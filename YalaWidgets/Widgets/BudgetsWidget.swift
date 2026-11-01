@@ -47,6 +47,10 @@ struct BudgetsEntry: TimelineEntry {
     /// La persona no tiene ningún presupuesto activo: el widget invita a crear uno (UX 2.2 · L15-2). Con default para
     /// el placeholder, que trae ejemplos.
     var hasNoBudgets: Bool = false
+    /// Cuándo escribió la app la foto: lo gastado es de esa hora, y la marca del ritmo se mide a la misma.
+    var lastUpdated: Date? = nil
+    /// Cuántos presupuestos activos se pasaron, de TODOS (no solo los que caben en este tamaño o los elegidos).
+    var exceededCount: Int = 0
 
     static var placeholder: BudgetsEntry {
         BudgetsEntry(
@@ -144,11 +148,8 @@ struct BudgetsWidgetProvider: AppIntentTimelineProvider {
 
     func timeline(for configuration: BudgetsWidgetIntent, in context: Context) async -> Timeline<BudgetsEntry> {
         let entry = createEntry(for: configuration, family: context.family)
-
-        // Refresh every 4 hours
-        let refreshDate = Calendar.current.date(byAdding: .hour, value: 4, to: Date()) ?? Date()
-
-        return Timeline(entries: [entry], policy: .after(refreshDate))
+        // A medianoche se mueve la marca del ritmo; los gastos nuevos llegan antes, cuando la app guarda.
+        return Timeline(entries: [entry], policy: .after(WidgetRefresh.nextDate(after: entry.date)))
     }
 
     /// Cuántas filas caben por tamaño. El grande dobla el mediano: misma fila, el doble de alto.
@@ -181,7 +182,11 @@ struct BudgetsWidgetProvider: AppIntentTimelineProvider {
             budgets: budgets,
             currencyDisplayFormat: displayFormat,
             isPlaceholder: false,
-            hasNoBudgets: allBudgets.isEmpty
+            hasNoBudgets: allBudgets.isEmpty,
+            lastUpdated: WidgetDataService.getLastUpdated(),
+            exceededCount: allBudgets.filter {
+                WidgetInsightsLogic.budgetIsOver(limit: $0.limitAmount, spent: $0.spentAmount)
+            }.count
         )
     }
 }
@@ -192,130 +197,162 @@ struct BudgetsWidgetView: View {
     @Environment(\.widgetFamily) private var family
     var entry: BudgetsEntry
 
+    private var isLarge: Bool { family == .systemLarge }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: family == .systemLarge ? WDS.Spacing.lg : WDS.Spacing.sm) {
-            // Header
-            WidgetHeader(
+        VStack(alignment: .leading, spacing: isLarge ? WidgetDS.Spacing.md : WidgetDS.Spacing.sm) {
+            WidgetCardHeader(
                 title: String(localized: "widget.ui.budgets", bundle: .main),
-                icon: "chart.pie"
-            )
+                systemImage: "chart.pie.fill",
+                tint: WidgetColors.electricIndigo
+            ) {
+                if let exceeded = exceededText {
+                    Text(exceeded)
+                        .font(WidgetDS.Typography.indicator)
+                        .foregroundStyle(WidgetColors.alertText)
+                        .lineLimit(1)
+                }
+            }
 
             if entry.hasNoBudgets {
-                Spacer()
-                WidgetCreateFirstView(icon: "chart.pie", message: "widget.empty.noBudgetsYet")
-                Spacer()
-            } else if entry.budgets.isEmpty {
-                Spacer()
-                HStack {
-                    Spacer()
-                    VStack(spacing: WDS.Spacing.xs) {
-                        Image(systemName: "chart.pie")
-                            .font(.title2) // A11Y-DT: widget empty state icon
-                            .foregroundStyle(.tertiary)
-                        Text("widget.ui.noBudgets", bundle: .main)
-                            .font(WDS.Typography.body)
-                            .foregroundStyle(.tertiary)
-                    }
-                    Spacer()
-                }
-                Spacer()
-            } else {
-                // Budget list (el provider ya recortó a lo que cabe en este tamaño)
-                ForEach(entry.budgets.prefix(BudgetsWidgetProvider.budgetLimit(for: family)), id: \.id) { budget in
-                    BudgetRowView(
-                        budget: budget,
-                        displayFormat: entry.currencyDisplayFormat
-                    )
-                }
-
                 Spacer(minLength: 0)
+                WidgetCreateFirstView(icon: "chart.pie", message: "widget.empty.noBudgetsYet")
+                Spacer(minLength: 0)
+            } else if entry.budgets.isEmpty {
+                Spacer(minLength: 0)
+                Text("widget.ui.noBudgets", bundle: .main)
+                    .font(WidgetDS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
+                Spacer(minLength: 0)
+            } else {
+                // El provider ya recortó a lo que cabe; las filas reparten el alto.
+                let rows = Array(entry.budgets.prefix(BudgetsWidgetProvider.budgetLimit(for: family)))
+                VStack(alignment: .leading, spacing: WidgetDS.Spacing.none) {
+                    ForEach(Array(rows.enumerated()), id: \.element.id) { index, budget in
+                        if index > 0 { Spacer(minLength: isLarge ? WidgetDS.Spacing.sm : WidgetDS.Spacing.xs) }
+                        BudgetRowView(
+                            budget: budget,
+                            displayFormat: entry.currencyDisplayFormat,
+                            asOf: entry.lastUpdated ?? entry.date,
+                            isLarge: isLarge
+                        )
+                    }
+                    if isLarge {
+                        Spacer(minLength: WidgetDS.Spacing.sm)
+                        WidgetFreshnessNote(lastUpdated: entry.lastUpdated, now: entry.date)
+                    }
+                }
+                .frame(maxHeight: .infinity, alignment: .top)
             }
         }
-        .padding(WDS.Spacing.xs)
-        .clipped()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .widgetURL(WidgetURLHelper.url(for: entry.hasNoBudgets ? WidgetDeepLink.newBudget : "budgets"))
+    }
+
+    /// «1 se pasó» / «2 se pasaron», de todos los presupuestos activos aunque no quepan en este tamaño.
+    private var exceededText: String? {
+        let count = entry.exceededCount
+        guard count > 0 else { return nil }
+        return count == 1
+            ? String(localized: "widget.budgets.exceeded.one", bundle: .main)
+            : String(format: String(localized: "widget.budgets.exceeded.other", bundle: .main), count)
     }
 }
 
 // MARK: - Budget Row
 
+/// La fila de presupuesto de la app (`BudgetWidgetRow` del Panel): insignia sólida con su color, «Te quedan / Te
+/// pasaste por» con la cifra, y la barra índigo (rosa al pasarse) con la marca de cuánto del período ya pasó.
 struct BudgetRowView: View {
     let budget: WidgetBudget
     let displayFormat: String
+    /// La hora de lo gastado (la de la foto): la marca del ritmo se mide a esa hora, no a la de ahora.
+    var asOf: Date = Date()
+    var isLarge: Bool = false
+
+    private var remaining: Double { WidgetInsightsLogic.budgetRemaining(limit: budget.limitAmount, spent: budget.spentAmount) }
+    private var isOver: Bool { WidgetInsightsLogic.budgetIsOver(limit: budget.limitAmount, spent: budget.spentAmount) }
+    private var pace: Double? {
+        isOver ? nil : WidgetInsightsLogic.elapsedFraction(periodType: budget.periodType, now: asOf, calendar: .current)
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
-            // Row 1: Icon + Name + %
-            HStack(spacing: WDS.Spacing.sm) {
-                // Icon badge compacto
-                ZStack {
-                    Circle()
-                        .fill(budgetColor.opacity(0.2))
-                        .frame(width: WDS.ListItem.iconSizeCompact,
-                               height: WDS.ListItem.iconSizeCompact)
-
-                    Image(systemName: budget.iconName ?? "chart.pie.fill")
-                        .font(.system(size: WDS.Icon.sm)) // A11Y-DT: widget fixed layout
-                        .foregroundStyle(budgetColor)
-                        .widgetAccentable()
-                }
-
-                Text(budget.name)
-                    .font(WDS.Typography.label)
-                    .lineLimit(1)
-
-                Spacer()
-
-                // Spent/Limit compact con jerarquía visual: símbolo subordinado.
-                // Caso especial — el formato compuesto "S/720/800" no encaja en
-                // WidgetAmountText (que asume un solo número). HStack manual de 2 runs.
-                HStack(alignment: .firstTextBaseline, spacing: 0) {
-                    Text(currencySymbol)
-                        .font(WDS.Typography.valueSecondary)
-                        .foregroundStyle(.tertiary)
-                    Text(amountRatio)
-                        .font(WDS.Typography.tiny)
-                        .foregroundStyle(.secondary)
-                }
-                .fixedSize(horizontal: true, vertical: false)
-
-                Text("\(Int(budget.percentUsed))%")
-                    .font(WDS.Typography.labelSmall)
-                    .foregroundStyle(progressColor)
-                    .fixedSize(horizontal: true, vertical: false)
-                    .widgetAccentable()
-            }
-
-            // Row 2: Progress bar alineada con texto
-            WidgetProgressBar.budget(
-                percentUsed: budget.percentUsed,
-                height: WDS.Progress.heightCompact
+        HStack(alignment: .center, spacing: WidgetDS.Spacing.sm) {
+            WidgetBadge(
+                systemImage: budget.iconName ?? "chart.pie.fill",
+                color: WidgetColors.fill(hex: budget.colorHex),
+                size: isLarge ? WidgetDS.Icon.badgeMedium : WidgetDS.Icon.badgeSmall
             )
-            .padding(.leading, WDS.ListItem.iconSizeCompact + WDS.Spacing.sm)
+
+            VStack(alignment: .leading, spacing: WidgetDS.Spacing.xs) {
+                HStack(alignment: .firstTextBaseline, spacing: WidgetDS.Spacing.xs) {
+                    Text(budget.name)
+                        .font(WidgetDS.Typography.label)
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                    Spacer(minLength: WidgetDS.Spacing.xs)
+                    if !isLarge {
+                        statusLabel
+                    }
+                    amount
+                }
+
+                if isLarge {
+                    HStack(alignment: .firstTextBaseline, spacing: WidgetDS.Spacing.xs) {
+                        Text(String(format: String(localized: "widget.budgets.spentOfLimit", bundle: .main),
+                                    amountString(budget.spentAmount), amountString(budget.limitAmount))
+                             + " · " + percentString)
+                            .font(WidgetDS.Typography.captionSmall)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                        Spacer(minLength: WidgetDS.Spacing.xs)
+                        statusLabel
+                    }
+                }
+
+                WidgetMeterBar(
+                    fraction: budget.percentUsed / 100,
+                    color: isOver ? WidgetColors.hotPink : WidgetColors.electricIndigo,
+                    pace: pace
+                )
+            }
         }
+        .accessibilityElement(children: .combine)
     }
 
-    private var budgetColor: Color {
-        Color(hex: budget.colorHex ?? "#6366F1")
+    private var statusLabel: some View {
+        Text(isOver ? String(localized: "widget.budgets.over", bundle: .main)
+                    : String(localized: "widget.budgets.remaining", bundle: .main))
+            .font(WidgetDS.Typography.captionSmall)
+            .foregroundStyle(isOver ? WidgetColors.alertText : Color.secondary)
+            .lineLimit(1)
+            .fixedSize()
     }
 
-    private var progressColor: Color {
-        WidgetColors.forBudget(percentUsed: budget.percentUsed)
+    private var amount: some View {
+        WidgetAmountText(
+            value: abs(remaining),
+            currencyCode: budget.currencyCode,
+            displayFormat: displayFormat,
+            font: WidgetDS.Typography.subheadlineEmphasized,
+            secondaryFont: WidgetDS.Typography.captionSmall,
+            tint: isOver ? .color(WidgetColors.alertText) : .primary
+        )
+        .fixedSize()
     }
 
-    private var currencySymbol: String {
-        displayFormat == "symbol"
-            ? CurrencySymbols.symbol(for: budget.currencyCode)
-            : budget.currencyCode
+    private var symbol: String {
+        CurrencySymbols.display(for: budget.currencyCode, format: displayFormat)
     }
 
-    private var amountRatio: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        let spent = formatter.string(from: NSNumber(value: budget.spentAmount)) ?? "0"
-        let limit = formatter.string(from: NSNumber(value: budget.limitAmount)) ?? "0"
-        return "\(spent)/\(limit)"
+    private func amountString(_ value: Double) -> String {
+        WidgetAmountSplitter.split(value: value, symbol: symbol, fractionDigits: 0).accessibilityFormatted
+    }
+
+    private var percentString: String {
+        (budget.percentUsed / 100).formatted(.percent.precision(.fractionLength(0)))
     }
 }
 
@@ -333,7 +370,7 @@ struct BudgetsWidget: Widget {
             BudgetsWidgetView(entry: entry)
                 .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder)
                 .invitesToActivateFullWhenGroupsOnly()
-                .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
+                .containerBackground(WidgetColors.cardBackground, for: .widget)
         }
         .configurationDisplayName("widget.gallery.budgets")
         .description("widget.gallery.budgets.desc")

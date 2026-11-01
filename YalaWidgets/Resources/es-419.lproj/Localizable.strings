@@ -171,3 +171,26 @@
 "widget.ui.net" = "Neto";
 "widget.ui.byAccount" = "Por cuenta";
 "widget.ui.leftToPayThisMonth" = "Te falta pagar este mes";
+
+/* Rediseño de los widgets 2.2 (S35f, docs/widgets/AUDITORIA-WIDGETS-2-2.md) */
+"widget.budgets.remaining" = "Te quedan";
+"widget.budgets.over" = "Te pasaste por";
+"widget.budgets.spentOfLimit" = "%1$@ de %2$@";
+"widget.freshness.yesterday" = "Actualizado ayer";
+"widget.freshness.onDate" = "Actualizado el %@";
+"widget.balance.change.a11y" = "Cambio en el saldo, %2$@: %1$@";
+"widget.expense.vsPrevious" = "vs. %@";
+"widget.expense.previousToDate" = "En %1$@ a esta fecha: %2$@";
+"widget.expense.previousToDate.year" = "En %1$@ a esta fecha: %2$@";
+"widget.expense.perDay" = "%@ al día";
+"widget.expense.comparison.a11y" = "%1$@ respecto a %2$@ a esta fecha";
+"widget.budgets.exceeded.one" = "1 se pasó";
+"widget.budgets.exceeded.other" = "%d se pasaron";
+"widget.payments.inDays" = "En %d días";
+"widget.payments.leftShort" = "Falta %@";
+"widget.ui.yesterday" = "Ayer";
+"widget.records.emptyHint" = "Toca + para registrar el primero";
+"widget.quick.title" = "Registrar";
+"widget.quick.manual" = "A mano";
+"widget.quick.voice" = "Por voz";
+"widget.quick.photo" = "Con foto";

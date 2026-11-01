@@ -171,3 +171,26 @@
 "widget.ui.net" = "純額";
 "widget.ui.byAccount" = "口座別";
 "widget.ui.leftToPayThisMonth" = "今月の残りの支払い";
+
+/* Rediseño de los widgets 2.2 (S35f, docs/widgets/AUDITORIA-WIDGETS-2-2.md) */
+"widget.budgets.remaining" = "残り";
+"widget.budgets.over" = "超過額";
+"widget.budgets.spentOfLimit" = "%1$@ / %2$@";
+"widget.freshness.yesterday" = "昨日更新";
+"widget.freshness.onDate" = "%@ に更新";
+"widget.balance.change.a11y" = "残高の変化（%2$@）：%1$@";
+"widget.expense.vsPrevious" = "%@比";
+"widget.expense.previousToDate" = "%1$@の同じ日まで：%2$@";
+"widget.expense.previousToDate.year" = "%1$@の同じ日まで：%2$@";
+"widget.expense.perDay" = "1日あたり %@";
+"widget.expense.comparison.a11y" = "%2$@の同じ日と比べて %1$@";
+"widget.budgets.exceeded.one" = "1件超過";
+"widget.budgets.exceeded.other" = "%d件超過";
+"widget.payments.inDays" = "%d日後";
+"widget.payments.leftShort" = "残り %@";
+"widget.ui.yesterday" = "昨日";
+"widget.records.emptyHint" = "+ をタップして最初の記録を追加";
+"widget.quick.title" = "記録する";
+"widget.quick.manual" = "手入力";
+"widget.quick.voice" = "音声";
+"widget.quick.photo" = "写真";

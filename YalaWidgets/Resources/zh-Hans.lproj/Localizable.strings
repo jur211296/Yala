@@ -171,3 +171,26 @@
 "widget.ui.net" = "净额";
 "widget.ui.byAccount" = "按账户";
 "widget.ui.leftToPayThisMonth" = "本月待付";
+
+/* Rediseño de los widgets 2.2 (S35f, docs/widgets/AUDITORIA-WIDGETS-2-2.md) */
+"widget.budgets.remaining" = "还剩";
+"widget.budgets.over" = "超出";
+"widget.budgets.spentOfLimit" = "%1$@ / %2$@";
+"widget.freshness.yesterday" = "昨天更新";
+"widget.freshness.onDate" = "%@ 更新";
+"widget.balance.change.a11y" = "余额变化（%2$@）：%1$@";
+"widget.expense.vsPrevious" = "对比%@";
+"widget.expense.previousToDate" = "%1$@同期：%2$@";
+"widget.expense.previousToDate.year" = "%1$@同期：%2$@";
+"widget.expense.perDay" = "每天 %@";
+"widget.expense.comparison.a11y" = "与%2$@同期相比 %1$@";
+"widget.budgets.exceeded.one" = "1 个超支";
+"widget.budgets.exceeded.other" = "%d 个超支";
+"widget.payments.inDays" = "%d 天后";
+"widget.payments.leftShort" = "还需 %@";
+"widget.ui.yesterday" = "昨天";
+"widget.records.emptyHint" = "轻点 + 添加第一条";
+"widget.quick.title" = "记一笔";
+"widget.quick.manual" = "手动";
+"widget.quick.voice" = "语音";
+"widget.quick.photo" = "照片";

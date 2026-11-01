@@ -389,9 +389,16 @@ struct ApproximateMarkSecondarySurfacesWiringTests {
     func passthroughComponentsForwardTheMark() throws {
         let kpi = try Self.source("YalaWidgets/Views/WidgetKPI.swift")
         #expect(kpi.contains("isEstimate: isEstimate"), """
-            `WidgetKPI` es el ÚNICO camino de la marca hacia `BalanceWidget`, `ExpenseWidget` y el
-            neto de Flujo de caja: si deja de reenviarla, tres widgets pierden el «≈» y sus callsites
-            siguen pasándola tan campantes.
+            `WidgetKPI` es el camino de la marca hacia el neto de Flujo de caja y el Resumen del mes:
+            si deja de reenviarla, pierden el «≈» y sus callsites siguen pasándola tan campantes.
+            """)
+
+        // Desde el rediseño 2.2 la cifra de Saldo y Gastos va por `WidgetHeroAmount`.
+        let hero = try Self.source("YalaWidgets/Views/WidgetCardComponents.swift")
+        let heroBody = try #require(hero.range(of: "struct WidgetHeroAmount: View {"))
+        #expect(String(hero[heroBody.upperBound...].prefix(900)).contains("isEstimate: isEstimate"), """
+            `WidgetHeroAmount` es el camino de la marca hacia `BalanceWidget` y `ExpenseWidget`: si
+            deja de reenviarla, los dos pierden el «≈» con sus callsites en verde.
             """)
 
         let row = try Self.source("Yala/App/Views/Panel/Components/PanelSmallBarRow.swift")

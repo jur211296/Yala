@@ -104,6 +104,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				App/Logic/Helpers/WidgetAmountSplitter.swift,
+				App/Logic/Helpers/WidgetInsightsLogic.swift,
 				App/Logic/Helpers/WidgetSelectionFallback.swift,
 				Shared/ControlCenterIntents.swift,
 			);

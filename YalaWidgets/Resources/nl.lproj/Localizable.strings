@@ -171,3 +171,26 @@
 "widget.ui.net" = "Netto";
 "widget.ui.byAccount" = "Per rekening";
 "widget.ui.leftToPayThisMonth" = "Deze maand nog te betalen";
+
+/* Rediseño de los widgets 2.2 (S35f, docs/widgets/AUDITORIA-WIDGETS-2-2.md) */
+"widget.budgets.remaining" = "Nog over";
+"widget.budgets.over" = "Overschreden met";
+"widget.budgets.spentOfLimit" = "%1$@ van %2$@";
+"widget.freshness.yesterday" = "Gisteren bijgewerkt";
+"widget.freshness.onDate" = "Bijgewerkt op %@";
+"widget.balance.change.a11y" = "Saldowijziging, %2$@: %1$@";
+"widget.expense.vsPrevious" = "t.o.v. %@";
+"widget.expense.previousToDate" = "Op deze datum in %1$@: %2$@";
+"widget.expense.previousToDate.year" = "Op deze datum in %1$@: %2$@";
+"widget.expense.perDay" = "%@ per dag";
+"widget.expense.comparison.a11y" = "%1$@ ten opzichte van %2$@ op deze datum";
+"widget.budgets.exceeded.one" = "1 overschreden";
+"widget.budgets.exceeded.other" = "%d overschreden";
+"widget.payments.inDays" = "Over %d dagen";
+"widget.payments.leftShort" = "Nog %@";
+"widget.ui.yesterday" = "Gisteren";
+"widget.records.emptyHint" = "Tik op + om de eerste toe te voegen";
+"widget.quick.title" = "Toevoegen";
+"widget.quick.manual" = "Handmatig";
+"widget.quick.voice" = "Met stem";
+"widget.quick.photo" = "Met foto";

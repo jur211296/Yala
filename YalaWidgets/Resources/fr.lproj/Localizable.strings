@@ -171,3 +171,26 @@
 "widget.ui.net" = "Net";
 "widget.ui.byAccount" = "Par compte";
 "widget.ui.leftToPayThisMonth" = "Reste à payer ce mois-ci";
+
+/* Rediseño de los widgets 2.2 (S35f, docs/widgets/AUDITORIA-WIDGETS-2-2.md) */
+"widget.budgets.remaining" = "Il te reste";
+"widget.budgets.over" = "Dépassé de";
+"widget.budgets.spentOfLimit" = "%1$@ sur %2$@";
+"widget.freshness.yesterday" = "Mis à jour hier";
+"widget.freshness.onDate" = "Mis à jour le %@";
+"widget.balance.change.a11y" = "Variation du solde, %2$@ : %1$@";
+"widget.expense.vsPrevious" = "vs %@";
+"widget.expense.previousToDate" = "À la même date en %1$@ : %2$@";
+"widget.expense.previousToDate.year" = "À la même date en %1$@ : %2$@";
+"widget.expense.perDay" = "%@ par jour";
+"widget.expense.comparison.a11y" = "%1$@ par rapport à %2$@ à la même date";
+"widget.budgets.exceeded.one" = "1 dépassé";
+"widget.budgets.exceeded.other" = "%d dépassés";
+"widget.payments.inDays" = "Dans %d jours";
+"widget.payments.leftShort" = "Reste %@";
+"widget.ui.yesterday" = "Hier";
+"widget.records.emptyHint" = "Touche + pour ajouter le premier";
+"widget.quick.title" = "Ajouter";
+"widget.quick.manual" = "À la main";
+"widget.quick.voice" = "À la voix";
+"widget.quick.photo" = "Photo";

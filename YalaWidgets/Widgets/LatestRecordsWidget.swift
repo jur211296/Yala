@@ -22,10 +22,12 @@ struct LatestRecordsWidgetIntent: WidgetConfigurationIntent {
 // MARK: - Timeline Entry
 
 struct LatestRecordsEntry: TimelineEntry {
-    let date: Date
+    var date: Date
     let transactions: [WidgetTransaction]
     let currencyDisplayFormat: String
     let isPlaceholder: Bool
+    /// Cuándo escribió la app la foto.
+    var lastUpdated: Date? = nil
 
     static var placeholder: LatestRecordsEntry {
         LatestRecordsEntry(
@@ -162,8 +164,12 @@ struct LatestRecordsProvider: AppIntentTimelineProvider {
 
     func timeline(for configuration: LatestRecordsWidgetIntent, in context: Context) async -> Timeline<LatestRecordsEntry> {
         let entry = createEntry(for: configuration, family: context.family)
-        let refreshDate = Calendar.current.date(byAdding: .hour, value: 2, to: Date()) ?? Date()
-        return Timeline(entries: [entry], policy: .after(refreshDate))
+        // A medianoche «Hoy» pasa a «Ayer»; los registros nuevos llegan antes, cuando la app guarda.
+        return WidgetRefresh.dayAwareTimeline(entry) { midnight in
+            var next = entry
+            next.date = midnight
+            return next
+        }
     }
 
     /// Cuántas filas caben por tamaño.
@@ -179,7 +185,8 @@ struct LatestRecordsProvider: AppIntentTimelineProvider {
             date: Date(),
             transactions: transactions,
             currencyDisplayFormat: displayFormat,
-            isPlaceholder: false
+            isPlaceholder: false,
+            lastUpdated: WidgetDataService.getLastUpdated()
         )
     }
 }
@@ -190,104 +197,150 @@ struct LatestRecordsWidgetView: View {
     @Environment(\.widgetFamily) private var family
     var entry: LatestRecordsEntry
 
+    private var isLarge: Bool { family == .systemLarge }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: family == .systemLarge ? WDS.Spacing.md : WDS.Spacing.sm) {
-            // Header
-            WidgetHeader(
+        VStack(alignment: .leading, spacing: isLarge ? WidgetDS.Spacing.md : WidgetDS.Spacing.sm) {
+            WidgetCardHeader(
                 title: String(localized: "widget.ui.latestRecords", bundle: .main),
-                icon: "list.bullet.rectangle"
-            )
+                systemImage: "list.bullet",
+                tint: WidgetColors.electricIndigo
+            ) {
+                NewRecordButton()
+            }
 
             if entry.transactions.isEmpty {
-                Spacer()
-                HStack {
-                    Spacer()
-                    VStack(spacing: WDS.Spacing.xs) {
-                        Image(systemName: "tray")
-                            .font(.title2) // A11Y-DT: widget empty state icon
-                            .foregroundStyle(.tertiary)
-                        Text("widget.ui.noRecords", bundle: .main)
-                            .font(WDS.Typography.body)
-                            .foregroundStyle(.tertiary)
-                    }
-                    Spacer()
-                }
-                Spacer()
-            } else {
-                // Transaction list
-                ForEach(Array(entry.transactions.prefix(LatestRecordsProvider.recordLimit(for: family)).enumerated()), id: \.element.id) { _, transaction in
-                    TransactionRowView(
-                        transaction: transaction,
-                        displayFormat: entry.currencyDisplayFormat
-                    )
-                }
-
                 Spacer(minLength: 0)
+                VStack(spacing: WidgetDS.Spacing.xxs) {
+                    Text("widget.ui.noRecords", bundle: .main)
+                        .font(WidgetDS.Typography.label)
+                        .foregroundStyle(.primary)
+                    Text("widget.records.emptyHint", bundle: .main)
+                        .font(WidgetDS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+                Spacer(minLength: 0)
+            } else {
+                let rows = Array(entry.transactions.prefix(LatestRecordsProvider.recordLimit(for: family)))
+                VStack(alignment: .leading, spacing: WidgetDS.Spacing.none) {
+                    ForEach(Array(rows.enumerated()), id: \.element.id) { index, transaction in
+                        if index > 0 { Spacer(minLength: WidgetDS.Spacing.xs) }
+                        TransactionRowView(transaction: transaction, displayFormat: entry.currencyDisplayFormat, now: entry.date)
+                    }
+                    if isLarge {
+                        Spacer(minLength: WidgetDS.Spacing.sm)
+                        WidgetFreshnessNote(lastUpdated: entry.lastUpdated, now: entry.date)
+                    }
+                }
+                .frame(maxHeight: .infinity, alignment: .top)
             }
         }
-        .padding(WDS.Spacing.xs)
-        .clipped()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .widgetURL(WidgetURLHelper.url(for: "records"))
+    }
+}
+
+/// El «+» de la cabecera: abre Nuevo registro desde el widget, sin pasar por la lista. Relleno índigo sólido como el
+/// botón de la app; en tintado, translúcido (un relleno opaco se comería el «+»).
+struct NewRecordButton: View {
+    @Environment(\.widgetRenderingMode) private var renderingMode
+
+    var body: some View {
+        Link(destination: MonthSummaryLinks.url("new-transaction")) {
+            Image(systemName: "plus")
+                .font(WidgetDS.Typography.indicator)
+                .foregroundStyle(renderingMode == .fullColor ? Color.white : Color.primary)
+                .frame(width: WidgetDS.Icon.badgeSmall, height: WidgetDS.Icon.badgeSmall)
+                .background(Circle().fill(renderingMode == .fullColor
+                                          ? WidgetColors.electricIndigo
+                                          : Color.primary.opacity(WidgetDS.Opacity.subtle)))
+        }
+        .accessibilityLabel(Text("widget.ui.newRecord", bundle: .main))
     }
 }
 
 // MARK: - Transaction Row
 
+/// Un registro: insignia sólida de su categoría, la nota (o la subcategoría), «categoría · cuándo» y el importe con su
+/// signo en la divisa en que se guardó. Solo el ingreso lleva color.
 struct TransactionRowView: View {
     let transaction: WidgetTransaction
     let displayFormat: String
+    var now: Date = Date()
 
     var body: some View {
-        HStack(spacing: WDS.Spacing.sm) {
-            // Category icon with color
-            ZStack {
-                Circle()
-                    .fill(categoryColor.opacity(0.2))
-                    .frame(width: WDS.ListItem.iconSizeCompact,
-                           height: WDS.ListItem.iconSizeCompact)
+        HStack(spacing: WidgetDS.Spacing.sm) {
+            WidgetBadge(systemImage: iconName, color: categoryColor)
 
-                Image(systemName: transaction.subcategoryIcon ?? transaction.categoryIcon ?? "questionmark")
-                    .font(.system(size: WDS.Icon.sm)) // A11Y-DT: widget fixed layout
-                    .foregroundStyle(categoryColor)
-                    .widgetAccentable()
-            }
-
-            // Note/category
-            VStack(alignment: .leading, spacing: 0) {
-                Text(transaction.note ?? transaction.categoryName ?? String(localized: "widget.ui.noNote", bundle: .main))
-                    .font(WDS.Typography.label)
+            VStack(alignment: .leading, spacing: WidgetDS.Spacing.none) {
+                Text(title)
+                    .font(WidgetDS.Typography.label)
+                    .foregroundStyle(.primary)
                     .lineLimit(1)
-
-                if let subcategory = transaction.subcategoryName {
-                    Text(subcategory)
-                        .font(WDS.Typography.tiny)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
+                Text(subtitle)
+                    .font(WidgetDS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
 
-            Spacer()
+            Spacer(minLength: WidgetDS.Spacing.xs)
 
-            // Amount (show in original currency)
+            // Importe en su divisa original, como la fila de Registros.
             WidgetAmountText(
                 value: transaction.isIncome ? abs(transaction.amount) : -abs(transaction.amount),
                 currencyCode: transaction.currencyCode,
                 displayFormat: displayFormat,
-                font: WDS.Typography.value,
-                secondaryFont: WDS.Typography.valueSecondary,
-                tint: .color(transaction.isIncome ? WidgetColors.income : WidgetColors.expense),
+                font: WidgetDS.Typography.subheadlineEmphasized,
+                secondaryFont: WidgetDS.Typography.captionSmall,
+                tint: transaction.isIncome ? .color(WidgetColors.incomeText) : .primary,
                 forceSign: true,
                 fractionDigits: 2
             )
-            .widgetAccentable()
+            .fixedSize()
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private var note: String? {
+        guard let note = transaction.note?.trimmingCharacters(in: .whitespacesAndNewlines), !note.isEmpty else { return nil }
+        return note
+    }
+
+    /// La nota; sin nota, la subcategoría; sin ella, la categoría.
+    private var title: String {
+        note ?? transaction.subcategoryName ?? transaction.categoryName
+            ?? String(localized: "widget.ui.uncategorized", bundle: .main)
+    }
+
+    /// Lo que el título no dijo (la subcategoría o la categoría) y el día.
+    private var subtitle: String {
+        let context: String?
+        if note != nil {
+            context = transaction.subcategoryName ?? transaction.categoryName
+        } else if transaction.subcategoryName != nil {
+            context = transaction.categoryName
+        } else {
+            context = nil
+        }
+        return [context, dayText].compactMap { $0 }.joined(separator: " · ")
+    }
+
+    private var dayText: String {
+        switch WidgetInsightsLogic.dayLabel(for: transaction.date, now: now, calendar: .current) {
+        case .today: return String(localized: "widget.ui.today", bundle: .main)
+        case .yesterday: return String(localized: "widget.ui.yesterday", bundle: .main)
+        case .date: return transaction.date.formatted(.dateTime.day().month(.abbreviated))
         }
     }
 
+    private var iconName: String {
+        transaction.subcategoryIcon ?? transaction.categoryIcon ?? WidgetDataService.uncategorizedIconName
+    }
+
     private var categoryColor: Color {
-        if let hex = transaction.categoryColor {
-            return Color(hex: hex)
-        }
-        return .gray
+        Color(hex: transaction.categoryColor ?? WidgetDataService.uncategorizedColorHex)
     }
 }
 
@@ -305,7 +358,7 @@ struct LatestRecordsWidget: Widget {
             LatestRecordsWidgetView(entry: entry)
                 .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder)
                 .invitesToActivateFullWhenGroupsOnly()
-                .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
+                .containerBackground(WidgetColors.cardBackground, for: .widget)
         }
         .configurationDisplayName("widget.gallery.latestRecords")
         .description("widget.gallery.latestRecords.desc")

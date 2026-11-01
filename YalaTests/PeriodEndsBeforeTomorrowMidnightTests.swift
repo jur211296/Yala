@@ -92,7 +92,7 @@ struct PeriodEndsBeforeTomorrowMidnightTests {
     @Test func widgetMirror_closesAt235959() throws {
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
         let code = try String(contentsOf: root.appendingPathComponent("YalaWidgets/Services/WidgetDataService.swift"), encoding: .utf8)
-        let function = try #require(code.range(of: "func dateInterval() -> DateInterval {"))
+        let function = try #require(code.range(of: "func dateInterval(now: Date = Date()) -> DateInterval {"))
         let end = try #require(code.range(of: "\n    }\n", range: function.upperBound..<code.endIndex))
         let body = code[function.upperBound..<end.lowerBound]
         #expect(body.contains("let endOfToday = calendar.date(byAdding: .second, value: -1, to: startOfTomorrow) ?? startOfTomorrow"))

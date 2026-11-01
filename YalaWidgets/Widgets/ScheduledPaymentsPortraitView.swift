@@ -18,17 +18,13 @@ struct ScheduledPaymentsPortraitView: View {
     let entry: ScheduledPaymentsEntry
 
     var body: some View {
-        VStack(alignment: .leading, spacing: WDS.Spacing.lg) {
-            WidgetHeader(
-                title: String(localized: "widget.ui.upcomingPayments", bundle: .main),
-                subtitle: PaymentsMonthCalendar.monthTitle(for: entry.date),
-                icon: "calendar.badge.clock"
-            )
+        VStack(alignment: .leading, spacing: WidgetDS.Spacing.lg) {
+            ScheduledPaymentsHeader(entry: entry, subtitle: PaymentsMonthCalendar.monthTitle(for: entry.date))
 
             if entry.hasNoPayments {
-                Spacer()
+                Spacer(minLength: 0)
                 WidgetCreateFirstView(icon: "calendar.badge.plus", message: "widget.empty.noPaymentsYet")
-                Spacer()
+                Spacer(minLength: 0)
             } else {
                 PaymentsMonthCalendar(
                     now: entry.date,
@@ -38,20 +34,20 @@ struct ScheduledPaymentsPortraitView: View {
                 Divider()
 
                 if entry.payments.isEmpty {
-                    HStack(spacing: WDS.Spacing.xs) {
-                        Image(systemName: "checkmark.circle")
-                            .foregroundStyle(WidgetColors.success)
+                    Label {
                         Text("widget.ui.noPayments", bundle: .main)
-                            .font(WDS.Typography.body)
-                            .foregroundStyle(.secondary)
+                    } icon: {
+                        Image(systemName: "checkmark.circle.fill")
                     }
+                    .font(WidgetDS.Typography.caption)
+                    .foregroundStyle(.secondary)
                 } else {
-                    VStack(alignment: .leading, spacing: WDS.Spacing.md) {
+                    VStack(alignment: .leading, spacing: WidgetDS.Spacing.md) {
                         ForEach(
                             entry.payments.prefix(ScheduledPaymentsProvider.extraLargePortraitLimit),
                             id: \.id
                         ) { payment in
-                            PaymentRowView(payment: payment, displayFormat: entry.currencyDisplayFormat)
+                            PaymentRowView(payment: payment, displayFormat: entry.currencyDisplayFormat, now: entry.date)
                         }
                     }
                 }
@@ -62,15 +58,15 @@ struct ScheduledPaymentsPortraitView: View {
                     Divider()
                     HStack(alignment: .firstTextBaseline) {
                         Text("widget.ui.leftToPayThisMonth", bundle: .main)
-                            .font(WDS.Typography.label)
+                            .font(WidgetDS.Typography.label)
                             .foregroundStyle(.secondary)
-                        Spacer(minLength: WDS.Spacing.md)
+                        Spacer(minLength: WidgetDS.Spacing.md)
                         WidgetAmountText(
                             value: month.remainingToPay,
                             currencyCode: entry.currencyCode,
                             displayFormat: entry.currencyDisplayFormat,
-                            font: WDS.Typography.kpiSmall,
-                            secondaryFont: WDS.Typography.kpiSmallSecondary,
+                            font: WidgetDS.Typography.headline,
+                            secondaryFont: WidgetDS.Typography.caption,
                             tint: .primary,
                             fractionDigits: 2
                         )
@@ -80,8 +76,7 @@ struct ScheduledPaymentsPortraitView: View {
                 }
             }
         }
-        .padding(WDS.Spacing.xs)
-        .clipped()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .widgetURL(WidgetURLHelper.url(
             for: entry.hasNoPayments ? WidgetDeepLink.newScheduledPayment : "planning/scheduled-payments"))
     }
@@ -95,7 +90,7 @@ struct PaymentsMonthCalendar: View {
     let month: WidgetPaymentsMonth?
 
     private var calendar: Calendar { WidgetDataService.widgetConfiguredCalendar() }
-    static let cellHeight: CGFloat = 24
+    static let cellHeight = WidgetDS.Spacing.xxl
 
     var body: some View {
         let weeks = Self.weeks(for: now, calendar: calendar)
@@ -103,11 +98,11 @@ struct PaymentsMonthCalendar: View {
         let pending = Set(month?.pendingDays ?? [])
         let paid = Set(month?.paidDays ?? [])
 
-        Grid(horizontalSpacing: WDS.Spacing.xs, verticalSpacing: WDS.Spacing.xs) {
+        Grid(horizontalSpacing: WidgetDS.Spacing.xs, verticalSpacing: WidgetDS.Spacing.xs) {
             GridRow {
                 ForEach(Array(Self.weekdaySymbols(calendar: calendar).enumerated()), id: \.offset) { _, symbol in
                     Text(symbol)
-                        .font(WDS.Typography.labelSmall)
+                        .font(WidgetDS.Typography.labelTiny)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity)
                 }
@@ -122,28 +117,33 @@ struct PaymentsMonthCalendar: View {
         }
     }
 
+    @Environment(\.widgetRenderingMode) private var renderingMode
+
+    /// Día con pago pendiente: relleno índigo sólido con el número en blanco (en tintado, translúcido: un relleno opaco
+    /// se comería el número). Pagado: gris tenue. Hoy: contorno.
     @ViewBuilder
     private func dayCell(_ day: Int?, today: Int, pending: Set<Int>, paid: Set<Int>) -> some View {
         if let day {
             let isPending = pending.contains(day)
             let isPaid = !isPending && paid.contains(day)
+            let solid = isPending && renderingMode == .fullColor
             Text("\(day)")
-                .font(WDS.Typography.value)
+                .font(WidgetDS.Typography.caption)
                 .monospacedDigit()
-                .fontWeight(isPending ? .bold : .regular)
-                .foregroundStyle(isPending ? AnyShapeStyle(WidgetColors.primary)
+                .fontWeight(isPending ? .semibold : .regular)
+                .foregroundStyle(solid ? AnyShapeStyle(Color.white)
                                  : isPaid ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
                 .frame(maxWidth: .infinity)
                 .frame(height: Self.cellHeight)
                 .background {
-                    RoundedRectangle(cornerRadius: WDS.Radius.xs)
-                        .fill(isPending ? WidgetColors.primary.opacity(0.16)
-                              : isPaid ? Color.primary.opacity(0.06) : .clear)
+                    RoundedRectangle(cornerRadius: WidgetDS.Radius.sm, style: .continuous)
+                        .fill(isPending ? (solid ? WidgetColors.electricIndigo : Color.primary.opacity(WidgetDS.Opacity.overlay))
+                              : isPaid ? Color.primary.opacity(WidgetDS.Opacity.faint) : .clear)
                 }
                 .overlay {
                     if day == today {
-                        RoundedRectangle(cornerRadius: WDS.Radius.xs)
-                            .strokeBorder(WidgetColors.primary, lineWidth: 1.5)
+                        RoundedRectangle(cornerRadius: WidgetDS.Radius.sm, style: .continuous)
+                            .strokeBorder(isPending ? Color.primary : WidgetColors.accentText, lineWidth: WidgetDS.Spacing.xxs)
                     }
                 }
                 .widgetAccentable(isPending)
