@@ -4487,9 +4487,9 @@
 "groups.openingBalance.errorNotAdmin" = "Only a group admin can manage opening balances.";
 "groups.openingBalance.errorSameMember" = "Choose two different members.";
 "groups.openingBalance.serverRejected.title" = "Your change didn't reach the group";
-"groups.openingBalance.serverRejected.notAdmin" = "Only the group's owner or an admin can change opening balances, and you aren't one right now. Other members won't see this change.";
-"groups.openingBalance.serverRejected.locked" = "The people in that opening balance already have confirmed payments, so it can't be changed anymore. Other members won't see this change.";
-"groups.openingBalance.serverRejected.groupClosed" = "This group no longer accepts changes. Other members won't see this change.";
+"groups.openingBalance.serverRejected.notAdmin" = "Only the group's owner or an admin can change opening balances, and you aren't one right now. The balance goes back to how it is in the group.";
+"groups.openingBalance.serverRejected.locked" = "The people in that opening balance already have confirmed payments, so it can't be changed anymore. The balance goes back to how it is in the group.";
+"groups.openingBalance.serverRejected.groupClosed" = "This group no longer accepts changes. The balance goes back to how it is in the group.";
 
 // MARK: groups header balance bar
 "groups.detail.yourBalance" = "Your balance";

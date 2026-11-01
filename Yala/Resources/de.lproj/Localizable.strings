@@ -4481,9 +4481,9 @@
 "groups.openingBalance.errorNotAdmin" = "Nur Admins der Gruppe können Anfangssalden verwalten.";
 "groups.openingBalance.errorSameMember" = "Wählen Sie zwei verschiedene Mitglieder.";
 "groups.openingBalance.serverRejected.title" = "Deine Änderung ist nicht in der Gruppe angekommen";
-"groups.openingBalance.serverRejected.notAdmin" = "Nur der Eigentümer oder Admins der Gruppe können Anfangssalden ändern, und du bist gerade keiner davon. Die anderen Mitglieder sehen diese Änderung nicht.";
-"groups.openingBalance.serverRejected.locked" = "Die Personen in diesem Anfangssaldo haben schon bestätigte Zahlungen, deshalb lässt er sich nicht mehr ändern. Die anderen Mitglieder sehen diese Änderung nicht.";
-"groups.openingBalance.serverRejected.groupClosed" = "Diese Gruppe nimmt keine Änderungen mehr an. Die anderen Mitglieder sehen diese Änderung nicht.";
+"groups.openingBalance.serverRejected.notAdmin" = "Nur der Eigentümer oder Admins der Gruppe können Anfangssalden ändern, und du bist gerade keiner davon. Der Saldo ist wieder so wie in der Gruppe.";
+"groups.openingBalance.serverRejected.locked" = "Die Personen in diesem Anfangssaldo haben schon bestätigte Zahlungen, deshalb lässt er sich nicht mehr ändern. Der Saldo ist wieder so wie in der Gruppe.";
+"groups.openingBalance.serverRejected.groupClosed" = "Diese Gruppe nimmt keine Änderungen mehr an. Der Saldo ist wieder so wie in der Gruppe.";
 
 // MARK: groups header balance bar
 "groups.detail.yourBalance" = "Dein Saldo";

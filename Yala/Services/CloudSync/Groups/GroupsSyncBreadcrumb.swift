@@ -38,6 +38,18 @@ enum GroupsSyncBreadcrumb {
         logger.notice("GroupsSync pushDeadLettered reason=\(reason, privacy: .public)")
     }
 
+    /// Card e6fd: `rows` saldos iniciales que el servidor rechazó para siempre se DESCARTARON del teléfono (outbox y copia
+    /// local), y `groupsReset` grupos vuelven a bajar desde 0 para enseñar lo que tiene el servidor.
+    static func groupsOpeningBalanceRejectionSettled(rows: Int, groupsReset: Int) {
+        logger.notice("GroupsSync openingBalanceRejectionSettled rows=\(rows, privacy: .public) groupsReset=\(groupsReset, privacy: .public)")
+    }
+
+    /// Card e6fd: el descarte de un saldo rechazado espera al ciclo siguiente. `reason` = `drain-unfinished` (algo sigue en el
+    /// History sin traducir) o `live-outbox:<n>` (n grupos con cambios aún por subir, que el re-pull pisaría en pantalla).
+    static func groupsOpeningBalanceRejectionDeferred(reason: String) {
+        logger.notice("GroupsSync openingBalanceRejectionDeferred reason=\(reason, privacy: .public)")
+    }
+
     /// `count` filas de meta de grupo se PURGARON del outbox por noop `group_not_found` (el grupo no existe
     /// server-side — nace solo vía `create_group`; anti retry-storm de meta legacy). Deja de ser silenciosa.
     static func groupsMetaPurgedGroupNotFound(count: Int) {

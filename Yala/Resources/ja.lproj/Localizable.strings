@@ -4493,9 +4493,9 @@
 "groups.openingBalance.errorNotAdmin" = "開始残高を管理できるのはグループの管理者のみです。";
 "groups.openingBalance.errorSameMember" = "異なるメンバーを2人選んでください。";
 "groups.openingBalance.serverRejected.title" = "変更がグループに反映されませんでした";
-"groups.openingBalance.serverRejected.notAdmin" = "開始残高を変更できるのはグループのオーナーか管理者だけで、現在あなたはどちらでもありません。この変更はほかのメンバーには表示されません。";
-"groups.openingBalance.serverRejected.locked" = "この開始残高の対象の人たちにはすでに確定した支払いがあるため、変更できません。この変更はほかのメンバーには表示されません。";
-"groups.openingBalance.serverRejected.groupClosed" = "このグループは変更を受け付けていません。この変更はほかのメンバーには表示されません。";
+"groups.openingBalance.serverRejected.notAdmin" = "開始残高を変更できるのはグループのオーナーか管理者だけで、現在あなたはどちらでもありません。残高はグループでの内容に戻ります。";
+"groups.openingBalance.serverRejected.locked" = "この開始残高の対象の人たちにはすでに確定した支払いがあるため、変更できません。残高はグループでの内容に戻ります。";
+"groups.openingBalance.serverRejected.groupClosed" = "このグループは変更を受け付けていません。残高はグループでの内容に戻ります。";
 
 // MARK: groups header balance bar
 "groups.detail.yourBalance" = "あなたの収支";
