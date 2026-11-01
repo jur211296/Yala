@@ -1728,6 +1728,12 @@ final class CloudSyncEngine {
     /// `historyTokenBrokenReanchored`). Expuesto para tests.
     private(set) var historyTokenBrokenReanchoredCount = 0
 
+    /// Las entidades cuyo índice cargó la última vuelta del drain. Testigo de YALA-IOS-2: una vuelta sin nada que
+    /// traducir no carga ningún modelo. Expuesto para tests.
+    private(set) var lastDrainIndexedEntities: Set<String> = []
+    /// Si la última vuelta leyó la cola entera para deduplicar (solo cuando hay algo que traducir). Expuesto para tests.
+    private(set) var lastDrainReadOutboxKeys = false
+
     // MARK: Espejo del outbox (A1, §d.5)
 
     /// Espejo App Group del `SyncOutbox` (durabilidad ante lightweight migration). `nil` = mirroring
@@ -1895,6 +1901,8 @@ final class CloudSyncEngine {
 
     private func performDrain(context: ModelContext) -> Bool {
         drainSeq += 1
+        lastDrainIndexedEntities = []
+        lastDrainReadOutboxKeys = false
         lastDrainCutTranslation = false
         drainContext = context
         drainRelayLedger = nil
@@ -1922,10 +1930,13 @@ final class CloudSyncEngine {
             let tokenState = decodeToken(cursor.historyTokenData)
             drainAdoptWindowFloor = cursor.lastDrainedTxAt
 
-            // 2) Barrido defensivo: asigna syncID a las filas vivas de los 6 tipos que aún no lo tengan
-            //    (SIN autor especial → la próxima vuelta captura ese cambio), y construye los índices
-            //    persistentID→modelo que usa la traducción. Save con autor por DEFECTO (no es outbox).
-            let lookups = try sweepAndBuildLookups(context)
+            // 2) Barrido defensivo, ANTES de leer el History: asigna syncID a las filas de los 6 tipos que aún no lo
+            //    tengan y guarda lo pendiente (autor por DEFECTO: no es outbox). Así ese cambio entra en la ventana de esta
+            //    misma vuelta —que lo salta por ser syncID-only y avanza el token—, ninguna fila sale de un drain sin syncID
+            //    (lo dan por hecho el snapshot de la migración y el Merkle) y, desde aquí, lo único sucio en el contexto es
+            //    del drain (lo que presupone el rollback de los pasos 6-7). **Desde YALA-IOS-2 solo LEE las filas sin
+            //    syncID** (`#Predicate` por tipo), no las tablas enteras: los índices van en el paso 3-ter.
+            try assignMissingSyncIDs(context)
 
             // 3) History posterior al token — o, con token ROTO (in-decodificable / fetch que lanza),
             //    el fallback ACOTADO por `lastDrainedTxAt` de DIFERIDOS #33 (rama decidida por
@@ -1953,9 +1964,21 @@ final class CloudSyncEngine {
             if tokenGuard.validatedByCompare { historyTokenValidated = true }
             let txns = tokenGuard.txns
 
+            // 3-ter) Índices persistentID→modelo que usa la traducción, **solo de las entidades que la ventana va a
+            //    traducir** (YALA-IOS-2): cargar e indexar los 16 tipos en cada vuelta —cada 60 s, tras cada pull y en
+            //    cada página de la subida de la migración— congelaba el hilo principal segundos con miles de registros,
+            //    aunque no hubiera nada que traducir. Cada índice solo lo consulta su propia entidad, y el conjunto sale
+            //    del mismo filtro que el bucle del paso 5 (autor y `personalEntityNames`): una entidad sin índice se
+            //    leería como «borrada» y su cambio no saldría. No escribe nada.
+            let indexed = Self.entitiesToTranslate(in: txns)
+            let lookups = try buildLookups(context, only: indexed)
+
             // 4) Pre-siembra del dedup con las filas de outbox YA existentes (kill-replay: absorbe las
             //    filas persistidas en un drain previo cuyo token no llegó a avanzar).
-            var seen = try existingOutboxKeys(context)
+            //    Solo si la ventana trae algo que traducir (YALA-IOS-2): `seen` solo lo lee la traducción, y leer la cola
+            //    entera en cada vuelta ociosa era el grueso de lo que quedaba del cuelgue con muchas filas pendientes
+            //    (sin red, o durante la subida de la migración).
+            var seen = indexed.isEmpty ? Set<String>() : try existingOutboxKeys(context)
 
             // 5) Traducción, transacción a transacción y en orden. `advancedToken` = high-water del STORE
             //    PERSONAL consumido (nil = no se consumió nada de ese store esta vuelta). Dos criterios
@@ -3223,54 +3246,89 @@ final class CloudSyncEngine {
 
     // MARK: - Barrido defensivo + índices
 
-    private func sweepAndBuildLookups(_ context: ModelContext) throws -> Lookups {
-        var lookups = Lookups()
-        lookups.transactionItem = try sweepType(TransactionItem.self, context: context)
-        lookups.inboxDraft = try sweepType(InboxDraft.self, context: context)
-        lookups.category = try sweepType(Category.self, context: context)
-        lookups.favoritePayment = try sweepType(FavoritePayment.self, context: context)
-        lookups.merchantMemory = try sweepType(MerchantMemory.self, context: context)
-        lookups.exchangeRate = try sweepType(ExchangeRate.self, context: context)
-        // I12: identidad = UUID persistido (nunca nil) → solo indexar, NUNCA acuñar (regenerarla sería
-        // un incidente D4, no una asignación defensiva). Fetch CONCRETO por tipo.
-        lookups.budget = try indexType(Budget.self, context: context)
-        lookups.scheduledPayment = try indexType(ScheduledPayment.self, context: context)
-        // I12 commit B: las 8 restantes — identidad = UUID persistido (`shortcutID`/`id`) → solo indexar.
-        lookups.account = try indexType(Account.self, context: context)
-        lookups.subcategory = try indexType(Subcategory.self, context: context)
-        lookups.tag = try indexType(Tag.self, context: context)
-        lookups.notificationItem = try indexType(NotificationItem.self, context: context)
-        lookups.cashFlowPlan = try indexType(CashFlowPlan.self, context: context)
-        lookups.cashFlowLine = try indexType(CashFlowLine.self, context: context)
-        lookups.cashFlowOverride = try indexType(CashFlowOverride.self, context: context)
-        lookups.groupBridgePreference = try indexType(GroupBridgePreference.self, context: context)
+    /// Las entidades que la traducción del paso 5 va a consultar en esta ventana: cambios de transacciones que NO
+    /// escribió el motor, de entidades sincronizables del store personal. Es el MISMO filtro que el bucle del paso 5
+    /// (autor y `personalEntityNames`), así que nunca deja fuera un índice que la traducción vaya a leer: una entidad
+    /// sin índice se leería como «borrada» y su cambio no saldría. Sin efectos, para tests.
+    static func entitiesToTranslate(
+        authorsAndEntities: [(author: String?, entities: [String])]
+    ) -> Set<String> {
+        var names = Set<String>()
+        for tx in authorsAndEntities where tx.author != outboxSaveAuthor {
+            names.formUnion(tx.entities.filter { personalEntityNames.contains($0) })
+        }
+        return names
+    }
+
+    private static func entitiesToTranslate(in txns: [DefaultHistoryTransaction]) -> Set<String> {
+        entitiesToTranslate(authorsAndEntities: txns.map { tx in
+            (author: tx.author, entities: tx.changes.map { $0.changedPersistentIdentifier.entityName })
+        })
+    }
+
+    /// Paso 2 del drain: `syncID` a las filas de los 6 tipos de identidad acuñada que no lo tengan, y guardado de todo lo
+    /// pendiente. Lee solo las filas sin `syncID` (fetch CONCRETO por tipo): en una vuelta normal no materializa ninguna.
+    private func assignMissingSyncIDs(_ context: ModelContext) throws {
+        try assignMissingSyncID(
+            FetchDescriptor<TransactionItem>(predicate: #Predicate<TransactionItem> { $0.syncID == nil }), context: context)
+        try assignMissingSyncID(
+            FetchDescriptor<InboxDraft>(predicate: #Predicate<InboxDraft> { $0.syncID == nil }), context: context)
+        try assignMissingSyncID(
+            FetchDescriptor<Category>(predicate: #Predicate<Category> { $0.syncID == nil }), context: context)
+        try assignMissingSyncID(
+            FetchDescriptor<FavoritePayment>(predicate: #Predicate<FavoritePayment> { $0.syncID == nil }), context: context)
+        try assignMissingSyncID(
+            FetchDescriptor<MerchantMemory>(predicate: #Predicate<MerchantMemory> { $0.syncID == nil }), context: context)
+        try assignMissingSyncID(
+            FetchDescriptor<ExchangeRate>(predicate: #Predicate<ExchangeRate> { $0.syncID == nil }), context: context)
         if context.hasChanges {
             // Autor por DEFECTO (no `outboxSaveAuthor`): el cambio de syncID DEBE quedar en el History
-            // para que la próxima vuelta lo procese (y lo salte por ser syncID-only), no ocultarse.
+            // para que la vuelta lo procese (y lo salte por ser syncID-only), no ocultarse.
             try context.save()
         }
+    }
+
+    /// Ejecuta un descriptor ya construido CONCRETO por tipo (regla de `#Predicate` genérico-protocolo: el genérico solo
+    /// ejecuta, nunca construye el predicado).
+    private func assignMissingSyncID<T: PersistentModel & SyncIdentifiable>(
+        _ descriptor: FetchDescriptor<T>, context: ModelContext
+    ) throws {
+        for model in try context.fetch(descriptor) where model.syncID == nil {
+            model.syncID = UUID()
+        }
+    }
+
+    /// Paso 3-ter del drain: los índices de las entidades que la ventana traduce. No escribe.
+    private func buildLookups(_ context: ModelContext, only entities: Set<String>) throws -> Lookups {
+        // El testigo apunta lo que de verdad se carga (YALA-IOS-2), no el conjunto pedido.
+        func wants(_ entityName: String) -> Bool {
+            guard entities.contains(entityName) else { return false }
+            lastDrainIndexedEntities.insert(entityName)
+            return true
+        }
+        var lookups = Lookups()
+        if wants(SyncEntityType.transactionItem) { lookups.transactionItem = try indexType(TransactionItem.self, context: context) }
+        if wants(SyncEntityType.inboxDraft) { lookups.inboxDraft = try indexType(InboxDraft.self, context: context) }
+        if wants(SyncEntityType.category) { lookups.category = try indexType(Category.self, context: context) }
+        if wants(SyncEntityType.favoritePayment) { lookups.favoritePayment = try indexType(FavoritePayment.self, context: context) }
+        if wants(SyncEntityType.merchantMemory) { lookups.merchantMemory = try indexType(MerchantMemory.self, context: context) }
+        if wants(SyncEntityType.exchangeRate) { lookups.exchangeRate = try indexType(ExchangeRate.self, context: context) }
+        if wants(SyncEntityType.budget) { lookups.budget = try indexType(Budget.self, context: context) }
+        if wants(SyncEntityType.scheduledPayment) { lookups.scheduledPayment = try indexType(ScheduledPayment.self, context: context) }
+        if wants(SyncEntityType.account) { lookups.account = try indexType(Account.self, context: context) }
+        if wants(SyncEntityType.subcategory) { lookups.subcategory = try indexType(Subcategory.self, context: context) }
+        if wants(SyncEntityType.tag) { lookups.tag = try indexType(Tag.self, context: context) }
+        if wants(SyncEntityType.notificationItem) { lookups.notificationItem = try indexType(NotificationItem.self, context: context) }
+        if wants(SyncEntityType.cashFlowPlan) { lookups.cashFlowPlan = try indexType(CashFlowPlan.self, context: context) }
+        if wants(SyncEntityType.cashFlowLine) { lookups.cashFlowLine = try indexType(CashFlowLine.self, context: context) }
+        if wants(SyncEntityType.cashFlowOverride) { lookups.cashFlowOverride = try indexType(CashFlowOverride.self, context: context) }
+        if wants(SyncEntityType.groupBridgePreference) { lookups.groupBridgePreference = try indexType(GroupBridgePreference.self, context: context) }
         return lookups
     }
 
-    /// Fetch CONCRETO por tipo (nunca genérico sobre keypath de protocolo — regla inviolable de
-    /// `#Predicate`; patrón `SyncIdentityService`). Asigna syncID a los nil y devuelve el índice.
-    private func sweepType<T: PersistentModel & SyncIdentifiable>(
-        _ type: T.Type, context: ModelContext
-    ) throws -> [PersistentIdentifier: T] {
-        let models = try context.fetch(FetchDescriptor<T>())
-        var map: [PersistentIdentifier: T] = [:]
-        for model in models {
-            if model.syncID == nil {
-                model.syncID = UUID()
-            }
-            map[model.persistentModelID] = model
-        }
-        return map
-    }
-
-    /// I12: barrido SIN acuñar para las entidades cuya identidad de sync es su UUID persistido (nunca
-    /// nil). Solo construye el índice persistentID→modelo (fetch CONCRETO por tipo). Regenerar ese UUID
-    /// es un incidente (canario D4), no una asignación defensiva → aquí jamás se toca.
+    /// Índice persistentID→modelo de un tipo (fetch CONCRETO por tipo). No acuña nada: el `syncID` de los 6 tipos
+    /// acuñados lo pone el paso 2, y el UUID de los otros 10 es su identidad persistida (regenerarlo sería un
+    /// incidente, canario D4).
     private func indexType<T: PersistentModel>(
         _ type: T.Type, context: ModelContext
     ) throws -> [PersistentIdentifier: T] {
@@ -3566,6 +3624,7 @@ final class CloudSyncEngine {
     // MARK: - Dedup / encoding
 
     private func existingOutboxKeys(_ context: ModelContext) throws -> Set<String> {
+        lastDrainReadOutboxKeys = true  // testigo de YALA-IOS-2: lo que de verdad se leyó, no la condición
         let existing = try context.fetch(FetchDescriptor<SyncOutbox>())
         var keys: Set<String> = []
         for row in existing {
