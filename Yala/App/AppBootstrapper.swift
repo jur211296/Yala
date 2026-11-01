@@ -1240,6 +1240,10 @@ final class AppBootstrapper {
         if UITestHooks.seedUncategorizedExpense {
             DevSeedUncategorizedExpense.create(in: context)
         }
+        // Un borrador en la tarjeta con su línea y una etiqueta: el registro unificado (opción A, 2026-10-31).
+        if UITestHooks.seedRecordForms {
+            DevSeedRecordForms.create(in: context)
+        }
         #endif
         // Liquidación aprobada cuyo importe cambia después: el aviso de importe cambiado en el Inbox.
         if UITestHooks.seedSettlementAmountChange {

@@ -66,9 +66,11 @@ struct GroupDraftFinalizationScaffold<Selector: View>: View {
                             .padding(.bottom, DS.Spacing.lg)
                     }
 
-                    HStack(spacing: DS.Spacing.sm) { selector() }
-                        .frame(maxWidth: .infinity)
-                        .padding(.horizontal, DS.Spacing.lg)
+                    // El contenedor de los formularios de registro (registro unificado, 2026-10-31): filas que bajan
+                    // cuando no caben, con las pastillas rellenas; antes, una fila fija que se cortaba con nombres largos.
+                    // Centrado, como el monto de encima.
+                    RecordSelectorChips(spacing: DS.Spacing.sm, alignment: .center) { selector() }
+                        .padding(.horizontal, DS.Spacing.xl)
                         .padding(.bottom, DS.Spacing.lg)
 
                     if let hint {

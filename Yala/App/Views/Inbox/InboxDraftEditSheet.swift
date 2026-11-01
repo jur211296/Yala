@@ -138,9 +138,11 @@ struct InboxDraftEditSheet: View {
         return baseAmountSize * ratio
     }
 
+    /// El color del monto de los tres formularios de registro (registro unificado): rosa el gasto, turquesa el ingreso.
+    /// Antes, el gasto salía en blanco aquí y en rosa en Nuevo registro. Sin monto, el «0.00» es el ejemplo gris del campo
+    /// (`prompt`): el color de un campo con foco no cambia hasta salir de él (`swiftui-ds.md`).
     private var amountColor: Color {
-        guard amount != nil else { return .secondary }
-        return Color.amountTint(isIncome: !isExpense)
+        Color.recordFormAmount(isIncome: !isExpense)
     }
 
     /// Next pending draft (excluding current one)
@@ -290,23 +292,29 @@ struct InboxDraftEditSheet: View {
     }
 
     private var mainContent: some View {
-        ZStack {
-            VStack(spacing: DS.Spacing.none) {
-                // Transaction type selector (full width, at top)
-                if !sessionState.isExpensesOnlyMode {
-                    transactionTypeSelector
-                        .padding(.top, DS.Spacing.sm)
-                }
+        // Con los selectores en dos filas (registro unificado) la pantalla crece: va en el molde del scroll con alto mínimo
+        // de Nuevo registro (`swiftui-ds.md`), que cuando cabe reparte igual con los `Spacer`s y no desplaza.
+        GeometryReader { proxy in
+            ScrollView {
+                VStack(spacing: DS.Spacing.none) {
+                    // Transaction type selector (full width, at top)
+                    if !sessionState.isExpensesOnlyMode {
+                        transactionTypeSelector
+                            .padding(.top, DS.Spacing.sm)
+                    }
 
-                Spacer()
-                centralContent
-                Spacer()
-                bottomChips
-                    .padding(.bottom, DS.Spacing.lg)
-                actionButtons
-                    .padding(.horizontal, DS.Spacing.xl)
-                    .padding(.bottom, DS.Spacing.xxl)
+                    Spacer()
+                    centralContent
+                    Spacer()
+                    bottomChips
+                        .padding(.bottom, DS.Spacing.lg)
+                    actionButtons
+                        .padding(.horizontal, DS.Spacing.xl)
+                        .padding(.bottom, DS.Spacing.xxl)
+                }
+                .frame(minHeight: proxy.size.height)
             }
+            .scrollBounceBehavior(.basedOnSize)
             .dismissKeyboardOnTap()
         }
         // Sheet full-height (presentado sin detents desde InboxView) → .subtle.
@@ -441,8 +449,9 @@ struct InboxDraftEditSheet: View {
         TagSelectorSheet(selectedTags: $selectedTags)
     }
 
+    /// La misma hoja de fecha que Nuevo registro, con los atajos Hoy / Ayer / Anteayer (registro unificado).
     private var dateSheet: some View {
-        DatePickerSheet(selectedDate: $transactionDate)
+        DatePickerSheet(selectedDate: $transactionDate, quickPick: true)
     }
 
     private var needSheet: some View {
@@ -461,68 +470,30 @@ struct InboxDraftEditSheet: View {
 
     private var centralContent: some View {
         VStack(spacing: DS.Spacing.xxl) {
-            // Date chip
-            Button {
+            // Fecha y descripción, con las piezas y el tamaño de Nuevo registro (registro unificado). La descripción iba
+            // en `headline`, más pequeña.
+            RecordPillButton(icon: "calendar", text: dateChipText) {
                 showDatePicker = true
-            } label: {
-                HStack(spacing: DS.Spacing.sm) {
-                    Image(systemName: "calendar")
-                        .font(DS.Typography.label)
-                    Text(dateChipText)
-                        .font(DS.Typography.label)
-                }
-                .foregroundStyle(.primary)
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.Spacing.md)
-                .background(
-                    Capsule()
-                        .fill(Color.primary.opacity(0.08))
-                )
             }
-            .buttonStyle(.plain)
+            .accessibilityIdentifier("draft_editor_date_chip")
 
-            // Note field
             TextField(L10n.Transaction.description, text: $note)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.primary)
-                .multilineTextAlignment(.center)
-                .textContentType(.none)
+                .recordDescriptionStyle()
                 .autocorrectionDisabled(false)
                 .focused($isNoteFieldFocused)
-                .frame(maxWidth: 280)
-                .tint(Color.primary)
+                .accessibilityIdentifier("draft_editor_note")
 
             // Amount display
             amountDisplay
 
-            // Category chip + Nature chip (visible when subcategory is selected)
+            // Categoría y necesidad: el mismo componente y tamaño que Nuevo registro, con la necesidad rellena
+            // (registro unificado). Antes iba solo teñida y se leía más pequeña.
             if let subcategory = selectedSubcategory {
-                HStack(spacing: DS.Spacing.sm) {
-                    // Category chip (read-only)
-                    let category = subcategory.safeCategory
-                    let categoryColor = Color(hex: category.colorHex)
-                    HStack(spacing: DS.Spacing.xs) {
-                        Image(systemName: category.iconName ?? "folder")
-                            .font(DS.Typography.labelTiny)
-                        Text(category.name)
-                            .font(DS.Typography.labelTiny)
-                    }
-                    .foregroundStyle(categoryColor)
-                    .padding(.horizontal, DS.Chip.paddingH)
-                    .padding(.vertical, DS.Chip.paddingV)
-                    .background(
-                        Capsule().fill(categoryColor.opacity(0.12))
-                    )
-
-                    if isExpense {
-                        NeedEditChip(
-                            need: selectedNeed ?? subcategory.need
-                        ) {
-                            showNeedSelector = true
-                        }
-                    }
-                }
-                .padding(.top, DS.Spacing.sm)
+                RecordCategoryChips(
+                    category: subcategory.safeCategory,
+                    need: isExpense ? (selectedNeed ?? subcategory.need) : nil,
+                    onNeedTap: { showNeedSelector = true }
+                )
             }
 
             // Source indicator
@@ -539,7 +510,7 @@ struct InboxDraftEditSheet: View {
                     .contentTransition(.numericText())
             }
 
-            TextField("0.00", text: $amountString)
+            TextField("", text: $amountString, prompt: Text(verbatim: "0.00").foregroundStyle(.tertiary))
                 .font(.system(size: amountFontSize, weight: .bold, design: .rounded))
                 .foregroundStyle(amountColor)
                 .multilineTextAlignment(.center)
@@ -551,8 +522,8 @@ struct InboxDraftEditSheet: View {
                         amountString = ""
                     }
                     if !isFocused {
-                        if amountString.isEmpty {
-                            amountString = "0.00"
+                        if amountString.isEmpty || AmountInputHelper.parseDecimal(amountString) == 0 {
+                            amountString = ""
                         } else {
                             let amt = AmountInputHelper.parseDecimal(amountString)
                             amountString = AmountInputHelper.formatWithGrouping(abs(amt))
@@ -620,97 +591,66 @@ struct InboxDraftEditSheet: View {
 
     // MARK: - Bottom Chips
 
+    /// Los selectores como en Nuevo registro (registro unificado, opción A): en filas que bajan cuando no caben, en vez
+    /// de una sola fila con desplazamiento lateral donde la etiqueta se salía por la derecha. Con una tarjeta con varias
+    /// divisas, la tarjeta y sus divisas van en una fila (entrega 3, decisión D6: elegir la divisa elige la línea en la que
+    /// se aprueba) y la categoría y las etiquetas en otra. Lo elegido, relleno; lo que falta para aprobar, marcado.
     private var bottomChips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: DS.Spacing.sm) {
-                // Account chip. Con una tarjeta con varias divisas, la tarjeta y sus divisas (entrega 3, decisión D6): elegir
-                // la divisa elige la línea en la que se aprueba.
-                AccountCardChips(selectedAccount: $selectedAccount) {
-                    dismissKeyboard()
-                    showAccountSelector = true
-                }
+        RecordSelectorChips(spacing: DS.Spacing.sm) {
+            AccountCardChips(
+                selectedAccount: $selectedAccount,
+                isMissing: amount != nil && selectedAccount == nil,
+                accountIdentifier: "draft_editor_account_chip"
+            ) {
+                dismissKeyboard()
+                showAccountSelector = true
+            }
 
-                // Subcategory chip
+            SelectionChip(
+                icon: "tag",
+                text: selectedSubcategory?.name ?? L10n.Transaction.subcategory,
+                isSelected: selectedSubcategory != nil,
+                color: subcategoryChipColor,
+                isMissing: amount != nil && selectedSubcategory == nil
+            ) {
+                dismissKeyboard()
+                showSubcategorySelector = true
+            }
+            .accessibilityIdentifier("draft_editor_subcategory_chip")
+
+            if selectedTags.isEmpty {
                 SelectionChip(
-                    icon: "tag",
-                    text: selectedSubcategory?.name ?? L10n.Transaction.subcategory,
-                    isSelected: selectedSubcategory != nil,
-                    color: subcategoryChipColor
+                    icon: "number",
+                    text: L10n.Transaction.tags,
+                    isSelected: false,
+                    color: nil
                 ) {
                     dismissKeyboard()
-                    showSubcategorySelector = true
+                    showTagSelector = true
                 }
-
-                // Tags
-                if selectedTags.isEmpty {
-                    SelectionChip(
-                        icon: "number",
-                        text: L10n.Transaction.tags,
-                        isSelected: false,
-                        color: nil
-                    ) {
-                        dismissKeyboard()
-                        showTagSelector = true
-                    }
-                } else {
-                    ForEach(selectedTags, id: \.persistentModelID) { tag in
-                        tagChip(for: tag)
-                    }
+                .accessibilityIdentifier("draft_editor_tags_chip")
+            } else {
+                ForEach(selectedTags, id: \.persistentModelID) { tag in
+                    SelectedTagChip(
+                        tag: tag,
+                        // La etiqueta que acaba de crear Yala IA lleva su marca «Nueva».
+                        badge: draft.newlyCreatedTagNames.contains(tag.name) ? L10n.Inbox.newTag : nil,
+                        onOpen: {
+                            dismissKeyboard()
+                            showTagSelector = true
+                        },
+                        onRemove: {
+                            dsWithAnimation(reduceMotion) {
+                                selectedTags.removeAll { $0.persistentModelID == tag.persistentModelID }
+                            }
+                        }
+                    )
                 }
             }
-            .padding(.horizontal, DS.Spacing.lg)
         }
-        .fadesTowardVerticalBar()
-    }
-
-    private func tagChip(for tag: Tag) -> some View {
-        let isNewlyCreated = draft.newlyCreatedTagNames.contains(tag.name)
-
-        return HStack(spacing: DS.Spacing.sm) {
-            Button {
-                dismissKeyboard()
-                showTagSelector = true
-            } label: {
-                HStack(spacing: DS.Spacing.sm) {
-                    Image(systemName: tag.iconName)
-                        .font(DS.Typography.labelSmall)
-                    Text(tag.name)
-                        .font(DS.Typography.label)
-                        .lineLimit(1)
-
-                    // Show "New" badge for newly created tags
-                    if isNewlyCreated {
-                        Text(L10n.Inbox.newTag)
-                            .font(DS.Typography.badgeLabel)
-                            .foregroundStyle(.thOnAccent)
-                            .padding(.horizontal, DS.Spacing.xs)
-                            .padding(.vertical, DS.Spacing.xxs)
-                            .background(Capsule().fill(theme.accent))
-                    }
-                }
-            }
-            .buttonStyle(.plain)
-
-            Button {
-                dsWithAnimation(reduceMotion) {
-                    selectedTags.removeAll { $0.persistentModelID == tag.persistentModelID }
-                }
-            } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .font(DS.Typography.label)
-            }
-            .buttonStyle(.plain)
-        }
-        .foregroundStyle(.thTagChip)
-        .padding(.horizontal, DS.FormRow.paddingV)
-        .padding(.vertical, DS.Spacing.sm)
-        .background(
-            Capsule().fill(.thTagChip.opacity(0.12))
-        )
-        .overlay(
-            Capsule()
-                .stroke(.thTagChip.opacity(0.3), lineWidth: 1)
-        )
+        .padding(.horizontal, DS.Spacing.xl)
+        .animation(reduceMotion ? .easeInOut(duration: DS.Animation.fast) : .spring(response: 0.3, dampingFraction: 0.75),
+                   value: selectedTags.map(\.persistentModelID))
     }
 
     private var subcategoryChipColor: Color? {
@@ -868,7 +808,7 @@ struct InboxDraftEditSheet: View {
             amountString = AmountInputHelper.formatWithGrouping(abs(amt))
             isExpense = amt < 0
         } else {
-            amountString = "0.00"
+            amountString = ""
             isExpense = true // Default to expense
         }
 

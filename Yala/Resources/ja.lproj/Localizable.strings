@@ -8534,3 +8534,9 @@
 "account.lines.delete %@" = "%@ の明細を削除";
 "account.lines.deleteConfirmTitle %@" = "%@ の明細を削除しますか？";
 "account.lines.deleteConfirmMessage" = "記録はありません。カードのほかの通貨はそのまま残ります。元に戻せません。";
+
+/* Group expense form, under the selectors when you paid: the whole amount leaves your account and the others owe you their part */
+"groups.expense.outflowLine" = "あなたの口座から%1$@が出て、%2$@を返してもらえます";
+
+/* Group expense form, under the selectors when you paid and nobody owes you */
+"groups.expense.outflowLineNoDebt" = "あなたの口座から%@が出ます";

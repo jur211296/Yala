@@ -2797,6 +2797,14 @@ enum L10n {
             static var missingSplit: String { ls("groups.expense.missingSplit", comment: "") }
             static var missingAccount: String { ls("groups.expense.missingAccount", comment: "") }
             static var eachPays: String { ls("groups.expense.eachPays", comment: "") }
+            /// «Salen S/ 240.00 de tu cuenta y te deben S/ 160.00»: bajo los selectores, cuando pagas tú (registro unificado).
+            static func outflowLine(_ paidOut: String, _ owedToYou: String) -> String {
+                String(format: ls("groups.expense.outflowLine", comment: ""), paidOut, owedToYou)
+            }
+            /// «Salen S/ 240.00 de tu cuenta»: lo mismo cuando nadie te debe nada.
+            static func outflowLineNoDebt(_ paidOut: String) -> String {
+                String(format: ls("groups.expense.outflowLineNoDebt", comment: ""), paidOut)
+            }
         }
 
         enum Settlement {

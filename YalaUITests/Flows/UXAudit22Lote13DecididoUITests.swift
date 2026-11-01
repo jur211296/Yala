@@ -189,8 +189,12 @@ final class UXAudit22Lote13DecididoUITests: XCTestCase {
         let amount = app.textFields["group_expense_amount"]
         amount.tap()
         amount.typeText("90")
+        // Registro unificado: la cuenta es una pastilla de abajo y el teclado la tapa. Tocar fuera de los campos (el
+        // grupo, que dentro del detalle no responde) cierra el teclado.
+        app.descendants(matching: .any).matching(identifier: "group_expense_group_chip").firstMatch.tap()
         let accountRow = app.buttons["group_expense_account_row"]
         XCTAssertTrue(accountRow.waitForExistence(timeout: 5), "Pagaste tú y no se pidió la cuenta.")
+        XCTAssertTrue(accountRow.waitForHittable(timeout: 5), "La cuenta no quedó alcanzable.")
         accountRow.tap()
         let firstAccount = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'account_selector_row_'"))
             .firstMatch

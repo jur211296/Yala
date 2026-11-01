@@ -7861,3 +7861,9 @@
 "account.lines.delete %@" = "Eliminar la línea en %@";
 "account.lines.deleteConfirmTitle %@" = "¿Eliminar la línea en %@?";
 "account.lines.deleteConfirmMessage" = "No tiene registros. La tarjeta se queda con sus otras divisas. No se puede deshacer.";
+
+/* Group expense form, under the selectors when you paid: the whole amount leaves your account and the others owe you their part */
+"groups.expense.outflowLine" = "Salen %1$@ de tu cuenta y te deben %2$@";
+
+/* Group expense form, under the selectors when you paid and nobody owes you */
+"groups.expense.outflowLineNoDebt" = "Salen %@ de tu cuenta";

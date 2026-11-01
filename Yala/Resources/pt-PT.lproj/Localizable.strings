@@ -7857,3 +7857,9 @@
 "account.lines.delete %@" = "Eliminar a linha em %@";
 "account.lines.deleteConfirmTitle %@" = "Eliminar a linha em %@?";
 "account.lines.deleteConfirmMessage" = "Não tem registos. O cartão mantém as outras moedas. Não é possível desfazer.";
+
+/* Group expense form, under the selectors when you paid: the whole amount leaves your account and the others owe you their part */
+"groups.expense.outflowLine" = "Saem %1$@ da tua conta e devem-te %2$@";
+
+/* Group expense form, under the selectors when you paid and nobody owes you */
+"groups.expense.outflowLineNoDebt" = "Saem %@ da tua conta";

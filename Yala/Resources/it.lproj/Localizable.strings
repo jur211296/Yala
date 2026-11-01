@@ -8532,3 +8532,9 @@
 "account.lines.delete %@" = "Elimina la linea in %@";
 "account.lines.deleteConfirmTitle %@" = "Eliminare la linea in %@?";
 "account.lines.deleteConfirmMessage" = "Non ha movimenti. La carta mantiene le altre valute. L'operazione non si può annullare.";
+
+/* Group expense form, under the selectors when you paid: the whole amount leaves your account and the others owe you their part */
+"groups.expense.outflowLine" = "Escono %1$@ dal tuo conto e ti devono %2$@";
+
+/* Group expense form, under the selectors when you paid and nobody owes you */
+"groups.expense.outflowLineNoDebt" = "Escono %@ dal tuo conto";

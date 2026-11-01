@@ -299,6 +299,15 @@ extension Color {
         isIncome ? Color.incomeAmount : Color.primary
     }
 
+    /// El monto GRANDE que se escribe en los tres formularios de registro (Nuevo registro, la aprobación de un borrador de
+    /// la Bandeja y Nuevo gasto de Grupos): el mismo en las tres (registro unificado, Jürgen 2026-10-31). Gasto en
+    /// `hotPink`, ingreso en `incomeAmount`. Antes Nuevo registro pintaba el ingreso en índigo, la aprobación el gasto en
+    /// blanco y Grupos en el acento del tema. No es el importe de una lista: ahí manda `amountTint`, que colorea solo el
+    /// ingreso. Como texto grande (64 pt en negrita), `hotPink` sobre blanco da 3,77:1, por encima del 3:1 de AA.
+    static func recordFormAmount(isIncome: Bool) -> Color {
+        isIncome ? Color.incomeAmount : Color.hotPink
+    }
+
     // MARK: - Rellenos sólidos del onboarding (UX 2.2 · L1UI, variante 2 elegida por Jürgen el 2026-10-13)
 
     /// Índigo profundo: la tarjeta ELEGIDA del onboarding y las fichas de resultado de la calculadora del saldo.

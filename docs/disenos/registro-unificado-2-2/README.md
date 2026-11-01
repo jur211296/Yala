@@ -126,3 +126,25 @@ línea.
   «S/ 340 de S/ 500» solo tiene sentido con presupuesto; sin él, quedaría «Este mes S/ 340».
 
 Las cifras de «Disponible» y «Este mes» de las maquetas son fijas, de ejemplo.
+
+## Aplicada: la A (2026-11-01)
+
+Jürgen eligió la A el 31-oct a las 19:03 (Lima): «Va la A». Se aplicó con lo que añadió a las 19:04 (mismo color de
+monto, chips bajo el monto, descripción y fecha iguales, y en Grupos el grupo arriba). Capturas del simulador (iPhone 17
+Pro, iOS 27.0), antes y después, con la app de verdad:
+
+| Oscuro | Claro | Liquid Glass |
+|---|---|---|
+| ![](aplicada/antes-despues-oscuro.jpg) | ![](aplicada/antes-despues-claro.jpg) | ![](aplicada/antes-despues-glass.jpg) |
+
+Qué quedó distinto de la maqueta:
+
+- **Grupos**: el grupo va solo, arriba, en el sitio del control segmentado, y la fecha encabeza el bloque central, como
+  en las otras dos (lo pidió Jürgen a las 19:04; la maqueta los ponía juntos). Dentro del detalle de un grupo, el grupo
+  no se puede cambiar y por eso va sin cápsula.
+- **Grupos, la línea «Salen … de tu cuenta y te deben …»**: solo al crear un gasto. Al editar no sale, porque cambiar la
+  cuenta de un gasto ya guardado no mueve tu registro (card aparte).
+- **La hoja de fecha** con atajos (Hoy / Ayer / Anteayer) llega a la aprobación. Grupos se queda con la de siempre: el
+  mismo calendario, pero sin la nota que enlaza a Pagos planificados, que no tiene sentido en un gasto de grupo.
+- **El editor de favoritos y las hojas que completan un borrador de grupo** también cambian, porque usan la misma
+  pastilla: rellena al elegir y en filas que bajan cuando no caben.

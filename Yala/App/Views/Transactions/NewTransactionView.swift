@@ -760,40 +760,20 @@ struct NewTransactionView: View {
     ///   L2-10 pide «Etiquetas» a la vista sin deslizar también en el SE. En un iPhone normal no cambia nada.
     private func centralContent(compact: Bool) -> some View {
         VStack(spacing: compact ? DS.Spacing.md : DS.Spacing.xxl) {
-            // Date chip - above description
-            Button {
+            // La fecha, encima de la descripción: la misma pastilla en los tres formularios (registro unificado).
+            RecordPillButton(icon: "calendar", text: dateChipText) {
                 viewModel.showDatePicker = true
-            } label: {
-                HStack(spacing: DS.Spacing.sm) {
-                    Image(systemName: "calendar")
-                        .font(DS.Typography.label)
-                    Text(dateChipText)
-                        .font(DS.Typography.label)
-                }
-                .foregroundStyle(.primary)
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.Spacing.md)
-                .background(
-                    Capsule()
-                        .fill(Color.primary.opacity(0.08))
-                )
             }
-            .buttonStyle(.plain)
             .accessibilityIdentifier("new_transaction_date_chip")
 
             // Note field with mention detection and popover autocomplete
             VStack(spacing: DS.Spacing.xs) {
                 // El campo da un ejemplo (UX 2.2 · L2-8): antes decía solo «Descripción».
                 TextField(L10n.Transaction.description, text: $viewModel.note, prompt: Text(L10n.UXL2B.noteExample))
-                    .font(DS.Typography.title)
-                    .foregroundStyle(.primary)
-                    .multilineTextAlignment(.center)
-                    .textContentType(.none)
+                    .recordDescriptionStyle()
                     .autocorrectionDisabled(false)
                     .focused($isNoteFieldFocused)
                     .accessibilityIdentifier("new_transaction_note")
-                    .frame(maxWidth: 280)
-                    .tint(Color.primary)
                     .onChange(of: viewModel.note) { _, newValue in
                         dsWithAnimation(reduceMotion) {
                             // Disable #!@ shortcuts for transfers
@@ -861,35 +841,14 @@ struct NewTransactionView: View {
             }
 
             // Category chip + Nature chip (visible when subcategory is selected, not for transfers)
+            // La necesidad elegida, rellena (L2-19); el chip de la categoría, a su izquierda, no (C no elegida). El mismo
+            // componente que la aprobación de la Bandeja (registro unificado).
             if !viewModel.isTransfer, let subcategory = viewModel.selectedSubcategory {
-                HStack(spacing: DS.Spacing.sm) {
-                    // Category chip (read-only, styled like NeedEditChip)
-                    let category = subcategory.safeCategory
-                    let categoryColor = Color(hex: category.colorHex)
-                    HStack(spacing: DS.Spacing.xs) {
-                        Image(systemName: category.iconName ?? "folder")
-                            .font(DS.Typography.labelTiny)
-                            .accessibilityHidden(true)
-                        Text(category.name)
-                            .font(DS.Typography.labelTiny)
-                    }
-                    .foregroundStyle(categoryColor)
-                    .padding(.horizontal, DS.Chip.paddingH)
-                    .padding(.vertical, DS.Chip.paddingV)
-                    .background(
-                        Capsule().fill(categoryColor.opacity(0.12))
-                    )
-
-                    if viewModel.transactionType != .income {
-                        // La necesidad elegida, rellena (L2-19). El chip de la categoría, a su izquierda, no (C no elegida).
-                        NeedEditChip(
-                            need: viewModel.selectedNeed ?? subcategory.need,
-                            filled: true
-                        ) {
-                            viewModel.showNeedSelector = true
-                        }
-                    }
-
+                RecordCategoryChips(
+                    category: subcategory.safeCategory,
+                    need: viewModel.transactionType != .income ? (viewModel.selectedNeed ?? subcategory.need) : nil,
+                    onNeedTap: { viewModel.showNeedSelector = true }
+                ) {
                     if isEditingSavedRecord, readableTransactionToEdit?.scheduledPaymentID != nil {
                         Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90")
                             .font(DS.Typography.labelTiny)
@@ -901,7 +860,6 @@ struct NewTransactionView: View {
                             )
                     }
                 }
-                .padding(.top, DS.Spacing.sm)
             }
 
             // Quick actions bar
@@ -1224,9 +1182,11 @@ struct NewTransactionView: View {
     // MARK: - Bottom Chips
 
     /// Los chips fluyen en dos filas en vez de hacer scroll horizontal (L2-10): «Etiquetas» siempre a la vista. Lo elegido
-    /// va relleno con su color y texto blanco (L2-19), con rebote y relleno animado (L2-21).
+    /// va relleno con su color y texto blanco (L2-19), con rebote y relleno animado (L2-21). El contenedor y la etiqueta
+    /// puesta son los de la aprobación de la Bandeja y Grupos (registro unificado): con una tarjeta con líneas, la última
+    /// línea cierra la fila y la categoría empieza otra.
     private var bottomChips: some View {
-        FlowLayout(spacing: DS.Spacing.sm) {
+        RecordSelectorChips(spacing: DS.Spacing.sm) {
                 // Account chip (or source/dest for transfers). En Caso B/derivadas/settlement la
                 // cuenta es de sistema por diseño → bloqueada; transfers no son bridgeadas.
                 Group {
@@ -1292,6 +1252,7 @@ struct NewTransactionView: View {
                             }
                             .accessibilityLabel(L10n.Account.Lines.cardCurrencyChip(member.currencyCode))
                             .accessibilityIdentifier("new_transaction_card_currency_\(member.currencyCode)")
+                            .endsSelectorRow(member.persistentModelID == cardMembers.last?.persistentModelID)
                         }
                     }
                 }
@@ -1334,45 +1295,20 @@ struct NewTransactionView: View {
                         }
                         .accessibilityIdentifier("new_transaction_tags_chip")
                     } else {
-                        // Individual chip for each selected tag with remove button inside
-                        // Styled to match SelectionChip size
+                        // Una pastilla por etiqueta puesta, rellena con su color y con su ✕ (L2-19).
                         ForEach(viewModel.selectedTags, id: \.persistentModelID) { tag in
-                            HStack(spacing: DS.Spacing.sm) {
-                                // Tag content (tappable to open selector)
-                                Button {
+                            SelectedTagChip(
+                                tag: tag,
+                                onOpen: {
                                     dismissKeyboard()
                                     viewModel.showTagSelector = true
-                                } label: {
-                                    HStack(spacing: DS.Spacing.sm) {
-                                        Image(systemName: tag.iconName)
-                                            .font(DS.Typography.labelSmall)
-                                        Text(tag.name)
-                                            .font(DS.Typography.label)
-                                            .lineLimit(1)
-                                    }
-                                }
-                                .buttonStyle(.plain)
-
-                                // Remove button (X)
-                                Button {
+                                },
+                                onRemove: {
                                     dsWithAnimation(reduceMotion) {
                                         viewModel.selectedTags.removeAll { $0.persistentModelID == tag.persistentModelID }
                                     }
-                                } label: {
-                                    Image(systemName: "xmark.circle.fill")
-                                        .font(DS.Typography.label)
                                 }
-                                .buttonStyle(.plain)
-                                .accessibilityLabel(L10n.Accessibility.deleteTag)
-                            }
-                            // Puesta, rellena con el color de la etiqueta y texto blanco (L2-19).
-                            .foregroundStyle(Color.white)
-                            .padding(.horizontal, DS.FormRow.paddingV)
-                            .padding(.vertical, DS.Spacing.sm)
-                            .background(
-                                Capsule().fill(Color.selectedFill(hex: tag.colorHex))
                             )
-                            .transition(reduceMotion ? .opacity : .scale(scale: 0.85).combined(with: .opacity))
                         }
                     }
                     }
