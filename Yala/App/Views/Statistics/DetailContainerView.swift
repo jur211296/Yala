@@ -40,10 +40,10 @@ struct DetailContainerView: View {
 
     // MARK: - Navigation State
 
-    @State private var selectedTab: DetailViewTab = .records
-    /// El chip que pinta la fila. Va por delante de `selectedTab` mientras la fila se anima: la pestaña se monta
-    /// después (`NavigationChipButton.switchTab`).
-    @State private var chipsSelection: DetailViewTab = .records
+    /// Las pestañas montadas y la que se ve. Chip y página cambian juntos (`StagedTabPages`, card pjum): la nueva se
+    /// monta invisible debajo y, ya montada, la fila y la página cambian en el mismo movimiento.
+    @State private var pages = StagedTabSelection<DetailViewTab>(.records)
+    private var selectedTab: DetailViewTab { pages.shown }
 
     // MARK: - UI State
 
@@ -203,8 +203,7 @@ struct DetailContainerView: View {
             dateInterval: nil
         )
         _trendsViewModel = State(initialValue: StatisticsViewModel(context: trendsContext))
-        _selectedTab = State(initialValue: initialTab)
-        _chipsSelection = State(initialValue: initialTab)
+        _pages = State(initialValue: StagedTabSelection(initialTab))
     }
 
     // MARK: - Body
@@ -272,15 +271,13 @@ struct DetailContainerView: View {
             }
             .task {
                 if selectedTab != navigation.selectedDetailTab {
-                    selectedTab = navigation.selectedDetailTab
+                    pages.jump(to: navigation.selectedDetailTab)
                 }
             }
             .onChange(of: navigation.selectedDetailTab) { _, newValue in
-                if selectedTab != newValue { selectedTab = newValue }
+                if selectedTab != newValue { pages.jump(to: newValue) }
             }
             .onChange(of: selectedTab) { _, newTab in
-                // La pestaña también cambia desde fuera (avisos, enlaces, la otra columna): la fila la sigue.
-                if chipsSelection != newTab { chipsSelection = newTab }
                 // Cada subpestaña monta su scroll desde arriba, con su fila a la vista.
                 showFloatingActions = false
                 if newTab != .records {
@@ -438,9 +435,15 @@ struct DetailContainerView: View {
         }
     }
 
-    @ViewBuilder
     private var tabContent: some View {
-        switch selectedTab {
+        StagedTabPages(selection: $pages) { tab in
+            page(for: tab)
+        }
+    }
+
+    @ViewBuilder
+    private func page(for tab: DetailViewTab) -> some View {
+        switch tab {
         case .insights:
             InsightsTabView(
                 accounts: dataViewModel.accounts,
@@ -591,6 +594,9 @@ struct DetailContainerView: View {
         // Al pulsar, el cristal interactivo del chip se hincha por encima de su cápsula; sin esto el scroll lo recortaba
         // en recto arriba y abajo (QA de Jürgen, 2026-10-27). Cabe en el aire de `navigationChipsInset`. Grupos ya lo lleva.
         .scrollClipDisabled()
+        // La cápsula cambia de ancho con la página, en el mismo movimiento. Implícita: un `withAnimation` no anima
+        // dentro de una pestaña.
+        .animation(reduceMotion ? nil : StagedTabSelection<DetailViewTab>.animation, value: selectedTab)
     }
 
     private func navigationChipButton(for tab: DetailViewTab) -> some View {
@@ -598,11 +604,9 @@ struct DetailContainerView: View {
         // 2026-10-15). Con los cuatro nombres, «Distribución» salía cortada y «Registros» quedaba entera fuera de
         // la pantalla de un iPhone 17 Pro, sin nada que dijera que la fila se desliza.
         NavigationChipButton(
-            title: tab.title, icon: tab.icon, isSelected: chipsSelection == tab, animatesSwitch: true
+            title: tab.title, icon: tab.icon, isSelected: selectedTab == tab, animatesSwitch: true
         ) {
-            NavigationChipButton.switchTab(
-                to: tab, chips: $chipsSelection, content: $selectedTab, reduceMotion: reduceMotion
-            )
+            StagedTabSelection.select(tab, in: $pages, reduceMotion: reduceMotion)
         }
         .accessibilityIdentifier("detail_chip_\(tab.rawValue.lowercased())")
     }

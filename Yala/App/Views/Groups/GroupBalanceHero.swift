@@ -59,7 +59,8 @@ struct GroupBalanceHero: View {
                     secondaryFont: DS.Typography.panelHeroAmountSecondary,
                     tint: .primary,
                     isEstimate: isEstimate,
-                    forceFullPrecision: true
+                    forceFullPrecision: true,
+                    animatesValue: true
                 )
             }
             if let line = detailLine {

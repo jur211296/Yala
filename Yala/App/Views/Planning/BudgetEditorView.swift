@@ -1008,6 +1008,7 @@ struct BudgetEditorView: View {
         )
 
         if let savedID = saved {
+            DS.Haptic.success()
             applyShowInWidget(savedID: savedID)
             sessionState.needsBudgetsWidgetRefresh = true
             if budget == nil, SetupChecklistManager.shared.stepCompleted[.firstBudget] != true {
@@ -1098,6 +1099,7 @@ struct BudgetEditorView: View {
         guard let budget = budget else { return }
 
         if viewModel.deleteBudget(budget) {
+            DS.Haptic.warning()
             // Trigger widget refresh
             sessionState.needsBudgetsWidgetRefresh = true
             dismiss()

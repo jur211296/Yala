@@ -771,6 +771,10 @@ struct PanelView: View {
                     // lo de debajo. Implícita y no `withAnimation`: `ContentView` apaga la animación de toda
                     // transacción que cruza las pestañas (card 8atf; regla de `swiftui-ds.md`).
                     .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: notices)
+                    // Plegar o desplegar «Tu panorama» abre o cierra su sitio y lo de debajo lo acompaña, en el mismo
+                    // contenedor (card pjum). Antes las transiciones de la sección no tenían animación y la columna
+                    // entera saltaba.
+                    .animation(reduceMotion ? nil : DS.Animation.appear, value: appPreferences.panelAccountsCollapsed)
                     .padding(.top, DS.Spacing.lg)
                     // Tocar un registro de «Últimos registros» abre su detalle (UX 2.2 · L3-12).
                     .environment(\.openPanelRecord, OpenPanelRecordAction { record in

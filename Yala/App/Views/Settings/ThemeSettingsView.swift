@@ -113,6 +113,7 @@ struct ThemeSettingsView: View {
         } else {
             // UX 2.2 · L16-10: el tema se aplica en vivo y Temas se queda abierta. Antes, a los 300 ms se cerraba Ajustes
             // entero y no se podían comparar dos temas.
+            if themeManager.userChoice != appTheme { DS.Haptic.selection() }
             themeManager.userChoice = appTheme
         }
     }

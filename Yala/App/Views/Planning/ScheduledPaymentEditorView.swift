@@ -24,6 +24,7 @@ struct ScheduledPaymentEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 28 // A11Y-DT: @ScaledMetric
     @Environment(EntityDeletionService.self) private var deletionService
     @Environment(SessionState.self) private var sessionState
@@ -217,7 +218,7 @@ struct ScheduledPaymentEditorView: View {
             }
             .onChange(of: missingFieldScrollToken) { _, _ in
                 guard let target = firstMissingField else { return }
-                dsWithAnimation(false) { proxy.scrollTo(target, anchor: .center) }
+                dsWithAnimation(reduceMotion) { proxy.scrollTo(target, anchor: .center) }
             }
         }
         .scrollViewGlassEdges()
@@ -366,7 +367,7 @@ struct ScheduledPaymentEditorView: View {
     private var moreOptionsSection: some View {
         VStack(spacing: DS.Spacing.none) {
             Button {
-                dsWithAnimation(false) { showMoreOptions.toggle() }
+                dsWithAnimation(reduceMotion) { showMoreOptions.toggle() }
             } label: {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "slider.horizontal.3")
@@ -1421,7 +1422,7 @@ struct ScheduledPaymentEditorView: View {
         }
         highlightMissing = true
         missingFieldScrollToken += 1
-        DS.Haptic.light()
+        DS.Haptic.error()
         switch missing {
         case .name: isNameFieldFocused = true
         case .amount: isAmountFieldFocused = true

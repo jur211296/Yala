@@ -323,18 +323,51 @@ paths:
 - **`GlassEffectContainer` alrededor de chips que cambian de ancho rompe la animación**: la cápsula nueva no crecía hasta
   el final y la pulsación fundía chips vecinos. Fuera del contenedor, anima.
 - **Un cambio que recalcula la pantalla se come la animación que va a la vez**: las animaciones avanzan en el hilo
-  principal, y montar una pestaña de Estadísticas lo bloquea 0,12–0,27 s en el iPhone (vídeo de Jürgen, 60 fps). Se anima
-  primero lo pequeño y se aplica lo caro al terminar (`NavigationChipButton.switchTab`, `StatisticsPeriodControl.choose`).
-  **Toda fila de chips cuyo chip elegido cambia de ancho (solo el elegido enseña el nombre) cambia con `switchTab`**:
-  Estadísticas y el detalle de grupo (barrido iOS 27, card yc6k, 2026-10-30; en Grupos saltaba en un fotograma). Lo que
-  la pestaña cambie desde fuera de la fila (el saldo, «Ver los saldos») mueve también el chip con un `onChange`.
-  Planificación y Reportes enseñan el nombre en todos y no lo necesitan.
+  principal, y montar una pestaña de Estadísticas lo bloquea 0,12–0,27 s en el iPhone (vídeo de Jürgen, 60 fps). Lo caro
+  se hace con la pantalla quieta y lo pequeño se anima después (`StatisticsPeriodControl.choose`).
+  **Toda fila de chips cuyo chip elegido cambia de ancho (solo el elegido enseña el nombre) monta sus páginas con
+  `StagedTabPages`** (Estadísticas y el detalle de grupo, card pjum, 2026-10-31). La página nueva se monta invisible
+  debajo de la que se ve y, cuando ya apareció, la página cambia y la fila se anima en el mismo fotograma. Sustituye a
+  `switchTab` (card yc6k), que animaba el chip primero y montaba la página al terminar: Jürgen lo vio en el iPhone como
+  «primero cambia el chip y un segundo después la página cambia de golpe». Lo que la pestaña cambie desde fuera de la fila
+  (el saldo, «Ver los saldos») pasa por el mismo `StagedTabSelection.select`. Planificación y Reportes enseñan el nombre
+  en todos y no lo necesitan. **La página no se funde**: el título grande vive dentro del scroll de la página (iOS 26), y
+  un fundido de la página funde también el título; con la vieja aún montada, la nueva no lo recibe y «Viaje a Cusco»
+  desaparecía ~0,3 s (medido en vídeo). Por eso `StagedTabPages` desmonta la vieja en el mismo instante en que enseña la
+  nueva. Pin: `StagedTabSelectionTests`, `FluidezWiringTests`.
 - **Un `Text` que cambia de valor con animación se funde con el anterior**: los dos quedan uno encima del otro («Este mes»
   sobre «Mes pasado»). Un valor, una vista (`.id(valor)`) con salida `.identity`. Una salida con sentido no sirve: SwiftUI
   la saca con la transición de su último fotograma, que es la del cambio anterior.
 - **Cómo se mide**: `simctl io recordVideo` escribe un fotograma solo cuando la pantalla cambia, así que los tiempos de
   fotograma (`ffprobe -show_entries frame=pts_time`) dicen dónde hay bloqueo (hueco sin fotogramas) y una hoja de
   contactos con `select='between(t,…)'` + `-fps_mode passthrough` enseña si hay interpolación o salto.
+
+## Fluidez: el sistema común (card pjum, 2026-10-31)
+
+La tabla vista por vista y lo que queda en cards: `docs/fluidez/AUDITORIA-FLUIDEZ-2-2.md`.
+
+- **Curvas con nombre en `DS.Animation`**, una por intención: `.selection` (chip, segmento, píldora, pestaña interna),
+  `.appear` (aviso, sección plegable, flotante, lo que entra o sale) y `.number` (una cifra que cambia). Una animación
+  nueva usa una de las tres; si ninguna sirve, se añade aquí, no se escribe un `.spring(...)` suelto.
+- **Siempre por `dsAnimation(_:value:reduceMotion:)` o `reduceMotion ? nil : …`.** Con Reducir movimiento no hay
+  animación. Dentro de una pestaña, implícita; en una hoja vale `dsWithAnimation(reduceMotion, …)`. Nunca
+  `dsWithAnimation(false)` fijo (ignora el ajuste: lo tenía el editor de pagos).
+- **Hápticos, `DS.Haptic`, uno por gesto**: selección → `selection()`; éxito (guardar, aprobar, confirmar) →
+  `success()`; aviso (validación que no deja seguir, error al guardar) → `error()`; borrado (al confirmarlo) →
+  `warning()`. Si el ViewModel ya vibra al confirmar, la vista no repite: confirmar una liquidación y marcar una fila de
+  Registros vibraban dos veces. El éxito va donde el guardado ya ha salido bien, no en el botón: el botón vibra
+  aunque falle. `.sensoryFeedback(_:trigger:)` vale para lo declarativo (la marca de una fila), sin sumarle un
+  `DS.Haptic` en el mismo toque. Un `UIImpactFeedbackGenerator` suelto es deuda (la Bandeja, card C4).
+- **Una cifra que cambia a la vista: `AmountText(…, animatesValue: true)`**: `numericText` con su animación implícita.
+  Un `.contentTransition(.numericText())` sin `.animation(_:value:)` detrás no hace nada dentro de una pestaña, y así
+  estaban los heros de Categorías, Tendencias y Pagos. **Solo rueda lo que cambia con la cifra ya en pantalla** (600 ms
+  tras aparecer): el primer cálculo de una página recién montada sale quieto, porque si no Distribución rodaba de 0
+  hasta su saldo cada vez que se abría (`CategoriesTabView.balanceKPI`).
+- **Un selector de cápsula desliza la cápsula** (`matchedGeometryEffect`, molde `GenericSegmentedPill` y
+  `TransactionTypeSelectorView`), y su animación va en el propio selector, no en lo que cambia debajo.
+- **Un fundido de pantalla entera duplica el árbol de accesibilidad mientras dura**: dos copias de cada botón, y un
+  XCUITest que toque en ese instante cae con «varios elementos». Por eso el esqueleto → datos (`yalaSkeleton`) no se
+  funde todavía (card C1).
 
 ## iOS 26 Liquid Glass (OBLIGATORIO)
 - `ToolbarSpacer(.fixed, placement: .topBarTrailing)` — placement es OBLIGATORIO.

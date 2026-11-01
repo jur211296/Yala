@@ -91,11 +91,10 @@ struct GroupDetailView: View {
     // MARK: - State
 
     @State private var viewModel: GroupDetailViewModel
-    @State private var selectedTab: GroupDetailTab = .records
-    /// El chip que pinta la fila. Va por delante de `selectedTab` mientras la fila se anima: la pestaña se monta al
-    /// terminar (`NavigationChipButton.switchTab`), como en Estadísticas. Sigue a `selectedTab` cuando la cambia otro
-    /// (tocar el saldo, «Ver los saldos» desde Ajustes o Miembros).
-    @State private var chipsSelection: GroupDetailTab = .records
+    /// Las pestañas montadas y la que se ve. Chip y página cambian juntos (`StagedTabPages`, card pjum): la nueva se
+    /// monta invisible debajo y, ya montada, la fila y la página cambian en el mismo movimiento.
+    @State private var pages = StagedTabSelection<GroupDetailTab>(.records)
+    private var selectedTab: GroupDetailTab { pages.shown }
     @State private var showNudgeBanner = false
     @State private var showShareSheet = false
     @State private var wasArchivedOnAppear = false
@@ -195,10 +194,6 @@ struct GroupDetailView: View {
         .navigationChipsInset {
             navigationChipsBar
         }
-        // Un cambio de pestaña que no viene de la fila (el saldo, «Ver los saldos») mueve también el chip.
-        .onChange(of: selectedTab) { _, newTab in
-            if chipsSelection != newTab { chipsSelection = newTab }
-        }
         .navigationTitle(group.name)
         .navigationBarTitleDisplayMode(.large)
         // Empujado (compacta): push nativo con swipe-back desde el borde izquierdo + chevron custom, y tab bar
@@ -271,7 +266,7 @@ struct GroupDetailView: View {
                 viewModel.loadData()
                 switch next {
                 case .settle(let debt): viewModel.activeSheet = .settlement(debt)
-                case .showBalances: selectedTab = .balances
+                case .showBalances: selectPage(.balances)
                 }
             } else {
                 viewModel.loadData()
@@ -497,30 +492,42 @@ struct GroupDetailView: View {
         .contentMargins(.horizontal, DS.Spacing.lg)
         .scrollTargetBehavior(.viewAligned)
         .scrollClipDisabled()
+        // La cápsula cambia de ancho con la página, en el mismo movimiento. Implícita: un `withAnimation` no anima
+        // dentro de una pestaña.
+        .animation(reduceMotion ? nil : StagedTabSelection<GroupDetailTab>.animation, value: selectedTab)
     }
 
     private func navigationChipButton(for tab: GroupDetailTab) -> some View {
         // Icono en las tres y nombre solo en la elegida, como las pestañas de Estadísticas (UX 2.2 · L12-1, decisión
         // B de Jürgen del 2026-10-18: la solución de L11-1). Con los tres nombres «Estadísticas» salía cortada contra
         // el borde de un iPhone 17 Pro.
-        // Cambio en dos tiempos (barrido iOS 27, card yc6k): la fila se anima y la pestaña se monta al terminar. Sin
-        // eso, montar Saldos o Estadísticas se comía la animación y el chip saltaba de ancho en un fotograma, como en
-        // Estadísticas antes del PR #656.
+        // Chip y página cambian juntos (card pjum): la pestaña nueva se monta invisible debajo y, ya montada, la fila
+        // y la página se animan a la vez. Antes (card yc6k) la fila se animaba primero y la página llegaba de golpe
+        // después; animarlas a la vez sin montar antes dejaba el chip saltando de ancho en un fotograma.
         NavigationChipButton(
-            title: tab.displayName, icon: tab.icon, isSelected: chipsSelection == tab, animatesSwitch: true
+            title: tab.displayName, icon: tab.icon, isSelected: selectedTab == tab, animatesSwitch: true
         ) {
-            NavigationChipButton.switchTab(
-                to: tab, chips: $chipsSelection, content: $selectedTab, reduceMotion: reduceMotion
-            )
+            selectPage(tab)
         }
         .accessibilityIdentifier("group_detail_tab_\(tab.rawValue)")
     }
 
     // MARK: - Tab Content
 
-    @ViewBuilder
+    /// Cambia de pestaña desde la fila o desde fuera de ella (tocar el saldo, «Ver los saldos»).
+    private func selectPage(_ tab: GroupDetailTab) {
+        StagedTabSelection.select(tab, in: $pages, reduceMotion: reduceMotion)
+    }
+
     private var tabContent: some View {
-        switch selectedTab {
+        StagedTabPages(selection: $pages) { tab in
+            page(for: tab)
+        }
+    }
+
+    @ViewBuilder
+    private func page(for tab: GroupDetailTab) -> some View {
+        switch tab {
         case .records:
             GroupRecordsView(
                 expenses: viewModel.expenses,
@@ -548,11 +555,7 @@ struct GroupDetailView: View {
                 } : nil,
                 headerBalance: viewModel.headerBalance,
                 debtsWereConverted: viewModel.debtsWereConverted,
-                onTapBalance: {
-                    var transaction = Transaction()
-                    transaction.disablesAnimations = true
-                    withTransaction(transaction) { selectedTab = .balances }
-                },
+                onTapBalance: { selectPage(.balances) },
                 onRefresh: { await viewModel.refreshFromCloud(force: true) },
                 budgetProgress: viewModel.budgetProgress,
                 budgetColorHex: group.colorHex

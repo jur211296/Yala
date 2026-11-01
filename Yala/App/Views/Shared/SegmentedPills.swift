@@ -24,9 +24,9 @@ struct GenericSegmentedPill<S: Hashable>: View {
         HStack(spacing: DS.Spacing.none) {
             ForEach(options, id: \.self) { option in
                 Button {
-                    dsWithAnimation(reduceMotion) {
-                        selection = option
-                    }
+                    guard option != selection else { return }
+                    DS.Haptic.selection()
+                    selection = option
                 } label: {
                     Text(labelProvider(option))
                         .font(DS.Typography.label.weight(option == selection ? .semibold : .medium))
@@ -51,5 +51,8 @@ struct GenericSegmentedPill<S: Hashable>: View {
         .padding(DS.Spacing.xs)
         .background(Capsule().fill(.thCard))
         .overlay(Capsule().stroke(theme.cardBorder, lineWidth: 1))
+        // Implícita: la píldora vive en pestañas (Estadísticas), donde un `withAnimation` no anima y la cápsula
+        // saltaba en vez de deslizarse (card pjum). Solo la píldora: lo que cambia debajo con la selección, como siempre.
+        .dsAnimation(DS.Animation.selection, value: selection, reduceMotion: reduceMotion)
     }
 }

@@ -1075,6 +1075,7 @@ struct InboxDraftEditSheet: View {
                 categoryColorHex: subcategory.safeCategory.colorHex,
                 isExpense: isExpense
             )
+            DS.Haptic.success()
 
             // Desde un pago planificado se vuelve a su detalle: ni pantalla de éxito ni «Aprobar siguiente» (L10-11).
             if payNowTitle != nil {

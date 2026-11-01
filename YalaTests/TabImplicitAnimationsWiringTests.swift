@@ -61,6 +61,17 @@ struct TabImplicitAnimationsWiringTests {
          ".animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.fast), value: expenseCollapsed)"),
         ("Yala/App/Views/Reports/CashFlow/CashFlowMonthStrip.swift",
          ".animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.fast), value: selectedMonthKey)"),
+        // Card pjum (pasada de fluidez, 2026-10-31).
+        ("Yala/App/Views/Panel/PanelView.swift",
+         ".animation(reduceMotion ? nil : DS.Animation.appear, value: appPreferences.panelAccountsCollapsed)"),
+        ("Yala/App/Views/Groups/GroupDetailView.swift",
+         ".animation(reduceMotion ? nil : StagedTabSelection<GroupDetailTab>.animation, value: selectedTab)"),
+        ("Yala/App/Views/Statistics/DetailContainerView.swift",
+         ".animation(reduceMotion ? nil : StagedTabSelection<DetailViewTab>.animation, value: selectedTab)"),
+        ("Yala/App/Views/Shared/SegmentedPills.swift",
+         ".dsAnimation(DS.Animation.selection, value: selection, reduceMotion: reduceMotion)"),
+        ("Yala/App/Views/Chat/ChatSheetView.swift",
+         ".dsAnimation(DS.Animation.appear, value: viewModel.messages.count, reduceMotion: reduceMotion)"),
     ]
 
     @Test(arguments: animated.indices)

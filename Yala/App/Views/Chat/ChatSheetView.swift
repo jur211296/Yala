@@ -335,6 +335,8 @@ struct ChatSheetView: View {
                     ForEach(viewModel.messages) { message in
                         ChatMessageBubble(message: message, viewModel: viewModel)
                             .id(message.id)
+                            // Cada mensaje entra subiendo y fundido, no de golpe (card pjum).
+                            .transition(.opacity.combined(with: .move(edge: .bottom)))
                     }
 
                     if viewModel.showContextHint {
@@ -350,6 +352,7 @@ struct ChatSheetView: View {
                     if viewModel.isLoading {
                         ChatLoadingIndicator()
                             .id("loading")
+                            .transition(.opacity)
                     }
 
                     // Reset contexto: aparece cuando hay turnos guardados y no está cargando.
@@ -361,6 +364,9 @@ struct ChatSheetView: View {
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.md)
+                // Implícitas: en la columna del iPad el chat vive junto a una pestaña, donde `withAnimation` no anima.
+                .dsAnimation(DS.Animation.appear, value: viewModel.messages.count, reduceMotion: reduceMotion)
+                .dsAnimation(DS.Animation.appear, value: viewModel.isLoading, reduceMotion: reduceMotion)
                 .readableChatWidth()
             }
             .scrollDismissesKeyboard(.interactively)
@@ -522,6 +528,7 @@ struct ChatSheetView: View {
 
     private var sendButton: some View {
         Button {
+            DS.Haptic.light()
             Task { await viewModel.sendQuestion(viewModel.inputText) }
         } label: {
             Image(systemName: "arrow.up")

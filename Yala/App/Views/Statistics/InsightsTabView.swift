@@ -236,7 +236,8 @@ struct InsightsTabView: View {
                     value: expensesOnly ? summary.totalExpense : summary.netBalance,
                     currencyCode: defaultCurrencyCode,
                     font: DS.Typography.panelHeroAmount, secondaryFont: DS.Typography.panelHeroAmountSecondary,
-                    isEstimate: expensesOnly ? summary.expenseAmountsAreApproximate : summary.amountsAreApproximate
+                    isEstimate: expensesOnly ? summary.expenseAmountsAreApproximate : summary.amountsAreApproximate,
+                    animatesValue: true
                 )
             }
         } detail: {

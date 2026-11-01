@@ -134,7 +134,8 @@ struct HeroMonthView: View {
                     font: DS.Typography.panelHeroAmount,
                     secondaryFont: DS.Typography.panelHeroAmountSecondary,
                     // Solo el lado del gasto: este número no incluye los ingresos.
-                    isEstimate: periodSummary.expenseApproximate
+                    isEstimate: periodSummary.expenseApproximate,
+                    animatesValue: true
                 )
 
                 // Gateado también por `showVariations`: `VariationChip` se
@@ -154,7 +155,8 @@ struct HeroMonthView: View {
                     currencyCode: currencyCode,
                     font: DS.Typography.panelHeroAmount,
                     secondaryFont: DS.Typography.panelHeroAmountSecondary,
-                    isEstimate: figureIsApproximate
+                    isEstimate: figureIsApproximate,
+                    animatesValue: true
                 )
 
                 // A tamaños de accesibilidad los dos importes van uno bajo otro (`AdaptiveRowStack`): en fila no

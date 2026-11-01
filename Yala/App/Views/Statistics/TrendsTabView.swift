@@ -253,9 +253,9 @@ struct TrendsTabView: View {
                     value: heroKPIValue(for: summary),
                     currencyCode: defaultCurrencyCode,
                     font: DS.Typography.panelHeroAmount, secondaryFont: DS.Typography.panelHeroAmountSecondary,
-                    isEstimate: heroKPIIsApproximate(for: summary)
+                    isEstimate: heroKPIIsApproximate(for: summary),
+                    animatesValue: true
                 )
-                .contentTransition(.numericText())
 
                 // En «Solo gastos» la fila de entradas y salidas repetía la cifra grande: queda su variación, con la
                 // lectura del Panel (decisión A de Jürgen del 2026-10-26).
