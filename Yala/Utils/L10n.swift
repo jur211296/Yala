@@ -2216,6 +2216,8 @@ enum L10n {
             static var sectionTitle: String { ls("groups.openingBalance.sectionTitle", comment: "") }
             static var addButton: String { ls("groups.openingBalance.addButton", comment: "") }
             static var emptyState: String { ls("groups.openingBalance.emptyState", comment: "") }
+            /// Card jqgy: nota de la sección en un grupo congelado (neutra para los tres estados: volver a entrar, actualizar, pausa).
+            static var frozenNote: String { ls("groups.openingBalance.frozenNote", comment: "") }
             /// Rollup por miembro: "%@ debe" (deudor neto).
             static var rollupOwes: String { ls("groups.openingBalance.rollupOwes", comment: "") }
             /// Rollup por miembro: "a %@ le deben" (acreedor neto).

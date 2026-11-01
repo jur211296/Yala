@@ -303,6 +303,9 @@ final class GroupExpenseService {
         currencyCode: String,
         date: Date
     ) throws -> SplitExpense {
+        // Card jqgy: el freeze primero, como en `removeOpeningBalance`. Antes llegaba tarde (dentro de `createExpense`) y
+        // a quien no era admin le salía «solo un administrador…», falso en un grupo que ya no admite cambios de nadie.
+        try validateGroupIsWritable(group)
         try validateCurrentUserCanManageOpeningBalances(in: group)
         guard debtorMemberID != creditorMemberID else { throw GroupExpenseServiceError.invalidOpeningBalanceMembers }
 
@@ -388,6 +391,8 @@ final class GroupExpenseService {
         currencyCode: String,
         date: Date
     ) throws {
+        // Card jqgy: el freeze antes que el permiso y que el guard de liquidaciones (ver `setOpeningBalance`).
+        try validateGroupIsWritable(group)
         try validateCurrentUserCanManageOpeningBalances(in: group)
         guard debtorMemberID != creditorMemberID else { throw GroupExpenseServiceError.invalidOpeningBalanceMembers }
         // Guard sobre la UNIÓN del par ORIGINAL (lo que se va a mutar/borrar) y el par NUEVO:
@@ -654,8 +659,8 @@ final class GroupExpenseService {
     /// zona CloudKit congelada y se perderían (R4). El guard central lo lanza ANTES de cualquier check de
     /// participación. Punto de inserción óptimo (ajuste #6): al TOP de `validateCurrentUserCanWrite` (cubre
     /// create/update/deleteExpense/createSettlement/confirmSettlement/deleteSettlement) + `removeOpeningBalance`.
-    /// El trío opening-balance (dueño o admin, card yd2w) también lo respeta: alta y edición por `validateCurrentUserCanWrite`
-    /// dentro de `createExpense`/`updateExpense`, y el borrado con su llamada explícita.
+    /// El trío opening-balance (dueño o admin, card yd2w) también lo respeta, y desde la card jqgy los tres lo llaman
+    /// PRIMERO (alta, edición y borrado), antes del permiso y del guard de liquidaciones: así el rechazo dice «se movió».
     func validateGroupIsWritable(_ group: SplitGroup) throws {
         if group.isMigratedFrozen { throw GroupExpenseServiceError.movedToBackend }
     }

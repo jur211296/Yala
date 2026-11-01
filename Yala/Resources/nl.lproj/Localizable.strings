@@ -4483,6 +4483,7 @@
 "groups.openingBalance.sectionTitle" = "Beginsaldi";
 "groups.openingBalance.addButton" = "Beginsaldo toevoegen";
 "groups.openingBalance.emptyState" = "Nog geen beginsaldi.";
+"groups.openingBalance.frozenNote" = "Deze groep is verplaatst naar de Yala-cloud. Je kunt de beginsaldi zien, maar hier niet wijzigen.";
 "groups.openingBalance.rollupOwes" = "is schuldig";
 "groups.openingBalance.rollupOwed" = "heeft tegoed";
 "groups.openingBalance.approvalPromptTitle" = "Had %@ al iets openstaan met de groep?";

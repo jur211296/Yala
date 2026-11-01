@@ -113,8 +113,9 @@ struct GroupMembersView: View {
 
                 membersSection
 
-                // Saldos iniciales (deuda de apertura) — el dueño o un admin (card yd2w).
-                if viewModel.isOpeningBalanceManager {
+                // Saldos iniciales (deuda de apertura) — el dueño o un admin (card yd2w). En un grupo congelado se ven
+                // sin dejar cambiar (card jqgy).
+                if viewModel.openingBalanceSectionMode != .hidden {
                     openingBalanceSection
                 }
             }
@@ -413,7 +414,8 @@ struct GroupMembersView: View {
                 viewModel.loadData()
                 pendingActionMember = nil
                 // Atajo (dueño o admin, card yd2w): ofrecer crear un saldo inicial para el miembro recién aprobado.
-                if viewModel.isOpeningBalanceManager {
+                // Card jqgy: solo si el grupo admite cambios (no congelado).
+                if viewModel.canManageOpeningBalances {
                     openingBalancePrefillDebtor = memberID
                     approvedMemberName = memberName
                     showOpeningBalanceApprovalPrompt = true
@@ -517,22 +519,32 @@ struct GroupMembersView: View {
                 edgeRow(expense)
             }
 
-            Button {
-                openingBalanceRequest = OpeningBalanceRequest()
-            } label: {
-                Label(L10n.Groups.OpeningBalance.addButton, systemImage: "plus.circle.fill")
-                    .font(DS.Typography.label)
-                    .foregroundStyle(theme.accentText)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
+            if viewModel.openingBalanceSectionMode.allowsChanges {
+                addOpeningBalanceButton
             }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("opening_balance_add")
         } footer: {
-            if openingExpenses.isEmpty {
+            if viewModel.openingBalanceSectionMode == .frozenReadOnly {
+                // Card jqgy: por qué no se puede añadir ni editar. El banner del detalle ya da la salida de cada estado.
+                Text(L10n.Groups.OpeningBalance.frozenNote)
+                    .accessibilityIdentifier("opening_balance_frozen_note")
+            } else if openingExpenses.isEmpty {
                 Text(L10n.Groups.OpeningBalance.emptyState)
             }
         }
+    }
+
+    private var addOpeningBalanceButton: some View {
+        Button {
+            openingBalanceRequest = OpeningBalanceRequest()
+        } label: {
+            Label(L10n.Groups.OpeningBalance.addButton, systemImage: "plus.circle.fill")
+                .font(DS.Typography.label)
+                .foregroundStyle(theme.accentText)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("opening_balance_add")
     }
 
     private func rollupRow(memberID: String, net: Double, currencyCode: String) -> some View {
@@ -550,30 +562,45 @@ struct GroupMembersView: View {
         }
     }
 
+    @ViewBuilder
     private func edgeRow(_ expense: SplitExpense) -> some View {
+        let canEdit = viewModel.openingBalanceSectionMode.allowsChanges
+        if canEdit {
+            Button {
+                openingBalanceRequest = OpeningBalanceRequest(expense: expense)
+            } label: {
+                edgeRowContent(expense, showsChevron: true)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("opening_balance_edge_\(expense.id)")
+        } else {
+            // Card jqgy: grupo congelado ⇒ el saldo se lee, no abre el editor.
+            edgeRowContent(expense, showsChevron: false)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("opening_balance_edge_\(expense.id)")
+        }
+    }
+
+    private func edgeRowContent(_ expense: SplitExpense, showsChevron: Bool) -> some View {
         let debtorName = debtorID(for: expense).flatMap { viewModel.memberNameLookup[$0] } ?? "?"
         let creditorName = viewModel.memberNameLookup[expense.paidByMemberID] ?? "?"
         let amountStr = appPreferences.currency(expense.amount, currencyCode: expense.currencyCode)
-        return Button {
-            openingBalanceRequest = OpeningBalanceRequest(expense: expense)
-        } label: {
-            HStack(spacing: DS.Spacing.md) {
-                Text(L10n.Groups.OpeningBalance.feedRow(debtorName, creditorName))
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                Spacer()
-                Text(amountStr)
-                    .font(DS.Typography.label)
-                    .foregroundStyle(.secondary)
+        return HStack(spacing: DS.Spacing.md) {
+            Text(L10n.Groups.OpeningBalance.feedRow(debtorName, creditorName))
+                .font(DS.Typography.body)
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+            Spacer()
+            Text(amountStr)
+                .font(DS.Typography.label)
+                .foregroundStyle(.secondary)
+            if showsChevron {
                 Image(systemName: "chevron.right")
                     .font(DS.Typography.caption)
                     .foregroundStyle(.tertiary)
             }
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("opening_balance_edge_\(expense.id)")
+        .contentShape(Rectangle())
     }
 
     // MARK: - Quitar a alguien (L19-4)

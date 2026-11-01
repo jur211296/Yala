@@ -3758,6 +3758,7 @@
 "groups.openingBalance.sectionTitle" = "Opening balances";
 "groups.openingBalance.addButton" = "Add opening balance";
 "groups.openingBalance.emptyState" = "No opening balances yet.";
+"groups.openingBalance.frozenNote" = "This group moved to Yala's cloud. You can see its opening balances, but not change them here.";
 "groups.openingBalance.rollupOwes" = "owes";
 "groups.openingBalance.rollupOwed" = "is owed";
 "groups.openingBalance.approvalPromptTitle" = "Did %@ already have anything to settle with the group?";
