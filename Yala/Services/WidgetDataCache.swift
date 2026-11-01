@@ -309,7 +309,9 @@ enum WidgetDataCache {
         // Lo que tarda en estar la foto que leen los widgets (y Siri): la extensión solo la decodifica.
         let built = LoadTimeMarks.measure(.widgetCache) { buildSnapshot(context: context) }
         saveSnapshot(built.widget)
-        lastBuiltAt = Date.now
+        // La hora de la foto, no la de ahora: una foto de las 23:59:59 guardada pasada la medianoche es de ayer, y
+        // `refreshIfBuiltOnAnotherDay` tiene que rehacerla al volver a primer plano.
+        lastBuiltAt = built.widget.lastUpdated
         // La foto de Siri sale de los MISMOS números, en su propia clave (`SiriFinanceSnapshot`): así Siri y los widgets
         // dicen lo mismo y viven y mueren juntos (ver `clearCache`).
         SiriFinanceSnapshotStore.write(built.siri, to: sharedDefaults)
@@ -397,7 +399,13 @@ enum WidgetDataCache {
 
     // MARK: - Private Helpers
 
-    private static func buildSnapshot(context: ModelContext) -> (widget: WidgetDataSnapshot, siri: SiriFinanceSnapshot) {
+    /// `now` es el «ahora» de la foto: los ocho períodos, el mes de los pagos, Siri y `lastUpdated` salen de él. Los
+    /// widgets miden los períodos a la hora de la foto (`lastUpdated`), así que un segundo reloj para ella haría que una
+    /// foto empezada a las 23:59:59 del último día del mes y guardada pasada la medianoche leyera «Este mes» como el
+    /// siguiente. Solo los tests lo fijan.
+    static func buildSnapshot(
+        context: ModelContext, now: Date = .now
+    ) -> (widget: WidgetDataSnapshot, siri: SiriFinanceSnapshot) {
         // Fetch ALL transactions for correct balance calculation
         let allTransactionsDescriptor = FetchDescriptor<TransactionItem>(
             sortBy: [SortDescriptor(\.date, order: .reverse), SortDescriptor(\.createdAt, order: .reverse)]
@@ -588,7 +596,7 @@ enum WidgetDataCache {
 
         // Un solo «ahora» para los ocho períodos y para la foto de Siri, que guarda el inicio de cada uno: con dos
         // relojes, un cálculo a caballo de medianoche del día 1 etiquetaría los totales de septiembre como de octubre.
-        let periodsNow = Date.now
+        let periodsNow = now
         for period in widgetPeriods {
             let interval = period.dateInterval(now: periodsNow)
             let summary = buildPeriodSummary(
@@ -606,8 +614,8 @@ enum WidgetDataCache {
         // Legacy fields for backwards compatibility
         let thisMonthSummary = periodSummaries[DetailPeriod.thisMonth.rawValue] ?? buildPeriodSummary(
             transactions: eligibleRecentTransactions,
-            periodStart: Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: Date.now)) ?? Date.now,
-            periodEnd: Date.now,
+            periodStart: Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: periodsNow)) ?? periodsNow,
+            periodEnd: periodsNow,
             currencyCode: preferredCurrency,
             adjustment: adjustment,
             converter: converter
@@ -616,7 +624,7 @@ enum WidgetDataCache {
         let allTimeSummary = periodSummaries[DetailPeriod.allTime.rawValue] ?? buildPeriodSummary(
             transactions: eligibleTransactions,
             periodStart: Date.distantPast,
-            periodEnd: Date.now,
+            periodEnd: periodsNow,
             currencyCode: preferredCurrency,
             adjustment: adjustment,
             converter: converter
@@ -635,7 +643,7 @@ enum WidgetDataCache {
         )
 
         let widgetSnapshot = WidgetDataSnapshot(
-            lastUpdated: Date.now,
+            lastUpdated: periodsNow,
             preferredCurrencyCode: preferredCurrency,
             currencyDisplayFormat: currencyDisplayFormat,
             accountBalances: widgetAccountBalances,
