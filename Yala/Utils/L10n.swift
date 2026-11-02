@@ -2252,6 +2252,8 @@ enum L10n {
             static var editPartialBannerCaseB: String { ls("groups.bridge.editPartialBannerCaseB", comment: "") }
             static var draftReasonRemoteCreate: String { ls("groups.bridge.draftReasonRemoteCreate", comment: "") }
             static var draftReasonCurrencyChanged: String { ls("groups.bridge.draftReasonCurrencyChanged", comment: "") }
+            /// Grupos B: las líneas de tu parte ya no cuadran. %@ = nombre del grupo.
+            static var draftReasonSplitLinesMismatch: String { ls("groups.bridge.draftReasonSplitLinesMismatch", comment: "") }
             // Activation/deactivation modals (F12)
             static var activateTitle: String { ls("groups.bridge.activateTitle", comment: "") }
             static func activateBody(_ count: Int) -> String {

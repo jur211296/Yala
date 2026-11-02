@@ -243,6 +243,77 @@ describe("resumen de periodo (port de CashFlowCalculator)", () => {
     expect(r.avisos.join(" ")).not.toMatch(/grupo|tasa/);
   });
 
+  describe("Grupos B: tu parte en líneas", () => {
+    const groupsAcc = uuid(2201);
+    const sip = uuid(2202);
+    const loanCat = uuid(2211);
+    const comisiones = uuid(2212);
+    const super_ = uuid(2213);
+    const hogar = uuid(2214);
+    const transferOut = uuid(2215);
+    const transferIn = uuid(2216);
+    const lk = buildLookup({
+      accounts: [
+        account({ sync_id: acc }),
+        account({ sync_id: sip, name: "Sip" }),
+        account({ sync_id: groupsAcc, name: "Grupos", is_system_account: true }),
+      ],
+      categories: [
+        category({ sync_id: loanCat, name: "Cobros de grupos", is_income: true }),
+        category({ sync_id: comisiones, name: "Comisiones" }),
+        category({ sync_id: super_, name: "Supermercado" }),
+        category({ sync_id: hogar, name: "Hogar" }),
+        category({ sync_id: transferOut, name: "Otros" }),
+        category({ sync_id: transferIn, name: "Ingresos", is_income: true }),
+      ],
+    });
+    const t = "transfer";
+
+    it("caso Pía (pagó otro: 500 de recarga a Sip + 10 de comisión): 10 de Comisiones y nada de la recarga", () => {
+      const legs = [
+        // La pata conservada es la línea de gasto (la ancla); la recarga sale de «Grupos» y entra en Sip sin puntero.
+        tx({ ...base, account_ref: groupsAcc, category_ref: comisiones, amount: -10, amount_in_preferred_currency: -10, split_expense_id: "p1" }),
+        tx({ ...base, account_ref: groupsAcc, category_ref: transferOut, amount: -500, amount_in_preferred_currency: -500, split_expense_id: "p1", balance_adjustment_type: t, transfer_pair_id: "L1" }),
+        tx({ ...base, account_ref: sip, category_ref: transferIn, amount: 500, amount_in_preferred_currency: 500, balance_adjustment_type: t, transfer_pair_id: "L1" }),
+      ];
+      const groups = buildGroupAdjustment(legs, lk.accounts, lk.subcategories);
+      const r = summarize(legs, lk, period, { ...ctx, groups });
+      expect(r.gastos).toBe(10);
+      expect(r.ingresos).toBe(0);
+      expect(r.top_categorias_gasto).toEqual([expect.objectContaining({ categoria: "Comisiones", importe: 10 })]);
+    });
+
+    it("caso súper (pagaste 200 con BCP, tu parte 100 = Supermercado 80 + Hogar 20): 80 + 20", () => {
+      const legs = [
+        tx({ ...base, category_ref: super_, amount: -200, amount_in_preferred_currency: -200, split_expense_id: "s9" }),
+        // Préstamo = lo que te deben (100) + las líneas derivadas apuntadas en «Grupos» (20).
+        tx({ ...base, account_ref: groupsAcc, category_ref: loanCat, amount: 120, amount_in_preferred_currency: 120, split_expense_id: "s9" }),
+        tx({ ...base, account_ref: groupsAcc, category_ref: hogar, amount: -20, amount_in_preferred_currency: -20, split_expense_id: "s9" }),
+      ];
+      const groups = buildGroupAdjustment(legs, lk.accounts, lk.subcategories);
+      const r = summarize(legs, lk, period, { ...ctx, groups });
+      expect(r.gastos).toBe(100);
+      expect(r.ingresos).toBe(0);
+      const porCategoria = Object.fromEntries(r.top_categorias_gasto.map((c) => [c.categoria, c.importe]));
+      expect(porCategoria).toEqual({ Supermercado: 80, Hogar: 20 });
+    });
+
+    it("una pata de transferencia con puntero no se toma por la real: el préstamo se netea contra el gasto", () => {
+      // Si la entrada de una recarga llegara con `split_expense_id` (un aparato que no siguiera D4), «la real» por orden
+      // sería ella y el préstamo se netearía contra la recarga: el gasto saldría entero.
+      const legs = [
+        tx({ ...base, account_ref: sip, category_ref: transferIn, amount: 20, amount_in_preferred_currency: 20, split_expense_id: "s8", balance_adjustment_type: t, transfer_pair_id: "L2" }),
+        tx({ ...base, category_ref: super_, amount: -200, amount_in_preferred_currency: -200, split_expense_id: "s8" }),
+        tx({ ...base, account_ref: groupsAcc, category_ref: loanCat, amount: 120, amount_in_preferred_currency: 120, split_expense_id: "s8" }),
+        tx({ ...base, account_ref: groupsAcc, category_ref: transferOut, amount: -20, amount_in_preferred_currency: -20, split_expense_id: "s8", balance_adjustment_type: t, transfer_pair_id: "L2" }),
+      ];
+      const groups = buildGroupAdjustment(legs, lk.accounts, lk.subcategories);
+      const r = summarize(legs, lk, period, { ...ctx, groups });
+      expect(r.gastos).toBe(80);
+      expect(r.ingresos).toBe(0);
+    });
+  });
+
   it("sin categoría también cuenta tu parte, y una pata de préstamo suprimida no entra aunque su categoría no resuelva", () => {
     const groupsAcc = uuid(2004);
     const lk = buildLookup({ accounts: [account({ sync_id: acc }), account({ sync_id: groupsAcc, is_system_account: true })] });

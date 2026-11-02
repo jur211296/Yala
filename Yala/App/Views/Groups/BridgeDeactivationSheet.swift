@@ -201,6 +201,8 @@ struct BridgeDeactivationSheet: View {
     /// Scope global → todas. Scope per-grupo → filtra por `splitGroupZoneID`.
     private func deleteBridgedTransactions(zoneID: String?) throws {
         for tx in try transactionsToDelete(zoneID: zoneID) {
+            // Grupos B: la entrada de una recarga de tu parte está en tus cuentas sin puntero (D4): se va con la pata.
+            GroupTransactionBridge.deleteSplitLineEntries(of: tx, context: modelContext)
             modelContext.delete(tx)
         }
         try modelContext.save()

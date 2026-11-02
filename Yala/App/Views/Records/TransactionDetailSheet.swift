@@ -133,7 +133,8 @@ struct TransactionDetailSheet: View {
     }
 
     private var isGroupRecord: Bool {
-        transaction.splitExpenseID != nil || transaction.splitSettlementID != nil
+        // Grupos B: también la entrada de una recarga de tu parte, que no lleva puntero (D4).
+        RecordContextActionLogic.Shape(record: transaction).isGroupRecord
     }
 
     @ViewBuilder
@@ -239,7 +240,8 @@ struct TransactionDetailSheet: View {
             )
             guard !legs.contains(where: { $0.account == nil }) else { return }
             groupBreakdown = GroupExpenseBreakdownLogic.breakdown(legs: legs.map {
-                .init(amount: $0.amount, isSystemAccount: $0.account?.isSystemAccount ?? false)
+                .init(amount: $0.amount, isSystemAccount: $0.account?.isSystemAccount ?? false,
+                      isSplitLineLeg: GroupSplitLinesBridgeLogic.isDerivedMarker($0.splitLinesRaw))
             })
         } catch {
             #if DEBUG

@@ -8541,3 +8541,6 @@
 
 /* Group expense form, under the selectors when you paid and nobody owes you */
 "groups.expense.outflowLineNoDebt" = "Er gaat %@ van je rekening af";
+
+/* Inbox hint: group expense changed and the user's split lines no longer add up. %@ = group name */
+"groups.bridge.draftReasonSplitLinesMismatch" = "De uitgave in ‘%@’ is gewijzigd en je regels tellen niet meer op tot je deel. Voorlopig is het één regel: kies de categorie.";

@@ -53,6 +53,12 @@ enum RecordContextActionLogic {
         let accountIsNil: Bool
         let accountIsSystem: Bool
         let subcategoryIsSystem: Bool
+        /// Grupos B: pata derivada de una línea de tu parte (también la entrada de una recarga, sin puntero). Cuenta como
+        /// de grupo: la escribe el puente.
+        var isSplitLineLeg: Bool = false
+
+        /// Lo que viene de un grupo y por eso lo manda el grupo.
+        var isGroupRecord: Bool { hasSplitExpenseID || hasSplitSettlementID || isSplitLineLeg }
     }
 
     struct Actions: Equatable {
@@ -63,7 +69,7 @@ enum RecordContextActionLogic {
     }
 
     static func actions(_ s: Shape) -> Actions {
-        let isGroupRecord = s.hasSplitExpenseID || s.hasSplitSettlementID
+        let isGroupRecord = s.isGroupRecord
         // Transferencias y ajustes de saldo llevan subcategoría de sistema obligatoria (`bulkUpdateSubcategory` ya
         // rechaza las transferencias). En lo de grupo, lo mismo que `BridgedEditPolicy` le deja al editor.
         let bridged = BridgedEditPolicy.classify(BridgedEditPolicy.TxShape(
@@ -72,7 +78,8 @@ enum RecordContextActionLogic {
             accountIsNil: s.accountIsNil,
             accountIsSystem: s.accountIsSystem,
             subcategoryIsSystem: s.subcategoryIsSystem,
-            hasPendingPointerDraft: false))
+            hasPendingPointerDraft: false,
+            isSplitLineLeg: s.isSplitLineLeg))
         let canChangeCategory = !s.hasBalanceAdjustmentType
             && !s.subcategoryIsSystem
             && BridgedEditPolicy.canEditSubcategoryAndTags(bridged)
@@ -99,7 +106,7 @@ enum RecordBulkActionLogic {
     }
 
     static func allows(_ operation: Operation, _ s: RecordContextActionLogic.Shape) -> Bool {
-        let isGroupRecord = s.hasSplitExpenseID || s.hasSplitSettlementID
+        let isGroupRecord = s.isGroupRecord
         guard isGroupRecord else { return true }
         // Como el menú: sin el fetch al store de grupos que haría falta para saber si el gasto sigue vivo, todo registro
         // con puntero de grupo cuenta como de grupo (`pointerResolves` por defecto). El huérfano se arregla en el editor.
@@ -109,7 +116,8 @@ enum RecordBulkActionLogic {
             accountIsNil: s.accountIsNil,
             accountIsSystem: s.accountIsSystem,
             subcategoryIsSystem: s.subcategoryIsSystem,
-            hasPendingPointerDraft: false))
+            hasPendingPointerDraft: false,
+            isSplitLineLeg: s.isSplitLineLeg))
         switch operation {
         // Borrar y el monto: los del grupo (M6, `RecordContextActionLogic.canDelete`). La nota, igual: el editor la
         // deja dentro de los campos del grupo (`centralContent`, bloqueado en todo registro de grupo).

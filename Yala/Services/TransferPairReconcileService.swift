@@ -131,6 +131,11 @@ enum TransferPairReconcileService {
 
     /// Reconcilia transfer pairs en el contexto. Idempotente — re-ejecuciones sin orphans no hacen nada.
     @discardableResult
+    /// Grupos B: una pata que escribe el puente (lleva puntero de gasto de grupo o la marca de una línea de tu parte).
+    private static func isBridgeOwned(_ tx: TransactionItem) -> Bool {
+        tx.splitExpenseID != nil || GroupSplitLinesBridgeLogic.isDerivedMarker(tx.splitLinesRaw)
+    }
+
     static func reconcileTransferPairs(in context: ModelContext) -> ReconcilePlan {
         let transferTypeRaw = TransactionItem.adjustmentTypeTransfer
         let txs: [TransactionItem]
@@ -177,15 +182,19 @@ enum TransferPairReconcileService {
         guard hasChanges || !plan.collisions.isEmpty else { return plan }
 
         // Apply: clear orphans + malformed.
+        // Grupos B: los pares de una recarga de tu parte (la salida en «Grupos», con `splitExpenseID`, y su entrada, con
+        // la marca de línea) los lleva el puente. Cuentan para emparejar —una entrada congelada al salir del grupo sigue
+        // emparejada con su salida—, pero nunca se limpian aquí: una mitad que aún no bajó no es un huérfano, y limpiarla
+        // la convertía en un gasto o un ingreso suelto. El puente repara el par en su pasada.
         let toClearSet = Set(plan.orphansToClearIDs + plan.malformedToClearIDs)
         for id in toClearSet {
-            if let tx = idMap[id] {
+            if let tx = idMap[id], !isBridgeOwned(tx) {
                 tx.transferPairID = nil
                 tx.balanceAdjustmentType = nil
             }
         }
 
-        // Apply: pairings (asigna mismo pairID a ambos lados).
+        // Apply: pairings (asigna mismo pairID a ambos lados). Los del puente siempre llevan su par: nunca entran aquí.
         for pairing in plan.pairings {
             idMap[pairing.txAID]?.transferPairID = pairing.pairID
             idMap[pairing.txBID]?.transferPairID = pairing.pairID

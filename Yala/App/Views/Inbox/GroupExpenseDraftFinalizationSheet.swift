@@ -48,6 +48,10 @@ struct GroupExpenseDraftFinalizationSheet: View {
                 amount: draft.amount,
                 currencyCode: resolvedCurrency,
                 date: draft.effectiveDate,
+                // Grupos B: el aviso de que tus líneas ya no cuadran dice por qué volvió a la Bandeja.
+                hint: draft.isSplitLinesMismatchNotice
+                    ? String(format: L10n.Groups.Bridge.draftReasonSplitLinesMismatch, draft.originGroupName ?? groupName)
+                    : nil,
                 finalizeDisabled: selectedSubcategory == nil,
                 onFinalize: { handleFinalize() }
             ) {

@@ -169,6 +169,9 @@ enum CloudSyncReconciler {
                 // Guard de clasificación: `account == nil` (p.ej. dangler I8f-1 sin resolver) es
                 // NO-clasificable → no participa (ni se poda ni cuenta como "forma presente").
                 guard let account = tx.account else { continue }
+                // Grupos B: una pata derivada de una línea de tu parte (marca `{"of":…}`) no es la forma vieja
+                // `-myShare`: convive con la real por diseño (D1). Podarla borraría tus líneas en cada pull.
+                if GroupSplitLinesBridgeLogic.isDerivedMarker(tx.splitLinesRaw) { continue }
                 if account.isSystemAccount {
                     if tx.amount < 0 { virtualNegatives.append(tx) }
                 } else {

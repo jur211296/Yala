@@ -268,6 +268,13 @@ final class DraftService {
             return try applySettlementAmountChange(draft, context: context)
         }
 
+        // Grupos B: el aviso de que las líneas de tu parte ya no cuadran. Va antes del camino de los punteros
+        // `[.subcategory]`, que clasificaría una pata cualquiera sin categoría: aprobarlo es clasificar la pata que lleva
+        // la receta y retirar la receta (tu parte queda en una línea).
+        if draft.isSplitLinesMismatchNotice {
+            return try approveSplitLinesMismatch(draft, context: context)
+        }
+
         // Draft opt-in de settlement (bridge OFF): crea TX manual independiente SIN bridge —
         // el virtual del settlement ya es de signo opuesto al real, compensa sin doble conteo.
         // (Los opt-in de groupExpense NO se bifurcan aquí: caen al path de cuenta de abajo —
@@ -893,6 +900,43 @@ final class DraftService {
         }
 
         try context.save()
+    }
+
+    // MARK: - Grupos B: aviso de líneas que no cuadran
+
+    /// Deja tu parte en una línea con la categoría elegida: la pata que lleva la receta toma la categoría y pierde la
+    /// receta, y el aviso se va. No crea ningún registro: el puente ya dejó tu parte en esa pata al detectar que no cuadraba.
+    /// Si la receta ya no está (otro aparato la retiró o la reescribió), el aviso sobra y se retira igual.
+    private func approveSplitLinesMismatch(_ draft: InboxDraft, context: ModelContext) throws -> TransactionItem {
+        guard let splitID = draft.splitExpenseID else { throw DraftServiceError.groupExpenseTargetMissing }
+        let legs = try context.fetch(FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { $0.splitExpenseID == splitID }))
+        let holder = legs.first { tx in
+            if case .recipe = GroupSplitLinesRecipe.parse(tx.splitLinesRaw) { return true }
+            return false
+        }
+        guard let target = holder ?? legs.first(where: { $0.account?.isSystemAccount == false }) ?? legs.first else {
+            throw DraftServiceError.groupExpenseTargetMissing
+        }
+        // Solo si la receta sigue sin cuadrar con la parte del aviso: si otro aparato ya la reescribió y cuadra, el aviso
+        // sobra y la receta se queda. Y la categoría solo va a una pata que ya es tu parte en una línea: si aquí aún tiene
+        // la forma de una recarga (el puente de este aparato no ha pasado), la pasada siguiente la pondría ella.
+        if let holder, case let .recipe(lines) = GroupSplitLinesRecipe.parse(holder.splitLinesRaw),
+           let noticeAmount = draft.amount,
+           GroupSplitLinesRecipe.balance(
+               of: lines, share: GroupSplitLinesBridgeLogic.decimal(abs(noticeAmount)),
+               currencyCode: holder.currencyCode) != .balanced {
+            if let subcategory = draft.subcategory, holder.balanceAdjustmentType == nil {
+                holder.subcategory = subcategory
+                holder.category = subcategory.safeCategory
+            }
+            holder.splitLinesRaw = nil
+        }
+        cacheDisplayValues(draft)
+        deleteInboxDraftPruningRow(draft, in: context)
+        try context.save()
+        SessionState.shared.incrementDataVersion()
+        return target
     }
 
     // MARK: - M6: Approve groupExpense Caso A pendiente cuenta

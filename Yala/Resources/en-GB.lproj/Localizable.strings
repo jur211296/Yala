@@ -7859,3 +7859,6 @@
 
 /* Group expense form, under the selectors when you paid and nobody owes you */
 "groups.expense.outflowLineNoDebt" = "%@ leaves your account";
+
+/* Inbox hint: group expense changed and the user's split lines no longer add up. %@ = group name */
+"groups.bridge.draftReasonSplitLinesMismatch" = "The expense in “%@” changed and your lines no longer add up to your share. For now it’s a single line: choose its category.";

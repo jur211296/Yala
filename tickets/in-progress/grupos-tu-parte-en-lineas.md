@@ -134,3 +134,26 @@ Production lo hace Jürgen, `docs/despliegue-cloudkit-2-2.md`) y por el Modo Nub
 
 - Ventas por cobrar (cards 7-11): otro `/spec`.
 - La UI (cards 4-6).
+
+## Cards 2 y 3 hechas (2026-11-01): el puente aplica la receta y la recarga no cuenta
+
+Encargo `2026-11-01-grupos-b-puente-y-estadisticas` (decisiones en su Paso 0). Lo que cambió respecto al diseño de arriba:
+
+- **La ancla es la primera línea de GASTO** (o la primera si no hay ninguna, solo en el Caso B): la pata que el usuario
+  clasifica sigue siendo un gasto siempre que haya uno. Mismas cifras en Pía y en el súper.
+- **Las derivadas se actualizan en sitio**, no se rehacen en cada pasada; el `transferPairID` de una recarga es el id de su
+  línea (determinista entre aparatos) y la entrada lleva la marca, así que se encuentra aunque llegue antes que su salida.
+- **El aviso de «no cuadra» (D6)** es un `.groupExpense` con motivo `splitLinesMismatch` que pide la categoría y no se
+  aprueba deslizando. Aprobarlo deja tu parte en una línea y retira la receta; «Partir» desde esa hoja es la card 5.
+- **Los consumidores que borraban o soltaban patas** se midieron (lista del punto 1) y quedaron así: `CloudSyncReconciler`
+  ya no poda las derivadas (las borraba en cada pull con pata real), `TransferPairReconcileService` no toca los pares del
+  puente, los tres barridos y el congelado se llevan o sueltan la entrada con su pata, el borrado de cuenta la bloquea
+  como de grupo, y el menú, el lote y el editor la tratan como del puente. El cambio de divisa ya la bloqueaba (es una
+  transferencia). El desglose «Tu parte» del detalle suma las líneas.
+- **Card 3:** `GroupBridgeStatsAdjustment` y `mcp/src/logic/groups.ts` dejan las patas de transferencia fuera del neteo.
+  Con D1 la fórmula ya daba 80 + 20 y 10; el cambio es la defensa para una entrada que llegue con puntero.
+  `FullFinancialContextBuilder` ya filtraba transferencias antes del ajuste: sin cambio.
+
+**Residuales aceptados:** un cambio de pagador (A ↔ B) o de divisa del gasto pierde la receta con la pata que la llevaba;
+editar la categoría de la pata conservada con receta se pisa en la pasada siguiente (la card 6 lo lleva a «Partir»); con
+«Incluir grupos» apagado en Registros se ve la entrada de la recarga sin su salida (no cambia cifras).

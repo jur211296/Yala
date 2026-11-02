@@ -62,6 +62,8 @@ enum GroupExpenseBreakdownLogic {
     struct Leg: Equatable {
         let amount: Double
         let isSystemAccount: Bool
+        /// Grupos B: pata derivada de una línea de tu parte (en «Grupos», con la marca de línea). Es parte de tu parte.
+        var isSplitLineLeg: Bool = false
     }
 
     struct Breakdown: Equatable {
@@ -75,12 +77,15 @@ enum GroupExpenseBreakdownLogic {
 
     /// `nil` si las patas no permiten explicar nada sin inventar (ninguna de coste a la vista).
     static func breakdown(legs: [Leg]) -> Breakdown? {
-        let real = legs.filter { !$0.isSystemAccount }
+        let real = legs.filter { !$0.isSystemAccount && !$0.isSplitLineLeg }
         let loans = legs.filter { $0.isSystemAccount && $0.amount > 0 }
-        let systemCost = legs.filter { $0.isSystemAccount && $0.amount <= 0 }
+        let systemCost = legs.filter { $0.isSystemAccount && $0.amount <= 0 && !$0.isSplitLineLeg }
+        // Grupos B: las líneas derivadas de tu parte, en «Grupos» (negativas). El préstamo las incluye en el Caso A, y en
+        // el Caso B suman a la pata conservada.
+        let splitLines = legs.filter { $0.isSplitLineLeg && $0.isSystemAccount }.reduce(0) { $0 + $1.amount }
 
         if let realLeg = real.first {
-            let owed = loans.reduce(0) { $0 + $1.amount }
+            let owed = loans.reduce(0) { $0 + $1.amount } + splitLines
             return Breakdown(
                 youPaid: abs(realLeg.amount),
                 yourShare: abs(realLeg.amount + owed),
@@ -90,7 +95,7 @@ enum GroupExpenseBreakdownLogic {
         // Sin pata en tu cuenta (pagó otra persona, o el gasto no llegó a tu cuenta): la pata de coste en Grupos ya vale
         // tu parte. «Pagaste» no se dice: aquí no se sabe quién pagó.
         if let cost = systemCost.first {
-            return Breakdown(youPaid: nil, yourShare: abs(cost.amount), owedToYou: nil)
+            return Breakdown(youPaid: nil, yourShare: abs(cost.amount + splitLines), owedToYou: nil)
         }
         return nil
     }
