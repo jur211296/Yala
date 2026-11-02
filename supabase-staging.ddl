@@ -418,6 +418,7 @@ CREATE TABLE tx_items (
   split_my_value NUMERIC(18,4),
   split_divisor NUMERIC(18,4),
   created_at TIMESTAMPTZ,
+  split_lines_raw TEXT,  -- g28_01 (2026-11-01): tu parte de un gasto de grupo en líneas (receta del puente, Grupos B · card 1); aplicada con el Worker v6 el 2026-11-01
   field_hlcs JSONB,
   hlc TEXT NOT NULL,
   deleted BOOLEAN NOT NULL DEFAULT false,

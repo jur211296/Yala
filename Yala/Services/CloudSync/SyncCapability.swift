@@ -39,7 +39,7 @@ import Foundation
 nonisolated enum SyncCapability {
 
     /// La versión del manifest que este build entiende. Súbela SOLO junto con la columna que la estrena.
-    static let clientManifestVersion = 5
+    static let clientManifestVersion = 6
 
     /// Versión del manifest que estrena `accounts.parent_account_id`.
     static let accountLinksSince = 2
@@ -59,6 +59,10 @@ nonisolated enum SyncCapability {
     /// Las dos columnas de la v5, juntas: se apuntan y se reemiten a la vez.
     static let creditCardCycleColumns: Set<String> = ["credit_card_statement_day", "credit_card_reminder_days_before"]
 
+    /// Versión del manifest que estrena `tx_items.split_lines_raw` (Grupos B, card 1: tu parte de un gasto de grupo en
+    /// líneas, la receta del puente).
+    static let splitLinesSince = 6
+
     static let backendManifestVersionKey = "cloudSync.backendManifestVersion"
     static let lastDeclaredLevelKey = "cloudSync.lastDeclaredLevel"
     static let upgradePendingKey = "cloudSync.capabilityUpgradePending"
@@ -66,6 +70,7 @@ nonisolated enum SyncCapability {
     static let suppressedCashFlowAmountChangesKey = "cloudSync.cashFlowAmountChangesSuppressed"
     static let suppressedFavoriteDestinationsKey = "cloudSync.favoriteDestinationsSuppressed"
     static let suppressedCreditCardCyclesKey = "cloudSync.creditCardCyclesSuppressed"
+    static let suppressedSplitLinesKey = "cloudSync.splitLinesSuppressed"
 
     /// Bajo tests NUNCA `.standard`: el host es la app del simulador y un valor de una suite se leería luego en
     /// una corrida a mano. Inyectable (los tests que lo fijan lo restauran en `defer`).
@@ -237,6 +242,29 @@ nonisolated enum SyncCapability {
             current[id] = remaining.isEmpty ? nil : remaining
         }
         storeSuppressedCreditCardCycles(current)
+    }
+
+    // MARK: - Recetas de líneas de tu parte que no subieron (v6)
+
+    /// Los movimientos (por `syncID`) cuya receta de líneas este teléfono cambió o subió mientras hablaba una versión que
+    /// no conoce la columna: la emisión la quitó y el servidor no la tiene. Una sola columna: el apunte es por fila.
+    static var suppressedSplitLines: Set<UUID> {
+        Set((defaults.stringArray(forKey: suppressedSplitLinesKey) ?? []).compactMap(UUID.init(uuidString:)))
+    }
+
+    /// Lo llama quien filtró `split_lines_raw` por la versión. Apuntar de más es inocuo: la reemisión sube el valor de
+    /// ese momento.
+    static func noteSuppressedSplitLines(_ syncID: UUID) {
+        var current = suppressedSplitLines
+        guard current.insert(syncID).inserted else { return }
+        defaults.set(current.map(\.uuidString).sorted(), forKey: suppressedSplitLinesKey)
+    }
+
+    /// Retira los que ya se encolaron. Solo esos: uno que se apuntó mientras tanto se queda para la siguiente.
+    static func clearSuppressedSplitLines(_ syncIDs: Set<UUID>) {
+        let remaining = suppressedSplitLines.subtracting(syncIDs)
+        if remaining.isEmpty { defaults.removeObject(forKey: suppressedSplitLinesKey) }
+        else { defaults.set(remaining.map(\.uuidString).sorted(), forKey: suppressedSplitLinesKey) }
     }
 
     private static func makeDefaults() -> UserDefaults {

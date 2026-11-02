@@ -16,6 +16,9 @@
  * Desde el 2026-10-27 (card nmtk) hay una v5: `accounts.credit_card_statement_day` y
  * `accounts.credit_card_reminder_days_before`, el día de corte de una tarjeta y los días de antelación de su aviso. `v4`
  * es todo menos esas dos, y `v5` el set completo.
+ *
+ * Desde el 2026-11-01 (Grupos B, card 1) hay una v6: `tx_items.split_lines_raw`, la receta de tu parte de un gasto de
+ * grupo en líneas. `v5` es todo menos esa columna, y `v6` el set completo.
  */
 import { describe, expect, it } from "vitest";
 import { canonRowC1, merkleColumns } from "../src/sync/canon";
@@ -64,8 +67,8 @@ const ACCOUNT_ROW = {
 };
 
 describe("capability-set por versión del manifest", () => {
-  it("el Worker anuncia la versión 5, y ninguna columna es posterior a ella", () => {
-    expect(MANIFEST_VERSION).toBe(5);
+  it("el Worker anuncia la versión 6, y ninguna columna es posterior a ella", () => {
+    expect(MANIFEST_VERSION).toBe(6);
     for (const spec of Object.values(manifest.entities)) {
       for (const c of Object.values(spec.columns) as Array<{ since?: number }>) {
         expect(c.since ?? 1).toBeLessThanOrEqual(MANIFEST_VERSION);
@@ -73,7 +76,7 @@ describe("capability-set por versión del manifest", () => {
     }
   });
 
-  it("las columnas posteriores: parent_account_id (2), amount_changes_raw (3), destination_account_ref (4) y las dos de la tarjeta (5)", () => {
+  it("las columnas posteriores: parent_account_id (2), amount_changes_raw (3), destination_account_ref (4) las dos de la tarjeta (5) y la receta de líneas (6)", () => {
     const later: string[] = [];
     for (const [entity, spec] of Object.entries(manifest.entities)) {
       for (const [col, c] of Object.entries(spec.columns) as Array<[string, { since?: number }]>) {
@@ -86,17 +89,20 @@ describe("capability-set por versión del manifest", () => {
       "accounts.parent_account_id@2",
       "cashflow_lines.amount_changes_raw@3",
       "favorite_payments.destination_account_ref@4",
+      "tx_items.split_lines_raw@6",
     ]);
   });
 
-  it("v1 = exactamente las columnas de antes en accounts; cashflow_lines y favoritos sin las suyas; el resto, enteras", () => {
+  it("v1 = exactamente las columnas de antes en accounts; cashflow_lines, favoritos y tx_items sin las suyas; el resto, enteras", () => {
     const cap = resolveCapabilitySet("v1");
     expect(cap.columns).toBeDefined();
     expect([...(cap.columns!.accounts ?? [])].sort()).toEqual([...ACCOUNTS_V1].sort());
     expect([...(cap.columns!.cashflow_lines ?? [])]).not.toContain("amount_changes_raw");
     expect([...(cap.columns!.favorite_payments ?? [])]).not.toContain("destination_account_ref");
+    expect([...(cap.columns!.tx_items ?? [])]).not.toContain("split_lines_raw");
+    const later = new Set(["accounts", "cashflow_lines", "favorite_payments", "tx_items"]);
     for (const [entity, spec] of Object.entries(manifest.entities)) {
-      if (entity === "accounts" || entity === "cashflow_lines" || entity === "favorite_payments") continue;
+      if (later.has(entity)) continue;
       expect([...(cap.columns![entity] ?? [])].sort()).toEqual(Object.keys(spec.columns).sort());
     }
   });
@@ -136,10 +142,49 @@ describe("capability-set por versión del manifest", () => {
     );
   });
 
-  it("v5, vN mayor, full y ausente = set completo", () => {
-    for (const raw of ["v5", "v99", "full", null]) {
+  it("v5 = todo menos la receta de líneas: las columnas de la tarjeta sí", () => {
+    const cap = resolveCapabilitySet("v5");
+    expect(cap.columns).toBeDefined();
+    expect([...(cap.columns!.accounts ?? [])]).toContain("credit_card_statement_day");
+    const tx = [...(cap.columns!.tx_items ?? [])];
+    expect(tx).not.toContain("split_lines_raw");
+    expect(tx.sort()).toEqual(
+      Object.keys(manifest.entities.tx_items.columns).filter((c) => c !== "split_lines_raw").sort(),
+    );
+  });
+
+  it("v6, vN mayor, full y ausente = set completo", () => {
+    for (const raw of ["v6", "v99", "full", null]) {
       expect(resolveCapabilitySet(raw)).toEqual({});
     }
+  });
+
+  it("el pull de v5 no baja la receta de líneas ni su unidad; el de v6 sí", () => {
+    const recipe = '{"v":1,"lines":[{"kind":"transfer","amount":"500"},{"kind":"expense","amount":"10"}]}';
+    const row = { sync_id: "5a1b2c3d-1111-4222-8333-944455556666", note: "Recarga Sip", split_lines_raw: recipe };
+    const stored = { note: HLC, split_lines_raw: HLC };
+    const v5 = projectRowToDelta("tx_items", row, stored, resolveCapabilitySet("v5"));
+    expect(v5.fields).not.toHaveProperty("split_lines_raw");
+    expect(v5.field_hlcs).not.toHaveProperty("split_lines_raw");
+    expect(v5.fields.note).toBe("Recarga Sip");
+    const v6 = projectRowToDelta("tx_items", row, stored, resolveCapabilitySet("v6"));
+    expect(v6.fields.split_lines_raw).toBe(recipe);
+    expect(v6.field_hlcs.split_lines_raw).toBe(HLC);
+  });
+
+  it("el Merkle de v5 no hashea la receta de líneas; el de v6 sí (como null en un movimiento sin receta)", () => {
+    const row = { sync_id: "5a1b2c3d-1111-4222-8333-944455556666", note: "Súper", split_lines_raw: null };
+    const v5 = merkleColumns("tx_items", resolveCapabilitySet("v5"));
+    expect(v5).not.toContain("split_lines_raw");
+    expect(canonRowC1("tx_items", row, v5)).not.toContain("split_lines_raw");
+    const v6 = merkleColumns("tx_items", resolveCapabilitySet("v6"));
+    expect(v6).toContain("split_lines_raw");
+    expect(canonRowC1("tx_items", row, v6)).toContain('"split_lines_raw":null');
+  });
+
+  it("un push con la receta de líneas tiene forma válida (columna safe, su propia unidad), también al vaciarla", () => {
+    expect(validateUpsertShape("tx_items", { split_lines_raw: '{"v":1}' }, { split_lines_raw: HLC })).toBeNull();
+    expect(validateUpsertShape("tx_items", { split_lines_raw: null }, { split_lines_raw: HLC })).toBeNull();
   });
 
   it("el pull de v4 no baja el día de corte ni los días del aviso; el de v5 sí", () => {

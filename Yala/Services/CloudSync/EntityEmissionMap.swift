@@ -212,6 +212,9 @@ enum EntityEmissionMap {
             ColumnEmitter("split_my_value", group: "tx_split") { m, _ in Emit.money(m.splitMyValue) },
             ColumnEmitter("split_divisor", group: "tx_split") { m, _ in Emit.money(m.splitDivisor) },
             ColumnEmitter("created_at") { m, _ in .timestamp(m.createdAt) },
+            // Grupos B (card 1): la receta de tu parte en líneas, tal cual se guarda. Columna posterior al lanzamiento:
+            // no viaja hasta que el backend anuncia la versión que la conoce.
+            ColumnEmitter("split_lines_raw", since: SyncCapability.splitLinesSince) { m, _ in Emit.text(m.splitLinesRaw) },
         ],
         columnKeyPaths: [
             \TransactionItem.date: ["date", "local_day"],
@@ -239,6 +242,7 @@ enum EntityEmissionMap {
             \TransactionItem.splitMyValue: ["split_my_value"],
             \TransactionItem.splitDivisor: ["split_divisor"],
             \TransactionItem.createdAt: ["created_at"],
+            \TransactionItem.splitLinesRaw: ["split_lines_raw"],
         ]
     )
 

@@ -59,7 +59,7 @@ describe("GET /config — shape y semántica fail-closed", () => {
         photoMaxEdge: 1536,
       },
       sync: {
-        manifestVersion: 5,
+        manifestVersion: 6,
         groupsManifestVersion: 2,
       },
     });

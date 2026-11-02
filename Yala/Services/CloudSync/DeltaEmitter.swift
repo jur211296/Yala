@@ -79,6 +79,11 @@ enum DeltaEmitter {
             if account.creditCardReminderDaysBefore != 0 { withValue.insert("credit_card_reminder_days_before") }
             SyncCapability.noteSuppressedCreditCardCycle(account.shortcutID, columns: withValue.intersection(changedColumns))
         }
+        // Y con la receta de líneas de tu parte de un gasto de grupo (v6, Grupos B · card 1).
+        if capabilityLevel < SyncCapability.splitLinesSince, changedColumns.contains("split_lines_raw"),
+           let item = model as? TransactionItem, item.splitLinesRaw != nil, let syncID = item.syncID {
+            SyncCapability.noteSuppressedSplitLines(syncID)
+        }
         // 1) Índices de grupo desde los emisores: group_key → [columnas], y columna → group_key.
         var columnsByGroup: [String: [String]] = [:]
         var groupByColumn: [String: String] = [:]
