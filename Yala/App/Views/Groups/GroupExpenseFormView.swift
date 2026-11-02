@@ -396,7 +396,8 @@ struct GroupExpenseFormView: View {
                     sizing: .mediumFirst
                 )
             }
-            .sheet(isPresented: $showSubcategorySelector) {
+            // Card 10u2: con dos homónimas, la que se queda es la que leerá el puente.
+            .sheet(isPresented: $showSubcategorySelector, onDismiss: { viewModel.alignSubcategoryWithBridge() }) {
                 SubcategorySelectorSheet(
                     selectedSubcategory: $viewModel.selectedSubcategory,
                     transactionType: .expense,
@@ -1126,7 +1127,9 @@ struct GroupExpenseFormView: View {
                 trace: bridgeTrace()
             ),
             splitExpenseID: savedExpenseID,
-            offersSplitLines: offersSplitLines(savedExpenseID)
+            offersSplitLines: offersSplitLines(savedExpenseID),
+            // Card 00xj: una venta no dice «¡Gasto agregado!».
+            isSale: viewModel.isSale
         )
     }
 

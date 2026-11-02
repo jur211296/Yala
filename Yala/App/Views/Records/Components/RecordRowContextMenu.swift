@@ -21,7 +21,8 @@ extension RecordContextActionLogic.Shape {
             // Las patas de una venta —por cobrar (card 8) y cobradas (card 10)— también las escribe entera el puente.
             isSplitLineLeg: GroupSplitLinesBridgeLogic.isDerivedMarker(record.splitLinesRaw)
                 || GroupCollectedLegLogic.isBridgeWrittenSaleLeg(
-                    adjustmentType: record.balanceAdjustmentType, splitLinesRaw: record.splitLinesRaw))
+                    adjustmentType: record.balanceAdjustmentType, splitLinesRaw: record.splitLinesRaw),
+            holdsSplitRecipe: record.splitExpenseID != nil && GroupSplitLinesEntryLogic.holdsRecipe(record.splitLinesRaw))
     }
 }
 

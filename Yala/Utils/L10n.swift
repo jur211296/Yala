@@ -2802,6 +2802,9 @@ enum L10n {
             enum Success {
                 static var titleCreated: String { ls("groups.expense.success.titleCreated", comment: "") }
                 static var titleUpdated: String { ls("groups.expense.success.titleUpdated", comment: "") }
+                /// Card 00xj: la pantalla de éxito de una venta de grupo.
+                static var titleSaleCreated: String { ls("groups.expense.success.titleSaleCreated", comment: "Éxito: se guardó una venta de grupo") }
+                static var titleSaleUpdated: String { ls("groups.expense.success.titleSaleUpdated", comment: "Éxito: se editó una venta de grupo") }
                 static var group: String { ls("groups.expense.success.group", comment: "") }
                 static var splitLabel: String { ls("groups.expense.success.splitLabel", comment: "") }
                 static var participants: String { ls("groups.expense.success.participants", comment: "") }
@@ -6738,6 +6741,10 @@ enum L10n {
         }
         static var cannotEditGroupRecords: String {
             ls("bulkEdit.cannotEditGroupRecords", comment: "Editar varios: la selección lleva registros de un grupo")
+        }
+        /// Card 6u5f: la categoría de la pata que lleva tu parte partida en líneas sale de ellas; se cambia en «Partir tu parte».
+        static var cannotEditSplitRecipeCategory: String {
+            ls("bulkEdit.cannotEditSplitRecipeCategory", comment: "Editar varios: un registro tiene tu parte partida en líneas")
         }
         static func editCount(_ count: Int) -> String {
             String(format: ls("bulkEdit.editCount", comment: ""), count)

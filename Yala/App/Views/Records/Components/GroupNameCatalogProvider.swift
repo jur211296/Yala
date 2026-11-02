@@ -16,19 +16,38 @@ private struct GroupNameCatalogKey: EnvironmentKey {
     static let defaultValue: [String: String] = [:]
 }
 
+private struct GroupZoneByTransferPairKey: EnvironmentKey {
+    static let defaultValue: [String: String] = [:]
+}
+
 extension EnvironmentValues {
     /// Nombre del grupo por `cloudKitZoneID`.
     var groupNameCatalog: [String: String] {
         get { self[GroupNameCatalogKey.self] }
         set { self[GroupNameCatalogKey.self] = newValue }
     }
+
+    /// Zona del grupo por `transferPairID` de las recargas de tu parte (card oibr): la entrada en tu cuenta no lleva
+    /// puntero de grupo (D4) y dice su grupo por su salida en «Grupos».
+    var groupZoneByTransferPair: [String: String] {
+        get { self[GroupZoneByTransferPairKey.self] }
+        set { self[GroupZoneByTransferPairKey.self] = newValue }
+    }
 }
 
 struct GroupNameCatalogProvider: ViewModifier {
     @Query private var groups: [SplitGroup]
+    /// Las salidas de las recargas de tu parte: patas con puntero de grupo que forman un par de transferencia.
+    @Query(filter: #Predicate<TransactionItem> { $0.splitExpenseID != nil && $0.transferPairID != nil })
+    private var bridgedPairLegs: [TransactionItem]
 
     func body(content: Content) -> some View {
-        content.environment(\.groupNameCatalog, Self.catalog(groups))
+        content
+            .environment(\.groupNameCatalog, Self.catalog(groups))
+            .environment(\.groupZoneByTransferPair, GroupSplitLineEntryGroupLogic.zoneByTransferPair(
+                bridgedPairLegs.compactMap { leg in
+                    leg.transferPairID.map { .init(transferPairID: $0, groupZoneID: leg.splitGroupZoneID) }
+                }))
     }
 
     /// Una zona repetida (no debería) se queda con el primer nombre no vacío.

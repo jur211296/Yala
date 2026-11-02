@@ -458,6 +458,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | goldens-de-staging-solo-pasan-a-trozos | done | tickets/done/goldens-de-staging-solo-pasan-a-trozos.md |
 | google-signup-with-reused-credential-leaves-no-sdk-session-to-revoke | backlog | tickets/backlog/google-signup-with-reused-credential-leaves-no-sdk-session-to-revoke.md |
 | gpt-4-1-nano-shuts-down-on-october-23 | done | tickets/done/gpt-4-1-nano-shuts-down-on-october-23.md |
+| group-badge-missing-outside-records | backlog | tickets/backlog/group-badge-missing-outside-records.md |
 | group-balance-service-shares-not-deduped | backlog | tickets/backlog/group-balance-service-shares-not-deduped.md |
 | group-detail-reads-the-group-after-leaving-it | qa | tickets/qa/group-detail-reads-the-group-after-leaving-it.md |
 | group-expense-detail-like-record-detail | backlog | tickets/backlog/group-expense-detail-like-record-detail.md |
@@ -469,8 +470,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | group-notif-credits-payer-not-editor | done | tickets/done/group-notif-credits-payer-not-editor.md |
 | group-presence-predicates-disagree-on-archived-and-hidden | backlog | tickets/backlog/group-presence-predicates-disagree-on-archived-and-hidden.md |
 | group-push-has-no-collapse-id-and-multi-device-duplicates | backlog | tickets/backlog/group-push-has-no-collapse-id-and-multi-device-duplicates.md |
-| group-split-line-entry-reads-as-a-loose-transfer-in-records | backlog | tickets/backlog/group-split-line-entry-reads-as-a-loose-transfer-in-records.md |
-| group-split-lines-recipe-lost-on-payer-or-currency-change | backlog | tickets/backlog/group-split-lines-recipe-lost-on-payer-or-currency-change.md |
+| group-share-to-zero-leaves-the-recharge-entry-orphaned | backlog | tickets/backlog/group-share-to-zero-leaves-the-recharge-entry-orphaned.md |
+| group-split-line-entry-reads-as-a-loose-transfer-in-records | done | tickets/done/group-split-line-entry-reads-as-a-loose-transfer-in-records.md |
+| group-split-lines-recipe-lost-on-payer-or-currency-change | done | tickets/done/group-split-lines-recipe-lost-on-payer-or-currency-change.md |
+| group-split-lines-recipe-lost-when-the-new-leg-is-not-born-in-the-pass | backlog | tickets/backlog/group-split-lines-recipe-lost-when-the-new-leg-is-not-born-in-the-pass.md |
 | group-split-sheet-shows-you-twice | done | tickets/done/group-split-sheet-shows-you-twice.md |
 | groups-account-association-in-storage-row | done | tickets/done/groups-account-association-in-storage-row.md |
 | groups-actions-do-not-retry-a-401-with-a-forced-token-refresh | backlog | tickets/backlog/groups-actions-do-not-retry-a-401-with-a-forced-token-refresh.md |
@@ -872,9 +875,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | record-selectors-open-at-medium-detent | done | tickets/done/record-selectors-open-at-medium-detent.md |
 | record-selectors-uitest-taps-the-tags-chip-off-screen | backlog | tickets/backlog/record-selectors-uitest-taps-the-tags-chip-off-screen.md |
 | records-delete-uitest-counts-only-visible-rows | done | tickets/done/records-delete-uitest-counts-only-visible-rows.md |
+| records-landscape-first-row-only-peeks | backlog | tickets/backlog/records-landscape-first-row-only-peeks.md |
 | records-lote8-uitest-expects-the-old-change-category-title | done | tickets/done/records-lote8-uitest-expects-the-old-change-category-title.md |
 | records-orphaned-by-earlier-account-deletions-stay-invisible | done | tickets/done/records-orphaned-by-earlier-account-deletions-stay-invisible.md |
-| records-page-keeps-the-fixed-floating-button | backlog | tickets/backlog/records-page-keeps-the-fixed-floating-button.md |
+| records-page-keeps-the-fixed-floating-button | done | tickets/done/records-page-keeps-the-fixed-floating-button.md |
 | records-standalone-amount-discrepancy | done | tickets/done/records-standalone-amount-discrepancy.md |
 | records-summary-approximate-mark-fails-only-alongside-group-suites | done | tickets/done/records-summary-approximate-mark-fails-only-alongside-group-suites.md |
 | records-summary-chips-hide-their-amount-from-voiceover | backlog | tickets/backlog/records-summary-chips-hide-their-amount-from-voiceover.md |

@@ -67,6 +67,12 @@ paths:
   valor de antes. Con un `@Observable` (Registros, `RecordsViewModel`) el mismo molde funciona. ⇒ **para presentar UN
   objeto, `.sheet(item:)`**; si hace falta encadenar otra presentación al cerrar, guarda el objeto en un estado aparte
   (`recordAwaitingEditor`) antes de vaciar el `item`. Pin: `UXAudit22Lote8CWiringTests`.
+- **Una hoja que reescribe el registro que tiene abierto un editor deja al editor con datos viejos, y su «Guardar» los
+  vuelve a escribir (review del 2026-11-02, card 6u5f).** «Tu parte» abierta desde el editor de la pata con receta pasa el
+  puente, que le cambia el importe (al de la línea ancla) y, con una recarga de ancla, la convierte en transferencia; el
+  editor seguía con el importe y la categoría que cargó al abrir, y guardar pisaba lo primero y borraba el par de lo
+  segundo. Refrescar un campo no basta: el editor escribe todos. ⇒ **si la hoja guardó, el editor se cierra al volver**
+  (`NewTransactionView.closeEditorIfSplitWasSaved`, con el aviso del `onSaved` de la hoja); si se canceló, sigue.
 - **Un `.task` (o un `onAppear`) colgado de un `Group` cuyo contenido es un `if` falso no corre nunca (medido el
   2026-10-21, iOS 27.0, lote decidido 14).** Los modificadores de un `Group` se reparten entre sus hijos; sin hijos no
   hay vista que aparezca. La tarjeta de avisos de grupo medía su estado en ese `.task` y no salía jamás. ⇒ **lo que mide

@@ -8577,3 +8577,6 @@
 
 /* Inbox hint: group expense changed and the user's split lines no longer add up. %@ = group name */
 "groups.bridge.draftReasonSplitLinesMismatch" = "「%@」中的支出已更改，你的明细不再等于你的份额。目前先合为一行：请选择它的类别。";
+"groups.expense.success.titleSaleCreated" = "已添加销售！";
+"groups.expense.success.titleSaleUpdated" = "已更新销售！";
+"bulkEdit.cannotEditSplitRecipeCategory" = "所选记录中有一条的你的部分已拆分成多行，其分类来自这些行。请在它的详情中通过“拆分你的部分”修改。";

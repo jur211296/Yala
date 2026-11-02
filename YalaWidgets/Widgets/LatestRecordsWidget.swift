@@ -294,7 +294,7 @@ struct TransactionRowView: View {
                 displayFormat: displayFormat,
                 font: WidgetDS.Typography.subheadlineEmphasized,
                 secondaryFont: WidgetDS.Typography.captionSmall,
-                tint: transaction.isIncome ? .color(WidgetColors.incomeText) : .primary,
+                tint: amountTint,
                 forceSign: true,
                 fractionDigits: 2
             )
@@ -314,7 +314,8 @@ struct TransactionRowView: View {
             ?? String(localized: "widget.ui.uncategorized", bundle: .main)
     }
 
-    /// Lo que el título no dijo (la subcategoría o la categoría) y el día.
+    /// Lo que el título no dijo (la subcategoría o la categoría), «Por cobrar» si es la pata de una venta de grupo que aún
+    /// no te pagan (card 00xj) y el día.
     private var subtitle: String {
         let context: String?
         if note != nil {
@@ -324,7 +325,16 @@ struct TransactionRowView: View {
         } else {
             context = nil
         }
-        return [context, dayText].compactMap { $0 }.joined(separator: " · ")
+        let receivable = isReceivable ? String(localized: "widget.ui.receivable", bundle: .main) : nil
+        return [context, receivable, dayText].compactMap { $0 }.joined(separator: " · ")
+    }
+
+    private var isReceivable: Bool { transaction.isReceivable == true }
+
+    /// Lo por cobrar va en gris, como en Registros: no es dinero que haya entrado todavía.
+    private var amountTint: WidgetAmountText.Tint {
+        if isReceivable { return .color(.secondary) }
+        return transaction.isIncome ? .color(WidgetColors.incomeText) : .primary
     }
 
     private var dayText: String {

@@ -155,9 +155,10 @@ final class UXAudit22Lote08UITests: XCTestCase {
         guard UIDevice.current.userInterfaceIdiom == .phone else {
             throw XCTSkip("El alto corto de este caso es el del iPhone girado.")
         }
-        let app = launch(deeplink: "records")
+        // Desde la card 97gc la página Registros no lleva flotantes: se mide en el Panel, donde salen al bajar.
+        let app = launch(deeplink: "panel")
+        let plus = app.revealPanelFAB()
         let chat = app.buttons["fab_chat"]
-        let plus = app.buttons["fab_new_transaction"]
         XCTAssertTrue(plus.waitForExistence(timeout: 15) && chat.waitForExistence(timeout: 5), "Faltan los botones.")
         XCTAssertLessThan(chat.frame.midY, plus.frame.midY - 20, "En vertical, Yala IA va encima de «+».")
 

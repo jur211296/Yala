@@ -40,6 +40,10 @@ struct WidgetTransaction: Codable {
     /// aquí. A la copia del widget —la que de verdad lee en producción— la vigila el source-scan
     /// de `ApproximateMarkSecondarySurfacesWiringTests`.
     let isExchangeRateProvisional: Bool?
+    /// Grupos B · card 00xj: la pata de una venta de grupo que aún no te pagan (`balanceAdjustmentType = "receivable"`). El
+    /// widget la pinta en gris y dice «Por cobrar», como la fila de Registros: en el color de un ingreso se leía como dinero
+    /// que ya entró. Opcional por lo mismo que `isExchangeRateProvisional`: los snapshots de hoy no traen la clave.
+    var isReceivable: Bool? = nil
 }
 
 /// Lightweight budget data for widgets
@@ -808,7 +812,8 @@ enum WidgetDataCache {
             subcategoryName: tx.subcategory?.name,
             isIncome: isIncomeTx(tx),
             amountInPreferredCurrency: resolved.value,
-            isExchangeRateProvisional: resolved.approximateMagnitude > 0
+            isExchangeRateProvisional: resolved.approximateMagnitude > 0,
+            isReceivable: GroupSaleBridgeLogic.isReceivable(tx.balanceAdjustmentType)
         )
     }
 

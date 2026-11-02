@@ -344,11 +344,21 @@ final class RecordsViewModel: Filterable {
         // Pre-filter: hide transactions from accounts excluded from statistics
         // Lo que espera su borrado con «Deshacer» no se ve (UX 2.2 · L15-13, `RecordPendingDeletion`).
         let pendingDeletion = RecordPendingDeletion.shared
+        // La entrada de una recarga de tu parte se oculta con su salida (card oibr): no lleva puntero de grupo (D4).
+        let bridgedTransferPairs: Set<String> = includeGroupTxs ? [] : Set(transactions.compactMap {
+            $0.splitExpenseID != nil ? $0.transferPairID : nil
+        })
         let eligibleTransactions = transactions.filter { tx in
             if pendingDeletion.hides(tx.persistentModelID, transferPairID: tx.transferPairID) { return false }
             guard let account = tx.account else { return true }
             if account.excludeFromStatistics { return false }
             if !includeGroupTxs && (tx.splitExpenseID != nil || tx.splitSettlementID != nil) {
+                return false
+            }
+            if GroupSplitLineEntryGroupLogic.hiddenWithItsExit(
+                hasGroupPointer: tx.splitExpenseID != nil || tx.splitSettlementID != nil,
+                transferPairID: tx.transferPairID, bridgedTransferPairs: bridgedTransferPairs,
+                includeGroups: includeGroupTxs) {
                 return false
             }
             return true
@@ -1194,6 +1204,11 @@ final class RecordsViewModel: Filterable {
     private func subcategoryBlocker(in transactions: [TransactionItem]) -> String? {
         if transactions.contains(where: { $0.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer }) {
             return L10n.BulkEdit.cannotEditTransferSubcategory
+        }
+        // La pata con tu parte partida en líneas: su categoría sale de ellas (card 6u5f). Antes que el motivo genérico,
+        // que mandaría al grupo, donde esto no se cambia.
+        if transactions.contains(where: { RecordContextActionLogic.Shape(record: $0).holdsSplitRecipe }) {
+            return L10n.BulkEdit.cannotEditSplitRecipeCategory
         }
         return groupBlocker(.subcategory, in: transactions)
     }

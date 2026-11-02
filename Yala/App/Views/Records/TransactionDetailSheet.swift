@@ -579,12 +579,17 @@ struct TransactionDetailSheet: View {
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
         } trailing: {
-            Text(transactionType.displayName)
+            // La pata de una venta de grupo dice «Ingreso • Por cobrar» (o «Cobrado»), como su fila (card 00xj).
+            Text(RecordRowPresentationLogic.categoryCaption(
+                transactionType.displayName, adjustmentType: transaction.balanceAdjustmentType,
+                splitLinesRaw: transaction.splitLinesRaw))
                 .font(DS.Typography.label)
                 .foregroundStyle(.primary)
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.FormRow.paddingV)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("transaction_detail_type")
     }
 
     private func detailRow(icon: String, label: String, value: String) -> some View {

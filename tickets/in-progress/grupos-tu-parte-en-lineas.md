@@ -227,3 +227,22 @@ Encargo `2026-11-02-grupos-b-cobros` (decisiones en su Paso 0).
 **Residuales:** una build con las cards 2-8 lee la marca de cobrada como pata de línea y la borra al repasar la venta (se
 corta con la versión mínima de 2.2). El pago cubre lo más antiguo también si es de otra persona del grupo: lo que cuenta
 es tu saldo, como acordó Jürgen.
+
+## Cabos sueltos de las cards 2-8 (2026-11-02)
+
+Encargo `2026-11-02-grupos-b-cabos-sueltos` (decisiones en su Paso 0).
+
+- **La categoría por nombre (10u2).** Una sola regla para formulario, puente y «Partir»: `GroupSubcategoryMatchLogic`
+  (exacto antes que «contiene»; entre homónimas, la de usuario, la de gasto y el menor `shortcutID`), detrás de
+  `GroupTransactionBridge.matchSubcategory`. El formulario se alinea con ella al cerrar el selector y al abrir una edición
+  (`GroupExpenseViewModel.alignSubcategoryWithBridge`). **Un sitio nuevo que case `subcategoryName` pasa por
+  `matchSubcategory`**: un fetch por nombre con `fetchLimit = 1` vuelve a dejar que formulario y puente elijan distinta.
+- **Lo por cobrar fuera de Registros (00xj).** Detalle («Ingreso • Por cobrar»), widget de inicio (gris y «Por cobrar»,
+  `WidgetTransaction.isReceivable` opcional en las dos copias), ficha de la cuenta y pantalla de éxito («¡Venta agregada!»).
+- **La receta sobrevive al cambio de pagador (sbvw).** `GroupSplitLinesTransplantLogic`: se trasplanta cuando la pata nueva
+  nace en la pasada. En el Caso B la divisa ya no cierra la puerta de la receta (la pata se rehace con ella dentro y el aviso
+  de «no cuadra» sale en la misma pasada). Residual: `group-split-lines-recipe-lost-when-the-new-leg-is-not-born-in-the-pass`.
+- **Editar la pata con receta (6u5f, D8).** En el editor, la categoría abre «Tu parte»; el lote y el menú no la cambian
+  (`RecordContextActionLogic.Shape.holdsSplitRecipe`). Las derivadas siguen bloqueadas.
+- **La entrada de una recarga (oibr).** Su grupo sale de su salida (`GroupSplitLineEntryGroupLogic`): cápsula del grupo en
+  Registros y, con los grupos ocultos, se oculta con ella.

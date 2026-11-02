@@ -42,6 +42,20 @@ enum GroupSplitLinesEntryLogic {
             && input.share > 0
     }
 
+    /// La pata guarda una receta de varias líneas (no la marca de una derivada ni una de versión posterior): su categoría
+    /// la pone el puente desde las líneas en cada pasada (card 6u5f).
+    static func holdsRecipe(_ raw: String?) -> Bool {
+        if case let .recipe(lines) = GroupSplitLinesRecipe.parse(raw) { return !lines.isEmpty }
+        return false
+    }
+
+    /// En el editor de un registro, la pastilla de categoría abre «Tu parte» en vez del selector (D8 del diseño, card 6u5f):
+    /// el registro es la pata que lleva la receta y el puente la aplica. Con el puente apagado o en solo-grupos la receta no
+    /// se aplica (D5) y la categoría se cambia como siempre.
+    static func editorCategoryOpensSplit(holdsRecipe: Bool, isTheHolder: Bool, offersSplit: Bool) -> Bool {
+        holdsRecipe && isTheHolder && offersSplit
+    }
+
     /// Con qué líneas abre la tarjeta: las de la receta guardada si las hay (el aviso de «no cuadra» o una receta que se
     /// edita), y si no una sola línea de gasto por tu parte entera con la categoría que ya tenga (card 4, decisión 5).
     static func initialLines(

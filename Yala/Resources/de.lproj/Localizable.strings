@@ -8565,3 +8565,6 @@
 
 /* Inbox hint: group expense changed and the user's split lines no longer add up. %@ = group name */
 "groups.bridge.draftReasonSplitLinesMismatch" = "Die Ausgabe in „%@“ hat sich geändert und deine Zeilen ergeben nicht mehr deinen Anteil. Vorerst ist es eine Zeile: Wähle ihre Kategorie.";
+"groups.expense.success.titleSaleCreated" = "Verkauf hinzugefügt!";
+"groups.expense.success.titleSaleUpdated" = "Verkauf aktualisiert!";
+"bulkEdit.cannotEditSplitRecipeCategory" = "Bei einem der ausgewählten Einträge ist dein Anteil in Zeilen aufgeteilt, und seine Kategorie kommt aus ihnen. Ändere sie in seinen Details über „Deinen Anteil aufteilen“.";

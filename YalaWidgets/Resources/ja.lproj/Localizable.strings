@@ -213,3 +213,4 @@
 "widget.empty.openYalaGroups" = "Yalaを開いてグループを表示";
 "widget.groups.archivedOwedLine" = "+ アーカイブ済みのグループで貸している%@";
 "widget.groups.archivedOweLine" = "+ アーカイブ済みのグループで借りている%@";
+"widget.ui.receivable" = "未回収";

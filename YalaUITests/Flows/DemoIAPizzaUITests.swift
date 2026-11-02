@@ -55,7 +55,7 @@ final class DemoIAPizzaUITests: XCTestCase {
         XCTAssertTrue(app.waitForUITestReady(timeout: 180), "uitest_ready ausente — bootstrap/seed no completó.")
 
         // 1 · Registros, con la entrada de Yala IA a la vista.
-        let chatEntry = app.buttons["fab_chat"]
+        let chatEntry = app.buttons["stats_action_ai"]  // Registros sin flotante (card 97gc): la fila de arriba
         XCTAssertTrue(chatEntry.waitForExistence(timeout: 20), "No aparece la entrada de Yala IA en Registros.")
         XCTAssertTrue(
             app.buttons.matching(identifier: "record_row").firstMatch.waitForExistence(timeout: 20),

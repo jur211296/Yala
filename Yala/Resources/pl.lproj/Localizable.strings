@@ -8577,3 +8577,6 @@
 
 /* Inbox hint: group expense changed and the user's split lines no longer add up. %@ = group name */
 "groups.bridge.draftReasonSplitLinesMismatch" = "Wydatek w „%@” się zmienił i twoje pozycje nie sumują się już do twojej części. Na razie to jedna pozycja: wybierz jej kategorię.";
+"groups.expense.success.titleSaleCreated" = "Sprzedaż dodana!";
+"groups.expense.success.titleSaleUpdated" = "Sprzedaż zaktualizowana!";
+"bulkEdit.cannotEditSplitRecipeCategory" = "W jednym z zaznaczonych wpisów twoja część jest podzielona na pozycje, a jego kategoria wynika z nich. Zmień ją przez „Podziel swoją część” w jego szczegółach.";

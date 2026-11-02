@@ -543,7 +543,10 @@ struct AccountDetailSheet: View {
                 currencyCode: currencyCode,
                 font: DS.Typography.subheadlineEmphasized,
                 secondaryFont: DS.Typography.caption,
-                tint: .color(entry.amount > 0 ? Color.incomeAmount : theme.primaryText)
+                // Lo por cobrar de una venta de grupo, en gris: no es dinero que haya entrado (card 00xj).
+                tint: .color(GroupSaleBridgeLogic.isReceivable(entry.adjustmentType)
+                    ? theme.secondaryText
+                    : entry.amount > 0 ? Color.incomeAmount : theme.primaryText)
             )
         }
         .padding(.vertical, DS.Spacing.xs)
@@ -560,7 +563,8 @@ struct AccountDetailSheet: View {
     private func entryCaption(_ entry: AccountDetailCalculator.Entry) -> String {
         let date = Self.rowDateFormatter.string(from: entry.date)
         guard let category = entry.categoryName, !category.isEmpty else { return date }
-        return "\(date) · \(category)"
+        // «Ventas • Por cobrar», como la fila de Registros (card 00xj).
+        return "\(date) · \(RecordRowPresentationLogic.categoryCaption(category, adjustmentType: entry.adjustmentType))"
     }
 
     // MARK: - Datos

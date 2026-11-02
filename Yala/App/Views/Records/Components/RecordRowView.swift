@@ -27,6 +27,7 @@ struct RecordRowView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.tagCatalog) private var tagCatalog
     @Environment(\.groupNameCatalog) private var groupNameCatalog
+    @Environment(\.groupZoneByTransferPair) private var groupZoneByTransferPair
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
@@ -152,13 +153,16 @@ struct RecordRowView: View {
     // MARK: - Accessibility
 
     private var accessibilityDescription: String {
-        Self.accessibilityDescription(for: record, appPreferences: appPreferences)
+        Self.accessibilityDescription(for: record, appPreferences: appPreferences, groupName: groupNameForRealLeg)
     }
 
     /// La etiqueta de VoiceOver de la fila. El importe va SIEMPRE en la divisa del registro, como el texto visible: con la
     /// preferida, un gasto de 9.064.482 ₫ se leía «S/ 9.064.482,03» (card cvlu). Estática para fijarla con un registro de
     /// verdad en `RecordRowAccessibilityCurrencyTests`.
-    static func accessibilityDescription(for record: TransactionItem, appPreferences: AppPreferences) -> String {
+    /// `groupName`: la cápsula del grupo que la fila pinta junto al importe (pata de tu cuenta, entrada de una recarga).
+    static func accessibilityDescription(
+        for record: TransactionItem, appPreferences: AppPreferences, groupName: String? = nil
+    ) -> String {
         let isTransfer = record.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer
         // Un ajuste de saldo no es gasto ni ingreso: sin tipo y con el signo en el importe.
         let isBalanceAdjustment = record.balanceAdjustmentType != nil && !isTransfer
@@ -181,7 +185,8 @@ struct RecordRowView: View {
                 RecordRowPresentationLogic.categoryCaption(
                     $0, adjustmentType: record.balanceAdjustmentType, splitLinesRaw: record.splitLinesRaw)
             },
-            account: record.account?.name
+            // La cápsula del grupo en la pata de tu cuenta (y en la entrada de una recarga, card oibr) también se lee.
+            account: [record.account?.name, groupName].compactMap { $0 }.joined(separator: " · ")
         )
     }
 
@@ -276,10 +281,13 @@ struct RecordRowView: View {
 
     /// Nombre del grupo del que viene el registro, si se conoce (`GroupNameCatalogProvider`).
     private var groupName: String? {
-        guard record.splitExpenseID != nil || record.splitSettlementID != nil,
-              let zone = record.splitGroupZoneID
-        else { return nil }
-        return groupNameCatalog[zone]
+        let hasPointer = record.splitExpenseID != nil || record.splitSettlementID != nil
+        if hasPointer, let zone = record.splitGroupZoneID { return groupNameCatalog[zone] }
+        // La entrada de una recarga de tu parte (card oibr): su grupo es el de su salida.
+        return GroupSplitLineEntryGroupLogic.entryZone(
+            hasGroupPointer: hasPointer, transferPairID: record.transferPairID,
+            zoneByTransferPair: groupZoneByTransferPair
+        ).flatMap { groupNameCatalog[$0] }
     }
 
     /// La cuenta que se nombra en la fila. La pata que vive en la cuenta de sistema de Grupos («Grupos PEN») nombra

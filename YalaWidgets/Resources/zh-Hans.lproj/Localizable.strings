@@ -213,3 +213,4 @@
 "widget.empty.openYalaGroups" = "打开 Yala 查看你的群组";
 "widget.groups.archivedOwedLine" = "+ 已归档群组中别人欠你的%@";
 "widget.groups.archivedOweLine" = "+ 你在已归档群组中欠的%@";
+"widget.ui.receivable" = "待收款";

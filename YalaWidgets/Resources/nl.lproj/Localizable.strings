@@ -213,3 +213,4 @@
 "widget.empty.openYalaGroups" = "Open Yala om je groepen te zien";
 "widget.groups.archivedOwedLine" = "+ %@ die je nog krijgt in gearchiveerde groepen";
 "widget.groups.archivedOweLine" = "+ %@ die je nog moet betalen in gearchiveerde groepen";
+"widget.ui.receivable" = "Te ontvangen";
