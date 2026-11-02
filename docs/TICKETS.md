@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1156)
+## Index (1160)
 
 | id | status | path |
 |---|---|---|
@@ -964,6 +964,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reverse-verify-network-bucket-hides-a-definitive-server-no | done | tickets/done/reverse-verify-network-bucket-hides-a-definitive-server-no.md |
 | reverse-zombie-sweep-reads-an-expired-session-as-network | backlog | tickets/backlog/reverse-zombie-sweep-reads-an-expired-session-as-network.md |
 | revert-card-copy-says-datos-regresan-a-quien-nunca-estuvo | done | tickets/done/revert-card-copy-says-datos-regresan-a-quien-nunca-estuvo.md |
+| rojo-heroBuckets-thisWeek-trailing-window | done | tickets/done/rojo-heroBuckets-thisWeek-trailing-window.md |
 | rojo-heroBuckets-thisWeek-trailing-window | done | tickets/done/rojo-heroBuckets-thisWeek-trailing-window.md |
 | rojo-xcuitest-runner-muere-tras-el-primer-caso | done | tickets/done/rojo-xcuitest-runner-muere-tras-el-primer-caso.md |
 | row-deleted-during-the-relief-wait-comes-back-after-the-relief | backlog | tickets/backlog/row-deleted-during-the-relief-wait-comes-back-after-the-relief.md |
