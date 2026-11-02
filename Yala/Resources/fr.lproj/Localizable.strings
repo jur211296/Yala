@@ -4427,6 +4427,26 @@
 /* Banner cuando lo asignado supera el total */
 "groups.expense.overAllocated %@" = "Dépassé de %@";
 
+/* Grupos B · tarjeta «Tu parte» y hoja de una línea */
+"groups.splitLines.title %@" = "Ta part · %@";
+"groups.splitLines.addLine" = "Ajouter une ligne";
+"groups.splitLines.balanced" = "Équilibré";
+"groups.splitLines.missing %@" = "Il manque %@";
+"groups.splitLines.over %@" = "%@ en trop";
+"groups.splitLines.kindTransfer" = "Recharge";
+"groups.splitLines.transferTo %@" = "Recharge sur %@";
+"groups.splitLines.transferSubtitle" = "Ni dépense ni revenu";
+"groups.splitLines.chooseCategory" = "Choisis une catégorie";
+"groups.splitLines.chooseAccount" = "Choisis un compte";
+"groups.splitLines.destinationUnavailable" = "Ce compte ne peut plus recevoir la recharge";
+"groups.splitLines.sheetTitle" = "Ligne";
+"groups.splitLines.from %@" = "depuis %@";
+"groups.splitLines.transferExplanation %@" = "Il passe sur ton compte %@. Il ne compte ni comme dépense ni comme revenu.";
+"groups.splitLines.transferExplanationNoAccount" = "Il passe sur l'un de tes comptes. Il ne compte ni comme dépense ni comme revenu.";
+"groups.splitLines.saveLine" = "Enregistrer la ligne";
+"groups.splitLines.deleteLine" = "Supprimer la ligne";
+"groups.splitLines.kindPicker" = "Type de ligne";
+
 /* Título sheet división por porcentaje */
 "groups.expense.splitSheet.percentageTitle" = "Par pourcentage";
 

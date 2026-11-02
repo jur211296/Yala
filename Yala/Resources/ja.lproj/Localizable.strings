@@ -4438,6 +4438,26 @@
 /* Banner cuando lo asignado supera el total */
 "groups.expense.overAllocated %@" = "%@ 超過";
 
+/* Grupos B · tarjeta «Tu parte» y hoja de una línea */
+"groups.splitLines.title %@" = "あなたの負担分 · %@";
+"groups.splitLines.addLine" = "行を追加";
+"groups.splitLines.balanced" = "合計が一致";
+"groups.splitLines.missing %@" = "残り %@";
+"groups.splitLines.over %@" = "%@ 超過";
+"groups.splitLines.kindTransfer" = "チャージ";
+"groups.splitLines.transferTo %@" = "%@ へのチャージ";
+"groups.splitLines.transferSubtitle" = "支出でも収入でもありません";
+"groups.splitLines.chooseCategory" = "カテゴリを選択";
+"groups.splitLines.chooseAccount" = "口座を選択";
+"groups.splitLines.destinationUnavailable" = "この口座ではチャージを受け取れません";
+"groups.splitLines.sheetTitle" = "行";
+"groups.splitLines.from %@" = "%@ から";
+"groups.splitLines.transferExplanation %@" = "%@ に移ります。支出にも収入にも数えません。";
+"groups.splitLines.transferExplanationNoAccount" = "あなたの口座に移ります。支出にも収入にも数えません。";
+"groups.splitLines.saveLine" = "行を保存";
+"groups.splitLines.deleteLine" = "行を削除";
+"groups.splitLines.kindPicker" = "行の種類";
+
 /* Título sheet división por porcentaje */
 "groups.expense.splitSheet.percentageTitle" = "割合（％）で";
 

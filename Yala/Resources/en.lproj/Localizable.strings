@@ -4432,6 +4432,26 @@
 /* Banner cuando lo asignado supera el total */
 "groups.expense.overAllocated %@" = "Over by %@";
 
+/* Grupos B · tarjeta «Tu parte» y hoja de una línea */
+"groups.splitLines.title %@" = "Your portion · %@";
+"groups.splitLines.addLine" = "Add line";
+"groups.splitLines.balanced" = "Balanced";
+"groups.splitLines.missing %@" = "%@ left";
+"groups.splitLines.over %@" = "%@ over";
+"groups.splitLines.kindTransfer" = "Top-up";
+"groups.splitLines.transferTo %@" = "Top-up to %@";
+"groups.splitLines.transferSubtitle" = "Neither expense nor income";
+"groups.splitLines.chooseCategory" = "Choose category";
+"groups.splitLines.chooseAccount" = "Choose account";
+"groups.splitLines.destinationUnavailable" = "This account can't take the top-up anymore";
+"groups.splitLines.sheetTitle" = "Line";
+"groups.splitLines.from %@" = "from %@";
+"groups.splitLines.transferExplanation %@" = "It moves to your %@ account. It doesn't count as an expense or as income.";
+"groups.splitLines.transferExplanationNoAccount" = "It moves to one of your accounts. It doesn't count as an expense or as income.";
+"groups.splitLines.saveLine" = "Save line";
+"groups.splitLines.deleteLine" = "Delete line";
+"groups.splitLines.kindPicker" = "Line type";
+
 /* Título sheet división por porcentaje */
 "groups.expense.splitSheet.percentageTitle" = "By percentage";
 
