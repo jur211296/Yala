@@ -72,6 +72,22 @@ struct TabImplicitAnimationsWiringTests {
          ".dsAnimation(DS.Animation.selection, value: selection, reduceMotion: reduceMotion)"),
         ("Yala/App/Views/Chat/ChatSheetView.swift",
          ".dsAnimation(DS.Animation.appear, value: viewModel.messages.count, reduceMotion: reduceMotion)"),
+        // Cards C1 y C7 (transiciones de contenido, 2026-11-01): las cargas se funden. El esqueleto, en
+        // `ContentTransitionsWiringTests`; las filas que entran o se van, con `animatesRowEdits`.
+        ("Yala/App/Views/Groups/GroupsContainerView.swift",
+         ".animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.hasLoadedOnce)"),
+        ("Yala/App/Views/Statistics/InsightsTabView.swift",
+         ".animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.insightData == nil)"),
+        ("Yala/App/Views/Statistics/InsightsTabView.swift",
+         ".animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.isLoadingAI)"),
+        ("Yala/App/Views/Statistics/CategoriesTabView.swift",
+         ".animation(reduceMotion ? nil : DS.Animation.appear, value: insightsViewModel.isLoadingAI)"),
+        ("Yala/App/Views/Statistics/TrendsTabView.swift",
+         ".animation(reduceMotion ? nil : DS.Animation.appear, value: trendsAI.phase == .loading)"),
+        ("Yala/App/Views/Statistics/RecordsTabView.swift",
+         ".animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.hasAppliedFilters)"),
+        ("Yala/App/Views/Chat/ChatGreetingBubble.swift",
+         ".animation(reduceMotion ? nil : DS.Animation.appear, value: isPreparing)"),
     ]
 
     @Test(arguments: animated.indices)

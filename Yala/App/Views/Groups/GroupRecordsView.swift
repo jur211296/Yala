@@ -61,6 +61,7 @@ struct GroupRecordsView: View {
                 action: onInvite
             )
         } else {
+            let days = groupedByDate
             ScrollView {
                 // Separación de filas y cabecera de día de Registros (lienzo «Una sola Yala»): antes, el doble de aire.
                 LazyVStack(spacing: DS.Spacing.sm, pinnedViews: .sectionHeaders) {
@@ -74,14 +75,18 @@ struct GroupRecordsView: View {
                             onTap: onTapBalance
                         )
                         .padding(.bottom, DS.Spacing.sm)
+                        // Va arriba y no se mueve cuando una fila se va: sin animación, su frase no se funde con la
+                        // anterior (dos cifras una encima de otra; regla de `swiftui-ds.md`).
+                        .transaction { $0.animation = nil }
                     }
                     // Presupuesto del grupo (G14). Deliberadamente COMPACTA: la primera fila de gastos
                     // tiene que seguir siendo alcanzable sin scroll (`GroupsSmokeUITests` la tapea así).
                     if let budgetProgress {
                         budgetCard(budgetProgress)
                             .padding(.bottom, DS.Spacing.sm)
+                            .transaction { $0.animation = nil }
                     }
-                    ForEach(groupedByDate, id: \.key) { day, dayItems in
+                    ForEach(days, id: \.key) { day, dayItems in
                         Section {
                             ForEach(dayItems, id: \.id) { item in
                                 switch item {
@@ -135,6 +140,8 @@ struct GroupRecordsView: View {
                     }
                 }
                 .padding(.bottom, DS.Spacing.safeBottom)
+                // Card C3: borrar un gasto, quitar un saldo inicial o llegar uno nuevo se anima; la primera carga no.
+                .animatesRowEdits(ids: days.flatMap { $0.value.map(\.id) })
             }
             .scrollViewGlassEdges()
             .refreshable { await onRefresh?() }

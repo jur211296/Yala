@@ -523,7 +523,8 @@ struct ScheduledPaymentDetailView: View {
             noticeIdentifier: "scheduled_skip_notice",
             undoIdentifier: "scheduled_skip_undo"
         ) {
-            viewModel.unskipOccurrence(payment: payment, date: date)
+            // Deshacer, solo si la fecha volvió de verdad (card C3; mapa de `DS.Haptic`).
+            if viewModel.unskipOccurrence(payment: payment, date: date) { DS.Haptic.success() }
         }
     }
 

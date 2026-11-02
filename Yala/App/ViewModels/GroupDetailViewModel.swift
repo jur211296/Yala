@@ -426,6 +426,8 @@ final class GroupDetailViewModel {
     func deleteExpense(_ expense: SplitExpense) {
         do {
             try GroupExpenseService.shared.deleteExpense(expense, in: group)
+            // El borrado, al confirmarlo y solo si salió bien (mapa de `DS.Haptic`, card C3).
+            DS.Haptic.warning()
             loadData()
         } catch {
             #if DEBUG
@@ -450,6 +452,7 @@ final class GroupDetailViewModel {
     func removeOpeningBalance(_ expense: SplitExpense) {
         do {
             try GroupExpenseService.shared.removeOpeningBalance(expense, in: group)
+            DS.Haptic.warning()
             loadData()
         } catch {
             #if DEBUG

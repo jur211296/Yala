@@ -77,7 +77,8 @@ enum DraftDiscardUndoNotice {
         onSecondary: (@MainActor () -> Void)? = nil,
         onUndo: (@MainActor () -> Void)?
     ) {
-        hide()
+        // Uno nuevo sustituye al de antes en el acto: fundirlos dejaría dos textos uno encima de otro.
+        hide(animated: false)
         guard let scene = targetScene() else { return }
 
         let window = NoticePassthroughWindow(windowScene: scene)
@@ -130,13 +131,45 @@ enum DraftDiscardUndoNotice {
     }
 
     static func hide() {
+        hide(animated: true)
+    }
+
+    private static func hide(animated: Bool) {
         hideTask?.cancel()
         hideTask = nil
-        window?.isHidden = true
+        if let window {
+            if animated {
+                retire(window)
+            } else {
+                window.isHidden = true
+            }
+        }
         window = nil
         activeUndo = nil
         UndoNoticeState.shared.isActive = false
         currentNoticeIdentifier = nil
+    }
+
+    /// La salida del aviso (card C3): se funde, y desde el primer instante ni se lee ni recoge toques, así que para la
+    /// app y para un XCUITest ya no está. Con Reducir movimiento, se va en seco. La ventana se esconde al terminar; la
+    /// retiene el propio cierre de la animación.
+    private static func retire(_ leaving: NoticePassthroughWindow) {
+        leaving.hitArea.frame = .zero
+        leaving.accessibilityElementsHidden = true
+        guard !UIAccessibility.isReduceMotionEnabled, let view = leaving.rootViewController?.view else {
+            leaving.isHidden = true
+            return
+        }
+        view.accessibilityElementsHidden = true
+        UIView.animate(
+            withDuration: DS.Animation.normal,
+            delay: 0,
+            options: [.curveEaseInOut, .beginFromCurrentState, .allowUserInteraction]
+        ) {
+            view.alpha = 0
+        } completion: { _ in
+            leaving.isHidden = true
+        }
     }
 
     /// Retira el aviso solo si el que se ve es ese: el chat lo hace al cerrarse (UX 2.2 · L14-7), y en el iPad, con el
@@ -182,6 +215,12 @@ struct DraftDiscardUndoNoticeLayer: View {
     let hitArea: NoticeHitArea
     let toast: DraftDiscardUndoToast
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// La entrada (card C3): el aviso se funde en su sitio. Va en su propia ventana, fuera de la `TabView`, así que aquí
+    /// `withAnimation` sí anima. Sin desplazamiento a propósito: moverlo cambiaría su marco mientras entra, y
+    /// `UndoNoticePlacementUITests` mide ese marco en cuanto aparece. Con Reducir movimiento sale ya pintado.
+    @State private var hasEntered = false
+
     var body: some View {
         VStack(spacing: 0) {
             Spacer(minLength: 0)
@@ -189,10 +228,14 @@ struct DraftDiscardUndoNoticeLayer: View {
                 .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame in
                     hitArea.frame = frame
                 }
+                .opacity(hasEntered || reduceMotion ? 1 : 0)
                 .padding(.bottom, DraftDiscardUndoNotice.bottomClearance)
         }
         // El teclado no lo sube: hasta ahora el aviso no se movía con él.
         .ignoresSafeArea(.keyboard)
+        .onAppear {
+            dsWithAnimation(reduceMotion, DS.Animation.appear) { hasEntered = true }
+        }
     }
 }
 

@@ -295,19 +295,36 @@ extension View {
 
 // MARK: - Skeleton Placeholder
 
-/// Modifier para mostrar placeholder skeleton mientras carga
+/// Modifier para mostrar placeholder skeleton mientras carga.
+///
+/// Al terminar de cargar, el esqueleto se funde encima de los datos (card C1, 2026-11-01). Siguen siendo dos ramas, así
+/// que los datos se montan de nuevo al cargar, como siempre. Lo que cambia es la salida del esqueleto: se queda encima
+/// (`zIndex`) y, desde el primer fotograma del fundido, ni se lee ni se toca (`AnyTransition.loadingPlaceholder`). Los
+/// datos entran debajo ya opacos (`.identity`): mientras dura el fundido hay una sola copia de cada botón en el árbol
+/// de accesibilidad, que es lo que tumbó el primer intento (card pjum). Con Reducir movimiento, en seco.
 struct YalaSkeletonModifier: ViewModifier {
     let isLoading: Bool
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     func body(content: Content) -> some View {
-        if isLoading {
-            content
-                .redacted(reason: .placeholder)
-                .shimmer()
-        } else {
-            content
+        ZStack {
+            if isLoading {
+                content
+                    .redacted(reason: .placeholder)
+                    .shimmer()
+                    .transition(.loadingPlaceholder)
+                    .zIndex(1)
+            } else {
+                content
+                    .transition(.identity)
+            }
         }
+        .animation(reduceMotion ? nil : Self.fade, value: isLoading)
     }
+
+    /// `DS.Animation.appear`; un XCUITest la alarga para mirar a mitad del fundido (`UITestHooks.skeletonFadeSeconds`).
+    private static let fade: Animation = UITestHooks.skeletonFadeSeconds.map { .easeInOut(duration: $0) } ?? DS.Animation.appear
 }
 
 extension View {

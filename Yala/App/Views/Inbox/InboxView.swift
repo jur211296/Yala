@@ -942,6 +942,8 @@ struct InboxView: View {
             draftService.setContext(context)
             do {
                 try draftService.returnToPending(draft)
+                // Deshacer, solo si de verdad se deshizo (card C3; mapa de `DS.Haptic`).
+                DS.Haptic.success()
             } catch {
                 #if DEBUG
                 print("InboxView: Error undoing discard: \(error)")

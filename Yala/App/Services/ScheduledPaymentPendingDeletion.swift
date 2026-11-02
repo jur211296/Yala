@@ -97,6 +97,8 @@ final class ScheduledPaymentPendingDeletion {
             undoesDeletion: true
         ) { [weak self] in
             self?.undoAll()
+            // Deshacer el borrado no falla: lo que esperaba vuelve (card C3; mapa de `DS.Haptic`).
+            DS.Haptic.success()
         }
     }
 

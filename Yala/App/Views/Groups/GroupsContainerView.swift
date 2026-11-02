@@ -109,6 +109,10 @@ struct GroupsContainerView: View {
                     // state hasta la primera carga con éxito (el bootstrap dispara loadData al terminar).
                     ProgressView()
                         .accessibilityIdentifier("groups_loading_spinner")
+                        // Card C7: al cargar, el spinner se funde encima y lo que llega entra debajo ya opaco
+                        // (`.identity`): el título grande vive en el scroll de la lista, y fundirla lo fundiría con ella.
+                        .transition(.loadingPlaceholder)
+                        .zIndex(1)
                 } else if viewModel.activeGroups.isEmpty && viewModel.archivedGroups.isEmpty {
                     // L12-2: la tarjeta con los pasos es más alta que el estado vacío de antes; con el texto grande o en
                     // un SE no cabe sin desplazarse. Cuando cabe, queda centrada y sin scroll.
@@ -119,6 +123,7 @@ struct GroupsContainerView: View {
                         }
                         .scrollBounceBehavior(.basedOnSize)
                     }
+                    .transition(.identity)
                 } else if viewModel.activeGroups.isEmpty {
                     // Only archived groups exist
                     VStack(spacing: DS.Spacing.xl) {
@@ -130,6 +135,7 @@ struct GroupsContainerView: View {
                         archivedGroupsSection
                             .padding(.horizontal, DS.Spacing.lg)
                     }
+                    .transition(.identity)
                 } else {
                     ScrollView {
                         VStack(spacing: DS.Spacing.lg) {
@@ -229,6 +235,7 @@ struct GroupsContainerView: View {
                         // otro rechazo del attest o, con un 200, borrar la racha entera.
                         refreshAttestTerminalNotice()
                     }
+                    .transition(.identity)
                 }
 
                 // FAB — new group. Solo con grupos activos y cuando el scroll se lleva los botones de arriba (card kzhe).
@@ -241,6 +248,8 @@ struct GroupsContainerView: View {
             // El flotante entra y sale fundiéndose al desplazar. Implícita: el `withAnimation` de quien lo enciende no
             // anima dentro de una pestaña (card 8atf).
             .animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.normal), value: showFloatingActions)
+            // La primera carga: del spinner a la lista (o al vacío) fundiéndose, no de golpe (card C7).
+            .animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.hasLoadedOnce)
             .safeAreaInset(edge: .top) { joinIntentBanner }
             .safeAreaInset(edge: .top) { groupsSignOutReentryBanner }
             // El último `safeAreaInset` queda el MÁS ARRIBA, y ahí va: de los tres avisos del tab, este es el

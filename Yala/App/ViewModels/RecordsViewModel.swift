@@ -214,6 +214,10 @@ final class RecordsViewModel: Filterable {
     /// Grouped records by date (pre-computed for performance)
     var groupedRecords: [(date: Date, records: [TransactionItem])] = []
 
+    /// `true` desde el primer `applyFilters`. Antes, una lista vacía no quiere decir «sin registros» sino «aún no se ha
+    /// filtrado», y la pantalla no enseña el vacío (card C7: «Sin registros» salía un instante antes de cargar).
+    private(set) var hasAppliedFilters = false
+
     /// Proyección "mi parte" (neto) de los gastos de grupo bridgeados, construida en `applyFilters`
     /// desde el set AMPLIO. La consumen el chip de resumen y el calendario (DailySpendingCalculator).
     private(set) var statsAdjustment: GroupBridgeStatsAdjustment = .none
@@ -404,6 +408,7 @@ final class RecordsViewModel: Filterable {
 
         // Update cached summary (calculated once per filter change, not per render)
         calculateSummary(currencyCode: currencyCode, converter: converter)
+        if !hasAppliedFilters { hasAppliedFilters = true }
     }
 
     /// Calculate summary from grouped records (called once when data changes)

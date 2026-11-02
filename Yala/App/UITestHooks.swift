@@ -1325,6 +1325,20 @@ final class UITestHooks {
         #endif
     }
 
+    /// `-uitest-skeleton-fade-seconds <N>`: alarga el fundido del esqueleto a los datos (card C1). A 0,25 s un XCUITest
+    /// no llega a mirar el árbol de accesibilidad mientras dura; alargado, puede contar las copias de un botón a mitad del
+    /// fundido. Solo cambia CUÁNTO dura, no qué decide nadie.
+    nonisolated static var skeletonFadeSeconds: Double? {
+        #if DEBUG
+        guard isActive, let raw = parseValue(after: "-uitest-skeleton-fade-seconds", from: ProcessInfo.processInfo.arguments),
+              let seconds = Double(raw), seconds > 0
+        else { return nil }
+        return seconds
+        #else
+        return nil
+        #endif
+    }
+
     nonisolated static var deeplinkTarget: String? {
         #if DEBUG
         guard isActive else { return nil }

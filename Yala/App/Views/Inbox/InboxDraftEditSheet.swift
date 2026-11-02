@@ -1099,6 +1099,8 @@ struct InboxDraftEditSheet: View {
             do {
                 // La Bandeja abierta lo vuelve a enseñar sola: su lista lee el estado de cada borrador.
                 try draftService.returnToPending(draft)
+                // Deshacer, solo si de verdad se deshizo (card C3; mapa de `DS.Haptic`).
+                DS.Haptic.success()
             } catch {
                 #if DEBUG
                 print("InboxDraftEditSheet: Error undoing discard: \(error)")
