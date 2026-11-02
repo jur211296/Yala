@@ -1785,6 +1785,8 @@ enum L10n {
         static var noRecords: String { ls("records.noRecords", comment: "") }
         static var noRecordsThisDay: String { ls("records.noRecordsThisDay", comment: "Calendario: día seleccionado sin registros") }
         static var detailPlaceholder: String { ls("records.detailPlaceholder", comment: "iPad/ventana ancha: columna de detalle vacía en Registros") }
+        /// «Por cobrar»: la pata de una venta de grupo que aún no te pagan (Grupos B · card 8).
+        static var receivable: String { ls("records.receivable", comment: "Fila de Registros: lo que te deben por una venta en un grupo") }
         static var viewModeListA11y: String { ls("records.viewModeListA11y", comment: "A11y: botón vista lista") }
         static var viewModeCalendarA11y: String { ls("records.viewModeCalendarA11y", comment: "A11y: botón vista calendario") }
         static func deleteConfirmTitle(_ count: Int) -> String {
@@ -2832,6 +2834,14 @@ enum L10n {
             /// «Salen S/ 240.00 de tu cuenta»: lo mismo cuando nadie te debe nada.
             static func outflowLineNoDebt(_ paidOut: String) -> String {
                 String(format: ls("groups.expense.outflowLineNoDebt", comment: ""), paidOut)
+            }
+            /// «Ana te debe S/ 120.00. Cuenta como ingreso cuando te pague.»: una venta con un solo deudor (Grupos B · card 7).
+            static func saleLineOne(_ debtor: String, _ owed: String) -> String {
+                String(format: ls("groups.expense.saleLineOne", comment: ""), debtor, owed)
+            }
+            /// «Te deben S/ 120.00. Cuenta como ingreso cuando te paguen.»: una venta con varios deudores.
+            static func saleLineMany(_ owed: String) -> String {
+                String(format: ls("groups.expense.saleLineMany", comment: ""), owed)
             }
         }
 

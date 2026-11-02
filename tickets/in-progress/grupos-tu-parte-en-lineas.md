@@ -157,3 +157,28 @@ Encargo `2026-11-01-grupos-b-puente-y-estadisticas` (decisiones en su Paso 0). L
 **Residuales aceptados:** un cambio de pagador (A ↔ B) o de divisa del gasto pierde la receta con la pata que la llevaba;
 editar la categoría de la pata conservada con receta se pisa en la pasada siguiente (la card 6 lo lleva a «Partir»); con
 «Incluir grupos» apagado en Registros se ve la entrada de la recarga sin su salida (no cambia cifras).
+
+## Cards 7 y 8 hechas (2026-11-02): categorías de ingreso y la venta por cobrar
+
+Encargo `2026-11-02-grupos-b-ventas-por-cobrar` (decisiones en su Paso 0).
+
+- **Formulario (card 7).** El selector de categoría del gasto de grupo enseña «Gasto | Ingreso» (solo desde ese formulario)
+  y abre en el tipo de lo elegido. Pagando tú con una de ingreso es una venta (`GroupExpenseViewModel.isSale`): no se pide
+  cuenta, no se pasa al guardar, no sale el «¿Lo registramos?» del puente apagado y la frase de abajo dice «Ana te debe
+  S/ X. Cuenta como ingreso cuando te pague.» (o «Te deben…» con varios), también al editar. Con una de gasto, el
+  formulario es el de antes píxel a píxel (salvo el reloj).
+- **Puente (card 8).** `GroupTransactionBridge.bridgeSale`: sin pata real (también se va la del «Sí, registrar» con el
+  puente apagado, y su borrador pendiente), sin préstamo ni líneas, una sola pata en «Grupos» por `total − tu parte` con
+  la subcategoría de ingreso y `balanceAdjustmentType = "receivable"`. Se reutiliza entre pasadas. En el Caso B una
+  categoría de ingreso no clasifica tu parte (`GroupSaleBridgeLogic.classifiesShare`). El editor, el lote y el menú la
+  tratan como pata derivada (`GroupSaleBridgeLogic.isReceivable`).
+- **Registros.** La fila dice «Ventas • Por cobrar • Grupos» en gris.
+- **Consumidores medidos:** 52 `== nil` y 17 `!= nil` de `balanceAdjustmentType`; solo la reversión de la pata conservada
+  leía `!= nil` como «recarga» (`GroupSaleBridgeLogic.revertsKeptLeg`).
+
+**Para las cards 9-11:** lo cobrado se calcula sobre las patas `receivable` (el pago aún no las toca: hoy Ana paga, Yape
++120 y Grupos −120, y la venta sigue por cobrar sin contar como ingreso). El conector `mcp/` las lista como
+`ajuste_de_saldo`. **Residuales con card:** la categoría viaja por NOMBRE y puede casar con una de gasto homónima
+(`10u2`); el detalle, el widget de inicio, la ficha de la cuenta y la pantalla de éxito aún no dicen «por cobrar»
+(`00xj`). **Versión mínima:** un aparato con 2.1 —también el de OTRO miembro— casa la categoría de ingreso por nombre y
+cuenta su parte como ingreso negativo; se corta con la subida de versión mínima al publicar 2.2.

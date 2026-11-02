@@ -32,6 +32,11 @@ struct SubcategorySelectorSheet: View {
 
     @Binding var selectedSubcategory: Subcategory?
     let transactionType: TransactionType
+    /// Grupos B · card 7: el gasto de grupo ofrece también las categorías de ingreso (una venta), con «Gasto | Ingreso»
+    /// arriba. Abre en el tipo de lo que ya está elegido. Solo lo pide ese formulario: los demás selectores no cambian.
+    var offersIncome: Bool = false
+    @State private var shownType: TransactionType = .expense
+    @Environment(\.yalaTheme) private var theme
 
     /// Cómo abre la hoja (`SelectorSheetSizing`): `.mediumFirst` desde un registro nuevo, `.large` en el resto.
     var sizing: SelectorSheetSizing = .large
@@ -59,6 +64,9 @@ struct SubcategorySelectorSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: DS.Spacing.xl) {
+                    if offersIncome {
+                        typePill
+                    }
                     if viewModel.isEmpty {
                         YalaEmptyState(
                             icon: "tag.fill",
@@ -157,8 +165,23 @@ struct SubcategorySelectorSheet: View {
         }
         .selectorSheetSizing(sizing, selectedDetent: $selectedDetent)
         .onAppear {
-            viewModel.setContext(modelContext, transactionType: transactionType)
+            shownType = SubcategorySelectorTypeLogic.initialType(
+                requested: transactionType, offersIncome: offersIncome,
+                selectedIsIncome: selectedSubcategory.map { $0.safeCategory.isIncome })
+            viewModel.setContext(modelContext, transactionType: shownType)
         }
+        .onChange(of: shownType) { _, newType in viewModel.transactionType = newType }
+    }
+
+    /// «Gasto | Ingreso» (card 7). Los dos segmentos heredan el id del contenedor, en ese orden.
+    private var typePill: some View {
+        GenericSegmentedPill(
+            options: [TransactionType.expense, .income],
+            selection: $shownType,
+            labelProvider: { $0.displayName },
+            selectedFillColorProvider: { _ in theme.accent }
+        )
+        .accessibilityIdentifier("subcategory_selector_type")
     }
 
     private func isSelected(_ subcategory: Subcategory) -> Bool {

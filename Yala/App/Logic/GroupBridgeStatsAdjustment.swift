@@ -195,7 +195,8 @@ struct GroupBridgeStatsAdjustment {
             // Grupos B: una pata de TRANSFERENCIA (la recarga de una línea de tu parte, o su entrada si alguna vez
             // llevara el puntero) no es pata real, ni de préstamo, ni de costo: no es gasto ni ingreso, y las
             // superficies ya la excluyen por `balanceAdjustmentType`. Contarla como «la real» netearía el préstamo
-            // contra la recarga en vez de contra el gasto.
+            // contra la recarga en vez de contra el gasto. La pata «por cobrar» de una venta (card 8) también lleva tipo
+            // y queda fuera igual: no hay pata real que netear y no es ingreso hasta el pago.
             let nonTransfer = legs.filter { $0.balanceAdjustmentType == nil }
             let real = nonTransfer.filter { $0.account?.isSystemAccount == false }
             let systemLegs = nonTransfer.filter { $0.account?.isSystemAccount == true }

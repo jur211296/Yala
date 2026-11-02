@@ -23,6 +23,13 @@ enum RecordRowPresentationLogic {
         return isIncome ? .income : .expense
     }
 
+    /// La categoría de la fila. La pata de una venta de grupo que aún no te pagan añade «Por cobrar» (Grupos B · card 8):
+    /// sin la palabra, un `+120` gris en «Grupos» no se explica. El gris ya lo da su tipo.
+    static func categoryCaption(_ name: String, adjustmentType: String?) -> String {
+        guard adjustmentType == TransactionItem.adjustmentTypeReceivable else { return name }
+        return "\(name) • \(L10n.Records.receivable)"
+    }
+
     /// La píldora de necesidad (Esencial, Prioritaria, Opcional) solo en los gastos. En un ingreso, un saldo inicial,
     /// una transferencia o la parte que te deben en un grupo la necesidad no aplica, y la píldora salía con «Sin
     /// clasificación», que parecía un error.

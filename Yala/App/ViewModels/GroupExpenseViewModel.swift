@@ -169,6 +169,15 @@ final class GroupExpenseViewModel {
         return paidByMemberID == myID && !paidByMemberID.isEmpty
     }
 
+    /// Grupos B · card 7: pagaste tú con una categoría de ingreso. Es una venta: no salió dinero de ninguna cuenta (no se
+    /// pide) y lo que te deben queda por cobrar (`GroupSaleBridgeLogic`, la misma regla que aplica el puente).
+    var isSale: Bool {
+        GroupSaleBridgeLogic.isSale(
+            isCaseA: isCaseA,
+            subcategoryIsIncome: selectedSubcategory.map { $0.safeCategory.isIncome },
+            subcategoryIsSystem: selectedSubcategory?.isAnySystem == true)
+    }
+
     /// Una sesión solo-grupos no tiene cuentas reales — bridge fallback a M5 puro.
     /// Default: lee `SessionState.shared`. Tests inyectan via `isGroupsOnlyOverride`.
     var isGroupsOnlySession: Bool {
@@ -193,7 +202,7 @@ final class GroupExpenseViewModel {
     /// el bridge effective está ON. Si OFF, el form NO pide cuenta (alert post-save F2c
     /// ofrece opt-in para crear draft Inbox).
     var isAccountRequired: Bool {
-        isCaseA && !isGroupsOnlySession && effectiveBridgeEnabled
+        isCaseA && !isSale && !isGroupsOnlySession && effectiveBridgeEnabled
     }
 
     /// Cuenta seleccionada compatible con la moneda actual del gasto.
@@ -308,7 +317,8 @@ final class GroupExpenseViewModel {
 
         do {
             // M6: pasar selectedAccount solo si Caso A (en Caso B, la cuenta del user no aplica).
-            let accountToPass: Account? = isCaseA ? selectedAccount : nil
+            // Una venta no sale de ninguna cuenta (card 7): aunque quede elegida de antes, no se pasa.
+            let accountToPass: Account? = isCaseA && !isSale ? selectedAccount : nil
             if let existing = editingExpense {
                 try GroupExpenseService.shared.updateExpense(
                     existing,

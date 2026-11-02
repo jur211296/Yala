@@ -61,11 +61,14 @@ final class TransactionItem {
     var scheduledPaymentID: String?
 
     // MARK: - Balance Adjustment Type
-    /// Type of balance adjustment transaction: "initial_balance" | "adjustment" | "transfer" | nil (normal)
+    /// Type of balance adjustment transaction: "initial_balance" | "adjustment" | "transfer" | "receivable" | nil (normal)
     var balanceAdjustmentType: String?
 
     // MARK: - Balance Adjustment Type Constants
     static let adjustmentTypeTransfer = "transfer"
+    /// Lo que te deben por una venta en un grupo (Grupos B · card 8): suma al saldo de «Grupos» y ninguna superficie lo
+    /// cuenta como ingreso. Lo escribe solo el puente (`GroupSaleBridgeLogic`).
+    static let adjustmentTypeReceivable = GroupSaleBridgeLogic.receivableType
 
     // MARK: - Transfer Pair
     /// Shared UUID between both sides of a transfer (outflow + inflow)
