@@ -24,10 +24,12 @@ enum RecordRowPresentationLogic {
     }
 
     /// La categoría de la fila. La pata de una venta de grupo que aún no te pagan añade «Por cobrar» (Grupos B · card 8):
-    /// sin la palabra, un `+120` gris en «Grupos» no se explica. El gris ya lo da su tipo.
-    static func categoryCaption(_ name: String, adjustmentType: String?) -> String {
-        guard adjustmentType == TransactionItem.adjustmentTypeReceivable else { return name }
-        return "\(name) • \(L10n.Records.receivable)"
+    /// sin la palabra, un `+120` gris en «Grupos» no se explica. El gris ya lo da su tipo. Lo ya cobrado añade «Cobrado»
+    /// (card 10): un ingreso en «Grupos» que no es una devolución.
+    static func categoryCaption(_ name: String, adjustmentType: String?, splitLinesRaw: String? = nil) -> String {
+        if adjustmentType == TransactionItem.adjustmentTypeReceivable { return "\(name) • \(L10n.Records.receivable)" }
+        if GroupCollectedLegLogic.isCollected(splitLinesRaw) { return "\(name) • \(L10n.Records.collected)" }
+        return name
     }
 
     /// La píldora de necesidad (Esencial, Prioritaria, Opcional) solo en los gastos. En un ingreso, un saldo inicial,

@@ -31,6 +31,11 @@ final class GroupTransactionBridge {
     /// bridge borre el draft activo. NO setear directamente — usar el closure helper.
     private(set) var skipDraftCleanup: Bool = false
 
+    /// Grupos B · card 10: dentro de un lote (`batchingReceivables`), las zonas cuyo repaso de lo cobrado espera al final
+    /// del lote. `nil` fuera de un lote: el repaso es inmediato. Solo lo tocan `batchingReceivables` y
+    /// `reconcileReceivablesOrDefer`.
+    @ObservationIgnored var receivableBatchZones: Set<String>?
+
     /// Ejecuta `body` con `skipDraftCleanup=true` y resetea garantizado vía `defer`,
     /// incluso si `body` lanza. Único path autorizado para mutar el flag.
     /// `@discardableResult` porque el `T` puede venir de una función que ya lo es (`bridgeExpense` devuelve
@@ -61,6 +66,9 @@ final class GroupTransactionBridge {
         self.modelContext = nil
     }
     #endif
+
+    /// El contexto del puente para el repaso de lo cobrado al volver a primer plano (`reconcileAllReceivables`).
+    var contextForReceivables: ModelContext? { modelContext }
 
     private func requireContext() throws -> ModelContext {
         guard let context = modelContext else {
@@ -246,7 +254,7 @@ final class GroupTransactionBridge {
         // reflejar su +Z en la cuenta virtual.
         if expense.isOpeningBalance {
             try bridgeOpeningBalance(expense, in: group, currentMemberID: currentMemberID, context: context)
-            try saveIfNeeded(shouldSave: shouldSave, context: context)
+            try finishExpensePass(expense, shouldSave: shouldSave, context: context)
             return true
         }
 
@@ -271,6 +279,12 @@ final class GroupTransactionBridge {
         guard isCaseA || myShareRecord != nil else {
             let anySharesArrived = try context.fetchCount(FetchDescriptor<SplitShare>(
                 predicate: #Predicate { $0.expenseID == expenseID })) > 0
+            // Grupos B · card 10: ya no estás en este gasto (te quitaron, o cambió el pagador de tu venta): tu saldo cambió y
+            // lo cobrado de tus ventas se repasa, también las patas de una venta que dejó de ser tuya.
+            if anySharesArrived {
+                try reconcileReceivablesOrDefer(zoneID: expense.groupZoneID, context: context)
+                try saveIfNeeded(shouldSave: shouldSave && context.hasChanges, context: context)
+            }
             return anySharesArrived
         }
 
@@ -291,7 +305,11 @@ final class GroupTransactionBridge {
         let allExistingTxs = try context.fetch(FetchDescriptor<TransactionItem>(
             predicate: #Predicate { $0.splitExpenseID == expenseIDStr }
         ))
-        let existingVirtualTxs = allExistingTxs.filter { $0.account?.isSystemAccount == true }
+        // Grupos B · card 10: las patas cobradas de una venta las escribe `reconcileReceivables` y no compiten en la partición.
+        let collectedLegs = allExistingTxs.filter { GroupCollectedLegLogic.isCollected($0.splitLinesRaw) }
+        let existingVirtualTxs = allExistingTxs.filter {
+            $0.account?.isSystemAccount == true && !GroupCollectedLegLogic.isCollected($0.splitLinesRaw)
+        }
         // Una pata derivada de una línea (Grupos B) nunca es «la real», aunque la lleve una cuenta real.
         var existingRealTx = allExistingTxs.first {
             $0.account?.isSystemAccount == false && !GroupSplitLinesBridgeLogic.isDerivedMarker($0.splitLinesRaw)
@@ -366,6 +384,8 @@ final class GroupTransactionBridge {
         let isSale = GroupSaleBridgeLogic.isSale(
             isCaseA: isCaseA, subcategoryIsIncome: matchedIsIncome,
             subcategoryIsSystem: matchedSubcat?.isAnySystem == true)
+        // Un gasto que no es una venta no tiene nada cobrado (dejó de ser venta, o cambió el pagador).
+        if !isSale { for leg in collectedLegs where !leg.isDeleted { context.delete(leg) } }
         let realSubcat: Subcategory? = (matchedSubcat?.isAnySystem == true)
             || !GroupSaleBridgeLogic.classifiesShare(isSale: isSale, subcategoryIsIncome: matchedIsIncome)
             ? nil : matchedSubcat
@@ -439,7 +459,7 @@ final class GroupTransactionBridge {
                     expense: expense, holder: preservedClassifiable, myShareAmount: mySharedAmount,
                     groupName: group.name, existingPendingDrafts: existingPendingDrafts, context: context)
             }
-            try saveIfNeeded(shouldSave: shouldSave, context: context)
+            try finishExpensePass(expense, shouldSave: shouldSave, context: context)
             Self.logger.info("caseB saved expense=\(expenseIDStr, privacy: .public) shouldSave=\(shouldSave, privacy: .public)")
             return true
         }
@@ -460,7 +480,7 @@ final class GroupTransactionBridge {
                 virtualAccount: virtualAccount,
                 context: context
             )
-            try saveIfNeeded(shouldSave: shouldSave, context: context)
+            try finishExpensePass(expense, shouldSave: shouldSave, context: context)
             return true
         }
 
@@ -482,7 +502,7 @@ final class GroupTransactionBridge {
             try reconcileDerivedLegs(
                 expense: expense, plan: nil, existing: derivedLegs, holder: nil,
                 virtualAccount: virtualAccount, destinations: [:], context: context)
-            try saveIfNeeded(shouldSave: shouldSave, context: context)
+            try finishExpensePass(expense, shouldSave: shouldSave, context: context)
             return true
         }
 
@@ -510,7 +530,7 @@ final class GroupTransactionBridge {
             try reconcileDerivedLegs(
                 expense: expense, plan: nil, existing: derivedLegs, holder: nil,
                 virtualAccount: virtualAccount, destinations: [:], context: context)
-            try saveIfNeeded(shouldSave: shouldSave, context: context)
+            try finishExpensePass(expense, shouldSave: shouldSave, context: context)
             return true
         }
 
@@ -649,7 +669,7 @@ final class GroupTransactionBridge {
             createCaseASubcategoryDraft(expense: expense, account: existingRealTx?.account, context: context)
         }
 
-        try saveIfNeeded(shouldSave: shouldSave, context: context)
+        try finishExpensePass(expense, shouldSave: shouldSave, context: context)
         return true
     }
 
@@ -1160,6 +1180,13 @@ final class GroupTransactionBridge {
         }
     }
 
+    /// El cierre de cada camino de `bridgeExpense`: lo por cobrar y lo cobrado de las ventas del grupo dependen de este gasto
+    /// (Grupos B · card 10), y van en el mismo `save()`.
+    private func finishExpensePass(_ expense: SplitExpense, shouldSave: Bool, context: ModelContext) throws {
+        try reconcileReceivablesOrDefer(zoneID: expense.groupZoneID, context: context)
+        try saveIfNeeded(shouldSave: shouldSave, context: context)
+    }
+
     private func saveIfNeeded(shouldSave: Bool, context: ModelContext) throws {
         guard shouldSave else { return }
         try context.save()
@@ -1189,6 +1216,8 @@ final class GroupTransactionBridge {
         Self.logger.info("bridgeRemoteExpenses count=\(expenses.count, privacy: .public)")
 
         var bridged: Set<UUID> = []
+        // Grupos B · card 10: lo cobrado se repasa una vez por grupo al final del lote, no en cada gasto.
+        try batchingReceivables(context: context) {
         for expense in expenses {
             // Find the group for this expense
             let zoneID = expense.groupZoneID
@@ -1208,6 +1237,7 @@ final class GroupTransactionBridge {
                 print("GroupTransactionBridge: Failed to bridge expense \(expense.id): \(error)")
                 #endif
             }
+        }
         }
 
         // El `save()` va ANTES del return a propósito: si lanza, el llamador no recibe ningún ID y la
@@ -1286,7 +1316,12 @@ final class GroupTransactionBridge {
         // Determinar caso C/D. Skip si user no es from ni to (settlement entre otros).
         let isCaseC = settlement.fromMemberID == currentMemberID
         let isCaseD = settlement.toMemberID == currentMemberID
-        guard isCaseC || isCaseD else { return true }
+        guard isCaseC || isCaseD else {
+            // Grupos B · card 10: una liquidación que dejó de incluirte (la editaron) ya no cubre tus ventas.
+            try reconcileReceivablesOrDefer(zoneID: zoneID, context: context)
+            try saveIfNeeded(shouldSave: shouldSave && context.hasChanges, context: context)
+            return true
+        }
 
         // Idempotency: delete previous TX/Drafts.
         let settlementIDStr = settlement.id.uuidString
@@ -1462,6 +1497,9 @@ final class GroupTransactionBridge {
                 groupName: group.name,
                 context: context)
         }
+
+        // Grupos B · card 10: un pago que te hacen (o que haces) mueve tu saldo, y con él lo cobrado de tus ventas.
+        try reconcileReceivablesOrDefer(zoneID: zoneID, context: context)
 
         if shouldSave {
             try context.save()
@@ -1661,6 +1699,7 @@ final class GroupTransactionBridge {
         let settlements = try context.fetch(FetchDescriptor<SplitSettlement>()).filter { idSet.contains($0.id) }
 
         var bridged: Set<UUID> = []
+        try batchingReceivables(context: context) {
         for settlement in settlements {
             let zoneID = settlement.groupZoneID
             let groupDescriptor = FetchDescriptor<SplitGroup>(
@@ -1678,6 +1717,7 @@ final class GroupTransactionBridge {
                 #endif
             }
         }
+        }
 
         try context.save()
         return bridged
@@ -1690,12 +1730,17 @@ final class GroupTransactionBridge {
         let txs = try context.fetch(FetchDescriptor<TransactionItem>(
             predicate: #Predicate { $0.splitSettlementID == settlementID }
         ))
+        let zones = Self.zones(of: txs)
         for tx in txs { context.delete(tx) }
 
         let drafts = try context.fetch(FetchDescriptor<InboxDraft>(
             predicate: #Predicate { $0.splitSettlementID == settlementID }
         ))
         for draft in drafts { context.delete(draft) }
+
+        // Grupos B · card 10: sin ese pago, lo que cubría de tus ventas vuelve a estar por cobrar.
+        let excluded = UUID(uuidString: settlementID).map { Set([$0]) } ?? []
+        for zone in zones { try reconcileReceivables(zoneID: zone, excludingSettlements: excluded, context: context) }
 
         try context.save()
         SessionState.shared.incrementDataVersion()
@@ -1711,6 +1756,7 @@ final class GroupTransactionBridge {
         let txs = try context.fetch(FetchDescriptor<TransactionItem>(
             predicate: #Predicate { $0.splitExpenseID == expenseID }
         ))
+        let zones = Self.zones(of: txs)
         // Grupos B: la entrada de una recarga no lleva `splitExpenseID` (D4); se borra con su pata.
         for tx in txs { try deleteLegWithEntries(tx, context: context) }
 
@@ -1718,6 +1764,10 @@ final class GroupTransactionBridge {
             predicate: #Predicate { $0.splitExpenseID == expenseID }
         ))
         for draft in drafts { context.delete(draft) }
+
+        // Grupos B · card 10: sin ese gasto, tu saldo en el grupo cambia, y con él lo cobrado de tus ventas.
+        let excluded = UUID(uuidString: expenseID).map { Set([$0]) } ?? []
+        for zone in zones { try reconcileReceivables(zoneID: zone, excludingExpenses: excluded, context: context) }
 
         try context.save()
         SessionState.shared.incrementDataVersion()
@@ -1803,6 +1853,7 @@ final class GroupTransactionBridge {
 
         var deletedTxs = 0
         var deletedDrafts = 0
+        var touchedZones: Set<String> = []
 
         // Un fetch por ID con igualdad EXACTA sobre el opcional (el mismo `#Predicate` concreto que ya
         // usan `unbridgeExpense`/`unbridgeSettlement`, y el único patrón probado en device sobre estos
@@ -1817,6 +1868,7 @@ final class GroupTransactionBridge {
                 for entry in try Self.derivedEntries(of: tx, context: context) where !entry.isDeleted {
                     context.delete(entry); deletedTxs += 1
                 }
+                touchedZones.formUnion(Self.zones(of: [tx]))
                 context.delete(tx); deletedTxs += 1
             }
             for draft in try context.fetch(FetchDescriptor<InboxDraft>(
@@ -1831,6 +1883,7 @@ final class GroupTransactionBridge {
             for tx in try context.fetch(FetchDescriptor<TransactionItem>(
                 predicate: #Predicate { $0.splitSettlementID == key }
             )) {
+                touchedZones.formUnion(Self.zones(of: [tx]))
                 context.delete(tx); deletedTxs += 1
             }
             for draft in try context.fetch(FetchDescriptor<InboxDraft>(
@@ -1841,6 +1894,12 @@ final class GroupTransactionBridge {
         }
 
         guard deletedTxs > 0 || deletedDrafts > 0 else { return (0, 0) }
+
+        // Grupos B · card 10: lo borrado movía tu saldo en esos grupos; lo cobrado de tus ventas se rehace sin ello.
+        for zone in touchedZones {
+            try reconcileReceivables(
+                zoneID: zone, excludingExpenses: expenseIDs, excludingSettlements: settlementIDs, context: context)
+        }
 
         SaveBreadcrumb.willSave("GroupTransactionBridge.unbridgeDeletedRemotely")
         try context.save()

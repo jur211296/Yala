@@ -1107,6 +1107,13 @@ final class UITestHooks {
     /// llega de otro dispositivo.
     nonisolated static var seedPendingSettlement: Bool { hasArg("-uitest-seed-pending-settlement") }
 
+    /// `-uitest-seed-group-sale`: con el perfil `grupos`, un grupo más, «Ventas con Ana», con una venta tuya a Ana de S/ 50
+    /// ya puenteada (por cobrar) y el pago de Ana de S/ 50 por confirmar, que la cobra entera (Grupos B · card 10).
+    nonisolated static var seedGroupSale: Bool { hasArg("-uitest-seed-group-sale") }
+    /// La descripción de esa venta y el nombre de su grupo.
+    nonisolated static let seededGroupSaleName = "Venta de bici"
+    nonisolated static let seededSaleGroupName = "Ventas con Ana"
+
     /// `-uitest-scheduled-due-today`: añade al seed UN pago planificado «una sola vez» que vence
     /// HOY (`DevSeedScheduledPayments.dueTodayName`). Los 8 del fixture base se reparten por el
     /// mes y `min(day, 28)` capa los días 29-31, así que NINGUNO vence hoy de forma garantizada.

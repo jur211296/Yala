@@ -457,19 +457,20 @@ struct InsightsCalculator {
         // doble-contaba AMBAS hermanas del Caso A (real -total + lent +lent) y `totalPersonal`
         // colapsaba a 0. Con el filtro + monto ajustado, `totalShared` = Σ mi parte.
         // Grupos B: una recarga de tu parte es una transferencia con `splitExpenseID` (su salida en «Grupos»): no es gasto
-        // compartido, como no lo es para `cashFlow.totalExpense`, que la resta después.
-        let sharedTxns = periodTxns.filter {
+        // compartido, como no lo es para `cashFlow.totalExpense`, que la resta después. Lo COBRADO de una venta (card 10)
+        // tampoco: es un ingreso con el puntero de la venta, y sumado aquí con `abs` restaba del gasto personal.
+        let isSharedExpense: (TransactionItem) -> Bool = {
             $0.splitExpenseID != nil && $0.balanceAdjustmentType == nil && !adjustment.isSuppressed($0)
+                && !GroupCollectedLegLogic.isCollected($0.splitLinesRaw)
         }
+        let sharedTxns = periodTxns.filter(isSharedExpense)
         if !sharedTxns.isEmpty {
             // Precompute converted amounts once per transaction (avoid repeated currency conversion)
             let sharedAmounts = sharedTxns.map { abs(txAmount($0, currencyCode: currencyCode, adjustment: adjustment, converter: converter)) }
             let totalShared = sharedAmounts.reduce(0.0, +)
             let totalPersonal = cashFlow.totalExpense - totalShared
 
-            let prevSharedTxns = prevTxns.filter {
-                $0.splitExpenseID != nil && $0.balanceAdjustmentType == nil && !adjustment.isSuppressed($0)
-            }
+            let prevSharedTxns = prevTxns.filter(isSharedExpense)
             let prevShared: Double? = prevSharedTxns.isEmpty ? nil : prevSharedTxns.reduce(0.0) { $0 + abs(txAmount($1, currencyCode: currencyCode, adjustment: adjustment, converter: converter)) }
 
             let groupNameLookup = Dictionary(splitGroups.map { ($0.cloudKitZoneID, $0.name) }, uniquingKeysWith: { a, _ in a })

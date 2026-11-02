@@ -19,7 +19,8 @@
 //
 //  LÍNEAS DE TU PARTE (Grupos B). Con la receta, las líneas que no son la ancla viven en «Grupos» (`-x`, con su
 //  categoría) y el préstamo engorda en lo que suman, así que la pata real netea a la línea ancla con la misma fórmula.
-//  Una recarga es un par de transferencia: sus patas no entran en el neteo (ver `build`).
+//  Una recarga es un par de transferencia: sus patas no entran en el neteo (ver `build`). Lo por cobrar de una venta
+//  tampoco (lleva tipo), y lo cobrado (card 10) es un ingreso suelto con la fecha del pago: tampoco se netea.
 //
 //  SOLUCIÓN. Netear la pareja por `splitExpenseID` en la capa de agregación:
 //    · a la pata REAL se le atribuye `-myShare` (= `real.amount + Σ patas de préstamo`),
@@ -197,7 +198,12 @@ struct GroupBridgeStatsAdjustment {
             // superficies ya la excluyen por `balanceAdjustmentType`. Contarla como «la real» netearía el préstamo
             // contra la recarga en vez de contra el gasto. La pata «por cobrar» de una venta (card 8) también lleva tipo
             // y queda fuera igual: no hay pata real que netear y no es ingreso hasta el pago.
-            let nonTransfer = legs.filter { $0.balanceAdjustmentType == nil }
+            // Lo COBRADO de una venta (card 10, marca `.collected`) es un ingreso propio con su fecha: ni préstamo que
+            // suprimir ni pata que netear. Se aparta aquí aunque por su forma (sistema, `+x`) pareciera un préstamo: con
+            // una pata real a la vez —un aparato que aún no repasó una venta que dejó de serlo— se netearía contra ella.
+            let nonTransfer = legs.filter {
+                $0.balanceAdjustmentType == nil && !GroupCollectedLegLogic.isCollected($0.splitLinesRaw)
+            }
             let real = nonTransfer.filter { $0.account?.isSystemAccount == false }
             let systemLegs = nonTransfer.filter { $0.account?.isSystemAccount == true }
             // Pata de préstamo = sistema + income-direction (SIGNO: escalar nunca-lazy).

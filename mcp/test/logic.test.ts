@@ -3,7 +3,7 @@ import { computeBalances } from "../src/logic/balances";
 import { linesByHead, lineNode, resolveLines, spendingAccountIds } from "../src/logic/accountLines";
 import { budgetStatuses } from "../src/logic/budgets";
 import { buildRateBook, convertOn, resolveRates } from "../src/logic/fx";
-import { buildGroupAdjustment } from "../src/logic/groups";
+import { buildGroupAdjustment, isCollectedLeg } from "../src/logic/groups";
 import { buildLookup } from "../src/logic/lookup";
 import { canonicalMerchant } from "../src/logic/merchant";
 import { listRecurring, monthlyMultiplier } from "../src/logic/recurring";
@@ -311,6 +311,66 @@ describe("resumen de periodo (port de CashFlowCalculator)", () => {
       const r = summarize(legs, lk, period, { ...ctx, groups });
       expect(r.gastos).toBe(80);
       expect(r.ingresos).toBe(0);
+    });
+  });
+
+  describe("Grupos B: ventas por cobrar (cards 8-11)", () => {
+    const groupsAcc = uuid(2301);
+    const ventas = uuid(2311);
+    const ropa = uuid(2312);
+    const lk = buildLookup({
+      accounts: [account({ sync_id: acc }), account({ sync_id: groupsAcc, name: "Grupos", is_system_account: true })],
+      categories: [category({ sync_id: ventas, name: "Ventas", is_income: true }), category({ sync_id: ropa, name: "Ropa" })],
+    });
+    const g = { ...base, account_ref: groupsAcc };
+    /** La marca de una pata cobrada, como la escribe la app (`encodeCollectedMarker`, claves ordenadas). */
+    const cobrada = (eventId: string) => JSON.stringify({ k: "c", of: eventId, v: 1 });
+    const pago = "8B5B7E0B-0D35-4C8E-9C1E-7C3A52B0A001";
+    const agosto = resolvePeriod("mes_pasado", "2026-09-26");
+
+    it("lo por cobrar no es ingreso; lo cobrado sí, en el mes del pago", () => {
+      // Venta de 120 del 25-ago; Ana pagó 50 el 8-sep. Quedan 70 por cobrar (fechados en la venta) y 50 cobrados.
+      const legs = [
+        tx({ ...g, category_ref: ventas, date: "2026-08-25T15:00:00Z", amount: 70, amount_in_preferred_currency: 70, split_expense_id: "v1", balance_adjustment_type: "receivable" }),
+        tx({ ...g, category_ref: ventas, date: "2026-09-08T15:00:00Z", amount: 50, amount_in_preferred_currency: 50, split_expense_id: "v1", split_lines_raw: cobrada(pago) }),
+      ];
+      const groups = buildGroupAdjustment(legs, lk.accounts, lk.subcategories);
+      expect(summarize(legs, lk, period, { ...ctx, groups }).ingresos).toBe(50);
+      expect(summarize(legs, lk, agosto, { ...ctx, groups }).ingresos).toBe(0);
+    });
+
+    it("antes del pago, la venta entera por cobrar no suma ingreso (control: sin su tipo, sí)", () => {
+      const porCobrar = tx({ ...g, category_ref: ventas, amount: 120, amount_in_preferred_currency: 120, split_expense_id: "v2", balance_adjustment_type: "receivable" });
+      expect(summarize([porCobrar], lk, period, ctx).ingresos).toBe(0);
+      const sinTipo = { ...porCobrar, balance_adjustment_type: null };
+      expect(summarize([sinTipo], lk, period, ctx).ingresos).toBe(120);
+    });
+
+    it("lo cobrado no se netea contra una pata real del mismo gasto", () => {
+      // Un aparato que aún no repasó una venta que pasó a ser gasto: la pata real (−120) y lo cobrado (+50) conviven.
+      // Tomado por préstamo, lo cobrado se suprimiría y la real saldría por 70.
+      const legs = [
+        tx({ ...base, category_ref: ropa, amount: -120, amount_in_preferred_currency: -120, split_expense_id: "v3" }),
+        tx({ ...g, category_ref: ventas, amount: 50, amount_in_preferred_currency: 50, split_expense_id: "v3", split_lines_raw: cobrada(pago) }),
+      ];
+      const groups = buildGroupAdjustment(legs, lk.accounts, lk.subcategories);
+      const r = summarize(legs, lk, period, { ...ctx, groups });
+      expect(r.gastos).toBe(120);
+      expect(r.ingresos).toBe(50);
+      expect(groups.isSuppressed(legs[1]!)).toBe(false);
+    });
+
+    it("solo la marca de una pata cobrada cuenta como tal", () => {
+      expect(isCollectedLeg(cobrada(pago))).toBe(true);
+      // La marca de una línea de tu parte (sin `k`), una receta, una versión posterior o texto roto: no.
+      expect(isCollectedLeg(JSON.stringify({ of: pago, v: 1 }))).toBe(false);
+      expect(isCollectedLeg(JSON.stringify({ l: [], v: 1 }))).toBe(false);
+      expect(isCollectedLeg(JSON.stringify({ k: "c", of: pago, v: 2 }))).toBe(false);
+      expect(isCollectedLeg("{roto")).toBe(false);
+      // Un `of` que no es un UUID no es una marca (la app lo lee ilegible); un `l` nulo es como ausente.
+      expect(isCollectedLeg(JSON.stringify({ k: "c", of: "no-es-un-uuid", v: 1 }))).toBe(false);
+      expect(isCollectedLeg(JSON.stringify({ k: "c", l: null, of: pago, v: 1 }))).toBe(true);
+      expect(isCollectedLeg(null)).toBe(false);
     });
   });
 

@@ -2288,6 +2288,10 @@ final class AppBootstrapper {
         // Lo que llegó sincronizado mientras la app no estaba delante entra (o sale) del índice de Spotlight (card ste6).
         SpotlightIndexService.scheduleReconcile(context: context)
 
+        // Grupos B · card 10: lo cobrado de las ventas de grupo, una pasada por grupo con ventas. Funde las patas cobradas
+        // que dos aparatos escribieron a la vez antes de verse. Sin ventas, dos consultas y nada más.
+        GroupTransactionBridge.shared.reconcileAllReceivables()
+
         // Quien volvió por «Ya tengo una cuenta»: si sus datos ya llegaron, los tips de principiante se dan por vistos.
         ReturningUserBeginnerTips.settleIfPending(context: context)
 

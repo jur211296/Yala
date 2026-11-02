@@ -632,7 +632,9 @@ struct LegacyGroupsRetirementWiringTests {
         // subirlo: las 5 construcciones tienen sus 5 marcas — el grupo nuevo NO nace legacy.
         // 7 desde el 2026-10-16: `createFicha` (perfil `ficha`, capturas de la ficha en cada idioma) construye sus dos
         // grupos con UN `SplitGroup(` dentro de su helper `seedGroup`, que marca backend justo debajo.
-        #expect(constructions == 7, "Cambió el número de grupos del seed; revisa que todos sigan siendo backend.")
+        // 8 desde el 2026-11-02: «Ventas con Ana» (`-uitest-seed-group-sale`, Grupos B · card 10) nace backend en
+        // `create`, justo debajo de su `SplitGroup(`.
+        #expect(constructions == 8,"Cambió el número de grupos del seed; revisa que todos sigan siendo backend.")
         #expect(marks == constructions,
                 "Un grupo del seed volvió a nacer legacy: la retirada lo oculta y los XCUITest de Grupos se quedan sin datos.")
     }

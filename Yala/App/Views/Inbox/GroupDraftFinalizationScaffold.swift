@@ -37,6 +37,8 @@ struct GroupDraftFinalizationScaffold<Selector: View>: View {
     var secondaryAction: (title: String, action: () -> Void)? = nil
     /// Bloque opcional sobre el selector: «¿Ya lo apuntaste?» con los movimientos parecidos (UX 2.2 · L13-15).
     var accessory: AnyView? = nil
+    /// Frase opcional bajo el selector: qué ingreso cobra este pago (Grupos B · card 10).
+    var footnote: String? = nil
     /// Selector interactivo de la pieza que falta (un `SelectionChip`).
     @ViewBuilder let selector: () -> Selector
 
@@ -72,6 +74,16 @@ struct GroupDraftFinalizationScaffold<Selector: View>: View {
                     RecordSelectorChips(spacing: DS.Spacing.sm, alignment: .center) { selector() }
                         .padding(.horizontal, DS.Spacing.xl)
                         .padding(.bottom, DS.Spacing.lg)
+
+                    if let footnote {
+                        Label(footnote, systemImage: "arrow.down.left.circle")
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, DS.Spacing.xl)
+                            .padding(.bottom, DS.Spacing.lg)
+                            .accessibilityIdentifier("group_draft_footnote")
+                    }
 
                     if let hint {
                         hintView(hint)

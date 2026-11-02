@@ -5498,6 +5498,7 @@
 /* iPad/ventana ancha: columna de detalle vacía en Registros */
 "records.detailPlaceholder" = "Escolhe um registro para o veres aqui";
 "records.receivable" = "A receber";
+"records.collected" = "Recebido";
 
 /* iPad/ventana ancha: columna de detalle vacía en Planificación */
 "planning.detailPlaceholder" = "Escolhe um orçamento ou um pagamento para o veres aqui";
@@ -7307,6 +7308,12 @@
 
 /* Nombre del borrador de un pago que recibiste. %1$@ = de quién, %2$@ = grupo. */
 "inbox.groupSettlementDraft.paidBy" = "Pagamento de %1$@ · %2$@";
+/* Grupos B · card 10: hoja de pago de la Bandeja, lo que el pago cobra de una venta. %1$@ venta, %2$@ importe, %3$@ categoría, %4$@ fecha */
+"inbox.groupSettlementDraft.collectsOneToday" = "Recebes «%1$@»: %2$@ de %3$@ contam como receita hoje.";
+"inbox.groupSettlementDraft.collectsOneOn" = "Recebes «%1$@»: %2$@ de %3$@ contam como receita em %4$@.";
+/* Grupos B · card 10: un pago que cobra varias ventas. %1$@ importe, %2$@ fecha */
+"inbox.groupSettlementDraft.collectsManyToday" = "Recebes várias vendas: %@ contam como receita hoje.";
+"inbox.groupSettlementDraft.collectsManyOn" = "Recebes várias vendas: %1$@ contam como receita em %2$@.";
 
 /* Bajo «Mi parte» en las estadísticas del grupo: qué mide. */
 "groups.stats.myPortionHint" = "o que te cabia";

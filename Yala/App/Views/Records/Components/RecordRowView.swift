@@ -72,7 +72,7 @@ struct RecordRowView: View {
                         // Line 2: Category • Account (Compact)
                         let categoryName = RecordRowPresentationLogic.categoryCaption(
                             record.subcategory?.name ?? record.category?.name ?? L10n.Common.uncategorized,
-                            adjustmentType: record.balanceAdjustmentType)
+                            adjustmentType: record.balanceAdjustmentType, splitLinesRaw: record.splitLinesRaw)
                         let accountName = displayedAccountName ?? ""
 
                         Text("\(categoryName) • \(accountName)")
@@ -83,7 +83,7 @@ struct RecordRowView: View {
                         // Fallback: Line 1 = Category
                         Text(RecordRowPresentationLogic.categoryCaption(
                             record.subcategory?.name ?? record.category?.name ?? L10n.Common.uncategorized,
-                            adjustmentType: record.balanceAdjustmentType))
+                            adjustmentType: record.balanceAdjustmentType, splitLinesRaw: record.splitLinesRaw))
                             .font(DS.Typography.label)
                             .foregroundStyle(.primary)
                             .lineLimit(conceptLineLimit)
@@ -178,7 +178,8 @@ struct RecordRowView: View {
                 ? appPreferences.currency(record.amount, currencyCode: record.currencyCode)
                 : appPreferences.currency(abs(record.amount), currencyCode: record.currencyCode),
             category: (record.subcategory?.name ?? record.category?.name).map {
-                RecordRowPresentationLogic.categoryCaption($0, adjustmentType: record.balanceAdjustmentType)
+                RecordRowPresentationLogic.categoryCaption(
+                    $0, adjustmentType: record.balanceAdjustmentType, splitLinesRaw: record.splitLinesRaw)
             },
             account: record.account?.name
         )
