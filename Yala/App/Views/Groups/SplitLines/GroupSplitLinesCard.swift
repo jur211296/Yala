@@ -272,7 +272,9 @@ enum GroupSplitLinesPreviewFixture {
         do {
             container = try ModelContainer(
                 for: Account.self, Category.self, Subcategory.self,
-                configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+                // `.none` explícito: con el default (`.automatic`) y relaciones, SwiftData le cuelga el espejo de iCloud
+                // al almacén en memoria y el primer fetch revienta («No eligible connection available»).
+                configurations: ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none)
             )
         } catch {
             fatalError("GroupSplitLinesPreviewFixture: \(error)")
@@ -303,7 +305,8 @@ enum GroupSplitLinesPreviewFixture {
 
 private struct GroupSplitLinesCardPreview: View {
     let share: Decimal
-    let seeded = GroupSplitLinesPreviewFixture.make()
+    /// En `@State`: con `let`, cada redibujo creaba otro almacén con otros ids y las líneas no encontraban su cuenta.
+    @State private var seeded = GroupSplitLinesPreviewFixture.make()
     @State private var lines: [GroupSplitLinesRecipe.Line] = []
 
     var body: some View {
