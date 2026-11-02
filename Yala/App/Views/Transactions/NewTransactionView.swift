@@ -1019,7 +1019,9 @@ struct NewTransactionView: View {
             Text("≈ \(appPreferences.currency(converted, currencyCode: preferred, forceFullPrecision: true))")
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
-                .contentTransition(.numericText())
+                .contentTransition(.numericText(value: converted))
+                // Sin la animación detrás, `numericText` no rueda (card C2).
+                .animation(reduceMotion ? nil : DS.Animation.number, value: converted)
                 .accessibilityIdentifier("new_transaction_equivalence")
             ExchangeRateCapsule(
                 caption: ExchangeRateCaptionLogic.caption(for: viewModel.transactionDate),

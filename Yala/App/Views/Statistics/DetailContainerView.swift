@@ -360,45 +360,53 @@ struct DetailContainerView: View {
             // (`HeroHeader`). Decisión del 2026-10-03, ticket `distribution-subviews-miss-the-new-panel-hero`.
             // Desde la card kzhe, solo cuando el scroll se lleva la fila de acciones del hero: arriba la acción ya está a
             // la vista y los flotantes tapaban la primera tarjeta.
-            if showFloatingActions && !recordsViewModel.isSelectionMode && !recordPaneCoversList {
-                VStack {
-                    Spacer()
-                    HStack {
+            // Un contenedor propio para los flotantes: su animación no alcanza al resto de la página, que cambia a la
+            // vez (`showFloatingActions` también baja al cambiar de chip, con el relevo de `StagedTabPages`).
+            ZStack {
+                if showFloatingActions && !recordsViewModel.isSelectionMode && !recordPaneCoversList {
+                    VStack {
                         Spacer()
-                        FABStackView(
-                            canUseVoiceInput: canUseVoiceInput,
-                            isVoiceLocked: isVoiceLocked,
-                            isImageLocked: isImageLocked,
-                            isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
-                            chatFABVisible: appPreferences.chatFABVisible,
-                            isShortContainer: fabShortContainer,
-                            missingStep: dataViewModel.visibleMissingStep,
-                            onResolveMissingStep: { resolveMissingStep() },
-                            onVoiceTap: { showVoiceRecording = true },
-                            onImageTap: { showImageSelection = true },
-                            onManualTap: { recordsViewModel.showNewTransaction = true },
-                            onUpgradeVoice: { showUpgradeForVoice = true },
-                            onUpgradeImage: { showUpgradeForImage = true },
-                            onChatTap: {
-                                switch YalaAIOnboardingLogic.nextScreen(
-                                    consentAccepted: appPreferences.aiChatConsentAccepted,
-                                    onboardingShown: appPreferences.hasShownYalaAIOnboarding
-                                ) {
-                                case .onboarding: showYalaAIOnboarding = true
-                                case .chat:       showChatSheet = true
-                                case .consent:    showChatConsentAlert = true
-                                }
-                            },
-                            onUpgradeChat: { showUpgradeForChat = true }
-                        )
+                        HStack {
+                            Spacer()
+                            FABStackView(
+                                canUseVoiceInput: canUseVoiceInput,
+                                isVoiceLocked: isVoiceLocked,
+                                isImageLocked: isImageLocked,
+                                isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
+                                chatFABVisible: appPreferences.chatFABVisible,
+                                isShortContainer: fabShortContainer,
+                                missingStep: dataViewModel.visibleMissingStep,
+                                onResolveMissingStep: { resolveMissingStep() },
+                                onVoiceTap: { showVoiceRecording = true },
+                                onImageTap: { showImageSelection = true },
+                                onManualTap: { recordsViewModel.showNewTransaction = true },
+                                onUpgradeVoice: { showUpgradeForVoice = true },
+                                onUpgradeImage: { showUpgradeForImage = true },
+                                onChatTap: {
+                                    switch YalaAIOnboardingLogic.nextScreen(
+                                        consentAccepted: appPreferences.aiChatConsentAccepted,
+                                        onboardingShown: appPreferences.hasShownYalaAIOnboarding
+                                    ) {
+                                    case .onboarding: showYalaAIOnboarding = true
+                                    case .chat:       showChatSheet = true
+                                    case .consent:    showChatConsentAlert = true
+                                    }
+                                },
+                                onUpgradeChat: { showUpgradeForChat = true }
+                            )
+                        }
                     }
+                    // Con poco alto, los dos botones van en fila (UX 2.2 · L15-14).
+                    .measuresShortContainer($fabShortContainer)
+                    // Con el registro abierto al lado, los flotantes van sobre la lista, como en la página Registros.
+                    .frame(width: recordsListWidth)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .transition(.opacity)
                 }
-                // Con poco alto, los dos botones van en fila (UX 2.2 · L15-14).
-                .measuresShortContainer($fabShortContainer)
-                // Con el registro abierto al lado, los flotantes van sobre la lista, como en la página Registros.
-                .frame(width: recordsListWidth)
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
+            // Entran y salen fundiéndose al desplazar, como en el Panel (card C2). Implícita: quien enciende
+            // `showFloatingActions` lo hace desde el scroll, dentro de la pestaña, donde un `withAnimation` no anima.
+            .animation(reduceMotion ? nil : DS.Animation.appear, value: showFloatingActions)
 
             // Modo selección: qué hacer y, con algo elegido, Eliminar y Editar (L8-12).
             if recordsViewModel.isSelectionMode {

@@ -15,6 +15,7 @@ struct SetupChecklistCard: View {
 
     @Environment(\.yalaTheme) private var theme
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // MARK: - Properties
 
@@ -43,8 +44,9 @@ struct SetupChecklistCard: View {
                         .allowsHitTesting(false)
                 }
             }
-            .animation(.easeInOut(duration: 0.3), value: manager.isCollapsed)
-            .animation(.easeInOut(duration: 0.3), value: manager.isAllComplete)
+            // Con Reducir movimiento, sin animación (card C6).
+            .animation(reduceMotion ? nil : DS.Animation.appear, value: manager.isCollapsed)
+            .animation(reduceMotion ? nil : DS.Animation.appear, value: manager.isAllComplete)
             // Card ds09: quien volvió por «Ya tengo una cuenta» con datos no ve Primeros pasos. Pregunta al aparecer y
             // cada vez que cambia el progreso: los datos que llegan marcan solos el primer paso (el «1 de 7» que vio
             // Jürgen), que es justo cuando ya se puede decidir. Si se resuelve, la tarjeta se retira
@@ -94,7 +96,7 @@ struct SetupChecklistCard: View {
             footer
         }
         .yalaCard(padding: DS.Spacing.md, radius: DS.Radius.md, shadow: false)
-        .animation(.easeInOut(duration: 0.25), value: showsAllSteps)
+        .animation(reduceMotion ? nil : DS.Animation.appear, value: showsAllSteps)
     }
 
     private var header: some View {
@@ -271,7 +273,7 @@ struct SetupChecklistCard: View {
                 RoundedRectangle(cornerRadius: DS.Radius.xs)
                     .fill(theme.accent)
                     .frame(width: progressBarWidth * manager.progress, height: 6)
-                    .animation(.easeInOut(duration: 0.4), value: manager.progress)
+                    .animation(reduceMotion ? nil : DS.Animation.number, value: manager.progress)
             }
             .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { progressBarWidth = $0 }
     }

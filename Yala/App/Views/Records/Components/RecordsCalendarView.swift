@@ -51,6 +51,13 @@ struct RecordsCalendarView: View {
     @Binding var selectedDay: Date?
     @Binding var calendarMonth: Date
 
+    /// Cómo entra el mes nuevo: empujado desde el lado de la flecha o del deslizamiento, fundido desde el menú (card C2).
+    /// El viejo se va en el acto: fundidos en sitio, los números de los dos meses quedarían uno encima del otro.
+    @State private var monthMotion: PeriodTitleMotion = .fade
+    /// Sube solo cuando la persona cambia de mes aquí (flechas, deslizar, menú): un mes que ajusta Registros al cambiar el
+    /// período o los filtros cambia en seco, con la página.
+    @State private var monthSteps = 0
+
     private var calendar: Calendar {
         var c = Calendar.current
         // Las iniciales de los días en el idioma de Yala, no en el del iPhone (con el idioma cambiado dentro de la
@@ -82,6 +89,10 @@ struct RecordsCalendarView: View {
         .padding(DS.Spacing.md)
         .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        // El día elegido se rellena y el mes cambia animados (card C2). Implícitas: en una pestaña un `withAnimation` no
+        // anima.
+        .dsAnimation(DS.Animation.selection, value: selectedDay, reduceMotion: reduceMotion)
+        .dsAnimation(DS.Animation.appear, value: monthSteps, reduceMotion: reduceMotion)
     }
 
     // MARK: - Effective range (acotado a los datos visibles)
@@ -180,11 +191,16 @@ struct RecordsCalendarView: View {
             monthNavigationHeader(months: months)
             VStack(spacing: DS.Spacing.xs) {
                 weekdayHeaders
-                ForEach(Array(weeks.enumerated()), id: \.offset) { _, week in
-                    weekRow(week, spending: spending, inRange: {
-                        calendar.isDate($0, equalTo: calendarMonth, toGranularity: .month)
-                    })
+                VStack(spacing: DS.Spacing.xs) {
+                    ForEach(Array(weeks.enumerated()), id: \.offset) { _, week in
+                        weekRow(week, spending: spending, inRange: {
+                            calendar.isDate($0, equalTo: calendarMonth, toGranularity: .month)
+                        })
+                    }
                 }
+                // Un mes, una vista: el nuevo entra con `monthMotion` y el viejo se va en el acto.
+                .id(monthInterval.start)
+                .transition(monthMotion.transition)
             }
             .contentShape(Rectangle())
             .simultaneousGesture(monthSwipeGesture(months: months))
@@ -217,6 +233,8 @@ struct RecordsCalendarView: View {
                     Text(monthName(calendarMonth, withYear: true))
                         .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
+                        // En seco: fundido, «octubre» quedaba encima de «noviembre» mientras entra el mes (vídeo, card C2).
+                        .transaction { $0.animation = nil }
                     Image(systemName: "chevron.down")
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(.secondary)
@@ -234,7 +252,7 @@ struct RecordsCalendarView: View {
         _ systemName: String, enabled: Bool, label: String, action: @escaping () -> Void
     ) -> some View {
         Button {
-            dsWithAnimation(reduceMotion) { action() }
+            action()
         } label: {
             Image(systemName: systemName)
                 .font(DS.Typography.headline)
@@ -260,17 +278,19 @@ struct RecordsCalendarView: View {
 
     private func navigate(months: [Date], to index: Int) {
         guard months.indices.contains(index) else { return }
-        dsWithAnimation(reduceMotion) {
-            calendarMonth = months[index]
-            selectedDay = nil
-        }
+        let current = months.firstIndex { calendar.isDate($0, equalTo: calendarMonth, toGranularity: .month) } ?? index
+        // El mes siguiente entra por la derecha y el anterior por la izquierda, como el gesto.
+        monthMotion = .push(from: index > current ? .trailing : .leading)
+        monthSteps += 1
+        calendarMonth = months[index]
+        selectedDay = nil
     }
 
     private func selectMonth(_ month: Date) {
-        dsWithAnimation(reduceMotion) {
-            calendarMonth = month
-            selectedDay = nil
-        }
+        monthMotion = .fade
+        monthSteps += 1
+        calendarMonth = month
+        selectedDay = nil
     }
 
     // MARK: - Week row + day cell (shared)
@@ -304,9 +324,7 @@ struct RecordsCalendarView: View {
         let hasIncome = income >= RecordsCalendarDaySummaryLogic.minimumAmount && inRange
 
         return Button {
-            dsWithAnimation(reduceMotion) {
-                selectedDay = isSelected ? nil : calendar.startOfDay(for: date)
-            }
+            selectedDay = isSelected ? nil : calendar.startOfDay(for: date)
         } label: {
             VStack(spacing: DS.Spacing.xxs) {
                 dayNumber(dayNum, isSelected: isSelected, isToday: isToday, inRange: inRange)

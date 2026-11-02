@@ -13,6 +13,7 @@ import SwiftUI
 struct AccountFormView: View {
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.modelContext) private var modelContext
     @Environment(EntityDeletionService.self) private var deletionService
     @Environment(SessionState.self) private var sessionState
@@ -1013,7 +1014,7 @@ struct AccountFormView: View {
         SectionBox(title: "") {
             VStack(spacing: DS.Spacing.none) {
                 Button {
-                    withAnimation(.easeInOut(duration: 0.2)) { showsMoreOptions.toggle() }
+                    dsWithAnimation(reduceMotion, DS.Animation.appear) { showsMoreOptions.toggle() }
                 } label: {
                     HStack {
                         Text(L10n.Common.moreOptions)
@@ -1189,7 +1190,7 @@ struct AccountFormView: View {
     ) -> some View {
         let isSelected = viewModel.selectedAdjustmentMode == mode
         return Button {
-            withAnimation(.easeInOut(duration: 0.2)) { viewModel.selectedAdjustmentMode = mode }
+            dsWithAnimation(reduceMotion, DS.Animation.selection) { viewModel.selectedAdjustmentMode = mode }
         } label: {
             HStack(alignment: .top, spacing: DS.Spacing.md) {
                 Image(systemName: icon)

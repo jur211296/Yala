@@ -231,7 +231,7 @@ struct CategoriesTabView: View {
     /// así que pasa a Gráficas aunque Distribución arranque en Detalle.
     private func showSubcategoriesFromLink() {
         contentMode = .charts
-        dsWithAnimation(reduceMotion) { chartsCarouselPosition = "subcategory" }
+        chartsCarouselPosition = "subcategory"
         setListViewManually(.subcategories)
     }
 
@@ -578,11 +578,13 @@ struct CategoriesTabView: View {
                             .contentShape(Rectangle().inset(by: -8))
                             .onTapGesture {
                                 DS.Haptic.selection()
-                                dsWithAnimation(reduceMotion) { chartsCarouselPosition = pageId }
+                                chartsCarouselPosition = pageId
                             }
                             .accessibilityLabel(L10n.Accessibility.pageIndicator(page + 1, carouselPageCount))
                     }
                 }
+                // La cápsula de la página a la vista se estira y la anterior encoge (card C2), también al deslizar.
+                .dsAnimation(DS.Animation.selection, value: chartsCarouselPosition, reduceMotion: reduceMotion)
                 .frame(maxWidth: .infinity, alignment: .center)
             }
         }
@@ -745,9 +747,12 @@ struct CategoriesTabView: View {
                     askAboutSubcategory(subID)
                 },
                 onTapPoolNode: { nodeID in
-                    dsWithAnimation(reduceMotion) { toggleSankeyPoolNode(nodeID) }
+                    toggleSankeyPoolNode(nodeID)
                 }
             )
+            // El nodo elegido se resalta y los demás se atenúan animados (card C2). Implícita: en una pestaña un
+            // `withAnimation` no anima.
+            .dsAnimation(DS.Animation.selection, value: selectedSankeyPoolNodeIDs, reduceMotion: reduceMotion)
 
             if viewModel.shouldShowPlannedHint && viewModel.sankeyData.hasPlannedBranch {
                 Text(L10n.Statistics.Sankey.plannedHint)
@@ -1024,6 +1029,8 @@ struct CategoriesTabView: View {
                 listViewButton(for: viewType)
             }
         }
+        // El círculo de Categorías / Subcategorías se desliza (card C2); la lista cambia en seco.
+        .dsAnimation(DS.Animation.selection, value: listViewType, reduceMotion: reduceMotion)
     }
 
     private func listViewButton(for viewType: ListViewType) -> some View {
@@ -1033,9 +1040,7 @@ struct CategoriesTabView: View {
         return Button {
             guard !isLocked || viewType == .subcategories else { return }
 
-            dsWithAnimation(reduceMotion) {
-                setListViewManually(viewType)
-            }
+            setListViewManually(viewType)
         } label: {
             Image(systemName: viewType.iconName)
                 .font(DS.Typography.labelSmall)

@@ -126,6 +126,11 @@ struct InsightsTabView: View {
                             }
                         }
                         .frame(maxWidth: .infinity)
+                        // Las secciones plegables se abren y se cierran con lo de debajo moviéndose (card C2). Implícitas,
+                        // en el contenedor común: el `withAnimation` del toque no anima dentro de una pestaña.
+                        .animation(reduceMotion ? nil : DS.Animation.appear, value: isToPayExpanded)
+                        .animation(reduceMotion ? nil : DS.Animation.appear, value: budgetsExpandedChoice)
+                        .animation(reduceMotion ? nil : DS.Animation.appear, value: isNeedSectionExpanded)
                         // Yala IA y «+» flotan encima en las cuatro pestañas de Estadísticas: al final del scroll, la última tarjeta sube
                         // por encima de los dos (mismo margen que `RecordsTabView`).
                         .padding(.bottom, DS.Button.fabStackClearance(buttons: 2))
@@ -717,9 +722,23 @@ struct InsightsTabView: View {
             + (appPreferences.insightsShowSubscriptions ? c.pendingSubscriptionsAmount : 0)
     }
 
+    /// El cuerpo de una sección plegable: se desenrolla bajo su cabecera, recortado a su propio hueco (card C2). Sin el
+    /// recorte, el `.move(edge: .top)` lo hacía bajar desde encima de las tarjetas de arriba mientras se fundía (vídeo).
+    /// La separación con la cabecera va dentro del cuerpo: plegada, la sección mide lo mismo que antes.
+    private func collapsibleBody<Content: View>(_ isExpanded: Bool, @ViewBuilder _ content: () -> Content) -> some View {
+        VStack(spacing: DS.Spacing.none) {
+            if isExpanded {
+                content()
+                    .padding(.top, DS.Spacing.sm)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .clipped()
+    }
+
     @ViewBuilder
     private func toPaySection(_ c: Commitments) -> some View {
-        VStack(spacing: DS.Spacing.sm) {
+        VStack(spacing: DS.Spacing.none) {
             CollapsibleSectionHeader(
                 title: L10n.UXL11D.toPayTitle,
                 subtitle: L10n.UXL11D.toPayTotal(
@@ -727,13 +746,11 @@ struct InsightsTabView: View {
                 ),
                 isExpanded: isToPayExpanded
             ) {
-                dsWithAnimation(reduceMotion) {
-                    isToPayExpanded.toggle()
-                }
+                isToPayExpanded.toggle()
             }
             .accessibilityIdentifier("insights_to_pay_header")
 
-            if isToPayExpanded {
+            collapsibleBody(isToPayExpanded) {
                 VStack(spacing: DS.Spacing.md) {
                     if appPreferences.insightsShowPendingPayments, c.pendingOtherPaymentsCount > 0 {
                         commitmentRow(
@@ -755,7 +772,6 @@ struct InsightsTabView: View {
                         .accessibilityIdentifier("insights_to_pay_subscriptions")
                     }
                 }
-                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
     }
@@ -763,25 +779,22 @@ struct InsightsTabView: View {
     @ViewBuilder
     private func budgetsSection(_ budgets: [BudgetAtRisk]) -> some View {
         let expanded = isBudgetsExpanded(budgets)
-        VStack(spacing: DS.Spacing.sm) {
+        VStack(spacing: DS.Spacing.none) {
             CollapsibleSectionHeader(
                 title: L10n.UXL11D.budgetsTitle,
                 subtitle: L10n.Insights.commitmentsNote,
                 isExpanded: expanded
             ) {
-                dsWithAnimation(reduceMotion) {
-                    budgetsExpandedChoice = !expanded
-                }
+                budgetsExpandedChoice = !expanded
             }
             .accessibilityIdentifier("insights_budgets_header")
 
-            if expanded {
+            collapsibleBody(expanded) {
                 VStack(spacing: DS.Spacing.md) {
                     ForEach(budgets) { budget in
                         budgetRow(budget)
                     }
                 }
-                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
     }
@@ -864,17 +877,15 @@ struct InsightsTabView: View {
 
     @ViewBuilder
     private func needSection(_ distribution: NeedDistribution) -> some View {
-        VStack(spacing: DS.Spacing.sm) {
+        VStack(spacing: DS.Spacing.none) {
             CollapsibleSectionHeader(
                 title: L10n.Insights.needDistribution,
                 isExpanded: isNeedSectionExpanded
             ) {
-                dsWithAnimation(reduceMotion) {
-                    isNeedSectionExpanded.toggle()
-                }
+                isNeedSectionExpanded.toggle()
             }
 
-            if isNeedSectionExpanded {
+            collapsibleBody(isNeedSectionExpanded) {
                 VStack(alignment: .leading, spacing: DS.Spacing.md) {
                     // El para qué (UX 2.2 · L11-6, decisión B): las tres palabras no se explicaban solas.
                     Text(L10n.UXL11D.needPurpose)
@@ -921,7 +932,6 @@ struct InsightsTabView: View {
                     }
                 }
                 .panelCard()
-                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
     }

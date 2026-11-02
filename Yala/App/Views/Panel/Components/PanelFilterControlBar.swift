@@ -61,6 +61,11 @@ struct PanelFilterControlBar: View {
             hasCurrencyFilter, hasAmountFilter, hasNoteFilter,
             hasTransactionNatureFilter,
         ].count(where: { $0 }) + excludedChipCount
+        // Lo que cambia cuántos chips hay: la cuenta de filtros no lo ve todo (dos etiquetas cuentan como una dimensión).
+        let chipLayout = [
+            activeFilterCount, viewModel.selectedTags.count, viewModel.selectedCurrencies.count,
+            viewModel.selectedSubcategoryIDs.count, excludedChipCount,
+        ]
 
         if activeFilterCount > 0 {
             PanelSection(title: L10n.Panel.FilterBar.sectionTitle) {
@@ -95,9 +100,7 @@ struct PanelFilterControlBar: View {
                             FilterChipView(
                                 text: L10n.Filters.datePrefix(formattedDate(focusedDate)),
                                 onClear: {
-                                    dsWithAnimation(reduceMotion) {
-                                        viewModel.focusedDate = nil
-                                    }
+                                    viewModel.focusedDate = nil
                                 }
                             )
                             .glassEffectID("chip.date", in: chipNamespace)
@@ -177,7 +180,7 @@ struct PanelFilterControlBar: View {
                             FilterChipView(
                                 need: need,
                                 onClear: {
-                                    dsWithAnimation(reduceMotion) { viewModel.selectedNeed = nil }
+                                    viewModel.selectedNeed = nil
                                 }
                             )
                             .filterMembership(.included)
@@ -202,9 +205,7 @@ struct PanelFilterControlBar: View {
                             FilterChipView(
                                 transactionNature: transactionNature,
                                 onClear: {
-                                    dsWithAnimation(reduceMotion) {
-                                        sessionState.selectedTransactionNatures.removeAll()
-                                    }
+                                    sessionState.selectedTransactionNatures.removeAll()
                                 }
                             )
                             .opensFilters(onOpenFilters)
@@ -219,10 +220,8 @@ struct PanelFilterControlBar: View {
                                     iconName: tag.iconName,
                                     colorHex: tag.colorHex,
                                     onClear: {
-                                        dsWithAnimation(reduceMotion) {
-                                            viewModel.selectedTags.remove(tagID)
-                                            viewModel.syncToSessionState(sessionState)
-                                        }
+                                        viewModel.selectedTags.remove(tagID)
+                                        viewModel.syncToSessionState(sessionState)
                                     }
                                 )
                                 .filterMembership(.included)
@@ -236,10 +235,8 @@ struct PanelFilterControlBar: View {
                             FilterChipView(
                                 currencyCode: currency.rawValue,
                                 onClear: {
-                                    dsWithAnimation(reduceMotion) {
-                                        viewModel.selectedCurrencies.remove(currency)
-                                        viewModel.syncToSessionState(sessionState)
-                                    }
+                                    viewModel.selectedCurrencies.remove(currency)
+                                    viewModel.syncToSessionState(sessionState)
                                 }
                             )
                             .filterMembership(.included)
@@ -252,10 +249,8 @@ struct PanelFilterControlBar: View {
                             FilterChipView(
                                 amountText: viewModel.amountCondition.displayText,
                                 onClear: {
-                                    dsWithAnimation(reduceMotion) {
-                                        viewModel.amountCondition = .any
-                                        viewModel.syncToSessionState(sessionState)
-                                    }
+                                    viewModel.amountCondition = .any
+                                    viewModel.syncToSessionState(sessionState)
                                 }
                             )
                             .opensFilters(onOpenFilters)
@@ -267,10 +262,8 @@ struct PanelFilterControlBar: View {
                             FilterChipView(
                                 noteText: viewModel.searchText,
                                 onClear: {
-                                    dsWithAnimation(reduceMotion) {
-                                        viewModel.searchText = ""
-                                        viewModel.syncToSessionState(sessionState)
-                                    }
+                                    viewModel.searchText = ""
+                                    viewModel.syncToSessionState(sessionState)
                                 }
                             )
                             .opensFilters(onOpenFilters)
@@ -280,9 +273,7 @@ struct PanelFilterControlBar: View {
                         // Clear All Button
                         if activeFilterCount > 1 {
                             Button {
-                                dsWithAnimation(reduceMotion) {
-                                    clearAllPanelFilters()
-                                }
+                                clearAllPanelFilters()
                             } label: {
                                 Image(systemName: "xmark.circle.fill")
                                     .foregroundStyle(.secondary)
@@ -293,6 +284,9 @@ struct PanelFilterControlBar: View {
                         }
                     }
                     } // GlassEffectContainer
+                    // Al quitar un chip, los demás se recolocan animados (card C2). Implícita: el `withAnimation` del
+                    // toque no anima dentro de una pestaña. Solo la fila: los widgets de debajo se recalculan en seco.
+                    .animation(reduceMotion ? nil : DS.Animation.selection, value: chipLayout)
                 }
                 .contentMargins(.horizontal, DS.Spacing.md, for: .scrollContent)
                 .scrollClipDisabled()

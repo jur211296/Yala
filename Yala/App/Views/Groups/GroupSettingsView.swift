@@ -19,6 +19,7 @@ struct GroupSettingsView: View {
     // MARK: - Environment
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
@@ -434,7 +435,7 @@ struct GroupSettingsView: View {
             // Guard de igualdad: el `.onAppear` siembra el @State desde el group, lo que
             // dispararía un save+sync espurio en cada apertura sin este check.
             guard newValue != group.simplifyDebts else { return }
-            withAnimation(.easeInOut(duration: 0.2)) {
+            dsWithAnimation(reduceMotion, DS.Animation.appear) {
                 updateMemberOption { $0.simplifyDebts = newValue }
             }
         }
@@ -458,7 +459,7 @@ struct GroupSettingsView: View {
         }
         .onChange(of: showDebtsInSingleCurrency) { _, newValue in
             guard newValue != group.showDebtsInSingleCurrency else { return }
-            withAnimation(.easeInOut(duration: 0.2)) {
+            dsWithAnimation(reduceMotion, DS.Animation.appear) {
                 updateGroupOption { group in
                     group.showDebtsInSingleCurrency = newValue
                     if !newValue {

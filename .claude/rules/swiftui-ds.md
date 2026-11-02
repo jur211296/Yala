@@ -397,6 +397,15 @@ La tabla vista por vista y lo que queda en cards: `docs/fluidez/AUDITORIA-FLUIDE
   que se pintan. Solo anima una edición de 1-3 filas con el resto en su orden (`RowListEditLogic`); un filtro o un
   período que cambian la lista entera siguen en seco. La animación cubre el contenedor: lo de dentro que cambie en la
   misma transacción y no deba fundirse (la frase con la cifra del grupo) lleva `.transaction { $0.animation = nil }`.
+- **Lo que se va dentro de un contenedor animado no puede fundirse si lo de FUERA se mueve por ello (medido en vídeo el
+  2026-11-02, card C2).** El chip «solo gastos» del hero se fundía al irse y la fila de acciones, que vive fuera del
+  hero, subía de golpe y quedaba encima de él. ⇒ entra fundido y sale en el acto
+  (`.asymmetric(insertion: .opacity, removal: .identity)`), o la animación sube al contenedor común. Un `Text` que
+  cambia dentro de algo que se anima por otra cosa (el título del mes mientras entra el mes nuevo) lleva
+  `.transaction { $0.animation = nil }`: fundido, los dos títulos se solapan.
+- **Una `.transaction { $0.animation = nil }` en la raíz de una hoja no llega a lo que su `NavigationStack` empuja**
+  (medido el 2026-11-02, Ajustes desde Más, card C5): Presupuestos animaba igual con ella que sin ella. Solo apagaba la
+  lista raíz.
 - **El háptico de «Deshacer» va en quien deshace, no en el botón del aviso**: el aviso también lleva «Ver» y «Editar»,
   que no deshacen nada, y un deshacer puede no tener nada que deshacer (`returnToPending` que lanza, `unskipOccurrence`
   que no guarda). `success()` tras deshacer de verdad.

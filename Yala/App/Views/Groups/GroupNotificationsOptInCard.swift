@@ -18,10 +18,14 @@ struct GroupNotificationsOptInCard: View {
 
     /// Card fptw: en la lista de Grupos, solo a quien nunca vio la tarjeta (`GroupNotificationsOptInLogic`).
     var onlyIfNeverSeen: Bool = false
+    /// Al cerrarla con su ✕: quien la monta anima su contenedor con esto, para que lo de debajo suba fundido y no de golpe
+    /// (card C2). Una animación en la propia tarjeta la fundiría a ella sola.
+    var onDismissed: () -> Void = {}
 
     @Environment(\.modelContext) private var modelContext
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.openURL) private var openURL
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
     @Environment(\.scenePhase) private var scenePhase
 
@@ -55,6 +59,8 @@ struct GroupNotificationsOptInCard: View {
                         .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                     Text(state == .denied ? L10n.UXD14.notifyDenied : L10n.UXD14.notifyWhy)
+                        // En seco: un texto que se funde con el anterior deja los dos superpuestos.
+                        .transaction { $0.animation = nil }
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -65,7 +71,8 @@ struct GroupNotificationsOptInCard: View {
                 // En «está listo» y «Ya estás en» no hace falta: se van con su pantalla.
                 if onlyIfNeverSeen {
                     Button {
-                        withAnimation(.easeOut(duration: 0.25)) { showsCard = false }
+                        showsCard = false
+                        onDismissed()
                     } label: {
                         Image(systemName: "xmark")
                             .font(DS.Typography.caption)
@@ -103,6 +110,8 @@ struct GroupNotificationsOptInCard: View {
         .padding(DS.Spacing.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
+        // «Activar» pasa a «Avisos activados» fundido (card C2): la tarjeta vive dentro de una pestaña o de una hoja.
+        .animation(reduceMotion ? nil : DS.Animation.appear, value: state)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("group_notifications_card")
         // Volver de Ajustes con el permiso dado tiene que verse: la tarjeta vuelve a medir.
@@ -171,7 +180,7 @@ struct GroupNotificationsOptInCard: View {
         #if DEBUG
         if UITestHooks.isActive {
             // Bajo XCUITest no se pide el permiso real: se da por concedido para ver el estado final.
-            withAnimation { state = .enabled }
+            state = .enabled
             return
         }
         #endif

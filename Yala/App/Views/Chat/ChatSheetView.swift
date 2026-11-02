@@ -430,8 +430,9 @@ struct ChatSheetView: View {
                 idleInputBar
             }
         }
-        .animation(.easeInOut(duration: 0.25), value: isVoiceActive)
-        .animation(.easeInOut(duration: 0.2), value: viewModel.isTranscribing)
+        // El panel de voz sube y se funde; con Reducir movimiento, en seco (card C6).
+        .animation(reduceMotion ? nil : DS.Animation.appear, value: isVoiceActive)
+        .animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.isTranscribing)
         .readableChatWidth()
     }
 

@@ -33,6 +33,8 @@ struct GroupsContainerView: View {
     @State private var isPresentingGroupsSettings = false
     @Environment(AppPreferences.self) private var appPreferences
     @State private var showNudgeBanner = false
+    /// Sube al cerrar la tarjeta de avisos: el contenedor la anima a ella y a lo que sube detrás (card C2).
+    @State private var notificationsCardDismissals = 0
     @State private var showGroupsOnboarding = false
     // D2 (§3.3.3): banner one-shot de re-entrada tras "Cerrar sesión de grupos". Se arma con
     // `GroupsSignOutBannerMarker` (in-session, sobrevive el relaunch), se lee en la primera aparición del
@@ -188,7 +190,9 @@ struct GroupsContainerView: View {
                                 inviteSheetPending: groupAwaitingInviteSheet != nil || groupReadyToInvite != nil) {
                                 // Sin margen propio (card rj3b, 2026-10-28): el del scroll (`scrollViewGlassEdges`) ya lo
                                 // pone, y con los dos quedaba 16 pt más adentro que las tarjetas de grupo.
-                                GroupNotificationsOptInCard(onlyIfNeverSeen: true)
+                                GroupNotificationsOptInCard(onlyIfNeverSeen: true) {
+                                    notificationsCardDismissals += 1
+                                }
                             }
 
                             // LazyVStack sólo alrededor de las TARJETAS: con VStack, SwiftUI
@@ -219,6 +223,10 @@ struct GroupsContainerView: View {
                         // El aviso de grupos se funde al cerrarlo y la lista sube. Implícita: el `withAnimation` del
                         // aviso no anima dentro de una pestaña (card 8atf).
                         .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: showNudgeBanner)
+                        // Los archivados se despliegan y la tarjeta de avisos se va con la lista subiendo detrás (card
+                        // C2). Implícitas, en el contenedor de lo que aparece y de lo que se mueve por ello.
+                        .animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.showArchived)
+                        .animation(reduceMotion ? nil : DS.Animation.appear, value: notificationsCardDismissals)
                     }
                     .scrollViewGlassEdges()
                     // Sin buscador propio (Jürgen, 2026-10-30): la búsqueda vive en la pestaña Buscar. Tampoco hay cajón
@@ -874,9 +882,7 @@ struct GroupsContainerView: View {
     private var archivedGroupsSection: some View {
         VStack(spacing: DS.Spacing.md) {
             Button {
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    viewModel.showArchived.toggle()
-                }
+                viewModel.showArchived.toggle()
             } label: {
                 HStack(spacing: DS.Spacing.sm) {
                     Image(systemName: viewModel.showArchived ? "chevron.down" : "chevron.right")
@@ -887,6 +893,8 @@ struct GroupsContainerView: View {
                          : L10n.Groups.Settings.showArchivedCount(viewModel.archivedGroups.count))
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
+                        // En seco: fundido, «Ocultar archivados» quedaría encima de «Mostrar archivados (N)».
+                        .transaction { $0.animation = nil }
                     Spacer()
                 }
             }
