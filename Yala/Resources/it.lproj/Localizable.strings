@@ -4455,6 +4455,9 @@
 "groups.splitLines.saveLine" = "Salva riga";
 "groups.splitLines.deleteLine" = "Elimina riga";
 "groups.splitLines.kindPicker" = "Tipo di riga";
+"groups.splitLines.splitAction" = "Dividi";
+"groups.splitLines.splitYourShare" = "Dividi la tua parte";
+"groups.splitLines.yourShareTitle" = "La tua parte";
 
 /* Título sheet división por porcentaje */
 "groups.expense.splitSheet.percentageTitle" = "In percentuale";

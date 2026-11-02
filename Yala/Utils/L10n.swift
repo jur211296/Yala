@@ -2009,6 +2009,12 @@ enum L10n {
             static var saveLine: String { ls("groups.splitLines.saveLine") }
             static var deleteLine: String { ls("groups.splitLines.deleteLine") }
             static var kindPicker: String { ls("groups.splitLines.kindPicker") }
+            /// Card 5: la pastilla de la hoja de la Bandeja que abre la tarjeta «Tu parte».
+            static var splitAction: String { ls("groups.splitLines.splitAction") }
+            /// Card 6: el enlace de la pantalla de éxito y del detalle del registro.
+            static var splitYourShare: String { ls("groups.splitLines.splitYourShare") }
+            /// Card 6: título de la hoja «Tu parte».
+            static var yourShareTitle: String { ls("groups.splitLines.yourShareTitle") }
         }
         /// **«Empezar de cero» no borró: quedan cambios de grupos sin subir** (ticket
         /// `fresh-start-wipe-kills-unsent-group-writes-silently`). Lo enseñan las tres pantallas del gesto —la puerta

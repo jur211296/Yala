@@ -247,9 +247,13 @@ final class DraftService {
 
     // MARK: - Approve Operations
 
+    /// - Parameter splitLines: Grupos B (card 5): tu parte de un gasto de grupo partida en líneas desde la hoja de la
+    ///   Bandeja. Solo con más de una línea o una recarga: una sola línea de gasto es lo de siempre y la hoja la aprueba
+    ///   como tal, con esa categoría en `draft.subcategory`.
     func approveDraft(
         _ draft: InboxDraft,
-        currencyConverter: CurrencyConverter
+        currencyConverter: CurrencyConverter,
+        splitLines: [GroupSplitLinesRecipe.Line]? = nil
     ) throws -> TransactionItem {
         let context = try requireContext()
 
@@ -272,6 +276,9 @@ final class DraftService {
         // `[.subcategory]`, que clasificaría una pata cualquiera sin categoría: aprobarlo es clasificar la pata que lleva
         // la receta y retirar la receta (tu parte queda en una línea).
         if draft.isSplitLinesMismatchNotice {
+            if let splitLines {
+                return try approveGroupExpenseWithSplitLines(draft, lines: splitLines, context: context)
+            }
             return try approveSplitLinesMismatch(draft, context: context)
         }
 
@@ -290,7 +297,13 @@ final class DraftService {
         if draft.sourceType == .groupExpense,
            draft.targetTransactionID == nil,
            draft.needsUserInput.contains(DraftInputRequirement.account) {
-            return try approveGroupExpenseAccountDraft(draft, currencyConverter: currencyConverter, context: context)
+            return try approveGroupExpenseAccountDraft(
+                draft, currencyConverter: currencyConverter, splitLines: splitLines, context: context)
+        }
+
+        // Grupos B (card 5): pagó otro y partiste tu parte en la Bandeja. La pata que el puente conserva toma la receta.
+        if draft.sourceType == .groupExpense, let splitLines {
+            return try approveGroupExpenseWithSplitLines(draft, lines: splitLines, context: context)
         }
 
         // Drafts groupExpense apuntan a una TX virtual con subcategory=nil creada por
@@ -939,6 +952,42 @@ final class DraftService {
         return target
     }
 
+    // MARK: - Grupos B: aprobar con «Partir» (card 5)
+
+    /// Pagó otro (o es el aviso de «no cuadra») y partiste tu parte en la hoja: la pata que el puente conserva toma la
+    /// receta nueva y el puente, al pasar, crea las demás patas y clasifica la ancla. El borrador se va, y con él los
+    /// punteros hermanos que pedían clasificar una parte que ya está clasificada.
+    private func approveGroupExpenseWithSplitLines(
+        _ draft: InboxDraft, lines: [GroupSplitLinesRecipe.Line], context: ModelContext
+    ) throws -> TransactionItem {
+        guard let splitID = draft.splitExpenseID,
+              let target = try GroupSplitLinesService.target(splitExpenseID: splitID, context: context),
+              let holder = target.holder, !holder.isDeleted
+        else {
+            // Como en el puntero de siempre: la hoja retira el borrador al cerrarse, no aquí (card ouka).
+            throw DraftServiceError.groupExpenseTargetMissing
+        }
+        holder.splitLinesRaw = GroupSplitLinesRecipe.encode(lines)
+        try GroupTransactionBridge.shared.withSkippedDraftCleanup {
+            try GroupTransactionBridge.shared.bridgeExpense(target.expense, in: target.group, shouldSave: false)
+        }
+        let siblings = try context.fetch(FetchDescriptor<InboxDraft>(
+            predicate: #Predicate { $0.splitExpenseID == splitID }))
+        for sibling in siblings where sibling.persistentModelID != draft.persistentModelID
+            && !sibling.optInPersonalOnly
+            && sibling.targetTransactionID == nil
+            && sibling.needsUserInput.contains(DraftInputRequirement.subcategory)
+            && !sibling.needsUserInput.contains(DraftInputRequirement.account) {
+            deleteInboxDraftPruningRow(sibling, in: context)
+        }
+        cacheDisplayValues(draft)
+        deleteInboxDraftPruningRow(draft, in: context)
+        try context.save()
+        SessionState.shared.incrementDataVersion()
+        WidgetDataCache.updateCache(context: context)
+        return holder
+    }
+
     // MARK: - M6: Approve groupExpense Caso A pendiente cuenta
 
     /// Crea TX cuenta real con `splitExpenseID` setteado e invoca el bridge para regenerar/
@@ -958,6 +1007,7 @@ final class DraftService {
     private func approveGroupExpenseAccountDraft(
         _ draft: InboxDraft,
         currencyConverter: CurrencyConverter,
+        splitLines: [GroupSplitLinesRecipe.Line]?,
         context: ModelContext
     ) throws -> TransactionItem {
         // 1. Guards.
@@ -1050,6 +1100,9 @@ final class DraftService {
         realTx.amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue
         realTx.preferredCurrencyCode = preferredCode
         realTx.isExchangeRateProvisional = !outcome.quality.isExact
+        // Grupos B (card 5): tu parte partida en la Bandeja. La pata real lleva la receta (D2) y el puente, al pasar, crea
+        // las demás patas y le pone la categoría de la primera línea de gasto.
+        if let splitLines { realTx.splitLinesRaw = GroupSplitLinesRecipe.encode(splitLines) }
         context.insert(realTx)
 
         // 4 + 5. Invocar bridge con flag para no borrar este draft activo.

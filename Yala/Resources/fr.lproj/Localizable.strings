@@ -4446,6 +4446,9 @@
 "groups.splitLines.saveLine" = "Enregistrer la ligne";
 "groups.splitLines.deleteLine" = "Supprimer la ligne";
 "groups.splitLines.kindPicker" = "Type de ligne";
+"groups.splitLines.splitAction" = "Répartir";
+"groups.splitLines.splitYourShare" = "Répartir ta part";
+"groups.splitLines.yourShareTitle" = "Ta part";
 
 /* Título sheet división por porcentaje */
 "groups.expense.splitSheet.percentageTitle" = "Par pourcentage";

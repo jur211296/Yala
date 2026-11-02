@@ -3739,6 +3739,9 @@
 "groups.splitLines.saveLine" = "Guardar línea";
 "groups.splitLines.deleteLine" = "Eliminar línea";
 "groups.splitLines.kindPicker" = "Tipo de línea";
+"groups.splitLines.splitAction" = "Partir";
+"groups.splitLines.splitYourShare" = "Partir tu parte";
+"groups.splitLines.yourShareTitle" = "Tu parte";
 
 /* Título sheet división por porcentaje */
 "groups.expense.splitSheet.percentageTitle" = "Por porcentaje";

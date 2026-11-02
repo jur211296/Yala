@@ -1249,6 +1249,12 @@ final class AppBootstrapper {
         if UITestHooks.seedSettlementAmountChange {
             DevSeedSettlementAmountChange.create(in: context)
         }
+        // Grupos B: el caso Pía, con su borrador en la Bandeja (cards 5 y 6).
+        #if DEBUG
+        if UITestHooks.seedGroupSplitLines {
+            DevSeedGroupSplitLines.create(in: context)
+        }
+        #endif
         // Deeplink simulado en uitest: encola la navegación al tab destino (el gate la
         // drena cuando el routing esté listo). Ejercita el wiring de tabs ocultos.
         if let dest = uitestDeeplinkDestination() {

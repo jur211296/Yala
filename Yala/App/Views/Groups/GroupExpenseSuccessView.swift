@@ -32,6 +32,10 @@ struct GroupExpenseSuccessData {
     /// Auditoría UX 2.2 · L13-3: quién eres (para decir quién te debe sin contarte) y qué apuntó Yala en tus finanzas.
     var currentUserMemberID: String? = nil
     var personalOutcome: GroupExpensePersonalOutcome = .none
+    /// Grupos B (card 6): el gasto guardado, y si se ofrece «Partir tu parte» en el bloque de qué apuntó Yala
+    /// (`GroupSplitLinesEntryLogic.offersSplit`: puente activo, fuera de la sesión solo-grupos y con parte propia).
+    var splitExpenseID: String? = nil
+    var offersSplitLines: Bool = false
 
     /// Participante con su parte del gasto. `id` estable = memberID (los nombres pueden repetirse).
     struct Participant: Identifiable {
@@ -70,6 +74,7 @@ struct GroupExpenseSuccessView: View {
     @State private var showAmount = false
     @State private var showDetails = false
     @State private var showActions = false
+    @State private var showsSplitLines = false
 
     private var heroColor: Color { DS.Semantic.successForeground }
 
@@ -144,6 +149,11 @@ struct GroupExpenseSuccessView: View {
         // propaga a TODOS los elementos hijos y PISA sus identifiers propios (los botones
         // group_expense_success_accept/_edit/_add_another reportaban este id → XCUI no los hallaba).
         .onAppear(perform: runEntranceAnimation)
+        .sheet(isPresented: $showsSplitLines) {
+            if let splitExpenseID = data.splitExpenseID {
+                GroupSplitLinesSheet(splitExpenseID: splitExpenseID)
+            }
+        }
     }
 
     // MARK: - Hero
@@ -276,8 +286,8 @@ struct GroupExpenseSuccessView: View {
         case .chargedToAccount(let accountName):
             infoRow(icon: "creditcard.fill", color: .electricIndigo,
                     title: L10n.UXL13.successAccountTitle(amount: format(data.totalAmount), account: accountName),
-                    detail: L10n.UXL13.successAccountDetail)
-                .accessibilityIdentifier("group_expense_success_money_line")
+                    detail: L10n.UXL13.successAccountDetail, offersSplit: data.offersSplitLines,
+                    contentIdentifier: "group_expense_success_money_line")
         case .waitingInInbox:
             infoRow(icon: "tray.full.fill", color: .electricIndigo,
                     title: L10n.UXL13.successInboxTitle,
@@ -286,14 +296,48 @@ struct GroupExpenseSuccessView: View {
         case .shareAsGroupExpense(let amount):
             infoRow(icon: "chart.pie.fill", color: .electricIndigo,
                     title: L10n.UXL13.successShareTitle(format(amount)),
-                    detail: L10n.UXL13.successShareDetail)
-                .accessibilityIdentifier("group_expense_success_money_line")
+                    detail: L10n.UXL13.successShareDetail, offersSplit: data.offersSplitLines,
+                    contentIdentifier: "group_expense_success_money_line")
         case .none:
             EmptyView()
         }
     }
 
-    private func infoRow(icon: String, color: Color, title: String, detail: String?) -> some View {
+    /// - Parameter offersSplit: Grupos B (card 6): el enlace «Partir tu parte» dentro del bloque, bajo el texto (maqueta
+    ///   `opcion-b.html`, escenarios 2 y 3). Va fuera del elemento combinado para que se pueda tocar por sí solo.
+    private func infoRow(
+        icon: String, color: Color, title: String, detail: String?, offersSplit: Bool = false,
+        contentIdentifier: String? = nil
+    ) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            // Con el enlace dentro, el id va en el texto y no en el bloque: en el bloque pisaría el del enlace.
+            if let contentIdentifier {
+                infoRowContent(icon: icon, color: color, title: title, detail: detail)
+                    .accessibilityIdentifier(contentIdentifier)
+            } else {
+                infoRowContent(icon: icon, color: color, title: title, detail: detail)
+            }
+            if offersSplit {
+                Button {
+                    showsSplitLines = true
+                } label: {
+                    Label(L10n.Groups.SplitLines.splitYourShare, systemImage: "scissors")
+                        .font(DS.Typography.subheadlineEmphasized)
+                        .foregroundStyle(.thAccentText)
+                        .padding(.leading, infoIconSize + DS.Spacing.md)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("group_expense_success_split")
+            }
+        }
+        .padding(DS.Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+    }
+
+    private func infoRowContent(icon: String, color: Color, title: String, detail: String?) -> some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
                 .font(DS.Typography.subheadlineEmphasized)
@@ -315,9 +359,6 @@ struct GroupExpenseSuccessView: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(DS.Spacing.md)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
         .accessibilityElement(children: .combine)
     }
 
