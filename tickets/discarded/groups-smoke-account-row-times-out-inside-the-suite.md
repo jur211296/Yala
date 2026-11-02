@@ -1,6 +1,6 @@
 ---
 id: groups-smoke-account-row-times-out-inside-the-suite
-status: backlog
+status: discarded
 updated: 2026-11-02
 priority: low
 area: "groups, xcuitest"
@@ -24,3 +24,13 @@ detrás de otros; la regla de `testing.md` sobre los plazos en el runner lento a
 
 **Qué hacer:** fechar el rojo con la nocturna (`gh run view --log` de `qa.yml`) y, si se repite, ver en el vídeo del
 `.xcresult` qué hay en pantalla a los 5 s antes de subir el plazo.
+
+## Cierre (2026-11-02): no se confirma, no se toca el plazo
+
+**Medido** con `gh run view --log` de las 15 nocturnas de `qa.yml` por `schedule` del 18-oct al 1-nov (todas
+`success`): el caso corre en la tanda de UI que le toca y **pasa las 15 a la primera iteración** (`Iteration 1 of 3`,
+~32 s; el 1-nov, 32,3 s), en el runner frío del CI, que es más lento que la Mini. Ningún `GroupsSmokeUITests.swift:319`
+en ningún log. El único rojo sigue siendo el local del 2-nov, que pasó 13/13 al repetir con el simulador borrado.
+
+Subir los 5 s sin un rojo que lo justifique taparía el siguiente fallo real de esa pantalla. Si vuelve a caer —en la
+nocturna o en un gate solo en el simulador—, se reabre con el vídeo del `.xcresult` a los 5 s, como decía el plan.

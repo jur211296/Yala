@@ -574,7 +574,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-shareable-summary | done | tickets/done/groups-shareable-summary.md |
 | groups-sign-out-quiescence-gate-fails-open-with-drive-off | backlog | tickets/backlog/groups-sign-out-quiescence-gate-fails-open-with-drive-off.md |
 | groups-signout-reentry-banner-has-no-producer | backlog | tickets/backlog/groups-signout-reentry-banner-has-no-producer.md |
-| groups-smoke-account-row-times-out-inside-the-suite | backlog | tickets/backlog/groups-smoke-account-row-times-out-inside-the-suite.md |
+| groups-smoke-account-row-times-out-inside-the-suite | discarded | tickets/discarded/groups-smoke-account-row-times-out-inside-the-suite.md |
 | groups-stats-no-deduplica-gastos | done | tickets/done/groups-stats-no-deduplica-gastos.md |
 | groups-stuck-drain-on-a-healthy-phone-says-try-again-later | done | tickets/done/groups-stuck-drain-on-a-healthy-phone-says-try-again-later.md |
 | groups-sync-reads-a-missing-attest-401-as-a-session-expiry | done | tickets/done/groups-sync-reads-a-missing-attest-401-as-a-session-expiry.md |

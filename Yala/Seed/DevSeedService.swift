@@ -339,6 +339,17 @@ final class DevSeedService {
                 in: context
             )
 
+            // Step 8.5: del 1 al 4 del mes, un gasto de vivienda (card 04ek). Solo `realista`: la ficha y el perfil de
+            // medida conservan sus cifras.
+            if profile == .realista {
+                DevSeedTransactions.createEarlyMonthHousing(
+                    now: endDate,
+                    account: accounts.cuentaPrincipal,
+                    subcategoryLookup: subcategoryLookup,
+                    in: context
+                )
+            }
+
             // Step 9: Create initial balances
             updateStep(L10n.DevSeed.stepInitialBalances, progress: 0.96)
             DevSeedTransactions.createInitialBalances(
