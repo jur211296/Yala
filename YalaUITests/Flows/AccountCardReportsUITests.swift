@@ -107,7 +107,9 @@ final class AccountCardReportsUITests: XCTestCase {
         for _ in 0..<5 {
             if app.staticTexts[title].exists && app.staticTexts[title].isHittable { return true }
             let picker = element(app, "account_card_grouping_picker")
-            let y = picker.frame.maxY + 120
+            // Por la fila del título de la página, no por las barras: la gráfica se queda el arrastre a ratos y la
+            // página no pasa (visto en el vídeo del rojo del 2026-11-01: 4 páginas y el caso parado en la 3.ª).
+            let y = picker.frame.maxY + 36
             let start = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: app.frame.width * 0.85, dy: y))
             let end = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: app.frame.width * 0.1, dy: y))
             start.press(forDuration: 0.05, thenDragTo: end)
