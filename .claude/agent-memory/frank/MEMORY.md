@@ -148,6 +148,7 @@
 - [Rojo de compilación en un fichero ajeno](feedback_rojo_de_compilacion_en_fichero_ajeno.md) — relanza; si repite tras editar durante un build, clean antes de bisecar.
 - [Capturas con un conductor XCUITest](feedback_capturas_con_conductor_xcuitest.md) — build del árbol sin tocar, capturas en segundo plano y editar mientras.
 - [La captura es del binario que lanzas](feedback_la_captura_es_del_binario_que_lanzas.md) — `-configuration Debug` deja otro bundle; lanza el .dev recién compilado.
+- [El «antes» con la app base en Products](reference_el_antes_con_la_app_base_en_products.md) — regrabar el antes sin otra build: cambia el Yala.app de Products.
 - [El «antes» sale del build del rojo](feedback_el_antes_sale_del_build_del_rojo.md) — un build con el arreglo revertido da el rojo del XCUITest y la captura.
 - [Tras un mutante, la app instalada es el mutante](feedback_tras_un_mutante_la_app_instalada_es_el_mutante.md) — recompila antes de capturar; axe type, no type_text.
 - [La gráfica se queda el gesto](feedback_la_grafica_se_queda_el_gesto.md) — swipe por x=8, despacio; el banner, en ráfaga.
