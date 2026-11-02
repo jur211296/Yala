@@ -231,6 +231,7 @@ enum EntityApplyMap {
             "split_my_value": Apply.moneyOpt(\.splitMyValue),
             "split_divisor": Apply.moneyOpt(\.splitDivisor),
             "created_at": Apply.dateReq(\.createdAt),
+            "split_lines_raw": Apply.textOpt(\.splitLinesRaw),
         ]
     )
 

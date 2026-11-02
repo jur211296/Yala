@@ -576,6 +576,7 @@ DEFINE SCHEMA
         CD_splitDivisor              DOUBLE,
         CD_splitExpenseID            STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_splitGroupZoneID          STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_splitLinesRaw             STRING,
         CD_splitMyValue              DOUBLE,
         CD_splitSettlementID         STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_splitTotalAmount          DOUBLE QUERYABLE SORTABLE,

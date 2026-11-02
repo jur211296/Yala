@@ -105,8 +105,32 @@ editar una abre «Partir tu parte». Borrar una recarga a mano la recrea la pasa
 4. **El mismo cambio en el port `mcp/src/logic/groups.ts`** solo si el ajuste cambia. Por D3 no debería; la card 3
    lo comprueba con tests del caso Pía y del súper.
 
+## Card 1 hecha (2026-11-01): el campo viaja
+
+`TransactionItem.splitLinesRaw` existe y viaja por iCloud (`CD_splitLinesRaw`, los cuatro `.ckdb`; el deploy a
+Production lo hace Jürgen, `docs/despliegue-cloudkit-2-2.md`) y por el Modo Nube (`tx_items.split_lines_raw`, v6,
+`g28_01` aplicada en staging y producción, Worker v6 en los dos). Nada lo escribe todavía.
+
+**Lo que la review de la card 1 dejó para la card 2** (medido en el árbol del 1-nov, sin arreglar porque es de la card 2):
+
+5. **`partitionVirtualTxs` se come las derivadas de gasto**: una pata derivada lleva subcategoría de usuario y cuenta como
+   clasificable (`GroupTransactionBridge.swift` ~316-329, `BridgeBranchLogic.swift` ~112), así que se conserva una y se
+   borran las demás. `hasUserMetadata` no mira `splitLinesRaw`: la pata con la receta puede perder contra otra con tags
+   o más antigua. Es el D2 de arriba, ahora con coordenadas.
+6. **`existingRealTx = first { !isSystemAccount }`** (~295): una recarga derivada con `splitExpenseID` saldría elegida
+   como «la real» y `deleteStaleReal` la borraría. D4 lo evita quitándole el `splitExpenseID` a la entrada; si la card 2
+   cambia D4, esto vuelve.
+7. **Soltar punteros no limpia la receta**: `OrphanedBridgedTxSweeper.swift` ~331-334 y `LegacyGroupsRetirement.swift`
+   ~267-270 vacían los tres punteros y dejan `splitLinesRaw` (o la marca `{"of":…}`) en un movimiento que vuelve a ser
+   personal. Y si `.deleteVirtual` borra la pata con la receta, las derivadas quedan huérfanas.
+8. **Cambio de divisa de una cuenta**: hoy lo bloquea cualquier fila con `splitExpenseID` (`AccountFormViewModel.swift`
+   ~694-704). La entrada de una recarga no lo lleva (D4): `convertHistory` le cambiaría el importe y la receta, en la
+   divisa vieja, dejaría de cuadrar.
+9. **Un aparato con una build anterior a la card 2** —2.1, o una build con la card 1 sin la 2— corre el puente viejo y deja
+   tu parte en una sola pata (ya aceptado en «Compatibilidad» del diseño). Por eso la card 1 no sube sola a TestFlight
+   con algo que escriba la receta: no hay nada que la escriba hasta la card 2.
+
 ## Fuera de este diseño
 
 - Ventas por cobrar (cards 7-11): otro `/spec`.
-- La columna en el servidor y en CloudKit (card 1), que es requisito de la card 2.
 - La UI (cards 4-6).

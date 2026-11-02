@@ -23,6 +23,7 @@
 //  Y desde la v4 (card da5d), con el destino de los favoritos de transferencia (`favorite_payments.destination_account_ref`).
 //  Y desde la v5 (card nmtk), con el día de corte y los días de aviso de una tarjeta (`accounts.credit_card_statement_day`,
 //  `accounts.credit_card_reminder_days_before`).
+//  Y desde la v6 (Grupos B, card 1), con la receta de líneas de tu parte de un gasto de grupo (`tx_items.split_lines_raw`).
 //
 //  Por qué no «reemitir toda cuenta con enlace»: subiría con un HLC fresco copias de lo que bajó antes de que otro
 //  teléfono lo cambiara, y le ganaría por LWW a ese cambio más nuevo (lo cazó la review).
@@ -165,6 +166,37 @@ extension CloudSyncEngine {
             reemitted += inputs.count
         }
 
+        // La receta de líneas de tu parte de un gasto de grupo (v6, Grupos B · card 1), con el mismo molde.
+        let pendingSplitLines = level >= SyncCapability.splitLinesSince ? SyncCapability.suppressedSplitLines : []
+        if !pendingSplitLines.isEmpty {
+            let items = try context.fetch(FetchDescriptor<TransactionItem>()).filter {
+                $0.syncID.map(pendingSplitLines.contains) ?? false
+            }
+            let emission = EntityEmissionMap.transactionItem
+            let groupedColumns = Set(emission.groupByColumn.keys)
+            let inputs: [SnapshotRowInput] = items.compactMap { item in
+                guard let syncID = item.syncID else { return nil }
+                return SnapshotRowInput(syncID: syncID, entityType: SyncEntityType.transactionItem) { hlc in
+                    let result = DeltaEmitter.emit(model: item, emission: emission,
+                                                   changedColumns: ["split_lines_raw"], hlc: hlc,
+                                                   capabilityLevel: level)
+                    do {
+                        let fieldsJSON = try Canonc1Codec.encode(result.fields, groupedColumns: groupedColumns)
+                        return (fieldsJSON, self.encodeFieldHlcs(result.fieldHlcs))
+                    } catch {
+                        #if DEBUG
+                        print("CloudSyncEngine.applyCapabilityUpgrade: codec c1 rechazó el movimiento: \(error)")
+                        #endif
+                        CloudSyncBreadcrumb.encodeRejected(entity: SyncEntityType.transactionItem,
+                                                           reason: "splitLinesReemit:\(error)")
+                        return nil
+                    }
+                }
+            }
+            try enqueueSnapshotRows(inputs, context: context, now: now)
+            reemitted += inputs.count
+        }
+
         let cursor = try loadOrCreateCursor(context)
         if cursor.serverSeqCursor != 0 {
             try saveWithAuthor(context, Self.outboxSaveAuthor) {
@@ -176,6 +208,7 @@ extension CloudSyncEngine {
         SyncCapability.clearSuppressedCashFlowAmountChanges(pendingLineIDs)
         SyncCapability.clearSuppressedFavoriteDestinations(pendingFavoriteIDs)
         SyncCapability.clearSuppressedCreditCardCycles(pendingCycles)
+        SyncCapability.clearSuppressedSplitLines(pendingSplitLines)
         SyncCapability.upgradePending = false
         CloudSyncBreadcrumb.capabilityUpgradeApplied(reemittedLinks: reemitted)
         return true

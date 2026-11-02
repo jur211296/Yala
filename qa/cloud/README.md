@@ -28,6 +28,7 @@
 - `—` [I14 — UI real de migración + consent + claimAction + relaunch asistido + encendido de flags](#i14--ui-real-de-migracin--consent--claimaction--relaunch-asistido--encendido-de-flags)
 - `—` [transfer_group_ownership (G10 / D10) — batch "salir de todos mis grupos" — APLICADA EN AMBOS ENVS ✅](#transfergroupownership-g10--d10--batch-salir-de-todos-mis-grupos--aplicada-en-ambos-envs)
 - `—` [G7 — cifrado pgcrypto de columnas † de grupos (data-at-rest)](#g7--cifrado-pgcrypto-de-columnas--de-grupos-data-at-rest)
+- `2026-11-01` [g28_01 — `tx_items.split_lines_raw`: las líneas de tu parte de un gasto de grupo (2026-11-01)](#g2801--txitemssplitlinesraw-las-lneas-de-tu-parte-de-un-gasto-de-grupo-2026-11-01)
 - `2026-10-27` [g26_01 — `accounts.credit_card_statement_day` y `credit_card_reminder_days_before`: el corte de la tarjeta (2026-10-27)](#g2601--accountscreditcardstatementday-y-creditcardreminderdaysbefore-el-corte-de-la-tarjeta-2026-10-27)
 - `2026-10-25` [g24_01 — `favorite_payments.destination_account_ref`: el destino de un favorito de transferencia (2026-10-25)](#g2401--favoritepaymentsdestinationaccountref-el-destino-de-un-favorito-de-transferencia-2026-10-25)
 - `2026-10-21` [g21_01 — `cashflow_lines.amount_changes_raw`: los cambios «desde este mes» del flujo de caja (2026-1](#g2101--cashflowlinesamountchangesraw-los-cambios-desde-este-mes-del-flujo-de-caja-2026-10-21)
@@ -1852,6 +1853,31 @@ teléfono de otro admin la app ofrece quitarle el admin al creador (el servidor 
 **El orden: g22_01 → Worker con `set_member_role` en la allowlist → app.** Al revés no se escribe nada: sin DDL, el
 gateway devuelve 502 `yala_unavailable`; sin Worker, 404 `unknown rpc`; la app enseña en los dos el error genérico. El
 §2 no depende del orden: no cambia la forma de ninguna respuesta.
+
+## g28_01 — `tx_items.split_lines_raw`: las líneas de tu parte de un gasto de grupo (2026-11-01)
+
+**Estado:** **APLICADA en staging y en producción el 2026-11-01**, con el Worker v6 en los dos (medido con `g28_01-remote.sh … state`: `text`, nullable, grant heredado; `/config` de los dos da `"sync":{"manifestVersion":6,"groupsManifestVersion":2}`). Worker de staging `0d84adaf…` → `925a42da-8047-4150-8293-691e78a4aa03`; producción `36fc05ae…` → `d0737d7a-2964-4463-b70d-e7a10f37cb6f`. La sonda de staging, 15/15.
+
+Fichero: `qa/cloud/g28_01_tx_items_split_lines.sql`; marcha atrás `qa/cloud/g28_01_rollback.sql` (idempotente, solo
+sin recetas, bajo lock). Se aplica y se mide con `bash qa/cloud/g28_01-remote.sh <staging|production> <state|apply|rollback>`
+(Management API, `~/Secrets/yala-supabase-mgmt/pat`). Card `tablero-grupos-b-1-guardar-las-lineas-de-tu-part-vqhe`.
+
+Qué cambia: una columna `text` nullable en `tx_items` con la receta de tu parte en líneas (`GroupSplitLinesRecipe`;
+diseño en `docs/disenos/grupos-tu-parte-en-lineas/README.md`). NULL = sin receta. Sin CHECK: la receta de una versión
+posterior se lee sin romper y no se reescribe. Grants heredados (la migración lo comprueba). No toca ningún RPC.
+
+**Quinto `since` del manifest**: `"since": 6` y `manifest_version: 6`, columna `safe` (el puente re-deriva las patas en
+cada pasada; una receta que no cuadra es un estado previsto, no una corrupción). Apunte por fila
+(`SyncCapability.noteSuppressedSplitLines`, también al vaciarla) y reemisión al subir a v6. Lo fijan `SplitLinesSyncTests`,
+`AccountLineSyncTests` (paridad del manifest) y `gateway/test/manifest.capability.test.ts`.
+
+**La ida y vuelta entre dos teléfonos**, contra el Worker desplegado: `bash qa/cloud/g28_01-staging-probe.sh` (usuario
+de test A, dos nodos de HLC; 15 casos: v6 sube y baja, v5 no la ve, Merkle v5/v6 en 200, la vuelta del nodo 2, vaciarla
+viaja como `null`). Deja en staging un `tx_items` borrado y sin receta.
+
+**El orden: g28_01 → Worker v6 → app.** La app puede salir antes: con un Worker v5 declara v5 y no emite ni hashea la
+columna. En iCloud el campo es `CD_TransactionItem.CD_splitLinesRaw` (String), y su deploy a Production es de Jürgen
+(`docs/despliegue-cloudkit-2-2.md`).
 
 ## g26_01 — `accounts.credit_card_statement_day` y `credit_card_reminder_days_before`: el corte de la tarjeta (2026-10-27)
 

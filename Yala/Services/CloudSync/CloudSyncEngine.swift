@@ -3116,6 +3116,11 @@ final class CloudSyncEngine {
                let account = model as? Account {
                 SyncCapability.noteSuppressedCreditCardCycle(account.shortcutID, columns: changedColumns)
             }
+            // Y con la receta de líneas de tu parte (v6, Grupos B · card 1), también cuando se vacía.
+            if level < SyncCapability.splitLinesSince, changedColumns.contains("split_lines_raw"),
+               let item = model as? TransactionItem, let itemSyncID = item.syncID {
+                SyncCapability.noteSuppressedSplitLines(itemSyncID)
+            }
             changedColumns.formIntersection(emission.columns(upTo: level))
             guard !changedColumns.isEmpty else { return }
             try appendUpsert(model: model, emission: emission, syncID: syncID, entityType: entityType,

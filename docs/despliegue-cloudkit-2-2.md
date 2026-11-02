@@ -1,5 +1,5 @@
 ---
-updated: 2026-10-27
+updated: 2026-11-01
 tags: [cloudkit, despliegue, owner, v2.2]
 ---
 
@@ -71,6 +71,27 @@ En cada contenedor (`iCloud.com.jurgenschmidt.yala` y luego `iCloud.com.jurgensc
 5. **Deploy**. Cambia a **Production**, abre `CD_Account` y comprueba los dos campos como **Int(64)**.
 
 Si haces esta pasada junto con la de arriba, basta un solo **Deploy** por contenedor.
+
+## Añadido el 2026-11-01: las líneas de tu parte de un gasto de grupo (Grupos B, card 1)
+
+Un campo más en `CD_TransactionItem`, **String**, sin índices: la receta con la que tu parte de un gasto de grupo se
+parte en líneas (recarga + comisión, por ejemplo). Hoy ninguna pantalla lo escribe; lo escribirá la build que traiga
+«Partir tu parte» (cards 2-6). **Sin el campo en Production, iCloud rechazaría ese movimiento sin avisar.**
+
+| Record type | Campo | Tipo | Índices |
+|---|---|---|---|
+| `CD_TransactionItem` | `CD_splitLinesRaw` | String | ninguno |
+
+En cada contenedor (`iCloud.com.jurgenschmidt.yala` y luego `iCloud.com.jurgenschmidt.yala.dev`):
+
+1. Selector de entorno en **Development**. **Schema → Record Types → `CD_TransactionItem`**.
+2. Si falta `CD_splitLinesRaw`: **+**, nombre `CD_splitLinesRaw`, tipo **String**, **Save**. No marques ningún índice.
+3. **Schema → Deploy Schema Changes…** La lista trae solo altas, entre ellas «Add field `CD_splitLinesRaw` to
+   `CD_TransactionItem`». Con un «Remove» o «Change», **Cancel** y avisa a Frank.
+4. **Deploy**. Cambia a **Production**, abre `CD_TransactionItem` y comprueba `CD_splitLinesRaw` como **String**.
+
+Si haces esta pasada junto con las de arriba, basta un solo **Deploy** por contenedor. **Antes de subir a TestFlight una
+build que escriba la receta.**
 
 ## Cuando acabes
 

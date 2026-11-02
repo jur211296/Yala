@@ -1,5 +1,5 @@
 ---
-updated: 2026-10-22
+updated: 2026-11-01
 tags: [runbook, staging, ddl, owner]
 ---
 
@@ -582,6 +582,30 @@ entorno, va primero (su sección, arriba).
 **Marcha atrás.** Worker: `npx wrangler rollback <id anterior>`. Columna: `g21_01_rollback.sql`, idempotente, que aborta si
 alguna línea ya tiene cambios. Tras volver el Worker atrás, un teléfono que ya apuntó «backend = 3» manda la columna hasta
 su siguiente pull, y el Worker v2 rechaza esas filas enteras (`unknown_column`) en ese hueco.
+
+## `g28_01_tx_items_split_lines.sql` — las líneas de tu parte de un gasto de grupo (APLICADA, 2026-11-01)
+
+**Estado:** **APLICADA en staging y en producción el 2026-11-01**, con el Worker v6 en los dos (medido con `g28_01-remote.sh … state`: `text`, nullable, grant heredado; `/config` de los dos da `"sync":{"manifestVersion":6,"groupsManifestVersion":2}`). Worker de staging `0d84adaf…` → `925a42da-8047-4150-8293-691e78a4aa03`; producción `36fc05ae…` → `d0737d7a-2964-4463-b70d-e7a10f37cb6f`. La sonda de staging, 15/15.
+
+Qué es: `tx_items.split_lines_raw text`, nullable, con la receta de tu parte en líneas. Va con el Worker de
+`manifest_version: 6` (`qa/cloud/README.md`, entrada g28_01). La aplicó la sesión de la card 1 de Grupos B por la
+Management API, sin pasar por el *SQL Editor*.
+
+### Si hay que repetirla (staging `fostjbbwstyuunmmefuk` primero; luego producción `kefvaiymtgytemwbltlz`)
+
+1. **Medir.** `bash qa/cloud/g28_01-remote.sh <staging|production> state`. Con `"tipo":"text"` ya está: salta al paso 3.
+2. **Aplicar.** `bash qa/cloud/g28_01-remote.sh <staging|production> apply`. Responde `[]` y luego el estado con
+   `"tipo":"text","nullable":"YES","grant_update":true`. Con un error no se aplicó nada (va en transacción, con
+   `lock_timeout` de 5 s: si choca con tráfico, se relanza).
+3. **Worker, SOLO después del paso 2**, desde `2.2` con este cambio: `cd gateway && npm ci && npm run deploy:staging` o
+   `npm run deploy:production`. El `predeploy` dice `check-manifest-not-older: OK (personal desplegado v5, este árbol v6 …)`.
+   Apunta el `Current Version ID` y el anterior.
+4. **Comprobar.** `curl -s -A yala <url del gateway>/config` trae `"manifestVersion":6`. En staging, además,
+   `bash qa/cloud/g28_01-staging-probe.sh` → `15/15 PASS`.
+
+**Marcha atrás.** Worker: `npx wrangler rollback <id anterior>` (último recurso: en el hueco, un teléfono con «backend = 6»
+apuntado pierde sus altas de movimientos con `unknown_column`; detalle en la cabecera de `g28_01_rollback.sql`). Columna:
+`bash qa/cloud/g28_01-remote.sh <entorno> rollback`, que aborta si algún movimiento ya tiene receta.
 
 ## `g26_01_credit_card_cycle.sql` — el día de corte y el aviso de la tarjeta (aplicada según la card nmtk)
 
