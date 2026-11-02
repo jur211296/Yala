@@ -152,16 +152,27 @@ final class AccountFormViewModel {
     var archiveLinesChoice: Bool?
     /// Un añadir, vincular o desvincular que falló, con su motivo ya traducido.
     var lineActionError: String?
-    var isShowingLineActionError: Bool = false
+    var isShowingLineActionError: Bool = false {
+        didSet { Self.vibrateIfErrorAppeared(isShowingLineActionError, was: oldValue) }
+    }
     /// Editar cuenta con varias divisas (S30): la línea elegida en el selector de moneda (`nil` = la propia cuenta) y
     /// un borrador del saldo inicial por línea, que se guarda con el «Guardar» del formulario.
     var selectedLineID: UUID?
     var lineDrafts: [LineBalanceDraft] = []
 
     // MARK: - UI State
-    var isShowingDeleteError: Bool = false
+    // Las tres alertas de error vibran `error()` al aparecer, quien sea que las levante (card C4; mapa de `DS.Haptic`).
+    var isShowingDeleteError: Bool = false {
+        didSet { Self.vibrateIfErrorAppeared(isShowingDeleteError, was: oldValue) }
+    }
     var deleteErrorMessage: String = ""
-    var isShowingSaveError: Bool = false
+    var isShowingSaveError: Bool = false {
+        didSet { Self.vibrateIfErrorAppeared(isShowingSaveError, was: oldValue) }
+    }
+
+    private static func vibrateIfErrorAppeared(_ isShowing: Bool, was: Bool) {
+        if isShowing && !was { DS.Haptic.error() }
+    }
     var hasInitializedBalance: Bool = false  // Track if balance was initialized from transactions
 
     // MARK: - Cambio de divisa con histórico

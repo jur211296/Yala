@@ -112,6 +112,7 @@ final class FavoriteEditorViewModel {
             #if DEBUG
             print("FavoriteEditorViewModel: Error saving favorite: \(error)")
             #endif
+            DS.Haptic.error()
             showSaveError = true
             return false
         }
@@ -129,6 +130,7 @@ final class FavoriteEditorViewModel {
             #if DEBUG
             print("FavoriteEditorViewModel: Error deleting favorite: \(error)")
             #endif
+            DS.Haptic.error()
             showSaveError = true
             return false
         }

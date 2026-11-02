@@ -235,6 +235,7 @@ final class ScheduledPaymentEditorViewModel {
             #if DEBUG
             print("ScheduledPaymentEditorViewModel: Error saving payment: \(error)")
             #endif
+            DS.Haptic.error()
             showSaveError = true
             return nil
         }
@@ -283,6 +284,7 @@ final class ScheduledPaymentEditorViewModel {
             #if DEBUG
             print("ScheduledPaymentEditorViewModel: Error deleting payment: \(error)")
             #endif
+            // Sin háptico: este borrado corre diferido, con el editor ya cerrado y sin alerta que lo explique.
             showSaveError = true
             return false
         }

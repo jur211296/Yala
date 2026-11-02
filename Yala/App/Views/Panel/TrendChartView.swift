@@ -319,6 +319,8 @@ struct TrendChartView: View {
             }
         }
         .chartXSelection(value: $draggingDate)  // Native iOS 17+ selection - works with scroll
+        // Una vibración por punto al recorrer la gráfica, no por fotograma del arrastre (card C4).
+        .sensoryFeedback(.selection, trigger: scrubbedPointDate) { old, new in new != nil && old != new }
         .chartOverlay { proxy in
             ZStack {
                 todayHintPillOverlay(proxy: proxy)
@@ -555,6 +557,12 @@ struct TrendChartView: View {
 
     private func value(for date: Date, in data: [PanelViewModel.BarPoint]) -> Double? {
         data.first(where: { Calendar.current.isDate($0.date, inSameDayAs: date) })?.value
+    }
+
+    /// El punto bajo el dedo mientras se recorre la gráfica: cambia solo al pasar de un punto al siguiente.
+    private var scrubbedPointDate: Date? {
+        guard let draggingDate else { return nil }
+        return closestPoint(to: draggingDate, in: trendPoints)?.date
     }
 
     private func closestPoint(to date: Date, in data: [PanelViewModel.BarPoint]) -> PanelViewModel

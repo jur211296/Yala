@@ -401,7 +401,7 @@ struct GroupFormView: View {
                 case .channelOff:
                     // Cero escrituras: antes de C4 esta rama era `.cloudKit` y acuñaba un `SplitGroup`
                     // local con `isBackendGroup == false` — no invitable y sin vía de migración.
-                    DS.Haptic.warning()
+                    DS.Haptic.error()
                     saveErrorMessage = L10n.Welcome.Groups.channelOffBody
                     showSaveError = true
                     return
@@ -454,7 +454,7 @@ struct GroupFormView: View {
             #if DEBUG
             print("GroupFormView: Error saving group: \(error)")
             #endif
-            DS.Haptic.warning()
+            DS.Haptic.error()
             // `GroupsRPCError` no es `LocalizedError`: sin clasificar salía «Error de Yala.GroupsRPCError 2».
             saveErrorMessage = GroupActionErrorLogic.message(for: error)
             showSaveError = true

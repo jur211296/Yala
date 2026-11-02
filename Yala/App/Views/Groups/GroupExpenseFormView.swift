@@ -786,6 +786,8 @@ struct GroupExpenseFormView: View {
         let name = payerDisplayName(member)
         return Button {
             dismissKeyboard()
+            // Elegir quién pagó: selección (card C4; mapa de `DS.Haptic`).
+            if !isSelected { DS.Haptic.selection() }
             viewModel.paidByMemberID = id
         } label: {
             VStack(spacing: DS.Spacing.xs) {
@@ -1007,7 +1009,7 @@ struct GroupExpenseFormView: View {
             // cubre el grupo congelado por migración, la carrera pull-congela-mientras-guardas
             // y cualquier otro saveError. Sin esto el botón quedaba activo sin feedback alguno.
             if viewModel.saveError != nil {
-                DS.Haptic.warning()
+                DS.Haptic.error()
                 showSaveErrorAlert = true
             }
             return
@@ -1275,7 +1277,7 @@ struct GroupExpenseFormView: View {
     }
 
     private func showMissingField(_ missing: GroupExpenseMissingField) {
-        DS.Haptic.warning()
+        DS.Haptic.error()
         dsWithAnimation(reduceMotion) {
             showsMissingField = true
             switch missing {

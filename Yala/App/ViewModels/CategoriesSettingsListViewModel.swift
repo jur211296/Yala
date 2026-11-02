@@ -196,6 +196,8 @@ final class CategoriesSettingsListViewModel {
 
         do {
             try context.save()
+            // Borrado confirmado y guardado (card C4; mapa de `DS.Haptic`).
+            DS.Haptic.warning()
             context.processPendingChanges()
             SessionState.shared.forgetDeletedFilterValues(categories: [categoryID], subcategories: subcategoryIDs)
             WidgetDataCache.updateCache(context: context)

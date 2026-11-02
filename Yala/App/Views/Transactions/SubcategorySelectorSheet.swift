@@ -105,6 +105,7 @@ struct SubcategorySelectorSheet: View {
                                             categoryColor: subcategory.safeCategory.colorHex,
                                             isSelected: isSelected(subcategory),
                                             action: {
+                                                DS.Haptic.selection()
                                                 selectedSubcategory = subcategory
                                                 dismiss()
                                             }
@@ -136,6 +137,7 @@ struct SubcategorySelectorSheet: View {
                                 columns: columns,
                                 selectedSubcategory: $selectedSubcategory,
                                 onSelect: { subcategory in
+                                    DS.Haptic.selection()
                                     selectedSubcategory = subcategory
                                     dismiss()
                                 }

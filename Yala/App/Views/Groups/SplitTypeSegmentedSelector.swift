@@ -18,6 +18,7 @@ import SwiftUI
 struct SplitTypeSegmentedSelector: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Namespace private var selectionNamespace
     @Binding var selectedType: SplitType
     var onTypeChange: ((SplitType) -> Void)?
 
@@ -35,7 +36,9 @@ struct SplitTypeSegmentedSelector: View {
         HStack(spacing: DS.Spacing.none) {
             ForEach(SplitType.allCases) { type in
                 Button {
-                    dsWithAnimation(reduceMotion) {
+                    // Molde de `TransactionTypeSelectorView` (card C4): vibra al cambiar y la cápsula se desliza.
+                    if type != selectedType { DS.Haptic.selection() }
+                    dsWithAnimation(reduceMotion, DS.Animation.selection) {
                         selectedType = type
                     }
                     onTypeChange?(type)
@@ -58,10 +61,13 @@ struct SplitTypeSegmentedSelector: View {
             .foregroundStyle(selectedType == type ? AnyShapeStyle(.thOnAccent) : AnyShapeStyle(.secondary))
             .frame(maxWidth: .infinity)
             .padding(.vertical, DS.Spacing.sm)
-            .background(
-                Capsule()
-                    .fill(selectedType == type ? AnyShapeStyle(.thAccent) : AnyShapeStyle(Color.clear))
-            )
+            .background {
+                if selectedType == type {
+                    Capsule()
+                        .fill(.thAccent)
+                        .matchedGeometryEffect(id: "selection", in: selectionNamespace)
+                }
+            }
     }
 
     // MARK: - DT XXL fallback (Menu)
@@ -70,6 +76,7 @@ struct SplitTypeSegmentedSelector: View {
         Menu {
             ForEach(SplitType.allCases) { type in
                 Button {
+                    if type != selectedType { DS.Haptic.selection() }
                     selectedType = type
                     onTypeChange?(type)
                 } label: {

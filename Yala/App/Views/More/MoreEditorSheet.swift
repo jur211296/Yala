@@ -60,7 +60,11 @@ struct MoreEditorSheet: View {
                         .listRowBackground(Color.clear)
                         .listRowSeparator(kind == localOrder.last ? .hidden : .visible)
                 }
-                .onMove(perform: moveSection)
+                // Una vibración de selección al soltar en su sitio (card C4; mapa de `DS.Haptic`).
+                .onMove { source, destination in
+                    DS.Haptic.selection()
+                    moveSection(from: source, to: destination)
+                }
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)

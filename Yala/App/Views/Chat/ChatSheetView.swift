@@ -106,6 +106,7 @@ struct ChatSheetView: View {
 
             if let error = viewModel.errorMessage {
                 errorBanner(error)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
 
             // Las últimas diez preguntas del día llevan su contador. Con el tope alcanzado lo dice la propia caja
@@ -120,6 +121,8 @@ struct ChatSheetView: View {
 
             chatInputBar
         }
+        .modifier(ChatFeedbackModifier(
+            errorMessage: viewModel.errorMessage, isRecording: viewModel.isRecording, reduceMotion: reduceMotion))
         .dismissKeyboardOnTap()
         .yalaScreenBackground(.subtle)
         .sheet(isPresented: $showAISettingsSheet) {
@@ -163,11 +166,15 @@ struct ChatSheetView: View {
     private static let conversationDeletedNoticeID = "chat_conversation_deleted_notice"
 
     private func startNewConversation() {
-        let snapshot = withAnimation(.easeInOut(duration: 0.25)) {
-            viewModel.resetConversationContext()
+        var snapshot: ChatConversationSnapshot?
+        dsWithAnimation(reduceMotion, DS.Animation.appear) {
+            snapshot = viewModel.resetConversationContext()
         }
         guard let snapshot else { return }
+        // Borra sin preguntar: el toque es la confirmación del borrado (card C8; mapa de `DS.Haptic`).
+        DS.Haptic.warning()
         let viewModel = viewModel
+        let reduceMotion = reduceMotion
         DraftDiscardUndoNotice.show(
             message: L10n.UXL14D.conversationDeleted,
             systemImage: "trash",
@@ -175,9 +182,12 @@ struct ChatSheetView: View {
             noticeIdentifier: Self.conversationDeletedNoticeID,
             undoIdentifier: "chat_conversation_undo"
         ) {
-            withAnimation(.easeInOut(duration: 0.25)) {
-                _ = viewModel.restoreConversation(snapshot)
+            var restored = false
+            dsWithAnimation(reduceMotion, DS.Animation.appear) {
+                restored = viewModel.restoreConversation(snapshot)
             }
+            // Éxito solo si de verdad volvió: con una pregunta nueva en marcha no se repone nada.
+            if restored { DS.Haptic.success() }
         }
     }
 
@@ -367,6 +377,9 @@ struct ChatSheetView: View {
                 // Implícitas: en la columna del iPad el chat vive junto a una pestaña, donde `withAnimation` no anima.
                 .dsAnimation(DS.Animation.appear, value: viewModel.messages.count, reduceMotion: reduceMotion)
                 .dsAnimation(DS.Animation.appear, value: viewModel.isLoading, reduceMotion: reduceMotion)
+                // La tarjeta de un borrador que pasa a guardado, descartado o fallido (card C8): aquí y no en la tarjeta,
+                // para que lo de debajo suba a la vez que ella se encoge.
+                .dsAnimation(DS.Animation.appear, value: draftStatuses, reduceMotion: reduceMotion)
                 .readableChatWidth()
             }
             .scrollDismissesKeyboard(.interactively)
@@ -397,6 +410,16 @@ struct ChatSheetView: View {
         }
     }
 
+    /// El estado de cada borrador del hilo, en orden: cambia cuando uno se guarda, se descarta o falla.
+    private var draftStatuses: [ChatTransactionDraft.Status] {
+        viewModel.messages.flatMap { message in
+            (message.attachments ?? []).flatMap { attachment -> [ChatTransactionDraft.Status] in
+                guard case .drafts(let drafts) = attachment else { return [] }
+                return drafts.map(\.status)
+            }
+        }
+    }
+
     // MARK: - Error Banner
 
     private func errorBanner(_ message: String) -> some View {
@@ -423,7 +446,11 @@ struct ChatSheetView: View {
                     accent: theme.accent,
                     reduceMotion: reduceMotion,
                     onCancel: { viewModel.cancelVoiceInput() },
-                    onDone: { Task { await viewModel.stopVoiceInput() } }
+                    onDone: {
+                        // Enviar lo dictado, como enviar texto: golpe ligero (card C8).
+                        DS.Haptic.light()
+                        Task { await viewModel.stopVoiceInput() }
+                    }
                 )
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             } else {
@@ -566,6 +593,30 @@ struct ChatSheetView: View {
         case .start:
             await viewModel.startVoiceInput()
         }
+    }
+}
+
+/// El banner de error entra y sale con `.appear` y vibra `error()` al aparecer; empezar a grabar vibra `medium()`
+/// (card C8; mapa de `DS.Haptic`). Aparte del `body` de `ChatSheetView`: como mucho tres modificadores por
+/// `ViewModifier` y cierres de una línea, por el compilador del CI (`swiftui-ds.md`).
+private struct ChatFeedbackModifier: ViewModifier {
+    let errorMessage: String?
+    let isRecording: Bool
+    let reduceMotion: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .dsAnimation(DS.Animation.appear, value: errorMessage, reduceMotion: reduceMotion)
+            .onChange(of: errorMessage) { old, new in Self.errorChanged(from: old, to: new) }
+            .onChange(of: isRecording) { was, now in Self.recordingChanged(from: was, to: now) }
+    }
+
+    private static func errorChanged(from old: String?, to new: String?) {
+        if new != nil, new != old { DS.Haptic.error() }
+    }
+
+    private static func recordingChanged(from was: Bool, to now: Bool) {
+        if now, !was { DS.Haptic.medium() }
     }
 }
 

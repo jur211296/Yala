@@ -145,6 +145,7 @@ final class BudgetsFavoritesSettingsViewModel {
             #if DEBUG
             print("BudgetsFavoritesSettingsViewModel: Error deleting: \(error)")
             #endif
+            DS.Haptic.error()
             showDeleteError = true
         }
 
@@ -174,6 +175,7 @@ final class BudgetsFavoritesSettingsViewModel {
             #if DEBUG
             print("BudgetsFavoritesSettingsViewModel: Error saving: \(error)")
             #endif
+            DS.Haptic.error()
             showSaveError = true
         }
 
@@ -198,6 +200,7 @@ final class BudgetsFavoritesSettingsViewModel {
             #if DEBUG
             print("BudgetsFavoritesSettingsViewModel: Error moving: \(error)")
             #endif
+            DS.Haptic.error()
             showSaveError = true
         }
 

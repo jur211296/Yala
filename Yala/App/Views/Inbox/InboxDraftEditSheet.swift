@@ -883,24 +883,28 @@ struct InboxDraftEditSheet: View {
 
         guard let account = selectedAccount else {
             approveErrorMessage = L10n.Inbox.errorNoAccount
+            DS.Haptic.error()
             showApproveError = true
             return
         }
 
         if account.isArchived {
             approveErrorMessage = L10n.Inbox.errorArchivedAccount
+            DS.Haptic.error()
             showApproveError = true
             return
         }
 
         guard let amt = amount else {
             approveErrorMessage = L10n.Inbox.errorNoAmount
+            DS.Haptic.error()
             showApproveError = true
             return
         }
 
         guard selectedSubcategory != nil else {
             approveErrorMessage = L10n.Inbox.errorNoSubcategory
+            DS.Haptic.error()
             showApproveError = true
             return
         }
@@ -1077,6 +1081,8 @@ struct InboxDraftEditSheet: View {
         draftService.setContext(modelContext)
         do {
             try draftService.rejectDraft(draft)
+            // Descartar desde el editor, una vez hecho (card C4; mapa de `DS.Haptic`).
+            DS.Haptic.warning()
             dismiss()
             showDiscardedNotice()
         } catch {
@@ -1136,6 +1142,7 @@ struct InboxDraftEditSheet: View {
         draftService.setContext(modelContext)
         do {
             try draftService.deleteDraft(draft)
+            DS.Haptic.warning()
             dismiss()
         } catch {
             #if DEBUG

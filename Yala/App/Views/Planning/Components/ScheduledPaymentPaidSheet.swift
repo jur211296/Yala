@@ -168,10 +168,13 @@ struct ScheduledPaymentPaidSheet: View {
                 payment, occurrence: occurrence, amount: amount,
                 draftService: draftService, currencyConverter: currencyConverter
             ) != nil {
+                // Marcado como pagado, una vez guardado (card C4; mapa de `DS.Haptic`).
+                DS.Haptic.success()
                 dismiss()
             }
         } catch {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? L10n.Common.saveError
+            DS.Haptic.error()
             showError = true
         }
     }

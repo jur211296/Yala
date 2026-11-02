@@ -184,6 +184,7 @@ struct GroupSettlementDraftFinalizationSheet: View {
             print("GroupSettlementDraftFinalizationSheet: approve failed: \(error)")
             #endif
             saveErrorMessage = GroupsUserFacingErrorLogic.message(for: error)
+            DS.Haptic.error()
             showSaveError = true
         }
     }

@@ -376,7 +376,7 @@ La tabla vista por vista y lo que queda en cards: `docs/fluidez/AUDITORIA-FLUIDE
   `warning()`. Si el ViewModel ya vibra al confirmar, la vista no repite: confirmar una liquidación y marcar una fila de
   Registros vibraban dos veces. El éxito va donde el guardado ya ha salido bien, no en el botón: el botón vibra
   aunque falle. `.sensoryFeedback(_:trigger:)` vale para lo declarativo (la marca de una fila), sin sumarle un
-  `DS.Haptic` en el mismo toque. Un `UIImpactFeedbackGenerator` suelto es deuda (la Bandeja, card C4).
+  `DS.Haptic` en el mismo toque. Ningún `UIImpactFeedbackGenerator`/`UINotificationFeedbackGenerator` suelto fuera de `DS.Haptic` (card C4, 2026-11-02: lo fija `FluidezHapticosWiringTests`, igual que «toda lista con `.onMove` vibra al soltar»). Borrar con pregunta vibra en el botón que CONFIRMA, no en el que abre la pregunta. En una hoja de selección, vibra la opción elegida, no el chip que abre la hoja.
 - **Una cifra que cambia a la vista: `AmountText(…, animatesValue: true)`**: `numericText` con su animación implícita.
   Un `.contentTransition(.numericText())` sin `.animation(_:value:)` detrás no hace nada dentro de una pestaña, y así
   estaban los heros de Categorías, Tendencias y Pagos. **Solo rueda lo que cambia con la cifra ya en pantalla** (600 ms
@@ -406,6 +406,10 @@ La tabla vista por vista y lo que queda en cards: `docs/fluidez/AUDITORIA-FLUIDE
 - **Una `.transaction { $0.animation = nil }` en la raíz de una hoja no llega a lo que su `NavigationStack` empuja**
   (medido el 2026-11-02, Ajustes desde Más, card C5): Presupuestos animaba igual con ella que sin ella. Solo apagaba la
   lista raíz.
+- **Una pieza que cambia de estado en su sitio** (el borrador del chat: pendiente → guardado o descartado, card C8):
+  `.transition(.stateSwap)` en la pieza y la animación implícita en el contenedor común (el hilo), con el estado como
+  valor. Como `loadingPlaceholder`, el estado que se va deja de leerse y de tocarse desde su primer fotograma: sin eso
+  hay dos «Guardar» en el árbol mientras dura el fundido.
 - **El háptico de «Deshacer» va en quien deshace, no en el botón del aviso**: el aviso también lleva «Ver» y «Editar»,
   que no deshacen nada, y un deshacer puede no tener nada que deshacer (`returnToPending` que lanza, `unskipOccurrence`
   que no guarda). `success()` tras deshacer de verdad.

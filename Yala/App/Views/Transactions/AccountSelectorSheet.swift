@@ -182,6 +182,8 @@ struct AccountSelectorSheet: View {
     /// Una línea tocada a propósito se guarda tal cual; la tarjeta se enruta por la divisa del importe, salvo desde una de
     /// sus propias líneas, que vuelve a la principal (`AccountSelectorViewModel.selection`).
     private func choose(_ account: Account) {
+        // Elegir en un selector del formulario: selección (card C4; mapa de `DS.Haptic`).
+        DS.Haptic.selection()
         selectedAccount = viewModel.selection(
             for: account, current: selectedAccount?.persistentModelID, routingCurrency: routingCurrency)
         dismiss()

@@ -220,6 +220,7 @@ struct PanelSectionsConfigView: View {
                     }
                 }
                 .onMove { source, destination in
+                    DS.Haptic.selection()
                     appPreferences.movePanelSection(from: source, to: destination)
                 }
                 .deleteDisabled(true)

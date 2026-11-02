@@ -60,28 +60,36 @@ final class NotificationsSettingsViewModel {
 
     // MARK: - Notification Operations
 
-    func insertNotification(_ notification: NotificationItem) {
-        guard let context = modelContext else { return }
+    /// `true` si se guardó: el editor vibra éxito solo entonces (card C4).
+    @discardableResult
+    func insertNotification(_ notification: NotificationItem) -> Bool {
+        guard let context = modelContext else { return false }
         context.insert(notification)
         do {
             try context.save()
             loadNotifications()
+            return true
         } catch {
             #if DEBUG
             print("NotificationsSettingsViewModel: Error inserting notification: \(error)")
             #endif
+            return false
         }
     }
 
-    func saveContext() {
-        guard let context = modelContext else { return }
+    /// `true` si se guardó: el editor vibra éxito solo entonces (card C4).
+    @discardableResult
+    func saveContext() -> Bool {
+        guard let context = modelContext else { return false }
         do {
             try context.save()
             loadNotifications()
+            return true
         } catch {
             #if DEBUG
             print("NotificationsSettingsViewModel: Error saving context: \(error)")
             #endif
+            return false
         }
     }
 
@@ -90,6 +98,8 @@ final class NotificationsSettingsViewModel {
         context.delete(notification)
         do {
             try context.save()
+            // El aviso se borra al tocar la papelera, sin pregunta: el toque es la confirmación (card C4).
+            DS.Haptic.warning()
             loadNotifications()
         } catch {
             #if DEBUG

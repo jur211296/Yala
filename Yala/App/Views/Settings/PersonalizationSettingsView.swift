@@ -159,6 +159,7 @@ struct PersonalizationSettingsView: View {
                 Menu {
                     ForEach(VoiceLanguage.allCases) { language in
                         Button {
+                            DS.Haptic.selection()
                             appPreferences.voiceLanguage = language
                         } label: {
                             HStack {
@@ -494,6 +495,7 @@ private struct PeriodPickerSheet: View {
         let isSelected = selectedPeriod == period
 
         Button {
+            DS.Haptic.selection()
             onSelect(period)
         } label: {
             HStack {
@@ -569,6 +571,7 @@ private struct WeekdayPickerSheet: View {
         let isSelected = selectedWeekday == weekday
 
         Button {
+            DS.Haptic.selection()
             onSelect(weekday)
         } label: {
             HStack {
@@ -650,6 +653,7 @@ private struct DecimalsPickerSheet: View {
         let isSelected = selectedDecimals == option.value
 
         Button {
+            DS.Haptic.selection()
             onSelect(option.value)
         } label: {
             HStack {
@@ -736,6 +740,7 @@ private struct CurrencyFormatPickerSheet: View {
         let isSelected = selectedFormat == option.value
 
         Button {
+            DS.Haptic.selection()
             onSelect(option.value)
         } label: {
             HStack {
@@ -815,6 +820,7 @@ private struct LanguagePickerSheet: View {
 
         return VStack(spacing: DS.Spacing.none) {
             Button {
+                DS.Haptic.selection()
                 onSelect(lang.code)
             } label: {
                 HStack(spacing: DS.Spacing.md) {
@@ -901,6 +907,7 @@ private struct AverageLinePickerSheet: View {
         let isSelected = selectedMode == option.value
 
         Button {
+            DS.Haptic.selection()
             onSelect(option.value)
         } label: {
             HStack {
@@ -984,6 +991,7 @@ private struct AutoFocusPickerSheet: View {
         let isSelected = selectedField == option
 
         Button {
+            DS.Haptic.selection()
             onSelect(option)
         } label: {
             HStack {

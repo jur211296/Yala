@@ -284,7 +284,7 @@ struct GroupOpeningBalanceFormView: View {
     }
 
     private func showMissingField(_ missing: GroupOpeningBalanceMissingField) {
-        DS.Haptic.warning()
+        DS.Haptic.error()
         dsWithAnimation(reduceMotion) {
             showsMissingField = true
             if missing == .amount { amountFocused = true }

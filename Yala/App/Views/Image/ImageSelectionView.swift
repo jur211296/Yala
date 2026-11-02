@@ -1165,7 +1165,7 @@ struct ImageSelectionView: View {
             failedImages = failed
             failedReasons = reasons
             phase = .review
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            DS.Haptic.success()
         }
     }
 
@@ -1276,7 +1276,7 @@ struct ImageSelectionView: View {
             }
         }
         if !saveFailed {
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            DS.Haptic.success()
         }
     }
 

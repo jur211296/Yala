@@ -159,7 +159,11 @@ struct FavoritesListView: View {
                 .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
             }
             .onDelete(perform: viewModel.deleteFavorites)
-            .onMove(perform: viewModel.moveFavorites)
+            // Una vibración de selección al soltar en su sitio (card C4; mapa de `DS.Haptic`).
+            .onMove { source, destination in
+                DS.Haptic.selection()
+                viewModel.moveFavorites(from: source, to: destination)
+            }
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)

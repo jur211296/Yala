@@ -100,7 +100,11 @@ struct TabBarConfigView: View {
                         .listRowBackground(Color.clear)
                         .listRowSeparator(index == localConfig.activeTabs.count - 1 ? .hidden : .visible)
                 }
-                .onMove(perform: moveTab)
+                // Una vibración de selección al soltar en su sitio (card C4; mapa de `DS.Haptic`).
+                .onMove { source, destination in
+                    DS.Haptic.selection()
+                    moveTab(from: source, to: destination)
+                }
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)

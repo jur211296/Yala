@@ -293,6 +293,7 @@ final class BudgetEditorViewModel {
             #if DEBUG
             print("BudgetEditorViewModel: Error saving budget: \(error)")
             #endif
+            DS.Haptic.error()
             showSaveError = true
             return nil
         }
@@ -313,6 +314,7 @@ final class BudgetEditorViewModel {
             #if DEBUG
             print("BudgetEditorViewModel: Error deleting budget: \(error)")
             #endif
+            DS.Haptic.error()
             showSaveError = true
             return false
         }

@@ -122,7 +122,11 @@ struct TransactionDetailSheet: View {
         }
         .alert(deleteTitle, isPresented: $isConfirmingDelete) {
             Button(L10n.Action.cancel, role: .cancel) {}
-            Button(L10n.Action.delete, role: .destructive) { onDelete?() }
+            Button(L10n.Action.delete, role: .destructive) {
+                // Al confirmar el borrado, no al abrir la pregunta (card C4; mapa de `DS.Haptic`).
+                DS.Haptic.warning()
+                onDelete?()
+            }
         } message: {
             Text(deleteMessage)
         }
@@ -168,7 +172,6 @@ struct TransactionDetailSheet: View {
                 }
                 if offersDelete {
                     Button {
-                        DS.Haptic.warning()
                         isConfirmingDelete = true
                     } label: {
                         Label(L10n.Action.delete, systemImage: "trash")

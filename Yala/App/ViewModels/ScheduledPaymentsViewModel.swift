@@ -326,6 +326,8 @@ final class ScheduledPaymentsViewModel {
         }
         do {
             try persistAndRefresh(context: context)
+            // Pausar o reanudar, una vez guardado (card C4; mapa de `DS.Haptic`).
+            DS.Haptic.success()
         } catch {
             #if DEBUG
             print("ScheduledPaymentsViewModel: Error saving pause: \(error)")
@@ -707,6 +709,8 @@ final class ScheduledPaymentsViewModel {
         guard let context = modelContext else { return }
         do {
             try persistAndRefresh(context: context)
+            // «Ya lo apunté»: el pago queda pagado con ese registro (card C4; mapa de `DS.Haptic`).
+            DS.Haptic.success()
         } catch {
             #if DEBUG
             print("ScheduledPaymentsViewModel: Error associating transaction: \(error)")
