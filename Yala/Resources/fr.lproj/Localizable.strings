@@ -6197,6 +6197,7 @@
 
 /* iPad/ventana ancha: columna de detalle vacía en Registros */
 "records.detailPlaceholder" = "Choisis un enregistrement pour le voir ici";
+"records.receivable" = "À encaisser";
 
 /* iPad/ventana ancha: columna de detalle vacía en Planificación */
 "planning.detailPlaceholder" = "Choisis un budget ou un paiement pour le voir ici";
@@ -8550,6 +8551,8 @@
 
 /* Group expense form, under the selectors when you paid and nobody owes you */
 "groups.expense.outflowLineNoDebt" = "%@ sortent de ton compte";
+"groups.expense.saleLineOne" = "%1$@ te doit %2$@. Ça compte comme un revenu au moment du paiement.";
+"groups.expense.saleLineMany" = "On te doit %@. Ça compte comme un revenu au moment du paiement.";
 
 /* Inbox hint: group expense changed and the user's split lines no longer add up. %@ = group name */
 "groups.bridge.draftReasonSplitLinesMismatch" = "La dépense dans « %@ » a changé et tes lignes ne font plus ta part. Pour l’instant, elle tient sur une ligne : choisis sa catégorie.";

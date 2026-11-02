@@ -6202,6 +6202,7 @@
 
 /* iPad/ventana ancha: columna de detalle vacía en Registros */
 "records.detailPlaceholder" = "Choose a record to see it here";
+"records.receivable" = "Owed to you";
 
 /* iPad/ventana ancha: columna de detalle vacía en Planificación */
 "planning.detailPlaceholder" = "Choose a budget or a payment to see it here";
@@ -8555,6 +8556,8 @@
 
 /* Group expense form, under the selectors when you paid and nobody owes you */
 "groups.expense.outflowLineNoDebt" = "%@ leaves your account";
+"groups.expense.saleLineOne" = "%1$@ owes you %2$@. It counts as income when they pay you.";
+"groups.expense.saleLineMany" = "You're owed %@. It counts as income when you get paid.";
 
 /* Inbox hint: group expense changed and the user's split lines no longer add up. %@ = group name */
 "groups.bridge.draftReasonSplitLinesMismatch" = "The expense in “%@” changed and your lines no longer add up to your share. For now it’s a single line: choose its category.";

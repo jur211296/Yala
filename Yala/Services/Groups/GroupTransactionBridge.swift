@@ -360,7 +360,15 @@ final class GroupTransactionBridge {
             context: context
         )
         let matchedSubcat = GroupTransactionBridge.matchSubcategory(name: expense.subcategoryName, context: context)
-        let realSubcat: Subcategory? = (matchedSubcat?.isAnySystem == true) ? nil : matchedSubcat
+        // Grupos B · card 8: pagaste tú y la categoría es de ingreso ⇒ una venta, que queda «por cobrar» en «Grupos».
+        // Fuera de una venta (pagó otro), una categoría de ingreso no clasifica tu parte: contaría como ingreso.
+        let matchedIsIncome = matchedSubcat.map { $0.safeCategory.isIncome }
+        let isSale = GroupSaleBridgeLogic.isSale(
+            isCaseA: isCaseA, subcategoryIsIncome: matchedIsIncome,
+            subcategoryIsSystem: matchedSubcat?.isAnySystem == true)
+        let realSubcat: Subcategory? = (matchedSubcat?.isAnySystem == true)
+            || !GroupSaleBridgeLogic.classifiesShare(isSale: isSale, subcategoryIsIncome: matchedIsIncome)
+            ? nil : matchedSubcat
 
         // Grupos B: la receta de líneas vive en la pata que el puente conserva (la real en el Caso A, la virtual
         // clasificable en el Caso B) y solo se aplica con el puente activo y vida personal (D5). Si no se aplica, tu
@@ -370,7 +378,7 @@ final class GroupTransactionBridge {
         let recipeDestinations = try Self.splitLineDestinations(for: recipeStored, context: context)
         let splitLines = GroupSplitLinesBridgeLogic.decide(
             stored: recipeStored,
-            gateOpen: effectiveBridgeEnabled && !isGroupsOnlySession
+            gateOpen: effectiveBridgeEnabled && !isGroupsOnlySession && !isSale
                 && recipeHolder?.currencyCode == expense.currencyCode,
             isCaseA: isCaseA,
             share: mySharedAmount,
@@ -387,10 +395,12 @@ final class GroupTransactionBridge {
         let splitLinesCoverSubcategory = splitPlan != nil || splitLinesMismatch
 
         // Una pata conservada del Caso B que quedó como recarga (la ancla era una recarga) vuelve a ser tu parte en una
-        // línea si esta pasada no la necesita así.
+        // línea si esta pasada no la necesita así. Y la de una venta, si dejó de serlo. No compares con `!= nil`: una
+        // pata por cobrar también lleva tipo (`GroupSaleBridgeLogic.revertsKeptLeg`).
         let planTransfers = Self.transferLineIDs(in: splitPlan)
-        if let holder = preservedClassifiable, holder.balanceAdjustmentType != nil,
-           isCaseA || splitPlan?.anchor?.kind != .transfer {
+        if let holder = preservedClassifiable, GroupSaleBridgeLogic.revertsKeptLeg(
+            currentType: holder.balanceAdjustmentType, isSale: isSale, isCaseA: isCaseA,
+            anchorIsTransfer: splitPlan?.anchor?.kind == .transfer) {
             try revertTransferShape(of: holder, keep: planTransfers, context: context)
         }
 
@@ -431,6 +441,26 @@ final class GroupTransactionBridge {
             }
             try saveIfNeeded(shouldSave: shouldSave, context: context)
             Self.logger.info("caseB saved expense=\(expenseIDStr, privacy: .public) shouldSave=\(shouldSave, privacy: .public)")
+            return true
+        }
+
+        // Path Caso A con categoría de ingreso: una venta. No salió dinero de ninguna cuenta; lo que te deben queda «por
+        // cobrar» en «Grupos» (Grupos B · card 8). Vale con el puente activo, apagado y en solo-grupos.
+        if isSale {
+            try bridgeSale(
+                expense: expense,
+                existingRealTx: existingRealTx,
+                // También la del «Sí, registrar» con el puente apagado, y su borrador si sigue pendiente: decir que es
+                // una venta es decir que no salió dinero. Conservarla dejaba un `-total` contado como gasto (review).
+                optInDrafts: existingPendingDrafts.filter(\.optInPersonalOnly),
+                keptLeg: preservedClassifiable,
+                derivedLegs: derivedLegs,
+                saleSubcategory: realSubcat,
+                myShareAmount: mySharedAmount,
+                virtualAccount: virtualAccount,
+                context: context
+            )
+            try saveIfNeeded(shouldSave: shouldSave, context: context)
             return true
         }
 
@@ -621,6 +651,66 @@ final class GroupTransactionBridge {
 
         try saveIfNeeded(shouldSave: shouldSave, context: context)
         return true
+    }
+
+    // MARK: - Venta por cobrar (Grupos B · card 8)
+
+    /// Una venta: sin pata real (tampoco la de un «Sí, registrar» con el puente apagado, ni su borrador pendiente), sin
+    /// préstamo y sin líneas de tu parte. Una sola pata en «Grupos» por lo que te deben,
+    /// con la categoría de ingreso y `balanceAdjustmentType = "receivable"`, que Estadísticas no cuenta. Reutiliza la
+    /// pata clasificable que el puente conserva (así guarda sus etiquetas y su identidad entre pasadas). Si nadie te debe
+    /// nada, no hay pata.
+    private func bridgeSale(
+        expense: SplitExpense,
+        existingRealTx: TransactionItem?,
+        optInDrafts: [InboxDraft],
+        keptLeg: TransactionItem?,
+        derivedLegs: [TransactionItem],
+        saleSubcategory: Subcategory?,
+        myShareAmount: Double,
+        virtualAccount: Account,
+        context: ModelContext
+    ) throws {
+        if let real = existingRealTx { try deleteLegWithEntries(real, context: context) }
+        for draft in optInDrafts where !draft.isDeleted { context.delete(draft) }
+        try reconcileDerivedLegs(
+            expense: expense, plan: nil, existing: derivedLegs, holder: nil,
+            virtualAccount: virtualAccount, destinations: [:], context: context)
+
+        var leg = keptLeg
+        if let current = leg, current.currencyCode != expense.currencyCode {
+            try deleteLegWithEntries(current, context: context)
+            leg = nil
+        }
+        guard let amount = GroupSaleBridgeLogic.receivableAmount(total: expense.amount, myShare: myShareAmount)
+        else {
+            if let leg { try deleteLegWithEntries(leg, context: context) }
+            return
+        }
+        let note = expense.expenseDescription.isEmpty ? nil : expense.expenseDescription
+        let receivable: TransactionItem
+        if let leg {
+            receivable = leg
+        } else {
+            receivable = TransactionItem(
+                date: expense.date, amount: amount, currencyCode: expense.currencyCode, note: note,
+                category: saleSubcategory?.safeCategory, subcategory: saleSubcategory, account: virtualAccount)
+            context.insert(receivable)
+        }
+        receivable.amount = amount
+        receivable.date = expense.date
+        receivable.note = note
+        receivable.account = virtualAccount
+        receivable.subcategory = saleSubcategory
+        receivable.category = saleSubcategory?.safeCategory
+        receivable.balanceAdjustmentType = TransactionItem.adjustmentTypeReceivable
+        receivable.transferPairID = nil
+        receivable.splitLinesRaw = nil
+        receivable.splitExpenseID = expense.id.uuidString
+        receivable.splitGroupZoneID = expense.groupZoneID
+        receivable.splitTotalAmount = expense.amount
+        receivable.splitType = expense.splitType
+        receivable.recalculatePreferredCurrency(context: context)
     }
 
     // MARK: - Helpers (M6)

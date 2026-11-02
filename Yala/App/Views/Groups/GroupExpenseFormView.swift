@@ -400,6 +400,8 @@ struct GroupExpenseFormView: View {
                 SubcategorySelectorSheet(
                     selectedSubcategory: $viewModel.selectedSubcategory,
                     transactionType: .expense,
+                    // Grupos B · card 7: también las de ingreso (una venta).
+                    offersIncome: true,
                     sizing: .mediumFirst
                 )
             }
@@ -865,10 +867,35 @@ struct GroupExpenseFormView: View {
     }
 
     /// «Salen S/ 240.00 de tu cuenta y te deben S/ 160.00»: solo al crear, cuando pagas tú y el reparto cuadra
-    /// (`GroupExpenseOutflowLineLogic`). No dice «tu parte»: lo que sale de la cuenta es el gasto entero.
+    /// (`GroupExpenseOutflowLineLogic`). No dice «tu parte»: lo que sale de la cuenta es el gasto entero. Con una venta
+    /// (card 7) dice quién te debe y cuándo cuenta como ingreso.
     @ViewBuilder
     private var outflowLine: some View {
-        if let line = GroupExpenseOutflowLineLogic.line(
+        if let sale = GroupExpenseOutflowLineLogic.saleLine(
+            isSale: viewModel.isSale,
+            isGroupsOnlySession: viewModel.isGroupsOnlySession,
+            amount: viewModel.amount,
+            hasParticipants: viewModel.hasSelectedMembers,
+            sharesBalanced: viewModel.isSharesBalanced,
+            shares: viewModel.calculatedShares,
+            myMemberID: viewModel.currentUserMemberID
+        ) {
+            let owed = appPreferences.currency(sale.owedToYou, currencyCode: viewModel.currencyCode, forceFullPrecision: true)
+            let debtor = sale.debtorMemberID.flatMap { id in viewModel.members.first { $0.id.uuidString == id } }
+            Label(
+                debtor.map { L10n.Groups.Expense.saleLineOne(payerDisplayName($0), owed) }
+                    ?? L10n.Groups.Expense.saleLineMany(owed),
+                systemImage: "arrow.down.left.circle"
+            )
+            .font(DS.Typography.caption)
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, DS.Spacing.xl)
+            .frame(maxWidth: .infinity)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("group_expense_sale_line")
+        } else if let line = GroupExpenseOutflowLineLogic.line(
             accountRequired: viewModel.isAccountRequired,
             isEditing: viewModel.isEditMode,
             amount: viewModel.amount,
@@ -1021,7 +1048,8 @@ struct GroupExpenseFormView: View {
         presentSuccess()
     }
 
-    /// Opt-out: Caso A + bridge effective OFF + creación (no edit). NO en una sesión solo-grupos: ahí el
+    /// Opt-out: Caso A + bridge effective OFF + creación (no edit). Una venta no pregunta: no salió dinero de ninguna
+    /// cuenta que registrar (card 7). NO en una sesión solo-grupos: ahí el
     /// bridge es M5 puro (par virtual, sin TX real) y el invitado minimal no tiene cuentas
     /// personales donde registrar — consistente con `isAccountRequired` y el gate Caso C de
     /// `SettlementFormView`. Solo aplica en creación (`lastCreatedExpenseID != nil`).
@@ -1029,6 +1057,7 @@ struct GroupExpenseFormView: View {
         !viewModel.effectiveBridgeEnabled
             && !viewModel.isGroupsOnlySession
             && viewModel.isCaseA
+            && !viewModel.isSale
             && viewModel.lastCreatedExpenseID != nil
     }
 

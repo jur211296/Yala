@@ -180,7 +180,9 @@ struct NewTransactionView: View {
             subcategoryIsSystem: tx?.subcategory?.isAnySystem == true,
             hasPendingPointerDraft: cachedPendingGroupDraft != nil,
             pointerResolves: bridgedPointerResolves,
+            // La pata por cobrar de una venta (card 8) también la escribe entera el puente.
             isSplitLineLeg: GroupSplitLinesBridgeLogic.isDerivedMarker(tx?.splitLinesRaw)
+                || GroupSaleBridgeLogic.isReceivable(tx?.balanceAdjustmentType)
         )
     }
 

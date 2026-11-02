@@ -55,3 +55,36 @@ enum GroupExpenseOutflowLineLogic {
         return shares?.first { $0.memberID == myMemberID }?.amount
     }
 }
+
+// MARK: - Venta (Grupos B · card 7)
+
+/// La misma frase cuando el gasto es una venta (pagaste tú con una categoría de ingreso): no sale nada de tu cuenta, así
+/// que dice quién te debe y cuándo cuenta como ingreso. «Ana te debe S/ 120.00. Cuenta como ingreso cuando te pague.»
+///
+/// A diferencia de la de arriba, también sale al EDITAR: el puente sí mueve lo por cobrar al monto nuevo
+/// (`GroupTransactionBridge.bridgeSale`). No sale en una sesión solo-grupos, donde no hay finanzas personales que contar.
+extension GroupExpenseOutflowLineLogic {
+
+    struct SaleLine: Equatable {
+        /// Lo que te deben: el gasto menos tu parte.
+        let owedToYou: Double
+        /// Quién te debe, si es una sola persona; `nil` si son varias.
+        let debtorMemberID: String?
+    }
+
+    static func saleLine(
+        isSale: Bool,
+        isGroupsOnlySession: Bool,
+        amount: Double,
+        hasParticipants: Bool,
+        sharesBalanced: Bool,
+        shares: [(memberID: String, amount: Double)]?,
+        myMemberID: String?
+    ) -> SaleLine? {
+        guard isSale, !isGroupsOnlySession, amount > 0, hasParticipants, sharesBalanced, let shares else { return nil }
+        let myShare = myStoredShare(shares, myMemberID: myMemberID) ?? 0
+        guard let owed = GroupSaleBridgeLogic.receivableAmount(total: amount, myShare: myShare) else { return nil }
+        let debtors = shares.filter { $0.memberID != myMemberID && $0.amount >= GroupSaleBridgeLogic.epsilon }
+        return SaleLine(owedToYou: owed, debtorMemberID: debtors.count == 1 ? debtors.first?.memberID : nil)
+    }
+}

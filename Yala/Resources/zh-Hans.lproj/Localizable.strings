@@ -6208,6 +6208,7 @@
 
 /* iPad/ventana ancha: columna de detalle vacía en Registros */
 "records.detailPlaceholder" = "选择一条记录，在这里查看";
+"records.receivable" = "待收款";
 
 /* iPad/ventana ancha: columna de detalle vacía en Planificación */
 "planning.detailPlaceholder" = "选择一项预算或付款，在这里查看";
@@ -8561,6 +8562,8 @@
 
 /* Group expense form, under the selectors when you paid and nobody owes you */
 "groups.expense.outflowLineNoDebt" = "从你的账户支出 %@";
+"groups.expense.saleLineOne" = "%1$@欠你 %2$@。对方付款时才算作收入。";
+"groups.expense.saleLineMany" = "别人欠你 %@。对方付款时才算作收入。";
 
 /* Inbox hint: group expense changed and the user's split lines no longer add up. %@ = group name */
 "groups.bridge.draftReasonSplitLinesMismatch" = "「%@」中的支出已更改，你的明细不再等于你的份额。目前先合为一行：请选择它的类别。";

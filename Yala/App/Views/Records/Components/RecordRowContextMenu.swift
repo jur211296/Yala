@@ -18,7 +18,9 @@ extension RecordContextActionLogic.Shape {
             accountIsNil: record.account == nil,
             accountIsSystem: record.account?.isSystemAccount ?? false,
             subcategoryIsSystem: record.subcategory?.isAnySystem ?? false,
-            isSplitLineLeg: GroupSplitLinesBridgeLogic.isDerivedMarker(record.splitLinesRaw))
+            // La pata por cobrar de una venta (card 8) también la escribe entera el puente.
+            isSplitLineLeg: GroupSplitLinesBridgeLogic.isDerivedMarker(record.splitLinesRaw)
+                || GroupSaleBridgeLogic.isReceivable(record.balanceAdjustmentType))
     }
 }
 

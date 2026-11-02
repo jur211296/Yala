@@ -6208,6 +6208,7 @@
 
 /* iPad/ventana ancha: columna de detalle vacía en Registros */
 "records.detailPlaceholder" = "記録を選ぶとここに表示されます";
+"records.receivable" = "未回収";
 
 /* iPad/ventana ancha: columna de detalle vacía en Planificación */
 "planning.detailPlaceholder" = "予算または支払いを選ぶとここに表示されます";
@@ -8561,6 +8562,8 @@
 
 /* Group expense form, under the selectors when you paid and nobody owes you */
 "groups.expense.outflowLineNoDebt" = "あなたの口座から%@が出ます";
+"groups.expense.saleLineOne" = "%1$@から%2$@を受け取る予定です。支払われた時点で収入になります。";
+"groups.expense.saleLineMany" = "%@を受け取る予定です。支払われた時点で収入になります。";
 
 /* Inbox hint: group expense changed and the user's split lines no longer add up. %@ = group name */
 "groups.bridge.draftReasonSplitLinesMismatch" = "「%@」の支出が変わり、あなたの内訳があなたの分と合わなくなりました。今は1行にまとめています。カテゴリーを選んでください。";

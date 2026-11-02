@@ -10,58 +10,58 @@ paths:
 
 ## Índice de reglas (45)
 
-> Este fichero son **57 KB en 45 reglas largas**. No lo leas entero: localiza la regla
+> Este fichero son **58 KB en 45 reglas largas**. No lo leas entero: localiza la regla
 > aquí y lee **solo su tramo** con `sed -n '<linea>,<linea+N>p'`.
 > Los números de línea se desplazan al editar — regenera con
 > `python3 scripts/indexar_doc.py <fichero> --apply`.
 
 | Línea | Regla | Peso |
 |---|---|---|
-| `L71` | TODO `ModelConfiguration` de un test lleva `cloudKitDatabase: .none` EXPLÍCITO — el default es `.automatic` y en el simu | 2.5 KB |
-| `L74` | NUNCA aserjar el valor EN MEMORIA de un `@Model` ya persistido justo después de un `context.rollback()` — es dependiente | 1019 B |
-| `L75` | `.serialized` ordena DENTRO de una suite, no entre suites hermanas del mismo archivo. | 3.8 KB |
-| `L111` | Y en el fixture tampoco: el «ahora» del test es una fecha fija, no el reloj (card tyzh, 2026-11-01). | 2.7 KB |
-| `L131` | En QA MANUAL, `-uitest` a secas es OBLIGATORIO y su ausencia no da ningún error (2026-09-08). | 707 B |
-| `L133` | `-uitest-seed <perfil>` SIEMPRE siembra: relanzar sin `-uitest-reset` DUPLICA el corpus entero (2026-09-09). | 1.0 KB |
-| `L135` | `-uitest-reset` NO limpia `UserDefaults` entero, así que un one-shot de arranque sobrevive al wipe (2026-09-09). | 1.0 KB |
-| `L137` | Un argumento de lanzamiento que fija una preferencia (`-clave valor`) se lee como plist: un valor que empieza por `{` o  | 602 B |
-| `L139` | Un fixture de QA tiene que ser DISCRIMINANTE, no solo sembrar el escenario (2026-09-09). | 1.2 KB |
-| `L141` | Seed `minimal` por default | 372 B |
-| `L145` | Tocar algo justo después de `typeText` pierde el toque en iOS 27.0: el teclado sigue entrando y la pantalla se mueve deb | 2.7 KB |
-| `L162` | `XCUIApplication.open(_:)` RELANZA la app: es un arranque en frío, no un enlace en caliente (medido el 2026-10-10). | 633 B |
-| `L164` | Un `accessibilityIdentifier` aplicado a un CONTENEDOR pisa el de sus hijos, así que el id declarado en el componente pue | 783 B |
-| `L166` | Una fila `.accessibilityElement(children: .combine)` con texto sale como `StaticText`, no como `Other` (medido el 2026-1 | 513 B |
-| `L168` | `isHittable` tampoco: lo que el `swipeUp` sube BAJO la barra de chips da `true` y el toque cae encima (2026-10-27). | 943 B |
-| `L177` | `exists` NO implica alcanzable: con un sheet presentado, la vista de fondo sigue ENTERA en el árbol de accesibilidad y l | 396 B |
-| `L179` | El manejador de interrupciones de XCTest CONTESTA los alerts de la app por ti, y puede ejecutar justo el gesto que el te | 853 B |
-| `L181` | Una segunda hoja pedida en el MISMO anchor ESPERA turno en iOS 26.5: aparece al cerrarse la que estaba arriba (2026-09-1 | 730 B |
-| `L183` | Un seam de QA que FUERZA el resultado de un predicado deja CIEGOS a todos los tests que lo usan: cubren el flujo, no la  | 1.5 KB |
-| `L185` | El tercero de la familia, y el más barato de cometer: cuando el HELPER que construye el fixture omite el campo que decid | 1.7 KB |
-| `L187` | El gemelo del anterior: un seam de QA que PERSISTE pone rojos a los tests de OTRO target (2026-08-05). | 1.5 KB |
-| `L192` | Se finge la sesión, no se relajan las aserciones | 485 B |
-| `L194` | Crear grupo necesita ADEMÁS `-uitest-groups-consent` | 551 B |
-| `L196` | `-uitest-fake-cloud-session` ≠ `-uitest-fake-backend-session` | 508 B |
-| `L198` | Con la sesión fingida, un cierre de sesión que sube grupos NO llega a `signOut()` (medido el 2026-09-26). | 897 B |
-| `L206` | `-uitest-fake-icloud` no sirve para esto | 245 B |
-| `L210` | DOS corridas de XCUITest sobre el MISMO simulador se derriban entre sí, y el síntoma NO se parece a un fallo de test (me | 1.5 KB |
-| `L212` | Corolario, y es el que ahorra el diagnóstico entero: la presencia o ausencia de la línea de fallo CLASIFICA el rojo. | 931 B |
-| `L214` | La otra mitad del corolario, y la que costó un ticket `high` falso (2026-09-11): «tiene línea de fallo» NO prueba que el | 1.9 KB |
-| `L218` | Desde el 2026-09-12 el simulador se pide por turno: lo que corra `xcodebuild … test` desde el `/gate` o `/l10n-check` va | 3.6 KB |
-| `L225` | El lock NO jubila al centinela, y confundirlos deja el agujero abierto. | 3.7 KB |
-| `L227` | El device DEBE casar con el runtime del SDK contra el que se compila. | 832 B |
-| `L229` | Teclear con XcodeBuildMCP (`type_text`) deja el simulador en modo «teclado físico», y desde ahí todo XCUITest que abra u | 1.1 KB |
-| `L231` | NO apagar el simulador entre corridas. | 386 B |
-| `L233` | La PRIMERA corrida tras bootear un simulador no cuenta — y en iOS 27.0 falla de verdad. | 991 B |
-| `L235` | iOS 27.0 (beta) es ~2× más lento que 26.4.1 para todo el ciclo de vida de UI, y cuelga el teardown de `xcodebuild` ~600  | 412 B |
-| `L237` | En iOS 27.0 NINGÚN swipe sintético materializa una celda de `LazyVGrid` que no esté ya en pantalla ⇒ no navegues por ahí | 2.4 KB |
-| `L239` | Clasificar la corrida por su exit code ANTES de leer el output | 619 B |
-| `L241` | Con Swift Testing, «cero casos» tiene un tercer modo y NO da 70: da exit 0, `TEST SUCCEEDED` y `Executed 0 tests` (2026- | 1.1 KB |
-| `L243` | NUNCA cuentes casos con un grep anclado en `^`: los logs de la app PARTEN las líneas del reporter (2026-09-07). | 1.6 KB |
-| `L245` | `-only-testing` filtra por el TIPO, no por el FICHERO — y varios ficheros de este repo declaran DOS `@Suite` (2026-08-03 | 1015 B |
-| `L247` | Los XCUITest que pasan por «¿Dónde viven tus datos?» van con el scheme `Yala Dev`, y con `Yala` la fila NO EXISTE (2026- | 1.5 KB |
-| `L249` | Atajos de teclado en XCUITest: `typeKey` llega a `.commands`, salvo ⌫ (medido el 2026-09-30, iPad Pro 13, iOS 27.0). | 1.1 KB |
-| `L251` | Un worktree aislado necesita `Secrets.xcconfig` copiado a mano | 341 B |
-| `L253` | Cuando el source-scan es la ÚNICA red posible —el código vive en un target que la suite no compila—, grepear dos literal | 2.5 KB |
+| `L71` | TODO `ModelConfiguration` de un test lleva `cloudKitDatabase: .none` EXPLÍCITO — el default es `.automatic` y en el simu | 3.4 KB |
+| `L83` | NUNCA aserjar el valor EN MEMORIA de un `@Model` ya persistido justo después de un `context.rollback()` — es dependiente | 1019 B |
+| `L84` | `.serialized` ordena DENTRO de una suite, no entre suites hermanas del mismo archivo. | 3.8 KB |
+| `L120` | Y en el fixture tampoco: el «ahora» del test es una fecha fija, no el reloj (card tyzh, 2026-11-01). | 2.7 KB |
+| `L140` | En QA MANUAL, `-uitest` a secas es OBLIGATORIO y su ausencia no da ningún error (2026-09-08). | 707 B |
+| `L142` | `-uitest-seed <perfil>` SIEMPRE siembra: relanzar sin `-uitest-reset` DUPLICA el corpus entero (2026-09-09). | 1.0 KB |
+| `L144` | `-uitest-reset` NO limpia `UserDefaults` entero, así que un one-shot de arranque sobrevive al wipe (2026-09-09). | 1.0 KB |
+| `L146` | Un argumento de lanzamiento que fija una preferencia (`-clave valor`) se lee como plist: un valor que empieza por `{` o  | 602 B |
+| `L148` | Un fixture de QA tiene que ser DISCRIMINANTE, no solo sembrar el escenario (2026-09-09). | 1.2 KB |
+| `L150` | Seed `minimal` por default | 372 B |
+| `L154` | Tocar algo justo después de `typeText` pierde el toque en iOS 27.0: el teclado sigue entrando y la pantalla se mueve deb | 2.7 KB |
+| `L171` | `XCUIApplication.open(_:)` RELANZA la app: es un arranque en frío, no un enlace en caliente (medido el 2026-10-10). | 633 B |
+| `L173` | Un `accessibilityIdentifier` aplicado a un CONTENEDOR pisa el de sus hijos, así que el id declarado en el componente pue | 783 B |
+| `L175` | Una fila `.accessibilityElement(children: .combine)` con texto sale como `StaticText`, no como `Other` (medido el 2026-1 | 513 B |
+| `L177` | `isHittable` tampoco: lo que el `swipeUp` sube BAJO la barra de chips da `true` y el toque cae encima (2026-10-27). | 943 B |
+| `L186` | `exists` NO implica alcanzable: con un sheet presentado, la vista de fondo sigue ENTERA en el árbol de accesibilidad y l | 396 B |
+| `L188` | El manejador de interrupciones de XCTest CONTESTA los alerts de la app por ti, y puede ejecutar justo el gesto que el te | 853 B |
+| `L190` | Una segunda hoja pedida en el MISMO anchor ESPERA turno en iOS 26.5: aparece al cerrarse la que estaba arriba (2026-09-1 | 730 B |
+| `L192` | Un seam de QA que FUERZA el resultado de un predicado deja CIEGOS a todos los tests que lo usan: cubren el flujo, no la  | 1.5 KB |
+| `L194` | El tercero de la familia, y el más barato de cometer: cuando el HELPER que construye el fixture omite el campo que decid | 1.7 KB |
+| `L196` | El gemelo del anterior: un seam de QA que PERSISTE pone rojos a los tests de OTRO target (2026-08-05). | 1.5 KB |
+| `L201` | Se finge la sesión, no se relajan las aserciones | 485 B |
+| `L203` | Crear grupo necesita ADEMÁS `-uitest-groups-consent` | 551 B |
+| `L205` | `-uitest-fake-cloud-session` ≠ `-uitest-fake-backend-session` | 508 B |
+| `L207` | Con la sesión fingida, un cierre de sesión que sube grupos NO llega a `signOut()` (medido el 2026-09-26). | 897 B |
+| `L215` | `-uitest-fake-icloud` no sirve para esto | 245 B |
+| `L219` | DOS corridas de XCUITest sobre el MISMO simulador se derriban entre sí, y el síntoma NO se parece a un fallo de test (me | 1.5 KB |
+| `L221` | Corolario, y es el que ahorra el diagnóstico entero: la presencia o ausencia de la línea de fallo CLASIFICA el rojo. | 931 B |
+| `L223` | La otra mitad del corolario, y la que costó un ticket `high` falso (2026-09-11): «tiene línea de fallo» NO prueba que el | 1.9 KB |
+| `L227` | Desde el 2026-09-12 el simulador se pide por turno: lo que corra `xcodebuild … test` desde el `/gate` o `/l10n-check` va | 3.6 KB |
+| `L234` | El lock NO jubila al centinela, y confundirlos deja el agujero abierto. | 3.7 KB |
+| `L236` | El device DEBE casar con el runtime del SDK contra el que se compila. | 832 B |
+| `L238` | Teclear con XcodeBuildMCP (`type_text`) deja el simulador en modo «teclado físico», y desde ahí todo XCUITest que abra u | 1.1 KB |
+| `L240` | NO apagar el simulador entre corridas. | 386 B |
+| `L242` | La PRIMERA corrida tras bootear un simulador no cuenta — y en iOS 27.0 falla de verdad. | 991 B |
+| `L244` | iOS 27.0 (beta) es ~2× más lento que 26.4.1 para todo el ciclo de vida de UI, y cuelga el teardown de `xcodebuild` ~600  | 412 B |
+| `L246` | En iOS 27.0 NINGÚN swipe sintético materializa una celda de `LazyVGrid` que no esté ya en pantalla ⇒ no navegues por ahí | 2.4 KB |
+| `L248` | Clasificar la corrida por su exit code ANTES de leer el output | 619 B |
+| `L250` | Con Swift Testing, «cero casos» tiene un tercer modo y NO da 70: da exit 0, `TEST SUCCEEDED` y `Executed 0 tests` (2026- | 1.1 KB |
+| `L252` | NUNCA cuentes casos con un grep anclado en `^`: los logs de la app PARTEN las líneas del reporter (2026-09-07). | 1.6 KB |
+| `L254` | `-only-testing` filtra por el TIPO, no por el FICHERO — y varios ficheros de este repo declaran DOS `@Suite` (2026-08-03 | 1015 B |
+| `L256` | Los XCUITest que pasan por «¿Dónde viven tus datos?» van con el scheme `Yala Dev`, y con `Yala` la fila NO EXISTE (2026- | 1.5 KB |
+| `L258` | Atajos de teclado en XCUITest: `typeKey` llega a `.commands`, salvo ⌫ (medido el 2026-09-30, iPad Pro 13, iOS 27.0). | 1.1 KB |
+| `L260` | Un worktree aislado necesita `Secrets.xcconfig` copiado a mano | 341 B |
+| `L262` | Cuando el source-scan es la ÚNICA red posible —el código vive en un target que la suite no compila—, grepear dos literal | 2.5 KB |
 
 <!-- INDICE:fin -->
 
@@ -71,6 +71,15 @@ Detalles completos en `$VAULT/planning/TESTING-STRATEGY.md`. Reglas mínimas:
 - **TODO `ModelConfiguration` de un test lleva `cloudKitDatabase: .none` EXPLÍCITO — el default es `.automatic` y en el simulador mata el proceso (2026-08-02).** Con `.automatic` y un schema que tenga **relaciones**, SwiftData adjunta `NSPersistentCloudKitContainer` incluso a un store **in-memory** (`URL: file:///dev/null`); el sim no tiene cuenta iCloud, así que `_performSetupRequest:` falla con `CKAccountStatusNoAccount` (134400), `recoverFromError:` tampoco puede, y deja el store **sin conexión SQL** ⇒ el `save()` siguiente revienta con `NSInternalInconsistencyException "No eligible connection available"` desde `-[NSSQLDefaultConnectionManager handleStoreRequest:]`. Es una **excepción ObjC**: el `do/catch` de Swift NO la ve (familia de la Variante 2 de `swiftdata-cloudkit.md`), así que no es un rojo — es `SIGABRT`, `xcodebuild` reinicia el runner y la corrida acaba en exit 65. **Tres cosas que engañan al diagnosticar:** (1) **el disparador es tener relaciones, no cuántos modelos hay** — `Schema([ExchangeRate.self])` con el MISMO `ModelConfiguration(isStoredInMemoryOnly: true)` no crashea nunca porque sin relaciones no se adjunta el mirror, así que el sitio sano de al lado te hace descartar la config como sospechosa; (2) **parece dependiente del CONJUNTO** —crasheaba aislada en los dos schemes y pasaba dentro de la suite completa de `Yala Dev`— porque el desmontaje de la conexión es ASÍNCRONO y corre contra el `save()`: lo que cambia el resultado es qué se ejecutó antes en el proceso, no el test; (3) el `.ips` de `DiagnosticReports` trae `asi` **null** ⇒ el `reason:` no está ahí, está en el stdout del runner (`*** Terminating app due to uncaught exception`) — una corrida con el log entero lo da, y **razonar sobre el frame sin el mensaje cuesta hipótesis falsas** (aquí la primera fue «falta un modelo en el schema», refutada porque el fix dejó el schema INTACTO). El conocimiento existía desde 2026-07-04 pero solo como comentario dentro de `TestHelpers.testContainer(for:)`, y por eso no llegó a los dos sitios que lo escribieron a mano: **ahora la superficie es esta regla**. Auditoría: `ModelConfiguration(` sin `cloudKitDatabase` en `YalaTests/` debe dar cero, salvo `Spikes/SpikeSRuntimeTests` (que mide `.automatic` a propósito, aislado en su propio archivo y con schema sin relaciones).
 - NUNCA `UserDefaults.standard` directo en tests → `UserDefaults(suiteName: "test.\(UUID().uuidString)")!` (helper `makeIsolatedDefaults()`).
 
+- **Un test con store on-disk en `tmp` que deja cambios SIN GUARDAR tumba el proceso de tests entero, y el rojo cae en
+  OTRA suite (medido el 2026-11-02, `GroupBridgeSaleTests`).** El caso de control quitaba un campo para comparar y no
+  guardaba; el `defer` borraba la carpeta del store; minutos después, cuando un test de XCTest giraba el run loop
+  (`XCTWaiter`), saltaba el guardado diferido de SwiftData sobre ese contexto: `NSInternalInconsistencyException` al
+  hacer fault sobre `personal.sqlite`, `Restarting after unexpected exit` y el crash atribuido a
+  `GroupsDetachPurgeFailureTests`, que a solas pasa. ⇒ en un harness on-disk, `context.autosaveEnabled = false` al crear
+  el contexto y `rollback()` tras un control que no se guarda; y el singleton que recibió ese contexto
+  (`GroupTransactionBridge.shared`) se suelta en el `defer` (`_testClearContext()`). Ante un crash en una suite que a solas
+  pasa, mira la RUTA del store en el mensaje: dice de qué suite viene.
 - **NUNCA aserjar el valor EN MEMORIA de un `@Model` ya persistido justo después de un `context.rollback()` — es dependiente del runtime (medido 2026-07-30 en iOS 26.5 y 27.0).** `rollback()` deja el STORE limpio en los dos, pero solo 27.0 re-hidrata el snapshot del objeto; en 26.5 la propiedad sigue devolviendo el valor mutado hasta el siguiente `fetch`. ⇒ **aserja contra el store (contexto fresco) o contra el re-fetch**, que además es la aserción MÁS FUERTE: sin el `rollback()` el objeto sigue sucio y un `fetch` no descarta cambios pendientes, así que el re-fetch caza la mutación y el store no. Costó un rojo en la Mac estable, una entrada de Lista Negra y un chip entero persiguiendo un «laundering en iOS 26.x» que no existía (`context.hasChanges == false` ⇒ ningún save ajeno persiste nada). Corolario de método: cuando un test falla en un runtime y pasa en otro, **mide qué tiene el disco antes de escribir la hipótesis** — con dos `print` de sonda se habría visto en cinco minutos.
 - **`.serialized` ordena DENTRO de una suite, no entre suites hermanas del mismo archivo.** Como el
   container se cachea por `#fileID` y `makeTestContext()` **vacía el store en cada llamada**, dos

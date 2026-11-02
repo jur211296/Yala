@@ -70,8 +70,9 @@ struct RecordRowView: View {
                             .lineLimit(conceptLineLimit)
 
                         // Line 2: Category • Account (Compact)
-                        let categoryName =
-                            record.subcategory?.name ?? record.category?.name ?? L10n.Common.uncategorized
+                        let categoryName = RecordRowPresentationLogic.categoryCaption(
+                            record.subcategory?.name ?? record.category?.name ?? L10n.Common.uncategorized,
+                            adjustmentType: record.balanceAdjustmentType)
                         let accountName = displayedAccountName ?? ""
 
                         Text("\(categoryName) • \(accountName)")
@@ -80,7 +81,9 @@ struct RecordRowView: View {
                             .lineLimit(1)
                     } else {
                         // Fallback: Line 1 = Category
-                        Text(record.subcategory?.name ?? record.category?.name ?? L10n.Common.uncategorized)
+                        Text(RecordRowPresentationLogic.categoryCaption(
+                            record.subcategory?.name ?? record.category?.name ?? L10n.Common.uncategorized,
+                            adjustmentType: record.balanceAdjustmentType))
                             .font(DS.Typography.label)
                             .foregroundStyle(.primary)
                             .lineLimit(conceptLineLimit)
@@ -174,7 +177,9 @@ struct RecordRowView: View {
             amount: isBalanceAdjustment
                 ? appPreferences.currency(record.amount, currencyCode: record.currencyCode)
                 : appPreferences.currency(abs(record.amount), currencyCode: record.currencyCode),
-            category: record.subcategory?.name ?? record.category?.name,
+            category: (record.subcategory?.name ?? record.category?.name).map {
+                RecordRowPresentationLogic.categoryCaption($0, adjustmentType: record.balanceAdjustmentType)
+            },
             account: record.account?.name
         )
     }
