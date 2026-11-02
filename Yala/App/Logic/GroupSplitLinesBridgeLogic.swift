@@ -155,3 +155,26 @@ enum GroupSplitLinesBridgeLogic {
         }
     }
 }
+
+/// Grupos B · card sbvw: la receta de tu parte vive en la pata que el puente conserva, que depende de quién pagó (la real si
+/// pagaste tú, la de «Grupos» si pagó otro). Al cambiar de pagador esa pata se va; esto decide si la pata NUEVA hereda su
+/// receta en la misma pasada.
+enum GroupSplitLinesTransplantLogic {
+
+    /// La receta que hereda la pata que el puente conserva esta pasada, o `nil` si no hay nada que trasplantar.
+    /// - Parameters:
+    ///   - holderRaw: lo que guarda la pata que conserva el caso de ahora (puede no existir todavía).
+    ///   - donorRaw: lo que guarda la pata del OTRO caso.
+    ///   - donorLeaves: esa pata se borra en esta pasada (con el puente activo, fuera de solo-grupos y de una venta).
+    ///   - newHolderAppears: la pata del caso de ahora existe o nace en esta pasada. Sin ella, las líneas derivadas se
+    ///     quedarían sueltas en «Grupos» sin la pata que las netea.
+    static func inheritedRecipe(
+        holderRaw: String?, donorRaw: String?, donorLeaves: Bool, newHolderAppears: Bool
+    ) -> String? {
+        guard donorLeaves, newHolderAppears,
+              !GroupSplitLinesBridgeLogic.mayCarryRecipe(holderRaw),
+              GroupSplitLinesBridgeLogic.mayCarryRecipe(donorRaw)
+        else { return nil }
+        return donorRaw
+    }
+}

@@ -56,6 +56,9 @@ enum RecordContextActionLogic {
         /// Grupos B: pata derivada de una línea de tu parte (también la entrada de una recarga, sin puntero). Cuenta como
         /// de grupo: la escribe el puente.
         var isSplitLineLeg: Bool = false
+        /// Grupos B · card 6u5f: la pata que lleva tu parte partida en líneas. Su categoría la pone el puente desde las
+        /// líneas; se cambia en «Partir tu parte», no suelta.
+        var holdsSplitRecipe: Bool = false
 
         /// Lo que viene de un grupo y por eso lo manda el grupo.
         var isGroupRecord: Bool { hasSplitExpenseID || hasSplitSettlementID || isSplitLineLeg }
@@ -82,6 +85,7 @@ enum RecordContextActionLogic {
             isSplitLineLeg: s.isSplitLineLeg))
         let canChangeCategory = !s.hasBalanceAdjustmentType
             && !s.subcategoryIsSystem
+            && !s.holdsSplitRecipe
             && BridgedEditPolicy.canEditSubcategoryAndTags(bridged)
         return Actions(
             canEdit: true,
@@ -123,7 +127,8 @@ enum RecordBulkActionLogic {
         // deja dentro de los campos del grupo (`centralContent`, bloqueado en todo registro de grupo).
         case .delete, .amount, .note: return false
         case .account: return BridgedEditPolicy.canEditAccount(classification)
-        case .subcategory, .tags: return BridgedEditPolicy.canEditSubcategoryAndTags(classification)
+        case .subcategory: return !s.holdsSplitRecipe && BridgedEditPolicy.canEditSubcategoryAndTags(classification)
+        case .tags: return BridgedEditPolicy.canEditSubcategoryAndTags(classification)
         }
     }
 

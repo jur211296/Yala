@@ -213,3 +213,4 @@
 "widget.empty.openYalaGroups" = "Apri Yala per vedere i tuoi gruppi";
 "widget.groups.archivedOwedLine" = "+ %@ che ti devono in gruppi archiviati";
 "widget.groups.archivedOweLine" = "+ %@ che devi in gruppi archiviati";
+"widget.ui.receivable" = "Da incassare";

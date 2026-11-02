@@ -36,6 +36,9 @@ struct GroupExpenseSuccessData {
     /// (`GroupSplitLinesEntryLogic.offersSplit`: puente activo, fuera de la sesión solo-grupos y con parte propia).
     var splitExpenseID: String? = nil
     var offersSplitLines: Bool = false
+    /// Grupos B · card 00xj: pagaste tú con una categoría de ingreso (`GroupExpenseViewModel.isSale`). El título dice
+    /// «¡Venta agregada!» en vez de «¡Gasto agregado!».
+    var isSale: Bool = false
 
     /// Participante con su parte del gasto. `id` estable = memberID (los nombres pueden repetirse).
     struct Participant: Identifiable {
@@ -158,14 +161,22 @@ struct GroupExpenseSuccessView: View {
 
     // MARK: - Hero
 
+    private var heroTitle: String {
+        switch GroupExpenseSuccessLogic.title(isSale: data.isSale, isEditMode: data.isEditMode) {
+        case .expenseCreated: L10n.Groups.Expense.Success.titleCreated
+        case .expenseUpdated: L10n.Groups.Expense.Success.titleUpdated
+        case .saleCreated: L10n.Groups.Expense.Success.titleSaleCreated
+        case .saleUpdated: L10n.Groups.Expense.Success.titleSaleUpdated
+        }
+    }
+
     private var heroArea: some View {
         VStack(spacing: DS.Spacing.lg) {
-            Text(data.isEditMode
-                ? L10n.Groups.Expense.Success.titleUpdated
-                : L10n.Groups.Expense.Success.titleCreated)
+            Text(heroTitle)
                 .font(DS.Typography.headline)
                 .foregroundStyle(.secondary)
                 .opacity(showHero ? 1.0 : 0.0)
+                .accessibilityIdentifier("group_expense_success_title")
 
             heroCircle
 

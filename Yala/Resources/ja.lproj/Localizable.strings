@@ -8577,3 +8577,6 @@
 
 /* Inbox hint: group expense changed and the user's split lines no longer add up. %@ = group name */
 "groups.bridge.draftReasonSplitLinesMismatch" = "「%@」の支出が変わり、あなたの内訳があなたの分と合わなくなりました。今は1行にまとめています。カテゴリーを選んでください。";
+"groups.expense.success.titleSaleCreated" = "販売を追加しました！";
+"groups.expense.success.titleSaleUpdated" = "販売を更新しました！";
+"bulkEdit.cannotEditSplitRecipeCategory" = "選択した記録の1件は負担分が行に分けられていて、カテゴリはその行から決まります。詳細の「負担分を分ける」から変更してください。";

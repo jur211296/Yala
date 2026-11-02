@@ -401,6 +401,7 @@ final class GroupExpenseViewModel {
         // del mismo gasto en la Bandeja pidiéndola (`shared-scheduled-expense-shows-twice-in-inbox`).
         if let subcategory = template.subcategory {
             selectedSubcategory = subcategory
+            alignSubcategoryWithBridge()
         }
     }
 
@@ -618,20 +619,23 @@ final class GroupExpenseViewModel {
         return Dictionary(pairs, uniquingKeysWith: { first, _ in first })
     }
 
-    /// Resuelve subcategoryName (String) → Subcategory object via fetch
+    /// Resuelve `subcategoryName` a la subcategoría que leerá el puente (`GroupTransactionBridge.matchSubcategory`, la
+    /// misma regla para los dos; card 10u2). Con un fetch por nombre exacto y `fetchLimit = 1`, dos homónimas de gasto e
+    /// ingreso podían dar aquí una y en el puente otra.
     private func resolveSubcategory() {
         guard let name = subcategoryName, let ctx = modelContext else { return }
-        do {
-            var descriptor = FetchDescriptor<Subcategory>(
-                predicate: #Predicate { $0.name == name }
-            )
-            descriptor.fetchLimit = 1
-            selectedSubcategory = try ctx.fetch(descriptor).first
-        } catch {
-            #if DEBUG
-            print("GroupExpenseViewModel: Error resolving subcategory '\(name)': \(error)")
-            #endif
-        }
+        selectedSubcategory = GroupTransactionBridge.matchSubcategory(name: name, context: ctx)
+    }
+
+    /// Lo único que viaja del gasto es el nombre de su categoría, y con dos homónimas (una de gasto y otra de ingreso) el
+    /// puente se queda con la de gasto. Tras elegir en el selector, el formulario se alinea con lo que leerá el puente:
+    /// así «es una venta» (y si pide cuenta) lo decide la misma subcategoría aquí y allí (card 10u2).
+    func alignSubcategoryWithBridge() {
+        guard let ctx = modelContext, let chosen = selectedSubcategory,
+              let canonical = GroupTransactionBridge.matchSubcategory(name: chosen.name, context: ctx),
+              canonical.persistentModelID != chosen.persistentModelID
+        else { return }
+        selectedSubcategory = canonical
     }
 
     private func buildParticipants() -> [GroupSplitCalculator.Participant] {

@@ -40,6 +40,10 @@ struct WidgetTransaction: Codable {
     /// y se elige a conciencia; sin él, «limpiar» este `?` deja la suite entera en verde y apaga los
     /// widgets del parque que aún no ha reescrito su snapshot.
     let isExchangeRateProvisional: Bool?
+    /// Grupos B · card 00xj: la pata de una venta de grupo que aún no te pagan (`balanceAdjustmentType = "receivable"`). El
+    /// widget la pinta en gris y dice «Por cobrar», como la fila de Registros: en el color de un ingreso se leía como dinero
+    /// que ya entró. Opcional por lo mismo que `isExchangeRateProvisional`: los snapshots de hoy no traen la clave.
+    var isReceivable: Bool? = nil
 }
 
 /// Lightweight budget data for widgets

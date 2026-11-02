@@ -8577,3 +8577,6 @@
 
 /* Inbox hint: group expense changed and the user's split lines no longer add up. %@ = group name */
 "groups.bridge.draftReasonSplitLinesMismatch" = "De uitgave in ‘%@’ is gewijzigd en je regels tellen niet meer op tot je deel. Voorlopig is het één regel: kies de categorie.";
+"groups.expense.success.titleSaleCreated" = "Verkoop toegevoegd!";
+"groups.expense.success.titleSaleUpdated" = "Verkoop bijgewerkt!";
+"bulkEdit.cannotEditSplitRecipeCategory" = "Bij een van de geselecteerde boekingen is jouw deel in regels opgesplitst, en de categorie komt daaruit. Wijzig die via ‘Jouw deel opsplitsen’ in de details.";

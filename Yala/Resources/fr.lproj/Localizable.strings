@@ -8566,3 +8566,6 @@
 
 /* Inbox hint: group expense changed and the user's split lines no longer add up. %@ = group name */
 "groups.bridge.draftReasonSplitLinesMismatch" = "La dépense dans « %@ » a changé et tes lignes ne font plus ta part. Pour l’instant, elle tient sur une ligne : choisis sa catégorie.";
+"groups.expense.success.titleSaleCreated" = "Vente ajoutée !";
+"groups.expense.success.titleSaleUpdated" = "Vente mise à jour !";
+"bulkEdit.cannotEditSplitRecipeCategory" = "Dans l’un des enregistrements sélectionnés, ta part est répartie en lignes, et sa catégorie vient d’elles. Modifie-la depuis « Répartir ta part », dans son détail.";

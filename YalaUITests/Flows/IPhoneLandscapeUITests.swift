@@ -132,11 +132,14 @@ final class IPhoneLandscapeUITests: XCTestCase {
 
         let tabBar = app.tabBars.firstMatch
         XCTAssertTrue(tabBar.waitForExistence(timeout: 10), "En horizontal no hay barra de pestañas.")
-        // La cabecera cambia de forma al medir el alto: se espera a que la fila se asiente.
+        // La cabecera cambia de forma al medir el alto: se espera a que la fila se asiente. Desde la card 97gc la página
+        // lleva la fila de acciones de Estadísticas › Registros bajo la cabecera, y en el iPhone girado la primera fila
+        // asoma (medido: empieza 20 pt por encima de la barra, su centro queda debajo). Lo que se fija es que asome: la
+        // cabecera sin compactar la dejaba entera debajo (ticket `records-landscape-first-row-only-peeks`).
         let deadline = Date().addingTimeInterval(5)
-        while Date() < deadline, row.frame.midY > tabBar.frame.minY { Thread.sleep(forTimeInterval: 0.25) }
-        XCTAssertLessThanOrEqual(
-            row.frame.midY, tabBar.frame.minY,
+        while Date() < deadline, row.frame.minY > tabBar.frame.minY { Thread.sleep(forTimeInterval: 0.25) }
+        XCTAssertLessThan(
+            row.frame.minY, tabBar.frame.minY,
             "Con poco alto la cabecera tapa la lista: la primera fila (\(row.frame)) queda bajo la barra de pestañas "
                 + "(\(tabBar.frame)).")
     }

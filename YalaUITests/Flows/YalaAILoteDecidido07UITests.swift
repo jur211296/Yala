@@ -37,7 +37,7 @@ final class YalaAILoteDecidido07UITests: XCTestCase {
                 + (undoNoticeSeconds.map { ["-uitest-undo-notice-seconds", String($0)] } ?? [])
         )
         XCTAssertTrue(app.waitForUITestReady(timeout: 90), "uitest_ready ausente — bootstrap/seed no completó.")
-        let chatEntry = app.buttons["fab_chat"]
+        let chatEntry = app.buttons["stats_action_ai"]  // Registros sin flotante (card 97gc): la fila de arriba
         XCTAssertTrue(chatEntry.waitForExistence(timeout: 15), "No aparece la entrada de Yala IA en Registros.")
         chatEntry.tap()
         XCTAssertTrue(app.textFields["chat_input"].waitForExistence(timeout: 10), "No se abrió Yala IA.")

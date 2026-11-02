@@ -7895,3 +7895,6 @@
 
 /* Inbox hint: group expense changed and the user's split lines no longer add up. %@ = group name */
 "groups.bridge.draftReasonSplitLinesMismatch" = "The expense in “%@” changed and your lines no longer add up to your share. For now it’s a single line: choose its category.";
+"groups.expense.success.titleSaleCreated" = "Sale added!";
+"groups.expense.success.titleSaleUpdated" = "Sale updated!";
+"bulkEdit.cannotEditSplitRecipeCategory" = "One of the selected records has your portion split into lines, and its category comes from them. Change it from ‘Split your portion’ in its details.";

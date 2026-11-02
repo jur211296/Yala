@@ -8575,3 +8575,6 @@
 
 /* Inbox hint: group expense changed and the user's split lines no longer add up. %@ = group name */
 "groups.bridge.draftReasonSplitLinesMismatch" = "La spesa in «%@» è cambiata e le tue righe non danno più la tua parte. Per ora è una riga sola: scegli la sua categoria.";
+"groups.expense.success.titleSaleCreated" = "Vendita aggiunta!";
+"groups.expense.success.titleSaleUpdated" = "Vendita aggiornata!";
+"bulkEdit.cannotEditSplitRecipeCategory" = "In una delle registrazioni selezionate la tua parte è divisa in righe, e la sua categoria viene da esse. Cambiala da «Dividi la tua parte», nel suo dettaglio.";

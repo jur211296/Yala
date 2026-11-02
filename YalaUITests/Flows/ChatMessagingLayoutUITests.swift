@@ -43,7 +43,7 @@ final class ChatMessagingLayoutUITests: XCTestCase {
             extraArguments: ["-uitest-chat-suggestions"] + (drafts ? ["-uitest-chat-draft"] : []) + counter
         )
         XCTAssertTrue(app.waitForUITestReady(timeout: 90), "uitest_ready ausente — bootstrap/seed no completó.")
-        let chatEntry = app.buttons["fab_chat"]
+        let chatEntry = app.buttons["stats_action_ai"]  // Registros sin flotante (card 97gc): la fila de arriba
         XCTAssertTrue(chatEntry.waitForExistence(timeout: 15), "No aparece la entrada de Yala IA en Registros.")
         chatEntry.tap()
         // Con el tope del día la caja de escribir no existe: en su sitio va el aviso de cuándo vuelve (L14-8).

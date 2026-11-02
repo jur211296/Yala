@@ -24,6 +24,18 @@ nonisolated enum GroupExpenseDebt: Equatable {
 
 nonisolated enum GroupExpenseSuccessLogic {
 
+    /// El título de la pantalla de éxito (card 00xj): una venta no es un gasto.
+    enum Title: Equatable { case expenseCreated, expenseUpdated, saleCreated, saleUpdated }
+
+    static func title(isSale: Bool, isEditMode: Bool) -> Title {
+        switch (isSale, isEditMode) {
+        case (false, false): .expenseCreated
+        case (false, true): .expenseUpdated
+        case (true, false): .saleCreated
+        case (true, true): .saleUpdated
+        }
+    }
+
     /// Umbral bajo el cual una diferencia se trata como cero — evita mostrar
     /// "te deben 0.00" por redondeos de la división.
     static let epsilon = 0.005

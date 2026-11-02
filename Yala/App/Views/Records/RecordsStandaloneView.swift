@@ -3,7 +3,9 @@
 //  Yala
 //
 //  Standalone Records view accessible from "More" tab.
-//  Provides full Records functionality with FAB, selection mode, and filter sync.
+//  Provides full Records functionality with selection mode and filter sync. Desde la card 97gc (decisión de Jürgen del
+//  2-nov) es idéntica a Estadísticas › Registros: la acción principal va en la fila bajo la cabecera
+//  (`StatsQuickActionsSlot`) y no hay flotante nunca, tampoco al bajar.
 //
 
 import SwiftData
@@ -25,9 +27,6 @@ struct RecordsStandaloneView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     // MARK: - ViewModels
-
-    /// La pantalla tiene poco alto: Yala IA y «+» en fila (UX 2.2 · L15-14).
-    @State private var fabShortContainer = false
 
     @State private var dataViewModel = DetailContainerViewModel()
     @State private var recordsViewModel = RecordsViewModel()
@@ -258,46 +257,10 @@ struct RecordsStandaloneView: View {
                 defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
                 onFilterChange: { recalculateData() }
             )
+            // La fila de acciones bajo la cabecera, la misma de Estadísticas › Registros; sin flotante (card 97gc).
+            .environment(\.statsQuickActions, recordsQuickActions)
             .overlay(alignment: .bottom) {
                 ZStack(alignment: .bottom) {
-                    // FAB (only when not in selection mode)
-                    if !recordsViewModel.isSelectionMode {
-                        VStack {
-                            Spacer()
-                            HStack {
-                                Spacer()
-                                FABStackView(
-                                    canUseVoiceInput: canUseVoiceInput,
-                                    isVoiceLocked: isVoiceLocked,
-                                    isImageLocked: isImageLocked,
-                                    isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
-                                    chatFABVisible: appPreferences.chatFABVisible,
-                                    isShortContainer: fabShortContainer,
-                                    missingStep: dataViewModel.visibleMissingStep,
-                                    onResolveMissingStep: { resolveMissingStep() },
-                                    onVoiceTap: { showVoiceRecording = true },
-                                    onImageTap: { showImageSelection = true },
-                                    onManualTap: { recordsViewModel.showNewTransaction = true },
-                                    onUpgradeVoice: { showUpgradeForVoice = true },
-                                    onUpgradeImage: { showUpgradeForImage = true },
-                                    onChatTap: {
-                                        switch YalaAIOnboardingLogic.nextScreen(
-                                            consentAccepted: appPreferences.aiChatConsentAccepted,
-                                            onboardingShown: appPreferences.hasShownYalaAIOnboarding
-                                        ) {
-                                        case .onboarding: showYalaAIOnboarding = true
-                                        case .chat:       showChatSheet = true
-                                        case .consent:    showChatConsentAlert = true
-                                        }
-                                    },
-                                    onUpgradeChat: { showUpgradeForChat = true }
-                                )
-                            }
-                        }
-                        // Con poco alto, los dos botones van en fila (UX 2.2 · L15-14).
-                        .measuresShortContainer($fabShortContainer)
-                    }
-
                     // Modo selección: qué hacer y, con algo elegido, Eliminar y Editar (L8-12).
                     if recordsViewModel.isSelectionMode {
                         RecordsSelectionBar(
@@ -326,7 +289,66 @@ struct RecordsStandaloneView: View {
             .navigationBarBackButtonHidden(recordsViewModel.isSelectionMode)
     }
 
-    /// Sin cuenta o sin categorías, el flotante lleva a la salida, como la fila del Panel (card 7jfp).
+    /// Lo que la fila de acciones necesita: las mismas puertas que Estadísticas (`DetailContainerView.statsQuickActions`).
+    /// Sin flotante, así que nadie lee `showsFloating`.
+    private var recordsQuickActions: StatsQuickActions {
+        StatsQuickActions(
+            canCreateRecords: canUseVoiceInput,
+            missingStep: dataViewModel.visibleMissingStep,
+            onCreateFirstAccount: { resolveMissingStep() },
+            onCreateCategories: { resolveMissingStep() },
+            isVoiceLocked: isVoiceLocked,
+            isImageLocked: isImageLocked,
+            isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
+            isChatVisible: appPreferences.chatFABVisible,
+            onManualTap: { recordsViewModel.showNewTransaction = true },
+            onVoiceTap: { startAIEntry(.voice) },
+            onImageTap: { startAIEntry(.image) },
+            onChatTap: { startChat() },
+            showsFloating: .constant(false)
+        )
+    }
+
+    /// Voz y foto desde la fila: Pro → permiso de IA → la entrada (el orden de `DetailContainerView.startAIEntry`).
+    private func startAIEntry(_ input: PendingAIInput) {
+        switch input {
+        case .voice where isVoiceLocked:
+            showUpgradeForVoice = true
+            return
+        case .image where isImageLocked:
+            showUpgradeForImage = true
+            return
+        default:
+            break
+        }
+        guard appPreferences.aiDataConsentAccepted else {
+            pendingAIInput = input
+            showAIConsentAlert = true
+            return
+        }
+        switch input {
+        case .voice: showVoiceRecording = true
+        case .image: showImageSelection = true
+        }
+    }
+
+    /// Yala IA: Pro → presentación, permiso o chat (`YalaAIOnboardingLogic`).
+    private func startChat() {
+        guard FeatureGateService.shared.canAccess(.chatAssistant) else {
+            showUpgradeForChat = true
+            return
+        }
+        switch YalaAIOnboardingLogic.nextScreen(
+            consentAccepted: appPreferences.aiChatConsentAccepted,
+            onboardingShown: appPreferences.hasShownYalaAIOnboarding
+        ) {
+        case .onboarding: showYalaAIOnboarding = true
+        case .chat: showChatSheet = true
+        case .consent: showChatConsentAlert = true
+        }
+    }
+
+    /// Sin cuenta o sin categorías, la fila lleva a la salida, como la del Panel (card 7jfp).
     private func resolveMissingStep() {
         switch dataViewModel.quickActionsState {
         case .needsAccount:

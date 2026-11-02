@@ -53,6 +53,15 @@ struct NewTransactionView: View {
     /// compartido vivo durante ese frame.
     @State private var bridgedPointerResolves = true
 
+    /// Grupos B · card 6u5f: el registro es la pata que lleva tu parte partida en líneas. Su categoría la pone el puente
+    /// desde las líneas, así que la pastilla abre «Tu parte» (`GroupSplitLinesSheet`) en vez del selector: un cambio suelto
+    /// se pisaría en la pasada siguiente. Lo resuelve el `onAppear` (`resolveCategoryOpensSplit`).
+    @State private var categoryOpensSplit = false
+    @State private var showsSplitLinesFromEditor = false
+    /// «Tu parte» se guardó: el puente ya reescribió la pata (importe de la línea ancla, categoría, quizá su forma de
+    /// recarga). El editor cierra al volver, porque guardar con lo que cargó al abrir pisaría todo eso (review de 6u5f).
+    @State private var splitLinesSavedFromEditor = false
+
     // Quick action states
     @State private var showSavedToast = false
     @State private var savedToastMessage = ""
@@ -243,6 +252,37 @@ struct NewTransactionView: View {
             #endif
             bridgedPointerResolves = true
         }
+    }
+
+    /// Si la pastilla de categoría abre «Tu parte» (card 6u5f). Un fetch por apertura, solo con una receta guardada. Ante
+    /// un fallo se queda en el selector de siempre: la categoría se puede pisar, pero no se bloquea nada.
+    private func resolveCategoryOpensSplit() {
+        guard let tx = readableTransactionToEdit, let expenseID = tx.splitExpenseID,
+              GroupSplitLinesEntryLogic.holdsRecipe(tx.splitLinesRaw)
+        else {
+            categoryOpensSplit = false
+            return
+        }
+        do {
+            let target = try GroupSplitLinesService.target(splitExpenseID: expenseID, context: modelContext)
+            categoryOpensSplit = GroupSplitLinesEntryLogic.editorCategoryOpensSplit(
+                holdsRecipe: true,
+                isTheHolder: target?.holder?.persistentModelID == tx.persistentModelID,
+                offersSplit: target?.offersSplit ?? false)
+        } catch {
+            #if DEBUG
+            print("NewTransactionView: Error: resolving the split recipe of the record: \(error)")
+            #endif
+            categoryOpensSplit = false
+        }
+    }
+
+    /// Al volver de «Tu parte»: si se guardó, el editor se cierra (lo que tenía cargado ya no es la pata); si se canceló,
+    /// sigue como estaba.
+    private func closeEditorIfSplitWasSaved() {
+        guard splitLinesSavedFromEditor else { return }
+        splitLinesSavedFromEditor = false
+        dismiss()
     }
 
     /// Hidrata `cachedPendingGroupDraft` una vez al aparecer (evita fetch en hot path del body).
@@ -528,6 +568,11 @@ struct NewTransactionView: View {
             .sheet(isPresented: $viewModel.showTagSelector) {
                 TagSelectorSheet(selectedTags: $viewModel.selectedTags, sizing: .mediumFirst)
             }
+            .sheet(isPresented: $showsSplitLinesFromEditor, onDismiss: closeEditorIfSplitWasSaved) {
+                if let expenseID = readableTransactionToEdit?.splitExpenseID {
+                    GroupSplitLinesSheet(splitExpenseID: expenseID) { splitLinesSavedFromEditor = true }
+                }
+            }
             .sheet(isPresented: $viewModel.showFavoritesSheet) {
                 FavoritesListView(mode: .select) { favorite in
                     prefillFromFavorite(favorite)
@@ -671,6 +716,7 @@ struct NewTransactionView: View {
             // ANTES del draft: `loadPendingGroupDraftIfNeeded` abre con `guard isBridgedReadOnly`, que ya
             // depende de esta resolución.
             resolveBridgedPointer()
+            resolveCategoryOpensSplit()
             loadPendingGroupDraftIfNeeded()
             openAsDuplicateIfAsked()
             // Force expense type in expenses-only mode
@@ -1277,7 +1323,11 @@ struct NewTransactionView: View {
                         fillsWhenSelected: true
                     ) {
                         dismissKeyboard()
-                        viewModel.showSubcategorySelector = true
+                        if categoryOpensSplit {
+                            showsSplitLinesFromEditor = true
+                        } else {
+                            viewModel.showSubcategorySelector = true
+                        }
                     }
                     .accessibilityIdentifier("new_transaction_subcategory_chip")
                     .disabled(!canEditBridgedSubcategoryAndTags)

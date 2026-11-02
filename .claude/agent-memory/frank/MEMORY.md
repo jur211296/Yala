@@ -50,6 +50,7 @@
 - [Upload OK no es build aceptado](feedback_upload_ok_no_es_build_aceptado.md) — mira `asc builds uploads list`; altool validate no vio 23 ITMS-90626.
 - [Un timeout tapa el rojo de detrás](feedback_un_timeout_tapa_el_rojo_de_detras.md) — con plazo, el golden 20 salió rojo por g24_01; instrumenta y nombra la causa en el mensaje.
 - [El «antes» del iPhone, con git archive](feedback_antes_del_iphone_con_git_archive.md) — base aparte para el diff de píxeles; para una captura, respaldo + `git show HEAD:`.
+- [El guion del antes se ensaya antes de la base](feedback_el_guion_del_antes_se_ensaya_antes_de_la_base.md) — una pantalla por test, filas por dos rasgos; costó dos vueltas.
 - [La build cortada deja un .app sin Info.plist](feedback_la_build_cortada_deja_un_app_sin_info_plist.md) — deja terminar la del «antes» o restaura y recompila incremental.
 - [Una lectura del body basta para todo el body](feedback_una_lectura_del_body_basta_para_todo_el_body.md) — mutar un repintado: quita todas las lecturas del @State en ese body.
 - [Un seam de reloj arranca bajo el splash](feedback_un_seam_de_reloj_arranca_bajo_el_splash.md) — onAppear no es visible: N=2 vencía tapado; verde con el arreglo antes de fiarte.
