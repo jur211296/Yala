@@ -62,7 +62,7 @@ extension GroupTransactionBridge {
             lineIDs.insert(lineID)
         case let .recipe(lines):
             if includeRecipeLines { for line in lines where line.kind == .transfer { lineIDs.insert(line.id) } }
-        case .none, .newerVersion, .unreadable:
+        case .none, .newerVersion, .unreadable, .collected:
             break
         }
         var result: [TransactionItem] = []

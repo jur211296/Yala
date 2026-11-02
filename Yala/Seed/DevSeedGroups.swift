@@ -113,6 +113,36 @@ enum DevSeedGroups {
             context.insert(pending)
         }
 
+        // Grupos B · card 10: un grupo aparte, «Ventas con Ana», con solo una venta tuya de S/ 50 y el pago de Ana por
+        // confirmar. Aparte porque en «Viaje a Cusco» tus partes de la cena y el almuerzo ya cubren la venta (lo más
+        // antiguo primero) y el pago de Ana cubriría el hospedaje, no la venta.
+        var sale: (expense: SplitExpense, group: SplitGroup)?
+        if UITestHooks.seedGroupSale {
+            let saleGroup = SplitGroup(name: UITestHooks.seededSaleGroupName, iconName: "bag", currencyCode: "PEN", isOwner: true)
+            saleGroup.isBackendGroup = true
+            context.insert(saleGroup)
+            let saleZone = saleGroup.cloudKitZoneID
+            let me3 = SplitMember(
+                groupZoneID: saleZone, displayName: "Tú", cloudKitUserRecordID: "uitest-current-user",
+                role: "admin", status: .active, isGroupOwner: true, isCurrentUser: true)
+            let ana3 = SplitMember(
+                groupZoneID: saleZone, displayName: "Ana", cloudKitUserRecordID: "uitest-member-ana", status: .active)
+            context.insert(me3)
+            context.insert(ana3)
+            let expense = SplitExpense(
+                groupZoneID: saleZone, amount: 50, currencyCode: "PEN", expenseDescription: UITestHooks.seededGroupSaleName,
+                paidByMemberID: me3.id.uuidString, splitType: "exact", subcategoryName: L10n.Subcategory.freelance)
+            expense.date = cal.date(byAdding: .day, value: -3, to: Date.now) ?? Date.now
+            context.insert(expense)
+            context.insert(SplitShare(expenseID: expense.id, memberID: ana3.id.uuidString, amount: 50, groupZoneID: saleZone))
+            let payment = SplitSettlement(
+                groupZoneID: saleZone, fromMemberID: ana3.id.uuidString, toMemberID: me3.id.uuidString,
+                amount: 50, currencyCode: "PEN", date: Date.now)
+            payment.recordedByMemberID = ana3.id.uuidString
+            context.insert(payment)
+            sale = (expense, saleGroup)
+        }
+
         // ── 2º grupo "Viaje a Lima" (yo owner/activo). Habilita el chip EDITABLE del
         //    composer "Nuevo gasto" (>1 grupo elegible) y el cambio de grupo en el picker.
         //    Ordena DESPUÉS de "Viaje a Cusco" (Cusco < Lima) → no altera el primer
@@ -164,6 +194,15 @@ enum DevSeedGroups {
             try context.save()
         } catch {
             print("DevSeedGroups: save error: \(error)")
+        }
+
+        // El resto de la semilla no pasa por el puente; la venta sí, para que exista su pata por cobrar.
+        if let sale {
+            do {
+                try GroupTransactionBridge.shared.bridgeExpense(sale.expense, in: sale.group)
+            } catch {
+                print("DevSeedGroups: bridge de la venta: \(error)")
+            }
         }
     }
 

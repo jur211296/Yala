@@ -1787,6 +1787,8 @@ enum L10n {
         static var detailPlaceholder: String { ls("records.detailPlaceholder", comment: "iPad/ventana ancha: columna de detalle vacía en Registros") }
         /// «Por cobrar»: la pata de una venta de grupo que aún no te pagan (Grupos B · card 8).
         static var receivable: String { ls("records.receivable", comment: "Fila de Registros: lo que te deben por una venta en un grupo") }
+        /// «Cobrado»: la parte de una venta de grupo que ya te pagaron (Grupos B · card 10).
+        static var collected: String { ls("records.collected", comment: "Fila de Registros: lo cobrado de una venta en un grupo") }
         static var viewModeListA11y: String { ls("records.viewModeListA11y", comment: "A11y: botón vista lista") }
         static var viewModeCalendarA11y: String { ls("records.viewModeCalendarA11y", comment: "A11y: botón vista calendario") }
         static func deleteConfirmTitle(_ count: Int) -> String {
@@ -6804,6 +6806,22 @@ enum L10n {
             }
             static func paidBy(_ name: String, group: String) -> String {
                 String(format: ls("inbox.groupSettlementDraft.paidBy", comment: ""), name, group)
+            }
+            /// Grupos B · card 10: lo que el pago cobra de una venta. «Cobras «%1$@»: %2$@ de %3$@ cuentan como ingreso hoy.»
+            static func collectsOneToday(_ sale: String, _ amount: String, _ category: String) -> String {
+                String(format: ls("inbox.groupSettlementDraft.collectsOneToday", comment: ""), sale, amount, category)
+            }
+            /// Igual, con un pago que no es de hoy. %4$@ = la fecha del pago.
+            static func collectsOneOn(_ sale: String, _ amount: String, _ category: String, _ date: String) -> String {
+                String(format: ls("inbox.groupSettlementDraft.collectsOneOn", comment: ""), sale, amount, category, date)
+            }
+            /// Un pago que cobra varias ventas. %@ = el total cobrado.
+            static func collectsManyToday(_ amount: String) -> String {
+                String(format: ls("inbox.groupSettlementDraft.collectsManyToday", comment: ""), amount)
+            }
+            /// Igual, con un pago que no es de hoy. %2$@ = la fecha del pago.
+            static func collectsManyOn(_ amount: String, _ date: String) -> String {
+                String(format: ls("inbox.groupSettlementDraft.collectsManyOn", comment: ""), amount, date)
             }
         }
 

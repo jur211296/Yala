@@ -201,3 +201,29 @@ Encargo `2026-11-02-grupos-b-partir-en-pantallas` (decisiones en su Paso 0).
 - **En las hojas que piden cuenta**, la cuenta se puede cambiar después de partir: «Aprobar» no se enciende si una
   recarga va a la cuenta elegida (`GroupDraftSplitState.rechargesToItsOwnSource`).
 - **Residual:** el editor de la pata con receta sigue como lo dejó el #737.
+
+## Cards 9, 10 y 11 hechas (2026-11-02): lo cobrado cuenta el día del pago
+
+Encargo `2026-11-02-grupos-b-cobros` (decisiones en su Paso 0).
+
+- **Qué cubre una venta (card 9).** `GroupReceivableCoverageLogic`, pura: tu saldo en el grupo, en la divisa de la venta,
+  lo más antiguo primero. Lo que lo sube (lo que adelantaste, tus ventas, lo que pagas tú) son lotes con fecha; lo que lo
+  baja (tu parte de lo que pagó otro, lo que te pagan) consume el lote más antiguo, y si es una venta esa parte queda
+  cobrada con la fecha de ese movimiento. Una venta que llega cuando ya debías se cobra en su fecha contra la deuda. Los
+  cuatro casos de la página salen de ahí; en deudas cruzadas con el almuerzo después de la venta, 64 cuentan el día del
+  almuerzo y 56 el del pago (asumido: la página no fecha esa fila).
+- **Cómo queda en tus cuentas (card 10).** La pata por cobrar guarda solo el resto (sin resto, no hay pata). Cada parte
+  cobrada es una pata de ingreso normal en «Grupos» (categoría de la venta, fecha del cobro, sin tipo) con la marca
+  `{"k":"c","of":<movimiento>,"v":1}` en `splitLinesRaw` (`GroupSplitLinesRecipe.Stored.collected`). La escribe
+  `GroupTransactionBridge.reconcileReceivables`, una pasada por grupo al final de cada puente de gasto o liquidación y de
+  cada borrado (local y remoto), solo si el grupo tiene patas de venta. Identidad (venta, movimiento), actualización en
+  sitio y superviviente determinista. La partición del puente aparta las cobradas; un gasto que deja de ser venta las
+  borra. Registros dice «Cobrado»; editor, lote y menú las bloquean. La hoja de pago de la Bandeja dice qué venta cobra el
+  pago («… cuentan como ingreso hoy», o con su fecha).
+- **Estadísticas, Yala IA y el conector (card 11).** Lo por cobrar ya caía por su tipo. Lo cobrado es ingreso; el ajuste
+  del puente y su port (`mcp/src/logic/groups.ts`, `isCollectedLeg`, columna `split_lines_raw` en la lectura de
+  movimientos) lo apartan del neteo de préstamos.
+
+**Residuales:** una build con las cards 2-8 lee la marca de cobrada como pata de línea y la borra al repasar la venta (se
+corta con la versión mínima de 2.2). El pago cubre lo más antiguo también si es de otra persona del grupo: lo que cuenta
+es tu saldo, como acordó Jürgen.

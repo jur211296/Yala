@@ -39,6 +39,10 @@ struct GroupSettlementDraftFinalizationSheet: View {
     @State private var showSaveError: Bool = false
     /// UX 2.2 · L13-12: «Pago a Ana · Viaje a Cusco» cuando el borrador no trae descripción.
     @State private var paymentName: String?
+    /// Grupos B · card 10: lo que este pago cobra de tus ventas, que cuenta como ingreso el día del pago.
+    @State private var collectedLine: String?
+
+    @Environment(AppPreferences.self) private var appPreferences
 
     // MARK: - Body
 
@@ -52,7 +56,8 @@ struct GroupSettlementDraftFinalizationSheet: View {
                 date: draft.effectiveDate,
                 categoryReadOnly: categoryReadOnly,
                 finalizeDisabled: selectedAccount == nil,
-                onFinalize: { handleFinalize() }
+                onFinalize: { handleFinalize() },
+                footnote: collectedLine
             ) {
                 SelectionChip(
                     icon: "creditcard",
@@ -125,6 +130,43 @@ struct GroupSettlementDraftFinalizationSheet: View {
             resolvedCurrency = (try? modelContext.fetch(settDesc).first?.currencyCode) ?? ""
         }
         paymentName = GroupSettlementDraftNameResolver.name(for: draft, context: modelContext)
+        collectedLine = loadCollectedLine()
+    }
+
+    /// La frase de lo que este pago cobra: las patas cobradas que el puente escribió con esta liquidación
+    /// (`GroupTransactionBridge.reconcileReceivables`). Solo en un pago que recibes.
+    private func loadCollectedLine() -> String? {
+        guard (draft.amount ?? 0) > 0, let settlementID = draft.splitSettlementID,
+              let settlementUUID = UUID(uuidString: settlementID) else { return nil }
+        let marker = GroupSplitLinesRecipe.encodeCollectedMarker(eventID: settlementUUID)
+        do {
+            let legs = try modelContext.fetch(FetchDescriptor<TransactionItem>(
+                predicate: #Predicate { $0.splitLinesRaw == marker }))
+            let bySale = Dictionary(grouping: legs.filter { !$0.isDeleted }) { $0.splitExpenseID ?? "" }
+            var parts: [(date: Date, part: GroupSettlementCollectedLineLogic.Part)] = []
+            for (saleID, saleLegs) in bySale {
+                guard let saleUUID = UUID(uuidString: saleID) else { continue }
+                let sale = try modelContext.fetch(FetchDescriptor<SplitExpense>(
+                    predicate: #Predicate { $0.id == saleUUID })).first
+                let name = sale?.expenseDescription.isEmpty == false
+                    ? (sale?.expenseDescription ?? "") : (saleLegs.first?.note ?? "")
+                parts.append((sale?.date ?? .distantPast, .init(
+                    saleName: name,
+                    categoryName: sale?.subcategoryName ?? saleLegs.first?.subcategory?.name,
+                    amount: saleLegs.reduce(0) { $0 + $1.amount })))
+            }
+            let currency = resolvedCurrency.isEmpty ? (legs.first?.currencyCode ?? "") : resolvedCurrency
+            return GroupSettlementCollectedLineLogic.line(
+                parts: parts.sorted { $0.date < $1.date }.map(\.part),
+                date: draft.effectiveDate,
+                formatAmount: { appPreferences.currency($0, currencyCode: currency, forceFullPrecision: true) },
+                formatDate: { GroupSettlementCollectedLineLogic.dateText($0) })
+        } catch {
+            #if DEBUG
+            print("GroupSettlementDraftFinalizationSheet: Error: \(error)")
+            #endif
+            return nil
+        }
     }
 
     private func handleFinalize() {

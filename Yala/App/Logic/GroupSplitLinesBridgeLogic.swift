@@ -111,7 +111,8 @@ enum GroupSplitLinesBridgeLogic {
         switch GroupSplitLinesRecipe.parse(raw) {
         case .derived: return true
         case .newerVersion: return looksLikeMarker(raw)
-        case .none, .recipe, .unreadable: return false
+        // Una pata cobrada de una venta no es una línea de tu parte: la escribe otra pasada (`reconcileReceivables`).
+        case .none, .recipe, .unreadable, .collected: return false
         }
     }
 
@@ -127,7 +128,7 @@ enum GroupSplitLinesBridgeLogic {
         switch GroupSplitLinesRecipe.parse(raw) {
         case .recipe, .unreadable: return true
         case .newerVersion: return !looksLikeMarker(raw)
-        case .none, .derived: return false
+        case .none, .derived, .collected: return false
         }
     }
 

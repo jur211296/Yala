@@ -148,15 +148,18 @@ struct BridgeActivationSheet: View {
     @discardableResult
     private func importHistory() throws -> Int {
         let allExpenses = try fetchScopedExpenses()
-        for expense in allExpenses {
-            guard let group = try fetchGroup(for: expense.groupZoneID) else { continue }
-            try GroupTransactionBridge.shared.bridgeExpense(
-                expense, in: group,
-                accountForCurrentUser: nil,
-                isRemoteSync: false,
-                isBulkImport: true,
-                shouldSave: false
-            )
+        // Grupos B · card 10: lo cobrado de las ventas se repasa una vez por grupo al final, no en cada gasto del historial.
+        try GroupTransactionBridge.shared.batchingReceivables(context: modelContext) {
+            for expense in allExpenses {
+                guard let group = try fetchGroup(for: expense.groupZoneID) else { continue }
+                try GroupTransactionBridge.shared.bridgeExpense(
+                    expense, in: group,
+                    accountForCurrentUser: nil,
+                    isRemoteSync: false,
+                    isBulkImport: true,
+                    shouldSave: false
+                )
+            }
         }
         try modelContext.save()
         return allExpenses.count

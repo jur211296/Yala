@@ -93,6 +93,8 @@ extension XCUIApplication {
         // `grupos`. NOMBRADOS por lo mismo que sus vecinos.
         groupCreatedSheet: Bool = false,
         pendingSettlement: Bool = false,
+        // Grupos B · card 10: una venta tuya a Ana, la más antigua de «Viaje a Cusco» (`-uitest-seed-group-sale`).
+        groupSale: Bool = false,
         lateNoticeKeptGroups: Bool = false,
         welcomeAfterAdoptExit: Bool = false,
         // `-uitest-private-gate-device-reading <present|unreadable>`: la puerta de «Es mi primera vez → privado» mide con
@@ -152,6 +154,7 @@ extension XCUIApplication {
         if settlementAmountChange { args.append("-uitest-seed-settlement-amount-change") }
         if groupCreatedSheet { args.append("-uitest-group-created-sheet") }
         if pendingSettlement { args.append("-uitest-seed-pending-settlement") }
+        if groupSale { args.append("-uitest-seed-group-sale") }
         // La marca de los grupos que conservó el aviso tardío (`LateNoticeKeptGroupsMark`). NOMBRADO por lo mismo que sus
         // vecinos, y con su agravante: el caso del handover real se lanza SIN él, así que un typo que lo dejara fuera
         // pondría verde el control y rojo el caso, culpando al Welcome.

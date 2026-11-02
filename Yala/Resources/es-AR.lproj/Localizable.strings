@@ -5502,6 +5502,7 @@
 /* iPad/ventana ancha: columna de detalle vacía en Registros */
 "records.detailPlaceholder" = "Elegí un registro para verlo aquí";
 "records.receivable" = "Por cobrar";
+"records.collected" = "Cobrado";
 
 /* iPad/ventana ancha: columna de detalle vacía en Planificación */
 "planning.detailPlaceholder" = "Elegí un presupuesto o un pago para verlo aquí";
@@ -7311,6 +7312,12 @@
 
 /* Nombre del borrador de un pago que recibiste. %1$@ = de quién, %2$@ = grupo. */
 "inbox.groupSettlementDraft.paidBy" = "Pago de %1$@ · %2$@";
+/* Grupos B · card 10: hoja de pago de la Bandeja, lo que el pago cobra de una venta. %1$@ venta, %2$@ importe, %3$@ categoría, %4$@ fecha */
+"inbox.groupSettlementDraft.collectsOneToday" = "Cobrás «%1$@»: %2$@ de %3$@ cuentan como ingreso hoy.";
+"inbox.groupSettlementDraft.collectsOneOn" = "Cobrás «%1$@»: %2$@ de %3$@ cuentan como ingreso el %4$@.";
+/* Grupos B · card 10: un pago que cobra varias ventas. %1$@ importe, %2$@ fecha */
+"inbox.groupSettlementDraft.collectsManyToday" = "Cobrás varias ventas: %@ cuentan como ingreso hoy.";
+"inbox.groupSettlementDraft.collectsManyOn" = "Cobrás varias ventas: %1$@ cuentan como ingreso el %2$@.";
 
 /* Bajo «Mi parte» en las estadísticas del grupo: qué mide. */
 "groups.stats.myPortionHint" = "lo que te tocaba";

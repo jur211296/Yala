@@ -72,6 +72,10 @@ enum GroupSplitLinesRecipe {
         case recipe([Line])
         /// Marca de una pata que el puente fabricó a partir de la línea `lineID`.
         case derived(lineID: UUID)
+        /// Marca de una pata de ingreso COBRADO de una venta (Grupos B · card 10): la parte de la venta que cubrió el
+        /// movimiento `eventID` (un gasto o una liquidación del grupo). No es una línea de tu parte: la escribe
+        /// `GroupTransactionBridge.reconcileReceivables`. Una build con las cards 2-8 la lee como `.derived` (lleva `of`).
+        case collected(eventID: UUID)
         /// Una versión posterior a la de este build. No se toca.
         case newerVersion
         /// Texto que no se entiende. El puente no lo da por bueno ni lo borra.
@@ -164,6 +168,14 @@ enum GroupSplitLinesRecipe {
         encodeJSON(WireMarker(v: currentVersion, of: lineID.uuidString)) ?? ""
     }
 
+    /// La marca de una pata cobrada de una venta, cubierta por el movimiento `eventID` (`Stored.collected`).
+    static func encodeCollectedMarker(eventID: UUID) -> String {
+        encodeJSON(WireCollectedMarker(v: currentVersion, of: eventID.uuidString, k: collectedKind)) ?? ""
+    }
+
+    /// El `k` de la marca de una pata cobrada.
+    private static let collectedKind = "c"
+
     /// Lee `splitLinesRaw`. Nunca lanza: lo que no se entiende es `.unreadable` y lo de una versión posterior,
     /// `.newerVersion`.
     static func parse(_ raw: String?) -> Stored {
@@ -193,7 +205,12 @@ enum GroupSplitLinesRecipe {
         switch (header.of, header.l) {
         case let (.some(of), nil):
             guard let id = UUID(uuidString: of) else { return .unreadable }
-            return .derived(lineID: id)
+            switch header.k {
+            case nil: return .derived(lineID: id)
+            case collectedKind?: return .collected(eventID: id)
+            // Otra clase de marca, de una build posterior: no es una línea ni una receta.
+            case .some: return .newerVersion
+            }
         case let (nil, .some(wireLines)):
             var lines: [Line] = []
             for wire in wireLines {
@@ -213,11 +230,19 @@ enum GroupSplitLinesRecipe {
     private struct WireHeader: Decodable {
         let of: String?
         let l: [WireLine]?
+        /// La clase de marca: sin él, la de una línea; `"c"`, la de una pata cobrada.
+        let k: String?
     }
 
     private struct WireMarker: Encodable {
         let v: Int
         let of: String
+    }
+
+    private struct WireCollectedMarker: Encodable {
+        let v: Int
+        let of: String
+        let k: String
     }
 
     private struct WireRecipe: Encodable {

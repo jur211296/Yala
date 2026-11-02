@@ -77,3 +77,78 @@ enum SubcategorySelectorTypeLogic {
         return selectedIsIncome ? .income : .expense
     }
 }
+
+/// Lo COBRADO de una venta de grupo (Grupos B · card 10). La pata por cobrar guarda solo lo que falta; cada parte cobrada es
+/// una pata de ingreso normal en «Grupos», con la categoría de la venta y la fecha del movimiento que la cubrió
+/// (`GroupReceivableCoverageLogic`), marcada en `splitLinesRaw` (`GroupSplitLinesRecipe.Stored.collected`). Estadísticas la
+/// cuenta como ingreso ese día; el saldo de «Grupos» suma lo mismo que antes (por cobrar + cobrado = lo que te debían).
+enum GroupCollectedLegLogic {
+
+    /// `true` si `splitLinesRaw` marca una pata cobrada de una venta.
+    static func isCollected(_ raw: String?) -> Bool {
+        collectedEventID(raw) != nil
+    }
+
+    /// El movimiento (gasto o liquidación del grupo) que cubrió esta parte de la venta, o `nil`.
+    static func collectedEventID(_ raw: String?) -> UUID? {
+        if case let .collected(eventID) = GroupSplitLinesRecipe.parse(raw) { return eventID }
+        return nil
+    }
+
+    /// Una pata de venta que escribe entera el puente —la por cobrar o una cobrada—: el editor, el lote y el menú la tratan
+    /// como derivada (todo bloqueado, «se edita desde el grupo»).
+    static func isBridgeWrittenSaleLeg(adjustmentType: String?, splitLinesRaw: String?) -> Bool {
+        GroupSaleBridgeLogic.isReceivable(adjustmentType) || isCollected(splitLinesRaw)
+    }
+}
+
+/// La frase de la hoja de pago de la Bandeja (Grupos B · card 10): qué venta cobra este pago y que cuenta como ingreso ese
+/// día. «Cobras «Venta de zapatillas»: S/ 120.00 de Ventas cuentan como ingreso hoy.»
+enum GroupSettlementCollectedLineLogic {
+
+    /// La fecha de un pago que no es de hoy, en el idioma de la app («8 nov 2026»).
+    static func dateText(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = AppLocale.current
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .none
+        return formatter.string(from: date)
+    }
+
+    /// Lo que un pago cobra de UNA venta.
+    struct Part: Equatable, Sendable {
+        let saleName: String
+        let categoryName: String?
+        let amount: Double
+    }
+
+    /// `nil` si el pago no cobra ninguna venta (es una devolución, como siempre).
+    /// - Parameters:
+    ///   - parts: una por venta, en el orden en que el pago las cubre.
+    ///   - date: la fecha del pago, que es la del ingreso.
+    ///   - formatAmount: el importe con su divisa.
+    ///   - formatDate: la fecha, para un pago que no es de hoy.
+    static func line(
+        parts: [Part],
+        date: Date,
+        now: Date = .now,
+        calendar: Calendar = .current,
+        formatAmount: (Double) -> String,
+        formatDate: (Date) -> String
+    ) -> String? {
+        let parts = parts.filter { $0.amount >= GroupSaleBridgeLogic.epsilon }
+        guard !parts.isEmpty else { return nil }
+        let isToday = calendar.isDate(date, inSameDayAs: now)
+        let total = formatAmount(parts.reduce(0) { $0 + $1.amount })
+        // Una venta con su categoría: «Cobras «X»: S/ 120.00 de Ventas…». Varias (o una sin categoría legible): sin
+        // nombres, que en una lista no se citan bien en todos los idiomas.
+        if parts.count == 1, let part = parts.first, let category = part.categoryName, !category.isEmpty {
+            return isToday
+                ? L10n.Inbox.GroupSettlementDraft.collectsOneToday(part.saleName, total, category)
+                : L10n.Inbox.GroupSettlementDraft.collectsOneOn(part.saleName, total, category, formatDate(date))
+        }
+        return isToday
+            ? L10n.Inbox.GroupSettlementDraft.collectsManyToday(total)
+            : L10n.Inbox.GroupSettlementDraft.collectsManyOn(total, formatDate(date))
+    }
+}

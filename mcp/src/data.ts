@@ -96,7 +96,7 @@ export const COLUMNS = {
   tx:
     "sync_id,date,local_day,amount,currency_code,note,category_ref,subcategory_ref,account_ref,tag_refs," +
     "amount_in_preferred_currency,preferred_currency_code,is_exchange_rate_provisional,need_override," +
-    "scheduled_payment_ref,balance_adjustment_type,transfer_pair_id,split_expense_id",
+    "scheduled_payment_ref,balance_adjustment_type,transfer_pair_id,split_expense_id,split_lines_raw",
   txBalance: "account_ref,amount,currency_code",
   budgets:
     "sync_id,name,currency_code,limit_amount,period_type,start_date,end_date,natures,subcategory_ids,account_ids,tag_refs," +
