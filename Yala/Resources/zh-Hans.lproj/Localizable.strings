@@ -4438,6 +4438,26 @@
 /* Banner cuando lo asignado supera el total */
 "groups.expense.overAllocated %@" = "超出 %@";
 
+/* Grupos B · tarjeta «Tu parte» y hoja de una línea */
+"groups.splitLines.title %@" = "你的部分 · %@";
+"groups.splitLines.addLine" = "添加明细";
+"groups.splitLines.balanced" = "金额相符";
+"groups.splitLines.missing %@" = "还差 %@";
+"groups.splitLines.over %@" = "多出 %@";
+"groups.splitLines.kindTransfer" = "充值";
+"groups.splitLines.transferTo %@" = "充值到 %@";
+"groups.splitLines.transferSubtitle" = "既不是支出也不是收入";
+"groups.splitLines.chooseCategory" = "选择分类";
+"groups.splitLines.chooseAccount" = "选择账户";
+"groups.splitLines.destinationUnavailable" = "此账户已无法接收充值";
+"groups.splitLines.sheetTitle" = "明细";
+"groups.splitLines.from %@" = "从 %@";
+"groups.splitLines.transferExplanation %@" = "转入你的账户 %@。不计为支出，也不计为收入。";
+"groups.splitLines.transferExplanationNoAccount" = "转入你的一个账户。不计为支出，也不计为收入。";
+"groups.splitLines.saveLine" = "保存明细";
+"groups.splitLines.deleteLine" = "删除明细";
+"groups.splitLines.kindPicker" = "明细类型";
+
 /* Título sheet división por porcentaje */
 "groups.expense.splitSheet.percentageTitle" = "按百分比";
 

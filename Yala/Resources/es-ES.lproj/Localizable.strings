@@ -3720,6 +3720,26 @@
 /* Banner cuando lo asignado supera el total */
 "groups.expense.overAllocated %@" = "Te pasaste por %@";
 
+/* Grupos B · tarjeta «Tu parte» y hoja de una línea */
+"groups.splitLines.title %@" = "Tu parte · %@";
+"groups.splitLines.addLine" = "Añadir línea";
+"groups.splitLines.balanced" = "Cuadra";
+"groups.splitLines.missing %@" = "Faltan %@";
+"groups.splitLines.over %@" = "Sobran %@";
+"groups.splitLines.kindTransfer" = "Recarga";
+"groups.splitLines.transferTo %@" = "Recarga a %@";
+"groups.splitLines.transferSubtitle" = "No es gasto ni ingreso";
+"groups.splitLines.chooseCategory" = "Elige categoría";
+"groups.splitLines.chooseAccount" = "Elige la cuenta";
+"groups.splitLines.destinationUnavailable" = "Esta cuenta ya no sirve para la recarga";
+"groups.splitLines.sheetTitle" = "Línea";
+"groups.splitLines.from %@" = "desde %@";
+"groups.splitLines.transferExplanation %@" = "Pasa a tu cuenta %@. No cuenta como gasto ni como ingreso.";
+"groups.splitLines.transferExplanationNoAccount" = "Pasa a una cuenta tuya. No cuenta como gasto ni como ingreso.";
+"groups.splitLines.saveLine" = "Guardar línea";
+"groups.splitLines.deleteLine" = "Eliminar línea";
+"groups.splitLines.kindPicker" = "Tipo de línea";
+
 /* Título sheet división por porcentaje */
 "groups.expense.splitSheet.percentageTitle" = "Por porcentaje";
 

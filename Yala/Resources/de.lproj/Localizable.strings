@@ -4426,6 +4426,26 @@
 /* Banner cuando lo asignado supera el total */
 "groups.expense.overAllocated %@" = "%@ zu viel";
 
+/* Grupos B · tarjeta «Tu parte» y hoja de una línea */
+"groups.splitLines.title %@" = "Dein Anteil · %@";
+"groups.splitLines.addLine" = "Zeile hinzufügen";
+"groups.splitLines.balanced" = "Passt";
+"groups.splitLines.missing %@" = "Es fehlen %@";
+"groups.splitLines.over %@" = "%@ zu viel";
+"groups.splitLines.kindTransfer" = "Aufladung";
+"groups.splitLines.transferTo %@" = "Aufladung auf %@";
+"groups.splitLines.transferSubtitle" = "Weder Ausgabe noch Einnahme";
+"groups.splitLines.chooseCategory" = "Kategorie wählen";
+"groups.splitLines.chooseAccount" = "Konto wählen";
+"groups.splitLines.destinationUnavailable" = "Dieses Konto kann die Aufladung nicht mehr empfangen";
+"groups.splitLines.sheetTitle" = "Zeile";
+"groups.splitLines.from %@" = "von %@";
+"groups.splitLines.transferExplanation %@" = "Es geht auf dein Konto %@. Es zählt weder als Ausgabe noch als Einnahme.";
+"groups.splitLines.transferExplanationNoAccount" = "Es geht auf eines deiner Konten. Es zählt weder als Ausgabe noch als Einnahme.";
+"groups.splitLines.saveLine" = "Zeile speichern";
+"groups.splitLines.deleteLine" = "Zeile löschen";
+"groups.splitLines.kindPicker" = "Zeilentyp";
+
 /* Título sheet división por porcentaje */
 "groups.expense.splitSheet.percentageTitle" = "Nach Prozent";
 

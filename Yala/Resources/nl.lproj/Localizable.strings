@@ -4438,6 +4438,26 @@
 /* Banner cuando lo asignado supera el total */
 "groups.expense.overAllocated %@" = "%@ te veel";
 
+/* Grupos B · tarjeta «Tu parte» y hoja de una línea */
+"groups.splitLines.title %@" = "Jouw deel · %@";
+"groups.splitLines.addLine" = "Regel toevoegen";
+"groups.splitLines.balanced" = "Klopt";
+"groups.splitLines.missing %@" = "Nog %@";
+"groups.splitLines.over %@" = "%@ te veel";
+"groups.splitLines.kindTransfer" = "Opwaardering";
+"groups.splitLines.transferTo %@" = "Opwaardering naar %@";
+"groups.splitLines.transferSubtitle" = "Geen uitgave of inkomen";
+"groups.splitLines.chooseCategory" = "Kies categorie";
+"groups.splitLines.chooseAccount" = "Kies rekening";
+"groups.splitLines.destinationUnavailable" = "Deze rekening kan de opwaardering niet meer ontvangen";
+"groups.splitLines.sheetTitle" = "Regel";
+"groups.splitLines.from %@" = "van %@";
+"groups.splitLines.transferExplanation %@" = "Het gaat naar je rekening %@. Het telt niet als uitgave of als inkomen.";
+"groups.splitLines.transferExplanationNoAccount" = "Het gaat naar een van je rekeningen. Het telt niet als uitgave of als inkomen.";
+"groups.splitLines.saveLine" = "Regel opslaan";
+"groups.splitLines.deleteLine" = "Regel verwijderen";
+"groups.splitLines.kindPicker" = "Soort regel";
+
 /* Título sheet división por porcentaje */
 "groups.expense.splitSheet.percentageTitle" = "Op percentage";
 

@@ -1984,6 +1984,30 @@ enum L10n {
 
     enum Groups {
         static var detailPlaceholder: String { ls("groups.detailPlaceholder", comment: "iPad/ventana ancha: columna de detalle vacía en Grupos") }
+
+        /// Grupos B · tarjeta «Tu parte» y hoja de una línea (`GroupSplitLinesCard`, `GroupSplitLineSheet`).
+        enum SplitLines {
+            static func title(_ share: String) -> String { String(format: ls("groups.splitLines.title %@"), share) }
+            static var addLine: String { ls("groups.splitLines.addLine") }
+            static var balanced: String { ls("groups.splitLines.balanced") }
+            static func missing(_ amount: String) -> String { String(format: ls("groups.splitLines.missing %@"), amount) }
+            static func over(_ amount: String) -> String { String(format: ls("groups.splitLines.over %@"), amount) }
+            static var kindTransfer: String { ls("groups.splitLines.kindTransfer") }
+            static func transferTo(_ account: String) -> String { String(format: ls("groups.splitLines.transferTo %@"), account) }
+            static var transferSubtitle: String { ls("groups.splitLines.transferSubtitle") }
+            static var chooseCategory: String { ls("groups.splitLines.chooseCategory") }
+            static var chooseAccount: String { ls("groups.splitLines.chooseAccount") }
+            static var destinationUnavailable: String { ls("groups.splitLines.destinationUnavailable") }
+            static var sheetTitle: String { ls("groups.splitLines.sheetTitle") }
+            static func from(_ account: String) -> String { String(format: ls("groups.splitLines.from %@"), account) }
+            static func transferExplanation(_ account: String) -> String {
+                String(format: ls("groups.splitLines.transferExplanation %@"), account)
+            }
+            static var transferExplanationNoAccount: String { ls("groups.splitLines.transferExplanationNoAccount") }
+            static var saveLine: String { ls("groups.splitLines.saveLine") }
+            static var deleteLine: String { ls("groups.splitLines.deleteLine") }
+            static var kindPicker: String { ls("groups.splitLines.kindPicker") }
+        }
         /// **«Empezar de cero» no borró: quedan cambios de grupos sin subir** (ticket
         /// `fresh-start-wipe-kills-unsent-group-writes-silently`). Lo enseñan las tres pantallas del gesto —la puerta
         /// privada del Welcome, el aviso del espejo tardío y el alert del shell—, seguido del motivo de la subida
