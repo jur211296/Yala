@@ -243,15 +243,15 @@ struct ScheduledPaymentsWidget: View {
                 filterButton(for: filterOption)
             }
         }
+        // El círculo elegido se desliza (card C2). Implícita: en el Panel un `withAnimation` no anima.
+        .dsAnimation(DS.Animation.selection, value: filter, reduceMotion: reduceMotion)
     }
 
     private func filterButton(for filterOption: ScheduledPaymentsWidgetFilter) -> some View {
         let isSelected = filter == filterOption
 
         return Button {
-            dsWithAnimation(reduceMotion, .spring(response: 0.3, dampingFraction: 0.7)) {
-                filter = filterOption
-            }
+            filter = filterOption
         } label: {
             Image(systemName: filterOption.iconName)
                 .font(DS.Typography.labelSmall)

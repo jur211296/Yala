@@ -302,14 +302,12 @@ struct ExchangeRateWidget: View {
                         let isSelected = filteredCurrency == nil || filteredCurrency == currency
 
                         Button {
-                            dsWithAnimation(reduceMotion, .easeInOut(duration: 0.2)) {
-                                if filteredCurrency == currency {
-                                    // Deselect: show all
-                                    filteredCurrency = nil
-                                } else {
-                                    // Select: show only this one
-                                    filteredCurrency = currency
-                                }
+                            if filteredCurrency == currency {
+                                // Deselect: show all
+                                filteredCurrency = nil
+                            } else {
+                                // Select: show only this one
+                                filteredCurrency = currency
                             }
                         } label: {
                             HStack(spacing: DS.Spacing.xs) {
@@ -331,6 +329,9 @@ struct ExchangeRateWidget: View {
                     }
                 }
             }
+            // La divisa elegida se enciende y las demás se atenúan animadas (card C2). Implícita: en el Panel un
+            // `withAnimation` no anima.
+            .dsAnimation(DS.Animation.selection, value: filteredCurrency, reduceMotion: reduceMotion)
         }
         .fadesTowardVerticalBar()
     }

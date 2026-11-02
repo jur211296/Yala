@@ -146,6 +146,8 @@ struct ScheduledPaymentsListView: View {
             ZStack(alignment: .leading) {
                 Capsule().fill(Color(.tertiarySystemFill))
                 Capsule().fill(theme.accent).frame(width: geo.size.width * fraction)
+                    // Al marcar un pago, la barra de «pagado» avanza (card C2).
+                    .animation(reduceMotion ? nil : DS.Animation.number, value: fraction)
             }
         }
         .frame(height: 8)
@@ -160,15 +162,15 @@ struct ScheduledPaymentsListView: View {
                 viewModeButton(for: mode)
             }
         }
+        // El círculo se desliza entre Lista, Línea y Calendario (card C2); la página cambia en seco.
+        .dsAnimation(DS.Animation.selection, value: viewModel.paymentsViewMode, reduceMotion: reduceMotion)
     }
 
     private func viewModeButton(for mode: PaymentsViewMode) -> some View {
         let isSelected = viewModel.paymentsViewMode == mode
 
         return Button {
-            dsWithAnimation(reduceMotion) {
-                viewModel.paymentsViewMode = mode
-            }
+            viewModel.paymentsViewMode = mode
         } label: {
             Image(systemName: mode.iconName)
                 .font(DS.Typography.labelSmall)
@@ -196,6 +198,10 @@ struct ScheduledPaymentsListView: View {
 
     private var listContent: some View {
         let sections = ScheduledPaymentListLogic.sections(monthSummaries, date: \.dueDate, state: \.rowState)
+        // Los ids llevan su sección: la misma fila en otra sección es una que se va y otra que entra.
+        let rowIDs: [String] = sections.flatMap { section in
+            section.items.map { "\(section.section.rawValue)-\($0.id)" }
+        }
         return VStack(alignment: .leading, spacing: DS.Spacing.xl) {
             if sections.isEmpty {
                 emptyState
@@ -206,6 +212,8 @@ struct ScheduledPaymentsListView: View {
                             .font(DS.Typography.headline)
                             .foregroundStyle(.primary)
                             .accessibilityIdentifier("scheduled_section_\(section.section.rawValue)")
+                            // La cuenta cambia en seco: fundida, «· 3» quedaría encima de «· 2».
+                            .transaction { $0.animation = nil }
 
                         ForEach(section.items) { summary in
                             row(summary)
@@ -214,6 +222,8 @@ struct ScheduledPaymentsListView: View {
                 }
             }
         }
+        // Pausar, reanudar o marcar pagado mueve la fila de sección: se va de una y entra en la otra fundida (card C2).
+        .animatesRowEdits(ids: rowIDs)
         .padding(.horizontal, DS.Spacing.lg)
     }
 
@@ -376,6 +386,8 @@ struct ScheduledPaymentsListView: View {
             ScheduledPaymentCalendarLegend()
                 .padding(.top, DS.Spacing.xs)
         }
+        // El día elegido se rellena animado (card C2); la lista de debajo cambia en seco.
+        .dsAnimation(DS.Animation.selection, value: selectedDay, reduceMotion: reduceMotion)
         .padding(DS.Spacing.md)
         .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
@@ -405,9 +417,7 @@ struct ScheduledPaymentsListView: View {
         let dayAmount = ScheduledPaymentListLogic.dayAmount(summaries.map { ($0.displayAmount, $0.displayCurrencyCode) })
 
         return Button {
-            dsWithAnimation(reduceMotion) {
-                selectedDay = selectedDay == day ? nil : day
-            }
+            selectedDay = selectedDay == day ? nil : day
         } label: {
             VStack(spacing: DS.Spacing.xxs) {
                 Text("\(day)")
@@ -494,9 +504,7 @@ struct ScheduledPaymentsListView: View {
                     Spacer()
 
                     Button {
-                        dsWithAnimation(reduceMotion) {
-                            selectedDay = nil
-                        }
+                        selectedDay = nil
                     } label: {
                         Text(NSLocalizedString("scheduled.calendar.show.all", comment: ""))
                             .font(DS.Typography.labelSmall)

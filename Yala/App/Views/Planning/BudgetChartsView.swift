@@ -182,6 +182,9 @@ struct BudgetChartsView: View {
                                 localPeriodNavigationHeader
                             }
                             dailySpendingChartContent
+                                // Al cambiar de período, las barras crecen o encogen hasta las nuevas (card C2). Solo la
+                                // gráfica: el título del período cambia en seco, fundido se solaparía con el anterior.
+                                .animation(reduceMotion ? nil : DS.Animation.appear, value: localDateInterval.start)
                         }
                     }
 
@@ -191,6 +194,10 @@ struct BudgetChartsView: View {
                         hint: L10n.Planning.BudgetCharts.byCategoryHint
                     ) {
                         categoryBreakdownContent
+                            // La categoría elegida se despliega y las demás se atenúan (card C2). Implícita: la pantalla se
+                            // empuja dentro de la pestaña de Planificación, donde un `withAnimation` no anima. Al cambiar de
+                            // período, en seco: sus filas van por posición y los nombres se fundirían uno sobre otro.
+                            .animation(reduceMotion ? nil : DS.Animation.selection, value: selectedCategory)
                     }
                 }
                 .padding(.vertical, DS.Spacing.lg)
@@ -241,9 +248,7 @@ struct BudgetChartsView: View {
     private var localPeriodNavigationHeader: some View {
         HStack {
             Button {
-                dsWithAnimation(reduceMotion) {
-                    localPreviousPeriod()
-                }
+                localPreviousPeriod()
             } label: {
                 Image(systemName: "chevron.left")
                     .font(DS.Typography.headline)
@@ -273,9 +278,7 @@ struct BudgetChartsView: View {
             Spacer()
 
             Button {
-                dsWithAnimation(reduceMotion) {
-                    localNextPeriod()
-                }
+                localNextPeriod()
             } label: {
                 Image(systemName: "chevron.right")
                     .font(DS.Typography.headline)
@@ -516,9 +519,7 @@ struct BudgetChartsView: View {
                         let isDimmed = selectedCategory != nil && !isSelected
 
                         Button {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                selectedCategory = isSelected ? nil : item.name
-                            }
+                            selectedCategory = isSelected ? nil : item.name
                         } label: {
                             breakdownRow(
                                 name: item.name,

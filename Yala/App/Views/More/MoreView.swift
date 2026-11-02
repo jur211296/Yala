@@ -117,9 +117,12 @@ struct MoreView: View {
                 }
             }
         }
+        // Sin `.transaction { $0.animation = nil }` (card C5, 2026-11-02): lo puso `c6d44bac8` (2026-01-15) contra un
+        // parpadeo al abrir Ajustes desde la vista Más de entonces, y su propio mensaje dice que no lo arregló; ese mismo
+        // día el apagado de `ContentView` sobre la `TabView` cubrió el parpadeo. Lo único que hacía era apagar las
+        // animaciones de Ajustes solo cuando se abría desde aquí. Desde el Panel y Grupos nunca lo llevó.
         .sheet(isPresented: $showProfile) {
             ProfileView()
-                .transaction { $0.animation = nil }
         }
         .sheet(isPresented: $showEditor, onDismiss: { navigation.isEditingTabBarLayout = false }) {
             MoreEditorSheet()

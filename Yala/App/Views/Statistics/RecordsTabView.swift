@@ -334,14 +334,12 @@ struct RecordsTabView: View {
         return AdaptiveRowStack(stackedAlignment: .center, spacing: DS.Spacing.md, stackedSpacing: DS.Spacing.xs) {
             if !sessionState.isExpensesOnlyMode {
                 Button {
-                    dsWithAnimation(reduceMotion) {
-                        if isIncomeFiltered {
-                            viewModel.selectedTransactionNatures.removeAll()
-                        } else {
-                            viewModel.selectedTransactionNatures = [.income]
-                        }
-                        onFilterChange()
+                    if isIncomeFiltered {
+                        viewModel.selectedTransactionNatures.removeAll()
+                    } else {
+                        viewModel.selectedTransactionNatures = [.income]
                     }
+                    onFilterChange()
                 } label: {
                     HStack(spacing: DS.Spacing.xs) {
                         Image(systemName: "arrow.up.right")
@@ -372,16 +370,14 @@ struct RecordsTabView: View {
             }
 
             Button {
-                dsWithAnimation(reduceMotion) {
-                    if isExpenseFiltered {
-                        if !sessionState.isExpensesOnlyMode {
-                            viewModel.selectedTransactionNatures.removeAll()
-                        }
-                    } else {
-                        viewModel.selectedTransactionNatures = [.expense]
+                if isExpenseFiltered {
+                    if !sessionState.isExpensesOnlyMode {
+                        viewModel.selectedTransactionNatures.removeAll()
                     }
-                    onFilterChange()
+                } else {
+                    viewModel.selectedTransactionNatures = [.expense]
                 }
+                onFilterChange()
             } label: {
                 HStack(spacing: DS.Spacing.xs) {
                     Image(systemName: "arrow.down.right")
@@ -407,6 +403,8 @@ struct RecordsTabView: View {
                 isEstimate: recordsSummary.expenseIsApproximate
             ))
         }
+        // El importe que no filtra se atenúa animado (card C2). Implícita: en una pestaña un `withAnimation` no anima.
+        .dsAnimation(DS.Animation.selection, value: viewModel.selectedTransactionNatures, reduceMotion: reduceMotion)
     }
 
     private var recordsSummary: RecordsViewModel.RecordsSummary {
@@ -581,18 +579,19 @@ struct RecordsTabView: View {
                 viewModeButton(for: mode)
             }
         }
+        // El círculo se desliza de Lista a Calendario (card C2); la página cambia en seco, como con los chips: fundirla
+        // dejaría las dos copias en el árbol de accesibilidad mientras dura.
+        .dsAnimation(DS.Animation.selection, value: recordsViewMode, reduceMotion: reduceMotion)
     }
 
     private func viewModeButton(for mode: RecordsViewMode) -> some View {
         let isSelected = recordsViewMode == mode
         return Button {
-            dsWithAnimation(reduceMotion) {
-                recordsViewMode = mode
-                if mode == .list {
-                    selectedCalendarDay = nil
-                } else {
-                    clampCalendarMonthIfNeeded()
-                }
+            recordsViewMode = mode
+            if mode == .list {
+                selectedCalendarDay = nil
+            } else {
+                clampCalendarMonthIfNeeded()
             }
         } label: {
             Image(systemName: mode.iconName)

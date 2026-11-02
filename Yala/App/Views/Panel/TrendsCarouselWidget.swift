@@ -29,6 +29,7 @@ struct TrendsCarouselWidget: View {
     var headerInfoButton: AnyView? = nil
 
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @Namespace private var animationNamespace
     @State private var showFilterBlockedMessage: Bool = false
@@ -201,6 +202,8 @@ struct TrendsCarouselWidget: View {
                 metricButton(for: type)
             }
         }
+        // El círculo de la métrica elegida se desliza (card C2). Implícita: en el Panel un `withAnimation` no anima.
+        .dsAnimation(DS.Animation.selection, value: viewModel.trendType, reduceMotion: reduceMotion)
         .filterBlockedPopover(
             isPresented: $showFilterBlockedMessage,
             title: L10n.Trend.filterBlockedTitle,

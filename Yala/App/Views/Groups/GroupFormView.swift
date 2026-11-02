@@ -21,6 +21,7 @@ struct GroupFormView: View {
     // MARK: - Environment
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
 
@@ -231,7 +232,7 @@ struct GroupFormView: View {
     private var moreOptionsSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             Button {
-                withAnimation(.smooth(duration: 0.25)) { showsMoreOptions.toggle() }
+                dsWithAnimation(reduceMotion, DS.Animation.appear) { showsMoreOptions.toggle() }
             } label: {
                 HStack(spacing: DS.Spacing.sm) {
                     Text(L10n.Common.moreOptions)

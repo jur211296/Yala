@@ -557,6 +557,9 @@ struct TrendsTabView: View {
                 chartEmptyState
             }
         }
+        // «Ver el mes anterior» funde una gráfica con la otra y la píldora se rellena (card C2). Implícita: en una
+        // pestaña un `withAnimation` no anima.
+        .animation(reduceMotion ? nil : DS.Animation.appear, value: showsPreviousPeriod)
     }
 
     private var chartEmptyState: some View {
@@ -571,7 +574,7 @@ struct TrendsTabView: View {
     /// sigue al período y al modo de comparación («Ver la semana anterior», «Ver el año anterior»).
     private var showPreviousPeriodToggle: some View {
         Button {
-            dsWithAnimation(reduceMotion) { showsPreviousPeriod.toggle() }
+            showsPreviousPeriod.toggle()
         } label: {
             HStack(spacing: DS.Spacing.xs) {
                 Image(systemName: showsPreviousPeriod ? "checkmark" : "chart.line.flattrend.xyaxis")
@@ -1115,34 +1118,34 @@ struct TrendsTabView: View {
                 cashFlowViewButton(for: viewType)
             }
         }
+        // El segmento elegido se desliza (card C2); lo de debajo cambia en seco.
+        .dsAnimation(DS.Animation.selection, value: cashFlowViewType, reduceMotion: reduceMotion)
     }
 
     private func cashFlowViewButton(for viewType: CashFlowViewType) -> some View {
         let isSelected = cashFlowViewType == viewType
 
         return Button {
-            dsWithAnimation(reduceMotion) {
-                cashFlowViewType = viewType
-                if viewType == .byAccount,
-                    let firstAccount = sortedAccountIDs(Array(cashFlowByAccount.keys)).first
-                {
-                    accountCarouselPosition = firstAccount
-                }
-                if viewType == .byCurrency,
-                    let firstCurrency = cashFlowByCurrency.keys.sorted(by: { code1, code2 in
-                        if code1 == defaultCurrencyCode { return true }
-                        if code2 == defaultCurrencyCode { return false }
-                        let total1 =
-                            (cashFlowByCurrency[code1]?.totalIncome ?? 0)
-                            + (cashFlowByCurrency[code1]?.totalExpense ?? 0)
-                        let total2 =
-                            (cashFlowByCurrency[code2]?.totalIncome ?? 0)
-                            + (cashFlowByCurrency[code2]?.totalExpense ?? 0)
-                        return total1 > total2
-                    }).first
-                {
-                    currencyCarouselPosition = firstCurrency
-                }
+            cashFlowViewType = viewType
+            if viewType == .byAccount,
+                let firstAccount = sortedAccountIDs(Array(cashFlowByAccount.keys)).first
+            {
+                accountCarouselPosition = firstAccount
+            }
+            if viewType == .byCurrency,
+                let firstCurrency = cashFlowByCurrency.keys.sorted(by: { code1, code2 in
+                    if code1 == defaultCurrencyCode { return true }
+                    if code2 == defaultCurrencyCode { return false }
+                    let total1 =
+                        (cashFlowByCurrency[code1]?.totalIncome ?? 0)
+                        + (cashFlowByCurrency[code1]?.totalExpense ?? 0)
+                    let total2 =
+                        (cashFlowByCurrency[code2]?.totalIncome ?? 0)
+                        + (cashFlowByCurrency[code2]?.totalExpense ?? 0)
+                    return total1 > total2
+                }).first
+            {
+                currencyCarouselPosition = firstCurrency
             }
         } label: {
             Text(viewType.title)

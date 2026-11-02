@@ -130,9 +130,7 @@ struct BudgetsWidget: View {
 
                 Button {
                     DS.Haptic.selection()
-                    dsWithAnimation(reduceMotion, .easeInOut(duration: 0.2)) {
-                        onSelectBudget?(summary.budget)
-                    }
+                    onSelectBudget?(summary.budget)
                 } label: {
                     BudgetWidgetRow(
                         summary: summary,
@@ -144,6 +142,9 @@ struct BudgetsWidget: View {
                 .buttonStyle(.plain)
             }
         }
+        // El presupuesto elegido queda y los demás se atenúan animados (card C2). Implícita: en el Panel un
+        // `withAnimation` no anima.
+        .dsAnimation(DS.Animation.selection, value: selectedBudgetID, reduceMotion: reduceMotion)
     }
 
     // MARK: - Empty State

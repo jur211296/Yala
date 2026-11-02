@@ -40,12 +40,17 @@ struct HeroMonthView: View {
         HeroHeader {
             labelWithDetailHint
         } period: {
+            // El título de la píldora se releva fundido y la cápsula cambia de ancho animada (card C2), como en
+            // Estadísticas. Con Reducir movimiento, en seco.
             TrendsPeriodMenu(
                 selectedPeriod: selectedPeriod,
                 customDateRange: customDateRange,
                 onSelect: onSelectPeriod,
-                onCustomTapped: onCustomPeriodTapped
+                onCustomTapped: onCustomPeriodTapped,
+                titleMotion: reduceMotion ? nil : .fade
             )
+            .animation(reduceMotion ? nil : DS.Animation.selection, value: selectedPeriod)
+            .animation(reduceMotion ? nil : DS.Animation.selection, value: customDateRange)
         } content: {
             summaryRow
         }
@@ -184,6 +189,9 @@ struct HeroMonthView: View {
                 heroCaption(isIncomeFiltered: isIncomeFiltered, isExpenseFiltered: isExpenseFiltered)
             }
         }
+        // La píldora elegida se rellena, la otra se atenúa y el chip «solo gastos» entra fundido (card C2). Implícita: el
+        // `withAnimation` del toque no anima dentro de una pestaña.
+        .animation(reduceMotion ? nil : DS.Animation.selection, value: sessionState.selectedTransactionNatures)
         .contentShape(Rectangle())
     }
 
@@ -211,7 +219,7 @@ struct HeroMonthView: View {
         let fill = isIncome ? Color.incomeFill : Color.emphasisPinkFill
         return Button {
             DS.Haptic.selection()
-            dsWithAnimation(reduceMotion) { toggleNature(nature) }
+            toggleNature(nature)
         } label: {
             HStack(spacing: DS.Spacing.xs) {
                 Image(systemName: isIncome ? "arrow.up.right" : "arrow.down.right")
@@ -263,7 +271,7 @@ struct HeroMonthView: View {
         if isIncomeFiltered || isExpenseFiltered {
             Button {
                 DS.Haptic.selection()
-                dsWithAnimation(reduceMotion) { sessionState.selectedTransactionNatures.removeAll() }
+                sessionState.selectedTransactionNatures.removeAll()
             } label: {
                 HStack(spacing: DS.Spacing.xs) {
                     Text(isExpenseFiltered ? L10n.Panel.Hero.onlyExpensesChip : L10n.Panel.Hero.onlyIncomeChip)
@@ -280,6 +288,12 @@ struct HeroMonthView: View {
                 .contentShape(Capsule())
             }
             .buttonStyle(.plain)
+            // Entra fundido y se va en el acto: lo de debajo del hero (la fila de acciones) sube sin animar, y un chip
+            // que se fundiera al irse quedaría encima de ella (medido en vídeo, card C2).
+            // Un chip por filtro: de «solo ingresos» a «solo gastos» es uno que se va y otro que entra, no un texto que
+            // se funde con el anterior.
+            .id(isExpenseFiltered)
+            .transition(.asymmetric(insertion: .opacity, removal: .identity))
             .accessibilityHint(L10n.Panel.Hero.clearNatureFilter)
             .accessibilityIdentifier("panel_hero_nature_chip")
         } else if periodSummary.hasNoMovements {

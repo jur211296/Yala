@@ -14,6 +14,7 @@ struct BudgetProgressBar: View {
     var simplified: Bool = false
 
     @State private var barWidth: CGFloat = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var barColor: Color {
         if isExceeded { return Color.hotPink }
@@ -33,6 +34,9 @@ struct BudgetProgressBar: View {
                 Capsule()
                     .fill(barColor)
                     .frame(width: max(0, barWidth * (min(percentage, 100.0) / 100.0)), height: 6)
+                    // El relleno crece o encoge con la cifra (card C2). Solo con el porcentaje: el ancho medido al
+                    // aparecer o al girar sale quieto.
+                    .animation(reduceMotion ? nil : DS.Animation.number, value: percentage)
             }
             .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { barWidth = $0 }
         .accessibilityValue(isExceeded ? L10n.Accessibility.exceeded : "\(Int(percentage))%")

@@ -36,6 +36,7 @@ private struct YalaAIChatPresentation: ViewModifier {
     let insideNavigationStack: Bool
     /// Size class de la VENTANA en el sitio donde se cuelga el chat (fuera de cualquier split).
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var showsColumn: Bool {
         YalaAIChatLayoutLogic.showsColumn(isPresented: isPresented, isRegularWidth: horizontalSizeClass == .regular)
@@ -58,7 +59,8 @@ private struct YalaAIChatPresentation: ViewModifier {
                     .transition(.move(edge: .trailing))
             }
         }
-        .animation(.snappy, value: showsColumn)
+        // La columna entra desde la derecha; con Reducir movimiento, aparece en seco (card C6).
+        .animation(reduceMotion ? nil : DS.Animation.appear, value: showsColumn)
         .sheet(isPresented: showsSheet) {
             ChatSheetView()
         }

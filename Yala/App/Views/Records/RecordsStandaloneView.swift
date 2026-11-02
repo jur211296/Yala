@@ -275,8 +275,9 @@ struct RecordsStandaloneView: View {
                 }
             }
             .yalaScreenBackground(.panel)
-            .animation(.spring(response: DS.Animation.springResponse, dampingFraction: DS.Animation.springDamping), value: recordsViewModel.isSelectionMode)
-            .animation(.spring(response: DS.Animation.springResponse, dampingFraction: DS.Animation.springDamping), value: recordsViewModel.selectedRecordIDs.isEmpty)
+            // La barra de selección entra y sale; con Reducir movimiento, en seco (card C6).
+            .animation(reduceMotion ? nil : DS.Animation.appear, value: recordsViewModel.isSelectionMode)
+            .animation(reduceMotion ? nil : DS.Animation.appear, value: recordsViewModel.selectedRecordIDs.isEmpty)
             .navigationTitle(L10n.Records.title)
             .prefersToolbarItemsInVerticalBar()
             .toolbar {
