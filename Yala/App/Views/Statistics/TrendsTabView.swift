@@ -714,6 +714,8 @@ struct TrendsTabView: View {
             if trendsViewModel.periodTransactionCount >= 5, !bullets.isEmpty {
                 if isProUser {
                     proTrendInsightCard(ruleBullets: bullets)
+                        // Card C7: «Analizando…» → la tarjeta de la IA, fundiéndose. Es la última del scroll.
+                        .animation(reduceMotion ? nil : DS.Animation.appear, value: trendsAI.phase == .loading)
                 } else {
                     freeTrendInsightCard(bullets: bullets)
                 }
@@ -769,6 +771,7 @@ struct TrendsTabView: View {
         switch trendsAI.phase {
         case .loading:
             AIInsightCardComponents.loadingPlaceholder(accentColor: theme.accent)
+                .transition(.loadingPlaceholder)
         case .loaded(let aiBullets) where !aiBullets.isEmpty:
             proAIInsightCard(aiBullets: aiBullets)
         case .loaded, .idle:

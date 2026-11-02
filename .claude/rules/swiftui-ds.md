@@ -378,9 +378,22 @@ La tabla vista por vista y lo que queda en cards: `docs/fluidez/AUDITORIA-FLUIDE
   hasta su saldo cada vez que se abría (`CategoriesTabView.balanceKPI`).
 - **Un selector de cápsula desliza la cápsula** (`matchedGeometryEffect`, molde `GenericSegmentedPill` y
   `TransactionTypeSelectorView`), y su animación va en el propio selector, no en lo que cambia debajo.
-- **Un fundido de pantalla entera duplica el árbol de accesibilidad mientras dura**: dos copias de cada botón, y un
-  XCUITest que toque en ese instante cae con «varios elementos». Por eso el esqueleto → datos (`yalaSkeleton`) no se
-  funde todavía (card C1).
+- **Un fundido de pantalla entera puede duplicar el árbol de accesibilidad mientras dura**: dos copias de cada botón, y
+  un XCUITest que toque en ese instante cae con «varios elementos». **Lo que se va al terminar una carga** (esqueleto,
+  `ProgressView`, «Analizando…») sale con `.transition(.loadingPlaceholder)` (`ContentTransitions.swift`, card C1,
+  2026-11-01): se funde y, desde el primer fotograma de su salida, ni se lee ni se toca. `yalaSkeleton` funde así el
+  esqueleto ENCIMA de los datos (`zIndex(1)`), que entran debajo ya opacos (`.identity`). Medido ese día: con el
+  esqueleto redactado ningún mutante llegó a duplicar el árbol (inferido: la copia `.redacted(.placeholder)` no se
+  expone), así que la salida oculta es el cinturón y `SkeletonFadeAccessibilityUITests` fija el criterio, no la pieza.
+  **Si lo que llega lleva el título grande en su scroll** (la lista de Grupos), entra con `.identity`: fundirla funde
+  el título con ella.
+- **Filas que entran o se van: `.animatesRowEdits(ids:)`** en el contenedor de las filas, con los ids en el orden en
+  que se pintan. Solo anima una edición de 1-3 filas con el resto en su orden (`RowListEditLogic`); un filtro o un
+  período que cambian la lista entera siguen en seco. La animación cubre el contenedor: lo de dentro que cambie en la
+  misma transacción y no deba fundirse (la frase con la cifra del grupo) lleva `.transaction { $0.animation = nil }`.
+- **El háptico de «Deshacer» va en quien deshace, no en el botón del aviso**: el aviso también lleva «Ver» y «Editar»,
+  que no deshacen nada, y un deshacer puede no tener nada que deshacer (`returnToPending` que lanza, `unskipOccurrence`
+  que no guarda). `success()` tras deshacer de verdad.
 
 ## iOS 26 Liquid Glass (OBLIGATORIO)
 - `ToolbarSpacer(.fixed, placement: .topBarTrailing)` — placement es OBLIGATORIO.

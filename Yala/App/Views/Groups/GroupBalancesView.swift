@@ -104,6 +104,9 @@ struct GroupBalancesView: View {
                 }
                 .padding(.top, DS.Spacing.sm)
                 .padding(.bottom, DS.Spacing.safeBottom)
+                // Card C3: una liquidación que se confirma (pasa de «por confirmar» a la lista), se rechaza o se borra
+                // entra y se va fundiéndose. Cada lista con su prefijo: confirmarla es salir de una y entrar en otra.
+                .animatesRowEdits(ids: pending.map { "pending-\($0.id)" } + listedSettlements.map { "listed-\($0.id)" })
             }
             .scrollViewGlassEdges()
             .confirmationDialog(

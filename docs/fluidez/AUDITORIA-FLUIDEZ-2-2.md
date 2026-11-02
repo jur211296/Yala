@@ -67,11 +67,11 @@ Está documentado en `.claude/rules/swiftui-ds.md`, en «Fluidez: el sistema com
 | Háptico al cambiar de chip (las cuatro filas) | [V] Ninguno | `NavigationChipButton` | medio | ✅ |
 | Cifras de `AmountText` | [V] Sin `numericText`; en Categorías, Tendencias y Pagos el `numericText` no tenía animación que lo disparara | `AmountText.swift` | alto | ✅ heros (ver abajo) |
 | `GenericSegmentedPill` | [V] `dsWithAnimation` dentro de pestaña: la cápsula saltaba; sin háptico | `SegmentedPills.swift` | alto | ✅ |
-| Esqueleto → datos (`yalaSkeleton`) | [V] if/else: los datos sustituyen al esqueleto de golpe | `ViewModifiers.swift` | alto | C1 |
+| Esqueleto → datos (`yalaSkeleton`) | [V] if/else: los datos sustituyen al esqueleto de golpe | `ViewModifiers.swift` | alto | ✅ C1 (2026-11-01) |
 | Háptico de aviso | [V] `warning()` (golpe rígido) se usaba también para errores | `DS.Haptic` | alto | ✅ `error()` nuevo |
 | Ajustes abierto desde Más no anima | [V] `.transaction { $0.animation = nil }` en `ProfileView` solo desde Más | `MoreView.swift:122` | alto | C5 |
-| Aviso «Deshacer» (borrar, descartar, saltar pago) | [V] Aparece y se va sin transición; sin háptico al deshacer | `DraftDiscardUndoNotice.swift` | medio | C3 |
-| Inserción y borrado de filas | [V] `LazyVStack` sin transición en Registros, Grupos y Presupuestos | varios | alto | C3 |
+| Aviso «Deshacer» (borrar, descartar, saltar pago) | [V] Aparece y se va sin transición; sin háptico al deshacer | `DraftDiscardUndoNotice.swift` | medio | ✅ C3 (2026-11-01) |
+| Inserción y borrado de filas | [V] `LazyVStack` sin transición en Registros, Grupos y Presupuestos | varios | alto | ✅ C3 (2026-11-01) |
 
 ### Panel
 
@@ -84,7 +84,7 @@ Está documentado en `.claude/rules/swiftui-ds.md`, en «Fluidez: el sistema com
 | Período del hero | [V] Cambia de golpe; sin háptico | `PanelHeroSection.swift:31` | medio | C2 |
 | Widgets: filtro de pagos, métrica de tendencias, tipo de cambio, presupuesto elegido | [V] Píldoras que saltan; sin háptico | widgets | medio | C2 |
 | Tartas: seleccionar sector, recorrer gráficas | [V] Sin háptico al cambiar de sector o de barra | `CategoriesPieWidget`, `CashFlowWidget`, `TrendChartView` | medio | C4 |
-| Esqueleto inicial | [V] De golpe | `PanelView.swift:308` | alto | C1 |
+| Esqueleto inicial | [V] De golpe | `PanelView.swift:308` | alto | ✅ C1 (2026-11-01) |
 | Checklist de configuración, anillo de puntuación | [V] Animaciones sin Reducir movimiento | `SetupChecklistCard`, `ScoreRingView` | medio | C6 |
 | Avisos y flotantes | [V] Implícitas con Reducir movimiento | `PanelView` | — | ya bien |
 
@@ -95,7 +95,7 @@ Está documentado en `.claude/rules/swiftui-ds.md`, en «Fluidez: el sistema com
 | Totales del hero (saldo, entradas, salidas) | [V] Sin `numericText` | `RecordsTabView.swift` | medio | ✅ |
 | Selección de filas | [V] Háptico doble (explícito y `sensoryFeedback`) | `RecordRowView.swift` | medio | ✅ uno |
 | Lista ↔ Calendario, mes, día | [V] `dsWithAnimation` en pestaña; sin háptico | `RecordsTabView`, `RecordsCalendarView` | medio | C2 |
-| Filas que entran o se borran | [V] Sin transición; el deshacer las devuelve de golpe | `RecordsTabView.swift:424` | alto | C3 |
+| Filas que entran o se borran | [V] Sin transición; el deshacer las devuelve de golpe | `RecordsTabView.swift:424` | alto | ✅ C3 (2026-11-01) |
 | Confirmar borrado, borrado en lote, deshacer | [V] Sin háptico al confirmar | `RecordRowContextMenu`, `RecordsSelectionBar` | medio | C4 |
 | Barra de selección | [V] Spring sin Reducir movimiento | `RecordsStandaloneView.swift:315` | medio | C6 |
 
@@ -114,9 +114,9 @@ Está documentado en `.claude/rules/swiftui-ds.md`, en «Fluidez: el sistema com
 | Cambio de pestaña Gastos / Saldos / Estadísticas | [V] Desfasado (ver la causa) | `GroupDetailView.swift` | alto | ✅ |
 | Saldo grande del grupo | [V] Sin `numericText` | `GroupBalanceHero.swift` | medio | ✅ |
 | Confirmar liquidación | [V] Háptico doble (botón y ViewModel), también si fallaba | `GroupBalancesView.swift` | medio | ✅ uno, al confirmar |
-| Carga de la lista | [V] `ProgressView` → lista de golpe | `GroupsContainerView.swift:106` | medio | C7 |
+| Carga de la lista | [V] `ProgressView` → lista de golpe | `GroupsContainerView.swift:106` | medio | ✅ C7 (2026-11-01) |
 | Archivados, tarjeta de avisos | [V] `withAnimation` en pestaña: de golpe | `GroupsContainerView`, `GroupNotificationsOptInCard` | medio | C2 |
-| Borrar gasto, quitar saldo inicial | [V] Sin háptico de éxito; la fila se va de golpe | `GroupDetailViewModel`, `GroupRecordsView` | alto | C3 |
+| Borrar gasto, quitar saldo inicial | [V] Sin háptico de éxito; la fila se va de golpe | `GroupDetailViewModel`, `GroupRecordsView` | alto | ✅ C3 (2026-11-01) |
 | Tipo de reparto, participantes y pagador | [V] Sin háptico; la cápsula se funde | `SplitTypeSegmentedSelector`, `GroupSplitEditorCard` | medio | C4 |
 
 ### Estadísticas
@@ -129,7 +129,7 @@ Está documentado en `.claude/rules/swiftui-ds.md`, en «Fluidez: el sistema com
 | Período (flechas y menú) | [V] Implícita bien hecha; sin háptico | `StatisticsPeriodControl.swift` | medio | C4 |
 | Secciones plegables de Insights, «Ver período anterior», Sankey | [V] `dsWithAnimation` en pestaña | `InsightsTabView`, `TrendsTabView`, `CategoriesTabView` | medio | C2 |
 | Flotantes al desplazar | [V] Sin implícita: de golpe (en el Panel sí se funden) | `DetailContainerView.swift:365` | medio | C2 |
-| Carga de Insights y de la IA | [V] `ProgressView` → contenido de golpe | `InsightsTabView.swift:77,325` | medio | C7 |
+| Carga de Insights y de la IA | [V] `ProgressView` → contenido de golpe | `InsightsTabView.swift:77,325` | medio | ✅ C7 (2026-11-01) |
 
 ### Presupuestos y Pagos
 
@@ -199,3 +199,7 @@ Está documentado en `.claude/rules/swiftui-ds.md`, en «Fluidez: el sistema com
 **Por qué C1 quedó fuera.** Se probó en este PR y se retiró. Mientras dura el fundido conviven dos copias de la
 pantalla, y cada botón sale dos veces en el árbol de accesibilidad. Un XCUITest que toque justo en ese momento falla con
 «varios elementos». La card pide resolverlo antes de aplicarlo al Panel.
+
+**C1, C3 y C7 resueltas el 2026-11-01** (sesión S35l): `ContentTransitions.swift` y la regla de `swiftui-ds.md`. El
+esqueleto se funde encima de los datos y su salida no se lee ni se toca; con el esqueleto redactado no se midió ningún
+duplicado, ni siquiera con las dos copias montadas a la vez.

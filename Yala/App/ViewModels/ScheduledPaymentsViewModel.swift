@@ -266,18 +266,23 @@ final class ScheduledPaymentsViewModel {
         loadPayments()
     }
 
-    func unskipOccurrence(payment: ScheduledPayment, date: Date) {
-        guard let context = modelContext else { return }
+    /// `true` si la fecha volvió y se guardó: el «Deshacer» del aviso vibra solo entonces (card C3).
+    @discardableResult
+    func unskipOccurrence(payment: ScheduledPayment, date: Date) -> Bool {
+        guard let context = modelContext else { return false }
         payment.unskipDate(date)
         ScheduledPaymentDraftService.recreateDraftIfNeeded(for: payment, date: date, context: context)
+        var saved = false
         do {
             try persistAndRefresh(context: context)
+            saved = true
         } catch {
             #if DEBUG
             print("ScheduledPaymentsViewModel: Error saving unskip: \(error)")
             #endif
         }
         loadPayments()
+        return saved
     }
 
     private func rejectPendingDraft(for payment: ScheduledPayment) {

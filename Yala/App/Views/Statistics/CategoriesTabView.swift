@@ -1122,6 +1122,8 @@ struct CategoriesTabView: View {
         if txCount >= 5 {
             if isProUser {
                 proDistributionInsightCard
+                    // Card C7: «Analizando…» → la tarjeta de la IA, fundiéndose. Es la última del scroll: no mueve a nadie.
+                    .animation(reduceMotion ? nil : DS.Animation.appear, value: insightsViewModel.isLoadingAI)
             } else {
                 freeDistributionInsightCard
             }
@@ -1170,6 +1172,7 @@ struct CategoriesTabView: View {
         if insightsViewModel.aiActivated {
             if insightsViewModel.isLoadingAI {
                 AIInsightCardComponents.loadingPlaceholder(accentColor: theme.accent)
+                    .transition(.loadingPlaceholder)
             } else if let aiHero = insightsViewModel.aiInsights?.heroText {
                 proAIInsightCard(aiHero: aiHero)
             } else if let error = insightsViewModel.aiError {

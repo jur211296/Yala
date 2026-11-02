@@ -64,28 +64,37 @@ struct RecordsTabView: View {
 
                 filterBarPanel
 
-                if viewModel.groupedRecords.isEmpty {
-                    emptyStateContent
-                } else {
-                    viewModeHeader
+                // Card C7: hasta el primer filtrado la lista vacía no es «Sin registros», es que aún no se ha cargado;
+                // no se enseña nada y la lista (o el vacío) entra fundiéndose. La pila de dentro lleva el mismo
+                // espaciado que la de fuera: no cambia nada de sitio.
+                VStack(spacing: DS.Spacing.md) {
+                    if !viewModel.hasAppliedFilters {
+                        EmptyView()
+                    } else if viewModel.groupedRecords.isEmpty {
+                        emptyStateContent
+                            .transition(.opacity)
+                    } else {
+                        viewModeHeader
 
-                    if recordsViewMode == .calendar {
-                        RecordsCalendarView(
-                            groups: viewModel.groupedRecords,
-                            period: viewModel.period,
-                            customDateRange: sessionState.customDateRange,
-                            currencyCode: defaultCurrencyCode,
-                            adjustment: viewModel.statsAdjustment,
-                            selectedDay: $selectedCalendarDay,
-                            calendarMonth: $calendarMonth
-                        )
-                        .padding(.horizontal, DS.Spacing.lg)
+                        if recordsViewMode == .calendar {
+                            RecordsCalendarView(
+                                groups: viewModel.groupedRecords,
+                                period: viewModel.period,
+                                customDateRange: sessionState.customDateRange,
+                                currencyCode: defaultCurrencyCode,
+                                adjustment: viewModel.statsAdjustment,
+                                selectedDay: $selectedCalendarDay,
+                                calendarMonth: $calendarMonth
+                            )
+                            .padding(.horizontal, DS.Spacing.lg)
 
-                        calendarDaySummary
+                            calendarDaySummary
+                        }
+
+                        recordsListContent
                     }
-
-                    recordsListContent
                 }
+                .animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.hasAppliedFilters)
             }
             .padding(.top, DS.Spacing.sm)
         }
@@ -449,6 +458,8 @@ struct RecordsTabView: View {
                 }
             }
             .padding(.top, DS.Spacing.sm)
+            // Card C3: borrar, deshacer o añadir una fila se anima; cambiar de filtro o de período, no.
+            .animatesRowEdits(ids: groups.flatMap { $0.records.map(\.persistentModelID) })
             // Las dos páginas que montan esta lista (Registros y Estadísticas › Registros) le ponen encima Yala IA y
             // «+»: al final del scroll, la última fila sube por encima de los dos. Dos aunque Yala IA esté oculto —
             // sobrar 68 pt al final no se ve; quedarse corto tapa el importe.

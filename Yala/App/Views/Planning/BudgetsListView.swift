@@ -280,6 +280,11 @@ struct BudgetsListView: View {
             }
         }
         .padding(.bottom, DS.Spacing.safeBottom)  // Space for FAB
+        // Card C3: crear o borrar un presupuesto se anima; cambiar de tipo de período, no. Los ids, con el mismo filtro
+        // que las filas (sin los borrados que esperan la recarga).
+        .animatesRowEdits(ids: viewModel.groupedBudgets.flatMap { section in
+            section.budgets.filter { !$0.budget.isDeleted && $0.budget.modelContext != nil }.map(\.id)
+        })
     }
 
     // MARK: - New Budget FAB

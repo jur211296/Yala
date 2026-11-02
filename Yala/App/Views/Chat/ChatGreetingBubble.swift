@@ -95,6 +95,7 @@ struct ChatTwoUsesGreeting: View {
     let onLogExpense: () -> Void
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
@@ -164,6 +165,7 @@ struct ChatTwoUsesGreeting: View {
 
             if isPreparing {
                 preparingRow
+                    .transition(.loadingPlaceholder)
             } else {
                 ForEach(Array(suggestions.enumerated()), id: \.element.id) { index, suggestion in
                     if index > 0 {
@@ -176,6 +178,9 @@ struct ChatTwoUsesGreeting: View {
         }
         .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        // Card C7: «Preparando…» → las sugerencias, fundiéndose. Detrás del fondo y el recorte: así la ficha crece con
+        // ellas en vez de saltar a su alto final.
+        .animation(reduceMotion ? nil : DS.Animation.appear, value: isPreparing)
     }
 
     private func suggestionRow(_ suggestion: ChatSuggestion) -> some View {

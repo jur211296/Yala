@@ -99,6 +99,7 @@ struct InsightsTabView: View {
 
                             if isProUser {
                                 proHeroSection(data)
+                                    .animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.isLoadingAI)
                             } else {
                                 aiInsightsTeaser
                             }
@@ -131,11 +132,16 @@ struct InsightsTabView: View {
                     }
                 }
                 .padding(.top, DS.Spacing.sm)
+                .transition(.opacity)
             } else {
                 ProgressView()
                     .frame(maxWidth: .infinity, minHeight: 200)
+                    .transition(.loadingPlaceholder)
             }
         }
+        // Card C7: la primera carga, del spinner al contenido fundiéndose. «Analizando…» se anima en sus dos tarjetas, no
+        // aquí: un recálculo con la IA en curso apaga `isLoadingAI` junto con los datos nuevos y animaría la página entera.
+        .animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.insightData == nil)
         .measuresShortContainer($isShortContainer)
         .scrollViewGlassEdges()
         // Aquí y no en la tarjeta bloqueada de Observaciones: colgada de ella, «Actualizar a Pro» del resumen no abría
@@ -325,6 +331,7 @@ struct InsightsTabView: View {
         if viewModel.aiActivated {
             if viewModel.isLoadingAI {
                 AIInsightCardComponents.loadingPlaceholder(accentColor: theme.accent)
+                    .transition(.loadingPlaceholder)
             } else if let aiHero = viewModel.aiInsights?.heroText {
                 InsightCard(insight: InsightResult(
                     id: "ai_hero",
@@ -392,6 +399,7 @@ struct InsightsTabView: View {
             if viewModel.aiActivated {
                 if viewModel.isLoadingAI {
                     AIInsightCardComponents.loadingPlaceholder(accentColor: theme.accent)
+                        .transition(.loadingPlaceholder)
                         .spansAllColumns()
                 } else if let aiCards = viewModel.aiInsights?.cards, !aiCards.isEmpty {
                     ForEach(Array(aiCards.enumerated()), id: \.offset) { _, card in
@@ -432,6 +440,7 @@ struct InsightsTabView: View {
                 // Pro con el consentimiento dado: el resumen sale solo al abrir Observaciones (UX 2.2 · L11-7). Hasta
                 // que llega, el mismo «cargando» que tras tocar el botón; antes, una caja gris que mandaba «arriba».
                 AIInsightCardComponents.loadingPlaceholder(accentColor: theme.accent)
+                    .transition(.loadingPlaceholder)
                     .spansAllColumns()
             } else {
                 // Sin consentimiento hace falta un toque: es el que autoriza enviar el resumen al servicio de IA.
@@ -462,6 +471,8 @@ struct InsightsTabView: View {
         .task(id: viewModel.aiContextVersion) {
             await viewModel.autoGenerateIfNeeded()
         }
+        // Card C7: «Analizando…» → las observaciones de la IA, fundiéndose; solo esta sección.
+        .animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.isLoadingAI)
     }
 
     // MARK: - Free Observations Section
