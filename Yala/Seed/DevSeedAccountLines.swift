@@ -49,11 +49,7 @@ enum DevSeedAccountLines {
             iconName: "dollarsign.circle.fill", type: AccountType.savings.rawValue)
         [card, line, savings, dollars].forEach { context.insert($0) }
 
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: .now)
-        func day(_ offset: Int) -> Date {
-            calendar.date(byAdding: .day, value: -offset, to: today) ?? today
-        }
+        func day(_ offset: Int) -> Date { seedDate(daysAgo: offset) }
         let expenseSub = subcategoryLookup.values.first { !$0.safeCategory.isIncome }
         let incomeSub = subcategoryLookup.values.first { $0.safeCategory.isIncome }
 
@@ -70,6 +66,16 @@ enum DevSeedAccountLines {
         insert("Sueldo QA", 2_000, day(4), savings, incomeSub)
         insert("Freelance QA", UITest.dollarsIncome, day(4), dollars, incomeSub)
         insert("Suscripción QA", UITest.dollarsExpense, day(1), dollars, expenseSub)
+    }
+
+    /// «Hace `daysAgo` días» a medianoche, sin salir del mes en curso: los días 1 a 3 del mes, «hace 2 o 3 días» caía en
+    /// el mes anterior y el presupuesto del mes de la tarjeta salía al 0 % (card xn78). Lo que cruzaría se queda en el
+    /// día 1 a medianoche, que sigue dentro del mes y no es futuro.
+    static func seedDate(daysAgo: Int, now: Date = .now, calendar: Calendar = .current) -> Date {
+        let today = calendar.startOfDay(for: now)
+        let date = calendar.date(byAdding: .day, value: -daysAgo, to: today) ?? today
+        guard let monthStart = calendar.dateInterval(of: .month, for: today)?.start else { return date }
+        return max(date, monthStart)
     }
 
     /// Los literales del perfil `tarjeta-corte` (card nmtk).

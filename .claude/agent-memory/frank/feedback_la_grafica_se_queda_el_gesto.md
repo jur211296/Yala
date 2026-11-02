@@ -19,3 +19,8 @@ que los swipes caían en la gráfica; y dos intentos de capturar la prueba del i
 
 **How to apply:** al conducir a mano cualquier pantalla con gráficas, antes de culpar a la app comprueba con
 `axe describe-ui` si la posición cambió. Relacionado: [[el-final-del-scroll-se-mide-hasta-que-para]].
+
+**También en XCUITest (2026-11-01, xn78):** el carrusel por cuenta del flujo de caja (`AccountCardReportsUITests.carouselShows`)
+arrastraba a `picker.maxY + 120`, encima de las barras, y a ratos la página no pasaba: 1 de 3 rojo aislado («Por línea»
+no tiene página), con la página presente en el vídeo. Arrastrar por la fila del título (`+ 36`) dio 5/5. Ante un
+carrusel que «no tiene la página», mira los puntos del paginador en el último fotograma antes de culpar a los datos.
