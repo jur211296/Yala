@@ -61,6 +61,9 @@ enum DraftOriginReason: String {
     /// ajustar esa transacción (ticket `settlement-amount-edited-after-approval-leaves-the-bank-stale`). No es un borrador
     /// de «¿a qué cuenta llegó?»: ver `InboxDraft.isSettlementAmountChangeNotice`.
     case settlementAmountChanged = "groups.bridge.draftReasonSettlementAmountChanged"
+    /// Grupos B: el gasto cambió y las líneas de tu parte ya no suman: tu parte volvió a una línea y el borrador pide
+    /// su categoría (`InboxDraft.isSplitLinesMismatchNotice`).
+    case splitLinesMismatch = "groups.bridge.draftReasonSplitLinesMismatch"
 }
 
 /// M6: Campos que un draft espera del user para finalizar. Centraliza los strings
@@ -267,6 +270,14 @@ final class InboxDraft: Identifiable {
         sourceType == .groupSettlement && originReasonKey == DraftOriginReason.settlementAmountChanged.rawValue
     }
 
+    /// **El aviso de que las líneas de tu parte ya no cuadran** (Grupos B, D6 del ticket `grupos-tu-parte-en-lineas`).
+    /// El gasto cambió de importe o de reparto y la receta ya no suma tu parte: el puente dejó tu parte en una sola línea,
+    /// conservó la receta y pide aquí la categoría de esa línea. Aprobarlo retira la receta (`DraftService`); «Partir»
+    /// desde la hoja, que la reescribe, es la card 5. No se aprueba deslizando ni en «Aprobar todo».
+    var isSplitLinesMismatchNotice: Bool {
+        sourceType == .groupExpense && originReasonKey == DraftOriginReason.splitLinesMismatch.rawValue
+    }
+
     /// Si sale en la pestaña Archivados. Los archivados sin cuenta cacheada no salen (sus relaciones pueden estar
     /// invalidadas), salvo el de una liquidación: se rechaza sin haber elegido cuenta, y si no saliera, el rechazo no se
     /// podría deshacer nunca —el re-puente lo respeta—. Su fila solo lee valores guardados (`needsUserInput`, importe).
@@ -373,7 +384,9 @@ final class InboxDraft: Identifiable {
     ///
     /// El aviso de importe cambiado tampoco: aprobarlo es AJUSTAR una transacción que ya existe, y eso se decide en su hoja,
     /// viendo las dos cifras, no deslizando ni en «Aprobar todo».
-    var requiresApprovalForm: Bool { sourceType == .groupScheduledExpense || isSettlementAmountChangeNotice }
+    var requiresApprovalForm: Bool {
+        sourceType == .groupScheduledExpense || isSettlementAmountChangeNotice || isSplitLinesMismatchNotice
+    }
 
     // MARK: - Init
 

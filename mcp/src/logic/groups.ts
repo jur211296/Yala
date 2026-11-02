@@ -16,6 +16,10 @@
  *
  * Los saldos NUNCA se ajustan: reflejan el dinero que de verdad salió de tu cuenta.
  *
+ * Líneas de tu parte (Grupos B): una pata de TRANSFERENCIA (`balance_adjustment_type` puesto, la recarga de una línea)
+ * no es pata real, de préstamo ni de costo: no se netea. Las demás líneas viven en «Grupos» con su categoría y el
+ * préstamo ya las incluye, así que la regla no cambia para ellas.
+ *
  * Una pata cuyo importe guardado no se puede creer —0 con un nativo distinto de 0 (la conversión no se escribió), o
  * guardado con otra divisa preferida que la pata real— se reconvierte desde su nativo con la tasa de su día, como
  * `preferredContribution(of:in:converter:)` de la app; si no, «tu parte» salía con el importe del grupo entero y sin
@@ -52,6 +56,7 @@ type LegTx = Pick<
   | "account_ref"
   | "subcategory_ref"
   | "split_expense_id"
+  | "balance_adjustment_type"
   | "amount_in_preferred_currency"
   | "is_exchange_rate_provisional"
   | "currency_code"
@@ -146,9 +151,11 @@ export function buildGroupAdjustment(
     const accountOf = (tx: LegTx) => (tx.account_ref ? accounts.get(tx.account_ref) : undefined);
     if (legs.some((l) => !accountOf(l))) continue;
 
+    // Una pata de transferencia (recarga de una línea de tu parte) no entra en el neteo: ver la cabecera.
+    const nonTransfer = legs.filter((l) => !l.balance_adjustment_type);
     // `isSystemAccount` nace a false: un null del wire es una cuenta real.
-    const real = legs.filter((l) => accountOf(l)?.is_system_account !== true);
-    const systemLegs = legs.filter((l) => accountOf(l)?.is_system_account === true);
+    const real = nonTransfer.filter((l) => accountOf(l)?.is_system_account !== true);
+    const systemLegs = nonTransfer.filter((l) => accountOf(l)?.is_system_account === true);
     const loanBySign = systemLegs.filter((l) => amountOf(l) > 0);
     const hasCostLeg = real.length > 0 || systemLegs.some((l) => amountOf(l) <= 0);
 

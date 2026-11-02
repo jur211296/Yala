@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1152)
+## Index (1155)
 
 | id | status | path |
 |---|---|---|
@@ -469,6 +469,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | group-notif-credits-payer-not-editor | done | tickets/done/group-notif-credits-payer-not-editor.md |
 | group-presence-predicates-disagree-on-archived-and-hidden | backlog | tickets/backlog/group-presence-predicates-disagree-on-archived-and-hidden.md |
 | group-push-has-no-collapse-id-and-multi-device-duplicates | backlog | tickets/backlog/group-push-has-no-collapse-id-and-multi-device-duplicates.md |
+| group-split-line-entry-reads-as-a-loose-transfer-in-records | backlog | tickets/backlog/group-split-line-entry-reads-as-a-loose-transfer-in-records.md |
+| group-split-lines-recipe-lost-on-payer-or-currency-change | backlog | tickets/backlog/group-split-lines-recipe-lost-on-payer-or-currency-change.md |
 | group-split-sheet-shows-you-twice | done | tickets/done/group-split-sheet-shows-you-twice.md |
 | groups-account-association-in-storage-row | done | tickets/done/groups-account-association-in-storage-row.md |
 | groups-actions-do-not-retry-a-401-with-a-forced-token-refresh | backlog | tickets/backlog/groups-actions-do-not-retry-a-401-with-a-forced-token-refresh.md |

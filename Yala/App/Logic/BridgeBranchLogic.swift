@@ -79,6 +79,12 @@ enum BridgeBranchLogic {
         let date: Date
         /// Timestamp de creación (desempate estable secundario).
         let createdAt: Date
+        /// Grupos B: pata derivada de una línea de tu parte (lleva la marca `{"of":…}`). No compite por quedarse:
+        /// el puente la recrea o la actualiza desde la receta, así que la partición la aparta (`derivedLineIndices`).
+        var isDerivedLine: Bool = false
+        /// Grupos B: lleva la receta de líneas (o algo que puede serlo y este build no entiende). Gana la conservación
+        /// por delante de los metadatos: perderla rehace tu parte en una línea y borra lo que otro aparato escribió.
+        var carriesRecipe: Bool = false
     }
 
     /// Resultado de particionar las TX virtuales: el índice de la ÚNICA clasificable a
@@ -90,6 +96,9 @@ enum BridgeBranchLogic {
         let preservedIndex: Int?
         /// Índices a borrar (orden estable ascendente).
         let deletedIndices: [Int]
+        /// Grupos B: índices de las patas derivadas de una línea. Ni se conservan ni se borran aquí: decide el puente,
+        /// según aplique la receta o no.
+        var derivedLineIndices: [Int] = []
     }
 
     /// Particiona las TX virtuales de un gasto entre la clasificable a preservar y las
@@ -112,19 +121,24 @@ enum BridgeBranchLogic {
     static func partitionVirtualTxs(_ shapes: [VirtualTxShape]) -> VirtualTxPartition {
         var classifiable: [Int] = []
         var derived: [Int] = []
+        var derivedLines: [Int] = []
         for (i, s) in shapes.enumerated() {
-            if s.subcategoryIsNil || !s.subcategoryIsSystem {
+            if s.isDerivedLine {
+                derivedLines.append(i)
+            } else if s.carriesRecipe || s.subcategoryIsNil || !s.subcategoryIsSystem {
                 classifiable.append(i)
             } else {
                 derived.append(i)
             }
         }
         guard !classifiable.isEmpty else {
-            return VirtualTxPartition(preservedIndex: nil, deletedIndices: derived.sorted())
+            return VirtualTxPartition(
+                preservedIndex: nil, deletedIndices: derived.sorted(), derivedLineIndices: derivedLines)
         }
         let winner = classifiable.min { a, b in
             let sa = shapes[a], sb = shapes[b]
-            // Prioridad: con metadatos de usuario primero.
+            // Prioridad: la que lleva la receta, luego con metadatos de usuario.
+            if sa.carriesRecipe != sb.carriesRecipe { return sa.carriesRecipe }
             if sa.hasUserMetadata != sb.hasUserMetadata { return sa.hasUserMetadata }
             // Empate → más antigua (date, luego createdAt, luego índice).
             if sa.date != sb.date { return sa.date < sb.date }
@@ -132,6 +146,6 @@ enum BridgeBranchLogic {
             return a < b
         }!
         let deleted = (derived + classifiable.filter { $0 != winner }).sorted()
-        return VirtualTxPartition(preservedIndex: winner, deletedIndices: deleted)
+        return VirtualTxPartition(preservedIndex: winner, deletedIndices: deleted, derivedLineIndices: derivedLines)
     }
 }

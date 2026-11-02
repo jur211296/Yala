@@ -140,6 +140,9 @@ struct GroupExpenseAccountAndSubcategoryFinalizationSheet: View {
         case .settlementAmountChanged:
             // Solo lo llevan avisos de liquidación, que tienen su hoja (`GroupSettlementAmountChangeSheet`); un gasto no.
             return ""
+        case .splitLinesMismatch:
+            // Grupos B: lo lleva un aviso que solo pide la categoría (`GroupExpenseDraftFinalizationSheet`); por si llegara.
+            return String(format: L10n.Groups.Bridge.draftReasonSplitLinesMismatch, group)
         }
     }
 

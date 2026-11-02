@@ -64,7 +64,9 @@ enum AccountRemovalService {
                             hasSplitExpenseID: tx.splitExpenseID != nil,
                             hasSplitSettlementID: tx.splitSettlementID != nil
                         )),
-                        isGroupRecord: tx.splitExpenseID != nil || tx.splitSettlementID != nil,
+                        // Grupos B: la entrada de una recarga de tu parte tampoco se borra aquí: la escribe el puente.
+                        isGroupRecord: tx.splitExpenseID != nil || tx.splitSettlementID != nil
+                            || GroupSplitLinesBridgeLogic.isDerivedMarker(tx.splitLinesRaw),
                         transferPartnerAccount: outsidePartners[tx.persistentModelID]?.account?.persistentModelID
                     )
                 },

@@ -17,7 +17,8 @@ extension RecordContextActionLogic.Shape {
             hasSplitSettlementID: record.splitSettlementID != nil,
             accountIsNil: record.account == nil,
             accountIsSystem: record.account?.isSystemAccount ?? false,
-            subcategoryIsSystem: record.subcategory?.isAnySystem ?? false)
+            subcategoryIsSystem: record.subcategory?.isAnySystem ?? false,
+            isSplitLineLeg: GroupSplitLinesBridgeLogic.isDerivedMarker(record.splitLinesRaw))
     }
 }
 
@@ -140,7 +141,7 @@ struct RecordRowContextMenu: ViewModifier {
             Button(L10n.Action.delete, systemImage: "trash", role: .destructive) {
                 viewModel.requestDelete(record)
             }
-        } else if record.splitExpenseID != nil || record.splitSettlementID != nil {
+        } else if RecordContextActionLogic.Shape(record: record).isGroupRecord {
             // Lo de un grupo se borra desde el grupo: «Eliminar» sale, apagado y con el porqué, en vez de no salir
             // (UX 2.2 · L15-13).
             Divider()

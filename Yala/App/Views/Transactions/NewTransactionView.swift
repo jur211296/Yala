@@ -147,7 +147,9 @@ struct NewTransactionView: View {
     /// arreglarlo él en vez de quedarse sin salida.
     private var isBridgedReadOnly: Bool {
         guard let tx = readableTransactionToEdit, bridgedPointerResolves else { return false }
+        // Grupos B: también la pata de una línea de tu parte, aunque sea la entrada de una recarga, sin puntero (D4, D8).
         return tx.splitExpenseID != nil || tx.splitSettlementID != nil
+            || GroupSplitLinesBridgeLogic.isDerivedMarker(tx.splitLinesRaw)
     }
 
     /// M6: True si la TX bridgeada es Caso A (cuenta personal real, no virtual).
@@ -177,7 +179,8 @@ struct NewTransactionView: View {
             accountIsSystem: tx?.account?.isSystemAccount == true,
             subcategoryIsSystem: tx?.subcategory?.isAnySystem == true,
             hasPendingPointerDraft: cachedPendingGroupDraft != nil,
-            pointerResolves: bridgedPointerResolves
+            pointerResolves: bridgedPointerResolves,
+            isSplitLineLeg: GroupSplitLinesBridgeLogic.isDerivedMarker(tx?.splitLinesRaw)
         )
     }
 

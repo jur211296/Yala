@@ -17,6 +17,10 @@
 //  `splitMyValue` NO sirve: es un valor contextual polimórfico (%, personas, partes, exacto),
 //  no dinero, y se muestra en la UI de split personal.
 //
+//  LÍNEAS DE TU PARTE (Grupos B). Con la receta, las líneas que no son la ancla viven en «Grupos» (`-x`, con su
+//  categoría) y el préstamo engorda en lo que suman, así que la pata real netea a la línea ancla con la misma fórmula.
+//  Una recarga es un par de transferencia: sus patas no entran en el neteo (ver `build`).
+//
 //  SOLUCIÓN. Netear la pareja por `splitExpenseID` en la capa de agregación:
 //    · a la pata REAL se le atribuye `-myShare` (= `real.amount + Σ patas de préstamo`),
 //    · las patas de préstamo (income-direction) se SUPRIMEN en superficies income-aware
@@ -188,8 +192,13 @@ struct GroupBridgeStatsAdjustment {
             // Conservador: pata con cuenta sin hidratar (ventana lazy) → no tocar el grupo.
             if legs.contains(where: { $0.account == nil }) { continue }
 
-            let real = legs.filter { $0.account?.isSystemAccount == false }
-            let systemLegs = legs.filter { $0.account?.isSystemAccount == true }
+            // Grupos B: una pata de TRANSFERENCIA (la recarga de una línea de tu parte, o su entrada si alguna vez
+            // llevara el puntero) no es pata real, ni de préstamo, ni de costo: no es gasto ni ingreso, y las
+            // superficies ya la excluyen por `balanceAdjustmentType`. Contarla como «la real» netearía el préstamo
+            // contra la recarga en vez de contra el gasto.
+            let nonTransfer = legs.filter { $0.balanceAdjustmentType == nil }
+            let real = nonTransfer.filter { $0.account?.isSystemAccount == false }
+            let systemLegs = nonTransfer.filter { $0.account?.isSystemAccount == true }
             // Pata de préstamo = sistema + income-direction (SIGNO: escalar nunca-lazy).
             let loanBySign = systemLegs.filter { $0.amount > 0 }
             // Pata de costo clasificable = real, o sistema con `amount <= 0`

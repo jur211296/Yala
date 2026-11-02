@@ -785,11 +785,13 @@ enum GroupsAssociationDetach {
                     conservedSettlements.insert(settlementID)
                     settlementMovementRows[settlementID, default: []].append(tx)
                 }
+                GroupTransactionBridge.releaseSplitLines(of: tx, context: context)
                 tx.splitExpenseID = nil
                 tx.splitSettlementID = nil
                 tx.splitGroupZoneID = nil
                 outcome.released += 1
             case .delete:
+                GroupTransactionBridge.deleteSplitLineEntries(of: tx, context: context)
                 context.delete(tx)
                 outcome.deleted += 1
             case .leaveUntouched:

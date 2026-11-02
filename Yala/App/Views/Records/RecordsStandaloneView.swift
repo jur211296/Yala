@@ -196,7 +196,7 @@ struct RecordsStandaloneView: View {
         return RecordCommandActions(
             hasOpenRecord: record != nil,
             canDeleteOpenRecord: record.map { RecordContextActionLogic.actions(.init(record: $0)).canDelete } ?? false,
-            openRecordIsFromGroup: record.map { $0.splitExpenseID != nil || $0.splitSettlementID != nil } ?? false,
+            openRecordIsFromGroup: record.map { RecordContextActionLogic.Shape(record: $0).isGroupRecord } ?? false,
             editOpenRecord: {
                 guard let record, RootCommandPerformer.keyboardMayAct(navigation) else { return }
                 viewModel.editOpenRecord(record)
