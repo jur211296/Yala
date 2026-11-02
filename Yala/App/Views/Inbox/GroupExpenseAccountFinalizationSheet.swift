@@ -46,6 +46,10 @@ struct GroupExpenseAccountFinalizationSheet: View {
     @State private var retirementOnClose: GroupExpenseDraftRetirement? = nil
     /// UX 2.2 · L13-15: movimientos que ya apuntaste y pueden ser este gasto.
     @State private var linkCandidates: [TransactionItem] = []
+    /// Grupos B (card 5): «Partir» tu parte en líneas.
+    @State private var split = GroupDraftSplitState()
+
+    @Query private var accounts: [Account]
 
     // MARK: - Body
 
@@ -58,11 +62,14 @@ struct GroupExpenseAccountFinalizationSheet: View {
                 currencyCode: resolvedCurrency,
                 date: draft.effectiveDate,
                 hint: hintMessage,
-                finalizeDisabled: selectedAccount == nil,
+                finalizeDisabled: selectedAccount == nil || (split.isSplitting && !split.canApprove(accounts: accounts, sourceAccount: selectedAccount)),
                 onFinalize: { handleFinalize() },
-                accessory: linkCandidates.isEmpty ? nil : AnyView(
-                    GroupDraftLinkCandidatesView(candidates: linkCandidates) { link($0) }
-                )
+                // Con «Partir» abierto, la tarjeta ocupa el sitio de «¿Ya lo apuntaste?»: enlazar un movimiento no parte nada.
+                accessory: split.isSplitting
+                    ? AnyView(GroupDraftSplitCard(state: split, sourceAccount: selectedAccount))
+                    : linkCandidates.isEmpty ? nil : AnyView(
+                        GroupDraftLinkCandidatesView(candidates: linkCandidates) { link($0) }
+                    )
             ) {
                 SelectionChip(
                     icon: "creditcard",
@@ -71,6 +78,9 @@ struct GroupExpenseAccountFinalizationSheet: View {
                     color: selectedAccount.map { Color(hex: $0.colorHex) }
                 ) {
                     showAccountSelector = true
+                }
+                if split.offersSplit && !split.isSplitting {
+                    GroupDraftSplitChip { split.start(selectedSubcategoryID: nil) }
                 }
             }
             .navigationTitle(L10n.Inbox.GroupExpenseAccountDraft.title)
@@ -94,7 +104,10 @@ struct GroupExpenseAccountFinalizationSheet: View {
             } message: {
                 Text(saveErrorMessage ?? L10n.Common.unknownError)
             }
-            .onAppear { loadMetadata() }
+            .onAppear {
+                loadMetadata()
+                split.load(draft: draft, context: modelContext)
+            }
             .onDisappear { retireDraftOnClose() }
         }
     }
@@ -181,8 +194,11 @@ struct GroupExpenseAccountFinalizationSheet: View {
     private func handleFinalize() {
         guard let account = selectedAccount else { return }
         draft.account = account
+        // Con «Partir»: la pata real lleva la categoría de la primera línea de gasto y, si hay varias, la receta.
+        let splitLines = split.isSplitting ? split.approvalLines : nil
+        if split.isSplitting { draft.subcategory = split.draftSubcategory(context: modelContext) }
         do {
-            _ = try DraftService.shared.approveDraft(draft, currencyConverter: currencyConverter)
+            _ = try DraftService.shared.approveDraft(draft, currencyConverter: currencyConverter, splitLines: splitLines)
             DS.Haptic.success()
             onRegistered?(account.name)
             onApproved()

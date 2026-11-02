@@ -4457,6 +4457,9 @@
 "groups.splitLines.saveLine" = "Regel opslaan";
 "groups.splitLines.deleteLine" = "Regel verwijderen";
 "groups.splitLines.kindPicker" = "Soort regel";
+"groups.splitLines.splitAction" = "Opsplitsen";
+"groups.splitLines.splitYourShare" = "Jouw deel opsplitsen";
+"groups.splitLines.yourShareTitle" = "Jouw deel";
 
 /* Título sheet división por porcentaje */
 "groups.expense.splitSheet.percentageTitle" = "Op percentage";

@@ -182,3 +182,22 @@ Encargo `2026-11-02-grupos-b-ventas-por-cobrar` (decisiones en su Paso 0).
 (`10u2`); el detalle, el widget de inicio, la ficha de la cuenta y la pantalla de éxito aún no dicen «por cobrar»
 (`00xj`). **Versión mínima:** un aparato con 2.1 —también el de OTRO miembro— casa la categoría de ingreso por nombre y
 cuenta su parte como ingreso negativo; se corta con la subida de versión mínima al publicar 2.2.
+
+## Cards 5 y 6 hechas (2026-11-02): «Partir» en la Bandeja, la pantalla de éxito y el detalle
+
+Encargo `2026-11-02-grupos-b-partir-en-pantallas` (decisiones en su Paso 0).
+
+- **Bandeja (card 5).** Pastilla «Partir» junto a la de categoría en las tres hojas de gasto de grupo (pagó otro, el aviso
+  de «no cuadra» y las dos que piden cuenta). Al tocarla, la tarjeta «Tu parte» ocupa su sitio y «Aprobar» espera a que
+  cuadre; sin tocarla, la hoja aprueba como antes. Con varias líneas, `DraftService.approveDraft(splitLines:)` escribe la
+  receta en la pata que el puente conserva y lo pasa; una sola línea de gasto se aprueba como siempre, con su categoría.
+  El aviso de «no cuadra» abre con la receta que había y, aprobado con «Partir», la reescribe (sin «Partir» sigue como lo
+  dejó el #737: una línea y fuera la receta, pendiente de Jürgen).
+- **Pantalla de éxito y detalle (card 6).** «Partir tu parte» en el bloque de qué apuntó Yala y como fila del detalle de
+  cualquier pata del gasto; abre la hoja «Tu parte» (`GroupSplitLinesSheet`) y guarda con `GroupSplitLinesService.save`.
+  Volver a una sola línea retira la receta, las patas derivadas y la recarga, y deja tu parte clasificada.
+- **Puerta** (`GroupSplitLinesEntryLogic`): puente activo, sesión privada, fuera de la shell solo-grupos, parte > 0, no
+  saldo inicial y **no venta** (cards 7 y 8: sin pata real, el puente no aplica la receta).
+- **En las hojas que piden cuenta**, la cuenta se puede cambiar después de partir: «Aprobar» no se enciende si una
+  recarga va a la cuenta elegida (`GroupDraftSplitState.rechargesToItsOwnSource`).
+- **Residual:** el editor de la pata con receta sigue como lo dejó el #737.

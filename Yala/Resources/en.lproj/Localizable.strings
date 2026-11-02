@@ -4451,6 +4451,9 @@
 "groups.splitLines.saveLine" = "Save line";
 "groups.splitLines.deleteLine" = "Delete line";
 "groups.splitLines.kindPicker" = "Line type";
+"groups.splitLines.splitAction" = "Split";
+"groups.splitLines.splitYourShare" = "Split your portion";
+"groups.splitLines.yourShareTitle" = "Your portion";
 
 /* Título sheet división por porcentaje */
 "groups.expense.splitSheet.percentageTitle" = "By percentage";

@@ -4457,6 +4457,9 @@
 "groups.splitLines.saveLine" = "行を保存";
 "groups.splitLines.deleteLine" = "行を削除";
 "groups.splitLines.kindPicker" = "行の種類";
+"groups.splitLines.splitAction" = "分ける";
+"groups.splitLines.splitYourShare" = "負担分を分ける";
+"groups.splitLines.yourShareTitle" = "あなたの負担分";
 
 /* Título sheet división por porcentaje */
 "groups.expense.splitSheet.percentageTitle" = "割合（％）で";

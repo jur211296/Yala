@@ -4457,6 +4457,9 @@
 "groups.splitLines.saveLine" = "保存明细";
 "groups.splitLines.deleteLine" = "删除明细";
 "groups.splitLines.kindPicker" = "明细类型";
+"groups.splitLines.splitAction" = "拆分";
+"groups.splitLines.splitYourShare" = "拆分你的部分";
+"groups.splitLines.yourShareTitle" = "你的部分";
 
 /* Título sheet división por porcentaje */
 "groups.expense.splitSheet.percentageTitle" = "按百分比";

@@ -4457,6 +4457,9 @@
 "groups.splitLines.saveLine" = "Zapisz pozycję";
 "groups.splitLines.deleteLine" = "Usuń pozycję";
 "groups.splitLines.kindPicker" = "Rodzaj pozycji";
+"groups.splitLines.splitAction" = "Podziel";
+"groups.splitLines.splitYourShare" = "Podziel swoją część";
+"groups.splitLines.yourShareTitle" = "Twoja część";
 
 /* Título sheet división por porcentaje */
 "groups.expense.splitSheet.percentageTitle" = "Według procentów";

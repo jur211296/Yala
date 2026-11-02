@@ -1124,8 +1124,28 @@ struct GroupExpenseFormView: View {
                     } ?? 0
                 ),
                 trace: bridgeTrace()
-            )
+            ),
+            splitExpenseID: savedExpenseID,
+            offersSplitLines: offersSplitLines(savedExpenseID)
         )
+    }
+
+    /// El gasto que se acaba de guardar (creado o editado).
+    private var savedExpenseID: String? {
+        viewModel.lastCreatedExpenseID ?? viewModel.editingExpense?.id.uuidString
+    }
+
+    /// Grupos B (card 6): «Partir tu parte» en la pantalla de éxito, con la misma puerta que el puente.
+    private func offersSplitLines(_ expenseID: String?) -> Bool {
+        guard let expenseID else { return false }
+        do {
+            return try GroupSplitLinesService.target(splitExpenseID: expenseID, context: modelContext)?.offersSplit ?? false
+        } catch {
+            #if DEBUG
+            print("GroupExpenseFormView: Error: \(error)")
+            #endif
+            return false
+        }
     }
 
     /// Lo que el puente dejó para el gasto que se acaba de guardar (creado o editado); `nil` si no se pudo leer.

@@ -14,3 +14,7 @@ antes de cada `test-without-building`. `-uitest-reset` no la borra. Al acabar, `
 
 Así se saca también el «antes» con el binario viejo ya compilado, antes de recompilar con el cambio.
 Relacionado: [[feedback-capturas-con-conductor-xcuitest]].
+
+Variante dentro del conductor (2026-11-02, cards 5-6 de Grupos B): pasar `-userTheme 0` (Sistema) como argumento de
+lanzamiento y dejar que `simctl ui appearance` decida claro u oscuro; un arg gana al dominio sin escribir nada. Esa
+sesión volvió a sacar una tanda «claro» oscura porque esta nota cae en la mitad del índice que no se carga.

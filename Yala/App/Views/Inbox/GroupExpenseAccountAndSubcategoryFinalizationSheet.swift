@@ -49,6 +49,10 @@ struct GroupExpenseAccountAndSubcategoryFinalizationSheet: View {
     @State private var retirementOnClose: GroupExpenseDraftRetirement? = nil
     /// UX 2.2 · L13-15: movimientos que ya apuntaste y pueden ser este gasto.
     @State private var linkCandidates: [TransactionItem] = []
+    /// Grupos B (card 5): «Partir» tu parte en líneas.
+    @State private var split = GroupDraftSplitState()
+
+    @Query private var accounts: [Account]
 
     // MARK: - Body
 
@@ -61,11 +65,15 @@ struct GroupExpenseAccountAndSubcategoryFinalizationSheet: View {
                 currencyCode: resolvedCurrency,
                 date: draft.effectiveDate,
                 hint: hintMessage,
-                finalizeDisabled: selectedAccount == nil || selectedSubcategory == nil,
+                finalizeDisabled: selectedAccount == nil
+                    || (split.isSplitting ? !split.canApprove(accounts: accounts, sourceAccount: selectedAccount) : selectedSubcategory == nil),
                 onFinalize: { handleFinalize() },
-                accessory: linkCandidates.isEmpty ? nil : AnyView(
-                    GroupDraftLinkCandidatesView(candidates: linkCandidates) { link($0) }
-                )
+                // Con «Partir» abierto, la tarjeta ocupa el sitio de «¿Ya lo apuntaste?»: enlazar un movimiento no parte nada.
+                accessory: split.isSplitting
+                    ? AnyView(GroupDraftSplitCard(state: split, sourceAccount: selectedAccount))
+                    : linkCandidates.isEmpty ? nil : AnyView(
+                        GroupDraftLinkCandidatesView(candidates: linkCandidates) { link($0) }
+                    )
             ) {
                 SelectionChip(
                     icon: "creditcard",
@@ -75,13 +83,18 @@ struct GroupExpenseAccountAndSubcategoryFinalizationSheet: View {
                 ) {
                     showAccountSelector = true
                 }
-                SelectionChip(
-                    icon: "tag",
-                    text: selectedSubcategory?.name ?? L10n.Inbox.GroupExpenseDraft.assignSubcategory,
-                    isSelected: selectedSubcategory != nil,
-                    color: selectedSubcategory.map { Color(hex: $0.safeCategory.colorHex) }
-                ) {
-                    showSubcategorySelector = true
+                if !split.isSplitting {
+                    SelectionChip(
+                        icon: "tag",
+                        text: selectedSubcategory?.name ?? L10n.Inbox.GroupExpenseDraft.assignSubcategory,
+                        isSelected: selectedSubcategory != nil,
+                        color: selectedSubcategory.map { Color(hex: $0.safeCategory.colorHex) }
+                    ) {
+                        showSubcategorySelector = true
+                    }
+                    if split.offersSplit {
+                        GroupDraftSplitChip { split.start(selectedSubcategoryID: selectedSubcategory?.shortcutID) }
+                    }
                 }
             }
             .navigationTitle(L10n.Inbox.GroupExpenseAccountSubcategoryDraft.title)
@@ -112,7 +125,10 @@ struct GroupExpenseAccountAndSubcategoryFinalizationSheet: View {
             } message: {
                 Text(saveErrorMessage ?? L10n.Common.unknownError)
             }
-            .onAppear { loadMetadata() }
+            .onAppear {
+                loadMetadata()
+                split.load(draft: draft, context: modelContext)
+            }
             .onDisappear { retireDraftOnClose() }
         }
     }
@@ -197,11 +213,16 @@ struct GroupExpenseAccountAndSubcategoryFinalizationSheet: View {
     }
 
     private func handleFinalize() {
-        guard let account = selectedAccount, let subcategory = selectedSubcategory else { return }
+        guard let account = selectedAccount else { return }
+        // Con «Partir»: la categoría la llevan las líneas (la primera de gasto va a la pata real) y, si hay varias, la
+        // receta. Sin «Partir», la de siempre.
+        let splitLines = split.isSplitting ? split.approvalLines : nil
+        let subcategory = split.isSplitting ? split.draftSubcategory(context: modelContext) : selectedSubcategory
+        guard split.isSplitting || subcategory != nil else { return }
         draft.account = account
         draft.subcategory = subcategory
         do {
-            _ = try DraftService.shared.approveDraft(draft, currencyConverter: currencyConverter)
+            _ = try DraftService.shared.approveDraft(draft, currencyConverter: currencyConverter, splitLines: splitLines)
             DS.Haptic.success()
             onRegistered?(account.name)
             onApproved()

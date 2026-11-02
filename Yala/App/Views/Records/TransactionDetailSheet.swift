@@ -75,6 +75,9 @@ struct TransactionDetailSheet: View {
     /// Gasto de grupo (L8-5): su nombre y de dónde sale cada número. Se leen una vez al abrir.
     @State private var groupName: String?
     @State private var groupBreakdown: GroupExpenseBreakdownLogic.Breakdown?
+    /// Grupos B (card 6): «Partir tu parte» de un registro puenteado, con la misma puerta que el puente.
+    @State private var offersSplitLines = false
+    @State private var showsSplitLines = false
 
     /// Detent fijo: medium en ventana compacta / large en ventana ancha. Sin `selection` — ya no hay
     /// drag-to-edit que dispare cambios de modo.
@@ -124,6 +127,11 @@ struct TransactionDetailSheet: View {
             Text(deleteMessage)
         }
         .task(id: transaction.persistentModelID) { resolveGroup() }
+        .sheet(isPresented: $showsSplitLines) {
+            if let expenseID = transaction.splitExpenseID {
+                GroupSplitLinesSheet(splitExpenseID: expenseID) { resolveGroup() }
+            }
+        }
     }
 
     // MARK: - Pie: Duplicar y Eliminar (L8-4)
@@ -238,6 +246,8 @@ struct TransactionDetailSheet: View {
             let legs = try modelContext.fetch(
                 FetchDescriptor<TransactionItem>(predicate: #Predicate { $0.splitExpenseID == expenseID })
             )
+            offersSplitLines = try GroupSplitLinesService.target(splitExpenseID: expenseID, context: modelContext)?
+                .offersSplit ?? false
             guard !legs.contains(where: { $0.account == nil }) else { return }
             groupBreakdown = GroupExpenseBreakdownLogic.breakdown(legs: legs.map {
                 .init(amount: $0.amount, isSystemAccount: $0.account?.isSystemAccount ?? false,
@@ -488,12 +498,44 @@ struct TransactionDetailSheet: View {
                     infoRow(icon: "person.2.fill", text: L10n.Groups.title)
                 }
             }
+
+            if offersSplitLines {
+                splitLinesRow
+            }
         }
         .padding(.vertical, DS.Spacing.sm)
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
                 .fill(.thCard)
         )
+    }
+
+    /// Grupos B (card 6): abre la hoja «Tu parte» de este gasto de grupo.
+    private var splitLinesRow: some View {
+        Button {
+            showsSplitLines = true
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: "scissors")
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.thAccentText)
+                    .frame(width: Self.rowIconWidth)
+                    .accessibilityHidden(true)
+                Text(L10n.Groups.SplitLines.splitYourShare)
+                    .font(DS.Typography.label)
+                    .foregroundStyle(.thAccentText)
+                Spacer(minLength: DS.Spacing.sm)
+                Image(systemName: "chevron.right")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.FormRow.paddingV)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("transaction_detail_split")
     }
 
     private var showsNeed: Bool {

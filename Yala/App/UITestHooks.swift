@@ -1092,6 +1092,11 @@ final class UITestHooks {
     /// importe cambiado (`settlement-amount-edited-after-approval-leaves-the-bank-stale`).
     nonisolated static var seedSettlementAmountChange: Bool { hasArg("-uitest-seed-settlement-amount-change") }
 
+    /// `-uitest-seed-group-split-lines`: el caso Pía de Grupos B (`DevSeedGroupSplitLines`). En «Pía y yo», Pía paga
+    /// «Recarga Sip» S/ 510 y es todo tuyo; el puente real deja tu parte en «Grupos» y un borrador en la Bandeja que pide
+    /// la categoría. Con la cuenta Sip para partirlo en recarga 500 + comisión 10.
+    nonisolated static var seedGroupSplitLines: Bool { hasArg("-uitest-seed-group-split-lines") }
+
     /// `-uitest-group-created-sheet`: al cargar la pestaña Grupos, abre la hoja «está listo» (UX 2.2 · L12-10) del primer
     /// grupo, como si acabara de crearse. Crear un grupo exige el backend y el simulador no tiene sesión real; el
     /// cableado del formulario con la hoja lo fija `UXAudit22Lote12y13WiringTests`.
