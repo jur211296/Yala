@@ -8564,9 +8564,9 @@
 "creditCardStatement.reminderPayByNoAmount %@" = "Zapłać kartę do %@.";
 "cashFlowPlan.cardPaymentTitle %1$@ %2$@" = "Spłata %1$@ · %2$@";
 "cashFlowPlan.cardPaymentNote" = "Jest już w wydatkach z miesiąca zakupu: nie odejmujemy go drugi raz.";
-"groups.hero.netOwedToMe" = "W twojej walucie głównej (%1$@) to saldo %2$@, które ci są winni.";
-"groups.hero.netIOwe" = "W twojej walucie głównej (%1$@) to saldo %2$@, które jesteś winien.";
-"groups.hero.netEven" = "W twojej walucie głównej (%@) to, co jesteś winien, i to, co ci są winni, się równoważy.";
+"groups.hero.netOwedToMe" = "Są ci winni łącznie · w %@";
+"groups.hero.netIOwe" = "Jesteś winien łącznie · w %@";
+"groups.hero.netEven" = "Jesteście kwita · w %@";
 "groups.card.andMore" = "i %d więcej";
 
 // Editar cuenta con varias divisas (S30)

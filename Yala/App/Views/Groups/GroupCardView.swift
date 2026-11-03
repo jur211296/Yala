@@ -4,7 +4,7 @@
 //
 //  Card de un grupo en la lista principal — icono, nombre y miembros arriba; debajo, una fila por persona
 //  (decisión de Jürgen, 2026-10-30, propuesta 1 de `docs/disenos/grupos-rediseno-2-2/`): «Le debes a Maria P.» /
-//  «Maria P. te debe» a la izquierda y el monto en color a la derecha, rosa rojizo lo que debes y verde lo que te
+//  «Maria P. te debe» a la izquierda y el monto en color a la derecha, el rosa de marca lo que debes y verde lo que te
 //  deben. Primero lo que debes; como mucho tres filas y el resto en «y N más» (`GroupsListBalanceLogic.personRows`).
 //
 

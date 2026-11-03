@@ -8552,9 +8552,9 @@
 "creditCardStatement.reminderPayByNoAmount %@" = "Pague seu cartão até %@.";
 "cashFlowPlan.cardPaymentTitle %1$@ %2$@" = "Pagamento de %1$@ · %2$@";
 "cashFlowPlan.cardPaymentNote" = "Já está nos gastos do mês em que você comprou: não é descontado de novo.";
-"groups.hero.netOwedToMe" = "Na sua moeda principal (%1$@), isso significa um saldo de %2$@ que te devem.";
-"groups.hero.netIOwe" = "Na sua moeda principal (%1$@), isso significa um saldo de %2$@ que você deve.";
-"groups.hero.netEven" = "Na sua moeda principal (%@), o que você deve e o que te devem se compensam.";
+"groups.hero.netOwedToMe" = "Te devem no total · em %@";
+"groups.hero.netIOwe" = "Você deve no total · em %@";
+"groups.hero.netEven" = "Vocês estão quites · em %@";
 "groups.card.andMore" = "e mais %d";
 
 // Editar cuenta con varias divisas (S30)
