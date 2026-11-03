@@ -1236,6 +1236,10 @@ final class AppBootstrapper {
         if UITestHooks.seedFutureMovement {
             DevSeedFutureMovement.create(in: context)
         }
+        // Un «Bus» de hace un minuto: un registro conocido en «Este mes» sea el día que sea (card 30pv).
+        if UITestHooks.seedTodayRecord {
+            DevSeedTodayRecord.create(in: context)
+        }
         // Un gasto sin categoría: el trozo «Sin categoría» de la tarta y los rankings (decisión A, 2026-10-23).
         if UITestHooks.seedUncategorizedExpense {
             DevSeedUncategorizedExpense.create(in: context)

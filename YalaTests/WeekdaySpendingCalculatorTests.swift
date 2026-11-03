@@ -314,7 +314,7 @@ struct WeekdaySpendingCalculatorTests {
                 year: 2026, month: 1, day: 31, hour: 23, minute: 59, second: 59))!
         )
 
-        let ocurrencias = WeekdaySpendingCalculator.weekdayOccurrences(in: enero)
+        let ocurrencias = WeekdaySpendingCalculator.weekdayOccurrences(in: enero, calendar: lima)
 
         // Enero 2026: del jueves 1 al sábado 31.
         #expect(ocurrencias.values.reduce(0, +) == 31, """
@@ -337,7 +337,7 @@ struct WeekdaySpendingCalculatorTests {
             end: lima.date(from: DateComponents(year: 2026, month: 2, day: 1))!
         )
 
-        let ocurrencias = WeekdaySpendingCalculator.weekdayOccurrences(in: enero)
+        let ocurrencias = WeekdaySpendingCalculator.weekdayOccurrences(in: enero, calendar: lima)
         #expect(ocurrencias.values.reduce(0, +) == 31)
         #expect(ocurrencias[7] == 5)
     }

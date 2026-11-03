@@ -89,7 +89,9 @@ final class UsageModeUITests: XCTestCase {
     /// Con registros: la hoja pregunta, «Seguir donde lo dejé» va marcado y devuelve todo, sin bienvenida.
     func test_withRecords_keepEverything_bringsTheDataBack() {
         let app = XCUIApplication()
-        app.launchForUITest(seed: "minimal")
+        // El «Bus» del control lo pone `-uitest-seed-today-record` (hace un minuto): el de la semilla `minimal` sale al
+        // azar en los últimos 7 días, y el 1 y el 2 de noviembre no cayó en «Este mes» (card 30pv).
+        app.launchForUITest(seed: "minimal", extraArguments: ["-uitest-seed-today-record"])
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
         XCTAssertTrue(app.staticTexts["Bus"].firstMatch.waitForExistence(timeout: 15),
                       "Control: el Panel no enseñó los registros sembrados.")
@@ -118,7 +120,9 @@ final class UsageModeUITests: XCTestCase {
     /// Panel sin los registros viejos. Discrimina: el control ve «Bus» antes; con el borrado roto seguiría ahí.
     func test_startFresh_confirmsTwice_asksOnlyForTheMainAccount_andErasesTheRecords() {
         let app = XCUIApplication()
-        app.launchForUITest(seed: "minimal")
+        // El «Bus» del control lo pone `-uitest-seed-today-record` (hace un minuto): el de la semilla `minimal` sale al
+        // azar en los últimos 7 días, y el 1 y el 2 de noviembre no cayó en «Este mes» (card 30pv).
+        app.launchForUITest(seed: "minimal", extraArguments: ["-uitest-seed-today-record"])
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
         XCTAssertTrue(app.staticTexts["Bus"].firstMatch.waitForExistence(timeout: 15),
                       "Control: el Panel no enseñó los registros sembrados.")

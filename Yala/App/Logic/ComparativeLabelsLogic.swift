@@ -61,7 +61,10 @@ enum ComparativeLabelsLogic {
         period: DetailPeriod, customRange: DateInterval?,
         now: Date = .now, calendar: Calendar = .current, locale: Locale = AppLocale.current
     ) -> String {
-        let previous = PreviousPeriodHelper.previousInterval(for: period, mode: .year, customRange: customRange, now: now)
+        let previous = PreviousPeriodHelper.previousInterval(
+            for: period, mode: .year, customRange: customRange, now: now,
+            calendar: ComparisonPhraseLogic.periodCalendar(in: calendar.timeZone)
+        )
         switch period {
         case .thisMonth, .lastMonth:
             return monthName(of: previous.start, now: now, calendar: calendar, locale: locale, forceYear: true).inSentence

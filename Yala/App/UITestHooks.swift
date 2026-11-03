@@ -106,6 +106,11 @@ final class UITestHooks {
     /// para ver el saldo de hoy con un movimiento futuro. Aditivo al perfil de `-uitest-seed`.
     nonisolated static var seedFutureMovement: Bool { hasArg("-uitest-seed-future-movement") }
 
+    /// `-uitest-seed-today-record`: añade un gasto «Bus» hace un minuto sin salir de hoy en la cuenta principal
+    /// (`DevSeedTodayRecord`), el registro más reciente del corpus, para que el Panel enseñe un registro conocido en «Este
+    /// mes» también el día 1 (card 30pv). Aditivo al perfil de `-uitest-seed`.
+    nonisolated static var seedTodayRecord: Bool { hasArg("-uitest-seed-today-record") }
+
     /// `-uitest-seed-uncategorized-expense`: añade un gasto de 40 SIN categoría en la cuenta principal
     /// (`DevSeedUncategorizedExpense`), para ver el trozo «Sin categoría» de la tarta. Aditivo al perfil de `-uitest-seed`.
     nonisolated static var seedUncategorizedExpense: Bool { hasArg("-uitest-seed-uncategorized-expense") }

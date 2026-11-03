@@ -185,6 +185,7 @@ struct BudgetPeriodWheelSheet: View {
     static func weekOptions(from earliest: Date, to latest: Date, now: Date, calendar: Calendar, locale: Locale) -> [WeekOption] {
         let formatter = DateFormatter()
         formatter.calendar = calendar
+        formatter.timeZone = calendar.timeZone
         formatter.locale = locale
         formatter.setLocalizedDateFormatFromTemplate("dMMM")
         let current = calendar.startOfWeek(for: now)
