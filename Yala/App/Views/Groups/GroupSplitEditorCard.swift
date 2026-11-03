@@ -166,6 +166,8 @@ struct GroupSplitMemberList: View {
     private func memberRow(member: SplitMember, id: String, amount: Double) -> some View {
         if viewModel.splitType == .equal {
             Button {
+                // Marcar o quitar a un participante: selección (card C4; mapa de `DS.Haptic`).
+                DS.Haptic.selection()
                 viewModel.toggleMember(id)
             } label: {
                 HStack(spacing: DS.Spacing.md) {
@@ -214,6 +216,7 @@ struct GroupSplitMemberList: View {
         let total = viewModel.activeSheetMembers.count
         let allSelected = total > 0 && viewModel.selectedMembers.count == total
         return Button {
+            DS.Haptic.selection()
             if allSelected { viewModel.deselectAllMembers() } else { viewModel.selectAllMembers() }
         } label: {
             HStack(spacing: DS.Spacing.md) {

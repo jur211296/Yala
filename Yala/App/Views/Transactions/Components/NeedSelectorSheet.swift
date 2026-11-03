@@ -47,6 +47,7 @@ struct NeedSelectorSheet: View {
                             need: need,
                             isSelected: selectedNeed == need
                         ) {
+                            DS.Haptic.selection()
                             selectedNeed = need
                             dismiss()
                         }

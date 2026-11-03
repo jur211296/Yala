@@ -38,6 +38,8 @@ struct ScheduledPaymentEditorView: View {
     var onDelete: (() -> Void)?
     let prefill: ScheduledPaymentPrefill?
     let onSaved: ((UUID) -> Void)?
+    /// Quien abre el editor vibra él el éxito del guardado (Nuevo registro, al cerrarse con su aviso): aquí no se repite.
+    let hostVibratesOnSave: Bool
 
     // Error state
     @State private var showSaveError = false
@@ -133,13 +135,15 @@ struct ScheduledPaymentEditorView: View {
         defaultCategory: String? = nil,
         onDelete: (() -> Void)? = nil,
         prefill: ScheduledPaymentPrefill? = nil,
-        onSaved: ((UUID) -> Void)? = nil
+        onSaved: ((UUID) -> Void)? = nil,
+        hostVibratesOnSave: Bool = false
     ) {
         self.payment = payment
         self.defaultCategory = defaultCategory
         self.onDelete = onDelete
         self.prefill = prefill
         self.onSaved = onSaved
+        self.hostVibratesOnSave = hostVibratesOnSave
     }
 
     var body: some View {
@@ -1692,6 +1696,9 @@ struct ScheduledPaymentEditorView: View {
         )
 
         if let id = savedID {
+            // Guardado de verdad, no al tocar el botón (card C4; mapa de `DS.Haptic`). Uno por gesto: si el anfitrión ya
+            // vibra al cerrarse, no.
+            if !hostVibratesOnSave { DS.Haptic.success() }
             onSaved?(id)
             if payment == nil, SetupChecklistManager.shared.stepCompleted[.scheduledPayment] != true {
                 // Find PersistentIdentifier from UUID
@@ -1752,6 +1759,8 @@ struct ScheduledPaymentEditorView: View {
     /// Cierra y deja el borrado unos segundos en espera con «Deshacer» (L10-15).
     private func deletePayment() {
         guard let payment = payment else { return }
+        // Al confirmar el borrado; «Deshacer» vibra éxito en quien deshace (card C4).
+        DS.Haptic.warning()
         let editorViewModel = viewModel
         dismiss()
         onDelete?()

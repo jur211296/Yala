@@ -84,7 +84,7 @@ struct NotificationsSettingsView: View {
         }
         .sheet(isPresented: $viewModel.isCreatingNew, onDismiss: { viewModel.closeEditor() }) {
             NotificationEditorSheet(notification: nil) { newNotification in
-                viewModel.insertNotification(newNotification)
+                if viewModel.insertNotification(newNotification) { DS.Haptic.success() }
                 Task {
                     await NotificationService.shared.scheduleNotification(for: newNotification)
                     replanPaymentSummariesIfNeeded(for: newNotification)
@@ -93,7 +93,7 @@ struct NotificationsSettingsView: View {
         }
         .sheet(item: $viewModel.selectedNotification, onDismiss: { viewModel.closeEditor() }) { notification in
             NotificationEditorSheet(notification: notification) { _ in
-                viewModel.saveContext()
+                if viewModel.saveContext() { DS.Haptic.success() }
                 Task {
                     await NotificationService.shared.scheduleNotification(for: notification)
                     // Cambiar la HORA del item mueve el disparo de las summaries agendadas —

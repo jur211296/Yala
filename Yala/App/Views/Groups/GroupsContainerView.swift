@@ -464,7 +464,7 @@ struct GroupsContainerView: View {
                                 #if DEBUG
                                 print("GroupsContainerView: leaveGroup failed: \(error)")
                                 #endif
-                                DS.Haptic.warning()
+                                DS.Haptic.error()
                                 // Mismo criterio que `GroupSettingsView`: el error crudo aquí era un
                                 // número de discriminante. El copy lo elige `GroupLeaveErrorLogic`.
                                 leaveErrorMessage = GroupLeaveErrorLogic.classify(
@@ -1142,7 +1142,7 @@ struct GroupsContainerView: View {
             // El copy que YA existe para este hecho, el de la puerta del Welcome (`welcome.groups.channelOff*`):
             // estado transitorio, sin culpar al usuario y diciendo que no se guardó nada. Es el mismo
             // precedente por el que esa puerta reusa `welcome.cloud.blocked*`.
-            DS.Haptic.warning()
+            DS.Haptic.error()
             navigation.pendingCreateGroupAfterIdentity = false
             navigation.pendingExpenseAfterNewGroup = false
             showChannelOffAlert = true

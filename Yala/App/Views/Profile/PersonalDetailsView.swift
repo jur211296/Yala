@@ -320,6 +320,8 @@ struct PersonalDetailsView: View {
 
     private func saveAndDismiss() {
         persistChanges()
+        // «Listo» guarda (preferencias locales, no falla): éxito (card C4). El cierre deslizando guarda sin vibrar.
+        DS.Haptic.success()
         dismiss()
     }
 
@@ -407,6 +409,7 @@ struct IconPickerSheet: View {
 
     private func iconButton(_ icon: (name: String, symbol: String)) -> some View {
         Button {
+            DS.Haptic.selection()
             selectedIcon = icon.symbol
             onSelect()
             dismiss()

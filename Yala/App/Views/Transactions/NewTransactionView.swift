@@ -1182,7 +1182,9 @@ struct NewTransactionView: View {
             ),
             onSaved: { paymentID in
                 handleRecurringSaved(paymentID: paymentID, fromFullEditor: true)
-            }
+            },
+            // El éxito lo vibra este formulario al cerrarse con el aviso (`closeAfterRecurringEditor`).
+            hostVibratesOnSave: true
         )
     }
 
@@ -1302,6 +1304,8 @@ struct NewTransactionView: View {
                                 color: isChosen ? Color(hex: member.colorHex) : nil,
                                 fillsWhenSelected: true
                             ) {
+                                // La pastilla de divisa elige al tocarla: selección (card C4).
+                                if !isChosen { DS.Haptic.selection() }
                                 viewModel.selectCardMember(member)
                             }
                             .accessibilityLabel(L10n.Account.Lines.cardCurrencyChip(member.currencyCode))
@@ -2255,6 +2259,8 @@ struct NewTransactionView: View {
                 $0 != viewModel.selectedSubcategory?.need ? $0.rawValue : nil
             }
         ) else {
+            // Sin háptico aquí: `ScheduledPaymentEditorViewModel.savePayment` ya vibra error() al fallar, y el éxito lo
+            // vibra `closeWithSavedNotice` al cerrar con el aviso (card C4, uno por gesto).
             showToast(L10n.Common.saveError)
             return
         }

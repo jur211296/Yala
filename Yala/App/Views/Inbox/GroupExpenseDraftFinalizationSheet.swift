@@ -144,6 +144,7 @@ struct GroupExpenseDraftFinalizationSheet: View {
             #endif
             retirementOnClose = GroupExpenseDraftRetirement(after: error)
             saveErrorMessage = GroupsUserFacingErrorLogic.message(for: error)
+            DS.Haptic.error()
             showSaveError = true
         }
     }

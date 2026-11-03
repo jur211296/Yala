@@ -156,6 +156,7 @@ struct GroupSettlementAmountChangeSheet: View {
             print("GroupSettlementAmountChangeSheet: adjust failed: \(error)")
             #endif
             saveErrorMessage = GroupsUserFacingErrorLogic.message(for: error)
+            DS.Haptic.error()
             showSaveError = true
         }
     }
@@ -172,6 +173,7 @@ struct GroupSettlementAmountChangeSheet: View {
             print("GroupSettlementAmountChangeSheet: keep failed: \(error)")
             #endif
             saveErrorMessage = GroupsUserFacingErrorLogic.message(for: error)
+            DS.Haptic.error()
             showSaveError = true
         }
     }

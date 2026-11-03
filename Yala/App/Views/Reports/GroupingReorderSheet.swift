@@ -55,6 +55,7 @@ struct GroupingReorderSheet: View {
                             activeRow(dimension)
                         }
                         .onMove { from, to in
+                            DS.Haptic.selection()
                             state.moveOptional(from: from, to: to)
                         }
                     }

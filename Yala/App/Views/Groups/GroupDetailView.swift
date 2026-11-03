@@ -687,7 +687,7 @@ struct GroupDetailView: View {
     private func handleMigratedRejoin() {
         guard GroupBackendCapability.current == .canRejoin else { return }
         guard let token = group.backendReInviteToken, !token.isEmpty else {
-            DS.Haptic.warning()
+            DS.Haptic.error()
             viewModel.actionErrorMessage = L10n.Groups.Errors.actionFailed
             viewModel.showActionError = true
             return

@@ -44,6 +44,17 @@ extension AnyTransition {
     }
 }
 
+// MARK: - Una pieza que cambia de estado en su sitio
+
+extension AnyTransition {
+    /// Una pieza que pasa de un estado a otro sin moverse (el borrador del chat: pendiente → guardado o descartado,
+    /// card C8): el estado nuevo entra fundiéndose y el viejo se funde sin leerse ni tocarse, como `loadingPlaceholder`.
+    /// Así no hay dos «Guardar» en el árbol durante el fundido.
+    static var stateSwap: AnyTransition {
+        .asymmetric(insertion: .opacity, removal: AnyTransition(LoadingExitTransition()))
+    }
+}
+
 // MARK: - Filas que entran o se van
 
 /// ¿El cambio de una lista es una edición pequeña que merece animarse? Valor puro: lo prueba `RowListEditLogicTests`.

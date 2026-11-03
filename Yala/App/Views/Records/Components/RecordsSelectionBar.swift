@@ -80,7 +80,6 @@ struct RecordsSelectionBar: View {
 
     private var deleteButton: some View {
         Button(role: .destructive) {
-            DS.Haptic.warning()
             onDelete()
         } label: {
             Label(L10n.Action.delete, systemImage: "trash")

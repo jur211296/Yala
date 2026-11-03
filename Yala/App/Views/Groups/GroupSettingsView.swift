@@ -842,14 +842,14 @@ struct GroupSettingsView: View {
                 // pintamos el botón y el usuario confirmó). NO es un error del usuario ni del canal:
                 // es un cambio de estado, y el copy lo dice tal cual. La pantalla se queda abierta y
                 // se recalcula, así que el botón desaparece solo.
-                DS.Haptic.warning()
+                DS.Haptic.error()
                 actionErrorMessage = L10n.Groups.Errors.transferNoHeir
                 showActionError = true
                 transferRefusedByServer = true
                 recomputeOwnerExit()
             }
         } catch {
-            DS.Haptic.warning()
+            DS.Haptic.error()
             // Mismo contrato que `leaveGroup()`: nunca un número crudo ni una dev-string.
             actionErrorMessage = GroupLeaveErrorLogic.classify(
                 error, attestUnavailable: GroupsAttestStreakStore.isTerminal()).localizedMessage
@@ -1108,7 +1108,7 @@ struct GroupSettingsView: View {
             DS.Haptic.success()
             dismiss()
         } catch {
-            DS.Haptic.warning()
+            DS.Haptic.error()
             // Copy propio por caso: el `localizedDescription` de un `GroupsRPCError` es el número del
             // discriminante («…GroupsRPCError 10.»), y el de un `GroupServiceError` es una dev-string en
             // inglés. Ninguno de los dos es un mensaje para el usuario.

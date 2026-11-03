@@ -78,6 +78,7 @@ final class FavoritesListViewModel {
             #if DEBUG
             print("FavoritesListViewModel: Error deleting favorites: \(error)")
             #endif
+            DS.Haptic.error()
             showSaveError = true
         }
     }
@@ -100,6 +101,7 @@ final class FavoritesListViewModel {
             #if DEBUG
             print("FavoritesListViewModel: Error moving favorites: \(error)")
             #endif
+            DS.Haptic.error()
             showSaveError = true
         }
     }

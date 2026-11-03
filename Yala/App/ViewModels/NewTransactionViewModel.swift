@@ -788,6 +788,8 @@ final class NewTransactionViewModel {
         showValidationErrors = true
         if Calendar.current.compare(transactionDate, to: Date.now, toGranularity: .day) == .orderedDescending {
             showFutureDateAlert = true
+            // Validación que no deja seguir (card C4; mapa de `DS.Haptic`): vibra con la alerta.
+            DS.Haptic.error()
             return false
         }
         return canSave
@@ -855,6 +857,7 @@ final class NewTransactionViewModel {
             print("Error saving transaction: \(error)")
             #endif
             saveError = L10n.Common.saveError
+            DS.Haptic.error()
             isSaving = false
             return nil
         }

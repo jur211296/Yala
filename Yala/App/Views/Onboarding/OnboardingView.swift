@@ -593,7 +593,8 @@ struct OnboardingView: View {
         // En una `optionCard` la fila no lleva forma ni borde propios: la tarjeta los pone. Sin elegir, transparente
         // sobre el relleno de la tarjeta; elegida, el mismo índigo que la tarjeta suelta, recortado por la de fuera.
         let rowShape = RoundedRectangle(cornerRadius: grouped ? 0 : DS.Radius.xl, style: .continuous)
-        return Button(action: action) {
+        // Elegir una opción: selección (card C4; mapa de `DS.Haptic`).
+        return Button(action: { DS.Haptic.selection(); action() }) {
             HStack(spacing: DS.Spacing.md) {
                 ZStack {
                     RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
@@ -1656,7 +1657,7 @@ struct OnboardingView: View {
         showCheckmark: Bool = false,
         action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
+        Button(action: { DS.Haptic.selection(); action() }) {
             HStack(spacing: DS.Spacing.md) {
                 Text(currency.flag)
                     .font(DS.Typography.title)
@@ -1852,6 +1853,8 @@ struct OnboardingView: View {
 
         guard let next = nextStep(after: currentStep) else { return }
 
+        // Avanzar es una acción sin resultado: golpe ligero. El éxito queda para terminar (card C4).
+        DS.Haptic.light()
         navigatingForward = true
         dsWithAnimation(reduceMotion, .easeInOut(duration: 0.3)) {
             currentStep = next
@@ -1904,6 +1907,8 @@ struct OnboardingView: View {
 
         do {
             try modelContext.save()
+            // Terminar el onboarding, con lo elegido ya guardado (card C4; mapa de `DS.Haptic`).
+            DS.Haptic.success()
         } catch {
             #if DEBUG
             print("OnboardingView: Error saving onboarding data: \(error)")

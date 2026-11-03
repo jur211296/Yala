@@ -366,7 +366,7 @@ struct SettlementFormView: View {
     }
 
     private func showMissingAmount() {
-        DS.Haptic.warning()
+        DS.Haptic.error()
         dsWithAnimation(reduceMotion) {
             showsMissingAmount = true
             amountFocused = true

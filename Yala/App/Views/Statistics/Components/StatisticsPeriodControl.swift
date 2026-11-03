@@ -127,6 +127,8 @@ struct StatisticsPeriodControl: View {
             selection: PeriodStepLogic.Selection(period: period, customRange: customRange),
             stepUnit: stepUnit
         )
+        // Flechas y menú: una vibración de selección por cambio de período (card C4; mapa de `DS.Haptic`).
+        if target.selection != selection { DS.Haptic.selection() }
         guard !reduceMotion else {
             commit(target)
             return

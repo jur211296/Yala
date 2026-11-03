@@ -39,16 +39,21 @@ struct ChatTransactionDraftCard: View {
     @State private var fullFormRequested = false
 
     var body: some View {
-        switch draft.status {
-        case .saved:
-            savedRow
-        case .discarded:
-            discardedRow
-        case .failed:
-            failedRow
-        case .pending, .saving:
-            editableCard
+        // Cada estado se funde con el siguiente (card C8). La animación la pone el hilo de mensajes de `ChatSheetView`,
+        // que es el contenedor común: lo de debajo se recoloca a la vez que la tarjeta cambia de alto.
+        Group {
+            switch draft.status {
+            case .saved:
+                savedRow
+            case .discarded:
+                discardedRow
+            case .failed:
+                failedRow
+            case .pending, .saving:
+                editableCard
+            }
         }
+        .transition(.stateSwap)
     }
 
     // MARK: - Editable card (.pending / .saving)

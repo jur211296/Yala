@@ -566,6 +566,7 @@ struct InboxView: View {
         HStack(spacing: DS.Spacing.lg) {
             // Select all / Deselect all
             Button {
+                DS.Haptic.selection()
                 dsWithAnimation(reduceMotion) {
                     if selectedDraftIDs.count == filteredDrafts.count {
                         selectedDraftIDs.removeAll()
@@ -895,6 +896,7 @@ struct InboxView: View {
     }
 
     private func toggleSelection(_ draft: InboxDraft) {
+        DS.Haptic.selection()
         dsWithAnimation(reduceMotion) {
             if selectedDraftIDs.contains(draft.persistentModelID) {
                 selectedDraftIDs.remove(draft.persistentModelID)
@@ -928,7 +930,7 @@ struct InboxView: View {
 
     /// Descartar deslizando dice a dónde fue y deja deshacerlo (UX 2.2 · L4-6), con el mismo aviso que el editor.
     private func rejectDraft(_ draft: InboxDraft) {
-        removeDraftWithAnimation(draft, hapticStyle: .light, onPersisted: { showDiscardedNotice(for: draft) }) { service, d in
+        removeDraftWithAnimation(draft, onPersisted: { showDiscardedNotice(for: draft) }) { service, d in
             try service.rejectDraft(d)
         }
     }
@@ -998,7 +1000,7 @@ struct InboxView: View {
             )
             saveReadyLeftover = InboxSaveReadyLogic.leftoverLine(viewModel.filteredDrafts(for: .pending))
             guard !transactions.isEmpty else { return }
-            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            DS.Haptic.success()
             // La alerta de confirmación se está cerrando: la hoja de éxito espera a que termine (mismo anchor).
             Task {
                 do { try await Task.sleep(for: .milliseconds(400)) } catch { return }
@@ -1017,14 +1019,15 @@ struct InboxView: View {
             viewModel.loadData()
             return
         }
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        // Ocultar aquí no borra nada: una acción sin resultado que deshacer, golpe ligero (mapa de `DS.Haptic`).
+        DS.Haptic.light()
         dsWithAnimation(reduceMotion) {
             viewModel.removeDraft(draft)
         }
     }
 
     private func deleteDraftPermanently(_ draft: InboxDraft) {
-        removeDraftWithAnimation(draft, hapticStyle: .rigid) { service, d in
+        removeDraftWithAnimation(draft) { service, d in
             try service.deleteDraft(d)
         }
     }
@@ -1038,11 +1041,11 @@ struct InboxView: View {
     /// Delay avoids accessing invalidated SwiftData relationships during animation.
     private func removeDraftWithAnimation(
         _ draft: InboxDraft,
-        hapticStyle: UIImpactFeedbackGenerator.FeedbackStyle,
         onPersisted: (() -> Void)? = nil,
         persist: @escaping (DraftService, InboxDraft) throws -> Void
     ) {
-        UIImpactFeedbackGenerator(style: hapticStyle).impactOccurred()
+        // Descartar y borrar deslizando son el gesto de confirmar: golpe de borrado (card C4; mapa de `DS.Haptic`).
+        DS.Haptic.warning()
 
         // `beginRemoval` y no `removeDraft`: hasta que el borrado termine, ninguna recarga devuelve la fila. Con dos
         // borrados seguidos, la recarga del primero volvía a montar el segundo justo antes de borrarlo (card f8rj).
@@ -1111,9 +1114,6 @@ struct InboxView: View {
             return
         }
 
-        // Haptic feedback for positive action
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-
         // DB work OUTSIDE animation — only animate UI state changes
         draftService.setContext(modelContext)
         do {
@@ -1121,6 +1121,8 @@ struct InboxView: View {
                 draft,
                 currencyConverter: currencyConverter
             )
+            // Éxito donde la aprobación ya salió bien, no al deslizar: antes vibraba también si fallaba (card C4).
+            DS.Haptic.success()
 
             // Animate only the UI transition
             dsWithAnimation(reduceMotion) {

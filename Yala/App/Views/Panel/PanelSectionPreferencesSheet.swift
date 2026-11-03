@@ -157,6 +157,7 @@ struct PanelSectionPreferencesSheet: View {
                     }
                 }
                 .onMove { source, destination in
+                    DS.Haptic.selection()
                     viewModel.moveWidgetInSection(kind, from: source, to: destination)
                 }
                 .deleteDisabled(true)

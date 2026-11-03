@@ -617,6 +617,7 @@ struct CategoriesPieWidget: View {
 
     private func handleTap(_ item: PieChartData) {
         if let id = item.id {
+            // Sin háptico aquí: vibra quien recibe el toque (`askSegmentFilter` / `askPanelSegment`), una vez.
             // ViewModel handles toggle logic (select if new, deselect if same)
             onSelectCategory?(id)
         }

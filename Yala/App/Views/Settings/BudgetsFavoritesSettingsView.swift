@@ -364,7 +364,11 @@ struct BudgetsFavoritesSettingsView: View {
                             edges: index == 0 ? .top : .bottom
                         )
                 }
-                .onMove(perform: viewModel.moveBudget)
+                // Una vibración de selección al soltar en su sitio (card C4; mapa de `DS.Haptic`).
+                .onMove { source, destination in
+                    DS.Haptic.selection()
+                    viewModel.moveBudget(from: source, to: destination)
+                }
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)

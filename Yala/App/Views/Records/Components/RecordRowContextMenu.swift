@@ -90,7 +90,11 @@ struct RecordsBulkDeleteAlert: ViewModifier {
             // Solo con algo que borrar: si todo lo elegido viene de un grupo, el aviso explica dónde se borra.
             if viewModel.bulkDeleteDialog.offersDelete {
                 Button(L10n.Action.cancel, role: .cancel) {}
-                Button(L10n.Action.delete, role: .destructive) { onDelete() }
+                Button(L10n.Action.delete, role: .destructive) {
+                    // Al confirmar, no al tocar la papelera de la barra: ahí solo se pregunta (card C4).
+                    DS.Haptic.warning()
+                    onDelete()
+                }
             } else {
                 Button(L10n.Common.understood, role: .cancel) {}
             }
@@ -173,6 +177,8 @@ struct RecordRowActionsPresenter: ViewModifier {
             .alert(pendingDeleteTitle, isPresented: $viewModel.isConfirmingSingleDelete) {
                 Button(L10n.Action.cancel, role: .cancel) {}
                 Button(L10n.Action.delete, role: .destructive) {
+                    // Borrado al confirmarlo (card C4; mapa de `DS.Haptic`). «Deshacer» vibra éxito en quien deshace.
+                    DS.Haptic.warning()
                     viewModel.confirmPendingDelete(
                         context: modelContext,
                         undoName: pendingDeleteRecord.map {

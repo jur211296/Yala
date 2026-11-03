@@ -1090,6 +1090,8 @@ final class ChatAssistantViewModel {
         draft.status = .discarded
         replaceDraft(draft, at: location)
         persistSession()
+        // Descartar es el borrado del borrador, sin pregunta: el toque es la confirmación (card C8; mapa de `DS.Haptic`).
+        DS.Haptic.warning()
     }
 
     /// Tap en quick-reply chip de ambiguous → reenvía el texto con `forceIntent`

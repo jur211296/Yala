@@ -115,7 +115,11 @@ struct TagsSettingsListView: View {
                         index == 0 || index == viewModel.orderedActiveTags.count - 1 ? .hidden : .visible,
                         edges: index == 0 ? .top : .bottom)
                 }
-                .onMove(perform: moveTag)
+                // Una vibración de selección al soltar en su sitio (card C4; mapa de `DS.Haptic`).
+                .onMove { source, destination in
+                    DS.Haptic.selection()
+                    moveTag(from: source, to: destination)
+                }
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)

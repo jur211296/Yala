@@ -208,6 +208,7 @@ struct GroupExpenseAccountAndSubcategoryFinalizationSheet: View {
             #endif
             retirementOnClose = GroupExpenseDraftRetirement(after: error)
             saveErrorMessage = GroupsUserFacingErrorLogic.message(for: error)
+            DS.Haptic.error()
             showSaveError = true
         }
     }
@@ -233,6 +234,7 @@ struct GroupExpenseAccountAndSubcategoryFinalizationSheet: View {
             #endif
             retirementOnClose = GroupExpenseDraftRetirement(after: error)
             saveErrorMessage = GroupsUserFacingErrorLogic.message(for: error)
+            DS.Haptic.error()
             showSaveError = true
         }
     }

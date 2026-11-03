@@ -512,6 +512,14 @@ struct CashFlowWidget: View {
 
     @State private var selectedDate: Date?
 
+    /// La barra bajo el dedo (la misma que enseña el tooltip): cambia solo al pasar de una barra a la siguiente.
+    private var selectedBarDate: Date? {
+        guard let selectedDate else { return nil }
+        let granularity: Calendar.Component = grouping == .month ? .month : (grouping == .week ? .weekOfYear : .day)
+        return activeChartData.first { Calendar.current.isDate($0.date, equalTo: selectedDate, toGranularity: granularity) }?
+            .date
+    }
+
     @ViewBuilder
     private var contentView: some View {
         if size == .large {
@@ -744,6 +752,8 @@ struct CashFlowWidget: View {
                     }
                 }
                 .chartXSelection(value: $selectedDate)  // Native iOS 17+ selection
+                // Una vibración por barra al recorrer la gráfica, no por fotograma del arrastre (card C4).
+                .sensoryFeedback(.selection, trigger: selectedBarDate) { old, new in new != nil && old != new }
                 .chartOverlay { proxy in
                     GeometryReader { geo in
                         let plotFrame = proxy.plotFrame.map { geo[$0] } ?? geo.frame(in: .local)

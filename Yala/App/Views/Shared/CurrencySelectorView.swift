@@ -173,6 +173,7 @@ struct CurrencySelectorView: View {
         let info = currencyInfo(for: currency)
 
         Button {
+            DS.Haptic.selection()
             selectedCurrency = currency
             dismiss()
         } label: {

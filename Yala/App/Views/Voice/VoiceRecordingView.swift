@@ -556,7 +556,7 @@ struct VoiceRecordingView: View {
             try await recorder.startRecording()
             phase = .listening
             livePreview.start(languageCode: appPreferences.voiceLanguage.isoCode)
-            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            DS.Haptic.medium()
         } catch let error as RecordingError {
             phase = .failure(VoiceEntryFlowLogic.failure(for: error))
         } catch {
@@ -578,7 +578,7 @@ struct VoiceRecordingView: View {
         #endif
         do {
             let audioData = try await recorder.stopRecording()
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            DS.Haptic.light()
             pendingAudioData = audioData
             startProcessing(audioData)
         } catch let error as RecordingError {
@@ -684,7 +684,7 @@ struct VoiceRecordingView: View {
             drafts = isSetupTrial ? Array(created.prefix(1)) : created
             transcription = text
             phase = .review
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            DS.Haptic.success()
         } catch let error as TranscriptionError {
             if let detail = VoiceEntryFlowLogic.canaryDetail(for: error) {
                 MetricsService.canaryOnce(.aiEntryReadFailed, key: detail, detail: detail)
@@ -817,7 +817,7 @@ struct VoiceRecordingView: View {
             }
         }
         if !saveFailed {
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            DS.Haptic.success()
         }
     }
 

@@ -83,7 +83,7 @@ Está documentado en `.claude/rules/swiftui-ds.md`, en «Fluidez: el sistema com
 | Quitar chips de filtro | [V] 8 `dsWithAnimation` que no animan; sin háptico | `PanelFilterControlBar.swift` | medio | ✅ C2 (2026-11-02) |
 | Período del hero | [V] Cambia de golpe; sin háptico | `PanelHeroSection.swift:31` | medio | ✅ C2 (2026-11-02) |
 | Widgets: filtro de pagos, métrica de tendencias, tipo de cambio, presupuesto elegido | [V] Píldoras que saltan; sin háptico | widgets | medio | ✅ C2 (2026-11-02) |
-| Tartas: seleccionar sector, recorrer gráficas | [V] Sin háptico al cambiar de sector o de barra | `CategoriesPieWidget`, `CashFlowWidget`, `TrendChartView` | medio | C4 |
+| Tartas: seleccionar sector, recorrer gráficas | [V] Sin háptico al cambiar de sector o de barra | `CategoriesPieWidget`, `CashFlowWidget`, `TrendChartView` | medio | ✅ C4 (2026-11-02): recorrer la tendencia y el flujo vibra una vez por punto o barra; tocar un sector ya vibraba (lo hace el anfitrión del filtro: la fila se midió mal) |
 | Esqueleto inicial | [V] De golpe | `PanelView.swift:308` | alto | ✅ C1 (2026-11-01) |
 | Checklist de configuración, anillo de puntuación | [V] Animaciones sin Reducir movimiento | `SetupChecklistCard`, `ScoreRingView` | medio | ✅ C6 (2026-11-02) |
 | Avisos y flotantes | [V] Implícitas con Reducir movimiento | `PanelView` | — | ya bien |
@@ -96,7 +96,7 @@ Está documentado en `.claude/rules/swiftui-ds.md`, en «Fluidez: el sistema com
 | Selección de filas | [V] Háptico doble (explícito y `sensoryFeedback`) | `RecordRowView.swift` | medio | ✅ uno |
 | Lista ↔ Calendario, mes, día | [V] `dsWithAnimation` en pestaña; sin háptico | `RecordsTabView`, `RecordsCalendarView` | medio | ✅ C2 (2026-11-02) |
 | Filas que entran o se borran | [V] Sin transición; el deshacer las devuelve de golpe | `RecordsTabView.swift:424` | alto | ✅ C3 (2026-11-01) |
-| Confirmar borrado, borrado en lote, deshacer | [V] Sin háptico al confirmar | `RecordRowContextMenu`, `RecordsSelectionBar` | medio | C4 |
+| Confirmar borrado, borrado en lote, deshacer | [V] Sin háptico al confirmar | `RecordRowContextMenu`, `RecordsSelectionBar` | medio | ✅ C4 (2026-11-02): al confirmar, no al abrir la pregunta (también el detalle) |
 | Barra de selección | [V] Spring sin Reducir movimiento | `RecordsStandaloneView.swift:315` | medio | ✅ C6 (2026-11-02) |
 
 ### Bandeja (es una hoja, y ahí `withAnimation` sí anima)
@@ -104,8 +104,8 @@ Está documentado en `.claude/rules/swiftui-ds.md`, en «Fluidez: el sistema com
 | Interacción | Estado antes | Dónde | Impacto | Estado |
 |---|---|---|---|---|
 | Aprobar desde el editor | [V] Sin háptico | `InboxDraftEditSheet.swift` | medio | ✅ éxito |
-| Deslizar para descartar, borrar o aprobar | [V] Animado; hápticos con `UIImpactFeedbackGenerator` crudo | `InboxView.swift` | bajo | C4 |
-| Selección múltiple, descartar desde el editor | [V] Sin háptico | `InboxView`, `InboxDraftEditSheet` | medio | C4 |
+| Deslizar para descartar, borrar o aprobar | [V] Animado; hápticos con `UIImpactFeedbackGenerator` crudo | `InboxView.swift` | bajo | ✅ C4 (2026-11-02): `DS.Haptic`; aprobar vibra tras aprobar |
+| Selección múltiple, descartar desde el editor | [V] Sin háptico | `InboxView`, `InboxDraftEditSheet` | medio | ✅ C4 (2026-11-02) |
 
 ### Grupos
 
@@ -117,7 +117,7 @@ Está documentado en `.claude/rules/swiftui-ds.md`, en «Fluidez: el sistema com
 | Carga de la lista | [V] `ProgressView` → lista de golpe | `GroupsContainerView.swift:106` | medio | ✅ C7 (2026-11-01) |
 | Archivados, tarjeta de avisos | [V] `withAnimation` en pestaña: de golpe | `GroupsContainerView`, `GroupNotificationsOptInCard` | medio | ✅ C2 (2026-11-02) |
 | Borrar gasto, quitar saldo inicial | [V] Sin háptico de éxito; la fila se va de golpe | `GroupDetailViewModel`, `GroupRecordsView` | alto | ✅ C3 (2026-11-01) |
-| Tipo de reparto, participantes y pagador | [V] Sin háptico; la cápsula se funde | `SplitTypeSegmentedSelector`, `GroupSplitEditorCard` | medio | C4 |
+| Tipo de reparto, participantes y pagador | [V] Sin háptico; la cápsula se funde | `SplitTypeSegmentedSelector`, `GroupSplitEditorCard` | medio | ✅ C4 (2026-11-02): la cápsula se desliza |
 
 ### Estadísticas
 
@@ -126,7 +126,7 @@ Está documentado en `.claude/rules/swiftui-ds.md`, en «Fluidez: el sistema com
 | Chips de pestaña | [V] Igual que Grupos | `DetailContainerView.swift` | alto | ✅ |
 | Hero de Categorías, Tendencias e Insights | [V] `numericText` sin animación (no rodaba) o sin `numericText` | `CategoriesTabView`, `TrendsTabView`, `InsightsTabView` | alto | ✅ |
 | Detalle/Gráficas, modo de Insights | [V] Píldora que saltaba | `GenericSegmentedPill` | alto | ✅ |
-| Período (flechas y menú) | [V] Implícita bien hecha; sin háptico | `StatisticsPeriodControl.swift` | medio | C4 |
+| Período (flechas y menú) | [V] Implícita bien hecha; sin háptico | `StatisticsPeriodControl.swift` | medio | ✅ C4 (2026-11-02) |
 | Secciones plegables de Insights, «Ver período anterior», Sankey | [V] `dsWithAnimation` en pestaña | `InsightsTabView`, `TrendsTabView`, `CategoriesTabView` | medio | ✅ C2 (2026-11-02) |
 | Flotantes al desplazar | [V] Sin implícita: de golpe (en el Panel sí se funden) | `DetailContainerView.swift:365` | medio | ✅ C2 (2026-11-02) |
 | Carga de Insights y de la IA | [V] `ProgressView` → contenido de golpe | `InsightsTabView.swift:77,325` | medio | ✅ C7 (2026-11-01) |
@@ -140,7 +140,7 @@ Está documentado en `.claude/rules/swiftui-ds.md`, en «Fluidez: el sistema com
 | Pago: falta un campo al guardar | [V] Golpe ligero | `ScheduledPaymentEditorView.swift` | medio | ✅ `error()` |
 | Pago: scroll al campo y «Más opciones» | [V] `dsWithAnimation(false)` fijo: ignoraba Reducir movimiento | `ScheduledPaymentEditorView.swift:220,369` | medio | ✅ |
 | Barra de progreso del presupuesto | [V] El ancho no anima | `BudgetProgressBar.swift` | medio | ✅ C2 (2026-11-02) |
-| Lista/Calendario de pagos, pausar, marcar pagado | [V] Sin animación ni háptico | `ScheduledPaymentsListView`, `ScheduledPaymentPaidSheet` | medio | ✅ C2 (2026-11-02) · háptico: C4 |
+| Lista/Calendario de pagos, pausar, marcar pagado | [V] Sin animación ni háptico | `ScheduledPaymentsListView`, `ScheduledPaymentPaidSheet` | medio | ✅ C2 (2026-11-02) · ✅ C4 (2026-11-02): hápticos |
 | Gráficas del presupuesto | [V] `dsWithAnimation` / `withAnimation` en pestaña | `BudgetChartsView.swift` | medio | ✅ C2 (2026-11-02) |
 
 ### Yala IA
@@ -151,8 +151,8 @@ Está documentado en `.claude/rules/swiftui-ds.md`, en «Fluidez: el sistema com
 | Indicador «escribiendo» | [V] Entra y sale en seco | `ChatSheetView.swift` | alto | ✅ fundido |
 | Enviar pregunta | [V] Sin háptico | `ChatSheetView.swift` | medio | ✅ ligero |
 | Guardar borrador desde el chat | [V] Sin háptico | `ChatAssistantViewModel.swift` | alto | ✅ éxito |
-| Tarjeta del borrador: pendiente → guardado / descartado | [V] `switch` sin transición | `ChatTransactionDraftCard.swift` | alto | C8 |
-| Banner de error, panel de voz, nueva conversación | [V] Sin transición ni háptico; voz sin Reducir movimiento | `ChatSheetView`, `VoiceListeningPanel` | medio | C8 |
+| Tarjeta del borrador: pendiente → guardado / descartado | [V] `switch` sin transición | `ChatTransactionDraftCard.swift` | alto | ✅ C8 (2026-11-02): se funde sin duplicar el árbol (`stateSwap`) |
+| Banner de error, panel de voz, nueva conversación | [V] Sin transición ni háptico; voz sin Reducir movimiento | `ChatSheetView`, `VoiceListeningPanel` | medio | ✅ C8 (2026-11-02) |
 
 ### Ajustes, Perfil y Más
 
@@ -160,16 +160,16 @@ Está documentado en `.claude/rules/swiftui-ds.md`, en «Fluidez: el sistema com
 |---|---|---|---|---|
 | Elegir tema | [V] Sin háptico | `ThemeSettingsView.swift` | medio | ✅ |
 | Animaciones de Ajustes abierto desde Más | [V] Apagadas por un `.transaction` | `MoreView.swift:122` | alto | ✅ C5 (2026-11-02) |
-| Hojas de selección (período, decimales, idioma…) | [V] Sin háptico | `PersonalizationSettingsView` | medio | C4 |
-| Borrar categoría, notificación; guardar notificación, datos personales | [V] Sin háptico | varios | medio | C4 |
-| Reordenar listas | [V] Sin háptico al soltar | varios | bajo | C4 |
+| Hojas de selección (período, decimales, idioma…) | [V] Sin háptico | `PersonalizationSettingsView` | medio | ✅ C4 (2026-11-02) |
+| Borrar categoría, notificación; guardar notificación, datos personales | [V] Sin háptico | varios | medio | ✅ C4 (2026-11-02) |
+| Reordenar listas | [V] Sin háptico al soltar | varios | bajo | ✅ C4 (2026-11-02): las nueve listas, y una nueva entra sola en el test |
 
 ### Onboarding y Welcome
 
 | Interacción | Estado antes | Dónde | Impacto | Estado |
 |---|---|---|---|---|
 | Pasos, contador, confeti, restaurar | [V] Bien: transiciones con Reducir movimiento | `OnboardingView`, `WelcomeFlowContainer` | — | ya bien |
-| Avanzar paso, elegir opción, terminar | [V] Ni un háptico en `OnboardingView` | `OnboardingView.swift` | medio | C4 |
+| Avanzar paso, elegir opción, terminar | [V] Ni un háptico en `OnboardingView` | `OnboardingView.swift` | medio | ✅ C4 (2026-11-02) |
 
 ### Formularios y hojas
 
@@ -180,9 +180,9 @@ Está documentado en `.claude/rules/swiftui-ds.md`, en «Fluidez: el sistema com
 | Guardar cuenta, categoría, etiqueta | [V] Sin háptico | `AccountFormView`, `CategoryDetailView`, `TagFormView` | alto | ✅ éxito |
 | Borrar categoría, etiqueta | [V] Sin háptico | ídem | medio | ✅ borrado |
 | Categoría nueva sin subcategorías | [V] Alerta sin háptico | `CategoryDetailView.swift` | bajo | ✅ `error()` |
-| Chips de cuenta, categoría y necesidad; etiquetas; selectores | [V] Sin háptico | `SelectionChip`, `TagSelectorSheet`… | medio | C4 |
+| Chips de cuenta, categoría y necesidad; etiquetas; selectores | [V] Sin háptico | `SelectionChip`, `TagSelectorSheet`… | medio | ✅ C4 (2026-11-02): en el selector, al elegir (el chip solo abre la hoja) |
 | Equivalente «≈ S/ X» | [V] `numericText` sin animación | `NewTransactionView.swift:1011` | medio | ✅ C2 (2026-11-02) |
-| Errores al guardar (alertas) | [V] Sin háptico | `NewTransactionView`, `AccountFormView`… | medio | C4 |
+| Errores al guardar (alertas) | [V] Sin háptico | `NewTransactionView`, `AccountFormView`… | medio | ✅ C4 (2026-11-02): también presupuestos, favoritos, pagos, cierres de la Bandeja y Grupos (que usaba `warning()`) |
 | Más opciones y modos de cuenta, grupo y ajustes del grupo | [V] `withAnimation` sin Reducir movimiento | `AccountFormView`, `GroupFormView`, `GroupSettingsView` | bajo | ✅ C6 (2026-11-02) |
 
 ## Cards para lo que no entró (2.2, «ready to launch», `cierra-sola`, frank)
@@ -219,3 +219,7 @@ C4. Tres cosas medidas en vídeo que no dice la tabla:
   tocar su indicador (una animación implícita sobre `scrollPosition` podía pelear con el dedo).
 
 Los `withAnimation` de pestaña que esta tabla no listó van en la card `oxyr`.
+
+**C4 y C8 resueltas el 2026-11-02** (sesión S35n): los hápticos siguen el mapa de `DS.Haptic` y ningún
+`UIImpactFeedbackGenerator` suelto queda en `Yala/App`; la tarjeta del borrador del chat cambia de estado con
+`AnyTransition.stateSwap`. Lo fija `FluidezHapticosWiringTests`.

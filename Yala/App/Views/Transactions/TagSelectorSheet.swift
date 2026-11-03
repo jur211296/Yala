@@ -155,6 +155,7 @@ struct TagSelectorSheet: View {
     }
 
     private func toggleTag(_ tag: Tag) {
+        DS.Haptic.selection()
         dsWithAnimation(reduceMotion) {
             if isSelected(tag) {
                 selectedTags.removeAll { $0.persistentModelID == tag.persistentModelID }

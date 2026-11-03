@@ -463,7 +463,7 @@ struct GroupsAssociationSection: View {
             if CloudSyncFlags.groupsBackendEnabled {
                 onAssociate()
             } else {
-                DS.Haptic.warning()
+                DS.Haptic.error()
                 showChannelOff = true
             }
             refreshTick.toggle()

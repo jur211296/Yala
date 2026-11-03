@@ -170,6 +170,7 @@ struct ScheduledPaymentsListView: View {
         let isSelected = viewModel.paymentsViewMode == mode
 
         return Button {
+            if !isSelected { DS.Haptic.selection() }
             viewModel.paymentsViewMode = mode
         } label: {
             Image(systemName: mode.iconName)
