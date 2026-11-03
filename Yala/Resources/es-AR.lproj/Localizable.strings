@@ -1517,7 +1517,7 @@
 "empty.tagsDescription" = "Crea etiquetas para organizar tus registros de forma flexible.";
 "exchangeRate.loadError" = "No pudimos obtener el tipo de cambio. Intenta de nuevo en un momento.";
 "exchangeRate.noSecondaryCurrenciesPath" = "Ajustes > Moneda y tipo de cambio";
-"exchangeRate.title" = "Tipo de Cambio";
+"exchangeRate.title" = "Tipo de cambio";
 "exchangeRate.updated" = "Actualizado";
 "export.accountsSelected" = "%d seleccionadas";
 "export.allAvailable" = "Todas las disponibles";

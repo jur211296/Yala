@@ -63,11 +63,12 @@ struct ScheduledPaymentsWidget: View {
             if data.activeCount == 0 || data.monthlyTotal == 0 {
                 smallEmptyState
             } else {
-                HStack(alignment: .center, spacing: DS.Spacing.sm) {
+                // En columna: compartiendo fila con el anillo, la cifra no cabía en media tarjeta y salía «S/ 2,…».
+                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                     smallKPIBlock
-                    Spacer(minLength: 0)
                     smallRing
                         .accessibilityLabel(ringAccessibilityLabel)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
                 }
             }
         }

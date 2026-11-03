@@ -126,6 +126,9 @@ struct InsightsTabView: View {
                             }
                         }
                         .frame(maxWidth: .infinity)
+                        // 12 + 8 = 20 pt sobre la primera sección, el mismo aire que entre tarjetas: con 12 el título
+                        // «Tu salud financiera» colgaba de la fila de acciones en vez de encabezar su tarjeta.
+                        .padding(.top, DS.Spacing.sm)
                         // Las secciones plegables se abren y se cierran con lo de debajo moviéndose (card C2). Implícitas,
                         // en el contenedor común: el `withAnimation` del toque no anima dentro de una pestaña.
                         .animation(reduceMotion ? nil : DS.Animation.appear, value: isToPayExpanded)
@@ -552,8 +555,9 @@ struct InsightsTabView: View {
         // «vs Set 26» debajo.
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                // `headline`, como «Tu salud financiera» y «Tus presupuestos»: un solo estilo de título de sección.
                 Text(L10n.Stats.Insights.detailHeader)
-                    .font(DS.Typography.title)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
                 Text(period.displayName)
                     .font(DS.Typography.caption)
@@ -633,12 +637,9 @@ struct InsightsTabView: View {
     // MARK: - Daily Average Card (full-width hero del bento)
 
     private func dailyAverageCard(stats: QuickStats, summary: PeriodSummary) -> some View {
+        // Sin icono delante: repetía el de la pestaña y empujaba la etiqueta y la cifra fuera de la línea izquierda
+        // de las demás tarjetas.
         HStack(spacing: DS.Spacing.md) {
-            Image(systemName: "chart.bar.fill")
-                .font(.system(size: 32))
-                .foregroundStyle(theme.accentText)
-                .accessibilityHidden(true)
-
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(L10n.Insights.dailyAverage)
                     .font(DS.Typography.subheadline)
@@ -647,7 +648,7 @@ struct InsightsTabView: View {
                 AmountText(
                     value: stats.dailyAverage,
                     currencyCode: defaultCurrencyCode,
-                    font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary,
+                    font: DS.Typography.cardHeroAmount, secondaryFont: DS.Typography.cardHeroAmountSecondary,
                     // `dailyAverage` es `cashFlow.totalExpense` dividido entre un entero exacto: el
                     // cociente aproximado/total que mide `ApproximateMarkThreshold` no cambia al
                     // dividir, así que la marca del gasto es exactamente la suya.
@@ -681,9 +682,10 @@ struct InsightsTabView: View {
 
     private func subscriptionsCard(_ stats: QuickStats) -> some View {
         HStack(spacing: DS.Spacing.md) {
+            // En gris, como los iconos de las celdas: el acento se queda para la acción y la pestaña elegida.
             Image(systemName: "repeat.circle.fill")
                 .font(.system(size: 24))
-                .foregroundStyle(theme.accentText)
+                .foregroundStyle(.secondary)
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {

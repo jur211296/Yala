@@ -17,7 +17,9 @@ struct WidgetHelpCircleLabel: View {
         Image(systemName: systemName)
             .font(DS.Typography.captionSmall)
             .fontWeight(.semibold)
-            .foregroundStyle(Color.primary)
+            // Gris secundario fijo: en tinta principal el «?» pesaba tanto como el título al que ayuda. Fijo y no
+            // `.secondary`, que dentro de un botón deriva del tinte.
+            .foregroundStyle(Color(uiColor: .secondaryLabel))
             .frame(width: DS.Panel.widgetAccessorySize, height: DS.Panel.widgetAccessorySize)
             .glassEffect(.regular.interactive(), in: Circle())
     }

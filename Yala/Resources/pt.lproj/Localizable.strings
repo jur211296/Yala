@@ -262,7 +262,7 @@
 
 // MARK: - Exchange Rate
 
-"exchangeRate.title" = "Taxa de Câmbio";
+"exchangeRate.title" = "Taxa de câmbio";
 "exchangeRate.updated" = "Atualizado";
 "exchangeRate.loadError" = "Não foi possível carregar a taxa de câmbio para este período. Tente novamente mais tarde.";
 "exchangeRate.noSecondaryCurrenciesHint" = "Você pode selecionar moedas secundárias em";
