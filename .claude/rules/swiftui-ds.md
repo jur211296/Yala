@@ -397,6 +397,12 @@ La tabla vista por vista y lo que queda en cards: `docs/fluidez/AUDITORIA-FLUIDE
   que se pintan. Solo anima una edición de 1-3 filas con el resto en su orden (`RowListEditLogic`); un filtro o un
   período que cambian la lista entera siguen en seco. La animación cubre el contenedor: lo de dentro que cambie en la
   misma transacción y no deba fundirse (la frase con la cifra del grupo) lleva `.transaction { $0.animation = nil }`.
+  **Y el relevo con el vacío va en el contenedor de las DOS ramas, no en la de filas** (card 1jvv, 2026-11-03): ahí
+  dentro, borrar la última fila desmontaba la lista antes de que nadie animara y el vacío entraba en seco.
+  `.animatesEmptyStateSwap(ids:settled:)` en un `ZStack` (`.top` dentro de un scroll; centrado si el vacío ocupa la
+  página) con `.transition(.stateSwap)` en cada rama; la rama que lleva el título grande en su scroll, `.identity`. La
+  primera carga no cuenta (`settled`), o con 1-3 filas el vacío se fundía cada vez que se abría la pantalla. Pin:
+  `ContentTransitionsWiringTests.eachListWithAnEmptyState_swapsFromTheCommonContainer`.
 - **Lo que se va dentro de un contenedor animado no puede fundirse si lo de FUERA se mueve por ello (medido en vídeo el
   2026-11-02, card C2).** El chip «solo gastos» del hero se fundía al irse y la fila de acciones, que vive fuera del
   hero, subía de golpe y quedaba encima de él. ⇒ entra fundido y sale en el acto
