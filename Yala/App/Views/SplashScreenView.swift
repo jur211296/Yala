@@ -102,7 +102,11 @@ struct SplashScreenView: View {
                         return  // Cancelada: la vista ya no está.
                     }
                     startPulseAnimation()
-                    startParticleAnimation(in: geometry.size)
+                    // Con Reducir movimiento las partículas se quedan quietas: el temporizador de 20 Hz las movía a
+                    // saltos aunque la curva ya respetara el ajuste (card n3iq).
+                    if !reduceMotion {
+                        startParticleAnimation(in: geometry.size)
+                    }
                 }
             }
             .onDisappear {

@@ -346,11 +346,13 @@ struct PanelView: View {
             }
         )
         .task(id: ProTourManager.shared.currentPhase) {
-            guard !UITestHooks.isActive else { return }
+            // `-uitest-pro-tour-panel` saca esta fase en el simulador para grabarla (card v84b).
+            let forcedForUITest = UITestHooks.showsProTourPanel
+            guard !UITestHooks.isActive || forcedForUITest else { return }
             guard !ProTourManager.shared.hasCompleted,
-                  ProTourManager.shared.currentPhase == .panel else { return }
+                  ProTourManager.shared.currentPhase == .panel || forcedForUITest else { return }
             do { try await Task.sleep(for: .seconds(0.8)) } catch { return }
-            guard ProTourManager.shared.currentPhase == .panel,
+            guard ProTourManager.shared.currentPhase == .panel || forcedForUITest,
                   !showProFabTour else { return }
             showProFabTour = true
         }

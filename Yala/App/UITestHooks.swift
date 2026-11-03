@@ -94,6 +94,11 @@ final class UITestHooks {
     /// `-uitest-pro-ended-paid`: la hoja de fin de Pro habla de una suscripción pagada y no de la prueba (L17-6).
     nonisolated static var proEndedPaid: Bool { hasArg("-uitest-pro-ended-paid") }
 
+    /// `-uitest-pro-tour-panel`: saca la fase del Panel del tour Pro (sus marcas de ayuda) sin pasar por la compra, para
+    /// grabar cómo entran (card v84b). No escribe nada: «Omitir guía» la da por vista como siempre, y `-uitest-reset` lo
+    /// limpia.
+    nonisolated static var showsProTourPanel: Bool { hasArg("-uitest-pro-tour-panel") }
+
     /// `-uitest-skip-onboarding`: marca onboarding/chooser completados.
     nonisolated static var skipOnboarding: Bool { hasArg("-uitest-skip-onboarding") }
 
