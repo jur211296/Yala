@@ -264,7 +264,7 @@
 
 // MARK: - Exchange Rate
 
-"exchangeRate.title" = "Tipo de Cambio";
+"exchangeRate.title" = "Tipo de cambio";
 "exchangeRate.updated" = "Actualizado";
 "exchangeRate.loadError" = "No pudimos obtener el tipo de cambio. Intenta de nuevo en un momento.";
 "exchangeRate.noSecondaryCurrenciesHint" = "Puedes seleccionar monedas secundarias en";

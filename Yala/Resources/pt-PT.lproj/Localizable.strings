@@ -1380,7 +1380,7 @@
 "exchangeRate.loadError" = "Não foi possível carregar a taxa de câmbio para este período. Tente novamente mais tarde.";
 "exchangeRate.noSecondaryCurrenciesHint" = "Podes selecionar moedas secundárias em";
 "exchangeRate.noSecondaryCurrenciesPath" = "Definições > Moeda e câmbio";
-"exchangeRate.title" = "Taxa de Câmbio";
+"exchangeRate.title" = "Taxa de câmbio";
 "exchangeRate.updated" = "Atualizado";
 "export.accountsSelected" = "%d selecionadas";
 "export.allAvailable" = "Todas disponíveis";
