@@ -552,8 +552,9 @@ struct InsightsTabView: View {
         // «vs Set 26» debajo.
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                // `headline`, como «Tu salud financiera» y «Tus presupuestos»: un solo estilo de título de sección.
                 Text(L10n.Stats.Insights.detailHeader)
-                    .font(DS.Typography.title)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
                 Text(period.displayName)
                     .font(DS.Typography.caption)
