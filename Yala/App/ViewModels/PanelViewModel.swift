@@ -584,6 +584,9 @@ final class PanelViewModel {
 
     // Pre-computed account data — eliminates passing [TransactionItem] to AccountsCarouselView
     private(set) var accountBalances: [PersistentIdentifier: Double] = [:]
+    /// Card extra (2026-11-03): lo que cada grupo aporta a las cuentas de sistema activas, para las líneas de la tarjeta
+    /// «Grupos». Se calcula con los saldos (`calculateAccountBalances`): mismos movimientos, mismo corte de hoy.
+    private(set) var groupAccountLines: [GroupsAccountCardLogic.GroupLine] = []
     private(set) var accountPeriodExpenses: [PersistentIdentifier: Double] = [:]
 
     // Pre-computed transaction date range — eliminates iterating all transactions in body eval
@@ -1131,7 +1134,25 @@ final class PanelViewModel {
     /// Las cuentas activas agrupadas en tarjetas (tarjeta con varias divisas): una por principal o cuenta suelta, con
     /// sus líneas dentro. Los roles se resuelven sobre TODAS las cuentas, archivadas incluidas.
     func orderedActiveAccountCards(from accounts: [Account], sortOrderNames: [String]) -> [AccountCard<Account>] {
-        orderedActiveAccounts(from: accounts, sortOrderNames: sortOrderNames).accountCards(roles: accounts.lineRoles)
+        let cards = orderedActiveAccounts(from: accounts, sortOrderNames: sortOrderNames)
+            .accountCards(roles: accounts.lineRoles)
+        // Card extra (2026-11-03): las cuentas de sistema de Grupos, en una sola tarjeta. Salvo con alguna de ellas en el
+        // filtro de cuentas: la tarjeta junta varias cuentas que el filtro trata por separado, y marcada o atenuada por
+        // una sola contradiría al saldo («La UI tiene que decir lo mismo que el número», `session-filters.md`). Con el
+        // filtro puesto, cada una vuelve a su tarjeta.
+        let filter = EntityFilter(included: selectedAccountIDs, excluded: excludedAccountIDs)
+        let systemFiltered = accounts.contains {
+            $0.isSystemAccount && filter.membership(of: $0.persistentModelID) != .none
+        }
+        return systemFiltered ? cards : GroupsAccountCardLogic.mergingSystemCards(cards, isSystem: \.isSystemAccount)
+    }
+
+    /// ¿La tarjeta es «Grupos»: TODAS las cuentas de sistema activas juntas (una sola, o las fusionadas)? Solo esa se
+    /// llama «Grupos» y enseña las filas por grupo.
+    func isGroupsCard(_ card: AccountCard<Account>) -> Bool {
+        guard card.head.isSystemAccount else { return false }
+        let active = Set(accounts.filter { $0.isSystemAccount && !$0.isArchived }.map(\.persistentModelID))
+        return Set(card.members.map(\.persistentModelID)) == active
     }
 
     /// Lo de cada cuenta de la tarjeta en su divisa: saldo, o lo gastado en el período en modo «solo gastos».
@@ -3069,6 +3090,19 @@ final class PanelViewModel {
         )
         let newBalances = batchBalances.mapValues { ($0 as NSDecimalNumber).doubleValue }
         if newBalances != accountBalances { accountBalances = newBalances }
+
+        // Las líneas de la tarjeta «Grupos»: los mismos movimientos que suman esos saldos, por el grupo al que apuntan.
+        let cutoff = LiveBalanceCalculator.TodayCutoff(asOf: .now)
+        let systemIDs = Set(accounts.filter { $0.isSystemAccount && !$0.isArchived }.map(\.persistentModelID))
+        let movements: [GroupsAccountCardLogic.Movement] = systemIDs.isEmpty ? [] : transactions.compactMap { tx in
+            guard cutoff.counts(tx.date), let account = tx.account,
+                  systemIDs.contains(account.persistentModelID) else { return nil }
+            let pointsToGroup = tx.splitExpenseID != nil || tx.splitSettlementID != nil
+            return .init(zoneID: pointsToGroup ? tx.splitGroupZoneID : nil,
+                         currencyCode: account.currencyCode, amount: tx.amount)
+        }
+        let newGroupLines = GroupsAccountCardLogic.groupLines(movements)
+        if newGroupLines != groupAccountLines { groupAccountLines = newGroupLines }
     }
 
     /// Pre-computes period-specific expenses per account (expenses-only mode). La regla es `AccountSpendingLogic`, la

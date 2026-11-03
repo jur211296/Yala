@@ -58,9 +58,7 @@ struct PanelAccountChipsRow: View {
         let shown = PanelAccountCardLogic.displayedValue(amount.value, kind: amount.kind)
         let currency = amount.currencyCode
 
-        return Button {
-            onOpenAccount(account)
-        } label: {
+        return openControl(for: card) {
             HStack(spacing: DS.Spacing.xs) {
                 Image(systemName: account.iconName)
                     .font(DS.Typography.caption)
@@ -71,7 +69,8 @@ struct PanelAccountChipsRow: View {
                             .fill(isFilled ? Color.black.opacity(0.18) : color)
                     )
                     .accessibilityHidden(true)
-                Text(account.name)
+                // Card extra (2026-11-03): las cuentas de sistema van en un solo chip «Grupos», con su total.
+                Text(viewModel.isGroupsCard(card) ? L10n.Category.System.groups : account.name)
                     .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(foreground)
                     .lineLimit(1)
@@ -101,16 +100,16 @@ struct PanelAccountChipsRow: View {
             .contentShape(Capsule())
             .opacity(style == .excluded ? 0.5 : 1.0)
         }
-        .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityLabel(
-            account: account, kind: amount.kind, shown: shown, currency: currency,
+            account: account, isGroupsCard: viewModel.isGroupsCard(card), kind: amount.kind, shown: shown, currency: currency,
             isApproximate: amount.isConverted, isFiltering: isFilled))
         .accessibilityAddTraits(isFilled ? .isSelected : [])
         .accessibilityIdentifier("panel_account_chip_\(index)")
         .pointerHighlight(cornerRadius: nil)
         .contextMenu {
-            if PanelAccountCardLogic.showsFilterAction(membership: membership) {
+            if PanelAccountCardLogic.showsFilterAction(membership: membership),
+               !(viewModel.isGroupsCard(card) && card.hasLines) {
                 Button(L10n.Keyboard.filterByAccount, systemImage: "line.3.horizontal.decrease.circle") {
                     viewModel.selectedAccountID = account.persistentModelID
                 }
@@ -125,6 +124,7 @@ struct PanelAccountChipsRow: View {
 
     private func accessibilityLabel(
         account: Account,
+        isGroupsCard: Bool,
         kind: PanelAccountCardLogic.AmountKind,
         shown: Double,
         currency: String,
@@ -138,7 +138,8 @@ struct PanelAccountChipsRow: View {
         case .spent: label = L10n.PanelAccountCard.spentInPeriod(viewModel.selectedPeriod.displayName)
         }
         let amount = appPreferences.currency(shown, currencyCode: currency)
-        var text = "\(account.name). \(label): \(isApproximate ? "≈ " : "")\(amount)"
+        let name = isGroupsCard ? L10n.Category.System.groups : account.name
+        var text = "\(name). \(label): \(isApproximate ? "≈ " : "")\(amount)"
         if isFiltering { text += ". \(L10n.PanelAccountCard.filtering)" }
         return text
     }
@@ -166,6 +167,31 @@ struct PanelAccountChipsRow: View {
             return (outcome.amount as NSDecimalNumber).doubleValue
         }
         return (total.value, target, kind, total.isConverted)
+    }
+
+    /// La tarjeta «Grupos» con varias cuentas abre la ficha de la que se elija (ver `AccountsCarouselView.openControl`).
+    @ViewBuilder
+    private func openControl<Label: View>(
+        for card: AccountCard<Account>, @ViewBuilder label: () -> Label
+    ) -> some View {
+        if viewModel.isGroupsCard(card), card.hasLines {
+            Menu {
+                ForEach(card.members, id: \.persistentModelID) { member in
+                    Button(member.name) { onOpenAccount(member) }
+                }
+            } label: {
+                label()
+            }
+            .menuStyle(.button)
+            .buttonStyle(.plain)
+        } else {
+            Button {
+                onOpenAccount(card.head)
+            } label: {
+                label()
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     // MARK: - Agregar

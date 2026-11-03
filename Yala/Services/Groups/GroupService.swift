@@ -1526,14 +1526,14 @@ final class GroupService {
 
     private func requireCurrentUserAdmin(in group: SplitGroup, context: ModelContext) throws {
         let members = try fetchMembers(for: group)
-        // Identidad resuelta: espeja a `GroupDetailViewModel.isCurrentUserAdmin`, que es quien
-        // decide si se PINTAN aprobar/rechazar/invitar. Divergir aquí deja botones que fallan.
-        if let current = GroupExpenseService.resolveCurrentUserMember(from: members) {
-            guard current.isActive else { throw GroupServiceError.inactiveMember }
-            guard current.role == "admin" else { throw GroupServiceError.adminRequired }
-            return
+        // Card 0vbn: la MISMA decisión que `GroupDetailViewModel.isCurrentUserAdmin`, que es quien decide si se PINTAN
+        // aprobar/rechazar/quitar/cambiar rol. Divergir aquí deja botones que fallan, o acciones que el servidor acepta y
+        // la app no deja hacer. El error de una fila propia inactiva se conserva: es el texto que ya se enseñaba.
+        if GroupAdminPermissionLogic.isAdmin(group: group, members: members) { return }
+        if let current = GroupExpenseService.resolveCurrentUserMember(from: members), !current.isActive {
+            throw GroupServiceError.inactiveMember
         }
-        guard group.isOwner else { throw GroupServiceError.adminRequired }
+        throw GroupServiceError.adminRequired
     }
 
     /// Cualquier miembro activo puede escribir (no requiere admin). Espejo de
