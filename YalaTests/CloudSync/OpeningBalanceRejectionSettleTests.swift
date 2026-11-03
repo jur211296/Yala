@@ -75,8 +75,8 @@ struct OpeningBalanceRejectionSettleTests {
         let cursors = try cursorMap(fresh)
         #expect(cursors["SplitGroup-A"] == 0)
         #expect(cursors["SplitGroup-B"] == 7)
-        // Ese re-pull no avisa de «gasto modificado».
-        #expect(client.capabilityRepullZones == ["SplitGroup-A"])
+        // Ese re-pull no avisa de «gasto modificado»: lo visto antes del reset queda en disco (card vj61).
+        #expect(try client.groupSeenSeq(fresh)["SplitGroup-A"] == 42)
         // El puente del saldo (su movimiento en la cuenta virtual) se va con él; el re-pull lo rehace si el saldo existe.
         #expect(try bridgedTxCount(fresh, expenseID: fx.expenseID) == 0)
         // Un aviso por grupo, con el motivo que más explica (not_admin gana a locked); nada para el grupo B.
@@ -108,7 +108,7 @@ struct OpeningBalanceRejectionSettleTests {
         #expect(try fresh.fetch(FetchDescriptor<GroupSyncOutbox>())
             .contains { $0.syncID == fx.otherExpenseID && $0.rejectedReason == nil })
         #expect(try cursorMap(fresh)["SplitGroup-A"] == 42)
-        #expect(client.capabilityRepullZones.isEmpty)
+        #expect(try client.groupSeenSeq(context).isEmpty, "sin reset no se apunta nada")
         #expect(notices.peek(groupID: "SplitGroup-A") == nil)
     }
 
@@ -124,7 +124,7 @@ struct OpeningBalanceRejectionSettleTests {
         let fresh = try freshContext(dir)
         #expect(try expenses(fresh, fx.expenseID).count == 1)
         #expect(try cursorMap(fresh)["SplitGroup-A"] == 42)
-        #expect(client.capabilityRepullZones.isEmpty)
+        #expect(try client.groupSeenSeq(context).isEmpty, "sin reset no se apunta nada")
     }
 
     // MARK: - (3) El Merkle del grupo vuelve
@@ -210,7 +210,7 @@ struct OpeningBalanceRejectionSettleTests {
             #expect(try expenses(ctx, fx.expenseID).count == 1)
             #expect(try ctx.fetch(FetchDescriptor<GroupSyncOutbox>()).filter { $0.rejectedReason == Self.notAdmin }.count == 1)
         }
-        #expect(client.capabilityRepullZones.isEmpty)
+        #expect(try client.groupSeenSeq(context).isEmpty, "sin reset no se apunta nada")
     }
 
     // MARK: - (6) El ciclo

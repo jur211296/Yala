@@ -57,6 +57,14 @@ final class GroupSyncCursor {
     /// su `max_server_seq` en el MISMO `save()` que aplica → interrumpir a mitad es idempotente.
     var groupCursorsJSON: String = "{}"
 
+    /// Card vj61 (2026-11-03): el `server_seq` más alto que este dispositivo llegó a APLICAR de cada grupo, JSON
+    /// `{group_id: server_seq}`. A diferencia de `groupCursorsJSON`, no baja nunca: un reset del cursor (subida de versión,
+    /// descarte de un saldo rechazado, remedio del Merkle, re-entrada) vuelve a bajar filas que ya estaban, y una fila
+    /// que vuelve con un `server_seq` ≤ este valor no cambió desde que se vio: no avisa de «gasto modificado». Se escribe
+    /// en el MISMO save que el cursor (`GroupsSyncClient.writeGroupCursors`), así que un kill a mitad de la re-bajada
+    /// lo conserva. `"{}"` en las filas de un build anterior: el pull lo completa con los cursores de ese momento.
+    var groupSeenSeqJSON: String = "{}"
+
     /// Versión del schema bajo la que se materializó esta fila (testigo A1).
     var schemaVersion: Int = CloudSyncSchemaVersions.groupSyncCursor
 

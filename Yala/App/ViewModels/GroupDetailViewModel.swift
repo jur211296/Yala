@@ -125,9 +125,11 @@ final class GroupDetailViewModel {
         return currentUserMember?.isActive == true
     }
 
+    /// Card 0vbn: en un grupo del backend, como `is_group_admin` (cualquier fila mía activa y admin), no la fila canónica.
+    /// La misma decisión que `GroupService.requireCurrentUserAdmin` aplica al guardar.
     var isCurrentUserAdmin: Bool {
-        guard let me = currentUserMember, me.isActive else { return false }
-        return me.isAdmin
+        guard !isGroupGone else { return false }
+        return GroupAdminPermissionLogic.isAdmin(group: group, members: members)
     }
 
     /// Card yd2w: gestiona los saldos iniciales el dueño o cualquier admin activo. La misma decisión que

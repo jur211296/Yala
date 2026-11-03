@@ -44,6 +44,9 @@
 --   Then — 2026-11-02, staging AND production — g29_01_group_change_author: `split_expenses.last_edited_by_member_key`
 --   and `split_settlements.recorded_by_member_key` (plain text, manifest v3 `since: 3`). Woven IN-PLACE into §1 (tables
 --   + column grants) and into the two pull readers (returned LAST). apply_group_delta unchanged (plain columns).
+--   Then — 2026-11-03, staging AND production — g30_01_expense_author_from_v2_clients (§12): BEFORE UPDATE trigger
+--   `expense_author_from_v2_clients` on split_expenses (an edit from a client that does not send the author sets
+--   `last_edited_by_member_key` to NULL). New section; no policy and no RPC body changes.
 --   ⚠️ STAGING IS THREE MIGRATIONS BEHIND: g13_04, g13_05 and g14_01 are applied in PRODUCTION only —
 --   there is no staging DDL credential (re-measured 2026-09-07). This mold therefore describes PRODUCTION;
 --   staging matches it only after those three are applied, in order.
@@ -2164,3 +2167,63 @@ create trigger opening_balance_guard before insert or update on public.split_exp
 drop trigger if exists opening_balance_guard on public.split_shares;
 create trigger opening_balance_guard before insert or update on public.split_shares
   for each row execute function public.opening_balance_guard();
+
+
+-- ============================================================================
+-- §12 — g30_01_expense_author_from_v2_clients (el autor de un gasto editado desde un teléfono que no lo conoce, card vx6f)
+-- ============================================================================
+-- APLICADA EN STAGING el 2026-11-03, md5(prosrc) 52ff05a7e07092ca9422143d3ce863ae; producción: ver PR.
+-- Verbatim de `qa/cloud/g30_01_expense_author_from_v2_clients.sql` (la cabecera con la regla y el porqué vive allí).
+-- Banco: `qa/cloud/g30_01-local-test.sh`. Sonda: `qa/cloud/g30_01-staging-probe.sh`. Marcha atrás: `qa/cloud/g30_01_rollback.sql`.
+
+create or replace function public.expense_author_from_v2_clients() returns trigger
+language plpgsql security invoker set search_path = public, pg_temp as $$
+declare
+  -- Las unidades del formulario de edición (gmoney = amount + currency_code).
+  c_form_units constant text[] := array['gmoney', 'expense_description', 'note', 'date', 'paid_by_member_key',
+                                        'split_type', 'subcategory_name'];
+  v_old_fh jsonb := coalesce(old.field_hlcs, '{}'::jsonb);
+  v_new_fh jsonb := coalesce(new.field_hlcs, '{}'::jsonb);
+  v_author text;  -- HLC guardado de la unidad del autor ('' si no la tiene: fila anterior a g29_01)
+begin
+  -- 0. Un borrado no se juzga.
+  if new.deleted then
+    return new;
+  end if;
+
+  -- 1. Nada que anular, o nada que haya avanzado.
+  if new.last_edited_by_member_key is null or v_new_fh = v_old_fh then
+    return new;
+  end if;
+
+  -- 2. Un cambio del formulario que avanza y es posterior al autor guardado → el autor ya no es de esta edición.
+  v_author := coalesce(v_new_fh ->> 'last_edited_by_member_key', '');
+  if exists (select 1 from unnest(c_form_units) u
+              where coalesce(v_new_fh ->> u, '') collate "C" > coalesce(v_old_fh ->> u, '') collate "C"
+                and coalesce(v_new_fh ->> u, '') collate "C" > v_author collate "C") then
+    new.last_edited_by_member_key := null;
+  end if;
+
+  return new;
+end;
+$$;
+
+revoke all on function public.expense_author_from_v2_clients() from public, anon, authenticated;
+
+drop trigger if exists expense_author_from_v2_clients on public.split_expenses;
+create trigger expense_author_from_v2_clients before update on public.split_expenses
+  for each row execute function public.expense_author_from_v2_clients();
+
+-- Comprobaciones: aborta la transacción entera si algo no es lo esperado.
+do $$
+begin
+  if (select count(*) from pg_trigger where tgname = 'expense_author_from_v2_clients'
+        and tgrelid = 'public.split_expenses'::regclass and not tgisinternal) <> 1 then
+    raise exception 'g30_01: el trigger expense_author_from_v2_clients no quedó puesto (o hay más de uno)';
+  end if;
+  if has_function_privilege('authenticated', 'public.expense_author_from_v2_clients()', 'EXECUTE') then
+    raise exception 'g30_01: authenticated puede ejecutar la función del trigger';
+  end if;
+  raise notice 'g30_01 OK';
+end;
+$$;

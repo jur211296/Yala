@@ -16,9 +16,9 @@ final class PanelAccountsUITests: XCTestCase {
     }
 
     /// Lleva al Panel con «Tus finanzas» desplegada: la preferencia de plegado sobrevive entre arranques.
-    private func launchWithAccountsVisible() -> XCUIApplication {
+    private func launchWithAccountsVisible(seed: String = "minimal") -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchForUITest()
+        app.launchForUITest(seed: seed)
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
         XCTAssertTrue(
             app.buttons["panel_action_new"].waitForExistence(timeout: 10),
@@ -67,5 +67,23 @@ final class PanelAccountsUITests: XCTestCase {
             app.buttons["filters_apply_button"].waitForExistence(timeout: 5),
             "El botón de filtros no abrió la hoja de filtros."
         )
+    }
+
+    /// Card extra (2026-11-03): «Grupos PEN» y «Grupos USD» van en UNA tarjeta «Grupos», con una fila por grupo y el
+    /// total de las dos cuentas. Seed `cuentas-de-grupos` (`DevSeedGroupsAccountCard`): tres grupos y una cuenta propia.
+    /// Con el comportamiento anterior la primera tarjeta es «Grupos PEN» sola y la segunda «Grupos USD»: cae.
+    func test_groupsSystemAccounts_shareOneCard_withARowPerGroup() {
+        let app = launchWithAccountsVisible(seed: "cuentas-de-grupos")
+
+        let groups = app.buttons["panel_account_card_0"]
+        XCTAssertTrue(groups.label.hasPrefix("Grupos."), "La primera tarjeta no es «Grupos»: \(groups.label)")
+        for name in ["Viaje a Cusco", "Depa Miraflores", "Japón"] {
+            XCTAssertTrue(groups.label.contains(name), "Falta la fila de «\(name)» en la tarjeta: \(groups.label)")
+        }
+        // La segunda tarjeta ya es la cuenta propia: las dos de sistema ocupan un solo sitio.
+        let second = app.buttons["panel_account_card_1"]
+        XCTAssertTrue(second.waitForExistence(timeout: 5), "No apareció la segunda tarjeta.")
+        XCTAssertTrue(second.label.hasPrefix("Sueldo QA."), "La segunda tarjeta debería ser «Sueldo QA»: \(second.label)")
+        XCTAssertFalse(app.buttons["panel_account_card_2"].exists, "Sobra una tarjeta: «Grupos USD» sigue aparte.")
     }
 }

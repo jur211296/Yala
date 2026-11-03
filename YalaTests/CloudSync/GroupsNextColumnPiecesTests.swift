@@ -143,8 +143,8 @@ struct GroupsNextColumnPiecesTests {
         #expect(emits == 2, "el drain y la re-emisión de la subida; un emit nuevo se revisa aquí")
         // La subida solo con el drain completo: el re-pull desde 0 pisaría una edición que sigue en el History.
         #expect(client.contains("if drained { try applyCapabilityUpgradeIfPending(context: context) }"))
-        // Y durante su re-pull, un gasto que ya estaba no avisa de «modificado».
-        #expect(client.contains("notify.modifiedExpenses.removeAll { capabilityRepullZones.contains($0.zone) }"))
+        // Y durante su re-pull, un gasto que ya estaba no avisa de «modificado» (card vj61: por `server_seq`, en disco).
+        #expect(client.contains("notify.modifiedExpenses.removeAll { redeliveredExpenseIDs.contains($0.id) }"))
     }
 
     // MARK: - (1) El drain emite con el nivel de GRUPOS
@@ -247,13 +247,85 @@ struct GroupsNextColumnPiecesTests {
             let cursors = try JSONDecoder().decode([String: Int64].self, from: cursorsData)
             #expect(cursors["SplitGroup-A"] == 0, "el grupo que bajó sin la columna no vuelve a bajar")
             #expect(cursors["SplitGroup-GONE"] == 70, "un grupo que no está aquí no puede volver a bajar por esto")
-            #expect(client.capabilityRepullZones == ["SplitGroup-A"],
+            #expect(try client.groupSeenSeq(context)["SplitGroup-A"] == 50,
                     "el re-pull de la subida avisaría de «gasto modificado» por cada gasto que ya estaba")
 
             #expect(GroupsSyncCapability.suppressedRows.isEmpty)
             #expect(GroupsSyncCapability.upgradePendingLevel == nil)
             #expect(try client.applyCapabilityUpgradeIfPending(context: context) == false, "se cumple una sola vez")
         }
+    }
+
+    // MARK: - (2 bis) Card vj61 · la re-bajada cortada por un kill
+
+    final class ChangeSetCollector: @unchecked Sendable { var sets: [RemoteChangeSet] = [] }
+
+    private func expenseDelta(_ id: UUID, seq: Int64, amount: String = "25.0000") -> GroupPulledDelta {
+        GroupPulledDelta(
+            entityType: GroupEntityEmissionMap.splitExpense.table, groupID: "SplitGroup-A",
+            rawSyncID: id.uuidString.lowercased(), syncID: id, op: .upsert,
+            fields: ["expense_description": .string("Cena"), "amount": .string(amount),
+                     "currency_code": .string("PEN"), "paid_by_member_key": .string("m1")],
+            fieldHlcs: [:], hlc: "2026-11-03T00:00:00.000Z-0000-000000000000000d",
+            serverSeq: seq, schemaVersion: 1)
+    }
+
+    private func page(_ deltas: [GroupPulledDelta]) -> GroupPulledPage {
+        GroupPulledPage(deltas: deltas, cursors: [:], memberships: nil)
+    }
+
+    @Test("(vj61) un kill a mitad de la re-bajada no hace avisar de «modificado» a lo que ya estaba; una edición sí avisa")
+    func killMidRepull_unchangedExpensesStaySilent_aRealEditNotifies() throws {
+        let dir = try freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try withIsolatedCapability {
+            GroupsSyncCapability.recordBackendManifestVersion(1)
+            try makeBackendGroup(zoneID: "SplitGroup-A", context: context)
+            let ids = (0..<4).map { _ in UUID() }
+
+            // El teléfono ya tenía los cuatro gastos (server_seq 1…4).
+            let beforeKill = ChangeSetCollector()
+            let client = GroupsSyncClient(onRemoteChanges: { beforeKill.sets.append($0) })
+            client.applyPulledPage(page(ids.enumerated().map { expenseDelta($1, seq: Int64($0 + 1)) }),
+                                   cursor: try client.loadOrCreateCursor(context), context: context)
+
+            // La subida de versión vuelve a bajar el grupo desde 0.
+            GroupsSyncCapability.recordBackendManifestVersion(2)
+            #expect(try client.applyCapabilityUpgradeIfPending(context: context))
+            #expect(try client.groupSeenSeq(context)["SplitGroup-A"] == 4)
+
+            // Primera página de la re-bajada: los dos primeros, sin cambios.
+            beforeKill.sets.removeAll()
+            client.applyPulledPage(page([expenseDelta(ids[0], seq: 1), expenseDelta(ids[1], seq: 2)]),
+                                   cursor: try client.loadOrCreateCursor(context), context: context)
+            #expect(beforeKill.sets.allSatisfy { $0.modifiedExpenses.isEmpty })
+
+            // Kill: el proceso nuevo no trae nada en memoria. La página siguiente trae los otros dos sin cambios y una
+            // edición REAL del primero (server_seq 9, por encima de todo lo que este teléfono ya vio).
+            let afterKill = ChangeSetCollector()
+            let relaunched = GroupsSyncClient(onRemoteChanges: { afterKill.sets.append($0) })
+            relaunched.applyPulledPage(
+                page([expenseDelta(ids[2], seq: 3), expenseDelta(ids[3], seq: 4),
+                      expenseDelta(ids[0], seq: 9, amount: "40.0000")]),
+                cursor: try relaunched.loadOrCreateCursor(context), context: context)
+
+            let modified = afterKill.sets.flatMap { $0.modifiedExpenses.map(\.id) }
+            #expect(modified == [ids[0]], "solo la edición real avisa; los gastos que no cambiaron, no")
+        }
+    }
+
+    @Test("(vj61) la lógica: un reset guarda lo visto; lo que vuelve con seq ≤ eso es una re-entrega")
+    func repullSilenceLogic_table() {
+        let seen = GroupRepullSilenceLogic.raisedSeen(["A": 3], previous: ["A": 10, "B": 2], next: ["A": 0, "B": 5])
+        #expect(seen == ["A": 10, "B": 5], "el reset de A conserva 10; B sube a 5")
+        #expect(GroupRepullSilenceLogic.raisedSeen(["A": 12], previous: ["A": 10], next: ["A": 11]) == ["A": 12],
+                "no baja nunca")
+        // Una fila de un build anterior sin el campo: lo visto sale de los cursores.
+        #expect(GroupRepullSilenceLogic.seenAtPageStart(stored: [:], cursors: ["A": 7]) == ["A": 7])
+        #expect(GroupRepullSilenceLogic.isRedelivery(serverSeq: 7, groupID: "A", seen: ["A": 7]))
+        #expect(!GroupRepullSilenceLogic.isRedelivery(serverSeq: 8, groupID: "A", seen: ["A": 7]))
+        #expect(!GroupRepullSilenceLogic.isRedelivery(serverSeq: 1, groupID: "B", seen: ["A": 7]),
+                "de un grupo nunca visto, nada es re-entrega")
     }
 
     @Test("(2) con la subida pedida y el Worker vuelto atrás, espera sin tocar nada")

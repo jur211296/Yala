@@ -28,6 +28,7 @@
 - `—` [I14 — UI real de migración + consent + claimAction + relaunch asistido + encendido de flags](#i14--ui-real-de-migracin--consent--claimaction--relaunch-asistido--encendido-de-flags)
 - `—` [transfer_group_ownership (G10 / D10) — batch "salir de todos mis grupos" — APLICADA EN AMBOS ENVS ✅](#transfergroupownership-g10--d10--batch-salir-de-todos-mis-grupos--aplicada-en-ambos-envs)
 - `—` [G7 — cifrado pgcrypto de columnas † de grupos (data-at-rest)](#g7--cifrado-pgcrypto-de-columnas--de-grupos-data-at-rest)
+- `2026-11-03` [g30_01 — el autor de un gasto editado desde un teléfono que no lo conoce (2026-11-03)](#g3001--el-autor-de-un-gasto-editado-desde-un-teléfono-que-no-lo-conoce-2026-11-03)
 - `2026-11-02` [g29_01 — quién creó o editó un gasto y quién registró una liquidación viajan por el canal (2026-11-02)](#g2901--quién-creó-o-editó-un-gasto-y-quién-registró-una-liquidación-viajan-por-el-canal-2026-11-02)
 - `2026-11-01` [g28_01 — `tx_items.split_lines_raw`: las líneas de tu parte de un gasto de grupo (2026-11-01)](#g2801--txitemssplitlinesraw-las-lneas-de-tu-parte-de-un-gasto-de-grupo-2026-11-01)
 - `2026-10-27` [g26_01 — `accounts.credit_card_statement_day` y `credit_card_reminder_days_before`: el corte de la tarjeta (2026-10-27)](#g2601--accountscreditcardstatementday-y-creditcardreminderdaysbefore-el-corte-de-la-tarjeta-2026-10-27)
@@ -1854,6 +1855,27 @@ teléfono de otro admin la app ofrece quitarle el admin al creador (el servidor 
 **El orden: g22_01 → Worker con `set_member_role` en la allowlist → app.** Al revés no se escribe nada: sin DDL, el
 gateway devuelve 502 `yala_unavailable`; sin Worker, 404 `unknown rpc`; la app enseña en los dos el error genérico. El
 §2 no depende del orden: no cambia la forma de ninguna respuesta.
+
+## g30_01 — el autor de un gasto editado desde un teléfono que no lo conoce (2026-11-03)
+
+**Estado:** **APLICADA en staging y en producción el 2026-11-03** (`g30_01-remote.sh … state`: trigger
+`expense_author_from_v2_clients` en `split_expenses`, función md5 `52ff05a7e07092ca9422143d3ce863ae`, sin EXECUTE para
+`authenticated`; `apply_group_delta` sin cambios, md5 `ae78bce6…` en los dos). Card vx6f. Sin orden de despliegue: ni el
+Worker ni la app cambian.
+
+Qué cambia: un teléfono hasta 2.1 no manda `last_edited_by_member_key`, y el servidor conservaba el autor ANTERIOR por LWW
+de columna (Ana edita desde 2.1 y los demás recibían «Jürgen actualizó»). El trigger `BEFORE UPDATE` lo pone a NULL cuando
+el UPDATE avanza una unidad del formulario (`gmoney`, `expense_description`, `note`, `date`, `paid_by_member_key`,
+`split_type`, `subcategory_name`) con un HLC posterior al del autor guardado; con NULL la app cae al pagador, como antes de
+g29_01. Compara `field_hlcs`, no valores. «Posterior al autor» y no «sin la unidad del autor»: la app pone el mismo HLC a
+todas las unidades de un delta, y dos ediciones 2.2 desordenadas no deben borrar el autor bueno.
+
+Fichero: `qa/cloud/g30_01_expense_author_from_v2_clients.sql`; marcha atrás `qa/cloud/g30_01_rollback.sql`. Banco local
+`bash qa/cloud/g30_01-local-test.sh` (24 casos, control sin trigger y 12 mutantes). Se aplica y se mide con
+`bash qa/cloud/g30_01-remote.sh <staging|production> <state|apply|rollback>`. Sonda por el Worker real:
+`GROUPS_ENC_KEY="$(cat ~/Secrets/yala-groups-enc/staging.key)" bash qa/cloud/g30_01-staging-probe.sh` (5 casos; con el
+rollback cae el caso de la edición 2.1). Residual: un gasto que un 2.1 editó entre g29_01 y hoy conserva el autor viejo
+hasta su siguiente edición del formulario.
 
 ## g29_01 — quién creó o editó un gasto y quién registró una liquidación viajan por el canal (2026-11-02)
 

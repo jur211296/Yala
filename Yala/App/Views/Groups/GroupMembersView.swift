@@ -270,6 +270,11 @@ struct GroupMembersView: View {
     /// el guard service-level en `GroupService`.
     private var canActAsAdmin: Bool { viewModel.isCurrentUserAdmin && !group.isMigratedFrozen }
 
+    /// Todas mis filas del grupo (flag, `sub` o identidad iCloud): ninguna lleva acciones de admin sobre mí mismo.
+    private var myMemberIDs: Set<UUID> {
+        Set(GroupExpenseService.resolveAllCurrentUserMembers(from: viewModel.members).map(\.id))
+    }
+
     private var membersSection: some View {
         YalaSettingsSection(L10n.Groups.Settings.members) {
             ForEach(listedMembers, id: \.id) { member in
@@ -284,8 +289,13 @@ struct GroupMembersView: View {
                     // resolvedor devuelve UNA (la de `min(joinedAt)`). Comparar solo contra ella
                     // dejaría la otra fila propia con «quitar» y «cambiar rol» a la vista, que es
                     // justo la regresión que este parámetro venía a evitar.
+                    // Card 0vbn: y cualquier otra fila mía por identidad (`resolveAllCurrentUserMembers`, la del `sub`
+                    // incluida). Desde que el admin se decide como `is_group_admin`, en un grupo migrado mi fila
+                    // reclamada `admin` —sin el flag hasta relanzar y sin ser la canónica— ve el menú: sin esto, en
+                    // ella salían «quitar» y «cambiar rol» y el servidor dejaba echarme de mi propio grupo.
                     isSelf: member.isCurrentUser
-                        || member.id.uuidString == viewModel.currentMemberID,
+                        || member.id.uuidString == viewModel.currentMemberID
+                        || myMemberIDs.contains(member.id),
                     roleChangeOffer: GroupService.shared.roleChangeOffer(for: member, in: group),
                     relation: relation(with: member),
                     onChangeRole: { askRoleChange(member) },

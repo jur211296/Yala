@@ -52,6 +52,8 @@ struct PanelAccountsSection: View {
                     accountDetail = AccountDetailPresentation(account: account)
                 }
             )
+            // Los nombres de los grupos para las filas de la tarjeta «Grupos».
+            .providesGroupNames()
         }
     }
 }

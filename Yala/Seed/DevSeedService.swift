@@ -102,6 +102,9 @@ enum DevSeedProfile: String {
     /// Tarjeta con varias divisas (entrega 2): «Visa QA» en soles con su línea en dólares, más dos cuentas sueltas.
     /// Ver `DevSeedAccountLines`.
     case tarjetaDosLineas = "tarjeta-dos-lineas"
+    /// Las cuentas de Grupos en una sola tarjeta (card extra del 2026-11-03): una cuenta propia y tres grupos que aportan a
+    /// «Grupos PEN» y «Grupos USD». Ver `DevSeedGroupsAccountCard`.
+    case cuentasDeGrupos = "cuentas-de-grupos"
     /// `.tarjetaDosLineas` con día de corte (card nmtk): un corte hace 10 días, lo facturado antes y lo gastado después,
     /// el aviso 3 días antes y tres meses de sueldo y gastos para que el flujo de caja proponga un plan. Ver
     /// `DevSeedAccountLines.createWithStatement`.
@@ -127,7 +130,7 @@ enum DevSeedProfile: String {
              .gruposSinFlag, .gruposPendiente, .soloGruposTrasAviso, .sinRegistros, .sinCategorias,
              .sinCategoriasConGrupos, .fichaMX,
              .cuentaConMovimientos, .movimientosSinCuenta, .gastoDeGrupoSinSuGrupo, .pataDeGrupoSinCuenta,
-             .tarjetaDosLineas, .tarjetaCorte, .unaCuenta, .formulario: return 7
+             .tarjetaDosLineas, .cuentasDeGrupos, .tarjetaCorte, .unaCuenta, .formulario: return 7
         case .fichaMXVida: return 365
         case .realista, .ficha, .rendimiento: return 730
         case .pesado: return 3650
@@ -184,7 +187,7 @@ final class DevSeedService {
             return
         }
         if profile == .cuentaConMovimientos || profile == .movimientosSinCuenta || profile == .pataDeGrupoSinCuenta
-            || profile == .tarjetaDosLineas || profile == .tarjetaCorte {
+            || profile == .tarjetaDosLineas || profile == .tarjetaCorte || profile == .cuentasDeGrupos {
             defer { isSeeding = false }
             seedCategoriesIfNeeded(in: context)
             // Tipos de cambio de la semana: mover a «Dólares QA» convierte con la tasa de cada día, y en el
@@ -193,7 +196,9 @@ final class DevSeedService {
             let end = Date.now
             let start = Calendar.current.date(byAdding: .day, value: -7, to: end) ?? end
             DevSeedExchangeRates.create(startDate: start, endDate: end, rng: &rng, in: context)
-            if profile == .tarjetaDosLineas {
+            if profile == .cuentasDeGrupos {
+                DevSeedGroupsAccountCard.create(subcategoryLookup: buildSubcategoryLookup(in: context), in: context)
+            } else if profile == .tarjetaDosLineas {
                 DevSeedAccountLines.create(subcategoryLookup: buildSubcategoryLookup(in: context), in: context)
             } else if profile == .tarjetaCorte {
                 DevSeedAccountLines.createWithStatement(subcategoryLookup: buildSubcategoryLookup(in: context), in: context)

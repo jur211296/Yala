@@ -126,10 +126,6 @@ final class GroupsSyncClient {
     /// El registro de sesiones de la vuelta de drain EN CURSO (`performDrain` lo lee al empezar y `appendRow` fecha cada
     /// transacción contra él). `nil` fuera de un drain, o sin registro.
     private var drainSignInLog: SessionSignInLog?
-    /// Card u8cl: grupos que la subida de versión vuelve a bajar desde 0. Mientras dure ese re-pull no avisan de «gasto
-    /// modificado». En memoria a propósito: un kill a mitad deja el resto del re-pull con avisos, que es lo de antes.
-    /// Desde la card e6fd lo llena también el descarte de un saldo inicial rechazado (`settleRejectedOpeningBalances`).
-    private(set) var capabilityRepullZones: Set<String> = []
     private var isDraining = false
     private var pendingDrain = false
     private var bridgeRetryTask: Task<Void, Never>?
@@ -1664,11 +1660,10 @@ final class GroupsSyncClient {
         let resetGroupIDs = maxSeqByGroup.keys.filter { localZones.contains($0) && maxSeqByGroup[$0] != 0 }
         if !resetGroupIDs.isEmpty {
             for gid in resetGroupIDs { maxSeqByGroup[gid] = 0 }
-            try saveWithAuthor(context) { cursor.groupCursorsJSON = encodeCursors(maxSeqByGroup) }
+            // El re-pull vuelve a bajar todos los gastos de esos grupos. Lo que ya estaba no avisa de «gasto modificado»:
+            // `writeGroupCursors` guarda en el mismo save el `server_seq` visto antes del reset (card vj61).
+            try saveWithAuthor(context) { writeGroupCursors(maxSeqByGroup, to: cursor) }
         }
-        // El re-pull vuelve a bajar todos los gastos de esos grupos, y el apply lee cada uno que ya existe como «gasto
-        // modificado»: sin esto, cada persona recibiría un aviso por grupo el día de la subida (review adversarial).
-        capabilityRepullZones.formUnion(resetGroupIDs)
 
         GroupsSyncCapability.clearUpgrade(level: target)
         GroupsSyncBreadcrumb.groupsCapabilityUpgradeApplied(
@@ -2703,7 +2698,7 @@ final class GroupsSyncClient {
                         resetGroupIDs.insert(groupID)
                     }
                 }
-                if !resetGroupIDs.isEmpty { cursor.groupCursorsJSON = encodeCursors(map) }
+                if !resetGroupIDs.isEmpty { writeGroupCursors(map, to: cursor) }
                 if _testThrowOnSettleSave { throw GroupsApplyTestCrash.suppressed }
             }
         } catch {
@@ -2717,8 +2712,7 @@ final class GroupsSyncClient {
         }
         drainUnbridge(expenseIDs: unbridgeExpenseIDs, settlementIDs: [])
         GroupsRejectedOpeningBalanceLedger.add(ledgerEntries)
-        // El re-pull vuelve a bajar todos los gastos de esos grupos: sin esto, cada uno avisaría de «gasto modificado».
-        capabilityRepullZones.formUnion(resetGroupIDs)
+        // El re-pull vuelve a bajar todos los gastos de esos grupos; lo que ya estaba no avisa (card vj61, en el save).
         // El aviso (card 6n1o) sale aquí y no en `applyResults`: dice que el saldo volvió a como está en el grupo, y eso solo
         // es verdad tras este save. También avisa de lo que descarta de una versión anterior: el saldo cambia en pantalla y
         // la persona tiene que saber por qué.
@@ -2858,8 +2852,6 @@ final class GroupsSyncClient {
                         completeInitialMemberImport(context: context)
                         onRemoteChangesApplied()
                     }
-                    // Card u8cl: el re-pull de la subida terminó; desde aquí, un gasto que cambia vuelve a avisar.
-                    capabilityRepullZones.removeAll()
                     return .completed(pages: pages, deltasApplied: totalDeltas)
                 }
                 pages += 1
@@ -2995,6 +2987,11 @@ final class GroupsSyncClient {
         var notify = PendingNotificationChanges()
         var freezeZones: Set<String> = []
         var maxSeqByGroup = decodeCursors(cursor.groupCursorsJSON)
+        // Card vj61: lo que este teléfono ya había aplicado de cada grupo antes de esta página. Un gasto que vuelve a bajar
+        // con un `server_seq` ≤ eso no cambió desde que se vio (re-bajada tras un reset del cursor): no avisa.
+        let seenAtStart = GroupRepullSilenceLogic.seenAtPageStart(
+            stored: decodeCursors(cursor.groupSeenSeqJSON), cursors: maxSeqByGroup)
+        var redeliveredExpenseIDs: Set<UUID> = []
         // H-2026-07-18-3: grupos cuyo cursor hay que RESETEAR a 0 tras esta página (re-join del propio user:
         // pendingApproval→active). Lo llena `applyMember`; se aplica DESPUÉS del merge de `page.cursors`.
         var cursorResetGroupIDs: Set<String> = []
@@ -3036,6 +3033,11 @@ final class GroupsSyncClient {
                                    unbridgeSettlementIDs: &unbridgeSettlementIDs,
                                    cursorResetGroupIDs: &cursorResetGroupIDs,
                                    notify: &notify, freezeZones: &freezeZones)
+                    if delta.entityType == GroupEntityEmissionMap.splitExpense.table, let id = delta.syncID,
+                       GroupRepullSilenceLogic.isRedelivery(
+                        serverSeq: delta.serverSeq, groupID: delta.groupID, seen: seenAtStart) {
+                        redeliveredExpenseIDs.insert(id)
+                    }
                     // Avanzar el cursor del grupo al server_seq máximo aplicado.
                     let prev = maxSeqByGroup[delta.groupID] ?? 0
                     if delta.serverSeq > prev { maxSeqByGroup[delta.groupID] = delta.serverSeq }
@@ -3049,7 +3051,7 @@ final class GroupsSyncClient {
                 // cualquier avance de ESTA página; el próximo pull re-pide ese grupo desde 0 y re-visita el
                 // contenido que RLS ocultaba mientras el member estaba pendingApproval.
                 for gid in cursorResetGroupIDs { maxSeqByGroup[gid] = 0 }
-                cursor.groupCursorsJSON = encodeCursors(maxSeqByGroup)
+                writeGroupCursors(maxSeqByGroup, to: cursor)
                 cursor.clockLatestHLC = clock.latest?.description
                 // Seam de test: crash ANTES del commit → se ejercita el `catch` de abajo con el grafo
                 // remoto a medias, que es el único estado donde el `rollback()` significa algo.
@@ -3118,11 +3120,10 @@ final class GroupsSyncClient {
         // 2.1: notificaciones locales de grupo. Post-save (como el canal CloudKit, que las procesaba en
         // `processPendingRemoteChanges` tras persistir): un save fallido retornó arriba y no notifica nada
         // que el usuario no tenga en el store.
-        // Card u8cl: durante el re-pull de la subida de versión, lo que «cambia» en un gasto que ya estaba es la columna
-        // nueva que baja por primera vez, no una edición de nadie: no avisa.
-        if !capabilityRepullZones.isEmpty {
-            notify.modifiedExpenses.removeAll { capabilityRepullZones.contains($0.zone) }
-        }
+        // Card vj61 (antes u8cl, en memoria): un gasto que vuelve a bajar tras un reset del cursor —subida de versión,
+        // saldo rechazado, remedio del Merkle, re-entrada— y no cambió desde que se vio no avisa de «modificado». Lo decide
+        // su `server_seq` contra lo ya aplicado, que vive en disco: un kill a mitad de la re-bajada no lo pierde.
+        notify.modifiedExpenses.removeAll { redeliveredExpenseIDs.contains($0.id) }
         let changes = resolveNotificationChanges(notify, context: context)
         if !changes.isEmpty { onRemoteChanges(changes) }
         // ORDEN: el CONGELADO va PRIMERO, el des-puenteo después. Una misma página puede traer el tombstone
@@ -4166,6 +4167,21 @@ final class GroupsSyncClient {
         return map
     }
 
+    /// Card vj61: el ÚNICO escritor de `groupCursorsJSON`. Sube en la misma escritura el máximo visto
+    /// (`groupSeenSeqJSON`) con el valor de antes y el de después, así que un reset guarda lo que ya se había aplicado.
+    /// Va siempre dentro del `saveWithAuthor` que guarda el cursor.
+    private func writeGroupCursors(_ map: [String: Int64], to cursor: GroupSyncCursor) {
+        let seen = GroupRepullSilenceLogic.raisedSeen(
+            decodeCursors(cursor.groupSeenSeqJSON), previous: decodeCursors(cursor.groupCursorsJSON), next: map)
+        cursor.groupSeenSeqJSON = encodeCursors(seen)
+        cursor.groupCursorsJSON = encodeCursors(map)
+    }
+
+    /// Lo visto por grupo (`groupSeenSeqJSON`), decodificado. Para los tests de la re-bajada.
+    func groupSeenSeq(_ context: ModelContext) throws -> [String: Int64] {
+        decodeCursors(try loadOrCreateCursor(context).groupSeenSeqJSON)
+    }
+
     private func encodeCursors(_ map: [String: Int64]) -> String {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys]
@@ -4423,7 +4439,7 @@ extension GroupsSyncClient {
             let cursor = try loadOrCreateCursor(context)
             var map = decodeCursors(cursor.groupCursorsJSON)
             for gid in gids { map[gid] = 0 }
-            try saveWithAuthor(context) { cursor.groupCursorsJSON = encodeCursors(map) }
+            try saveWithAuthor(context) { writeGroupCursors(map, to: cursor) }
         } catch {
             #if DEBUG
             logger.error("GroupsSync: resetGroupCursors falló: \(error)")
