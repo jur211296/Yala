@@ -380,7 +380,7 @@ struct UsageModeWiringTests {
 
     /// El toque del aviso de Apple Pay abre la vuelta (o la activación), antes de buscar un destino de pestaña.
     @Test func elToqueDelAvisoDeApplePay_abreLaVuelta() throws {
-        let body = try Self.lines(of: "static func routeTap(deepLink destination: String, targetSessionID: String?) {",
+        let body = try Self.lines(of: "static func routeTap(deepLink destination: String, targetSessionID: String?, awaitsRemoteChange: Bool = false) {",
                                   in: try Self.source("Yala/Services/NotificationService.swift"), take: 8)
         #expect(body.first == "if destination == GroupsOnlyIntentGate.activationDeepLink {")
         let submit = try #require(body.firstIndex { $0 == "RouterEntryGate.shared.submit(.presentFullModeActivation)" })

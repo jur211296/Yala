@@ -779,7 +779,24 @@ final class AppBootstrapper {
         if uiTestActive, UITestHooks.inboxNotificationTapMode == "foreground" {
             Task { @MainActor in
                 do { try await Task.sleep(for: .seconds(4)) } catch { return }
-                NotificationService.routeTap(deepLink: UITestHooks.notificationTapLink, targetSessionID: nil)
+                NotificationService.routeTap(
+                deepLink: UITestHooks.notificationTapLink, targetSessionID: nil,
+                awaitsRemoteChange: UITestHooks.groupPushChangeKind != nil)
+            }
+        }
+        // Card th4n: el cambio que trae el aviso de grupo. En frío, el pull del arranque sigue en vuelo cuando el toque abre
+        // el grupo; delante, el del propio push empieza al llegar el aviso, medio segundo antes del toque.
+        if uiTestActive, UITestHooks.groupPushChangeKind != nil {
+            switch UITestHooks.inboxNotificationTapMode {
+            case "cold":
+                uitestStartGroupPushChange(context: context, lasting: .seconds(8), landsAfterFirstWaiter: .milliseconds(1500))
+            case "foreground":
+                Task { @MainActor in
+                    do { try await Task.sleep(for: .milliseconds(3500)) } catch { return }
+                    self.uitestStartGroupPushChange(context: context, lasting: .seconds(3))
+                }
+            default:
+                break
             }
         }
         #endif
@@ -2348,7 +2365,9 @@ final class AppBootstrapper {
         // antes que el aviso. Solo en la primera vuelta a primer plano.
         let uitestWarmTap = uitestInboxNotificationWarmTapIfDue()
         if uitestWarmTap == "warm-tap-first" {
-            NotificationService.routeTap(deepLink: UITestHooks.notificationTapLink, targetSessionID: nil)
+            NotificationService.routeTap(
+                deepLink: UITestHooks.notificationTapLink, targetSessionID: nil,
+                awaitsRemoteChange: UITestHooks.groupPushChangeKind != nil)
         }
         #endif
 
@@ -2387,7 +2406,9 @@ final class AppBootstrapper {
         #if DEBUG
         // El toque que llega después del aviso: `didReceive` lo entrega en otra vuelta del main actor.
         if uitestWarmTap == "warm-check-first" {
-            Task { @MainActor in NotificationService.routeTap(deepLink: UITestHooks.notificationTapLink, targetSessionID: nil) }
+            Task { @MainActor in NotificationService.routeTap(
+                deepLink: UITestHooks.notificationTapLink, targetSessionID: nil,
+                awaitsRemoteChange: UITestHooks.groupPushChangeKind != nil) }
         }
         #endif
 
@@ -3378,6 +3399,29 @@ final class AppBootstrapper {
 
     #if DEBUG
     private var uitestWarmTapDone = false
+    private var uitestGroupPushChangeStarted = false
+
+    /// Card th4n: con la app en segundo plano, el aviso de grupo la despierta y sincroniza fuera (la vuelta dura 1 s y
+    /// acaba antes de volver). Lo llama `YalaApp.handleScenePhase` al pasar a segundo plano; solo la primera vez.
+    func uitestGroupPushChangeInBackground(context: ModelContext) {
+        guard UITestHooks.groupPushChangeKind != nil,
+              UITestHooks.inboxNotificationTapMode?.hasPrefix("warm-") == true else { return }
+        Task { @MainActor in
+            do { try await Task.sleep(for: .milliseconds(500)) } catch { return }
+            self.uitestStartGroupPushChange(context: context, lasting: .seconds(1))
+        }
+    }
+
+    /// La vuelta fingida del canal de Grupos con el cambio de `-uitest-group-push-change`, una vez por proceso.
+    private func uitestStartGroupPushChange(
+        context: ModelContext, lasting duration: Duration, landsAfterFirstWaiter: Duration? = nil
+    ) {
+        guard !uitestGroupPushChangeStarted, let kind = UITestHooks.groupPushChangeKind else { return }
+        uitestGroupPushChangeStarted = true
+        GroupsSyncClient.shared.uitestRunFakeRemoteCycle(lasting: duration, landsAfterFirstWaiter: landsAfterFirstWaiter) {
+            UITestHooks.applyGroupPushChange(kind: kind, context: context)
+        }
+    }
     /// Lo enciende `YalaApp.handleScenePhase` al pasar a segundo plano: el `.active` del arranque no es una vuelta.
     var uitestWentToBackground = false
 

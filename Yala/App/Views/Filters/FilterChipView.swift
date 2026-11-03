@@ -76,9 +76,8 @@ struct FilterChipView: View {
             }
 
             Button {
-                dsWithAnimation(reduceMotion) {
-                    onClear()
-                }
+                // En seco: quitar un filtro reemplaza la página (card oxyr).
+                onClear()
             } label: {
                 Image(systemName: "xmark.circle.fill")
                     .font(DS.Typography.chipClose)

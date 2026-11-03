@@ -221,13 +221,22 @@ struct BudgetsListView: View {
 
     // MARK: - List Content
 
-    @ViewBuilder
+    /// Card 1jvv: borrar el último presupuesto o crear el primero releva la lista y el vacío fundiéndose, en el sitio.
+    /// Los ids, sin el filtro de borrados de las filas: la lista se vacía cuando recarga, no cuando la fila se esconde.
     private var listContent: some View {
-        if viewModel.groupedBudgets.isEmpty {
-            emptyState
-        } else {
-            budgetsList
+        ZStack(alignment: .top) {
+            if viewModel.groupedBudgets.isEmpty {
+                emptyState
+                    .transition(.stateSwap)
+            } else {
+                budgetsList
+                    .transition(.stateSwap)
+            }
         }
+        .animatesEmptyStateSwap(
+            ids: Array(viewModel.groupedBudgets.lazy.flatMap { $0.budgets }.prefix(4).map(\.id)),
+            settled: viewModel.hasLoadedOnce
+        )
     }
 
     // MARK: - Empty State

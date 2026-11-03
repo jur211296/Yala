@@ -36,6 +36,7 @@ struct CashFlowSetupView: View {
 
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // MARK: - Computed
 
@@ -105,6 +106,8 @@ struct CashFlowSetupView: View {
                     createButton
                 }
             }
+            // Implícita en el contenedor común: en una pestaña un `withAnimation` no anima (card oxyr).
+            .animation(reduceMotion ? nil : DS.Animation.appear, value: showVariableLines)
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.top, DS.Spacing.sm)
             .yalaSafeBottomPadding()
@@ -291,9 +294,8 @@ struct CashFlowSetupView: View {
 
     private var variableLinesRow: some View {
         Button {
-            withAnimation(.easeInOut(duration: DS.Animation.fast)) {
-                showVariableLines.toggle()
-            }
+            // Lo anima la implícita del `VStack` del `body` (card oxyr).
+            showVariableLines.toggle()
         } label: {
             HStack(spacing: DS.Spacing.md) {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {

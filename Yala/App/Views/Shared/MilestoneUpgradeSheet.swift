@@ -13,6 +13,7 @@ struct MilestoneUpgradeSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // MARK: - Properties
 
@@ -57,7 +58,8 @@ struct MilestoneUpgradeSheet: View {
                     }
                 }
                 .onAppear {
-                    withAnimation(.spring(response: 0.8, dampingFraction: 0.8)) {
+                    // En hoja sí anima; con Reducir movimiento, sin animación (card oxyr).
+                    dsWithAnimation(reduceMotion, .spring(response: 0.8, dampingFraction: 0.8)) {
                         animateNumber = true
                     }
                 }

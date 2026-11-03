@@ -71,11 +71,12 @@ struct FABStackView: View {
         if !showFABMenu {
             DraftDiscardUndoNotice.hide(noticeIdentifier: SavedRecordNotice.noticeIdentifier)
         }
-        dsWithAnimation(reduceMotion, Self.fabSpring) { showFABMenu.toggle() }
+        // Sin envoltorio: lo anima la implícita del `VStack` del `body` (card oxyr).
+        showFABMenu.toggle()
     }
 
     private func dismissMenu() {
-        dsWithAnimation(reduceMotion, Self.fabSpring) { showFABMenu = false }
+        showFABMenu = false
     }
 
     // MARK: - Body
@@ -99,6 +100,8 @@ struct FABStackView: View {
                     transactionFAB(background: fabBackground)
                 }
             }
+            // Implícita: en una pestaña un `withAnimation` no anima (card oxyr).
+            .animation(reduceMotion ? nil : Self.fabSpring, value: showFABMenu)
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
             .onChange(of: navigation.selectedMainTab) { _, _ in

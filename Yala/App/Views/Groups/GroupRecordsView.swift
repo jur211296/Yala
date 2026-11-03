@@ -53,119 +53,132 @@ struct GroupRecordsView: View {
     @State private var expenseToDelete: SplitExpense?
 
     var body: some View {
-        if feedItems.isEmpty {
-            YalaEmptyState(
-                icon: "receipt",
-                title: L10n.Groups.Expense.noExpenses,
-                actionTitle: onInvite != nil ? L10n.Groups.Settings.invite : nil,
-                action: onInvite
-            )
-        } else {
-            let days = groupedByDate
-            ScrollView {
-                // Separación de filas y cabecera de día de Registros (lienzo «Una sola Yala»): antes, el doble de aire.
-                LazyVStack(spacing: DS.Spacing.sm, pinnedViews: .sectionHeaders) {
-                    // La cifra grande del grupo (3A), la misma que en Saldos: primer elemento del scroll, se va con
-                    // los registros (no fija). Tocarla lleva a Saldos.
-                    if let headerBalance, let onTapBalance {
-                        GroupBalanceHero(
-                            balance: headerBalance,
-                            scope: .group,
-                            isEstimate: debtsWereConverted,
-                            onTap: onTapBalance
-                        )
-                        .padding(.bottom, DS.Spacing.sm)
-                        // Va arriba y no se mueve cuando una fila se va: sin animación, su frase no se funde con la
-                        // anterior (dos cifras una encima de otra; regla de `swiftui-ds.md`).
-                        .transaction { $0.animation = nil }
-                    }
-                    // Presupuesto del grupo (G14). Deliberadamente COMPACTA: la primera fila de gastos
-                    // tiene que seguir siendo alcanzable sin scroll (`GroupsSmokeUITests` la tapea así).
-                    if let budgetProgress {
-                        budgetCard(budgetProgress)
-                            .padding(.bottom, DS.Spacing.sm)
-                            .transaction { $0.animation = nil }
-                    }
-                    ForEach(days, id: \.key) { day, dayItems in
-                        Section {
-                            ForEach(dayItems, id: \.id) { item in
-                                switch item {
-                                case .expense(let expense):
-                                    if onTapExpense == nil {
-                                        expenseRow(expense)
-                                    } else if expense.isOpeningBalance {
-                                        // Saldo inicial: tap → detalle (owner edita desde ahí).
-                                        // Sin context menu (edit/delete owner-only vive en el detalle).
-                                        Button {
-                                            onTapExpense?(expense)
-                                        } label: {
-                                            expenseRow(expense)
-                                        }
-                                        .buttonStyle(.plain)
-                                        .contentShape(Rectangle())
-                                        .accessibilityIdentifier("group_opening_balance_row_\(expense.id)")
-                                    } else {
-                                        Button {
-                                            onTapExpense?(expense)
-                                        } label: {
-                                            expenseRow(expense)
-                                        }
-                                        .buttonStyle(.plain)
-                                        .contentShape(Rectangle())
-                                        .accessibilityIdentifier("group_expense_row_\(expense.expenseDescription)")
-                                        .contextMenu {
-                                            Button {
-                                                onEditExpense?(expense)
-                                            } label: {
-                                                Label(L10n.Action.edit, systemImage: "pencil")
-                                            }
+        let items = feedItems
+        // Card 1jvv: borrar el último gasto o llegar el primero releva la lista y el vacío, en el sitio: el vacío se funde
+        // y el scroll entra y sale en el acto, porque lleva el título grande del grupo y fundido se fundiría con él.
+        ZStack {
+            if items.isEmpty {
+                YalaEmptyState(
+                    icon: "receipt",
+                    title: L10n.Groups.Expense.noExpenses,
+                    actionTitle: onInvite != nil ? L10n.Groups.Settings.invite : nil,
+                    action: onInvite
+                )
+                .transition(.stateSwap)
+            } else {
+                recordsScroll
+                    .transition(.identity)
+            }
+        }
+        .animatesEmptyStateSwap(ids: items.prefix(4).map(\.id))
+    }
 
-                                            Button(role: .destructive) {
-                                                expenseToDelete = expense
-                                            } label: {
-                                                Label(L10n.Action.delete, systemImage: "trash")
-                                            }
+    @ViewBuilder
+    private var recordsScroll: some View {
+        let days = groupedByDate
+        ScrollView {
+            // Separación de filas y cabecera de día de Registros (lienzo «Una sola Yala»): antes, el doble de aire.
+            LazyVStack(spacing: DS.Spacing.sm, pinnedViews: .sectionHeaders) {
+                // La cifra grande del grupo (3A), la misma que en Saldos: primer elemento del scroll, se va con
+                // los registros (no fija). Tocarla lleva a Saldos.
+                if let headerBalance, let onTapBalance {
+                    GroupBalanceHero(
+                        balance: headerBalance,
+                        scope: .group,
+                        isEstimate: debtsWereConverted,
+                        onTap: onTapBalance
+                    )
+                    .padding(.bottom, DS.Spacing.sm)
+                    // Va arriba y no se mueve cuando una fila se va: sin animación, su frase no se funde con la
+                    // anterior (dos cifras una encima de otra; regla de `swiftui-ds.md`).
+                    .transaction { $0.animation = nil }
+                }
+                // Presupuesto del grupo (G14). Deliberadamente COMPACTA: la primera fila de gastos
+                // tiene que seguir siendo alcanzable sin scroll (`GroupsSmokeUITests` la tapea así).
+                if let budgetProgress {
+                    budgetCard(budgetProgress)
+                        .padding(.bottom, DS.Spacing.sm)
+                        .transaction { $0.animation = nil }
+                }
+                ForEach(days, id: \.key) { day, dayItems in
+                    Section {
+                        ForEach(dayItems, id: \.id) { item in
+                            switch item {
+                            case .expense(let expense):
+                                if onTapExpense == nil {
+                                    expenseRow(expense)
+                                } else if expense.isOpeningBalance {
+                                    // Saldo inicial: tap → detalle (owner edita desde ahí).
+                                    // Sin context menu (edit/delete owner-only vive en el detalle).
+                                    Button {
+                                        onTapExpense?(expense)
+                                    } label: {
+                                        expenseRow(expense)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .contentShape(Rectangle())
+                                    .accessibilityIdentifier("group_opening_balance_row_\(expense.id)")
+                                } else {
+                                    Button {
+                                        onTapExpense?(expense)
+                                    } label: {
+                                        expenseRow(expense)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .contentShape(Rectangle())
+                                    .accessibilityIdentifier("group_expense_row_\(expense.expenseDescription)")
+                                    .contextMenu {
+                                        Button {
+                                            onEditExpense?(expense)
+                                        } label: {
+                                            Label(L10n.Action.edit, systemImage: "pencil")
+                                        }
+
+                                        Button(role: .destructive) {
+                                            expenseToDelete = expense
+                                        } label: {
+                                            Label(L10n.Action.delete, systemImage: "trash")
                                         }
                                     }
-                                case .settlement(let settlement):
-                                    settlementRow(settlement)
                                 }
+                            case .settlement(let settlement):
+                                settlementRow(settlement)
                             }
-                        } header: {
-                            RecordDateSectionView(
-                                date: day,
-                                includesYear: !Calendar.current.isDate(day, equalTo: .now, toGranularity: .year)
-                            )
                         }
+                    } header: {
+                        RecordDateSectionView(
+                            date: day,
+                            includesYear: !Calendar.current.isDate(day, equalTo: .now, toGranularity: .year)
+                        )
                     }
                 }
-                .padding(.bottom, DS.Spacing.safeBottom)
-                // Card C3: borrar un gasto, quitar un saldo inicial o llegar uno nuevo se anima; la primera carga no.
-                .animatesRowEdits(ids: days.flatMap { $0.value.map(\.id) })
             }
-            .scrollViewGlassEdges()
-            .refreshable { await onRefresh?() }
-            .confirmationDialog(
-                L10n.Groups.Expense.deleteTitle(expenseToDelete?.expenseDescription ?? ""),
-                isPresented: Binding(
-                    get: { expenseToDelete != nil },
-                    set: { if !$0 { expenseToDelete = nil } }
-                ),
-                titleVisibility: .visible
-            ) {
-                Button(L10n.Action.delete, role: .destructive) {
-                    if let expense = expenseToDelete {
-                        onDeleteExpense?(expense)
-                        expenseToDelete = nil
-                    }
+            .padding(.bottom, DS.Spacing.safeBottom)
+            // Card C3: borrar un gasto, quitar un saldo inicial o llegar uno nuevo se anima; la primera carga no.
+            .animatesRowEdits(ids: days.flatMap { $0.value.map(\.id) })
+        }
+        .scrollViewGlassEdges()
+        .refreshable { await onRefresh?() }
+        .confirmationDialog(
+            L10n.Groups.Expense.deleteTitle(expenseToDelete?.expenseDescription ?? ""),
+            isPresented: Binding(
+                get: { expenseToDelete != nil },
+                set: { if !$0 { expenseToDelete = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button(L10n.Action.delete, role: .destructive) {
+                if let expense = expenseToDelete {
+                    onDeleteExpense?(expense)
+                    expenseToDelete = nil
                 }
-                // Lote 13: sin esta salida el diálogo solo se cerraba tocando fuera. Sin `role: .cancel`: con él,
-                // el diálogo (sale como popover en iOS 26) no la pinta (.claude/rules/swiftui-ds.md).
-                Button(L10n.Common.cancel) { expenseToDelete = nil }
-            } message: {
-                // UX 2.2 · L13-4: el mismo aviso que desde el formulario.
-                Text(L10n.Groups.Expense.deleteMessage)
             }
+            // Lote 13: sin esta salida el diálogo solo se cerraba tocando fuera. Sin `role: .cancel`: con él,
+            // el diálogo (sale como popover en iOS 26) no la pinta (.claude/rules/swiftui-ds.md).
+            Button(L10n.Common.cancel) { expenseToDelete = nil }
+        } message: {
+            // UX 2.2 · L13-4: el mismo aviso que desde el formulario.
+            Text(L10n.Groups.Expense.deleteMessage)
         }
     }
 

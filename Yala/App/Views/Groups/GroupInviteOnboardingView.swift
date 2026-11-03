@@ -17,6 +17,7 @@ struct GroupInviteOnboardingView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// La ventana que presenta la hoja: «Ver el grupo» y «Apuntar un gasto» (L12-18) dejan aquí su destino.
     @Environment(SceneNavigation.self) private var navigation
 
@@ -387,7 +388,8 @@ struct GroupInviteOnboardingView: View {
         } else {
             performSilentSetup()
         }
-        withAnimation { hasTappedJoin = true }
+        // En hoja sí anima; con Reducir movimiento, sin animación (card oxyr).
+        dsWithAnimation(reduceMotion, .default) { hasTappedJoin = true }
         // Camino rápido: si la zona ya materializó, el member nace ahora mismo y
         // la fase salta a pending/active sin esperar el próximo fetch.
         Task { @MainActor in
@@ -402,10 +404,13 @@ struct GroupInviteOnboardingView: View {
     private func startSoftTimeout() {
         timeoutTask?.cancel()
         hitSoftTimeout = false
+        // Se captura antes del `Task`, como en los demás sitios que animan desde uno (card oxyr).
+        let reduceMotion = reduceMotion
         timeoutTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(softTimeoutSeconds))
             guard !Task.isCancelled else { return }
-            withAnimation { hitSoftTimeout = true }
+            // En hoja sí anima; con Reducir movimiento, sin animación (card oxyr).
+            dsWithAnimation(reduceMotion, .default) { hitSoftTimeout = true }
         }
     }
 

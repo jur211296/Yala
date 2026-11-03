@@ -170,16 +170,19 @@ struct GroupsContainerView: View {
                                     message: NudgeService.shared.currentNudgeMessage ?? "",
                                     onAction: {
                                         NudgeService.shared.recordInteracted(nudge)
-                                        withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                                        // Lo anima la implícita de `showNudgeBanner` (card oxyr).
+                                        showNudgeBanner = false
                                         handleNudgeAction(nudge)
                                     },
                                     onDismiss: {
                                         NudgeService.shared.recordDismissed(nudge)
-                                        withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                                        // Lo anima la implícita de `showNudgeBanner` (card oxyr).
+                                        showNudgeBanner = false
                                     },
                                     onAutoDismiss: {
                                         NudgeService.shared.recordDismissed(nudge, autoDismissed: true)
-                                        withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                                        // Lo anima la implícita de `showNudgeBanner` (card oxyr).
+                                        showNudgeBanner = false
                                     }
                                 )
                             }
@@ -694,9 +697,8 @@ struct GroupsContainerView: View {
     private func evaluateNudge() {
         NudgeService.shared.evaluate()
         if NudgeService.shared.currentNudge != nil {
-            withAnimation(.easeOut(duration: 0.3)) {
-                showNudgeBanner = true
-            }
+            // Lo anima la implícita de `showNudgeBanner` (card oxyr).
+            showNudgeBanner = true
         }
     }
 
@@ -733,6 +735,7 @@ struct GroupsContainerView: View {
         else { return }
 
         navigation.pendingGroupID = nil
+        let fromNotification = GroupNotificationOpening.shared.consume(matching: groupID)
 
         // La puerta también se cierra aquí (decisión owner 2026-09-06). `activeGroups` filtra por
         // archivado/oculto y NO por el status del miembro, así que sin este gate un deep link de
@@ -742,6 +745,8 @@ struct GroupsContainerView: View {
             showPendingApprovalNotice = true
             return
         }
+        // Card th4n: el detalle (nuevo o el que ya estaba abierto) recarga y espera al ciclo en vuelo.
+        if fromNotification { navigation.groupOpenedFromNotification = GroupNotificationEntry(groupID: group.id) }
         viewModel.openDetail(for: group)
     }
 

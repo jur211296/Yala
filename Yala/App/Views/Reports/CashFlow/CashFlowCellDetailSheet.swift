@@ -31,6 +31,7 @@ struct CashFlowCellDetailSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // Local navigation state (resets on dismiss)
     @State private var activeMonthKey: String = ""
@@ -667,7 +668,8 @@ struct CashFlowCellDetailSheet: View {
                 HStack(spacing: DS.Spacing.none) {
                     ForEach(snapshots, id: \.monthKey) { snap in
                         Button {
-                            withAnimation(.easeInOut(duration: DS.Animation.fast)) {
+                            // En hoja sí anima; con Reducir movimiento, sin animación (card oxyr).
+                            dsWithAnimation(reduceMotion, .easeInOut(duration: DS.Animation.fast)) {
                                 activeMonthKey = snap.monthKey
                                 showAdjustAmount = false
                             }

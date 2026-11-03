@@ -21,9 +21,8 @@ struct CashFlowMonthStrip: View {
                 HStack(spacing: DS.Spacing.sm) {
                     ForEach(months, id: \.monthKey) { month in
                         Button {
-                            withAnimation(.easeInOut(duration: DS.Animation.fast)) {
-                                selectedMonthKey = month.monthKey
-                            }
+                            // Lo anima la implícita de `selectedMonthKey` (card oxyr).
+                            selectedMonthKey = month.monthKey
                         } label: {
                             CashFlowMonthCapsule(
                                 month: month,
@@ -46,7 +45,8 @@ struct CashFlowMonthStrip: View {
             .fadesTowardVerticalBar()
             .scrollTargetBehavior(.viewAligned)
             .onChange(of: selectedMonthKey) { _, newKey in
-                withAnimation(.easeInOut(duration: DS.Animation.fast)) {
+                // Con Reducir movimiento, sin desplazamiento animado (card oxyr).
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.fast)) {
                     proxy.scrollTo(newKey, anchor: .center)
                 }
             }

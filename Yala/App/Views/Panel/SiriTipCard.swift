@@ -30,9 +30,8 @@ struct SiriTipCard: View {
             Spacer(minLength: 0)
 
             Button {
-                dsWithAnimation(reduceMotion) {
-                    isVisible = false
-                }
+                // Lo anima la implícita de `notices` de PanelView (card oxyr).
+                isVisible = false
             } label: {
                 Image(systemName: "xmark")
                     .font(DS.Typography.caption)

@@ -310,9 +310,8 @@ struct CashFlowMonthDetailView: View {
     /// Título de sección de la app (sin mayúsculas) con su total en blanco a la derecha; tocarlo pliega la sección.
     private func sectionHeader(title: String, total: Double, isCollapsed: Binding<Bool>) -> some View {
         Button {
-            withAnimation(.easeInOut(duration: DS.Animation.fast)) {
-                isCollapsed.wrappedValue.toggle()
-            }
+            // Lo anima la implícita de `incomeCollapsed` / `expenseCollapsed` (card oxyr).
+            isCollapsed.wrappedValue.toggle()
         } label: {
             HStack(spacing: DS.Spacing.sm) {
                 Text(title)

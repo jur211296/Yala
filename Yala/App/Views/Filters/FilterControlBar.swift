@@ -305,10 +305,9 @@ struct FilterControlBar<VM: Filterable & Observable, PeriodView: View, TrailingC
             // Clear all button
             if viewModel.userFilterCount(isExpensesOnlyMode: sessionState.isExpensesOnlyMode) > 1 {
                 Button {
-                    dsWithAnimation(reduceMotion) {
-                        viewModel.clearFilters()
-                        onFilterChange?()
-                    }
+                    // En seco: quitar los filtros reemplaza la página (card oxyr).
+                    viewModel.clearFilters()
+                    onFilterChange?()
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(.secondary)

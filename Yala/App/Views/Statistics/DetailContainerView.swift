@@ -32,6 +32,17 @@ struct DetailContainerView: View {
     /// Yala IA y «+» flotantes solo cuando el scroll se lleva la fila de acciones del hero (card kzhe, el patrón del
     /// Panel). Lo escribe la fila de cada subpestaña (`StatsQuickActionsSlot`).
     @State private var showFloatingActions = false
+    /// Las mismas claves que leen las guías de las cuatro pestañas (`ContextualGuideBanner.insights()`…), como hace
+    /// PanelView con la suya: cerrar una tiene que animar también lo de debajo (card oxyr).
+    @AppStorage("guide.insights.dismissed") private var insightsGuideDismissed = false
+    @AppStorage("guide.trends.dismissed") private var trendsGuideDismissed = false
+    @AppStorage("guide.categories.dismissed") private var categoriesGuideDismissed = false
+    @AppStorage("guide.records.dismissed") private var recordsGuideDismissed = false
+
+    /// Las cuatro juntas: así el valor cambia al cerrar una guía y no al cambiar de chip, que va en seco.
+    private var statisticsGuidesDismissed: [Bool] {
+        [insightsGuideDismissed, trendsGuideDismissed, categoriesGuideDismissed, recordsGuideDismissed]
+    }
 
     @State private var dataViewModel = DetailContainerViewModel()
     @State private var recordsViewModel: RecordsViewModel
@@ -351,6 +362,8 @@ struct DetailContainerView: View {
                 tabContent
                     .environment(\.statsQuickActions, statsQuickActions)
             }
+            // Implícita: en una pestaña el `withAnimation` de la guía no anima, ni a ella ni a lo de debajo (card oxyr).
+            .animation(reduceMotion ? nil : DS.Animation.appear, value: statisticsGuidesDismissed)
             .navigationChipsInset {
                 navigationChipsBar
             }

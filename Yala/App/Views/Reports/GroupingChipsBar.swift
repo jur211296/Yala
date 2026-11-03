@@ -46,9 +46,8 @@ struct GroupingChipsBar: View {
     private func breadcrumbItem(_ dimension: ReportGroupingDimension) -> some View {
         Button {
             if !dimension.isMandatory {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    state.toggle(dimension)
-                }
+                // En seco: re-agrupa el informe entero (card oxyr).
+                state.toggle(dimension)
             }
         } label: {
             HStack(spacing: DS.Spacing.xs) {

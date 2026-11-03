@@ -73,6 +73,12 @@ enum RowListEditLogic {
         guard changed > 0, changed <= maxAnimatedChanges else { return false }
         return old.filter(newSet.contains) == new.filter(oldSet.contains)
     }
+
+    /// `true` si la edición pequeña vacía la lista o le pone su primera fila (card 1jvv): es lo que cambia la lista por
+    /// su estado vacío, o al revés. Un filtro que deja la lista vacía de golpe no es pequeño y sigue en seco.
+    static func crossesEmpty<ID: Hashable>(from old: [ID], to new: [ID]) -> Bool {
+        old.isEmpty != new.isEmpty && isSmallEdit(from: old, to: new)
+    }
 }
 
 /// Anima la lista solo cuando el cambio de sus filas es una edición pequeña (`RowListEditLogic`).
@@ -85,18 +91,30 @@ enum RowListEditLogic {
 /// (una frase con la cifra de arriba) lleva `.transaction { $0.animation = nil }`.
 private struct RowEditAnimationModifier<ID: Hashable>: ViewModifier {
     let ids: [ID]
+    /// Solo cuando la lista pasa a vacía o deja de estarlo (`crossesEmpty`): el modo del contenedor que monta la lista
+    /// Y su vacío. Las filas las sigue animando el modificador de dentro, con su propio contenedor.
+    var onlyAcrossEmpty = false
+    /// `false` mientras la lista aún no ha cargado (Presupuestos carga en su `onAppear`, Registros con su primer filtrado):
+    /// esa primera carga no es una edición, y con 1-3 filas se fundía el vacío cada vez que se abría la pantalla. La lista
+    /// que se recuerda empieza cuando pasa a `true`.
+    var settled = true
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var lastIDs: [ID]?
 
     func body(content: Content) -> some View {
         content
-            .transaction(value: ids) { [lastIDs, ids, reduceMotion] transaction in
-                guard !reduceMotion, let lastIDs, RowListEditLogic.isSmallEdit(from: lastIDs, to: ids) else { return }
+            .transaction(value: ids) { [lastIDs, ids, reduceMotion, onlyAcrossEmpty] transaction in
+                guard !reduceMotion, let lastIDs else { return }
+                let animates = onlyAcrossEmpty
+                    ? RowListEditLogic.crossesEmpty(from: lastIDs, to: ids)
+                    : RowListEditLogic.isSmallEdit(from: lastIDs, to: ids)
+                guard animates else { return }
                 transaction.animation = DS.Animation.appear
             }
-            .onAppear { lastIDs = ids }
-            .onChange(of: ids) { _, newIDs in lastIDs = newIDs }
+            .onAppear { lastIDs = settled ? ids : nil }
+            .onChange(of: ids) { _, newIDs in lastIDs = settled ? newIDs : nil }
+            .onChange(of: settled) { _, isSettled in lastIDs = isSettled ? ids : nil }
     }
 }
 
@@ -106,5 +124,20 @@ extension View {
     /// orden en que se pintan.
     func animatesRowEdits<ID: Hashable>(ids: [ID]) -> some View {
         modifier(RowEditAnimationModifier(ids: ids))
+    }
+
+    /// La lista y su estado vacío se relevan fundiéndose cuando una edición pequeña borra la última fila o añade la
+    /// primera (card 1jvv). Va en el contenedor que monta las DOS ramas —un `ZStack`, para que durante el fundido no se
+    /// apilen una debajo de otra: `.top` dentro de un scroll, centrado si el vacío ocupa la página—, y cada rama lleva
+    /// `.transition(.stateSwap)`: la que se va deja de leerse y de tocarse desde el primer fotograma. La rama que lleva el
+    /// título grande en su scroll (el detalle de grupo) entra y sale con `.identity`: fundida, se funde el título con ella.
+    /// Con `animatesRowEdits` dentro de la rama con filas, la lista se desmontaba antes de que nadie pudiera animar el
+    /// cambio, y al volver a montarse no recordaba la lista vacía.
+    ///
+    /// Bastan las `maxAnimatedChanges + 1` primeras filas (`prefix`): para cruzar el vacío con una edición pequeña, un
+    /// lado está vacío y el otro tiene como mucho 3; con 4 o más, el cambio ya no es pequeño. Así una lista de miles de
+    /// filas no paga el recorrido entero en cada render.
+    func animatesEmptyStateSwap<ID: Hashable>(ids: [ID], settled: Bool = true) -> some View {
+        modifier(RowEditAnimationModifier(ids: ids, onlyAcrossEmpty: true, settled: settled))
     }
 }

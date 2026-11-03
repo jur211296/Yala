@@ -47,7 +47,8 @@ struct AccountTypeChips: View {
     private func chip(_ type: AccountType) -> some View {
         let isSelected = type == selectedType
         return Button {
-            withAnimation(reduceMotion ? .easeInOut(duration: 0.15) : .spring(response: 0.3, dampingFraction: 0.75)) {
+            // Con Reducir movimiento, sin animación: antes pasaba a una curva corta (card oxyr).
+            dsWithAnimation(reduceMotion, .spring(response: 0.3, dampingFraction: 0.75)) {
                 selectedType = type
             }
         } label: {

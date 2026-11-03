@@ -57,8 +57,11 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         let targetSessionID = response.targetScene?.session.persistentIdentifier
 
         if let destination = userInfo["deepLink"] as? String {
+            // El push del servidor (`yala`) avisa de un cambio que puede no haber bajado aún; los avisos locales de Grupos
+            // (recordatorio de saldar, alerta de presupuesto, «te aprobaron») no traen nada que bajar (card th4n).
+            let awaitsRemoteChange = userInfo["yala"] != nil
             Task { @MainActor in
-                Self.routeTap(deepLink: destination, targetSessionID: targetSessionID)
+                Self.routeTap(deepLink: destination, targetSessionID: targetSessionID, awaitsRemoteChange: awaitsRemoteChange)
             }
         }
 
@@ -71,7 +74,7 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     /// Separado de `didReceive` porque `UNNotificationResponse` no tiene inicializador público: es lo que permite
     /// probar el camino entero del toque en frío (`NotificationColdLaunchTapTests`).
     @MainActor
-    static func routeTap(deepLink destination: String, targetSessionID: String?) {
+    static func routeTap(deepLink destination: String, targetSessionID: String?, awaitsRemoteChange: Bool = false) {
         // El aviso de Apple Pay con Yala solo en grupos (encargo S11e): abre la vuelta a Yala completo o su activación.
         // Si la persona ya volvió, `ContentView` no hace nada con él.
         if destination == GroupsOnlyIntentGate.activationDeepLink {
@@ -98,6 +101,11 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         // Informe (`statistics/insights/last7Days`): abre esa pestaña con ese período (UX 2.2 · L11-2).
         if let statisticsRequest = StatisticsDeepLink.request(fromDeepLink: destination) {
             StatisticsDeepLinkTarget.shared.request(statisticsRequest)
+        }
+        // El aviso de un grupo (`groups/<id>`) del servidor: el grupo se abre con el cambio que avisa, no con lo de antes
+        // (card th4n).
+        if awaitsRemoteChange, case .groupDetail(let groupID) = dest {
+            GroupNotificationOpening.shared.request(groupID)
         }
         if let targetSessionID {
             SceneRegistry.shared.noteFocused(sessionID: targetSessionID)

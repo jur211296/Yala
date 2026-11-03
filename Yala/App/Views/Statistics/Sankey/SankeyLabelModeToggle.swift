@@ -20,6 +20,8 @@ struct SankeyLabelModeToggle: View {
             button(for: .amount, systemImage: "dollarsign", accessibilityLabel: L10n.Statistics.Sankey.toggleAmount)
             button(for: .percentage, systemImage: "percent", accessibilityLabel: L10n.Statistics.Sankey.togglePercentage)
         }
+        // Implícita en el propio selector: en una pestaña un `withAnimation` no anima (card oxyr).
+        .dsAnimation(DS.Animation.selection, value: mode, reduceMotion: reduceMotion)
     }
 
     private func button(
@@ -30,9 +32,7 @@ struct SankeyLabelModeToggle: View {
         let isSelected = mode == target
 
         return Button {
-            dsWithAnimation(reduceMotion) {
-                mode = target
-            }
+            mode = target
         } label: {
             Image(systemName: systemImage)
                 .font(.system(size: 14, weight: .semibold))

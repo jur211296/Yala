@@ -42,6 +42,14 @@ final class GroupDetailViewModel {
     /// skeleton en vez de contenido a medio poblar (espejo de `GroupsViewModel.hasLoadedOnce`).
     private(set) var isReady: Bool = false
 
+    /// Card th4n: el grupo se abrió desde su aviso y el esqueleto se queda hasta que baje el cambio que avisa (o venza
+    /// `notificationEntryHoldCeiling`). Mientras, un `fetchData()` carga pero no marca `isReady`.
+    private var holdsForNotificationSync = false
+
+    /// Lo que como mucho espera el grupo abierto desde su aviso antes de enseñar lo que ya hay. Lo que baje después entra
+    /// igual en cuanto llega (la recarga del final de `refreshForNotificationEntry`).
+    static let notificationEntryHoldCeiling: Duration = .seconds(4)
+
     /// Sube una vez por cada recálculo CON FRENO que llega a publicar (sync remoto, vuelta a primer
     /// plano); no sube con el `loadData()` directo de los gestos locales. Los Ajustes del grupo cuelgan
     /// de aquí y no de `dataVersion`: una ráfaga de N cambios remotos les cuesta un recálculo, no N, y
@@ -204,6 +212,50 @@ final class GroupDetailViewModel {
         loadData()
     }
 
+    // MARK: - Abrir el grupo desde su aviso (card th4n)
+
+    /// Antes del primer `setContext`: el grupo que se abre desde su aviso no enseña lo de antes mientras baja el cambio.
+    /// Solo con una vuelta del canal en vuelo: sin ella, lo que avisa ya bajó (el push despertó a la app) o bajará con el
+    /// ciclo que pide `refreshForNotificationEntry`, y esperar a la red cada vez escondería un grupo que ya está al día.
+    /// Con el detalle ya en pantalla no hace nada: no se esconde lo que la persona está viendo.
+    func beginNotificationEntry() {
+        guard !isReady, GroupsSyncClient.shared.hasRunInFlight else { return }
+        holdsForNotificationSync = true
+    }
+
+    /// La tarea de la apertura desde el aviso: se cancela al salir del detalle (`cancelRecalculation`), para que una
+    /// recarga tardía no lea un grupo que el ciclo borró mientras tanto.
+    private var notificationEntryTask: Task<Void, Never>?
+
+    func startNotificationEntry() {
+        notificationEntryTask?.cancel()
+        notificationEntryTask = Task { [weak self] in await self?.refreshForNotificationEntry() }
+    }
+
+    /// Abrir (o volver a) un grupo desde su aviso. Recarga primero lo que ya está en el teléfono —si el aviso despertó a
+    /// la app, el cambio bajó con ella fuera y nadie recargó: con la app en segundo plano las recargas con freno se
+    /// descartan—, luego espera al ciclo del canal (el que ya está en vuelo, con el que se le encola, o uno nuevo) y
+    /// recarga otra vez. Las dos recargas son directas, sin el freno de 150 ms: no dependen de que la app esté activa
+    /// cuando el ciclo acaba ni de que su `dataVersion` llegue a esta pantalla. Antes, abrir el grupo con un ciclo en
+    /// vuelo recargaba lo viejo en el acto y el cambio solo entraba tirando para refrescar.
+    func refreshForNotificationEntry() async {
+        let release = Task { @MainActor [weak self] in
+            do { try await Task.sleep(for: Self.notificationEntryHoldCeiling) } catch { return }
+            self?.releaseNotificationHold()
+        }
+        loadData()
+        await GroupsSyncClient.shared.syncNowFromUI()
+        release.cancel()
+        guard !Task.isCancelled else { return }
+        releaseNotificationHold()
+    }
+
+    /// Suelta el esqueleto y recarga: al vencer el tope (lo que haya) y al acabar el ciclo (lo que bajó).
+    private func releaseNotificationHold() {
+        holdsForNotificationSync = false
+        loadData()
+    }
+
     // MARK: - Debounced Recalculation (sync remoto)
 
     /// Recálculo debounced (150ms) — usado por el sync remoto (`onChange(dataVersion)` / vuelta a
@@ -216,6 +268,7 @@ final class GroupDetailViewModel {
     /// Cancela cualquier recálculo pendiente (llamado desde `.onDisappear`).
     func cancelRecalculation() {
         debouncer.cancel()
+        notificationEntryTask?.cancel()
     }
 
     /// Estado de background — suprime el recálculo mientras la app no está activa.
@@ -258,7 +311,7 @@ final class GroupDetailViewModel {
         // Con contexto presente, tras el INTENTO marcamos listo (mostrar contenido/estado, no un
         // skeleton eterno si un fetch falla) — espeja el diseño temprano de `hasLoadedOnce` en
         // GroupsViewModel. Sin contexto (carrera de bootstrap) NO se marca → sigue el skeleton.
-        defer { isReady = true }
+        defer { if !holdsForNotificationSync { isReady = true } }
 
         do {
             // Fetch atómico: a locales primero, asignar solo si TODOS tuvieron éxito. Un fallo a

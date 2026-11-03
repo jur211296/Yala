@@ -67,34 +67,43 @@ struct RecordsTabView: View {
                 // Card C7: hasta el primer filtrado la lista vacía no es «Sin registros», es que aún no se ha cargado;
                 // no se enseña nada y la lista (o el vacío) entra fundiéndose. La pila de dentro lleva el mismo
                 // espaciado que la de fuera: no cambia nada de sitio.
-                VStack(spacing: DS.Spacing.md) {
+                // Card 1jvv: borrar el último registro o apuntar el primero releva la lista y «Sin registros»
+                // fundiéndose, en el sitio (`ZStack`); un filtro que vacía la lista sigue en seco.
+                ZStack(alignment: .top) {
                     if !viewModel.hasAppliedFilters {
                         EmptyView()
                     } else if viewModel.groupedRecords.isEmpty {
                         emptyStateContent
-                            .transition(.opacity)
+                            .transition(.stateSwap)
                     } else {
-                        viewModeHeader
+                        VStack(spacing: DS.Spacing.md) {
+                            viewModeHeader
 
-                        if recordsViewMode == .calendar {
-                            RecordsCalendarView(
-                                groups: viewModel.groupedRecords,
-                                period: viewModel.period,
-                                customDateRange: sessionState.customDateRange,
-                                currencyCode: defaultCurrencyCode,
-                                adjustment: viewModel.statsAdjustment,
-                                selectedDay: $selectedCalendarDay,
-                                calendarMonth: $calendarMonth
-                            )
-                            .padding(.horizontal, DS.Spacing.lg)
+                            if recordsViewMode == .calendar {
+                                RecordsCalendarView(
+                                    groups: viewModel.groupedRecords,
+                                    period: viewModel.period,
+                                    customDateRange: sessionState.customDateRange,
+                                    currencyCode: defaultCurrencyCode,
+                                    adjustment: viewModel.statsAdjustment,
+                                    selectedDay: $selectedCalendarDay,
+                                    calendarMonth: $calendarMonth
+                                )
+                                .padding(.horizontal, DS.Spacing.lg)
 
-                            calendarDaySummary
+                                calendarDaySummary
+                            }
+
+                            recordsListContent
                         }
-
-                        recordsListContent
+                        .transition(.stateSwap)
                     }
                 }
                 .animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.hasAppliedFilters)
+                .animatesEmptyStateSwap(
+                    ids: Array(viewModel.groupedRecords.lazy.flatMap { $0.records }.prefix(4).map(\.persistentModelID)),
+                    settled: viewModel.hasAppliedFilters
+                )
             }
             .padding(.top, DS.Spacing.sm)
         }
@@ -428,41 +437,54 @@ struct RecordsTabView: View {
         let groups = displayedGroups
         if viewModel.duplicateModeActive {
             duplicateGroupsContent
-        } else if groups.isEmpty {
-            dayEmptyState
         } else {
-            LazyVStack(spacing: DS.Spacing.sm, pinnedViews: [.sectionHeaders]) {
-                ForEach(groups, id: \.date) { group in
-                    Section {
-                        ForEach(group.records, id: \.persistentModelID) { record in
-                            RecordRowView(
-                                record: record,
-                                currencyCode: defaultCurrencyCode,
-                                isSelectionMode: viewModel.isSelectionMode,
-                                isSelected: viewModel.selectedRecordIDs.contains(
-                                    record.persistentModelID),
-                                onTap: {
-                                    viewModel.showRecordDetail(record)
-                                },
-                                onToggleSelection: {
-                                    viewModel.toggleSelection(record.persistentModelID)
-                                }
-                            )
-                            .modifier(RecordRowContextMenu(record: record, viewModel: viewModel))
-                        }
-                    } header: {
-                        RecordDateSectionView(date: group.date)
-                    }
+            // Card 1jvv: en el calendario, borrar el último registro del día elegido releva la lista y «Sin registros
+            // este día» fundiéndose, como la lista entera de arriba.
+            ZStack(alignment: .top) {
+                if groups.isEmpty {
+                    dayEmptyState
+                        .transition(.stateSwap)
+                } else {
+                    recordsList(groups)
+                        .transition(.stateSwap)
                 }
             }
-            .padding(.top, DS.Spacing.sm)
-            // Card C3: borrar, deshacer o añadir una fila se anima; cambiar de filtro o de período, no.
-            .animatesRowEdits(ids: groups.flatMap { $0.records.map(\.persistentModelID) })
-            // Las dos páginas que montan esta lista (Registros y Estadísticas › Registros) le ponen encima Yala IA y
-            // «+»: al final del scroll, la última fila sube por encima de los dos. Dos aunque Yala IA esté oculto —
-            // sobrar 68 pt al final no se ve; quedarse corto tapa el importe.
-            .padding(.bottom, DS.Button.fabStackClearance(buttons: 2))
+            .animatesEmptyStateSwap(ids: Array(groups.lazy.flatMap { $0.records }.prefix(4).map(\.persistentModelID)))
         }
+    }
+
+    private func recordsList(_ groups: [(date: Date, records: [TransactionItem])]) -> some View {
+        LazyVStack(spacing: DS.Spacing.sm, pinnedViews: [.sectionHeaders]) {
+            ForEach(groups, id: \.date) { group in
+                Section {
+                    ForEach(group.records, id: \.persistentModelID) { record in
+                        RecordRowView(
+                            record: record,
+                            currencyCode: defaultCurrencyCode,
+                            isSelectionMode: viewModel.isSelectionMode,
+                            isSelected: viewModel.selectedRecordIDs.contains(
+                                record.persistentModelID),
+                            onTap: {
+                                viewModel.showRecordDetail(record)
+                            },
+                            onToggleSelection: {
+                                viewModel.toggleSelection(record.persistentModelID)
+                            }
+                        )
+                        .modifier(RecordRowContextMenu(record: record, viewModel: viewModel))
+                    }
+                } header: {
+                    RecordDateSectionView(date: group.date)
+                }
+            }
+        }
+        .padding(.top, DS.Spacing.sm)
+        // Card C3: borrar, deshacer o añadir una fila se anima; cambiar de filtro o de período, no.
+        .animatesRowEdits(ids: groups.flatMap { $0.records.map(\.persistentModelID) })
+        // Las dos páginas que montan esta lista (Registros y Estadísticas › Registros) le ponen encima Yala IA y
+        // «+»: al final del scroll, la última fila sube por encima de los dos. Dos aunque Yala IA esté oculto —
+        // sobrar 68 pt al final no se ve; quedarse corto tapa el importe.
+        .padding(.bottom, DS.Button.fabStackClearance(buttons: 2))
     }
 
     // MARK: - Modo duplicados: un grupo por sección (L8-11)

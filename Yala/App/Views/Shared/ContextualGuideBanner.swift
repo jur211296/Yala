@@ -22,6 +22,7 @@ struct ContextualGuideBanner: View {
     @AppStorage private var dismissed: Bool
     @Environment(\.yalaTheme) private var theme
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // MARK: - Init
 
@@ -74,7 +75,8 @@ struct ContextualGuideBanner: View {
                         .tracking(0.8)
                     Spacer(minLength: DS.Spacing.xs)
                     Button {
-                        withAnimation(.easeOut(duration: 0.25)) {
+                        // En una hoja anima esto; en una pestaña, la implícita de quien la monta (card oxyr).
+                        dsWithAnimation(reduceMotion, .easeOut(duration: 0.25)) {
                             dismissed = true
                         }
                     } label: {

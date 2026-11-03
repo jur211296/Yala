@@ -744,15 +744,40 @@ final class UITestHooks {
         #endif
     }
 
-    /// El `deepLink` del toque fingido de `-uitest-inbox-notification-tap`.
+    /// El `deepLink` del toque fingido de `-uitest-inbox-notification-tap`. Admite `groups/seeded-first`: el token se
+    /// sustituye por el id del primer grupo sembrado (`seededGroupIDKey`) al leerlo, como `-uitest-deeplink-url`. En frío
+    /// el toque llega antes de sembrar, así que ese caso relanza sin reset sobre lo que sembró un arranque anterior.
     nonisolated static var notificationTapLink: String {
         #if DEBUG
         guard isActive else { return "inbox" }
-        return parseValue(after: "-uitest-notification-tap-link", from: ProcessInfo.processInfo.arguments) ?? "inbox"
+        let link = parseValue(after: "-uitest-notification-tap-link", from: ProcessInfo.processInfo.arguments) ?? "inbox"
+        guard link.contains("seeded-first"),
+              let seededID = UserDefaults.standard.string(forKey: seededGroupIDKey) else { return link }
+        return link.replacingOccurrences(of: "seeded-first", with: seededID)
         #else
         return "inbox"
         #endif
     }
+
+    /// `-uitest-group-push-change` (card th4n): el toque fingido en un aviso de grupo llega con el cambio que avisa, como
+    /// el de verdad. El cambio (un gasto de Ana, «Cambio remoto») entra en el store por el mismo camino que un pull del
+    /// canal de Grupos: guardado, `markRemoteChangePending` por página y `incrementDataVersion` por ciclo. Cuándo entra
+    /// depende del estado: en frío y con la app delante, poco DESPUÉS del toque (el pull del arranque o del propio push
+    /// sigue en vuelo cuando el grupo se abre); en segundo plano, MIENTRAS la app está fuera (el push la despierta y
+    /// sincroniza antes de que la persona toque). No decide nada del producto: solo pone el cambio en el store.
+    /// El tipo de cambio: `new` (un gasto nuevo de Ana), `edit` («Mercado» pasa a llamarse «Cambio remoto») o `settlement`
+    /// (Beto te paga S/ 30, confirmado). `nil` sin el argumento.
+    nonisolated static var groupPushChangeKind: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-group-push-change", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
+    /// Descripción del gasto que trae el aviso fingido de `-uitest-group-push-change`; el XCUITest la busca en el detalle.
+    nonisolated static let groupPushChangeDescription = "Cambio remoto"
 
     #if DEBUG
     /// El pago de Apple Pay que anuncia la notificación fingida: encolado en el App Group como lo deja la automatización
@@ -765,6 +790,56 @@ final class UITestHooks {
             rawAmount: "S/ 18,50", merchant: merchant, savedAt: Date.now.timeIntervalSince1970
         ))
         InboundCaptureDrain.drain(context: context)
+    }
+
+    /// El cambio de `-uitest-group-push-change` en el primer grupo sembrado («Viaje a Cusco»), guardado y anunciado por
+    /// página como lo hace el pull del canal (`markRemoteChangePending`); el aviso por ciclo lo da la vuelta fingida.
+    @MainActor
+    static func applyGroupPushChange(kind: String, context: ModelContext) {
+        guard let seeded = UserDefaults.standard.string(forKey: seededGroupIDKey), let groupID = UUID(uuidString: seeded)
+        else { return }
+        do {
+            guard let group = try context.fetch(FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.id == groupID })).first
+            else { return }
+            let zoneID = group.cloudKitZoneID
+            let members = try context.fetch(FetchDescriptor<SplitMember>(predicate: #Predicate { $0.groupZoneID == zoneID }))
+            guard let me = members.first(where: { $0.isCurrentUser }),
+                  let ana = members.first(where: { $0.displayName == "Ana" }),
+                  let beto = members.first(where: { $0.displayName == "Beto" }) else { return }
+            switch kind {
+            case "edit":
+                let expenses = try context.fetch(FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.groupZoneID == zoneID }))
+                guard let market = expenses.first(where: { $0.expenseDescription == "Mercado" }) else { return }
+                market.expenseDescription = groupPushChangeDescription
+                market.amount = 150
+            case "settlement":
+                let settlement = SplitSettlement(
+                    groupZoneID: zoneID, fromMemberID: beto.id.uuidString, toMemberID: me.id.uuidString,
+                    amount: 30, currencyCode: "PEN", date: Date.now
+                )
+                settlement.isConfirmed = true
+                settlement.recordedByMemberID = beto.id.uuidString
+                context.insert(settlement)
+            default:
+                let expense = SplitExpense(
+                    groupZoneID: zoneID, amount: 45, currencyCode: "PEN",
+                    expenseDescription: groupPushChangeDescription, paidByMemberID: ana.id.uuidString,
+                    splitType: "equal", subcategoryName: nil
+                )
+                expense.date = Date.now
+                context.insert(expense)
+                for member in members where member.status == SplitMemberStatus.active.rawValue {
+                    context.insert(SplitShare(
+                        expenseID: expense.id, memberID: member.id.uuidString, amount: 15,
+                        isPaid: member.id == ana.id, groupZoneID: zoneID
+                    ))
+                }
+            }
+            try context.save()
+            SessionState.shared.markRemoteChangePending()
+        } catch {
+            print("UITestHooks: Error: applyGroupPushChange: \(error)")
+        }
     }
     #endif
 

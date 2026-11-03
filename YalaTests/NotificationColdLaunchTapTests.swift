@@ -94,8 +94,10 @@ struct NotificationColdLaunchTapTests {
             "let userInfo = response.notification.request.content.userInfo",
             "let targetSessionID = response.targetScene?.session.persistentIdentifier",
             "if let destination = userInfo[\"deepLink\"] as? String {",
+            // Card th4n: solo el push del servidor (`yala`) espera al cambio que avisa.
+            "let awaitsRemoteChange = userInfo[\"yala\"] != nil",
             "Task { @MainActor in",
-            "Self.routeTap(deepLink: destination, targetSessionID: targetSessionID)",
+            "Self.routeTap(deepLink: destination, targetSessionID: targetSessionID, awaitsRemoteChange: awaitsRemoteChange)",
             "}",
             "}",
             "completionHandler()",

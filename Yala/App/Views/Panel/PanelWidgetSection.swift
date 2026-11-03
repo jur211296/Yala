@@ -34,7 +34,8 @@ private func askPanelSegment(
         ask(choice)
     } else {
         DS.Haptic.selection()
-        dsWithAnimation(reduceMotion) { choice.showOnly() }
+        // En seco: es un filtro y reemplaza la página (card oxyr).
+        choice.showOnly()
     }
 }
 

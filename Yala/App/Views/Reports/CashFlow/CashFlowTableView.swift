@@ -155,9 +155,8 @@ struct CashFlowTableView: View {
         guard let idx = months.firstIndex(where: { $0.monthKey == viewModel.selectedMonthKey }) else { return }
         let next = forward ? idx + 1 : idx - 1
         guard months.indices.contains(next) else { return }
-        withAnimation(.easeInOut(duration: DS.Animation.fast)) {
-            viewModel.selectedMonthKey = months[next].monthKey
-        }
+        // La tira lo anima con su implícita; el detalle del mes cambia en seco (card oxyr).
+        viewModel.selectedMonthKey = months[next].monthKey
     }
 
     // MARK: - Recalculate
