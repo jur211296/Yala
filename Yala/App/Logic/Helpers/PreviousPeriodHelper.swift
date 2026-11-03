@@ -57,15 +57,20 @@ enum PreviousPeriodHelper {
     ///   - period: The current detail period
     ///   - mode: The comparison mode (month or year)
     ///   - customRange: Optional custom date range for .custom period
+    ///   - calendar: Calendario con el que se cortan el período actual y el anterior. Por defecto el del usuario
+    ///     (`userConfiguredCalendar()`, en la zona del proceso), el mismo que ya usaba `dateInterval`; las cuentas del
+    ///     período anterior (sumar meses, semanas, días o años) no dependen de `firstWeekday`, así que el default da lo
+    ///     mismo que el `Calendar.current` de antes. Inyectable para que un llamador que fija la zona (los nombres de
+    ///     la comparativa, sus tests) no mezcle su zona con la del proceso.
     /// - Returns: The date interval for the previous period
     static func previousInterval(
         for period: DetailPeriod,
         mode: ComparisonMode,
         customRange: DateInterval? = nil,
-        now: Date = .now
+        now: Date = .now,
+        calendar: Calendar = userConfiguredCalendar()
     ) -> DateInterval {
-        let calendar = Calendar.current
-        let currentInterval = period.dateInterval(customRange: customRange, now: now)
+        let currentInterval = period.dateInterval(customRange: customRange, now: now, calendar: calendar)
 
         switch mode {
         case .month:

@@ -136,9 +136,12 @@ enum DevSeedAccountLines {
         insert("Hotel QA", -StatementUITest.billedUSD, noon(-2, from: statement), line, expenseSub)
         insert("Restaurante QA", -StatementUITest.unbilledPEN, noon(-1), card, expenseSub)
 
-        // Tres meses de sueldo y gastos en la cuenta de ahorros: el flujo de caja necesita historial para proponer líneas.
+        // Cuatro meses de sueldo y gastos en la cuenta de ahorros: el flujo de caja necesita historial para proponer
+        // líneas, y solo marca de entrada las que tienen actividad en 4 meses (`CashFlowPlanViewModel`). Con tres, el
+        // cuarto lo ponía el gasto de «ayer», que el día 1 cae en el mes anterior: nada marcado, «Crear» apagado y
+        // `CreditCardStatementUITests.test_cashFlow_showsTheCardPaymentInItsMonth` en rojo (card 30pv).
         let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: today)) ?? today
-        for monthsBack in 1...3 {
+        for monthsBack in 1...4 {
             guard let month = calendar.date(byAdding: .month, value: -monthsBack, to: monthStart) else { continue }
             insert("Sueldo QA", 4_500, noon(0, from: month), savings, incomeSub)
             insert("Alquiler QA", -1_800, noon(2, from: month), savings, expenseSub)

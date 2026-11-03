@@ -33,12 +33,23 @@ final class UXAudit22Lote11DecididasUITests: XCTestCase {
 
     /// Cambia el período a «Este mes» desde la píldora del período.
     private func chooseThisMonth(_ app: XCUIApplication) {
+        choosePeriod(app, "Este mes")
+    }
+
+    /// Cambia el período a «Mes pasado»: un mes ENTERO de la semilla, sea el día que sea. Para lo que pide la píldora
+    /// «Detalle | Observaciones», que solo sale con 5 movimientos o más en el período: «Este mes» el domingo 1 por la
+    /// mañana no los tiene, y los tres casos que la usan cayeron en la nocturna del 1-nov (card 30pv).
+    private func chooseLastMonth(_ app: XCUIApplication) {
+        choosePeriod(app, "Mes pasado")
+    }
+
+    private func choosePeriod(_ app: XCUIApplication, _ name: String) {
         let periodMenu = app.buttons["Todo el tiempo"].firstMatch
         if periodMenu.waitForExistence(timeout: 10) {
             periodMenu.tap()
-            let thisMonth = app.buttons["Este mes"].firstMatch
-            XCTAssertTrue(thisMonth.waitForExistence(timeout: 5), "No salió «Este mes» en el menú del período.")
-            thisMonth.tap()
+            let option = app.buttons[name].firstMatch
+            XCTAssertTrue(option.waitForExistence(timeout: 5), "No salió «\(name)» en el menú del período.")
+            option.tap()
         }
     }
 
@@ -105,7 +116,7 @@ final class UXAudit22Lote11DecididasUITests: XCTestCase {
 
     func test_needSection_explainsWhatItIsFor_andGivesAnExamplePerRow() {
         let app = launchStatistics()
-        chooseThisMonth(app)
+        chooseLastMonth(app)
 
         let header = app.buttons["Distribución del gasto por necesidad"].firstMatch
         XCTAssertTrue(scrollTo(app, header), "Falta la sección de la necesidad.")
@@ -122,7 +133,7 @@ final class UXAudit22Lote11DecididasUITests: XCTestCase {
     /// En Pro con el consentimiento dado, Observaciones ya no manda «arriba»: el resumen se pide solo.
     func test_proObservations_doNotAskForATap() {
         let app = launchStatistics(pro: true, insightsAIConsent: true)
-        chooseThisMonth(app)
+        chooseLastMonth(app)
 
         openObservations(app)
 
@@ -137,7 +148,7 @@ final class UXAudit22Lote11DecididasUITests: XCTestCase {
     /// Sin consentimiento hace falta un toque, y el botón está en Observaciones mismo.
     func test_proObservations_withoutConsent_offerTheButtonInPlace() {
         let app = launchStatistics(pro: true)
-        chooseThisMonth(app)
+        chooseLastMonth(app)
 
         openObservations(app)
         XCTAssertTrue(element(app, "insights_observations_generate_ai").waitForExistence(timeout: 5),

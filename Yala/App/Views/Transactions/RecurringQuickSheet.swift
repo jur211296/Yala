@@ -21,11 +21,13 @@ enum RecurringQuickChoiceLogic {
         let weekday = DateFormatter()
         weekday.locale = locale
         weekday.calendar = calendar
+        weekday.timeZone = calendar.timeZone
         weekday.setLocalizedDateFormatFromTemplate("EEEE")
 
         let dayMonth = DateFormatter()
         dayMonth.locale = locale
         dayMonth.calendar = calendar
+        dayMonth.timeZone = calendar.timeZone
         dayMonth.setLocalizedDateFormatFromTemplate("dMMMM")
 
         let day = calendar.component(.day, from: date)

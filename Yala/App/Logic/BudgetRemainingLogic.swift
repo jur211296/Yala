@@ -67,6 +67,9 @@ enum BudgetPeriodTitleLogic {
     static func monthYear(_ date: Date, calendar: Calendar, locale: Locale) -> String {
         let formatter = DateFormatter()
         formatter.calendar = calendar
+        // `calendar` no lleva su zona al formatter: sin esto, una fecha cortada en la zona del calendario se nombraba
+        // en la del proceso (un día antes o después). En la app son la misma.
+        formatter.timeZone = calendar.timeZone
         formatter.locale = locale
         formatter.setLocalizedDateFormatFromTemplate("MMMMyyyy")
         return formatter.string(from: date).capitalizingFirstLetter(locale: locale)
@@ -75,6 +78,9 @@ enum BudgetPeriodTitleLogic {
     private static func range(from start: Date, to end: Date, template: String, calendar: Calendar, locale: Locale) -> String {
         let formatter = DateFormatter()
         formatter.calendar = calendar
+        // `calendar` no lleva su zona al formatter: sin esto, una fecha cortada en la zona del calendario se nombraba
+        // en la del proceso (un día antes o después). En la app son la misma.
+        formatter.timeZone = calendar.timeZone
         formatter.locale = locale
         formatter.setLocalizedDateFormatFromTemplate(template)
         return "\(formatter.string(from: start)) – \(formatter.string(from: end))"

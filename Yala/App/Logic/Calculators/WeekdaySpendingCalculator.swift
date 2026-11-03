@@ -96,8 +96,8 @@ struct WeekdaySpendingCalculator {
     }
 
     /// Counts how many times each weekday (1=Sun..7=Sat) appears in a date interval.
-    static func weekdayOccurrences(in interval: DateInterval) -> [Int: Int] {
-        let calendar = Calendar.current
+    /// `calendar`: el del proceso por defecto, como siempre; un test que corta el intervalo en otra zona pasa la suya.
+    static func weekdayOccurrences(in interval: DateInterval, calendar: Calendar = .current) -> [Int: Int] {
         var occurrences: [Int: Int] = [:]
         // Contado con el helper: sobre un período CERRADO (`.lastMonth`, `.lastYear`, un rango
         // personalizado) el intervalo llega con `-1 s` y `dateComponents` a pelo devolvía un día menos.

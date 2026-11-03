@@ -29,8 +29,11 @@ enum ComparisonPhraseLogic {
         calendar: Calendar = .current
     ) -> DateInterval? {
         guard period != .allTime else { return nil }
-        let current = period.dateInterval(customRange: customRange, now: now)
-        let previous = PreviousPeriodHelper.previousInterval(for: period, mode: mode, customRange: customRange, now: now)
+        let periodCalendar = periodCalendar(in: calendar.timeZone)
+        let current = period.dateInterval(customRange: customRange, now: now, calendar: periodCalendar)
+        let previous = PreviousPeriodHelper.previousInterval(
+            for: period, mode: mode, customRange: customRange, now: now, calendar: periodCalendar
+        )
         let asOf = dataEnd.map { min($0, now) } ?? now
         return DateAlignmentHelper.alignedPreviousInterval(
             currentInterval: current,
@@ -40,6 +43,15 @@ enum ComparisonPhraseLogic {
             comparisonMode: mode,
             calendar: calendar
         )
+    }
+
+    /// El calendario con el que se cortan los períodos: el del usuario (su `firstWeekday`), en la zona del calendario que
+    /// recibe la frase. En la app las dos zonas son la del proceso y esto da `userConfiguredCalendar()`, lo de siempre;
+    /// un llamador que fija otra zona (los tests) corta los períodos en la suya y no en la del simulador.
+    static func periodCalendar(in timeZone: TimeZone) -> Calendar {
+        var calendar = userConfiguredCalendar()
+        calendar.timeZone = timeZone
+        return calendar
     }
 
     /// «1–15 de septiembre» si el tramo cae en un solo mes; «29 sept – 5 oct» si cruza meses (con el mes largo no

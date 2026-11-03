@@ -17,9 +17,12 @@ import Testing
 @MainActor
 struct CreditCardReminderSchedulerTests {
 
+    /// En la zona del PROCESO, no fijada a Lima: las marcas del tracker (`hasNotifiedCreditCard`) se guardan por día en
+    /// la zona del proceso, y la app programa con `Calendar.current`. Con el calendario fijado a Lima y el simulador en
+    /// otra zona, el día del aviso y el de la comprobación caían en claves distintas (card orwz).
     private var calendar: Calendar {
         var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(identifier: "America/Lima")!
+        calendar.timeZone = .current
         return calendar
     }
 
