@@ -1178,6 +1178,9 @@ final class GroupService {
                 } catch {
                     throw GroupServiceError.saveFailed(error)
                 }
+                // Card dvg6: como el alta de abajo. Quién soy en el grupo cambia mi saldo en la lista y en el widget,
+                // que solo se rehacen al subir `dataVersion`.
+                SessionState.shared.incrementDataVersion()
             }
             return existing
         }
@@ -1199,6 +1202,7 @@ final class GroupService {
                 } catch {
                     throw GroupServiceError.saveFailed(error)
                 }
+                SessionState.shared.incrementDataVersion()  // card dvg6, como arriba
             }
             return legacy
         }

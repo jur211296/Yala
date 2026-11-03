@@ -104,7 +104,7 @@ struct GroupsNextColumnPiecesTests {
                 == ["name", "amount", "currency_code", "rate"])
     }
 
-    @Test("(4) con el manifest de hoy, v2 conserva todas las columnas y v1 solo quita el presupuesto")
+    @Test("(4) con el manifest de hoy, v2 conserva todo split_groups y v1 solo le quita el presupuesto")
     func keptColumns_todaysManifest() {
         let emission = GroupEntityEmissionMap.splitGroup
         #expect(GroupsSyncCapability.keptColumns(of: emission, level: 2) == emission.columns)
@@ -114,7 +114,10 @@ struct GroupsNextColumnPiecesTests {
                       GroupEntityEmissionMap.splitSettlement.columns] {
             #expect(!table.isEmpty)
         }
+        // Desde la v3 (g29_01, card xi74) el autor del gasto es posterior: v2 solo le quita esa columna.
         #expect(GroupsSyncCapability.keptColumns(of: GroupEntityEmissionMap.splitExpense, level: 2)
+                == GroupEntityEmissionMap.splitExpense.columns.subtracting(["last_edited_by_member_key"]))
+        #expect(GroupsSyncCapability.keptColumns(of: GroupEntityEmissionMap.splitExpense, level: 3)
                 == GroupEntityEmissionMap.splitExpense.columns)
     }
 

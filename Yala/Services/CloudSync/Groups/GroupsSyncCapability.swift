@@ -20,9 +20,8 @@
 //  mismo (`GROUP_CAPABILITY_LEVEL_WITHOUT_HEADER`, `gateway/src/groups/manifest.ts`). Leerlo como 1 haría que este
 //  teléfono, contra ese Worker, hashease sin el presupuesto mientras el Worker lo hashea con él.
 //
-//  LAS CUATRO PIEZAS DE LA PRÓXIMA COLUMNA (card u8cl, 2026-10-28). Hoy el nivel declarado es siempre 2 (el cliente
-//  entiende 2 y todo Worker que exista anuncia 2 o no anuncia), así que ninguna muerde todavía. Están puestas para que
-//  la primera columna con `since: 3` solo tenga que declararse en `columnSince` y en el manifest:
+//  LAS CUATRO PIEZAS DE LA PRÓXIMA COLUMNA (card u8cl, 2026-10-28). Las estrenó la v3 el 2026-11-02 (g29_01, card
+//  xi74: el autor de gastos y liquidaciones), que solo se declaró en `columnSince` y en el manifest:
 //   1. La EMISIÓN del drain sale de aquí (`emission(_:upTo:)`) y `DeltaEmitter.emit` recibe
 //      `capabilityLevel: declaredLevel`: sin eso tomaba `SyncCapability.declaredLevel`, el nivel del canal PERSONAL, y
 //      una columna nueva dejaba de subir en todo teléfono cuyo canal personal declara 1. El `since` de Grupos sigue
@@ -53,16 +52,22 @@ import os
 nonisolated enum GroupsSyncCapability {
 
     /// La versión del manifest de Grupos que este build entiende. Súbela SOLO junto con la columna que la estrena.
-    static let clientManifestVersion = 2
+    static let clientManifestVersion = 3
 
     /// Versión del manifest de Grupos que estrena `split_groups.budget_limit_amount` (g14_01).
     static let budgetLimitSince = 2
+
+    /// Versión que estrena quién hizo cada cambio (g29_01, card xi74, 2026-11-02): `split_expenses.last_edited_by_member_key`
+    /// y `split_settlements.recorded_by_member_key`. Con ellas el aviso local no le sale al autor en su otro dispositivo.
+    static let changeAuthorSince = 3
 
     /// `since` de cada columna de Grupos posterior a la v1, por tabla (las que no están, 1). Espejo del `since` de
     /// `group_capability_manifest.json`, y `GroupsCapabilityManifestParityTests` exige que casen columna a columna.
     /// Vive aquí y no en el `ColumnEmitter`: ver la trampa de la cabecera.
     static let columnSince: [String: [String: Int]] = [
         "split_groups": ["budget_limit_amount": budgetLimitSince],
+        "split_expenses": ["last_edited_by_member_key": changeAuthorSince],
+        "split_settlements": ["recorded_by_member_key": changeAuthorSince],
     ]
 
     /// `since` de una columna de Grupos (1 si no figura en `columnSince`).

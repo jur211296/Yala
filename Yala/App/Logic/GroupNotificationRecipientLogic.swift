@@ -60,15 +60,22 @@ enum GroupNotificationRecipientLogic {
     /// - No tengo share, o mi share es 0 → `.skip` (no participo, me quitaron del split,
     ///   o mi porción es 0 → "te toca S/0" sería ruido; financieramente no me concierne).
     /// - En otro caso → `.notify(share:)` con mi porción.
+    ///
+    /// `myOtherMemberIDs` (card xi74, 2026-11-02): mis OTRAS filas de la zona. En un grupo migrado la misma persona tiene la
+    /// fila heredada de CloudKit y la nacida en el backend, y dos dispositivos suyos pueden resolver filas distintas (el
+    /// flag `isCurrentUser` es del dispositivo): el iPhone firma con una y el iPad se reconoce en la otra. Comparar solo con
+    /// la canónica le avisaba de su propia edición.
     static func expenseDecision(currentMemberID: String?,
                                 paidByMemberID: String,
                                 lastEditedByMemberID: String? = nil,
+                                myOtherMemberIDs: Set<String> = [],
                                 myShareAmount: Double?) -> ExpenseNotifyDecision {
         guard let me = currentMemberID else { return .skip }
+        let mine = myOtherMemberIDs.union([me])
         // Autor efectivo del cambio; si el campo es nil (legado) cae al proxy pagador.
         let author = lastEditedByMemberID ?? paidByMemberID
-        if author == me { return .skip }
-        if paidByMemberID == me { return .skip }
+        if mine.contains(author) { return .skip }
+        if mine.contains(paidByMemberID) { return .skip }
         guard let share = myShareAmount, share > 0 else { return .skip }
         return .notify(share: share)
     }
@@ -80,9 +87,11 @@ enum GroupNotificationRecipientLogic {
     /// filtro por receptor.
     static func shouldNotifySettlement(currentMemberID: String?,
                                        toMemberID: String,
-                                       recordedByMemberID: String? = nil) -> Bool {
+                                       recordedByMemberID: String? = nil,
+                                       myOtherMemberIDs: Set<String> = []) -> Bool {
         guard let me = currentMemberID else { return false }
-        if let recorder = recordedByMemberID, recorder == me { return false }
+        // Card xi74: mis otras filas de la zona también me identifican como quien la registró (ver `expenseDecision`).
+        if let recorder = recordedByMemberID, myOtherMemberIDs.union([me]).contains(recorder) { return false }
         return toMemberID == me
     }
 }

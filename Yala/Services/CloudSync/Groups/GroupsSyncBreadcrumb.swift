@@ -44,6 +44,11 @@ enum GroupsSyncBreadcrumb {
         logger.notice("GroupsSync openingBalanceRejectionSettled rows=\(rows, privacy: .public) groupsReset=\(groupsReset, privacy: .public)")
     }
 
+    /// Card m76a: repartos huérfanos de saldos iniciales rechazados que se retiraron tras el re-pull.
+    static func groupsOpeningBalanceOrphanSharesRemoved(count: Int) {
+        logger.notice("GroupsSync openingBalanceOrphanSharesRemoved count=\(count, privacy: .public)")
+    }
+
     /// Card e6fd: el descarte de un saldo rechazado espera al ciclo siguiente. `reason` = `drain-unfinished` (algo sigue en el
     /// History sin traducir) o `live-outbox:<n>` (n grupos con cambios aún por subir, que el re-pull pisaría en pantalla).
     static func groupsOpeningBalanceRejectionDeferred(reason: String) {

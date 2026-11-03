@@ -741,6 +741,9 @@ final class GroupsSyncClient {
         // `SyncApplyEngine`: divergencia esperada, no incidente).
         if case .completed = pull {
             lastPullCycleCompleted = true
+            // Card m76a: con el pull agotado, el re-pull de un grupo cuyo saldo se descartó ya bajó lo que el servidor
+            // tiene; los repartos de un saldo que no volvió son huérfanos y se retiran.
+            sweepRejectedOpeningBalanceShares(context: context)
             completedPullsSinceMerkle += 1
             if SyncCadencePolicy.shouldRunMerkle(
                 completedPullsSinceMerkle: completedPullsSinceMerkle, lastMerkleAt: lastMerkleAt, now: now()) {
@@ -2567,6 +2570,17 @@ final class GroupsSyncClient {
             return (row.groupID, reason)
         }
         let settledCount = rows.count
+        // Card m76a: los gastos descartados, para mirar tras el re-pull si sus repartos se quedaron huérfanos. Se leen
+        // ANTES del save, como los avisos.
+        let ledgerEntries: [GroupsRejectedOpeningBalanceLedger.Entry] = rows.compactMap { row in
+            guard row.entityType == GroupSyncEntityType.splitExpense else { return nil }
+            let reason = row.rejectedReason.flatMap {
+                OpeningBalanceServerRejectionLogic.reason(
+                    forSlug: String($0.dropFirst(OpeningBalanceServerRejectionLogic.storedPrefix.count)))
+            }
+            return .init(groupID: row.groupID, expenseID: row.syncID, ownerUserID: sessionOwner,
+                         localOnly: reason == .groupClosed)
+        }
 
         var unbridgeExpenseIDs: Set<UUID> = []
         var resetGroupIDs: Set<String> = []
@@ -2606,6 +2620,7 @@ final class GroupsSyncClient {
             return 0
         }
         drainUnbridge(expenseIDs: unbridgeExpenseIDs, settlementIDs: [])
+        GroupsRejectedOpeningBalanceLedger.add(ledgerEntries)
         // El re-pull vuelve a bajar todos los gastos de esos grupos: sin esto, cada uno avisaría de «gasto modificado».
         capabilityRepullZones.formUnion(resetGroupIDs)
         // El aviso (card 6n1o) sale aquí y no en `applyResults`: dice que el saldo volvió a como está en el grupo, y eso solo
@@ -2616,6 +2631,64 @@ final class GroupsSyncClient {
         }
         GroupsSyncBreadcrumb.groupsOpeningBalanceRejectionSettled(rows: settledCount, groupsReset: resetGroupIDs.count)
         return settledCount
+    }
+
+    /// Card m76a (2026-11-02) · tras un pull COMPLETO, retira los repartos huérfanos de los saldos iniciales que
+    /// `settleRejectedOpeningBalances` descartó (`GroupsRejectedOpeningBalanceLedger`, donde está el porqué entero).
+    /// Si el gasto volvió con el re-pull, el servidor lo tiene y no se toca nada. Si no volvió, sus repartos locales se
+    /// borran: con el autor normal, para que el drain los suba como tombstones; con el grupo cerrado, con el del canal
+    /// (solo aquí). Lo de otra cuenta se queda apuntado. Devuelve cuántos repartos retiró.
+    @discardableResult
+    func sweepRejectedOpeningBalanceShares(context: ModelContext) -> Int {
+        let sessionOwner = currentUserIDProvider()
+        let pending = GroupsRejectedOpeningBalanceLedger.entries.filter { $0.ownerUserID == sessionOwner }
+        guard !pending.isEmpty else { return 0 }
+        var settled: Set<UUID> = []
+        var uploadDeletes: [SplitShare] = []
+        var localDeletes: [SplitShare] = []
+        do {
+            for entry in pending {
+                let expenseID = entry.expenseID
+                if try fetchSplitExpense(id: expenseID, context: context) != nil {
+                    settled.insert(expenseID)  // volvió: era una edición, sus repartos son los del servidor
+                    continue
+                }
+                let shares = try context.fetch(FetchDescriptor<SplitShare>(predicate: #Predicate { $0.expenseID == expenseID }))
+                if entry.localOnly { localDeletes += shares } else { uploadDeletes += shares }
+                settled.insert(expenseID)
+            }
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: sweepRejectedOpeningBalanceShares fetch falló: \(error)")
+            #endif
+            return 0  // «no pude leer» no es «no hay nada»: se reintenta tras el siguiente pull completo
+        }
+        do {
+            if !localDeletes.isEmpty {
+                try saveWithAuthor(context) { for share in localDeletes { context.delete(share) } }
+            }
+            if !uploadDeletes.isEmpty {
+                for share in uploadDeletes { context.delete(share) }
+                try context.save()  // autor por defecto: el drain del ciclo siguiente sube los tombstones
+            }
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: sweepRejectedOpeningBalanceShares save falló: \(error)")
+            #endif
+            context.rollback()
+            return 0
+        }
+        GroupsRejectedOpeningBalanceLedger.remove(expenseIDs: settled)
+        // Los tombstones al outbox YA (review del 2026-11-02): el Merkle de este mismo ciclo corre detrás, y con el outbox a 0
+        // vería menos repartos que el servidor y daría una divergencia falsa —canario y la remediación de la sesión—. Con
+        // filas vivas, el guard 1 de `verifyGroupIntegrity` salta el grupo hasta que suban.
+        if !uploadDeletes.isEmpty { drainOnce(context: context) }
+        let removed = localDeletes.count + uploadDeletes.count
+        if removed > 0 {
+            GroupsSyncBreadcrumb.groupsOpeningBalanceOrphanSharesRemoved(count: removed)
+            onRemoteChangesApplied()
+        }
+        return removed
     }
 
     /// Decodifica el `outcome` de cada resultado del push APARTE (el `SyncDeltaResult` local lo descarta),
@@ -2669,11 +2742,15 @@ final class GroupsSyncClient {
     func pullUntilExhausted(context: ModelContext, limit: Int = 500) async -> GroupsPullOutcome {
         var pages = 0
         var totalDeltas = 0
+        // Card dvg6: un pull que se corta a medias YA guardó las páginas de antes. Sin el bump, la lista, el detalle y el
+        // widget seguían con lo viejo hasta el ciclo siguiente (`swiftui-ds.md`, «Mover un cálculo del body…»). Solo con
+        // algo aplicado: un corte en la primera página no cambió nada.
+        func notifyPartialPull() { if totalDeltas > 0 { onRemoteChangesApplied() } }
         for _ in 0..<Self.pullMaxIterations {
             let page = await pullAndApplyOnce(context: context, limit: limit)
             switch page {
             case .applied(let deltas, let saved):
-                guard saved else { return .transient }             // A1: cursor no avanzó → cortar
+                guard saved else { notifyPartialPull(); return .transient }   // A1: cursor no avanzó → cortar
                 if deltas == 0 {
                     // H-2026-07-18-5: bump VIVO de refresh POR-CICLO (no por-página) — solo si el ciclo
                     // aplicó deltas que cambian contenido. `markRemoteChangePending` (por-página, en
@@ -2691,12 +2768,13 @@ final class GroupsSyncClient {
                 }
                 pages += 1
                 totalDeltas += deltas
-            case .sessionExpired: return .sessionExpired
-            case .accountUnavailable: return .accountUnavailable
-            case .transient: return .transient
+            case .sessionExpired: notifyPartialPull(); return .sessionExpired
+            case .accountUnavailable: notifyPartialPull(); return .accountUnavailable
+            case .transient: notifyPartialPull(); return .transient
             }
         }
         GroupsSyncBreadcrumb.groupsPullExhaustedCap(pages: pages)
+        notifyPartialPull()
         return .transient
     }
 
@@ -3463,6 +3541,10 @@ final class GroupsSyncClient {
         if let v = wireBool(f["is_settled"]) { model.isSettled = v }
         if let v = wireBool(f["is_opening_balance"]) { model.isOpeningBalance = v }
         if let v = f["subcategory_name"] { model.subcategoryName = wireString(v) }
+        // g29_01 (v3, card xi74): quién hizo el cambio. Con la key presente manda el servidor, también su NULL (una fila
+        // anterior a la columna): conservar el autor local divergiría del Merkle en cada fila vieja. Sin la key —un Worker o
+        // un nivel declarado que no la conocen— el autor local se queda como estaba.
+        if let v = f["last_edited_by_member_key"] { model.lastEditedByMemberID = wireString(v) }
         if existing == nil { context.insert(model) }
         bridgeExpenseIDs.append(id)
     }
@@ -3515,6 +3597,8 @@ final class GroupsSyncClient {
         if let v = f["note"] { model.note = wireString(v) }
         if let v = wireDate(f["date"]) { model.date = v }
         if let v = wireBool(f["is_confirmed"]) { model.isConfirmed = v }
+        // g29_01 (v3, card xi74): quién la registró. Mismo criterio que el autor del gasto (`applyExpense`).
+        if let v = f["recorded_by_member_key"] { model.recordedByMemberID = wireString(v) }
         if existing == nil { context.insert(model) }
         bridgeSettlementIDs.append(id)
     }

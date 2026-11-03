@@ -138,6 +138,9 @@ class YalaAppDelegate: NSObject, UIApplicationDelegate {
             // breadcrumb se conserva idéntico.
             Task { @MainActor in
                 let result = await GroupsSyncClient.shared.syncNowFromPush(timeout: .seconds(20))
+                // Card dvg6: el widget de Grupos se rehace 400 ms después de subir `dataVersion`, y al contestar el push
+                // iOS suspende la app antes de que pase la espera. Se hace aquí, en el acto.
+                WidgetGroupsRefresh.shared.flushPendingCheck()
                 completionHandler(result ? .newData : .noData)
             }
             return

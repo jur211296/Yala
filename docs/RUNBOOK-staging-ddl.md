@@ -583,6 +583,32 @@ entorno, va primero (su sección, arriba).
 alguna línea ya tiene cambios. Tras volver el Worker atrás, un teléfono que ya apuntó «backend = 3» manda la columna hasta
 su siguiente pull, y el Worker v2 rechaza esas filas enteras (`unknown_column`) en ese hueco.
 
+## `g29_01_group_change_author.sql` — quién hizo cada cambio de un grupo (APLICADA, 2026-11-02)
+
+**Estado:** **APLICADA en staging y en producción el 2026-11-02**, con el Worker del manifest de Grupos **v3** en los dos
+(`g29_01-remote.sh … state`: las dos columnas `text` y los dos readers con la columna al final; `/config` de los dos da
+`"sync":{"manifestVersion":6,"groupsManifestVersion":3}`). Worker de staging `925a42da…` → `453090c6-70d6-42cd-ba77-1d32ecac83b2`;
+producción `d0737d7a…` → `9b651957-c662-40d5-ad21-b6ef870d5a85`. Sonda de staging `g29_01-staging-probe.sh`, 12/12.
+
+Qué es: `split_expenses.last_edited_by_member_key` y `split_settlements.recorded_by_member_key`, `text` nullable en claro,
+con su grant de UPDATE por columna (en Grupos no se hereda) y los dos readers del pull recreados con la columna al final.
+`apply_group_delta` no cambia. Card xi74.
+
+### Si hay que repetirla (staging `fostjbbwstyuunmmefuk` primero; luego producción `kefvaiymtgytemwbltlz`)
+
+1. **Medir.** `bash qa/cloud/g29_01-remote.sh <staging|production> state`. Con las dos columnas `text` y los readers en
+   `true` ya está: salta al paso 3.
+2. **Aplicar.** `bash qa/cloud/g29_01-remote.sh <staging|production> apply`. Responde `[]` y luego el estado. Aborta entera
+   si un reader no está en la versión medida (md5 en §1 del fichero).
+3. **Worker, SOLO después del paso 2**, desde `2.2` con este cambio: `cd gateway && npm ci && npm run deploy:staging` o
+   `npm run deploy:production`. El `predeploy` dice `check-manifest-not-older: OK (… grupos desplegado v2, este árbol v3)`.
+4. **Comprobar.** `curl -s -A yala <url del gateway>/config` trae `"groupsManifestVersion":3`. En staging, además,
+   `GROUPS_ENC_KEY="$(cat ~/Secrets/yala-groups-enc/staging.key)" bash qa/cloud/g29_01-staging-probe.sh` → `12/12 PASS`.
+
+**Marcha atrás.** Worker: `npx wrangler rollback <id anterior>` (último recurso: un teléfono con «backend = 3» apuntado
+manda las columnas a un Worker v2 hasta su siguiente pull, `unknown_column`). Columnas y readers:
+`bash qa/cloud/g29_01-remote.sh <entorno> rollback` (no aborta con datos: solo se pierde quién hizo cada cambio).
+
 ## `g28_01_tx_items_split_lines.sql` — las líneas de tu parte de un gasto de grupo (APLICADA, 2026-11-01)
 
 **Estado:** **APLICADA en staging y en producción el 2026-11-01**, con el Worker v6 en los dos (medido con `g28_01-remote.sh … state`: `text`, nullable, grant heredado; `/config` de los dos da `"sync":{"manifestVersion":6,"groupsManifestVersion":2}`). Worker de staging `0d84adaf…` → `925a42da-8047-4150-8293-691e78a4aa03`; producción `36fc05ae…` → `d0737d7a-2964-4463-b70d-e7a10f37cb6f`. La sonda de staging, 15/15.

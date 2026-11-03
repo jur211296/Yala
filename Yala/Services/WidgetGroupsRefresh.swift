@@ -12,12 +12,13 @@
 //  del momento, y la comprobación los encuentra iguales.
 //
 //  El pull de Grupos sube `dataVersion` por ciclo (`GroupsSyncClient.onRemoteChangesApplied`). Con la app delante,
-//  lo que baja llega al widget en menos de un segundo. Un push silencioso con la app en segundo plano NO: iOS la
-//  suspende al contestar el push, antes de que pase la espera, y el widget se pone al día al siguiente despertar o
-//  primer plano (card aparte; cambiarlo toca el manejador del push, que es sincronización).
+//  lo que baja llega al widget en menos de un segundo. Con un push silencioso y la app en segundo plano, iOS la suspende
+//  al contestar el push, antes de que pase la espera: desde la card dvg6 (2026-11-02) el manejador del push llama a
+//  `flushPendingCheck()` justo antes del `completionHandler`, que hace la comprobación pendiente en el acto.
 //
 import Foundation
 import SwiftData
+import UIKit
 
 /// La decisión, sin estado: lo que el test fija.
 enum WidgetGroupsRefreshLogic {
@@ -56,6 +57,11 @@ final class WidgetGroupsRefresh {
     /// gasto lo sube en el servicio y en el puente.
     static let coalesceDelay: Duration = .milliseconds(400)
 
+    /// ¿La app está en segundo plano? Inyectable para tests (en el host de test la app está activa).
+    nonisolated(unsafe) static var isInBackground: @MainActor () -> Bool = {
+        UIApplication.shared.applicationState == .background
+    }
+
     private init() {}
 
     func setContext(_ context: ModelContext?) {
@@ -83,6 +89,7 @@ final class WidgetGroupsRefresh {
     func requestCheck(now: Date = .now) {
         guard modelContext != nil else { return }
         requestedAt = now
+        if Self.isInBackground() { return checkNowInBackground() }
         guard pending == nil else { return }
         pending = Task { @MainActor [weak self] in
             do {
@@ -99,6 +106,36 @@ final class WidgetGroupsRefresh {
             self.check()
         }
     }
+
+    /// Card dvg6 (review del 2026-11-02): en segundo plano no se espera. iOS puede suspender la app antes de que venza la
+    /// espera, y no siempre pasa por el `flushPendingCheck` del push: un ciclo que ya estaba en marcha cuando llegó el push,
+    /// o el que sigue tras el tope de 20 s, suben `dataVersion` después del `completionHandler`.
+    private func checkNowInBackground() {
+        pending?.cancel()
+        pending = nil
+        requestedAt = nil
+        check()
+    }
+
+    /// Card dvg6: hace YA la comprobación que espera su `coalesceDelay`, si hay una. La llama el manejador del push
+    /// silencioso antes del `completionHandler`: después, iOS suspende la app y la espera no llega a vencer. Sin nada
+    /// pendiente no hace nada (ningún ciclo subió `dataVersion`, así que no hay nada nuevo que pintar). Devuelve si rehizo
+    /// la foto.
+    @discardableResult
+    func flushPendingCheck() -> Bool {
+        guard let task = pending else { return false }
+        task.cancel()
+        pending = nil
+        let requested = requestedAt
+        requestedAt = nil
+        guard !WidgetGroupsRefreshLogic.alreadyCovered(requestedAt: requested, publishedAt: publishedAt) else { return false }
+        return check()
+    }
+
+    #if DEBUG
+    /// Tests: ¿hay una comprobación esperando su `coalesceDelay`?
+    var _testHasPendingCheck: Bool { pending != nil }
+    #endif
 
     /// Recalcula la parte de grupos y rehace la foto si cambió. Devuelve si la rehizo.
     @discardableResult

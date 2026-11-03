@@ -262,6 +262,7 @@ final class GroupNotificationService {
                 currentMemberID: cmid,
                 paidByMemberID: expense.paidByMemberID,
                 lastEditedByMemberID: expense.lastEditedByMemberID,
+                myOtherMemberIDs: myMemberIDs(inZone: expense.groupZoneID),
                 myShareAmount: myShare
             ) {
             case .notify(let share): return (expense, share)
@@ -285,7 +286,8 @@ final class GroupNotificationService {
             return GroupNotificationRecipientLogic.shouldNotifySettlement(
                 currentMemberID: cmid,
                 toMemberID: settlement.toMemberID,
-                recordedByMemberID: settlement.recordedByMemberID
+                recordedByMemberID: settlement.recordedByMemberID,
+                myOtherMemberIDs: myMemberIDs(inZone: settlement.groupZoneID)
             ) ? settlement : nil
         } catch {
             #if DEBUG
@@ -325,6 +327,22 @@ final class GroupNotificationService {
             print("GroupNotificationService: Error resolving current member for zone \(zoneName): \(error)")
             #endif
             return nil
+        }
+    }
+
+    /// Card xi74: TODAS mis filas de la zona (`GroupExpenseService.resolveAllCurrentUserMembers`), para reconocer como mío
+    /// un cambio firmado con mi otra fila. Un fallo de lectura devuelve el conjunto vacío: la decisión cae a la canónica,
+    /// que es lo de antes.
+    private func myMemberIDs(inZone zoneID: String) -> Set<String> {
+        guard let modelContext else { return [] }
+        do {
+            let members = try modelContext.fetch(FetchDescriptor<SplitMember>(predicate: #Predicate { $0.groupZoneID == zoneID }))
+            return Set(GroupExpenseService.resolveAllCurrentUserMembers(from: members).map(\.id.uuidString))
+        } catch {
+            #if DEBUG
+            print("GroupNotificationService: Error resolving my members for zone \(zoneID): \(error)")
+            #endif
+            return []
         }
     }
 

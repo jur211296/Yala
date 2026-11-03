@@ -126,11 +126,8 @@ final class GroupDetailViewModel {
     /// `GroupExpenseService` aplica al guardar (`OpeningBalancePermissionLogic`).
     var isOpeningBalanceManager: Bool {
         guard !isGroupGone else { return false }
-        return OpeningBalancePermissionLogic.canManage(
-            groupIsOwner: group.isOwner,
-            currentMemberIsActive: currentUserMember?.isActive ?? false,
-            currentMemberIsAdmin: currentUserMember?.isAdmin ?? false
-        )
+        // Card hfhs: en un grupo del backend, como `is_group_admin` (cualquier fila mía admin), no la fila canónica.
+        return OpeningBalancePermissionLogic.canManage(group: group, members: members)
     }
 
     /// Card jqgy: cómo se pinta la sección «Saldos iniciales» de Miembros. En un grupo congelado se ve sin dejar cambiar.
