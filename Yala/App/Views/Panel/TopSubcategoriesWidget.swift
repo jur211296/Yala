@@ -501,11 +501,12 @@ private struct SubcategoryRow: View {
                                 .font(DS.Typography.headline)
                                 .foregroundStyle(.primary)
                             Spacer()
-                            Text(
-                                appPreferences.currency(summary.amount, currencyCode: currencyCode)
+                            // Misma forma de importe que «Top categorías» (símbolo y decimales en pequeño).
+                            AmountText(
+                                value: summary.amount,
+                                currencyCode: currencyCode,
+                                font: DS.Typography.headline, secondaryFont: DS.Typography.caption
                             )
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(.primary)
                         }
 
                         // Percentages + Variation Chip (inline, chip aligned right)
