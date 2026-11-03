@@ -38,12 +38,15 @@ struct TrendsAIInput {
     let filtersActive: Bool
 }
 
-struct TrendsAIBullet: Equatable, Identifiable {
+/// `Codable` para guardar la última respuesta de cada ranura (encargo `estadisticas-ia-automatica`).
+struct TrendsAIBullet: Equatable, Identifiable, Codable {
     let id: Int
     /// Gráfica de la que habla; decide el icono. `nil` si el modelo no la dijo.
     let source: TrendInsightBullet.Source?
     let text: String
 }
+
+extension TrendInsightBullet.Source: Codable {}
 
 // MARK: - Service
 

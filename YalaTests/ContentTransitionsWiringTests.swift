@@ -63,7 +63,8 @@ struct ContentTransitionsWiringTests {
     /// Cada marcador de carga de la card C7 sale con la salida que no duplica.
     static let loadingPlaceholders: [(path: String, count: Int)] = [
         ("Yala/App/Views/Groups/GroupsContainerView.swift", 1),
-        ("Yala/App/Views/Statistics/InsightsTabView.swift", 4),
+        // 5 desde el encargo `estadisticas-ia-automatica`: el hero pinta «Analizando…» mientras decide si sale solo.
+        ("Yala/App/Views/Statistics/InsightsTabView.swift", 5),
         ("Yala/App/Views/Statistics/CategoriesTabView.swift", 1),
         ("Yala/App/Views/Statistics/TrendsTabView.swift", 1),
         ("Yala/App/Views/Chat/ChatGreetingBubble.swift", 1),
@@ -76,7 +77,7 @@ struct ContentTransitionsWiringTests {
         #expect(found == count, "\(path): \(found) marcadores con la salida de carga, se esperaban \(count).")
     }
 
-    /// Las cinco tarjetas «Analizando…» de Estadísticas (Insights ×3, Distribución, Tendencias): todas con la salida.
+    /// Las tarjetas «Analizando…» de Estadísticas (Insights ×4, Distribución, Tendencias): todas con la salida.
     @Test func everyAIPlaceholder_isWired() throws {
         let paths = [
             "Yala/App/Views/Statistics/InsightsTabView.swift",

@@ -22,11 +22,11 @@ final class UXAudit22Lote11DecididasUITests: XCTestCase {
     }
 
     private func launchStatistics(
-        pro: Bool = false, insightsAIConsent: Bool = false, extraArguments: [String] = []
+        pro: Bool = false, insightsAIConsent: Bool = false, statsAIReply: Bool = false, extraArguments: [String] = []
     ) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchForUITest(pro: pro, seed: "realista", deeplink: "statistics", insightsAIConsent: insightsAIConsent,
-                            extraArguments: extraArguments)
+                            statsAIReply: statsAIReply, extraArguments: extraArguments)
         XCTAssertTrue(app.waitForUITestReady(timeout: 90), "uitest_ready ausente — bootstrap/seed no completó.")
         return app
     }
@@ -130,12 +130,16 @@ final class UXAudit22Lote11DecididasUITests: XCTestCase {
 
     // MARK: - L11-7
 
-    /// En Pro con el consentimiento dado, Observaciones ya no manda «arriba»: el resumen se pide solo.
+    /// En Pro con el consentimiento dado, Observaciones ya no manda «arriba»: el resumen se pide solo. Desde el encargo
+    /// `estadisticas-ia-automatica` sale al abrir Estadísticas (no al abrir Observaciones) y un fallo es silencioso, así
+    /// que la llamada la contesta el seam: sin él, en el simulador falla y vuelve el botón.
     func test_proObservations_doNotAskForATap() {
-        let app = launchStatistics(pro: true, insightsAIConsent: true)
+        let app = launchStatistics(pro: true, insightsAIConsent: true, statsAIReply: true)
         chooseLastMonth(app)
 
         openObservations(app)
+        XCTAssertTrue(app.staticTexts["Observación de prueba de la IA."].waitForExistence(timeout: 15),
+                      "Las observaciones con IA no salieron solas.")
 
         XCTAssertFalse(
             app.staticTexts["Toca el botón de arriba para generar observaciones con IA"].waitForExistence(timeout: 3),

@@ -68,6 +68,12 @@ final class InsightsAIResultStore {
         payload["_focus"] = focus.rawValue
         payload["_currencyFormat"] = currencyFormat
         payload["_version"] = fingerprintVersion
+        return stableHash(payload)
+    }
+
+    /// SHA-256 del JSON con las claves ordenadas: el mismo diccionario da la misma huella en cualquier lanzamiento. La
+    /// usa también la ranura de `StatsAIAutoRefreshStore`.
+    static func stableHash(_ payload: [String: Any]) -> String? {
         guard JSONSerialization.isValidJSONObject(payload) else { return nil }
         do {
             let data = try JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys])

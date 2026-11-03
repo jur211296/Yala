@@ -13,6 +13,11 @@ paths:
   - "Yala/Services/TranscriptionParserService.swift"
   - "Yala/Services/AIPromptLanguage.swift"
   - "Yala/Services/InsightsLLMService.swift"
+  - "Yala/Services/TrendsAIService.swift"
+  - "Yala/Services/StatsAIAutoRefreshStore.swift"
+  - "Yala/App/Logic/StatsAIAutoRefreshLogic.swift"
+  - "Yala/App/ViewModels/InsightsViewModel.swift"
+  - "Yala/App/ViewModels/TrendsAIViewModel.swift"
   - "Yala/Services/ChatAssistantService.swift"
   - "Yala/Services/Chat/**"
   - "qa/ai-bank/**"
@@ -157,3 +162,26 @@ reales sobre `realista`, y `gateway/scripts/yala-ia-bank.ts` las manda a staging
 Baja el centinela de la semilla de categorías antes de sembrar: puesto, la semilla sale sin categorías y el banco mide
 un libro sin gastos.
 
+## Los textos con IA de Estadísticas salen solos (encargo `estadisticas-ia-automatica`, 2026-11-03)
+
+Pro con la IA aceptada ve el resumen (Resumen, Distribución) y el análisis de Tendencias sin tocar nada. Lo que no se
+toca sin reabrirlo:
+
+- **Una sola decisión, `StatsAIAutoRefreshLogic.decide`**, para las dos páginas: ≥5 registros, mismas cifras = lo guardado
+  (aunque tenga más de 24 h), antirrebote de 10 min por ranura (también para la primera), cambio relevante (±3 registros
+  o un total ±10 %) y, sin él, una regeneración al día si lo guardado tiene 24 h. **Techo: 4 automáticas por página y
+  día**; lo manual no cuenta. Un texto de IA nuevo en Estadísticas pasa por ella, o se dispara sin techo.
+- **La ranura no lleva cifras** (período, filtros por nombre con `InsightsViewModel.aiFilterIdentity`, tono, enfoque,
+  idioma, divisa): es lo que se enseña mientras se regenera. Nunca `hashValue` en una ranura o una huella: cambia en cada
+  lanzamiento y cada arranque sería una primera vez pagada.
+- **El intento se apunta al pedirlo** (`StatsAIAutoRefreshStore.recordGeneration`), no al recibirlo: un fallo también
+  gasta y así el techo acota los reintentos. Sin red no se apunta ni se llama.
+- **La petición automática va en una tarea propia**, fuera del `.task(id:)` que la decide: cambiar de pestaña recalcula,
+  sube la versión y cancelaría una llamada ya pagada.
+- **Un fallo automático es silencioso**: lo guardado se queda; sin nada, vuelve el botón de siempre (ni la tarjeta de
+  error ni el aviso V2-06, que son de lo pedido a mano).
+- **Coste medido** (banco del 2026-10-07): `insights.cards` 0,48 USD/1000 y `trends.summary` 4,49 USD/1000. Con el techo,
+  como mucho ≈0,02 USD por usuario y día; lo normal, una de cada (≈0,005). Si cambia el modelo de una de las dos filas
+  de `routes.ts`, rehaz la cuenta antes de tocar el techo.
+- XCUITest: `-uitest-stats-ai-reply` contesta sin red con `StatsAIUITestReply`; la decisión sigue siendo la de producción.
+  Sus claves (`StatsAIAutoRefreshStore.storageKeys`) las borran «Vaciar datos» y `-uitest-reset`.
