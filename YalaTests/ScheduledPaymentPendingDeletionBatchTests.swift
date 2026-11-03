@@ -34,6 +34,14 @@ struct ScheduledPaymentPendingDeletionBatchTests {
     private func reset(_ pending: ScheduledPaymentPendingDeletion, delay: Duration) {
         pending.undoAll()
         pending.commitDelayForBatch = delay
+        pending.batchSleep = { try await Task.sleep(for: $0) }
+    }
+
+    /// El plazo lo dispara el test (`ManualBatchTimer`): ningún caso depende de cuánto tarde el hilo principal.
+    private func manualTimer(_ pending: ScheduledPaymentPendingDeletion) -> ManualBatchTimer {
+        let timer = ManualBatchTimer()
+        pending.batchSleep = { try await timer.sleep($0) }
+        return timer
     }
 
     /// Dos borrados seguidos comparten aviso: su «Deshacer» devuelve los dos. Hasta el 2026-10-29 el aviso del segundo
@@ -59,39 +67,43 @@ struct ScheduledPaymentPendingDeletionBatchTests {
     /// Sin «Deshacer», los dos se borran juntos al terminar el plazo del último, una vez cada uno.
     @Test func twoDeletionsInARow_commitTogether() async throws {
         let pending = ScheduledPaymentPendingDeletion.shared
-        let savedDelay = pending.commitDelayForBatch
-        pending.commitDelayForBatch = .milliseconds(60)
-        defer { reset(pending, delay: savedDelay) }
+        defer { reset(pending, delay: ScheduledPaymentPendingDeletion.commitDelay) }
+        let timer = manualTimer(pending)
         let gym = UUID(), rent = UUID()
 
         var committed: [String] = []
         pending.request(paymentID: gym, name: "Gimnasio") { committed.append("Gimnasio") }
         pending.request(paymentID: rent, name: "Alquiler") { committed.append("Alquiler") }
+        // Un solo plazo vivo: el del segundo sustituye al del primero.
+        #expect(await timer.settle { timer.requestedDelays.count == 2 && timer.pendingCount == 1 })
         #expect(committed.isEmpty)
-        try await Task.sleep(for: .milliseconds(300))
+        timer.fireAll()
+        #expect(await timer.settle { committed.count == 2 })
         #expect(committed.sorted() == ["Alquiler", "Gimnasio"])
         #expect(!pending.hides(gym))
         #expect(!pending.hides(rent))
     }
 
     /// El plazo es UNO y lo marca el último borrado: el primero no se borra a su hora, espera al segundo. Con un plazo por
-    /// pago (el molde viejo) el primero se borraba a los 200 ms aunque su aviso ya no estuviera.
+    /// pago (el molde viejo) quedaban dos plazos vivos y el primero se borraba al vencer el suyo, sin aviso ya.
     @Test func secondDeletion_extendsTheFirstOnesDeadline() async throws {
         let pending = ScheduledPaymentPendingDeletion.shared
-        let savedDelay = pending.commitDelayForBatch
+        defer { reset(pending, delay: ScheduledPaymentPendingDeletion.commitDelay) }
+        let timer = manualTimer(pending)
         pending.commitDelayForBatch = .milliseconds(200)
-        defer { reset(pending, delay: savedDelay) }
         let gym = UUID(), rent = UUID()
 
         var committed: [String] = []
         pending.request(paymentID: gym, name: "Gimnasio") { committed.append("Gimnasio") }
-        try await Task.sleep(for: .milliseconds(120))
+        #expect(await timer.settle { timer.requestedDelays.count == 1 && timer.pendingCount == 1 })
         pending.request(paymentID: rent, name: "Alquiler") { committed.append("Alquiler") }
-        try await Task.sleep(for: .milliseconds(140))
-        // A 260 ms del primero: su plazo propio ya habría vencido, el compartido (320 ms) no.
+        // El plazo del primero se canceló y el nuevo cuenta entero desde el segundo borrado.
+        #expect(await timer.settle { timer.requestedDelays.count == 2 && timer.pendingCount == 1 })
+        #expect(timer.requestedDelays == [.milliseconds(200), .milliseconds(200)])
         #expect(committed.isEmpty)
         #expect(pending.hides(gym))
-        try await Task.sleep(for: .milliseconds(250))
+        timer.fireAll()
+        #expect(await timer.settle { committed.count == 2 })
         #expect(committed.sorted() == ["Alquiler", "Gimnasio"])
     }
 
@@ -110,15 +122,15 @@ struct ScheduledPaymentPendingDeletionBatchTests {
     /// Al vencer, las pantallas recargan aunque el borrado no llegara a hacerse: el pago no se queda fuera de todas.
     @Test func batchEnd_reloadsTheScreens_evenIfNothingWasDeleted() async throws {
         let pending = ScheduledPaymentPendingDeletion.shared
-        let savedDelay = pending.commitDelayForBatch
-        pending.commitDelayForBatch = .milliseconds(60)
-        defer { reset(pending, delay: savedDelay) }
+        defer { reset(pending, delay: ScheduledPaymentPendingDeletion.commitDelay) }
+        let timer = manualTimer(pending)
         let gym = UUID()
 
         pending.request(paymentID: gym, name: "Gimnasio") { /* el borrado no se hace */ }
         let afterRequest = SessionState.shared.dataVersion
-        try await Task.sleep(for: .milliseconds(250))
-        #expect(!pending.hides(gym))
+        #expect(await timer.settle { timer.requestedDelays.count == 1 && timer.pendingCount == 1 })
+        timer.fireAll()
+        #expect(await timer.settle { !pending.hides(gym) })
         #expect(SessionState.shared.dataVersion != afterRequest)
     }
 

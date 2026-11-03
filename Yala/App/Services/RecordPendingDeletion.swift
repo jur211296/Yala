@@ -48,6 +48,9 @@ final class RecordPendingDeletion {
     static let maxBatchSpan: Duration = .seconds(30)
     /// El plazo que usa esta instancia. Solo los tests lo acortan, para ver el borrado sin esperar cinco segundos.
     var commitDelayForBatch: Duration = RecordPendingDeletion.commitDelay
+    /// La espera del plazo. Solo los tests la sustituyen, por un temporizador que ellos disparan: con el reloj de verdad,
+    /// bajo la carga de la suite entera el hilo principal no despachaba el borrado a tiempo y el caso salía rojo a veces.
+    var batchSleep: @MainActor (Duration) async throws -> Void = { try await Task.sleep(for: $0) }
 
     /// ¿Se esconde mientras espera?
     func hides(_ id: PersistentIdentifier, transferPairID: String?) -> Bool {
@@ -91,9 +94,10 @@ final class RecordPendingDeletion {
         SessionState.shared.incrementDataVersion()
         batchTask?.cancel()
         let delay = commitDelayForBatch
+        let sleep = batchSleep
         batchTask = Task { @MainActor [weak self] in
             do {
-                try await Task.sleep(for: delay)
+                try await sleep(delay)
             } catch {
                 return
             }

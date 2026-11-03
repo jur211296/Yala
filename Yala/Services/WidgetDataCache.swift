@@ -870,7 +870,9 @@ enum WidgetDataCache {
         let earliestTransactionDate = transactions.map(\.date).min()
         let daysOfData: Int
         if let earliest = earliestTransactionDate {
-            daysOfData = calendar.dateComponents([.day], from: earliest, to: Date.now).day ?? 90
+            // Acotado a 0: si todo el libro es futuro (lo más antiguo es de mañana o después), la cuenta sale negativa
+            // y `0..<días` revienta el proceso. La curva empieza hoy, como con un libro vacío.
+            daysOfData = max(0, calendar.dateComponents([.day], from: earliest, to: Date.now).day ?? 90)
         } else {
             daysOfData = 0
         }
