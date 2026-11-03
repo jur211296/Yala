@@ -126,6 +126,9 @@ struct InsightsTabView: View {
                             }
                         }
                         .frame(maxWidth: .infinity)
+                        // 12 + 8 = 20 pt sobre la primera sección, el mismo aire que entre tarjetas: con 12 el título
+                        // «Tu salud financiera» colgaba de la fila de acciones en vez de encabezar su tarjeta.
+                        .padding(.top, DS.Spacing.sm)
                         // Las secciones plegables se abren y se cierran con lo de debajo moviéndose (card C2). Implícitas,
                         // en el contenedor común: el `withAnimation` del toque no anima dentro de una pestaña.
                         .animation(reduceMotion ? nil : DS.Animation.appear, value: isToPayExpanded)
