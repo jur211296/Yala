@@ -82,6 +82,7 @@ struct ScheduledPaymentNextMonthActionsTests {
         #expect(!settled(dates: []), "Sin fechas este mes no hay nada hecho")
         #expect(!settled(recurring: false), "Un pago de una sola vez no tiene «mes en curso»")
         #expect(!settled(active: false), "Pausado o terminado, tampoco")
+        #expect(!settled(next: date(2026, 10, 15)), "Octubre vencido sin pagar no es «Próximo»: textos de siempre")
     }
 
     // MARK: - El mes, dentro de una frase

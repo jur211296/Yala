@@ -22,7 +22,8 @@ diciembre. Jürgen pidió que el mes al que aplican se viera con jerarquía, no 
   de 2026». Los botones dicen «Ya pagué diciembre» y «Saltar diciembre», y la ayuda «No se apunta nada en diciembre; los
   demás meses siguen igual». Si ese mes tiene varias fechas (semanal, diario) se nombra la fecha, porque saltar quita una.
 - Se descartó ocultar o bajar de nivel las acciones: pagar por adelantado es legítimo.
-- Con el mes en curso sin pagar, todo sigue igual.
+- Con el mes en curso sin pagar, todo sigue igual. Con una fecha de un mes anterior vencida y sin pagar, también: no es «Próximo», es atrasada
+  (lo cazó la review).
 - Bandeja y widget de pagos: medidos, no cambiados. Los dos leen `nextDueDate`, y pagar noviembre lo avanza al 1 de
   diciembre, la misma fecha que el detalle nombra. Lo fija un test de paridad.
 - Textos nuevos en los 16 idiomas.

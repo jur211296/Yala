@@ -147,6 +147,9 @@ enum ScheduledPaymentDetailLogic {
     ) -> Bool {
         guard isRecurring, isActive else { return false }
         guard !datesThisMonth.isEmpty, !calendar.isDate(nextDate, equalTo: now, toGranularity: .month) else { return false }
+        // «Más adelante»: una fecha de un mes ANTERIOR sin pagar no es la próxima, es una atrasada (lo cazó la review de
+        // la card 3zva: decía «Próximo: octubre» con octubre vencido).
+        guard nextDate > now else { return false }
         return datesThisMonth.allSatisfy(isCovered)
     }
 

@@ -54,8 +54,10 @@ Desde el rediseño 2.2 (S35f, `docs/widgets/AUDITORIA-WIDGETS-2-2.md`). Lo que e
   neto de su categoría (`WidgetInsightsLogic.netExpenseSlices`, como la tarta de Estadísticas: la devolución resta de su
   trozo), y centro, «Otros» y porcentajes se miden contra la suma de TODOS los trozos (`expenseBreakdownTotal` de la
   foto, que la extensión lee con `breakdownTotal`). Antes un gasto de 100 y su devolución de 30 daban un trozo de 130
-  contra un centro de 70. Una cifra nueva de una tarta de categorías lee `breakdownTotal`; el «Gastado» de un widget
-  sigue siendo `totalExpense`. Una fila que no
+  contra un centro de 70. Las subcategorías tienen SU total (`expenseSubcategoryBreakdownTotal`, leído con
+  `subcategoryBreakdownTotal`): sus filas más el neto de lo que no tiene subcategoría, por categoría. Con el de categorías,
+  un gasto de 100 en Restaurante y una devolución de 80 en Comida sin subcategoría daban una fila del 500 %. Una cifra
+  nueva de una tarta lee el total de su desglose; el «Gastado» de un widget sigue siendo `totalExpense`. Una fila que no
   sale de un hex de la foto lleva su color en `WidgetBreakdownItem.fixedColor`: con el hex vacío, `WidgetColors.fill`
   devuelve el índigo de marca (así salió «Otros» índigo en el aro y gris en la leyenda, lo cazó el banco).
 - **Una acción nueva del Centro de Control** escribe su valor en `pendingControlAction` (`Yala/Shared/ControlCenterIntents.swift`)

@@ -48,8 +48,10 @@ struct WidgetBreakdownTotalWiringTests {
             "let categorySlices = categoryExpenseSlices(from: transactions)",
             "let expenseBreakdownTotal = WidgetInsightsLogic.breakdownTotal(categorySlices.map(\\.amount))",
             "let topCategories = Self.topCategories(from: categorySlices, breakdownTotal: expenseBreakdownTotal)",
-            "let topSubcategories = buildTopSubcategories(from: transactions, totalExpense: expenseBreakdownTotal)",
-            "expenseBreakdownTotal: expenseBreakdownTotal",
+            "let subcategoryBreakdown = subcategoryExpenseBreakdown(from: transactions)",
+            "let topSubcategories = subcategoryBreakdown.rows",
+            "expenseBreakdownTotal: expenseBreakdownTotal,",
+            "expenseSubcategoryBreakdownTotal: subcategoryBreakdown.total",
         ] {
             #expect(summary.contains(line), "buildPeriodSummary de la extensión no lleva «\(line)»")
         }
@@ -71,6 +73,10 @@ struct WidgetBreakdownTotalWiringTests {
                 "Categorías y subcategorías agrupan con `netExpenseSlices` (dos veces)")
         #expect(builders.components(separatedBy: "WidgetInsightsLogic.breakdownPercentage(").count == 3,
                 "Categorías y subcategorías miden el porcentaje con `breakdownPercentage` (dos veces)")
+        #expect(builders.contains("key = \"\\u{1}rest_\\(categoryName)\""),
+                "Lo que no tiene subcategoría entra en el total de subcategorías, por categoría")
+        #expect(builders.contains("percentage: WidgetInsightsLogic.breakdownPercentage(entry.amount, of: total)"),
+                "Las subcategorías se miden contra su propio total")
         #expect(!builders.contains("abs(tx.amountInPreferredCurrency)"), """
             Sumar la magnitud de cada movimiento es el bug: un gasto de 100 y su devolución de 30 daban un trozo de 130.
             """)
@@ -81,18 +87,27 @@ struct WidgetBreakdownTotalWiringTests {
         let service = Self.codeOnly(try Self.source("YalaWidgets/Services/WidgetDataService.swift"))
         #expect(service.contains("var expenseBreakdownTotal: Double? = nil"))
         #expect(service.contains("var breakdownTotal: Double { expenseBreakdownTotal ?? totalExpense }"))
+        #expect(service.contains("var expenseSubcategoryBreakdownTotal: Double? = nil"))
+        #expect(service.contains(
+            "var subcategoryBreakdownTotal: Double { expenseSubcategoryBreakdownTotal ?? breakdownTotal }"
+        ))
     }
 
-    @Test("Las dos tartas ponen en el centro y miden «Otros» contra el total del desglose")
+    @Test("Las dos tartas ponen en el centro y miden «Otros» contra el total de su desglose")
     func piesUseTheBreakdownTotal() throws {
-        for file in ["YalaWidgets/Widgets/CategoriesPieWidget.swift", "YalaWidgets/Widgets/SubcategoriesPieWidget.swift"] {
-            let code = Self.codeOnly(try Self.source(file))
-            #expect(code.contains("totalExpense: summary?.breakdownTotal ?? 0,"), "\(file): el centro no es el total del desglose")
-            #expect(code.contains(
-                "let othersPercentage = WidgetInsightsLogic.breakdownPercentage(othersAmount, of: summary?.breakdownTotal ?? 0)"
-            ), "\(file): «Otros» no se mide contra el total del desglose")
-            #expect(!code.contains("summary?.totalExpense"), "\(file): lee el gasto con signo")
-        }
+        let categories = Self.codeOnly(try Self.source("YalaWidgets/Widgets/CategoriesPieWidget.swift"))
+        #expect(categories.contains("totalExpense: summary?.breakdownTotal ?? 0,"), "Categorías: el centro no es el total del desglose")
+        #expect(categories.contains(
+            "let othersPercentage = WidgetInsightsLogic.breakdownPercentage(othersAmount, of: summary?.breakdownTotal ?? 0)"
+        ), "Categorías: «Otros» no se mide contra el total del desglose")
+        #expect(!categories.contains("summary?.totalExpense"), "Categorías: lee el gasto con signo")
+
+        let subcategories = Self.codeOnly(try Self.source("YalaWidgets/Widgets/SubcategoriesPieWidget.swift"))
+        #expect(subcategories.contains("totalExpense: summary?.subcategoryBreakdownTotal ?? 0,"),
+                "Subcategorías: el centro no es el total de su desglose")
+        #expect(subcategories.contains("othersAmount, of: summary?.subcategoryBreakdownTotal ?? 0"),
+                "Subcategorías: «Otros» no se mide contra el total de su desglose")
+        #expect(!subcategories.contains("summary?.totalExpense"), "Subcategorías: lee el gasto con signo")
     }
 
     @Test("El resumen del mes mide «Otros» contra el total del desglose y su «Gastado» sigue siendo el gasto")

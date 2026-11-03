@@ -251,6 +251,11 @@ struct WidgetPeriodSummary: Codable {
     /// subcategorías no cubren (card znu5). **Opcional y con default**: una foto vieja no lo trae y el widget cae al
     /// gasto del período.
     var expenseBreakdownTotal: Double? = nil
+
+    /// El total del desglose por SUBCATEGORÍAS: sus filas más lo que no tiene subcategoría, cada parte en neto
+    /// (`WidgetDataCache.subcategoryExpenseBreakdown`). La tarta de subcategorías lo pone en el centro. **Opcional y con
+    /// default**, como el de categorías.
+    var expenseSubcategoryBreakdownTotal: Double? = nil
 }
 
 /// Complete widget data snapshot
@@ -1141,15 +1146,15 @@ enum WidgetDataCache {
         let expenseBreakdownTotal = WidgetInsightsLogic.breakdownTotal(categorySlices.map(\.amount))
         let topCategories = Self.topCategories(from: categorySlices, breakdownTotal: expenseBreakdownTotal, limit: 20)
 
-        // Build top subcategories (expenses only, top 20 for Large widgets)
-        let topSubcategories = buildTopSubcategories(
+        // Las subcategorías, con el total de su propio desglose (top 20 para las tartas grandes).
+        let subcategoryBreakdown = subcategoryExpenseBreakdown(
             transactions: periodTransactions,
-            totalExpense: expenseBreakdownTotal,
             limit: 20,
             currencyCode: currencyCode,
             adjustment: adjustment,
             converter: converter
         )
+        let topSubcategories = subcategoryBreakdown.rows
 
         // Build cash flow by day
         let cashFlowPoints = buildCashFlowByDay(
@@ -1196,7 +1201,8 @@ enum WidgetDataCache {
                 // Sin `periodBalance` no hay número que marcar.
                 : false,
             accountFlows: accountFlows,
-            expenseBreakdownTotal: expenseBreakdownTotal
+            expenseBreakdownTotal: expenseBreakdownTotal,
+            expenseSubcategoryBreakdownTotal: subcategoryBreakdown.total
         )
     }
 
@@ -1286,16 +1292,18 @@ enum WidgetDataCache {
     /// coincida con el nombre de ninguna categoría.
     static let uncategorizedWidgetKey = "\u{1}uncategorized"
 
-    /// Las subcategorías del lado gasto, en neto como las categorías. `totalExpense` es el total del desglose de
-    /// CATEGORÍAS: lo que no tiene subcategoría no tiene fila, y la tarta lo lleva a «Otros».
-    static func buildTopSubcategories(
+    /// Las subcategorías del lado gasto, en neto como las categorías, y el total de SU desglose. Lo que no tiene fila
+    /// (el gasto de una categoría sin subcategoría, por categoría, y el gasto sin categoría) entra en el total con su
+    /// propio neto y la tarta lo lleva a «Otros». Medirlas contra el total de categorías no basta: con un gasto de 100
+    /// en Restaurante y una devolución de 80 en Comida sin subcategoría, Comida neta 20 y Restaurante 100 (500 %; lo
+    /// cazó la review de la card znu5). Sin signos mezclados dentro de una categoría, los dos totales coinciden.
+    static func subcategoryExpenseBreakdown(
         transactions: [TransactionItem],
-        totalExpense: Double,
         limit: Int,
         currencyCode: String,
         adjustment: GroupBridgeStatsAdjustment = .none,
         converter: CurrencyConverting = CurrencyConverter.shared
-    ) -> [WidgetSubcategory] {
+    ) -> (rows: [WidgetSubcategory], total: Double) {
         var subcategories: [String: (subcategory: Subcategory, category: Category)] = [:]
         var contributions: [(key: String, expense: Double)] = []
 
@@ -1305,18 +1313,25 @@ enum WidgetDataCache {
             // Skip la pata de préstamo derivada (bridge) e income (clasif. por categoría)
             guard !adjustment.isSuppressed(tx) else { continue }
             guard !isIncomeTx(tx) else { continue }
-            guard let subcategory = tx.subcategory,
-                  let category = tx.category else { continue }
-
-            let key = "\(category.name)_\(subcategory.name)"
-            if subcategories[key] == nil { subcategories[key] = (subcategory, category) }
+            let key: String
+            if let subcategory = tx.subcategory, let category = tx.category {
+                key = "\(category.name)_\(subcategory.name)"
+                if subcategories[key] == nil { subcategories[key] = (subcategory, category) }
+            } else if let category = tx.category {
+                // Sin subcategoría: su resto, por categoría (una clave que ningún nombre puede dar).
+                key = "\u{1}rest_\(category.name)"
+            } else {
+                key = uncategorizedWidgetKey
+            }
             let value = CashFlowCalculator.resolvedAmount(
                 tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
             ).value
             contributions.append((key: key, expense: -value))
         }
 
-        return WidgetInsightsLogic.netExpenseSlices(contributions).prefix(limit).compactMap { slice in
+        let slices = WidgetInsightsLogic.netExpenseSlices(contributions)
+        let total = WidgetInsightsLogic.breakdownTotal(slices.map(\.amount))
+        let rows: [WidgetSubcategory] = slices.compactMap { slice in
             guard let item = subcategories[slice.key] else { return nil }
             return WidgetSubcategory(
                 id: item.subcategory.persistentModelID.hashValue.description,
@@ -1325,9 +1340,10 @@ enum WidgetDataCache {
                 iconName: item.subcategory.iconName ?? item.category.iconName,
                 colorHex: item.category.colorHex,
                 amount: slice.amount,
-                percentage: WidgetInsightsLogic.breakdownPercentage(slice.amount, of: totalExpense)
+                percentage: WidgetInsightsLogic.breakdownPercentage(slice.amount, of: total)
             )
         }
+        return (Array(rows.prefix(limit)), total)
     }
 
     static func buildCashFlowByDay(

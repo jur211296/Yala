@@ -40,6 +40,9 @@ era el centro y «Otros» (contra el gasto con signo) y que cada trozo sumaba la
   de la extensión (`WidgetDataService`).
 - La foto lleva `expenseBreakdownTotal` (la suma de todos los trozos, opcional en las dos copias). Las dos tartas lo
   ponen en el centro y miden «Otros» contra él; el resumen del mes mide su «Otros» igual. «Gastado» sigue siendo el gasto.
+- Las subcategorías se miden contra su propio desglose: sus filas más lo que no tiene subcategoría, por categoría
+  (`expenseSubcategoryBreakdownTotal`). Lo cazó la review: con el total de categorías, un gasto de 100 en Restaurante y
+  una devolución de 80 en Comida sin subcategoría daban una fila del 500 %.
 - Con un gasto y su devolución, los porcentajes suman 100 % y el centro es la suma de las filas. Con una categoría a
   favor también suman 100 %; el centro es entonces la suma de las magnitudes.
 - No tocado: los porcentajes de Estadísticas (no comparten código; su denominador es el total con signo y solo se

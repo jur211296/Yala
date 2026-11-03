@@ -211,9 +211,16 @@ struct WidgetPeriodSummary: Codable {
     /// El total del desglose de gasto por categorías, tal como lo escribió `WidgetDataCache` (card znu5). **Opcional y
     /// con default**: una foto vieja no lo trae. Se lee con `breakdownTotal`.
     var expenseBreakdownTotal: Double? = nil
+
+    /// El total del desglose por subcategorías, tal como lo escribió `WidgetDataCache`. **Opcional y con default**. Se
+    /// lee con `subcategoryBreakdownTotal`.
+    var expenseSubcategoryBreakdownTotal: Double? = nil
 }
 
 extension WidgetPeriodSummary {
+    /// Contra lo que mide la tarta de subcategorías: su propio total y, en una foto sin él, el de categorías.
+    var subcategoryBreakdownTotal: Double { expenseSubcategoryBreakdownTotal ?? breakdownTotal }
+
     /// Contra lo que miden las tartas su centro, su «Otros» y los porcentajes: el total del desglose y, en una foto
     /// vieja, el gasto del período (lo de antes). Fuera de la struct: no es una clave de la foto.
     var breakdownTotal: Double { expenseBreakdownTotal ?? totalExpense }
@@ -633,8 +640,9 @@ enum WidgetDataService {
         let expenseBreakdownTotal = WidgetInsightsLogic.breakdownTotal(categorySlices.map(\.amount))
         let topCategories = Self.topCategories(from: categorySlices, breakdownTotal: expenseBreakdownTotal)
 
-        // Build top subcategories
-        let topSubcategories = buildTopSubcategories(from: transactions, totalExpense: expenseBreakdownTotal)
+        // Las subcategorías con el total de su propio desglose, como la foto (`WidgetDataCache.subcategoryExpenseBreakdown`).
+        let subcategoryBreakdown = subcategoryExpenseBreakdown(from: transactions)
+        let topSubcategories = subcategoryBreakdown.rows
 
         // Build cash flow by day
         let cashFlowPoints = buildCashFlowByDay(from: transactions)
@@ -661,7 +669,8 @@ enum WidgetDataService {
                 total: netCashFlow
             ),
             periodBalanceIsApproximate: nil,  // sin `periodBalance` no hay número que marcar
-            expenseBreakdownTotal: expenseBreakdownTotal
+            expenseBreakdownTotal: expenseBreakdownTotal,
+            expenseSubcategoryBreakdownTotal: subcategoryBreakdown.total
         )
     }
 
@@ -720,38 +729,50 @@ enum WidgetDataService {
         }
     }
 
-    /// En neto como las categorías. `totalExpense` es el total del desglose de CATEGORÍAS.
-    private static func buildTopSubcategories(
+    /// En neto como las categorías, con el total de su propio desglose: lo que no tiene subcategoría entra en el total
+    /// (por categoría, y el gasto sin categoría) y la tarta lo lleva a «Otros». Como
+    /// `WidgetDataCache.subcategoryExpenseBreakdown`.
+    private static func subcategoryExpenseBreakdown(
         from transactions: [WidgetTransaction],
-        totalExpense: Double,
         limit: Int = 20
-    ) -> [WidgetSubcategory] {
+    ) -> (rows: [WidgetSubcategory], total: Double) {
         var subcategories: [String: (name: String, categoryName: String, icon: String?, color: String)] = [:]
         var contributions: [(key: String, expense: Double)] = []
 
         for tx in transactions where !tx.isIncome {
-            guard let subcategoryName = tx.subcategoryName,
-                  let categoryName = tx.categoryName else { continue }
-            let key = "\(categoryName)_\(subcategoryName)"
-            if subcategories[key] == nil {
-                // El icono de la categoría como respaldo.
-                subcategories[key] = (subcategoryName, categoryName, tx.categoryIcon, tx.categoryColor ?? "#808080")
+            let key: String
+            if let subcategoryName = tx.subcategoryName, let categoryName = tx.categoryName {
+                key = "\(categoryName)_\(subcategoryName)"
+                if subcategories[key] == nil {
+                    // El icono de la categoría como respaldo.
+                    subcategories[key] = (subcategoryName, categoryName, tx.categoryIcon, tx.categoryColor ?? "#808080")
+                }
+            } else if let categoryName = tx.categoryName {
+                key = "\u{1}rest_\(categoryName)"
+            } else {
+                key = uncategorizedKey
             }
             contributions.append((key: key, expense: -tx.amountInPreferredCurrency))
         }
 
-        return WidgetInsightsLogic.netExpenseSlices(contributions).prefix(limit).enumerated().compactMap { index, slice in
+        let slices = WidgetInsightsLogic.netExpenseSlices(contributions)
+        let total = WidgetInsightsLogic.breakdownTotal(slices.map(\.amount))
+        let named = slices.compactMap { slice -> (item: (name: String, categoryName: String, icon: String?, color: String), amount: Double)? in
             guard let item = subcategories[slice.key] else { return nil }
-            return WidgetSubcategory(
+            return (item, slice.amount)
+        }
+        let rows = named.prefix(limit).enumerated().map { index, entry in
+            WidgetSubcategory(
                 id: "\(index)",
-                name: item.name,
-                categoryName: item.categoryName,
-                iconName: item.icon,
-                colorHex: item.color,
-                amount: slice.amount,
-                percentage: WidgetInsightsLogic.breakdownPercentage(slice.amount, of: totalExpense)
+                name: entry.item.name,
+                categoryName: entry.item.categoryName,
+                iconName: entry.item.icon,
+                colorHex: entry.item.color,
+                amount: entry.amount,
+                percentage: WidgetInsightsLogic.breakdownPercentage(entry.amount, of: total)
             )
         }
+        return (rows, total)
     }
 
     private static func buildCashFlowByDay(from transactions: [WidgetTransaction]) -> [WidgetCashFlowPoint] {
