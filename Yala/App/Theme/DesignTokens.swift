@@ -760,6 +760,14 @@ enum DS {
         /// Símbolo y decimales de `panelHeroAmount`. Mantiene la misma
         /// proporción respecto al entero que la pareja `heroAmount`/`Secondary`.
         static let panelHeroAmountSecondary = Font.system(size: 17, weight: .regular)
+
+        /// Cifra protagonista DENTRO de una tarjeta, bajo un hero de página (el «Promedio diario» de Estadísticas ›
+        /// Resumen). Por debajo de `panelHeroAmount` (36) a propósito: con `heroAmount` (44) la tarjeta se leía antes
+        /// que el balance de la página. 28 elegido entre sus vecinos: 36 empata con el balance y 22 se confunde con
+        /// los `headline` de las celdas.
+        static let cardHeroAmount = Font.system(size: 28, weight: .semibold)
+        /// Símbolo y decimales de `cardHeroAmount`, en la misma proporción que las otras parejas.
+        static let cardHeroAmountSecondary = Font.system(size: 15, weight: .regular)
     }
 
     // MARK: - Sizing

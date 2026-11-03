@@ -647,7 +647,7 @@ struct InsightsTabView: View {
                 AmountText(
                     value: stats.dailyAverage,
                     currencyCode: defaultCurrencyCode,
-                    font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary,
+                    font: DS.Typography.cardHeroAmount, secondaryFont: DS.Typography.cardHeroAmountSecondary,
                     // `dailyAverage` es `cashFlow.totalExpense` dividido entre un entero exacto: el
                     // cociente aproximado/total que mide `ApproximateMarkThreshold` no cambia al
                     // dividir, así que la marca del gasto es exactamente la suya.
