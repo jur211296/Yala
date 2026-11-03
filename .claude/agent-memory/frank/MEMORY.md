@@ -45,6 +45,7 @@
 ## Cómo mido y cómo entrego
 - [XcodeBuildMCP: la configuración pisa el scheme](feedback_xcodebuildmcp_configuration_pisa_el_scheme.md) — Yala Dev = Debug-Dev; con Debug la nube sale apagada bajo -uitest.
 - [Sentry vacío no descarta un «crash»](feedback_sentry_vacio_no_descarta_un_crash.md) — pantalla muerta o exit(0) primero; .ips en «Necesita de ti».
+- [Sentry dev: cuadra con las sesiones](feedback_sentry_dev_cuadra_con_las_sesiones.md) — evento cada pocos segundos en simulador = previews o bucle ajeno; mira git log de esa hora.
 - [Gate con globs anchos: subconjunto declarado](feedback_gate_globs_ancho_subconjunto.md) — ContentView/PanelView piden ~90 suites; corre las que ejercen y dilo.
 - [Forzar una preferencia en un lanzamiento](reference_forzar_una_preferencia_en_un_lanzamiento.md) — `-clave NO` gana al dominio de registro de -uitest.
 - [Upload OK no es build aceptado](feedback_upload_ok_no_es_build_aceptado.md) — mira `asc builds uploads list`; altool validate no vio 23 ITMS-90626.
