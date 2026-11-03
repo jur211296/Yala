@@ -54,3 +54,6 @@ cableado: `TopPrimaryActionRevealLogicTests`, `RootDisplayedTabTests`, `TopPrima
 2. Haz lo mismo en Planificación → Presupuestos.
 3. En Presupuestos (o en Grupos, si tienes muchos), baja hasta que salga el «+» abajo a la derecha. Ve al Panel y vuelve:
    el «+» tiene que seguir ahí.
+
+
+Cerrado en el barrido de QA 2026-11-03: aspecto, no grave; verificado en vídeo y fijado por TopPrimaryActionUITests (PR #751).

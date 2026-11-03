@@ -55,6 +55,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | a-wipe-that-throws-between-drafts-and-transactions-loses-settlement-drafts | backlog | tickets/backlog/a-wipe-that-throws-between-drafts-and-transactions-loses-settlement-drafts.md |
 | abandoned-restore-no-longer-clears-the-session-window-clock | done | tickets/done/abandoned-restore-no-longer-clears-the-session-window-clock.md |
 | account-card-reports-cashflow-carousel-uitest-is-flaky | backlog | tickets/backlog/account-card-reports-cashflow-carousel-uitest-is-flaky.md |
+| account-chip-icon-overflows-at-the-largest-text-size | backlog | tickets/backlog/account-chip-icon-overflows-at-the-largest-text-size.md |
 | account-collections | backlog | tickets/backlog/account-collections.md |
 | account-currency-change-leaves-scheduled-and-favorites-stale | done | tickets/done/account-currency-change-leaves-scheduled-and-favorites-stale.md |
 | account-currency-conversion-overlay-has-no-ceiling | backlog | tickets/backlog/account-currency-conversion-overlay-has-no-ceiling.md |
@@ -63,7 +64,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | account-deletion-cloud-close-has-no-durable-intent | backlog | tickets/backlog/account-deletion-cloud-close-has-no-durable-intent.md |
 | account-deletion-leaves-attest-key-and-usage-counter-in-cloudflare | done | tickets/done/account-deletion-leaves-attest-key-and-usage-counter-in-cloudflare.md |
 | account-deletion-private-close-has-no-durable-intent | done | tickets/done/account-deletion-private-close-has-no-durable-intent.md |
-| account-edit-multi-currency-lines | qa | tickets/qa/account-edit-multi-currency-lines.md |
+| account-edit-multi-currency-lines | done | tickets/done/account-edit-multi-currency-lines.md |
 | account-form-as-medium-detent-sheet | done | tickets/done/account-form-as-medium-detent-sheet.md |
 | account-form-redesign | backlog | tickets/backlog/account-form-redesign.md |
 | account-goldens-freeze-read-test-times-out | done | tickets/done/account-goldens-freeze-read-test-times-out.md |
@@ -298,7 +299,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | corpus-de-test-de-staging-crece-sin-limite | done | tickets/done/corpus-de-test-de-staging-crece-sin-limite.md |
 | coverage-index-meta-counts-drifted-from-reality | backlog | tickets/backlog/coverage-index-meta-counts-drifted-from-reality.md |
 | creategroup-throw-after-commit-loses-owner | done | tickets/done/creategroup-throw-after-commit-loses-owner.md |
-| credit-card-statement-cycle | qa | tickets/qa/credit-card-statement-cycle.md |
+| credit-card-statement-cycle | done | tickets/done/credit-card-statement-cycle.md |
 | csv-import-leaves-no-origin-mark-and-reuses-opposite-categories | done | tickets/done/csv-import-leaves-no-origin-mark-and-reuses-opposite-categories.md |
 | csv-import-rows-fall-in-the-chat-sign-sweep | done | tickets/done/csv-import-rows-fall-in-the-chat-sign-sweep.md |
 | csv-import-silently-swallows-rows-and-only-reads-utf8 | backlog | tickets/backlog/csv-import-silently-swallows-rows-and-only-reads-utf8.md |
@@ -405,7 +406,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | first-panel-says-available-zero-next-to-the-opening-balance | done | tickets/done/first-panel-says-available-zero-next-to-the-opening-balance.md |
 | first-photo-after-install-fails-on-a-shared-burst-limit | done | tickets/done/first-photo-after-install-fails-on-a-shared-burst-limit.md |
 | floating-buttons-cover-row-amounts-on-ipad-landscape | done | tickets/done/floating-buttons-cover-row-amounts-on-ipad-landscape.md |
-| floating-plus-flashes-when-entering-a-tab | qa | tickets/qa/floating-plus-flashes-when-entering-a-tab.md |
+| floating-plus-flashes-when-entering-a-tab | done | tickets/done/floating-plus-flashes-when-entering-a-tab.md |
 | flows-atlas-predates-session-redesign | backlog | tickets/backlog/flows-atlas-predates-session-redesign.md |
 | follower-waits-forever-on-a-lease-with-a-null-heartbeat | backlog | tickets/backlog/follower-waits-forever-on-a-lease-with-a-null-heartbeat.md |
 | force-fetch-and-wait-ignores-cancellation | done | tickets/done/force-fetch-and-wait-ignores-cancellation.md |
@@ -460,7 +461,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | gpt-4-1-nano-shuts-down-on-october-23 | done | tickets/done/gpt-4-1-nano-shuts-down-on-october-23.md |
 | group-badge-missing-outside-records | backlog | tickets/backlog/group-badge-missing-outside-records.md |
 | group-balance-service-shares-not-deduped | backlog | tickets/backlog/group-balance-service-shares-not-deduped.md |
-| group-detail-reads-the-group-after-leaving-it | qa | tickets/qa/group-detail-reads-the-group-after-leaving-it.md |
+| group-detail-reads-the-group-after-leaving-it | done | tickets/done/group-detail-reads-the-group-after-leaving-it.md |
 | group-expense-detail-like-record-detail | backlog | tickets/backlog/group-expense-detail-like-record-detail.md |
 | group-expense-draft-is-deleted-with-its-sheet-open-when-the-expense-is-gone | done | tickets/done/group-expense-draft-is-deleted-with-its-sheet-open-when-the-expense-is-gone.md |
 | group-expense-edit-save-disabled-without-saying-the-account-is-missing | done | tickets/done/group-expense-edit-save-disabled-without-saying-the-account-is-missing.md |
@@ -512,7 +513,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-equal-split-shows-not-participating-on-peer | done | tickets/done/groups-equal-split-shows-not-participating-on-peer.md |
 | groups-expense-notif-only-on-foreground | done | tickets/done/groups-expense-notif-only-on-foreground.md |
 | groups-fab-group-with-only-pending-groups-says-nothing | done | tickets/done/groups-fab-group-with-only-pending-groups-says-nothing.md |
-| groups-first-entry-after-launch-slides-content | qa | tickets/qa/groups-first-entry-after-launch-slides-content.md |
+| groups-first-entry-after-launch-slides-content | done | tickets/done/groups-first-entry-after-launch-slides-content.md |
 | groups-form-and-settings-name-the-same-options-differently | done | tickets/done/groups-form-and-settings-name-the-same-options-differently.md |
 | groups-gate-can-start-the-neutral-return-while-the-welcome-is-dismissing | backlog | tickets/backlog/groups-gate-can-start-the-neutral-return-while-the-welcome-is-dismissing.md |
 | groups-gate-wipe-failed-notice-can-outlive-its-attempt | backlog | tickets/backlog/groups-gate-wipe-failed-notice-can-outlive-its-attempt.md |
@@ -1176,7 +1177,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | widget-balance-figure-and-curve-count-different-rows-for-accountless-movements | done | tickets/done/widget-balance-figure-and-curve-count-different-rows-for-accountless-movements.md |
 | widget-cache-falls-back-to-usd-while-the-app-falls-back-to-pen | done | tickets/done/widget-cache-falls-back-to-usd-while-the-app-falls-back-to-pen.md |
 | widget-cache-rebuild-blocks-the-main-thread | backlog | tickets/backlog/widget-cache-rebuild-blocks-the-main-thread.md |
-| widget-category-percentages-use-the-signed-total | qa | tickets/qa/widget-category-percentages-use-the-signed-total.md |
+| widget-category-percentages-use-the-signed-total | done | tickets/done/widget-category-percentages-use-the-signed-total.md |
 | widget-de-tc-no-localiza-separadores | done | tickets/done/widget-de-tc-no-localiza-separadores.md |
 | widget-fallback-summary-uses-ten-rows | discarded | tickets/discarded/widget-fallback-summary-uses-ten-rows.md |
 | widget-period-balance-ignores-group-bridge-adjustment | backlog | tickets/backlog/widget-period-balance-ignores-group-bridge-adjustment.md |
