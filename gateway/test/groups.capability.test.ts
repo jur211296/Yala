@@ -11,6 +11,8 @@
  *  - sin cabecera = v2, CONGELADO (todo iOS publicado ya conoce el presupuesto y no manda la cabecera);
  *  - `v1` poda `budget_limit_amount` en el pull y en el Merkle; `v2` la trae;
  *  - `/groups/pull` y `/groups/merkle` anuncian `manifest_version`.
+ *  - v3 (g29_01, card xi74, 2026-11-02): `split_expenses.last_edited_by_member_key` y
+ *    `split_settlements.recorded_by_member_key`; `v2` (y la ausencia de cabecera) no las bajan ni las hashean.
  *
  * Los casos de rutas pasan por `app.fetch` con `verifyUserToken` mockeado y `fetch` stubbeado (molde de
  * `groups.attest401.test.ts`), así que no tocan la red. A mano: `npm test -- test/groups.capability.test.ts`.
@@ -97,8 +99,32 @@ function makeEnv(): Env {
   } as unknown as Env;
 }
 
-/** PostgREST de mentira: una membresía (GID) y una sola fila, la de `split_groups`; el resto de tablas, vacías. */
-function stubUpstream(row: Record<string, unknown> = GROUP_ROW): void {
+/** Fila de `split_expenses` tal como la devuelve `groups_pull_rows_split_expenses` tras g29_01: con autor. */
+const EXPENSE_ID = "7b1e2f0a-1111-4222-8333-944455556666";
+const EXPENSE_ROW: Record<string, unknown> = {
+  group_id: GID,
+  sync_id: EXPENSE_ID,
+  amount: "40.0000",
+  currency_code: "PEN",
+  expense_description: "Cena",
+  note: null,
+  date: "2026-11-01T20:00:00.000Z",
+  created_at: "2026-11-01T20:00:00.000Z",
+  paid_by_member_key: "member-ana",
+  split_type: "equal",
+  is_settled: false,
+  is_opening_balance: false,
+  subcategory_name: null,
+  last_edited_by_member_key: "member-jurgen",
+  field_hlcs: { gmoney: HLC, expense_description: HLC, last_edited_by_member_key: HLC },
+  hlc: HLC,
+  deleted: false,
+  server_seq: 8,
+  schema_version: 1,
+};
+
+/** PostgREST de mentira: una membresía (GID), la fila de `split_groups` y la de `split_expenses`; el resto, vacías. */
+function stubUpstream(row: Record<string, unknown> = GROUP_ROW, expense: Record<string, unknown> = EXPENSE_ROW): void {
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: unknown, init?: RequestInit) => {
@@ -109,6 +135,10 @@ function stubUpstream(row: Record<string, unknown> = GROUP_ROW): void {
       if (url.endsWith("/rest/v1/rpc/groups_pull_rows_split_groups")) {
         const args = JSON.parse(String(init?.body ?? "{}")) as { p_after_seq?: number };
         return json((args.p_after_seq ?? 0) < Number(row.server_seq) ? [row] : []);
+      }
+      if (url.endsWith("/rest/v1/rpc/groups_pull_rows_split_expenses")) {
+        const args = JSON.parse(String(init?.body ?? "{}")) as { p_after_seq?: number };
+        return json((args.p_after_seq ?? 0) < Number(expense.server_seq) ? [expense] : []);
       }
       return json([]);
     }),
@@ -141,13 +171,20 @@ async function splitGroupsHash(columns: string[]): Promise<string> {
   return hex(await entityHash([{ syncId: GID.toLowerCase(), leaf: await leafChannel1(GID.toLowerCase(), payload) }]));
 }
 
+/** entityHash de `split_expenses` con la fila de `EXPENSE_ROW`, hasheada con las columnas dadas. */
+async function splitExpensesHash(columns: string[]): Promise<string> {
+  const payload = canonRowC1Group("split_expenses", EXPENSE_ROW, columns);
+  const id = EXPENSE_ID.toLowerCase();
+  return hex(await entityHash([{ syncId: id, leaf: await leafChannel1(id, payload) }]));
+}
+
 afterEach(() => {
   vi.unstubAllGlobals();
 });
 
 describe("capability-set de Grupos por versión del manifest", () => {
-  it("el manifest de Grupos va por la v2, y budget_limit_amount es la única columna posterior a v1", () => {
-    expect(GROUP_MANIFEST_VERSION).toBe(2);
+  it("el manifest de Grupos va por la v3: el presupuesto en v2 y los dos autores en v3", () => {
+    expect(GROUP_MANIFEST_VERSION).toBe(3);
     expect(GROUP_CAPABILITY_LEVEL_WITHOUT_HEADER).toBe(2);
     const later: string[] = [];
     for (const [entity, spec] of Object.entries(groupManifest.entities)) {
@@ -156,32 +193,42 @@ describe("capability-set de Grupos por versión del manifest", () => {
         if ((c.since ?? 1) > 1) later.push(`${entity}.${col}@${c.since}`);
       }
     }
-    expect(later).toEqual(["split_groups.budget_limit_amount@2"]);
+    expect(later).toEqual([
+      "split_groups.budget_limit_amount@2",
+      "split_expenses.last_edited_by_member_key@3",
+      "split_settlements.recorded_by_member_key@3",
+    ]);
   });
 
-  it("v1 = exactamente las columnas de antes en split_groups; el resto de tablas, enteras", () => {
+  it("v1 = exactamente las columnas de antes en split_groups; el resto de tablas, sin las de v3", () => {
     const cap = resolveGroupCapabilitySet("v1");
     expect(cap.columns).toBeDefined();
     expect([...(cap.columns!.split_groups ?? [])].sort()).toEqual([...SPLIT_GROUPS_V1].sort());
     for (const [entity, spec] of Object.entries(groupManifest.entities)) {
       if (entity === "split_groups") continue;
-      expect([...(cap.columns![entity] ?? [])].sort()).toEqual(Object.keys(spec.columns).sort());
+      const v1 = Object.entries(spec.columns as Record<string, { since?: number }>)
+        .filter(([, c]) => (c.since ?? 1) <= 1)
+        .map(([col]) => col);
+      expect([...(cap.columns![entity] ?? [])].sort()).toEqual(v1.sort());
     }
   });
 
-  it("sin cabecera = v2: hoy el set completo, y congelado aunque el manifest suba", () => {
-    // Hoy v2 es el manifest entero, así que la ausencia resuelve a «completo».
+  it("sin cabecera = v2, congelado aunque el manifest suba: desde la v3 ya no es el set completo", () => {
+    // La ausencia es la proyección de v2, no «completo»: todo iOS publicado hasta 2.1 la omite y no conoce los autores.
     for (const raw of [null, undefined, ""]) {
-      expect(resolveGroupCapabilitySet(raw)).toEqual({});
+      expect(resolveGroupCapabilitySet(raw)).toEqual({ columns: groupColumnsUpTo(2) });
     }
+    expect(groupColumnsUpTo(2).split_expenses.has("last_edited_by_member_key")).toBe(false);
+    expect(groupColumnsUpTo(2).split_settlements.has("recorded_by_member_key")).toBe(false);
     // Lo que fija el «congelado»: la ausencia es la proyección de v2, no la de la versión del Worker.
     expect(groupColumnsUpTo(GROUP_CAPABILITY_LEVEL_WITHOUT_HEADER).split_groups.has("budget_limit_amount")).toBe(true);
   });
 
-  it("v2, vN mayor y full = set completo; v0 se lee como v1; un valor ilegible = completo, como el personal", () => {
-    for (const raw of ["v2", "v99", "full", "basura", "{no-json"]) {
+  it("v3, vN mayor y full = set completo; v2 sin los autores; v0 se lee como v1; un valor ilegible = completo", () => {
+    for (const raw of ["v3", "v99", "full", "basura", "{no-json"]) {
       expect(resolveGroupCapabilitySet(raw)).toEqual({});
     }
+    expect(resolveGroupCapabilitySet("v2")).toEqual({ columns: groupColumnsUpTo(2) });
     expect(resolveGroupCapabilitySet("v0")).toEqual({ columns: groupColumnsUpTo(1) });
   });
 
@@ -228,19 +275,21 @@ describe("capability-set de Grupos por versión del manifest", () => {
     expect(canonRowC1Group("split_groups", { ...GROUP_ROW, budget_limit_amount: null }, v2)).toContain(
       '"budget_limit_amount":null',
     );
-    // Y las otras tablas no cambian con v1.
+    // Y las otras tablas no cambian entre v1 y v2 (en ellas solo hay columnas de v1 y de v3).
     for (const entity of Object.keys(groupManifest.entities)) {
       if (entity === "split_groups") continue;
-      expect(merkleColumnsGroup(entity, resolveGroupCapabilitySet("v1"))).toEqual(merkleColumnsGroup(entity));
+      expect(merkleColumnsGroup(entity, resolveGroupCapabilitySet("v1"))).toEqual(
+        merkleColumnsGroup(entity, resolveGroupCapabilitySet("v2")),
+      );
     }
   });
 });
 
 describe("las rutas de Grupos leen la cabecera y anuncian su versión", () => {
-  it("GET /groups/pull con v1 poda budget_limit_amount y anuncia manifest_version 2", async () => {
+  it("GET /groups/pull con v1 poda budget_limit_amount y anuncia manifest_version 3", async () => {
     stubUpstream();
     const body = await pull("v1");
-    expect(body.manifest_version).toBe(2);
+    expect(body.manifest_version).toBe(3);
     const delta = body.deltas.find((d) => d.entity_type === "split_groups");
     expect(delta).toBeDefined();
     expect(delta!.fields).not.toHaveProperty("budget_limit_amount");
@@ -252,7 +301,7 @@ describe("las rutas de Grupos leen la cabecera y anuncian su versión", () => {
     for (const capability of ["v2", undefined]) {
       stubUpstream();
       const body = await pull(capability);
-      expect(body.manifest_version).toBe(2);
+      expect(body.manifest_version).toBe(3);
       const delta = body.deltas.find((d) => d.entity_type === "split_groups");
       expect(delta?.fields.budget_limit_amount).toBe("1500.0000");
       expect(delta?.field_hlcs.budget_limit_amount).toBe(HLC);
@@ -260,10 +309,10 @@ describe("las rutas de Grupos leen la cabecera y anuncian su versión", () => {
     }
   });
 
-  it("GET /groups/merkle con v1 hashea split_groups sin budget_limit_amount y anuncia manifest_version 2", async () => {
+  it("GET /groups/merkle con v1 hashea split_groups sin budget_limit_amount y anuncia manifest_version 3", async () => {
     stubUpstream();
     const body = await merkle("v1");
-    expect(body.manifest_version).toBe(2);
+    expect(body.manifest_version).toBe(3);
     expect(body.entities.split_groups.hash).toBe(await splitGroupsHash(SPLIT_GROUPS_V1));
     // Control: el hash de v1 no es el de las 12 columnas (si coincidieran, el caso no mediría la poda).
     expect(body.entities.split_groups.hash).not.toBe(await splitGroupsHash([...SPLIT_GROUPS_V1, "budget_limit_amount"]));
@@ -275,11 +324,49 @@ describe("las rutas de Grupos leen la cabecera y anuncian su versión", () => {
     for (const capability of ["v2", undefined]) {
       stubUpstream();
       const body = await merkle(capability);
-      expect(body.manifest_version).toBe(2);
+      expect(body.manifest_version).toBe(3);
       expect(body.entities.split_groups.hash).toBe(full);
       roots.push(body.root);
       vi.unstubAllGlobals();
     }
     expect(roots[0]).toBe(roots[1]);
+  });
+});
+
+describe("v3 · el autor del gasto (g29_01, card xi74)", () => {
+  it("el pull de v3 baja last_edited_by_member_key con su HLC; el de v2 y el de sin cabecera, no", async () => {
+    stubUpstream();
+    const v3 = await pull("v3");
+    const d3 = v3.deltas.find((d) => d.entity_type === "split_expenses");
+    expect(d3?.fields.last_edited_by_member_key).toBe("member-jurgen");
+    expect(d3?.field_hlcs.last_edited_by_member_key).toBe(HLC);
+    expect(d3?.fields.paid_by_member_key).toBe("member-ana");
+    vi.unstubAllGlobals();
+    for (const capability of ["v2", undefined]) {
+      stubUpstream();
+      const body = await pull(capability);
+      const d = body.deltas.find((x) => x.entity_type === "split_expenses");
+      expect(d).toBeDefined();
+      expect(d!.fields).not.toHaveProperty("last_edited_by_member_key");
+      expect(d!.field_hlcs).not.toHaveProperty("last_edited_by_member_key");
+      expect(d!.fields.paid_by_member_key).toBe("member-ana");
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("el Merkle de v2 hashea split_expenses sin el autor; el de v3, con él", async () => {
+    const v2Columns = merkleColumnsGroup("split_expenses", resolveGroupCapabilitySet("v2"));
+    expect(v2Columns).not.toContain("last_edited_by_member_key");
+    const full = merkleColumnsGroup("split_expenses");
+    expect(full).toContain("last_edited_by_member_key");
+    stubUpstream();
+    const v2 = await merkle("v2");
+    expect(v2.entities.split_expenses.hash).toBe(await splitExpensesHash(v2Columns));
+    vi.unstubAllGlobals();
+    stubUpstream();
+    const v3 = await merkle("v3");
+    expect(v3.entities.split_expenses.hash).toBe(await splitExpensesHash(full));
+    // Control: si los dos hashes coincidieran, el caso no mediría la poda.
+    expect(v3.entities.split_expenses.hash).not.toBe(v2.entities.split_expenses.hash);
   });
 });

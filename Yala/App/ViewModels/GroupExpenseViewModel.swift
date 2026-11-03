@@ -463,7 +463,12 @@ final class GroupExpenseViewModel {
             }
         )
         do {
-            if let realTx = try ctx.fetch(descriptor).first, let account = realTx.account {
+            // La misma pata que gestiona el puente (`GroupTransactionBridge`, `existingRealTx`): nunca una derivada de una
+            // línea (Grupos B). Desde la card 8933 la cuenta elegida aquí MUEVE ese registro al guardar, así que la pastilla
+            // tiene que enseñar la suya, no la de otra pata.
+            if let realTx = try ctx.fetch(descriptor).first(where: {
+                !GroupSplitLinesBridgeLogic.isDerivedMarker($0.splitLinesRaw)
+            }), let account = realTx.account {
                 selectedAccount = account
             }
         } catch {

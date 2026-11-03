@@ -41,6 +41,9 @@
 --   Then — 2026-10-31, staging AND production — g27_01_opening_balance_managers (§11): BEFORE INSERT OR UPDATE trigger
 --   `opening_balance_guard` on split_expenses and split_shares (only the owner or an active admin writes opening
 --   balances; closed group and confirmed-payment lock). New section; no policy and no RPC body changes.
+--   Then — 2026-11-02, staging AND production — g29_01_group_change_author: `split_expenses.last_edited_by_member_key`
+--   and `split_settlements.recorded_by_member_key` (plain text, manifest v3 `since: 3`). Woven IN-PLACE into §1 (tables
+--   + column grants) and into the two pull readers (returned LAST). apply_group_delta unchanged (plain columns).
 --   ⚠️ STAGING IS THREE MIGRATIONS BEHIND: g13_04, g13_05 and g14_01 are applied in PRODUCTION only —
 --   there is no staging DDL credential (re-measured 2026-09-07). This mold therefore describes PRODUCTION;
 --   staging matches it only after those three are applied, in order.
@@ -193,6 +196,7 @@ create table public.split_expenses (
   server_seq bigint not null,
   schema_version integer not null default 1,
   updated_at timestamptz not null default now(),
+  last_edited_by_member_key text,  -- g29_01 (2026-11-02): quién creó o editó el gasto; NULL = no se sabe
   primary key (group_id, sync_id)
 );
 create index split_expenses_seq on public.split_expenses (group_id, server_seq);
@@ -243,6 +247,7 @@ create table public.split_settlements (
   note bytea,  -- † G7: bytea at-rest (was text)
   date timestamptz,
   is_confirmed boolean,
+  recorded_by_member_key text,  -- g29_01 (2026-11-02): quién registró la liquidación; NULL = no se sabe
   field_hlcs jsonb,
   hlc text not null,
   deleted boolean not null default false,
@@ -930,7 +935,7 @@ grant update (name, icon_name, color_hex, currency_code, simplify_debts, show_de
 -- el canal G2 nunca necesita mover una fila de grupo/identidad, y el PK-move es patológico.
 revoke update on public.split_expenses from authenticated;
 grant update (amount, currency_code, expense_description, note, date, created_at, paid_by_member_key,
-              split_type, is_settled, is_opening_balance, subcategory_name,
+              split_type, is_settled, is_opening_balance, subcategory_name, last_edited_by_member_key,
               field_hlcs, hlc, deleted, deleted_hlc, schema_version, updated_at)
   on public.split_expenses to authenticated;
 
@@ -940,7 +945,7 @@ grant update (expense_id, member_key, amount, is_paid,
   on public.split_shares to authenticated;
 
 revoke update on public.split_settlements from authenticated;
-grant update (from_member_key, to_member_key, amount, currency_code, note, date, is_confirmed,
+grant update (from_member_key, to_member_key, amount, currency_code, note, date, is_confirmed, recorded_by_member_key,
               field_hlcs, hlc, deleted, deleted_hlc, schema_version, updated_at)
   on public.split_settlements to authenticated;
 
@@ -1541,7 +1546,8 @@ create or replace function public.groups_pull_rows_split_expenses(
   group_id text, sync_id uuid, amount text, currency_code text, expense_description text,
   note text, date timestamptz, created_at timestamptz, paid_by_member_key text, split_type text,
   is_settled boolean, is_opening_balance boolean, subcategory_name text, field_hlcs jsonb,
-  hlc text, deleted boolean, deleted_hlc text, server_seq bigint, schema_version integer, updated_at timestamptz
+  hlc text, deleted boolean, deleted_hlc text, server_seq bigint, schema_version integer, updated_at timestamptz,
+  last_edited_by_member_key text  -- g29_01, AL FINAL
 ) language sql security invoker stable set search_path = public, extensions as $$
   select
     t.group_id, t.sync_id,
@@ -1550,7 +1556,8 @@ create or replace function public.groups_pull_rows_split_expenses(
     public.yala_try_decrypt(t.note, p_key),
     t.date, t.created_at, t.paid_by_member_key, t.split_type,
     t.is_settled, t.is_opening_balance, t.subcategory_name, t.field_hlcs,
-    t.hlc, t.deleted, t.deleted_hlc, t.server_seq, t.schema_version, t.updated_at
+    t.hlc, t.deleted, t.deleted_hlc, t.server_seq, t.schema_version, t.updated_at,
+    t.last_edited_by_member_key
   from public.split_expenses t
   where t.group_id = p_group_id and t.server_seq > p_after_seq
   order by t.server_seq asc
@@ -1580,13 +1587,15 @@ create or replace function public.groups_pull_rows_split_settlements(
 ) returns table(
   group_id text, sync_id uuid, from_member_key text, to_member_key text, amount text, currency_code text,
   note text, date timestamptz, is_confirmed boolean, field_hlcs jsonb, hlc text, deleted boolean,
-  deleted_hlc text, server_seq bigint, schema_version integer, updated_at timestamptz
+  deleted_hlc text, server_seq bigint, schema_version integer, updated_at timestamptz,
+  recorded_by_member_key text  -- g29_01, AL FINAL
 ) language sql security invoker stable set search_path = public, extensions as $$
   select
     t.group_id, t.sync_id, t.from_member_key, t.to_member_key,
     public.yala_try_decrypt(t.amount, p_key), t.currency_code,
     public.yala_try_decrypt(t.note, p_key), t.date, t.is_confirmed, t.field_hlcs,
-    t.hlc, t.deleted, t.deleted_hlc, t.server_seq, t.schema_version, t.updated_at
+    t.hlc, t.deleted, t.deleted_hlc, t.server_seq, t.schema_version, t.updated_at,
+    t.recorded_by_member_key
   from public.split_settlements t
   where t.group_id = p_group_id and t.server_seq > p_after_seq
   order by t.server_seq asc

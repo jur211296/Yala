@@ -2987,10 +2987,10 @@
 "groups.new" = "Nouveau groupe";
 "groups.edit" = "Modifier le groupe";
 "groups.empty.title" = "Aucun groupe";
-"groups.empty.message" = "Créez un groupe pour partager les dépenses avec d'autres";
+"groups.empty.message" = "Crée un groupe pour partager les dépenses avec d'autres";
 "groups.empty.action" = "Créer un groupe";
-"groups.summary.owedToMe" = "On vous doit";
-"groups.summary.iOwe" = "Vous devez";
+"groups.summary.owedToMe" = "On te doit";
+"groups.summary.iOwe" = "Tu dois";
 "groups.summary.pendingSettlements" = "%d règlements en attente";
 "groups.summary.allSettled" = "Tout est réglé !";
 "groups.detail.records" = "Dépenses";
@@ -3008,7 +3008,7 @@
 "groups.stats.last6Months" = "6 mois";
 "groups.stats.thisYear" = "Cette année";
 "groups.stats.allTime" = "Tout";
-"groups.stats.assignCategoriesHint" = "Attribuez des catégories à vos dépenses pour voir la répartition par type.";
+"groups.stats.assignCategoriesHint" = "Attribue des catégories à tes dépenses pour voir la répartition par type.";
 "groups.form.name" = "Nom";
 "groups.form.namePlaceholder" = "Nom du groupe";
 "groups.form.currency" = "Devise";
@@ -3025,20 +3025,20 @@
 "groups.settings.addMember" = "Ajouter un membre";
 "groups.settings.addMemberPrompt" = "Nom du membre";
 "groups.settings.invite" = "Inviter par lien";
-"groups.settings.inviteLinkHint" = "Toute personne disposant de ce lien peut rejoindre le groupe tant que l'accès par lien est activé. Ne le partagez qu'avec des personnes de confiance.";
+"groups.settings.inviteLinkHint" = "Toute personne disposant de ce lien peut rejoindre le groupe tant que l'accès par lien est activé. Ne le partage qu'avec des personnes de confiance.";
 "groups.settings.leaveGroup" = "Quitter le groupe";
-"groups.settings.leaveGroupConfirm" = "Êtes-vous sûr ? Vos dépenses personnelles seront conservées.";
-"groups.settings.leaveGroupWithDebtWarning" = "Vous quittez le groupe avec un solde ouvert. L'autre partie continuera à voir cette dette comme en attente. Continuer ?";
+"groups.settings.leaveGroupConfirm" = "Tu es sûr ? Tes dépenses personnelles seront conservées.";
+"groups.settings.leaveGroupWithDebtWarning" = "Tu quittes le groupe avec un solde ouvert. L'autre partie continuera à voir cette dette comme en attente. Continuer ?";
 "groups.settings.deleteGroup" = "Supprimer le groupe";
 "groups.settings.deleteGroupConfirm" = "Supprimer ce groupe ?";
 "groups.settings.deleteGroupFinalConfirm" = "Le groupe disparaîtra pour tous les membres. Cette action est irréversible.";
-"groups.settings.deleteGroupDisabledHint" = "Réglez les soldes en attente avant de supprimer";
+"groups.settings.deleteGroupDisabledHint" = "Règle les soldes en attente avant de supprimer";
 "groups.settings.archive" = "Archiver le groupe";
-"groups.settings.archiveWithDebtWarning" = "Il y a des soldes en attente entre membres. Si vous archivez, les dettes restent. Continuer ?";
+"groups.settings.archiveWithDebtWarning" = "Il y a des soldes en attente entre membres. Si tu archives, les dettes restent. Continuer ?";
 "groups.settings.archiveConfirm" = "Archiver ce groupe ? Les dépenses et soldes sont conservés.";
 "groups.settings.generatingInvite" = "Génération du lien…";
 "groups.settings.unarchive" = "Désarchiver le groupe";
-"groups.settings.archiveHint" = "Les dépenses et soldes sont conservés. Vous pouvez désarchiver à tout moment.";
+"groups.settings.archiveHint" = "Les dépenses et soldes sont conservés. Tu peux désarchiver à tout moment.";
 "groups.settings.showArchived" = "Voir archivés";
 "groups.settings.showArchivedCount" = "Voir archivés (%d)";
 "groups.settings.hideArchived" = "Masquer archivés";
@@ -3047,13 +3047,13 @@
 "groups.settings.dangerZone" = "Zone de danger";
 "groups.member.admin" = "Admin";
 "groups.member.member" = "Membre";
-"groups.member.you" = "(Vous)";
+"groups.member.you" = "(Toi)";
 "groups.member.left" = "Parti";
 "groups.member.removed" = "Retiré";
 "groups.member.changeRole" = "Changer le rôle";
 "groups.member.remove" = "Supprimer le membre";
 "groups.member.removeConfirm" = "Supprimer ce membre du groupe ?";
-"groups.member.removeWithDebtWarning" = "Cette personne a un solde ouvert dans le groupe. Si vous la supprimez, la dette reste ouverte. Continuer ?";
+"groups.member.removeWithDebtWarning" = "Cette personne a un solde ouvert dans le groupe. Si tu la supprimes, la dette reste ouverte. Continuer ?";
 "groups.member.actions" = "Actions du membre";
 "groups.balance.title" = "Soldes";
 "groups.balance.noDebts" = "Tout est réglé !";
@@ -3062,7 +3062,7 @@
 "groups.balance.confirmed" = "Confirmé";
 "groups.balance.pending" = "En attente";
 "groups.expense.noExpenses" = "Aucune dépense";
-"groups.expense.youPaid" = "Vous avez payé %@";
+"groups.expense.youPaid" = "Tu as payé %@";
 "groups.expense.memberPaid" = "%@ a payé %@";
 "groups.expense.youAreOwed" = "Prêté";
 "groups.expense.youOwe" = "Emprunté";
@@ -3450,18 +3450,18 @@
 "groups.reconnect.archived.title" = "%@ a été archivé";
 "groups.reconnect.archived.body" = "L'admin l'a archivé et il n'accepte plus de nouveaux membres.";
 "groups.reconnect.archived.cta" = "Compris";
-"groups.reconnect.alreadyMember.title" = "Vous êtes déjà dans %@";
-"groups.reconnect.alreadyMember.body" = "Nous vous y emmenons.";
+"groups.reconnect.alreadyMember.title" = "Tu es déjà dans %@";
+"groups.reconnect.alreadyMember.body" = "Nous t'y emmenons.";
 "groups.reconnect.alreadyMember.cta" = "Ouvrir le groupe";
 "groups.reconnect.pendingDuplicate.title" = "Demande en attente pour %@";
-"groups.reconnect.pendingDuplicate.body" = "L'admin n'a pas encore approuvé votre demande.";
+"groups.reconnect.pendingDuplicate.body" = "L'admin n'a pas encore approuvé ta demande.";
 "groups.reconnect.pendingDuplicate.cta" = "Voir les groupes";
-"groups.reconnect.rejectedRetry.title" = "Votre demande a été refusée";
-"groups.reconnect.rejectedRetry.body" = "Redemandez et l'admin verra votre nouvelle demande.";
-"groups.reconnect.leftRetry.title" = "Vous avez quitté %@";
-"groups.reconnect.leftRetry.body" = "Redemandez si vous souhaitez revenir.";
-"groups.reconnect.removedRetry.title" = "Vous avez été retiré de %@";
-"groups.reconnect.removedRetry.body" = "Redemandez si vous souhaitez revenir.";
+"groups.reconnect.rejectedRetry.title" = "Ta demande a été refusée";
+"groups.reconnect.rejectedRetry.body" = "Redemande et l'admin verra ta nouvelle demande.";
+"groups.reconnect.leftRetry.title" = "Tu as quitté %@";
+"groups.reconnect.leftRetry.body" = "Redemande si tu souhaites revenir.";
+"groups.reconnect.removedRetry.title" = "Tu as été retiré de %@";
+"groups.reconnect.removedRetry.body" = "Redemande si tu souhaites revenir.";
 "groups.reconnect.retryCta" = "Redemander";
 "groups.reconnect.subtitleWithGroup" = "Tu as été invité dans %@";
 
@@ -3477,37 +3477,37 @@
 "groups.activate.done" = "Commencer";
 
 // Groups — Nudges (GC-09)
-"groups.nudge.invitedSpendingInsight.title" = "Vos dépenses partagées augmentent";
-"groups.nudge.invitedSpendingInsight.message" = "Vous avez dépensé %@ en frais partagés. Voulez-vous voir où va le reste ?";
+"groups.nudge.invitedSpendingInsight.title" = "Tes dépenses partagées augmentent";
+"groups.nudge.invitedSpendingInsight.message" = "Tu as dépensé %@ en frais partagés. Veux-tu voir où va le reste ?";
 "groups.nudge.invitedSpendingInsight.cta" = "Explorer Yala";
 "groups.nudge.invitedPostSettlement.title" = "Paiement enregistré";
-"groups.nudge.invitedPostSettlement.message" = "Vous venez de régler une dette. Voulez-vous noter d'où venait l'argent ?";
+"groups.nudge.invitedPostSettlement.message" = "Tu viens de régler une dette. Veux-tu noter d'où venait l'argent ?";
 "groups.nudge.invitedPostSettlement.cta" = "Activer Yala complet";
-"groups.nudge.invitedMonthTwo.title" = "Vous ne voyez qu'une partie";
-"groups.nudge.invitedMonthTwo.message" = "Vos groupes représentent %d%% de vos dépenses. Le reste n'est pas suivi.";
+"groups.nudge.invitedMonthTwo.title" = "Tu ne vois qu'une partie";
+"groups.nudge.invitedMonthTwo.message" = "Tes groupes représentent %d%% de tes dépenses. Le reste n'est pas suivi.";
 "groups.nudge.invitedMonthTwo.cta" = "Tout voir";
-"groups.nudge.invitedSocialProof.title" = "Vos amis utilisent déjà Yala";
-"groups.nudge.invitedSocialProof.message" = "%d personnes dans votre groupe utilisent déjà Yala complet.";
+"groups.nudge.invitedSocialProof.title" = "Tes amis utilisent déjà Yala";
+"groups.nudge.invitedSocialProof.message" = "%d personnes dans ton groupe utilisent déjà Yala complet.";
 "groups.nudge.invitedSocialProof.cta" = "Activer Yala complet";
-"groups.nudge.dormantGroupsAsMain.title" = "Vos groupes vous attendent";
-"groups.nudge.dormantGroupsAsMain.message" = "Vous avez des dépenses partagées en attente. Voyez où vous en êtes.";
+"groups.nudge.dormantGroupsAsMain.title" = "Tes groupes t'attendent";
+"groups.nudge.dormantGroupsAsMain.message" = "Tu as des dépenses partagées en attente. Vois où tu en es.";
 "groups.nudge.dormantGroupsAsMain.cta" = "Voir les groupes";
 "groups.nudge.dormantNewExpenses.title" = "Du nouveau";
 "groups.nudge.dormantNewExpenses.cta" = "Voir les dépenses";
 "groups.nudge.dormantSpendingGap.title" = "Dépenses non suivies";
-"groups.nudge.dormantSpendingGap.message" = "Vous avez plusieurs dépenses partagées mais vos autres dépenses ne sont pas suivies.";
+"groups.nudge.dormantSpendingGap.message" = "Tu as plusieurs dépenses partagées mais tes autres dépenses ne sont pas suivies.";
 "groups.nudge.dormantSpendingGap.cta" = "Enregistrer une dépense";
 "groups.nudge.dormantQuickEntry.title" = "Saisie rapide";
-"groups.nudge.dormantQuickEntry.message" = "Enregistrez une dépense personnelle en 5 secondes.";
+"groups.nudge.dormantQuickEntry.message" = "Enregistre une dépense personnelle en 5 secondes.";
 "groups.nudge.dormantQuickEntry.cta" = "Enregistrer";
 "groups.nudge.sporadicImbalance.title" = "Déséquilibre détecté";
-"groups.nudge.sporadicImbalance.message" = "Vous avez enregistré %d dépenses partagées mais seulement %d personnelles cette semaine.";
+"groups.nudge.sporadicImbalance.message" = "Tu as enregistré %d dépenses partagées mais seulement %d personnelles cette semaine.";
 "groups.nudge.sporadicImbalance.cta" = "Compris";
 "groups.nudge.sporadicBudgetSuggestion.title" = "Un budget pour les frais partagés ?";
-"groups.nudge.sporadicBudgetSuggestion.message" = "Vous avez beaucoup de dépenses partagées ce mois-ci. Un budget pourrait aider.";
+"groups.nudge.sporadicBudgetSuggestion.message" = "Tu as beaucoup de dépenses partagées ce mois-ci. Un budget pourrait aider.";
 "groups.nudge.sporadicBudgetSuggestion.cta" = "Compris";
 "groups.nudge.sporadicTrendAlert.title" = "Tendance à la hausse";
-"groups.nudge.sporadicTrendAlert.message" = "Vos dépenses partagées ont augmenté de %d%% par rapport au mois dernier.";
+"groups.nudge.sporadicTrendAlert.message" = "Tes dépenses partagées ont augmenté de %d%% par rapport au mois dernier.";
 "groups.nudge.sporadicTrendAlert.cta" = "Compris";
 
 "statistics.sankey.title" = "Flux d'argent";
@@ -3956,30 +3956,30 @@
 "filters.includeGroupTransactionsHint" = "Lorsqu'activé, les enregistrements générés par les dépenses partagées apparaissent dans votre liste.";
 
 // MARK: - A0-Bridge Bridge messages
-"groups.bridge.deleteExpenseBlocked" = "Cette dépense a des paiements postérieurs. Supprimez ou ajustez ces paiements avant de la supprimer.";
-"groups.bridge.editFromGroup" = "Cet enregistrement se synchronise avec un groupe. Modifiez-le depuis la dépense partagée.";
-"groups.bridge.assignFromInbox" = "Attribuez une catégorie depuis la Boîte de réception pour la finaliser.";
-"groups.bridge.editSettlementInGroup" = "Cet enregistrement provient d'un paiement de groupe. Modifiez-le dans le groupe.";
-"groups.bridge.editPartialBanner" = "Cette dépense vient du groupe. Vous pouvez modifier le compte, la catégorie et les étiquettes. Le montant et la date sont synchronisés avec le groupe.";
-"groups.bridge.draftReasonRemoteCreate" = "%1$@ a enregistré cette dépense dans %2$@. Choisissez un compte pour la suivre dans vos enregistrements.";
-"groups.bridge.draftReasonCurrencyChanged" = "La devise de la dépense dans %@ a changé. Choisissez un compte pour enregistrer votre part.";
+"groups.bridge.deleteExpenseBlocked" = "Cette dépense a des paiements postérieurs. Supprime ou ajuste ces paiements avant de la supprimer.";
+"groups.bridge.editFromGroup" = "Cet enregistrement se synchronise avec un groupe. Modifie-le depuis la dépense partagée.";
+"groups.bridge.assignFromInbox" = "Attribue une catégorie depuis la Boîte de réception pour la finaliser.";
+"groups.bridge.editSettlementInGroup" = "Cet enregistrement provient d'un paiement de groupe. Modifie-le dans le groupe.";
+"groups.bridge.editPartialBanner" = "Cette dépense vient du groupe. Tu peux modifier le compte, la catégorie et les étiquettes. Le montant et la date sont synchronisés avec le groupe.";
+"groups.bridge.draftReasonRemoteCreate" = "%1$@ a enregistré cette dépense dans %2$@. Choisis un compte pour la suivre dans tes enregistrements.";
+"groups.bridge.draftReasonCurrencyChanged" = "La devise de la dépense dans %@ a changé. Choisis un compte pour enregistrer ta part.";
 "groups.card.moreDebts" = "+%d de plus";
 "inbox.groupExpenseAccountDraft.title" = "Choisis le compte";
 "inbox.groupExpenseAccountDraft.assignAccount" = "Compte d'origine";
 "groups.bridge.activateTitle" = "Refléter dans tes comptes";
-"groups.bridge.activateBody" = "Désormais, les dépenses partagées apparaîtront dans vos comptes personnels. Dépenses précédentes dans vos groupes : %d. Que faisons-nous avec elles ?";
+"groups.bridge.activateBody" = "Désormais, les dépenses partagées apparaîtront dans tes comptes personnels. Dépenses précédentes dans tes groupes : %d. Que faisons-nous avec elles ?";
 "groups.bridge.activateOptionFromNow" = "Commencer maintenant";
 "groups.bridge.activateOptionFromNowHint" = "Seules les nouvelles dépenses seront reflétées.";
 "groups.bridge.activateOptionImportAll" = "Importer tout l'historique";
-"groups.bridge.activateOptionImportAllHint" = "Les dépenses précédentes apparaîtront aussi dans vos comptes (%d au total).";
+"groups.bridge.activateOptionImportAllHint" = "Les dépenses précédentes apparaîtront aussi dans tes comptes (%d au total).";
 "groups.bridge.activateImportRegenerationNote" = "Les enregistrements générés existants seront régénérés selon les règles actuelles.";
 "groups.bridge.deactivateTitle" = "Désactiver les enregistrements automatiques";
-"groups.bridge.deactivateBody" = "Vous avez %d enregistrements générés par ce groupe. Si vous les supprimez, votre solde de groupes sera ajusté.";
+"groups.bridge.deactivateBody" = "Tu as %d enregistrements générés par ce groupe. Si tu les supprimes, ton solde de groupes sera ajusté.";
 "groups.bridge.deactivateOptionDelete" = "Supprimer";
 "groups.bridge.deactivateOptionKeep" = "Conserver comme historique";
 "groups.bridge.importing" = "Importation de %d dépenses…";
-"groups.bridge.importError" = "Un problème est survenu lors de l'importation. Veuillez réessayer.";
-"groups.bridge.upsellGroupInviteSettlement" = "Activez Yala complet pour rapprocher ce paiement avec votre compte réel.";
+"groups.bridge.importError" = "Un problème est survenu lors de l'importation. Réessaie.";
+"groups.bridge.upsellGroupInviteSettlement" = "Active Yala complet pour rapprocher ce paiement avec ton compte réel.";
 
 // MARK: - A0-Bridge System Categories & Subcategories (Groupes)
 "account.system.groups" = "Groupes %@";
@@ -4021,10 +4021,10 @@
 "groups.invite.waitingApproval.body" = "L'admin du groupe doit t'accepter avant que tu puisses participer. En attendant, tu verras le groupe dans ta liste, mais tu ne peux pas encore l'ouvrir. On te préviendra quand tu seras accepté.";
 "groups.invite.waitingApproval.banner" = "En attente de l'approbation de l'admin";
 "groups.invite.rejected.title" = "Demande refusée";
-"groups.invite.rejected.body" = "L'administrateur n'a pas approuvé votre demande. Demandez-lui un nouveau lien si vous souhaitez réessayer.";
+"groups.invite.rejected.body" = "L'administrateur n'a pas approuvé ta demande. Demande-lui un nouveau lien si tu souhaites réessayer.";
 "groups.notifications.newPendingRequest" = "👋 %@ souhaite rejoindre %@";
-"groups.notifications.newPendingRequestBody" = "Vous pouvez approuver ou refuser depuis Yala.";
-"groups.errors.pendingApproval" = "Vous ne pouvez pas encore faire cela — l'admin doit d'abord approuver votre demande.";
+"groups.notifications.newPendingRequestBody" = "Tu peux approuver ou refuser depuis Yala.";
+"groups.errors.pendingApproval" = "Tu ne peux pas encore faire cela — l'admin doit d'abord approuver ta demande.";
 
 // MARK: - Welcome (A4 — Chooser pre-onboarding)
 "welcome.chooser.title" = "Bonjour ! Que voulez-vous faire dans Yala ?";
@@ -4102,7 +4102,7 @@
 "groups.card.pendingApprovalChip" = "En attente d'approbation";
 "groups.card.rejectedChip" = "Demande refusée";
 "groups.card.leaveGroupAlertTitle" = "Quitter le groupe ?";
-"groups.card.leaveGroupAlertBody" = "Votre demande a été refusée. En quittant, ce groupe sera retiré de votre liste. Vos registres personnels sont conservés.";
+"groups.card.leaveGroupAlertBody" = "Ta demande a été refusée. En quittant, ce groupe sera retiré de ta liste. Tes registres personnels sont conservés.";
 
 // MARK: - Yala AI Onboarding (5-step tutorial first-use post-consent)
 "yalaAI.onboarding.continue" = "Continuer";
@@ -4227,22 +4227,22 @@
 
 // MARK: GroupsOnboarding-keys
 "groups.onboarding.progressLabel" = "Étape %1$d sur %2$d";
-"groups.onboarding.step1.title" = "Partagez les dépenses sans rien perdre de vue";
-"groups.onboarding.step1.subtitle" = "Yala vous prévient dès qu'un membre ajoute une dépense au groupe.";
+"groups.onboarding.step1.title" = "Partage les dépenses sans rien perdre de vue";
+"groups.onboarding.step1.subtitle" = "Yala te prévient dès qu'un membre ajoute une dépense au groupe.";
 "groups.onboarding.step1.demoMemberName" = "Sophie";
 "groups.onboarding.step1.demoGroupName" = "Amis";
 "groups.onboarding.step1.demoNotifTemplate" = "%1$@ a ajouté %2$@ au groupe %3$@";
 "groups.onboarding.step1.demoBalanceLabelInitial" = "Solde : %@";
-"groups.onboarding.step1.demoBalanceLabelDebt" = "Vous devez %@";
-"groups.onboarding.step1.a11yLabelTemplate" = "%1$@ a ajouté %2$@ au groupe %3$@. Vous devez désormais %4$@.";
+"groups.onboarding.step1.demoBalanceLabelDebt" = "Tu dois %@";
+"groups.onboarding.step1.a11yLabelTemplate" = "%1$@ a ajouté %2$@ au groupe %3$@. Tu dois désormais %4$@.";
 "groups.onboarding.step2.title" = "Trois étapes, zéro tableur";
-"groups.onboarding.step2.subtitle" = "Yala divise, enregistre et règle pour vous.";
-"groups.onboarding.step2.card1.title" = "Créez des groupes avec vos proches";
+"groups.onboarding.step2.subtitle" = "Yala divise, enregistre et règle pour toi.";
+"groups.onboarding.step2.card1.title" = "Crée des groupes avec tes proches";
 "groups.onboarding.step2.card1.body" = "Famille, amis, voyages ou travail. Autant de groupes que nécessaire.";
-"groups.onboarding.step2.card2.title" = "Enregistrez les dépenses, Yala les divise";
-"groups.onboarding.step2.card2.body" = "Choisissez comment chaque dépense se divise. Yala calcule qui doit quoi.";
-"groups.onboarding.step2.card3.title" = "Réglez les dettes en quelques taps";
-"groups.onboarding.step2.card3.body" = "Clôturez les paiements et revenez à zéro. Sans débats, sans Excel.";
+"groups.onboarding.step2.card2.title" = "Enregistre les dépenses, Yala les divise";
+"groups.onboarding.step2.card2.body" = "Choisis comment chaque dépense se divise. Yala calcule qui doit quoi.";
+"groups.onboarding.step2.card3.title" = "Règle les dettes en quelques taps";
+"groups.onboarding.step2.card3.body" = "Clôture les paiements et reviens à zéro. Sans débats, sans Excel.";
 "groups.onboarding.step3.cta" = "Voir les groupes";
 "groups.onboarding.step3.signInCTA" = "Se connecter";
 
@@ -4252,27 +4252,27 @@
 "groups.reconnect.deletedForAll.cta" = "J'ai compris";
 
 // MARK: Bridge opt-out (F7 consolidation)
-"groups.bridge.optoutAlertTitle" = "Enregistrer aussi dans votre Yala personnel ?";
-"groups.bridge.optoutAlertBody" = "Vous pouvez créer un enregistrement personnel dans votre compte pour refléter cette dépense, ou la laisser uniquement dans le groupe.";
+"groups.bridge.optoutAlertTitle" = "Enregistrer aussi dans ton Yala personnel ?";
+"groups.bridge.optoutAlertBody" = "Tu peux créer un enregistrement personnel dans ton compte pour refléter cette dépense, ou la laisser uniquement dans le groupe.";
 "groups.bridge.optoutAlertYes" = "Oui, enregistrer";
 "groups.bridge.optoutAlertNo" = "Uniquement dans le groupe";
 "groups.bridge.deactivationSheetTitle" = "Ne plus refléter dans tes comptes";
-"groups.bridge.deactivationSheetBody" = "Vous avez déjà des enregistrements créés automatiquement dans vos comptes. Choisissez ce que vous voulez en faire.";
+"groups.bridge.deactivationSheetBody" = "Tu as déjà des enregistrements créés automatiquement dans tes comptes. Choisis ce que tu veux en faire.";
 "groups.bridge.deactivationOptionFreeze" = "Conserver comme historique";
 "groups.bridge.deactivationOptionDelete" = "Supprimer de mes comptes";
 "groups.globalSettings.title" = "Réglages des groupes";
 "groups.globalSettings.bridgeSectionTitle" = "Refléter dans tes comptes";
 "groups.globalSettings.bridgeToggleLabel" = "Enregistrer les dépenses de groupe dans mes comptes personnels";
-"groups.globalSettings.bridgeCaption" = "Quand cette option est active, chaque dépense que vous payez ou réglez est aussi enregistrée dans le compte personnel que vous choisissez. Votre solde reflète la réalité.";
+"groups.globalSettings.bridgeCaption" = "Quand cette option est active, chaque dépense que tu paies ou règles est aussi enregistrée dans le compte personnel que tu choisis. Ton solde reflète la réalité.";
 "groups.globalSettings.visibilitySectionTitle" = "Visibilité";
-"groups.globalSettings.visibilityCaption" = "Choisissez si les enregistrements des groupes apparaissent dans votre Tableau de bord, vos statistiques et Enregistrements.";
+"groups.globalSettings.visibilityCaption" = "Choisis si les enregistrements des groupes apparaissent dans ton Tableau de bord, tes statistiques et Enregistrements.";
 "groups.globalSettings.includeGroupTransactionsInFeedLabel" = "Inclure les enregistrements des groupes dans Enregistrements";
 "groups.settings.personalIntegrationSectionTitle" = "Refléter dans tes comptes";
 "groups.settings.personalIntegrationToggleLabel" = "Enregistrer les dépenses de ce groupe dans mes comptes personnels";
-"groups.settings.personalIntegrationHintInheritOn" = "Hérite de votre réglage général (Activé).";
+"groups.settings.personalIntegrationHintInheritOn" = "Hérite de ton réglage général (Activé).";
 "groups.settings.personalIntegrationHintLocalOff" = "Uniquement dans ce groupe : désactivé.";
-"groups.settings.personalIntegrationHintBlockedByGlobal" = "Pour activer cette option ici, activez-la d'abord dans les Réglages des groupes.";
-"groups.onboarding.step2.bridgeAwareness" = "Quand vous payez une dépense, nous l'enregistrons aussi automatiquement dans votre compte personnel — pour que votre solde reflète toujours la réalité.";
+"groups.settings.personalIntegrationHintBlockedByGlobal" = "Pour activer cette option ici, active-la d'abord dans les Réglages des groupes.";
+"groups.onboarding.step2.bridgeAwareness" = "Quand tu paies une dépense, nous l'enregistrons aussi automatiquement dans ton compte personnel — pour que ton solde reflète toujours la réalité.";
 
 // MARK: B-16 — groups.reconnect.backToStart
 "groups.reconnect.backToStart" = "Retour au début";
@@ -4337,10 +4337,10 @@
 "shortcut.notification.errorBody" = "Nous n'avons pas pu enregistrer ton paiement Apple Pay. Ouvre Yala pour le saisir manuellement.";
 
 /* Card del grupo: otro miembro le debe al usuario actual (perspectiva theyOweMe) */
-"groups.card.theyOweYou" = "%@ vous doit";
+"groups.card.theyOweYou" = "%@ te doit";
 
 /* Card del grupo: el usuario actual le debe a otro miembro (perspectiva iOwe) */
-"groups.card.youOwe" = "Vous devez à %@";
+"groups.card.youOwe" = "Tu dois à %@";
 
 /* Banner explicativo en el sheet de finalización de gasto de grupo (asignar cuenta). %@ = nombre del grupo. */
 "inbox.groupExpenseAccountDraft.banner" = "Du groupe « %@ ».";
@@ -4413,11 +4413,11 @@
 "icloud.forceSync.offlineNote" = "Nous n'avons pas pu joindre iCloud pour l'instant. Tes données sont à l'abri et se synchroniseront dès le retour de la connexion.";
 
 /* Shown when a group action needs the sync engine but the personal iCloud import has not settled yet */
-"groups.errors.syncPreparing" = "Nous terminons la synchronisation de votre compte iCloud. Réessayez dans quelques secondes.";
+"groups.errors.syncPreparing" = "Nous terminons la synchronisation de ton compte iCloud. Réessaie dans quelques secondes.";
 /* Shown when generating a group invite link fails */
-"groups.errors.inviteFailed" = "Impossible de créer le lien d'invitation. Vérifiez votre connexion et réessayez.";
+"groups.errors.inviteFailed" = "Impossible de créer le lien d'invitation. Vérifie ta connexion et réessaie.";
 /* Generic group action failure (delete expense, settle, approve/reject member) */
-"groups.errors.actionFailed" = "Impossible de terminer l'action. Veuillez réessayer.";
+"groups.errors.actionFailed" = "Impossible de terminer l'action. Réessaie.";
 /* Chip 'Dividir entre' cuando todos los miembros del grupo están seleccionados */
 "groups.expense.allMembers" = "Tous";
 
@@ -4454,19 +4454,19 @@
 "groups.expense.splitSheet.percentageTitle" = "Par pourcentage";
 
 /* Explicación división por porcentaje */
-"groups.expense.splitSheet.percentageHint" = "Indiquez le pourcentage payé par chaque personne. Le total doit faire 100%.";
+"groups.expense.splitSheet.percentageHint" = "Indique le pourcentage payé par chaque personne. Le total doit faire 100%.";
 
 /* Título sheet división por monto */
 "groups.expense.splitSheet.exactTitle" = "Par montant";
 
 /* Explicación división por monto */
-"groups.expense.splitSheet.exactHint" = "Saisissez combien paie chaque personne. Le total doit correspondre au montant.";
+"groups.expense.splitSheet.exactHint" = "Saisis combien paie chaque personne. Le total doit correspondre au montant.";
 
 /* Título sheet división por proporción */
 "groups.expense.splitSheet.sharesTitle" = "Par parts";
 
 /* Explicación división por proporción */
-"groups.expense.splitSheet.sharesHint" = "Attribuez des parts à chaque personne; le total est réparti proportionnellement.";
+"groups.expense.splitSheet.sharesHint" = "Attribue des parts à chaque personne; le total est réparti proportionnellement.";
 
 /* Header del gráfico de quién pagó más en el grupo */
 "groups.stats.whoMadeMostPayments" = "Qui a le plus payé ?";
@@ -4503,14 +4503,14 @@
 "groups.openingBalance.approvalPromptAdd" = "Oui, l'ajouter";
 "groups.openingBalance.approvalPromptSkip" = "Non, commencer à zéro";
 "groups.openingBalance.errorNotAdmin" = "Seul un administrateur du groupe peut gérer les soldes initiaux.";
-"groups.openingBalance.errorSameMember" = "Choisissez deux membres différents.";
+"groups.openingBalance.errorSameMember" = "Choisis deux membres différents.";
 "groups.openingBalance.serverRejected.title" = "Ta modification n'a pas atteint le groupe";
 "groups.openingBalance.serverRejected.notAdmin" = "Seul le propriétaire ou un administrateur du groupe peut modifier les soldes initiaux, et ce n'est plus ton cas. Le solde redevient tel qu'il est dans le groupe.";
 "groups.openingBalance.serverRejected.locked" = "Les personnes de ce solde initial ont déjà des paiements confirmés, il ne peut donc plus être modifié. Le solde redevient tel qu'il est dans le groupe.";
 "groups.openingBalance.serverRejected.groupClosed" = "Ce groupe n'accepte plus de modifications. Le solde redevient tel qu'il est dans le groupe.";
 
 // MARK: groups header balance bar
-"groups.detail.yourBalance" = "Votre solde";
+"groups.detail.yourBalance" = "Ton solde";
 "groups.detail.settledUp" = "Tout est réglé";
 "groups.options.ownerOnlyHint" = "Seul l'organisateur du groupe peut le modifier";
 
@@ -4532,17 +4532,17 @@
 /* Two-person quick split: sheet title */
 "groups.expense.twoPerson.sheetTitle" = "Comment diviser ?";
 /* Two-person quick split: I paid, equal */
-"groups.expense.twoPerson.actionIPaidEqual" = "Vous avez payé · à parts égales";
+"groups.expense.twoPerson.actionIPaidEqual" = "Tu as payé · à parts égales";
 /* Two-person quick split: I paid, all theirs (name) */
-"groups.expense.twoPerson.actionIPaidOwedFull" = "Vous avez payé · tout pour %@";
+"groups.expense.twoPerson.actionIPaidOwedFull" = "Tu as payé · tout pour %@";
 /* Two-person quick split: they paid, equal (name) */
 "groups.expense.twoPerson.actionTheyPaidEqual" = "%@ a payé · à parts égales";
 /* Two-person quick split: they paid, all yours (name) */
-"groups.expense.twoPerson.actionTheyPaidOwedFull" = "%@ a payé · tout pour vous";
+"groups.expense.twoPerson.actionTheyPaidOwedFull" = "%@ a payé · tout pour toi";
 /* Two-person quick split debt: they owe me (name, amount) */
-"groups.expense.twoPerson.theyOweAmount" = "%1$@ vous doit %2$@";
+"groups.expense.twoPerson.theyOweAmount" = "%1$@ te doit %2$@";
 /* Two-person quick split debt: I owe them (name, amount) */
-"groups.expense.twoPerson.youOweAmount" = "Vous devez %2$@ à %1$@";
+"groups.expense.twoPerson.youOweAmount" = "Tu dois %2$@ à %1$@";
 /* Two-person quick split: go to detailed editor */
 "groups.expense.twoPerson.moreOptions" = "Plus d'options";
 /* Detailed split editor: back to quick options (2-person only) */
@@ -4551,7 +4551,7 @@
 "groups.expense.amountRequiredTitle" = "Montant manquant";
 
 /* Alert al intentar dividir sin monto — cuerpo (pedir monto antes de abrir el sheet de división) */
-"groups.expense.amountRequiredMessage" = "Saisissez le montant de la dépense avant de la répartir entre les membres.";
+"groups.expense.amountRequiredMessage" = "Saisis le montant de la dépense avant de la répartir entre les membres.";
 
 
 /* MARK: GroupScheduledExpense (F7) */
@@ -5228,7 +5228,7 @@
 "groups.settlement.feedRow" = "%1$@ a payé %2$@";
 
 /* Bridge Caso B: banner de edición parcial (subcat/tags sí, cuenta no) */
-"groups.bridge.editPartialBannerCaseB" = "Cette dépense vient du groupe. Vous pouvez modifier la catégorie et les étiquettes. Le reste est synchronisé avec le groupe.";
+"groups.bridge.editPartialBannerCaseB" = "Cette dépense vient du groupe. Tu peux modifier la catégorie et les étiquettes. Le reste est synchronisé avec le groupe.";
 
 /* Panel Health — explicación del sub-score Compromisos en modo Solo Gastos (sin mención a ingresos) */
 "panel.health.bills.sheet.explanation.expensesOnly" = "Indique si ton solde couvre les paiements en attente de la période.";
@@ -5604,7 +5604,7 @@
 "notifications.settlementReminders.hintGroupsOff" = "Activez d’abord les notifications Groupes pour les recevoir";
 
 /* Delete-blocked hint for a group owner with debt and no heir: points at Archive, which already works with debt. */
-"groups.settings.deleteGroupDisabledHintArchive" = "Il reste des soldes dans ce groupe. Pour le retirer de votre liste, archivez-le : les dettes sont conservées.";
+"groups.settings.deleteGroupDisabledHintArchive" = "Il reste des soldes dans ce groupe. Pour le retirer de ta liste, archive-le : les dettes sont conservées.";
 
 /* Account currency locked because history is owned elsewhere */
 "account.currencyChange.blockedTitle" = "La devise ne peut pas être modifiée";
@@ -6429,7 +6429,7 @@
 "image.entry.failure.trialUsedUp.title" = "Tu as utilisé tes photos d’essai";
 "image.entry.failure.trialUsedUp.message" = "Avec Yala Pro, enregistre tes reçus en photo sans limite.";
 /* Current user's name, no parentheses */
-"groups.member.youName" = "Vous";
+"groups.member.youName" = "Toi";
 
 /* Header: how much each person puts in a group expense */
 "groups.expense.breakdownTitle" = "Répartition";
@@ -6438,13 +6438,13 @@
 "groups.expense.paidAmount" = "A payé %@";
 
 /* Row title: where this expense landed in your personal records */
-"groups.expense.inYourFinances" = "Dans vos finances";
+"groups.expense.inYourFinances" = "Dans tes finances";
 
 /* Middle of the sentence: Paid by <name> and split <mode> */
 "groups.expense.andDividedLabel" = "et partagé";
 
 /* Current user after a preposition: Paid by <you> */
-"groups.member.youObject" = "vous";
+"groups.member.youObject" = "toi";
 
 /* Dialog title: activating the cloud while an iCloud deletion the user asked for has not finished */
 "storage.pendingICloudWipe.title" = "Une suppression n'est pas terminée";
@@ -8022,7 +8022,7 @@
 "groups.d13.form.namePlaceholder" = "Ex. : Voyage à Cusco";
 
 /* L12-9 · «Simplificar deudas» con palabras de persona, en «Más opciones». */
-"groups.d13.form.simplify" = "Moins de paiements entre vous";
+"groups.d13.form.simplify" = "Moins de paiements entre membres";
 
 /* L12-9 · qué hace «Menos pagos entre ustedes». */
 "groups.d13.form.simplifyHint" = "Yala regroupe les dettes pour qu'il y ait moins de virements.";
@@ -8241,41 +8241,41 @@
 /* Sin deuda; %@ = nombre */
 "groups.l19.member.removeBody" = "%@ ne verra plus le groupe. Les dépenses ajoutées restent.";
 /* Tras la cifra de la deuda, al quitar a alguien; %@ = nombre */
-"groups.l19.member.removeDebtTail" = "Si vous retirez %@ du groupe, ce qui reste à régler ne sera pas réglé.";
+"groups.l19.member.removeDebtTail" = "Si tu retires %@ du groupe, ce qui reste à régler ne sera pas réglé.";
 /* Botón: saldar antes de quitar o salir */
 "groups.l19.settleFirst" = "Régler d’abord";
 /* %1$@ = nombre, %2$@ = cifra */
-"groups.l19.debt.owesYou" = "%1$@ vous doit %2$@.";
+"groups.l19.debt.owesYou" = "%1$@ te doit %2$@.";
 /* %1$@ = nombre, %2$@ = cifra */
-"groups.l19.debt.youOwe" = "Vous devez %2$@ à %1$@.";
+"groups.l19.debt.youOwe" = "Tu dois %2$@ à %1$@.";
 /* %1$@ = quien debe, %2$@ = cifra, %3$@ = a quién */
 "groups.l19.debt.owesOther" = "%1$@ doit %2$@ à %3$@.";
 /* Bloqueo de eliminar; %1$@ = nombre, %2$@ = cifra (sin punto final) */
 "groups.l19.debt.memberOwes" = "%1$@ doit %2$@";
 /* Bloqueo de eliminar, quien mira; %@ = cifra (sin punto final) */
-"groups.l19.debt.youOweNet" = "Vous devez %@";
+"groups.l19.debt.youOweNet" = "Tu dois %@";
 /* Salir con deuda, una persona; %@ = la otra persona */
-"groups.l19.leave.debtTailOne" = "Si vous partez, vous ne verrez plus ce groupe ni cette dette ; %@ la verra toujours.";
+"groups.l19.leave.debtTailOne" = "Si tu pars, tu ne verras plus ce groupe ni cette dette ; %@ la verra toujours.";
 /* Salir con deuda, varias personas */
-"groups.l19.leave.debtTailMany" = "Si vous partez, vous ne verrez plus ce groupe ni ces dettes ; les autres les verront toujours.";
+"groups.l19.leave.debtTailMany" = "Si tu pars, tu ne verras plus ce groupe ni ces dettes ; les autres les verront toujours.";
 /* Confirmación de eliminar: qué pasa con tu dinero */
-"groups.l19.delete.body" = "Il disparaît pour tout le monde. Ce que vous avez noté dans vos comptes reste.";
+"groups.l19.delete.body" = "Il disparaît pour tout le monde. Ce que tu as noté dans tes comptes reste.";
 /* Ajustes del grupo: título de la tarjeta */
 "groups.l19.exits.sectionBoth" = "Archiver ou supprimer";
 /* Ajustes del grupo: título si solo se puede archivar */
 "groups.l19.exits.sectionArchive" = "Archiver";
 /* Bajo «Archivar grupo»: qué pasa (archivar es para todo el grupo) */
-"groups.l19.archive.body" = "Il passe dans Archivés pour tout le groupe. Les dépenses et les dettes sont conservées, et vous pouvez le récupérer quand vous voulez.";
+"groups.l19.archive.body" = "Il passe dans Archivés pour tout le groupe. Les dépenses et les dettes sont conservées, et tu peux le récupérer quand tu veux.";
 /* Bajo «Desarchivar grupo» */
 "groups.l19.unarchive.body" = "Il revient dans la liste de tout le groupe, avec ses dépenses et ses dettes.";
 /* Bajo «Eliminar grupo» */
 "groups.l19.delete.rowBody" = "Il disparaît pour tout le monde et c’est définitif.";
 /* Eliminar bloqueado: la condición */
-"groups.l19.delete.blockedTail" = "Vous pourrez le supprimer une fois les comptes à zéro.";
+"groups.l19.delete.blockedTail" = "Tu pourras le supprimer une fois les comptes à zéro.";
 /* Eliminar bloqueado con heredero */
-"groups.l19.delete.transferInstead" = "Si vous voulez partir, transférez-le et quittez-le.";
+"groups.l19.delete.transferInstead" = "Si tu veux partir, transfère-le et quitte-le.";
 /* Eliminar bloqueado sin heredero */
-"groups.l19.delete.archiveInstead" = "Si vous voulez juste le retirer de la liste, archivez-le : les dettes sont conservées.";
+"groups.l19.delete.archiveInstead" = "Si tu veux juste le retirer de la liste, archive-le : les dettes sont conservées.";
 /* Enlace a la pestaña de saldos del grupo */
 "groups.l19.seeBalances" = "Voir les soldes";
 /* Aviso tras archivar un grupo */
@@ -8289,27 +8289,27 @@
 /* Botón del aviso de grupo archivado */
 "groups.l19.archived.unarchive" = "Désarchiver";
 /* Bajo el total de la lista; %@ = cifras */
-"groups.l19.archived.owedLine" = "+ %@ qu’on vous doit dans des groupes archivés";
+"groups.l19.archived.owedLine" = "+ %@ qu’on te doit dans des groupes archivés";
 /* Bajo el total de la lista; %@ = cifras */
-"groups.l19.archived.oweLine" = "+ %@ que vous devez dans des groupes archivés";
+"groups.l19.archived.oweLine" = "+ %@ que tu dois dans des groupes archivés";
 /* Hoja del presupuesto: la pregunta */
-"groups.l19.budget.question" = "Combien voulez-vous dépenser au maximum ?";
+"groups.l19.budget.question" = "Combien le groupe veut-il dépenser au maximum ?";
 /* Vista previa; %@ = lo gastado hasta hoy (con ≈ si hubo conversión) */
 "groups.l19.budget.spentSoFar" = "Déjà dépensé : %@";
 /* Vista previa sin gastos */
 "groups.l19.budget.noSpendingYet" = "Aucune dépense dans le groupe pour l’instant.";
 /* Vista previa: ya se pasaron; %@ = cuánto */
-"groups.l19.budget.wouldExceed" = "Vous seriez déjà %@ au-dessus";
+"groups.l19.budget.wouldExceed" = "Le groupe serait déjà %@ au-dessus";
 /* Vista previa: lo que quedaría; %@ = cuánto */
 "groups.l19.budget.wouldRemain" = "Il resterait %@";
 /* Hoja del presupuesto: quién lo ve */
-"groups.l19.budget.seenByAll" = "Tout le groupe le voit, pas seulement vous.";
+"groups.l19.budget.seenByAll" = "Tout le groupe le voit, pas seulement toi.";
 /* Hoja del presupuesto: los avisos (50, 75, 90 y 100 %) */
 "groups.l19.budget.alerts" = "Nous prévenons tout le monde à la moitié, aux trois quarts, presque à la limite et à la limite.";
 /* Opción del grupo (antes «Simplificar deudas») */
-"groups.l19.options.simplify" = "Moins de paiements entre vous";
+"groups.l19.options.simplify" = "Moins de paiements entre membres";
 /* Ejemplo de la opción */
-"groups.l19.options.simplifyExample" = "Si Ana vous doit et que vous devez à Beto, Ana paie Beto directement.";
+"groups.l19.options.simplifyExample" = "Si Ana te doit et que tu dois à Beto, Ana paie Beto directement.";
 /* Opción del grupo (antes «Moneda única para deudas») */
 "groups.l19.options.singleCurrency" = "Voir les dettes dans une seule devise";
 /* Opción que solo cambia quien creó el grupo */
@@ -8317,29 +8317,29 @@
 /* Opción del grupo (antes «División predeterminada») */
 "groups.l19.options.splitType" = "Répartition d’une nouvelle dépense";
 /* Sección de ajustes del grupo (antes «Integración personal») */
-"groups.l19.options.personalSection" = "Dans vos comptes";
+"groups.l19.options.personalSection" = "Dans tes comptes";
 /* Interruptor del puente con las cuentas personales */
 "groups.l19.options.personalToggle" = "Noter dans mes comptes ce que je paie ici";
 /* Pie del interruptor cuando sigue el ajuste general */
 "groups.l19.options.personalInherit" = "Comme dans Réglages des groupes.";
 /* Miembros: rótulo sobre la cifra */
-"groups.l19.member.owesYouShort" = "Vous doit";
+"groups.l19.member.owesYouShort" = "Te doit";
 /* Miembros: rótulo sobre la cifra */
-"groups.l19.member.youOweShort" = "Vous devez";
+"groups.l19.member.youOweShort" = "Tu dois";
 /* Salir de varios: por qué un grupo no se pudo dejar */
-"groups.l19.batch.reasonCreator" = "Vous l’avez créé et personne d’autre ne peut encore le reprendre. Ouvrez-le pour l’archiver ou le supprimer.";
+"groups.l19.batch.reasonCreator" = "Tu l’as créé et personne d’autre ne peut encore le reprendre. Ouvre-le pour l’archiver ou le supprimer.";
 /* Salir de varios: botón por grupo */
 "groups.l19.batch.openSettings" = "Ouvrir ses réglages";
 /* Desasociar la cuenta de grupos: qué pasa */
-"groups.l19.detach.body" = "Vos groupes quittent cet appareil ; ils restent dans votre compte et reviennent si vous le reconnectez.";
+"groups.l19.detach.body" = "Tes groupes quittent cet appareil ; ils restent dans ton compte et reviennent si tu le reconnectes.";
 /* Desasociar: salida que conserva */
 "groups.l19.detach.keep" = "Garder dans mes comptes ce que j’ai payé";
 /* Desasociar: salida que quita */
 "groups.l19.detach.remove" = "Le retirer aussi de mes comptes";
 /* Desasociar: efecto de conservar; %1$d = gastos, %2$@ = total */
-"groups.l19.detach.keepCount" = "Si vous le gardez, les dépenses que vous avez payées restent dans vos comptes : %1$d (%2$@).";
+"groups.l19.detach.keepCount" = "Si tu le gardes, les dépenses que tu as payées restent dans tes comptes : %1$d (%2$@).";
 /* Desasociar: efecto de quitar */
-"groups.l19.detach.removeEffect" = "Si vous le retirez, elles disparaissent aussi de vos comptes.";
+"groups.l19.detach.removeEffect" = "Si tu le retires, elles disparaissent aussi de tes comptes.";
 /* Error: no se puede quitar el rol a quien creó el grupo */
 "groups.l19.error.creatorStaysAdmin" = "La personne qui a créé le groupe est toujours admin : ce rôle ne peut pas lui être retiré.";
 /* Error: tiene que quedar un administrador */

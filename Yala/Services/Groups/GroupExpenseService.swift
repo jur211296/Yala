@@ -444,11 +444,9 @@ final class GroupExpenseService {
     /// El dueño pasa sin leer los miembros, como antes: así una lectura que falle no le quita lo que ya tenía.
     private func validateCurrentUserCanManageOpeningBalances(in group: SplitGroup) throws {
         if group.isOwner { return }
-        let current = Self.resolveCurrentUserMember(from: try GroupService.shared.fetchMembers(for: group))
+        // Card hfhs: la misma decisión que el botón, la del servidor en un grupo del backend.
         guard OpeningBalancePermissionLogic.canManage(
-            groupIsOwner: false,
-            currentMemberIsActive: current?.isActive ?? false,
-            currentMemberIsAdmin: current?.isAdmin ?? false
+            group: group, members: try GroupService.shared.fetchMembers(for: group)
         ) else {
             throw GroupExpenseServiceError.notAdmin
         }

@@ -569,6 +569,31 @@ final class GroupTransactionBridge {
         // `-total` + la virtual lent derivada. Borrarla evita una virtual `-myShare` huérfana.
         if let stale = preservedClassifiable { try deleteLegWithEntries(stale, keep: planTransfers, context: context) }
 
+        // Card 8933: la cuenta que eligió la persona AL EDITAR mueve el registro (`GroupBridgeEditedAccountLogic`). Con otra
+        // moneda y una cuenta elegida de esa moneda, el registro se rehace en ella: se retira aquí y lo crea la rama de
+        // «primera vez» de abajo con la cuenta elegida, en vez de dejar un borrador en la Bandeja.
+        let editedAccount = existingRealTx.map { realTx in
+            GroupBridgeEditedAccountLogic.decide(
+                isRemoteSync: isRemoteSync,
+                recordAccountID: realTx.account?.shortcutID,
+                recordCurrency: realTx.currencyCode,
+                chosenAccountID: accountForCurrentUser?.shortcutID,
+                chosenAccountCurrency: accountForCurrentUser?.currencyCode,
+                expenseCurrency: expense.currencyCode)
+        }
+        // Lo que la persona le puso al registro viejo viaja al nuevo (nota, etiquetas, necesidad): rehacerlo es cambiar de
+        // cuenta, no empezar de cero (review adversarial del 2026-11-02).
+        var recreatedNote: String?
+        var recreatedTagIDs: Set<UUID> = []
+        var recreatedNeed: String?
+        if editedAccount == .recreateInChosenAccount, let stale = existingRealTx {
+            recreatedNote = stale.note
+            recreatedTagIDs = stale.resolvedTagIDs() ?? []
+            recreatedNeed = stale.needOverride
+            try deleteLegWithEntries(stale, context: context)
+            existingRealTx = nil
+        }
+
         // Path Caso A modo .full/.completed: gestionar TX cuenta real con preserve+update.
         if let realTx = existingRealTx {
             if realTx.currencyCode == expense.currencyCode {
@@ -577,7 +602,9 @@ final class GroupTransactionBridge {
                 realTx.date = expense.date
                 realTx.splitTotalAmount = totalAmount
                 realTx.splitType = expense.splitType
-                // NUNCA pisar account/note/tags/currencyCode ni una subcat ya puesta.
+                // Card 8933: la única excepción a «nunca pisar la cuenta» es la cuenta que la persona eligió al editar.
+                if editedAccount == .move, let chosen = accountForCurrentUser { realTx.account = chosen }
+                // NUNCA pisar account (salvo esa)/note/tags/currencyCode ni una subcat ya puesta.
                 // Excepción: rellenar subcat+category SOLO si la TX nunca tuvo (creada sin
                 // clasificar) y el gasto ahora resuelve una — refleja el chip elegido al
                 // editar el gasto, sin sobrescribir una clasificación manual del usuario.
@@ -620,6 +647,11 @@ final class GroupTransactionBridge {
             realTx.splitTotalAmount = totalAmount
             realTx.splitType = expense.splitType
             context.insert(realTx)
+            if editedAccount == .recreateInChosenAccount {
+                if let recreatedNote { realTx.note = recreatedNote }
+                Self.carryTransplantedMetadata(
+                    to: realTx, tagIDs: recreatedTagIDs, needOverride: recreatedNeed, context: context)
+            }
             realTx.recalculatePreferredCurrency(context: context)
             // Enfoque B: exponer la TX real recién creada al bloque fallback de abajo
             // (si su subcat quedó nil, ofrecerá clasificarla vía draft [.subcategory]).

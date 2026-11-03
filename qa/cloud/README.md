@@ -28,6 +28,7 @@
 - `—` [I14 — UI real de migración + consent + claimAction + relaunch asistido + encendido de flags](#i14--ui-real-de-migracin--consent--claimaction--relaunch-asistido--encendido-de-flags)
 - `—` [transfer_group_ownership (G10 / D10) — batch "salir de todos mis grupos" — APLICADA EN AMBOS ENVS ✅](#transfergroupownership-g10--d10--batch-salir-de-todos-mis-grupos--aplicada-en-ambos-envs)
 - `—` [G7 — cifrado pgcrypto de columnas † de grupos (data-at-rest)](#g7--cifrado-pgcrypto-de-columnas--de-grupos-data-at-rest)
+- `2026-11-02` [g29_01 — quién creó o editó un gasto y quién registró una liquidación viajan por el canal (2026-11-02)](#g2901--quién-creó-o-editó-un-gasto-y-quién-registró-una-liquidación-viajan-por-el-canal-2026-11-02)
 - `2026-11-01` [g28_01 — `tx_items.split_lines_raw`: las líneas de tu parte de un gasto de grupo (2026-11-01)](#g2801--txitemssplitlinesraw-las-lneas-de-tu-parte-de-un-gasto-de-grupo-2026-11-01)
 - `2026-10-27` [g26_01 — `accounts.credit_card_statement_day` y `credit_card_reminder_days_before`: el corte de la tarjeta (2026-10-27)](#g2601--accountscreditcardstatementday-y-creditcardreminderdaysbefore-el-corte-de-la-tarjeta-2026-10-27)
 - `2026-10-25` [g24_01 — `favorite_payments.destination_account_ref`: el destino de un favorito de transferencia (2026-10-25)](#g2401--favoritepaymentsdestinationaccountref-el-destino-de-un-favorito-de-transferencia-2026-10-25)
@@ -1853,6 +1854,19 @@ teléfono de otro admin la app ofrece quitarle el admin al creador (el servidor 
 **El orden: g22_01 → Worker con `set_member_role` en la allowlist → app.** Al revés no se escribe nada: sin DDL, el
 gateway devuelve 502 `yala_unavailable`; sin Worker, 404 `unknown rpc`; la app enseña en los dos el error genérico. El
 §2 no depende del orden: no cambia la forma de ninguna respuesta.
+
+## g29_01 — quién creó o editó un gasto y quién registró una liquidación viajan por el canal (2026-11-02)
+
+**Estado:** **APLICADA en staging y en producción el 2026-11-02**, con el Worker del manifest de Grupos v3 en los dos.
+Card xi74. Detalle de despliegue y marcha atrás: `docs/RUNBOOK-staging-ddl.md`, entrada g29_01.
+
+Fichero: `qa/cloud/g29_01_group_change_author.sql`; marcha atrás `qa/cloud/g29_01_rollback.sql`. Se aplica y se mide con
+`bash qa/cloud/g29_01-remote.sh <staging|production> <state|apply|rollback>`. Sonda por el Worker real:
+`GROUPS_ENC_KEY="$(cat ~/Secrets/yala-groups-enc/staging.key)" bash qa/cloud/g29_01-staging-probe.sh` (12 casos). Además
+del autor (casos 0-5), la sonda mide dos cosas del servidor que pidieron las cards m76a y hfhs: el reparto de un saldo
+inicial nuevo rechazado se aplica y su tombstone también, pero no el de un saldo vivo (6-8); y en un grupo con la fila
+heredada admin sin reclamar, `is_group_admin` no ve admin a quien entró por enlace (9), y sí a quien la reclamó (10). La
+fila heredada se siembra por la Management API: `migrate_group` ya no se ofrece a `authenticated`.
 
 ## g28_01 — `tx_items.split_lines_raw`: las líneas de tu parte de un gasto de grupo (2026-11-01)
 

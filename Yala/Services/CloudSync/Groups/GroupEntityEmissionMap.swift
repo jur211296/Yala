@@ -58,6 +58,9 @@ enum GroupEntityEmissionMap {
         GroupSyncEntityType.splitSettlement,
     ]
 
+    /// Columna del autor de un gasto (g29_01). Constante para que la emisión y el arrastre de `columnKeyPaths` no diverjan.
+    static let expenseAuthorColumn = "last_edited_by_member_key"
+
     // MARK: - split_expenses (gmoney) — sync_id = SplitExpense.id, group_id = groupZoneID
 
     static let splitExpense = EntityEmission<SplitExpense>(
@@ -74,19 +77,27 @@ enum GroupEntityEmissionMap {
             ColumnEmitter("is_settled") { m, _ in .bool(m.isSettled) },
             ColumnEmitter("is_opening_balance") { m, _ in .bool(m.isOpeningBalance) },
             ColumnEmitter("subcategory_name") { m, _ in Emit.text(m.subcategoryName) },
+            // g29_01 (since 3, card xi74): quién creó o editó el gasto. Su `since` vive en `GroupsSyncCapability.columnSince`.
+            ColumnEmitter("last_edited_by_member_key") { m, _ in Emit.text(m.lastEditedByMemberID) },
         ],
+        // El autor VIAJA CON CADA EDICIÓN del formulario (`GroupExpenseService.updateExpense` escribe estos ocho campos y
+        // el autor). Colgado solo de su keypath no saldría cuando el autor no cambia —reescribir el mismo valor no emite
+        // (regla de `hasChanges` en `swiftdata-cloudkit.md`)—, y un gasto que yo ya editaba antes de la v3 se quedaría en
+        // el servidor sin autor: mi otro dispositivo me avisaría de mi propia edición. `is_settled`, `is_opening_balance`
+        // y `created_at` no lo arrastran: no los cambia el formulario de edición.
         columnKeyPaths: [
-            \SplitExpense.amount: ["amount"],
-            \SplitExpense.currencyCode: ["currency_code"],
-            \SplitExpense.expenseDescription: ["expense_description"],
-            \SplitExpense.note: ["note"],
-            \SplitExpense.date: ["date"],
+            \SplitExpense.amount: ["amount", Self.expenseAuthorColumn],
+            \SplitExpense.currencyCode: ["currency_code", Self.expenseAuthorColumn],
+            \SplitExpense.expenseDescription: ["expense_description", Self.expenseAuthorColumn],
+            \SplitExpense.note: ["note", Self.expenseAuthorColumn],
+            \SplitExpense.date: ["date", Self.expenseAuthorColumn],
             \SplitExpense.createdAt: ["created_at"],
-            \SplitExpense.paidByMemberID: ["paid_by_member_key"],
-            \SplitExpense.splitType: ["split_type"],
+            \SplitExpense.paidByMemberID: ["paid_by_member_key", Self.expenseAuthorColumn],
+            \SplitExpense.splitType: ["split_type", Self.expenseAuthorColumn],
             \SplitExpense.isSettled: ["is_settled"],
             \SplitExpense.isOpeningBalance: ["is_opening_balance"],
-            \SplitExpense.subcategoryName: ["subcategory_name"],
+            \SplitExpense.subcategoryName: ["subcategory_name", Self.expenseAuthorColumn],
+            \SplitExpense.lastEditedByMemberID: [Self.expenseAuthorColumn],
         ]
     )
 
@@ -120,6 +131,8 @@ enum GroupEntityEmissionMap {
             ColumnEmitter("note") { m, _ in Emit.text(m.note) },
             ColumnEmitter("date") { m, _ in .timestamp(m.date) },
             ColumnEmitter("is_confirmed") { m, _ in .bool(m.isConfirmed) },
+            // g29_01 (since 3, card xi74): quién registró la liquidación. Nace con ella: el alta emite todas las columnas.
+            ColumnEmitter("recorded_by_member_key") { m, _ in Emit.text(m.recordedByMemberID) },
         ],
         columnKeyPaths: [
             \SplitSettlement.fromMemberID: ["from_member_key"],
@@ -129,6 +142,7 @@ enum GroupEntityEmissionMap {
             \SplitSettlement.note: ["note"],
             \SplitSettlement.date: ["date"],
             \SplitSettlement.isConfirmed: ["is_confirmed"],
+            \SplitSettlement.recordedByMemberID: ["recorded_by_member_key"],
         ]
     )
 
