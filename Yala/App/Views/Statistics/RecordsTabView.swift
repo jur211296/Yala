@@ -55,6 +55,8 @@ struct RecordsTabView: View {
                     ) {
                         periodSelector
                     }
+                    // Card 0mzg: el recuento y «Quitar repetidos» se van con la misma curva que la lista de abajo.
+                    .animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.duplicateRemovalCount)
                 } else {
                     heroSummary
                     // La acción principal arriba, como en el Panel; el flotante solo al bajar (card kzhe). En modo
@@ -498,36 +500,51 @@ struct RecordsTabView: View {
         }
     }
 
+    /// Card 0mzg: borrar un repetido se funde como la lista normal (`animatesRowEdits`), el último pasa al vacío
+    /// fundiéndose (`animatesEmptyStateSwap` en el contenedor de las dos ramas) y «Quitar repetidos», que borra de golpe
+    /// más filas de las que se funden solas, se anima con su propio contador.
     @ViewBuilder
     private var duplicateGroupsContent: some View {
         let groups = displayedDuplicateGroups
-        if groups.isEmpty {
-            duplicatesEmptyState
-        } else {
-            LazyVStack(spacing: DS.Spacing.sm, pinnedViews: [.sectionHeaders]) {
-                ForEach(Array(groups.enumerated()), id: \.offset) { _, group in
-                    Section {
-                        ForEach(group, id: \.persistentModelID) { record in
-                            RecordRowView(
-                                record: record,
-                                currencyCode: defaultCurrencyCode,
-                                isSelectionMode: viewModel.isSelectionMode,
-                                isSelected: viewModel.selectedRecordIDs.contains(record.persistentModelID),
-                                onTap: { viewModel.showRecordDetail(record) },
-                                onToggleSelection: { viewModel.toggleSelection(record.persistentModelID) },
-                                dateCaption: RecordsDuplicateLogic.rowDateCaption(
-                                    for: record.date, groupDates: group.map(\.date), criteria: viewModel.duplicateCriteria)
-                            )
-                            .modifier(RecordRowContextMenu(record: record, viewModel: viewModel))
-                        }
-                    } header: {
-                        DuplicateGroupHeader(records: group)
+        let rowIDs = groups.flatMap { $0.map(\.persistentModelID) }
+        ZStack(alignment: .top) {
+            if groups.isEmpty {
+                duplicatesEmptyState
+                    .transition(.stateSwap)
+            } else {
+                duplicateGroupsList(groups, rowIDs: rowIDs)
+                    .transition(.stateSwap)
+            }
+        }
+        .animatesEmptyStateSwap(ids: Array(rowIDs.prefix(4)))
+        .animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.duplicateRemovalCount)
+    }
+
+    private func duplicateGroupsList(_ groups: [[TransactionItem]], rowIDs: [PersistentIdentifier]) -> some View {
+        LazyVStack(spacing: DS.Spacing.sm, pinnedViews: [.sectionHeaders]) {
+            ForEach(Array(groups.enumerated()), id: \.offset) { _, group in
+                Section {
+                    ForEach(group, id: \.persistentModelID) { record in
+                        RecordRowView(
+                            record: record,
+                            currencyCode: defaultCurrencyCode,
+                            isSelectionMode: viewModel.isSelectionMode,
+                            isSelected: viewModel.selectedRecordIDs.contains(record.persistentModelID),
+                            onTap: { viewModel.showRecordDetail(record) },
+                            onToggleSelection: { viewModel.toggleSelection(record.persistentModelID) },
+                            dateCaption: RecordsDuplicateLogic.rowDateCaption(
+                                for: record.date, groupDates: group.map(\.date), criteria: viewModel.duplicateCriteria)
+                        )
+                        .modifier(RecordRowContextMenu(record: record, viewModel: viewModel))
                     }
+                } header: {
+                    DuplicateGroupHeader(records: group)
                 }
             }
-            .padding(.top, DS.Spacing.sm)
-            .padding(.bottom, DS.Button.fabStackClearance(buttons: 2))
         }
+        .padding(.top, DS.Spacing.sm)
+        .animatesRowEdits(ids: rowIDs)
+        .padding(.bottom, DS.Button.fabStackClearance(buttons: 2))
     }
 
     /// «No encontramos registros repetidos» y qué se miró, según los criterios de «Coincidir por».

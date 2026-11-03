@@ -231,6 +231,12 @@ struct CoachMarkOverlay: View {
                     .onTapGesture { }
             }
         }
+        // Card v84b: el Panel monta la guía dentro de su pestaña, donde `ContentView` apaga las transacciones y un
+        // `withAnimation` no anima nada: el oscurecido, el foco y la tarjeta salían en seco. Implícitas aquí, en el
+        // contenedor común, animan igual dentro de una pestaña y en una hoja (Ajustes).
+        .animation(reduceMotion ? nil : DS.Animation.appear, value: isVisible)
+        .animation(reduceMotion ? nil : DS.Animation.appear, value: showTooltip)
+        .animation(reduceMotion ? nil : DS.Animation.selection, value: currentIndex)
         .onAppear {
             handleStepTransition(initial: true)
         }
@@ -272,50 +278,38 @@ struct CoachMarkOverlay: View {
             scrollThenShow(step: step, initial: initial, gen: gen)
         } else if shouldScroll && initial {
             // First appearance, target already visible — scroll to center then show
-            withAnimation(.easeInOut(duration: DS.Animation.normal)) {
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.normal)) {
                 scrollProxy?.scrollTo(step.id, anchor: .center)
             }
             Task {
                 try? await Task.sleep(for: .seconds(DS.Animation.normal + 0.1))
                 guard transitionGeneration == gen else { return }
                 scrollSettleToken += 1
-                dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.slow)) {
-                    isVisible = true
-                }
+                isVisible = true
                 try? await Task.sleep(for: .seconds(DS.Animation.fast))
                 guard transitionGeneration == gen else { return }
                 isTransitioning = false
-                dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.normal)) {
-                    showTooltip = true
-                }
+                showTooltip = true
             }
         } else if initial {
             // No scroll proxy — fade in directly
             Task {
                 try? await Task.sleep(for: .milliseconds(50))
                 guard transitionGeneration == gen else { return }
-                dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.slow)) {
-                    isVisible = true
-                }
+                isVisible = true
                 try? await Task.sleep(for: .seconds(DS.Animation.fast))
                 guard transitionGeneration == gen else { return }
                 isTransitioning = false
-                dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.normal)) {
-                    showTooltip = true
-                }
+                showTooltip = true
             }
         } else {
             // Target visible, no scroll — crossfade tooltip
-            dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.normal)) {
-                showTooltip = false
-            }
+            showTooltip = false
             Task {
                 try? await Task.sleep(for: .seconds(DS.Animation.fast))
                 guard transitionGeneration == gen else { return }
                 isTransitioning = false
-                dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.normal)) {
-                    showTooltip = true
-                }
+                showTooltip = true
             }
         }
     }
@@ -323,13 +317,11 @@ struct CoachMarkOverlay: View {
     private func scrollThenShow(step: CoachMarkStep, initial: Bool, gen: UInt) {
         // Hide tooltip during scroll (spotlight stays dimmed)
         if !initial {
-            dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.fast)) {
-                showTooltip = false
-            }
+            showTooltip = false
         }
 
         // Scroll to the target
-        withAnimation(.easeInOut(duration: DS.Animation.normal)) {
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.normal)) {
             scrollProxy?.scrollTo(step.id, anchor: .center)
         }
 
@@ -340,15 +332,11 @@ struct CoachMarkOverlay: View {
             scrollSettleToken += 1
             isTransitioning = false
             if !isVisible {
-                dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.slow)) {
-                    isVisible = true
-                }
+                isVisible = true
             }
             try? await Task.sleep(for: .seconds(DS.Animation.fast))
             guard transitionGeneration == gen else { return }
-            dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.normal)) {
-                showTooltip = true
-            }
+            showTooltip = true
         }
     }
 
@@ -440,9 +428,7 @@ struct CoachMarkOverlay: View {
         guard !isTransitioning else { return }
         if currentIndex < steps.count - 1 {
             // The spotlight shape animates automatically via animatableData
-            dsWithAnimation(reduceMotion, .spring(duration: 0.45, bounce: 0.15)) {
-                currentIndex += 1
-            }
+            currentIndex += 1
         } else {
             dismissAndComplete()
         }
@@ -450,12 +436,18 @@ struct CoachMarkOverlay: View {
 
     private func dismissAndComplete(skipped: Bool = false) {
         isTransitioning = true
-        dsWithAnimation(reduceMotion, .easeIn(duration: DS.Animation.fast)) {
-            showTooltip = false
-            isVisible = false
-        }
+        showTooltip = false
+        isVisible = false
         Task {
-            try? await Task.sleep(for: .seconds(DS.Animation.fast + 0.05))
+            // Lo que dura el fundido de salida (`DS.Animation.appear`) antes de desmontar el overlay.
+            do {
+                try await Task.sleep(for: .seconds(reduceMotion ? 0.05 : DS.Animation.normal + 0.05))
+            } catch {
+                // Cancelada: se cierra igual, sin esperar al fundido.
+                #if DEBUG
+                print("CoachMarkOverlay: cierre sin esperar al fundido: \(error)")
+                #endif
+            }
             isPresented = false
             if skipped, let onSkip { onSkip() } else { onComplete() }
         }

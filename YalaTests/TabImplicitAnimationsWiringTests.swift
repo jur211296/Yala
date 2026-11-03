@@ -181,6 +181,18 @@ struct TabImplicitAnimationsWiringTests {
          ".dsAnimation(DS.Animation.selection, value: sessionState.comparisonMode, reduceMotion: reduceMotion)"),
         ("Yala/App/Views/Statistics/DetailContainerView.swift",
          ".animation(reduceMotion ? nil : DS.Animation.appear, value: statisticsGuidesDismissed)"),
+        // Encargo fluidez-subpestanas-duplicados-y-splash (2026-11-03): «Quitar repetidos» (0mzg), las marcas de ayuda
+        // del Panel (v84b) y el brillo de los esqueletos (ehsu).
+        ("Yala/App/Views/Statistics/RecordsTabView.swift",
+         ".animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.duplicateRemovalCount)"),
+        ("Yala/App/Tips/CoachMarkOverlay.swift",
+         ".animation(reduceMotion ? nil : DS.Animation.appear, value: isVisible)"),
+        ("Yala/App/Tips/CoachMarkOverlay.swift",
+         ".animation(reduceMotion ? nil : DS.Animation.appear, value: showTooltip)"),
+        ("Yala/App/Tips/CoachMarkOverlay.swift",
+         ".animation(reduceMotion ? nil : DS.Animation.selection, value: currentIndex)"),
+        ("Yala/App/Views/Shared/SkeletonView.swift",
+         ".animation(reduceMotion ? nil : Self.sweep, value: phase)"),
     ]
 
     /// Card C2: los sitios de la lista ya no envuelven el cambio en un `withAnimation` / `dsWithAnimation`, que dentro de
@@ -227,6 +239,9 @@ struct TabImplicitAnimationsWiringTests {
         ("Yala/App/Views/Reports/CashFlow/CashFlowTableView.swift", "withAnimation"),
         ("Yala/App/Views/Reports/GroupingChipsBar.swift", "withAnimation"),
         ("Yala/App/Views/Shared/ContextualGuideBanner.swift", "withAnimation"),
+        // Encargo fluidez-subpestanas-duplicados-y-splash (2026-11-03).
+        ("Yala/App/Tips/CoachMarkOverlay.swift", "dsWithAnimation("),
+        ("Yala/App/Views/Shared/SkeletonView.swift", "withAnimation"),
     ]
 
     @Test(arguments: deadWrappers.indices)

@@ -129,6 +129,8 @@ struct ContentTransitionsWiringTests {
         ("Yala/App/Views/Statistics/RecordsTabView.swift",
          ".animatesEmptyStateSwap(ids: Array(groups.lazy.flatMap { $0.records }.prefix(4).map(\\.persistentModelID)))", 2, 0),
         ("Yala/App/Views/Groups/GroupRecordsView.swift", ".animatesEmptyStateSwap(ids: items.prefix(4).map(\\.id))", 1, 1),
+        // Card 0mzg: el modo duplicados de Registros, con su vacío «No encontramos registros repetidos».
+        ("Yala/App/Views/Statistics/RecordsTabView.swift", ".animatesEmptyStateSwap(ids: Array(rowIDs.prefix(4)))", 2, 0),
         ("Yala/App/Views/Planning/BudgetsListView.swift",
          "ids: Array(viewModel.groupedBudgets.lazy.flatMap { $0.budgets }.prefix(4).map(\\.id)),", 2, 0),
     ]

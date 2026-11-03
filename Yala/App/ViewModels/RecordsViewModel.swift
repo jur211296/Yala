@@ -157,6 +157,9 @@ final class RecordsViewModel: Filterable {
         toDelete: [], keptGroupRecords: 0
     )
     var isConfirmingDuplicateRemoval = false
+    /// Sube en cada «Quitar repetidos» confirmado que borra algo. La vista anima con él (card 0mzg): el borrado en bloque
+    /// quita más filas de las que `animatesRowEdits` funde, y sin esto la lista pasaba al vacío en seco.
+    private(set) var duplicateRemovalCount = 0
 
     /// Sheet states
     var showFiltersSheet: Bool = false
@@ -608,6 +611,7 @@ final class RecordsViewModel: Filterable {
             .map { group in group.filter { !ids.contains($0.persistentModelID) } }
             .filter { $0.count >= 2 }
         duplicateTally = RecordsDuplicateLogic.tally(duplicateCandidateGroups)
+        duplicateRemovalCount += 1
     }
 
     /// Delete selected records (including transfer pairs)
