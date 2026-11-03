@@ -370,7 +370,7 @@ struct BudgetsWidget: Widget {
             BudgetsWidgetView(entry: entry)
                 .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder)
                 .invitesToActivateFullWhenGroupsOnly()
-                .containerBackground(WidgetColors.cardBackground, for: .widget)
+                .containerBackground(for: .widget) { WidgetCardBackground() }
         }
         .configurationDisplayName("widget.gallery.budgets")
         .description("widget.gallery.budgets.desc")

@@ -186,7 +186,7 @@ struct SubcategoriesPieWidget: Widget {
             SubcategoriesPieWidgetView(entry: entry)
                 .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder)
                 .invitesToActivateFullWhenGroupsOnly()
-                .containerBackground(WidgetColors.cardBackground, for: .widget)
+                .containerBackground(for: .widget) { WidgetCardBackground() }
         }
         .configurationDisplayName("widget.gallery.subcategoriesPie")
         .description("widget.gallery.subcategoriesPie.desc")

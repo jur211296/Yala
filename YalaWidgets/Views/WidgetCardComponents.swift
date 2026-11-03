@@ -6,7 +6,7 @@
 //  insignia sólida, cifra grande, píldora de variación, gráfica de línea sin ejes, barra con ritmo y pie de frescura.
 //  Todo con `WidgetDS` y `WidgetColors`, y pensado para los cuatro modos en que se ve un widget:
 //
-//  - claro y oscuro: la tarjeta de la app (`WidgetColors.cardBackground`);
+//  - claro y oscuro: el fondo con profundidad (`WidgetCardBackground`);
 //  - StandBy: el sistema quita la tarjeta y pinta sobre negro, así que nada depende del fondo para leerse;
 //  - tintado y transparente (`widgetRenderingMode == .accented`): el sistema pinta todo en blanco conservando la
 //    opacidad y tiñe lo marcado con `widgetAccentable()`. Un relleno opaco con un icono blanco encima se vuelve un

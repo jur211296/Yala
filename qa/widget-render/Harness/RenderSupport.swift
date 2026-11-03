@@ -86,9 +86,9 @@ struct FamilySpec {
 
 /// Cómo se ve el fondo de la casilla.
 enum RenderBackground {
-    /// El de las tarjetas de la app: blanco en claro, #1C1C1E en oscuro.
+    /// El fondo con profundidad de los widgets (`WidgetCardBackground`).
     case card
-    /// Un relleno sólido propio (Entrada rápida).
+    /// Un relleno de marca propio (Entrada rápida), con la misma profundidad.
     case fill(Color)
 }
 
@@ -120,6 +120,7 @@ struct RenderFrame<Content: View>: View {
                 .padding(spec.margins)
                 .frame(width: spec.size.width, height: spec.size.height)
                 .background { cardBackground }
+                .containerShape(RoundedRectangle(cornerRadius: spec.cornerRadius, style: .continuous))
                 .clipShape(RoundedRectangle(cornerRadius: spec.cornerRadius, style: .continuous))
                 .environment(\.renderFamily, spec.family)
                 .environment(\.renderShowsContainerBackground, mode != .standby && mode != .tintado)
@@ -164,8 +165,8 @@ struct RenderFrame<Content: View>: View {
             Color.clear
         } else {
             switch background {
-            case .card: Color(uiColor: .secondarySystemGroupedBackground)
-            case .fill(let color): color
+            case .card: WidgetCardBackground()
+            case .fill(let color): WidgetCardBackground(fill: color)
             }
         }
     }

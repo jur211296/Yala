@@ -18,8 +18,18 @@ Desde el rediseño 2.2 (S35f, `docs/widgets/AUDITORIA-WIDGETS-2-2.md`). Lo que e
   barras y gráficas. En una lista solo el ingreso lleva color. **Excepción: el widget de Grupos** pinta «debes» y «te
   deben» con `groupOweText` / `groupOwedText`, espejos de los tokens de la lista de Grupos (los fija el mismo test), y
   pone una flecha a cada lado para que no dependa del color.
-- **Fondo**: `.containerBackground(WidgetColors.cardBackground, for: .widget)` (el `card` del tema por defecto). Entrada
-  rápida pequeña es la excepción: relleno sólido (`indigoFill`/`pinkFill`/`tealFill`) con blanco encima.
+- **Fondo**: `.containerBackground(for: .widget) { WidgetCardBackground() }` (card c0nl, 2026-11-03): degradado
+  vertical de un solo tono y borde fino iluminado arriba, con colores FIJOS (`cardTop`/`cardBottom`/`cardEdge*`). No el
+  gris de sistema: en oscuro el widget resuelve el nivel «elevado» y `secondarySystemGroupedBackground` sube a #3A3A3C,
+  el gris plano que Jürgen comparó con el de batería. Es la **excepción de los widgets** a «sin degradados» de la marca:
+  un tono, sin brillos ni glows. En iOS no hay glass real para un widget de terceros (`WidgetTexture.glass` es de
+  visionOS; un `Material` no ve el fondo de pantalla). Los extremos del degradado están medidos contra los textos de
+  color: aclarar el oscuro o agrisar el claro baja el rosa y el índigo de 4,5:1, y lo caza
+  `elFondoConProfundidadMantieneElContrasteDeLosTextos`. **El iPhone aclara la parte de arriba** del fondo de un widget
+  de terceros en el estilo «Original» (medido en el simulador de iOS 27.2: #121320 sale #2E2F3B, #191A25 salía #35353F, y
+  un rojo puro, #F42725); el banco no lo imita. Por eso los extremos son más oscuros de lo que parecen en el banco: un
+  fondo que en el banco «ya se ve bien» sale gris en la pantalla de inicio. Entrada rápida pequeña lleva su relleno de marca
+  (`WidgetCardBackground(fill:)`), que solo OSCURECE hacia abajo para que el blanco de encima gane contraste.
 - **Tintado y transparente** (`widgetRenderingMode == .accented`): el sistema pinta todo en blanco conservando la
   opacidad. Un relleno opaco con un icono blanco encima se vuelve un círculo blanco sin icono: `WidgetBadge`, el «+» de
   Últimos registros, los botones de Entrada rápida y los días del calendario de Pagos pasan a translúcidos en ese modo.

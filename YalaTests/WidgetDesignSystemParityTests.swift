@@ -113,14 +113,61 @@ struct WidgetDesignSystemParityTests {
         #expect(owed.dark == Color.groupOwedAmountDarkHex.uppercased())
     }
 
-    /// El fondo de la tarjeta del widget es el `card` del tema por defecto: blanco y #1C1C1E, que es el gris agrupado
-    /// secundario del sistema. Si el tema cambia su tarjeta, el widget se queda atrás.
-    @Test func elFondoDeLaTarjetaEsElDelTemaPorDefecto() throws {
+    /// Contraste WCAG entre dos hex («RRGGBB»).
+    private static func contrast(_ a: String, _ b: String) throws -> Double {
+        func luminance(_ hex: String) throws -> Double {
+            let value = try #require(Int(hex, radix: 16), "«\(hex)» no es un hex.")
+            let channels = [(value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF].map { Double($0) / 255 }
+            let linear = channels.map { $0 <= 0.04045 ? $0 / 12.92 : pow(($0 + 0.055) / 1.055, 2.4) }
+            return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+        }
+        let (la, lb) = (try luminance(a), try luminance(b))
+        return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
+    }
+
+    /// El fondo con profundidad (2026-11-03) ya no es el `card` de la app: es un degradado de colores fijos. Cada texto
+    /// de color tiene que seguir dando 4,5:1 en los DOS extremos del degradado, en claro y en oscuro: si alguien
+    /// aclara el oscuro o agrisa el claro para que «se note más», el rosa y el índigo bajan de AA sin que nada lo diga.
+    @Test func elFondoConProfundidadMantieneElContrasteDeLosTextos() throws {
         let widget = try Self.source("YalaWidgets/Theme/WidgetColors.swift")
-        #expect(widget.contains("static let cardBackground = Color(uiColor: .secondarySystemGroupedBackground)"))
-        let theme = try Self.source("Yala/App/Theme/YalaTheme.swift")
-        #expect(theme.contains("card: .white,"))
-        #expect(theme.contains("card: Color(red: 0.11, green: 0.11, blue: 0.12),  // #1C1C1E"))
+        let top = try Self.adaptiveHex("cardTop", in: widget)
+        let bottom = try Self.adaptiveHex("cardBottom", in: widget)
+        // Que sea un degradado de verdad en oscuro (lo que pidió Jürgen), y que el oscuro no vuelva al gris elevado.
+        #expect(top.dark != bottom.dark)
+        #expect(try Self.contrast(top.dark, "000000") < Self.contrast("3A3A3C", "000000"))
+        for name in ["incomeText", "alertText", "accentText", "groupOweText", "groupOwedText"] {
+            let text = try Self.adaptiveHex(name, in: widget)
+            for (label, fondo, color) in [("claro arriba", top.light, text.light), ("claro abajo", bottom.light, text.light),
+                                          ("oscuro arriba", top.dark, text.dark), ("oscuro abajo", bottom.dark, text.dark)] {
+                let ratio = try Self.contrast(color, fondo)
+                #expect(ratio >= 4.5, "\(name) da \(ratio):1 sobre el fondo \(label) (#\(fondo)).")
+            }
+        }
+    }
+
+    /// Todos los widgets de la pantalla de inicio pintan su fondo con `WidgetCardBackground`; los de la pantalla
+    /// bloqueada, transparente. Un widget nuevo copiado de una rama vieja traería el gris plano de vuelta.
+    @Test func todosLosWidgetsUsanElFondoConProfundidad() throws {
+        let widgets = Self.root.appending(path: "YalaWidgets/Widgets")
+        let files = try FileManager.default.contentsOfDirectory(at: widgets, includingPropertiesForKeys: nil)
+            .filter { $0.pathExtension == "swift" }
+        var withBackground = 0
+        for url in files {
+            let code = try String(contentsOf: url, encoding: .utf8)
+            for match in code.matches(of: /\.containerBackground\(([^\n]*)/) {
+                let call = String(match.1)
+                withBackground += 1
+                let ok = call.hasPrefix("for: .widget) {") || call == ".clear, for: .widget)"
+                #expect(ok, "\(url.lastPathComponent) pinta el fondo sin `WidgetCardBackground`: «\(call)».")
+                if call.hasPrefix("for: .widget) {") {
+                    let tail = call + code[match.range.upperBound...].prefix(120)
+                    #expect(tail.contains("WidgetCardBackground("), "\(url.lastPathComponent): el cierre no pinta `WidgetCardBackground`.")
+                }
+            }
+        }
+        // 12 widgets de datos + Entrada rápida + los 4 de la pantalla bloqueada.
+        #expect(withBackground == 17, "Esperaba 17 fondos y hay \(withBackground): ¿un widget nuevo o uno sin fondo?")
+        #expect(!(try Self.source("YalaWidgets/Theme/WidgetColors.swift")).contains("secondarySystemGroupedBackground"))
     }
 
     /// Los widgets rediseñados no usan el `WDS` viejo ni números de espaciado sueltos: solo `WidgetDS`.

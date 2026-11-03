@@ -216,13 +216,16 @@ struct QuickManualEntryWidget: Widget {
     }
 }
 
-/// El fondo: el relleno sólido en el pequeño y la tarjeta de siempre en el mediano (que lleva sus botones de color).
+/// El fondo: el relleno de marca en el pequeño y la tarjeta de siempre en el mediano (que lleva sus botones de color),
+/// los dos con la profundidad de `WidgetCardBackground`.
 private struct QuickEntryBackground: ViewModifier {
     @Environment(\.widgetFamily) private var family
     let action: QuickEntryAction
 
     func body(content: Content) -> some View {
-        content.containerBackground(family == .systemMedium ? WidgetColors.cardBackground : action.fill, for: .widget)
+        content.containerBackground(for: .widget) {
+            WidgetCardBackground(fill: family == .systemMedium ? nil : action.fill)
+        }
     }
 }
 

@@ -613,7 +613,7 @@ struct CashFlowWidget: Widget {
             CashFlowWidgetView(entry: entry)
                 .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder)
                 .invitesToActivateFullWhenGroupsOnly()
-                .containerBackground(WidgetColors.cardBackground, for: .widget)
+                .containerBackground(for: .widget) { WidgetCardBackground() }
         }
         .configurationDisplayName("widget.gallery.cashFlow")
         .description("widget.gallery.cashFlow.desc")

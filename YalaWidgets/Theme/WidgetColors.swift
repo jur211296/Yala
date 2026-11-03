@@ -96,9 +96,32 @@ enum WidgetColors {
     // La paleta de arriba es para RELLENOS (barras, gráficas, insignias): como texto sobre la tarjeta blanca no llega
     // al AA. El texto con color usa los tres de abajo, los mismos de la app.
 
-    /// Fondo de la tarjeta: el `card` del tema por defecto de la app (blanco en claro, #1C1C1E en oscuro), que es
-    /// exactamente el gris agrupado secundario del sistema.
-    static let cardBackground = Color(uiColor: .secondarySystemGroupedBackground) // A11Y-DM: color de sistema, adapta claro/oscuro
+    // MARK: - Fondo con profundidad (`WidgetCardBackground`, 2026-11-03)
+    //
+    // Ya no es el `card` de la app: con el gris de sistema, el widget oscuro subía al gris «elevado» (#3A3A3C) y se veía
+    // plano junto a los de Apple. Colores fijos, medidos contra los textos de color: el punto más claro del degradado
+    // oscuro y el más oscuro del claro siguen dando 4,5:1 a `alertText` y `accentText` (lo fija
+    // `WidgetDesignSystemParityTests`).
+
+    /// Arriba del degradado: blanco en claro; casi negro con un punto de índigo en oscuro, como el widget de batería.
+    static let cardTop = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark ? UIColor(Color(hex: "121320")) : UIColor(Color(hex: "FFFFFF"))
+    })
+
+    /// Abajo del degradado: un gris perla apenas visible en claro (más oscuro, el índigo bajaría de 4,5:1) y casi negro
+    /// en oscuro.
+    static let cardBottom = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark ? UIColor(Color(hex: "08080D")) : UIColor(Color(hex: "FDFDFE"))
+    })
+
+    /// El borde fino: iluminado arriba y apagado abajo en oscuro (luz que cae de arriba); un gris tenue y casi parejo en
+    /// claro, donde un borde blanco no se vería.
+    static let cardEdgeTop = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark ? UIColor(white: 1, alpha: 0.16) : UIColor(white: 0, alpha: 0.07)
+    })
+    static let cardEdgeBottom = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark ? UIColor(white: 1, alpha: 0.04) : UIColor(white: 0, alpha: 0.05)
+    })
 
     /// Ingreso como TEXTO (`Color.incomeAmount`): #0F7A80 en claro (5,1:1 sobre blanco) y el turquesa de marca en oscuro.
     static let incomeText = Color(uiColor: UIColor { traits in

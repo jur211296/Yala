@@ -432,7 +432,7 @@ struct ExpenseWidget: Widget {
             ExpenseWidgetView(entry: entry)
                 .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder)
                 .invitesToActivateFullWhenGroupsOnly()
-                .containerBackground(WidgetColors.cardBackground, for: .widget)
+                .containerBackground(for: .widget) { WidgetCardBackground() }
         }
         .configurationDisplayName("widget.gallery.expense")
         .description("widget.gallery.expense.desc")

@@ -342,7 +342,7 @@ struct GroupsWidget: Widget {
             GroupsWidgetView(entry: entry)
                 .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder, message: "widget.empty.openYalaGroups")
                 .invitesToActivateFullWhenGroupsOnly()
-                .containerBackground(WidgetColors.cardBackground, for: .widget)
+                .containerBackground(for: .widget) { WidgetCardBackground() }
         }
         .configurationDisplayName("widget.gallery.groups")
         .description("widget.gallery.groups.desc")

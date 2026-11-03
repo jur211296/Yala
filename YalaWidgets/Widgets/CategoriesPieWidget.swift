@@ -183,7 +183,7 @@ struct CategoriesPieWidget: Widget {
             CategoriesPieWidgetView(entry: entry)
                 .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder)
                 .invitesToActivateFullWhenGroupsOnly()
-                .containerBackground(WidgetColors.cardBackground, for: .widget)
+                .containerBackground(for: .widget) { WidgetCardBackground() }
         }
         .configurationDisplayName("widget.gallery.categoriesPie")
         .description("widget.gallery.categoriesPie.desc")

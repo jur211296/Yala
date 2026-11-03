@@ -389,7 +389,7 @@ struct ScheduledPaymentsWidget: Widget {
             ScheduledPaymentsWidgetView(entry: entry)
                 .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder)
                 .invitesToActivateFullWhenGroupsOnly()
-                .containerBackground(WidgetColors.cardBackground, for: .widget)
+                .containerBackground(for: .widget) { WidgetCardBackground() }
         }
         .configurationDisplayName("widget.gallery.scheduledPayments")
         .description("widget.gallery.scheduledPayments.desc")
