@@ -153,6 +153,10 @@ final class GroupsSyncClient {
     /// el mismo outbox en paralelo.
     private var isCycling = false
     private var pendingCycle = false
+    /// Card th4n: quien pidió un ciclo con otro en vuelo y necesita saber cuándo ACABA esa vuelta (con la que se le
+    /// encoló) para leer lo que bajó. Lo despierta `finishRun`; un esperador cancelado se despierta solo.
+    /// Cada uno recibe el resultado de LA vuelta que esperó (no un estado compartido que otra vuelta pueda pisar).
+    private var runWaiters: [UUID: CheckedContinuation<SyncCadencePolicy.CadenceOutcome, Never>] = [:]
 
     /// B2 (MEDIA del review adversarial — guardia de GENERACIÓN, molde `sessionEpoch` del runtime
     /// personal): la cancelación del loop es COOPERATIVA (solo se chequea al tope y post-sleep) — un
@@ -629,16 +633,85 @@ final class GroupsSyncClient {
             return .coalesced
         }
         isCycling = true
-        defer { isCycling = false }
-        let generation = teardownGeneration
         var last: SyncCadencePolicy.CadenceOutcome = .coalesced
+        defer { finishRun(last) }
+        let generation = teardownGeneration
         repeat {
             pendingCycle = false
-            guard generation == teardownGeneration else { return .coalesced }  // teardown → ni la encolada
+            // teardown → ni la encolada; y quien esperaba no recibe el resultado de la vuelta de antes de su petición.
+            guard generation == teardownGeneration else { last = .coalesced; return .coalesced }
             last = await syncCycleOnce(context: context)
         } while pendingCycle
         return last
     }
+
+    /// Card th4n: hay una vuelta del canal en vuelo (el grupo que se abre desde su aviso espera a ella).
+    var hasRunInFlight: Bool { isCycling }
+
+    /// Cierra la vuelta en vuelo y despierta a quien la esperaba (card th4n).
+    private func finishRun(_ outcome: SyncCadencePolicy.CadenceOutcome) {
+        isCycling = false
+        let waiters = runWaiters
+        runWaiters.removeAll()
+        for waiter in waiters.values { waiter.resume(returning: outcome) }
+    }
+
+    /// Card th4n: espera a que acabe la vuelta EN VUELO —con el ciclo que se le encoló— y devuelve su resultado; sin
+    /// ninguna en vuelo, `nil` en el acto. Antes, pedir un ciclo con otro en vuelo devolvía `.coalesced` en el acto y quien
+    /// lo pedía (abrir un grupo desde su aviso, tirar para refrescar) recargaba ANTES de que bajara el cambio: el grupo se
+    /// abría con lo viejo y lo nuevo dependía de que el `dataVersion` del final del ciclo llegara a una pantalla activa.
+    /// Cancelable: la tarea que espera se cancela (el tope de `syncNowFromPush`) y sale sin esperar, con `.coalesced`.
+    func awaitRunInFlight() async -> SyncCadencePolicy.CadenceOutcome? {
+        guard isCycling else { return nil }
+        let id = UUID()
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { (continuation: CheckedContinuation<SyncCadencePolicy.CadenceOutcome, Never>) in
+                if Task.isCancelled {
+                    continuation.resume(returning: .coalesced)
+                } else {
+                    runWaiters[id] = continuation
+                }
+            }
+        } onCancel: {
+            Task { @MainActor [weak self] in self?.runWaiters.removeValue(forKey: id)?.resume(returning: .coalesced) }
+        }
+    }
+
+    #if DEBUG
+    /// Seam de `-uitest-group-push-change` (card th4n): una vuelta FINGIDA en vuelo que dura `duration` y al final aplica
+    /// el cambio como lo haría un pull (`apply`) y avisa como él (`onRemoteChangesApplied`). En XCUITest el canal no corre
+    /// —no hay sesión—, así que sin esto no habría vuelta en vuelo que esperar. No decide nada: quien la espera es el
+    /// código de producción (`awaitRunInFlight`).
+    ///
+    /// Con `landsAfterFirstWaiter`, la vuelta acaba ese rato después de que alguien empiece a esperarla (como un pull que
+    /// aterriza poco después de abrir el grupo), y `duration` es el tope si nadie la espera: así el caso no depende de
+    /// cuánto tarde el arranque en abrir el grupo.
+    func uitestRunFakeRemoteCycle(
+        lasting duration: Duration, landsAfterFirstWaiter: Duration? = nil, apply: @escaping @MainActor () -> Void
+    ) {
+        guard !isCycling else { return }
+        isCycling = true
+        Task { @MainActor in
+            do {
+                if let landsAfterFirstWaiter {
+                    let deadline = ContinuousClock.now + duration
+                    while runWaiters.isEmpty, ContinuousClock.now < deadline {
+                        try await Task.sleep(for: .milliseconds(100))
+                    }
+                    if !runWaiters.isEmpty { try await Task.sleep(for: landsAfterFirstWaiter) }
+                } else {
+                    try await Task.sleep(for: duration)
+                }
+            } catch {
+                print("GroupsSyncClient: Error: vuelta fingida cancelada: \(error)")
+            }
+            apply()
+            onRemoteChangesApplied()
+            pendingCycle = false
+            finishRun(.completed)
+        }
+    }
+    #endif
 
     /// G8-2: dispara UN ciclo del canal desde un silent push (`didReceiveRemoteNotification`, rama `yala`),
     /// carreado contra `timeout` (iOS da ~30s de background; el caller pasa 20s de margen). SIN `ModelContext`
@@ -653,7 +726,11 @@ final class GroupsSyncClient {
     /// esto devuelve false (.noData); el pull real ocurre al próximo foreground (consistencia eventual v1).
     @discardableResult
     func syncNowFromPush(timeout: Duration) async -> Bool {
-        guard CloudSyncFlags.groupsBackendEnabled, sessionCheck(), context != nil else { return false }
+        guard CloudSyncFlags.groupsBackendEnabled, sessionCheck(), context != nil else {
+            // Una vuelta en vuelo ya pasó estas puertas al empezar: lo que baje sigue valiendo para quien espera.
+            guard isCycling else { return false }
+            return await raceAgainst(timeout) { await self.awaitRunInFlight() == .completed }
+        }
         // Lanza AMBOS hijos ANTES del primer `next()` (AJUSTE review #7). El hijo del ciclo puede sobrevivir
         // al timeout tras `cancelAll` — benigno: el push es chunked con dedupe por `client_mutation_id` y el
         // próximo ciclo re-emite. `self` (clase @MainActor) es Sendable; el hijo lee `self.context` en el
@@ -661,10 +738,29 @@ final class GroupsSyncClient {
         return await withTaskGroup(of: Bool.self) { group in
             group.addTask { @MainActor [weak self] in
                 guard let self, let ctx = self.context else { return false }
-                return await self.syncCycleOnceCoalesced(context: ctx) == .completed
+                let outcome = await self.syncCycleOnceCoalesced(context: ctx)
+                // Card th4n: con otra vuelta en vuelo, el ciclo pedido se le encola; se espera a que ACABE (y con ella lo
+                // encolado) para que quien pidió lea lo que bajó, no lo de antes.
+                if outcome == .coalesced, let run = await self.awaitRunInFlight() { return run == .completed }
+                return outcome == .completed
             }
             group.addTask {
                 try? await Task.sleep(for: timeout)
+                return false
+            }
+            let first = await group.next() ?? false
+            group.cancelAll()
+            return first
+        }
+    }
+
+    /// `work` contra un tope: lo que llegue antes. El hijo que pierde se cancela (`awaitRunInFlight` sale al cancelarse).
+    private func raceAgainst(_ timeout: Duration, _ work: @escaping @MainActor () async -> Bool) async -> Bool {
+        await withTaskGroup(of: Bool.self) { group in
+            group.addTask { @MainActor in await work() }
+            group.addTask {
+                // Cancelado o vencido, el tope da `false`: lo mismo por las dos vías.
+                do { try await Task.sleep(for: timeout) } catch { return false }
                 return false
             }
             let first = await group.next() ?? false

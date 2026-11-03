@@ -35,6 +35,8 @@ struct GlobalSearchView: View {
                         transactions: sessionState.isGroupsOnlyByChoice
                             ? [] : RecordPendingDeletion.shared.visible(allTransactions)
                     )
+                    // Entra debajo ya opaco: el título grande va en su scroll y fundirlo lo fundiría con él (molde C1/C7).
+                    .transition(.identity)
                 } else {
                     // Loading state - subtle animation
                     VStack(spacing: DS.Spacing.lg) {
@@ -44,8 +46,12 @@ struct GlobalSearchView: View {
                             .font(DS.Typography.subheadline)
                             .foregroundStyle(.secondary)
                     }
+                    .transition(.loadingPlaceholder)
+                    .zIndex(1)
                 }
             }
+            // Implícita: en una pestaña un `withAnimation` no anima (card oxyr).
+            .animation(reduceMotion ? nil : DS.Animation.appear, value: isDataReady)
             .yalaScreenBackground()
             .navigationTitle(L10n.Common.search)
             .navigationBarTitleDisplayMode(.large)
@@ -64,9 +70,8 @@ struct GlobalSearchView: View {
                 // Task cancelled - continue with animation anyway
             }
             await MainActor.run {
-                dsWithAnimation(reduceMotion, .easeIn(duration: 0.2)) {
-                    isDataReady = true
-                }
+                // Lo funde la implícita del `ZStack` (card oxyr).
+                isDataReady = true
                 isSearchActive = true
             }
         }
@@ -240,6 +245,8 @@ struct SearchContentView: View {
                     filterChip(for: filter)
                 }
             }
+            // Implícita solo en las cápsulas: la lista filtrada cambia en seco (card oxyr).
+            .dsAnimation(DS.Animation.selection, value: selectedFilter, reduceMotion: reduceMotion)
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.sm)
         }
@@ -250,9 +257,8 @@ struct SearchContentView: View {
         let isSelected = selectedFilter == filter
 
         return Button {
-            dsWithAnimation(reduceMotion, .easeInOut(duration: 0.2)) {
-                selectedFilter = filter
-            }
+            // La cápsula la anima la implícita del `HStack` de los chips (card oxyr).
+            selectedFilter = filter
         } label: {
             Text(filter.displayName)
                 .font(DS.Typography.subheadline.weight(isSelected ? .semibold : .regular))
@@ -295,9 +301,8 @@ struct SearchContentView: View {
                         if !searchText.isEmpty,
                            SearchResultsLogic.offersShowAll(total: totalMatchingCount, showsAll: showsAllResults) {
                             Button {
-                                dsWithAnimation(reduceMotion, .easeInOut(duration: 0.2)) {
-                                    showsAllResults = true
-                                }
+                                // En seco: cambia la lista entera (card oxyr).
+                                showsAllResults = true
                             } label: {
                                 HStack(spacing: DS.Spacing.xs) {
                                     Text(L10n.Action.viewAll)

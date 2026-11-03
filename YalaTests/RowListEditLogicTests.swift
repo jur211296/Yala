@@ -54,4 +54,26 @@ struct RowListEditLogicTests {
         #expect(!RowListEditLogic.isSmallEdit(from: [1, 2, 3], to: [2, 1, 3]))
         #expect(!RowListEditLogic.isSmallEdit(from: [1, 2, 3, 4], to: [3, 1, 2]))
     }
+
+    // MARK: - La lista y su vacío (card 1jvv)
+
+    /// Borrar la última fila o apuntar la primera cruza entre la lista y el vacío: se funde.
+    @Test func lastRowOut_orFirstRowIn_crossesEmpty() {
+        #expect(RowListEditLogic.crossesEmpty(from: [7], to: []))
+        #expect(RowListEditLogic.crossesEmpty(from: [Int](), to: [7]))
+        #expect(RowListEditLogic.crossesEmpty(from: [1, 2, 3], to: []))
+    }
+
+    /// Una edición que deja filas no es cosa del contenedor del vacío (la anima el de las filas).
+    @Test func anEditThatKeepsRows_doesNotCrossEmpty() {
+        #expect(!RowListEditLogic.crossesEmpty(from: [1, 2], to: [1]))
+        #expect(!RowListEditLogic.crossesEmpty(from: [1], to: [1, 2]))
+        #expect(!RowListEditLogic.crossesEmpty(from: [Int](), to: [Int]()))
+    }
+
+    /// Un filtro que vacía una lista larga, o la primera carga de una lista larga, sigue en seco.
+    @Test func aWholeListEmptiedOrLoaded_doesNotCrossEmpty() {
+        #expect(!RowListEditLogic.crossesEmpty(from: Array(1...20), to: []))
+        #expect(!RowListEditLogic.crossesEmpty(from: [Int](), to: Array(1...20)))
+    }
 }

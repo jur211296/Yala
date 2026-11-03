@@ -118,11 +118,70 @@ struct ContentTransitionsWiringTests {
         #expect(try Self.code(path).contains { $0.hasPrefix(".animatesRowEdits(ids:") }, "\(path) ya no anima sus filas.")
     }
 
+    /// Card 1jvv: cada lista con estado vacío monta las DOS ramas en un contenedor común (`ZStack`, sin apilarlas mientras
+    /// se funden), con la salida que no se lee ni se toca, y anima el relevo desde ESE contenedor. Con la animación dentro
+    /// de la rama con filas, borrar la última saltaba al vacío en seco. (fichero, cabecera del relevo, cuántas ramas con
+    /// `.transition(.stateSwap)` DENTRO del contenedor, y la del título grande que va con `.identity`).
+    static let emptyStateSwaps: [(path: String, ids: String, swaps: Int, identities: Int)] = [
+        ("Yala/App/Views/Statistics/RecordsTabView.swift",
+         "ids: Array(viewModel.groupedRecords.lazy.flatMap { $0.records }.prefix(4).map(\\.persistentModelID)),", 2, 0),
+        ("Yala/App/Views/Statistics/RecordsTabView.swift",
+         ".animatesEmptyStateSwap(ids: Array(groups.lazy.flatMap { $0.records }.prefix(4).map(\\.persistentModelID)))", 2, 0),
+        ("Yala/App/Views/Groups/GroupRecordsView.swift", ".animatesEmptyStateSwap(ids: items.prefix(4).map(\\.id))", 1, 1),
+        ("Yala/App/Views/Planning/BudgetsListView.swift",
+         "ids: Array(viewModel.groupedBudgets.lazy.flatMap { $0.budgets }.prefix(4).map(\\.id)),", 2, 0),
+    ]
+
+    /// El bloque `{ … }` que cierra en `closing`, buscando su apertura hacia atrás por el saldo de llaves.
+    private static func blockOpening(in lines: [String], closing: Int) -> Int? {
+        var balance = 0
+        for index in stride(from: closing, through: 0, by: -1) {
+            balance += lines[index].filter { $0 == "}" }.count - lines[index].filter { $0 == "{" }.count
+            if balance <= 0 { return index }
+        }
+        return nil
+    }
+
+    @Test(arguments: emptyStateSwaps.indices)
+    func eachListWithAnEmptyState_swapsFromTheCommonContainer(_ index: Int) throws {
+        let (path, ids, swaps, identities) = Self.emptyStateSwaps[index]
+        let lines = try Self.code(path)
+        let idsLine = try #require(lines.firstIndex(of: ids), "\(path): el relevo lista/vacío ya no se anima desde fuera.")
+        let swap = try #require(lines[...idsLine].lastIndex { $0.hasPrefix(".animatesEmptyStateSwap(") })
+        // El contenedor de las dos ramas cierra justo encima de su cadena de modificadores, y abre como `ZStack`.
+        let closing = try #require(lines[..<swap].lastIndex { !$0.hasPrefix(".") })
+        #expect(lines[closing] == "}", "\(path): el relevo no cuelga del contenedor de las dos ramas.")
+        let opening = try #require(Self.blockOpening(in: lines, closing: closing))
+        #expect(lines[opening].hasPrefix("ZStack"), "\(path): las dos ramas ya no comparten un `ZStack`: se apilarían.")
+        let block = lines[opening...closing]
+        #expect(block.contains { $0.hasPrefix("if ") }, "\(path): el contenedor ya no monta las dos ramas.")
+        #expect(block.filter { $0 == ".transition(.stateSwap)" }.count == swaps,
+                "\(path): alguna rama perdió la salida que no se lee ni se toca.")
+        #expect(block.filter { $0 == ".transition(.identity)" }.count == identities,
+                "\(path): el scroll con el título grande vuelve a fundirse (se funde el título con él).")
+    }
+
+    /// La primera carga no es una edición: Presupuestos y Registros no recuerdan la lista hasta haber cargado.
+    @Test func emptyStateSwap_waitsForTheFirstLoad() throws {
+        #expect(try Self.code("Yala/App/Views/Planning/BudgetsListView.swift").contains("settled: viewModel.hasLoadedOnce"))
+        #expect(try Self.code("Yala/App/Views/Statistics/RecordsTabView.swift").contains("settled: viewModel.hasAppliedFilters"))
+        let modifier = try Self.code("Yala/App/DesignSystem/ContentTransitions.swift")
+        #expect(modifier.contains(".onAppear { lastIDs = settled ? ids : nil }"))
+        #expect(modifier.contains(".onChange(of: settled) { _, isSettled in lastIDs = isSettled ? ids : nil }"))
+    }
+
+    /// El relevo del vacío solo cuando una edición pequeña vacía la lista o le pone la primera fila.
+    @Test func emptyStateSwap_animatesOnlyAcrossEmpty() throws {
+        let lines = try Self.code("Yala/App/DesignSystem/ContentTransitions.swift")
+        #expect(lines.contains("? RowListEditLogic.crossesEmpty(from: lastIDs, to: ids)"))
+        #expect(lines.contains("modifier(RowEditAnimationModifier(ids: ids, onlyAcrossEmpty: true, settled: settled))"))
+    }
+
     /// Solo la edición pequeña, y nunca con Reducir movimiento.
     @Test func rowEdits_animateOnlySmallEditsAndRespectReduceMotion() throws {
         let lines = try Self.code("Yala/App/DesignSystem/ContentTransitions.swift")
-        #expect(lines.contains(
-            "guard !reduceMotion, let lastIDs, RowListEditLogic.isSmallEdit(from: lastIDs, to: ids) else { return }"))
+        #expect(lines.contains("guard !reduceMotion, let lastIDs else { return }"))
+        #expect(lines.contains(": RowListEditLogic.isSmallEdit(from: lastIDs, to: ids)"))
         #expect(lines.contains("transaction.animation = DS.Animation.appear"))
     }
 

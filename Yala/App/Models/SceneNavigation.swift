@@ -164,6 +164,12 @@ final class SceneNavigation: Identifiable {
     /// Set by AppRouter.navigate(.groupDetail) handler, read by GroupsContainerView.
     var pendingGroupID: String?
 
+    /// El grupo que esta ventana acaba de abrir desde su aviso (card th4n). Lo pone `GroupsContainerView` al consumir un
+    /// `pendingGroupID` que vino de una notificación, y lo consume el detalle de ese grupo: recarga lo que ya está en el
+    /// teléfono y espera al ciclo en vuelo antes de enseñar el grupo. Con el detalle ya abierto, el cambio de valor es lo
+    /// que lo dispara. Un valor nuevo en cada toque (`token`): dos avisos del mismo grupo son dos aperturas.
+    var groupOpenedFromNotification: GroupNotificationEntry?
+
     /// Zona del grupo cuyos AJUSTES debe abrir esta ventana: el botón de cada grupo que «necesita tu decisión» al
     /// salir de varios grupos (auditoría UX 2.2 · L19-13). Lo consume `GroupsContainerView` (abre el detalle) y el
     /// detalle de ese grupo (abre sus ajustes).

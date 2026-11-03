@@ -231,6 +231,8 @@ struct SubcategoriesPieWidget: View {
                                 .position(center)
                         }
                     }
+                    // Implícita: en una pestaña un `withAnimation` no anima (card oxyr).
+                    .animation(reduceMotion ? nil : DS.Animation.appear, value: hoveredItem?.identity)
                 }
                 .frame(maxWidth: .infinity)
 
@@ -352,9 +354,8 @@ struct SubcategoriesPieWidget: View {
             .onLongPressGesture(
                 minimumDuration: 0.3,
                 pressing: { isPressing in
-                    dsWithAnimation(reduceMotion, .easeInOut(duration: 0.15)) {
-                        hoveredItem = isPressing ? item : nil
-                    }
+                    // La anima la implícita del `ZStack` del gráfico (card oxyr).
+                    hoveredItem = isPressing ? item : nil
                 }, perform: {})
         }
     }

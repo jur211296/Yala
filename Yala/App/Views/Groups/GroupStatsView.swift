@@ -426,11 +426,14 @@ struct GroupStatsView: View {
                     .contentShape(Rectangle().inset(by: -8))
                     .onTapGesture {
                         DS.Haptic.selection()
-                        dsWithAnimation(reduceMotion) { allCurrenciesPage = stat.currencyCode }
+                        // La página cambia en seco; los puntos los anima la implícita de abajo (card oxyr).
+                        allCurrenciesPage = stat.currencyCode
                     }
                     .accessibilityLabel(currencyLabel(stat.currencyCode))
             }
         }
+        // Implícita: en una pestaña un `withAnimation` no anima (card oxyr).
+        .animation(reduceMotion ? nil : DS.Animation.selection, value: allCurrenciesPage)
         .frame(maxWidth: .infinity, alignment: .center)
     }
 

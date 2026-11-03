@@ -119,14 +119,13 @@ private struct SegmentFilterChoiceHostModifier: ViewModifier {
     }
 
     private func perform(_ action: SegmentFilterChoiceLogic.Action, on current: SegmentFilterChoice) {
-        dsWithAnimation(reduceMotion) {
-            switch action {
-            case .showOnly: current.showOnly()
-            case .hide:
-                if let hide = current.hide { hide() } else { sessionState.hide(current.target) }
-            case .clear:
-                if let clear = current.clear { clear() } else { sessionState.clearFilter(current.target) }
-            }
+        // En seco: el filtro reemplaza la página (card oxyr).
+        switch action {
+        case .showOnly: current.showOnly()
+        case .hide:
+            if let hide = current.hide { hide() } else { sessionState.hide(current.target) }
+        case .clear:
+            if let clear = current.clear { clear() } else { sessionState.clearFilter(current.target) }
         }
     }
 }

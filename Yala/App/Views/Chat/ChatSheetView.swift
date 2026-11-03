@@ -384,7 +384,8 @@ struct ChatSheetView: View {
             }
             .scrollDismissesKeyboard(.interactively)
             .onChange(of: viewModel.messages.count) { _, _ in
-                withAnimation {
+                // Con Reducir movimiento, sin desplazamiento animado (card oxyr).
+                withAnimation(reduceMotion ? nil : .default) {
                     // Si hay turnos completos, scroll hasta el botón de reset (último elemento del stack).
                     // Si está cargando, al indicador. Sino, al último mensaje.
                     let target: AnyHashable
@@ -401,10 +402,11 @@ struct ChatSheetView: View {
                 }
             }
             .onChange(of: viewModel.isLoading) { _, isLoading in
+                // Con Reducir movimiento, sin desplazamiento animado (card oxyr).
                 if isLoading {
-                    withAnimation { proxy.scrollTo("loading", anchor: .bottom) }
+                    withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("loading", anchor: .bottom) }
                 } else if viewModel.turnCount > 0 {
-                    withAnimation { proxy.scrollTo("resetContext", anchor: .bottom) }
+                    withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("resetContext", anchor: .bottom) }
                 }
             }
         }

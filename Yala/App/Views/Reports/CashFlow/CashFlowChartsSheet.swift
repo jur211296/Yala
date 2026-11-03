@@ -14,6 +14,7 @@ struct CashFlowChartsSheet: View {
     let currencyCode: String
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var projection: CashFlowProjection {
         viewModel.projection ?? CashFlowProjection(
@@ -495,7 +496,8 @@ struct CashFlowChartsSheet: View {
         Button {
             if isPro {
                 if appPreferences.aiInsightsConsentAccepted {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    // En hoja sí anima; con Reducir movimiento, sin animación (card oxyr).
+                    dsWithAnimation(reduceMotion, .spring(response: 0.3, dampingFraction: 0.8)) {
                         appPreferences.cashFlowAIEnabled.toggle()
                     }
                 } else {

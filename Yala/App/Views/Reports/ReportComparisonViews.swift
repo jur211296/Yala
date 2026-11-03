@@ -58,6 +58,8 @@ struct ComparisonModeChips: View {
                 chip(.month, title: previousTitle)
                 chip(.year, title: yearAgoTitle)
             }
+            // Implícita solo en los chips: las cifras de la comparativa cambian en seco (card oxyr).
+            .dsAnimation(DS.Animation.selection, value: sessionState.comparisonMode, reduceMotion: reduceMotion)
         }
         .fadesTowardVerticalBar()
         .scrollClipDisabled()
@@ -66,9 +68,8 @@ struct ComparisonModeChips: View {
     private func chip(_ mode: ComparisonMode, title: String) -> some View {
         let isSelected = sessionState.comparisonMode == mode
         return Button {
-            dsWithAnimation(reduceMotion) {
-                sessionState.comparisonMode = mode
-            }
+            // Lo anima la implícita del `HStack` de los chips (card oxyr).
+            sessionState.comparisonMode = mode
         } label: {
             ReportChoiceChip(title: title, isSelected: isSelected)
         }

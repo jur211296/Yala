@@ -364,7 +364,8 @@ struct PanelView: View {
             guard shouldShowTodayFXCoachMark, !showTodayFXCoachMark else { return }
             do { try await Task.sleep(for: .seconds(1.5)) } catch { return }
             guard !Task.isCancelled, shouldShowTodayFXCoachMark else { return }
-            withAnimation { showTodayFXCoachMark = true }
+            // En seco: el overlay no tiene transición y su entrada la hace `CoachMarkOverlay` (card oxyr).
+            showTodayFXCoachMark = true
         }
         .appliesPendingRemoteChanges(sessionState)
         .onAppear {
@@ -570,7 +571,8 @@ struct PanelView: View {
                     sheets.isPresentingSettings = true
                 },
                 onDismiss: {
-                    withAnimation(.easeOut(duration: 0.25)) { cloudAdoptOfferDismissed = true }
+                    // Lo anima la implícita de `notices` (card oxyr).
+                    cloudAdoptOfferDismissed = true
                 })
         case .panelGuide:
             ContextualGuideBanner.panel()
@@ -612,16 +614,19 @@ struct PanelView: View {
                     message: NudgeService.shared.currentNudgeMessage ?? "",
                     onAction: {
                         NudgeService.shared.recordInteracted(nudge)
-                        withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                        // Lo anima la implícita de `notices` (card oxyr).
+                        showNudgeBanner = false
                         handleNudgeAction(nudge)
                     },
                     onDismiss: {
                         NudgeService.shared.recordDismissed(nudge)
-                        withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                        // Lo anima la implícita de `notices` (card oxyr).
+                        showNudgeBanner = false
                     },
                     onAutoDismiss: {
                         NudgeService.shared.recordDismissed(nudge, autoDismissed: true)
-                        withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                        // Lo anima la implícita de `notices` (card oxyr).
+                        showNudgeBanner = false
                     }
                 )
             }
@@ -792,9 +797,8 @@ struct PanelView: View {
                         ? offsetY > Self.inlineTitleHideAt
                         : offsetY >= Self.inlineTitleShowAt
                     if showInlineTitle != shouldShowTitle {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            showInlineTitle = shouldShowTitle
-                        }
+                        // En seco: el título de la barra es de UIKit y ninguna implícita lo funde (card oxyr).
+                        showInlineTitle = shouldShowTitle
                     }
 
                     // Los flotantes entran cuando la fila de acciones sale por
@@ -803,9 +807,8 @@ struct PanelView: View {
                         ? offsetY > Self.floatingActionsHideAt
                         : offsetY >= Self.floatingActionsShowAt
                     if showFloatingActions != shouldShowFABs {
-                        dsWithAnimation(reduceMotion) {
-                            showFloatingActions = shouldShowFABs
-                        }
+                        // Lo anima la implícita de `showFloatingActions` (card oxyr).
+                        showFloatingActions = shouldShowFABs
                     }
                 }
                 .refreshable {
@@ -879,7 +882,8 @@ struct PanelView: View {
     }
 
     private func scrollToProTourRow(_ proxy: ScrollViewProxy) {
-        withAnimation(.easeInOut(duration: DS.Animation.normal)) {
+        // Con Reducir movimiento, sin desplazamiento animado (card oxyr).
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.normal)) {
             proxy.scrollTo(ProTourSteps.panelVoiceImageAnchor, anchor: .center)
         }
     }

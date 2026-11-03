@@ -154,6 +154,33 @@ struct TabImplicitAnimationsWiringTests {
          ".animation(reduceMotion ? nil : DS.Animation.appear, value: localDateInterval.start)"),
         ("Yala/App/Views/Transactions/NewTransactionView.swift",
          ".animation(reduceMotion ? nil : DS.Animation.number, value: converted)"),
+        // Card oxyr (los que la auditoría no listó, 2026-11-03): inventario en el PR.
+        ("Yala/App/Views/Panel/CategoriesPieWidget.swift",
+         ".animation(reduceMotion ? nil : DS.Animation.appear, value: hoveredItem?.identity)"),
+        ("Yala/App/Views/Panel/SubcategoriesPieWidget.swift",
+         ".animation(reduceMotion ? nil : DS.Animation.appear, value: hoveredItem?.identity)"),
+        ("Yala/App/Views/Panel/TagsPieWidget.swift",
+         ".animation(reduceMotion ? nil : DS.Animation.appear, value: hoveredItem?.identity)"),
+        ("Yala/App/Views/Shared/DonutChartView.swift",
+         ".animation(reduceMotion ? nil : DS.Animation.appear, value: hoveredItem?.id)"),
+        ("Yala/App/Views/Statistics/Sankey/SankeyLabelModeToggle.swift",
+         ".dsAnimation(DS.Animation.selection, value: mode, reduceMotion: reduceMotion)"),
+        ("Yala/App/Views/Groups/GroupStatsView.swift",
+         ".animation(reduceMotion ? nil : DS.Animation.selection, value: allCurrenciesPage)"),
+        ("Yala/App/Views/Shared/ExpandableFAB.swift",
+         ".animation(reduceMotion ? nil : Self.fabSpring, value: showMenu)"),
+        ("Yala/App/Views/Shared/FABStackView.swift",
+         ".animation(reduceMotion ? nil : Self.fabSpring, value: showFABMenu)"),
+        ("Yala/App/Views/Reports/CashFlow/CashFlowSetupView.swift",
+         ".animation(reduceMotion ? nil : DS.Animation.appear, value: showVariableLines)"),
+        ("Yala/App/Views/Search/GlobalSearchView.swift",
+         ".animation(reduceMotion ? nil : DS.Animation.appear, value: isDataReady)"),
+        ("Yala/App/Views/Search/GlobalSearchView.swift",
+         ".dsAnimation(DS.Animation.selection, value: selectedFilter, reduceMotion: reduceMotion)"),
+        ("Yala/App/Views/Reports/ReportComparisonViews.swift",
+         ".dsAnimation(DS.Animation.selection, value: sessionState.comparisonMode, reduceMotion: reduceMotion)"),
+        ("Yala/App/Views/Statistics/DetailContainerView.swift",
+         ".animation(reduceMotion ? nil : DS.Animation.appear, value: statisticsGuidesDismissed)"),
     ]
 
     /// Card C2: los sitios de la lista ya no envuelven el cambio en un `withAnimation` / `dsWithAnimation`, que dentro de
@@ -171,10 +198,39 @@ struct TabImplicitAnimationsWiringTests {
         ("Yala/App/Views/Statistics/TrendsTabView.swift", "dsWithAnimation("),
         ("Yala/App/Views/Planning/ScheduledPaymentsListView.swift", "dsWithAnimation("),
         ("Yala/App/Views/Planning/BudgetChartsView.swift", "withAnimation"),
+        // Card oxyr (2026-11-03).
+        ("Yala/App/Views/Panel/CategoriesPieWidget.swift", "dsWithAnimation("),
+        ("Yala/App/Views/Panel/SubcategoriesPieWidget.swift", "dsWithAnimation("),
+        ("Yala/App/Views/Panel/TagsPieWidget.swift", "dsWithAnimation("),
+        ("Yala/App/Views/Shared/DonutChartView.swift", "dsWithAnimation("),
+        ("Yala/App/Views/Statistics/Sankey/SankeyLabelModeToggle.swift", "dsWithAnimation("),
+        ("Yala/App/Views/Groups/GroupStatsView.swift", "dsWithAnimation("),
+        ("Yala/App/Views/Shared/ExpandableFAB.swift", "dsWithAnimation("),
+        ("Yala/App/Views/Shared/FABStackView.swift", "dsWithAnimation("),
+        ("Yala/App/Views/Search/GlobalSearchView.swift", "dsWithAnimation("),
+        ("Yala/App/Views/Reports/ReportComparisonViews.swift", "dsWithAnimation("),
+        ("Yala/App/Views/Panel/SiriTipCard.swift", "dsWithAnimation("),
+        ("Yala/App/Views/Panel/Sections/PanelPanoramaSection.swift", "dsWithAnimation("),
+        ("Yala/App/Views/Panel/Components/PanelNoticeCarousel.swift", "dsWithAnimation("),
+        ("Yala/App/Views/Shared/TopPrimaryAction.swift", "dsWithAnimation("),
+        ("Yala/App/Views/Filters/SegmentFilterChoiceSheet.swift", "dsWithAnimation("),
+        ("Yala/App/Views/Filters/FilterChipView.swift", "dsWithAnimation("),
+        ("Yala/App/Views/Filters/FilterControlBar.swift", "dsWithAnimation("),
+        ("Yala/App/Views/Panel/PanelWidgetSection.swift", "dsWithAnimation("),
+        ("Yala/App/Views/Statistics/CategoriesTabView.swift", "dsWithAnimation("),
+        ("Yala/App/Views/Shared/PeriodNavigationHeader.swift", "dsWithAnimation("),
+        ("Yala/App/Views/Panel/PanelView.swift", "dsWithAnimation("),
+        ("Yala/App/Views/Reports/CashFlow/CashFlowSetupView.swift", "withAnimation"),
+        ("Yala/App/Views/Groups/GroupsContainerView.swift", "withAnimation"),
+        ("Yala/App/Views/Groups/GroupDetailView.swift", "withAnimation"),
+        ("Yala/App/Views/Reports/CashFlow/CashFlowMonthDetailView.swift", "withAnimation"),
+        ("Yala/App/Views/Reports/CashFlow/CashFlowTableView.swift", "withAnimation"),
+        ("Yala/App/Views/Reports/GroupingChipsBar.swift", "withAnimation"),
+        ("Yala/App/Views/Shared/ContextualGuideBanner.swift", "withAnimation"),
     ]
 
     @Test(arguments: deadWrappers.indices)
-    func eachC2Site_dropsTheDeadWrapper(_ index: Int) throws {
+    func eachC2AndOxyrSite_dropsTheDeadWrapper(_ index: Int) throws {
         let (path, needle) = Self.deadWrappers[index]
         let code = try Self.codeLines(path)
         #expect(!code.contains { $0.contains(needle) }, "\(path) vuelve a envolver un cambio en «\(needle)».")

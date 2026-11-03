@@ -27,7 +27,9 @@ class YalaAppDelegate: NSObject, UIApplicationDelegate {
         #if DEBUG
         // Toque fingido con la app cerrada: llega aquí, justo después de instalar el delegado, como el real.
         if UITestHooks.inboxNotificationTapMode == "cold" {
-            NotificationService.routeTap(deepLink: UITestHooks.notificationTapLink, targetSessionID: nil)
+            NotificationService.routeTap(
+                deepLink: UITestHooks.notificationTapLink, targetSessionID: nil,
+                awaitsRemoteChange: UITestHooks.groupPushChangeKind != nil)
         }
         #endif
 

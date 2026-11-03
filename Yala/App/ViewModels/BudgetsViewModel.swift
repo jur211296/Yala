@@ -88,6 +88,9 @@ final class BudgetsViewModel {
 
     /// Budgets grouped by status
     var groupedBudgets: [(status: BudgetStatus, budgets: [BudgetSummary])] = []
+    /// `true` tras la primera carga de la lista (card 1jvv): antes, una lista vacía es «aún no ha cargado», no «sin
+    /// presupuestos», y el relevo con el vacío no se anima.
+    private(set) var hasLoadedOnce = false
 
     /// Count of active budgets (for Pro tier limit checking)
     /// Sin los ya borrados: la lista lo lee en su `body` y, tras borrar un presupuesto, se repinta antes de recargar
@@ -436,6 +439,7 @@ final class BudgetsViewModel {
         let grouped = Dictionary(grouping: summaries) { $0.status }
 
         // Sort by status order and create final array
+        defer { if !hasLoadedOnce { hasLoadedOnce = true } }
         groupedBudgets = BudgetStatus.allCases
             .compactMap { status -> (status: BudgetStatus, budgets: [BudgetSummary])? in
                 guard let budgets = grouped[status], !budgets.isEmpty else { return nil }

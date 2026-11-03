@@ -39,6 +39,7 @@ struct CloudActivationSheet: View {
     @Environment(\.openURL) private var openURL
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var showsDetails = false
     @State private var isExporting = false
@@ -173,7 +174,8 @@ struct CloudActivationSheet: View {
     private var detailsDisclosure: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             Button {
-                withAnimation(.easeInOut(duration: 0.2)) { showsDetails.toggle() }
+                // En hoja sí anima; con Reducir movimiento, sin animación (card oxyr).
+                dsWithAnimation(reduceMotion, .easeInOut(duration: 0.2)) { showsDetails.toggle() }
             } label: {
                 HStack(spacing: DS.Spacing.xs) {
                     Text(showsDetails ? L10n.UXL20N.hideDetails : L10n.UXL20N.details)

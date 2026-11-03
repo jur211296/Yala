@@ -29,6 +29,7 @@ struct ExportRecordsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     let origin: Origin
     /// Desde Vaciar: «Seguir con el vaciado». Quien presenta cierra esta hoja y reabre la de alcance.
@@ -365,7 +366,8 @@ struct ExportRecordsView: View {
     private var moreOptionsCard: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.none) {
             Button {
-                withAnimation(.snappy) { showsMoreOptions.toggle() }
+                // En hoja sí anima; con Reducir movimiento, sin animación (card oxyr).
+                dsWithAnimation(reduceMotion, .snappy) { showsMoreOptions.toggle() }
             } label: {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "slider.horizontal.3")

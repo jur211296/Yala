@@ -201,16 +201,24 @@ struct GroupDetailView: View {
         .task { await openSettingsIfRequested() }
         .onAppear {
             wasArchivedOnAppear = group.isArchived
+            // Card th4n: abierto desde su aviso, el grupo espera al cambio que avisa antes de enseñarse.
+            let fromNotification = consumeNotificationEntry()
+            if fromNotification { viewModel.beginNotificationEntry() }
             viewModel.setContext(modelContext)
             // Traer cambios remotos al abrir el grupo: los gastos de otros aún no sincronizados
             // aparecen sin depender del pull (el empty state de records no tiene pull-to-refresh).
-            Task { await viewModel.refreshFromCloud(force: false) }
+            if fromNotification {
+                viewModel.startNotificationEntry()
+            } else {
+                Task { await viewModel.refreshFromCloud(force: false) }
+            }
             // Only evaluate if no nudge is already showing (avoid overriding GroupsContainer nudge)
             if NudgeService.shared.currentNudge == nil {
                 NudgeService.shared.evaluate()
             }
             if NudgeService.shared.currentNudge != nil {
-                withAnimation(.easeOut(duration: 0.3)) { showNudgeBanner = true }
+                // Lo anima la implícita de `showNudgeBanner` (card oxyr).
+                showNudgeBanner = true
             }
         }
         .onDisappear {
@@ -229,6 +237,11 @@ struct GroupDetailView: View {
                 break
             }
         }
+        // Card th4n: el aviso de ESTE grupo con el detalle ya abierto (en segundo plano o delante) no lo vuelve a montar;
+        // sin esto se quedaba con lo de antes hasta tirar para refrescar.
+        .modifier(GroupNotificationEntryObserver(entry: navigation.groupOpenedFromNotification, onChange: {
+            if consumeNotificationEntry() { viewModel.startNotificationEntry() }
+        }))
         .onChange(of: sessionState.dataVersion) {
             // Dismiss-first: las condiciones leen el modelo `group` directo (no dependen de la
             // salida de loadData) → decidir cerrar ANTES, sin carrera con el reload debounced,
@@ -252,6 +265,13 @@ struct GroupDetailView: View {
         }
     }
 
+    /// `true` (y lo consume) si esta ventana acaba de abrir ESTE grupo desde su aviso (card th4n).
+    private func consumeNotificationEntry() -> Bool {
+        guard let entry = navigation.groupOpenedFromNotification, entry.groupID == group.id else { return false }
+        navigation.groupOpenedFromNotification = nil
+        return true
+    }
+
     /// Lo que se ve del grupo: avisos, pestañas y el botón de nuevo gasto. Solo con el grupo vivo (`isGroupReadable`).
     @ViewBuilder
     private var groupContent: some View {
@@ -262,16 +282,19 @@ struct GroupDetailView: View {
                     message: NudgeService.shared.currentNudgeMessage ?? "",
                     onAction: {
                         NudgeService.shared.recordInteracted(nudge)
-                        withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                        // Lo anima la implícita de `showNudgeBanner` (card oxyr).
+                        showNudgeBanner = false
                         handleNudgeAction(nudge)
                     },
                     onDismiss: {
                         NudgeService.shared.recordDismissed(nudge)
-                        withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                        // Lo anima la implícita de `showNudgeBanner` (card oxyr).
+                        showNudgeBanner = false
                     },
                     onAutoDismiss: {
                         NudgeService.shared.recordDismissed(nudge, autoDismissed: true)
-                        withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                        // Lo anima la implícita de `showNudgeBanner` (card oxyr).
+                        showNudgeBanner = false
                     }
                 )
                 .padding(.horizontal, DS.Spacing.lg)
@@ -323,6 +346,15 @@ struct GroupDetailView: View {
 
             tabContent
                 .yalaSkeleton(!viewModel.isReady)
+                // Solo en XCUITest: el esqueleto es una copia redactada de las filas y está en el árbol de accesibilidad,
+                // así que un test no distingue «cargando» de «listo» por las filas (card th4n).
+                .overlay(alignment: .topLeading) {
+                    if UITestHooks.isActive, viewModel.isReady {
+                        Color.clear.frame(width: 1, height: 1)
+                            .accessibilityElement()
+                            .accessibilityIdentifier("group_detail_ready")
+                    }
+                }
         }
         // El aviso de grupos entra y se funde al cerrarlo. Implícita: el `withAnimation` del aviso no anima dentro
         // de una pestaña (card 8atf).
@@ -932,5 +964,16 @@ private struct GroupDetailPushedChrome: ViewModifier {
         content
             .swipeBack(isEnabled: isPushed)
             .toolbar(isPushed ? .hidden : .automatic, for: .tabBar)
+    }
+}
+
+/// Card th4n: el aviso de ESTE grupo con el detalle ya abierto. Aparte del `body` para no alargar su cadena de
+/// modificadores (el compilador del CI se rinde antes; regla de `swiftui-ds.md`).
+private struct GroupNotificationEntryObserver: ViewModifier {
+    let entry: GroupNotificationEntry?
+    let onChange: () -> Void
+
+    func body(content: Content) -> some View {
+        content.onChange(of: entry) { onChange() }
     }
 }

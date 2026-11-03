@@ -16,6 +16,7 @@ struct GroupingReorderSheet: View {
     @Binding var state: ReportGroupingState
     @Environment(SessionState.self) private var sessionState
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// «Gastos › Alimentación › Supermercados» con los niveles activos, en su orden.
     private var exampleText: String {
@@ -66,7 +67,8 @@ struct GroupingReorderSheet: View {
                     Section(L10n.Report.Grouping.available) {
                         ForEach(state.inactiveDimensions) { dimension in
                             Button {
-                                withAnimation {
+                                // En hoja sí anima; con Reducir movimiento, sin animación (card oxyr).
+                                dsWithAnimation(reduceMotion, .default) {
                                     state.toggle(dimension)
                                 }
                             } label: {
@@ -117,7 +119,8 @@ struct GroupingReorderSheet: View {
                 .frame(width: DS.FormRow.iconWidth)
                 .contentShape(Rectangle())
                 .onTapGesture {
-                    withAnimation {
+                    // En hoja sí anima; con Reducir movimiento, sin animación (card oxyr).
+                    dsWithAnimation(reduceMotion, .default) {
                         state.toggle(dimension)
                     }
                 }

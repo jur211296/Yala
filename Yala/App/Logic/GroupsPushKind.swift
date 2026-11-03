@@ -39,3 +39,32 @@ nonisolated enum GroupDeepLinkMatch {
         return !zoneID.isEmpty && zoneID == pendingID
     }
 }
+
+/// Card th4n: un grupo abierto desde su aviso, para el detalle de esa ventana (`SceneNavigation.groupOpenedFromNotification`).
+nonisolated struct GroupNotificationEntry: Equatable, Sendable {
+    let groupID: UUID
+    let token = UUID()
+}
+
+/// Card th4n: el aviso de grupo que se acaba de tocar. `NotificationService.routeTap` lo apunta antes de navegar y
+/// `GroupsContainerView` lo consume al abrir el grupo: así distingue una apertura desde el aviso de las otras que pasan por
+/// el mismo `.navigate(.groupDetail)` (crear un gasto de grupo desde Nuevo registro), que no deben esperar a la red.
+@MainActor
+final class GroupNotificationOpening {
+    static let shared = GroupNotificationOpening()
+
+    /// Lo que dura la marca: si el grupo no llega a abrirse en ese rato (el toque se perdió, el grupo no está), una
+    /// apertura posterior del mismo grupo por otro camino no se toma por la del aviso.
+    static let lifetime: TimeInterval = 60
+
+    private var pending: (id: String, at: Date)?
+
+    func request(_ pendingID: String, now: Date = .now) { pending = (pendingID, now) }
+
+    /// `true` (y lo olvida) si el `pendingGroupID` que se consume es el del aviso tocado y la marca sigue viva.
+    func consume(matching pendingID: String, now: Date = .now) -> Bool {
+        guard let pending, pending.id == pendingID else { return false }
+        self.pending = nil
+        return now.timeIntervalSince(pending.at) <= Self.lifetime
+    }
+}

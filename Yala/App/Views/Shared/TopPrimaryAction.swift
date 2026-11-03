@@ -155,13 +155,13 @@ private struct TopPrimaryActionRevealModifier: ViewModifier {
         firstHiddenConfirmation?.cancel()
         firstHiddenConfirmation = awaits ? confirmFirstHidden() : nil
         guard let shows, shows != showsFloating else { return }
-        dsWithAnimation(reduceMotion) { showsFloating = shows }
+        // Lo anima la implícita de quien monta el flotante (card oxyr).
+        showsFloating = shows
     }
 
     /// Nadie desmintió el primer «no visible»: el botón nació fuera de pantalla y el flotante sale.
     private func confirmFirstHidden() -> Task<Void, Never> {
         let showsFloating = $showsFloating
-        let reduceMotion = reduceMotion
         return Task { @MainActor in
             do {
                 try await Task.sleep(for: TopPrimaryActionRevealLogic.firstHiddenConfirmation)
@@ -169,7 +169,8 @@ private struct TopPrimaryActionRevealModifier: ViewModifier {
                 return  // Llegó otro aviso (o la página se fue): ese decide.
             }
             guard !showsFloating.wrappedValue else { return }
-            dsWithAnimation(reduceMotion) { showsFloating.wrappedValue = true }
+            // Lo anima la implícita de quien monta el flotante (card oxyr).
+            showsFloating.wrappedValue = true
         }
     }
 }

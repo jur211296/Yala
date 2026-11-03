@@ -80,9 +80,8 @@ struct PanelPanoramaSection: View {
             accessibilityHint: expanded ? L10n.Panel.panoramaCollapse : L10n.Panel.panoramaExpand
         ) {
             DS.Haptic.selection()
-            dsWithAnimation(reduceMotion) {
-                appPreferences.panelAccountsCollapsed.toggle()
-            }
+            // Lo anima la implícita de `panelAccountsCollapsed` de PanelView (card oxyr).
+            appPreferences.panelAccountsCollapsed.toggle()
         }
         .accessibilityIdentifier("panel_panorama_header")
     }

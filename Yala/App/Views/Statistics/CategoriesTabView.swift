@@ -797,7 +797,8 @@ struct CategoriesTabView: View {
         if let askSegmentFilter {
             askSegmentFilter(choice)
         } else {
-            dsWithAnimation(reduceMotion) { showOnly() }
+            // En seco: es un filtro y reemplaza la página (card oxyr).
+            showOnly()
         }
     }
 

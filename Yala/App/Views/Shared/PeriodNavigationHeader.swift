@@ -75,7 +75,8 @@ struct PeriodNavigationHeader: View {
         label: String
     ) -> some View {
         Button {
-            dsWithAnimation(reduceMotion) { action() }
+            // En seco: el período reemplaza la lista (card oxyr).
+            action()
         } label: {
             Image(systemName: systemName)
                 .font(DS.Typography.headline)

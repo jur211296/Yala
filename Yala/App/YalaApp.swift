@@ -245,7 +245,12 @@ struct YalaApp: App {
             // re-emit on next .active via handleBecameActive().
             AppRouter.shared.resetTransients()
             #if DEBUG
-            if UITestHooks.isActive { bootstrapper.uitestWentToBackground = true }
+            if UITestHooks.isActive {
+                bootstrapper.uitestWentToBackground = true
+                if let container = sharedModelContainer {
+                    bootstrapper.uitestGroupPushChangeInBackground(context: container.mainContext)
+                }
+            }
             #endif
         }
     }

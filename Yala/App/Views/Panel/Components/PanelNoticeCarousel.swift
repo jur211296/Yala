@@ -44,9 +44,8 @@ struct PanelNoticeCarousel<Content: View>: View {
             Spacer(minLength: 0)
             Button {
                 DS.Haptic.selection()
-                dsWithAnimation(reduceMotion) {
-                    selected = PanelNoticeQueueLogic.next(after: current, in: notices)
-                }
+                // Lo anima la implícita de `current` (card oxyr).
+                selected = PanelNoticeQueueLogic.next(after: current, in: notices)
             } label: {
                 HStack(spacing: DS.Spacing.xxs) {
                     Text(L10n.Panel.Notices.next)
