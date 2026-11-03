@@ -139,7 +139,7 @@ struct TopSubcategoriesWidget: Widget {
             TopSubcategoriesWidgetView(entry: entry)
                 .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder)
                 .invitesToActivateFullWhenGroupsOnly()
-                .containerBackground(WidgetColors.cardBackground, for: .widget)
+                .containerBackground(for: .widget) { WidgetCardBackground() }
         }
         .configurationDisplayName("widget.gallery.topSubcategories")
         .description("widget.gallery.topSubcategories.desc")

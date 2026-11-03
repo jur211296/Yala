@@ -97,6 +97,20 @@ enum WidgetDS {
         static let legendPercentWidth: CGFloat = 34
     }
 
+    // MARK: - Card (solo widgets: el fondo con profundidad, `WidgetCardBackground`)
+
+    /// El fondo de los widgets de la pantalla de inicio. No es espejo de nada: el test de paridad no lo mira.
+    enum Card {
+        /// Grosor del borde fino iluminado.
+        static let edgeWidth: CGFloat = 1
+        /// Cuánto negro se mezcla abajo en un relleno de marca (Entrada rápida): solo oscurece, así el blanco de
+        /// encima gana contraste en vez de perderlo.
+        static let fillShade: Double = 0.2
+        /// El borde de un relleno de marca, arriba y abajo.
+        static let fillEdgeTop: Double = 0.22
+        static let fillEdgeBottom: Double = 0.06
+    }
+
     // MARK: - Typography (= DS.Typography)
 
     enum Typography {

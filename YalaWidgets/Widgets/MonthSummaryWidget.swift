@@ -356,7 +356,7 @@ struct MonthSummaryWidget: Widget {
             MonthSummaryWidgetView(entry: entry)
                 .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder)
                 .invitesToActivateFullWhenGroupsOnly()
-                .containerBackground(WidgetColors.cardBackground, for: .widget)
+                .containerBackground(for: .widget) { WidgetCardBackground() }
         }
         .configurationDisplayName("widget.gallery.monthSummary")
         .description("widget.gallery.monthSummary.desc")

@@ -368,7 +368,7 @@ struct LatestRecordsWidget: Widget {
             LatestRecordsWidgetView(entry: entry)
                 .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder)
                 .invitesToActivateFullWhenGroupsOnly()
-                .containerBackground(WidgetColors.cardBackground, for: .widget)
+                .containerBackground(for: .widget) { WidgetCardBackground() }
         }
         .configurationDisplayName("widget.gallery.latestRecords")
         .description("widget.gallery.latestRecords.desc")
