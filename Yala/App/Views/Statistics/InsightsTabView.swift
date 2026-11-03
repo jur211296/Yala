@@ -678,9 +678,10 @@ struct InsightsTabView: View {
 
     private func subscriptionsCard(_ stats: QuickStats) -> some View {
         HStack(spacing: DS.Spacing.md) {
+            // En gris, como los iconos de las celdas: el acento se queda para la acción y la pestaña elegida.
             Image(systemName: "repeat.circle.fill")
                 .font(.system(size: 24))
-                .foregroundStyle(theme.accentText)
+                .foregroundStyle(.secondary)
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {

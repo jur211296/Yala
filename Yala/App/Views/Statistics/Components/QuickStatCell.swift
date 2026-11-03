@@ -13,14 +13,13 @@ struct QuickStatCell: View {
     let value: String
     var secondary: String? = nil
 
-    @Environment(\.yalaTheme) private var theme
-
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
             HStack(spacing: DS.Spacing.xs) {
                 Image(systemName: icon)
                     .font(DS.Typography.captionSmall)
-                    .foregroundStyle(theme.accentText)
+                    // Gris, como su etiqueta: en acento competía con la pestaña elegida y las acciones.
+                    .foregroundStyle(.secondary)
                     .accessibilityHidden(true)
 
                 Text(label)
