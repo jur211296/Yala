@@ -38,3 +38,6 @@ Cubierto en el simulador: `YalaTests/AccountEditMultiCurrencyTests` y `YalaUITes
 6. Opcional, si tienes otro dispositivo con Yala Dev: comprueba que el nombre de la línea y su saldo llegan allí.
 
 **No hace falta probar «Eliminar la línea»** con tus datos: borra de verdad y está cubierto en el simulador.
+
+
+Cerrado en el barrido de QA 2026-11-03: XCUITest del flujo (AccountEditMultiCurrencyUITests + AccountEditMultiCurrencyTests, PR #707). Detalle en docs/qa/tanda-qa-jurgen-2.2-barrido-2026-11-03.md.

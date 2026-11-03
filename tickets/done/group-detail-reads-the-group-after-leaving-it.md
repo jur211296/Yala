@@ -65,3 +65,6 @@ iPhone. Necesitas un grupo del que puedas salir (no eres el dueño) y que no te 
 2. Toca el engranaje (arriba a la derecha) → baja hasta **Salir del grupo** → confírmalo.
 3. Esperado: la hoja de Ajustes baja, el detalle vuelve a la lista y el grupo ya no está. **La app no se cierra.**
 4. Si eres dueño de otro grupo con más miembros: repite con **Transferir y salir**. Mismo resultado esperado.
+
+
+Cerrado en el barrido de QA 2026-11-03: no grave (la salida ya se completó) y fijado por GroupDetailDismissDecisionTests y el scan de formularios (PR #729).

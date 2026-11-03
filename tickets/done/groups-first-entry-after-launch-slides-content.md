@@ -63,3 +63,6 @@ Capturas y vídeos: `~/Claude/worktrees/_capturas/2026-11-02-fluidez-extra/` (`a
 3. Mira el resumen de arriba («Te deben…» / «Debes…»): tiene que salir ya en su sitio, sin bajar ni subir, y el aviso
    morado del neto (si lo tienes) entero desde el primer momento. Abajo a la derecha no debe asomar el «+».
 4. Repite con Planificación tras cerrar y abrir la app: «Nuevo presupuesto» tampoco debe moverse.
+
+
+Cerrado en el barrido de QA 2026-11-03: aspecto, no grave; verificado en vídeo y fijado por GroupsSearchDrawerWiringTests (PR #703, #751).

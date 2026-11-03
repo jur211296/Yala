@@ -139,3 +139,6 @@ Decisiones de implementación: `encargos/lanzados/2026-10-27-tarjeta-credito-imp
 4. Tiene que llegar «<tarjeta>: Paga S/ … antes del <día>.» con lo facturado. Tócalo: abre la ficha de esa tarjeta, con el
    bloque «Estado de cuenta».
 5. Registra una transferencia que pague todo lo facturado. Vuelve a programar el aviso para mañana (paso 2): ya no llega.
+
+
+Cerrado en el barrido de QA 2026-11-03: XCUITest del flujo (CreditCardStatementUITests, CreditCardStatementLogicTests, CreditCardReminderSchedulerTests, PR #650); el aviso con la app cerrada no es grave. Detalle en docs/qa/tanda-qa-jurgen-2.2-barrido-2026-11-03.md.

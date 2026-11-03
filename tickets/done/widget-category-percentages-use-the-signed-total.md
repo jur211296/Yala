@@ -59,3 +59,6 @@ Tests: `WidgetInsightsLogicTests` (desglose), `WidgetDataCacheTests` (`periodSum
    «Total» del centro es la suma de las filas.
 4. Mira «Top categorías» y el «Resumen del mes»: Comida con 70 y ningún porcentaje por encima de 100 %.
 5. Borra los dos registros de prueba.
+
+
+Cerrado en el barrido de QA 2026-11-03: cálculo con test (WidgetBreakdownTotalWiringTests, CategoryBreakdownUncategorizedTests, PR #753).
