@@ -95,8 +95,7 @@ struct CategoriesPieWidgetProvider: AppIntentTimelineProvider {
         if categories.count > 12 {
             let top12 = Array(categories.prefix(12))
             let othersAmount = categories.dropFirst(12).reduce(0) { $0 + $1.amount }
-            let totalExpense = summary?.totalExpense ?? 1
-            let othersPercentage = totalExpense > 0 ? (othersAmount / totalExpense) * 100 : 0
+            let othersPercentage = WidgetInsightsLogic.breakdownPercentage(othersAmount, of: summary?.breakdownTotal ?? 0)
 
             categories = top12 + [
                 WidgetCategory(
@@ -113,7 +112,9 @@ struct CategoriesPieWidgetProvider: AppIntentTimelineProvider {
         return CategoriesPieEntry(
             date: Date(),
             categories: categories,
-            totalExpense: summary?.totalExpense ?? 0,
+            // El total del desglose, no el gasto con signo: centro, «Otros» y porcentajes suman lo mismo que las filas
+            // (card znu5).
+            totalExpense: summary?.breakdownTotal ?? 0,
             currencyCode: currency,
             currencyDisplayFormat: displayFormat,
             isPlaceholder: false,

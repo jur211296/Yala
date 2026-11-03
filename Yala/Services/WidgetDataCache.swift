@@ -245,6 +245,12 @@ struct WidgetPeriodSummary: Codable {
     /// El reparto por cuenta (extragrande vertical de «Entradas y salidas»). **Opcional y con default**: las fotos
     /// escritas antes de 2.2 no lo traen y decodifican igual; el widget solo esconde ese bloque.
     var accountFlows: [WidgetAccountFlow]? = nil
+
+    /// El total del desglose de gasto por categorías: la suma de TODOS sus trozos en neto
+    /// (`WidgetInsightsLogic.breakdownTotal`). Las tartas lo ponen en el centro y miden contra él «Otros» y lo que las
+    /// subcategorías no cubren (card znu5). **Opcional y con default**: una foto vieja no lo trae y el widget cae al
+    /// gasto del período.
+    var expenseBreakdownTotal: Double? = nil
 }
 
 /// Complete widget data snapshot
@@ -1039,9 +1045,9 @@ enum WidgetDataCache {
         // `ApproximateMarkThreshold` documenta y que `CashFlowCalculator` aplica).
         var incomeApproximateMagnitude: Double = 0
         var expenseApproximateMagnitude: Double = 0
-        // Denominadores del umbral y de los porcentajes de categorías: magnitudes por lado, como `CashFlowCalculator`.
-        // Los totales van con signo desde el 2026-10-23, y una devolución que los encoge disparaba el cociente (la marca)
-        // y pasaba de 100 % los porcentajes de las categorías, que suman magnitudes (lo cazó la review).
+        // Denominadores del umbral «≈»: magnitudes por lado, como `CashFlowCalculator`. Los totales van con signo desde el
+        // 2026-10-23, y una devolución que los encoge disparaba el cociente (la marca). Los porcentajes de las categorías
+        // tienen su propio total desde la card znu5 (`expenseBreakdownTotal`, abajo).
         var incomeTotalMagnitude: Double = 0
         var expenseTotalMagnitude: Double = 0
         // El reparto por cuenta (extragrande vertical de «Entradas y salidas») se acumula en el MISMO bucle y con la
@@ -1127,20 +1133,18 @@ enum WidgetDataCache {
             balanceApproximateMagnitude = (converted.approximateMagnitude as NSDecimalNumber).doubleValue
         }
 
-        // Build top categories (expenses only, top 20 for Large widgets)
-        let topCategories = buildTopCategories(
-            transactions: periodTransactions,
-            totalExpense: expenseTotalMagnitude,
-            limit: 20,
-            currencyCode: currencyCode,
-            adjustment: adjustment,
-            converter: converter
+        // Las categorías del gasto, en neto y todas: su suma es el total del desglose (card znu5). La foto lleva las 20
+        // primeras (las tartas grandes) y el total, para que centro, «Otros» y porcentajes se midan contra lo mismo.
+        let categorySlices = categoryExpenseSlices(
+            transactions: periodTransactions, currencyCode: currencyCode, adjustment: adjustment, converter: converter
         )
+        let expenseBreakdownTotal = WidgetInsightsLogic.breakdownTotal(categorySlices.map(\.amount))
+        let topCategories = Self.topCategories(from: categorySlices, breakdownTotal: expenseBreakdownTotal, limit: 20)
 
         // Build top subcategories (expenses only, top 20 for Large widgets)
         let topSubcategories = buildTopSubcategories(
             transactions: periodTransactions,
-            totalExpense: expenseTotalMagnitude,
+            totalExpense: expenseBreakdownTotal,
             limit: 20,
             currencyCode: currencyCode,
             adjustment: adjustment,
@@ -1191,8 +1195,45 @@ enum WidgetDataCache {
                 )
                 // Sin `periodBalance` no hay número que marcar.
                 : false,
-            accountFlows: accountFlows
+            accountFlows: accountFlows,
+            expenseBreakdownTotal: expenseBreakdownTotal
         )
+    }
+
+    /// Las categorías del lado gasto con lo gastado en neto (`WidgetInsightsLogic.netExpenseSlices`: una devolución resta
+    /// de su categoría, como la tarta de Estadísticas), ordenadas de mayor a menor y TODAS: su suma es el total del
+    /// desglose (`expenseBreakdownTotal`), el centro de la tarta y el denominador de los porcentajes (card znu5).
+    /// `category == nil` es el trozo «Sin categoría»: un gasto sin categoría (por su signo) entra ahí para que el desglose
+    /// sume el gasto del período (decisión A de Jürgen, 2026-10-23).
+    static func categoryExpenseSlices(
+        transactions: [TransactionItem],
+        currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none,
+        converter: CurrencyConverting = CurrencyConverter.shared
+    ) -> [(category: Category?, amount: Double)] {
+        var categories: [String: Category?] = [:]
+        var contributions: [(key: String, expense: Double)] = []
+
+        for tx in transactions {
+            // Skip balance adjustments
+            guard tx.balanceAdjustmentType == nil else { continue }
+            // Skip la pata de préstamo derivada (bridge) e income (clasif. por categoría)
+            guard !adjustment.isSuppressed(tx) else { continue }
+            guard !isIncomeTx(tx) else { continue }
+            let category = tx.category
+            // Una clave que ningún nombre de categoría puede tener (el nombre es texto del usuario).
+            let key = category?.name ?? uncategorizedWidgetKey
+            if categories[key] == nil { categories[key] = .some(category) }
+            // Con signo, como el total del período: el gasto aporta en positivo y la devolución resta.
+            let value = CashFlowCalculator.resolvedAmount(
+                tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+            ).value
+            contributions.append((key: key, expense: -value))
+        }
+
+        return WidgetInsightsLogic.netExpenseSlices(contributions).map { slice in
+            (category: categories[slice.key] ?? nil, amount: slice.amount)
+        }
     }
 
     static func buildTopCategories(
@@ -1203,38 +1244,23 @@ enum WidgetDataCache {
         adjustment: GroupBridgeStatsAdjustment = .none,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> [WidgetCategory] {
-        // Group expenses by category. `category == nil` es el trozo «Sin categoría»: un gasto sin categoría (por su
-        // signo) entra ahí para que el desglose sume el gasto del período (decisión A de Jürgen, 2026-10-23).
-        var categoryTotals: [String: (category: Category?, amount: Double)] = [:]
+        topCategories(
+            from: categoryExpenseSlices(
+                transactions: transactions, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+            ),
+            breakdownTotal: totalExpense,
+            limit: limit
+        )
+    }
 
-        for tx in transactions {
-            // Skip balance adjustments
-            guard tx.balanceAdjustmentType == nil else { continue }
-            // Skip la pata de préstamo derivada (bridge) e income (clasif. por categoría)
-            guard !adjustment.isSuppressed(tx) else { continue }
-            guard !isIncomeTx(tx) else { continue }
-            let category = tx.category
-
-            let amount = abs(CashFlowCalculator.resolvedAmount(
-                tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
-            ).value)
-            // Una clave que ningún nombre de categoría puede tener (el nombre es texto del usuario).
-            let key = category?.name ?? uncategorizedWidgetKey
-
-            if var existing = categoryTotals[key] {
-                existing.amount += amount
-                categoryTotals[key] = existing
-            } else {
-                categoryTotals[key] = (category: category, amount: amount)
-            }
-        }
-
-        // Sort by amount and take top N
-        let sorted = categoryTotals.values.sorted { $0.amount > $1.amount }
-        let topN = Array(sorted.prefix(limit))
-
-        return topN.map { item in
-            let percentage = totalExpense > 0 ? (item.amount / totalExpense) * 100 : 0
+    /// Las `limit` primeras, con su porcentaje sobre el total del desglose.
+    static func topCategories(
+        from slices: [(category: Category?, amount: Double)],
+        breakdownTotal: Double,
+        limit: Int
+    ) -> [WidgetCategory] {
+        slices.prefix(limit).map { item in
+            let percentage = WidgetInsightsLogic.breakdownPercentage(item.amount, of: breakdownTotal)
             guard let category = item.category else {
                 return WidgetCategory(
                     id: uncategorizedWidgetKey,
@@ -1260,6 +1286,8 @@ enum WidgetDataCache {
     /// coincida con el nombre de ninguna categoría.
     static let uncategorizedWidgetKey = "\u{1}uncategorized"
 
+    /// Las subcategorías del lado gasto, en neto como las categorías. `totalExpense` es el total del desglose de
+    /// CATEGORÍAS: lo que no tiene subcategoría no tiene fila, y la tarta lo lleva a «Otros».
     static func buildTopSubcategories(
         transactions: [TransactionItem],
         totalExpense: Double,
@@ -1268,8 +1296,8 @@ enum WidgetDataCache {
         adjustment: GroupBridgeStatsAdjustment = .none,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> [WidgetSubcategory] {
-        // Group expenses by subcategory
-        var subcategoryTotals: [String: (subcategory: Subcategory, category: Category, amount: Double)] = [:]
+        var subcategories: [String: (subcategory: Subcategory, category: Category)] = [:]
+        var contributions: [(key: String, expense: Double)] = []
 
         for tx in transactions {
             // Skip balance adjustments
@@ -1280,33 +1308,24 @@ enum WidgetDataCache {
             guard let subcategory = tx.subcategory,
                   let category = tx.category else { continue }
 
-            let amount = abs(CashFlowCalculator.resolvedAmount(
-                tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
-            ).value)
             let key = "\(category.name)_\(subcategory.name)"
-
-            if var existing = subcategoryTotals[key] {
-                existing.amount += amount
-                subcategoryTotals[key] = existing
-            } else {
-                subcategoryTotals[key] = (subcategory: subcategory, category: category, amount: amount)
-            }
+            if subcategories[key] == nil { subcategories[key] = (subcategory, category) }
+            let value = CashFlowCalculator.resolvedAmount(
+                tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+            ).value
+            contributions.append((key: key, expense: -value))
         }
 
-        // Sort by amount and take top N
-        let sorted = subcategoryTotals.values.sorted { $0.amount > $1.amount }
-        let topN = Array(sorted.prefix(limit))
-
-        return topN.map { item in
-            let percentage = totalExpense > 0 ? (item.amount / totalExpense) * 100 : 0
+        return WidgetInsightsLogic.netExpenseSlices(contributions).prefix(limit).compactMap { slice in
+            guard let item = subcategories[slice.key] else { return nil }
             return WidgetSubcategory(
                 id: item.subcategory.persistentModelID.hashValue.description,
                 name: item.subcategory.name,
                 categoryName: item.category.name,
                 iconName: item.subcategory.iconName ?? item.category.iconName,
                 colorHex: item.category.colorHex,
-                amount: item.amount,
-                percentage: percentage
+                amount: slice.amount,
+                percentage: WidgetInsightsLogic.breakdownPercentage(slice.amount, of: totalExpense)
             )
         }
     }

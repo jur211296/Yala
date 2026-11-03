@@ -7230,6 +7230,15 @@
 "scheduled.l10.action.received" = "L’ho già ricevuto";
 "scheduled.l10.action.skipMonth" = "Salta questo mese";
 "scheduled.l10.action.skipHelp" = "Non si registra nulla; gli altri mesi restano uguali";
+"scheduled.l10.next.header" = "Prossimo: %@";
+"scheduled.l10.action.paidMonth" = "Ho già pagato %@";
+"scheduled.l10.action.receivedMonth" = "Ho già ricevuto %@";
+"scheduled.l10.action.skipNamedMonth" = "Salta %@";
+"scheduled.l10.action.skipHelpMonth" = "Non si registra nulla a %@; gli altri mesi restano uguali";
+"scheduled.l10.action.paidDate" = "Ho già pagato quello del %@";
+"scheduled.l10.action.receivedDate" = "Ho già ricevuto quello del %@";
+"scheduled.l10.action.skipDate" = "Salta quello del %@";
+"scheduled.l10.action.skipHelpDate" = "Non si registra nulla il %@; le altre date restano uguali";
 "scheduled.l10.action.pause" = "Metti in pausa questo pagamento";
 "scheduled.l10.action.resume" = "Riprendi";
 "scheduled.l10.action.pauseHelp" = "Non te lo ricordiamo né lo contiamo finché non lo riprendi";

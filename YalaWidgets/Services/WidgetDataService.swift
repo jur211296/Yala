@@ -207,6 +207,16 @@ struct WidgetPeriodSummary: Codable {
     /// El reparto por cuenta (extragrande vertical de «Entradas y salidas»). **Opcional y con default**: las fotos
     /// escritas antes de 2.2 no lo traen y decodifican igual; el widget solo esconde ese bloque.
     var accountFlows: [WidgetAccountFlow]? = nil
+
+    /// El total del desglose de gasto por categorías, tal como lo escribió `WidgetDataCache` (card znu5). **Opcional y
+    /// con default**: una foto vieja no lo trae. Se lee con `breakdownTotal`.
+    var expenseBreakdownTotal: Double? = nil
+}
+
+extension WidgetPeriodSummary {
+    /// Contra lo que miden las tartas su centro, su «Otros» y los porcentajes: el total del desglose y, en una foto
+    /// vieja, el gasto del período (lo de antes). Fuera de la struct: no es una clave de la foto.
+    var breakdownTotal: Double { expenseBreakdownTotal ?? totalExpense }
 }
 
 /// Complete widget data snapshot
@@ -598,7 +608,8 @@ enum WidgetDataService {
         // en que se guardó y este camino no podría reconvertirla.
         // Con signo, como los totales que precalcula la app (`WidgetDataCache.buildPeriodSummary`): una devolución en una
         // categoría de gasto resta del gasto. `isIncome` ya llega con la regla de la app.
-        // Denominadores del umbral y de los porcentajes de categorías: magnitudes por lado, como la app.
+        // Denominadores del umbral «≈»: magnitudes por lado, como la app. Los porcentajes de las categorías se miden contra
+        // el total del desglose (`expenseBreakdownTotal`, card znu5).
         var incomeTotalMagnitude: Double = 0
         var expenseTotalMagnitude: Double = 0
         for tx in transactions {
@@ -617,11 +628,13 @@ enum WidgetDataService {
 
         let netCashFlow = totalIncome - totalExpense
 
-        // Build top categories
-        let topCategories = buildTopCategories(from: transactions, totalExpense: expenseTotalMagnitude)
+        // Las categorías en neto y su total, con la misma regla que la foto (`WidgetDataCache.categoryExpenseSlices`).
+        let categorySlices = categoryExpenseSlices(from: transactions)
+        let expenseBreakdownTotal = WidgetInsightsLogic.breakdownTotal(categorySlices.map(\.amount))
+        let topCategories = Self.topCategories(from: categorySlices, breakdownTotal: expenseBreakdownTotal)
 
         // Build top subcategories
-        let topSubcategories = buildTopSubcategories(from: transactions, totalExpense: expenseTotalMagnitude)
+        let topSubcategories = buildTopSubcategories(from: transactions, totalExpense: expenseBreakdownTotal)
 
         // Build cash flow by day
         let cashFlowPoints = buildCashFlowByDay(from: transactions)
@@ -647,7 +660,8 @@ enum WidgetDataService {
                 approximate: incomeApproximateMagnitude + expenseApproximateMagnitude,
                 total: netCashFlow
             ),
-            periodBalanceIsApproximate: nil  // sin `periodBalance` no hay número que marcar
+            periodBalanceIsApproximate: nil,  // sin `periodBalance` no hay número que marcar
+            expenseBreakdownTotal: expenseBreakdownTotal
         )
     }
 
@@ -657,106 +671,85 @@ enum WidgetDataService {
     static let uncategorizedIconName = "questionmark.folder.fill"
     static let uncategorizedColorHex = "#9CA3AF"
 
-    private static func buildTopCategories(
-        from transactions: [WidgetTransaction],
-        totalExpense: Double,
-        limit: Int = 20
-    ) -> [WidgetCategory] {
-        // Group expenses by category
-        var categoryTotals: [String: (name: String, icon: String, color: String, amount: Double)] = [:]
+    /// Las categorías del lado gasto en neto, todas y de mayor a menor (`WidgetInsightsLogic.netExpenseSlices`), como
+    /// `WidgetDataCache.categoryExpenseSlices`: una devolución resta de su categoría. Sin categoría, el trozo «Sin
+    /// categoría» en gris, para que el desglose sume el gasto del período.
+    private static func categoryExpenseSlices(
+        from transactions: [WidgetTransaction]
+    ) -> [(name: String, icon: String, color: String, amount: Double)] {
+        var categories: [String: (name: String, icon: String, color: String)] = [:]
+        var contributions: [(key: String, expense: Double)] = []
 
         for tx in transactions where !tx.isIncome {
-            let amount = abs(tx.amountInPreferredCurrency)
-            // Sin categoría: el trozo «Sin categoría» en gris, como en la app (`WidgetDataCache.buildTopCategories`),
-            // para que el desglose sume el gasto del período.
-            guard let categoryName = tx.categoryName else {
-                let key = uncategorizedKey
-                if var existing = categoryTotals[key] {
-                    existing.amount += amount
-                    categoryTotals[key] = existing
+            let key = tx.categoryName ?? uncategorizedKey
+            if categories[key] == nil {
+                if let categoryName = tx.categoryName {
+                    categories[key] = (categoryName, tx.categoryIcon ?? "folder", tx.categoryColor ?? "#808080")
                 } else {
-                    categoryTotals[key] = (
-                        name: String(localized: "widget.ui.uncategorized", bundle: .main),
-                        icon: uncategorizedIconName,
-                        color: uncategorizedColorHex,
-                        amount: amount
+                    categories[key] = (
+                        String(localized: "widget.ui.uncategorized", bundle: .main),
+                        uncategorizedIconName,
+                        uncategorizedColorHex
                     )
                 }
-                continue
             }
-
-            if var existing = categoryTotals[categoryName] {
-                existing.amount += amount
-                categoryTotals[categoryName] = existing
-            } else {
-                categoryTotals[categoryName] = (
-                    name: categoryName,
-                    icon: tx.categoryIcon ?? "folder",
-                    color: tx.categoryColor ?? "#808080",
-                    amount: amount
-                )
-            }
+            // Con signo, como el total: el gasto aporta en positivo y la devolución resta.
+            contributions.append((key: key, expense: -tx.amountInPreferredCurrency))
         }
 
-        // Sort by amount and take top N
-        let sorted = categoryTotals.values.sorted { $0.amount > $1.amount }
-        let topN = Array(sorted.prefix(limit))
+        return WidgetInsightsLogic.netExpenseSlices(contributions).compactMap { slice in
+            guard let item = categories[slice.key] else { return nil }
+            return (name: item.name, icon: item.icon, color: item.color, amount: slice.amount)
+        }
+    }
 
-        return topN.enumerated().map { index, item in
-            let percentage = totalExpense > 0 ? (item.amount / totalExpense) * 100 : 0
-            return WidgetCategory(
+    private static func topCategories(
+        from slices: [(name: String, icon: String, color: String, amount: Double)],
+        breakdownTotal: Double,
+        limit: Int = 20
+    ) -> [WidgetCategory] {
+        slices.prefix(limit).enumerated().map { index, item in
+            WidgetCategory(
                 id: "\(index)",
                 name: item.name,
                 iconName: item.icon,
                 colorHex: item.color,
                 amount: item.amount,
-                percentage: percentage
+                percentage: WidgetInsightsLogic.breakdownPercentage(item.amount, of: breakdownTotal)
             )
         }
     }
 
+    /// En neto como las categorías. `totalExpense` es el total del desglose de CATEGORÍAS.
     private static func buildTopSubcategories(
         from transactions: [WidgetTransaction],
         totalExpense: Double,
         limit: Int = 20
     ) -> [WidgetSubcategory] {
-        // Group expenses by subcategory
-        var subcategoryTotals: [String: (name: String, categoryName: String, icon: String?, color: String, amount: Double)] = [:]
+        var subcategories: [String: (name: String, categoryName: String, icon: String?, color: String)] = [:]
+        var contributions: [(key: String, expense: Double)] = []
 
         for tx in transactions where !tx.isIncome {
             guard let subcategoryName = tx.subcategoryName,
                   let categoryName = tx.categoryName else { continue }
-            let amount = abs(tx.amountInPreferredCurrency)
             let key = "\(categoryName)_\(subcategoryName)"
-
-            if var existing = subcategoryTotals[key] {
-                existing.amount += amount
-                subcategoryTotals[key] = existing
-            } else {
-                subcategoryTotals[key] = (
-                    name: subcategoryName,
-                    categoryName: categoryName,
-                    icon: tx.categoryIcon,  // Use category icon as fallback
-                    color: tx.categoryColor ?? "#808080",
-                    amount: amount
-                )
+            if subcategories[key] == nil {
+                // El icono de la categoría como respaldo.
+                subcategories[key] = (subcategoryName, categoryName, tx.categoryIcon, tx.categoryColor ?? "#808080")
             }
+            contributions.append((key: key, expense: -tx.amountInPreferredCurrency))
         }
 
-        // Sort by amount and take top N
-        let sorted = subcategoryTotals.values.sorted { $0.amount > $1.amount }
-        let topN = Array(sorted.prefix(limit))
-
-        return topN.enumerated().map { index, item in
-            let percentage = totalExpense > 0 ? (item.amount / totalExpense) * 100 : 0
+        return WidgetInsightsLogic.netExpenseSlices(contributions).prefix(limit).enumerated().compactMap { index, slice in
+            guard let item = subcategories[slice.key] else { return nil }
             return WidgetSubcategory(
                 id: "\(index)",
                 name: item.name,
                 categoryName: item.categoryName,
                 iconName: item.icon,
                 colorHex: item.color,
-                amount: item.amount,
-                percentage: percentage
+                amount: slice.amount,
+                percentage: WidgetInsightsLogic.breakdownPercentage(slice.amount, of: totalExpense)
             )
         }
     }

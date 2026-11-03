@@ -7226,6 +7226,15 @@
 "scheduled.l10.action.received" = "I’ve received it";
 "scheduled.l10.action.skipMonth" = "Skip this month";
 "scheduled.l10.action.skipHelp" = "Nothing gets recorded; the other months stay the same";
+"scheduled.l10.next.header" = "Next: %@";
+"scheduled.l10.action.paidMonth" = "I’ve paid %@";
+"scheduled.l10.action.receivedMonth" = "I’ve received %@";
+"scheduled.l10.action.skipNamedMonth" = "Skip %@";
+"scheduled.l10.action.skipHelpMonth" = "Nothing gets recorded for %@; the other months stay the same";
+"scheduled.l10.action.paidDate" = "I’ve paid the %@ one";
+"scheduled.l10.action.receivedDate" = "I’ve received the %@ one";
+"scheduled.l10.action.skipDate" = "Skip the %@ one";
+"scheduled.l10.action.skipHelpDate" = "Nothing gets recorded on %@; the other dates stay the same";
 "scheduled.l10.action.pause" = "Pause this payment";
 "scheduled.l10.action.resume" = "Resume";
 "scheduled.l10.action.pauseHelp" = "We won’t remind you or count it until you resume it";

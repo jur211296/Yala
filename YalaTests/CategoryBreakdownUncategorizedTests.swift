@@ -406,21 +406,17 @@ struct WidgetExtensionUncategorizedParityTests {
         let body = Self.normalized(try Self.source("YalaWidgets/Services/WidgetDataService.swift"))
         let expected = Self.normalized("""
             for tx in transactions where !tx.isIncome {
-                let amount = abs(tx.amountInPreferredCurrency)
-                guard let categoryName = tx.categoryName else {
-                    let key = uncategorizedKey
-                    if var existing = categoryTotals[key] {
-                        existing.amount += amount
-                        categoryTotals[key] = existing
+                let key = tx.categoryName ?? uncategorizedKey
+                if categories[key] == nil {
+                    if let categoryName = tx.categoryName {
+                        categories[key] = (categoryName, tx.categoryIcon ?? "folder", tx.categoryColor ?? "#808080")
                     } else {
-                        categoryTotals[key] = (
-                            name: String(localized: "widget.ui.uncategorized", bundle: .main),
-                            icon: uncategorizedIconName,
-                            color: uncategorizedColorHex,
-                            amount: amount
+                        categories[key] = (
+                            String(localized: "widget.ui.uncategorized", bundle: .main),
+                            uncategorizedIconName,
+                            uncategorizedColorHex
                         )
                     }
-                    continue
                 }
             """)
         #expect(body.contains(expected))

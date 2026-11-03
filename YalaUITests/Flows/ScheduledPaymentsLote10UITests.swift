@@ -79,6 +79,40 @@ final class ScheduledPaymentsLote10UITests: XCTestCase {
         )
     }
 
+    // MARK: - Mes en curso pagado: las acciones dicen de qué mes son (card 3zva)
+
+    /// Con el mes en curso pagado, «Ya lo pagué» y «Saltar» son de la próxima fecha: un encabezado lo dice encima y los
+    /// botones nombran el mes. Antes de pagar, ni encabezado ni textos nuevos. Deja la captura de la pantalla (claro u
+    /// oscuro, según el simulador) para el PR.
+    func test_monthAlreadyPaid_actionsNameTheNextMonth() {
+        let app = XCUIApplication()
+        launch(app)
+        openFirstPendingPayment(app)
+        XCTAssertFalse(element(app, "scheduled_detail_next_target").exists, "Con el mes sin pagar no hay encabezado.")
+        let paidButton = app.buttons["scheduled_detail_paid_button"]
+        let skipButton = app.buttons["scheduled_detail_skip_button"]
+        let paidBefore = paidButton.label
+        let skipBefore = skipButton.label
+
+        paidButton.tap()
+        let recordNow = app.buttons["scheduled_paid_record_now"]
+        XCTAssertTrue(recordNow.waitForExistence(timeout: 5), "La hoja «Ya lo pagué» no ofreció «Apuntarlo ahora».")
+        recordNow.tap()
+        XCTAssertTrue(element(app, "scheduled_detail_month_paid").waitForExistence(timeout: 5), "El mes no quedó pagado.")
+
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "3zva-detalle-mes-pagado"
+        shot.lifetime = .keepAlways
+        add(shot)
+
+        XCTAssertTrue(
+            element(app, "scheduled_detail_next_target").waitForExistence(timeout: 5),
+            "Con el mes pagado, falta el encabezado que dice a qué mes van las acciones."
+        )
+        XCTAssertNotEqual(paidButton.label, paidBefore, "«Ya lo pagué» no nombra el mes al que apunta.")
+        XCTAssertNotEqual(skipButton.label, skipBefore, "«Saltar este mes» no nombra el mes al que apunta.")
+    }
+
     // MARK: - «Saltar este mes» y «Deshacer» (L10-10)
 
     func test_skipThisMonth_showsUndo_andUndoRestores() {

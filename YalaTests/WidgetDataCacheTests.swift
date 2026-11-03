@@ -167,6 +167,76 @@ struct WidgetDataCacheTests {
         #expect(top.first?.amount == 100)
     }
 
+    // MARK: - Desglose con una devolución (card znu5)
+
+    /// Un gasto de 100 en Comida, su devolución de 30 (positiva, en la misma categoría de gasto) y 50 de Transporte. La
+    /// foto lleva Comida 70 y Transporte 50, porcentajes que suman 100 % y un total del desglose de 120: el centro de la
+    /// tarta es la suma de sus filas y coincide con el gasto del período. Antes salía Comida 130 (108 %) con centro 120.
+    @Test func periodSummary_aRefundLeavesPercentagesAt100AndTheCenterAtTheSumOfTheRows() {
+        let food = makeTx(amount: -100, category: expenseCategory)
+        let foodRefund = makeTx(amount: 30, category: expenseCategory)
+        let transport = makeTx(amount: -50, category: Yala.Category(name: "Transport", colorHex: "#111", isIncome: false))
+
+        let summary = WidgetDataCache.buildPeriodSummary(
+            transactions: [food, foodRefund, transport],
+            periodStart: Date.distantPast,
+            periodEnd: Date.distantFuture,
+            currencyCode: "PEN"
+        )
+
+        #expect(summary.totalExpense == 120)
+        #expect(summary.topCategories.map(\.name) == ["Food", "Transport"])
+        #expect(summary.topCategories.map(\.amount) == [70, 50])
+        let rows = summary.topCategories.reduce(0) { $0 + $1.amount }
+        #expect(summary.expenseBreakdownTotal == rows)
+        #expect(summary.expenseBreakdownTotal == summary.totalExpense)
+        let percentages = summary.topCategories.reduce(0) { $0 + $1.percentage }
+        #expect(abs(percentages - 100) < 1e-9)
+    }
+
+    /// Las subcategorías también van en neto y se miden contra el total del desglose de categorías: lo que no tiene
+    /// subcategoría queda fuera de las filas y la tarta lo lleva a «Otros».
+    @Test func periodSummary_subcategoriesNetTheRefundAndMeasureAgainstTheCategoryTotal() {
+        let groceries = Subcategory(name: "Groceries", category: expenseCategory)
+        let food = makeTx(amount: -100, category: expenseCategory)
+        food.subcategory = groceries
+        let refund = makeTx(amount: 30, category: expenseCategory)
+        refund.subcategory = groceries
+        let other = makeTx(amount: -50, category: expenseCategory)
+
+        let summary = WidgetDataCache.buildPeriodSummary(
+            transactions: [food, refund, other],
+            periodStart: Date.distantPast,
+            periodEnd: Date.distantFuture,
+            currencyCode: "PEN"
+        )
+
+        #expect(summary.expenseBreakdownTotal == 120)
+        #expect(summary.topSubcategories.map(\.amount) == [70])
+        let percentage = summary.topSubcategories.first?.percentage ?? 0
+        #expect(abs(percentage - 70.0 / 120.0 * 100) < 1e-9)
+    }
+
+    /// Una categoría a favor: los porcentajes siguen sumando 100 % (se miden contra la suma de los trozos) aunque el gasto
+    /// con signo del período sea menor que esa suma.
+    @Test func periodSummary_aCategoryInFavorStillAddsUpTo100() {
+        let food = makeTx(amount: -10, category: expenseCategory)
+        let bigRefund = makeTx(amount: 30, category: expenseCategory)
+        let transport = makeTx(amount: -50, category: Yala.Category(name: "Transport", colorHex: "#111", isIncome: false))
+
+        let summary = WidgetDataCache.buildPeriodSummary(
+            transactions: [food, bigRefund, transport],
+            periodStart: Date.distantPast,
+            periodEnd: Date.distantFuture,
+            currencyCode: "PEN"
+        )
+
+        #expect(summary.totalExpense == 30)
+        #expect(summary.expenseBreakdownTotal == 70)
+        let percentages = summary.topCategories.reduce(0) { $0 + $1.percentage }
+        #expect(abs(percentages - 100) < 1e-9)
+    }
+
     // MARK: - Cash flow by day
 
     @Test func cashFlowByDay_classifiesIncomeByCategoryNotSign() {

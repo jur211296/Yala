@@ -12,6 +12,8 @@
 //    buscaba a ±7 días y un gasto vinculado a 11 no salía nunca como pagado, mientras la lista sí lo contaba.
 //  - **La próxima fecha** es la primera que no se saltó ni se pagó. Tras «Saltar», «Próxima fecha» seguía diciendo la
 //    fecha saltada.
+//  - **A qué fecha apuntan las acciones.** Con el mes en curso ya pagado, «Ya lo pagué» y «Saltar» son de la próxima
+//    fecha, y lo dicen (card 3zva).
 //  - **Cómo se nombra la frecuencia.** «Una sola vez», «Mensual» o «Cada 2 meses». La fila decía «Mensual» a un pago
 //    de una sola vez y a uno de cada dos meses, y Ajustes decía «2 Meses».
 //
@@ -130,6 +132,42 @@ enum ScheduledPaymentDetailLogic {
         return all[next]
     }
 
+    // MARK: - A qué fecha apuntan las acciones (card 3zva)
+
+    /// El mes en curso ya está hecho: todas sus fechas pagadas o saltadas, y la próxima cae más adelante. Entonces
+    /// «Ya lo pagué» y «Saltar» del detalle apuntan a la próxima fecha, que es de otro mes.
+    static func currentMonthSettled(
+        isRecurring: Bool,
+        isActive: Bool,
+        datesThisMonth: [Date],
+        nextDate: Date,
+        now: Date,
+        calendar: Calendar = .current,
+        isCovered: (Date) -> Bool
+    ) -> Bool {
+        guard isRecurring, isActive else { return false }
+        guard !datesThisMonth.isEmpty, !calendar.isDate(nextDate, equalTo: now, toGranularity: .month) else { return false }
+        return datesThisMonth.allSatisfy(isCovered)
+    }
+
+    /// A qué fecha apuntan «Ya lo pagué» y «Saltar» del detalle, y cómo se nombran.
+    enum ActionTarget: Equatable {
+        /// La fecha que toca es del mes en curso: los textos de siempre («Ya lo pagué», «Saltar este mes»).
+        case current
+        /// El mes en curso ya está hecho y la próxima fecha es la única de su mes: se nombra el mes («Saltar diciembre»).
+        case nextMonth(Date)
+        /// El mes en curso ya está hecho y el mes de la próxima fecha tiene varias (semanal, diario): se nombra la fecha,
+        /// porque saltar quita una sola y «Saltar diciembre» mentiría.
+        case nextDate(Date)
+    }
+
+    /// Hasta la card 3zva (Jürgen, 2026-11-01) el detalle decía «Noviembre de 2026 ya está pagado» y, debajo, «Ya lo
+    /// pagué» y «Saltar este mes» sin decir que eran de diciembre. Con el mes en curso sin hacer, nada cambia.
+    static func actionTarget(currentMonthSettled: Bool, nextDate: Date, datesInNextDateMonth: Int) -> ActionTarget {
+        guard currentMonthSettled else { return .current }
+        return datesInNextDateMonth > 1 ? .nextDate(nextDate) : .nextMonth(nextDate)
+    }
+
     // MARK: - Frecuencia
 
     /// «Una sola vez», el nombre del tipo («Mensual») o «Cada 2 meses».
@@ -203,6 +241,30 @@ enum ScheduledPaymentDateText {
     /// «OCT».
     static func monthAbbreviation(_ date: Date, locale: Locale = AppLocale.current) -> String {
         formatter(template: "MMM", locale: locale).string(from: date).uppercased(with: locale)
+    }
+
+    /// «diciembre», el mes solo, en la forma que va dentro de una frase («Saltar diciembre»): sin mayúscula en español,
+    /// con ella en inglés y alemán, y en nominativo en polaco (la plantilla da el mes autónomo, `LLLL`).
+    /// El mes autónomo sale en mayúscula en `es_PE` («Diciembre»), también con el contexto de mitad de frase (medido el
+    /// 2026-11-03): en los idiomas que escriben el mes en minúscula se baja la primera letra.
+    static func monthName(_ date: Date, locale: Locale = AppLocale.current) -> String {
+        let f = formatter(template: "MMMM", locale: locale)
+        f.formattingContext = .middleOfSentence
+        let name = f.string(from: date)
+        guard let language = locale.language.languageCode?.identifier,
+              lowercaseMonthLanguages.contains(language),
+              let first = name.first else { return name }
+        return String(first).lowercased(with: locale) + name.dropFirst()
+    }
+
+    /// Los idiomas de Yala que escriben el nombre del mes en minúscula dentro de una frase.
+    private static let lowercaseMonthLanguages: Set<String> = ["es", "pt", "fr", "it", "nl", "pl"]
+
+    /// «diciembre de 2026», dentro de una frase («Próximo: diciembre de 2026»). `monthYear` capitaliza para ir sola.
+    static func monthYearInline(_ date: Date, locale: Locale = AppLocale.current) -> String {
+        let f = formatter(template: "MMMMyyyy", locale: locale)
+        f.formattingContext = .middleOfSentence
+        return f.string(from: date)
     }
 
     /// «Octubre de 2026»: mayúscula solo en la primera letra (`capitalized` la ponía en cada palabra).

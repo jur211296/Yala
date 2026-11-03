@@ -547,7 +547,7 @@ struct ApproximateMarkSecondarySurfacesWiringTests {
 
         let saldo = try Self.scope(
             cache, from: "if let allTx = allTransactionsForBalance {",
-            to: "let topCategories = buildTopCategories("
+            to: "let categorySlices = categoryExpenseSlices("
         )
         #expect(saldo.contains("LiveBalanceCalculator.addNative(tx, to: &native)"), """
             El saldo del período suma la fila ENTERA —los saldos reflejan montos reales, no «mi

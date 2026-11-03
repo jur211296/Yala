@@ -97,7 +97,9 @@ struct MonthSummaryProvider: TimelineProvider {
             balanceIsApproximate: WidgetDataService.getBalanceIsApproximate(for: .thisMonth),
             totalExpense: totalExpense,
             expenseIsApproximate: summary?.expenseIsApproximate ?? false,
-            categories: Self.groupCategories(summary?.topCategories ?? [], totalExpense: totalExpense),
+            // «Otros» se mide contra el total del desglose, como los trozos (card znu5); la cifra de «Gastado» sigue
+            // siendo el gasto del período.
+            categories: Self.groupCategories(summary?.topCategories ?? [], totalExpense: summary?.breakdownTotal ?? 0),
             budgets: Array(
                 WidgetDataService.getBudgets(sortByCritical: true)
                     .prefix(max(MonthSummaryEntry.budgetLimit, MonthSummaryPortraitView.budgetLimit))
@@ -120,7 +122,7 @@ struct MonthSummaryProvider: TimelineProvider {
         let limit = MonthSummaryEntry.categoryLimit
         guard categories.count > limit else { return categories }
         let othersAmount = categories.dropFirst(limit).reduce(0) { $0 + $1.amount }
-        let othersPercentage = totalExpense > 0 ? (othersAmount / totalExpense) * 100 : 0
+        let othersPercentage = WidgetInsightsLogic.breakdownPercentage(othersAmount, of: totalExpense)
         return Array(categories.prefix(limit)) + [
             WidgetCategory(
                 id: "others",

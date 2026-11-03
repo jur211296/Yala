@@ -978,6 +978,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | scene-phase-active-guard-may-leave-the-brake-paused | backlog | tickets/backlog/scene-phase-active-guard-may-leave-the-brake-paused.md |
 | scheduled-due-draft-cannot-be-reached-in-uitest | backlog | tickets/backlog/scheduled-due-draft-cannot-be-reached-in-uitest.md |
 | scheduled-early-payment-test-fails-on-the-31st | backlog | tickets/backlog/scheduled-early-payment-test-fails-on-the-31st.md |
+| scheduled-payment-actions-name-the-month-they-apply-to | qa | tickets/qa/scheduled-payment-actions-name-the-month-they-apply-to.md |
 | scheduled-payment-identical-drafts-in-the-inbox | done | tickets/done/scheduled-payment-identical-drafts-in-the-inbox.md |
 | scheduled-payment-once-labeled-monthly | done | tickets/done/scheduled-payment-once-labeled-monthly.md |
 | scheduled-payment-pending-deletion-loses-undo-on-a-second-delete | done | tickets/done/scheduled-payment-pending-deletion-loses-undo-on-a-second-delete.md |
@@ -1175,7 +1176,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | widget-balance-figure-and-curve-count-different-rows-for-accountless-movements | done | tickets/done/widget-balance-figure-and-curve-count-different-rows-for-accountless-movements.md |
 | widget-cache-falls-back-to-usd-while-the-app-falls-back-to-pen | done | tickets/done/widget-cache-falls-back-to-usd-while-the-app-falls-back-to-pen.md |
 | widget-cache-rebuild-blocks-the-main-thread | backlog | tickets/backlog/widget-cache-rebuild-blocks-the-main-thread.md |
-| widget-category-percentages-use-the-signed-total | backlog | tickets/backlog/widget-category-percentages-use-the-signed-total.md |
+| widget-category-percentages-use-the-signed-total | qa | tickets/qa/widget-category-percentages-use-the-signed-total.md |
 | widget-de-tc-no-localiza-separadores | done | tickets/done/widget-de-tc-no-localiza-separadores.md |
 | widget-fallback-summary-uses-ten-rows | discarded | tickets/discarded/widget-fallback-summary-uses-ten-rows.md |
 | widget-period-balance-ignores-group-bridge-adjustment | backlog | tickets/backlog/widget-period-balance-ignores-group-bridge-adjustment.md |
