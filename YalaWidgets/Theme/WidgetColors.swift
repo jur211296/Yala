@@ -140,10 +140,10 @@ enum WidgetColors {
         traits.userInterfaceStyle == .dark ? UIColor(Color(hex: "818CF8")) : UIColor(Color(hex: "6063F1"))
     })
 
-    /// «Debes» en Grupos como TEXTO (`Color.groupOweAmount`): rosa rojizo, #BE123C en claro y #FB7185 en oscuro. Solo en
+    /// «Debes» en Grupos como TEXTO (`Color.groupOweAmount`): rosa de marca, #C80066 en claro y #FF4DA6 en oscuro. Solo en
     /// el widget de Grupos: es el color de la lista de Grupos (decisión de Jürgen, 2026-10-30).
     static let groupOweText = Color(uiColor: UIColor { traits in
-        traits.userInterfaceStyle == .dark ? UIColor(Color(hex: "FB7185")) : UIColor(Color(hex: "BE123C"))
+        traits.userInterfaceStyle == .dark ? UIColor(Color(hex: "FF4DA6")) : UIColor(Color(hex: "C80066"))
     })
 
     /// «Te deben» en Grupos como TEXTO (`Color.groupOwedAmount`): verde, #15803D en claro y #4ADE80 en oscuro.

@@ -2,14 +2,18 @@
 //  GroupSummaryHeader.swift
 //  Yala
 //
-//  Resumen global de la lista de grupos (decisión de Jürgen, 2026-10-30, sobre las propuestas de
-//  `docs/disenos/grupos-rediseno-2-2/`): «↗ Debes» y debajo lo que debes, en rosa rojizo; «↙ Te deben» y debajo lo que
-//  te deben, en verde. Los rótulos van en gris y fuente ligera; los montos, en fuente regular y algo menores que la
-//  cifra del Panel. Primero lo que debes. A diferencia del detalle de un grupo, el global NO se netea (se debe a
-//  personas distintas en grupos distintos): cada lado lleva sus divisas unidas con « + ».
+//  Resumen global de la lista de grupos (propuesta 2 de Jürgen, 2026-11-03, sobre `docs/disenos/grupos-cabecera-2-2/`):
 //
-//  Con Yala completo, debajo va un aviso morado a lo ancho con el neto en tu moneda principal
-//  (`GroupsListBalanceLogic.net`). En Yala gratis (solo grupos) no hay moneda principal que elegir y no sale.
+//  - Arriba, la cifra grande: el neto en tu moneda principal, en el color de quien va a favor («Debes en total · en S/»
+//    en el rosa de marca, «Te deben en total · en S/» en verde, «Estás a mano» sin color). Solo en Yala completo: en solo
+//    grupos no hay moneda principal que elegir y la cabecera empieza en la barra.
+//  - Una barra que reparte lo que debes (rosa, a la izquierda) y lo que te deben (verde), las dos partes pasadas a la
+//    moneda principal. Rellenos sólidos: nada de degradados ni brillos.
+//  - Debajo, «Debes» a la izquierda y «Te deben» a la derecha, cada uno con una línea por divisa: como mucho tres, y
+//    con cuatro o más, las dos mayores y «y N más». Un lado vacío dice «0.00» en gris.
+//
+//  El global NO se netea por divisa (se debe a personas distintas en grupos distintos): cada lado lleva sus divisas.
+//  El neto en la moneda principal es solo presentación (`GroupsListBalanceLogic`).
 //
 
 import SwiftUI
@@ -17,31 +21,27 @@ import SwiftUI
 struct GroupSummaryHeader: View {
 
     let summary: GroupGlobalSummary
-    /// Yala completo: el aviso con el neto en la moneda principal. `false` en solo grupos.
+    /// Yala completo: la cifra grande con el neto en la moneda principal. `false` en solo grupos.
     var showsNetInMainCurrency = false
 
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
+    private var mainCurrency: String { appPreferences.defaultCurrencyCode.rawValue }
+
     var body: some View {
-        let iOwe = Self.amounts(summary.totalIOwe)
-        let owedToMe = Self.amounts(summary.totalOwedToMe)
+        let iOwe = summary.totalIOwe.filter { $0.value > 0.01 }
+        let owedToMe = summary.totalOwedToMe.filter { $0.value > 0.01 }
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             if iOwe.isEmpty && owedToMe.isEmpty {
                 HeroHeaderLabel(text: L10n.Groups.Summary.allSettled)
                     .accessibilityIdentifier("groups_hero_settled")
             } else {
-                if !iOwe.isEmpty {
-                    side(label: L10n.Groups.Summary.iOwe, systemImage: "arrow.up.right", amounts: iOwe,
-                         color: .groupOweAmount, identifier: "groups_hero_iowe")
-                }
-                if !owedToMe.isEmpty {
-                    side(label: L10n.Groups.Summary.owedToMe, systemImage: "arrow.down.left", amounts: owedToMe,
-                         color: .groupOwedAmount, identifier: "groups_hero_owed")
-                }
                 if showsNetInMainCurrency, let net = netInMainCurrency {
-                    netNotice(net)
+                    netFigure(net)
                 }
+                bar(iOwe: iOwe, owedToMe: owedToMe)
+                sides(iOwe: iOwe, owedToMe: owedToMe)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -51,43 +51,107 @@ struct GroupSummaryHeader: View {
 
     // MARK: - Piezas
 
+    private func netFigure(_ net: GroupsListBalanceLogic.Net) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+            HeroHeaderLabel(text: GroupsListBalanceLogic.netCaption(
+                net.direction, currencySymbol: appPreferences.currencyIdentifier(for: net.currencyCode)))
+            Text(formatted(net.amount, net.currencyCode, isEstimate: net.isEstimate))
+                .font(DS.Typography.panelHeroAmount)
+                .foregroundStyle(Self.netColor(net.direction))
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("groups_hero_net")
+    }
+
+    /// Lo que debes (izquierda) y lo que te deben (derecha), en proporción a lo que pesa cada lado en la moneda
+    /// principal. Con un solo lado, la barra entera es de ese color.
+    private func bar(iOwe: [String: Double], owedToMe: [String: Double]) -> some View {
+        let converter = CurrencyConverter.shared
+        let share = GroupsListBalanceLogic.oweShare(
+            iOweInMain: GroupsListBalanceLogic.total(iOwe, mainCurrency: mainCurrency, converter: converter),
+            owedInMain: GroupsListBalanceLogic.total(owedToMe, mainCurrency: mainCurrency, converter: converter)
+        ) ?? 0.5
+        let both = !iOwe.isEmpty && !owedToMe.isEmpty
+        return GeometryReader { proxy in
+            let gap: CGFloat = both ? DS.Spacing.xs : 0
+            let width = max(0, proxy.size.width - gap)
+            HStack(spacing: gap) {
+                if !iOwe.isEmpty {
+                    Capsule()
+                        .fill(Color.groupOweAmount)
+                        .frame(width: both ? width * share : width)
+                }
+                if !owedToMe.isEmpty {
+                    Capsule().fill(Color.groupOwedAmount)
+                }
+            }
+        }
+        .frame(height: DS.Spacing.sm + DS.Spacing.xxs)
+        .accessibilityHidden(true)
+        .accessibilityIdentifier("groups_hero_bar")
+    }
+
+    @ViewBuilder
+    private func sides(iOwe: [String: Double], owedToMe: [String: Double]) -> some View {
+        let owe = side(label: L10n.Groups.Summary.iOwe, systemImage: "arrow.up.right", byCurrency: iOwe,
+                       color: .groupOweAmount, alignment: .leading, identifier: "groups_hero_iowe")
+        let owed = side(label: L10n.Groups.Summary.owedToMe, systemImage: "arrow.down.left", byCurrency: owedToMe,
+                        color: .groupOwedAmount, alignment: dynamicTypeSize.isAccessibilitySize ? .leading : .trailing,
+                        identifier: "groups_hero_owed")
+        if dynamicTypeSize.isAccessibilitySize {
+            // A tamaños de accesibilidad los dos lados no caben a lo ancho: uno debajo del otro.
+            VStack(alignment: .leading, spacing: DS.Spacing.md) { owe; owed }
+        } else {
+            HStack(alignment: .top) {
+                owe
+                Spacer(minLength: DS.Spacing.md)
+                owed
+            }
+        }
+    }
+
     private func side(
         label: String,
         systemImage: String,
-        amounts: [GroupBalancesPresentationLogic.CurrencyAmount],
+        byCurrency: [String: Double],
         color: Color,
+        alignment: HorizontalAlignment,
         identifier: String
     ) -> some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-            Label(label, systemImage: systemImage)
-                .font(DS.Typography.groupsHeroSideLabel)
-                .foregroundStyle(.secondary)
-            Text(amounts.map { formatted($0.amount, $0.currencyCode) }.joined(separator: " + "))
-                .font(DS.Typography.groupsHeroSideAmount)
-                .foregroundStyle(color)
-                .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
-                .minimumScaleFactor(0.7)
-                .fixedSize(horizontal: false, vertical: true)
+        let lines = GroupsListBalanceLogic.sideLines(byCurrency, mainCurrency: mainCurrency,
+                                                    converter: CurrencyConverter.shared)
+        return VStack(alignment: alignment, spacing: DS.Spacing.xxs) {
+            HStack(spacing: DS.Spacing.xs) {
+                if alignment == .trailing {
+                    Text(label).foregroundStyle(.secondary)
+                    Image(systemName: systemImage).foregroundStyle(color).accessibilityHidden(true)
+                } else {
+                    Image(systemName: systemImage).foregroundStyle(color).accessibilityHidden(true)
+                    Text(label).foregroundStyle(.secondary)
+                }
+            }
+            .font(DS.Typography.subheadline)
+            if lines.shown.isEmpty {
+                Text(formatted(0, mainCurrency))
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.tertiary)
+            }
+            ForEach(lines.shown, id: \.currencyCode) { item in
+                Text(formatted(item.amount, item.currencyCode))
+                    .font(DS.Typography.headline)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+            if lines.hiddenCount > 0 {
+                Text(L10n.Groups.Card.andMore(lines.hiddenCount))
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+            }
         }
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier(identifier)
-    }
-
-    /// El aviso morado del neto, a lo ancho y sin icono (Jürgen eligió «sin el ícono» entre las dos opciones).
-    private func netNotice(_ net: GroupsListBalanceLogic.Net) -> some View {
-        Text(GroupsListBalanceLogic.netText(
-            net,
-            currencySymbol: appPreferences.currencyIdentifier(for: net.currencyCode),
-            formattedAmount: formatted(net.amount, net.currencyCode, isEstimate: net.isEstimate)
-        ))
-        .font(DS.Typography.subheadline)
-        .foregroundStyle(.primary)
-        .fixedSize(horizontal: false, vertical: true)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, DS.Spacing.md)
-        .glassEffect(.regular.tint(Color.groupsNetNoticeTint), in: .rect(cornerRadius: DS.Radius.card))
-        .accessibilityIdentifier("groups_hero_net_notice")
     }
 
     // MARK: - Datos
@@ -96,9 +160,17 @@ struct GroupSummaryHeader: View {
         GroupsListBalanceLogic.net(
             owedToMe: summary.totalOwedToMe,
             iOwe: summary.totalIOwe,
-            mainCurrency: appPreferences.defaultCurrencyCode.rawValue,
+            mainCurrency: mainCurrency,
             converter: CurrencyConverter.shared
         )
+    }
+
+    static func netColor(_ direction: GroupsListBalanceLogic.NetDirection) -> Color {
+        switch direction {
+        case .iOwe: .groupOweAmount
+        case .owedToMe: .groupOwedAmount
+        case .even: .primary
+        }
     }
 
     private func formatted(_ amount: Double, _ currencyCode: String, isEstimate: Bool = false) -> String {

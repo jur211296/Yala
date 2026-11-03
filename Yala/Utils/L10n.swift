@@ -2650,17 +2650,17 @@ enum L10n {
             }
         }
 
-        /// El aviso morado del resumen de la lista con el neto en tu moneda principal (Yala completo, 2026-10-30).
+        /// El rótulo de la cifra grande de la lista: el neto en tu moneda principal (Yala completo, 2026-11-03).
         enum Hero {
-            /// «En tu moneda principal (S/), esto significa un saldo de S/ 50.00 que te deben.»
-            static func netOwedToMe(_ symbol: String, _ amount: String) -> String {
-                String(format: ls("groups.hero.netOwedToMe", comment: ""), symbol, amount)
+            /// «Te deben en total · en S/»
+            static func netOwedToMe(_ symbol: String) -> String {
+                String(format: ls("groups.hero.netOwedToMe", comment: ""), symbol)
             }
-            /// «En tu moneda principal (S/), esto significa un saldo de S/ 50.00 que debes.»
-            static func netIOwe(_ symbol: String, _ amount: String) -> String {
-                String(format: ls("groups.hero.netIOwe", comment: ""), symbol, amount)
+            /// «Debes en total · en S/»
+            static func netIOwe(_ symbol: String) -> String {
+                String(format: ls("groups.hero.netIOwe", comment: ""), symbol)
             }
-            /// «En tu moneda principal (S/), lo que debes y lo que te deben se compensan.»
+            /// «Estás a mano · en S/»
             static func netEven(_ symbol: String) -> String {
                 String(format: ls("groups.hero.netEven", comment: ""), symbol)
             }

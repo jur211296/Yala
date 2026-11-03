@@ -5,8 +5,9 @@
 //  Lo que enseña la lista de Grupos encima y dentro de cada tarjeta (decisión de Jürgen, 2026-10-30, sobre las
 //  propuestas de `docs/disenos/grupos-rediseno-2-2/`):
 //
-//  - El neto en tu moneda principal para el aviso morado bajo «Debes / Te deben»: lo que te deben menos lo que debes,
-//    cada divisa convertida con los tipos de cambio de la app. Solo presentación: los saldos no se tocan.
+//  - El neto en tu moneda principal, la cifra grande de arriba (propuesta 2 de Jürgen, 2026-11-03): lo que te deben
+//    menos lo que debes, cada divisa convertida con los tipos de cambio de la app. Solo presentación: los saldos no se
+//    tocan. Con él, la barra que reparte lo que debes y lo que te deben y una línea por divisa en cada lado.
 //  - Las filas por persona de cada tarjeta: primero lo que debes y después lo que te deben, cada lado de mayor a menor,
 //    como mucho tres y el resto en «y N más».
 //
@@ -77,13 +78,64 @@ enum GroupsListBalanceLogic {
         )
     }
 
-    /// «En tu moneda principal (S/), esto significa un saldo de S/ 566.81 que debes.»
-    static func netText(_ net: Net, currencySymbol: String, formattedAmount: String) -> String {
-        switch net.direction {
-        case .owedToMe: L10n.Groups.Hero.netOwedToMe(currencySymbol, formattedAmount)
-        case .iOwe: L10n.Groups.Hero.netIOwe(currencySymbol, formattedAmount)
+    /// El rótulo de la cifra grande: «Debes en total · en S/», «Te deben en total · en S/» o «Estás a mano · en S/».
+    static func netCaption(_ direction: NetDirection, currencySymbol: String) -> String {
+        switch direction {
+        case .owedToMe: L10n.Groups.Hero.netOwedToMe(currencySymbol)
+        case .iOwe: L10n.Groups.Hero.netIOwe(currencySymbol)
         case .even: L10n.Groups.Hero.netEven(currencySymbol)
         }
+    }
+
+    // MARK: - Barra y montos de cada lado (propuesta 2 de Jürgen, 2026-11-03)
+
+    /// Un lado entero (lo que debes o lo que te deben) pasado a la moneda principal, con la misma conversión que el neto.
+    static func total(
+        _ byCurrency: [String: Double],
+        mainCurrency: String,
+        converter: CurrencyConverting
+    ) -> Double {
+        var total = Decimal(0)
+        for (code, value) in byCurrency.filter({ $0.value > 0.01 }).sorted(by: { $0.key < $1.key }) {
+            let amount = Decimal(value)
+            total += code == mainCurrency
+                ? amount
+                : converter.convertCheckedWithLatestRate(amount, from: code, to: mainCurrency).amount
+        }
+        return NSDecimalNumber(decimal: total).doubleValue
+    }
+
+    /// Qué parte de la barra es lo que debes (0…1). `nil` si los dos lados están vacíos: no hay barra que pintar.
+    static func oweShare(iOweInMain: Double, owedInMain: Double) -> Double? {
+        let total = iOweInMain + owedInMain
+        guard total > 0 else { return nil }
+        return min(1, max(0, iOweInMain / total))
+    }
+
+    struct SideLines: Equatable {
+        let shown: [GroupBalancesPresentationLogic.CurrencyAmount]
+        /// Las divisas que no caben («y N más»).
+        let hiddenCount: Int
+    }
+
+    /// Una línea por divisa, de mayor a menor en la moneda principal (desempate por código). Como mucho `limit` líneas
+    /// contando la de «y N más»: con tres divisas salen las tres; con cuatro o más, las dos mayores y «y N más»
+    /// (Jürgen, 2026-11-03: «limitamos a 3 monedas y la 3ra dice “+1 más”»).
+    static func sideLines(
+        _ byCurrency: [String: Double],
+        mainCurrency: String,
+        converter: CurrencyConverting,
+        limit: Int = 3
+    ) -> SideLines {
+        let items = byCurrency
+            .filter { $0.value > 0.01 }
+            .map { (code: $0.key, amount: $0.value,
+                    inMain: total([$0.key: $0.value], mainCurrency: mainCurrency, converter: converter)) }
+            .sorted { a, b in a.inMain != b.inMain ? a.inMain > b.inMain : a.code < b.code }
+            .map { GroupBalancesPresentationLogic.CurrencyAmount(currencyCode: $0.code, amount: $0.amount) }
+        let cap = max(1, limit)
+        guard items.count > cap else { return SideLines(shown: items, hiddenCount: 0) }
+        return SideLines(shown: Array(items.prefix(cap - 1)), hiddenCount: items.count - (cap - 1))
     }
 
     // MARK: - Filas por persona de la tarjeta

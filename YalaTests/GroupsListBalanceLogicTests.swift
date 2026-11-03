@@ -2,9 +2,9 @@
 //  GroupsListBalanceLogicTests.swift
 //  YalaTests
 //
-//  El resumen y las tarjetas de la lista de Grupos (decisión de Jürgen, 2026-10-30): el neto en la moneda principal
-//  del aviso morado (signo, cero, una y varias divisas, tasa aproximada) y las filas por persona de cada tarjeta
-//  (primero lo que debes, de mayor a menor, como mucho tres y «y N más»).
+//  El resumen y las tarjetas de la lista de Grupos: el neto en la moneda principal de la cifra grande (signo, cero, una
+//  y varias divisas, tasa aproximada), la barra y las líneas por divisa de cada lado (propuesta 2 de Jürgen,
+//  2026-11-03: como mucho tres líneas) y las filas por persona de cada tarjeta (2026-10-30).
 //
 
 import Foundation
@@ -72,8 +72,7 @@ struct GroupsListBalanceLogicTests {
         let result = try #require(net(["USD": 10], ["PEN": 34]))
         #expect(result.direction == .even)
         #expect(result.amount == 0)
-        #expect(GroupsListBalanceLogic.netText(result, currencySymbol: "S/", formattedAmount: "S/ 0.00")
-                == L10n.Groups.Hero.netEven("S/"))
+        #expect(GroupsListBalanceLogic.netCaption(result.direction, currencySymbol: "S/") == L10n.Groups.Hero.netEven("S/"))
     }
 
     @Test("Un solo lado que al convertirlo baja del céntimo no dice «se compensan»: no hay aviso")
@@ -88,15 +87,61 @@ struct GroupsListBalanceLogicTests {
         #expect(try #require(net(["PEN": 10], [:], quality: .staticFallback)).isEstimate == false)
     }
 
-    @Test("El texto elige la frase por el signo")
-    func text_followsTheDirection() throws {
+    @Test("El rótulo de la cifra grande elige la frase por el signo")
+    func caption_followsTheDirection() throws {
         let owed = try #require(net(["PEN": 50], [:]))
         let owe = try #require(net([:], ["PEN": 50]))
-        #expect(GroupsListBalanceLogic.netText(owed, currencySymbol: "S/", formattedAmount: "S/ 50.00")
-                == L10n.Groups.Hero.netOwedToMe("S/", "S/ 50.00"))
-        #expect(GroupsListBalanceLogic.netText(owe, currencySymbol: "S/", formattedAmount: "S/ 50.00")
-                == L10n.Groups.Hero.netIOwe("S/", "S/ 50.00"))
-        #expect(L10n.Groups.Hero.netIOwe("S/", "S/ 50.00") != L10n.Groups.Hero.netOwedToMe("S/", "S/ 50.00"))
+        #expect(GroupsListBalanceLogic.netCaption(owed.direction, currencySymbol: "S/")
+                == L10n.Groups.Hero.netOwedToMe("S/"))
+        #expect(GroupsListBalanceLogic.netCaption(owe.direction, currencySymbol: "S/") == L10n.Groups.Hero.netIOwe("S/"))
+        #expect(L10n.Groups.Hero.netIOwe("S/") != L10n.Groups.Hero.netOwedToMe("S/"))
+        #expect(L10n.Groups.Hero.netIOwe("S/").contains("S/"), "el rótulo nombra la moneda principal")
+    }
+
+    // MARK: - Barra y líneas por divisa
+
+    @Test("Cada lado se pasa a la moneda principal; la barra reparte por lo que pesa cada uno")
+    func totals_andShare() throws {
+        let c = Conversor()
+        #expect(abs(GroupsListBalanceLogic.total(["USD": 10, "PEN": 6], mainCurrency: "PEN", converter: c) - 40) < 0.001)
+        #expect(GroupsListBalanceLogic.total([:], mainCurrency: "PEN", converter: c) == 0)
+        #expect(GroupsListBalanceLogic.total(["PEN": 0.004], mainCurrency: "PEN", converter: c) == 0,
+                "los restos de menos de un céntimo no pesan")
+        let share = try #require(GroupsListBalanceLogic.oweShare(iOweInMain: 30, owedInMain: 10))
+        #expect(abs(share - 0.75) < 0.0001)
+        #expect(GroupsListBalanceLogic.oweShare(iOweInMain: 0, owedInMain: 10) == 0)
+        #expect(GroupsListBalanceLogic.oweShare(iOweInMain: 5, owedInMain: 0) == 1)
+        #expect(GroupsListBalanceLogic.oweShare(iOweInMain: 0, owedInMain: 0) == nil, "sin nada, no hay barra")
+    }
+
+    @Test("Hasta tres divisas salen todas, de mayor a menor en la moneda principal")
+    func sideLines_upToThree() {
+        let c = Conversor()
+        // $ 10 = S/ 34 pesa más que S/ 20 aunque el número sea menor.
+        let lines = GroupsListBalanceLogic.sideLines(["PEN": 20, "USD": 10, "EUR": 5], mainCurrency: "PEN", converter: c)
+        #expect(lines.shown.map(\.currencyCode) == ["USD", "PEN", "EUR"])
+        #expect(lines.hiddenCount == 0)
+    }
+
+    @Test("Con cuatro o más divisas: las dos mayores y «y N más» como tercera línea")
+    func sideLines_capsAtThreeLines() {
+        let c = Conversor()
+        let four = GroupsListBalanceLogic.sideLines(["PEN": 20, "USD": 10, "EUR": 5, "MXN": 1], mainCurrency: "PEN",
+                                                   converter: c)
+        #expect(four.shown.map(\.currencyCode) == ["USD", "PEN"])
+        #expect(four.hiddenCount == 2)
+        let five = GroupsListBalanceLogic.sideLines(["PEN": 20, "USD": 10, "EUR": 5, "MXN": 1, "COP": 2],
+                                                   mainCurrency: "PEN", converter: c)
+        #expect(five.shown.count + (five.hiddenCount > 0 ? 1 : 0) == 3, "nunca más de tres líneas")
+        #expect(five.hiddenCount == 3)
+    }
+
+    @Test("Un lado vacío no tiene líneas; los empates no bailan")
+    func sideLines_emptyAndTies() {
+        let c = Conversor()
+        #expect(GroupsListBalanceLogic.sideLines([:], mainCurrency: "PEN", converter: c).shown.isEmpty)
+        let ties = GroupsListBalanceLogic.sideLines(["EUR": 5, "CHF": 5], mainCurrency: "PEN", converter: c)
+        #expect(ties.shown.map(\.currencyCode) == ["CHF", "EUR"])
     }
 
     // MARK: - Filas por persona
