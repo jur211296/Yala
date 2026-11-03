@@ -51,6 +51,32 @@ final class InsightsViewModel {
     /// Dónde se guardan las respuestas por huella. Inyectable para los tests.
     var aiResultStore: InsightsAIResultStore = .shared
 
+    /// La última respuesta de cada ranura y lo que se generó hoy, para que el resumen salga solo (encargo
+    /// `estadisticas-ia-automatica`). Inyectable para los tests.
+    @ObservationIgnored var autoRefreshStore: StatsAIAutoRefreshStore = .shared
+
+    /// Pro y consentimiento. Los seams llegan como propiedades: un valor por defecto que lea un singleton `@MainActor`
+    /// en un `init` se evalúa fuera del actor.
+    @ObservationIgnored var isProProvider: @MainActor () -> Bool = { FeatureGateService.shared.canAccess(.smartInsightsAI) }
+    @ObservationIgnored var hasConsentProvider: @MainActor () -> Bool = {
+        UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiInsightsConsentAccepted)
+    }
+    @ObservationIgnored var isOnlineProvider: @MainActor () -> Bool = { NetworkMonitor.shared.isConnected }
+    /// La llamada al servicio de IA: `(datos agregados, clave, tono, enfoque, saltar caché)`. En producción,
+    /// `InsightsLLMService`.
+    @ObservationIgnored var aiRequest: @MainActor ([String: Any], String, InsightTone, InsightFocus, Bool) async throws -> LLMInsightResponse = {
+        #if DEBUG
+        if UITestHooks.statsAIReply { return StatsAIUITestReply.summary }
+        #endif
+        return try await InsightsLLMService.shared.generateInsights(
+            aggregatedData: $0, cacheKey: $1, tone: $2, focus: $3, bypassCache: $4
+        )
+    }
+
+    /// Pro con la IA aceptada y sin nada a la vista todavía: la decisión automática está por llegar. Las tarjetas pintan
+    /// «Analizando…» en vez del botón mientras dura (`autoRefreshIfNeeded`).
+    private(set) var isAwaitingAutoDecision = false
+
     /// La huella de la pregunta que va de camino al servicio de IA, si hay una.
     private var inFlightAIFingerprint: String?
 
@@ -205,8 +231,7 @@ final class InsightsViewModel {
     /// `true` si este usuario puede recibir el resumen sin tocar nada: Pro y con el consentimiento ya dado. Sin
     /// consentimiento hace falta un toque, y no se puede saltar: es el que autoriza enviar el resumen al servicio de IA.
     var canGenerateAIAutomatically: Bool {
-        FeatureGateService.shared.canAccess(.smartInsightsAI)
-            && UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiInsightsConsentAccepted)
+        isProProvider() && hasConsentProvider()
     }
 
     /// La huella de lo que se enviaría ahora al servicio de IA (`InsightsAIResultStore.fingerprint`).
@@ -231,23 +256,153 @@ final class InsightsViewModel {
         )
     }
 
-    /// Tras un recálculo: si hay un resumen guardado para estos mismos datos, se enseña ya, sin llamar a nadie.
+    /// La ranura de lo que se ve: todo lo que define el resumen menos las cifras (período, filtros, tono, enfoque, idioma
+    /// y divisa). Cada ranura guarda su última respuesta, que se enseña mientras se regenera.
+    func currentAISlot() -> String? {
+        guard let data = insightData, let period = lastPeriod else { return nil }
+        let aggregated = buildAggregatedData(
+            data,
+            currencyCode: lastCurrencyCode,
+            comparisonMode: lastComparisonMode,
+            criteria: lastCriteria,
+            accounts: lastAccounts,
+            categories: lastCategories,
+            tags: lastTags
+        )
+        var parts: [String: Any] = [
+            "period": period.rawValue,
+            "comparison": lastComparisonMode.rawValue,
+            "tone": currentTone.rawValue,
+            "focus": currentFocus.rawValue,
+            "currencyFormat": UserDefaults.standard.string(forKey: "currencyDisplayFormat") ?? "code",
+        ]
+        for key in ["locale", "country", "currency", "currency_display"] {
+            if let value = aggregated[key] { parts[key] = value }
+        }
+        parts["filters"] = aiFilterIdentity()
+        if period == .custom, let range = lastCustomRange {
+            parts["range"] = [range.start.timeIntervalSince1970, range.end.timeIntervalSince1970]
+        }
+        return StatsAIAutoRefreshStore.slotKey(page: .summary, parts: parts)
+    }
+
+    /// Los filtros de lo que se ve, con valores estables entre lanzamientos (nombres, no `hashValue`): parte de la ranura
+    /// del resumen y de la de Tendencias, que lee los mismos filtros de sesión. Lleva también el importe y «compartidos»,
+    /// que el contexto de la IA no describe.
+    func aiFilterIdentity() -> [String: Any] {
+        var identity: [String: Any] = [:]
+        if lastCriteria.hasActiveFilters {
+            identity["context"] = buildFilterContext(
+                criteria: lastCriteria, accounts: lastAccounts, categories: lastCategories, tags: lastTags
+            )
+        }
+        if lastCriteria.amountCondition.isActive {
+            identity["amount"] = String(describing: lastCriteria.amountCondition)
+        }
+        identity["shared"] = String(describing: lastCriteria.sharedExpenseFilter)
+        identity["type"] = String(describing: lastCriteria.transactionTypeFilter)
+        return identity
+    }
+
+    /// Las cifras del resumen que deciden si un cambio es relevante: registros, gasto e ingreso del período.
+    func currentAISnapshot() -> StatsAIAutoRefreshLogic.Snapshot? {
+        guard let summary = insightData?.periodSummary else { return nil }
+        return StatsAIAutoRefreshLogic.Snapshot(
+            transactionCount: summary.transactionCount,
+            totals: [summary.totalExpense, summary.totalIncome]
+        )
+    }
+
+    private var transactionCountInView: Int { insightData?.periodSummary.transactionCount ?? 0 }
+
+    /// Tras un recálculo: lo guardado para lo que se ve sale ya, sin llamar a nadie. Primero la respuesta de estas
+    /// mismas cifras; si no, la última de esta ranura (período y filtros), que se enseña mientras
+    /// `autoRefreshIfNeeded` decide si toca una nueva.
     func restoreSavedAIIfAvailable() {
-        guard canGenerateAIAutomatically,
-              let fingerprint = currentAIFingerprint(),
-              let saved = aiResultStore.response(for: fingerprint)
-        else { return }
+        isAwaitingAutoDecision = false
+        guard canGenerateAIAutomatically else { return }
+        if let fingerprint = currentAIFingerprint(), let saved = aiResultStore.response(for: fingerprint) {
+            show(saved)
+        } else if let slot = currentAISlot(),
+                  let (_, saved) = autoRefreshStore.response(LLMInsightResponse.self, page: .summary, slot: slot) {
+            show(saved)
+        } else {
+            isAwaitingAutoDecision = transactionCountInView >= StatsAIAutoRefreshLogic.minimumTransactions
+        }
+    }
+
+    private func show(_ saved: LLMInsightResponse) {
         aiInsights = saved
         aiError = nil
         isLoadingAI = false
         aiActivated = true
     }
 
-    /// Al abrir Observaciones en Pro: el resumen sale solo. Reusa el guardado si los datos no cambiaron; si no, lo pide.
-    func autoGenerateIfNeeded() async {
-        guard canGenerateAIAutomatically, insightData != nil, !isLoadingAI, aiInsights == nil, aiError == nil
-        else { return }
-        await triggerAIGeneration()
+    /// Al abrir Estadísticas, y tras cada recálculo: el resumen sale solo para Pro con la IA aceptada, una vez al día o
+    /// ante un cambio relevante, con antirrebote y techo diario (`StatsAIAutoRefreshLogic`). Lo guardado se queda a la
+    /// vista mientras se regenera, y un fallo no avisa: la próxima apertura lo reintenta.
+    func autoRefreshIfNeeded(now: Date = .now) async {
+        guard let fingerprint = currentAIFingerprint(),
+              let slot = currentAISlot(),
+              let snapshot = currentAISnapshot()
+        else {
+            isAwaitingAutoDecision = false
+            return
+        }
+        // Estas mismas cifras ya tienen respuesta (guardada por huella): pasa a ser la de la ranura, sin llamar a nadie.
+        if canGenerateAIAutomatically, let exact = aiResultStore.response(for: fingerprint) {
+            if autoRefreshStore.entry(page: .summary, slot: slot)?.fingerprint != fingerprint {
+                saveToSlot(exact, slot: slot, fingerprint: fingerprint, snapshot: snapshot)
+            }
+            if !isLoadingAI { show(exact) }
+            isAwaitingAutoDecision = false
+            return
+        }
+        // La misma pregunta ya va de camino (un recálculo a mitad de la espera la reinició): se espera a su respuesta.
+        if canGenerateAIAutomatically, fingerprint == inFlightAIFingerprint {
+            if aiInsights == nil { isLoadingAI = true; aiActivated = true }
+            isAwaitingAutoDecision = false
+            return
+        }
+        let saved = autoRefreshStore.entry(page: .summary, slot: slot).map {
+            StatsAIAutoRefreshLogic.Saved(fingerprint: $0.fingerprint, savedAt: $0.savedAt, snapshot: $0.snapshot)
+        }
+        let decision = StatsAIAutoRefreshLogic.decide(
+            isPro: isProProvider(),
+            hasConsent: hasConsentProvider(),
+            transactionCount: snapshot.transactionCount,
+            saved: saved,
+            fingerprint: fingerprint,
+            snapshot: snapshot,
+            today: autoRefreshStore.today(page: .summary, slot: slot, now: now),
+            now: now
+        )
+        guard case .generate(let reason) = decision,
+              isOnlineProvider(),
+              !isLoadingAI,
+              inFlightAIFingerprint != fingerprint,
+              let period = lastPeriod
+        else {
+            isAwaitingAutoDecision = false
+            return
+        }
+        #if DEBUG
+        print("InsightsViewModel: auto refresh (\(reason.rawValue))")
+        #endif
+        autoRefreshStore.recordGeneration(page: .summary, slot: slot, automatic: true, now: now)
+        isAwaitingAutoDecision = false
+        await generateAIInsights(
+            period: period,
+            filterHash: lastFilterHash,
+            txnCount: lastTxnCount,
+            currencyCode: lastCurrencyCode,
+            comparisonMode: lastComparisonMode,
+            criteria: lastCriteria,
+            accounts: lastAccounts,
+            categories: lastCategories,
+            tags: lastTags,
+            automatic: true
+        )
     }
 
     /// Resets AI state when period/filters change so the button reappears.
@@ -256,11 +411,15 @@ final class InsightsViewModel {
         aiActivated = false
         isLoadingAI = false
         aiError = nil
+        isAwaitingAutoDecision = false
     }
 
     // MARK: - AI Insights
 
     /// Generate AI insights if Pro + AI consent + online + has data.
+    ///
+    /// - Parameter automatic: la pidió `autoRefreshIfNeeded`, no un toque. Con un resumen ya a la vista se regenera por
+    ///   detrás, sin «Analizando…»; y un fallo no avisa: lo guardado se queda o vuelve el botón.
     func generateAIInsights(
         period: DetailPeriod,
         filterHash: Int,
@@ -271,17 +430,19 @@ final class InsightsViewModel {
         accounts: [Account] = [],
         categories: [Category] = [],
         tags: [Tag] = [],
-        refresh: Bool = false
+        refresh: Bool = false,
+        automatic: Bool = false
     ) async {
         guard let data = insightData else { return }
 
         // Check prerequisites
-        let isPro = FeatureGateService.shared.canAccess(.smartInsightsAI)
-        let hasConsent = UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiInsightsConsentAccepted)
-        let isOnline = NetworkMonitor.shared.isConnected
+        let isPro = isProProvider()
+        let hasConsent = hasConsentProvider()
+        let isOnline = isOnlineProvider()
 
         guard isPro, hasConsent, isOnline else {
-            aiInsights = nil
+            // Lo automático no quita lo que hay a la vista: sin red, lo guardado se queda.
+            if !automatic { aiInsights = nil }
             return
         }
 
@@ -290,9 +451,13 @@ final class InsightsViewModel {
 
         // El guardado por huella va primero: mismos datos, misma respuesta, sin llamada (UX 2.2 · L11-7).
         let fingerprint = currentAIFingerprint()
+        let slot = currentAISlot()
+        let snapshot = currentAISnapshot()
         if !refresh, let fingerprint, let saved = aiResultStore.response(for: fingerprint) {
             aiInsights = saved
             aiError = nil
+            aiActivated = true
+            saveToSlot(saved, slot: slot, fingerprint: fingerprint, snapshot: snapshot)
             return
         }
         // La misma pregunta ya va de camino: se espera a su respuesta, que se pintará al llegar.
@@ -312,13 +477,26 @@ final class InsightsViewModel {
         )
 
         // Check cache first
-        if !refresh, let cached = InsightsLLMService.shared.getCached(key: key) {
+        // Lo automático no la mira: su clave es el número de registros, y una edición del importe la acertaría con el
+        // resumen viejo.
+        if !refresh, !automatic, let cached = InsightsLLMService.shared.getCached(key: key) {
             aiInsights = cached
+            aiActivated = true
             return
         }
 
-        isLoadingAI = true
+        // Con un resumen a la vista, la regeneración automática va por detrás: lo guardado se queda hasta que llega el
+        // nuevo («mostrar el guardado mientras se regenera»).
+        let inBackground = automatic && aiInsights != nil
+        if !inBackground {
+            isLoadingAI = true
+            aiActivated = true
+        }
         aiError = nil
+        if !automatic, let slot {
+            // Lo pedido a mano no cuenta para el techo automático, pero sí para «una al día» y el antirrebote.
+            autoRefreshStore.recordGeneration(page: .summary, slot: slot, automatic: false)
+        }
 
         // Build aggregated data (never individual transactions)
         let aggregated = buildAggregatedData(
@@ -342,28 +520,41 @@ final class InsightsViewModel {
             return currentAIFingerprint() == fingerprint
         }
         do {
-            let response = try await InsightsLLMService.shared.generateInsights(
-                aggregatedData: aggregated,
-                cacheKey: key,
-                tone: tone,
-                focus: focus,
-                bypassCache: refresh
-            )
+            let response = try await aiRequest(aggregated, key, tone, focus, refresh)
             if inFlightAIFingerprint == fingerprint { inFlightAIFingerprint = nil }
-            if let fingerprint { aiResultStore.save(response, for: fingerprint) }
+            if let fingerprint {
+                aiResultStore.save(response, for: fingerprint)
+                saveToSlot(response, slot: slot, fingerprint: fingerprint, snapshot: snapshot)
+            }
             guard stillCurrent() else { return }
             aiInsights = response
             aiActivated = true
         } catch {
             if inFlightAIFingerprint == fingerprint { inFlightAIFingerprint = nil }
             guard stillCurrent() else { return }
-            aiError = AIInsightFailureLogic.failure(for: error, isConnected: NetworkMonitor.shared.isConnected)
             #if DEBUG
             print("InsightsViewModel: AI error: \(error)")
             #endif
+            if automatic {
+                // Silencioso (encargo `estadisticas-ia-automatica`): lo guardado se queda; sin nada guardado vuelve el
+                // botón. La próxima apertura lo reintenta.
+                if aiInsights == nil { aiActivated = false }
+            } else {
+                aiError = AIInsightFailureLogic.failure(for: error, isConnected: NetworkMonitor.shared.isConnected)
+            }
         }
 
         isLoadingAI = false
+    }
+
+    private func saveToSlot(
+        _ response: LLMInsightResponse,
+        slot: String?,
+        fingerprint: String,
+        snapshot: StatsAIAutoRefreshLogic.Snapshot?
+    ) {
+        guard let slot, let snapshot else { return }
+        autoRefreshStore.save(response, page: .summary, slot: slot, fingerprint: fingerprint, snapshot: snapshot)
     }
 
     // MARK: - Helpers

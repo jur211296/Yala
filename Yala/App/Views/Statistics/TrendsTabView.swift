@@ -108,6 +108,9 @@ struct TrendsTabView: View {
     @State private var showUpgradeSheet = false
     @State private var showInsightsConsentAlert = false
     @State private var trendsAI = TrendsAIViewModel()
+    /// Sube cuando lo que se ve está recalculado: la decisión automática de la IA cuelga de él
+    /// (`TrendsAIAutoTrigger`, encargo `estadisticas-ia-automatica`).
+    @State private var trendsAIContextVersion = 0
 
     @ScaledMetric(relativeTo: .largeTitle) private var summaryVerticalPadding: CGFloat = 12
 
@@ -184,8 +187,10 @@ struct TrendsTabView: View {
             calculateCashFlowData()
             calculatePeriodComparisonData()
             calculateWeekdayData()
+            trendsAIContextVersion &+= 1
         }
         .onDisappear { recalcTask?.cancel() }
+        .modifier(TrendsAIAutoTrigger(trendsAI: trendsAI, version: trendsAIContextVersion, request: makeTrendsAIAutoRequest))
         .onChange(of: trendsViewModel.detailPeriod)            { scheduleTrendsRecalc() }
         .onChange(of: trendsViewModel.selectedAccounts)        { scheduleTrendsRecalc() }
         .onChange(of: trendsViewModel.selectedCategories)      { scheduleTrendsRecalc() }
@@ -216,7 +221,7 @@ struct TrendsTabView: View {
             UpgradePromptSheet(feature: .smartInsightsAI, context: .proFeature)
         }
         .insightsConsentAlert(isPresented: $showInsightsConsentAlert) {
-            Task { await trendsAI.generate(input: trendsAIInput, regenerate: false) }
+            Task { await trendsAI.generate(input: trendsAIInput, regenerate: false, autoRequest: makeTrendsAIAutoRequest()) }
         }
     }
 
@@ -727,8 +732,8 @@ struct TrendsTabView: View {
         // Dos cambios que no pasan por `scheduleTrendsRecalc`: otro rango personalizado
         // (el período sigue siendo `.custom`) y una edición que no cambia el número de
         // movimientos. Van aquí y no en la cadena del `body`, que ya va justa de tipado.
-        .onChange(of: sessionState.customDateRange) { trendsAI.reset() }
-        .onChange(of: sessionState.dataVersion) { trendsAI.reset() }
+        .onChange(of: sessionState.customDateRange) { resetTrendsAI() }
+        .onChange(of: sessionState.dataVersion) { resetTrendsAI() }
     }
 
     @ViewBuilder
@@ -840,7 +845,7 @@ struct TrendsTabView: View {
                 Spacer()
 
                 Button {
-                    Task { await trendsAI.generate(input: trendsAIInput, regenerate: true) }
+                    Task { await trendsAI.generate(input: trendsAIInput, regenerate: true, autoRequest: makeTrendsAIAutoRequest()) }
                 } label: {
                     HStack(spacing: DS.Spacing.xs) {
                         Image(systemName: "arrow.clockwise")
@@ -876,7 +881,7 @@ struct TrendsTabView: View {
 
             Button {
                 if appPreferences.aiInsightsConsentAccepted {
-                    Task { await trendsAI.generate(input: trendsAIInput, regenerate: false) }
+                    Task { await trendsAI.generate(input: trendsAIInput, regenerate: false, autoRequest: makeTrendsAIAutoRequest()) }
                 } else {
                     showInsightsConsentAlert = true
                 }
@@ -954,6 +959,30 @@ struct TrendsTabView: View {
             locale: AppLocale.identifier,
             country: Locale.current.region?.identifier ?? "",
             filtersActive: trendsViewModel.hasActiveFilters
+        )
+    }
+
+    /// Otro rango o datos nuevos: el análisis vuelve al CTA y la decisión automática se vuelve a tomar.
+    private func resetTrendsAI() {
+        trendsAI.reset()
+        trendsAIContextVersion &+= 1
+    }
+
+    /// Lo que la decisión automática de la IA necesita de lo que se ve, o `nil` si la tarjeta no sale (pocos
+    /// movimientos o nada que decir): ahí no se gasta una llamada.
+    private func makeTrendsAIAutoRequest() -> TrendsAIViewModel.AutoRequest? {
+        let count = trendsViewModel.periodTransactionCount
+        guard !hasNoData, count >= StatsAIAutoRefreshLogic.minimumTransactions, !insightBullets.isEmpty else { return nil }
+        var slotParts: [String: Any] = [
+            "period": trendsViewModel.detailPeriod.rawValue,
+            "comparison": sessionState.comparisonMode.rawValue,
+            "filters": insightsViewModel.aiFilterIdentity(),
+        ]
+        if trendsViewModel.detailPeriod == .custom, let range = sessionState.customDateRange {
+            slotParts["range"] = [range.start.timeIntervalSince1970, range.end.timeIntervalSince1970]
+        }
+        return TrendsAIViewModel.AutoRequest.make(
+            input: trendsAIInput, transactionCount: count, slotParts: slotParts, tone: .current, focus: .current
         )
     }
 
@@ -1441,6 +1470,7 @@ struct TrendsTabView: View {
             // Y otra vez al terminar: un «Generar» tocado durante el debounce se
             // llevó los totales viejos con la etiqueta del período nuevo.
             trendsAI.reset()
+            trendsAIContextVersion &+= 1
         }
     }
 
@@ -1950,4 +1980,27 @@ struct TrendsTabView: View {
         }
     }
 
+}
+
+/// El análisis con IA de Tendencias sale solo para Pro con la IA aceptada (encargo `estadisticas-ia-automatica`): al
+/// abrir la página y tras cada recálculo. Lo guardado para lo que se ve sale en el acto; la decisión espera un momento
+/// de calma, para que una ráfaga de cambios deje una sola. La petición va en una tarea propia: la del `.task` se cancela
+/// con el siguiente recálculo, y cancelarla cortaría una llamada ya pagada.
+private struct TrendsAIAutoTrigger: ViewModifier {
+    let trendsAI: TrendsAIViewModel
+    let version: Int
+    let request: @MainActor () -> TrendsAIViewModel.AutoRequest?
+
+    static let settleDelay: Duration = .milliseconds(1200)
+
+    func body(content: Content) -> some View {
+        content.task(id: version) { await decide() }
+    }
+
+    private func decide() async {
+        if let initial = request() { trendsAI.restoreSaved(initial) }
+        do { try await Task.sleep(for: Self.settleDelay) } catch { return }
+        guard let current = request() else { return }
+        Task { @MainActor in await trendsAI.autoRefresh(current) }
+    }
 }

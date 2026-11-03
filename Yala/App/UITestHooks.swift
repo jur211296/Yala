@@ -987,6 +987,12 @@ final class UITestHooks {
     /// XCUITest lo que Pro ve SIN tocar nada (UX 2.2 · L11-7). Es otro consentimiento que el de `-uitest-ai-consent`.
     nonisolated static var insightsAIConsent: Bool { hasArg("-uitest-insights-ai-consent") }
 
+    /// `-uitest-stats-ai-reply`: los textos con IA de Estadísticas (Resumen/Distribución y Tendencias) contestan con un
+    /// texto fijo (`StatsAIUITestReply`) sin red ni App Attest, para ver en XCUITest que salen SOLOS al abrir la página
+    /// (encargo `estadisticas-ia-automatica`). Sustituye la llamada, no la decisión: Pro, consentimiento, techo y
+    /// antirrebote siguen siendo los de producción.
+    nonisolated static var statsAIReply: Bool { hasArg("-uitest-stats-ai-reply") }
+
     /// `-uitest-ai-chat-ready`: el chat de Yala IA ya tiene su consentimiento y su onboarding vistos, así que
     /// tocar la entrada abre el chat directo (`YalaAIOnboardingLogic.nextScreen` → `.chat`). Lo usa el XCUITest de
     /// la columna de Yala IA en iPad: solo monta la vista, no envía nada.

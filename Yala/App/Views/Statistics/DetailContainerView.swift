@@ -347,6 +347,7 @@ struct DetailContainerView: View {
                 horizontalSizeClass: horizontalSizeClass,
                 recordsTabIsShown: selectedTab == .records,
                 allTransactions: dataViewModel.allTransactions))
+            .modifier(StatsAIAutoRefreshTrigger(insights: insightsViewModel))
     }
 
     // MARK: - Main Content
@@ -800,6 +801,27 @@ struct DetailContainerView: View {
 // MARK: - ViewModifiers to break up expression complexity
 
 /// Encapsulates sheet presentations to reduce body complexity
+/// El resumen con IA de Resumen y Distribución sale solo para Pro con la IA aceptada (encargo
+/// `estadisticas-ia-automatica`): al abrir Estadísticas, al volver a primer plano y tras cada recálculo, que suben
+/// `aiContextVersion`. Espera un momento de calma antes de decidir: una ráfaga de cambios (un import, varias ediciones)
+/// cancela la tarea anterior y deja una sola decisión.
+private struct StatsAIAutoRefreshTrigger: ViewModifier {
+    let insights: InsightsViewModel
+
+    static let settleDelay: Duration = .milliseconds(1200)
+
+    func body(content: Content) -> some View {
+        content.task(id: insights.aiContextVersion) { await decide() }
+    }
+
+    /// La petición va en una tarea propia: la del `.task` se cancela con el siguiente recálculo (cambiar de pestaña
+    /// también recalcula), y cancelarla cortaría una llamada ya pagada.
+    private func decide() async {
+        do { try await Task.sleep(for: Self.settleDelay) } catch { return }
+        Task { @MainActor in await insights.autoRefreshIfNeeded() }
+    }
+}
+
 private struct DetailContainerSheets: ViewModifier {
     @Environment(AppPreferences.self) private var appPreferences
     @Bindable var recordsViewModel: RecordsViewModel

@@ -351,6 +351,10 @@ struct InsightsTabView: View {
                     Task { await viewModel.triggerAIGeneration() }
                 }
             }
+        } else if viewModel.isAwaitingAutoDecision {
+            // Pro con la IA aceptada: el resumen sale solo al abrir Estadísticas (encargo `estadisticas-ia-automatica`).
+            AIInsightCardComponents.loadingPlaceholder(accentColor: theme.accent)
+                .transition(.loadingPlaceholder)
         } else {
             generateAIButton
         }
@@ -441,16 +445,21 @@ struct InsightsTabView: View {
                     }
                     .spansAllColumns()
                 }
-            } else if viewModel.canGenerateAIAutomatically {
-                // Pro con el consentimiento dado: el resumen sale solo al abrir Observaciones (UX 2.2 · L11-7). Hasta
-                // que llega, el mismo «cargando» que tras tocar el botón; antes, una caja gris que mandaba «arriba».
+            } else if viewModel.isAwaitingAutoDecision {
+                // Pro con el consentimiento dado: el resumen sale solo al abrir Estadísticas (UX 2.2 · L11-7, encargo
+                // `estadisticas-ia-automatica`). Hasta que llega, el mismo «cargando» que tras tocar el botón.
                 AIInsightCardComponents.loadingPlaceholder(accentColor: theme.accent)
                     .transition(.loadingPlaceholder)
                     .spansAllColumns()
             } else {
-                // Sin consentimiento hace falta un toque: es el que autoriza enviar el resumen al servicio de IA.
+                // Sin consentimiento hace falta un toque: es el que autoriza enviar el resumen al servicio de IA. Con él
+                // (y el techo automático del día alcanzado, o una generación que falló), el toque la pide directamente.
                 Button {
-                    showInsightsConsentAlert = true
+                    if appPreferences.aiInsightsConsentAccepted {
+                        Task { await viewModel.triggerAIGeneration() }
+                    } else {
+                        showInsightsConsentAlert = true
+                    }
                 } label: {
                     HStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "sparkles")
@@ -471,11 +480,8 @@ struct InsightsTabView: View {
             }
         }
         .spansAllColumns()
-        // Al abrir Observaciones, y cada vez que cambian el período, los filtros o los datos: si hay un resumen guardado
-        // para lo que se ve, ya está en pantalla; si no, se pide uno (`InsightsViewModel.autoGenerateIfNeeded`).
-        .task(id: viewModel.aiContextVersion) {
-            await viewModel.autoGenerateIfNeeded()
-        }
+        // Lo automático ya no cuelga de aquí: lo decide el contenedor de Estadísticas al abrirla y tras cada recálculo
+        // (`DetailContainerView`, `InsightsViewModel.autoRefreshIfNeeded`), así sale también en el hero y en Distribución.
         // Card C7: «Analizando…» → las observaciones de la IA, fundiéndose; solo esta sección.
         .animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.isLoadingAI)
     }

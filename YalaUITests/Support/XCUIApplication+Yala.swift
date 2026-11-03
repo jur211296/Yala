@@ -125,6 +125,8 @@ extension XCUIApplication {
         // UX 2.2 · L11-7 y L11-12: el consentimiento del «Resumen con IA» ya dado, y el permiso de notificaciones
         // negado para «Probar». Nombrados por lo mismo que sus vecinos.
         insightsAIConsent: Bool = false,
+        // Encargo `estadisticas-ia-automatica`: los textos con IA de Estadísticas contestan sin red.
+        statsAIReply: Bool = false,
         notificationsDenied: Bool = false,
         appleLanguages: String = "(es)",
         appleLocale: String = XCUIApplication.uiTestLocaleIdentifier,
@@ -200,6 +202,7 @@ extension XCUIApplication {
         if forceUpdate { args.append("-uitest-force-update") }
         if aiConsent { args.append("-uitest-ai-consent") }
         if insightsAIConsent { args.append("-uitest-insights-ai-consent") }
+        if statsAIReply { args.append("-uitest-stats-ai-reply") }
         if notificationsDenied { args.append("-uitest-notifications-denied") }
         if aiChatReady { args.append("-uitest-ai-chat-ready") }
         if chatConversation { args.append("-uitest-chat-conversation") }
