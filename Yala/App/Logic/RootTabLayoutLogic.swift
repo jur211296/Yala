@@ -90,6 +90,23 @@ enum RootTabLayoutLogic {
         mounted.filter { !shown.contains($0) }
     }
 
+    /// La página que la `TabView` enseña de verdad, para lo que tenga que saber si está a la vista (el «+» flotante,
+    /// `\.isRootPageShown`). Casi siempre la seleccionada. En la shell de solo grupos la selección puede quedarse en
+    /// Panel, que ahí no se monta, y la `TabView` enseña la primera montada (review del 2026-11-02, encargo
+    /// fluidez-extra): con la seleccionada a secas, Grupos se creía oculta y su «+» no salía nunca.
+    static func displayedTab(
+        selected: AppTab,
+        mounted: [ConfigurableTab],
+        showsMore: Bool,
+        showsSearch: Bool
+    ) -> AppTab {
+        if let page = selected.asConfigurable {
+            return mounted.contains(page) ? selected : (mounted.first?.appTab ?? selected)
+        }
+        if (selected == .more && showsMore) || (selected == .search && showsSearch) { return selected }
+        return mounted.first?.appTab ?? selected
+    }
+
     /// Más solo existe en la barra de pestañas: en la lateral, todo lo que ofrecía ya está a la vista.
     static func showsMoreTab(layout: Layout) -> Bool {
         layout == .tabBar

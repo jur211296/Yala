@@ -15,19 +15,22 @@
 
 | Token | Hex | Dónde se usa |
 |---|---|---|
-| `navy-900` | `#0F172A` | Arriba del degradado del post diario. Es también el fondo de la web (`--bg-primary`) |
-| `navy-950` | `#0B1122` | Abajo del degradado del post diario |
-| Degradado | `linear-gradient(180deg, #0F172A 0%, #0B1122 100%)` | Fondo de toda pieza de redes |
+| `navy-900` | `#0F172A` | Fondo liso de toda pieza de redes. Es también el fondo de la web (`--bg-primary`) |
+| `navy-950` | `#0B1122` | Solo en el degradado viejo del post diario. Las piezas nuevas no lo usan |
 
-### Brillos y acentos
+**Sin degradados, sin brillos ni glows** (regla de Jürgen del 2026-10-13: se ven hechos con IA). El fondo
+es `navy-900` liso. El render del post diario (`render-post.mjs`) todavía pinta el degradado viejo
+`#0F172A → #0B1122`: es una pieza anterior a la regla, no un modelo para las nuevas.
+
+### Acentos
 
 En redes se usan los del post diario. La web tiene otra tanda, más saturada.
 
 | Nombre | Redes (post diario) | Web | Uso |
 |---|---|---|---|
-| Rosa | `#FF2D78` | `#FF0080` | Brillo y palabra subrayada |
-| Azul / índigo | `#6164EB` | `#6366F1` | Brillo y palabra subrayada |
-| Teal / cian | `#3BD6F0` | `#00F3FF` (cian) · `#00C2CB` (teal) | Brillo y palabra subrayada |
+| Rosa | `#FF2D78` | `#FF0080` | Palabra subrayada, pill y formas planas |
+| Azul / índigo | `#6164EB` | `#6366F1` | Palabra subrayada, pill y formas planas |
+| Teal / cian | `#3BD6F0` | `#00F3FF` (cian) · `#00C2CB` (teal) | Palabra subrayada, pill y formas planas |
 | Violeta | `#8B5CF6` | — | Cuarto acento del post diario. Úsalo poco |
 
 **Decisión:** en redes manda la columna del post diario, porque es la que ya tiene publicada el feed.
@@ -49,12 +52,12 @@ La de la web no se toca desde aquí.
 2. **Pill tag** sobre el titular. Va en MAYÚSCULAS, con peso 800 y tracking de 2 px. El texto es del
    color del acento y el fondo es ese acento al 15 % (`${accent}26`). Radio de 32 px. Ejemplos:
    «NUEVO EN 2.1», «GRUPOS», «IPAD».
-3. **Brillos.** Son de dos tipos:
-   - un halo radial del acento al 30 % de opacidad, que no queda debajo del texto;
-   - destellos de cuatro puntas en los bordes, de 50 a 80 px, girados entre −15° y 18°, con su sombra del mismo color.
-
-   El trazado del destello: `M50 0 C54 36 64 46 100 50 C64 54 54 64 50 100 C46 64 36 54 0 50 C36 46 46 36 50 0 Z` (viewBox 100).
+3. **Formas planas de color sólido**, no brillos. El movimiento lo dan la barra del subrayado en grande,
+   un disco o una traza del acento, sin transparencias que hagan de halo. Nada de halo radial, destellos
+   de cuatro puntas, resplandor detrás del teléfono ni reflejo sobre su pantalla. La única sombra es negra,
+   para separar un objeto del fondo; nunca del color del acento.
 4. **Logo «yala» blanco con destello**, abajo a la izquierda: 190 px de ancho en 1080 y a 64 px del borde.
+   El destello del logo se queda porque es la marca; no se repite suelto por la pieza.
    En el encabezado de la App Store no se repite el ícono, porque la ficha ya lo pone debajo.
 
 ## Logo e ícono (fuentes, no copias)
