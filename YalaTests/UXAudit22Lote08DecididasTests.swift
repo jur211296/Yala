@@ -354,22 +354,24 @@ struct RecordPendingDeletionTests {
         try context.save()
 
         let pending = RecordPendingDeletion.shared
-        let savedDelay = pending.commitDelayForBatch
-        pending.commitDelayForBatch = .milliseconds(60)
-        defer { pending.commitDelayForBatch = savedDelay }
+        let timer = manualRecordTimer(pending)
+        defer { restoreRecordTimer(pending) }
 
         var committed: [String] = []
         pending.request(id: first.persistentModelID, transferPairID: nil, name: "Uber") { committed.append("Uber") }
         pending.request(id: second.persistentModelID, transferPairID: nil, name: "Café") { committed.append("Café") }
+        // Un solo plazo vivo: el del segundo sustituye al del primero.
+        #expect(await timer.settle { timer.requestedDelays.count == 2 && timer.pendingCount == 1 })
         #expect(committed.isEmpty)
-        try await Task.sleep(for: .milliseconds(300))
+        timer.fireAll()
+        #expect(await timer.settle { committed.count == 2 })
         #expect(committed.sorted() == ["Café", "Uber"])
         #expect(!pending.hides(first.persistentModelID, transferPairID: nil))
         #expect(!pending.hides(second.persistentModelID, transferPairID: nil))
     }
 
     /// El plazo es UNO y lo marca el último borrado: el primero no se borra a su hora, espera al segundo. Con un plazo por
-    /// registro (el molde viejo) el primero se borraba a los 200 ms aunque su aviso ya no estuviera.
+    /// registro (el molde viejo) quedaban dos plazos vivos y el primero se borraba al vencer el suyo, sin aviso ya.
     @Test func secondDeletion_extendsTheFirstOnesDeadline() async throws {
         let context = try makeTestContext()
         let account = makeTestAccount(context: context, name: "Diaria")
@@ -380,19 +382,21 @@ struct RecordPendingDeletionTests {
         try context.save()
 
         let pending = RecordPendingDeletion.shared
-        let savedDelay = pending.commitDelayForBatch
+        let timer = manualRecordTimer(pending)
+        defer { restoreRecordTimer(pending) }
         pending.commitDelayForBatch = .milliseconds(200)
-        defer { pending.commitDelayForBatch = savedDelay }
 
         var committed: [String] = []
         pending.request(id: first.persistentModelID, transferPairID: nil, name: "Uber") { committed.append("Uber") }
-        try await Task.sleep(for: .milliseconds(120))
+        #expect(await timer.settle { timer.requestedDelays.count == 1 && timer.pendingCount == 1 })
         pending.request(id: second.persistentModelID, transferPairID: nil, name: "Café") { committed.append("Café") }
-        try await Task.sleep(for: .milliseconds(140))
-        // A 260 ms del primero: su plazo propio ya habría vencido, el compartido (320 ms) no.
+        // El plazo del primero se canceló y el nuevo cuenta entero desde el segundo borrado.
+        #expect(await timer.settle { timer.requestedDelays.count == 2 && timer.pendingCount == 1 })
+        #expect(timer.requestedDelays == [.milliseconds(200), .milliseconds(200)])
         #expect(committed.isEmpty)
         #expect(pending.hides(first.persistentModelID, transferPairID: nil))
-        try await Task.sleep(for: .milliseconds(250))
+        timer.fireAll()
+        #expect(await timer.settle { committed.count == 2 })
         #expect(committed.sorted() == ["Café", "Uber"])
     }
 
@@ -405,15 +409,27 @@ struct RecordPendingDeletionTests {
         try context.save()
 
         let pending = RecordPendingDeletion.shared
-        let savedDelay = pending.commitDelayForBatch
-        pending.commitDelayForBatch = .milliseconds(60)
-        defer { pending.commitDelayForBatch = savedDelay }
+        let timer = manualRecordTimer(pending)
+        defer { restoreRecordTimer(pending) }
 
         pending.request(id: record.persistentModelID, transferPairID: nil, name: "Uber") { /* el borrado no se hace */ }
         let afterRequest = SessionState.shared.dataVersion
-        try await Task.sleep(for: .milliseconds(250))
-        #expect(!pending.hides(record.persistentModelID, transferPairID: nil))
+        #expect(await timer.settle { timer.requestedDelays.count == 1 && timer.pendingCount == 1 })
+        timer.fireAll()
+        #expect(await timer.settle { !pending.hides(record.persistentModelID, transferPairID: nil) })
         #expect(SessionState.shared.dataVersion != afterRequest)
+    }
+
+    /// El plazo lo dispara el test (`ManualBatchTimer`): ningún caso depende de cuánto tarde el hilo principal.
+    private func manualRecordTimer(_ pending: RecordPendingDeletion) -> ManualBatchTimer {
+        let timer = ManualBatchTimer()
+        pending.batchSleep = { try await timer.sleep($0) }
+        return timer
+    }
+
+    private func restoreRecordTimer(_ pending: RecordPendingDeletion) {
+        pending.commitDelayForBatch = RecordPendingDeletion.commitDelay
+        pending.batchSleep = { try await Task.sleep(for: $0) }
     }
 
     /// «Deshacer» rehace la foto de los widgets, que pudo escribirse sin el registro mientras esperaba.

@@ -4,8 +4,8 @@
 //
 //  Avisos de errores y caídas en Sentry (proyecto `yala-ios`).
 //
-//  El DSN llega de `Secrets.xcconfig` → `Info.plist` (`SENTRY_DSN`). Sin DSN, en unit tests y en XCUITest el SDK no
-//  arranca y la app se comporta exactamente igual que antes. Lo que sale pasa por `ErrorReportScrubLogic`: sin datos
+//  El DSN llega de `Secrets.xcconfig` → `Info.plist` (`SENTRY_DSN`). Sin DSN, en unit tests, en XCUITest y en las
+//  previews de Xcode el SDK no arranca y la app se comporta exactamente igual que antes. Lo que sale pasa por `ErrorReportScrubLogic`: sin datos
 //  del usuario, sin cuerpos ni queries de red, sin capturas de pantalla ni grabación de sesión.
 //
 
@@ -16,7 +16,11 @@ nonisolated enum ErrorReportingService {
 
     /// Arranca el SDK. Va lo primero de `didFinishLaunching` para que una caída del arranque también avise.
     static func start() {
-        guard !SwiftDataConfiguration.isRunningTests, !UITestHooks.isActive else { return }
+        guard shouldStart(
+            isRunningTests: SwiftDataConfiguration.isRunningTests,
+            isUITest: UITestHooks.isActive,
+            environment: ProcessInfo.processInfo.environment
+        ) else { return }
         guard let dsn = ErrorReportScrubLogic.usableDSN(
             Bundle.main.object(forInfoDictionaryKey: "SENTRY_DSN") as? String
         ) else { return }
@@ -48,6 +52,14 @@ nonisolated enum ErrorReportingService {
         // `-sentry-test-error`: manda el error de prueba al arrancar, para comprobarlo sin navegar hasta el botón.
         if ProcessInfo.processInfo.arguments.contains("-sentry-test-error") { _ = sendTestError() }
         #endif
+    }
+
+    /// Ni en unit tests, ni en XCUITest, ni dentro de una preview de Xcode. Una preview corre la app de desarrollo en el
+    /// simulador, y sus caídas —las de un fixture a medio escribir— llegaban a Sentry como caídas de la app
+    /// (YALA-IOS-3 y YALA-IOS-4, 2026-11-02: doce arranques en dos minutos de las previews de «Tu parte»).
+    static func shouldStart(isRunningTests: Bool, isUITest: Bool, environment: [String: String]) -> Bool {
+        guard !isRunningTests, !isUITest else { return false }
+        return environment["XCODE_RUNNING_FOR_PREVIEWS"] != "1"
     }
 
     /// Error de prueba (Ajustes › Almacenamiento › panel de Modo Nube, o `-sentry-test-error`; solo DEV_BUILD). El mensaje lleva un correo y un importe FALSOS: en
