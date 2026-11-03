@@ -54,3 +54,10 @@ Termina con /cerrar-total.
 - **Qué entra:** desde 2.2 (5) (#701) se mergearon #702–#747; #747 (fluidez-animaciones-apagadas) ya está en `origin/2.2`. #748 (fluidez-hapticos-yala-ia) está en cola de auto-merge con `tests` en curso: se espera hasta 45 min antes de archivar; si no entra, se sube sin él y se anota.
 - **Gate:** el diff compilable es solo `project.pbxproj`. Gate como en los builds anteriores: archive `Yala` Release + build `Yala Dev` + `validate-coverage` + banco de versiones. Sin simulador.
 - Es de noche y el encargo es autónomo: nada aquí es decisión de producto.
+
+## Resultado (2026-11-02 20:10 Lima)
+
+- **Yala 2.2 (6)** subido desde `761d5f932` (merge de #748) + bump 5 → 6. App, share y widgets en 2.2 (6). Firma de producción en el `.ipa` (`aps-environment` production, `appattest` production, `get-task-allow` false). Preflight OK.
+- Upload `1f9c8d8d…` → build `VALID`, `internalBuildState: IN_BETA_TESTING`. Asignado a la versión 2.2 de App Store, que sigue en `PREPARE_FOR_SUBMISSION`. Sin revisión, sin grupos, sin tocar textos ni capturas.
+- **Dentro:** todo lo mergeado a `2.2` desde 2.2 (5): #702–#748, incluidos #747 (fluidez-animaciones-apagadas) y #748 (fluidez-hapticos-yala-ia, mergeado a las 19:37 tras ~35 min de espera). Nada de lo pedido quedó fuera.
+- **Gate:** archive `Yala` Release ✓, build `Yala Dev` ✓, `validate-coverage` ✓, banco de versiones (8 casos) ✓. Sin simulador.
