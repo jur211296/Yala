@@ -49,9 +49,15 @@ Desde el rediseño 2.2 (S35f, `docs/widgets/AUDITORIA-WIDGETS-2-2.md`). Lo que e
 - **Una tarta con leyenda agrupa con `WidgetInsightsLogic.pieLegend`** (hasta 5 filas; con más, 4 y «Otros») y el aro
   pinta las MISMAS filas: si el aro lee los trozos sueltos y la leyenda los agrupados, no dicen lo mismo. **Lo que los
   trozos no cubren del total del centro también va a «Otros»**: las subcategorías de la foto solo cuentan lo que tiene
-  subcategoría, y sin eso cinco filas sumaban el 95 % del centro y ningún arco medía su porcentaje (review de S35f2). Si
-  los trozos suman MÁS que el total (una devolución resta del total y no de su trozo), el aro normaliza y los porcentajes
-  pasan del 100: es de la foto, card `widget-category-percentages-use-the-signed-total`. Una fila que no
+  subcategoría, y sin eso cinco filas sumaban el 95 % del centro y ningún arco medía su porcentaje (review de S35f2). **El
+  total de una tarta de categorías es el del desglose, no el gasto con signo (card znu5, 2026-11-03)**: cada trozo es el
+  neto de su categoría (`WidgetInsightsLogic.netExpenseSlices`, como la tarta de Estadísticas: la devolución resta de su
+  trozo), y centro, «Otros» y porcentajes se miden contra la suma de TODOS los trozos (`expenseBreakdownTotal` de la
+  foto, que la extensión lee con `breakdownTotal`). Antes un gasto de 100 y su devolución de 30 daban un trozo de 130
+  contra un centro de 70. Las subcategorías tienen SU total (`expenseSubcategoryBreakdownTotal`, leído con
+  `subcategoryBreakdownTotal`): sus filas más el neto de lo que no tiene subcategoría, por categoría. Con el de categorías,
+  un gasto de 100 en Restaurante y una devolución de 80 en Comida sin subcategoría daban una fila del 500 %. Una cifra
+  nueva de una tarta lee el total de su desglose; el «Gastado» de un widget sigue siendo `totalExpense`. Una fila que no
   sale de un hex de la foto lleva su color en `WidgetBreakdownItem.fixedColor`: con el hex vacío, `WidgetColors.fill`
   devuelve el índigo de marca (así salió «Otros» índigo en el aro y gris en la leyenda, lo cazó el banco).
 - **Una acción nueva del Centro de Control** escribe su valor en `pendingControlAction` (`Yala/Shared/ControlCenterIntents.swift`)

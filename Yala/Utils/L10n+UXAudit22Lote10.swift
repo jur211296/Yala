@@ -75,6 +75,35 @@ extension L10n {
         static var actionReceived: String { l10("scheduled.l10.action.received") }
         static var actionSkipMonth: String { l10("scheduled.l10.action.skipMonth") }
         static var actionSkipHelp: String { l10("scheduled.l10.action.skipHelp") }
+        // Con el mes en curso ya pagado, las acciones dicen a qué mes (o fecha) apuntan (card 3zva).
+        /// «Próximo: diciembre de 2026» / «Próximo: 1 de diciembre»
+        static func nextHeader(_ when: String) -> String { String(format: l10("scheduled.l10.next.header"), when) }
+        /// «Ya pagué diciembre»
+        static func actionPaidMonth(_ month: String) -> String { String(format: l10("scheduled.l10.action.paidMonth"), month) }
+        /// «Ya recibí diciembre»
+        static func actionReceivedMonth(_ month: String) -> String {
+            String(format: l10("scheduled.l10.action.receivedMonth"), month)
+        }
+        /// «Saltar diciembre»
+        static func actionSkipNamedMonth(_ month: String) -> String {
+            String(format: l10("scheduled.l10.action.skipNamedMonth"), month)
+        }
+        /// «No se apunta nada en diciembre; los demás meses siguen igual»
+        static func actionSkipHelpMonth(_ month: String) -> String {
+            String(format: l10("scheduled.l10.action.skipHelpMonth"), month)
+        }
+        /// «Ya pagué el del 1 dic»
+        static func actionPaidDate(_ date: String) -> String { String(format: l10("scheduled.l10.action.paidDate"), date) }
+        /// «Ya recibí el del 1 dic»
+        static func actionReceivedDate(_ date: String) -> String {
+            String(format: l10("scheduled.l10.action.receivedDate"), date)
+        }
+        /// «Saltar el del 1 dic»
+        static func actionSkipDate(_ date: String) -> String { String(format: l10("scheduled.l10.action.skipDate"), date) }
+        /// «No se apunta nada el 1 de diciembre; las demás fechas siguen igual»
+        static func actionSkipHelpDate(_ date: String) -> String {
+            String(format: l10("scheduled.l10.action.skipHelpDate"), date)
+        }
         static var actionPause: String { l10("scheduled.l10.action.pause") }
         static var actionResume: String { l10("scheduled.l10.action.resume") }
         static var actionPauseHelp: String { l10("scheduled.l10.action.pauseHelp") }

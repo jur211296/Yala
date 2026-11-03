@@ -7232,6 +7232,15 @@
 "scheduled.l10.action.received" = "我已收到";
 "scheduled.l10.action.skipMonth" = "跳过本月";
 "scheduled.l10.action.skipHelp" = "不会记录任何内容，其他月份保持不变";
+"scheduled.l10.next.header" = "下一次：%@";
+"scheduled.l10.action.paidMonth" = "已支付 %@";
+"scheduled.l10.action.receivedMonth" = "已收到 %@";
+"scheduled.l10.action.skipNamedMonth" = "跳过 %@";
+"scheduled.l10.action.skipHelpMonth" = "%@ 不会记录任何内容，其他月份保持不变";
+"scheduled.l10.action.paidDate" = "已支付 %@ 的这笔";
+"scheduled.l10.action.receivedDate" = "已收到 %@ 的这笔";
+"scheduled.l10.action.skipDate" = "跳过 %@ 的这笔";
+"scheduled.l10.action.skipHelpDate" = "%@ 不会记录任何内容，其他日期保持不变";
 "scheduled.l10.action.pause" = "暂停此付款";
 "scheduled.l10.action.resume" = "恢复";
 "scheduled.l10.action.pauseHelp" = "恢复之前不会提醒你，也不会计入";

@@ -418,10 +418,78 @@ struct WidgetInsightsLogicTests {
     }
 
     /// Lo que la app redondea no es gasto sin trozo: no sale un «Otros» de céntimos. Y si los trozos suman MÁS que el
-    /// centro (una devolución resta del total y no del trozo), no se inventa un resto negativo.
+    /// centro (una foto de antes de la card znu5, en la que la devolución restaba del total y no del trozo), no se inventa
+    /// un resto negativo.
     @Test func laTartaNoInventaRestosDeRedondeoNiNegativos() {
         let slices = [Slice(id: "a", amount: 600, percentage: 60), Slice(id: "b", amount: 399.6, percentage: 40)]
         #expect(Self.legend(slices, total: 1_000).others == nil)
         #expect(Self.legend(slices, total: 900).others == nil)
+    }
+
+    // MARK: - Desglose del gasto (card znu5)
+
+    /// Un gasto de 100 en Comida y su devolución de 30: el trozo es 70, no 130. Es lo que hace la tarta de Estadísticas.
+    @Test func elTrozoDeUnaCategoriaConDevolucionEsSuNeto() {
+        let slices = WidgetInsightsLogic.netExpenseSlices([
+            (key: "comida", expense: 100), (key: "transporte", expense: 50), (key: "comida", expense: -30),
+        ])
+        #expect(slices.map(\.key) == ["comida", "transporte"])
+        #expect(slices.map(\.amount) == [70, 50])
+    }
+
+    /// Los porcentajes de los trozos suman 100 % y el total del desglose (el centro de la tarta) es la suma de las filas:
+    /// la tarta y su leyenda no dejan nada en «Otros».
+    @Test func conUnaDevolucionLosPorcentajesSuman100YElCentroEsLaSumaDeLasFilas() {
+        let slices = WidgetInsightsLogic.netExpenseSlices([
+            (key: "comida", expense: 100), (key: "comida", expense: -30), (key: "transporte", expense: 50),
+            (key: "sin", expense: 20),
+        ])
+        let total = WidgetInsightsLogic.breakdownTotal(slices.map(\.amount))
+        #expect(total == 140)  // 100 − 30 + 50 + 20: el gasto del período
+        let percentages = slices.map { WidgetInsightsLogic.breakdownPercentage($0.amount, of: total) }
+        #expect(abs(percentages.reduce(0, +) - 100) < 1e-9)
+        #expect(percentages.allSatisfy { $0 <= 100 })
+
+        let rows = slices.map { Slice(id: $0.key, amount: $0.amount, percentage: WidgetInsightsLogic.breakdownPercentage($0.amount, of: total)) }
+        let legend = Self.legend(rows, total: total)
+        #expect(legend.others == nil)
+        #expect(legend.shown.reduce(0) { $0 + $1.amount } == total)
+    }
+
+    /// Una categoría a favor (le devolvieron más de lo que se gastó en ella) cuenta su magnitud, como en Estadísticas, y
+    /// los porcentajes siguen sumando 100 % porque se miden contra la suma de los trozos, no contra el gasto con signo.
+    @Test func unaCategoriaAFavorCuentaSuMagnitudYLosPorcentajesSiguenSumando100() {
+        let slices = WidgetInsightsLogic.netExpenseSlices([
+            (key: "comida", expense: 10), (key: "comida", expense: -30), (key: "transporte", expense: 50),
+        ])
+        #expect(slices.map(\.key) == ["transporte", "comida"])
+        #expect(slices.map(\.amount) == [50, 20])
+        let total = WidgetInsightsLogic.breakdownTotal(slices.map(\.amount))
+        #expect(total == 70)
+        let sum = slices.map { WidgetInsightsLogic.breakdownPercentage($0.amount, of: total) }.reduce(0, +)
+        #expect(abs(sum - 100) < 1e-9)
+    }
+
+    /// Un gasto y su devolución entera no dejan un trozo de cero en la leyenda; un neto de redondeo, tampoco.
+    @Test func unNetoDeCeroNoEsUnTrozo() {
+        let slices = WidgetInsightsLogic.netExpenseSlices([
+            (key: "comida", expense: 30), (key: "comida", expense: -30), (key: "cine", expense: 12.004),
+            (key: "cine", expense: -12), (key: "taxi", expense: 8),
+        ])
+        #expect(slices.map(\.key) == ["taxi"])
+    }
+
+    /// A igual importe, el orden en que aparecen: el widget no baila entre dos recargas de la misma foto.
+    @Test func aIgualImporteVaPrimeroElQueAparecioAntes() {
+        let slices = WidgetInsightsLogic.netExpenseSlices([
+            (key: "b", expense: 40), (key: "a", expense: 40), (key: "c", expense: 90),
+        ])
+        #expect(slices.map(\.key) == ["c", "b", "a"])
+    }
+
+    /// Sin total no hay porcentaje (y no hay división por cero).
+    @Test func sinTotalElPorcentajeEsCero() {
+        #expect(WidgetInsightsLogic.breakdownPercentage(30, of: 0) == 0)
+        #expect(WidgetInsightsLogic.breakdownTotal([]) == 0)
     }
 }

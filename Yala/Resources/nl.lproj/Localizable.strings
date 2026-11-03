@@ -7232,6 +7232,15 @@
 "scheduled.l10.action.received" = "Al ontvangen";
 "scheduled.l10.action.skipMonth" = "Deze maand overslaan";
 "scheduled.l10.action.skipHelp" = "Er wordt niets vastgelegd; de andere maanden blijven hetzelfde";
+"scheduled.l10.next.header" = "Volgende: %@";
+"scheduled.l10.action.paidMonth" = "%@ al betaald";
+"scheduled.l10.action.receivedMonth" = "%@ al ontvangen";
+"scheduled.l10.action.skipNamedMonth" = "%@ overslaan";
+"scheduled.l10.action.skipHelpMonth" = "Voor %@ wordt niets vastgelegd; de andere maanden blijven hetzelfde";
+"scheduled.l10.action.paidDate" = "Die van %@ al betaald";
+"scheduled.l10.action.receivedDate" = "Die van %@ al ontvangen";
+"scheduled.l10.action.skipDate" = "Die van %@ overslaan";
+"scheduled.l10.action.skipHelpDate" = "Op %@ wordt niets vastgelegd; de andere datums blijven hetzelfde";
 "scheduled.l10.action.pause" = "Deze betaling pauzeren";
 "scheduled.l10.action.resume" = "Hervatten";
 "scheduled.l10.action.pauseHelp" = "We herinneren je er niet aan en tellen het niet mee tot je het hervat";

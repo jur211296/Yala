@@ -240,6 +240,50 @@ nonisolated enum WidgetInsightsLogic {
         }
     }
 
+    // MARK: - Desglose del gasto
+
+    /// Los trozos de un desglose de gasto por categoría o subcategoría: lo gastado en NETO por clave, como la tarta de
+    /// Estadísticas (`TopSpendingCategoriesCalculator`), donde una devolución resta de su categoría. Cada `expense` es lo
+    /// que el movimiento aporta al gasto: positivo si gasta, negativo si es una devolución. El trozo es la magnitud del
+    /// neto, y uno que queda en cero no sale. Van de mayor a menor y, a igual importe, en el orden en que aparecen.
+    ///
+    /// Hasta la card znu5 (2026-11-03) cada trozo sumaba la magnitud de cada movimiento: un gasto de 100 y su devolución
+    /// de 30 daban un trozo de 130 contra un total de 70. Los porcentajes pasaban del 100 % y el centro de la tarta era
+    /// menor que la suma de sus filas.
+    static func netExpenseSlices<Key: Hashable>(_ contributions: [(key: Key, expense: Double)]) -> [(key: Key, amount: Double)] {
+        var order: [Key] = []
+        var net: [Key: Double] = [:]
+        for contribution in contributions {
+            if net[contribution.key] == nil { order.append(contribution.key) }
+            net[contribution.key, default: 0] += contribution.expense
+        }
+        var slices: [(index: Int, key: Key, amount: Double)] = []
+        for (index, key) in order.enumerated() {
+            let amount = abs(net[key] ?? 0)
+            if amount >= breakdownNoiseFloor { slices.append((index: index, key: key, amount: amount)) }
+        }
+        slices.sort { lhs, rhs in
+            lhs.amount != rhs.amount ? lhs.amount > rhs.amount : lhs.index < rhs.index
+        }
+        return slices.map { (key: $0.key, amount: $0.amount) }
+    }
+
+    /// Por debajo de medio céntimo, un neto es el redondeo de un gasto y su devolución, no un trozo.
+    static let breakdownNoiseFloor = 0.005
+
+    /// El total de un desglose: la suma de TODOS sus trozos, también los que no caben en el widget. Es la cifra del centro
+    /// de la tarta y el denominador de cada porcentaje, así que los porcentajes suman 100 % y el centro coincide con las
+    /// filas. Es el gasto del período salvo que una categoría quede a favor (le devolvieron más de lo que se gastó en
+    /// ella): entonces su trozo cuenta su magnitud, como en Estadísticas.
+    static func breakdownTotal(_ amounts: [Double]) -> Double {
+        amounts.reduce(0, +)
+    }
+
+    /// El porcentaje de un trozo sobre el total del desglose; 0 sin total.
+    static func breakdownPercentage(_ amount: Double, of total: Double) -> Double {
+        total > 0 ? amount / total * 100 : 0
+    }
+
     // MARK: - Reparto en tarta
 
     /// Lo que suma la fila «Otros» de una leyenda: importe, porcentaje del total y cuántos trozos junta.
@@ -259,7 +303,7 @@ nonisolated enum WidgetInsightsLogic {
     /// la tarta del Panel. El aro se agrupa igual, así que aro y leyenda dicen lo mismo. Los trozos llegan ordenados de
     /// mayor a menor (así los escribe la app) y aquí no se reordenan; el «Sin categoría» es uno más.
     ///
-    /// `total` es la cifra que el widget enseña en el centro (el gasto del período). Lo que los trozos no cubren va
+    /// `total` es la cifra que el widget enseña en el centro (el total del desglose, `breakdownTotal`). Lo que los trozos no cubren va
     /// también a «Otros»: en Subcategorías, el gasto sin subcategoría; en Categorías, lo que pasa del tope de filas que
     /// escribe la app. Sin eso el aro repartía el círculo entre una parte del total y sus arcos no medían su porcentaje
     /// (lo cazó la review de S35f2: cinco filas que sumaban el 95 % del centro). El porcentaje de «Otros» se mide contra

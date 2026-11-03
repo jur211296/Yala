@@ -13,6 +13,9 @@
 //  - L10-10 B: «Saltar este mes» explica qué hace, y tras saltar un aviso deja deshacerlo; el inverso es «No saltar».
 //  - L10-11 B: «Pagar ahora» dice qué fecha paga y vuelve aquí al guardar.
 //  - L10-12 B: «Ver registro» abre el detalle del registro, con su «Editar».
+//  - Card 3zva (2026-11-03): con el mes en curso ya pagado, las acciones son de la próxima fecha y lo dicen: un
+//    encabezado «Próximo: diciembre de 2026» sobre los botones, que nombran el mes («Ya pagué diciembre», «Saltar
+//    diciembre») o, si ese mes tiene varias fechas, la fecha.
 //
 
 import SwiftData
@@ -197,12 +200,23 @@ struct ScheduledPaymentDetailView: View {
 
     /// El mes en curso ya está hecho: todas sus fechas pagadas o saltadas, y la próxima cae más adelante.
     private var currentMonthSettled: Bool {
-        guard payment.isRecurring, payment.isActive else { return false }
-        let calendar = Calendar.current
-        let dates = viewModel.getPaymentDatesInMonth(payment: payment, month: .now)
-        guard !dates.isEmpty, !calendar.isDate(nextDate, equalTo: .now, toGranularity: .month) else { return false }
         let linked = linkedByOccurrence
-        return dates.allSatisfy { linked[$0] != nil || payment.isDateSkipped($0) }
+        return ScheduledPaymentDetailLogic.currentMonthSettled(
+            isRecurring: payment.isRecurring,
+            isActive: payment.isActive,
+            datesThisMonth: viewModel.getPaymentDatesInMonth(payment: payment, month: .now),
+            nextDate: nextDate,
+            now: .now
+        ) { linked[$0] != nil || payment.isDateSkipped($0) }
+    }
+
+    /// A qué fecha apuntan «Ya lo pagué» y «Saltar»: con el mes en curso hecho, a la próxima, y lo dicen (card 3zva).
+    private func actionTarget(for date: Date) -> ScheduledPaymentDetailLogic.ActionTarget {
+        ScheduledPaymentDetailLogic.actionTarget(
+            currentMonthSettled: currentMonthSettled,
+            nextDate: date,
+            datesInNextDateMonth: viewModel.getPaymentDatesInMonth(payment: payment, month: date).count
+        )
     }
 
     private var statusCard: some View {
@@ -260,26 +274,96 @@ struct ScheduledPaymentDetailView: View {
                 refreshPaymentData()
             }
         } else if case .date(let state, let date) = status, state != .paid, state != .skipped {
+            let target = actionTarget(for: date)
             VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                HStack(spacing: DS.Spacing.md) {
-                    filledButton(
-                        payment.isIncome ? L10n.UXL10.actionReceived : L10n.UXL10.actionPaid,
-                        identifier: "scheduled_detail_paid_button"
-                    ) {
-                        paidSheetDate = OccurrenceTarget(date: date)
-                    }
-                    if payment.isRecurring {
-                        glassButton(L10n.UXL10.actionSkipMonth, identifier: "scheduled_detail_skip_button") {
-                            skip(date)
-                        }
+                if target != .current {
+                    nextTargetHeader(target)
+                }
+                if target == .current {
+                    HStack(spacing: DS.Spacing.md) { actionButtonPair(date: date, target: target) }
+                } else {
+                    // Con el mes o la fecha en el texto, los dos botones pueden no caber en una fila: entonces van uno
+                    // debajo del otro. Con el mes en curso sin hacer, la fila de siempre.
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: DS.Spacing.md) { actionButtonPair(date: date, target: target) }
+                        VStack(spacing: DS.Spacing.sm) { actionButtonPair(date: date, target: target) }
                     }
                 }
                 if payment.isRecurring {
-                    Text(L10n.UXL10.actionSkipHelp)
+                    Text(skipHelp(target))
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func actionButtonPair(date: Date, target: ScheduledPaymentDetailLogic.ActionTarget) -> some View {
+        filledButton(paidTitle(target), identifier: "scheduled_detail_paid_button") {
+            paidSheetDate = OccurrenceTarget(date: date)
+        }
+        if payment.isRecurring {
+            glassButton(skipTitle(target), identifier: "scheduled_detail_skip_button") {
+                skip(date)
+            }
+        }
+    }
+
+    /// El encabezado de las acciones cuando no son del mes en curso: una línea que separa lo hecho de lo que toca y el
+    /// mes en titular, con más peso que la ayuda gris de debajo (Jürgen pidió que se viera, no solo que se leyera).
+    private func nextTargetHeader(_ target: ScheduledPaymentDetailLogic.ActionTarget) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            Divider()
+            Label {
+                Text(nextHeaderText(target))
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.primary)
+            } icon: {
+                Image(systemName: "calendar")
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(theme.accentText)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("scheduled_detail_next_target")
+        }
+        .padding(.bottom, DS.Spacing.xs)
+    }
+
+    private func nextHeaderText(_ target: ScheduledPaymentDetailLogic.ActionTarget) -> String {
+        switch target {
+        case .current: return ""
+        case .nextMonth(let date): return L10n.UXL10.nextHeader(ScheduledPaymentDateText.monthYearInline(date))
+        case .nextDate(let date): return L10n.UXL10.nextHeader(ScheduledPaymentDateText.dayMonthLong(date))
+        }
+    }
+
+    private func paidTitle(_ target: ScheduledPaymentDetailLogic.ActionTarget) -> String {
+        switch target {
+        case .current:
+            return payment.isIncome ? L10n.UXL10.actionReceived : L10n.UXL10.actionPaid
+        case .nextMonth(let date):
+            let month = ScheduledPaymentDateText.monthName(date)
+            return payment.isIncome ? L10n.UXL10.actionReceivedMonth(month) : L10n.UXL10.actionPaidMonth(month)
+        case .nextDate(let date):
+            let day = ScheduledPaymentDateText.dayMonth(date)
+            return payment.isIncome ? L10n.UXL10.actionReceivedDate(day) : L10n.UXL10.actionPaidDate(day)
+        }
+    }
+
+    private func skipTitle(_ target: ScheduledPaymentDetailLogic.ActionTarget) -> String {
+        switch target {
+        case .current: return L10n.UXL10.actionSkipMonth
+        case .nextMonth(let date): return L10n.UXL10.actionSkipNamedMonth(ScheduledPaymentDateText.monthName(date))
+        case .nextDate(let date): return L10n.UXL10.actionSkipDate(ScheduledPaymentDateText.dayMonth(date))
+        }
+    }
+
+    private func skipHelp(_ target: ScheduledPaymentDetailLogic.ActionTarget) -> String {
+        switch target {
+        case .current: return L10n.UXL10.actionSkipHelp
+        case .nextMonth(let date): return L10n.UXL10.actionSkipHelpMonth(ScheduledPaymentDateText.monthName(date))
+        case .nextDate(let date): return L10n.UXL10.actionSkipHelpDate(ScheduledPaymentDateText.dayMonthLong(date))
         }
     }
 
@@ -290,6 +374,9 @@ struct ScheduledPaymentDetailView: View {
                 .foregroundStyle(.thOnAccent)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
+                // Aire a los lados: con el mes en el texto, el botón no llega al borde de la cápsula y, si no cabe,
+                // la pareja se apila (card 3zva).
+                .padding(.horizontal, DS.Spacing.md)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, DS.Spacing.md)
                 .background(Capsule().fill(theme.accent))
@@ -306,6 +393,9 @@ struct ScheduledPaymentDetailView: View {
                 .foregroundStyle(.primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
+                // Aire a los lados: con el mes en el texto, el botón no llega al borde de la cápsula y, si no cabe,
+                // la pareja se apila (card 3zva).
+                .padding(.horizontal, DS.Spacing.md)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, DS.Spacing.md)
                 .glassEffect(.regular.interactive(), in: Capsule())

@@ -7232,6 +7232,15 @@
 "scheduled.l10.action.received" = "受け取った";
 "scheduled.l10.action.skipMonth" = "今月はスキップ";
 "scheduled.l10.action.skipHelp" = "何も記録されず、他の月はそのままです";
+"scheduled.l10.next.header" = "次回：%@";
+"scheduled.l10.action.paidMonth" = "%@分を支払った";
+"scheduled.l10.action.receivedMonth" = "%@分を受け取った";
+"scheduled.l10.action.skipNamedMonth" = "%@をスキップ";
+"scheduled.l10.action.skipHelpMonth" = "%@は何も記録されず、他の月はそのままです";
+"scheduled.l10.action.paidDate" = "%@の分を支払った";
+"scheduled.l10.action.receivedDate" = "%@の分を受け取った";
+"scheduled.l10.action.skipDate" = "%@の分をスキップ";
+"scheduled.l10.action.skipHelpDate" = "%@は何も記録されず、他の日付はそのままです";
 "scheduled.l10.action.pause" = "この支払いを一時停止";
 "scheduled.l10.action.resume" = "再開";
 "scheduled.l10.action.pauseHelp" = "再開するまで通知も集計もしません";
