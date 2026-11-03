@@ -29,6 +29,8 @@ struct GroupsContainerView: View {
     @State private var viewModel = GroupsViewModel()
     /// El «+» flotante, solo cuando el scroll se lleva los botones de arriba (card kzhe).
     @State private var showFloatingActions = false
+    /// La primera carga llegó en el `onAppear` de la pestaña, sin que el indicador se pintara: no se funde (card hsqm).
+    @State private var firstLoadArrivedOnAppear = false
     @State private var isPresentingSettings = false
     @State private var isPresentingGroupsSettings = false
     @Environment(AppPreferences.self) private var appPreferences
@@ -257,7 +259,7 @@ struct GroupsContainerView: View {
             // anima dentro de una pestaña (card 8atf).
             .animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.normal), value: showFloatingActions)
             // La primera carga: del spinner a la lista (o al vacío) fundiéndose, no de golpe (card C7).
-            .animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.hasLoadedOnce)
+            .animation(reduceMotion || firstLoadArrivedOnAppear ? nil : DS.Animation.appear, value: viewModel.hasLoadedOnce)
             .safeAreaInset(edge: .top) { joinIntentBanner }
             .safeAreaInset(edge: .top) { groupsSignOutReentryBanner }
             // El último `safeAreaInset` queda el MÁS ARRIBA, y ahí va: de los tres avisos del tab, este es el
@@ -344,7 +346,17 @@ struct GroupsContainerView: View {
             }
             .appliesPendingRemoteChanges(sessionState)
             .onAppear {
+                // Si la primera carga entra en este mismo `onAppear`, no se funde (card hsqm, 2026-11-02): el indicador no
+                // llegó a pintarse, y con la animación de C7 el aviso de cristal del neto («En tu moneda principal…»)
+                // salía vacío ~0,15 s la primera vez que se entraba tras abrir la app. Solo esa animación: una
+                // transacción sin animaciones viajaba a los `onChange` que presentan la hoja de invitar o empujan el
+                // grupo pendiente (review del 2026-11-02). La carga tardía sigue fundiéndose.
+                let hadLoaded = viewModel.hasLoadedOnce
                 viewModel.setContext(modelContext)
+                if GroupsFirstLoadLogic.arrivedWithoutWaiting(
+                    hadLoadedBefore: hadLoaded, hasLoadedNow: viewModel.hasLoadedOnce) {
+                    firstLoadArrivedOnAppear = true
+                }
                 evaluateNudge()
                 evaluateGroupsOnboarding()
                 // D2 (§3.3.3): lee el marker en la primera aparición del tab. NO re-lee si el banner ya
@@ -1307,5 +1319,15 @@ private struct WelcomeCreatedGroupInviteObserver: ViewModifier {
         content
             .onChange(of: navigation.pendingCreatedGroupInviteID, initial: true) { _, _ in onChange() }
             .onChange(of: navigation.isWelcomeGroupFormOpen) { _, _ in onChange() }
+    }
+}
+
+/// La primera carga de la lista de Grupos, la que entra en el `onAppear` de la pestaña (card hsqm, 2026-11-02).
+enum GroupsFirstLoadLogic {
+    /// La lista llegó en el mismo `onAppear` que la monta: el indicador de carga no llegó a pintarse, así que no hay nada
+    /// que fundir y la lista tiene que salir entera desde el primer fotograma. Una carga que llega después (el arranque
+    /// aún no había configurado el contexto, C7) sí se funde.
+    static func arrivedWithoutWaiting(hadLoadedBefore: Bool, hasLoadedNow: Bool) -> Bool {
+        !hadLoadedBefore && hasLoadedNow
     }
 }

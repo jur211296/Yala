@@ -414,6 +414,19 @@ La tabla vista por vista y lo que queda en cards: `docs/fluidez/AUDITORIA-FLUIDE
   que no deshacen nada, y un deshacer puede no tener nada que deshacer (`returnToPending` que lanza, `unskipOccurrence`
   que no guarda). `success()` tras deshacer de verdad.
 
+- **`onScrollVisibilityChange` avisa de cosas que no son el scroll, y un aviso animado mueve la página entera (medido en
+  vídeo el 2026-11-02, iOS 27.2, cards hsqm y 2m2r).** Con la página de pestaña oculta dice «no visible». Y al montarse
+  la página, su primer aviso es «no visible» con el elemento en pantalla, antes de que el scroll tenga su sitio: si ese
+  aviso cambia un estado con animación, la transacción anima también el reajuste del scroll, y Grupos y Planificación
+  pintaban su contenido 44 pt abajo en la primera entrada y lo subían en ~0,2 s (con el «+» asomando). Se aisló con
+  variantes por argumento de lanzamiento: sin avisos, sin barra vertical, sin toolbar, sin márgenes ni `.large`, seguían
+  los 44 pt; sin el modificador, 0. ⇒ **quien reaccione a la visibilidad ignora la página oculta (`\.isRootPageShown`, lo
+  pone `MainTabView` con la página que SE VE, `RootTabLayoutLogic.displayedTab`: en la shell de solo grupos la selección
+  se queda en Panel) y no se cree el primer «no visible» hasta que pasa un rato sin desmentirse**
+  (`TopPrimaryActionRevealLogic.floatingAfterVisibilityChange` + `awaitsConfirmation`). Y si lo que hay que apagar es la
+  animación de una carga, apaga esa `.animation(_:value:)`: una transacción con `disablesAnimations` viaja a los
+  `onChange` que la carga dispara (hojas, empujes). Pin: `TopPrimaryActionRevealLogicTests`.
+
 ## iOS 26 Liquid Glass (OBLIGATORIO)
 - `ToolbarSpacer(.fixed, placement: .topBarTrailing)` — placement es OBLIGATORIO.
 - `.glassEffect()` para chips, barras flotantes, elementos translúcidos.

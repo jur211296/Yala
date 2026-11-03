@@ -63,6 +63,39 @@ final class TopPrimaryActionUITests: XCTestCase {
             "Al bajar, el «+» flotante de Presupuestos no apareció.")
     }
 
+    /// Card 2m2r (2026-11-02): lo que la página oye con otra pestaña delante se ignora, y el flotante se queda como
+    /// estaba al salir. Con la lista bajada, al volver tiene que seguir ahí. (Que no asome al volver con el botón de
+    /// arriba a la vista dura 2-3 fotogramas y se midió en vídeo: un XCUITest no lo ve.)
+    func test_budgets_returningWithTheListScrolled_keepsTheFloating() {
+        let app = XCUIApplication()
+        app.launchForUITest(pro: true, seed: "realista", deeplink: "budgets")
+        XCTAssertTrue(app.waitForUITestReady(timeout: 90), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        let top = app.buttons["budgets_create_button"]
+        XCTAssertTrue(top.waitForExistence(timeout: 15), "Falta «Nuevo presupuesto» arriba (budgets_create_button).")
+        let floating = app.buttons["budgets_create_fab"]
+        XCTAssertTrue(scrollUntilFloatingShows(app, top: top, floating: floating),
+                      "Control: al bajar, el «+» flotante de Presupuestos no apareció.")
+        // Un poco más abajo, para que nada de lo que sigue devuelva el botón de arriba al umbral.
+        app.swipeUp()
+
+        // Con la lista bajada la barra de pestañas se encoge a la pestaña elegida y Panel no está en el árbol: tocarla la
+        // despliega sin mover la lista.
+        let panelTab = app.tabBars.buttons["Panel"].firstMatch
+        if !panelTab.exists {
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.08, dy: 0.955)).tap()
+        }
+        XCTAssertTrue(panelTab.waitForExistence(timeout: 5), "No se pudo volver a la barra de pestañas.")
+        panelTab.tap()
+        XCTAssertTrue(floating.waitForNonExistence(timeout: 5), "Control: con el Panel delante, el «+» de Presupuestos sigue.")
+
+        let planningTab = app.tabBars.buttons["Planificación"].firstMatch
+        XCTAssertTrue(planningTab.waitForExistence(timeout: 5))
+        planningTab.tap()
+        XCTAssertTrue(floating.waitForExistence(timeout: 5),
+                      "Al volver a Presupuestos con la lista bajada, el «+» flotante ya no estaba.")
+    }
+
     func test_statistics_actionsRowOnTop_floatingOnlyAfterScrolling() {
         let app = XCUIApplication()
         app.launchForUITest(pro: true, seed: "realista", deeplink: "statistics")

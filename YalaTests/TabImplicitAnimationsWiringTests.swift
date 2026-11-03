@@ -75,7 +75,8 @@ struct TabImplicitAnimationsWiringTests {
         // Cards C1 y C7 (transiciones de contenido, 2026-11-01): las cargas se funden. El esqueleto, en
         // `ContentTransitionsWiringTests`; las filas que entran o se van, con `animatesRowEdits`.
         ("Yala/App/Views/Groups/GroupsContainerView.swift",
-         ".animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.hasLoadedOnce)"),
+         // Card hsqm (2026-11-02): sin fundido si la carga llegó en el mismo `onAppear` (el indicador no se pintó).
+         ".animation(reduceMotion || firstLoadArrivedOnAppear ? nil : DS.Animation.appear, value: viewModel.hasLoadedOnce)"),
         ("Yala/App/Views/Statistics/InsightsTabView.swift",
          ".animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.insightData == nil)"),
         ("Yala/App/Views/Statistics/InsightsTabView.swift",

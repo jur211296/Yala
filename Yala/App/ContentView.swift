@@ -4375,6 +4375,16 @@ struct MainTabView: View {
         RootTabLayoutLogic.hiddenTabs(mounted: mountedTabs, shown: shownTabs)
     }
 
+    /// La página que se ve de verdad (`RootTabLayoutLogic.displayedTab`): la que cada página compara para saber si está
+    /// a la vista (card 2m2r).
+    private var displayedTab: AppTab {
+        RootTabLayoutLogic.displayedTab(
+            selected: navigation.selectedMainTab,
+            mounted: mountedTabs,
+            showsMore: RootTabLayoutLogic.showsMoreTab(layout: layout),
+            showsSearch: showsSearchTab)
+    }
+
     /// Tabs to show in the TAB BAR: mode-aware config + temporary tab (if set and not already active)
     private var visibleTabs: [ConfigurableTab] {
         var tabs = modeConfig.activeTabs
@@ -4424,6 +4434,8 @@ struct MainTabView: View {
                 ForEach(mountedTabs) { tab in
                     Tab(tab.displayName, systemImage: tab.iconName, value: tab.appTab) {
                         viewForTab(tab)
+                            // Lo que aparece al desplazar no se decide con la página oculta (card 2m2r).
+                            .environment(\.isRootPageShown, displayedTab == tab.appTab)
                     }
                     .hidden(hiddenTabs.contains(tab))
                 }
@@ -4432,6 +4444,7 @@ struct MainTabView: View {
                 if RootTabLayoutLogic.showsMoreTab(layout: layout) {
                     Tab(L10n.Tab.more, systemImage: "ellipsis", value: .more) {
                         MoreView()
+                            .environment(\.isRootPageShown, displayedTab == .more)
                     }
                 }
 
@@ -4440,6 +4453,7 @@ struct MainTabView: View {
                 if showsSearchTab {
                     Tab(value: .search, role: .search) {
                         GlobalSearchView()
+                            .environment(\.isRootPageShown, displayedTab == .search)
                     }
                 }
             }

@@ -165,6 +165,7 @@
 - [El control que no recorre el camino no descarta](feedback_el_control_que_no_recorre_el_camino_no_descarta.md) — «sin X funciona» no aísla X si X cambia la ruta.
 - [Una carrera de presentación no se mide a mano](feedback_una_carrera_de_presentacion_no_se_mide_a_mano.md) — axe lento gana la carrera; XCUITest + sonda + log stream.
 - [Instrumentar gana a razonar](feedback_instrumentar_gana_a_razonar.md) — a la tercera hipótesis caída, cuenta en vez de ded…
+- [Un fotograma se aísla con variantes por argumento](feedback_un_fotograma_se_aisla_con_variantes_por_argumento.md) — un build, `-zzVn YES`, medidor de filas; y review adversarial aunque sea pulido.
 - [Una carrera se prueba con el último escritor](feedback_una_carrera_se_prueba_con_el_ultimo_escritor.md) — con el código viejo: si lee y escribe sin `await`, es el dato.
 - [Un flaky «de entorno» se mide a mano](feedback_el_flaky_de_entorno_se_mide_lanzando_a_mano.md) — N arranques con simctl + prints; el de la oferta en cola era producto.
 - [Conducir a mano ensucia aunque no teclees](feedback_conducir_a_mano_ensucia_aunque_no_teclees.md) — capturas con content_size/axe antes del gate: erase o capturar después.
