@@ -633,12 +633,9 @@ struct InsightsTabView: View {
     // MARK: - Daily Average Card (full-width hero del bento)
 
     private func dailyAverageCard(stats: QuickStats, summary: PeriodSummary) -> some View {
+        // Sin icono delante: repetía el de la pestaña y empujaba la etiqueta y la cifra fuera de la línea izquierda
+        // de las demás tarjetas.
         HStack(spacing: DS.Spacing.md) {
-            Image(systemName: "chart.bar.fill")
-                .font(.system(size: 32))
-                .foregroundStyle(theme.accentText)
-                .accessibilityHidden(true)
-
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(L10n.Insights.dailyAverage)
                     .font(DS.Typography.subheadline)
