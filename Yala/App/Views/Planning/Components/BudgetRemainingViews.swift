@@ -47,6 +47,7 @@ extension BudgetRemainingFigure {
     fileprivate var amountText: some View {
         Text(appPreferences.currency(abs(remaining), currencyCode: currencyCode))
             .font(amountFont)
+            .monospacedDigit()  // las cifras de la columna cuadran fila a fila
             .foregroundStyle(isOver ? Color.overBudgetText : Color.primary)
             .lineLimit(1)
     }

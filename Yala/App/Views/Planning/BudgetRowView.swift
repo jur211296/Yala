@@ -42,8 +42,9 @@ struct BudgetRowView: View {
                     // Budget name
                     VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                         HStack(spacing: DS.Spacing.xs) {
+                            // body (peso normal): la cifra de la derecha es lo único en semibold de la fila.
                             Text(summary.budget.name)
-                                .font(DS.Typography.headline)
+                                .font(DS.Typography.body)
                                 .foregroundStyle(.primary)
                                 .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
 
