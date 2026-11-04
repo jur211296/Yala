@@ -11,6 +11,9 @@ import SwiftUI
 struct BudgetRowView: View {
     let summary: BudgetSummary
     let currencyCode: String
+    /// Los días que quedan, en la fila. La lista los quita cuando ya los dice el título de la sección (todos los
+    /// presupuestos del período comparten fin): repetidos en cada fila, no dejaban sitio y los importes perdían los decimales.
+    var showsDaysLeft = true
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
@@ -125,7 +128,7 @@ struct BudgetRowView: View {
             spent: summary.spent,
             limit: summary.budget.limitAmount,
             currencyCode: currencyCode,
-            suffix: L10n.UXL9.shortDays(summary.daysRemaining)
+            suffix: showsDaysLeft ? L10n.UXL9.shortDays(summary.daysRemaining) : nil
         )
     }
 

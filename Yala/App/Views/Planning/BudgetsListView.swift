@@ -251,21 +251,35 @@ struct BudgetsListView: View {
 
     // MARK: - Budgets List
 
+    /// «28 días» para el título de la sección, o nil si la sección no comparte fin: los «Único» llevan fechas propias
+    /// y los inactivos no corren.
+    private func sectionDaysLeft(_ section: (status: BudgetStatus, budgets: [BudgetSummary])) -> String? {
+        guard selectedSegment != 3, section.status != .inactive, let first = section.budgets.first else { return nil }
+        return L10n.UXL9.shortDays(first.daysRemaining)
+    }
+
     private var budgetsList: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             ForEach(viewModel.groupedBudgets, id: \.status) { section in
                 VStack(alignment: .leading, spacing: DS.Spacing.md) {
-                    // Section header
-                    Text(section.status.localizedName)
-                        .font(DS.Typography.subheadlineEmphasized)
-                        .foregroundStyle(.primary)
+                    // Section header. Con período compartido, los días van aquí una vez y no en cada fila.
+                    if let days = sectionDaysLeft(section) {
+                        Text("\(section.status.localizedName) · \(days)")
+                            .font(DS.Typography.subheadlineEmphasized)
+                            .foregroundStyle(.primary)
+                    } else {
+                        Text(section.status.localizedName)
+                            .font(DS.Typography.subheadlineEmphasized)
+                            .foregroundStyle(.primary)
+                    }
 
                     // Budget cards. Sin los ya borrados: la lista recarga 150 ms después de borrar y, mientras, leer uno
                     // aborta en iOS 27.x (`BudgetRowView`).
                     ForEach(section.budgets.filter { !$0.budget.isDeleted && $0.budget.modelContext != nil }) { summary in
                         BudgetRowView(
                             summary: summary,
-                            currencyCode: summary.budget.currencyCode
+                            currencyCode: summary.budget.currencyCode,
+                            showsDaysLeft: sectionDaysLeft(section) == nil
                         )
                         // Clic secundario en el iPad, pulsación larga en el iPhone: el editor de siempre.
                         .contextMenu {
