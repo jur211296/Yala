@@ -496,6 +496,9 @@ private struct RecordsStandaloneSheets: ViewModifier {
     let modelContext: ModelContext
     let recalculateData: () -> Void
     let reloadAndRecalculate: () -> Void
+    /// Lo escrito en «Nuevo registro» mientras su hoja siga abierta: si SwiftUI rehace el contenido de la hoja (entrada
+    /// desde fuera con el formulario a medias), el formulario lo retoma. Se descarta al cerrarse la hoja.
+    @State private var newRecordDraft = NewRecordDraft()
 
     func body(content: Content) -> some View {
         content
@@ -503,8 +506,9 @@ private struct RecordsStandaloneSheets: ViewModifier {
                 RecordsFiltersView(recordsViewModel: recordsViewModel)
                     .onDisappear { recalculateData() }
             }
-            .sheet(isPresented: $recordsViewModel.showNewTransaction) {
-                NewTransactionView()
+            .sheet(isPresented: $recordsViewModel.showNewTransaction, onDismiss: { newRecordDraft.discard() }) {
+                NewTransactionView(draft: newRecordDraft)
+                    .newRecordSheetIdentity()
                     .presentationDetents([.large])
                     .onDisappear { reloadAndRecalculate() }
             }

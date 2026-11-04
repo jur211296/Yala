@@ -22,7 +22,11 @@ struct NewTransactionView: View {
     /// Quién abre el registro cuando se toca «Editar» en el aviso tras guardar (UX 2.2 · L2-5).
     @Environment(\.savedRecordEditorOpener) private var savedRecordEditorOpener
 
-    @State private var viewModel = NewTransactionViewModel()
+    /// El modelo del formulario. Con `draft`, el de quien presenta la hoja: si SwiftUI rehace el contenido de la hoja sin
+    /// cerrarla (entrada desde fuera con el formulario a medias), el formulario nuevo retoma lo escrito.
+    @State private var viewModel: NewTransactionViewModel
+    /// Lo escrito mientras la hoja siga abierta, guardado por quien la presenta (`NewRecordDraft`). Solo en un registro nuevo.
+    private let draft: NewRecordDraft?
     @FocusState private var isNoteFieldFocused: Bool
     @FocusState private var isAmountFieldFocused: Bool
 
@@ -120,8 +124,13 @@ struct NewTransactionView: View {
         prefillSubcategoryName: String? = nil,
         prefillFromChatDraft: ChatDraftPrefill? = nil,
         transactionToEdit: TransactionItem? = nil,
-        startsAsDuplicate: Bool = false
+        startsAsDuplicate: Bool = false,
+        draft: NewRecordDraft? = nil
     ) {
+        // El borrador solo vale para un registro nuevo sin precarga de chat: editar carga siempre el guardado.
+        let draft = (transactionToEdit == nil && prefillFromChatDraft == nil && !startsAsDuplicate) ? draft : nil
+        self.draft = draft
+        _viewModel = State(initialValue: draft?.resolveViewModel() ?? NewTransactionViewModel())
         self.prefillAccountID = prefillAccountID
         self.prefillCategoryID = prefillCategoryID
         self.prefillSubcategoryName = prefillSubcategoryName
@@ -405,11 +414,13 @@ struct NewTransactionView: View {
                     }
                     applyAccountPrefillRule(to: newViewModel)
                     viewModel = newViewModel
+                    draft?.adopt(newViewModel)
                     // «Registrar otro» empieza la calculadora de cero (L2-12): antes arrastraba la del registro anterior.
                     splitFieldState.reset()
                     descriptionHint = DescriptionShortcutHintLogic.registerOpening()
                     // El formulario nuevo vuelve a empezar vacío: su foto es la de ahora (L2-4).
                     formBaseline = newViewModel.formSnapshot
+                    draft?.baseline = formBaseline
                     isCreatingAnother = true
                     dsWithAnimation(reduceMotion) {
                         showSuccessScreen = false
@@ -421,6 +432,7 @@ struct NewTransactionView: View {
                     isEditingFromSuccess = true
                     // Ya es la edición de un registro guardado: cerrar sin cambios no pregunta (L2-4).
                     formBaseline = viewModel.formSnapshot
+                    draft?.baseline = formBaseline
                     dsWithAnimation(reduceMotion) {
                         showSuccessScreen = false
                         successData = nil
@@ -711,8 +723,11 @@ struct NewTransactionView: View {
         }
 
         .onAppear {
+            // La hoja se rehízo con el formulario a medias: se retoma lo escrito, sin volver a precargar (pisaría la
+            // cuenta o la categoría que la persona ya eligió).
+            let resumesDraft = formBaseline == nil && (draft?.isResumable ?? false)
             viewModel.setContext(modelContext)
-            prefillFromContext()
+            if !resumesDraft { prefillFromContext() }
             // ANTES del draft: `loadPendingGroupDraftIfNeeded` abre con `guard isBridgedReadOnly`, que ya
             // depende de esta resolución.
             resolveBridgedPointer()
@@ -725,8 +740,12 @@ struct NewTransactionView: View {
             }
             // La foto de lo precargado, una vez: el `onAppear` vuelve a correr al cerrarse una hoja encima (L2-4). Es
             // también la primera aparición: ahí cuenta la apertura para la pista de los atajos (L2-8), solo en uno nuevo.
-            if formBaseline == nil {
+            if formBaseline == nil, resumesDraft, let saved = draft?.baseline {
+                formBaseline = saved
+                UITestHooks.shared.traceLifecycle("formulario retomado")
+            } else if formBaseline == nil {
                 formBaseline = viewModel.formSnapshot
+                draft?.baseline = formBaseline
                 UITestHooks.shared.noteLifecycle(.freshForm)
                 if transactionToEdit == nil {
                     descriptionHint = DescriptionShortcutHintLogic.registerOpening()
@@ -1814,6 +1833,7 @@ struct NewTransactionView: View {
             let newViewModel = NewTransactionViewModel()
             newViewModel.setContext(modelContext)
             viewModel = newViewModel
+            draft?.adopt(newViewModel)
         }
 
         // La regla de la cuenta precargada lee el filtro de cuentas y la última usada de ahora (UX 2.2 · L2-1). Se ponen
