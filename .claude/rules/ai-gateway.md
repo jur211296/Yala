@@ -86,6 +86,17 @@ calidad medida y después por precio**. La app ya no decide nada: dice qué tare
 - **Un ejemplo del prompt solo enseña una subcategoría de la lista del usuario** (o `null`): un nombre fijo enseña a
   inventar. Y la fecha tiene una sola regla: siempre `YYYY-MM-DD`, hoy si no la dijo.
 
+## El medio de pago de una frase (`paymentHint`, card v466, 2026-11-04)
+
+- **El modelo solo COPIA las palabras; la cuenta la elige Swift** (`PaymentMethodAccountLogic`, contra las cuentas del
+  usuario). El prompt no lleva los nombres de las cuentas: no sube el coste y no sale nada nuevo del teléfono.
+- **La palabra solo vale si está escrita en la frase**: es la red contra la invención, y la replica el banco
+  (`acceptedPaymentHint`). Una mención que casa con dos cuentas no elige ninguna.
+- **«El campo no vino» no es «el modelo dijo null»** (`paymentHintAnswered`): sin el campo (gateway sin desplegar, Siri en el
+  dispositivo) la app busca una palabra del léxico en la frase, solo con un movimiento. Con el campo, manda el modelo.
+- Lo usan las tres capturas que leen una frase: chat, nota de voz y Siri. Una cuarta que llame a `parseMultiple` pasa la
+  frase a `PaymentMethodAccountLogic.mention`, o el mismo dictado elige cuenta en un sitio y no en otro.
+
 ## El idioma de la respuesta (2026-10-07)
 
 - **El idioma lo da `AIPromptLanguage.current` (de `AppLocale`), nunca `Locale.current`**, que es la región de formato:

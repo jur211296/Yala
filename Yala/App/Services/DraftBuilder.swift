@@ -40,6 +40,18 @@ struct DraftBuilder {
         return matches.count == 1 ? matches.first : nil
     }
 
+    /// Las cuentas sin archivar. Si el fetch falla, ninguna (y el borrador pide la cuenta).
+    static func fetchActiveAccounts(context: ModelContext) -> [Account] {
+        do {
+            return try context.fetch(FetchDescriptor<Account>(predicate: #Predicate<Account> { account in account.isArchived == false }))
+        } catch {
+            #if DEBUG
+            print("DraftBuilder: Error fetching accounts: \(error)")
+            #endif
+            return []
+        }
+    }
+
     /// Convenience: fetch desde el context y delega al overload puro.
     /// Devuelve `nil` si el fetch falla o no hay match único.
     static func findAccount(byCurrency currencyCode: String, context: ModelContext) -> Account? {
@@ -60,6 +72,43 @@ struct DraftBuilder {
         }
 
         return findAccount(byCurrency: currencyCode, in: accounts)
+    }
+
+    // MARK: - findAccount por medio de pago
+
+    /// Las cuentas entre las que se busca el medio de pago: sin archivar, sin las de sistema de Grupos y sin las líneas de
+    /// una tarjeta con varias divisas (se nombra la tarjeta; la divisa elige la línea en `findAccount(paymentMention:)`).
+    static func paymentCandidates(in accounts: [Account]) -> [PaymentMethodAccountLogic.Candidate] {
+        let roles = AccountLineLogic.resolve(accounts.map { AccountLineNode($0) })
+        return accounts
+            .filter { !$0.isArchived && !$0.isSystemAccount && !(roles[$0.shortcutID]?.isLine ?? false) }
+            .map { PaymentMethodAccountLogic.Candidate(id: $0.shortcutID, name: $0.name, kind: paymentKind(of: $0)) }
+    }
+
+    private static func paymentKind(of account: Account) -> PaymentMethodAccountLogic.AccountKind {
+        switch AccountType(rawValue: account.type) {
+        case .cash: return .cash
+        case .creditCard: return .creditCard
+        case .checking, .savings: return .bank
+        case .general, nil: return .other
+        }
+    }
+
+    /// La cuenta que el usuario nombró como medio de pago («25 almuerzo yape» → su cuenta Yape), o `nil`.
+    ///
+    /// Sin divisa dicha, la cuenta nombrada vale tal cual (y su divisa pasa a ser la del borrador). Con divisa dicha, la
+    /// tarjeta con varias divisas va a su línea en esa divisa (`AccountCardLogic.route`); si la cuenta no tiene esa divisa,
+    /// `nil`: no se fuerza una cuenta en otra divisa y quien llama vuelve a la regla de siempre, por divisa.
+    static func findAccount(paymentMention mention: String?, dictatedCurrency: String?, in accounts: [Account]) -> Account? {
+        guard let mention else { return nil }
+        let live = accounts.filter { !$0.isArchived && !$0.isSystemAccount }
+        guard let chosenID = PaymentMethodAccountLogic.account(for: mention, among: paymentCandidates(in: live)),
+              let chosen = live.first(where: { $0.shortcutID == chosenID }) else { return nil }
+        let dictated = dictatedCurrency?.uppercased().trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !dictated.isEmpty else { return chosen }
+        guard let route = AccountCardLogic.route(chosenID: chosenID, currencyCode: dictated, nodes: live.map { AccountLineNode($0) }),
+              !route.isFallback else { return nil }
+        return live.first { $0.shortcutID == route.accountID }
     }
 
     // MARK: - matchesNature
@@ -220,15 +269,24 @@ struct DraftBuilder {
     /// existentes del user. Tags no encontrados se ignoran (v1).
     /// `expensesOnlyMode`: con el modo «solo gastos», el borrador nace como gasto aunque el modelo lea un ingreso, como en
     /// Siri, el Atajo y Apple Pay (`SiriDraftService`). Ticket `chat-ignores-expenses-only-mode`.
+    /// `sourceText` y `batchCount`: la frase del usuario y cuántos movimientos salieron de ella, para el medio de pago
+    /// (`PaymentMethodAccountLogic.mention`). Sin frase no se busca: queda la regla por divisa.
     static func build(
         parsed: ParsedTransaction,
         defaultCurrency: String,
         context: ModelContext,
-        expensesOnlyMode: Bool = false
+        expensesOnlyMode: Bool = false,
+        sourceText: String = "",
+        batchCount: Int = 1
     ) -> ChatTransactionDraft {
         let isExpense = expensesOnlyMode ? true : parsed.isExpense
-        let currency = parsed.currencyHint?.uppercased() ?? defaultCurrency.uppercased()
-        let account = findAccount(byCurrency: currency, context: context)
+        let mention = PaymentMethodAccountLogic.mention(
+            hint: parsed.paymentHint, hintAnswered: parsed.paymentHintAnswered, sourceText: sourceText, batchCount: batchCount)
+        let paymentAccount = mention.flatMap { mention in
+            findAccount(paymentMention: mention, dictatedCurrency: parsed.currencyHint, in: fetchActiveAccounts(context: context))
+        }
+        let currency = parsed.currencyHint?.uppercased() ?? paymentAccount?.currencyCode.uppercased() ?? defaultCurrency.uppercased()
+        let account = paymentAccount ?? findAccount(byCurrency: currency, context: context)
 
         // 1) Match por subcategoryHint del LLM (replica el comportamiento de voice input).
         //    El LLM recibe la lista de subcategorías del user y devuelve el nombre exacto.

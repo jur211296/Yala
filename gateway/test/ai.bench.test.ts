@@ -202,7 +202,7 @@ import { categoryName, currencySymbol, seedSubcategoryNames, subcategoryName } f
 import { chatDynamicPrompt, chatRegister, chatStaticPrompt, extractNumbers, fidelity, gradeChatAnswer, matchesValue, personaContext, triggersAnomalies } from "../bench/lib/chatAnswer";
 import { toAppJSON } from "../bench/lib/chatContext";
 import { commonWordSet, gradeRewrite, isPolishInflection, isValidSuggestion, parseRewritten, rewriteBody, type RewriteCase } from "../bench/lib/chatRewrite";
-import { exampleHint, gradeTextParse, matchSubcategory, parserCurrencyValues, parseNoteResponse, resolveFamily, sharedNameFamilies, textParseBody, type TextParseCase } from "../bench/lib/textParse";
+import { acceptedPaymentHint, exampleHint, gradeTextParse, matchSubcategory, parserCurrencyValues, parseNoteResponse, resolveFamily, sharedNameFamilies, textParseBody, type TextParseCase } from "../bench/lib/textParse";
 import { TEXT_PARSE_SCHEMA } from "../src/ai/schemas";
 import { PERSONAS } from "../bench/tasks/chat.answer";
 
@@ -291,6 +291,20 @@ describe("text.parse: el cuerpo de TranscriptionParserService", () => {
     expect(g([tx({ amount: -45.5 })]).pass).toBe(false); // el chat descarta importes ≤ 0
     expect(g([tx({ subcategoryHint: "Comida" })]).pass).toBe(false);
     expect(g([tx({}), tx({ amount: 3 })]).pass).toBe(false);
+  });
+
+  it("medio de pago (card v466): la pista tiene que estar escrita en la frase, y null cuando no lo dice", () => {
+    const tx = (o: Record<string, unknown>) => ({ amount: 25, date: null, note: "almuerzo", isExpense: true, subcategoryHint: "Restaurantes", tagHints: [], currencyHint: null, confidence: { amount: 1, date: 1, merchant: 1, subcategory: 1, tags: 0 }, ...o });
+    const k = (text: string, payment: string | null): TextParseCase => ({ id: "x", locale: "es-PE", today: "2026-10-07", defaultCurrency: "PEN", text, expect: [{ amount: 25, isExpense: true, date: "2026-10-07", currency: "PEN", sub: ["restaurants"], payment }] });
+    const g = (c: TextParseCase, o: Record<string, unknown>) => gradeTextParse(JSON.stringify({ transactions: [tx(o)] }), c);
+    expect(g(k("25 almuerzo yape", "yape"), { paymentHint: "yape" }).pass).toBe(true);
+    expect(g(k("le yapeé 25", "yape"), { paymentHint: "yapeé" }).pass).toBe(true);
+    expect(g(k("25 almuerzo yape", "yape"), { paymentHint: null }).pass).toBe(false);
+    expect(g(k("25 almuerzo yape", "yape"), {}).pass).toBe(false); // gateway sin el campo
+    expect(g(k("25 almuerzo", null), { paymentHint: "efectivo" }).pass).toBe(true); // inventado, pero la app lo descarta
+    expect(g(k("25 almuerzo en efectivo", null), { paymentHint: "efectivo" }).pass).toBe(false);
+    expect(acceptedPaymentHint("現金", "コンビニで500円、現金で")).toBe("現金");
+    expect(acceptedPaymentHint("tarjeta", "25 almuerzo")).toBeNull();
   });
 });
 

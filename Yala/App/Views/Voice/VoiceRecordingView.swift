@@ -718,7 +718,7 @@ struct VoiceRecordingView: View {
 
             processingStep = 2
             let newDrafts = validTransactions.map { parsed in
-                createInboxDraft(from: parsed, transcription: text, insertInContext: false)
+                createInboxDraft(from: parsed, transcription: text, insertInContext: false, batchCount: validTransactions.count)
             }
             let uniqueDrafts = DraftDeduplicationService.deduplicate(newDrafts: newDrafts, existingDrafts: existingDrafts)
             // Si todos parecen duplicados, son los propios (SwiftData pudo insertarlos ya).
@@ -925,7 +925,9 @@ struct VoiceRecordingView: View {
 
     // MARK: - Borradores
 
-    private func createInboxDraft(from parsed: ParsedTransaction, transcription: String, insertInContext: Bool = true) -> InboxDraft {
+    private func createInboxDraft(
+        from parsed: ParsedTransaction, transcription: String, insertInContext: Bool = true, batchCount: Int = 1
+    ) -> InboxDraft {
         // Importe con signo: negativo es gasto.
         var amountDouble: Double?
         if let amount = parsed.amount {
@@ -936,7 +938,20 @@ struct VoiceRecordingView: View {
         var matchedAccount: Account?
         var needsUserInputFields = ["account", "subcategory"]
 
-        if let currencyHint = parsed.currencyHint, !currencyHint.isEmpty {
+        // El medio de pago que el usuario nombró («con yape», «en efectivo») manda sobre la divisa: es la misma regla
+        // que el chat (`PaymentMethodAccountLogic`).
+        let mention = PaymentMethodAccountLogic.mention(
+            hint: parsed.paymentHint, hintAnswered: parsed.paymentHintAnswered, sourceText: transcription, batchCount: batchCount)
+        if let mention {
+            matchedAccount = DraftBuilder.findAccount(
+                paymentMention: mention, dictatedCurrency: parsed.currencyHint,
+                in: DraftBuilder.fetchActiveAccounts(context: modelContext))
+            if matchedAccount != nil {
+                needsUserInputFields.removeAll { $0 == "account" }
+            }
+        }
+
+        if matchedAccount == nil, let currencyHint = parsed.currencyHint, !currencyHint.isEmpty {
             // La regla común de las capturas (`DraftBuilder.findAccount`): la voz tenía su copia y no quitaba las cuentas de
             // sistema de Grupos (entrega 3 de la tarjeta con varias divisas).
             matchedAccount = DraftBuilder.findAccount(byCurrency: currencyHint, context: modelContext)
