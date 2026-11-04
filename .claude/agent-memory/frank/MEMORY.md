@@ -135,6 +135,7 @@
 - [Tests del conector mcp/ en local](reference_mcp_tests_en_local.md) — un calculador compartido rompe el golden; npm ci --prefer-offline + regenerar.
 - [Sentry por API: tokens y dónde](reference_sentry_tokens_y_api.md) — Chrome sin sesión; lectura en ~/Secrets, completo en el Llavero `sentry-yala`.
 - [Entradas de fuera en el simulador](reference_entradas_de_fuera_en_el_simulador.md) — widget = URL; Siri se ejecuta en Atajos; push sin permiso no va.
+- [Botón de widget y App Group en el simulador](reference_widget_intent_y_app_group_en_simulador.md) — el ✓ no responde a toques sintéticos; la cola, por plistlib.
 - [Yala IA en el simulador](reference_yala_ia_en_el_simulador.md) — sin servidor: args -uitest-chat-* y -chatQuestionsToday N; privacy grant mata la app.
 - [Precios en el simulador: SKTestSession](reference_precios_en_el_simulador_con_sktestsession.md) — conductor XCUITest; la config se queda: erase antes del gate.
 - [La tarjeta de grupo no se abre con toques sintéticos](reference_tarjeta_de_grupo_no_se_abre_con_toques_sinteticos.md) — tap se pierde, touch abre el menú; recorre Grupos con XCUITest.
