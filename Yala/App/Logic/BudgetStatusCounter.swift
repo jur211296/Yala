@@ -11,6 +11,9 @@
 //    - spentPercent  80-99%  → .atLimit
 //    - spentPercent >= 100%  → .overLimit
 //
+//  Es la fuente única del umbral «en el límite» (card bj9n, 2026-11-04): la barra de un presupuesto se pone naranja
+//  con `isAtOrPastLimit(percent:)`. Antes la barra lo hacía al 75 % y el estado empezaba al 80 %.
+//
 
 import Foundation
 
@@ -29,14 +32,28 @@ struct BudgetCounters: Equatable {
 }
 
 enum BudgetStatusCounter {
+    /// Desde qué porcentaje gastado un presupuesto está «en el límite». Decidido el 2026-11-04: 80 %.
+    static let atLimitPercent: Double = 80
+    /// Desde qué porcentaje está superado.
+    static let overLimitPercent: Double = 100
+
     /// Clasifica un presupuesto individual por `spent / limitAmount`.
     /// `limit <= 0` defensive → `.onTrack` (no rompe en datos inválidos).
     static func classify(spent: Double, limit: Double) -> BudgetCounterStatus {
         guard limit > 0 else { return .onTrack }
-        let pct = spent / limit * 100
-        if pct >= 100 { return .overLimit }
-        if pct >= 80  { return .atLimit }
+        return classify(percent: spent / limit * 100)
+    }
+
+    /// Clasifica por el porcentaje gastado (0-100+), el que reciben las barras.
+    static func classify(percent: Double) -> BudgetCounterStatus {
+        if percent >= overLimitPercent { return .overLimit }
+        if percent >= atLimitPercent { return .atLimit }
         return .onTrack
+    }
+
+    /// La barra se pinta de aviso desde aquí: «en el límite» o más.
+    static func isAtOrPastLimit(percent: Double) -> Bool {
+        classify(percent: percent) != .onTrack
     }
 
     /// Agrega contadores a partir de pares `(spent, limit)` ya filtrados por

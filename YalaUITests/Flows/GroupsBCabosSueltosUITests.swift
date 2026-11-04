@@ -4,7 +4,8 @@
 //
 //  Grupos B · cabos sueltos (encargo 2026-11-02-grupos-b-cabos-sueltos): lo por cobrar fuera de Registros (00xj), editar
 //  la pata que lleva la receta abre «Partir» (6u5f), la entrada de una recarga lleva su grupo en Registros (oibr) y la
-//  página Registros sin flotante (97gc).
+//  página Registros con la fila de acciones arriba (97gc). Que su flotante salga al bajar lo fija
+//  `TopPrimaryActionUITests` (card rtyu).
 //
 //  Siembras: `-uitest-seed-group-sale` (una venta tuya a Ana, por cobrar, en «Ventas con Ana») y
 //  `-uitest-seed-group-split-lines` (el caso Pía: «Recarga Sip» S/ 510 en «Pía y yo», en la Bandeja).
@@ -127,22 +128,6 @@ final class GroupsBCabosSueltosUITests: XCTestCase {
         let entry = app.buttons.matching(identifier: "record_row")
             .matching(NSPredicate(format: "label CONTAINS 'Sip' AND label CONTAINS 'Pía y yo'")).firstMatch
         XCTAssertTrue(entry.waitForExistence(timeout: 10), "La entrada de la recarga en Sip no dice de qué grupo es.")
-    }
-
-    // MARK: - 97gc · Registros (página) sin flotante
-
-    /// Arriba la misma fila de acciones que Estadísticas › Registros; el flotante no sale nunca, tampoco al bajar.
-    func test_recordsPage_hasTheTopActions_andNeverTheFloatingButton() {
-        let app = XCUIApplication()
-        app.launchForUITest(pro: true, seed: "realista", deeplink: "records")
-        XCTAssertTrue(app.waitForUITestReady(timeout: 90), "uitest_ready ausente — bootstrap/seed no completó.")
-        XCTAssertTrue(app.buttons["stats_action_new"].waitForExistence(timeout: 15),
-                      "La página Registros no lleva «Nuevo registro» arriba.")
-        XCTAssertFalse(app.buttons["fab_new_transaction"].exists, "La página Registros enseña el «+» flotante.")
-        for _ in 0..<4 { app.swipeUp() }
-        XCTAssertFalse(app.buttons["fab_new_transaction"].waitForExistence(timeout: 2),
-                       "Al bajar, la página Registros enseña el «+» flotante.")
-        XCTAssertFalse(app.buttons["fab_chat"].exists, "Al bajar, la página Registros enseña Yala IA flotante.")
     }
 
     // MARK: - Recorridos

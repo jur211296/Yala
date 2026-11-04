@@ -20,7 +20,8 @@ struct BudgetProgressBar: View {
     private var barColor: Color {
         if isExceeded { return Color.hotPink }
         if simplified { return Color.electricIndigo }
-        if percentage >= 75 { return DS.Semantic.warningForeground }
+        // El mismo umbral que «en el límite» (card bj9n): una sola fuente, `BudgetStatusCounter`.
+        if BudgetStatusCounter.isAtOrPastLimit(percent: percentage) { return DS.Semantic.warningForeground }
         return Color(hex: color)
     }
 
