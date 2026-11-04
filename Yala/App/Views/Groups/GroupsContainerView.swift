@@ -142,7 +142,8 @@ struct GroupsContainerView: View {
                     .transition(.identity)
                 } else {
                     ScrollView {
-                        VStack(spacing: DS.Spacing.lg) {
+                        // xxl entre bloques (cabecera, acciones, lista); entre tarjetas sigue `lg` en su LazyVStack.
+                        VStack(spacing: DS.Spacing.xxl) {
                             // Global summary
                             if let summary = viewModel.globalSummary {
                                 VStack(spacing: DS.Spacing.xs) {

@@ -136,7 +136,8 @@ struct GroupSummaryHeader: View {
             if lines.shown.isEmpty {
                 Text(formatted(0, mainCurrency))
                     .font(DS.Typography.headline)
-                    .foregroundStyle(.tertiary)
+                    // Gris secundario, no terciario: en terciario el lado vacío medía 1,7:1 en claro y casi se borraba.
+                    .foregroundStyle(.secondary)
             }
             ForEach(lines.shown, id: \.currencyCode) { item in
                 Text(formatted(item.amount, item.currencyCode))

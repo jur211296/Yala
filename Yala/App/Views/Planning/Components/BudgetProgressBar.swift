@@ -12,6 +12,7 @@ struct BudgetProgressBar: View {
     let color: String
     let isExceeded: Bool
     var simplified: Bool = false
+    var height: CGFloat = DS.Sizing.budgetProgressBarHeight
 
     @State private var barWidth: CGFloat = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -28,12 +29,12 @@ struct BudgetProgressBar: View {
         // ancho medido y la barra no encogía al estrechar la ventana (iPhone Duo al plegar o girar, iPad).
         Capsule()
             .fill(DS.Semantic.neutralBackground)
-            .frame(height: 6)
+            .frame(height: height)
             .overlay(alignment: .leading) {
                 // Foreground capsule (progress)
                 Capsule()
                     .fill(barColor)
-                    .frame(width: max(0, barWidth * (min(percentage, 100.0) / 100.0)), height: 6)
+                    .frame(width: max(0, barWidth * (min(percentage, 100.0) / 100.0)), height: height)
                     // El relleno crece o encoge con la cifra (card C2). Solo con el porcentaje: el ancho medido al
                     // aparecer o al girar sale quieto.
                     .animation(reduceMotion ? nil : DS.Animation.number, value: percentage)
