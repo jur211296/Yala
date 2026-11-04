@@ -82,8 +82,9 @@ struct GroupCardView: View {
             groupIcon
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                // headline: el nombre es el título de la tarjeta; en `label` pesaba igual que «Caro te debe».
                 Text(group.name)
-                    .font(DS.Typography.label)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
                     .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
 
