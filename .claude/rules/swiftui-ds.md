@@ -20,6 +20,13 @@ paths:
 - NUNCA `@AppStorage` dentro de `@Observable` (no triggerea updates).
 - Preferir `@Observable` + `@State`/`@Bindable` sobre `ObservableObject`/`@Published`/`@StateObject`.
 - **Preferencias persistentes → `AppPreferences` inyectado via `@Environment`.** NUNCA `@AppStorage` directo en views nuevas.
+- **El contenido de una hoja puede rehacerse SIN cerrarla, y su `@State` nace de cero (medido el 2026-11-04).** Pasaba al
+  entrar a Yala desde fuera con «Nuevo registro» a medias en otra pestaña. Fue en el runner del CI y una vez en local:
+  mismo proceso, misma escena y la barra intacta. El formulario volvía con «0.00» y sin animación de cierre.
+  ⇒ **Lo que la persona escribió no vive solo en un `@State` del contenido de la hoja**: lo guarda quien la presenta y se
+  descarta en el `onDismiss`, no en un `onDisappear` del contenido, que también corre al rehacerse. Molde:
+  `NewRecordDraft`. El rehecho se fuerza en XCUITest con `-uitest-rebuild-form-on-return`
+  (`View.newRecordSheetIdentity()`). Una hoja nueva con formulario largo y el mismo riesgo copia el molde.
 - **Un singleton que NO es `@Observable` (`CloudAuthService.shared`) leído desde el body no repinta nada al cambiar, y un
   `@State` que se cambia pero el body no lee, tampoco.** `StorageSettingsView` cambia `refreshTick` cada segundo y ningún
   body lo lee: lo que repinta es que `controller.refresh()` cambie propiedades del controller `@Observable`. Medido por

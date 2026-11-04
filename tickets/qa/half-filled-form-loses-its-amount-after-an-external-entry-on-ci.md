@@ -1,10 +1,10 @@
 ---
 id: half-filled-form-loses-its-amount-after-an-external-entry-on-ci
-status: in-progress
+status: qa
 priority: high
 area: "entradas desde fuera, formulario de registro, testing"
 created: 2026-10-29
-updated: 2026-11-01
+updated: 2026-11-04
 source: "encargo ui-tests-2-2-tres-tandas-rojo (PR #690), dispatch 40939651475 y nocturnas del 23 al 29-oct"
 ---
 
@@ -93,3 +93,25 @@ traza no estaba aún en esa corrida.
 
 **Siguiente**: leer el primer rojo de la nocturna con esto dentro y decidir con la causa delante. Si es el proceso o la
 escena, la pregunta de producto sigue en pie (¿un formulario a medias sobrevive a que iOS descarte Yala?).
+
+## 2026-11-04 — arreglado: el formulario rehecho retoma lo escrito (encargo lote 2.2 globo/pestañas/registro)
+
+**Decisión de Jürgen (por el bot):** solo en memoria. Un formulario a medias sobrevive a que SwiftUI rehaga la hoja
+dentro del mismo proceso, y se descarta al cerrar la hoja o al guardar. No se escribe en disco un gasto a medias. Que
+sobreviva a que iOS cierre Yala del todo va a otra card en backlog: «Nuevo registro: conservar el borrador si iOS
+cierra Yala».
+
+**Qué cambia.** `NewRecordDraft` guarda el modelo del formulario y su foto de partida en quien presenta la hoja
+(`DetailContainerSheets`, `RecordsStandaloneView`, `PanelSheetsModifier`, un `@State`). Lo descarta en el `onDismiss`
+de la hoja, que no corre si la hoja solo se rehace. `NewTransactionView` lo recibe por `draft:`. Si nace con un borrador
+retomable, retoma modelo y foto y no vuelve a precargar (pisaría la cuenta o la categoría elegidas). La traza de
+`uitest_lifecycle` lo apunta como «formulario retomado».
+
+**Cómo se probó.** `-uitest-rebuild-form-on-return` fuerza el rehecho al volver a primer plano (`.id` del contenido de
+la hoja, siempre 0 fuera de los tests). Con el arreglo desactivado, `test_rebuiltForm_panelLink_keepsWhatWasTyped` dio
+el síntoma del CI: «0.00», mismo `pid`, `formularios=2`. Con el arreglo, los tres caminos (foto compartida, voz y enlace
+al Panel) pasan, y la suite `ExternalEntryForeignSheetUITests` da 10 de 10. La X sigue preguntando antes de descartar.
+Unit: `NewRecordDraftTests` y `NewRecordDraftWiringTests`.
+
+**Lo que no cubre.** La variante «el formulario se cerró» (`XCTWaiterResult 1`) de algunas nocturnas no es un rehecho:
+la hoja se fue. Si vuelve a salir, la traza del marcador dirá qué la cerró.
