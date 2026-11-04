@@ -38,7 +38,9 @@ struct RecordDateSectionView: View {
 
             Spacer()
         }
-        .padding(.vertical, DS.Spacing.xs)
+        // Más aire arriba que abajo: la fecha encabeza su día y no flota a medio camino de la tarjeta de arriba.
+        .padding(.top, DS.Spacing.md)
+        .padding(.bottom, DS.Spacing.xxs)
     }
 
     /// Format: "12 December" or "12 de diciembre" depending on locale
