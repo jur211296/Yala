@@ -53,6 +53,25 @@ YALA_FICHA_SALIDA=~/Claude/propuestas/ficha-app-store-2.2 portada/render.sh es g
   de ASC antes de enviar.
 - En el iPad, el de Yala IA va delante: su chat vive en la columna derecha y detrás quedaría tapado.
 
+## Encabezado en vídeo de iOS 27 (2.2)
+
+El encabezado de la página de producto (21:9, 3840×1646) y el de resultados de búsqueda (3:2, 3840×2560), en vídeo:
+8,4 s a 30 fps, H.264, `.mp4` sin pista de audio y en loop sin corte. Sale de la toma `ia` del vídeo (`video/grabar.sh
+<idioma> ia`):
+
+```bash
+python3 encabezado/render.py es   # → <salida>/es/encabezado/yala-encabezado-{21x9-3840x1646,3x2-3840x2560}.mp4 y _revision/
+```
+
+- **Una idea y nada de texto encima**: el logo y un iPhone en el que le dices un gasto a Yala IA y aparece el registro.
+  Lo único que cambia por idioma es la pantalla grabada.
+- La burbuja y la tarjeta caen dentro de la zona segura de las plantillas de Apple (`FOCO` en `render.py`); el teléfono
+  es grande y se corta por abajo. `_revision/guia-*.png` marca esa zona.
+- **El archivo empieza con la tarjeta ya puesta**, porque el primer fotograma es la portada que enseña Apple. La
+  pantalla se funde de la tarjeta a la bienvenida en 0,8 s y el último fotograma enlaza con el primero.
+- El envío se busca en la grabación (el primer fotograma que cambia), no en la marca `chat_send`, que llega hasta
+  0,6 s tarde.
+
 ## Evento dentro de la app y páginas personalizadas (2.2)
 
 ```bash
@@ -123,6 +142,7 @@ el Duo no está hecho: `sets.js` no tiene sus medidas.
 | `video/grabar.sh` | Graba cada escena del vídeo con `simctl io recordVideo` y apunta los toques. |
 | `video/cortes/<idioma>.json` | Los tramos de cada toma y los toques, medidos por idioma. |
 | `video/tomas.py` · `index.html` · `render.sh` | La pista de pantalla, la composición con las frases de `VIDEO` y el render (HyperFrames + ffmpeg). |
+| `encabezado/` | `encabezado.html` (fondo: logo, estrellas y el iPhone con la pantalla en negro) y `render.py` (la toma `ia` dentro de la pantalla, en loop, con ffmpeg). |
 | `portada/` | `portada.html` (composición del recurso universal, iPhone e iPad) y `render.sh` (Chrome → PNG sin alfa). |
 | `duo/` | `capturas.sh` (exterior e interior del iPhone Duo) y `comun.sh`: posturas y toques por Device Hub (`clic.swift`, `hubmap.py`, `mappt.py`). |
 | `assets/` | El logo y GSAP (licencia estándar de GreenSock). La música (`pop.mp3`, Mixkit) no está en el repo: `YALA_FICHA_MUSICA`. |
