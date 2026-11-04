@@ -91,9 +91,10 @@ struct RecordRowView: View {
 
                         // Line 2: Account name
                         if let accountName = displayedAccountName {
+                            // Secundario como la línea con nota: en terciario medía 1,7:1 en claro.
                             Text(accountName)
                                 .font(DS.Typography.caption)
-                                .foregroundStyle(.tertiary)
+                                .foregroundStyle(.secondary)
                                 .lineLimit(1)
                         }
                     }
