@@ -1,0 +1,17 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import FeaturePage from '../../../components/FeaturePage.astro';
+import { features, featureUrl, type Feature } from '../../../content/seo';
+import { featureJsonLd, alternatesFor } from '../../../content/seoJsonLd';
+
+export function getStaticPaths() {
+  return features.map((feature) => ({ params: { slug: feature.slug.en }, props: { feature } }));
+}
+
+const { feature } = Astro.props as { feature: Feature };
+const t = feature.text.en;
+---
+
+<Layout title={t.title} description={t.description} lang="en" alternates={alternatesFor({ es: featureUrl(feature, 'es'), en: featureUrl(feature, 'en') })} jsonLd={featureJsonLd(feature, 'en')}>
+  <FeaturePage lang="en" feature={feature} />
+</Layout>

@@ -1,10 +1,10 @@
 # Yala
 
 > App de finanzas personales para iPhone (iOS 26 o superior). Anota gastos e ingresos, presupuestos con
-> alertas, pagos planificados, widgets, más de 50 divisas, importación y exportación en CSV/Excel. Con Yala
-> Pro: lectura de capturas y recibos, dictado por voz, el asistente Yala IA y reportes avanzados. Los datos
-> viven en el iPhone y el iCloud personal del usuario, o en su cuenta en la nube de Yala si la elige; Yala no
-> se conecta a bancos ni pide credenciales bancarias.
+> alertas, pagos planificados, Grupos para dividir gastos, widgets, más de 50 divisas, importación y
+> exportación en CSV/Excel. Con Yala Pro: lectura de capturas y recibos, dictado por voz, el asistente
+> Yala IA y reportes avanzados. Los datos viven en el iPhone y el iCloud personal del usuario, o en su
+> cuenta en la nube de Yala si la elige; Yala no se conecta a bancos ni pide credenciales bancarias.
 > Hecha en Lima, Perú. En la App Store desde marzo de 2026.
 
 ## Qué es y qué no es
@@ -14,6 +14,12 @@
   Un mes de prueba gratis; al dejar Pro no se pierden datos, solo se apagan las funciones Pro.
 - **No es** asesoría financiera, ni un agregador bancario: no se conecta a bancos ni pide credenciales.
 - **Plataformas:** solo iPhone, iOS 26 o superior. No hay Android ni versión web.
+- **Plan Gratis:** hasta 4 cuentas y 3 presupuestos con alertas, anotar a mano y con Siri, pagos
+  planificados, widgets, más de 50 divisas, Grupos, importar y exportar en CSV/Excel. **Yala Pro** agrega
+  cuentas y presupuestos ilimitados, lectura de capturas, dictado y foto del recibo, Yala IA y reportes
+  avanzados.
+- **Para quién:** quien quiere saber a dónde se va su dinero sin pasar tiempo anotando; también parejas,
+  amigos o quienes comparten departamento y dividen gastos con Grupos.
 
 ## Cómo se anotan los gastos
 
@@ -24,6 +30,12 @@
 - **Dictando o fotografiando el recibo** (Pro).
 - **Importando** un CSV o Excel del banco.
 - **Pidiéndoselo a Yala IA** en lenguaje natural (Pro), p. ej. «registra 24 soles de pizza con amigos».
+
+## Dividir gastos (Grupos)
+
+- Se reparte cada gasto en partes iguales, por porcentaje, por monto exacto o por partes; Yala simplifica
+  las deudas y dice quién le paga a quién. Cada miembro usa Yala en su iPhone; se invita con un enlace.
+- Está en el plan Gratis y pide iniciar sesión con Apple o Google.
 
 ## Privacidad
 
@@ -44,8 +56,31 @@
 - [Privacidad](https://yala-app.pe/privacy): qué datos se guardan, dónde y qué sale del dispositivo.
 - [Términos](https://yala-app.pe/terms): condiciones de uso y suscripciones.
 - [Ayuda](https://yala-app.pe/support): primeros pasos, cuentas, importación y contacto.
+- [Preguntas frecuentes](https://yala-app.pe/preguntas-frecuentes/): precio, planes, datos, bancos,
+  plataformas. En inglés: https://yala-app.pe/en/faq/
+- [Funciones](https://yala-app.pe/funciones/): una página por función. En inglés:
+  https://yala-app.pe/en/features/
+  - [Anotar gastos en segundos](https://yala-app.pe/funciones/anotar-gastos/)
+  - [Leer comprobantes y estados de cuenta](https://yala-app.pe/funciones/leer-comprobantes-de-pago/) (Pro)
+  - [Por voz o con la foto del recibo](https://yala-app.pe/funciones/anotar-gastos-por-voz-y-foto/) (Pro)
+  - [Yala IA](https://yala-app.pe/funciones/yala-ia/) (Pro)
+  - [Presupuestos con alertas](https://yala-app.pe/funciones/presupuestos/)
+  - [Dividir gastos en grupo](https://yala-app.pe/funciones/dividir-gastos/)
 - [App Store](https://apps.apple.com/pe/app/yala-finanzas-sin-esfuerzo/id6758253109)
 
 ## Contacto
 
 admin@yala-app.pe
+
+## In English
+
+Yala is a personal finance app for iPhone (iOS 26 or later), made in Lima, Peru. You log expenses and
+income in seconds (typing, Siri shortcuts, CSV/Excel import; with Yala Pro also payment screenshots, voice
+and receipt photos), set budgets with alerts, split expenses with Groups and, with Yala Pro, ask the Yala AI
+assistant about your money. It doesn't connect to banks or ask for bank credentials. Free plan: up to 4
+accounts and 3 budgets. Yala Pro: S/ 12.90 a month or S/ 99.90 a year in Peru (localized by the App Store),
+one-month free trial. iPhone only: no Android or web version.
+
+- [Features](https://yala-app.pe/en/features/): one page per feature.
+- [FAQ](https://yala-app.pe/en/faq/): price, plans, data, banks, platforms.
+- [Home](https://yala-app.pe/en/) · [Privacy](https://yala-app.pe/en/privacy/) · [Terms](https://yala-app.pe/en/terms/)

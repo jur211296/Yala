@@ -2,6 +2,19 @@ User-agent: *
 Allow: /
 
 # Los rastreadores de IA son bienvenidos: la web es material público y queremos que la lean bien.
+# Se nombran uno a uno para que ninguna regla genérica futura los deje fuera sin querer.
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+Allow: /
+
 # El resumen en texto plano, para quien prefiera leerlo así, está en /llms.txt
 
 Sitemap: https://yala-app.pe/sitemap-index.xml

@@ -1,0 +1,10 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import FeaturesIndexPage from '../../../components/FeaturesIndexPage.astro';
+import { ui, seoPaths } from '../../../content/seo';
+import { featuresIndexJsonLd, alternatesFor } from '../../../content/seoJsonLd';
+---
+
+<Layout title={ui.en.featuresTitle} description={ui.en.featuresDescription} lang="en" alternates={alternatesFor(seoPaths.features)} jsonLd={featuresIndexJsonLd('en')}>
+  <FeaturesIndexPage lang="en" />
+</Layout>

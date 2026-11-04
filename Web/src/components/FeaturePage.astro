@@ -1,0 +1,78 @@
+---
+import SeoShell from './SeoShell.astro';
+import { ui, features, featureUrl, seoPaths, APP_STORE_URL, type Feature, type SeoLang } from '../content/seo';
+
+interface Props {
+  lang: SeoLang;
+  feature: Feature;
+}
+
+const { lang, feature } = Astro.props;
+const t = ui[lang];
+const f = feature.text[lang];
+const other: SeoLang = lang === 'es' ? 'en' : 'es';
+const planLabel = { free: t.planFree, pro: t.planPro, mixed: t.planMixed }[feature.plan];
+const others = features.filter((x) => x.id !== feature.id);
+---
+
+<SeoShell
+  lang={lang}
+  otherLangHref={featureUrl(feature, other)}
+  crumbs={[
+    { label: t.home, href: lang === 'es' ? '/' : '/en/' },
+    { label: t.features, href: seoPaths.features[lang] },
+    { label: f.nav },
+  ]}
+>
+  <article class="seo-card p-8 rounded-3xl">
+    <p class="text-sm font-medium text-yala-cyan mb-3">{planLabel}</p>
+    <h1 class="text-3xl md:text-4xl font-bold text-white mb-5 leading-tight">{f.h1}</h1>
+    <p class="text-lg text-neutral-300 leading-relaxed">{f.lede}</p>
+
+    <section class="mt-10">
+      <h2 class="text-xl font-semibold text-white mb-4">{t.howTitle}</h2>
+      <ol class="space-y-3 list-decimal pl-6 text-neutral-300 leading-relaxed">
+        {f.steps.map((s) => <li>{s}</li>)}
+      </ol>
+    </section>
+
+    <section class="mt-10">
+      <h2 class="text-xl font-semibold text-white mb-4">{t.detailsTitle}</h2>
+      <ul class="space-y-3 list-disc pl-6 text-neutral-300 leading-relaxed">
+        {f.details.map((d) => <li>{d}</li>)}
+      </ul>
+    </section>
+
+    <section class="mt-10">
+      <h2 class="text-xl font-semibold text-white mb-4">{t.planTitle}</h2>
+      <p class="text-neutral-300 leading-relaxed">{f.planNote}</p>
+    </section>
+
+    <section class="mt-10">
+      <h2 class="text-xl font-semibold text-white mb-4">{t.faqTitle}</h2>
+      <dl class="space-y-5">
+        {f.faq.map(({ q, a }) => (
+          <div>
+            <dt class="font-semibold text-white">{q}</dt>
+            <dd class="text-neutral-300 leading-relaxed mt-1">{a}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+
+    <div class="mt-10 flex flex-col sm:flex-row sm:items-center gap-4">
+      <a href={APP_STORE_URL} target="_blank" rel="noopener" class="btn-primary inline-flex justify-center">{t.download}<span class="sr-only"> ({t.newTab})</span></a>
+      <span class="text-sm text-neutral-400">{t.platform}</span>
+    </div>
+  </article>
+
+  <section class="mt-12">
+    <h2 class="text-xl font-semibold text-white mb-4">{t.moreFeatures}</h2>
+    <ul class="grid sm:grid-cols-2 gap-3">
+      {others.map((o) => (
+        <li><a href={featureUrl(o, lang)} class="seo-card block rounded-2xl px-5 py-4 text-neutral-300 hover:text-yala-cyan transition-colors">{o.text[lang].nav}</a></li>
+      ))}
+    </ul>
+    <p class="mt-6 text-sm text-neutral-400"><a href={seoPaths.faq[lang]} class="underline underline-offset-2 hover:text-yala-cyan">{t.faq}</a></p>
+  </section>
+</SeoShell>
