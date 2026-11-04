@@ -51,10 +51,9 @@ SIWA_KEY_ID = "PQ53RQ5D3G"
 CLOUD_MODE_ROLLOUT_PERCENT = "100"
 CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT = "100"
 GROUPS_BACKEND_ROLLOUT_PERCENT = "100"
-# Yala IA en modo nube con herramientas (`chat.explore`, src/ai/explore/). APAGADO en los dos entornos a propósito:
-# encenderlo exige antes el texto de consentimiento nuevo (card de Jürgen) y es un acto deliberado que rompe
-# `test/config.test.ts`. Ver docs/ai-cloud-vs-private-2026-10.md.
-AI_CLOUD_EXPLORE_ROLLOUT_PERCENT = "0"
+# Yala IA en modo nube con herramientas (`chat.explore`, src/ai/explore/). STAGING al 100 (paso previo a 2.2):
+# QA con Yala Dev. Producción sigue en 0 hasta 2.2 publicada (luego 10→50→100). Ver docs/ai-cloud-vs-private-2026-10.md §7.
+AI_CLOUD_EXPLORE_ROLLOUT_PERCENT = "100"
 # Forzado de actualización (min-version): build por debajo del cual el cliente bloquea. 0 = desactivado.
 # STAGING también en 0 a propósito: un valor > 0 BLOQUEARÍA la app de dogfooding/QA (≠ percents, que
 # encienden superficie). Se sube conscientemente al probar el flujo end-to-end.
@@ -172,9 +171,8 @@ CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT = "100"
 # viva — sin sesión, `startIfEligible` retorna en su primer guard. Es decir, los dos teléfonos del
 # owner en TestFlight.
 GROUPS_BACKEND_ROLLOUT_PERCENT = "100"
-# Yala IA en modo nube con herramientas (`chat.explore`, src/ai/explore/). APAGADO en los dos entornos a propósito:
-# encenderlo exige antes el texto de consentimiento nuevo (card de Jürgen) y es un acto deliberado que rompe
-# `test/config.test.ts`. Ver docs/ai-cloud-vs-private-2026-10.md.
+# Yala IA en modo nube con herramientas (`chat.explore`, src/ai/explore/). PRODUCCIÓN en 0 a propósito:
+# staging ya va al 100; prod 10→50→100 solo con 2.2 publicada. Ver docs/ai-cloud-vs-private-2026-10.md §7.
 AI_CLOUD_EXPLORE_ROLLOUT_PERCENT = "0"
 # Forzado de actualización (min-version): 0 = desactivado. Se sube al build mínimo soportado cuando
 # haya que forzar una versión crítica (requiere que /config esté vivo en prod — D9/Modo Nube).
