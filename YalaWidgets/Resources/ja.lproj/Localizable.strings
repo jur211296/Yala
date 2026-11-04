@@ -190,6 +190,14 @@
 "widget.budgets.exceeded.other" = "%d件超過";
 "widget.payments.inDays" = "%d日後";
 "widget.payments.leftShort" = "残り %@";
+"widget.payments.markPaid" = "支払い済みにする";
+"widget.payments.markReceived" = "受け取り済みにする";
+"widget.payments.paid" = "支払い済み";
+"widget.payments.received" = "受け取り済み";
+"widget.payments.markPaid.intentTitle" = "支払いを支払い済みにする";
+"widget.payments.markPaid.intentDescription" = "Yalaを開かずに今日の支払いを支払い済みにします。";
+"widget.payments.markPaid.paramPayment" = "支払い";
+"widget.payments.markPaid.paramDate" = "日付";
 "widget.ui.yesterday" = "昨日";
 "widget.records.emptyHint" = "+ をタップして最初の記録を追加";
 "widget.quick.title" = "記録する";

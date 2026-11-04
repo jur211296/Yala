@@ -380,7 +380,8 @@ struct WidgetGroupsWiringTests {
         #expect(bundle.contains("GroupsWidget()"))
         let widget = try source("YalaWidgets/Widgets/GroupsWidget.swift")
         #expect(widget.contains(".supportedFamilies([.systemMedium, .systemLarge])"))
-        #expect(widget.contains(".invitesToActivateFullWhenGroupsOnly()"))
+        // En «solo grupos» enseña los grupos, no la invitación a activar Yala completo (decisión A, 2026-11-03).
+        #expect(!widget.contains(".invitesToActivateFullWhenGroupsOnly()"))
         #expect(widget.contains("MonthSummaryLinks.url(\"groups/\\(group.id)\")"))
     }
 }

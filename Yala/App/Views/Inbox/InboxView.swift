@@ -189,33 +189,14 @@ struct InboxView: View {
     }
 
     /// Construye el contexto (miembros + lookup + plantilla) para abrir el form de grupo
-    /// prellenado desde un draft personal. nil si el grupo no tiene miembros activos.
+    /// prellenado desde un draft personal (`DraftGroupConversion.context`, el mismo que usan imagen y voz). nil si el
+    /// grupo no tiene miembros activos.
     private func buildConversionContext(draft: InboxDraft, group: SplitGroup) -> ConversionContext? {
-        let members: [SplitMember]
-        do {
-            members = try GroupService.shared.fetchMembers(for: group, context: modelContext)
-        } catch {
-            #if DEBUG
-            print("InboxView: error fetching members for conversion: \(error)")
-            #endif
+        guard let ctx = DraftGroupConversion.context(draft: draft, group: group, modelContext: modelContext) else {
             return nil
         }
-        let activeMembers = members.filter(\.isActive)
-        guard !activeMembers.isEmpty else { return nil }
-        let lookup = Dictionary(members.map { ($0.id.uuidString, $0.resolvedDisplayName) }, uniquingKeysWith: { first, _ in first })
-        let template = DraftToGroupExpenseTemplateLogic.buildTemplate(
-            amount: draft.amount ?? 0,
-            cachedCurrencyCode: draft.cachedCurrencyCode,
-            note: draft.note,
-            activeMemberIDs: activeMembers.map { $0.id },
-            groupCurrencyCode: group.currencyCode,
-            accountPrefill: draft.account,
-            // `effectiveDate`: `date` es opcional y su fallback (`createdAt`) es el que el resto
-            // del Inbox usa para mostrar y ordenar.
-            date: draft.effectiveDate,
-            subcategory: draft.subcategory
-        )
-        return ConversionContext(draft: draft, group: group, members: members, lookup: lookup, template: template)
+        return ConversionContext(
+            draft: ctx.draft, group: ctx.group, members: ctx.members, lookup: ctx.lookup, template: ctx.template)
     }
 
     /// UX 2.2 · L13-11 (decisión B): el borrador desapareció de la Bandeja; el aviso dice adónde fue y «Ver» lleva al grupo.

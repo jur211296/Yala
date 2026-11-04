@@ -190,6 +190,14 @@
 "widget.budgets.exceeded.other" = "%d overschreden";
 "widget.payments.inDays" = "Over %d dagen";
 "widget.payments.leftShort" = "Nog %@";
+"widget.payments.markPaid" = "Betaald";
+"widget.payments.markReceived" = "Ontvangen";
+"widget.payments.paid" = "Betaald";
+"widget.payments.received" = "Ontvangen";
+"widget.payments.markPaid.intentTitle" = "Betaling markeren als betaald";
+"widget.payments.markPaid.intentDescription" = "Markeert de betaling van vandaag als betaald zonder Yala te openen.";
+"widget.payments.markPaid.paramPayment" = "Betaling";
+"widget.payments.markPaid.paramDate" = "Datum";
 "widget.ui.yesterday" = "Gisteren";
 "widget.records.emptyHint" = "Tik op + om de eerste toe te voegen";
 "widget.quick.title" = "Toevoegen";

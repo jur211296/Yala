@@ -81,6 +81,7 @@
 			membershipExceptions = (
 				Resources/Info.plist,
 				Shared/ControlCenterIntents.swift,
+				Shared/ScheduledPaymentWidgetIntents.swift,
 			);
 			target = 96CFFF922EC3CF06002AC31C /* Yala */;
 		};
@@ -105,8 +106,10 @@
 			membershipExceptions = (
 				App/Logic/Helpers/WidgetAmountSplitter.swift,
 				App/Logic/Helpers/WidgetInsightsLogic.swift,
+				App/Logic/Helpers/ScheduledPaymentWidgetPay.swift,
 				App/Logic/Helpers/WidgetSelectionFallback.swift,
 				Shared/ControlCenterIntents.swift,
+				Shared/ScheduledPaymentWidgetIntents.swift,
 			);
 			target = CFB1B6AB2F30EC930083BC08 /* YalaWidgetsExtension */;
 		};

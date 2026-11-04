@@ -24,6 +24,7 @@ import SwiftUI
 struct VoiceRecordingView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(SceneNavigation.self) private var navigation
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.usesLargeSheets) private var usesLargeSheets
@@ -54,6 +55,8 @@ struct VoiceRecordingView: View {
     @State private var detailDraft: InboxDraft?
     /// Qué registros están marcados en la hoja de varios (`MultiDraftReviewList`). Todo sale marcado.
     @State private var selection = MultiDraftReviewLogic.Selection<PersistentIdentifier>()
+    /// La hoja del borrador pidió convertirlo en un gasto de grupo (`DraftGroupConversionFlow`).
+    @State private var conversionRequest: DraftGroupConversionRequest?
     @State private var saveFailed = false
     @State private var trialReported = false
     @State private var selectedDetent: PresentationDetent = .medium
@@ -104,8 +107,12 @@ struct VoiceRecordingView: View {
         .task { await startListening() }
         .onDisappear(perform: tearDown)
         .sheet(item: $detailDraft, onDismiss: afterDetails) { draft in
-            InboxDraftEditSheet(draft: draft)
+            InboxDraftEditSheet(draft: draft, onConvertToGroupExpense: { converting, groups in
+                conversionRequest = DraftGroupConversionRequest(draft: converting, groups: groups)
+            })
         }
+        // «Convertir a gasto compartido» desde la hoja del borrador, como en la Bandeja (bug del 2026-11-03).
+        .draftGroupConversionFlow($conversionRequest, onFinished: afterGroupConversion)
         .sheet(isPresented: $showManualEntry, onDismiss: { dismiss() }) {
             NewTransactionView()
         }
@@ -871,6 +878,14 @@ struct VoiceRecordingView: View {
         }
         if !saveFailed {
             DS.Haptic.success()
+        }
+    }
+
+    /// Tras el formulario de grupo: el borrador convertido ya no está, y el aviso dice adónde fue.
+    private func afterGroupConversion(_ group: SplitGroup?) {
+        afterDetails()
+        if let group {
+            DraftGroupConversion.announce(group, navigation: navigation) { dismiss() }
         }
     }
 

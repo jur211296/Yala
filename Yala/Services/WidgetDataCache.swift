@@ -72,12 +72,15 @@ struct WidgetScheduledPayment: Codable {
     let iconName: String
     let colorHex: String
     let isVariableAmount: Bool
+    /// El widget lo puede marcar como pagado en un toque (`ScheduledPaymentWidgetPayLogic.canMarkPaid`).
+    let canMarkPaid: Bool
 
-    init(id: String, name: String, amount: Double, currencyCode: String, nextDueDate: Date, isOverdue: Bool, paymentCategory: String, isIncome: Bool, iconName: String, colorHex: String, isVariableAmount: Bool = false) {
+    init(id: String, name: String, amount: Double, currencyCode: String, nextDueDate: Date, isOverdue: Bool, paymentCategory: String, isIncome: Bool, iconName: String, colorHex: String, isVariableAmount: Bool = false, canMarkPaid: Bool = false) {
         self.id = id; self.name = name; self.amount = amount; self.currencyCode = currencyCode
         self.nextDueDate = nextDueDate; self.isOverdue = isOverdue; self.paymentCategory = paymentCategory
         self.isIncome = isIncome; self.iconName = iconName; self.colorHex = colorHex
         self.isVariableAmount = isVariableAmount
+        self.canMarkPaid = canMarkPaid
     }
 
     init(from decoder: Decoder) throws {
@@ -93,6 +96,7 @@ struct WidgetScheduledPayment: Codable {
         iconName = try container.decode(String.self, forKey: .iconName)
         colorHex = try container.decode(String.self, forKey: .colorHex)
         isVariableAmount = try container.decodeIfPresent(Bool.self, forKey: .isVariableAmount) ?? false
+        canMarkPaid = try container.decodeIfPresent(Bool.self, forKey: .canMarkPaid) ?? false
     }
 }
 
@@ -611,7 +615,10 @@ enum WidgetDataCache {
                 isIncome: payment.transactionType == "income",
                 iconName: icon,
                 colorHex: color,
-                isVariableAmount: payment.isVariableAmount
+                isVariableAmount: payment.isVariableAmount,
+                canMarkPaid: ScheduledPaymentWidgetPayLogic.canMarkPaid(
+                    isGroupPayment: payment.isGroupPayment, hasAccount: payment.account != nil,
+                    hasSubcategory: payment.subcategory != nil, isVariableAmount: payment.isVariableAmount)
             )
         }
 
