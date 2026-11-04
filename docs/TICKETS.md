@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1160)
+## Index (1164)
 
 | id | status | path |
 |---|---|---|
@@ -300,6 +300,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | coverage-index-meta-counts-drifted-from-reality | backlog | tickets/backlog/coverage-index-meta-counts-drifted-from-reality.md |
 | creategroup-throw-after-commit-loses-owner | done | tickets/done/creategroup-throw-after-commit-loses-owner.md |
 | credit-card-statement-cycle | done | tickets/done/credit-card-statement-cycle.md |
+| cross-currency-sale-coverage-depends-on-the-rates-each-device-has | backlog | tickets/backlog/cross-currency-sale-coverage-depends-on-the-rates-each-device-has.md |
 | csv-import-leaves-no-origin-mark-and-reuses-opposite-categories | done | tickets/done/csv-import-leaves-no-origin-mark-and-reuses-opposite-categories.md |
 | csv-import-rows-fall-in-the-chat-sign-sweep | done | tickets/done/csv-import-rows-fall-in-the-chat-sign-sweep.md |
 | csv-import-silently-swallows-rows-and-only-reads-utf8 | backlog | tickets/backlog/csv-import-silently-swallows-rows-and-only-reads-utf8.md |
