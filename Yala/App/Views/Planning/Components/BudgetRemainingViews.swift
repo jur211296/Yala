@@ -16,6 +16,8 @@ struct BudgetRemainingFigure: View {
     var alignment: HorizontalAlignment = .trailing
     var labelFont: Font = DS.Typography.captionSmall
     var amountFont: Font = DS.Typography.headline
+    /// «Te quedan» sobre la cifra. La lista lo dice una vez en el título de la sección; «Te pasaste por» sale siempre.
+    var showsLabel = true
 
     @Environment(AppPreferences.self) private var appPreferences
 
@@ -24,10 +26,12 @@ struct BudgetRemainingFigure: View {
 
     var body: some View {
         VStack(alignment: alignment, spacing: DS.Spacing.xxs) {
-            Text(isOver ? L10n.UXL9.overLabel : L10n.UXL9.remainingLabel)
-                .font(labelFont)
-                .foregroundStyle(isOver ? Color.overBudgetText : Color.secondary)
-                .lineLimit(1)
+            if showsLabel || isOver {
+                Text(isOver ? L10n.UXL9.overLabel : L10n.UXL9.remainingLabel)
+                    .font(labelFont)
+                    .foregroundStyle(isOver ? Color.overBudgetText : Color.secondary)
+                    .lineLimit(1)
+            }
 
             // A su tamaño si cabe; solo si no cabe (un importe en COP, texto de accesibilidad) se encoge. Con
             // `minimumScaleFactor` a secas la cifra salía encogida aunque cupiera (medido en la fila, iPhone 17 Pro).

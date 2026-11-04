@@ -17,6 +17,7 @@ struct BudgetsListView: View {
 
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     // ViewModel
     @State private var viewModel = BudgetsViewModel()
@@ -251,6 +252,12 @@ struct BudgetsListView: View {
 
     // MARK: - Budgets List
 
+    /// El rótulo «Te quedan» sube al título en las secciones donde ninguna fila se pasó, y a tamaños normales (a los de
+    /// accesibilidad la cifra baja bajo el nombre y pierde la columna).
+    private func sectionShowsRemainingLabel(_ section: (status: BudgetStatus, budgets: [BudgetSummary])) -> Bool {
+        section.status != .exceeded && !dynamicTypeSize.isAccessibilitySize
+    }
+
     /// «28 días» para el título de la sección, o nil si la sección no comparte fin: los «Único» llevan fechas propias
     /// y los inactivos no corren.
     private func sectionDaysLeft(_ section: (status: BudgetStatus, budgets: [BudgetSummary])) -> String? {
@@ -262,15 +269,26 @@ struct BudgetsListView: View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             ForEach(viewModel.groupedBudgets, id: \.status) { section in
                 VStack(alignment: .leading, spacing: DS.Spacing.md) {
-                    // Section header. Con período compartido, los días van aquí una vez y no en cada fila.
-                    if let days = sectionDaysLeft(section) {
-                        Text("\(section.status.localizedName) · \(days)")
-                            .font(DS.Typography.subheadlineEmphasized)
-                            .foregroundStyle(.primary)
-                    } else {
-                        Text(section.status.localizedName)
-                            .font(DS.Typography.subheadlineEmphasized)
-                            .foregroundStyle(.primary)
+                    // Section header. Con período compartido, los días van aquí una vez y no en cada fila. «Te quedan», una
+                    // vez sobre la columna de cifras (no en «Excedidos»: ahí cada fila dice «Te pasaste por»).
+                    HStack(alignment: .firstTextBaseline) {
+                        if let days = sectionDaysLeft(section) {
+                            Text("\(section.status.localizedName) · \(days)")
+                                .font(DS.Typography.subheadlineEmphasized)
+                                .foregroundStyle(.primary)
+                        } else {
+                            Text(section.status.localizedName)
+                                .font(DS.Typography.subheadlineEmphasized)
+                                .foregroundStyle(.primary)
+                        }
+                        if sectionShowsRemainingLabel(section) {
+                            Spacer(minLength: DS.Spacing.sm)
+                            Text(L10n.UXL9.remainingLabel)
+                                .font(DS.Typography.captionSmall)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .padding(.trailing, DS.Spacing.lg)
+                        }
                     }
 
                     // Budget cards. Sin los ya borrados: la lista recarga 150 ms después de borrar y, mientras, leer uno
@@ -279,7 +297,8 @@ struct BudgetsListView: View {
                         BudgetRowView(
                             summary: summary,
                             currencyCode: summary.budget.currencyCode,
-                            showsDaysLeft: sectionDaysLeft(section) == nil
+                            showsDaysLeft: sectionDaysLeft(section) == nil,
+                            showsRemainingLabel: !sectionShowsRemainingLabel(section)
                         )
                         // Clic secundario en el iPad, pulsación larga en el iPhone: el editor de siempre.
                         .contextMenu {
