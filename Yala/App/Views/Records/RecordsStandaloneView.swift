@@ -5,7 +5,8 @@
 //  Standalone Records view accessible from "More" tab.
 //  Provides full Records functionality with selection mode and filter sync. Desde la card 97gc (decisión de Jürgen del
 //  2-nov) es idéntica a Estadísticas › Registros: la acción principal va en la fila bajo la cabecera
-//  (`StatsQuickActionsSlot`) y no hay flotante nunca, tampoco al bajar.
+//  (`StatsQuickActionsSlot`) y el flotante solo sale cuando el scroll se lleva esa fila (card rtyu, 4-nov: quitarlo
+//  también al bajar fue leer de más el «sin FAB»; el patrón de toda la app es el de kzhe, del 24-oct).
 //
 
 import SwiftData
@@ -27,6 +28,11 @@ struct RecordsStandaloneView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     // MARK: - ViewModels
+
+    /// La fila de acciones salió de la vista al bajar: entran Yala IA y «+» flotantes (card rtyu).
+    @State private var showFloatingActions = false
+    /// La pantalla tiene poco alto: Yala IA y «+» en fila (UX 2.2 · L15-14).
+    @State private var fabShortContainer = false
 
     @State private var dataViewModel = DetailContainerViewModel()
     @State private var recordsViewModel = RecordsViewModel()
@@ -257,10 +263,46 @@ struct RecordsStandaloneView: View {
                 defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
                 onFilterChange: { recalculateData() }
             )
-            // La fila de acciones bajo la cabecera, la misma de Estadísticas › Registros; sin flotante (card 97gc).
+            // La fila de acciones bajo la cabecera, la misma de Estadísticas › Registros (card 97gc). Al bajar y perderla
+            // de vista, la fila enciende `showFloatingActions` y salen los flotantes, como en Estadísticas (card rtyu).
             .environment(\.statsQuickActions, recordsQuickActions)
             .overlay(alignment: .bottom) {
                 ZStack(alignment: .bottom) {
+                    // Un contenedor propio para los flotantes: su animación no alcanza a la barra de selección.
+                    ZStack {
+                        if showFloatingActions && !recordsViewModel.isSelectionMode {
+                            VStack {
+                                Spacer()
+                                HStack {
+                                    Spacer()
+                                    FABStackView(
+                                        canUseVoiceInput: canUseVoiceInput,
+                                        isVoiceLocked: isVoiceLocked,
+                                        isImageLocked: isImageLocked,
+                                        isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
+                                        chatFABVisible: appPreferences.chatFABVisible,
+                                        isShortContainer: fabShortContainer,
+                                        missingStep: dataViewModel.visibleMissingStep,
+                                        onResolveMissingStep: { resolveMissingStep() },
+                                        onVoiceTap: { showVoiceRecording = true },
+                                        onImageTap: { showImageSelection = true },
+                                        onManualTap: { recordsViewModel.showNewTransaction = true },
+                                        onUpgradeVoice: { showUpgradeForVoice = true },
+                                        onUpgradeImage: { showUpgradeForImage = true },
+                                        onChatTap: { startChat() },
+                                        onUpgradeChat: { showUpgradeForChat = true }
+                                    )
+                                }
+                            }
+                            // Con poco alto, los dos botones van en fila (UX 2.2 · L15-14).
+                            .measuresShortContainer($fabShortContainer)
+                            .transition(.opacity)
+                        }
+                    }
+                    // Entran y salen fundiéndose al desplazar, como en Estadísticas. Implícita: quien enciende
+                    // `showFloatingActions` lo hace desde el scroll, donde un `withAnimation` no anima.
+                    .animation(reduceMotion ? nil : DS.Animation.appear, value: showFloatingActions)
+
                     // Modo selección: qué hacer y, con algo elegido, Eliminar y Editar (L8-12).
                     if recordsViewModel.isSelectionMode {
                         RecordsSelectionBar(
@@ -291,7 +333,7 @@ struct RecordsStandaloneView: View {
     }
 
     /// Lo que la fila de acciones necesita: las mismas puertas que Estadísticas (`DetailContainerView.statsQuickActions`).
-    /// Sin flotante, así que nadie lee `showsFloating`.
+    /// La fila escribe en `showsFloating` cuando el scroll se la lleva (`revealsFloatingActionWhenScrolledAway`).
     private var recordsQuickActions: StatsQuickActions {
         StatsQuickActions(
             canCreateRecords: canUseVoiceInput,
@@ -306,7 +348,7 @@ struct RecordsStandaloneView: View {
             onVoiceTap: { startAIEntry(.voice) },
             onImageTap: { startAIEntry(.image) },
             onChatTap: { startChat() },
-            showsFloating: .constant(false)
+            showsFloating: $showFloatingActions
         )
     }
 
