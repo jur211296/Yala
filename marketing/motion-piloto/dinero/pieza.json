@@ -1,0 +1,11 @@
+{
+  "titulo": "Yala · ¿A dónde va tu dinero? (piloto Motion)",
+  "url": "https://claude.ai/artifact/Spf7koD6TdiZWswfyuPS4D",
+  "main": "#FF2D78",
+  "assets": {
+    "panel.jpg": "~/Claude/propuestas/capturas-app-store-2-2-2026-11/capturas/s-panel.png",
+    "estadisticas.jpg": "~/Claude/propuestas/capturas-app-store-2-2-2026-11/capturas/s-estadisticas-grafica.png",
+    "logo.png": "~/Claude/propuestas/reels-hyperframes-v3-2026-10-13/plantilla/base/logo.png"
+  },
+  "comparar_con": "~/Claude/propuestas/reels-hyperframes-v3-2026-10-13/reels/ia/ia-pop.mp4"
+}
