@@ -2355,13 +2355,6 @@
 "panel.widgetInfo.expensesByNeed.smallWhatA" = "How your spending in the active period splits across need types: essential (the must-haves), priority (the important) and optional (the nice-to-haves). \"Unclassified\" only shows if you have uncategorized spending.";
 "panel.widgetInfo.expensesByNeed.smallWhatQ" = "What are you seeing?";
 "panel.widgetInfo.expensesByNeed.title" = "Distribution by need";
-"panel.widgetInfo.periodComparison.chip1" = "Comparison";
-"panel.widgetInfo.periodComparison.chip2" = "Follows the chosen period";
-"panel.widgetInfo.periodComparison.howA" = "Tap M to compare against the previous month or Y for the previous year. Your choice also applies to variations across the rest of the Panel.";
-"panel.widgetInfo.periodComparison.howQ" = "What does it compare against?";
-"panel.widgetInfo.periodComparison.title" = "Period comparison";
-"panel.widgetInfo.periodComparison.whatA" = "Your current period's balance, income or expenses side by side with the previous period. Helps you see at a glance if the trend is improving.";
-"panel.widgetInfo.periodComparison.whatQ" = "What are you seeing?";
 "panel.widgetInfo.recentRecords.chip1" = "Records";
 "panel.widgetInfo.recentRecords.chip2" = "Current period";
 "panel.widgetInfo.recentRecords.title" = "Latest records";
@@ -7699,6 +7692,8 @@
 "l2d.missing.twoDifferentAccounts" = "Choose two different accounts";
 "l2d.missing.chipValue" = "Missing";
 "l2d.discard.title" = "Discard this record?";
+"l2d.draft.restored" = "We kept what you were writing.";
+"l2d.draft.startOver" = "Start over";
 "l2d.saved.expense" = "Expense saved · %@";
 "l2d.saved.income" = "Income saved · %@";
 "l2d.saved.transfer" = "Transfer saved · %@";

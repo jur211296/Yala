@@ -91,6 +91,10 @@ enum WidgetDS {
         static let donutAngularInset: CGFloat = 1.5
         /// Donut de las tartas de Categorías y Subcategorías (grande del iPhone, con el total en el centro).
         static let donutSizeLarge: CGFloat = 156
+        /// Hasta dónde crece ese aro cuando la leyenda trae pocas filas, y lo que deja libre cada fila que falta (su
+        /// alto más el hueco entre filas). Card dz6c: con dos categorías, el aro de 156 dejaba un tercio vacío.
+        static let donutSizeLargeMax: CGFloat = 196
+        static let legendRowPitch: CGFloat = 22
         /// Punto de color de una leyenda.
         static let legendDot: CGFloat = 8
         /// Columna del porcentaje en una leyenda o un ranking: los «%» quedan alineados («8 %» y «31 %»).

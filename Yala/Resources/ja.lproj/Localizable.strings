@@ -4240,13 +4240,6 @@
 "stats.trends.insight.weekdayPeak %@ %@" = "最もお金を使う曜日は%@です。平均%@です。";
 
 // MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
-"panel.widgetInfo.periodComparison.title" = "期間の比較";
-"panel.widgetInfo.periodComparison.chip1" = "比較";
-"panel.widgetInfo.periodComparison.chip2" = "選んだ期間に連動";
-"panel.widgetInfo.periodComparison.whatQ" = "ここに表示されているのは何ですか？";
-"panel.widgetInfo.periodComparison.whatA" = "現在の期間の残高・収入・支出を、前の期間と並べて表示しています。傾向が改善しているかどうかが一目で分かります。";
-"panel.widgetInfo.periodComparison.howQ" = "何と比較していますか？";
-"panel.widgetInfo.periodComparison.howA" = "Mをタップすると前月、Aをタップすると前年と比較できます。この選択はパネル全体の差分にも適用されます。";
 "panel.widgetInfo.sankey.title" = "お金の流れ";
 "panel.widgetInfo.sankey.chip1" = "流れ";
 "panel.widgetInfo.sankey.chip2" = "必要度別";
@@ -8386,6 +8379,8 @@
 "l2d.missing.twoDifferentAccounts" = "別々の口座を2つ選んでください";
 "l2d.missing.chipValue" = "未入力";
 "l2d.discard.title" = "この記録を破棄しますか？";
+"l2d.draft.restored" = "入力中の内容を復元しました。";
+"l2d.draft.startOver" = "最初からやり直す";
 "l2d.saved.expense" = "支出を保存しました · %@";
 "l2d.saved.income" = "収入を保存しました · %@";
 "l2d.saved.transfer" = "振替を保存しました · %@";

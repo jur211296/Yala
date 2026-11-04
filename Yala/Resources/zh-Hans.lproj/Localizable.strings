@@ -4240,13 +4240,6 @@
 "stats.trends.insight.weekdayPeak %@ %@" = "%@是你花费最多的一天，平均 %@。";
 
 // MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
-"panel.widgetInfo.periodComparison.title" = "期间对比";
-"panel.widgetInfo.periodComparison.chip1" = "对比";
-"panel.widgetInfo.periodComparison.chip2" = "跟随所选期间";
-"panel.widgetInfo.periodComparison.whatQ" = "你看到的是什么？";
-"panel.widgetInfo.periodComparison.whatA" = "把你当前期间的余额、收入或支出与上一期间并排显示，让你一眼看出趋势是否在改善。";
-"panel.widgetInfo.periodComparison.howQ" = "在与什么对比？";
-"panel.widgetInfo.periodComparison.howA" = "点 M 与上月对比，点 A 与上年对比。这个选择也会应用到面板其他部分的变化数据。";
 "panel.widgetInfo.sankey.title" = "资金流向";
 "panel.widgetInfo.sankey.chip1" = "流向";
 "panel.widgetInfo.sankey.chip2" = "按需求";
@@ -8386,6 +8379,8 @@
 "l2d.missing.twoDifferentAccounts" = "请选择两个不同的账户";
 "l2d.missing.chipValue" = "未填写";
 "l2d.discard.title" = "要丢弃这条记录吗？";
+"l2d.draft.restored" = "已恢复你正在填写的内容。";
+"l2d.draft.startOver" = "重新开始";
 "l2d.saved.expense" = "支出已保存 · %@";
 "l2d.saved.income" = "收入已保存 · %@";
 "l2d.saved.transfer" = "转账已保存 · %@";

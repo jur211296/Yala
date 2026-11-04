@@ -4214,13 +4214,6 @@
 "stats.trends.insight.weekdayPeak %@ %@" = "%@ is your priciest day: you spend %@ on average.";
 
 // MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
-"panel.widgetInfo.periodComparison.title" = "Period comparison";
-"panel.widgetInfo.periodComparison.chip1" = "Comparison";
-"panel.widgetInfo.periodComparison.chip2" = "Follows the chosen period";
-"panel.widgetInfo.periodComparison.whatQ" = "What are you seeing?";
-"panel.widgetInfo.periodComparison.whatA" = "Your current period's balance, income or expenses side by side with the previous period. Helps you see at a glance if the trend is improving.";
-"panel.widgetInfo.periodComparison.howQ" = "What does it compare against?";
-"panel.widgetInfo.periodComparison.howA" = "Tap M to compare against the previous month or Y for the previous year. Your choice also applies to variations across the rest of the Panel.";
 "panel.widgetInfo.sankey.title" = "Money flow";
 "panel.widgetInfo.sankey.chip1" = "Flow";
 "panel.widgetInfo.sankey.chip2" = "By need";
@@ -8380,6 +8373,8 @@
 "l2d.missing.twoDifferentAccounts" = "Choose two different accounts";
 "l2d.missing.chipValue" = "Missing";
 "l2d.discard.title" = "Discard this record?";
+"l2d.draft.restored" = "We kept what you were writing.";
+"l2d.draft.startOver" = "Start over";
 "l2d.saved.expense" = "Expense saved · %@";
 "l2d.saved.income" = "Income saved · %@";
 "l2d.saved.transfer" = "Transfer saved · %@";

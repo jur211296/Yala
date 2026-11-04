@@ -22,9 +22,14 @@ struct ScheduledPaymentsPortraitView: View {
             ScheduledPaymentsHeader(entry: entry, subtitle: PaymentsMonthCalendar.monthTitle(for: entry.date))
 
             if entry.hasNoPayments {
-                Spacer(minLength: 0)
+                // El mes se queda aunque no haya pagos: sin él, el widget era una invitación sola en un rectángulo vacío
+                // (card dz6c). La invitación ocupa el sitio de la lista.
+                PaymentsMonthCalendar(now: entry.date, month: nil)
+
+                Divider()
+
                 WidgetCreateFirstView(icon: "calendar.badge.plus", message: "widget.empty.noPaymentsYet")
-                Spacer(minLength: 0)
+                    .frame(maxHeight: .infinity)
             } else {
                 PaymentsMonthCalendar(
                     now: entry.date,
@@ -53,7 +58,11 @@ struct ScheduledPaymentsPortraitView: View {
                     }
                 }
 
-                Spacer(minLength: 0)
+                // Con la lista llena, «Te falta pagar» va al fondo, como siempre. Con menos pagos va justo detrás de la
+                // lista: anclado al fondo, con uno o dos quedaba un hueco entre los dos (card dz6c).
+                if entry.payments.count >= ScheduledPaymentsProvider.extraLargePortraitLimit {
+                    Spacer(minLength: 0)
+                }
 
                 if let month = entry.paymentsMonth(for: entry.date) {
                     Divider()

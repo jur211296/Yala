@@ -1201,6 +1201,7 @@ final class DataWipeService {
         defaults.removeObject(forKey: "lastSplitPercentage")
         defaults.removeObject(forKey: DescriptionShortcutHintLogic.openingsKey) // Pista de los atajos del formulario (L2-8)
         defaults.removeObject(forKey: DescriptionShortcutHintLogic.usedKey)
+        defaults.removeObject(forKey: NewRecordDraftStore.key)    // Lo que se escribía en Nuevo registro (card 77j1)
 
         // El estado del servicio de tipos de cambio. Sin esto, `preloadHistoricalIfNeeded` se salta el
         // histórico hasta 30 días después —la key la acaba de escribir el arranque que importó el corpus—

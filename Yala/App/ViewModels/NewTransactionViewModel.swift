@@ -632,6 +632,62 @@ final class NewTransactionViewModel {
         }
     }
 
+    // MARK: - Borrador que sobrevive al cierre (card 77j1)
+
+    /// Lo escrito en el formulario, para guardarlo al pasar a segundo plano (`NewRecordDraftStore`). Las entidades van
+    /// por su identidad estable: el `PersistentIdentifier` no se puede volver a buscar con seguridad tras relanzar.
+    func makeDraft(now: Date = .now) -> SavedNewRecordDraft {
+        SavedNewRecordDraft(
+            savedAt: now,
+            type: transactionType.rawValue,
+            amountString: amountString,
+            currencyCode: currencyCode,
+            accountID: selectedAccount?.shortcutID,
+            sourceAccountID: isTransfer ? sourceAccount?.shortcutID : nil,
+            destinationAccountID: isTransfer ? destinationAccount?.shortcutID : nil,
+            subcategoryID: selectedSubcategory?.shortcutID,
+            need: selectedNeed?.rawValue,
+            date: transactionDate,
+            tagIDs: selectedTags.map(\.id),
+            note: note,
+            exchangeRate: exchangeRate,
+            isExchangeRateManual: isExchangeRateManual,
+            destinationAmount: destinationAmount
+        )
+    }
+
+    /// Vuelve a poner en el formulario un borrador guardado. Lo que ya no existe (una cuenta archivada o borrada, una
+    /// subcategoría, una etiqueta) se queda como estaba: vacío, para que la persona lo elija otra vez.
+    func apply(_ draft: SavedNewRecordDraft) {
+        if let type = TransactionType(rawValue: draft.type) {
+            transactionType = type
+        }
+        if let id = draft.accountID, let account = accounts.first(where: { $0.shortcutID == id }) {
+            selectedAccount = account
+        }
+        if let id = draft.sourceAccountID, let account = accounts.first(where: { $0.shortcutID == id }) {
+            sourceAccount = account
+        }
+        if let id = draft.destinationAccountID, let account = accounts.first(where: { $0.shortcutID == id }) {
+            destinationAccount = account
+        }
+        currencyCode = draft.currencyCode
+        if let id = draft.subcategoryID {
+            let all = categories.flatMap { $0.subcategories ?? [] }
+            selectedSubcategory = all.first { $0.shortcutID == id }
+        }
+        selectedNeed = draft.need.flatMap(SubcategoryNeed.init(rawValue:))
+        transactionDate = draft.date
+        if !draft.tagIDs.isEmpty {
+            selectedTags = tags.filter { draft.tagIDs.contains($0.id) }
+        }
+        note = draft.note
+        exchangeRate = draft.exchangeRate
+        isExchangeRateManual = draft.isExchangeRateManual
+        amountString = draft.amountString
+        destinationAmount = draft.destinationAmount
+    }
+
     // MARK: - Numeric Keypad
 
     /// Añade un dígito al monto

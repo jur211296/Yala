@@ -426,7 +426,6 @@
 "stats.sankey.subtitle" = "Distribución del flujo";
 
 // MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
-"panel.widgetInfo.periodComparison.howA" = "Tocá M para comparar contra el mes anterior o A contra el año anterior. La elección se aplica también a las variaciones del resto del Panel.";
 "panel.widgetInfo.sankey.howA" = "Tocá una categoría, subcategoría o rama del flujo para filtrar el resto del Panel por ese trayecto. Volvé a tocar para quitar el filtro.";
 
 // MARK: GroupsOnboarding-keys
@@ -2369,12 +2368,6 @@
 "panel.widgetInfo.expensesByNeed.smallWhatA" = "El reparto de tus gastos del período activo entre tipos de necesidad: esenciales (lo imprescindible), prioritarios (lo importante) y opcionales (lo superfluo). «Sin clasificar» aparece solo si tienes gastos sin categorizar.";
 "panel.widgetInfo.expensesByNeed.smallWhatQ" = "¿Qué estás viendo?";
 "panel.widgetInfo.expensesByNeed.title" = "Distribución por necesidad";
-"panel.widgetInfo.periodComparison.chip1" = "Comparación";
-"panel.widgetInfo.periodComparison.chip2" = "Sigue el período elegido";
-"panel.widgetInfo.periodComparison.howQ" = "¿Con qué se compara?";
-"panel.widgetInfo.periodComparison.title" = "Comparativa de período";
-"panel.widgetInfo.periodComparison.whatA" = "El balance, ingresos o gastos de tu período actual al lado del período anterior. Así ves de un vistazo si la tendencia va mejorando.";
-"panel.widgetInfo.periodComparison.whatQ" = "¿Qué estás viendo?";
 "panel.widgetInfo.recentRecords.chip1" = "Registros";
 "panel.widgetInfo.recentRecords.chip2" = "Período actual";
 "panel.widgetInfo.recentRecords.title" = "Últimos registros";
@@ -7708,6 +7701,8 @@
 "l2d.missing.twoDifferentAccounts" = "Elegí dos cuentas distintas";
 "l2d.missing.chipValue" = "Falta";
 "l2d.discard.title" = "¿Descartar este registro?";
+"l2d.draft.restored" = "Recuperamos lo que estabas escribiendo.";
+"l2d.draft.startOver" = "Empezar de cero";
 "l2d.saved.expense" = "Gasto guardado · %@";
 "l2d.saved.income" = "Ingreso guardado · %@";
 "l2d.saved.transfer" = "Transferencia guardada · %@";
