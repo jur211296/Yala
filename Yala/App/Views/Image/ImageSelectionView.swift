@@ -508,6 +508,10 @@ struct ImageSelectionView: View {
                         thumbnails
                     }
 
+                    if dynamicTypeSize.isAccessibilitySize {
+                        missingHint
+                    }
+
                     if isMulti {
                         MultiDraftReviewList(drafts: drafts, selection: $selection) { detailDraft = $0 }
                     } else {
@@ -541,12 +545,8 @@ struct ImageSelectionView: View {
             }
             .scrollBounceBehavior(.basedOnSize)
 
-            if isMulti, !isFinished, MultiDraftReviewLogic.incompleteMarked(reviewItems, selection) > 0 {
-                Text(L10n.Voice.reviewMissingHint)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(DS.Semantic.warningForeground)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityIdentifier("multi_review_missing_hint")
+            if !dynamicTypeSize.isAccessibilitySize {
+                missingHint
             }
 
             if saveFailed {
@@ -556,7 +556,7 @@ struct ImageSelectionView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            HStack(spacing: DS.Spacing.md) {
+            actionsLayout {
                 if isFinished {
                     primaryButton(L10n.Action.done, isEnabled: true, identifier: "image_finish") {
                         dismiss()
@@ -569,6 +569,28 @@ struct ImageSelectionView: View {
         }
         .padding(.top, DS.Spacing.xs)
         .onChange(of: drafts.map(\.persistentModelID), initial: true) { _, ids in selection.sync(with: ids) }
+    }
+
+    /// «Completa los marcados en ámbar…». A tamaño normal va fijo encima de los botones; con texto de accesibilidad
+    /// ocupa cuatro líneas y, fijo abajo, dejaba la lista en una franja (pase de estrés 2.2, card 48ri): ahí entra en el
+    /// scroll, bajo el título.
+    @ViewBuilder
+    private var missingHint: some View {
+        if isMulti, !isFinished, MultiDraftReviewLogic.incompleteMarked(reviewItems, selection) > 0 {
+            Text(L10n.Voice.reviewMissingHint)
+                .font(DS.Typography.caption)
+                .foregroundStyle(DS.Semantic.warningForeground)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityIdentifier("multi_review_missing_hint")
+        }
+    }
+
+    /// Los botones de abajo, uno al lado del otro; con texto de accesibilidad, uno encima del otro a todo lo ancho, o
+    /// «Guardar 7 · S/ …» se partía por sílabas. `AnyLayout`: cambiar el tamaño de texto no cambia su identidad.
+    private var actionsLayout: AnyLayout {
+        dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(spacing: DS.Spacing.sm))
+            : AnyLayout(HStackLayout(spacing: DS.Spacing.md))
     }
 
     /// Con varios y alguno sin marcar, la hoja dice que esos siguen en la Bandeja; si no, el aviso de siempre.
