@@ -64,6 +64,8 @@ struct ImageSelectionView: View {
     @State private var readTask: Task<Void, Never>?
     @State private var drafts: [InboxDraft] = []
     @State private var detailDraft: InboxDraft?
+    /// Qué registros están marcados en la hoja de varios (`MultiDraftReviewList`). Todo sale marcado.
+    @State private var selection = MultiDraftReviewLogic.Selection<PersistentIdentifier>()
     @State private var saveFailed = false
     @State private var trialReported = false
     @State private var selectedDetent: PresentationDetent = .medium
@@ -462,8 +464,28 @@ struct ImageSelectionView: View {
         !drafts.isEmpty && pendingDrafts.isEmpty
     }
 
+    /// Con varios, la hoja elige: se guarda lo marcado y lo demás se queda en la Bandeja.
+    private var isMulti: Bool { drafts.count > 1 }
+
+    private var reviewItems: [MultiDraftReviewLogic.Item<PersistentIdentifier>] {
+        MultiDraftReviewLogic.items(for: drafts, defaultCurrency: appPreferences.defaultCurrencyCode.rawValue)
+    }
+
+    /// Lo que «Guardar» aprueba: con varios, solo los marcados; con uno, el pendiente.
+    private var draftsToSave: [InboxDraft] {
+        guard isMulti else { return pendingDrafts }
+        return pendingDrafts.filter { selection.contains($0.persistentModelID) }
+    }
+
     private var canSave: Bool {
-        VoiceEntryFlowLogic.canSave(pendingDrafts.map(readiness))
+        isMulti
+            ? MultiDraftReviewLogic.canSave(reviewItems, selection)
+            : VoiceEntryFlowLogic.canSave(pendingDrafts.map(readiness))
+    }
+
+    /// Sin nada más que hacer en la hoja: todo guardado o, con varios, lo marcado ya guardado.
+    private var isFinished: Bool {
+        isMulti ? MultiDraftReviewLogic.isFinished(reviewItems, selection) : allSaved
     }
 
     private var reviewContent: some View {
@@ -480,9 +502,13 @@ struct ImageSelectionView: View {
                         thumbnails
                     }
 
-                    ForEach(drafts, id: \.persistentModelID) { draft in
-                        VoiceDraftReviewCard(draft: draft) {
-                            detailDraft = draft
+                    if isMulti {
+                        MultiDraftReviewList(drafts: drafts, selection: $selection) { detailDraft = $0 }
+                    } else {
+                        ForEach(drafts, id: \.persistentModelID) { draft in
+                            VoiceDraftReviewCard(draft: draft) {
+                                detailDraft = draft
+                            }
                         }
                     }
 
@@ -498,15 +524,24 @@ struct ImageSelectionView: View {
                         sharedPhotosLeftOutNote
                     }
 
-                    if !allSaved {
-                        Text(L10n.Voice.reviewInboxNote)
+                    if let note = inboxNote {
+                        Text(note)
                             .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
+                            .accessibilityIdentifier("review_inbox_note")
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .scrollBounceBehavior(.basedOnSize)
+
+            if isMulti, !isFinished, MultiDraftReviewLogic.incompleteMarked(reviewItems, selection) > 0 {
+                Text(L10n.Voice.reviewMissingHint)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(DS.Semantic.warningForeground)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier("multi_review_missing_hint")
+            }
 
             if saveFailed {
                 Text(L10n.Chat.Draft.saveFailedGeneric)
@@ -516,7 +551,7 @@ struct ImageSelectionView: View {
             }
 
             HStack(spacing: DS.Spacing.md) {
-                if allSaved {
+                if isFinished {
                     primaryButton(L10n.Action.done, isEnabled: true, identifier: "image_finish") {
                         dismiss()
                     }
@@ -527,6 +562,15 @@ struct ImageSelectionView: View {
             }
         }
         .padding(.top, DS.Spacing.xs)
+        .onChange(of: drafts.map(\.persistentModelID), initial: true) { _, ids in selection.sync(with: ids) }
+    }
+
+    /// Con varios y alguno sin marcar, la hoja dice que esos siguen en la Bandeja; si no, el aviso de siempre.
+    private var inboxNote: String? {
+        if isMulti, MultiDraftReviewLogic.leavesUnmarkedInInbox(reviewItems, selection) {
+            return L10n.Voice.reviewLeftInInbox
+        }
+        return allSaved ? nil : L10n.Voice.reviewInboxNote
     }
 
     /// Las fotos de esta vez, en pequeño; las que no se leyeron, atenuadas y con aviso.
@@ -629,8 +673,17 @@ struct ImageSelectionView: View {
         return drafts.count > 1 ? L10n.Image.Entry.reviewTitleMany(drafts.count) : L10n.Image.Entry.reviewTitle
     }
 
+    /// Con varios, cuántos marcados y cuánto suman («Guardar 5 · S/ 224.81»); sin cifra si mezclan divisas.
     private var saveTitle: String {
-        pendingDrafts.count > 1 ? L10n.Voice.saveMany(pendingDrafts.count) : L10n.Chat.Draft.saveButton
+        guard isMulti else {
+            return pendingDrafts.count > 1 ? L10n.Voice.saveMany(pendingDrafts.count) : L10n.Chat.Draft.saveButton
+        }
+        let toSave = MultiDraftReviewLogic.toSave(reviewItems, selection)
+        guard !toSave.isEmpty else { return L10n.Chat.Draft.saveButton }
+        guard let code = MultiDraftReviewLogic.sharedCurrency(toSave) else { return L10n.Voice.saveMany(toSave.count) }
+        let amount = appPreferences.currency(
+            MultiDraftReviewLogic.saveTotal(reviewItems, selection), currencyCode: code, forceFullPrecision: true)
+        return L10n.Voice.reviewSaveSelected(toSave.count, amount: amount)
     }
 
     private func readiness(_ draft: InboxDraft) -> VoiceDraftReadiness {
@@ -1263,7 +1316,7 @@ struct ImageSelectionView: View {
     private func saveAll() {
         saveFailed = false
         DraftService.shared.setContext(modelContext)
-        for draft in pendingDrafts {
+        for draft in draftsToSave {
             do {
                 let transaction = try DraftService.shared.approveDraft(draft, currencyConverter: currencyConverter)
                 reportTrial(id: transaction.persistentModelID, name: draft.note, kind: .transaction)
@@ -1368,6 +1421,9 @@ struct ImageSelectionView: View {
         formatter.dateFormat = "yyyy-MM-dd"
         formatter.locale = Locale(identifier: "en_US_POSIX")
         let today = formatter.string(from: Date.now)
+        if profile == "many" {
+            return uiTestManyDrafts(formatter: formatter)
+        }
         let isFirst = index == 0
         // `pages`: un movimiento distinto por página, para que la deduplicación no junte dos páginas en uno.
         let perPage = profile.hasPrefix("pages")
@@ -1403,6 +1459,55 @@ struct ImageSelectionView: View {
             }
         }
         return made
+    }
+
+    /// `many`: un estado de cuenta con siete movimientos en cuatro días y cuatro categorías, dos sin categoría, para la
+    /// hoja de varios registros (resumen, selección y agrupado por día).
+    private func uiTestManyDrafts(formatter: DateFormatter) -> [InboxDraft] {
+        let calendar = Calendar.current
+        func day(_ offset: Int) -> String {
+            formatter.string(from: calendar.date(byAdding: .day, value: -offset, to: Date.now) ?? Date.now)
+        }
+        let currency = uiTestAccountCurrency()
+        let rows: [(String, Double, Int, [String])] = [
+            ("Wong", 83.47, 0, ["Supermercado"]), ("Starbucks", 6.25, 0, ["Café", "Restaurante"]), ("Uber", 18.90, 1, []),
+            ("Netflix", 15.49, 1, ["Streaming", "Suscrip"]), ("Primax", 52.10, 2, ["Gasolina", "Combustible"]),
+            ("Ladislao Bal", 5.00, 3, []), ("Warda", 67.50, 3, ["Supermercado"]),
+        ]
+        let response = VisionResponse(
+            imageType: "list",
+            transactions: rows.map {
+                VisionTransaction(amount: -$0.1, date: day($0.2), merchant: $0.0, note: nil, currency: currency)
+            },
+            confidence: VisionConfidence(overall: 1, imageType: 1)
+        )
+        let made = VisionDraftFactory.makeDrafts(from: response, rawText: nil, context: modelContext)
+        let account = currency.flatMap {
+            UITestDemoAccountLogic.account(for: .photo, among: uiTestActiveAccounts(), currencyCode: $0)
+        }
+        let pool = uiTestSubcategoriesByCategory()
+        for (draft, row) in zip(made, rows) {
+            if draft.account == nil, let account {
+                draft.account = account
+                draft.needsUserInput.removeAll { $0 == DraftInputRequirement.account }
+            }
+            draft.subcategory = row.3.lazy.compactMap { prefix in pool.first { $0.name.hasPrefix(prefix) } }.first
+            if draft.subcategory != nil {
+                draft.needsUserInput.removeAll { $0 == DraftInputRequirement.subcategory }
+            }
+        }
+        return made
+    }
+
+    /// Las subcategorías de gasto visibles, en orden de nombre.
+    private func uiTestSubcategoriesByCategory() -> [Subcategory] {
+        let descriptor = FetchDescriptor<Subcategory>(sortBy: [SortDescriptor(\.name)])
+        do {
+            return try modelContext.fetch(descriptor).filter { $0.isVisible && !$0.safeCategory.isIncome }
+        } catch {
+            print("ImageSelectionView: Error fetching subcategories for the UI-test seam: \(error)")
+            return []
+        }
     }
 
     private func uiTestActiveAccounts() -> [Account] {

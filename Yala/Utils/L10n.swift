@@ -7278,6 +7278,19 @@ enum L10n {
             String(format: ls("voice.review.saveMany", comment: ""), count)
         }
         static var reviewInboxNote: String { ls("voice.review.inboxNote", comment: "") }
+        static var reviewSelectAll: String { ls("voice.review.selectAll", comment: "") }
+        static var reviewDeselectAll: String { ls("voice.review.deselectAll", comment: "") }
+        static func reviewSelectedOf(_ selected: Int, _ total: Int) -> String {
+            String(format: ls("voice.review.selectedOf", comment: ""), selected, total)
+        }
+        static func reviewSaveSelected(_ count: Int, amount: String) -> String {
+            String(format: ls("voice.review.saveSelected", comment: ""), count, amount)
+        }
+        static var reviewMissingHint: String { ls("voice.review.missingHint", comment: "") }
+        static var reviewLeftInInbox: String { ls("voice.review.leftInInbox", comment: "") }
+        static func reviewIncludeA11y(_ name: String) -> String {
+            String(format: ls("voice.review.includeA11y", comment: ""), name)
+        }
         static var failureNoConnectionTitle: String { ls("voice.failure.noConnection.title", comment: "") }
         static var failureMicTitle: String { ls("voice.failure.mic.title", comment: "") }
         static var failureNoVoiceTitle: String { ls("voice.failure.noVoice.title", comment: "") }

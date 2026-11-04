@@ -52,6 +52,8 @@ struct VoiceRecordingView: View {
     @State private var drafts: [InboxDraft] = []
     @State private var transcription = ""
     @State private var detailDraft: InboxDraft?
+    /// Qué registros están marcados en la hoja de varios (`MultiDraftReviewList`). Todo sale marcado.
+    @State private var selection = MultiDraftReviewLogic.Selection<PersistentIdentifier>()
     @State private var saveFailed = false
     @State private var trialReported = false
     @State private var selectedDetent: PresentationDetent = .medium
@@ -300,8 +302,28 @@ struct VoiceRecordingView: View {
         !drafts.isEmpty && pendingDrafts.isEmpty
     }
 
+    /// Con varios, la hoja elige: se guarda lo marcado y lo demás se queda en la Bandeja.
+    private var isMulti: Bool { drafts.count > 1 }
+
+    private var reviewItems: [MultiDraftReviewLogic.Item<PersistentIdentifier>] {
+        MultiDraftReviewLogic.items(for: drafts, defaultCurrency: appPreferences.defaultCurrencyCode.rawValue)
+    }
+
+    /// Lo que «Guardar» aprueba: con varios, solo los marcados; con uno, el pendiente.
+    private var draftsToSave: [InboxDraft] {
+        guard isMulti else { return pendingDrafts }
+        return pendingDrafts.filter { selection.contains($0.persistentModelID) }
+    }
+
     private var canSave: Bool {
-        VoiceEntryFlowLogic.canSave(pendingDrafts.map(readiness))
+        isMulti
+            ? MultiDraftReviewLogic.canSave(reviewItems, selection)
+            : VoiceEntryFlowLogic.canSave(pendingDrafts.map(readiness))
+    }
+
+    /// Sin nada más que hacer en la hoja: todo guardado o, con varios, lo marcado ya guardado.
+    private var isFinished: Bool {
+        isMulti ? MultiDraftReviewLogic.isFinished(reviewItems, selection) : allSaved
     }
 
     private var reviewContent: some View {
@@ -322,21 +344,34 @@ struct VoiceRecordingView: View {
                         }
                     }
 
-                    ForEach(drafts, id: \.persistentModelID) { draft in
-                        VoiceDraftReviewCard(draft: draft) {
-                            detailDraft = draft
+                    if isMulti {
+                        MultiDraftReviewList(drafts: drafts, selection: $selection) { detailDraft = $0 }
+                    } else {
+                        ForEach(drafts, id: \.persistentModelID) { draft in
+                            VoiceDraftReviewCard(draft: draft) {
+                                detailDraft = draft
+                            }
                         }
                     }
 
-                    if !allSaved {
-                        Text(L10n.Voice.reviewInboxNote)
+                    if let note = inboxNote {
+                        Text(note)
                             .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
+                            .accessibilityIdentifier("review_inbox_note")
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .scrollBounceBehavior(.basedOnSize)
+
+            if isMulti, !isFinished, MultiDraftReviewLogic.incompleteMarked(reviewItems, selection) > 0 {
+                Text(L10n.Voice.reviewMissingHint)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(DS.Semantic.warningForeground)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier("multi_review_missing_hint")
+            }
 
             if saveFailed {
                 Text(L10n.Chat.Draft.saveFailedGeneric)
@@ -346,7 +381,7 @@ struct VoiceRecordingView: View {
             }
 
             HStack(spacing: DS.Spacing.md) {
-                if allSaved {
+                if isFinished {
                     primaryButton(L10n.Action.done, isEnabled: true, identifier: "voice_finish") {
                         dismiss()
                     }
@@ -357,6 +392,15 @@ struct VoiceRecordingView: View {
             }
         }
         .padding(.top, DS.Spacing.xs)
+        .onChange(of: drafts.map(\.persistentModelID), initial: true) { _, ids in selection.sync(with: ids) }
+    }
+
+    /// Con varios y alguno sin marcar, la hoja dice que esos siguen en la Bandeja; si no, el aviso de siempre.
+    private var inboxNote: String? {
+        if isMulti, MultiDraftReviewLogic.leavesUnmarkedInInbox(reviewItems, selection) {
+            return L10n.Voice.reviewLeftInInbox
+        }
+        return allSaved ? nil : L10n.Voice.reviewInboxNote
     }
 
     private var reviewTitle: String {
@@ -364,8 +408,17 @@ struct VoiceRecordingView: View {
         return drafts.count > 1 ? L10n.Voice.reviewTitleMany(drafts.count) : L10n.Voice.reviewTitle
     }
 
+    /// Con varios, cuántos marcados y cuánto suman («Guardar 5 · S/ 224.81»); sin cifra si mezclan divisas.
     private var saveTitle: String {
-        pendingDrafts.count > 1 ? L10n.Voice.saveMany(pendingDrafts.count) : L10n.Chat.Draft.saveButton
+        guard isMulti else {
+            return pendingDrafts.count > 1 ? L10n.Voice.saveMany(pendingDrafts.count) : L10n.Chat.Draft.saveButton
+        }
+        let toSave = MultiDraftReviewLogic.toSave(reviewItems, selection)
+        guard !toSave.isEmpty else { return L10n.Chat.Draft.saveButton }
+        guard let code = MultiDraftReviewLogic.sharedCurrency(toSave) else { return L10n.Voice.saveMany(toSave.count) }
+        let amount = appPreferences.currency(
+            MultiDraftReviewLogic.saveTotal(reviewItems, selection), currencyCode: code, forceFullPrecision: true)
+        return L10n.Voice.reviewSaveSelected(toSave.count, amount: amount)
     }
 
     private func readiness(_ draft: InboxDraft) -> VoiceDraftReadiness {
@@ -804,7 +857,7 @@ struct VoiceRecordingView: View {
     private func saveAll() {
         saveFailed = false
         DraftService.shared.setContext(modelContext)
-        for draft in pendingDrafts {
+        for draft in draftsToSave {
             do {
                 let transaction = try DraftService.shared.approveDraft(draft, currencyConverter: currencyConverter)
                 reportTrial(id: transaction.persistentModelID, name: draft.note, kind: .transaction)

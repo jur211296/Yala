@@ -6361,6 +6361,15 @@
 /* Voice entry: closing without saving leaves the drafts in the Inbox */
 "voice.review.inboxNote" = "Se chiudi senza salvare, lo troverai in Posta in arrivo.";
 
+/* Hoja de varios registros (foto y voz): selección, resumen y guardado de los marcados. */
+"voice.review.selectAll" = "Seleziona tutti";
+"voice.review.deselectAll" = "Deseleziona tutti";
+"voice.review.selectedOf" = "%1$d di %2$d";
+"voice.review.saveSelected" = "Salva %1$d · %2$@";
+"voice.review.missingHint" = "Completa quelli in arancione o deselezionali per salvare il resto.";
+"voice.review.leftInInbox" = "Quello che non hai selezionato resta in Posta in arrivo.";
+"voice.review.includeA11y" = "Includi %@";
+
 /* Voice entry failure title: no internet */
 "voice.failure.noConnection.title" = "Nessuna connessione";
 
