@@ -69,6 +69,11 @@ aparecen en ningún sitio**. Pasó del 23 al 29-oct de 2026: las tres tandas se 
 - **Cuando una tanda se acerque a ~80 min de UI, se añade otra**, no se sube el tope. Las cifras y
   la simulación están en `qa.yml` («POR QUE OCHO»). Cambiar el número toca la matriz, las salidas
   `ui_N` y `UI_TANDAS` del aviso; `ci-ui-tandas-test.sh` falla si no cuadran.
+- **Las tandas no compilan (2026-11-04).** El job `ui-build` compila una vez y sube
+  `.ddp/Build/Products`; cada tanda lo baja y corre `test-without-building`. Antes compilaba cada
+  una en frío con tope de 25 y el runner tarda de 11 a 25+ min: cuatro de ocho se quedaron sin
+  tests el 4-nov. No se vuelve a compilar por tanda. `-only-testing` no recorta el build:
+  `build-for-testing` compila `YalaTests` igual.
 - **`max-parallel` deja un `macOS` libre para el CI de los PR**: GitHub sirve la nocturna de día.
 - **El primer test de cada tanda paga el arranque del simulador** si nadie lo calienta antes
   (`ci-calentar-simulador.sh`). Un rojo que siempre cae en el primer caso de una tanda es eso, no
