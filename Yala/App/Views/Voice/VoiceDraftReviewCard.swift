@@ -177,47 +177,10 @@ struct VoiceDraftReviewCard: View {
 
     // MARK: - Edición
 
-    /// Los selectores devuelven IDs; aquí vuelven a ser modelos contra lo cargado (nunca `model(for:)`, que fabrica
-    /// un objeto aunque ya no exista). Importe y nota se corrigen en el formulario completo.
     private var editing: ChatDraftEditing {
-        ChatDraftEditing(
-            onAmountChange: { _ in },
-            onAccountChange: { id in
-                draft.account = allAccounts.first { $0.persistentModelID == id }
-                persistChange()
-            },
-            onSubcategoryChange: { id in
-                draft.subcategory = allSubcategories.first { $0.persistentModelID == id }
-                persistChange()
-            },
-            onDateChange: { date in
-                draft.date = date
-                persistChange()
-            },
-            onTagsChange: { ids in
-                draft.setTags(from: allTags.filter { ids.contains($0.persistentModelID) })
-                persistChange()
-            },
-            onNoteChange: { _ in }
+        VoiceDraftFieldEditing.editing(
+            draft: draft, accounts: allAccounts, subcategories: allSubcategories, tags: allTags, context: modelContext
         )
-    }
-
-    /// Lo que falta se recalcula con el mismo criterio que la Bandeja (`needsUserInput`), para que su fila diga lo
-    /// mismo si el usuario cierra sin guardar.
-    private func persistChange() {
-        var needs: [String] = []
-        if draft.account == nil { needs.append(DraftInputRequirement.account) }
-        if draft.subcategory == nil { needs.append(DraftInputRequirement.subcategory) }
-        if draft.amount == nil { needs.append(DraftInputRequirement.amount) }
-        draft.needsUserInput = needs
-        draft.updatedAt = Date.now
-        do {
-            try modelContext.save()
-        } catch {
-            #if DEBUG
-            print("VoiceDraftReviewCard: Error saving draft change: \(error)")
-            #endif
-        }
     }
 
     // MARK: - Datos
@@ -244,5 +207,60 @@ struct VoiceDraftReviewCard: View {
     /// sí se lee sobre la tarjeta (`.claude/rules/swiftui-ds.md`).
     private var amountColor: Color {
         Color.amountTint(isIncome: !isExpense)
+    }
+}
+
+/// Lo que escriben los selectores de una fila de «Esto leí» en su borrador. Lo comparten la tarjeta de un registro y la
+/// fila de la hoja de varios (`MultiDraftReviewList`).
+enum VoiceDraftFieldEditing {
+    /// Los selectores devuelven IDs; aquí vuelven a ser modelos contra lo cargado (nunca `model(for:)`, que fabrica
+    /// un objeto aunque ya no exista). Importe y nota se corrigen en el formulario completo.
+    @MainActor
+    static func editing(
+        draft: InboxDraft,
+        accounts: [Account],
+        subcategories: [Subcategory],
+        tags: [Tag],
+        context: ModelContext
+    ) -> ChatDraftEditing {
+        ChatDraftEditing(
+            onAmountChange: { _ in },
+            onAccountChange: { id in
+                draft.account = accounts.first { $0.persistentModelID == id }
+                persist(draft, context: context)
+            },
+            onSubcategoryChange: { id in
+                draft.subcategory = subcategories.first { $0.persistentModelID == id }
+                persist(draft, context: context)
+            },
+            onDateChange: { date in
+                draft.date = date
+                persist(draft, context: context)
+            },
+            onTagsChange: { ids in
+                draft.setTags(from: tags.filter { ids.contains($0.persistentModelID) })
+                persist(draft, context: context)
+            },
+            onNoteChange: { _ in }
+        )
+    }
+
+    /// Lo que falta se recalcula con el mismo criterio que la Bandeja (`needsUserInput`), para que su fila diga lo
+    /// mismo si el usuario cierra sin guardar.
+    @MainActor
+    static func persist(_ draft: InboxDraft, context: ModelContext) {
+        var needs: [String] = []
+        if draft.account == nil { needs.append(DraftInputRequirement.account) }
+        if draft.subcategory == nil { needs.append(DraftInputRequirement.subcategory) }
+        if draft.amount == nil { needs.append(DraftInputRequirement.amount) }
+        draft.needsUserInput = needs
+        draft.updatedAt = Date.now
+        do {
+            try context.save()
+        } catch {
+            #if DEBUG
+            print("VoiceDraftReviewCard: Error saving draft change: \(error)")
+            #endif
+        }
     }
 }

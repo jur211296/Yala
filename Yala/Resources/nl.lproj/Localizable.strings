@@ -6363,6 +6363,15 @@
 /* Voice entry: closing without saving leaves the drafts in the Inbox */
 "voice.review.inboxNote" = "Als je sluit zonder op te slaan, vind je het in je inbox.";
 
+/* Hoja de varios registros (foto y voz): selección, resumen y guardado de los marcados. */
+"voice.review.selectAll" = "Alles selecteren";
+"voice.review.deselectAll" = "Alles deselecteren";
+"voice.review.selectedOf" = "%1$d van %2$d";
+"voice.review.saveSelected" = "%1$d opslaan · %2$@";
+"voice.review.missingHint" = "Vul de oranje gemarkeerde aan of deselecteer ze om de rest op te slaan.";
+"voice.review.leftInInbox" = "Wat je niet selecteerde, blijft in je inbox.";
+"voice.review.includeA11y" = "%@ meenemen";
+
 /* Voice entry failure title: no internet */
 "voice.failure.noConnection.title" = "Geen verbinding";
 

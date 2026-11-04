@@ -6363,6 +6363,15 @@
 /* Voice entry: closing without saving leaves the drafts in the Inbox */
 "voice.review.inboxNote" = "如果不保存就关闭，可以在收件箱里找到它。";
 
+/* Hoja de varios registros (foto y voz): selección, resumen y guardado de los marcados. */
+"voice.review.selectAll" = "全选";
+"voice.review.deselectAll" = "全部取消";
+"voice.review.selectedOf" = "%1$d / %2$d";
+"voice.review.saveSelected" = "保存 %1$d 条 · %2$@";
+"voice.review.missingHint" = "补全标为橙色的项目，或取消勾选以保存其余项目。";
+"voice.review.leftInInbox" = "未勾选的项目会留在收件箱。";
+"voice.review.includeA11y" = "包含 %@";
+
 /* Voice entry failure title: no internet */
 "voice.failure.noConnection.title" = "没有网络连接";
 

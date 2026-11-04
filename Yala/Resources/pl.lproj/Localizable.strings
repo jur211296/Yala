@@ -6363,6 +6363,15 @@
 /* Voice entry: closing without saving leaves the drafts in the Inbox */
 "voice.review.inboxNote" = "Jeśli zamkniesz bez zapisywania, znajdziesz to w Skrzynce.";
 
+/* Hoja de varios registros (foto y voz): selección, resumen y guardado de los marcados. */
+"voice.review.selectAll" = "Zaznacz wszystkie";
+"voice.review.deselectAll" = "Odznacz wszystkie";
+"voice.review.selectedOf" = "%1$d z %2$d";
+"voice.review.saveSelected" = "Zapisz (%1$d) · %2$@";
+"voice.review.missingHint" = "Uzupełnij pozycje zaznaczone na pomarańczowo albo je odznacz, aby zapisać resztę.";
+"voice.review.leftInInbox" = "To, czego nie zaznaczysz, zostaje w Skrzynce.";
+"voice.review.includeA11y" = "Uwzględnij %@";
+
 /* Voice entry failure title: no internet */
 "voice.failure.noConnection.title" = "Brak połączenia";
 

@@ -1067,12 +1067,12 @@ final class UITestHooks {
         #endif
     }
 
-    /// Valor de `-uitest-image-result <one|incomplete|two|partial|none|trial-used-up|busy|daily-limit|pages|pages-trial>`: el registro por imagen no abre
+    /// Valor de `-uitest-image-result <one|incomplete|two|partial|none|trial-used-up|busy|daily-limit|pages|pages-trial|many>`: el registro por imagen no abre
     /// Fotos ni llama a la red (`trial-used-up`: el gateway contesta que el cupo de prueba de fotos se agotó; `busy` y
     /// `daily-limit`: un 429 por ráfaga o por el cupo del día). «Fotos» usa los recibos de ejemplo de la práctica guiada y la hoja «lee» lo que diga el perfil,
     /// resuelto contra los datos sembrados (`one`: un gasto · `incomplete`: sin subcategoría · `two`: dos fotos, un gasto
     /// cada una · `partial`: dos fotos y la segunda falla · `none`: ninguna trae importe · `pages`: un gasto distinto por
-    /// página de PDF · `pages-trial`: la primera página se lee y en las demás se acaba el cupo de prueba). El selector de Fotos es de
+    /// página de PDF · `pages-trial`: la primera página se lee y en las demás se acaba el cupo de prueba · `many`: siete movimientos en cuatro días, dos sin categoría, para la hoja de varios). El selector de Fotos es de
     /// otro proceso y en el simulador el servicio no contesta: sin esto no hay lectura que capturar ni probar.
     nonisolated static var imageResult: String? {
         #if DEBUG

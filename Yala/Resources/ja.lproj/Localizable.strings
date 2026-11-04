@@ -6363,6 +6363,15 @@
 /* Voice entry: closing without saving leaves the drafts in the Inbox */
 "voice.review.inboxNote" = "保存せずに閉じると、受信箱に残ります。";
 
+/* Hoja de varios registros (foto y voz): selección, resumen y guardado de los marcados. */
+"voice.review.selectAll" = "すべて選択";
+"voice.review.deselectAll" = "すべて解除";
+"voice.review.selectedOf" = "%2$d件中%1$d件";
+"voice.review.saveSelected" = "%1$d件を保存 · %2$@";
+"voice.review.missingHint" = "オレンジ色の項目を入力するか、選択を外すと残りを保存できます。";
+"voice.review.leftInInbox" = "選択しなかったものは受信箱に残ります。";
+"voice.review.includeA11y" = "%@を含める";
+
 /* Voice entry failure title: no internet */
 "voice.failure.noConnection.title" = "接続がありません";
 

@@ -5644,6 +5644,15 @@
 /* Voice entry: closing without saving leaves the drafts in the Inbox */
 "voice.review.inboxNote" = "If you close without saving, you’ll find it in your Inbox.";
 
+/* Hoja de varios registros (foto y voz): selección, resumen y guardado de los marcados. */
+"voice.review.selectAll" = "Select all";
+"voice.review.deselectAll" = "Deselect all";
+"voice.review.selectedOf" = "%1$d of %2$d";
+"voice.review.saveSelected" = "Save %1$d · %2$@";
+"voice.review.missingHint" = "Complete the ones marked in amber or deselect them to save the rest.";
+"voice.review.leftInInbox" = "Anything you didn’t select stays in your Inbox.";
+"voice.review.includeA11y" = "Include %@";
+
 /* Voice entry failure title: no internet */
 "voice.failure.noConnection.title" = "No connection";
 
