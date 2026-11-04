@@ -4209,13 +4209,6 @@
 "stats.trends.insight.weekdayPeak %@ %@" = "Le %@ est votre jour le plus cher : vous dépensez %@ en moyenne.";
 
 // MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
-"panel.widgetInfo.periodComparison.title" = "Comparaison de période";
-"panel.widgetInfo.periodComparison.chip1" = "Comparaison";
-"panel.widgetInfo.periodComparison.chip2" = "Suit la période choisie";
-"panel.widgetInfo.periodComparison.whatQ" = "Que voyez-vous ici ?";
-"panel.widgetInfo.periodComparison.whatA" = "Le solde, les revenus ou les dépenses de votre période actuelle aux côtés de la période précédente. Vous voyez d'un coup d'œil si la tendance s'améliore.";
-"panel.widgetInfo.periodComparison.howQ" = "Avec quoi se compare-t-elle ?";
-"panel.widgetInfo.periodComparison.howA" = "Touchez M pour comparer avec le mois précédent ou A avec l'année précédente. Votre choix s'applique aussi aux variations du reste du Panneau.";
 "panel.widgetInfo.sankey.title" = "Flux d'argent";
 "panel.widgetInfo.sankey.chip1" = "Flux";
 "panel.widgetInfo.sankey.chip2" = "Par besoin";
@@ -8375,6 +8368,8 @@
 "l2d.missing.twoDifferentAccounts" = "Choisis deux comptes différents";
 "l2d.missing.chipValue" = "Manquant";
 "l2d.discard.title" = "Abandonner cet enregistrement ?";
+"l2d.draft.restored" = "Nous avons gardé ce que vous étiez en train d’écrire.";
+"l2d.draft.startOver" = "Recommencer";
 "l2d.saved.expense" = "Dépense enregistrée · %@";
 "l2d.saved.income" = "Revenu enregistré · %@";
 "l2d.saved.transfer" = "Virement enregistré · %@";

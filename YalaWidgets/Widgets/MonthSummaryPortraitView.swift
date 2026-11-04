@@ -17,32 +17,35 @@ struct MonthSummaryPortraitView: View {
     static let budgetLimit = 5
 
     var body: some View {
-        // Las secciones reparten el alto que sobra (con pocos presupuestos, el hueco no se queda abajo).
+        // Las secciones van arriba con el mismo aire entre ellas, y el alto que sobra lo toma el aro de las categorías.
+        // Antes lo repartían tres `Spacer`: con un presupuesto, el widget quedaba con tres franjas vacías (card dz6c,
+        // captura de Jürgen del 2026-11-04).
         VStack(alignment: .leading, spacing: WidgetDS.Spacing.none) {
             MonthSummaryHeader()
 
-            Spacer(minLength: WidgetDS.Spacing.lg)
-
             figures
-
-            Spacer(minLength: WidgetDS.Spacing.lg)
+                .padding(.top, WidgetDS.Spacing.xl)
 
             WidgetPlainLink(destination: MonthSummaryLinks.url("statistics/categories")) {
                 VStack(alignment: .leading, spacing: WidgetDS.Spacing.sm) {
                     Text("widget.ui.categories", bundle: .main)
                         .font(WidgetDS.Typography.labelSmall)
                         .foregroundStyle(.secondary)
-                    MonthSummaryCategories(entry: entry)
+                    // El aro encima y grande si cabe; si no (muchos presupuestos debajo), al lado de la leyenda.
+                    ViewThatFits(in: .vertical) {
+                        MonthSummaryCategories(entry: entry, layout: .stacked)
+                        MonthSummaryCategories(entry: entry, layout: .beside)
+                    }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
-
-            Spacer(minLength: WidgetDS.Spacing.lg)
+            .padding(.top, WidgetDS.Spacing.xl)
 
             WidgetPlainLink(destination: MonthSummaryLinks.url("budgets")) {
                 MonthSummaryBudgets(entry: entry, limit: Self.budgetLimit, fillsHeight: false)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .padding(.top, WidgetDS.Spacing.xl)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .widgetURL(WidgetURLHelper.url(for: "panel"))

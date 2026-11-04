@@ -27,6 +27,13 @@ paths:
   descarta en el `onDismiss`, no en un `onDisappear` del contenido, que también corre al rehacerse. Molde:
   `NewRecordDraft`. El rehecho se fuerza en XCUITest con `-uitest-rebuild-form-on-return`
   (`View.newRecordSheetIdentity()`). Una hoja nueva con formulario largo y el mismo riesgo copia el molde.
+  **Que iOS cierre Yala lo cubre otra pieza, en disco** (card 77j1, decisión A de Jürgen, 2026-11-04):
+  `NewRecordDraftStore` guarda un registro nuevo al dejar de estar activa la app (`.inactive`, no solo `.background`:
+  matada justo al pasar a segundo plano, la escritura de `.background` no llegaba a disco, medido en XCUITest), lo
+  recupera al abrir un registro nuevo a secas con «Empezar de cero» y caduca a las 24 h. Quién lo posee vive en
+  `NewRecordDraft.ownsSavedDraft` (sobrevive al rehecho) y se borra en su `discard()`. Pin:
+  `NewRecordDraftSurvivesCloseUITests` (el cierre se imita esperando a `.runningBackgroundSuspended` antes de
+  `terminate()`).
 - **Un singleton que NO es `@Observable` (`CloudAuthService.shared`) leído desde el body no repinta nada al cambiar, y un
   `@State` que se cambia pero el body no lee, tampoco.** `StorageSettingsView` cambia `refreshTick` cada segundo y ningún
   body lo lee: lo que repinta es que `controller.refresh()` cambie propiedades del controller `@Observable`. Medido por

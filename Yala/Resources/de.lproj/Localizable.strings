@@ -4208,13 +4208,6 @@
 "stats.trends.insight.weekdayPeak %@ %@" = "%@ ist Ihr teuerster Tag: Sie geben im Schnitt %@ aus.";
 
 // MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
-"panel.widgetInfo.periodComparison.title" = "Zeitraum-Vergleich";
-"panel.widgetInfo.periodComparison.chip1" = "Vergleich";
-"panel.widgetInfo.periodComparison.chip2" = "Folgt dem gewählten Zeitraum";
-"panel.widgetInfo.periodComparison.whatQ" = "Was sehen Sie hier?";
-"panel.widgetInfo.periodComparison.whatA" = "Saldo, Einnahmen oder Ausgaben Ihres aktuellen Zeitraums neben dem vorherigen Zeitraum. So erkennen Sie auf einen Blick, ob sich Ihr Trend verbessert.";
-"panel.widgetInfo.periodComparison.howQ" = "Womit wird verglichen?";
-"panel.widgetInfo.periodComparison.howA" = "Tippen Sie M, um mit dem Vormonat zu vergleichen, oder J für das Vorjahr. Ihre Auswahl gilt auch für die Abweichungen im restlichen Panel.";
 "panel.widgetInfo.sankey.title" = "Geldfluss";
 "panel.widgetInfo.sankey.chip1" = "Fluss";
 "panel.widgetInfo.sankey.chip2" = "Nach Bedarf";
@@ -8374,6 +8367,8 @@
 "l2d.missing.twoDifferentAccounts" = "Wähle zwei verschiedene Konten";
 "l2d.missing.chipValue" = "Fehlt";
 "l2d.discard.title" = "Diesen Eintrag verwerfen?";
+"l2d.draft.restored" = "Wir haben aufbewahrt, was du gerade eingegeben hast.";
+"l2d.draft.startOver" = "Neu beginnen";
 "l2d.saved.expense" = "Ausgabe gespeichert · %@";
 "l2d.saved.income" = "Einnahme gespeichert · %@";
 "l2d.saved.transfer" = "Überweisung gespeichert · %@";

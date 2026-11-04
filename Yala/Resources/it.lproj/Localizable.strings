@@ -4238,13 +4238,6 @@
 "stats.trends.insight.weekdayPeak %@ %@" = "Giorno più caro: %@, con una spesa media di %@.";
 
 // MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
-"panel.widgetInfo.periodComparison.title" = "Confronto periodo";
-"panel.widgetInfo.periodComparison.chip1" = "Confronto";
-"panel.widgetInfo.periodComparison.chip2" = "Segue il periodo scelto";
-"panel.widgetInfo.periodComparison.whatQ" = "Cosa stai vedendo?";
-"panel.widgetInfo.periodComparison.whatA" = "Il saldo, le entrate o le spese del tuo periodo attuale a fianco del periodo precedente. Vedi al volo se la tendenza sta migliorando.";
-"panel.widgetInfo.periodComparison.howQ" = "Con cosa si confronta?";
-"panel.widgetInfo.periodComparison.howA" = "Tocca M per confrontare con il mese precedente o A con l'anno precedente. La scelta vale anche per le variazioni nel resto del Pannello.";
 "panel.widgetInfo.sankey.title" = "Flusso del denaro";
 "panel.widgetInfo.sankey.chip1" = "Flusso";
 "panel.widgetInfo.sankey.chip2" = "Per necessità";
@@ -8384,6 +8377,8 @@
 "l2d.missing.twoDifferentAccounts" = "Scegli due conti diversi";
 "l2d.missing.chipValue" = "Manca";
 "l2d.discard.title" = "Scartare questa registrazione?";
+"l2d.draft.restored" = "Abbiamo recuperato quello che stavi scrivendo.";
+"l2d.draft.startOver" = "Ricomincia da capo";
 "l2d.saved.expense" = "Spesa salvata · %@";
 "l2d.saved.income" = "Entrata salvata · %@";
 "l2d.saved.transfer" = "Trasferimento salvato · %@";

@@ -32,6 +32,25 @@ python3 qa/widget-render/contact-sheet.py hoja.png 1500 capturas/widgets/despues
 Yala/Shared/ControlCenterIntents.swift | tar -x -C <carpeta>` y `render.sh build <carpeta>`. Si el catálogo nombra tipos
 que la base no tiene, compílala con el catálogo de esa base.
 
+## Matriz de estados (pocos datos)
+
+Card dz6c (2026-11-04): los widgets se miran también con pocos datos, no solo con la foto completa.
+
+```bash
+# Seis fotos derivadas de la realista: completo, vacio, pocos, sin-ingresos, sin-presupuestos, sin-gastos
+python3 qa/widget-render/estados.py qa/widget-render/fixtures/realista-2026-10-31.plist <carpeta>/estados
+# Una corrida por estado (la ruta de la foto, ABSOLUTA: con una relativa la app no la encuentra y la corrida se
+# cuelga hasta el plazo de 4 min sin decir por qué)
+for st in completo vacio pocos sin-ingresos sin-presupuestos sin-gastos; do
+  qa/widget-render/render.sh run <carpeta>/estados/$st.plist <carpeta>/capturas/$st
+done
+# Una hoja por widget y tamaño: una fila por estado, claro y oscuro
+qa/widget-render/matriz.sh <carpeta>/capturas <carpeta>/matriz
+```
+
+Lo que se busca: franjas vacías ENTRE bloques, una lista cuya segunda fila se va al fondo, un bloque de gráfica que es
+un texto suelto en un hueco. La matriz del 2026-11-04 está en `qa/evidencia-widgets-estados-20261104/`.
+
 ## Nombres
 
 `<widget>-<tamaño>-<modo>.png` · tamaño `s m l xl xlv circ rect`, y `m-se l-se` (iPhone SE, 321 × 148 y 321 × 324) en los de Categorías · modo `claro oscuro standby tintado`.

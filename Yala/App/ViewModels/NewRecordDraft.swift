@@ -9,8 +9,9 @@
 //  en un `@State` de la propia hoja. El borrador lo guarda quien presenta la hoja, que no se rehace: el formulario
 //  rehecho retoma su modelo y su foto de partida.
 //
-//  Solo en memoria (decisión de Jürgen, 2026-11-04): no sobrevive a que iOS cierre Yala, y no se escribe a disco un
-//  gasto a medias. Se descarta en el `onDismiss` de la hoja, que corre al cerrarla o al guardar, y no al rehacerse.
+//  Solo en memoria (decisión de Jürgen, 2026-11-04): este borrador cubre la hoja rehecha con Yala viva. Que iOS cierre
+//  Yala lo cubre otro, en disco y con caducidad de 24 h (`NewRecordDraftStore`, card 77j1, decisión A de Jürgen del
+//  mismo día). Se descarta en el `onDismiss` de la hoja, que corre al cerrarla o al guardar, y no al rehacerse.
 //
 //  Clase sin observación a propósito: el formulario lo lee en su `init` y en su primer `onAppear`, y nada se pinta con
 //  él; observarlo invalidaría la vista que presenta al escribirlo durante su propio cuerpo.
@@ -44,10 +45,17 @@ final class NewRecordDraft {
     /// Hay un formulario a medias que retomar (ya pasó por su primer `onAppear`).
     var isResumable: Bool { viewModel != nil && baseline != nil }
 
-    /// La hoja se cerró (descartar, X sin cambios, guardar): la próxima apertura empieza de cero.
-    func discard() {
+    /// El formulario de esta hoja escribió o recuperó el borrador en disco (`NewRecordDraftStore`, card 77j1). Vive aquí
+    /// y no en el formulario porque un formulario rehecho tiene que seguir sabiéndolo.
+    var ownsSavedDraft = false
+
+    /// La hoja se cerró (descartar, X sin cambios, guardar): la próxima apertura empieza de cero, y el borrador en disco
+    /// de este formulario ya no hace falta.
+    func discard(savedDraftsIn defaults: UserDefaults = .standard) {
         viewModel = nil
         baseline = nil
+        if ownsSavedDraft { NewRecordDraftStore.clear(in: defaults) }
+        ownsSavedDraft = false
     }
 }
 

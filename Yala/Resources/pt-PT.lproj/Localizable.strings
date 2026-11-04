@@ -2328,13 +2328,6 @@
 "panel.widgetInfo.expensesByNeed.smallWhatA" = "A distribuição dos seus gastos no período ativo por tipo de necessidade: essenciais (o indispensável), prioritárias (o importante) e opcionais (o supérfluo). \"Sem classificar\" só aparece se você tem gastos sem categoria.";
 "panel.widgetInfo.expensesByNeed.smallWhatQ" = "O que você está vendo?";
 "panel.widgetInfo.expensesByNeed.title" = "Distribuição por necessidade";
-"panel.widgetInfo.periodComparison.chip1" = "Comparação";
-"panel.widgetInfo.periodComparison.chip2" = "Segue o período escolhido";
-"panel.widgetInfo.periodComparison.howA" = "Toque em M para comparar com o mês anterior ou A com o ano anterior. A escolha também se aplica às variações do restante do Painel.";
-"panel.widgetInfo.periodComparison.howQ" = "Com o que se compara?";
-"panel.widgetInfo.periodComparison.title" = "Comparativo de período";
-"panel.widgetInfo.periodComparison.whatA" = "O saldo, as receitas ou as despesas do seu período atual ao lado do período anterior. Você vê num relance se a tendência está melhorando.";
-"panel.widgetInfo.periodComparison.whatQ" = "O que você está vendo?";
 "panel.widgetInfo.recentRecords.chip1" = "Registos";
 "panel.widgetInfo.recentRecords.chip2" = "Período atual";
 "panel.widgetInfo.recentRecords.title" = "Últimos registros";
@@ -7704,6 +7697,8 @@
 "l2d.missing.twoDifferentAccounts" = "Escolhe duas contas diferentes";
 "l2d.missing.chipValue" = "Falta";
 "l2d.discard.title" = "Descartar este registo?";
+"l2d.draft.restored" = "Recuperámos o que estava a escrever.";
+"l2d.draft.startOver" = "Começar do zero";
 "l2d.saved.expense" = "Despesa guardada · %@";
 "l2d.saved.income" = "Receita guardada · %@";
 "l2d.saved.transfer" = "Transferência guardada · %@";

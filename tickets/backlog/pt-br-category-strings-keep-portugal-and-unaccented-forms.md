@@ -29,7 +29,7 @@ Pero esos dos prefijos mezclan nombres guardados con **textos de interfaz** que 
 ## Y cuatro desajustes de contenido que salieron en el mismo barrido (pt-BR, puede que no solo)
 
 - `tutorials.createBudgets.step1.desc` nombra un período «diário» que los presupuestos no tienen.
-- `panel.widgetInfo.periodComparison.howA` habla de los botones «M/A», que en la app son «P-1/A-1».
+- ~~`panel.widgetInfo.periodComparison.howA` habla de los botones «M/A», que en la app son «P-1/A-1».~~ Resuelto el 2026-11-04: la clave se retiró junto con la hoja de ayuda huérfana de la Comparativa.
 - `tutorials.editPanel.step2.desc` cita «Restabelecer»; el botón se llama «Restaurar layout original».
 - `groups.accountIsComplete.settingsHint` cita «Onde seus dados moram»; la pantalla es «Onde ficam seus dados».
 

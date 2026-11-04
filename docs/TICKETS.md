@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1165)
+## Index (1166)
 
 | id | status | path |
 |---|---|---|
@@ -791,6 +791,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | panel-no-recalcula-al-llegar-tasas-nuevas | done | tickets/done/panel-no-recalcula-al-llegar-tasas-nuevas.md |
 | panel-pies-amount-filter-uses-signed-amount | done | tickets/done/panel-pies-amount-filter-uses-signed-amount.md |
 | panel-pies-ignore-hidden-currency-and-compare-signed-amount | done | tickets/done/panel-pies-ignore-hidden-currency-and-compare-signed-amount.md |
+| panel-preview-sample-trend-helper-has-no-callers | backlog | tickets/backlog/panel-preview-sample-trend-helper-has-no-callers.md |
 | panel-recalculates-everything-on-every-return-to-the-tab | backlog | tickets/backlog/panel-recalculates-everything-on-every-return-to-the-tab.md |
 | panel-says-nothing-when-cloud-sync-needs-sign-in | done | tickets/done/panel-says-nothing-when-cloud-sync-needs-sign-in.md |
 | panel-spent-per-account-counts-refunds-as-spending | done | tickets/done/panel-spent-per-account-counts-refunds-as-spending.md |

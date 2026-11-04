@@ -165,8 +165,10 @@ struct MonthSummaryWidgetView: View {
                                                entry: entry, isEstimate: entry.expenseIsApproximate)
                             Spacer(minLength: 0)
                         }
-                        MonthSummaryCategories(entry: entry)
-                        Spacer(minLength: 0)
+                        // El aro crece con el alto de la columna (card dz6c): con el de 104 fijo, la mitad de abajo
+                        // del widget quedaba vacía en todos los estados.
+                        MonthSummaryCategories(entry: entry, layout: .besideFlexible)
+                            .frame(maxHeight: .infinity, alignment: .top)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -232,33 +234,71 @@ struct MonthSummaryFigure: View {
     }
 }
 
-/// El gasto del mes por categoría: el aro y, al lado, cada categoría con su importe y su porcentaje.
+/// El gasto del mes por categoría: el aro y su leyenda, cada categoría con su importe y su porcentaje.
+///
+/// Tres formas (card dz6c, matriz de estados): `.beside` es la de siempre, aro de 104 al lado de la leyenda; `.besideFlexible`
+/// es la misma con el aro creciendo con el alto que le den (iPad); `.stacked` pone el aro encima, centrado y tan grande
+/// como quepa, para el extragrande vertical con pocos presupuestos. Sin gastos, el aro vacío ocupa el sitio del aro.
 struct MonthSummaryCategories: View {
+    enum Layout { case beside, besideFlexible, stacked }
+
     let entry: MonthSummaryEntry
+    var layout: Layout = .beside
+
+    private var slices: [WidgetDonutSlice] {
+        entry.categories.map {
+            WidgetDonutSlice(id: $0.id, value: $0.amount, color: WidgetColors.fill(hex: $0.colorHex))
+        }
+    }
 
     var body: some View {
         if entry.categories.isEmpty {
-            Text("widget.ui.noExpenses", bundle: .main)
-                .font(WidgetDS.Typography.caption)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            switch layout {
+            case .beside:
+                WidgetEmptyRing(maxDiameter: WidgetDS.Chart.donutSize)
+                    .frame(width: WidgetDS.Chart.donutSize, height: WidgetDS.Chart.donutSize)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            case .besideFlexible, .stacked:
+                WidgetEmptyRing(maxDiameter: WidgetDS.Chart.donutSizeLargeMax)
+                    .frame(minHeight: WidgetDS.Chart.donutSize, maxHeight: .infinity)
+            }
         } else {
-            HStack(alignment: .center, spacing: WidgetDS.Spacing.md) {
-                WidgetDonut(slices: entry.categories.map {
-                    WidgetDonutSlice(id: $0.id, value: $0.amount, color: WidgetColors.fill(hex: $0.colorHex))
-                }) {
-                    EmptyView()
+            switch layout {
+            case .beside:
+                HStack(alignment: .center, spacing: WidgetDS.Spacing.md) {
+                    WidgetDonut(slices: slices) { EmptyView() }
+                        .frame(width: WidgetDS.Chart.donutSize, height: WidgetDS.Chart.donutSize)
+                    legend
                 }
-                .frame(width: WidgetDS.Chart.donutSize, height: WidgetDS.Chart.donutSize)
-
-                VStack(alignment: .leading, spacing: WidgetDS.Spacing.xs) {
-                    ForEach(entry.categories, id: \.id) { category in
-                        MonthSummaryCategoryRow(category: category, entry: entry)
-                    }
+            case .besideFlexible:
+                HStack(alignment: .center, spacing: WidgetDS.Spacing.md) {
+                    WidgetDonut(slices: slices) { EmptyView() }
+                        .aspectRatio(1, contentMode: .fit)
+                        .frame(minWidth: WidgetDS.Chart.donutSize, maxWidth: WidgetDS.Chart.donutSizeLarge,
+                               minHeight: WidgetDS.Chart.donutSize, maxHeight: WidgetDS.Chart.donutSizeLarge)
+                    legend
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+            case .stacked:
+                VStack(alignment: .leading, spacing: WidgetDS.Spacing.md) {
+                    WidgetDonut(slices: slices) { EmptyView() }
+                        .aspectRatio(1, contentMode: .fit)
+                        .frame(minHeight: WidgetDS.Chart.donutSize, idealHeight: WidgetDS.Chart.donutSize,
+                               maxHeight: WidgetDS.Chart.donutSizeLargeMax)
+                        .frame(maxWidth: .infinity)
+                    legend
+                }
             }
         }
+    }
+
+    private var legend: some View {
+        VStack(alignment: .leading, spacing: WidgetDS.Spacing.xs) {
+            ForEach(entry.categories, id: \.id) { category in
+                MonthSummaryCategoryRow(category: category, entry: entry)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .fixedSize(horizontal: false, vertical: true)
     }
 }
 
