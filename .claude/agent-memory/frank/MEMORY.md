@@ -141,6 +141,7 @@
 - [La tarjeta de grupo no se abre con toques sintéticos](reference_tarjeta_de_grupo_no_se_abre_con_toques_sinteticos.md) — tap se pierde, touch abre el menú; recorre Grupos con XCUITest.
 - [Molde de la ficha de la App Store](reference_molde_ficha_app_store.md) — ficha-app-store/: reloj falso al 13-oct; barra del iPad y Panel, lo descartado.
 - [Capturar el menú de compartir](reference_capturar_el_menu_de_compartir.md) — Fotos + `axe tap` en puntos; vigilar PendingImages/.
+- [simctl al disco externo se cuelga](feedback_simctl_al_disco_externo_cuelga.md) — diálogo de volumen extraíble invisible; capturas al disco interno.
 - [Montar el simulador del Duo](reference_montar_el_simulador_del_duo.md) — Xcode 27.2: runtime propio del Duo, no se deja instalado; aviso de PosterBoard.
 - [Conducir el Duo sin pantalla propia](reference_conducir_el_duo_sin_pantalla_propia.md) — screencapture vía osascript; carrusel por argumento, no arrastre.
 - [Conducir el simulador con axe](reference_conducir_simulador_con_axe.md) — describe-ui filtrado y tap por id: una fracción de snapshot_ui; sin tildes.
