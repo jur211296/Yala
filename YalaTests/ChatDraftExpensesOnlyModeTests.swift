@@ -48,7 +48,9 @@ struct ChatDraftExpensesOnlyModeTests {
                 .appendingPathComponent("Yala/Services/ChatAssistantService.swift"),
             encoding: .utf8)
         #expect(src.contains("UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)?\n            .bool(forKey: AppPreferences.Keys.expensesOnlyMode)"))
-        #expect(src.contains("context: modelContext, expensesOnlyMode: expensesOnlyMode)"))
+        #expect(src.contains("context: modelContext, expensesOnlyMode: expensesOnlyMode,"))
+        // Y la frase del usuario, para el medio de pago (card v466).
+        #expect(src.contains("sourceText: question, batchCount: cropped.count)"))
     }
 }
 

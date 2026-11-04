@@ -95,7 +95,8 @@ struct SiriDraftService {
                     realAccounts: realAccounts,
                     visibleSubcategories: visibleSubcategories,
                     expensesOnlyMode: expensesOnlyMode,
-                    context: context
+                    context: context,
+                    batchCount: entry.transactions.count
                 )
             }
             guard !candidates.isEmpty else {
@@ -150,12 +151,18 @@ struct SiriDraftService {
         realAccounts: [Account],
         visibleSubcategories: [Subcategory],
         expensesOnlyMode: Bool,
-        context: ModelContext
+        context: ModelContext,
+        batchCount: Int = 1
     ) -> InboxDraft? {
         guard let amount = parsed.amount else { return nil }
 
-        // Cuenta por divisa (único match entre cuentas reales; nil si 0 ó 2+ → user elige al aprobar).
-        let matchedAccount: Account? = parsed.currencyHint.flatMap {
+        // Cuenta: la que el usuario nombró como medio de pago («con yape»), y si no, por divisa (único match entre
+        // cuentas reales; nil si 0 ó 2+ → user elige al aprobar).
+        let mention = PaymentMethodAccountLogic.mention(
+            hint: parsed.paymentHint, hintAnswered: parsed.paymentHintAnswered, sourceText: rawText, batchCount: batchCount)
+        let matchedAccount: Account? = DraftBuilder.findAccount(
+            paymentMention: mention, dictatedCurrency: parsed.currencyHint, in: realAccounts
+        ) ?? parsed.currencyHint.flatMap {
             DraftBuilder.findAccount(byCurrency: $0, in: realAccounts)
         }
 

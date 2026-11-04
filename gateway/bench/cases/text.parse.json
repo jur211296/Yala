@@ -1,6 +1,6 @@
 {
   "task": "text.parse",
-  "criterion": "Pasa si la frase produce EXACTAMENTE los movimientos esperados tal como los guardaría la app. Primero la app: `parseMultipleResponse` (quita ```json y decodifica con JSONDecoder estricto: `note` e `isExpense` obligatorios y `confidence` con sus cinco números; un tipo incorrecto tumba la respuesta entera) y el filtro del chat (importe no nulo, > 0 y < 1 000 000). Después, cada movimiento esperado emparejado con uno recibido por importe (±0,01), tipo gasto/ingreso, fecha efectiva (la del modelo si es yyyy-MM-dd; si no, hoy), divisa efectiva (`currencyHint` o la principal del usuario) y subcategoría resuelta con `DraftBuilder.matchSubcategoryByHint` contra la lista que manda la app (las 53 + 9 subcategorías del seed en el idioma del usuario, más las suyas). Ningún movimiento de más. El comercio (nota) y las etiquetas se miden aparte: se corrigen en el borrador; un importe, una fecha o una divisa mal leídos se cuelan. Donde la fecha de un segundo movimiento es ambigua (la palabra «ayer» no lo rige con claridad), valen las dos lecturas y el caso lo dice en `note`. Hoy es miércoles 2026-10-07: ayer 10-06, anteayer y «el lunes» 10-05, «el viernes» 10-02, «el sábado» 10-03, «el jueves» 10-01.",
+  "criterion": "Pasa si la frase produce EXACTAMENTE los movimientos esperados tal como los guardaría la app. Primero la app: `parseMultipleResponse` (quita ```json y decodifica con JSONDecoder estricto: `note` e `isExpense` obligatorios y `confidence` con sus cinco números; un tipo incorrecto tumba la respuesta entera) y el filtro del chat (importe no nulo, > 0 y < 1 000 000). Después, cada movimiento esperado emparejado con uno recibido por importe (±0,01), tipo gasto/ingreso, fecha efectiva (la del modelo si es yyyy-MM-dd; si no, hoy), divisa efectiva (`currencyHint` o la principal del usuario) y subcategoría resuelta con `DraftBuilder.matchSubcategoryByHint` contra la lista que manda la app (las 53 + 9 subcategorías del seed en el idioma del usuario, más las suyas). Ningún movimiento de más. El comercio (nota) y las etiquetas se miden aparte: se corrigen en el borrador; un importe, una fecha o una divisa mal leídos se cuelan. Donde la fecha de un segundo movimiento es ambigua (la palabra «ayer» no lo rige con claridad), valen las dos lecturas y el caso lo dice en `note`. Hoy es miércoles 2026-10-07: ayer 10-06, anteayer y «el lunes» 10-05, «el viernes» 10-02, «el sábado» 10-03, «el jueves» 10-01. Medio de pago (2026-11-04, casos `pago-*`): con `payment` en el esperado, `paymentHint` tiene que contener esa palabra y estar escrita en la frase (lo que acepta la app); `null` = no debe traer ninguno.",
   "cases": [
     { "id": "es-PE-01", "locale": "es-PE", "today": "2026-10-07", "defaultCurrency": "PEN", "text": "Ayer gasté 45.50 en Wong y 12 soles en un taxi",
       "expect": [
@@ -165,6 +165,80 @@
       "expect": [ { "amount": 28.3, "isExpense": true, "date": "2026-10-07", "currency": "EUR", "sub": ["supermarkets"], "merchant": "Pingo Doce" } ] },
     { "id": "ja-04", "locale": "ja", "today": "2026-10-07", "defaultCurrency": "PEN", "accountCurrencies": ["PEN", "JPY"], "text": "ローソンで860円",
       "note": "Principal PEN: 円 es JPY, nunca soles.",
-      "expect": [ { "amount": 860, "isExpense": true, "date": "2026-10-07", "currency": "JPY", "sub": ["supermarkets", "otherShopping"], "merchant": "ローソン" } ] }
+      "expect": [ { "amount": 860, "isExpense": true, "date": "2026-10-07", "currency": "JPY", "sub": ["supermarkets", "otherShopping"], "merchant": "ローソン" } ] },
+    { "id": "pago-es-PE-01", "locale": "es-PE", "today": "2026-10-07", "defaultCurrency": "PEN", "text": "25 almuerzo yape",
+      "expect": [
+        { "amount": 25, "isExpense": true, "date": "2026-10-07", "currency": "PEN", "sub": ["restaurants", "custom:Menús", "delivery"], "payment": "yape" } ] },
+    { "id": "pago-es-PE-02", "locale": "es-PE", "today": "2026-10-07", "defaultCurrency": "PEN", "text": "pagué 12 soles de taxi con plin",
+      "expect": [
+        { "amount": 12, "isExpense": true, "date": "2026-10-07", "currency": "PEN", "sub": ["rideshare"], "payment": "plin" } ] },
+    { "id": "pago-es-PE-03", "locale": "es-PE", "today": "2026-10-07", "defaultCurrency": "PEN", "text": "menú 15 en efectivo", "extraExpense": ["Menús"],
+      "expect": [
+        { "amount": 15, "isExpense": true, "date": "2026-10-07", "currency": "PEN", "sub": ["restaurants", "custom:Menús", "delivery"], "payment": "efectivo" } ] },
+    { "id": "pago-es-PE-04", "locale": "es-PE", "today": "2026-10-07", "defaultCurrency": "PEN", "text": "40 en Tottus con tarjeta",
+      "expect": [
+        { "amount": 40, "isExpense": true, "date": "2026-10-07", "currency": "PEN", "sub": ["supermarkets"], "payment": "tarjeta", "merchant": "Tottus" } ] },
+    { "id": "pago-es-PE-05", "locale": "es-PE", "today": "2026-10-07", "defaultCurrency": "PEN", "text": "le yapeé 30 a mi pata por la pizza",
+      "expect": [
+        { "amount": 30, "isExpense": true, "date": "2026-10-07", "currency": "PEN", "sub": ["restaurants", "custom:Menús", "delivery", "gifts", "otherShopping"], "payment": "yape" } ] },
+    { "id": "pago-es-PE-06", "locale": "es-PE", "today": "2026-10-07", "defaultCurrency": "PEN", "text": "almuerzo 18 y taxi 10, todo con yape",
+      "expect": [
+        { "amount": 18, "isExpense": true, "date": "2026-10-07", "currency": "PEN", "sub": ["restaurants", "custom:Menús", "delivery"], "payment": "yape" },
+        { "amount": 10, "isExpense": true, "date": "2026-10-07", "currency": "PEN", "sub": ["rideshare"], "payment": "yape" } ] },
+    { "id": "pago-es-PE-07", "locale": "es-PE", "today": "2026-10-07", "defaultCurrency": "PEN", "text": "café 8 con yape y taxi 15 en efectivo",
+      "expect": [
+        { "amount": 8, "isExpense": true, "date": "2026-10-07", "currency": "PEN", "sub": ["restaurants", "bars"], "payment": "yape" },
+        { "amount": 15, "isExpense": true, "date": "2026-10-07", "currency": "PEN", "sub": ["rideshare"], "payment": "efectivo" } ] },
+    { "id": "pago-es-PE-08", "locale": "es-PE", "today": "2026-10-07", "defaultCurrency": "PEN", "text": "Wong 120 con la de crédito",
+      "expect": [
+        { "amount": 120, "isExpense": true, "date": "2026-10-07", "currency": "PEN", "sub": ["supermarkets"], "payment": "crédito", "merchant": "Wong" } ] },
+    { "id": "pago-es-PE-09", "locale": "es-PE", "today": "2026-10-07", "defaultCurrency": "PEN", "text": "gasté 60 en Plaza Vea con mi BCP",
+      "expect": [
+        { "amount": 60, "isExpense": true, "date": "2026-10-07", "currency": "PEN", "sub": ["supermarkets"], "payment": "BCP", "merchant": "Plaza Vea" } ] },
+    { "id": "pago-es-PE-10", "locale": "es-PE", "today": "2026-10-07", "defaultCurrency": "PEN", "text": "almuerzo en el chifa 22",
+      "expect": [
+        { "amount": 22, "isExpense": true, "date": "2026-10-07", "currency": "PEN", "sub": ["restaurants", "custom:Menús", "delivery"], "payment": null } ] },
+    { "id": "pago-es-PE-11", "locale": "es-PE", "today": "2026-10-07", "defaultCurrency": "PEN", "text": "pasaje 3.50 en la combi",
+      "expect": [
+        { "amount": 3.5, "isExpense": true, "date": "2026-10-07", "currency": "PEN", "sub": ["publicTransport"], "payment": null } ] },
+    { "id": "pago-es-AR-01", "locale": "es-AR", "today": "2026-10-07", "defaultCurrency": "ARS", "text": "pagué 8000 con Mercado Pago en el súper",
+      "expect": [
+        { "amount": 8000, "isExpense": true, "date": "2026-10-07", "currency": "ARS", "sub": ["supermarkets"], "payment": "Mercado Pago" } ] },
+    { "id": "pago-es-ES-01", "locale": "es-ES", "today": "2026-10-07", "defaultCurrency": "EUR", "text": "25 € en Mercadona con tarjeta",
+      "expect": [
+        { "amount": 25, "isExpense": true, "date": "2026-10-07", "currency": "EUR", "sub": ["supermarkets"], "payment": "tarjeta", "merchant": "Mercadona" } ] },
+    { "id": "pago-en-01", "locale": "en", "today": "2026-10-07", "defaultCurrency": "USD", "text": "paid 40 cash for the taxi",
+      "expect": [
+        { "amount": 40, "isExpense": true, "date": "2026-10-07", "currency": "USD", "sub": ["rideshare", "publicTransport"], "payment": "cash" } ] },
+    { "id": "pago-en-02", "locale": "en", "today": "2026-10-07", "defaultCurrency": "USD", "text": "groceries 85 on my credit card",
+      "expect": [
+        { "amount": 85, "isExpense": true, "date": "2026-10-07", "currency": "USD", "sub": ["supermarkets"], "payment": "credit card" } ] },
+    { "id": "pago-pt-BR-01", "locale": "pt-BR", "today": "2026-10-07", "defaultCurrency": "BRL", "text": "paguei 30 no pix pro almoço",
+      "expect": [
+        { "amount": 30, "isExpense": true, "date": "2026-10-07", "currency": "BRL", "sub": ["restaurants", "custom:Menús", "delivery"], "payment": "pix" } ] },
+    { "id": "pago-pt-BR-02", "locale": "pt-BR", "today": "2026-10-07", "defaultCurrency": "BRL", "text": "gastei 50 no débito no mercado",
+      "expect": [
+        { "amount": 50, "isExpense": true, "date": "2026-10-07", "currency": "BRL", "sub": ["supermarkets"], "payment": "débito" } ] },
+    { "id": "pago-fr-01", "locale": "fr", "today": "2026-10-07", "defaultCurrency": "EUR", "text": "45 € chez Carrefour en espèces",
+      "expect": [
+        { "amount": 45, "isExpense": true, "date": "2026-10-07", "currency": "EUR", "sub": ["supermarkets"], "payment": "espèces", "merchant": "Carrefour" } ] },
+    { "id": "pago-de-01", "locale": "de", "today": "2026-10-07", "defaultCurrency": "EUR", "text": "34 € bei Rewe mit Karte",
+      "expect": [
+        { "amount": 34, "isExpense": true, "date": "2026-10-07", "currency": "EUR", "sub": ["supermarkets"], "payment": "Karte", "merchant": "Rewe" } ] },
+    { "id": "pago-it-01", "locale": "it", "today": "2026-10-07", "defaultCurrency": "EUR", "text": "pagato 20 euro in contanti al ristorante",
+      "expect": [
+        { "amount": 20, "isExpense": true, "date": "2026-10-07", "currency": "EUR", "sub": ["restaurants", "custom:Menús", "delivery"], "payment": "contanti" } ] },
+    { "id": "pago-nl-01", "locale": "nl", "today": "2026-10-07", "defaultCurrency": "EUR", "text": "12 euro gepind bij Jumbo",
+      "expect": [
+        { "amount": 12, "isExpense": true, "date": "2026-10-07", "currency": "EUR", "sub": ["supermarkets"], "payment": "gepind", "merchant": "Jumbo" } ] },
+    { "id": "pago-pl-01", "locale": "pl", "today": "2026-10-07", "defaultCurrency": "PLN", "text": "zapłaciłem kartą 50 zł w Żabce",
+      "expect": [
+        { "amount": 50, "isExpense": true, "date": "2026-10-07", "currency": "PLN", "sub": ["supermarkets", "otherShopping"], "payment": "kartą" } ] },
+    { "id": "pago-ja-01", "locale": "ja", "today": "2026-10-07", "defaultCurrency": "JPY", "text": "コンビニで500円、現金で", "extraExpense": ["コンビニ"],
+      "expect": [
+        { "amount": 500, "isExpense": true, "date": "2026-10-07", "currency": "JPY", "sub": ["custom:コンビニ", "supermarkets", "otherShopping"], "payment": "現金" } ] },
+    { "id": "pago-zh-01", "locale": "zh-Hans", "today": "2026-10-07", "defaultCurrency": "CNY", "text": "用微信支付了35元午饭",
+      "expect": [
+        { "amount": 35, "isExpense": true, "date": "2026-10-07", "currency": "CNY", "sub": ["restaurants", "custom:Menús", "delivery"], "payment": "微信" } ] }
   ]
 }

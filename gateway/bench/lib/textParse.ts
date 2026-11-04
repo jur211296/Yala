@@ -139,6 +139,11 @@ export interface ExpectedNoteTx {
   sub: string[];
   merchant?: string;
   tags?: string[];
+  /**
+   * Medio de pago (card v466, 2026-11-04): la palabra que tiene que traer `paymentHint` (basta que la contenga, sin tildes
+   * ni mayúsculas), o `null` si la frase no lo dice. Sin la clave, el caso no lo mide (y cuenta si el modelo inventa uno).
+   */
+  payment?: string | null;
 }
 
 export interface TextParseCase {
@@ -186,6 +191,8 @@ export interface ParsedNoteTx {
   subcategoryHint: string | null;
   tagHints: string[];
   currencyHint: string | null;
+  /** `undefined` = el campo no vino (gateway sin desplegar); `null` = contestó que no lo dice. */
+  paymentHint?: string | null;
 }
 
 /** `parseMultipleResponse` + la decodificación de `LLMMultipleResponse`. `null` = la app lanza `parsingFailed`. */
@@ -207,7 +214,7 @@ export function parseNoteResponse(content: string): ParsedNoteTx[] | null {
   for (const raw of obj.transactions as unknown[]) {
     if (!raw || typeof raw !== "object") return null;
     const t = raw as Record<string, unknown>;
-    if (!opt(t.amount, "number") || !opt(t.date, "string") || !opt(t.subcategoryHint, "string") || !opt(t.currencyHint, "string")) return null;
+    if (!opt(t.amount, "number") || !opt(t.date, "string") || !opt(t.subcategoryHint, "string") || !opt(t.currencyHint, "string") || !opt(t.paymentHint, "string")) return null;
     if (typeof t.note !== "string" || typeof t.isExpense !== "boolean") return null;
     if (t.tagHints !== undefined && t.tagHints !== null && (!Array.isArray(t.tagHints) || t.tagHints.some((x) => typeof x !== "string"))) return null;
     const conf = t.confidence as Record<string, unknown> | undefined;
@@ -220,6 +227,7 @@ export function parseNoteResponse(content: string): ParsedNoteTx[] | null {
       subcategoryHint: (t.subcategoryHint as string | null | undefined) ?? null,
       tagHints: (t.tagHints as string[] | null | undefined) ?? [],
       currencyHint: (t.currencyHint as string | null | undefined) ?? null,
+      ...("paymentHint" in t ? { paymentHint: (t.paymentHint as string | null) ?? null } : {}),
     });
   }
   return out;
@@ -252,6 +260,21 @@ function effectiveDate(date: string | null, today: string): string {
   const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
   if (d.getUTCMonth() !== Number(m[2]) - 1) return today;
   return d.toISOString().slice(0, 10);
+}
+
+/**
+ * La mención que la app ACEPTA (`PaymentMethodAccountLogic.mention`, con el campo contestado): la palabra del modelo solo
+ * vale si está escrita en la frase, palabra a palabra sin tildes ni mayúsculas (o como texto en japonés y chino).
+ */
+export function acceptedPaymentHint(hint: string | null | undefined, text: string): string | null {
+  if (!hint || !hint.trim()) return null;
+  const f = (s: string) => normalize(s);
+  if (/[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/u.test(hint)) return f(text).includes(f(hint)) ? hint : null;
+  const tok = (s: string) => f(s).split(/[^\p{L}\p{N}]+/u).filter(Boolean).map((w) => (w.startsWith("yape") ? "yape" : w));
+  const needle = tok(hint);
+  const hay = tok(text);
+  for (let i = 0; i + needle.length <= hay.length; i++) if (needle.every((w, j) => hay[i + j] === w)) return hint;
+  return null;
 }
 
 function merchantOk(note: string, want: string): boolean {
@@ -292,6 +315,9 @@ export function gradeTextParse(content: string, c: TextParseCase): Grade {
   let merchantWanted = 0;
   let tagHits = 0;
   let tagWanted = 0;
+  let paymentHits = 0;
+  let paymentWanted = 0;
+  let paymentInvented = 0;
   const field = { type: 0, date: 0, currency: 0, sub: 0 };
   const misses: string[] = [];
   for (const e of c.expect) {
@@ -325,6 +351,15 @@ export function gradeTextParse(content: string, c: TextParseCase): Grade {
       merchantWanted++;
       if (merchantOk(g.note, e.merchant)) merchantHits++;
     }
+    const accepted = acceptedPaymentHint(g.paymentHint, c.text);
+    if (e.payment !== undefined) {
+      paymentWanted++;
+      const ok = e.payment === null ? accepted === null : accepted !== null && normalize(accepted).includes(normalize(e.payment));
+      if (ok) paymentHits++;
+      else misses.push(`${e.amount}: medio de pago ${accepted ?? "—"} [pista ${g.paymentHint ?? "—"}] (esp. ${e.payment ?? "ninguno"})`);
+    } else if (accepted !== null) {
+      paymentInvented++;
+    }
     if (e.tags?.length) {
       tagWanted++;
       const hints = g.tagHints.map((x) => x.trim().toLowerCase());
@@ -332,7 +367,7 @@ export function gradeTextParse(content: string, c: TextParseCase): Grade {
     }
   }
   const extra = got.length - used.size;
-  const pass = full === c.expect.length && extra === 0;
+  const pass = full === c.expect.length && extra === 0 && paymentHits === paymentWanted;
   return {
     pass,
     appParsed: true,
@@ -347,6 +382,9 @@ export function gradeTextParse(content: string, c: TextParseCase): Grade {
       merchantWanted,
       tagHits,
       tagWanted,
+      paymentHits,
+      paymentWanted,
+      paymentInvented,
       extra,
       ...(misses.length ? { misses } : {}),
       // La respuesta entera (los casos son públicos): permite volver a puntuar sin volver a pagar.

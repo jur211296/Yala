@@ -329,7 +329,8 @@ final class ChatAssistantService {
             .bool(forKey: AppPreferences.Keys.expensesOnlyMode) ?? false
         let drafts = cropped.map {
             DraftBuilder.build(
-                parsed: $0, defaultCurrency: currencyCode, context: modelContext, expensesOnlyMode: expensesOnlyMode)
+                parsed: $0, defaultCurrency: currencyCode, context: modelContext, expensesOnlyMode: expensesOnlyMode,
+                sourceText: question, batchCount: cropped.count)
         }
 
         let exceededCap = valid.count > Self.maxDraftsPerMessage

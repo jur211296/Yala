@@ -20,7 +20,7 @@ export const TEXT_PARSE_SCHEMA = {
         items: {
           type: "object",
           additionalProperties: false,
-          required: ["amount", "date", "note", "isExpense", "subcategoryHint", "tagHints", "currencyHint", "confidence"],
+          required: ["amount", "date", "note", "isExpense", "subcategoryHint", "tagHints", "currencyHint", "paymentHint", "confidence"],
           properties: {
             amount: { type: ["number", "null"] },
             date: { type: ["string", "null"] },
@@ -29,6 +29,9 @@ export const TEXT_PARSE_SCHEMA = {
             subcategoryHint: { type: ["string", "null"] },
             tagHints: { type: "array", items: { type: "string" } },
             currencyHint: { type: ["string", "null"] },
+            // Las palabras del medio de pago que dijo el usuario («yape», «tarjeta»), o null (card v466, 2026-11-04). Las
+            // versiones instaladas lo ignoran al decodificar; la app nueva elige la cuenta con él.
+            paymentHint: { type: ["string", "null"] },
             confidence: {
               type: "object",
               additionalProperties: false,

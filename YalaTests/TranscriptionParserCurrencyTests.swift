@@ -141,7 +141,7 @@ struct TranscriptionParserCurrencyTests {
     /// Los `Output:` de los ejemplos, decodificados como JSON.
     private func exampleOutputs(_ text: String) throws -> [[String: Any]] {
         let lines = text.components(separatedBy: "\n").filter { $0.hasPrefix("Output: ") }
-        #expect(lines.count == 4, "el prompt tiene \(lines.count) ejemplos")
+        #expect(lines.count == 5, "el prompt tiene \(lines.count) ejemplos")
         return try lines.flatMap { line -> [[String: Any]] in
             let json = String(line.dropFirst("Output: ".count))
             let object = try #require(try JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
@@ -155,7 +155,7 @@ struct TranscriptionParserCurrencyTests {
         #expect(text.contains("\"date\" SIEMPRE es una fecha \"YYYY-MM-DD\", nunca null. Sin mención de fecha → hoy, 2026-10-07"))
         #expect(!text.contains("\"date\":null"))
         let txs = try exampleOutputs(text)
-        #expect(txs.count == 5)
+        #expect(txs.count == 6)
         for tx in txs {
             let date = try #require(tx["date"] as? String, "un ejemplo sin fecha")
             let confidence = try #require((tx["confidence"] as? [String: Any])?["date"] as? Double)
@@ -192,7 +192,7 @@ struct TranscriptionParserCurrencyTests {
     @Test("con una lista que las tiene, los ejemplos eligen la subcategoría que toca")
     func examplesPickTheMatchingSubcategory() throws {
         let hints = try exampleOutputs(prompt(.unknown)).map { $0["subcategoryHint"] as? String }
-        #expect(hints == ["Restaurantes", "Restaurantes", "Restaurantes", "Estacionamientos", "Supermercados y bodegas"])
+        #expect(hints == ["Restaurantes", "Restaurantes", "Restaurantes", "Estacionamientos", "Restaurantes", "Supermercados y bodegas"])
     }
 
     @Test("los ejemplos son respuestas que la app sabe leer")
@@ -230,7 +230,7 @@ struct TranscriptionParserCurrencyTests {
         let required = try #require(item["required"] as? [String])
         #expect(item["additionalProperties"] as? Bool == false)
         #expect(Set(required) == Set(properties.keys), "en modo estricto todo campo es obligatorio")
-        #expect(Set(required) == ["amount", "date", "note", "isExpense", "subcategoryHint", "tagHints", "currencyHint", "confidence"])
+        #expect(Set(required) == ["amount", "date", "note", "isExpense", "subcategoryHint", "tagHints", "currencyHint", "paymentHint", "confidence"])
         for optional in ["amount", "date", "subcategoryHint", "currencyHint"] {
             let type = (properties[optional] as? [String: Any])?["type"] as? [String]
             #expect(type?.last == "null", "\(optional) es opcional en el DTO: va como [tipo, \"null\"]")
