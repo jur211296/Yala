@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copia las fuentes del widget (y los tres ficheros de `Yala/` que su target compila por membership) a `Generated/`,
+# Copia las fuentes del widget (y los ficheros de `Yala/` que su target compila por membership) a `Generated/`,
 # con cinco cambios para poder pintarlas fuera de WidgetKit (ver README):
 #   1. sin el `@main` del bundle (el banco es una app);
 #   2. el entorno de WidgetKit (familia, modo de pintado, fondo) pasa a claves propias que el banco fija;
@@ -19,7 +19,7 @@ mkdir -p "$OUT/Widget" "$OUT/Shared"
   mkdir -p "$OUT/Widget/$(dirname "$f")"
   cp "$ROOT/YalaWidgets/$f" "$OUT/Widget/$f"
 done
-for f in Yala/App/Logic/Helpers/WidgetAmountSplitter.swift Yala/App/Logic/Helpers/WidgetInsightsLogic.swift Yala/App/Logic/Helpers/WidgetSelectionFallback.swift Yala/Shared/ControlCenterIntents.swift; do
+for f in Yala/App/Logic/Helpers/WidgetAmountSplitter.swift Yala/App/Logic/Helpers/WidgetInsightsLogic.swift Yala/App/Logic/Helpers/WidgetSelectionFallback.swift Yala/App/Logic/Helpers/ScheduledPaymentWidgetPay.swift Yala/Shared/ControlCenterIntents.swift Yala/Shared/ScheduledPaymentWidgetIntents.swift; do
   [ -f "$ROOT/$f" ] && cp "$ROOT/$f" "$OUT/Shared/"
 done
 

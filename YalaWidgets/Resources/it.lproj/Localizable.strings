@@ -190,6 +190,14 @@
 "widget.budgets.exceeded.other" = "%d superati";
 "widget.payments.inDays" = "Tra %d giorni";
 "widget.payments.leftShort" = "Mancano %@";
+"widget.payments.markPaid" = "L'ho pagato";
+"widget.payments.markReceived" = "L'ho ricevuto";
+"widget.payments.paid" = "Pagato";
+"widget.payments.received" = "Ricevuto";
+"widget.payments.markPaid.intentTitle" = "Segna un pagamento come pagato";
+"widget.payments.markPaid.intentDescription" = "Segna come pagato il pagamento di oggi senza aprire Yala.";
+"widget.payments.markPaid.paramPayment" = "Pagamento";
+"widget.payments.markPaid.paramDate" = "Data";
 "widget.ui.yesterday" = "Ieri";
 "widget.records.emptyHint" = "Tocca + per registrare il primo";
 "widget.quick.title" = "Registra";

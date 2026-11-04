@@ -190,6 +190,14 @@
 "widget.budgets.exceeded.other" = "%d 个超支";
 "widget.payments.inDays" = "%d 天后";
 "widget.payments.leftShort" = "还需 %@";
+"widget.payments.markPaid" = "已付款";
+"widget.payments.markReceived" = "已收款";
+"widget.payments.paid" = "已付款";
+"widget.payments.received" = "已收款";
+"widget.payments.markPaid.intentTitle" = "将付款标记为已付";
+"widget.payments.markPaid.intentDescription" = "无需打开 Yala，将今天的付款标记为已付。";
+"widget.payments.markPaid.paramPayment" = "付款";
+"widget.payments.markPaid.paramDate" = "日期";
 "widget.ui.yesterday" = "昨天";
 "widget.records.emptyHint" = "轻点 + 添加第一条";
 "widget.quick.title" = "记一笔";

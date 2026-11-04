@@ -169,12 +169,14 @@ extension GroupTransactionBridge {
                 fromMemberID: $0.fromMemberID, toMemberID: $0.toMemberID, isConfirmed: $0.isConfirmed)
         }
 
-        var coverage: [UUID: GroupReceivableCoverageLogic.Coverage] = [:]
-        for currency in Set(sales.values.map(\.currencyCode)) {
-            let events = GroupReceivableCoverageLogic.events(
-                for: memberID, currencyCode: currency, expenses: inputs, settlements: settlementInputs)
-            coverage.merge(GroupReceivableCoverageLogic.coverage(of: events)) { _, new in new }
-        }
+        // Con «deudas en una sola moneda» el grupo neta todas las divisas, y un pago en otra cubre la venta con el tipo de
+        // cambio del día del pago (decisión A, 2026-11-02). Sin la opción, cada divisa va por su lado.
+        let events = GroupReceivableCoverageLogic.events(
+            for: memberID, currencyCode: nil, expenses: inputs, settlements: settlementInputs)
+        let convert: GroupReceivableCoverageLogic.Convert? = group.showDebtsInSingleCurrency
+            ? { amount, from, to, date in Self.convertAtPaymentDay(amount, from: from, to: to, on: date, context: context) }
+            : nil
+        let coverage = GroupReceivableCoverageLogic.coverage(of: events, convert: convert)
 
         // Las patas de venta que ya no son de ninguna venta (el gasto dejó de serlo o se está borrando). Las de un gasto
         // que ya no está en el store las recoge su borrado o el barrido de huérfanas.
@@ -276,6 +278,16 @@ extension GroupTransactionBridge {
         Self.receivablesLogger.info(
             "reconcileReceivables sale=\(sale.id.uuidString, privacy: .public) owed=\(coverage.owed, privacy: .public) collectedParts=\(coverage.collected.count, privacy: .public)")
         #endif
+    }
+
+    /// Un importe de un movimiento del grupo en otra divisa, con el tipo de cambio del día del pago (su mediodía, como
+    /// lee las tasas `BalanceValuation.rateDay`). Es la misma conversión que propone el «Sugerido» de la liquidación
+    /// (`SettlementFormView.suggestedAmount`): pagar lo sugerido cubre la venta entera.
+    static func convertAtPaymentDay(
+        _ amount: Decimal, from: String, to: String, on date: Date, context: ModelContext
+    ) -> Decimal {
+        CurrencyConverter.shared.convert(
+            amount, from: from, to: to, on: BalanceValuation.rateDay(of: date, calendar: .current), context: context)
     }
 
     /// Las zonas de unas patas que se van a borrar: las que hay que repasar después.

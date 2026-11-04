@@ -59,6 +59,9 @@ enum AppGroupInboundPurge {
     static func purgeInboundSurfaces() {
         ApplePayPendingStore.remove(keys: ApplePayPendingStore.peekAll().map(\.key))
         SiriPendingStore.remove(keys: SiriPendingStore.peekAll().map(\.key))
+        let widgetDefaults = UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)
+        ScheduledPaymentWidgetPaidStore.remove(
+            keys: ScheduledPaymentWidgetPaidStore.peekAll(defaults: widgetDefaults).map(\.key), defaults: widgetDefaults)
 
         // Snapshot que el intent de Siri lee sin abrir SwiftData: nombres de subcategoría (pueden ser
         // propios del usuario) + divisa. La app lo reconstruye en su próximo `refresh` (bootstrap /

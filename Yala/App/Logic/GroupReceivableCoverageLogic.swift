@@ -22,6 +22,12 @@
 //
 //  Pura y determinista: dos aparatos con el mismo grupo dan el mismo reparto (orden por fecha y, a igualdad, por id).
 //
+//  ENTRE DIVISAS (decisión A de Jürgen, 2026-11-02, card «una venta en otra divisa no se cobra con un pago en la moneda
+//  del grupo»). Con «deudas en una sola moneda» el grupo neta todas las divisas, y un pago en la moneda del grupo puede
+//  cubrir una venta en otra. Entonces el reparto corre con todas las divisas juntas (`coverage(of:convert:)`): lo que
+//  baja tu saldo cubre lo más antiguo de CUALQUIER divisa, convertido con el tipo de cambio del día del movimiento que
+//  cubre (el pago) y fijo desde ahí: repasar otro día no lo recalcula. Sin la opción, cada divisa va por su lado.
+//
 
 import Foundation
 
@@ -36,7 +42,12 @@ nonisolated enum GroupReceivableCoverageLogic {
         let amount: Decimal
         /// Una venta tuya (solo cuenta con `amount > 0`).
         let isSale: Bool
+        /// La divisa del movimiento. Sin conversión entre divisas, un movimiento solo cubre o salda los de su divisa.
+        var currencyCode: String = ""
     }
+
+    /// Convierte `amount` de `from` a `to` con el tipo de cambio de `date` (el día del movimiento que cubre).
+    typealias Convert = (_ amount: Decimal, _ from: String, _ to: String, _ date: Date) -> Decimal
 
     /// Una parte cobrada de una venta: cuánto, cuándo y qué movimiento la cubrió.
     struct Portion: Equatable, Sendable {
@@ -61,14 +72,47 @@ nonisolated enum GroupReceivableCoverageLogic {
     static let settledResidue = Decimal(string: "0.01", locale: Locale(identifier: "en_US_POSIX")) ?? 0
 
     /// El reparto de lo cobrado de cada venta de `events`.
-    static func coverage(of events: [Event]) -> [UUID: Coverage] {
+    ///
+    /// - Parameter convert: con él, un movimiento cubre o salda también los de otra divisa, convertidos con el tipo de
+    ///   cambio del día del movimiento que cubre. Sin él (el caso de siempre), solo los de su divisa.
+    static func coverage(of events: [Event], convert: Convert? = nil) -> [UUID: Coverage] {
         struct Lot {
             let saleID: UUID?
+            let currencyCode: String
             var remaining: Decimal
         }
         var result: [UUID: Coverage] = [:]
         var credits: [Lot] = []
-        var debts: [Decimal] = []
+        var debts: [Lot] = []
+
+        /// El siguiente lote que `event` puede tomar: el más antiguo de su divisa o, con conversión, de cualquiera.
+        func nextIndex(in lots: [Lot], for event: Event) -> Int? {
+            if convert != nil { return lots.isEmpty ? nil : 0 }
+            return lots.firstIndex { $0.currencyCode == event.currencyCode }
+        }
+
+        /// Toma de `lot` hasta `rest` (en la divisa del evento). Devuelve lo tomado en la divisa del LOTE y lo que eso
+        /// gasta de `rest`. La conversión es la del día del evento; si se lleva el lote entero, lo gastado se convierte
+        /// de vuelta para que el resto siga en la divisa del evento.
+        ///
+        /// Un pago entre divisas va redondeado al céntimo de SU divisa (el «Sugerido»), y ese céntimo, convertido, puede
+        /// valer más de un céntimo del lote (S/ 0,04 por cada dólar de 3,7; ¥ 1,5 con un tipo de 150). Por eso el lote se
+        /// da por cubierto si falta menos de lo que vale un céntimo del pago, y lo que sobra del pago por ese redondeo
+        /// (un céntimo o menos) no queda como deuda: el grupo ya no ofrece deudas de 0,01 o menos.
+        func take(_ rest: Decimal, from lot: Lot, by event: Event) -> (inLot: Decimal, spent: Decimal) {
+            guard lot.currencyCode != event.currencyCode, let convert else {
+                let taken = min(rest, lot.remaining)
+                return (taken, taken)
+            }
+            let restInLot = rounded(convert(rest, event.currencyCode, lot.currencyCode, event.date))
+            let oneCentInLot = convert(settledResidue, event.currencyCode, lot.currencyCode, event.date)
+            if restInLot + max(epsilon, oneCentInLot) >= lot.remaining {
+                let back = rounded(convert(lot.remaining, lot.currencyCode, event.currencyCode, event.date))
+                let spent = rest - back <= settledResidue ? rest : back
+                return (lot.remaining, spent)
+            }
+            return (restInLot, rest)
+        }
 
         func collect(_ amount: Decimal, of saleID: UUID, by event: Event) {
             guard amount > epsilon else { return }
@@ -87,28 +131,40 @@ nonisolated enum GroupReceivableCoverageLogic {
                 var rest = event.amount
                 let saleID: UUID? = event.isSale ? event.id : nil
                 if let saleID { result[saleID] = Coverage(saleID: saleID, owed: event.amount, collected: []) }
-                // Lo que debías se salda primero: esa parte de la venta queda cobrada en su propia fecha.
-                while rest > epsilon, let first = debts.first {
-                    let taken = min(rest, first)
-                    if let saleID { collect(taken, of: saleID, by: event) }
-                    rest -= taken
-                    if first - taken > epsilon { debts[0] = first - taken } else { debts.removeFirst() }
+                // Lo que debías se salda primero: esa parte de la venta queda cobrada en su propia fecha. Lo cobrado va en
+                // la divisa de la venta, que es la del evento: `spent`.
+                while rest > epsilon, let index = nextIndex(in: debts, for: event) {
+                    let debt = debts[index]
+                    let (inLot, spent) = take(rest, from: debt, by: event)
+                    if let saleID { collect(spent, of: saleID, by: event) }
+                    rest -= spent
+                    if debt.remaining - inLot > epsilon { debts[index].remaining = debt.remaining - inLot } else {
+                        debts.remove(at: index)
+                    }
+                    if inLot <= 0 && spent <= 0 { break }
                 }
-                if rest > epsilon { credits.append(Lot(saleID: saleID, remaining: rest)) }
+                if rest > epsilon {
+                    credits.append(Lot(saleID: saleID, currencyCode: event.currencyCode, remaining: rest))
+                }
             } else if event.amount < -epsilon {
                 var rest = -event.amount
-                // Lo que baja tu saldo cubre primero lo más antiguo, venta o gasto adelantado.
-                while rest > epsilon, let first = credits.first {
-                    let taken = min(rest, first.remaining)
-                    if let saleID = first.saleID { collect(taken, of: saleID, by: event) }
-                    rest -= taken
-                    if first.remaining - taken > epsilon {
-                        credits[0].remaining = first.remaining - taken
+                // Lo que baja tu saldo cubre primero lo más antiguo, venta o gasto adelantado. Lo cobrado va en la divisa
+                // de la venta, que es la del lote: `inLot`.
+                while rest > epsilon, let index = nextIndex(in: credits, for: event) {
+                    let credit = credits[index]
+                    let (inLot, spent) = take(rest, from: credit, by: event)
+                    if let saleID = credit.saleID { collect(inLot, of: saleID, by: event) }
+                    rest -= spent
+                    if credit.remaining - inLot > epsilon {
+                        credits[index].remaining = credit.remaining - inLot
                     } else {
-                        credits.removeFirst()
+                        credits.remove(at: index)
                     }
+                    if inLot <= 0 && spent <= 0 { break }
                 }
-                if rest > epsilon { debts.append(rest) }
+                if rest > epsilon {
+                    debts.append(Lot(saleID: nil, currencyCode: event.currencyCode, remaining: rest))
+                }
             }
         }
         // El resto que el grupo ya da por saldado va con la última parte cobrada (`settledResidue`).
@@ -165,18 +221,20 @@ nonisolated enum GroupReceivableCoverageLogic {
         let isConfirmed: Bool
     }
 
-    /// Los movimientos que mueven el saldo de `memberID` en `currencyCode`, con la misma cuenta que `GroupBalanceService`:
-    /// el pagador suma el gasto entero y cada miembro resta su parte; quien paga una liquidación suma y quien la recibe
-    /// resta. Solo cuentan las liquidaciones confirmadas y los gastos sin saldar, y cada id una vez.
+    /// Los movimientos que mueven el saldo de `memberID` en `currencyCode` (con `nil`, en todas las divisas), con la misma
+    /// cuenta que `GroupBalanceService`: el pagador suma el gasto entero y cada miembro resta su parte; quien paga una
+    /// liquidación suma y quien la recibe resta. Solo cuentan las liquidaciones confirmadas y los gastos sin saldar, y
+    /// cada id una vez.
     static func events(
         for memberID: String,
-        currencyCode: String,
+        currencyCode: String?,
         expenses: [ExpenseInput],
         settlements: [SettlementInput]
     ) -> [Event] {
         var result: [Event] = []
         var seenExpenses: Set<UUID> = []
-        for expense in expenses where expense.currencyCode == currencyCode && !expense.isSettled {
+        for expense in expenses
+        where (currencyCode == nil || expense.currencyCode == currencyCode) && !expense.isSettled {
             guard seenExpenses.insert(expense.id).inserted else { continue }
             let myShare = expense.shares.filter { $0.memberID == memberID }.reduce(0) { $0 + $1.amount }
             let paid = expense.paidByMemberID == memberID ? expense.amount : 0
@@ -184,17 +242,19 @@ nonisolated enum GroupReceivableCoverageLogic {
             guard delta != 0 else { continue }
             result.append(Event(
                 id: expense.id, date: expense.date, amount: delta,
-                isSale: expense.isSale && expense.paidByMemberID == memberID))
+                isSale: expense.isSale && expense.paidByMemberID == memberID, currencyCode: expense.currencyCode))
         }
         var seenSettlements: Set<UUID> = []
         for settlement in settlements
-        where settlement.currencyCode == currencyCode && settlement.isConfirmed {
+        where (currencyCode == nil || settlement.currencyCode == currencyCode) && settlement.isConfirmed {
             guard seenSettlements.insert(settlement.id).inserted else { continue }
             var delta = Decimal(0)
             if settlement.fromMemberID == memberID { delta += decimal(settlement.amount) }
             if settlement.toMemberID == memberID { delta -= decimal(settlement.amount) }
             guard delta != 0 else { continue }
-            result.append(Event(id: settlement.id, date: settlement.date, amount: delta, isSale: false))
+            result.append(Event(
+                id: settlement.id, date: settlement.date, amount: delta, isSale: false,
+                currencyCode: settlement.currencyCode))
         }
         return result
     }
@@ -206,6 +266,14 @@ nonisolated enum GroupReceivableCoverageLogic {
         var rounded = Decimal()
         NSDecimalRound(&rounded, &exact, 2, .plain)
         return rounded
+    }
+
+    /// Un importe convertido, al céntimo.
+    static func rounded(_ value: Decimal) -> Decimal {
+        var exact = value
+        var result = Decimal()
+        NSDecimalRound(&result, &exact, 2, .plain)
+        return result
     }
 
     /// Un importe como `Double`, para escribirlo en un `TransactionItem`.

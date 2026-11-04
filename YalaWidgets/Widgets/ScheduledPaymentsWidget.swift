@@ -54,6 +54,8 @@ struct ScheduledPaymentsEntry: TimelineEntry {
     var paymentsMonth: WidgetPaymentsMonth?
     /// Cuándo escribió la app la foto.
     var lastUpdated: Date? = nil
+    /// Lo marcado como pagado desde el widget que la app aún no ha apuntado (`ScheduledPaymentWidgetPaidStore`).
+    var paidRequests: [ScheduledPaymentWidgetPaidRequest] = []
 
     /// El mes de pagos SOLO si es el mes de `date`: una foto de otro mes (la app no se abre desde el día 1) pintaría
     /// días y una cifra que ya no son de este calendario.
@@ -228,7 +230,9 @@ struct ScheduledPaymentsProvider: AppIntentTimelineProvider {
             hasNoPayments: allPayments.isEmpty,
             currencyCode: WidgetDataService.getPreferredCurrency(),
             paymentsMonth: WidgetDataService.getPaymentsMonth(),
-            lastUpdated: WidgetDataService.getLastUpdated()
+            lastUpdated: WidgetDataService.getLastUpdated(),
+            paidRequests: ScheduledPaymentWidgetPaidStore.peekAll(
+                defaults: UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)).map(\.request)
         )
     }
 }
@@ -274,7 +278,8 @@ struct ScheduledPaymentsWidgetView: View {
                 VStack(alignment: .leading, spacing: WidgetDS.Spacing.none) {
                     ForEach(Array(rows.enumerated()), id: \.element.id) { index, payment in
                         if index > 0 { Spacer(minLength: WidgetDS.Spacing.xs) }
-                        PaymentRowView(payment: payment, displayFormat: entry.currencyDisplayFormat, now: entry.date)
+                        PaymentRowView(payment: payment, displayFormat: entry.currencyDisplayFormat, now: entry.date,
+                                       paidRequests: entry.paidRequests, allowsMarkPaid: !entry.isPlaceholder)
                     }
                     if isLarge {
                         Spacer(minLength: WidgetDS.Spacing.sm)
@@ -318,12 +323,52 @@ struct ScheduledPaymentsHeader: View {
 
 /// Un pago: insignia sólida con su icono y color, el nombre, cuándo vence («Hoy», «Mañana», «En 3 días», «Vencido · 28
 /// oct.») y el importe con signo. Solo el ingreso lleva color; el vencido avisa en el «cuándo», sin cambiar el icono.
+///
+/// El pago de HOY que se puede apuntar en un toque lleva al final «Ya lo pagué» (✓, decisión B de Jürgen, 2026-11-03):
+/// lo marca sin abrir Yala (`MarkScheduledPaymentPaidIntent`). Tocado, la fila dice «Pagado» hasta que la app lo apunte.
 struct PaymentRowView: View {
     let payment: WidgetScheduledPayment
     let displayFormat: String
     var now: Date = Date()
+    var paidRequests: [ScheduledPaymentWidgetPaidRequest] = []
+    /// En el placeholder y la galería no hay pago que marcar.
+    var allowsMarkPaid: Bool = true
 
     var body: some View {
+        HStack(spacing: WidgetDS.Spacing.sm) {
+            info
+            if isRequested {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(WidgetDS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(WidgetColors.accentText)
+                    .accessibilityHidden(true)
+            } else if showsMarkPaid {
+                Button(intent: MarkScheduledPaymentPaidIntent(paymentID: payment.id, occurrence: payment.nextDueDate)) {
+                    Image(systemName: "checkmark.circle")
+                        .font(WidgetDS.Typography.headline)
+                        .foregroundStyle(WidgetColors.accentText)
+                        .frame(minWidth: 28, minHeight: 28) // A11Y-DT: área de toque del botón del widget
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text(payment.isIncome ? "widget.payments.markReceived" : "widget.payments.markPaid",
+                                         bundle: .main))
+                .accessibilityIdentifier("widget_payment_mark_paid_\(payment.id)")
+            }
+        }
+    }
+
+    private var showsMarkPaid: Bool {
+        allowsMarkPaid && ScheduledPaymentWidgetPayLogic.showsButton(
+            canMarkPaid: payment.canMarkPaid ?? false, nextDueDate: payment.nextDueDate, now: now, calendar: .current)
+    }
+
+    private var isRequested: Bool {
+        ScheduledPaymentWidgetPayLogic.isRequested(
+            paymentID: payment.id, nextDueDate: payment.nextDueDate, requests: paidRequests, calendar: .current)
+    }
+
+    private var info: some View {
         HStack(spacing: WidgetDS.Spacing.sm) {
             WidgetBadge(systemImage: iconName, color: WidgetColors.fill(hex: payment.colorHex))
 
@@ -334,7 +379,7 @@ struct PaymentRowView: View {
                     .lineLimit(1)
                 Text(dueText)
                     .font(WidgetDS.Typography.captionSmall)
-                    .foregroundStyle(isOverdue ? WidgetColors.alertText : Color.secondary)
+                    .foregroundStyle(isOverdue && !isRequested ? WidgetColors.alertText : Color.secondary)
                     .lineLimit(1)
             }
 
@@ -371,7 +416,10 @@ struct PaymentRowView: View {
     }
 
     private var dueText: String {
-        WidgetDateText.due(payment.nextDueDate, isOverdue: payment.isOverdue, now: now)
+        if isRequested {
+            return String(localized: payment.isIncome ? "widget.payments.received" : "widget.payments.paid", bundle: .main)
+        }
+        return WidgetDateText.due(payment.nextDueDate, isOverdue: payment.isOverdue, now: now)
     }
 }
 

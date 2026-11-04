@@ -339,39 +339,14 @@ final class ScheduledPaymentsViewModel {
 
     // MARK: - «Ya lo pagué» → «Apuntarlo ahora» (UX 2.2 · L10-9, L10-11)
 
-    /// El borrador con el que se apunta una fecha: el pendiente que ya espera en la Bandeja para ese pago y ese mes
-    /// (el que dejó el vencimiento), o uno nuevo (`isNew`). La fecha del registro es la del pago si ya llegó, y hoy si
-    /// se paga por adelantado: la Bandeja no deja guardar registros con fecha futura. Un pago compartido no pasa por
-    /// aquí: se aprueba con el formulario de grupo (`DraftService` lo rechazaría).
+    /// El borrador con el que se apunta una fecha (`ScheduledPaymentPayNow.draftForPaying`, compartido con el widget).
     func draftForPaying(_ payment: ScheduledPayment, occurrence: Date) -> (draft: InboxDraft, isNew: Bool)? {
-        guard let context = modelContext, !payment.isGroupPayment else { return nil }
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date.now)
-        let targetDate = min(calendar.startOfDay(for: occurrence), today)
-        let paymentID = payment.id.uuidString
-        do {
-            let descriptor = FetchDescriptor<InboxDraft>(
-                predicate: #Predicate<InboxDraft> { draft in
-                    draft.sourceScheduledPaymentID == paymentID && draft.statusRaw == "pending"
-                }
-            )
-            if let existing = try context.fetch(descriptor).first(where: {
-                calendar.isDate($0.date ?? $0.createdAt, equalTo: occurrence, toGranularity: .month)
-            }) {
-                return (existing, false)
-            }
-        } catch {
-            #if DEBUG
-            print("ScheduledPaymentsViewModel: Error fetching pending drafts: \(error)")
-            #endif
-            return nil
-        }
-        let draft = ScheduledPaymentDraftService.createDraftForOccurrence(from: payment, date: targetDate, context: context)
-        return (draft, true)
+        guard let context = modelContext else { return nil }
+        return ScheduledPaymentPayNow.draftForPaying(payment, occurrence: occurrence, context: context)
     }
 
-    /// «Apuntarlo ahora» en un toque: el borrador de esa fecha con el monto elegido, aprobado por el mismo camino que la
-    /// Bandeja (`DraftService.approveDraft`: registro, fecha pagada y próxima fecha). Lanza lo que lance la Bandeja.
+    /// «Apuntarlo ahora» en un toque (`ScheduledPaymentPayNow.recordPaymentNow`, la misma lógica que el botón del widget
+    /// de Pagos planificados). Lanza lo que lance la Bandeja.
     @discardableResult
     func recordPaymentNow(
         _ payment: ScheduledPayment,
@@ -380,20 +355,11 @@ final class ScheduledPaymentsViewModel {
         draftService: DraftService,
         currencyConverter: CurrencyConverter
     ) throws -> TransactionItem? {
-        guard amount > 0, let (draft, isNew) = draftForPaying(payment, occurrence: occurrence) else { return nil }
-        draft.amount = payment.isIncome ? abs(amount) : -abs(amount)
-        if draft.account == nil { draft.account = payment.account }
-        if draft.subcategory == nil { draft.subcategory = payment.subcategory }
-        let transaction: TransactionItem
-        do {
-            transaction = try draftService.approveDraft(draft, currencyConverter: currencyConverter)
-        } catch {
-            // Un borrador recién creado que no se pudo aprobar no se queda en el contexto: el siguiente guardado lo
-            // dejaría en la Bandeja sin que nadie lo pidiera.
-            if isNew { modelContext?.delete(draft) }
-            throw error
-        }
-        ScheduledPaymentNotificationService.shared.requestSummaryReplan()
+        guard let context = modelContext else { return nil }
+        let transaction = try ScheduledPaymentPayNow.recordPaymentNow(
+            payment, occurrence: occurrence, amount: amount, draftService: draftService,
+            currencyConverter: currencyConverter, context: context)
+        guard transaction != nil else { return nil }
         loadPayments()
         calculatePaymentData(payments: allPayments)
         return transaction

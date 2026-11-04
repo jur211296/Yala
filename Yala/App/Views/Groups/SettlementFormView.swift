@@ -86,15 +86,21 @@ struct SettlementFormView: View {
     /// es cross-currency y existe un tipo de cambio que produzca un delta significativo.
     /// Si la conversión devuelve el mismo monto (sin rate disponible) → nil para ocultar
     /// el segmented silenciosamente.
-    private var suggestedAmount: Double? {
+    private var suggestedAmount: Double? { suggestedAmount(on: date) }
+
+    /// Con el tipo de cambio del día del pago (decisión A, 2026-11-02): es el mismo con el que ese pago cubre una venta en
+    /// otra divisa (`GroupTransactionBridge.convertAtPaymentDay`), así que pagar lo sugerido la deja cobrada entera.
+    private func suggestedAmount(on paymentDate: Date) -> Double? {
         guard group.showDebtsInSingleCurrency,
               debt.currencyCode != group.currencyCode
         else { return nil }
 
-        let converted = CurrencyConverter.shared.convertWithLatestRate(
+        let converted = GroupTransactionBridge.convertAtPaymentDay(
             Decimal(debt.amount),
             from: debt.currencyCode,
-            to: group.currencyCode
+            to: group.currencyCode,
+            on: paymentDate,
+            context: modelContext
         )
         let result = NSDecimalNumber(decimal: converted).doubleValue
         guard abs(result - debt.amount) > 0.01 else { return nil }
@@ -185,6 +191,7 @@ struct SettlementFormView: View {
             // M6: NO defaults — selectedAccount inicial nil, user siempre elige.
             // Cambio de currency → reset amount al canónico + nullify selectedAccount si
             // deja de ser compatible (selectivo: preserva la cuenta si sigue OK).
+            .onChange(of: date) { oldDate, _ in refreshSuggestedAmount(changedFrom: oldDate) }
             .onChange(of: useSuggestedAmount) { _, _ in
                 let newAmount = AmountInputHelper.formatWithGrouping(effectiveCanonicalAmount)
                 if amountString != newAmount {
@@ -396,6 +403,15 @@ struct SettlementFormView: View {
     }
 
     // MARK: - Actions
+
+    /// Al cambiar la fecha con el sugerido elegido, el importe sigue al tipo de cambio de la fecha nueva, salvo que la
+    /// persona lo haya escrito a mano.
+    private func refreshSuggestedAmount(changedFrom oldDate: Date) {
+        guard useSuggestedAmount, let old = suggestedAmount(on: oldDate),
+              amountString == AmountInputHelper.formatWithGrouping(old),
+              let new = suggestedAmount(on: date) else { return }
+        amountString = AmountInputHelper.formatWithGrouping(new)
+    }
 
     private var parsedAmount: Double {
         AmountInputHelper.parseDecimal(amountString)

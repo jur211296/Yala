@@ -190,6 +190,14 @@
 "widget.budgets.exceeded.other" = "%d überschritten";
 "widget.payments.inDays" = "In %d Tagen";
 "widget.payments.leftShort" = "Noch %@";
+"widget.payments.markPaid" = "Bezahlt";
+"widget.payments.markReceived" = "Erhalten";
+"widget.payments.paid" = "Bezahlt";
+"widget.payments.received" = "Erhalten";
+"widget.payments.markPaid.intentTitle" = "Zahlung als bezahlt markieren";
+"widget.payments.markPaid.intentDescription" = "Markiert die heutige Zahlung als bezahlt, ohne Yala zu öffnen.";
+"widget.payments.markPaid.paramPayment" = "Zahlung";
+"widget.payments.markPaid.paramDate" = "Datum";
 "widget.ui.yesterday" = "Gestern";
 "widget.records.emptyHint" = "Tippe auf +, um den ersten zu erfassen";
 "widget.quick.title" = "Erfassen";

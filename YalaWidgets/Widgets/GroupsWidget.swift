@@ -341,7 +341,8 @@ struct GroupsWidget: Widget {
         StaticConfiguration(kind: kind, provider: GroupsWidgetProvider()) { entry in
             GroupsWidgetView(entry: entry)
                 .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder, message: "widget.empty.openYalaGroups")
-                .invitesToActivateFullWhenGroupsOnly()
+                // Sin la invitación a activar Yala completo, a diferencia de los demás widgets de datos: en «solo grupos»
+                // este enseña los saldos de tus grupos, como en Yala completo (decisión A de Jürgen, 2026-11-03).
                 .containerBackground(for: .widget) { WidgetCardBackground() }
         }
         .configurationDisplayName("widget.gallery.groups")

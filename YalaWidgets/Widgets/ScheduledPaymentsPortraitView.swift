@@ -47,7 +47,8 @@ struct ScheduledPaymentsPortraitView: View {
                             entry.payments.prefix(ScheduledPaymentsProvider.extraLargePortraitLimit),
                             id: \.id
                         ) { payment in
-                            PaymentRowView(payment: payment, displayFormat: entry.currencyDisplayFormat, now: entry.date)
+                            PaymentRowView(payment: payment, displayFormat: entry.currencyDisplayFormat, now: entry.date,
+                                           paidRequests: entry.paidRequests, allowsMarkPaid: !entry.isPlaceholder)
                         }
                     }
                 }

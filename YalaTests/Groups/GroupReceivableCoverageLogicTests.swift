@@ -347,4 +347,129 @@ struct GroupReceivableCoverageLogicTests {
         #expect(venta.owed == Self.dec("0.3"))
         #expect(venta.remaining == 0)
     }
+    // MARK: - Entre divisas (decisión A: el tipo de cambio del día del pago, fijo)
+
+    /// Soles por dólar según el día: el 8 de octubre 3,00 y el 20 de octubre 4,00. Un pago del 8 que se convirtiera con
+    /// otro tipo daría otra cifra cobrada.
+    private static func penPerUSD(on date: Date) -> Decimal {
+        date < day(10, 15) ? 3 : 4
+    }
+
+    private static let convert: Logic.Convert = { amount, from, to, date in
+        let rate = penPerUSD(on: date)
+        if from == to { return amount }
+        return from == "USD" ? amount * rate : amount / rate
+    }
+
+    private func crossCoverage(
+        _ expenses: [Logic.ExpenseInput], _ settlements: [Logic.SettlementInput], convert: Logic.Convert? = convert
+    ) -> [UUID: Logic.Coverage] {
+        Logic.coverage(
+            of: Logic.events(for: me, currencyCode: nil, expenses: expenses, settlements: settlements),
+            convert: convert)
+    }
+
+    /// El caso del encargo: venta en USD, Ana paga en PEN lo sugerido con el tipo del día del pago ⇒ cobrada entera ese
+    /// día, en dólares.
+    @Test func aUSDSale_paidInPENWithTheSuggestedAmount_isCollectedWholeOnThePaymentDay() throws {
+        let sale = UUID(), pay = UUID()
+        let venta = try #require(crossCoverage(
+            [expense(sale, on: Self.day(10, 2), amount: 100, paidBy: me, shares: [ana: 100], currency: "USD", isSale: true)],
+            [payment(pay, on: Self.day(10, 8), amount: 300, from: ana, to: me, currency: "PEN")])[sale])
+        #expect(venta.collected == [Logic.Portion(eventID: pay, date: Self.day(10, 8), amount: 100)])
+        #expect(venta.remaining == 0)
+    }
+
+    /// Sin «deudas en una sola moneda» (sin conversión) cada divisa va por su lado: el pago en soles no cubre la venta.
+    @Test func withoutConversion_aPaymentInAnotherCurrency_coversNothing() throws {
+        let sale = UUID()
+        let venta = try #require(crossCoverage(
+            [expense(sale, on: Self.day(10, 2), amount: 100, paidBy: me, shares: [ana: 100], currency: "USD", isSale: true)],
+            [payment(on: Self.day(10, 8), amount: 300, from: ana, to: me, currency: "PEN")], convert: nil)[sale])
+        #expect(venta.collected.isEmpty)
+        #expect(venta.remaining == 100)
+    }
+
+    /// El tipo es el del día del PAGO y no cambia con el tiempo: un pago del 8 se convierte a 3,00 aunque el repaso corra
+    /// cuando el dólar ya vale 4,00. El del 20 se convierte a 4,00.
+    @Test func eachPayment_usesItsOwnDayRate() throws {
+        let sale = UUID(), early = UUID(), late = UUID()
+        let venta = try #require(crossCoverage(
+            [expense(sale, on: Self.day(10, 2), amount: 100, paidBy: me, shares: [ana: 100], currency: "USD", isSale: true)],
+            [payment(early, on: Self.day(10, 8), amount: 150, from: ana, to: me, currency: "PEN"),
+             payment(late, on: Self.day(10, 20), amount: 200, from: ana, to: me, currency: "PEN")])[sale])
+        #expect(venta.collected.map(\.amount) == [50, 50])
+        #expect(venta.collected.map(\.eventID) == [early, late])
+        #expect(venta.remaining == 0)
+    }
+
+    /// Un pago a medias en la otra divisa deja el resto por cobrar, en la divisa de la venta.
+    @Test func aPartialPaymentInAnotherCurrency_leavesTheRestToCollect() throws {
+        let sale = UUID()
+        let venta = try #require(crossCoverage(
+            [expense(sale, on: Self.day(10, 2), amount: 100, paidBy: me, shares: [ana: 100], currency: "USD", isSale: true)],
+            [payment(on: Self.day(10, 8), amount: 90, from: ana, to: me, currency: "PEN")])[sale])
+        #expect(venta.collected.map(\.amount) == [30])
+        #expect(venta.remaining == 70)
+    }
+
+    /// Una deuda cruzada en otra divisa: debías S/ 150 de un almuerzo que pagó Ana; la venta en dólares la salda primero,
+    /// con el tipo del día de la venta, y esa parte queda cobrada ese día.
+    @Test func aDebtInAnotherCurrency_isSettledByTheSaleFirst() throws {
+        let sale = UUID()
+        let venta = try #require(crossCoverage(
+            [expense(on: Self.day(10, 1), amount: 300, paidBy: ana, shares: [me: 150, ana: 150]),
+             expense(sale, on: Self.day(10, 2), amount: 100, paidBy: me, shares: [ana: 100], currency: "USD", isSale: true)],
+            [])[sale])
+        #expect(venta.collected == [Logic.Portion(eventID: sale, date: Self.day(10, 2), amount: 50)])
+        #expect(venta.remaining == 50)
+    }
+
+    /// Un sobrante del pago en la otra divisa sigue cubriendo lo siguiente, en su orden.
+    @Test func whatIsLeftOfACrossPayment_coversTheNextSale() throws {
+        let usd = UUID(), pen = UUID(), pay = UUID()
+        let result = crossCoverage(
+            [expense(usd, on: Self.day(10, 2), amount: 100, paidBy: me, shares: [ana: 100], currency: "USD", isSale: true),
+             expense(pen, on: Self.day(10, 3), amount: 60, paidBy: me, shares: [ana: 60], isSale: true)],
+            [payment(pay, on: Self.day(10, 8), amount: 330, from: ana, to: me, currency: "PEN")])
+        #expect(try #require(result[usd]).remaining == 0)
+        #expect(try #require(result[pen]).collected.map(\.amount) == [30])
+        #expect(try #require(result[pen]).remaining == 30)
+    }
+    /// Un tipo fijo de soles por dólar, para los casos de redondeo.
+    private static func fixedRate(_ penPerUSD: String) -> Logic.Convert {
+        let rate = dec(penPerUSD)
+        return { amount, from, to, _ in
+            if from == to { return amount }
+            return from == "USD" ? amount * rate : amount / rate
+        }
+    }
+
+    /// Hallazgo de la review: con el grupo en dólares y la venta en soles, lo «Sugerido» va redondeado al centavo de
+    /// dólar, que vale casi 4 céntimos de sol. 26,93 USD a 3,71266 son 99,98 PEN: la venta de 100 tiene que quedar
+    /// cobrada entera, no con 0,02 por cobrar para siempre.
+    @Test func theSuggestedInTheStrongerCurrency_collectsTheWholeSale() throws {
+        let sale = UUID()
+        let venta = try #require(crossCoverage(
+            [expense(sale, on: Self.day(10, 2), amount: 100, paidBy: me, shares: [ana: 100], currency: "PEN", isSale: true)],
+            [payment(on: Self.day(10, 8), amount: 26.93, from: ana, to: me, currency: "USD")],
+            convert: Self.fixedRate("3.71266"))[sale])
+        #expect(venta.remaining == 0)
+        #expect(venta.collected.map(\.amount) == [100])
+    }
+
+    /// Hallazgo de la review: el resto de céntimo de una venta cubierta entre divisas no puede cortar el recorrido. La
+    /// venta B en dólares, pagada entera en dólares, queda cobrada aunque delante quede un lote diminuto en soles.
+    @Test func aCentLeftInAnotherCurrency_doesNotStopTheNextPayment() throws {
+        let saleA = UUID(), saleB = UUID()
+        let result = crossCoverage(
+            [expense(saleA, on: Self.day(10, 2), amount: 100, paidBy: me, shares: [ana: 100], currency: "PEN", isSale: true),
+             expense(saleB, on: Self.day(10, 10), amount: 50, paidBy: me, shares: [ana: 50], currency: "USD", isSale: true)],
+            [payment(on: Self.day(10, 8), amount: 26.94, from: ana, to: me, currency: "USD"),
+             payment(on: Self.day(10, 12), amount: 50, from: ana, to: me, currency: "USD")],
+            convert: Self.fixedRate("3.7116"))
+        #expect(try #require(result[saleA]).remaining == 0)
+        #expect(try #require(result[saleB]).remaining == 0)
+        #expect(try #require(result[saleB]).collected.map(\.amount) == [50])
+    }
 }

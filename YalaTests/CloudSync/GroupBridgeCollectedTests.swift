@@ -241,6 +241,52 @@ struct GroupBridgeCollectedTests {
         }
     }
 
+    // MARK: - Venta en otra divisa (decisión A: el tipo de cambio del día del pago)
+
+    /// Grupo en soles con «deudas en una sola moneda»: le vendes a Ana algo en dólares y te paga en soles lo «Sugerido» de
+    /// la liquidación, que sale del tipo de cambio del día del pago. La venta queda cobrada entera ese día, en dólares.
+    @Test func aUSDSale_paidInPENWithTheSuggestedAmount_isCollectedWholeOnThePaymentDay() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        f.group.showDebtsInSingleCurrency = true
+        _ = try makeTestExchangeRate(context: context, dateKey: "2026-10-08", rates: ["USD": 1.0, "PEN": 3.75])
+        try context.save()
+        try withBridge(context) {
+            let sale = SplitExpense(
+                groupZoneID: f.group.cloudKitZoneID, amount: 100, currencyCode: "USD",
+                expenseDescription: "Venta de una consola", date: Self.day(9, 25), paidByMemberID: f.me.id.uuidString)
+            sale.subcategoryName = "Ventas"
+            context.insert(sale)
+            context.insert(SplitShare(expenseID: sale.id, memberID: f.ana.id.uuidString, amount: 100,
+                                      groupZoneID: f.group.cloudKitZoneID))
+            try context.save()
+            try GroupTransactionBridge.shared.bridgeExpense(sale, in: f.group, accountForCurrentUser: nil, shouldSave: false)
+            try context.save()
+            #expect(try receivable(context, sale).map(\.amount) == [100])
+
+            let suggested = GroupTransactionBridge.convertAtPaymentDay(
+                100, from: "USD", to: "PEN", on: Self.day(10, 8), context: context)
+            #expect(suggested == 375, "El sugerido sale del tipo del día del pago.")
+            let payment = try anaPays(context, f, NSDecimalNumber(decimal: suggested).doubleValue, on: Self.day(10, 8))
+
+            #expect(try receivable(context, sale).isEmpty, "Cobrada entera: nada por cobrar.")
+            let part = try #require(try collected(context, sale).first)
+            #expect(try collected(context, sale).count == 1)
+            #expect(part.amount == 100)
+            #expect(part.currencyCode == "USD")
+            #expect(Calendar.current.isDate(part.date, inSameDayAs: Self.day(10, 8)))
+            #expect(GroupCollectedLegLogic.collectedEventID(part.splitLinesRaw) == payment.id)
+
+            // Otro repaso con el dólar más caro no lo recalcula: el tipo es el del día del pago.
+            _ = try makeTestExchangeRate(context: context, dateKey: "2026-10-20", rates: ["USD": 1.0, "PEN": 4.0])
+            try GroupTransactionBridge.shared.reconcileReceivables(zoneID: f.group.cloudKitZoneID, context: context)
+            try context.save()
+            #expect(try receivable(context, sale).isEmpty)
+            #expect(try collected(context, sale).map(\.amount) == [100])
+        }
+    }
+
     // MARK: - Pagos a medias y deudas cruzadas
 
     @Test func halfPayment_leaves70ToCollect_andGroupsStillMatchesTheGroup() throws {

@@ -17,7 +17,8 @@ import WidgetKit
 /// Sustituye el contenido de un widget de datos por la invitación cuando la sesión es solo grupos.
 ///
 /// Se aplica en el `Widget` (el cierre de su configuración), no dentro de cada vista: un solo sitio por widget, y la
-/// vista de datos no tiene que saber nada de sesiones. Los de entrada rápida no lo llevan: abren una acción, no datos.
+/// vista de datos no tiene que saber nada de sesiones. Los de entrada rápida no lo llevan: abren una acción, no datos. El de
+/// Grupos tampoco: sus datos existen en solo grupos y los enseña (decisión de Jürgen del 2026-11-03).
 struct GroupsOnlyInviteModifier: ViewModifier {
     func body(content: Content) -> some View {
         if WidgetDataService.isGroupsOnlySession {
