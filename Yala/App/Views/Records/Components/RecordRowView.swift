@@ -257,17 +257,26 @@ struct RecordRowView: View {
 
     private func tagsRow(_ tags: [Tag]) -> some View {
         HStack(spacing: DS.Spacing.xs) {
+            // Píldora tranquila, como la de necesidad: punto del color de la etiqueta y texto en tinta sobre su tinte.
+            // Rellena de color saturado pesaba más que el propio movimiento, y el blanco sobre azul daba 3,6:1.
             ForEach(Array(tags.prefix(3)), id: \.persistentModelID) { tag in
-                Text(tag.name)
-                    .font(DS.Typography.labelTiny)
-                    .foregroundStyle(Color.contrastingText(for: Color(hex: tag.colorHex)))
-                    .padding(.horizontal, DS.Chip.paddingV)
-                    .padding(.vertical, DS.Spacing.xxs)
-                    .background(
-                        Capsule()
-                            .fill(Color(hex: tag.colorHex))
-                    )
-                    .accessibilityHint(String(localized: "Tag"))
+                HStack(spacing: DS.Spacing.xs) {
+                    Circle()
+                        .fill(Color(hex: tag.colorHex))
+                        .frame(width: DS.Chip.dotSize - 2, height: DS.Chip.dotSize - 2)
+                        .accessibilityHidden(true)
+                    Text(tag.name)
+                        .font(DS.Typography.labelTiny)
+                        .foregroundStyle(.primary)
+                }
+                .padding(.horizontal, DS.Chip.paddingV)
+                .padding(.vertical, DS.Spacing.xxs)
+                .background(
+                    Capsule()
+                        .fill(Color(hex: tag.colorHex).opacity(0.15))
+                )
+                .accessibilityElement(children: .combine)
+                .accessibilityHint(String(localized: "Tag"))
             }
 
             if tags.count > 3 {
