@@ -2579,6 +2579,11 @@ final class PanelViewModel {
 
         let percentage = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100.0 : 0.0
         let daysRemaining = getBudgetDaysRemaining(budget: budget, interval: interval)
+        // El cupo del día («Hoy puedes gastar») sale de lo gastado hoy, con la misma función que Planificación.
+        let spentToday = BudgetsViewModel.calculateSpentToday(
+            budget: budget, transactions: transactions, period: interval,
+            adjustment: statsAdjustment, calendar: userConfiguredCalendar()
+        )
         let status = getBudgetStatus(budget: budget, spending: spent)
         let (icon, color): (String, String) = {
             if let ctx = modelContext {
@@ -2594,7 +2599,8 @@ final class PanelViewModel {
             daysRemaining: daysRemaining,
             status: status,
             icon: icon,
-            color: color
+            color: color,
+            spentToday: spentToday
         )
     }
 

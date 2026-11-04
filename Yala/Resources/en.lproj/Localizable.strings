@@ -8592,3 +8592,7 @@
 "groups.expense.success.titleSaleCreated" = "Sale added!";
 "groups.expense.success.titleSaleUpdated" = "Sale updated!";
 "bulkEdit.cannotEditSplitRecipeCategory" = "One of the selected records has your portion split into lines, and its category comes from them. Change it from “Split your portion” in its details.";
+
+/* «Cuánto puedo gastar hoy» (2.3): el cupo del día de un presupuesto */
+"budgets.daily.canSpend" = "You can spend %@ today";
+"budgets.daily.overToday" = "You went over by %@ today";

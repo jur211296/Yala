@@ -8596,3 +8596,7 @@
 "groups.expense.success.titleSaleCreated" = "Vendita aggiunta!";
 "groups.expense.success.titleSaleUpdated" = "Vendita aggiornata!";
 "bulkEdit.cannotEditSplitRecipeCategory" = "In una delle registrazioni selezionate la tua parte è divisa in righe, e la sua categoria viene da esse. Cambiala da «Dividi la tua parte», nel suo dettaglio.";
+
+/* «Cuánto puedo gastar hoy» (2.3): el cupo del día de un presupuesto */
+"budgets.daily.canSpend" = "Oggi puoi spendere %@";
+"budgets.daily.overToday" = "Oggi hai superato di %@";

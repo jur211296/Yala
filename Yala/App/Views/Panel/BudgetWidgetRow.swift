@@ -70,6 +70,9 @@ struct BudgetWidgetRow: View {
                     isExceeded: summary.status == .exceeded,
                     simplified: true
                 )
+
+                // «Hoy puedes gastar S/ 42.30» (2.3): el cupo del día, que baja con cada gasto de hoy.
+                DailyAllowanceLine(summary: summary)
             }
         }
         .accessibilityElement(children: .combine)

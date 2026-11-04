@@ -309,6 +309,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | currency-change-service-tests-mirror-the-logic | backlog | tickets/backlog/currency-change-service-tests-mirror-the-logic.md |
 | currency-converter-fetches-the-rate-row-on-every-conversion | backlog | tickets/backlog/currency-converter-fetches-the-rate-row-on-every-conversion.md |
 | cutover-marker-without-a-session-locks-out-the-second-device | backlog | tickets/backlog/cutover-marker-without-a-session-locks-out-the-second-device.md |
+| daily-allowance-how-much-can-i-spend-today | qa | tickets/qa/daily-allowance-how-much-can-i-spend-today.md |
 | dangling-ref-pass-overwrites-a-pending-local-edit | backlog | tickets/backlog/dangling-ref-pass-overwrites-a-pending-local-edit.md |
 | dangling-ref-repair-is-lost-when-its-row-cannot-be-read | done | tickets/done/dangling-ref-repair-is-lost-when-its-row-cannot-be-read.md |
 | debounce-sync-imported-transactions | backlog | tickets/backlog/debounce-sync-imported-transactions.md |

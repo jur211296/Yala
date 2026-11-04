@@ -8598,3 +8598,7 @@
 "groups.expense.success.titleSaleCreated" = "Verkoop toegevoegd!";
 "groups.expense.success.titleSaleUpdated" = "Verkoop bijgewerkt!";
 "bulkEdit.cannotEditSplitRecipeCategory" = "Bij een van de geselecteerde boekingen is jouw deel in regels opgesplitst, en de categorie komt daaruit. Wijzig die via ‘Jouw deel opsplitsen’ in de details.";
+
+/* «Cuánto puedo gastar hoy» (2.3): el cupo del día de un presupuesto */
+"budgets.daily.canSpend" = "Vandaag kun je %@ uitgeven";
+"budgets.daily.overToday" = "Vandaag %@ over je dagbudget";

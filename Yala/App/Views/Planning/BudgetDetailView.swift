@@ -79,6 +79,10 @@ struct BudgetDetailView: View {
         // En ventana ancha la lista sigue a la vista y su ‹ › cambia el período: las cifras lo siguen, como el título
         // (UX 2.2 · L9-6). Antes solo se recalculaban al abrir.
         .onChange(of: listPeriodKey) { _, _ in refreshSummary() }
+        // El cupo del día («Hoy puedes gastar») tiene que bajar con un gasto apuntado con el detalle abierto (iPad, Yala
+        // IA al lado) y cambiar al pasar la medianoche: sigue a la fila de la lista, que se recalcula con cada cambio
+        // de datos, y al cambio de día.
+        .modifier(BudgetDetailLiveRefresh(listSummary: listSummary, onRefresh: refreshSummary))
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
@@ -174,7 +178,7 @@ struct BudgetDetailView: View {
             )
             .padding(.horizontal, DS.Spacing.xl)
 
-            // Porcentaje y lo que toca por día (o los días / «Cerrado» cuando ya no hay «al día»).
+            // Porcentaje y los días que quedan (o «Cerrado» / «Aún no empieza»).
             HStack {
                 Text(String(format: NSLocalizedString("budgets.spent.percent", comment: ""), String(format: "%.0f%%", summary.percentage)))
                     .font(DS.Typography.label)
@@ -189,12 +193,21 @@ struct BudgetDetailView: View {
             }
             .padding(.horizontal, DS.Spacing.sm)
 
+            // «Hoy puedes gastar S/ 42.30» (2.3): el cupo del día sustituye al «al día» fijo de antes, que no bajaba al
+            // gastar y habría dado otra cifra por día en la misma tarjeta.
+            DailyAllowanceLine(summary: summary, font: DS.Typography.subheadline)
+
             if budget.countsAllExpenses {
                 BudgetCountsAllExpensesNote(font: DS.Typography.caption)
             }
         }
         .padding(DS.Spacing.xl)
         .solidCard(padding: 0, radius: DS.Panel.widgetRadius)
+    }
+
+    /// La fila de este presupuesto en la lista, que el ViewModel recalcula tras cada cambio de datos.
+    private var listSummary: BudgetSummary? {
+        viewModel.groupedBudgets.lazy.flatMap(\.budgets).first { $0.budget.persistentModelID == budget.persistentModelID }
     }
 
     private var listPeriodKey: String {
@@ -216,13 +229,9 @@ struct BudgetDetailView: View {
         )
     }
 
-    /// «Puedes gastar S/ 22.00 al día» mientras el período corre y queda algo; si no, los días o «Cerrado».
+    /// Los días que quedan, o «Cerrado» / «Aún no empieza». Lo que se puede gastar va en el cupo del día, debajo.
     private func dayLine(_ summary: BudgetSummary) -> String {
-        let remaining = BudgetRemainingLogic.remaining(limit: budget.limitAmount, spent: summary.spent)
-        if let perDay = BudgetRemainingLogic.perDay(remaining: remaining, daysRemaining: summary.daysRemaining) {
-            return L10n.UXL9.perDay(appPreferences.currency(perDay, currencyCode: budget.currencyCode))
-        }
-        return L10n.UXL9.shortDays(summary.daysRemaining)
+        L10n.UXL9.shortDays(summary.daysRemaining)
     }
 
     // MARK: - Info Section
@@ -490,5 +499,17 @@ private struct BudgetChartsDestination: View {
 #Preview {
     NavigationStack {
         Text("Preview requires Budget instance")
+    }
+}
+
+/// Recalcula el detalle cuando cambia la fila de la lista (un gasto nuevo, editado o borrado) o el día.
+private struct BudgetDetailLiveRefresh: ViewModifier {
+    let listSummary: BudgetSummary?
+    let onRefresh: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: listSummary) { _, _ in onRefresh() }
+            .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in onRefresh() }
     }
 }
