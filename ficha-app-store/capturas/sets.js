@@ -75,8 +75,9 @@ laminas: [
   t("grupos", {pos: {left: 90, top: 150, width: 1140}, tit: 112}),
   P("s-grupo.png", 1000, {left: 170, top: 820}, "rotateX(36deg) rotateZ(-24deg)"),
   tarjeta(O["06_grupos"].tarjeta, {pos: {left: 90, width: 1140, top: 1000}, estilo: {transform: "rotate(-3deg)"}, escala: 1.3, icoC: "#3BD6F0"}),
-  chip(O["06_grupos"].chips[0], {left: 600, top: 2180}, {"font-size": 44, padding: "24px 40px", transform: "rotate(4deg)"}),
-  chip(O["06_grupos"].chips[1], {left: 80, top: 2460}, {"font-size": 44, padding: "24px 40px", transform: "rotate(-5deg)"}),
+  // Desde la 2.2 el iPhone enseña la LISTA de Grupos: sus chips son las filas del viaje (chipsLista), que suman la tarjeta.
+  chip((O["06_grupos"].chipsLista || O["06_grupos"].chips)[0], {left: 600, top: 2180}, {"font-size": 44, padding: "24px 40px", transform: "rotate(4deg)"}),
+  chip((O["06_grupos"].chipsLista || O["06_grupos"].chips)[1], {left: 80, top: 2460}, {"font-size": 44, padding: "24px 40px", transform: "rotate(-5deg)"}),
 ]},
 // 07 · Presupuestos · lo que queda, en grande (Maia queda fuera del lienzo)
 { logo: LOGO, acento: "azul", els: [
@@ -227,12 +228,19 @@ return SETS;
 
 // Ajustes de composición por idioma, medidos sobre el render. Forma: {iphone: {<n.º de lámina>: {<índice del elemento>:
 // {campo: valor, …}}}, ipad: {…}}. Un objeto se funde con el del elemento (pos, estilo); lo demás se sustituye.
+// La lista de Grupos ordena por nombre: en pt-BR («Fim de semana em Paraty»), pt-PT («… em Sintra») y en-GB («Cotswolds
+// weekend») el fin de semana va antes que el viaje, y los chips de la 06 del iPhone tapaban el nombre del viaje. Bajan,
+// debajo de sus filas (4-nov-2026).
+const SEGUNDO_EN_LA_LISTA = {3: {pos: {left: 560, top: 2590}}, 4: {pos: {left: 80, top: 2730}}};
 const AJUSTES = {
+  "en-GB": {iphone: {6: SEGUNDO_EN_LA_LISTA}},
+  // La frase del chat bajaba a tres líneas y montaba el teléfono (4-nov-2026).
+  "pt-PT": {iphone: {1: {1: {estilo: {"font-size": 54}}}, 6: SEGUNDO_EN_LA_LISTA}},
   "pt-BR": {
     iphone: {
       1: {0: {tit: 108}},                        // «Escreva pro Yala como pra uma amiga» bajaba a 3 líneas bajo la burbuja
       2: {1: {pos: {width: 760}}},               // «Tributos aprox. (incl.)» partía en dos líneas (revisión de Lola, 16-oct)
-      6: {3: {pos: {left: 470}}},                // «Mercado · Ana pagou R$ 240» llegaba al borde derecho
+      6: SEGUNDO_EN_LA_LISTA,
     },
     ipad: {
       // «US$ 3.615,00» se montaba sobre «Poupança · USD · Saldo» (revisión de Lola, 16-oct): tarjeta más ancha y algo menor.

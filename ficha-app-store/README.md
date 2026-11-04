@@ -2,9 +2,10 @@
 
 El molde que saca, para un idioma, las 10 capturas del set B («Primer plano y objetos») en iPhone 6,9", iPhone 6,5" e
 iPad 13", sus hojas de contacto y la vista previa (vídeo) con y sin música. Todo recibe **un solo parámetro: el
-idioma** (`es`, `en`, `pt-BR`). El inglés sirve para en-US y en-GB.
+idioma** (`es`, `en`, `en-GB`, `pt-BR`, `pt-PT`). `en` es en-US; en-GB (libras) y pt-PT (euros) tienen set propio
+desde la 2.2.
 
-Las salidas viven fuera del repo, en `~/Claude/propuestas/ficha-app-store-2.1/<idioma>/` (cámbialo con
+Las salidas viven fuera del repo, en `~/Claude/propuestas/ficha-app-store-2.2/<idioma>/` (cámbialo con
 `YALA_FICHA_SALIDA`). Subirlas a App Store Connect es de Lola; aquí no se sube ni se manda a revisión nada.
 
 ## Una corrida
@@ -52,6 +53,21 @@ YALA_FICHA_SALIDA=~/Claude/propuestas/ficha-app-store-2.2 portada/render.sh es g
   de ASC antes de enviar.
 - En el iPad, el de Yala IA va delante: su chat vive en la columna derecha y detrás quedaría tapado.
 
+## Evento dentro de la app y páginas personalizadas (2.2)
+
+```bash
+evento/render.sh es        # → <salida>/es/evento/yala-evento-{tarjeta-3840x2160,detalle-2160x3840}.png (sin texto encima)
+python3 paginas/armar.py <salida>/es <destino>/es   # las láminas reordenadas: voz/, grupos/, yala-ia/, variante-b/
+```
+
+- El evento usa las pantallas `s-programados` y `s-panel` del idioma. Apple pinta el distintivo, el nombre y la
+  descripción sobre la parte de abajo: la imagen no lleva texto.
+- `paginas/armar.py` no compone nada: copia las 10 láminas en el orden de cada página (primero la de su función) y en el
+  de la variante B de la prueba A/B. Los órdenes y los textos (borrador para Lola) están en
+  `docs/evidencia/app-store-2-2-lote-2026-11-04/BORRADOR-textos.md`.
+- **Composición 2.2** (4-nov-2026): Estadísticas en «Gráficas» con la tarjeta de Categorías arriba, y la 06 del iPhone
+  con la **lista** de Grupos (sus chips salen de `OBJ["06_grupos"].chipsLista`).
+
 ## Sumar un idioma (de, fr, it, ja…)
 
 1. **`textos/<idioma>.js`**: el fichero de Lola, con la misma forma que `en.js` (`TXT`, `OBJ`, `VIDEO`).
@@ -92,7 +108,9 @@ el Duo no está hecho: `sets.js` no tiene sus medidas.
 
 | Ruta | Qué es |
 |---|---|
-| `textos/` | Los textos de Lola por idioma, copia literal de `~/Claude/lola-borradores/2.1/textos-capturas/` (16-oct-2026). |
+| `textos/` | Los textos de Lola por idioma, copia literal de `~/Claude/lola-borradores/2.1/textos-capturas/` (16-oct-2026). `en-GB.js` y `pt-PT.js` (4-nov-2026) son borradores de Frank adaptados de los suyos, para que Lola los revise. |
+| `evento/` | `evento.html` y `render.sh`: las dos imágenes del evento dentro de la app. |
+| `paginas/armar.py` | Las láminas reordenadas para las páginas personalizadas y la variante B. |
 | `idiomas.json` | Idioma → `AppleLanguages`, `AppleLocale`, divisa y `.lproj`; el reloj; los simuladores. |
 | `comun.sh` | Lo que comparten los scripts: la configuración del idioma, `udid`, `barra` y `preparar`. |
 | `reloj/` | `reloj.c` y su `compilar.sh`: la app del simulador ve la hora desplazada al reloj de `idiomas.json`. |
