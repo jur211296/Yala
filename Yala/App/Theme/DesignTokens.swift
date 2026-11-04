@@ -772,6 +772,13 @@ enum DS {
 
         /// Altura de progress bars compactos (CashFlowDetailLineRow, badges).
         static let progressBarHeight: CGFloat = 4
+
+        /// Altura por defecto de `BudgetProgressBar`.
+        static let budgetProgressBarHeight: CGFloat = 6
+
+        /// `BudgetProgressBar` en la fila de la lista de Presupuestos: a 6 pt el carril de un presupuesto sin gastar
+        /// casi no se veía (1,1:1 contra la tarjeta). Se engrosa, no se oscurece.
+        static let budgetRowProgressBarHeight: CGFloat = 8
     }
 }
 

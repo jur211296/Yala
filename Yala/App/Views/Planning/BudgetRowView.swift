@@ -85,7 +85,8 @@ struct BudgetRowView: View {
                 BudgetProgressBar(
                     percentage: summary.percentage,
                     color: summary.color,
-                    isExceeded: summary.status == .exceeded
+                    isExceeded: summary.status == .exceeded,
+                    height: DS.Sizing.budgetRowProgressBarHeight
                 )
 
                 // Sin filtros cuenta TODO lo gastado (UX 2.2 · L9-2): «Viajes» salió al 1522% sin que nada lo dijera.
