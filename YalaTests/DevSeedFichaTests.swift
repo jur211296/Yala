@@ -43,6 +43,29 @@ struct DevSeedFichaTests {
         #expect(c.pizza == 90, "«Pizza com os amigos 90»: 280 reales no eran creíbles")
     }
 
+    @Test func cifras_gbp_areTheBritishStoreFigures() {
+        let c = DevSeedFicha.cifras(forMainCurrency: "GBP")
+        #expect(c == DevSeedFicha.Cifras(groupFactor: 1, groupSecondaryCurrency: "EUR", foreignCurrency: "EUR",
+                                         foreignBalance: 1_850, phone: 18, spotify: 11.99,
+                                         cash: 120, cardDebt: -540.20, pizza: 24))
+    }
+
+    @Test func cifras_eur_areThePortugueseStoreFigures() {
+        let c = DevSeedFicha.cifras(forMainCurrency: "EUR")
+        #expect(c == DevSeedFicha.Cifras(groupFactor: 1, groupSecondaryCurrency: nil, foreignCurrency: "USD",
+                                         foreignBalance: 2_400, phone: 25, spotify: 7.99,
+                                         cash: 150, cardDebt: -680.50, pizza: 26))
+    }
+
+    @Test func createFicha_eur_isAllInEuros() throws {
+        let context = try makeTestContext()
+        DevSeedGroups.createFicha(in: context, mainCurrency: "EUR")
+
+        let nets = try myNets(inGroupNamed: L10n.DevSeed.Ficha.groupTrip, context)
+        #expect(Set(nets.keys) == ["EUR"], "En el Algarve se paga en euros: \(nets)")
+        #expect(abs((nets["EUR"] ?? 0) - 190) < 0.01, "Te devem 190,00 € (OBJ 06_grupos de pt-PT): \(nets)")
+    }
+
     @Test func cifras_pen_areTheSpanishSetUnchanged() {
         let c = DevSeedFicha.cifras(forMainCurrency: "PEN")
         #expect(c == DevSeedFicha.Cifras(groupFactor: 1, groupSecondaryCurrency: "USD", foreignCurrency: "USD",
