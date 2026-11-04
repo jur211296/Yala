@@ -416,6 +416,10 @@ final class BudgetsViewModel {
             )
             let percentage = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100.0 : 0.0
             let daysRemaining = getDaysRemaining(budget: budget)
+            let spentToday = Self.calculateSpentToday(
+                budget: budget, transactions: transactions, period: getBudgetDateInterval(budget: budget),
+                adjustment: adjustment, calendar: userConfiguredCalendar()
+            )
             let status = getBudgetStatus(budget: budget, spending: spent)
             let (icon, color): (String, String) = {
                 if let ctx = modelContext {
@@ -431,7 +435,8 @@ final class BudgetsViewModel {
                 daysRemaining: daysRemaining,
                 status: status,
                 icon: icon,
-                color: color
+                color: color,
+                spentToday: spentToday
             )
         }
 
@@ -466,6 +471,10 @@ final class BudgetsViewModel {
         )
         let percentage = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100.0 : 0.0
         let daysRemaining = getDaysRemaining(budget: budget)
+        let spentToday = Self.calculateSpentToday(
+            budget: budget, transactions: allTransactions, period: getBudgetDateInterval(budget: budget),
+            adjustment: adjustment, calendar: userConfiguredCalendar()
+        )
         let status = getBudgetStatus(budget: budget, spending: spent)
         let (icon, color): (String, String) = {
             if let ctx = modelContext {
@@ -481,7 +490,8 @@ final class BudgetsViewModel {
             daysRemaining: daysRemaining,
             status: status,
             icon: icon,
-            color: color
+            color: color,
+            spentToday: spentToday
         )
     }
 
@@ -766,6 +776,21 @@ final class BudgetsViewModel {
         return filtered.reduce(0.0) { sum, tx in
             sum + abs(budgetAmount(of: tx, in: budget.currencyCode, adjustment: adjustment, converter: converter))
         }
+    }
+
+    /// Lo gastado HOY en el presupuesto, con la misma regla que `calculateSpending` y recortado a su período. 0 si hoy no
+    /// cae en el período. Es la entrada del cupo del día («Hoy puedes gastar», `DailyAllowanceLogic`), y la comparten el
+    /// Panel y Planificación para que las dos digan la misma cifra.
+    static func calculateSpentToday(
+        budget: Budget,
+        transactions: [TransactionItem],
+        period: DateInterval,
+        adjustment: GroupBridgeStatsAdjustment = .none,
+        now: Date = .now,
+        calendar: Calendar
+    ) -> Double {
+        guard let today = DailyAllowanceLogic.todayInterval(in: period, now: now, calendar: calendar) else { return 0 }
+        return calculateSpending(budget: budget, transactions: transactions, interval: today, adjustment: adjustment)
     }
 
     /// Devuelve el monto de la transacción expresado en la moneda del budget.

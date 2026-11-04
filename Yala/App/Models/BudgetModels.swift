@@ -71,6 +71,8 @@ struct BudgetSummary: Identifiable, Equatable {
     let status: BudgetStatus
     let icon: String
     let color: String
+    /// Lo gastado HOY dentro del período (el cupo del día, `DailyAllowanceLogic`). 0 si el período no está en curso.
+    var spentToday: Double = 0
 
     var id: PersistentIdentifier {
         budget.persistentModelID
@@ -84,6 +86,7 @@ struct BudgetSummary: Identifiable, Equatable {
             && lhs.status == rhs.status
             && lhs.icon == rhs.icon
             && lhs.color == rhs.color
+            && lhs.spentToday == rhs.spentToday
     }
 }
 

@@ -8598,3 +8598,7 @@
 "groups.expense.success.titleSaleCreated" = "已添加销售！";
 "groups.expense.success.titleSaleUpdated" = "已更新销售！";
 "bulkEdit.cannotEditSplitRecipeCategory" = "所选记录中有一条的你的部分已拆分成多行，其分类来自这些行。请在它的详情中通过“拆分你的部分”修改。";
+
+/* «Cuánto puedo gastar hoy» (2.3): el cupo del día de un presupuesto */
+"budgets.daily.canSpend" = "今天还能花 %@";
+"budgets.daily.overToday" = "今天超出 %@";

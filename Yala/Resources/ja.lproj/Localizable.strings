@@ -8598,3 +8598,7 @@
 "groups.expense.success.titleSaleCreated" = "販売を追加しました！";
 "groups.expense.success.titleSaleUpdated" = "販売を更新しました！";
 "bulkEdit.cannotEditSplitRecipeCategory" = "選択した記録の1件は負担分が行に分けられていて、カテゴリはその行から決まります。詳細の「負担分を分ける」から変更してください。";
+
+/* «Cuánto puedo gastar hoy» (2.3): el cupo del día de un presupuesto */
+"budgets.daily.canSpend" = "今日使えるのは%@";
+"budgets.daily.overToday" = "今日は%@超過";
