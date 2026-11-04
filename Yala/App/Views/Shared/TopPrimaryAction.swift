@@ -24,6 +24,7 @@ struct TopPrimaryActionPill: View {
     let action: () -> Void
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     /// 44 pt, el mínimo táctil de las HIG; con texto grande crece (`minHeight`).
     private static let pillHeight: CGFloat = 44
@@ -39,7 +40,8 @@ struct TopPrimaryActionPill: View {
                     .accessibilityHidden(true)
                 Text(title)
                     .font(DS.Typography.label)
-                    .lineLimit(1)
+                    // Con texto de accesibilidad, dos líneas antes que cortar el título (pase de estrés 2.2).
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
                     .minimumScaleFactor(0.8)
             }
             .foregroundStyle(isPrimary ? AnyShapeStyle(theme.onAccent) : AnyShapeStyle(Color.primary))
