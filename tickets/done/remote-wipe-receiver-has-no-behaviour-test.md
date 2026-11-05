@@ -1,10 +1,10 @@
 ---
 id: remote-wipe-receiver-has-no-behaviour-test
-status: backlog
+status: done
 priority: low
 area: "testing, modo-nube"
 created: 2026-09-14
-updated: 2026-10-08
+updated: 2026-11-05
 source: "review adversarial de `remote-wipe-signal-honored-by-any-session`, lente de tests"
 ---
 
@@ -54,3 +54,14 @@ tres agujeros que el source-scan solo puede cerrar por texto.
 - `low`: es un hueco de tests; el decisor puro y el source-scan siguen siendo red.
 
 Triage 2026-10-08: abierto · medium → low · checkForRemoteWipeSignal sigue private en un singleton con private init y ningún test ejercita la detección; solo cubren el decisor puro y el source-scan del cableado.
+
+## Resuelto en el lote N4 (2026-11-05, rama 2.3)
+
+- El cuerpo de `checkForRemoteWipeSignal` es la función estática `PreferenceSyncService.checkForRemoteWipeSignal(iKV:local:isWipingData:submit:postRemoteOnboardingCompleted:)`;
+  el `private` de siempre delega en ella con el router y la notificación de producción.
+- `RemoteWipeSignalDetectionTests` la ejercita: sesión en la nube + señal ⇒ cero intents y señal procesada; sesión
+  privada confirmada ⇒ un `.remoteWipe` (y la pasada siguiente, ninguno); marca ausente ⇒ cero; el onboarding remoto.
+  Mutante medido: con el eje fijado a `.icloud`, el caso de la nube cae.
+- `RemoteWipeSignalWiringTests` dice en su cabecera qué scans pasan a ser redundantes para la detección (el del eje y
+  la mitad «consume antes de decidir»); se quedan como cinturón. El drenaje (`ContentView.handleRemoteWipeSignal`) sigue
+  sin test de comportamiento.

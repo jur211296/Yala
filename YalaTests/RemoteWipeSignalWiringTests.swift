@@ -31,9 +31,14 @@
 //  `sleep` —que la decidiría con el estado de cinco segundos antes—, cualquier cosa colada entre el
 //  guard y el encendido, y un escritor nuevo del flag a través de su `@Binding`.)
 //
-//  Lo que este fichero NO puede dar es un test de COMPORTAMIENTO del camino que borra: eso pide hacer
-//  `checkForRemoteWipeSignal` invocable con sus dos `UserDefaults`/iKV inyectados. Ticket
-//  `remote-wipe-receiver-has-no-behaviour-test`.
+//  **Desde el 2026-11-05 (card os7l) la DETECCIÓN sí tiene test de comportamiento**: el cuerpo de
+//  `checkForRemoteWipeSignal` es una función estática con el iCloud-KV, el dominio local y el encolado inyectados, y
+//  `RemoteWipeSignalDetectionTests` la ejercita en las tres sesiones (nube ⇒ cero intents, privada confirmada ⇒ uno,
+//  marca ausente ⇒ uno). Con eso pasan a ser REDUNDANTES, para la detección, dos cosas de este fichero: el
+//  `detectionWiresTheStrictReading` (un `true` literal o leer `hasPrivateSession` lo tumban ya los casos de nube y de
+//  marca ausente) y la mitad «consume la señal antes de decidir» de `theSignalIsConsumedWhereItIsDetected` (la fija
+//  el caso que comprueba `lastKnownWipeTimestamp` en la sesión que no obedece). Se quedan como cinturón barato. Lo que
+//  sigue sin test de comportamiento es el DRENAJE: `ContentView.handleRemoteWipeSignal` es `private` de una `View`.
 //
 
 import Foundation
@@ -528,9 +533,17 @@ struct RemoteWipeSignalWiringTests {
             Encontrado: \(consumo.prefix(200))
             """)
 
-        #expect(try Self.countInProduction("RouterEntryGate.shared.submit(.remoteWipe(") == 1, """
+        // Desde el 2026-11-05 (card os7l) la detección encola por el cierre `submit` que recibe, y su único llamador de
+        // producción le pasa el router: el intent sale de un solo sitio si `submit(.remoteWipe(` aparece una vez en
+        // `Yala/` y el wrapper conecta ese cierre con `RouterEntryGate`. Lo que el intent HACE con cada sesión ya no lo
+        // fija este scan sino `RemoteWipeSignalDetectionTests`, que ejercita la detección real.
+        #expect(try Self.countInProduction("submit(.remoteWipe(") == 1, """
             el intent `.remoteWipe` se emite desde más de un sitio (o desde ninguno) en `Yala/`.
             Comprueba que el emisor nuevo consulta el eje de sesión y consume la señal antes de encolar.
+            """)
+        #expect(try Self.countInProduction("RouterEntryGate.shared.submit(.remoteWipe(") == 0)
+        #expect(servicio.contains("submit: { RouterEntryGate.shared.submit($0) },"), """
+            el wrapper de producción ya no conecta la detección con el router: la señal se detecta y no llega a nadie.
             """)
     }
 

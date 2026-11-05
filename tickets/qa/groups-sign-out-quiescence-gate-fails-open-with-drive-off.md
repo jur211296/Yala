@@ -1,11 +1,11 @@
 ---
 id: groups-sign-out-quiescence-gate-fails-open-with-drive-off
-status: backlog
+status: qa
 priority: medium
 area: "modo-nube, groups, sync"
 created: 2026-09-11
 source: "review adversarial del paso 9 (`session-exits-one-verb-per-session`), lente de celdas"
-updated: 2026-10-08
+updated: 2026-11-05
 ---
 
 # Con iCloud Drive apagado, el cierre con grupos puede guardar en plena importación de iCloud
@@ -45,3 +45,31 @@ enciende nunca y la puerta esperaría para siempre un import que no llega: el ci
 - Sin commits sobre ese término desde el 2026-09-11. Las dos mediciones en device siguen pendientes.
 
 Triage 2026-10-08: abierto · medium → medium · La puerta de quiescencia sigue abriéndose cuando falta el token de iCloud Drive; el sustituto necesita antes una medición en device.
+
+## Resuelto en el lote N4 (2026-11-05, rama 2.3)
+
+- La puerta usa `hasICloudAccount` (token **o** CloudKit `.available`), una prueba POSITIVA de cuenta: un teléfono sin
+  iCloud (CloudKit `.noAccount`) sigue sin esperar. No es `mirrorReportedNotAuthenticated`, el sustituto que este
+  ticket temía.
+- Para no quedarse esperando un import que con Drive apagado quizá no llega, la puerta copia la salida del «store
+  vacío» del gate del arranque: pasados 60 s desde que el proceso escucha al espejo sin NINGUNA actividad de import,
+  quieto y sin fase de sync en vuelo, abre. Con un import observado, espera a que se asiente (su tope de 60 s sigue).
+- Tests: `CloudSignOutFlowLogicTests` (tabla, salida del store vacío y paridad con `BootSaveGateLogic` en las 48
+  combinaciones posibles) y `BootWaitsICloudAccountWiringTests` (qué lee la puerta).
+- Las dos mediciones en device que pedía el ticket quedan en el guion de abajo.
+
+### Residual aceptado (review adversarial del lote)
+
+- Un espejo cuyos imports terminan SIEMPRE con error enciende «hubo actividad» sin completar el primer import: la
+  puerta no abre y el cierre se queda en «un momento más». Es lo mismo que ya le pasaba a quien tiene Drive activo
+  (falla cerrado); ahora alcanza también a Drive apagado, que antes abría sin esperar.
+
+## Guion de QA (Jürgen, iPhone con iCloud Drive apagado, sesión de iCloud abierta y al menos un grupo)
+
+1. iCloud Drive apagado (Ajustes del iPhone → tu nombre → iCloud → iCloud Drive). La sesión de iCloud sigue abierta.
+2. Abre Yala con una cuenta que tenga grupos y espera a que el Panel cargue.
+3. Ajustes de Yala → Cerrar sesión → confirma.
+4. Lo que tiene que pasar: el cierre termina (vuelves a la bienvenida) sin quedarse en «Guardando tus cambios
+   pendientes…» más de un minuto, y la app no se cierra sola.
+5. Repite el paso 3 recién abierta la app (en los primeros 10 segundos): puede tardar hasta un minuto, pero tiene que
+   terminar.

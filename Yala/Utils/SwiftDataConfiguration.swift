@@ -690,6 +690,10 @@ extension SwiftDataConfiguration {
         // volvería a `.iCloudMirror` en el arranque siguiente —el archivo del store YA existe, así que el
         // predicado de R2 no lo cubre— adjuntando el mirror al store vaciado del humano que se fue.
         StorageModePersistence.armNeutralMount(defaults)
+        // Card ij0i · y el iCloud-KV del Apple ID queda retenido hasta que alguien restaure o termine un onboarding: sin
+        // esto el arranque siguiente le devolvía a quien entra el nombre y la moneda de quien cerró. En los tres cierres
+        // (decisión del bot, 2026-11-05). Antes de `resetPrefs()`, que no toca `cloudSync.*`.
+        SignOutPreferenceHold.arm(defaults)
         // El neutro de SOLO-GRUPOS se retira aquí, y no es redundante con la línea de arriba: son dos
         // marcas con vidas distintas. Ésta no caduca con el chooser, así que sobrevivir a un wipe que
         // devuelve el device a «recién instalado» la dejaría decidiendo el mount de la vida siguiente —
