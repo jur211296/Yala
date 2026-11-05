@@ -1,9 +1,9 @@
 ---
 id: restore-beacon-outlives-account-deletion
-status: backlog
+status: done
 priority: medium
 created: 2026-09-07
-updated: 2026-10-08
+updated: 2026-11-05
 source: review adversarial de `reentry-killswitch-closes-both-doors` (2026-09-07)
 ---
 
@@ -111,3 +111,7 @@ saber qué cerró el paso 6 y qué no.
 - Sube a `medium`: copy que puede afirmar algo falso sobre los datos (§1) y una copia vieja que se restaura como si fuera la buena (§3).
 
 Triage 2026-10-08: abierto · sin prioridad → medium · el copy puede afirmar que los datos están a salvo en una cuenta borrada y el migrado restaura su copia vieja sin aviso.
+
+## Hecho (2026-11-05, lote N3 · Restaurar y Almacenamiento)
+
+§1: `welcome.restore.cloudPausedBody` deja de afirmar «a salvo» (opción A de Jürgen, 2026-11-05): «Este Apple ID se usó con una cuenta de Yala en la nube, y lo que guardaste ahí no está en tu iCloud…», en los 16 idiomas. §3: con el faro puesto, «Encontramos tus datos» añade bajo la lista «Esta copia de iCloud es de antes de que usaras la nube de Yala, así que puede no tener tus últimos cambios.» sin cambiar los botones (opción A); la pantalla pasa al molde de scroll con alto mínimo para que quepa en un SE. §2 queda fuera (la card no lo nombraba): ticket `restore-icloud-disabled-asks-a-born-cloud-user-for-icloud`. Residual: si el faro llega DESPUÉS de encontrar datos, la nota no sale.

@@ -922,13 +922,15 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | rescue-discarded-groups-pull | discarded | tickets/discarded/rescue-discarded-groups-pull.md |
 | resolved-amount-trusts-a-zero-converted-amount | done | tickets/done/resolved-amount-trusts-a-zero-converted-amount.md |
 | restore-back-and-reenter-closes-the-live-session-window | done | tickets/done/restore-back-and-reenter-closes-the-live-session-window.md |
-| restore-beacon-may-not-have-synced-yet-on-a-fresh-install | backlog | tickets/backlog/restore-beacon-may-not-have-synced-yet-on-a-fresh-install.md |
-| restore-beacon-outlives-account-deletion | backlog | tickets/backlog/restore-beacon-outlives-account-deletion.md |
+| restore-beacon-may-not-have-synced-yet-on-a-fresh-install | done | tickets/done/restore-beacon-may-not-have-synced-yet-on-a-fresh-install.md |
+| restore-beacon-outlives-account-deletion | done | tickets/done/restore-beacon-outlives-account-deletion.md |
 | restore-empty-state-resolution-cannot-be-cancelled | backlog | tickets/backlog/restore-empty-state-resolution-cannot-be-cancelled.md |
 | restore-error-state-is-never-reached | backlog | tickets/backlog/restore-error-state-is-never-reached.md |
 | restore-found-copy-says-icloud-for-groups-that-never-were | qa | tickets/qa/restore-found-copy-says-icloud-for-groups-that-never-were.md |
-| restore-found-state-leaves-no-breadcrumb | backlog | tickets/backlog/restore-found-state-leaves-no-breadcrumb.md |
+| restore-found-state-leaves-no-breadcrumb | done | tickets/done/restore-found-state-leaves-no-breadcrumb.md |
 | restore-gate-claims-a-wipe-this-device-did-not-do | backlog | tickets/backlog/restore-gate-claims-a-wipe-this-device-did-not-do.md |
+| restore-icloud-disabled-asks-a-born-cloud-user-for-icloud | backlog | tickets/backlog/restore-icloud-disabled-asks-a-born-cloud-user-for-icloud.md |
+| restore-inside-full-mode-activation-cannot-read-the-beacon | backlog | tickets/backlog/restore-inside-full-mode-activation-cannot-read-the-beacon.md |
 | restore-prefill-skips-currency-for-an-empty-summary | backlog | tickets/backlog/restore-prefill-skips-currency-for-an-empty-summary.md |
 | restore-retry-reopens-the-session-window-every-90-seconds | done | tickets/done/restore-retry-reopens-the-session-window-every-90-seconds.md |
 | restore-says-no-data-when-the-icloud-import-never-settled | done | tickets/done/restore-says-no-data-when-the-icloud-import-never-settled.md |
@@ -941,7 +943,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | retry-after-a-failed-migration-resumes-the-pending-icloud-wipe-blindly | done | tickets/done/retry-after-a-failed-migration-resumes-the-pending-icloud-wipe-blindly.md |
 | retrying-a-group-creation-after-a-lost-response-creates-a-second-group | done | tickets/done/retrying-a-group-creation-after-a-lost-response-creates-a-second-group.md |
 | returning-groups-entry-asks-consent-and-name-again | done | tickets/done/returning-groups-entry-asks-consent-and-name-again.md |
-| reverse-abort-rejected-leaves-a-frozen-cloud-saying-up-to-date | backlog | tickets/backlog/reverse-abort-rejected-leaves-a-frozen-cloud-saying-up-to-date.md |
+| reverse-abort-rejected-leaves-a-frozen-cloud-saying-up-to-date | done | tickets/done/reverse-abort-rejected-leaves-a-frozen-cloud-saying-up-to-date.md |
 | reverse-before-mount-has-no-way-to-abandon-the-return | done | tickets/done/reverse-before-mount-has-no-way-to-abandon-the-return.md |
 | reverse-before-mount-stays-stuck-with-an-expired-session | done | tickets/done/reverse-before-mount-stays-stuck-with-an-expired-session.md |
 | reverse-cancel-pushes-what-the-mirror-imported-during-the-wait | backlog | tickets/backlog/reverse-cancel-pushes-what-the-mirror-imported-during-the-wait.md |
@@ -960,7 +962,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reverse-offered-on-a-device-without-icloud | backlog | tickets/backlog/reverse-offered-on-a-device-without-icloud.md |
 | reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last | done | tickets/done/reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last.md |
 | reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out | done | tickets/done/reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out.md |
-| reverse-prior-icloud-scan-has-a-fixed-deadline | backlog | tickets/backlog/reverse-prior-icloud-scan-has-a-fixed-deadline.md |
+| reverse-prior-icloud-scan-has-a-fixed-deadline | done | tickets/done/reverse-prior-icloud-scan-has-a-fixed-deadline.md |
 | reverse-tap-is-lost-while-a-resume-is-running | backlog | tickets/backlog/reverse-tap-is-lost-while-a-resume-is-running.md |
 | reverse-tap-on-a-stale-card-aborts-instead-of-starting | backlog | tickets/backlog/reverse-tap-on-a-stale-card-aborts-instead-of-starting.md |
 | reverse-to-icloud-merges-prior-icloud-data-without-asking | done | tickets/done/reverse-to-icloud-merges-prior-icloud-data-without-asking.md |

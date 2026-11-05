@@ -242,8 +242,10 @@ nonisolated enum WelcomeAccountChoiceLogic {
 /// (`CloudBeacon.isCloudAccountLinked`) y el iCloud-KV de un móvil recién instalado llega cuando iOS
 /// quiere, por `didChangeExternallyNotification`. En esa ventana las dos señales dicen «no» por
 /// motivos distintos y el desenlace vuelve a ser `.notFound` con los datos intactos en el servidor.
-/// Es anterior a este ticket —el `.cloudPaused` del kill tenía el mismo hueco— y no se cierra aquí:
-/// ticket `restore-beacon-may-not-have-synced-yet-on-a-fresh-install`.
+/// Es anterior a este ticket —el `.cloudPaused` del kill tenía el mismo hueco—. **Desde el lote N3
+/// (2026-11-05) la pantalla lo repinta cuando el faro llega** (`afterLateBeacon`, ticket
+/// `restore-beacon-may-not-have-synced-yet-on-a-fresh-install`): el primer mensaje puede seguir siendo
+/// el equivocado durante esos segundos, y se corrige solo.
 ///
 /// **Deliberadamente NO sustituye a `.found`**: esto solo se consulta cuando la búsqueda no encontró
 /// nada. Un usuario de iCloud privado que además tenga el faro puesto (dos devices, dos modos) sigue
@@ -278,6 +280,28 @@ nonisolated enum WelcomeRestoreEmptyOutcome: Equatable {
         }
         guard cloudConfigKnown else { return .cloudUnverified }
         return .notFound
+    }
+
+    /// **Repintar cuando el faro llega TARDE** (card 14hc del lote N3, ticket
+    /// `restore-beacon-may-not-have-synced-yet-on-a-fresh-install`; decisión B de Jürgen del 2026-10-08: repintar al
+    /// llegar, sin alargar la espera de quien de verdad no tiene cuenta). En un móvil recién instalado el iCloud-KV llega
+    /// cuando iOS quiere, por `didChangeExternallyNotification`, y la búsqueda puede haber decidido antes con el faro en
+    /// blanco. Escuchan los dos desenlaces decididos SIN faro; `.cloudPaused` ya lo tiene.
+    static func listensForLateBeacon(_ outcome: WelcomeRestoreEmptyOutcome) -> Bool {
+        switch outcome {
+        case .notFound, .cloudUnverified: return true
+        case .cloudPaused: return false
+        }
+    }
+
+    /// El desenlace nuevo tras un cambio del iCloud-KV, o `nil` si no cambia nada. Se decide con la MISMA `resolve`:
+    /// solo el faro ha podido moverse, y la config y el kill se leen como estén en ese momento.
+    static func afterLateBeacon(current: WelcomeRestoreEmptyOutcome, beaconLinked: Bool, cloudConfigKnown: Bool,
+                                remoteCloudEnabled: Bool) -> WelcomeRestoreEmptyOutcome? {
+        guard listensForLateBeacon(current) else { return nil }
+        let next = resolve(beaconLinked: beaconLinked, cloudConfigKnown: cloudConfigKnown,
+                           remoteCloudEnabled: remoteCloudEnabled)
+        return next == current ? nil : next
     }
 }
 

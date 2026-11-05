@@ -20,22 +20,33 @@ enum SyncStatusSectionLogic {
         case attestUnavailable
         /// El motor espera a que se vuelva a firmar. `nil` = la cola no se dejó contar: se ofrece firmar sin cifra.
         case needsSignIn(pendingCount: Int?)
+        /// El motor está PARADO y esperar no lo arranca: `.stoppedUntilRelaunch` (un 403, el 409 de una cuenta que vuelve
+        /// a iCloud con otro dispositivo) o `.idle` con efectos de migración pendientes. `nil` = no se dejaron contar
+        /// (card 39ww del lote N3, ticket `reverse-abort-rejected-leaves-a-frozen-cloud-saying-up-to-date`).
+        case stopped(pendingCount: Int?)
         /// Quedan cambios sin subir y el motor no acaba de completar un ciclo. `nil` = no se dejaron contar.
         case waitingForConnection(pendingCount: Int?)
         /// Nada pendiente, o el motor sano y lo que queda sale en su próximo ciclo.
         case upToDate
     }
 
-    /// **El orden es el contrato**: attest terminal > `syncNeedsSignIn` > cambios esperando > «Todo sincronizado».
+    /// **El orden es el contrato**: attest terminal > `syncNeedsSignIn` > motor parado > cambios esperando >
+    /// «Todo sincronizado».
+    ///
+    /// **El motor parado va antes que los cambios esperando y no depende del recuento** (card 39ww): parado, lo apuntado
+    /// no sube por mucho que haya red, así que ni «esperando conexión» ni el check verde con la cola a cero dicen la
+    /// verdad. El attest terminal también deja el motor en `.stoppedUntilRelaunch`, y por eso su rama va antes.
     ///
     /// La tercera rama exige el modo nube y un motor que NO esté sano (`engineIsHealthy`): con el último ciclo completado,
     /// lo que se apuntó después sale en el siguiente (60 s), y decir «esperando conexión» con la red bien sería otra
     /// frase falsa. **Un recuento que no se deja leer no se lee como cero**: sale sin cifra, pero nunca el check verde.
     static func decide(attestNoticeShowing: Bool,
                        needsSignIn: Bool, signInPendingCount: Int?,
-                       isCloud: Bool, pendingCount: Int?, engineIsHealthy: Bool) -> Status {
+                       isCloud: Bool, pendingCount: Int?, engineIsHealthy: Bool,
+                       engineIsStopped: Bool = false) -> Status {
         if attestNoticeShowing { return .attestUnavailable }
         if needsSignIn { return .needsSignIn(pendingCount: signInPendingCount) }
+        if isCloud, engineIsStopped { return .stopped(pendingCount: pendingCount) }
         guard isCloud, !engineIsHealthy else { return .upToDate }
         guard let pendingCount else { return .waitingForConnection(pendingCount: nil) }
         return pendingCount > 0 ? .waitingForConnection(pendingCount: pendingCount) : .upToDate
@@ -50,6 +61,21 @@ enum SyncStatusSectionLogic {
     /// sin red con la verificación en caché, y el motor `.idle` por el gate de dominio.
     static func engineIsHealthy(state: CloudSyncRuntime.RuntimeState?, consecutiveTransients: Int) -> Bool {
         state == .running && consecutiveTransients == 0
+    }
+
+    /// ¿Está el motor PARADO sin que esperar lo arranque? (card 39ww). `.stoppedUntilRelaunch` siempre; `.idle`,
+    /// `.idleSignedOut` (o sin runtime) solo con efectos de migración pendientes, que es lo que impide arrancarlo (`startRuntimeIfStable` exige
+    /// `!hasPending`). Un `.idle` sin pendientes es el arranque normal o el gate de dominio: lo cubre la rama de los
+    /// cambios esperando. `.stoppedUntilSignIn` tiene su propia rama (`needsSignIn`).
+    static func engineIsStopped(state: CloudSyncRuntime.RuntimeState?, migrationEffectsPending: Bool) -> Bool {
+        switch state {
+        case .stoppedUntilRelaunch: return true
+        // `.idleSignedOut` también: la salida de una vuelta con la sesión borrada deja un `.reverseRollback` pendiente, y al
+        // relanzar el motor arranca sin sesión. Con el outbox a cero la puerta de firmar no se enciende (solo con filas), y
+        // sin esto caía al check verde (lo cazó la review adversarial del lote N3).
+        case .idle, .idleSignedOut, nil: return migrationEffectsPending
+        case .running, .stoppedUntilSignIn: return false
+        }
     }
 
     /// Cuántos cambios esperan, sumando las TRES colas: las filas vivas del outbox personal, los cambios del History que

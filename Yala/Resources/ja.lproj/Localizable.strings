@@ -4072,6 +4072,7 @@
 "welcome.restore.foundTitle" = "%@さん、おかえりなさい！";
 "welcome.restore.foundTitleAnonymous" = "おかえりなさい！";
 "welcome.restore.foundBody" = "この端末に戻るデータ：";
+"welcome.restore.foundPreCloudNote" = "このiCloudのコピーはYalaのクラウドを使う前のものです。最近の変更が含まれていない可能性があります。";
 "welcome.restore.continue" = "続ける";
 "welcome.restore.notFoundTitle" = "データが見つかりませんでした";
 "welcome.restore.notFoundBody" = "iCloudアカウントに関連するデータが見つかりません。最初から始めますか？";
@@ -5510,7 +5511,7 @@
 "welcome.restore.cloudPausedTitle" = "データはiCloudにはありません";
 
 /* Restore: cuerpo del estado de nube en pausa — tranquiliza sobre los datos sin prometer plazo */
-"welcome.restore.cloudPausedBody" = "このApple IDにはYalaのクラウドアカウントがあります。データはiCloudではなく、そちらに安全に保存されています。クラウドへのサインインは現在一時停止中です。しばらくしてからもう一度お試しください。";
+"welcome.restore.cloudPausedBody" = "このApple IDはYalaのクラウドアカウントで使われていました。そこに保存したデータはiCloudにはありません。クラウドへのサインインは現在一時停止中です。しばらくしてからもう一度お試しください。";
 
 /* Push: gentle reminder to the DEBTOR that a group debt has been idle. Args: 1=formatted amount, 2=creditor name. Never dunning/collector tone. */
 "notifications.groups.settlementReminder" = "👋 お知らせです。%2$@さんに%1$@の精算が残っています。都合のよいときにどうぞ。";
@@ -6125,6 +6126,7 @@
 /* Card pz4v: aviso del Panel cuando la sincronización espera a que vuelvas a iniciar sesión */
 "panel.syncSignIn.body" = "ここに表示されている内容は、アカウントの最新の状態ではない可能性があります。";
 "storage.sync.waitingForConnectionUncounted" = "変更が接続待ちです";
+"storage.sync.stoppedUncounted" = "変更は現在アカウントにアップロードされていません。";
 
 /* Ver qué migraría: los conteos no se pudieron leer */
 "storage.migrate.previewUnreadable" = "データを数えられませんでした。少し待ってからもう一度お試しください。";
@@ -6747,6 +6749,8 @@
 "storage.revert.prior.discardConfirm" = "削除して iCloud に戻る";
 "storage.revert.prior.checkFailedTitle" = "iCloud を確認できませんでした";
 "storage.revert.prior.checkFailedBody" = "戻る前に、iCloud にすでに Yala のデータがあるか確認しています。知らないうちに混ざらないようにするためです。接続の問題かもしれません。もう一度お試しください。";
+"storage.revert.prior.stalledTitle" = "iCloudの応答に時間がかかりすぎました";
+"storage.revert.prior.stalledBody" = "戻る前に、iCloud にすでに Yala のデータがあるか確認しています。知らないうちに混ざらないようにするためです。確認が進まなくなりました。もう一度お試しください。";
 "storage.revert.prior.wipeFailed" = "iCloud から以前のデータを削除しきれなかったため、iCloud に戻る処理を開始していません。クラウドのままです。接続を確認して、もう一度お試しください。";
 "storage.revert.prior.wipeStopped" = "iCloud から以前のデータを削除しきれなかったため、iCloud に戻る処理を開始していません。クラウドのままです。削除済みのデータは元に戻りません。もう一度お試しいただくと、残りの削除を続けます。";
 "storage.revert.prior.wiping" = "以前のデータを削除しています…（%d 件完了）";

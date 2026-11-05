@@ -70,6 +70,52 @@ struct SyncStatusSectionLogicTests {
                              isCloud: false, pendingCount: 5, engineIsHealthy: false) == .upToDate)
     }
 
+    // MARK: - Motor parado (card 39ww, lote N3)
+
+    /// El relevo de otro dispositivo en la vuelta a iCloud: cada push recibe 409 y el motor queda `.stoppedUntilRelaunch`.
+    /// Con la cola a cero, antes salía el check verde; con cambios, «esperando conexión» con la red bien.
+    @Test("MUTACIÓN: con el motor parado hasta relanzar, ni «Todo sincronizado» ni «esperando conexión»")
+    func stoppedUntilRelaunch_isStopped_withOrWithoutPendingChanges() {
+        let stopped = Logic.engineIsStopped(state: .stoppedUntilRelaunch, migrationEffectsPending: false)
+        #expect(stopped)
+        for pending in [0, 3, nil] as [Int?] {
+            #expect(Logic.decide(attestNoticeShowing: false, needsSignIn: false, signInPendingCount: 0,
+                                 isCloud: true, pendingCount: pending, engineIsHealthy: false,
+                                 engineIsStopped: stopped) == .stopped(pendingCount: pending))
+        }
+    }
+
+    /// Un efecto de migración pendiente (el `reverseRollback` con la sesión caducada, el `complete` que no llegó) deja el
+    /// motor en `.idle`: tampoco es «Todo sincronizado».
+    @Test("MUTACIÓN: `.idle` con efectos de migración pendientes cuenta como parado; sin ellos, no")
+    func idleWithMigrationEffectsPending_isStopped() {
+        #expect(Logic.engineIsStopped(state: .idle, migrationEffectsPending: true))
+        #expect(Logic.engineIsStopped(state: nil, migrationEffectsPending: true))
+        #expect(!Logic.engineIsStopped(state: .idle, migrationEffectsPending: false))
+        #expect(!Logic.engineIsStopped(state: nil, migrationEffectsPending: false))
+        // Los demás estados tienen su rama o están sanos: un pendiente no los convierte en parados.
+        #expect(!Logic.engineIsStopped(state: .running, migrationEffectsPending: true))
+        #expect(!Logic.engineIsStopped(state: .stoppedUntilSignIn, migrationEffectsPending: true))
+        // La salida de la vuelta con la sesión borrada: motor sin sesión y el `.reverseRollback` pendiente.
+        #expect(Logic.engineIsStopped(state: .idleSignedOut, migrationEffectsPending: true))
+        #expect(!Logic.engineIsStopped(state: .idleSignedOut, migrationEffectsPending: false))
+    }
+
+    /// El orden: el attest (que también deja `.stoppedUntilRelaunch`) y la puerta de firmar ganan al motor parado, y el
+    /// motor parado gana a los cambios esperando. Fuera de la nube no aplica.
+    @Test("MUTACIÓN: attest y firmar van antes que el motor parado; fuera de la nube no se dice")
+    func stoppedOrder() {
+        #expect(Logic.decide(attestNoticeShowing: true, needsSignIn: false, signInPendingCount: 0,
+                             isCloud: true, pendingCount: 1, engineIsHealthy: false,
+                             engineIsStopped: true) == .attestUnavailable)
+        #expect(Logic.decide(attestNoticeShowing: false, needsSignIn: true, signInPendingCount: 1,
+                             isCloud: true, pendingCount: 1, engineIsHealthy: false,
+                             engineIsStopped: true) == .needsSignIn(pendingCount: 1))
+        #expect(Logic.decide(attestNoticeShowing: false, needsSignIn: false, signInPendingCount: 0,
+                             isCloud: false, pendingCount: 1, engineIsHealthy: false,
+                             engineIsStopped: true) == .upToDate)
+    }
+
     // MARK: - Prioridad
 
     @Test("MUTACIÓN: el aviso del attest gana a la puerta de firmar y a los cambios esperando")

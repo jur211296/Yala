@@ -4072,6 +4072,7 @@
 "welcome.restore.foundTitle" = "你好 %@！很高兴再次见到你。";
 "welcome.restore.foundTitleAnonymous" = "很高兴再次见到你！";
 "welcome.restore.foundBody" = "以下数据会回到这台设备：";
+"welcome.restore.foundPreCloudNote" = "这份 iCloud 副本来自你使用 Yala 云端之前，可能不包含你最近的更改。";
 "welcome.restore.continue" = "继续";
 "welcome.restore.notFoundTitle" = "未找到数据";
 "welcome.restore.notFoundBody" = "你的 iCloud 账户没有关联的数据。想要重新开始吗？";
@@ -5510,7 +5511,7 @@
 "welcome.restore.cloudPausedTitle" = "你的数据不在 iCloud 中";
 
 /* Restore: cuerpo del estado de nube en pausa — tranquiliza sobre los datos sin prometer plazo */
-"welcome.restore.cloudPausedBody" = "此 Apple ID 有一个 Yala 云端账户：你的数据安全地保存在那里，而不在你的 iCloud 中。云端登录暂时已暂停，请稍后再试。";
+"welcome.restore.cloudPausedBody" = "此 Apple ID 曾用于 Yala 云端账户，你保存在那里的内容不在你的 iCloud 中。云端登录暂时已暂停，请稍后再试。";
 
 /* Push: gentle reminder to the DEBTOR that a group debt has been idle. Args: 1=formatted amount, 2=creditor name. Never dunning/collector tone. */
 "notifications.groups.settlementReminder" = "👋 温馨提醒：你还欠 %2$@ %1$@。方便的时候结一下吧。";
@@ -6125,6 +6126,7 @@
 /* Card pz4v: aviso del Panel cuando la sincronización espera a que vuelvas a iniciar sesión */
 "panel.syncSignIn.body" = "这里显示的内容可能与你的账户不同步。";
 "storage.sync.waitingForConnectionUncounted" = "更改正在等待连接";
+"storage.sync.stoppedUncounted" = "你的更改暂时没有上传到你的账户。";
 
 /* Ver qué migraría: los conteos no se pudieron leer */
 "storage.migrate.previewUnreadable" = "无法统计你的数据。请稍后重试。";
@@ -6747,6 +6749,8 @@
 "storage.revert.prior.discardConfirm" = "删除并返回 iCloud";
 "storage.revert.prior.checkFailedTitle" = "无法检查你的 iCloud";
 "storage.revert.prior.checkFailedBody" = "返回之前，我们会检查你的 iCloud 里是否已有 Yala 数据，以免在不告诉你的情况下混在一起。可能是网络问题：请再试一次。";
+"storage.revert.prior.stalledTitle" = "iCloud 响应时间太长";
+"storage.revert.prior.stalledBody" = "返回之前，我们会检查你的 iCloud 里是否已有 Yala 数据，以免在不告诉你的情况下混在一起。检查没有进展：请再试一次。";
 "storage.revert.prior.wipeFailed" = "我们没能从你的 iCloud 中删除完以前的数据，所以没有开始返回：你仍在使用云端。请检查网络后再试一次。";
 "storage.revert.prior.wipeStopped" = "我们没能从你的 iCloud 中删除完以前的数据，所以没有开始返回：你仍在使用云端。已删除的数据不会恢复：再试一次，我们会继续删除剩下的部分。";
 "storage.revert.prior.wiping" = "正在删除以前的数据…已删除 %d 条";

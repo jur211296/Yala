@@ -546,6 +546,22 @@
 			<string>Entre para enviar %d alterações</string>
 		</dict>
 	</dict>
+	<key>storage.sync.stopped</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d alteração não enviada para sua conta por enquanto.</string>
+			<key>other</key>
+			<string>%d alterações não enviadas para sua conta por enquanto.</string>
+		</dict>
+	</dict>
 	<key>storage.sync.waitingForConnection</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

@@ -172,6 +172,7 @@
 - [El control que no recorre el camino no descarta](feedback_el_control_que_no_recorre_el_camino_no_descarta.md) — «sin X funciona» no aísla X si X cambia la ruta.
 - [Una carrera de presentación no se mide a mano](feedback_una_carrera_de_presentacion_no_se_mide_a_mano.md) — axe lento gana la carrera; XCUITest + sonda + log stream.
 - [Instrumentar gana a razonar](feedback_instrumentar_gana_a_razonar.md) — a la tercera hipótesis caída, cuenta en vez de ded…
+- [El mutante cortado se queda puesto](feedback_el_mutante_cortado_se_queda_puesto.md) — comando de mutar+correr+restaurar cortado: grep el árbol antes de seguir.
 - [El log que lee el estado cura el bug](feedback_el_log_que_lee_el_estado_cura_el_bug.md) — en el body, log sin leer el estado; el valor, en el didSet.
 - [Un fotograma se aísla con variantes por argumento](feedback_un_fotograma_se_aisla_con_variantes_por_argumento.md) — un build, `-zzVn YES`, medidor de filas; y review adversarial aunque sea pulido.
 - [Una carrera se prueba con el último escritor](feedback_una_carrera_se_prueba_con_el_ultimo_escritor.md) — con el código viejo: si lee y escribe sin `await`, es el dato.

@@ -1,10 +1,10 @@
 ---
 id: reverse-prior-icloud-scan-has-a-fixed-deadline
-status: backlog
+status: done
 priority: low
 area: "nube, vuelta a iCloud"
 created: 2026-10-19
-updated: 2026-10-20
+updated: 2026-11-05
 source: hallado al arreglar `reverse-discard-wipe-cuts-a-large-icloud-at-two-minutes`
 ---
 
@@ -33,3 +33,7 @@ Con la card blqa del QA guiado del TF19 la pregunta pasó al molde del borrado: 
 ## Lo que queda
 
 El texto de fallo de la vuelta a iCloud sigue diciendo «Puede ser la conexión» también cuando fue el plazo. La puerta privada del Welcome ya tiene el suyo (`welcome.privateICloud.stalledTitle`); falta decidir el de Almacenamiento.
+
+## Hecho (2026-11-05, lote N3 · Restaurar y Almacenamiento)
+
+El aviso de Almacenamiento separa el plazo: `ReverseICloudPriorDataLogic.checkFailedNotice` da `.stalled` con `ICloudZoneScanEnd.stalledReason`, con título «iCloud tardó demasiado en responder» y cuerpo «… La revisión no avanzó: inténtalo otra vez.» (16 idiomas). Tests: `ReverseICloudPriorDataLogicTests` + XCUITest `test_stalledCheck_doesNotBlameTheConnection` (seam `-uitest-reverse-prior-icloud stalled`).

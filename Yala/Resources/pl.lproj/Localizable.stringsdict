@@ -682,6 +682,26 @@
 			<string>Zaloguj się, aby wysłać %d zmiany</string>
 		</dict>
 	</dict>
+	<key>storage.sync.stopped</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d zmiana nieprzesłana teraz na Twoje konto.</string>
+			<key>few</key>
+			<string>%d zmiany nieprzesłane teraz na Twoje konto.</string>
+			<key>many</key>
+			<string>%d zmian nieprzesłanych teraz na Twoje konto.</string>
+			<key>other</key>
+			<string>%d zmiany nieprzesłanej teraz na Twoje konto.</string>
+		</dict>
+	</dict>
 	<key>storage.sync.waitingForConnection</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

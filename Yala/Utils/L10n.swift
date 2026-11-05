@@ -6362,6 +6362,8 @@ enum L10n {
             }
             static var foundTitleAnonymous: String { ls("welcome.restore.foundTitleAnonymous", comment: "") }
             static var foundBody: String { ls("welcome.restore.foundBody", comment: "") }
+            /// La copia de iCloud es anterior a la nube de Yala (card lokl del lote N3, decisión A de Jürgen).
+            static var foundPreCloudNote: String { ls("welcome.restore.foundPreCloudNote", comment: "") }
             static func foundAccounts(_ count: Int) -> String {
                 String.localizedStringWithFormat(ls("welcome.restore.foundAccounts", comment: ""), count)
             }
@@ -8352,6 +8354,8 @@ enum L10n {
                 static var discardConfirm: String { ls("storage.revert.prior.discardConfirm", comment: "") }
                 static var checkFailedTitle: String { ls("storage.revert.prior.checkFailedTitle", comment: "") }
                 static var checkFailedBody: String { ls("storage.revert.prior.checkFailedBody", comment: "") }
+                static var stalledTitle: String { ls("storage.revert.prior.stalledTitle", comment: "") }
+                static var stalledBody: String { ls("storage.revert.prior.stalledBody", comment: "") }
                 static var wipeFailed: String { ls("storage.revert.prior.wipeFailed", comment: "") }
                 static var wipeStopped: String { ls("storage.revert.prior.wipeStopped", comment: "") }
                 static func wiping(_ deleted: Int) -> String {
@@ -8381,6 +8385,12 @@ enum L10n {
             static var waitingForConnectionUncounted: String {
                 ls("storage.sync.waitingForConnectionUncounted", comment: "")
             }
+            /// El motor está parado y esperar no lo arranca (card 39ww del lote N3). Plural en el `.stringsdict`.
+            static func stopped(_ count: Int) -> String {
+                String.localizedStringWithFormat(ls("storage.sync.stopped", comment: ""), count)
+            }
+            /// Lo mismo sin cifra: la cola a cero o sin contar.
+            static var stoppedUncounted: String { ls("storage.sync.stoppedUncounted", comment: "") }
             static var signInButton: String { ls("storage.sync.signInButton", comment: "") }
             /// La segunda línea del aviso del Panel (card pz4v): la primera es la misma de esta pantalla.
             static var panelNoticeBody: String { ls("panel.syncSignIn.body", comment: "") }

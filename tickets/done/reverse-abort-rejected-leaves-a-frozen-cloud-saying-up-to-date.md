@@ -1,10 +1,10 @@
 ---
 id: reverse-abort-rejected-leaves-a-frozen-cloud-saying-up-to-date
-status: backlog
+status: done
 priority: medium
 area: "modo-nube, sync, migración"
 created: 2026-09-16
-updated: 2026-10-08
+updated: 2026-11-05
 source: "review adversarial de `reverse-upload-has-no-ceiling-and-no-exit` (2026-09-16), lente de datos — H3; decisión D17 (c) de Jürgen: ticket aparte"
 ---
 
@@ -61,3 +61,7 @@ nueva, pero ahora se ve justo después de un aviso de «vuelve a intentarlo en u
 - ad344b12d (2026-09-17) añadió la puerta de «vuelve a entrar» (`reverseNeedsSignIn`) solo para las cuatro fases de la vuelta anteriores al montaje del espejo; el `reverseRollback` pendiente tras salir de `reverseUpload` no la enciende. Inferido, sin medir: con la sesión borrada ese caso no tiene puerta para firmar.
 
 Triage 2026-10-08: abierto · low → medium · el copy le dice a la persona que sus datos están al día cuando nada sube; las causas son raras (relevo de otro dispositivo, sesión borrada a mitad), pero la mentira es sobre sus datos.
+
+## Hecho (2026-11-05, lote N3 · Restaurar y Almacenamiento)
+
+`SyncStatusSectionLogic` gana `.stopped`: motor en `.stoppedUntilRelaunch`, o `.idle`/`.idleSignedOut` con efectos de migración pendientes (`engineIsStopped`), va después del attest y de firmar y antes de los cambios esperando. Texto (opción A2 de Jürgen, 2026-11-05): «Tus cambios no se están subiendo a tu cuenta por ahora.» / «%d cambios sin subir a tu cuenta por ahora.», icono de aviso y sin pedir gesto: la review midió que en el relevo de otro dispositivo (y con el 403) reabrir no lo arregla, así que el texto no promete salida. El relevo usa el mismo texto (decisión). Tests: `SyncStatusSectionLogicTests`. Sin XCUITest positivo: el simulador no tiene modo nube real.

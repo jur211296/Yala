@@ -61,6 +61,46 @@ enum ReverseICloudPriorDataLogic {
         }
     }
 
+    /// Qué aviso sale cuando la pregunta previa no se pudo hacer. **Con el plazo sin avance de la revisión
+    /// (`ICloudZoneScanEnd.stalledReason`) no se culpa a la conexión** (card dfja, lote N3): hasta ese día el texto decía
+    /// «Puede ser la conexión» también cuando lo que venció fue la revisión, con la red bien. Cualquier otro motivo
+    /// —un `CKError`, un registro que no se deja leer— conserva el texto de siempre, igual que la puerta privada del
+    /// Welcome (`WelcomePrivateICloudGateLogic.wasStalled`).
+    enum CheckFailedNotice: Equatable {
+        /// No hay cuenta de iCloud a la que preguntar.
+        case needsICloud
+        /// La revisión dejó de avanzar.
+        case stalled
+        /// No se pudo preguntar por otra causa.
+        case cannotCheck
+    }
+
+    /// El aviso de una pregunta que no se pudo hacer. `nil` para las respuestas que no son un fallo.
+    static func checkFailedNotice(_ gate: Gate) -> CheckFailedNotice? {
+        switch gate {
+        case .needsICloud: return .needsICloud
+        case .cannotCheck(let reason): return reason == ICloudZoneScanEnd.stalledReason ? .stalled : .cannotCheck
+        case .proceed, .ask: return nil
+        }
+    }
+
+    /// Título y cuerpo de cada aviso.
+    static func checkFailedTitle(_ notice: CheckFailedNotice) -> String {
+        switch notice {
+        case .needsICloud: return L10n.Storage.Revert.Prior.noAccountTitle
+        case .stalled: return L10n.Storage.Revert.Prior.stalledTitle
+        case .cannotCheck: return L10n.Storage.Revert.Prior.checkFailedTitle
+        }
+    }
+
+    static func checkFailedBody(_ notice: CheckFailedNotice) -> String {
+        switch notice {
+        case .needsICloud: return L10n.Storage.Revert.Prior.noAccountBody
+        case .stalled: return L10n.Storage.Revert.Prior.stalledBody
+        case .cannotCheck: return L10n.Storage.Revert.Prior.checkFailedBody
+        }
+    }
+
     /// Las cifras del aviso, en el orden en que se leen. Vacío si ninguna casilla tiene nada que decir: el texto cae
     /// entonces a la versión sin cifras, que no promete números que no tiene.
     static func summaryParts(_ corpus: ICloudForeignCorpus) -> [String] {

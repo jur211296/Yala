@@ -1,10 +1,10 @@
 ---
 id: restore-beacon-may-not-have-synced-yet-on-a-fresh-install
-status: backlog
+status: done
 priority: medium
 area: "welcome, restore, beacon"
 created: 2026-09-17
-updated: 2026-10-08
+updated: 2026-11-05
 source: "review adversarial de `reinstall-without-network-has-no-cloud-door` (lente de reglas de área), 2026-09-17"
 ---
 
@@ -74,3 +74,7 @@ Qué hace Restaurar cuando la búsqueda sale vacía y el faro del iCloud-KV pued
 señal. Con B la prioridad es `medium`.
 
 Triage 2026-10-08: abierto · medium → medium · resolveEmptyState fuerza el remote-config pero sigue leyendo el faro con un store.bool sin esperar ni repintar; el propio docblock de WelcomeRestoreEmptyOutcome remite a este ticket.
+
+## Hecho (2026-11-05, lote N3 · Restaurar y Almacenamiento)
+
+Opción B (decisión de Jürgen del 2026-10-08). `WelcomeRestoreView` escucha `didChangeExternallyNotification` del emisor real mientras enseña `.notFound` o `.cloudUnverified`, re-decide con la misma `WelcomeRestoreEmptyOutcome.resolve` (`afterLateBeacon`) y repinta una vez, con miga `LATE-BEACON`. Lee el faro también al entrar, por si llegó entre la decisión y la suscripción. Tests: `RestoreLoteN3Tests`. Residual: dentro de «Activar Yala completo» (sesión solo grupos) la puerta del iCloud-KV está cerrada y el faro no se lee nunca — ticket `restore-inside-full-mode-activation-cannot-read-the-beacon`.

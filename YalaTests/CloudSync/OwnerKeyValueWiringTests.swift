@@ -84,6 +84,7 @@ struct OwnerKeyValueWiringTests {
         "PanelPreferencesMigration.swift",            // «¿hay Panel remoto?»
         "GroupsRemoteWipeDivision.swift",             // el reparto de «Vaciar datos» entre el origen y el receptor
         "PrivateBirthKeyValueHandover.swift",         // lo guardado en solo-grupos, al nacer la sesión privada NUEVA
+        "WelcomeRestoreView.swift",                   // solo ESCUCHA el aviso de cambio: el faro tardío (card 14hc, lote N3)
     ]
 
     /// Las líneas de código de un fichero, sin las de comentario.
