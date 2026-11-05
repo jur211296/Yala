@@ -807,9 +807,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d selezionata</string>
+			<string>%d selezionato</string>
 			<key>other</key>
-			<string>%d selezionate</string>
+			<string>%d selezionati</string>
 		</dict>
 	</dict>
 	<key>records.groupRecordsKept</key>
@@ -1031,7 +1031,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>… e altra %d</string>
+			<string>… e %d in più</string>
 			<key>other</key>
 			<string>… e altre %d</string>
 		</dict>

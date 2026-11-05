@@ -217,8 +217,8 @@ struct InboxApproveSuccessView: View {
 
     private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateFormat = "d MMM yyyy"
         formatter.locale = AppLocale.current
+        formatter.setLocalizedDateFormatFromTemplate("dMMMy")
         return formatter
     }()
 

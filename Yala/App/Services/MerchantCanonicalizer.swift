@@ -39,6 +39,28 @@ enum MerchantCanonicalizer {
         return result.trimmingCharacters(in: .whitespaces)
     }
 
+    /// Cómo se le enseña un comercio al usuario (o a un prompt que lo copia tal cual): la nota sin el prefijo del
+    /// procesador de pago, y con mayúscula inicial si venía entera en mayúsculas o en minúsculas. Lote 12.4: las
+    /// sugerencias de Yala IA recibían el canónico («SUPERMERCADO») y el modelo lo copiaba. Una sigla corta en mayúsculas
+    /// («KFC», «BCP») se queda como está.
+    static func displayName(for note: String) -> String {
+        var text = note.trimmingCharacters(in: .whitespacesAndNewlines)
+        for prefix in paymentPrefixes where text.uppercased().hasPrefix(prefix.uppercased()) {
+            text = String(text.dropFirst(prefix.count)).trimmingCharacters(in: .whitespaces)
+        }
+        text = text.replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+        let letters = text.filter(\.isLetter)
+        guard !letters.isEmpty else { return text }
+        let allUpper = letters == letters.uppercased() && letters != letters.lowercased()
+        let allLower = letters == letters.lowercased() && letters != letters.uppercased()
+        if allUpper && !text.contains(" ") && letters.count <= 4 { return text }
+        guard allUpper || allLower else { return text }
+        return text.split(separator: " ").map { word -> String in
+            let lower = word.lowercased()
+            return lower.prefix(1).uppercased() + lower.dropFirst()
+        }.joined(separator: " ")
+    }
+
     /// Calcula similitud entre dos strings (0.0 = nada, 1.0 = idénticos).
     /// Usa distancia de Levenshtein normalizada.
     static func similarity(_ a: String, _ b: String) -> Double {

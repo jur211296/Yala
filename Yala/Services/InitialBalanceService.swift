@@ -143,7 +143,7 @@ import SwiftData
 
         let dateFormatter = DateFormatter()
         dateFormatter.locale = AppLocale.current
-        dateFormatter.dateFormat = "d MMM yyyy"
+        dateFormatter.setLocalizedDateFormatFromTemplate("dMMMy")
         let dateString = dateFormatter.string(from: date)
 
         let note = "\(L10n.Account.adjustmentNote) - \(dateString)"

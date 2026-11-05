@@ -1,0 +1,86 @@
+[
+ {
+  "k": "budgets.favorites.previewEmpty",
+  "categoria": "registro",
+  "gravedad": "media",
+  "propuesta": "Seleccioná favoritos para ver la vista previa",
+  "motivo": "«Selecciona» es tuteo en vez de voseo y «preview» es anglicismo innecesario frente a «vista previa».",
+  "fuente": "llm",
+  "actual": "Selecciona favoritos para ver el preview",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": true
+ },
+ {
+  "k": "cashFlow.net",
+  "categoria": "significado",
+  "gravedad": "alta",
+  "propuesta": "Neto",
+  "motivo": "Dice «Yala» en lugar de «Neto», que es lo que indica el original.",
+  "fuente": "llm",
+  "actual": "Yala",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": true
+ },
+ {
+  "k": "insights.offlineCached",
+  "categoria": "ortografia",
+  "gravedad": "alta",
+  "propuesta": "Sin conexión. Mostrando último análisis.",
+  "motivo": "Faltan las tildes en «conexión», «último» y «análisis».",
+  "fuente": "llm",
+  "actual": "Sin conexion. Mostrando ultimo analisis.",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": true
+ },
+ {
+  "k": "insights.offlineNoCache",
+  "categoria": "ortografia",
+  "gravedad": "alta",
+  "propuesta": "Sin conexión. Los insights personalizados estarán disponibles al conectarte.",
+  "motivo": "Faltan las tildes en «conexión» y «estarán».",
+  "fuente": "llm",
+  "actual": "Sin conexion. Los insights personalizados estaran disponibles al conectarte.",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": true
+ },
+ {
+  "k": "insights.yearComparison",
+  "categoria": "ortografia",
+  "gravedad": "alta",
+  "propuesta": "Año pasado: %@. Este año: %@.",
+  "motivo": "«Ano» y «ano» deben ser «Año» y «año»; sin la ñ cambia el significado.",
+  "fuente": "llm",
+  "actual": "Ano pasado: %@. Este ano: %@.",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": true
+ },
+ {
+  "k": "split.you",
+  "categoria": "registro",
+  "gravedad": "alta",
+  "propuesta": "Vos",
+  "motivo": "«Tu» sin tilde es un posesivo y además la guía exige voseo, por lo que corresponde «Vos».",
+  "fuente": "llm",
+  "actual": "Tu",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": true
+ },
+ {
+  "k": "whatsNew.v12.comparative.title",
+  "categoria": "ortografia",
+  "gravedad": "alta",
+  "propuesta": "Reporte comparativo",
+  "motivo": "«Reporte» es masculino, así que «Comparativa» no concuerda, y sobra la mayúscula.",
+  "fuente": "llm",
+  "actual": "Reporte Comparativa",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": true
+ }
+]

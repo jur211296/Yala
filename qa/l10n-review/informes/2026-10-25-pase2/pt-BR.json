@@ -1,0 +1,189 @@
+[
+ {
+  "k": "cashFlowPlan.editStartingBalance",
+  "categoria": "sin_traducir",
+  "gravedad": "media",
+  "motivo": "Idéntica al español (posible resto sin traducir).",
+  "fuente": "determinista",
+  "actual": "Editar saldo inicial",
+  "protegida": false,
+  "aplicada": false,
+  "no_aplicada_por": "sin propuesta"
+ },
+ {
+  "k": "currency.hkd",
+  "categoria": "sin_traducir",
+  "gravedad": "media",
+  "motivo": "Idéntica al español (posible resto sin traducir).",
+  "fuente": "determinista",
+  "actual": "dólar de Hong Kong",
+  "protegida": false,
+  "aplicada": false,
+  "no_aplicada_por": "sin propuesta"
+ },
+ {
+  "k": "account.modifyInitialBalance",
+  "categoria": "sin_traducir",
+  "gravedad": "media",
+  "motivo": "Idéntica al español (posible resto sin traducir).",
+  "fuente": "determinista",
+  "actual": "Modificar saldo inicial",
+  "protegida": false,
+  "aplicada": false,
+  "no_aplicada_por": "sin propuesta"
+ },
+ {
+  "k": "account.adjustByEntry",
+  "categoria": "sin_traducir",
+  "gravedad": "media",
+  "motivo": "Idéntica al español (posible resto sin traducir).",
+  "fuente": "determinista",
+  "actual": "Ajustar por registro",
+  "protegida": false,
+  "aplicada": false,
+  "no_aplicada_por": "sin propuesta"
+ },
+ {
+  "k": "settings.currencyCode",
+  "categoria": "sin_traducir",
+  "gravedad": "media",
+  "motivo": "Idéntica al español (posible resto sin traducir).",
+  "fuente": "determinista",
+  "actual": "Código (PEN, USD)",
+  "protegida": false,
+  "aplicada": false,
+  "no_aplicada_por": "sin propuesta"
+ },
+ {
+  "k": "onboarding.calc.useBalance",
+  "categoria": "sin_traducir",
+  "gravedad": "media",
+  "motivo": "Idéntica al español (posible resto sin traducir).",
+  "fuente": "determinista",
+  "actual": "Usar este saldo",
+  "protegida": false,
+  "aplicada": false,
+  "no_aplicada_por": "sin propuesta"
+ },
+ {
+  "k": "subscription.feature.voice",
+  "categoria": "sin_traducir",
+  "gravedad": "media",
+  "motivo": "Idéntica al español (posible resto sin traducir).",
+  "fuente": "determinista",
+  "actual": "Registro por voz ilimitado",
+  "protegida": false,
+  "aplicada": false,
+  "no_aplicada_por": "sin propuesta"
+ },
+ {
+  "k": "tipkit.pro.voiceInput.title",
+  "categoria": "sin_traducir",
+  "gravedad": "media",
+  "motivo": "Idéntica al español (posible resto sin traducir).",
+  "fuente": "determinista",
+  "actual": "Registro por voz",
+  "protegida": false,
+  "aplicada": false,
+  "no_aplicada_por": "sin propuesta"
+ },
+ {
+  "k": "shortcut.voiceEntry.title",
+  "categoria": "sin_traducir",
+  "gravedad": "media",
+  "motivo": "Idéntica al español (posible resto sin traducir).",
+  "fuente": "determinista",
+  "actual": "Registrar por voz",
+  "protegida": false,
+  "aplicada": false,
+  "no_aplicada_por": "sin propuesta"
+ },
+ {
+  "k": "shortcut.voiceEntry.shortTitle",
+  "categoria": "sin_traducir",
+  "gravedad": "media",
+  "motivo": "Idéntica al español (posible resto sin traducir).",
+  "fuente": "determinista",
+  "actual": "Registrar por voz",
+  "protegida": false,
+  "aplicada": false,
+  "no_aplicada_por": "sin propuesta"
+ },
+ {
+  "k": "control.voiceEntry.label",
+  "categoria": "sin_traducir",
+  "gravedad": "media",
+  "motivo": "Idéntica al español (posible resto sin traducir).",
+  "fuente": "determinista",
+  "actual": "Registro por voz",
+  "protegida": false,
+  "aplicada": false,
+  "no_aplicada_por": "sin propuesta"
+ },
+ {
+  "k": "control.voiceEntry.displayName",
+  "categoria": "sin_traducir",
+  "gravedad": "media",
+  "motivo": "Idéntica al español (posible resto sin traducir).",
+  "fuente": "determinista",
+  "actual": "Registro por voz",
+  "protegida": false,
+  "aplicada": false,
+  "no_aplicada_por": "sin propuesta"
+ },
+ {
+  "k": "control.voiceEntry.intentTitle",
+  "categoria": "sin_traducir",
+  "gravedad": "media",
+  "motivo": "Idéntica al español (posible resto sin traducir).",
+  "fuente": "determinista",
+  "actual": "Abrir registro por voz",
+  "protegida": false,
+  "aplicada": false,
+  "no_aplicada_por": "sin propuesta"
+ },
+ {
+  "k": "setup.practice.type.voiceTrial",
+  "categoria": "sin_traducir",
+  "gravedad": "media",
+  "motivo": "Idéntica al español (posible resto sin traducir).",
+  "fuente": "determinista",
+  "actual": "gasto por voz",
+  "protegida": false,
+  "aplicada": false,
+  "no_aplicada_por": "sin propuesta"
+ },
+ {
+  "k": "setup.practice.type.imageTrial",
+  "categoria": "sin_traducir",
+  "gravedad": "media",
+  "motivo": "Idéntica al español (posible resto sin traducir).",
+  "fuente": "determinista",
+  "actual": "gasto por foto",
+  "protegida": false,
+  "aplicada": false,
+  "no_aplicada_por": "sin propuesta"
+ },
+ {
+  "k": "filters.includeGroupTransactions",
+  "categoria": "sin_traducir",
+  "gravedad": "media",
+  "motivo": "Idéntica al español (posible resto sin traducir).",
+  "fuente": "determinista",
+  "actual": "Incluir registros de grupos",
+  "protegida": false,
+  "aplicada": false,
+  "no_aplicada_por": "sin propuesta"
+ },
+ {
+  "k": "groups.settings.openGroupsSettings",
+  "categoria": "sin_traducir",
+  "gravedad": "media",
+  "motivo": "Idéntica al español (posible resto sin traducir).",
+  "fuente": "determinista",
+  "actual": "Abrir Ajustes de Grupos",
+  "protegida": false,
+  "aplicada": false,
+  "no_aplicada_por": "sin propuesta"
+ }
+]

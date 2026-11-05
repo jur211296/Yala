@@ -1,10 +1,10 @@
 ---
 id: fr-legacy-strings-without-accents
-status: backlog
+status: done
 priority: low
 area: l10n
 created: 2026-10-16
-updated: 2026-10-16
+updated: 2026-10-25
 source: encargo 2026-10-16-textos-2-1 (Frank)
 ---
 
@@ -33,3 +33,9 @@ esas aparte.
 
 `fr.lproj` no tiene palabras sin tilde que la lleven (revisado a ojo, no solo con el detector), las claves de
 emparejamiento por nombre conservan el emparejamiento, y `LocalizationParityTests` sigue en verde.
+
+## Resuelto (lote 12.4, 2026-10-25)
+
+~260 → 0. La revisión de Sonnet corrigió las tildes del catálogo entero (y, de paso, pasó a «tu» lo que estaba en «vous», que era el trato minoritario: 259 frente a 938); un detector de palabras que en francés siempre llevan tilde encontró 9 más que se corrigieron a mano («Étiquettes», «Retour aux réglages», «Top catégories»…).
+- Claves de emparejamiento por nombre: no se tocaron las protegidas (`qa/l10n-review/claves-protegidas.txt`). «Non attribue» pasó a «Non attribué» con la búsqueda que acepta el nombre viejo. Los nombres de la siembra (categorías por defecto) sí se corrigieron: el deduplicador no empareja por nombre; un usuario francés que ya los tiene conserva los suyos.
+- Lo fija `TranslationLot124GuardTests.french_hasNoWordsMissingTheirAccent` (`.strings`, plurales e `InfoPlist`).
