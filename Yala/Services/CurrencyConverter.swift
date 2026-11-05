@@ -6,6 +6,7 @@
 //  Uses stored exchange rates from ExchangeRateService.
 //
 
+import CoreData
 import Foundation
 import Observation
 import SwiftData
@@ -16,7 +17,7 @@ import os.lock
 extension Notification.Name {
     /// Posted by ExchangeRateService after persisting fresh today's exchange rates.
     /// Subscribers should invalidate any cached "latest rate" data and reload UI.
-    static let yalaExchangeRatesUpdated = Notification.Name("yalaExchangeRatesUpdated")
+    nonisolated static let yalaExchangeRatesUpdated = Notification.Name("yalaExchangeRatesUpdated")
 }
 
 // MARK: - Rate Quality
@@ -132,7 +133,23 @@ final class CurrencyConverter: CurrencyConverting {
     /// `nonisolated` initializer so the `nonisolated` `shared` singleton can be constructed off
     /// any actor. Every stored property has a default (or is optional → nil) and none require the
     /// main actor, so an empty nonisolated init is sound.
-    nonisolated init() {}
+    nonisolated init() {
+        // Ver `rowMemoClock`: todo lo que pueda haber escrito una fila de tasas retira lo leído. Los observadores capturan
+        // solo el candado (`Sendable`), no `self`.
+        let clock = OSAllocatedUnfairLock<RowMemoClock>(initialState: RowMemoClock())
+        rowMemoClock = clock
+        let drop: @Sendable (Notification) -> Void = { _ in clock.withLock { $0.bump() } }
+        let center = NotificationCenter.default
+        rowMemoObservers = [
+            center.addObserver(forName: .yalaExchangeRatesUpdated, object: nil, queue: nil, using: drop),
+            center.addObserver(forName: .NSPersistentStoreRemoteChange, object: nil, queue: nil, using: drop),
+            center.addObserver(forName: ModelContext.didSave, object: nil, queue: nil, using: drop),
+        ]
+    }
+
+    deinit {
+        for observer in rowMemoObservers { NotificationCenter.default.removeObserver(observer) }
+    }
 
     // MARK: - Properties
 
@@ -163,6 +180,134 @@ final class CurrencyConverter: CurrencyConverting {
         /// devolvía 40 (la fila de ayer) — dos APIs, el mismo instante, la que más pinta eligiendo
         /// la peor fuente. Con el origen por divisa la caché solo afirma lo que sabe.
         var origins: [String: RateQuality]
+    }
+
+    /// Las filas de tasas ya leídas en ESTA pasada de cálculo, por fecha (card «Convertir importes de otra fecha hace un
+    /// fetch de tasas por llamada»).
+    ///
+    /// **Por qué existe.** `resolveRates` leía la fila del día —y, si le faltaba una divisa, hasta 30 anteriores— con un
+    /// `FetchDescriptor` y un decode JSON en CADA conversión. Lo pagan los importes que se reconvierten desde el nativo
+    /// (`CashFlowCalculator.resolvedAmount`, segunda rama), y en un arranque eran ~170 ms (Time Profiler, 2026-10-30).
+    ///
+    /// **Por qué dura una pasada y no hasta la notificación.** La fila del día no la escribe solo `ExchangeRateService`
+    /// (que postea `.yalaExchangeRatesUpdated`): también llega por el espejo de iCloud y por el pull del Modo Nube, que no
+    /// la postean. Una caché que viviera hasta la notificación TAPARÍA una fila mejor recién llegada con lo que leyó antes
+    /// —«una fuente peor tapa una mejor», `currency-fx.md`—. Así que se retira cuando el hilo principal pasa a otro trabajo
+    /// (una `Task` encolada al llenarla), y antes si algo pudo escribir una fila: la notificación, CUALQUIER guardado de
+    /// cualquier contexto, un cambio del store o un contexto distinto. Lo que la sostiene son esas retiradas; la de la
+    /// vuelta es el cinturón para un escritor que no avise. Con todo eso el peor caso es el de antes: volver a leer.
+    ///
+    /// **No se filtra por entidad, y se midió por qué** (2026-11-04): Core Data postea `.NSPersistentStoreRemoteChange`
+    /// también en los guardados PROPIOS, no solo en los imports del espejo, así que cualquier guardado retira la memoria
+    /// aunque no toque tasas. Un filtro por `ExchangeRate` en `ModelContext.didSave` no ahorraba nada, y se quitó. No
+    /// cuesta: dentro de una pasada de cálculo no se guarda. El aviso de guardado se queda porque es el que llega
+    /// SÍNCRONO dentro de `save()`; el de cambio del store llega también síncrono en un store en memoria (los tests no
+    /// separan los dos), sin medir en el SQLite del teléfono, y es el único que oye un import del espejo de iCloud.
+    ///
+    /// **Lo que no ve, a sabiendas** (lo fija `CurrencyConverterRowMemoTests.theRatesNotification_dropsWhatWasRead`): un
+    /// cambio SIN guardar en el mismo contexto, dentro de la misma pasada. El fetch de antes sí lo veía; hoy no hay
+    /// escritor de tasas que no guarde en el acto (`ExchangeRateService.persistRate`).
+    ///
+    /// Guarda las filas tal cual las devuelve la lectura y decodifica cada una UNA vez, cuando hace falta: la escalera de
+    /// `resolveRates` sale en cuanto cubre lo que falta, así que decodificar las 30 anteriores de golpe costaría más de lo
+    /// que se ahorra (lo cazó la review). Las tasas inservibles se filtran donde siempre, y las dos rutas siguen de acuerdo
+    /// (`CurrencyConverterLatestRateQualityTests.bothRoutesAgree`).
+    ///
+    /// El candado solo guarda la GENERACIÓN, que cualquier hilo puede subir; las filas viven en el hilo principal y valen
+    /// mientras la generación con la que se leyeron siga siendo la actual.
+    @ObservationIgnored
+    private let rowMemoClock: OSAllocatedUnfairLock<RowMemoClock>
+    @ObservationIgnored
+    private nonisolated(unsafe) let rowMemoObservers: [NSObjectProtocol]
+
+    /// El contexto con el que se leyó lo que hay en la memoria: otro contexto puede ver otro store. Débil y comparado por
+    /// identidad, no por `ObjectIdentifier`: la dirección de un contexto liberado la puede reusar otro (en los tests,
+    /// uno por caso), y el identificador diría «el mismo».
+    @ObservationIgnored
+    private weak var rowMemoContext: ModelContext?
+    /// La generación con la que se llenaron los tres diccionarios de abajo.
+    @ObservationIgnored
+    private var rowMemoGenerationInUse = -1
+    /// Las tasas de la fila de cada fecha; `.some(nil)` = «leída, y no hay fila».
+    @ObservationIgnored
+    private var ownRowRates: [String: [String: Double]?] = [:]
+    /// Las filas estrictamente anteriores a cada fecha, de la más reciente hacia atrás, sin decodificar.
+    @ObservationIgnored
+    private var previousRowsByDate: [String: [ExchangeRate]] = [:]
+    /// El decode de cada fila anterior, hecho la primera vez que la escalera la mira.
+    @ObservationIgnored
+    private var decodedPreviousRows: [PersistentIdentifier: [String: Double]] = [:]
+
+    private nonisolated struct RowMemoClock {
+        /// Sube en cada retirada: lo leído con una generación anterior no vale.
+        var generation = 0
+        /// Ya hay una retirada encolada en el hilo principal.
+        var dropScheduled = false
+
+        mutating func bump() {
+            generation &+= 1
+            dropScheduled = false
+        }
+    }
+
+    /// Prepara la memoria para leer con `context` y devuelve la generación con la que se lee.
+    private func rowMemoGeneration(for context: ModelContext) -> Int {
+        if rowMemoContext !== context {
+            rowMemoContext = context
+            rowMemoClock.withLock { $0.bump() }
+        }
+        let (generation, needsDrop) = rowMemoClock.withLock { clock -> (Int, Bool) in
+            let needsDrop = !clock.dropScheduled
+            clock.dropScheduled = true
+            return (clock.generation, needsDrop)
+        }
+        if needsDrop {
+            // Cuando el hilo principal pase a otro trabajo. Solo retira si nadie lo hizo ya (misma generación).
+            let clock = rowMemoClock
+            Task { @MainActor in
+                clock.withLock { if $0.generation == generation { $0.bump() } }
+            }
+        }
+        if generation != rowMemoGenerationInUse {
+            ownRowRates = [:]
+            previousRowsByDate = [:]
+            decodedPreviousRows = [:]
+            rowMemoGenerationInUse = generation
+        }
+        return generation
+    }
+
+    /// `true` si nadie retiró la memoria desde que se leyó con `generation` (un guardado de otro hilo puede caer en medio
+    /// de un fetch): lo leído antes de una retirada no se guarda después.
+    private func rowMemoIsCurrent(_ generation: Int) -> Bool {
+        rowMemoClock.withLock { $0.generation == generation }
+    }
+
+    /// Las tasas de la fila de una fecha, leída y decodificada una vez por pasada.
+    private func rowRates(for dateKey: String, context: ModelContext) -> [String: Double]? {
+        let generation = rowMemoGeneration(for: context)
+        if let hit = ownRowRates[dateKey] { return hit }
+        let rates = fetchExchangeRate(for: dateKey, context: context)?.decodedRates()
+        if rowMemoIsCurrent(generation) { ownRowRates[dateKey] = .some(rates) }
+        return rates
+    }
+
+    /// Las filas estrictamente anteriores a una fecha (hasta `carryForwardLookback`), leídas una vez por pasada.
+    private func previousRows(strictlyBefore dateKey: String, context: ModelContext) -> [ExchangeRate] {
+        let generation = rowMemoGeneration(for: context)
+        if let hit = previousRowsByDate[dateKey] { return hit }
+        let rows = fetchRates(strictlyBefore: dateKey, limit: Self.carryForwardLookback, context: context)
+        if rowMemoIsCurrent(generation) { previousRowsByDate[dateKey] = rows }
+        return rows
+    }
+
+    /// Las tasas de una fila anterior, decodificadas la primera vez que se miran en la pasada.
+    private func decodedPreviousRates(_ row: ExchangeRate) -> [String: Double] {
+        let id = row.persistentModelID
+        if let hit = decodedPreviousRows[id], rowMemoIsCurrent(rowMemoGenerationInUse) { return hit }
+        let rates = row.decodedRates()
+        if rowMemoIsCurrent(rowMemoGenerationInUse) { decodedPreviousRows[id] = rates }
+        return rates
     }
 
     private let dateFormatter: DateFormatter = {
@@ -480,7 +625,7 @@ final class CurrencyConverter: CurrencyConverting {
         // nunca contaba como ausente, y `performConversion` acababa devolviendo el monto CRUDO (o un
         // 0, si el cero estaba en la divisa de destino) etiquetado `.exact`. Tratarla como ausente
         // desde aquí deja que los escalones la rescaten, que es lo que ya hacen con una que falta.
-        var merged = (fetchExchangeRate(for: dateKey, context: context)?.decodedRates() ?? [:])
+        var merged = (rowRates(for: dateKey, context: context) ?? [:])
             .filter { Self.isUsableRate($0.value) }
         func missing() -> Set<String> { codes.subtracting(merged.keys) }
 
@@ -492,8 +637,8 @@ final class CurrencyConverter: CurrencyConverting {
         // una tasa real de otro día es mejor aproximación que la tabla estática, que no envejece.
         var carriedFrom: String?
         if !missing().isEmpty {
-            for previous in fetchRates(strictlyBefore: dateKey, limit: Self.carryForwardLookback, context: context) {
-                let previousRates = previous.decodedRates()
+            for previous in previousRows(strictlyBefore: dateKey, context: context) {
+                let previousRates = decodedPreviousRates(previous)
                 for code in missing() {
                     guard let rate = previousRates[code], Self.isUsableRate(rate) else { continue }
                     merged[code] = rate
@@ -636,6 +781,9 @@ final class CurrencyConverter: CurrencyConverting {
         limit: Int,
         context: ModelContext
     ) -> [ExchangeRate] {
+        #if DEBUG
+        _testRateRowFetches += 1
+        #endif
         var descriptor = FetchDescriptor<ExchangeRate>(
             predicate: #Predicate { $0.dateKey < dateKey },
             sortBy: [SortDescriptor(\ExchangeRate.dateKey, order: .reverse)]
@@ -748,7 +896,16 @@ final class CurrencyConverter: CurrencyConverting {
         }
     }
 
+    #if DEBUG
+    /// Cuántos fetch de filas de tasas hizo este converter (la del día y las anteriores, por cualquier ruta: también
+    /// `rateFactors` y la caché de últimas tasas). Solo para tests.
+    @ObservationIgnored private(set) var _testRateRowFetches = 0
+    #endif
+
     private func fetchExchangeRate(for dateKey: String, context: ModelContext) -> ExchangeRate? {
+        #if DEBUG
+        _testRateRowFetches += 1
+        #endif
         let descriptor = FetchDescriptor<ExchangeRate>(
             predicate: #Predicate { $0.dateKey == dateKey }
         )

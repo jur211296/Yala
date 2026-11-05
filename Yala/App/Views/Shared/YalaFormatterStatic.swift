@@ -68,8 +68,9 @@ enum YalaFormatterStatic {
 
     static func amountCashFlowCell(value: Double, currencyCode: String) -> String {
         let sym = currencyIdentifier(for: currencyCode)
-        let sign = value < 0 ? "-" : ""
         let compact = YalaFormatter.amountCompactTable(value: abs(value))
+        // Lo que se pinta como cero no lleva signo («-S/ 0» de un saldo que suma cero en coma flotante).
+        let sign = value < 0 && compact != YalaFormatter.amountCompactTable(value: 0) ? "-" : ""
         return "\(sign)\(sym) \(compact)"
     }
 }

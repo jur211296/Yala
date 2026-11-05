@@ -55,10 +55,12 @@ enum WidgetAmountSplitter {
         let fmt = formatter(fractionDigits: fractionDigits, locale: locale)
         let formatted = fmt.string(from: NSNumber(value: abs(value))) ?? "0"
 
+        // Lo que se pinta como cero no lleva signo: un saldo que suma cero en coma flotante (`-1e-14`) salía «-0».
+        let shownAsZero = formatted == fmt.string(from: NSNumber(value: 0))
         let sign: String
-        if value < 0 {
+        if value < 0 && !shownAsZero {
             sign = "-"
-        } else if forceSign && value > 0 {
+        } else if forceSign && value > 0 && !shownAsZero {
             sign = "+"
         } else {
             sign = ""

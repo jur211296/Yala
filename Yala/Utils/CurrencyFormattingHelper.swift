@@ -19,7 +19,7 @@ enum CurrencyFormattingHelper {
     /// `NumberFormatter` is thread-safe for read access since iOS 7 (WWDC 2018
     /// "What's New in Foundation" confirmed). Mutation is guarded by only being
     /// done at initialization, never after.
-    private static let formatters: [Int: NumberFormatter] = {
+    private nonisolated static let formatters: [Int: NumberFormatter] = {
         var dict: [Int: NumberFormatter] = [:]
         for decimals in 0...2 {
             let f = NumberFormatter()
@@ -31,7 +31,7 @@ enum CurrencyFormattingHelper {
         return dict
     }()
 
-    private static func formatter(for decimals: Int) -> NumberFormatter {
+    private nonisolated static func formatter(for decimals: Int) -> NumberFormatter {
         formatters[decimals] ?? formatters[2]!
     }
 
@@ -52,10 +52,12 @@ enum CurrencyFormattingHelper {
         let formattedNumber = formatter(for: decimals)
             .string(from: NSNumber(value: absoluteValue)) ?? fallback(for: decimals)
 
+        // Lo que se pinta como cero no lleva signo: ni «-0.00» ni «+0.00».
+        let shownAsZero = isShownAsZero(value, using: formatter(for: decimals))
         var signedNumber = formattedNumber
-        if value < 0 {
+        if value < 0 && !shownAsZero {
             signedNumber = "-\(formattedNumber)"
-        } else if forceSign && value > 0 {
+        } else if forceSign && value > 0 && !shownAsZero {
             signedNumber = "+\(formattedNumber)"
         }
 
@@ -65,7 +67,28 @@ enum CurrencyFormattingHelper {
 
     /// Formats a number with `decimals`: `20,000.00` or `-20,000.00`.
     static func number(_ value: Double, decimals: Int) -> String {
-        formatter(for: decimals)
-            .string(from: NSNumber(value: value)) ?? fallback(for: decimals)
+        let fmt = formatter(for: decimals)
+        let shown = isShownAsZero(value, using: fmt) ? 0 : value
+        return fmt.string(from: NSNumber(value: shown)) ?? fallback(for: decimals)
+    }
+
+    /// `true` cuando `formatter` pinta `value` como su cero: «-0.00» no es un importe.
+    ///
+    /// Una suma en coma flotante que debería dar cero da `-1e-14`, y el formateador redondea a «-0.00» conservando el
+    /// signo (medido: la cuenta «Euros» del Excel real de Jürgen, 73 movimientos que suman cero, salía «€ -0.00» en
+    /// Ajustes › Cuentas). Se compara con lo que el MISMO formateador escribe para el cero, así que vale con cualquier
+    /// número de decimales y cualquier modo de redondeo sin repetir la aritmética. Un formateador que pinte un importe
+    /// llama aquí antes de decidir el signo.
+    /// Lo mismo con el formateador de `decimals` decimales de la app: para quien decide un signo, un color o un rótulo de
+    /// deuda sobre un importe que se pinta con `currency(_:decimals:…)`. `nonisolated`: la lógica de las tarjetas del
+    /// Panel lo es, y los formateadores cacheados solo se leen (ver `formatters`).
+    nonisolated static func isShownAsZero(_ value: Double, decimals: Int = 2) -> Bool {
+        isShownAsZero(value, using: formatter(for: decimals))
+    }
+
+    nonisolated static func isShownAsZero(_ value: Double, using formatter: NumberFormatter) -> Bool {
+        guard value != 0 else { return true }
+        guard value.isFinite else { return false }
+        return formatter.string(from: NSNumber(value: abs(value))) == formatter.string(from: NSNumber(value: 0))
     }
 }

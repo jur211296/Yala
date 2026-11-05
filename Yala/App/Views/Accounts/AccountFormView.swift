@@ -760,7 +760,10 @@ struct AccountFormView: View {
                         Spacer()
                         Text(formatAmount(finalBalance, currency: viewModel.selectedCurrency))
                             .font(DS.Typography.headline)
-                            .foregroundStyle(finalBalance >= 0 ? Color.primary : DS.Semantic.errorForeground)
+                            .foregroundStyle(
+                                finalBalance >= 0 || CurrencyFormattingHelper.isShownAsZero(finalBalance)
+                                    ? Color.primary : DS.Semantic.errorForeground
+                            )
                     }
                     .padding()
                 }
@@ -1360,13 +1363,15 @@ struct AccountFormView: View {
 
     private func formatAmount(_ amount: Double, currency: CurrencyCode) -> String {
         Self.currencyFormatter.currencyCode = currency.rawValue
-        return Self.currencyFormatter.string(from: NSNumber(value: amount)) ?? "0.00"
+        let shown = CurrencyFormattingHelper.isShownAsZero(amount, using: Self.currencyFormatter) ? 0 : amount
+        return Self.currencyFormatter.string(from: NSNumber(value: shown)) ?? "0.00"
     }
 
     private func formatAdjustment(_ amount: Double, currency: CurrencyCode) -> String {
-        let sign = amount >= 0 ? "+" : ""
         Self.currencyFormatter.currencyCode = currency.rawValue
-        let formatted = Self.currencyFormatter.string(from: NSNumber(value: amount)) ?? "0.00"
+        let shown = CurrencyFormattingHelper.isShownAsZero(amount, using: Self.currencyFormatter) ? 0 : amount
+        let sign = shown >= 0 ? "+" : ""
+        let formatted = Self.currencyFormatter.string(from: NSNumber(value: shown)) ?? "0.00"
         return sign + formatted
     }
 
