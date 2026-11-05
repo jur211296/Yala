@@ -619,8 +619,20 @@ jobs:
   # suites por numero de `func test`; una suite nueva entra sola, sin tocar este fichero. La
   # ULTIMA tanda corre el target entero menos lo de las otras, asi que ninguna suite se queda
   # fuera aunque el descubrimiento no la vea (detalle en el script; banco en `coverage-index`).
-  # Cada tanda va en su `macos-26` con su propio build: compartir el build por artefacto costaria
-  # subir y bajar `.ddp`, y el build son ~15 min en paralelo con las otras tandas.
+  #
+  # UN SOLO BUILD PARA TODAS LAS TANDAS (2026-11-04, nocturna 41865831610). Hasta ese dia cada tanda
+  # compilaba en su runner, desde cero y sin cache, con un tope de 25 min. Medido en las 12
+  # nocturnas del 24-oct al 4-nov: ese build tarda de 11 a 25+ min segun el runner que toque, y el
+  # 2-nov, el 3-nov y dos veces el 4-nov una o varias tandas agotaron los 25 (cuatro de ocho en el
+  # segundo intento del 4-nov) y no corrieron un solo test. No era un cuelgue: el log de la tanda 2
+  # cortada seguia compilando `YalaTests` al llegar al tope: `build-for-testing` del scheme compila
+  # todos sus targets de test, y `-only-testing:YalaUITests` NO lo evita (medido en local: el build
+  # con ese flag compila igual los ~1 000 ficheros de `YalaTests`).
+  # Ahora el job `ui-build` compila UNA vez y sube `.ddp/Build/Products` como artefacto (~850 MB,
+  # ~270 comprimido); cada tanda lo baja y corre `test-without-building` sobre el. Ocho builds por noche pasan a uno, y una tanda ya no se queda sin tests por la loteria del
+  # runner: si el build se corta, se corta UNA vez, en su propio job, y el aviso lo cuenta (las ocho
+  # salidas `ui_N` llegan vacias: «la suite NO llego a correr»). El job `tests` sigue con su build
+  # propio: es el check requerido de los PR y no puede esperar a un job que solo corre de noche.
   #
   # CUANTAS TANDAS. Las decide la matriz, y SOLO la matriz: el script recibe
   # `strategy.job-index` y `strategy.job-total`, asi que no hay un segundo numero que pueda
@@ -628,7 +640,8 @@ jobs:
   # mano son las salidas `ui_N` de abajo y su lectura en el job `aviso`.
   #
   # TOPES. Paso de UI 110 y job 150. Antes de la UI cada tanda gasta ~20 min (simulador hasta 3,
-  # build hasta 16), asi que aunque el paso agote sus 110 el job conserva ~20 min: el corte lo da
+  # build hasta 16; desde el 2026-11-04 el build es una descarga, ver «UN SOLO BUILD»), asi que
+  # aunque el paso agote sus 110 el job conserva ~20 min: el corte lo da
   # siempre el tope del PASO, que deja el job vivo para contarlo (ver «POR QUE TAMBIEN EN CADA
   # PASO» en el job `tests`).
   #
@@ -675,10 +688,54 @@ jobs:
   # cada noche del 23 al 29-oct, el de la tanda 2 (`AccountCardPickersUITests`) cuatro de seis, y
   # los dos con `Timed out while evaluating UI query` esperando `uitest_ready`, a 130-290 s por
   # intento. El paso «Calentar el simulador» lo arranca y abre la app una vez antes de los tests.
+  # Ver «UN SOLO BUILD PARA TODAS LAS TANDAS». Sin `needs`: arranca a la vez que `tests`. Tercera
+  # aparicion de la condicion de UI_TOCABA (ver el `env:` del job `tests`); la cuarta es la del job
+  # `ui`, que depende de este.
+  ui-build:
+    name: UI tests (build compartido)
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    runs-on: xcode-27
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      # Mismo paso y mismo porque que en el job `tests`.
+      - name: Seleccionar Xcode 27.1
+        run: bash qa/scripts/ci-xcode.sh
+      - name: Crear Secrets.xcconfig (placeholder para CI)
+        run: cp Secrets.xcconfig.template Secrets.xcconfig
+      # El build necesita un destino concreto (ver el job `tests`: sin device activo compilaria
+      # todas las arquitecturas). Cada tanda crea el suyo; el `.xctestrun` no ata el UDID.
+      - name: Simulador del runner
+        id: sim
+        timeout-minutes: 25
+        run: bash qa/scripts/ci-simulador.sh
+      # 40, como el build del job `tests`, que compila lo mismo (maximo verde medido 28,6).
+      - name: Build for testing
+        timeout-minutes: 40
+        run: |
+          xcodebuild build-for-testing \
+            -scheme "Yala Dev" \
+            -project Yala.xcodeproj \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath .ddp \
+            -quiet
+      # En tar: el zip del artefacto no conserva los permisos de ejecucion de los binarios.
+      - name: Empaquetar el build
+        run: tar -C .ddp/Build -cf ui-build.tar Products && ls -lh ui-build.tar
+      - name: Subir el build
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-build
+          path: ui-build.tar
+          retention-days: 1
+          # Un re-run del job vuelve a subirlo con el mismo nombre.
+          overwrite: true
+
   ui:
     name: UI tests (tanda ${{ matrix.tanda }})
-    # Sin `needs`: arranca a la vez que `tests`. Tercera aparicion de la condicion de UI_TOCABA
-    # (ver el `env:` del job `tests`).
+    # Espera al build compartido. Si el build falla, las tandas quedan `skipped` y el aviso lo
+    # cuenta como «la suite NO llego a correr».
+    needs: ui-build
     if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     runs-on: xcode-27
     timeout-minutes: 150
@@ -708,22 +765,20 @@ jobs:
       # Mismo paso y mismo porque que en el job `tests`.
       - name: Seleccionar Xcode 27.1
         run: bash qa/scripts/ci-xcode.sh
-      - name: Crear Secrets.xcconfig (placeholder para CI)
-        run: cp Secrets.xcconfig.template Secrets.xcconfig
       # Mismo paso y mismo porque que en el job `tests`.
       - name: Simulador del runner
         id: sim
         timeout-minutes: 25
         run: bash qa/scripts/ci-simulador.sh
-      - name: Build for testing
-        timeout-minutes: 25
-        run: |
-          xcodebuild build-for-testing \
-            -scheme "Yala Dev" \
-            -project Yala.xcodeproj \
-            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
-            -derivedDataPath .ddp \
-            -quiet
+      # El build lo hizo `ui-build`. Se deja en `.ddp/Build/Products`, donde lo habria dejado el
+      # build local: `test-without-building` y `ci-calentar-simulador.sh` lo buscan ahi.
+      - name: Bajar el build compartido
+        uses: actions/download-artifact@v4
+        with:
+          name: ui-build
+      - name: Desempaquetar el build
+        timeout-minutes: 10
+        run: mkdir -p .ddp/Build && tar -C .ddp/Build -xf ui-build.tar && rm ui-build.tar
       # Ver «CALENTAR EL SIMULADOR». Advisory como la UI: si falla, los tests arrancan el simulador
       # ellos mismos, como hasta ahora.
       - name: Calentar el simulador
