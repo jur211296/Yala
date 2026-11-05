@@ -17,7 +17,7 @@ final class StatisticsMissingStepUITests: XCTestCase {
     }
 
     private func openStatistics(_ app: XCUIApplication) {
-        let tab = app.tabBars.buttons["Estadísticas"]
+        let tab = app.tabEntry(.statistics)
         XCTAssertTrue(tab.waitForExistence(timeout: 15), "No apareció la pestaña Estadísticas.")
         tab.tap()
     }

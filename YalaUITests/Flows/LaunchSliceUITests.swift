@@ -26,7 +26,7 @@ final class LaunchSliceUITests: XCTestCase {
             "El root nunca expuso uitest_ready — bootstrap/seed no completó en modo uitest."
         )
         XCTAssertTrue(
-            app.tabBars.firstMatch.waitForExistence(timeout: 10),
+            app.waitForRootNavigation(timeout: 10),
             "No se montó MainTabView (¿el skip-onboarding no aplicó?)."
         )
     }
@@ -37,6 +37,6 @@ final class LaunchSliceUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchForUITest(seed: "grupos")
         XCTAssertTrue(app.waitForUITestReady(), "El seed 'grupos' no completó (uitest_ready ausente).")
-        XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 10), "MainTabView no se montó con seed grupos.")
+        XCTAssertTrue(app.waitForRootNavigation(timeout: 10), "MainTabView no se montó con seed grupos.")
     }
 }

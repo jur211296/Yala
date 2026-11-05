@@ -43,7 +43,7 @@ final class ProfileSettingsUITests: XCTestCase {
         app.launchForUITest()
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
-        let moreTab = app.tabBars.buttons.element(boundBy: 3)
+        let moreTab = app.tabEntry(.more)
         XCTAssertTrue(moreTab.waitForExistence(timeout: 10), "No apareció el tab Más.")
         moreTab.tap()
 
@@ -74,7 +74,7 @@ final class ProfileSettingsUITests: XCTestCase {
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
         // Tab "Más" (4º del tab bar) → editor (icono del toolbar).
-        let moreTab = app.tabBars.buttons.element(boundBy: 3)
+        let moreTab = app.tabEntry(.more)
         XCTAssertTrue(moreTab.waitForExistence(timeout: 10), "No apareció el tab Más.")
         moreTab.tap()
 

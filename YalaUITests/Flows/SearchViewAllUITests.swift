@@ -22,9 +22,7 @@ final class SearchViewAllUITests: XCTestCase {
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
         // Buscar es la última pestaña (rol `.search`, anclada al final de la barra).
-        let tabs = app.tabBars.buttons
-        XCTAssertTrue(tabs.firstMatch.waitForExistence(timeout: 10), "No apareció la barra de pestañas.")
-        tabs.element(boundBy: tabs.count - 1).tap()
+        app.selectTab(.search)
 
         let field = app.searchFields.firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 10), "No se abrió Buscar.")

@@ -88,7 +88,7 @@ final class ExpensesOnlyHeroesUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts["Filtros aplicados"].exists, "El Panel pinta «Filtros aplicados» sin filtros.")
         capture(app, "solo-gastos-panel")
 
-        app.tabBars.buttons.element(boundBy: 1).tap()
+        app.selectTab(.statistics)
         assertExpenseHero(app, in: "Resumen")
         assertExpenseVariation(app, in: "Resumen")
         capture(app, "solo-gastos-resumen")

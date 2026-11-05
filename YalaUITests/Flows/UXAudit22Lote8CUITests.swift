@@ -22,7 +22,7 @@ final class UXAudit22Lote8CUITests: XCTestCase {
 
     /// Navega a Estadísticas → chip Registros (revelando el chip si queda fuera de vista).
     private func openRecords(_ app: XCUIApplication) {
-        app.tabBars.buttons.element(boundBy: 1).tap()
+        app.selectTab(.statistics)
         let recordsChip = app.buttons["detail_chip_registros"]
         XCTAssertTrue(recordsChip.waitForExistence(timeout: 10), "No apareció el chip Registros.")
         let chipsBar = app.scrollViews.containing(.button, identifier: "detail_chip_insights").firstMatch
@@ -45,9 +45,7 @@ final class UXAudit22Lote8CUITests: XCTestCase {
         let app = launch()
 
         // Buscar es la última pestaña (rol `.search`, anclada al final de la barra).
-        let tabs = app.tabBars.buttons
-        XCTAssertTrue(tabs.firstMatch.waitForExistence(timeout: 10), "No apareció la barra de pestañas.")
-        tabs.element(boundBy: tabs.count - 1).tap()
+        app.selectTab(.search)
 
         // Sin texto, la lista enseña los últimos registros con su rótulo.
         let header = app.staticTexts["search_results_header"]

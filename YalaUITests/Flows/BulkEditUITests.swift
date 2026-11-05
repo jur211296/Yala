@@ -23,7 +23,7 @@ final class BulkEditUITests: XCTestCase {
     /// chips es un ScrollView horizontal y Registros (el último) puede quedar fuera
     /// de vista → se revela con swipe sobre un chip visible antes de tocarlo.
     private func enterRecordsSelectionMode(_ app: XCUIApplication) {
-        app.tabBars.buttons.element(boundBy: 1).tap()
+        app.selectTab(.statistics)
 
         let recordsChip = app.buttons["detail_chip_registros"]
         XCTAssertTrue(recordsChip.waitForExistence(timeout: 10), "No apareció el chip Registros en Estadísticas.")

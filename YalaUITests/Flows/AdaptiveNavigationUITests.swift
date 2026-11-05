@@ -36,6 +36,14 @@ final class AdaptiveNavigationUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchForUITest(pro: true, seed: "realista", deeplink: deeplink)
         XCTAssertTrue(app.waitForUITestReady(timeout: 90), "uitest_ready ausente — bootstrap/seed no completó.")
+        // «Ventana ancha» es el iPad a pantalla completa, y el iPad no siempre arranca así: con «Apps en ventanas» la
+        // ventana puede volver flotante y pequeña. Medido el 2026-11-05 (iPad Pro 13, iOS 27.2) con una traza del ancho
+        // en cada arranque de esta suite: `test_root…` arrancó en horizontal con la ventana a 375 pt justo detrás de un
+        // caso en vertical que la había dejado entera, y salió rojo («La barra lateral no enseña Registros»); el mismo
+        // par, corrido solo, pasó. Lo que el iPad hace con sus ventanas no es de Yala: se fija el punto de partida.
+        if expectsWideWindow, !app.windowIsFullScreen, app.hasResizableWindow {
+            app.maximizeWindow()
+        }
         return app
     }
 
@@ -580,6 +588,14 @@ final class AdaptiveNavigationUITests: XCTestCase {
             throw XCTSkip("El iPad no tiene «Apps en ventanas» (Ajustes → Multitarea y gestos): no hay ventana que estrechar.")
         }
         app.maximizeWindow()
+        // El iPad recuerda el tamaño de la ventana entre arranques. Si el caso cae con la ventana estrecha
+        // (`continueAfterFailure = false` corta antes de su `maximizeWindow()`), el siguiente test arrancaba estrecho:
+        // pestañas abajo y sin «Registros», y `test_rootShowsSidebar…` salía rojo solo detrás de estos casos
+        // (ticket `sidebar-test-fails-after-the-narrowing-cases-on-ipad`). Se devuelve aquí, pase lo que pase.
+        addTeardownBlock {
+            guard app.state == .runningForeground else { return }
+            app.maximizeWindow()
+        }
         return app
     }
 

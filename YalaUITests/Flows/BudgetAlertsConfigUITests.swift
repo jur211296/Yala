@@ -23,7 +23,7 @@ final class BudgetAlertsConfigUITests: XCTestCase {
     /// `[panel, statistics, planning]`, por índice para no acoplar al label) y
     /// abre el editor de un presupuesto nuevo (FAB de crear → BudgetEditorView).
     private func openNewBudgetEditor(_ app: XCUIApplication) {
-        let planningTab = app.tabBars.buttons.element(boundBy: 2)
+        let planningTab = app.tabEntry(.planning)
         XCTAssertTrue(planningTab.waitForExistence(timeout: 10), "No apareció el tab Planificación.")
         planningTab.tap()
 

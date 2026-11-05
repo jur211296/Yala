@@ -355,7 +355,7 @@ final class TutorialVideoRecordingUITests: XCTestCase {
     // MARK: - Presupuestos
 
     private func openPlanning(_ app: XCUIApplication, chip: String) {
-        app.tabBars.buttons.element(boundBy: 2).tap()
+        app.selectTab(.planning)
         pause(0.8)
         let chipButton = app.buttons["planning_chip_\(chip)"]
         if chipButton.waitForExistence(timeout: 5) { chipButton.tap() }

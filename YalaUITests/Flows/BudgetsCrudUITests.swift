@@ -22,7 +22,7 @@ final class BudgetsCrudUITests: XCTestCase {
     /// (`[panel, statistics, planning]`), targeteado por índice para no depender
     /// del label localizado. El sub-tab Presupuestos es el default de PlanningView.
     private func openPlanningBudgets(_ app: XCUIApplication) {
-        let planningTab = app.tabBars.buttons.element(boundBy: 2)
+        let planningTab = app.tabEntry(.planning)
         XCTAssertTrue(planningTab.waitForExistence(timeout: 10), "No apareció el tab bar / tab Planificación.")
         planningTab.tap()
     }

@@ -167,7 +167,7 @@ final class SharedImageEntryUITests: XCTestCase {
     /// `ExternalEntryForeignSheetUITests`).
     func test_foreignSheetOpen_sharedImage_startsReadingWhenItCloses() {
         let app = launch()
-        app.tabBars.buttons.element(boundBy: 1).tap()
+        app.selectTab(.statistics)
         let recordsChip = app.buttons["detail_chip_registros"]
         XCTAssertTrue(recordsChip.waitForExistence(timeout: 10), "No apareció el chip Registros en Estadísticas.")
         let chipsBar = app.scrollViews.containing(.button, identifier: "detail_chip_insights").firstMatch

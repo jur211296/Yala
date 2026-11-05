@@ -22,7 +22,7 @@ final class RecordsDetailSheetUITests: XCTestCase {
     /// puede quedar fuera de vista → se revela con swipe antes de tocarlo.
     /// (Mismo patrón que BulkEditUITests, sin entrar en modo selección.)
     private func openRecordsList(_ app: XCUIApplication) {
-        app.tabBars.buttons.element(boundBy: 1).tap()
+        app.selectTab(.statistics)
 
         let recordsChip = app.buttons["detail_chip_registros"]
         XCTAssertTrue(recordsChip.waitForExistence(timeout: 10), "No apareció el chip Registros en Estadísticas.")

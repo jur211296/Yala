@@ -34,7 +34,7 @@ final class IncomeExpenseClassificationUITests: XCTestCase {
         XCTAssertTrue(app.buttons["profile_avatar"].waitForExistence(timeout: 10), "El Panel no terminó de montar.")
 
         // Estadísticas (2º tab) → sub-tab Insights (landing por defecto).
-        app.tabBars.buttons.element(boundBy: 1).tap()
+        app.selectTab(.statistics)
         XCTAssertTrue(
             app.descendants(matching: .any).matching(identifier: "stats_tab_insights").firstMatch.waitForExistence(timeout: 15),
             "No montó la tab Insights de Estadísticas."

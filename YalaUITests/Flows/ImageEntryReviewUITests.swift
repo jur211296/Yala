@@ -25,16 +25,29 @@ final class ImageEntryReviewUITests: XCTestCase {
         app.launchForUITest(pro: true, aiConsent: true, extraArguments: ["-uitest-image-result", profile])
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
-        app.revealPanelFAB().tap()
-        let image = app.buttons["fab_image"]
-        XCTAssertTrue(image.waitForExistence(timeout: 5), "El menú del FAB no ofreció imagen (fab_image).")
-        image.tap()
+        openImageEntry(app)
 
         let photos = app.buttons["image_source_photos"]
         XCTAssertTrue(photos.waitForExistence(timeout: 15), "La hoja no abrió eligiendo (image_source_photos).")
         XCTAssertTrue(app.buttons["image_source_file"].exists, "Archivo tiene que ofrecerse junto a Fotos.")
         photos.tap()
         return app
+    }
+
+    /// En el iPhone, por el menú del flotante, como siempre. En el iPad el Panel cabe sin scroll y el flotante no entra
+    /// nunca (medido el 2026-11-05, iPad Pro 13, iOS 27.2: 8 de 8 rojos), así que se entra por la acción de imagen de
+    /// la fila del Panel, como `ReceiptDropUITests`. Esta suite prueba la hoja de imagen, no el menú del flotante.
+    private func openImageEntry(_ app: XCUIApplication) {
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            let image = app.buttons["panel_action_image"]
+            XCTAssertTrue(image.waitForHittable(timeout: 10), "Falta la acción de imagen del Panel (panel_action_image).")
+            image.tap()
+            return
+        }
+        app.revealPanelFAB().tap()
+        let image = app.buttons["fab_image"]
+        XCTAssertTrue(image.waitForExistence(timeout: 5), "El menú del FAB no ofreció imagen (fab_image).")
+        image.tap()
     }
 
     private func waitForReview(_ app: XCUIApplication) {

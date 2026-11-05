@@ -46,8 +46,8 @@ final class LoadTimesUITests: XCTestCase {
             wait(for: "panel_inbox_button", in: app)
             settle(app)
 
-            visitTab(index: 1, expecting: "stats_hero_caption", in: app)        // Estadísticas
-            visitTab(index: 2, expecting: "report_chip_flujoDeCaja", in: app)   // Informes
+            visitTab(.statistics, expecting: "stats_hero_caption", in: app)
+            visitTab(.reports, expecting: "report_chip_flujoDeCaja", in: app)   // Informes
             if app.buttons["report_chip_flujoDeCaja"].waitForExistence(timeout: 10) {
                 app.buttons["report_chip_flujoDeCaja"].tap()                     // Flujo de caja
                 settle(app)
@@ -57,7 +57,7 @@ final class LoadTimesUITests: XCTestCase {
             openLink("yaladev://groups", in: app)                               // Grupos
 
             // Bandeja y Ajustes, desde el Panel.
-            app.tabBars.buttons.element(boundBy: 0).tap()
+            app.selectTab(.panel)
             if app.buttons["panel_inbox_button"].waitForHittable(timeout: 10) {
                 app.buttons["panel_inbox_button"].tap()
                 settle(app)
@@ -98,8 +98,8 @@ final class LoadTimesUITests: XCTestCase {
         settle(app)
     }
 
-    private func visitTab(index: Int, expecting identifier: String, in app: XCUIApplication) {
-        app.tabBars.buttons.element(boundBy: index).tap()
+    private func visitTab(_ tab: XCUIApplication.RootTab, expecting identifier: String, in app: XCUIApplication) {
+        app.selectTab(tab)
         wait(for: identifier, in: app)
         settle(app)
     }
@@ -107,7 +107,7 @@ final class LoadTimesUITests: XCTestCase {
     private func visitMoreCard(_ card: String, in app: XCUIApplication) {
         // Por su nombre: con una pestaña temporal abierta (la que deja otra tarjeta de «Más») cambia de posición. El
         // idioma lo fija `launchForUITest` (es).
-        app.tabBars.buttons["Más"].tap()
+        app.selectTab(.more)
         let target = app.descendants(matching: .any)[card].firstMatch
         // Arrastres cortos: la tarjeta suele asomar bajo la barra de pestañas, y un `swipeUp` entero se la pasa.
         // `isHittable` no basta: bajo la barra de pestañas también da `true` y el toque cae en la barra.
