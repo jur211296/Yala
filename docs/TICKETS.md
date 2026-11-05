@@ -238,11 +238,12 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | claim-seal-writers-read-the-session-after-the-claim-await | backlog | tickets/backlog/claim-seal-writers-read-the-session-after-the-claim-await.md |
 | claim-takeover-races-the-leader-cutover-without-cas | backlog | tickets/backlog/claim-takeover-races-the-leader-cutover-without-cas.md |
 | claude-mcp-activate-oauth-in-staging | done | tickets/done/claude-mcp-activate-oauth-in-staging.md |
+| claude-mcp-connected-apps-in-the-app | backlog | tickets/backlog/claude-mcp-connected-apps-in-the-app.md |
 | claude-mcp-consent-with-apple-and-google | backlog | tickets/backlog/claude-mcp-consent-with-apple-and-google.md |
 | claude-mcp-numbers-match-the-app | done | tickets/done/claude-mcp-numbers-match-the-app.md |
 | claude-mcp-oauth-token-can-change-the-account | done | tickets/done/claude-mcp-oauth-token-can-change-the-account.md |
 | claude-mcp-production-auth-hardening | in-progress | tickets/in-progress/claude-mcp-production-auth-hardening.md |
-| claude-mcp-revoke-from-claude-leaves-supabase-session | backlog | tickets/backlog/claude-mcp-revoke-from-claude-leaves-supabase-session.md |
+| claude-mcp-revoke-from-claude-leaves-supabase-session | done | tickets/done/claude-mcp-revoke-from-claude-leaves-supabase-session.md |
 | claude-plugin-read-only-mcp-connector | backlog | tickets/backlog/claude-plugin-read-only-mcp-connector.md |
 | clock-ahead-retried-older-change-beats-the-newer-one | backlog | tickets/backlog/clock-ahead-retried-older-change-beats-the-newer-one.md |
 | clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits | discarded | tickets/discarded/clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits.md |

@@ -36,6 +36,7 @@ import {
   authorizeUrl,
   exchangeCode,
   getAuthorization,
+  hasCloudProfile,
   logout,
   passwordLogin,
   pkceLogin,
@@ -215,9 +216,13 @@ async function loginAndApprove(request: Request, env: Env, deps: AuthorizeDeps):
   return approveWithWebSession(env, deps, session, authorizationId);
 }
 
+/** Lo que ve quien entra con una cuenta que no usa la nube de Yala. */
+export const NO_CLOUD_MESSAGE =
+  "Esta cuenta todavía no usa la nube de Yala, así que Claude no tendría nada que leer. En Yala ve a Ajustes → «Dónde viven tus datos» → «Activar la nube» con esta misma cuenta, y luego vuelve a conectar. Si tu nube está en tu otra cuenta, elige esa.";
+
 /**
- * Con la sesión web recién abierta (contraseña o Apple/Google), aprueba la autorización que pidió ESTE Worker y cierra
- * esa sesión. La sesión web es NORMAL (`authenticated`): puede escribir. Por eso vive solo dentro de esta petición.
+ * Con la sesión web recién abierta (contraseña o Apple/Google), comprueba que la cuenta usa la nube, aprueba la
+ * autorización que pidió ESTE Worker y cierra esa sesión. La sesión web es NORMAL (`authenticated`): puede escribir. Por eso vive solo dentro de esta petición.
  */
 async function approveWithWebSession(
   env: Env,
@@ -227,6 +232,14 @@ async function approveWithWebSession(
   extraHeaders?: Headers,
 ): Promise<Response> {
   try {
+    // Sin la nube de Yala, Claude no tendría nada que leer: no se conecta y se explica qué hacer. La autorización
+    // pendiente sigue valiendo, así que puede probar con su otra cuenta (Apple o Google) sin volver a Claude.
+    if (!(await hasCloudProfile(env, deps.fetcher, session))) {
+      auditEvent("mcp_autorizacion", { resultado: "sin_nube" });
+      const res = loginPage(authorizationId, { staging: isStaging(env), message: NO_CLOUD_MESSAGE, status: 403 });
+      for (const c of extraHeaders?.getSetCookie() ?? []) res.headers.append("Set-Cookie", c);
+      return res;
+    }
     const got = await getAuthorization(env, deps.fetcher, session, authorizationId);
     if (!got.ok) return errorPage("La solicitud de autorización caducó o no existe. Vuelve a conectar desde Claude.");
     let redirectUrl: string | null;

@@ -76,6 +76,10 @@ export class FakeSupabase {
   /** Si está, la aprobación devuelve esta URL en vez del callback con el código. */
   consentRedirectOverride: string | undefined;
   rows: Record<string, unknown[]> = {};
+  /** Usuarios SIN fila en `profiles`: no activaron la nube de Yala. Los demás la tienen. */
+  readonly withoutCloud = new Set<string>();
+  /** Si está, `GET /rest/v1/profiles` responde este estado. */
+  profilesStatus: number | undefined;
   postgrestStatus: number | undefined;
   /** Los logins con Apple o Google en curso: código → reto PKCE y usuario. Un solo uso, como el flow state de GoTrue. */
   readonly socialFlows = new Map<string, { challenge: string; userId: string; used: boolean; createdAt: string }>();
@@ -139,6 +143,8 @@ export class FakeSupabase {
     if (!this.users.has(user.email)) this.users.set(user.email, user);
     const code = `sc_${rand()}`;
     const createdAt = new Date(opts.newUser ? Date.now() : Date.now() - 400 * 86_400_000).toISOString();
+    // Una cuenta recién creada no tiene fila en `profiles`: esa la crea la app al activar la nube.
+    if (opts.newUser) this.withoutCloud.add(user.id);
     this.socialFlows.set(code, { challenge: u.searchParams.get("code_challenge") ?? "", userId: user.id, used: false, createdAt });
     back.searchParams.set("code", code);
     return back.toString();
@@ -198,6 +204,14 @@ export class FakeSupabase {
     const body = typeof init?.body === "string" ? init.body : "";
     this.calls.push({ method, path: url.pathname, search: url.search, auth: headers.get("Authorization"), body });
     const path = url.pathname;
+
+    if (path === "/rest/v1/profiles") {
+      // Como la RLS de `profiles`: cada sesión ve solo su fila.
+      if (this.profilesStatus) return new Response("{}", { status: this.profilesStatus });
+      const { session, error } = await this.sessionOf(headers.get("Authorization"));
+      if (error) return error;
+      return Response.json(this.withoutCloud.has(session!.userId) ? [] : [{ id: session!.userId }]);
+    }
 
     if (path.startsWith("/rest/v1/")) {
       if (this.postgrestStatus) return new Response("{}", { status: this.postgrestStatus });

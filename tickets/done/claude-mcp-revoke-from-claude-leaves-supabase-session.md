@@ -1,10 +1,10 @@
 ---
 id: claude-mcp-revoke-from-claude-leaves-supabase-session
-status: backlog
+status: done
 priority: low
 area: cloud
 created: 2026-09-26
-updated: 2026-10-08
+updated: 2026-11-05
 source: encargo 2026-09-26-claude-mcp-oauth-token-can-change-the-account (residual, medido en el diseño)
 ---
 
@@ -44,3 +44,20 @@ Revocar desde la cuenta de Supabase sí corta todo al momento: el Worker lo dete
 - Hermano, no duplicado: `claude-mcp-production-auth-hardening` (medium) pide en su punto 6 un `sessions_inactivity_timeout`, que acotaría la vida de la sesión huérfana pero no decide qué lista la app como «Claude conectado».
 
 Triage 2026-10-08: abierto · low → low · sigue igual, pero no cambia nada para el usuario hasta la fase 2; la sesión huérfana es inalcanzable.
+
+## Resuelto (2026-11-04/05, encargo «Login Apple y Google en el conector + lote P7»)
+
+Decidido el 2026-11-05: opción 1A (la lista «Claude conectado» la da el conector, una fila por app de Claude; las
+huérfanas, con un barrido diario en la base).
+
+- **Desconectar desde Claude cierra la sesión de Supabase** (`mcp/src/revoke.ts`). Antes de que la librería atienda
+  una revocación con refresh, el Worker hace con ese refresh un refresh normal, cierra con el access resultante la
+  sesión de Supabase (`/logout?scope=local`) y deja que la librería borre la conexión. Falla abierto: si algo falla,
+  la revocación sigue igual. **Medido en staging:** sesiones del Worker en `auth.sessions` 1 → 0.
+- **Reconectar y caducar:** el barrido diario `qa/cloud/mcp0_04_sweep_connector_sessions.sql` (pg_cron, 04:17 UTC)
+  borra las sesiones del cliente del Worker sin refrescar en 31 días o con más de 91. Aplicado en staging y probado
+  con cinco sesiones sintéticas (`docs/RUNBOOK-staging-ddl.md`). Producción: paso 8 de
+  `claude-mcp-production-auth-hardening`.
+- Tests: `mcp/test/oauth-flow.test.ts` (desconectar con y sin pista, access sin efecto, otro cliente, parámetro
+  repetido, Supabase caído).
+- **La pantalla de la app** es la fase 2 y queda en `claude-mcp-connected-apps-in-the-app`.

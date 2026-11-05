@@ -2,7 +2,7 @@ import { jwtPayload } from "./b64";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { isAllowedEgress } from "../src/egress";
 import { GRANT_MAX_AGE_SECONDS } from "../src/tokens";
-import { BASE, callTool, connect, grantCount, INIT, looksLikeJwt, refresh, register, RESOURCE, rpc, world, type World } from "./helpers";
+import { BASE, callTool, connect, grantCount, INIT, isDataRead, looksLikeJwt, refresh, register, RESOURCE, rpc, world, type World } from "./helpers";
 import { USER_A, USER_B } from "./supabase-fake";
 
 afterEach(() => {
@@ -117,7 +117,7 @@ describe("/mcp con el token del Worker", () => {
     expect(body?.result.isError).toBeFalsy();
     const calls = w.supabase.calls.slice(before);
     expect(calls[0]).toMatchObject({ method: "GET", path: "/auth/v1/user" });
-    const reads = calls.filter((c) => c.path.startsWith("/rest/v1/"));
+    const reads = calls.filter(isDataRead);
     expect(reads.length).toBeGreaterThan(0);
     for (const c of calls) {
       expect(c.auth).not.toContain(tokens.access_token);
@@ -140,7 +140,7 @@ describe("/mcp con el token del Worker", () => {
     const b = await connect(w, USER_B);
     w.supabase.rows = { categories: [], subcategories: [] };
     await callTool(w, b.tokens.access_token, "listar_categorias");
-    const bRead = w.supabase.calls.filter((c) => c.path.startsWith("/rest/v1/")).at(-1)!;
+    const bRead = w.supabase.calls.filter(isDataRead).at(-1)!;
     const bSession = w.supabase.oauthSessions(USER_B.id)[0]!;
     const payload = jwtPayload(bRead.auth!.replace("Bearer ", ""));
     expect(payload.sub).toBe(USER_B.id);
@@ -158,7 +158,7 @@ describe("revocar corta al momento", () => {
     const { res } = await callTool(w, tokens.access_token, "listar_categorias");
     expect(res.status).toBe(401);
     expect(res.headers.get("WWW-Authenticate")).toContain('error="invalid_token"');
-    expect(w.supabase.calls.some((c) => c.path.startsWith("/rest/v1/"))).toBe(false);
+    expect(w.supabase.calls.some(isDataRead)).toBe(false);
     // La conexión se borró en el KV en esa misma llamada, ANTES de cualquier refresh: es `/mcp` quien la retira.
     expect(grantCount(w)).toBe(0);
     // Y por eso no se puede refrescar: el grant ya no existe.
@@ -285,7 +285,7 @@ describe("revocar corta al momento", () => {
     const { res } = await callTool(w, tokens.access_token, "listar_categorias");
     expect(res.status).toBe(503);
     expect(res.headers.get("Retry-After")).toBe("30");
-    expect(w.supabase.calls.some((c) => c.path.startsWith("/rest/v1/"))).toBe(false);
+    expect(w.supabase.calls.some(isDataRead)).toBe(false);
     expect(grantCount(w)).toBe(1);
     w.supabase.userEndpoint = undefined;
     w.supabase.rows = { categories: [], subcategories: [] };
@@ -302,7 +302,7 @@ describe("un fallo pasajero del JWKS no borra la conexión", () => {
     expect(res.status).toBe(503);
     expect(grantCount(w)).toBe(1);
     // No llega ni a preguntar por la sesión ni a leer.
-    expect(w.supabase.calls.some((c) => c.path === "/auth/v1/user" || c.path.startsWith("/rest/v1/"))).toBe(false);
+    expect(w.supabase.calls.some((c) => c.path === "/auth/v1/user" || isDataRead(c))).toBe(false);
     w.supabase.jwksThrows = undefined;
     w.supabase.rows = { categories: [], subcategories: [] };
     expect((await callTool(w, tokens.access_token, "listar_categorias")).res.status).toBe(200);

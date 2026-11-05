@@ -69,6 +69,8 @@ de A y B al cliente del Worker en Supabase.
   ```
 
 - **En Supabase:** Site URL = el Worker, y `oauth_server_authorization_path = /oauth/consent`. El DCR, apagado.
+- **El barrido diario** de las sesiones de Supabase que el Worker ya no puede cerrar (reconectar, caducar):
+  `qa/cloud/mcp0_04_sweep_connector_sessions.sql`, con `pg_cron`.
 
 El antes → después de staging y la marcha atrás: `docs/RUNBOOK-staging-ddl.md`, sección `mcp0_02`.
 
@@ -80,7 +82,8 @@ El antes → después de staging y la marcha atrás: `docs/RUNBOOK-staging-ddl.m
 - **claude.ai o Claude Desktop:** Ajustes → Conectores → *Añadir conector personalizado* → la misma URL.
 
 En los dos casos se abre la pantalla de permiso del Worker (*Continuar*). Luego inicias sesión con **Apple o Google**,
-la misma cuenta que usas en la app (login social de Supabase en PKCE; `authorize.ts`, paso 4). En staging hay además,
+la misma cuenta que usas en la app (login social de Supabase en PKCE; `authorize.ts`, paso 4). Si esa cuenta no usa la
+nube de Yala (no tiene fila en `profiles`), no se conecta y la página explica cómo activarla. En staging hay además,
 plegada, «Cuenta de prueba» con email y contraseña para los usuarios de prueba y el e2e; en producción no existe.
 
 ## Producción

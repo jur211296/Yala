@@ -186,8 +186,28 @@ export async function pkceLogin(env: Env, fetcher: Fetcher, authCode: string, ve
   const body = (await res.json()) as { access_token?: string; user?: { created_at?: string } };
   if (!body.access_token) return null;
   const created = Date.parse(body.user?.created_at ?? "");
-  // Diez minutos: lo que dura el viaje a Apple o Google. Solo se usa para la auditoría.
+  // Diez minutos: lo que dura el viaje a Apple o Google. Solo se usa para la auditoría; quién puede conectar lo decide
+  // `hasCloudProfile`.
   return { access: body.access_token, createdNow: Number.isFinite(created) && nowMs - created < 600_000 };
+}
+
+/**
+ * ¿Esta cuenta usa la nube de Yala? La app crea su fila en `profiles` al activar la nube (no hay trigger en
+ * `auth.users`). Una cuenta que Supabase acaba de crear en el login social no la tiene, y una cuenta de antes sin la
+ * nube activada, tampoco. Se pregunta con la sesión web del propio usuario: la RLS de `profiles` (`auth.uid() = id`)
+ * solo le deja ver su fila. Lanza si Supabase no contesta bien, para que quien llama falle CERRADO (pedir reintento).
+ *
+ * Por qué no «la cuenta se creó hace menos de diez minutos»: quien activa la nube en la app y conecta Claude enseguida
+ * tiene una cuenta igual de reciente, y es justo el camino que pide el aviso de iCloud.
+ */
+export async function hasCloudProfile(env: Env, fetcher: Fetcher, session: string): Promise<boolean> {
+  const f = guardSupabase(env, fetcher);
+  const u = new URL(`${env.SUPABASE_URL.replace(/\/+$/, "")}/rest/v1/profiles`);
+  u.search = new URLSearchParams({ select: "id", limit: "1" }).toString();
+  const res = await f(u.toString(), { method: "GET", headers: headers(env, session) });
+  if (!res.ok) throw new Error(`profiles ${res.status}`);
+  const rows = (await res.json()) as unknown;
+  return Array.isArray(rows) && rows.length > 0;
 }
 
 // ─── Login con contraseña (solo staging) ───────────────────────────────────────────────────────────────────────

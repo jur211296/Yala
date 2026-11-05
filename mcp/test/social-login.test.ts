@@ -231,21 +231,81 @@ describe("la vuelta del login social, sin atajos", () => {
     expect(socialPendings(w)).toHaveLength(0);
   });
 
-  it("si la persona no tenía cuenta, se conecta igual (solo aviso) y queda en la auditoría, sin datos", async () => {
+  it("una cuenta recién creada (sin la nube de Yala) NO se conecta: se explica qué hacer y se puede elegir la otra cuenta", async () => {
     const w = await world();
     const l = await toLogin(w);
     const nueva: TestUser = { id: "33333333-3333-4333-8333-333333333333", email: "nueva@test.yala", password: "x" };
     const logs: string[] = [];
     const orig = console.log;
     console.log = (m: unknown) => void logs.push(String(m));
+    let blocked: Response;
     try {
       const press = await pressSocial(l.b, l.authorizationId, "google");
-      const returned = await l.b.fetch(w.supabase.visitSocialAuthorize(press.headers.get("Location")!, nueva, { newUser: true }));
-      await finishWithClaude(w, l, returned);
+      const logoutsBefore = w.supabase.calls.filter((c) => c.path === "/auth/v1/logout").length;
+      blocked = await l.b.fetch(w.supabase.visitSocialAuthorize(press.headers.get("Location")!, nueva, { newUser: true }));
+      // La sesión web de la cuenta nueva se cierra igual.
+      expect(w.supabase.calls.filter((c) => c.path === "/auth/v1/logout").length).toBe(logoutsBefore + 1);
     } finally {
       console.log = orig;
     }
+    const html = await blocked.text();
+    expect(blocked.status).toBe(403);
+    expect(blocked.headers.get("Location")).toBeNull();
+    expect(html).toContain("todavía no usa la nube de Yala");
+    expect(html).toContain("Activar la nube");
+    expect(html).toContain("Continuar con Apple");
+    expect(grantCount(w)).toBe(0);
+    expect(w.supabase.oauthSessions(nueva.id)).toHaveLength(0);
     expect(logs.some((m) => m.includes('"resultado":"cuenta_nueva_google"'))).toBe(true);
+    expect(logs.some((m) => m.includes('"resultado":"sin_nube"'))).toBe(true);
     expect(logs.join("\n")).not.toContain("nueva@test.yala");
+
+    // Con su otra cuenta, que sí usa la nube, la MISMA solicitud termina bien.
+    const again = await pressSocial(l.b, l.authorizationId, "apple");
+    const returned = await l.b.fetch(w.supabase.visitSocialAuthorize(again.headers.get("Location")!, USER_A));
+    await finishWithClaude(w, l, returned);
+    expect(grantCount(w)).toBe(1);
+  });
+
+  it("una cuenta antigua que nunca activó la nube tampoco se conecta", async () => {
+    const w = await world();
+    w.supabase.withoutCloud.add(USER_A.id);
+    const l = await toLogin(w);
+    const press = await pressSocial(l.b, l.authorizationId, "apple");
+    const res = await l.b.fetch(w.supabase.visitSocialAuthorize(press.headers.get("Location")!, USER_A));
+    expect(res.status).toBe(403);
+    expect(await res.text()).toContain("todavía no usa la nube de Yala");
+    expect(grantCount(w)).toBe(0);
+  });
+
+  it("quien acaba de activar la nube (cuenta de hace un minuto, con perfil) se conecta", async () => {
+    const w = await world();
+    const l = await toLogin(w);
+    const press = await pressSocial(l.b, l.authorizationId, "apple");
+    const returnUrl = w.supabase.visitSocialAuthorize(press.headers.get("Location")!, USER_A, { newUser: true });
+    w.supabase.withoutCloud.delete(USER_A.id); // la app creó su perfil al activar la nube
+    await finishWithClaude(w, l, await l.b.fetch(returnUrl));
+    expect(grantCount(w)).toBe(1);
+  });
+
+  it("si Supabase no dice si la cuenta usa la nube, no se conecta: se pide reintentar", async () => {
+    const w = await world();
+    w.supabase.profilesStatus = 500;
+    const l = await toLogin(w);
+    const press = await pressSocial(l.b, l.authorizationId, "google");
+    const res = await l.b.fetch(w.supabase.visitSocialAuthorize(press.headers.get("Location")!, USER_A));
+    expect(res.status).toBe(503);
+    expect(res.headers.get("Location")).toBeNull();
+    expect(grantCount(w)).toBe(0);
+  });
+
+  it("en staging, la cuenta de prueba sin la nube tampoco se conecta", async () => {
+    const w = await world();
+    w.supabase.withoutCloud.add(USER_A.id);
+    const l = await toLogin(w);
+    const res = await l.b.form(`${BASE}/oauth/consent`, { authorization_id: l.authorizationId, email: USER_A.email, password: USER_A.password });
+    expect(res.status).toBe(403);
+    expect(await res.text()).toContain("todavía no usa la nube de Yala");
+    expect(grantCount(w)).toBe(0);
   });
 });

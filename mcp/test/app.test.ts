@@ -1,6 +1,6 @@
 import { jwtPayload } from "./b64";
 import { describe, expect, it } from "vitest";
-import { callTool, connect, INIT, rpc, world, type World } from "./helpers";
+import { callTool, connect, INIT, isDataRead, rpc, world, type World } from "./helpers";
 import { account, tx, uuid } from "./fixtures";
 import { USER_A } from "./supabase-fake";
 
@@ -12,7 +12,7 @@ async function connected(rows: Record<string, unknown[]> = {}) {
 }
 
 function reads(w: World) {
-  return w.supabase.calls.filter((c) => c.path.startsWith("/rest/v1/")).map((c) => ({ ...c, url: new URL(`https://x${c.path}${c.search}`) }));
+  return w.supabase.calls.filter(isDataRead).map((c) => ({ ...c, url: new URL(`https://x${c.path}${c.search}`) }));
 }
 
 describe("protocolo MCP", () => {
