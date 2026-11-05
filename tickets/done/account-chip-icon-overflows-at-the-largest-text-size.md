@@ -1,10 +1,10 @@
 ---
 id: account-chip-icon-overflows-at-the-largest-text-size
-status: qa
+status: done
 priority: low
 area: "panel, accesibilidad"
 created: 2026-11-03
-updated: 2026-11-04
+updated: 2026-11-05
 source: "pase de estrés del barrido de QA 2.2 (encargo 2026-11-03-barrido-qa-2-2-b)"
 ---
 
@@ -47,3 +47,5 @@ mismo cuadrito para que los dos midan igual. Capturas del antes y el después en
 3. Desliza la fila de chips hasta «Agregar»: su «+» va en el mismo cuadrito y la cápsula mide lo mismo de alto.
 4. Pon el modo claro y repite el paso 2.
 5. Vuelve el texto al tamaño normal: los chips se ven como antes.
+
+Cerrado en el barrido de QA 2026-11-05: accesibilidad/tamaños, criterio de Jürgen; arreglo del PR #771 visto con el texto al máximo en el iPhone 17 Pro y 17e (icono dentro de su chip).

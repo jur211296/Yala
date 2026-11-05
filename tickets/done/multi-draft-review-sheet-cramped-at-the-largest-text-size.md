@@ -1,10 +1,10 @@
 ---
 id: multi-draft-review-sheet-cramped-at-the-largest-text-size
-status: qa
+status: done
 priority: medium
 area: "registro, accesibilidad"
 created: 2026-11-03
-updated: 2026-11-04
+updated: 2026-11-05
 source: "pase de estrés del barrido de QA 2.2, parte C (card del tablero tablero-pase-de-estres-2-2-c-con-el-texto-al-max-48ri)"
 ---
 
@@ -38,3 +38,5 @@ cambia (diff de píxeles en el PR).
 6. Desplaza la lista: se ven al menos dos filas a la vez.
 7. Desmarca los incompletos y guarda: se guardan los marcados, como siempre.
 8. Repite con el texto normal: la hoja se ve como antes (botones lado a lado).
+
+Cerrado en el barrido de QA 2026-11-05: accesibilidad/tamaños, criterio de Jürgen; arreglo del PR #771 fijado por MultiDraftReviewUITests.

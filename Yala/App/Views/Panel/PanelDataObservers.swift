@@ -83,3 +83,17 @@ struct PanelDataFilterObservers: ViewModifier {
             }
     }
 }
+
+/// La app pasa a activa → el Panel repite lo que el freno de recálculo descartó antes (`applicationDidBecomeActive`).
+/// En el arranque en frío del iPad la carga se pedía con la app aún sin activar y el Panel se quedaba en el esqueleto
+/// (barrido final 2.2, 2026-11-05). Va aparte: `PanelDataObservers` ya lleva tres modificadores.
+struct PanelActivationObserver: ViewModifier {
+    let viewModel: PanelViewModel
+
+    func body(content: Content) -> some View {
+        content
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+                viewModel.applicationDidBecomeActive()
+            }
+    }
+}

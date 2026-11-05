@@ -224,6 +224,13 @@ struct OnboardingView: View {
         backgroundStyle == .heroFlow ? .white.opacity(0.4) : .secondary.opacity(0.6)
     }
 
+    /// Texto de ejemplo de un campo. El del sistema sigue el modo claro/oscuro, y con el tema Claro persistido salía
+    /// gris oscuro sobre el degradado fijo de `.heroFlow`, casi invisible (barrido final 2.2, 2026-11-05). En
+    /// `.themedPanel` se queda el del sistema.
+    private func fieldPrompt(_ text: String) -> Text {
+        backgroundStyle == .heroFlow ? Text(text).foregroundStyle(mutedTextStyle) : Text(text)
+    }
+
     private var cardStroke: Color {
         switch backgroundStyle {
         case .heroFlow:    return WelcomeFlowStyle.cardStroke
@@ -463,7 +470,7 @@ struct OnboardingView: View {
                         .font(DS.Typography.label)
                         .foregroundStyle(secondaryTextStyle)
 
-                    TextField(L10n.Onboarding.namePlaceholder, text: $userName)
+                    TextField(L10n.Onboarding.namePlaceholder, text: $userName, prompt: fieldPrompt(L10n.Onboarding.namePlaceholder))
                         .textContentType(.nickname)
                         .font(DS.Typography.body)
                         .foregroundStyle(primaryTextStyle)
@@ -856,7 +863,7 @@ struct OnboardingView: View {
                     HStack(spacing: DS.Spacing.md) {
                         Image(systemName: "pencil")
                             .foregroundStyle(secondaryTextStyle)
-                        TextField(L10n.Onboarding.accountNamePlaceholder, text: $accountName)
+                        TextField(L10n.Onboarding.accountNamePlaceholder, text: $accountName, prompt: fieldPrompt(L10n.Onboarding.accountNamePlaceholder))
                             .focused($accountNameFocused)
                             .accessibilityIdentifier("onboarding_account_name")
                             .foregroundStyle(primaryTextStyle)
@@ -1159,7 +1166,7 @@ struct OnboardingView: View {
                             .font(DS.Typography.body)
                             .foregroundStyle(secondaryTextStyle)
                         // «Ej. 1500» y no un «0», que parecía un valor ya puesto (UX 2.2 · L1UI-5).
-                        TextField(L10n.Onboarding.balancePlaceholder, text: $initialBalanceText)
+                        TextField(L10n.Onboarding.balancePlaceholder, text: $initialBalanceText, prompt: fieldPrompt(L10n.Onboarding.balancePlaceholder))
                             .font(DS.Typography.largeTitle)
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)

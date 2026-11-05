@@ -255,6 +255,13 @@ final class PanelViewModel {
     @ObservationIgnored
     var isApplicationActive: @MainActor () -> Bool = { UIApplication.shared.applicationState == .active }
 
+    /// Se pidió un recálculo con la app todavía sin activar. En el arranque en frío del iPad el `onAppear` del Panel y
+    /// su cambio de fase a `.active` llegan antes de que UIKit marque la app activa: el freno los descartaba y nada
+    /// volvía a pedir la carga, así que el Panel se quedaba en el esqueleto hasta mandar Yala a segundo plano y volver
+    /// (barrido final 2.2, 2026-11-05, medido en el iPad Pro 13). Lo repite `applicationDidBecomeActive()`.
+    @ObservationIgnored
+    private(set) var missedWhileInactive = false
+
     #if DEBUG
     /// Cuántas veces ha corrido `performCalculation`. Solo para medir: los tests cuentan con él que un
     /// evento produce UN recálculo y no más, y la traza de DEBUG lo imprime con su motivo.
@@ -2631,7 +2638,17 @@ final class PanelViewModel {
             recalculateTask?.cancel()
             recalculateTask = nil
             pendingReload = false
+            missedWhileInactive = false
         }
+    }
+
+    /// La app pasó a activa (`UIApplication.didBecomeActiveNotification`, `PanelActivationObserver`): repite el
+    /// recálculo que el freno descartó mientras no lo estaba, con la recarga si alguno la pedía. Sin nada pendiente,
+    /// no hace nada: la vuelta a primer plano normal ya recarga por su cuenta.
+    func applicationDidBecomeActive() {
+        guard missedWhileInactive, !isInBackground else { return }
+        missedWhileInactive = false
+        scheduleRecalculation(reload: pendingReload)
     }
 
     /// Cancel any pending recalculation
@@ -2674,7 +2691,11 @@ final class PanelViewModel {
     /// Guarded by isInBackground to prevent 0x8BADF00D during snapshot capture.
     private func scheduleRecalculation(reload: Bool) {
         guard !isInBackground else { return }
-        guard isApplicationActive() else { return }
+        guard isApplicationActive() else {
+            if reload { pendingReload = true }
+            missedWhileInactive = true
+            return
+        }
         if reload { pendingReload = true }
         recalculateTask?.cancel()
         recalculateTask = Task { @MainActor in
