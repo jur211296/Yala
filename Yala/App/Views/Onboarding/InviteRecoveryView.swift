@@ -122,6 +122,7 @@ struct InviteRecoveryView: View {
                     YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
                         onBack()
                     }
+                    .accessibilityIdentifier("invite_recovery_back")
                 }
             }
             .task {

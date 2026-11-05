@@ -1,10 +1,10 @@
 ---
 id: welcome-fresh-install-neutral-mount-lasts-one-launch
-status: backlog
+status: done
 priority: low
 area: "onboarding, modo-nube"
 created: 2026-10-19
-updated: 2026-10-19
+updated: 2026-11-04
 source: "encontrado en `invite-on-a-fresh-install-mounts-the-icloud-mirror-after-a-relaunch` (2026-10-19)"
 ---
 
@@ -22,3 +22,14 @@ Reinstalo Yala, la abro y, en el Welcome, la cierro antes de elegir nada. Al abr
 ## Lo que habría que decidir
 
 Si el primer arranque de una instalación nueva arma el neutro durable siempre (caduca al elegir en el Welcome), o se deja.
+
+## Resuelto (2026-11-04, lote N1 de la 2.3)
+
+Decisión de Jürgen del 2026-10-26: el neutro dura hasta que se elija. El primer arranque de una instalación nueva arma el
+neutro durable (`StorageModePersistence.settleFreshInstallNeutralMount`, con su propia marca de dueño); caduca con el
+chooser como los otros y se retira en el arranque siguiente a terminar el onboarding. Un dueño previo (cierre de sesión,
+borrado del corpus) no se toca; uno posterior se lo queda. El parque actual no lo alcanza: exige que no exista el archivo
+del store.
+
+Test: `WelcomeNeutralMountUntilChosenTests` (tres arranques sin elegir siguen neutros; elegir lo hace inerte; terminar lo
+retira; dueños). Rojo medido con el arma quitada (5 casos).

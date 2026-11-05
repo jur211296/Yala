@@ -316,4 +316,16 @@ final class SceneNavigation: Identifiable {
     /// el guard de `.panel` y por la matriz de readiness del shell (cross-node:
     /// el cover del inbox alert no debe montarse encima de un sheet de MainTab).
     var isMainTabModalVisible: Bool = false
+
+    /// Ajustes (`ProfileView`) está presentado en ESTA ventana. Lo escriben SOLO los `onAppear`/`onDisappear` de
+    /// `ProfileView` (`ClosesForShellIntegrityNotice`). Ajustes se abre como hoja desde diez sitios y ninguno publica nada
+    /// al shell; esto es lo único que le dice a `ContentView` que la hoja de delante es Ajustes (card ulks). Nunca retiene
+    /// solo: la retención exige además que UIKit diga que hay algo presentado, así que un `true` pegado no tapa la cola.
+    var isSettingsSheetPresented: Bool = false
+
+    /// Petición del shell para que Ajustes se cierre: sube en uno cada vez que un aviso de integridad (vaciado remoto,
+    /// cambio de Apple ID, iCloud cambiado) espera a que se vaya (`RouterConsumerGateLogic.closesSettingsFirst`). La
+    /// escribe SOLO `ContentView.drainContentViewIntents`; `ProfileView` se cierra al verla cambiar (decisión de Jürgen
+    /// del 2026-11-04, opción A).
+    var settingsCloseRequest: Int = 0
 }

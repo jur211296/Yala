@@ -1289,6 +1289,9 @@ struct ProfileView: View {
                   !showSettingsTour else { return }
             showProTour = true
         }
+        // Card ulks: un aviso de integridad del shell (vaciado remoto, cambio de Apple ID, iCloud cambiado) cierra Ajustes
+        // y sale después. Va en la raíz de la hoja, fuera de su pila: un empuje no la hace desaparecer.
+        .modifier(ClosesForShellIntegrityNotice(navigation: navigation) { dismiss() })
         .presentationSizing(.page)
     }
 

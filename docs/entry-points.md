@@ -24,7 +24,12 @@ tiene cuatro reglas, y ninguna entrada se las salta:
    ventana tiene algo presentado (`ModalPresentationProbe`), porque las hojas de OTRA pestaña no publican ningún flag;
    como cerrarlas tampoco avisa a nadie, el Panel vuelve a mirar cada 300 ms mientras solo eso lo retiene. `ContentView`
    y `MainTabView` hacen la misma pregunta para sus avisos **diferibles**; los **críticos** no esperan (tabla de abajo,
-   «Avisos con una hoja abierta en otra pestaña»).
+   «Avisos con una hoja abierta en otra pestaña»). **Con Ajustes delante, los avisos de integridad lo cierran antes de
+   salir** (desde el 2026-11-04, card ulks, decisión de Jürgen): vaciado remoto, cambio de Apple ID, iCloud cambiado y
+   espejo tardío (`RouterConsumerGateLogic.closesSettingsFirst`). No esperan a que la persona lo cierre —son críticos—,
+   pero tampoco se presentan encima: el shell le pide a Ajustes que se cierre (`SceneNavigation.settingsCloseRequest`,
+   `ClosesForShellIntegrityNotice`) y el aviso sale con la ventana libre. Con otra hoja delante, los críticos siguen
+   como arriba, y lo que contesta a un toque hecho desde Ajustes («Activar Yala completo») sale encima.
 4. **Lo que tiene una fuente durable se vuelve a pedir desde ella.** Los intents transitorios se tiran al pasar a
    segundo plano (`AppRouter.resetTransients`); la foto compartida se re-emite desde `PendingImages/` en el arranque y
    en cada vuelta a primer plano, y la invitación desde `PendingJoinStore`. Las entradas que no tienen fuente durable

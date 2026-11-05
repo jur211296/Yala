@@ -1,10 +1,10 @@
 ---
 id: welcome-groups-gate-button-identifiers-are-shadowed-by-their-screen
-status: backlog
+status: done
 priority: low
 area: "testing, groups"
 created: 2026-09-30
-updated: 2026-10-08
+updated: 2026-11-04
 source: "XCUITest de `sign-out-wipe-abort-loops-the-groups-gate` (medido en el árbol de la corrida)"
 ---
 
@@ -35,3 +35,10 @@ regla de `testing.md` sobre identifiers en contenedores). Cambio de accesibilida
 - `WelcomeGroupsGateView.noticeShell` sigue con `.accessibilityIdentifier(identifier)` sobre el `VStack` y sin `.accessibilityElement(children: .contain)`.
 
 Triage 2026-10-08: abierto · low → low · noticeShell no ha cambiado; afecta a los XCUITest, no a la persona.
+
+## Resuelto (2026-11-04, lote N1 de la 2.3)
+
+`noticeShell` lleva `.accessibilityElement(children: .contain)` antes del id de la pantalla. El XCUITest del aviso de
+borrado fallido busca ya `welcome_groups_gate_wipe_failed_back`, comprueba que la pantalla conserva su id y que ningún
+botón sale con el de la pantalla (rojo con el `.contain` quitado). VoiceOver: la pantalla pasa a ser un contenedor y cada
+botón se lee por sí mismo, como el resto de la bienvenida (no se pidió paso de VoiceOver en el iPhone).

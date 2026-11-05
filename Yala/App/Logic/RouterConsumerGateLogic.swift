@@ -118,6 +118,45 @@ enum RouterConsumerGateLogic {
     /// ella tapada el consumidor ya no drena, y cuando drena igual —la invitación que derriba la cadena del Welcome
     /// (B4-04)— lo que la ventana tiene presentado es ese cover yéndose, y retener ahí colgaría la invitación que lo
     /// cerró. Quien llama mide la ventana ANTES de ese derribo.
+    /// **¿Cierra Ajustes antes de presentarse?** Card ulks, decisión de Jürgen del 2026-11-04 (opción A): los avisos de
+    /// integridad no esperan a que la persona cierre Ajustes —son críticos, la clasificación del 11-oct manda— pero
+    /// tampoco se presentan encima: el shell le pide a Ajustes que se cierre y el aviso sale cuando la ventana queda libre.
+    /// Encima de Ajustes podía no llegar a montarse y perderse hasta el arranque siguiente, y mientras tanto Ajustes
+    /// seguía enseñando datos que ya no son de esa persona.
+    ///
+    /// Solo Ajustes: con otra hoja delante (un formulario a medias) los críticos salen como hasta hoy. Y nunca lo que
+    /// contesta a un toque hecho DESDE Ajustes («Activar Yala completo» sale encima a propósito).
+    ///
+    /// El `switch` no tiene `default`: un caso nuevo de `RouterIntent` no compila hasta que alguien decida.
+    static func closesSettingsFirst(_ intent: RouterIntent) -> Bool {
+        switch intent {
+        case .remoteWipe, .presentRemoteWipeNotice, .appleIDChangedClosePrivate, .iCloudMismatch,
+             .presentLateICloudMirrorNotice:
+            return true
+        case .remoteOnboardingCompleted, .showGroupSyncError, .presentFullModeActivation, .presentGroupsOrganizerStep,
+             .showInboxAlert, .presentTrialOffer, .presentWhatsNew, .showInviteError, .showGroupArchivedNotice,
+             .presentGroupsConsent, .presentGroupsSignIn, .presentGroupBackendInviteOnboarding,
+             .presentGroupsInviteNeutralGate, .presentDowngradeResolution, .presentTrialExpired,
+             .presentMilestoneUpgrade, .navigate, .requestAppStoreReview,
+             .presentInboxSheet, .presentSharedImage, .presentNewTransaction, .presentNewTransactionFromChatDraft,
+             .presentVoiceEntry, .presentImageEntry, .presentUpgradeSheet, .requestAIConsent,
+             .autoOpenBudgetEditor, .autoOpenScheduledEditor:
+            return false
+        }
+    }
+
+    /// ¿`.contentView` retiene `intent` mientras Ajustes se cierra? Con la matriz libre, Ajustes publicado en la ventana
+    /// **y** UIKit diciendo que hay algo presentado: la bandera sola no retiene, así que una que se quedara pegada no tapa
+    /// la cola. Mientras dure, quien llama pide el cierre y vuelve a mirar (el reintento de 300 ms de las hojas ajenas).
+    static func contentViewClosesSettingsFirst(
+        _ intent: RouterIntent,
+        shellClear: Bool,
+        settingsPresented: Bool,
+        windowPresentationVisible: Bool
+    ) -> Bool {
+        shellClear && settingsPresented && windowPresentationVisible && closesSettingsFirst(intent)
+    }
+
     static func contentViewHoldsForForeignPresentation(
         _ intent: RouterIntent,
         shellClear: Bool,

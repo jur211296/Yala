@@ -5,7 +5,7 @@
 //  Seam de XCUITest para pedir un aviso de la app con Yala ya delante. Sus productores reales no se pueden disparar a
 //  voluntad en el simulador (la prueba que caduca, la cuenta de iCloud que cambia, la oferta tras el onboarding), y los
 //  launch args existentes los encolan en el ARRANQUE, antes de que el test pueda abrir un formulario. El test abre
-//  `<scheme>://uitest-notice?kind=<trial-offer|trial-expired|pro-ended|icloud-mismatch>` y este seam hace solo lo que haría el
+//  `<scheme>://uitest-notice?kind=<trial-offer|trial-expired|pro-ended|icloud-mismatch|apple-id-changed>` y este seam hace solo lo que haría el
 //  productor: `RouterEntryGate.shared.submit(_:)`. Lo que se prueba —qué consumidor lo drena y cuándo— es el camino
 //  real (ticket `invite-and-app-notices-present-over-other-tab-sheets`).
 //  Fuera de `-uitest` no hace nada, y en release no existe.
@@ -25,6 +25,9 @@ enum UITestRouterNoticeStage {
         // La hoja de fin de Pro (UX 2.2 · L17-6): su productor exige un downgrade de verdad, que el simulador no da.
         case "pro-ended": return .presentDowngradeResolution
         case "icloud-mismatch": return .iCloudMismatch
+        // Card ulks: la hoja «Cambiaste de cuenta de iCloud» pedida con Ajustes ya abierto. `-uitest-apple-id-changed` la
+        // encola en el ARRANQUE, antes de que el test pueda abrir nada.
+        case "apple-id-changed": return .appleIDChangedClosePrivate
         default: return nil
         }
     }

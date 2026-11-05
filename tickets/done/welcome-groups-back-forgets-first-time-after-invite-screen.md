@@ -1,10 +1,10 @@
 ---
 id: welcome-groups-back-forgets-first-time-after-invite-screen
-status: backlog
+status: done
 priority: low
 area: "welcome, grupos, navegación"
 created: 2026-10-24
-updated: 2026-10-24
+updated: 2026-11-04
 source: "encargo 2026-10-24-welcome-solo-grupos-a-b (card jyhh), visto en el QA del simulador"
 ---
 
@@ -29,3 +29,12 @@ inicio de sesión de «Crear mi primer grupo», que también vuelve por `Content
 Que `ContentView` recuerde el origen junto al step al que devuelve (`returnToWelcomeChooser(…, step: .groupsChooser)`),
 como ya hace `onRestoreOrigin` para Restaurar. Se dejó fuera del encargo A+B a propósito: era tocar `ContentView`
 por un caso de un nivel.
+
+## Resuelto (2026-11-04, lote N1 de la 2.3)
+
+El contenedor del Welcome avisa del origen al abrir «¿Cómo empiezas?» (`onGroupsChooserOrigin`) y `ContentView` se lo
+devuelve al volver a montarlo (`groupsChooserOrigin`). Cubre también la vuelta del inicio de sesión de «Crear mi primer
+grupo». «Pega tu enlace» gana el id `invite_recovery_back`.
+
+Test: `WelcomeChooserUITests.testNewChooser_groupsFooter_throughInviteRecovery_backStillReturnsToFirstTime` (rojo con el
+reporte del origen quitado).
