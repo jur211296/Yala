@@ -32,7 +32,7 @@ import {
 import { buildRateBook, CARRY_FORWARD_LOOKBACK, utcDateKey, type RateBook } from "./logic/fx";
 import { buildGroupAdjustment, type GroupAdjustment } from "./logic/groups";
 import { buildLookup, categoryOf, type Lookup } from "./logic/lookup";
-import { computeBalances } from "./logic/balances";
+import { computeBalances, type BalanceTx } from "./logic/balances";
 import { storedConversionMissing, summarize, txKindOf } from "./logic/summary";
 import { budgetPeriod, budgetStatuses, isBudgetActive } from "./logic/budgets";
 import { listRecurring } from "./logic/recurring";
@@ -199,12 +199,14 @@ const listarCuentas: ToolCore = {
   title: "Cuentas y saldos",
   plan: "gratis",
   description:
-    "Devuelve las cuentas del usuario en Yala con su saldo actual en la divisa de cada cuenta, y el total de las cuentas " +
-    "que cuentan para estadísticas convertido a su divisa preferida. Las cuentas archivadas solo salen si se piden.",
+    "Devuelve las cuentas del usuario en Yala con su saldo de hoy en la divisa de cada cuenta, y el total de las cuentas " +
+    "que cuentan para estadísticas convertido a su divisa preferida. Como en la app, lo fechado después de hoy no está en " +
+    "ningún saldo. Las cuentas archivadas solo salen si se piden.",
   async run(ctx, args) {
+    const zone = zoneOf(ctx, args);
     const [accounts, txs, prefs, rates] = await Promise.all([
       ctx.reader.all<AccountRow>("accounts", [["select", COLUMNS.accounts], NOT_DELETED, ORDER_ID]),
-      ctx.reader.all<Pick<TxRow, "account_ref" | "amount" | "currency_code">>("tx_items", [
+      ctx.reader.all<BalanceTx>("tx_items", [
         ["select", COLUMNS.txBalance],
         NOT_DELETED,
         ["account_ref", "not.is.null"],
@@ -217,8 +219,18 @@ const listarCuentas: ToolCore = {
     const result = computeBalances(accounts.rows, txs.rows, preferred.code, rates, {
       incluirArchivadas: args.incluir_archivadas === true,
       todayUtc: todayUtcKey(ctx),
+      today: dayInZone(ctx.now, zone.tz),
+      tz: zone.tz,
     });
     const avisos = [...truncationNotice(txs.truncated)];
+    if (result.futuros_excluidos > 0) {
+      avisos.push(
+        `${result.futuros_excluidos === 1 ? "Hay 1 movimiento" : `Hay ${result.futuros_excluidos} movimientos`} con fecha posterior a hoy: no ${result.futuros_excluidos === 1 ? "está" : "están"} en los saldos, igual que en la app.`,
+      );
+    }
+    // Siempre que se supuso: una zona por delante de la del usuario mete en el saldo algo que la app aún deja fuera, y
+    // ahí no hay futuros que lo delaten.
+    avisos.push(...zoneNotice(zone));
     if (preferred.inferred) avisos.push(`No hay divisa preferida guardada; se usa ${preferred.code}, la más frecuente en tus cuentas.`);
     if (result.total.aproximado) {
       avisos.push("El total es aproximado: alguna divisa se convirtió sin la cotización exacta de hoy. La app lo marca igual, con «≈».");

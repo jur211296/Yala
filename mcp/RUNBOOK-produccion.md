@@ -115,6 +115,17 @@ Todo desde `mcp/`, salvo donde se diga. Antes de cada paso de Supabase, guardar 
    2. **Después**, `site_url = https://yala-mcp-production.misty-surf-6866.workers.dev`,
       `oauth_server_enabled = true`, `oauth_server_allow_dynamic_registration = false`,
       `oauth_server_authorization_path = /oauth/consent`.
+   3. **El login con Apple y Google de la pantalla de permiso** (las credenciales web ya existen: Llavero
+      `yala-siwa-web` y `yala-google-oauth-web`, y sus Return URLs ya incluyen el callback de Supabase producción):
+      - `external_apple_client_id = pe.yala.app.web,com.jurgenschmidt.yala,com.jurgenschmidt.yala.dev` y
+        `external_apple_secret` = el JWT web. **El Services ID va PRIMERO**: Supabase usa el primero de la lista para el
+        login web, y con el bundle de la app primero Apple responde «Invalid client id or web redirect url» (medido en
+        staging el 2026-11-04). La app nativa acepta cualquiera de la lista: no cambia.
+      - `external_google_client_id` con el cliente web «Yala Web (MCP)» **primero** y los dos de iOS detrás, y
+        `external_google_secret` = su secreto.
+      - Nada en `uri_allow_list`: la vuelta del login (`/oauth/consent/social`) es del mismo host que `site_url`.
+      Comprobación: `curl -s -o /dev/null -w "%{redirect_url}" "https://kefvaiymtgytemwbltlz.supabase.co/auth/v1/authorize?provider=apple&redirect_to=https://yala-mcp-production.misty-surf-6866.workers.dev/oauth/consent/social&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=s256"`
+      → tiene que llevar `client_id=pe.yala.app.web`; con `provider=google`, el id del cliente web.
 
 7. **Desplegar el Worker.**
    ```bash

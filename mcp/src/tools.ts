@@ -43,6 +43,7 @@ const zonaHoraria = z
 export const INPUT_SCHEMAS: Record<string, z.ZodRawShape> = {
   listar_cuentas: {
       incluir_archivadas: z.boolean().optional().describe("Incluir las cuentas archivadas. Por defecto, no."),
+      zona_horaria: zonaHoraria,
   },
   listar_categorias: {
       incluir_ocultas: z.boolean().optional().describe("Incluir categorías y subcategorías ocultas. Por defecto, no."),

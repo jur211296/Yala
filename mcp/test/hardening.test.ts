@@ -194,6 +194,19 @@ describe("límite por USUARIO en /mcp", () => {
   });
 });
 
+describe("el canje del login con Apple o Google, solo en el Worker del conector (lista de salidas)", () => {
+  const url = new URL(`${SB_URL}/auth/v1/token?grant_type=pkce`);
+
+  it("staging y producción lo dejan salir; un entorno raro o sin entorno (el gateway), no", () => {
+    expect(isAllowedEgress(makeEnv(), "POST", url)).toBe(true);
+    expect(isAllowedEgress(prod(), "POST", url)).toBe(true);
+    expect(isAllowedEgress(makeEnv({ ENVIRONMENT: "Production" }), "POST", url)).toBe(false);
+    expect(isAllowedEgress({ SUPABASE_URL: SB_URL, SUPABASE_ANON_KEY: "x" }, "POST", url)).toBe(false);
+    expect(isAllowedEgress(prod(), "POST", new URL(`${SB_URL}/auth/v1/token?grant_type=pkce&x=1`))).toBe(false);
+    expect(isAllowedEgress(prod(), "GET", url)).toBe(false);
+  });
+});
+
 describe("el login con contraseña, solo en staging (lista de salidas)", () => {
   const url = new URL(`${SB_URL}/auth/v1/token?grant_type=password`);
 

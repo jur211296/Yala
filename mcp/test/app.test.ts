@@ -64,6 +64,34 @@ describe("protocolo MCP", () => {
     }
   });
 
+  it("listar_cuentas deja fuera del saldo lo fechado después de hoy, lo dice, y pide la columna de fecha", async () => {
+    const acc = uuid(9002);
+    const { w, token } = await connected({
+      accounts: [account({ sync_id: acc, name: "BCP" })],
+      tx_items: [
+        { account_ref: acc, amount: 1000, currency_code: "PEN", date: "2020-01-01T12:00:00Z", local_day: "2020-01-01" },
+        { account_ref: acc, amount: -200, currency_code: "PEN", date: "2099-01-01T12:00:00Z", local_day: "2099-01-01" },
+      ],
+      user_preferences: [{ key: "defaultCurrencyCode", value: "PEN" }],
+      exchange_rates: [],
+    });
+    const sinZona = JSON.parse((await callTool(w, token, "listar_cuentas")).body!.result.content[0]!.text);
+    expect(sinZona.cuentas[0]).toMatchObject({ saldo: 1000, movimientos: 1 });
+    expect(sinZona.total.importe).toBe(1000);
+    expect(sinZona.futuros_excluidos).toBe(1);
+    expect(sinZona.avisos).toContain("Hay 1 movimiento con fecha posterior a hoy: no está en los saldos, igual que en la app.");
+    expect(sinZona.avisos.some((a: string) => a.startsWith("No se indicó zona horaria"))).toBe(true);
+    const conZona = JSON.parse((await callTool(w, token, "listar_cuentas", { zona_horaria: "Europe/Madrid" })).body!.result.content[0]!.text);
+    expect(conZona.avisos.some((a: string) => a.startsWith("No se indicó zona horaria"))).toBe(false);
+    // Sin futuros, el aviso de zona sigue saliendo si se supuso: una zona por delante metería de más sin delatarse.
+    w.supabase.rows.tx_items = [w.supabase.rows.tx_items![0]!];
+    const sinFuturos = JSON.parse((await callTool(w, token, "listar_cuentas")).body!.result.content[0]!.text);
+    expect(sinFuturos.futuros_excluidos).toBe(0);
+    expect(sinFuturos.avisos.some((a: string) => a.startsWith("No se indicó zona horaria"))).toBe(true);
+    const txRead = reads(w).find((c) => c.url.pathname.endsWith("/tx_items"))!;
+    expect(txRead.url.searchParams.get("select")).toBe("account_ref,amount,currency_code,date,local_day");
+  });
+
   it("buscar_movimientos pagina con cursor y escapa el texto libre", async () => {
     const rows = Array.from({ length: 3 }, (_, i) =>
       tx({ sync_id: uuid(9100 + i), date: `2026-09-1${i}T15:00:00+00:00`, note: `Compra ${i}`, amount: -i }),

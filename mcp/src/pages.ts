@@ -31,7 +31,9 @@ main{background:var(--card);border:1px solid var(--line);border-radius:16px;max-
 h1{font-size:20px;margin:0 0 8px}p,li{color:var(--muted)}strong{color:var(--fg)}.warn{color:var(--warn)}
 label{display:block;margin:12px 0 4px;font-size:14px}input{width:100%;box-sizing:border-box;padding:10px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--fg);font:inherit}
 button{font:inherit;padding:10px 16px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--fg);cursor:pointer}
-button.primary{background:var(--accent);border-color:var(--accent);color:#fff}.row{display:flex;gap:8px;margin-top:20px;justify-content:flex-end}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}button.apple{background:#000;border-color:#000;color:#fff}button.google{background:#fff;border-color:#dadce0;color:#1f1f1f}
+.social{display:flex;flex-direction:column;gap:10px;margin-top:20px}.social button{width:100%}.note{border:1px solid var(--line);border-radius:12px;padding:12px;margin:16px 0}.note p{margin:0}
+details{margin-top:20px}summary{cursor:pointer;color:var(--muted);font-size:14px}.row{display:flex;gap:8px;margin-top:20px;justify-content:flex-end}
 .tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--muted)}
 </style></head><body><main>${body}</main></body></html>`;
   const headers = new Headers(extra);
@@ -67,6 +69,7 @@ ${staging ? STAGING_TAG : ""}${where}
 <p>Si continúas, inicias sesión en Yala y podrá <strong>leer</strong>:</p>
 <ul><li>tus cuentas y sus saldos</li><li>tus movimientos, categorías y etiquetas</li><li>tus presupuestos</li><li>tus pagos recurrentes</li></ul>
 <p><strong>No podrá</strong> crear, cambiar ni borrar nada: ni tus finanzas ni los datos de tu cuenta. Tampoco verá tus grupos. Puedes quitarle el acceso cuando quieras.</p>
+${CLOUD_ONLY_NOTE}
 <form method="post" action="/authorize">
 <input type="hidden" name="handle" value="${escapeHtml(handle)}">
 <div class="row"><button name="decision" value="deny" type="submit">No permitir</button>
@@ -74,18 +77,41 @@ ${staging ? STAGING_TAG : ""}${where}
   return page(`Conectar Yala con ${name}`, body, 200, headers);
 }
 
-/** Inicio de sesión en Yala tras el permiso. Solo existe en staging: en producción, Apple y Google (fase 1). */
-export function loginPage(authorizationId: string, message?: string): Response {
-  const warning = message ? `<p><strong>${escapeHtml(message)}</strong></p>` : "";
-  return page(
-    "Iniciar sesión en Yala",
-    `<h1>Inicia sesión en Yala</h1><p>Entra con tu cuenta de Yala en la nube para terminar de conectar.</p>
-${STAGING_TAG}${warning}
+/**
+ * El aviso para quien guarda sus datos en su iCloud (decisión de Jürgen del 2026-10-29): el conector solo lee la nube de
+ * Yala, y quien está en iCloud privado no verá nada. Es solo un aviso: no bloquea. Va en el permiso, antes de iniciar
+ * sesión, porque iniciar sesión con Apple o Google en una cuenta que no existe la crea vacía.
+ */
+export const CLOUD_ONLY_NOTE = `<div class="note"><p><strong>Solo funciona con la nube de Yala.</strong> Si tus datos viven en tu iCloud, Claude no podrá verlos. Para usarlo, en Yala ve a Ajustes → «Dónde viven tus datos» → «Activar la nube», y luego vuelve a conectar.</p></div>`;
+
+export type SocialProvider = "apple" | "google";
+
+/**
+ * Inicio de sesión en Yala tras el permiso: con Apple o con Google, la misma cuenta que usa en la app. Cada botón es un
+ * formulario sin JavaScript que manda a Supabase (`authorize.ts`, `startSocialLogin`).
+ *
+ * El email y la contraseña solo existen en staging, plegados, para las cuentas de prueba y el e2e. En producción no se
+ * pintan y `authorize.ts` los rechaza aunque alguien los mande.
+ */
+export function loginPage(authorizationId: string, opts: { staging: boolean; message?: string; status?: number }): Response {
+  const id = escapeHtml(authorizationId);
+  const warning = opts.message ? `<p><strong>${escapeHtml(opts.message)}</strong></p>` : "";
+  const social = (provider: SocialProvider, label: string) =>
+    `<form method="post" action="/oauth/consent/social"><input type="hidden" name="authorization_id" value="${id}"><input type="hidden" name="provider" value="${provider}"><button class="${provider}" type="submit">${label}</button></form>`;
+  const password = opts.staging
+    ? `<details${opts.message && opts.status === 401 ? " open" : ""}><summary>Cuenta de prueba (solo staging)</summary>
 <form method="post" action="/oauth/consent">
-<input type="hidden" name="authorization_id" value="${escapeHtml(authorizationId)}">
+<input type="hidden" name="authorization_id" value="${id}">
 <label for="email">Email</label><input id="email" name="email" type="email" autocomplete="username" required>
 <label for="password">Contraseña</label><input id="password" name="password" type="password" autocomplete="current-password" required>
-<div class="row"><button class="primary" type="submit">Continuar</button></div></form>`,
-    message ? 401 : 200,
+<div class="row"><button class="primary" type="submit">Continuar</button></div></form></details>`
+    : "";
+  return page(
+    "Iniciar sesión en Yala",
+    `<h1>Inicia sesión en Yala</h1><p>Usa la misma cuenta con la que entras en la app para terminar de conectar.</p>
+${opts.staging ? STAGING_TAG : ""}${warning}
+<div class="social">${social("apple", "Continuar con Apple")}${social("google", "Continuar con Google")}</div>
+${password}`,
+    opts.status ?? (opts.message ? 401 : 200),
   );
 }

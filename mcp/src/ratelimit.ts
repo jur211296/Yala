@@ -18,7 +18,7 @@ import type { Env } from "./env";
 
 export type Bucket = "RL_BROWSER" | "RL_OAUTH" | "RL_MCP";
 
-const BROWSER_PATHS = new Set(["/authorize", "/oauth/consent", "/oauth/supabase/callback"]);
+const BROWSER_PATHS = new Set(["/authorize", "/oauth/consent", "/oauth/consent/social", "/oauth/supabase/callback"]);
 const OAUTH_PATHS = new Set(["/oauth/register", "/oauth/token"]);
 
 /** Qué cubo por IP le toca a esta ruta, o ninguno (`/mcp` se limita por usuario dentro de `mcp.ts`). */

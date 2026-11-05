@@ -119,6 +119,10 @@ for (const s of golden.scenarios) {
       const r = computeBalances(s.rows.accounts, s.rows.tx_items, s.preferredCurrency, book, {
         incluirArchivadas: true,
         todayUtc: REAL_TODAY_UTC,
+        // El corte de hoy, con el MISMO «hoy» que usó la app al escribir el golden: `liveBalanceBreakdown` sin `asOf`,
+        // o sea la fecha real. Los escenarios no tienen nada posterior a la fecha real; el corte lo fijan logic.test.ts.
+        today: REAL_TODAY_UTC,
+        tz: "UTC",
       });
       for (const [id, want] of Object.entries(exp.balances.accounts)) {
         close(r.cuentas.find((c) => c.id === id)?.saldo, want, `saldo ${id}`);

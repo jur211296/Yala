@@ -142,7 +142,55 @@ export async function sessionStatus(env: Env, fetcher: Fetcher, access: string):
   return gone.includes(code) ? "gone" : "stale";
 }
 
-// ─── Sesión web de la pantalla de login (solo staging) ─────────────────────────────────────────────────────────
+// ─── Sesión web de la pantalla de login ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * A dónde se manda al navegador para iniciar sesión con Apple o Google. Es el login social de Supabase en su flujo
+ * PKCE: Supabase vuelve a `redirectTo` con `?code=…`, y ese código solo se canjea con el `verifier` que guardó el
+ * Worker (`pkceLogin`). Sin JavaScript en la página: el flujo implícito dejaría el token en el fragmento, que el
+ * servidor no ve.
+ *
+ * `redirectTo` tiene que estar permitido en Supabase: lo está porque es del mismo host que la Site URL (en staging,
+ * la Site URL es este Worker; el runbook de producción lo repite).
+ */
+export function socialAuthorizeUrl(env: Env, provider: "apple" | "google", redirectTo: string, codeChallenge: string): string {
+  const u = new URL(`${authIssuer(env)}/authorize`);
+  u.search = new URLSearchParams({
+    provider,
+    redirect_to: redirectTo,
+    code_challenge: codeChallenge,
+    code_challenge_method: "s256",
+  }).toString();
+  return u.toString();
+}
+
+export interface WebSession {
+  access: string;
+  /** El usuario se creó en este mismo inicio de sesión (no tenía cuenta en la nube de Yala). */
+  createdNow: boolean;
+}
+
+/**
+ * Canje del código del login social (`grant_type=pkce`). Devuelve el access token de una sesión NORMAL: se cierra en
+ * la misma petición, como la de contraseña. `null` si Supabase no lo acepta (código usado, caducado o de otro
+ * navegador); lanza si no hay red.
+ */
+export async function pkceLogin(env: Env, fetcher: Fetcher, authCode: string, verifier: string, nowMs: number): Promise<WebSession | null> {
+  const f = guardSupabase(env, fetcher);
+  const res = await f(`${authIssuer(env)}/token?grant_type=pkce`, {
+    method: "POST",
+    headers: { ...headers(env), "Content-Type": "application/json" },
+    body: JSON.stringify({ auth_code: authCode, code_verifier: verifier }),
+  });
+  if (!res.ok) return null;
+  const body = (await res.json()) as { access_token?: string; user?: { created_at?: string } };
+  if (!body.access_token) return null;
+  const created = Date.parse(body.user?.created_at ?? "");
+  // Diez minutos: lo que dura el viaje a Apple o Google. Solo se usa para la auditoría.
+  return { access: body.access_token, createdNow: Number.isFinite(created) && nowMs - created < 600_000 };
+}
+
+// ─── Login con contraseña (solo staging) ───────────────────────────────────────────────────────────────────────
 
 /** Login con email y contraseña. Devuelve el access token de una sesión NORMAL: se cierra en la misma petición. */
 export async function passwordLogin(env: Env, fetcher: Fetcher, email: string, password: string): Promise<string | null> {

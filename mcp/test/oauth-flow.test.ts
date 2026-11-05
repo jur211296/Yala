@@ -2,7 +2,7 @@ import { jwtPayload } from "./b64";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { isAllowedEgress } from "../src/egress";
 import { GRANT_MAX_AGE_SECONDS } from "../src/tokens";
-import { BASE, callTool, connect, grantCount, INIT, looksLikeJwt, refresh, register, RESOURCE, rpc, world } from "./helpers";
+import { BASE, callTool, connect, grantCount, INIT, looksLikeJwt, refresh, register, RESOURCE, rpc, world, type World } from "./helpers";
 import { USER_A, USER_B } from "./supabase-fake";
 
 afterEach(() => {
@@ -177,6 +177,78 @@ describe("revocar corta al momento", () => {
     });
     expect(rev.status).toBe(200);
     expect((await rpc(w, tokens.access_token, INIT)).status).toBe(401);
+  });
+
+  /** Revocación RFC 7009 como la manda Claude. */
+  const revoke = (w: World, clientId: string, token: string, hint?: string) =>
+    w.call(`${BASE}/oauth/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ token, client_id: clientId, ...(hint ? { token_type_hint: hint } : {}) }),
+    });
+
+  it("desconectar desde Claude (refresh) cierra también la sesión de Supabase: no queda huérfana", async () => {
+    const w = await world();
+    const { tokens, clientId } = await connect(w);
+    expect(w.supabase.oauthSessions(USER_A.id)).toHaveLength(1);
+    const rev = await revoke(w, clientId, tokens.refresh_token, "refresh_token");
+    expect(rev.status).toBe(200);
+    expect(w.supabase.oauthSessions(USER_A.id)).toEqual([]);
+    expect(grantCount(w)).toBe(0);
+    // Ni el token viejo ni el que se acuñó por dentro para cerrar la sesión quedan vivos.
+    expect([...w.kv.store.keys()].filter((k) => k.startsWith("token:"))).toEqual([]);
+    expect((await refresh(w, clientId, tokens.refresh_token)).res.status).toBe(400);
+  });
+
+  it("también sin pista de tipo (la librería prueba primero como access)", async () => {
+    const w = await world();
+    const { tokens, clientId } = await connect(w);
+    expect((await revoke(w, clientId, tokens.refresh_token)).status).toBe(200);
+    expect(w.supabase.oauthSessions(USER_A.id)).toEqual([]);
+    expect(grantCount(w)).toBe(0);
+  });
+
+  it("revocar solo el access token no toca la conexión ni la sesión de Supabase", async () => {
+    const w = await world();
+    const { tokens, clientId } = await connect(w);
+    const logouts = () => w.supabase.calls.filter((c) => c.path === "/auth/v1/logout").length;
+    const before = logouts();
+    expect((await revoke(w, clientId, tokens.access_token, "access_token")).status).toBe(200);
+    expect(w.supabase.oauthSessions(USER_A.id)).toHaveLength(1);
+    expect(grantCount(w)).toBe(1);
+    expect(logouts()).toBe(before);
+    expect((await refresh(w, clientId, tokens.refresh_token)).res.status).toBe(200);
+  });
+
+  it("otro cliente no puede usar la revocación para cerrar la sesión de una conexión ajena", async () => {
+    const w = await world();
+    const { tokens } = await connect(w);
+    const { body: other } = await register(w);
+    expect((await revoke(w, other.client_id!, tokens.refresh_token, "refresh_token")).status).toBe(200);
+    expect(w.supabase.oauthSessions(USER_A.id)).toHaveLength(1);
+    expect(grantCount(w)).toBe(1);
+  });
+
+  it("una revocación que la librería rechaza (parámetro repetido) no cierra la sesión de Supabase", async () => {
+    const w = await world();
+    const { tokens, clientId } = await connect(w);
+    const rev = await w.call(`${BASE}/oauth/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `token=${encodeURIComponent(tokens.refresh_token)}&token=${encodeURIComponent(tokens.refresh_token)}&client_id=${clientId}`,
+    });
+    expect(rev.status).toBe(400);
+    expect(w.supabase.oauthSessions(USER_A.id)).toHaveLength(1);
+    expect(grantCount(w)).toBe(1);
+    expect((await refresh(w, clientId, tokens.refresh_token)).res.status).toBe(200);
+  });
+
+  it("si Supabase no responde al cerrar, la revocación sigue: Claude recibe su 200 y la conexión se borra", async () => {
+    const w = await world();
+    const { tokens, clientId } = await connect(w);
+    w.supabase.failRefresh = { status: 503, code: "x" };
+    expect((await revoke(w, clientId, tokens.refresh_token, "refresh_token")).status).toBe(200);
+    expect(grantCount(w)).toBe(0);
   });
 
   it("si GoTrue no reconoce el JWT (bad_jwt), 401 pero la conexión NO se borra: el refresh decide", async () => {

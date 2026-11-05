@@ -79,8 +79,9 @@ El antes → después de staging y la marcha atrás: `docs/RUNBOOK-staging-ddl.m
   vez: el servidor de autorización cambió.
 - **claude.ai o Claude Desktop:** Ajustes → Conectores → *Añadir conector personalizado* → la misma URL.
 
-En los dos casos se abre la pantalla de permiso del Worker (*Continuar*). Luego inicias sesión con un usuario de
-prueba de staging, con email y contraseña.
+En los dos casos se abre la pantalla de permiso del Worker (*Continuar*). Luego inicias sesión con **Apple o Google**,
+la misma cuenta que usas en la app (login social de Supabase en PKCE; `authorize.ts`, paso 4). En staging hay además,
+plegada, «Cuenta de prueba» con email y contraseña para los usuarios de prueba y el e2e; en producción no existe.
 
 ## Producción
 

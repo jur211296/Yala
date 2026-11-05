@@ -39,7 +39,8 @@ function object(properties: Record<string, unknown>, required: string[] = []): R
 export const EXPLORE_TOOL_SPECS: readonly ExploreToolSpec[] = [
   {
     name: "listar_cuentas",
-    takesTimeZone: false,
+    // Desde 2026-11-04: el saldo de hoy deja fuera lo fechado después de hoy, y «hoy» depende de la zona.
+    takesTimeZone: true,
     parameters: object({
       incluir_archivadas: { type: "boolean", description: "Incluir las cuentas archivadas. Por defecto, no." },
     }),

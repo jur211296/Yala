@@ -9,6 +9,7 @@
  *   GET  /.well-known/oauth-protected-resource/mcp   → metadatos del recurso protegido (RFC 9728)       [librería]
  *   POST /oauth/register                             → registro dinámico (RFC 7591), solo vueltas de Claude [librería]
  *   POST /oauth/token                                → canje, refresh y revocación (RFC 7009)            [librería]
+ *                                                      (la revocación cierra antes la sesión de Supabase) [revoke.ts]
  *   GET|POST /authorize, /oauth/consent, GET /oauth/supabase/callback → el permiso y el login      [authorize.ts]
  *   POST /mcp                                        → el servidor MCP (Streamable HTTP, sin estado)       [mcp.ts]
  *   GET  /                                           → qué es esto, en una línea
@@ -16,7 +17,7 @@
  * Antes de todo eso: si la configuración está mal, 503 a todo (`config.ts`); y los límites de peticiones por IP de
  * `ratelimit.ts` (el de `/mcp`, por usuario, está en `mcp.ts`).
  */
-import { OAuthProvider } from "@cloudflare/workers-oauth-provider";
+import { getOAuthApi, OAuthProvider, type OAuthHelpers, type OAuthProviderOptions } from "@cloudflare/workers-oauth-provider";
 import type { JWTVerifyGetKey } from "jose";
 import { makeUpstreamVerifier, type UpstreamVerifier } from "./auth";
 import { handleAuthorizeRoutes, registrationPolicy } from "./authorize";
@@ -26,6 +27,7 @@ import { defaultFetch, type Fetcher } from "./egress";
 import { handleMcpRoute } from "./mcp";
 import { errorPage } from "./pages";
 import { allow, clientIp, ipBucketFor, tooManyRequests } from "./ratelimit";
+import { closeUpstreamBeforeRevocation } from "./revoke";
 import { GRANT_IDLE_SECONDS, makeTokenExchangeCallback, SCOPE } from "./tokens";
 
 export interface AppDeps {
@@ -36,13 +38,20 @@ export interface AppDeps {
   now?: () => Date;
 }
 
-function buildProvider(env: Env, deps: AppDeps): OAuthProvider<Env> {
+interface Built {
+  provider: OAuthProvider<Env>;
+  /** Los helpers de la librería fuera de un handler (la revocación los usa antes de entrar en ella). */
+  helpers: OAuthHelpers;
+  fetcher: Fetcher;
+}
+
+function buildProvider(env: Env, deps: AppDeps): Built {
   const fetcher = deps.fetcher ?? defaultFetch;
   const verify: UpstreamVerifier = makeUpstreamVerifier(env, deps.upstreamKeys);
   const nowSec = () => Math.floor((deps.now ? deps.now() : new Date()).getTime() / 1000);
   const shared = { fetcher, verify, nowSec };
 
-  return new OAuthProvider<Env>({
+  const options: OAuthProviderOptions<Env> = {
     apiRoute: "/mcp",
     apiHandler: {
       fetch: (request, e, ctx) => handleMcpRoute(request, e as Env, ctx, { fetcher, verify, now: deps.now }),
@@ -87,12 +96,13 @@ function buildProvider(env: Env, deps: AppDeps): OAuthProvider<Env> {
       bearer_methods_supported: ["header"],
       resource_name: env.ENVIRONMENT === "staging" ? "Yala (staging)" : "Yala",
     },
-  });
+  };
+  return { provider: new OAuthProvider<Env>(options), helpers: getOAuthApi(options, env), fetcher };
 }
 
 export function createApp(deps: AppDeps = {}) {
   // Un proveedor por `env`: sus callbacks cierran sobre esa configuración (URL pública, cliente de Supabase).
-  const providers = new WeakMap<Env, OAuthProvider<Env>>();
+  const providers = new WeakMap<Env, Built>();
   // La configuración se comprueba una vez por `env`; el log de lo que falla, también una vez.
   const problemsByEnv = new WeakMap<Env, string[]>();
   return {
@@ -115,12 +125,14 @@ export function createApp(deps: AppDeps = {}) {
         return tooManyRequests();
       }
 
-      let provider = providers.get(env);
-      if (!provider) {
-        provider = buildProvider(env, deps);
-        providers.set(env, provider);
+      let built = providers.get(env);
+      if (!built) {
+        built = buildProvider(env, deps);
+        providers.set(env, built);
       }
-      return provider.fetch(request, env, ctx);
+      // Desconectar desde Claude: antes de que la librería borre la conexión, se cierra su sesión de Supabase.
+      await closeUpstreamBeforeRevocation(request, env, { provider: built.provider, helpers: built.helpers, fetcher: built.fetcher, ctx });
+      return built.provider.fetch(request, env, ctx);
     },
   };
 }
