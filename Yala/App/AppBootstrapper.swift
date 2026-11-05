@@ -767,6 +767,8 @@ final class AppBootstrapper {
 
         #if DEBUG
         if uiTestActive { await applyUITestSeed(context: context) }
+        // Lote P1: el paso 4 (vencidos → borradores) no corre bajo test y la siembra llega después; con el seam, corre aquí.
+        if uiTestActive, UITestHooks.processDueScheduled { processDueScheduledPayments(context: context) }
         // Toque fingido en la notificación de Apple Pay: el pago que la notificación anuncia (los borradores de la semilla
         // son manuales y el aviso no los cuenta), materializado como en el paso 4, y el paso 5 repetido ahora que hay
         // cuentas, delante del paso 20 como en producción.

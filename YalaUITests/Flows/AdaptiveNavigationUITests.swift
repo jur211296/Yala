@@ -190,6 +190,36 @@ final class AdaptiveNavigationUITests: XCTestCase {
         XCTAssertNotEqual(spent.label, first, "Los dos presupuestos sembrados gastan lo mismo: el caso no discrimina.")
     }
 
+    /// Planificación en ancho: cambiar de chip con algo abierto devuelve la columna de detalle a «Elige un presupuesto o
+    /// un pago». Antes se quedaba en negro con el triángulo amarillo de SwiftUI: el destino lo registraba la lista que se
+    /// desmonta al cambiar de chip (ticket `ipad-planning-chip-switch-leaves-a-detail-without-destination`). Los dos
+    /// sentidos: con un presupuesto abierto a Pagos, y con un pago abierto a Presupuestos.
+    func test_switchingPlanningChip_withSomethingOpen_returnsTheDetailToItsPlaceholder() throws {
+        guard expectsWideWindow else { throw XCTSkip("Solo en ventana ancha: en iPhone el detalle tapa los chips.") }
+        let app = launch(deeplink: "budgets")
+        let placeholder = app.descendants(matching: .any)["planning_detail_placeholder"].firstMatch
+        let budgetRows = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'budget_row_'"))
+        XCTAssertTrue(budgetRows.firstMatch.waitForExistence(timeout: 15), "No hay presupuestos sembrados.")
+        budgetRows.element(boundBy: 0).tap()
+        let budgetDetail = app.scrollViews["budget_detail"]
+        XCTAssertTrue(budgetDetail.waitForExistence(timeout: 10), "No se abrió el detalle del presupuesto.")
+        XCTAssertFalse(placeholder.exists, "Precondición: con el presupuesto abierto no se ve el vacío.")
+
+        app.buttons["planning_chip_scheduledPayments"].tap()
+        XCTAssertTrue(placeholder.waitForExistence(timeout: 10), "Tras cambiar a Pagos, el detalle no volvió al vacío.")
+        XCTAssertFalse(budgetDetail.exists, "El presupuesto sigue abierto con la lista de Pagos.")
+
+        let paymentRow = app.buttons["scheduled_payment_row"].firstMatch
+        XCTAssertTrue(paymentRow.waitForHittable(timeout: 10), "No hay pagos planificados a la vista.")
+        paymentRow.tap()
+        let paymentDetail = app.descendants(matching: .any)["scheduled_detail_status"].firstMatch
+        XCTAssertTrue(paymentDetail.waitForExistence(timeout: 10), "No se abrió el detalle del pago.")
+
+        app.buttons["planning_chip_budgets"].tap()
+        XCTAssertTrue(placeholder.waitForExistence(timeout: 10), "Tras volver a Presupuestos, el detalle no volvió al vacío.")
+        XCTAssertFalse(paymentDetail.exists, "El pago sigue abierto con la lista de Presupuestos.")
+    }
+
     // MARK: - Fase 2
 
     /// Grupos: en ancho, el grupo se abre en la columna de detalle con la lista y la navegación de la app a la

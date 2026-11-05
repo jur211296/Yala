@@ -109,6 +109,40 @@ struct ScheduledPaymentDateCalculatorTests {
         #expect(jun2025.count == 1)
     }
 
+    // MARK: - Lote P1: el 29 de febrero
+
+    /// Un pago anual el 29-feb cae el 28-feb en un año no bisiesto, y vuelve al 29 en el bisiesto. Antes
+    /// `Calendar.date(from:)` daba el 1-mar, que no está en febrero, y el año se quedaba sin fecha.
+    @Test func yearlyFeb29_fallsOnFeb28InCommonYears_andBackOn29InLeapYears() {
+        let params = makeParams(
+            recurrenceType: "yearly", nextDueDate: date(2027, 2, 28), createdAt: date(2026, 10, 14),
+            yearlyMonth: 2, yearlyDay: 29
+        )
+        let feb2027 = ScheduledPaymentDateCalculator.paymentDatesInMonth(params: params, month: monthDate(2027, 2))
+        #expect(feb2027 == [date(2027, 2, 28)])
+        let mar2027 = ScheduledPaymentDateCalculator.paymentDatesInMonth(params: params, month: monthDate(2027, 3))
+        #expect(mar2027.isEmpty, "El 29 no se cuela en marzo")
+        let feb2028 = ScheduledPaymentDateCalculator.paymentDatesInMonth(params: params, month: monthDate(2028, 2))
+        #expect(feb2028 == [date(2028, 2, 29)])
+    }
+
+    /// El caso del ticket: creado el 14-oct-2026, el primer vencimiento era el 29-feb-2028 y 2027 no tenía borrador.
+    @Test func yearlyFeb29_firstOccurrenceFromOctober2026_isFeb28Of2027() {
+        let params = makeParams(
+            recurrenceType: "yearly", nextDueDate: date(2026, 10, 14), createdAt: date(2026, 10, 14),
+            yearlyMonth: 2, yearlyDay: 29
+        )
+        let first = ScheduledPaymentDateCalculator.firstOccurrence(onOrAfter: date(2026, 10, 14), params: params)
+        #expect(first == date(2027, 2, 28))
+    }
+
+    @Test func yearlyDate_clampsTheDayToTheMonth() {
+        #expect(ScheduledPaymentDateCalculator.yearlyDate(year: 2027, month: 2, day: 29) == date(2027, 2, 28))
+        #expect(ScheduledPaymentDateCalculator.yearlyDate(year: 2028, month: 2, day: 29) == date(2028, 2, 29))
+        #expect(ScheduledPaymentDateCalculator.yearlyDate(year: 2027, month: 4, day: 31) == date(2027, 4, 30))
+        #expect(ScheduledPaymentDateCalculator.yearlyDate(year: 2027, month: 6, day: 15) == date(2027, 6, 15))
+    }
+
     // MARK: - BUG-26: weekly respects recurrenceInterval
 
     @Test func weeklyInterval2AlternatesWeeks() {

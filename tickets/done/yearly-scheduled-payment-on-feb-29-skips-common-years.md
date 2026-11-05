@@ -1,10 +1,11 @@
 ---
 id: yearly-scheduled-payment-on-feb-29-skips-common-years
-status: backlog
+status: done
 priority: low
 area: "scheduled-payments, dates"
 created: 2026-10-14
-updated: 2026-10-14
+updated: 2026-11-05
+card: tablero-pagos-planificados-adelantar-gasto-ofrec-flvl
 source: "auditoría UX 2.2 · lote 10 (pagos planificados)"
 ---
 
@@ -15,3 +16,11 @@ Visto por la review adversarial del lote 10 (2026-10-14) y comprobado con `DateF
 ## Hecho cuando
 
 En un año no bisiesto el pago cae el 28 de febrero, con test.
+
+## Resolución (2026-11-05, lote P1)
+
+Medido, eran dos fallos: el calendario no daba fecha en 2027, y además `advanceToNextDueDate` sumaba un año con `byAdding`,
+que deja el 28 y ya no vuelve al 29 (2032 caía el 28). Ahora `ScheduledPaymentDateCalculator.yearlyDate` acota el día al
+largo del mes y lo usan el calendario, el avance y la vuelta atrás de `ScheduledDraftOccurrenceLogic` (que gana
+`Schedule.yearlyDay`): 28-feb en los años comunes y 29 en los bisiestos. Cuatro tests unitarios, los cuatro rojos con la
+lógica vieja.

@@ -23,6 +23,8 @@ enum ScheduledDraftOccurrenceLogic {
         let dayOfMonth: Int?
         let nextDueDate: Date
         let lastPaidDate: Date?
+        /// Día del pago anual (el 29 de febrero), para volver a él al retroceder como el avance (lote P1).
+        var yearlyDay: Int? = nil
     }
 
     /// Los orígenes cuyo borrador retiene una ocurrencia de un pago programado.
@@ -175,7 +177,14 @@ enum ScheduledDraftOccurrenceLogic {
             components.day = min(monthlyDay, maxDay)
             return calendar.date(from: components).map { calendar.startOfDay(for: $0) }
         case .yearly:
-            return calendar.date(byAdding: .year, value: -interval, to: date)
+            guard let shifted = calendar.date(byAdding: .year, value: -interval, to: date) else { return nil }
+            let targetDay = schedule.yearlyDay ?? calendar.component(.day, from: date)
+            return ScheduledPaymentDateCalculator.yearlyDate(
+                year: calendar.component(.year, from: shifted),
+                month: calendar.component(.month, from: shifted),
+                day: targetDay,
+                calendar: calendar
+            ) ?? shifted
         }
     }
 }
@@ -189,7 +198,8 @@ extension ScheduledPayment {
             recurrenceInterval: recurrenceInterval,
             dayOfMonth: dayOfMonth,
             nextDueDate: nextDueDate,
-            lastPaidDate: lastPaidDate
+            lastPaidDate: lastPaidDate,
+            yearlyDay: yearlyDay
         )
     }
 }

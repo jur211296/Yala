@@ -65,6 +65,11 @@ struct PlanningView: View {
                     .marksEmptyDetailColumn()
             }
         }
+        // Cambiar de chip rehace el split: lo abierto en el detalle (un presupuesto o un pago) lo guarda el split, y su
+        // destino lo registra la lista del chip, que se desmonta. Sin esto, en ancho la columna quedaba en negro con el
+        // triángulo amarillo de SwiftUI; rehacer solo la pila del detalle no bastaba (lote 9). Con la identidad del chip
+        // vuelve a «Elige un presupuesto o un pago» (lote P1, ticket `ipad-planning-chip-switch-leaves-a-detail-without-destination`).
+        .id(selectedTab)
     }
 
     private var listColumn: some View {
@@ -164,6 +169,10 @@ struct PlanningView: View {
         NavigationChipButton(
             title: tab.displayName, icon: tab.icon, isSelected: selectedTab == tab, showsTitleWhenUnselected: true
         ) {
+            // Los dos a la vez: el chip rehace el split (`.id(selectedTab)`), y el `onAppear` del nuevo lee
+            // `navigation.selectedPlanningTab` antes de que el `onChange` del viejo llegue a escribirlo; sin esto el chip
+            // volvía al anterior (medido en el iPad, lote P1).
+            navigation.selectedPlanningTab = tab
             selectedTab = tab
         }
         .accessibilityIdentifier("planning_chip_\(tab.rawValue)")
