@@ -16,9 +16,9 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (35 entradas)
+## Índice (36 entradas)
 
-> **No hace falta leer este fichero entero** — son 211 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 212 KB. Localiza la entrada
 > aquí y salta a ella.
 
 - `—` [Sync de Grupos (CKSyncEngine) NO debe arrancar/`save()` sobre el `mainContext` compartido antes](#sync-de-grupos-cksyncengine-no-debe-arrancarsave-sobre-el-maincontext-compartido-antes)
@@ -40,6 +40,7 @@
 - `—` [`accessibilityIdentifier` NO se propaga dentro de un `.alert` de SwiftUI: el botón existe en pantall](#accessibilityidentifier-no-se-propaga-dentro-de-un-alert-de-swiftui-el-botn-existe-en-pantalla-y-el-id-llega-vaco-al-rbol)
 - `—` [`xcodebuild test` REINSTALA la app del simulador: el QA que corres después del gate no mira tu](#xcodebuild-test-reinstala-la-app-del-simulador-el-qa-que-corres-despus-del-gate-no-mira-tu)
 - `—` [El árbol de accesibilidad del simulador se degrada tras muchos ciclos launch/stop y solo lo cura](#el-rbol-de-accesibilidad-del-simulador-se-degrada-tras-muchos-ciclos-launchstop-y-solo-lo-cura)
+- `2026-11-05` [`context.rollback()` aborta la app con un campo cambiado antes de un borrado + inserción enlazados (](#contextrollback-aborta-la-app-con-un-campo-cambiado-antes-de-un-borrado--insercin-enlazados-2026-11-05)
 - `2026-10-26` [Sentry: el `userInfo` de un NSError y la IP de envío se saltan el `sendDefaultPii` (2026-10-26)](#sentry-el-userinfo-de-un-nserror-y-la-ip-de-envo-se-saltan-el-senddefaultpii-2026-10-26)
 - `2026-10-22` [El idioma por app de iOS solo sale si el iPhone tiene más de un idioma (2026-10-22)](#el-idioma-por-app-de-ios-solo-sale-si-el-iphone-tiene-ms-de-un-idioma-2026-10-22)
 - `2026-10-21` [Abrir la página de la app en Atajos desde un botón propio: no hay URL, y `ShortcutsUIButton` no se d](#abrir-la-pgina-de-la-app-en-atajos-desde-un-botn-propio-no-hay-url-y-shortcutsuibutton-no-se-dispara-por-cdigo-2026-10-21)
@@ -657,3 +658,16 @@ Sentry (Security & Privacy › Prevent Storing of IP Addresses), no en el códig
 
 **La lección.** Una limpieza por lista negra no se da por buena leyendo el código: se manda un evento con datos
 falsos reconocibles y se busca cada uno en el JSON entero del evento (API de Sentry, `/events/<id>/`).
+
+### `context.rollback()` aborta la app con un campo cambiado antes de un borrado + inserción enlazados (2026-11-05)
+
+Medido con sondas, una por proceso (iPhone 17 Pro, iOS 27.2, `ModelContext` en memoria y en disco, `cloudKitDatabase:
+.none`): cambiar un atributo de una `Account` guardada, **después** borrar un movimiento suyo guardado e insertar otro
+enlazado a ella, y llamar a `rollback()` → `SIGABRT` en `swift_dynamicCast` dentro de SwiftData, sin símbolos. El
+`do/catch` no lo ve. Cada pieza sola pasa, y también el mismo conjunto con el cambio del atributo DESPUÉS de la
+inserción: el orden decide. Es justo lo que hace `AccountFormViewModel.saveAccount` al editar una cuenta y su saldo
+inicial (`applyBaseAccountProperties` y luego `InitialBalanceService.setInitialBalance`), y lo destapó el intento de
+deshacer un guardado fallido (ticket `save-error-alert-lies-when-the-context-autosaves`). ⇒ **antes de poner un
+`rollback()` en un camino que mezcla ediciones, borrados e inserciones relacionadas, mide ese camino exacto con un
+guardado que falla** (un seam que sustituya al `save()`); que otros `rollback()` del repo funcionen no lo garantiza. Los
+existentes (`AccountRemovalService`, la edición masiva de `RecordsViewModel`) no se han medido con esta forma.

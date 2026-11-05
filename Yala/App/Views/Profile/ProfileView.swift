@@ -914,35 +914,6 @@ struct ProfileView: View {
                     }
                 }
             }
-            .sheet(item: $activeSheet, onDismiss: {
-                // El resultado de importar sale cuando la hoja YA se fue: con un retardo fijo de 200 ms, en un iPhone
-                // real la animación de cierre duraba más y SwiftUI descartaba el aviso, así que «Importación
-                // completada» salía unas veces sí y otras no (ticket `import-completed-alert-is-sometimes-lost`).
-                if importResultAwaitingDismiss {
-                    importResultAwaitingDismiss = false
-                    showImportResult = true
-                }
-            }) { item in
-                switch item {
-                case .personalDetails:
-                    PersonalDetailsView()
-                case .importIntro:
-                    ImportIntroSheet(
-                        accounts: viewModel.accounts,
-                        categories: viewModel.categories,
-                        onImportCompleted: { result in
-                            // El aviso se pide en el `onDismiss` de esta hoja, no aquí.
-                            importResult = result
-                            importResultAwaitingDismiss = true
-                            activeSheet = nil
-                        }
-                    )
-                case .exportWizard:
-                    ExportRecordsView()
-                case .groupsExport:
-                    GroupsExportView(onFinish: { activeSheet = nil })
-                }
-            }
             .alert(
                 importResult?.isSuccess == true
                     ? L10n.Profile.importSuccess : L10n.Profile.importError,
@@ -986,6 +957,44 @@ struct ProfileView: View {
             }
     }
 
+    // MARK: - Hojas de Ajustes
+
+    /// Las hojas de Ajustes (datos personales, importar, exportar), colgadas del CONTENEDOR de la pila y no de su lista
+    /// raíz, como las del cierre de sesión. Colgadas de la lista, un cambio del tamaño del texto con una hoja abierta la
+    /// reconstruía desde cero sin cerrarla: Exportar volvía a «todas las cuentas» y plegaba «Más opciones» (medido el
+    /// 2026-11-05 en el simulador, iOS 27.2; ticket `export-filters-reset-when-the-text-size-changes`).
+    private func settingsSheets<Content: View>(_ content: Content) -> some View {
+        content
+            .sheet(item: $activeSheet, onDismiss: {
+                // El resultado de importar sale cuando la hoja YA se fue: con un retardo fijo de 200 ms, en un iPhone
+                // real la animación de cierre duraba más y SwiftUI descartaba el aviso, así que «Importación
+                // completada» salía unas veces sí y otras no (ticket `import-completed-alert-is-sometimes-lost`).
+                if importResultAwaitingDismiss {
+                    importResultAwaitingDismiss = false
+                    showImportResult = true
+                }
+            }) { item in
+                switch item {
+                case .personalDetails:
+                    PersonalDetailsView()
+                case .importIntro:
+                    ImportIntroSheet(
+                        accounts: viewModel.accounts,
+                        categories: viewModel.categories,
+                        onImportCompleted: { result in
+                            // El aviso se pide en el `onDismiss` de esta hoja, no aquí.
+                            importResult = result
+                            importResultAwaitingDismiss = true
+                            activeSheet = nil
+                        }
+                    )
+                case .exportWizard:
+                    ExportRecordsView()
+                case .groupsExport:
+                    GroupsExportView(onFinish: { activeSheet = nil })
+                }
+            }
+    }
 
     // MARK: - Presentaciones del cierre de sesión y del borrado de cuenta
 
@@ -1249,10 +1258,10 @@ struct ProfileView: View {
     /// a lado y otras mide 810 pt y la lista flota sobre el ajuste (ticket
     /// `ipad-settings-sheet-size-depends-on-where-it-opens`).
     var body: some View {
-        deleteAccountPresentations(signOutPresentations(
+        deleteAccountPresentations(signOutPresentations(settingsSheets(
             settingsContainer
                 // UX 2.2 · L16-16: «Hacerlo ahora» del cierre de un tutorial, que vive dentro de esta pila.
-                .environment(\.tutorialDoItNow, TutorialDoItNowAction { doTutorialNow($0) })))
+                .environment(\.tutorialDoItNow, TutorialDoItNowAction { doTutorialNow($0) }))))
         .coachMarkOverlay(
             steps: SettingsTourSteps.steps,
             isPresented: $showSettingsTour,

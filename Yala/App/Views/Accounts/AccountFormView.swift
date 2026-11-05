@@ -222,7 +222,8 @@ struct AccountFormView: View {
                 Button(L10n.Common.understood, role: .cancel) {}
             },
             message: {
-                Text(L10n.Common.saveError)
+                // No «no se guardó»: parte de lo escrito puede verse ya en el resto de la app (decisión A del 2026-11-05).
+                Text(L10n.Account.saveErrorPartial)
             }
         )
         .modifier(SecondaryCurrencySuggestionAlert(

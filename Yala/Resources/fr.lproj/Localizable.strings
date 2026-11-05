@@ -8628,3 +8628,6 @@
 "bankEmail.icloudRuleDetail" = "Sur iCloud.com, ouvre Mail et va dans Réglages › Règles › Ajouter une règle. Si un message vient de l’adresse de ta banque, transfère-le à ton adresse Yala. Enregistre la règle.";
 "bankEmail.stepWaitTitle" = "Attends la prochaine alerte";
 "bankEmail.stepWaitDetail" = "Quand ta banque enverra la prochaine, l’opération apparaîtra dans ta Boîte de réception, prête à être confirmée.";
+
+/* Account form: the save failed after some changes were already applied in the app, so it must not say nothing was saved. */
+"account.saveErrorPartial" = "Tout n'a pas pu être enregistré. Une partie des modifications est peut-être déjà visible ; vérifie le compte et enregistre à nouveau.";

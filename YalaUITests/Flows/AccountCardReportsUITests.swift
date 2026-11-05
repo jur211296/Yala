@@ -63,8 +63,15 @@ final class AccountCardReportsUITests: XCTestCase {
         drillDown.tap()
         let addAccount = app.buttons["report_grouping_add_cuenta"]
         XCTAssertTrue(addAccount.waitForExistence(timeout: 5), "No está la opción Cuenta en «Desglosar».")
-        // El centro de esa fila no responde (la fila no tiene `contentShape`): se toca el «+».
-        addAccount.coordinate(withNormalizedOffset: CGVector(dx: 0.08, dy: 0.5)).tap()
+        // El toque de XCUITest cae en el CENTRO de la fila, lejos del «+» y del nombre: fija que la fila entera añade
+        // (ticket `report-grouping-sheet-row-center-does-not-respond`). Antes se tocaba el «+» porque el centro no respondía.
+        addAccount.tap()
+        let added = app.descendants(matching: .any)["report_grouping_active_cuenta"].waitForExistence(timeout: 5)
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "desglosar-tras-tocar-el-centro"
+        shot.lifetime = .keepAlways
+        add(shot)
+        XCTAssertTrue(added, "Tocar el centro de la fila «Cuenta» no la añadió a los niveles activos.")
         let save = app.buttons["toolbar_save_button"]
         XCTAssertTrue(save.waitForExistence(timeout: 5))
         save.tap()

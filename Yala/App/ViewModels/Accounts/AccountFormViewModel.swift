@@ -45,6 +45,11 @@ final class AccountFormViewModel {
     /// los habría convertido dos veces.
     private var reexpressedDraftIDs: Set<PersistentIdentifier> = []
 
+    /// El guardado del formulario. Solo existe para que un test lo haga fallar: `ModelContext.save()` no se puede forzar
+    /// a lanzar (ticket `save-error-alert-lies-when-the-context-autosaves`).
+    @ObservationIgnored
+    var persistChanges: (ModelContext) throws -> Void = { try $0.save() }
+
     // MARK: - Form State
     var name: String = ""
     var selectedType: AccountType = .general
@@ -871,12 +876,18 @@ final class AccountFormViewModel {
 
         // Force save to ensure @Query observers are notified of changes
         do {
-            try context.save()
+            try persistChanges(context)
             WidgetDataCache.updateCache(context: context)
             SessionState.shared.incrementDataVersion()
         } catch {
+            #if DEBUG
+            print("AccountFormViewModel: Error saving account: \(error)")
+            #endif
             // Lo escrito sigue en el contexto (es compartido: no se deshace). Releerlo hace que un segundo «Guardar» vea
             // las filas de saldo inicial que este dejó y las sustituya, en vez de añadir otra al lado (review S30).
+            // **Y no se deshace con `rollback()`, a propósito** (decisión A de Jürgen, 2026-11-05): medido, con un campo de
+            // la cuenta cambiado antes de reescribir su saldo inicial, `rollback()` aborta la app dentro de SwiftData
+            // (`docs/aprendizajes-tecnicos.md`). Por eso el aviso no dice «no se guardó»: dice que puede verse parte.
             loadTransactions()
             isShowingSaveError = true
             return false

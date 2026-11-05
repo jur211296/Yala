@@ -153,6 +153,16 @@ paths:
   (`CashFlowPlanUITests#test_resetPlan_asksWithAVisibleCancel`). En XCUITest los botones de esa alerta salen
   duplicados en el árbol: `.firstMatch`.
 
+- **Una hoja colgada del contenido RAÍZ de una `NavigationStack` se reconstruye desde cero al cambiar el tamaño del
+  texto, sin cerrarse (medido el 2026-11-05, iPhone 17 Pro, iOS 27.2, card mbj6).** Exportar, abierta desde la lista de
+  Ajustes, pasaba de «Exportar 2 registros» a «Exportar 5» y plegaba «Más opciones»: su vista se desmonta y se vuelve a
+  montar con el `@State` nuevo. Ni la lista ni el `activeSheet` cambian; solo el contenido de la hoja. La hoja de Ajustes
+  que presenta el Panel (colgada FUERA de su pila) no lo sufre. ⇒ **una hoja con estado que la persona va rellenando
+  cuelga del CONTENEDOR de la pila**, como las alertas de abajo (molde: `ProfileView.settingsSheets`, pin
+  `ProfileSheetsAnchorWiringTests`). El XCUITest no puede cambiar el tamaño del texto con la app abierta: se mide con un
+  conductor que espera un fichero de señal mientras el host corre `simctl ui <udid> content_size extra-large`. Las demás
+  hojas colgadas de la raíz de una pila no están auditadas.
+
 - **Una `.alert` colgada de la RAÍZ de una `NavigationStack` no sale si hay una pantalla empujada encima, aunque una
   `.sheet` colgada del mismo sitio sí (medido el 2026-10-17, iPhone 17 Pro, iOS 27.0, lote 20).** En Ajustes, las
   presentaciones del cierre de sesión y del borrado de cuenta colgaban de `listColumn`; desde «Tu cuenta de Yala»

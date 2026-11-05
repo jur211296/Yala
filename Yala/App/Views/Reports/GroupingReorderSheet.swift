@@ -86,7 +86,12 @@ struct GroupingReorderSheet: View {
                                     Text(dimension.displayName(expensesOnly: sessionState.isExpensesOnlyMode))
                                         .font(DS.Typography.body)
                                         .foregroundStyle(.primary)
+
+                                    Spacer(minLength: 0)
                                 }
+                                // Toda la fila añade, no solo sus glifos: sin esto el centro quedaba muerto (ticket
+                                // `report-grouping-sheet-row-center-does-not-respond`, regla de filas de `swiftui-ds.md`).
+                                .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                             .accessibilityIdentifier("report_grouping_add_\(dimension.rawValue)")

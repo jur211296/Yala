@@ -1,10 +1,10 @@
 ---
 id: drained-intent-that-presents-nothing-may-strand-the-next
-status: backlog
+status: done
 priority: low
 area: "presentaciones, router"
 created: 2026-10-08
-updated: 2026-10-08
+updated: 2026-11-05
 source: "review adversarial de `queued-offer-after-dismiss-flakes-on-a-cold-simulator` (2026-10-08)"
 ---
 
@@ -32,5 +32,18 @@ próximo intent o a que algo cambie la matriz.
 
 ## Criterios de aceptación
 
-- [ ] Medido con N ≥ 20: se atasca o no.
-- [ ] Si se atasca, arreglado y con la medición antes/después.
+- [x] Medido con N ≥ 20: se atasca o no.
+- [x] Si se atasca, arreglado y con la medición antes/después. (No se atasca: no hay arreglo.)
+
+## Medido (2026-11-05, lote P5 de la 2.3): no se atasca
+
+- Seam nuevo `<scheme>://uitest-notice?kind=quiet-then-trial-offer` (`UITestRouterNoticeStage.notices(for:)`): encola,
+  por la puerta de siempre y con Yala delante, `.remoteOnboardingCompleted` (que con el onboarding hecho no presenta
+  nada) y detrás la oferta de prueba. Por prioridad (`.high` frente a `.normal`) el silencioso drena primero (inferido de
+  `AppRouter.enqueue`, no instrumentado).
+- `QueuedNoticeAfterQuietIntentUITests` con `-test-iterations 20` (iPhone 17 Pro, iOS 27.2): **20 de 20 verdes**, la
+  oferta sale siempre, 13,7–14,7 s por corrida (unimodal: ninguna cola lenta que delate un rescate tardío).
+- Control: la oferta sola, mismo arranque, verde. Sin `fakePrices` la oferta no sale nunca (se guarda para el arranque
+  siguiente, L17-5): la primera tanda salió 20/20 roja por eso, no por la carrera.
+- El caso distingue un atasco: con un mutante que quita el cambio de revisión al drenar el aviso silencioso, rojo.
+- No se tocó el router. El caso queda en la suite como red (una corrida, ~15 s).

@@ -8639,3 +8639,6 @@
 "bankEmail.icloudRuleDetail" = "Na iCloud.com otwórz Pocztę i przejdź do Ustawienia › Reguły › Dodaj regułę. Jeśli wiadomość jest z adresu Twojego banku, przekaż ją na Twój adres Yala. Zapisz regułę.";
 "bankEmail.stepWaitTitle" = "Poczekaj na następne powiadomienie";
 "bankEmail.stepWaitDetail" = "Gdy bank wyśle kolejne, transakcja pojawi się w Twojej Skrzynce do potwierdzenia.";
+
+/* Account form: the save failed after some changes were already applied in the app, so it must not say nothing was saved. */
+"account.saveErrorPartial" = "Nie udało się zapisać wszystkiego. Część zmian może być już widoczna; sprawdź konto i zapisz ponownie.";

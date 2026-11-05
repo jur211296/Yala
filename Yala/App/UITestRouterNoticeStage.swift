@@ -5,7 +5,7 @@
 //  Seam de XCUITest para pedir un aviso de la app con Yala ya delante. Sus productores reales no se pueden disparar a
 //  voluntad en el simulador (la prueba que caduca, la cuenta de iCloud que cambia, la oferta tras el onboarding), y los
 //  launch args existentes los encolan en el ARRANQUE, antes de que el test pueda abrir un formulario. El test abre
-//  `<scheme>://uitest-notice?kind=<trial-offer|trial-expired|pro-ended|icloud-mismatch|apple-id-changed>` y este seam hace solo lo que haría el
+//  `<scheme>://uitest-notice?kind=<trial-offer|trial-expired|pro-ended|icloud-mismatch|apple-id-changed|quiet-then-trial-offer>` y este seam hace solo lo que haría el
 //  productor: `RouterEntryGate.shared.submit(_:)`. Lo que se prueba —qué consumidor lo drena y cuándo— es el camino
 //  real (ticket `invite-and-app-notices-present-over-other-tab-sheets`).
 //  Fuera de `-uitest` no hace nada, y en release no existe.
@@ -32,10 +32,27 @@ enum UITestRouterNoticeStage {
         }
     }
 
-    /// Bajo `-uitest`, encola el aviso que pide `url` por la puerta de siempre.
+    /// Los avisos que pide `url`, en el orden en que se encolan. `quiet-then-trial-offer` pide DOS: uno que no presenta
+    /// nada (`.remoteOnboardingCompleted` con el onboarding ya hecho) y, detrás, la oferta de prueba. Es la medición del
+    /// ticket `drained-intent-that-presents-nothing-may-strand-the-next`: si el drenaje del primero no vuelve a mirar la
+    /// cola, la oferta se queda esperando.
+    static func notices(for url: URL) -> [RouterIntent] {
+        let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        if items.first(where: { $0.name == "kind" })?.value == "quiet-then-trial-offer" {
+            return [.remoteOnboardingCompleted, .presentTrialOffer]
+        }
+        return notice(for: url).map { [$0] } ?? []
+    }
+
+    /// Bajo `-uitest`, encola los avisos que pide `url` por la puerta de siempre.
     @MainActor
     static func submitIfRequested(by url: URL) {
-        guard UITestHooks.isActive, let intent = notice(for: url) else { return }
+        guard UITestHooks.isActive else { return }
+        for intent in notices(for: url) { submit(intent) }
+    }
+
+    @MainActor
+    private static func submit(_ intent: RouterIntent) {
         // La hoja de fin de Pro exige que Pro se haya acabado de verdad (`justDowngraded`): el seam crea esa
         // precondición, no la salta. `-uitest-reset` la borra en el arranque siguiente.
         if case .presentDowngradeResolution = intent { StoreKitManager.shared.wasProUser = true }
