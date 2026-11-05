@@ -21,7 +21,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import app from "../src/index";
 import type { Env } from "../src/env";
 import { issueSessionToken } from "../src/attest/session";
-import { PREPARED_ROUTES, ROUTES, routeFor, type ManagedRoute, type Route } from "../src/ai/routes";
+import { LEGACY_OVERRIDES, PASSTHROUGH_MAX_OUTPUT_TOKENS, PREPARED_ROUTES, ROUTES, routeFor, type ManagedRoute, type Route } from "../src/ai/routes";
 import { TASKS, type TaskId } from "../src/ai/tasks";
 import { intentBody, photoReadBody, suggestionsBody } from "../bench/lib/appRequests";
 
@@ -337,12 +337,23 @@ describe("las de gpt-4.1-mini: las decide la tabla, con los parámetros de hoy h
     }
   });
 
-  it("una petición con gpt-4.1-mini que ninguna huella reconoce sale BYTE A BYTE como siempre (legacy.passthrough)", async () => {
+  it("una petición con gpt-4.1-mini que ninguna huella reconoce sale BYTE A BYTE como siempre, con el tope antepuesto (legacy.passthrough)", async () => {
     const body = { model: "gpt-4.1-mini", messages: [{ role: "system", content: "un prompt que no es de esta app" }], response_format: { type: "json_object" }, temperature: 0.2, stream: false };
     const raw = JSON.stringify(body, null, 3);
     const res = await chat(raw, "suggestions");
     expect(res.status).toBe(200);
-    expect(new TextDecoder().decode(sent[0].bytes)).toBe(raw);
+    // 2026-11-04: lo único nuevo es el tope, detrás de la `{`; el resto de bytes, los de la app.
+    expect(new TextDecoder().decode(sent[0].bytes)).toBe(`{"max_completion_tokens":${PASSTHROUGH_MAX_OUTPUT_TOKENS},${raw.slice(1)}`);
+    expect((sent[0].json ?? {}).max_completion_tokens).toBe(PASSTHROUGH_MAX_OUTPUT_TOKENS);
+  });
+
+  it("passthrough: si la app ya fijó tope, sale BYTE A BYTE sin tocar", async () => {
+    for (const key of ["max_tokens", "max_completion_tokens"]) {
+      sent = [];
+      const raw = JSON.stringify({ model: "gpt-4.1-mini", messages: [{ role: "system", content: "un prompt que no es de esta app" }], [key]: 77 });
+      expect((await chat(raw, "suggestions")).status).toBe(200);
+      expect(new TextDecoder().decode(sent[0].bytes), key).toBe(raw);
+    }
   });
 
   it("transcripción: sale con el modelo de la fila (gpt-transcribe), languages[] y sin language; otro modelo que no sea whisper-1 → 400", async () => {

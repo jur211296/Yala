@@ -102,7 +102,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | adr-013-does-not-know-yala-has-its-own-commit-msg | backlog | tickets/backlog/adr-013-does-not-know-yala-has-its-own-commit-msg.md |
 | advisory-ui-tests-fail-every-retry | done | tickets/done/advisory-ui-tests-fail-every-retry.md |
 | after-session-redesign-review-widgets-siri-applepay-and-web-copy | done | tickets/done/after-session-redesign-review-widgets-siri-applepay-and-web-copy.md |
-| ai-calls-have-no-output-token-cap | backlog | tickets/backlog/ai-calls-have-no-output-token-cap.md |
+| ai-calls-have-no-output-token-cap | done | tickets/done/ai-calls-have-no-output-token-cap.md |
 | ai-chat-reads-heavier-than-a-messaging-app | done | tickets/done/ai-chat-reads-heavier-than-a-messaging-app.md |
 | ai-comments-ignore-the-app-language | done | tickets/done/ai-comments-ignore-the-app-language.md |
 | ai-every-call-sends-its-task-and-passes-the-bench | done | tickets/done/ai-every-call-sends-its-task-and-passes-the-bench.md |
@@ -451,8 +451,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | g16-01-is-not-applied-on-staging | done | tickets/done/g16-01-is-not-applied-on-staging.md |
 | gate-doc-says-swift-testing-only | backlog | tickets/backlog/gate-doc-says-swift-testing-only.md |
 | gate-never-reads-test-file-warnings | backlog | tickets/backlog/gate-never-reads-test-file-warnings.md |
-| gateway-deploys-from-2-1-are-not-guarded-against-a-manifest-downgrade | backlog | tickets/backlog/gateway-deploys-from-2-1-are-not-guarded-against-a-manifest-downgrade.md |
-| gateway-does-not-record-ai-token-usage | backlog | tickets/backlog/gateway-does-not-record-ai-token-usage.md |
+| gateway-deploys-from-2-1-are-not-guarded-against-a-manifest-downgrade | done | tickets/done/gateway-deploys-from-2-1-are-not-guarded-against-a-manifest-downgrade.md |
+| gateway-does-not-record-ai-token-usage | done | tickets/done/gateway-does-not-record-ai-token-usage.md |
+| gateway-goldens-serialize-parallel-posts-on-node-26 | done | tickets/done/gateway-goldens-serialize-parallel-posts-on-node-26.md |
 | gateway-has-no-telemetry | done | tickets/done/gateway-has-no-telemetry.md |
 | gateway-proxies-any-model-and-any-length | done | tickets/done/gateway-proxies-any-model-and-any-length.md |
 | gateway-push-accepts-non-finite-numbers | backlog | tickets/backlog/gateway-push-accepts-non-finite-numbers.md |

@@ -7,6 +7,8 @@ export interface Env {
   // Telemetría propia mínima (POST /metrics, 2026-07-17): Workers Analytics Engine. Opcional a
   // propósito: ausente (tests / env sin configurar) → el handler acepta y descarta (no-op logueado).
   METRICS?: AnalyticsEngineDataset;
+  // Uso de cada llamada de IA (`src/ai/usage.ts`, 2026-11-04). Opcional por lo mismo: ausente, no se guarda.
+  AI_USAGE?: AnalyticsEngineDataset;
 
   // --- Vars (wrangler.toml [vars]) ---
   ENVIRONMENT: string; // "staging" | "production"

@@ -54,6 +54,13 @@ calidad medida y después por precio**. La app ya no decide nada: dice qué tare
   nombre a Gemini.
 - **Las filas `managed` ignoran los parámetros del cuerpo** (modelo, temperatura, formato): manda la fila. Un
   `maxOutputTokens` demasiado bajo trunca el JSON y la app lo rechaza: se fija con el p99 del banco ×2.
+- **Toda fila de chat lleva tope de salida, también las preparadas y las de `LEGACY_OVERRIDES`** (2026-11-04,
+  `test/ai.caps-and-usage.test.ts`). Las passthrough salen byte a byte con UN cambio: si la app no fijó tope, el
+  gateway antepone `"max_completion_tokens":4096,` tras la `{` (`withPassthroughCap`). La transcripción no tiene
+  tope de salida en la API de audio.
+- **Cada llamada deja su registro de uso** (`src/ai/usage.ts`): tarea, categoría, proveedor, modelo, estado,
+  `finish_reason`, tokens de entrada/caché/salida/razonamiento, ms e intentos. Nada del contenido ni del dispositivo:
+  un campo nuevo pasa por el test que lista las claves. Un adaptador nuevo devuelve `finishReason` en su resultado.
 
 ## El cupo de prueba del plan free
 

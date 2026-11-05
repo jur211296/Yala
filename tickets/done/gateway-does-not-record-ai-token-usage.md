@@ -1,10 +1,10 @@
 ---
 id: gateway-does-not-record-ai-token-usage
-status: backlog
+status: done
 priority: medium
 area: gateway, ai, cost
 created: 2026-10-07
-updated: 2026-10-08
+updated: 2026-11-04
 source: revisión del uso de IA (docs/ai-usage-review-2026-10.md, hallazgo H9)
 ---
 
@@ -52,3 +52,35 @@ Relacionado, no duplicado: `gateway-has-no-telemetry` trata el gateway sin ning�
 - Tampoco hay `finish_reason`, test del datapoint ni consulta guardada. La transcripción registra `usage: null` (`handler.ts:250`, `:258`), que basta para su punto 2 si se persiste.
 
 Triage 2026-10-08: abierto · medium → medium · desde `cef2a467f` el gateway lee `usage` y lo escribe en `console.log` (`ai/handler.ts:70-104`), pero no lo persiste en Analytics Engine ni guarda `finish_reason`.
+
+## Cierre 2026-11-04
+
+Decisión de Jürgen (2026-11-04): **Analytics Engine, dataset propio** (`yala_ai_usage`, `_staging` en staging). Guarda 90
+días; si hiciera falta más historia, se guarda aparte un resumen mensual.
+
+- `src/ai/usage.ts`: una fila por llamada con tarea, cubo, proveedor, modelo, estado, `finish_reason`, tokens de entrada,
+  caché, salida y razonamiento, ms e intentos. Las columnas, en `README.md` («Uso de tokens por llamada»), con la
+  consulta de tokens medios por función, % cacheado y respuestas cortadas por el tope.
+- Lo escriben los cuatro caminos: managed, `chat.explore`, passthrough y transcripción (esta sin tokens: la API no los da).
+- La respuesta a la app no cambia: `test/ai.routing.test.ts` sigue comparando bytes.
+- `test/ai.caps-and-usage.test.ts`: el registro trae esos campos y ninguno de texto ni del dispositivo; un error también
+  se registra; un fallo al guardar no tumba la respuesta; las columnas de Analytics Engine están fijadas.
+
+**Medido en staging** (versión `f48d2794`, `scripts/verify-ai.ts --headers`, 2026-11-05 UTC): las diez llamadas
+llegaron al dataset.
+
+| hora (UTC) | función | modelo | fin | estado | entrada | caché | salida | razonamiento | ms |
+|---|---|---|---|---|---|---|---|---|---|
+| 02:31:41 | photo.read | gpt-6-luna | stop | 200 | 4157 | 0 | 99 | 0 | 4074 |
+| 02:31:42 | chat.intent | gpt-6-luna | stop | 200 | 750 | 0 | 17 | 0 | 844 |
+| 02:31:46 | chat.suggestions | gpt-6-luna | stop | 200 | 339 | 0 | 303 | 0 | 3291 |
+| 02:31:49 | text.parse | gpt-6-luna | stop | 200 | 182 | 0 | 143 | 54 | 2601 |
+| 02:31:50 | chat.answer | gpt-6-luna | stop | 200 | 34 | 0 | 12 | 0 | 1280 |
+| 02:31:52 | insights.cards | gpt-6-luna | stop | 200 | 46 | 0 | 81 | 30 | 1694 |
+| 02:31:53 | insights.cashflow | gpt-6-luna | stop | 200 | 51 | 0 | 25 | 0 | 986 |
+| 02:31:55 | insights.deviation | gpt-6-luna | stop | 200 | 56 | 0 | 31 | 0 | 1393 |
+| 02:31:58 | trends.summary | gpt-6.1-sol | stop | 200 | 59 | 0 | 73 | 0 | 2956 |
+| 02:32:00 | chat.rewrite | gpt-6-luna | stop | 200 | 42 | 0 | 20 | 0 | 1157 |
+
+**Queda:** desplegar producción (Jürgen, `gateway/RUNBOOK.md`) y, tras una semana, leer el coste medio por pregunta, foto
+y nota de voz con la consulta del README.

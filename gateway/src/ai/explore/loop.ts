@@ -2,7 +2,7 @@ import type { ToolContext } from "../../../../mcp/src/toolCore";
 import { InvalidInputError } from "../../../../mcp/src/logic/dates";
 import { UpstreamError } from "../../../../mcp/src/data";
 import { errorResult } from "../providers/common";
-import { buildOpenAIBody, OPENAI_BASE, openAIUsage } from "../providers/openai";
+import { buildOpenAIBody, OPENAI_BASE, openAIFinishReason, openAIUsage } from "../providers/openai";
 import type { AdapterResult, FetchLike, OpenAIChatBody, Usage } from "../providers/types";
 import type { ManagedRoute } from "../routes";
 import { withExploreAddendum } from "./prompt";
@@ -231,7 +231,7 @@ export async function runExplore(body: OpenAIChatBody, route: ManagedRoute, deps
           const againText = await again.text();
           const againJson = safeJson(againText) as CompletionJson | null;
           usage = addUsage(usage, openAIUsage(againJson));
-          return { status: again.status, body: againText, usage, model: againJson?.model ?? null, attempts, stats };
+          return { status: again.status, body: againText, usage, model: againJson?.model ?? null, attempts, finishReason: openAIFinishReason(againJson), stats };
         } catch (err) {
           return { ...errorResult(502, "openai", `red: ${String(err)}`, attempts), usage, stats };
         }
@@ -243,7 +243,7 @@ export async function runExplore(body: OpenAIChatBody, route: ManagedRoute, deps
     const calls = Array.isArray(message?.tool_calls) ? message.tool_calls : [];
     if (calls.length === 0 || !allowTools) {
       // Respuesta final. Si con `tool_choice: none` aún trajera llamadas (no debería), la app lee `content` igual.
-      return { status: resp.status, body: text, usage, model: json?.model ?? null, attempts, stats };
+      return { status: resp.status, body: text, usage, model: json?.model ?? null, attempts, finishReason: openAIFinishReason(json), stats };
     }
 
     stats.rounds++;

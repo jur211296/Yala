@@ -35,6 +35,12 @@ export function buildOpenAIBody(body: OpenAIChatBody, route: ManagedRoute): Reco
   return out;
 }
 
+/** `finish_reason` de la primera elección de una respuesta de Chat Completions, o `null`. */
+export function openAIFinishReason(json: unknown): string | null {
+  const fr = (json as { choices?: { finish_reason?: unknown }[] } | null)?.choices?.[0]?.finish_reason;
+  return typeof fr === "string" ? fr : null;
+}
+
 export function openAIUsage(json: unknown): Usage | null {
   const u = (json as { usage?: Record<string, unknown> } | null)?.usage;
   if (!u || typeof u.prompt_tokens !== "number") return null;
@@ -100,7 +106,7 @@ export function makeOpenAICompatibleAdapter(opts: {
       }
       const usage = openAIUsage(json);
       if (!opts.normalize) {
-        return { status: resp.status, body: text, usage, model: json?.model ?? null, attempts };
+        return { status: resp.status, body: text, usage, model: json?.model ?? null, attempts, finishReason: json?.choices?.[0]?.finish_reason ?? null };
       }
       const choice = json?.choices?.[0];
       const raw = choice?.message?.content ?? "";
@@ -112,6 +118,7 @@ export function makeOpenAICompatibleAdapter(opts: {
         usage,
         model: json?.model ?? route.model,
         attempts,
+        finishReason: fr,
       };
     },
   };

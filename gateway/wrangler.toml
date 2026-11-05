@@ -79,6 +79,12 @@ class_name = "RateLimiter"
 binding = "METRICS"
 dataset = "yala_metrics_staging"
 
+# Uso de cada llamada de IA (2026-11-04, decisión de Jürgen: Analytics Engine, dataset propio): tarea, proveedor,
+# modelo, tokens y finish_reason, sin contenido. Columnas en src/ai/usage.ts. Retención AE: 90 días.
+[[analytics_engine_datasets]]
+binding = "AI_USAGE"
+dataset = "yala_ai_usage_staging"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["RateLimiter"]
@@ -196,3 +202,7 @@ class_name = "RateLimiter"
 [[env.production.analytics_engine_datasets]]
 binding = "METRICS"
 dataset = "yala_metrics"
+
+[[env.production.analytics_engine_datasets]]
+binding = "AI_USAGE"
+dataset = "yala_ai_usage"
