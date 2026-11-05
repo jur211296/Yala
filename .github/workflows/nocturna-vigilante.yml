@@ -83,7 +83,7 @@ jobs:
     steps:
       # Primero y sin condición: la entrega del aviso lleva `always()` y necesita la action local
       # en el workspace aunque un paso anterior haya fallado.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: ¿Ha nacido la corrida de UI de hoy?
         id: decidir

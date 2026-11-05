@@ -1,10 +1,10 @@
 ---
 id: two-qa-benches-nobody-runs
-status: backlog
+status: done
 priority: low
 area: "qa"
 created: 2026-09-09
-updated: 2026-10-08
+updated: 2026-11-04
 source: salió de camino al cerrar el-hook-que-prohibe-atribuir-a-una-ia-no-corre-en-este-repo
 ---
 
@@ -51,3 +51,7 @@ y conviene medir que no depende de nada de macOS.
 - Por qué low: vigilan dos redes (el sello del gate y el allowlist del CI), pero las dos redes funcionan. Lo que no existe es la alarma si se rompen.
 
 Triage 2026-10-08: abierto · medium → low · qa.yml ya corre cinco bancos de qa/scripts, pero sigue sin correr worktree-stamp-test.sh ni ci-allowlist-test.sh
+
+## Resuelto (2026-11-04, lote T6 · CI)
+
+Los dos bancos corren en el job `coverage-index` de `qa.yml`. `worktree-stamp-test.sh` no corría en Linux: `worktree-stamp.sh` usaba `stat -f '%Lp'`, que en GNU vuelca los bloques libres del disco (4 de 11 rojos medidos con `gstat`); ahora elige `stat` por `uname`, con la misma salida. Mutantes: quitar la columna de permisos pasaba 11/11, así que se añadió el caso F2 (fichero ya modificado + chmod), que lo caza en macOS y en Linux simulado; `encargos/*` en vez de `encargos/*.md` lo caza `ci-allowlist-test.sh` (15 casos).

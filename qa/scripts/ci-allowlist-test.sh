@@ -11,7 +11,7 @@
 #
 #   bash qa/scripts/ci-allowlist-test.sh
 #
-# Sale 0 si los 12 casos pasan. Al tocar la allowlist, volver a dejarlo en 12/12 y añadir
+# Sale 0 si los 15 casos pasan. Al tocar la allowlist, volver a dejarlo en 15/15 y añadir
 # el caso nuevo — con su gemelo negativo, la ruta vecina que NO debe saltarse.
 
 set -uo pipefail
@@ -46,6 +46,8 @@ t SALTA "solo el Worker"                     gateway/test/sync.goldens.test.ts g
 t SALTA "solo scripts de staging"            qa/cloud/cross-user-rls-test.sh qa/cloud/README.md
 t SALTA "solo documentacion"                 docs/ESTADO.md tickets/x.md README.md
 t SALTA "marketing y web"                    marketing/ficha.md Web/index.html
+t SALTA "solo el encargo de la sesion"       encargos/lanzados/2026-11-04-lote-t6-ci.md
+t SALTA "encargo + ticket + docs"            encargos/lanzados/x.md tickets/done/y.md docs/z.md
 
 echo "== Sigue corriendo: esto SI decide como se construye o se verifica"
 t CORRE "qa/scripts (el vecino de qa/cloud)" qa/scripts/worktree-stamp.sh
@@ -54,6 +56,7 @@ t CORRE "codigo de la app"                   Yala/App/Views/Panel/PanelView.swif
 t CORRE "tests de la app"                    YalaTests/CloudSync/StagingTestCredentials.swift
 t CORRE "el proyecto Xcode"                  Yala.xcodeproj/project.pbxproj
 t CORRE "el propio workflow"                 "$WF"
+t CORRE "un no-markdown en encargos/"        encargos/lanzados/x.sh
 
 echo "== Deny-by-default: basta UNO fuera de la allowlist"
 t CORRE "gateway + codigo de la app juntos"  gateway/src/index.ts Yala/App/YalaApp.swift

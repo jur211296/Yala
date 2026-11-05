@@ -65,7 +65,7 @@ jobs:
     timeout-minutes: 5
     steps:
       # Hace falta para poder usar la action local `.github/actions/avisar`.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Ejercitar el camino entero
         uses: ./.github/actions/avisar

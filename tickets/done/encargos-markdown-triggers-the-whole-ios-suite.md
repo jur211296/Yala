@@ -1,11 +1,11 @@
 ---
 id: encargos-markdown-triggers-the-whole-ios-suite
-status: backlog
+status: done
 priority: low
 area: "ci, proceso"
 created: 2026-09-10
 source: "medido el 2026-09-10 en el PR #126: el job `changes` dijo «CORRE — toca encargos/lanzados/…» sobre un diff sin una sola línea de Swift"
-updated: 2026-10-08
+updated: 2026-11-04
 ---
 
 # Un fichero de encargo en markdown dispara la suite entera de iOS, y eso pasa en TODA sesión lanzada
@@ -67,3 +67,7 @@ Un PR que toque **solo** `encargos/` tiene que salir con `tests` en `skipped`. Y
   `:209`) acota a `qa/cloud/` a propósito porque los scripts de `qa/scripts/` los ejecuta el propio workflow.
 
 Triage 2026-10-08: abierto · medium → low · el job `changes` (`qa.yml:203-216`) sigue sin `encargos/*`; la `concurrency` ya la añadió `25a71f999`; recibe por fusión el gemelo `ci-allowlist-no-cubre-encargos-ni-qa-scripts`.
+
+## Resuelto (2026-11-04, lote T6 · CI)
+
+`encargos/*.md` entra en la allowlist del job `changes` (medido: 651 ficheros, todos `.md`; 0 apariciones de `encargos` en el project.pbxproj, control `Utils` → 4). Acotado a `.md` a propósito. `ci-allowlist-test.sh` suma tres casos: solo el encargo y encargo+tickets+docs saltan; un no-markdown en `encargos/` corre. La `concurrency` ya estaba. `encargos/` sigue fuera de la lista «sin nada que compilar» de `CLAUDE.md` (decisión de proceso, no de CI).

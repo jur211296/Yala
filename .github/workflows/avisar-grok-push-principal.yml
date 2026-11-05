@@ -70,7 +70,7 @@ jobs:
       # Historia entera: el resumen la recorre con `git log` sobre `origin/2.2`. El checkout
       # es de la rama que dispara (la action local `.github/actions/avisar` sale de ahi), pero
       # lo que se resume es SIEMPRE `2.2`, tambien en una prueba manual desde otra rama.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 

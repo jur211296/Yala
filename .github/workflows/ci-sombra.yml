@@ -73,7 +73,7 @@ jobs:
           xcodebuild -version
           df -h / | tail -1
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Candado — la Mini tiene que estar libre
         run: bash qa/scripts/ci-runner/guardia.sh antes

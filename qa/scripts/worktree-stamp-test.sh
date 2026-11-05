@@ -73,6 +73,14 @@ echo "== F · chmod sin tocar el contenido SÍ la cambia"
 F1=$(s); chmod +x tracked.txt; F2=$(s)
 check "permisos detectados" distinto "$F1" "$F2"
 chmod -x tracked.txt
+# El caso de arriba no pinea los permisos: el chmod mete el fichero en `git diff HEAD`, y con
+# eso solo la lista ya cambia la huella. Aquí el fichero YA está en el diff antes del chmod,
+# así que solo la columna de permisos puede distinguirlos (un mutante sin ella dio 11/11).
+echo "editado" > tracked.txt
+F3=$(s); chmod +x tracked.txt; F4=$(s)
+check "permisos de un fichero ya modificado" distinto "$F3" "$F4"
+chmod -x tracked.txt
+git checkout -q -- tracked.txt
 
 echo "== G · fichero ignorado por .gitignore no influye"
 echo "ign/" > .gitignore; git add .gitignore >/dev/null; git commit -qm ign

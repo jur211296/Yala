@@ -1,10 +1,10 @@
 ---
 id: ci-checkout-v4-runs-on-deprecated-node
-status: backlog
+status: done
 priority: low
 area: ci
 created: 2026-09-07
-updated: 2026-10-08
+updated: 2026-11-04
 source: anotación del propio CI, vista de camino en el-job-de-tests-del-ci-no-tiene-timeout
 ---
 
@@ -59,3 +59,7 @@ y la anotación desaparecer. Verificar de paso que `setup-xcode@v1` no empieza a
 - Aparece además `actions/setup-node@v4` (`qa.yml:122`), que habría que mirar con el mismo criterio que `setup-xcode@v1`.
 
 Triage 2026-10-08: abierto · low → low · todos los checkouts siguen en `@v4` y ahora son siete; hoy no rompe nada, pero el CI es la red del auto-merge.
+
+## Resuelto (2026-11-04, lote T6 · CI)
+
+Los 10 `actions/checkout@v4` de los 5 workflows pasan a `actions/checkout@3d3c42e5… # v7.0.1` y los 2 `actions/setup-node@v4` a `@949feb24… # v7.1.0`, fijados por SHA. Las dos declaran `node24` (leído de su `action.yml`). El cambio que rompe en checkout v7 solo afecta a `pull_request_target`/`workflow_run` con forks, y ningún workflow usa esos eventos. `setup-xcode@v1` ya no se usa (`qa.yml` elige Xcode con `xcode-select`). La anotación de Node 20 se comprueba en el primer run del PR.

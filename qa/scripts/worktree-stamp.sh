@@ -32,6 +32,16 @@
 set -uo pipefail
 cd "$(git rev-parse --show-toplevel 2>/dev/null)" || exit 1
 
+# Permisos en octal (`644`, `755`). BSD (macOS) y GNU (el runner Linux del CI, que corre el
+# banco) piden flags distintas, y la de BSD en GNU NO falla limpio: `stat -f` es «sistema de
+# ficheros», trata `%Lp` como un fichero más y vuelca los bloques libres del disco, así que la
+# huella cambiaba entre dos llamadas seguidas (medido el 2026-11-04 con gstat: 4 casos rojos).
+if [ "$(uname)" = "Darwin" ]; then
+    permisos() { stat -f '%Lp' "$1" 2>/dev/null; }
+else
+    permisos() { stat -c '%a' "$1" 2>/dev/null; }
+fi
+
 {
     git rev-parse HEAD 2>/dev/null
 
@@ -46,7 +56,7 @@ cd "$(git rev-parse --show-toplevel 2>/dev/null)" || exit 1
         if [ -e "$f" ]; then
             printf '%s\t%s\t%s\n' \
                 "$f" \
-                "$(stat -f '%Lp' "$f" 2>/dev/null)" \
+                "$(permisos "$f")" \
                 "$(shasum -a 256 "$f" 2>/dev/null | cut -d' ' -f1)"
         else
             printf '%s\tausente\n' "$f"
