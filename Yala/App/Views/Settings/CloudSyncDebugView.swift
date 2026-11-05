@@ -187,6 +187,9 @@ final class CloudSyncMigrationPanelModel {
     /// para que el device-QA vea POR QUÉ el cutover espera y cuánto lleva esperando.
     var markerClockLabel = "—"
     var icloudVerdictLabel = "—"
+    /// El techo de la vuelta antes del montaje: fase sellada, desde cuándo y cuánto lleva parada
+    /// (`CloudSyncDebugReverseClockLogic`). Lo que sustituye al contador de red, que la vuelta ya no mueve.
+    var reversePreMountClockLabel = "—"
     var outboxDiagLabel = "—"
     var quiescent = false
     var mountedModeLabel = "—"
@@ -561,13 +564,23 @@ final class CloudSyncMigrationPanelModel {
         guard let state = try? context.fetch(descriptor).first else {
             phaseLabel = "notStarted (sin journal)"
             pendingEffectsLabel = "—"; countersLabel = "—"; cursorLabel = "—"; startedAtLabel = "—"
+            reversePreMountClockLabel = "—"
             markerClockLabel = "—"; icloudVerdictLabel = "—"
             return
         }
         phaseLabel = "\(state.readPhase().phase)"
         let pending = state.readPendingEffects().map(\.rawValue)
         pendingEffectsLabel = pending.isEmpty ? "—" : pending.joined(separator: ", ")
-        countersLabel = "mismatch \(state.verifyMismatchRetries) · red \(state.verifyNetworkRetries) · leader \(state.leaderDeviceID ?? "—") · seqCut \(state.serverSeqCut)"
+        let phase = state.readPhase().phase
+        countersLabel = CloudSyncDebugReverseClockLogic.countersLabel(
+            phase: phase, mismatchRetries: state.verifyMismatchRetries, networkRetries: state.verifyNetworkRetries,
+            leaderDeviceID: state.leaderDeviceID, serverSeqCut: state.serverSeqCut)
+        reversePreMountClockLabel = CloudSyncDebugReverseClockLogic.clockLabel(.init(
+            phase: phase, sealedPhaseRaw: state.reversePreMountPhaseRaw, progressAt: state.reversePreMountProgressAt,
+            causeRaw: state.reversePreMountCauseRaw, causeAt: state.reversePreMountCauseAt,
+            causeAccruedSeconds: state.reversePreMountCauseAccruedSeconds,
+            definitiveAt: state.reversePreMountDefinitiveAt,
+            definitiveAccruedSeconds: state.reversePreMountDefinitiveAccruedSeconds), now: .now)
         cursorLabel = state.snapshotCursorJSON ?? "—"
         startedAtLabel = state.startedAt.map { $0.formatted(date: .omitted, time: .standard) } ?? "—"
         markerClockLabel = state.markerWrittenSince.map {
@@ -734,6 +747,7 @@ struct CloudSyncDebugView: View {
                     row("Fase", migration.phaseLabel)
                     row("Pending fx", migration.pendingEffectsLabel)
                     row("Contadores", migration.countersLabel)
+                    row("Techo vuelta", migration.reversePreMountClockLabel)
                     row("Cursor", migration.cursorLabel)
                     row("startedAt", migration.startedAtLabel)
                     row("Quiescent", migration.quiescent ? "SÍ" : "NO")

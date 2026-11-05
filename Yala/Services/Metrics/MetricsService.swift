@@ -159,6 +159,12 @@ enum MetricsCanary: String {
     /// Terminó una espera a que iCloud termine de traer datos. `detail` = `<preWait|runner>|<settled|cut|cap>`; `x` =
     /// segundos esperados. Solo si hubo espera (con iCloud quieto no sale).
     case cloudMigrationImportWaited
+    /// Una página de la subida de la ida (`uploadingSnapshot`) quedó confirmada por el servidor (card «Activar la nube con
+    /// pocos datos tarda minutos», ticket `cloud-activation-time-is-unmeasured-between-the-claim-and-the-cutover`).
+    /// `detail` = `<tabla>|<filas de la página>`; `x` = segundos que tardó la página, de encolarla a confirmarla. Con
+    /// `cloudMigrationStep upload>verify` dice si el paso de la subida se va en una tabla grande (los tipos de cambio de
+    /// años, la hipótesis 2 del ticket) o en la latencia por página.
+    case cloudSnapshotPageUploaded
     case cloudSyncOutboxMirrorRehydrated
     case cloudSyncOutboxMirrorDivergence
     case cloudSyncMutationRejected
@@ -581,15 +587,18 @@ enum MetricsService {
         drainTask = Task { @MainActor in
             defer { drainTask = nil }
             while true {
-                let batch = Array(MetricsSpool.pending(defaults).prefix(25))
+                let batch = Array(MetricsSpool.pendingEntries(defaults).prefix(25))
                 guard !batch.isEmpty else { return }
-                let outcome = await client.send(install: installHash, app: appVersion, events: batch)
+                let outcome = await client.send(install: installHash, app: appVersion, events: batch.map(\.event))
+                // Se purga por IDENTIDAD lo que viajó: el `await` suelta el main actor y, con la cola en su tope, lo
+                // que se encola mientras tanto recorta por el frente (ver `MetricsSpool.remove(ids:)`).
+                let sent = Set(batch.map(\.id))
                 switch outcome {
                 case .delivered:
-                    MetricsSpool.removeFirst(batch.count, defaults: defaults)
+                    MetricsSpool.remove(ids: sent, defaults: defaults)
                     MetricsBreadcrumb.drained(count: batch.count)
                 case .dropped:
-                    MetricsSpool.removeFirst(batch.count, defaults: defaults)
+                    MetricsSpool.remove(ids: sent, defaults: defaults)
                 case .retry:
                     return
                 }
@@ -661,6 +670,11 @@ extension MetricsService {
     /// Un cambio de paso de la ida o la vuelta (`cloudMigrationStep`).
     static func cloudMigrationStep(from: String, to: String, previousStepSeconds: Double?) {
         canary(.cloudMigrationStep, detail: "\(from)>\(to)", value: previousStepSeconds ?? -1)
+    }
+
+    /// Una página de la subida de la ida confirmada (`cloudSnapshotPageUploaded`).
+    static func cloudSnapshotPageUploaded(table: String, rows: Int, seconds: Double) {
+        canary(.cloudSnapshotPageUploaded, detail: "\(table)|\(rows)", value: seconds)
     }
 
     /// Una espera a iCloud que terminó (`cloudMigrationImportWaited`).

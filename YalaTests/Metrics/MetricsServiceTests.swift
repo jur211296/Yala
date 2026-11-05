@@ -79,15 +79,29 @@ struct MetricsSpoolTests {
         #expect(pending.last?.n == "c54")
     }
 
-    @Test func removeFirst_retiraPorPrefijo() {
+    @Test func removeIDs_retiraSoloLoQueViajo() {
         let defaults = makeIsolatedDefaults()
         for i in 0..<4 {
             MetricsSpool.enqueue(.canary(name: "c\(i)", detail: nil, value: 1), defaults: defaults)
         }
-        MetricsSpool.removeFirst(2, defaults: defaults)
-        #expect(MetricsSpool.pending(defaults).map(\.n) == ["c2", "c3"])
-        MetricsSpool.removeFirst(99, defaults: defaults)  // más que el tamaño → vacía sin crash
-        #expect(MetricsSpool.pending(defaults).isEmpty)
+        let entries = MetricsSpool.pendingEntries(defaults)
+        MetricsSpool.remove(ids: [entries[1].id, entries[3].id], defaults: defaults)
+        #expect(MetricsSpool.pending(defaults).map(\.n) == ["c0", "c2"])
+        MetricsSpool.remove(ids: [UUID()], defaults: defaults)  // una identidad que ya no está → no toca nada
+        #expect(MetricsSpool.pending(defaults).map(\.n) == ["c0", "c2"])
+    }
+
+    /// El formato de antes (`[MetricsEvent]`, hasta 2.3) no se tira al actualizar: se lee y se le da identidad estable.
+    @Test func formatoAnterior_seLeeYConservaIdentidad() throws {
+        let defaults = makeIsolatedDefaults()
+        let legacy: [MetricsEvent] = [.ping(), .canary(name: "c1", detail: "d", value: 2)]
+        defaults.set(try JSONEncoder().encode(legacy), forKey: MetricsSpool.pendingKey)
+        let first = MetricsSpool.pendingEntries(defaults)
+        #expect(first.map(\.event) == legacy)
+        #expect(MetricsSpool.pendingEntries(defaults).map(\.id) == first.map(\.id),
+                "la identidad se escribe al leer: la purga de un drain casa con lo que leyó")
+        MetricsSpool.remove(ids: [first[0].id], defaults: defaults)
+        #expect(MetricsSpool.pending(defaults) == [legacy[1]])
     }
 
     @Test func spoolCorrupto_seDescartaSinCrash() {
@@ -107,6 +121,10 @@ private final class StubHTTPSession: SyncHTTPSession, @unchecked Sendable {
     let error: Error?
     private(set) var lastRequest: URLRequest?
     var callCount = 0
+    /// Nombres de todos los eventos que llegaron a la red, en orden.
+    private(set) var sentNames: [String] = []
+    /// Corre DENTRO del envío, antes de responder: simula lo que se encola mientras el `await` suelta el main actor.
+    var duringSend: ((Int) -> Void)?
     init(status: Int = 200, error: Error? = nil) {
         self.status = status
         self.error = error
@@ -114,6 +132,14 @@ private final class StubHTTPSession: SyncHTTPSession, @unchecked Sendable {
     func data(for request: URLRequest) async throws -> (Data, URLResponse) {
         callCount += 1
         lastRequest = request
+        if let body = request.httpBody {
+            do {
+                sentNames += try JSONDecoder().decode(MetricsRequestBody.self, from: body).events.map { $0.n ?? $0.e }
+            } catch {
+                sentNames.append("<body-no-decodifica>")
+            }
+        }
+        duringSend?(callCount)
         if let error { throw error }
         let response = HTTPURLResponse(
             url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!
@@ -282,6 +308,40 @@ struct MetricsServiceTests {
             }
             #expect(MetricsSpool.pending(defaults).isEmpty)
             #expect(stub.callCount >= 1)
+        }
+    }
+
+    /// Ticket `metrics-drain-purge-drops-unsent-events-when-the-spool-is-full`. Cola en su tope (50) y 5 canarios encolados
+    /// DURANTE el primer envío: el tope recorta por el frente (lo que estaba en vuelo) y una purga por posición se llevaba
+    /// c25…c29, que no habían salido nunca. Con la purga por identidad sale todo.
+    @Test func drain_conLaColaLlena_noPierdeLoEncoladoDuranteElEnvio() async {
+        await withStartedService { defaults, stub in
+            for i in 0..<MetricsSpool.capacity {
+                MetricsSpool.enqueue(.canary(name: "c\(i)", detail: nil, value: 1), defaults: defaults)
+            }
+            stub.duringSend = { call in
+                guard call == 1 else { return }
+                for i in 0..<5 { MetricsSpool.enqueue(.canary(name: "n\(i)", detail: nil, value: 1), defaults: defaults) }
+            }
+            MetricsService.kickDrain()
+            for _ in 0..<500 where !MetricsSpool.pending(defaults).isEmpty { await Task.yield() }
+            #expect(MetricsSpool.pending(defaults).isEmpty)
+            let expected = Set((0..<MetricsSpool.capacity).map { "c\($0)" } + (0..<5).map { "n\($0)" })
+            let missing = expected.subtracting(stub.sentNames)
+            #expect(missing.isEmpty, "nunca salieron: \(missing.sorted())")
+        }
+    }
+
+    /// Control: sin encolar durante el envío, la cola llena sale entera y una sola vez.
+    @Test func drain_conLaColaLlena_sinEncolarDurante_saleTodoUnaVez() async {
+        await withStartedService { defaults, stub in
+            for i in 0..<MetricsSpool.capacity {
+                MetricsSpool.enqueue(.canary(name: "c\(i)", detail: nil, value: 1), defaults: defaults)
+            }
+            MetricsService.kickDrain()
+            for _ in 0..<500 where !MetricsSpool.pending(defaults).isEmpty { await Task.yield() }
+            #expect(MetricsSpool.pending(defaults).isEmpty)
+            #expect(stub.sentNames == (0..<MetricsSpool.capacity).map { "c\($0)" })
         }
     }
 

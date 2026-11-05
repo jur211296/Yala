@@ -1,10 +1,10 @@
 ---
 id: metrics-drain-purge-drops-unsent-events-when-the-spool-is-full
-status: backlog
+status: done
 priority: low
 area: "métricas, canarios"
 created: 2026-09-26
-updated: 2026-10-08
+updated: 2026-11-05
 source: "review adversarial de `prefs-push-purge-drops-a-change-made-during-the-upload` (2026-09-26), lente de gemelos"
 ---
 
@@ -28,8 +28,8 @@ emiten justo mientras se vacía la cola pueden perderse sin rastro, y la racha q
 
 ## Criterios de aceptación
 
-- [ ] La purga tras el envío retira exactamente los eventos que viajaron (identidad del evento, no posición).
-- [ ] Test con la cola en su tope y eventos encolados durante el envío; control sin encolar.
+- [x] La purga tras el envío retira exactamente los eventos que viajaron (identidad del evento, no posición).
+- [x] Test con la cola en su tope y eventos encolados durante el envío; control sin encolar.
 
 ## Notas
 
@@ -41,3 +41,15 @@ emiten justo mientras se vacía la cola pueden perderse sin rastro, y la racha q
 - Sin cambios: `MetricsService` purga con `MetricsSpool.removeFirst(batch.count, …)` en las ramas `.delivered` y `.dropped`, y `MetricsSpool.enqueue` recorta con `queue.removeFirst(queue.count - capacity)`. Los commits posteriores al fichero añaden canarios (`84c3c3b3e`, `d9462c742`), no tocan la purga.
 
 Triage 2026-10-08: abierto · low → low · `MetricsService.kickDrain` sigue purgando con `MetricsSpool.removeFirst(batch.count)` por posición, y `MetricsSpool.enqueue` sigue recortando por el frente al llegar a `capacity = 50`.
+
+## Cierre (2026-11-05, lote N9)
+
+- La cola guarda cada evento con una identidad local que no viaja (`MetricsSpoolEntry`), y el drain purga con
+  `MetricsSpool.remove(ids:)` exactamente lo que envió. `removeFirst` se retiró: era la trampa.
+- El formato de antes (`[MetricsEvent]`) se lee y se le da identidad al vuelo, así una actualización no tira la cola.
+- La variante del spool que no decodifica durante el envío queda cerrada por lo mismo: las identidades enviadas ya no
+  están y la purga no toca lo encolado después.
+- Tests: `MetricsServiceTests.drain_conLaColaLlena_noPierdeLoEncoladoDuranteElEnvio` (cola en 50 y 5 canarios encolados
+  DENTRO del primer envío) con su control sin encolar, y `MetricsSpoolTests.removeIDs_*` / `formatoAnterior_*`.
+  Mutante «purga por posición» (`dropFirst(ids.count)`): cae el caso de la cola llena (faltaban c25…c29) y el de
+  `removeIDs`; el control sigue verde.
