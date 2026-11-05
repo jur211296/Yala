@@ -69,7 +69,7 @@ jobs:
   coverage-index:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Validar coverage-index (ratchet anti-drift)
         run: python3 qa/validate-coverage.py
       - name: Aislamiento de tests (makeTestContext( ⇒ .serialized)
@@ -85,6 +85,26 @@ jobs:
       # el hook global se salta sola aquí: en el runner no hay ~/.claude.
       - name: Candado anti-atribución (.githooks/commit-msg)
         run: bash qa/scripts/commit-msg-test.sh
+      # El hook de arriba solo corre al ESCRIBIR un commit: git no lo invoca en cherry-pick,
+      # revert ni rebase, y los merges de GitHub (el auto-merge incluido) se crean en el servidor.
+      # Este paso le pasa el MISMO hook a los commits ya hechos: en un PR, a cada commit de
+      # base..head y al título del PR (que GitHub copia al merge y al squash); en un push a
+      # `2.2`/`1.0`, a before..after. Lee el evento de GITHUB_EVENT_PATH y trae solo los commits
+      # que faltan (sin árboles: ~2 s). En el `/gate` revisa los commits sin subir. Elegido por
+      # Jürgen el 2026-10-08 (ticket `rebase-and-cherry-pick-skip-the-attribution-hook`).
+      - name: Candado anti-atribución sobre los commits del PR o del push
+        run: bash qa/scripts/ci-atribucion-commits.sh
+      - name: Candado sobre los commits, su banco (ci-atribucion-commits-test.sh)
+        run: bash qa/scripts/ci-atribucion-commits-test.sh
+      # El sello que deja `/gate` y que recalcula el pre-commit. Nació de un fallo real (bloqueaba
+      # todo fichero nuevo) y hasta el 2026-11-04 su banco no lo corría nadie. En Linux pedía un
+      # `stat` portable: el de BSD vuelca aquí los bloques libres del disco y la huella bailaba.
+      - name: Sello del gate (worktree-stamp.sh)
+        run: bash qa/scripts/worktree-stamp-test.sh
+      # La allowlist del job `changes`, de abajo: qué diffs se saltan la suite iOS. Ampliarla de
+      # más no da error, sale verde sin probar nada. El banco extrae el `case` de este fichero.
+      - name: Allowlist del job changes (ci-allowlist-test.sh)
+        run: bash qa/scripts/ci-allowlist-test.sh
       # La cola del simulador (`sim-lock.sh`) y su centinela (`sim-libre.sh`). Mismo
       # argumento que el candado de arriba, y aquí pesa más: un lock roto NO da error — deja
       # correr dos sesiones a la vez y el daño sale tres horas después disfrazado de test en
@@ -154,8 +174,8 @@ jobs:
       run:
         working-directory: mcp
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
@@ -187,8 +207,8 @@ jobs:
       run:
         working-directory: gateway
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
@@ -283,6 +303,12 @@ jobs:
               # job `mcp`). Medido el 2026-09-26: 0 apariciones en el project.pbxproj ni en las
               # fuentes de los targets.
               mcp/*) ;;
+              # Los encargos que deja `lanzar-sesion` (2026-11-04). Toda sesión lanzada commitea
+              # el suyo, así que sin esta línea TODO PR de sesión lanzada encolaba la suite.
+              # Medido: 651 ficheros, todos `.md`, y 0 apariciones de `encargos` en el
+              # project.pbxproj (control positivo: `Utils` → 4). ACOTADO a `.md`: otra cosa que
+              # aparezca ahí no está medida y sigue corriendo.
+              encargos/*.md) ;;
               *) culprit="$file"; break ;;
             esac
           done <<< "$changed"
@@ -293,7 +319,7 @@ jobs:
           [ "$total" -lt "$cap" ] || run_suite "la API cortó la lista en $cap ficheros"
 
           echo "run_tests=false" >> "$GITHUB_OUTPUT"
-          echo "::notice title=Suite de simulador::SE SALTA — el diff es solo docs/tickets/marketing (ficheros: $total)"
+          echo "::notice title=Suite de simulador::SE SALTA — el diff es solo docs/tickets/encargos/marketing (ficheros: $total)"
 
   # Suite de tests. Runner `xcode-27` (preview de GitHub, macOS 27): Xcode 27.1 + sim
   # iPhone 17 Pro en iOS 27.0 (rama 2.2; ver el paso «Seleccionar Xcode 27.1»). Build UNA vez + test-without-building.
@@ -476,7 +502,7 @@ jobs:
       - name: Exponer si a la UI le tocaba correr
         id: contexto
         run: echo "ui_tocaba=$UI_TOCABA" >> "$GITHUB_OUTPUT"
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # XCODE 27.1 FIJO EN LA RAMA 2.2 (2026-10-18). 2.2 usa APIs que solo existen en el SDK de
       # iOS 27 (el «Abrir cuenta» de Siri, PR #552) y con el 26.6 de `macos-26` no compilaba:
       # `SiriQueryIntents.swift:195: … has no member 'open'`, cero tests corridos. La release de 2.2
@@ -714,7 +740,7 @@ jobs:
       ui_7: ${{ steps.salida.outputs.ui_7 }}
       ui_8: ${{ steps.salida.outputs.ui_8 }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # Mismo paso y mismo porque que en el job `tests`.
       - name: Seleccionar Xcode 27.1
         run: bash qa/scripts/ci-xcode.sh
@@ -829,7 +855,7 @@ jobs:
       issues: write
     steps:
       # Hace falta para poder usar la action local `.github/actions/avisar`.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: ¿Hay algo que avisar?
         id: componer

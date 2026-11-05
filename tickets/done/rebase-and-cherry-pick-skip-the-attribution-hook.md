@@ -1,10 +1,10 @@
 ---
 id: rebase-and-cherry-pick-skip-the-attribution-hook
-status: backlog
+status: done
 priority: low
 area: "proceso"
 created: 2026-09-09
-updated: 2026-10-08
+updated: 2026-11-04
 source: lente adversarial al cerrar el-hook-que-prohibe-atribuir-a-una-ia-no-corre-en-este-repo
 ---
 
@@ -78,3 +78,7 @@ historial dispara.
 Con A, la prioridad es `low`.
 
 Triage 2026-10-08: abierto · medium → low · `qa.yml:82` solo prueba el banco del hook y no escanea los commits del PR; 0 fugas medidas en 2.1 desde el 2026-09-10.
+
+## Resuelto (2026-11-04, lote T6 · CI)
+
+Camino A (Jürgen, 2026-10-08). `qa/scripts/ci-atribucion-commits.sh`, paso del job `coverage-index`, le pasa el MISMO `.githooks/commit-msg` a cada commit de `base..head` del PR (mensaje, autor y committer) y al título del PR; en push a `2.2`/`1.0`, a `before..after`; en el `/gate`, a los commits sin subir. Banco `ci-atribucion-commits-test.sh`, 14 casos (cherry-pick, revert, merge, `--author`, título, push, local, fail-closed), 5 mutantes muertos. Medido al cablearlo: el 2026-11-04 entraron 9 commits firmados en `2.3`/`2.2` porque la Max no tiene `core.hooksPath` en `~/Yala`.

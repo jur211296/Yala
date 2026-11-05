@@ -219,7 +219,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ci-2-2-builds-with-xcode-26-and-uses-ios-27-apis | done | tickets/done/ci-2-2-builds-with-xcode-26-and-uses-ios-27-apis.md |
 | ci-allowlist-no-cubre-encargos-ni-qa-scripts | discarded | tickets/discarded/ci-allowlist-no-cubre-encargos-ni-qa-scripts.md |
 | ci-avisador-de-rojos-advisory-tiene-la-clave-mal | done | tickets/done/ci-avisador-de-rojos-advisory-tiene-la-clave-mal.md |
-| ci-checkout-v4-runs-on-deprecated-node | backlog | tickets/backlog/ci-checkout-v4-runs-on-deprecated-node.md |
+| ci-checkout-v4-runs-on-deprecated-node | done | tickets/done/ci-checkout-v4-runs-on-deprecated-node.md |
 | ci-destination-assumes-a-simulator-that-may-not-exist | done | tickets/done/ci-destination-assumes-a-simulator-that-may-not-exist.md |
 | ci-no-corre-la-suite-del-gateway | done | tickets/done/ci-no-corre-la-suite-del-gateway.md |
 | ci-one-red-in-pure-logic-triples-the-step-and-the-job-ceiling-cancels-it | done | tickets/done/ci-one-red-in-pure-logic-triples-the-step-and-the-job-ceiling-cancels-it.md |
@@ -373,7 +373,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | el-job-de-tests-del-ci-no-tiene-timeout | done | tickets/done/el-job-de-tests-del-ci-no-tiene-timeout.md |
 | el-saldo-de-distribucion-no-se-entera-de-un-registro-nuevo | done | tickets/done/el-saldo-de-distribucion-no-se-entera-de-un-registro-nuevo.md |
 | el-turno-del-simulador-cubre-tambien-la-compilacion | backlog | tickets/backlog/el-turno-del-simulador-cubre-tambien-la-compilacion.md |
-| encargos-markdown-triggers-the-whole-ios-suite | backlog | tickets/backlog/encargos-markdown-triggers-the-whole-ios-suite.md |
+| encargos-markdown-triggers-the-whole-ios-suite | done | tickets/done/encargos-markdown-triggers-the-whole-ios-suite.md |
 | ensure-rates-for-existing-transactions-has-no-callers | backlog | tickets/backlog/ensure-rates-for-existing-transactions-has-no-callers.md |
 | entitlement-sync-forzado-es-noop-si-hay-otro-en-vuelo | backlog | tickets/backlog/entitlement-sync-forzado-es-noop-si-hay-otro-en-vuelo.md |
 | entry-to-panel-closes-sheets-of-other-tabs | done | tickets/done/entry-to-panel-closes-sheets-of-other-tabs.md |
@@ -877,7 +877,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | readme-index-generator-walks-into-claude-worktrees | discarded | tickets/discarded/readme-index-generator-walks-into-claude-worktrees.md |
 | readme-index-lists-files-from-other-worktrees | discarded | tickets/discarded/readme-index-lists-files-from-other-worktrees.md |
 | readme-index-scans-internal-worktrees | discarded | tickets/discarded/readme-index-scans-internal-worktrees.md |
-| rebase-and-cherry-pick-skip-the-attribution-hook | backlog | tickets/backlog/rebase-and-cherry-pick-skip-the-attribution-hook.md |
+| rebase-and-cherry-pick-skip-the-attribution-hook | done | tickets/done/rebase-and-cherry-pick-skip-the-attribution-hook.md |
 | record-pending-deletion-still-counts-outside-records | done | tickets/done/record-pending-deletion-still-counts-outside-records.md |
 | record-row-voiceover-reads-a-foreign-amount-in-the-preferred-currency | done | tickets/done/record-row-voiceover-reads-a-foreign-amount-in-the-preferred-currency.md |
 | record-selectors-open-at-medium-detent | done | tickets/done/record-selectors-open-at-medium-detent.md |
@@ -1110,7 +1110,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | trial-says-30-days-for-a-one-month-offer | done | tickets/done/trial-says-30-days-for-a-one-month-offer.md |
 | tutorial-completion-check-appears-only-after-reentering | done | tickets/done/tutorial-completion-check-appears-only-after-reentering.md |
 | two-account-drafts-for-one-group-expense-can-create-two-real-legs | done | tickets/done/two-account-drafts-for-one-group-expense-can-create-two-real-legs.md |
-| two-qa-benches-nobody-runs | backlog | tickets/backlog/two-qa-benches-nobody-runs.md |
+| two-qa-benches-nobody-runs | done | tickets/done/two-qa-benches-nobody-runs.md |
 | two-silent-local-reads-leave-a-false-or-no-trace | done | tickets/done/two-silent-local-reads-leave-a-false-or-no-trace.md |
 | ui-suite-2-2-five-tests-red-on-the-base | done | tickets/done/ui-suite-2-2-five-tests-red-on-the-base.md |
 | uitest-compara-fechas-sin-fijar-locale | done | tickets/done/uitest-compara-fechas-sin-fijar-locale.md |

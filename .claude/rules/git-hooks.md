@@ -112,9 +112,16 @@ Medido: git **no invoca** `commit-msg` en `cherry-pick`, `revert`, `rebase` ni
 `merge --squash`. Y los botones de merge de la web de GitHub crean el commit en servidor,
 donde no hay hook que valga.
 
-O sea que el candado cubre **escribir** un commit, no **replayarlo**. Cerrar eso pide otra
-superficie (un `pre-push` o un check de CI) y tiene su ticket:
-`rebase-and-cherry-pick-skip-the-attribution-hook`.
+O sea que el hook cubre **escribir** un commit, no **replayarlo**. Lo replayado lo cubre desde
+el 2026-11-04 `qa/scripts/ci-atribucion-commits.sh`, paso del job `coverage-index` (requerido,
+así que frena el auto-merge): le pasa **este mismo hook** a cada commit de `base..head` del PR y
+al título del PR —lo que GitHub escribe en el merge y en el squash—, y en el push a `2.2`/`1.0` a
+`before..after`. En el `/gate` revisa los commits que aún no están en ningún remoto. Banco:
+`ci-atribucion-commits-test.sh` (cherry-pick, revert, merge, `--author`, título, push y local).
+
+**Un hook que no corre no avisa.** El 2026-11-04 la Max no tenía `core.hooksPath` en `~/Yala`
+y entraron 9 commits firmados en `2.3` y `2.2` en un día. Si el check de CI se pone rojo con
+commits tuyos, mira primero `git config --get core.hooksPath`.
 
 Dos detalles de flujo, por si te muerden: si el hook tumba un `git merge`, el árbol queda a
 medias (`MERGE_HEAD` y `MERGE_MSG` puestos, índice staged, `HEAD` sin mover) y hay que
@@ -175,5 +182,6 @@ test -x .githooks/commit-msg && echo "candado puesto" || echo "SIN CANDADO"
 
 Corre `qa/scripts/precommit-gate.sh`, que comprueba el sello de `/gate`. Sale 0 sin
 mirar nada si no hay ficheros `.swift` en staging: un cambio de solo docs no necesita
-gate. Su banco es `qa/scripts/worktree-stamp-test.sh`, y a ése **no lo corre nadie**
-automáticamente.
+gate. Su banco es `qa/scripts/worktree-stamp-test.sh`, que corre en `coverage-index` desde el
+2026-11-04. El sello lee los permisos con `stat`, que es distinto en BSD y en GNU: si lo tocas,
+córrelo también en Linux (o con `gstat` delante en el PATH), que es donde lo corre el CI.
