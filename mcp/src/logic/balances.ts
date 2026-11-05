@@ -2,8 +2,11 @@
  * Saldos de cuentas. No hay columna de saldo: el saldo es la suma de los movimientos de la cuenta, incluido el
  * movimiento de saldo inicial (`balance_adjustment_type = "initial_balance"`).
  *
- * - Por cuenta: port de `InitialBalanceService.currentBalance` (Yala/Services/InitialBalanceService.swift:46):
- *   Σ `amount` de sus movimientos, en la divisa nativa.
+ * - Por cuenta: port de `AccountBalanceCalculator.currentBalance` (Yala/Utils/AccountBalanceCalculator.swift): Σ `amount`
+ *   de sus movimientos en la divisa de la cuenta. Un movimiento en OTRA divisa (las dos del catálogo) entra convertido
+ *   a la de la cuenta con la tasa del día UTC de su `date` (`amountInAccountCurrency`, regla de 2.3 del 2026-11-05:
+ *   filas que quedaron en la divisa vieja tras cambiar la de la cuenta en otro teléfono). Con una divisa desconocida,
+ *   o sin fecha, se suma tal cual, como la app.
  * - Total: port de `LiveBalanceCalculator.liveBalanceBreakdown`
  *   (Yala/App/Logic/Calculators/LiveBalanceCalculator.swift:111) con el filtro de cuentas del chat
  *   (`FullFinancialContextBuilder.buildBalances` = `PanelTotalAccountsLogic.countableAccounts`: fuera las excluidas de
@@ -20,7 +23,7 @@
  *   `local_day`; sin ninguno, cuenta.
  */
 import { marksApproximate } from "./approx";
-import { convertOn, type RateBook } from "./fx";
+import { convertOn, normalizeCode, utcDateKey, type RateBook } from "./fx";
 import { dayInZone, txDay, type Day } from "./dates";
 
 /** Día de un instante en la zona, o null si no se puede leer. */
@@ -77,11 +80,20 @@ export function computeBalances(
     return false;
   });
 
+  const accountCurrency = new Map(accounts.map((a) => [a.sync_id, normalizeCode(a.currency_code)]));
   const byAccount = new Map<string, { sum: number; count: number }>();
   for (const tx of counted) {
     if (!tx.account_ref) continue;
-    const amount = num(tx.amount);
-    if (amount === null) continue;
+    const raw = num(tx.amount);
+    if (raw === null) continue;
+    let amount = raw;
+    const from = normalizeCode(tx.currency_code ?? "USD");
+    const to = accountCurrency.get(tx.account_ref) ?? null;
+    const key = tx.date ? utcDateKey(tx.date) : null;
+    if (from && to && from !== to && key) {
+      const converted = convertOn(raw, from, to, key, rates);
+      if (converted) amount = converted.value;
+    }
     const agg = byAccount.get(tx.account_ref) ?? { sum: 0, count: 0 };
     agg.sum += amount;
     agg.count += 1;

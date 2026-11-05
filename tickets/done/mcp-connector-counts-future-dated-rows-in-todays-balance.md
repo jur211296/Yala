@@ -38,3 +38,7 @@ golden y regenerarlo. **Desplegar el conector es producción**: lo hace Jürgen.
   gasto posterior a `now`. Regenerado desde la app en el simulador; `mcp/test/golden.test.ts` usa el `now` del
   escenario y pasa.
 - Desplegado en staging. Producción, con el runbook del conector (Jürgen).
+- **Al rebasar sobre 2.3 (2026-11-05)** el golden cazó un cambio de la app de ese mismo día: el saldo de una cuenta
+  convierte a su divisa los movimientos que quedaron en otra (`AccountBalanceCalculator.amountInAccountCurrency`).
+  Portado a `computeBalances` (tasa del día UTC de `date`; divisa desconocida o sin fecha, tal cual) y golden
+  regenerado: la cuenta de `mes-con-grupos-y-divisas` pasa a 10318.78. Sin la conversión, el golden de TS falla.

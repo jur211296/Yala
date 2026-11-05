@@ -8,7 +8,8 @@
 //  conector—. Este test las mete en SwiftData por el camino real del pull (`EntityApplyMap`) y calcula con el código
 //  de producción, sin réplicas:
 //
-//  - saldo por cuenta: `AccountBalanceCalculator.currentBalance` (con el corte de hoy en `now`);
+//  - saldo por cuenta: `AccountBalanceCalculator.currentBalance` (con el corte de hoy en `now`, y lo que está en otra
+//    divisa convertido a la de la cuenta con la tasa de su fecha);
 //  - saldo total y su «≈»: `LiveBalanceCalculator.liveBalanceBreakdown` (con el corte de hoy en `now`) sobre las cuentas
 //    que cuentan (como el Panel; el chat recorta a 13 meses al leer, y el conector no);
 //  - periodos y totales de recurrentes: `FullFinancialContextBuilder.buildFromArrays` (el contexto del chat, que es
@@ -202,7 +203,8 @@ struct MCPAppParityGoldenTests {
         // ninguna pantalla usa.
         var perAccount: [String: Any] = [:]
         for (id, account) in accounts {
-            let balance = AccountBalanceCalculator.currentBalance(for: account, allTransactions: allTx, asOf: now)
+            let balance = AccountBalanceCalculator.currentBalance(
+                for: account, allTransactions: allTx, asOf: now, converter: converter)
             perAccount[id] = round6(NSDecimalNumber(decimal: balance).doubleValue)
         }
 
