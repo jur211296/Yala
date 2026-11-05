@@ -41,13 +41,7 @@ struct GroupsSyncCapabilityTests {
     }
 
     private func cleanup(_ dir: URL) {
-        do {
-            try FileManager.default.removeItem(at: dir)
-        } catch {
-            #if DEBUG
-            print("GroupsSyncCapabilityTests: no se pudo borrar \(dir.lastPathComponent): \(error)")
-            #endif
-        }
+        discardTestStoreDirectory(dir)
     }
 
     private func makeContext(_ dir: URL) throws -> ModelContext {
@@ -68,7 +62,7 @@ struct GroupsSyncCapabilityTests {
     /// Aísla `GroupsSyncCapability.defaults` en una suite propia; el llamador restaura con el valor devuelto.
     private func isolateDefaults() throws -> UserDefaults {
         let previous = GroupsSyncCapability.defaults
-        GroupsSyncCapability.defaults = try #require(UserDefaults(suiteName: "test.groupsCapability.\(UUID().uuidString)"))
+        GroupsSyncCapability.defaults = try #require(testDefaults(suiteName: "test.groupsCapability.\(UUID().uuidString)"))
         return previous
     }
 

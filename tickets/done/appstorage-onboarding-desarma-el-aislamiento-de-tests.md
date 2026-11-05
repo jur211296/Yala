@@ -1,10 +1,10 @@
 ---
 id: appstorage-onboarding-desarma-el-aislamiento-de-tests
-status: backlog
+status: done
 priority: low
 area: testing
 created: 2026-09-02
-updated: 2026-10-08
+updated: 2026-11-04
 ---
 
 # Una corrida de tests deja el onboarding marcado como visto en el simulador
@@ -157,3 +157,18 @@ lectura del árbol `553b91c9`.
 - `UITestEphemeralDefaults.applyOnboardingAlreadySeen` (`:141`) sigue purgando solo al arrancar.
 
 Triage 2026-10-08: abierto · medium → low · ContentView sigue escribiendo las dos claves en el almacén persistente (22 asignaciones); solo afecta al aislamiento de tests y a arranques manuales del simulador.
+
+## Cerrado (2026-11-04) por el criterio del encargo, partido en dos (decisión de Jürgen, opción A)
+
+Medido: una corrida completa de YalaTests no escribe las dos claves. La corrida de unit queda blindada igual: el conserje
+fotografía `hasCompletedOnboarding` y `hasShownWelcomeChooser` de `.standard` al empezar y las devuelve al salir
+(`TestSimulatorJanitorTests.elOnboardingVuelveAComoEstaba` y `laRedDelOnboardingCuelgaDelCicloDelProceso`). La mitad de
+XCUITest (los `@AppStorage` de `ContentView`) sigue en `uitests-leave-the-onboarding-marked-as-seen-through-contentview`:
+`ContentView` no se tocó porque la bienvenida lo estaba cambiando en paralelo.
+
+Medición (iPhone 17 Pro de la Max, iOS 27.2, scheme `Yala`, corrida completa de YalaTests con el simulador en turno):
+la base (`origin/2.3` sin tocar, instalación limpia) dejó **1.262** ficheros de preferencias, **74** directorios en
+`tmp/`, el `.plist` del App Group con `isProUser`, `lastUsedAccountID` y `siri_finance_snapshot`, y **2.910** avisos
+«vnode unlinked while in use»; con el arreglo (12.783 tests en verde): **0** preferencias nuevas, App Group sin claves
+antes y después (leído vía `cfprefsd`: el fichero en disco va desfasado), onboarding sin marcar y **3** avisos, los del
+control negativo del eje 4b del spike R3, que los provoca a propósito.

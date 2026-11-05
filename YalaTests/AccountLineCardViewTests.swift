@@ -36,7 +36,7 @@ struct AccountLineCardViewTests {
     }
 
     private func isolatedDefaults() throws -> UserDefaults {
-        try #require(UserDefaults(suiteName: "test.\(UUID().uuidString)"))
+        try #require(testDefaults(suiteName: "test.\(UUID().uuidString)"))
     }
 
     /// Lo que hay en el store de cada movimiento, leído con un contexto NUEVO.

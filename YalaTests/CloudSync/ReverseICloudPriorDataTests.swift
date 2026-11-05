@@ -307,7 +307,7 @@ struct MirroredRecordNamesTests {
 
     /// Las filas con `ZCKRECORDNAME` y nada más: las `NULL` son exports pendientes, que iCloud todavía no tiene.
     @Test func readsTheRecordNames_skippingPendingExports() {
-        let dir = freshDir(); defer { try? FileManager.default.removeItem(at: dir) }
+        let dir = freshDir(); defer { discardTestStoreDirectory(dir) }
         let url = makeDatabase(dir, [
             "CREATE TABLE ZTRANSACTIONITEM (Z_PK INTEGER)",
             "CREATE TABLE ANSCKRECORDZONEMETADATA (Z_PK INTEGER, ZCKRECORDZONENAME TEXT)",
@@ -321,7 +321,7 @@ struct MirroredRecordNamesTests {
 
     /// Un store que nunca montó el espejo no tiene la tabla: no conoce nada, y eso es una respuesta.
     @Test func aStoreThatNeverMirrored_knowsNothing() {
-        let dir = freshDir(); defer { try? FileManager.default.removeItem(at: dir) }
+        let dir = freshDir(); defer { discardTestStoreDirectory(dir) }
         let url = makeDatabase(dir, ["CREATE TABLE ZTRANSACTIONITEM (Z_PK INTEGER)"])
         #expect(CKIdentityCapture.mirroredRecordNames(storeURL: url) == .names([]))
     }
@@ -329,26 +329,26 @@ struct MirroredRecordNamesTests {
     /// Con side-tables del espejo y sin la de metadatos, el formato cambió: no se sabe qué conoce, y «nada» llevaría el
     /// borrado a la copia propia.
     @Test func mirrorTablesWithoutTheMetadataTable_areUnreadable() {
-        let dir = freshDir(); defer { try? FileManager.default.removeItem(at: dir) }
+        let dir = freshDir(); defer { discardTestStoreDirectory(dir) }
         let url = makeDatabase(dir, ["CREATE TABLE ANSCKRECORDZONEMETADATA (Z_PK INTEGER, ZCKRECORDZONENAME TEXT)"])
         #expect(CKIdentityCapture.mirroredRecordNames(storeURL: url) == .unreadable("meta-table-missing"))
     }
 
     @Test func aTableWithoutTheRecordNameColumn_isUnreadable() {
-        let dir = freshDir(); defer { try? FileManager.default.removeItem(at: dir) }
+        let dir = freshDir(); defer { discardTestStoreDirectory(dir) }
         let url = makeDatabase(dir, ["CREATE TABLE ANSCKRECORDMETADATA (Z_PK INTEGER, ZENTITYPK INTEGER)"])
         #expect(CKIdentityCapture.mirroredRecordNames(storeURL: url) == .unreadable("meta-columns-missing"))
     }
 
     @Test func aMissingStore_isUnreadable() {
-        let dir = freshDir(); defer { try? FileManager.default.removeItem(at: dir) }
+        let dir = freshDir(); defer { discardTestStoreDirectory(dir) }
         #expect(CKIdentityCapture.mirroredRecordNames(storeURL: dir.appendingPathComponent("nada.sqlite"))
                 == .unreadable("open-failed"))
     }
 
     /// Un fichero que no es una base de datos no puede leerse como «el espejo no conoce nada».
     @Test func aFileThatIsNotADatabase_isUnreadable() throws {
-        let dir = freshDir(); defer { try? FileManager.default.removeItem(at: dir) }
+        let dir = freshDir(); defer { discardTestStoreDirectory(dir) }
         let url = dir.appendingPathComponent("basura.sqlite")
         try Data(repeating: 0x41, count: 4096).write(to: url)
         #expect(CKIdentityCapture.mirroredRecordNames(storeURL: url) == .unreadable("schema-unreadable"))

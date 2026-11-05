@@ -64,7 +64,7 @@ struct PrivateGateZoneMarkAcrossRetriesTests {
     private func freshDefaults(_ name: String = #function) throws -> UserDefaults {
         let suite = "test.privateGateZoneMark.\(name).\(UUID().uuidString)"
         UserDefaults().removePersistentDomain(forName: suite)
-        return try #require(UserDefaults(suiteName: suite))
+        return try #require(testDefaults(suiteName: suite))
     }
 
     @Test("re-armar para reintentar no borra que la zona ya se había ido")

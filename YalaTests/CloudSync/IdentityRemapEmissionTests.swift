@@ -29,6 +29,8 @@ struct IdentityRemapEmissionTests {
         let dir = FileManager.default.temporaryDirectory
             .appendingPathComponent("IdRemap-\(UUID().uuidString)", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        // Nadie lo borraba: se apunta para retirarlo cuando su store cierre (o al salir el proceso).
+        retireTestStoreDirectoryLater(dir)
         return dir
     }
     /// NO borra el dir (2026-07-16): borrar los .sqlite bajo un container on-disk VIVO cuyo SUT dejó

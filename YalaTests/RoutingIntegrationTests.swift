@@ -221,7 +221,7 @@ struct RoutingIntegrationTests {
     @MainActor @Test
     func deferredBuffer_persistsAndDrainsNavigateIntent() {
         // Use isolated UserDefaults to avoid colliding with the real buffer.
-        let isolatedDefaults = UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+        let isolatedDefaults = testDefaults(suiteName: "test.\(UUID().uuidString)")!
         let buffer = DeferredIntentBuffer(defaults: isolatedDefaults)
         buffer.clear()
 
@@ -240,7 +240,7 @@ struct RoutingIntegrationTests {
 
     @MainActor @Test
     func deferredBuffer_silentlyDropsNonSerializableIntents() {
-        let isolatedDefaults = UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+        let isolatedDefaults = testDefaults(suiteName: "test.\(UUID().uuidString)")!
         let buffer = DeferredIntentBuffer(defaults: isolatedDefaults)
         buffer.clear()
 

@@ -158,7 +158,7 @@ struct BudgetsViewModelTests {
 
     @Test("userConfiguredCalendar respects Monday preference")
     func userConfiguredCalendar_respectsMondayPreference() {
-        let defaults = UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+        let defaults = testDefaults(suiteName: "test.\(UUID().uuidString)")!
         defaults.set(2, forKey: "firstWeekday")
         let cal = userConfiguredCalendar(defaults: defaults)
         #expect(cal.firstWeekday == 2)
@@ -166,7 +166,7 @@ struct BudgetsViewModelTests {
 
     @Test("userConfiguredCalendar respects Sunday preference")
     func userConfiguredCalendar_respectsSundayPreference() {
-        let defaults = UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+        let defaults = testDefaults(suiteName: "test.\(UUID().uuidString)")!
         defaults.set(1, forKey: "firstWeekday")
         let cal = userConfiguredCalendar(defaults: defaults)
         #expect(cal.firstWeekday == 1)
@@ -174,7 +174,7 @@ struct BudgetsViewModelTests {
 
     @Test("userConfiguredCalendar defaults to Monday when preference unset")
     func userConfiguredCalendar_defaultsToMondayWhenUnset() {
-        let defaults = UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+        let defaults = testDefaults(suiteName: "test.\(UUID().uuidString)")!
         let cal = userConfiguredCalendar(defaults: defaults)
         #expect(cal.firstWeekday == 2, "Default should be Monday (2), not system default Sunday (1)")
     }

@@ -477,7 +477,7 @@ struct AttestHeaderTransportTests {
     }
 
     @Test func groupsSyncClientPull_sendsAttest_whenProviderIsLive() async throws {
-        let dir = freshDir(); defer { try? FileManager.default.removeItem(at: dir) }
+        let dir = freshDir(); defer { discardTestStoreDirectory(dir) }
         let context = try makeContext(dir)
         let session = GroupsSyncClientTests.StubHTTPSession()
         let client = GroupsSyncClient(
@@ -491,7 +491,7 @@ struct AttestHeaderTransportTests {
     }
 
     @Test func groupsSyncClientPull_omitsAttest_whenProviderIsNil() async throws {
-        let dir = freshDir(); defer { try? FileManager.default.removeItem(at: dir) }
+        let dir = freshDir(); defer { discardTestStoreDirectory(dir) }
         let context = try makeContext(dir)
         let session = GroupsSyncClientTests.StubHTTPSession()
         let client = GroupsSyncClient(

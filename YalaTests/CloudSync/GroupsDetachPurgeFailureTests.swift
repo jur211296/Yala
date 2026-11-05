@@ -57,7 +57,7 @@ struct GroupsDetachPurgeFailureTests {
         return dir
     }
 
-    private func cleanup(_ dir: URL) { try? FileManager.default.removeItem(at: dir) }
+    private func cleanup(_ dir: URL) { discardTestStoreDirectory(dir) }
 
     /// Los tres stores, como en producción. Molde de `GroupsDetachHistoryReplayTests`.
     private func makeFullContext(_ dir: URL) throws -> ModelContext {
@@ -189,7 +189,7 @@ struct GroupsDetachPurgeFailureTests {
     /// `UserDefaults` aislado: el host de los unit tests es la propia app, así que `.standard` es el del
     /// simulador y el libro escrito ahí sobreviviría a la corrida.
     private func isolatedDefaults(_ name: String) -> UserDefaults {
-        let defaults = UserDefaults(suiteName: name)!
+        let defaults = testDefaults(suiteName: name)!
         defaults.removePersistentDomain(forName: name)
         return defaults
     }

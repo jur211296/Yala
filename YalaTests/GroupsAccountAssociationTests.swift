@@ -51,7 +51,7 @@ private final class FakeKV: BeaconKeyValueStore, @unchecked Sendable {
 }
 
 private func isolatedDefaults() -> UserDefaults {
-    UserDefaults(suiteName: "test.assoc.\(UUID().uuidString)")!
+    testDefaults(suiteName: "test.assoc.\(UUID().uuidString)")!
 }
 
 // MARK: - 1 · La tabla de la sección

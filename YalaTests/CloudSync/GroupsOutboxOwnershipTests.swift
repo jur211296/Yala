@@ -32,7 +32,7 @@ private enum OwnershipFixture {
         return dir
     }
 
-    static func cleanup(_ dir: URL) { try? FileManager.default.removeItem(at: dir) }
+    static func cleanup(_ dir: URL) { discardTestStoreDirectory(dir) }
 
     static func makeContext(_ dir: URL) throws -> ModelContext {
         let personalCfg = ModelConfiguration(
@@ -135,7 +135,7 @@ struct GroupsOutboxOwnershipLogicTests {
 
     private func isolatedDefaults() throws -> (UserDefaults, String) {
         let suite = "GroupsOutboxOwnership-\(UUID().uuidString)"
-        return (try #require(UserDefaults(suiteName: suite)), suite)
+        return (try #require(testDefaults(suiteName: suite)), suite)
     }
 
     @Test("MUTACIÓN: el dueño es la cuenta que el teléfono tenía cuando se escribió, no la de ahora")

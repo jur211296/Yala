@@ -25,7 +25,7 @@ struct AppPreferencesTests {
     /// Crea un UserDefaults suite aislado único por test.
     private static func makeSuite() -> UserDefaults {
         let suiteName = "AppPreferencesTests.\(UUID().uuidString)"
-        return UserDefaults(suiteName: suiteName)!
+        return testDefaults(suiteName: suiteName)!
     }
 
     // MARK: - Almacén aislado: no publica

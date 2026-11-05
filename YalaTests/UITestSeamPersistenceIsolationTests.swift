@@ -88,7 +88,7 @@ struct UITestSeamPersistenceIsolationTests {
 
     private func makeToyStore() throws -> ToyStore {
         let suite = "test.uitest-seam.\(UUID().uuidString)"
-        let defaults = try #require(UserDefaults(suiteName: suite))
+        let defaults = try #require(testDefaults(suiteName: suite))
         return ToyStore(suite: suite, defaults: defaults)
     }
 
@@ -259,6 +259,7 @@ struct UITestSeamPersistenceIsolationTests {
     /// dentro del mismo helper — y eso lo fija `losTresPersistLlevanElGuardYSonElUnicoPushDeAquí`.
     @Test func cargarPreferencias_noReescribeLoQueYaDiceElStore() throws {
         let suite = "test.uitest-seam.lavado.\(UUID().uuidString)"
+        TestSimulatorJanitor.registerDefaultsSuite(suite)
         let counting = try #require(CountingDefaults(suiteName: suite))
         defer { counting.removePersistentDomain(forName: suite) }
 
@@ -347,6 +348,7 @@ struct UITestSeamPersistenceIsolationTests {
     /// cubre el test de arriba, y lo que aquí importa es la recarga, que es por donde entra el eco.
     @Test func recargaTrasUnWipe_noReMaterializaLaKeyBorrada() async throws {
         let suite = "test.uitest-seam.wipe.\(UUID().uuidString)"
+        TestSimulatorJanitor.registerDefaultsSuite(suite)
         let counting = try #require(CountingDefaults(suiteName: suite))
         defer { counting.removePersistentDomain(forName: suite) }
         let key = AppPreferences.Keys.expensesOnlyMode

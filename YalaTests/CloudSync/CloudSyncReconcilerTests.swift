@@ -26,7 +26,7 @@ struct CloudSyncReconcilerTests {
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir
     }
-    private func cleanup(_ dir: URL) { try? FileManager.default.removeItem(at: dir) }
+    private func cleanup(_ dir: URL) { discardTestStoreDirectory(dir) }
 
     private func makeContext(_ dir: URL) throws -> ModelContext {
         let personalCfg = ModelConfiguration(
@@ -362,7 +362,7 @@ struct CloudSyncReconcilerTests {
 
     /// Aislado (regla del repo: NUNCA `UserDefaults.standard` en tests).
     private func isolatedDefaults() -> UserDefaults {
-        UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+        testDefaults(suiteName: "test.\(UUID().uuidString)")!
     }
 
     @Test("cuentas sistema misma moneda → merge determinista; TXs re-apuntadas; tombstone drena (autor default)")

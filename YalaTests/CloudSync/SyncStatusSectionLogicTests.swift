@@ -136,7 +136,7 @@ struct SyncStatusSectionLogicTests {
             .appendingPathComponent("SSS-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer {
-            do { try FileManager.default.removeItem(at: dir) } catch { print("SSS cleanup: \(error)") }
+            discardTestStoreDirectory(dir)
         }
         let context = try makeContext(dir)
         for rejected in [nil, nil, "poison"] as [String?] {
@@ -161,7 +161,7 @@ struct SyncStatusSectionLogicTests {
             .appendingPathComponent("SSS-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer {
-            do { try FileManager.default.removeItem(at: dir) } catch { print("SSS cleanup: \(error)") }
+            discardTestStoreDirectory(dir)
         }
         let context = try makeContext(dir)
         #expect(CloudMigrationController.pendingSyncCount(context: context, uncapturedPersonal: { 0 }) == 0)

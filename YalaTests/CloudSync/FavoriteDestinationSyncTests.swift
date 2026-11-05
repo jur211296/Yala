@@ -29,6 +29,8 @@ struct FavoriteDestinationSyncTests {
         let dir = FileManager.default.temporaryDirectory
             .appendingPathComponent("FavDest-\(UUID().uuidString)", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        // Nadie lo borraba: se apunta para retirarlo cuando su store cierre (o al salir el proceso).
+        retireTestStoreDirectoryLater(dir)
         return dir
     }
 
@@ -50,7 +52,7 @@ struct FavoriteDestinationSyncTests {
     private func isolateCapability(backend level: Int?) -> () -> Void {
         let previous = SyncCapability.defaults
         let suite = "test.syncCapability.\(UUID().uuidString)"
-        let isolated = UserDefaults(suiteName: suite) ?? previous
+        let isolated = testDefaults(suiteName: suite) ?? previous
         SyncCapability.defaults = isolated
         if let level { isolated.set(level, forKey: SyncCapability.backendManifestVersionKey) }
         return {

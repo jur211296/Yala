@@ -65,10 +65,10 @@ struct PrivateBirthKeyValueHandoverTests {
         let store: OwnerKeyValueStore
 
         init() throws {
-            let domain = try #require(UserDefaults(suiteName: name))
+            let domain = try #require(testDefaults(suiteName: name))
             let backing = HandoverSpyStore()
             defaults = domain
-            languageSuite = try #require(UserDefaults(suiteName: languageName))
+            languageSuite = try #require(testDefaults(suiteName: languageName))
             spy = backing
             store = OwnerKeyValueStore(backing: backing, decision: { OwnerKeyValueGate.current(domain) })
             // La celda de la activación tras relanzar: `clearGroupsOnlyNeutralMount` ya corrió, el eje sigue apagado.

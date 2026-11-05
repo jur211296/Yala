@@ -46,8 +46,14 @@ final class GroupsSyncClient {
     // `GET /groups/pull` pasan por `requireUserAndAttest` (`gateway/src/groups/routes.ts:67-73`), que bajo
     // `ENFORCE = "enforce"` responde `yala_attest_required` sin el header. Cablearlo aquí cablea TAMBIÉN el
     // `GroupsMerkleClient` de `GET /groups/merkle`: el init lo construye reenviando ESTE provider (:234).
+    //
+    // `outboxMirror` también va EXPLÍCITO aquí, y es el único sitio que lo pasa real: el default del init es `nil`
+    // para que los tests no escriban en el espejo del App Group del simulador (ticket
+    // `unit-tests-write-group-amounts-into-the-real-app-group-mirror`). Sin esta línea, producción se quedaría sin
+    // espejo y `rehydrateOutboxFromMirror` no tendría de dónde recuperar el outbox tras un kill.
     static let shared = GroupsSyncClient(
         attestProvider: AttestSessionProvider.live,
+        outboxMirror: GroupsOutboxMirror(),
         deviceTokenProvider: { PushTokenRegistrar.shared.storedToken })
 
     // MARK: Constantes
@@ -352,6 +358,10 @@ final class GroupsSyncClient {
 
     // MARK: Init
 
+    /// El default `nil` de `outboxMirror` es **SOLO PARA TESTS**, como el de `attestProvider`: el espejo real vive en
+    /// el App Group y lo comparten todos los tests del proceso. Producción lo pasa en el `.shared`, su única
+    /// construcción; lo fija `GroupsOutboxMirrorDefaultTests`.
+    ///
     /// El default `{ nil }` de `attestProvider` es **SOLO PARA TESTS**: `POST /groups/push` y
     /// `GET /groups/pull` pasan por `requireUserAndAttest` (`gateway/src/groups/routes.ts:67-73`).
     /// Producción DEBE pasar `AttestSessionProvider.live` — y lo hace en un único sitio, el `.shared` de
@@ -368,7 +378,7 @@ final class GroupsSyncClient {
         now: @escaping () -> Date = { .now },
         nodeID: NodeID = NodeID.generate(),
         merkleClient: GroupsMerkleClient? = nil,
-        outboxMirror: GroupsOutboxMirror? = GroupsOutboxMirror(),
+        outboxMirror: GroupsOutboxMirror? = nil,
         deviceTokenProvider: @escaping @MainActor () -> String? = { nil },
         forceRefreshTokenProvider: @escaping @MainActor () async -> String? =
             { await CloudAuthService.shared.forceRefreshAccessToken() },

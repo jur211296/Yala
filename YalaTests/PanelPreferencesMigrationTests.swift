@@ -20,7 +20,7 @@ struct PanelPreferencesMigrationTests {
 
     private static func makeSuite() -> UserDefaults {
         let suiteName = "PanelPreferencesMigrationTests.\(UUID().uuidString)"
-        return UserDefaults(suiteName: suiteName)!
+        return testDefaults(suiteName: suiteName)!
     }
 
     private static func writeLegacyJSON(_ configs: [WidgetConfig], to defaults: UserDefaults) {

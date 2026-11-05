@@ -44,7 +44,7 @@ struct ChatUnsignedExpenseRepairTests {
     /// Un `UserDefaults` limpio y propio del caso, para que el flag one-shot no viaje entre tests.
     private func makeIsolatedDefaults() throws -> UserDefaults {
         let name = "ChatUnsignedExpenseRepairTests.\(UUID().uuidString)"
-        return try #require(UserDefaults(suiteName: name))
+        return try #require(testDefaults(suiteName: name))
     }
 
     /// Una fecha dentro de la ventana en la que el chat guardaba sin firmar.

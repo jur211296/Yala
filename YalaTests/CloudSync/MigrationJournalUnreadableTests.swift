@@ -96,7 +96,7 @@ struct MigrationJournalUnreadablePhaseStoreTests {
     }
 
     private func cleanup(_ dir: URL) {
-        do { try FileManager.default.removeItem(at: dir) } catch { print("MJU cleanup: \(error)") }
+        discardTestStoreDirectory(dir)
     }
 
     private func makeContainer(_ dir: URL) throws -> ModelContainer {
@@ -300,7 +300,7 @@ struct MigrationJournalUnreadableConsumerTests {
 
     /// Sin `configure` no hay journal: un `MigrationPhaseStore` recién creado lo dice, y el swap de persona lo suelta.
     @Test func phaseStore_withoutConfigure_isNotConnected() {
-        let defaults = UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+        let defaults = testDefaults(suiteName: "test.\(UUID().uuidString)")!
         let store = MigrationPhaseStore(defaults: defaults)
         #expect(!store.isJournalConnected)
         store.releaseContainerForSwap()

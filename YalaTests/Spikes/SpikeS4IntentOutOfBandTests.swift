@@ -64,7 +64,7 @@ struct SpikeS4IntentOutOfBandTests {
     }
 
     private func cleanup(_ url: URL) {
-        try? FileManager.default.removeItem(at: url.deletingLastPathComponent())
+        discardTestStoreDirectory(url.deletingLastPathComponent())
     }
 
     private func makeContainer(_ url: URL) throws -> ModelContainer {

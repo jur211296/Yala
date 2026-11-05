@@ -257,7 +257,7 @@ struct ICloudCorpusWipeArmTests {
     private func freshDefaults(_ name: String = #function) -> UserDefaults {
         let suite = "test.privateICloudGate.\(name).\(UUID().uuidString)"
         UserDefaults().removePersistentDomain(forName: suite)
-        return UserDefaults(suiteName: suite)!
+        return testDefaults(suiteName: suite)!
     }
 
     @Test("armar el borrado arma TAMBIÉN el neutro durable")

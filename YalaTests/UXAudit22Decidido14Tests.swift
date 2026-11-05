@@ -226,7 +226,7 @@ struct UXAudit22Decidido14GroupFirstTests {
     /// Molde de `GroupInviteSheetAlwaysShownTests.makeEnv`, con sesión y consentimiento como parámetros.
     private func makeEnv(_ spy: JoinSpy, session: Bool, consent: Bool) -> () -> Void {
         let suite = "test.groupfirst.\(UUID().uuidString)"
-        let d = UserDefaults(suiteName: suite)!
+        let d = testDefaults(suiteName: suite)!
         PendingJoinStore.defaults = d
         let savedJoin = GroupBackendInviteEntryHandler.joinProvider
         let savedSession = GroupBackendInviteEntryHandler.hasSessionProvider

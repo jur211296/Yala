@@ -38,7 +38,7 @@ struct PrefsSyncE2EStagingTests {
             .appendingPathComponent("prefs-e2e-\(UUID().uuidString)", isDirectory: true)
         return dir
     }
-    private func cleanup(_ dir: URL) { try? FileManager.default.removeItem(at: dir) }
+    private func cleanup(_ dir: URL) { discardTestStoreDirectory(dir) }
 
     /// Password-grant contra Supabase staging (mismo flujo que el harness del gateway).
     private func login() async throws -> String {

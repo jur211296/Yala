@@ -1,10 +1,10 @@
 ---
 id: unit-tests-write-group-amounts-into-the-real-app-group-mirror
-status: backlog
+status: done
 priority: low
 area: "testing, grupos"
 created: 2026-09-26
-updated: 2026-10-08
+updated: 2026-11-04
 source: "`groups-drain-failure-reads-as-nothing-pending` (2026-09-26), medido en el simulador del gate"
 ---
 
@@ -38,3 +38,18 @@ el directorio del simulador una vez.
 - En `YalaTests/` hay unas 184 construcciones de `GroupsSyncClient(` y solo unas 27 pasan `outboxMirror:` en las diez líneas siguientes (conteo con grep, aproximado).
 
 Triage 2026-10-08: abierto · low → low · sigue igual (el espejo real por defecto en casi todos los tests); es higiene de tests que ya obligó a inyectar un testigo, sin efecto en la app.
+
+## Cerrado (2026-11-04)
+
+El default de `outboxMirror` en `GroupsSyncClient.init` es `nil`; el `.shared`, única construcción de `Yala/`, pasa
+`GroupsOutboxMirror()` explícito, así que la app no cambia. Lo fija
+`TestSimulatorJanitorTests.elEspejoRealDeGruposSoloLoRecibeElShared` (incluido el conteo de construcciones). El espejo de
+Grupos del App Group estaba en 0 entradas al medir y siguió en 0. Además, el conserje devuelve el dominio de preferencias
+del App Group a como estaba al empezar: ahí sí dejaba claves la corrida.
+
+Medición (iPhone 17 Pro de la Max, iOS 27.2, scheme `Yala`, corrida completa de YalaTests con el simulador en turno):
+la base (`origin/2.3` sin tocar, instalación limpia) dejó **1.262** ficheros de preferencias, **74** directorios en
+`tmp/`, el `.plist` del App Group con `isProUser`, `lastUsedAccountID` y `siri_finance_snapshot`, y **2.910** avisos
+«vnode unlinked while in use»; con el arreglo (12.783 tests en verde): **0** preferencias nuevas, App Group sin claves
+antes y después (leído vía `cfprefsd`: el fichero en disco va desfasado), onboarding sin marcar y **3** avisos, los del
+control negativo del eje 4b del spike R3, que los provoca a propósito.

@@ -147,7 +147,7 @@ struct AdoptSessionOwnershipLogicTests {
     // MARK: - El registrador
 
     @Test func ownsLiveSession_onlyWithTheMarkOfThatSession() throws {
-        let d = try #require(UserDefaults(suiteName: "AdoptSessionOwnershipLogicTests.\(UUID().uuidString)"))
+        let d = try #require(testDefaults(suiteName: "AdoptSessionOwnershipLogicTests.\(UUID().uuidString)"))
         #expect(!AdoptSessionOwnership.ownsLiveSession(sessionAccountHash: Self.cuenta, d))
         AdoptSessionOwnership.record(Self.cuenta, d)
         #expect(AdoptSessionOwnership.ownsLiveSession(sessionAccountHash: Self.cuenta, d))
@@ -174,7 +174,7 @@ struct AdoptSessionOwnershipStoreTests {
 
     private static func defaults() throws -> UserDefaults {
         let name = "AdoptSessionOwnershipStoreTests.\(UUID().uuidString)"
-        return try #require(UserDefaults(suiteName: name))
+        return try #require(testDefaults(suiteName: name))
     }
 
     @Test func record_thenRead() throws {

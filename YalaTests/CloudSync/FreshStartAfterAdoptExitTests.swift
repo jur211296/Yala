@@ -351,7 +351,7 @@ struct FreshStartAfterAdoptExitGateTests {
             resetCoordinator(context)
         }
         let dir = freshDir()
-        defer { try? FileManager.default.removeItem(at: dir) }
+        defer { discardTestStoreDirectory(dir) }
         let mirror = GroupsOutboxMirror(directoryURL: dir)
         try mirror.write(foreignEntry(0))
         try mirror.write(foreignEntry(1))
@@ -395,7 +395,7 @@ struct FreshStartAfterAdoptExitGateTests {
             resetCoordinator(context)
         }
         let dir = freshDir()
-        defer { try? FileManager.default.removeItem(at: dir) }
+        defer { discardTestStoreDirectory(dir) }
         let mirror = GroupsOutboxMirror(directoryURL: dir)
         try mirror.write(foreignEntry(0))
         let witness = witness(mirror, owner: nil)

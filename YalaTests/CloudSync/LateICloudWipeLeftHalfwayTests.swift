@@ -110,7 +110,7 @@ struct LateICloudWipeLeftHalfwayLogicTests {
 struct LateICloudWipeLeftHalfwayFlagsTests {
 
     private func freshDefaults() throws -> UserDefaults {
-        try #require(UserDefaults(suiteName: "LateICloudWipeLeftHalfwayFlagsTests.\(UUID().uuidString)"))
+        try #require(testDefaults(suiteName: "LateICloudWipeLeftHalfwayFlagsTests.\(UUID().uuidString)"))
     }
 
     /// La marca de la zona es un sub-estado del arm: sin arm no se escribe, y no puede describir un borrado que no existe.

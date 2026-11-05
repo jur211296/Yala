@@ -58,7 +58,7 @@ struct GroupsDetachHistoryReplayTests {
         return dir
     }
 
-    private func cleanup(_ dir: URL) { try? FileManager.default.removeItem(at: dir) }
+    private func cleanup(_ dir: URL) { discardTestStoreDirectory(dir) }
 
     private func makeContext(_ dir: URL) throws -> ModelContext {
         let personalCfg = ModelConfiguration(
@@ -305,7 +305,7 @@ struct GroupsDetachHistoryReplayTests {
         defer { cleanup(dir) }
         let context = try makeContext(dir)
         let client = makeClient()
-        let defaults = UserDefaults(suiteName: "test.detach.replay.\(UUID().uuidString)")!
+        let defaults = testDefaults(suiteName: "test.detach.replay.\(UUID().uuidString)")!
 
         let group = try makeBackendGroup(context)
         let zone = group.cloudKitZoneID

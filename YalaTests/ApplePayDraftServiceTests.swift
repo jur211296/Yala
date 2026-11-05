@@ -60,7 +60,7 @@ struct ApplePayDraftServiceTests {
     /// la da el clear de `.lastUsedAccountIsolated`, y hacerlo aquí volvería a romper la restauración
     /// (ver el docblock de arriba).
     init() {
-        pendingDefaults = UserDefaults(suiteName: "test.applepay.pending.\(UUID().uuidString)")!
+        pendingDefaults = testDefaults(suiteName: "test.applepay.pending.\(UUID().uuidString)")!
         // Quiescencia garantizada: status .idle + lastSuccessfulImportDate nil → gate .run.
         iCloudSyncService.shared._testReset()
     }

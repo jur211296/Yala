@@ -49,7 +49,7 @@ struct FXOneToOneRepairSweepTests {
     /// Un `UserDefaults` limpio y propio del caso, para que el one-shot no viaje entre tests.
     private func makeIsolatedDefaults() throws -> UserDefaults {
         let name = "FXOneToOneRepairSweepTests.\(UUID().uuidString)"
-        return try #require(UserDefaults(suiteName: name))
+        return try #require(testDefaults(suiteName: name))
     }
 
     /// Una divisa que NO es la preferida del entorno de test.

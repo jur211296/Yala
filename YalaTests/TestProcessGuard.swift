@@ -79,6 +79,10 @@ final class TestProcessGuard: NSObject {
     // MARK: - Cableado al proceso
 
     nonisolated static func armForCurrentProcess() {
+        // El conserje va primero y fuera del `guard`: lo que deja la corrida en el simulador (dominios de
+        // `UserDefaults` de los tests, directorios de stores) no depende de que el App Group resuelva.
+        TestSimulatorJanitor.startProcess()
+        atexit { TestSimulatorJanitor.finishProcess() }
         guard let appGroup = UserDefaults(suiteName: SharedContainerService.appGroupIdentifier) else { return }
         captured = capture(from: appGroup)
         atexit { TestProcessGuard.restoreForCurrentProcess() }

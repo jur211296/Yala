@@ -27,7 +27,7 @@ typealias YalaTag = Yala.Tag
 /// Ver TESTING-STRATEGY.md (sección "Anti-patrones detectados") para detalles.
 func makeIsolatedDefaults(prefix: String = "test") -> UserDefaults {
     let suiteName = "\(prefix).\(UUID().uuidString)"
-    guard let defaults = UserDefaults(suiteName: suiteName) else {
+    guard let defaults = testDefaults(suiteName: suiteName) else {
         fatalError("Failed to create isolated UserDefaults suite: \(suiteName)")
     }
     return defaults

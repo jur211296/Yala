@@ -106,7 +106,7 @@ struct SyncSignInBannerLogicTests {
             .appendingPathComponent("SSB-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer {
-            do { try FileManager.default.removeItem(at: dir) } catch { print("SSB cleanup: \(error)") }
+            discardTestStoreDirectory(dir)
         }
         let context = try makeContext(dir)
         context.insert(groupRow())

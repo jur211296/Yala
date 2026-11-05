@@ -42,7 +42,7 @@ struct SpikeSRuntimeTests {
     }
 
     private func cleanup(_ url: URL) {
-        try? FileManager.default.removeItem(at: url.deletingLastPathComponent())
+        discardTestStoreDirectory(url.deletingLastPathComponent())
     }
 
     // MARK: - (a) .automatic en sim sin cuenta iCloud

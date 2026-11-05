@@ -24,7 +24,7 @@ struct GroupBackendInviteEntryHandlerJoinTests {
 
     private func makeEnv() -> () -> Void {
         let suite = "test.backendjoin.\(UUID().uuidString)"
-        let d = UserDefaults(suiteName: suite)!
+        let d = testDefaults(suiteName: suite)!
         PendingJoinStore.defaults = d
         let savedJoin = GroupBackendInviteEntryHandler.joinProvider
         let savedProfile = GroupBackendInviteEntryHandler.profileNameProvider

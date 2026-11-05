@@ -1,10 +1,10 @@
 ---
 id: tests-borran-el-store-sqlite-abierto
-status: backlog
+status: done
 priority: low
 area: testing
 created: 2026-09-07
-updated: 2026-10-08
+updated: 2026-11-04
 source: medido de camino durante unit-suite-nondeterministic-reds (2026-09-07)
 ---
 
@@ -74,3 +74,20 @@ Elegir **una** y aplicarla a los 12 prefijos, no solo al primero que aparezca.
 - Por qué low: es higiene de tests, sin ningún rojo atribuido. Sigue siendo una variable de confusión.
 
 Triage 2026-10-08: abierto · medium → low · Los helpers de teardown siguen borrando el directorio temporal con removeItem sin cerrar antes el ModelContainer; ningún commit cambió el patrón
+
+## Cerrado (2026-11-04)
+
+Opción elegida: retirar el directorio cuando el store ya cerró. SwiftData no tiene `close()`, así que
+`discardTestStoreDirectory(dir)` borra solo si el proceso no tiene ningún fd abierto dentro (`fcntl(F_GETPATH)`), y si lo
+tiene lo reintenta en la siguiente llamada; aplicado a los 132 sitios de limpieza de los ~115 ficheros con store en disco
+(no solo los 12 prefijos del ticket: hoy salían de ~40). Los siete `freshDir()` que nunca borraban lo apuntan para el final.
+Al salir, un directorio con el store todavía abierto NO se borra —el SQLite de Apple avisa en el instante del `unlink`; de
+ahí salían 64 de los 67 que quedaban tras la primera pasada— y lo retira el arranque de la corrida siguiente (manifiesto en
+`Caches`): ~25 por corrida, de containers que retienen singletons de migración y sync.
+
+Medición (iPhone 17 Pro de la Max, iOS 27.2, scheme `Yala`, corrida completa de YalaTests con el simulador en turno):
+la base (`origin/2.3` sin tocar, instalación limpia) dejó **1.262** ficheros de preferencias, **74** directorios en
+`tmp/`, el `.plist` del App Group con `isProUser`, `lastUsedAccountID` y `siri_finance_snapshot`, y **2.910** avisos
+«vnode unlinked while in use»; con el arreglo (12.783 tests en verde): **0** preferencias nuevas, App Group sin claves
+antes y después (leído vía `cfprefsd`: el fichero en disco va desfasado), onboarding sin marcar y **3** avisos, los del
+control negativo del eje 4b del spike R3, que los provoca a propósito.

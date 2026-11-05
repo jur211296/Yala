@@ -67,7 +67,7 @@ struct UXAudit22Decidido02BLogicTests {
     }
 
     @Test func pista_cuentaLasAperturas_ySeApagaAlUsarUnAtajo() throws {
-        let defaults = try #require(UserDefaults(suiteName: "test.\(UUID().uuidString)"))
+        let defaults = try #require(testDefaults(suiteName: "test.\(UUID().uuidString)"))
         #expect(DescriptionShortcutHintLogic.registerOpening(defaults: defaults) == .category)
         #expect(DescriptionShortcutHintLogic.registerOpening(defaults: defaults) == .tag)
         #expect(defaults.integer(forKey: DescriptionShortcutHintLogic.openingsKey) == 2)

@@ -1,10 +1,10 @@
 ---
 id: unit-test-suites-leave-orphan-userdefaults-domains
-status: backlog
+status: done
 priority: low
 area: "testing, disco, simulador"
 created: 2026-09-13
-updated: 2026-10-08
+updated: 2026-11-04
 source: "medido de camino en el PR-B del paso 12 (`shell-derives-from-two-session-axes`), diagnosticando ocho XCUITest rojos"
 ---
 
@@ -57,3 +57,20 @@ Medido el 2026-09-13 en el contenedor de `com.jurgenschmidt.yala.dev` del iPhone
 - El contenedor del simulador no se re-midió: el triage no lo toca.
 
 Triage 2026-10-08: abierto · medium → low · El hueco creció: 59 ficheros de YalaTests crean UserDefaults(suiteName:), 25 llaman a removePersistentDomain y 35 crean suites sin destruirlas (eran 45/17)
+
+## Cerrado (2026-11-04)
+
+Las 124 llamadas a `UserDefaults(suiteName:)` de `YalaTests/` pasan por `testDefaults(suiteName:)` (y `makeIsolatedDefaults`),
+que apuntan el nombre en `TestSimulatorJanitor`; el conserje borra los dominios con su fichero al salir el proceso (no al
+acabar el test: hay suites que reabren el mismo nombre). Las subclases (`CountingDefaults`) apuntan a mano. Los `.plist`
+que nacen fuera de los helpers con prefijo `test.` (`iCloudSyncService._testReset`, en la app) se barren al salir. El
+`removePersistentDomain` del `defer` NO basta: medido, vacía el dominio y deja el fichero. Lo fija
+`TestSimulatorJanitorTests.ningunTestCreaUnDominioSinApuntarlo`. Limpieza única del simulador: 571 + 2.539 ficheros con UUID
+borrados de los contenedores de Yala y Yala Dev.
+
+Medición (iPhone 17 Pro de la Max, iOS 27.2, scheme `Yala`, corrida completa de YalaTests con el simulador en turno):
+la base (`origin/2.3` sin tocar, instalación limpia) dejó **1.262** ficheros de preferencias, **74** directorios en
+`tmp/`, el `.plist` del App Group con `isProUser`, `lastUsedAccountID` y `siri_finance_snapshot`, y **2.910** avisos
+«vnode unlinked while in use»; con el arreglo (12.783 tests en verde): **0** preferencias nuevas, App Group sin claves
+antes y después (leído vía `cfprefsd`: el fichero en disco va desfasado), onboarding sin marcar y **3** avisos, los del
+control negativo del eje 4b del spike R3, que los provoca a propósito.

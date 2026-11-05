@@ -15,7 +15,7 @@ import Testing
 struct DeferredIntentBufferSharedImageTests {
 
     private func makeBuffer() -> DeferredIntentBuffer {
-        DeferredIntentBuffer(defaults: UserDefaults(suiteName: "test.\(UUID().uuidString)")!)
+        DeferredIntentBuffer(defaults: testDefaults(suiteName: "test.\(UUID().uuidString)")!)
     }
 
     private func makePhoto() throws -> URL {

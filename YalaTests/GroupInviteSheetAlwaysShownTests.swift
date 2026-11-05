@@ -33,7 +33,7 @@ struct GroupInviteSheetAlwaysShownTests {
     /// handler restaurados al salir. Añade el router, que aquí SÍ se observa.
     private func makeEnv(_ spy: JoinSpy) -> () -> Void {
         let suite = "test.invitesheet.\(UUID().uuidString)"
-        let d = UserDefaults(suiteName: suite)!
+        let d = testDefaults(suiteName: suite)!
         PendingJoinStore.defaults = d
         let savedJoin = GroupBackendInviteEntryHandler.joinProvider
         let savedSession = GroupBackendInviteEntryHandler.hasSessionProvider

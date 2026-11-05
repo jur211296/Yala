@@ -138,11 +138,7 @@ struct PrivateExitInboundCaptureIntegrationTests {
     }
 
     private func cleanup(_ dir: URL) {
-        do {
-            try FileManager.default.removeItem(at: dir)
-        } catch {
-            print("PrivateExitInboundCaptureIntegrationTests: no se pudo borrar \(dir.lastPathComponent): \(error)")
-        }
+        discardTestStoreDirectory(dir)
     }
 
     /// El mismo andamio que `PersonalExportPendingCounterTests`: tres stores y un contexto que los abarca.

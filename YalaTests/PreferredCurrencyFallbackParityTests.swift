@@ -17,7 +17,7 @@ import Testing
 struct PreferredCurrencyFallbackParityTests {
 
     private static func makeIsolatedDefaults() throws -> UserDefaults {
-        try #require(UserDefaults(suiteName: "PreferredCurrencyFallbackParityTests.\(UUID().uuidString)"))
+        try #require(testDefaults(suiteName: "PreferredCurrencyFallbackParityTests.\(UUID().uuidString)"))
     }
 
     // MARK: - La regla

@@ -35,7 +35,7 @@ struct GroupBridgeCollectedTests {
     }
 
     private func cleanup(_ dir: URL) {
-        do { try FileManager.default.removeItem(at: dir) } catch { print("cleanup: \(error)") }
+        discardTestStoreDirectory(dir)
     }
 
     private func makeContext(_ dir: URL) throws -> ModelContext {

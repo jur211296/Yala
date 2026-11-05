@@ -276,7 +276,7 @@ struct MigrationWorkExecutorTests {
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir
     }
-    private func cleanup(_ dir: URL) { try? FileManager.default.removeItem(at: dir) }
+    private func cleanup(_ dir: URL) { discardTestStoreDirectory(dir) }
 
     private func relayLedgerURL(forStore personalStoreURL: URL) -> URL {
         personalStoreURL.deletingLastPathComponent().appendingPathComponent("relay-identity-ledger.json")
@@ -459,7 +459,7 @@ struct MigrationWorkExecutorTests {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         let session = FakeSession(token: "jwt", userID: "sub-1")
-        let defaults = UserDefaults(suiteName: "test.rollback.\(UUID().uuidString)")!
+        let defaults = testDefaults(suiteName: "test.rollback.\(UUID().uuidString)")!
         defaults.set(true, forKey: MigrationWorkExecutor.relaunchRequestedKey)  // defensivo: no debería estar
         let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
                                     personalStoreURL: dir.appendingPathComponent("personal.sqlite"),

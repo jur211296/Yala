@@ -162,13 +162,7 @@ struct SnapshotEnqueueSaveFailurePremiseTests {
         ]
 
         func cleanup() {
-            do {
-                try FileManager.default.removeItem(at: directory)
-            } catch {
-                #if DEBUG
-                print("SnapshotEnqueueSaveFailurePremiseTests: no se pudo borrar \(directory.path): \(error)")
-                #endif
-            }
+            discardTestStoreDirectory(directory)
         }
     }
 }

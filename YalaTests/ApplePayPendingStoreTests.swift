@@ -15,7 +15,7 @@ struct ApplePayPendingStoreTests {
 
     /// UserDefaults aislado por test (regla del proyecto — nunca .standard).
     private func makeDefaults() -> UserDefaults {
-        UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+        testDefaults(suiteName: "test.\(UUID().uuidString)")!
     }
 
     private func expense(_ raw: String, _ merchant: String? = nil, at t: Double = 1) -> ApplePayPendingExpense {

@@ -621,7 +621,7 @@ struct CloudSyncSchemaParityTests {
         let dir = FileManager.default.temporaryDirectory
             .appendingPathComponent("SchemaParity-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: dir) }
+        defer { discardTestStoreDirectory(dir) }
         let personalCfg = ModelConfiguration(
             "SP-Personal", schema: SwiftDataConfiguration.personalSchema,
             url: dir.appendingPathComponent("personal.sqlite"), cloudKitDatabase: .none)

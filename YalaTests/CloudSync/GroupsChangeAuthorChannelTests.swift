@@ -41,13 +41,7 @@ struct GroupsChangeAuthorChannelTests {
     }
 
     private func cleanup(_ dir: URL) {
-        do {
-            try FileManager.default.removeItem(at: dir)
-        } catch {
-            #if DEBUG
-            print("GroupsChangeAuthorChannelTests: cleanup: \(error)")
-            #endif
-        }
+        discardTestStoreDirectory(dir)
     }
 
     private func makeContext(_ dir: URL) throws -> ModelContext {
@@ -69,7 +63,7 @@ struct GroupsChangeAuthorChannelTests {
 
     private func withIsolatedCapability(_ body: () throws -> Void) throws {
         let previous = GroupsSyncCapability.defaults
-        GroupsSyncCapability.defaults = try #require(UserDefaults(suiteName: "test.gca.groups.\(UUID().uuidString)"))
+        GroupsSyncCapability.defaults = try #require(testDefaults(suiteName: "test.gca.groups.\(UUID().uuidString)"))
         defer { GroupsSyncCapability.defaults = previous }
         try body()
     }

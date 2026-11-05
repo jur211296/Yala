@@ -50,7 +50,7 @@ struct AccountEntitlementSyncTests {
 
     private func makeStore(_ name: String) -> (AccountEntitlementStore, UserDefaults) {
         let suite = "test.entitlement.net.\(name).\(UUID().uuidString)"
-        guard let defaults = UserDefaults(suiteName: suite) else { fatalError("suite de test") }
+        guard let defaults = testDefaults(suiteName: suite) else { fatalError("suite de test") }
         return (AccountEntitlementStore(defaults: defaults), defaults)
     }
 

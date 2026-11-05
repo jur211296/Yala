@@ -27,7 +27,7 @@ struct InviteBrandedMetadataWiringTests {
 
     private func makeStore() -> () -> Void {
         let suiteName = "test.invitebranded.\(UUID().uuidString)"
-        let d = UserDefaults(suiteName: suiteName)!
+        let d = testDefaults(suiteName: suiteName)!
         PendingJoinStore.defaults = d
         return {
             PendingJoinStore.defaults = .standard

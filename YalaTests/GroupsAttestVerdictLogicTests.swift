@@ -106,7 +106,7 @@ final class IsolatedAttestStreak {
 
     init() throws {
         name = "yala.tests.groupsAttestStreak.\(UUID().uuidString)"
-        guard let suite = UserDefaults(suiteName: name) else { throw SuiteUnavailable() }
+        guard let suite = testDefaults(suiteName: name) else { throw SuiteUnavailable() }
         defaults = suite
         previous = GroupsAttestStreakStore.defaults
         GroupsAttestStreakStore.defaults = suite

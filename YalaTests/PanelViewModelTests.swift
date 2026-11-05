@@ -229,7 +229,7 @@ struct PanelViewModelTests {
     /// declaration order for the rest.
     @MainActor @Test func orderedPanelSections_anchorsFirst_defaultOrder() {
         let vm = PanelViewModel()
-        let prefs = AppPreferences(defaults: UserDefaults(suiteName: "sectionOrder.default.\(UUID().uuidString)")!)
+        let prefs = AppPreferences(defaults: testDefaults(suiteName: "sectionOrder.default.\(UUID().uuidString)")!)
         vm.setAppPreferences(prefs)
 
         let visible: [PanelSectionKind] = [.tendencias, .accounts, .distribucion, .health, .tools]
@@ -244,7 +244,7 @@ struct PanelViewModelTests {
     /// anchors stay pinned to the front.
     @MainActor @Test func orderedPanelSections_respectsCustomOrder() {
         let vm = PanelViewModel()
-        let prefs = AppPreferences(defaults: UserDefaults(suiteName: "sectionOrder.custom.\(UUID().uuidString)")!)
+        let prefs = AppPreferences(defaults: testDefaults(suiteName: "sectionOrder.custom.\(UUID().uuidString)")!)
         prefs.panelSectionsOrder = [
             PanelSectionKind.tools.rawValue,
             PanelSectionKind.tendencias.rawValue,
@@ -266,7 +266,7 @@ struct PanelViewModelTests {
     /// appended at the end so nothing disappears from the Panel.
     @MainActor @Test func orderedPanelSections_appendsMissingKinds() {
         let vm = PanelViewModel()
-        let prefs = AppPreferences(defaults: UserDefaults(suiteName: "sectionOrder.partial.\(UUID().uuidString)")!)
+        let prefs = AppPreferences(defaults: testDefaults(suiteName: "sectionOrder.partial.\(UUID().uuidString)")!)
         prefs.panelSectionsOrder = [PanelSectionKind.tendencias.rawValue]
         vm.setAppPreferences(prefs)
 
@@ -283,7 +283,7 @@ struct PanelViewModelTests {
     /// `movePanelSection` from empty pref seeds the default order, applies
     /// the move, and persists the result.
     @MainActor @Test func movePanelSection_persistsToPreferences() {
-        let prefs = AppPreferences(defaults: UserDefaults(suiteName: "sectionOrder.move.\(UUID().uuidString)")!)
+        let prefs = AppPreferences(defaults: testDefaults(suiteName: "sectionOrder.move.\(UUID().uuidString)")!)
         let defaults = PanelSectionKind.reorderableSections
         let firstKind = defaults.first!
 
@@ -298,7 +298,7 @@ struct PanelViewModelTests {
     /// `resetPanelSectionsOrder` empties the preference; subsequent reads
     /// fall back to the default `reorderableSections` order.
     @MainActor @Test func resetPanelSectionsOrder_clearsPreference() {
-        let prefs = AppPreferences(defaults: UserDefaults(suiteName: "sectionOrder.reset.\(UUID().uuidString)")!)
+        let prefs = AppPreferences(defaults: testDefaults(suiteName: "sectionOrder.reset.\(UUID().uuidString)")!)
         prefs.panelSectionsOrder = [PanelSectionKind.tools.rawValue]
         prefs.resetPanelSectionsOrder()
         #expect(prefs.panelSectionsOrder.isEmpty)
@@ -310,7 +310,7 @@ struct PanelViewModelTests {
     /// del array `panel<Section>Hidden` correspondiente a su sección.
     @MainActor @Test func addWidgetToPanel_makesHiddenWidgetVisible() {
         let vm = PanelViewModel()
-        let prefs = AppPreferences(defaults: UserDefaults(suiteName: "addWidget.hidden.\(UUID().uuidString)")!)
+        let prefs = AppPreferences(defaults: testDefaults(suiteName: "addWidget.hidden.\(UUID().uuidString)")!)
         prefs.panelTendenciasHidden = [WidgetType.trend.rawValue]
         vm.setAppPreferences(prefs)
 
@@ -324,7 +324,7 @@ struct PanelViewModelTests {
     /// El array no debe mutar.
     @MainActor @Test func addWidgetToPanel_isNoOpForAlreadyVisible() {
         let vm = PanelViewModel()
-        let prefs = AppPreferences(defaults: UserDefaults(suiteName: "addWidget.visible.\(UUID().uuidString)")!)
+        let prefs = AppPreferences(defaults: testDefaults(suiteName: "addWidget.visible.\(UUID().uuidString)")!)
         vm.setAppPreferences(prefs)
 
         let before = prefs.panelTendenciasHidden
@@ -356,7 +356,7 @@ struct PanelViewModelTests {
     @MainActor @Test func weekdayBar_skipsCompute_whenWidgetHidden() {
         let vm = PanelViewModel()
         let suite = "weekdayBar.widgetHidden.\(UUID().uuidString)"
-        let prefs = AppPreferences(defaults: UserDefaults(suiteName: suite)!)
+        let prefs = AppPreferences(defaults: testDefaults(suiteName: suite)!)
         prefs.panelTendenciasHidden = [WidgetType.weekdayBar.rawValue]
         vm.setAppPreferences(prefs)
 
@@ -369,7 +369,7 @@ struct PanelViewModelTests {
     @MainActor @Test func weekdayBar_skipsCompute_whenSectionHidden() {
         let vm = PanelViewModel()
         let suite = "weekdayBar.sectionHidden.\(UUID().uuidString)"
-        let prefs = AppPreferences(defaults: UserDefaults(suiteName: suite)!)
+        let prefs = AppPreferences(defaults: testDefaults(suiteName: suite)!)
         prefs.panelSectionsHidden = [PanelSectionKind.tendencias.rawValue]
         vm.setAppPreferences(prefs)
 
@@ -410,7 +410,7 @@ struct PanelViewModelTests {
     @MainActor @Test func tagsPie_skipsCompute_whenWidgetHidden() {
         let vm = PanelViewModel()
         let suite = "tagsPie.widgetHidden.\(UUID().uuidString)"
-        let prefs = AppPreferences(defaults: UserDefaults(suiteName: suite)!)
+        let prefs = AppPreferences(defaults: testDefaults(suiteName: suite)!)
         prefs.panelDistribucionHidden = [WidgetType.tagsPie.rawValue]
         vm.setAppPreferences(prefs)
 
@@ -421,7 +421,7 @@ struct PanelViewModelTests {
     @MainActor @Test func tagsPie_skipsCompute_whenSectionHidden() {
         let vm = PanelViewModel()
         let suite = "tagsPie.sectionHidden.\(UUID().uuidString)"
-        let prefs = AppPreferences(defaults: UserDefaults(suiteName: suite)!)
+        let prefs = AppPreferences(defaults: testDefaults(suiteName: suite)!)
         prefs.panelSectionsHidden = [PanelSectionKind.distribucion.rawValue]
         vm.setAppPreferences(prefs)
 
@@ -481,7 +481,7 @@ struct PanelViewModelTests {
     @MainActor @Test func syncPlanificacionPair_otherHidden_stillSyncs() {
         let vm = PanelViewModel()
         let suite = "pairSync.hidden.\(UUID().uuidString)"
-        let prefs = AppPreferences(defaults: UserDefaults(suiteName: suite)!)
+        let prefs = AppPreferences(defaults: testDefaults(suiteName: suite)!)
         prefs.panelPlanificacionHidden = [WidgetType.scheduledPayments.rawValue]
         vm.setAppPreferences(prefs)
 

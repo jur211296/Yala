@@ -33,7 +33,7 @@ struct CloudSyncTombstoneTests {
     }
 
     private func cleanup(_ dir: URL) {
-        try? FileManager.default.removeItem(at: dir)
+        discardTestStoreDirectory(dir)
     }
 
     private func makeContext(_ dir: URL) throws -> ModelContext {

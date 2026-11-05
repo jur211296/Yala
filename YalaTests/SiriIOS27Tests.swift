@@ -290,7 +290,7 @@ struct SiriFinanceSnapshotBuilderTests {
 struct SiriFinanceSnapshotStoreTests {
 
     private func makeDefaults() -> UserDefaults {
-        UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+        testDefaults(suiteName: "test.\(UUID().uuidString)")!
     }
 
     @Test func seGuardaYSeLee() {

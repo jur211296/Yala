@@ -153,7 +153,7 @@ struct GroupInviteNeutralGateRoutingTests {
                          cloud: Bool = false,
                          joinSpy: @escaping @MainActor () -> Void = {}) -> () -> Void {
         let suite = "test.inviteneutral.\(UUID().uuidString)"
-        let d = UserDefaults(suiteName: suite)!
+        let d = testDefaults(suiteName: suite)!
         PendingJoinStore.defaults = d
         GroupInviteResumeStore.defaults = d
 
@@ -364,7 +364,7 @@ struct GroupInviteResumeStoreTests {
 
     private func makeEnv() -> (UserDefaults, () -> Void) {
         let suite = "test.inviteresume.\(UUID().uuidString)"
-        let d = UserDefaults(suiteName: suite)!
+        let d = testDefaults(suiteName: suite)!
         GroupInviteResumeStore.defaults = d
         PendingJoinStore.defaults = d
         GroupBackendInviteEntryHandler.clearInviteTapArms()

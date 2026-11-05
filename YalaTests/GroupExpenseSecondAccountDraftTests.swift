@@ -32,13 +32,7 @@ struct GroupExpenseSecondAccountDraftTests {
     }
 
     private func cleanup(_ dir: URL) {
-        do {
-            try FileManager.default.removeItem(at: dir)
-        } catch {
-            #if DEBUG
-            print("GroupExpenseSecondAccountDraftTests: cleanup: \(error)")
-            #endif
-        }
+        discardTestStoreDirectory(dir)
     }
 
     private func makeContext(_ dir: URL) throws -> ModelContext {

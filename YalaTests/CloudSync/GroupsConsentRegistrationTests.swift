@@ -37,7 +37,7 @@ struct GroupsConsentPendingIntentTests {
     private let t0 = Date(timeIntervalSince1970: 1_800_000_000)
 
     private func withIntent(_ body: (UserDefaults) throws -> Void) rethrows {
-        let d = UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+        let d = testDefaults(suiteName: "test.\(UUID().uuidString)")!
         let previous = GroupsConsentPendingIntent.defaults
         GroupsConsentPendingIntent.defaults = d
         defer { GroupsConsentPendingIntent.defaults = previous }
@@ -62,7 +62,7 @@ struct GroupsConsentPendingIntentTests {
     @Test func survivesAProcessDeath_becauseItLivesInUserDefaults() throws {
         // Kill-safe: el estado se relee del almacén, no de memoria. Es lo que cubre «matar la app entre el
         // tap de aceptar y el request».
-        let d = UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+        let d = testDefaults(suiteName: "test.\(UUID().uuidString)")!
         let previous = GroupsConsentPendingIntent.defaults
         GroupsConsentPendingIntent.defaults = d
         defer { GroupsConsentPendingIntent.defaults = previous }
@@ -198,8 +198,8 @@ struct GroupsConsentRegistrarTests {
     }
 
     private func withIsolatedStores(_ body: () async -> Void) async {
-        let cache = UserDefaults(suiteName: "test.\(UUID().uuidString)")!
-        let intent = UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+        let cache = testDefaults(suiteName: "test.\(UUID().uuidString)")!
+        let intent = testDefaults(suiteName: "test.\(UUID().uuidString)")!
         let prevCache = GroupsConsentState.defaults
         let prevIntent = GroupsConsentPendingIntent.defaults
         let prevProvider = GroupsConsentState.currentUserIDProvider

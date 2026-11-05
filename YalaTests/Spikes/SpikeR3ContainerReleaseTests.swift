@@ -93,6 +93,11 @@ struct SpikeR3ContainerReleaseTests {
     /// Reproduce el estado del §1.10 A PROPÓSITO. No afirma un veredicto: afirma que el eje LLEGÓ AL
     /// FINAL — si SwiftData decidiera trapear (familia `_assertionFailure`/SIGTRAP, que un `do/catch` de
     /// Swift no ve), el proceso moriría aquí y eso también sería el resultado, visible como exit 65.
+    ///
+    /// **Sus avisos de SQLite son ESPERADOS.** Este eje es el único sitio de la corrida que borra un store con el
+    /// container vivo, y lo hace a propósito: las 3 líneas «vnode unlinked while in use» que deja en el log son el
+    /// comportamiento que fija. Medido el 2026-11-04: tras retirar los directorios con `discardTestStoreDirectory`,
+    /// la corrida completa pasó de 2.910 avisos a estos 3. No lo «arregles» con el conserje: dejaría de medir.
     @Test("R3 eje 4b · control negativo — wipe y segunda conexión con el container VIVO")
     func eje4b_wipeConContainerVivo() async throws {
         let harness = SpikeR3Harness()

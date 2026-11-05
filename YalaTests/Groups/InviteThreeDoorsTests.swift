@@ -248,7 +248,7 @@ struct InviteSignUpCleanStoreMarkTests {
     private func withIsolatedStore(_ body: () throws -> Void) rethrows {
         let previous = PendingJoinStore.defaults
         let suite = "test.pendingJoins.\(UUID().uuidString)"
-        guard let defaults = UserDefaults(suiteName: suite) else {
+        guard let defaults = testDefaults(suiteName: suite) else {
             Issue.record("No se pudo crear el UserDefaults aislado")
             return
         }

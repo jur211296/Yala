@@ -110,7 +110,7 @@ struct PersonalPullIntegratesTheCappedClockTests {
         return dir
     }
 
-    private func cleanup(_ dir: URL) { try? FileManager.default.removeItem(at: dir) }
+    private func cleanup(_ dir: URL) { discardTestStoreDirectory(dir) }
 
     private func makeContext(_ dir: URL) throws -> ModelContext {
         let personalCfg = ModelConfiguration(
@@ -236,7 +236,7 @@ struct UploadOrderTests {
         let dir = FileManager.default.temporaryDirectory
             .appendingPathComponent("UploadOrder-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: dir) }
+        defer { discardTestStoreDirectory(dir) }
         let container = try ModelContainer(
             for: SwiftDataConfiguration.schema,
             configurations:
@@ -283,7 +283,7 @@ struct GroupsPullIntegratesTheClockTests {
         return dir
     }
 
-    private func cleanup(_ dir: URL) { try? FileManager.default.removeItem(at: dir) }
+    private func cleanup(_ dir: URL) { discardTestStoreDirectory(dir) }
 
     private func makeContext(_ dir: URL) throws -> ModelContext {
         let personalCfg = ModelConfiguration(
@@ -402,7 +402,7 @@ struct PrefsPullIntegratesTheClockTests {
         return dir
     }
 
-    private func cleanup(_ dir: URL) { try? FileManager.default.removeItem(at: dir) }
+    private func cleanup(_ dir: URL) { discardTestStoreDirectory(dir) }
 
     private func stampOfNextChange(_ outbox: PrefsOutbox) throws -> HLC {
         try outbox.enqueue(key: "userName", userID: "u1", value: .string("Bea"))

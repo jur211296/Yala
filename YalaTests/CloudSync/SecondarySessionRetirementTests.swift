@@ -28,7 +28,7 @@ struct SecondarySessionRetirementTests {
 
     private func makeDefaults(_ sufijo: String) -> UserDefaults {
         let nombre = "test.retirement.\(sufijo).\(UUID().uuidString)"
-        let d = UserDefaults(suiteName: nombre)!
+        let d = testDefaults(suiteName: nombre)!
         d.removePersistentDomain(forName: nombre)
         return d
     }

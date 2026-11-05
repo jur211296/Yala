@@ -22,7 +22,7 @@ struct WidgetShowVariationsMirrorTests {
 
     private static func isolated() -> UserDefaults {
         let name = "test.showVariations.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: name) ?? .standard
+        let defaults = testDefaults(suiteName: name) ?? .standard
         defaults.removePersistentDomain(forName: name)
         return defaults
     }

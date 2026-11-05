@@ -114,7 +114,7 @@ struct StatsAIAutoRefreshInsightsTests {
     }
 
     private func isolatedDefaults() -> UserDefaults {
-        UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+        testDefaults(suiteName: "test.\(UUID().uuidString)")!
     }
 
     @Test("Pro con la IA aceptada: al abrir sale solo; al volver con los mismos datos, lo guardado y sin llamar")

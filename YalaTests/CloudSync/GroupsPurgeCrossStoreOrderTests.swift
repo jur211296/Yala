@@ -62,7 +62,7 @@ struct GroupsPurgeCrossStoreOrderTests {
     }
 
     private func cleanup(_ dir: URL) {
-        do { try FileManager.default.removeItem(at: dir) } catch { print("GPCS: Error: \(error)") }
+        discardTestStoreDirectory(dir)
     }
 
     /// Los tres stores de producción sobre `dir`, con `readOnly` en solo lectura. Cada llamada es un contenedor
