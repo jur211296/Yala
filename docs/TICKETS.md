@@ -310,7 +310,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | csv-import-silently-swallows-rows-and-only-reads-utf8 | backlog | tickets/backlog/csv-import-silently-swallows-rows-and-only-reads-utf8.md |
 | currency-change-asks-rates-for-the-old-currency | backlog | tickets/backlog/currency-change-asks-rates-for-the-old-currency.md |
 | currency-change-failure-is-silent-and-half-applied | done | tickets/done/currency-change-failure-is-silent-and-half-applied.md |
-| currency-change-service-tests-mirror-the-logic | backlog | tickets/backlog/currency-change-service-tests-mirror-the-logic.md |
+| currency-change-service-tests-mirror-the-logic | done | tickets/done/currency-change-service-tests-mirror-the-logic.md |
 | currency-converter-fetches-the-rate-row-on-every-conversion | done | tickets/done/currency-converter-fetches-the-rate-row-on-every-conversion.md |
 | latest-rates-cache-ignores-rate-rows-from-the-mirror-and-the-pull | backlog | tickets/backlog/latest-rates-cache-ignores-rate-rows-from-the-mirror-and-the-pull.md |
 | cash-flow-month-capsule-and-balance-widget-pill-sign-a-zero | backlog | tickets/backlog/cash-flow-month-capsule-and-balance-widget-pill-sign-a-zero.md |
@@ -759,6 +759,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | needsrelaunch-hides-the-groups-section | done | tickets/done/needsrelaunch-hides-the-groups-section.md |
 | neutral-boot-hands-owner-prefs-to-whoever-signs-in-next | done | tickets/done/neutral-boot-hands-owner-prefs-to-whoever-signs-in-next.md |
 | neutral-mount-wiring-scan-is-red-on-2-1 | done | tickets/done/neutral-mount-wiring-scan-is-red-on-2-1.md |
+| new-record-chip-row-hides-the-tags-chip-without-a-hint | backlog | tickets/backlog/new-record-chip-row-hides-the-tags-chip-without-a-hint.md |
 | new-record-drafts-banner-says-abrir-inbox | backlog | tickets/backlog/new-record-drafts-banner-says-abrir-inbox.md |
 | new-record-with-one-account-keeps-save-off-without-saying-why | backlog | tickets/backlog/new-record-with-one-account-keeps-save-off-without-saying-why.md |
 | new-transaction-account-picker-uitests-fail-on-the-ios-27-lane-pro-max | done | tickets/done/new-transaction-account-picker-uitests-fail-on-the-ios-27-lane-pro-max.md |
@@ -884,7 +885,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | record-pending-deletion-still-counts-outside-records | done | tickets/done/record-pending-deletion-still-counts-outside-records.md |
 | record-row-voiceover-reads-a-foreign-amount-in-the-preferred-currency | done | tickets/done/record-row-voiceover-reads-a-foreign-amount-in-the-preferred-currency.md |
 | record-selectors-open-at-medium-detent | done | tickets/done/record-selectors-open-at-medium-detent.md |
-| record-selectors-uitest-taps-the-tags-chip-off-screen | backlog | tickets/backlog/record-selectors-uitest-taps-the-tags-chip-off-screen.md |
+| record-selectors-uitest-taps-the-tags-chip-off-screen | done | tickets/done/record-selectors-uitest-taps-the-tags-chip-off-screen.md |
 | records-delete-uitest-counts-only-visible-rows | done | tickets/done/records-delete-uitest-counts-only-visible-rows.md |
 | records-landscape-first-row-only-peeks | backlog | tickets/backlog/records-landscape-first-row-only-peeks.md |
 | records-lote8-uitest-expects-the-old-change-category-title | done | tickets/done/records-lote8-uitest-expects-the-old-change-category-title.md |
@@ -1061,7 +1062,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | smart-ai-notifications | backlog | tickets/backlog/smart-ai-notifications.md |
 | snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling | done | tickets/done/snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling.md |
 | snapshot-upload-has-no-ceiling-and-no-way-out | done | tickets/done/snapshot-upload-has-no-ceiling-and-no-way-out.md |
-| spike-r3-eje-4b-flaky-en-suite-completa | backlog | tickets/backlog/spike-r3-eje-4b-flaky-en-suite-completa.md |
+| spike-r3-eje-4b-flaky-en-suite-completa | done | tickets/done/spike-r3-eje-4b-flaky-en-suite-completa.md |
 | staging-test-credentials-in-public-repo | done | tickets/done/staging-test-credentials-in-public-repo.md |
 | staging-test-user-c-does-not-exist | discarded | tickets/discarded/staging-test-user-c-does-not-exist.md |
 | stall-canaries-have-no-test-for-which-clock-they-publish | backlog | tickets/backlog/stall-canaries-have-no-test-for-which-clock-they-publish.md |

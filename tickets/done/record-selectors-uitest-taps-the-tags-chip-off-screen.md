@@ -1,10 +1,10 @@
 ---
 id: record-selectors-uitest-taps-the-tags-chip-off-screen
-status: backlog
+status: done
 priority: low
 area: testing
 created: 2026-10-07
-updated: 2026-10-28
+updated: 2026-11-05
 source: rojo del gate de advisory-ui-tests-fail-every-retry, bisecado contra la base
 ---
 
@@ -76,3 +76,14 @@ mensaje, rojo con la base `d89a68061` recompilada (1 de 1, centinela en 0) y con
 **Y el 2026-10-28** en el gate de `grupos-bugs-columna-reintento-borrador` (Frank): mismo mensaje en la línea 124, en lote
 (1 de 157) y aislado con la rama, y **rojo con la base `d071f1657` extraída con `git archive` y compilada aparte** (1 de
 1, centinela en 0 en las tres corridas). Esa rama no toca etiquetas ni «Nuevo registro».
+
+## 2026-11-05 · cerrado (lote T8): verde sin tocar nada
+
+Medido en `2.3` @ `472e94bf9`, iPhone 17 Pro iOS 27.2: **5 de 5 en verde**, 2 con el simulador caliente y 3 tras
+`simctl erase` (la condición de los rojos del 27 y 28-oct). La nocturna del CI lo da verde todas las noches desde el
+30-oct; el último rojo es el del 28-oct (`fb6c358f5`). Lo arregló algo entre `fb6c358f5` y `41109c35f`; no se bisecó
+porque no hay rojo que perseguir. La semilla `minimal` sí siembra etiquetas (`DevSeedTags` va en todo perfil con datos
+personales), así que la hipótesis de la nota del 27-oct no era la causa.
+
+La mitad de producto (si la fila de chips de «Nuevo registro» enseña en 402 pt que hay un chip más a la derecha) pasa a
+su propio ticket: [[new-record-chip-row-hides-the-tags-chip-without-a-hint]].

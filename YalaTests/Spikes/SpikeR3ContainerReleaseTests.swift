@@ -109,16 +109,52 @@ struct SpikeR3ContainerReleaseTests {
         #expect(!harness.log.contains("FALLÓ el montaje"))
         #expect(harness.log.contains("(v) limpieza final"), "el eje no llegó al final")
 
-        // Realidad medida, y es el VEREDICTO que R4 hereda (3/3 corridas idénticas):
-        //  1. borrar los archivos bajo un container vivo NO cierra su conexión (3 descriptores siguen ahí);
-        //  2. el fetch del superviviente devuelve **0 filas y NO LANZA** — SQLite grita
-        //     `vnode unlinked while in use` / `6922 disk I/O error` y Core Data lo traga ⇒ «la app en cero»
-        //     es indistinguible de «el store está vacío» desde la API;
-        //  3. el superviviente ESCRIBE y RESUCITA el archivo que el wipe acababa de borrar.
-        #expect(harness.log.contains("(ii) el superviviente LEE 0 filas"),
-                "el superviviente dejó de leer vacío ⇒ el modo de fallo del §1.10 cambió de forma")
-        #expect(harness.log.contains("(iii) el superviviente ESCRIBIÓ sin lanzar"),
-                "el superviviente ya no escribe tras el wipe ⇒ re-medir la resurrección del archivo")
+        // Realidad medida, y es el VEREDICTO que R4 hereda: borrar los archivos bajo un container vivo NO cierra su
+        // conexión (3 descriptores siguen ahí) y **el fetch del superviviente NO LANZA** — SQLite grita
+        // `vnode unlinked while in use` / `6922 disk I/O error` y Core Data lo traga ⇒ desde la API, la app no se entera
+        // de que su store ya no está. Lo que lee y si puede escribir tiene DOS formas, y las dos son la plataforma:
+        //  - **A (la habitual)**: lee 0 filas y ESCRIBE sin lanzar, resucitando el archivo borrado.
+        //  - **B (≈1 de cada 150 corridas del CI, 31-oct a 5-nov; y en la primera corrida tras arrancar el simulador,
+        //    medido el 2026-10-03)**: lee las 25 filas VIEJAS y el save lanza 134030 → «The file doesn't exist».
+        // Ticket `spike-r3-eje-4b-flaky-en-suite-completa`: el test exigía solo la A y salía rojo con la B. Una tercera
+        // forma —sobre todo que el fetch LANCE— sí es noticia: R4 se apoya en que la lectura es silenciosa.
+        #expect(!harness.log.contains("(ii) el fetch del superviviente LANZÓ"),
+                "el fetch del superviviente lanzó ⇒ la lectura dejó de ser silenciosa: el veredicto del §1.10 cambió, reabrir R4")
+        #expect(Self.formaDelSuperviviente(harness.log) != nil,
+                "el superviviente no está en ninguna de las dos formas medidas (A: lee 0 y escribe · B: lee 25 y el save lanza 134030) ⇒ re-medir")
+    }
+
+    enum FormaDelSuperviviente: Equatable { case leeVacioYEscribe, leeViejoYNoGuarda }
+
+    /// Las dos formas medidas del eje 4b, leídas del log del harness. `nil` = una forma que nadie ha medido.
+    static func formaDelSuperviviente(_ log: String) -> FormaDelSuperviviente? {
+        if log.contains("(ii) el superviviente LEE 0 filas"), log.contains("(iii) el superviviente ESCRIBIÓ sin lanzar") {
+            return .leeVacioYEscribe
+        }
+        if log.contains("(ii) el superviviente LEE 25 filas"), log.contains("(iii) el save del superviviente lanzó"),
+            log.contains("Code=134030")
+        {
+            return .leeViejoYNoGuarda
+        }
+        return nil
+    }
+
+    /// La forma B no se provoca a voluntad (≈1 de 150 corridas), así que su lectura se fija con las líneas LITERALES del
+    /// log del CI donde salió (run 41911203989, 2026-11-04, `2.2` @ `1f802dc5d`), y con sus mezclas, que no valen.
+    @Test("R3 eje 4b · las dos formas medidas se reconocen y una mezcla no")
+    func eje4b_clasificaLasDosFormas() {
+        let leeVacio = "(ii) el superviviente LEE 0 filas tras el borrado (sembradas 25)"
+        let escribe = "(iii) el superviviente ESCRIBIÓ sin lanzar · trío base=1 wal=1 shm=1"
+        let leeViejo = "(ii) el superviviente LEE 25 filas tras el borrado (sembradas 25)"
+        let noGuarda = """
+            (iii) el save del superviviente lanzó: Error Domain=NSCocoaErrorDomain Code=134030 "An error occurred while \
+            saving." UserInfo={NSUnderlyingError=0x179037060 {Error Domain=NSCocoaErrorDomain Code=4 "The file doesn’t exist."
+            """
+        #expect(Self.formaDelSuperviviente([leeVacio, escribe].joined(separator: "\n")) == .leeVacioYEscribe)
+        #expect(Self.formaDelSuperviviente([leeViejo, noGuarda].joined(separator: "\n")) == .leeViejoYNoGuarda)
+        #expect(Self.formaDelSuperviviente([leeVacio, noGuarda].joined(separator: "\n")) == nil)
+        #expect(Self.formaDelSuperviviente([leeViejo, escribe].joined(separator: "\n")) == nil)
+        #expect(Self.formaDelSuperviviente(leeVacio) == nil)
     }
 
     // MARK: - Instrumento de descriptores

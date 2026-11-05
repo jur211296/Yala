@@ -1,10 +1,10 @@
 ---
 id: currency-change-service-tests-mirror-the-logic
-status: backlog
+status: done
 priority: low
 area: "testing, currency"
 created: 2026-09-07
-updated: 2026-10-08
+updated: 2026-11-05
 source: hallazgo de camino en fx-manual-writes-seal-approximate-as-final (2026-09-07)
 ---
 
@@ -52,3 +52,15 @@ El molde está escrito y funciona — tres casos, 0,08 s.
       un test no prueba nada del código de producción.
 
 Triage 2026-10-08: abierto · medium → low · `CurrencyChangeServiceTests.swift` sigue copiando la derivación (`:19`) y el `% 20` (`:83`) sin llamar al servicio; es un hueco solo de tests, y el molde que sí lo llama ya existe (`ManualWriteRateQualityBehaviorTests.swift:190`).
+
+## 2026-11-05 · cerrado (lote T8)
+
+Los casos llaman ahora a `CurrencyChangeService.updateAllTransactions` sobre un store de test con la fila de tasas del día
+sembrada (sin red y sin tocar los seams del singleton) y leen lo PERSISTIDO con un fetch nuevo: monto normal, gasto, cero,
+por debajo del umbral, la pareja por ENCIMA del umbral (nueva), el progreso real con 45 registros (0, 20/45, 40/45, 1) y el
+store vacío (salta a 1). El caso «progreso al completar», que solo dividía dos literales, se sustituyó por el del store vacío.
+
+Mutantes en el servicio (iPhone 17 Pro, iOS 27.2): umbral `0.0001 → 0.000001` rojo · `→ 0.01` rojo · `else { 1.0 } → 0.0`
+rojo · `% 20 → % 10` rojo · quitar los `onProgress?(1.0)` rojo. **Sobrevive** quitar el `abs()` de la tasa, y es un mutante
+equivalente: el monto convertido lleva siempre el signo del original, así que la división ya sale positiva. El caso del
+gasto lo dice en su comentario y fija el monto con signo.

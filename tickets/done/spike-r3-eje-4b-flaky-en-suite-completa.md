@@ -1,11 +1,11 @@
 ---
 id: spike-r3-eje-4b-flaky-en-suite-completa
-status: backlog
+status: done
 priority: low
 area: "testing"
 created: 2026-09-11
 source: "corrida completa de YalaTests durante `detach-history-replay-can-tombstone-groups-on-next-launch`"
-updated: 2026-10-13
+updated: 2026-11-05
 ---
 
 # `SpikeR3ContainerReleaseTests` «eje 4b» se pone rojo en la suite completa y verde en solitario
@@ -96,3 +96,21 @@ Suite completa de `YalaTests` con `Yala Dev` en el iPhone 17 Pro (iOS 27.0) reci
 único rojo, «R3 eje 4a · wipe in-process con release verificado…» (`SpikeR3ContainerReleaseTests.swift:88`,
 `harness.log.contains("EJE 4a ✅")`). Aislado, la suite pasa 2 de 2 (6 casos). El cambio del lote no toca el store ni
 el harness. Sigue sin entrada en la Lista Negra.
+
+## 2026-11-05 · cerrado (lote T8): el 4a ya no cae y el 4b tenía dos formas reales
+
+**Eje 4a — medido sin rojo.** La espera de descriptores con techo de 2 s (`awaitDescriptorsClosed`, entró el 2026-10-16 en
+`6765a1722`, después de la última nota de arriba) lo resolvió: **0 rojos en los logs de ~150 corridas del CI con el spike**
+(31-oct a 5-nov, también las fallidas y canceladas), y en local verde aislado, en la suite completa (12.935 casos) y en
+frío tras `shutdown`/`boot` con el scheme `Yala`.
+
+**Eje 4b — la segunda forma es la plataforma, no el test.** En esas ~150 corridas del CI cayó **una** vez (run
+41911203989, 2026-11-04, `2.2` @ `1f802dc5d`, push), con la misma forma que el 2026-09-11 y el 2026-10-03: el superviviente
+LEE las 25 filas viejas y su save lanza 134030 → «The file doesn't exist» (POSIX 2). Las dos formas sostienen lo que R4
+hereda —el fetch del superviviente NO lanza: la app no se entera de que su store ya no está—, y ninguna depende del test.
+El test ahora acepta las dos por nombre (`formaDelSuperviviente`) y sigue en rojo con una tercera o si el fetch lanza; la
+lectura de la forma B, que no se provoca a voluntad, la fija un caso con las líneas literales de ese log y sus mezclas
+(mutante que acepta la mezcla: rojo).
+
+Criterio del lote: **10 corridas seguidas en verde** de la suite aislada con el cambio (y otras 10 antes, sin él). No hace
+falta entrada en la Lista Negra.
