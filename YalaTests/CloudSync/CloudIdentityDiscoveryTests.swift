@@ -127,6 +127,41 @@ struct CloudIdentityDiscoveryTests {
         }
     }
 
+    /// **`migrated` se guarda al descubrir la identidad, sellado por la cuenta** (ticket
+    /// `reverse-hidden-on-a-born-cloud-second-device`, opción A). Solo `migrated:false` con `reverted:false` LEÍDOS dicen «nació
+    /// en la nube y su zona está vacía de ella»; una cuenta vuelta a iCloud, `true`, ausente
+    /// o fuera del dominio, no — y un ausente no borra lo que ya se sabía. Otra cuenta no lo lee.
+    @Test("`migrated` viaja al descubrir: solo `false` leído abre born-cloud, y sellado por `sub`")
+    func migratedSeGuardaAlDescubrir() async {
+        let previous = AccountOriginStore.defaults
+        defer { AccountOriginStore.defaults = previous }
+        for (body, esperado) in [
+            (#"{"exists":true,"kind":"complete","migrated":false,"reverted":false}"#, true),
+            (#"{"exists":true,"kind":"complete","migrated":false,"reverted":true}"#, false),
+            (#"{"exists":true,"kind":"complete","migrated":false}"#, false),
+            (#"{"exists":true,"kind":"complete","migrated":true,"reverted":false}"#, false),
+            (#"{"exists":true,"kind":"complete"}"#, false),
+            (#"{"exists":true,"kind":"complete","migrated":"no"}"#, false),
+        ] {
+            AccountOriginStore.defaults = makeIsolatedDefaults(prefix: "idisc.origin")
+            let (motor, _) = makeMotor(body: body, store: AccountKindStore(defaults: makeIsolatedDefaults(prefix: "idisc.k")))
+            #expect(await motor.discover(gate: .settingsMigrateToCloud) == .discovered(.complete, userID: "sub-A"), "\(body)")
+            #expect(AccountOriginStore.accountBornCloud(sub: "sub-A") == esperado, "\(body)")
+            #expect(!AccountOriginStore.accountBornCloud(sub: "sub-B"), "otra cuenta no hereda el dato")
+        }
+        // Un descubrimiento posterior SIN el campo (gateway anterior) no borra lo sabido.
+        AccountOriginStore.defaults = makeIsolatedDefaults(prefix: "idisc.origin2")
+        let (primero, _) = makeMotor(body: #"{"exists":true,"kind":"complete","migrated":false,"reverted":false}"#,
+                                     store: AccountKindStore(defaults: makeIsolatedDefaults(prefix: "idisc.k2")))
+        _ = await primero.discover(gate: .settingsMigrateToCloud)
+        let (segundo, _) = makeMotor(body: #"{"exists":true,"kind":"complete"}"#,
+                                     store: AccountKindStore(defaults: makeIsolatedDefaults(prefix: "idisc.k3")))
+        _ = await segundo.discover(gate: .settingsMigrateToCloud)
+        #expect(AccountOriginStore.accountBornCloud(sub: "sub-A"))
+        AccountOriginStore.clear()
+        #expect(!AccountOriginStore.accountBornCloud(sub: "sub-A"), "el cierre de sesión lo retira")
+    }
+
     /// El faro «nombra esta cuenta» solo puesto y con el hash de ESTE `sub`. Sin hash —el faro fingido de los XCUITest, o uno
     /// escrito sin `sub`— no nombra ninguna.
     @Test("el faro nombra la cuenta solo con su hash")

@@ -84,7 +84,7 @@ private final class FakeExecutor: MigrationWorkExecuting {
     var sweepOutcome: ZombieSweepOutcome = .completed(deleted: 0)
     var sweepCallCount = 0
     var sweptSinceSeqs: [Int64] = []
-    var verifyRebindsResult = 0
+    var verifyRebindsResult: Int? = 0
     var healDuplicatesResult = 0
     var reverseUploadStatuses: [ReverseUploadStatus] = [.drained]
     private var reverseUploadIndex = 0
@@ -255,7 +255,7 @@ private final class FakeExecutor: MigrationWorkExecuting {
     func sweepZombies(sinceSeq: Int64) async -> ZombieSweepOutcome {
         sweepCallCount += 1; sweptSinceSeqs.append(sinceSeq); return sweepOutcome
     }
-    func verifyRebinds() -> Int { verifyRebindsResult }
+    func verifyRebinds() -> Int? { verifyRebindsResult }
     func healDuplicates() -> Int { healDuplicatesResult }
     func reverseUploadStatus() -> ReverseUploadStatus {
         guard !reverseUploadStatuses.isEmpty else { return .drained }
@@ -5495,6 +5495,33 @@ struct MigrationRunnerTests {
         let j = try journal(context)
         #expect(j.readPhase().phase == .notStarted)
         #expect(j.adoptClaimExitRaw == nil)
+    }
+
+    /// **«Cancelar» en la IDENTIDAD de un intento que entró como adopt deja la marca** (ticket
+    /// `welcome-cancel-during-the-identity-step-does-not-return-to-the-chooser`): es el relevo que recibe «Ya tengo una cuenta»
+    /// y para al 35 % probando el linaje. Sin la marca, la bienvenida se quedaba en la barra sin salida
+    /// (`WelcomeAdoptCancel.afterCancel` exige `.cancelled`). El control es la misma fase con «Migrar» y con la fila sin
+    /// intención: ninguna de las dos deja la marca.
+    @Test func identityCancel_ofAnAdoptIntent_leavesTheMark_andTheWelcomeGoesBack() async throws {
+        // La subida y el `cutover(.pending)` del relevo tienen el mismo callejón (review adversarial).
+        let phases: [MigrationPhase] = [.assigningIdentity, .uploadingSnapshot, .cutover(.pending)]
+        for phase in phases {
+        for (raw, expected) in [("adoptIfExisting", "cancelled"), ("migrateOnly", nil), (nil, nil)] as [(String?, String?)] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            try seedJournal(context, phase: phase, leaderDeviceID: deviceID, forwardClaimIntentRaw: raw)
+
+            await makeRunner(context, fake).cancelMigration()
+            let j = try journal(context)
+            #expect(j.readPhase().phase == .notStarted, "\(raw ?? "nil"): cancelar en la identidad vuelve al inicio")
+            #expect(j.adoptClaimExitRaw == expected, "\(raw ?? "nil")")
+            let after = WelcomeAdoptCancel.afterCancel(
+                journaledPhase: j.readPhase().phase, adoptEffectJournaled: false,
+                adoptClaimExit: j.adoptClaimExitRaw.flatMap(AdoptClaimExit.init(rawValue:)), journalUnreadable: false)
+            #expect(after == (expected == nil ? .keepPolling : .back), "\(phase) \(raw ?? "nil")")
+        }
+        }
     }
 
     /// **La marca sobrevive a «Reintentar»** —es la salida hacia delante de la tarjeta de fallo— **y se va cuando otro claim

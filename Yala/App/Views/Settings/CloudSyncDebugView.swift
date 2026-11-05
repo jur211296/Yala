@@ -348,9 +348,21 @@ final class CloudSyncMigrationPanelModel {
     /// `scanOrphanMetadata`/`computeDryRun`). El upload real lo cablea I14 en el flujo de adopt.
     func diffOrphansAdopt() async {
         isWorking = true; defer { isWorking = false }
-        guard let plan = await makeExecutor().adoptOrphanDryRun() else {
+        let plan: AdoptOrphanDiff.Plan
+        switch await makeExecutor().adoptOrphanDryRunOutcome() {
+        case .plan(let p):
+            plan = p
+        case .network:
             adoptDiffLabel = "transient (red) — reintenta"
             lastMessage = "Diff huérfanas (adopt): red caída al enumerar el backend"
+            return
+        case .enumerationIncomplete:
+            adoptDiffLabel = "enumeración incompleta — reintenta"
+            lastMessage = "Diff huérfanas (adopt): el Merkle no da la enumeración del backend por completa"
+            return
+        case .localUnreadable:
+            adoptDiffLabel = "inventario local ilegible"
+            lastMessage = "Diff huérfanas (adopt): no se pudo leer la base local de este dispositivo"
             return
         }
         let orphanLines = plan.orphans.sorted { $0.key < $1.key }

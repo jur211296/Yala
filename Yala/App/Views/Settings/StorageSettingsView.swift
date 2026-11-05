@@ -994,7 +994,12 @@ struct StorageSettingsView: View {
     /// «Dejar de esperar»: la salida del adopt (`controller.cancelMigration()`, marca `cancelled`) con palabras que son
     /// verdad para un teléfono que solo espera. El otro dispositivo sigue a lo suyo, y eso lo dice el cuerpo.
     private func stopWaitingButton(_ controller: CloudMigrationController) -> some View {
-        YalaSecondaryButton(L10n.Storage.stopWaiting, icon: "xmark.circle", isDisabled: controller.isWorking) {
+        // Mismo criterio que «Cancelar la activación»: tocable durante la pre-espera del import, que `cancelMigration`
+        // corta (ticket `migration-exits-stay-disabled-during-the-import-pre-wait`).
+        YalaSecondaryButton(L10n.Storage.stopWaiting, icon: "xmark.circle",
+                            isDisabled: !MigrationImportWaitLogic.cancelEnabled(
+                                isWorking: controller.isWorking, waitingForImport: controller.resumeWaitingForImport,
+                                cancelling: controller.isCancellingMigration)) {
             confirmStopWaiting = true
         }
         .accessibilityIdentifier("storage_stop_waiting_button")

@@ -260,13 +260,13 @@ struct ProfileView: View {
             // El canal de Grupos en pausa entra por el MISMO alert que los otros dos permanentes, con el
             // mensaje que le toca (`signOutBlockedMessage`).
             //
-            // **Y hereda el agujero que estos tres ya tenían, que NO es suyo y no se cierra aquí:** el
-            // desasociar de Ajustes escribe esta misma fase con estos mismos motivos, así que su bloqueo
-            // también enciende este aviso —«No pudimos cerrar tu sesión» a quien solo pidió soltar una
-            // cuenta de grupos—, encima del aviso propio de la sección. El corte de abajo solo cubre los
-            // dos motivos EXCLUSIVOS del desasociar; los compartidos no se pueden distinguir por el
-            // motivo, porque el discriminador correcto es el GESTO y el coordinador no lo publica.
-            // Ticket: `signout-alert-fires-on-detach-blocks-it-did-not-cause`.
+            // **El desasociar ya no llega aquí con estos motivos** (2026-10-02, ticket
+            // `detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait`): devuelve su bloqueo por el
+            // retorno (`.blockedBeforeWriting(reason:)`) y vuelve la fase a `.idle` en el mismo turno del main actor
+            // (`CloudSessionSignOut.releaseDetachBlock`), así que el `guard` de arriba —que re-mira la fase 0,35 s
+            // después— no ve un `.blocked` suyo. Visto en el simulador en el barrido del 2026-10-15. Hasta ese día
+            // escribía esta misma fase con los motivos compartidos, y «No pudimos cerrar tu sesión» salía encima del
+            // aviso propio de la sección (ticket `signout-alert-fires-on-detach-blocks-it-did-not-cause`).
             //
             // **El fallo pasajero de la subida de grupos entra por el MISMO alert, y no por el de
             // «un momento más»** (2026-09-14). Su título —«No pudimos cerrar tu sesión»— es exacto: el
@@ -284,12 +284,12 @@ struct ProfileView: View {
                  .syncStoppedNeedsUpdate, .syncStoppedMidMigration, .syncStoppedNeedsRelaunch, .personalUploadRetryLater,
                  .signOutSessionSurvived, .migrationInFlight, .migrationUnreadable, .personalCaptureUnfinished:
                 showSignOutBlockedAlert = true
-            // **Los dos motivos del DESASOCIAR no encienden nada aquí, y no es teoría: llegaban.**
-            // `phase` es un singleton observable y esta pantalla escucha sus cambios; la de
-            // almacenamiento se abre DESDE aquí, así que sigue montada. Sin este corte, cada bloqueo del
-            // desasociar apilaba «No pudimos cerrar tu sesión» encima del aviso propio de la sección
-            // —dos presentaciones del mismo anchor, con su carrera— y le hablaba a la persona de cerrar
-            // la sesión entera cuando solo pidió soltar una cuenta de grupos. Es justo lo que el aviso
+            // **Los motivos EXCLUSIVOS del desasociar no encienden nada aquí.** Llegaban cuando el desasociar
+            // dejaba su bloqueo en `phase`; desde el 2026-10-02 lo devuelve por el retorno y suelta la fase en el
+            // mismo turno, y este corte queda de cinturón: `phase` es un singleton observable y la pantalla de
+            // almacenamiento se abre DESDE aquí, así que esta sigue montada. Sin él, un bloqueo del desasociar
+            // apilaría «No pudimos cerrar tu sesión» encima del aviso propio de la sección y le hablaría a la
+            // persona de cerrar la sesión entera cuando solo pidió soltar una cuenta de grupos. Es justo lo que el aviso
             // propio de `GroupsAssociationSection` existe para evitar. Quien los enseña es esa sección,
             // por el veredicto de retorno, no por la fase. `.sessionNotClosed` (2026-09-26) es el tercero, y por lo mismo.
             case .bridgeUnreadable, .detachBusy, .sessionNotClosed: break

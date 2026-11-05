@@ -178,6 +178,15 @@ struct SnapshotUploadCeilingLogicTests {
                 "con una pasada en vuelo el botón no se toca: la cancelación es de la subida APARCADA")
         let failure = try Self.body(of: "private func failureMessage(", in: view)
         #expect(failure.contains("snapshotExit: controller.snapshotExitReason"))
+        // «Dejar de esperar» con el mismo criterio (ticket `migration-exits-stay-disabled-during-the-import-pre-wait`): con
+        // `isDisabled: controller.isWorking` se quedaba apagado durante toda la pre-espera de `pollLeader`.
+        let stop = try Self.body(of: "private func stopWaitingButton(", in: view)
+        #expect(stop.contains("""
+            isDisabled: !MigrationImportWaitLogic.cancelEnabled(
+                                            isWorking: controller.isWorking, waitingForImport: controller.resumeWaitingForImport,
+                                            cancelling: controller.isCancellingMigration)) {
+            """))
+        #expect(stop.contains("Task { await controller.cancelMigration() }"))
     }
 
     /// El controller ofrece la salida donde dice `ForwardCancelScope` —la subida y, desde

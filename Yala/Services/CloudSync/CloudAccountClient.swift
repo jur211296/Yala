@@ -48,7 +48,10 @@ enum ClaimOutcome: Equatable {
 /// una ida en curso (`profiles.migration_in_progress`). Ausente en la respuesta —un gateway anterior— es `false`, que deja la
 /// puerta de «Migrar» con su aviso de siempre.
 enum ExistsOutcome: Equatable {
-    case exists(Bool, kind: AccountKind?, migrationInProgress: Bool = false)
+    /// `migrated` (2026-11-04, ticket `reverse-hidden-on-a-born-cloud-second-device`): ¿la cuenta pasó por el cutover de una
+    /// ida? `false` = nació en la nube; `nil` = el servidor no lo dijo (un gateway anterior), y no se sabe.
+    /// `reverted`: ¿la cuenta volvió, o está volviendo, a iCloud? `nil` = no se sabe.
+    case exists(Bool, kind: AccountKind?, migrationInProgress: Bool = false, migrated: Bool? = nil, reverted: Bool? = nil)
     case sessionExpired(detail: String)
     case transient(detail: String)
 }
@@ -200,9 +203,13 @@ final class CloudAccountClient {
         /// booleano se lee como AUSENTE en vez de tumbar el decode entero: el `try?` de `exists` lo convertiría en
         /// `.transient`, y un campo que solo elige el texto de un aviso no puede dejar sin sign-in a nadie.
         let migrationInProgress: Bool?
+        /// ADITIVO (2026-11-04). Mismo trato que `migrationInProgress`: opcional, y un valor que no sea booleano es AUSENTE.
+        let migrated: Bool?
+        /// ADITIVO (2026-11-04), mismo trato.
+        let reverted: Bool?
 
         enum CodingKeys: String, CodingKey {
-            case exists, kind
+            case exists, kind, migrated, reverted
             case migrationInProgress = "migration_in_progress"
         }
 
@@ -217,6 +224,22 @@ final class CloudAccountClient {
                 print("CloudAccountClient: migration_in_progress fuera del dominio, se lee como ausente: \(error)")
                 #endif
                 migrationInProgress = nil
+            }
+            do {
+                migrated = try container.decodeIfPresent(Bool.self, forKey: .migrated)
+            } catch {
+                #if DEBUG
+                print("CloudAccountClient: migrated fuera del dominio, se lee como ausente: \(error)")
+                #endif
+                migrated = nil
+            }
+            do {
+                reverted = try container.decodeIfPresent(Bool.self, forKey: .reverted)
+            } catch {
+                #if DEBUG
+                print("CloudAccountClient: reverted fuera del dominio, se lee como ausente: \(error)")
+                #endif
+                reverted = nil
             }
         }
     }
@@ -325,7 +348,8 @@ final class CloudAccountClient {
             // Un `kind` que este build no conozca se lee como AUSENTE, no como error: se prefiere el
             // fail-safe a `groupsOnly` antes que dar por buena una etiqueta que nadie sabe interpretar.
             return .exists(decoded.exists, kind: decoded.kind.flatMap(AccountKind.init(rawValue:)),
-                           migrationInProgress: decoded.migrationInProgress ?? false)
+                           migrationInProgress: decoded.migrationInProgress ?? false, migrated: decoded.migrated,
+                           reverted: decoded.reverted)
         case 401:
             return .sessionExpired(detail: "HTTP 401: \(Self.bodyString(data))")
         default:

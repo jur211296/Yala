@@ -443,6 +443,12 @@ final class GroupsSyncClient {
     /// en caliente. El rehydrate del espejo (B2) corre en AMBOS modos (es red de boot, no de loop).
     func startIfEligible(context: ModelContext, trigger: String? = nil) {
         guard CloudSyncFlags.groupsBackendEnabled, sessionCheck() else { return }
+        // Un alta de cuenta COMPLETA por enlace en curso: el canal espera al adopt, o los grupos que bajara contarían en el
+        // guard cross-cuenta del Welcome (ticket `complete-account-invite-adopt-can-pull-groups-before-the-guard`).
+        guard !completeAccountAdoptPending(currentUserIDProvider()) else {
+            GroupsSyncBreadcrumb.groupsLoopStopped(reason: "complete-account-adopt-pending")
+            return
+        }
         // G8-2 (AJUSTE review #3): retener el context AQUÍ — DESPUÉS del guard flag+sesión, ANTES del
         // return del piggyback. Sin esto, en modo piggyback (personal cadencia) el context quedaría
         // sin fijar y `syncNowFromPush` devolvería siempre false.
@@ -468,8 +474,21 @@ final class GroupsSyncClient {
         purgeQueuedSplitGroupTombstones(context: context)
         // B2: red de boot — re-insertar del espejo App Group lo que una lightweight migration se llevó.
         rehydrateOutboxFromMirror(context: context)
-        // [R3] Personal cadencia ⇒ grupos piggyback (paso 5.6); si no ⇒ loop propio.
-        if CloudSyncFlags.syncRuntimeEnabled && CloudSyncRuntime.canRunDomain() { return }
+        // [R3] Personal cadencia ⇒ grupos piggyback (paso 5.6); si no ⇒ loop propio. Sin journal todavía, ninguna de
+        // las dos: el candado leería la fase de RELLENO (ticket `can-run-domain-reads-the-filler-phase-before-the-journal-connects`).
+        switch GroupsLoopRestartLogic.loopMode(
+            runtimeEnabled: CloudSyncFlags.syncRuntimeEnabled,
+            storageModeIsCloud: CloudSyncFlags.storageMode == .cloud,
+            journalConnected: journalConnected(),
+            personalCanRun: personalDomainCanRun) {
+        case .piggyback:
+            return
+        case .decideAfterJournal:
+            decideLoopModeWhenJournalConnects(context: context, trigger: trigger)
+            return
+        case .ownLoop:
+            break
+        }
         // A7: canario de push fallando permanente (filas ya en dead-letter al arrancar el loop).
         let deadLettered = (try? deadLetteredCount(context)) ?? 0
         if deadLettered > 0 { GroupsSyncBreadcrumb.groupsDeadLetteredCount(deadLettered) }
@@ -480,6 +499,41 @@ final class GroupsSyncClient {
         // Solo cuando el loop se creó de verdad (no en piggyback / no-op): breadcrumb de re-arranque.
         if let trigger { GroupsSyncBreadcrumb.groupsLoopRestarted(trigger: trigger) }
     }
+
+    /// Observador de `MigrationPhaseStore.journalDidConnect` mientras Grupos espera para elegir modo. Uno solo: varias
+    /// llamadas antes del journal (el foreground y el paso 15) dejan una sola re-decisión.
+    private var journalConnectObserver: NSObjectProtocol?
+    /// Seams de la decisión de modo: el journal conectado y el candado del motor personal. Los tests los sustituyen para
+    /// recorrer «sin journal → conecta → decide» sin el arranque de la app.
+    var journalConnected: () -> Bool = { MigrationPhaseStore.shared.isJournalConnected }
+    /// Seam del candado del alta de cuenta completa por enlace (`CompleteAccountAdoptPending`).
+    var completeAccountAdoptPending: (String?) -> Bool = { CompleteAccountAdoptPending.blocksChannel(sub: $0) }
+    var personalDomainCanRun: () -> Bool = { CloudSyncRuntime.canRunDomain() }
+
+    /// `.decideAfterJournal`: ni loop ni piggyback hasta que el journal se conecte; entonces se vuelve a pasar por
+    /// `startIfEligible`, que ya decide con la fase leída. Si otra llamada levantó el loop entretanto, `shouldStart` lo
+    /// despierta en vez de duplicarlo.
+    private func decideLoopModeWhenJournalConnects(context: ModelContext, trigger: String?) {
+        // El contexto y el disparador se guardan aquí y no en el cierre: el cierre del observador es `@Sendable`, y
+        // `ModelContext` no lo es. El último pedido manda.
+        journalWaitRequest = (context, trigger)
+        guard journalConnectObserver == nil else { return }
+        journalConnectObserver = NotificationCenter.default.addObserver(
+            forName: MigrationPhaseStore.journalDidConnect, object: nil, queue: nil
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                if let observer = self.journalConnectObserver {
+                    NotificationCenter.default.removeObserver(observer)
+                    self.journalConnectObserver = nil
+                }
+                guard let request = self.journalWaitRequest else { return }
+                self.journalWaitRequest = nil
+                self.startIfEligible(context: request.context, trigger: request.trigger ?? "journal-connected")
+            }
+        }
+    }
+    private var journalWaitRequest: (context: ModelContext, trigger: String?)?
 
     /// El loop de cadencia: cada vuelta = `syncCycleOnce` → delay por `SyncCadencePolicy` → repetir.
     /// `sessionExpired` (401, salvo el de App Attest ausente, que es pasajero) y `accountUnavailable` TERMINAN el
@@ -2081,18 +2135,30 @@ final class GroupsSyncClient {
     /// dead-letter presente NO se revive por esta vía), re-inserta con los valores ORIGINALES bajo
     /// `outboxSaveAuthor` (el drain no re-captura el save). Idempotente. Un archivo huérfano (crash entre
     /// purga y remove) es benigno: se re-sube y el backend deduplica por `client_mutation_id`.
+    /// Seam: el fetch del outbox del rehydrate lanza. Y el testigo de que la última pasada no pudo leer.
+    var _testThrowOnRehydrateFetch = false
+    private(set) var lastRehydrateReadFailed = false
+
     func rehydrateOutboxFromMirror(context: ModelContext) {
         guard let mirror = outboxMirror, let userID = currentUserIDProvider() else { return }
         let entries = mirror.entriesForUser(userID)
         guard !entries.isEmpty else { return }
 
         let liveKeys: Set<String>
-        do { liveKeys = try existingOutboxKeys(context) } catch {
+        do {
+            if _testThrowOnRehydrateFetch { throw CocoaError(.fileReadCorruptFile) }
+            liveKeys = try existingOutboxKeys(context)
+        } catch {
+            // Sale sin re-insertar (sin saber qué hay vivo, re-insertar duplicaría), pero con rastro también en producción,
+            // como su gemelo personal (ticket `two-silent-local-reads-leave-a-false-or-no-trace`).
+            CloudSyncBreadcrumb.localReadFailed(step: "groups-rehydrate-mirror", errorType: String(describing: type(of: error)))
+            lastRehydrateReadFailed = true
             #if DEBUG
             logger.error("GroupsSync: rehydrate fetch(GroupSyncOutbox) falló: \(error)")
             #endif
             return
         }
+        lastRehydrateReadFailed = false
 
         var missing: [GroupsOutboxMirrorEntry] = []
         for entry in entries {

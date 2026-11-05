@@ -198,6 +198,10 @@ struct GroupsBackendInviteModifier: ViewModifier {
                     }
                     if GroupsSignInChannelStartLogic.startsChannelAtSignIn(destino) {
                         GroupsSyncClient.shared.startIfEligible(context: modelContext, trigger: "post-sign-in")
+                    } else if destino == .adoptAsCompleteAndOpenGroups {
+                        // Y el arranque en frío y el primer plano tampoco, hasta que el adopt empiece: un candado durable
+                        // con la cuenta que entra (ticket `complete-account-invite-adopt-can-pull-groups-before-the-guard`).
+                        CompleteAccountAdoptPending.arm(sub: CloudAuthService.shared.currentUserID)
                     }
                     // C1: la sesión acaba de nacer, y es el instante en que (a) un consent aceptado sin red
                     // por fin tiene cuenta a la que atribuirse, (b) el consent LEGACY de este device —el

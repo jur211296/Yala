@@ -1492,12 +1492,17 @@ final class CloudMigrationController {
         return StorageModePersistence.read()
     }
 
-    /// ¿Nació la cuenta en la nube EN ESTE dispositivo? Mismo seam que `readPersistedStorageMode`.
+    /// ¿Nació la cuenta en la nube? La marca de ESTE dispositivo (el alta) o, desde el 2026-11-04, la palabra del SERVIDOR
+    /// guardada al descubrir la identidad (`AccountOriginStore`, ticket `reverse-hidden-on-a-born-cloud-second-device`): un
+    /// segundo dispositivo entra por adopt y no tiene la marca. Decide `ReverseEligibility.accountBornCloud`. Mismo seam
+    /// que `readPersistedStorageMode`.
     private static func readIsBornCloud() -> Bool {
         #if DEBUG
         if UITestHooks.fakeBornCloudStorage { return true }
         #endif
-        return StorageModePersistence.isBornCloud()
+        return ReverseEligibility.accountBornCloud(
+            localMark: StorageModePersistence.isBornCloud(),
+            serverSaysBornCloud: AccountOriginStore.accountBornCloud(sub: CloudAuthService.shared.currentUserID))
     }
 
     /// Avisa de una salida del claim de la vuelta a iCloud que haya producido la llamada en curso (ticket

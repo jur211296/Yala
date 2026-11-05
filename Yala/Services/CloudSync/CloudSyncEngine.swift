@@ -939,6 +939,14 @@ enum CloudSyncBreadcrumb {
     ///
     /// Hasta ese ticket este fallo no dejaba NADA: los tres helpers homónimos devolvían `[]` bajo un `print` de
     /// `#if DEBUG`, así que en producción una base ilegible se leía como «no hay nada que subir» en silencio.
+    /// Una lectura LOCAL que se tolera (no decide nada) no se pudo hacer (ticket
+    /// `two-silent-local-reads-leave-a-false-or-no-trace`). Distinto del rastro de «no hay»: quien diagnostica una avería
+    /// tiene que saber que aquí no se pudo mirar. `step`: `adopt-marker-belt`, `reverse-rebinds-verify`,
+    /// `reverse-sample-witnesses`, `groups-rehydrate-mirror`. Sin PII.
+    static func localReadFailed(step: String, errorType: String) {
+        logger.notice("CloudSyncLocalRead failed step=\(step, privacy: .public) errorType=\(errorType, privacy: .public) — no se pudo mirar; no es «no hay»")
+    }
+
     static func outboxFetchFailed(step: String) {
         logger.notice("CloudSyncOutbox fetchFailed step=\(step, privacy: .public) — no se decide nada con el outbox")
     }

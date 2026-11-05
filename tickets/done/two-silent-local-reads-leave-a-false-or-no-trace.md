@@ -1,10 +1,10 @@
 ---
 id: two-silent-local-reads-leave-a-false-or-no-trace
-status: backlog
+status: done
 priority: low
 area: "modo-nube, grupos"
 created: 2026-09-23
-updated: 2026-10-08
+updated: 2026-11-04
 source: "barrido del patrón durante `an-incomplete-inventory-reads-as-the-whole-corpus` (2026-09-23)"
 ---
 
@@ -47,3 +47,7 @@ El primero además es un `try?` que silencia, que las reglas del repo prohíben.
 - `GroupsSyncClient.rehydrateOutboxFromMirror` (`Groups/GroupsSyncClient.swift:1795`) sigue con el `logger.error` dentro de `#if DEBUG` y nada en producción, y `verifyRebinds` sigue devolviendo `0` en el `catch`.
 
 Triage 2026-10-08: abierto · low → low · las cinco lecturas siguen igual, pero ninguna decide mal con los datos: solo engañan a quien diagnostica (aunque una es un try? prohibido).
+
+## Cierre (2026-11-04, sesión «Activar la nube»)
+
+Rastro nuevo `CloudSyncBreadcrumb.localReadFailed(step:)` para «no pude mirar»: el cinturón del marcador ya no es `try?`, `verifyRebinds` devuelve `Int?`, el fetch tolerado de testigos y el rehydrate de Grupos dejan rastro en producción, y el panel DEBUG distingue red / enumeración incompleta / inventario local ilegible (`adoptOrphanDryRunOutcome`). Nada cambia lo que se decide. Tests: `SilentLocalReadsWiringTests`, `MigrationWorkExecutorTests` (verifyRebinds y dry-run) y `GroupsSyncHardeningTests.rehydrate_unreadableOutbox_doesNotReinsert_andLeavesATrace`.

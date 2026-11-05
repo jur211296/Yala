@@ -1,10 +1,10 @@
 ---
 id: reverse-hidden-on-a-born-cloud-second-device
-status: backlog
+status: done
 priority: medium
 area: "modo-nube, migración"
 created: 2026-09-10
-updated: 2026-10-08
+updated: 2026-11-04
 source: "residual CONOCIDO y aceptado de `reverse-cutover-cerrado-para-cuentas-born-cloud` (2026-09-10), decisión D4"
 ---
 
@@ -90,3 +90,7 @@ Cómo sabe el segundo dispositivo que la cuenta nació en la nube:
 encaminamiento en autorización justo en el guardarraíl que evita resucitar datos borrados. Con A, `medium`.
 
 Triage 2026-10-08: abierto · medium → medium · ReverseEligibility.decide sigue abriendo la puerta solo con la marca local isBornCloud, y la cuenta no expone migrated_at; pendiente elegir vía A o B.
+
+## Cierre (2026-11-04, sesión «Activar la nube»)
+
+Vía A (Jürgen, 2026-10-08). `GET /account/exists` emite `migrated` (`migrated_at` null → false; con fecha → true; otra cosa se omite) y `reverted` (`reverted_at` o `reverse_in_progress` → true; los dos en reposo → false). Solo `migrated: false` con `reverted: false` abre: con la cuenta vuelta a iCloud, la zona tiene su propio corpus y «Empezar sin ellos» lo borraría (review adversarial). El cliente lo guarda sellado por `sub` al descubrir la identidad y al refrescar el tipo (`AccountOriginStore`), y `ReverseEligibility.accountBornCloud` = marca local O servidor `migrated: false`. Ausente sigue exigiendo el mapa. Tests: `MigrationWorkExecutorTests.reverseEligibility_serverBornCloudOpensTheSecondDevice`, `CloudIdentityDiscoveryTests.migratedSeGuardaAlDescubrir`, `gateway/test/account.kind.test.ts`. **Falta desplegar el Worker** (staging y producción, este con OK de Jürgen) y el device-QA con dos dispositivos.

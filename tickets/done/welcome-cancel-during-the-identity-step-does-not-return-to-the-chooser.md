@@ -1,10 +1,10 @@
 ---
 id: welcome-cancel-during-the-identity-step-does-not-return-to-the-chooser
-status: backlog
+status: done
 priority: medium
 area: "modo-nube, onboarding"
 created: 2026-09-24
-updated: 2026-10-08
+updated: 2026-11-04
 source: "review adversarial de `migration-takeover-uploads-without-a-lineage-check` (2026-09-24), lente del runner y el copy"
 ---
 
@@ -36,3 +36,7 @@ toco «Cancelar la activación», la pantalla no vuelve a la de elegir: se queda
 - La única salida es matar la app, y aterriza en MainTab vacío (el onboarding ya se marcó en `onAdoptStarted`), no en la bienvenida. Por eso sube: es una pantalla sin salida, aunque solo en el relevo con comprobación de linaje.
 
 Triage 2026-10-08: abierto · low → medium · tras cancelar en la identidad la pantalla no tiene salida y solo matando la app se sale (WelcomeAdoptCancel.afterCancel).
+
+## Cierre (2026-11-04, sesión «Activar la nube»)
+
+«Cancelar la activación» en la identidad —y, por la review adversarial, también en la subida y en el `cutover(.pending)` del relevo— de un intento que entró como adopt (intención escrita `adoptIfExisting`) deja la marca `.cancelled` en el mismo save (`AdoptClaimScope.cancelLeavesAdoptMark`), y la bienvenida vuelve a elegir. «Migrar» y la fila sin intención siguen sin marca. Test: `MigrationRunnerTests.identityCancel_ofAnAdoptIntent_leavesTheMark_andTheWelcomeGoesBack` (mutante verificado).

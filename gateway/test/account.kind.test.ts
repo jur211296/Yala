@@ -141,6 +141,52 @@ describe("GET /account/exists · kind", () => {
   });
 });
 
+describe("GET /account/exists · migrated (2026-11-04, reverse-hidden-on-a-born-cloud-second-device)", () => {
+  it("migrated_at null → migrated: false (nació en la nube)", async () => {
+    stubFetch({ status: 200, body: [{ id: SUB, kind: "complete", migration_in_progress: false, migrated_at: null }] });
+    expect(await (await exists(makeEnv())).json()).toEqual({
+      exists: true, kind: "complete", migration_in_progress: false, migrated: false,
+    });
+  });
+
+  it("reverted: true con reverted_at o con la vuelta en curso; false solo con los dos en reposo; si no, se omite", async () => {
+    const casos: Array<[Record<string, unknown>, boolean | undefined]> = [
+      [{ reverted_at: "2026-10-01T00:00:00+00:00", reverse_in_progress: false }, true],
+      [{ reverted_at: null, reverse_in_progress: true }, true],
+      [{ reverted_at: null, reverse_in_progress: false }, false],
+      [{ reverted_at: null }, undefined],
+      [{}, undefined],
+    ];
+    for (const [extra, esperado] of casos) {
+      stubFetch({ status: 200, body: [{ id: SUB, kind: "complete", migrated_at: null, ...extra }] });
+      const cuerpo = (await (await exists(makeEnv())).json()) as Record<string, unknown>;
+      expect(cuerpo.reverted).toBe(esperado);
+      expect("reverted" in cuerpo).toBe(esperado !== undefined);
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("migrated_at con fecha → migrated: true (pasó por una ida, aunque luego volviera a iCloud)", async () => {
+    stubFetch({ status: 200, body: [{ id: SUB, kind: "groups_only", migrated_at: "2026-09-01T10:00:00+00:00" }] });
+    expect(await (await exists(makeEnv())).json()).toEqual({ exists: true, kind: "groups_only", migrated: true });
+  });
+
+  it("sin la columna o fuera del dominio → se OMITE: el cliente lo lee como «no se sabe»", async () => {
+    for (const fila of [{ id: SUB, kind: "complete" }, { id: SUB, kind: "complete", migrated_at: 0 }, { id: SUB, kind: "complete", migrated_at: true }]) {
+      stubFetch({ status: 200, body: [fila] });
+      const cuerpo = (await (await exists(makeEnv())).json()) as Record<string, unknown>;
+      expect("migrated" in cuerpo).toBe(false);
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("pide la columna al upstream", async () => {
+    const cap = stubFetch({ status: 200, body: [{ id: SUB, kind: "complete", migrated_at: null }] });
+    await exists(makeEnv());
+    expect(cap.urls.some((u) => u.includes("/rest/v1/profiles") && u.includes("migrated_at"))).toBe(true);
+  });
+});
+
 describe("GET /account/exists · migration_in_progress (2026-10-09)", () => {
   it("migración en curso → lo dice, junto al kind", async () => {
     stubFetch({ status: 200, body: [{ id: SUB, kind: "complete", migration_in_progress: true }] });

@@ -64,7 +64,13 @@ final class MigrationPhaseStore {
         // prefs del runtime. Internamente re-verifica todo (storageMode/fase/userID/sentinel) → no-op
         // total en producción (.icloud) y en cualquier device que no sea el líder post-relaunch.
         PreferenceSyncService.shared.drainiKVToOutboxOnceIfNeeded()
+        // Quien aplazó una decisión hasta tener journal (Grupos: loop propio o piggyback) la toma ahora.
+        NotificationCenter.default.post(name: Self.journalDidConnect, object: nil)
     }
+
+    /// Se emite al final de `configure`: desde aquí `currentPhaseRead` es una fase LEÍDA, no el relleno `.notStarted`
+    /// (ticket `can-run-domain-reads-the-filler-phase-before-the-journal-connects`).
+    static let journalDidConnect = Notification.Name("MigrationPhaseStore.journalDidConnect")
 
     /// **R4 · seam del swap de persona in-process.** Suelta el container del journal. Sin `nil` aquí, el
     /// `ModelContainer` viejo sobrevive dentro de este singleton y el release verificado aborta — este

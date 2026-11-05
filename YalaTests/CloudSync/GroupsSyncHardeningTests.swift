@@ -467,6 +467,30 @@ struct GroupsSyncHardeningTests {
         #expect(try context.fetchCount(FetchDescriptor<GroupSyncOutbox>()) == 0)
     }
 
+    /// **El rehydrate con el outbox ilegible sale sin re-insertar y lo DICE** (ticket
+    /// `two-silent-local-reads-leave-a-false-or-no-trace`): antes el rastro vivía en `#if DEBUG` y en producción no quedaba
+    /// nada. Control: la misma entrada con el fetch sano sí vuelve al outbox.
+    @Test func rehydrate_unreadableOutbox_doesNotReinsert_andLeavesATrace() throws {
+        for unreadable in [true, false] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let mirrorDir = freshDir(); defer { cleanup(mirrorDir) }
+            let context = try makeContext(dir)
+            let mirror = GroupsOutboxMirror(directoryURL: mirrorDir)
+            let client = makeClient(session: StubSession(emptyPageJSON), mirrorDir: mirrorDir)
+            try mirror.write(GroupsOutboxMirrorEntry(
+                userID: "sub-a", syncID: UUID(), groupID: "SplitGroup-A",
+                entityType: GroupSyncEntityType.splitExpense, op: SyncOutboxOp.upsert.rawValue,
+                hlc: "2026-08-02T00:00:00.000Z-0005-00000000000000aa", clientMutationID: UUID(), fieldsJSON: "{}",
+                fieldHlcsJSON: nil, tombstoneReason: nil, author: GroupsOutboxMirror.author, createdAt: .now))
+
+            client._testThrowOnRehydrateFetch = unreadable
+            client.rehydrateOutboxFromMirror(context: context)
+            #expect(client.lastRehydrateReadFailed == unreadable)
+            #expect(try context.fetchCount(FetchDescriptor<GroupSyncOutbox>()) == (unreadable ? 0 : 1),
+                    unreadable ? "sin saber qué hay vivo no re-inserta" : "control: legible, re-inserta la entrada")
+        }
+    }
+
     /// Idempotente por construcción y SIN sentinel (molde `OrphanedBridgedTxSweeper`): la segunda pasada no
     /// encuentra nada, y sobre un outbox limpio no toca ni una fila. Es lo que permite dejarlo corriendo en
     /// CADA arranque como red de cualquier camino futuro que reabra el hueco.
@@ -1234,8 +1258,141 @@ struct GroupsSyncHardeningTests {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         let client = makeClient(session: StubSession(emptyPageJSON), userID: nil)
+        client.journalConnected = { true }
         client.startIfEligible(context: context)
         #expect(client._testLoopTask == nil)  // abstención: piggyback 5.6 conduce
+    }
+
+    /// **Sin journal todavía, Grupos no elige modo: espera a que se conecte** (ticket
+    /// `can-run-domain-reads-the-filler-phase-before-the-journal-connects`). Antes del paso 11 del arranque la fase es el
+    /// relleno `.notStarted`, que el candado lee como estable: con una fase transitoria de verdad Grupos se iba de piggyback y
+    /// se quedaba sin loop. Tres tramos: (1) sin journal no hay loop; (2) conectado con el candado CERRADO (fase transitoria)
+    /// levanta el loop propio; (3) el control, conectado con el candado ABIERTO (arranque normal), no levanta ninguno: el
+    /// motor personal lo lleva y no hay dos loops.
+    @Test func startIfEligible_beforeTheJournal_decidesWhenItConnects() async throws {
+        let prevRuntime = CloudSyncFlags.syncRuntimeEnabled
+        CloudSyncFlags.groupsBackendEnabled = true
+        CloudSyncFlags.syncRuntimeEnabled = true
+        CloudSyncFlags.storageMode = .cloud
+        defer {
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
+            CloudSyncFlags.syncRuntimeEnabled = prevRuntime
+            CloudSyncFlags._testResetStorageModeOverride()
+        }
+        for transient in [true, false] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let stub = StubSession(emptyPageJSON, status: 401)
+            let client = makeClient(session: stub, userID: nil)
+            client.sleeper = { _ in }
+            var connected = false
+            var asked = 0
+            client.journalConnected = { connected }
+            client.personalDomainCanRun = { asked += 1; return !transient }
+
+            client.startIfEligible(context: context)
+            client.startIfEligible(context: context, trigger: "foreground")
+            #expect(client._testLoopTask == nil, "sin journal no hay loop todavía")
+            #expect(asked == 0, "el candado no se pregunta con la fase de relleno")
+
+            connected = true
+            NotificationCenter.default.post(name: MigrationPhaseStore.journalDidConnect, object: nil)
+            #expect(asked == 1, "una sola re-decisión aunque se pidiera dos veces")
+            if transient {
+                let task = client._testLoopTask
+                #expect(task != nil, "fase transitoria: Grupos levanta su loop propio")
+                await task?.value
+            } else {
+                #expect(client._testLoopTask == nil, "fase estable: piggyback, sin segundo loop")
+            }
+        }
+    }
+
+    /// **Con un alta de cuenta completa por enlace en curso, el canal no arranca por ninguna puerta** (ticket
+    /// `complete-account-invite-adopt-can-pull-groups-before-the-guard`): el arranque en frío y el primer plano bajaban los
+    /// grupos antes del guard cross-cuenta del Welcome. Control: sin el candado, el mismo cliente levanta su loop.
+    @Test func startIfEligible_completeAccountAdoptPending_doesNotStartTheChannel() async throws {
+        let prevRuntime = CloudSyncFlags.syncRuntimeEnabled
+        CloudSyncFlags.groupsBackendEnabled = true
+        CloudSyncFlags.syncRuntimeEnabled = true
+        defer {
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
+            CloudSyncFlags.syncRuntimeEnabled = prevRuntime
+        }
+        for pending in [true, false] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let stub = StubSession(emptyPageJSON, status: 401)
+            let client = makeClient(session: stub, userID: "sub-a")
+            client.sleeper = { _ in }
+            var askedFor: String?
+            client.completeAccountAdoptPending = { askedFor = $0; return pending }
+            client.startIfEligible(context: context, trigger: "foreground")
+            #expect(askedFor == "sub-a", "el candado se pregunta con la cuenta de la sesión")
+            if pending {
+                #expect(client._testLoopTask == nil, "con el alta en curso el canal espera al adopt")
+                #expect(stub.callCount == 0)
+            } else {
+                let task = client._testLoopTask
+                #expect(task != nil, "control: sin el candado, el loop arranca")
+                await task?.value
+            }
+        }
+    }
+
+    @Test func completeAccountAdoptPending_decide_table() {
+        let t0 = Date(timeIntervalSince1970: 1_800_000_000)
+        typealias P = CompleteAccountAdoptPending
+        #expect(P.decide(armedSub: "a", armedSince: t0, sessionSub: "a", now: t0.addingTimeInterval(60)))
+        #expect(P.decide(armedSub: "a", armedSince: t0, sessionSub: "a", now: t0.addingTimeInterval(P.ttl - 1)))
+        #expect(!P.decide(armedSub: "a", armedSince: t0, sessionSub: "a", now: t0.addingTimeInterval(P.ttl)), "caduca")
+        #expect(!P.decide(armedSub: "a", armedSince: t0, sessionSub: "b", now: t0), "otra cuenta no frena")
+        #expect(!P.decide(armedSub: "a", armedSince: t0, sessionSub: nil, now: t0))
+        #expect(!P.decide(armedSub: nil, armedSince: t0, sessionSub: "a", now: t0))
+        #expect(!P.decide(armedSub: "a", armedSince: t0, sessionSub: "a", now: t0.addingTimeInterval(-60)), "reloj atrás no frena")
+    }
+
+    /// El ciclo durable: armar con la cuenta, frenar, y soltar con `clear()`. Sobre un almacén aislado.
+    @Test func completeAccountAdoptPending_armAndClear() {
+        let previous = CompleteAccountAdoptPending.defaults
+        let isolated = makeIsolatedDefaults()
+        CompleteAccountAdoptPending.defaults = isolated
+        defer { CompleteAccountAdoptPending.defaults = previous }
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        #expect(!CompleteAccountAdoptPending.blocksChannel(sub: "a", now: now))
+        CompleteAccountAdoptPending.arm(sub: "a", now: now)
+        #expect(CompleteAccountAdoptPending.blocksChannel(sub: "a", now: now.addingTimeInterval(30)))
+        CompleteAccountAdoptPending.clear()
+        #expect(!CompleteAccountAdoptPending.blocksChannel(sub: "a", now: now.addingTimeInterval(30)))
+    }
+
+    /// Cableado: lo arma la firma con destino `.adoptAsCompleteAndOpenGroups` (la que NO arranca el canal) y lo suelta el
+    /// `onAdoptStarted` del Welcome.
+    @Test func completeAccountAdoptPending_wiring() throws {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let modifier = try String(contentsOf: root.appendingPathComponent(
+            "Yala/App/Views/Shared/GroupsBackendInviteModifier.swift"), encoding: .utf8)
+        let start = try #require(modifier.range(of: "if GroupsSignInChannelStartLogic.startsChannelAtSignIn(destino) {"))
+        let tail = String(modifier[start.lowerBound...].prefix(700))
+        #expect(tail.contains("} else if destino == .adoptAsCompleteAndOpenGroups {"))
+        #expect(tail.contains("CompleteAccountAdoptPending.arm(sub: CloudAuthService.shared.currentUserID)"))
+        let content = try String(contentsOf: root.appendingPathComponent("Yala/App/ContentView.swift"), encoding: .utf8)
+        let adopt = try #require(content.range(of: "onAdoptStarted: {"))
+        let onAdopt = String(content[adopt.lowerBound...].prefix(2000))
+        let clear = try #require(onAdopt.range(of: "CompleteAccountAdoptPending.clear()"))
+        let restart = try #require(onAdopt.range(of: "GroupsSyncClient.shared.startIfEligible(context: modelContext, trigger: \"adopt-started\")"),
+                                   "al soltar el candado, el canal se arranca: nadie más lo haría")
+        #expect(clear.upperBound <= restart.lowerBound)
+    }
+
+    @Test func loopMode_table() {
+        typealias L = GroupsLoopRestartLogic
+        #expect(L.loopMode(runtimeEnabled: false, storageModeIsCloud: true, journalConnected: false, personalCanRun: { true }) == .ownLoop)
+        #expect(L.loopMode(runtimeEnabled: true, storageModeIsCloud: false, journalConnected: false, personalCanRun: { true }) == .ownLoop)
+        #expect(L.loopMode(runtimeEnabled: true, storageModeIsCloud: true, journalConnected: false, personalCanRun: { true }) == .decideAfterJournal)
+        #expect(L.loopMode(runtimeEnabled: true, storageModeIsCloud: true, journalConnected: true, personalCanRun: { true }) == .piggyback)
+        #expect(L.loopMode(runtimeEnabled: true, storageModeIsCloud: true, journalConnected: true, personalCanRun: { false }) == .ownLoop)
     }
 
     /// `canRunDomain() == false` (.icloud — solo-grupos; misma línea de guard que la fase transicional de

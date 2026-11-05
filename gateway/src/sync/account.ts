@@ -319,10 +319,12 @@ export async function handleAccountExists(c: Ctx): Promise<Response> {
     c.env,
     auth.userJWT,
     "profiles",
-    "select=id,kind,migration_in_progress&limit=1",
+    "select=id,kind,migration_in_progress,migrated_at,reverted_at,reverse_in_progress&limit=1",
   );
   if (!ok) return jsonError("yala_unavailable", `exists upstream ${status}`, 502);
-  const row = rows[0] as { kind?: unknown; migration_in_progress?: unknown } | undefined;
+  const row = rows[0] as
+    | { kind?: unknown; migration_in_progress?: unknown; migrated_at?: unknown; reverted_at?: unknown; reverse_in_progress?: unknown }
+    | undefined;
   if (!row) return c.json({ exists: false });
 
   // `kind` se OMITE si el upstream no lo trae, o trae algo fuera del dominio: el cliente lee la
@@ -330,9 +332,25 @@ export async function handleAccountExists(c: Ctx): Promise<Response> {
   // se corrige en el refresco siguiente. Emitir un valor desconocido sería peor que callar — el
   // cliente lo guardaría en su caché sellada y no tendría de qué corregirse.
   const kind = row.kind === "complete" || row.kind === "groups_only" ? row.kind : undefined;
-  const out: { exists: true; kind?: string; migration_in_progress?: boolean } = { exists: true };
+  const out: { exists: true; kind?: string; migration_in_progress?: boolean; migrated?: boolean; reverted?: boolean } = {
+    exists: true,
+  };
   if (kind) out.kind = kind;
   // Mismo trato que `kind`: fuera del dominio se omite, y el cliente lo lee como `false`.
   if (typeof row.migration_in_progress === "boolean") out.migration_in_progress = row.migration_in_progress;
+  // `migrated` (ADITIVO, 2026-11-04, ticket `reverse-hidden-on-a-born-cloud-second-device`, opción A de Jürgen del
+  // 2026-10-08): ¿la cuenta pasó alguna vez por el cutover de una ida? `migrated_at` solo lo estampa el `cutover` del líder
+  // y la vuelta a iCloud lo CONSERVA (g15_02), así que `false` es «nació en la nube y nunca tuvo zona CloudKit». Con eso el
+  // SEGUNDO dispositivo de un born-cloud ve «Volver a iCloud», que hasta ahora dependía de una marca local del primero. Se
+  // emite solo con la columna leída: `null` ⇒ `false`, timestamp (string) ⇒ `true`; cualquier otra cosa —un upstream sin la
+  // columna— se OMITE, y el cliente lee la ausencia como «no se sabe» (exige el mapa, como antes).
+  if (row.migrated_at === null) out.migrated = false;
+  else if (typeof row.migrated_at === "string") out.migrated = true;
+  // `reverted` (mismo día, cazado por la review adversarial): ¿la cuenta volvió, o está volviendo, a iCloud? Entonces la zona
+  // CloudKit del Apple ID tiene el corpus de ESTA cuenta (lo subió el dispositivo que hizo la vuelta), y el segundo
+  // dispositivo no puede tratarse como «nunca tuvo zona»: la pregunta de qué sumaría lo leería como ajeno y «Empezar sin
+  // ellos» lo borraría. `true` con `reverted_at` puesto o `reverse_in_progress`; `false` solo con los dos leídos en reposo.
+  if (typeof row.reverted_at === "string" || row.reverse_in_progress === true) out.reverted = true;
+  else if (row.reverted_at === null && row.reverse_in_progress === false) out.reverted = false;
   return c.json(out);
 }
