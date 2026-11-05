@@ -8639,3 +8639,6 @@
 "bankEmail.icloudRuleDetail" = "Open op iCloud.com Mail en ga naar Instellingen › Regels › Een regel toevoegen. Als een bericht van het adres van je bank komt, stuur het door naar je Yala-adres. Sla de regel op.";
 "bankEmail.stepWaitTitle" = "Wacht op de volgende melding";
 "bankEmail.stepWaitDetail" = "Zodra je bank de volgende stuurt, verschijnt de transactie in je Inbox om te bevestigen.";
+
+/* Account form: the save failed after some changes were already applied in the app, so it must not say nothing was saved. */
+"account.saveErrorPartial" = "Niet alles kon worden opgeslagen. Een deel van de wijzigingen is misschien al zichtbaar; controleer de rekening en sla opnieuw op.";

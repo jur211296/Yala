@@ -8639,3 +8639,6 @@
 "bankEmail.icloudRuleDetail" = "iCloud.com でメールを開き、設定 › ルール › ルールを追加 に進みます。メッセージが銀行のアドレスからの場合、Yala アドレスに転送するよう設定し、ルールを保存します。";
 "bankEmail.stepWaitTitle" = "次の通知を待つ";
 "bankEmail.stepWaitDetail" = "銀行から次の通知が届くと、取引が受信箱に表示され、確認できます。";
+
+/* Account form: the save failed after some changes were already applied in the app, so it must not say nothing was saved. */
+"account.saveErrorPartial" = "すべてを保存できませんでした。一部の変更はすでに反映されている可能性があります。口座を確認して、もう一度保存してください。";

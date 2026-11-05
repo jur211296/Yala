@@ -981,7 +981,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | rules-testing-habla-de-ios-27-que-no-existe | discarded | tickets/discarded/rules-testing-habla-de-ios-27-que-no-existe.md |
 | saldo-con-seleccion-no-contable-diverge-entre-panel-y-estadisticas | done | tickets/done/saldo-con-seleccion-no-contable-diverge-entre-panel-y-estadisticas.md |
 | save-as-favorite-from-a-mismatched-row-relabels-it | done | tickets/done/save-as-favorite-from-a-mismatched-row-relabels-it.md |
-| save-error-alert-lies-when-the-context-autosaves | backlog | tickets/backlog/save-error-alert-lies-when-the-context-autosaves.md |
+| save-error-alert-lies-when-the-context-autosaves | done | tickets/done/save-error-alert-lies-when-the-context-autosaves.md |
 | saved-record-notice-covers-the-panel-plus-button | done | tickets/done/saved-record-notice-covers-the-panel-plus-button.md |
 | saving-a-mismatched-transaction-relabels-it-without-converting | done | tickets/done/saving-a-mismatched-transaction-relabels-it-without-converting.md |
 | savings-tracking | backlog | tickets/backlog/savings-tracking.md |

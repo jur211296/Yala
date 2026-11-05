@@ -1,10 +1,10 @@
 ---
 id: save-error-alert-lies-when-the-context-autosaves
-status: backlog
+status: done
 priority: low
 area: "accounts, swiftdata"
 created: 2026-09-09
-updated: 2026-10-08
+updated: 2026-11-05
 source: review adversarial de changing-an-account-currency-orphans-its-whole-history (2026-09-09)
 ---
 
@@ -37,10 +37,10 @@ recarga. También preexistente.
 
 ## Criterio de hecho (AC)
 
-- [ ] Decidido qué hace el formulario cuando `save()` lanza: revertir, reintentar, o cambiar el
+- [x] Decidido qué hace el formulario cuando `save()` lanza: revertir, reintentar, o cambiar el
       mensaje para que no prometa una atomicidad que no hay. (Ojo: `rollback()` sobre el
       `mainContext` descarta también lo que hayan escrito otras pantallas.)
-- [ ] Test que fije la decisión.
+- [x] Test que fije la decisión.
 
 ## Relacionados
 
@@ -73,5 +73,16 @@ cuenta y cambian su saldo inicial. Aislado con sondas, una por proceso (iPhone 1
 | lo mismo con un store EN DISCO (no en memoria) | **aborta** |
 
 `saveAccount` hace exactamente eso: `applyBaseAccountProperties` y luego el saldo inicial. ⇒ **el «revertir» con
-`rollback()` no es viable tal cual**: cambiaría un mensaje falso por un cierre de la app. Decisión pendiente (pregunta al
-bot del 2026-11-05).
+`rollback()` no es viable tal cual**: cambiaría un mensaje falso por un cierre de la app. Pregunta al bot del 2026-11-05: decisión abajo.
+
+## Resuelto (2026-11-05): decisión A de Jürgen, aviso honesto sin deshacer
+
+- **El formulario de cuenta ya no dice «Los cambios no se guardaron»**: dice «No se pudo guardar del todo. Puede que parte
+  de los cambios ya se vea; revisa la cuenta y vuelve a guardar» (`account.saveErrorPartial`, en los 16 idiomas). El
+  resto de pantallas siguen con `common.saveError`.
+- **No se usa `rollback()`** en `saveAccount`, por la medición de arriba. Lo escrito queda en el contexto (lo que hace
+  verdad el aviso) y lo tecleado en el formulario; el segundo «Guardar» lo reescribe sin duplicar el saldo inicial.
+- Seam `AccountFormViewModel.persistChanges` para forzar el fallo en tests. Red: `AccountFormSaveFailureTests` (el
+  aviso, sin cambios deshechos, el reintento con un solo saldo inicial, y un scan que prohíbe `rollback()` en
+  `saveAccount` y `common.saveError` en el aviso del formulario). Mutante con `rollback()` en el `catch`: rojo.
+- El «segundo efecto» de arriba (filas ya borradas en `allTransactions`) lo cubre la recarga que ya existía.

@@ -7957,3 +7957,6 @@
 "bankEmail.icloudRuleDetail" = "On iCloud.com, open Mail and go to Settings › Rules › Add a rule. If a message is from your bank's address, forward it to your Yala address. Save the rule.";
 "bankEmail.stepWaitTitle" = "Wait for the next alert";
 "bankEmail.stepWaitDetail" = "When your bank sends the next one, the transaction shows up in your Inbox, ready to confirm.";
+
+/* Account form: the save failed after some changes were already applied in the app, so it must not say nothing was saved. */
+"account.saveErrorPartial" = "Not everything could be saved. Some of the changes may already show; check the account and save again.";

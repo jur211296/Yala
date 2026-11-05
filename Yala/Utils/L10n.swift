@@ -3747,6 +3747,9 @@ enum L10n {
             String.localizedStringWithFormat(ls("account.deleteConfirmMessage", comment: ""), count)
         }
         static var deleteConfirmMessageEmpty: String { ls("account.deleteConfirmMessageEmpty", comment: "") }
+        /// El guardado del formulario falló con parte de lo escrito ya en el contexto compartido: no se puede decir «no se
+        /// guardó» (ticket `save-error-alert-lies-when-the-context-autosaves`).
+        static var saveErrorPartial: String { ls("account.saveErrorPartial", comment: "") }
         static var addAccount: String { ls("account.addAccount", comment: "") }
 
         // MARK: - Eliminar con movimientos (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst)

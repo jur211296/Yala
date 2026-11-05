@@ -8639,3 +8639,6 @@
 "bankEmail.icloudRuleDetail" = "在 iCloud.com 打开邮件，前往 设置 › 规则 › 添加规则。如果邮件来自银行的地址，就转发到你的 Yala 地址。保存规则。";
 "bankEmail.stepWaitTitle" = "等待下一条通知";
 "bankEmail.stepWaitDetail" = "银行发来下一条通知时，这笔交易会出现在你的收件箱，等你确认。";
+
+/* Account form: the save failed after some changes were already applied in the app, so it must not say nothing was saved. */
+"account.saveErrorPartial" = "未能全部保存。部分更改可能已经显示；请检查该账户并再次保存。";
