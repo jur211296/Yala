@@ -47,7 +47,7 @@ enum ParserError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .noAPIKey:
-            return "OpenAI API key not configured"
+            return "AI service not configured"
         case .emptyText:
             return "Transcription text is empty"
         case .parsingFailed(let message):

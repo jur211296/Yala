@@ -93,7 +93,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Verwijder %d boekingen?</string>
+			<string>Verwijder %d boeking?</string>
 			<key>other</key>
 			<string>Verwijder %d boekingen?</string>
 		</dict>
@@ -109,9 +109,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d subcategoriey geselecteerd</string>
+			<string>%d subcategorie geselecteerd</string>
 			<key>other</key>
-			<string>%d subcategorieies geselecteerd</string>
+			<string>%d subcategorieën geselecteerd</string>
 		</dict>
 	</dict>
 	<key>import.recordsImported</key>
@@ -125,7 +125,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d boekingen succesvol geïmporteerd.</string>
+			<string>%d boeking succesvol geïmporteerd.</string>
 			<key>other</key>
 			<string>%d boekingen succesvol geïmporteerd.</string>
 		</dict>
@@ -141,7 +141,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d automatische boekingen toegevoegd aan je inbox.</string>
+			<string>%d automatische boeking toegevoegd aan je inbox.</string>
 			<key>other</key>
 			<string>%d automatische boekingen toegevoegd aan je inbox.</string>
 		</dict>
@@ -157,9 +157,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d subcategoriey geselecteerd</string>
+			<string>%d subcategorie geselecteerd</string>
 			<key>other</key>
-			<string>%d subcategorieies geselecteerd</string>
+			<string>%d subcategorieën geselecteerd</string>
 		</dict>
 	</dict>
 	<key>scheduled.widget.daysAgo</key>
@@ -173,7 +173,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d dagen geleden</string>
+			<string>%d dag geleden</string>
 			<key>other</key>
 			<string>%d dagen geleden</string>
 		</dict>
@@ -189,7 +189,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Over %d dagen</string>
+			<string>Over %d dag</string>
 			<key>other</key>
 			<string>Over %d dagen</string>
 		</dict>
@@ -205,7 +205,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d actieve betalingen</string>
+			<string>%d actieve betaling</string>
 			<key>other</key>
 			<string>%d actieve betalingen</string>
 		</dict>
@@ -221,7 +221,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d dagen geleden</string>
+			<string>%d dag geleden</string>
 			<key>other</key>
 			<string>%d dagen geleden</string>
 		</dict>
@@ -237,7 +237,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Over %d dagen</string>
+			<string>Over %d dag</string>
 			<key>other</key>
 			<string>Over %d dagen</string>
 		</dict>
@@ -253,7 +253,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d dagen niet opgeslagen in iCloud</string>
+			<string>%d dag niet opgeslagen in iCloud</string>
 			<key>other</key>
 			<string>%d dagen niet opgeslagen in iCloud</string>
 		</dict>
@@ -269,7 +269,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d dagen sinds laatste synchronisatie</string>
+			<string>%d dag sinds laatste synchronisatie</string>
 			<key>other</key>
 			<string>%d dagen sinds laatste synchronisatie</string>
 		</dict>
@@ -285,7 +285,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Nog %d dagen</string>
+			<string>Nog %d dag</string>
 			<key>other</key>
 			<string>Nog %d dagen</string>
 		</dict>
@@ -301,7 +301,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Selecteer %d rekeningen om te behouden</string>
+			<string>Selecteer %d rekening om te behouden</string>
 			<key>other</key>
 			<string>Selecteer %d rekeningen om te behouden</string>
 		</dict>
@@ -317,7 +317,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Selecteer %d budgets om te behouden</string>
+			<string>Selecteer %d budget om te behouden</string>
 			<key>other</key>
 			<string>Selecteer %d budgets om te behouden</string>
 		</dict>
@@ -333,7 +333,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Je hebt deze periode %d gedeelde uitgaven</string>
+			<string>Je hebt deze periode %d gedeelde uitgave</string>
 			<key>other</key>
 			<string>Je hebt deze periode %d gedeelde uitgaven</string>
 		</dict>
@@ -365,7 +365,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d gedeelde uitgaven. Doen jullie ALLES samen?</string>
+			<string>%d gedeelde uitgave. Doen jullie ALLES samen?</string>
 			<key>other</key>
 			<string>%d gedeelde uitgaven. Doen jullie ALLES samen?</string>
 		</dict>
@@ -413,7 +413,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Je groep heeft %d nieuwe uitgaven sinds je laatste bezoek.</string>
+			<string>Je groep heeft %d nieuwe uitgave sinds je laatste bezoek.</string>
 			<key>other</key>
 			<string>Je groep heeft %d nieuwe uitgaven sinds je laatste bezoek.</string>
 		</dict>
@@ -429,7 +429,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d stappen</string>
+			<string>%d stap</string>
 			<key>other</key>
 			<string>%d stappen</string>
 		</dict>

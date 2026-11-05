@@ -210,7 +210,7 @@ struct DateFormRow: View {
     private static let dateFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = "d MMM yyyy"
+        f.setLocalizedDateFormatFromTemplate("dMMMy")
         return f
     }()
 

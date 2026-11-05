@@ -13,9 +13,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Ce compte a %d enregistrement. Il n'est pas supprimé : il reste dans Enregistrements, sans compte. Si vous voulez seulement ne plus voir le compte, archivez-le. Cette action est irréversible.</string>
+			<string>Ce compte a %d enregistrement. Il n'est pas supprimé : il reste dans Enregistrements, sans compte. Si tu veux seulement ne plus le voir, archive-le. Cette action est irréversible.</string>
 			<key>other</key>
-			<string>Ce compte a %d enregistrements. Ils ne sont pas supprimés : ils restent dans Enregistrements, sans compte. Si vous voulez seulement ne plus voir le compte, archivez-le. Cette action est irréversible.</string>
+			<string>Ce compte a %d enregistrements. Ils ne sont pas supprimés : ils restent dans Enregistrements, sans compte. Si tu veux seulement ne plus le voir, archive-le. Cette action est irréversible.</string>
 		</dict>
 	</dict>
 	<key>category.cannotDeleteMessage</key>
@@ -1175,9 +1175,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Vous allez modifier dans %d enregistrement :</string>
+			<string>Tu vas modifier dans %d enregistrement :</string>
 			<key>other</key>
-			<string>Vous allez modifier dans %d enregistrements :</string>
+			<string>Tu vas modifier dans %d enregistrements :</string>
 		</dict>
 	</dict>
 	<key>records.l8b.bulk.apply</key>

@@ -148,3 +148,6 @@ nunca contra CloudKit de producción. Se miran en el iPhone más pequeño y el m
 Type al máximo y en modo oscuro. Lo barato se arregla; lo demás va a `tickets/backlog/`, con
 capturas del antes y el después en `qa/evidencia-estres-AAAAMMDD/`. El procedimiento:
 `~/Claude/casa/docs/pase-estres.md`.
+
+**Revisión de traducciones** (lote 12.4): `qa/l10n-review/review.py --since <tag anterior>` revisa con Sonnet lo que
+cambió en los 16 idiomas, y `apply.py` aplica lo que pasa sus filtros. Cómo y qué no aplica: `qa/l10n-review/README.md`.

@@ -174,3 +174,7 @@ echo "  xcodebuild test -scheme Yala -only-testing:YalaTests/LocalizationParityT
 echo ""
 echo "Las variantes (es-ES/es-AR/en-GB/pt-PT) ya se materializaron. Si la key requiere"
 echo "un override regional (peninsular/voseo/británico), edítalo manualmente en su .lproj."
+echo ""
+echo "Un PLURAL no pasa por este script: va al .stringsdict de cada idioma base Y al de cada"
+echo "variante (es-ES/es-AR/en-GB/pt-PT tienen el suyo desde el lote 12.4). Nunca como línea"
+echo "plana en el .strings de la variante: con ella de idioma del sistema dice «1 seleccionados»."

@@ -782,14 +782,14 @@ struct NeedTrendChartView: View {
     private static let fullDayFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = "d MMM yy"
+        f.setLocalizedDateFormatFromTemplate("dMMMyy")
         return f
     }()
 
     private static let fullMonthFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = "MMM yy"
+        f.setLocalizedDateFormatFromTemplate("MMMyy")
         return f
     }()
 

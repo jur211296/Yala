@@ -1,10 +1,10 @@
 ---
 id: regional-variants-show-the-plural-form-for-one
-status: backlog
+status: done
 priority: low
 area: "l10n"
 created: 2026-10-17
-updated: 2026-10-19
+updated: 2026-10-25
 source: "implementación del lote 8 de la auditoría UX 2.2 (2026-10-17), hallazgo fuera de alcance"
 ---
 
@@ -30,3 +30,10 @@ cuentan cosas dicen el plural también para una: «1 seleccionados», «1 posibl
 1. Medir en el simulador con `-AppleLanguages "(es-ES)"`: modo selección con un registro elegido.
 2. Si se confirma, dar a las cuatro variantes su `.stringsdict` (copia del padre, con las formas propias de pt-PT) y
    que `LocalizationParityTests` exija la paridad de plurales también en ellas.
+
+## Resuelto (lote 12.4, 2026-10-25)
+
+Medido con el bundle de cada variante (lo que lee `Bundle.main` con la variante como idioma del sistema): la línea plana daba «1 seleccionados». Además las 80 planas estaban viejas («transacciones» donde el padre ya dice «registros»).
+- Cada variante tiene su `Localizable.stringsdict` ENTERO: es-ES copia de es-419; es-AR con voseo (22 formas), en-GB igual que en, pt-PT con «tu» y vocabulario de Portugal (98 formas). Se quitaron las 80 planas de cada `.strings`.
+- `variants_doNotCreateOwnStringsdict` (M4) exigía lo contrario apoyado en una herencia por clave que no existe con idioma de sistema; se sustituyó por `variants_ownStringsdict_hasEveryPluralFormOfTheParent`, más `variants_haveTheSamePluralKeysAsTheirParent`, `variantPlurals_matchParentPlaceholders` y `variant_countOfOne_isSingular` (es-ES, es-AR, pt-PT, en-GB: «1 seleccionado», «3 seleccionados»).
+- Regla nueva en `.claude/rules/l10n.md` y aviso en `qa/scripts/add-l10n-key.sh`: un plural va al `.stringsdict` de los 12 base y de las 4 variantes.

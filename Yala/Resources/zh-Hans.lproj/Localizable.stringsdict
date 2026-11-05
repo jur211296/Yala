@@ -69,7 +69,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>您在 %2$d 个账户中持有 %1$@</string>
+			<string>你在 %2$d 个账户中持有 %1$@</string>
 		</dict>
 	</dict>
 	<key>records.deleteConfirmTitle</key>

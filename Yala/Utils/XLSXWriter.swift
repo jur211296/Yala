@@ -38,7 +38,10 @@ enum XLSXWriter {
     ///   - url: URL donde guardar el archivo.
     ///   - headers: Array de nombres de columnas.
     ///   - rows: Array de filas, cada fila es un array de valores string.
-    static func write(to url: URL, headers: [String], rows: [[String]]) throws {
+    ///   - sheetName: Nombre de la pestaña. Por defecto «Registros» en el idioma de la app (lote 12.4: hasta entonces
+    ///     era «Transacciones» en todos los idiomas).
+    static func write(to url: URL, headers: [String], rows: [[String]],
+                      sheetName: String = L10n.UXL20D.fileStem) throws {
         // Crear archivo temporal
         let tempDir = FileManager.default.temporaryDirectory
         let workDir = tempDir.appendingPathComponent(UUID().uuidString)
@@ -63,7 +66,7 @@ enum XLSXWriter {
         try writeContentTypes(to: workDir.appendingPathComponent("[Content_Types].xml"))
         try writeRootRels(to: relsDir.appendingPathComponent(".rels"))
         try writeWorkbookRels(to: xlRelsDir.appendingPathComponent("workbook.xml.rels"))
-        try writeWorkbook(to: xlDir.appendingPathComponent("workbook.xml"))
+        try writeWorkbook(to: xlDir.appendingPathComponent("workbook.xml"), sheetName: sheetName)
         try writeStyles(to: xlDir.appendingPathComponent("styles.xml"))
         try writeSharedStrings(to: xlDir.appendingPathComponent("sharedStrings.xml"), headers: headers, rows: rows)
         try writeWorksheet(to: worksheetsDir.appendingPathComponent("sheet1.xml"), headers: headers, rows: rows)
@@ -128,16 +131,29 @@ enum XLSXWriter {
         try xml.write(to: url, atomically: true, encoding: .utf8)
     }
 
-    private static func writeWorkbook(to url: URL) throws {
-        let xml = """
+    private static func writeWorkbook(to url: URL, sheetName: String) throws {
+        try workbookXML(sheetName: sheetName).write(to: url, atomically: true, encoding: .utf8)
+    }
+
+    static func workbookXML(sheetName: String) -> String {
+        """
         <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
         <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
             <sheets>
-                <sheet name="Transacciones" sheetId="1" r:id="rId1"/>
+                <sheet name="\(escapeXML(validSheetName(sheetName)))" sheetId="1" r:id="rId1"/>
             </sheets>
         </workbook>
         """
-        try xml.write(to: url, atomically: true, encoding: .utf8)
+    }
+
+    /// Excel rechaza el libro entero si el nombre de la pestaña lleva `[ ] : * ? / \`, pasa de 31 caracteres o
+    /// está vacío.
+    static func validSheetName(_ name: String) -> String {
+        let forbidden = CharacterSet(charactersIn: "[]:*?/\\")
+        let cleaned = String(String.UnicodeScalarView(name.unicodeScalars.filter { !forbidden.contains($0) }))
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = String(cleaned.prefix(31))
+        return trimmed.isEmpty ? "Sheet1" : trimmed
     }
 
     private static func writeStyles(to url: URL) throws {
