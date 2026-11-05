@@ -2868,11 +2868,15 @@ final class CloudSessionSignOut {
     /// `awaitPersonalQuiescenceForGroupsSignOut`, para quien ya esperó y solo tiene que volver a mirar tras una pausa
     /// (`captureGroupsForExit`).
     static func personalSaveIsSafeNow() -> Bool {
-        CloudSignOutFlowLogic.isPersonalSaveSafe(
+        let sync = iCloudSyncService.shared
+        return CloudSignOutFlowLogic.isPersonalSaveSafe(
             mountAttachesMirror: personalMountAttachesMirror,
-            accountAvailable: iCloudSyncService.shared.isAccountAvailable,
-            firstImportCompleted: iCloudSyncService.shared.hasCompletedFirstImport,
-            importQuiescent: iCloudSyncService.shared.isImportQuiescent)
+            accountPresent: sync.hasICloudAccount,
+            firstImportCompleted: sync.hasCompletedFirstImport,
+            importQuiescent: sync.isImportQuiescent,
+            observedImportActivity: sync.hasObservedImportActivity,
+            noImportGraceElapsed: sync.noImportGraceElapsed,
+            syncingAnyPhase: sync.status.isSyncing)
     }
 
     /// Filas VIVAS (no dead-letter) del outbox de GRUPOS agregadas sobre TODOS los grupos. Cero → seguro

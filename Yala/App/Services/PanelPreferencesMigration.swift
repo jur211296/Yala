@@ -131,9 +131,13 @@ enum PanelPreferencesMigration {
     ///
     /// **Sin cuenta iCloud no hay iKV del que puedan bajar preferencias**, así que
     /// «no encuentro nada remoto» deja de ser ambiguo: es una instalación fresca de
-    /// verdad y sembrar no puede pisar nada. Es el mismo predicado con el que
-    /// `MigrationGateLogic.shouldWaitForCloudKit` decide `.runNow`; hasta ahora esta
-    /// rama esperaba igualmente hasta 15 s a un hook que en su caso no traería nada.
+    /// verdad y sembrar no puede pisar nada. Hasta el 2026-11-05 era el mismo predicado con
+    /// el que `MigrationGateLogic.shouldWaitForCloudKit` decide `.runNow`; desde la card dtex
+    /// aquel lee `hasICloudAccount` (token de Drive O CloudKit `.available`) y éste sigue con
+    /// el token, porque corre en `AppPreferences.init`, antes de que CloudKit conteste. Con
+    /// iCloud Drive apagado eso siembra en el `init` en vez de diferir: si el iCloud-KV del
+    /// Apple ID viaja con Drive apagado (sin medir), la siembra pisaría el Panel de los otros
+    /// dispositivos. Ticket `panel-fresh-seed-reads-the-icloud-drive-token`.
     static func freshSeedDecision(
         deferRequested: Bool,
         isICloudAvailable: Bool

@@ -27,7 +27,7 @@ struct LocaleResolution {
 /// Consume `SupportedLocale` como single source of truth — añadir un idioma se hace
 /// agregando case en `SupportedLocale.swift`, no aquí.
 ///
-/// **Storage:** App Group suite (compartido con widgets) + iCloud KV (sync cross-device).
+/// **Storage:** App Group suite (compartido con widgets) + el canal de preferencias (iCloud KV en `.icloud`, outbox en `.cloud`).
 /// Migración one-shot desde `UserDefaults.standard` ejecutada en `bootstrapMigrationIfNeeded`.
 enum LanguageManager {
     static let overrideKey = "appLanguageOverride"
@@ -87,19 +87,12 @@ enum LanguageManager {
         set {
             guard newValue != sharedDefaults.string(forKey: overrideKey) else { return }
             sharedDefaults.set(newValue, forKey: overrideKey)
-            // La PUERTA, no el store crudo, por dos motivos. El GUARD: con una sesión solo-grupos en un
-            // móvil prestado este KV es el del DUEÑO, y el idioma que elegía quien lo usa le cambiaba la
-            // app en su iPad (lo decide `OwnerKeyValueGate`). Y el CONTEO: esta escritura fue la SÉPTIMA
-            // vía al iCloud-KV del Apple ID y no figuraba en ningún inventario (2026-08-12); lo que
-            // impide una novena es que haya UN solo sitio que nombrar, y eso lo cuenta
-            // `OwnerKeyValueWiringTests`.
-            let iKV = OwnerKeyValueStore.shared
-            if let value = newValue {
-                iKV.setString(value, forKey: overrideKey)
-            } else {
-                iKV.removeObject(forKey: overrideKey)
-            }
-            iKV.synchronize()
+            // **A dónde viaja lo decide el canal de preferencias, como las otras 36 keys** (card p9wf, 2026-11-05). En
+            // `.icloud`, al iCloud-KV por la PUERTA (`OwnerKeyValueStore`: el guard del móvil prestado y el conteo de
+            // `OwnerKeyValueWiringTests`); en `.cloud`, al outbox de preferencias y NO al iCloud-KV. Hasta ese día
+            // escribía aquí directo al KV en los dos modos: en una cuenta en la nube el idioma no llegaba a los otros
+            // dispositivos de la cuenta, y en un móvil prestado se lo cambiaba al dueño del Apple ID.
+            PreferenceSyncService.shared.syncLanguageOverride(newValue)
             NotificationCenter.default.post(name: .languageDidChange, object: nil)
         }
     }
@@ -184,10 +177,9 @@ enum LanguageManager {
            let alias = SupportedLocale(rawValue: current),
            let canonical = aliasRemap[alias] {
             suite.set(canonical.code, forKey: overrideKey)
-            // Los mismos dos motivos que el setter de arriba: el remap de alias es una escritura al
-            // iCloud-KV del Apple ID, así que va por la puerta, que la guarda y la cuenta.
-            OwnerKeyValueStore.shared.setString(canonical.code, forKey: overrideKey)
-            OwnerKeyValueStore.shared.synchronize()
+            // Por el mismo canal que el setter de arriba (card p9wf): en `.icloud` al iCloud-KV por la puerta, en
+            // `.cloud` al outbox de preferencias.
+            PreferenceSyncService.shared.syncLanguageOverride(canonical.code)
 
             #if DEBUG
             print("LanguageManager: Remapped legacy alias '\(current)' → '\(canonical.code)'")

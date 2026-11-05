@@ -332,8 +332,13 @@ final class AppBootstrapper {
         // resolver con fallback M2M.
         Task { @MainActor in
             let started = Date.now
+            // Card dtex: la cuenta la dice `hasICloudAccount` (token de Drive O CloudKit `.available`), no el token solo.
+            // Con iCloud Drive apagado y la sesión de iCloud abierta el espejo importa igual, y con el token esta
+            // migración corría sin esperar sobre un store a medio importar. La respuesta de CloudKit llega asíncrona:
+            // se espera con techo y, si no llega, decide el token como siempre.
+            await iCloudSyncService.shared.awaitCloudKitAccountStatus(timeout: Self.bootAccountStatusTimeout)
             let decision = MigrationGateLogic.shouldWaitForCloudKit(
-                isAccountAvailable: iCloudSyncService.shared.isAccountAvailable,
+                isAccountAvailable: iCloudSyncService.shared.hasICloudAccount,
                 hasCompletedFirstImport: iCloudSyncService.shared.hasCompletedFirstImport
             )
             var waitedForSync = false
@@ -1858,15 +1863,24 @@ final class AppBootstrapper {
     /// genuinamente colgado (`isImporting` → no-quiescente) ES el crash. Por eso el tope total del poll
     /// (120s) solo TERMINA LA ESPERA (→ DEFER), jamás fuerza el save. El `forceFetchAndWait(15s)` inicial
     /// cuenta hacia la gracia de 60s (medida desde la entrada de la función).
+    /// Techo de la espera a la respuesta de CloudKit sobre la cuenta en las esperas del arranque (card dtex).
+    /// `accountStatus()` contesta en milisegundos con el daemon local; 5 s solo cubre el caso raro que no contesta.
+    static let bootAccountStatusTimeout: TimeInterval = 5
+
     private func awaitPersonalImportForBootSave() async -> Bool {
         let start = Date()
         let noImportGrace: TimeInterval = 60
         let totalPollCap: TimeInterval = 120
         let pollInterval: TimeInterval = 2
 
+        // Card dtex: la cuenta es `hasICloudAccount`, con la respuesta de CloudKit esperada con techo (cuenta hacia la
+        // gracia, como el `forceFetchAndWait` de abajo). Con el token solo, Drive apagado abría el gate en `.runNoAccount`
+        // mientras el espejo importaba: el save del arranque sobre un import a medio asentar que este gate existe para evitar.
+        await iCloudSyncService.shared.awaitCloudKitAccountStatus(timeout: Self.bootAccountStatusTimeout)
+
         func gateDecision() -> BootSaveGateLogic.Decision {
             BootSaveGateLogic.decide(
-                isAccountAvailable: iCloudSyncService.shared.isAccountAvailable,
+                isAccountAvailable: iCloudSyncService.shared.hasICloudAccount,
                 hasCompletedFirstImport: iCloudSyncService.shared.hasCompletedFirstImport,
                 hasObservedImportActivity: iCloudSyncService.shared.hasObservedImportActivity,
                 isQuiescent: iCloudSyncService.shared.isImportQuiescent,
@@ -1882,7 +1896,7 @@ final class AppBootstrapper {
 
         // 1) Esperar el primer import (restore lento). Estos ≤15s cuentan hacia la gracia de 60s.
         if MigrationGateLogic.shouldWaitForCloudKit(
-            isAccountAvailable: iCloudSyncService.shared.isAccountAvailable,
+            isAccountAvailable: iCloudSyncService.shared.hasICloudAccount,
             hasCompletedFirstImport: iCloudSyncService.shared.hasCompletedFirstImport
         ) == .waitForHook {
             _ = await iCloudSyncService.shared.forceFetchAndWait(timeout: 15)

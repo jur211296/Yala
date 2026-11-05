@@ -1119,6 +1119,9 @@ struct ContentView: View {
                 returnToWelcomeChooser(dismissing: $showWelcomeRestore, step: .mirrorRelaunch)
             }
         )
+        // Card ij0i: abrir Restaurar suelta la retención del iCloud-KV que dejó un cierre de sesión, y aplica en el acto
+        // lo del Apple ID: el resumen del restore necesita el nombre. Desde aquí y no desde la pantalla, que no se toca.
+        .onAppear { PreferenceSyncService.shared.releaseSignOutPreferenceHoldForRestore() }
         .environment(SessionState.shared)
     }
 

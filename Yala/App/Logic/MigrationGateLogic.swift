@@ -20,7 +20,9 @@ enum MigrationGateLogic {
 
     /// Decides whether the migration must wait for CloudKit's first import.
     ///
-    /// - `isAccountAvailable=false` → no CloudKit, no lazy hydration race → run now.
+    /// - `isAccountAvailable=false` → no CloudKit, no lazy hydration race → run now. El llamador pasa
+    ///   `iCloudSyncService.hasICloudAccount` (card dtex), no el token de iCloud Drive: con Drive apagado y la sesión
+    ///   abierta el espejo importa igual, y el token decía «sin cuenta».
     /// - `hasCompletedFirstImport=true` → import already settled → run now.
     /// - `iCloud available && import pending` → wait for hook (timeout-bounded).
     static func shouldWaitForCloudKit(

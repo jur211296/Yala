@@ -61,26 +61,63 @@ struct CloudSignOutFlowLogicTests {
     /// La puerta de quiescencia de los cierres que drenan grupos. Sin espejo no hay import con el que
     /// chocar: el término del mount es la corrección del cierre solo-grupos, que con iCloud Drive activo
     /// esperaba un «primer import» que un store neutro no emite nunca.
+    private static func safe(mirror: Bool = true, account: Bool = true, first: Bool = false, quiet: Bool = false,
+                             observed: Bool = false, grace: Bool = false, syncing: Bool = false) -> Bool {
+        CloudSignOutFlowLogic.isPersonalSaveSafe(
+            mountAttachesMirror: mirror, accountPresent: account, firstImportCompleted: first, importQuiescent: quiet,
+            observedImportActivity: observed, noImportGraceElapsed: grace, syncingAnyPhase: syncing)
+    }
+
     @Test("la puerta de quiescencia: sin espejo es seguro siempre; con espejo y cuenta, solo asentado")
     func personalSaveSafety() {
-        typealias L = CloudSignOutFlowLogic
         for account in [true, false] {
             for first in [true, false] {
                 for quiet in [true, false] {
-                    #expect(L.isPersonalSaveSafe(mountAttachesMirror: false, accountAvailable: account,
-                                                 firstImportCompleted: first, importQuiescent: quiet))
+                    #expect(Self.safe(mirror: false, account: account, first: first, quiet: quiet, syncing: true))
                 }
             }
         }
-        #expect(L.isPersonalSaveSafe(mountAttachesMirror: true, accountAvailable: false,
-                                     firstImportCompleted: false, importQuiescent: false))
-        #expect(L.isPersonalSaveSafe(mountAttachesMirror: true, accountAvailable: true,
-                                     firstImportCompleted: true, importQuiescent: true))
-        #expect(!L.isPersonalSaveSafe(mountAttachesMirror: true, accountAvailable: true,
-                                      firstImportCompleted: false, importQuiescent: true),
+        #expect(Self.safe(account: false, first: false, quiet: false, observed: true, syncing: true),
+                "sin cuenta (ni token ni CloudKit `.available`) no hay import que esperar: el teléfono sin iCloud no se queda colgado")
+        #expect(Self.safe(first: true, quiet: true))
+        #expect(!Self.safe(first: false, quiet: true),
                 "`isImportQuiescent` a secas es true ANTES del primer import: señal prematura en un restore")
-        #expect(!L.isPersonalSaveSafe(mountAttachesMirror: true, accountAvailable: true,
-                                      firstImportCompleted: true, importQuiescent: false))
+        #expect(!Self.safe(first: true, quiet: false))
+    }
+
+    /// Card jzti: con iCloud Drive apagado y ningún `.import` en el proceso, la puerta no espera para siempre.
+    @Test("sin ningún import en el proceso, pasada la gracia y quieto, abre; con un import observado, no")
+    func emptyStoreEscape() {
+        #expect(Self.safe(quiet: true, grace: true), "store que no importa nada: sin import con el que chocar")
+        #expect(!Self.safe(quiet: true, grace: false), "dentro de la gracia el primer import puede estar por llegar")
+        #expect(!Self.safe(quiet: true, observed: true, grace: true),
+                "con actividad de import observada, un restore a medias espera a su primer import")
+        #expect(!Self.safe(quiet: true, grace: true, syncing: true), "con una fase de sync en vuelo (.setup/.export) no")
+        #expect(!Self.safe(quiet: false, grace: true))
+    }
+
+    /// La fórmula está escrita a mano porque esta lógica es `nonisolated`; tiene que dar lo mismo que el gate del arranque
+    /// (`BootSaveGateLogic.decide`) en las 48 combinaciones posibles con espejo.
+    @MainActor
+    @Test("paridad con el gate de los guardados del arranque, en las 48 combinaciones posibles con espejo")
+    func parityWithTheBootSaveGate() {
+        let bools = [true, false]
+        var checked = 0
+        for account in bools { for first in bools { for quiet in bools {
+            for observed in bools { for grace in bools { for syncing in bools {
+                // `hasCompletedFirstImport` implica actividad observada (ver `BootSaveGateLogic.decide`): la combinación
+                // contraria no existe fuera del seam de uitest.
+                if first && !observed { continue }
+                let boot = BootSaveGateLogic.decide(
+                    isAccountAvailable: account, hasCompletedFirstImport: first, hasObservedImportActivity: observed,
+                    isQuiescent: quiet, noImportGraceElapsed: grace, isSyncingAnyPhase: syncing).isRun
+                #expect(Self.safe(account: account, first: first, quiet: quiet, observed: observed, grace: grace,
+                                  syncing: syncing) == boot,
+                        "account=\(account) first=\(first) quiet=\(quiet) observed=\(observed) grace=\(grace) syncing=\(syncing)")
+                checked += 1
+            }}}
+        }}}
+        #expect(checked == 48)
     }
 
     @Test("las cuatro salidas son alcanzables y distintas: ninguna celda comparte camino")
