@@ -66,9 +66,16 @@ su paso sale `failure` y el run sigue verde (advisory): **las suites que no lleg
 aparecen en ningún sitio**. Pasó del 23 al 29-oct de 2026: las tres tandas se cortaban cada noche,
 ~16 suites por tanda llevaban días sin correr, y la suite había pasado de 250 a 646 casos.
 
-- **Cuando una tanda se acerque a ~80 min de UI, se añade otra**, no se sube el tope. Las cifras y
-  la simulación están en `qa.yml` («POR QUE OCHO»). Cambiar el número toca la matriz, las salidas
-  `ui_N` y `UI_TANDAS` del aviso; `ci-ui-tandas-test.sh` falla si no cuadran.
+- **Cuando una tanda se acerque a ~80 min de UI, primero se regenera la tabla de tiempos; si no basta,
+  se añade otra tanda**, no se sube el tope. Las cifras y la simulación están en `qa.yml` («POR QUE
+  OCHO», «POR QUE NUEVE»). Cambiar el número toca la matriz, las salidas `ui_N` y `UI_TANDAS` del
+  aviso; `ci-ui-tandas-test.sh` falla si no cuadran.
+- **El reparto pesa por MINUTOS, no por casos (2026-11-05).** Con ocho tandas iguales en casos, los
+  pasos fueron de 54 a 92 min: el coste por caso va de 10 s a más de 4 min. El peso sale de
+  `qa/ci-ui-tiempos.json`; se regenera con `bash qa/scripts/ci-ui-tiempos.sh <run>` desde un run con
+  **todas** las tandas completas (se niega si alguna no corrió casos). Una suite que no está en la
+  tabla pesa 46 s por caso: una suite que se salta entera (vídeos, medidas de carga) tiene que estar
+  en la tabla, o pesa minutos que no gasta. Una tabla vieja descompensa; nunca deja una suite fuera.
 - **Las tandas no compilan (2026-11-04).** El job `ui-build` compila una vez y sube
   `.ddp/Build/Products`; cada tanda lo baja y corre `test-without-building`. Antes compilaba cada
   una en frío con tope de 25 y el runner tarda de 11 a 25+ min: cuatro de ocho se quedaron sin

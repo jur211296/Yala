@@ -616,7 +616,8 @@ jobs:
   #   · quitar el reintento: 2 reintentos medidos, no es lo que gasta el tiempo.
   #
   # COMO SE REPARTE. `qa/scripts/ci-ui-tandas.sh` lee el arbol de `YalaUITests/` y reparte las
-  # suites por numero de `func test`; una suite nueva entra sola, sin tocar este fichero. La
+  # suites por lo que tardan (`qa/ci-ui-tiempos.json`; hasta el 2026-11-05, por numero de `func test`, ver
+  # «POR QUE NUEVE»); una suite nueva entra sola, a 46 s por caso, sin tocar este fichero. La
   # ULTIMA tanda corre el target entero menos lo de las otras, asi que ninguna suite se queda
   # fuera aunque el descubrimiento no la vea (detalle en el script; banco en `coverage-index`).
   #
@@ -676,9 +677,19 @@ jobs:
   # 8 → 66. Ocho deja la mas larga a 1,7x de su tope, como pedia la tabla de octubre, y la suite
   # crece deprisa.
   #
+  # POR QUE NUEVE, Y POR MINUTOS (2026-11-05, dispatch 41931406144, ya con el build compartido). Con ocho
+  # repartidas por CASOS los pasos de UI fueron de 54 a 92 min (tanda 3 = 91,7, tanda 5 = 85,3): el coste
+  # por caso va de 10 s a mas de 4 min y una tanda de ~90 casos podia llevarse las lentas. El paso suma
+  # ~6,5 min sobre lo que suman sus casos. Simulado con los tiempos por suite de esa noche (minutos de
+  # test de la tanda mas larga): 9 por casos → 70 · 10 por casos → 73 · 9 por minutos → 58 · 10 por
+  # minutos → 55. Contra la nocturna de ese mismo dia (otra corrida, otros runners), 9 por minutos → 68.
+  # Nueve, porque caben en tres oleadas como las ocho; diez abria una cuarta (~1 h mas de nocturna). El
+  # reparto pesa ahora cada suite con `qa/ci-ui-tiempos.json` (ver la cabecera de `ci-ui-tandas.sh`); se
+  # regenera con `qa/scripts/ci-ui-tiempos.sh <run>` cuando una tanda vuelva a acercarse a ~80.
+  #
   # `max-parallel: 3`. Tres tandas a la vez, como antes: con el job `tests` son cuatro `macOS` y
   # queda uno libre para el CI de los PR, que la nocturna pisa porque GitHub la sirve de dia (ver el
-  # cron). Las ocho caben en tres oleadas (~3 h de nocturna en vez de ~2,2). Abrirlas todas a la vez
+  # cron). Las ocho caben en tres oleadas (~3 h de nocturna en vez de ~2,2; las nueve, tambien). Abrirlas todas a la vez
   # no la acortaria: el limite de `macOS` simultaneos de la cuenta las pondria en cola igual, y por
   # delante de los PR.
   #
@@ -742,10 +753,10 @@ jobs:
     strategy:
       # Una tanda que falla no puede cancelar a las otras: perderiamos su parte de la suite.
       fail-fast: false
-      # Ver «POR QUE OCHO»: tres a la vez deja un `macOS` libre para el CI de los PR.
+      # Ver «POR QUE OCHO» y «POR QUE NUEVE»: tres a la vez deja un `macOS` libre para el CI de los PR.
       max-parallel: 3
       matrix:
-        tanda: [1, 2, 3, 4, 5, 6, 7, 8]
+        tanda: [1, 2, 3, 4, 5, 6, 7, 8, 9]
     env:
       TEST_RUNNER_TZ: America/Lima
     # Una salida por tanda, con nombre fijo. En una matriz, si dos patas escriben la MISMA salida
@@ -760,6 +771,7 @@ jobs:
       ui_6: ${{ steps.salida.outputs.ui_6 }}
       ui_7: ${{ steps.salida.outputs.ui_7 }}
       ui_8: ${{ steps.salida.outputs.ui_8 }}
+      ui_9: ${{ steps.salida.outputs.ui_9 }}
     steps:
       - uses: actions/checkout@v4
       # Mismo paso y mismo porque que en el job `tests`.
@@ -891,6 +903,7 @@ jobs:
           R_UI_6: ${{ needs.ui.outputs.ui_6 }}
           R_UI_7: ${{ needs.ui.outputs.ui_7 }}
           R_UI_8: ${{ needs.ui.outputs.ui_8 }}
+          R_UI_9: ${{ needs.ui.outputs.ui_9 }}
           UI_TOCABA: ${{ needs.tests.outputs.ui_tocaba }}
           RESULTADO_JOB: ${{ needs.tests.result }}
           RESULTADO_UI: ${{ needs.ui.result }}
@@ -925,7 +938,7 @@ jobs:
             fi
           fi
           # Una variable por tanda (`R_UI_<n>`), de la 1 a la ultima de la matriz.
-          UI_TANDAS="1 2 3 4 5 6 7 8"
+          UI_TANDAS="1 2 3 4 5 6 7 8 9"
           ui_resumen=""
           for k in $UI_TANDAS; do
             v="R_UI_$k"
