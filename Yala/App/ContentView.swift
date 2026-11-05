@@ -55,6 +55,10 @@ struct ContentView: View {
     @State private var welcomeFlowInitialStep: WelcomeFlowStep = .hero
     /// Desde dónde se abrió Restaurar en este proceso; `nil` si se abrió al arrancar (destino pendiente). UX 2.2 · L6-11.
     @State private var welcomeRestoreOrigin: WelcomeFlowStep?
+    /// De qué pantalla se abrió «¿Cómo empiezas?» (el 2.º nivel de grupos), para que su «Volver» siga llevando allí cuando
+    /// el Welcome se vuelve a montar al regresar de «Pega tu enlace» o del inicio de sesión de «Crear mi primer grupo»
+    /// (card mgaj). Lo apunta el contenedor cada vez que lo abre; aquí solo se guarda entre montajes.
+    @State private var welcomeGroupsChooserOrigin: WelcomeFlowStep = .chooser
     /// Positive confirmation toast for reactive events (remote onboarding / restore).
     /// Replaces the noisy "Syncing…" banner. Nil when hidden.
     @State private var positiveToast: String?
@@ -635,6 +639,7 @@ struct ContentView: View {
             showWelcomeFlow: $showWelcomeFlow,
             welcomeFlowInitialStep: $welcomeFlowInitialStep,
             welcomeRestoreOrigin: $welcomeRestoreOrigin,
+            welcomeGroupsChooserOrigin: $welcomeGroupsChooserOrigin,
             showOnboarding: $showOnboarding,
             showWelcomeRestore: $showWelcomeRestore,
             showInviteRecovery: $showInviteRecovery,
@@ -1098,6 +1103,9 @@ struct ContentView: View {
                 let back = welcomeRestoreOrigin ?? WelcomeBackStepLogic.existingBranchOrigin(
                     options: WelcomeFlowContainer.liveVisibleExistingOptions)
                 welcomeRestoreOrigin = nil
+                // Card z5dd, la misma instancia por el otro cover: «Restaurar» marca el chooser al encaminar
+                // (`onSelectExistingOption` / `onSelectBranch(.restore)`) y volver de aquí es volver a elegir.
+                hasShownWelcomeChooser = false
                 returnToWelcomeChooser(dismissing: $showWelcomeRestore, step: back)
             },
             onNeedsMirrorRelaunch: {
@@ -1417,9 +1425,38 @@ struct ContentView: View {
         // (el orden que en iOS 26.5 destapó el ticket hermano). Tapada de verdad, se bloquea en el acto y no se drena:
         // al soltarse, la liberación de siempre sube la `revision` y drena.
         // Por `update…`, que con la matriz tapada bloquea en el acto y nunca libera aquí dentro.
+        // Card ulks: Ajustes abierto desde el propio shell (la hoja de sincronización) sí tapa la matriz, y ahí el aviso de
+        // integridad esperaba a que la persona la cerrara. Mismo gesto que con Ajustes de una pestaña: se le pide que se
+        // cierre, y al cerrarse la matriz se libera y drena como siempre.
+        if ContentViewReadinessLogic.blocker(state: currentShellReadinessState()) == "syncSettingsSheet",
+           AppRouter.shared.peekNext(for: .contentView, in: navigation.id,
+                                     where: RouterConsumerGateLogic.closesSettingsFirst) != nil {
+            navigation.settingsCloseRequest &+= 1
+        }
         if ContentViewReadinessLogic.blocker(state: currentShellReadinessState()) != nil {
             updateContentViewReadiness()
             return
+        }
+        // **Card ulks · un aviso de integridad con Ajustes delante cierra Ajustes y sale después** (decisión de Jürgen del
+        // 2026-11-04, opción A). No se presenta y se cierra en la misma vuelta: el aviso se retiene, Ajustes se cierra solo
+        // (`settingsCloseRequest`) y el reintento de 300 ms lo drena con la ventana ya libre.
+        let settingsPresented = navigation.isSettingsSheetPresented
+        if AppRouter.shared.peekNext(for: .contentView, in: navigation.id, where: {
+            RouterConsumerGateLogic.contentViewClosesSettingsFirst(
+                $0, shellClear: shellClear, settingsPresented: settingsPresented,
+                windowPresentationVisible: windowPresentationVisible)
+        }) != nil {
+            navigation.settingsCloseRequest &+= 1
+            scheduleForeignPresentationRedrain()
+            return
+        }
+        // Con varias ventanas (iPad) el aviso sale en esta, la líder, y Ajustes abierto en OTRA seguiría enseñando lo de
+        // antes: se le pide cerrarse también. Ahí no hay nada que retener.
+        if AppRouter.shared.peekNext(for: .contentView, in: navigation.id,
+                                     where: RouterConsumerGateLogic.closesSettingsFirst) != nil {
+            for other in SceneRegistry.shared.allNavigations where other.id != navigation.id && other.isSettingsSheetPresented {
+                other.settingsCloseRequest &+= 1
+            }
         }
         // Los diferibles esperan a que se cierre la hoja; los críticos que vengan detrás salen igual. Y un diferible cede
         // su turno a la hoja de MainTab que vaya delante en la cola (`NoticeOrderLogic`): sin esto salía el del consumidor
@@ -1556,6 +1593,7 @@ struct ContentView: View {
             //
             // El propósito se escribe EXPLÍCITO junto al step, en la misma vuelta: son un par, y
             // separarlos es lo que haría que esta invitación entrara por la rama que informa-y-borra.
+            welcomeGroupsChooserOrigin = .chooser  // un Welcome que empieza de nuevo no hereda el origen del anterior (mgaj)
             welcomeFlowInitialStep = .groupsGate(purpose: .acceptInvite(groupID: zone))
             showWelcomeFlow = true
         case .presentGroupBackendInviteOnboarding(let zone):
@@ -2292,6 +2330,7 @@ struct ContentView: View {
         UserDefaults.standard.removeObject(forKey: "notificationsSeeded")
         hasShownWelcomeChooser = false
         hasShownYalaAIOnboarding = false  // tras un vaciado vuelve a verse el onboarding del chat
+        welcomeGroupsChooserOrigin = .chooser  // un Welcome que empieza de nuevo no hereda el origen del anterior (mgaj)
         welcomeFlowInitialStep = .hero
         showWelcomeFlow = true
         hasCompletedOnboarding = false
@@ -3269,6 +3308,7 @@ struct ContentView: View {
                 // este arranque acaba de reponer es por construcción la última. Con dos invitaciones vivas
                 // —posible si el wipe no llegó a correr— coger la vieja retomaría la que nadie confirmó.
                 if let zone = PendingJoinStore.all().last(where: { $0.isBackendJoin })?.zoneName {
+                    welcomeGroupsChooserOrigin = .chooser  // un Welcome que empieza de nuevo no hereda el origen del anterior (mgaj)
                     welcomeFlowInitialStep = .groupsGate(purpose: .acceptInvite(groupID: zone))
                 } else {
                     welcomeFlowInitialStep = .chooser
@@ -3287,6 +3327,7 @@ struct ContentView: View {
             return
         }
         if !hasShownWelcomeChooser {
+            welcomeGroupsChooserOrigin = .chooser  // un Welcome que empieza de nuevo no hereda el origen del anterior (mgaj)
             welcomeFlowInitialStep = .hero
             showWelcomeFlow = true
         } else {
@@ -3317,6 +3358,7 @@ private struct WelcomeFlowModifier: ViewModifier {
     @Binding var showWelcomeFlow: Bool
     @Binding var welcomeFlowInitialStep: WelcomeFlowStep
     @Binding var welcomeRestoreOrigin: WelcomeFlowStep?
+    @Binding var welcomeGroupsChooserOrigin: WelcomeFlowStep
     @Binding var showOnboarding: Bool
     @Binding var showWelcomeRestore: Bool
     @Binding var showInviteRecovery: Bool
@@ -3708,7 +3750,9 @@ private struct WelcomeFlowModifier: ViewModifier {
             // scope aquí sería darle a este reenvío el derecho a contradecir al de arriba.
             performICloudCorpusWipe: { await performICloudCorpusWipe() },
             performDeviceCorpusWipe: { await performDeviceCorpusWipe() },
-            onRestoreOrigin: { welcomeRestoreOrigin = $0 }
+            onRestoreOrigin: { welcomeRestoreOrigin = $0 },
+            groupsChooserOrigin: welcomeGroupsChooserOrigin,
+            onGroupsChooserOrigin: { welcomeGroupsChooserOrigin = $0 }
         )
         .environment(SessionState.shared)
     }
@@ -3833,6 +3877,13 @@ private struct WelcomeFlowModifier: ViewModifier {
             },
             onBack: {
                 showWelcomeCloudSignIn = false
+                // **Card z5dd · la persona vuelve a estar ELIGIENDO**, así que el chooser deja de constar como visto. Las
+                // tres entradas a este cover lo marcan al ENCAMINAR (`onSelectExistingOption`, `onSelectCloudAccount`,
+                // `onBeaconRoutesToCloudSignIn`), antes de firmar nada; volver sin bajarlo dejaba un cierre de la app aquí
+                // abriendo el onboarding privado directo —sin Welcome y sin la comprobación de iCloud del paso 4— y el
+                // montaje del arranque siguiente con el espejo. Mismo gesto que `onCreateAnotherAccount` y
+                // `onCancelFromStep1`. Al volver a elegir, la entrada lo marca otra vez.
+                hasShownWelcomeChooser = false
                 // UX 2.2 · L6-3: la re-entrada vuelve a «¡Hola de nuevo!», que es de donde salió (también al
                 // cancelar el consentimiento, que ahora es su primera pantalla). El alta y el faro, al chooser.
                 if cloudSignInFromExistingChooser {

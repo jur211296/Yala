@@ -129,12 +129,16 @@ struct WelcomeFlowContainer: View {
 
     /// Desde qué pantalla se abrió Restaurar, para que su «Volver» vuelva allí (UX 2.2 · L6-11).
     var onRestoreOrigin: (WelcomeFlowStep) -> Void
+    /// De qué pantalla se abrió «¿Cómo empiezas?», cada vez que se abre (card mgaj). `ContentView` lo guarda y lo devuelve
+    /// en `groupsChooserOrigin` al volver a montar el Welcome tras «Pega tu enlace» o el inicio de sesión de crear grupo.
+    var onGroupsChooserOrigin: (WelcomeFlowStep) -> Void
 
     @State private var step: WelcomeFlowStep = .hero
     /// De qué pantalla se abrió el 2.º nivel de grupos, y por tanto a dónde vuelve su «Volver»: la fila del elector o la
     /// pregunta de pie de «Es mi primera vez» (propuesta B, 24-oct). Lo escribe cada productor al abrirlo; la vuelta
-    /// desde la puerta de crear no lo toca. Si el cover se re-monta, cae al elector, que la persona también vio.
-    @State private var groupsChooserOrigin: WelcomeFlowStep = .chooser
+    /// desde la puerta de crear no lo toca. Si el cover se re-monta, arranca con el que `ContentView` guardó (card mgaj:
+    /// volver de «Pega tu enlace» subía un nivel de más, porque caía siempre al elector).
+    @State private var groupsChooserOrigin: WelcomeFlowStep
     /// Lo mismo para «¡Hola de nuevo!»: la abre la fila del elector o la pregunta de pie del 2.º nivel de grupos (card
     /// 2osn), y su «Volver» devuelve a la que la abrió (`WelcomeBackStepLogic.existingChooserOrigin`).
     @State private var existingChooserOrigin: WelcomeFlowStep = .chooser
@@ -157,9 +161,13 @@ struct WelcomeFlowContainer: View {
         welcomeDeviceDataReading: @escaping @MainActor @Sendable () -> WelcomePrivateICloudGateLogic.DeviceDataReading,
         performICloudCorpusWipe: @escaping @MainActor () async -> String?,
         performDeviceCorpusWipe: @escaping @MainActor () async -> String?,
-        onRestoreOrigin: @escaping (WelcomeFlowStep) -> Void = { _ in }
+        onRestoreOrigin: @escaping (WelcomeFlowStep) -> Void = { _ in },
+        groupsChooserOrigin: WelcomeFlowStep = .chooser,
+        onGroupsChooserOrigin: @escaping (WelcomeFlowStep) -> Void = { _ in }
     ) {
         self.onRestoreOrigin = onRestoreOrigin
+        self.onGroupsChooserOrigin = onGroupsChooserOrigin
+        self._groupsChooserOrigin = State(initialValue: groupsChooserOrigin)
         self.initialStep = initialStep
         self.onSelectBranch = onSelectBranch
         self.onSelectExistingOption = onSelectExistingOption
@@ -598,6 +606,7 @@ struct WelcomeFlowContainer: View {
     /// Abre el 2.º nivel de grupos apuntando de dónde se vino (`WelcomeBackStepLogic.groupsChooserOrigin`).
     private func openGroupsChooser(from origin: WelcomeFlowStep) {
         groupsChooserOrigin = WelcomeBackStepLogic.groupsChooserOrigin(openedFrom: origin)
+        onGroupsChooserOrigin(groupsChooserOrigin)
         goTo(.groupsChooser)
     }
 

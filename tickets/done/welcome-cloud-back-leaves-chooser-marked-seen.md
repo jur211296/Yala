@@ -1,10 +1,10 @@
 ---
 id: welcome-cloud-back-leaves-chooser-marked-seen
-status: backlog
+status: done
 priority: medium
 area: "onboarding, modo-nube"
 created: 2026-09-10
-updated: 2026-10-08
+updated: 2026-11-04
 source: "review adversarial (lente de flujo) de `beacon-routes-only-never-blocks`, 2026-09-10"
 ---
 
@@ -52,3 +52,13 @@ del cover, y cambiarlo es otro objeto.
 - `isFreshInstallForNeutralMount` (`Utils/SwiftDataConfiguration.swift:260-269`) sigue exigiendo `!hasShownWelcomeChooser`.
 
 Triage 2026-10-08: abierto · medium → medium · El onBack del cover de nube sigue sin devolver hasShownWelcomeChooser a false, y las tres entradas lo marcan al encaminar; solo onCreateAnotherAccount lo resetea
+
+## Resuelto (2026-11-04, lote N1 de la 2.3)
+
+El `onBack` del cover de nube devuelve `hasShownWelcomeChooser` a `false` (mismo gesto que `onCreateAnotherAccount`), y
+también el `onBack` de Restaurar, la otra entrada que marcaba al encaminar y volvía sin bajarlo. Con el neutro durable de
+la instalación nueva (`welcome-fresh-install-neutral-mount-lasts-one-launch`), cerrar la app tras volver deja el arranque
+siguiente en neutro y en la bienvenida, con la comprobación de iCloud del paso 4 por delante.
+
+Test: `WelcomeNeutralMountUntilChosenTests` (simulación de arranques + scan de los dos `onBack`, con mutante). Un XCUITest
+que relance no lo ve: bajo `-uitest` cada arranque purga `hasShownWelcomeChooser`.

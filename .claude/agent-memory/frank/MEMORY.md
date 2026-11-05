@@ -43,6 +43,8 @@
 - [Límite del plan: la persona elige](feedback_limite_del_plan_la_persona_elige.md) — alta masiva sobre el límite Free: elegir qué entra, o pedir Pro; nunca saltarlo.
 - [La condición del encargo puede no ser suya](feedback_la_condicion_del_encargo_puede_no_ser_suya.md) — «sin tapar el +» era de Tim; confirma lo que multiplica alcance.
 ## Cómo mido y cómo entrego
+- [Mutantes: orden rechazada y zsh](feedback_mutantes_rechazados_y_zsh.md) — una orden rechazada ya pudo mutar; `$FILES` en zsh no se parte: `git diff --stat` tras cada tanda.
+- [La Max sin «iPhone 17 Pro»](feedback_la_max_sin_iphone_17_pro.md) — el gate lo pide por nombre; se creó en iOS 27.2 el 4-nov.
 - [XcodeBuildMCP: la configuración pisa el scheme](feedback_xcodebuildmcp_configuration_pisa_el_scheme.md) — Yala Dev = Debug-Dev; con Debug la nube sale apagada bajo -uitest.
 - [Sentry vacío no descarta un «crash»](feedback_sentry_vacio_no_descarta_un_crash.md) — pantalla muerta o exit(0) primero; .ips en «Necesita de ti».
 - [Sentry dev: cuadra con las sesiones](feedback_sentry_dev_cuadra_con_las_sesiones.md) — evento cada pocos segundos en simulador = previews o bucle ajeno; mira git log de esa hora.

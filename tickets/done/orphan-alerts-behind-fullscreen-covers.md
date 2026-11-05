@@ -1,10 +1,10 @@
 ---
 id: orphan-alerts-behind-fullscreen-covers
-status: backlog
+status: done
 priority: medium
 area: "routing, groups"
 created: 2026-07-11
-updated: 2026-10-08
+updated: 2026-11-04
 source: YalaWiki/Backlog/alerts-huerfanos-detras-de-fullscreencovers.md
 ---
 
@@ -59,3 +59,25 @@ migrated from YalaWiki Backlog/alerts-huerfanos-detras-de-fullscreencovers.md @ 
 - **La segunda mitad sigue igual.** `ownModalVisible` (`ContentView.swift:3664-3666`) solo cuenta `showDowngradeResolution`, `showTrialExpired` y `activeMilestone`. La hoja de Ajustes abierta desde una pestaña no entra en la matriz del shell. `PanelSheetState.hasActivePresentation` (`:85`) solo la lee la puerta del Panel.
 
 Triage 2026-10-08: abierto · medium → medium · los covers ya bloquean la cola (`ContentViewReadinessLogic.blocker`), pero las hojas de pestaña, como Ajustes, siguen fuera de `ownModalVisible` (`ContentView.swift:3664`).
+
+## Resuelto (2026-11-04, lote N1 de la 2.3)
+
+Decisión de Jürgen (opción A): con Ajustes abierto, un aviso de integridad (vaciado remoto, cambio de Apple ID, iCloud
+cambiado, espejo tardío) cierra Ajustes y sale al momento; con otra hoja delante, los críticos siguen como el 11-oct.
+Ajustes publica que está delante (`ClosesForShellIntegrityNotice`), el shell le pide cerrarse y retiene el aviso hasta
+que la ventana queda libre (`RouterConsumerGateLogic.closesSettingsFirst`). También desde la hoja de sincronización del
+shell. Tabla en `docs/entry-points.md`.
+
+**Medido** (iOS 27.2, simulador): sin el cierre explícito el aviso tampoco se perdía —UIKit tumbaba Ajustes al presentar
+encima y Ajustes se reabría bien—. La pérdida del ticket era inferida; el cierre explícito quita la dependencia de ese
+comportamiento implícito.
+
+Tests: `ShellNoticeOverSettingsUITests` (hoja del Apple ID e iCloud cambiado con Ajustes abierto; Ajustes se reabre tras
+contestar) y `ShellIntegrityNoticeClosesSettingsTests` (clasificador, los cuatro términos de la retención y cableado).
+
+**Review adversarial (3 lentes, 2026-11-04)**: sin daños. Con varias ventanas en el iPad, el aviso sale en la líder y
+pide cerrarse también a Ajustes abierto en otra ventana. Residuales aceptados, sin regresión (se comportan como antes):
+(1) con una pantalla completa encima de Ajustes (la compra hecha de Pro) la raíz de Ajustes puede recibir `onDisappear`
+y el aviso sale como hasta hoy, sin cerrarla (inferido, no medido); (2) Ajustes abierto desde el final de «Activar Yala
+completo»: esa pantalla tapa la matriz y el aviso espera a que se cierren las dos. El XCUITest del aviso de iCloud solo
+fija que el aviso sale; el cierre de Ajustes lo fija el del Apple ID.

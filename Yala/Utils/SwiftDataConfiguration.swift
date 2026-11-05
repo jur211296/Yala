@@ -247,10 +247,13 @@ enum SwiftDataConfiguration {
     ///     de `deleteStoreFiles`) para no capturar el testigo antes de tiempo.
     ///  2. **El par de storage está en su estado virgen** (`.icloud` sin armar). Un par a medias o `.cloud`
     ///     ya escrito significa que este device YA eligió, y quien decide entonces es la rama del par.
-    ///  3. **El chooser del Welcome no se ha visto.** Es lo que hace que el neutro dure UN solo arranque:
-    ///     en cuanto el usuario elige, el flag queda `true` y el arranque siguiente vuelve a la tabla
-    ///     normal. Sin este término, un kill a mitad del Welcome con el archivo aún sin crear podría
-    ///     re-montar neutro indefinidamente.
+    ///  3. **El chooser del Welcome no se ha visto.** En cuanto el usuario elige, el flag queda `true` y el
+    ///     arranque siguiente vuelve a la tabla normal. Sin este término, un kill a mitad del Welcome con el
+    ///     archivo aún sin crear podría re-montar neutro indefinidamente.
+    ///
+    /// **Este predicado por sí solo dura UN arranque** (el montaje crea el archivo). Desde la card zlbn
+    /// (decisión de Jürgen del 2026-10-26) ese primer arranque arma además el neutro DURABLE
+    /// (`StorageModePersistence.settleFreshInstallNeutralMount`), que es lo que lo sostiene hasta que se elija.
     ///
     /// **Un device que acaba de ejecutar el wipe de cierre de sesión pasa este predicado, y es CORRECTO:**
     /// `performSignOutWipeIfArmed` borra los archivos, repone el par a `.icloud` y devuelve el device a
@@ -1067,11 +1070,18 @@ extension SwiftDataConfiguration {
         // producción hasta que el cutover de una migración real ejecute sus pasos.
         // R2: el término `freshInstall`. Se evalúa ANTES de capturar el testigo y sin construir ningún
         // container (la URL sale de una `ModelConfiguration` efímera, patrón `deleteStoreFiles`).
+        let freshInstall = isFreshInstallForNeutralMount()
+        // Card zlbn: el neutro de una instalación nueva dura hasta que se elija, no un arranque. Se arma (o se retira,
+        // con el onboarding ya hecho) ANTES de leer el neutro durable, para que este mismo arranque lo vea igual que
+        // el siguiente. `hasCompletedOnboarding` con el literal de la key, por lo mismo que `hasShownWelcomeChooser`.
+        StorageModePersistence.settleFreshInstallNeutralMount(
+            freshInstall: freshInstall,
+            hasCompletedOnboarding: UserDefaults.standard.bool(forKey: "hasCompletedOnboarding"))
         let decision = personalStoreDecision(
             storageMode: CloudSyncFlags.storageMode,
             mirrorOffArmed: StorageModePersistence.isMirrorOffArmed(),
             iCloudAvailable: isICloudAvailable(),
-            freshInstall: isFreshInstallForNeutralMount(),
+            freshInstall: freshInstall,
             neutralDurable: shouldMountNeutralDurable())
         capturePersonalStoreMountedDecisionOnce(decision)
         switch decision {

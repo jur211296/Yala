@@ -261,6 +261,40 @@ nonisolated enum StorageModePersistence {
     static func armNeutralMount(_ defaults: UserDefaults = .standard) {
         defaults.set(true, forKey: neutralMountArmedKey)
         defaults.removeObject(forKey: icloudCorpusWipeOwnsNeutralMountKey)
+        defaults.removeObject(forKey: freshInstallOwnsNeutralMountKey)
+    }
+
+    /// «El neutro durable lo armó el PRIMER arranque de una instalación nueva» (card zlbn, decisión de Jürgen del
+    /// 2026-10-26: el montaje neutro dura hasta que se elija, no un arranque). Solo existe con el neutro puesto.
+    static let freshInstallOwnsNeutralMountKey = "cloudSync.freshInstallOwnsNeutralMount"
+
+    /// **El primer arranque de una instalación nueva arma el neutro durable, y es su dueño hasta que la persona termine
+    /// de entrar.** `isFreshInstallForNeutralMount` exige que no exista el archivo del store, y el propio montaje neutro lo
+    /// crea: sin esta marca, quien cerraba Yala en la bienvenida antes de elegir montaba en el arranque siguiente el espejo
+    /// de iCloud y le bajaban sus datos privados sin haber elegido «privado». La marca caduca con el chooser igual que las
+    /// otras (`shouldMountNeutralDurable`), así que el relanzamiento de un destino que pide el espejo no gira.
+    ///
+    /// Pura sobre `defaults` e idempotente. La llama `SwiftDataConfiguration.personalConfiguration`, que es una propiedad
+    /// calculada: corre antes del montaje y también en cada lectura posterior del proceso (sondas, el swap). Cualquier
+    /// lectura decide lo mismo que decidiría el arranque siguiente, así que no cambia ningún montaje vivo:
+    ///  - **instalación nueva** → arma, solo si nadie lo armó antes (un cierre de sesión o el borrado del corpus son sus
+    ///    dueños y su marca no se toca);
+    ///  - **onboarding hecho** → retira el SUYO: la persona ya eligió y entró, y un neutro superviviente decidiría el montaje
+    ///    del día en que algo vuelva a poner `hasShownWelcomeChooser = false` (seis sitios lo hacen). El de otro dueño no.
+    static func settleFreshInstallNeutralMount(
+        freshInstall: Bool,
+        hasCompletedOnboarding: Bool,
+        _ defaults: UserDefaults = .standard
+    ) {
+        if freshInstall {
+            guard !defaults.bool(forKey: neutralMountArmedKey) else { return }
+            defaults.set(true, forKey: neutralMountArmedKey)
+            defaults.set(true, forKey: freshInstallOwnsNeutralMountKey)
+            return
+        }
+        guard hasCompletedOnboarding, defaults.bool(forKey: freshInstallOwnsNeutralMountKey) else { return }
+        defaults.removeObject(forKey: neutralMountArmedKey)
+        defaults.removeObject(forKey: freshInstallOwnsNeutralMountKey)
     }
 
     /// El neutro durable de una instalación nueva que entra por un enlace de invitación
@@ -280,6 +314,7 @@ nonisolated enum StorageModePersistence {
     static func retireNeutralMountOnChoice(_ defaults: UserDefaults = .standard) {
         guard !defaults.bool(forKey: icloudCorpusWipeOwnsNeutralMountKey) else { return }
         defaults.removeObject(forKey: neutralMountArmedKey)
+        defaults.removeObject(forKey: freshInstallOwnsNeutralMountKey)
     }
 
     static func isNeutralMountArmed(_ defaults: UserDefaults = .standard) -> Bool {
@@ -288,6 +323,7 @@ nonisolated enum StorageModePersistence {
 
     static func clearNeutralMountArm(_ defaults: UserDefaults = .standard) {
         defaults.removeObject(forKey: neutralMountArmedKey)
+        defaults.removeObject(forKey: freshInstallOwnsNeutralMountKey)
     }
 
     /// **El NEUTRO DURABLE de una sesión SOLO-GRUPOS** (paso 5 del rediseño de sesiones, ADR 2026-09-09

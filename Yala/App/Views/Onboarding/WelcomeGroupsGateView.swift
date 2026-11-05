@@ -649,6 +649,10 @@ struct WelcomeGroupsGateView: View {
             actions()
                 .padding(.horizontal, DS.Spacing.xl)
         }
+        // Card i64u: sin `.contain`, SwiftUI aplicaba el id de la PANTALLA a cada hijo y pisaba el de cada botón (`_back`,
+        // `_retry`, `_confirm`…): en el árbol, el «Volver» salía como la pantalla. Con `.contain` la pantalla es un
+        // contenedor con su id y cada botón conserva el suyo (regla de `testing.md` sobre ids en contenedores).
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier(identifier)
     }
 

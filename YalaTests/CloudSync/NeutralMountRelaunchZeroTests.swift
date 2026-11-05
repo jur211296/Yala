@@ -336,7 +336,10 @@ struct NeutralMountWiringTests {
     func personalConfiguration_asksThePredicate() throws {
         let src = try Self.source("Yala/Utils/SwiftDataConfiguration.swift")
         let config = try Self.body(of: "static var personalConfiguration: ModelConfiguration {", in: src)
-        #expect(config.contains("freshInstall: isFreshInstallForNeutralMount()"), """
+        // Desde la card zlbn el predicado se lee una vez (`let freshInstall`) y lo usan el neutro de la instalación nueva y
+        // la decisión.
+        #expect(config.contains("let freshInstall = isFreshInstallForNeutralMount()")
+                && config.contains("freshInstall: freshInstall,"), """
             La decisión tiene que recibir el predicado REAL. Cablearlo a `false` deja la quinta salida como
             código muerto con sus tablas en verde; cablearlo a `true` monta neutro a TODO el parque.
             """)

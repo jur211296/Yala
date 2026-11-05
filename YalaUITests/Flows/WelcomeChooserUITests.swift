@@ -168,6 +168,52 @@ final class WelcomeChooserUITests: XCTestCase {
                       "El «Volver» del 2.º nivel no devolvió a «Es mi primera vez», de donde se vino.")
     }
 
+    /// **Card mgaj · volver de «Pega tu enlace» no olvida que venías de «Es mi primera vez».** «Pega tu enlace» vive fuera
+    /// del Welcome: al volver, el Welcome se monta de nuevo en «¿Cómo empiezas?», y su origen era un `@State` que arrancaba
+    /// en el elector. El «Volver» de esa pantalla subía entonces a «¡Hola!» en vez de a «Es mi primera vez». Ahora
+    /// `ContentView` guarda el origen y se lo devuelve al contenedor al montarlo.
+    ///
+    /// Discrimina con la card de nube de «Es mi primera vez», que el elector no tiene: con el bug, tras el último «Volver»
+    /// sale `welcome_chooser_new` y no `welcome_new_cloud`.
+    func testNewChooser_groupsFooter_throughInviteRecovery_backStillReturnsToFirstTime() throws {
+        let app = XCUIApplication()
+        app.launchForUITest(
+            reset: true,
+            skipOnboarding: false,
+            seed: nil,
+            fakeAttestSupport: true,
+            extraArguments: ["-uitest-cloud-chooser"]
+        )
+        let heroCTA = app.buttons["welcome_hero_cta"]
+        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
+        heroCTA.tap()
+
+        let newBranch = app.buttons["welcome_chooser_new"]
+        XCTAssertTrue(newBranch.waitForExistence(timeout: 10), "No apareció la card «Es mi primera vez».")
+        newBranch.tap()
+
+        let cloudCard = app.buttons["welcome_new_cloud"]
+        XCTAssertTrue(cloudCard.waitForExistence(timeout: 10), "No apareció «Es mi primera vez» con la elección de nube.")
+        app.buttons["welcome_new_start_groups"].tap()
+
+        let joinCard = app.buttons["welcome_groups_join"]
+        XCTAssertTrue(joinCard.waitForExistence(timeout: 10), "«Empieza por aquí» no llevó a «¿Cómo empiezas?».")
+        joinCard.tap()
+
+        // Fuera del Welcome: «Pega tu enlace» tiene su propio «Volver».
+        let inviteBack = app.buttons["invite_recovery_back"]
+        XCTAssertTrue(inviteBack.waitForExistence(timeout: 10), "La card de unirse no abrió «Pega tu enlace».")
+        inviteBack.tap()
+
+        XCTAssertTrue(joinCard.waitForExistence(timeout: 10), "El «Volver» de «Pega tu enlace» no devolvió a «¿Cómo empiezas?».")
+        let groupsBack = app.buttons["welcome_back_button"].firstMatch
+        XCTAssertTrue(groupsBack.waitForExistence(timeout: 10), "No apareció el «Volver» de «¿Cómo empiezas?».")
+        groupsBack.tap()
+
+        XCTAssertTrue(cloudCard.waitForExistence(timeout: 10),
+                      "Tras pasar por «Pega tu enlace», el «Volver» de «¿Cómo empiezas?» no devolvió a «Es mi primera vez».")
+    }
+
     /// Card 2osn (QA guiado de 2.1, 19-oct): en «¿Cómo empiezas?» quien ya tiene una cuenta de Grupos no tenía salida —solo
     /// crear o unirse con un enlace—. La pregunta de pie «¿Ya tienes una cuenta? Entra aquí» lo lleva a «¡Hola de nuevo!»,
     /// y su «Volver» devuelve al 2.º nivel de grupos, no al elector. Con `-uitest-cloud-chooser` hay varias entradas a una
@@ -560,15 +606,19 @@ final class WelcomeChooserUITests: XCTestCase {
         XCTAssertTrue(createCard.waitForExistence(timeout: 10), "No apareció la card «Crear mi primer grupo».")
         createCard.tap()
 
-        // El botón se busca por el identifier de la PANTALLA y no por el suyo, y está medido: `noticeShell` pone su
-        // `accessibilityIdentifier` en el contenedor y SwiftUI se lo aplica a cada hijo, pisando el del botón (en el árbol
-        // de esta misma corrida, el botón sale como `welcome_groups_gate_wipe_failed`). Es el único botón con ese id: el
-        // «volver» de arriba lleva `welcome_back_button`.
-        let back = app.buttons.matching(identifier: "welcome_groups_gate_wipe_failed").firstMatch
+        // Card i64u: el botón se busca por SU identifier. Hasta ese día `noticeShell` ponía el de la pantalla en el
+        // contenedor sin `.accessibilityElement(children: .contain)` y SwiftUI se lo aplicaba a cada hijo, pisando el del
+        // botón (el «Volver» salía como `welcome_groups_gate_wipe_failed`). Ahora la pantalla es un contenedor con su id y
+        // el botón conserva el suyo: las dos aserciones caen si el contenedor vuelve a pisarlo.
+        let back = app.buttons["welcome_groups_gate_wipe_failed_back"]
         XCTAssertTrue(back.waitForExistence(timeout: 20), """
-            La puerta no enseñó el aviso del borrado que no pudo. Si en su lugar salió el progreso de la vuelta al \
-            neutro, volvió a armar: el bucle del ticket.
+            La puerta no enseñó el aviso del borrado que no pudo, o su «Volver» no expone su propio identificador. Si \
+            en su lugar salió el progreso de la vuelta al neutro, volvió a armar: el bucle del ticket.
             """)
+        XCTAssertTrue(app.descendants(matching: .any)["welcome_groups_gate_wipe_failed"].exists,
+                      "La pantalla del aviso perdió su identificador de contenedor.")
+        XCTAssertFalse(app.buttons.matching(identifier: "welcome_groups_gate_wipe_failed").firstMatch.exists,
+                       "Un botón sigue saliendo con el identificador de la pantalla: el contenedor pisa los de sus hijos.")
         // El aviso y el progreso de la vuelta al neutro son ramas del mismo `switch`, así que afirmar aquí la ausencia
         // del progreso no probaría nada: lo que discrimina es la aserción positiva de arriba.
 
