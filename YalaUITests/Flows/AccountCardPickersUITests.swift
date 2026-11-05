@@ -120,7 +120,7 @@ final class AccountCardPickersUITests: XCTestCase {
     /// (41 %); con él pasa del 41 %.
     func test_budgetOnTheCard_countsTheLineExpense() {
         let app = launch()
-        let planningTab = app.tabBars.buttons.element(boundBy: 2)
+        let planningTab = app.tabEntry(.planning)
         XCTAssertTrue(planningTab.waitForExistence(timeout: 10))
         planningTab.tap()
         let fab = app.buttons["budgets_create_button"]

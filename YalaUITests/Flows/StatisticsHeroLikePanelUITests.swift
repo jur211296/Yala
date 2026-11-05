@@ -87,7 +87,7 @@ final class StatisticsHeroLikePanelUITests: XCTestCase {
         app.launchForUITest(pro: true)
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
-        app.tabBars.buttons.element(boundBy: 1).tap()
+        app.selectTab(.statistics)
         assertPanelHero(app, in: "Resumen")
         assertHeroHugsChips(app, chip: "detail_chip_insights", in: "Resumen")
 
@@ -130,7 +130,7 @@ final class StatisticsHeroLikePanelUITests: XCTestCase {
         app.launchForUITest(pro: true)
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
-        app.tabBars.buttons.element(boundBy: 1).tap()
+        app.selectTab(.statistics)
         openChip(app, "detail_chip_categorías")
 
         // Distribución arranca en Detalle (izquierda) y Gráficas va a su derecha: los dos segmentos heredan el id del
@@ -170,7 +170,7 @@ final class StatisticsHeroLikePanelUITests: XCTestCase {
         app.launchForUITest(pro: true)
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
-        app.tabBars.buttons.element(boundBy: 1).tap()
+        app.selectTab(.statistics)
         openChip(app, "detail_chip_categorías")
 
         let heroAmount = app.descendants(matching: .any)["stats_hero_amount"]

@@ -45,7 +45,7 @@ final class AccountCardReportsUITests: XCTestCase {
 
     func test_report_byCard_showsTheCardOnceConverted_andByLineShowsBothLines() {
         let app = launch()
-        let moreTab = app.tabBars.buttons.element(boundBy: 3)
+        let moreTab = app.tabEntry(.more)
         XCTAssertTrue(moreTab.waitForExistence(timeout: 10), "No apareció el tab Más.")
         moreTab.tap()
         let cashflowCard = app.buttons["more_card_flujoDeCaja"]
@@ -126,7 +126,7 @@ final class AccountCardReportsUITests: XCTestCase {
 
     func test_cashFlow_byCard_hidesTheLinePage_andByLineShowsIt() {
         let app = launch()
-        let statsTab = app.tabBars.buttons.element(boundBy: 1)
+        let statsTab = app.tabEntry(.statistics)
         XCTAssertTrue(statsTab.waitForExistence(timeout: 10))
         statsTab.tap()
         let trends = app.buttons["detail_chip_tendencias"]

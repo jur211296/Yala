@@ -28,7 +28,7 @@ final class ScheduledPaymentSkipUITests: XCTestCase {
 
     /// Navega al tab Planificación → sub-tab Pagos programados → detalle del primer pago.
     private func openFirstPaymentDetail(_ app: XCUIApplication) {
-        app.tabBars.buttons.element(boundBy: 2).tap()
+        app.selectTab(.planning)
         let scheduledChip = app.buttons["planning_chip_scheduledPayments"]
         XCTAssertTrue(scheduledChip.waitForExistence(timeout: 10), "No apareció el sub-tab Pagos programados.")
         scheduledChip.tap()

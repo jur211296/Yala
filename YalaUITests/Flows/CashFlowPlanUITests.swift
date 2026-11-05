@@ -27,7 +27,7 @@ final class CashFlowPlanUITests: XCTestCase {
         // Reports está oculto en "Más" (config default [panel, statistics, planning]).
         // El dashboard de "Más" tiene una card directa a Flujo de Caja que navega
         // a Reportes con ese sub-tab ya seleccionado (sin pasar por el chip).
-        let moreTab = app.tabBars.buttons.element(boundBy: 3)
+        let moreTab = app.tabEntry(.more)
         XCTAssertTrue(moreTab.waitForExistence(timeout: 10), "No apareció el tab Más.")
         moreTab.tap()
 
@@ -49,7 +49,7 @@ final class CashFlowPlanUITests: XCTestCase {
     private func openFreshPlan(_ app: XCUIApplication) {
         app.launchForUITest(pro: true, seed: "realista")
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
-        let moreTab = app.tabBars.buttons.element(boundBy: 3)
+        let moreTab = app.tabEntry(.more)
         XCTAssertTrue(moreTab.waitForExistence(timeout: 10), "No apareció el tab Más.")
         moreTab.tap()
         let cashflowCard = app.buttons["more_card_flujoDeCaja"]
@@ -315,7 +315,7 @@ final class CashFlowPlanUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchForUITest(pro: true, seed: "realista")
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
-        let moreTab = app.tabBars.buttons.element(boundBy: 3)
+        let moreTab = app.tabEntry(.more)
         XCTAssertTrue(moreTab.waitForExistence(timeout: 10))
         moreTab.tap()
         let card = app.buttons["more_card_flujoDeCaja"]
@@ -367,7 +367,7 @@ final class CashFlowPlanUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchForUITest(pro: true, seed: "realista")
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
-        let moreTab = app.tabBars.buttons.element(boundBy: 3)
+        let moreTab = app.tabEntry(.more)
         XCTAssertTrue(moreTab.waitForExistence(timeout: 10))
         moreTab.tap()
         let card = app.buttons["more_card_comparativa"]

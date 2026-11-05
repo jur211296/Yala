@@ -85,7 +85,7 @@ final class CustomTabBarUITests: XCTestCase {
         app.launchForUITest()
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
-        app.tabBars.buttons["Más"].tap()
+        app.selectTab(.more)
         let recordsCard = app.buttons["more_card_records"]
         XCTAssertTrue(recordsCard.waitForExistence(timeout: 10), "Más no trae la tarjeta de Registros.")
         recordsCard.tap()
@@ -193,7 +193,7 @@ final class CustomTabBarUITests: XCTestCase {
     }
 
     private func customizeBar(_ app: XCUIApplication, remove: [String], add: [String]) {
-        let moreTab = app.tabBars.buttons["Más"]
+        let moreTab = app.tabEntry(.more)
         XCTAssertTrue(moreTab.waitForExistence(timeout: 10), "No apareció el tab Más.")
         moreTab.tap()
 
@@ -231,8 +231,10 @@ final class CustomTabBarUITests: XCTestCase {
     }
 
     private func tapTab(_ app: XCUIApplication, label: String) {
-        let tab = app.tabBars.buttons[label]
-        XCTAssertTrue(tab.waitForExistence(timeout: 10), "No apareció la pestaña \(label) en la barra.")
-        tab.tap()
+        guard let tab = XCUIApplication.RootTab(rawValue: label) else {
+            XCTFail("«\(label)» no es una página de la raíz.")
+            return
+        }
+        app.selectTab(tab)
     }
 }

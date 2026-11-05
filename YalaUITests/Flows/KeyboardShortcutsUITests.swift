@@ -56,6 +56,14 @@ final class KeyboardShortcutsUITests: XCTestCase {
         let app = launch()
         XCTAssertTrue(app.navigationBars.firstMatch.waitForExistence(timeout: 15))
 
+        // En el simulador, si ⌘F es la PRIMERA tecla tras abrir la app, no llega a la app: medido el 2026-11-05 (iPad Pro
+        // 13, iOS 27.2) con una traza en `RootCommandPerformer.perform`, que no se llamaba; la segunda pulsación sí abría
+        // Buscar. Con ⌘G en lugar de ⌘F y sin el `.disabled` del menú, igual; ⌘4 y ⌘N como primera tecla sí llegan, y
+        // con Escape antes, ⌘F también. No siempre: ese mismo día la suite entera pasó una vez sin esto, y las sondas
+        // fallaron al primer ⌘F 5 de 5. Escape no hace nada en el Panel. Si pasa también en un iPad real con teclado es una card de
+        // producto aparte («El primer ⌘F tras abrir Yala se pierde en iPad»): cuando se arregle, esta línea sobra.
+        app.typeKey(XCUIKeyboardKey.escape.rawValue, modifierFlags: [])
+
         app.typeKey("f", modifierFlags: .command)
 
         XCTAssertTrue(app.searchFields.firstMatch.waitForExistence(timeout: 10), "⌘F no abrió Buscar.")

@@ -20,7 +20,7 @@ final class UXAudit22Lote11y16UITests: XCTestCase {
     }
 
     private func openStatistics(_ app: XCUIApplication) {
-        app.tabBars.buttons.element(boundBy: 1).tap()
+        app.selectTab(.statistics)
         XCTAssertTrue(app.buttons["detail_chip_insights"].waitForExistence(timeout: 10), "No apareció Estadísticas.")
     }
 
@@ -128,8 +128,8 @@ final class UXAudit22Lote11y16UITests: XCTestCase {
                       "El enlace no puso su período (sin rango de días bajo la píldora).")
         XCTAssertTrue(app.buttons["detail_chip_insights"].isSelected, "El enlace no abrió el Resumen.")
 
-        app.tabBars.buttons.element(boundBy: 0).tap()
-        app.tabBars.buttons.element(boundBy: 1).tap()
+        app.selectTab(.panel)
+        app.selectTab(.statistics)
         XCTAssertTrue(app.buttons["detail_chip_insights"].waitForExistence(timeout: 10))
         XCTAssertTrue(element(app, "stats_period_range").waitForNonExistence(timeout: 5),
                       "Al volver a Estadísticas sigue el período del aviso: no se devolvió el de antes.")

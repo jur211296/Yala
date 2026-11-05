@@ -38,7 +38,7 @@ final class RecordsLote8UITests: XCTestCase {
         let app = XCUIApplication()
         app.launchForUITest()
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
-        app.tabBars.buttons["Más"].tap()
+        app.selectTab(.more)
 
         let panel = app.buttons["more_card_panel"]
         let records = app.buttons["more_card_records"]

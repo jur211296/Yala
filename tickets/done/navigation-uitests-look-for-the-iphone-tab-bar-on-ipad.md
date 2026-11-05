@@ -1,9 +1,9 @@
 ---
 id: navigation-uitests-look-for-the-iphone-tab-bar-on-ipad
-status: backlog
+status: done
 priority: low
 area: "qa, ipad, navigation"
-updated: 2026-10-08
+updated: 2026-11-05
 created: 2026-09-27
 source: "fase 0 del carril adaptativo (ipad-multiple-windows-share-one-navigation-state), 2026-09-27"
 ---
@@ -49,3 +49,15 @@ suites.
 - [[ipad-sidebar-and-list-detail-for-records-and-planning]] — la fase que más lo necesita.
 
 Triage 2026-10-08: abierto · medium → low · no hay helper de pestañas en `YalaUITests/Support/XCUIApplication+Yala.swift`, y `tabBars` ha crecido de 19 usos en 16 ficheros a 32 usos en 19.
+
+## Resuelto en parte (lote de XCUITest en iPad, 2026-11-05)
+
+- Helper en `YalaUITests/Support/XCUIApplication+Yala.swift`: `selectTab(_:)` / `tabEntry(_:)` por la página
+  (`RootTab`), que vale con la barra de abajo del iPhone, las pestañas de arriba del iPad en vertical (`Button`) y su
+  barra lateral en horizontal (`Cell`), medido en el árbol; y `waitForRootNavigation()` para «la app montó la raíz».
+- Migrados todos los usos que ELIGEN pestaña (incluidos los de posición, que en iPad no existen), en todas las suites.
+  Las tres suites del ticket, en verde en el iPad Pro 13 en dos pasadas.
+- Parcial a propósito (decisión del bot dueño): quedan 17 usos de `tabBars` que no eligen pestaña, sino que comprueban
+  la barra del iPhone o leen su estado. Van a la card «Los XCUITest que comprueban la barra de pestañas del iPhone
+  siguen fallando en iPad». LaunchSlice y el `isSelected` de Deeplink sí pasaron al helper: eran la misma comprobación
+  y sin eso esas suites del ticket seguían rojas.

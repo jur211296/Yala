@@ -615,7 +615,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | image-entry-multi-photo-drops-failures-silently | done | tickets/done/image-entry-multi-photo-drops-failures-silently.md |
 | image-entry-name-says-image-but-takes-files | done | tickets/done/image-entry-name-says-image-but-takes-files.md |
 | image-entry-network-failure-reads-as-no-transactions | done | tickets/done/image-entry-network-failure-reads-as-no-transactions.md |
-| image-entry-uitests-cannot-reach-the-fab-on-ipad | backlog | tickets/backlog/image-entry-uitests-cannot-reach-the-fab-on-ipad.md |
+| image-entry-uitests-cannot-reach-the-fab-on-ipad | done | tickets/done/image-entry-uitests-cannot-reach-the-fab-on-ipad.md |
 | image-entry-uitests-save-stays-off-for-a-complete-record | done | tickets/done/image-entry-uitests-save-stays-off-for-a-complete-record.md |
 | image-note-uses-bank-template-instead-of-merchant | done | tickets/done/image-note-uses-bank-template-instead-of-merchant.md |
 | image-reading-sends-the-full-resolution-photo | done | tickets/done/image-reading-sends-the-full-resolution-photo.md |
@@ -697,7 +697,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | iphone-supports-landscape-orientation | done | tickets/done/iphone-supports-landscape-orientation.md |
 | joiner-flag-residuals-cosmetic-and-service-guard | backlog | tickets/backlog/joiner-flag-residuals-cosmetic-and-service-guard.md |
 | journal-unreadable-card-says-reopen-when-a-downgrade-needs-an-update | backlog | tickets/backlog/journal-unreadable-card-says-reopen-when-a-downgrade-needs-an-update.md |
-| keyboard-shortcut-command-f-uitest-goes-red-on-a-used-ipad-simulator | backlog | tickets/backlog/keyboard-shortcut-command-f-uitest-goes-red-on-a-used-ipad-simulator.md |
+| keyboard-shortcut-command-f-uitest-goes-red-on-a-used-ipad-simulator | done | tickets/done/keyboard-shortcut-command-f-uitest-goes-red-on-a-used-ipad-simulator.md |
 | l10n-check-corre-13-de-17-tests | done | tickets/done/l10n-check-corre-13-de-17-tests.md |
 | la-nocturna-de-ui-no-ha-disparado-ni-una-vez | done | tickets/done/la-nocturna-de-ui-no-ha-disparado-ni-una-vez.md |
 | landscape-records-test-misses-the-first-row-in-long-runs | backlog | tickets/backlog/landscape-records-test-misses-the-first-row-in-long-runs.md |
@@ -755,7 +755,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | multi-currency-accounts-2-card-view | qa | tickets/qa/multi-currency-accounts-2-card-view.md |
 | multi-currency-accounts-3-pickers-and-capture | done | tickets/done/multi-currency-accounts-3-pickers-and-capture.md |
 | multi-currency-accounts-4-reports-and-export | done | tickets/done/multi-currency-accounts-4-reports-and-export.md |
-| navigation-uitests-look-for-the-iphone-tab-bar-on-ipad | backlog | tickets/backlog/navigation-uitests-look-for-the-iphone-tab-bar-on-ipad.md |
+| navigation-uitests-look-for-the-iphone-tab-bar-on-ipad | done | tickets/done/navigation-uitests-look-for-the-iphone-tab-bar-on-ipad.md |
 | needsrelaunch-hides-the-groups-section | done | tickets/done/needsrelaunch-hides-the-groups-section.md |
 | neutral-boot-hands-owner-prefs-to-whoever-signs-in-next | done | tickets/done/neutral-boot-hands-owner-prefs-to-whoever-signs-in-next.md |
 | neutral-mount-wiring-scan-is-red-on-2-1 | done | tickets/done/neutral-mount-wiring-scan-is-red-on-2-1.md |
@@ -1035,7 +1035,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | shell-and-wipe-alert-read-the-session-axis-differently | backlog | tickets/backlog/shell-and-wipe-alert-read-the-session-axis-differently.md |
 | shell-derives-from-two-session-axes | done | tickets/done/shell-derives-from-two-session-axes.md |
 | short-dates-keep-day-month-order-in-en-us | backlog | tickets/backlog/short-dates-keep-day-month-order-in-en-us.md |
-| sidebar-test-fails-after-the-narrowing-cases-on-ipad | backlog | tickets/backlog/sidebar-test-fails-after-the-narrowing-cases-on-ipad.md |
+| sidebar-test-fails-after-the-narrowing-cases-on-ipad | done | tickets/done/sidebar-test-fails-after-the-narrowing-cases-on-ipad.md |
 | sign-out-block-reason-is-only-logged-on-the-cloud-path | backlog | tickets/backlog/sign-out-block-reason-is-only-logged-on-the-cloud-path.md |
 | sign-out-blocked-by-a-surviving-session-already-dropped-the-account-caches | backlog | tickets/backlog/sign-out-blocked-by-a-surviving-session-already-dropped-the-account-caches.md |
 | sign-out-exits-do-not-verify-the-cloud-session-closed | done | tickets/done/sign-out-exits-do-not-verify-the-cloud-session-closed.md |

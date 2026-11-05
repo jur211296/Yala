@@ -54,9 +54,10 @@ final class IPhoneLandscapeUITests: XCTestCase {
 
     /// Una página de la raíz, por su etiqueta: en la barra de pestañas si la hay, si no en la barra lateral.
     private func pageEntry(_ app: XCUIApplication, _ label: String) -> XCUIElement {
-        let tab = app.tabBars.buttons[label]
-        if tab.exists { return tab }
-        return app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
+        guard let tab = XCUIApplication.RootTab(rawValue: label) else {
+            return app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
+        }
+        return app.tabEntry(tab)
     }
 
     private func element(_ app: XCUIApplication, _ identifier: String) -> XCUIElement {

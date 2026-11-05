@@ -46,7 +46,7 @@ final class WidgetEntryBackgroundUITests: XCTestCase {
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
         // Estadísticas es el 2.º tab del config default [panel, statistics, planning].
-        let statsTab = app.tabBars.buttons.element(boundBy: 1)
+        let statsTab = app.tabEntry(.statistics)
         XCTAssertTrue(statsTab.waitForExistence(timeout: 10), "No apareció el tab Estadísticas.")
         statsTab.tap()
 

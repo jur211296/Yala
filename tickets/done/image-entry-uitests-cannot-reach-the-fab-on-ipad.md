@@ -1,10 +1,10 @@
 ---
 id: image-entry-uitests-cannot-reach-the-fab-on-ipad
-status: backlog
+status: done
 priority: low
 area: "testing"
 created: 2026-10-07
-updated: 2026-10-08
+updated: 2026-11-05
 source: hallazgo del encargo 2026-10-07-ipad-drop-unreadable-file-fails-silently
 ---
 
@@ -32,3 +32,9 @@ suites se declaren de iPhone. `ReceiptDropUITests` ya entra por `panel_action_im
 - La suite vive hoy en `YalaUITests/Flows/ImageEntryReviewUITests.swift` y sigue entrando por `app.revealPanelFAB().tap()`; `revealPanelFAB` (`YalaUITests/Support/XCUIApplication+Yala.swift`) no tiene alternativa para cuando el flotante no entra.
 
 Triage 2026-10-08: abierto · low → low · `ImageEntryReviewUITests` (YalaUITests/Flows) sigue entrando por `revealPanelFAB()` y no por `panel_action_image`; solo afecta a corridas en iPad, fuera del gate.
+
+## Resuelto (lote de XCUITest en iPad, 2026-11-05)
+
+- En el iPad la suite entra por la acción de imagen de la fila del Panel (`panel_action_image`), como
+  `ReceiptDropUITests`; en el iPhone sigue por el menú del flotante. La suite prueba la hoja de imagen, no el menú.
+- 8 de 8 en verde en el iPad Pro 13 en dos pasadas (antes 8 de 8 rojos).

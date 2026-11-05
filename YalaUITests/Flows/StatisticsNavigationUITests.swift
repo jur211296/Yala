@@ -30,7 +30,7 @@ final class StatisticsNavigationUITests: XCTestCase {
         app.launchForUITest()
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
-        app.tabBars.buttons.element(boundBy: 1).tap()
+        app.selectTab(.statistics)
 
         XCTAssertTrue(
             tabContainer(app, "stats_tab_insights").waitForExistence(timeout: 10),
@@ -45,7 +45,7 @@ final class StatisticsNavigationUITests: XCTestCase {
         app.launchForUITest()
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
-        app.tabBars.buttons.element(boundBy: 1).tap()
+        app.selectTab(.statistics)
         XCTAssertTrue(tabContainer(app, "stats_tab_insights").waitForExistence(timeout: 10), "La tab Insights no montó.")
 
         app.buttons["detail_chip_tendencias"].tap()

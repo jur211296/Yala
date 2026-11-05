@@ -62,7 +62,7 @@ final class StatisticsGuideScrollsAwayUITests: XCTestCase {
 
     func test_guideScrollsWithTheContent_inSummaryAndDistribution() {
         let app = launch()
-        app.tabBars.buttons.element(boundBy: 1).tap()
+        app.selectTab(.statistics)
         assertGuideScrollsAway(app, in: "Resumen")
 
         let chip = app.buttons["detail_chip_categorías"]

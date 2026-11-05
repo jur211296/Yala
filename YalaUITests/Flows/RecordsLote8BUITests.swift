@@ -17,7 +17,7 @@ final class RecordsLote8BUITests: XCTestCase {
 
     /// Estadísticas (2º tab) → chip Registros, con la lista montada.
     private func openRecordsList(_ app: XCUIApplication) {
-        app.tabBars.buttons.element(boundBy: 1).tap()
+        app.selectTab(.statistics)
         let recordsChip = app.buttons["detail_chip_registros"]
         XCTAssertTrue(recordsChip.waitForExistence(timeout: 10), "No apareció el chip Registros en Estadísticas.")
         let chipsBar = app.scrollViews.containing(.button, identifier: "detail_chip_insights").firstMatch

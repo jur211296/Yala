@@ -24,7 +24,7 @@ final class SmartRefinementFabUITests: XCTestCase {
 
     /// Navega a Estadísticas → chip Registros (revelando el chip si queda fuera de vista).
     private func openStatsRecords(_ app: XCUIApplication) {
-        app.tabBars.buttons.element(boundBy: 1).tap()
+        app.selectTab(.statistics)
         let recordsChip = app.buttons["detail_chip_registros"]
         XCTAssertTrue(recordsChip.waitForExistence(timeout: 10), "No apareció el chip Registros.")
         let chipsBar = app.scrollViews.containing(.button, identifier: "detail_chip_insights").firstMatch
@@ -55,7 +55,7 @@ final class SmartRefinementFabUITests: XCTestCase {
         app.launchForUITest(pro: true)
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
-        app.tabBars.buttons.element(boundBy: 1).tap()
+        app.selectTab(.statistics)
         XCTAssertTrue(
             app.descendants(matching: .any).matching(identifier: "stats_tab_insights").firstMatch.waitForExistence(timeout: 10),
             "La tab Insights no montó."

@@ -1,10 +1,10 @@
 ---
 id: sidebar-test-fails-after-the-narrowing-cases-on-ipad
-status: backlog
+status: done
 priority: low
 area: "testing, ipad, adaptativo"
 created: 2026-10-03
-updated: 2026-10-08
+updated: 2026-11-05
 source: "gate de floating-buttons-cover-row-amounts-on-ipad-landscape, 2026-10-03"
 ---
 
@@ -53,3 +53,14 @@ orientación— que el arranque siguiente hereda, y la barra lateral sale sin «
 - `low`: es un rojo de orden en la lane del iPad, fuera del CI.
 
 Triage 2026-10-08: abierto · medium → low · AdaptiveNavigationUITests sigue sin tearDown ni addTeardownBlock que devuelva la ventana, y su único commit posterior (6bad63aaa) añade un caso sin tocar el orden.
+
+## Resuelto (lote de XCUITest en iPad, 2026-11-05)
+
+- Par confirmado con control en las dos direcciones (iPad Pro 13, iOS 27.2): `test_narrowingTheWindow_keepsEveryPage…`
+  cae en «perdió Más» con la ventana estrecha y, como el iPad recuerda el tamaño, `test_root…` arrancaba estrecho.
+  Ahora el caso devuelve la ventana en un `addTeardownBlock`: sin él, el par sale rojo; con él, verde.
+- Segundo origen, medido con una traza del ancho en cada arranque: tras un caso en vertical, al girar a horizontal la
+  ventana volvía a veces flotante a 375 pt. No es de Yala; la suite arranca a pantalla completa en el iPad.
+- En verde en dos pasadas seguidas de la suite entera en el iPad Pro 13.
+- El rojo de «Más» al estrechar con Registros elegido sigue: card aparte («Al estrechar la ventana del iPad con
+  Registros elegido, la barra de abajo sale sin Más»).

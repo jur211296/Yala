@@ -172,7 +172,7 @@ final class SettingsLote15UITests: XCTestCase {
 
     func test_tabBarConfig_saysTheTwoRules() {
         let app = launch()
-        app.tabBars.buttons["Más"].tap()
+        app.selectTab(.more)
         let editor = app.buttons["more_editor_button"]
         XCTAssertTrue(editor.waitForExistence(timeout: 10), "No apareció «Personalizar».")
         editor.tap()

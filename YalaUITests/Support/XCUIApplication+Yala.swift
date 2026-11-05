@@ -457,9 +457,76 @@ extension XCUIApplication {
         row.tap()
     }
 
+    // MARK: - Pestañas de la raíz (iPhone e iPad)
+
+    /// Una página de la raíz, por la etiqueta con que la pinta la barra (`launchForUITest` fija el español).
+    ///
+    /// La `TabView(.sidebarAdaptable)` no sale igual en todos los aparatos (medido el 2026-11-05, iOS 27.2):
+    /// - **iPhone**: la barra de abajo, un `TabBar` con un `Button` por pestaña. Por defecto Panel, Estadísticas,
+    ///   Planificación, Más y Buscar.
+    /// - **iPad en vertical**: pestañas ARRIBA, `Button` sueltos, sin `TabBar` (las dos últimas páginas, tras «›»).
+    /// - **iPad en horizontal**: barra lateral, una `Cell` por página, con las seis a la vista y sin «Más».
+    /// Por eso aquí no se elige por posición ni por `app.tabBars`, que en el iPad no existe.
+    enum RootTab: String {
+        case panel = "Panel"
+        case statistics = "Estadísticas"
+        case planning = "Planificación"
+        case records = "Registros"
+        case reports = "Reportes"
+        case groups = "Grupos"
+        /// Solo en la barra de pestañas: con barra lateral no existe.
+        case more = "Más"
+        case search = "Buscar"
+    }
+
+    /// La entrada de una pestaña: la de la barra de abajo si la hay; si no, la de arriba o la de la barra lateral.
+    func tabEntry(_ tab: RootTab) -> XCUIElement {
+        if tabBars.firstMatch.exists {
+            return tabBars.buttons[tab.rawValue].firstMatch
+        }
+        return descendants(matching: .any)
+            .matching(Self.rootTabEntryPredicate(labels: [tab.rawValue]))
+            .firstMatch
+    }
+
+    /// Elige una pestaña de la raíz. Falla con el motivo si no está (p. ej. «Más» con barra lateral).
+    func selectTab(_ tab: RootTab, timeout: TimeInterval = 10, file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertTrue(waitForRootNavigation(timeout: timeout),
+                      "No se montó la navegación raíz (ni barra de pestañas ni barra lateral).", file: file, line: line)
+        let entry = tabEntry(tab)
+        XCTAssertTrue(
+            entry.waitForExistence(timeout: timeout),
+            "No apareció la pestaña «\(tab.rawValue)»"
+                + (tab == .more ? " (con barra lateral no hay «Más»: cada página está a la vista)." : "."),
+            file: file, line: line)
+        entry.tap()
+    }
+
+    /// La navegación raíz está montada: la barra de pestañas (iPhone) o las pestañas de arriba / la barra lateral (iPad).
+    /// Es la comprobación de «la app llegó a `MainTabView`», sin depender de qué forma pinta.
+    func waitForRootNavigation(timeout: TimeInterval = 10) -> Bool {
+        let anyPage = descendants(matching: .any).matching(Self.rootTabEntryPredicate(labels: [
+            RootTab.panel, .statistics, .planning, .records, .reports, .groups,
+        ].map(\.rawValue))).firstMatch
+        let deadline = Date().addingTimeInterval(timeout)
+        repeat {
+            if tabBars.firstMatch.exists || anyPage.exists { return true }
+            _ = anyPage.waitForExistence(timeout: 1)
+        } while Date() < deadline
+        return tabBars.firstMatch.exists || anyPage.exists
+    }
+
+    /// Botón (pestañas de arriba) o celda (barra lateral) con la etiqueta de una página. Deja fuera los textos: el título
+    /// de la página y los rótulos de dentro llevan las mismas palabras.
+    private static func rootTabEntryPredicate(labels: [String]) -> NSPredicate {
+        NSPredicate(
+            format: "label IN %@ AND (elementType == %d OR elementType == %d)",
+            labels, XCUIElement.ElementType.button.rawValue, XCUIElement.ElementType.cell.rawValue)
+    }
+
     /// Planificación › Pagos planificados por la barra de pestañas (desde UX 2.2 · L10-15 es la única lista de pagos).
     func openScheduledPaymentsList(timeout: TimeInterval = 10) {
-        tabBars.buttons.element(boundBy: 2).tap()
+        selectTab(.planning, timeout: timeout)
         let chip = buttons["planning_chip_scheduledPayments"]
         XCTAssertTrue(chip.waitForExistence(timeout: timeout), "No apareció el chip de Pagos planificados.")
         chip.tap()
