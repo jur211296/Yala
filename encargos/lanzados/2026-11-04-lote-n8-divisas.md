@@ -45,3 +45,8 @@ Jürgen** (se pregunta a las 5:00, regla nocturna). El ticket dice «el receptor
 cubre: las filas propias del receptor que el otro teléfono no conocía al convertir se quedan en la divisa vieja para
 siempre. Mientras llega la respuesta: medición de la ventana por orden de llegada y test del receptor con histórico
 propio, sin cambiar su comportamiento.
+
+**D4 resuelta (2026-11-05, respuesta del bot de Jürgen antes de las 5:00)** → **opción C**: la cifra de la cuenta
+(`AccountBalanceCalculator`) convierte al pintar, a la tasa de su fecha, las filas que quedaron en otra divisa que la
+de su cuenta, sin tocar lo guardado. Reversible. Descartadas A (la cifra mentía) y B (el receptor no distingue lo que el
+emisor ya convirtió de lo que no conocía). Elegida por el bot de noche como la recomendada y reversible.

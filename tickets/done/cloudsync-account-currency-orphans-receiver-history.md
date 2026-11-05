@@ -1,10 +1,10 @@
 ---
 id: cloudsync-account-currency-orphans-receiver-history
-status: backlog
+status: done
 priority: medium
 area: "cloudsync, accounts, currency, fx"
 created: 2026-09-09
-updated: 2026-10-08
+updated: 2026-11-05
 source: AC nº4 de changing-an-account-currency-orphans-its-whole-history (2026-09-09)
 ---
 
@@ -71,11 +71,11 @@ cuenta sin convertir nada, y ése es el caso que hay que acotar.
 
 ## Criterio de hecho (AC)
 
-- [ ] Decidido qué hace el receptor cuando la divisa de una cuenta cambia y sus transacciones
+- [x] Decidido qué hace el receptor cuando la divisa de una cuenta cambia y sus transacciones
       locales no coinciden: esperar, reexpresar, o marcar la cuenta hasta que cuadre.
-- [ ] Medido si el orden de llegada (`accounts` antes que `tx_items`, o al revés) puede dejar una
+- [x] Medido si el orden de llegada (`accounts` antes que `tx_items`, o al revés) puede dejar una
       ventana visible, y cuánto dura.
-- [ ] Test que fije la decisión con un receptor que tiene histórico propio.
+- [x] Test que fije la decisión con un receptor que tiene histórico propio.
 
 ## Relacionados
 
@@ -105,3 +105,31 @@ el teléfono que cambia la divisa convierte, en el mismo guardado, historial (ta
 sigue abierto por el RECEPTOR: el applier de `accounts` escribe la divisa nueva sin mirar lo que el otro teléfono tiene.
 
 Triage 2026-10-08: abierto · medium → medium · el emisor ya convierte (4ec6f0c5e, PR #400), pero el applier de `accounts` sigue escribiendo `currency_code` a ciegas en el receptor (`EntityApplyMap.swift:524`).
+
+## Hecho (2026-11-05, lote N8 · Divisas)
+
+**Decisión: opción C** (la tomó el bot de Jürgen de noche, como la recomendada y reversible; se discute en el PR).
+El receptor no re-expresa su histórico, como dice 2A: el apply de `accounts.currency_code` sigue escribiendo la divisa
+y nada más. Lo que cambia es la CIFRA: `AccountBalanceCalculator` (tarjeta de la cuenta, Ajustes › Cuentas, widgets,
+formulario, Yala IA) suma una fila en otra divisa que la de su cuenta CONVERTIDA a la de la cuenta, con la tasa de la
+fecha de la fila, sin escribir nada. Es la misma regla con la que convierte el emisor
+(`AccountCurrencyMigrationService`), así que la cifra del intermedio es la que queda cuando la fila llega convertida.
+Solo con divisas del catálogo (`recognizedCurrencyCode`): una vacía o desconocida se suma tal cual, como antes.
+
+Descartadas: A (no hacer nada: la cifra mentía en el intermedio y para siempre en las filas propias) y B (que el
+receptor convierta sus filas: no puede distinguir las que el emisor ya convirtió y aún no llegaron de las que el emisor
+no conocía, y convertir emite con HLC fresco por LWW).
+
+**Medido en el código (AC 2).** El emisor convierte y guarda cuenta e histórico en UN guardado; el drain los pasa al
+outbox y la subida va por trozos de 50 en orden de HLC (`SyncPushClient`, `HLC.uploadOrder`); el receptor baja páginas
+de hasta 500 por `serverSeq` y aplica cada una en un guardado. La ventana existe cuando el receptor baja entre dos
+trozos de la subida (segundos), cuando la subida del emisor se corta a mitad (hasta que vuelva su red) o con más de 500
+filas (entre páginas). Además hay un caso que no se cura solo: las filas que el receptor apuntó y el emisor no tenía al
+convertir. Ese ciclo (drain → push → pull) las sube ANTES de bajar el cambio, así que ni siquiera están pendientes en
+el receptor cuando llega: se quedan en la divisa vieja en los dos teléfonos. Con C su cifra sale bien igual.
+
+**Lo que queda, sin cambiar:** los datos de esas filas siguen en la divisa vieja (exportar las saca así); la marca «≈»
+no se enciende por la conversión de la cifra de la cuenta; el resto de pantallas ya leían la divisa de la fila.
+
+Tests: `CloudSync/AccountCurrencyReceiverTests` (receptor con histórico propio por el apply real del pull, la cifra
+antes y después de que llegue la fila convertida, divisas fuera del catálogo y filas sin cuenta).

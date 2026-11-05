@@ -23,14 +23,17 @@ struct AccountBalanceCalculator {
     ///
     /// Solo cuentan los movimientos fechados hasta hoy (`LiveBalanceCalculator.TodayCutoff`): un movimiento con fecha
     /// futura entra en el saldo cuando llega su fecha, igual que en el saldo total del Panel.
+    ///
+    /// Un movimiento en otra divisa que la de su cuenta entra convertido a la de la cuenta (`amountInAccountCurrency`).
     static func currentBalance(
         transactions: [TransactionItem],
-        asOf now: Date = .now
+        asOf now: Date = .now,
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) -> Decimal {
         let cutoff = LiveBalanceCalculator.TodayCutoff(asOf: now)
         // Reducimos desde 0 y sumamos cada monto con su signo correcto
         return transactions.reduce(Decimal(0)) { partial, item in
-            cutoff.counts(item.date) ? partial + signedAmount(for: item) : partial
+            cutoff.counts(item.date) ? partial + amountInAccountCurrency(item, converter: converter) : partial
         }
     }
 
@@ -39,7 +42,8 @@ struct AccountBalanceCalculator {
     static func currentBalance(
         for account: Account,
         allTransactions: [TransactionItem],
-        asOf now: Date = .now
+        asOf now: Date = .now,
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) -> Decimal {
         // Filtramos únicamente las transacciones de la cuenta dada.
         // Usamos `persistentModelID` en lugar de comparar modelos directamente para
@@ -48,7 +52,7 @@ struct AccountBalanceCalculator {
         let accountTransactions = allTransactions.filter { $0.account?.persistentModelID == accountID }
 
         // Partimos de 0 - el saldo inicial es ahora una transacción.
-        return currentBalance(transactions: accountTransactions, asOf: now)
+        return currentBalance(transactions: accountTransactions, asOf: now, converter: converter)
     }
 
     // MARK: - Batch Calculation (Optimized)
@@ -58,7 +62,8 @@ struct AccountBalanceCalculator {
     static func batchCalculateBalances(
         accounts: [Account],
         transactions: [TransactionItem],
-        asOf now: Date = .now
+        asOf now: Date = .now,
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) -> [PersistentIdentifier: Decimal] {
         let cutoff = LiveBalanceCalculator.TodayCutoff(asOf: now)
         // 1. Inicializar saldos en 0 (el saldo inicial es ahora una transacción)
@@ -70,7 +75,7 @@ struct AccountBalanceCalculator {
         // 2. Iterar transacciones una sola vez y acumular en la cuenta correspondiente
         for transaction in transactions where cutoff.counts(transaction.date) {
             if let account = transaction.account {
-                let amount = signedAmount(for: transaction)
+                let amount = amountInAccountCurrency(transaction, converter: converter)
                 let accountID = account.persistentModelID
 
                 // Solo sumamos si la cuenta está en nuestro mapa de interés
@@ -85,8 +90,25 @@ struct AccountBalanceCalculator {
 
     // MARK: - Normalización de monto
 
-    /// Devuelve el monto de la transacción con el signo correcto.
-    private static func signedAmount(for item: TransactionItem) -> Decimal {
-        return Decimal(item.amount)
+    /// El importe de un movimiento en la divisa de SU cuenta, con su signo.
+    ///
+    /// **Una fila en otra divisa que la de su cuenta entra convertida, a la tasa de su fecha, sin tocar lo guardado**
+    /// (card «Cambiar la divisa de una cuenta en un teléfono puede dejar el otro con movimientos en la divisa vieja»,
+    /// opción C, 2026-11-05). El teléfono que cambia la divisa convierte en el mismo guardado todo lo que tiene de la
+    /// cuenta, con la tasa de la fecha de cada fila (`AccountCurrencyMigrationService`), y lo sube; el otro lo recibe por
+    /// páginas, así que mientras llega —y para siempre en las filas que solo él tenía, que el primero no podía conocer—
+    /// la cuenta dice una divisa y algunas filas otra. Sumadas en crudo, 900 soles contaban como 900 dólares. Convertidas
+    /// con la MISMA regla del emisor, la cifra de la tarjeta es la que dará la fila cuando llegue convertida.
+    ///
+    /// Solo cuando las dos divisas son del catálogo: una divisa vacía o desconocida se sigue sumando tal cual, en vez de
+    /// tomarla por dólares (`recognizedCurrencyCode`). Sin cuenta no hay divisa de destino: tal cual.
+    private static func amountInAccountCurrency(_ item: TransactionItem, converter: CurrencyConverting) -> Decimal {
+        let amount = Decimal(item.amount)
+        guard let account = item.account,
+              let from = recognizedCurrencyCode(item.currencyCode),
+              let to = recognizedCurrencyCode(account.currencyCode),
+              from != to
+        else { return amount }
+        return converter.convert(amount, from: from, to: to, on: item.date)
     }
 }
