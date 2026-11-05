@@ -1,10 +1,10 @@
 ---
 id: seeds-de-grupos-no-escriben-userid-ni-memberkey
-status: backlog
+status: done
 priority: low
 area: "groups, testing, seeds"
 created: 2026-09-08
-updated: 2026-10-08
+updated: 2026-11-05
 source: barrido de QA en simulador del 2026-09-08 (hallazgo de camino)
 ---
 
@@ -72,3 +72,9 @@ escribe— necesitaría otro perfil. Los dos casos son complementarios y hacen f
 - `groups-owner-transfer-and-leave` ya está en `done`: esto es solo tooling de QA, `low`.
 
 Triage 2026-10-08: abierto · medium → low · DevSeedGroups.swift sigue con 0 userID/memberKey y el offer exige userID y memberKey no nulos; el ticket groups-owner-transfer-and-leave ya está en done, así que solo queda el hueco de QA.
+
+## Resuelto (2026-11-05, lote T4)
+
+- Perfil nuevo `grupos-con-heredero`: el dataset de `grupos` con `userID` y `memberKey` en los co-miembros (nunca en mí), como los deja el pull. `ownerExitOffer` encuentra heredero y Ajustes del grupo ofrece «Transferir y salir».
+- `grupos` no cambia: sigue siendo el callejón «dueño con deuda y sin heredero».
+- Lo fijan `SeedRelaunchT4UITests#test_heirProfile_offersTransferAndLeave` y su control `#test_groupsProfile_keepsTheNoHeirDeadEnd`, más `SeedRelaunchT4Tests`.

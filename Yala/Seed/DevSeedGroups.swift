@@ -15,7 +15,11 @@ import Foundation
 import SwiftData
 
 enum DevSeedGroups {
-    static func create(in context: ModelContext) {
+    /// - Parameter identifiedCoMembers: perfil `.gruposConHeredero`. Pone `userID` y `memberKey` a los co-miembros
+    ///   (nunca a mí), como los deja el pull del canal backend. Con eso `GroupService.ownerExitOffer` encuentra un
+    ///   heredero y Ajustes del grupo ofrece «Transferir y salir». Sin él (`.grupos`), ningún co-miembro es elegible y
+    ///   el dueño con deuda cae en el callejón sin heredero, que es el otro caso que hay que poder ver.
+    static func create(in context: ModelContext, identifiedCoMembers: Bool = false) {
         // 1. Grupo (yo soy owner)
         let group = SplitGroup(
             name: "Viaje a Cusco",
@@ -54,6 +58,7 @@ enum DevSeedGroups {
             cloudKitUserRecordID: "uitest-member-beto", status: .active
         )
         let members = [me, ana, beto]
+        if identifiedCoMembers { identify([ana, beto]) }
         for m in members { context.insert(m) }
         let memberIDs = members.map { $0.id.uuidString }
 
@@ -165,6 +170,7 @@ enum DevSeedGroups {
             groupZoneID: zone2, displayName: "Caro",
             cloudKitUserRecordID: "uitest-member-caro", status: .active
         )
+        if identifiedCoMembers { identify([caro]) }
         for m in [me2, caro] { context.insert(m) }
         let member2IDs = [me2, caro].map { $0.id.uuidString }
         let expenses2: [(desc: String, amount: Double, payer: SplitMember, subcat: String?, monthsAgo: Int)] = [
@@ -768,6 +774,68 @@ enum DevSeedGroups {
             try context.save()
         } catch {
             print("DevSeedGroups: createAsPendingMember save error: \(error)")
+        }
+    }
+
+    /// Identidad del canal backend para miembros sembrados: `userID` (el `user_id` del wire) y `memberKey`. Valores
+    /// deterministas por nombre, para que el heredero que replica `GroupOwnerExitLogic.designatedHeir` sea el mismo en
+    /// cada corrida.
+    private static func identify(_ members: [SplitMember]) {
+        for m in members {
+            let slug = m.displayName.lowercased()
+            m.userID = "uitest-user-\(slug)"
+            m.memberKey = "uitest-key-\(slug)"
+        }
+    }
+
+    /// Perfil `.gruposRechazado`: un grupo de Ana donde **mi** solicitud fue RECHAZADA.
+    ///
+    /// Es el espejo de `createAsPendingMember` con el estado siguiente: el cliente ya sabe pintar el aviso de rechazo
+    /// (`GroupDetailView`, `PendingApprovalBanner(state: .rejected)`) y su botón, que quita el grupo de ESTE teléfono,
+    /// pero el estado solo llegaba por un pull real. Lo que sigue siendo de aparato es que el rechazo LLEGUE por el
+    /// canal, no cómo se ve.
+    ///
+    /// `isCurrentUser` APAGADO, igual que su hermano: el pull no lo enciende nunca, así que la app me reconoce por
+    /// `cloudKitUserRecordID` y el test lanza con `-uitest-icloud-identity`. El grupo lleva un gasto para que el
+    /// detalle no esté vacío por otro motivo.
+    static func createAsRejectedMember(in context: ModelContext) {
+        let group = SplitGroup(
+            name: "Asado del sábado",
+            iconName: "flame",
+            currencyCode: "PEN",
+            isOwner: false
+        )
+        group.isBackendGroup = true
+        context.insert(group)
+        let zoneID = group.cloudKitZoneID
+        if UITestHooks.isActive {
+            UserDefaults.standard.set(group.id.uuidString, forKey: UITestHooks.seededGroupIDKey)
+        }
+
+        let ana = SplitMember(
+            groupZoneID: zoneID, displayName: "Ana",
+            cloudKitUserRecordID: "uitest-member-ana",
+            role: "admin", status: .active, isGroupOwner: true
+        )
+        // Yo: rechazado. El corazón del perfil.
+        let me = SplitMember(
+            groupZoneID: zoneID, displayName: "Tú",
+            cloudKitUserRecordID: "uitest-current-user",
+            status: .rejected
+        )
+        for m in [ana, me] { context.insert(m) }
+
+        let expense = SplitExpense(
+            groupZoneID: zoneID, amount: 90, currencyCode: "PEN",
+            expenseDescription: "Carbón y carne", paidByMemberID: ana.id.uuidString,
+            splitType: "equal"
+        )
+        context.insert(expense)
+
+        do {
+            try context.save()
+        } catch {
+            print("DevSeedGroups: createAsRejectedMember save error: \(error)")
         }
     }
 

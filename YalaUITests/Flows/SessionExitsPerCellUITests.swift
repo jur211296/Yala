@@ -234,8 +234,11 @@ final class SessionExitsPerCellUITests: XCTestCase {
         XCTAssertFalse(app.descendants(matching: .any)["signout_relaunch_screen"].exists,
                        "Salió la pantalla de reabrir: el cierre armó el borrado. Borra el arm del simulador.")
 
-        // El reintento tiene puerta: cerrar el aviso devuelve el cierre a reposo y la hoja vuelve a abrir.
-        app.alerts.buttons.firstMatch.tap()
+        // El reintento tiene puerta: cerrar el aviso devuelve el cierre a reposo y la hoja vuelve a abrir. Se cierra por
+        // el identificador del «OK» de ESTE aviso (lote T4): prueba que llega al árbol dentro de un `.alert`.
+        let ok = app.alerts.buttons["signout_blocked_ok"].firstMatch
+        XCTAssertTrue(ok.waitForExistence(timeout: 5), "El «OK» del aviso de cierre bloqueado no lleva su identificador.")
+        ok.tap()
         scrollTo(app, "profile_security_signout").tap()
         XCTAssertTrue(app.buttons["destructive_scope_confirm"].waitForExistence(timeout: 10),
                       "Tras cerrar el aviso, «Cerrar sesión» no vuelve a abrir su hoja: el reintento no tiene puerta.")

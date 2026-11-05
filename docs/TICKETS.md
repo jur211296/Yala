@@ -763,7 +763,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | new-record-with-one-account-keeps-save-off-without-saying-why | backlog | tickets/backlog/new-record-with-one-account-keeps-save-off-without-saying-why.md |
 | new-transaction-account-picker-uitests-fail-on-the-ios-27-lane-pro-max | done | tickets/done/new-transaction-account-picker-uitests-fail-on-the-ios-27-lane-pro-max.md |
 | nightly-ui-suite-hits-its-110-minute-cap-every-night | done | tickets/done/nightly-ui-suite-hits-its-110-minute-cap-every-night.md |
-| no-hay-seed-con-miembro-rechazado | backlog | tickets/backlog/no-hay-seed-con-miembro-rechazado.md |
+| no-hay-seed-con-miembro-rechazado | done | tickets/done/no-hay-seed-con-miembro-rechazado.md |
 | no-test-seam-for-account-exists-blocks-xcuitest-of-identity | done | tickets/done/no-test-seam-for-account-exists-blocks-xcuitest-of-identity.md |
 | nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo | discarded | tickets/discarded/nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo.md |
 | notices-come-out-one-after-another-by-priority | done | tickets/done/notices-come-out-one-after-another-by-priority.md |
@@ -1008,7 +1008,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | secondary-session-retirement-leaves-the-guest-cloud-session | backlog | tickets/backlog/secondary-session-retirement-leaves-the-guest-cloud-session.md |
 | secondary-visit-data-lost-on-signout-unannounced | discarded | tickets/discarded/secondary-visit-data-lost-on-signout-unannounced.md |
 | secondary-visitor-writes-owner-domain | discarded | tickets/discarded/secondary-visitor-writes-owner-domain.md |
-| seeds-de-grupos-no-escriben-userid-ni-memberkey | backlog | tickets/backlog/seeds-de-grupos-no-escriben-userid-ni-memberkey.md |
+| seeds-de-grupos-no-escriben-userid-ni-memberkey | done | tickets/done/seeds-de-grupos-no-escriben-userid-ni-memberkey.md |
 | session-exits-one-verb-per-session | done | tickets/done/session-exits-one-verb-per-session.md |
 | session-redesign-implementation-order | done | tickets/done/session-redesign-implementation-order.md |
 | session-redesign-web-and-store-copy | done | tickets/done/session-redesign-web-and-store-copy.md |
@@ -1045,7 +1045,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | sign-out-wipe-abort-in-icloud-says-nothing | backlog | tickets/backlog/sign-out-wipe-abort-in-icloud-says-nothing.md |
 | sign-out-wipe-abort-loops-the-groups-gate | done | tickets/done/sign-out-wipe-abort-loops-the-groups-gate.md |
 | signout-alert-fires-on-detach-blocks-it-did-not-cause | done | tickets/done/signout-alert-fires-on-detach-blocks-it-did-not-cause.md |
-| signout-blocked-alert-button-has-no-test-identifier | backlog | tickets/backlog/signout-blocked-alert-button-has-no-test-identifier.md |
+| signout-blocked-alert-button-has-no-test-identifier | done | tickets/done/signout-blocked-alert-button-has-no-test-identifier.md |
 | signout-pending-copy-says-wait-seconds-when-offline | done | tickets/done/signout-pending-copy-says-wait-seconds-when-offline.md |
 | single-item-active-toggle-uses-the-plural-filter-label | backlog | tickets/backlog/single-item-active-toggle-uses-the-plural-filter-label.md |
 | siri-ai-content-in-spotlight-and-pro-decision | done | tickets/done/siri-ai-content-in-spotlight-and-pro-decision.md |
@@ -1120,10 +1120,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | two-silent-local-reads-leave-a-false-or-no-trace | done | tickets/done/two-silent-local-reads-leave-a-false-or-no-trace.md |
 | ui-suite-2-2-five-tests-red-on-the-base | done | tickets/done/ui-suite-2-2-five-tests-red-on-the-base.md |
 | uitest-compara-fechas-sin-fijar-locale | done | tickets/done/uitest-compara-fechas-sin-fijar-locale.md |
-| uitest-relaunch-without-reset-can-lose-the-new-user-panel | backlog | tickets/backlog/uitest-relaunch-without-reset-can-lose-the-new-user-panel.md |
+| uitest-relaunch-without-reset-can-lose-the-new-user-panel | done | tickets/done/uitest-relaunch-without-reset-can-lose-the-new-user-panel.md |
 | uitest-reset-keeps-the-sign-out-wipe-arm | backlog | tickets/backlog/uitest-reset-keeps-the-sign-out-wipe-arm.md |
 | uitest-seam-for-a-seeded-groups-association | backlog | tickets/backlog/uitest-seam-for-a-seeded-groups-association.md |
-| uitest-seed-reseeds-the-corpus-without-reset | backlog | tickets/backlog/uitest-seed-reseeds-the-corpus-without-reset.md |
+| uitest-seed-reseeds-the-corpus-without-reset | done | tickets/done/uitest-seed-reseeds-the-corpus-without-reset.md |
 | uitests-leave-the-onboarding-marked-as-seen-through-contentview | backlog | tickets/backlog/uitests-leave-the-onboarding-marked-as-seen-through-contentview.md |
 | undercount-dias-intervalos-cerrados | done | tickets/done/undercount-dias-intervalos-cerrados.md |
 | unit-clocks-duplicated-before-the-fix-are-never-merged | backlog | tickets/backlog/unit-clocks-duplicated-before-the-fix-are-never-merged.md |
