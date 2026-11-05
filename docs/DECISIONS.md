@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (91 entradas)
+## Índice (92 entradas)
 
-> **No hace falta leer este fichero entero** — son 264 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 268 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-05` [Decisiones de Jürgen del 5-nov — deploys, umbral del 80 %, «en el límite» y el candado de commits](#2026-11-05-decisiones-de-jrgen-del-5-nov--deploys-umbral-del-80--en-el-lmite-y-el-candado-de-commits)
 - `2026-10-21` [Formulario de registro 2.2 — la cuenta viene puesta, guardar no saca del flujo y lo elegido va relle](#2026-10-21-formulario-de-registro-22--la-cuenta-viene-puesta-guardar-no-saca-del-flujo-y-lo-elegido-va-relleno)
 - `2026-10-21` [Roadmap de Yala de 2.2 a 4.0 — por tema y sin fechas](#2026-10-21-roadmap-de-yala-de-22-a-40--por-tema-y-sin-fechas)
 - `2026-10-07` [IA en el plan free — voz y foto son un cupo de prueba de 5 notas y 5 fotos](#2026-10-07-ia-en-el-plan-free--voz-y-foto-son-un-cupo-de-prueba-de-5-notas-y-5-fotos)
@@ -117,6 +118,49 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-05] Decisiones de Jürgen del 5-nov — deploys, umbral del 80 %, «en el límite» y el candado de commits
+
+**Contexto.** Jürgen contestó el resumen de las 6:00 hacia las 8:55 (Lima). Las cards del tablero ya llevaban una nota
+que remite a esta entrada; esta entrada es el registro durable. Aquí van las decisiones del repo de la app. Lo de la
+ficha de la App Store es de Lola y se resuelve en su lado: el vídeo del iPad en portugués, el encabezado de iOS 27, las
+páginas en borrador, el evento de lanzamiento y la prueba A/B de capturas.
+
+**Decisión** (Jürgen, 2026-11-05).
+
+- **Umbral de presupuesto: uno solo, el 80 %.** La barra se pone naranja en el mismo punto donde el presupuesto pasa a
+  «en el límite» (`BudgetStatusCounter.atLimitPercent`). Jürgen confirma lo que decidió antes el bot dueño. El cambio
+  ya está en 2.2.
+- **La palabra «en el límite» sí se muestra** junto al naranja, con el mismo umbral del 80 %. Jürgen pidió «lo que
+  recomiendes» y la recomendación era mostrarla. Va en **2.3**: 2.2 está en QA con TestFlight y no recibe copy nuevo.
+- **Saldo del Panel:** sigue con el mismo molde que la cabecera de Grupos.
+- **Deploys aprobados.** Los despliega Dan; ninguna sesión de código despliega Workers ni toca App Store Connect.
+  - *Gateway de IA a producción desde 2.3,* con el registro de cuántos tokens gasta cada llamada (PR 787). Tras el
+    deploy se consulta `yala_ai_usage` y se revisa el costo medio a la semana, hacia el 12-nov.
+  - *«Activar la nube» y «Volver a iCloud»* (PR 791): primero staging, luego producción.
+  - *Correo del banco por `auto@yala-app.pe`* (PR 788): aprobado el costo y la activación (D1, Worker y Email
+    Routing). Antes de producción, la política de privacidad tiene que estar publicada en 1.0.
+  - *Conector de Claude en producción* (PR 790): aprobado el costo, que no suma nada y lleva alerta en US$10. Falta
+    elegir el dominio, `workers.dev` o `mcp.yala-app.pe`. Va después del login con Apple y Google.
+  - *Yala IA ampliada en la nube:* se enciende cuando Frank o Dan lo digan, staging primero.
+- **Token de Sentry a 1Password:** más adelante, no ahora.
+- **Conectar Gmail** (PR 613): el borrador ya tiene base 2.3. Jürgen graba el vídeo y hace el resto de la solicitud
+  a Google.
+- **Candado de commits.** Los 9 commits del 4-nov que se firmaron como escritos por IA se quedan: no se reescribe la
+  historia. Que no vuelva a pasar: el hook `commit-msg` de `.githooks` tiene que estar activo en la Mini y en la Max.
+  Medido el 2026-11-05: en la Mini `core.hooksPath` vale `/Users/jur/Yala/.githooks` y en la Max vale `.githooks`
+  (Jürgen lo puso esa mañana). Las dos carpetas traen `commit-msg` y `pre-commit`. La ruta relativa de la Max también
+  vale en sus worktrees, porque `.githooks/` está versionada y cada worktree la trae.
+
+**Razones.** Un umbral único hace que el color y el estado digan lo mismo, y la palabra nombra lo que el color avisa. Los
+deploys los hace quien tiene las credenciales y la vista de costos, con staging primero cuando el cambio toca datos de
+personas.
+
+**Consecuencias.** La card «"en el límite" ya no se dice» queda decidida y lista para implementar en 2.3, con copy en
+los 7 idiomas. Las cards de cada deploy esperan a Dan. La card del conector de Claude sigue esperando a que Jürgen elija
+el dominio.
+
+**Estado:** Activa.
 
 ### [2026-10-21] Formulario de registro 2.2 — la cuenta viene puesta, guardar no saca del flujo y lo elegido va relleno
 
