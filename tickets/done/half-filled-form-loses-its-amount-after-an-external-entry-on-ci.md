@@ -1,10 +1,10 @@
 ---
 id: half-filled-form-loses-its-amount-after-an-external-entry-on-ci
-status: qa
+status: done
 priority: high
 area: "entradas desde fuera, formulario de registro, testing"
 created: 2026-10-29
-updated: 2026-11-04
+updated: 2026-11-05
 source: "encargo ui-tests-2-2-tres-tandas-rojo (PR #690), dispatch 40939651475 y nocturnas del 23 al 29-oct"
 ---
 
@@ -115,3 +115,5 @@ Unit: `NewRecordDraftTests` y `NewRecordDraftWiringTests`.
 
 **Lo que no cubre.** La variante «el formulario se cerró» (`XCTWaiterResult 1`) de algunas nocturnas no es un rehecho:
 la hoja se fue. Si vuelve a salir, la traza del marcador dirá qué la cerró.
+
+Cerrado en el barrido de QA 2026-11-05: test del flujo: ExternalEntryForeignSheetUITests y NewRecordDraftTests (PR #776).

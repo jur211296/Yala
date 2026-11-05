@@ -75,6 +75,16 @@ paths:
 
 ## Gotchas de vistas
 
+- **Un freno «solo con la app activa» que DESCARTA la petición deja la pantalla sin cargar en el arranque del iPad
+  (medido el 2026-11-05, iPad Pro 13, iOS 27.2, barrido final 2.2).** El Panel pedía su carga en el `onAppear` y en el
+  cambio de fase a `.active`, y los dos llegaban antes de que `UIApplication.applicationState` fuera `.active`: el freno
+  (`guard isApplicationActive() else { return }`) los tiraba y nadie volvía a pedirla (inferido: repetirla al activarse
+  lo cura, medido). El Panel se quedaba en el
+  esqueleto hasta mandar Yala a segundo plano y volver; en el iPhone no pasaba y la 2.1 tampoco lo tenía. ⇒ **un freno
+  así apunta lo que descartó y lo repite al activarse** (`PanelViewModel.missedWhileInactive` +
+  `UIApplication.didBecomeActiveNotification` en `PanelActivationObserver`). `RecalculationDebouncer` (Grupos) tiene el
+  mismo freno sin repetición; en las capturas del barrido Grupos sí cargó al relanzar en el iPad (no se buscó la carrera
+  a propósito). Pin: `PanelColdLaunchActivationTests`.
 - **`.sheet(isPresented:)` con el contenido sacado de OTRO `@State` sale VACÍA si el `body` no lee ese estado fuera del
   cierre (medido el 2026-10-17, iOS 27.0, lote 8).** Buscar ponía `detailTransaction = record` y `showsDetail = true` en
   el mismo toque, y la hoja se presentaba con `if let transaction = detailTransaction` en nil: el cierre se quedó con el

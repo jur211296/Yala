@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1169)
+## Index (1171)
 
 | id | status | path |
 |---|---|---|
@@ -55,7 +55,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | a-wipe-that-throws-between-drafts-and-transactions-loses-settlement-drafts | backlog | tickets/backlog/a-wipe-that-throws-between-drafts-and-transactions-loses-settlement-drafts.md |
 | abandoned-restore-no-longer-clears-the-session-window-clock | done | tickets/done/abandoned-restore-no-longer-clears-the-session-window-clock.md |
 | account-card-reports-cashflow-carousel-uitest-is-flaky | backlog | tickets/backlog/account-card-reports-cashflow-carousel-uitest-is-flaky.md |
-| account-chip-icon-overflows-at-the-largest-text-size | qa | tickets/qa/account-chip-icon-overflows-at-the-largest-text-size.md |
+| account-chip-icon-overflows-at-the-largest-text-size | done | tickets/done/account-chip-icon-overflows-at-the-largest-text-size.md |
 | account-collections | backlog | tickets/backlog/account-collections.md |
 | account-currency-change-leaves-scheduled-and-favorites-stale | done | tickets/done/account-currency-change-leaves-scheduled-and-favorites-stale.md |
 | account-currency-conversion-overlay-has-no-ceiling | backlog | tickets/backlog/account-currency-conversion-overlay-has-no-ceiling.md |
@@ -115,6 +115,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ai-text-model-generation-upgrade | done | tickets/done/ai-text-model-generation-upgrade.md |
 | aligned-previous-interval-counts-the-next-midnight | done | tickets/done/aligned-previous-interval-counts-the-next-midnight.md |
 | alternating-definitive-causes-never-reach-the-short-ceiling | done | tickets/done/alternating-definitive-causes-never-reach-the-short-ceiling.md |
+| amounts-cut-or-split-at-the-largest-text-size | backlog | tickets/backlog/amounts-cut-or-split-at-the-largest-text-size.md |
 | an-incomplete-inventory-reads-as-the-whole-corpus | done | tickets/done/an-incomplete-inventory-reads-as-the-whole-corpus.md |
 | an-undecodable-migration-phase-reads-as-never-started | done | tickets/done/an-undecodable-migration-phase-reads-as-never-started.md |
 | an-unreadable-migration-journal-reads-as-never-started | done | tickets/done/an-unreadable-migration-journal-reads-as-never-started.md |
@@ -159,6 +160,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | born-cloud-signup-into-existing-account-relaunch-says-nothing | backlog | tickets/backlog/born-cloud-signup-into-existing-account-relaunch-says-nothing.md |
 | born-cloud-signup-lands-on-existing-account-silently | done | tickets/done/born-cloud-signup-lands-on-existing-account-silently.md |
 | borncloud-consent-epoch-written-before-the-guard-decides | backlog | tickets/backlog/borncloud-consent-epoch-written-before-the-guard-decides.md |
+| bottom-save-bar-overlaps-the-form-at-the-largest-text-size | backlog | tickets/backlog/bottom-save-bar-overlaps-the-form-at-the-largest-text-size.md |
 | branch-2-2-merges-without-waiting-for-ci | done | tickets/done/branch-2-2-merges-without-waiting-for-ci.md |
 | bridge-de-grupos-pierde-la-marca-de-sus-patas | done | tickets/done/bridge-de-grupos-pierde-la-marca-de-sus-patas.md |
 | bridge-synthesis-trusts-a-zero-converted-amount | done | tickets/done/bridge-synthesis-trusts-a-zero-converted-amount.md |
@@ -522,7 +524,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-ghost-tx-on-delete | done | tickets/done/groups-ghost-tx-on-delete.md |
 | groups-guest-currency-from-region | discarded | tickets/discarded/groups-guest-currency-from-region.md |
 | groups-has-no-cadence-when-the-personal-runtime-is-stopped | backlog | tickets/backlog/groups-has-no-cadence-when-the-personal-runtime-is-stopped.md |
-| groups-header-net-smaller-than-sides-at-the-largest-text-size | qa | tickets/qa/groups-header-net-smaller-than-sides-at-the-largest-text-size.md |
+| groups-header-net-smaller-than-sides-at-the-largest-text-size | done | tickets/done/groups-header-net-smaller-than-sides-at-the-largest-text-size.md |
 | groups-history-cutoff-needs-synced-state | discarded | tickets/discarded/groups-history-cutoff-needs-synced-state.md |
 | groups-import-splitwise-tricount | backlog | tickets/backlog/groups-import-splitwise-tricount.md |
 | groups-in-group-search | backlog | tickets/backlog/groups-in-group-search.md |
@@ -572,9 +574,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-reconnect-prune-or-rewire | done | tickets/done/groups-reconnect-prune-or-rewire.md |
 | groups-reject-can-expel-a-member-approved-elsewhere | discarded | tickets/discarded/groups-reject-can-expel-a-member-approved-elsewhere.md |
 | groups-set-member-role-deploy | done | tickets/done/groups-set-member-role-deploy.md |
+| groups-settlement-reminder | done | tickets/done/groups-settlement-reminder.md |
 | groups-settlement-reminder-discoverability | done | tickets/done/groups-settlement-reminder-discoverability.md |
 | groups-settlement-reminder-stale-clock | backlog | tickets/backlog/groups-settlement-reminder-stale-clock.md |
-| groups-settlement-reminder | done | tickets/done/groups-settlement-reminder.md |
 | groups-shareable-summary | done | tickets/done/groups-shareable-summary.md |
 | groups-sign-out-quiescence-gate-fails-open-with-drive-off | backlog | tickets/backlog/groups-sign-out-quiescence-gate-fails-open-with-drive-off.md |
 | groups-signout-reentry-banner-has-no-producer | backlog | tickets/backlog/groups-signout-reentry-banner-has-no-producer.md |
@@ -590,7 +592,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | grupos-tu-parte-en-lineas | in-progress | tickets/in-progress/grupos-tu-parte-en-lineas.md |
 | guest-decline-has-no-screen | done | tickets/done/guest-decline-has-no-screen.md |
 | guest-journey-dead-screens | done | tickets/done/guest-journey-dead-screens.md |
-| half-filled-form-loses-its-amount-after-an-external-entry-on-ci | qa | tickets/qa/half-filled-form-loses-its-amount-after-an-external-entry-on-ci.md |
+| half-filled-form-loses-its-amount-after-an-external-entry-on-ci | done | tickets/done/half-filled-form-loses-its-amount-after-an-external-entry-on-ci.md |
 | handover-leaves-the-storage-mode-without-a-session | backlog | tickets/backlog/handover-leaves-the-storage-mode-without-a-session.md |
 | health-score-income-sums-stored-amounts-from-other-preferred-currencies | done | tickets/done/health-score-income-sums-stored-amounts-from-other-preferred-currencies.md |
 | hero-estadisticas-stock-vs-flujo-entre-pestanas | done | tickets/done/hero-estadisticas-stock-vs-flujo-entre-pestanas.md |
@@ -745,12 +747,12 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | month-year-titles-capitalize-every-word | backlog | tickets/backlog/month-year-titles-capitalize-every-word.md |
 | more-forms-read-their-deleted-model-while-closing | done | tickets/done/more-forms-read-their-deleted-model-while-closing.md |
 | more-tab-missing-profile-button | done | tickets/done/more-tab-missing-profile-button.md |
+| multi-currency-accounts | qa | tickets/qa/multi-currency-accounts.md |
 | multi-currency-accounts-1-model-and-sync | done | tickets/done/multi-currency-accounts-1-model-and-sync.md |
 | multi-currency-accounts-2-card-view | qa | tickets/qa/multi-currency-accounts-2-card-view.md |
 | multi-currency-accounts-3-pickers-and-capture | done | tickets/done/multi-currency-accounts-3-pickers-and-capture.md |
 | multi-currency-accounts-4-reports-and-export | done | tickets/done/multi-currency-accounts-4-reports-and-export.md |
-| multi-currency-accounts | qa | tickets/qa/multi-currency-accounts.md |
-| multi-draft-review-sheet-cramped-at-the-largest-text-size | qa | tickets/qa/multi-draft-review-sheet-cramped-at-the-largest-text-size.md |
+| multi-draft-review-sheet-cramped-at-the-largest-text-size | done | tickets/done/multi-draft-review-sheet-cramped-at-the-largest-text-size.md |
 | navigation-uitests-look-for-the-iphone-tab-bar-on-ipad | backlog | tickets/backlog/navigation-uitests-look-for-the-iphone-tab-bar-on-ipad.md |
 | needsrelaunch-hides-the-groups-section | done | tickets/done/needsrelaunch-hides-the-groups-section.md |
 | neutral-boot-hands-owner-prefs-to-whoever-signs-in-next | done | tickets/done/neutral-boot-hands-owner-prefs-to-whoever-signs-in-next.md |

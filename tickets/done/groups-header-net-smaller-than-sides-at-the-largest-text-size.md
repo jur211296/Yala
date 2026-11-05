@@ -1,10 +1,10 @@
 ---
 id: groups-header-net-smaller-than-sides-at-the-largest-text-size
-status: qa
+status: done
 priority: low
 area: "grupos, accesibilidad"
 created: 2026-11-03
-updated: 2026-11-04
+updated: 2026-11-05
 source: "pase de estrés del barrido de QA 2.2, parte C (card del tablero tablero-pase-de-estres-2-2-c-con-el-texto-al-max-ysol)"
 ---
 
@@ -37,3 +37,5 @@ y queda como hallazgo aparte.
 4. Toca «Nuevo gasto»: abre el formulario de gasto. Cierra y toca «Nuevo grupo»: abre el de grupo.
 5. Pon el modo claro y repite el paso 2.
 6. Con el texto normal, la cabecera y los botones se ven como antes (lado a lado).
+
+Cerrado en el barrido de QA 2026-11-05: accesibilidad/tamaños, criterio de Jürgen; arreglo del PR #771 visto con el texto al máximo (el neto es lo mayor de la cabecera).

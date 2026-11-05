@@ -34,6 +34,7 @@ struct PanelShell: View {
                 viewModel: viewModel,
                 sessionState: sessionState
             ))
+            .modifier(PanelActivationObserver(viewModel: viewModel))
             .modifier(PanelSessionObservers(
                 viewModel: viewModel,
                 sessionState: sessionState
