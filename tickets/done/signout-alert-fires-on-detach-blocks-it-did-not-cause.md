@@ -1,10 +1,10 @@
 ---
 id: signout-alert-fires-on-detach-blocks-it-did-not-cause
-status: backlog
+status: done
 priority: medium
 area: "modo-nube, settings, groups"
 created: 2026-09-13
-updated: 2026-10-02
+updated: 2026-11-04
 source: "review adversarial de `groups-killswitch-403-blocks-detach-forever`, lentes de producto y de sync"
 ---
 
@@ -77,3 +77,7 @@ dispara en el gate ~25 suites XCUITest). Al cerrar este ticket, corregirlos.
 ## Barrido de QA · 2026-10-15
 
 Visto en el simulador (Yala Dev, iOS 27.0, `8cd693cb6`): con la sesión de grupos fingida y un cambio de grupos sin subir, «Desasociar» muestra su propio aviso y, al volver a Perfil, el de «No pudimos cerrar tu sesión» **no** sale en 15 s. La card `7m1e` pasó a done con esa evidencia. Queda lo que este ticket pide del código (corregir los comentarios de `ProfileView` que siguen describiendo el agujero).
+
+## Cierre (2026-11-04, sesión «Activar la nube»)
+
+Comentarios de `ProfileView.presentSignOutBlock` corregidos: el desasociar ya no deja su bloqueo en `phase` desde el 2026-10-02, y el barrido del 2026-10-15 lo vio en el simulador. Solo comentarios.

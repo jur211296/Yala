@@ -135,6 +135,11 @@ final class CloudIdentityDiscovery {
             return .discovered(.newAccount, userID: userIDVivo)
 
         case let .accountFound(kind, migrationInProgress):
+            // Si la cuenta nació en la nube, se guarda AQUÍ, con el resto del descubrimiento (ticket
+            // `reverse-hidden-on-a-born-cloud-second-device`): es lo que abre «Volver a iCloud» en el segundo dispositivo.
+            if case let .exists(_, _, _, migrated, reverted) = outcome {
+                AccountOriginStore.record(migrated: migrated, reverted: reverted, sub: userIDVivo)
+            }
             // El tipo se cachea aquí porque éste es el único punto de la app donde el backend lo dice
             // antes de que la sesión esté en marcha. `snapshotToPersist` es quien decide si se escribe:
             // un `kind` ausente devuelve `nil` y **no** borra lo que ya sabíamos.

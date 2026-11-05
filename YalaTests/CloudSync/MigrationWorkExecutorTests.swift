@@ -1446,6 +1446,10 @@ struct MigrationWorkExecutorTests {
                 "10 filas vivas tombstoneadas borradas (el syncID inexistente es no-op)")
         #expect(try context.fetchCount(FetchDescriptor<TransactionItem>()) == 40, "quedan 40 vivas")
         #expect(executor.verifyRebinds() == 1, "la fila rebound sigue viva portando su syncID")
+        // «No pude leer» no es «0 re-enlazadas» (ticket `two-silent-local-reads-leave-a-false-or-no-trace`).
+        executor._testInventoryFetchThrows = { step, _ in step == "reverse-rebinds-verify" }
+        #expect(executor.verifyRebinds() == nil, "con SyncIdentity ilegible la verificación dice nil, no 0")
+        executor._testInventoryFetchThrows = nil
 
         // El sweep NO avanza SyncCursor NI borra testigos SyncIdentity (enumeración read-only salvo deletes).
         let cursorAfter = try context.fetch(FetchDescriptor<SyncCursor>()).first?.serverSeqCursor ?? 0
@@ -1876,6 +1880,24 @@ struct MigrationWorkExecutorTests {
         // coordenadas conforme el mirror exporta): elegible por las dos vías.
         #expect(ReverseEligibility.decide(
             storageMode: .cloud, hasCKMap: true, isBornCloud: true, journaledPhase: .done) == .eligible)
+    }
+
+    /// **El segundo dispositivo de un born-cloud** (ticket `reverse-hidden-on-a-born-cloud-second-device`, opción A): la marca
+    /// local no está (entró por adopt), pero el servidor dijo `migrated: false` → elegible sin mapa. La mitad que no se puede
+    /// perder: el migrado sin mapa —sin marca y con el servidor callado o diciendo `migrated: true`— SIGUE fuera. Mutante en
+    /// las dos direcciones: `accountBornCloud` devolviendo solo `localMark` tumba el primer caso; devolviendo `true` fijo, el
+    /// segundo.
+    @Test("ReverseEligibility: el servidor dice born-cloud → el 2.º dispositivo entra; el migrado sin mapa sigue fuera")
+    func reverseEligibility_serverBornCloudOpensTheSecondDevice() {
+        func decision(local: Bool, server: Bool) -> ReverseEligibility.Decision {
+            ReverseEligibility.decide(
+                storageMode: .cloud, hasCKMap: false,
+                isBornCloud: ReverseEligibility.accountBornCloud(localMark: local, serverSaysBornCloud: server),
+                journaledPhase: .done)
+        }
+        #expect(decision(local: false, server: true) == .eligible, "2.º dispositivo de un born-cloud")
+        #expect(decision(local: false, server: false) == .degradedNoMap, "migrado sin mapa: sigue excluido")
+        #expect(decision(local: true, server: false) == .eligible, "el primer dispositivo, como antes")
     }
 
     /// La PRECEDENCIA de los guards, que sin este test es decorado: los casos de arriba se pueden reordenar
@@ -4712,6 +4734,11 @@ struct MigrationWorkExecutorTests {
                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: source())
         enfermo._testInventoryFetchThrows = { step, entity in step == "adopt-inventory" && entity == "Category" }
         #expect(await enfermo.adoptOrphanDryRun() == nil)
+        // Y el panel lo dice como lo que es (ticket `two-silent-local-reads-leave-a-false-or-no-trace`): pintaba «red caída».
+        let enfermo2 = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: source())
+        enfermo2._testInventoryFetchThrows = { step, entity in step == "adopt-inventory" && entity == "Category" }
+        #expect(await enfermo2.adoptOrphanDryRunOutcome() == .localUnreadable)
     }
 
     /// El fetch dirigido de las huérfanas. Saltar la tabla dejaba `inputs` sin sus filas, el outbox vivo vacío y el

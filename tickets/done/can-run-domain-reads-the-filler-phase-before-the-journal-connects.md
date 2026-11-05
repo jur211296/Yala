@@ -1,10 +1,10 @@
 ---
 id: can-run-domain-reads-the-filler-phase-before-the-journal-connects
-status: backlog
+status: done
 priority: low
 area: "modo-nube, sync"
 created: 2026-10-25
-updated: 2026-10-25
+updated: 2026-11-04
 source: "review adversarial del lote 12.2 (card jbjj), inferido leyendo el código"
 ---
 
@@ -27,3 +27,7 @@ su loop en el arranque normal y que después el motor personal lo lleve también
 
 Un tercer valor («sin journal todavía») que Grupos lea como «decide luego», o re-evaluar el modo de Grupos cuando el
 journal se conecta. Medir antes en el simulador con una fase transitoria sembrada.
+
+## Cierre (2026-11-04, sesión «Activar la nube»)
+
+Tercer valor `GroupsLoopRestartLogic.LoopMode.decideAfterJournal`: en `.cloud` y sin journal, Grupos no elige modo; `MigrationPhaseStore.configure` avisa con `journalDidConnect` y se re-decide con la fase leída. Tests: `GroupsSyncHardeningTests.startIfEligible_beforeTheJournal_decidesWhenItConnects` (fase transitoria → loop propio; estable → piggyback, sin segundo loop) y `loopMode_table` (mutante verificado).

@@ -20,6 +20,31 @@ import Foundation
 
 nonisolated enum GroupsLoopRestartLogic {
 
+    /// Cómo corre el canal de Grupos una vez decidido arrancarlo (ticket
+    /// `can-run-domain-reads-the-filler-phase-before-the-journal-connects`).
+    enum LoopMode: Equatable {
+        /// El runtime personal cadencia y Grupos va de paso 5.6 (piggyback): sin loop propio.
+        case piggyback
+        /// Loop propio de Grupos.
+        case ownLoop
+        /// Todavía no se puede saber: modo `.cloud` y el journal sin conectar. Antes del paso 11 del arranque
+        /// `MigrationPhaseStore.currentPhaseRead` es el RELLENO `.notStarted`, que el candado del motor lee como fase
+        /// estable: con una fase transitoria de verdad, Grupos se iba de piggyback y el motor personal —ya con el journal—
+        /// no arrancaba. Se vuelve a decidir cuando el journal se conecta.
+        case decideAfterJournal
+    }
+
+    /// `personalCanRun` es `CloudSyncRuntime.canRunDomain()` y solo se consulta con el journal conectado: con el relleno su
+    /// respuesta no vale nada. Fuera de `.cloud` el candado no abre con ninguna fase, así que no hay nada que esperar.
+    static func loopMode(
+        runtimeEnabled: Bool, storageModeIsCloud: Bool, journalConnected: Bool, personalCanRun: () -> Bool
+    ) -> LoopMode {
+        guard runtimeEnabled, storageModeIsCloud else { return .ownLoop }
+        guard journalConnected else { return .decideAfterJournal }
+        return personalCanRun() ? .piggyback : .ownLoop
+    }
+
+
     /// ¿Debe `startIfEligible` (re)arrancar el loop propio del canal AHORA?
     ///
     /// - `flagOn` — `CloudSyncFlags.groupsBackendEnabled`. Con el flag OFF (producción hoy) SIEMPRE

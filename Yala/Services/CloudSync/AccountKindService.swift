@@ -117,12 +117,13 @@ final class AccountKindService {
         guard let jwt = await jwtProvider() else { return current }
 
         let outcome = await client.exists(jwt: jwt)
-        guard case let .exists(existe, kind, _) = outcome, existe else { return current }
+        guard case let .exists(existe, kind, _, migrated, reverted) = outcome, existe else { return current }
 
         // El userID se re-lee DESPUÉS del await: entre la petición y la respuesta puede haberse
         // cerrado la sesión o entrado otra cuenta, y escribir aquí resucitaría un snapshot que la
         // frontera acaba de purgar. Es el mismo guard que `AccountEntitlementService.persist`.
         guard let userIDVivo = userIDProvider(), userIDVivo == userID else { return current }
+        AccountOriginStore.record(migrated: migrated, reverted: reverted, sub: userIDVivo)
 
         if let snapshot = AccountKindLogic.snapshotToPersist(
             remote: kind, sessionUserID: userIDVivo, cached: store.read(), now: now()
@@ -138,6 +139,7 @@ final class AccountKindService {
     /// que evita que un dato de alguien siga en el disco de un dispositivo que ya no es suyo.
     func handleSignOut() {
         store.clear()
+        AccountOriginStore.clear()
     }
 
     /// Tras «Volver a iCloud»: el servidor acaba de degradar la cuenta a solo-grupos y lo cacheado
@@ -150,5 +152,48 @@ final class AccountKindService {
     /// no deja al cliente creyéndose una degradación que no ocurrió.
     func handleReverseCutoverCompleted() async {
         await refresh()
+    }
+}
+
+/// ¿La cuenta de la sesión nació en la nube? Lo dice el SERVIDOR (`migrated` de `/account/exists`), y es la respuesta que el
+/// segundo dispositivo de un born-cloud no tenía (ticket `reverse-hidden-on-a-born-cloud-second-device`, opción A de Jürgen
+/// del 2026-10-08): la marca local `StorageModePersistence.isBornCloud` solo la escribe el alta, en el teléfono donde ocurre.
+///
+/// **Sellado por `sub`** y escrito solo con el dato presente: una respuesta sin `migrated` (gateway anterior) no borra lo
+/// sabido, y otra cuenta no lo lee. **Solo `migrated == false` LEÍDO cuenta como born-cloud**: ausente o ilegible se
+/// comporta como antes —se exige el mapa—, porque abrir la vuelta a un migrado sin mapa resucitaría lo borrado.
+@MainActor
+enum AccountOriginStore {
+    static let key = "cloudSync.accountOrigin"
+    private static let subField = "sub"
+    private static let migratedField = "migrated"
+
+    /// Almacén. Los tests lo sustituyen por uno aislado.
+    static var defaults: UserDefaults = .standard
+
+    private static let revertedField = "reverted"
+
+    /// Con `migrated` presente se guarda la pareja; `reverted` ausente se guarda como ausente (y no abre nada).
+    static func record(migrated: Bool?, reverted: Bool?, sub: String) {
+        guard let migrated, !sub.isEmpty else { return }
+        var entry: [String: Any] = [subField: sub, migratedField: migrated]
+        if let reverted { entry[revertedField] = reverted }
+        defaults.set(entry, forKey: key)
+    }
+
+    /// `true` solo si el servidor dijo, para ESTA cuenta, `migrated: false` **y** `reverted: false`. Con la cuenta vuelta (o
+    /// volviendo) a iCloud la zona del Apple ID tiene su corpus, y la pregunta de qué sumaría lo leería como ajeno y
+    /// ofrecería borrarlo (review adversarial del 2026-11-04): ahí se queda como antes, exigiendo el mapa.
+    static func accountBornCloud(sub: String?) -> Bool {
+        guard let sub, !sub.isEmpty,
+              let stored = defaults.dictionary(forKey: key),
+              stored[subField] as? String == sub,
+              let migrated = stored[migratedField] as? Bool,
+              let reverted = stored[revertedField] as? Bool else { return false }
+        return migrated == false && reverted == false
+    }
+
+    static func clear() {
+        defaults.removeObject(forKey: key)
     }
 }

@@ -180,6 +180,13 @@ nonisolated enum ReverseEligibility {
         case mapUnreadable
     }
 
+    /// ¿Cuenta como nacida en la nube? La marca LOCAL del alta, o el `migrated: false` que el servidor dijo para la cuenta
+    /// de la sesión (ticket `reverse-hidden-on-a-born-cloud-second-device`, opción A). Las dos son señales POSITIVAS: lo que
+    /// no se sabe sigue exigiendo el mapa.
+    static func accountBornCloud(localMark: Bool, serverSaysBornCloud: Bool) -> Bool {
+        localMark || serverSaysBornCloud
+    }
+
     /// - Parameter hasCKMap: `nil` = los testigos con `ckRecordName` no se dejaron contar.
     static func decide(
         storageMode: StorageMode,
@@ -592,10 +599,14 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     private func collectReverseUploadPairs() throws -> [(id: PersistentIdentifier, row: SyncIdentity)] {
         var rowsBySyncID: [UUID: SyncIdentity] = [:]
         do {
+            if _testInventoryFetchThrows?("reverse-sample-witnesses", "SyncIdentity") == true { throw CocoaError(.fileReadCorruptFile) }
             for row in try context.fetch(FetchDescriptor<SyncIdentity>()) {
                 rowsBySyncID[row.syncID] = row
             }
         } catch {
+            // Se tolera a propósito (todas las filas van con testigo scratch y la muestra sigue leyendo el SQLite), pero deja
+            // rastro también en producción (ticket `two-silent-local-reads-leave-a-false-or-no-trace`).
+            CloudSyncBreadcrumb.localReadFailed(step: "reverse-sample-witnesses", errorType: String(describing: type(of: error)))
             #if DEBUG
             print("MigrationWorkExecutor.collectReverseUploadPairs: fetch(SyncIdentity) falló, todo va con testigo scratch: \(error)")
             #endif
@@ -1734,8 +1745,11 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// update de campo `CD_syncID` sobre el MISMO CKRecord que el replay del mirror exporta). Cuenta las
     /// identidades con `lastReboundAt != nil` cuya fila viva sigue portando su `syncID` (regla `899c1c25` ya
     /// reconstruyó los mirrors). Si una fila rebound NO existe viva, la cubre el barrido de zombies (tombstone).
-    func verifyRebinds() -> Int {
+    /// `nil` = no se pudo leer `SyncIdentity` (ticket `two-silent-local-reads-leave-a-false-or-no-trace`): hasta ese ticket
+    /// devolvía `0` y el rastro decía «0 re-enlazadas». La fase avanza igual: es una verificación, no decide nada.
+    func verifyRebinds() -> Int? {
         do {
+            if _testInventoryFetchThrows?("reverse-rebinds-verify", "SyncIdentity") == true { throw CocoaError(.fileReadCorruptFile) }
             let rebound = try context.fetch(FetchDescriptor<SyncIdentity>()).filter { $0.lastReboundAt != nil }
             return rebound.reduce(0) { acc, row in
                 EntityApplyMap.liveRowExists(entityTypeName: row.entityType, syncID: row.syncID, context: context)
@@ -1745,7 +1759,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             #if DEBUG
             print("MigrationWorkExecutor.verifyRebinds: fetch(SyncIdentity) falló: \(error)")
             #endif
-            return 0
+            return nil
         }
     }
 
@@ -2436,9 +2450,18 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         //    algo que subir, la guarda de linaje del paso 2 ya exigió el marcador o filas de la cuenta en local (el líder
         //    puede haber pasado el cutover del servidor sin exportarlo aún); sin nada que subir el adopt es legítimo sin
         //    marcador (el 2.º dispositivo de una cuenta nacida en la nube no lo tiene nunca).
-        let markerCount = (try? context.fetchCount(FetchDescriptor<CloudMigrationMarker>())) ?? 0
-        if markerCount == 0 {
-            CloudSyncBreadcrumb.migrationEffectFailed(effect: "adoptBackendAccount", reason: "marker absent (belt)")
+        //    «No está» y «no pude mirar» dejan rastros DISTINTOS (ticket `two-silent-local-reads-leave-a-false-or-no-trace`):
+        //    con un `try?` el fallo de lectura se leía «el marcador del líder no llegó», que manda a diagnosticar la exportación
+        //    del líder cuando la avería es de este teléfono. Ninguna de las dos bloquea, como antes.
+        do {
+            if _testInventoryFetchThrows?("adopt-marker-belt", "CloudMigrationMarker") == true {
+                throw CocoaError(.fileReadCorruptFile)
+            }
+            if try context.fetchCount(FetchDescriptor<CloudMigrationMarker>()) == 0 {
+                CloudSyncBreadcrumb.migrationEffectFailed(effect: "adoptBackendAccount", reason: "marker absent (belt)")
+            }
+        } catch {
+            CloudSyncBreadcrumb.localReadFailed(step: "adopt-marker-belt", errorType: String(describing: type(of: error)))
         }
 
         // 5) Persistir el PAR `.cloud` + `mirrorOffArmed` JUNTOS (invariante SERIO 1). El marcador ya está
@@ -3301,12 +3324,30 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// `scanOrphanMetadata`/`computeDryRun`). `nil` = red (transient) al enumerar, enumeración incompleta O inventario
     /// local ilegible.
     func adoptOrphanDryRun() async -> AdoptOrphanDiff.Plan? {
-        guard let enumeration = await enumerateBackendSyncIDs() else { return nil }
-        guard await verifyEnumerationComplete(enumeration) else { return nil }
+        if case .plan(let plan) = await adoptOrphanDryRunOutcome() { return plan }
+        return nil
+    }
+
+    /// El desenlace del dry-run con su porqué (ticket `two-silent-local-reads-leave-a-false-or-no-trace`): el panel pintaba
+    /// «red caída al enumerar el backend» también con el inventario LOCAL ilegible.
+    enum AdoptOrphanDryRunOutcome: Equatable {
+        case plan(AdoptOrphanDiff.Plan)
+        /// La enumeración del backend no llegó (red).
+        case network
+        /// El backend contestó, pero el Merkle no da la enumeración por completa.
+        case enumerationIncomplete
+        /// El inventario local no se dejó leer.
+        case localUnreadable
+    }
+
+    func adoptOrphanDryRunOutcome() async -> AdoptOrphanDryRunOutcome {
+        guard let enumeration = await enumerateBackendSyncIDs() else { return .network }
+        guard await verifyEnumerationComplete(enumeration) else { return .enumerationIncomplete }
         do {
-            return AdoptOrphanDiff.compute(inventory: try collectAdoptInventory(), backendSyncIDs: enumeration.known)
+            return .plan(AdoptOrphanDiff.compute(inventory: try collectAdoptInventory(), backendSyncIDs: enumeration.known))
         } catch {
-            return nil  // inventario ilegible: un diff parcial mentiría en el panel igual que en el reconcile
+            // Inventario ilegible: un diff parcial mentiría en el panel igual que en el reconcile.
+            return .localUnreadable
         }
     }
 

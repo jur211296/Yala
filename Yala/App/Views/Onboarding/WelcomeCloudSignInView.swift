@@ -922,9 +922,17 @@ struct WelcomeCloudSignInView: View {
             confirmCancelAdopt = true
         }
         .font(DS.Typography.subheadline)
-        .foregroundStyle(.white.opacity(controller.isWorking ? 0.4 : 0.8))
-        .disabled(controller.isWorking)
+        .foregroundStyle(.white.opacity(cancelAdoptEnabled(controller) ? 0.8 : 0.4))
+        .disabled(!cancelAdoptEnabled(controller))
         .accessibilityIdentifier("welcome_cloud_adopt_cancel")
+    }
+
+    /// El criterio de Almacenamiento (`MigrationImportWaitLogic.cancelEnabled`): también durante la pre-espera del import,
+    /// que `cancelMigration` corta (ticket `migration-exits-stay-disabled-during-the-import-pre-wait`).
+    private func cancelAdoptEnabled(_ controller: CloudMigrationController) -> Bool {
+        MigrationImportWaitLogic.cancelEnabled(
+            isWorking: controller.isWorking, waitingForImport: controller.resumeWaitingForImport,
+            cancelling: controller.isCancellingMigration)
     }
 
     /// Cancela y vuelve a mirar. **El poll se para ANTES** (`launchFlow` cancela el task viejo) y vuelve DESPUÉS: quien

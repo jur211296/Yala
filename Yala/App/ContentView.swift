@@ -3787,6 +3787,13 @@ private struct WelcomeFlowModifier: ViewModifier {
                 hasCompletedOnboarding = true
                 // Adoptar es elegir: el neutro que armó un enlace de invitación no puede sobrevivir a la nube.
                 StorageModePersistence.retireNeutralMountOnChoice()
+                // El guard cross-cuenta ya contó: el canal de Grupos puede bajar los de esta cuenta (ticket
+                // `complete-account-invite-adopt-can-pull-groups-before-the-guard`).
+                CompleteAccountAdoptPending.clear()
+                // Y nadie más lo arranca: la pestaña de Grupos pudo aparecer con el candado puesto y quedarse sin contexto, y
+                // con ella «tirar para refrescar» y los avisos push no hacían nada hasta el siguiente primer plano (review
+                // adversarial). Idempotente: con el loop vivo solo lo despierta.
+                GroupsSyncClient.shared.startIfEligible(context: modelContext, trigger: "adopt-started")
             },
             onFinishedToApp: {
                 showWelcomeCloudSignIn = false

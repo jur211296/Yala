@@ -256,6 +256,29 @@ nonisolated enum AdoptClaimScope {
         (phase == .claimingMigration || phase == .waitingForLeader) && claimIntent == .adoptIfExisting
     }
 
+    /// ¿Deja «Cancelar la activación» la marca `.cancelled` del adopt? Lo de `isAdoptClaim` **y además las fases del relevo
+    /// de un intento que entró como adopt** —identidad, subida y `cutover(.pending)`, las que `ForwardCancelScope` ofrece
+    /// tras el claim (la subida y el cutover los cazó la review adversarial)— (ticket
+    /// `welcome-cancel-during-the-identity-step-does-not-return-to-the-chooser`): «Ya tengo una cuenta» sobre una cuenta con
+    /// una activación a medias de otro teléfono recibe el relevo (`created`) y para en la identidad comprobando el linaje,
+    /// hasta 15 min. `ForwardCancelScope` ofrece el botón ahí, y sin la marca `WelcomeAdoptCancel.afterCancel` se quedaba en
+    /// `.keepPolling`: la bienvenida en `.adopting(0)` sin salida salvo matar la app.
+    ///
+    /// **En la identidad la intención tiene que estar ESCRITA** (`claimIntentRaw != nil`): ahí la fila sin intención no es
+    /// un adopt seguro —una fila anterior a la intención journaleada pudo entrar por «Migrar»—, y marcarla le cambiaría a
+    /// «Migrar» la tarjeta por la del adopt. Solo la cancelación: el techo de la identidad sale con su texto de linaje y su
+    /// «Reintentar», que ya tienen salida.
+    static func cancelLeavesAdoptMark(
+        _ phase: MigrationPhase, claimIntentRaw: String?, claimIntent: ForwardClaimIntent
+    ) -> Bool {
+        if isAdoptClaim(phase, claimIntent: claimIntent) { return true }
+        guard claimIntentRaw != nil, claimIntent == .adoptIfExisting else { return false }
+        switch phase {
+        case .assigningIdentity, .uploadingSnapshot, .cutover(.pending): return true
+        default: return false
+        }
+    }
+
     /// El aviso de la tarjeta de progreso mientras el claim de un adopt sigue aparcado. `observedCause` es lo que vio el
     /// ÚLTIMO claim de este proceso (`MigrationRunner.lastClaimDefinitiveCause`), no el reloj de causa journaleado: ese
     /// reloj se PAUSA sin borrar la causa cuando una observación no trae motivo, así que un aviso leído de él seguía
@@ -882,7 +905,7 @@ protocol MigrationWorkExecuting: AnyObject {
     func sweepZombies(sinceSeq: Int64) async -> ZombieSweepOutcome
     /// §h.3 `rebindingUUIDs`: verificación (v1) de `SyncIdentity.lastReboundAt` con fila viva presente.
     /// Devuelve el conteo verificado (sin deletes — el replay del mirror exporta el update de campo, S5).
-    func verifyRebinds() -> Int
+    func verifyRebinds() -> Int?
     /// §h.3 `dedupHealed`: AUTO-CURA (I11-4) de copias idénticas de Account/Tag. Devuelve el nº de filas
     /// perdedoras fusionadas+borradas (idempotente: 2ª pasada → 0).
     func healDuplicates() -> Int
@@ -1335,7 +1358,10 @@ final class MigrationRunner {
             return true
         }
         if phase == .uploadingSnapshot {
-            try await handle(.snapshotUploadCancelled) { _, _ in
+            let leavesAdoptMark = AdoptClaimScope.cancelLeavesAdoptMark(
+                phase, claimIntentRaw: state.forwardClaimIntentRaw, claimIntent: claimIntent)
+            try await handle(.snapshotUploadCancelled) { state, _ in
+                if leavesAdoptMark { state.adoptClaimExitRaw = AdoptClaimExit.cancelled.rawValue }
                 CloudSyncBreadcrumb.snapshotUploadExited(reason: "cancelled")
                 MetricsService.cloudSnapshotUploadAborted(reason: "cancelled")
             }
@@ -1343,11 +1369,13 @@ final class MigrationRunner {
         }
         let step = ForwardStepPhase(phase: phase)
         // La intención se lee ANTES del `handle`: el cierre a `notStarted` la borra en el mismo save.
-        let isAdoptClaim = AdoptClaimScope.isAdoptClaim(phase, claimIntent: claimIntent)
+        let leavesAdoptMark = AdoptClaimScope.cancelLeavesAdoptMark(
+            phase, claimIntentRaw: state.forwardClaimIntentRaw, claimIntent: claimIntent)
         try await handle(.forwardStepCancelled) { state, _ in
             // El adopt cancelado deja su marca en el MISMO save: sin ella, Almacenamiento ofrecería «Migrar», que la
-            // puerta de identidad para con esa cuenta (ticket `adopt-claim-stays-parked-with-no-ceiling`).
-            if isAdoptClaim { state.adoptClaimExitRaw = AdoptClaimExit.cancelled.rawValue }
+            // puerta de identidad para con esa cuenta (ticket `adopt-claim-stays-parked-with-no-ceiling`), y la bienvenida
+            // no volvería a elegir (`WelcomeAdoptCancel.afterCancel` exige la marca).
+            if leavesAdoptMark { state.adoptClaimExitRaw = AdoptClaimExit.cancelled.rawValue }
             guard let step else { return }
             self.reportForwardStepExit(step, reason: "cancelled")
         }
@@ -2529,8 +2557,13 @@ final class MigrationRunner {
                 return false
             }
         case .rebindingUUIDs:
-            let verified = executor.verifyRebinds()
-            CloudSyncBreadcrumb.reverseRebindsVerified(count: verified)
+            // «No pude leer» no es «0 re-enlazadas» (ticket `two-silent-local-reads-leave-a-false-or-no-trace`); la fase avanza
+            // igual en los dos casos, como antes.
+            if let verified = executor.verifyRebinds() {
+                CloudSyncBreadcrumb.reverseRebindsVerified(count: verified)
+            } else {
+                CloudSyncBreadcrumb.localReadFailed(step: "reverse-rebinds-verify", errorType: "fetch")
+            }
             try await handle(.reverseUUIDsRebound)
             return true
         case .dedupHealed:

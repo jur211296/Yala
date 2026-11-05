@@ -172,7 +172,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | bulk-edit-uitests-fail-on-the-small-iphone | backlog | tickets/backlog/bulk-edit-uitests-fail-on-the-small-iphone.md |
 | bulk-move-to-another-currency-account-relabels-the-amount | backlog | tickets/backlog/bulk-move-to-another-currency-account-relabels-the-amount.md |
 | bulk-update-account-leaves-converted-amount-stale | done | tickets/done/bulk-update-account-leaves-converted-amount-stale.md |
-| can-run-domain-reads-the-filler-phase-before-the-journal-connects | backlog | tickets/backlog/can-run-domain-reads-the-filler-phase-before-the-journal-connects.md |
+| can-run-domain-reads-the-filler-phase-before-the-journal-connects | done | tickets/done/can-run-domain-reads-the-filler-phase-before-the-journal-connects.md |
 | canarios-y-breadcrumbs-sin-emisor | done | tickets/done/canarios-y-breadcrumbs-sin-emisor.md |
 | cancel-reverse-wipes-the-alert-that-just-appeared | backlog | tickets/backlog/cancel-reverse-wipes-the-alert-that-just-appeared.md |
 | capability-upgrade-reemits-a-v1-link-edit-with-a-fresh-hlc | backlog | tickets/backlog/capability-upgrade-reemits-a-v1-link-edit-with-a-fresh-hlc.md |
@@ -292,7 +292,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cold-launch-panel-first-content-waits-for-the-bootstrap | backlog | tickets/backlog/cold-launch-panel-first-content-waits-for-the-bootstrap.md |
 | combined-filters-edge-cases-after-option-b | done | tickets/done/combined-filters-edge-cases-after-option-b.md |
 | comparative-and-statistics-pick-the-comparison-with-different-controls | done | tickets/done/comparative-and-statistics-pick-the-comparison-with-different-controls.md |
-| complete-account-invite-adopt-can-pull-groups-before-the-guard | backlog | tickets/backlog/complete-account-invite-adopt-can-pull-groups-before-the-guard.md |
+| complete-account-invite-adopt-can-pull-groups-before-the-guard | done | tickets/done/complete-account-invite-adopt-can-pull-groups-before-the-guard.md |
 | completed-mode-escalates-a-second-groups-only-device | discarded | tickets/discarded/completed-mode-escalates-a-second-groups-only-device.md |
 | consecutive-wipes-whole-convergence-ignores-the-second-division | backlog | tickets/backlog/consecutive-wipes-whole-convergence-ignores-the-second-division.md |
 | contrasting-text-helper-is-not-wcag-on-tags-and-account-colors | backlog | tickets/backlog/contrasting-text-helper-is-not-wcag-on-tags-and-account-colors.md |
@@ -740,7 +740,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | migrate-retry-after-a-sign-out-meets-its-own-half-claimed-account | backlog | tickets/backlog/migrate-retry-after-a-sign-out-meets-its-own-half-claimed-account.md |
 | migration-activation-ceiling-drops-origin-pending-effects | backlog | tickets/backlog/migration-activation-ceiling-drops-origin-pending-effects.md |
 | migration-activation-drops-pending-effects-it-never-restores | done | tickets/done/migration-activation-drops-pending-effects-it-never-restores.md |
-| migration-exits-stay-disabled-during-the-import-pre-wait | backlog | tickets/backlog/migration-exits-stay-disabled-during-the-import-pre-wait.md |
+| migration-exits-stay-disabled-during-the-import-pre-wait | done | tickets/done/migration-exits-stay-disabled-during-the-import-pre-wait.md |
 | migration-started-during-a-sign-out-teardown-loses-its-session | backlog | tickets/backlog/migration-started-during-a-sign-out-teardown-loses-its-session.md |
 | migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived | done | tickets/done/migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived.md |
 | migration-takeover-uploads-without-a-lineage-check | done | tickets/done/migration-takeover-uploads-without-a-lineage-check.md |
@@ -950,7 +950,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reverse-exit-alert-published-off-screen-never-shows | backlog | tickets/backlog/reverse-exit-alert-published-off-screen-never-shows.md |
 | reverse-exit-leaves-a-partial-copy-in-icloud | backlog | tickets/backlog/reverse-exit-leaves-a-partial-copy-in-icloud.md |
 | reverse-exit-on-a-reverted-account-rejects-the-retry | done | tickets/done/reverse-exit-on-a-reverted-account-rejects-the-retry.md |
-| reverse-hidden-on-a-born-cloud-second-device | backlog | tickets/backlog/reverse-hidden-on-a-born-cloud-second-device.md |
+| reverse-hidden-on-a-born-cloud-second-device | done | tickets/done/reverse-hidden-on-a-born-cloud-second-device.md |
 | reverse-ineligible-copy-says-right-now-for-a-permanent-case | done | tickets/done/reverse-ineligible-copy-says-right-now-for-a-permanent-case.md |
 | reverse-leaves-dangling-refs-it-can-no-longer-resolve | backlog | tickets/backlog/reverse-leaves-dangling-refs-it-can-no-longer-resolve.md |
 | reverse-mount-can-reimport-a-late-leader-identity | backlog | tickets/backlog/reverse-mount-can-reimport-a-late-leader-identity.md |
@@ -1039,7 +1039,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | sign-out-push-all-runs-a-sync-cycle-past-the-migration-gate | done | tickets/done/sign-out-push-all-runs-a-sync-cycle-past-the-migration-gate.md |
 | sign-out-wipe-abort-in-icloud-says-nothing | backlog | tickets/backlog/sign-out-wipe-abort-in-icloud-says-nothing.md |
 | sign-out-wipe-abort-loops-the-groups-gate | done | tickets/done/sign-out-wipe-abort-loops-the-groups-gate.md |
-| signout-alert-fires-on-detach-blocks-it-did-not-cause | backlog | tickets/backlog/signout-alert-fires-on-detach-blocks-it-did-not-cause.md |
+| signout-alert-fires-on-detach-blocks-it-did-not-cause | done | tickets/done/signout-alert-fires-on-detach-blocks-it-did-not-cause.md |
 | signout-blocked-alert-button-has-no-test-identifier | backlog | tickets/backlog/signout-blocked-alert-button-has-no-test-identifier.md |
 | signout-pending-copy-says-wait-seconds-when-offline | done | tickets/done/signout-pending-copy-says-wait-seconds-when-offline.md |
 | single-item-active-toggle-uses-the-plural-filter-label | backlog | tickets/backlog/single-item-active-toggle-uses-the-plural-filter-label.md |
@@ -1111,7 +1111,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | tutorial-completion-check-appears-only-after-reentering | done | tickets/done/tutorial-completion-check-appears-only-after-reentering.md |
 | two-account-drafts-for-one-group-expense-can-create-two-real-legs | done | tickets/done/two-account-drafts-for-one-group-expense-can-create-two-real-legs.md |
 | two-qa-benches-nobody-runs | backlog | tickets/backlog/two-qa-benches-nobody-runs.md |
-| two-silent-local-reads-leave-a-false-or-no-trace | backlog | tickets/backlog/two-silent-local-reads-leave-a-false-or-no-trace.md |
+| two-silent-local-reads-leave-a-false-or-no-trace | done | tickets/done/two-silent-local-reads-leave-a-false-or-no-trace.md |
 | ui-suite-2-2-five-tests-red-on-the-base | done | tickets/done/ui-suite-2-2-five-tests-red-on-the-base.md |
 | uitest-compara-fechas-sin-fijar-locale | done | tickets/done/uitest-compara-fechas-sin-fijar-locale.md |
 | uitest-relaunch-without-reset-can-lose-the-new-user-panel | backlog | tickets/backlog/uitest-relaunch-without-reset-can-lose-the-new-user-panel.md |
@@ -1152,7 +1152,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | welcome-adopt-stalled-session-is-kept-when-settings-reuses-it | backlog | tickets/backlog/welcome-adopt-stalled-session-is-kept-when-settings-reuses-it.md |
 | welcome-beacon-origin-contradicts-not-found-copy | done | tickets/done/welcome-beacon-origin-contradicts-not-found-copy.md |
 | welcome-beacon-reads-owner-icloud-in-secondary | discarded | tickets/discarded/welcome-beacon-reads-owner-icloud-in-secondary.md |
-| welcome-cancel-during-the-identity-step-does-not-return-to-the-chooser | backlog | tickets/backlog/welcome-cancel-during-the-identity-step-does-not-return-to-the-chooser.md |
+| welcome-cancel-during-the-identity-step-does-not-return-to-the-chooser | done | tickets/done/welcome-cancel-during-the-identity-step-does-not-return-to-the-chooser.md |
 | welcome-chooser-uitests-cannot-reach-the-chooser | discarded | tickets/discarded/welcome-chooser-uitests-cannot-reach-the-chooser.md |
 | welcome-adopt-cancel-then-close-mounts-the-icloud-mirror | backlog | tickets/backlog/welcome-adopt-cancel-then-close-mounts-the-icloud-mirror.md |
 | welcome-cloud-back-leaves-chooser-marked-seen | done | tickets/done/welcome-cloud-back-leaves-chooser-marked-seen.md |

@@ -1,10 +1,10 @@
 ---
 id: migration-exits-stay-disabled-during-the-import-pre-wait
-status: backlog
+status: done
 priority: low
 area: "modo-nube, settings, onboarding"
 created: 2026-10-19
-updated: 2026-10-19
+updated: 2026-11-04
 source: "review adversarial de `cloud-activation-waits-for-icloud-with-no-way-out` (2026-10-19)"
 ---
 
@@ -22,3 +22,7 @@ Mientras Yala espera a que iCloud se asiente, en Almacenamiento ya puedo cancela
 ## Lo que habría que hacer
 
 Llevar el mismo criterio a los dos, con el corte de la pre-espera que ya tiene `cancelMigration`.
+
+## Cierre (2026-11-04, sesión «Activar la nube»)
+
+«Dejar de esperar» y el «Cancelar» del adopt en la bienvenida usan `MigrationImportWaitLogic.cancelEnabled`, como «Cancelar la activación». Scans en `SnapshotUploadCeilingLogicTests` y `WelcomeAdoptExitTests`.

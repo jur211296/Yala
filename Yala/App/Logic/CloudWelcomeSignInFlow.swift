@@ -137,9 +137,9 @@ nonisolated enum CloudWelcomeSignInFlow {
 
     static func route(_ outcome: ExistsOutcome) -> ExistsRoute {
         switch outcome {
-        case let .exists(true, kind, migrationInProgress):
+        case let .exists(true, kind, migrationInProgress, _, _):
             .accountFound(kind: kind, migrationInProgress: migrationInProgress)
-        case .exists(false, _, _): .accountMissing
+        case .exists(false, _, _, _, _): .accountMissing
         case .sessionExpired: .failed(retryable: true)
         case .transient: .failed(retryable: true)
         }

@@ -1,10 +1,10 @@
 ---
 id: complete-account-invite-adopt-can-pull-groups-before-the-guard
-status: backlog
+status: done
 priority: medium
 area: "groups, modo-nube, onboarding"
 created: 2026-10-19
-updated: 2026-10-19
+updated: 2026-11-04
 source: "review adversarial de `invite-sign-in-with-a-complete-account-blocks-on-its-own-groups` (2026-10-19)"
 ---
 
@@ -23,3 +23,7 @@ Entro por un enlace con mi cuenta completa y, si a mitad del recorrido Yala se r
 ## Lo que habría que decidir
 
 Un candado durable «alta de cuenta completa en curso» (por `sub`, con caducidad) que `startIfEligible` respete hasta `onAdoptStarted`, o que el guard no cuente los grupos que bajó la propia sesión que firma.
+
+## Cierre (2026-11-04, sesión «Activar la nube»)
+
+Candado durable `CompleteAccountAdoptPending` (por `sub`, 1 h): lo arma la firma con destino `.adoptAsCompleteAndOpenGroups`, `startIfEligible` no arranca el canal mientras siga en pie y `onAdoptStarted` lo retira y arranca el canal (si no, la pestaña que apareció con el candado puesto se quedaba sin contexto hasta el siguiente primer plano; review adversarial). Tests en `GroupsSyncHardeningTests` (`completeAccountAdoptPending_*`, `startIfEligible_completeAccountAdoptPending_doesNotStartTheChannel`).

@@ -322,9 +322,19 @@ struct WelcomeAdoptExitTests {
                     confirmCancelAdopt = true
                 }
                 .font(DS.Typography.subheadline)
-                .foregroundStyle(.white.opacity(controller.isWorking ? 0.4 : 0.8))
-                .disabled(controller.isWorking)
+                .foregroundStyle(.white.opacity(cancelAdoptEnabled(controller) ? 0.8 : 0.4))
+                .disabled(!cancelAdoptEnabled(controller))
                 .accessibilityIdentifier("welcome_cloud_adopt_cancel")
+            }
+            """))
+        // Y se toca durante la pre-espera del import, con el criterio de Almacenamiento (ticket
+        // `migration-exits-stay-disabled-during-the-import-pre-wait`).
+        let enabled = try Self.flat(Self.body(of: "private func cancelAdoptEnabled("))
+        #expect(enabled == Self.flat("""
+            {
+                MigrationImportWaitLogic.cancelEnabled(
+                    isWorking: controller.isWorking, waitingForImport: controller.resumeWaitingForImport,
+                    cancelling: controller.isCancellingMigration)
             }
             """))
         // El diálogo cuelga del `body`, que no sale del árbol: su `.onChange` corre de verdad.
