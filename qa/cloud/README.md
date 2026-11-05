@@ -96,8 +96,11 @@ Para los tests de Swift, `xcodebuild` entrega las variables al runner con el pre
 
 ```bash
 TEST_RUNNER_YALA_CLOUD_E2E=1 TEST_RUNNER_USER_A_PASS="$USER_A_PASS" \
-TEST_RUNNER_USER_B_PASS="$USER_B_PASS" xcodebuild test -scheme Yala …
+TEST_RUNNER_USER_B_PASS="$USER_B_PASS" bash qa/scripts/sim-lock.sh -- xcodebuild test -scheme Yala …
 ```
+
+El `sim-lock.sh` de delante es la cola del simulador compartido: sin él, esta corrida y la de otra
+sesión se derriban y las dos salen en rojo. Las variables pasan intactas al `xcodebuild`.
 
 Las contraseñas vivas no están en el árbol ni en este documento — viven en
 `~/Secrets/yala-supabase-test/test-users.env` (permisos 600), que se carga con

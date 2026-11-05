@@ -1,6 +1,6 @@
 ---
 description: QA visual en el simulador — recorre los tickets en tickets/qa/, captura evidencia y actualiza su estado. Modo lote por defecto.
-allowed-tools: Bash(bash qa/validate-coverage.sh:*), Bash(xcrun simctl:*), Bash(cp:*), Bash(date:*), Bash(git:*), Read, Write, Edit, Glob, Grep
+allowed-tools: Bash(bash qa/validate-coverage.sh:*), Bash(bash qa/scripts/sim-lock.sh:*), Bash(cut:*), Bash(kill:*), Bash(xcrun simctl:*), Bash(cp:*), Bash(date:*), Bash(git:*), Read, Write, Edit, Glob, Grep
 argument-hint: "[nombre de ticket, o vacío para recorrer todos los de tickets/qa/]"
 ---
 
@@ -23,6 +23,33 @@ Antes del primer build: `session_show_defaults`; si falta algo, `session_set_def
 ## Antes de empezar
 
 Comprueba el disco: `bash qa/scripts/disk-report.sh --guard`. Por debajo del umbral, el simulador falla al lanzar apps con errores que no mencionan el disco — no empieces una tanda de QA así.
+
+## Turno del simulador — antes del primer build
+
+El simulador es uno y lo comparten todas las sesiones. Un `build_run_sim` o un `install_app_sim` instala
+sobre el mismo bundle id que el `/gate` de otra sesión está probando: **le tumbas la corrida y su rojo
+parece un bug del producto**. Y ninguna firma del centinela (`sim-libre.sh`) ve un install, así que nadie
+te avisa. Por eso el `/qa` **pide turno y lo sostiene** toda la tanda:
+
+1. Toma el turno en segundo plano (Bash con `run_in_background`), con un tope de 2 h por si la sesión
+   muere sin soltarlo:
+   ```bash
+   bash qa/scripts/sim-lock.sh -- sleep 7200
+   ```
+   Si otra sesión lo tiene, **espera** y dice quién. No empieces a instalar mientras espera.
+2. Comprueba que es tuyo: `bash qa/scripts/sim-lock.sh --estado` → `TOMADO`, con `sleep 7200`, tu
+   directorio y el pid de ese proceso en segundo plano.
+3. Si dentro de la tanda corres un XCUITest conductor, pasa por la misma cola **reentrando** en tu turno
+   (si no, esperaría a tu propio `sleep` para siempre):
+   ```bash
+   YALA_SIM_LOCK_HELD=$(cut -f1 ~/Library/Caches/Yala/simulador.lock) \
+     bash qa/scripts/sim-lock.sh -- xcodebuild … test …
+   ```
+   Solo con tu propio turno: el primer campo del lockfile es el token de quien lo tiene ahora.
+4. Al acabar —o si la tanda se corta— **suéltalo**: `kill <pid del paso 1>` y `--estado` dice `OK`.
+   Si la tanda pasa de 2 h, vuelve al paso 1.
+
+`/barrido-qa` y el device QA visual de las recetas de traducción (`qa/prompts/`) piden turno igual.
 
 ## Flujo por ticket
 
@@ -51,6 +78,9 @@ Añade o actualiza la sección `## QA Visual` del ticket con fecha, veredicto, p
 Si el área tiene entrada en `qa/coverage-index.json`, actualiza su `lastVerified` y corre `bash qa/validate-coverage.sh`.
 
 ## Cierre del lote
+
+Suelta el turno del simulador (paso 4 de «Turno del simulador»).
+
 
 Una tabla: ticket · veredicto · qué se vio. Y separa explícitamente **lo que no pudiste verificar aquí** — CloudKit multi-dispositivo, APNs, SIWA/Google, StoreKit real — a una lista de "requiere device físico". Eso no es un FAIL: es otra cola, y mezclarlas es lo que hace que se pierdan.
 

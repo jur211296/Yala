@@ -225,7 +225,8 @@ Repetir validaciones 1–4 y 6 para `YalaWidgets/Resources/ja.lproj/Localizable.
 ## Validación con tests (OBLIGATORIO antes de reportar)
 
 ```bash
-xcodebuild test -scheme Yala -project Yala.xcodeproj \
+bash qa/scripts/sim-lock.sh -- \
+  xcodebuild test -scheme Yala -project Yala.xcodeproj \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
   -only-testing:YalaTests/LocalizationParityTests \
   -only-testing:YalaTests/StringsdictParityTests \
@@ -237,6 +238,10 @@ xcodebuild test -scheme Yala -project Yala.xcodeproj \
 Para confirmar que los caracteres japoneses se renderizan correctamente (no mojibake):
 
 ```bash
+# 0. Pide el turno del simulador y SOSTENLO hasta las capturas: install, idioma y launch
+#    pisan el bundle id de quien esté corriendo tests. Cómo: «Turno del simulador» en
+#    .claude/commands/qa.md (sim-lock.sh -- sleep en segundo plano; al acabar, kill).
+
 # 1. Build Yala Dev con cambios
 xcodebuild -scheme "Yala Dev" -project Yala.xcodeproj \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
@@ -252,6 +257,8 @@ xcrun simctl launch booted com.jurgenschmidt.yala.dev
 # 4. Tomar screenshot de Panel + Records + Profile + Statistics
 agent-device screenshot /tmp/yala-qa-ja-panel.png
 # Verificar: ningún ? ni cuadrado □ en lugar de caracteres
+
+# 5. Suelta el turno: kill del pid del sim-lock del paso 0
 ```
 
 Cualquier `?` o cuadrado en el screenshot indica encoding broken — debes arreglarlo antes de reportar.

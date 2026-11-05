@@ -25,6 +25,12 @@ Todo esto lo haces tú, y se lo cuentas en dos líneas:
    luego TestFlight en el iPhone de QA, luego dos dispositivos, y al final y aparte lo que no pide iPhone (App Store
    Connect, consolas).
 
+6. **Qué deja fuera la tanda**, antes del primer paso:
+   `python3 -I qa/scripts/guion-tanda-check.py --tablero --guion <la tanda que vas a correr> --guion <las demás de la versión>`
+   (sin `--escribir`: aquí solo se lee). Si sale algo en «FUERA», díselo a Jürgen en una línea con el número y
+   los nombres en lenguaje de usuario: esos tickets esperan prueba y la tanda no los trae. Él decide si entran hoy
+   o se apuntan para el próximo barrido; no los metas tú en la tanda por tu cuenta.
+
 Escribe las decisiones del montaje en el `## Paso 0` del encargo.
 
 ## 2. Cómo se le habla

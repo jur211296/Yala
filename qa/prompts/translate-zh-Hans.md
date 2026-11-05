@@ -253,7 +253,8 @@ Repetir validaciones 1–4, 6, 7 para `YalaWidgets/Resources/zh-Hans.lproj/Local
 ## Validación con tests (OBLIGATORIO antes de reportar)
 
 ```bash
-xcodebuild test -scheme Yala -project Yala.xcodeproj \
+bash qa/scripts/sim-lock.sh -- \
+  xcodebuild test -scheme Yala -project Yala.xcodeproj \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
   -only-testing:YalaTests/LocalizationParityTests \
   -only-testing:YalaTests/StringsdictParityTests \
@@ -265,6 +266,10 @@ Debe imprimir `** TEST SUCCEEDED **`.
 ## Device QA visual (CRÍTICO para chino — encoding + tradicionales risk)
 
 ```bash
+# 0. Pide el turno del simulador y SOSTENLO hasta las capturas: install, idioma y launch
+#    pisan el bundle id de quien esté corriendo tests. Cómo: «Turno del simulador» en
+#    .claude/commands/qa.md (sim-lock.sh -- sleep en segundo plano; al acabar, kill).
+
 # 1. Build Yala Dev
 xcodebuild -scheme "Yala Dev" -project Yala.xcodeproj \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
@@ -285,6 +290,8 @@ agent-device screenshot /tmp/yala-qa-zh-records.png
 # - Ningún caracter tradicional 個/這/說/etc.
 # - Espaciado correcto entre chino y números/latín
 # - Punctuación china correcta (， 。 ！ ？)
+
+# 5. Suelta el turno: kill del pid del sim-lock del paso 0
 ```
 
 ## Commit message sugerido

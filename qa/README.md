@@ -5,10 +5,10 @@ Automated QA scripts using [agent-device](https://github.com/callstackincubator/
 ## Tanda pendiente
 
 Los tickets de `tickets/qa/` **no se drenan de uno en uno**: se acumulan y se hacen juntos (decisión del
-owner, 2026-09-03). El guion agrupado por montaje está en **[`guion-tanda.md`](guion-tanda.md)** — hoy
-son 20 tickets en 4 montajes, y siete de ellos comparten los mismos dos teléfonos.
-
-Al mover un ticket a `qa/` o sacarlo de ahí, actualiza también ese guion.
+owner, 2026-09-03). El guion vivo lo escribe `/barrido-qa` en `docs/qa/tanda-qa-jurgen-<versión>-barrido-*.md`;
+[`guion-tanda.md`](guion-tanda.md) es histórico (hasta el 2026-10-04). Lo que espera prueba —`tickets/qa/` y las
+cards «in qa» del tablero— y ninguna tanda nombra lo dice `qa/scripts/guion-tanda-check.py` (receta en
+`/barrido-qa`, §6), que el barrido corre al cerrar y `/qa-guiado` al empezar.
 
 ## Prerequisites
 
