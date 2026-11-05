@@ -1472,6 +1472,8 @@ final class AppBootstrapper {
         GroupTransactionBridge.shared.setContext(nil)
         WidgetGroupsRefresh.shared.setContext(nil)
         GroupNotificationService.shared.setContext(nil)
+        // Una foto de widgets pedida y aún sin hacer leería el contexto que se suelta (`WidgetDataCache.updateCache`).
+        WidgetDataCache.cancelPendingUpdate()
         // Los dos contextos que alimentan a los observers de proceso (los observers NO se retiran: son
         // por-proceso y leen estas propiedades, que el re-bootstrap repone).
         raceCleanerModelContext = nil

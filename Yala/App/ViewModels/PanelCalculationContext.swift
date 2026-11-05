@@ -98,8 +98,8 @@ struct PanelCalculationContext {
     /// Currently selected subcategory filters (by PersistentIdentifier, supports multiple)
     let selectedSubcategoryIDs: Set<PersistentIdentifier>
 
-    /// Currently selected need filter
-    let selectedNeed: SubcategoryNeed?
+    /// Currently selected need filters (a set: Records › Filters admits several)
+    let selectedNeeds: Set<SubcategoryNeed>
 
     /// Subcategories widget category filter
     let subcategoriesWidgetFilter: PersistentIdentifier?

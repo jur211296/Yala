@@ -38,6 +38,11 @@ mostraba 10.000 y Distribución 15.000 — y cuál de las dos enseñaba el Panel
 diseño** (el tap del carrusel, un prefill de formulario, limpiar el filtro). Para filtrar o sumar,
 lee el conjunto.
 
+**Y para PINTAR también (2026-11-04, card 2y7e).** El Panel exponía `selectedNeed = selectedNeeds.first`: el cálculo
+usaba las dos necesidades filtradas desde Registros, pero el chip y el widget de necesidades enseñaban una, y
+Estadísticas la copiaba a un `@State` que con dos no se actualizaba. Ya no hay accessor singular de necesidades: un chip
+por valor y el widget resalta y suma todas (`NeedSelectionLogic`). Lo fija `PanelNeedsSetViewModelTests`.
+
 ## «Es single-select» es una propiedad del escritor, no del estado
 
 `SessionState.toggleAccountFilter` y `toggleCategoryFilter` hacen `removeAll()` antes de insertar,

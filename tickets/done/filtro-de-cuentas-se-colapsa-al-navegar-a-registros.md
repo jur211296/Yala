@@ -1,10 +1,10 @@
 ---
 id: filtro-de-cuentas-se-colapsa-al-navegar-a-registros
-status: backlog
+status: done
 priority: low
 area: statistics
 created: 2026-09-07
-updated: 2026-10-08
+updated: 2026-11-05
 source: barrido del patrón al cerrar panel-colapsa-la-seleccion-de-cuentas-a-la-primera
 ---
 
@@ -70,3 +70,13 @@ solo un accessor con una forma peligrosa, y la regla `.claude/rules/session-filt
 - Categorías: `SessionState.toggleCategoryFilter` y `RecordsFiltersView` son de selección única; ahí no hay bug, solo la forma del accessor.
 
 Triage 2026-10-08: abierto · low → low · la navegación del título usa código muerto y no se alcanza; queda vivo el gemelo de necesidades en el Panel (chip y widget con `.first`), sin efecto en las cifras.
+
+## Hecho (lote P2, 2026-11-05)
+
+- El gemelo de necesidades: el Panel ya no tiene `selectedNeed` (`.first`); expone `selectedNeeds` y el chip sale uno
+  por necesidad, como etiquetas y monedas. El widget de necesidades resalta, suma y compara todas las elegidas
+  (`NeedSelectionLogic`). Tocar una en el widget sigue siendo «ver solo ésta».
+- Mismo patrón encontrado en Estadísticas › Distribución: copiaba la necesidad a un `@State` que con dos no se
+  actualizaba; ahora el widget lee el conjunto de la sesión.
+- `StatisticsViewModel.buildRecordsContext` (código muerto) no se toca: fuera del lote.
+- Tests: `NeedSelectionLogicTests`, `PanelNeedsSetViewModelTests`.

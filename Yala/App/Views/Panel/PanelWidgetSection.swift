@@ -536,7 +536,7 @@ private struct PanelNeedTrendSection: View {
     var body: some View {
         NeedTrendWidget(
             trendPoints: viewModel.needTrendPoints,
-            selectedNeed: viewModel.selectedNeed,
+            selectedNeeds: viewModel.selectedNeeds,
             currencyCode: currencyCode,
             size: mapWidgetSize(size),
             grouping: viewModel.needGrouping,
@@ -571,7 +571,7 @@ private struct PanelNeedTrendSection: View {
                     : viewModel.needTrendPoints
                 NeedTrendWidget(
                     trendPoints: previewPoints,
-                    selectedNeed: nil,
+                    selectedNeeds: [],
                     currencyCode: currencyCode,
                     size: mapWidgetSize(previewSize),
                     grouping: viewModel.needGrouping,

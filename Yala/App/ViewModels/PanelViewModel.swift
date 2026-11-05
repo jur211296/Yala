@@ -250,16 +250,35 @@ final class PanelViewModel {
     /// Whether the app is in background — suppresses recalculation to prevent 0x8BADF00D
     private(set) var isInBackground = false
 
-    /// «¿Está la app activa?» para el freno del recálculo. Costura de test: el `applicationState` del
+    /// «¿Está la app en primer plano?» para el freno del recálculo. Costura de test: el `applicationState` del
     /// host de unit tests no es fiable (molde de `RecalculationDebouncer`). Producción no la toca.
+    ///
+    /// Primer plano, no «activa»: en el arranque en frío la escena sigue `.inactive` hasta la primera activación, y el
+    /// primer cálculo del Panel se tiraba ahí y esperaba a que el arranque terminara (card
+    /// `tablero-el-primer-contenido-del-panel-espera-a-q-h1hy`). El paso a segundo plano —el riesgo del watchdog del
+    /// snapshot, `0x8BADF00D`— lo sigue frenando `setBackground(true)`, que `PanelView` llama ya en `.inactive`; y un
+    /// arranque directo en segundo plano (push silencioso, tarea de fondo) da `.background` y aquí se para.
     @ObservationIgnored
-    var isApplicationActive: @MainActor () -> Bool = { UIApplication.shared.applicationState == .active }
+    var isApplicationInForeground: @MainActor () -> Bool = { UIApplication.shared.applicationState != .background }
+
+    /// Lo que tenía el mundo en la última carga: si no cambió, volver al Panel no recarga (`PanelReloadFreshness`).
+    @ObservationIgnored
+    private var lastLoadStamp: PanelDataStamp?
+
+    /// Un recálculo pedido que se canceló sin correr (salir del Panel en su espera): la próxima vuelta lo hace.
+    @ObservationIgnored
+    private var hasInterruptedWork = false
 
     #if DEBUG
     /// Cuántas veces ha corrido `performCalculation`. Solo para medir: los tests cuentan con él que un
     /// evento produce UN recálculo y no más, y la traza de DEBUG lo imprime con su motivo.
     @ObservationIgnored
     private(set) var debugCalculationRuns = 0
+
+    /// Cuántas esperas de 150 ms se han abierto. Una petición que llega con otra esperando se suma a ella y no abre
+    /// otra: los tests lo cuentan sin depender del reloj (card h1hy).
+    @ObservationIgnored
+    private(set) var debugRecalculationWindowsOpened = 0
     #endif
 
     // MARK: - Loaded Data
@@ -410,6 +429,8 @@ final class PanelViewModel {
 
     func loadData() {
         guard let context = modelContext else { return }
+        // La firma se toma ANTES de leer: un guardado que llegue durante la lectura cuenta como cambio en la vuelta.
+        lastLoadStamp = currentDataStamp()
 
         // Equality checks prevent unnecessary @Observable notifications, which break the
         // loadData → onChange(of: transactions) → recalculateData → loadData feedback loop.
@@ -641,12 +662,11 @@ final class PanelViewModel {
         SessionState.shared.selectedBudgetID
     }
 
-    var selectedNeed: SubcategoryNeed? {
-        get { SessionState.shared.selectedNeeds.first }
-        set {
-            SessionState.shared.selectedNeeds.removeAll()
-            if let n = newValue { SessionState.shared.selectedNeeds.insert(n) }
-        }
+    /// Las necesidades del filtro. Un CONJUNTO: Registros › Filtros admite varias, y con `.first` el chip y el widget
+    /// de necesidades enseñaban una sola (card 2y7e, `NeedSelectionLogic`).
+    var selectedNeeds: Set<SubcategoryNeed> {
+        get { SessionState.shared.selectedNeeds }
+        set { SessionState.shared.selectedNeeds = newValue }
     }
 
     var selectedTags: Set<PersistentIdentifier> {
@@ -1878,7 +1898,7 @@ final class PanelViewModel {
             focusedDate: focusedDate,
             selectedCategoryID: selectedCategoryID,
             selectedSubcategoryIDs: selectedSubcategoryIDs,
-            selectedNeed: selectedNeed,
+            selectedNeeds: selectedNeeds,
             subcategoriesWidgetFilter: subcategoriesWidgetFilter,
             selectedTransactionNatures: selectedTransactionNatures
         )
@@ -2282,7 +2302,7 @@ final class PanelViewModel {
         case .need(let need):
             return SegmentFilterChoice(
                 target: target, name: name, amountText: amountText, membership: membership,
-                showOnly: { [weak self] in self?.selectedNeed = need }
+                showOnly: { [weak self] in self?.selectedNeeds = [need] }
             )
         case .account(let id):
             return SegmentFilterChoice(
@@ -2405,11 +2425,7 @@ final class PanelViewModel {
     }
 
     func toggleNeedFilter(_ need: SubcategoryNeed) {
-        if selectedNeed == need {
-            selectedNeed = nil
-        } else {
-            selectedNeed = need
-        }
+        selectedNeeds = NeedSelectionLogic.toggled(need, in: selectedNeeds)
     }
 
     // MARK: - Exchange Rate Widget Logic
@@ -2642,7 +2658,38 @@ final class PanelViewModel {
 
     /// Cancel any pending recalculation
     func cancelRecalculation() {
+        if recalculateTask != nil { hasInterruptedWork = true }
         recalculateTask?.cancel()
+        recalculateTask = nil
+    }
+
+    /// Volver al Panel (`onAppear`). Recarga y recalcula solo si algo cambió desde la última carga; si no, lo que se ve
+    /// ya es lo que hay: sus observadores siguieron recalculando con el Panel oculto (card
+    /// `tablero-volver-al-panel-lo-recarga-y-recalcula-e-zpgm`). La primera aparición siempre carga.
+    func reloadOnAppearIfStale() {
+        let stale = PanelReloadFreshness.needsReload(
+            lastLoad: lastLoadStamp,
+            now: currentDataStamp(),
+            hasUnsavedChanges: modelContext?.hasChanges ?? true,
+            hasInterruptedWork: hasInterruptedWork
+        )
+        #if DEBUG
+        print("PanelViewModel: volver al Panel → \(stale ? "recarga" : "sin cambios, no recarga")")
+        #endif
+        if stale {
+            reloadAndRecalculate()
+        } else {
+            LoadTimeMarks.ready(.panel)
+        }
+    }
+
+    private func currentDataStamp() -> PanelDataStamp {
+        PanelReloadFreshness.stamp(
+            dataVersion: sessionState?.dataVersion ?? SessionState.shared.dataVersion,
+            storeSaves: StoreSaveCounter.shared.count,
+            now: .now,
+            calendar: .current
+        )
     }
 
     /// Debounced recalculation (150ms) — coalesces rapid onChange cascades.
@@ -2678,14 +2725,25 @@ final class PanelViewModel {
     /// Shared debounce (150ms). `pendingReload` ensures a reload request isn't lost
     /// if a subsequent calculate-only call arrives within the debounce window.
     /// Guarded by isInBackground to prevent 0x8BADF00D during snapshot capture.
+    ///
+    /// La ventana es FIJA desde la primera petición: una petición que llega con un cálculo ya esperando se suma a él y no
+    /// reinicia la espera. Antes cada aviso cancelaba y volvía a esperar 150 ms, y el `incrementDataVersion()` del final
+    /// del arranque retrasaba así el primer contenido del Panel (card `tablero-el-primer-contenido-del-panel-espera-a-q-h1hy`).
+    /// Una ráfaga dentro de la ventana sigue siendo UN cálculo, que corre con todo lo pedido (`pendingReload`).
     private func scheduleRecalculation(reload: Bool) {
         guard !isInBackground else { return }
-        guard isApplicationActive() else { return }
+        guard isApplicationInForeground() else { return }
         if reload { pendingReload = true }
-        recalculateTask?.cancel()
+        hasInterruptedWork = false
+        guard recalculateTask == nil else { return }
+        #if DEBUG
+        debugRecalculationWindowsOpened += 1
+        #endif
         recalculateTask = Task { @MainActor in
             do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
             guard !Task.isCancelled else { return }
+            // Entre aquí y el final no hay ningún `await`: nadie puede sumarse a este cálculo a medias.
+            recalculateTask = nil
             let shouldReload = pendingReload
             pendingReload = false
             if shouldReload {

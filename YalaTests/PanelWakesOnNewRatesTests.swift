@@ -33,7 +33,7 @@ struct PanelWakesOnNewRatesTests {
         let context = try makeTestContext()
         let viewModel = PanelViewModel()
         // El `applicationState` del host de unit tests no es fiable: el freno se inyecta.
-        viewModel.isApplicationActive = { true }
+        viewModel.isApplicationInForeground = { true }
         viewModel.setContext(context, defaultCurrencyCode: "PEN", sessionState: session)
         return viewModel
     }

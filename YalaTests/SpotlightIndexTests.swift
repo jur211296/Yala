@@ -239,8 +239,9 @@ struct SpotlightIndexWiringTests {
     /// El índice vive y muere con la foto de Siri: se reconcilia donde se escribe y se vacía donde se borra.
     @Test func vivesYMuereConLaFotoDeSiri() throws {
         let cache = try Self.code("Yala/Services/WidgetDataCache.swift")
-        let update = try #require(cache.range(of: "static func updateCache(context: ModelContext) {"))
-        let updateBody = cache[update.upperBound...].prefix(1200)
+        // Desde el lote P2 (2026-11-05) `updateCache` solo PIDE la foto; el cuerpo de siempre es `updateCacheNow`.
+        let update = try #require(cache.range(of: "static func updateCacheNow(context: ModelContext) {"))
+        let updateBody = cache[update.upperBound...].prefix(1600)
         #expect(updateBody.contains("SpotlightIndexService.scheduleReconcile(context: context)"))
         let wipeGuard = try #require(updateBody.range(of: "guard !isWipeArmed"))
         let schedule = try #require(updateBody.range(of: "SpotlightIndexService.scheduleReconcile"))

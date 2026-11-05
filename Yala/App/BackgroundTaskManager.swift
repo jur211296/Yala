@@ -187,8 +187,8 @@ final class BackgroundTaskManager {
 
         let context = container.mainContext
 
-        // Update widget cache
-        WidgetDataCache.updateCache(context: context)
+        // Update widget cache — en el acto: la tarea termina enseguida y la foto diferida no llegaría a hacerse.
+        WidgetDataCache.updateCacheNow(context: context)
 
         #if DEBUG
         print("BackgroundTaskManager: Widget cache refreshed in background")
@@ -459,7 +459,7 @@ final class BackgroundTaskManager {
             print("BackgroundTaskManager: [S7-directo] No model container available")
             return
         }
-        WidgetDataCache.updateCache(context: container.mainContext)
+        WidgetDataCache.updateCacheNow(context: container.mainContext)
         print("BackgroundTaskManager: [S7-directo] Widget cache refreshed (gate .run)")
     }
 

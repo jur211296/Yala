@@ -75,6 +75,13 @@ Desde el rediseño 2.2 (S35f, `docs/widgets/AUDITORIA-WIDGETS-2-2.md`). Lo que e
   Lo fija `ControlCenterNewRecordWiringTests`.
 - **Refresco**: `WidgetRefresh.nextDate(after:)` (medianoche o +4 h). Los datos nuevos llegan antes: la app recarga
   todos los widgets en cada `WidgetDataCache.updateCache`.
+- **`updateCache` PIDE la foto, no la hace (2026-11-04, card 1hcz)**: las peticiones de 1 s (`rebuildDelay`) se funden
+  en una reconstrucción, que cuesta ~0,27 s de hilo principal con 2.337 movimientos. La foto es la misma
+  (`updateCacheNow`, el cuerpo de siempre con la puerta del borrado armado). Quien la necesita escrita antes de seguir
+  llama a `updateCacheNow` (las tareas de fondo de `BackgroundTaskManager`) o a `flushPendingUpdate()` (el paso a
+  segundo plano, en `YalaApp.handleScenePhase`). `clearCache` y la suelta del contenedor en un swap la cancelan, y el
+  contexto pendiente va en `weak`: una referencia fuerte retendría el contenedor que el swap comprueba que muere. Un
+  lector EN PROCESO de la foto (Siri) puede ver la de hace un segundo; lo fija `WidgetCacheCoalescingTests`.
 - **Los grupos de la foto los calcula `WidgetGroupsSnapshotBuilder` con las funciones de la app**, nunca una cuenta
   propia: el resumen y los archivados con `globalSummary`, como arriba de la lista; cada fila, con la cabecera del
   detalle de su grupo (`computeGroupHeaderBalance`), que es lo que abre al tocarla, porque la tarjeta de la lista va por

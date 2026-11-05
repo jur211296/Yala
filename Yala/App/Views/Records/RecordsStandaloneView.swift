@@ -154,10 +154,12 @@ struct RecordsStandaloneView: View {
                     isInBackground = true
                     recalculateTask?.cancel()
                 case .active:
-                    guard UIApplication.shared.applicationState == .active else { return }
-                    guard isInBackground else { return }
-                    isInBackground = false
-                    reloadAndRecalculate()
+                    // Con la app aún sin activar, espera a que lo esté en vez de dejar el freno puesto (`ForegroundResume`).
+                    ForegroundResume.whenApplicationActive("registros") {
+                        guard isInBackground else { return }
+                        isInBackground = false
+                        reloadAndRecalculate()
+                    }
                 @unknown default:
                     break
                 }

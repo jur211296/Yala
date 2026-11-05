@@ -388,7 +388,9 @@ struct PanelView: View {
             Task { TransferMigrationService.migratePositiveTransfersIfNeeded(in: modelContext) }
             viewModel.syncFromSessionState(sessionState)
             reconcileAccountsSortOrder()
-            viewModel.reloadAndRecalculate()
+            // Solo si algo cambió desde la última carga: con el Panel oculto sus observadores ya recalcularon
+            // (card `tablero-volver-al-panel-lo-recarga-y-recalcula-e-zpgm`, `PanelReloadFreshness`).
+            viewModel.reloadOnAppearIfStale()
             refreshCloudAdoptMarker()
         }
         .onChange(of: sessionState.dataVersion) { _, _ in refreshCloudAdoptMarker() }
@@ -400,10 +402,12 @@ struct PanelView: View {
             case .background, .inactive:
                 viewModel.setBackground(true)
             case .active:
-                guard UIApplication.shared.applicationState == .active else { return }
-                viewModel.setBackground(false)
-                viewModel.reloadAndRecalculate()
-                refreshCloudAdoptMarker()
+                // Con la app aún sin activar, espera a que lo esté en vez de dejar el freno puesto (`ForegroundResume`).
+                ForegroundResume.whenApplicationActive("panel") {
+                    viewModel.setBackground(false)
+                    viewModel.reloadAndRecalculate()
+                    refreshCloudAdoptMarker()
+                }
             @unknown default:
                 break
             }

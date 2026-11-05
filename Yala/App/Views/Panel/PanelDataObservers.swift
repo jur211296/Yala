@@ -75,7 +75,7 @@ struct PanelDataFilterObservers: ViewModifier {
             .onChange(of: viewModel.focusedDate) {
                 viewModel.recalculateData()
             }
-            .onChange(of: viewModel.selectedNeed) {
+            .onChange(of: viewModel.selectedNeeds) {
                 viewModel.recalculateData()
             }
             .onChange(of: viewModel.subcategoriesWidgetFilter) {

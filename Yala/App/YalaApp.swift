@@ -255,6 +255,9 @@ struct YalaApp: App {
             // Drop transient router intents. Persistence-backed intents
             // re-emit on next .active via handleBecameActive().
             AppRouter.shared.resetTransients()
+            // La foto de los widgets se pide con espera (`WidgetDataCache.updateCache`): iOS puede suspender la app antes
+            // de que venza, y el widget se quedaría sin el último cambio hasta volver a abrir Yala.
+            WidgetDataCache.flushPendingUpdate()
             #if DEBUG
             if UITestHooks.isActive {
                 bootstrapper.uitestWentToBackground = true

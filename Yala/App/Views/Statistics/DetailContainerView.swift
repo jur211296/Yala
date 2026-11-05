@@ -274,9 +274,11 @@ struct DetailContainerView: View {
                     isInBackground = true
                     recalculateTask?.cancel()
                 case .active:
-                    guard UIApplication.shared.applicationState == .active else { return }
-                    isInBackground = false
-                    reloadAndRecalculate()
+                    // Con la app aún sin activar, espera a que lo esté en vez de dejar el freno puesto (`ForegroundResume`).
+                    ForegroundResume.whenApplicationActive("estadisticas") {
+                        isInBackground = false
+                        reloadAndRecalculate()
+                    }
                 @unknown default:
                     break
                 }

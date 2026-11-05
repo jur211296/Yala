@@ -422,11 +422,13 @@ struct GroupsContainerView: View {
                 case .background, .inactive:
                     viewModel.setBackground(true)
                 case .active:
-                    guard UIApplication.shared.applicationState == .active else { return }
-                    viewModel.setBackground(false)
-                    viewModel.reloadAndRecalculate()
-                    // Volver de background es el salto de reloj que hace terminal a una racha de ayer.
-                    refreshAttestTerminalNotice()
+                    // Con la app aún sin activar, espera a que lo esté en vez de dejar el freno puesto (`ForegroundResume`).
+                    ForegroundResume.whenApplicationActive("grupos") {
+                        viewModel.setBackground(false)
+                        viewModel.reloadAndRecalculate()
+                        // Volver de background es el salto de reloj que hace terminal a una racha de ayer.
+                        refreshAttestTerminalNotice()
+                    }
                 @unknown default:
                     break
                 }
