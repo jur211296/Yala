@@ -1,7 +1,12 @@
 import type { OAuthHelpers } from "@cloudflare/workers-oauth-provider";
 
+/** El binding Rate Limiting de Workers (`[[ratelimits]]`), con la forma que documenta Cloudflare. */
+export interface RateLimiter {
+  limit(options: { key: string }): Promise<{ success: boolean }>;
+}
+
 export interface Env {
-  /** "staging" en la fase 0. La página de inicio de sesión solo ofrece email y contraseña en staging. */
+  /** "staging" o "production" (`config.ts` rechaza cualquier otro). El login con contraseña solo existe en staging. */
   ENVIRONMENT: string;
   /** https://<ref>.supabase.co — sin barra final. */
   SUPABASE_URL: string;
@@ -24,6 +29,13 @@ export interface Env {
    * propio token de Claude: leer el KV no los revela.
    */
   OAUTH_KV: KVNamespace;
+  /**
+   * Límites de peticiones (`ratelimit.ts`). Opcionales para los tests y `wrangler dev`; en producción `config.ts` los
+   * exige y sin ellos el Worker no atiende.
+   */
+  RL_BROWSER?: RateLimiter;
+  RL_OAUTH?: RateLimiter;
+  RL_MCP?: RateLimiter;
   /** Lo inyecta la librería en los handlers. */
   OAUTH_PROVIDER?: OAuthHelpers;
 }

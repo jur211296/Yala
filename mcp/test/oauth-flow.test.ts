@@ -95,7 +95,7 @@ describe("lo que recibe Claude no sirve fuera del Worker", () => {
     await callTool(w, tokens.access_token, "listar_categorias");
     await refresh(w, (await register(w)).body.client_id!, tokens.refresh_token); // cliente equivocado: no sale nada
     for (const c of w.supabase.calls) {
-      expect(isAllowedEgress(w.env, c.method, new URL(`https://proyecto.supabase.co${c.path}${c.search}`)), `${c.method} ${c.path}`).toBe(true);
+      expect(isAllowedEgress(w.env, c.method, new URL(`https://proyectoyalatest0001.supabase.co${c.path}${c.search}`)), `${c.method} ${c.path}`).toBe(true);
       expect(c.method === "PUT" || c.method === "PATCH" || c.method === "DELETE").toBe(false);
     }
   });

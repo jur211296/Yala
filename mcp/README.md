@@ -1,10 +1,10 @@
-# mcp/ — conector de Yala para Claude (fase 0, staging)
+# mcp/ — conector de Yala para Claude (staging desplegado; producción lista, sin desplegar)
 
 Un servidor MCP remoto de **solo lectura**. Claude lo usa para leer las finanzas de un usuario en la nube de
 Yala: cuentas y saldos, categorías, movimientos, resumen de un periodo, presupuestos y pagos recurrentes.
 Contexto, decisiones y fases: `docs/exploracion/plugin-claude-mcp.md` (§7 y §8).
 
-- **Worker propio** (`yala-mcp-staging`), separado del gateway: no tiene `GROUPS_ENC_KEY`.
+- **Worker propio** (`yala-mcp-staging`; en producción `yala-mcp-production`), separado del gateway: no tiene `GROUPS_ENC_KEY`.
 - **El servidor OAuth de Claude es este Worker** (`@cloudflare/workers-oauth-provider`), no Supabase. Claude
   recibe un token opaco, atado a `…/mcp`, que no sirve en Supabase. Por qué: el ADR «El conector de Claude emite
   sus propios tokens» (`docs/DECISIONS.md`). Con un token de Supabase en la mano, Claude podía cambiar la cuenta.
@@ -18,7 +18,9 @@ Contexto, decisiones y fases: `docs/exploracion/plugin-claude-mcp.md` (§7 y §8
 
 | Ruta | Qué hace |
 |---|---|
-| `src/index.ts` | El `OAuthProvider`: metadatos, registro, token, revocación y enrutado |
+| `src/index.ts` | El `OAuthProvider`: metadatos, registro, token, revocación y enrutado. Antes, la configuración y los límites por IP |
+| `src/config.ts` | Comprueba la configuración: si está mal (producción contra staging, anon key de otro proyecto, algo PENDIENTE, sin límites), 503 a todo |
+| `src/ratelimit.ts` | Límites de peticiones: por IP en las páginas y en registro/token, por usuario en `/mcp` |
 | `src/authorize.ts` | El permiso por cliente (`/authorize`), el login (`/oauth/consent`) y la vuelta de Supabase |
 | `src/pages.ts` | Las páginas HTML, renderizadas en servidor y sin JavaScript |
 | `src/upstream.ts` | El Worker como cliente OAuth de Supabase: canje, refresh, sesión viva, login de staging |
@@ -31,6 +33,9 @@ Contexto, decisiones y fases: `docs/exploracion/plugin-claude-mcp.md` (§7 y §8
 | `src/toolCore.ts` | El núcleo de las seis (qué leen y qué calculan) y el punto de extensión Pro (`plan`). Lo comparte el gateway para Yala IA en la nube: sin dependencias, ver `gateway/src/ai/explore/` |
 | `src/logic/` | Cálculos portados de Swift; cada fichero cita la función de origen |
 | `plugin/` | Borrador del plugin: `.mcp.json` y tres skills. No publicado |
+| `scripts/preflight-production.mjs` | Lo que comprueba `deploy:production` antes de desplegar |
+| `scripts/sql-produccion.py` | Genera los SQL del hook para producción (id del cliente y guardas md5) |
+| `RUNBOOK-produccion.md` | La salida a producción: pasos, lo que falta crear, coste y marcha atrás |
 
 ## Comandos
 
@@ -38,7 +43,8 @@ Contexto, decisiones y fases: `docs/exploracion/plugin-claude-mcp.md` (§7 y §8
 npm ci
 npm run typecheck
 npm test                 # unitarios, sin red (los corre el CI, job `mcp`): el baile OAuth entero con un Supabase falso
-npm run deploy:staging   # wrangler deploy → https://yala-mcp-staging.misty-surf-6866.workers.dev
+npm run deploy:staging   # wrangler deploy --env="" → https://yala-mcp-staging.misty-surf-6866.workers.dev
+npm run deploy:production  # SOLO Jürgen, por RUNBOOK-produccion.md: preflight y luego wrangler deploy --env production
 
 # E2E contra staging: el baile OAuth entero, las sondas de escritura en /auth/v1/*, las seis herramientas con A y B,
 # refresh y revocación.
@@ -76,7 +82,8 @@ El antes → después de staging y la marcha atrás: `docs/RUNBOOK-staging-ddl.m
 En los dos casos se abre la pantalla de permiso del Worker (*Continuar*). Luego inicias sesión con un usuario de
 prueba de staging, con email y contraseña.
 
-## Antes de producción
+## Producción
 
-No hay entorno de producción en `wrangler.toml` a propósito. Lo que falta está en §7 y §8 del documento de
-exploración, y en `tickets/backlog/claude-mcp-production-auth-hardening.md`.
+`[env.production]` está en `wrangler.toml` y **no está desplegado**: lo despliega Jürgen con
+`npm run deploy:production`, que se niega mientras quede algo PENDIENTE. Pasos, lo que falta crear (KV, cliente de
+Supabase, secreto, hook y configuración de Auth), coste y marcha atrás: `RUNBOOK-produccion.md`.

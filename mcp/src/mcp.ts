@@ -5,6 +5,9 @@
  * 1. Tiene la forma esperada y es del mismo usuario que el token. Si no, 401: falla cerrado.
  * 2. Sigue siendo un token de solo lectura del cliente del Worker, bien firmado y sin caducar. Si no, 401 sin borrar
  *    nada: Claude refresca y el refresh decide.
+ * Entre 1 y 2, el límite de peticiones POR USUARIO (`RL_MCP`, `ratelimit.ts`): por IP ahogaría a todos los usuarios de
+ * claude.ai, que llegan desde las mismas IPs de Anthropic. Va antes de hablar con Supabase, que es lo que cuesta.
+ *
  * 3. Supabase la sigue reconociendo (`GET /auth/v1/user`). Si se revocó el permiso, se borró la cuenta o se
  *    bloqueó, se retira la conexión del Worker y se responde 401: revocar corta AL MOMENTO, no a la hora.
  */
@@ -13,6 +16,7 @@ import { invalidTokenChallenge, type UpstreamVerifier } from "./auth";
 import { auditEvent } from "./audit";
 import type { Env } from "./env";
 import type { Fetcher } from "./egress";
+import { allow, tooManyRequests } from "./ratelimit";
 import { handleMcp } from "./server";
 import { isAccessProps } from "./tokens";
 import { sessionStatus } from "./upstream";
@@ -57,6 +61,7 @@ export async function handleMcpRoute(request: Request, env: Env, ctx: Ctx, deps:
   if (!auth?.userId || !auth.clientId || !isAccessProps(props) || props.sub !== auth.userId) {
     return unauthorized(env, "Token no valido");
   }
+  if (!(await allow(env, "RL_MCP", props.sub))) return tooManyRequests();
 
   const check = await deps.verify(props.access, props.sub);
   if (!check.ok) {

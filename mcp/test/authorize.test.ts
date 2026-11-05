@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { isAllowedRedirect } from "../src/authorize";
 import { escapeHtml } from "../src/pages";
 import { randB64url, sha256b64url } from "./b64";
-import { authorizeUrl, BASE, Browser, register, REDIRECT, world, type World } from "./helpers";
+import { authorizeUrl, BASE, Browser, productionEnv, register, REDIRECT, world, type World } from "./helpers";
 import { USER_A, WORKER_SB_CLIENT } from "./supabase-fake";
 
 const pkce = async () => {
@@ -107,7 +107,7 @@ describe("2 · la decisión (POST /authorize)", () => {
     const res = await c.b.form(`${BASE}/authorize`, { handle: c.handle, decision: "approve" });
     expect(res.status).toBe(302);
     const loc = new URL(res.headers.get("Location")!);
-    expect(loc.origin + loc.pathname).toBe("https://proyecto.supabase.co/auth/v1/oauth/authorize");
+    expect(loc.origin + loc.pathname).toBe("https://proyectoyalatest0001.supabase.co/auth/v1/oauth/authorize");
     expect(loc.searchParams.get("client_id")).toBe(WORKER_SB_CLIENT);
     expect(loc.searchParams.get("redirect_uri")).toBe(`${BASE}/oauth/supabase/callback`);
     expect(loc.searchParams.get("code_challenge_method")).toBe("S256");
@@ -199,7 +199,7 @@ describe("3 y 4 · el login (/oauth/consent)", () => {
   });
 
   it("fuera de staging no hay login con contraseña", async () => {
-    const w = await world({ env: { ENVIRONMENT: "production" } });
+    const w = await world({ env: productionEnv() });
     const { b, authorizationId } = await toLogin(w);
     const res = await b.form(`${BASE}/oauth/consent`, { authorization_id: authorizationId, email: USER_A.email, password: USER_A.password });
     expect(res.status).toBe(403);

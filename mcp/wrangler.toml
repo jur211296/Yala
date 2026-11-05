@@ -1,14 +1,19 @@
 # Yala MCP — conector de solo lectura para Claude. Worker PROPIO, separado del gateway (docs/exploracion/plugin-claude-mcp.md §3):
 # no lleva GROUPS_ENC_KEY, y un deploy suyo no alcanza al sync de la app.
 #
-# FASE 0: solo staging. No hay [env.production] a propósito; el lanzamiento espera a que la nube esté estable (tras 2.1).
+# Dos entornos: staging (el de arriba, `npm run deploy:staging`) y producción (`[env.production]`, abajo). Producción
+# está ESCRITO pero NO desplegado: lo despliega Jürgen con `npm run deploy:production`, que antes comprueba que no
+# quede nada PENDIENTE. Pasos, secretos y marcha atrás: mcp/RUNBOOK-produccion.md.
+#
+# Si la configuración está mal (producción apuntando a staging, anon key de otro proyecto, un id PENDIENTE, sin
+# límites de peticiones…) el Worker no atiende: 503 a todo (src/config.ts).
 #
 # Este Worker es el SERVIDOR OAUTH de Claude (ADR «El conector de Claude emite sus propios tokens», docs/DECISIONS.md):
 # Claude recibe un token opaco del Worker, y el Worker lee con una sesión de Supabase de solo lectura
 # (role = yala_mcp_reader) que consigue como cliente OAuth CONFIDENCIAL de Supabase y guarda cifrada en KV.
 #
-# Secreto (no va aquí): SUPABASE_OAUTH_CLIENT_SECRET, con `wrangler secret put`. Se guarda en
-# ~/Secrets/yala-mcp-staging/supabase-oauth-client.json. La URL de Supabase, la anon key y el id del cliente son públicos.
+# Secreto (no va aquí): SUPABASE_OAUTH_CLIENT_SECRET, con `wrangler secret put` (y `--env production`). Se guarda en
+# ~/Secrets/yala-mcp-staging/supabase-oauth-client.json (producción: ~/Secrets/yala-mcp-production/). La URL de Supabase, la anon key y el id del cliente son públicos.
 
 name = "yala-mcp-staging"
 main = "src/index.ts"
@@ -36,3 +41,66 @@ SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 SUPABASE_OAUTH_CLIENT_ID = "65fb5767-59a5-4f50-b77c-7970e67589c5"
 # Zona por defecto para «este mes» cuando Claude no pasa zona_horaria. El servidor no conoce la del teléfono.
 DEFAULT_TIMEZONE = "America/Lima"
+
+# Límites de peticiones (src/ratelimit.ts). Binding Rate Limiting de Workers: sin coste aparte, contador aproximado
+# por ubicación. Periodo: 10 o 60 s. `namespace_id` es un entero único en la cuenta (el gateway no usa este binding).
+#   RL_BROWSER, por IP: /authorize, /oauth/consent y la vuelta de Supabase (el navegador del usuario).
+#   RL_OAUTH,   por IP y generoso: /oauth/register y /oauth/token (claude.ai llama desde pocas IPs de Anthropic).
+#   RL_MCP,     por usuario: /mcp.
+[[ratelimits]]
+name = "RL_BROWSER"
+namespace_id = "7301"
+simple = { limit = 30, period = 60 }
+
+[[ratelimits]]
+name = "RL_OAUTH"
+namespace_id = "7302"
+simple = { limit = 600, period = 60 }
+
+[[ratelimits]]
+name = "RL_MCP"
+namespace_id = "7303"
+simple = { limit = 120, period = 60 }
+
+# ---------- PRODUCCIÓN — escrito, NO desplegado. Runbook: mcp/RUNBOOK-produccion.md ----------
+# En wrangler, `vars`, `kv_namespaces` y `ratelimits` NO se heredan del nivel de arriba: se repiten aquí enteros.
+# Lo que dice PENDIENTE lo crea Jürgen siguiendo el runbook; `npm run deploy:production` se niega mientras quede uno.
+[env.production]
+name = "yala-mcp-production"
+# Mismo patrón que el gateway de producción (yala-gateway-production.misty-surf-6866.workers.dev). Un dominio propio
+# (mcp.yala-app.pe) exige mover el DNS de yala-app.pe a Cloudflare: hoy está en RCP. Ver el runbook, «Dominio propio».
+workers_dev = true
+
+[env.production.observability]
+enabled = true
+
+[[env.production.kv_namespaces]]
+binding = "OAUTH_KV"
+# `npx wrangler kv namespace create yala-mcp-production-oauth` → su id aquí.
+id = "PENDIENTE-crear-kv-yala-mcp-production-oauth"
+
+[env.production.vars]
+ENVIRONMENT = "production"
+PUBLIC_URL = "https://yala-mcp-production.misty-surf-6866.workers.dev"
+# Supabase PRODUCCIÓN (proyecto kefvaiymtgytemwbltlz), las mismas URL y anon key que el gateway de producción.
+SUPABASE_URL = "https://kefvaiymtgytemwbltlz.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlZnZhaXltdGd5dGVtd2JsdGx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3OTg0MDYsImV4cCI6MjA5OTM3NDQwNn0.H8P3-kNUjeK8CTNZHwhfkqwqeflrNXLGvNa7OGGXkAk"
+# El cliente OAuth CONFIDENCIAL del Worker en Supabase producción. Se registra en el runbook (paso 3); el mismo id va
+# en el hook de producción (mcp0_02/mcp0_03 con este id).
+SUPABASE_OAUTH_CLIENT_ID = "PENDIENTE-registrar-cliente-oauth-en-supabase-produccion"
+DEFAULT_TIMEZONE = "America/Lima"
+
+[[env.production.ratelimits]]
+name = "RL_BROWSER"
+namespace_id = "7311"
+simple = { limit = 30, period = 60 }
+
+[[env.production.ratelimits]]
+name = "RL_OAUTH"
+namespace_id = "7312"
+simple = { limit = 600, period = 60 }
+
+[[env.production.ratelimits]]
+name = "RL_MCP"
+namespace_id = "7313"
+simple = { limit = 120, period = 60 }

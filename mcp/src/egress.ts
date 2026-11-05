@@ -10,7 +10,8 @@
  *
  * Lo permitido, y para qué:
  * - PostgREST: solo `GET` a una tabla. `/rest/v1/rpc/*` no cabe en el patrón.
- * - Auth, con la sesión web de la pantalla de login (staging): iniciar sesión con contraseña, leer y aprobar la
+ * - Auth, con la sesión web de la pantalla de login: iniciar sesión con contraseña (SOLO con `ENVIRONMENT = staging`;
+ *   en cualquier otro entorno, o sin entorno, se niega aquí además de en `authorize.ts`), leer y aprobar la
  *   autorización OAuth que el propio Worker pidió, y cerrar esa sesión (`scope=local`).
  * - Auth, como cliente OAuth del Worker: canjear el código y refrescar.
  * - Auth, con la sesión de solo lectura: `GET /user`, para saber si sigue viva (revocación al momento).
@@ -35,6 +36,8 @@ interface Rule {
   /** Si está, la query tiene que cumplirla. Si no está, la query tiene que venir vacía… salvo en PostgREST. */
   query?: (q: URLSearchParams) => boolean;
   anyQuery?: boolean;
+  /** Solo se permite si el entorno es staging. Falla cerrado: sin `ENVIRONMENT` (el gateway) tampoco. */
+  stagingOnly?: boolean;
 }
 
 const onlyParam = (name: string, value: string) => (q: URLSearchParams) =>
@@ -44,7 +47,7 @@ const AUTH_ID = "[A-Za-z0-9_-]{8,128}";
 
 export const EGRESS_RULES: readonly Rule[] = [
   { method: "GET", path: /^\/rest\/v1\/[a-z_]+$/, anyQuery: true },
-  { method: "POST", path: /^\/auth\/v1\/token$/, query: onlyParam("grant_type", "password") },
+  { method: "POST", path: /^\/auth\/v1\/token$/, query: onlyParam("grant_type", "password"), stagingOnly: true },
   { method: "GET", path: new RegExp(`^/auth/v1/oauth/authorizations/${AUTH_ID}$`) },
   { method: "POST", path: new RegExp(`^/auth/v1/oauth/authorizations/${AUTH_ID}/consent$`) },
   { method: "POST", path: /^\/auth\/v1\/oauth\/token$/ },
@@ -61,8 +64,10 @@ function describe(input: Request | string | URL, init?: RequestInit): { method: 
 export function isAllowedEgress(env: SupabaseEnv, method: string, url: URL): boolean {
   if (url.origin !== new URL(env.SUPABASE_URL).origin) return false;
   if (url.username || url.password || url.hash) return false;
+  const staging = (env as SupabaseEnv & { ENVIRONMENT?: string }).ENVIRONMENT === "staging";
   return EGRESS_RULES.some((r) => {
     if (r.method !== method || !r.path.test(url.pathname)) return false;
+    if (r.stagingOnly && !staging) return false;
     if (r.anyQuery) return true;
     if (r.query) return r.query(url.searchParams);
     return [...url.searchParams.keys()].length === 0;

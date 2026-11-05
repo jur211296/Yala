@@ -1,10 +1,10 @@
 ---
 id: claude-mcp-production-auth-hardening
-status: backlog
+status: in-progress
 priority: medium
 area: cloud
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-11-04
 source: encargo 2026-09-26-claude-mcp-oauth-token-can-change-the-account (residual, fase 1)
 ---
 
@@ -54,3 +54,25 @@ producción hay que hacer las dos cosas.
 
 - `mcp/test/e2e/oauth.e2e.test.ts` en verde contra producción, con una cuenta de prueba de producción.
 - Con el proveedor de email apagado, `POST /auth/v1/token?grant_type=password` da error aunque la contraseña exista.
+
+## Hecho en el repo (2026-11-04) — espera a Jürgen para producción
+
+Lo que se podía hacer sin acceso a producción está hecho y probado; el resto es el runbook
+`mcp/RUNBOOK-produccion.md`, que lo despliega Jürgen tras el login con Apple y Google.
+
+- **El punto 7 está hecho:** `[env.production]` en `mcp/wrangler.toml` (Worker `yala-mcp-production`, Supabase
+  `kefvaiymtgytemwbltlz`, su KV y sus límites). Quedan dos valores PENDIENTE: el id del KV y el del cliente.
+- **`npm run deploy:production`** corre antes un preflight (`mcp/scripts/preflight-production.mjs`) que se niega
+  mientras quede algo PENDIENTE, falte el secreto o fallen typecheck o tests.
+- **La configuración falla cerrado** (`mcp/src/config.ts`): producción contra el Supabase de staging, la anon key de
+  otro proyecto, un id PENDIENTE o sin límites de peticiones → 503 a todo y un log `config_invalida`.
+- **Límites de peticiones** (`mcp/src/ratelimit.ts`, pendiente de §7): por IP en las páginas y en registro/token, por
+  usuario en `/mcp`.
+- **El login con contraseña solo sale en staging**, ahora también en la lista de salidas (`egress.ts`).
+- **Los SQL del hook para producción** se generan con `mcp/scripts/sql-produccion.py <client_id>`: cambia el id y
+  recalcula las guardas por md5 (con el id cambiado a mano, `mcp0_03` abortaba). Verificado contra los md5 medidos en
+  staging.
+- Tests: `mcp/test/hardening.test.ts` y `mcp/test/production-config.test.ts`; 11 mutantes del endurecimiento, todos
+  cazados.
+
+**Lo que sigue (Jürgen):** los pasos 1–10 del runbook. Los puntos 1–6 de arriba son sus pasos 3, 5, 6 y 8.
