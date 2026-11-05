@@ -362,7 +362,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | dormant-convergence-request-from-a-groups-only-wipe | backlog | tickets/backlog/dormant-convergence-request-from-a-groups-only-wipe.md |
 | dos-criterios-de-aproximado-en-la-misma-pantalla | done | tickets/done/dos-criterios-de-aproximado-en-la-misma-pantalla.md |
 | drain-duplicates-the-unit-clock-when-its-row-cannot-be-read | done | tickets/done/drain-duplicates-the-unit-clock-when-its-row-cannot-be-read.md |
-| drained-intent-that-presents-nothing-may-strand-the-next | backlog | tickets/backlog/drained-intent-that-presents-nothing-may-strand-the-next.md |
+| drained-intent-that-presents-nothing-may-strand-the-next | done | tickets/done/drained-intent-that-presents-nothing-may-strand-the-next.md |
 | drained-notice-lets-the-next-intent-drain-before-the-matrix-blocks | done | tickets/done/drained-notice-lets-the-next-intent-drain-before-the-matrix-blocks.md |
 | dry-run-del-avisador-envia-igual | backlog | tickets/backlog/dry-run-del-avisador-envia-igual.md |
 | duplicate-exchange-rate-rows-pick-an-arbitrary-rate | backlog | tickets/backlog/duplicate-exchange-rate-rows-pick-an-arbitrary-rate.md |
@@ -390,7 +390,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | export-anchor-accepts-events-from-any-container | backlog | tickets/backlog/export-anchor-accepts-events-from-any-container.md |
 | export-errors-are-hardcoded-in-spanish | done | tickets/done/export-errors-are-hardcoded-in-spanish.md |
 | export-file-insides-still-say-transacciones | backlog | tickets/backlog/export-file-insides-still-say-transacciones.md |
-| export-filters-reset-when-the-text-size-changes | backlog | tickets/backlog/export-filters-reset-when-the-text-size-changes.md |
+| export-filters-reset-when-the-text-size-changes | done | tickets/done/export-filters-reset-when-the-text-size-changes.md |
 | export-filters-say-1-seleccionadas | backlog | tickets/backlog/export-filters-say-1-seleccionadas.md |
 | export-hide-mode-with-the-defaults-exports-nothing | done | tickets/done/export-hide-mode-with-the-defaults-exports-nothing.md |
 | export-import-carry-record-kind-and-transfer-pair | backlog | tickets/backlog/export-import-carry-record-kind-and-transfer-pair.md |
@@ -918,7 +918,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reopened-balance-calculator-reads-a-grouped-amount-as-zero | done | tickets/done/reopened-balance-calculator-reads-a-grouped-amount-as-zero.md |
 | repair-queue-has-no-exit-for-partial-rate-rows | done | tickets/done/repair-queue-has-no-exit-for-partial-rate-rows.md |
 | reparacion-de-tasas-no-avisa-al-panel | done | tickets/done/reparacion-de-tasas-no-avisa-al-panel.md |
-| report-grouping-sheet-row-center-does-not-respond | backlog | tickets/backlog/report-grouping-sheet-row-center-does-not-respond.md |
+| report-grouping-sheet-row-center-does-not-respond | done | tickets/done/report-grouping-sheet-row-center-does-not-respond.md |
 | rescue-discarded-groups-pull | discarded | tickets/discarded/rescue-discarded-groups-pull.md |
 | resolved-amount-trusts-a-zero-converted-amount | done | tickets/done/resolved-amount-trusts-a-zero-converted-amount.md |
 | restore-back-and-reenter-closes-the-live-session-window | done | tickets/done/restore-back-and-reenter-closes-the-live-session-window.md |
