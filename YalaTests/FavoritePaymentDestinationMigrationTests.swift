@@ -62,9 +62,7 @@ struct FavoritePaymentDestinationMigrationTests {
             .appendingPathComponent("FavDestMigration-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer {
-            do { try FileManager.default.removeItem(at: directory) } catch {
-                print("FavoritePaymentDestinationMigrationTests: Error: limpiar el directorio: \(error)")
-            }
+            discardTestStoreDirectory(directory)
         }
         let url = directory.appendingPathComponent("Yala.store")
 

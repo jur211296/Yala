@@ -26,7 +26,7 @@ struct PanelSectionPreferencesTests {
 
     private static func makeSuite() -> UserDefaults {
         let suiteName = "PanelSectionPreferencesTests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
+        let defaults = testDefaults(suiteName: suiteName)!
         // Seed sentinel para evitar que corra la migration y toque UserDefaults.standard.
         defaults.set(true, forKey: AppPreferences.Keys.panelPrefsMigratedV2)
         return defaults

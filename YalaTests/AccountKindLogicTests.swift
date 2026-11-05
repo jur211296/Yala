@@ -126,7 +126,7 @@ struct AccountKindStoreTests {
 
     private func almacenLimpio() -> (AccountKindStore, UserDefaults) {
         let suite = "test.accountkind.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suite)!
+        let defaults = testDefaults(suiteName: suite)!
         return (AccountKindStore(defaults: defaults), defaults)
     }
 

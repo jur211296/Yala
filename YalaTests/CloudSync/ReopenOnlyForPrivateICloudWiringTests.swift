@@ -180,7 +180,7 @@ struct WelcomeGroupsGateDestinationTests {
     private func withIsolatedResumeStore(_ body: () -> Void) {
         let suite = "WelcomeGroupsGateDestinationTests.\(UUID().uuidString)"
         let previous = GroupInviteResumeStore.defaults
-        let defaults = UserDefaults(suiteName: suite)!
+        let defaults = testDefaults(suiteName: suite)!
         GroupInviteResumeStore.defaults = defaults
         defer {
             GroupInviteResumeStore.defaults = previous

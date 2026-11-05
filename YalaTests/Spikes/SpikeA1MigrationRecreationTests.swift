@@ -140,7 +140,7 @@ struct SpikeA1MigrationRecreationTests {
     }
 
     private func cleanup(_ url: URL) {
-        try? FileManager.default.removeItem(at: url.deletingLastPathComponent())
+        discardTestStoreDirectory(url.deletingLastPathComponent())
     }
 
     /// Abre V1, inserta filas, SALVA y suelta el container (scope local → ARC lo libera).

@@ -50,7 +50,7 @@ struct InboxGroupDraftHiddenHereLogicTests {
 struct InboxGroupDraftsHiddenHereStoreTests {
 
     private func defaults() -> UserDefaults {
-        UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+        testDefaults(suiteName: "test.\(UUID().uuidString)")!
     }
 
     /// El borrador que deja «Sumarlos a mis datos»: un gasto de grupo de un grupo que no está en este teléfono.

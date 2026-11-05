@@ -40,13 +40,7 @@ struct OpeningBalanceOrphanSharesTests {
     }
 
     private func cleanup(_ dir: URL) {
-        do {
-            try FileManager.default.removeItem(at: dir)
-        } catch {
-            #if DEBUG
-            print("OpeningBalanceOrphanSharesTests: cleanup: \(error)")
-            #endif
-        }
+        discardTestStoreDirectory(dir)
     }
 
     private func makeContext(_ dir: URL) throws -> ModelContext {
@@ -67,7 +61,7 @@ struct OpeningBalanceOrphanSharesTests {
 
     private func withIsolatedLedger(_ body: () throws -> Void) throws {
         let previous = GroupsRejectedOpeningBalanceLedger.defaults
-        GroupsRejectedOpeningBalanceLedger.defaults = try #require(UserDefaults(suiteName: "test.obo.\(UUID().uuidString)"))
+        GroupsRejectedOpeningBalanceLedger.defaults = try #require(testDefaults(suiteName: "test.obo.\(UUID().uuidString)"))
         defer { GroupsRejectedOpeningBalanceLedger.defaults = previous }
         try body()
     }

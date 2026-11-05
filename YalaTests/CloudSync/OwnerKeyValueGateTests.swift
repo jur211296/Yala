@@ -111,7 +111,7 @@ struct OwnerKeyValueGateTests {
         @Test("seis celdas leídas de un UserDefaults de verdad", arguments: OwnerKeyValueGateTests.cells)
         func readsBothMarks(_ cell: OwnerKeyValuePhoneCell) throws {
             let name = "test.ownerKeyValueGate.\(UUID().uuidString)"
-            let defaults = try #require(UserDefaults(suiteName: name))
+            let defaults = try #require(testDefaults(suiteName: name))
             defer { defaults.removePersistentDomain(forName: name) }
             if cell.groupsOnlyAltaStarted { StorageModePersistence.armGroupsOnlyNeutralMount(defaults) }
             if let mark = cell.privateMark { PrivateSessionMark.set(mark, defaults) }
@@ -221,7 +221,7 @@ struct OwnerKeyValueGateTests {
         @Test("la puerta se resuelve en CADA llamada, con el proceso vivo")
         func decisionIsResolvedPerCall() throws {
             let name = "test.ownerKeyValueGate.live.\(UUID().uuidString)"
-            let defaults = try #require(UserDefaults(suiteName: name))
+            let defaults = try #require(testDefaults(suiteName: name))
             defer { defaults.removePersistentDomain(forName: name) }
             let spy = SpyStore()
             let sut = OwnerKeyValueStore(backing: spy, decision: { OwnerKeyValueGate.current(defaults) })

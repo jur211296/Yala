@@ -16,7 +16,7 @@ import Testing
 struct RecordRowAccessibilityCurrencyTests {
 
     private func makePrefs() throws -> AppPreferences {
-        let defaults = try #require(UserDefaults(suiteName: "RecordRowAccessibilityCurrencyTests.\(UUID().uuidString)"))
+        let defaults = try #require(testDefaults(suiteName: "RecordRowAccessibilityCurrencyTests.\(UUID().uuidString)"))
         let prefs = AppPreferences(defaults: defaults)
         prefs.defaultCurrencyCode = .pen
         prefs.currencyDisplayFormat = .symbol

@@ -43,12 +43,12 @@ struct GroupsDetachQuiescenceWindowTests {
         return dir
     }
 
-    private func cleanup(_ dir: URL) { try? FileManager.default.removeItem(at: dir) }
+    private func cleanup(_ dir: URL) { discardTestStoreDirectory(dir) }
 
     /// `UserDefaults` aislado: el host de los unit tests es la propia app, y el libro de conservados escrito en
     /// `.standard` sobreviviría a la corrida.
     private func isolatedDefaults(_ name: String) -> UserDefaults {
-        let defaults = UserDefaults(suiteName: name)!
+        let defaults = testDefaults(suiteName: name)!
         defaults.removePersistentDomain(forName: name)
         return defaults
     }

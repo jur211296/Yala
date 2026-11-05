@@ -56,7 +56,7 @@ struct SpikeA1HistoryTokenTests {
     }
 
     private func cleanup(_ url: URL) {
-        try? FileManager.default.removeItem(at: url.deletingLastPathComponent())
+        discardTestStoreDirectory(url.deletingLastPathComponent())
     }
 
     /// ¿La history está disponible del todo en este store on-disk? (control positivo).

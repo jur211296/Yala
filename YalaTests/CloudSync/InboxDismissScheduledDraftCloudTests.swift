@@ -93,7 +93,7 @@ struct InboxDismissScheduledDraftCloudTests {
 
     @Test func theOtherPhonesDraft_arrivingThroughTheCloud_isArchived_notShownAgain() throws {
         let dirA = freshDir(), dirB = freshDir()
-        defer { try? FileManager.default.removeItem(at: dirA); try? FileManager.default.removeItem(at: dirB) }
+        defer { discardTestStoreDirectory(dirA); discardTestStoreDirectory(dirB) }
         let a = try makeContext(dirA), b = try makeContext(dirB)
         let paymentID = UUID()
 
@@ -129,7 +129,7 @@ struct InboxDismissScheduledDraftCloudTests {
 
     @Test func theOtherPhone_receivingTheSkipThroughTheCloud_archivesItsOwnDraft() throws {
         let dirA = freshDir(), dirB = freshDir()
-        defer { try? FileManager.default.removeItem(at: dirA); try? FileManager.default.removeItem(at: dirB) }
+        defer { discardTestStoreDirectory(dirA); discardTestStoreDirectory(dirB) }
         let a = try makeContext(dirA), b = try makeContext(dirB)
         let paymentID = UUID()
 

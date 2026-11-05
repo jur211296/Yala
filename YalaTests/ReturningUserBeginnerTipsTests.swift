@@ -17,7 +17,7 @@ import Testing
 struct ReturningUserBeginnerTipsTests {
 
     private func isolatedDefaults() throws -> UserDefaults {
-        try #require(UserDefaults(suiteName: "ReturningUserBeginnerTipsTests.\(UUID().uuidString)"))
+        try #require(testDefaults(suiteName: "ReturningUserBeginnerTipsTests.\(UUID().uuidString)"))
     }
 
     private let entrada = Date(timeIntervalSince1970: 1_800_000_000)

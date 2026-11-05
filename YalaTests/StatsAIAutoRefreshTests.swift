@@ -162,7 +162,7 @@ struct StatsAIAutoRefreshLogicTests {
 struct StatsAIAutoRefreshStoreTests {
 
     private func store() -> StatsAIAutoRefreshStore {
-        StatsAIAutoRefreshStore(defaults: UserDefaults(suiteName: "test.\(UUID().uuidString)")!)
+        StatsAIAutoRefreshStore(defaults: testDefaults(suiteName: "test.\(UUID().uuidString)")!)
     }
 
     private let snapshot = StatsAIAutoRefreshLogic.Snapshot(transactionCount: 5, totals: [1])
@@ -204,7 +204,7 @@ struct StatsAIAutoRefreshStoreTests {
 
     @Test("«Vaciar datos» borra las dos claves que el almacén escribe")
     func wipeKnowsTheKeys() throws {
-        let defaults = UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+        let defaults = testDefaults(suiteName: "test.\(UUID().uuidString)")!
         let store = StatsAIAutoRefreshStore(defaults: defaults)
         store.save(["x"], page: .summary, slot: "A", fingerprint: "f", snapshot: snapshot)
         store.recordGeneration(page: .summary, slot: "A", automatic: true)
@@ -278,7 +278,7 @@ struct TrendsAIAutoRefreshTests {
     }
 
     private func store() -> StatsAIAutoRefreshStore {
-        StatsAIAutoRefreshStore(defaults: UserDefaults(suiteName: "test.\(UUID().uuidString)")!)
+        StatsAIAutoRefreshStore(defaults: testDefaults(suiteName: "test.\(UUID().uuidString)")!)
     }
 
     @Test("Sin Pro o sin consentimiento: ninguna llamada")

@@ -166,7 +166,7 @@ struct PrivateSessionAppleIDWitnessTests {
     /// determinista el dominio queda escrito en disco entre corridas, y los dos hosts del scheme
     /// comparten prefs.
     private func makeDefaults() -> UserDefaults {
-        UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+        testDefaults(suiteName: "test.\(UUID().uuidString)")!
     }
 
     @Test("Ausente ⇒ nil; adoptado ⇒ se lee; limpiado ⇒ vuelve a nil")

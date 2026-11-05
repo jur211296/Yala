@@ -46,7 +46,7 @@ struct YalaIACloudExploreConsentTests {
 
     @Test("la respuesta se guarda con su formato y se puede borrar")
     func storeRoundTrip() throws {
-        let defaults = try #require(UserDefaults(suiteName: "test.\(UUID().uuidString)"))
+        let defaults = try #require(testDefaults(suiteName: "test.\(UUID().uuidString)"))
         #expect(YalaIACloudExploreConsentStore.read(defaults) == nil)
         YalaIACloudExploreConsentStore.write(.accepted, defaults)
         #expect(defaults.string(forKey: "aiCloudExploreConsent") == "accepted")
@@ -59,14 +59,14 @@ struct YalaIACloudExploreConsentTests {
 
     @Test("un valor que no se entiende cuenta como «sin preguntar», nunca como aceptado")
     func unknownValueIsNotAccepted() throws {
-        let defaults = try #require(UserDefaults(suiteName: "test.\(UUID().uuidString)"))
+        let defaults = try #require(testDefaults(suiteName: "test.\(UUID().uuidString)"))
         defaults.set("yes", forKey: AppPreferences.Keys.aiCloudExploreConsent)
         #expect(YalaIACloudExploreConsentStore.read(defaults) == nil)
     }
 
     @Test("AppPreferences lee y escribe la misma key que la ruta")
     func appPreferencesSharesTheKey() throws {
-        let defaults = try #require(UserDefaults(suiteName: "test.\(UUID().uuidString)"))
+        let defaults = try #require(testDefaults(suiteName: "test.\(UUID().uuidString)"))
         defaults.set("accepted", forKey: AppPreferences.Keys.aiCloudExploreConsent)
         let prefs = AppPreferences(defaults: defaults)
         #expect(prefs.aiCloudExploreConsent == .accepted)
@@ -77,7 +77,7 @@ struct YalaIACloudExploreConsentTests {
     // MARK: - En el chat
 
     private func makeChat(available: Bool) throws -> (ChatAssistantViewModel, UserDefaults) {
-        let defaults = try #require(UserDefaults(suiteName: "test.\(UUID().uuidString)"))
+        let defaults = try #require(testDefaults(suiteName: "test.\(UUID().uuidString)"))
         let vm = ChatAssistantViewModel(defaults: defaults, cloudExploreAvailable: { available })
         vm.setContext(try makeTestContext(), autoLoadSuggestions: false)
         return (vm, defaults)
@@ -112,7 +112,7 @@ struct YalaIACloudExploreConsentTests {
 
     @Test("con una respuesta guardada N1 no vuelve a salir", arguments: [YalaIACloudExploreConsent.accepted, .declined])
     func answeredN1DoesNotShowAgain(consent: YalaIACloudExploreConsent) throws {
-        let defaults = try #require(UserDefaults(suiteName: "test.\(UUID().uuidString)"))
+        let defaults = try #require(testDefaults(suiteName: "test.\(UUID().uuidString)"))
         YalaIACloudExploreConsentStore.write(consent, defaults)
         #expect(!YalaIAChatRouteLogic.needsCloudExploreConsentPrompt(
             available: true, consent: YalaIACloudExploreConsentStore.read(defaults)

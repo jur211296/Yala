@@ -70,7 +70,7 @@ struct SystemSubcategoryLegacyNameTests {
         context.insert(sub)
         try context.save()
         let suite = "bxds-\(UUID().uuidString)"
-        let defaults = try #require(UserDefaults(suiteName: suite))
+        let defaults = try #require(testDefaults(suiteName: suite))
         return (context, category, defaults)
     }
 

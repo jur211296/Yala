@@ -30,7 +30,7 @@ struct PrivateSessionMarkTests {
 
         init() {
             name = "test.privateSessionMark.\(UUID().uuidString)"
-            defaults = UserDefaults(suiteName: name)!
+            defaults = testDefaults(suiteName: name)!
         }
 
         deinit {

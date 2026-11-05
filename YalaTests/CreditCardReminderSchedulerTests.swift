@@ -41,7 +41,7 @@ struct CreditCardReminderSchedulerTests {
     private func makeScheduler(context: ModelContext, sendResult: Bool = true, quiescent: Bool = true)
         -> (CreditCardReminderScheduler, Log) {
         let scheduler = CreditCardReminderScheduler(
-            tracker: ScheduledPaymentNotificationTracker(defaults: UserDefaults(suiteName: "cc.\(UUID().uuidString)")!))
+            tracker: ScheduledPaymentNotificationTracker(defaults: testDefaults(suiteName: "cc.\(UUID().uuidString)")!))
         scheduler.setContext(context)
         let log = Log()
         scheduler.isAuthorizedOverride = { true }

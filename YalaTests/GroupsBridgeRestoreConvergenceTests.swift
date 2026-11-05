@@ -139,14 +139,7 @@ struct GroupsBridgeRestoreConvergenceBehaviourTests {
     }
 
     private func cleanup(_ dir: URL) {
-        do {
-            try FileManager.default.removeItem(at: dir)
-        } catch {
-            // Un temporal que no se pudo borrar no invalida el caso.
-            #if DEBUG
-            print("GroupsBridgeRestoreConvergenceTests: cleanup: \(error)")
-            #endif
-        }
+        discardTestStoreDirectory(dir)
     }
 
     private func makeContext(_ dir: URL) throws -> ModelContext {

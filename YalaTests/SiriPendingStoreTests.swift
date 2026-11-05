@@ -15,7 +15,7 @@ struct SiriPendingStoreTests {
 
     /// UserDefaults aislado por test (regla del proyecto — nunca .standard).
     private func makeDefaults() -> UserDefaults {
-        UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+        testDefaults(suiteName: "test.\(UUID().uuidString)")!
     }
 
     private func parsed(_ amount: Decimal?, note: String = "café", isExpense: Bool = true) -> ParsedTransaction {

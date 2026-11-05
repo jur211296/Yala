@@ -166,7 +166,7 @@ struct ForeignSheetNoticesQueueTests {
     func diferibleSinFuente_sobreviveAlSegundoPlano(_ notice: RouterIntent) {
         let router = freshRouter()
         defer { router._testReset() }
-        let buffer = DeferredIntentBuffer(defaults: UserDefaults(suiteName: "test.\(UUID().uuidString)")!)
+        let buffer = DeferredIntentBuffer(defaults: testDefaults(suiteName: "test.\(UUID().uuidString)")!)
 
         router.enqueue(notice)
         router.resetTransients(parkingIn: buffer)
@@ -186,7 +186,7 @@ struct ForeignSheetNoticesQueueTests {
     @Test func diferibleConFuente_noSeAparca() {
         let router = freshRouter()
         defer { router._testReset() }
-        let buffer = DeferredIntentBuffer(defaults: UserDefaults(suiteName: "test.\(UUID().uuidString)")!)
+        let buffer = DeferredIntentBuffer(defaults: testDefaults(suiteName: "test.\(UUID().uuidString)")!)
 
         router.enqueue(.presentTrialExpired)
         router.enqueue(.presentDowngradeResolution)

@@ -112,7 +112,7 @@ struct PrivateGateHalfwayWipeFlagsTests {
     private func freshDefaults(_ name: String = #function) throws -> UserDefaults {
         let suite = "test.privateGateHalfway.\(name).\(UUID().uuidString)"
         UserDefaults().removePersistentDomain(forName: suite)
-        return try #require(UserDefaults(suiteName: suite))
+        return try #require(testDefaults(suiteName: suite))
     }
 
     /// **El recorrido del ticket.** Borrado armado, zona borrada, falla lo del teléfono, la persona sale: con el

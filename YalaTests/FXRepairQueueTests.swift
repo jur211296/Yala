@@ -429,7 +429,7 @@ struct FXRepairQueueOutboxTests {
     /// Reescribir una columna del grupo `money` con su MISMO valor: ¿emite?
     @Test func identicalRewriteOfMoneyColumn_versusRealChange() throws {
         let dir = freshDir()
-        defer { try? FileManager.default.removeItem(at: dir) }
+        defer { discardTestStoreDirectory(dir) }
         let context = try makeContext(dir)
 
         let tx = TransactionItem(

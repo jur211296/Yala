@@ -85,7 +85,7 @@ struct PanelCreateCategoriesTests {
     /// Las categorías sistema de Grupos no se eligen al registrar: no cuentan como «ya tiene categorías».
     @Test func peticion_conSoloCategoriasSistema_siembra() throws {
         let context = try makeTestContext()
-        let defaults = try #require(UserDefaults(suiteName: "test.\(UUID().uuidString)"))
+        let defaults = try #require(testDefaults(suiteName: "test.\(UUID().uuidString)"))
         seedSystemGroupCategoriesIfNeeded(in: context, defaults: defaults)
         let systemCategories = try context.fetchCount(
             FetchDescriptor<Yala.Category>(predicate: #Predicate { $0.isSystem }))
@@ -115,7 +115,7 @@ struct PanelCreateCategoriesTests {
     /// elegir y sin el «Crear categorías» (el caso de Jürgen, con grupos, tras vaciar el 27-oct).
     @Test func soloSubcategoriasSistemaDeGrupos_noCuentanParaRegistrar() throws {
         let context = try makeTestContext()
-        let defaults = try #require(UserDefaults(suiteName: "test.\(UUID().uuidString)"))
+        let defaults = try #require(testDefaults(suiteName: "test.\(UUID().uuidString)"))
         seedSystemGroupCategoriesIfNeeded(in: context, defaults: defaults)
         let subcategories = try context.fetch(FetchDescriptor<Subcategory>())
         // Control: el escenario existe — hay subcategorías y alguna es visible.
@@ -128,7 +128,7 @@ struct PanelCreateCategoriesTests {
 
     @Test func trasSembrarLasRecomendadas_hayAlgoQueElegir() throws {
         let context = try makeTestContext()
-        let defaults = try #require(UserDefaults(suiteName: "test.\(UUID().uuidString)"))
+        let defaults = try #require(testDefaults(suiteName: "test.\(UUID().uuidString)"))
         seedSystemGroupCategoriesIfNeeded(in: context, defaults: defaults)
         try withStaleSentinel {
             #expect(seedDefaultCategoriesOnUserRequest(in: context))

@@ -43,7 +43,7 @@ struct SpikeA1MirrorOrderingTests {
     }
 
     private func cleanup(_ url: URL) {
-        try? FileManager.default.removeItem(at: url.deletingLastPathComponent())
+        discardTestStoreDirectory(url.deletingLastPathComponent())
     }
 
     // MARK: - Q3.1 · El flush de autosave NO es observable/controlable desde el drain

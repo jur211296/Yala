@@ -91,7 +91,7 @@ struct ChatContextGroupsToggleTests {
     /// que le llegan en producción (las no excluidas de estadísticas, `computeEligibleAccounts`).
     private func panelTotal(_ accounts: [Account], _ txs: [TransactionItem], includeGroups: Bool) throws -> Double {
         let suite = "test.chatGroupsToggle.\(UUID().uuidString)"
-        let defaults = try #require(UserDefaults(suiteName: suite))
+        let defaults = try #require(testDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
         let prefs = AppPreferences(defaults: defaults)
         prefs.includeGroupsInPanelTotal = includeGroups
@@ -159,7 +159,7 @@ struct ChatContextGroupsToggleTests {
         #expect(context.balances.totalIncludesGroups == true)
 
         let suite = "test.chatGroupsToggle.default.\(UUID().uuidString)"
-        let defaults = try #require(UserDefaults(suiteName: suite))
+        let defaults = try #require(testDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
         #expect(AppPreferences(defaults: defaults).includeGroupsInPanelTotal == true)
     }
@@ -207,7 +207,7 @@ struct ChatContextGroupsToggleTests {
 
     @Test func viewModel_readsTheSettingAtAskTime() throws {
         let suite = "test.chatGroupsToggle.vm.\(UUID().uuidString)"
-        let defaults = try #require(UserDefaults(suiteName: suite))
+        let defaults = try #require(testDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
         let prefs = AppPreferences(defaults: defaults)
 

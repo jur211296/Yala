@@ -17,7 +17,7 @@ import Testing
 struct WidgetAndSiriEntriesBackgroundTests {
 
     private func makeBuffer() -> DeferredIntentBuffer {
-        DeferredIntentBuffer(defaults: UserDefaults(suiteName: "test.\(UUID().uuidString)")!)
+        DeferredIntentBuffer(defaults: testDefaults(suiteName: "test.\(UUID().uuidString)")!)
     }
 
     private func freshRouter() -> AppRouter {

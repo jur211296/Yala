@@ -25,6 +25,8 @@ struct DrainUnitClockUnreadableTests {
         let dir = FileManager.default.temporaryDirectory
             .appendingPathComponent("DrainClock-\(UUID().uuidString)", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        // Nadie lo borraba: se apunta para retirarlo cuando su store cierre (o al salir el proceso).
+        retireTestStoreDirectoryLater(dir)
         return dir
     }
     /// No borra el dir: mismo motivo que `IdentityRemapEmissionTests.cleanup` (IO errors de saves huérfanos).

@@ -39,7 +39,7 @@ struct GroupsActionsOfflineTokenTests {
         return dir
     }
 
-    private func cleanup(_ dir: URL) { try? FileManager.default.removeItem(at: dir) }
+    private func cleanup(_ dir: URL) { discardTestStoreDirectory(dir) }
 
     private func makeContext(_ dir: URL) throws -> ModelContext {
         let personalCfg = ModelConfiguration(
@@ -164,7 +164,7 @@ struct GroupsActionsOfflineTokenTests {
         canRenewSession: Bool, session: GroupsSyncClientTests.StubHTTPSession
     ) -> () -> Void {
         let suite = "test.offlinejoin.\(UUID().uuidString)"
-        let d = UserDefaults(suiteName: suite)!
+        let d = testDefaults(suiteName: suite)!
         PendingJoinStore.defaults = d
         let savedJoin = GroupBackendInviteEntryHandler.joinProvider
         let savedProfile = GroupBackendInviteEntryHandler.profileNameProvider

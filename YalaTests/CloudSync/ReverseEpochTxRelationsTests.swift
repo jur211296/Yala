@@ -259,7 +259,7 @@ struct ReverseEpochTxRelationsTests {
     /// El eco le llega DENTRO de la reversa, en el pull del drenaje.
     @Test("reversa inmediata: el eco llega dentro de la reversa y las relaciones siguen puestas")
     func immediateReverse_keepsRelations() async throws {
-        let f = try await makeMigratedFixture(); defer { try? FileManager.default.removeItem(at: f.dir) }
+        let f = try await makeMigratedFixture(); defer { discardTestStoreDirectory(f.dir) }
         try createEpochTx(f, note: "Prueba staging")
         let pulledBefore = f.backend.pulledEntityTypes.filter { $0 == "tx_items" }.count
         await runReverseWritingSteps(f)
@@ -275,7 +275,7 @@ struct ReverseEpochTxRelationsTests {
     /// las dos mitades del guion del 2026-07-17: la época nube Y la reversa que llega tarde.
     @Test("reversa tras varios ciclos: el eco ya aplicado no cambia nada en la reversa")
     func lateReverse_keepsRelations() async throws {
-        let f = try await makeMigratedFixture(); defer { try? FileManager.default.removeItem(at: f.dir) }
+        let f = try await makeMigratedFixture(); defer { discardTestStoreDirectory(f.dir) }
         try createEpochTx(f, note: "qa-eco")
         // Ciclos de la nube estable (drain + push + pull), como la cadencia del runtime.
         for _ in 0..<3 { #expect(await f.executor.reverseDrainOnce() == .completed) }
@@ -287,7 +287,7 @@ struct ReverseEpochTxRelationsTests {
     /// movimiento de la época y los viejos se re-aplican sobre sus filas.
     @Test("reversa con re-pull completo: el corpus re-aplicado conserva las relaciones")
     func reverseWithFullRepull_keepsRelations() async throws {
-        let f = try await makeMigratedFixture(); defer { try? FileManager.default.removeItem(at: f.dir) }
+        let f = try await makeMigratedFixture(); defer { discardTestStoreDirectory(f.dir) }
         try createEpochTx(f, note: "repull")
         let cursor = try #require(try f.context.fetch(FetchDescriptor<SyncCursor>()).first)
         cursor.serverSeqCursor = 0
@@ -301,7 +301,7 @@ struct ReverseEpochTxRelationsTests {
     /// drenaje y verifica otra vez, con dos pulls más sobre la fila de la época.
     @Test("reversa con la verificación en desacuerdo: el re-drenaje conserva las relaciones")
     func reverseWithVerifyMismatch_keepsRelations() async throws {
-        let f = try await makeMigratedFixture(); defer { try? FileManager.default.removeItem(at: f.dir) }
+        let f = try await makeMigratedFixture(); defer { discardTestStoreDirectory(f.dir) }
         try createEpochTx(f, note: "mismatch")
         var answered = 0
         f.backend.merkleProvider = {
@@ -319,7 +319,7 @@ struct ReverseEpochTxRelationsTests {
     /// de la cuenta y la subcategoría ya cargadas antes del alta.
     @Test("reversa con el movimiento creado en otro contexto: las relaciones siguen puestas")
     func reverseWithTxFromAnotherContext_keepsRelations() async throws {
-        let f = try await makeMigratedFixture(); defer { try? FileManager.default.removeItem(at: f.dir) }
+        let f = try await makeMigratedFixture(); defer { discardTestStoreDirectory(f.dir) }
         _ = f.account.transactions?.count
         _ = f.subcategory.transactions?.count
         try createEpochTx(f, note: "otro-contexto", in: ModelContext(f.container))

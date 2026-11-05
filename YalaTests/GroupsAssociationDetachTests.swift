@@ -24,7 +24,7 @@ import Testing
 /// Fuera del harness `@MainActor` a propósito: lo usan también las suites puras del libro, que no
 /// necesitan contexto y por tanto no necesitan el hilo principal.
 private func isolatedDetachDefaults() -> UserDefaults {
-    UserDefaults(suiteName: "test.detach.\(UUID().uuidString)")!
+    testDefaults(suiteName: "test.detach.\(UUID().uuidString)")!
 }
 
 // MARK: - Harness
@@ -39,7 +39,7 @@ private enum DetachHarness {
         return dir
     }
 
-    static func cleanup(_ dir: URL) { try? FileManager.default.removeItem(at: dir) }
+    static func cleanup(_ dir: URL) { discardTestStoreDirectory(dir) }
 
     static func makeContext(_ dir: URL) throws -> ModelContext {
         let personalCfg = ModelConfiguration(

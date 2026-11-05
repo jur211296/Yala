@@ -52,7 +52,7 @@ struct SpikeS3MultiStoreHistoryTests {
     }
 
     private func cleanup(_ dir: URL) {
-        try? FileManager.default.removeItem(at: dir)
+        discardTestStoreDirectory(dir)
     }
 
     /// Container de DOS stores, espejo de producción: full schema + 2 configs con URLs distintas.

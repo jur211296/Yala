@@ -35,7 +35,7 @@ struct GroupBridgeSplitLinesTransplantTests {
 
     private func cleanup(_ dir: URL) {
         GroupTransactionBridge.shared._testClearContext()
-        do { try FileManager.default.removeItem(at: dir) } catch { print("cleanup: \(error)") }
+        discardTestStoreDirectory(dir)
     }
 
     private func makeContext(_ dir: URL) throws -> ModelContext {

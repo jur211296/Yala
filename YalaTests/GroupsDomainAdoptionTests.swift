@@ -76,6 +76,7 @@ struct GroupsDomainAdoptionTests {
     /// sobre almacenes aislados.
     @Test func recordEntry_isIdempotent_soTheUITestSeamNeverGetsPersisted() throws {
         let suite = "test.\(UUID().uuidString)"
+        TestSimulatorJanitor.registerDefaultsSuite(suite)
         let counting = try #require(CountingDefaults(suiteName: suite))
         defer { counting.removePersistentDomain(forName: suite) }
 

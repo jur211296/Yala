@@ -30,7 +30,7 @@ struct AppLanguageSyncTests {
     private static let testSuiteName = "test.yala.languageManager"
 
     private func makeCleanSuite() -> UserDefaults {
-        let suite = UserDefaults(suiteName: Self.testSuiteName)!
+        let suite = testDefaults(suiteName: Self.testSuiteName)!
         suite.removePersistentDomain(forName: Self.testSuiteName)
         return suite
     }

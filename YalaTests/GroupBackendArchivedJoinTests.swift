@@ -24,7 +24,7 @@ struct GroupBackendArchivedJoinTests {
 
     private func makeEnv(failWith error: GroupsRPCError) -> () -> Void {
         let suite = "test.archivedjoin.\(UUID().uuidString)"
-        let d = UserDefaults(suiteName: suite)!
+        let d = testDefaults(suiteName: suite)!
         PendingJoinStore.defaults = d
         let savedJoin = GroupBackendInviteEntryHandler.joinProvider
         let savedProfile = GroupBackendInviteEntryHandler.profileNameProvider

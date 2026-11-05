@@ -184,7 +184,7 @@ struct InsightsAIResultStoreTests {
 
     private func store() -> InsightsAIResultStore {
         InsightsAIResultStore(
-            defaults: UserDefaults(suiteName: "test.\(UUID().uuidString)")!, storageKey: "insightsAI.savedResults"
+            defaults: testDefaults(suiteName: "test.\(UUID().uuidString)")!, storageKey: "insightsAI.savedResults"
         )
     }
 

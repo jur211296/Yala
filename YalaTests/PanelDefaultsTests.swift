@@ -17,7 +17,7 @@ struct PanelDefaultsTests {
 
     private static func makeSuite() -> UserDefaults {
         let suiteName = "PanelDefaultsTests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
+        let defaults = testDefaults(suiteName: suiteName)!
         defaults.set(true, forKey: AppPreferences.Keys.panelPrefsMigratedV2)
         return defaults
     }

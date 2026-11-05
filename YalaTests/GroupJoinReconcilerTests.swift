@@ -26,7 +26,7 @@ struct GroupJoinReconcilerTests {
     /// Devuelve el cleanup.
     private func makeEnvironment() -> () -> Void {
         let suiteName = "test.joinreconciler.\(UUID().uuidString)"
-        let d = UserDefaults(suiteName: suiteName)!
+        let d = testDefaults(suiteName: suiteName)!
         PendingJoinStore.defaults = d
         GroupUserIdentityService.shared._testSetCachedRecordName(recordName)
         GroupJoinIntentTracker.shared.clear()

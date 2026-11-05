@@ -1,10 +1,10 @@
 ---
 id: shared-state-guard-misses-wipelocalgroupsdomain
-status: backlog
+status: done
 priority: low
 area: "testing"
 created: 2026-09-11
-updated: 2026-10-08
+updated: 2026-11-04
 source: "review adversarial de `detach-history-replay-can-tombstone-groups-on-next-launch` (lente de contrato)"
 ---
 
@@ -41,3 +41,19 @@ el trait de una suite listada debe dar rojo.
   `WelcomePrivateICloudGate`, `FreshStartGroupsLossExit`), y o lo inyectan o llevan el trait: hoy no hay ninguna suite en rojo.
 
 Triage 2026-10-08: abierto · medium → low · El escáner sigue buscando solo wipeAllUserData(, wipePersonalDataKeepingGroups( y wipeLocallyForRemoteWipeSignal(; wipeLocalGroupsDomain sigue purgando el espejo real por defecto, aunque hoy las 14 suites que lo llaman inyectan el seam.
+
+## Cerrado (2026-11-04)
+
+`SharedStateIsolationTests.cadaLlamadaAlBorradoDeGruposInyectaSuReset` cuenta cada llamada
+`try DataWipeService.wipeLocalGroupsDomain(` en código (no en literales ni comentarios; 23 hoy) y exige que inyecte
+`resetSyncState:`. No pide el trait: `.wipeAppGroupMirrorIsolated` restaura claves del App Group, no el directorio del
+espejo. Tercer escritor con el mismo perfil: `GroupsSyncClient.purgeOutboxForSessionChange` purga el espejo del cliente,
+que en los tests ya es `nil` por defecto (ticket del espejo, mismo PR). Mutante: quitar `resetSyncState:` de una llamada
+pone el test en rojo.
+
+Medición (iPhone 17 Pro de la Max, iOS 27.2, scheme `Yala`, corrida completa de YalaTests con el simulador en turno):
+la base (`origin/2.3` sin tocar, instalación limpia) dejó **1.262** ficheros de preferencias, **74** directorios en
+`tmp/`, el `.plist` del App Group con `isProUser`, `lastUsedAccountID` y `siri_finance_snapshot`, y **2.910** avisos
+«vnode unlinked while in use»; con el arreglo (12.783 tests en verde): **0** preferencias nuevas, App Group sin claves
+antes y después (leído vía `cfprefsd`: el fichero en disco va desfasado), onboarding sin marcar y **3** avisos, los del
+control negativo del eje 4b del spike R3, que los provoca a propósito.

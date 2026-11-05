@@ -63,7 +63,7 @@ struct ScheduledPaymentWidgetPayLogicTests {
     }
 
     @Test func theQueue_roundTripsAndRemovesByKey() throws {
-        let defaults = try #require(UserDefaults(suiteName: "test.\(UUID().uuidString)"))
+        let defaults = try #require(testDefaults(suiteName: "test.\(UUID().uuidString)"))
         let first = ScheduledPaymentWidgetPaidRequest(paymentID: "a", occurrence: .now, requestedAt: Date(timeIntervalSince1970: 10))
         let second = ScheduledPaymentWidgetPaidRequest(paymentID: "b", occurrence: .now, requestedAt: Date(timeIntervalSince1970: 20))
         ScheduledPaymentWidgetPaidStore.append(second, defaults: defaults)
@@ -100,7 +100,7 @@ struct ScheduledPaymentWidgetPayRecordTests {
         payment.subcategory = subcategory
         context.insert(payment)
         try context.save()
-        let defaults = try #require(UserDefaults(suiteName: "test.\(UUID().uuidString)"))
+        let defaults = try #require(testDefaults(suiteName: "test.\(UUID().uuidString)"))
         return Fixture(context: context, payment: payment, defaults: defaults)
     }
 

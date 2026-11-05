@@ -113,11 +113,7 @@ struct GroupExpenseSuccessBridgeTraceReaderTests {
     }
 
     private func remove(_ dir: URL) {
-        do {
-            try FileManager.default.removeItem(at: dir)
-        } catch {
-            Issue.record("No se borró el directorio del test: \(error)")
-        }
+        discardTestStoreDirectory(dir)
     }
 
     private func makeContext(_ dir: URL) throws -> ModelContext {

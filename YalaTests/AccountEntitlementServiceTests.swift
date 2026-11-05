@@ -31,7 +31,7 @@ struct AccountEntitlementServiceTests {
     /// `UserDefaults` aislado por test (regla del repo: jamás `.standard`).
     private func makeStore(_ name: String) -> (AccountEntitlementStore, UserDefaults) {
         let suite = "test.entitlement.\(name).\(UUID().uuidString)"
-        guard let defaults = UserDefaults(suiteName: suite) else {
+        guard let defaults = testDefaults(suiteName: suite) else {
             fatalError("no se pudo crear el suite de test")
         }
         return (AccountEntitlementStore(defaults: defaults), defaults)

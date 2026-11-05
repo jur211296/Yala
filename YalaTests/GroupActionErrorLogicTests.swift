@@ -133,7 +133,7 @@ struct GroupsConsentChangeNotificationTests {
 
     @Test func writeAndClear_announceTheChange() throws {
         let previous = GroupsConsentState.defaults
-        let isolated = try #require(UserDefaults(suiteName: "test.\(UUID().uuidString)"))
+        let isolated = try #require(testDefaults(suiteName: "test.\(UUID().uuidString)"))
         GroupsConsentState.defaults = isolated
         defer { GroupsConsentState.defaults = previous }
 

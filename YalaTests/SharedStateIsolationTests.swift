@@ -366,4 +366,72 @@ struct SharedStateIsolationTests {
             """
         )
     }
+
+    /// El hermano del escáner del wipe, y por qué NO pide el trait (ticket
+    /// `shared-state-guard-misses-wipelocalgroupsdomain`). `DataWipeService.wipeLocalGroupsDomain` también toca estado
+    /// compartido: su `resetSyncState` tiene por defecto `GroupsOutboxMirror()?.purgeAll()`, que vacía el espejo REAL del
+    /// App Group, y una suite que lo llame a pelo deja sin sus filas de outbox a la que corra a la vez —«verde a solas,
+    /// cero acompañado»—. `.wipeAppGroupMirrorIsolated` restaura CLAVES del App Group, no ese directorio, así que exigir
+    /// el trait dejaría pasar la purga. Lo que se exige es que CADA llamada inyecte `resetSyncState:`.
+    ///
+    /// Cuenta llamadas, no ficheros: un fichero con nueve llamadas que inyecta en ocho pasaría un escáner por fichero.
+    /// Y solo las que llevan `try DataWipeService.` delante, que es como se invoca; los literales de los source-scans
+    /// de producción (`"…wipeLocalGroupsDomain(in: modelContext…"`) no son llamadas.
+    @Test func cadaLlamadaAlBorradoDeGruposInyectaSuReset() throws {
+        let selfFile = URL(fileURLWithPath: #filePath)
+        let testsDir = selfFile.deletingLastPathComponent()
+        let files = (FileManager.default.enumerator(at: testsDir, includingPropertiesForKeys: nil)?
+            .compactMap { $0 as? URL }
+            .filter { $0.pathExtension == "swift" } ?? [])
+        let call = "try DataWipeService.wipeLocalGroupsDomain("
+
+        var llamadas = 0
+        var sinReset: [String] = []
+        for url in files where url.lastPathComponent != selfFile.lastPathComponent {
+            let code = try String(contentsOf: url, encoding: .utf8)
+                .split(separator: "\n", omittingEmptySubsequences: false)
+                .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+                .joined(separator: "\n")
+            var rest = code[...]
+            while let start = rest.range(of: call) {
+                // Dentro de un literal (`#expect(src.contains("… try DataWipeService.wipeLocalGroupsDomain("))`) no es
+                // una llamada: comillas impares en la línea antes del match.
+                let lineStart = code[..<start.lowerBound].lastIndex(of: "\n").map { code.index(after: $0) }
+                    ?? code.startIndex
+                if code[lineStart..<start.lowerBound].filter({ $0 == "\"" }).count % 2 == 1 {
+                    rest = rest[start.upperBound...]
+                    continue
+                }
+                // Los argumentos de ESTA llamada: hasta el paréntesis que cierra el que abre `call`.
+                var depth = 1
+                var index = start.upperBound
+                while index < rest.endIndex, depth > 0 {
+                    if rest[index] == "(" { depth += 1 }
+                    if rest[index] == ")" { depth -= 1 }
+                    index = rest.index(after: index)
+                }
+                llamadas += 1
+                if !rest[start.upperBound..<index].contains("resetSyncState:") {
+                    let line = code[..<start.lowerBound].components(separatedBy: "\n").count
+                    sinReset.append("\(url.lastPathComponent):\(line)")
+                }
+                rest = rest[index...]
+            }
+        }
+
+        // Eran 23 llamadas al escribirlo (2026-11-04): sin mínimo, renombrar el método dejaría al
+        // escáner sin nada que contar y en verde.
+        #expect(
+            llamadas >= 20,
+            "El escáner solo encontró \(llamadas) llamadas a `wipeLocalGroupsDomain`: o se renombró, o dejó de comprobar."
+        )
+        #expect(
+            sinReset.isEmpty,
+            """
+            \(sinReset.joined(separator: ", ")) llama(n) a `wipeLocalGroupsDomain` sin inyectar `resetSyncState:`. \
+            El default purga el espejo REAL del outbox de Grupos en el App Group (`GroupsOutboxMirror()?.purgeAll()`), \
+            que comparten todos los tests del proceso, y el trait de aislamiento no lo cubre.
+            """
+        )
+    }
 }

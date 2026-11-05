@@ -26,7 +26,7 @@ struct InboxDismissCapturedDraftTests {
     private let pendingDefaults: UserDefaults
 
     init() {
-        pendingDefaults = UserDefaults(suiteName: "test.inboxdismiss.pending.\(UUID().uuidString)")!
+        pendingDefaults = testDefaults(suiteName: "test.inboxdismiss.pending.\(UUID().uuidString)")!
         iCloudSyncService.shared._testReset()
     }
 

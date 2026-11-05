@@ -19,7 +19,7 @@ struct PrefsOutboxTests {
             .appendingPathComponent("PrefsOutbox-\(UUID().uuidString)", isDirectory: true)
         return dir
     }
-    private func cleanup(_ dir: URL) { try? FileManager.default.removeItem(at: dir) }
+    private func cleanup(_ dir: URL) { discardTestStoreDirectory(dir) }
 
     // MARK: - Enqueue + durabilidad
 

@@ -21,7 +21,7 @@ struct PendingJoinStoreTests {
 
     private func makeStore() -> () -> Void {
         let suiteName = "test.pendingjoin.\(UUID().uuidString)"
-        let d = UserDefaults(suiteName: suiteName)!
+        let d = testDefaults(suiteName: suiteName)!
         PendingJoinStore.defaults = d
         return {
             PendingJoinStore.defaults = .standard

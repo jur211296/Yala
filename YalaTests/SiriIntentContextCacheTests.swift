@@ -14,7 +14,7 @@ import Testing
 struct SiriIntentContextCacheTests {
 
     private func makeDefaults() -> UserDefaults {
-        UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+        testDefaults(suiteName: "test.\(UUID().uuidString)")!
     }
 
     @Test func writeThenRead_roundTrips() {

@@ -16,7 +16,7 @@ import Testing
 struct GroupsSessionHistoryMarkerTests {
 
     private func isolatedDefaults() -> UserDefaults {
-        UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+        testDefaults(suiteName: "test.\(UUID().uuidString)")!
     }
 
     @Test func nace_apagado() {

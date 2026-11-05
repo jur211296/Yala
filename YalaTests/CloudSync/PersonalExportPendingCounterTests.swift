@@ -32,11 +32,7 @@ struct PersonalExportPendingCounterTests {
     }
 
     private func cleanup(_ dir: URL) {
-        do {
-            try FileManager.default.removeItem(at: dir)
-        } catch {
-            print("PersonalExportPendingCounterTests: no se pudo borrar \(dir.lastPathComponent): \(error)")
-        }
+        discardTestStoreDirectory(dir)
     }
 
     private func makeContext(_ dir: URL) throws -> ModelContext {

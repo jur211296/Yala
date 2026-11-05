@@ -37,7 +37,7 @@ private enum UnbridgeHarness {
         return dir
     }
 
-    static func cleanup(_ dir: URL) { try? FileManager.default.removeItem(at: dir) }
+    static func cleanup(_ dir: URL) { discardTestStoreDirectory(dir) }
 
     static func makeContext(_ dir: URL) throws -> ModelContext {
         let personalCfg = ModelConfiguration(

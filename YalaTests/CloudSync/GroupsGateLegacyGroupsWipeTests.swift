@@ -44,11 +44,7 @@ struct GroupsGateLegacyGroupsWipeTests {
     }
 
     private func cleanup(_ dir: URL) {
-        do { try FileManager.default.removeItem(at: dir) } catch {
-            #if DEBUG
-            print("GroupsGateLegacyGroupsWipeTests: Error limpiando \(dir.lastPathComponent): \(error)")
-            #endif
-        }
+        discardTestStoreDirectory(dir)
     }
 
     /// El archivo de cada store en el directorio del test, por el nombre con que el borrado del arranque lo pide.

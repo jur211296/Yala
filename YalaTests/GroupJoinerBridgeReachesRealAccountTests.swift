@@ -134,7 +134,7 @@ struct GroupJoinerBridgeReachesRealAccountTests {
     @Test("con la identidad resuelta, el gasto aterriza en la cuenta real elegida")
     func elGastoLlegaALaCuentaReal() throws {
         let dir = freshDir()
-        defer { try? FileManager.default.removeItem(at: dir) }
+        defer { discardTestStoreDirectory(dir) }
         let context = try makeContext(dir)
 
         let recordNamePrevio = GroupUserIdentityService.shared.cachedRecordName
@@ -180,7 +180,7 @@ struct GroupJoinerBridgeReachesRealAccountTests {
     @Test("sin ninguna identidad, el bridge no inventa una transacción")
     func sinIdentidadNoSePuentea() throws {
         let dir = freshDir()
-        defer { try? FileManager.default.removeItem(at: dir) }
+        defer { discardTestStoreDirectory(dir) }
         let context = try makeContext(dir)
 
         let recordNamePrevio = GroupUserIdentityService.shared.cachedRecordName

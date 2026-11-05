@@ -162,7 +162,7 @@ struct PendingICloudWipeCloudLogicTests {
 struct PendingICloudWipeCloudFlagsTests {
 
     private func freshDefaults() throws -> UserDefaults {
-        try #require(UserDefaults(suiteName: "PendingICloudWipeCloudFlagsTests.\(UUID().uuidString)"))
+        try #require(testDefaults(suiteName: "PendingICloudWipeCloudFlagsTests.\(UUID().uuidString)"))
     }
 
     @Test func pending_isTheArmOrTheHalfwayMark() throws {

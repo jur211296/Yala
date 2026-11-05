@@ -60,13 +60,7 @@ struct RemoteWipeSignalSurfacesTests {
             .appendingPathComponent("RemoteWipeSurfaces-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer {
-            do {
-                try FileManager.default.removeItem(at: dir)
-            } catch {
-                #if DEBUG
-                print("RemoteWipeSurfacesTests: cleanup: \(error)")
-                #endif
-            }
+            discardTestStoreDirectory(dir)
         }
         let context = try makeContext(dir)
 

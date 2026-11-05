@@ -33,13 +33,7 @@ struct GroupsNextColumnPiecesTests {
     }
 
     private func cleanup(_ dir: URL) {
-        do {
-            try FileManager.default.removeItem(at: dir)
-        } catch {
-            #if DEBUG
-            print("GroupsNextColumnPiecesTests: cleanup: \(error)")
-            #endif
-        }
+        discardTestStoreDirectory(dir)
     }
 
     private func makeContext(_ dir: URL) throws -> ModelContext {
@@ -61,8 +55,8 @@ struct GroupsNextColumnPiecesTests {
     private func withIsolatedCapability(_ body: () throws -> Void) throws {
         let previousGroups = GroupsSyncCapability.defaults
         let previousPersonal = SyncCapability.defaults
-        GroupsSyncCapability.defaults = try #require(UserDefaults(suiteName: "test.gnc.groups.\(UUID().uuidString)"))
-        SyncCapability.defaults = try #require(UserDefaults(suiteName: "test.gnc.personal.\(UUID().uuidString)"))
+        GroupsSyncCapability.defaults = try #require(testDefaults(suiteName: "test.gnc.groups.\(UUID().uuidString)"))
+        SyncCapability.defaults = try #require(testDefaults(suiteName: "test.gnc.personal.\(UUID().uuidString)"))
         defer {
             GroupsSyncCapability.defaults = previousGroups
             SyncCapability.defaults = previousPersonal

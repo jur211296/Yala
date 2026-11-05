@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1164)
+## Index (1166)
 
 | id | status | path |
 |---|---|---|
@@ -135,7 +135,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | apply-overwrites-a-pending-local-write-without-its-guards | done | tickets/done/apply-overwrites-a-pending-local-write-without-its-guards.md |
 | apppreferences-rewritten-on-launch | done | tickets/done/apppreferences-rewritten-on-launch.md |
 | approximate-mark-ors-over-whole-period | done | tickets/done/approximate-mark-ors-over-whole-period.md |
-| appstorage-onboarding-desarma-el-aislamiento-de-tests | backlog | tickets/backlog/appstorage-onboarding-desarma-el-aislamiento-de-tests.md |
+| appstorage-onboarding-desarma-el-aislamiento-de-tests | done | tickets/done/appstorage-onboarding-desarma-el-aislamiento-de-tests.md |
 | archived-accounts-still-count-in-the-panel-total | done | tickets/done/archived-accounts-still-count-in-the-panel-total.md |
 | archiving-exclusion-open-decisions | backlog | tickets/backlog/archiving-exclusion-open-decisions.md |
 | associate-cta-ignores-the-groups-kill-switch | done | tickets/done/associate-cta-ignores-the-groups-kill-switch.md |
@@ -1019,7 +1019,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | shared-photo-waits-silently-behind-an-open-panel-sheet | done | tickets/done/shared-photo-waits-silently-behind-an-open-panel-sheet.md |
 | shared-receipt-is-dropped-when-it-hits-the-pro-gate | done | tickets/done/shared-receipt-is-dropped-when-it-hits-the-pro-gate.md |
 | shared-scheduled-expense-shows-twice-in-inbox | done | tickets/done/shared-scheduled-expense-shows-twice-in-inbox.md |
-| shared-state-guard-misses-wipelocalgroupsdomain | backlog | tickets/backlog/shared-state-guard-misses-wipelocalgroupsdomain.md |
+| shared-state-guard-misses-wipelocalgroupsdomain | done | tickets/done/shared-state-guard-misses-wipelocalgroupsdomain.md |
 | sharing-several-photos-hides-yala | done | tickets/done/sharing-several-photos-hides-yala.md |
 | sheet-size-follows-the-device-not-the-window | done | tickets/done/sheet-size-follows-the-device-not-the-window.md |
 | shell-and-wipe-alert-read-the-session-axis-differently | backlog | tickets/backlog/shell-and-wipe-alert-read-the-session-axis-differently.md |
@@ -1087,7 +1087,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | tag-chips-change-order-on-every-launch | done | tickets/done/tag-chips-change-order-on-every-launch.md |
 | tag-sheet-new-name-field-never-idles-in-xcuitest | done | tickets/done/tag-sheet-new-name-field-never-idles-in-xcuitest.md |
 | tags-none-label-has-the-wrong-gender | backlog | tickets/backlog/tags-none-label-has-the-wrong-gender.md |
-| tests-borran-el-store-sqlite-abierto | backlog | tickets/backlog/tests-borran-el-store-sqlite-abierto.md |
+| tests-borran-el-store-sqlite-abierto | done | tickets/done/tests-borran-el-store-sqlite-abierto.md |
 | the-gate-destination-no-longer-resolves-on-this-mac | discarded | tickets/discarded/the-gate-destination-no-longer-resolves-on-this-mac.md |
 | the-gate-stamp-hides-the-deleted-side-of-a-staged-rename | done | tickets/done/the-gate-stamp-hides-the-deleted-side-of-a-staged-rename.md |
 | transaction-save-helper-flake-one-per-suite | discarded | tickets/discarded/transaction-save-helper-flake-one-per-suite.md |
@@ -1113,12 +1113,13 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | uitest-reset-keeps-the-sign-out-wipe-arm | backlog | tickets/backlog/uitest-reset-keeps-the-sign-out-wipe-arm.md |
 | uitest-seam-for-a-seeded-groups-association | backlog | tickets/backlog/uitest-seam-for-a-seeded-groups-association.md |
 | uitest-seed-reseeds-the-corpus-without-reset | backlog | tickets/backlog/uitest-seed-reseeds-the-corpus-without-reset.md |
+| uitests-leave-the-onboarding-marked-as-seen-through-contentview | backlog | tickets/backlog/uitests-leave-the-onboarding-marked-as-seen-through-contentview.md |
 | undercount-dias-intervalos-cerrados | done | tickets/done/undercount-dias-intervalos-cerrados.md |
 | unit-clocks-duplicated-before-the-fix-are-never-merged | backlog | tickets/backlog/unit-clocks-duplicated-before-the-fix-are-never-merged.md |
 | unit-suite-nondeterministic-reds | done | tickets/done/unit-suite-nondeterministic-reds.md |
-| unit-test-suites-leave-orphan-userdefaults-domains | backlog | tickets/backlog/unit-test-suites-leave-orphan-userdefaults-domains.md |
+| unit-test-suites-leave-orphan-userdefaults-domains | done | tickets/done/unit-test-suites-leave-orphan-userdefaults-domains.md |
 | unit-tests-clear-the-attest-streak-of-a-device-qa-in-progress | backlog | tickets/backlog/unit-tests-clear-the-attest-streak-of-a-device-qa-in-progress.md |
-| unit-tests-write-group-amounts-into-the-real-app-group-mirror | backlog | tickets/backlog/unit-tests-write-group-amounts-into-the-real-app-group-mirror.md |
+| unit-tests-write-group-amounts-into-the-real-app-group-mirror | done | tickets/done/unit-tests-write-group-amounts-into-the-real-app-group-mirror.md |
 | update-banner-appstore-criteria | done | tickets/done/update-banner-appstore-criteria.md |
 | upload-order-sorts-by-hlc-test-fails-in-ci | done | tickets/done/upload-order-sorts-by-hlc-test-fails-in-ci.md |
 | usage-mode-full-to-groups-only-and-back | done | tickets/done/usage-mode-full-to-groups-only-and-back.md |

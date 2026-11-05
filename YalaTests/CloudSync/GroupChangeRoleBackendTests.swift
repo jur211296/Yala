@@ -38,7 +38,7 @@ struct GroupChangeRoleBackendTests {
     }
 
     private func cleanup(_ dir: URL) {
-        do { try FileManager.default.removeItem(at: dir) } catch { print("GroupChangeRoleBackendTests: cleanup: \(error)") }
+        discardTestStoreDirectory(dir)
     }
 
     private func makeContext(_ dir: URL) throws -> ModelContext {

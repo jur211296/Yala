@@ -22,7 +22,7 @@ import Testing
 struct GroupsEntryKeptGroupsTests {
 
     private func defaults() -> UserDefaults {
-        UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+        testDefaults(suiteName: "test.\(UUID().uuidString)")!
     }
 
     /// Lo que la puerta lee del teléfono cuando el canal ya bajó los grupos de la persona: con la marca que lee hoy.

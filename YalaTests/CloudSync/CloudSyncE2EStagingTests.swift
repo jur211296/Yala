@@ -49,11 +49,7 @@ struct CloudSyncE2EStagingTests {
     }
 
     private func cleanup(_ dir: URL) {
-        do { try FileManager.default.removeItem(at: dir) } catch {
-            #if DEBUG
-            print("CloudSyncE2EStagingTests: cleanup: \(error)")
-            #endif
-        }
+        discardTestStoreDirectory(dir)
     }
 
     private func makeContext(_ dir: URL) throws -> ModelContext {
@@ -681,7 +677,7 @@ struct CloudSyncE2EStagingTests {
     // MARK: - Merge de entidades de SISTEMA (política v1, residual gate de flags)
 
     private func isolatedDefaults() -> UserDefaults {
-        UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+        testDefaults(suiteName: "test.\(UUID().uuidString)")!
     }
 
     /// Drena la History, pushea el outbox vivo, aplica resultados. `true` si todo aplicó/noop.

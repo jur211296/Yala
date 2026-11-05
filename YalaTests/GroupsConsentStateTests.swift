@@ -23,7 +23,7 @@ struct GroupsConsentStateTests {
     private func withState(
         userID: String?, _ body: (UserDefaults) throws -> Void
     ) rethrows {
-        let d = UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+        let d = testDefaults(suiteName: "test.\(UUID().uuidString)")!
         let previousDefaults = GroupsConsentState.defaults
         let previousProvider = GroupsConsentState.currentUserIDProvider
         GroupsConsentState.defaults = d
@@ -131,11 +131,11 @@ struct GroupsConsentStateTests {
     @Test func hasLocalRecord_coversBothFormats() {
         // El gate del boot-cleanup del wipe de sign-out lo usa: comprobar solo el snapshot nuevo dejaría
         // fuera justo a quien lleva más tiempo con el consent puesto.
-        let onlyLegacy = UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+        let onlyLegacy = testDefaults(suiteName: "test.\(UUID().uuidString)")!
         onlyLegacy.set(1_700_000_000, forKey: GroupsConsentState.legacyAcceptedAtKey)
         #expect(GroupsConsentState.hasLocalRecord(in: onlyLegacy))
 
-        let empty = UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+        let empty = testDefaults(suiteName: "test.\(UUID().uuidString)")!
         #expect(!GroupsConsentState.hasLocalRecord(in: empty))
     }
 }

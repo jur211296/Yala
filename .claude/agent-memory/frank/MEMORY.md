@@ -27,6 +27,7 @@
 - [No esperes el CI ajeno](feedback_no_esperar_ci_ajeno.md) — ni antes del gate: sigue y rebasa una vez antes de tu PR.
 - [El rerun no recoge el arreglo de la base](feedback_rerun_no_recoge_el_arreglo_de_la_base.md) — reusa el merge original: hace falta update-branch.
 - [Simulador ajeno parado: se pregunta](feedback_simulador_ajeno_parado_se_pregunta.md) — si su sesión espera a Jürgen, aprobó usarlo sin apagarlo.
+- [Los contenedores del simulador también hacen cola](feedback_contenedores_del_simulador_tambien_hacen_cola.md) — limpiar Preferences/tmp con sim TOMADO pisó a la bienvenida; va con sim-lock.
 - [Auditoría UX por lotes: propone, no implementa](feedback_auditoria_ux_lote_propone_no_implementa.md) — solo bugs claros con card; informe.md + HTML acumulado + card por mejora.
 - [Auditoría UI: el glass se queda, se jerarquiza](feedback_auditoria_ui_glass_se_queda_jerarquiza.md) — rellenos sólidos, sin degradados ni brillos; instruir; adaptar; solo el lote.
 
