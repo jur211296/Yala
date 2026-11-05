@@ -320,7 +320,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | debounce-sync-imported-transactions | backlog | tickets/backlog/debounce-sync-imported-transactions.md |
 | debt-simplification-nondeterministic-ties | backlog | tickets/backlog/debt-simplification-nondeterministic-ties.md |
 | debt-tracking | backlog | tickets/backlog/debt-tracking.md |
-| debug-panel-shows-a-counter-the-reverse-no-longer-moves | backlog | tickets/backlog/debug-panel-shows-a-counter-the-reverse-no-longer-moves.md |
+| debug-panel-shows-a-counter-the-reverse-no-longer-moves | done | tickets/done/debug-panel-shows-a-counter-the-reverse-no-longer-moves.md |
 | declining-ai-consent-keeps-a-dropped-or-shared-photo-pending | backlog | tickets/backlog/declining-ai-consent-keeps-a-dropped-or-shared-photo-pending.md |
 | deleting-an-account-asks-nothing | done | tickets/done/deleting-an-account-asks-nothing.md |
 | demo-pizza-uitest-misses-the-registered-badge | done | tickets/done/demo-pizza-uitest-misses-the-registered-badge.md |
@@ -733,7 +733,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | markerless-adopt-without-full-coverage-never-relays-the-marker | backlog | tickets/backlog/markerless-adopt-without-full-coverage-never-relays-the-marker.md |
 | mcp-connector-counts-future-dated-rows-in-todays-balance | backlog | tickets/backlog/mcp-connector-counts-future-dated-rows-in-todays-balance.md |
 | merchant-memory-suggests-across-natures-in-three-more-places | done | tickets/done/merchant-memory-suggests-across-natures-in-three-more-places.md |
-| metrics-drain-purge-drops-unsent-events-when-the-spool-is-full | backlog | tickets/backlog/metrics-drain-purge-drops-unsent-events-when-the-spool-is-full.md |
+| metrics-drain-purge-drops-unsent-events-when-the-spool-is-full | done | tickets/done/metrics-drain-purge-drops-unsent-events-when-the-spool-is-full.md |
 | migrate-attempt-session-survives-a-relaunch-mid-attempt | backlog | tickets/backlog/migrate-attempt-session-survives-a-relaunch-mid-attempt.md |
 | migrate-before-the-groups-association-arrives-splits-the-accounts | backlog | tickets/backlog/migrate-before-the-groups-association-arrives-splits-the-accounts.md |
 | migrate-card-keeps-promising-an-account-the-check-refused | done | tickets/done/migrate-card-keeps-promising-an-account-the-check-refused.md |

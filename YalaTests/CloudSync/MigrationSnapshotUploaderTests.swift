@@ -186,6 +186,34 @@ struct MigrationSnapshotUploaderTests {
         try context.save()
     }
 
+    /// Card «Activar la nube con pocos datos tarda minutos» (ticket
+    /// `cloud-activation-time-is-unmeasured-between-the-claim-and-the-cutover`): cada página confirmada deja un canario con
+    /// su tabla y sus filas, que es lo que separa «la subida se va en una tabla grande» de «se va en la latencia».
+    @Test("cada página confirmada emite cloudSnapshotPageUploaded con su tabla y sus filas")
+    func pageConfirmed_emitsThePageCanary() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = ApplyingStubSession()
+        try seedCategories(context, 3)
+        context.insert(Tag(name: "t0"))
+        context.insert(Tag(name: "t1"))
+        context.insert(Account(name: "acc", currencyCode: "USD", colorHex: "#222222", iconName: "creditcard",
+                               type: "checking"))
+        try context.save()
+        let defaults = makeIsolatedDefaults(prefix: "snapshotUploader.metrics")
+        MetricsService._testReset()
+        // 500 → `.retry`: el spool conserva los canarios y se pueden contar.
+        MetricsService.start(client: MetricsClient(baseURL: URL(string: "https://gw.test")!,
+                                                   urlSession: MetricsRetryStub()), defaults: defaults)
+        defer { MetricsService._testReset() }
+
+        _ = await runToCompletion(makeUploader(context, CloudSyncEngine(), stub, pageSize: 2))
+
+        let pages = MetricsSpool.pending(defaults).filter { $0.e == "canary" && $0.n == "cloudSnapshotPageUploaded" }
+        #expect(pages.compactMap(\.d) == ["accounts|1", "categories|2", "categories|1", "tags|2"])
+        #expect(pages.allSatisfy { ($0.x ?? 1) == 0 }, "con el reloj fijo cada página dura 0 s")
+    }
+
     @Test("la cifra cuenta las filas de todas las tablas y llega al total al terminar")
     func progress_countsEveryTable_andEndsAtTheTotal() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
@@ -764,5 +792,14 @@ struct MigrationSnapshotUploaderTests {
         guard let data = json.data(using: .utf8),
               let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
         return obj["table"] as? String
+    }
+}
+
+/// Respuesta 500 para el cliente de métricas: el drain se corta y los canarios se quedan en el spool.
+private final class MetricsRetryStub: SyncHTTPSession, @unchecked Sendable {
+    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        guard let url = request.url, let response = HTTPURLResponse(
+            url: url, statusCode: 500, httpVersion: nil, headerFields: nil) else { throw URLError(.badURL) }
+        return (Data(), response)
     }
 }

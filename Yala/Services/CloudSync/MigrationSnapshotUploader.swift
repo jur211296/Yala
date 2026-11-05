@@ -177,6 +177,7 @@ final class MigrationSnapshotUploader {
             }
             return outcome
         }
+        let pageStartedAt = now()
         let doneBeforePage = rowsConfirmedBefore(page)
         if let doneBeforePage, let total = countAllRows() {
             progress = .init(done: doneBeforePage, total: total)
@@ -217,6 +218,9 @@ final class MigrationSnapshotUploader {
         switch await drainPushConfirm(onChunkConfirmed: onChunkConfirmed) {
         case .confirmed:
             CloudSyncBreadcrumb.migrationSnapshotPageConfirmed(table: page.cursor.table, rows: page.inputs.count)
+            MetricsService.cloudSnapshotPageUploaded(
+                table: page.cursor.table, rows: page.inputs.count,
+                seconds: max(0, now().timeIntervalSince(pageStartedAt)).rounded())
             if let doneBeforePage, let current = progress {
                 progress = .init(done: min(doneBeforePage + page.inputs.count, current.total), total: current.total)
             }
