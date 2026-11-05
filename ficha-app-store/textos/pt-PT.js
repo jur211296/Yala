@@ -9,14 +9,14 @@ const TEXTOS = {
   moneda: {codigo: "EUR", simbolo: "€", ejemplo: "€ 1284,50"},
 
   TXT: {
-    ia:      ["Yala IA · Pro", "Escreva ao Yala como a uma <u>amiga</u>", null],
-    foto:    ["Por foto · Pro", "Tire uma <u>foto</u> ao talão e pronto", "O Yala lê o estabelecimento, a data e o total."],
-    voz:     ["Por voz · Pro", "<u>Diga</u> à sua maneira. O Yala regista", "Sem escrever: diz e fica logo na categoria."],
-    yape:    ["Por captura · Pro", "Registe as transferências com uma <u>captura</u>", "O Yala tira o valor, o estabelecimento e a data."],
-    stats:   ["Estatísticas", "Veja para onde foi cada <u>euro</u>", "Categoria a categoria, sem folhas de cálculo."],
+    ia:      ["Yala IA · Pro", "Escreve ao Yala como a uma <u>amiga</u>", null],
+    foto:    ["Por foto · Pro", "Tira uma <u>foto</u> ao talão e pronto", "O Yala lê o estabelecimento, a data e o total."],
+    voz:     ["Por voz · Pro", "<u>Diz</u> à tua maneira. O Yala regista", "Sem escrever: diz e fica logo na categoria."],
+    yape:    ["Por captura · Pro", "Regista as transferências com uma <u>captura</u>", "O Yala tira o valor, o estabelecimento e a data."],
+    stats:   ["Estatísticas", "Vê para onde foi cada <u>euro</u>", "Categoria a categoria, sem folhas de cálculo."],
     grupos:  ["Grupos", "Viagem ao Algarve: contas <u>certas</u> e a amizade intacta", null],
     presu:   ["Orçamentos", "Quanto <u>sobra</u> este mês?", null],
-    cuentas: ["As suas contas", "Todas as suas contas, sem <u>ligar</u> o banco", "Dinheiro, cartão e poupança num só ecrã. Decide o que regista."],
+    cuentas: ["As tuas contas", "Todas as tuas contas, sem <u>ligar</u> o banco", "Dinheiro, cartão e poupança num só ecrã. Decide o que regista."],
     divisas: ["Multimoeda", "Mais de 50 moedas, sem <u>calculadora</u>", "Cada conta na sua moeda. O Yala faz a conversão."],
     recor:   ["Lembretes", "<u>Avisamos</u> antes de cada pagamento", "Luz, telemóvel, o cartão de crédito: escolhe a data."],
   },
@@ -41,7 +41,7 @@ const TEXTOS = {
       chip: "Partilhar → <b>Yala</b>",
     },
     "05_stats": {
-      cifra: "€ 4686<small>gastou este mês</small>",
+      cifra: "€ 4686<small>gastaste este mês</small>",
       chips: ["Moradia <b>47%</b>", "Alimentação <b>28%</b>", "Entretenimento <b>8%</b>", "Transporte <b>4%</b>"],
     },
     "06_grupos": {
@@ -65,11 +65,11 @@ const TEXTOS = {
   },
 
   VIDEO: {
-    t0:     {acento: "azul",    pill: "Yala IA · Pro",      lineas: ["Escreva como", "a uma <u>amiga</u>"]},
-    t1:     {acento: "rosa",    pill: "Por foto · Pro",     lineas: ["Tire uma <u>foto</u>", "ao talão"]},
-    t2:     {acento: "teal",    pill: "Por voz · Pro",      lineas: ["<u>Diga</u>", "à sua maneira"]},
+    t0:     {acento: "azul",    pill: "Yala IA · Pro",      lineas: ["Escreve como", "a uma <u>amiga</u>"]},
+    t1:     {acento: "rosa",    pill: "Por foto · Pro",     lineas: ["<u>Fotografa</u>", "o talão"]},
+    t2:     {acento: "teal",    pill: "Por voz · Pro",      lineas: ["<u>Diz</u>", "à tua maneira"]},
     t3:     {acento: "violeta", pill: "Grupos · Gratuito",  lineas: ["Contas <u>certas</u>", "na viagem"]},
-    cierre: {acento: "rosa",    pill: null,                 lineas: ["As suas finanças,", "sem <u>esforço</u>."]},
+    cierre: {acento: "rosa",    pill: null,                 lineas: ["As tuas finanças,", "sem <u>esforço</u>."]},
   },
 };
 if (typeof module !== "undefined" && module.exports) module.exports = TEXTOS;
