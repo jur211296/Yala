@@ -7,12 +7,19 @@ interface Props {
 	title: string;
 	description?: string;
 	lang?: Language;
+	/** Páginas que no existen en los seis idiomas (funciones, preguntas frecuentes): sus gemelas
+	 *  explícitas. Si se pasa, sustituye al cálculo por ruta base. */
+	alternates?: { l: string; href: string }[];
+	/** Nodos schema.org extra para el @graph de la página (FAQPage, BreadcrumbList…). */
+	jsonLd?: Record<string, unknown>[];
 }
 
 const {
 	title,
 	description = "Tu centro de control financiero con Yala IA y gastos compartidos. Registra en segundos, entiende en minutos.",
-	lang = 'es'
+	lang = 'es',
+	alternates: alternatesOverride,
+	jsonLd = []
 } = Astro.props;
 
 const site = 'https://yala-app.pe';
@@ -28,10 +35,50 @@ const knownBases = ['/', '/privacy', '/terms', '/support'];
 // Con barra final, igual que las URLs del sitemap (Astro las emite así): canonical y sitemap deben coincidir.
 const localizedUrl = (l: Language) =>
 	site + (l === 'es' ? basePath : `/${l}${basePath === '/' ? '' : basePath}`) + (basePath === '/' && l === 'es' ? '' : '/');
-const alternates = knownBases.includes(basePath)
-	? langCodes.map((l) => ({ l, href: localizedUrl(l) }))
-	: [];
-const canonical = knownBases.includes(basePath) ? localizedUrl(lang) : site + rawPath;
+const alternates = alternatesOverride
+	?? (knownBases.includes(basePath) ? langCodes.map((l) => ({ l, href: localizedUrl(l) })) : []);
+const canonical = alternatesOverride
+	? (alternatesOverride.find((a) => a.l === lang)?.href ?? site + rawPath + '/')
+	: knownBases.includes(basePath) ? localizedUrl(lang) : site + rawPath;
+const xDefault = alternatesOverride
+	? (alternatesOverride.find((a) => a.l === 'es')?.href ?? canonical)
+	: localizedUrl('es');
+// Descripción y funciones de la app para los datos estructurados: fijas por idioma, no la de la página
+// (una página de privacidad o de una función no describe la app). de/fr/it/pt conservan la de su página,
+// como hasta ahora, y la lista de funciones en inglés.
+const appTexts = {
+	es: {
+		description: 'Yala es una app de finanzas personales para iPhone: anota gastos en segundos, arma presupuestos con alertas, divide gastos en grupo y pregúntale a Yala IA cómo vas.',
+		features: [
+			'Anotar gastos e ingresos en segundos, a mano o con atajos de Siri',
+			'Leer capturas de comprobantes y estados de cuenta (Yala Pro)',
+			'Dictado por voz y foto del recibo (Yala Pro)',
+			'Yala IA, asistente que responde con tus datos y anota por ti (Yala Pro)',
+			'Presupuestos con alertas y pagos planificados',
+			'Grupos para dividir gastos y simplificar deudas',
+			'Más de 50 divisas',
+			'Importar y exportar en CSV o Excel',
+			'Widgets de pantalla de inicio',
+			'Sin conexión a bancos ni claves bancarias',
+		],
+	},
+	en: {
+		description: 'Yala is a personal finance app for iPhone: log expenses in seconds, set budgets with alerts, split expenses with a group and ask Yala AI how you are doing.',
+		features: [
+			'Log expenses and income in seconds, by hand or with Siri shortcuts',
+			'Read screenshots of payment receipts and bank statements (Yala Pro)',
+			'Voice dictation and receipt photos (Yala Pro)',
+			'Yala AI, an assistant that answers with your data and logs for you (Yala Pro)',
+			'Budgets with alerts and planned payments',
+			'Groups to split expenses and simplify debts',
+			'More than 50 currencies',
+			'CSV and Excel import and export',
+			'Home Screen widgets',
+			'No bank connection or bank credentials',
+		],
+	},
+};
+const appText = lang === 'es' ? appTexts.es : lang === 'en' ? appTexts.en : { ...appTexts.en, description };
 const ogLocale = ({ es: 'es_PE', en: 'en_US', de: 'de_DE', fr: 'fr_FR', it: 'it_IT', pt: 'pt_BR' } as const)[lang];
 ---
 
@@ -44,7 +91,7 @@ const ogLocale = ({ es: 'es_PE', en: 'en_US', de: 'de_DE', fr: 'fr_FR', it: 'it_
 		<meta name="theme-color" content="#0F172A" />
 		<link rel="canonical" href={canonical} />
 		{alternates.map(({ l, href }) => <link rel="alternate" hreflang={l} href={href} />)}
-		{alternates.length > 0 && <link rel="alternate" hreflang="x-default" href={localizedUrl('es')} />}
+		{alternates.length > 0 && <link rel="alternate" hreflang="x-default" href={xDefault} />}
 
 		<!-- Smart App Banner (Safari iOS): abre o descarga la app sin salir de la web -->
 		<meta name="apple-itunes-app" content={`app-id=${APP_STORE_ID}`} />
@@ -115,12 +162,15 @@ const ogLocale = ({ es: 'es_PE', en: 'en_US', de: 'de_DE', fr: 'fr_FR', it: 'it_
 					publisher: { '@id': `${site}/#organization` },
 					inLanguage: langCodes,
 					datePublished: '2026-03-03',
-					description,
+					description: appText.description,
+					// Lo que hace, en frases cortas: es lo que citan los buscadores y las IA. Detalle por función en /funciones/.
+					featureList: appText.features,
 					offers: [
 						{ '@type': 'Offer', name: 'Yala Gratis', price: '0', priceCurrency: 'PEN', category: 'free' },
 						{ '@type': 'Offer', name: 'Yala Pro', price: '12.90', priceCurrency: 'PEN', category: 'subscription' },
 					],
 				},
+				...jsonLd,
 			],
 		})} />
 

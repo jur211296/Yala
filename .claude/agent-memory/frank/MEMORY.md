@@ -140,6 +140,7 @@
 - [Precios en el simulador: SKTestSession](reference_precios_en_el_simulador_con_sktestsession.md) — conductor XCUITest; la config se queda: erase antes del gate.
 - [La tarjeta de grupo no se abre con toques sintéticos](reference_tarjeta_de_grupo_no_se_abre_con_toques_sinteticos.md) — tap se pierde, touch abre el menú; recorre Grupos con XCUITest.
 - [Molde de la ficha de la App Store](reference_molde_ficha_app_store.md) — ficha-app-store/: reloj falso al 13-oct; barra del iPad y Panel, lo descartado.
+- [Planes de Lola: en la Mini](reference_propuestas_de_lola_en_la_mini.md) — ~/Claude/propuestas/ solo existe allí; `ssh mini` desde la Max.
 - [Capturar el menú de compartir](reference_capturar_el_menu_de_compartir.md) — Fotos + `axe tap` en puntos; vigilar PendingImages/.
 - [Montar el simulador del Duo](reference_montar_el_simulador_del_duo.md) — Xcode 27.2: runtime propio del Duo, no se deja instalado; aviso de PosterBoard.
 - [Conducir el Duo sin pantalla propia](reference_conducir_el_duo_sin_pantalla_propia.md) — screencapture vía osascript; carrusel por argumento, no arrastre.

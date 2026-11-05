@@ -1,6 +1,8 @@
 ---
 import type { Language } from '../i18n/translations';
 import { getTranslation, languages } from '../i18n/translations';
+import { ui, seoPaths } from '../content/seo';
+import { faqPageNode } from '../content/seoJsonLd';
 
 interface Props {
   lang: Language;
@@ -21,6 +23,16 @@ const privacyUrl = lang === 'es' ? '/privacy' : `/${lang}/privacy`;
 const termsUrl = lang === 'es' ? '/terms' : `/${lang}/terms`;
 const supportUrl = lang === 'es' ? '/support' : `/${lang}/support`;
 const APP_STORE = 'https://apps.apple.com/pe/app/yala-finanzas-sin-esfuerzo/id6758253109';
+// Funciones y preguntas frecuentes solo existen en es y en (decisión de Jürgen, 2026-11-04).
+const seoLang = lang === 'es' || lang === 'en' ? lang : null;
+// Las 6 dudas visibles de la portada, también como FAQPage para buscadores y lectores de IA.
+const homeFaqLd = {
+  '@context': 'https://schema.org',
+  ...faqPageNode(`https://yala-app.pe${homeUrl}`, lang as 'es', [1, 2, 3, 4, 5, 6].map((n) => ({
+    q: (t as Record<string, string>)[`v3Faq${n}Q`],
+    a: (t as Record<string, string>)[`v3Faq${n}A`],
+  }))),
+};
 
 // Capturas 2.0 — idioma-aware con fallback a ES (raw en/ no tiene panel-hero)
 const imgLang = lang === 'es' ? 'es' : 'en';
@@ -321,7 +333,7 @@ const navLinks = [
       <div class="v3-faq"><dt class="font-semibold">{t.v3Faq5Q}</dt><dd class="v3-muted leading-relaxed">{t.v3Faq5A}</dd></div>
       <div class="v3-faq"><dt class="font-semibold">{t.v3Faq6Q}</dt><dd class="v3-muted leading-relaxed">{t.v3Faq6A}</dd></div>
     </dl>
-    <p class="mt-6 text-sm v3-muted"><a href={supportUrl} class="v3-link">{t.footerHelp}</a></p>
+    <p class="mt-6 text-sm v3-muted"><a href={supportUrl} class="v3-link">{t.footerHelp}</a>{seoLang && <> · <a href={seoPaths.faq[seoLang]} class="v3-link">{ui[seoLang].faq}</a></>}</p>
   </section>
 
   <!-- CTA -->
@@ -339,6 +351,8 @@ const navLinks = [
   </section>
 </main>
 
+<script type="application/ld+json" set:html={JSON.stringify(homeFaqLd)} />
+
 <!-- FOOTER -->
 <footer class="py-10 border-t" style="border-color: var(--border-color);">
   <div class="v3-wrap flex flex-col md:flex-row items-center justify-between gap-5 text-sm v3-muted">
@@ -351,6 +365,8 @@ const navLinks = [
       <a href={privacyUrl} class="v3-navlink">{t.footerPrivacy}</a>
       <a href={termsUrl} class="v3-navlink">{t.footerTerms}</a>
       <a href={supportUrl} class="v3-navlink">{t.footerHelp}</a>
+      {seoLang && <a href={seoPaths.features[seoLang]} class="v3-navlink">{ui[seoLang].features}</a>}
+      {seoLang && <a href={seoPaths.faq[seoLang]} class="v3-navlink">{ui[seoLang].faq}</a>}
       <a href="mailto:admin@yala-app.pe" class="v3-navlink">{t.footerContact}</a>
     </div>
   </div>

@@ -1,0 +1,40 @@
+---
+import SeoShell from './SeoShell.astro';
+import { ui, features, featureUrl, seoPaths, APP_STORE_URL, type SeoLang } from '../content/seo';
+
+interface Props {
+  lang: SeoLang;
+}
+
+const { lang } = Astro.props;
+const t = ui[lang];
+const other: SeoLang = lang === 'es' ? 'en' : 'es';
+const planLabel = { free: t.planFree, pro: t.planPro, mixed: t.planMixed };
+---
+
+<SeoShell
+  lang={lang}
+  otherLangHref={seoPaths.features[other]}
+  crumbs={[{ label: t.home, href: lang === 'es' ? '/' : '/en/' }, { label: t.features }]}
+>
+  <h1 class="text-3xl md:text-4xl font-bold text-white mb-5 leading-tight">{t.featuresH1}</h1>
+  <p class="text-lg text-neutral-300 leading-relaxed mb-10">{t.featuresLede}</p>
+
+  <ul class="space-y-4">
+    {features.map((f) => (
+      <li>
+        <a href={featureUrl(f, lang)} class="seo-card block rounded-3xl p-6 hover:border-yala-cyan transition-colors">
+          <p class="text-xs font-medium text-yala-cyan mb-2">{planLabel[f.plan]}</p>
+          <h2 class="text-xl font-semibold text-white mb-2">{f.text[lang].nav}</h2>
+          <p class="text-neutral-300 leading-relaxed">{f.text[lang].description}</p>
+        </a>
+      </li>
+    ))}
+  </ul>
+
+  <div class="mt-12 flex flex-col sm:flex-row sm:items-center gap-4">
+    <a href={APP_STORE_URL} target="_blank" rel="noopener" class="btn-primary inline-flex justify-center">{t.download}<span class="sr-only"> ({t.newTab})</span></a>
+    <span class="text-sm text-neutral-400">{t.platform}</span>
+  </div>
+  <p class="mt-8 text-sm text-neutral-400"><a href={seoPaths.faq[lang]} class="underline underline-offset-2 hover:text-yala-cyan">{t.faq}</a></p>
+</SeoShell>

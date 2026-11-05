@@ -1,0 +1,45 @@
+---
+import SeoShell from './SeoShell.astro';
+import { ui, faq, features, featureUrl, seoPaths, APP_STORE_URL, type SeoLang } from '../content/seo';
+
+interface Props {
+  lang: SeoLang;
+}
+
+const { lang } = Astro.props;
+const t = ui[lang];
+const other: SeoLang = lang === 'es' ? 'en' : 'es';
+---
+
+<SeoShell
+  lang={lang}
+  otherLangHref={seoPaths.faq[other]}
+  crumbs={[{ label: t.home, href: lang === 'es' ? '/' : '/en/' }, { label: t.faq }]}
+>
+  <h1 class="text-3xl md:text-4xl font-bold text-white mb-5 leading-tight">{t.faqH1}</h1>
+  <p class="text-lg text-neutral-300 leading-relaxed mb-10">{t.faqLede}</p>
+
+  <dl class="space-y-4">
+    {faq[lang].map(({ q, a }) => (
+      <div class="seo-card rounded-2xl p-6">
+        <dt class="font-semibold text-white">{q}</dt>
+        <dd class="text-neutral-300 leading-relaxed mt-2">{a}</dd>
+      </div>
+    ))}
+  </dl>
+
+  <section class="mt-12">
+    <h2 class="text-xl font-semibold text-white mb-4">{t.features}</h2>
+    <ul class="grid sm:grid-cols-2 gap-3">
+      {features.map((f) => (
+        <li><a href={featureUrl(f, lang)} class="seo-card block rounded-2xl px-5 py-4 text-neutral-300 hover:text-yala-cyan transition-colors">{f.text[lang].nav}</a></li>
+      ))}
+    </ul>
+  </section>
+
+  <p class="mt-10 text-neutral-300">{t.contact} <a href="mailto:admin@yala-app.pe" class="text-yala-cyan underline underline-offset-2">admin@yala-app.pe</a>.</p>
+  <div class="mt-8 flex flex-col sm:flex-row sm:items-center gap-4">
+    <a href={APP_STORE_URL} target="_blank" rel="noopener" class="btn-primary inline-flex justify-center">{t.download}<span class="sr-only"> ({t.newTab})</span></a>
+    <span class="text-sm text-neutral-400">{t.platform}</span>
+  </div>
+</SeoShell>
