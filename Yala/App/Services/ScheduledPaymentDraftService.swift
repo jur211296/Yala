@@ -677,8 +677,16 @@ struct ScheduledPaymentDraftService {
             }
 
         case .yearly:
+            // Sumar un año deja el 29 de febrero en el 28 y, sin volver a la fecha del pago, se quedaba en el 28 para
+            // siempre (lote P1): se reancla en el día del pago, acotado al largo del mes.
             if let nextDate = calendar.date(byAdding: .year, value: interval, to: payment.nextDueDate) {
-                payment.nextDueDate = nextDate
+                let targetDay = payment.yearlyDay ?? calendar.component(.day, from: payment.nextDueDate)
+                payment.nextDueDate = ScheduledPaymentDateCalculator.yearlyDate(
+                    year: calendar.component(.year, from: nextDate),
+                    month: calendar.component(.month, from: nextDate),
+                    day: targetDay,
+                    calendar: calendar
+                ) ?? nextDate
             }
         }
 

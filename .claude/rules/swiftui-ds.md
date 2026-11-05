@@ -622,9 +622,12 @@ La tabla vista por vista y lo que queda en cards: `docs/fluidez/AUDITORIA-FLUIDE
   (`navigationDestination(isPresented:)`) no hacía nada, ni con `NavigationLink(value:)` y el destino registrado en
   la lista (desde la columna de detalle no se ve). Lo que funciona: `NavigationStack { vacío }` en `detail:` y el
   destino registrado en la propia vista abierta (`PlanningView`, `BudgetDetailView`). Es la misma familia que el «+»
-  de Categorías en Ajustes. **Dos cosas que siguen igual y no se arreglan así**: cambiar de chip con algo abierto deja
-  la columna con el triángulo amarillo (el destino vivía en la lista que se desmonta; `.id` de la pila no lo cambia,
-  ticket `ipad-planning-chip-switch-leaves-a-detail-without-destination`), y en ancho
+  de Categorías en Ajustes. **Cambiar de chip con algo abierto dejaba la columna con el triángulo amarillo** (el destino
+  vivía en la lista que se desmonta; `.id` de la pila no lo cambia). Desde el 2026-11-05 (lote P1) `PlanningView` rehace
+  el split ENTERO con `.id(selectedTab)` y el detalle vuelve a «Elige un…». Con eso, **lo que el split nuevo lee en su
+  `onAppear` tiene que estar escrito ANTES de rehacerlo**: el chip copiaba su estado a `SceneNavigation` en un `onChange`,
+  que el split viejo ya no llegaba a correr, y el `onAppear` del nuevo devolvía el chip al anterior (medido en el iPad
+  Pro 13); el toque escribe los dos. Test: `AdaptiveNavigationUITests#test_switchingPlanningChip_*`. Y en ancho
   `app.navigationBars.buttons.element(boundBy: 0)` es el botón de la barra lateral, no el «Atrás»: en XCUITest,
   `buttons["BackButton"]`.
 - **Lo que se abre en la columna de detalle lleva `.id(<identidad de lo abierto>)`** (medido el 2026-10-12 en el iPad

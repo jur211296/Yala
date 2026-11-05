@@ -643,7 +643,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | inbox-dismiss-x-does-not-delete-the-draft-for-good | done | tickets/done/inbox-dismiss-x-does-not-delete-the-draft-for-good.md |
 | inbox-header-leaves-no-room-for-drafts-at-large-text | done | tickets/done/inbox-header-leaves-no-room-for-drafts-at-large-text.md |
 | inbox-strings-show-a-python-dict-in-four-languages | done | tickets/done/inbox-strings-show-a-python-dict-in-four-languages.md |
-| inbox-success-says-transaction-created | backlog | tickets/backlog/inbox-success-says-transaction-created.md |
+| inbox-success-says-transaction-created | done | tickets/done/inbox-success-says-transaction-created.md |
 | income-amount-color-is-dim-in-dark-mode | done | tickets/done/income-amount-color-is-dim-in-dark-mode.md |
 | indice-readme-barre-worktrees-anidados | discarded | tickets/discarded/indice-readme-barre-worktrees-anidados.md |
 | indice-readme-cuenta-los-ficheros-de-los-worktrees-anidados | discarded | tickets/discarded/indice-readme-cuenta-los-ficheros-de-los-worktrees-anidados.md |
@@ -680,7 +680,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ipad-multiple-windows-share-one-navigation-state | done | tickets/done/ipad-multiple-windows-share-one-navigation-state.md |
 | ipad-narrowing-the-window-on-groups-crashes-the-app | done | tickets/done/ipad-narrowing-the-window-on-groups-crashes-the-app.md |
 | ipad-native-app | done | tickets/done/ipad-native-app.md |
-| ipad-planning-chip-switch-leaves-a-detail-without-destination | backlog | tickets/backlog/ipad-planning-chip-switch-leaves-a-detail-without-destination.md |
+| ipad-planning-chip-switch-leaves-a-detail-without-destination | done | tickets/done/ipad-planning-chip-switch-leaves-a-detail-without-destination.md |
 | ipad-real-multiwindow-with-per-scene-state | done | tickets/done/ipad-real-multiwindow-with-per-scene-state.md |
 | ipad-records-empty-detail-half-hidden-with-chat-open | backlog | tickets/backlog/ipad-records-empty-detail-half-hidden-with-chat-open.md |
 | ipad-reports-and-search-get-a-readable-width | backlog | tickets/backlog/ipad-reports-and-search-get-a-readable-width.md |
@@ -986,7 +986,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | saving-a-mismatched-transaction-relabels-it-without-converting | done | tickets/done/saving-a-mismatched-transaction-relabels-it-without-converting.md |
 | savings-tracking | backlog | tickets/backlog/savings-tracking.md |
 | scene-phase-active-guard-may-leave-the-brake-paused | done | tickets/done/scene-phase-active-guard-may-leave-the-brake-paused.md |
-| scheduled-due-draft-cannot-be-reached-in-uitest | backlog | tickets/backlog/scheduled-due-draft-cannot-be-reached-in-uitest.md |
+| scheduled-due-draft-cannot-be-reached-in-uitest | done | tickets/done/scheduled-due-draft-cannot-be-reached-in-uitest.md |
 | scheduled-early-payment-test-fails-on-the-31st | backlog | tickets/backlog/scheduled-early-payment-test-fails-on-the-31st.md |
 | scheduled-payment-actions-name-the-month-they-apply-to | qa | tickets/qa/scheduled-payment-actions-name-the-month-they-apply-to.md |
 | scheduled-payment-identical-drafts-in-the-inbox | done | tickets/done/scheduled-payment-identical-drafts-in-the-inbox.md |
@@ -1220,6 +1220,6 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | yala-ia-answer-renders-model-links-as-tappable | done | tickets/done/yala-ia-answer-renders-model-links-as-tappable.md |
 | yala-ia-classifies-uncategorized-movements-as-expense | done | tickets/done/yala-ia-classifies-uncategorized-movements-as-expense.md |
 | yala-ia-context-sums-stored-amounts-from-other-preferred-currencies | done | tickets/done/yala-ia-context-sums-stored-amounts-from-other-preferred-currencies.md |
-| yearly-scheduled-payment-on-feb-29-skips-common-years | backlog | tickets/backlog/yearly-scheduled-payment-on-feb-29-skips-common-years.md |
+| yearly-scheduled-payment-on-feb-29-skips-common-years | done | tickets/done/yearly-scheduled-payment-on-feb-29-skips-common-years.md |
 | zone-decisions-still-per-row | backlog | tickets/backlog/zone-decisions-still-per-row.md |
 

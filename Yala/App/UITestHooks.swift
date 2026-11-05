@@ -1229,6 +1229,13 @@ final class UITestHooks {
     /// `ScheduledPaymentSkipUITests` opera sobre el `firstMatch` de las filas.
     nonisolated static var scheduledDueToday: Bool { hasArg("-uitest-scheduled-due-today") }
 
+    /// `-uitest-process-due-scheduled`: tras la siembra, procesa los pagos planificados vencidos como el arranque real
+    /// (paso 4 de `AppBootstrapper.bootstrap`, que bajo `-uitest` no corre) y deja su borrador en la Bandeja. Con
+    /// `-uitest-scheduled-due-today`, el de «Recibo vence hoy». Aparte de ese seam a propósito: Estadísticas cuenta el pago
+    /// que vence hoy como «por pagar», y procesarlo siempre lo retiraría (lote P1, ticket
+    /// `scheduled-due-draft-cannot-be-reached-in-uitest`).
+    nonisolated static var processDueScheduled: Bool { hasArg("-uitest-process-due-scheduled") }
+
     /// `-uitest-scheduled-seed-day <N>`: siembra los pagos planificados como si hoy fuera el día `N` del mes
     /// EN CURSO (recortado a su longitud: `31` es siempre el último día). Solo mueve el «hoy» de
     /// `DevSeedScheduledPayments` —sus fechas y su `createdAt`—; la app sigue mirando el reloj real, así que

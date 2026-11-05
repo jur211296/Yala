@@ -213,24 +213,25 @@ enum ScheduledPaymentDateCalculator {
         let yearsBetween = year - anchorYear
         guard yearsBetween % interval == 0 else { return [] }
 
-        var components = DateComponents(year: year, month: targetMonth, day: targetDay)
-        let paymentDate: Date
-        if let direct = calendar.date(from: components) {
-            paymentDate = direct
-        } else {
-            // Fallback: last day of month (e.g., Feb 28 in non-leap year)
-            if let range = calendar.range(of: .day, in: .month,
-                for: calendar.date(from: DateComponents(year: year, month: targetMonth, day: 1)) ?? month) {
-                components.day = min(targetDay, range.count)
-            }
-            guard let fallback = calendar.date(from: components) else { return [] }
-            paymentDate = fallback
-        }
+        // El 29 de febrero en un año no bisiesto cae el 28: `Calendar.date(from:)` lo convertía en el 1 de marzo, el
+        // respaldo nunca corría y ese año se quedaba sin fecha (lote P1).
+        guard let paymentDate = yearlyDate(year: year, month: targetMonth, day: targetDay, calendar: calendar) else { return [] }
 
         let startOfPayment = calendar.startOfDay(for: paymentDate)
         guard monthInterval.contains(startOfPayment) else { return [] }
 
         return [startOfPayment]
+    }
+
+    /// La fecha anual de `day`/`month` en `year`, con el día acotado al largo del mes (el 29 de febrero, el 28 en un año
+    /// no bisiesto), como el mensual hace con el 31. La comparten el calendario, el avance de `nextDueDate`
+    /// (`ScheduledPaymentDraftService.advanceToNextDueDate`) y la vuelta atrás de `ScheduledDraftOccurrenceLogic`, para que
+    /// los tres caigan en el mismo día y el 29 vuelva en el bisiesto siguiente en vez de quedarse en el 28.
+    static func yearlyDate(year: Int, month: Int, day: Int, calendar: Calendar = .current) -> Date? {
+        guard let firstOfMonth = calendar.date(from: DateComponents(year: year, month: month, day: 1)),
+              let maxDay = calendar.range(of: .day, in: .month, for: firstOfMonth)?.count else { return nil }
+        return calendar.date(from: DateComponents(year: year, month: month, day: min(max(day, 1), maxDay)))
+            .map { calendar.startOfDay(for: $0) }
     }
 
     // MARK: - Post Filters (createdAt + endDate)

@@ -186,6 +186,20 @@ struct ScheduledPaymentDraftServiceTests {
         #expect(calendar.isDate(payment.nextDueDate, inSameDayAs: expected))
     }
 
+    /// Lote P1: el 29-feb pasa al 28 en los años no bisiestos y VUELVE al 29 en el bisiesto. Sumar años con `byAdding`
+    /// lo dejaba en el 28 para siempre: 2032 caía el 28.
+    @Test func advanceToNextDueDate_yearlyFeb29_returnsTo29InTheNextLeapYear() {
+        let payment = makePayment(recurrenceType: "yearly", nextDueDate: date(2028, 2, 29))
+        payment.yearlyMonth = 2
+        payment.yearlyDay = 29
+        var dates: [Date] = []
+        for _ in 0..<4 {
+            ScheduledPaymentDraftService.advanceToNextDueDate(payment: payment)
+            dates.append(calendar.startOfDay(for: payment.nextDueDate))
+        }
+        #expect(dates == [date(2029, 2, 28), date(2030, 2, 28), date(2031, 2, 28), date(2032, 2, 29)])
+    }
+
     @Test func advanceToNextDueDate_yearly_interval2() {
         let payment = makePayment(
             recurrenceType: "yearly",

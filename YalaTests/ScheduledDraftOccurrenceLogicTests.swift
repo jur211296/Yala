@@ -100,6 +100,17 @@ struct ScheduledDraftOccurrenceLogicTests {
         #expect(!ScheduledDraftOccurrenceLogic.isOccurrence(offSchedule, before: next, schedule: s, calendar: calendar))
     }
 
+    /// Lote P1: hacia atrás, el 29-feb vuelve al 29 en el bisiesto, como el avance hacia delante. Restar años dejaba el
+    /// 28-feb-2028 como ocurrencia de un pago del 29.
+    @Test func yearlyFeb29_walksBackTo29InTheLeapYear() {
+        let s = ScheduledDraftOccurrenceLogic.Schedule(isRecurring: true, recurrenceType: "yearly",
+                                                       recurrenceInterval: 1, dayOfMonth: nil,
+                                                       nextDueDate: day(2029, 2, 28), lastPaidDate: nil, yearlyDay: 29)
+        #expect(ScheduledDraftOccurrenceLogic.isOccurrence(day(2028, 2, 29), before: day(2029, 2, 28), schedule: s, calendar: calendar))
+        #expect(!ScheduledDraftOccurrenceLogic.isOccurrence(day(2028, 2, 28), before: day(2029, 2, 28), schedule: s, calendar: calendar))
+        #expect(ScheduledDraftOccurrenceLogic.isOccurrence(day(2027, 2, 28), before: day(2029, 2, 28), schedule: s, calendar: calendar))
+    }
+
     @Test func oneTimePayment_onlyHoldsItsDate() {
         let s = monthly(next: day(2026, 10, 1), recurring: false)
         #expect(!ScheduledDraftOccurrenceLogic.isOccurrence(day(2026, 9, 1), before: day(2026, 10, 1), schedule: s, calendar: calendar))

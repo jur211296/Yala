@@ -106,6 +106,11 @@ extension XCUIApplication {
         privateGateProbeStalled: Bool = false,
         inviteOpening: Bool = false,
         scheduledSeedDay: Int? = nil,
+        // `-uitest-scheduled-due-today` + `-uitest-process-due-scheduled`: un pago que vence hoy y, tras la siembra, el
+        // procesado de vencidos del arranque real, que deja su borrador en la Bandeja (lote P1). Nombrados: un typo dejaría
+        // la Bandeja sin el borrador y el caso rojo por la razón equivocada.
+        scheduledDueToday: Bool = false,
+        processDueScheduled: Bool = false,
         // `-uitest-last-seen-version <versión|none|keep>`: la última versión cuyas Novedades «vio» el dispositivo
         // (`UITestHooks.lastSeenAppVersionOverride`). Sin él, la actual, y la hoja no sale. NOMBRADO por lo mismo que sus
         // vecinos: un typo dejaría la versión actual y el caso de «viene de actualizar» saldría rojo culpando a la hoja.
@@ -273,6 +278,8 @@ extension XCUIApplication {
             args.append("-uitest-scheduled-seed-day")
             args.append(String(scheduledSeedDay))
         }
+        if scheduledDueToday { args.append("-uitest-scheduled-due-today") }
+        if processDueScheduled { args.append("-uitest-process-due-scheduled") }
         // Los dos seams del XCUITest del DESARME: la condición viva se enciende y la presentación no monta
         // nunca. NOMBRADOS por lo mismo que sus vecinos y con un agravante: un typo dejaría el aviso montando
         // de verdad, y el caso del desarme se quedaría esperando un paywall que solo sale al contestarlo.
