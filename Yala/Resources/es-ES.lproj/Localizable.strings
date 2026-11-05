@@ -7936,3 +7936,40 @@
 /* «Cuánto puedo gastar hoy» (2.3): el cupo del día de un presupuesto */
 "budgets.daily.canSpend" = "Hoy puedes gastar %@";
 "budgets.daily.overToday" = "Hoy te pasaste por %@";
+
+/* «Correo del banco» (2.3): reenvío de los avisos del banco a Yala */
+"bankEmail.title" = "Correo del banco";
+"bankEmail.intro" = "Reenvía a Yala los avisos que te manda tu banco y cada movimiento llega a tu Bandeja para que lo confirmes.";
+"bankEmail.addressCaption" = "Tu dirección de Yala";
+"bankEmail.addressLoading" = "Preparando tu dirección…";
+"bankEmail.addressError" = "No pudimos traer tu dirección. Revisa tu conexión e inténtalo otra vez.";
+"bankEmail.retry" = "Reintentar";
+"bankEmail.copyAddress" = "Copiar dirección";
+"bankEmail.copied" = "Dirección copiada";
+"bankEmail.seePro" = "Ver Yala Pro";
+"bankEmail.guidesCaption" = "Configura el reenvío en tu correo";
+"bankEmail.privacyFooter" = "Reenvía solo los avisos de tu banco. Yala lee cada correo para sacar el movimiento y no lo guarda.";
+"bankEmail.proLine" = "Con Yala Pro se leen todos tus avisos.";
+"bankEmail.trialExhausted" = "Ya usaste tus correos de prueba. Con Yala Pro se leen todos.";
+"bankEmail.skipped" = "Correos que llegaron sin leerse: %d.";
+"bankEmail.trialUsed" = "Correos de prueba usados: %1$d de %2$d.";
+"bankEmail.guideTitle" = "Reenviar desde %@";
+"bankEmail.guideLine" = "Se configura una sola vez, desde el navegador.";
+"bankEmail.guarantee" = "Solo salen de tu correo los avisos de tu banco: el resto de tus correos no se reenvía.";
+"bankEmail.stepCopyTitle" = "Copia tu dirección de Yala";
+"bankEmail.stepCopyDetail" = "La vas a pegar en tu correo en el paso siguiente.";
+"bankEmail.gmailAddTitle" = "Agrégala como dirección de reenvío";
+"bankEmail.gmailAddDetail" = "En Gmail, desde el navegador: Configuración › Ver toda la configuración › Reenvío y correo POP/IMAP › Agregar una dirección de reenvío. Pega tu dirección y acepta.";
+"bankEmail.openProvider" = "Abrir %@";
+"bankEmail.gmailConfirmTitle" = "Confirma con el código de Gmail";
+"bankEmail.gmailConfirmWaiting" = "Gmail le manda un código a tu dirección de Yala. Cuando llegue lo verás aquí: toca «Buscar el código» en un momento.";
+"bankEmail.gmailConfirmCode" = "Tu código de Gmail es %@. Escríbelo en Gmail, en Reenvío y correo POP/IMAP, y toca Verificar.";
+"bankEmail.copyCode" = "Copiar código";
+"bankEmail.checkCode" = "Buscar el código";
+"bankEmail.gmailFilterTitle" = "Crea un filtro para tu banco";
+"bankEmail.gmailFilterDetail" = "En Gmail, busca la dirección desde la que tu banco te manda los avisos y toca Crear filtro. Marca «Reenviarlo a», elige tu dirección de Yala y crea el filtro. Así solo se reenvían los avisos del banco.";
+"bankEmail.ruleTitle" = "Crea una regla para tu banco";
+"bankEmail.outlookRuleDetail" = "En Outlook, desde el navegador: Configuración › Correo › Reglas › Agregar nueva regla. Condición: «De» la dirección de tu banco. Acción: «Reenviar a» tu dirección de Yala. Guarda la regla.";
+"bankEmail.icloudRuleDetail" = "En iCloud.com, abre Mail y ve a Configuración › Reglas › Agregar una regla. Si un mensaje es de la dirección de tu banco, reenvíalo a tu dirección de Yala. Guarda la regla.";
+"bankEmail.stepWaitTitle" = "Espera el próximo aviso";
+"bankEmail.stepWaitDetail" = "Cuando tu banco te mande el siguiente, el movimiento aparece en tu Bandeja por confirmar.";

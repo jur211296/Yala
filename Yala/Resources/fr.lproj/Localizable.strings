@@ -8591,3 +8591,40 @@
 /* «Cuánto puedo gastar hoy» (2.3): el cupo del día de un presupuesto */
 "budgets.daily.canSpend" = "Aujourd'hui, tu peux dépenser %@";
 "budgets.daily.overToday" = "Aujourd'hui, tu as dépassé de %@";
+
+/* «Correo del banco» (2.3): reenvío de los avisos del banco a Yala */
+"bankEmail.title" = "E-mails de la banque";
+"bankEmail.intro" = "Transfère à Yala les alertes de ta banque : chaque opération arrive dans ta Boîte de réception pour que tu la confirmes.";
+"bankEmail.addressCaption" = "Ton adresse Yala";
+"bankEmail.addressLoading" = "Préparation de ton adresse…";
+"bankEmail.addressError" = "Impossible de récupérer ton adresse. Vérifie ta connexion et réessaie.";
+"bankEmail.retry" = "Réessayer";
+"bankEmail.copyAddress" = "Copier l’adresse";
+"bankEmail.copied" = "Adresse copiée";
+"bankEmail.seePro" = "Voir Yala Pro";
+"bankEmail.guidesCaption" = "Configure le transfert dans ta messagerie";
+"bankEmail.privacyFooter" = "Transfère uniquement les alertes de ta banque. Yala lit chaque e-mail pour en extraire l’opération et ne le conserve pas.";
+"bankEmail.proLine" = "Avec Yala Pro, toutes tes alertes sont lues.";
+"bankEmail.trialExhausted" = "Tu as utilisé tes e-mails d’essai. Avec Yala Pro, ils sont tous lus.";
+"bankEmail.skipped" = "E-mails arrivés sans être lus : %d.";
+"bankEmail.trialUsed" = "E-mails d’essai utilisés : %1$d sur %2$d.";
+"bankEmail.guideTitle" = "Transférer depuis %@";
+"bankEmail.guideLine" = "Ça se configure une seule fois, depuis le navigateur.";
+"bankEmail.guarantee" = "Seules les alertes de ta banque quittent ta boîte : le reste de tes e-mails n’est pas transféré.";
+"bankEmail.stepCopyTitle" = "Copie ton adresse Yala";
+"bankEmail.stepCopyDetail" = "Tu vas la coller dans ta messagerie à l’étape suivante.";
+"bankEmail.gmailAddTitle" = "Ajoute-la comme adresse de transfert";
+"bankEmail.gmailAddDetail" = "Dans Gmail, depuis le navigateur : Paramètres › Voir tous les paramètres › Transfert et POP/IMAP › Ajouter une adresse de transfert. Colle ton adresse et valide.";
+"bankEmail.openProvider" = "Ouvrir %@";
+"bankEmail.gmailConfirmTitle" = "Confirme avec le code Gmail";
+"bankEmail.gmailConfirmWaiting" = "Gmail envoie un code à ton adresse Yala. Dès qu’il arrive, tu le verras ici : touche « Chercher le code » dans un instant.";
+"bankEmail.gmailConfirmCode" = "Ton code Gmail est %@. Saisis-le dans Gmail, dans Transfert et POP/IMAP, puis touche Valider.";
+"bankEmail.copyCode" = "Copier le code";
+"bankEmail.checkCode" = "Chercher le code";
+"bankEmail.gmailFilterTitle" = "Crée un filtre pour ta banque";
+"bankEmail.gmailFilterDetail" = "Dans Gmail, recherche l’adresse depuis laquelle ta banque envoie ses alertes et touche Créer un filtre. Coche « Transférer à », choisis ton adresse Yala et crée le filtre. Ainsi, seules les alertes de la banque sont transférées.";
+"bankEmail.ruleTitle" = "Crée une règle pour ta banque";
+"bankEmail.outlookRuleDetail" = "Dans Outlook, depuis le navigateur : Paramètres › Courrier › Règles › Ajouter une nouvelle règle. Condition : « De » l’adresse de ta banque. Action : « Transférer à » ton adresse Yala. Enregistre la règle.";
+"bankEmail.icloudRuleDetail" = "Sur iCloud.com, ouvre Mail et va dans Réglages › Règles › Ajouter une règle. Si un message vient de l’adresse de ta banque, transfère-le à ton adresse Yala. Enregistre la règle.";
+"bankEmail.stepWaitTitle" = "Attends la prochaine alerte";
+"bankEmail.stepWaitDetail" = "Quand ta banque enverra la prochaine, l’opération apparaîtra dans ta Boîte de réception, prête à être confirmée.";

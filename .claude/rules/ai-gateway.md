@@ -203,3 +203,20 @@ toca sin reabrirlo:
   de `routes.ts`, rehaz la cuenta antes de tocar el techo.
 - XCUITest: `-uitest-stats-ai-reply` contesta sin red con `StatsAIUITestReply`; la decisión sigue siendo la de producción.
   Sus claves (`StatsAIAutoRefreshStore.storageKeys`) las borran «Vaciar datos» y `-uitest-reset`.
+
+## La lectura del correo del banco vive FUERA de `src/ai/` (encargo S2 de 2.3, 2026-11-04)
+
+- **`gateway/src/mail/read.ts` lleva su propia fila (`MAIL_READ_ROUTE`, `gpt-6-luna`) y su propio tope** (entrada 6.000
+  caracteres, salida 400 tokens): S1 tenía `src/ai/` cuando se escribió (opción B de Jürgen). **Reconciliado con S1 al
+  rebasar el mismo día**: cada lectura deja su fila en `yala_ai_usage` con `recordUsage` (tarea `mail.read`, cubo
+  `mail`), y el tope cumple la regla de S1 de que toda llamada de chat salga con `maxOutputTokens`.
+- **No está en `TASKS`/`ROUTES`, a propósito**: esa tabla es también lo que la app puede pedir por el proxy con
+  `X-Yala-Task`, y la lectura del correo solo la lanza el servidor. Si algún día entra, como `deducedOnly`, y el test
+  de topes de S1 la cubrirá sola.
+- **Usa el adaptador de OpenAI de siempre**: ningún proveedor nuevo, así que la política no cambia por proveedor. Si la
+  fila pasa a otro, aplica el orden de arriba (política primero).
+- **El cupo es por CUENTA, no por instalación**: 5 correos leídos sin Pro (`mail_addresses.trial_used`, D1); el correo
+  llega sin dispositivo. Un 5xx/429/408/red del proveedor devuelve el uso y olvida el «visto» para que un reenvío lo
+  reintente. El código de Gmail no pasa por la IA ni gasta, y no deja fila de uso.
+- **El correo no se guarda nunca**: ni cuerpo, ni asunto, ni remitente; ni en D1, ni en los logs (`[mail] outcome=…`),
+  ni en la fila de uso (test). Lo que la política promete (sección 6 y «Conservación» de la web) depende de esto.

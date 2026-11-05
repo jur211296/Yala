@@ -44,7 +44,7 @@ Para cada construcción, la pregunta es **a qué ruta llama y qué guard usa ESE
 
 | Guard del handler | Bajo `enforce` | Rutas |
 |---|---|---|
-| `requireUserAndAttest` | **401 sin header** | `/groups/rpc/:fn` · `/groups/push` · `/groups/pull` · `/groups/merkle` · `/push/register` · `/push/unregister` · `/account/delete` · `/account/siwa/revoke` · `/sync/*` · `/prefs/*` · `/attest/bind` |
+| `requireUserAndAttest` | **401 sin header** | `/groups/rpc/:fn` · `/groups/push` · `/groups/pull` · `/groups/merkle` · `/push/register` · `/push/unregister` · `/account/delete` · `/account/siwa/revoke` · `/sync/*` · `/prefs/*` · `/attest/bind` · `/mail/address` · `/mail/drafts` · `/mail/drafts/ack` (2.3, `BankEmailClient`) |
 | `requireUser` | pasa sin header | `/account/claim` · `/account/exists` · `/account/migration` · `/account/siwa/exchange` · `/account/entitlement` |
 
 Las **CUATRO** definiciones de la guard estricta están DUPLICADAS a propósito y son espejos declarados:

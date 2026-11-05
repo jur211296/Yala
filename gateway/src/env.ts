@@ -36,6 +36,10 @@ export interface Env {
   // muestra la pantalla bloqueante. Ausente/inválido → 0 (desactivado). Flip = editar var + deploy.
   MIN_SUPPORTED_BUILD?: string;
 
+  // --- Correo del banco por reenvío (src/mail/): la dirección es `<local>+<code>@<domain>`. Ausentes → auto / yala-app.pe.
+  MAIL_ADDRESS_LOCAL?: string;
+  MAIL_ADDRESS_DOMAIN?: string;
+
   // --- APNs (spike G0 Grupos→backend) — ausentes hasta configurar; /v1/debug/push responde 503 ---
   APNS_KEY_ID?: string; // Var (wrangler.toml): Key ID de 10 chars. NO es secreto (viaja en el header kid del JWT).
   APNS_AUTH_KEY?: string; // Secret (wrangler secret put): contenido PEM del AuthKey_<KEYID>.p8.

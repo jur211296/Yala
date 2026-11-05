@@ -561,6 +561,15 @@ struct ProfileView: View {
     /// exactamente `CloudAuthService.shared.hasSession` (byte-idéntico); `UITestHooks.fakeBackendSession`
     /// es inerte fuera de DEBUG (`hasArg` → false) y solo lo fuerza a `true` para QA/XCUITest del diálogo
     /// D5 en el simulador, donde no hay sign-in backend real (SIWA/Google no corren). NO crea sesión real.
+    /// «Correo del banco» (2.3): solo con los datos en la nube y sesión, y fuera de solo-grupos.
+    private var showsBankEmailRow: Bool {
+        CloudSessionRevision.shared.track()
+        return UITestHooks.bankEmailFake || BankEmailEntryLogic.showsRow(
+            storageIsCloud: CloudSyncFlags.storageMode == .cloud,
+            hasSession: CloudAuthService.shared.hasSession,
+            isGroupsFocusedShell: isGroupsOnlyShell)
+    }
+
     private var deleteAccountRowHasSession: Bool {
         // Card n533 · sin esto, la sesión que entra con Ajustes abierto no sacaba «Tu cuenta de Yala» (medido).
         CloudSessionRevision.shared.track()
@@ -1337,6 +1346,8 @@ struct ProfileView: View {
                 iCloudSyncSettingsView()
             case .siriShortcuts:
                 SiriShortcutsView()
+            case .bankEmail:
+                BankEmailForwardingView()
             case .aiPrivacy:
                 AIPrivacySettingsView()
             case .permissions:
@@ -1395,7 +1406,7 @@ struct ProfileView: View {
     private func paintsOwnBackButton(_ destination: ProfileDestination) -> Bool {
         switch destination {
         case .accounts, .categories, .tags, .themes, .personalization, .appIcon, .notifications, .budgets,
-             .subscription, .tips, .faq, .siriShortcuts, .permissions, .usageMode:
+             .subscription, .tips, .faq, .siriShortcuts, .bankEmail, .permissions, .usageMode:
             true
         case .currency, .favorites, .userDataReset, .faceIDProtectionGuide, .iCloudSync, .aiPrivacy, .storageMode,
              .yalaAccount:
@@ -1692,6 +1703,15 @@ struct ProfileView: View {
                         icon: "mic.badge.plus", title: String(localized: "settings.siriShortcuts"),
                         iconColor: .blue, destination: .siriShortcuts)
                     .accessibilityIdentifier("profile_siri_shortcuts")
+                }
+                // Correo del banco (2.3): exige los datos en la nube con sesión. Registra gastos personales: fuera en
+                // solo-grupos (lo decide `BankEmailEntryLogic`).
+                if showsBankEmailRow {
+                    SubsectionDivider()
+                    profileRow(
+                        icon: "envelope.badge.fill", title: L10n.BankEmail.title,
+                        iconColor: .indigo, destination: .bankEmail)
+                    .accessibilityIdentifier("profile_bank_email")
                 }
             }
         }

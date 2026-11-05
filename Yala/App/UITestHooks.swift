@@ -998,6 +998,13 @@ final class UITestHooks {
     /// antirrebote siguen siendo los de producción.
     nonisolated static var statsAIReply: Bool { hasArg("-uitest-stats-ai-reply") }
 
+    /// `-uitest-bank-email`: «Correo del banco» (2.3) sin servidor ni nube. Enseña la fila de Ajustes aunque los datos no
+    /// estén en la nube y la pantalla contesta con una dirección fija (`BankEmailModel`), sin red. La decisión de la fila
+    /// la prueban los unit tests de `BankEmailEntryLogic`, sin el seam. `-uitest-bank-email-gmail-code` añade el código de
+    /// Gmail ya recibido. Solo DEBUG (inerte en release vía `hasArg`).
+    nonisolated static var bankEmailFake: Bool { hasArg("-uitest-bank-email") }
+    nonisolated static var bankEmailFakeGmailCode: Bool { hasArg("-uitest-bank-email-gmail-code") }
+
     /// `-uitest-ai-chat-ready`: el chat de Yala IA ya tiene su consentimiento y su onboarding vistos, así que
     /// tocar la entrada abre el chat directo (`YalaAIOnboardingLogic.nextScreen` → `.chat`). Lo usa el XCUITest de
     /// la columna de Yala IA en iPad: solo monta la vista, no envía nada.

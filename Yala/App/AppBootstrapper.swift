@@ -2382,6 +2382,13 @@ final class AppBootstrapper {
         if InboundCaptureDrain.drain(context: context) > 0 {
             sessionState.incrementDataVersion()
         }
+        // Correo del banco por reenvío (2.3): los movimientos que el gateway leyó de los avisos reenviados pasan a la
+        // Bandeja. Solo pregunta con la dirección preparada y los datos en la nube (`BankEmailDraftService.shouldSync`).
+        Task { @MainActor in
+            if await BankEmailDraftService.syncIfNeeded(context: context) > 0 {
+                sessionState.incrementDataVersion()
+            }
+        }
         // Refrescar la caché de contexto del intent de Siri (subcategorías/divisa/cuentas).
         SiriIntentContextCache.refresh(context: context, defaultCurrency: appPreferences.defaultCurrencyCode.rawValue)
         ApplePayDraftService.refreshCurrencyHint(context: context)

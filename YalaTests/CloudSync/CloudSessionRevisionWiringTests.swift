@@ -66,6 +66,8 @@ struct CloudSessionRevisionWiringTests {
         ("Yala/App/Views/Profile/ProfileView.swift",
          "private var deleteAccountRowHasSession: Bool {",
          "return UITestHooks.fakeBackendSession || CloudAuthService.shared.hasSession"),
+        ("Yala/App/Views/Profile/ProfileView.swift",
+         "private var showsBankEmailRow: Bool {", "return UITestHooks.bankEmailFake || BankEmailEntryLogic.showsRow("),
         ("Yala/App/Views/Profile/YalaAccountView.swift",
          "if let previewModel { return previewModel }", "return YalaAccountLogic.model("),
         ("Yala/App/Views/Shared/CloudAttestNoticeBanner.swift",
