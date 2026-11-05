@@ -933,7 +933,8 @@ enum WidgetPeriod: String, CaseIterable, Codable {
             return DateInterval(start: startOfLastYear, end: endOfLastYear)
 
         case .allTime:
-            let start = calendar.date(byAdding: .year, value: -10, to: now) ?? startOfToday
+            // Anclado al inicio del día, como `DetailPeriod.dateInterval()`: con `now` el intervalo cambiaba en cada lectura.
+            let start = calendar.date(byAdding: .year, value: -10, to: startOfToday) ?? startOfToday
             return DateInterval(start: start, end: endOfToday)
         }
     }

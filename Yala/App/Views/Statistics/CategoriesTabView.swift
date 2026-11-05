@@ -293,6 +293,7 @@ struct CategoriesTabView: View {
     @ViewBuilder
     private var scrollContent: some View {
         VStack(spacing: DS.Spacing.md) {
+            StatsGuideSlot()
             heroSummary
             // La acción principal arriba, como en el Panel; el flotante solo al bajar (card kzhe).
             StatsQuickActionsSlot()
@@ -2172,6 +2173,9 @@ private struct CategoriesFilterRecalcObservers: ViewModifier {
             .onChange(of: viewModel.amountCondition) { onRecalc() }
             .onChange(of: viewModel.searchText) { onRecalc() }
             .onChange(of: viewModel.excludedEntitiesKey) { onRecalc() }
-            .onChange(of: viewModel.selectedTransactionNatures) { onRecalc() }
+            // La naturaleza (ingresos / gastos) NO va aquí: `viewModel.selectedTransactionNatures` es un proxy de
+            // `SessionState`, y el body ya la observa (`sessionState.selectedTransactionNatures`) para recolocar la
+            // lista y el carrusel antes de recalcular. Observarla dos veces corría `calculateData()` dos veces por toque
+            // (ticket `distribucion-recalcula-dos-veces-por-toque-y-sin-debounce`).
     }
 }

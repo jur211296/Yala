@@ -1,10 +1,10 @@
 ---
 id: distribucion-recalcula-dos-veces-por-toque-y-sin-debounce
-status: backlog
+status: done
 priority: low
 area: statistics
 created: 2026-09-06
-updated: 2026-10-08
+updated: 2026-11-05
 source: hallazgo de la review adversarial de distribution-balance-kpi-skips-fx
 ---
 
@@ -58,3 +58,11 @@ pulsación — por eso esto es `low` y no `high`.
 - Sigue sin debounce: 11 llamadas a `calculateData()` en el fichero y ninguna `Task.sleep` ni `schedule…Recalc`. Los tres commits posteriores (`262e97631`, `415193daa`, `7a2baaf7e`) no tocan los observadores.
 
 Triage 2026-10-08: abierto · low → low · el doble recálculo y la falta de debounce siguen; coste por toque, no por tecla, y sin medir en aparato.
+
+## Resolución (2026-11-05, lote P3 de 2.3)
+
+Se quitó el observador duplicado (`CategoriesFilterRecalcObservers` observaba el proxy `viewModel.selectedTransactionNatures`
+además del `sessionState.selectedTransactionNatures` del body). Medido en el simulador: quitar el chip «Gasto» pasa de 2
+a 1 `calculateData()`. El debounce que también menciona el ticket queda fuera a propósito: la card pedía un recálculo por
+toque, y un freno cambiaría la respuesta de todos los filtros de la pestaña. Las otras pestañas (Tendencias, Registros,
+el contenedor) observan la naturaleza una sola vez.

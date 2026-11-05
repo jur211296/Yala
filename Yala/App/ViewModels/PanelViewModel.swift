@@ -425,6 +425,69 @@ final class PanelViewModel {
         }
         self.defaultCurrencyCode = defaultCurrencyCode
         self.sessionState = sessionState
+        if observedSessionFilters == nil { observeSessionFilters() }
+    }
+
+    // MARK: - Filtros de sesión
+
+    /// Lo último que vio la observación de los filtros. `nil` mientras no observa.
+    @ObservationIgnored private var observedSessionFilters: PanelSessionFilterKey?
+
+    /// Los filtros de sesión recalculan el Panel desde aquí, no desde `onChange` en la vista. Medido el 2026-11-05 (lote
+    /// P3, ticket `panel-stayed-filtered-after-removing-the-account-chip`): tras volver a primer plano, SwiftUI dejaba de
+    /// reevaluar el modificador que los observaba cuando cambiaba SOLO `selectedAccountIDs`. Quitar el chip escribía
+    /// `1 → 0` sin que nada se enterara, el `onChange` se quedaba con el 1 y los `0 → 1` siguientes le parecían «sin
+    /// cambio»: el Panel seguía con las cifras filtradas hasta relanzar. `withObservationTracking` no depende del
+    /// repintado: se arma de nuevo en cada cambio.
+    private func observeSessionFilters() {
+        guard let sessionState else {
+            observedSessionFilters = nil
+            return
+        }
+        let current = withObservationTracking {
+            PanelSessionFilterKey(sessionState)
+        } onChange: { [weak self] in
+            // `willSet`: el valor nuevo se lee en la vuelta siguiente del main actor.
+            Task { @MainActor [weak self] in self?.sessionFiltersDidChange() }
+        }
+        observedSessionFilters = current
+    }
+
+    private func sessionFiltersDidChange() {
+        let previous = observedSessionFilters
+        observeSessionFilters()
+        guard let previous, let current = observedSessionFilters, current != previous else { return }
+        inferNatureFromSelection(previous: previous, current: current)
+        recalculateData()
+    }
+
+    /// Elegir solo categorías, subcategorías o necesidades de gasto (o solo de ingreso) deja la naturaleza a juego. Lo
+    /// hacían los `onChange` de `PanelSessionObservers` (retirado), y con ellos dormidos también se perdía.
+    private func inferNatureFromSelection(previous: PanelSessionFilterKey, current: PanelSessionFilterKey) {
+        guard let sessionState else { return }
+        if current.categoryIDs != previous.categoryIDs, !current.categoryIDs.isEmpty {
+            let selected = categories.filter { current.categoryIDs.contains($0.persistentModelID) }
+            if !selected.isEmpty {
+                if selected.allSatisfy({ !$0.isIncome }) {
+                    sessionState.selectedTransactionNatures = [.expense]
+                } else if selected.allSatisfy({ $0.isIncome }) {
+                    sessionState.selectedTransactionNatures = [.income]
+                }
+            }
+        }
+        if current.needs != previous.needs, !current.needs.isEmpty {
+            sessionState.selectedTransactionNatures = [.expense]
+        }
+        if current.subcategoryIDs != previous.subcategoryIDs, !current.subcategoryIDs.isEmpty {
+            let selected = allSubcategories.filter { current.subcategoryIDs.contains($0.persistentModelID) }
+            if !selected.isEmpty {
+                if selected.allSatisfy({ !$0.safeCategory.isIncome }) {
+                    sessionState.selectedTransactionNatures = [.expense]
+                } else if selected.allSatisfy({ $0.safeCategory.isIncome }) {
+                    sessionState.selectedTransactionNatures = [.income]
+                }
+            }
+        }
     }
 
     func loadData() {
@@ -3423,3 +3486,37 @@ final class PanelViewModel {
 
 // MARK: - Calendar Extension for Budget Calculations
 
+/// Los filtros de sesión que cambian lo que pinta el Panel. Comparar la clave entera evita recalcular por una escritura
+/// que deja el mismo valor (`onChange` tampoco lo hacía).
+struct PanelSessionFilterKey: Equatable {
+    let period: DetailPeriod
+    let customDateRange: DateInterval?
+    let accountIDs: Set<PersistentIdentifier>
+    let categoryIDs: Set<PersistentIdentifier>
+    let subcategoryIDs: Set<PersistentIdentifier>
+    let needs: Set<SubcategoryNeed>
+    let tags: Set<PersistentIdentifier>
+    let currencies: Set<CurrencyCode>
+    let natures: Set<TransactionNature>
+    let amountCondition: AmountFilterCondition
+    let searchText: String
+    let excluded: SessionState.ExcludedFilterSets
+    let trendMetric: TrendMetric
+
+    @MainActor
+    init(_ session: SessionState) {
+        period = session.selectedPeriod
+        customDateRange = session.customDateRange
+        accountIDs = session.selectedAccountIDs
+        categoryIDs = session.selectedCategoryIDs
+        subcategoryIDs = session.selectedSubcategoryIDs
+        needs = session.selectedNeeds
+        tags = session.selectedTags
+        currencies = session.selectedCurrencies
+        natures = session.selectedTransactionNatures
+        amountCondition = session.amountCondition
+        searchText = session.searchText
+        excluded = session.excludedFilterSets
+        trendMetric = session.selectedTrendMetric
+    }
+}

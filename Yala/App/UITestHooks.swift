@@ -50,6 +50,10 @@ final class UITestHooks {
     /// `-uitest-pro`: fuerza Pro (devForceProTier) al arranque.
     nonisolated static var forcePro: Bool { hasArg("-uitest-pro") }
 
+    /// `-uitest-show-guides`: las guías de primera visita (`ContextualGuideBanner`) se pintan también bajo `-uitest`, donde
+    /// por defecto se callan para no tapar lo que cada test busca. Solo para el test que mira la propia guía.
+    nonisolated static var showsContextualGuides: Bool { hasArg("-uitest-show-guides") }
+
     // MARK: Yala Pro (auditoría UX 2.2 · lote decidido 06)
 
     enum FakePrices: Equatable { case eligible, trialUsed }

@@ -54,6 +54,17 @@ paths:
   el cálculo lea fuera del almacén (una preferencia, el reloj) necesita su observador o entrar en la firma.
   La espera de 150 ms del Panel es ahora FIJA desde la primera petición: lo que llega dentro se suma, no la reinicia.
 
+- **Un `onChange(of:)` sobre un `@Observable` puede DORMIRSE tras volver a primer plano, y el que recalcula una pantalla
+  no puede depender de él (medido el 2026-11-05, iOS 27.2, lote P3, ticket
+  `panel-stayed-filtered-after-removing-the-account-chip`).** En `PanelShell`, tras ir a inicio y volver, SwiftUI dejó de
+  reevaluar el modificador cuando cambiaba SOLO `selectedAccountIDs`: quitar el chip escribía `1 → 0` sin que nada se
+  enterara, el `onChange` se quedaba con el 1 y los `0 → 1` siguientes le parecían «sin cambio». El Panel seguía
+  filtrado hasta relanzar (3 de 7 corridas de 10 rondas; con logs que leían la sesión en el `body` no salía: los logs
+  tapaban el fallo). ⇒ **el recálculo por filtros de sesión vive en el ViewModel**, con `withObservationTracking`
+  rearmado en cada cambio y una clave `Equatable` para no recalcular por escrituras del mismo valor
+  (`PanelViewModel.observeSessionFilters`, `PanelSessionFilterKey`). Estadísticas y Registros siguen con `onChange` (sin
+  medir).
+
 - **La vuelta a `.active` de una pantalla con freno pasa por `ForegroundResume.whenApplicationActive` (2026-11-04,
   card n34p).** El `guard UIApplication.shared.applicationState == .active else { return }` de antes se saltaba también
   el `setBackground(false)` si la escena llegaba antes que la app, y la pantalla se quedaba sin recalcular hasta el

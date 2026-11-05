@@ -246,8 +246,11 @@ enum DetailPeriod: String, CaseIterable, Identifiable {
             return DateInterval(start: startOfLastYear, end: endOfLastYear)
 
         case .allTime:
-            // Return a very long interval (10 years back to end of today)
-            let start = calendar.date(byAdding: .year, value: -10, to: now) ?? startOfToday
+            // Diez años hasta el fin de hoy. El inicio se ancla al inicio del día, no a `now`: anclado a `now` avanzaba
+            // en cada evaluación, la clave del Sankey de Distribución (`sankeyInputKey`) no se repetía nunca y el Sankey
+            // se recalculaba en cada repintado (ticket `distribution-sankey-recomputes-on-every-render-with-all-time`).
+            // Espejo: `WidgetPeriod.dateInterval()`.
+            let start = calendar.date(byAdding: .year, value: -10, to: startOfToday) ?? startOfToday
             return DateInterval(start: start, end: endOfToday)
 
         case .custom:
@@ -257,7 +260,9 @@ enum DetailPeriod: String, CaseIterable, Identifiable {
             } else {
                 let startOfMonth = calendar.date(
                     from: calendar.dateComponents([.year, .month], from: now)) ?? startOfToday
-                return DateInterval(start: startOfMonth, end: now)
+                // Hasta el fin de hoy, como los períodos en curso: con `end: now` la clave del Sankey también cambiaba en
+                // cada repintado.
+                return DateInterval(start: startOfMonth, end: endOfToday)
             }
         }
     }
