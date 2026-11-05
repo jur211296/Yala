@@ -198,7 +198,8 @@ Repetir validaciones 1–4 para `YalaWidgets/Resources/pl.lproj/Localizable.stri
 ## Validación con tests (OBLIGATORIO antes de reportar)
 
 ```bash
-xcodebuild test -scheme Yala -project Yala.xcodeproj \
+bash qa/scripts/sim-lock.sh -- \
+  xcodebuild test -scheme Yala -project Yala.xcodeproj \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
   -only-testing:YalaTests/LocalizationParityTests \
   -only-testing:YalaTests/StringsdictParityTests \

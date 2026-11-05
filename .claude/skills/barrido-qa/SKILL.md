@@ -46,8 +46,9 @@ para Jürgen solo si además pasa el filtro doble de §4.
 
 ## 3. Cómo se prueba en el simulador
 
-- **Un simulador como máximo.** Antes de encender uno, mira si otra sesión lo está usando
-  (`xcrun simctl list devices booted` y las sesiones vivas). Si está ocupado, espera; no lo apagues tú.
+- **Un simulador como máximo, y con turno.** Antes del primer build o install, pide el turno y sostenlo todo el
+  barrido, como en `/qa` («Turno del simulador»): `bash qa/scripts/sim-lock.sh -- sleep 7200` en segundo plano, y
+  `kill` al acabar. Si está tomado, espera; no lo apagues tú. Un install sin turno tumba el gate de otra sesión.
 - Las herramientas y el arranque del simulador, como en `/qa`.
 - Siembra con `DevSeed*` / `-uitest-*`. Nunca contra CloudKit de producción.
 - Para cada item probado guarda: el paso, lo que se esperaba, lo que salió y la captura en `_capturas/<slug>/`.
@@ -114,6 +115,16 @@ fecha de ayer», y el editor no permite fechas pasadas en un pago nuevo (`minDat
    - **dos tablas al final:** lo que pasó a done (id, motivo y evidencia) **y lo que se queda (id y qué parte del
      filtro doble de §4, o qué visto bueno de §2.6, lo retiene)**. Sin esta segunda tabla no se puede auditar el
      barrido.
+   - **Antes de cerrar, el comprobador:** que nada de lo que espera prueba quede fuera sin que se vea. Con la tanda
+     nueva primero (ahí escribe el aviso) y las anteriores de la versión detrás:
+     ```bash
+     args=(--guion docs/qa/tanda-qa-jurgen-<versión>-<esta>.md)
+     for f in docs/qa/tanda-qa-jurgen-<versión>-barrido-*.md; do args+=(--guion "$f"); done
+     python3 -I qa/scripts/guion-tanda-check.py --tablero "${args[@]}" --escribir
+     ```
+     Exit 1 = hay tickets de `tickets/qa/` o cards «in qa» que ninguna tanda nombra. Cada uno va a la tanda o a la
+     tabla de «lo que se queda»; si de verdad no toca en este barrido, el aviso que deja el script en la tanda lo
+     dice, y no se borra a mano. Lo creó el lote T7 (2026-11-05), tras tres desfases sin aviso.
 4. **Vistos buenos de §2.6.** Deja las capturas en `_capturas/<slug>/`, una carpeta por pregunta. En el cuerpo del PR
    añade la sección **«Preguntas de visto bueno pendientes para Frank»**: por pregunta, la card, qué se pregunta en una
    frase y la ruta de sus capturas. Frank, el bot, se las manda a Jürgen **una pregunta por mensaje, con sus fotos**, y

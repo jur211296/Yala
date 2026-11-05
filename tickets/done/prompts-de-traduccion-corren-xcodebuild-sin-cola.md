@@ -1,10 +1,10 @@
 ---
 id: prompts-de-traduccion-corren-xcodebuild-sin-cola
-status: backlog
+status: done
 priority: low
 area: qa, l10n
 created: 2026-09-12
-updated: 2026-10-08
+updated: 2026-11-05
 source: lente adversarial de la sesión de la cola del simulador (2026-09-12)
 ---
 
@@ -61,3 +61,10 @@ Es el mismo hueco: trabajo que toca el iPhone 17 Pro compartido fuera de la cola
 Ninguna de las recetas lleva `sim-lock.sh` todavía: `qa/prompts/README.md:58` y `:98`, `translate-ja.md:228`, `translate-zh-Hans.md:256`, `translate-pl.md:201`, `translate-nl.md:183`, `add-l10n-key.sh:173` (scheme `Yala`) y `qa/cloud/README.md:84`. Desde el 12-sep no hay commits en `sim-lock.sh` ni en `sim-libre.sh`.
 
 Triage 2026-10-08: abierto · medium → low · ninguna de las ocho recetas pasa por `sim-lock.sh` y el centinela sigue sin ver `simctl`; se fusiona aquí `qa-de-producto-toca-el-simulador-sin-cola`.
+
+## Cerrado — 2026-11-05 (lote T7, proceso)
+
+- Las ocho recetas llevan la cola: `bash qa/scripts/sim-lock.sh --` delante del `xcodebuild test` de `qa/prompts/README.md` (las dos), `translate-ja.md`, `translate-zh-Hans.md`, `translate-pl.md`, `translate-nl.md` y `qa/cloud/README.md`; `add-l10n-key.sh` ya no imprime su propio `xcodebuild` (scheme `Yala`) y remite a `/l10n-check`, que hace cola con `Yala Dev`.
+- El `simctl install booted` de ja y zh: el device QA visual pide turno en su paso 0 y lo sostiene hasta las capturas.
+- La otra mitad (`qa-de-producto-toca-el-simulador-sin-cola`): `/qa` y `/barrido-qa` **sostienen el turno** toda la tanda con `sim-lock.sh -- sleep 7200` en segundo plano, reentran con el token del lockfile si corren un XCUITest y lo sueltan con `kill` (`.claude/commands/qa.md`, «Turno del simulador»). Patrón probado con un lockfile propio: toma, reentrada, el ajeno espera y sale 75, el `kill` libera. Sin cambios en la lógica de `sim-lock.sh`; su cabecera y `.claude/rules/testing.md` ya no dicen que el `/qa` va sin lock.
+- Queda fuera, a propósito: enseñar al centinela (`sim-libre.sh`) la firma de `simctl install` (opción 3 del ticket fusionado). Quien instale a mano fuera de las recetas sigue sin verse.

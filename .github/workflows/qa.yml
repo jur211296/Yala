@@ -114,6 +114,10 @@ jobs:
       # sesión los vería; aquí el lock está siempre libre y no cuesta nada.
       - name: Cola del simulador (sim-lock.sh + sim-libre.sh)
         run: bash qa/scripts/sim-lock-test.sh
+      # El comprobador de las tandas de QA. Contra el guion real NO corre aquí (cada PR que mueve un
+      # ticket a `qa/` saldría rojo); corre su banco, con repos y tablero de juguete.
+      - name: Comprobador de la tanda de QA (guion-tanda-check.py)
+        run: bash qa/scripts/guion-tanda-check-test.sh
       # El paso «Simulador del runner» del job `tests` solo se ejerce de verdad cuando
       # CoreSimulator falla (8 de los 33 rojos de QA entre el 2026-08-18 y el 2026-10-02). Su banco simula esos
       # casos con un `xcrun` falso, sin tocar ningún simulador.

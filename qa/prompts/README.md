@@ -53,9 +53,10 @@ Estos prompts permiten ejecutar las 4 traducciones de calidad real (nl, pl, ja, 
 8. **(zh)** 0 caracteres tradicionales (繁體)
 
 ### xcodebuild test obligatorio antes de reportar
-Cada sesión DEBE ejecutar:
+Cada sesión DEBE ejecutar, **siempre con la cola delante** (`sim-lock.sh`: el simulador es uno y lo comparten todas las sesiones; sin cola, dos corridas se derriban y el rojo parece tuyo):
 ```bash
-xcodebuild test -scheme Yala -project Yala.xcodeproj \
+bash qa/scripts/sim-lock.sh -- \
+  xcodebuild test -scheme Yala -project Yala.xcodeproj \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
   -only-testing:YalaTests/LocalizationParityTests \
   -only-testing:YalaTests/StringsdictParityTests \
@@ -65,6 +66,7 @@ Debe imprimir `** TEST SUCCEEDED **`.
 
 ### Device QA visual obligatorio para ja/zh
 Por riesgo de mojibake (encoding) o caracteres tradicionales contaminantes:
+- Pide el turno del simulador y sostenlo mientras dure (ver «Turno del simulador» en `.claude/commands/qa.md`): el install pisa el bundle id de quien esté corriendo tests.
 - Build `Yala Dev`, install, setear idioma del simulador, tomar screenshots de Panel + Records + Profile + Statistics.
 - Verificar que NO haya `?` ni cuadrados □ ni caracteres erróneos.
 
@@ -95,7 +97,8 @@ Una vez tengas los 4 commits listos en main/branch, ejecuta el suite completo:
 
 ```bash
 cd /Users/jur/Yala
-xcodebuild test -scheme Yala -project Yala.xcodeproj \
+bash qa/scripts/sim-lock.sh -- \
+  xcodebuild test -scheme Yala -project Yala.xcodeproj \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
   -only-testing:YalaTests/LocalizationParityTests \
   -only-testing:YalaTests/StringsdictParityTests \

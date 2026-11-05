@@ -859,7 +859,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | private-signout-groups-session-expiry-does-not-say-where-to-sign-in | backlog | tickets/backlog/private-signout-groups-session-expiry-does-not-say-where-to-sign-in.md |
 | pro-saved-entitlement-survives-an-apple-id-switch | backlog | tickets/backlog/pro-saved-entitlement-survives-an-apple-id-switch.md |
 | pro-theme-resets-silently-when-pro-ends | done | tickets/done/pro-theme-resets-silently-when-pro-ends.md |
-| prompts-de-traduccion-corren-xcodebuild-sin-cola | backlog | tickets/backlog/prompts-de-traduccion-corren-xcodebuild-sin-cola.md |
+| prompts-de-traduccion-corren-xcodebuild-sin-cola | done | tickets/done/prompts-de-traduccion-corren-xcodebuild-sin-cola.md |
 | pt-br-category-strings-keep-portugal-and-unaccented-forms | backlog | tickets/backlog/pt-br-category-strings-keep-portugal-and-unaccented-forms.md |
 | pt-br-group-rows-say-they-lent-you-under-owed-to-you | done | tickets/done/pt-br-group-rows-say-they-lent-you-under-owed-to-you.md |
 | pt-pt-group-system-names-keep-the-brazilian-voce | done | tickets/done/pt-pt-group-system-names-keep-the-brazilian-voce.md |
@@ -871,7 +871,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | qa-cloud-readme-sin-entradas-g13-04-y-g13-05 | backlog | tickets/backlog/qa-cloud-readme-sin-entradas-g13-04-y-g13-05.md |
 | qa-de-producto-toca-el-simulador-sin-cola | discarded | tickets/discarded/qa-de-producto-toca-el-simulador-sin-cola.md |
 | qa-folder-keeps-evidence-of-tickets-that-already-left | backlog | tickets/backlog/qa-folder-keeps-evidence-of-tickets-that-already-left.md |
-| qa-guion-tanda-no-cubre-17-tickets | backlog | tickets/backlog/qa-guion-tanda-no-cubre-17-tickets.md |
+| qa-guion-tanda-no-cubre-17-tickets | done | tickets/done/qa-guion-tanda-no-cubre-17-tickets.md |
 | qa-no-puede-crear-cuenta-en-otra-divisa | done | tickets/done/qa-no-puede-crear-cuenta-en-otra-divisa.md |
 | qa-yml-no-cancela-la-corrida-anterior-de-la-misma-rama | discarded | tickets/discarded/qa-yml-no-cancela-la-corrida-anterior-de-la-misma-rama.md |
 | queued-offer-after-dismiss-flakes-on-a-cold-simulator | done | tickets/done/queued-offer-after-dismiss-flakes-on-a-cold-simulator.md |

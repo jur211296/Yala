@@ -60,10 +60,12 @@
 #
 # ## Qué NO cubre
 #
-# - **Al `/qa` de producto no se le pone lock**: ese es device-QA a mano, con un humano
-#   mirando, y encolarlo detrás de un gate de 40 min no ayuda a nadie. Ojo con la otra
-#   cara: un `simctl install` suelto pisa un bundle id sin que ninguna de las dos firmas
-#   que vigila `sim-libre.sh` lo vea (ticket `qa-de-producto-toca-el-simulador-sin-cola`).
+# - **Un `simctl install` o un `build_run_sim` NO pasan por aquí por sí solos**, y ninguna de
+#   las dos firmas que vigila `sim-libre.sh` los ve. Desde el 2026-11-05 el `/qa`, el
+#   `/barrido-qa` y el device QA de `qa/prompts/` SOSTIENEN el turno toda la tanda con
+#   `sim-lock.sh -- sleep 7200` en segundo plano (y reentran con el token del lockfile si
+#   corren un XCUITest dentro): ver «Turno del simulador» en `.claude/commands/qa.md`.
+#   Quien instale a mano fuera de esas recetas sigue siendo invisible.
 # - **Un worktree cuya rama no traiga este script no hace cola** (el fichero vive en el
 #   árbol de trabajo, como `.githooks/`). Por eso `sim-libre.sh --vigilar` SIGUE siendo la
 #   red: caza al que corre sin lock. Si el centinela canta con el lock puesto, el intruso

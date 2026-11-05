@@ -1,5 +1,12 @@
 # Guion de la tanda de QA
 
+> **HISTÓRICO — no es el guion vivo.** Dejó de mantenerse el 2026-10-04. Desde entonces el guion de la tanda lo
+> escribe `/barrido-qa` en **`docs/qa/tanda-qa-jurgen-<versión>-barrido-*.md`** (hoy, las de 2.2), y la cola de
+> lo que espera prueba vive en `tickets/qa/` y en las cards «in qa» del tablero. Lo de abajo se conserva como
+> registro: los 36 tickets que nombra ya están en `done`. Para saber qué se queda fuera de las tandas:
+> `python3 -I qa/scripts/guion-tanda-check.py --tablero --guion docs/qa/tanda-qa-jurgen-2.2-barrido-*.md`
+> (cada fichero con su `--guion`; receta completa en `/barrido-qa`, §6).
+
 > **Qué es esto.** La cola de `tickets/qa/` y el guion para recorrerla en el iPhone, agrupada **por
 > montaje** y no por ticket: una reinstalación sirve a tres tickets si se hacen seguidos.
 >
@@ -13,7 +20,7 @@
 > siguen: nadie los ha probado todavía. **Los 36 de aquí son los que merece la pena probar a mano**; los que
 > bajaron a `done` no se te vuelven a pedir.
 >
-> Al mover algo a `qa/` o sacarlo de ahí, actualiza este guion.
+> (Instrucción de cuando estaba vivo: «al mover algo a `qa/` o sacarlo de ahí, actualiza este guion». Ya no aplica.)
 >
 > `qa` NO significa «terminado»: significa que el código está hecho y verificado hasta donde el simulador
 > alcanza.

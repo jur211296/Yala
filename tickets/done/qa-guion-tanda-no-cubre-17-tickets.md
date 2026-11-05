@@ -1,10 +1,10 @@
 ---
 id: qa-guion-tanda-no-cubre-17-tickets
-status: backlog
+status: done
 priority: low
 area: qa
 created: 2026-09-06
-updated: 2026-10-08
+updated: 2026-11-05
 source: hallazgo al añadir groups-archived-group-rejects-join al guion (2026-09-06)
 ---
 
@@ -58,3 +58,10 @@ comprobador del punto 2**, que sigue pendiente.
 - Sigue sin existir un comprobador en `qa/` ni en `qa/scripts/` que cruce `tickets/qa/*.md` con el guion: el punto 2 está sin hacer.
 
 Triage 2026-10-08: abierto · low → low · tooling de QA: la medición de hoy confirma que repartir a mano no basta, pero no afecta a la app.
+
+## Cerrado — 2026-11-05 (lote T7, proceso): el punto 2 existe
+
+- `qa/scripts/guion-tanda-check.py` cruza lo que espera prueba —`tickets/qa/*.md` y, con `--tablero`, las cards de Yala «in qa» sin las de Lola— contra uno o varios guiones (`--guion`, repetible; las tandas nombran por sufijo de 4 letras). Exit 1 si algo queda fuera; con `--escribir` deja un bloque de aviso arriba del primer guion. Banco `guion-tanda-check-test.sh` (12 casos, dos mutantes muertos), en el job `coverage-index` del CI. Contra el guion real no corre en el CI: cada PR que mueve un ticket a `qa/` saldría rojo.
+- `/barrido-qa` lo corre al cerrar (§6, escribe el aviso en la tanda nueva) y `/qa-guiado` al empezar (lee y se lo dice a Jürgen).
+- Medido hoy: `qa/guion-tanda.md` estaba muerto desde el 2026-10-04 (nombraba 36 tickets ya en `done` y ninguno de los 17 de `tickets/qa/`). Decisión de Jürgen (2026-11-05, por el bot): no se borra; lleva arriba la nota de histórico y el puntero a las tandas `docs/qa/tanda-qa-jurgen-2.2-barrido-*.md`, que son el guion vivo.
+- Hallazgo de la primera corrida real: **67 de 90** cosas que esperan prueba (17 tickets + 73 cards) no salen en ninguna tanda de 2.2. Repartirlas es trabajo del próximo `/barrido-qa`.

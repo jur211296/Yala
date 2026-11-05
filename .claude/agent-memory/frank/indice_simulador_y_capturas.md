@@ -1,0 +1,95 @@
+---
+name: indice-simulador-y-capturas
+description: Simulador y capturas
+metadata:
+  type: reference
+---
+
+# Subíndice: conducir el simulador (axe, XCUITest conductor, iPad, Duo), capturas, vídeo y el «antes/después».
+
+Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de conducir el simulador o sacar capturas y vídeos. Una entrada nueva de este tema va AQUÍ.
+
+- [Mutantes: orden rechazada y zsh](feedback_mutantes_rechazados_y_zsh.md) — una orden rechazada ya pudo mutar; `$FILES` en zsh no se parte: `git diff --stat` tras cada tanda.
+- [Sentry dev: cuadra con las sesiones](feedback_sentry_dev_cuadra_con_las_sesiones.md) — evento cada pocos segundos en simulador = previews o bucle ajeno; mira git log de esa hora.
+- [Forzar una preferencia en un lanzamiento](reference_forzar_una_preferencia_en_un_lanzamiento.md) — `-clave NO` gana al dominio de registro de -uitest.
+- [Un timeout tapa el rojo de detrás](feedback_un_timeout_tapa_el_rojo_de_detras.md) — con plazo, el golden 20 salió rojo por g24_01; instrumenta y nombra la causa en el mensaje.
+- [El «antes» del iPhone, con git archive](feedback_antes_del_iphone_con_git_archive.md) — base aparte para el diff de píxeles; para una captura, respaldo + `git show HEAD:`.
+- [El guion del antes se ensaya antes de la base](feedback_el_guion_del_antes_se_ensaya_antes_de_la_base.md) — una pantalla por test, filas por dos rasgos; costó dos vueltas.
+- [La build cortada deja un .app sin Info.plist](feedback_la_build_cortada_deja_un_app_sin_info_plist.md) — deja terminar la del «antes» o restaura y recompila incremental.
+- [Un seam de reloj arranca bajo el splash](feedback_un_seam_de_reloj_arranca_bajo_el_splash.md) — onAppear no es visible: N=2 vencía tapado; verde con el arreglo antes de fiarte.
+- [Ver un fallo de XCUITest en vídeo](reference_ver_un_fallo_de_xcuitest_en_video.md) — xcresult → mp4 → ffmpeg último fotograma; los .txt no ven las hojas.
+- [Vídeo de un XCUITest en verde](reference_video_de_un_xcuitest_en_verde.md) — el verde no deja mp4: simctl recordVideo alrededor de la corrida.
+- [Fechar un rojo con la nocturna](reference_fechar_un_rojo_con_la_nocturna.md) — `gh run view --log` de qa.yml da el veredicto por caso y día; acota antes de bisecar.
+- [Un seam de contador dispara sus one-shots](feedback_un_seam_de_contador_dispara_sus_one_shots.md) — fijar «5 registros» sin primer ni checklist sacaba hojas encima.
+- [La decisión vive en la nota de la card](feedback_la_decision_vive_en_la_nota_de_la_card.md) — `listar --json` no trae `note`: `tablero ver` antes de lanzar.
+- [Prefs del simulador y NavigationLink](reference_simulador_prefs_y_navigationlink.md) — plist con el simulador apagado; axe no abre un link en hoja.
+- [axe no ve las hojas](feedback_axe_no_ve_las_hojas.md) — árbol de debajo; filas de List con el tap de MCP.
+- [La telemetría de la card puede ser de otro aparato](feedback_la_telemetria_de_la_card_puede_ser_de_otro_aparato.md) — filtra por instalación; el 401 «medido» era del iPad.
+- [Un seam que deja algo pendiente contamina el test siguiente](feedback_un_seam_que_deja_algo_pendiente_contamina_al_siguiente_test.md) — `SessionState` lee antes del reset; lee la debug description.
+- [`tablero --nota`/`--enlace` sustituyen](feedback_tablero_nota_sustituye.md) — lee el campo antes y repite lo que había; borró una decisión y dos enlaces.
+- [Capturar widgets por galería](feedback_capturar_widgets_por_galeria.md) — un tamaño por página, vuelve a la 1 tras cada alta; seed + 2.º arranque.
+- [El marco de celda no es el bloque](feedback_el_marco_de_celda_no_es_el_bloque.md) — mide bordes de List en píxeles; los marcos XCUI mienten.
+- [El final del scroll se mide hasta que para](feedback_el_final_del_scroll_se_mide_hasta_que_para.md) — N arrastres fijos no llegan (2 años, AX5); semilla corta.
+- [El testigo se apunta ANTES de conducir](feedback_el_testigo_se_apunta_antes_de_conducir.md) — el kill de la 1.ª pasada; y…
+- [Cerrar un atajo quita lo que capturaba](feedback_cerrar_un_atajo_quita_lo_que_capturaba.md) — el ciclo sin candado era el…
+- [La limpieza «por si acaso» enmascara mutantes](feedback_la_limpieza_por_si_acaso_enmascara_mutantes.md) — una línea inalca…
+- [El mutante muere y el término sobra](feedback_el_mutante_muere_y_el_termino_sobra.md) — 5 mutantes muertos y la rama solo…
+- [Antes de poner techo, mide que la espera existe](feedback_antes_de_poner_techo_mide_que_la_espera_existe.md) — acoté una esper…
+- [Maqueta de estados del Welcome](reference_maqueta_de_estados_del_welcome.md) — `-mock6`; el cover de la nube se cae sobre la app: lánzalo desde el Welcome.
+- [Maqueta de variantes por XCUITest](reference_maqueta_de_variantes_por_xcuitest.md) — `-mockv N` + PNG al Mac; `launchForUITest` pisa args: `extraArguments:`.
+- [Forzar preferencias en el simulador](reference_forzar_preferencias_en_el_simulador.md) — matar cfprefsd del runtime y plistlib; plutil rompe claves con puntos.
+- [axe no toca una ventana propia](feedback_axe_no_toca_una_ventana_propia.md) — un aviso en UIWindow aparte: veredicto por XCUITest y dedo.
+- [Tests del conector mcp/ en local](reference_mcp_tests_en_local.md) — un calculador compartido rompe el golden; npm ci --prefer-offline + regenerar.
+- [Entradas de fuera en el simulador](reference_entradas_de_fuera_en_el_simulador.md) — widget = URL; Siri se ejecuta en Atajos; push sin permiso no va.
+- [Botón de widget y App Group en el simulador](reference_widget_intent_y_app_group_en_simulador.md) — el ✓ no responde a toques sintéticos; la cola, por plistlib.
+- [Yala IA en el simulador](reference_yala_ia_en_el_simulador.md) — sin servidor: args -uitest-chat-* y -chatQuestionsToday N; privacy grant mata la app.
+- [Precios en el simulador: SKTestSession](reference_precios_en_el_simulador_con_sktestsession.md) — conductor XCUITest; la config se queda: erase antes del gate.
+- [La tarjeta de grupo no se abre con toques sintéticos](reference_tarjeta_de_grupo_no_se_abre_con_toques_sinteticos.md) — tap se pierde, touch abre el menú; recorre Grupos con XCUITest.
+- [Molde de la ficha de la App Store](reference_molde_ficha_app_store.md) — ficha-app-store/: reloj falso al 13-oct; barra del iPad y Panel, lo descartado.
+- [Capturar el menú de compartir](reference_capturar_el_menu_de_compartir.md) — Fotos + `axe tap` en puntos; vigilar PendingImages/.
+- [Montar el simulador del Duo](reference_montar_el_simulador_del_duo.md) — Xcode 27.2: runtime propio del Duo, no se deja instalado; aviso de PosterBoard.
+- [Conducir el Duo sin pantalla propia](reference_conducir_el_duo_sin_pantalla_propia.md) — screencapture vía osascript; carrusel por argumento, no arrastre.
+- [Conducir el simulador con axe](reference_conducir_simulador_con_axe.md) — describe-ui filtrado y tap por id: una fracción de snapshot_ui; sin tildes.
+- [Portapapeles y PasteButton en el simulador](reference_portapapeles_y_pastebutton_en_simulador.md) — pbcopy no llega en iOS 27; el PasteButton ignora toques sintéticos: typeText + guion.
+- [Capturas de hojas con XCUITest](feedback_capturas_de_hojas_con_xcuitest.md) — dentro de Ajustes, XCTAttachment + export; los swipes de axe cierran la hoja.
+- [Capturas: en `_capturas/<slug>`](reference_capturas_sobreviven_en_worktrees_capturas.md) — el worktree se retira; capturas/ dentro muere y ensucia el status.
+- [Regresión aparente: se mide contra la base](feedback_regresion_aparente_se_mide_contra_la_base.md) — worktree de origin y mismos toques antes de arreglar o culparte.
+- [Rojo de compilación en un fichero ajeno](feedback_rojo_de_compilacion_en_fichero_ajeno.md) — relanza; si repite tras editar durante un build, clean antes de bisecar.
+- [Capturas con un conductor XCUITest](feedback_capturas_con_conductor_xcuitest.md) — build del árbol sin tocar, capturas en segundo plano y editar mientras.
+- [La captura es del binario que lanzas](feedback_la_captura_es_del_binario_que_lanzas.md) — `-configuration Debug` deja otro bundle; lanza el .dev recién compilado.
+- [El «antes» con la app base en Products](reference_el_antes_con_la_app_base_en_products.md) — regrabar el antes sin otra build: cambia el Yala.app de Products.
+- [El «antes» sale del build del rojo](feedback_el_antes_sale_del_build_del_rojo.md) — un build con el arreglo revertido da el rojo del XCUITest y la captura.
+- [Tras un mutante, la app instalada es el mutante](feedback_tras_un_mutante_la_app_instalada_es_el_mutante.md) — recompila antes de capturar; axe type, no type_text.
+- [La gráfica se queda el gesto](feedback_la_grafica_se_queda_el_gesto.md) — swipe por x=8, despacio; el banner, en ráfaga.
+- [El vídeo del simulador salta pantallas cortas](feedback_el_video_del_simulador_salta_pantallas_cortas.md) — el «después» breve se conduce a mano y screenshot.
+- [El vídeo del simulador no casa con el reloj](feedback_el_video_del_simulador_no_casa_con_el_reloj.md) — solo escribe al cambiar la pantalla: graba el tramo con apretón de manos.
+- [Una tanda de capturas cuesta ~12 GB](feedback_una_tanda_de_capturas_cuesta_diez_gigas.md) — .ddp, base y `erase` de los iPhone del carril al cerrar; los iPad no.
+- [DerivedData en /Volumes/ExtDev](reference_deriveddata_en_extdev.md) — disk-report lo da 0B; el .app y los huérfanos están ahí.
+- [Importar un archivo en el simulador](reference_importar_un_archivo_en_el_simulador.md) — LocalStorage + XCUITest conductor; store vacío = sin categorías.
+- [El simulador no lee ~/Downloads](reference_el_simulador_no_lee_downloads.md) — test colgado al 0 % sin error: copia a /private/tmp.
+- [El barrido de QA rinde por lotes](feedback_el_barrido_qa_rinde_por_lotes.md) — agrupa por estado de simulador; dos números…
+- [Una carrera de presentación no se mide a mano](feedback_una_carrera_de_presentacion_no_se_mide_a_mano.md) — axe lento gana la carrera; XCUITest + sonda + log stream.
+- [El mutante cortado se queda puesto](feedback_el_mutante_cortado_se_queda_puesto.md) — comando de mutar+correr+restaurar cortado: grep el árbol antes de seguir.
+- [Un fotograma se aísla con variantes por argumento](feedback_un_fotograma_se_aisla_con_variantes_por_argumento.md) — un build, `-zzVn YES`, medidor de filas; y review adversarial aunque sea pulido.
+- [Un flaky «de entorno» se mide a mano](feedback_el_flaky_de_entorno_se_mide_lanzando_a_mano.md) — N arranques con simctl + prints; el de la oferta en cola era producto.
+- [Conducir a mano ensucia aunque no teclees](feedback_conducir_a_mano_ensucia_aunque_no_teclees.md) — capturas con content_size/axe antes del gate: erase o capturar después.
+- [Conducir a mano contamina los unit](feedback_conducir_a_mano_contamina_los_unit.md) — un arranque en solo grupos dejó 16 rojos falsos; erase antes del gate.
+- [El tap de XcodeBuildMCP se pierde en pantallas vivas](feedback_el_tap_de_xcodebuildmcp_se_pierde_en_pantallas_vivas.md) — `touch` 0,1 s antes de culpar al botón.
+- [Los mutantes compilan solo YalaTests](feedback_mutantes_compilan_solo_yalatests.md) — sin `-only-testing` en el build, 15…
+- [El script de mutantes revierte mi trabajo](feedback_el_script_de_mutantes_revierte_mi_trabajo.md) — LÉELO antes de lanzar: copia, techo, y vaciar Dead/ por vuelta.
+- [Mutantes: sin diagnose y con copia](feedback_mutantes_sin_diagnose_y_con_copia.md) — iOS 27 gasta 600 s por mutante muerto; un corte deja el mutante puesto; en zsh la lista de copias va en array.
+- [El mutante de un scan vive en el disco](feedback_el_mutante_de_un_scan_vive_en_el_disco.md) — el scan lee al correr; build+restaurar los da por vivos.
+- [El sello depende del staging de los renombrados](feedback_el_sello_depende_del_staging_de_los_renombrados.md) — no partas el commit tras /gate; Swift en uno, docs después.
+- [El régimen del test decide qué mutante caza](feedback_el_regimen_del_test_decide_que_mutante_caza.md) — en el régimen del bug las variantes se igualan; mutante por alternativa descartada.
+- [Cerrar deslizando agarra la hoja de debajo](feedback_el_gesto_de_cerrar_agarra_la_hoja_de_debajo.md) — `navigationBars.firstMatch` es la de fondo; verde con el bug.
+- [Ajustar en el sitio común duplica](feedback_ajustar_en_el_sitio_comun_duplica.md) — el residuo ya contaba; sumar en la común salía 5 y no 3.
+- [El sello cubre el encargo](feedback_el_sello_cubre_el_encargo.md) — Paso 0 antes de `/gate`; heredoc con markdown, siempre…
+- [La review y los mutantes no comparten árbol](feedback_la_review_y_los_mutantes_no_comparten_arbol.md) — una lente leyó un…
+- [Dos corridas, un simulador](feedback_dos_corridas_un_simulador.md) — vigila la corrida ENTERA, no solo la foto de antes.
+- [Medir en simulador: salida y PID](feedback_medir_en_simulador_salida_y_pid.md) — `print` sale con `--console-pty`; `eval … & $!` da el PID del subshell.
+- [Medir la web: axe, Lighthouse, preview](feedback_medir_la_web_a11y_y_preview.md) — axe ciego con opacity 0; preview con SS…
+- [Capturas del simulador para la web](feedback_capturas_simulador_para_la_web.md) — receta y trampas: Secrets.xcconfig, nomb…
+- [«Sin cambios visibles» se mide al píxel](feedback_sin_cambios_visibles_se_mide_al_pixel.md) — el ojo pasó un truncado del SE; diff antes/después.
+- [El flag que enciendo lo lee la hoja](feedback_el_flag_que_enciendo_lo_lee_la_hoja.md) — «Editar» abría uno nuevo; la entrada nueva cruza las puertas del dedo.
+- [la-poblacion-de-un-bug-se-mide-antes-de-arreglarlo](feedback_la_poblacion_de_un_bug_se_mide_antes_de_arreglarlo.md) — Antes de cerrar un hueco en código, mide a cuánta gente alcanza — hay CUATRO fuentes en este repo y las cuatro son barat…
+- [un-arreglo-de-carga-puede-no-verse-en-el-primer-contenido](feedback_un_arreglo_de_carga_puede_no_verse_en_el_primer_contenido.md) — Quitar recálculos y escrituras que ocurren DESPUÉS de pintar no mueve el «tiempo hasta contenido»; mídelo con Time Profi…
