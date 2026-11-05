@@ -127,6 +127,37 @@ Verificar en vivo qué modelo sale (y que ninguno es `gpt-4.1-nano`):
 npx wrangler tail --env production --format json | grep -o '"evt":"ai_route"[^}]*'
 ```
 
+### Uso de tokens por llamada (Analytics Engine, 2026-11-04)
+
+Cada petición de IA escribe un punto en el dataset `yala_ai_usage` (`yala_ai_usage_staging` en staging; binding
+`AI_USAGE`, `src/ai/usage.ts`). Sin contenido ni identificador del dispositivo. Guarda 90 días; si hiciera falta más
+historia, Jürgen aprobó guardar aparte un resumen mensual.
+
+| Columna | Qué es |
+|---|---|
+| `blob1` · `blob2` · `blob3` · `blob4` · `blob5` | tarea · cubo de cuota · proveedor · modelo · `finish_reason` (`length` = cortada por el tope) |
+| `double1` · `double2` · `double3` · `double4` · `double5` | estado HTTP · tokens de entrada · de ellos, de caché · tokens de salida · de ellos, de razonamiento |
+| `double6` · `double7` · `double8` | ms · intentos · `1` si el proveedor dio `usage` (`0` en errores y transcripciones) |
+
+Tokens medios por función y % cacheado, últimos 7 días (token de solo lectura en `~/Secrets/yala-cloudflare/`):
+
+```sh
+curl -s "https://api.cloudflare.com/client/v4/accounts/<account>/analytics_engine/sql" \
+  -H "Authorization: Bearer $(cat ~/Secrets/yala-cloudflare/analytics-read.token)" --data "
+SELECT blob1 AS task, blob4 AS model,
+  sum(_sample_interval) AS calls,
+  sum(_sample_interval * double2) / sum(_sample_interval * double8) AS avg_input,
+  sum(_sample_interval * double4) / sum(_sample_interval * double8) AS avg_output,
+  sum(_sample_interval * double3) / sum(_sample_interval * double2) AS cached_share,
+  sum(_sample_interval * if(blob5 = 'length', 1, 0)) AS cut_by_cap
+FROM yala_ai_usage
+WHERE timestamp > NOW() - INTERVAL '7' DAY
+GROUP BY task, model ORDER BY calls DESC FORMAT JSON"
+```
+
+El coste sale de multiplicar por el precio del modelo (`bench/candidates.ts`). **Siempre `sum(_sample_interval)`**, nunca
+`count()`: Analytics Engine muestrea.
+
 ### `POST /metrics` — telemetría propia mínima (sustituye TelemetryDeck)
 
 Ingestión PÚBLICA (molde `/config`: sin auth/attest) de 3 eventos: `ping` (activos/día), `register`

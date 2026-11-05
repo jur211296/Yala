@@ -102,6 +102,6 @@ export const geminiAdapter: ChatAdapter = {
     const fr = cand?.finishReason === "MAX_TOKENS" ? "length" : cand?.finishReason === "SAFETY" ? "content_filter" : "stop";
     const usage = geminiUsage(json);
     const model = json?.modelVersion ?? route.model;
-    return { status: 200, body: openAICompletion({ model, content, finishReason: fr, usage }), usage, model, attempts };
+    return { status: 200, body: openAICompletion({ model, content, finishReason: fr, usage }), usage, model, attempts, finishReason: fr };
   },
 };

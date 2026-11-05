@@ -117,6 +117,6 @@ export const anthropicAdapter: ChatAdapter = {
     const fr = json?.stop_reason === "max_tokens" ? "length" : json?.stop_reason === "refusal" ? "content_filter" : "stop";
     const usage = anthropicUsage(json);
     const model = json?.model ?? route.model;
-    return { status: 200, body: openAICompletion({ model, content, finishReason: fr, usage }), usage, model, attempts };
+    return { status: 200, body: openAICompletion({ model, content, finishReason: fr, usage }), usage, model, attempts, finishReason: fr };
   },
 };

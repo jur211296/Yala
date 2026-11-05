@@ -36,6 +36,11 @@ export interface AdapterResult {
   /** Modelo que contestó, tal como lo dice el proveedor. */
   model: string | null;
   attempts: number;
+  /**
+   * Por qué terminó la respuesta, en el vocabulario de OpenAI (`stop`, `length`, `content_filter`, `tool_calls`…).
+   * `null` si no hubo respuesta del modelo (error, red) o el proveedor no lo dice. Va al registro de uso.
+   */
+  finishReason?: string | null;
   /** Solo diagnóstico (banco): por qué falló, sin contenido del usuario. */
   error?: string;
 }

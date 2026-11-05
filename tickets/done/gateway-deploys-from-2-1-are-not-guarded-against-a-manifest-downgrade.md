@@ -1,10 +1,10 @@
 ---
 id: gateway-deploys-from-2-1-are-not-guarded-against-a-manifest-downgrade
-status: backlog
+status: done
 priority: high
 area: "gateway, cloud-sync, deploy"
 created: 2026-10-18
-updated: 2026-10-18
+updated: 2026-11-04
 source: review adversarial de multi-currency-accounts-1-model-and-sync (lente de servidor, 2026-10-18)
 ---
 
@@ -38,3 +38,10 @@ cola sin red en el momento del despliegue.
 
 - [`multi-currency-accounts-1-model-and-sync`](../done/multi-currency-accounts-1-model-and-sync.md)
 - `gateway/RUNBOOK.md`, entrada «manifest_version: 2».
+
+## Cierre 2026-11-04
+
+Decisión de Jürgen (2026-11-04): llevar el guard a 1.0. Va en un PR aparte contra `1.0` con
+`check-manifest-not-older.mjs`, `manifest-guard.mjs`, su test y los dos `predeploy:*`. Medido contra lo desplegado
+(personal v6, grupos v3): desde 1.0 (v1 y v1) `npm run predeploy:production` sale con 1 y no despliega. No se desplegó
+nada. El punto 2 (reintentar sin las columnas nuevas una fila apartada por `unknown_column`) queda sin tocar.

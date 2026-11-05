@@ -87,6 +87,14 @@ export interface TranscriptionRoute {
 
 export type Route = ManagedRoute | PassthroughRoute | TranscriptionRoute;
 
+/**
+ * Tope de salida de las filas passthrough (2026-11-04). El cuerpo sigue saliendo byte a byte; si la app no fijó tope
+ * (`max_tokens` / `max_completion_tokens`), el gateway antepone este campo y nada más (`withPassthroughCap`, handler).
+ * Holgado a propósito: no hay banco de estas peticiones (versiones anteriores al 2026-10-03), y el máximo medido de
+ * `gpt-4.1-mini` en la tarea más larga, la foto, fue 1431 tokens.
+ */
+export const PASSTHROUGH_MAX_OUTPUT_TOKENS = 4096;
+
 const PASS_MINI: PassthroughRoute = { mode: "passthrough", allowedModels: ["gpt-4.1-mini"] };
 
 /** Fila managed que reproduce la llamada de hoy con `gpt-4.1-mini`: se usa hasta que el banco de la tarea decida. */
@@ -186,6 +194,9 @@ export const ROUTES: Readonly<Record<TaskId, Route>> = {
       responseFormat: "json_object",
       jsonSchema: PHOTO_SCHEMA,
       image: { detail: "high", maxEdge: 1536 },
+      // Tope (2026-11-04): el máximo medido con razonamiento son 2564 tokens (extractos de varias páginas,
+      // results/2026-10-08-multipagina; p99 de las fotos sueltas 1121-2118). ×2 y redondeado: una lista larga no se corta.
+      maxOutputTokens: 6000,
     },
     retries: 0,
   },
@@ -195,7 +206,8 @@ export const ROUTES: Readonly<Record<TaskId, Route>> = {
     mode: "managed",
     provider: "openai",
     model: "gpt-6-luna",
-    params: { reasoningEffort: "none", responseFormat: "json_object", jsonSchema: INTENT_SCHEMA },
+    // Tope (2026-11-04): p99 59 y máximo 86 tokens en 259 respuestas del banco; 200 da margen y acota el peor caso.
+    params: { reasoningEffort: "none", responseFormat: "json_object", jsonSchema: INTENT_SCHEMA, maxOutputTokens: 200 },
     retries: 0,
   },
   // 100 % en 16 contextos de 12 idiomas, dos pasadas (nano: 96,9 %); p95 4,2 s contra el corte de 8 s;
@@ -204,7 +216,8 @@ export const ROUTES: Readonly<Record<TaskId, Route>> = {
     mode: "managed",
     provider: "openai",
     model: "gpt-6-luna",
-    params: { reasoningEffort: "none", responseFormat: "json_object", jsonSchema: SUGGESTIONS_SCHEMA },
+    // Tope (2026-11-04): p99 415 y máximo 415 tokens en 48 respuestas (validador: p99 359); ×2 y redondeado.
+    params: { reasoningEffort: "none", responseFormat: "json_object", jsonSchema: SUGGESTIONS_SCHEMA, maxOutputTokens: 1000 },
     retries: 0,
   },
 

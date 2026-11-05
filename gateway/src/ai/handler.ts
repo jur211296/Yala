@@ -5,11 +5,12 @@ import { jsonError } from "../errors";
 import { gateAIRequest, isProviderFailure, refundQuota } from "../ratelimit";
 import type { Category } from "../policy";
 import { ADAPTERS } from "./providers";
-import { OPENAI_BASE, openAIUsage } from "./providers/openai";
+import { OPENAI_BASE, openAIFinishReason, openAIUsage } from "./providers/openai";
 import { sendTranscription } from "./providers/transcription";
 import type { OpenAIChatBody, ProviderKeys, Usage } from "./providers/types";
 import { type ChatBody, multipartField, resolveChatTask, resolveTranscriptionTask } from "./resolve";
-import { routeFor } from "./routes";
+import { PASSTHROUGH_MAX_OUTPUT_TOKENS, routeFor } from "./routes";
+import { recordUsage, usageRecord, usageSink } from "./usage";
 import { TASKS, TASK_HEADER, type TaskId, type TaskInfo } from "./tasks";
 import { gateExplore, TIME_ZONE_HEADER, USER_TOKEN_HEADER, type ExploreGate } from "./explore";
 import { runExplore, type ExploreStats } from "./explore/loop";
@@ -67,9 +68,10 @@ function providerKeys(env: Env): ProviderKeys {
 
 /**
  * Una línea por petición para `wrangler tail`: tarea, cómo se resolvió, proveedor y modelo, estado,
- * milisegundos y tokens. NUNCA contenido del usuario.
+ * milisegundos y tokens. NUNCA contenido del usuario. Y el mismo dato, sin los campos de diagnóstico, al registro
+ * de uso (`usage.ts`), que sí se guarda.
  */
-function logRoute(entry: {
+function logRoute(env: Env, entry: {
   task: TaskId;
   how: string;
   headerUnknown: boolean;
@@ -82,6 +84,8 @@ function logRoute(entry: {
   status: number;
   ms: number;
   usage: Usage | null;
+  /** `finish_reason` del proveedor (`length` = cortada por el tope). `null` si no hubo respuesta del modelo. */
+  finishReason: string | null;
   attempts: number;
   /** Solo `chat.explore`: por qué salió con o sin herramientas y, con ellas, qué hizo. Nombres, nunca argumentos. */
   explore?: { gate: ExploreGate["mode"]; tzAssumed?: boolean; stats?: ExploreStats };
@@ -103,6 +107,7 @@ function logRoute(entry: {
       cached: entry.usage?.cachedInputTokens ?? null,
       out: entry.usage?.outputTokens ?? null,
       reasoning: entry.usage?.reasoningTokens ?? null,
+      finish: entry.finishReason,
       attempts: entry.attempts,
       ...(entry.explore
         ? {
@@ -120,6 +125,20 @@ function logRoute(entry: {
               : {}),
           }
         : {}),
+    }),
+  );
+  recordUsage(
+    usageSink(env),
+    usageRecord({
+      task: entry.task,
+      category: entry.category,
+      provider: entry.provider,
+      model: entry.model,
+      status: entry.status,
+      finishReason: entry.finishReason,
+      usage: entry.usage,
+      ms: entry.ms,
+      attempts: entry.attempts,
     }),
   );
 }
@@ -147,8 +166,31 @@ function safeJsonParse(bytes: Uint8Array): unknown {
   }
 }
 
+const WS = new Set([0x20, 0x09, 0x0a, 0x0d]);
+
+/**
+ * Tope de salida de una fila passthrough (2026-11-04). Si el cuerpo ya trae `max_tokens` o `max_completion_tokens`,
+ * sale intacto. Si no, se antepone `"max_completion_tokens":N,` justo detrás de la `{` de apertura: el resto de bytes
+ * sale exactamente como lo mandó la app.
+ */
+export function withPassthroughCap(bytes: Uint8Array, body: ChatBody, cap: number = PASSTHROUGH_MAX_OUTPUT_TOKENS): Uint8Array {
+  const b = body as Record<string, unknown>;
+  if (b.max_tokens !== undefined || b.max_completion_tokens !== undefined) return bytes;
+  let i = bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf ? 3 : 0;
+  while (i < bytes.length && WS.has(bytes[i])) i++;
+  if (bytes[i] !== 0x7b) return bytes; // no puede pasar: el cuerpo ya se parseó como objeto
+  let j = i + 1;
+  while (j < bytes.length && WS.has(bytes[j])) j++;
+  const field = new TextEncoder().encode(`"max_completion_tokens":${cap}${bytes[j] === 0x7d ? "" : ","}`);
+  const out = new Uint8Array(bytes.length + field.length);
+  out.set(bytes.subarray(0, i + 1), 0);
+  out.set(field, i + 1);
+  out.set(bytes.subarray(i + 1), i + 1 + field.length);
+  return out;
+}
+
 /** Reenvía los bytes de la app a OpenAI tal cual y devuelve su respuesta tal cual. */
-async function passthrough(c: Ctx, path: string, bytes: Uint8Array): Promise<{ resp: Response; usage: Usage | null; model: string | null }> {
+async function passthrough(c: Ctx, path: string, bytes: Uint8Array): Promise<{ resp: Response; usage: Usage | null; model: string | null; finishReason: string | null }> {
   let upstream: Response;
   try {
     upstream = await fetch(`${OPENAI_BASE}${path}`, {
@@ -158,7 +200,7 @@ async function passthrough(c: Ctx, path: string, bytes: Uint8Array): Promise<{ r
     });
   } catch (err) {
     console.log(`[gw-ai] red hacia OpenAI en ${path}: ${String(err).slice(0, 120)}`);
-    return { resp: jsonError("yala_upstream_error", "El proveedor de IA no respondió.", 502), usage: null, model: null };
+    return { resp: jsonError("yala_upstream_error", "El proveedor de IA no respondió.", 502), usage: null, model: null, finishReason: null };
   }
   const out = new Uint8Array(await upstream.arrayBuffer());
   const json = upstream.headers.get("content-type")?.includes("json") ? (safeJsonParse(out) as { model?: string } | null) : null;
@@ -166,6 +208,7 @@ async function passthrough(c: Ctx, path: string, bytes: Uint8Array): Promise<{ r
     resp: new Response(out, { status: upstream.status, statusText: upstream.statusText, headers: upstream.headers }),
     usage: openAIUsage(json),
     model: json?.model ?? null,
+    finishReason: openAIFinishReason(json),
   };
 }
 
@@ -222,7 +265,7 @@ export async function handleChatCompletions(c: Ctx): Promise<Response> {
     });
     const refunded = isProviderFailure(result.status);
     if (refunded) await refundQuota(c.env, claims, category, gate.ticket);
-    logRoute({
+    logRoute(c.env, {
       task: res.task,
       how: res.how,
       headerUnknown: res.headerUnknown,
@@ -234,6 +277,7 @@ export async function handleChatCompletions(c: Ctx): Promise<Response> {
       status: result.status,
       ms: Date.now() - started,
       usage: result.usage,
+      finishReason: result.finishReason ?? null,
       attempts: result.attempts,
       explore: { gate: "tools", tzAssumed: explore.timeZoneAssumed, stats: result.stats },
     });
@@ -242,17 +286,17 @@ export async function handleChatCompletions(c: Ctx): Promise<Response> {
   }
 
   if (route.mode === "passthrough") {
-    const { resp, usage, model } = await passthrough(c, "/chat/completions", bytes);
+    const { resp, usage, model, finishReason } = await passthrough(c, "/chat/completions", withPassthroughCap(bytes, body));
     const refunded = isProviderFailure(resp.status);
     if (refunded) await refundQuota(c.env, claims, category, gate.ticket);
-    logRoute({ task: res.task, how: res.how, headerUnknown: res.headerUnknown, category, quota: quotaLabel(gate.ticket, refunded), provider: "openai", requested, model, status: resp.status, ms: Date.now() - started, usage, attempts: 1 });
+    logRoute(c.env, { task: res.task, how: res.how, headerUnknown: res.headerUnknown, category, quota: quotaLabel(gate.ticket, refunded), provider: "openai", requested, model, status: resp.status, ms: Date.now() - started, usage, finishReason, attempts: 1 });
     return resp;
   }
 
   const result = await ADAPTERS[route.provider].send(body as OpenAIChatBody, route, { keys: providerKeys(c.env) });
   const refunded = isProviderFailure(result.status);
   if (refunded) await refundQuota(c.env, claims, category, gate.ticket);
-  logRoute({
+  logRoute(c.env, {
     task: res.task,
     how: res.how,
     headerUnknown: res.headerUnknown,
@@ -264,6 +308,7 @@ export async function handleChatCompletions(c: Ctx): Promise<Response> {
     status: result.status,
     ms: Date.now() - started,
     usage: result.usage,
+    finishReason: result.finishReason ?? null,
     attempts: result.attempts,
     ...(explore ? { explore: { gate: explore.mode } } : {}),
   });
@@ -302,7 +347,7 @@ export async function handleAudioTranscriptions(c: Ctx): Promise<Response> {
     const result = await sendTranscription(bytes, c.req.header("content-type") ?? "", route, c.env.OPENAI_API_KEY);
     const refunded = isProviderFailure(result.status);
     if (refunded) await refundQuota(c.env, claims, category, gate.ticket);
-    logRoute({ task: res.task, how: res.how, headerUnknown: res.headerUnknown, category, quota: quotaLabel(gate.ticket, refunded), provider: route.provider, requested: model, model: route.model, status: result.status, ms: Date.now() - started, usage: null, attempts: 1 });
+    logRoute(c.env, { task: res.task, how: res.how, headerUnknown: res.headerUnknown, category, quota: quotaLabel(gate.ticket, refunded), provider: route.provider, requested: model, model: route.model, status: result.status, ms: Date.now() - started, usage: null, finishReason: null, attempts: 1 });
     if (result.status >= 400) console.log(`[gw-ai] ${res.task} ${route.provider} ${result.status} ${upstreamErrorKind(result.body)}`);
     return new Response(result.body, { status: result.status, headers: { "content-type": "application/json" } });
   }
@@ -310,6 +355,6 @@ export async function handleAudioTranscriptions(c: Ctx): Promise<Response> {
   const { resp } = await passthrough(c, "/audio/transcriptions", bytes);
   const refunded = isProviderFailure(resp.status);
   if (refunded) await refundQuota(c.env, claims, category, gate.ticket);
-  logRoute({ task: res.task, how: res.how, headerUnknown: res.headerUnknown, category, quota: quotaLabel(gate.ticket, refunded), provider: "openai", requested: model, model, status: resp.status, ms: Date.now() - started, usage: null, attempts: 1 });
+  logRoute(c.env, { task: res.task, how: res.how, headerUnknown: res.headerUnknown, category, quota: quotaLabel(gate.ticket, refunded), provider: "openai", requested: model, model, status: resp.status, ms: Date.now() - started, usage: null, finishReason: null, attempts: 1 });
   return resp;
 }
