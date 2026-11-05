@@ -256,10 +256,11 @@ struct AppPreferencesSyncedMirrorResetTests {
         .averageLineMode: { $0.averageLineMode },
     ]
 
-    /// `financialMindset` vive en `SessionState`; el idioma, en `LanguageManager`; el consentimiento de la nube no
-    /// tiene copia en memoria.
+    /// `financialMindset` vive en `SessionState`; el idioma, en `LanguageManager`; el consentimiento de la nube y la
+    /// zona del teléfono (la escribe la app sola al volver a primer plano, para el conector de Claude) no tienen copia
+    /// en memoria.
     private static let mirroredElsewhere: Set<PrefSyncKey> = [
-        .financialMindset, .appLanguageOverride, .cloudConsentAcceptedAt, .cloudConsentTextVersion
+        .financialMindset, .appLanguageOverride, .cloudConsentAcceptedAt, .cloudConsentTextVersion, .timeZoneIdentifier
     ]
 
     /// Un valor de dueño por key, válido para su tipo y distinto del de fábrica.
@@ -297,7 +298,7 @@ struct AppPreferencesSyncedMirrorResetTests {
         d.set(0, forKey: AppPreferences.Keys.averageLineMode)
     }
 
-    @Test("la tabla cubre las 36: cada key sincronizada tiene su copia aquí o declara dónde vive")
+    @Test("la tabla cubre todas: cada key sincronizada tiene su copia aquí o declara dónde vive")
     func theTableCoversEverySyncedKey() {
         #expect(Set(Self.mirrored.keys).isDisjoint(with: Self.mirroredElsewhere))
         #expect(Set(Self.mirrored.keys).union(Self.mirroredElsewhere) == Set(PrefSyncKey.allCases),

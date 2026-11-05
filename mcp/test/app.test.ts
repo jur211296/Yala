@@ -92,6 +92,25 @@ describe("protocolo MCP", () => {
     expect(txRead.url.searchParams.get("select")).toBe("account_ref,amount,currency_code,date,local_day");
   });
 
+  it("la zona: la de Claude manda; si no, la que subió la app; si tampoco (o no es válida), Lima y se avisa", async () => {
+    const base = { tx_items: [], accounts: [], categories: [], subcategories: [], tags: [], exchange_rates: [] };
+    const { w, token } = await connected({ ...base, user_preferences: [{ key: "timeZoneIdentifier", value: "Europe/Madrid" }] });
+    const zoneOf = async (args: Record<string, unknown> = {}) => JSON.parse((await callTool(w, token, "buscar_movimientos", args)).body!.result.content[0]!.text);
+    const deLaApp = await zoneOf();
+    expect(deLaApp.zona_horaria).toBe("Europe/Madrid");
+    expect(deLaApp.avisos.some((a: string) => a.startsWith("No se indicó zona horaria"))).toBe(false);
+    expect((await zoneOf({ zona_horaria: "Asia/Tokyo" })).zona_horaria).toBe("Asia/Tokyo");
+    const prefsRead = reads(w).find((c) => c.url.pathname.endsWith("/user_preferences"))!;
+    expect(prefsRead.url.searchParams.get("key")).toBe("in.(defaultCurrencyCode,firstWeekday,timeZoneIdentifier)");
+
+    w.supabase.rows.user_preferences = [{ key: "timeZoneIdentifier", value: "Marte/Olimpo" }];
+    const ilegible = await zoneOf();
+    expect(ilegible.zona_horaria).toBe("America/Lima");
+    expect(ilegible.avisos.some((a: string) => a.startsWith("No se indicó zona horaria"))).toBe(true);
+    w.supabase.rows.user_preferences = [];
+    expect((await zoneOf()).zona_horaria).toBe("America/Lima");
+  });
+
   it("buscar_movimientos pagina con cursor y escapa el texto libre", async () => {
     const rows = Array.from({ length: 3 }, (_, i) =>
       tx({ sync_id: uuid(9100 + i), date: `2026-09-1${i}T15:00:00+00:00`, note: `Compra ${i}`, amount: -i }),

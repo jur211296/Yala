@@ -119,7 +119,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | an-undecodable-migration-phase-reads-as-never-started | done | tickets/done/an-undecodable-migration-phase-reads-as-never-started.md |
 | an-unreadable-migration-journal-reads-as-never-started | done | tickets/done/an-unreadable-migration-journal-reads-as-never-started.md |
 | another-account-group-copy-assumes-a-single-other-account | backlog | tickets/backlog/another-account-group-copy-assumes-a-single-other-account.md |
-| app-uploads-its-timezone-to-the-cloud | backlog | tickets/backlog/app-uploads-its-timezone-to-the-cloud.md |
+| app-uploads-its-timezone-to-the-cloud | qa | tickets/qa/app-uploads-its-timezone-to-the-cloud.md |
 | apple-id-change-boot-check-is-lost-when-the-journal-is-unreadable-at-launch | backlog | tickets/backlog/apple-id-change-boot-check-is-lost-when-the-journal-is-unreadable-at-launch.md |
 | apple-id-change-boot-check-runs-before-the-migration-guard-can-see | done | tickets/done/apple-id-change-boot-check-runs-before-the-migration-guard-can-see.md |
 | apple-id-change-check-stays-off-after-a-failed-migration | done | tickets/done/apple-id-change-check-stays-off-after-a-failed-migration.md |
@@ -239,12 +239,12 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | claim-takeover-races-the-leader-cutover-without-cas | backlog | tickets/backlog/claim-takeover-races-the-leader-cutover-without-cas.md |
 | claude-mcp-activate-oauth-in-staging | done | tickets/done/claude-mcp-activate-oauth-in-staging.md |
 | claude-mcp-connected-apps-in-the-app | backlog | tickets/backlog/claude-mcp-connected-apps-in-the-app.md |
-| claude-mcp-consent-with-apple-and-google | backlog | tickets/backlog/claude-mcp-consent-with-apple-and-google.md |
+| claude-mcp-consent-with-apple-and-google | qa | tickets/qa/claude-mcp-consent-with-apple-and-google.md |
 | claude-mcp-numbers-match-the-app | done | tickets/done/claude-mcp-numbers-match-the-app.md |
 | claude-mcp-oauth-token-can-change-the-account | done | tickets/done/claude-mcp-oauth-token-can-change-the-account.md |
 | claude-mcp-production-auth-hardening | in-progress | tickets/in-progress/claude-mcp-production-auth-hardening.md |
 | claude-mcp-revoke-from-claude-leaves-supabase-session | done | tickets/done/claude-mcp-revoke-from-claude-leaves-supabase-session.md |
-| claude-plugin-read-only-mcp-connector | backlog | tickets/backlog/claude-plugin-read-only-mcp-connector.md |
+| claude-plugin-read-only-mcp-connector | done | tickets/done/claude-plugin-read-only-mcp-connector.md |
 | clock-ahead-retried-older-change-beats-the-newer-one | backlog | tickets/backlog/clock-ahead-retried-older-change-beats-the-newer-one.md |
 | clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits | discarded | tickets/discarded/clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits.md |
 | cloud-activation-master-toggle-mirror-never-reaches-the-apple-id-kv | backlog | tickets/backlog/cloud-activation-master-toggle-mirror-never-reaches-the-apple-id-kv.md |
@@ -732,7 +732,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | maintab-drain-publishes-its-sheet-after-contentview-may-drain | done | tickets/done/maintab-drain-publishes-its-sheet-after-contentview-may-drain.md |
 | markerless-adopt-stays-blocked-while-another-device-writes-to-the-account | done | tickets/done/markerless-adopt-stays-blocked-while-another-device-writes-to-the-account.md |
 | markerless-adopt-without-full-coverage-never-relays-the-marker | backlog | tickets/backlog/markerless-adopt-without-full-coverage-never-relays-the-marker.md |
-| mcp-connector-counts-future-dated-rows-in-todays-balance | backlog | tickets/backlog/mcp-connector-counts-future-dated-rows-in-todays-balance.md |
+| mcp-connector-counts-future-dated-rows-in-todays-balance | done | tickets/done/mcp-connector-counts-future-dated-rows-in-todays-balance.md |
 | merchant-memory-suggests-across-natures-in-three-more-places | done | tickets/done/merchant-memory-suggests-across-natures-in-three-more-places.md |
 | metrics-drain-purge-drops-unsent-events-when-the-spool-is-full | done | tickets/done/metrics-drain-purge-drops-unsent-events-when-the-spool-is-full.md |
 | migrate-attempt-session-survives-a-relaunch-mid-attempt | backlog | tickets/backlog/migrate-attempt-session-survives-a-relaunch-mid-attempt.md |

@@ -65,7 +65,8 @@ nonisolated enum PrefSideSignal {
 /// Las keys sincronizadas cross-device (SSOT único: el service itera `allCases`). `rawValue` = la key
 /// EXACTA de UserDefaults / iKV / backend (no renombrar: rompería la persistencia y el matching).
 ///
-/// El orden de los cases NO importa para el merge (cada key es independiente). El conteo actual es **36**
+/// El orden de los cases NO importa para el merge (cada key es independiente). El conteo actual es **37**
+/// (+1 el 2026-11-05: `timeZoneIdentifier`, la zona del teléfono para el conector de Claude)
 /// (34 hasta I13; I14 P5 añadió `cloudConsentAcceptedAt` + `cloudConsentTextVersion`; C1 SACÓ las dos del
 /// consent de Grupos — ver el bloque de abajo; y el barrido del 2026-09-13 se llevó las dos del modelo
 /// viejo de sesiones, que describían el dispositivo y no a la persona).
@@ -83,6 +84,10 @@ nonisolated enum PrefSyncKey: String, CaseIterable {
     case insightsTone
     case insightsFocus
     case financialMindset
+    // La zona IANA del teléfono (2026-11-05). La escribe la app sola (`reportDeviceTimeZoneIfNeeded`), no el
+    // usuario; la lee el conector de Claude para saber qué día es hoy (`mcp/src/toolCore.ts`, `zoneOf`). Con dos
+    // teléfonos en zonas distintas gana el último que vuelve a primer plano (LWW normal de las prefs).
+    case timeZoneIdentifier
     // Merge especial: App Group suite + remove-on-empty + languageDidChange
     case appLanguageOverride
     // Strings del Panel donde "" es válido (8)
@@ -129,7 +134,7 @@ nonisolated enum PrefSyncKey: String, CaseIterable {
         switch self {
         case .defaultCurrencyCode, .userName, .defaultPeriod, .secondaryCurrencies,
              .userProfileIcon, .currencyDisplayFormat, .voiceLanguage, .autoFocusField,
-             .accountsSortOrderNames, .insightsTone, .insightsFocus, .financialMindset:
+             .accountsSortOrderNames, .insightsTone, .insightsFocus, .financialMindset, .timeZoneIdentifier:
             return .stringGuardNonEmpty
         case .appLanguageOverride:
             return .appLanguageOverride
@@ -242,5 +247,27 @@ nonisolated enum PreferenceMergeLogic {
             }
             return .skip
         }
+    }
+}
+
+// MARK: - Zona horaria del teléfono
+
+/// Cuándo sube la app la zona del teléfono (`PrefSyncKey.timeZoneIdentifier`). Puro, para testear sin UserDefaults.
+///
+/// Se sube si la guardada no es la del teléfono (cambió de zona, o llegó la de otro teléfono: el que está en uso la
+/// recupera), o si todavía no se subió a ESTE destino (`owner`: la cuenta de la nube o el iCloud KV). Lo segundo cubre
+/// el arranque en que la sesión de la nube aún no estaba lista y el encolado no se hizo.
+nonisolated enum DeviceTimeZoneReport {
+    /// UserDefaults: a qué destino y con qué zona se subió por última vez (`marker`).
+    static let markerKey = "timeZoneIdentifierReportedTo"
+
+    static func marker(owner: String, identifier: String) -> String { "\(owner)|\(identifier)" }
+
+    /// La zona a subir, o `nil` si no hay que subir nada.
+    static func valueToReport(current: String, stored: String?, lastReport: String?, owner: String) -> String? {
+        guard !current.isEmpty else { return nil }
+        if stored != current { return current }
+        if lastReport != marker(owner: owner, identifier: current) { return current }
+        return nil
     }
 }

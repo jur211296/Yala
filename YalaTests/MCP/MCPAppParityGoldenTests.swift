@@ -8,8 +8,8 @@
 //  conector—. Este test las mete en SwiftData por el camino real del pull (`EntityApplyMap`) y calcula con el código
 //  de producción, sin réplicas:
 //
-//  - saldo por cuenta: `InitialBalanceService.currentBalance`;
-//  - saldo total y su «≈»: `LiveBalanceCalculator.liveBalanceBreakdown` sobre TODOS los movimientos y las cuentas
+//  - saldo por cuenta: `AccountBalanceCalculator.currentBalance` (con el corte de hoy en `now`);
+//  - saldo total y su «≈»: `LiveBalanceCalculator.liveBalanceBreakdown` (con el corte de hoy en `now`) sobre las cuentas
 //    que cuentan (como el Panel; el chat recorta a 13 meses al leer, y el conector no);
 //  - periodos y totales de recurrentes: `FullFinancialContextBuilder.buildFromArrays` (el contexto del chat, que es
 //    lo que el conector porta), con `GroupBridgeStatsAdjustment.build(from:context:)`;
@@ -185,18 +185,25 @@ struct MCPAppParityGoldenTests {
             now: now
         )
 
+        // El saldo de HOY corta en el `now` del escenario (`LiveBalanceCalculator.TodayCutoff`): lo fechado después no
+        // cuenta, como en el Panel y en la lista de cuentas.
         let live = LiveBalanceCalculator.liveBalanceBreakdown(
             // Las cuentas que suma el Panel (archivar no decide la suma, 2026-10-03), que es también lo que el
             // chat lista en `balances` y lo que porta `computeBalances` del conector.
             accounts: PanelTotalAccountsLogic.countableAccounts(accounts.map(\.model)),
             transactions: allTx,
             preferredCurrencyCode: scenario.preferredCurrency,
+            asOf: now,
             converter: converter
         )
 
+        // El saldo por cuenta que enseña la app (lista de cuentas, Panel, widgets): `AccountBalanceCalculator`, con el
+        // corte de hoy. Hasta el 2026-11-05 el golden usaba `InitialBalanceService.currentBalance`, que suma todo y que
+        // ninguna pantalla usa.
         var perAccount: [String: Any] = [:]
         for (id, account) in accounts {
-            perAccount[id] = round6(InitialBalanceService.currentBalance(for: account, allTransactions: allTx))
+            let balance = AccountBalanceCalculator.currentBalance(for: account, allTransactions: allTx, asOf: now)
+            perAccount[id] = round6(NSDecimalNumber(decimal: balance).doubleValue)
         }
 
         func period(_ p: FullFinancialContext.PeriodSummary) -> [String: Any] {

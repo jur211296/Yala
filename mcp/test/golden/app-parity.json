@@ -136,7 +136,7 @@
       "expected" : {
         "balances" : {
           "accounts" : {
-            "00000000-0000-4000-8000-000000001001" : 9887.5,
+            "00000000-0000-4000-8000-000000001001" : 10664.5,
             "00000000-0000-4000-8000-000000001002" : 870,
             "00000000-0000-4000-8000-000000001003" : 360,
             "00000000-0000-4000-8000-000000001004" : -999,
@@ -144,7 +144,7 @@
             "00000000-0000-4000-8000-000000001006" : 100
           },
           "aproximado" : true,
-          "total" : 12223.70616
+          "total" : 13000.70616
         },
         "budgets" : {
           "00000000-0000-4000-8000-000000006001" : 4118.8054679999996,
@@ -1567,7 +1567,7 @@
           "to" : "USD"
         }
       ],
-      "description" : "Divisa preferida USD y ninguna fila de tasas: todo lo que hay que convertir sale de la tabla estática.",
+      "description" : "Divisa preferida USD y ninguna fila de tasas: todo lo que hay que convertir sale de la tabla estática. Y un gasto con fecha posterior a `now` (el 20): el saldo de hoy no lo cuenta, ni en la cuenta ni en el total.",
       "expected" : {
         "balances" : {
           "accounts" : {
@@ -1577,7 +1577,7 @@
           "total" : 470
         },
         "budgets" : {
-          "00000000-0000-4000-8000-000000006101" : 30
+          "00000000-0000-4000-8000-000000006101" : 164.408602
         },
         "conversions" : [
           {
@@ -1591,7 +1591,8 @@
         "kinds" : {
           "00000000-0000-4000-8000-000000007101" : "gasto",
           "00000000-0000-4000-8000-000000007102" : "gasto",
-          "00000000-0000-4000-8000-000000007103" : "ingreso"
+          "00000000-0000-4000-8000-000000007103" : "ingreso",
+          "00000000-0000-4000-8000-000000007104" : "gasto"
         },
         "periods" : {
           "anio_actual" : {
@@ -1774,6 +1775,28 @@
             "split_expense_id" : null,
             "subcategory_ref" : null,
             "sync_id" : "00000000-0000-4000-8000-000000007103",
+            "tag_refs" : [
+
+            ],
+            "transfer_pair_id" : null
+          },
+          {
+            "account_ref" : "00000000-0000-4000-8000-000000001101",
+            "amount" : -500,
+            "amount_in_preferred_currency" : -500,
+            "balance_adjustment_type" : null,
+            "category_ref" : "00000000-0000-4000-8000-000000002101",
+            "currency_code" : "PEN",
+            "date" : "2026-09-20T12:00:00Z",
+            "is_exchange_rate_provisional" : false,
+            "local_day" : null,
+            "need_override" : null,
+            "note" : null,
+            "preferred_currency_code" : "PEN",
+            "scheduled_payment_ref" : null,
+            "split_expense_id" : null,
+            "subcategory_ref" : null,
+            "sync_id" : "00000000-0000-4000-8000-000000007104",
             "tag_refs" : [
 
             ],

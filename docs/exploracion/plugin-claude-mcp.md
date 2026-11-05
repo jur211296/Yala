@@ -366,9 +366,10 @@ cambiar la cuenta de inicio de sesión** (`PUT /auth/v1/user` → 200), y eso ha
 - ~~**Bloqueante:** que el token de Claude no pueda cambiar la cuenta.~~ Cerrado en §8: Claude recibe un token del
   Worker, que no sirve en Supabase.
 - ~~**Paridad de cifras:** golden vectors desde Swift, gastos de grupo, tasa del día y zona horaria
-  (`claude-mcp-numbers-match-the-app`).~~ Cerrado en §9, salvo la zona horaria
-  (`app-uploads-its-timezone-to-the-cloud`).
-- **Login con Apple y Google** en la pantalla de consentimiento (`claude-mcp-consent-with-apple-and-google`).
+  (`claude-mcp-numbers-match-the-app`).~~ Cerrado en §9; la zona horaria, el 2026-11-05: la app la sube como
+  preferencia (`app-uploads-its-timezone-to-the-cloud`).
+- ~~**Login con Apple y Google** en la pantalla de consentimiento (`claude-mcp-consent-with-apple-and-google`).~~
+  Hecho el 2026-11-05 en staging; queda el último paso real con Apple (QA de Jürgen).
 - **Producción:**
   - Aplicar `mcp0_01` y `mcp0_02` (con el id del cliente del Worker en producción) por el runbook, en una ventana sin
     migraciones de la cola A.
@@ -527,8 +528,8 @@ los idiomas— también viaja en el golden y se compara.
 
 ### Diferencias que quedan, y por qué
 
-- **Zona horaria**, cuando Claude no la pasa: el único aviso que queda en `avisos`
-  (`app-uploads-its-timezone-to-the-cloud`).
+- **Zona horaria**, cuando ni Claude la pasa ni la app la subió todavía (desde el 2026-11-05 la app la sube al volver
+  a primer plano, `app-uploads-its-timezone-to-the-cloud`): se usa Lima y se avisa.
 - **Filas de tasas duplicadas.** En staging, 367 días tienen dos o tres filas (una por dispositivo), con valores que
   difieren hasta un 12,6 %. La app convierte con la primera que le devuelve SwiftData, sin orden; el conector las
   funde con una regla determinista (y respeta la ventana de 30 FILAS de la app, no 30 días). No hay cifra de la app

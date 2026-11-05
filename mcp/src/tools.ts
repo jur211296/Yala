@@ -37,7 +37,7 @@ const zonaHoraria = z
   .string()
   .max(64)
   .optional()
-  .describe("Zona horaria IANA del usuario, por ejemplo America/Lima. Decide qué día es «hoy» y dónde empieza cada mes.");
+  .describe("Zona horaria IANA del usuario, por ejemplo America/Lima. Decide qué día es «hoy» y dónde empieza cada mes. Si no se pasa, se usa la del teléfono del usuario, que sube la app.");
 
 /** El esquema de entrada de cada herramienta, por nombre. */
 export const INPUT_SCHEMAS: Record<string, z.ZodRawShape> = {
