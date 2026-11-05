@@ -423,11 +423,15 @@ struct ProfileView: View {
     /// visita, 2026-09-13**, y su motivo era suyo: la persona estaba en un móvil prestado que tenía que
     /// devolver, así que un cierre imposible de completar la dejaba atrapada. En el móvil propio nadie
     /// espera a que devuelvas nada, y perder un gasto por no esperar no tiene justificación.
+    ///
+    /// El identificador va por aviso (`signout_blocked_ok` / `signout_pending_ok`): los dos comparten botón, y un
+    /// XCUITest tiene que poder pulsarlo sin casar por el texto localizado y sabiendo cuál de los dos salió.
     @ViewBuilder
-    private var signOutBlockedButtons: some View {
+    private func signOutBlockedButtons(identifier: String) -> some View {
         Button(L10n.Common.ok, role: .cancel) {
             CloudSessionSignOut.shared.acknowledgeBlocked()
         }
+        .accessibilityIdentifier(identifier)
     }
 
     /// Paso 9 · la hoja de «Cerrar sesión» para el camino que el coordinador va a recorrer. En las dos celdas
@@ -1128,7 +1132,9 @@ struct ProfileView: View {
         }
         // El teléfono sin App Attest (2026-09-15, decisión de Jürgen): el aviso cuenta los cambios de grupos que se
         // pierden y ofrece cerrar igualmente. «Ahora no» reconoce el bloqueo y no pierde nada. Botones literales y
-        // sin `accessibilityIdentifier`: SwiftUI no los propaga a los botones de un `.alert`. Desde el 2026-09-28 es
+        // sin `accessibilityIdentifier`. [Corregido el 2026-11-05: «SwiftUI no los propaga a los botones de un `.alert`»
+        // era falso al menos para el botón `.cancel` — `signout_blocked_ok` llega al árbol, medido con
+        // `SessionExitsPerCellUITests`; los `signout_export_*` de arriba tampoco lo cumplían.] Desde el 2026-09-28 es
         // también el de la sesión caducada y el de los cambios de otra cuenta: título y mensaje salen del motivo.
         .alert(SignOutBlockedCopy.groupsLossTitle(for: signOutGroupsLossReason), isPresented: $showSignOutAttestLossAlert) {
             Button(L10n.Groups.Errors.attestUnavailableSignOutLossButton, role: .destructive) {
@@ -1175,7 +1181,7 @@ struct ProfileView: View {
             Text(signOutRescueExportErrorMessage)
         }
         .alert(L10n.Settings.signOutBlockedTitle, isPresented: $showSignOutBlockedAlert) {
-            signOutBlockedButtons
+            signOutBlockedButtons(identifier: "signout_blocked_ok")
         } message: {
             Text(signOutBlockedMessage)
         }
@@ -1183,7 +1189,7 @@ struct ProfileView: View {
         // copy que invita a esperar, no a revisar la conexión. Solo un bool se pone a la vez
         // (rutas mutuamente excluyentes en `syncSignOutUI`).
         .alert(L10n.Settings.signOutPendingTitle, isPresented: $showSignOutPendingAlert) {
-            signOutBlockedButtons
+            signOutBlockedButtons(identifier: "signout_pending_ok")
         } message: {
             Text(L10n.Settings.signOutPendingMessage)
         }

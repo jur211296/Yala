@@ -634,7 +634,9 @@ struct LegacyGroupsRetirementWiringTests {
         // grupos con UN `SplitGroup(` dentro de su helper `seedGroup`, que marca backend justo debajo.
         // 8 desde el 2026-11-02: «Ventas con Ana» (`-uitest-seed-group-sale`, Grupos B · card 10) nace backend en
         // `create`, justo debajo de su `SplitGroup(`.
-        #expect(constructions == 8,"Cambió el número de grupos del seed; revisa que todos sigan siendo backend.")
+        // 9 desde el 2026-11-05: `createAsRejectedMember` (perfil `grupos-rechazado`, lote T4) nace backend justo
+        // debajo de su `SplitGroup(`, como su hermano `createAsPendingMember`.
+        #expect(constructions == 9,"Cambió el número de grupos del seed; revisa que todos sigan siendo backend.")
         #expect(marks == constructions,
                 "Un grupo del seed volvió a nacer legacy: la retirada lo oculta y los XCUITest de Grupos se quedan sin datos.")
     }

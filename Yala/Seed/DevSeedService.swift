@@ -42,6 +42,17 @@ enum DevSeedProfile: String {
     /// siembra el mismo literal) y el flag `isCurrentUser` se deja APAGADO: es como llega de verdad
     /// por el pull, y encenderlo devolvería la ceguera que `5ca4dd47` arregló.
     case gruposPendiente = "grupos-pendiente"
+    /// El dataset de `.grupos` (yo dueño, con deuda a mi favor y en contra) con los co-miembros IDENTIFICADOS:
+    /// `userID` y `memberKey` puestos, como los deja el pull del canal backend. Es el único perfil con un heredero
+    /// posible, así que es el que pinta «Transferir y salir» en Ajustes del grupo. `.grupos` sigue sin ellos a
+    /// propósito: es el callejón «dueño con deuda y sin heredero», y los dos casos hacen falta. Ver
+    /// `DevSeedGroups.create(in:identifiedCoMembers:)`.
+    case gruposConHeredero = "grupos-con-heredero"
+    /// Grupo del canal backend donde a mí me RECHAZARON la solicitud: el estado que solo llega por el pull. Pinta el
+    /// aviso de rechazo del detalle y su botón, que quita el grupo de este teléfono. Identidad por
+    /// `cloudKitUserRecordID` y sin `isCurrentUser`, como `.gruposPendiente`: se lanza con `-uitest-icloud-identity`.
+    /// Ver `DevSeedGroups.createAsRejectedMember`.
+    case gruposRechazado = "grupos-rechazado"
     /// SOLO-GRUPOS PURO (escenario 5a legado): siembra únicamente grupos, SIN nada de vida
     /// personal (cuentas, transacciones, presupuestos, tags…). Representa fielmente al usuario
     /// de una sesión solo-grupos. Pensado para combinar con `-uitest-group-invite` en
@@ -127,7 +138,7 @@ enum DevSeedProfile: String {
     var daysBack: Int {
         switch self {
         case .minimal, .grupos, .gruposInvitado, .gruposSaldado, .soloGrupos, .deadPointer,
-             .gruposSinFlag, .gruposPendiente, .soloGruposTrasAviso, .sinRegistros, .sinCategorias,
+             .gruposSinFlag, .gruposPendiente, .gruposConHeredero, .gruposRechazado, .soloGruposTrasAviso, .sinRegistros, .sinCategorias,
              .sinCategoriasConGrupos, .fichaMX,
              .cuentaConMovimientos, .movimientosSinCuenta, .gastoDeGrupoSinSuGrupo, .pataDeGrupoSinCuenta,
              .tarjetaDosLineas, .cuentasDeGrupos, .tarjetaCorte, .unaCuenta, .formulario: return 7
@@ -141,6 +152,7 @@ enum DevSeedProfile: String {
     var seedsGroups: Bool {
         self == .grupos || self == .gruposInvitado || self == .gruposSaldado || self == .soloGrupos
             || self == .gruposSinFlag || self == .gruposPendiente || self == .soloGruposTrasAviso
+            || self == .gruposConHeredero || self == .gruposRechazado
             || self == .fichaMX || self == .fichaMXVida || self == .ficha || self == .rendimiento
     }
 
@@ -148,6 +160,46 @@ enum DevSeedProfile: String {
     /// `.soloGrupos` no — sólo grupos. `.deadPointer` tampoco: va por su fixture aislado.
     var seedsPersonalData: Bool {
         self != .soloGrupos && self != .deadPointer && self != .soloGruposTrasAviso && self != .fichaMX
+    }
+}
+
+/// Qué hace `-uitest-seed <perfil>` según lo que ya hay en el almacén (ticket `uitest-seed-reseeds-the-corpus-without-reset`).
+///
+/// Hasta el 2026-11-05 sembraba siempre: relanzar con el mismo perfil y sin `-uitest-reset` duplicaba el corpus entero
+/// (2.326 → 4.651 registros con `realista`) y los totales al doble parecían un error de cálculo.
+enum UITestSeedRelaunch: Equatable {
+    /// Almacén sin corpus o arranque con `-uitest-reset`: se siembra como siempre.
+    case seed
+    /// El mismo perfil ya está sembrado y sus datos siguen ahí: no se vuelve a sembrar.
+    case skipAlreadySeeded
+    /// Hay datos de otro perfil (o de antes de existir la marca): se siembra encima, como antes, y se avisa de que un
+    /// almacén limpio exige `-uitest-reset`. No se salta porque cambiar de perfil sin reset no haría nada en silencio.
+    case seedOverExisting(previous: String?)
+
+    /// La marca del último perfil sembrado. Se escribe tras cada siembra de `-uitest-seed`.
+    static let lastSeededProfileKey = "uitest.lastSeededProfile"
+
+    /// La decisión, pura. **Mira el almacén, no solo la marca**: un almacén vaciado a mano con la marca puesta vuelve a
+    /// sembrar en vez de dejar al QA sin corpus.
+    static func decide(requested: String, lastSeeded: String?, storeHasCorpus: Bool, reset: Bool) -> UITestSeedRelaunch {
+        guard !reset, storeHasCorpus else { return .seed }
+        return lastSeeded == requested ? .skipAlreadySeeded : .seedOverExisting(previous: lastSeeded)
+    }
+
+    /// Si el almacén tiene algo que un perfil siembra además de las categorías (que el arranque y la semilla crean
+    /// solas): cuentas, registros, borradores o grupos. Un fallo de lectura se trata como «sin corpus» y lo dice: el
+    /// peor caso es la duplicación de antes, en un almacén de pruebas.
+    @MainActor
+    static func storeHasCorpus(in context: ModelContext) -> Bool {
+        do {
+            return try context.fetchCount(FetchDescriptor<Account>()) > 0
+                || context.fetchCount(FetchDescriptor<TransactionItem>()) > 0
+                || context.fetchCount(FetchDescriptor<InboxDraft>()) > 0
+                || context.fetchCount(FetchDescriptor<SplitGroup>()) > 0
+        } catch {
+            print("UITestSeedRelaunch: Error: no se pudo contar el almacén, se siembra: \(error)")
+            return false
+        }
     }
 }
 
@@ -391,6 +443,8 @@ final class DevSeedService {
             case .gruposInvitado: DevSeedGroups.createAsInvitee(in: context)
             case .gruposSinFlag:  DevSeedGroups.createAsBackendJoiner(in: context)
             case .gruposPendiente: DevSeedGroups.createAsPendingMember(in: context)
+            case .gruposConHeredero: DevSeedGroups.create(in: context, identifiedCoMembers: true)
+            case .gruposRechazado: DevSeedGroups.createAsRejectedMember(in: context)
             case .gruposSaldado:  DevSeedGroups.createSettled(in: context)
             case .fichaMX, .fichaMXVida: DevSeedGroups.createFichaMX(in: context)
             case .ficha:          DevSeedGroups.createFicha(in: context, mainCurrency: CurrencyDefaults.currentPreferred)

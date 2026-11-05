@@ -910,6 +910,33 @@ final class AppPreferences {
         panelSectionsOrder = PanelDefaults.sectionsOrder.map(\.rawValue)
     }
 
+    /// Vuelve a sembrar los predeterminados del Panel cuando alguien acaba de BORRAR sus claves del disco con esta
+    /// instancia ya construida (el bloque `-uitest-reset` de `AppBootstrapper`).
+    ///
+    /// Sembrar a secas no basta, y por eso existe (ticket `uitest-relaunch-without-reset-can-lose-the-new-user-panel`):
+    /// la copia en memoria se cargó del disco ANTES del borrado, así que si ya valía lo mismo que los predeterminados
+    /// —lo normal tras una corrida anterior— cada `didSet` ve «sin cambio» y no escribe nada. El disco se quedaba sin
+    /// las secciones ocultas y sin el centinela, y el siguiente arranque sin `-uitest-reset` encontraba el blob de
+    /// tamaños `panel_widget_configs_v1` y tomaba la rama de ACTUALIZACIÓN de `PanelPreferencesMigration`: Panel con
+    /// todas las secciones. Salía en arranques alternos, porque la corrida que partía de un disco vacío sí escribía.
+    ///
+    /// Vacía la copia en memoria sin escribir (como la carga) y siembra por el camino normal, que ya escribe.
+    func reseedPanelDefaultsAfterDiskWipe() {
+        isLoadingFromDefaults = true
+        panelTendenciasOrder = []
+        panelTendenciasHidden = []
+        panelDistribucionOrder = []
+        panelDistribucionHidden = []
+        panelPlanificacionOrder = []
+        panelPlanificacionHidden = []
+        panelSectionsHidden = []
+        panelSectionsOrder = []
+        panelPrefsMigratedV2 = false
+        isLoadingFromDefaults = false
+        setupDefaultsForNewUser()
+        panelPrefsMigratedV2 = true
+    }
+
     /// Restablece los predeterminados de UNA sección: orden y ocultos vuelven a la
     /// tabla curada.
     ///

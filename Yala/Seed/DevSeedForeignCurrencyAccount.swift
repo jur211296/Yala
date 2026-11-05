@@ -113,6 +113,14 @@ enum DevSeedForeignCurrencyAccount {
             """)
         }
 
+        // Idempotente, como `DevSeedChatSealedRate` y `DevSeedGroupBridgeFXLegs`: un segundo arranque
+        // sin `-uitest-reset` plantaba una segunda «QA FX» con sus tres movimientos, y los importes del
+        // fixture pesaban el doble contra el umbral del 5 % (ticket `uitest-seed-reseeds-the-corpus-without-reset`).
+        if let existing = existingAccount(in: context) {
+            print("DevSeedForeignCurrencyAccount: «\(accountName)» ya estaba sembrada (\(existing.currencyCode)) — no se duplica.")
+            return existing
+        }
+
         let account = Account(
             name: accountName,
             currencyCode: currency.rawValue,
@@ -180,6 +188,17 @@ enum DevSeedForeignCurrencyAccount {
     }
 
     // MARK: - Helpers
+
+    /// La cuenta del fixture si ya está en el store, por su nombre (que no se localiza a propósito).
+    @MainActor
+    static func existingAccount(in context: ModelContext) -> Account? {
+        let target = accountName
+        let descriptor = FetchDescriptor<Account>(predicate: #Predicate { $0.name == target })
+        do { return try context.fetch(descriptor).first } catch {
+            print("DevSeedForeignCurrencyAccount: Error al buscar la cuenta existente: \(error)")
+            return nil
+        }
+    }
 
     /// Convierte el objetivo (en divisa preferida) a la divisa de la cuenta, con el converter.
     ///

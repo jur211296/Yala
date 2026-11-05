@@ -1,10 +1,10 @@
 ---
 id: uitest-seed-reseeds-the-corpus-without-reset
-status: backlog
+status: done
 priority: low
 area: "testing, seed"
 created: 2026-09-09
-updated: 2026-10-08
+updated: 2026-11-05
 source: hallazgo de camino en el device-QA de chat-rows-sealed-before-the-fix-have-no-repair-path (2026-09-09)
 ---
 
@@ -83,3 +83,9 @@ el mismo arreglo de una línea que llevan sus hermanos.
 - Por qué low: es una trampa de QA que lleva a falsos positivos. No afecta a producción.
 
 Triage 2026-10-08: abierto · medium → low · DevSeedService.seed sigue protegido solo contra la reentrada (!isSeeding), y DevSeedForeignCurrencyAccount sigue sin guard de presencia
+
+## Resuelto (2026-11-05, lote T4)
+
+- `UITestSeedRelaunch` decide antes de sembrar: con el mismo perfil ya sembrado (marca `uitest.lastSeededProfile`) y datos en el almacén, no siembra y lo dice; con el almacén vacío, siembra aunque la marca esté puesta; con otro perfil y sin reset, siembra encima y avisa de que lo limpio exige `-uitest-reset`.
+- `DevSeedForeignCurrencyAccount` gana su guard de presencia: «QA FX» ya no se duplica.
+- Lo fijan `SeedRelaunchT4Tests` (tabla de la decisión, lectura del almacén, «QA FX» idempotente) y `SeedRelaunchT4UITests#test_relaunchWithTheSameSeedAndNoReset_doesNotDuplicate`.

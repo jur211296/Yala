@@ -943,6 +943,8 @@ private struct PendingApprovalBanner: View {
                 Button(L10n.Groups.Settings.leaveGroup, action: onLeave)
                     .font(DS.Typography.label)
                     .foregroundStyle(DS.Semantic.errorForeground)
+                    // Solo existe en el aviso de rechazo: su presencia es la prueba de que salió (perfil `grupos-rechazado`).
+                    .accessibilityIdentifier("group_rejected_leave")
             }
         }
         .padding(DS.Spacing.md)

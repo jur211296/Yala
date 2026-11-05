@@ -1014,8 +1014,9 @@ final class AppBootstrapper {
             //    al paso 8.5: así el estado de partida es el de una instalación recién
             //    hecha pase lo que pase con el iKV, que es lo único que hace honesto a
             //    un test de «lo que ve un usuario nuevo».
-            appPreferences.setupDefaultsForNewUser()
-            appPreferences.panelPrefsMigratedV2 = true
+            //    Y la copia en memoria se vacía antes: si ya valía lo mismo que los predeterminados, sembrar sobre
+            //    ella no escribía nada y el siguiente arranque sin reset enseñaba todas las secciones.
+            appPreferences.reseedPanelDefaultsAfterDiskWipe()
         }
         // Estado Pro determinista según el launch arg, EFÍMERO y sin rastro en disco.
         // Va incondicional (no solo bajo `-uitest-reset`): también hay que fijar el estado
@@ -1203,7 +1204,26 @@ final class AppBootstrapper {
         // totales del XCUI de clasificación → si ambos flags están, gana el desync (aislado).
         if let raw = UITestHooks.seedProfile, !UITestHooks.seedDesync {
             let profile = DevSeedProfile(rawValue: raw) ?? .realista
-            await DevSeedService().seed(in: context, profile: profile)
+            // Relanzar con el mismo perfil y sin `-uitest-reset` ya no duplica el corpus (`UITestSeedRelaunch`).
+            let relaunch = UITestSeedRelaunch.decide(
+                requested: profile.rawValue,
+                lastSeeded: UserDefaults.standard.string(forKey: UITestSeedRelaunch.lastSeededProfileKey),
+                storeHasCorpus: UITestSeedRelaunch.storeHasCorpus(in: context),
+                reset: UITestHooks.shouldReset)
+            switch relaunch {
+            case .seed:
+                await DevSeedService().seed(in: context, profile: profile)
+            case .skipAlreadySeeded:
+                #if DEBUG
+                print("UITestSeedRelaunch: «\(profile.rawValue)» ya está sembrado en este almacén — no se vuelve a sembrar. Para empezar de cero, -uitest-reset.")
+                #endif
+            case .seedOverExisting(let previous):
+                #if DEBUG
+                print("UITestSeedRelaunch: el almacén ya tiene datos (\(previous ?? "perfil sin marca")); «\(profile.rawValue)» se siembra ENCIMA. Para un almacén limpio, -uitest-reset.")
+                #endif
+                await DevSeedService().seed(in: context, profile: profile)
+            }
+            UserDefaults.standard.set(profile.rawValue, forKey: UITestSeedRelaunch.lastSeededProfileKey)
             // Tras `-uitest-reset`, DataWipeService borra `secondaryCurrencies` y el
             // gráfico del Panel no monta (empty state). Mismo patrón que skip-onboarding
             // re-setea flags tras el wipe. USD+EUR basta: el seed ya escribe esas tasas.
