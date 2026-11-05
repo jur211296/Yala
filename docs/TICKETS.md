@@ -289,7 +289,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloudsync-witnesses-survive-the-sign-out-wipe | backlog | tickets/backlog/cloudsync-witnesses-survive-the-sign-out-wipe.md |
 | cobertura-ui-diaria-cuelga-del-push | discarded | tickets/discarded/cobertura-ui-diaria-cuelga-del-push.md |
 | cola-b-redesigns-must-hold-up-at-ipad-width | done | tickets/done/cola-b-redesigns-must-hold-up-at-ipad-width.md |
-| cold-launch-panel-first-content-waits-for-the-bootstrap | backlog | tickets/backlog/cold-launch-panel-first-content-waits-for-the-bootstrap.md |
+| cold-launch-panel-first-content-waits-for-the-bootstrap | done | tickets/done/cold-launch-panel-first-content-waits-for-the-bootstrap.md |
 | combined-filters-edge-cases-after-option-b | done | tickets/done/combined-filters-edge-cases-after-option-b.md |
 | comparative-and-statistics-pick-the-comparison-with-different-controls | done | tickets/done/comparative-and-statistics-pick-the-comparison-with-different-controls.md |
 | complete-account-invite-adopt-can-pull-groups-before-the-guard | done | tickets/done/complete-account-invite-adopt-can-pull-groups-before-the-guard.md |
@@ -403,7 +403,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | favorite-editor-does-not-know-transfer-favorites | done | tickets/done/favorite-editor-does-not-know-transfer-favorites.md |
 | favorite-transfer-destination-does-not-travel-in-cloud-mode | blocked | tickets/blocked/favorite-transfer-destination-does-not-travel-in-cloud-mode.md |
 | ficha-mx-vida-rates-jump-on-the-last-day | done | tickets/done/ficha-mx-vida-rates-jump-on-the-last-day.md |
-| filtro-de-cuentas-se-colapsa-al-navegar-a-registros | backlog | tickets/backlog/filtro-de-cuentas-se-colapsa-al-navegar-a-registros.md |
+| filtro-de-cuentas-se-colapsa-al-navegar-a-registros | done | tickets/done/filtro-de-cuentas-se-colapsa-al-navegar-a-registros.md |
 | financial-report-amounts-unmarked | backlog | tickets/backlog/financial-report-amounts-unmarked.md |
 | finish-halfway-wipe-early-failure-shows-no-feedback | backlog | tickets/backlog/finish-halfway-wipe-early-failure-shows-no-feedback.md |
 | first-drain-cursor-creation-saves-pending-edits-under-the-engine-author | backlog | tickets/backlog/first-drain-cursor-creation-saves-pending-edits-under-the-engine-author.md |
@@ -794,7 +794,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | panel-no-recalcula-al-llegar-tasas-nuevas | done | tickets/done/panel-no-recalcula-al-llegar-tasas-nuevas.md |
 | panel-pies-amount-filter-uses-signed-amount | done | tickets/done/panel-pies-amount-filter-uses-signed-amount.md |
 | panel-pies-ignore-hidden-currency-and-compare-signed-amount | done | tickets/done/panel-pies-ignore-hidden-currency-and-compare-signed-amount.md |
-| panel-recalculates-everything-on-every-return-to-the-tab | backlog | tickets/backlog/panel-recalculates-everything-on-every-return-to-the-tab.md |
+| panel-recalculates-everything-on-every-return-to-the-tab | done | tickets/done/panel-recalculates-everything-on-every-return-to-the-tab.md |
 | panel-says-nothing-when-cloud-sync-needs-sign-in | done | tickets/done/panel-says-nothing-when-cloud-sync-needs-sign-in.md |
 | panel-spent-per-account-counts-refunds-as-spending | done | tickets/done/panel-spent-per-account-counts-refunds-as-spending.md |
 | panel-stayed-filtered-after-removing-the-account-chip | backlog | tickets/backlog/panel-stayed-filtered-after-removing-the-account-chip.md |
@@ -983,7 +983,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | saved-record-notice-covers-the-panel-plus-button | done | tickets/done/saved-record-notice-covers-the-panel-plus-button.md |
 | saving-a-mismatched-transaction-relabels-it-without-converting | done | tickets/done/saving-a-mismatched-transaction-relabels-it-without-converting.md |
 | savings-tracking | backlog | tickets/backlog/savings-tracking.md |
-| scene-phase-active-guard-may-leave-the-brake-paused | backlog | tickets/backlog/scene-phase-active-guard-may-leave-the-brake-paused.md |
+| scene-phase-active-guard-may-leave-the-brake-paused | done | tickets/done/scene-phase-active-guard-may-leave-the-brake-paused.md |
 | scheduled-due-draft-cannot-be-reached-in-uitest | backlog | tickets/backlog/scheduled-due-draft-cannot-be-reached-in-uitest.md |
 | scheduled-early-payment-test-fails-on-the-31st | backlog | tickets/backlog/scheduled-early-payment-test-fails-on-the-31st.md |
 | scheduled-payment-actions-name-the-month-they-apply-to | qa | tickets/qa/scheduled-payment-actions-name-the-month-they-apply-to.md |
@@ -1185,7 +1185,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | widget-and-siri-entries-wait-for-the-panel-tab | done | tickets/done/widget-and-siri-entries-wait-for-the-panel-tab.md |
 | widget-balance-figure-and-curve-count-different-rows-for-accountless-movements | done | tickets/done/widget-balance-figure-and-curve-count-different-rows-for-accountless-movements.md |
 | widget-cache-falls-back-to-usd-while-the-app-falls-back-to-pen | done | tickets/done/widget-cache-falls-back-to-usd-while-the-app-falls-back-to-pen.md |
-| widget-cache-rebuild-blocks-the-main-thread | backlog | tickets/backlog/widget-cache-rebuild-blocks-the-main-thread.md |
+| widget-cache-rebuild-blocks-the-main-thread | done | tickets/done/widget-cache-rebuild-blocks-the-main-thread.md |
 | widget-category-percentages-use-the-signed-total | done | tickets/done/widget-category-percentages-use-the-signed-total.md |
 | widget-de-tc-no-localiza-separadores | done | tickets/done/widget-de-tc-no-localiza-separadores.md |
 | widget-fallback-summary-uses-ten-rows | discarded | tickets/discarded/widget-fallback-summary-uses-ten-rows.md |

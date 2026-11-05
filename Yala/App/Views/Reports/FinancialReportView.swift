@@ -132,9 +132,11 @@ struct FinancialReportView: View {
                 recalculateTask?.cancel()
                 recalculateTask = nil
             case .active:
-                guard UIApplication.shared.applicationState == .active else { return }
-                isInBackground = false
-                scheduleRecalculate()
+                // Con la app aún sin activar, espera a que lo esté en vez de dejar el freno puesto (`ForegroundResume`).
+                ForegroundResume.whenApplicationActive("informes") {
+                    isInBackground = false
+                    scheduleRecalculate()
+                }
             @unknown default:
                 break
             }

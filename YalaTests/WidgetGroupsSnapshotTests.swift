@@ -347,7 +347,8 @@ struct WidgetGroupsWiringTests {
     }
 
     @Test func laFotoApuntaYRetiraSusGrupos() throws {
-        let update = try body(of: "updateCache(", in: "Yala/Services/WidgetDataCache.swift")
+        // Desde el lote P2 (2026-11-05) `updateCache` solo PIDE la foto; el cuerpo de siempre es `updateCacheNow`.
+        let update = try body(of: "updateCacheNow(", in: "Yala/Services/WidgetDataCache.swift")
         #expect(update.contains("WidgetGroupsRefresh.shared.notePublished(built.widget.groups)"))
         let gate = try #require(update.range(of: "guard !isWipeArmed"))
         let note = try #require(update.range(of: "notePublished"))

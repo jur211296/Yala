@@ -71,13 +71,11 @@ struct CategoriesTabView: View {
     @State private var subcategorySpending: [SubcategorySpendingSummary] = []
     @State private var tagSpending: [TagSpendingSummary] = []
     @State private var needTrendPoints: [NeedTrendPoint] = []
-    @State private var selectedNeed: SubcategoryNeed?
     @State private var chartsCarouselPosition: String? = "category"
     @State private var listViewType: ListViewType = .categories
     @State private var isListExpanded: Bool = false
     @State private var isSubcategoriesAutomatic: Bool = false  // Track if switch was automatic
     @State private var showCustomPeriodPicker: Bool = false  // Custom period picker sheet
-    @State private var isSyncingFilters: Bool = false  // Anti-loop flag for Need sync functions only
     @Namespace private var listSelectorNamespace
 
     // Period Comparison State (comparisonMode is in SessionState for sync across tabs)
@@ -254,15 +252,8 @@ struct CategoriesTabView: View {
             // Filtros del VM que disparan recálculo, extraídos a un ViewModifier para no exceder el
             // presupuesto del type-checker de Swift (cadena larga de .onChange en este body).
             .modifier(CategoriesFilterRecalcObservers(viewModel: viewModel, onRecalc: { calculateData() }))
-            .onChange(of: viewModel.selectedNeeds) {
-                calculateData()
-                syncNeedFilterToSelection()
-            }
+            .onChange(of: viewModel.selectedNeeds) { calculateData() }
             .onChange(of: allSubcategories) { calculateData() }
-            .onChange(of: selectedNeed) {
-                syncSelectionToNeedFilter()
-                calculateData()
-            }
             .onChange(of: sessionState.customDateRange) { calculateData() }
             // `isBalanceMode` cuelga de este flag, así que sin este observer el hero
             // podía quedarse con un saldo rancio (o sin calcular) al apagar "solo
@@ -453,9 +444,6 @@ struct CategoriesTabView: View {
             panelStyle: true,
             inlinePeriodSelector: false
         )
-        .onChange(of: viewModel.hasActiveFilters) {
-            if !viewModel.hasActiveFilters { selectedNeed = nil }
-        }
     }
 
     // MARK: - Empty Gating
@@ -844,7 +832,7 @@ struct CategoriesTabView: View {
     private func askAboutNeed(_ need: SubcategoryNeed) {
         let amount = needTrendPoints.reduce(0) { $0 + $1.amount(for: need) }
         askAboutSegment(.need(need), name: need.displayName, amount: amount) {
-            selectedNeed = need
+            viewModel.selectedNeeds = [need]
         }
     }
 
@@ -900,7 +888,8 @@ struct CategoriesTabView: View {
     private var needWidgetLarge: some View {
         NeedTrendWidget(
             trendPoints: needTrendPoints,
-            selectedNeed: selectedNeed,
+            // El conjunto entero: con dos necesidades filtradas, las dos (card 2y7e).
+            selectedNeeds: viewModel.selectedNeeds,
             currencyCode: defaultCurrencyCode,
             size: .large,
             grouping: needGrouping,
@@ -922,7 +911,8 @@ struct CategoriesTabView: View {
     private var needWidgetCompact: some View {
         NeedTrendWidget(
             trendPoints: needTrendPoints,
-            selectedNeed: selectedNeed,
+            // El conjunto entero: con dos necesidades filtradas, las dos (card 2y7e).
+            selectedNeeds: viewModel.selectedNeeds,
             currencyCode: defaultCurrencyCode,
             size: .medium,
             grouping: needGrouping,
@@ -1795,35 +1785,6 @@ struct CategoriesTabView: View {
         if previousSubcategoryTotal == 0 { previousSubcategoryTotal = nil }
         if previousTagTotal == 0 { previousTagTotal = nil }
     }
-
-    // MARK: - Filter Synchronization
-
-    private func syncSelectionToNeedFilter() {
-        guard !isSyncingFilters else { return }
-        isSyncingFilters = true
-        defer { isSyncingFilters = false }
-
-        if let need = selectedNeed {
-            // Replace all selected natures with the new one (single selection)
-            viewModel.selectedNeeds = [need]
-        } else {
-            // Clear all when deselected
-            viewModel.selectedNeeds.removeAll()
-        }
-    }
-
-    private func syncNeedFilterToSelection() {
-        guard !isSyncingFilters else { return }
-        isSyncingFilters = true
-        defer { isSyncingFilters = false }
-
-        if viewModel.selectedNeeds.count == 1 {
-            selectedNeed = viewModel.selectedNeeds.first
-        } else if viewModel.selectedNeeds.isEmpty {
-            selectedNeed = nil
-        }
-    }
-
 }
 
 // MARK: - DistributionContentMode

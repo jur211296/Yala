@@ -225,8 +225,9 @@ struct BalanceFutureDatedCutoffTests {
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
         let cache = try String(contentsOf: root.appendingPathComponent("Yala/Services/WidgetDataCache.swift"), encoding: .utf8)
         let boot = try String(contentsOf: root.appendingPathComponent("Yala/App/AppBootstrapper.swift"), encoding: .utf8)
-        let update = try #require(cache.range(of: "static func updateCache(context: ModelContext) {"))
-        let body = String(cache[update.upperBound...].prefix(900))
+        // Desde el lote P2 (2026-11-05) `updateCache` solo PIDE la foto; el cuerpo de siempre es `updateCacheNow`.
+        let update = try #require(cache.range(of: "static func updateCacheNow(context: ModelContext) {"))
+        let body = String(cache[update.upperBound...].prefix(1300))
         let gate = try #require(body.range(of: "guard !isWipeArmed else"))
         // La hora de la FOTO, no la del reloj al terminar: una foto de las 23:59:59 guardada pasada la medianoche es de ayer.
         let stamp = try #require(body.range(of: "lastBuiltAt = built.widget.lastUpdated"))

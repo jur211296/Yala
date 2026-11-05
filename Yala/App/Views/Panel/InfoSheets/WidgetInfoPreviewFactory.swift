@@ -140,7 +140,7 @@ struct WidgetInfoPreviewFactory {
                 : viewModel.needTrendPoints
             NeedTrendWidget(
                 trendPoints: previewPoints,
-                selectedNeed: nil,
+                selectedNeeds: [],
                 currencyCode: currencyCode,
                 size: mapTopWidgetSize(size),
                 grouping: viewModel.needGrouping,

@@ -230,9 +230,11 @@ struct GroupDetailView: View {
             case .background, .inactive:
                 viewModel.setBackground(true)
             case .active:
-                guard UIApplication.shared.applicationState == .active else { return }
-                viewModel.setBackground(false)
-                viewModel.reloadAndRecalculate()
+                // Con la app aún sin activar, espera a que lo esté en vez de dejar el freno puesto (`ForegroundResume`).
+                ForegroundResume.whenApplicationActive("detalle-grupo") {
+                    viewModel.setBackground(false)
+                    viewModel.reloadAndRecalculate()
+                }
             @unknown default:
                 break
             }

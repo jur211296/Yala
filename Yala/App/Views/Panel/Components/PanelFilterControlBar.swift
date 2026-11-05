@@ -40,7 +40,7 @@ struct PanelFilterControlBar: View {
         let hasAccountFilter = !viewModel.selectedAccountIDs.isEmpty
         let hasDateFilter = viewModel.focusedDate != nil
         let hasCategoryFilter = viewModel.selectedCategoryID != nil
-        let hasNeedFilter = viewModel.selectedNeed != nil
+        let hasNeedFilter = !viewModel.selectedNeeds.isEmpty
         let hasSubcategoryFilter = !viewModel.selectedSubcategoryIDs.isEmpty
         let hasTagFilter = !viewModel.selectedTags.isEmpty
         let hasCurrencyFilter = !viewModel.selectedCurrencies.isEmpty
@@ -64,7 +64,7 @@ struct PanelFilterControlBar: View {
         // Lo que cambia cuántos chips hay: la cuenta de filtros no lo ve todo (dos etiquetas cuentan como una dimensión).
         let chipLayout = [
             activeFilterCount, viewModel.selectedTags.count, viewModel.selectedCurrencies.count,
-            viewModel.selectedSubcategoryIDs.count, excludedChipCount,
+            viewModel.selectedSubcategoryIDs.count, excludedChipCount, viewModel.selectedNeeds.count,
         ]
 
         if activeFilterCount > 0 {
@@ -175,17 +175,17 @@ struct PanelFilterControlBar: View {
                             }
                         }
 
-                        // Nature Chip
-                        if let need = viewModel.selectedNeed {
+                        // Need Chips: una por necesidad elegida, como etiquetas y monedas (card 2y7e).
+                        ForEach(NeedSelectionLogic.ordered(viewModel.selectedNeeds), id: \.self) { need in
                             FilterChipView(
                                 need: need,
                                 onClear: {
-                                    viewModel.selectedNeed = nil
+                                    viewModel.selectedNeeds.remove(need)
                                 }
                             )
                             .filterMembership(.included)
                             .opensFilters(onOpenFilters)
-                            .glassEffectID("chip.need", in: chipNamespace)
+                            .glassEffectID("chip.need.\(need.rawValue)", in: chipNamespace)
                         }
 
                         // Lo oculto («Sin X»), una cápsula por valor, junto a lo de «Solo X».
@@ -314,7 +314,7 @@ struct PanelFilterControlBar: View {
         viewModel.selectedCategoryID = nil
         viewModel.selectedSubcategoryIDs.removeAll()
         viewModel.subcategoriesWidgetFilter = nil
-        viewModel.selectedNeed = nil
+        viewModel.selectedNeeds.removeAll()
         viewModel.selectedTags.removeAll()
         viewModel.selectedCurrencies.removeAll()
         viewModel.amountCondition = .any

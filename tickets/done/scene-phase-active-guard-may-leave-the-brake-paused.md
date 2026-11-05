@@ -1,10 +1,10 @@
 ---
 id: scene-phase-active-guard-may-leave-the-brake-paused
-status: backlog
+status: done
 priority: low
 area: "performance, groups, panel"
 created: 2026-10-05
-updated: 2026-10-08
+updated: 2026-11-05
 source: tickets/qa/groups-tab-missing-panel-perf.md
 ---
 
@@ -57,3 +57,16 @@ los dos pueden discrepar.
 - Los 10 `guard UIApplication.shared.applicationState == .active else { return }` siguen donde dice el ticket, en las mismas líneas (`GroupDetailView.swift:273`, `PanelViewModel.swift:2576`, `FinancialReportView.swift:125` y `:409`, etc.). Ningún commit los ha tocado desde el 2026-10-05.
 
 Triage 2026-10-08: abierto · low → low · el guard sigue en los 10 sitios, pero es una hipótesis sin medir y nadie ha visto que la pantalla se quede quieta.
+
+## Hecho (lote P2, 2026-11-05): arreglo que no cambia el caso normal + instrumentación
+
+- Los seis sitios donde el `return` dejaba el freno puesto (Panel, Registros, Estadísticas, Grupos, detalle de grupo,
+  Informes) pasan por `ForegroundResume.whenApplicationActive`: con la app activa, igual que antes; si la escena llega
+  antes que la app, espera a `didBecomeActive` en vez de perder la vuelta. Los otros cuatro `guard` del ticket
+  (`ScheduledPaymentsViewModel`, `BudgetsViewModel`, `DetailContainerView.scheduleRecalculation`,
+  `FinancialReportView.scheduleRecalculate`) no sostienen ningún freno: descartan una petición suelta y se quedan.
+- **Criterio verificable**: cada espera deja `DEFERRED <pantalla>` en Console.app (subsistema `com.yala`, categoría
+  `ForegroundResume`, también en TestFlight). En el simulador, 6 arranques en frío del recorrido de medida: 0. Para
+  mirarlo en un iPhone: Consola en la Mac → el iPhone → buscar `ForegroundResume` → usar Yala y volver a ella desde el
+  multitarea, el Centro de Control y Face ID; cualquier línea `DEFERRED` confirma la hipótesis (y ya está cubierta).
+- Tests: `ForegroundResumeTests` (espera y una sola vuelta; scan de las seis pantallas).

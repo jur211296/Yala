@@ -359,7 +359,66 @@ enum WidgetDataCache {
     /// para cualquier productor, presente o futuro, sin rastrear tareas ni mantener una lista.
     ///
     /// `clearCache()` NO lleva guard — retirar siempre es seguro, y es lo que los caminos de cierre piden.
+    ///
+    /// **Pide la foto; no la hace en el acto** (card `tablero-la-cache-de-los-widgets-bloquea-el-hilo-1hcz`). Rehacerla
+    /// cuesta ~0,27 s de hilo principal con 2.337 movimientos (medido el 2026-10-30), y se pedía tras cada alta, edición o
+    /// borrado y en el paso 9 del arranque, donde retrasaba que la escena pasara a activa. Ahora las peticiones de una
+    /// ventana de `rebuildDelay` se funden en UNA reconstrucción, que corre después del gesto (la hoja ya se cerró, el
+    /// Panel ya pintó). El contexto se guarda `weak`: el cambio de almacén comprueba que el contenedor viejo muere
+    /// (`PersonalContainerSwap.releaseForSwap`), y una referencia fuerte aquí lo retendría. La foto es la misma: la hace
+    /// `updateCacheNow`, el cuerpo de siempre con su puerta. Quien la necesita escrita antes de seguir —una tarea de
+    /// fondo que va a terminar, el paso a segundo plano— llama a `updateCacheNow` o a `flushPendingUpdate()`.
     static func updateCache(context: ModelContext) {
+        pendingContext = context
+        guard pendingRebuild == nil else { return }
+        #if DEBUG
+        debugRebuildWindowsOpened += 1
+        #endif
+        pendingRebuild = Task { @MainActor in
+            do { try await Task.sleep(for: rebuildDelay) } catch { return }
+            guard !Task.isCancelled else { return }
+            flushPendingUpdate()
+        }
+    }
+
+    /// Cuánto se esperan más peticiones antes de rehacer la foto. Los widgets se recargan a petición de iOS, que no
+    /// promete hacerlo en el acto; un segundo no se nota en la pantalla de inicio y junta una ráfaga (importar, aprobar
+    /// varios borradores, guardar y cerrar la hoja de éxito).
+    static let rebuildDelay: Duration = .seconds(1)
+
+    private static var pendingRebuild: Task<Void, Never>?
+    private static weak var pendingContext: ModelContext?
+
+    #if DEBUG
+    /// Esperas abiertas: varias peticiones seguidas abren UNA. Solo para los tests.
+    private(set) static var debugRebuildWindowsOpened = 0
+    #endif
+
+    /// `true` mientras hay una foto pedida que aún no se hizo.
+    static var hasPendingUpdate: Bool { pendingRebuild != nil }
+
+    /// Hace YA la foto pedida, si la hay. Lo llaman el paso a segundo plano (`YalaApp.handleScenePhase`: iOS puede
+    /// suspender la app antes de que venza la espera) y la espera misma.
+    static func flushPendingUpdate() {
+        pendingRebuild?.cancel()
+        pendingRebuild = nil
+        guard let context = pendingContext else { return }
+        pendingContext = nil
+        updateCacheNow(context: context)
+    }
+
+    /// Olvida la foto pedida sin hacerla: al soltar el contenedor en un cambio de almacén, y al vaciar la caché (una
+    /// foto pedida antes del vaciado repoblaría lo que se acaba de retirar).
+    static func cancelPendingUpdate() {
+        pendingRebuild?.cancel()
+        pendingRebuild = nil
+        pendingContext = nil
+    }
+
+    /// La foto en el acto, con la puerta del borrado armado. Es el cuerpo que tenía `updateCache` hasta el 2026-11-04.
+    static func updateCacheNow(context: ModelContext) {
+        // Lo que se hace ahora cubre lo pedido antes.
+        cancelPendingUpdate()
         guard !isWipeArmed else {
             #if DEBUG
             print("WidgetDataCache: updateCache SUSPENDIDO — wipe armado")
@@ -425,6 +484,7 @@ enum WidgetDataCache {
     /// Variante con el store inyectado: la usan los tests de las purgas para medir el vaciado sin tocar el App Group real.
     /// No toca `groupsOnlySessionKey`: vaciar los datos no cambia QUIÉN usa el teléfono.
     static func clearCache(in defaults: UserDefaults?) {
+        cancelPendingUpdate()
         defaults?.removeObject(forKey: cacheKey)
         WidgetGroupsRefresh.shared.noteCleared()
         SiriFinanceSnapshotStore.clear(in: defaults)

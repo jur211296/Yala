@@ -45,6 +45,23 @@ paths:
 - **Corolario en Estadísticas (medido el 2026-10-09): la señal de «datos nuevos» es `DetailContainerViewModel.dataGeneration`, no `allTransactions.count` ni `dataVersion`.** `.count` no ve una edición en sitio (mismas filas) y `dataVersion` salta 150 ms antes de la recarga del contenedor, así que quien lo observe lee los arrays viejos. Y la señal no puede avanzar en cada recarga: el contenedor recarga **dos veces por alta** (al guardar, por `dataVersion`, y al cerrar la pantalla de éxito, por el `onDisappear` del sheet), y un contador por recarga duplicaba el recálculo de Distribución. Por eso solo avanza si la recarga trae algo (otro `dataVersion` o arrays distintos). Una pestaña que precalcule cuelga de ella (`CategoriesTabView` y, desde el 2026-10-25, `TrendsTabView`).
 
 
+- **Volver al Panel ya no recarga por costumbre: recarga si cambió su firma (2026-11-04, card zpgm).** La página sigue
+  montada y sus observadores recalculan con ella oculta, así que el `onAppear` solo recarga si cambió `dataVersion`, si
+  hubo CUALQUIER guardado de SwiftData en el proceso (`StoreSaveCounter`, `ModelContext.didSave` de cualquier contexto),
+  si cambió el día, si el contexto tiene cambios sin guardar o si un cálculo se canceló a medias
+  (`PanelReloadFreshness`). Ahorra ~0,7 s de hilo principal por vuelta con 2.337 movimientos. ⇒ **un escritor que
+  cambie lo que pinta el Panel sin GUARDAR y sin avisar no se ve al volver** (antes sí): guarda, o avisa. Y lo que
+  el cálculo lea fuera del almacén (una preferencia, el reloj) necesita su observador o entrar en la firma.
+  La espera de 150 ms del Panel es ahora FIJA desde la primera petición: lo que llega dentro se suma, no la reinicia.
+
+- **La vuelta a `.active` de una pantalla con freno pasa por `ForegroundResume.whenApplicationActive` (2026-11-04,
+  card n34p).** El `guard UIApplication.shared.applicationState == .active else { return }` de antes se saltaba también
+  el `setBackground(false)` si la escena llegaba antes que la app, y la pantalla se quedaba sin recalcular hasta el
+  siguiente cambio de fase. Ahora espera a `didBecomeActive` y deja `DEFERRED <pantalla>` en Console.app (`com.yala` /
+  `ForegroundResume`): esa línea es la medida de si pasa en un aparato. Una pantalla nueva con freno lo usa; lo fija
+  `ForegroundResumeTests`. Y el freno del Panel deja calcular con la app `.inactive` en primer plano (el arranque en
+  frío antes de la primera activación); el paso a segundo plano lo sigue frenando `setBackground(true)` en `.inactive`.
+
 - **«Solo grupos» tiene dos orígenes desde el 2026-10-26 (card p0iu), y la shell los lee juntos.** Sin sesión privada
   (`!hasPrivateSession`, el eje) o con sesión privada y «Solo grupos» elegido en «Cómo usas Yala» (`GroupsOnlyViewMark`,
   espejo `SessionState.prefersGroupsOnlyView`). ⇒ **un gate de SHELL o de visibilidad lee

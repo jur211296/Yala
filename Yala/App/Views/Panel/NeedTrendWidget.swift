@@ -18,7 +18,8 @@ private let needPercentFormatter: NumberFormatter = {
 struct NeedTrendWidget: View {
     @Environment(AppPreferences.self) private var appPreferences
     let trendPoints: [NeedTrendPoint]
-    let selectedNeed: SubcategoryNeed?
+    /// Las necesidades del filtro: un conjunto, nunca su `.first` (`NeedSelectionLogic`).
+    let selectedNeeds: Set<SubcategoryNeed>
     let currencyCode: String
     let size: TopCategoriesWidget.CardSize  // Reusing comparable size enum or WidgetSize
     let grouping: TrendGrouping
@@ -42,20 +43,13 @@ struct NeedTrendWidget: View {
     var headerInfoButton: AnyView? = nil
 
     private var totalAmount: Double {
-        guard let need = selectedNeed else {
-            return trendPoints.reduce(0) { $0 + $1.total }
-        }
-        return trendPoints.reduce(0) { $0 + $1.amount(for: need) }
+        trendPoints.reduce(0) { $0 + NeedSelectionLogic.amount(of: $1, for: selectedNeeds) }
     }
 
     private var variation: Double? {
-        let previousAmount: Double?
-        if let need = selectedNeed {
-            previousAmount = previousAmountByNeed[need]
-        } else {
-            previousAmount = previousTotalAmount
-        }
-        guard let previous = previousAmount else { return nil }
+        guard let previous = NeedSelectionLogic.previousAmount(
+            total: previousTotalAmount, byNeed: previousAmountByNeed, for: selectedNeeds
+        ) else { return nil }
         return PreviousPeriodHelper.calculateVariation(
             currentAmount: totalAmount,
             previousAmount: previous
@@ -98,7 +92,7 @@ struct NeedTrendWidget: View {
 
     init(
         trendPoints: [NeedTrendPoint],
-        selectedNeed: SubcategoryNeed?,
+        selectedNeeds: Set<SubcategoryNeed>,
         currencyCode: String,
         size: TopCategoriesWidget.CardSize,
         grouping: TrendGrouping,
@@ -115,7 +109,7 @@ struct NeedTrendWidget: View {
         headerInfoButton: AnyView? = nil
     ) {
         self.trendPoints = trendPoints
-        self.selectedNeed = selectedNeed
+        self.selectedNeeds = selectedNeeds
         self.currencyCode = currencyCode
         self.size = size
         self.grouping = grouping
@@ -217,7 +211,7 @@ struct NeedTrendWidget: View {
         amount: Double,
         ratio: Double
     ) -> some View {
-        let dimmed = selectedNeed != nil && selectedNeed != need
+        let dimmed = !NeedSelectionLogic.includes(need, in: selectedNeeds)
         return PanelSmallBarRow(
             label: need.displayName,
             amount: amount,
@@ -328,14 +322,14 @@ struct NeedTrendWidget: View {
             // Large: Chart + Legend (legend handles filtering)
             VStack(spacing: DS.Spacing.lg) {
                 NeedTrendChartView(
-                    points: trendPoints, selectedNeed: selectedNeed, currencyCode: currencyCode,
+                    points: trendPoints, selectedNeeds: selectedNeeds, currencyCode: currencyCode,
                     grouping: grouping, interval: interval,
                     onSelectNeed: nil  // Legend handles explicit selection
                 )
 
                 NeedLegendView(
                     points: trendPoints,
-                    selectedNeed: selectedNeed,
+                    selectedNeeds: selectedNeeds,
                     onSelect: onSelectNeed
                 )
             }
@@ -358,7 +352,7 @@ struct NeedTrendWidget: View {
                         amount: essentialTotal,
                         maxAmount: maxVal,
                         currencyCode: currencyCode,
-                        isSelected: selectedNeed == nil || selectedNeed == .essential,
+                        isSelected: NeedSelectionLogic.includes(.essential, in: selectedNeeds),
                         onTap: { onSelectNeed(.essential) },
                         variation: variationForNeed(.essential, currentAmount: essentialTotal),
                         showNAWhenNil: showVariationHeader
@@ -370,7 +364,7 @@ struct NeedTrendWidget: View {
                         amount: priorityTotal,
                         maxAmount: maxVal,
                         currencyCode: currencyCode,
-                        isSelected: selectedNeed == nil || selectedNeed == .priority,
+                        isSelected: NeedSelectionLogic.includes(.priority, in: selectedNeeds),
                         onTap: { onSelectNeed(.priority) },
                         variation: variationForNeed(.priority, currentAmount: priorityTotal),
                         showNAWhenNil: showVariationHeader
@@ -382,7 +376,7 @@ struct NeedTrendWidget: View {
                         amount: optionalTotal,
                         maxAmount: maxVal,
                         currencyCode: currencyCode,
-                        isSelected: selectedNeed == nil || selectedNeed == .optional,
+                        isSelected: NeedSelectionLogic.includes(.optional, in: selectedNeeds),
                         onTap: { onSelectNeed(.optional) },
                         variation: variationForNeed(.optional, currentAmount: optionalTotal),
                         showNAWhenNil: showVariationHeader
@@ -395,7 +389,7 @@ struct NeedTrendWidget: View {
                             amount: unclassifiedTotal,
                             maxAmount: maxVal,
                             currencyCode: currencyCode,
-                            isSelected: selectedNeed == nil || selectedNeed == .unclassified,
+                            isSelected: NeedSelectionLogic.includes(.unclassified, in: selectedNeeds),
                             onTap: { onSelectNeed(.unclassified) },
                             variation: variationForNeed(.unclassified, currentAmount: unclassifiedTotal),
                             showNAWhenNil: showVariationHeader
@@ -413,7 +407,7 @@ struct NeedTrendChartView: View {
     @Environment(AppPreferences.self) private var appPreferences
 
     let points: [NeedTrendPoint]
-    let selectedNeed: SubcategoryNeed?
+    let selectedNeeds: Set<SubcategoryNeed>
     let currencyCode: String
     let grouping: TrendGrouping
     let interval: DateInterval
@@ -503,21 +497,13 @@ struct NeedTrendChartView: View {
 
     private var totalAverageValue: Double {
         guard !points.isEmpty else { return 0 }
-        if let need = selectedNeed {
-            let values = points.map { $0.amount(for: need) }
-            return values.reduce(0, +) / Double(values.count)
-        } else {
-            let values = points.map { $0.total }
-            return values.reduce(0, +) / Double(values.count)
-        }
+        let values = points.map { NeedSelectionLogic.amount(of: $0, for: selectedNeeds) }
+        return values.reduce(0, +) / Double(values.count)
     }
 
     private var averageSegments: [AverageSegment] {
-        let values: [(date: Date, amount: Double)]
-        if let need = selectedNeed {
-            values = points.map { (date: $0.date, amount: $0.amount(for: need)) }
-        } else {
-            values = points.map { (date: $0.date, amount: $0.total) }
+        let values: [(date: Date, amount: Double)] = points.map {
+            (date: $0.date, amount: NeedSelectionLogic.amount(of: $0, for: selectedNeeds))
         }
         return AverageSegment.compute(from: values, barGrouping: grouping)
     }
@@ -532,10 +518,7 @@ struct NeedTrendChartView: View {
         Chart {
             // Filter to the selected need (show all when none selected). Both
             // branches rendered an identical BarMark, so this is a pure data filter.
-            ForEach(flattenData(points).filter { item in
-                guard let selected = selectedNeed else { return true }
-                return item.need == selected
-            }) { item in
+            ForEach(flattenData(points).filter { NeedSelectionLogic.includes($0.need, in: selectedNeeds) }) { item in
                 BarMark(
                     x: .value("Fecha", item.date, unit: chartUnit),
                     y: .value("Monto", item.amount)
@@ -763,20 +746,8 @@ struct NeedTrendChartView: View {
     private func calculateMaxValue() -> Double {
         guard !points.isEmpty else { return 100 }
 
-        if let selected = selectedNeed {
-            // If a need is selected, find max for that need
-            return points.map { point in
-                switch selected {
-                case .essential: return point.essential
-                case .priority: return point.priority
-                case .optional: return point.optional
-                case .unclassified: return point.unclassified
-                }
-            }.max() ?? 100
-        } else {
-            // If showing all, find max total per date (stacked)
-            return points.map { $0.total }.max() ?? 100
-        }
+        // Las barras de las necesidades elegidas van apiladas: el máximo es el de su suma (todas, sin filtro).
+        return points.map { NeedSelectionLogic.amount(of: $0, for: selectedNeeds) }.max() ?? 100
     }
 
     private static let fullDayFormatter: DateFormatter = {
@@ -856,10 +827,7 @@ struct NeedTrendChartView: View {
     }
 
     private func shouldShow(_ need: SubcategoryNeed) -> Bool {
-        if let selected = selectedNeed {
-            return selected == need
-        }
-        return true
+        NeedSelectionLogic.includes(need, in: selectedNeeds)
     }
 
     private func formatAxisAmount(_ value: Double) -> String {
@@ -875,7 +843,7 @@ struct NeedTrendChartView: View {
 
 struct NeedLegendView: View {
     let points: [NeedTrendPoint]
-    let selectedNeed: SubcategoryNeed?
+    let selectedNeeds: Set<SubcategoryNeed>
     let onSelect: (SubcategoryNeed) -> Void
 
     var body: some View {
@@ -890,20 +858,20 @@ struct NeedLegendView: View {
             HStack(spacing: DS.Spacing.sm) {
                 CompactLegendChip(
                     need: .essential, amount: essentials, total: total,
-                    isSelected: selectedNeed == .essential || selectedNeed == nil,
+                    isSelected: NeedSelectionLogic.includes(.essential, in: selectedNeeds),
                     onTap: { onSelect(.essential) })
                 CompactLegendChip(
                     need: .priority, amount: priorities, total: total,
-                    isSelected: selectedNeed == .priority || selectedNeed == nil,
+                    isSelected: NeedSelectionLogic.includes(.priority, in: selectedNeeds),
                     onTap: { onSelect(.priority) })
                 CompactLegendChip(
                     need: .optional, amount: optionals, total: total,
-                    isSelected: selectedNeed == .optional || selectedNeed == nil,
+                    isSelected: NeedSelectionLogic.includes(.optional, in: selectedNeeds),
                     onTap: { onSelect(.optional) })
                 if unclassified > 0 {
                     CompactLegendChip(
                         need: .unclassified, amount: unclassified, total: total,
-                        isSelected: selectedNeed == .unclassified || selectedNeed == nil,
+                        isSelected: NeedSelectionLogic.includes(.unclassified, in: selectedNeeds),
                         onTap: { onSelect(.unclassified) })
                 }
             }
@@ -1005,7 +973,7 @@ struct CompactLegendChip: View {
 // MARK: - Compact Mini Legend for Medium Size
 
 struct CompactNeedLegendView: View {
-    let selectedNeed: SubcategoryNeed?
+    let selectedNeeds: Set<SubcategoryNeed>
     let onSelect: (SubcategoryNeed) -> Void
 
     private let allNeeds: [SubcategoryNeed] = [.essential, .priority, .optional, .unclassified]
@@ -1039,11 +1007,11 @@ struct CompactNeedLegendView: View {
     }
 
     private func isSelected(_ need: SubcategoryNeed) -> Bool {
-        selectedNeed == need
+        selectedNeeds.contains(need)
     }
 
     private func isActiveOrNoFilter(_ need: SubcategoryNeed) -> Bool {
-        selectedNeed == nil || selectedNeed == need
+        NeedSelectionLogic.includes(need, in: selectedNeeds)
     }
 }
 
