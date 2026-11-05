@@ -7925,3 +7925,40 @@
 /* «Cuánto puedo gastar hoy» (2.3): el cupo del día de un presupuesto */
 "budgets.daily.canSpend" = "Hoje podes gastar %@";
 "budgets.daily.overToday" = "Hoje passaste %@ do limite";
+
+/* «Correo del banco» (2.3): reenvío de los avisos del banco a Yala */
+"bankEmail.title" = "E-mails do banco";
+"bankEmail.intro" = "Reencaminha para o Yala os avisos que o teu banco te envia e cada movimento chega à tua Caixa de entrada para o confirmares.";
+"bankEmail.addressCaption" = "O teu endereço do Yala";
+"bankEmail.addressLoading" = "A preparar o teu endereço…";
+"bankEmail.addressError" = "Não conseguimos obter o teu endereço. Verifica a ligação e tenta outra vez.";
+"bankEmail.retry" = "Tentar outra vez";
+"bankEmail.copyAddress" = "Copiar endereço";
+"bankEmail.copied" = "Endereço copiado";
+"bankEmail.seePro" = "Ver Yala Pro";
+"bankEmail.guidesCaption" = "Configura o reencaminhamento no teu e-mail";
+"bankEmail.privacyFooter" = "Reencaminha só os avisos do teu banco. O Yala lê cada e-mail para tirar o movimento e não o guarda.";
+"bankEmail.proLine" = "Com o Yala Pro, todos os teus avisos são lidos.";
+"bankEmail.trialExhausted" = "Já usaste os teus e-mails de teste. Com o Yala Pro, são todos lidos.";
+"bankEmail.skipped" = "E-mails que chegaram sem ser lidos: %d.";
+"bankEmail.trialUsed" = "E-mails de teste usados: %1$d de %2$d.";
+"bankEmail.guideTitle" = "Reencaminhar do %@";
+"bankEmail.guideLine" = "Configuras uma vez só, no navegador.";
+"bankEmail.guarantee" = "Só os avisos do teu banco saem do teu e-mail: o resto dos teus e-mails não é reencaminhado.";
+"bankEmail.stepCopyTitle" = "Copia o teu endereço do Yala";
+"bankEmail.stepCopyDetail" = "Vais colá-lo no teu e-mail no passo seguinte.";
+"bankEmail.gmailAddTitle" = "Adiciona-o como endereço de reencaminhamento";
+"bankEmail.gmailAddDetail" = "No Gmail, no navegador: Definições › Ver todas as definições › Encaminhamento e POP/IMAP › Adicionar um endereço de encaminhamento. Cola o teu endereço e confirma.";
+"bankEmail.openProvider" = "Abrir o %@";
+"bankEmail.gmailConfirmTitle" = "Confirma com o código do Gmail";
+"bankEmail.gmailConfirmWaiting" = "O Gmail envia um código para o teu endereço do Yala. Quando chegar, vais vê-lo aqui: toca em «Procurar o código» daqui a pouco.";
+"bankEmail.gmailConfirmCode" = "O teu código do Gmail é %@. Escreve-o no Gmail, em Encaminhamento e POP/IMAP, e toca em Verificar.";
+"bankEmail.copyCode" = "Copiar código";
+"bankEmail.checkCode" = "Procurar o código";
+"bankEmail.gmailFilterTitle" = "Cria um filtro para o teu banco";
+"bankEmail.gmailFilterDetail" = "No Gmail, procura o endereço de onde o teu banco envia os avisos e toca em Criar filtro. Assinala «Reencaminhar para», escolhe o teu endereço do Yala e cria o filtro. Assim só os avisos do banco são reencaminhados.";
+"bankEmail.ruleTitle" = "Cria uma regra para o teu banco";
+"bankEmail.outlookRuleDetail" = "No Outlook, no navegador: Definições › Correio › Regras › Adicionar nova regra. Condição: «De» o endereço do teu banco. Ação: «Reencaminhar para» o teu endereço do Yala. Guarda a regra.";
+"bankEmail.icloudRuleDetail" = "No iCloud.com, abre o Mail e vai a Definições › Regras › Adicionar uma regra. Se uma mensagem for do endereço do teu banco, reencaminha-a para o teu endereço do Yala. Guarda a regra.";
+"bankEmail.stepWaitTitle" = "Espera pelo próximo aviso";
+"bankEmail.stepWaitDetail" = "Quando o teu banco enviar o próximo, o movimento aparece na tua Caixa de entrada para confirmares.";

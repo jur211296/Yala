@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1166)
+## Index (1170)
 
 | id | status | path |
 |---|---|---|
@@ -150,6 +150,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | balance-chart-last-axis-label-overlaps-and-today-pill-covers-the-top-label | done | tickets/done/balance-chart-last-axis-label-overlaps-and-today-pill-covers-the-top-label.md |
 | balance-chart-voiceover-reads-base-to-monto | backlog | tickets/backlog/balance-chart-voiceover-reads-base-to-monto.md |
 | balance-figure-counts-future-dated-rows-the-curve-never-draws | done | tickets/done/balance-figure-counts-future-dated-rows-the-curve-never-draws.md |
+| bank-email-forwarding-to-the-inbox | done | tickets/done/bank-email-forwarding-to-the-inbox.md |
+| bank-email-measure-a-week-of-real-peruvian-alerts | backlog | tickets/backlog/bank-email-measure-a-week-of-real-peruvian-alerts.md |
+| bank-email-read-reconcile-with-the-ai-cost-control | done | tickets/done/bank-email-read-reconcile-with-the-ai-cost-control.md |
 | barrido-ios27-animaciones-y-vistas-mal-optimizadas | done | tickets/done/barrido-ios27-animaciones-y-vistas-mal-optimizadas.md |
 | beacon-routes-only-never-blocks | done | tickets/done/beacon-routes-only-never-blocks.md |
 | blocked-copy-mapping-lives-in-three-views-untestable | backlog | tickets/backlog/blocked-copy-mapping-lives-in-three-views-untestable.md |
@@ -831,6 +834,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | prior-icloud-group-records-summed-without-their-group | done | tickets/done/prior-icloud-group-records-summed-without-their-group.md |
 | privacy-manifest-misses-cloud-account-data | done | tickets/done/privacy-manifest-misses-cloud-account-data.md |
 | privacy-policy-and-terms-miss-cloud-mode-identifiers-and-account-deletion | done | tickets/done/privacy-policy-and-terms-miss-cloud-mode-identifiers-and-account-deletion.md |
+| privacy-policy-covers-the-bank-email | done | tickets/done/privacy-policy-covers-the-bank-email.md |
 | private-exit-export-wait-cached-zero-misses-outside-writes | backlog | tickets/backlog/private-exit-export-wait-cached-zero-misses-outside-writes.md |
 | private-exit-loses-unmaterialized-inbound-captures | done | tickets/done/private-exit-loses-unmaterialized-inbound-captures.md |
 | private-exit-materialized-drafts-do-not-refresh-the-inbox | backlog | tickets/backlog/private-exit-materialized-drafts-do-not-refresh-the-inbox.md |

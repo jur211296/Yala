@@ -8602,3 +8602,40 @@
 /* «Cuánto puedo gastar hoy» (2.3): el cupo del día de un presupuesto */
 "budgets.daily.canSpend" = "Vandaag kun je %@ uitgeven";
 "budgets.daily.overToday" = "Vandaag %@ over je dagbudget";
+
+/* «Correo del banco» (2.3): reenvío de los avisos del banco a Yala */
+"bankEmail.title" = "E-mails van de bank";
+"bankEmail.intro" = "Stuur de meldingen van je bank door naar Yala en elke transactie komt in je Inbox, zodat je hem kunt bevestigen.";
+"bankEmail.addressCaption" = "Je Yala-adres";
+"bankEmail.addressLoading" = "Je adres wordt klaargezet…";
+"bankEmail.addressError" = "We konden je adres niet ophalen. Controleer je verbinding en probeer het opnieuw.";
+"bankEmail.retry" = "Opnieuw proberen";
+"bankEmail.copyAddress" = "Adres kopiëren";
+"bankEmail.copied" = "Adres gekopieerd";
+"bankEmail.seePro" = "Bekijk Yala Pro";
+"bankEmail.guidesCaption" = "Stel doorsturen in bij je e-mail";
+"bankEmail.privacyFooter" = "Stuur alleen de meldingen van je bank door. Yala leest elke e-mail om de transactie eruit te halen en bewaart hem niet.";
+"bankEmail.proLine" = "Met Yala Pro worden al je meldingen gelezen.";
+"bankEmail.trialExhausted" = "Je hebt je proefmails gebruikt. Met Yala Pro worden ze allemaal gelezen.";
+"bankEmail.skipped" = "E-mails die ongelezen binnenkwamen: %d.";
+"bankEmail.trialUsed" = "Gebruikte proefmails: %1$d van %2$d.";
+"bankEmail.guideTitle" = "Doorsturen vanuit %@";
+"bankEmail.guideLine" = "Je stelt het één keer in, via de browser.";
+"bankEmail.guarantee" = "Alleen de meldingen van je bank verlaten je mailbox: de rest van je e-mail wordt niet doorgestuurd.";
+"bankEmail.stepCopyTitle" = "Kopieer je Yala-adres";
+"bankEmail.stepCopyDetail" = "Je plakt het in de volgende stap in je e-mail.";
+"bankEmail.gmailAddTitle" = "Voeg het toe als doorstuuradres";
+"bankEmail.gmailAddDetail" = "In Gmail, in de browser: Instellingen › Alle instellingen bekijken › Doorsturen en POP/IMAP › Een doorstuuradres toevoegen. Plak je adres en bevestig.";
+"bankEmail.openProvider" = "%@ openen";
+"bankEmail.gmailConfirmTitle" = "Bevestig met de Gmail-code";
+"bankEmail.gmailConfirmWaiting" = "Gmail stuurt een code naar je Yala-adres. Zodra die er is, zie je hem hier: tik zo op ‘Code zoeken’.";
+"bankEmail.gmailConfirmCode" = "Je Gmail-code is %@. Vul hem in Gmail in bij Doorsturen en POP/IMAP en tik op Verifiëren.";
+"bankEmail.copyCode" = "Code kopiëren";
+"bankEmail.checkCode" = "Code zoeken";
+"bankEmail.gmailFilterTitle" = "Maak een filter voor je bank";
+"bankEmail.gmailFilterDetail" = "Zoek in Gmail naar het adres waarvandaan je bank meldingen stuurt en tik op Filter maken. Vink ‘Doorsturen naar’ aan, kies je Yala-adres en maak het filter. Zo worden alleen de meldingen van de bank doorgestuurd.";
+"bankEmail.ruleTitle" = "Maak een regel voor je bank";
+"bankEmail.outlookRuleDetail" = "In Outlook, in de browser: Instellingen › E-mail › Regels › Nieuwe regel toevoegen. Voorwaarde: ‘Van’ het adres van je bank. Actie: ‘Doorsturen naar’ je Yala-adres. Sla de regel op.";
+"bankEmail.icloudRuleDetail" = "Open op iCloud.com Mail en ga naar Instellingen › Regels › Een regel toevoegen. Als een bericht van het adres van je bank komt, stuur het door naar je Yala-adres. Sla de regel op.";
+"bankEmail.stepWaitTitle" = "Wacht op de volgende melding";
+"bankEmail.stepWaitDetail" = "Zodra je bank de volgende stuurt, verschijnt de transactie in je Inbox om te bevestigen.";

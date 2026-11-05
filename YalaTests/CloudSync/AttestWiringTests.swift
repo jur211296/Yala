@@ -62,6 +62,9 @@ struct AttestWiringTests {
         ("GroupsSyncClient", 1),
         ("GroupsMerkleClient", 1),
         ("PushTokenRegistrationClient", 2),
+        // Correo del banco (2.3): `/mail/*` va por `requireUserAndAttest` (`gateway/src/mail/routes.ts`). Una sola
+        // construcción, `BankEmailDraftService.makeClient()`, que usan el servicio y la pantalla.
+        ("BankEmailClient", 1),
         // Canal PERSONAL. No estaban rotos —sus 7 construcciones ya inyectaban el provider de la sesión—,
         // pero tienen el MISMO default `{ nil }` y sus rutas (`/sync/*`, `/prefs/*`) la misma guard
         // estricta, así que el mismo descuido cabe ahí exactamente igual. Dejarlos fuera sería pinnear

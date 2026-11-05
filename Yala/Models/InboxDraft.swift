@@ -349,7 +349,9 @@ final class InboxDraft: Identifiable {
         case .approved, .rejected:
             return cachedCurrencyCode
         case .pending:
-            return account?.currencyCode
+            // Sin cuenta, la divisa que el borrador ya traía (el aviso del banco en dólares, 2.3). Ningún otro origen la
+            // rellena sin cuenta: para ellos sigue siendo la divisa por defecto de quien pinta.
+            return account?.currencyCode ?? cachedCurrencyCode
         }
     }
 

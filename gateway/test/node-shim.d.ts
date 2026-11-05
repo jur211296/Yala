@@ -12,6 +12,22 @@ declare module "node:fs" {
   export function mkdirSync(path: string | URL, options?: { recursive?: boolean }): void;
   export function existsSync(path: string | URL): boolean;
 }
+declare module "node:url" {
+  export function fileURLToPath(url: string | URL): string;
+}
+// SQLite de Node (22.13+ sin flag): el D1 de verdad en memoria de `mail.fakeD1.ts`.
+declare module "node:sqlite" {
+  interface StatementSync {
+    get(...params: unknown[]): unknown;
+    all(...params: unknown[]): unknown[];
+    run(...params: unknown[]): { changes: number | bigint; lastInsertRowid: number | bigint };
+  }
+  export class DatabaseSync {
+    constructor(path: string);
+    exec(sql: string): void;
+    prepare(sql: string): StatementSync;
+  }
+}
 declare module "node:os" {
   export function homedir(): string;
 }

@@ -72,7 +72,7 @@ struct AttestSessionTokenWiringTests {
             .filter { !$0.isEmpty && !$0.hasPrefix("//") }
     }
 
-    /// Los ocho sitios que leen el 401 `yala_attest_required`. Un sitio nuevo que lo lea sin olvidar el token reabre el
+    /// Los nueve sitios que leen el 401 `yala_attest_required`. Un sitio nuevo que lo lea sin olvidar el token reabre el
     /// ticket `attest-session-token-rejected-by-the-gateway-stays-cached`; el conteo hace que no se escape.
     @Test func everyAttestRequired401_reportsTheSentToken() throws {
         // Barre `Yala/` entero, no una lista escrita a mano: un cliente nuevo con la rama tiene que entrar en la cuenta.
@@ -91,7 +91,7 @@ struct AttestSessionTokenWiringTests {
                         "\(path): la rama del 401 de attest no olvida el token que viajó")
             }
         }
-        #expect(sites == 8, "Se esperaban 8 ramas `yala_attest_required` y hay \(sites): ¿una nueva o una renombrada?")
+        #expect(sites == 9, "Se esperaban 9 ramas `yala_attest_required` y hay \(sites): ¿una nueva o una renombrada?")
     }
 
     /// El cuerpo de la espera con techo, entero: el `TaskGroup` (que esperaría al hijo colgado) o un `refreshTask.value` a

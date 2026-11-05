@@ -8590,3 +8590,40 @@
 /* «Cuánto puedo gastar hoy» (2.3): el cupo del día de un presupuesto */
 "budgets.daily.canSpend" = "Heute kannst du %@ ausgeben";
 "budgets.daily.overToday" = "Heute %@ über dem Tagesbudget";
+
+/* «Correo del banco» (2.3): reenvío de los avisos del banco a Yala */
+"bankEmail.title" = "Bank-E-Mails";
+"bankEmail.intro" = "Leite die Benachrichtigungen deiner Bank an Yala weiter, und jede Buchung landet zum Bestätigen in deinem Posteingang.";
+"bankEmail.addressCaption" = "Deine Yala-Adresse";
+"bankEmail.addressLoading" = "Deine Adresse wird vorbereitet …";
+"bankEmail.addressError" = "Deine Adresse konnte nicht geladen werden. Prüfe deine Verbindung und versuch es noch einmal.";
+"bankEmail.retry" = "Erneut versuchen";
+"bankEmail.copyAddress" = "Adresse kopieren";
+"bankEmail.copied" = "Adresse kopiert";
+"bankEmail.seePro" = "Yala Pro ansehen";
+"bankEmail.guidesCaption" = "Weiterleitung in deinem E-Mail-Konto einrichten";
+"bankEmail.privacyFooter" = "Leite nur die Benachrichtigungen deiner Bank weiter. Yala liest jede E-Mail, um die Buchung zu entnehmen, und speichert sie nicht.";
+"bankEmail.proLine" = "Mit Yala Pro werden alle deine Benachrichtigungen gelesen.";
+"bankEmail.trialExhausted" = "Deine Test-E-Mails sind aufgebraucht. Mit Yala Pro werden alle gelesen.";
+"bankEmail.skipped" = "Ungelesen eingegangene E-Mails: %d.";
+"bankEmail.trialUsed" = "Genutzte Test-E-Mails: %1$d von %2$d.";
+"bankEmail.guideTitle" = "Weiterleiten von %@";
+"bankEmail.guideLine" = "Du richtest es einmal im Browser ein.";
+"bankEmail.guarantee" = "Nur die Benachrichtigungen deiner Bank verlassen dein Postfach: Der Rest deiner E-Mails wird nicht weitergeleitet.";
+"bankEmail.stepCopyTitle" = "Kopiere deine Yala-Adresse";
+"bankEmail.stepCopyDetail" = "Im nächsten Schritt fügst du sie in deinem E-Mail-Konto ein.";
+"bankEmail.gmailAddTitle" = "Füge sie als Weiterleitungsadresse hinzu";
+"bankEmail.gmailAddDetail" = "In Gmail im Browser: Einstellungen › Alle Einstellungen aufrufen › Weiterleitung und POP/IMAP › Weiterleitungsadresse hinzufügen. Füge deine Adresse ein und bestätige.";
+"bankEmail.openProvider" = "%@ öffnen";
+"bankEmail.gmailConfirmTitle" = "Bestätige mit dem Gmail-Code";
+"bankEmail.gmailConfirmWaiting" = "Gmail schickt einen Code an deine Yala-Adresse. Sobald er da ist, siehst du ihn hier: Tippe gleich auf „Nach Code suchen“.";
+"bankEmail.gmailConfirmCode" = "Dein Gmail-Code ist %@. Gib ihn in Gmail unter Weiterleitung und POP/IMAP ein und tippe auf Bestätigen.";
+"bankEmail.copyCode" = "Code kopieren";
+"bankEmail.checkCode" = "Nach Code suchen";
+"bankEmail.gmailFilterTitle" = "Erstelle einen Filter für deine Bank";
+"bankEmail.gmailFilterDetail" = "Suche in Gmail nach der Adresse, von der deine Bank die Benachrichtigungen schickt, und tippe auf Filter erstellen. Aktiviere „Weiterleiten an“, wähle deine Yala-Adresse und erstelle den Filter. So werden nur die Benachrichtigungen der Bank weitergeleitet.";
+"bankEmail.ruleTitle" = "Erstelle eine Regel für deine Bank";
+"bankEmail.outlookRuleDetail" = "In Outlook im Browser: Einstellungen › E-Mail › Regeln › Neue Regel hinzufügen. Bedingung: „Von“ der Adresse deiner Bank. Aktion: „Weiterleiten an“ deine Yala-Adresse. Speichere die Regel.";
+"bankEmail.icloudRuleDetail" = "Öffne auf iCloud.com Mail und gehe zu Einstellungen › Regeln › Regel hinzufügen. Wenn eine Nachricht von der Adresse deiner Bank ist, leite sie an deine Yala-Adresse weiter. Speichere die Regel.";
+"bankEmail.stepWaitTitle" = "Warte auf die nächste Benachrichtigung";
+"bankEmail.stepWaitDetail" = "Wenn deine Bank die nächste schickt, erscheint die Buchung zum Bestätigen in deinem Posteingang.";

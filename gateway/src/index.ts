@@ -25,6 +25,8 @@ import { handleDebugPush } from "./push/routes";
 import { handleDebugSentry } from "./debugSentry";
 import { sentryOptions } from "./sentry";
 import { handlePushRegister, handlePushUnregister } from "./push/register";
+import { handleMailAddress, handleMailDrafts, handleMailDraftsAck } from "./mail/routes";
+import { handleEmail } from "./mail/email";
 
 /**
  * Yala Gateway — entrada del Worker.
@@ -106,6 +108,11 @@ app.get("/groups/merkle", handleGroupsMerkle);
 // --- Grupos->backend (G3): RPCs de membresía (allowlist de 9; params filtrados por fn; RLS arbitra) ---
 app.post("/groups/rpc/:fn", handleGroupsRpc);
 
+// --- Correo del banco por reenvío (2.3): dirección auto+<code>@, cola de movimientos leídos (src/mail/) ---
+app.post("/mail/address", handleMailAddress);
+app.get("/mail/drafts", handleMailDrafts);
+app.post("/mail/drafts/ack", handleMailDraftsAck);
+
 app.notFound(() => jsonError("yala_bad_request", "Not found", 404));
 
 // Un throw sin capturar (D1 caída, binding ausente) salía como 500 en TEXTO PLANO: el SDK de
@@ -122,5 +129,11 @@ app.onError((err, c) => {
 
 // `withSentry` instrumenta el `fetch` de la app en el sitio y devuelve la misma app (los tests siguen usando
 // `app.request`). Sin `SENTRY_DSN`, `sentryOptions` devuelve `undefined` y el SDK no arranca.
-export default Sentry.withSentry((env: Env) => sentryOptions(env), app);
+//
+// `email`: Email Routing entrega aquí lo que llega a `auto+<code>@yala-app.pe` (src/mail/email.ts). Va colgado de la misma
+// instancia para que `withSentry` lo instrumente y los tests sigan usando `app.request`.
+const worker = Object.assign(app, {
+  email: (message: ForwardableEmailMessage, env: Env, _ctx: ExecutionContext) => handleEmail(message, env),
+});
+export default Sentry.withSentry((env: Env) => sentryOptions(env), worker);
 export { RateLimiter } from "./rate_limiter";

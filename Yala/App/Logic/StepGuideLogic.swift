@@ -64,7 +64,11 @@ nonisolated enum StepGuideProgressStore {
     /// Las guías que guardan avance: Apple Pay (Tutoriales) y Face ID (Seguridad).
     static let applePay = "applePay"
     static let faceID = "faceID"
-    static let guideIDs = [applePay, faceID]
+    /// Correo del banco por reenvío (2.3): una guía por correo.
+    static let bankEmailGmail = "bankEmailGmail"
+    static let bankEmailOutlook = "bankEmailOutlook"
+    static let bankEmailICloud = "bankEmailICloud"
+    static let guideIDs = [applePay, faceID, bankEmailGmail, bankEmailOutlook, bankEmailICloud]
 
     static func key(_ guideID: String) -> String { "stepGuide.progress.\(guideID)" }
 

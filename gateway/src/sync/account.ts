@@ -11,6 +11,7 @@
  */
 import type { Context } from "hono";
 import type { Env } from "../env";
+import { deleteMailData } from "../mail/store";
 import { errorBody, jsonError } from "../errors";
 import { accountQuotaBucket, forgetAccountQuota, gateRequest } from "../ratelimit";
 import { verifySessionToken, type SessionClaims } from "../attest/session";
@@ -269,6 +270,14 @@ export async function handleAccountDelete(c: Ctx): Promise<Response> {
     await deleteAccountEntitlement(c.env, auth.sub);
   } catch (e) {
     console.log(`[account-delete] entitlement cleanup falló: ${e instanceof Error ? e.message : "unknown"}`);
+  }
+
+  // El correo del banco (2.3) también vive en D1: la dirección, la cola de movimientos leídos y las huellas de los
+  // avisos vistos. Mismo trato que el derecho: después del RPC y sin tumbar la respuesta.
+  try {
+    await deleteMailData(c.env, auth.sub);
+  } catch (e) {
+    console.log(`[account-delete] mail cleanup falló: ${e instanceof Error ? e.message : "unknown"}`);
   }
 
   // El contador de uso de la CUENTA (Durable Object `sub:<sub>`) tampoco lo alcanza el RPC. Mismo trato que el

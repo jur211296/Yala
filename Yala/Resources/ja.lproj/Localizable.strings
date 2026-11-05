@@ -8602,3 +8602,40 @@
 /* «Cuánto puedo gastar hoy» (2.3): el cupo del día de un presupuesto */
 "budgets.daily.canSpend" = "今日使えるのは%@";
 "budgets.daily.overToday" = "今日は%@超過";
+
+/* «Correo del banco» (2.3): reenvío de los avisos del banco a Yala */
+"bankEmail.title" = "銀行のメール";
+"bankEmail.intro" = "銀行から届く通知メールを Yala に転送すると、取引が受信箱に届き、確認できます。";
+"bankEmail.addressCaption" = "あなたの Yala アドレス";
+"bankEmail.addressLoading" = "アドレスを準備しています…";
+"bankEmail.addressError" = "アドレスを取得できませんでした。接続を確認して、もう一度お試しください。";
+"bankEmail.retry" = "再試行";
+"bankEmail.copyAddress" = "アドレスをコピー";
+"bankEmail.copied" = "アドレスをコピーしました";
+"bankEmail.seePro" = "Yala Pro を見る";
+"bankEmail.guidesCaption" = "メールで転送を設定する";
+"bankEmail.privacyFooter" = "転送するのは銀行の通知メールだけにしてください。Yala は各メールから取引を読み取り、メール自体は保存しません。";
+"bankEmail.proLine" = "Yala Pro なら、すべての通知を読み取ります。";
+"bankEmail.trialExhausted" = "お試し分のメールを使い切りました。Yala Pro ならすべて読み取ります。";
+"bankEmail.skipped" = "読み取られずに届いたメール：%d 件。";
+"bankEmail.trialUsed" = "使用したお試しメール：%2$d 件中 %1$d 件。";
+"bankEmail.guideTitle" = "%@ から転送";
+"bankEmail.guideLine" = "設定はブラウザから一度だけです。";
+"bankEmail.guarantee" = "メールボックスから送られるのは銀行の通知だけです。ほかのメールは転送されません。";
+"bankEmail.stepCopyTitle" = "Yala アドレスをコピー";
+"bankEmail.stepCopyDetail" = "次のステップでメールの設定に貼り付けます。";
+"bankEmail.gmailAddTitle" = "転送先アドレスとして追加";
+"bankEmail.gmailAddDetail" = "ブラウザの Gmail で：設定 › すべての設定を表示 › メール転送と POP/IMAP › 転送先アドレスを追加。アドレスを貼り付けて確定します。";
+"bankEmail.openProvider" = "%@ を開く";
+"bankEmail.gmailConfirmTitle" = "Gmail のコードで確認";
+"bankEmail.gmailConfirmWaiting" = "Gmail から Yala アドレスにコードが届きます。届くとここに表示されます。少し待ってから「コードを確認」をタップしてください。";
+"bankEmail.gmailConfirmCode" = "Gmail のコードは %@ です。Gmail の「メール転送と POP/IMAP」で入力し、「確認」をタップしてください。";
+"bankEmail.copyCode" = "コードをコピー";
+"bankEmail.checkCode" = "コードを確認";
+"bankEmail.gmailFilterTitle" = "銀行用のフィルタを作成";
+"bankEmail.gmailFilterDetail" = "Gmail で銀行が通知を送ってくるアドレスを検索し、「フィルタを作成」をタップ。「次のアドレスに転送する」にチェックして Yala アドレスを選び、フィルタを作成します。これで銀行の通知だけが転送されます。";
+"bankEmail.ruleTitle" = "銀行用のルールを作成";
+"bankEmail.outlookRuleDetail" = "ブラウザの Outlook で：設定 › メール › ルール › 新しいルールを追加。条件：銀行のアドレス「から」。アクション：Yala アドレス「に転送」。ルールを保存します。";
+"bankEmail.icloudRuleDetail" = "iCloud.com でメールを開き、設定 › ルール › ルールを追加 に進みます。メッセージが銀行のアドレスからの場合、Yala アドレスに転送するよう設定し、ルールを保存します。";
+"bankEmail.stepWaitTitle" = "次の通知を待つ";
+"bankEmail.stepWaitDetail" = "銀行から次の通知が届くと、取引が受信箱に表示され、確認できます。";

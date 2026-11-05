@@ -8596,3 +8596,40 @@
 /* «Cuánto puedo gastar hoy» (2.3): el cupo del día de un presupuesto */
 "budgets.daily.canSpend" = "You can spend %@ today";
 "budgets.daily.overToday" = "You went over by %@ today";
+
+/* «Correo del banco» (2.3): reenvío de los avisos del banco a Yala */
+"bankEmail.title" = "Bank emails";
+"bankEmail.intro" = "Forward the alerts your bank sends you to Yala, and each transaction lands in your Inbox for you to confirm.";
+"bankEmail.addressCaption" = "Your Yala address";
+"bankEmail.addressLoading" = "Preparing your address…";
+"bankEmail.addressError" = "We couldn't get your address. Check your connection and try again.";
+"bankEmail.retry" = "Try again";
+"bankEmail.copyAddress" = "Copy address";
+"bankEmail.copied" = "Address copied";
+"bankEmail.seePro" = "See Yala Pro";
+"bankEmail.guidesCaption" = "Set up forwarding in your email";
+"bankEmail.privacyFooter" = "Only forward your bank's alerts. Yala reads each email to pull out the transaction and doesn't keep it.";
+"bankEmail.proLine" = "With Yala Pro, all your alerts are read.";
+"bankEmail.trialExhausted" = "You've used your trial emails. With Yala Pro, they're all read.";
+"bankEmail.skipped" = "Emails that arrived without being read: %d.";
+"bankEmail.trialUsed" = "Trial emails used: %1$d of %2$d.";
+"bankEmail.guideTitle" = "Forward from %@";
+"bankEmail.guideLine" = "You set it up once, from a web browser.";
+"bankEmail.guarantee" = "Only your bank's alerts leave your mailbox: the rest of your email isn't forwarded.";
+"bankEmail.stepCopyTitle" = "Copy your Yala address";
+"bankEmail.stepCopyDetail" = "You'll paste it into your email settings in the next step.";
+"bankEmail.gmailAddTitle" = "Add it as a forwarding address";
+"bankEmail.gmailAddDetail" = "In Gmail, in a browser: Settings › See all settings › Forwarding and POP/IMAP › Add a forwarding address. Paste your address and confirm.";
+"bankEmail.openProvider" = "Open %@";
+"bankEmail.gmailConfirmTitle" = "Confirm with the Gmail code";
+"bankEmail.gmailConfirmWaiting" = "Gmail sends a code to your Yala address. When it arrives you'll see it here: tap “Look for the code” in a moment.";
+"bankEmail.gmailConfirmCode" = "Your Gmail code is %@. Enter it in Gmail, under Forwarding and POP/IMAP, and tap Verify.";
+"bankEmail.copyCode" = "Copy code";
+"bankEmail.checkCode" = "Look for the code";
+"bankEmail.gmailFilterTitle" = "Create a filter for your bank";
+"bankEmail.gmailFilterDetail" = "In Gmail, search for the address your bank sends alerts from and tap Create filter. Check “Forward it to”, pick your Yala address and create the filter. That way only your bank's alerts are forwarded.";
+"bankEmail.ruleTitle" = "Create a rule for your bank";
+"bankEmail.outlookRuleDetail" = "In Outlook, in a browser: Settings › Mail › Rules › Add new rule. Condition: “From” your bank's address. Action: “Forward to” your Yala address. Save the rule.";
+"bankEmail.icloudRuleDetail" = "On iCloud.com, open Mail and go to Settings › Rules › Add a rule. If a message is from your bank's address, forward it to your Yala address. Save the rule.";
+"bankEmail.stepWaitTitle" = "Wait for the next alert";
+"bankEmail.stepWaitDetail" = "When your bank sends the next one, the transaction shows up in your Inbox, ready to confirm.";
