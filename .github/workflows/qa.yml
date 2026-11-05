@@ -132,6 +132,16 @@ jobs:
       # regresiones que debe cazar.
       - name: Versiones de los targets embebidos (versiones-embebidas.py)
         run: bash qa/scripts/versiones-embebidas-test.sh
+      # El `/gate` corre en local TODOS los pasos de este job, leyéndolos de aquí
+      # (`gate-ci-checks.sh`): un paso nuevo entra solo en el gate. Si el lector dejara de ver
+      # uno, el gate volvería a dar verde a lo que este job bloquea (pasó el 2026-09-08). Solo
+      # sabe replicar `run:` de una línea, sin `if:` ni `env:`: un paso de otra forma lo para.
+      - name: El gate corre lo que corre este job (gate-ci-checks.sh)
+        run: bash qa/scripts/gate-ci-checks-test.sh
+      # Lo que el gate y /l10n-check piden con `-only-testing` sale de este ayudante: si se
+      # equivoca, una suite no corre y el conteo cuadra igual.
+      - name: Suites de un fichero de test (suites-de-fichero.py)
+        run: bash qa/scripts/suites-de-fichero-test.sh
 
   # Suite del conector MCP de Claude (`mcp/`): typecheck y tests unitarios, sin red. Corre en
   # cada push, como `coverage-index`: es barata (Linux, segundos) y así un cambio de esquema que
