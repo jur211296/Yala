@@ -368,6 +368,13 @@ extension XCUIApplication {
         // Los CUATRO elementos son necesarios y el valor de `-AppleLanguages` va entre paréntesis
         // porque es un array serializado; sin ellos el argumento se ignora EN SILENCIO.
         args += ["-AppleLanguages", appleLanguages, "-AppleLocale", appleLocale]
+        // La zona horaria de la app, la MISMA del test (2026-11-05, dispatch 41931406144). `TEST_RUNNER_TZ`
+        // de qa.yml solo llega al proceso del runner; la app del simulador hereda la del host, que en el CI
+        // es UTC. Entre las 19:00 y las 24:00 de Lima los dos «hoy» son días distintos y cayeron dos casos
+        // que construyen fechas en el runner: el chip de fecha de `InboxConvertToGroupUITests` («2 nov.»
+        // frente a «1 nov.») y el contador de `ChatMessagingLayoutUITests` (la app daba por vieja la fecha
+        // del contador y lo reiniciaba). En la Mac del owner las dos zonas ya coinciden: aquí no cambia nada.
+        launchEnvironment["TZ"] = TimeZone.current.identifier
         launchArguments = args
         launch()
         return self

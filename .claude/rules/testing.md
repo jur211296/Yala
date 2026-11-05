@@ -131,6 +131,15 @@ Detalles completos en `$VAULT/planning/TESTING-STRATEGY.md`. Reglas mínimas:
 
 ## XCUITest (regresión UI determinista) — `YalaUITests`
 
+- **La app corre en la zona horaria del TEST (2026-11-05).** `TEST_RUNNER_TZ` solo llega al proceso del runner; la app
+  del simulador heredaba la del host, UTC en el CI. Entre las 19:00 y las 24:00 de Lima los dos «hoy» difieren y cayeron
+  `InboxConvertToGroupUITests` (chip «2 nov.» frente a «1 nov.») y `ChatMessagingLayoutUITests` (contador reiniciado).
+  `launchForUITest` le pasa `TZ` a la app; un test que lance la app SIN ese lanzador y construya fechas en el runner
+  tiene que hacer lo mismo. Se prueba en local con `TEST_RUNNER_TZ=Etc/GMT-12`: sin el `TZ` de la app, los dos rojos.
+- **Un texto que depende de CUÁNTOS registros salen se espera en su forma común.** El seed `minimal` cubre 7 días y
+  «Ahorros USD» solo se mueve los días 10 y 25: según el día queda uno solo y la app dice «Saldrá 1 registro». Esperar
+  «Saldrán» tumbó `ExportHiddenCurrencyAmountUITests` cada noche desde el 2-nov. Espera «Saldrá», que casa con los dos.
+
 - **El `accessibilityIdentifier` de un `Toggle` (o un `Menu` anidado) DENTRO de un `Menu` no llega a la accesibilidad
   (medido el 2026-10-17, iOS 27.0, lote 8).** `app.descendants(matching: .any)["records_duplicates_toggle"]` no existía con
   el menú abierto; `app.buttons["Identificar duplicados"].firstMatch` sí. Dentro de un menú, por la etiqueta.
