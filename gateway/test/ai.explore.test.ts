@@ -157,7 +157,9 @@ describe("explore · herramientas", () => {
     expect(exploreArgs(buscar, {}, "UTC").limite).toBe(20);
     expect(exploreArgs(buscar, "no es un objeto", "UTC")).toEqual({ limite: 20, zona_horaria: "UTC" });
     const cuentas = EXPLORE_TOOL_SPECS.find((s) => s.name === "listar_cuentas")!;
-    expect(exploreArgs(cuentas, { incluir_archivadas: true, zona_horaria: "X" }, "UTC")).toEqual({ incluir_archivadas: true });
+    expect(exploreArgs(cuentas, { incluir_archivadas: true, zona_horaria: "X" }, "UTC")).toEqual({ incluir_archivadas: true, zona_horaria: "UTC" });
+    const categorias = EXPLORE_TOOL_SPECS.find((s) => s.name === "listar_categorias")!;
+    expect(exploreArgs(categorias, { zona_horaria: "X" }, "UTC")).toEqual({});
   });
 
   it("valida lo que en el conector valida zod: obligatorios, enum, enteros con rango, longitud y fecha", () => {

@@ -32,7 +32,7 @@ import {
 import { buildRateBook, CARRY_FORWARD_LOOKBACK, utcDateKey, type RateBook } from "./logic/fx";
 import { buildGroupAdjustment, type GroupAdjustment } from "./logic/groups";
 import { buildLookup, categoryOf, type Lookup } from "./logic/lookup";
-import { computeBalances } from "./logic/balances";
+import { computeBalances, type BalanceTx } from "./logic/balances";
 import { storedConversionMissing, summarize, txKindOf } from "./logic/summary";
 import { budgetPeriod, budgetStatuses, isBudgetActive } from "./logic/budgets";
 import { listRecurring } from "./logic/recurring";
@@ -79,7 +79,7 @@ const ORDER_ID: [string, string] = ["order", "sync_id.asc"];
 async function loadPrefs(ctx: ToolContext): Promise<Map<string, string>> {
   const { rows } = await ctx.reader.all<PreferenceRow>("user_preferences", [
     ["select", COLUMNS.prefs],
-    ["key", "in.(defaultCurrencyCode,firstWeekday)"],
+    ["key", "in.(defaultCurrencyCode,firstWeekday,timeZoneIdentifier)"],
     ["order", "key.asc"],
   ]);
   return new Map(rows.filter((r) => r.value !== null).map((r) => [r.key, r.value as string]));
@@ -173,15 +173,27 @@ function firstWeekday(prefs: Map<string, string>, args: Record<string, unknown>)
   return prefs.get("firstWeekday") === "1" ? 1 : 2;
 }
 
-function zoneOf(ctx: ToolContext, args: Record<string, unknown>): { tz: string; assumed: boolean } {
+/**
+ * La zona que decide qué día es hoy y dónde empieza cada periodo: la que pase Claude (o el gateway, con la del
+ * teléfono); si no, la que subió la app (`PrefSyncKey.timeZoneIdentifier`, la zona del teléfono, el último que
+ * escribe gana); y si tampoco, `DEFAULT_TIMEZONE`, que es la única que se supone. Una zona guardada que no es IANA
+ * válida se ignora, no rompe la herramienta. La de Claude, en cambio, sí se valida con error: la pidió él.
+ */
+async function zoneOf(ctx: ToolContext, args: Record<string, unknown>, prefs: Promise<Map<string, string>>): Promise<{ tz: string; assumed: boolean }> {
   const given = typeof args.zona_horaria === "string" && args.zona_horaria ? args.zona_horaria : null;
-  return { tz: assertTimeZone(given ?? ctx.env.DEFAULT_TIMEZONE), assumed: given === null };
+  if (given) return { tz: assertTimeZone(given), assumed: false };
+  const stored = (await prefs).get("timeZoneIdentifier")?.trim();
+  if (stored) {
+    try {
+      return { tz: assertTimeZone(stored), assumed: false };
+    } catch {
+      // Zona guardada ilegible: se cae a la de por defecto y se avisa.
+    }
+  }
+  return { tz: assertTimeZone(ctx.env.DEFAULT_TIMEZONE), assumed: true };
 }
 
-/**
- * Lo único que el conector no puede saber de la app: en qué zona está el teléfono (la app no la sube; ticket
- * `app-uploads-its-timezone-to-the-cloud`). Solo se avisa cuando Claude no la pasó y se ha tenido que suponer.
- */
+/** Solo se avisa cuando ni Claude ni la app dieron la zona y se ha tenido que suponer. */
 function zoneNotice(zone: { tz: string; assumed: boolean }): string[] {
   return zone.assumed
     ? [`No se indicó zona horaria: se usa ${zone.tz} para decidir qué día es hoy y dónde empieza cada periodo. Si el usuario está en otra, las cifras del borde del periodo pueden cambiar.`]
@@ -199,26 +211,40 @@ const listarCuentas: ToolCore = {
   title: "Cuentas y saldos",
   plan: "gratis",
   description:
-    "Devuelve las cuentas del usuario en Yala con su saldo actual en la divisa de cada cuenta, y el total de las cuentas " +
-    "que cuentan para estadísticas convertido a su divisa preferida. Las cuentas archivadas solo salen si se piden.",
+    "Devuelve las cuentas del usuario en Yala con su saldo de hoy en la divisa de cada cuenta, y el total de las cuentas " +
+    "que cuentan para estadísticas convertido a su divisa preferida. Como en la app, lo fechado después de hoy no está en " +
+    "ningún saldo. Las cuentas archivadas solo salen si se piden.",
   async run(ctx, args) {
+    const prefsP = loadPrefs(ctx);
+    prefsP.catch(() => undefined); // si la zona falla antes de esperarla, que su rechazo no quede suelto
+    const zone = await zoneOf(ctx, args, prefsP);
     const [accounts, txs, prefs, rates] = await Promise.all([
       ctx.reader.all<AccountRow>("accounts", [["select", COLUMNS.accounts], NOT_DELETED, ORDER_ID]),
-      ctx.reader.all<Pick<TxRow, "account_ref" | "amount" | "currency_code">>("tx_items", [
+      ctx.reader.all<BalanceTx>("tx_items", [
         ["select", COLUMNS.txBalance],
         NOT_DELETED,
         ["account_ref", "not.is.null"],
         ORDER_ID,
       ]),
-      loadPrefs(ctx),
+      prefsP,
       loadRates(ctx, todayUtcKey(ctx)),
     ]);
     const preferred = resolvePreferredCurrency(prefs, accounts.rows.map((a) => a.currency_code));
     const result = computeBalances(accounts.rows, txs.rows, preferred.code, rates, {
       incluirArchivadas: args.incluir_archivadas === true,
       todayUtc: todayUtcKey(ctx),
+      today: dayInZone(ctx.now, zone.tz),
+      tz: zone.tz,
     });
     const avisos = [...truncationNotice(txs.truncated)];
+    if (result.futuros_excluidos > 0) {
+      avisos.push(
+        `${result.futuros_excluidos === 1 ? "Hay 1 movimiento" : `Hay ${result.futuros_excluidos} movimientos`} con fecha posterior a hoy: no ${result.futuros_excluidos === 1 ? "está" : "están"} en los saldos, igual que en la app.`,
+      );
+    }
+    // Siempre que se supuso: una zona por delante de la del usuario mete en el saldo algo que la app aún deja fuera, y
+    // ahí no hay futuros que lo delaten.
+    avisos.push(...zoneNotice(zone));
     if (preferred.inferred) avisos.push(`No hay divisa preferida guardada; se usa ${preferred.code}, la más frecuente en tus cuentas.`);
     if (result.total.aproximado) {
       avisos.push("El total es aproximado: alguna divisa se convirtió sin la cotización exacta de hoy. La app lo marca igual, con «≈».");
@@ -311,7 +337,9 @@ const buscarMovimientos: ToolCore = {
     "Devuelve movimientos del usuario, del más reciente al más antiguo, filtrados por fechas, cuenta, categoría o texto de la nota. " +
     "Pagina de hasta 200 en 200: si hay más, la respuesta trae un cursor para la página siguiente.",
   async run(ctx, args) {
-    const zone = zoneOf(ctx, args);
+    const prefsP = loadPrefs(ctx);
+    prefsP.catch(() => undefined); // si la zona falla antes de esperarla, que su rechazo no quede suelto
+    const zone = await zoneOf(ctx, args, prefsP);
     const tz = zone.tz;
     const limit = typeof args.limite === "number" ? args.limite : 50;
     const params: [string, string][] = [
@@ -333,7 +361,7 @@ const buscarMovimientos: ToolCore = {
       const instant = zonedDayStartUtc(addDays(h, 1), tz).toISOString();
       ands.push(`or(local_day.lte.${h},and(local_day.is.null,date.lt.${quoteValue(instant)}))`);
     }
-    const [lookup, prefs] = await Promise.all([loadLookup(ctx), loadPrefs(ctx)]);
+    const [lookup, prefs] = await Promise.all([loadLookup(ctx), prefsP]);
     const avisos: string[] = [...zoneNotice(zone)];
 
     if (typeof args.cuenta === "string" && args.cuenta.trim()) {
@@ -423,10 +451,12 @@ const resumenPeriodo: ToolCore = {
     "Devuelve ingresos, gastos, neto, tasa de ahorro y gasto medio diario de un periodo en la divisa preferida del usuario, " +
     "con las categorías y comercios en los que más gastó. Usa las mismas reglas que las estadísticas de la app.",
   async run(ctx, args) {
-    const zone = zoneOf(ctx, args);
+    const prefsP = loadPrefs(ctx);
+    prefsP.catch(() => undefined); // si la zona falla antes de esperarla, que su rechazo no quede suelto
+    const zone = await zoneOf(ctx, args, prefsP);
     const tz = zone.tz;
     const today = dayInZone(ctx.now, tz);
-    const prefs = await loadPrefs(ctx);
+    const prefs = await prefsP;
     const fw = firstWeekday(prefs, args);
     const kind = args.periodo as PeriodKind;
     const period = resolvePeriod(kind, today, {
@@ -465,7 +495,9 @@ const estadoPresupuestos: ToolCore = {
     "Devuelve cada presupuesto del usuario en su periodo actual: límite, gastado, porcentaje, lo que queda, días restantes " +
     "y si va en camino, en riesgo (75 % o más) o excedido.",
   async run(ctx, args) {
-    const zone = zoneOf(ctx, args);
+    const prefsP = loadPrefs(ctx);
+    prefsP.catch(() => undefined); // si la zona falla antes de esperarla, que su rechazo no quede suelto
+    const zone = await zoneOf(ctx, args, prefsP);
     const tz = zone.tz;
     const today = dayInZone(ctx.now, tz);
     const todayUtc = todayUtcKey(ctx);
@@ -473,7 +505,7 @@ const estadoPresupuestos: ToolCore = {
       ctx.reader.all<BudgetRow>("budgets", [["select", COLUMNS.budgets], NOT_DELETED, ORDER_ID]),
       loadLookup(ctx),
       loadRates(ctx, todayUtc),
-      loadPrefs(ctx),
+      prefsP,
     ]);
     const fw = firstWeekday(prefs, args);
     const soloActivos = args.solo_activos !== false;
@@ -508,7 +540,9 @@ const listarRecurrentes: ToolCore = {
     "enlazado y equivalente mensual y anual, más los totales de suscripciones y recurrentes. Marca los que conviene revisar: " +
     "sin movimientos recientes enlazados o con la fecha de cobro ya pasada.",
   async run(ctx, args) {
-    const zone = zoneOf(ctx, args);
+    const prefsP = loadPrefs(ctx);
+    prefsP.catch(() => undefined); // si la zona falla antes de esperarla, que su rechazo no quede suelto
+    const zone = await zoneOf(ctx, args, prefsP);
     const tz = zone.tz;
     const today = dayInZone(ctx.now, tz);
     const todayUtc = todayUtcKey(ctx);
@@ -516,7 +550,7 @@ const listarRecurrentes: ToolCore = {
       ctx.reader.all<ScheduledPaymentRow>("scheduled_payments", [["select", COLUMNS.scheduled], NOT_DELETED, ORDER_ID]),
       loadLookup(ctx),
       loadRates(ctx, todayUtc),
-      loadPrefs(ctx),
+      prefsP,
       ctx.reader.all<Pick<TxRow, "scheduled_payment_ref" | "date" | "local_day">>("tx_items", [
         ["select", "scheduled_payment_ref,date,local_day"],
         NOT_DELETED,

@@ -196,9 +196,49 @@ struct PreferenceMergeLogicTests {
         // −2 el 2026-09-13 = las dos del modelo viejo de sesiones. No fue limpieza tampoco: describían
         // el DISPOSITIVO y no a la persona, y viajar por este canal era el mecanismo por el que un móvil
         // le recortaba la shell a otro del mismo Apple ID.
-        #expect(PrefSyncKey.allCases.count == 36)
+        // +1 el 2026-11-05 = timeZoneIdentifier (la zona del teléfono para el conector de Claude, .stringGuardNonEmpty).
+        #expect(PrefSyncKey.allCases.count == 37)
         // Y no pueden volver por la puerta de atrás: el canal de prefs no debe transportar este consent.
         #expect(!PrefSyncKey.allCases.contains { $0.rawValue.hasPrefix("groupsConsent") })
+    }
+
+    // MARK: - Zona horaria del teléfono
+
+    @Test func timeZone_isAStringThatNeverClearsTheRemote() {
+        #expect(PrefSyncKey.timeZoneIdentifier.rawValue == "timeZoneIdentifier")
+        #expect(PrefSyncKey.timeZoneIdentifier.family == .stringGuardNonEmpty)
+        #expect(PrefSyncKey.timeZoneIdentifier.signal == nil)
+        // Una zona vacía de otro teléfono no borra la local.
+        #expect(PreferenceMergeLogic.decide(key: .timeZoneIdentifier, remote: .string(""), local: .string("Europe/Madrid")) == .skip)
+    }
+
+    @Test func timeZoneReport_firstTime_uploads() {
+        #expect(DeviceTimeZoneReport.valueToReport(current: "America/Lima", stored: nil, lastReport: nil, owner: "u1") == "America/Lima")
+    }
+
+    @Test func timeZoneReport_unchangedAndAlreadyUploaded_doesNothing() {
+        let marker = DeviceTimeZoneReport.marker(owner: "u1", identifier: "America/Lima")
+        #expect(DeviceTimeZoneReport.valueToReport(current: "America/Lima", stored: "America/Lima", lastReport: marker, owner: "u1") == nil)
+    }
+
+    @Test func timeZoneReport_phoneChangedZone_uploads() {
+        let marker = DeviceTimeZoneReport.marker(owner: "u1", identifier: "America/Lima")
+        #expect(DeviceTimeZoneReport.valueToReport(current: "Europe/Madrid", stored: "America/Lima", lastReport: marker, owner: "u1") == "Europe/Madrid")
+    }
+
+    @Test func timeZoneReport_anotherPhonesZoneArrived_thePhoneInUseTakesItBack() {
+        let marker = DeviceTimeZoneReport.marker(owner: "u1", identifier: "America/Lima")
+        #expect(DeviceTimeZoneReport.valueToReport(current: "America/Lima", stored: "Europe/Madrid", lastReport: marker, owner: "u1") == "America/Lima")
+    }
+
+    @Test func timeZoneReport_sameZoneButNewDestination_uploads() {
+        // Subida al iCloud KV y luego se activó la nube (u otra cuenta): esa cuenta aún no la tiene.
+        let marker = DeviceTimeZoneReport.marker(owner: "icloud", identifier: "America/Lima")
+        #expect(DeviceTimeZoneReport.valueToReport(current: "America/Lima", stored: "America/Lima", lastReport: marker, owner: "u1") == "America/Lima")
+    }
+
+    @Test func timeZoneReport_emptyIdentifier_neverUploads() {
+        #expect(DeviceTimeZoneReport.valueToReport(current: "", stored: nil, lastReport: nil, owner: "u1") == nil)
     }
 
     @Test func taxonomy_kindMatchesFamily() {

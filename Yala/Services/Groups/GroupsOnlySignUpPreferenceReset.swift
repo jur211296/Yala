@@ -60,7 +60,7 @@ enum GroupsOnlySignUpPreferenceReset {
 
     /// La mitad de los almacenes, sin efectos sobre el proceso vivo: así se puede afirmar sobre stores aislados.
     ///
-    /// - Las 36 de `PrefSyncKey.allCases`, iteradas y no copiadas —es la lista con la que `bootstrap()` las aplica, y
+    /// - Las de `PrefSyncKey.allCases`, iteradas y no copiadas —es la lista con la que `bootstrap()` las aplica, y
     ///   una lista a mano se quedaría corta con la key 37—, **menos el consentimiento de la nube**
     ///   (`keptConsentKeys`). Es un registro de trazabilidad y ningún camino lo borra (la misma excepción que
     ///   `PrivateBirthKeyValueHandover.neverRemovedKeys`). Y no siempre es del dueño: «Primera vez → nube» lo registra

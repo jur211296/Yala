@@ -2306,6 +2306,10 @@ final class AppBootstrapper {
         // Apply any pending remote CloudKit changes on foreground resume
         sessionState.applyPendingChangesIfNeeded()
 
+        // La zona del teléfono viaja como preferencia: el conector de Claude la usa para saber qué día es hoy y dónde
+        // empieza el mes. Solo escribe si cambió o si aún no llegó a esta cuenta.
+        if !UITestHooks.isActive { PreferenceSyncService.shared.reportDeviceTimeZoneIfNeeded() }
+
         // El saldo de los widgets corta en el día (movimientos con fecha futura fuera): si la foto es de otro día, se
         // rehace para que lo que llegó a su fecha entre.
         WidgetDataCache.refreshIfBuiltOnAnotherDay(context: context)

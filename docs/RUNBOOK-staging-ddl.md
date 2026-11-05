@@ -343,6 +343,29 @@ a `false`, por el mismo `PATCH` de la Management API. Es defensa en profundidad;
 
 ---
 
+## `mcp0_04_sweep_connector_sessions.sql` — barrido diario de las sesiones huérfanas del conector (solo staging, 2026-11-05)
+
+**Aplicada en staging** el 2026-11-05, de madrugada. **Producción: no** (con el id del cliente de producción, lo aplica
+Jürgen; ver el ticket `claude-mcp-production-auth-hardening`).
+
+**Qué hace.** Instala `pg_cron` (1.6.4) y programa `yala-mcp-sweep-connector-sessions` a las 04:17 UTC. El job llama a
+`public.yala_mcp_sweep_connector_sessions()`, que borra de `auth.sessions` las sesiones del cliente OAuth del Worker
+sin refrescar en 31 días o creadas hace más de 91. Sus refresh tokens se van en cascada. Las sesiones de la app (sin
+cliente OAuth) no se tocan.
+
+**Por qué.** Desconectar desde Claude ya cierra la sesión (Worker, `mcp/src/revoke.ts`). Quedan dos casos sin
+credencial con que cerrarla: reconectar la misma app de Claude, y el grant que caduca en el KV (30 días sin uso o 90
+desde autorizar, `mcp/src/tokens.ts`). Los umbrales son esos topes más un día.
+
+**Verificado** (SQL en un bloque que se revierte, contra staging): cinco sesiones sintéticas → se borran la del Worker
+sin uso en 32 días y la de 95 días; se quedan la refrescada hace 2 días, la de la app de 60 días y la nueva del Worker.
+Tras aplicar: el job existe y está activo, `anon` y `authenticated` no pueden ejecutar la función (PostgREST publica
+`public`), y la primera ejecución a mano barrió 0 (no había sesiones del conector).
+
+**Marcha atrás:** `qa/cloud/mcp0_04_rollback.sql` (quita el job y la función; deja `pg_cron` instalado).
+
+---
+
 ## `g17_01_reverse_claim_keeps_reverted_at.sql` — «Volver a iCloud» se puede reintentar en el 2.º dispositivo (PENDIENTE, 2026-10-09)
 
 **Estado: preparada y probada en local; NO aplicada en ningún entorno.** Autorizada por Jürgen el 2026-10-09 14:01. La

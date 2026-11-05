@@ -4,7 +4,7 @@ status: in-progress
 priority: medium
 area: cloud
 created: 2026-09-26
-updated: 2026-11-04
+updated: 2026-11-05
 source: encargo 2026-09-26-claude-mcp-oauth-token-can-change-the-account (residual, fase 1)
 ---
 
@@ -49,6 +49,9 @@ producción hay que hacer las dos cosas.
    que el usuario se entere si algo cambia.
 6. Poner un `sessions_inactivity_timeout`: en staging es 0, así que una sesión huérfana no caduca nunca.
 7. Un `[env.production]` en `mcp/wrangler.toml` con su KV, su `PUBLIC_URL` (dominio propio) y su cliente.
+8. **(2026-11-05)** Aplicar `qa/cloud/mcp0_04_sweep_connector_sessions.sql` con el id del cliente de producción
+   (cambiar `worker_client`; no lleva guarda por md5). Es el barrido diario de las sesiones que el Worker ya no puede
+   cerrar al reconectar o caducar; en staging está aplicado y medido (`docs/RUNBOOK-staging-ddl.md`).
 
 ## Cómo se sabe que está bien
 

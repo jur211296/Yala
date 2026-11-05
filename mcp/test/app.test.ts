@@ -1,6 +1,6 @@
 import { jwtPayload } from "./b64";
 import { describe, expect, it } from "vitest";
-import { callTool, connect, INIT, rpc, world, type World } from "./helpers";
+import { callTool, connect, INIT, isDataRead, rpc, world, type World } from "./helpers";
 import { account, tx, uuid } from "./fixtures";
 import { USER_A } from "./supabase-fake";
 
@@ -12,7 +12,7 @@ async function connected(rows: Record<string, unknown[]> = {}) {
 }
 
 function reads(w: World) {
-  return w.supabase.calls.filter((c) => c.path.startsWith("/rest/v1/")).map((c) => ({ ...c, url: new URL(`https://x${c.path}${c.search}`) }));
+  return w.supabase.calls.filter(isDataRead).map((c) => ({ ...c, url: new URL(`https://x${c.path}${c.search}`) }));
 }
 
 describe("protocolo MCP", () => {
@@ -62,6 +62,53 @@ describe("protocolo MCP", () => {
       // user_preferences es un KV sin lápidas (supabase-staging.ddl:427): no tiene `deleted`.
       if (!c.url.pathname.endsWith("/user_preferences")) expect(c.url.searchParams.getAll("deleted")).toContain("is.false");
     }
+  });
+
+  it("listar_cuentas deja fuera del saldo lo fechado después de hoy, lo dice, y pide la columna de fecha", async () => {
+    const acc = uuid(9002);
+    const { w, token } = await connected({
+      accounts: [account({ sync_id: acc, name: "BCP" })],
+      tx_items: [
+        { account_ref: acc, amount: 1000, currency_code: "PEN", date: "2020-01-01T12:00:00Z", local_day: "2020-01-01" },
+        { account_ref: acc, amount: -200, currency_code: "PEN", date: "2099-01-01T12:00:00Z", local_day: "2099-01-01" },
+      ],
+      user_preferences: [{ key: "defaultCurrencyCode", value: "PEN" }],
+      exchange_rates: [],
+    });
+    const sinZona = JSON.parse((await callTool(w, token, "listar_cuentas")).body!.result.content[0]!.text);
+    expect(sinZona.cuentas[0]).toMatchObject({ saldo: 1000, movimientos: 1 });
+    expect(sinZona.total.importe).toBe(1000);
+    expect(sinZona.futuros_excluidos).toBe(1);
+    expect(sinZona.avisos).toContain("Hay 1 movimiento con fecha posterior a hoy: no está en los saldos, igual que en la app.");
+    expect(sinZona.avisos.some((a: string) => a.startsWith("No se indicó zona horaria"))).toBe(true);
+    const conZona = JSON.parse((await callTool(w, token, "listar_cuentas", { zona_horaria: "Europe/Madrid" })).body!.result.content[0]!.text);
+    expect(conZona.avisos.some((a: string) => a.startsWith("No se indicó zona horaria"))).toBe(false);
+    // Sin futuros, el aviso de zona sigue saliendo si se supuso: una zona por delante metería de más sin delatarse.
+    w.supabase.rows.tx_items = [w.supabase.rows.tx_items![0]!];
+    const sinFuturos = JSON.parse((await callTool(w, token, "listar_cuentas")).body!.result.content[0]!.text);
+    expect(sinFuturos.futuros_excluidos).toBe(0);
+    expect(sinFuturos.avisos.some((a: string) => a.startsWith("No se indicó zona horaria"))).toBe(true);
+    const txRead = reads(w).find((c) => c.url.pathname.endsWith("/tx_items"))!;
+    expect(txRead.url.searchParams.get("select")).toBe("account_ref,amount,currency_code,date,local_day");
+  });
+
+  it("la zona: la de Claude manda; si no, la que subió la app; si tampoco (o no es válida), Lima y se avisa", async () => {
+    const base = { tx_items: [], accounts: [], categories: [], subcategories: [], tags: [], exchange_rates: [] };
+    const { w, token } = await connected({ ...base, user_preferences: [{ key: "timeZoneIdentifier", value: "Europe/Madrid" }] });
+    const zoneOf = async (args: Record<string, unknown> = {}) => JSON.parse((await callTool(w, token, "buscar_movimientos", args)).body!.result.content[0]!.text);
+    const deLaApp = await zoneOf();
+    expect(deLaApp.zona_horaria).toBe("Europe/Madrid");
+    expect(deLaApp.avisos.some((a: string) => a.startsWith("No se indicó zona horaria"))).toBe(false);
+    expect((await zoneOf({ zona_horaria: "Asia/Tokyo" })).zona_horaria).toBe("Asia/Tokyo");
+    const prefsRead = reads(w).find((c) => c.url.pathname.endsWith("/user_preferences"))!;
+    expect(prefsRead.url.searchParams.get("key")).toBe("in.(defaultCurrencyCode,firstWeekday,timeZoneIdentifier)");
+
+    w.supabase.rows.user_preferences = [{ key: "timeZoneIdentifier", value: "Marte/Olimpo" }];
+    const ilegible = await zoneOf();
+    expect(ilegible.zona_horaria).toBe("America/Lima");
+    expect(ilegible.avisos.some((a: string) => a.startsWith("No se indicó zona horaria"))).toBe(true);
+    w.supabase.rows.user_preferences = [];
+    expect((await zoneOf()).zona_horaria).toBe("America/Lima");
   });
 
   it("buscar_movimientos pagina con cursor y escapa el texto libre", async () => {

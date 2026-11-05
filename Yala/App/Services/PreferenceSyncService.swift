@@ -51,7 +51,7 @@ final class PreferenceSyncService {
 
     // MARK: - Synced Keys
     //
-    // La taxonomía de las 37 keys sincronizadas (familias de merge + señales + tipos) vive en el helper
+    // La taxonomía de las keys sincronizadas (37 desde el 2026-11-05) (familias de merge + señales + tipos) vive en el helper
     // pure-logic `PrefSyncKey` (SSOT único, `PreferenceMergeLogic.swift`), consumido por AMBAS ramas
     // (`.icloud` iKV y `.cloud` backend). El merge se decide en `PreferenceMergeLogic.decide` (byte-idéntico
     // a la lógica que vivía inline aquí) y el bloque POST-PASS compartido es `applyMergeOutcome`.
@@ -226,6 +226,31 @@ final class PreferenceSyncService {
             print("PreferenceSyncService: enqueue pref \(key) failed: \(error)")
             #endif
         }
+    }
+
+    // MARK: - Zona horaria del teléfono (para el conector de Claude)
+
+    /// Sube la zona del teléfono como `PrefSyncKey.timeZoneIdentifier` si cambió o si aún no llegó a este destino
+    /// (`DeviceTimeZoneReport`). Se llama al volver a primer plano. En `.cloud` sin sesión todavía no hace nada ni
+    /// marca: el encolado necesita el `userID`, así que se reintenta en el siguiente primer plano.
+    func reportDeviceTimeZoneIfNeeded(current: TimeZone = .autoupdatingCurrent) {
+        let owner: String
+        switch behavior {
+        case .icloudKeyValue:
+            owner = "icloud"
+        case .cloudOutbox:
+            guard let userID = cloudUserIDProvider() else { return }
+            owner = userID
+        }
+        let key = PrefSyncKey.timeZoneIdentifier.rawValue
+        guard let value = DeviceTimeZoneReport.valueToReport(
+            current: current.identifier,
+            stored: local.string(forKey: key),
+            lastReport: local.string(forKey: DeviceTimeZoneReport.markerKey),
+            owner: owner
+        ) else { return }
+        set(string: value, forKey: key)
+        local.set(DeviceTimeZoneReport.marker(owner: owner, identifier: value), forKey: DeviceTimeZoneReport.markerKey)
     }
 
     // MARK: - Drenaje único iKV → outbox (CUTOVER S8, DIFERIDOS #30 — I10-wiring w8)

@@ -1,10 +1,10 @@
 ---
 id: claude-plugin-read-only-mcp-connector
-status: backlog
+status: done
 priority: low
 area: cloud
 created: 2026-09-26
-updated: 2026-10-08
+updated: 2026-11-05
 source: encargo 2026-09-26-plugin-claude-mcp-exploracion; diferido #22 de docs/modo-nube/MODO-NUBE-DIFERIDOS.md
 ---
 
@@ -61,3 +61,11 @@ cuenta de inicio de sesión (`claude-mcp-oauth-token-can-change-the-account`).
 - Producción espera a que la nube esté estable tras 2.1 (decisión 3 de Jürgen).
 
 Triage 2026-10-08: abierto · sin prioridad → low · fase 0 hecha; producción espera a después de 2.1 por decisión de Jürgen.
+
+## Cerrado como mergeado (encargo «Login Apple y Google en el conector + lote P7», 2026-11-04/05)
+
+La fase 1 del conector está en la rama de trabajo: endurecimiento para producción (PR del 2026-11-04), login con Apple
+y Google, saldo de hoy sin futuros, zona del teléfono, desconectar sin sesión huérfana y barrido diario. Lo que
+queda vive en sus tickets: salida a producción (`claude-mcp-production-auth-hardening`, Jürgen) y la pantalla
+«Claude conectado» (`claude-mcp-connected-apps-in-the-app`). Publicar el plugin y pedir el alta en los directorios
+quedan fuera de este ticket a propósito.

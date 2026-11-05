@@ -142,7 +142,75 @@ export async function sessionStatus(env: Env, fetcher: Fetcher, access: string):
   return gone.includes(code) ? "gone" : "stale";
 }
 
-// ─── Sesión web de la pantalla de login (solo staging) ─────────────────────────────────────────────────────────
+// ─── Sesión web de la pantalla de login ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * A dónde se manda al navegador para iniciar sesión con Apple o Google. Es el login social de Supabase en su flujo
+ * PKCE: Supabase vuelve a `redirectTo` con `?code=…`, y ese código solo se canjea con el `verifier` que guardó el
+ * Worker (`pkceLogin`). Sin JavaScript en la página: el flujo implícito dejaría el token en el fragmento, que el
+ * servidor no ve.
+ *
+ * `redirectTo` tiene que estar permitido en Supabase: lo está porque es del mismo host que la Site URL (en staging,
+ * la Site URL es este Worker; el runbook de producción lo repite).
+ */
+export function socialAuthorizeUrl(env: Env, provider: "apple" | "google", redirectTo: string, codeChallenge: string): string {
+  const u = new URL(`${authIssuer(env)}/authorize`);
+  u.search = new URLSearchParams({
+    provider,
+    redirect_to: redirectTo,
+    code_challenge: codeChallenge,
+    code_challenge_method: "s256",
+  }).toString();
+  return u.toString();
+}
+
+export interface WebSession {
+  access: string;
+  /** El usuario se creó en este mismo inicio de sesión (no tenía cuenta en la nube de Yala). */
+  createdNow: boolean;
+}
+
+/**
+ * Canje del código del login social (`grant_type=pkce`). Devuelve el access token de una sesión NORMAL: se cierra en
+ * la misma petición, como la de contraseña. `null` si Supabase no lo acepta (código usado, caducado o de otro
+ * navegador); lanza si no hay red.
+ */
+export async function pkceLogin(env: Env, fetcher: Fetcher, authCode: string, verifier: string, nowMs: number): Promise<WebSession | null> {
+  const f = guardSupabase(env, fetcher);
+  const res = await f(`${authIssuer(env)}/token?grant_type=pkce`, {
+    method: "POST",
+    headers: { ...headers(env), "Content-Type": "application/json" },
+    body: JSON.stringify({ auth_code: authCode, code_verifier: verifier }),
+  });
+  if (!res.ok) return null;
+  const body = (await res.json()) as { access_token?: string; user?: { created_at?: string } };
+  if (!body.access_token) return null;
+  const created = Date.parse(body.user?.created_at ?? "");
+  // Diez minutos: lo que dura el viaje a Apple o Google. Solo se usa para la auditoría; quién puede conectar lo decide
+  // `hasCloudProfile`.
+  return { access: body.access_token, createdNow: Number.isFinite(created) && nowMs - created < 600_000 };
+}
+
+/**
+ * ¿Esta cuenta usa la nube de Yala? La app crea su fila en `profiles` al activar la nube (no hay trigger en
+ * `auth.users`). Una cuenta que Supabase acaba de crear en el login social no la tiene, y una cuenta de antes sin la
+ * nube activada, tampoco. Se pregunta con la sesión web del propio usuario: la RLS de `profiles` (`auth.uid() = id`)
+ * solo le deja ver su fila. Lanza si Supabase no contesta bien, para que quien llama falle CERRADO (pedir reintento).
+ *
+ * Por qué no «la cuenta se creó hace menos de diez minutos»: quien activa la nube en la app y conecta Claude enseguida
+ * tiene una cuenta igual de reciente, y es justo el camino que pide el aviso de iCloud.
+ */
+export async function hasCloudProfile(env: Env, fetcher: Fetcher, session: string): Promise<boolean> {
+  const f = guardSupabase(env, fetcher);
+  const u = new URL(`${env.SUPABASE_URL.replace(/\/+$/, "")}/rest/v1/profiles`);
+  u.search = new URLSearchParams({ select: "id", limit: "1" }).toString();
+  const res = await f(u.toString(), { method: "GET", headers: headers(env, session) });
+  if (!res.ok) throw new Error(`profiles ${res.status}`);
+  const rows = (await res.json()) as unknown;
+  return Array.isArray(rows) && rows.length > 0;
+}
+
+// ─── Login con contraseña (solo staging) ───────────────────────────────────────────────────────────────────────
 
 /** Login con email y contraseña. Devuelve el access token de una sesión NORMAL: se cierra en la misma petición. */
 export async function passwordLogin(env: Env, fetcher: Fetcher, email: string, password: string): Promise<string | null> {

@@ -237,3 +237,11 @@ export function looksLikeJwt(s: string): boolean {
 export function grantCount(w: World): number {
   return [...w.kv.store.keys()].filter((k) => k.startsWith("grant:")).length;
 }
+
+/**
+ * ¿Es una lectura de datos de las herramientas? La comprobación del login («¿esta cuenta usa la nube?», `profiles`,
+ * con la sesión web) no cuenta: va antes de que exista la conexión.
+ */
+export function isDataRead(c: { path: string }): boolean {
+  return c.path.startsWith("/rest/v1/") && c.path !== "/rest/v1/profiles";
+}

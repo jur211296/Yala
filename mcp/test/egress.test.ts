@@ -20,6 +20,7 @@ describe("lista cerrada de salidas del Worker hacia Supabase", () => {
     const ok: [string, string][] = [
       ["GET", `${SB_URL}/rest/v1/tx_items?select=sync_id&deleted=is.false&limit=10`],
       ["POST", `${SB_URL}/auth/v1/token?grant_type=password`],
+      ["POST", `${SB_URL}/auth/v1/token?grant_type=pkce`],
       ["GET", `${SB_URL}/auth/v1/oauth/authorizations/az_12345678`],
       ["POST", `${SB_URL}/auth/v1/oauth/authorizations/az_12345678/consent`],
       ["POST", `${SB_URL}/auth/v1/oauth/token`],

@@ -76,7 +76,13 @@ export class FakeSupabase {
   /** Si está, la aprobación devuelve esta URL en vez del callback con el código. */
   consentRedirectOverride: string | undefined;
   rows: Record<string, unknown[]> = {};
+  /** Usuarios SIN fila en `profiles`: no activaron la nube de Yala. Los demás la tienen. */
+  readonly withoutCloud = new Set<string>();
+  /** Si está, `GET /rest/v1/profiles` responde este estado. */
+  profilesStatus: number | undefined;
   postgrestStatus: number | undefined;
+  /** Los logins con Apple o Google en curso: código → reto PKCE y usuario. Un solo uso, como el flow state de GoTrue. */
+  readonly socialFlows = new Map<string, { challenge: string; userId: string; used: boolean; createdAt: string }>();
 
   private constructor(
     private readonly signer: (claims: Record<string, unknown>, expSec: number) => Promise<string>,
@@ -115,6 +121,33 @@ export class FakeSupabase {
       clientId,
     });
     return `${siteUrl}/oauth/consent?authorization_id=${id}`;
+  }
+
+  /**
+   * Lo que hacen el navegador, Supabase y Apple o Google entre el botón y la vuelta: `GET /auth/v1/authorize` del login
+   * social en PKCE. Devuelve la URL con la que Supabase vuelve al `redirect_to` (con `?code=…`), o con `?error=…` si el
+   * usuario cancela. `newUser`: el usuario no tenía cuenta y Supabase la crea en este login.
+   */
+  visitSocialAuthorize(url: string, user: TestUser, opts: { cancel?: boolean; newUser?: boolean } = {}): string {
+    const u = new URL(url);
+    if (u.origin + u.pathname !== `${SB_ISSUER}/authorize`) throw new Error(`no es el login social de Supabase: ${url}`);
+    const provider = u.searchParams.get("provider");
+    if (provider !== "apple" && provider !== "google") throw new Error(`proveedor desconocido: ${provider}`);
+    if (u.searchParams.get("code_challenge_method") !== "s256") throw new Error("PKCE sin s256");
+    const back = new URL(u.searchParams.get("redirect_to") ?? "");
+    if (opts.cancel) {
+      back.searchParams.set("error", "access_denied");
+      back.searchParams.set("error_description", "user cancelled");
+      return back.toString();
+    }
+    if (!this.users.has(user.email)) this.users.set(user.email, user);
+    const code = `sc_${rand()}`;
+    const createdAt = new Date(opts.newUser ? Date.now() : Date.now() - 400 * 86_400_000).toISOString();
+    // Una cuenta recién creada no tiene fila en `profiles`: esa la crea la app al activar la nube.
+    if (opts.newUser) this.withoutCloud.add(user.id);
+    this.socialFlows.set(code, { challenge: u.searchParams.get("code_challenge") ?? "", userId: user.id, used: false, createdAt });
+    back.searchParams.set("code", code);
+    return back.toString();
   }
 
   /** Lo que hace `DELETE /auth/v1/user/oauth/grants?client_id=…` desde la cuenta del usuario. */
@@ -172,6 +205,14 @@ export class FakeSupabase {
     this.calls.push({ method, path: url.pathname, search: url.search, auth: headers.get("Authorization"), body });
     const path = url.pathname;
 
+    if (path === "/rest/v1/profiles") {
+      // Como la RLS de `profiles`: cada sesión ve solo su fila.
+      if (this.profilesStatus) return new Response("{}", { status: this.profilesStatus });
+      const { session, error } = await this.sessionOf(headers.get("Authorization"));
+      if (error) return error;
+      return Response.json(this.withoutCloud.has(session!.userId) ? [] : [{ id: session!.userId }]);
+    }
+
     if (path.startsWith("/rest/v1/")) {
       if (this.postgrestStatus) return new Response("{}", { status: this.postgrestStatus });
       const all = this.rows[path.slice("/rest/v1/".length)] ?? [];
@@ -186,6 +227,18 @@ export class FakeSupabase {
       if (!user || user.password !== password) return Response.json({ error_code: "invalid_credentials" }, { status: 400 });
       const t = await this.issue(user.id);
       return Response.json({ access_token: t.access_token, refresh_token: t.refresh_token });
+    }
+
+    if (method === "POST" && path === "/auth/v1/token" && url.searchParams.get("grant_type") === "pkce") {
+      const { auth_code, code_verifier } = JSON.parse(body) as { auth_code?: string; code_verifier?: string };
+      const flow = this.socialFlows.get(auth_code ?? "");
+      if (!flow || flow.used) return Response.json({ code: 404, error_code: "flow_state_not_found" }, { status: 404 });
+      if ((await sha256b64url(code_verifier ?? "")) !== flow.challenge) {
+        return Response.json({ code: 403, error_code: "bad_code_verifier" }, { status: 403 });
+      }
+      flow.used = true;
+      const t = await this.issue(flow.userId);
+      return Response.json({ access_token: t.access_token, refresh_token: t.refresh_token, user: { id: flow.userId, created_at: flow.createdAt } });
     }
 
     const authz = /^\/auth\/v1\/oauth\/authorizations\/([^/]+)(\/consent)?$/.exec(path);

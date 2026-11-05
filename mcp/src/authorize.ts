@@ -10,9 +10,14 @@
  *                                        la vuelta sea de Claude, y se pide el permiso (`consentPage`).
  *   2. POST /authorize                → «No permitir» vuelve a Claude con `access_denied`. «Continuar» guarda la
  *                                        petición (ligada al navegador) y manda a Supabase como el cliente del Worker.
- *   3. GET  /oauth/consent            → Supabase manda aquí (Site URL + authorization path): formulario de login.
- *   4. POST /oauth/consent            → login, aprobación de la autorización del cliente del Worker y cierre de la
- *                                        sesión web, TODO en esta petición. Vuelve al callback del Worker.
+ *   3. GET  /oauth/consent            → Supabase manda aquí (Site URL + authorization path): «Continuar con Apple» y
+ *                                        «Continuar con Google» (y, solo en staging, email y contraseña).
+ *   4. POST /oauth/consent/social     → guarda un `verifier` PKCE ligado a este navegador y manda al login social de
+ *                                        Supabase, que vuelve a…
+ *      GET  /oauth/consent/social     → …aquí con un código: se canjea, y con esa sesión web se aprueba la
+ *                                        autorización del cliente del Worker y se cierra la sesión, TODO en esta
+ *                                        petición. Vuelve al callback del Worker.
+ *      POST /oauth/consent            → lo mismo con email y contraseña. Solo staging (cuentas de prueba y e2e).
  *   5. GET  /oauth/supabase/callback  → recupera la petición de Claude (solo con la cookie de este navegador),
  *                                        canjea el código como cliente confidencial, verifica que el token es de solo
  *                                        lectura y termina la autorización de Claude con su propio código.
@@ -22,11 +27,21 @@
 import { AuthorizationError, type AuthRequest, type OAuthHelpers } from "@cloudflare/workers-oauth-provider";
 import type { UpstreamVerifier } from "./auth";
 import { auditEvent } from "./audit";
-import { upstreamCallbackUrl, type Env } from "./env";
+import { publicOrigin, upstreamCallbackUrl, type Env } from "./env";
 import type { Fetcher } from "./egress";
-import { consentPage, errorPage, loginPage } from "./pages";
+import { consentPage, errorPage, loginPage, type SocialProvider } from "./pages";
 import { SCOPE, type GrantProps } from "./tokens";
-import { approveAuthorization, authorizeUrl, exchangeCode, getAuthorization, logout, passwordLogin } from "./upstream";
+import {
+  approveAuthorization,
+  authorizeUrl,
+  exchangeCode,
+  getAuthorization,
+  hasCloudProfile,
+  logout,
+  passwordLogin,
+  pkceLogin,
+  socialAuthorizeUrl,
+} from "./upstream";
 
 /**
  * Vueltas a las que se acepta devolver el código de autorización. La lista es por URL EXACTA, no por dominio: con
@@ -168,11 +183,15 @@ async function decideConsent(request: Request, env: Env): Promise<Response> {
 
 // ─── 3 y 4 · /oauth/consent (la página de autorización que Supabase tiene configurada) ─────────────────────────
 
-function showLogin(request: Request): Response {
+function isStaging(env: Env): boolean {
+  return env.ENVIRONMENT === "staging";
+}
+
+function showLogin(request: Request, env: Env): Response {
   const authorizationId = new URL(request.url).searchParams.get("authorization_id") ?? "";
   if (!AUTH_ID_RE.test(authorizationId)) return errorPage("Falta la solicitud de autorización o no es válida.");
   if (!hasUpstreamBinding(request)) return errorPage("Empieza la conexión desde Claude.");
-  return loginPage(authorizationId);
+  return loginPage(authorizationId, { staging: isStaging(env) });
 }
 
 async function loginAndApprove(request: Request, env: Env, deps: AuthorizeDeps): Promise<Response> {
@@ -184,8 +203,8 @@ async function loginAndApprove(request: Request, env: Env, deps: AuthorizeDeps):
   if (!AUTH_ID_RE.test(authorizationId)) return errorPage("Falta la solicitud de autorización o no es válida.");
   // Un POST de otro sitio no trae la cookie (SameSite=Lax): esto también frena el login forzado.
   if (!hasUpstreamBinding(request)) return errorPage("Empieza la conexión desde Claude.");
-  if (env.ENVIRONMENT !== "staging") return errorPage("El inicio de sesión con contraseña solo existe en staging.", 403);
-  if (!email || !password) return loginPage(authorizationId, "Escribe tu email y tu contraseña.");
+  if (!isStaging(env)) return errorPage("El inicio de sesión con contraseña solo existe en staging.", 403);
+  if (!email || !password) return loginPage(authorizationId, { staging: true, message: "Escribe tu email y tu contraseña." });
 
   let session: string | null;
   try {
@@ -193,9 +212,34 @@ async function loginAndApprove(request: Request, env: Env, deps: AuthorizeDeps):
   } catch {
     return errorPage("Yala no respondió. Prueba de nuevo en un momento.", 503);
   }
-  if (!session) return loginPage(authorizationId, "Email o contraseña incorrectos.");
-  // La sesión web es NORMAL (`authenticated`): puede escribir. Vive solo dentro de esta petición.
+  if (!session) return loginPage(authorizationId, { staging: true, message: "Email o contraseña incorrectos." });
+  return approveWithWebSession(env, deps, session, authorizationId);
+}
+
+/** Lo que ve quien entra con una cuenta que no usa la nube de Yala. */
+export const NO_CLOUD_MESSAGE =
+  "Esta cuenta todavía no usa la nube de Yala, así que Claude no tendría nada que leer. En Yala ve a Ajustes → «Dónde viven tus datos» → «Activar la nube» con esta misma cuenta, y luego vuelve a conectar. Si tu nube está en tu otra cuenta, elige esa.";
+
+/**
+ * Con la sesión web recién abierta (contraseña o Apple/Google), comprueba que la cuenta usa la nube, aprueba la
+ * autorización que pidió ESTE Worker y cierra esa sesión. La sesión web es NORMAL (`authenticated`): puede escribir. Por eso vive solo dentro de esta petición.
+ */
+async function approveWithWebSession(
+  env: Env,
+  deps: AuthorizeDeps,
+  session: string,
+  authorizationId: string,
+  extraHeaders?: Headers,
+): Promise<Response> {
   try {
+    // Sin la nube de Yala, Claude no tendría nada que leer: no se conecta y se explica qué hacer. La autorización
+    // pendiente sigue valiendo, así que puede probar con su otra cuenta (Apple o Google) sin volver a Claude.
+    if (!(await hasCloudProfile(env, deps.fetcher, session))) {
+      auditEvent("mcp_autorizacion", { resultado: "sin_nube" });
+      const res = loginPage(authorizationId, { staging: isStaging(env), message: NO_CLOUD_MESSAGE, status: 403 });
+      for (const c of extraHeaders?.getSetCookie() ?? []) res.headers.append("Set-Cookie", c);
+      return res;
+    }
     const got = await getAuthorization(env, deps.fetcher, session, authorizationId);
     if (!got.ok) return errorPage("La solicitud de autorización caducó o no existe. Vuelve a conectar desde Claude.");
     let redirectUrl: string | null;
@@ -211,13 +255,126 @@ async function loginAndApprove(request: Request, env: Env, deps: AuthorizeDeps):
     }
     const target = callbackTarget(env, redirectUrl);
     if (!target) return errorPage("Yala no aceptó la conexión. Vuelve a conectar desde Claude.", 502);
-    return new Response(null, { status: 303, headers: { Location: target, "Cache-Control": "no-store" } });
+    const headers = new Headers(extraHeaders);
+    headers.set("Location", target);
+    headers.set("Cache-Control", "no-store");
+    return new Response(null, { status: 303, headers });
   } catch {
     // Un fallo de red hablando con Supabase, no un bug: se pide reintentar.
     return errorPage("Yala no respondió. Prueba de nuevo en un momento.", 503);
   } finally {
     await logout(env, deps.fetcher, session);
   }
+}
+
+// ─── 4 · Login con Apple o Google (/oauth/consent/social) ───────────────────────────────────────────────────────
+
+/** Cookie que liga la vuelta del login social a ESTE navegador. Solo lleva un identificador al azar. */
+const SOCIAL_COOKIE = "__Host-yala-social";
+/** Lo que dura el viaje a Apple o Google. Pasado, hay que volver a pulsar el botón. */
+const SOCIAL_TTL_SECONDS = 600;
+const SOCIAL_KEY_PREFIX = "yala:social:";
+const NONCE_RE = /^[A-Za-z0-9_-]{43}$/;
+
+interface SocialPending {
+  v: 1;
+  authorizationId: string;
+  verifier: string;
+  provider: SocialProvider;
+}
+
+function socialReturnUrl(env: Env): string {
+  return `${publicOrigin(env)}/oauth/consent/social`;
+}
+
+function readCookie(request: Request, name: string): string | null {
+  const cookie = request.headers.get("Cookie") ?? "";
+  for (const part of cookie.split(/;\s*/)) {
+    const eq = part.indexOf("=");
+    if (eq > 0 && part.slice(0, eq) === name) return part.slice(eq + 1);
+  }
+  return null;
+}
+
+function socialCookie(value: string, maxAge: number): string {
+  // SameSite=Lax: la vuelta desde Supabase es una navegación GET de primer nivel, así que la cookie viaja; un POST de
+  // otro sitio, no.
+  return `${SOCIAL_COOKIE}=${value}; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=${maxAge}`;
+}
+
+/**
+ * «Continuar con Apple» / «Continuar con Google»: guarda el `verifier` PKCE en el KV, bajo un identificador que solo
+ * conoce la cookie de este navegador, y manda al login social de Supabase.
+ */
+async function startSocialLogin(request: Request, env: Env): Promise<Response> {
+  const form = await readForm(request);
+  if (!form) return errorPage("No se pudo leer el formulario. Vuelve a conectar desde Claude.");
+  const authorizationId = String(form.get("authorization_id") ?? "");
+  const provider = String(form.get("provider") ?? "");
+  if (!AUTH_ID_RE.test(authorizationId)) return errorPage("Falta la solicitud de autorización o no es válida.");
+  if (provider !== "apple" && provider !== "google") return errorPage("Elige Apple o Google para iniciar sesión.");
+  if (!hasUpstreamBinding(request)) return errorPage("Empieza la conexión desde Claude.");
+
+  const nonce = b64url(crypto.getRandomValues(new Uint8Array(32)));
+  const verifier = b64url(crypto.getRandomValues(new Uint8Array(32)));
+  const pending: SocialPending = { v: 1, authorizationId, verifier, provider };
+  await env.OAUTH_KV.put(SOCIAL_KEY_PREFIX + nonce, JSON.stringify(pending), { expirationTtl: SOCIAL_TTL_SECONDS });
+  const location = socialAuthorizeUrl(env, provider, socialReturnUrl(env), await s256(verifier));
+  return new Response(null, {
+    status: 303,
+    headers: { Location: location, "Cache-Control": "no-store", "Set-Cookie": socialCookie(nonce, SOCIAL_TTL_SECONDS) },
+  });
+}
+
+function parsePending(raw: string | null): SocialPending | null {
+  if (!raw) return null;
+  try {
+    const p = JSON.parse(raw) as Partial<SocialPending>;
+    if (p.v !== 1 || typeof p.authorizationId !== "string" || !AUTH_ID_RE.test(p.authorizationId)) return null;
+    if (typeof p.verifier !== "string" || (p.provider !== "apple" && p.provider !== "google")) return null;
+    return p as SocialPending;
+  } catch {
+    return null;
+  }
+}
+
+/** Vuelta de Supabase tras Apple o Google: canjea el código con el `verifier` de este navegador y aprueba. */
+async function finishSocialLogin(request: Request, env: Env, deps: AuthorizeDeps): Promise<Response> {
+  const url = new URL(request.url);
+  const clear = new Headers({ "Set-Cookie": socialCookie("", 0) });
+  const nonce = readCookie(request, SOCIAL_COOKIE);
+  if (!nonce || !NONCE_RE.test(nonce)) {
+    return errorPage("Este inicio de sesión caducó o se abrió en otro navegador. Vuelve a conectar desde Claude.", 400, clear);
+  }
+  const key = SOCIAL_KEY_PREFIX + nonce;
+  const raw = await env.OAUTH_KV.get(key);
+  // Un solo uso: aunque el canje falle, para reintentar hay que volver a pulsar el botón.
+  if (raw) await env.OAUTH_KV.delete(key);
+  const pending = parsePending(raw);
+  if (!pending) {
+    return errorPage("Este inicio de sesión caducó o se abrió en otro navegador. Vuelve a conectar desde Claude.", 400, clear);
+  }
+  if (!hasUpstreamBinding(request)) return errorPage("Empieza la conexión desde Claude.", 400, clear);
+
+  const retry = (message: string, status: number) => {
+    const res = loginPage(pending.authorizationId, { staging: isStaging(env), message, status });
+    res.headers.append("Set-Cookie", socialCookie("", 0));
+    return res;
+  };
+  const code = url.searchParams.get("code");
+  if (!code) {
+    // Cancelar en Apple o Google vuelve con `error`; cualquier otra cosa sin código, igual: se puede volver a probar.
+    return retry("No se completó el inicio de sesión. Puedes intentarlo otra vez.", 400);
+  }
+  let web: Awaited<ReturnType<typeof pkceLogin>>;
+  try {
+    web = await pkceLogin(env, deps.fetcher, code, pending.verifier, deps.nowSec() * 1000);
+  } catch {
+    return errorPage("Yala no respondió. Prueba de nuevo en un momento.", 503, clear);
+  }
+  if (!web) return retry("No se pudo iniciar sesión. Puedes intentarlo otra vez.", 401);
+  if (web.createdNow) auditEvent("mcp_autorizacion", { resultado: `cuenta_nueva_${pending.provider}` });
+  return approveWithWebSession(env, deps, web.access, pending.authorizationId, clear);
 }
 
 /** Lee el formulario; si el cuerpo no es un formulario (Content-Type raro), devuelve null en vez de un 500. */
@@ -322,8 +479,13 @@ export async function handleAuthorizeRoutes(request: Request, env: Env, deps: Au
     if (request.method === "POST") return decideConsent(request, env);
     return new Response("Method not allowed", { status: 405, headers: { Allow: "GET, POST" } });
   }
+  if (path === "/oauth/consent/social") {
+    if (request.method === "POST") return startSocialLogin(request, env);
+    if (request.method === "GET") return finishSocialLogin(request, env, deps);
+    return new Response("Method not allowed", { status: 405, headers: { Allow: "GET, POST" } });
+  }
   if (path === "/oauth/consent") {
-    if (request.method === "GET") return showLogin(request);
+    if (request.method === "GET") return showLogin(request, env);
     if (request.method === "POST") return loginAndApprove(request, env, deps);
     return new Response("Method not allowed", { status: 405, headers: { Allow: "GET, POST" } });
   }

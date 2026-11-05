@@ -2,8 +2,11 @@
  * Saldos de cuentas. No hay columna de saldo: el saldo es la suma de los movimientos de la cuenta, incluido el
  * movimiento de saldo inicial (`balance_adjustment_type = "initial_balance"`).
  *
- * - Por cuenta: port de `InitialBalanceService.currentBalance` (Yala/Services/InitialBalanceService.swift:46):
- *   Σ `amount` de sus movimientos, en la divisa nativa.
+ * - Por cuenta: port de `AccountBalanceCalculator.currentBalance` (Yala/Utils/AccountBalanceCalculator.swift): Σ `amount`
+ *   de sus movimientos en la divisa de la cuenta. Un movimiento en OTRA divisa (las dos del catálogo) entra convertido
+ *   a la de la cuenta con la tasa del día UTC de su `date` (`amountInAccountCurrency`, regla de 2.3 del 2026-11-05:
+ *   filas que quedaron en la divisa vieja tras cambiar la de la cuenta en otro teléfono). Con una divisa desconocida,
+ *   o sin fecha, se suma tal cual, como la app.
  * - Total: port de `LiveBalanceCalculator.liveBalanceBreakdown`
  *   (Yala/App/Logic/Calculators/LiveBalanceCalculator.swift:111) con el filtro de cuentas del chat
  *   (`FullFinancialContextBuilder.buildBalances` = `PanelTotalAccountsLogic.countableAccounts`: fuera las excluidas de
@@ -12,9 +15,25 @@
  *   la divisa DEL MOVIMIENTO y convierte cada bolsa con la tasa de HOY (`convertCheckedWithLatestRate`: la fila del
  *   día UTC de hoy, y si le falta la divisa, las anteriores o la tabla estática). Es «lo que tienes hoy», no la suma
  *   de conversiones históricas. Los gastos de grupo NO se ajustan: el saldo es el dinero que de verdad se movió.
+ * - Corte de hoy, en los dos: port de `LiveBalanceCalculator.TodayCutoff` (decisión A de Jürgen, 2026-10-18). Lo fechado
+ *   después de hoy NO está en el saldo, ni en el total ni en el de cada cuenta (`AccountBalanceCalculator`). La app
+ *   compara el INSTANTE `date` con el inicio de mañana en la zona actual del teléfono, y eso es lo que se porta: el día
+ *   de `date` en la zona pedida contra hoy. NO se usa `local_day` (el día en la zona de cuando se apuntó): con un viaje
+ *   de por medio, cerca de medianoche, los dos discrepan, y la app manda (review del 2026-11-04). Sin `date` legible,
+ *   `local_day`; sin ninguno, cuenta.
  */
 import { marksApproximate } from "./approx";
-import { convertOn, type RateBook } from "./fx";
+import { convertOn, normalizeCode, utcDateKey, type RateBook } from "./fx";
+import { dayInZone, txDay, type Day } from "./dates";
+
+/** Día de un instante en la zona, o null si no se puede leer. */
+function dayOf(date: string, tz: string): Day | null {
+  try {
+    return Number.isFinite(Date.parse(date)) ? dayInZone(date, tz) : null;
+  } catch {
+    return null;
+  }
+}
 import { num, round2, type AccountRow, type TxRow } from "./types";
 
 export interface AccountBalance {
@@ -25,6 +44,7 @@ export interface AccountBalance {
   saldo: number;
   archivada: boolean;
   excluida_de_estadisticas: boolean;
+  /** Movimientos que suman en `saldo` (los de hoy o antes). */
   movimientos: number;
 }
 
@@ -38,22 +58,42 @@ export interface BalancesResult {
     /** Divisas que la app no reconoce; su saldo NO está en `importe`. */
     sin_convertir: { divisa: string; importe: number }[];
   };
+  /** Movimientos con fecha posterior a hoy: no están en ningún saldo, como en la app. */
+  futuros_excluidos: number;
 }
 
-type BalanceTx = Pick<TxRow, "account_ref" | "amount" | "currency_code">;
+export type BalanceTx = Pick<TxRow, "account_ref" | "amount" | "currency_code" | "date" | "local_day">;
 
 export function computeBalances(
   accounts: AccountRow[],
   txs: BalanceTx[],
   preferredCurrency: string,
   rates: RateBook,
-  opts: { incluirArchivadas: boolean; todayUtc: string },
+  opts: { incluirArchivadas: boolean; todayUtc: string; today: Day; tz: string },
 ): BalancesResult {
+  // Un movimiento sin fecha legible se queda dentro: no hay con qué decir que es futuro.
+  let futuros = 0;
+  const counted = txs.filter((tx) => {
+    const day = tx.date ? dayOf(tx.date, opts.tz) : txDay(tx, opts.tz);
+    if (day === null || day <= opts.today) return true;
+    if (tx.account_ref) futuros += 1;
+    return false;
+  });
+
+  const accountCurrency = new Map(accounts.map((a) => [a.sync_id, normalizeCode(a.currency_code)]));
   const byAccount = new Map<string, { sum: number; count: number }>();
-  for (const tx of txs) {
+  for (const tx of counted) {
     if (!tx.account_ref) continue;
-    const amount = num(tx.amount);
-    if (amount === null) continue;
+    const raw = num(tx.amount);
+    if (raw === null) continue;
+    let amount = raw;
+    const from = normalizeCode(tx.currency_code ?? "USD");
+    const to = accountCurrency.get(tx.account_ref) ?? null;
+    const key = tx.date ? utcDateKey(tx.date) : null;
+    if (from && to && from !== to && key) {
+      const converted = convertOn(raw, from, to, key, rates);
+      if (converted) amount = converted.value;
+    }
     const agg = byAccount.get(tx.account_ref) ?? { sum: 0, count: 0 };
     agg.sum += amount;
     agg.count += 1;
@@ -66,7 +106,7 @@ export function computeBalances(
   }
 
   const native = new Map<string, number>();
-  for (const tx of txs) {
+  for (const tx of counted) {
     if (!tx.account_ref) continue;
     const acc = countable.get(tx.account_ref);
     if (!acc) continue;
@@ -117,5 +157,6 @@ export function computeBalances(
   return {
     cuentas,
     total: { divisa: preferredCurrency, importe: round2(total), aproximado: approximate, sin_convertir: unconverted },
+    futuros_excluidos: futuros,
   };
 }

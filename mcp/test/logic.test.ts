@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { computeBalances } from "../src/logic/balances";
+import { computeBalances, type BalanceTx } from "../src/logic/balances";
+import { addDays } from "../src/logic/dates";
 import { linesByHead, lineNode, resolveLines, spendingAccountIds } from "../src/logic/accountLines";
 import { budgetStatuses } from "../src/logic/budgets";
 import { buildRateBook, convertOn, resolveRates } from "../src/logic/fx";
@@ -106,46 +107,98 @@ describe("saldos", () => {
     account({ sync_id: archived, name: "Vieja", is_archived: true }),
     account({ sync_id: excluded, name: "Préstamo", exclude_from_statistics: true }),
   ];
-  const txs = [
-    { account_ref: pen, amount: 1000, currency_code: "PEN" }, // saldo inicial
-    { account_ref: pen, amount: -150.5, currency_code: "PEN" },
-    { account_ref: usd, amount: 100, currency_code: "USD" },
-    { account_ref: archived, amount: 50, currency_code: "PEN" },
-    { account_ref: excluded, amount: -999, currency_code: "PEN" },
-    { account_ref: pen, amount: null, currency_code: "PEN" }, // fila a medias: no cuenta
+  const past = { date: "2026-09-01T12:00:00Z", local_day: "2026-09-01" };
+  const txs: BalanceTx[] = [
+    { account_ref: pen, amount: 1000, currency_code: "PEN", ...past }, // saldo inicial
+    { account_ref: pen, amount: -150.5, currency_code: "PEN", ...past },
+    { account_ref: usd, amount: 100, currency_code: "USD", ...past },
+    { account_ref: archived, amount: 50, currency_code: "PEN", ...past },
+    { account_ref: excluded, amount: -999, currency_code: "PEN", ...past },
+    { account_ref: pen, amount: null, currency_code: "PEN", ...past }, // fila a medias: no cuenta
   ];
+  /** Hoy = el día de TODAY_UTC, en UTC. */
+  const cut = { today: TODAY_UTC, tz: "UTC" };
 
   it("el saldo de cada cuenta es la suma de sus movimientos en su divisa", () => {
-    const r = computeBalances(accounts, txs, "PEN", RATES, { incluirArchivadas: true, todayUtc: TODAY_UTC });
+    const r = computeBalances(accounts, txs, "PEN", RATES, { incluirArchivadas: true, todayUtc: TODAY_UTC, ...cut });
     const byName = Object.fromEntries(r.cuentas.map((c) => [c.nombre, c.saldo]));
     expect(byName).toEqual({ BCP: 849.5, "Ahorro USD": 100, Vieja: 50, Préstamo: -999 });
   });
 
   it("el total deja fuera las excluidas, no las archivadas, y convierte cada divisa con la tasa de hoy", () => {
     // Archivar no decide la suma (2026-10-03): «Vieja» no se lista sin pedirla, pero su saldo cuenta, como en el Panel.
-    const r = computeBalances(accounts, txs, "PEN", RATES, { incluirArchivadas: false, todayUtc: TODAY_UTC });
+    const r = computeBalances(accounts, txs, "PEN", RATES, { incluirArchivadas: false, todayUtc: TODAY_UTC, ...cut });
     expect(r.total.importe).toBeCloseTo(849.5 + 340 + 50);
     expect(r.total.aproximado).toBe(false);
     // Sin fila de hoy se usa la última anterior, y eso es «≈», igual que en la app.
-    expect(computeBalances(accounts, txs, "PEN", RATES, { incluirArchivadas: false, todayUtc: "2026-09-26" }).total.aproximado).toBe(true);
+    expect(computeBalances(accounts, txs, "PEN", RATES, { incluirArchivadas: false, todayUtc: "2026-09-26", ...cut }).total.aproximado).toBe(true);
     expect(r.cuentas.map((c) => c.nombre)).not.toContain("Vieja");
   });
 
   it("una divisa con tasa de otro día que no pesa no marca el total, como el panorama de la app", () => {
     // Decisión B del 2026-10-12: el mismo umbral del 5 % que la app. 340 PEN dudosos sobre ~101.239 no marcan.
-    const r = computeBalances(accounts, [...txs, { account_ref: pen, amount: 100000, currency_code: "PEN" }], "PEN", RATES, {
+    const r = computeBalances(accounts, [...txs, { account_ref: pen, amount: 100000, currency_code: "PEN", ...past }], "PEN", RATES, {
       incluirArchivadas: false,
       todayUtc: "2026-09-26",
+      ...cut,
     });
     expect(r.total.aproximado).toBe(false);
   });
 
   it("una divisa que la app no conoce no se suma y se declara", () => {
-    const r = computeBalances(accounts, [...txs, { account_ref: pen, amount: 7, currency_code: "XXX" }], "PEN", RATES, {
+    const r = computeBalances(accounts, [...txs, { account_ref: pen, amount: 7, currency_code: "XXX", ...past }], "PEN", RATES, {
       incluirArchivadas: false,
       todayUtc: TODAY_UTC,
+      ...cut,
     });
     expect(r.total.sin_convertir).toEqual([{ divisa: "XXX", importe: 7 }]);
+  });
+
+  describe("el corte de hoy (LiveBalanceCalculator.TodayCutoff, decisión A del 2026-10-18)", () => {
+    // El ejemplo del ticket: 1.000 hoy y −200 mañana. La app dice 1.000; el conector decía 800.
+    const today = TODAY_UTC;
+    const tomorrow = addDays(TODAY_UTC, 1);
+    const one = [account({ sync_id: pen, name: "BCP", currency_code: "PEN" })];
+    const rows = (extra: BalanceTx[]): BalanceTx[] => [
+      { account_ref: pen, amount: 1000, currency_code: "PEN", date: `${today}T12:00:00Z`, local_day: today },
+      ...extra,
+    ];
+    const run = (t: BalanceTx[], tz = "UTC", day = today) =>
+      computeBalances(one, t, "PEN", RATES, { incluirArchivadas: true, todayUtc: TODAY_UTC, today: day, tz });
+
+    it("lo fechado mañana no está en el total ni en el saldo de la cuenta, y se cuenta aparte", () => {
+      const r = run(rows([{ account_ref: pen, amount: -200, currency_code: "PEN", date: `${tomorrow}T12:00:00Z`, local_day: tomorrow }]));
+      expect(r.total.importe).toBe(1000);
+      expect(r.cuentas[0]!.saldo).toBe(1000);
+      expect(r.cuentas[0]!.movimientos).toBe(1);
+      expect(r.futuros_excluidos).toBe(1);
+    });
+
+    it("lo de hoy sí cuenta, hasta el último minuto del día", () => {
+      const r = run(rows([{ account_ref: pen, amount: -200, currency_code: "PEN", date: `${today}T23:59:59Z`, local_day: today }]));
+      expect(r.total.importe).toBe(800);
+      expect(r.futuros_excluidos).toBe(0);
+    });
+
+    it("manda el instante en la zona de hoy, no el local_day de cuando se apuntó (como la app)", () => {
+      // Apuntado en Madrid para «mañana» (local_day = mañana), pero el instante, 23:00 UTC de hoy, ya pasó en Lima.
+      const t = rows([{ account_ref: pen, amount: -200, currency_code: "PEN", date: `${today}T23:00:00Z`, local_day: tomorrow }]);
+      expect(run(t, "America/Lima").total.importe).toBe(800);
+      // Sin fecha legible, manda el local_day.
+      const sinFecha = rows([{ account_ref: pen, amount: -200, currency_code: "PEN", date: null, local_day: tomorrow }]);
+      expect(run(sinFecha, "America/Lima").futuros_excluidos).toBe(1);
+    });
+
+    it("sin local_day, el día sale de la fecha en la zona: la misma hora es hoy en Lima y mañana en UTC", () => {
+      const t = rows([{ account_ref: pen, amount: -200, currency_code: "PEN", date: `${tomorrow}T03:00:00Z`, local_day: null }]);
+      expect(run(t, "America/Lima").total.importe).toBe(800);
+      expect(run(t, "UTC").total.importe).toBe(1000);
+    });
+
+    it("un movimiento sin fecha legible se queda dentro: no hay con qué decir que es futuro", () => {
+      const r = run(rows([{ account_ref: pen, amount: -200, currency_code: "PEN", date: null, local_day: null }]));
+      expect(r.total.importe).toBe(800);
+    });
   });
 });
 
