@@ -164,9 +164,11 @@ struct DetailPeriodDateIntervalMoreTests {
 
     // MARK: - .allTime
 
-    @Test func dateInterval_allTime_starts10YearsBeforeNow_endsAtEndOfToday() {
-        // El start es `now - 10 años` (NO startOfDay: la función usa `now` directo aquí).
-        let expectedStart = Calendar.current.date(byAdding: .year, value: -10, to: now)!
+    @Test func dateInterval_allTime_starts10YearsBeforeStartOfToday_endsAtEndOfToday() {
+        // El start es el inicio del día de hace 10 años: anclado a `now` cambiaba en cada evaluación y el Sankey de
+        // Distribución se recalculaba en cada repintado.
+        let expectedStart = Calendar.current.date(
+            byAdding: .year, value: -10, to: Calendar.current.startOfDay(for: now))!
 
         let interval = DetailPeriod.allTime.dateInterval(now: now)
         #expect(interval.start == expectedStart)
@@ -179,6 +181,13 @@ struct DetailPeriodDateIntervalMoreTests {
         let nineYearsAgo = Calendar.current.date(byAdding: .year, value: -9, to: now)!
         #expect(interval.contains(nineYearsAgo))
         #expect(interval.contains(now))
+    }
+
+    /// Dos evaluaciones del mismo día dan el MISMO intervalo: es lo que deja quieta la clave del Sankey.
+    @Test func dateInterval_allTimeAndCustomFallback_areStableWithinTheDay() {
+        let later = now.addingTimeInterval(37)
+        #expect(DetailPeriod.allTime.dateInterval(now: now) == DetailPeriod.allTime.dateInterval(now: later))
+        #expect(DetailPeriod.custom.dateInterval(now: now) == DetailPeriod.custom.dateInterval(now: later))
     }
 
     // MARK: - Boundary compartido con el día siguiente (medianoche)

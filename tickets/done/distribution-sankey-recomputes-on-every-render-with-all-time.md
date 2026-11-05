@@ -1,10 +1,10 @@
 ---
 id: distribution-sankey-recomputes-on-every-render-with-all-time
-status: backlog
+status: done
 priority: low
 area: statistics
 created: 2026-10-09
-updated: 2026-10-09
+updated: 2026-11-05
 source: hallazgo de el-saldo-de-distribucion-no-se-entera-de-un-registro-nuevo (medición de veces por gesto)
 ---
 
@@ -40,3 +40,12 @@ comprobar quién más lee ese intervalo: hay tests de fechas y paridades con el 
 ## Acceptance Criteria
 
 - [ ] Con «Todo el tiempo», el Sankey se recalcula solo cuando cambian filtros o datos (medido).
+
+## Resolución (2026-11-05, lote P3 de 2.3)
+
+Causa confirmada: `.allTime` empezaba en `now − 10 años` y el respaldo de `.custom` sin rango acababa en `now`, así que
+`sankeyInputKey` cambiaba en cada evaluación. Ahora `.allTime` empieza al inicio del día de hace 10 años (app y espejo
+del widget) y el respaldo de `.custom` cierra en el fin de hoy. Medido con contadores en el simulador (seed `minimal`,
+«Todo el tiempo»): entrar en Distribución 4 → 1 recálculos del Sankey; seis arrastres de scroll 6 → 0; quitar el chip
+«Gasto» 3 → 0. Tests: `DetailPeriodDateIntervalMoreTests#dateInterval_allTimeAndCustomFallback_areStableWithinTheDay`
+y `WidgetDataServiceIntervalTests#allTime_starts_ten_years_before_start_of_today_in_both_impls`.

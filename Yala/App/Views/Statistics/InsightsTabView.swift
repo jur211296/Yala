@@ -76,6 +76,7 @@ struct InsightsTabView: View {
         ScrollView(.vertical, showsIndicators: false) {
             if let data = viewModel.insightData {
                 VStack(spacing: DS.Spacing.md) {
+                    StatsGuideSlot()
                     heroSummary(data.periodSummary)
                     // La acción principal arriba, como en el Panel; el flotante solo al bajar (card kzhe).
                     StatsQuickActionsSlot()

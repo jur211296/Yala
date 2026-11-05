@@ -43,7 +43,7 @@ struct ContextualGuideBanner: View {
     // MARK: - Body
 
     var body: some View {
-        if !UITestHooks.isActive, !isDismissible || !dismissed {
+        if !UITestHooks.isActive || UITestHooks.showsContextualGuides, !isDismissible || !dismissed {
             if isDismissible {
                 guideCard
                     // Quien volvió por «Ya tengo una cuenta» y ya tiene aquí sus datos no ve la guía de principiante:

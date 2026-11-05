@@ -34,10 +34,8 @@ struct PanelShell: View {
                 viewModel: viewModel,
                 sessionState: sessionState
             ))
-            .modifier(PanelSessionObservers(
-                viewModel: viewModel,
-                sessionState: sessionState
-            ))
+            // Los filtros de sesión los observa el ViewModel (`PanelViewModel.observeSessionFilters`), no un `onChange`
+            // aquí: tras volver a primer plano SwiftUI dejaba de reevaluarlo y el Panel se quedaba filtrado.
             .sheet(isPresented: $sheets.showSubscriptionFromBanner) {
                 NavigationStack {
                     SubscriptionView(source: sheets.subscriptionBannerSource)

@@ -356,15 +356,11 @@ struct DetailContainerView: View {
 
     private var mainContent: some View {
         ZStack {
-            VStack(spacing: DS.Spacing.none) {
-                // Contextual guide for current statistics tab
-                statisticsGuide
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.top, DS.Spacing.xs)
-
-                tabContent
-                    .environment(\.statsQuickActions, statsQuickActions)
-            }
+            // La guía de cada subpestaña va DENTRO de su scroll (`StatsGuideSlot`), no encima: fija arriba, las tarjetas
+            // pasaban por debajo al desplazar y quedaban cortadas (ticket
+            // `statistics-summary-guide-banner-stays-pinned-over-the-cards`). Como la del Panel, se va con el contenido.
+            tabContent
+                .environment(\.statsQuickActions, statsQuickActions)
             // Implícita: en una pestaña el `withAnimation` de la guía no anima, ni a ella ni a lo de debajo (card oxyr).
             .animation(reduceMotion ? nil : DS.Animation.appear, value: statisticsGuidesDismissed)
             .navigationChipsInset {
@@ -446,23 +442,10 @@ struct DetailContainerView: View {
         )
     }
 
-    @ViewBuilder
-    private var statisticsGuide: some View {
-        switch selectedTab {
-        case .insights:
-            ContextualGuideBanner.insights()
-        case .trends:
-            ContextualGuideBanner.trends()
-        case .categories:
-            ContextualGuideBanner.categories()
-        case .records:
-            ContextualGuideBanner.records()
-        }
-    }
-
     private var tabContent: some View {
         StagedTabPages(selection: $pages) { tab in
             page(for: tab)
+                .environment(\.statsGuideTab, tab)
         }
     }
 

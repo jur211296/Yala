@@ -123,7 +123,7 @@ struct WidgetDataServiceIntervalTests {
             return DateInterval(start: startOfLastYear, end: endOfLastYear)
 
         case .allTime:
-            let start = calendar.date(byAdding: .year, value: -10, to: now) ?? startOfToday
+            let start = calendar.date(byAdding: .year, value: -10, to: startOfToday) ?? startOfToday
             return DateInterval(start: start, end: endOfToday)
 
         case .custom:
@@ -269,11 +269,11 @@ struct WidgetDataServiceIntervalTests {
         }
     }
 
-    /// `.allTime` arranca 10 años antes de `now` (no del inicio del día).
-    @Test func allTime_starts_ten_years_before_now_in_both_impls() {
+    /// `.allTime` arranca 10 años antes del inicio de hoy, en las dos implementaciones.
+    @Test func allTime_starts_ten_years_before_start_of_today_in_both_impls() {
         let calendar = makeCalendar()
         let now = fixedNow(calendar)
-        let expectedStart = calendar.date(byAdding: .year, value: -10, to: now)!
+        let expectedStart = calendar.date(byAdding: .year, value: -10, to: calendar.startOfDay(for: now))!
 
         let widget = widgetDateInterval(.allTime, calendar: calendar, now: now)
         let ssot = DetailPeriod.allTime.dateInterval(now: now, calendar: calendar)

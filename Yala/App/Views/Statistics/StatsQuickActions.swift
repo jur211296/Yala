@@ -37,6 +37,28 @@ extension EnvironmentValues {
     @Entry var statsQuickActions: StatsQuickActions? = nil
 }
 
+extension EnvironmentValues {
+    /// La subpestaña de Estadísticas que se está pintando, para su guía de primera visita. `nil` fuera de Estadísticas
+    /// (Registros comparte `RecordsTabView` y tiene su propia guía): ahí `StatsGuideSlot` no pinta nada.
+    @Entry var statsGuideTab: DetailViewTab? = nil
+}
+
+/// La guía de primera visita de cada subpestaña, como primera pieza de su scroll: se va con el contenido al desplazar.
+/// Antes la montaba `DetailContainerView` encima de las páginas y se quedaba fija, con las tarjetas pasando por debajo.
+struct StatsGuideSlot: View {
+    @Environment(\.statsGuideTab) private var tab
+
+    var body: some View {
+        switch tab {
+        case .insights: ContextualGuideBanner.insights()
+        case .trends: ContextualGuideBanner.trends()
+        case .categories: ContextualGuideBanner.categories()
+        case .records: ContextualGuideBanner.records()
+        case nil: EmptyView()
+        }
+    }
+}
+
 /// El hueco de la fila, bajo el hero de cada subpestaña.
 struct StatsQuickActionsSlot: View {
     @Environment(\.statsQuickActions) private var actions

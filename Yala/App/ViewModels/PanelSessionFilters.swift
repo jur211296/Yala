@@ -6,7 +6,7 @@
 //
 //  Los filtros del Panel no son suyos: viven en `SessionState` y los comparten Registros, Estadísticas e Informes.
 //  Esta clase solo los expone con la forma de `Filterable` que pide la hoja, sin guardar nada propio. El Panel ya
-//  recalcula al cambiar cualquiera de ellos (`PanelSessionObservers`), así que aplicar la hoja basta.
+//  recalcula al cambiar cualquiera de ellos (`PanelViewModel.observeSessionFilters`), así que aplicar la hoja basta.
 //
 //  `PanelViewModel` no se hace `Filterable` a propósito: ya tiene su propio vocabulario de filtro
 //  (`selectedAccountID` en singular para el menú contextual y el chip, `selectedCategoryID` para los widgets) y el protocolo le sumaría

@@ -351,11 +351,11 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | displaced-leader-after-the-cutover-restores-its-own-identity-over-the-relays | discarded | tickets/discarded/displaced-leader-after-the-cutover-restores-its-own-identity-over-the-relays.md |
 | displaced-leader-late-identity-export-can-rekey-the-relief-corpus | done | tickets/done/displaced-leader-late-identity-export-can-rekey-the-relief-corpus.md |
 | displaced-migration-leader-keeps-uploading-after-a-takeover | done | tickets/done/displaced-migration-leader-keeps-uploading-after-a-takeover.md |
-| distribucion-recalcula-dos-veces-por-toque-y-sin-debounce | backlog | tickets/backlog/distribucion-recalcula-dos-veces-por-toque-y-sin-debounce.md |
+| distribucion-recalcula-dos-veces-por-toque-y-sin-debounce | done | tickets/done/distribucion-recalcula-dos-veces-por-toque-y-sin-debounce.md |
 | distribution-balance-kpi-skips-fx | done | tickets/done/distribution-balance-kpi-skips-fx.md |
 | distribution-default-should-be-detail-not-charts | done | tickets/done/distribution-default-should-be-detail-not-charts.md |
 | distribution-pie-totals-styled-differently-per-page | backlog | tickets/backlog/distribution-pie-totals-styled-differently-per-page.md |
-| distribution-sankey-recomputes-on-every-render-with-all-time | backlog | tickets/backlog/distribution-sankey-recomputes-on-every-render-with-all-time.md |
+| distribution-sankey-recomputes-on-every-render-with-all-time | done | tickets/done/distribution-sankey-recomputes-on-every-render-with-all-time.md |
 | distribution-subviews-miss-the-new-panel-hero | done | tickets/done/distribution-subviews-miss-the-new-panel-hero.md |
 | dmarc-sube-la-politica-tras-observar | backlog | tickets/backlog/dmarc-sube-la-politica-tras-observar.md |
 | doble-conteo-dia1-previo-thismonth | done | tickets/done/doble-conteo-dia1-previo-thismonth.md |
@@ -799,7 +799,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | panel-recalculates-everything-on-every-return-to-the-tab | done | tickets/done/panel-recalculates-everything-on-every-return-to-the-tab.md |
 | panel-says-nothing-when-cloud-sync-needs-sign-in | done | tickets/done/panel-says-nothing-when-cloud-sync-needs-sign-in.md |
 | panel-spent-per-account-counts-refunds-as-spending | done | tickets/done/panel-spent-per-account-counts-refunds-as-spending.md |
-| panel-stayed-filtered-after-removing-the-account-chip | backlog | tickets/backlog/panel-stayed-filtered-after-removing-the-account-chip.md |
+| panel-stayed-filtered-after-removing-the-account-chip | done | tickets/done/panel-stayed-filtered-after-removing-the-account-chip.md |
 | panel-trend-chart-labels-overlap | done | tickets/done/panel-trend-chart-labels-overlap.md |
 | partial-sheets-that-never-adapted-to-the-window | backlog | tickets/backlog/partial-sheets-that-never-adapted-to-the-window.md |
 | paywall-inbox-routing-uitest-misses-the-held-paywall-in-a-batch | backlog | tickets/backlog/paywall-inbox-routing-uitest-misses-the-held-paywall-in-a-batch.md |
@@ -1066,7 +1066,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | start-fresh-dialog-promises-what-the-gate-undoes | qa | tickets/qa/start-fresh-dialog-promises-what-the-gate-undoes.md |
 | statistics-calculators-count-an-unwritten-conversion-as-zero | done | tickets/done/statistics-calculators-count-an-unwritten-conversion-as-zero.md |
 | statistics-first-entry-takes-a-second-to-render | backlog | tickets/backlog/statistics-first-entry-takes-a-second-to-render.md |
-| statistics-summary-guide-banner-stays-pinned-over-the-cards | backlog | tickets/backlog/statistics-summary-guide-banner-stays-pinned-over-the-cards.md |
+| statistics-summary-guide-banner-stays-pinned-over-the-cards | done | tickets/done/statistics-summary-guide-banner-stays-pinned-over-the-cards.md |
 | stats-aggregators-sum-stored-amounts-from-other-preferred-currencies | done | tickets/done/stats-aggregators-sum-stored-amounts-from-other-preferred-currencies.md |
 | stats-filter-segment-tap-should-ask-include-or-exclude | done | tickets/done/stats-filter-segment-tap-should-ask-include-or-exclude.md |
 | stats-hero-detail-row-truncates-at-accessibility-text | done | tickets/done/stats-hero-detail-row-truncates-at-accessibility-text.md |

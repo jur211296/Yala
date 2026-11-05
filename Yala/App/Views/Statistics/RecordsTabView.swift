@@ -44,6 +44,7 @@ struct RecordsTabView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: DS.Spacing.md) {
+                StatsGuideSlot()
                 // L8-11: en modo duplicados el resumen del período («Neto del período · Sigue así») no dice nada de
                 // lo que se busca; lo sustituye el encabezado del modo, con el período para poder ampliar la búsqueda.
                 if viewModel.duplicateModeActive {
