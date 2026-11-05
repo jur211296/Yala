@@ -54,6 +54,9 @@ extension L10n {
 
         static var countsAllExpenses: String { l9("budgets.l9.countsAllExpenses") }
 
+        /// «En el límite»: la palabra que acompaña a la barra naranja (decisión de Jürgen, 2026-11-05).
+        static var atLimit: String { l9("budgets.l9.atLimit") }
+
         // MARK: - Editor (L9-2, L9-3, L9-4, L9-12, L9-13)
 
         static var limitLabel: String { l9("budgets.l9.limitLabel") }

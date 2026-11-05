@@ -7177,6 +7177,7 @@
 "budgets.l9.days" = "%@ jours";
 "budgets.l9.perDay" = "Tu peux dépenser %@ par jour";
 "budgets.l9.countsAllExpenses" = "Compte toutes tes dépenses";
+"budgets.l9.atLimit" = "Proche de la limite";
 "budgets.l9.limitLabel" = "Limite";
 "budgets.l9.whatCountsTitle" = "Quelles dépenses comptent ?";
 "budgets.l9.allExpensesChip" = "Toutes mes dépenses";
