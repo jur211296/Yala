@@ -40,7 +40,11 @@ anima lo que le das. Por eso la regla «la UI de Yala no se dibuja, se filma» s
   pueden corregir desde el móvil.
 - **Música generada** dentro de la pieza, sincronizada con los toques y el cierre. Es original y sale de
   un sintetizador sencillo.
-- **Exporta a MP4** desde la página: 720p o 1080p, 30 o 15 fps, con la opción «Sharper text».
+- **Exporta a MP4** desde la página: 720p o 1080p, 30 o 15 fps, con la opción «Sharper text». Medido el
+  4-nov con las tres piezas a 1080p, 30 fps y calidad alta: cada export tardó **entre 1 y 2,5 minutos**
+  con la pestaña delante y pesó **entre 5,6 y 9,5 MB**. Cada MP4 sale con su audio (volumen medio de unos
+  −18 dB) y con la duración exacta de la pieza. Los MP4 no se commitean: están en
+  `~/Claude/entregas/2026-11-04-piloto-claude-motion-lola/`.
 
 **4 · Lo que Motion no puede, y es lo que decide**
 
