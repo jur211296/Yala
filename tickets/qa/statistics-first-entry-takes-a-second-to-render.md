@@ -1,10 +1,10 @@
 ---
 id: statistics-first-entry-takes-a-second-to-render
-status: backlog
+status: qa
 priority: low
 area: "performance, statistics"
 created: 2026-10-30
-updated: 2026-10-30
+updated: 2026-11-05
 card: tablero-entrar-en-estadisticas-tarda-1-s-casi-to-7zc7
 source: "encargo eficiencia-carga-por-vista (S27e), Time Profiler en el simulador"
 ---
@@ -33,3 +33,18 @@ el segundo cálculo por observar `allTransactions`).
 
 Medido en un iPhone (Release) antes de decidir: si en el dispositivo baja de ~300 ms, cerrar; si no, elegir una de las
 tres vías con su medida.
+
+## Medido de nuevo (2026-11-05, lote P3 de 2.3)
+
+`LoadTimesUITests`, mismo corpus `rendimiento` (2.337 movimientos), iPhone 17 Pro simulado, iOS 27.2, Debug: **917 ms**
+de mediana en 5 entradas (909 · 915 · 917 · 921 · 945). Antes, 1.020. En Release la app no escribe esta marca y en la
+Max no hay iPhone, así que la medida que pide el criterio sigue pendiente.
+
+## Guion de QA para Jürgen (iPhone, TestFlight)
+
+1. Con la app abierta en el Panel y tus datos de siempre, toca la pestaña **Estadísticas**.
+2. Fíjate en cuánto tarda en aparecer el resumen con cifras. Vuelve al Panel.
+3. Repite dos veces más (tres en total).
+4. Responde: **¿se nota la espera? (sí / no)** y, si sí, cuánto más o menos (medio segundo, un segundo…).
+
+Si no se nota, se cierra. Si se nota, se elige una de las tres vías en una sesión aparte.

@@ -1066,7 +1066,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | start-fresh-dialog-promises-what-the-gate-undoes | qa | tickets/qa/start-fresh-dialog-promises-what-the-gate-undoes.md |
 | statistics-and-records-filter-onchange-may-fall-asleep-like-the-panel | backlog | tickets/backlog/statistics-and-records-filter-onchange-may-fall-asleep-like-the-panel.md |
 | statistics-calculators-count-an-unwritten-conversion-as-zero | done | tickets/done/statistics-calculators-count-an-unwritten-conversion-as-zero.md |
-| statistics-first-entry-takes-a-second-to-render | backlog | tickets/backlog/statistics-first-entry-takes-a-second-to-render.md |
+| statistics-first-entry-takes-a-second-to-render | qa | tickets/qa/statistics-first-entry-takes-a-second-to-render.md |
 | statistics-summary-guide-banner-stays-pinned-over-the-cards | done | tickets/done/statistics-summary-guide-banner-stays-pinned-over-the-cards.md |
 | stats-aggregators-sum-stored-amounts-from-other-preferred-currencies | done | tickets/done/stats-aggregators-sum-stored-amounts-from-other-preferred-currencies.md |
 | stats-filter-segment-tap-should-ask-include-or-exclude | done | tickets/done/stats-filter-segment-tap-should-ask-include-or-exclude.md |
