@@ -7176,6 +7176,7 @@
 "budgets.l9.days" = "%@ Tage";
 "budgets.l9.perDay" = "Du kannst %@ pro Tag ausgeben";
 "budgets.l9.countsAllExpenses" = "Zählt alle deine Ausgaben";
+"budgets.l9.atLimit" = "Fast am Limit";
 "budgets.l9.limitLabel" = "Limit";
 "budgets.l9.whatCountsTitle" = "Welche Ausgaben zählen?";
 "budgets.l9.allExpensesChip" = "Alle meine Ausgaben";

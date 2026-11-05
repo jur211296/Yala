@@ -7188,6 +7188,7 @@
 "budgets.l9.days" = "%@ 天";
 "budgets.l9.perDay" = "每天可花 %@";
 "budgets.l9.countsAllExpenses" = "统计你的全部支出";
+"budgets.l9.atLimit" = "接近上限";
 "budgets.l9.limitLabel" = "上限";
 "budgets.l9.whatCountsTitle" = "统计哪些支出？";
 "budgets.l9.allExpensesChip" = "我的全部支出";

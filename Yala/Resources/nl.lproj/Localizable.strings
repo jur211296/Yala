@@ -7188,6 +7188,7 @@
 "budgets.l9.days" = "%@ dagen";
 "budgets.l9.perDay" = "Je kunt %@ per dag uitgeven";
 "budgets.l9.countsAllExpenses" = "Telt al je uitgaven";
+"budgets.l9.atLimit" = "Bijna aan je limiet";
 "budgets.l9.limitLabel" = "Limiet";
 "budgets.l9.whatCountsTitle" = "Welke uitgaven tellen?";
 "budgets.l9.allExpensesChip" = "Al mijn uitgaven";

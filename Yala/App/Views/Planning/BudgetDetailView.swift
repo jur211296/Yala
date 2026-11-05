@@ -178,6 +178,11 @@ struct BudgetDetailView: View {
             )
             .padding(.horizontal, DS.Spacing.xl)
 
+            // «En el límite» junto al naranja (Jürgen, 2026-11-05), con el umbral de `BudgetStatusCounter`.
+            if BudgetAtLimitLabel.isShown(spent: summary.spent, limit: budget.limitAmount) {
+                BudgetAtLimitLabel(font: DS.Typography.label)
+            }
+
             // Porcentaje y los días que quedan (o «Cerrado» / «Aún no empieza»).
             HStack {
                 Text(String(format: NSLocalizedString("budgets.spent.percent", comment: ""), String(format: "%.0f%%", summary.percentage)))

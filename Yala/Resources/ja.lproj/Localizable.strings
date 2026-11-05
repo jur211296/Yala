@@ -7188,6 +7188,7 @@
 "budgets.l9.days" = "残り%@日";
 "budgets.l9.perDay" = "1日あたり%@使えます";
 "budgets.l9.countsAllExpenses" = "すべての支出を対象にします";
+"budgets.l9.atLimit" = "上限間近";
 "budgets.l9.limitLabel" = "上限";
 "budgets.l9.whatCountsTitle" = "対象にする支出は？";
 "budgets.l9.allExpensesChip" = "すべての支出";

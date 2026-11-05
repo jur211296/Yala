@@ -81,6 +81,11 @@ struct BudgetRowView: View {
                     isExceeded: summary.status == .exceeded
                 )
 
+                // «En el límite» junto al naranja (Jürgen, 2026-11-05): el color avisa y la palabra lo nombra.
+                if isAtLimit {
+                    BudgetAtLimitLabel()
+                }
+
                 // Sin filtros cuenta TODO lo gastado (UX 2.2 · L9-2): «Viajes» salió al 1522% sin que nada lo dijera.
                 if summary.budget.countsAllExpenses {
                     BudgetCountsAllExpensesNote()
@@ -100,7 +105,7 @@ struct BudgetRowView: View {
         .buttonStyle(.plain)
         .pointerHighlight(cornerRadius: DS.Radius.md)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(L10n.Accessibility.budgetRow(summary.budget.name, Int(summary.percentage), formattedSpent, formattedLimit))
+        .accessibilityLabel(accessibilityLabelText)
         .accessibilityIdentifier("budget_row_\(summary.budget.name)")
     }
 
@@ -127,6 +132,16 @@ struct BudgetRowView: View {
             currencyCode: currencyCode,
             suffix: L10n.UXL9.shortDays(summary.daysRemaining)
         )
+    }
+
+    private var isAtLimit: Bool {
+        BudgetAtLimitLabel.isShown(spent: summary.spent, limit: summary.budget.limitAmount)
+    }
+
+    /// La fila combina sus hijos con etiqueta propia: sin añadirla aquí, VoiceOver no diría «En el límite».
+    private var accessibilityLabelText: String {
+        let base = L10n.Accessibility.budgetRow(summary.budget.name, Int(summary.percentage), formattedSpent, formattedLimit)
+        return isAtLimit ? "\(base), \(L10n.UXL9.atLimit)" : base
     }
 
     // MARK: - Formatters
