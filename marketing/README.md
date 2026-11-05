@@ -41,6 +41,9 @@ borradores, plantillas y herramientas. Publicar en App Store Connect o en redes 
   renderizado por código. Piezas 9:16 y 16:9 del pack 2.1. Empieza por
   [`remotion/docs/OPERACION.md`](remotion/docs/OPERACION.md).
 
+- `motion-piloto/`: **piloto de Claude Motion** (4-nov-2026). Tres piezas, el veredicto y cuándo usarlo
+  en lugar de los reels de HyperFrames. Empieza por [`motion-piloto/README.md`](motion-piloto/README.md).
+
 Las tres son hermanas y ninguna sustituye a otra: el generador saca **capturas** para la ficha,
 Remotion saca **vídeo** para redes y las plantillas sacan **imágenes** para redes.
 
