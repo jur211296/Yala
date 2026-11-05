@@ -3,10 +3,12 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
-  "description": "Conector MCP de solo lectura de Yala para Claude (fase 0: spike contra staging).",
+  "description": "Conector MCP de solo lectura de Yala para Claude (staging desplegado; producción lista para desplegar).",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy:staging": "wrangler deploy",
+    "deploy:staging": "wrangler deploy --env=\"\"",
+    "preflight:production": "node scripts/preflight-production.mjs",
+    "deploy:production": "node scripts/preflight-production.mjs && wrangler deploy --env production",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.e2e.json",
     "test": "vitest run",
     "test:e2e": "vitest run --config vitest.e2e.config.ts"

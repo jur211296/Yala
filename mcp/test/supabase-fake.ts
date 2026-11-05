@@ -9,7 +9,7 @@
 import { createLocalJWKSet, exportJWK, generateKeyPair, jwtVerify, SignJWT, type JWTVerifyGetKey } from "jose";
 import { fromB64url, randHex, sha256b64url } from "./b64";
 
-export const SB_URL = "https://proyecto.supabase.co";
+export const SB_URL = "https://proyectoyalatest0001.supabase.co";
 export const SB_ISSUER = `${SB_URL}/auth/v1`;
 export const WORKER_SB_CLIENT = "0b6f1c5e-6a55-4e0b-9d9c-1f7a3d2e4c10";
 export const WORKER_SB_SECRET = "secreto-del-cliente-del-worker";

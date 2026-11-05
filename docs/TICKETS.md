@@ -241,7 +241,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | claude-mcp-consent-with-apple-and-google | backlog | tickets/backlog/claude-mcp-consent-with-apple-and-google.md |
 | claude-mcp-numbers-match-the-app | done | tickets/done/claude-mcp-numbers-match-the-app.md |
 | claude-mcp-oauth-token-can-change-the-account | done | tickets/done/claude-mcp-oauth-token-can-change-the-account.md |
-| claude-mcp-production-auth-hardening | backlog | tickets/backlog/claude-mcp-production-auth-hardening.md |
+| claude-mcp-production-auth-hardening | in-progress | tickets/in-progress/claude-mcp-production-auth-hardening.md |
 | claude-mcp-revoke-from-claude-leaves-supabase-session | backlog | tickets/backlog/claude-mcp-revoke-from-claude-leaves-supabase-session.md |
 | claude-plugin-read-only-mcp-connector | backlog | tickets/backlog/claude-plugin-read-only-mcp-connector.md |
 | clock-ahead-retried-older-change-beats-the-newer-one | backlog | tickets/backlog/clock-ahead-retried-older-change-beats-the-newer-one.md |

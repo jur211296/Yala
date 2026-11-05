@@ -4,8 +4,8 @@
  */
 import { expect } from "vitest";
 import { createApp } from "../src/index";
-import type { Env } from "../src/env";
-import { randB64url, sha256b64url } from "./b64";
+import type { Env, RateLimiter } from "../src/env";
+import { b64url, randB64url, sha256b64url } from "./b64";
 import { MemoryKV } from "./kv";
 import { FakeSupabase, SB_URL, USER_A, WORKER_SB_CLIENT, WORKER_SB_SECRET, type TestUser } from "./supabase-fake";
 
@@ -23,6 +23,38 @@ export function makeEnv(overrides: Partial<Env> = {}): Env {
     SUPABASE_OAUTH_CLIENT_ID: WORKER_SB_CLIENT,
     SUPABASE_OAUTH_CLIENT_SECRET: WORKER_SB_SECRET,
     OAUTH_KV: new MemoryKV() as unknown as KVNamespace,
+    ...overrides,
+  };
+}
+
+/** Un límite de peticiones en memoria: `limit` peticiones por clave, sin ventana (cada test empieza de cero). */
+export class FakeLimiter implements RateLimiter {
+  readonly keys: string[] = [];
+  private readonly counts = new Map<string, number>();
+  constructor(private readonly max = Number.POSITIVE_INFINITY) {}
+  async limit({ key }: { key: string }) {
+    this.keys.push(key);
+    const n = (this.counts.get(key) ?? 0) + 1;
+    this.counts.set(key, n);
+    return { success: n <= this.max };
+  }
+}
+
+/** Un JWT sin firma con este payload: basta para la anon key, que el Worker solo lee (`config.ts`). */
+export function unsignedJwt(payload: Record<string, unknown>): string {
+  const enc = (o: unknown) => b64url(new TextEncoder().encode(JSON.stringify(o)));
+  return `${enc({ alg: "HS256", typ: "JWT" })}.${enc(payload)}.firma`;
+}
+
+/** Lo que cambia para que la configuración sea de PRODUCCIÓN válida: anon key del mismo proyecto y los tres límites. */
+export function productionEnv(overrides: Partial<Env> = {}): Partial<Env> {
+  const ref = new URL(SB_URL).hostname.split(".")[0];
+  return {
+    ENVIRONMENT: "production",
+    SUPABASE_ANON_KEY: unsignedJwt({ iss: "supabase", ref, role: "anon" }),
+    RL_BROWSER: new FakeLimiter(),
+    RL_OAUTH: new FakeLimiter(),
+    RL_MCP: new FakeLimiter(),
     ...overrides,
   };
 }
