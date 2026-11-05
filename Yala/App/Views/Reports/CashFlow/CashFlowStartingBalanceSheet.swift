@@ -167,6 +167,7 @@ struct CashFlowStartingBalanceSheet: View {
         formatter.usesGroupingSeparator = false
         formatter.minimumFractionDigits = 0
         formatter.maximumFractionDigits = 2
-        return formatter.string(from: NSNumber(value: amount)) ?? String(format: "%.0f", amount)
+        let shown = CurrencyFormattingHelper.isShownAsZero(amount, using: formatter) ? 0 : amount
+        return formatter.string(from: NSNumber(value: shown)) ?? String(format: "%.0f", shown)
     }
 }

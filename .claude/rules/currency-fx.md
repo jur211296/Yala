@@ -126,6 +126,21 @@ reabrirlo:
   plano y `.NSCalendarDayChanged`): la extensión solo relee la foto. El conector `mcp/` todavía no corta (ticket
   `mcp-connector-counts-future-dated-rows-in-todays-balance`). Pin: `BalanceFutureDatedCutoffTests`.
 
+## El saldo de UNA cuenta suma sus filas en la divisa de la cuenta (2026-11-05)
+
+`AccountBalanceCalculator` (tarjeta de la cuenta, Ajustes › Cuentas, widgets, formulario, Yala IA) convierte a la
+divisa de la cuenta, con la tasa de la fecha de la fila, toda fila cuya divisa no es la de su cuenta, y no escribe nada
+(card del receptor de un cambio de divisa, opción C; ticket `cloudsync-account-currency-orphans-receiver-history`).
+Esas filas existen: el otro teléfono baja el cambio de divisa de la cuenta y el histórico convertido en páginas
+distintas, y lo que solo él tenía se queda en la divisa vieja. Sumadas en crudo, 900 soles contaban como 900 dólares.
+
+- **La regla es la del emisor** (`AccountCurrencyMigrationService`, tasa de la fecha de cada fila): así la cifra del
+  intermedio es la que queda cuando la fila llega convertida. Si cambias una, cambia la otra.
+- **Solo con divisas del catálogo** (`recognizedCurrencyCode`, sin el fallback a USD de `normalizeCurrencyCode`): una
+  divisa vacía o desconocida se suma tal cual. Decidir por `normalizeCurrencyCode` tomaría una desconocida por dólares.
+- **No re-expreses las filas en el receptor**: no distingue las que el emisor ya convirtió de las que no conocía, y
+  escribir emite con HLC fresco. Lo fija `CloudSync/AccountCurrencyReceiverTests`.
+
 ## Reabrir una fila para que el reparador la recalcule NO es neutro
 
 `isExchangeRateProvisional = true` parece una marca inocente —«que la mire otro»— y no lo es:

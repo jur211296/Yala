@@ -382,6 +382,8 @@ nonisolated enum WidgetInsightsLogic {
         formatter.maximumFractionDigits = suffix.isEmpty ? 0 : 1
         formatter.roundingMode = .halfUp
         let number = formatter.string(from: NSNumber(value: scaled)) ?? "0"
-        return (value < 0 ? "-" : "") + number + suffix
+        // Lo que se pinta como cero no lleva signo («-0» de un saldo que suma cero en coma flotante).
+        let shownAsZero = number == formatter.string(from: NSNumber(value: 0))
+        return (value < 0 && !shownAsZero ? "-" : "") + number + suffix
     }
 }

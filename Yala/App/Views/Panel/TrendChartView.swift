@@ -533,10 +533,12 @@ struct TrendChartView: View {
     private func formattedAmountShort(_ value: Double) -> String {
         let absValue = abs(value)
         let formattedNumber = absValue.formatted(.number.precision(.fractionLength(0)))
+        // Lo que se pinta como cero no lleva signo («-0» o «+0» de un saldo que suma cero en coma flotante).
+        let shownAsZero = formattedNumber == Double(0).formatted(.number.precision(.fractionLength(0)))
 
-        if value < 0 {
+        if value < 0 && !shownAsZero {
             return "-\(formattedNumber)"
-        } else if value > 0 && trendType == .balance {
+        } else if value > 0 && trendType == .balance && !shownAsZero {
             return "+\(formattedNumber)"
         } else {
             return formattedNumber
@@ -545,7 +547,7 @@ struct TrendChartView: View {
 
     private func formatK(_ value: Double) -> String {
         let absValue = abs(value)
-        let sign = value < 0 ? "-" : ""
+        let sign = value < 0 && absValue >= 0.5 ? "-" : ""  // «-0» de un residuo de coma flotante: sin signo
 
         if absValue >= 1000 {
             let kValue = absValue / 1000.0
@@ -628,7 +630,8 @@ struct TrendChartView: View {
     }
 
     private func formattedAmount(_ value: Double) -> String {
-        value.formatted(
+        // Sin signo para lo que se pinta como cero («-0» de un saldo que suma cero en coma flotante).
+        (abs(value) < 0.5 ? 0 : value).formatted(
             .number
                 .precision(.fractionLength(0))
         )

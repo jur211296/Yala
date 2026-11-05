@@ -43,7 +43,8 @@ nonisolated enum PanelAccountCardLogic {
 
     static func amountKind(isExpensesOnlyMode: Bool, isCreditCard: Bool, value: Double) -> AmountKind {
         if isExpensesOnlyMode { return .spent }
-        if isCreditCard && value < 0 { return .toPay }
+        // Un saldo que se pinta como cero no es deuda: el residuo de coma flotante (`-1e-14`) rotulaba «Por pagar».
+        if isCreditCard && value < 0 && !CurrencyFormattingHelper.isShownAsZero(value) { return .toPay }
         return .balance
     }
 
@@ -75,7 +76,7 @@ nonisolated enum PanelAccountCardLogic {
     /// creada no puede quitarle el «Por pagar» a la tarjeta. Lo de «tarjeta de crédito» lo decide la principal, igual en
     /// todas sus líneas. En «solo gastos» el rótulo es siempre el de lo gastado.
     static func lineKind(isExpensesOnlyMode: Bool, isCreditCard: Bool, value: Double) -> AmountKind? {
-        guard isExpensesOnlyMode || value != 0 else { return nil }
+        guard isExpensesOnlyMode || !CurrencyFormattingHelper.isShownAsZero(value) else { return nil }
         return amountKind(isExpensesOnlyMode: isExpensesOnlyMode, isCreditCard: isCreditCard, value: value)
     }
 

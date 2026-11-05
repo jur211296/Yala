@@ -449,7 +449,9 @@ struct YalaFormatter {
             return formatted
         }
         let formattedNumber = compactTableFormatter.string(from: NSNumber(value: absValue)) ?? "0"
-        return "\(sign)\(formattedNumber)"
+        // Lo que se pinta como cero no lleva signo («-0» de un saldo que suma cero en coma flotante).
+        let isZero = formattedNumber == compactTableFormatter.string(from: NSNumber(value: 0))
+        return "\(isZero ? "" : sign)\(formattedNumber)"
     }
 
     /// Etiqueta del eje Y con los decimales que pide el rango del eje.

@@ -784,6 +784,20 @@ func normalizeCurrencyCode(_ raw: String) -> String {
     return CurrencyDefaults.fallbackCode
 }
 
+/// El código del catálogo que nombra `raw`, o `nil` si no nombra ninguno (vacío o fuera del catálogo).
+///
+/// Es `normalizeCurrencyCode` sin su fallback a USD: para quien tiene que DECIDIR algo por la divisa (convertir o no) y
+/// no puede tomar una divisa desconocida por dólares (ticket `fx-unknown-currency-code-collapses-to-usd`).
+func recognizedCurrencyCode(_ raw: String) -> String? {
+    let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty else { return nil }
+    if let currency = CurrencyCode.fromAlias(trimmed) { return currency.rawValue }
+    let letters = trimmed.uppercased().filter { $0.isLetter }
+    guard letters.count >= 3 else { return nil }
+    let code = String(letters.prefix(3))
+    return CurrencyCode(rawValue: code) != nil ? code : nil
+}
+
 // MARK: - Currency Conversion (Using CurrencyConverter)
 
 /// Convierte un monto entre dos monedas.

@@ -561,7 +561,7 @@ final class AccountFormViewModel {
         // «Editar el saldo» (L7-6): el campo pide el saldo de HOY y arranca vacío en las dos opciones, con
         // el signo del saldo de hoy (B6). Prellenarlo con el saldo de partida era justo la confusión de B7.
         if editsTodayBalance {
-            isPositive = currentBalance >= 0
+            isPositive = currentBalanceIsNotNegative
             hasInitializedBalance = true
             return
         }
@@ -574,10 +574,16 @@ final class AccountFormViewModel {
             // .byEntry: el campo queda vacío (hay que escribir el saldo nuevo), pero el signo arranca en el
             // del saldo de hoy. Con «Positivo» fijo, quien debe S/ 1,200 en su tarjeta y escribe «1200»
             // obtenía +1,200 y un ajuste de +2,400 (auditoría UX 2.2, lote 7, B6).
-            isPositive = currentBalance >= 0
+            isPositive = currentBalanceIsNotNegative
         }
 
         hasInitializedBalance = true
+    }
+
+    /// El signo con que arranca el campo: el del saldo de hoy, y «Positivo» con un saldo que se pinta como cero (una cuenta
+    /// cuyos movimientos suman cero deja un residuo de coma flotante, `-1e-14`, que arrancaba en «Negativo»).
+    private var currentBalanceIsNotNegative: Bool {
+        currentBalance >= 0 || CurrencyFormattingHelper.isShownAsZero(currentBalance)
     }
 
     /// Handle adjustment mode change — reset balanceText based on new mode semantics
@@ -592,7 +598,7 @@ final class AccountFormViewModel {
         } else {
             // .byEntry: clear to require explicit user input; el signo, el del saldo de hoy (B6).
             balanceText = ""
-            isPositive = currentBalance >= 0
+            isPositive = currentBalanceIsNotNegative
         }
     }
 

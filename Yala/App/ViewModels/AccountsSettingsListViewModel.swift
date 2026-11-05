@@ -175,7 +175,9 @@ final class AccountsSettingsListViewModel {
         let nsNumber = currentDecimal as NSDecimalNumber
         let amountDouble = nsNumber.doubleValue
 
-        let formattedAmount = Self.balanceFormatter.string(from: NSNumber(value: amountDouble)) ?? "0.00"
+        // Un saldo que suma cero en coma flotante (`-1e-14`) salía «-0.00».
+        let shown = CurrencyFormattingHelper.isShownAsZero(amountDouble, using: Self.balanceFormatter) ? 0 : amountDouble
+        let formattedAmount = Self.balanceFormatter.string(from: NSNumber(value: shown)) ?? "0.00"
         return "\(info.code) \(formattedAmount)"
     }
 
