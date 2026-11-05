@@ -62,6 +62,7 @@ final class BulkEditUITests: XCTestCase {
         XCTAssertGreaterThanOrEqual(rows.count, 2, "El seed no produjo ≥2 transacciones para edición masiva.")
         for index in 0..<2 {
             let row = rows.element(boundBy: index)
+            bringIntoFreeBand(app, row)
             XCTAssertTrue(row.waitForHittable(timeout: 10), "La fila \(index) no es alcanzable para elegirla.")
             row.tap()
         }
@@ -69,6 +70,40 @@ final class BulkEditUITests: XCTestCase {
         let two = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label BEGINSWITH '2'"), object: count)
         XCTAssertEqual(XCTWaiter().wait(for: [two], timeout: 10), .completed,
                        "Tras tocar dos filas la barra no dice «2 seleccionados» (dice «\(count.exists ? count.label : "nada")»).")
+    }
+
+    /// Desplaza la página hasta que `row` quede entera en la franja libre: por debajo del primer cuarto de la ventana
+    /// (título y chips) y por encima de lo que flota abajo (la barra de selección y la de pestañas).
+    ///
+    /// En el iPhone SE (667 pt) la segunda fila nace en y≈590-670, debajo de la barra «1 seleccionado» (medido el
+    /// 2026-11-05 en el vídeo del `.xcresult`, iOS 27.2): `isHittable` no llegaba nunca y los tres casos caían en
+    /// «la fila 1 no es alcanzable». En el iPhone 17 Pro cabe sin desplazar, y este bucle no hace nada.
+    /// El arrastre empieza en el centro de la ventana con una pulsación corta, que la lista lee como desplazamiento y
+    /// no como toque: no elige ninguna fila.
+    private func bringIntoFreeBand(_ app: XCUIApplication, _ row: XCUIElement) {
+        let window = app.windows.firstMatch.frame
+        let top = window.minY + window.height * 0.25
+        for _ in 0..<5 {
+            var bottom = window.maxY
+            let tabBar = app.tabBars.firstMatch
+            if tabBar.exists { bottom = min(bottom, tabBar.frame.minY) }
+            let count = app.staticTexts["records_selection_count"]
+            // La cifra va dentro de la tarjeta de la barra, con su margen (`DS.Spacing.md`) por encima.
+            if count.exists { bottom = min(bottom, count.frame.minY - 24) }
+            let frame = row.frame
+            let delta: CGFloat
+            if frame.maxY > bottom {
+                delta = -(frame.maxY - bottom + 24)
+            } else if frame.minY < top {
+                delta = top - frame.minY + 24
+            } else {
+                return
+            }
+            let step = max(-window.height * 0.3, min(window.height * 0.3, delta))
+            let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: step)))
+            _ = app.waitForSettledLayout(of: row, timeout: 3)
+        }
     }
 
     /// Abre «Editar» de la barra de selección.

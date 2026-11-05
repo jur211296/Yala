@@ -1,11 +1,11 @@
 ---
 id: bulk-edit-uitests-fail-on-the-small-iphone
-status: backlog
+status: done
 priority: low
 area: "testing, records, bulk-edit, adaptativo"
 created: 2026-10-01
 source: "gate de iphone-landscape-headers-fill-the-short-screen (carril adaptativo), 2026-10-01"
-updated: 2026-10-08
+updated: 2026-11-05
 ---
 
 # Los dos casos de `BulkEditUITests` caen en el iPhone SE
@@ -33,3 +33,10 @@ filas visibles) — es del test, no del producto: con el dedo la fila se alcanza
 - `YalaUITests/Flows/BulkEditUITests.swift` no tiene commits desde el 2026-10-01 y no desplaza antes de tocar la segunda fila; los dos asserts siguen en `:61` y `:85`. Sin re-medir en el SE (aquí no se compila).
 
 Triage 2026-10-08: abierto · low → low · el test no ha cambiado desde la medida; es del test y del carril adaptativo, no del producto.
+
+## 2026-11-05 · cerrado en el lote T3
+
+Re-medido en el iPhone SE (iOS 27.2): los **tres** casos (hoy son tres) caían en «La fila 1 no es alcanzable». En el
+vídeo del `.xcresult`, la segunda fila nace en y≈590-670, debajo de la barra «1 seleccionado» y de la de pestañas: la
+hipótesis era buena. Arreglo del test: antes de tocar cada fila, la página se desplaza hasta dejarla en la franja libre
+(`bringIntoFreeBand`); en el 17 Pro no se mueve nada. Verde 3 de 3 en el SE, 3 de 3 en el 17 Pro, y en el lote.

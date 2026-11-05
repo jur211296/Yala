@@ -189,7 +189,9 @@ final class AppleIDCloseNoticeUITests: XCTestCase {
             antes de volver a abrir Yala Dev a mano.
             """)
         let cifra = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "sin subir: 1")).firstMatch
-        XCTAssertTrue(cifra.exists, "El aviso no cuenta los cambios que se perderían.")
+        // Con espera: la etapa puede montarse antes de que su texto traiga la cifra, y en iOS 27 `exists` justo después
+        // del `waitForExistence` de la etapa daba falso (ticket `apple-id-close-loss-notice-uitest-fails-on-2-1`).
+        XCTAssertTrue(cifra.waitForExistence(timeout: 10), "El aviso no cuenta los cambios que se perderían.")
         XCTAssertTrue(app.buttons["apple_id_close_discard_groups"].exists, "El aviso no ofrece «Cerrar sesión y perderlos».")
         XCTAssertTrue(app.buttons["apple_id_close_later"].exists, "El aviso no ofrece «Ahora no».")
 

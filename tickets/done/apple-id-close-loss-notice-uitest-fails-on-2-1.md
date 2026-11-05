@@ -1,10 +1,10 @@
 ---
 id: apple-id-close-loss-notice-uitest-fails-on-2-1
-status: backlog
+status: done
 priority: low
 area: "testing, sesiones, grupos"
 created: 2026-09-29
-updated: 2026-10-08
+updated: 2026-11-05
 source: "gate de sheet-size-follows-the-device-not-the-window, 2026-09-29"
 ---
 
@@ -43,3 +43,8 @@ de que llegue la cifra, o el texto se pinta primero con la copia «sin cifra», 
 - En la nocturna de `2.1` del 2026-10-08 (run `37802106095`, iOS 26.5) el caso pasa a la primera. El rojo del ticket se midió en iOS 27.0 (ProMax), y no se ha vuelto a medir ahí.
 
 Triage 2026-10-08: abierto · medium → low · pasa en el CI de 2.1 (iOS 26.5, run 37802106095) pero la aserción sigue sin esperar (:172-173) y el rojo de iOS 27.0 no se ha re-medido.
+
+## 2026-11-05 · cerrado en el lote T3
+
+Re-medido en iOS 27.2 (SE e iPhone 17 Pro): verde sin tocar. La aserción sin espera seguía ahí; ahora espera la cifra
+(`waitForExistence(timeout: 10)`), como proponía el ticket. Verde 3 de 3 en el SE, 3 de 3 en el 17 Pro, y en el lote.

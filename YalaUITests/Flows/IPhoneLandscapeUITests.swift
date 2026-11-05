@@ -30,6 +30,11 @@ final class IPhoneLandscapeUITests: XCTestCase {
         super.tearDown()
     }
 
+    /// Lo que se espera a la primera fila de Registros con el corpus `realista` (~2.300 registros). Eran 15 s y, dentro de
+    /// una corrida larga, la primera carga pasó de ahí con `uitest_ready` ya dado (ticket
+    /// `landscape-records-test-misses-the-first-row-in-long-runs`, 2026-10-14).
+    private static let firstRowTimeout: TimeInterval = 30
+
     private func launch(deeplink: String) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchForUITest(pro: true, seed: "realista", deeplink: deeplink)
@@ -93,7 +98,7 @@ final class IPhoneLandscapeUITests: XCTestCase {
     func test_rotatingKeepsTheOpenRecordOpen() {
         let app = launch(deeplink: "records")
         let row = app.buttons.matching(identifier: "record_row").firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 15), "No hay filas de registro.")
+        XCTAssertTrue(row.waitForExistence(timeout: Self.firstRowTimeout), "No hay filas de registro.")
         row.tap()
         let edit = app.buttons["transaction_detail_edit"]
         XCTAssertTrue(edit.waitForExistence(timeout: 10), "No se abrió el detalle del registro.")
@@ -109,7 +114,7 @@ final class IPhoneLandscapeUITests: XCTestCase {
     func test_recordOpenedInLandscape_staysOpenBackInPortrait() {
         let app = launch(deeplink: "records")
         let row = app.buttons.matching(identifier: "record_row").firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 15), "No hay filas de registro.")
+        XCTAssertTrue(row.waitForExistence(timeout: Self.firstRowTimeout), "No hay filas de registro.")
         rotate(app, to: .landscapeLeft)
         XCTAssertTrue(row.waitForExistence(timeout: 10), "En horizontal no se ven las filas de registro.")
         row.tap()
@@ -127,7 +132,7 @@ final class IPhoneLandscapeUITests: XCTestCase {
         try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .phone, "En iPad la barra de pestañas no va abajo.")
         let app = launch(deeplink: "records")
         let row = app.buttons.matching(identifier: "record_row").firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 15), "No hay filas de registro.")
+        XCTAssertTrue(row.waitForExistence(timeout: Self.firstRowTimeout), "No hay filas de registro.")
         rotate(app, to: .landscapeLeft)
         XCTAssertTrue(element(app, "stats_hero_caption").waitForExistence(timeout: 10), "En horizontal no se ve la cabecera.")
 
@@ -139,6 +144,13 @@ final class IPhoneLandscapeUITests: XCTestCase {
         // cabecera sin compactar la dejaba entera debajo (ticket `records-landscape-first-row-only-peeks`).
         let deadline = Date().addingTimeInterval(5)
         while Date() < deadline, row.frame.minY > tabBar.frame.minY { Thread.sleep(forTimeInterval: 0.25) }
+        // En el iPhone SE girado (375 pt de alto) la fila no asoma: empieza 8 pt por DEBAJO de la barra (medido el
+        // 2026-11-05, iOS 27.2). Jürgen decidió ese día dejarlo así —se baja con el dedo— mientras sigue abierto el ticket
+        // de diseño `records-landscape-first-row-only-peeks`; el caso exige que asome solo donde cabe (17 Pro, Pro Max).
+        try XCTSkipIf(
+            app.windows.firstMatch.frame.height < 390,
+            "iPhone SE girado: la primera fila no asoma bajo la fila de acciones, decidido así (ticket "
+                + "records-landscape-first-row-only-peeks).")
         XCTAssertLessThan(
             row.frame.minY, tabBar.frame.minY,
             "Con poco alto la cabecera tapa la lista: la primera fila (\(row.frame)) queda bajo la barra de pestañas "

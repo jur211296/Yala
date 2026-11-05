@@ -630,6 +630,21 @@ extension XCUIApplication {
             _ = waitForSettledLayout(of: chip, timeout: timeout)
             swipes += 1
         }
+        // En el iPhone SE (667 pt) el teclado numérico TAPA los chips de «Nuevo registro»: con el importe escrito el de
+        // cuenta queda en y≈444 y el teclado empieza en y≈432 (medido el 2026-11-05, iOS 27.2, en el vídeo del
+        // `.xcresult`). Quieto pero tapado: `waitForHittable` se agotaba con «existe pero no es alcanzable». Con el dedo
+        // se sube el formulario; aquí igual, con un arrastre por encima del teclado. En pantallas donde el chip cabe
+        // sobre el teclado (iPhone 17 Pro) este bucle no hace nada.
+        var lifts = 0
+        while lifts < 3 {
+            let keyboard = keyboards.firstMatch
+            guard keyboard.exists, chip.frame.maxY > keyboard.frame.minY else { break }
+            let lift = min(chip.frame.maxY - keyboard.frame.minY + 24, windowFrame.height * 0.3)
+            let start = coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3))
+            start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: -lift)))
+            _ = waitForSettledLayout(of: chip, timeout: timeout)
+            lifts += 1
+        }
         XCTAssertTrue(chip.waitForHittable(timeout: timeout), "\(chipID) existe pero no es alcanzable.", file: file, line: line)
         chip.tap()
         let row = descendants(matching: .any)

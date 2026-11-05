@@ -1,11 +1,11 @@
 ---
 id: paywall-inbox-routing-uitest-misses-the-held-paywall-in-a-batch
-status: backlog
+status: done
 priority: low
 area: "testing, routing"
 owner: frank
 created: 2026-10-01
-updated: 2026-10-08
+updated: 2026-11-05
 source: "gate de `superseding-intent-can-strand-the-sign-out-coordinator`"
 ---
 
@@ -35,3 +35,10 @@ paso cae. Si es del orden, mirar qué deja puesto la clase anterior.
 - Nadie ha repetido el lote de seis: falta la medición que pide «Qué falta».
 
 Triage 2026-10-08: abierto · low → low · intermitencia de test dependiente del lote, sin medir aún si es del orden; no deja ciego al gate de nada que el test aislado no cubra.
+
+## 2026-11-05 · cerrado en el lote T3: no se reproduce
+
+Medido en iOS 27.2 con el test sin tocar: el lote de seis clases del ticket, más las suites del lote T3 (43 casos por
+corrida), **3 de 3 corridas verdes** en el iPhone 17 Pro, con el centinela en «estuviste solo» las tres. Aislado: 3 de 3
+en el SE y 3 de 3 en el 17 Pro; el paso 2 tarda 15-21 s, lejos de los 45 s. El rojo del 1-oct era de iOS 27.0, que ya no
+está en la Mini. Sin cambio de código; si vuelve a salir en lote, el primer paso es mirar qué clase corrió justo antes.

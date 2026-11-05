@@ -103,8 +103,16 @@ final class ExternalEntryForeignSheetUITests: XCTestCase {
         XCTAssertEqual(waited, .timedOut,
                        "La entrada desde fuera cerró el Nuevo registro que estaba a medias en Estadísticas.\(lifecycleNote)",
                        file: file, line: line)
+        // **Rojo intermitente conocido, y es de la APP, no del test** (medido el 2026-11-05, iOS 27.2, 1 de 3 en el SE): el
+        // importe llegó al campo antes de salir (lo comprueba `launchWithHalfFilledFormInStatistics`), el proceso es el
+        // mismo, y al volver la hoja de «Nuevo registro» se ha desmontado y montado sin cerrarse —la traza trae
+        // `formulario fuera abierto=true` y `freshForm` de nuevo— y pierde lo escrito. Bug en
+        // `external-entry-panel-link-loses-the-typed-amount-intermittently` (card «Nuevo registro desde Estadísticas
+        // pierde el importe al salir y volver por enlace»). Este caso es la red que lo caza: no se relaja ni se borra.
         XCTAssertTrue(survived,
-                      "El importe escrito se perdió (valor: «\(typed)»).\(lifecycleNote)", file: file, line: line)
+                      "El importe escrito se perdió (valor: «\(typed)»).\(lifecycleNote) Si la traza de la vuelta repite "
+                        + "`freshForm`, es el bug de la app del ticket external-entry-panel-link-loses-the-typed-amount-"
+                        + "intermittently, no el test.", file: file, line: line)
     }
 
     private func closeForm(_ app: XCUIApplication) {
