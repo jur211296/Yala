@@ -4041,6 +4041,7 @@
 "welcome.restore.foundTitle" = "Bonjour %@ ! Content de vous revoir.";
 "welcome.restore.foundTitleAnonymous" = "Content de vous revoir !";
 "welcome.restore.foundBody" = "Voici ce qui revient sur cet appareil :";
+"welcome.restore.foundPreCloudNote" = "Cette copie iCloud date d’avant ton passage au cloud Yala : elle n’a peut-être pas tes dernières modifications.";
 "welcome.restore.continue" = "Continuer";
 "welcome.restore.notFoundTitle" = "Aucune donnée trouvée";
 "welcome.restore.notFoundBody" = "Aucune donnée n'est associée à votre compte iCloud. Voulez-vous repartir de zéro ?";
@@ -5499,7 +5500,7 @@
 "welcome.restore.cloudPausedTitle" = "Tes données ne sont pas dans iCloud";
 
 /* Restore: cuerpo del estado de nube en pausa — tranquiliza sobre los datos sin prometer plazo */
-"welcome.restore.cloudPausedBody" = "Cet identifiant Apple a un compte Yala dans le cloud : tes données y sont, en sécurité, et pas dans ton iCloud. La connexion au cloud est en pause pour le moment. Réessaie plus tard.";
+"welcome.restore.cloudPausedBody" = "Cet identifiant Apple a été utilisé avec un compte Yala dans le cloud, et ce que tu y as enregistré n’est pas dans ton iCloud. La connexion au cloud est en pause pour le moment. Réessaie plus tard.";
 
 /* Push: gentle reminder to the DEBTOR that a group debt has been idle. Args: 1=formatted amount, 2=creditor name. Never dunning/collector tone. */
 "notifications.groups.settlementReminder" = "👋 Petit rappel : tu dois %1$@ à %2$@. Quand tu peux, mets-toi à jour.";
@@ -6114,6 +6115,7 @@
 /* Card pz4v: aviso del Panel cuando la sincronización espera a que vuelvas a iniciar sesión */
 "panel.syncSignIn.body" = "Ce que tu vois ici n’est peut-être pas à jour avec ton compte.";
 "storage.sync.waitingForConnectionUncounted" = "Modifications en attente de connexion";
+"storage.sync.stoppedUncounted" = "Tes modifications ne sont pas envoyées vers ton compte pour le moment.";
 
 /* Ver qué migraría: los conteos no se pudieron leer */
 "storage.migrate.previewUnreadable" = "Nous n’avons pas pu compter tes données. Réessaie dans un instant.";
@@ -6736,6 +6738,8 @@
 "storage.revert.prior.discardConfirm" = "Supprimer et revenir à iCloud";
 "storage.revert.prior.checkFailedTitle" = "Impossible de vérifier ton iCloud";
 "storage.revert.prior.checkFailedBody" = "Avant de revenir, on vérifie si ton iCloud contient déjà des données Yala, pour ne pas les mélanger sans te prévenir. C’est peut-être la connexion : réessaie.";
+"storage.revert.prior.stalledTitle" = "iCloud a mis trop de temps à répondre";
+"storage.revert.prior.stalledBody" = "Avant de revenir, on vérifie si ton iCloud contient déjà des données Yala, pour ne pas les mélanger sans te prévenir. La vérification n’avançait plus : réessaie.";
 "storage.revert.prior.wipeFailed" = "Nous n’avons pas pu finir de supprimer les anciennes données de ton iCloud, donc le retour n’a pas commencé : tu restes dans le cloud. Vérifie ta connexion et réessaie.";
 "storage.revert.prior.wipeStopped" = "Nous n’avons pas pu finir de supprimer les anciennes données de ton iCloud, donc le retour n’a pas commencé : tu restes dans le cloud. Ce qui est déjà supprimé le reste : réessaie et nous continuerons avec le reste.";
 "storage.revert.prior.wiping" = "Suppression des anciennes données… %d pour l’instant";

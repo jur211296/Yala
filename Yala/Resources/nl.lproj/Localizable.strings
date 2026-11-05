@@ -4072,6 +4072,7 @@
 "welcome.restore.foundTitle" = "Hoi %@! Fijn dat je terug bent.";
 "welcome.restore.foundTitleAnonymous" = "Fijn dat je terug bent!";
 "welcome.restore.foundBody" = "Dit komt terug op dit apparaat:";
+"welcome.restore.foundPreCloudNote" = "Deze iCloud-kopie is van voordat je de Yala-cloud gebruikte, dus je laatste wijzigingen staan er misschien niet in.";
 "welcome.restore.continue" = "Doorgaan";
 "welcome.restore.notFoundTitle" = "Geen gegevens gevonden";
 "welcome.restore.notFoundBody" = "Er zijn geen gegevens gekoppeld aan je iCloud-account. Wil je opnieuw beginnen?";
@@ -5510,7 +5511,7 @@
 "welcome.restore.cloudPausedTitle" = "Je gegevens staan niet in iCloud";
 
 /* Restore: cuerpo del estado de nube en pausa — tranquiliza sobre los datos sin prometer plazo */
-"welcome.restore.cloudPausedBody" = "Deze Apple ID heeft een Yala-account in de cloud: je gegevens staan daar veilig, en niet in je iCloud. Inloggen in de cloud is nu gepauzeerd. Probeer het later opnieuw.";
+"welcome.restore.cloudPausedBody" = "Deze Apple ID is gebruikt met een Yala-account in de cloud, en wat je daar hebt bewaard, staat niet in je iCloud. Inloggen in de cloud is nu gepauzeerd. Probeer het later opnieuw.";
 
 /* Push: gentle reminder to the DEBTOR that a group debt has been idle. Args: 1=formatted amount, 2=creditor name. Never dunning/collector tone. */
 "notifications.groups.settlementReminder" = "👋 Kleine herinnering: je bent %2$@ nog %1$@ schuldig. Wanneer het uitkomt, reken het samen af.";
@@ -6125,6 +6126,7 @@
 /* Card pz4v: aviso del Panel cuando la sincronización espera a que vuelvas a iniciar sesión */
 "panel.syncSignIn.body" = "Wat je hier ziet, is misschien niet bijgewerkt met je account.";
 "storage.sync.waitingForConnectionUncounted" = "Wijzigingen wachten op verbinding";
+"storage.sync.stoppedUncounted" = "Je wijzigingen worden nu niet naar je account geüpload.";
 
 /* Ver qué migraría: los conteos no se pudieron leer */
 "storage.migrate.previewUnreadable" = "We konden je gegevens niet tellen. Probeer het zo meteen opnieuw.";
@@ -6747,6 +6749,8 @@
 "storage.revert.prior.discardConfirm" = "Verwijderen en terug naar iCloud";
 "storage.revert.prior.checkFailedTitle" = "We konden je iCloud niet controleren";
 "storage.revert.prior.checkFailedBody" = "Voordat je teruggaat, kijken we of je iCloud al Yala-gegevens heeft, zodat we ze niet ongevraagd mengen. Misschien ligt het aan je verbinding: probeer het opnieuw.";
+"storage.revert.prior.stalledTitle" = "iCloud deed er te lang over om te reageren";
+"storage.revert.prior.stalledBody" = "Voordat je teruggaat, kijken we of je iCloud al Yala-gegevens heeft, zodat we ze niet ongevraagd mengen. De controle kwam niet verder: probeer het opnieuw.";
 "storage.revert.prior.wipeFailed" = "We konden de oude gegevens niet helemaal uit je iCloud verwijderen, dus de terugkeer is niet begonnen: je zit nog in de cloud. Controleer je verbinding en probeer het opnieuw.";
 "storage.revert.prior.wipeStopped" = "We konden de oude gegevens niet helemaal uit je iCloud verwijderen, dus de terugkeer is niet begonnen: je zit nog in de cloud. Wat al verwijderd is, blijft verwijderd: probeer het opnieuw en we gaan verder met de rest.";
 "storage.revert.prior.wiping" = "Oude gegevens worden verwijderd… %d tot nu toe";

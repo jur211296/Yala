@@ -4044,6 +4044,7 @@
 "welcome.restore.foundTitle" = "Hi %@! Welcome back.";
 "welcome.restore.foundTitleAnonymous" = "Welcome back!";
 "welcome.restore.foundBody" = "Here's what's coming back to this device:";
+"welcome.restore.foundPreCloudNote" = "This iCloud copy is from before you used the Yala cloud, so it may not have your latest changes.";
 "welcome.restore.continue" = "Continue";
 "welcome.restore.notFoundTitle" = "No data found";
 "welcome.restore.notFoundBody" = "There's no data linked to your iCloud account. Want to start fresh?";
@@ -5504,7 +5505,7 @@
 "welcome.restore.cloudPausedTitle" = "Your data isn't in iCloud";
 
 /* Restore: cuerpo del estado de nube en pausa — tranquiliza sobre los datos sin prometer plazo */
-"welcome.restore.cloudPausedBody" = "This Apple ID has a Yala cloud account: your data is there, safe, and not in your iCloud. Signing in to the cloud is paused for now. Try again later.";
+"welcome.restore.cloudPausedBody" = "This Apple ID was used with a Yala cloud account, and what you saved there isn’t in your iCloud. Signing in to the cloud is paused for now. Try again later.";
 
 /* Push: gentle reminder to the DEBTOR that a group debt has been idle. Args: 1=formatted amount, 2=creditor name. Never dunning/collector tone. */
 "notifications.groups.settlementReminder" = "👋 A gentle reminder: you owe %2$@ %1$@. Whenever you can, settle up.";
@@ -6119,6 +6120,7 @@
 /* Card pz4v: aviso del Panel cuando la sincronización espera a que vuelvas a iniciar sesión */
 "panel.syncSignIn.body" = "What you see here may not be up to date with your account.";
 "storage.sync.waitingForConnectionUncounted" = "Changes waiting for a connection";
+"storage.sync.stoppedUncounted" = "Your changes aren’t being uploaded to your account for now.";
 
 /* Ver qué migraría: los conteos no se pudieron leer */
 "storage.migrate.previewUnreadable" = "We couldn’t count your data. Try again in a moment.";
@@ -6741,6 +6743,8 @@
 "storage.revert.prior.discardConfirm" = "Delete and return to iCloud";
 "storage.revert.prior.checkFailedTitle" = "We couldn’t check your iCloud";
 "storage.revert.prior.checkFailedBody" = "Before returning, we check whether your iCloud already has Yala data, so we don’t mix it in without telling you. It might be your connection: try again.";
+"storage.revert.prior.stalledTitle" = "iCloud took too long to respond";
+"storage.revert.prior.stalledBody" = "Before returning, we check whether your iCloud already has Yala data, so we don’t mix it in without telling you. The check stopped making progress: try again.";
 "storage.revert.prior.wipeFailed" = "We couldn’t finish deleting the earlier data from your iCloud, so we didn’t start the return: you’re still in the cloud. Check your connection and try again.";
 "storage.revert.prior.wipeStopped" = "We couldn’t finish deleting the earlier data from your iCloud, so we didn’t start the return: you’re still in the cloud. What’s already deleted stays deleted: try again and we’ll carry on with the rest.";
 "storage.revert.prior.wiping" = "Deleting the earlier data… %d so far";

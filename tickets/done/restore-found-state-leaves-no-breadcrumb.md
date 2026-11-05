@@ -1,10 +1,10 @@
 ---
 id: restore-found-state-leaves-no-breadcrumb
-status: backlog
+status: done
 priority: low
 area: "welcome, icloud, restore, observabilidad"
 created: 2026-09-21
-updated: 2026-10-08
+updated: 2026-11-05
 source: "review adversarial de `restore-treats-budgets-and-groups-as-no-data` (2026-09-21), hallazgo 6 de la lente de consumidores"
 ---
 
@@ -45,3 +45,7 @@ ninguna decisión.
 - `WelcomeRestoreView`: la rama `if summary.hasAnyData { state = .found(summary) }` no emite ninguna miga.
 
 Triage 2026-10-08: abierto · low → low · observabilidad aditiva; no cambia ninguna decisión del flujo.
+
+## Hecho (2026-11-05, lote N3 · Restaurar y Almacenamiento)
+
+`RestoreBreadcrumb.found` (`FOUND tx= accounts= categories= budgets= groups= import= beacon=`), emitida en la rama `.found` antes de cambiar de estado. Solo cifras: ni nombre ni moneda. Tests: `RestoreFoundBreadcrumbTests` + scan en `RestoreLoteN3WiringTests`.

@@ -393,8 +393,9 @@ struct RestoreStartFreshGateTests {
             mandarlo a la puerta le apaga la ventana sobre su propia cuenta.
             """)
 
-        // `.found` es el camino principal del ticket: el que enseña las cifras de lo que bajó.
-        let found = try Self.body(of: "private func foundView(summary: ICloudAccountSummary) -> some View {",
+        // `.found` es el camino principal del ticket: el que enseña las cifras de lo que bajó. Desde el lote N3 su contenido
+        // vive en `foundContent` (lo envuelve el scroll de `foundView`).
+        let found = try Self.body(of: "private func foundContent(summary: ICloudAccountSummary) -> some View {",
                                   in: src)
         #expect(found.contains("showStartFreshConfirm = true"), """
             el estado que acaba de enseñar «encontramos tus datos» descarta el restore sin confirmar.

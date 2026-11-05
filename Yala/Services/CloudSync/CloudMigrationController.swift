@@ -589,6 +589,9 @@ final class CloudMigrationController {
     /// El motor corre y su último ciclo con señal de red completó (`SyncStatusSectionLogic.engineIsHealthy`). Lo relee el
     /// sondeo de 1 s de la pantalla vía `refresh()`: no hace fetch.
     private(set) var syncEngineIsHealthy = false
+    /// El motor está parado y esperar no lo arranca (`SyncStatusSectionLogic.engineIsStopped`, card 39ww). Lo relee el
+    /// mismo sondeo de 1 s, sin fetch: los pendientes salen de la lectura del journal que `refresh()` ya hace.
+    private(set) var syncEngineIsStopped = false
 
     /// El aviso de un «Migrar a la nube» que se paró sin escribir nada (ticket
     /// `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`). Lo consume la pantalla de Almacenamiento, que
@@ -2037,6 +2040,8 @@ final class CloudMigrationController {
         syncEngineIsHealthy = SyncStatusSectionLogic.engineIsHealthy(
             state: CloudSyncRuntime.shared?.state,
             consecutiveTransients: CloudSyncRuntime.shared?.consecutiveTransients ?? 0)
+        syncEngineIsStopped = SyncStatusSectionLogic.engineIsStopped(
+            state: CloudSyncRuntime.shared?.state, migrationEffectsPending: pendingEffectCount > 0)
     }
 
     /// Recuenta lo que espera a subir (ticket `cloud-sync-status-says-all-synced-with-changes-still-pending`). Fuera del

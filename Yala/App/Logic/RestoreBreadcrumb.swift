@@ -36,6 +36,31 @@ enum RestoreBreadcrumb {
         logger.notice("IMPORT-INCOMPLETE — tope agotado con import observado: los datos siguen llegando")
     }
 
+    /// La búsqueda ENCONTRÓ datos: el único desenlace que hasta el lote N3 no dejaba rastro (card grgz, ticket
+    /// `restore-found-state-leaves-no-breadcrumb`). Lleva las cifras que decidieron y cómo terminó la espera del import,
+    /// para separar en Console.app «se encontró el corpus de iCloud» de «se encontró poco y se siguió igual» —desde que
+    /// los presupuestos cuentan para `hasAnyData`, un teléfono que antes registraba `importIncomplete` puede irse por
+    /// aquí—. Solo cifras: ni el nombre ni la moneda. Aditivo: no cambia ninguna decisión.
+    static func found(_ summary: ICloudAccountSummary, settlement: RestoreImportSettlement, beaconLinked: Bool) {
+        logger.notice("\(foundMessage(summary, settlement: settlement, beaconLinked: beaconLinked), privacy: .public)")
+    }
+
+    /// El texto de `found`, aparte para fijarlo en un test: el `Logger` no tiene sink.
+    /// `beacon` dice si la pantalla avisó de que la copia es anterior a la nube (card lokl): el migrado que restaura su
+    /// copia congelada es justo el caso que se quiere poder contar.
+    static func foundMessage(_ summary: ICloudAccountSummary, settlement: RestoreImportSettlement,
+                             beaconLinked: Bool) -> String {
+        "FOUND tx=\(summary.transactionsCount) accounts=\(summary.accountsCount) categories=\(summary.categoriesCount)"
+            + " budgets=\(summary.budgetsCount) groups=\(summary.groupsCount) import=\(String(describing: settlement))"
+            + " beacon=\(beaconLinked)"
+    }
+
+    /// El faro del iCloud-KV llegó DESPUÉS de decidir una búsqueda vacía y la pantalla cambió de desenlace (card 14hc).
+    /// Sin esta línea, el log enseñaría un `.notFound` o un `CLOUD-UNVERIFIED` que la persona ya no está viendo.
+    static func lateBeacon(from: WelcomeRestoreEmptyOutcome, to: WelcomeRestoreEmptyOutcome) {
+        logger.notice("LATE-BEACON \(String(describing: from), privacy: .public) -> \(String(describing: to), privacy: .public)")
+    }
+
     /// Destino post-restore decidido por `RestoreRouter`.
     static func destination(_ dest: String) {
         logger.notice("DEST \(dest, privacy: .public)")

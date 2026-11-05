@@ -53,6 +53,26 @@ struct ReverseICloudPriorDataLogicTests {
         #expect(ReverseICloudPriorDataLogic.gate(.failed("CKError.4")) == .cannotCheck("CKError.4"))
     }
 
+    /// Card dfja (lote N3): con el plazo sin avance de la revisión el aviso no culpa a la conexión. Cada motivo, su aviso;
+    /// las respuestas que no son un fallo no tienen aviso.
+    @Test func aStalledCheck_hasItsOwnNotice_otherFailuresKeepTheUsualOne() {
+        typealias L = ReverseICloudPriorDataLogic
+        #expect(L.checkFailedNotice(.cannotCheck(ICloudZoneScanEnd.stalledReason)) == .stalled)
+        #expect(L.checkFailedNotice(.cannotCheck("CKError.4")) == .cannotCheck)
+        #expect(L.checkFailedNotice(.cannotCheck("partialRecordFailure")) == .cannotCheck)
+        #expect(L.checkFailedNotice(.needsICloud) == .needsICloud)
+        #expect(L.checkFailedNotice(.proceed) == nil)
+        #expect(L.checkFailedNotice(.ask(corpus(transactions: 1))) == nil)
+        // El texto del plazo no es el de la conexión, y cada aviso tiene el suyo.
+        #expect(L.checkFailedBody(.stalled) == L10n.Storage.Revert.Prior.stalledBody)
+        #expect(L.checkFailedTitle(.stalled) == L10n.Storage.Revert.Prior.stalledTitle)
+        #expect(L.checkFailedBody(.cannotCheck) == L10n.Storage.Revert.Prior.checkFailedBody)
+        #expect(L.checkFailedTitle(.cannotCheck) == L10n.Storage.Revert.Prior.checkFailedTitle)
+        #expect(L.checkFailedBody(.needsICloud) == L10n.Storage.Revert.Prior.noAccountBody)
+        #expect(L.checkFailedTitle(.needsICloud) == L10n.Storage.Revert.Prior.noAccountTitle)
+        #expect(L10n.Storage.Revert.Prior.stalledBody != L10n.Storage.Revert.Prior.checkFailedBody)
+    }
+
     /// El caso del QA del 2026-10-15: solo 9 gastos de grupo de otra cuenta. Tiene que avisar, y por la casilla de los
     /// grupos sola: con otra casilla encendida al lado, un `hasAnyData` que olvidara los grupos pasaría igual.
     @Test func onlyGroupRecords_asks() {
@@ -417,7 +437,8 @@ struct ReverseICloudPriorDataWiringTests {
             "confirmRevert = false",
             "showRevertPriorData = false",
             "showRevertCheckFailed = false",
-            "switch await controller.checkICloudBeforeReverse() {",
+            "let gate = await controller.checkICloudBeforeReverse()",
+            "switch gate {",
             "case nil:",
             "return",
             "case .proceed:",
@@ -425,11 +446,8 @@ struct ReverseICloudPriorDataWiringTests {
             "case .ask(let corpus):",
             "revertPriorData = corpus",
             "showRevertPriorData = true",
-            "case .cannotCheck:",
-            "revertNeedsICloud = false",
-            "showRevertCheckFailed = true",
-            "case .needsICloud:",
-            "revertNeedsICloud = true",
+            "case .cannotCheck, .needsICloud:",
+            "revertCheckFailedNotice = gate.flatMap(ReverseICloudPriorDataLogic.checkFailedNotice) ?? .cannotCheck",
             "showRevertCheckFailed = true",
             "}",
         ])

@@ -247,4 +247,25 @@ final class ReverseICloudPriorDataUITests: XCTestCase {
         XCTAssertFalse(sheetButton(app, "storage_revert_confirm").exists,
                        "Sin respuesta de iCloud se abrió la confirmación de la vuelta.")
     }
+
+    /// Card dfja (lote N3): si lo que venció fue el plazo de la revisión, el aviso no culpa a la conexión y la vuelta
+    /// tampoco empieza. Con el texto de antes («Puede ser la conexión») este caso sale rojo.
+    func test_stalledCheck_doesNotBlameTheConnection() {
+        let app = tapRevert(prior: "stalled")
+
+        let retry = app.alerts.buttons["storage_revert_prior_retry"].firstMatch
+        XCTAssertTrue(retry.waitForExistence(timeout: 5), "Con la revisión parada no salió el aviso con «Reintentar».")
+        let body = app.alerts.staticTexts.containing(
+            NSPredicate(format: "label CONTAINS %@", "La revisión no avanzó")).firstMatch
+        XCTAssertTrue(body.waitForExistence(timeout: 5), "El aviso de la revisión parada no dijo que no avanzó.")
+        XCTAssertFalse(app.alerts.staticTexts.containing(
+            NSPredicate(format: "label CONTAINS %@", "conexión")).firstMatch.exists,
+                       "La revisión parada culpó a la conexión.")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "despues-revision-parada"
+        shot.lifetime = .keepAlways
+        add(shot)
+        XCTAssertFalse(sheetButton(app, "storage_revert_confirm").exists,
+                       "Con la revisión parada se abrió la confirmación de la vuelta.")
+    }
 }

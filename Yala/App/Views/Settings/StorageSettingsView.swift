@@ -66,9 +66,9 @@ struct StorageSettingsView: View {
     /// «Empezar sin ellos» pide su propio «¿seguro?»: borra de iCloud y no tiene vuelta.
     @State private var confirmDiscardPriorData = false
     /// La pregunta a iCloud no contestó, o no hay iCloud al que preguntar: la vuelta no empieza y se ofrece reintentar.
-    /// `revertNeedsICloud` elige el texto.
+    /// `revertCheckFailedNotice` elige el texto (`ReverseICloudPriorDataLogic.checkFailedNotice`).
     @State private var showRevertCheckFailed = false
-    @State private var revertNeedsICloud = false
+    @State private var revertCheckFailedNotice: ReverseICloudPriorDataLogic.CheckFailedNotice = .cannotCheck
     /// La persona eligió «Sumarlos a mis datos» y la confirmación de siempre es la de esa vuelta. Lo baja cada toque del botón.
     @State private var revertMergesPriorData = false
     /// Confirmación de «Cancelar y seguir en la nube» en la espera de la vuelta a iCloud. Un solo diálogo, colgado
@@ -200,7 +200,7 @@ struct StorageSettingsView: View {
             showPriorData: $showRevertPriorData,
             confirmDiscard: $confirmDiscardPriorData,
             showCheckFailed: $showRevertCheckFailed,
-            needsICloud: revertNeedsICloud,
+            notice: revertCheckFailedNotice,
             onMerge: chooseMergingPriorData,
             onDiscard: { Task { await controller?.startReverseDiscardingICloudPriorData() } },
             onRetryCheck: retryRevertCheck))
@@ -589,7 +589,8 @@ struct StorageSettingsView: View {
         confirmRevert = false
         showRevertPriorData = false
         showRevertCheckFailed = false
-        switch await controller.checkICloudBeforeReverse() {
+        let gate = await controller.checkICloudBeforeReverse()
+        switch gate {
         case nil:
             return
         case .proceed:
@@ -597,11 +598,9 @@ struct StorageSettingsView: View {
         case .ask(let corpus):
             revertPriorData = corpus
             showRevertPriorData = true
-        case .cannotCheck:
-            revertNeedsICloud = false
-            showRevertCheckFailed = true
-        case .needsICloud:
-            revertNeedsICloud = true
+        case .cannotCheck, .needsICloud:
+            // El texto lo elige el motivo: el plazo de la revisión no culpa a la conexión (card dfja).
+            revertCheckFailedNotice = gate.flatMap(ReverseICloudPriorDataLogic.checkFailedNotice) ?? .cannotCheck
             showRevertCheckFailed = true
         }
     }
@@ -665,7 +664,7 @@ struct StorageSettingsView: View {
                 attestNoticeShowing: CloudAttestNotice.isShowing(verdictIsTerminal: attestVerdictIsTerminal),
                 needsSignIn: controller.syncNeedsSignIn, signInPendingCount: controller.pendingUploadCount,
                 isCloud: CloudSyncFlags.storageMode == .cloud, pendingCount: controller.pendingSyncCount,
-                engineIsHealthy: controller.syncEngineIsHealthy) {
+                engineIsHealthy: controller.syncEngineIsHealthy, engineIsStopped: controller.syncEngineIsStopped) {
             case .attestUnavailable:
                 CloudAttestNoticeBanner(accessibilityID: "storage_sync_attest_banner")
             case .needsSignIn(let pending):
@@ -695,6 +694,23 @@ struct StorageSettingsView: View {
                 // Card pz4v: «Iniciar sesión» del aviso del Panel llega aquí y arranca lo mismo que este botón, una vez.
                 // Cuelga del botón: solo existe cuando la tarjeta pide firmar, así que no repite sus condiciones.
                 .onAppear { beginSyncSignInFromPanelIfRequested(controller) }
+            case .stopped(let pending):
+                // Card 39ww: el motor está parado y esperar no lo arranca. Naranja solo el icono, como la puerta de firmar
+                // (como TEXTO no llega a AA sobre la tarjeta blanca). Sin botón: no hay gesto aquí que lo arranque.
+                Label {
+                    if let pending, pending > 0 {
+                        Text(L10n.Storage.Sync.stopped(pending))
+                    } else {
+                        Text(L10n.Storage.Sync.stoppedUncounted)
+                    }
+                } icon: {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(DS.Semantic.warningForeground)
+                }
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("storage_sync_stopped")
             case .waitingForConnection(let pending):
                 // Gris y sin botón: es pasajero y no hay nada que pulsar —sube solo con el siguiente ciclo sano—, así que
                 // ni el verde del check ni el naranja de la puerta de firmar.
@@ -1298,7 +1314,7 @@ private struct StorageRevertPriorDataDialogs: ViewModifier {
     @Binding var showPriorData: Bool
     @Binding var confirmDiscard: Bool
     @Binding var showCheckFailed: Bool
-    let needsICloud: Bool
+    let notice: ReverseICloudPriorDataLogic.CheckFailedNotice
     let onMerge: () -> Void
     let onDiscard: () -> Void
     let onRetryCheck: () -> Void
@@ -1330,13 +1346,13 @@ private struct StorageRevertPriorDataDialogs: ViewModifier {
                 Text(L10n.Storage.Revert.Prior.discardConfirmBody)
             }
             // Título y mensaje cambian con el motivo; los botones van literales (regla del `actions` de un `.alert`).
-            .alert(needsICloud ? L10n.Storage.Revert.Prior.noAccountTitle : L10n.Storage.Revert.Prior.checkFailedTitle,
+            .alert(ReverseICloudPriorDataLogic.checkFailedTitle(notice),
                    isPresented: $showCheckFailed) {
                 Button(L10n.Action.retry) { onRetryCheck() }
                     .accessibilityIdentifier("storage_revert_prior_retry")
                 Button(L10n.Common.cancel, role: .cancel) {}
             } message: {
-                Text(needsICloud ? L10n.Storage.Revert.Prior.noAccountBody : L10n.Storage.Revert.Prior.checkFailedBody)
+                Text(ReverseICloudPriorDataLogic.checkFailedBody(notice))
             }
     }
 }

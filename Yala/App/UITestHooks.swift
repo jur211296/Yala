@@ -451,7 +451,7 @@ final class UITestHooks {
     /// salen el aviso del Panel y la tarjeta de Ajustes. Finge solo esa lectura; no persiste nada. Solo DEBUG.
     nonisolated static var fakeSyncNeedsSignIn: Bool { hasArg("-uitest-sync-needs-sign-in") }
 
-    /// Valor de `-uitest-reverse-prior-icloud <found|foundGroups|none|failed|noAccount>`: lo que contesta la pregunta a iCloud antes
+    /// Valor de `-uitest-reverse-prior-icloud <found|foundGroups|none|failed|stalled|noAccount>`: lo que contesta la pregunta a iCloud antes
     /// de «Volver a iCloud» (`ICloudPersonalCorpusProbe.foreignCorpusForReverse`), que en el simulador no tiene CloudKit.
     /// `found`: 12 registros, 2 cuentas y 1 presupuesto ajenos; `foundGroups`: solo 9 registros de grupos, el caso del QA
     /// del 2026-10-15. **Finge la respuesta, no la decisión**: qué hace el botón lo decide `ReverseICloudPriorDataLogic`.
@@ -471,6 +471,8 @@ final class UITestHooks {
         case "none":      return .measured(.empty)
         case "noAccount": return .noAccount
         case "failed": return .failed("uitest")
+        // La revisión que deja de avanzar (card dfja): el motivo real del plazo, para ver el aviso que no culpa a la red.
+        case "stalled": return .failed(ICloudZoneScanEnd.stalledReason)
         default:       return nil
         }
         #else

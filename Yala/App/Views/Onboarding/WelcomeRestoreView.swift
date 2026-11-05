@@ -58,6 +58,10 @@ struct WelcomeRestoreView: View {
     @State private var flowToken: ICloudRestoreSessionSignal.FlowToken?
     @State private var showStartFreshConfirm: Bool = false
     @State private var refreshRotation: Double = 0
+    /// El faro dice que este Apple ID ya usó la nube de Yala cuando la búsqueda ENCONTRÓ datos: la copia de iCloud es
+    /// anterior (la del migrado se queda congelada al migrar) y «Encontramos tus datos» lo avisa con una nota (card lokl,
+    /// ticket `restore-beacon-outlives-account-deletion` §3, decisión A de Jürgen del 2026-11-05: nota, mismos botones).
+    @State private var foundCopyPredatesCloud = false
 
     var onContinueWithSummary: (ICloudAccountSummary) -> Void
     var onStartFresh: () -> Void
@@ -117,6 +121,9 @@ struct WelcomeRestoreView: View {
                             // Con datos se resuelve en el acto: el aviso de la nube jamás tapa un restore
                             // que sí puede ocurrir, y ese caso no necesita preguntarle nada al backend.
                             if summary.hasAnyData {
+                                foundCopyPredatesCloud = CloudBeacon().isCloudAccountLinked
+                                RestoreBreadcrumb.found(summary, settlement: settlement,
+                                                        beaconLinked: foundCopyPredatesCloud)
                                 state = .found(summary)
                             } else if !settlement.consultsRemoteConfig {
                                 // El import sigue trayendo datos: ya sabemos que existen, así que no hay
@@ -171,6 +178,9 @@ struct WelcomeRestoreView: View {
                 }
             }
             .task { startSearch() }
+            // Card 14hc: con un desenlace vacío decidido SIN faro, escucha el iCloud-KV y repinta si el faro llega tarde.
+            // `id: state` la cancela al salir de ese desenlace (reintentar, volver).
+            .task(id: state) { await listenForLateBeacon() }
             // **Irse de Restaurar SUELTA la titularidad de la ventana de sesión, y no la apaga.**
             //
             // La distinción es `abandoned-restore-no-longer-clears-the-session-window-clock`: el import
@@ -363,6 +373,56 @@ struct WelcomeRestoreView: View {
         }
     }
 
+    // MARK: - Faro que llega tarde (card 14hc)
+
+    /// El desenlace vacío que se está viendo, o `nil` si la pantalla enseña otra cosa.
+    private var shownEmptyOutcome: WelcomeRestoreEmptyOutcome? {
+        switch state {
+        case .notFound: return .notFound
+        case .cloudPaused: return .cloudPaused
+        case .cloudUnverified: return .cloudUnverified
+        default: return nil
+        }
+    }
+
+    /// El estado que pinta cada desenlace vacío: el mismo reparto que `resolveEmptyState`.
+    private static func viewState(for outcome: WelcomeRestoreEmptyOutcome) -> ViewState {
+        switch outcome {
+        case .notFound: return .notFound
+        case .cloudPaused: return .cloudPaused
+        case .cloudUnverified: return .cloudUnverified
+        }
+    }
+
+    /// Repinta un desenlace vacío decidido antes de que llegara el faro del iCloud-KV (ticket
+    /// `restore-beacon-may-not-have-synced-yet-on-a-fresh-install`, opción B). La decisión es
+    /// `WelcomeRestoreEmptyOutcome.afterLateBeacon`; aquí solo se escucha al EMISOR real
+    /// (`OwnerKeyValueStore.notificationSource`: `object:` filtra por identidad) y se repinta una vez.
+    private func listenForLateBeacon() async {
+        guard let shown = shownEmptyOutcome, WelcomeRestoreEmptyOutcome.listensForLateBeacon(shown) else { return }
+        // Una vez al entrar, antes de suscribirse: el faro pudo llegar entre la decisión y este render, y esa
+        // notificación no se repite (review del lote N3).
+        if repaintIfTheBeaconArrived() { return }
+        for await _ in NotificationCenter.default.notifications(
+            named: OwnerKeyValueStore.didChangeExternallyNotification,
+            object: OwnerKeyValueStore.notificationSource) {
+            if repaintIfTheBeaconArrived() { return }
+        }
+    }
+
+    /// Re-decide el desenlace vacío con el faro de ahora; repinta y devuelve `true` si cambió.
+    private func repaintIfTheBeaconArrived() -> Bool {
+        guard let current = shownEmptyOutcome,
+              let next = WelcomeRestoreEmptyOutcome.afterLateBeacon(
+                  current: current,
+                  beaconLinked: CloudBeacon().isCloudAccountLinked,
+                  cloudConfigKnown: CloudRemoteFlags.cloudConfigKnown,
+                  remoteCloudEnabled: CloudRemoteFlags.cloudModeEnabled) else { return false }
+        RestoreBreadcrumb.lateBeacon(from: current, to: next)
+        state = Self.viewState(for: next)
+        return true
+    }
+
     // MARK: - State views
 
     /// «Encontramos tus datos» (UX 2.2 · L6-5, variante 2 elegida por Jürgen): el icono en un círculo SÓLIDO
@@ -373,6 +433,18 @@ struct WelcomeRestoreView: View {
     /// `restore-found-copy-says-icloud-for-groups-that-never-were`, su recomendación): la cifra es correcta, lo falso
     /// era el origen común. La pantalla ya se llama «Restaurar desde iCloud», así que el matiz no se pierde.
     private func foundView(summary: ICloudAccountSummary) -> some View {
+        // Con scroll y alto mínimo (molde de `swiftui-ds.md`): con la nota de la copia vieja y las cinco filas, en un
+        // iPhone SE ya no cabía. Cuando cabe, los `Spacer` reparten igual que antes.
+        GeometryReader { proxy in
+            ScrollView {
+                foundContent(summary: summary)
+                    .frame(minHeight: proxy.size.height)
+            }
+            .scrollBounceBehavior(.basedOnSize)
+        }
+    }
+
+    private func foundContent(summary: ICloudAccountSummary) -> some View {
         VStack(spacing: DS.Spacing.xl) {
             Spacer(minLength: DS.Spacing.xxl)
 
@@ -401,6 +473,19 @@ struct WelcomeRestoreView: View {
 
             receiptList(for: summary)
                 .padding(.horizontal, DS.Spacing.lg)
+
+            if foundCopyPredatesCloud {
+                Label {
+                    Text(L10n.Welcome.Restore.foundPreCloudNote)
+                } icon: {
+                    Image(systemName: "clock.arrow.circlepath")
+                }
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, DS.Spacing.lg)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("welcome_restore_found_pre_cloud_note")
+            }
 
             Spacer()
 
