@@ -1,11 +1,11 @@
 ---
 id: gate-never-reads-test-file-warnings
-status: backlog
+status: done
 priority: low
 area: "qa, gate"
 created: 2026-09-10
 source: "cierre de `beacon-routes-only-never-blocks`, 2026-09-10"
-updated: 2026-10-08
+updated: 2026-11-04
 ---
 
 # El gate no mira los warnings de los ficheros de test, y los de la app los lee de un build incremental
@@ -53,3 +53,10 @@ Fuera de alcance: los warnings preexistentes de otros ficheros, que el gate ya d
 - Los dos commits del fichero desde el 10-sep (`c7fa850fe`, `a4454b8e2`) tocan la medición de XCUITest y la cola del simulador, no esto.
 
 Triage 2026-10-08: abierto · medium → low · el §2 del gate sigue filtrando fuera `warning:` (`gate.md:41`) y el §1 sigue leyendo un build incremental; es tooling, y un warning de test no llega al usuario.
+
+## Resuelto (2026-11-04, lote T5 · recetas del gate)
+
+- Paso 1 del `/gate`: `touch` de los `.swift` del alcance antes de cada build, para que el build incremental los recompile y vuelva a imprimir sus warnings. Y dice que ese build no compila los targets de test.
+- Paso 2: otro `touch` antes del `test` (el primero que compila `YalaTests`) y un `grep "warning:"` del log filtrado por `/<Fichero>.swift:` de los ficheros del alcance. Mismo criterio: cero warnings nuevos en lo tocado, también en los tests.
+- Paso 3: `warning:` en el grep de la corrida de XCUITest, con el mismo filtro, porque los ficheros de `YalaUITests` solo los compila ese paso.
+- Elegido `touch` y no `clean build`, que cuesta minutos por scheme.

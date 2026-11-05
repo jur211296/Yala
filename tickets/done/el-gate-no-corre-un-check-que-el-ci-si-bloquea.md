@@ -1,11 +1,11 @@
 ---
 id: el-gate-no-corre-un-check-que-el-ci-si-bloquea
-status: backlog
+status: done
 priority: low
 area: "proceso"
 created: 2026-09-08
 source: medido de camino en chat-draft-sign-can-contradict-its-subcategory (2026-09-08)
-updated: 2026-10-08
+updated: 2026-11-04
 ---
 
 # El gate da verde a un cambio que el CI bloquea
@@ -66,3 +66,15 @@ rama de todos. El gate es exactamente la red que debía cubrir eso.
 - El CI lo sigue parando en todo PR y en el push a `2.1`. El hueco queda en el commit directo desde el árbol principal.
 
 Triage 2026-10-08: abierto · medium → low · `/gate` §5 sigue sin correr `qa/check-test-isolation.sh` (`qa.yml:76`); el CI lo para en PR y en push, así que el hueco queda en el commit directo a `2.1`.
+
+## Resuelto (2026-11-04, lote T5 · recetas del gate)
+
+- Camino 2: el paso 5 del `/gate` corre `qa/scripts/gate-ci-checks.sh`, que lee del propio `qa.yml` **todos** los `run:` del job `coverage-index` (14 hoy: ratchet, aislamiento y los bancos) y los corre en local. Un paso nuevo del job entra solo en el gate.
+- Fail-closed: si el job trae un `run:` multilínea, un `if:` o un `env:`, o no aparece, sale con 2 y el gate no sella. Banco: `qa/scripts/gate-ci-checks-test.sh` (10 casos), que también corre en `coverage-index`.
+- Control positivo: ver «Medido al cerrar».
+- Lo que el gate no replica del job `tests`, escrito en el paso 5: la suite entera de `YalaTests` (el gate corre las del alcance) y los jobs `mcp`/`gateway`, que solo corren si se tocan esas carpetas.
+
+### Medido al cerrar (2026-11-04)
+
+- Control positivo: un `YalaTests/ZZControlAislamientoTests.swift` temporal que llama a `makeTestContext()` sin `.serialized` deja `gate-ci-checks.sh` en exit 1, con el fichero nombrado; con `@Suite(.serialized)`, los 14 pasos en verde. El fichero se borró después.
+- Los 14 pasos corren en local en 1,5 a 5 min (95 s y 300 s en dos corridas); casi todo es `sim-lock-test.sh`, que pide el turno real del simulador.

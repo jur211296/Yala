@@ -368,7 +368,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | edgecases-extreme-minimum-flaky-under-load | done | tickets/done/edgecases-extreme-minimum-flaky-under-load.md |
 | edgecases-minimum-amount-account-chip-never-settles-on-ios-27 | backlog | tickets/backlog/edgecases-minimum-amount-account-chip-never-settles-on-ios-27.md |
 | el-aviso-de-cierre-cita-el-pr-de-otra-sesion | backlog | tickets/backlog/el-aviso-de-cierre-cita-el-pr-de-otra-sesion.md |
-| el-gate-no-corre-un-check-que-el-ci-si-bloquea | backlog | tickets/backlog/el-gate-no-corre-un-check-que-el-ci-si-bloquea.md |
+| el-gate-no-corre-un-check-que-el-ci-si-bloquea | done | tickets/done/el-gate-no-corre-un-check-que-el-ci-si-bloquea.md |
 | el-hook-que-prohibe-atribuir-a-una-ia-no-corre-en-este-repo | done | tickets/done/el-hook-que-prohibe-atribuir-a-una-ia-no-corre-en-este-repo.md |
 | el-job-de-tests-del-ci-no-tiene-timeout | done | tickets/done/el-job-de-tests-del-ci-no-tiene-timeout.md |
 | el-saldo-de-distribucion-no-se-entera-de-un-registro-nuevo | done | tickets/done/el-saldo-de-distribucion-no-se-entera-de-un-registro-nuevo.md |
@@ -453,7 +453,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | fx-widget-drops-missing-currency | backlog | tickets/backlog/fx-widget-drops-missing-currency.md |
 | g16-01-is-not-applied-on-staging | done | tickets/done/g16-01-is-not-applied-on-staging.md |
 | gate-doc-says-swift-testing-only | backlog | tickets/backlog/gate-doc-says-swift-testing-only.md |
-| gate-never-reads-test-file-warnings | backlog | tickets/backlog/gate-never-reads-test-file-warnings.md |
+| gate-never-reads-test-file-warnings | done | tickets/done/gate-never-reads-test-file-warnings.md |
 | gateway-deploys-from-2-1-are-not-guarded-against-a-manifest-downgrade | done | tickets/done/gateway-deploys-from-2-1-are-not-guarded-against-a-manifest-downgrade.md |
 | gateway-does-not-record-ai-token-usage | done | tickets/done/gateway-does-not-record-ai-token-usage.md |
 | gateway-goldens-serialize-parallel-posts-on-node-26 | done | tickets/done/gateway-goldens-serialize-parallel-posts-on-node-26.md |
@@ -695,7 +695,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | joiner-flag-residuals-cosmetic-and-service-guard | backlog | tickets/backlog/joiner-flag-residuals-cosmetic-and-service-guard.md |
 | journal-unreadable-card-says-reopen-when-a-downgrade-needs-an-update | backlog | tickets/backlog/journal-unreadable-card-says-reopen-when-a-downgrade-needs-an-update.md |
 | keyboard-shortcut-command-f-uitest-goes-red-on-a-used-ipad-simulator | backlog | tickets/backlog/keyboard-shortcut-command-f-uitest-goes-red-on-a-used-ipad-simulator.md |
-| l10n-check-corre-13-de-17-tests | backlog | tickets/backlog/l10n-check-corre-13-de-17-tests.md |
+| l10n-check-corre-13-de-17-tests | done | tickets/done/l10n-check-corre-13-de-17-tests.md |
 | la-nocturna-de-ui-no-ha-disparado-ni-una-vez | done | tickets/done/la-nocturna-de-ui-no-ha-disparado-ni-una-vez.md |
 | landscape-records-test-misses-the-first-row-in-long-runs | backlog | tickets/backlog/landscape-records-test-misses-the-first-row-in-long-runs.md |
 | language-override-bypasses-the-cloud-prefs-channel | backlog | tickets/backlog/language-override-bypasses-the-cloud-prefs-channel.md |
@@ -776,7 +776,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | onboarding-sigue-los-estilos-del-resto-de-la-app | qa | tickets/qa/onboarding-sigue-los-estilos-del-resto-de-la-app.md |
 | one-off-scheduled-payment-row-says-monthly | done | tickets/done/one-off-scheduled-payment-row-says-monthly.md |
 | one-shot-prompts-burned-before-they-are-seen | backlog | tickets/backlog/one-shot-prompts-burned-before-they-are-seen.md |
-| only-testing-filters-may-be-silently-empty | backlog | tickets/backlog/only-testing-filters-may-be-silently-empty.md |
+| only-testing-filters-may-be-silently-empty | done | tickets/done/only-testing-filters-may-be-silently-empty.md |
 | open-worktrees-lack-the-attribution-hook | backlog | tickets/backlog/open-worktrees-lack-the-attribution-hook.md |
 | opening-balance-ticks-the-first-expense-step | done | tickets/done/opening-balance-ticks-the-first-expense-step.md |
 | orphan-alerts-behind-fullscreen-covers | done | tickets/done/orphan-alerts-behind-fullscreen-covers.md |

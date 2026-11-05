@@ -1,10 +1,10 @@
 ---
 id: l10n-check-corre-13-de-17-tests
-status: backlog
+status: done
 priority: low
 area: qa, l10n
 created: 2026-09-12
-updated: 2026-10-08
+updated: 2026-11-04
 source: lente adversarial de la sesión de la cola del simulador (2026-09-12)
 ---
 
@@ -58,3 +58,9 @@ fallo «cero casos con exit 0 y `TEST SUCCEEDED`» es **indetectable** en `/l10n
 - `.claude/rules/testing.md` — la regla del filtro por tipo, y la de `-quiet`
 
 Triage 2026-10-08: abierto · medium → low · `.claude/commands/l10n-check.md` sigue diciendo «(15 tests)», sigue con `-quiet` y solo pide `LocalizationParityTests` y la del widget; el fichero declara tres suites (`LocalizationParityTests.swift:15`, `:264`, `:277`).
+
+## Resuelto (2026-11-04, lote T5 · recetas del gate)
+
+- `/l10n-check` pide las suites con `qa/scripts/suites-de-fichero.py` sobre los dos ficheros: `LocalizationParityTests`, `BundleLocaleDriftTests`, `StringsdictParityTests` y `WidgetLocalizationParityTests`.
+- Sin `-quiet`; el grep lee `Test run with`, y el criterio exige `M ≥ suites pedidas` y N igual a los `@Test` de los dos ficheros.
+- La cabecera ya no da un número fijo (hoy son 12 + 1 + 3 en el fichero principal, más 2 del widget). La tabla de lectura suma los cuatro casos que se quedaban fuera.

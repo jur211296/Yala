@@ -1,10 +1,10 @@
 ---
 id: only-testing-filters-may-be-silently-empty
-status: backlog
+status: done
 priority: low
 area: qa, testing
 created: 2026-09-03
-updated: 2026-10-08
+updated: 2026-11-04
 source: descubierto al verificar un mutante (2026-09-02)
 ---
 
@@ -58,3 +58,11 @@ vez en esta misma sesión.
 - La red que sí hay: el gate exige comparar `Test run with N tests in M suites` con las suites pedidas (`gate.md:49`), y `.claude/rules/testing.md:178` manda resolver los nombres con `grep "@Suite"`. Falta que la receta del gate lo diga en su paso 2.
 
 Triage 2026-10-08: abierto · medium → low · CI y `/l10n-check` filtran por tipos reales; queda que `gate.md:38` resuelva por tipo y no por fichero (53 ficheros no casan).
+
+## Resuelto (2026-11-04, lote T5 · recetas del gate)
+
+- Nuevo ayudante `qa/scripts/suites-de-fichero.py`: de un fichero de test a los TIPOS que `-only-testing` sabe filtrar (tipos de columna 0 con `@Suite` delante o algún `@Test` dentro; mira solo código, no comentarios ni cadenas). Banco: `qa/scripts/suites-de-fichero-test.sh` (12 casos, con mutantes comprobados), que corre en `coverage-index`.
+- El paso 2 del `/gate` resuelve las suites con él, y suma los ficheros de test tocados (antes el mapeo los excluía). Criterio del conteo: `M ≥ suites pedidas`.
+- Medido sobre `YalaTests` el 2026-11-04: 107 ficheros no declaran ninguna suite con su nombre y 201 declaran más de una. `grep "@Suite"` tampoco bastaba: `LocalizationParityTests.swift` declara tres suites sin `@Suite`.
+- `YalaUITests`: sus 66 clases XCTest se llaman como su fichero, así que el paso 3 sigue pidiendo por el nombre del fichero; queda escrito en el gate.
+- La regla de `.claude/rules/testing.md` (la del filtro por tipo) apunta ahora al ayudante.
