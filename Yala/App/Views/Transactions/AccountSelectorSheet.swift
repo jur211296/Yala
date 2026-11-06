@@ -98,6 +98,9 @@ struct AccountSelectorSheet: View {
                         let cards = currencyFilter == nil
                             ? viewModel.cards(of: filteredAccounts)
                             : filteredAccounts.map { AccountCard(head: $0, lines: []) }
+                        // Cada fila dice una sola divisa, la suya; la principal de una tarjeta con líneas la lleva además
+                        // en el nombre («Sapphire · PEN»), como la línea de debajo (Jürgen, 6-nov).
+                        let headsWithLines = viewModel.headsWithLines
                         SectionBox(title: "") {
                             VStack(spacing: DS.Spacing.none) {
                                 ForEach(
@@ -110,8 +113,8 @@ struct AccountSelectorSheet: View {
 
                                     AccountSelectorRow(
                                         account: card.head,
-                                        isSelected: isSelected(card.head),
-                                        cardCurrencies: card.hasLines ? card.members.map(\.currencyCode) : nil
+                                        displayName: viewModel.rowName(for: card.head, headsWithLines: headsWithLines),
+                                        isSelected: isSelected(card.head)
                                     ) {
                                         choose(card.head)
                                     }
@@ -199,9 +202,10 @@ struct AccountSelectorSheet: View {
 
 struct AccountSelectorRow: View {
     let account: Account
+    /// El nombre que se pinta: el de la cuenta, o «Sapphire · PEN» en la principal de una tarjeta con líneas. El
+    /// identificador de accesibilidad sigue con el nombre guardado (`account_selector_row_<nombre>`).
+    var displayName: String?
     let isSelected: Bool
-    /// Tarjeta con varias divisas: las divisas de la tarjeta («PEN · USD») en vez de la de la principal.
-    var cardCurrencies: [String]?
     /// Una línea de la tarjeta de arriba: va sangrada y con el icono más pequeño.
     var isNestedLine: Bool = false
     let action: () -> Void
@@ -209,9 +213,7 @@ struct AccountSelectorRow: View {
     @ScaledMetric(relativeTo: .body) private var iconSize: CGFloat = 36
     @ScaledMetric(relativeTo: .body) private var lineIconSize: CGFloat = 26
 
-    private var currencyText: String {
-        cardCurrencies?.joined(separator: " · ") ?? account.currencyCode
-    }
+    private var name: String { displayName ?? account.name }
 
     var body: some View {
         Button(action: action) {
@@ -227,11 +229,11 @@ struct AccountSelectorRow: View {
                     .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(account.name)
+                    Text(name)
                         .font(isNestedLine ? DS.Typography.subheadline : DS.Typography.body)
                         .foregroundStyle(.primary)
 
-                    Text(currencyText)
+                    Text(account.currencyCode)
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -256,7 +258,7 @@ struct AccountSelectorRow: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("account_selector_row_\(account.name)")
-        .accessibilityLabel(L10n.Accessibility.accountRow(account.name, currencyText))
+        .accessibilityLabel(L10n.Accessibility.accountRow(name, account.currencyCode))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

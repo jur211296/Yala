@@ -198,6 +198,7 @@ struct ImportIntroSheet: View {
             ImportAccountPickerSheet(
                 accounts: filteredCurrencyForAccountPicker.map { accountsForCurrency($0) }
                     ?? activeAccounts,
+                allAccounts: accounts,
                 selectedAccount: $selectedAccount
             ) { account in
                 selectedAccount = account

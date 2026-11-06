@@ -124,6 +124,25 @@ nonisolated enum AccountCardLogic {
         return "\(base) \(index)"
     }
 
+    // MARK: - La tarjeta en un selector
+
+    /// El nombre de la principal en un selector donde se ven sus líneas: «Sapphire · PEN», con la misma forma que la línea
+    /// de debajo («Sapphire · USD»). Antes la fila decía «Sapphire» con «PEN · USD» debajo, como si fuera de las dos
+    /// divisas a la vez (Jürgen, 6-nov). Un nombre que ya acaba en su divisa («X · PEN», «X · PEN 2») no la repite.
+    static func headName(_ name: String, currencyCode: String) -> String {
+        guard automaticLinePrefix(of: name, currencyCode: currencyCode) == nil else { return name }
+        return "\(name) · \(isoCode(currencyCode))"
+    }
+
+    /// Las principales con alguna línea viva entre `nodes`: las que en un selector llevan su divisa en el nombre
+    /// (`headName`). `roles` sale de `AccountLineLogic.resolve` sobre todas las cuentas, como en `cards`.
+    static func headsWithLiveLines(_ nodes: [AccountLineNode], roles: [UUID: AccountLineRole]) -> Set<UUID> {
+        Set(nodes.compactMap { node in
+            guard !node.isArchived, case .line(let principalID)? = roles[node.id] else { return nil }
+            return principalID
+        })
+    }
+
     // MARK: - Nombre de las líneas al renombrar la tarjeta (S30)
 
     /// Renombrar la tarjeta arrastra el nombre de su línea: «BCP Débito Soles · USD» pasa a «BCP Débito · USD» cuando la
