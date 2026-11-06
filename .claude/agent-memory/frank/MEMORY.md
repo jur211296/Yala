@@ -53,3 +53,4 @@
 - [La condición del encargo puede no ser suya](feedback_la_condicion_del_encargo_puede_no_ser_suya.md) — «sin tapar el +» era de Tim; confirma lo que multiplica alcance.
 - [Gate en disco local, no ExtDev](feedback_gate_en_disco_local_no_extdev.md) — ExtDev se cuelga en Resolve Package Graph; 3 min y matar.
 - [Adjuntos de XCTest en el simulador](reference_adjuntos_de_xctest_en_el_simulador.md) — 16 GB en tmp/Attachments del daemon; y workspaces de XcodeBuildMCP huérfanos.
+- [Contar el store del iPhone](reference_contar_el_store_del_iphone_con_devicectl.md) — devicectl desde el App Group (no la app) + sqlite3: qué filas sube.
