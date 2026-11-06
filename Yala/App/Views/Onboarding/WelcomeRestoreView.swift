@@ -253,18 +253,40 @@ struct WelcomeRestoreView: View {
     /// Decide el estado inicial; la espera con quiescencia + el progreso en vivo
     /// los hace `RestoreProgressView` (estado `.searching`). Respeta el wipe: si el
     /// último acto del usuario fue un wipe, no ofrecemos restaurar (estado `.wiped`).
-    private func startSearch() {
-        // **Los dos `return` de abajo TIRAN el reloj que la puerta de descarte pudiera haber
-        // aparcado**, y esa línea la trajo la review (`restore-session-window-has-no-reachable-ceiling`).
-        // Aquí no se enciende la señal —no hay import que la justifique— así que el aparcado se
-        // quedaba VARADO esperando a un estreno futuro que no tiene nada que ver con él: el recorrido
-        // medido es volver de la puerta sin iCloud, caer en `.iCloudDisabled`, encenderlo, y que el
-        // «volver a buscar» estrene heredando un reloj de hace minutos sobre una descarga que acaba
-        // de empezar. Su tope duro caducaría a media bajada.
-        guard iCloudSyncService.shared.isAccountAvailable else {
+    private func startSearch(afterAskingCloudKit: Bool = false) {
+        // **«¿Hay iCloud?» es la cuenta de CloudKit, no el token de iCloud Drive** (card 6a12, ticket
+        // `restore-with-icloud-drive-off-mounts-without-mirror`). Con la sesión abierta y Drive apagado el token es `nil`
+        // y CloudKit funciona: esta pantalla decía «Activa iCloud» a quien tenía sus datos ahí. Si CloudKit todavía no
+        // contestó en este proceso, se le pregunta UNA vez antes de decidir; mientras, la pantalla sigue en `.searching`
+        // sin intento (la espera no se monta sin `flowToken`).
+        let sync = iCloudSyncService.shared
+        switch WelcomeRestoreRelaunchLogic.accountCheck(
+            tokenPresent: sync.isAccountAvailable,
+            cloudKitStatus: sync.cloudKitAccountStatus,
+            alreadyAsked: afterAskingCloudKit) {
+        case .askCloudKit:
+            Task { @MainActor in
+                await sync.awaitCloudKitAccountStatus()
+                if sync.cloudKitAccountStatus == nil {
+                    sync.refreshCloudKitAccountStatus()
+                    await sync.awaitCloudKitAccountStatus()
+                }
+                startSearch(afterAskingCloudKit: true)
+            }
+            return
+        case .absent:
+            // **Los dos `return` de abajo TIRAN el reloj que la puerta de descarte pudiera haber
+            // aparcado**, y esa línea la trajo la review (`restore-session-window-has-no-reachable-ceiling`).
+            // Aquí no se enciende la señal —no hay import que la justifique— así que el aparcado se
+            // quedaba VARADO esperando a un estreno futuro que no tiene nada que ver con él: el recorrido
+            // medido es volver de la puerta sin iCloud, caer en `.iCloudDisabled`, encenderlo, y que el
+            // «volver a buscar» estrene heredando un reloj de hace minutos sobre una descarga que acaba
+            // de empezar. Su tope duro caducaría a media bajada.
             ICloudRestoreSessionSignal.noteRestoreUnavailable()
             state = .iCloudDisabled
             return
+        case .present:
+            break
         }
         // L6-2 · iCloud está, pero este proceso montó el store sin su espejo (el Welcome no relanzó porque al elegir
         // «Restaurar» no había iCloud). Buscar aquí no puede traer nada: toca reabrir, y es ahora cuando se pide.
@@ -272,7 +294,7 @@ struct WelcomeRestoreView: View {
         // muere en el relanzamiento.
         if let onNeedsMirrorRelaunch,
            WelcomeRestoreRelaunchLogic.needsRelaunchToSearch(
-               iCloudAvailable: true,
+               iCloudAccountPresent: true,
                mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision) {
             onNeedsMirrorRelaunch()
             return
@@ -584,6 +606,7 @@ struct WelcomeRestoreView: View {
             primaryTitle: L10n.Welcome.Restore.startFresh,
             primaryAction: { showStartFreshConfirm = true }
         )
+        .accessibilityIdentifier("welcome_restore_not_found")
     }
 
     /// El tope se agotó con el import en marcha: los datos vienen.
@@ -610,8 +633,12 @@ struct WelcomeRestoreView: View {
 
     /// iCloud apagado: **no hubo búsqueda**, así que este estado no sabe si hay datos.
     ///
+    /// **Desde el 2026-11-05 (card 6a12) la puerta ya no es el token**: `startSearch` decide con la cuenta de CloudKit
+    /// (`WelcomeRestoreRelaunchLogic.accountCheck`), así que con Drive apagado y la sesión abierta ya no se llega aquí.
+    /// El párrafo de abajo cuenta por qué la red de «Empezar desde cero» se quedó: sigue valiendo si CloudKit no contesta.
+    ///
     /// Confirma desde el 2026-09-20, y no por coherencia: **su población tiene datos**. La puerta que
-    /// manda aquí es `startSearch`, con `iCloudSyncService.isAccountAvailable`, que es
+    /// mandaba aquí era `startSearch`, con `iCloudSyncService.isAccountAvailable`, que es
     /// `SwiftDataConfiguration.isICloudAvailable()` = `FileManager.ubiquityIdentityToken != nil`
     /// (`Yala/Utils/SwiftDataConfiguration.swift:36-38`). **Ese token mide iCloud DRIVE, no CloudKit**
     /// (`.claude/rules/swiftdata-cloudkit.md`, la regla del 2026-09-10): con Drive apagado y la sesión
@@ -634,6 +661,7 @@ struct WelcomeRestoreView: View {
             secondaryTitle: L10n.Welcome.Restore.startFresh,
             secondaryAction: { showStartFreshConfirm = true }
         )
+        .accessibilityIdentifier("welcome_restore_icloud_disabled")
     }
 
     private var errorView: some View {

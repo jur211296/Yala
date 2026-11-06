@@ -218,6 +218,11 @@ final class UITestHooks {
     /// de boot no esperen un import de CloudKit que en sim nunca llega. Solo DEBUG.
     nonisolated static var fakeICloudAvailable: Bool { hasArg("-uitest-fake-icloud") }
 
+    /// `-uitest-fake-icloud-drive-off`: la sesión de iCloud abierta con iCloud Drive APAGADO (card 6a12). El token de
+    /// Drive se fuerza a `false` y CloudKit «contesta» `.available`, que es lo que ve un iPhone así. Como
+    /// `-uitest-fake-icloud`, marca el primer import asentado y no habilita CloudKit real. Solo DEBUG.
+    nonisolated static var fakeICloudDriveOff: Bool { hasArg("-uitest-fake-icloud-drive-off") }
+
     /// `-uitest-fake-backend-session`: fuerza el input `hasSession` de «Eliminar mi cuenta» (desde el paso 9 vive en «Tu cuenta de Yala»)
     /// (ProfileView) a `true`, para QA/XCUITest del diálogo de D5 (aviso de deudas + «Ver mis grupos»)
     /// SIN un sign-in backend real —SIWA/Google no corren en sim—. NO crea una sesión Supabase real
