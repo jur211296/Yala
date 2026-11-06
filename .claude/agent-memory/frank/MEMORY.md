@@ -18,6 +18,12 @@
 - [Cuándo la app pregunta al usuario](feedback_cuando_la_app_pregunta_al_usuario.md) — pregunta si la decisión mueve DATOS su…
 - [Un límite de plataforma se explica en la pregunta](feedback_un_limite_de_plataforma_se_explica_en_la_pregunta.md) — preguntó por qu…
 - [Credencial pendiente: se aparca y se mide](feedback_credencial_pendiente_se_aparca.md) — pídela una vez; al llegar, mide a qué alcanza antes de usarla.
+- [Device MCP: lo enciende Jürgen](feedback_device_mcp_lo_enciende_jurgen.md) — permisos y servidor MCP en su pantalla; no scriptear su UI; listo = lo confirma el bot.
+- [Si Jürgen está en el chat, háblale directo](feedback_si_jurgen_esta_en_el_chat_hablale_directo.md) — no por preguntar-bot; el bot es para cuando no está.
+- [El iPhone de pruebas es el 14 por cable](feedback_el_iphone_de_pruebas_es_el_14_por_cable.md) — el 18 Pro Max es el suyo personal; elige por modelo, no por el primer UDID.
+- [QA físico: datos dev, no preguntes](feedback_qa_fisico_datos_dev_no_preguntes.md) — borrar/vaciar en el iPhone 14 lo decides tú; contáctale solo urgente o su mano.
+- [Conducir el iPhone real con Device MCP](reference_conducir_el_iphone_real_con_device_mcp.md) — stdio, teclado inglés, open_url con aprobación, devicectl --payload-url.
+- [Sin firma de IA en commits](feedback_sin_firma_de_ia_en_commits.md) — el hook rechaza Co-Authored-By de Claude; manda la casa sobre el entorno.
 - [El carril espera a Cola A](feedback_carril_espera_a_cola_a.md) — nada al simulador con Cola A viva; al acabar, validar que limpió.
 - [Elige la propuesta completa aunque apriete](feedback_elige_la_propuesta_completa_aunque_aprieta.md) — por producto y, en finanzas, por la regla del dominio.
 - [Gasto a la medida del tráfico](feedback_gasto_a_la_medida_del_trafico.md) — plan mínimo que funcione; estima el gasto y avisa antes.

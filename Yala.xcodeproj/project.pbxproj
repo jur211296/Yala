@@ -267,7 +267,6 @@
 			dependencies = (
 				CFADC3C12F2A42810040D198 /* PBXTargetDependency */,
 				CFB1B6BF2F30EC940083BC08 /* PBXTargetDependency */,
-				A77A7E0000000000000000B4 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				96CFFF952EC3CF06002AC31C /* Yala */,
@@ -425,7 +424,6 @@
 				34F31E7526F241AD90BE48C0 /* XCRemoteSwiftPackageReference "supabase-swift" */,
 				C2064AA48EB94CC391D77D75 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 				A1E5C0DE00000000000000A2 /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
-				A77A7E0000000000000000B2 /* XCRemoteSwiftPackageReference "annotatekit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 96CFFF942EC3CF06002AC31C /* Products */;
@@ -518,10 +516,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		A77A7E0000000000000000B4 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			productRef = A77A7E0000000000000000B3 /* AnnotateKit */;
-		};
 		96CFFFA62EC3CF09002AC31C /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 96CFFF922EC3CF06002AC31C /* Yala */;
@@ -889,11 +883,6 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 2.2;
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"$(BUILT_PRODUCTS_DIR)/AnnotateKit.o",
-					"$(BUILT_PRODUCTS_DIR)/AnnotateCore.o",
-				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.yala.dev;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -1579,14 +1568,6 @@
 				version = 9.31.0;
 			};
 		};
-		A77A7E0000000000000000B2 /* XCRemoteSwiftPackageReference "annotatekit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/ooolzhas/annotatekit";
-			requirement = {
-				kind = exactVersion;
-				version = 1.0.0;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1614,11 +1595,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A1E5C0DE00000000000000A2 /* XCRemoteSwiftPackageReference "sentry-cocoa" */;
 			productName = Sentry;
-		};
-		A77A7E0000000000000000B3 /* AnnotateKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = A77A7E0000000000000000B2 /* XCRemoteSwiftPackageReference "annotatekit" */;
-			productName = AnnotateKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

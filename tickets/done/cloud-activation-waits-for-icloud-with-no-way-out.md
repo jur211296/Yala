@@ -1,10 +1,13 @@
 ---
 id: cloud-activation-waits-for-icloud-with-no-way-out
-status: qa
+status: done
 priority: medium
 area: "modo-nube, settings"
 created: 2026-10-19
-updated: 2026-10-19
+updated: 2026-11-05
+qa-notes: verificado en el iPhone 14 con iCloud real (montaje B1)
+qa-date: 2026-11-05
+qa-status: passed
 source: "tablero-activar-la-nube-con-6-movimientos-espera-ppxk (QA guiado 2026-10-19)"
 ---
 
@@ -44,3 +47,11 @@ El `hechaCuando` («con pocos datos, termina en menos de 1 min sin salir de la a
 1. Con un iCloud que traiga cuentas duplicadas (el del QA del 19-oct), «Activar la nube».
 2. Si sale «Esperando a que iCloud termine de sincronizar…»: el botón «Cancelar la activación» tiene que estar **activo**. Tócalo y confirma: la activación tiene que cancelarse en cuanto iCloud se calme (o en el siguiente intento), sin dejarte atrapado.
 3. Repite sin cancelar y cronometra: dime si termina sin salir de Yala, y la hora para mirar el canario.
+
+## Verificado en dispositivo (2026-11-05)
+
+iPhone 14 (iOS 27.2), Yala Dev sobre `origin/2.2` (#809), iCloud privado con 2 registros y 2 cuentas. Activar la nube
+reusando la cuenta de Google de Grupos: confirmado a las 19:17:35, «Tus datos ya están en tu cuenta de la nube» a las
+19:26:00 (8 min 25 s). «Subir tus datos» cambió cada ~6 s (15 → 3333 de 3333), «Confirmar con iCloud» ~30 s y no
+salió «Esperar a iCloud». Lo que pedía este ticket pasa. Los 3333 elementos para tan pocos datos van a
+`cloud-activation-uploads-thousands-of-items-for-a-few-records`. Registro y vídeo: `~/Claude/entregas/2026-11-05-qa-dispositivo-fisico-device-mcp/evidencia/B1-*`.
