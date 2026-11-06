@@ -13,14 +13,28 @@ import SwiftData
 
 enum TransferCategoryResolver {
 
+    /// Los nombres de la subcategoría de transferencia en los 16 idiomas (`Subcategory.transferNames`). Antes se
+    /// buscaba solo el del idioma ACTUAL, y al cambiar de idioma cada transferencia nueva creaba otra subcategoría.
+    private static let knownNames: [String] = Array(Subcategory.transferNames)
+
+    /// Entre las que existen, la del idioma actual si la hay; si no, la de nombre más estable (orden alfabético),
+    /// para que dos llamadas seguidas devuelvan la misma.
+    static func preferred(_ candidates: [Subcategory], currentName: String) -> Subcategory? {
+        if let current = candidates.first(where: { $0.name == currentName }) {
+            return current
+        }
+        return candidates.min { $0.name < $1.name }
+    }
+
     /// La subcategoría de la pata de SALIDA (categoría de gasto).
     static func outflow(context: ModelContext) throws -> Subcategory {
-        // Use first expense category with localized subcategory name
         let subcategoryName = L10n.Transfer.categoryName
+        let knownNames = Self.knownNames
 
-        // Check if transfer subcategory already exists in any expense category
+        // La de transferencia puede existir con el nombre de CUALQUIER idioma: si el usuario cambió de idioma, se
+        // reutiliza la que ya tiene en vez de crear otra con el nombre nuevo.
         let descriptor = FetchDescriptor<Subcategory>(
-            predicate: #Predicate { $0.name == subcategoryName && $0.category?.isIncome == false }
+            predicate: #Predicate { knownNames.contains($0.name) && $0.category?.isIncome == false }
         )
 
         let fetchedSubcategories: [Subcategory]
@@ -32,7 +46,7 @@ enum TransferCategoryResolver {
             #endif
             fetchedSubcategories = []
         }
-        if let existing = fetchedSubcategories.first {
+        if let existing = preferred(fetchedSubcategories, currentName: subcategoryName) {
             return existing
         }
 
@@ -81,10 +95,11 @@ enum TransferCategoryResolver {
     /// Ensures the income transfer subcategory exists for incoming transfers
     static func inflow(context: ModelContext) throws -> Subcategory {
         let subcategoryName = L10n.Transfer.categoryName
+        let knownNames = Self.knownNames
 
-        // Check if transfer subcategory already exists in any income category
+        // Igual que en la de salida: cualquier idioma vale.
         let descriptor = FetchDescriptor<Subcategory>(
-            predicate: #Predicate { $0.name == subcategoryName && $0.category?.isIncome == true }
+            predicate: #Predicate { knownNames.contains($0.name) && $0.category?.isIncome == true }
         )
 
         let fetchedIncomeSubcategories: [Subcategory]
@@ -96,7 +111,7 @@ enum TransferCategoryResolver {
             #endif
             fetchedIncomeSubcategories = []
         }
-        if let existing = fetchedIncomeSubcategories.first {
+        if let existing = preferred(fetchedIncomeSubcategories, currentName: subcategoryName) {
             return existing
         }
 

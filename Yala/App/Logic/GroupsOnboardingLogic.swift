@@ -53,6 +53,18 @@ enum GroupsOnboardingLogic {
     ///   - hasPendingGroupDeeplink: `navigation.pendingGroupID != nil`. Si hay
     ///     deeplink hacia un grupo específico, abrir el detail tiene prioridad UX
     ///     sobre el onboarding informativo.
+    /// Qué hace la X de la bienvenida de Grupos (decisión de Jürgen, 2026-11-06, opción B): la primera vez la
+    /// APLAZA —vuelve en la siguiente entrada a Grupos—; la segunda la da por vista y ya no vuelve sola. Antes la X
+    /// no marcaba nada y la hoja volvía en cada entrada (QA del iPhone de pruebas, 2026-11-05).
+    enum CloseOutcome: Equatable {
+        case postponeOnce
+        case markSeen
+    }
+
+    static func closeOutcome(alreadyPostponed: Bool) -> CloseOutcome {
+        alreadyPostponed ? .markSeen : .postponeOnce
+    }
+
     static func shouldShow(
         hasSeenEducational: Bool,
         hasPendingGroupDeeplink: Bool
@@ -124,6 +136,7 @@ enum GroupsOnboardingResult: Equatable {
     /// sheet YA desmontado (`onDismiss`): emitirlo con el sheet puesto lo dejaría RETENIDO por
     /// peek-first, igual que documenta `GroupsContainerView.requestCreateGroup`.
     case completeAndSignIn
-    /// "X" topLeft (cualquier step): NO persistir flag (volverá a aparecer).
+    /// "X" topLeft (cualquier step): la primera vez aplaza (vuelve una vez más); la segunda persiste la flag
+    /// (`GroupsOnboardingLogic.closeOutcome`).
     case close
 }

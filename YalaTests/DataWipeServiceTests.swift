@@ -56,7 +56,7 @@ struct DataWipeServiceTests {
         // Grupos (toggles personales)
         "includeGroupTransactionsInFeed", "includeGroupsInPanelTotal",
         "includeGroupTransactionsInStats", "bridgeGroupExpensesToPersonalAccounts",
-        "hasShownGroupsOnboarding", "hasSeenGroupsNotificationPrompt",
+        "hasShownGroupsOnboarding", "groupsOnboardingPostponedOnce", "hasSeenGroupsNotificationPrompt",
         // Sync
         "subcatDedupRemoteHookDisabled",
         // Insights visibilidad
