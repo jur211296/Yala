@@ -54,3 +54,4 @@
 - [Gate en disco local, no ExtDev](feedback_gate_en_disco_local_no_extdev.md) — ExtDev se cuelga en Resolve Package Graph; 3 min y matar.
 - [Adjuntos de XCTest en el simulador](reference_adjuntos_de_xctest_en_el_simulador.md) — 16 GB en tmp/Attachments del daemon; y workspaces de XcodeBuildMCP huérfanos.
 - [Contar el store del iPhone](reference_contar_el_store_del_iphone_con_devicectl.md) — devicectl desde el App Group (no la app) + sqlite3: qué filas sube.
+- [iPhone 14 libre para pruebas](feedback_iphone_14_libre_para_pruebas.md) — siempre en Device MCP; úsalo si sale más rápido o fiel que el simulador.
