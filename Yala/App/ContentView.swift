@@ -3384,6 +3384,8 @@ struct ContentView: View {
 /// `fullScreenCover` (sin frame "azul vacío" entre ambos). El alert
 /// "Detectamos tu cuenta" vive dentro del `WelcomeFlowContainer`.
 private struct WelcomeFlowModifier: ViewModifier {
+    /// Lo que `onAdoptStarted` cambió, para deshacerlo si el adopt sale hacia atrás sin dejar nada (card 0f7h).
+    @State private var adoptStartSnapshot: WelcomeAdoptBackOut.Snapshot?
     @Environment(\.modelContext) private var modelContext
     @Binding var showWelcomeFlow: Bool
     @Binding var welcomeFlowInitialStep: WelcomeFlowStep
@@ -3807,6 +3809,12 @@ private struct WelcomeFlowModifier: ViewModifier {
             // data races`). Mismo remedio que `performICloudCorpusWipe` en el contenedor.
             hasLocalDataNow: { hasLocalDataNow() },
             onAdoptStarted: {
+                // La foto es la de ANTES del primer intento: un «Reintentar» vuelve a pasar por aquí con todo ya marcado.
+                if adoptStartSnapshot == nil {
+                    adoptStartSnapshot = WelcomeAdoptBackOut.Snapshot.capture(
+                        hasCompletedOnboarding: hasCompletedOnboarding,
+                        hasPrivateSession: SessionState.shared.hasPrivateSession)
+                }
                 // TEMPRANO (antes de conducir la máquina): cierra el hazard
                 // kill-mid-adopt → el seed del onboarding jamás corre sobre una
                 // cuenta existente; un kill aterriza en MainTab con la card de
@@ -3826,6 +3834,7 @@ private struct WelcomeFlowModifier: ViewModifier {
                 GroupsSyncClient.shared.startIfEligible(context: modelContext, trigger: "adopt-started")
             },
             onFinishedToApp: {
+                adoptStartSnapshot = nil
                 showWelcomeCloudSignIn = false
             },
             onBornCloudCompleted: {
@@ -3844,6 +3853,7 @@ private struct WelcomeFlowModifier: ViewModifier {
                 // `hasCompletedOnboarding` NO se marca aquí: el onboarding es real y lo marca él.
                 // Por eso `showOnboarding` se enciende EXPLÍCITAMENTE en vez de dejar que el
                 // `onDismiss` decida — su rama de respaldo devuelve al chooser.
+                adoptStartSnapshot = nil
                 showWelcomeCloudSignIn = false
                 showOnboarding = true
             },
@@ -3888,6 +3898,7 @@ private struct WelcomeFlowModifier: ViewModifier {
                 if sessionOpenedHere {
                     LateNoticeKeptGroupsMark.recordAtGroupsEntryIfNoGroupsYet(context: modelContext)
                 }
+                adoptStartSnapshot = nil
                 welcomeFlowInitialStep = .groupsGate(purpose: .createGroup)
                 showWelcomeFlow = true
                 showWelcomeCloudSignIn = false
@@ -3907,12 +3918,15 @@ private struct WelcomeFlowModifier: ViewModifier {
                 // `true` que dejó el faro al encaminar, un cierre de la app aquí abriría el onboarding
                 // privado directo —sin elegir y sin la comprobación de iCloud del paso 4— y el arranque
                 // siguiente ya no montaría neutro. Mismo gesto que `onCancelFromStep1`.
+                // Sale del cover como `onBack`: lo que marcó un adopt sin huella vuelve a como estaba (card 0f7h).
+                restoreStateIfAdoptLeftNoTrace()
                 hasShownWelcomeChooser = false
                 showWelcomeCloudSignIn = false
                 welcomeFlowInitialStep = .newChooser
                 showWelcomeFlow = true
             },
             onBack: {
+                restoreStateIfAdoptLeftNoTrace()
                 showWelcomeCloudSignIn = false
                 // **Card z5dd · la persona vuelve a estar ELIGIENDO**, así que el chooser deja de constar como visto. Las
                 // tres entradas a este cover lo marcan al ENCAMINAR (`onSelectExistingOption`, `onSelectCloudAccount`,
@@ -3932,6 +3946,31 @@ private struct WelcomeFlowModifier: ViewModifier {
                 showWelcomeFlow = true
             }
         )
+    }
+
+    /// **Card 0f7h** (decisión A de Jürgen): salir hacia atrás de un adopt que no trajo ni subió nada (cancelado, o tras su techo) devuelve el
+    /// onboarding, la sesión privada y el montaje neutro a como estaban antes de `onAdoptStarted`. Sin esto, cerrar Yala
+    /// en la bienvenida tras cancelar saltaba la bienvenida en el arranque siguiente y montaba el espejo de iCloud.
+    /// Con el journal sin probar que no quedó nada, no se toca: `onAdoptStarted` existe para que un kill a mitad del
+    /// adopt aterrice en la app (`WelcomeAdoptBackOut.leftNoTrace`).
+    private func restoreStateIfAdoptLeftNoTrace() {
+        guard let snapshot = adoptStartSnapshot else { return }
+        adoptStartSnapshot = nil
+        guard let controller = CloudMigrationController.shared else { return }
+        controller.refresh()
+        guard WelcomeAdoptBackOut.leftNoTrace(
+            journaledPhase: controller.journaledPhase,
+            adoptEffectJournaled: controller.adoptEffectJournaled,
+            journalUnreadable: controller.isJournalUnreadable,
+            adoptClaimExit: controller.adoptClaimExit,
+            hasLocalData: hasLocalDataNow()) else { return }
+        snapshot.restoreNeutralMount()
+        if !snapshot.hasCompletedOnboarding {
+            hasCompletedOnboarding = false
+        }
+        if !snapshot.hasPrivateSession {
+            SessionState.shared.hasPrivateSession = false
+        }
     }
 
     /// G3 · arranca la rama organizador. **No presenta nada directamente**: submitea el avance al router

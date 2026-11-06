@@ -40,6 +40,9 @@ final class AccountEntitlementService {
     /// `sync` salga sin tocar la red es el guard SIGUIENTE (sin `userID` no hay cuenta que consultar).
     /// Inyectable: un test que provee su propio cliente HTTP ya decidió que sí lo hay.
     private let isConfiguredProvider: @MainActor () -> Bool
+    /// Re-deriva `isProUser` cuando un sync que nadie espera cambió el snapshot. Inyectable: en
+    /// producción es `StoreKitManager.updateSubscriptionStatus()`.
+    private let onSnapshotChanged: @MainActor () async -> Void
 
     /// Guard de reentrada: foreground + boot + post-compra pueden coincidir; una sola en vuelo.
     private var isWorking = false
@@ -57,7 +60,8 @@ final class AccountEntitlementService {
         jwtProvider: (@MainActor () async -> String?)? = nil,
         userIDProvider: (@MainActor () -> String?)? = nil,
         storeKitJWSProvider: (@MainActor () async -> String?)? = nil,
-        isConfiguredProvider: (@MainActor () -> Bool)? = nil
+        isConfiguredProvider: (@MainActor () -> Bool)? = nil,
+        onSnapshotChanged: (@MainActor () async -> Void)? = nil
     ) {
         self.store = store ?? .shared
         // SIN `attestProvider` a propósito: `GET`/`POST /account/entitlement` van por `requireUser`
@@ -70,6 +74,7 @@ final class AccountEntitlementService {
         }
         // Un cliente HTTP inyectado implica backend: el default solo aplica a producción.
         self.isConfiguredProvider = isConfiguredProvider ?? (client != nil ? { true } : { CloudBackendConfig.isConfigured })
+        self.onSnapshotChanged = onSnapshotChanged ?? { await StoreKitManager.shared.updateSubscriptionStatus() }
     }
 
     /// Snapshot cacheado (lo consume `StoreKitManager` al resolver `isProUser`).
@@ -94,7 +99,12 @@ final class AccountEntitlementService {
             isWorking = false
             if forceRequestedWhileWorking {
                 forceRequestedWhileWorking = false
-                Task { @MainActor in await self.sync(force: true) }
+                // El `force` que se encoló (el de `handleSignIn`, típicamente) ya devolvió `false` a su
+                // llamador: nadie espera este `Bool`. Si el snapshot cambia, la re-derivación la hace el
+                // propio reintento, o el Pro de la cuenta no se ve hasta el próximo foreground.
+                Task { @MainActor in
+                    if await self.sync(force: true) { await self.onSnapshotChanged() }
+                }
             }
         }
 
@@ -143,9 +153,11 @@ final class AccountEntitlementService {
 
     /// Sesión nueva: el derecho de esa cuenta debe aparecer YA, no en el próximo foreground. Es el
     /// caso central de C-8 — entrar con tu cuenta de Yala en un device con otro Apple ID.
+    /// Si había otro sync en vuelo, este devuelve `false` al instante y el reintento diferido de
+    /// `sync` es quien re-deriva al terminar.
     func handleSignIn() async {
         guard await sync(force: true) else { return }
-        await StoreKitManager.shared.updateSubscriptionStatus()
+        await onSnapshotChanged()
     }
 
     private func persist(product: String?, expiresAt: Date?, userID: String) -> Bool {

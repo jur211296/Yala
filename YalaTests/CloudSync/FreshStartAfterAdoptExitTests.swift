@@ -190,8 +190,11 @@ struct FreshStartAfterAdoptExitWiringTests {
         #expect(!view.contains("hasCompletedOnboarding = false"), "una salida del adopt que bajara el flag sería la opción B")
 
         let content = Self.code(try Self.source(Self.contentView))
-        let onBack = try Self.slice(from: "onBack: {\n                showWelcomeCloudSignIn = false",
-                                    to: "\n            }", in: content)
+        // Card 0f7h: antes de reabrir, `onBack` devuelve lo que marcó el adopt SOLO si el journal prueba que no dejó nada
+        // (`restoreStateIfAdoptLeftNoTrace`). Con huella sigue en la celda de este test.
+        let onBack = try Self.slice(
+            from: "onBack: {\n                restoreStateIfAdoptLeftNoTrace()\n                showWelcomeCloudSignIn = false",
+            to: "\n            }", in: content)
         #expect(onBack.contains("welcomeFlowInitialStep = .chooser"))
         #expect(onBack.contains("showWelcomeFlow = true"))
         #expect(!onBack.contains("hasCompletedOnboarding"))

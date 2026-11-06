@@ -48,17 +48,18 @@
 //  falla.
 //
 //  LA VIDA DE LA MARCA. Tres reglas, y la de en medio es la que no se ve venir:
-//    · NACE / CAMBIA en los OCHO sitios donde el modelo dice que la sesión privada empieza o deja de
+//    · NACE / CAMBIA en los NUEVE sitios donde el modelo dice que la sesión privada empieza o deja de
 //      existir. La encienden el onboarding personal terminado, restaurar de iCloud a la app y adoptar
 //      una cuenta existente (los tres en `ContentView`) y activar Yala completo; la apagan las DOS
 //      puertas de entrada por grupo (invitación y organizador), la reposición tras vaciar en
-//      solo-grupos y el seam de uitest.
+//      solo-grupos, el seam de uitest y salir hacia atrás de un adopt que no dejó nada, que devuelve
+//      el valor de antes de adoptar (`ContentView`, card 0f7h).
 //
-//      **Los ocho pasan por `SessionState.hasPrivateSession`, y eso es un invariante, no un estilo.**
+//      **Los nueve pasan por `SessionState.hasPrivateSession`, y eso es un invariante, no un estilo.**
 //      Su `didSet` es el ÚNICO escritor de la marca en toda la app; asignar ahí persiste Y refresca la
 //      shell en el mismo render, mientras que un `set` directo haría lo primero y no lo segundo —
 //      dejando la pestaña de Grupos puesta hasta el arranque siguiente. Lo cuenta
-//      `PrivateSessionMarkTests`: si aparece un noveno, decide de qué lado va; si aparece un segundo
+//      `PrivateSessionMarkTests`: si aparece un décimo, decide de qué lado va; si aparece un segundo
 //      escritor directo, es el bug que acaba de describirse.
 //    · SOBREVIVE a «Vaciar datos», local o remoto. Vaciar no cambia QUIÉN eres: un solo-grupos que
 //      vacía sigue siendo un solo-grupos. Por eso la key lleva el prefijo `cloudSync.`, que
