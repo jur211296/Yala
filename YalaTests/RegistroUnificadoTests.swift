@@ -258,7 +258,9 @@ struct RegistroUnificadoWiringTests {
         #expect(chips.contains(".accessibilityIdentifier(\"group_expense_account_row\")"))
         #expect(chips.contains("isMissing: markedMissingField == .account"))
         let central = try Self.section(code, from: "private var centralContent: some View {", to: "private var dateChip")
-        #expect(central.contains("dateChip\n            descriptionField\n            amountDisplay"))
+        // Desde 2.3 la fecha comparte fila con «Desde un recibo» (card «Grupos: repartir un recibo con IA»): la fila sigue
+        // encabezando el bloque, con la fecha primero.
+        #expect(central.contains("HStack(spacing: DS.Spacing.sm) {\n                dateChip\n                if offersReceiptSplit { receiptSplitChip }\n            }\n            descriptionField\n            amountDisplay"))
         #expect(!central.contains("groupContextChip"), "el grupo va arriba, no junto a la fecha")
         #expect(code.contains("groupContextChip\n                            .padding(.top, DS.Spacing.sm)"))
     }

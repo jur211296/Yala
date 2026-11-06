@@ -8647,3 +8647,53 @@
 
 /* Account form: the save failed after some changes were already applied in the app, so it must not say nothing was saved. */
 "account.saveErrorPartial" = "Niet alles kon worden opgeslagen. Een deel van de wijzigingen is misschien al zichtbaar; controleer de rekening en sla opnieuw op.";
+
+/* Groups: «From a receipt» in a new group expense (2.3) */
+"receiptSplit.entry.button" = "Van een bon";
+"receiptSplit.entry.hint" = "Leest een bon via foto of stem en verdeelt hem per regel";
+"receiptSplit.title" = "Van een bon";
+"receiptSplit.photo.title" = "Foto van de bon";
+"receiptSplit.photo.camera" = "Camera";
+"receiptSplit.photo.library" = "Foto's";
+"receiptSplit.photo.change" = "Andere foto";
+"receiptSplit.phrase.label" = "Wie had wat?";
+"receiptSplit.phrase.placeholder" = "Ana de biefstuk, Luis en ik de pizza";
+"receiptSplit.phrase.footer" = "Optioneel. Wat niemand noemt, wordt over iedereen verdeeld.";
+"receiptSplit.split" = "Verdelen";
+"receiptSplit.voice.title" = "Bon inspreken";
+"receiptSplit.voice.hint" = "Zeg wat er besteld is en wie wat had";
+"receiptSplit.voice.example" = "Bijvoorbeeld: ‘Pizza 40, biefstuk 35, twee limonades 16. Ana de biefstuk, Luis en ik de pizza.’";
+"receiptSplit.voice.listening" = "Ik luister…";
+"receiptSplit.voice.stop" = "Klaar";
+"receiptSplit.reading" = "Bon lezen…";
+"receiptSplit.review.title" = "Controleer de verdeling";
+"receiptSplit.review.lines" = "Wat er besteld is";
+"receiptSplit.review.linesFooter" = "Tik op wie iets had om het te wijzigen. Veeg om een regel te verwijderen.";
+"receiptSplit.review.extras" = "Fooi, service en belasting";
+"receiptSplit.review.extrasFooter" = "Worden niet vanzelf verdeeld. Kies per regel hoe die meetelt, of voeg fooi toe.";
+"receiptSplit.review.perPerson" = "Per persoon";
+"receiptSplit.review.everyone" = "Iedereen";
+"receiptSplit.review.whoHadIt" = "Wie had dit";
+"receiptSplit.review.total" = "Totaal";
+"receiptSplit.review.use" = "Deze verdeling gebruiken";
+"receiptSplit.review.nothingToSplit" = "Nog niets om te verdelen.";
+"receiptSplit.review.negativeShare" = "Een korting brengt iemand onder nul. Verander hoe die wordt verdeeld.";
+"receiptSplit.review.totalMismatch" = "Op de bon staat %@ en de regels tellen op tot %@. Kijk of er iets ontbreekt of te veel is.";
+"receiptSplit.review.unmatched" = "%@ zit niet in de groep. Die regels worden over iedereen verdeeld: kies wie ze betaalt.";
+"receiptSplit.share.excluded" = "Niet meegeteld";
+"receiptSplit.share.proportional" = "Naar wat ieder had";
+"receiptSplit.share.equal" = "Gelijk verdeeld";
+"receiptSplit.share.people" = "Alleen voor";
+"receiptSplit.surcharge.add" = "Fooi of service toevoegen";
+"receiptSplit.surcharge.tip" = "Fooi %d %%";
+"receiptSplit.surcharge.service" = "Service %d %%";
+"receiptSplit.kind.tip" = "Fooi";
+"receiptSplit.kind.tax" = "Belasting";
+"receiptSplit.kind.service" = "Service";
+"receiptSplit.kind.discount" = "Korting";
+"receiptSplit.failure.read.title" = "De bon kon niet worden gelezen";
+"receiptSplit.failure.read.message" = "Er ging iets mis. Probeer het zo opnieuw.";
+"receiptSplit.failure.noLines.title" = "Geen regels met een bedrag gevonden";
+"receiptSplit.failure.noLines.message" = "Probeer een foto dichter bij de bon en met goed licht, of spreek hem in.";
+"receiptSplit.failure.noConnection.message" = "Maak verbinding met internet om de bon te lezen.";
+"receiptSplit.failure.mic.message" = "Geef toegang in Instellingen om de bon in te spreken.";

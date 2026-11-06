@@ -8635,3 +8635,53 @@
 
 /* Account form: the save failed after some changes were already applied in the app, so it must not say nothing was saved. */
 "account.saveErrorPartial" = "Não foi possível salvar tudo. Parte das alterações pode já aparecer; confira a conta e salve de novo.";
+
+/* Groups: «From a receipt» in a new group expense (2.3) */
+"receiptSplit.entry.button" = "De um recibo";
+"receiptSplit.entry.hint" = "Lê um recibo por foto ou voz e divide por linha";
+"receiptSplit.title" = "De um recibo";
+"receiptSplit.photo.title" = "Foto do recibo";
+"receiptSplit.photo.camera" = "Câmera";
+"receiptSplit.photo.library" = "Fotos";
+"receiptSplit.photo.change" = "Trocar foto";
+"receiptSplit.phrase.label" = "Quem comeu o quê?";
+"receiptSplit.phrase.placeholder" = "Ana o bife, Luis e eu a pizza";
+"receiptSplit.phrase.footer" = "Opcional. O que ninguém citar é dividido entre todos.";
+"receiptSplit.split" = "Dividir";
+"receiptSplit.voice.title" = "Ditar o recibo";
+"receiptSplit.voice.hint" = "Diga o que pediram e quem comeu o quê";
+"receiptSplit.voice.example" = "Por exemplo: “Pizza 40, bife 35, dois sucos 16. Ana o bife, Luis e eu a pizza.”";
+"receiptSplit.voice.listening" = "Estou ouvindo…";
+"receiptSplit.voice.stop" = "Pronto";
+"receiptSplit.reading" = "Lendo o recibo…";
+"receiptSplit.review.title" = "Revise a divisão";
+"receiptSplit.review.lines" = "O que foi pedido";
+"receiptSplit.review.linesFooter" = "Toque em quem comeu cada item para mudar. Deslize para remover uma linha.";
+"receiptSplit.review.extras" = "Gorjeta, serviço e impostos";
+"receiptSplit.review.extrasFooter" = "Não são divididos automaticamente. Escolha como cada um entra, ou adicione uma gorjeta.";
+"receiptSplit.review.perPerson" = "Para cada um";
+"receiptSplit.review.everyone" = "Entre todos";
+"receiptSplit.review.whoHadIt" = "Quem comeu isto";
+"receiptSplit.review.total" = "Total";
+"receiptSplit.review.use" = "Usar esta divisão";
+"receiptSplit.review.nothingToSplit" = "Ainda não há nada para dividir.";
+"receiptSplit.review.negativeShare" = "Um desconto deixa alguém abaixo de zero. Mude como ele é dividido.";
+"receiptSplit.review.totalMismatch" = "O recibo diz %@ e as linhas somam %@. Veja se falta ou sobra algo.";
+"receiptSplit.review.unmatched" = "Não encontrei %@ no grupo. As linhas ficaram entre todos: escolha quem paga.";
+"receiptSplit.share.excluded" = "Não incluído";
+"receiptSplit.share.proportional" = "Conforme o que cada um consumiu";
+"receiptSplit.share.equal" = "Em partes iguais";
+"receiptSplit.share.people" = "Só para";
+"receiptSplit.surcharge.add" = "Adicionar gorjeta ou serviço";
+"receiptSplit.surcharge.tip" = "Gorjeta %d %%";
+"receiptSplit.surcharge.service" = "Serviço %d %%";
+"receiptSplit.kind.tip" = "Gorjeta";
+"receiptSplit.kind.tax" = "Impostos";
+"receiptSplit.kind.service" = "Serviço";
+"receiptSplit.kind.discount" = "Desconto";
+"receiptSplit.failure.read.title" = "Não consegui ler o recibo";
+"receiptSplit.failure.read.message" = "Algo deu errado. Tente de novo em instantes.";
+"receiptSplit.failure.noLines.title" = "Não encontrei linhas com valor";
+"receiptSplit.failure.noLines.message" = "Tente uma foto mais perto do recibo e com boa luz, ou dite.";
+"receiptSplit.failure.noConnection.message" = "Conecte-se à internet para ler o recibo.";
+"receiptSplit.failure.mic.message" = "Dê permissão em Ajustes para ditar o recibo.";

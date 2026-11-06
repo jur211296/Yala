@@ -111,7 +111,7 @@ struct ProxyTaskHeaderTests {
             #expect(line.contains("category: \"\(task.category.rawValue)\""), "\(task.rawValue): el cubo de la app no es el del gateway")
             #expect(!line.contains("deducedOnly"), "\(task.rawValue) solo la deduce el gateway: con cabecera se ignoraría")
         }
-        #expect(ProxyTask.allCases.count == 12)
+        #expect(ProxyTask.allCases.count == 14)
     }
 
     @Test("cada tarea sale por el SDK con su X-Yala-Task, su cubo y el token")
@@ -374,6 +374,8 @@ struct ProxyTaskHeaderTests {
             ("Yala/Services/InsightsLLMService.swift", "func generateCashFlowInsight(", ".insightsCashflow"),
             ("Yala/Services/InsightsLLMService.swift", "func generateDeviationInsight(", ".insightsDeviation"),
             ("Yala/Services/TrendsAIService.swift", "func generate(", ".trendsSummary"),
+            ("Yala/App/Services/ReceiptSplitService.swift", "func readPhoto(", ".receiptPhoto"),
+            ("Yala/App/Services/ReceiptSplitService.swift", "func readNote(", ".receiptVoice"),
         ]
         for item in expected {
             let source = try String(contentsOf: repoURL(item.file), encoding: .utf8)

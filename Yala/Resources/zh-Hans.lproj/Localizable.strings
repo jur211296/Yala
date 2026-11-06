@@ -8647,3 +8647,53 @@
 
 /* Account form: the save failed after some changes were already applied in the app, so it must not say nothing was saved. */
 "account.saveErrorPartial" = "未能全部保存。部分更改可能已经显示；请检查该账户并再次保存。";
+
+/* Groups: «From a receipt» in a new group expense (2.3) */
+"receiptSplit.entry.button" = "从小票";
+"receiptSplit.entry.hint" = "用照片或语音读取小票，按项目分摊";
+"receiptSplit.title" = "从小票";
+"receiptSplit.photo.title" = "小票照片";
+"receiptSplit.photo.camera" = "相机";
+"receiptSplit.photo.library" = "照片";
+"receiptSplit.photo.change" = "更换照片";
+"receiptSplit.phrase.label" = "谁吃了什么？";
+"receiptSplit.phrase.placeholder" = "Ana 吃牛排，Luis 和我吃披萨";
+"receiptSplit.phrase.footer" = "可选。没有提到的项目由大家平摊。";
+"receiptSplit.split" = "分摊";
+"receiptSplit.voice.title" = "口述小票";
+"receiptSplit.voice.hint" = "说出点了什么以及谁吃了什么";
+"receiptSplit.voice.example" = "例如：“披萨 40，牛排 35，两杯柠檬水 16。Ana 吃牛排，Luis 和我吃披萨。”";
+"receiptSplit.voice.listening" = "正在听…";
+"receiptSplit.voice.stop" = "完成";
+"receiptSplit.reading" = "正在读取小票…";
+"receiptSplit.review.title" = "检查分摊";
+"receiptSplit.review.lines" = "点了什么";
+"receiptSplit.review.linesFooter" = "轻点每项的人员即可修改。轻扫可删除一行。";
+"receiptSplit.review.extras" = "小费、服务费和税";
+"receiptSplit.review.extrasFooter" = "不会自动分摊。请为每项选择计入方式，或添加小费。";
+"receiptSplit.review.perPerson" = "每人";
+"receiptSplit.review.everyone" = "所有人";
+"receiptSplit.review.whoHadIt" = "谁吃了这个";
+"receiptSplit.review.total" = "合计";
+"receiptSplit.review.use" = "使用此分摊";
+"receiptSplit.review.nothingToSplit" = "还没有可分摊的内容。";
+"receiptSplit.review.negativeShare" = "折扣让有人低于零。请更改分摊方式。";
+"receiptSplit.review.totalMismatch" = "小票显示 %@，各项合计 %@。请检查是否有遗漏或多余。";
+"receiptSplit.review.unmatched" = "群组里没有 %@。这些项目暂由大家平摊：请选择由谁支付。";
+"receiptSplit.share.excluded" = "不计入";
+"receiptSplit.share.proportional" = "按各自消费";
+"receiptSplit.share.equal" = "平均分摊";
+"receiptSplit.share.people" = "仅限";
+"receiptSplit.surcharge.add" = "添加小费或服务费";
+"receiptSplit.surcharge.tip" = "小费 %d %%";
+"receiptSplit.surcharge.service" = "服务费 %d %%";
+"receiptSplit.kind.tip" = "小费";
+"receiptSplit.kind.tax" = "税";
+"receiptSplit.kind.service" = "服务费";
+"receiptSplit.kind.discount" = "折扣";
+"receiptSplit.failure.read.title" = "无法读取小票";
+"receiptSplit.failure.read.message" = "出了点问题，请稍后再试。";
+"receiptSplit.failure.noLines.title" = "未找到带金额的项目";
+"receiptSplit.failure.noLines.message" = "请在光线充足处靠近拍摄小票，或用语音口述。";
+"receiptSplit.failure.noConnection.message" = "请连接互联网以读取小票。";
+"receiptSplit.failure.mic.message" = "请在“设置”中允许访问，以便口述小票。";

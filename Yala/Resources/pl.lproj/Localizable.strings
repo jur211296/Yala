@@ -8647,3 +8647,53 @@
 
 /* Account form: the save failed after some changes were already applied in the app, so it must not say nothing was saved. */
 "account.saveErrorPartial" = "Nie udało się zapisać wszystkiego. Część zmian może być już widoczna; sprawdź konto i zapisz ponownie.";
+
+/* Groups: «From a receipt» in a new group expense (2.3) */
+"receiptSplit.entry.button" = "Z paragonu";
+"receiptSplit.entry.hint" = "Odczytuje paragon ze zdjęcia lub głosu i dzieli go na pozycje";
+"receiptSplit.title" = "Z paragonu";
+"receiptSplit.photo.title" = "Zdjęcie paragonu";
+"receiptSplit.photo.camera" = "Aparat";
+"receiptSplit.photo.library" = "Zdjęcia";
+"receiptSplit.photo.change" = "Zmień zdjęcie";
+"receiptSplit.phrase.label" = "Kto co zjadł?";
+"receiptSplit.phrase.placeholder" = "Ana stek, Luis i ja pizzę";
+"receiptSplit.phrase.footer" = "Opcjonalnie. To, czego nikt nie wymieni, dzieli się na wszystkich.";
+"receiptSplit.split" = "Podziel";
+"receiptSplit.voice.title" = "Podyktuj paragon";
+"receiptSplit.voice.hint" = "Powiedz, co zamówiliście i kto co zjadł";
+"receiptSplit.voice.example" = "Na przykład: „Pizza 40, stek 35, dwie lemoniady 16. Ana stek, Luis i ja pizzę”.";
+"receiptSplit.voice.listening" = "Słucham…";
+"receiptSplit.voice.stop" = "Gotowe";
+"receiptSplit.reading" = "Odczytuję paragon…";
+"receiptSplit.review.title" = "Sprawdź podział";
+"receiptSplit.review.lines" = "Co zamówiono";
+"receiptSplit.review.linesFooter" = "Stuknij, kto zjadł daną pozycję, aby to zmienić. Przesuń, aby usunąć pozycję.";
+"receiptSplit.review.extras" = "Napiwek, serwis i podatki";
+"receiptSplit.review.extrasFooter" = "Nie są dzielone automatycznie. Wybierz, jak liczy się każda pozycja, albo dodaj napiwek.";
+"receiptSplit.review.perPerson" = "Na osobę";
+"receiptSplit.review.everyone" = "Wszyscy";
+"receiptSplit.review.whoHadIt" = "Kto to zjadł";
+"receiptSplit.review.total" = "Suma";
+"receiptSplit.review.use" = "Użyj tego podziału";
+"receiptSplit.review.nothingToSplit" = "Na razie nie ma czego dzielić.";
+"receiptSplit.review.negativeShare" = "Rabat sprawia, że ktoś schodzi poniżej zera. Zmień sposób podziału.";
+"receiptSplit.review.totalMismatch" = "Na paragonie jest %@, a pozycje dają %@. Sprawdź, czy czegoś nie brakuje lub nie ma za dużo.";
+"receiptSplit.review.unmatched" = "Nie ma %@ w grupie. Te pozycje dzielą wszyscy: wybierz, kto za nie płaci.";
+"receiptSplit.share.excluded" = "Nie wliczono";
+"receiptSplit.share.proportional" = "Według tego, co kto zjadł";
+"receiptSplit.share.equal" = "Po równo";
+"receiptSplit.share.people" = "Tylko dla";
+"receiptSplit.surcharge.add" = "Dodaj napiwek lub serwis";
+"receiptSplit.surcharge.tip" = "Napiwek %d %%";
+"receiptSplit.surcharge.service" = "Serwis %d %%";
+"receiptSplit.kind.tip" = "Napiwek";
+"receiptSplit.kind.tax" = "Podatki";
+"receiptSplit.kind.service" = "Serwis";
+"receiptSplit.kind.discount" = "Rabat";
+"receiptSplit.failure.read.title" = "Nie udało się odczytać paragonu";
+"receiptSplit.failure.read.message" = "Coś poszło nie tak. Spróbuj ponownie za chwilę.";
+"receiptSplit.failure.noLines.title" = "Nie znaleziono pozycji z kwotą";
+"receiptSplit.failure.noLines.message" = "Zrób zdjęcie bliżej paragonu przy dobrym świetle albo go podyktuj.";
+"receiptSplit.failure.noConnection.message" = "Połącz się z internetem, aby odczytać paragon.";
+"receiptSplit.failure.mic.message" = "Zezwól na dostęp w Ustawieniach, aby podyktować paragon.";

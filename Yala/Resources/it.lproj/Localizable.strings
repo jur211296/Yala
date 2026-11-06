@@ -8645,3 +8645,53 @@
 
 /* Account form: the save failed after some changes were already applied in the app, so it must not say nothing was saved. */
 "account.saveErrorPartial" = "Non è stato possibile salvare tutto. Parte delle modifiche potrebbe essere già visibile; controlla il conto e salva di nuovo.";
+
+/* Groups: «From a receipt» in a new group expense (2.3) */
+"receiptSplit.entry.button" = "Da uno scontrino";
+"receiptSplit.entry.hint" = "Legge uno scontrino da foto o voce e lo divide per righe";
+"receiptSplit.title" = "Da uno scontrino";
+"receiptSplit.photo.title" = "Foto dello scontrino";
+"receiptSplit.photo.camera" = "Fotocamera";
+"receiptSplit.photo.library" = "Foto";
+"receiptSplit.photo.change" = "Cambia foto";
+"receiptSplit.phrase.label" = "Chi ha preso cosa?";
+"receiptSplit.phrase.placeholder" = "Ana la bistecca, Luis e io la pizza";
+"receiptSplit.phrase.footer" = "Facoltativo. Quello che nessuno nomina si divide tra tutti.";
+"receiptSplit.split" = "Dividi";
+"receiptSplit.voice.title" = "Detta lo scontrino";
+"receiptSplit.voice.hint" = "Di’ cosa avete ordinato e chi ha preso cosa";
+"receiptSplit.voice.example" = "Per esempio: «Pizza 40, bistecca 35, due limonate 16. Ana la bistecca, Luis e io la pizza».";
+"receiptSplit.voice.listening" = "Ti ascolto…";
+"receiptSplit.voice.stop" = "Fatto";
+"receiptSplit.reading" = "Lettura dello scontrino…";
+"receiptSplit.review.title" = "Controlla la divisione";
+"receiptSplit.review.lines" = "Cosa è stato ordinato";
+"receiptSplit.review.linesFooter" = "Tocca chi ha preso ogni voce per cambiarlo. Scorri per togliere una riga.";
+"receiptSplit.review.extras" = "Mancia, servizio e tasse";
+"receiptSplit.review.extrasFooter" = "Non si dividono da soli. Scegli come conta ognuno, o aggiungi una mancia.";
+"receiptSplit.review.perPerson" = "A testa";
+"receiptSplit.review.everyone" = "Tutti";
+"receiptSplit.review.whoHadIt" = "Chi l’ha preso";
+"receiptSplit.review.total" = "Totale";
+"receiptSplit.review.use" = "Usa questa divisione";
+"receiptSplit.review.nothingToSplit" = "Ancora niente da dividere.";
+"receiptSplit.review.negativeShare" = "Uno sconto porta qualcuno sotto zero. Cambia come si divide.";
+"receiptSplit.review.totalMismatch" = "Lo scontrino dice %@ e le righe sommano %@. Controlla se manca o avanza qualcosa.";
+"receiptSplit.review.unmatched" = "Non ho trovato %@ nel gruppo. Le sue righe sono divise tra tutti: scegli chi le paga.";
+"receiptSplit.share.excluded" = "Non incluso";
+"receiptSplit.share.proportional" = "In base a quanto ha consumato ognuno";
+"receiptSplit.share.equal" = "In parti uguali";
+"receiptSplit.share.people" = "Solo per";
+"receiptSplit.surcharge.add" = "Aggiungi mancia o servizio";
+"receiptSplit.surcharge.tip" = "Mancia %d %%";
+"receiptSplit.surcharge.service" = "Servizio %d %%";
+"receiptSplit.kind.tip" = "Mancia";
+"receiptSplit.kind.tax" = "Tasse";
+"receiptSplit.kind.service" = "Servizio";
+"receiptSplit.kind.discount" = "Sconto";
+"receiptSplit.failure.read.title" = "Non riesco a leggere lo scontrino";
+"receiptSplit.failure.read.message" = "Qualcosa è andato storto. Riprova tra un attimo.";
+"receiptSplit.failure.noLines.title" = "Nessuna riga con un importo";
+"receiptSplit.failure.noLines.message" = "Prova una foto più vicina allo scontrino e con buona luce, o dettalo.";
+"receiptSplit.failure.noConnection.message" = "Connettiti a Internet per leggere lo scontrino.";
+"receiptSplit.failure.mic.message" = "Dai il permesso in Impostazioni per dettare lo scontrino.";

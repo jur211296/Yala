@@ -8636,3 +8636,53 @@
 
 /* Account form: the save failed after some changes were already applied in the app, so it must not say nothing was saved. */
 "account.saveErrorPartial" = "Tout n'a pas pu être enregistré. Une partie des modifications est peut-être déjà visible ; vérifie le compte et enregistre à nouveau.";
+
+/* Groups: «From a receipt» in a new group expense (2.3) */
+"receiptSplit.entry.button" = "Depuis un reçu";
+"receiptSplit.entry.hint" = "Lit un reçu en photo ou à la voix et le partage ligne par ligne";
+"receiptSplit.title" = "Depuis un reçu";
+"receiptSplit.photo.title" = "Photo du reçu";
+"receiptSplit.photo.camera" = "Appareil photo";
+"receiptSplit.photo.library" = "Photos";
+"receiptSplit.photo.change" = "Changer de photo";
+"receiptSplit.phrase.label" = "Qui a pris quoi ?";
+"receiptSplit.phrase.placeholder" = "Ana le steak, Luis et moi la pizza";
+"receiptSplit.phrase.footer" = "Facultatif. Ce que personne ne cite est partagé entre tous.";
+"receiptSplit.split" = "Partager";
+"receiptSplit.voice.title" = "Dicter le reçu";
+"receiptSplit.voice.hint" = "Dis ce qui a été commandé et qui a pris quoi";
+"receiptSplit.voice.example" = "Par exemple : « Pizza 40, steak 35, deux limonades 16. Ana le steak, Luis et moi la pizza. »";
+"receiptSplit.voice.listening" = "Je t’écoute…";
+"receiptSplit.voice.stop" = "Terminé";
+"receiptSplit.reading" = "Lecture du reçu…";
+"receiptSplit.review.title" = "Vérifie le partage";
+"receiptSplit.review.lines" = "Ce qui a été commandé";
+"receiptSplit.review.linesFooter" = "Touche qui a pris chaque article pour le modifier. Balaie pour retirer une ligne.";
+"receiptSplit.review.extras" = "Pourboire, service et taxes";
+"receiptSplit.review.extrasFooter" = "Ils ne sont pas partagés automatiquement. Choisis comment chacun est compté, ou ajoute un pourboire.";
+"receiptSplit.review.perPerson" = "Par personne";
+"receiptSplit.review.everyone" = "Tout le monde";
+"receiptSplit.review.whoHadIt" = "Qui a pris ceci";
+"receiptSplit.review.total" = "Total";
+"receiptSplit.review.use" = "Utiliser ce partage";
+"receiptSplit.review.nothingToSplit" = "Rien à partager pour l’instant.";
+"receiptSplit.review.negativeShare" = "Une remise fait passer quelqu’un sous zéro. Change la façon de la partager.";
+"receiptSplit.review.totalMismatch" = "Le reçu indique %@ et les lignes font %@. Vérifie s’il manque ou s’il y a quelque chose en trop.";
+"receiptSplit.review.unmatched" = "%@ n’est pas dans le groupe. Ses lignes sont partagées entre tous : choisis qui les paie.";
+"receiptSplit.share.excluded" = "Non inclus";
+"receiptSplit.share.proportional" = "Selon ce que chacun a consommé";
+"receiptSplit.share.equal" = "À parts égales";
+"receiptSplit.share.people" = "Seulement pour";
+"receiptSplit.surcharge.add" = "Ajouter un pourboire ou un service";
+"receiptSplit.surcharge.tip" = "Pourboire %d %%";
+"receiptSplit.surcharge.service" = "Service %d %%";
+"receiptSplit.kind.tip" = "Pourboire";
+"receiptSplit.kind.tax" = "Taxes";
+"receiptSplit.kind.service" = "Service";
+"receiptSplit.kind.discount" = "Remise";
+"receiptSplit.failure.read.title" = "Impossible de lire le reçu";
+"receiptSplit.failure.read.message" = "Un problème est survenu. Réessaie dans un instant.";
+"receiptSplit.failure.noLines.title" = "Aucune ligne avec un montant";
+"receiptSplit.failure.noLines.message" = "Essaie une photo plus proche du reçu, bien éclairée, ou dicte-le.";
+"receiptSplit.failure.noConnection.message" = "Connecte-toi à Internet pour lire le reçu.";
+"receiptSplit.failure.mic.message" = "Autorise l’accès dans Réglages pour dicter le reçu.";

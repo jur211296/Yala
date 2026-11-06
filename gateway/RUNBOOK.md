@@ -3,6 +3,14 @@
 El Worker no se despliega solo: `deploy:staging` y `deploy:production` los corre Jürgen a mano (`README.md`, «Deploy»).
 Aquí se apunta lo que está mergeado y espera despliegue, con cómo comprobarlo. Lo desplegado se borra de aquí.
 
+**Pendiente (2026-11-05, rama 2.3): repartir un recibo en un grupo** (card «Grupos: repartir un recibo con IA»). Dos
+tareas nuevas, `receipt.photo` (cubo `vision`, exige imagen) y `receipt.voice` (cubo `voice`, va con la nota), con el
+esquema `RECEIPT_SPLIT_SCHEMA` y JSON estricto. Sin ellas desplegadas, «Desde un recibo» de Nuevo gasto de grupo contesta
+400 (tarea desconocida) y la app enseña «No pude leer el recibo». Las versiones instaladas no las piden. Orden:
+`deploy:staging` desde 2.3 → en Yala Dev, un grupo → «+» → «Desde un recibo» → foto de un recibo y «Ana el lomo, yo la
+pizza» → la revisión sale con las líneas y los nombres → `deploy:production`. Se puede desplegar antes de publicar 2.3.
+**Cuidado**: un despliegue posterior desde `2.2` o `1.0` las quita.
+
 **Pendiente (2026-11-04, rama 2.3): correo del banco por reenvío** (`src/mail/`, encargo S2). Nada desplegado: sin
 el OK de Jürgen al gasto (cierre del PR) no se toca producción. Orden, y cada paso se comprueba antes del siguiente:
 
