@@ -2008,6 +2008,7 @@
 "inbox.sourceApplePay" = "Apple Pay";
 "inbox.sourceAutomation" = "Automação";
 "inbox.sourceSiri" = "Siri";
+"inbox.sourceAIConnector" = "Sua IA";
 "inbox.errorNoAccount" = "Você precisa selecionar uma conta";
 "inbox.errorNoAmount" = "Você precisa informar um valor";
 "inbox.errorNoSubcategory" = "Você precisa selecionar uma categoria";

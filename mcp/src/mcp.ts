@@ -88,7 +88,13 @@ export async function handleMcpRoute(request: Request, env: Env, ctx: Ctx, deps:
   return handleMcp(
     request,
     env,
-    { sub: props.sub, clientId: auth.clientId, upstreamToken: props.access, expiresAt: auth.expiresAt ?? 0 },
+    {
+      sub: props.sub,
+      clientId: auth.clientId,
+      upstreamToken: props.access,
+      expiresAt: auth.expiresAt ?? 0,
+      canDraft: props.drafts === true,
+    },
     { fetcher: deps.fetcher, now: deps.now },
   );
 }

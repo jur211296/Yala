@@ -34,6 +34,7 @@
 - [UI compleja: capturas antes de cerrar](feedback_ui_compleja_capturas_antes_de_cerrar.md) — aprueba sobre el simulador, no el lienzo; pide aire.
 - [El atasco se prueba con segundos y el mismo cambio](feedback_el_atasco_se_prueba_con_segundos_y_el_mismo_cambio.md) — backoff de segundos + mismo fallo antes de abrir una salida que pierde datos.
 - [No esperes el CI ajeno](feedback_no_esperar_ci_ajeno.md) — ni antes del gate: sigue y rebasa una vez antes de tu PR.
+- [El gate en serie, también contra ti](feedback_gate_en_serie_tambien_contra_ti.md) — gate-ci con tu XCUITest vivo agota la cola; build y test chocan en build.db.
 - [El rerun no recoge el arreglo de la base](feedback_rerun_no_recoge_el_arreglo_de_la_base.md) — reusa el merge original: hace falta update-branch.
 - [Simulador ajeno parado: se pregunta](feedback_simulador_ajeno_parado_se_pregunta.md) — si su sesión espera a Jürgen, aprobó usarlo sin apagarlo.
 - [Los contenedores del simulador también hacen cola](feedback_contenedores_del_simulador_tambien_hacen_cola.md) — limpiar Preferences/tmp con sim TOMADO pisó a la bienvenida; va con sim-lock.

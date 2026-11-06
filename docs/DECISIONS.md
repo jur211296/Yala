@@ -2,16 +2,17 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (92 entradas)
+## Índice (93 entradas)
 
-> **No hace falta leer este fichero entero** — son 268 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 269 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-05` [Tu IA registra en Yala: el conector escribe en una cola del gateway, nunca en la nube de la persona](#2026-11-05-tu-ia-registra-en-yala-el-conector-escribe-en-una-cola-del-gateway-nunca-en-la-nube-de-la-persona)
 - `2026-11-05` [Decisiones de Jürgen del 5-nov — deploys, umbral del 80 %, «en el límite» y el candado de commits](#2026-11-05-decisiones-de-jrgen-del-5-nov--deploys-umbral-del-80--en-el-lmite-y-el-candado-de-commits)
 - `2026-10-21` [Formulario de registro 2.2 — la cuenta viene puesta, guardar no saca del flujo y lo elegido va relle](#2026-10-21-formulario-de-registro-22--la-cuenta-viene-puesta-guardar-no-saca-del-flujo-y-lo-elegido-va-relleno)
 - `2026-10-21` [Roadmap de Yala de 2.2 a 4.0 — por tema y sin fechas](#2026-10-21-roadmap-de-yala-de-22-a-40--por-tema-y-sin-fechas)
-- `2026-10-07` [IA en el plan free — voz y foto son un cupo de prueba de 5 notas y 5 fotos](#2026-10-07-ia-en-el-plan-free--voz-y-foto-son-un-cupo-de-prueba-de-5-notas-y-5-fotos)
 - `2026-10-07` [IA — el gateway elige el modelo de cada tarea, por calidad medida](#2026-10-07-ia--el-gateway-elige-el-modelo-de-cada-tarea-por-calidad-medida)
+- `2026-10-07` [IA en el plan free — voz y foto son un cupo de prueba de 5 notas y 5 fotos](#2026-10-07-ia-en-el-plan-free--voz-y-foto-son-un-cupo-de-prueba-de-5-notas-y-5-fotos)
 - `2026-09-30` [El estado de Yala se lee de donde se escribe solo: se retira `docs/ESTADO.md`](#2026-09-30-el-estado-de-yala-se-lee-de-donde-se-escribe-solo-se-retira-docsestadomd)
 - `2026-09-27` [Yala se adapta por espacio, no por dispositivo](#2026-09-27-yala-se-adapta-por-espacio-no-por-dispositivo)
 - `2026-09-26` [El conector de Claude emite sus propios tokens](#2026-09-26-el-conector-de-claude-emite-sus-propios-tokens)
@@ -27,14 +28,14 @@
 - `2026-07-24` [Tanda 2026-07-24: fase 2.0.5 — 36 entradas (2026-07-08 → 2026-07-22)](#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
 - `2026-07-24` [Tanda 2026-07-24 (cierre): últimas 5 entradas de la fase 2.0.5](#tanda-2026-07-24-cierre-ltimas-5-entradas-de-la-fase-205)
 - `2026-07-06` [Stats — Comparativa: KPI "período anterior" alineado a la curva MTD-vs-MTD (p20-15 completo)](#2026-07-06-stats--comparativa-kpi-perodo-anterior-alineado-a-la-curva-mtd-vs-mtd-p20-15-completo)
+- `2026-07-05` [Cold launch — deep link de grupo `yala://groups/<id>` se perdía (gemelo D1 del anterior)](#2026-07-05-cold-launch--deep-link-de-grupo-yalagroupsid-se-perda-gemelo-d1-del-anterior)
 - `2026-07-05` [Siri — migrado al mismo patrón de cola (cierra el ciclo de Apple Pay)](#2026-07-05-siri--migrado-al-mismo-patrn-de-cola-cierra-el-ciclo-de-apple-pay)
 - `2026-07-05` [Cold launch — share-image al share sheet no hacía nada (intent no-serializable pre-init)](#2026-07-05-cold-launch--share-image-al-share-sheet-no-haca-nada-intent-no-serializable-pre-init)
 - `2026-07-05` [Stats — clasificación income/expense por categoría (fase 2 de p20-14)](#2026-07-05-stats--clasificacin-incomeexpense-por-categora-fase-2-de-p20-14)
-- `2026-07-05` [Cold launch — deep link de grupo `yala://groups/<id>` se perdía (gemelo D1 del anterior)](#2026-07-05-cold-launch--deep-link-de-grupo-yalagroupsid-se-perda-gemelo-d1-del-anterior)
 - `2026-07-04` [Apple Pay — el intent deja de tocar SwiftData (patrón de cola App Group)](#2026-07-04-apple-pay--el-intent-deja-de-tocar-swiftdata-patrn-de-cola-app-group)
 - `2026-07-02` [INCIDENTE PROD — sync de grupos muerto 4 días por campo sin deploy de schema + hardening](#2026-07-02-incidente-prod--sync-de-grupos-muerto-4-das-por-campo-sin-deploy-de-schema--hardening)
-- `2026-07-01` [Groups — notificaciones filtradas por participación + copy con voz de marca](#2026-07-01-groups--notificaciones-filtradas-por-participacin--copy-con-voz-de-marca)
 - `2026-07-01` [Groups — pagos planificados de grupo (gasto compartido recurrente)](#2026-07-01-groups--pagos-planificados-de-grupo-gasto-compartido-recurrente)
+- `2026-07-01` [Groups — notificaciones filtradas por participación + copy con voz de marca](#2026-07-01-groups--notificaciones-filtradas-por-participacin--copy-con-voz-de-marca)
 - `2026-06-30` [Personalización — toggle "Iconos coloridos" gobierna también "Más"](#2026-06-30-personalizacin--toggle-iconos-coloridos-gobierna-tambin-ms)
 - `2026-06-28` [Groups — rediseño del split de gastos estilo Splitwise](#2026-06-28-groups--rediseo-del-split-de-gastos-estilo-splitwise)
 - `2026-06-28` [..06-30] Groups — sync de "Solo Grupos" no bajaba cambios de otros miembros](#2026-06-2806-30-groups--sync-de-solo-grupos-no-bajaba-cambios-de-otros-miembros)
@@ -42,8 +43,8 @@
 - `2026-06-19` [..06-22] Groups — saga del crash-loop de sync en restore de iCloud (5 intentos, CERRADA en build 32)](#2026-06-1906-22-groups--saga-del-crash-loop-de-sync-en-restore-de-icloud-5-intentos-cerrada-en-build-32)
 - `2026-06-19` [Fix identity UUIDs colapsados tras restore lento de iCloud (Tag.id/Account.shortcutID/Subcategory.sh](#2026-06-19-fix-identity-uuids-colapsados-tras-restore-lento-de-icloud-tagidaccountshortcutidsubcategoryshortcutid)
 - `2026-06-14` [Fix doble canal de sync CloudKit en Grupos](#2026-06-14-fix-doble-canal-de-sync-cloudkit-en-grupos)
-- `2026-06-10` [Sesión de cierre pre-release 2.0](#2026-06-10-sesin-de-cierre-pre-release-20)
 - `2026-06-10` [OpenAI API key en Info.plist + PrivacyInfo sin FinancialInfo — diferido consciente a post-2.0](#2026-06-10-openai-api-key-en-infoplist--privacyinfo-sin-financialinfo--diferido-consciente-a-post-20)
+- `2026-06-10` [Sesión de cierre pre-release 2.0](#2026-06-10-sesin-de-cierre-pre-release-20)
 - `2026-06-08` [Fix Apple Pay — "No se pudo ejecutar el atajo"](#2026-06-08-fix-apple-pay--no-se-pudo-ejecutar-el-atajo)
 - `2026-06-08` [Fix invite-drop — persistencia de invite pendiente](#2026-06-08-fix-invite-drop--persistencia-de-invite-pendiente)
 - `2026-06-04` [Fix subcategorías duplicadas por re-sync de CloudKit](#2026-06-04-fix-subcategoras-duplicadas-por-re-sync-de-cloudkit)
@@ -53,8 +54,8 @@
 - `2026-05-26` [Refactor robusto del subsistema de routing (F0-F11)](#2026-05-26-refactor-robusto-del-subsistema-de-routing-f0-f11)
 - `2026-05-25` [Transfer pair integrity — épico de 6 commits](#2026-05-25-transfer-pair-integrity--pico-de-6-commits)
 - `2026-05-25` [CSV mirror épico — Budget filters + TransactionItem/InboxDraft tags resilientes a CloudKit lazy hydr](#2026-05-25-csv-mirror-pico--budget-filters--transactioniteminboxdraft-tags-resilientes-a-cloudkit-lazy-hydration)
-- `2026-05-22` [Groups — cleanup de TX/drafts huérfanos post soft-delete (FU-02-cleanup)](#2026-05-22-groups--cleanup-de-txdrafts-hurfanos-post-soft-delete-fu-02-cleanup)
 - `2026-05-22` [Groups — Soft-delete de grupo (FU-02, owner-only, gateado por balance=0)](#2026-05-22-groups--soft-delete-de-grupo-fu-02-owner-only-gateado-por-balance0)
+- `2026-05-22` [Groups — cleanup de TX/drafts huérfanos post soft-delete (FU-02-cleanup)](#2026-05-22-groups--cleanup-de-txdrafts-hurfanos-post-soft-delete-fu-02-cleanup)
 - `2026-05-20` [Onboarding informativo del tab Grupos (3 steps)](#2026-05-20-onboarding-informativo-del-tab-grupos-3-steps)
 - `2026-05-17` [Panel polish — AmountText API simplificada (cierre de sprint)](#2026-05-17-panel-polish--amounttext-api-simplificada-cierre-de-sprint)
 - `2026-05-13` [Stats polish — 4 tabs de Statistics panel-aligned (épico completo, Registros→Insights→Tendencias→Dis](#2026-05-13-stats-polish--4-tabs-de-statistics-panel-aligned-pico-completo-registrosinsightstendenciasdistribucin)
@@ -65,8 +66,8 @@
 - `2026-05-08` [Yala AI Onboarding — tutorial de 4 pasos post-consent](#2026-05-08-yala-ai-onboarding--tutorial-de-4-pasos-post-consent)
 - `2026-05-08` [Groups Pulido — Sprint Pulido 2 (9 bugs UX) + Sprint Pulido 3 (cierre diferidos)](#2026-05-08-groups-pulido--sprint-pulido-2-9-bugs-ux--sprint-pulido-3-cierre-diferidos)
 - `2026-05-08` [Fix subcategorías vacías en Grupos + FullModeActivation rediseñado](#2026-05-08-fix-subcategoras-vacas-en-grupos--fullmodeactivation-rediseado)
-- `2026-05-07` [A4 v3.2 — Welcome Hero + Chooser fix unificado (Sprint 2/2.1 polish visual)](#2026-05-07-a4-v32--welcome-hero--chooser-fix-unificado-sprint-221-polish-visual)
 - `2026-05-07` [A4 v3.2 — Fix P0 #2 (nudge dormant sin grupos) + #6 (Welcome Hero residual tras reinstall)](#2026-05-07-a4-v32--fix-p0-2-nudge-dormant-sin-grupos--6-welcome-hero-residual-tras-reinstall)
+- `2026-05-07` [A4 v3.2 — Welcome Hero + Chooser fix unificado (Sprint 2/2.1 polish visual)](#2026-05-07-a4-v32--welcome-hero--chooser-fix-unificado-sprint-221-polish-visual)
 - `2026-05-07` [Cleanup sistémico de duplicados CloudKit (TODO #10)](#2026-05-07-cleanup-sistmico-de-duplicados-cloudkit-todo-10)
 - `2026-05-06` [A4 — Landing + AASA + Welcome Chooser (cierra Fase A del épico Grupos)](#2026-05-06-a4--landing--aasa--welcome-chooser-cierra-fase-a-del-pico-grupos)
 - `2026-05-05` [A0-Bridge V2.0 — completa items P0+P1 diferidos](#2026-05-05-a0-bridge-v20--completa-items-p0p1-diferidos)
@@ -118,6 +119,32 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-05] Tu IA registra en Yala: el conector escribe en una cola del gateway, nunca en la nube de la persona
+
+**Contexto.** La decisión del 21-oct pasó los conectores de IA a 2.3 con escritura: «la IA solo deja borradores en la
+Bandeja, por confirmar». El conector lee con una sesión de Supabase de solo lectura (`yala_mcp_reader`, ADR del
+2026-09-26), y escribir `inbox_drafts` en la nube obliga a estampar el HLC del protocolo de sync desde un Worker que
+habla con la IA.
+
+**Decisión.** La herramienta `apuntar_movimiento` del conector deja el movimiento en una cola por cuenta del D1 del
+gateway (`connector_drafts`), por una llamada interna entre Workers (service binding a la clase RPC `ConnectorDrafts`,
+sin ruta pública). La app la recoge (`GET /connector/drafts`, con App Attest), crea el borrador local
+—que sincroniza como cualquier otro— y confirma (`ack`). Es el molde del correo del banco (`mail_drafts`).
+
+**Razones.** La sesión del conector sigue sin poder escribir nada en la base; el conector solo puede encolar para el
+usuario que ya verificó; y la app es la única que escribe datos de la persona, con su protocolo de sync. Descartado:
+(1) un rol de Supabase con escritura en `inbox_drafts` (abre escritura en la base a un Worker expuesto a la IA y le
+exige el HLC); (2) darle al conector el binding del D1 del gateway (alcanzaría entitlements y correo).
+
+**Consecuencias.**
+- El conector despliega **después** del gateway (migración 0004 + la clase), en staging y en producción.
+- Lo apuntado llega a la Bandeja cuando la app se abre con la nube y sesión; con la app sin abrir espera 30 días. Una
+  app anterior a 2.3 no lo recoge (y si un borrador `.aiConnector` le llega por sync, lo pinta como «Voz»).
+- Techos por cuenta: 50 al día y 100 en cola. Gratis.
+- Quien añada otra herramienta que escriba en el conector va por la misma cola, nunca por Supabase.
+
+**Estado:** Activa.
 
 ### [2026-11-05] Decisiones de Jürgen del 5-nov — deploys, umbral del 80 %, «en el límite» y el candado de commits
 

@@ -7,6 +7,11 @@
 //    - `GET  /mail/drafts`      → los movimientos que el gateway leyó de los avisos reenviados.
 //    - `POST /mail/drafts/ack`  → la app ya los creó en la Bandeja: el gateway los borra.
 //
+//  Y la cola de lo que apuntó la IA de la persona por el conector (`gateway/src/connector/routes.ts`, 2.3), con el mismo
+//  molde y la misma guard:
+//    - `GET  /connector/drafts`      → los movimientos que dejó Claude, ChatGPT o Grok (`apuntar_movimiento`).
+//    - `POST /connector/drafts/ack`  → la app ya los creó en la Bandeja: el gateway los borra.
+//
 //  Las tres rutas pasan por `requireUserAndAttest` (`gateway/src/mail/routes.ts`, que reusa la guard de
 //  `groups/routes.ts`): producción pasa `AttestSessionProvider.live`; el default `{ nil }` es solo para tests
 //  (`AttestWiringTests` cuenta la construcción). Sin logging de datos: logs bajo `#if DEBUG`.
@@ -74,6 +79,32 @@ struct BankEmailDraftDTO: Decodable, Equatable, Sendable {
     }
 }
 
+/// Un movimiento que apuntó la IA de la persona por el conector (`GET /connector/drafts`). La cuenta y la subcategoría
+/// vienen ya resueltas por el conector contra las de la persona: su `sync_id` (= `shortcutID`) y su nombre.
+nonisolated struct ConnectorDraftDTO: Decodable, Equatable, Sendable {
+    let id: String
+    let receivedAtMs: Double
+    let kind: String
+    let amount: Double
+    let currency: String?
+    let note: String?
+    let date: String?
+    let accountID: String?
+    let accountName: String?
+    let subcategoryID: String?
+    let subcategoryName: String?
+    let client: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, kind, amount, currency, note, date, client
+        case receivedAtMs = "received_at_ms"
+        case accountID = "account_id"
+        case accountName = "account_name"
+        case subcategoryID = "subcategory_id"
+        case subcategoryName = "subcategory_name"
+    }
+}
+
 @MainActor
 final class BankEmailClient {
     private let baseURL: URL
@@ -109,6 +140,17 @@ final class BankEmailClient {
     func ack(ids: [String]) async throws {
         guard !ids.isEmpty else { return }
         _ = try await send(method: "POST", path: "mail/drafts/ack", body: ["ids": ids])
+    }
+
+    func connectorDrafts() async throws -> [ConnectorDraftDTO] {
+        struct Envelope: Decodable { let drafts: [ConnectorDraftDTO] }
+        let data = try await send(method: "GET", path: "connector/drafts", body: nil)
+        return try decode(Envelope.self, from: data).drafts
+    }
+
+    func ackConnectorDrafts(ids: [String]) async throws {
+        guard !ids.isEmpty else { return }
+        _ = try await send(method: "POST", path: "connector/drafts/ack", body: ["ids": ids])
     }
 
     // MARK: - Red

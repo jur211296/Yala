@@ -1,18 +1,23 @@
-# mcp/ — conector de Yala para Claude (staging desplegado; producción lista, sin desplegar)
+# mcp/ — conector de Yala para tu IA (Claude, ChatGPT, Grok)
 
-Un servidor MCP remoto de **solo lectura**. Claude lo usa para leer las finanzas de un usuario en la nube de
-Yala: cuentas y saldos, categorías, movimientos, resumen de un periodo, presupuestos y pagos recurrentes.
-Contexto, decisiones y fases: `docs/exploracion/plugin-claude-mcp.md` (§7 y §8).
+Un servidor MCP remoto. La IA lo usa para **leer** las finanzas de un usuario en la nube de Yala —cuentas y saldos,
+categorías, movimientos, resumen de un periodo, presupuestos y pagos recurrentes— y para **apuntar** un gasto o un
+ingreso como borrador en la Bandeja (`apuntar_movimiento`), que el usuario confirma en la app. Contexto, decisiones y
+fases: `docs/exploracion/plugin-claude-mcp.md` (§7 y §8). Cómo conectar cada IA: `CONECTAR-TU-IA.md`.
 
-- **Worker propio** (`yala-mcp-staging`; en producción `yala-mcp-production`), separado del gateway: no tiene `GROUPS_ENC_KEY`.
-- **El servidor OAuth de Claude es este Worker** (`@cloudflare/workers-oauth-provider`), no Supabase. Claude
-  recibe un token opaco, atado a `…/mcp`, que no sirve en Supabase. Por qué: el ADR «El conector de Claude emite
-  sus propios tokens» (`docs/DECISIONS.md`). Con un token de Supabase en la mano, Claude podía cambiar la cuenta.
+- **Worker propio** (`yala-mcp-staging`), separado del gateway: no tiene `GROUPS_ENC_KEY`.
+- **El servidor OAuth de la IA es este Worker** (`@cloudflare/workers-oauth-provider`), no Supabase. La IA recibe un
+  token opaco, atado a `…/mcp`, que no sirve en Supabase. Por qué: el ADR «El conector de Claude emite sus propios
+  tokens» (`docs/DECISIONS.md`). Con un token de Supabase en la mano, la IA podía cambiar la cuenta.
 - **Supabase queda aguas arriba.** El Worker es un cliente OAuth confidencial de Supabase: el usuario inicia sesión
   allí, y el Worker recibe una sesión con `role = yala_mcp_reader` (hook de Supabase, `qa/cloud/mcp0_0*.sql`),
   que solo tiene SELECT sobre las filas del usuario. La guarda cifrada en KV y nunca la devuelve.
-- **Nada del Worker puede escribir la cuenta:** todas sus salidas a Supabase pasan por una lista cerrada
-  (`src/egress.ts`).
+- **Nada del Worker puede escribir en los datos de la cuenta:** todas sus salidas a Supabase pasan por una lista
+  cerrada (`src/egress.ts`). Lo único que «escribe» es `apuntar_movimiento`, y no lo hace en Supabase: deja el
+  movimiento en una cola del gateway por un service binding (`CONNECTOR_DRAFTS` → clase RPC `ConnectorDrafts`, sin ruta
+  pública) y la app lo recoge como borrador (ADR «Tu IA registra en Yala», `docs/DECISIONS.md`). Sin ese binding la
+  herramienta no se ofrece.
+- **Vueltas OAuth:** las de Claude y las de ChatGPT, exactas (`src/authorize.ts`); las demás, por `EXTRA_REDIRECT_URIS`.
 
 ## Estructura
 
@@ -29,7 +34,8 @@ Contexto, decisiones y fases: `docs/exploracion/plugin-claude-mcp.md` (§7 y §8
 | `src/egress.ts` | La lista cerrada de lo que el Worker puede pedir a Supabase |
 | `src/auth.ts` | Verifica los tokens de Supabase (firma, cliente, rol, sesión) |
 | `src/server.ts` | Servidor MCP sin estado, errores y auditoría por llamada |
-| `src/tools.ts` | Las seis herramientas tal como las ve el SDK de MCP: el núcleo más su esquema de `zod` |
+| `src/tools.ts` | Las seis herramientas de lectura tal como las ve el SDK de MCP: el núcleo más su esquema de `zod` |
+| `src/writeTool.ts` | `apuntar_movimiento`: valida, resuelve cuenta y subcategoría por nombre y encola en el gateway |
 | `src/toolCore.ts` | El núcleo de las seis (qué leen y qué calculan) y el punto de extensión Pro (`plan`). Lo comparte el gateway para Yala IA en la nube: sin dependencias, ver `gateway/src/ai/explore/` |
 | `src/logic/` | Cálculos portados de Swift; cada fichero cita la función de origen |
 | `plugin/` | Borrador del plugin: `.mcp.json` y tres skills. No publicado |

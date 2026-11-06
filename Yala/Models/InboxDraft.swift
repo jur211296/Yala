@@ -26,6 +26,10 @@ enum DraftSourceType: String, Codable {
     case groupSettlement // A0-Bridge: caso C/D — TX cuenta real diferida hasta asignar cuenta
     case manual         // FU-02 cleanup: draft convertido tras soft-delete/leave/remove. Editable como personal.
     case groupScheduledExpense // Pago planificado de grupo: al aprobar abre el form de grupo y crea el SplitExpense.
+    /// La IA de la persona (Claude, ChatGPT, Grok) lo apuntó por el conector de Yala (`mcp/`, `apuntar_movimiento`) y la
+    /// app lo recogió de la cola del gateway (`AIConnectorDraftService`). La IA concreta va en `evidence`. Una app anterior
+    /// a 2.3 no conoce el valor y lo pinta como `.voice` (el fallback de `sourceType`); el raw se conserva.
+    case aiConnector
 
     /// True para los sources que crea el bridge de grupos. Decide el ruteo del aprobar en lote
     /// (`BulkApproveRoutingLogic`). Si se pueden rechazar o borrar lo decide `blocksInboxDismissal`.
@@ -372,6 +376,7 @@ final class InboxDraft: Identifiable {
         case .groupSettlement: return "arrow.left.arrow.right.circle.fill"
         case .manual: return "square.and.pencil"
         case .groupScheduledExpense: return "arrow.trianglehead.2.clockwise.rotate.90"
+        case .aiConnector: return "sparkles"
         }
     }
 

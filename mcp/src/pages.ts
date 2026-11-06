@@ -56,19 +56,33 @@ function isLoopback(host: string): boolean {
  * para un servidor que autentica a través de otro (el «confused deputy»): quién pide, a dónde volverá el acceso, y
  * qué podrá hacer. `handle` liga el formulario a este navegador (cookie `__Host-` de la librería).
  */
-export function consentPage(client: ClientInfo, request: AuthRequest, handle: string, headers: Headers, staging: boolean): Response {
+export function consentPage(
+  client: ClientInfo,
+  request: AuthRequest,
+  handle: string,
+  headers: Headers,
+  staging: boolean,
+  canDraft = false,
+): Response {
   const name = client.clientName?.trim() || "Una aplicación";
   const host = new URL(request.redirectUri).hostname;
   const local = isLoopback(host);
   const where = local
     ? `<p class="warn"><strong>El acceso irá a una aplicación de tu computadora.</strong> Sigue solo si acabas de empezar la conexión desde ella.</p>`
     : `<p>Volverá a: <strong>${escapeHtml(host)}</strong></p>`;
-  const body = `<h1>${escapeHtml(name)} quiere leer tus datos de Yala</h1>
+  // Con la cola de la Bandeja enlazada (`CONNECTOR_DRAFTS`) el conector ofrece `apuntar_movimiento`: el permiso lo dice.
+  const draftItem = canDraft
+    ? `<p>Y podrá <strong>apuntar</strong> gastos e ingresos como borradores en tu Bandeja. Ninguno cuenta hasta que tú lo confirmes en la app.</p>`
+    : "";
+  const cannot = canDraft
+    ? `<p><strong>No podrá</strong> cambiar ni borrar nada, ni confirmar un borrador: ni tus finanzas ni los datos de tu cuenta. Tampoco verá tus grupos. Puedes quitarle el acceso cuando quieras.</p>`
+    : `<p><strong>No podrá</strong> crear, cambiar ni borrar nada: ni tus finanzas ni los datos de tu cuenta. Tampoco verá tus grupos. Puedes quitarle el acceso cuando quieras.</p>`;
+  const body = `<h1>${escapeHtml(name)} quiere ${canDraft ? "usar" : "leer"} tus datos de Yala</h1>
 ${staging ? STAGING_TAG : ""}${where}
 <p>El nombre «${escapeHtml(name)}» lo eligió la propia aplicación al registrarse.</p>
 <p>Si continúas, inicias sesión en Yala y podrá <strong>leer</strong>:</p>
 <ul><li>tus cuentas y sus saldos</li><li>tus movimientos, categorías y etiquetas</li><li>tus presupuestos</li><li>tus pagos recurrentes</li></ul>
-<p><strong>No podrá</strong> crear, cambiar ni borrar nada: ni tus finanzas ni los datos de tu cuenta. Tampoco verá tus grupos. Puedes quitarle el acceso cuando quieras.</p>
+${draftItem}${cannot}
 ${CLOUD_ONLY_NOTE}
 <form method="post" action="/authorize">
 <input type="hidden" name="handle" value="${escapeHtml(handle)}">
@@ -82,7 +96,7 @@ ${CLOUD_ONLY_NOTE}
  * Yala, y quien está en iCloud privado no verá nada. Es solo un aviso: no bloquea. Va en el permiso, antes de iniciar
  * sesión, porque iniciar sesión con Apple o Google en una cuenta que no existe la crea vacía.
  */
-export const CLOUD_ONLY_NOTE = `<div class="note"><p><strong>Solo funciona con la nube de Yala.</strong> Si tus datos viven en tu iCloud, Claude no podrá verlos. Para usarlo, en Yala ve a Ajustes → «Dónde viven tus datos» → «Activar la nube», y luego vuelve a conectar.</p></div>`;
+export const CLOUD_ONLY_NOTE = `<div class="note"><p><strong>Solo funciona con la nube de Yala.</strong> Si tus datos viven en tu iCloud, esta aplicación no podrá verlos. Para usarlo, en Yala ve a Ajustes → «Dónde viven tus datos» → «Activar la nube», y luego vuelve a conectar.</p></div>`;
 
 export type SocialProvider = "apple" | "google";
 

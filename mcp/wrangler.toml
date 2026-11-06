@@ -1,4 +1,4 @@
-# Yala MCP — conector de solo lectura para Claude. Worker PROPIO, separado del gateway (docs/exploracion/plugin-claude-mcp.md §3):
+# Yala MCP — conector de Yala para tu IA (Claude, ChatGPT, Grok): lee, y deja borradores en la Bandeja. Worker PROPIO, separado del gateway (docs/exploracion/plugin-claude-mcp.md §3):
 # no lleva GROUPS_ENC_KEY, y un deploy suyo no alcanza al sync de la app.
 #
 # Dos entornos: staging (el de arriba, `npm run deploy:staging`) y producción (`[env.production]`, abajo). Producción
@@ -41,6 +41,18 @@ SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 SUPABASE_OAUTH_CLIENT_ID = "65fb5767-59a5-4f50-b77c-7970e67589c5"
 # Zona por defecto para «este mes» cuando Claude no pasa zona_horaria. El servidor no conoce la del teléfono.
 DEFAULT_TIMEZONE = "America/Lima"
+
+# La cola de la Bandeja (src/writeTool.ts, `apuntar_movimiento`): llamada interna a la clase RPC `ConnectorDrafts` del
+# gateway, sin ruta pública. Sin este binding la herramienta de escritura no se ofrece. ORDEN DE DESPLIEGUE: primero el
+# gateway (migración 0004 + el código con la clase), después este Worker.
+[[services]]
+binding = "CONNECTOR_DRAFTS"
+service = "yala-gateway-staging"
+entrypoint = "ConnectorDrafts"
+
+# Vueltas OAuth extra (src/authorize.ts): la de Grok cuando se mida. Un intento rechazado deja la vuelta en el log
+# (`wrangler tail`, evento `mcp_autorizacion`, motivo `vuelta_no_permitida`). Se añade como var:
+#   EXTRA_REDIRECT_URIS = "https://…exacta…"
 
 # Límites de peticiones (src/ratelimit.ts). Binding Rate Limiting de Workers: sin coste aparte, contador aproximado
 # por ubicación. Periodo: 10 o 60 s. `namespace_id` es un entero único en la cuenta (el gateway no usa este binding).
@@ -104,3 +116,10 @@ simple = { limit = 600, period = 60 }
 name = "RL_MCP"
 namespace_id = "7313"
 simple = { limit = 120, period = 60 }
+
+# La cola de la Bandeja en producción: el gateway de producción con la migración 0004 y la clase `ConnectorDrafts`
+# desplegados ANTES que este Worker (mcp/RUNBOOK-produccion.md, «Tu IA registra en Yala»).
+[[env.production.services]]
+binding = "CONNECTOR_DRAFTS"
+service = "yala-gateway-production"
+entrypoint = "ConnectorDrafts"

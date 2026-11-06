@@ -1,4 +1,5 @@
 import type { OAuthHelpers } from "@cloudflare/workers-oauth-provider";
+import type { ConnectorDraftsBinding } from "./writeTool";
 
 /** El binding Rate Limiting de Workers (`[[ratelimits]]`), con la forma que documenta Cloudflare. */
 export interface RateLimiter {
@@ -36,6 +37,18 @@ export interface Env {
   RL_BROWSER?: RateLimiter;
   RL_OAUTH?: RateLimiter;
   RL_MCP?: RateLimiter;
+  /**
+   * Service binding a la clase RPC `ConnectorDrafts` del gateway (`gateway/src/connector/entrypoint.ts`): la cola donde
+   * `apuntar_movimiento` deja los borradores de la Bandeja. Sin él, la herramienta de escritura no se ofrece y el
+   * conector sigue siendo de solo lectura.
+   */
+  CONNECTOR_DRAFTS?: ConnectorDraftsBinding;
+  /**
+   * Vueltas OAuth exactas que se aceptan además de las de Claude y ChatGPT (`authorize.ts`), separadas por comas o
+   * espacios. Para la IA que no publica la suya (Grok): el primer intento rechazado la deja en el log
+   * (`mcp_autorizacion`, motivo `vuelta_no_permitida`) y se añade aquí. Solo https.
+   */
+  EXTRA_REDIRECT_URIS?: string;
   /** Lo inyecta la librería en los handlers. */
   OAUTH_PROVIDER?: OAuthHelpers;
 }

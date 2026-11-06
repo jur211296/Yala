@@ -1863,6 +1863,7 @@
 "inbox.sourceScreenshot" = "Captura";
 "inbox.sourceScreenshotList" = "Lista";
 "inbox.sourceSiri" = "Siri";
+"inbox.sourceAIConnector" = "Tu IA";
 "inbox.sourceSubscription" = "Suscripción";
 "inbox.sourceVoice" = "Voz";
 "inbox.subtitleAllDone" = "Bandeja en cero, gran trabajo.";

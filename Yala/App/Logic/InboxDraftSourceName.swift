@@ -25,6 +25,7 @@ extension InboxDraft {
         case .groupSettlement: return L10n.Inbox.sourceGroupSettlement
         case .manual: return L10n.Inbox.sourceManual
         case .groupScheduledExpense: return L10n.Inbox.sourceGroupScheduledExpense
+        case .aiConnector: return L10n.Inbox.sourceAIConnector
         }
     }
 }
