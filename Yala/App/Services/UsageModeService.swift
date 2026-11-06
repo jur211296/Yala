@@ -166,5 +166,9 @@ enum UsageModeService {
         // El borrado se llevó los tipos de cambio: se recargan por el camino de siempre.
         sessionState.needsExchangeRateReload = true
         await returnToFull(context: context)
+        // Los gastos de grupo vuelven a lo personal en esta sesión, no en el arranque siguiente (ticket
+        // `wipe-data-group-rows-return-only-on-the-next-cold-launch`). En su propia tarea: la espera del store listo
+        // puede durar y quien llama ya volvió al Panel.
+        Task { @MainActor in await AppBootstrapper.shared.convergeGroupsBridgeInSession(context: context) }
     }
 }

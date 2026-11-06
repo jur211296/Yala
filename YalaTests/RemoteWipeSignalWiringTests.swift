@@ -697,7 +697,10 @@ struct RemoteWipeSignalWiringTests {
     @Test("MUTACIÓN: el arranque resuelve el reparto antes de la convergencia, detrás de sus gates")
     func theBootResolvesTheDivisionBeforeTheConvergence() throws {
         let llamada = "GroupsRemoteWipeDivision.resolveIfArrived()"
-        #expect(try Self.countInProduction(llamada) == 1, "el arranque ya no resuelve el reparto, o lo resuelve dos veces")
+        // Dos desde el 2026-11-06: el arranque y la convergencia en la sesión tras vaciar
+        // (`AppBootstrapper.convergeGroupsBridgeInSession`, ticket `wipe-data-group-rows-return-only-on-the-next-cold-launch`).
+        #expect(try Self.countInProduction(llamada) == 2,
+                "el arranque o la convergencia en la sesión ya no resuelven el reparto, o alguien más lo resuelve")
         let boot = try Self.code("Yala/App/AppBootstrapper.swift")
         let inicio = try #require(boot.range(of: "func retryPendingBridges(context: ModelContext) async {"))
         let cuerpo = boot[inicio.upperBound...]

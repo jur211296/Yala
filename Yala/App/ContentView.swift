@@ -2505,6 +2505,9 @@ struct ContentView: View {
                 // «Datos restaurados» no decía lo que había pasado: los datos se VACIARON desde otro dispositivo, que siguió
                 // usando Yala (desde el encargo S27i, el caso normal: «Vaciar datos» ya no repite la bienvenida).
                 showPositiveToast(L10n.iCloud.remoteWipeKeptSetup, seconds: PositiveToastLayout.remoteOnboardingSeconds)
+                // La persona sigue dentro: lo que este teléfono repone de sus grupos vuelve ahora, no en el arranque
+                // siguiente (ticket `wipe-data-group-rows-return-only-on-the-next-cold-launch`).
+                await AppBootstrapper.shared.convergeGroupsBridgeInSession(context: modelContext)
             } else {
                 // Reset chooser flag: tras wipe completo, el user vuelve a ver las 3 ramas.
                 hasShownWelcomeChooser = false

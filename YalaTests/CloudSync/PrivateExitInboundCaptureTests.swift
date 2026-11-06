@@ -45,10 +45,41 @@ struct PrivateExitInboundCaptureLogicTests {
         let created = InboundCaptureDrain.drain(
             context: try makeTestContext(),
             wipeArmed: false,
+            hasPrivateSession: true,
             applePay: { _ in calls.append("applePay"); return 2 },
             siri: { _ in calls.append("siri"); return 1 })
         #expect(created == 3)
         #expect(calls == ["applePay", "siri"])
+    }
+
+    // Ticket `apple-pay-capture-in-a-groups-only-session-has-no-personal-inbox`: lo que ya esperaba en la cola no se
+    // convierte en borrador de un store personal sin sesión privada; espera a Yala completo.
+    @Test("sin sesión privada Apple Pay y Siri esperan en la cola; el widget de pagos sigue")
+    func drain_withoutPrivateSession_leavesApplePayAndSiriQueued() throws {
+        var calls: [String] = []
+        let created = InboundCaptureDrain.drain(
+            context: try makeTestContext(),
+            wipeArmed: false,
+            hasPrivateSession: false,
+            applePay: { _ in calls.append("applePay"); return 2 },
+            siri: { _ in calls.append("siri"); return 1 },
+            widgetPaid: { _ in calls.append("widgetPaid"); return 0 })
+        #expect(created == 0)
+        #expect(calls == ["widgetPaid"], "sin sesión privada no hay Bandeja ni cuentas: el pago se queda en el App Group")
+    }
+
+    @Test("con sesión privada (también con «Solo grupos» elegido) Apple Pay y Siri se materializan como siempre")
+    func drain_withPrivateSession_drainsBoth() throws {
+        var calls: [String] = []
+        let created = InboundCaptureDrain.drain(
+            context: try makeTestContext(),
+            wipeArmed: false,
+            hasPrivateSession: true,
+            applePay: { _ in calls.append("applePay"); return 2 },
+            siri: { _ in calls.append("siri"); return 1 },
+            widgetPaid: { _ in calls.append("widgetPaid"); return 0 })
+        #expect(created == 3)
+        #expect(calls == ["applePay", "siri", "widgetPaid"])
     }
 
     @Test("el cierre materializa ANTES de leer el historial")
@@ -169,6 +200,7 @@ struct PrivateExitInboundCaptureIntegrationTests {
                         InboundCaptureDrain.drain(
                             context: ctx,
                             wipeArmed: false,
+                            hasPrivateSession: true,
                             applePay: { ApplePayDraftService.processPending(
                                 context: $0, pendingStoreDefaults: queue, importQuiescent: quiescent) },
                             siri: { _ in 0 })
@@ -328,12 +360,16 @@ struct PrivateExitInboundCaptureWiringTests {
     func drainGuardsTheArmedWipe() throws {
         let src = try Self.source(Self.drainPath)
         #expect(src.contains("wipeArmed: Bool = StorageModePersistence.isSignOutWipeArmed(),"))
+        // Gate de DATOS: lee el eje, no la shell (`swiftui-ds.md`, «Solo grupos» tiene dos orígenes).
+        #expect(src.contains("hasPrivateSession: Bool = PrivateSessionMark.hasPrivateSession(),"))
         #expect(src.contains("applePay: @MainActor (ModelContext) -> Int = { ApplePayDraftService.processPending(context: $0) },"))
         #expect(src.contains("siri: @MainActor (ModelContext) -> Int = { SiriDraftService.processPending(context: $0) }"))
         let drain = try Self.body(of: "static func drain(", in: src)
         let guardRange = try #require(drain.range(of: "guard !wipeArmed else { return 0 }"))
         let firstDrain = try #require(drain.range(of: "applePay(context)"))
         #expect(guardRange.lowerBound < firstDrain.lowerBound)
+        #expect(drain.contains("let applePayCreated = hasPrivateSession ? applePay(context) : 0"))
+        #expect(drain.contains("let siriCreated = hasPrivateSession ? siri(context) : 0"))
         let forSignOut = try Self.body(of: "static func forSignOut(", in: src)
         #expect(forSignOut.contains("let created = drain(context)"))
         #expect(src.contains("drain: @MainActor (ModelContext) -> Int = { InboundCaptureDrain.drain(context: $0) },"))

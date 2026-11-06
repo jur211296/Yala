@@ -518,8 +518,10 @@ struct PrivateSessionMarkWiringTests {
     /// y la aserción de arriba pasaría verde sin medir nada — la familia de «Executed 0 tests».
     @Test("control: el escáner de producción encuentra algo")
     func theProductionScannerActuallyFindsThings() {
-        #expect(Self.countInProduction("PrivateSessionMark.hasPrivateSession(") == 20, """
-            el eje 1 tiene VEINTE consumidores de la lectura conservadora. Si este número cambia, hay un
+        #expect(Self.countInProduction("PrivateSessionMark.hasPrivateSession(") == 21, """
+            el eje 1 tiene VEINTIUNO consumidores de la lectura conservadora (el 21.º, del 2026-11-06, es el drenaje de
+            Apple Pay y Siri, `InboundCaptureDrain.drain`: sin sesión privada deja la cola en el App Group; ausente ⇒
+            drena, como antes). Si este número cambia, hay un
             constructor nuevo y hay que decidir con qué lectura contesta — y si el consumidor nuevo
             alcanza datos de FUERA de este teléfono, la lectura que le toca es la otra.
 

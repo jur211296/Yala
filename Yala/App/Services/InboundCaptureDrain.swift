@@ -30,18 +30,27 @@ enum InboundCaptureDrain {
     /// **Con el borrado de cierre armado no toca nada**: las colas se quedan para la purga del arranque, que
     /// es la frontera de privacidad entre cuentas.
     ///
+    /// **Sin sesión privada, Apple Pay y Siri esperan en el App Group** (ticket
+    /// `apple-pay-capture-in-a-groups-only-session-has-no-personal-inbox`). Desde el encargo S11e (2026-10-27) los dos
+    /// intents no encolan en «Solo grupos» (`GroupsOnlyIntentGate`), pero lo que ya esperaba —encolado antes de quedarse
+    /// en solo grupos, o por un build anterior— se materializaba como borrador de un store personal sin cuentas ni
+    /// Bandeja. Ahora se queda en la cola y se convierte en borrador cuando la persona activa Yala completo. Es un gate de
+    /// DATOS, así que lee el eje (`PrivateSessionMark`), no la shell: con sesión privada y «Solo grupos» elegido el store
+    /// personal es real y se materializa como siempre (el aviso de la Bandeja ya espera, `PersonalRemindersPause`).
+    ///
     /// Los parámetros existen para los tests; en producción se usan los valores por defecto.
     @discardableResult
     static func drain(
         context: ModelContext,
         wipeArmed: Bool = StorageModePersistence.isSignOutWipeArmed(),
+        hasPrivateSession: Bool = PrivateSessionMark.hasPrivateSession(),
         applePay: @MainActor (ModelContext) -> Int = { ApplePayDraftService.processPending(context: $0) },
         siri: @MainActor (ModelContext) -> Int = { SiriDraftService.processPending(context: $0) },
         widgetPaid: @MainActor (ModelContext) -> Int = { ScheduledPaymentPayNow.processWidgetPaidRequests(context: $0) }
     ) -> Int {
         guard !wipeArmed else { return 0 }
-        let applePayCreated = applePay(context)
-        let siriCreated = siri(context)
+        let applePayCreated = hasPrivateSession ? applePay(context) : 0
+        let siriCreated = hasPrivateSession ? siri(context) : 0
         // «Ya lo pagué» del widget de Pagos planificados: el registro con la lógica de «Apuntarlo ahora».
         let widgetPaidCreated = widgetPaid(context)
         return applePayCreated + siriCreated + widgetPaidCreated
