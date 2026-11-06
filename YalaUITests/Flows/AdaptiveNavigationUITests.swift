@@ -617,7 +617,9 @@ final class AdaptiveNavigationUITests: XCTestCase {
             let tab = app.tabBars.buttons[page]
             XCTAssertTrue(tab.waitForExistence(timeout: 10), "Al estrechar con «\(page)», no hay pestaña «\(page)» abajo.")
             XCTAssertTrue(tab.isSelected, "Al estrechar con «\(page)», la pestaña seleccionada es otra.")
-            XCTAssertTrue(app.tabBars.buttons["Más"].exists, "La barra estrecha perdió «Más».")
+            XCTAssertTrue(app.tabBars.buttons["Más"].waitForExistence(timeout: 5),
+                          "La barra estrecha perdió «Más». Botones: \(app.tabBars.buttons.allElementsBoundByIndex.map(\.label)); "
+                          + "otros: \(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Más")).allElementsBoundByIndex.map { "\($0.elementType.rawValue)" })")
             XCTAssertEqual(app.state, .runningForeground, "La app se cerró al estrechar con «\(page)».")
 
             app.maximizeWindow()

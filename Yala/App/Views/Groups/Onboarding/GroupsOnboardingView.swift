@@ -4,7 +4,7 @@
 //
 //  Onboarding informativo (3 steps) presentado al primer tap del tab Grupos.
 //  Patrón análogo a YalaAIOnboardingView:
-//   - "X" topLeft (step 1) → onResult(.close) — NO persiste flag.
+//   - "X" topLeft (step 1) → onResult(.close) — la primera aplaza, la segunda persiste la flag.
 //   - "‹" chevron back (steps 2-3) → goBack().
 //   - CTA Step 3 "Ir a Grupos" → onResult(.complete) — persiste flag.
 //
@@ -93,6 +93,7 @@ struct GroupsOnboardingView: View {
             YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                 onResult(.close)
             }
+            .accessibilityIdentifier("groups_onboarding_close")
         } else {
             YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
                 goBack()
