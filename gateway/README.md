@@ -160,8 +160,11 @@ El coste sale de multiplicar por el precio del modelo (`bench/candidates.ts`). *
 
 ### `POST /metrics` — telemetría propia mínima (sustituye TelemetryDeck)
 
-Ingestión PÚBLICA (molde `/config`: sin auth/attest) de 3 eventos: `ping` (activos/día), `register`
-(altas/día, `n`=local|cloud) y `canary` (diagnósticos del gate de Modo Nube). Escribe a **Workers
+Ingestión PÚBLICA (molde `/config`: sin auth/attest) de 4 eventos: `ping` (activos/día), `register`
+(altas/día, `n`=local|cloud), `canary` (diagnósticos del gate de Modo Nube) y, desde el 2026-11-06, `use` («usó esta
+función», uno al día; exige `n`). Un evento fuera de la lista tumba el lote entero: **`use` se despliega antes que el
+build de la app que lo manda**. El gateway apunta además sus propios hechos de uso con `e = "server"`
+(`src/serverEvent.ts`: avisos de Apple y la última pregunta del cupo de IA), que lee el panel (`panel/`). Escribe a **Workers
 Analytics Engine** (binding `METRICS`; datasets `yala_metrics_staging` / `yala_metrics`, retención 90
 días). Validación estricta (whitelist + regex + caps) como único anti-abuso; binding ausente → 200 y
 descarte logueado (el cliente no reintenta por config server-side). Queries de referencia y contrato

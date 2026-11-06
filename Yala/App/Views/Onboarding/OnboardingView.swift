@@ -293,6 +293,7 @@ struct OnboardingView: View {
             }
         }
         .task {
+            recordStepReached(currentStep)  // embudo del alta: el primer paso no pasa por `advance()`
             let defaults = UserDefaults.standard
             if let name = OnboardingPrefillResolver.resolveUserName(
                 prefilled: prefilledData,
@@ -1825,6 +1826,14 @@ struct OnboardingView: View {
         }
     }
 
+    /// Embudo del alta (telemetría propia): el paso al que se llegó, como mucho una vez al día por paso. Solo el
+    /// onboarding del Welcome: activar Yala completo desde solo grupos (`fullActivation`) no es un alta.
+    private func recordStepReached(_ step: OnboardingStep) {
+        guard MetricsUseFeature.closesSignUp(mode: mode.rawValue),
+              let feature = MetricsUseFeature.onboardingStep(trackingName: step.trackingName) else { return }
+        MetricsService.used(feature)
+    }
+
     /// Avanza al siguiente step (o completa el onboarding si es el último).
     private func advance() {
         dismissKeyboard()
@@ -1848,6 +1857,7 @@ struct OnboardingView: View {
             dsWithAnimation(reduceMotion, .easeInOut(duration: 0.3)) {
                 currentStep = first
             }
+            recordStepReached(first)
             return
         }
 
@@ -1859,6 +1869,7 @@ struct OnboardingView: View {
         dsWithAnimation(reduceMotion, .easeInOut(duration: 0.3)) {
             currentStep = next
         }
+        recordStepReached(next)
         if next == .categories {
             triggerCategoryAnimation()
         }

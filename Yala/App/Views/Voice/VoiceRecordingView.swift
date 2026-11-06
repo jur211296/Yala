@@ -702,6 +702,8 @@ struct VoiceRecordingView: View {
     }
 
     private func processAudio(_ audioData: Data) async {
+        // Telemetría propia: «usó esta función» (uno al día). Cuenta el intento, salga o no la lectura.
+        MetricsService.used(.notaDeVoz)
         do {
             let (text, parsedTransactions) = try await understand(audioData)
             guard !Task.isCancelled else { return }

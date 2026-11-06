@@ -1648,6 +1648,37 @@ Eso solo se distingue guardando `authorization_status` al registrar el token (ti
 `push-token-does-not-record-the-notification-permission`). **Hasta que se despliegue el Worker con este cambio, la
 serie está vacía**: el silencio no dice nada antes de esa fecha.
 
+### `use` y los eventos de uso del servidor (2026-11-06, telemetría propia · construcción)
+
+Decisiones de Jürgen del 6-nov (propuesta en `docs/telemetria/propuesta-2026-11.md`). Las lee el cron del panel
+(`panel/`), que resume cada día en su propia D1; no hacen falta para el gate de canarios.
+
+- **`use`** (de la app): «usó esta función», `n` = slug de la función, **como mucho uno al día por función** (guard
+  del cliente, día UTC, como el del ping). El gateway exige `n`. `blob4` = versión, `blob5` = install, como el resto.
+- **`e = "server"`** (del gateway, `gateway/src/serverEvent.ts`): hechos normales que solo ve el servidor, con
+  `blob4 = blob5 = 'gateway'`. No son canarios (`e = 'canary'`): no se miran «en cero». Lista cerrada
+  (`SERVER_EVENTS`); `gateway/test/serverEvent.unit.test.ts` exige que cada nombre salga aquí:
+
+| Evento | Cuándo | `blob3` |
+|---|---|---|
+| `appstoreNotification` | aviso de App Store Server Notifications V2 con firma válida y de NUESTRO bundle | `<notificationType>\|<subtype o ->\|<trial\|paid\|->\|<Production\|Sandbox>` |
+| `aiQuotaExhausted` | una petición de IA gastó la ÚLTIMA unidad de su cupo (una vez por persona y cupo; una devolución por fallo del proveedor puede hacer que salga dos veces) | `<free\|pro>\|<daily\|trial>\|<categoría>` |
+
+⚠️ **Orden de deploy:** un evento fuera de la lista del gateway tumba el LOTE ENTERO (400) y el cliente lo descarta
+con los canarios que viajaran en él. El gateway con `use` va a producción ANTES que cualquier build que lo mande.
+
+```sql
+-- Funciones usadas: personas distintas por función en los últimos 7 días.
+SELECT blob2 AS funcion, count(DISTINCT blob5) AS personas
+FROM yala_metrics WHERE blob1 = 'use' AND timestamp > NOW() - INTERVAL '7' DAY
+GROUP BY funcion ORDER BY personas DESC;
+
+-- Avisos de Apple por tipo (pruebas, compras, renovaciones, bajas).
+SELECT blob3 AS aviso, sum(_sample_interval) AS n
+FROM yala_metrics WHERE blob1 = 'server' AND blob2 = 'appstoreNotification'
+GROUP BY aviso ORDER BY n DESC;
+```
+
 Residuales documentados: evento retenido en el spool offline del cliente se estampa el día del ENVÍO
 (distorsión solo offline multi-día); sin rate-limit por IP (D2 — validación estricta + AE barato);
 alerting = consulta manual del dashboard (D5, paridad con lo que había). Tests:

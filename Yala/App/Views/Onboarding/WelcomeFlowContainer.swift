@@ -263,9 +263,11 @@ struct WelcomeFlowContainer: View {
                     // G3: la card de crear ya está cableada y por tanto se pinta. Su handler NO sale del
                     // cover: abre la puerta, que es el step siguiente. El portal se cruza más tarde, y
                     // solo si la puerta abre.
-                    onCreate: { goTo(.groupsGate(purpose: .createGroup)) },
+                    onCreate: { chooseGroupsPath(.altaCaminoGrupoCrear) { goTo(.groupsGate(purpose: .createGroup)) } },
                     onJoin: {
-                        leaveWelcome(to: .inviteRecovery) { onSelectBranch(.invite) }
+                        chooseGroupsPath(.altaCaminoGrupoUnirse) {
+                            leaveWelcome(to: .inviteRecovery) { onSelectBranch(.invite) }
+                        }
                     },
                     onBack: { goTo(groupsChooserOrigin) },
                     // Card 2osn: «¿Ya tienes una cuenta? Entra aquí» va por la MISMA puerta que «Ya tengo una cuenta» del
@@ -502,6 +504,8 @@ struct WelcomeFlowContainer: View {
     /// el arranque le ofrecería «Terminar de borrar» sobre lo que acaba de elegir conservar. Aquí y no en cada `onRestore`:
     /// este es el portal por el que pasan las tres entradas a Restaurar del Welcome.
     private func handleExistingOption(_ option: WelcomeAccountChoiceLogic.ExistingOption) {
+        // Embudo del alta (telemetría propia): el camino elegido, antes de puertas y relanzamientos.
+        MetricsService.used(option == .restoreICloud ? .altaCaminoRestaurar : .altaCaminoEntrar)
         let destination: WelcomeMirrorRelaunchLogic.Destination
         switch option {
         case .restoreICloud:
@@ -532,6 +536,7 @@ struct WelcomeFlowContainer: View {
             options: visibleNewOptions
         ) {
         case .cloudSignIn(let provider):
+            MetricsService.used(.altaCaminoEntrar)
             leaveWelcome(to: .cloudSignIn) { onBeaconRoutesToCloudSignIn(provider) }
         case .single(let option):
             handleNewOption(option)
@@ -577,7 +582,15 @@ struct WelcomeFlowContainer: View {
         WelcomeAccountChoiceLogic.bypass(visibleNewOptions) == nil ? .newChooser : .chooser
     }
 
+    /// Embudo del alta: apunta el camino de Grupos y sigue.
+    private func chooseGroupsPath(_ path: MetricsUseFeature, then next: () -> Void) {
+        MetricsService.used(path)
+        next()
+    }
+
     private func handleNewOption(_ option: WelcomeAccountChoiceLogic.NewOption) {
+        // Embudo del alta (telemetría propia): el camino elegido, antes de puertas y relanzamientos.
+        MetricsService.used(option == .privateAccount ? .altaCaminoPrivada : .altaCaminoNube)
         switch option {
         case .privateAccount:
             // **Paso 4 · esta rama ya no sale directa por el portal: pasa por la puerta.** Hasta el

@@ -1,0 +1,24 @@
+{
+  "name": "yala-panel",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Panel propio de Yala: resumen diario de la telemetría en D1 y una página por secciones con frases, detrás de Cloudflare Access.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "migrate": "wrangler d1 migrations apply yala-panel --remote",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
+    "test": "vitest run",
+    "preview": "vite-node scripts/preview.ts --"
+  },
+  "dependencies": {
+    "jose": "5.10.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "4.20260615.1",
+    "typescript": "5.9.3",
+    "vitest": "3.2.6",
+    "wrangler": "4.100.0"
+  }
+}

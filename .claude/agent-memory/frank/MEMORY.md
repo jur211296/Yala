@@ -56,3 +56,4 @@
 - [Adjuntos de XCTest en el simulador](reference_adjuntos_de_xctest_en_el_simulador.md) — 16 GB en tmp/Attachments del daemon; y workspaces de XcodeBuildMCP huérfanos.
 - [Contar el store del iPhone](reference_contar_el_store_del_iphone_con_devicectl.md) — devicectl desde el App Group (no la app) + sqlite3: qué filas sube.
 - [iPhone 14 libre para pruebas](feedback_iphone_14_libre_para_pruebas.md) — siempre en Device MCP; úsalo si sale más rápido o fiel que el simulador.
+- [Borrar en disco lo hace el bot](feedback_borrar_en_disco_lo_hace_el_bot.md) — sandbox niega `rm` y falta espacio: pide al bot de Frank la ruta exacta, solo lo tuyo.

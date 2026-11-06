@@ -1,3 +1,4 @@
+import { serverEvent } from "./serverEvent";
 import type { Env } from "./env";
 import type { SessionClaims } from "./attest/session";
 import { jsonError } from "./errors";
@@ -49,6 +50,8 @@ export async function forgetAccountQuota(env: Env, sub: string): Promise<void> {
   });
 }
 
+const NON_AI_CATEGORIES: ReadonlySet<Category> = new Set<Category>(["rates", "sync"]);
+
 export async function gateAIRequest(
   env: Env,
   claims: SessionClaims,
@@ -62,7 +65,11 @@ export async function gateAIRequest(
 
   const check: CheckRequest = { category, burstPerMin: limits.burstPerMin, ...(limits.trial !== undefined ? { trial: limits.trial } : { daily: limits.daily }), ...(notePairing ? { notePairing } : {}) };
   const res = await limiter(env, claims).fetch("https://ratelimiter/check", { method: "POST", body: JSON.stringify(check) });
-  const { allowed, reason, ticket } = (await res.json()) as RateLimitResult;
+  const { allowed, reason, ticket, exhausted } = (await res.json()) as RateLimitResult;
+  // Solo las categorías de IA: el mismo limitador cuenta tipos de cambio y sync, que no son «preguntas».
+  if (allowed && exhausted && !NON_AI_CATEGORIES.has(category)) {
+    serverEvent(env, "aiQuotaExhausted", `${claims.tier}|${limits.trial !== undefined ? "trial" : "daily"}|${category}`);
+  }
 
   if (!allowed && env.ENFORCE === "enforce") {
     if (reason === "trial") {

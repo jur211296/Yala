@@ -864,6 +864,8 @@ final class NewTransactionViewModel {
 
             // Track new transaction count for notification primer
             if isNewTransaction {
+                // Telemetría propia: «usó esta función», como mucho una vez al día (solo altas, no ediciones).
+                MetricsService.used(isTransfer ? .transferencia : .registrarMovimiento)
                 let count = UserDefaults.standard.integer(forKey: "transactionsSavedCount") + 1
                 UserDefaults.standard.set(count, forKey: "transactionsSavedCount")
 

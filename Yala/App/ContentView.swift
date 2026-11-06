@@ -3334,6 +3334,7 @@ struct ContentView: View {
         }
         if !hasShownWelcomeChooser {
             welcomeGroupsChooserOrigin = .chooser  // un Welcome que empieza de nuevo no hereda el origen del anterior (mgaj)
+            MetricsService.used(.altaBienvenida)  // embudo del alta (telemetría propia): primera pantalla
             welcomeFlowInitialStep = .hero
             showWelcomeFlow = true
         } else {
@@ -4604,6 +4605,7 @@ struct MainTabView: View {
             .onChange(of: showDowngradeResolution) { _, _ in publishMainTabModalVisibilityAndRedrain() }
             .onChange(of: showTrialExpired) { _, _ in publishMainTabModalVisibilityAndRedrain() }
             .onChange(of: activeMilestone) { _, _ in publishMainTabModalVisibilityAndRedrain() }
+            .tracksUsedTab(displayedTab, planning: navigation.selectedPlanningTab)
         }
     }
 

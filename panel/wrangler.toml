@@ -1,0 +1,42 @@
+# Yala Panel — Worker propio del panel de telemetría (decisión 2 del 6-nov-2026). Aparte del gateway a propósito: un
+# fallo aquí no toca el sync de producción. Lee Analytics Engine (API SQL, token de solo lectura) y la base de Supabase
+# (una RPC de conteos), resume cada día en su propia D1 y sirve la página detrás de Cloudflare Access.
+#
+# ⚠️ Antes del primer deploy (pasos completos en panel/README.md):
+#   1. `npx wrangler d1 create yala-panel` y pega aquí su database_id.
+#   2. `npm run migrate`.
+#   3. Secrets: CF_ANALYTICS_TOKEN (Account Analytics Read) y STATS_ROLE_JWT (scripts/mint-stats-role-jwt.mjs).
+#   4. Cloudflare Access: aplicación para el dominio del panel → pega ACCESS_TEAM_DOMAIN y ACCESS_AUD.
+#   Sin el paso 4 la página responde 503: falla cerrado.
+
+name = "yala-panel"
+main = "src/index.ts"
+compatibility_date = "2026-06-01"
+account_id = "86c270a7776be98639700bd5959b303b"
+workers_dev = false
+# Dominio propio (asumido: panel.yala-app.pe, en la zona de yala-app.pe que ya usa Email Routing). Access se pone sobre
+# este hostname. Sin `*.workers.dev`: la única puerta es la que cubre Access.
+routes = [{ pattern = "panel.yala-app.pe", custom_domain = true }]
+
+[triggers]
+crons = ["0 6 * * *"]   # 06:00 UTC = 01:00 en Lima: resume el día UTC de ayer
+
+[vars]
+ENVIRONMENT = "production"
+CF_ACCOUNT_ID = "86c270a7776be98639700bd5959b303b"
+METRICS_DATASET = "yala_metrics"
+AI_USAGE_DATASET = "yala_ai_usage"
+# Supabase de PRODUCCIÓN (kefvaiymtgytemwbltlz). URL y anon key son públicos; el conteo va con el JWT de máquina
+# `yala_stats` (secret STATS_ROLE_JWT), que solo puede llamar a yala_stats_counts() (qa/cloud/tel01_stats_counts.sql).
+SUPABASE_URL = "https://kefvaiymtgytemwbltlz.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlZnZhaXltdGd5dGVtd2JsdGx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3OTg0MDYsImV4cCI6MjA5OTM3NDQwNn0.H8P3-kNUjeK8CTNZHwhfkqwqeflrNXLGvNa7OGGXkAk"
+ALLOWED_EMAILS = "admin@yala-app.pe"
+# Rellenar al crear la aplicación de Access (Zero Trust → Access → Applications). Vacíos = 503.
+ACCESS_TEAM_DOMAIN = ""
+ACCESS_AUD = ""
+
+[[d1_databases]]
+binding = "PANEL_DB"
+database_name = "yala-panel"
+database_id = "00000000-0000-0000-0000-000000000000"   # <PLACEHOLDER> — `npx wrangler d1 create yala-panel`
+migrations_dir = "migrations"

@@ -2859,6 +2859,9 @@ final class AppBootstrapper {
         print("AppBootstrapper: Received deep link: \(url.absoluteString)")
         #endif
 
+        // Telemetría propia: «abrió desde un widget» (uno al día). Solo los enlaces de la extensión llevan la marca.
+        if WidgetURLHelper.cameFromWidget(url) { MetricsService.used(.widget) }
+
         switch url.host {
         case "shared-image":
             #if DEBUG

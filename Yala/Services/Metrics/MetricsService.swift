@@ -475,6 +475,8 @@ enum MetricsService {
     private static var drainTask: Task<Void, Never>?
 
     static let lastPingDayKey = "metrics.lastPingDay"
+    /// `[slug: día UTC]` del último `use` de cada función (guard «uno al día por función», MetricsUse.swift).
+    static let useDaysKey = "metrics.useDays"
     static let cloudRegisteredKeyPrefix = "metrics.cloudRegistered."
 
     // MARK: Arranque
@@ -497,6 +499,7 @@ enum MetricsService {
     static func resetLocalState(_ defaults: UserDefaults = .standard) {
         MetricsSpool.clear(defaults)
         defaults.removeObject(forKey: lastPingDayKey)
+        defaults.removeObject(forKey: useDaysKey)
         for key in defaults.dictionaryRepresentation().keys where key.hasPrefix(cloudRegisteredKeyPrefix) {
             defaults.removeObject(forKey: key)
         }
@@ -528,12 +531,50 @@ enum MetricsService {
 
     // MARK: KPI 2 — registros/día
 
-    /// Alta LOCAL: onboarding completado. `mode` = full | groupsOnly | groupInvite.
-    /// Un re-onboarding tras wipe legítimo cuenta de nuevo (semántica aceptada: nuevo alta).
+    /// Alta LOCAL: onboarding completado. `mode` = initial | fullActivation | groupInvite | groupsOrganizer (medido el
+    /// 2026-11-06 en sus cuatro llamadores). Un re-onboarding tras wipe legítimo cuenta de nuevo (semántica aceptada:
+    /// nuevo alta). También cierra el embudo del alta (`alta.termina`), salvo `fullActivation`, que no es un alta.
     static func localRegistrationCompleted(mode: String) {
         guard isStarted else { return }
         MetricsSpool.enqueue(.register(kind: "local", detail: mode), defaults: defaults)
+        if MetricsUseFeature.closesSignUp(mode: mode) { used(.altaTermina) }
         kickDrain()
+    }
+
+    // MARK: Uso — «usó esta función», uno al día por función (MetricsUse.swift)
+
+    /// Apunta que se usó `feature` si no se apuntó ya hoy (día UTC).
+    ///
+    /// Antes de `start()` —un App Intent que lanza Yala sin el arranque, o la bienvenida pintada antes del paso 0.5 del
+    /// bootstrap— va directo a la cola de `.standard`, la misma que lee `start()`, y sale en el siguiente vaciado
+    /// (molde `canaryFromIntent`). Bajo `-uitest` y en tests, nada.
+    static func used(_ feature: MetricsUseFeature, now: Date = .now) {
+        if isStarted {
+            guard recordUseDay(feature, now: now, defaults: defaults) else { return }
+            MetricsSpool.enqueue(.use(feature), defaults: defaults)
+            kickDrain()
+            return
+        }
+        guard !UITestHooks.isActive, !SwiftDataConfiguration.isRunningTests else { return }
+        guard recordUseDay(feature, now: now, defaults: .standard) else { return }
+        MetricsSpool.enqueue(.use(feature), defaults: .standard)
+    }
+
+    /// «Vio la oferta de Pro» (hojas de Pro, de la prueba y de la suscripción) y, si la abrió el tope de un plan gratis,
+    /// «chocó con el límite». Quien ya es Pro abre la misma pantalla para gestionar su suscripción: eso no es una oferta.
+    static func usedProOffer(limitHit: ProFeature? = nil) {
+        guard !FeatureGateService.shared.isProUser else { return }
+        used(.proOfertaVista)
+        if let limitHit, let limit = MetricsUseFeature.freeLimit(limitHit) { used(limit) }
+    }
+
+    /// `true` (y apunta el día) si toca emitir hoy.
+    private static func recordUseDay(_ feature: MetricsUseFeature, now: Date, defaults: UserDefaults) -> Bool {
+        var days = defaults.dictionary(forKey: useDaysKey) as? [String: String] ?? [:]
+        guard MetricsUseLogic.shouldEmit(feature, lastDays: days, now: now) else { return false }
+        days[feature.rawValue] = MetricsPingLogic.dayString(for: now)
+        defaults.set(days, forKey: useDaysKey)
+        return true
     }
 
     /// Alta NUBE: el claim devolvió `created` (cuenta backend NUEVA). One-shot persistido
