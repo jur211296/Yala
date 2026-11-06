@@ -221,6 +221,25 @@ jobs:
       - run: npm run typecheck
       - run: npm test
 
+  # Suite del panel de telemetría (`panel/`, Worker aparte del gateway): typecheck y vitest, sin red. Corre en cada
+  # push, como `gateway`. `test/prices.test.ts` lee las filas de IA del gateway: un modelo nuevo sin precio lo pone rojo.
+  panel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: panel
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: panel/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
   # Decide si el job `tests` (macos-26, ~1,5 h de reloj) tiene algo que probar. Un
   # cambio de solo docs/tickets no puede romper el build ni la suite y hasta ahora
   # encolaba el runner de simulador igual: el PR #41 (3 ficheros .md) esperó 1 h 45 min.
@@ -303,6 +322,9 @@ jobs:
               # `qa/validate-coverage.*` SI deciden como se verifica el proyecto, asi que
               # siguen disparando la suite. Meter `qa/*` entero seria el error.
               gateway/*|qa/cloud/*) ;;
+              # `panel/` es el Worker del panel de telemetría (TypeScript, su suite corre en el job `panel`).
+              # Medido el 2026-11-06: 0 apariciones en el project.pbxproj ni en las fuentes de los targets.
+              panel/*) ;;
               # `mcp/` es el Worker del conector de Claude (TypeScript, su suite corre en el
               # job `mcp`). Medido el 2026-09-26: 0 apariciones en el project.pbxproj ni en las
               # fuentes de los targets.

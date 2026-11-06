@@ -48,6 +48,7 @@ struct SubscriptionView: View {
             }
         }
         .task {
+            MetricsService.usedProOffer()
             await loadProducts()
             await store.updateSubscriptionStatus()
         }

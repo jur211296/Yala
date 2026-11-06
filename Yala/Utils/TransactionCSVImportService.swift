@@ -1038,6 +1038,8 @@ extension TransactionCSVImportService {
         do {
             let result = try await work()
             try save(context)
+            // Telemetría propia: «usó esta función» (uno al día), con lo importado ya guardado.
+            MetricsService.used(.importar)
             return result
         } catch {
             context.rollback()

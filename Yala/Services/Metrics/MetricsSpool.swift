@@ -61,12 +61,18 @@ nonisolated enum MetricsSpool {
     }
 
     /// Encola al final; si supera el cap, cae el MÁS VIEJO (los canarios recientes
-    /// valen más que los antiguos — el gate mira "ahora", no historia).
+    /// valen más que los antiguos — el gate mira "ahora", no historia). Desde el 2026-11-06 caen PRIMERO los `use`
+    /// («usó esta función»): con el teléfono días sin red llegan a ~20 al día y, sin esta regla, empujarían fuera de la
+    /// cola los canarios, que es lo que vigila el gate. Un `use` perdido es una función contada de menos ese día.
     static func enqueue(_ event: MetricsEvent, defaults: UserDefaults = .standard) {
         var queue = pendingEntries(defaults)
         queue.append(MetricsSpoolEntry(id: UUID(), event: event))
-        if queue.count > capacity {
-            queue.removeFirst(queue.count - capacity)
+        while queue.count > capacity {
+            if let oldestUse = queue.firstIndex(where: { $0.event.e == "use" }) {
+                queue.remove(at: oldestUse)
+            } else {
+                queue.removeFirst()
+            }
         }
         write(queue, defaults: defaults)
     }

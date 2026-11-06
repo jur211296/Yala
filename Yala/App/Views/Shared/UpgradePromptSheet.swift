@@ -128,7 +128,10 @@ struct UpgradePromptSheet: View {
         }
         .yalaScreenBackground(.subtle)
         .interactiveDismissDisabled(store.isPurchasing)
-        .task { await loadPrices() }
+        .task {
+            MetricsService.usedProOffer(limitHit: context == .limitReached ? feature : nil)
+            await loadPrices()
+        }
         .alert(store.alertTitle ?? L10n.Subscription.errorTitle, isPresented: $showError) {
             // Vaciar el aviso al cerrarlo: con el mismo error otra vez, el `onChange` no volvía a saltar.
             Button(L10n.Common.ok, role: .cancel) { clearStoreAlert() }

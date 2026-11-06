@@ -62,6 +62,11 @@ export interface RateLimitResult {
   allowed: boolean;
   reason: "daily" | "trial" | "burst" | null;
   ticket?: QuotaTicket;
+  /**
+   * `true` solo en la petición permitida que gasta la ÚLTIMA unidad del cupo (del día o de la prueba). Es lo que
+   * cuenta el panel como «llegó al límite»: una vez por persona y cupo, no en cada rechazo posterior (2026-11-06).
+   */
+  exhausted?: boolean;
 }
 
 /** Lógica pura del limitador (testeable sin Durable Object). Muta `stored`. */
@@ -115,7 +120,12 @@ export function applyCheck(stored: DOState, req: CheckRequest, now: number): Rat
     notes.push(now);
     if (notes.length > MAX_OPEN_NOTES) notes.splice(0, notes.length - MAX_OPEN_NOTES);
   }
-  return { allowed: true, reason: null, ticket: { counted: isTrial ? "trial" : "daily", grantedNoteAt, consumedNoteAt: null } };
+  return {
+    allowed: true,
+    reason: null,
+    ticket: { counted: isTrial ? "trial" : "daily", grantedNoteAt, consumedNoteAt: null },
+    ...(used + 1 >= limit ? { exhausted: true } : {}),
+  };
 }
 
 /**

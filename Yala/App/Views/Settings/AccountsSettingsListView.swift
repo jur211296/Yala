@@ -126,6 +126,7 @@ struct AccountsSettingsListView: View {
         }
         .onAppear {
             LoadTimeMarks.begin(.settingsAccounts)
+            MetricsService.used(.cuentas)
             viewModel.setContext(modelContext)
             viewModel.accountsSortOrderNames = appPreferences.accountsSortOrderNames
             LoadTimeMarks.ready(.settingsAccounts)

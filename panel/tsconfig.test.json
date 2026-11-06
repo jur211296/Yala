@@ -1,0 +1,6 @@
+{
+  // Tests y scripts: el mismo código del Worker más los tipos mínimos de Node (test/node-shim.d.ts). Aparte, para que
+  // `src/` se compruebe sin `process` ni `node:*` en su ámbito (molde del gateway).
+  "extends": "./tsconfig.json",
+  "include": ["src/**/*.ts", "test/**/*.ts", "scripts/**/*.ts"]
+}

@@ -124,6 +124,7 @@ struct GroupsExportView: View {
                     await MainActor.run {
                         self.isExporting = false
                         self.exportedFile = ExportedFile(urls: [groupsURL])
+                        MetricsService.used(.exportar)
                     }
                 } else {
                     // Sin grupos activos (nada que exportar) — no es un error.

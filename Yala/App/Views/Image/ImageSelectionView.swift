@@ -1147,6 +1147,8 @@ struct ImageSelectionView: View {
     }
 
     private func read(_ batch: [UIImage], appending: Bool) async {
+        // Telemetría propia: «usó esta función» (uno al día). Cuenta el intento, salga o no la lectura.
+        MetricsService.used(.leerFoto)
         // Foto de los pendientes ANTES de crear los nuevos, para que el auto-insert de SwiftData no se cuele en la
         // deduplicación.
         let existingDrafts = fetchPendingDrafts()

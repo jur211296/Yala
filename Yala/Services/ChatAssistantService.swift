@@ -115,6 +115,7 @@ final class ChatAssistantService {
         }
         lastCallTime = Date.now
         incrementDailyCounter()
+        MetricsService.used(.preguntaYalaIA)
 
         // === Intent resolution ===
         // Una pregunta que se reconoce en el teléfono no pasa por el clasificador (~1,4 s menos, banco del 2026-10-20).

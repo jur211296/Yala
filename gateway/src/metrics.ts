@@ -7,10 +7,15 @@ type Ctx = Context<{ Bindings: Env }>;
 /**
  * POST /metrics — ingestión PÚBLICA de telemetría propia mínima (sustituye a TelemetryDeck, 2026-07-17).
  *
- * Tres eventos y nada más: `ping` (usuarios activos/día — el cliente garantiza ≤1/día con guard local),
- * `register` (altas/día, n = local|cloud) y `canary` (diagnósticos operativos del gate de Modo Nube —
- * la condición de encendido "canarios en cero" se lee de aquí). Escribe a Workers Analytics Engine
+ * Cuatro eventos y nada más: `ping` (usuarios activos/día — el cliente garantiza ≤1/día con guard local),
+ * `register` (altas/día, n = local|cloud), `canary` (diagnósticos operativos del gate de Modo Nube —
+ * la condición de encendido "canarios en cero" se lee de aquí) y `use` (2026-11-06, decisión 1 de la telemetría
+ * propia: «usó esta función», n = slug de la función, como mucho uno al día por función — el guard es del
+ * cliente, como el del ping). `use` exige `n`. Escribe a Workers Analytics Engine
  * (binding METRICS; dataset yala_metrics_staging / yala_metrics).
+ *
+ * ⚠️ Un evento fuera de la lista tumba el LOTE ENTERO (400) y el cliente lo descarta (4xx = `.dropped`), con los
+ * canarios que viajaran en él. Por eso un tipo nuevo se despliega aquí ANTES de que ningún build lo mande.
  *
  * Sin auth/attest (molde GET /config): el ping diario corre pre-sesión y los canarios no pueden
  * depender de una sesión viva. Anti-abuso: whitelist de eventos + regex de nombres + caps de tamaño
@@ -26,7 +31,7 @@ type Ctx = Context<{ Bindings: Env }>;
  * bucle por un fallo de config server-side (molde no-op de fanOutGroupPush).
  */
 
-const EVENT_KINDS = new Set(["ping", "register", "canary"]);
+const EVENT_KINDS = new Set(["ping", "register", "canary", "use"]);
 const NAME_RE = /^[A-Za-z0-9_.-]{1,64}$/;
 const INSTALL_RE = /^[0-9a-f]{16,64}$/;
 const MAX_EVENTS = 25;
@@ -55,6 +60,7 @@ function isValidEvent(ev: unknown): ev is MetricsEventWire {
   const e = ev as Record<string, unknown>;
   if (typeof e.e !== "string" || !EVENT_KINDS.has(e.e)) return false;
   if (e.n !== undefined && (typeof e.n !== "string" || !NAME_RE.test(e.n))) return false;
+  if (e.e === "use" && e.n === undefined) return false;
   if (e.d !== undefined && (typeof e.d !== "string" || e.d.length === 0 || e.d.length > MAX_DETAIL_CHARS)) return false;
   if (e.x !== undefined && (typeof e.x !== "number" || !Number.isFinite(e.x))) return false;
   return true;
