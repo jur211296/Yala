@@ -244,6 +244,20 @@ paths:
   barra del inset, el contenido «cabe» y lo último queda debajo de «Guardar». ⇒ mientras haya un campo con foco, sin
   alto mínimo (`.frame(minHeight: focusedField == nil ? proxy.size.height : nil)`), o el molde de Nuevo registro
   (`SaveAreaPlacement`, que mete «Guardar» en el contenido con el teclado).
+- **Los botones fijos debajo de un scroll van en `.safeAreaBar(edge: .bottom)`, no en `.safeAreaInset` (barrido final
+  2.2, 2026-11-05).** Con el inset y sin fondo, el contenido que se desplaza pasa por debajo de «Guardar» y los dos textos
+  se leen uno encima del otro: a AX5 en Nuevo registro y el onboarding, y en el Duo cerrado también a tamaño normal. La
+  barra reserva el mismo sitio y difumina el borde del scroll bajo ella. Así van Nuevo registro (`SaveAreaPlacement`),
+  Nuevo gasto de Grupos, el onboarding y `YalaStepGuide`; los otros `safeAreaInset(edge: .bottom)` de `Yala/App` no se
+  han medido a AX5. **Dos efectos medidos a tamaño normal:** sin `spacing:` la barra deja otro hueco que el inset (el
+  formulario de Grupos bajaba 4 pt: va con `spacing: DS.Spacing.sm`), y **iOS atenúa el texto de un botón desactivado
+  dentro de la barra** (gris 164 → 129), sin que lo eviten el entorno `isEnabled` ni la opacidad de la etiqueta. Jürgen
+  pidió el tono de siempre a tamaño normal: `YalaPrimaryButton(keepsDisabledToneInBar: true)` pinta ese texto encima del
+  botón, al 50 % de `.plain`; con texto de accesibilidad se deja el del sistema.
+- **Una fila concepto-importe a tamaños de accesibilidad baja el importe a su propia línea; nunca lo corta ni lo parte.**
+  `AdaptiveRowStack`, o el mismo `if dynamicTypeSize.isAccessibilitySize` en línea cuando la fila lleva un
+  `Spacer(minLength:)` distinto (el `HStack` de tamaño normal queda idéntico: `VoiceDraftReviewCard`,
+  `ScheduledPaymentRowView`). Dos botones en una fila van en `ViewThatFits` (fila; si no cabe, uno debajo del otro).
 - **Cambiar el `foregroundStyle` de un `TextField` mientras tiene el foco no se ve hasta que lo pierde (medido el
   2026-11-01, iOS 27.0).** Un monto que pasaba de gris a rosa al escribir el primer dígito se quedó gris con «240»
   escrito. ⇒ el gris de «sin monto» va en el `prompt` (`Text(verbatim: "0.00").foregroundStyle(.tertiary)`) y el texto

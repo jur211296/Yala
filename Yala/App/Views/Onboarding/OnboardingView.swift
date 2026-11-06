@@ -282,7 +282,9 @@ struct OnboardingView: View {
                     ))
                 }
             }
-            .safeAreaInset(edge: .bottom) {
+            // Barra y no inset (barrido final 2.2): con el texto al máximo, o en el Duo cerrado, el paso se desplaza por
+            // debajo de «Siguiente», y la barra difumina ese borde del scroll.
+            .safeAreaBar(edge: .bottom, spacing: DS.Spacing.sm) {
                 floatingNavigationButtons
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -1824,7 +1826,8 @@ struct OnboardingView: View {
 
             YalaPrimaryButton(
                 currentStep == .confirmation ? L10n.Onboarding.startUsingYala : L10n.Action.next,
-                isDisabled: isNextDisabled
+                isDisabled: isNextDisabled,
+                keepsDisabledToneInBar: true
             ) {
                 advance()
             }

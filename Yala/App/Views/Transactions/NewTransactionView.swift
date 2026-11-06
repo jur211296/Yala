@@ -1654,7 +1654,8 @@ struct NewTransactionView: View {
             isDisabled: !viewModel.canSave || viewModel.isSaving,
             isLoading: viewModel.isSaving,
             disabledHint: !viewModel.canSave ? L10n.Accessibility.completeFormHint : nil,
-            enabledFill: Color.selectedFill(theme.accent)
+            enabledFill: Color.selectedFill(theme.accent),
+            keepsDisabledToneInBar: true
         ) {
             saveTransaction()
         }
@@ -2503,7 +2504,9 @@ private struct SaveAreaPlacement<SaveArea: View>: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .safeAreaInset(edge: .bottom, spacing: DS.Spacing.none) { inset }
+            // Barra y no inset (barrido final 2.2): con el texto al máximo el formulario se desplaza por debajo de «Guardar»,
+            // y la barra difumina ese borde del scroll en vez de dejar los dos textos uno encima del otro.
+            .safeAreaBar(edge: .bottom, spacing: DS.Spacing.none) { inset }
             .modifier(KeyboardVisibilityReader(isVisible: $isKeyboardVisible))
             // Poco alto (un iPhone SE): se mide el contenedor ignorando el teclado, así que escribir no lo cambia.
             .background { heightProbe }

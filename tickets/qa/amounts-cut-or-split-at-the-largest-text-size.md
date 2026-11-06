@@ -1,6 +1,6 @@
 ---
 id: amounts-cut-or-split-at-the-largest-text-size
-status: backlog
+status: qa
 priority: high
 area: "a11y, design-system, iphone"
 created: 2026-11-05
@@ -39,3 +39,26 @@ cabecera de Grupos (PR #771). Una cifra nunca con elipsis en medio: escala (`min
 
 A AX5 en el iPhone 17e las cuatro cifras se leen enteras y los dos botones del pago sin cortar; a tamaño normal nada
 cambia (diff de píxeles).
+
+## Arreglo (2026-11-05)
+
+Con texto de accesibilidad, cada cifra baja a su propia línea en vez de cortarse; a tamaño normal, las mismas filas de
+siempre:
+
+- Panel › Tendencias: título, cifra y selector de métrica, uno debajo del otro (`TrendsCarouselWidget`).
+- «Esto entendí» de voz: el importe del borrador debajo del nombre (`VoiceDraftReviewCard`).
+- Estadísticas › Resumen: una ficha por fila y el texto baja de línea entero (`InsightsTabView`, `QuickStatCell`).
+- Pagos planificados, lista y línea de tiempo: el importe debajo del nombre (`ScheduledPaymentRowView`,
+  `ScheduledPaymentsListView`).
+- Detalle de un pago: «Ya lo pagué / Saltar este mes» en fila si caben y, si no, uno debajo del otro, ahora también en
+  el mes en curso (`ScheduledPaymentDetailView`).
+
+## Guion de QA (iPhone, 2 min)
+
+1. Ajustes del iPhone › Accesibilidad › Pantalla y tamaño del texto › Texto más grande: actívalo y lleva la barra al
+   máximo.
+2. Abre Yala › Panel y baja hasta Tendencias: la cifra del saldo se lee entera.
+3. Estadísticas › Resumen, abajo: las fichas «Categoría principal» y «Subcategoría principal» van una por fila y el
+   importe se lee entero.
+4. Planificación › Pagos: abre un pago pendiente; «Ya lo pagué» y «Saltar este mes» se leen enteros.
+5. Devuelve el texto a su tamaño y mira que las mismas pantallas se ven como siempre.
