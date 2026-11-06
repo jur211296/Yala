@@ -913,7 +913,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | regional-variants-show-the-plural-form-for-one | backlog | tickets/backlog/regional-variants-show-the-plural-form-for-one.md |
 | registros-calendario-cuenta-gastos-por-signo | done | tickets/done/registros-calendario-cuenta-gastos-por-signo.md |
 | reimported-group-legs-become-transfers | backlog | tickets/backlog/reimported-group-legs-become-transfers.md |
-| reinstall-mid-migration-has-no-exit-from-the-identity-gate | backlog | tickets/backlog/reinstall-mid-migration-has-no-exit-from-the-identity-gate.md |
+| reinstall-mid-migration-has-no-exit-from-the-identity-gate | qa | tickets/qa/reinstall-mid-migration-has-no-exit-from-the-identity-gate.md |
 | reinstall-without-network-has-no-cloud-door | done | tickets/done/reinstall-without-network-has-no-cloud-door.md |
 | rejected-member-cold-tap-does-nothing | done | tickets/done/rejected-member-cold-tap-does-nothing.md |
 | rejoin-tap-renotifies-admins | done | tickets/done/rejoin-tap-renotifies-admins.md |

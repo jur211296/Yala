@@ -58,8 +58,13 @@ nonisolated enum StorageMigrationIdentityGateLogic {
         /// `migration_in_progress` (o el claim contesta `claiming_in_progress`) y el faro de iCloud-KV de este Apple ID nombra
         /// esta cuenta (ticket `settings-migrate-blocks-a-second-device-before-its-marker`, opción A de Jürgen del
         /// 2026-10-08). Hasta ese día esta parada decía «ya tiene finanzas personales», que es falso: son sus mismos datos.
-        /// **Sigue siendo un bloqueo**: el aviso nombra la salida (terminar o reintentar en ese dispositivo) y, cuando la
-        /// marca llegue, la tarjeta pasa sola a «Activar en este dispositivo». Va al final por el orden de `allCases`.
+        /// **Desde el 2026-11-06 solo lo da el CLAIM, no la comprobación** (ticket
+        /// `reinstall-mid-migration-has-no-exit-from-the-identity-gate`, opción 1 de Jürgen): la comprobación deja pasar y el
+        /// servidor decide. Con el lease del líder vivo contesta `claiming_in_progress` y sale este aviso, que ya no nombra
+        /// «otro dispositivo» —puede ser este mismo, reinstalado o tras cerrar sesión— y dice la salida: volver a intentarlo
+        /// en una hora (el lease caduca a los 60 min y el claim da el relevo) o terminarla en el otro. **No se recuerda en la
+        /// tarjeta** (`refusalToRemember`): esperar lo arregla, y apagar el botón dejaba sin el reintento que el aviso promete.
+        /// Va al final por el orden de `allCases`.
         case migrationInProgressOnAnotherDevice
 
         /// Nombre estable para el canario y el breadcrumb (`cloudMigrationExistingAccountBlocked`). No se renombra: parte
@@ -144,13 +149,16 @@ nonisolated enum StorageMigrationIdentityGateLogic {
     ///   - beaconNamesThisAccount: el faro del iCloud-KV de este Apple ID (`CloudBeacon`) está puesto y su hash es el del
     ///     `sub` de la sesión. Lo escribe el claim del dispositivo que migra, y viaja a los demás del mismo Apple ID.
     ///
-    ///     **Los dos juntos solo cambian el MOTIVO de un bloqueo que ya existía** (ticket
-    ///     `settings-migrate-blocks-a-second-device-before-its-marker`): una cuenta `complete` que este dispositivo no
-    ///     reclamó sigue sin recibir la migración, y con una ida en curso de esta misma persona el aviso lo dice en vez de
-    ///     «ya tiene finanzas personales». Sin el faro no se dice «otro de tus dispositivos»: la cuenta en curso podría ser de
-    ///     otra persona que firmó con su cuenta en este teléfono. **Residual con ticket**: tras reinstalar Yala a mitad de la
-    ///     ida en ESTE iPhone, el aviso habla de «otro dispositivo» y de reintentar allí, y no hay ese otro dispositivo
-    ///     (`reinstall-mid-migration-has-no-exit-from-the-identity-gate`).
+    ///     **Los dos juntos dejan pasar al claim** (ticket `reinstall-mid-migration-has-no-exit-from-the-identity-gate`,
+    ///     opción 1 de Jürgen del 2026-11-06). Una cuenta `complete` con una ida a medias de este mismo Apple ID es la de esta
+    ///     persona, y el que la empezó puede ser este teléfono: reinstalado o tras cerrar sesión, había perdido el sello y la
+    ///     marca, y hasta ese día se paraba aquí para siempre con un «termínala en ese dispositivo» sin dispositivo. Ahora
+    ///     decide el servidor: mismo `device_id` (cerrar sesión) → `created`; lease vencido (60 min sin latido, sin
+    ///     `migrated_at`) → relevo `created`, que la identidad comprueba por linaje (`checkForwardLineage`); lease vivo →
+    ///     `claiming_in_progress` y el aviso de `blockForClaimRefusal`. Las dos redes de arriba siguen mandando: otra cuenta
+    ///     de grupos asociada para, y una sesión que puede ser de la persona anterior a «Empezar desde cero» también. Sin el
+    ///     faro no cambia nada: la cuenta en curso podría ser de otra persona que firmó con su cuenta en este teléfono, y
+    ///     sigue siendo «ya tiene finanzas personales».
     static func check(
         answer: Answer,
         deviceState: CloudIdentityRoutingLogic.DeviceSessionState,
@@ -182,9 +190,10 @@ nonisolated enum StorageMigrationIdentityGateLogic {
             }
             return .proceed
         case .blockedAccountIsComplete:
-            return accountMigrationInProgress && beaconNamesThisAccount
-                ? .blocked(.migrationInProgressOnAnotherDevice)
-                : .blocked(.accountHasPersonalData)
+            guard accountMigrationInProgress && beaconNamesThisAccount else { return .blocked(.accountHasPersonalData) }
+            if isAssociatedGroupsAccount == false { return .blocked(.anotherGroupsAccountAssociated) }
+            if sessionMayBeFromBeforeFreshStart { return .blocked(.sessionFromBeforeFreshStart) }
+            return .proceed
         case .blockedAnotherGroupsAccountAssociated:
             return .blocked(.anotherGroupsAccountAssociated)
         case .createCompleteAccountThenPersonalOnboarding, .adoptAsComplete, .adoptAsCompleteAndOpenGroups,
@@ -217,8 +226,11 @@ nonisolated enum StorageMigrationIdentityGateLogic {
 
     /// Qué recordar al publicar un aviso: solo si queda una sesión viva, que es la que se comprobó. La sesión que abrió el
     /// intento ya se cerró antes del aviso, y sin sesión la tarjeta no promete ninguna cuenta: no hay nada que recordar.
+    ///
+    /// **La ida a medias no se recuerda** (2026-11-06): su aviso dice «vuelve a intentarlo en una hora», y con el botón
+    /// apagado el resto de la sesión ese reintento no existía.
     static func refusalToRemember(reason: Block, session: LiveSession) -> RefusedSession? {
-        guard session.hasSession else { return nil }
+        guard session.hasSession, reason != .migrationInProgressOnAnotherDevice else { return nil }
         return RefusedSession(reason: reason, sub: session.sub, sessionEpoch: session.sessionEpoch)
     }
 
@@ -234,8 +246,8 @@ nonisolated enum StorageMigrationIdentityGateLogic {
     ///
     /// `claiming_in_progress` es otro dispositivo migrando esa cuenta: ya tiene, o está recibiendo, finanzas personales
     /// (Jürgen, 2026-09-16: parar y avisar, sin seguirle). Desde el 2026-10-09, si el faro de este Apple ID nombra la cuenta,
-    /// el aviso dice que es OTRO de sus dispositivos (`migrationInProgressOnAnotherDevice`), con el mismo criterio que
-    /// `check`: es la segunda capa de la misma parada, y dejarle el texto viejo era el mismo bug por otra puerta. Con `existing_stable` lo elige lo que contestó la comprobación,
+    /// el aviso dice que hay una activación a medias con esa cuenta (`migrationInProgressOnAnotherDevice`). Desde el 2026-11-06
+    /// es la ÚNICA capa que lo da: la comprobación deja pasar y es el lease vivo del líder el que para aquí. Con `existing_stable` lo elige lo que contestó la comprobación,
     /// porque el cliente no lee el `kind` de la respuesta del claim: `claim_account` promociona toda cuenta solo-grupos sin
     /// lo personal reclamado, así que una `groupsOnly` que llega a `existing_stable` es la que volvió a iCloud. Cualquier
     /// otra se completó entre la comprobación y el claim. Queda un caso que recibe el aviso equivocado, y se acepta: una

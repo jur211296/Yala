@@ -300,21 +300,37 @@ struct StorageMigrationIdentityGateLogicTests {
 
     // MARK: - El segundo iPhone del mismo iCloud (ticket `settings-migrate-blocks-a-second-device-before-its-marker`)
 
-    /// El bug del ticket: con la ida del primer iPhone en curso, el segundo leía «Esa cuenta ya tiene finanzas personales».
-    /// Con la ida en curso y el faro de esta cuenta, el motivo es otro —y sigue siendo un BLOQUEO—, se asocie lo que se asocie
-    /// y venga de donde venga la sesión.
-    @Test("cuenta completa + ida en curso + faro de la cuenta → otro de tus dispositivos")
-    func idaEnCursoConFaro_motivoNuevo() {
+    /// Ticket `reinstall-mid-migration-has-no-exit-from-the-identity-gate`, opción 1 de Jürgen (2026-11-06): con la ida a
+    /// medias de este mismo Apple ID, la comprobación deja pasar y decide el claim (relevo con el lease vencido, aviso con el
+    /// lease vivo). Hasta ese día paraba aquí, y el iPhone que reinstaló a mitad de su propia ida no tenía salida. Las dos
+    /// redes siguen mandando: otra cuenta de grupos asociada, y la sesión que puede ser de antes de «Empezar desde cero».
+    @Test("cuenta completa + ida en curso + faro de la cuenta → al claim, salvo las dos redes")
+    func idaEnCursoConFaro_pasaAlClaim() {
         for associated in [true, false, nil] as [Bool?] {
             for freshStart in [false, true] {
                 for openedHere in [false, true] {
+                    let expected: Logic.Check
+                    if associated == false {
+                        expected = .blocked(.anotherGroupsAccountAssociated)
+                    } else if freshStart && associated == nil && !openedHere {
+                        expected = .blocked(.sessionFromBeforeFreshStart)
+                    } else {
+                        expected = .proceed
+                    }
                     #expect(check(.complete, associated: associated, freshStart: freshStart, openedHere: openedHere,
-                                  migrationInProgress: true, beacon: true)
-                            == .blocked(.migrationInProgressOnAnotherDevice),
+                                  migrationInProgress: true, beacon: true) == expected,
                             "asociada=\(String(describing: associated)) sellado=\(freshStart) abierta=\(openedHere)")
                 }
             }
         }
+    }
+
+    /// El caso del ticket, literal: reinstalar borra el sello y la marca, la sesión sobrevive en el llavero y queda
+    /// asociada. Antes: «termínala en ese dispositivo». Ahora: al claim.
+    @Test("reinstalado a mitad de su propia ida, sin sello ni marca: al claim")
+    func reinstaladoAMitad_pasaAlClaim() {
+        #expect(check(.complete, associated: true, claimedHere: false, unansweredClaim: false,
+                      migrationInProgress: true, beacon: true) == .proceed)
     }
 
     /// **La mitad que no se puede perder**: sin ida en curso, una cuenta completa es de datos que no son de este teléfono y el
@@ -338,8 +354,8 @@ struct StorageMigrationIdentityGateLogicTests {
                 == .blocked(.accountHasPersonalData))
     }
 
-    /// Los dos datos solo cambian el MOTIVO de una parada que ya existía: no abren nada que estuviera cerrado ni cierran nada
-    /// que estuviera abierto. «Reintentar» del propio líder sigue pasando, y una cuenta nueva o solo-grupos sigue igual.
+    /// Los dos datos solo tocan la parada de «ya tiene finanzas personales» (que pasa al claim o a una de las dos redes): no
+    /// cierran nada que estuviera abierto ni cambian ningún otro aviso. «Reintentar» del propio líder sigue pasando, y una cuenta nueva o solo-grupos sigue igual.
     @Test("la ida en curso y el faro no cambian ningún veredicto que no fuera «ya tiene finanzas personales»")
     func idaEnCurso_noTocaLosDemasVeredictos() {
         for discovery in [.newAccount, .groupsOnly, .complete] as [Discovery] {
@@ -351,7 +367,8 @@ struct StorageMigrationIdentityGateLogicTests {
                         let after = check(discovery, associated: associated, claimedHere: claimedHere,
                                           freshStart: freshStart, migrationInProgress: true, beacon: true)
                         if before == .blocked(.accountHasPersonalData) {
-                            #expect(after == .blocked(.migrationInProgressOnAnotherDevice))
+                            #expect(after == .proceed || after == .blocked(.anotherGroupsAccountAssociated)
+                                    || after == .blocked(.sessionFromBeforeFreshStart), "\(after)")
                         } else {
                             #expect(after == before, """
                                 \(discovery) asociada=\(String(describing: associated)) sellado=\(claimedHere) \
@@ -386,11 +403,20 @@ struct StorageMigrationIdentityGateLogicTests {
     /// El bug del ticket: tras «Entendido» la tarjeta seguía prometiendo la cuenta rechazada. Con la misma sesión viva, el
     /// rechazo se recuerda y la tarjeta lo enseña, con su motivo.
     @Test("la misma sesión viva recuerda el rechazo, con su motivo",
-          arguments: StorageMigrationIdentityGateLogic.Block.allCases)
+          arguments: StorageMigrationIdentityGateLogic.Block.allCases.filter { $0 != .migrationInProgressOnAnotherDevice })
     func mismaSesionRecuerda(reason: StorageMigrationIdentityGateLogic.Block) {
         let remembered = Logic.refusalToRemember(reason: reason, session: session("sub-a", epoch: 3))
         #expect(remembered == Logic.RefusedSession(reason: reason, sub: "sub-a", sessionEpoch: 3))
         #expect(Logic.cardRefusal(remembered: remembered, session: session("sub-a", epoch: 3)) == reason)
+    }
+
+    /// La ida a medias se resuelve esperando: su aviso dice «vuelve a intentarlo en una hora», y con el rechazo recordado el
+    /// botón seguía apagado el resto de la sesión (2026-11-06).
+    @Test("la ida a medias no se recuerda: el reintento sigue a un toque")
+    func idaAMedias_noSeRecuerda() {
+        #expect(Logic.refusalToRemember(reason: .migrationInProgressOnAnotherDevice, session: session("sub-a", epoch: 3)) == nil)
+        #expect(Logic.refusalToRemember(reason: .accountHasPersonalData, session: session("sub-a", epoch: 3)) != nil,
+                "control: los demás motivos se siguen recordando")
     }
 
     /// La sesión que abrió el intento se cierra antes del aviso: sin sesión viva no hay cuenta que la tarjeta prometa, y
@@ -472,20 +498,21 @@ struct StorageMigrationIdentityGateLogicTests {
                 != L10n.Storage.Migrate.refusedNote(for: .accountHasPersonalData))
     }
 
-    /// El texto es la decisión de Jürgen (2026-10-08): el título lo dice tal cual, y ni el título ni el cuerpo ni la nota
-    /// repiten «ya tiene finanzas personales», que es el texto falso que el ticket retira.
+    /// El texto es la decisión de Jürgen (2026-11-06, opción 1): no nombra «otro dispositivo» —puede ser este— y dice la
+    /// salida, volver a intentarlo en una hora. Ni repite «ya tiene finanzas personales».
     @Test("en español, el aviso dice lo que decidió Jürgen y no repite el texto falso")
     func textoDeJurgen() throws {
         let strings = StringsFileParser.parseStrings(forLocale: "es-419")
         let title = try #require(strings["storage.migrateBlock.otherDeviceTitle"])
         let body = try #require(strings["storage.migrateBlock.otherDeviceBody"])
         let note = try #require(strings["storage.migrate.refusedOtherDevice"])
-        #expect(title == "Otro de tus dispositivos está llevando tus datos a la nube")
+        #expect(title == "Hay una activación a medias con esta cuenta")
         for text in [title, body, note] {
             #expect(!text.contains("finanzas personales"), "repite el texto falso: \(text)")
+            #expect(!text.contains("Otro de tus dispositivos está"), "promete otro dispositivo: \(text)")
         }
-        #expect(body.contains("reinténtala allí"))
-        #expect(note.contains("reinténtala en ese dispositivo"))
+        #expect(body.contains("vuelve a intentarlo en una hora"))
+        #expect(note.contains("vuelve a intentarlo en una hora"))
     }
 
     /// El aviso de la sesión de antes tiene un solo cuerpo: no nombra el correo (la sección «Grupos» ya lo enseña) ni cambia

@@ -117,10 +117,11 @@ final class StorageMigrationIdentityBlockUITests: XCTestCase {
             """)
     }
 
-    /// El segundo iPhone del mismo iCloud, con la ida del primero en curso (ticket
-    /// `settings-migrate-blocks-a-second-device-before-its-marker`, opción A de Jürgen): el aviso dice que es OTRO de sus
-    /// dispositivos y nombra la salida, en vez de «Esa cuenta ya tiene finanzas personales». Sigue siendo una parada: sin
-    /// consentimiento detrás, y la tarjeta recuerda el motivo con su propia nota y apaga el botón.
+    /// Una activación a medias de esta misma cuenta con el líder vivo (tickets
+    /// `settings-migrate-blocks-a-second-device-before-its-marker` y `reinstall-mid-migration-has-no-exit-from-the-identity-gate`,
+    /// opción 1 de Jürgen del 2026-11-06): el aviso no nombra «otro dispositivo» —puede ser este, reinstalado— y dice la
+    /// salida, volver a intentarlo en una hora. Sigue siendo una parada sin consentimiento detrás, pero la tarjeta no la
+    /// recuerda ni apaga el botón. En producción este aviso solo lo da el claim; el seam lo fuerza en la comprobación.
     ///
     /// Qué cuenta llega a este motivo lo fijan los unit de `StorageMigrationIdentityGateLogic`; aquí, que el motivo nuevo se
     /// pinta entero —hoja y tarjeta— y no con los textos de otro.
@@ -132,12 +133,12 @@ final class StorageMigrationIdentityBlockUITests: XCTestCase {
         XCTAssertTrue(title.waitForExistence(timeout: 10), """
             Tocar «Activar la nube» con la ida de otro dispositivo en curso no avisa: el flujo seguiría hacia el claim.
             """)
-        XCTAssertEqual(title.label, "Otro de tus dispositivos está llevando tus datos a la nube", """
-            El aviso no es el de otro dispositivo: es el texto falso que el ticket retira, o el de otro motivo.
+        XCTAssertEqual(title.label, "Hay una activación a medias con esta cuenta", """
+            El aviso no es el de la activación a medias: es el texto falso de un ticket anterior, o el de otro motivo.
             """)
         let body = app.staticTexts["storage_migrate_block_body"]
         XCTAssertTrue(body.waitForExistence(timeout: 5))
-        XCTAssertTrue(body.label.contains("reinténtala allí"), "El aviso no nombra la salida: \(body.label)")
+        XCTAssertTrue(body.label.contains("vuelve a intentarlo en una hora"), "El aviso no nombra la salida: \(body.label)")
         XCTAssertFalse(body.label.contains("finanzas personales"), "El cuerpo repite el texto falso: \(body.label)")
         XCTAssertFalse(app.staticTexts["storage_activation_sheet"].exists,
                        "El consentimiento se abrió detrás del aviso: la comprobación no paró el flujo.")
@@ -150,13 +151,11 @@ final class StorageMigrationIdentityBlockUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts["storage_activation_sheet"].waitForExistence(timeout: 3),
                        "Cerrar el aviso abrió el consentimiento: el toque siguió aunque la comprobación dijo que no.")
 
-        let refused = app.staticTexts["storage_account_refused_note"]
-        XCTAssertTrue(refused.waitForExistence(timeout: 5), "La tarjeta no recuerda por qué ya no se puede activar la nube.")
-        XCTAssertTrue(refused.label.contains("Otro de tus dispositivos"), """
-            La nota de la tarjeta no es la de otro dispositivo: \(refused.label)
-            """)
-        XCTAssertFalse(refused.label.contains("finanzas personales"), "La nota repite el texto falso: \(refused.label)")
-        XCTAssertFalse(migrate.isEnabled, "«Activar la nube» sigue activo con la ida de otro dispositivo en curso.")
+        // 2026-11-06 (opción 1 de Jürgen): el aviso dice «vuelve a intentarlo en una hora», así que la tarjeta no recuerda
+        // el rechazo ni apaga el botón: apagado el resto de la sesión, ese reintento no existía.
+        XCTAssertFalse(app.staticTexts["storage_account_refused_note"].waitForExistence(timeout: 3),
+                       "La tarjeta recuerda un rechazo que esperar arregla.")
+        XCTAssertTrue(migrate.isEnabled, "«Activar la nube» se apagó: el reintento que promete el aviso no existe.")
     }
 
     /// El gemelo que hace discriminante al de arriba: con una cuenta que sí puede recibir la migración, el MISMO toque llega
