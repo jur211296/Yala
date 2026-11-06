@@ -219,7 +219,10 @@ final class PanelViewModel {
 
     // MARK: - Dependencies
 
-    private var modelContext: ModelContext?
+    /// Card 7e60: el contexto va atado al almacén con el que se dio (`BoundStoreContext`). Tras cerrar sesión en la
+    /// nube, el `onDismiss` de Ajustes del Panel viejo recargaba con el almacén soltado y cerraba Yala.
+    private var boundStore = BoundStoreContext()
+    private var modelContext: ModelContext? { boundStore.liveContext }
 
     /// Exchange rate service - injected or falls back to shared singleton
     private var exchangeRateService: ExchangeRateService = .shared
@@ -404,7 +407,7 @@ final class PanelViewModel {
         defaultCurrencyCode: String,
         sessionState: SessionState
     ) {
-        self.modelContext = context
+        boundStore.bind(context)
         if let service = exchangeRateService {
             self.exchangeRateService = service
         }
@@ -2691,6 +2694,8 @@ final class PanelViewModel {
     /// Guarded by isInBackground to prevent 0x8BADF00D during snapshot capture.
     private func scheduleRecalculation(reload: Bool) {
         guard !isInBackground else { return }
+        // Card 7e60: un Panel de un almacén ya soltado no recalcula — sus filas en memoria son de ese almacén.
+        guard !boundStore.isDetached else { return }
         guard isApplicationActive() else {
             if reload { pendingReload = true }
             missedWhileInactive = true
@@ -2700,7 +2705,7 @@ final class PanelViewModel {
         recalculateTask?.cancel()
         recalculateTask = Task { @MainActor in
             do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, !boundStore.isDetached else { return }
             let shouldReload = pendingReload
             pendingReload = false
             if shouldReload {

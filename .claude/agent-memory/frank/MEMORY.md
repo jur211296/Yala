@@ -22,6 +22,7 @@
 - [Si Jürgen está en el chat, háblale directo](feedback_si_jurgen_esta_en_el_chat_hablale_directo.md) — no por preguntar-bot; el bot es para cuando no está.
 - [El iPhone de pruebas es el 14 por cable](feedback_el_iphone_de_pruebas_es_el_14_por_cable.md) — el 18 Pro Max es el suyo personal; elige por modelo, no por el primer UDID.
 - [QA físico: datos dev, no preguntes](feedback_qa_fisico_datos_dev_no_preguntes.md) — borrar/vaciar en el iPhone 14 lo decides tú; contáctale solo urgente o su mano.
+- [Tester de Sandbox del iPhone 14](reference_tester_sandbox_iphone_14.md) — ya existe en ASC; no crear otro; contraseña en 1Password o la pone Jürgen.
 - [Conducir el iPhone real con Device MCP](reference_conducir_el_iphone_real_con_device_mcp.md) — stdio, teclado inglés, open_url con aprobación, devicectl --payload-url.
 - [Sin firma de IA en commits](feedback_sin_firma_de_ia_en_commits.md) — el hook rechaza Co-Authored-By de Claude; manda la casa sobre el entorno.
 - [El carril espera a Cola A](feedback_carril_espera_a_cola_a.md) — nada al simulador con Cola A viva; al acabar, validar que limpió.

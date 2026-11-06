@@ -1,10 +1,10 @@
 ---
 id: sign-out-in-place-leaves-a-screen-with-nothing-to-tap
-status: in-progress
+status: qa
 priority: high
 area: cloud-sync, sign-out, welcome
 created: 2026-10-28
-updated: 2026-11-05
+updated: 2026-11-06
 source: card 7e60 del tablero (Jürgen, 2.º iPhone, 2026-10-28 ~06:14)
 ---
 
@@ -92,5 +92,33 @@ Medido en el iPhone 14 con Yala Dev de la rama:
   sola reapertura y conecta con iCloud.
 
 Tests: `SwappedStoreContentTests`, `BackgroundTaskRegistrationOnceTests`, `SignOutWelcomeDestinationTests` (4
-mutantes, cada uno en rojo). Pendiente: (b), el elector tras «¡Tu cuenta está lista!», que necesita una entrada con
-Google (mano de Jürgen) con trazas puestas.
+mutantes, cada uno en rojo).
+
+## Mañana del 2026-11-06 (iPhone 14, con Jürgen para Google)
+
+- **Crash 3, el que el segundo tapaba.** Con los dos primeros fuera, el cierre en la nube volvió a cerrar Yala a los
+  ~3 s de pintar la bienvenida: `PanelViewModel.loadData()` ← `scheduleRecalculation` ← el `onDismiss` de la hoja de
+  Ajustes del Panel viejo, que corre aunque el Panel ya no esté montado y recarga con el almacén soltado. `.ips` en
+  `~/Claude/entregas/2026-11-05-lote-cerrar-sesion-crash-welcome/evidencia/Yala-2026-11-06-071322.ips`. Ahora el
+  contexto de `PanelViewModel` y `DetailContainerViewModel` va atado a la generación del almacén (`BoundStoreContext`):
+  con otro almacén montado se lee `nil`, y el Panel, Estadísticas y Registros no recargan ni recalculan. Son las únicas
+  hojas de Ajustes que recargan algo al cerrarse (las otras ocho no tienen `onDismiss`). Medido: cerrar sesión con
+  red, dos veces, sin `.ips` nuevo.
+- **(b) resuelto en el aparato.** Desde un cierre limpio: «Ya tengo cuenta» › Google › «¡Tu cuenta está lista!» ›
+  Empezar → entra en el Panel y se queda. Inferido, no medido: el elector salía por el estado roto que dejaban los
+  crashes (neutro armado + destino viejo), que ya no se produce.
+- **Reabrir a medias (decisión de Jürgen, 2026-11-06).** Quien elige entrar en una cuenta y ve Yala cerrarse antes de
+  terminar, al reabrir vuelve a «¿Qué quieres hacer?», no al Paso 1 del alta privada (`WelcomeUnfinishedAccountEntry`).
+  Medido: «Ya tengo cuenta › Google», cerrar en el aviso de Google y reabrir → el elector.
+
+Tests nuevos: `BoundStoreContextWiringTests`, `WelcomeUnfinishedAccountEntryTests`.
+
+## Device-QA pendiente (guion corto)
+
+1. iPhone de pruebas con Yala Dev en la nube (Google). Ajustes › Tu cuenta de Yala › Cerrar sesión › confirma.
+   Esperado: la bienvenida, y Yala sigue abierta 10 s después.
+2. «Empezar» › «Ya tengo cuenta» › «Entrar con Google» › tu cuenta › «¡Tu cuenta está lista!» › Empezar. Esperado: el
+   Panel.
+3. Repite 2 pero cierra Yala del todo en el aviso de Google y ábrela. Esperado: «¿Qué quieres hacer?».
+4. Sin probar aún: la sesión caducada con cambios sin subir (el caso original de la card). Si se puede provocar, cierra
+   sesión ahí y comprueba lo mismo que en 1.

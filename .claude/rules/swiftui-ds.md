@@ -203,7 +203,13 @@ paths:
   `AppBootstrapper.bootstrap` en el MISMO proceso**, y lo que el sistema solo admite una vez por proceso revienta:
   `BGTaskScheduler.register` de un identificador ya registrado lanza una excepción ObjC que nada atrapa. ⇒ un paso nuevo
   del arranque que registre algo en el sistema lleva su latch de proceso (`BackgroundTaskManager.didRegisterTasks`).
-  Pin: `SwappedStoreContentTests`, `BackgroundTaskRegistrationOnceTests`.
+  (3) **El `onDismiss` de una hoja corre aunque la vista que la presentó ya no esté montada** (2026-11-06, el tercer
+  cierre: el de Ajustes del Panel viejo llamaba a `reloadAndRecalculate()` y su recarga hacía `fetch` con el almacén
+  soltado). ⇒ el corte va en el ViewModel que guarda el contexto, no en cada llamada: `BoundStoreContext` lo ata a la
+  generación con la que se dio y lo devuelve `nil` con otro almacén montado; quien recalcule con sus arrays (filas de
+  ese almacén) mira `isDetachedFromMountedStore` antes. Hoy, `PanelViewModel` y `DetailContainerViewModel`. Un
+  ViewModel nuevo que recargue desde el `onDismiss` de una hoja que pueda cerrar sesión hace lo mismo.
+  Pin: `SwappedStoreContentTests`, `BoundStoreContextWiringTests`, `BackgroundTaskRegistrationOnceTests`.
 
 - **Un destino del Welcome sobrevive al borrado del cierre de sesión, a propósito, así que cada cierre decide el suyo
   (card 7e60, medido el 2026-11-05).** Un «Restaurar desde iCloud» de antes del cierre que nadie consumió dejaba a la

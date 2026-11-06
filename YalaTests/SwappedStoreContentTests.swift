@@ -94,3 +94,69 @@ struct SwappedStoreContentTests {
         #expect(lines[model + 1] == ".environment(\\.mountedStoreGeneration, containerHost.generation)")
     }
 }
+
+// MARK: - Tercer cierre: el ViewModel que recarga tras cerrar la hoja
+
+@Suite("ViewModels atados al almacén con el que se les dio")
+struct BoundStoreContextWiringTests {
+
+    private static let root = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+
+    private static func codeLines(_ path: String) throws -> [String] {
+        try String(contentsOf: root.appendingPathComponent(path), encoding: .utf8)
+            .components(separatedBy: "\n")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty && !$0.hasPrefix("//") && !$0.hasPrefix("///") }
+    }
+
+    @Test("Sin atar, no hay nada suelto ni contexto que dar")
+    @MainActor
+    func unbound_isNotDetached() {
+        let bound = BoundStoreContext()
+        #expect(!bound.isDetached)
+        #expect(bound.liveContext == nil)
+    }
+
+    @Test("La lectura viva devuelve nil justo cuando el almacén está suelto")
+    func liveContext_isNilWhenDetached() throws {
+        let lines = try Self.codeLines("Yala/App/Logic/SwappedStoreContentLogic.swift")
+        #expect(lines.contains("isDetached ? nil : context"))
+        #expect(lines.contains("generation = host.container != nil ? host.generation : nil"))
+    }
+
+    @Test("Panel y Estadísticas/Registros guardan el contexto atado, sin campo crudo", arguments: [
+        "Yala/App/ViewModels/PanelViewModel.swift",
+        "Yala/App/ViewModels/DetailContainerViewModel.swift",
+    ])
+    func viewModels_bindTheContext(path: String) throws {
+        let lines = try Self.codeLines(path)
+        #expect(lines.contains("private var boundStore = BoundStoreContext()"))
+        #expect(lines.contains("private var modelContext: ModelContext? { boundStore.liveContext }"))
+        #expect(lines.contains("boundStore.bind(context)"))
+        #expect(!lines.contains("private var modelContext: ModelContext?"))
+        #expect(!lines.contains { $0.hasPrefix("self.modelContext = ") })
+    }
+
+    @Test("El recálculo del Panel no arranca ni corre con el almacén suelto")
+    func panel_recalculationStopsWhenDetached() throws {
+        let lines = try Self.codeLines("Yala/App/ViewModels/PanelViewModel.swift")
+        let start = try #require(lines.firstIndex(of: "private func scheduleRecalculation(reload: Bool) {"))
+        #expect(lines[start + 2] == "guard !boundStore.isDetached else { return }")
+        let body = lines[start..<(start + 20)]
+        #expect(body.contains("guard !Task.isCancelled, !boundStore.isDetached else { return }"))
+    }
+
+    @Test("Estadísticas y Registros cortan antes de recargar o recalcular", arguments: [
+        "Yala/App/Views/Statistics/DetailContainerView.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift",
+    ])
+    func screens_stopBeforeReloading(path: String) throws {
+        let lines = try Self.codeLines(path)
+        let guardLine = try #require(lines.firstIndex(of:
+            "guard !Task.isCancelled, !dataViewModel.isDetachedFromMountedStore else { return }"))
+        #expect(lines[guardLine + 1] == "if pendingReload {")
+        #expect(lines[guardLine + 2] == "dataViewModel.loadData()")
+    }
+}

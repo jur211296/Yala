@@ -470,7 +470,8 @@ struct RecordsStandaloneView: View {
         recalculateTask?.cancel()
         recalculateTask = Task { @MainActor in
             do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
-            guard !Task.isCancelled else { return }
+            // Card 7e60: con el almacén de esta pantalla ya soltado (cerrar sesión en la nube), ni recarga ni recalcula.
+            guard !Task.isCancelled, !dataViewModel.isDetachedFromMountedStore else { return }
             if pendingReload {
                 dataViewModel.loadData()
                 pendingReload = false
