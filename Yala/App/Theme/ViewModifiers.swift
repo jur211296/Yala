@@ -501,6 +501,8 @@ struct InsightsConsentAlertModifier: ViewModifier {
             .alert(L10n.AIConsent.insightsTitle, isPresented: $isPresented) {
                 Button(L10n.AIConsent.accept) {
                     aiInsightsConsentAccepted = true
+                    // El texto vigente (`AIConsentRevision`): lo que la persona acaba de leer.
+                    UserDefaults.standard.set(AIConsentRevision.insights, forKey: AppPreferences.Keys.aiInsightsConsentVersion)
                     onAccepted()
                 }
                 Button(L10n.AIConsent.privacyPolicy) {

@@ -1127,7 +1127,7 @@
 "profile.aliasAvailable" = "Alias verfügbar";
 "profile.aliasHelper" = "3-20 Zeichen. Nur Buchstaben, Zahlen und Unterstriche.";
 "profile.privacyTitle" = "Wo deine Daten liegen";
-"profile.privacyDesc" = "Mit deinem Konto in deiner privaten iCloud werden deine Daten auf deinem Gerät und in deiner iCloud gespeichert. Mit deinem Konto in der Cloud werden sie auf den Servern von Yala gespeichert. Was du in einer Gruppe einträgst, wird mit deinem Alias auf den Servern von Yala gespeichert, damit die Gruppe es sieht. KI-Funktionen (Sprache, Bild und Insights) sind optional: Was du ihnen sendest, geht über unseren Server an einen KI-Dienst, der es verarbeitet. Welcher es ist, steht in der Datenschutzrichtlinie.";
+"profile.privacyDesc" = "Mit deinem Konto in deiner privaten iCloud werden deine Daten auf deinem Gerät und in deiner iCloud gespeichert. Mit deinem Konto in der Cloud werden sie auf den Servern von Yala gespeichert. Was du in einer Gruppe einträgst, wird mit deinem Alias auf den Servern von Yala gespeichert, damit die Gruppe es sieht. KI-Funktionen (Sprache, Bild und Insights) sind optional: Was du ihnen sendest, geht über unseren Server an einen KI-Dienst, der es verarbeitet. Welcher es ist, steht in der Datenschutzrichtlinie. Mit deinem Cloud-Konto kann die KI zusätzlich alle deine Daten lesen, die sie für genaue und detaillierte Antworten braucht.";
 "profile.aliasFutureNote" = "Hinweis: Die Alias-Eindeutigkeitsprüfung wird verfügbar sein, wenn die Funktion für geteilte Ausgaben implementiert wird.";
 "profile.proMember" = "PRO-Mitglied";
 "profile.choosePhoto" = "Foto wählen";
@@ -2831,14 +2831,14 @@
 "aiPrivacy.cloudExploreRow" = "Dein Cloud-Konto abfragen";
 "aiPrivacy.revokeConfirmMessage" = "Wir verarbeiten deine KI-Daten für diese Funktion nicht mehr. Du kannst sie jederzeit wieder aktivieren.";
 "aiPrivacy.revokeConfirmAction" = "Deaktivieren";
-"aiPrivacy.footerHint" = "Deine Daten werden nur gesendet, wenn du eine dieser Funktionen nutzt, und gelangen über unseren Server zu einem KI-Dienst. Wir verkaufen sie nicht und nutzen sie nicht für Werbung.";
+"aiPrivacy.footerHint" = "Deine Daten werden nur gesendet, wenn du eine dieser Funktionen nutzt, und gelangen über unseren Server zu einem KI-Dienst. Mit deinem Cloud-Konto kann die KI zusätzlich alle deine Daten lesen, die sie für genaue und detaillierte Antworten braucht. Wir verkaufen sie nicht und nutzen sie nicht für Werbung.";
 "aiPrivacy.policyLink" = "Datenschutzrichtlinie";
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Yala erfasst es für dich";
-"aiConsent.processingMessage" = "Sprich es ein oder wähle ein Foto vom Beleg, und Yala erfasst die Ausgabe. Dafür wird die Aufnahme oder das Foto nur in diesem Moment an einen KI-Dienst gesendet. Es wird nicht zum Trainieren der KI verwendet.";
+"aiConsent.processingMessage" = "Sprich es ein oder wähle ein Foto vom Beleg, und Yala erfasst die Ausgabe. Dafür wird die Aufnahme oder das Foto nur in diesem Moment an einen KI-Dienst gesendet. Mit deinem Cloud-Konto kann die KI zusätzlich alle deine Daten lesen, die sie für genaue und detaillierte Antworten braucht. Es wird nicht zum Trainieren der KI verwendet.";
 "aiConsent.insightsTitle" = "KI-Zusammenfassung";
-"aiConsent.insightsMessage" = "Yala analysiert deine Finanzen und zeigt dir, wie du dastehst. Dafür wird eine Zusammenfassung an einen KI-Dienst gesendet – Summen und Trends nach Kategorie, Budgets und wiederkehrende Zahlungen –, nicht dein vollständiger Verlauf an Einträgen. Sie wird nicht zum Trainieren der KI verwendet.";
+"aiConsent.insightsMessage" = "Yala analysiert deine Finanzen und zeigt dir, wie du dastehst. Dafür wird eine Zusammenfassung an einen KI-Dienst gesendet – Summen und Trends nach Kategorie, Budgets, wiederkehrende Zahlungen und die Namen der kleinen Käufe, die du wiederholst, mit Anzahl und Summe –, nicht dein vollständiger Verlauf an Einträgen. Mit deinem Cloud-Konto kann sie zusätzlich alles lesen, was für Genauigkeit nötig ist, etwa jeden Kauf mit Datum und Betrag. Sie wird nicht zum Trainieren der KI verwendet.";
 "aiConsent.accept" = "Akzeptieren und aktivieren";
 "aiConsent.privacyPolicy" = "Datenschutzrichtlinie";
 "aiConsent.inlineHintProcessing" = "Deine Sprach- und Bilddaten werden von einem KI-Dienst verarbeitet. Sie werden nicht dauerhaft gespeichert.";
@@ -3377,7 +3377,7 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Yala KI";
-"aiConsent.chatMessage" = "Yala beantwortet deine Fragen zu deinen Finanzen mit deinen eigenen Zahlen. Dafür wird eine Zusammenfassung der letzten 13 Monate an einen KI-Dienst gesendet: Salden und Namen deiner Konten, Summen nach Kategorie, häufige Händler, Budgets, wiederkehrende Zahlungen und deine größten Ausgaben in diesem Monat. Sie wird nur für die Antwort verwendet, nicht zum Trainieren der KI.";
+"aiConsent.chatMessage" = "Yala beantwortet deine Fragen zu deinen Finanzen mit deinen eigenen Zahlen. Dafür wird eine Zusammenfassung der letzten 13 Monate an einen KI-Dienst gesendet: Salden und Namen deiner Konten, Summen nach Kategorie, häufige Händler, Budgets, wiederkehrende Zahlungen und deine größten Ausgaben in diesem Monat. Mit deinem Cloud-Konto kann die KI zusätzlich alle deine Daten lesen, die sie für genaue und detaillierte Antworten braucht. Sie wird nur für die Antwort verwendet, nicht zum Trainieren der KI.";
 "aiConsent.cloudExploreTitle" = "Yala KI mit deinem Cloud-Konto";
 "aiConsent.cloudExploreMessage" = "Yala beantwortet deine Fragen zu deinen Finanzen mit deinen eigenen Zahlen. Dafür wird eine Zusammenfassung der letzten 13 Monate an einen KI-Dienst gesendet und, wenn eine Frage es erfordert, die Daten aus deinem Cloud-Konto, die für die Antwort nötig sind: Einträge aus jedem Zeitraum mit ihrer Notiz, Konten, Budgets und wiederkehrende Zahlungen. Sie werden nur für die Antwort verwendet, nicht zum Trainieren der KI.";
 "aiConsent.inlineHintChat" = "Deine Finanzzusammenfassung wird von einem KI-Dienst verarbeitet, um zu antworten. Sie wird nicht dauerhaft gespeichert.";
@@ -8692,6 +8692,10 @@
 "insights.antExpenses.monthly" = "≈ %@ pro Monat";
 "insights.antExpenses.row" = "%1$d-mal · %2$@";
 "insights.antExpenses.rule" = "Käufe bis %1$@, die du im Zeitraum %2$d-mal oder öfter wiederholst.";
+"insights.antExpenses.ai.title" = "Mit Yala KI";
+"insights.antExpenses.ai.alsoWritten" = "Auch geschrieben als %@";
+"insights.antExpenses.ai.combined" = "Ähnliche Namen zusammengefasst: %1$@ in %2$d kleinen Käufen";
+"insights.antExpenses.ai.cta" = "Ähnliche Namen mit Yala KI zusammenfassen";
 
 /* Sugerencias de descripción (Nuevo registro, 2.3) */
 "transaction.descriptionSuggestions" = "Beschreibungen, die du schon verwendet hast";

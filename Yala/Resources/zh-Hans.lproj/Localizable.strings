@@ -1125,7 +1125,7 @@
 "profile.aliasAvailable" = "别名可用";
 "profile.aliasHelper" = "3-20 个字符。只能包含字母、数字和下划线。";
 "profile.privacyTitle" = "你的数据存放在哪里";
-"profile.privacyDesc" = "使用私人 iCloud 账户时，你的数据保存在你的设备和你的 iCloud 中。使用云端账户时，数据保存在 Yala 的服务器上。你在群组中记录的内容会连同你的昵称保存在 Yala 的服务器上，以便群组成员查看。AI 功能(语音、图片和洞察)是可选的：你发送的内容会经由我们的服务器传到 AI 服务进行处理。具体是哪项服务，请见隐私政策。";
+"profile.privacyDesc" = "使用私人 iCloud 账户时，你的数据保存在你的设备和你的 iCloud 中。使用云端账户时，数据保存在 Yala 的服务器上。你在群组中记录的内容会连同你的昵称保存在 Yala 的服务器上，以便群组成员查看。AI 功能(语音、图片和洞察)是可选的：你发送的内容会经由我们的服务器传到 AI 服务进行处理。具体是哪项服务，请见隐私政策。使用云端账户时，AI 还可以读取为准确、详细所需的你的所有数据。";
 "profile.aliasFutureNote" = "注意:别名唯一性验证将在共享支出功能上线时可用。";
 "profile.proMember" = "PRO 会员";
 "profile.choosePhoto" = "选择照片";
@@ -2835,14 +2835,14 @@
 "aiPrivacy.cloudExploreRow" = "查询你的云端账户";
 "aiPrivacy.revokeConfirmMessage" = "我们将停止处理此功能的 AI 数据。你随时可以重新启用。";
 "aiPrivacy.revokeConfirmAction" = "禁用";
-"aiPrivacy.footerHint" = "只有在你使用这些功能时，你的数据才会被发送，并经由我们的服务器传给 AI 服务。我们不会出售你的数据，也不会将其用于广告。";
+"aiPrivacy.footerHint" = "只有在你使用这些功能时，你的数据才会被发送，并经由我们的服务器传给 AI 服务。使用云端账户时，AI 还可以读取为准确、详细所需的你的所有数据。我们不会出售你的数据，也不会将其用于广告。";
 "aiPrivacy.policyLink" = "隐私政策";
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Yala 帮你记下来";
-"aiConsent.processingMessage" = "说出来或选一张收据照片，Yala 就会记下这笔支出。为此，音频或照片只会在当时发送给 AI 服务，不会用于训练 AI。";
+"aiConsent.processingMessage" = "说出来或选一张收据照片，Yala 就会记下这笔支出。使用云端账户时，AI 还可以读取为准确、详细所需的你的所有数据。为此，音频或照片只会在当时发送给 AI 服务，不会用于训练 AI。";
 "aiConsent.insightsTitle" = "AI 总结";
-"aiConsent.insightsMessage" = "Yala 会分析你的财务，告诉你目前的状况。为此，它会把一份摘要——按类别的总计和趋势、预算以及定期付款——发送给 AI 服务，不会发送你的完整记录历史。这些数据不会用于训练 AI。";
+"aiConsent.insightsMessage" = "Yala 会分析你的财务，告诉你目前的状况。为此，它会把一份摘要——按类别的总计和趋势、预算、定期付款，以及你重复的小额消费的名称、次数和合计——发送给 AI 服务，不会发送你的完整记录历史。使用云端账户时，AI 还可以读取为了准确所需的一切，例如每笔消费的日期和金额。这些数据不会用于训练 AI。";
 "aiConsent.accept" = "接受并启用";
 "aiConsent.privacyPolicy" = "隐私政策";
 "aiConsent.inlineHintProcessing" = "你的语音和图片数据由 AI 服务处理，不会被永久存储。";
@@ -3388,7 +3388,7 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Yala AI";
-"aiConsent.chatMessage" = "Yala 会根据你自己的数字回答你的财务问题。为此，它会把你最近 13 个月的摘要发送给 AI 服务：账户余额和名称、按类别的总计、常用商家、预算、定期付款以及你本月最大的几笔支出。这些数据仅用于回答你，不会用于训练 AI。";
+"aiConsent.chatMessage" = "Yala 会根据你自己的数字回答你的财务问题。为此，它会把你最近 13 个月的摘要发送给 AI 服务：账户余额和名称、按类别的总计、常用商家、预算、定期付款以及你本月最大的几笔支出。使用云端账户时，AI 还可以读取为准确、详细所需的你的所有数据。这些数据仅用于回答你，不会用于训练 AI。";
 "aiConsent.cloudExploreTitle" = "Yala AI 与你的云端账户";
 "aiConsent.cloudExploreMessage" = "Yala 会根据你自己的数字回答你的财务问题。为此，它会把你最近 13 个月的摘要发送给 AI 服务；当问题需要时，还会发送回答所需的云端账户数据：任意日期的记录及其备注、账户、预算和定期付款。这些数据仅用于回答你，不会用于训练 AI。";
 "aiConsent.inlineHintChat" = "你的财务摘要由 AI 服务处理以作答，不会被永久存储。";
@@ -8704,6 +8704,10 @@
 "insights.antExpenses.monthly" = "每月约 %@";
 "insights.antExpenses.row" = "%1$d 次 · %2$@";
 "insights.antExpenses.rule" = "本期内重复 %2$d 次及以上、每笔不超过 %1$@ 的消费。";
+"insights.antExpenses.ai.title" = "由 Yala AI 整理";
+"insights.antExpenses.ai.alsoWritten" = "也写作 %@";
+"insights.antExpenses.ai.combined" = "合并相似名称后：%2$d 笔小额消费，共 %1$@";
+"insights.antExpenses.ai.cta" = "用 Yala AI 合并相似名称";
 
 /* Sugerencias de descripción (Nuevo registro, 2.3) */
 "transaction.descriptionSuggestions" = "你用过的描述";

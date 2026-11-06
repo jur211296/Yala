@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (92 entradas)
+## Índice (93 entradas)
 
-> **No hace falta leer este fichero entero** — son 268 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 269 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-06` [IA en la nube: lee todo lo que haga falta, y el permiso lo dice](#2026-11-06-ia-en-la-nube-lee-todo-lo-que-haga-falta-y-el-permiso-lo-dice)
 - `2026-11-05` [Decisiones de Jürgen del 5-nov — deploys, umbral del 80 %, «en el límite» y el candado de commits](#2026-11-05-decisiones-de-jrgen-del-5-nov--deploys-umbral-del-80--en-el-lmite-y-el-candado-de-commits)
 - `2026-10-21` [Formulario de registro 2.2 — la cuenta viene puesta, guardar no saca del flujo y lo elegido va relle](#2026-10-21-formulario-de-registro-22--la-cuenta-viene-puesta-guardar-no-saca-del-flujo-y-lo-elegido-va-relleno)
 - `2026-10-21` [Roadmap de Yala de 2.2 a 4.0 — por tema y sin fechas](#2026-10-21-roadmap-de-yala-de-22-a-40--por-tema-y-sin-fechas)
@@ -118,6 +119,30 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-06] IA en la nube: lee todo lo que haga falta, y el permiso lo dice
+
+**Contexto.** Al diseñar los gastos hormiga con IA para Pro (ticket `insights-ant-expenses-ai-version-for-pro`), juntar
+grafías del mismo comercio pedía enviar nombres de compras, y el permiso de Estadísticas solo prometía agregados.
+
+**Decisión.** Jürgen, 2026-11-06, en cuatro pasos:
+1. **Privado (1A):** los gastos hormiga envían solo nombre, veces y total de las compras pequeñas; el permiso de
+   Estadísticas lo dice en los 16 idiomas.
+2. **Gateway (2A):** tarea propia `insights.ants`; se despliega a producción antes de publicar 2.3 y, hasta entonces,
+   Pro solo ve la tarjeta gratis, sin error.
+3. **Nube, para TODA función de IA, pasada y futura:** con la cuenta en la nube la IA puede leer todo lo que haga falta
+   para ser precisa y detallada. Es la ventaja de la nube. Los permisos de IA lo dicen, de forma general, en los 16
+   idiomas, y las funciones que ya existían se alinean (el resumen de Estadísticas manda la nota del gasto más alto).
+4. **Permiso con versión (A):** quien aceptó el texto anterior vuelve a verlo para lo nuevo. Hasta aceptarlo, los gastos
+   hormiga le muestran un botón en vez de salir solos; el resumen de siempre sigue igual.
+
+**Razones.** La nube existe para que Yala entienda mejor tus datos; recortar contexto ahí por privacidad le quita su
+ventaja. En privado se mantiene lo mínimo. Y un permiso que cambia lo que promete se vuelve a pedir.
+
+**Consecuencias.** La regla operativa vive en `.claude/rules/ai-gateway.md` («Modo nube»): una función nueva decide qué
+envía en cada modo y, si manda algo que su permiso no decía, sube su versión (`AIConsentRevision`).
+
+**Estado:** Activa
 
 ### [2026-11-05] Decisiones de Jürgen del 5-nov — deploys, umbral del 80 %, «en el límite» y el candado de commits
 

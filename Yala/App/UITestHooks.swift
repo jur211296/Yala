@@ -1009,6 +1009,10 @@ final class UITestHooks {
     /// antirrebote siguen siendo los de producción.
     nonisolated static var statsAIReply: Bool { hasArg("-uitest-stats-ai-reply") }
 
+    /// `-uitest-seed-ant-spellings`: siembra encima del perfil dos grafías de la misma tienda en compras pequeñas
+    /// (`AppBootstrapper.seedAntSpellings`), para ver la unión de los gastos hormiga Pro con IA.
+    nonisolated static var seedAntSpellings: Bool { hasArg("-uitest-seed-ant-spellings") }
+
     /// `-uitest-bank-email`: «Correo del banco» (2.3) sin servidor ni nube. Enseña la fila de Ajustes aunque los datos no
     /// estén en la nube y la pantalla contesta con una dirección fija (`BankEmailModel`), sin red. La decisión de la fila
     /// la prueban los unit tests de `BankEmailEntryLogic`, sin el seam. `-uitest-bank-email-gmail-code` añade el código de

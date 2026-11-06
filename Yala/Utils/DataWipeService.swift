@@ -1303,6 +1303,7 @@ final class DataWipeService {
         defaults.removeObject(forKey: "imageInputEnabled")      // Default: false
         defaults.removeObject(forKey: "aiDataConsentAccepted") // Default: false
         defaults.removeObject(forKey: "aiInsightsConsentAccepted") // Default: false
+        defaults.removeObject(forKey: "aiInsightsConsentVersion") // Default: 0 (qué texto del permiso se aceptó)
         // El último «Resumen con IA» guardado (UX 2.2 · L11-7): describe los datos que se borran.
         defaults.removeObject(forKey: "insightsAI.savedResults")
         // Y lo que sale solo en Estadísticas (encargo `estadisticas-ia-automatica`): la última respuesta de cada ranura y

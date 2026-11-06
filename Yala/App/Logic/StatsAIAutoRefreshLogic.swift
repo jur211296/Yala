@@ -28,6 +28,9 @@ enum StatsAIAutoRefreshLogic {
     enum Page: String, Codable, CaseIterable {
         case summary
         case trends
+        /// Gastos hormiga Pro: qué grafías son la misma tienda y un consejo (ticket
+        /// `insights-ant-expenses-ai-version-for-pro`).
+        case ants
     }
 
     /// Por qué se genera. Solo informa (rastro en DEBUG y tests).

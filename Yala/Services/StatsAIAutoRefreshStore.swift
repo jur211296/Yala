@@ -173,4 +173,29 @@ enum StatsAIUITestReply {
     )
     static let trends = [TrendsAIBullet(id: 0, source: .trend, text: "Análisis de prueba de la IA.")]
 }
+
+/// La respuesta de hormigas del mismo seam: junta los grupos cuyo nombre empieza por el nombre de otro, sin mirar
+/// mayúsculas («Starbucks» y «STARBUCKS COFFEE» de `-uitest-seed-ant-spellings`), y da un consejo fijo. Sustituye la
+/// llamada, no la validación: lo que no cuadra lo sigue descartando `AntExpensesAILogic`.
+enum AntExpensesUITestReply {
+    static let tip = "Consejo de prueba de la IA sobre tus gastos hormiga."
+
+    static func reply(for payload: [String: Any]) -> AntAIResponse {
+        let groups = (payload["groups"] as? [[String: Any]] ?? []).compactMap { group -> (id: String, name: String)? in
+            guard let id = group["id"] as? String, let name = group["name"] as? String else { return nil }
+            return (id, name.lowercased())
+        }
+        var used = Set<String>()
+        var merges: [AntAIResponse.Merge] = []
+        for head in groups.sorted(by: { $0.name.count < $1.name.count }) where !used.contains(head.id) {
+            let ids = [head.id] + groups
+                .filter { $0.id != head.id && !used.contains($0.id) && $0.name.hasPrefix(head.name + " ") }
+                .map(\.id)
+            guard ids.count >= 2 else { continue }
+            used.formUnion(ids)
+            merges.append(AntAIResponse.Merge(ids: ids))
+        }
+        return AntAIResponse(merges: merges, tip: tip)
+    }
+}
 #endif

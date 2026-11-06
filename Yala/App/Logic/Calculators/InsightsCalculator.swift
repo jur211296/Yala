@@ -86,9 +86,9 @@ struct HighestExpenseInfo {
     let amount: Double
     /// Lo que se enseña en pantalla: la nota del gasto, o su subcategoría/categoría si no tiene.
     let note: String
-    /// Lo que viaja a la IA: subcategoría, categoría o «sin categoría». **Nunca la nota**, que es texto libre de la
-    /// persona y el permiso de Observaciones promete agregados (card `ve42`, ticket
-    /// `insights-cards-send-the-note-of-the-largest-expense`).
+    /// Lo que viaja a la IA: subcategoría, categoría o «sin categoría». **En privado, nunca la nota**, que es texto libre
+    /// de la persona (card `ve42`, ticket `insights-cards-send-the-note-of-the-largest-expense`). Con la cuenta en la
+    /// nube viaja también la nota (`InsightsViewModel.buildAggregatedData`, regla de `.claude/rules/ai-gateway.md`).
     let categoryLabel: String
 }
 
@@ -400,6 +400,23 @@ struct InsightsCalculator {
         let highestExpense = findHighestExpense(periodTxns, currencyCode: currencyCode, adjustment: adjustment, converter: converter)
         let subscriptionsTotal = calculateSubscriptionsTotal(scheduledPayments, currencyCode: currencyCode, converter: converter)
 
+        var antExpenses = AntExpensesCalculator.calculate(
+            transactions: periodTxns,
+            amountOf: { txAmount($0, currencyCode: currencyCode, adjustment: adjustment, converter: converter) },
+            isSuppressed: { adjustment.isSuppressed($0) },
+            dayCount: daysInPeriod
+        )
+        // Para el consejo de la versión Pro con IA: las mismas compras pequeñas en el período anterior ALINEADO (el que
+        // comparan las variaciones), con el tope de este período.
+        if hasPreviousPeriod, let threshold = antExpenses?.threshold {
+            antExpenses?.previousCandidates = AntExpensesCalculator.smallGroups(
+                transactions: prevTxns,
+                amountOf: { txAmount($0, currencyCode: currencyCode, adjustment: adjustment, converter: converter) },
+                isSuppressed: { adjustment.isSuppressed($0) },
+                threshold: threshold
+            )
+        }
+
         let quickStats = QuickStats(
             dailyAverage: dailyAverageExpense,
             topCategories: Array(topCategories.prefix(5)),
@@ -407,12 +424,7 @@ struct InsightsCalculator {
             highestExpense: highestExpense,
             highestAvgWeekday: highestAvgWeekday,
             subscriptionsTotal: subscriptionsTotal,
-            antExpenses: AntExpensesCalculator.calculate(
-                transactions: periodTxns,
-                amountOf: { txAmount($0, currencyCode: currencyCode, adjustment: adjustment, converter: converter) },
-                isSuppressed: { adjustment.isSuppressed($0) },
-                dayCount: daysInPeriod
-            )
+            antExpenses: antExpenses
         )
 
         // Commitments. «Lo que te falta pagar» de un período EN CURSO cuenta hasta su final, no hasta hoy (decisión A de

@@ -656,7 +656,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | indigo-small-text-on-the-light-background-is-4-46 | backlog | tickets/backlog/indigo-small-text-on-the-light-background-is-4-46.md |
 | initial-balance-date-move-leaves-converted-amount-stale | backlog | tickets/backlog/initial-balance-date-move-leaves-converted-amount-stale.md |
 | insights-and-trends-payload-labels-mislead-the-model | backlog | tickets/backlog/insights-and-trends-payload-labels-mislead-the-model.md |
-| insights-ant-expenses-ai-version-for-pro | backlog | tickets/backlog/insights-ant-expenses-ai-version-for-pro.md |
+| insights-ant-expenses-ai-version-for-pro | qa | tickets/qa/insights-ant-expenses-ai-version-for-pro.md |
 | insights-budgets-at-risk-compute-spent-on-their-own | done | tickets/done/insights-budgets-at-risk-compute-spent-on-their-own.md |
 | insights-cards-send-the-note-of-the-largest-expense | done | tickets/done/insights-cards-send-the-note-of-the-largest-expense.md |
 | insights-cashflow-and-deviation-prompts-do-not-ask-for-the-language | done | tickets/done/insights-cashflow-and-deviation-prompts-do-not-ask-for-the-language.md |

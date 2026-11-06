@@ -1188,6 +1188,42 @@ final class AppBootstrapper {
         }
     }
 
+    #if DEBUG
+    /// `-uitest-seed-ant-spellings`: cuatro compras pequeñas de este mes con dos grafías de la misma tienda
+    /// («Starbucks» ×2 y «STARBUCKS COFFEE» ×2). La regla fija no las junta (dos grupos de 2, por debajo de 3) y la
+    /// versión Pro con IA sí (ticket `insights-ant-expenses-ai-version-for-pro`). Va encima del perfil sembrado.
+    static func seedAntSpellings(in context: ModelContext) {
+        do {
+            let accounts = try context.fetch(FetchDescriptor<Account>())
+            let categories = try context.fetch(FetchDescriptor<Category>())
+            guard let account = accounts.first(where: { !$0.isSystemAccount && !$0.isArchived }),
+                  let category = categories.first(where: { !$0.isIncome })
+            else { return }
+            let calendar = Calendar.current
+            let now = Date.now
+            let dayOfMonth = calendar.component(.day, from: now)
+            let entries: [(String, Double, Int)] = [
+                ("Starbucks", 9, 0), ("Starbucks", 9, 1), ("STARBUCKS COFFEE", 11, 2), ("STARBUCKS COFFEE", 11, 3),
+            ]
+            for (note, amount, daysBack) in entries {
+                let back = min(daysBack, dayOfMonth - 1)
+                let date = calendar.date(byAdding: .day, value: -back, to: now) ?? now
+                let tx = TransactionItem(
+                    date: date, amount: -amount, currencyCode: account.currencyCode, note: note,
+                    category: category, account: account,
+                    amountInPreferredCurrency: -amount, preferredCurrencyCode: account.currencyCode
+                )
+                // Misma divisa que la cuenta: la conversión es exacta (`ManualWriteRateQualityTests`).
+                tx.isExchangeRateProvisional = false
+                context.insert(tx)
+            }
+            try context.save()
+        } catch {
+            print("AppBootstrapper: Error: \(error)")
+        }
+    }
+    #endif
+
     /// Tras `-uitest-reset`, DataWipeService borra `secondaryCurrencies`. El gráfico
     /// del Panel solo monta con al menos una secundaria. USD+EUR basta para Mini.
     /// Ticket: Bugs/qa_cloud-fx-rates-blob-dos-caras.md (F1).
@@ -1238,6 +1274,9 @@ final class AppBootstrapper {
             // Ticket: Bugs/qa_cloud-fx-rates-blob-dos-caras.md (F1 Mini QA).
             Self.restoreUITestSecondaryCurrencies(into: UserDefaults.standard)
             SessionState.shared.needsExchangeRateWidgetRefresh = true
+            #if DEBUG
+            if UITestHooks.seedAntSpellings { Self.seedAntSpellings(in: context) }
+            #endif
         }
         // Registros que la persona ya lleva (UX 2.2 · L2-5): con 3 o más, guardar cierra con el aviso breve en vez de la
         // pantalla completa. Tras el reset, que borra el contador.
@@ -1429,6 +1468,7 @@ final class AppBootstrapper {
         }
         if UITestHooks.insightsAIConsent {
             appPreferences.aiInsightsConsentAccepted = true
+            appPreferences.aiInsightsConsentVersion = AIConsentRevision.insights
         }
         if UITestHooks.aiChatReady {
             appPreferences.aiChatConsentAccepted = true

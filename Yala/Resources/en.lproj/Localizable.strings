@@ -1125,7 +1125,7 @@
 "profile.aliasAvailable" = "Alias available";
 "profile.aliasHelper" = "3-20 characters. Only letters, numbers, and underscores.";
 "profile.privacyTitle" = "Where your data lives";
-"profile.privacyDesc" = "With your account in your private iCloud, your data is stored on your device and in your iCloud. With your account in the cloud, it's stored on Yala's servers. What you add to a group, along with your alias, is stored on Yala's servers so the group can see it. AI features (voice, image and insights) are optional: what you send them goes through our server to an AI service, which processes it. The Privacy Policy says which one.";
+"profile.privacyDesc" = "With your account in your private iCloud, your data is stored on your device and in your iCloud. With your account in the cloud, it's stored on Yala's servers. What you add to a group, along with your alias, is stored on Yala's servers so the group can see it. AI features (voice, image and insights) are optional: what you send them goes through our server to an AI service, which processes it. The Privacy Policy says which one. With your cloud account, the AI can also read any of your data it needs to be precise and detailed.";
 "profile.aliasFutureNote" = "Note: Alias uniqueness validation will be available when shared expenses functionality is implemented.";
 "profile.proMember" = "PRO Member";
 "profile.choosePhoto" = "Choose photo";
@@ -2882,14 +2882,14 @@
 "aiPrivacy.cloudExploreRow" = "Use your cloud account";
 "aiPrivacy.revokeConfirmMessage" = "We'll stop processing your AI data for this feature. You can re-enable it anytime.";
 "aiPrivacy.revokeConfirmAction" = "Disable";
-"aiPrivacy.footerHint" = "Your data is only sent when you use one of these features, and it reaches an AI service through our server. We don't sell it or use it for advertising.";
+"aiPrivacy.footerHint" = "Your data is only sent when you use one of these features, and it reaches an AI service through our server. With your cloud account, the AI can also read any of your data it needs to be precise and detailed. We don't sell it or use it for advertising.";
 "aiPrivacy.policyLink" = "Privacy Policy";
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Yala records it for you";
-"aiConsent.processingMessage" = "Say it or pick a photo of the receipt, and Yala records the expense. To do that it sends the audio or photo to an AI service, only at that moment. It’s not used to train the AI.";
+"aiConsent.processingMessage" = "Say it or pick a photo of the receipt, and Yala records the expense. To do that it sends the audio or photo to an AI service, only at that moment. With your cloud account, the AI can also read any of your data it needs to be precise and detailed. It’s not used to train the AI.";
 "aiConsent.insightsTitle" = "AI summary";
-"aiConsent.insightsMessage" = "Yala analyzes your finances and explains how you’re doing. To do that it sends an AI service a summary —totals and trends by category, budgets, and recurring payments—, not your full record history. It’s not used to train the AI.";
+"aiConsent.insightsMessage" = "Yala analyzes your finances and explains how you’re doing. To do that it sends an AI service a summary —totals and trends by category, budgets, recurring payments, and the names of the small purchases you repeat, with how many times and how much they add up to—, not your full record history. With your cloud account, it can also read whatever it needs to be precise, such as each purchase with its date and amount. It’s not used to train the AI.";
 "aiConsent.accept" = "Accept and Enable";
 "aiConsent.privacyPolicy" = "Privacy Policy";
 "aiConsent.inlineHintProcessing" = "Your voice and image data is processed by an AI service. It is not stored permanently.";
@@ -3428,7 +3428,7 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Yala AI";
-"aiConsent.chatMessage" = "Yala answers your questions about your finances using your own numbers. To do that it sends an AI service a summary of your last 13 months: your account balances and names, totals by category, frequent merchants, budgets, recurring payments, and your largest expenses this month. It’s used only to answer you, not to train the AI.";
+"aiConsent.chatMessage" = "Yala answers your questions about your finances using your own numbers. To do that it sends an AI service a summary of your last 13 months: your account balances and names, totals by category, frequent merchants, budgets, recurring payments, and your largest expenses this month. With your cloud account, the AI can also read any of your data it needs to be precise and detailed. It’s used only to answer you, not to train the AI.";
 "aiConsent.cloudExploreTitle" = "Yala AI with your cloud account";
 "aiConsent.cloudExploreMessage" = "Yala answers your questions about your finances using your own numbers. To do that it sends an AI service a summary of your last 13 months and, when a question needs it, the data from your cloud account needed to answer it: entries from any date with their notes, accounts, budgets, and recurring payments. It’s used only to answer you, not to train the AI.";
 "aiConsent.inlineHintChat" = "Your financial summary is processed by an AI service to answer. It is not stored permanently.";
@@ -8698,6 +8698,10 @@
 "insights.antExpenses.monthly" = "≈ %@ a month";
 "insights.antExpenses.row" = "%1$d times · %2$@";
 "insights.antExpenses.rule" = "Purchases of up to %1$@ that you repeat %2$d or more times in the period.";
+"insights.antExpenses.ai.title" = "With Yala AI";
+"insights.antExpenses.ai.alsoWritten" = "Also written as %@";
+"insights.antExpenses.ai.combined" = "With similar names combined: %1$@ across %2$d small purchases";
+"insights.antExpenses.ai.cta" = "Combine similar names with Yala AI";
 
 /* Sugerencias de descripción (Nuevo registro, 2.3) */
 "transaction.descriptionSuggestions" = "Descriptions you've used before";

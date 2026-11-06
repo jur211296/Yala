@@ -78,13 +78,33 @@ struct InsightsHighestExpenseNoNoteTests {
             yearOverYear: nil,
             ruleBasedInsights: []
         )
-        let payload = InsightsViewModel().buildAggregatedData(data, currencyCode: "PEN", comparisonMode: .month)
+        // En privado (iCloud): sin la nota.
+        let privado = InsightsViewModel()
+        privado.isCloudProvider = { false }
+        let payload = privado.buildAggregatedData(data, currencyCode: "PEN", comparisonMode: .month)
         let highestPayload = try #require(payload["highest_expense"] as? [String: Any])
         #expect(highestPayload["description"] as? String == "Compras")
         #expect(highestPayload["amount"] as? Int == 300)
         // Ninguna parte del payload lleva la nota.
         let json = try JSONSerialization.data(withJSONObject: payload)
         #expect(!(String(data: json, encoding: .utf8) ?? "").contains("Regalo para Ana"))
+
+        // Con la cuenta en la nube la IA lee lo que haga falta para precisar (Jürgen, 2026-11-06): viaja también la nota.
+        let nube = InsightsViewModel()
+        nube.isCloudProvider = { true }
+        nube.hasCurrentConsentProvider = { true }
+        let cloudPayload = nube.buildAggregatedData(data, currencyCode: "PEN", comparisonMode: .month)
+        let cloudHighest = try #require(cloudPayload["highest_expense"] as? [String: Any])
+        #expect(cloudHighest["note"] as? String == "Regalo para Ana")
+        #expect(cloudHighest["description"] as? String == "Compras")
+
+        // En la nube pero con el permiso aceptado con el texto anterior: el resumen de siempre, sin la nota.
+        let nubeTextoViejo = InsightsViewModel()
+        nubeTextoViejo.isCloudProvider = { true }
+        nubeTextoViejo.hasCurrentConsentProvider = { false }
+        let oldTextPayload = nubeTextoViejo.buildAggregatedData(data, currencyCode: "PEN", comparisonMode: .month)
+        let oldTextHighest = try #require(oldTextPayload["highest_expense"] as? [String: Any])
+        #expect(oldTextHighest["note"] == nil)
     }
 
     @Test("Sin categoría: «sin categoría», tampoco la nota")
