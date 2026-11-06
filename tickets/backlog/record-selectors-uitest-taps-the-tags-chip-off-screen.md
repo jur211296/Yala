@@ -76,3 +76,14 @@ mensaje, rojo con la base `d89a68061` recompilada (1 de 1, centinela en 0) y con
 **Y el 2026-10-28** en el gate de `grupos-bugs-columna-reintento-borrador` (Frank): mismo mensaje en la línea 124, en lote
 (1 de 157) y aislado con la rama, y **rojo con la base `d071f1657` extraída con `git archive` y compilada aparte** (1 de
 1, centinela en 0 en las tres corridas). Esa rama no toca etiquetas ni «Nuevo registro».
+
+## 2026-11-06 · tercer mensaje: el chip de etiquetas «existe pero no es alcanzable»
+
+Gate de `seleccion-cuentas-doble-linea-moneda` (card betc), `iPhone 17 Pro` iOS 27.2: falla en la línea 124 con
+«`new_transaction_tags_chip` existe pero no es alcanzable» (el `waitForHittable` de `openSelectorFirstRow`). El chip ya
+no está a la derecha de la fila: sale en una segunda fila, en `{20, 767}` de una ventana de 874 pt. **Rojo con la base
+`origin/2.2` @ `7777e9bbf` extraída con `git archive` y compilada aparte** (1 de 1 con el centinela limpio; el otro
+runner vivo era el de Mando, en otro simulador) y rojo 3 de 3 con la rama, que solo cambia el texto de las filas del
+selector de cuenta y ninguna semilla `minimal` tiene tarjetas con líneas. La nocturna del 2026-11-05 (16:27 UTC) lo dio
+verde; desde entonces el único cambio en `Views/Transactions` es `545bb1cc9` («con el texto al máximo, cifras enteras y
+«Guardar» sin pisar el formulario»). Hipótesis sin medir: la barra de «Guardar» tapa ahora la segunda fila de chips.

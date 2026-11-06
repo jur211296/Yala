@@ -13,8 +13,21 @@ struct ImportAccountPickerSheet: View {
     @Environment(\.yalaTheme) private var theme
 
     let accounts: [Account]
+    /// Todas las cuentas, para saber qué principal tiene líneas aunque la lista venga filtrada por divisa: esa fila lleva
+    /// su divisa en el nombre («Sapphire · PEN»), como en la hoja «Cuenta» (`AccountCardLogic.headName`).
+    var allAccounts: [Account]?
     @Binding var selectedAccount: Account?
     let onContinue: (Account) -> Void
+
+    private var headsWithLines: Set<UUID> {
+        let all = allAccounts ?? accounts
+        return AccountCardLogic.headsWithLiveLines(all.map { AccountLineNode($0) }, roles: all.lineRoles)
+    }
+
+    private func rowName(for account: Account, headsWithLines: Set<UUID>) -> String {
+        guard headsWithLines.contains(account.shortcutID) else { return account.name }
+        return AccountCardLogic.headName(account.name, currencyCode: account.currencyCode)
+    }
 
     var body: some View {
         NavigationStack {
@@ -31,6 +44,7 @@ struct ImportAccountPickerSheet: View {
                 } else {
                     ScrollView {
                         VStack(spacing: DS.Spacing.xxl) {
+                            let headsWithLines = self.headsWithLines
                             SectionBox(title: "") {
                                 VStack(spacing: DS.Spacing.none) {
                                     ForEach(Array(accounts.enumerated()), id: \.element.id) { index, account in
@@ -41,7 +55,10 @@ struct ImportAccountPickerSheet: View {
                                         Button {
                                             selectedAccount = account
                                         } label: {
-                                            accountRow(for: account)
+                                            accountRow(
+                                                for: account,
+                                                name: rowName(for: account, headsWithLines: headsWithLines)
+                                            )
                                         }
                                         .buttonStyle(.plain)
                                     }
@@ -78,7 +95,7 @@ struct ImportAccountPickerSheet: View {
 
     // Fila de cuenta reutilizable para el selector
     @ViewBuilder
-    private func accountRow(for account: Account) -> some View {
+    private func accountRow(for account: Account, name: String) -> some View {
         let normalizedCode = normalizeCurrencyCode(account.currencyCode)
         let currency = CurrencyCode(rawValue: normalizedCode) ?? .pen
         let info = currencyInfo(for: currency)
@@ -93,7 +110,7 @@ struct ImportAccountPickerSheet: View {
                 )
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(account.name)
+                Text(name)
                     .font(DS.Typography.headline)
                 Text(info.name.capitalized)
                     .font(DS.Typography.caption)
