@@ -1935,7 +1935,7 @@
 "onboarding.confirm.motivationFullControl" = "Vanaf vandaag alles onder controle!";
 
 // MARK: - Bulk Edit
-"bulkEdit.currencyWarning" = "Wijziging van rekening past de valuta van de geselecteerde boekingen aan.";
+"bulkEdit.currencyWarning" = "Wijziging van rekening rekent de bedragen om naar de valuta van de nieuwe rekening, tegen de wisselkoers van de datum van elke boeking.";
 "bulkEdit.editCount" = "%d boekingen bewerken";
 "bulkEdit.successMessage" = "Boekingen bijgewerkt";
 "bulkEdit.cannotEditTransferSubcategory" = "Kan de categorie van overboekingen niet wijzigen. Bewerk ze afzonderlijk.";

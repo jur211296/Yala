@@ -878,7 +878,7 @@
 "budgets.title" = "Budgets";
 "bulkEdit.availableTags" = "Available to add";
 "bulkEdit.commonTags" = "In all selected";
-"bulkEdit.currencyWarning" = "Changing the account will update the currency of the selected records.";
+"bulkEdit.currencyWarning" = "Changing the account converts the amounts to the new account's currency, at the exchange rate of each record's date.";
 "bulkEdit.editCount" = "Edit %d records";
 "bulkEdit.partialTags" = "In some selected";
 "bulkEdit.successMessage" = "Records updated";

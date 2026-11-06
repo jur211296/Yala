@@ -1931,7 +1931,7 @@
 "onboarding.tutorialsSettingsHint" = "Du findest sie jederzeit in den Einstellungen";
 
 // MARK: - Bulk Edit
-"bulkEdit.currencyWarning" = "Beim Kontowechsel wird die Währung der ausgewählten Einträge aktualisiert.";
+"bulkEdit.currencyWarning" = "Beim Kontowechsel werden die Beträge in die Währung des neuen Kontos umgerechnet, zum Wechselkurs vom Datum des jeweiligen Eintrags.";
 "bulkEdit.editCount" = "%d Einträge bearbeiten";
 "bulkEdit.successMessage" = "Einträge aktualisiert";
 "bulkEdit.cannotEditTransferSubcategory" = "Die Kategorie von Überweisungen kann nicht geändert werden. Bearbeite jede einzeln.";

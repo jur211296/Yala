@@ -1933,7 +1933,7 @@
 "onboarding.tutorialsSettingsHint" = "Puoi trovarli sempre nelle Impostazioni";
 
 // MARK: - Bulk Edit
-"bulkEdit.currencyWarning" = "Cambiando il conto, verrà aggiornata la valuta delle registrazioni selezionate.";
+"bulkEdit.currencyWarning" = "Cambiando il conto, gli importi verranno convertiti nella valuta del nuovo conto, al tasso di cambio della data di ogni registrazione.";
 "bulkEdit.editCount" = "Modifica %d registrazioni";
 "bulkEdit.successMessage" = "Registrazioni aggiornate";
 "bulkEdit.cannotEditTransferSubcategory" = "Impossibile modificare la categoria dei trasferimenti. Modificali individualmente.";

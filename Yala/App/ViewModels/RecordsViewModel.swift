@@ -926,6 +926,13 @@ final class RecordsViewModel: Filterable {
             bulkUpdateError = blocker
             return
         }
+        // Un movimiento en OTRA divisa se convierte a la de la cuenta destino con la tasa de SU fecha, como al cambiar
+        // la divisa de una cuenta. Antes solo se cambiaba la etiqueta: 50 USD pasaban a ser 50 PEN (ticket
+        // `bulk-move-to-another-currency-account-relabels-the-amount`). Los de grupo en otra divisa y las
+        // transferencias no llegan aquí: los para `accountBlocker`.
+        let destination = normalizeCurrencyCode(account.currencyCode)
+        let mismatched = transactions.filter { normalizeCurrencyCode($0.currencyCode) != destination }
+        AccountCurrencyMigrationService.convertHistory(rows: mismatched, to: account.currencyCode, context: context)
         for transaction in transactions {
             transaction.account = account
             transaction.currencyCode = account.currencyCode

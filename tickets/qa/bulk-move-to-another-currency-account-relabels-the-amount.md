@@ -1,10 +1,10 @@
 ---
 id: bulk-move-to-another-currency-account-relabels-the-amount
-status: backlog
+status: qa
 priority: medium
 area: "transactions, bulk-edit, currency, fx"
 created: 2026-10-08
-updated: 2026-10-08
+updated: 2026-11-06
 source: análisis de impacto de multi-currency-accounts (2026-10-08)
 ---
 
@@ -62,3 +62,18 @@ intacto.
   el importe.
 - `multi-currency-accounts`: con la opción A recomendada, mover entre líneas de una misma tarjeta
   pasa por aquí (`docs/multi-currency-accounts-impact-2026-10.md`).
+
+## 2026-11-06 · Arreglado: se convierte con la tasa del día de cada movimiento
+
+- Decisión (la del encargo, sin pregunta de producto abierta): **convertir**, con
+  `AccountCurrencyMigrationService.convertHistory`, la misma pieza del cambio de divisa de una cuenta. Cada fila pasa
+  a la divisa de la cuenta destino con la tasa de SU fecha; con la tasa que hay guardada (sin pedir a la red antes),
+  así que si falta la del día usa la más cercana o la tabla estática, como el resto de la app. Grupos en otra divisa y
+  transferencias siguen bloqueados como antes.
+- El aviso de la hoja decía «se actualizará la moneda»; ahora «los montos se convertirán a la moneda de la cuenta nueva
+  con el tipo de cambio de su fecha», en los 16 idiomas.
+- Tests: `RecordsViewModelBulkAccountCurrencyTests` (los dos casos fijaban el reetiquetado como contrato; ahora fijan
+  la conversión), con control rojo: sin la línea de la conversión caen los dos.
+- Medido en el simulador: «Electricista» S/ 60.00 movido a «Ahorros USD» quedaba en $ 60.00 (base) y ahora en $ 16.39.
+- QA: Registros › Seleccionar dos gastos en soles › Editar › Cuenta › una en dólares › Aplicar. Los montos salen
+  convertidos, no con el mismo número.
