@@ -619,6 +619,10 @@ struct InsightsTabView: View {
         if stats.subscriptionsTotal > 0 {
             subscriptionsCard(stats)
         }
+
+        if let ants = stats.antExpenses {
+            antExpensesCard(ants)
+        }
     }
 
     // MARK: - Observations mode
@@ -700,6 +704,72 @@ struct InsightsTabView: View {
             Spacer()
         }
         .panelCard()
+    }
+
+    // MARK: - Gastos hormiga (card ea78, 2.3)
+
+    /// Compras pequeñas que se repiten, con lo que suman. La regla vive en `AntExpensesCalculator` y se enseña al pie
+    /// para que la cifra se entienda sin abrir nada.
+    private func antExpensesCard(_ ants: AntExpensesSummary) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            HStack(alignment: .top, spacing: DS.Spacing.md) {
+                Image(systemName: "ant.circle.fill")
+                    .font(.system(size: 24)) // A11Y-DT: mismo tamaño que el icono de Suscripciones, al lado.
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(L10n.Insights.antExpensesTitle)
+                        .font(DS.Typography.subheadlineEmphasized)
+                        .foregroundStyle(.primary)
+                    Text(L10n.Insights.antExpensesSummary(
+                        total: appPreferences.currency(ants.total, currencyCode: defaultCurrencyCode),
+                        count: ants.count))
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("insights_ant_expenses_summary")
+                    if let monthly = ants.monthlyEstimate {
+                        Text(L10n.Insights.antExpensesMonthly(
+                            appPreferences.currency(monthly, currencyCode: defaultCurrencyCode)))
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                ForEach(ants.groups.prefix(3), id: \.key) { group in
+                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                        Text(group.label)
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                        Spacer(minLength: DS.Spacing.sm)
+                        Text(L10n.Insights.antExpensesRow(
+                            count: group.count,
+                            total: appPreferences.currency(group.total, currencyCode: defaultCurrencyCode)))
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("insights_ant_expenses_row")
+                }
+            }
+
+            Text(L10n.Insights.antExpensesRule(
+                threshold: appPreferences.currency(ants.threshold, currencyCode: defaultCurrencyCode),
+                minCount: AntExpensesCalculator.minOccurrences))
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .panelCard()
+        // `.contain`: la tarjeta tiene su id sin pisar los de su resumen y sus filas.
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("insights_ant_expenses_card")
     }
 
     // MARK: - Section 4: Lo que te falta pagar · Tus presupuestos (UX 2.2 · L11-5)

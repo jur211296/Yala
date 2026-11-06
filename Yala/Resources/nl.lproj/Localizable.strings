@@ -8697,3 +8697,19 @@
 "receiptSplit.failure.noLines.message" = "Probeer een foto dichter bij de bon en met goed licht, of spreek hem in.";
 "receiptSplit.failure.noConnection.message" = "Maak verbinding met internet om de bon te lezen.";
 "receiptSplit.failure.mic.message" = "Geef toegang in Instellingen om de bon in te spreken.";
+
+/* Gastos hormiga (Insights, 2.3) */
+"insights.antExpenses.title" = "Kleine terugkerende uitgaven";
+"insights.antExpenses.summary" = "%1$@ in %2$d kleine aankopen";
+"insights.antExpenses.monthly" = "≈ %@ per maand";
+"insights.antExpenses.row" = "%1$d keer · %2$@";
+"insights.antExpenses.rule" = "Aankopen tot %1$@ die je in de periode %2$d keer of vaker herhaalt.";
+
+/* Sugerencias de descripción (Nuevo registro, 2.3) */
+"transaction.descriptionSuggestions" = "Omschrijvingen die je al gebruikte";
+
+/* Logo de suscripción (pagos planificados, 2.3) */
+"scheduled.editor.logo.title" = "Logo";
+"scheduled.editor.logo.none" = "Geen logo";
+"scheduled.editor.logo.auto" = "Automatisch";
+"scheduled.editor.logo.autoNamed" = "%@ (automatisch)";

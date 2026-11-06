@@ -8697,3 +8697,19 @@
 "receiptSplit.failure.noLines.message" = "明るい場所でレシートに近づいて撮るか、音声で入力してください。";
 "receiptSplit.failure.noConnection.message" = "レシートを読み取るにはインターネットに接続してください。";
 "receiptSplit.failure.mic.message" = "レシートを音声で入力するには「設定」でアクセスを許可してください。";
+
+/* Gastos hormiga (Insights, 2.3) */
+"insights.antExpenses.title" = "ちりつもの出費";
+"insights.antExpenses.summary" = "小さな買い物 %2$d 回で %1$@";
+"insights.antExpenses.monthly" = "月あたり約 %@";
+"insights.antExpenses.row" = "%1$d 回 · %2$@";
+"insights.antExpenses.rule" = "期間中に %2$d 回以上くり返した %1$@ までの買い物。";
+
+/* Sugerencias de descripción (Nuevo registro, 2.3) */
+"transaction.descriptionSuggestions" = "以前に使った説明";
+
+/* Logo de suscripción (pagos planificados, 2.3) */
+"scheduled.editor.logo.title" = "ロゴ";
+"scheduled.editor.logo.none" = "ロゴなし";
+"scheduled.editor.logo.auto" = "自動";
+"scheduled.editor.logo.autoNamed" = "%@（自動）";

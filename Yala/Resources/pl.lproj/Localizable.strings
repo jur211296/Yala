@@ -8697,3 +8697,19 @@
 "receiptSplit.failure.noLines.message" = "Zrób zdjęcie bliżej paragonu przy dobrym świetle albo go podyktuj.";
 "receiptSplit.failure.noConnection.message" = "Połącz się z internetem, aby odczytać paragon.";
 "receiptSplit.failure.mic.message" = "Zezwól na dostęp w Ustawieniach, aby podyktować paragon.";
+
+/* Gastos hormiga (Insights, 2.3) */
+"insights.antExpenses.title" = "Drobne, powtarzające się wydatki";
+"insights.antExpenses.summary" = "%1$@ w %2$d drobnych zakupach";
+"insights.antExpenses.monthly" = "≈ %@ miesięcznie";
+"insights.antExpenses.row" = "%1$d razy · %2$@";
+"insights.antExpenses.rule" = "Zakupy do %1$@, które powtarzasz w tym okresie %2$d razy lub więcej.";
+
+/* Sugerencias de descripción (Nuevo registro, 2.3) */
+"transaction.descriptionSuggestions" = "Opisy, których już używałeś";
+
+/* Logo de suscripción (pagos planificados, 2.3) */
+"scheduled.editor.logo.title" = "Logo";
+"scheduled.editor.logo.none" = "Bez logo";
+"scheduled.editor.logo.auto" = "Automatycznie";
+"scheduled.editor.logo.autoNamed" = "%@ (automatycznie)";

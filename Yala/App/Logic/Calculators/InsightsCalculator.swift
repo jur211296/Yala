@@ -73,6 +73,8 @@ struct QuickStats {
     let highestExpense: HighestExpenseInfo?
     let highestAvgWeekday: HighestAvgWeekdayInfo?
     let subscriptionsTotal: Double
+    /// Gastos hormiga del período (`AntExpensesCalculator`); `nil` si no hay ninguno que enseñar.
+    var antExpenses: AntExpensesSummary? = nil
 
     /// La mayor categoría REAL: el trozo «Sin categoría» suma en el ranking, pero no es una categoría que nombrar.
     var topCategory: CategorySpendingSummary? { topCategories.first { !$0.isUncategorized } }
@@ -404,7 +406,13 @@ struct InsightsCalculator {
             topSubcategories: Array(topSubcategories.prefix(5)),
             highestExpense: highestExpense,
             highestAvgWeekday: highestAvgWeekday,
-            subscriptionsTotal: subscriptionsTotal
+            subscriptionsTotal: subscriptionsTotal,
+            antExpenses: AntExpensesCalculator.calculate(
+                transactions: periodTxns,
+                amountOf: { txAmount($0, currencyCode: currencyCode, adjustment: adjustment, converter: converter) },
+                isSuppressed: { adjustment.isSuppressed($0) },
+                dayCount: daysInPeriod
+            )
         )
 
         // Commitments. «Lo que te falta pagar» de un período EN CURSO cuenta hasta su final, no hasta hoy (decisión A de

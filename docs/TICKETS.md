@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1183)
+## Index (1187)
 
 | id | status | path |
 |---|---|---|
@@ -315,6 +315,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | currency-converter-fetches-the-rate-row-on-every-conversion | done | tickets/done/currency-converter-fetches-the-rate-row-on-every-conversion.md |
 | exchange-rates-duplicate-per-day-across-installs | backlog | tickets/backlog/exchange-rates-duplicate-per-day-across-installs.md |
 | group-expense-from-a-receipt-with-ai | qa | tickets/qa/group-expense-from-a-receipt-with-ai.md |
+| insights-small-recurring-spending-card | qa | tickets/qa/insights-small-recurring-spending-card.md |
 | latest-rates-cache-ignores-rate-rows-from-the-mirror-and-the-pull | backlog | tickets/backlog/latest-rates-cache-ignores-rate-rows-from-the-mirror-and-the-pull.md |
 | cash-flow-month-capsule-and-balance-widget-pill-sign-a-zero | backlog | tickets/backlog/cash-flow-month-capsule-and-balance-widget-pill-sign-a-zero.md |
 | cutover-marker-without-a-session-locks-out-the-second-device | backlog | tickets/backlog/cutover-marker-without-a-session-locks-out-the-second-device.md |
@@ -764,6 +765,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | neutral-mount-wiring-scan-is-red-on-2-1 | done | tickets/done/neutral-mount-wiring-scan-is-red-on-2-1.md |
 | new-record-chip-row-hides-the-tags-chip-without-a-hint | backlog | tickets/backlog/new-record-chip-row-hides-the-tags-chip-without-a-hint.md |
 | new-record-drafts-banner-says-abrir-inbox | backlog | tickets/backlog/new-record-drafts-banner-says-abrir-inbox.md |
+| new-record-suggests-previous-descriptions | qa | tickets/qa/new-record-suggests-previous-descriptions.md |
 | new-record-with-one-account-keeps-save-off-without-saying-why | backlog | tickets/backlog/new-record-with-one-account-keeps-save-off-without-saying-why.md |
 | new-transaction-account-picker-uitests-fail-on-the-ios-27-lane-pro-max | done | tickets/done/new-transaction-account-picker-uitests-fail-on-the-ios-27-lane-pro-max.md |
 | new-transaction-form-sometimes-never-goes-idle-for-xcuitest | backlog | tickets/backlog/new-transaction-form-sometimes-never-goes-idle-for-xcuitest.md |
@@ -808,6 +810,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | panel-stayed-filtered-after-removing-the-account-chip | done | tickets/done/panel-stayed-filtered-after-removing-the-account-chip.md |
 | panel-trend-chart-labels-overlap | done | tickets/done/panel-trend-chart-labels-overlap.md |
 | partial-sheets-that-never-adapted-to-the-window | backlog | tickets/backlog/partial-sheets-that-never-adapted-to-the-window.md |
+| pay-now-uitest-stops-on-the-possible-duplicate-notice-in-2-3 | backlog | tickets/backlog/pay-now-uitest-stops-on-the-possible-duplicate-notice-in-2-3.md |
 | paywall-inbox-routing-uitest-misses-the-held-paywall-in-a-batch | done | tickets/done/paywall-inbox-routing-uitest-misses-the-held-paywall-in-a-batch.md |
 | paywall-storekit-alert-is-never-cleared | done | tickets/done/paywall-storekit-alert-is-never-cleared.md |
 | pdf-statement-pages-without-currency-pick-no-account | backlog | tickets/backlog/pdf-statement-pages-without-currency-pick-no-account.md |
@@ -1006,6 +1009,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | scheduled-payment-start-date-is-ignored-by-the-calendar | backlog | tickets/backlog/scheduled-payment-start-date-is-ignored-by-the-calendar.md |
 | scheduled-payments-notif-dedup | done | tickets/done/scheduled-payments-notif-dedup.md |
 | scheduled-payments-period-wheel-closes-the-sheet | done | tickets/done/scheduled-payments-period-wheel-closes-the-sheet.md |
+| scheduled-payments-show-subscription-logos | qa | tickets/qa/scheduled-payments-show-subscription-logos.md |
 | secondary-currency-prompt-uitest-red-on-iphone-se | done | tickets/done/secondary-currency-prompt-uitest-red-on-iphone-se.md |
 | secondary-entry-healing-writes-owner-not-session | discarded | tickets/discarded/secondary-entry-healing-writes-owner-not-session.md |
 | secondary-groups-off-wipes-owner | discarded | tickets/discarded/secondary-groups-off-wipes-owner.md |

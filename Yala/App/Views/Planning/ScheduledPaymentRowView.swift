@@ -21,7 +21,14 @@ struct ScheduledPaymentRowView: View {
         let state = summary.rowState
         NavigationLink(value: summary.payment.persistentModelID) {
             HStack(spacing: DS.Spacing.md) {
-                paymentIcon
+                Group {
+                    // El logo del servicio, si lo hay (card 9nn7, 2.3); si no, el icono de su subcategoría.
+                    if let brand = summary.payment.subscriptionBrand {
+                        SubscriptionBrandBadge(brand: brand, isDecorative: true)
+                    } else {
+                        paymentIcon
+                    }
+                }
                     // Lo hecho, saltado o pausado, atenuado: lo que falta es lo que llama la atención.
                     .opacity(ScheduledPaymentListLogic.section(for: state) == .toPay ? 1 : 0.55)
 

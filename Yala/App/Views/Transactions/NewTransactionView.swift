@@ -810,6 +810,45 @@ struct NewTransactionView: View {
     /// - Parameter compact: con poco alto (un iPhone SE) el aire entre bloques baja de `xxl` a `md`, para que la pregunta
     ///   del monto, la pista y los chips en dos filas (lote decidido 2.2 · 02, sesión B) quepan sin desplazar: la card de
     ///   L2-10 pide «Etiquetas» a la vista sin deslizar también en el SE. En un iPhone normal no cambia nada.
+    /// Las descripciones anteriores como cápsulas. Tocar una pone su texto exacto.
+    private func descriptionSuggestionsRow(_ suggestions: [String]) -> some View {
+        // Centradas bajo el campo cuando caben; si no, se desplazan a los lados.
+        ViewThatFits(in: .horizontal) {
+            descriptionSuggestionChips(suggestions)
+                .padding(.horizontal, DS.Spacing.lg)
+            ScrollView(.horizontal, showsIndicators: false) {
+                descriptionSuggestionChips(suggestions)
+                    .padding(.horizontal, DS.Spacing.lg)
+            }
+            .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+            .fadesTowardVerticalBar()
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(L10n.Transaction.descriptionSuggestions)
+        .accessibilityIdentifier("new_transaction_description_suggestions")
+    }
+
+    private func descriptionSuggestionChips(_ suggestions: [String]) -> some View {
+        HStack(spacing: DS.Spacing.sm) {
+            ForEach(suggestions, id: \.self) { text in
+                Button {
+                    DS.Haptic.selection()
+                    viewModel.applyDescriptionSuggestion(text)
+                } label: {
+                    Text(text)
+                        .font(DS.Typography.subheadline)
+                        .lineLimit(1)
+                        .padding(.horizontal, DS.Spacing.md)
+                        .padding(.vertical, DS.Spacing.xs)
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .glassEffect(.regular.interactive(), in: .capsule)
+                .accessibilityIdentifier("new_transaction_description_suggestion")
+            }
+        }
+    }
+
     private func centralContent(compact: Bool) -> some View {
         VStack(spacing: compact ? DS.Spacing.md : DS.Spacing.xxl) {
             // La fecha, encima de la descripción: la misma pastilla en los tres formularios (registro unificado).
@@ -841,8 +880,11 @@ struct NewTransactionView: View {
                             .presentationCompactAdaptation(.popover)
                     }
 
-                // La pista de los atajos, en palabras llanas y una por apertura (L2-8). No en transferencias.
-                if !viewModel.isTransfer, let descriptionHint {
+                // Sugerencias de registros anteriores mientras se escribe (card y6du, 2.3): ocupan el sitio de la
+                // pista, que vuelve en cuanto no hay nada que sugerir. Con una mención (#, !, @) manda su popover.
+                if isNoteFieldFocused, currentMentionState == nil, !viewModel.descriptionSuggestions.isEmpty {
+                    descriptionSuggestionsRow(viewModel.descriptionSuggestions)
+                } else if !viewModel.isTransfer, let descriptionHint {
                     Text(descriptionHint.hint)
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)

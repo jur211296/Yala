@@ -81,6 +81,24 @@ final class NewTransactionViewModel {
     /// Nota libre
     var note: String = ""
 
+    /// Descripciones de registros anteriores (card y6du, 2.3). Se arma una vez en `loadData`.
+    private(set) var descriptionSuggestionIndex: [DescriptionSuggestionEntry] = []
+    /// La última sugerencia elegida: mientras la descripción siga siendo ese texto, no se propone nada más.
+    private var pickedDescriptionSuggestion: String?
+
+    /// Hasta 5 descripciones anteriores para lo escrito, del mismo lado (gasto o ingreso). Nada en transferencias.
+    var descriptionSuggestions: [String] {
+        guard transactionType != .transfer, note != pickedDescriptionSuggestion else { return [] }
+        return DescriptionSuggestionLogic.suggestions(
+            for: note, isIncome: transactionType == .income, in: descriptionSuggestionIndex)
+    }
+
+    /// Completa la descripción con el texto exacto de la sugerencia.
+    func applyDescriptionSuggestion(_ text: String) {
+        pickedDescriptionSuggestion = text
+        note = text
+    }
+
     /// Código de divisa para el registro
     var currencyCode: String = CurrencyDefaults.defaultCode
 
@@ -307,6 +325,21 @@ final class NewTransactionViewModel {
         } catch {
             #if DEBUG
             print("NewTransactionViewModel: Error loading transactions: \(error)")
+            #endif
+        }
+
+        // Descripciones anteriores para las sugerencias: las últimas 1.000 con texto (card y6du). Basta para la
+        // frecuencia de lo que la persona escribe a diario y se lee una vez por apertura.
+        var notesDescriptor = FetchDescriptor<TransactionItem>(
+            predicate: #Predicate<TransactionItem> { $0.note != nil },
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+        notesDescriptor.fetchLimit = 1000
+        do {
+            descriptionSuggestionIndex = DescriptionSuggestionLogic.buildIndex(from: try context.fetch(notesDescriptor))
+        } catch {
+            #if DEBUG
+            print("NewTransactionViewModel: Error loading description suggestions: \(error)")
             #endif
         }
     }

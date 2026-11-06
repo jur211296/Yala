@@ -128,7 +128,9 @@ final class ScheduledPaymentEditorViewModel {
         groupZoneID: String? = nil,
         splitType: String? = nil,
         splitParticipantIDs: [UUID] = [],
-        splitValues: [UUID: Double] = [:]
+        splitValues: [UUID: Double] = [:],
+        // Logo de suscripción (card 9nn7): `.none` = no tocar lo guardado; `.some(nil)` = automático por el nombre.
+        brandLogoID: String?? = .none
     ) -> UUID? {
         guard let context = modelContext else { return nil }
 
@@ -162,6 +164,7 @@ final class ScheduledPaymentEditorViewModel {
             existingPayment.subcategory = subcategory
             existingPayment.setTags(from: tagsArray)
             existingPayment.needOverride = needOverride
+            if case .some(let logo) = brandLogoID { existingPayment.brandLogoID = logo }
 
             // Recurrence
             existingPayment.isRecurring = isRecurring
@@ -214,6 +217,8 @@ final class ScheduledPaymentEditorViewModel {
                 isVariableAmount: isVariableAmount
             )
             context.insert(newPayment)
+
+            if case .some(let logo) = brandLogoID { newPayment.brandLogoID = logo }
 
             // Group shared expense (F3)
             newPayment.groupZoneID = groupZoneID

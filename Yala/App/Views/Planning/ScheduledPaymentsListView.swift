@@ -311,7 +311,12 @@ struct ScheduledPaymentsListView: View {
                     }
                 }
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    HStack(alignment: .firstTextBaseline) {
+                    HStack(alignment: .center, spacing: DS.Spacing.sm) {
+                        // El logo del servicio delante del nombre (card 9nn7, 2.3). El día sigue en el círculo de la
+                        // línea, que es lo que la ordena.
+                        if let brand = summary.payment.subscriptionBrand {
+                            SubscriptionBrandBadge(brand: brand, diameter: DS.Icon.badgeSmall, isDecorative: true)
+                        }
                         Text(summary.payment.name)
                             .font(DS.Typography.label)
                             .foregroundStyle(.primary)
@@ -426,16 +431,14 @@ struct ScheduledPaymentsListView: View {
                     .foregroundStyle(isSelected ? theme.onAccent : (isToday ? theme.accentText : .secondary))
 
                 if hasPayments {
+                    // Con algún logo caben dos marcas por celda en vez de tres puntos (card 9nn7, 2.3).
+                    let markLimit = summaries.contains { $0.payment.subscriptionBrand != nil } ? 2 : 3
                     HStack(spacing: 3) {
-                        ForEach(Array(summaries.prefix(3).enumerated()), id: \.offset) { _, summary in
-                            Circle()
-                                .fill(isSelected
-                                      ? theme.onAccent
-                                      : ScheduledPaymentListLogic.dotStatus(for: summary.rowState).color(accent: theme.accent))
-                                .frame(width: 6, height: 6)
+                        ForEach(Array(summaries.prefix(markLimit).enumerated()), id: \.offset) { _, summary in
+                            calendarMark(summary, isSelected: isSelected)
                         }
-                        if summaries.count > 3 {
-                            Text("+\(summaries.count - 3)")
+                        if summaries.count > markLimit {
+                            Text("+\(summaries.count - markLimit)")
                                 .font(.system(size: 8, weight: .medium)) // A11Y-DT: fixed size — calendar micro-badge
                                 .foregroundStyle(isSelected ? theme.onAccent.opacity(0.8) : .secondary)
                         }
@@ -463,6 +466,31 @@ struct ScheduledPaymentsListView: View {
             )
         }
         .buttonStyle(.plain)
+    }
+
+    /// La marca de un pago en su día: el punto de estado o, si tiene logo, su círculo con la inicial y un aro del color
+    /// del estado (pagado, vencido, pendiente), para no perder lo que decían los puntos.
+    @ViewBuilder
+    private func calendarMark(_ summary: ScheduledPaymentSummary, isSelected: Bool) -> some View {
+        let stateColor = isSelected
+            ? theme.onAccent
+            : ScheduledPaymentListLogic.dotStatus(for: summary.rowState).color(accent: theme.accent)
+        if let brand = summary.payment.subscriptionBrand {
+            let fill = Color(hex: brand.colorHex)
+            ZStack {
+                Circle().fill(fill).frame(width: 12, height: 12)
+                Text(verbatim: String(brand.monogram.prefix(1)))
+                    .font(.system(size: 7, weight: .heavy, design: .rounded)) // A11Y-DT: micro-marca del calendario
+                    .foregroundStyle(theme.onFill(fill))
+                Circle().stroke(stateColor, lineWidth: 1.5).frame(width: 15, height: 15)
+            }
+            .frame(width: 15, height: 15)
+            .accessibilityHidden(true)
+        } else {
+            Circle()
+                .fill(stateColor)
+                .frame(width: 6, height: 6)
+        }
     }
 
     private func backgroundColor(isToday: Bool, isSelected: Bool, hasPayments: Bool) -> Color {

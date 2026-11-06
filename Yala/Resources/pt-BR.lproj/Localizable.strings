@@ -8685,3 +8685,19 @@
 "receiptSplit.failure.noLines.message" = "Tente uma foto mais perto do recibo e com boa luz, ou dite.";
 "receiptSplit.failure.noConnection.message" = "Conecte-se à internet para ler o recibo.";
 "receiptSplit.failure.mic.message" = "Dê permissão em Ajustes para ditar o recibo.";
+
+/* Gastos hormiga (Insights, 2.3) */
+"insights.antExpenses.title" = "Gastos formiga";
+"insights.antExpenses.summary" = "%1$@ em %2$d compras pequenas";
+"insights.antExpenses.monthly" = "≈ %@ por mês";
+"insights.antExpenses.row" = "%1$d vezes · %2$@";
+"insights.antExpenses.rule" = "Compras de até %1$@ que você repete %2$d vezes ou mais no período.";
+
+/* Sugerencias de descripción (Nuevo registro, 2.3) */
+"transaction.descriptionSuggestions" = "Descrições que você já usou";
+
+/* Logo de suscripción (pagos planificados, 2.3) */
+"scheduled.editor.logo.title" = "Logo";
+"scheduled.editor.logo.none" = "Sem logo";
+"scheduled.editor.logo.auto" = "Automático";
+"scheduled.editor.logo.autoNamed" = "%@ (automático)";
