@@ -346,6 +346,7 @@ DEFINE SCHEMA
     RECORD TYPE CD_ScheduledPayment (
         CD_account                STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_amount                 DOUBLE QUERYABLE SORTABLE,
+        CD_brandLogoID            STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_createdAt              TIMESTAMP QUERYABLE SORTABLE,
         CD_currencyCode           STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_dayOfMonth             INT64 QUERYABLE SORTABLE,

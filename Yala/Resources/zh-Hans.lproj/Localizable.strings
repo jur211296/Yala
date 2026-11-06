@@ -8697,3 +8697,19 @@
 "receiptSplit.failure.noLines.message" = "请在光线充足处靠近拍摄小票，或用语音口述。";
 "receiptSplit.failure.noConnection.message" = "请连接互联网以读取小票。";
 "receiptSplit.failure.mic.message" = "请在“设置”中允许访问，以便口述小票。";
+
+/* Gastos hormiga (Insights, 2.3) */
+"insights.antExpenses.title" = "积少成多的小额支出";
+"insights.antExpenses.summary" = "%2$d 笔小额消费，共 %1$@";
+"insights.antExpenses.monthly" = "每月约 %@";
+"insights.antExpenses.row" = "%1$d 次 · %2$@";
+"insights.antExpenses.rule" = "本期内重复 %2$d 次及以上、每笔不超过 %1$@ 的消费。";
+
+/* Sugerencias de descripción (Nuevo registro, 2.3) */
+"transaction.descriptionSuggestions" = "你用过的描述";
+
+/* Logo de suscripción (pagos planificados, 2.3) */
+"scheduled.editor.logo.title" = "标志";
+"scheduled.editor.logo.none" = "不显示标志";
+"scheduled.editor.logo.auto" = "自动";
+"scheduled.editor.logo.autoNamed" = "%@（自动）";

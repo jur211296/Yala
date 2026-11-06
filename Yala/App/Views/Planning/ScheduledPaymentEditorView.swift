@@ -53,6 +53,9 @@ struct ScheduledPaymentEditorView: View {
     @State private var transactionType: String = "expense"
     @State private var paymentCategory: PaymentCategory = .recurring
     @State private var isSubscription: Bool = false
+    /// Logo de suscripción (card 9nn7, 2.3): `nil` = automático por el nombre, `SubscriptionBrandCatalog.noneID` =
+    /// quitado, o el id del servicio elegido.
+    @State private var brandLogoID: String?
 
     // Classification
     @State private var selectedAccount: Account?
@@ -302,9 +305,16 @@ struct ScheduledPaymentEditorView: View {
 
                 // Name Field
                 HStack(spacing: DS.Spacing.md) {
-                    Image(systemName: "textformat")
-                        .foregroundStyle(.secondary)
-                        .accessibilityHidden(true)
+                    // Con un servicio conocido, su logo en lugar del icono genérico: así se ve que se propuso.
+                    if let brand = resolvedBrand {
+                        SubscriptionBrandBadge(brand: brand, diameter: DS.Icon.badgeSmall)
+                            // Id propio: la lista de debajo de la hoja tiene los suyos con el mismo servicio.
+                            .accessibilityIdentifier("scheduled_editor_brand_badge_\(brand.id)")
+                    } else {
+                        Image(systemName: "textformat")
+                            .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
+                    }
                     TextField(
                         NSLocalizedString("scheduled.editor.name.placeholder", comment: ""),
                         text: $name
@@ -316,6 +326,11 @@ struct ScheduledPaymentEditorView: View {
                 }
                 .padding()
                 .id(EditorField.name)
+
+                if showsLogoRow {
+                    SubsectionDivider()
+                    logoRow
+                }
 
                 SubsectionDivider()
 
@@ -493,6 +508,79 @@ struct ScheduledPaymentEditorView: View {
                 loadAvailableGroups()
             }
         }
+    }
+
+    // MARK: - Logo de suscripción (card 9nn7, 2.3)
+
+    private var resolvedBrand: SubscriptionBrand? {
+        SubscriptionBrandCatalog.resolve(storedID: brandLogoID, name: name)
+    }
+
+    /// Solo donde aporta: hay un logo (propuesto o elegido), se quitó uno, o el pago es una suscripción.
+    private var showsLogoRow: Bool {
+        !isGroupExpense && (resolvedBrand != nil || brandLogoID != nil || isSubscription)
+    }
+
+    private var logoRowValue: String {
+        if brandLogoID == SubscriptionBrandCatalog.noneID { return L10n.Scheduled.logoNone }
+        if brandLogoID == nil {
+            return resolvedBrand.map { L10n.Scheduled.logoAutoNamed($0.name) } ?? L10n.Scheduled.logoNone
+        }
+        return resolvedBrand?.name ?? L10n.Scheduled.logoNone
+    }
+
+    private var logoRow: some View {
+        Menu {
+            Button {
+                brandLogoID = nil
+            } label: {
+                let auto = SubscriptionBrandCatalog.match(name: name)
+                Label(auto.map { L10n.Scheduled.logoAutoNamed($0.name) } ?? L10n.Scheduled.logoAuto,
+                      systemImage: brandLogoID == nil ? "checkmark" : "wand.and.stars")
+            }
+            .accessibilityIdentifier("scheduled_logo_option_auto")
+            Button {
+                brandLogoID = SubscriptionBrandCatalog.noneID
+            } label: {
+                Label(L10n.Scheduled.logoNone,
+                      systemImage: brandLogoID == SubscriptionBrandCatalog.noneID ? "checkmark" : "circle.slash")
+            }
+            .accessibilityIdentifier("scheduled_logo_option_none")
+            Divider()
+            ForEach(SubscriptionBrandCatalog.sortedForPicking) { brand in
+                Button {
+                    brandLogoID = brand.id
+                } label: {
+                    if brandLogoID == brand.id {
+                        Label(brand.name, systemImage: "checkmark")
+                    } else {
+                        Text(brand.name)
+                    }
+                }
+                .accessibilityIdentifier("scheduled_logo_option_\(brand.id)")
+            }
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                // Colores fijos: dentro de un `Menu`, `.primary`/`.secondary` salen del tinte (swiftui-ds.md).
+                Image(systemName: "seal")
+                    .foregroundStyle(Color(.secondaryLabel))
+                    .frame(width: 24)
+                    .accessibilityHidden(true)
+                Text(L10n.Scheduled.logoTitle)
+                    .foregroundStyle(Color(.label))
+                Spacer(minLength: DS.Spacing.sm)
+                Text(logoRowValue)
+                    .foregroundStyle(Color(.secondaryLabel))
+                    .lineLimit(1)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(Color(.tertiaryLabel))
+                    .accessibilityHidden(true)
+            }
+            .padding()
+            .contentShape(Rectangle())
+        }
+        .accessibilityIdentifier("scheduled_logo_row")
     }
 
     private var subscriptionToggle: some View {
@@ -1579,6 +1667,7 @@ struct ScheduledPaymentEditorView: View {
         transactionType = payment.transactionType
         paymentCategory = PaymentCategory(rawValue: payment.paymentCategory) ?? .recurring
         isSubscription = paymentCategory == .subscription
+        brandLogoID = payment.brandLogoID
         selectedAccount = payment.account
         selectedSubcategory = payment.subcategory
         // CSV-mirror SSOT via resolver + TagResolver → set of persistentModelIDs.
@@ -1692,7 +1781,8 @@ struct ScheduledPaymentEditorView: View {
             groupZoneID: isGroupExpense ? selectedGroup?.cloudKitZoneID : nil,
             splitType: isGroupExpense ? splitConfigType.rawValue : nil,
             splitParticipantIDs: isGroupExpense ? splitParticipantIDs : [],
-            splitValues: isGroupExpense ? splitValues : [:]
+            splitValues: isGroupExpense ? splitValues : [:],
+            brandLogoID: .some(isGroupExpense ? nil : brandLogoID)
         )
 
         if let id = savedID {

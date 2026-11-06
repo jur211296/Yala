@@ -1505,6 +1505,20 @@ enum L10n {
         static var highestExpense: String { ls("insights.highestExpense", comment: "") }
         static var highestAvgWeekday: String { ls("insights.highestAvgWeekday", comment: "") }
         static var subscriptions: String { ls("insights.subscriptions", comment: "") }
+        // Gastos hormiga (card ea78, 2.3)
+        static var antExpensesTitle: String { ls("insights.antExpenses.title", comment: "") }
+        static func antExpensesSummary(total: String, count: Int) -> String {
+            String(format: ls("insights.antExpenses.summary", comment: ""), total, count)
+        }
+        static func antExpensesMonthly(_ amount: String) -> String {
+            String(format: ls("insights.antExpenses.monthly", comment: ""), amount)
+        }
+        static func antExpensesRow(count: Int, total: String) -> String {
+            String(format: ls("insights.antExpenses.row", comment: ""), count, total)
+        }
+        static func antExpensesRule(threshold: String, minCount: Int) -> String {
+            String(format: ls("insights.antExpenses.rule", comment: ""), threshold, minCount)
+        }
         static var quickStats: String { ls("insights.quickStats", comment: "") }
         static var comparison: String { ls("insights.comparison", comment: "") }
         static var weekdayAverage: String { ls("insights.weekdayAverage", comment: "") }
@@ -3598,6 +3612,8 @@ enum L10n {
         static var type: String { ls("transaction.type", comment: "") }
         static var amount: String { ls("transaction.amount", comment: "") }
         static var description: String { ls("transaction.description", comment: "") }
+        /// Rótulo de VoiceOver de la fila de sugerencias de descripción (card y6du, 2.3).
+        static var descriptionSuggestions: String { ls("transaction.descriptionSuggestions", comment: "") }
         static var descriptionHint: String {
             ls("transaction.descriptionHint", comment: "")
         }
@@ -4562,6 +4578,14 @@ enum L10n {
     // MARK: - Scheduled
 
     enum Scheduled {
+        // Logo de suscripción en el editor (card 9nn7, 2.3)
+        static var logoTitle: String { ls("scheduled.editor.logo.title", comment: "") }
+        static var logoNone: String { ls("scheduled.editor.logo.none", comment: "") }
+        static var logoAuto: String { ls("scheduled.editor.logo.auto", comment: "") }
+        static func logoAutoNamed(_ brand: String) -> String {
+            String(format: ls("scheduled.editor.logo.autoNamed", comment: ""), brand)
+        }
+
         static var saveDescription: String {
             ls("scheduled.saveDescription", comment: "")
         }
