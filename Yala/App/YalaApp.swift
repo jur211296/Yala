@@ -125,6 +125,10 @@ struct YalaApp: App {
                 // eje 1c midió.
                 .id(containerHost.generation)
                 .modelContainer(container)
+                // Card 7e60 · con qué almacén se montó este árbol. Lo heredan sus hojas, y una hoja que sobrevive al
+                // cambio en caliente se queda con el del árbol viejo aunque iOS rehaga su contenido
+                // (`detachesFromSwappedStore()`).
+                .environment(\.mountedStoreGeneration, containerHost.generation)
         } else {
             SignOutRelaunchView()
         }

@@ -137,8 +137,18 @@ final class CloudSessionSignOut {
     }
 
     /// Escribe el destino del Welcome pegado al arm del borrado (ver `destinationOnArm`) y lo retira: un cierre lo usa una vez.
+    ///
+    /// **Sin destino, retira el que hubiera** (card 7e60, medido en el iPhone 14 el 2026-11-05). El destino sobrevive al
+    /// borrado (`removeUserPreferenceKeys` no lo barre, a propósito: es lo que hace llegar el de este cierre), así que uno
+    /// viejo —un «Restaurar desde iCloud» que nadie llegó a consumir— encaminaba a quien entra después. Con el neutro
+    /// armado y `hasShownWelcomeChooser` borrado, Restaurar pedía reabrir y el arranque volvía a montar sin espejo: «Un
+    /// último paso: reabre Yala» en cada apertura, sin salida. A dónde vuelve el Welcome tras un cierre lo decide el cierre.
     private func persistDestinationOnArm() {
-        if let destinationOnArm { WelcomePendingDestinationStore.set(destinationOnArm) }
+        if let destinationOnArm {
+            WelcomePendingDestinationStore.set(destinationOnArm)
+        } else {
+            WelcomePendingDestinationStore.clear()
+        }
         destinationOnArm = nil
     }
 
@@ -2541,6 +2551,12 @@ final class CloudSessionSignOut {
         }
         StorageModePersistence.armSignOutWipe()
         CloudSyncBreadcrumb.signOutWipeArmed()
+        // Card 7e60 · el borrado de la cuenta tampoco deja un destino del Welcome de antes (ver `persistDestinationOnArm`).
+        // Retira sin mirar `destinationOnArm`: el borrado no lo trae, y el que quedara es de un cierre anterior que salió
+        // sin armar (la puerta de Grupos que se para por la celda), así que escribirlo mandaría a crear un grupo o a
+        // unirse con la cuenta ya borrada (review adversarial del lote).
+        destinationOnArm = nil
+        WelcomePendingDestinationStore.clear()
         clearLocalSurfacesForArmedWipe()
         phase = .awaitingRelaunch
 
@@ -2663,6 +2679,12 @@ final class CloudSessionSignOut {
         }
         StorageModePersistence.armSignOutWipe()
         CloudSyncBreadcrumb.signOutWipeArmed()
+        // Card 7e60 · el borrado de la cuenta tampoco deja un destino del Welcome de antes (ver `persistDestinationOnArm`).
+        // Retira sin mirar `destinationOnArm`: el borrado no lo trae, y el que quedara es de un cierre anterior que salió
+        // sin armar (la puerta de Grupos que se para por la celda), así que escribirlo mandaría a crear un grupo o a
+        // unirse con la cuenta ya borrada (review adversarial del lote).
+        destinationOnArm = nil
+        WelcomePendingDestinationStore.clear()
         clearLocalSurfacesForArmedWipe()
         phase = .awaitingRelaunch
         return true

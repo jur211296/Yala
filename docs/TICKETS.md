@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1175)
+## Index (1177)
 
 | id | status | path |
 |---|---|---|
@@ -548,6 +548,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-loop-restart-docs-cite-a-retired-mount-guard | backlog | tickets/backlog/groups-loop-restart-docs-cite-a-retired-mount-guard.md |
 | groups-merkle-reads-an-unreadable-table-as-an-empty-one | done | tickets/done/groups-merkle-reads-an-unreadable-table-as-an-empty-one.md |
 | groups-next-column-needs-the-capability-level-in-the-drain | done | tickets/done/groups-next-column-needs-the-capability-level-in-the-drain.md |
+| groups-no-session-loss-exit-test-fails-in-the-full-suite | backlog | tickets/backlog/groups-no-session-loss-exit-test-fails-in-the-full-suite.md |
 | groups-notifications-permission-skipped-when-the-group-arrives-another-way | done | tickets/done/groups-notifications-permission-skipped-when-the-group-arrives-another-way.md |
 | groups-only-account-deletion-skips-export-wait | backlog | tickets/backlog/groups-only-account-deletion-skips-export-wait.md |
 | groups-only-by-choice-holds-group-scheduled-payments | done | tickets/done/groups-only-by-choice-holds-group-scheduled-payments.md |
@@ -853,6 +854,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | private-gate-wipe-failure-copy-claims-icloud-is-intact | done | tickets/done/private-gate-wipe-failure-copy-claims-icloud-is-intact.md |
 | private-icloud-check-gives-up-on-a-large-history | done | tickets/done/private-icloud-check-gives-up-on-a-large-history.md |
 | private-icloud-gate-back-lands-on-the-wrong-branch | backlog | tickets/backlog/private-icloud-gate-back-lands-on-the-wrong-branch.md |
+| private-icloud-gate-takes-almost-a-minute-to-check | backlog | tickets/backlog/private-icloud-gate-takes-almost-a-minute-to-check.md |
 | private-sign-out-blocks-on-a-cloud-keychain-read-error | backlog | tickets/backlog/private-sign-out-blocks-on-a-cloud-keychain-read-error.md |
 | private-sign-out-counts-group-writes-without-capturing-them | done | tickets/done/private-sign-out-counts-group-writes-without-capturing-them.md |
 | private-sign-out-keeps-legacy-cloudkit-groups | backlog | tickets/backlog/private-sign-out-keeps-legacy-cloudkit-groups.md |
@@ -1038,7 +1040,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | sign-out-block-reason-is-only-logged-on-the-cloud-path | backlog | tickets/backlog/sign-out-block-reason-is-only-logged-on-the-cloud-path.md |
 | sign-out-blocked-by-a-surviving-session-already-dropped-the-account-caches | backlog | tickets/backlog/sign-out-blocked-by-a-surviving-session-already-dropped-the-account-caches.md |
 | sign-out-exits-do-not-verify-the-cloud-session-closed | done | tickets/done/sign-out-exits-do-not-verify-the-cloud-session-closed.md |
-| sign-out-in-place-leaves-a-screen-with-nothing-to-tap | backlog | tickets/backlog/sign-out-in-place-leaves-a-screen-with-nothing-to-tap.md |
+| sign-out-in-place-leaves-a-screen-with-nothing-to-tap | qa | tickets/qa/sign-out-in-place-leaves-a-screen-with-nothing-to-tap.md |
 | sign-out-migration-copy-does-not-fit-a-failed-or-waiting-migration | backlog | tickets/backlog/sign-out-migration-copy-does-not-fit-a-failed-or-waiting-migration.md |
 | sign-out-push-all-runs-a-sync-cycle-past-the-migration-gate | done | tickets/done/sign-out-push-all-runs-a-sync-cycle-past-the-migration-gate.md |
 | sign-out-wipe-abort-in-icloud-says-nothing | backlog | tickets/backlog/sign-out-wipe-abort-in-icloud-says-nothing.md |

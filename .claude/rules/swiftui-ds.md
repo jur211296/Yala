@@ -193,6 +193,32 @@ paths:
   (`onboardingRoutingDeferredForRelaunch` + `SignOutDeferredRoutingLogic`). El simulador no lo reproduce: monta con
   espejo y el cambio en caliente se salta.
 
+- **El cambio de almacén en caliente deja vivo lo que no cuelga de la jerarquía, y cerraba Yala por dos sitios (card
+  7e60, medido en el iPhone 14 el 2026-11-05: el primero tapaba al segundo).** (1) **Una hoja del árbol viejo sigue
+  presentada hasta que UIKit termina de cerrarla**, y en ese rato su contenido vuelve a aparecer con el `modelContext`
+  del almacén soltado: Ajustes hacía `fetchCount` en su `onAppear` y SwiftData abortaba (`swift_weakLoadStrong`,
+  EXC_BREAKPOINT). ⇒ el contenido de una presentación desde la que se cierra sesión o se borra la cuenta en la nube
+  lleva `.detachesFromSwappedStore()`, que deja de pintarlo en cuanto la generación del host cambia o se queda sin
+  almacén (`SwappedStoreContentLogic`); hoy, la hoja de Ajustes. **La generación con la que se montó viaja por el entorno** (`\.mountedStoreGeneration`, lo pone `YalaApp.windowContent`), no en un `@State` del contenido: si iOS rehace el contenido de la hoja tras el cambio, un `@State` nuevo guardaría la generación nueva con el contexto viejo. (2) **El re-arranque vuelve a correr
+  `AppBootstrapper.bootstrap` en el MISMO proceso**, y lo que el sistema solo admite una vez por proceso revienta:
+  `BGTaskScheduler.register` de un identificador ya registrado lanza una excepción ObjC que nada atrapa. ⇒ un paso nuevo
+  del arranque que registre algo en el sistema lleva su latch de proceso (`BackgroundTaskManager.didRegisterTasks`).
+  (3) **El `onDismiss` de una hoja corre aunque la vista que la presentó ya no esté montada** (2026-11-06, el tercer
+  cierre: el de Ajustes del Panel viejo llamaba a `reloadAndRecalculate()` y su recarga hacía `fetch` con el almacén
+  soltado). ⇒ el corte va en el ViewModel que guarda el contexto, no en cada llamada: `BoundStoreContext` lo ata a la
+  generación con la que se dio y lo devuelve `nil` con otro almacén montado; quien recalcule con sus arrays (filas de
+  ese almacén) mira `isDetachedFromMountedStore` antes. Hoy, `PanelViewModel` y `DetailContainerViewModel`. Un
+  ViewModel nuevo que recargue desde el `onDismiss` de una hoja que pueda cerrar sesión hace lo mismo.
+  Pin: `SwappedStoreContentTests`, `BoundStoreContextWiringTests`, `BackgroundTaskRegistrationOnceTests`.
+
+- **Un destino del Welcome sobrevive al borrado del cierre de sesión, a propósito, así que cada cierre decide el suyo
+  (card 7e60, medido el 2026-11-05).** Un «Restaurar desde iCloud» de antes del cierre que nadie consumió dejaba a la
+  persona siguiente en «Un último paso: reabre Yala» en cada apertura: Restaurar se abría sin pasar por el Welcome,
+  pedía reabrir para conectar iCloud y, con `hasShownWelcomeChooser` borrado, el neutro armado volvía a montar sin
+  espejo. ⇒ el arm del borrado escribe el destino del cierre o retira el que hubiera (`persistDestinationOnArm`), y
+  todo callback que pida reabrir para el espejo marca `hasShownWelcomeChooser`, como el del contenedor del Welcome. Pin:
+  `SignOutWelcomeDestinationTests`.
+
 - **Una decisión del arranque que lea el eje de sesión NO puede tomarse en el splash (medido el 2026-10-19).**
   `checkInitialSyncState` corre en paralelo a `AppBootstrapper.bootstrap`, y el eje (`PrivateSessionMark`) lo escribe
   el backfill del bootstrap: decidido en el splash, el aviso en frío de «iCloud no está disponible» no salía en ningún

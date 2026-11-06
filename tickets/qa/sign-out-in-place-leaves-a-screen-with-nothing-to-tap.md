@@ -1,10 +1,10 @@
 ---
 id: sign-out-in-place-leaves-a-screen-with-nothing-to-tap
-status: backlog
+status: qa
 priority: high
 area: cloud-sync, sign-out, welcome
 created: 2026-10-28
-updated: 2026-11-05
+updated: 2026-11-06
 source: card 7e60 del tablero (Jürgen, 2.º iPhone, 2026-10-28 ~06:14)
 ---
 
@@ -71,3 +71,54 @@ iPhone 14 (iOS 27.2), Yala Dev sobre `origin/2.2` (#809), cuenta en la nube (Goo
 
 Siguiente: arreglar 2 (Ajustes no lee el contexto viejo al reaparecer durante o tras el cambio de almacén; revisar
 los demás `setContext` que corren al cerrar la hoja) y 3. Review adversarial (cierre de sesión). Vuelve a QA con device.
+
+## Arreglado (2026-11-05, noche, lote «Cerrar sesión con cambios»)
+
+Medido en el iPhone 14 con Yala Dev de la rama:
+
+- **Crash 1 (Ajustes reaparece con el almacén soltado).** La hoja de Ajustes deja de pintar su contenido en cuanto la
+  generación del almacén cambia o el host se queda sin él (`.detachesFromSwappedStore()`, `SwappedStoreContentLogic`).
+  Con el arreglo, el primer crash no salió.
+- **Crash 2, el que el primero tapaba.** Con el primero fuera, el cierre en la nube seguía cerrando Yala a los ~8 s:
+  `AppBootstrapper.rebootstrapAfterSwap` → `BackgroundTaskManager.registerTasks()` → `BGTaskScheduler` lanza
+  `NSInternalInconsistencyException` por registrar dos veces el mismo identificador en el mismo proceso. `.ips` en
+  `~/Claude/entregas/2026-11-05-lote-cerrar-sesion-crash-welcome/evidencia/Yala-2026-11-05-224058.ips`. Ahora
+  `registerTasks()` corre una vez por proceso. **El cambio de almacén en caliente de la nube cerraba Yala siempre en un
+  iPhone real desde la card ypit**: el simulador monta con espejo y nunca lo ejerció.
+- **Bucle «Un último paso: reabre Yala» tras el cierre.** Un destino del Welcome de antes del cierre («Restaurar desde
+  iCloud», que la prueba de la tarde dejó sin consumir) sobrevivía al borrado; el arranque abría Restaurar, Restaurar
+  pedía reabrir y el neutro armado volvía a montar sin espejo, en cada apertura. Ahora cada arm del borrado escribe el
+  destino del cierre o retira el viejo, y Restaurar que pide reabrir marca la elección. Medido: con el arreglo, una
+  sola reapertura y conecta con iCloud.
+
+Tests: `SwappedStoreContentTests`, `BackgroundTaskRegistrationOnceTests`, `SignOutWelcomeDestinationTests` (4
+mutantes, cada uno en rojo).
+
+## Mañana del 2026-11-06 (iPhone 14, con Jürgen para Google)
+
+- **Crash 3, el que el segundo tapaba.** Con los dos primeros fuera, el cierre en la nube volvió a cerrar Yala a los
+  ~3 s de pintar la bienvenida: `PanelViewModel.loadData()` ← `scheduleRecalculation` ← el `onDismiss` de la hoja de
+  Ajustes del Panel viejo, que corre aunque el Panel ya no esté montado y recarga con el almacén soltado. `.ips` en
+  `~/Claude/entregas/2026-11-05-lote-cerrar-sesion-crash-welcome/evidencia/Yala-2026-11-06-071322.ips`. Ahora el
+  contexto de `PanelViewModel` y `DetailContainerViewModel` va atado a la generación del almacén (`BoundStoreContext`):
+  con otro almacén montado se lee `nil`, y el Panel, Estadísticas y Registros no recargan ni recalculan. Son las únicas
+  hojas de Ajustes que recargan algo al cerrarse (las otras ocho no tienen `onDismiss`). Medido: cerrar sesión con
+  red, dos veces, sin `.ips` nuevo.
+- **(b) resuelto en el aparato.** Desde un cierre limpio: «Ya tengo cuenta» › Google › «¡Tu cuenta está lista!» ›
+  Empezar → entra en el Panel y se queda. Inferido, no medido: el elector salía por el estado roto que dejaban los
+  crashes (neutro armado + destino viejo), que ya no se produce.
+- **Reabrir a medias (decisión de Jürgen, 2026-11-06).** Quien elige entrar en una cuenta y ve Yala cerrarse antes de
+  terminar, al reabrir vuelve a «¿Qué quieres hacer?», no al Paso 1 del alta privada (`WelcomeUnfinishedAccountEntry`).
+  Medido: «Ya tengo cuenta › Google», cerrar en el aviso de Google y reabrir → el elector.
+
+Tests nuevos: `BoundStoreContextWiringTests`, `WelcomeUnfinishedAccountEntryTests`.
+
+## Device-QA pendiente (guion corto)
+
+1. iPhone de pruebas con Yala Dev en la nube (Google). Ajustes › Tu cuenta de Yala › Cerrar sesión › confirma.
+   Esperado: la bienvenida, y Yala sigue abierta 10 s después.
+2. «Empezar» › «Ya tengo cuenta» › «Entrar con Google» › tu cuenta › «¡Tu cuenta está lista!» › Empezar. Esperado: el
+   Panel.
+3. Repite 2 pero cierra Yala del todo en el aviso de Google y ábrela. Esperado: «¿Qué quieres hacer?».
+4. Sin probar aún: la sesión caducada con cambios sin subir (el caso original de la card). Si se puede provocar, cierra
+   sesión ahí y comprueba lo mismo que en 1.

@@ -15,7 +15,12 @@ final class DetailContainerViewModel {
 
     // MARK: - Dependencies
 
-    private var modelContext: ModelContext?
+    /// Card 7e60: atado al almacén con el que se dio (`BoundStoreContext`); con otro almacén montado se lee `nil`.
+    private var boundStore = BoundStoreContext()
+    private var modelContext: ModelContext? { boundStore.liveContext }
+
+    /// El almacén de este ViewModel ya no es el montado: quien recalcule con sus arrays (filas de ese almacén) para.
+    var isDetachedFromMountedStore: Bool { boundStore.isDetached }
 
     // MARK: - Data
 
@@ -50,7 +55,7 @@ final class DetailContainerViewModel {
 
     func setContext(_ context: ModelContext) {
         let isNewContext = self.modelContext !== context
-        self.modelContext = context
+        boundStore.bind(context)
         if isNewContext { loadData() }
     }
 
