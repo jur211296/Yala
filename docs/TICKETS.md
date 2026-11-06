@@ -1112,7 +1112,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | sync-runtime-safety-note-assumes-every-prod-device-is-icloud | backlog | tickets/backlog/sync-runtime-safety-note-assumes-every-prod-device-is-icloud.md |
 | synced-prefs-outside-prefsynckey | discarded | tickets/discarded/synced-prefs-outside-prefsynckey.md |
 | tag-chips-change-order-on-every-launch | done | tickets/done/tag-chips-change-order-on-every-launch.md |
-| tag-selector-from-the-panel-form-shows-no-rows-in-2-3 | backlog | tickets/backlog/tag-selector-from-the-panel-form-shows-no-rows-in-2-3.md |
+| tag-selector-from-the-panel-form-shows-no-rows-in-2-3 | qa | tickets/qa/tag-selector-from-the-panel-form-shows-no-rows-in-2-3.md |
 | tag-sheet-new-name-field-never-idles-in-xcuitest | done | tickets/done/tag-sheet-new-name-field-never-idles-in-xcuitest.md |
 | tags-none-label-has-the-wrong-gender | backlog | tickets/backlog/tags-none-label-has-the-wrong-gender.md |
 | tests-borran-el-store-sqlite-abierto | done | tickets/done/tests-borran-el-store-sqlite-abierto.md |
@@ -1161,7 +1161,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | voice-cancel-does-not-resume-other-apps-audio | done | tickets/done/voice-cancel-does-not-resume-other-apps-audio.md |
 | voice-entry-end-to-end | done | tickets/done/voice-entry-end-to-end.md |
 | voice-language-and-silence-handling-differ-between-chat-and-sheet | backlog | tickets/backlog/voice-language-and-silence-handling-differ-between-chat-and-sheet.md |
-| voice-live-transcript-label-says-iphone-on-ipad | backlog | tickets/backlog/voice-live-transcript-label-says-iphone-on-ipad.md |
+| voice-live-transcript-label-says-iphone-on-ipad | qa | tickets/qa/voice-live-transcript-label-says-iphone-on-ipad.md |
 | voice-note-parser-prompt-knows-six-currencies | done | tickets/done/voice-note-parser-prompt-knows-six-currencies.md |
 | voice-parser-sends-no-json-mode | done | tickets/done/voice-parser-sends-no-json-mode.md |
 | voice-transcription-model-choice | done | tickets/done/voice-transcription-model-choice.md |

@@ -8550,7 +8550,7 @@
 "panel.createCategoriesHint" = "記録はカテゴリごとに分けて保存します。まだカテゴリがありません。";
 
 /* VoiceOver label for the live on-device transcript shown while recording a voice entry */
-"voice.live.transcriptAccessibility" = "iPhoneが聞き取っている内容";
+"voice.live.transcriptAccessibility" = "端末が聞き取っている内容";
 "settings.wipeLandingToast" = "リセットしました。最初の口座を作成して記録を始めましょう。";
 "icloud.remoteWipeKeptSetup" = "別の端末でデータを消去しました。";
 /* Tarjeta de crédito: corte, facturado y aviso (card nmtk) */

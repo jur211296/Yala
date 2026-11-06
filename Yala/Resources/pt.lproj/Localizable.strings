@@ -8538,7 +8538,7 @@
 "panel.createCategoriesHint" = "Todo registro vai em uma categoria, e você ainda não tem nenhuma.";
 
 /* VoiceOver label for the live on-device transcript shown while recording a voice entry */
-"voice.live.transcriptAccessibility" = "O que o iPhone está entendendo";
+"voice.live.transcriptAccessibility" = "O que o dispositivo está entendendo";
 "settings.wipeLandingToast" = "Pronto, você começou do zero. Crie sua primeira conta para registrar.";
 "icloud.remoteWipeKeptSetup" = "Você apagou seus dados em outro dispositivo.";
 /* Tarjeta de crédito: corte, facturado y aviso (card nmtk) */

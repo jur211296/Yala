@@ -8550,7 +8550,7 @@
 "panel.createCategoriesHint" = "Elke registratie hoort bij een categorie, en je hebt er nog geen.";
 
 /* VoiceOver label for the live on-device transcript shown while recording a voice entry */
-"voice.live.transcriptAccessibility" = "Wat je iPhone verstaat";
+"voice.live.transcriptAccessibility" = "Wat je apparaat verstaat";
 "settings.wipeLandingToast" = "Klaar, je begint opnieuw. Maak je eerste rekening aan om te registreren.";
 "icloud.remoteWipeKeptSetup" = "Je hebt je gegevens op een ander apparaat gewist.";
 /* Tarjeta de crédito: corte, facturado y aviso (card nmtk) */
