@@ -86,20 +86,20 @@ struct UXAudit22Lote6LogicTests {
 
     @Test("L6-2: solo «Restaurar» y solo sin iCloud sale del Welcome sin relanzar")
     func skipsRelaunch_onlyRestoreWithoutICloud() {
-        #expect(WelcomeRestoreRelaunchLogic.skipsRelaunch(destination: .restoreICloud, iCloudAvailable: false))
-        #expect(!WelcomeRestoreRelaunchLogic.skipsRelaunch(destination: .restoreICloud, iCloudAvailable: true))
+        #expect(WelcomeRestoreRelaunchLogic.skipsRelaunch(destination: .restoreICloud, iCloudAccountPresent: false))
+        #expect(!WelcomeRestoreRelaunchLogic.skipsRelaunch(destination: .restoreICloud, iCloudAccountPresent: true))
         for destination in [WelcomeMirrorRelaunchLogic.Destination.privateOnboarding, .inviteRecovery] {
-            #expect(!WelcomeRestoreRelaunchLogic.skipsRelaunch(destination: destination, iCloudAvailable: false),
+            #expect(!WelcomeRestoreRelaunchLogic.skipsRelaunch(destination: destination, iCloudAccountPresent: false),
                     "\(destination) no le pregunta nada a iCloud: no puede saltarse el relanzamiento")
         }
     }
 
     @Test("L6-2: Restaurar pide reabrir solo con iCloud ya encendido y el store neutro")
     func needsRelaunchToSearch_onlyWithICloudOnANeutralMount() {
-        #expect(WelcomeRestoreRelaunchLogic.needsRelaunchToSearch(iCloudAvailable: true, mountedDecision: .neutralNoMirror))
-        #expect(!WelcomeRestoreRelaunchLogic.needsRelaunchToSearch(iCloudAvailable: false, mountedDecision: .neutralNoMirror),
+        #expect(WelcomeRestoreRelaunchLogic.needsRelaunchToSearch(iCloudAccountPresent: true, mountedDecision: .neutralNoMirror))
+        #expect(!WelcomeRestoreRelaunchLogic.needsRelaunchToSearch(iCloudAccountPresent: false, mountedDecision: .neutralNoMirror),
                 "sin iCloud la pantalla es «Activa iCloud»: reabrir no cambiaría nada")
-        #expect(!WelcomeRestoreRelaunchLogic.needsRelaunchToSearch(iCloudAvailable: true, mountedDecision: .iCloudMirror),
+        #expect(!WelcomeRestoreRelaunchLogic.needsRelaunchToSearch(iCloudAccountPresent: true, mountedDecision: .iCloudMirror),
                 "con el espejo puesto se busca en este proceso")
     }
 
@@ -111,7 +111,7 @@ struct UXAudit22Lote6LogicTests {
         let portal = try Self.body(
             of: "private func leaveWelcome(to destination: WelcomeMirrorRelaunchLogic.Destination,", in: src)
         #expect(portal.contains("WelcomeRestoreRelaunchLogic.skipsRelaunch("))
-        #expect(portal.contains("iCloudAvailable: iCloudSyncService.shared.isAccountAvailable"))
+        #expect(portal.contains("iCloudAccountPresent: iCloudSyncService.shared.hasICloudAccount"))
         let guardRange = try #require(portal.range(of: "guard WelcomeMirrorRelaunchLogic.shouldRelaunch("))
         let skip = try #require(portal.range(of: "WelcomeRestoreRelaunchLogic.skipsRelaunch("))
         let elseRange = try #require(portal.range(of: "else {"))
@@ -124,7 +124,7 @@ struct UXAudit22Lote6LogicTests {
     @Test("MUTACIÓN L6-2: Restaurar pide reabrir antes de buscar, y solo si se lo piden")
     func restoreScreen_asksToRelaunchBeforeSearching() throws {
         let src = try Self.code("Yala/App/Views/Onboarding/WelcomeRestoreView.swift")
-        let search = try Self.body(of: "private func startSearch() {", in: src)
+        let search = try Self.body(of: "private func startSearch(afterAskingCloudKit: Bool = false) {", in: src)
         let ask = try #require(search.range(of: "onNeedsMirrorRelaunch()"))
         let wiped = try #require(search.range(of: "RestoreOfferGate.wasWiped("))
         let started = try #require(search.range(of: "ICloudRestoreSessionSignal.noteRestoreStarted("))

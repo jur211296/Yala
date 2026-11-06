@@ -466,12 +466,14 @@ struct WelcomeFlowContainer: View {
                               proceed: () -> Void) {
         // **L6-2 · «Restaurar» sin iCloud entra sin reabrir**: Restaurar dirá «Activa iCloud para continuar» en el acto,
         // y si la persona lo enciende y vuelve a buscar, es Restaurar quien pide reabrir (`WelcomeRestoreRelaunchLogic`).
+        // «Sin iCloud» es sin CUENTA, no sin iCloud Drive (card 6a12): con Drive apagado se reabre y se restaura. Si
+        // CloudKit aún no contestó, se entra sin reabrir y Restaurar le pregunta antes de decidir.
         guard WelcomeMirrorRelaunchLogic.shouldRelaunch(
             destination: destination,
             mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision),
               !WelcomeRestoreRelaunchLogic.skipsRelaunch(
                 destination: destination,
-                iCloudAvailable: iCloudSyncService.shared.isAccountAvailable) else {
+                iCloudAccountPresent: iCloudSyncService.shared.hasICloudAccount) else {
             proceed()
             return
         }

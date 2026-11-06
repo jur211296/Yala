@@ -789,6 +789,14 @@ final class iCloudSyncService {
         hasCompletedFirstImport = true
     }
 
+    /// La sesión de iCloud abierta con iCloud Drive apagado (`-uitest-fake-icloud-drive-off`, card 6a12): sin token de
+    /// Drive y con CloudKit diciendo `.available`. Producción nunca lo llama.
+    func _uiTestSimulateDriveOffWithAccount() {
+        _testForceAccountAvailable = false
+        cloudKitAccountStatus = .available
+        hasCompletedFirstImport = true
+    }
+
     /// Sitúa el último import exitoso en un instante concreto. Lo necesita el gate de quiescencia
     /// (`SubcategoryDedupGate.decide`, que devuelve `waitQuiescence` mientras no hayan pasado 8 s desde el
     /// último import): sin este seam no hay forma determinista de ejercitar la rama en la que el bridge se

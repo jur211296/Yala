@@ -945,6 +945,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | restore-timeout-closes-the-session-window-with-the-import-still-running | done | tickets/done/restore-timeout-closes-the-session-window-with-the-import-still-running.md |
 | restore-treats-budgets-and-groups-as-no-data | done | tickets/done/restore-treats-budgets-and-groups-as-no-data.md |
 | restore-unverified-message-depends-on-a-single-gateway-host | backlog | tickets/backlog/restore-unverified-message-depends-on-a-single-gateway-host.md |
+| restore-with-icloud-drive-off-mounts-without-mirror | qa | tickets/qa/restore-with-icloud-drive-off-mounts-without-mirror.md |
 | retire-guest-vocabulary-for-session-terms | done | tickets/done/retire-guest-vocabulary-for-session-terms.md |
 | retry-after-a-failed-migration-resumes-the-pending-icloud-wipe-blindly | done | tickets/done/retry-after-a-failed-migration-resumes-the-pending-icloud-wipe-blindly.md |
 | retrying-a-group-creation-after-a-lost-response-creates-a-second-group | done | tickets/done/retrying-a-group-creation-after-a-lost-response-creates-a-second-group.md |

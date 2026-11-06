@@ -1137,6 +1137,9 @@ final class AppBootstrapper {
         if UITestHooks.fakeICloudAvailable {
             iCloudSyncService.shared._uiTestSimulateAvailableAccount()
         }
+        if UITestHooks.fakeICloudDriveOff {
+            iCloudSyncService.shared._uiTestSimulateDriveOffWithAccount()
+        }
         // **«¿Espeja este arranque?» contesta la verdad del host de test: no.** El store `YalaModel-UITest` monta con
         // `cloudKitDatabase: .none`, pero sale de `personalConfiguration` ANTES de capturar la decisión del mount, así
         // que `personalStoreMountedDecision` se queda en `.iCloudMirror` y `mirrorWillSync()` decía `true` en toda
