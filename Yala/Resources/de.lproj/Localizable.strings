@@ -8635,3 +8635,53 @@
 
 /* Account form: the save failed after some changes were already applied in the app, so it must not say nothing was saved. */
 "account.saveErrorPartial" = "Nicht alles konnte gespeichert werden. Ein Teil der Änderungen ist eventuell schon sichtbar; prüfe das Konto und speichere erneut.";
+
+/* Groups: «From a receipt» in a new group expense (2.3) */
+"receiptSplit.entry.button" = "Aus einem Beleg";
+"receiptSplit.entry.hint" = "Liest einen Beleg per Foto oder Stimme und teilt ihn nach Positionen auf";
+"receiptSplit.title" = "Aus einem Beleg";
+"receiptSplit.photo.title" = "Foto des Belegs";
+"receiptSplit.photo.camera" = "Kamera";
+"receiptSplit.photo.library" = "Fotos";
+"receiptSplit.photo.change" = "Foto ändern";
+"receiptSplit.phrase.label" = "Wer hatte was?";
+"receiptSplit.phrase.placeholder" = "Ana das Steak, Luis und ich die Pizza";
+"receiptSplit.phrase.footer" = "Optional. Was niemandem zugeordnet wird, teilen alle.";
+"receiptSplit.split" = "Aufteilen";
+"receiptSplit.voice.title" = "Beleg diktieren";
+"receiptSplit.voice.hint" = "Sag, was bestellt wurde und wer was hatte";
+"receiptSplit.voice.example" = "Zum Beispiel: „Pizza 40, Steak 35, zwei Limonaden 16. Ana das Steak, Luis und ich die Pizza.“";
+"receiptSplit.voice.listening" = "Ich höre zu …";
+"receiptSplit.voice.stop" = "Fertig";
+"receiptSplit.reading" = "Beleg wird gelesen …";
+"receiptSplit.review.title" = "Aufteilung prüfen";
+"receiptSplit.review.lines" = "Was bestellt wurde";
+"receiptSplit.review.linesFooter" = "Tippe auf die Personen einer Position, um sie zu ändern. Wische, um eine Position zu entfernen.";
+"receiptSplit.review.extras" = "Trinkgeld, Service und Steuern";
+"receiptSplit.review.extrasFooter" = "Werden nicht automatisch aufgeteilt. Wähle, wie jede Position zählt, oder füge Trinkgeld hinzu.";
+"receiptSplit.review.perPerson" = "Pro Person";
+"receiptSplit.review.everyone" = "Alle";
+"receiptSplit.review.whoHadIt" = "Wer hatte das";
+"receiptSplit.review.total" = "Gesamt";
+"receiptSplit.review.use" = "Diese Aufteilung verwenden";
+"receiptSplit.review.nothingToSplit" = "Noch nichts aufzuteilen.";
+"receiptSplit.review.negativeShare" = "Ein Rabatt bringt jemanden unter null. Ändere, wie er aufgeteilt wird.";
+"receiptSplit.review.totalMismatch" = "Auf dem Beleg steht %@, die Positionen ergeben %@. Prüfe, ob etwas fehlt oder zu viel ist.";
+"receiptSplit.review.unmatched" = "%@ ist nicht in der Gruppe. Diese Positionen teilen jetzt alle: Wähle, wer sie zahlt.";
+"receiptSplit.share.excluded" = "Nicht enthalten";
+"receiptSplit.share.proportional" = "Nach Verbrauch";
+"receiptSplit.share.equal" = "Zu gleichen Teilen";
+"receiptSplit.share.people" = "Nur für";
+"receiptSplit.surcharge.add" = "Trinkgeld oder Service hinzufügen";
+"receiptSplit.surcharge.tip" = "Trinkgeld %d %%";
+"receiptSplit.surcharge.service" = "Service %d %%";
+"receiptSplit.kind.tip" = "Trinkgeld";
+"receiptSplit.kind.tax" = "Steuern";
+"receiptSplit.kind.service" = "Service";
+"receiptSplit.kind.discount" = "Rabatt";
+"receiptSplit.failure.read.title" = "Beleg konnte nicht gelesen werden";
+"receiptSplit.failure.read.message" = "Etwas ist schiefgelaufen. Versuch es gleich noch einmal.";
+"receiptSplit.failure.noLines.title" = "Keine Positionen mit Betrag gefunden";
+"receiptSplit.failure.noLines.message" = "Versuch ein näheres Foto bei gutem Licht oder diktiere den Beleg.";
+"receiptSplit.failure.noConnection.message" = "Verbinde dich mit dem Internet, um den Beleg zu lesen.";
+"receiptSplit.failure.mic.message" = "Erlaube den Zugriff in den Einstellungen, um den Beleg zu diktieren.";

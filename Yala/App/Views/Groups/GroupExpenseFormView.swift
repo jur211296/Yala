@@ -145,6 +145,9 @@ struct GroupExpenseFormView: View {
     /// Parte abierta bajo la frase «Pagado por · dividido»; `nil` = las dos plegadas.
     @State private var expandedSection: ExpandedSection?
 
+    /// «Desde un recibo» (card «Grupos: repartir un recibo con IA», 2.3): la hoja que lee el recibo y devuelve el reparto.
+    @State private var showReceiptSplit = false
+
     // MARK: - Init
 
     init(
@@ -379,6 +382,15 @@ struct GroupExpenseFormView: View {
             .sheet(isPresented: $showDatePicker) {
                 DatePickerSheet(selectedDate: $viewModel.date)
             }
+            .sheet(isPresented: $showReceiptSplit) {
+                GroupReceiptSplitView(
+                    members: viewModel.activeSheetMembers,
+                    currentMemberID: viewModel.currentUserMemberID,
+                    currencyCode: viewModel.currencyCode,
+                    onUse: applyReceiptSplit
+                )
+                .yalaSheetDetents([.large])
+            }
             .sheet(isPresented: $showCurrencyPicker) {
                 // NavigationStack para que el .toolbar con la "X" de CurrencySelectorView
                 // se renderice (sin barra de navegación no hay dónde colocarlo).
@@ -427,7 +439,10 @@ struct GroupExpenseFormView: View {
     /// Fecha, descripción y monto en el orden, el tamaño y el aire de Nuevo registro; debajo, quién paga y cómo se reparte.
     private var centralContent: some View {
         VStack(spacing: DS.Spacing.xxl) {
-            dateChip
+            HStack(spacing: DS.Spacing.sm) {
+                dateChip
+                if offersReceiptSplit { receiptSplitChip }
+            }
             descriptionField
             amountDisplay
             whoPaysCard
@@ -447,6 +462,34 @@ struct GroupExpenseFormView: View {
         // `dateChipText`, así que un test puede distinguir «Hoy» de una fecha real.
         .accessibilityIdentifier("group_expense_date_chip")
         .accessibilityLabel(dateChipText)
+    }
+
+    /// «Desde un recibo» solo en un gasto NUEVO y vacío de plantilla: editar o convertir un borrador ya traen su reparto.
+    private var offersReceiptSplit: Bool {
+        !viewModel.isEditMode && initialTemplate == nil
+    }
+
+    private var receiptSplitChip: some View {
+        RecordPillButton(icon: "doc.text.viewfinder", text: L10n.ReceiptSplit.entryButton) {
+            dismissKeyboard()
+            showReceiptSplit = true
+        }
+        .accessibilityIdentifier("group_expense_from_receipt")
+        .accessibilityHint(L10n.ReceiptSplit.entryHint)
+    }
+
+    /// Lo que devuelve «Desde un recibo»: el formulario se rellena con el total, la descripción y el reparto exacto, y
+    /// la persona sigue aquí (cuenta, categoría, quién pagó) y guarda como siempre.
+    ///
+    /// La fecha y una descripción ya escritas se quedan: el recibo no trae fecha, y sin nombre de local no borra la que
+    /// la persona puso antes de abrirlo.
+    private func applyReceiptSplit(_ template: GroupExpensePrefillTemplate) {
+        let typedDescription = viewModel.expenseDescription
+        let chosenDate = viewModel.date
+        viewModel.applyTemplate(template)
+        viewModel.date = chosenDate
+        if template.description.isEmpty { viewModel.expenseDescription = typedDescription }
+        expandedSection = .split
     }
 
     private var dateChipText: String {

@@ -1096,6 +1096,18 @@ final class UITestHooks {
         #endif
     }
 
+    /// `-uitest-receipt-split <perfil>`: «Desde un recibo» de Grupos lee sin red (card «repartir un recibo con IA», 2.3).
+    /// `cusco`: cinco líneas de una cena con Ana y Beto y un servicio · `trial`: la prueba de fotos agotada. La foto la
+    /// «elige» Fotos con el recibo de ejemplo. Nil si falta.
+    nonisolated static var receiptSplitProfile: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-receipt-split", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
     /// Valor de `-uitest-image-file <ruta>`: con `-uitest-image-result one`, la foto que «elige» Fotos es este fichero en
     /// vez del recibo de ejemplo de la práctica guiada. Lo pasa el molde de la ficha de la App Store
     /// (`ficha-app-store/`) con el recibo de cada idioma, para que la foto que se «lee» diga lo mismo que la hoja: los

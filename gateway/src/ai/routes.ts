@@ -1,4 +1,4 @@
-import { CHAT_REWRITE_SCHEMA, TEXT_PARSE_SCHEMA } from "./schemas";
+import { CHAT_REWRITE_SCHEMA, RECEIPT_SPLIT_SCHEMA, TEXT_PARSE_SCHEMA } from "./schemas";
 import type { TaskId } from "./tasks";
 
 /**
@@ -264,6 +264,30 @@ export const ROUTES: Readonly<Record<TaskId, Route>> = {
     provider: "openai",
     model: "gpt-6-luna",
     params: { reasoningEffort: "low", responseFormat: "json_object", jsonSchema: TEXT_PARSE_SCHEMA, strictSchema: true, maxOutputTokens: 1500 },
+    retries: 0,
+  },
+  // Repartir un recibo en un grupo (2.3). Sin banco propio todavía: el modelo y el esfuerzo de `photo.read` (leer un
+  // recibo es su caso «receipt», 96 % estricto) y JSON estricto como `text.parse`, porque la app decodifica el reparto
+  // entero o nada. Tope: un recibo de 30 líneas son ~1 200 tokens de salida más el razonamiento `low`; ×2 y redondeado.
+  "receipt.photo": {
+    mode: "managed",
+    provider: "openai",
+    model: "gpt-6-luna",
+    params: {
+      reasoningEffort: "low",
+      responseFormat: "json_object",
+      jsonSchema: RECEIPT_SPLIT_SCHEMA,
+      strictSchema: true,
+      image: { detail: "high", maxEdge: 1536 },
+      maxOutputTokens: 6000,
+    },
+    retries: 0,
+  },
+  "receipt.voice": {
+    mode: "managed",
+    provider: "openai",
+    model: "gpt-6-luna",
+    params: { reasoningEffort: "low", responseFormat: "json_object", jsonSchema: RECEIPT_SPLIT_SCHEMA, strictSchema: true, maxOutputTokens: 4000 },
     retries: 0,
   },
   // Banco de voz del 2026-10-07 (docs/ai-voice-bench-2026-10.md): de 15 variantes medidas, la que menos se equivoca.

@@ -8641,3 +8641,53 @@
 
 /* Account form: the save failed after some changes were already applied in the app, so it must not say nothing was saved. */
 "account.saveErrorPartial" = "Not everything could be saved. Some of the changes may already show; check the account and save again.";
+
+/* Groups: «From a receipt» in a new group expense (2.3) */
+"receiptSplit.entry.button" = "From a receipt";
+"receiptSplit.entry.hint" = "Reads a receipt from a photo or your voice and splits it by line";
+"receiptSplit.title" = "From a receipt";
+"receiptSplit.photo.title" = "Receipt photo";
+"receiptSplit.photo.camera" = "Camera";
+"receiptSplit.photo.library" = "Photos";
+"receiptSplit.photo.change" = "Change photo";
+"receiptSplit.phrase.label" = "Who had what?";
+"receiptSplit.phrase.placeholder" = "Ana the steak, Luis and I the pizza";
+"receiptSplit.phrase.footer" = "Optional. Anything nobody is named for is split among everyone.";
+"receiptSplit.split" = "Split";
+"receiptSplit.voice.title" = "Dictate the receipt";
+"receiptSplit.voice.hint" = "Say what you ordered and who had what";
+"receiptSplit.voice.example" = "For example: “Pizza 40, steak 35, two lemonades 16. Ana the steak, Luis and I the pizza.”";
+"receiptSplit.voice.listening" = "Listening…";
+"receiptSplit.voice.stop" = "Done";
+"receiptSplit.reading" = "Reading the receipt…";
+"receiptSplit.review.title" = "Check the split";
+"receiptSplit.review.lines" = "What was ordered";
+"receiptSplit.review.linesFooter" = "Tap who had each item to change it. Swipe to remove a line.";
+"receiptSplit.review.extras" = "Tip, service and taxes";
+"receiptSplit.review.extrasFooter" = "They aren’t split automatically. Choose how each one is shared, or add a tip.";
+"receiptSplit.review.perPerson" = "Per person";
+"receiptSplit.review.everyone" = "Everyone";
+"receiptSplit.review.whoHadIt" = "Who had this";
+"receiptSplit.review.total" = "Total";
+"receiptSplit.review.use" = "Use this split";
+"receiptSplit.review.nothingToSplit" = "There’s nothing to split yet.";
+"receiptSplit.review.negativeShare" = "A discount leaves someone below zero. Change how it’s shared.";
+"receiptSplit.review.totalMismatch" = "The receipt says %@ and the lines add up to %@. Check if something is missing or extra.";
+"receiptSplit.review.unmatched" = "I couldn’t find %@ in the group. Their lines are split among everyone: choose who pays them.";
+"receiptSplit.share.excluded" = "Not included";
+"receiptSplit.share.proportional" = "Based on what each person had";
+"receiptSplit.share.equal" = "Equally";
+"receiptSplit.share.people" = "Only for";
+"receiptSplit.surcharge.add" = "Add a tip or service charge";
+"receiptSplit.surcharge.tip" = "Tip %d %%";
+"receiptSplit.surcharge.service" = "Service %d %%";
+"receiptSplit.kind.tip" = "Tip";
+"receiptSplit.kind.tax" = "Taxes";
+"receiptSplit.kind.service" = "Service";
+"receiptSplit.kind.discount" = "Discount";
+"receiptSplit.failure.read.title" = "I couldn’t read the receipt";
+"receiptSplit.failure.read.message" = "Something went wrong. Try again in a moment.";
+"receiptSplit.failure.noLines.title" = "I couldn’t find lines with amounts";
+"receiptSplit.failure.noLines.message" = "Try a closer photo of the receipt in good light, or dictate it.";
+"receiptSplit.failure.noConnection.message" = "Connect to the internet to read the receipt.";
+"receiptSplit.failure.mic.message" = "Allow access in Settings to dictate the receipt.";

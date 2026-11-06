@@ -8647,3 +8647,53 @@
 
 /* Account form: the save failed after some changes were already applied in the app, so it must not say nothing was saved. */
 "account.saveErrorPartial" = "すべてを保存できませんでした。一部の変更はすでに反映されている可能性があります。口座を確認して、もう一度保存してください。";
+
+/* Groups: «From a receipt» in a new group expense (2.3) */
+"receiptSplit.entry.button" = "レシートから";
+"receiptSplit.entry.hint" = "写真か音声でレシートを読み取り、品目ごとに割り勘します";
+"receiptSplit.title" = "レシートから";
+"receiptSplit.photo.title" = "レシートの写真";
+"receiptSplit.photo.camera" = "カメラ";
+"receiptSplit.photo.library" = "写真";
+"receiptSplit.photo.change" = "写真を変更";
+"receiptSplit.phrase.label" = "誰が何を食べた？";
+"receiptSplit.phrase.placeholder" = "アナはステーキ、ルイスと私はピザ";
+"receiptSplit.phrase.footer" = "任意。名前のない品目は全員で割ります。";
+"receiptSplit.split" = "割り勘する";
+"receiptSplit.voice.title" = "レシートを音声で入力";
+"receiptSplit.voice.hint" = "注文した品と誰が何を食べたかを話してください";
+"receiptSplit.voice.example" = "例:「ピザ40、ステーキ35、レモネード2つ16。アナはステーキ、ルイスと私はピザ」";
+"receiptSplit.voice.listening" = "聞いています…";
+"receiptSplit.voice.stop" = "完了";
+"receiptSplit.reading" = "レシートを読み取り中…";
+"receiptSplit.review.title" = "割り勘を確認";
+"receiptSplit.review.lines" = "注文した品";
+"receiptSplit.review.linesFooter" = "品目の人をタップして変更。スワイプで行を削除。";
+"receiptSplit.review.extras" = "チップ・サービス料・税";
+"receiptSplit.review.extrasFooter" = "自動では割りません。それぞれの扱いを選ぶか、チップを追加してください。";
+"receiptSplit.review.perPerson" = "1人あたり";
+"receiptSplit.review.everyone" = "全員";
+"receiptSplit.review.whoHadIt" = "誰が食べた";
+"receiptSplit.review.total" = "合計";
+"receiptSplit.review.use" = "この割り勘を使う";
+"receiptSplit.review.nothingToSplit" = "まだ割り勘する品目がありません。";
+"receiptSplit.review.negativeShare" = "割引で誰かがマイナスになります。割り方を変更してください。";
+"receiptSplit.review.totalMismatch" = "レシートの合計は%@、品目の合計は%@です。抜けや重複がないか確認してください。";
+"receiptSplit.review.unmatched" = "%@はグループにいません。その品目は全員で割っています:支払う人を選んでください。";
+"receiptSplit.share.excluded" = "含めない";
+"receiptSplit.share.proportional" = "食べた分に応じて";
+"receiptSplit.share.equal" = "均等に";
+"receiptSplit.share.people" = "対象者のみ";
+"receiptSplit.surcharge.add" = "チップかサービス料を追加";
+"receiptSplit.surcharge.tip" = "チップ %d %%";
+"receiptSplit.surcharge.service" = "サービス料 %d %%";
+"receiptSplit.kind.tip" = "チップ";
+"receiptSplit.kind.tax" = "税";
+"receiptSplit.kind.service" = "サービス料";
+"receiptSplit.kind.discount" = "割引";
+"receiptSplit.failure.read.title" = "レシートを読み取れませんでした";
+"receiptSplit.failure.read.message" = "問題が発生しました。少ししてからもう一度お試しください。";
+"receiptSplit.failure.noLines.title" = "金額のある品目が見つかりません";
+"receiptSplit.failure.noLines.message" = "明るい場所でレシートに近づいて撮るか、音声で入力してください。";
+"receiptSplit.failure.noConnection.message" = "レシートを読み取るにはインターネットに接続してください。";
+"receiptSplit.failure.mic.message" = "レシートを音声で入力するには「設定」でアクセスを許可してください。";

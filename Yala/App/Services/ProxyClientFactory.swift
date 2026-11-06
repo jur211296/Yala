@@ -31,15 +31,19 @@ nonisolated enum ProxyTask: String, CaseIterable, Sendable {
     case insightsCashflow = "insights.cashflow"
     case insightsDeviation = "insights.deviation"
     case trendsSummary = "trends.summary"
+    /// Repartir un recibo en un grupo (2.3): la foto del recibo y la frase de quién comió qué. Gasta foto.
+    case receiptPhoto = "receipt.photo"
+    /// Repartir un recibo dictado en una nota: líneas y reparto. Va tras `voiceTranscribe` y no gasta otra nota.
+    case receiptVoice = "receipt.voice"
 
     /// El cubo de cuota de la tarea: el mismo que el gateway asigna a esa tarea. Se manda también en
     /// `X-Yala-Category` para los gateways anteriores a la sesión 2, que lo leían de ahí.
     var category: ProxyClientFactory.Category {
         switch self {
-        case .photoRead: .vision
+        case .photoRead, .receiptPhoto: .vision
         case .chatIntent, .chatSuggestions, .chatRewrite: .suggestions
         case .chatAnswer, .chatExplore: .chat
-        case .textParse, .voiceTranscribe: .voice
+        case .textParse, .voiceTranscribe, .receiptVoice: .voice
         case .insightsCards, .insightsCashflow, .insightsDeviation, .trendsSummary: .insights
         }
     }
