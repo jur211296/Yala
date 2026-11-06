@@ -32,11 +32,11 @@ SUPABASE_URL = "https://kefvaiymtgytemwbltlz.supabase.co"
 SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlZnZhaXltdGd5dGVtd2JsdGx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3OTg0MDYsImV4cCI6MjA5OTM3NDQwNn0.H8P3-kNUjeK8CTNZHwhfkqwqeflrNXLGvNa7OGGXkAk"
 ALLOWED_EMAILS = "admin@yala-app.pe"
 # Rellenar al crear la aplicación de Access (Zero Trust → Access → Applications). Vacíos = 503.
-ACCESS_TEAM_DOMAIN = ""
-ACCESS_AUD = ""
+ACCESS_TEAM_DOMAIN = "yala-app.cloudflareaccess.com"
+ACCESS_AUD = "f7fe6b0f76ec845583b50714513673a039d7b5321c55837d277583b964b53c7b"
 
 [[d1_databases]]
 binding = "PANEL_DB"
 database_name = "yala-panel"
-database_id = "00000000-0000-0000-0000-000000000000"   # <PLACEHOLDER> — `npx wrangler d1 create yala-panel`
+database_id = "ea823c44-a262-45a3-8138-c0e51f717e9c"
 migrations_dir = "migrations"
