@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1194)
+## Index (1195)
 
 | id | status | path |
 |---|---|---|
@@ -418,6 +418,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | floating-buttons-cover-row-amounts-on-ipad-landscape | done | tickets/done/floating-buttons-cover-row-amounts-on-ipad-landscape.md |
 | floating-plus-flashes-when-entering-a-tab | done | tickets/done/floating-plus-flashes-when-entering-a-tab.md |
 | flows-atlas-predates-session-redesign | backlog | tickets/backlog/flows-atlas-predates-session-redesign.md |
+| flujo-proyectado-en-tendencias-y-panel | backlog | tickets/backlog/flujo-proyectado-en-tendencias-y-panel.md |
 | follower-waits-forever-on-a-lease-with-a-null-heartbeat | backlog | tickets/backlog/follower-waits-forever-on-a-lease-with-a-null-heartbeat.md |
 | force-fetch-and-wait-ignores-cancellation | done | tickets/done/force-fetch-and-wait-ignores-cancellation.md |
 | forcesync-returns-ok-without-touching-the-network | backlog | tickets/backlog/forcesync-returns-ok-without-touching-the-network.md |
