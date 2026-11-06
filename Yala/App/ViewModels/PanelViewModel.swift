@@ -205,11 +205,12 @@ final class PanelViewModel {
         return f
     }()
 
-    private static let monthYearFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "MMMM yyyy"
-        return f
-    }()
+    /// «Octubre de 2026»: el mes del widget de pagos, en el idioma de Yala y con mayúscula solo en la primera letra.
+    /// Con `dateFormat = "MMMM yyyy"` + `.capitalized` salía en el idioma del iPhone y, con la plantilla, «Octubre De
+    /// 2026» (ticket `month-year-titles-capitalize-every-word`). Es el mismo texto que pinta la pantalla de Pagos.
+    static func scheduledPaymentsPeriodLabel(for month: Date, locale: Locale) -> String {
+        ScheduledPaymentDateText.monthYear(month, locale: locale)
+    }
 
     private static let shortDateFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -3476,7 +3477,7 @@ final class PanelViewModel {
             activeCount: filtered.count,
             pendingCount: pendingCount,
             displayMonth: displayMonth,
-            periodLabel: Self.monthYearFormatter.string(from: displayMonth).capitalized,
+            periodLabel: Self.scheduledPaymentsPeriodLabel(for: displayMonth, locale: AppLocale.current),
             upcomingPayments: upcomingPayments,
             paymentsByDay: paymentsByDay
         )
