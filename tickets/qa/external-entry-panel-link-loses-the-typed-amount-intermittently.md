@@ -1,10 +1,10 @@
 ---
 id: external-entry-panel-link-loses-the-typed-amount-intermittently
-status: backlog
+status: qa
 priority: high
 area: "transactions, statistics, testing"
 created: 2026-10-15
-updated: 2026-11-05
+updated: 2026-11-06
 source: gate del lote 15 de la auditoría UX 2.2 (encargo 2026-10-15-auditoria-ux-2-2-lote-15-desde-fuera)
 ---
 
@@ -77,3 +77,18 @@ borrador fuera de la vista. Afecta igual a los casos de foto y voz del mismo fic
 - El caso de `:209` lleva un comentario que lo marca como este bug; al arreglarlo, quitar esa nota del mensaje.
 - Card del tablero: «Nuevo registro desde Estadísticas pierde el importe al salir y volver por enlace» (`xhp6`).
 - No se tocó código de app en el lote T3 (decisión de Jürgen del 5-nov: card aparte).
+
+## 2026-11-06 · Arreglado: la hoja cuelga del contenedor de la pila
+
+- Reproducido en la base (`origin/2.3` en `b182e5774`), iPhone SE (3.ª gen) iOS 27.2, `-test-iterations 3`: **1 de 21**
+  (caso de la foto compartida), «0.00» con la traza `freshForm` ×3 y `formulario fuera abierto=true` ×2.
+- Arreglo: la hoja de «Nuevo registro» la presenta `StatisticsView`, por fuera de la `NavigationStack`, y
+  `DetailContainerView` (contenido raíz de la pila) ya no la presenta; solo recarga al cerrarse. El `RecordsViewModel`
+  sube a `StatisticsView` para que los botones sigan escribiendo la misma bandera, y la hoja recibe el
+  `savedRecordEditorOpener` que antes heredaba. Molde de la regla de `swiftui-ds.md`.
+- Con el arreglo, mismo SE, `-test-iterations 5`: **35 de 35** verdes. Bastó con el ancla; no hizo falta guardar el
+  borrador fuera de la vista. Como el rojo es intermitente (1 de 21), 0 de 35 es una señal fuerte pero no una prueba:
+  la red sigue siendo `ExternalEntryForeignSheetUITests`. Pin de sitio: `StatisticsNewTransactionSheetAnchorWiringTests`.
+- Registros no tiene el patrón: su hoja cuelga del `ListDetailSplit`, que es el contenedor.
+- QA en el iPhone: Estadísticas › Nuevo registro › escribe un importe › Inicio › abre `yala://panel` (o comparte una
+  foto) › al volver, el importe sigue.

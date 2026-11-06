@@ -1,10 +1,10 @@
 ---
 id: month-year-titles-capitalize-every-word
-status: backlog
+status: qa
 priority: low
 area: "copy, l10n, panel, planning"
 created: 2026-10-14
-updated: 2026-10-14
+updated: 2026-11-06
 source: "auditoría UX 2.2 · lote 8 (B5), visto fuera del lote"
 ---
 
@@ -43,3 +43,13 @@ Ninguna pantalla enseña «De» con mayúscula en un mes con año, en español y
 ## Lote 10 (2026-10-14)
 
 Las dos piezas de Pagos (`ScheduledPaymentsViewModel.monthYearLabel` y `ScheduledPaymentPeriodSelectorSheet`) usaban `dateFormat = "MMMM yyyy"`, así que salía «Octubre 2026» sin «De» pero en el idioma del sistema. Pasan a `ScheduledPaymentDateText.monthYear` (plantilla del idioma de la app y mayúscula solo en la primera letra): «Octubre de 2026». Quedan el Panel y Presupuestos.
+
+## 2026-11-06 · Panel arreglado (lote «Bugs UI: widget del mes, mover entre divisas, importe desde Estadísticas»)
+
+- Medido en `origin/2.3`: el PR #627 ya estaba mergeado y `PanelViewModel` seguía con `dateFormat = "MMMM yyyy"` sin
+  idioma + `.capitalized`: el widget de pagos del Panel decía «Noviembre 2026» (sin «de» y en el idioma del iPhone, no
+  en el de Yala). Ahora usa `ScheduledPaymentDateText.monthYear`, el mismo texto de la pantalla de Pagos:
+  «Noviembre de 2026». Test: `PanelScheduledPaymentsPeriodLabelTests` (es, pt, en y el cableado).
+- Presupuestos ya no tenía `.capitalized` (grep del 2026-11-06). No queda ningún mes con año que pase por `.capitalized`.
+- QA: con la app en español, el widget de pagos del Panel en tamaño mediano dice «Noviembre de 2026»; con Yala en
+  inglés, «November 2026». Capturas en el PR.

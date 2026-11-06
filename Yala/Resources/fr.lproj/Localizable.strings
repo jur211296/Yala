@@ -1933,7 +1933,7 @@
 "onboarding.tutorialsSettingsHint" = "Tu peux toujours les retrouver dans les Réglages";
 
 // MARK: - Bulk Edit
-"bulkEdit.currencyWarning" = "Le changement de compte mettra à jour la devise des enregistrements sélectionnés.";
+"bulkEdit.currencyWarning" = "Le changement de compte convertit les montants dans la devise du nouveau compte, au taux de change de la date de chaque enregistrement.";
 "bulkEdit.editCount" = "Modifier %d enregistrements";
 "bulkEdit.successMessage" = "Enregistrements mis à jour";
 "bulkEdit.cannotEditTransferSubcategory" = "Impossible de modifier la catégorie des virements. Modifiez-les individuellement.";

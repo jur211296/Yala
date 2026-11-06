@@ -1935,7 +1935,7 @@
 "onboarding.confirm.motivationFullControl" = "今日からすべて把握しましょう！";
 
 // MARK: - Bulk Edit
-"bulkEdit.currencyWarning" = "口座を変更すると、選択中の記録の通貨も更新されます。";
+"bulkEdit.currencyWarning" = "口座を変更すると、金額は各記録の日付の為替レートで新しい口座の通貨に換算されます。";
 "bulkEdit.editCount" = "%d件の記録を編集";
 "bulkEdit.successMessage" = "記録を更新しました";
 "bulkEdit.cannotEditTransferSubcategory" = "送金のカテゴリーは変更できません。個別に編集してください。";

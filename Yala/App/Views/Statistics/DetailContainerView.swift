@@ -190,18 +190,30 @@ struct DetailContainerView: View {
 
     // MARK: - Initialization
 
-    init(context: RecordsFilterContext = .empty, initialTab: DetailViewTab = .insights) {
-        self.isFromSearch = context.isFromSearch
+    /// El `RecordsViewModel` de Estadísticas. Fuera de una búsqueda arranca en «Este mes» y sin filtros; desde una
+    /// búsqueda respeta su período (`.allTime`) y su texto.
+    static func makeRecordsViewModel(context: RecordsFilterContext = .empty) -> RecordsViewModel {
         var cleanContext = context
-        // Only reset period and filters when NOT coming from search
-        // When from search, respect the passed period (.allTime) and searchText
         if !context.isFromSearch {
             cleanContext.period = .thisMonth
             cleanContext.accountID = nil
             cleanContext.categoryID = nil
             cleanContext.need = nil
         }
-        _recordsViewModel = State(initialValue: RecordsViewModel(context: cleanContext))
+        return RecordsViewModel(context: cleanContext)
+    }
+
+    /// `recordsViewModel` lo pasa quien monta la pila (`StatisticsView`, con `makeRecordsViewModel(context:)`), y es
+    /// quien presenta la hoja de «Nuevo registro» que su `showNewTransaction` pide: esta vista no la presenta
+    /// (ticket `external-entry-panel-link-loses-the-typed-amount-intermittently`). Obligatorio a propósito: un
+    /// llamador que creara aquí el suyo dejaría «Nuevo registro» sin hoja.
+    init(
+        context: RecordsFilterContext = .empty,
+        initialTab: DetailViewTab = .insights,
+        recordsViewModel: RecordsViewModel
+    ) {
+        self.isFromSearch = context.isFromSearch
+        _recordsViewModel = State(initialValue: recordsViewModel)
 
         let initialMetric: TrendMetric = SessionState.shared.isExpensesOnlyMode ? .expense : .balance
         let trendsContext = StatisticsContext(
@@ -775,7 +787,7 @@ struct DetailContainerView: View {
 
 #Preview {
     NavigationStack {
-        DetailContainerView()
+        DetailContainerView(recordsViewModel: DetailContainerView.makeRecordsViewModel())
     }
     .environment(SceneNavigation())
     .previewAppPreferences()
@@ -830,20 +842,21 @@ private struct DetailContainerSheets: ViewModifier {
     let recalculateData: () -> Void
     let reloadAndRecalculate: () -> Void
 
+    private func newTransactionPresentationChanged(_ isOpen: Bool) {
+        if !isOpen { reloadAndRecalculate() }
+    }
+
     func body(content: Content) -> some View {
         content
             .sheet(isPresented: $recordsViewModel.showFiltersSheet) {
                 RecordsFiltersView(recordsViewModel: recordsViewModel)
                     .onDisappear { recalculateData() }
             }
-            .sheet(isPresented: $recordsViewModel.showNewTransaction) {
-                NewTransactionView()
-                    .presentationDetents([.large])
-                    .onDisappear {
-                        UITestHooks.shared.traceLifecycle("formulario fuera abierto=\(recordsViewModel.showNewTransaction)")
-                        reloadAndRecalculate()
-                    }
-            }
+            // La hoja de «Nuevo registro» NO cuelga de aquí: esta vista es el contenido raíz de la pila, y SwiftUI la
+            // desmontaba y volvía a montar sin cerrarse al cambiar de pestaña por un enlace con la app volviendo a primer
+            // plano, con el importe escrito perdido. La presenta `StatisticsView`, por fuera de la pila; aquí solo se
+            // recarga al cerrarse (`swiftui-ds.md`, «Una hoja colgada del contenido RAÍZ de una NavigationStack»).
+            .onChange(of: recordsViewModel.showNewTransaction) { _, isOpen in newTransactionPresentationChanged(isOpen) }
             .sheet(isPresented: $showVoiceRecording) {
                 VoiceRecordingView()
             }

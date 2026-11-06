@@ -170,7 +170,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | budget-interval-counts-next-period-midnight | done | tickets/done/budget-interval-counts-next-period-midnight.md |
 | budget-tied-to-income-or-expense | backlog | tickets/backlog/budget-tied-to-income-or-expense.md |
 | bulk-edit-uitests-fail-on-the-small-iphone | done | tickets/done/bulk-edit-uitests-fail-on-the-small-iphone.md |
-| bulk-move-to-another-currency-account-relabels-the-amount | backlog | tickets/backlog/bulk-move-to-another-currency-account-relabels-the-amount.md |
+| bulk-move-to-another-currency-account-relabels-the-amount | qa | tickets/qa/bulk-move-to-another-currency-account-relabels-the-amount.md |
 | bulk-update-account-leaves-converted-amount-stale | done | tickets/done/bulk-update-account-leaves-converted-amount-stale.md |
 | can-run-domain-reads-the-filler-phase-before-the-journal-connects | done | tickets/done/can-run-domain-reads-the-filler-phase-before-the-journal-connects.md |
 | canarios-y-breadcrumbs-sin-emisor | done | tickets/done/canarios-y-breadcrumbs-sin-emisor.md |
@@ -403,7 +403,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | exportable-insights | backlog | tickets/backlog/exportable-insights.md |
 | exported-csv-cannot-be-imported-back | backlog | tickets/backlog/exported-csv-cannot-be-imported-back.md |
 | exported-xlsx-stores-amounts-and-dates-as-text | backlog | tickets/backlog/exported-xlsx-stores-amounts-and-dates-as-text.md |
-| external-entry-panel-link-loses-the-typed-amount-intermittently | backlog | tickets/backlog/external-entry-panel-link-loses-the-typed-amount-intermittently.md |
+| external-entry-panel-link-loses-the-typed-amount-intermittently | qa | tickets/qa/external-entry-panel-link-loses-the-typed-amount-intermittently.md |
 | fab-appears-without-animation | backlog | tickets/backlog/fab-appears-without-animation.md |
 | faq-says-long-press-starts-bulk-edit | done | tickets/done/faq-says-long-press-starts-bulk-edit.md |
 | favorite-editor-does-not-know-transfer-favorites | done | tickets/done/favorite-editor-does-not-know-transfer-favorites.md |
@@ -750,7 +750,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | migration-started-during-a-sign-out-teardown-loses-its-session | backlog | tickets/backlog/migration-started-during-a-sign-out-teardown-loses-its-session.md |
 | migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived | done | tickets/done/migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived.md |
 | migration-takeover-uploads-without-a-lineage-check | done | tickets/done/migration-takeover-uploads-without-a-lineage-check.md |
-| month-year-titles-capitalize-every-word | backlog | tickets/backlog/month-year-titles-capitalize-every-word.md |
+| month-year-titles-capitalize-every-word | qa | tickets/qa/month-year-titles-capitalize-every-word.md |
 | more-forms-read-their-deleted-model-while-closing | done | tickets/done/more-forms-read-their-deleted-model-while-closing.md |
 | more-tab-missing-profile-button | done | tickets/done/more-tab-missing-profile-button.md |
 | multi-currency-accounts | qa | tickets/qa/multi-currency-accounts.md |
@@ -1102,6 +1102,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | sync-runtime-safety-note-assumes-every-prod-device-is-icloud | backlog | tickets/backlog/sync-runtime-safety-note-assumes-every-prod-device-is-icloud.md |
 | synced-prefs-outside-prefsynckey | discarded | tickets/discarded/synced-prefs-outside-prefsynckey.md |
 | tag-chips-change-order-on-every-launch | done | tickets/done/tag-chips-change-order-on-every-launch.md |
+| tag-selector-from-the-panel-form-shows-no-rows-in-2-3 | backlog | tickets/backlog/tag-selector-from-the-panel-form-shows-no-rows-in-2-3.md |
 | tag-sheet-new-name-field-never-idles-in-xcuitest | done | tickets/done/tag-sheet-new-name-field-never-idles-in-xcuitest.md |
 | tags-none-label-has-the-wrong-gender | backlog | tickets/backlog/tags-none-label-has-the-wrong-gender.md |
 | tests-borran-el-store-sqlite-abierto | done | tickets/done/tests-borran-el-store-sqlite-abierto.md |

@@ -1935,7 +1935,7 @@
 "onboarding.confirm.motivationFullControl" = "从今天起一切尽在掌握!";
 
 // MARK: - Bulk Edit
-"bulkEdit.currencyWarning" = "更改账户会更新所选记录的货币。";
+"bulkEdit.currencyWarning" = "更改账户后，金额会按每条记录当天的汇率换算为新账户的货币。";
 "bulkEdit.editCount" = "编辑 %d 条记录";
 "bulkEdit.successMessage" = "记录已更新";
 "bulkEdit.cannotEditTransferSubcategory" = "无法更改转账的类别。请单独编辑每一笔。";

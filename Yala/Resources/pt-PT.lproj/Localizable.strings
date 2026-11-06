@@ -804,7 +804,7 @@
 "budgets.widget.selectFavorites" = "Selecionar favoritos";
 "bulkEdit.availableTags" = "Disponíveis para adicionar";
 "bulkEdit.commonTags" = "Em todas as selecionadas";
-"bulkEdit.currencyWarning" = "Ao mudar de conta, a moeda dos registos selecionados será atualizada.";
+"bulkEdit.currencyWarning" = "Ao mudar de conta, os valores serão convertidos para a moeda da nova conta, com a taxa de câmbio da data de cada registo.";
 "bulkEdit.editCount" = "Editar %d registos";
 "bulkEdit.partialTags" = "Em algumas selecionadas";
 "bulkEdit.successMessage" = "Registos atualizados";

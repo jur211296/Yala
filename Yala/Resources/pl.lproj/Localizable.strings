@@ -1935,7 +1935,7 @@
 "onboarding.confirm.motivationFullControl" = "Wszystko pod kontrolą od dziś!";
 
 // MARK: - Bulk Edit
-"bulkEdit.currencyWarning" = "Zmiana konta zaktualizuje walutę zaznaczonych wpisów.";
+"bulkEdit.currencyWarning" = "Zmiana konta przeliczy kwoty na walutę nowego konta, po kursie z dnia każdego wpisu.";
 "bulkEdit.editCount" = "Edytuj wpisy: %d";
 "bulkEdit.successMessage" = "Wpisy zaktualizowane";
 "bulkEdit.cannotEditTransferSubcategory" = "Nie można zmienić kategorii przelewów. Edytuj je osobno.";
