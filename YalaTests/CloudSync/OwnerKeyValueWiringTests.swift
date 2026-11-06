@@ -74,9 +74,11 @@ struct OwnerKeyValueWiringTests {
     /// de onboarding que escribía, y el 2026-09-14 entró `PanelPreferencesMigration`, que leía el store crudo: con
     /// la puerta cerrada habría visto el Panel del dueño, se habría saltado la siembra y nadie aplicaría nada.
     private static let gateUsers: Set<String> = [
-        "PreferenceSyncService.swift",                // las 36 keys + las señales de vaciado y onboarding
+        // Las 36 keys + las señales de vaciado y onboarding. Y desde el 2026-11-05 (card p9wf) también el override de
+        // idioma, que escribía `L10n.swift` directo a la puerta: ahora pasa por `syncLanguageOverride`, que elige el
+        // iCloud-KV en `.icloud` y el outbox en `.cloud`. `L10n.swift` salió de la lista por eso.
+        "PreferenceSyncService.swift",
         "OnboardingResetHelper.swift",                // userName / defaultCurrencyCode al empezar de cero
-        "L10n.swift",                                 // el override de idioma (7ª vía, no estaba en el ticket)
         "CloudBeacon.swift",                          // el faro del Modo Nube
         "ScheduledPaymentNotificationService.swift",  // el espejo del interruptor maestro (8ª vía)
         "GroupsAccountAssociation.swift",             // la cuenta de grupos asociada, con el correo en claro

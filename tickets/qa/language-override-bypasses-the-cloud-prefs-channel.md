@@ -1,10 +1,10 @@
 ---
 id: language-override-bypasses-the-cloud-prefs-channel
-status: backlog
+status: qa
 priority: medium
 area: "modo-nube, settings, sync, l10n"
 created: 2026-09-14
-updated: 2026-10-08
+updated: 2026-11-05
 source: "medido al reponer el guard del iCloud-KV (`icloud-kv-prefs-cross-sessions-on-a-lent-phone`), celda E"
 ---
 
@@ -48,3 +48,20 @@ de priorizar.
 - [ ] Los dos comentarios de `PreferenceSyncService` que dan `.cloud` por apagado quedan al día.
 
 Triage 2026-10-08: abierto · medium → medium · el setter de `LanguageManager.overrideLanguage` sigue escribiendo solo en el App Group y en `OwnerKeyValueStore` (`L10n.swift:69-88`), sin encolar; los comentarios «DARK» siguen en `PreferenceSyncService.swift:81` y `:147-149`.
+
+## Resuelto en el lote N4 (2026-11-05, rama 2.3)
+
+- `LanguageManager.overrideLanguage` (y el remap de alias) pasan por `PreferenceSyncService.syncLanguageOverride`: en
+  `.icloud` escribe el iCloud-KV por la puerta, como antes; en `.cloud` encola en el outbox de preferencias («idioma del
+  sistema» viaja como `""`, que el merge del otro dispositivo lee como quitar el override) y NO toca el iCloud-KV.
+- Los dos comentarios «DARK» de `PreferenceSyncService` quedan al día.
+- Población (pedía medirse antes de priorizar): no se re-midió; se hizo igual porque el lote lo encargaba.
+- Tests: `LanguageOverrideCloudChannelTests` (las dos ramas con su control y el cableado de `L10n.swift`);
+  `OwnerKeyValueWiringTests` saca `L10n.swift` de los usuarios de la puerta.
+
+## Guion de QA (Jürgen, dos dispositivos con la misma cuenta de Yala en la nube)
+
+1. En el primero: Ajustes de Yala → Personalización → Idioma → elige otro (por ejemplo, English).
+2. En el segundo, abre Yala y espera un minuto con la app delante (o ciérrala y ábrela).
+3. Lo que tiene que pasar: el segundo cambia al mismo idioma.
+4. Vuelve en el primero a «Idioma del sistema»: el segundo vuelve también al del sistema.

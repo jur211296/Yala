@@ -649,16 +649,25 @@ nonisolated enum CloudSignOutFlowLogic {
     /// puerta esperaba su tope de 60 s, reintentaba y acababa en «un momento más» — el cierre solo-grupos no
     /// podía terminar. Sin espejo no hay import con el que chocar: es seguro siempre.
     ///
-    /// `accountAvailable` es el token de iCloud Drive, el predicado que gobierna el mount, y su ausencia abre
-    /// la puerta. **Para una población la puerta falla ABIERTO, y se sabe** (review adversarial del paso 9;
-    /// `swiftdata-cloudkit.md`, «`ubiquityIdentityToken` mide iCloud DRIVE»): con Drive apagado y CloudKit
-    /// vivo el token falta y el espejo `.automatic` sigue importando. Es preexistente y se queda así porque el
-    /// sustituto obvio —`mirrorReportedNotAuthenticated`— solo existe si CloudKit contesta con un `CKError`:
-    /// sin él, un dispositivo sin iCloud esperaría para siempre un import que no llega y el cierre de grupos
-    /// quedaría colgado. Ticket: `groups-sign-out-quiescence-gate-fails-open-with-drive-off`.
-    static func isPersonalSaveSafe(mountAttachesMirror: Bool, accountAvailable: Bool,
-                                   firstImportCompleted: Bool, importQuiescent: Bool) -> Bool {
-        !mountAttachesMirror || !accountAvailable || (firstImportCompleted && importQuiescent)
+    /// **La cuenta es `hasICloudAccount`, no el token de iCloud Drive (card jzti, 2026-11-05).** Con el token, Drive
+    /// apagado y CloudKit vivo abrían la puerta mientras el espejo `.automatic` importaba: el drenaje de grupos podía
+    /// guardar en plena importación (`swiftdata-cloudkit.md`, «`ubiquityIdentityToken` mide iCloud DRIVE»). El sustituto
+    /// que el ticket temía —`mirrorReportedNotAuthenticated`— no es éste: `hasICloudAccount` es una prueba POSITIVA (token
+    /// o CloudKit `.available`), así que un teléfono sin iCloud (CloudKit `.noAccount`) sigue sin esperar, y sin respuesta
+    /// de CloudKit vale el token, como antes.
+    ///
+    /// **Y la salida del store que no importa nada**, la misma de `BootSaveGateLogic.decide` (`.runEmptyStore`): con
+    /// Drive apagado nadie ha medido que llegue un `.import` en cada arranque, y sin él la puerta esperaría su tope y
+    /// el cierre acabaría en «un momento más» para siempre. Pasada la gracia sin NINGUNA actividad de import en el
+    /// proceso, quieto y sin ninguna fase de sync en vuelo, no hay import con el que chocar. Es la fórmula de aquel gate
+    /// escrita aquí porque éste es `nonisolated`; `CloudSignOutFlowLogicTests` fija que las dos dan lo mismo.
+    static func isPersonalSaveSafe(mountAttachesMirror: Bool, accountPresent: Bool,
+                                   firstImportCompleted: Bool, importQuiescent: Bool,
+                                   observedImportActivity: Bool, noImportGraceElapsed: Bool,
+                                   syncingAnyPhase: Bool) -> Bool {
+        guard mountAttachesMirror, accountPresent else { return true }
+        if firstImportCompleted && importQuiescent { return true }
+        return noImportGraceElapsed && !observedImportActivity && importQuiescent && !syncingAnyPhase
     }
 
     /// Clasifica el outcome crudo de un ciclo de cadencia (H-2026-07-18-6). Base del retry interno del

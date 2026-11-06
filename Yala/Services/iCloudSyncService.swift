@@ -199,11 +199,45 @@ final class iCloudSyncService {
 
     /// La pregunta a CloudKit en vuelo, para quien tiene que decidir con su respuesta (`awaitCloudKitAccountStatus`).
     @ObservationIgnored private var accountStatusRefresh: Task<Void, Never>?
+    @ObservationIgnored private var accountStatusGeneration = 0
 
     /// Espera a que conteste la pregunta en vuelo, si la hay. La usa el aviso del arranque en frío, que decide UNA vez
     /// por proceso: decidido antes de que CloudKit conteste, un teléfono con Drive apagado y cuenta se leía sin cuenta.
     func awaitCloudKitAccountStatus() async {
         await accountStatusRefresh?.value
+    }
+
+    /// Cuándo empezó este proceso a escuchar al espejo (`startObserving`). `nil` = no escucha (los hosts de test).
+    @ObservationIgnored private var observingStartedAt: Date?
+
+    /// Gracia del store que no importa nada, la de `awaitPersonalImportForBootSave` (60 s), contada desde que el proceso
+    /// escucha al espejo. La lee la puerta del cierre con grupos (card jzti): sin ningún `.import` observado en ese rato,
+    /// un store quieto no tiene un import con el que chocar. Sin escuchar no puede llegar ningún evento: cuenta vencida.
+    var noImportGraceElapsed: Bool {
+        guard let observingStartedAt else { return true }
+        return Date.now.timeIntervalSince(observingStartedAt) >= Self.noImportGrace
+    }
+
+    static let noImportGrace: TimeInterval = 60
+
+    /// ¿Hay una pregunta a CloudKit por la cuenta sin contestar? La enciende `refreshCloudKitAccountStatus` y la apaga su
+    /// respuesta (o su error).
+    private(set) var isAwaitingCloudKitAccountStatus = false
+
+    /// La misma espera, **con techo** (card dtex). La usan las esperas del arranque, que deciden con `hasICloudAccount` y
+    /// no pueden quedarse colgadas de una pregunta que no contesta: `CKContainer.accountStatus()` no trae timeout. Vencido
+    /// el techo deciden con lo que haya, que sin respuesta es el token de Drive —lo de siempre—. Sondea en vez de correr
+    /// contra la tarea: esperar `accountStatusRefresh.value` dentro de un grupo no se deja cancelar y el grupo esperaría
+    /// a su hijo igual. Sin pregunta en vuelo (los hosts de test, o ya contestó) vuelve al instante.
+    func awaitCloudKitAccountStatus(timeout: TimeInterval) async {
+        let deadline = Date.now.addingTimeInterval(timeout)
+        while isAwaitingCloudKitAccountStatus && Date.now < deadline {
+            do {
+                try await Task.sleep(for: .milliseconds(100))
+            } catch {
+                return
+            }
+        }
     }
 
     /// **¿Hay cuenta de iCloud a la que CloudKit pueda hablar?** El token de Drive, o CloudKit diciendo `.available`
@@ -218,6 +252,12 @@ final class iCloudSyncService {
     /// CloudKit no tiene cuenta y la respuesta haría distinto cada arranque según llegara antes o después.
     func refreshCloudKitAccountStatus() {
         guard !SwiftDataConfiguration.isRunningTests, !SwiftDataConfiguration.isUITesting else { return }
+        isAwaitingCloudKitAccountStatus = true
+        // Solo la ÚLTIMA pregunta escribe y suelta la espera: con dos en vuelo (la cuenta cambió a mitad del arranque) la
+        // vieja podía contestar después con la cuenta anterior y soltar la espera del arranque con ese dato (review del
+        // lote N4, 2026-11-05).
+        accountStatusGeneration &+= 1
+        let generation = accountStatusGeneration
         accountStatusRefresh = Task { @MainActor [weak self] in
             let status: CKAccountStatus?
             do {
@@ -229,8 +269,9 @@ final class iCloudSyncService {
                 #endif
                 status = nil
             }
-            guard let self else { return }
+            guard let self, generation == self.accountStatusGeneration else { return }
             self.cloudKitAccountStatus = status
+            self.isAwaitingCloudKitAccountStatus = false
             self.checkAccountStatus()
         }
     }
@@ -301,6 +342,7 @@ final class iCloudSyncService {
     /// after the ModelContainer is created, so no setup events are missed.
     func startObserving() {
         guard observerToken == nil else { return }
+        observingStartedAt = .now
         observerToken = NotificationCenter.default.addObserver(
             forName: NSPersistentCloudKitContainer.eventChangedNotification,
             object: nil,
