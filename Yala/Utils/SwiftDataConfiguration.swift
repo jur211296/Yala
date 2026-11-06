@@ -328,6 +328,26 @@ enum SwiftDataConfiguration {
         return neutralMountArmed && !hasShownWelcomeChooser
     }
 
+    /// **El borrado del corpus de iCloud que se quedó entre sus dos mitades** (ticket
+    /// `late-icloud-wipe-can-re-export-between-its-two-halves`). `ContentView.performICloudCorpusWipe` borra primero la
+    /// zona y después las filas del teléfono. Un kill entre las dos dejaba el corpus local ENTERO, y el arranque siguiente
+    /// montaba el espejo: `NSPersistentCloudKitContainer` veía la zona borrada, reseteaba su metadata y lo volvía a subir
+    /// antes de que la reanudación llegara a borrar nada. En la puerta del Welcome ya lo cubría el neutro durable que arma
+    /// el borrado; en el aviso tardío y en la activación de Yala completo ese neutro es inerte
+    /// (`hasShownWelcomeChooser` ya está puesto). Este término lo cubre sin mirar el chooser: mientras la marca de la zona
+    /// siga puesta, el store monta sin espejo y la reanudación borra sin nadie que re-exporte.
+    ///
+    /// **Se va sola**: las marcas se retiran al terminar el borrado o cuando la persona elige quedarse con lo que tiene
+    /// («a medias» → «Déjalo así»). Mientras tanto el aviso tardío pregunta en cada arranque. Confinado a `.icloud` sin armar, como el
+    /// término de solo-grupos y por las mismas dos razones: la ventana SERIO-1 del cutover y la reversa.
+    static func shouldMountNeutralForCorpusWipeCrossingTheZone(
+        corpusWipeCrossedTheZone: Bool,
+        persistedMode: StorageMode,
+        mirrorOffArmed: Bool
+    ) -> Bool {
+        corpusWipeCrossedTheZone && persistedMode == .icloud && !mirrorOffArmed
+    }
+
     /// SERIO 1 del review adversarial (ciclo C): `storageMode == .cloud` por sí solo NO basta para
     /// apagar el mirror — `.cloud` se persiste en el paso 2 del cutover (§g.4) y el marcador CloudKit
     /// exporta ASYNC en el paso 3; un kill involuntario en esa ventana relanzaría con el mirror OFF y el
@@ -976,13 +996,22 @@ extension SwiftDataConfiguration {
     /// R4 · adaptador de producción del NEUTRO DURABLE. Mismo contrato que su hermano: corre PRE-MOUNT y
     /// lee `hasShownWelcomeChooser` con el literal de la key porque esto se evalúa en `@main`, antes de que
     /// exista ningún `AppBootstrapper`.
+    ///
+    /// Suma el término del borrado que cruzó la zona (`shouldMountNeutralForCorpusWipeCrossingTheZone`): es otro hecho con
+    /// su propia evidencia, y va en `||` por lo mismo que el de solo-grupos.
     static func shouldMountNeutralDurable(_ defaults: UserDefaults = .standard) -> Bool {
-        shouldMountNeutralDurable(
+        let persistedMode = StorageModePersistence.read(defaults)
+        let mirrorOffArmed = StorageModePersistence.isMirrorOffArmed(defaults)
+        return shouldMountNeutralDurable(
             neutralMountArmed: StorageModePersistence.isNeutralMountArmed(defaults),
             hasShownWelcomeChooser: defaults.bool(forKey: "hasShownWelcomeChooser"),
             groupsOnlySessionArmed: StorageModePersistence.isGroupsOnlyNeutralMountArmed(defaults),
-            persistedMode: StorageModePersistence.read(defaults),
-            mirrorOffArmed: StorageModePersistence.isMirrorOffArmed(defaults))
+            persistedMode: persistedMode,
+            mirrorOffArmed: mirrorOffArmed)
+            || shouldMountNeutralForCorpusWipeCrossingTheZone(
+                corpusWipeCrossedTheZone: StorageModePersistence.hasICloudCorpusWipeCrossedTheZone(defaults),
+                persistedMode: persistedMode,
+                mirrorOffArmed: mirrorOffArmed)
     }
 
     // MARK: - Container CloudKit State
@@ -1043,12 +1072,19 @@ extension SwiftDataConfiguration {
     /// propone justamente lo que el ADR §2-3 dice que no debe pasarle (bajar el iCloud del Apple ID).
     /// Se pregunta por la MARCA y no por el mount, porque `.neutralNoMirror` también lo produce una
     /// instalación fresca, donde el aviso sí es correcto.
+    ///
+    /// **Y un CUARTO por la misma razón (2026-11-06, ticket `late-icloud-wipe-can-re-export-between-its-two-halves`):** el
+    /// neutro de un borrado que ya cruzó la zona tampoco caduca al reabrir —dura hasta que el borrado termina o la persona
+    /// decide—, así que el aviso saldría en cada arranque proponiendo justo lo que ese neutro evita. Con default `false`
+    /// para los tests que fijan los otros términos; producción lo pasa siempre (`AppBootstrapper`, con su scan).
     static func shouldOfferICloudRestart(mountedDecision: PersonalStoreDecision,
                                          mountedWithMirroring: Bool,
                                          iCloudAvailableNow: Bool,
-                                         groupsOnlySessionArmed: Bool) -> Bool {
+                                         groupsOnlySessionArmed: Bool,
+                                         corpusWipeCrossedTheZone: Bool = false) -> Bool {
         guard !mountedDecision.isCloudModeMount else { return false }
         guard !groupsOnlySessionArmed else { return false }
+        guard !corpusWipeCrossedTheZone else { return false }
         return !mountedWithMirroring && iCloudAvailableNow
     }
 

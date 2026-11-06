@@ -128,10 +128,9 @@ struct CloudConsentRegistrationTests {
         }
     }
 
-    /// El alta born-cloud escribe en la PANTALLA (su ruta ya se conoce al aceptar y su claim la verifica),
-    /// así que llega aquí sin pendiente: la variante A de §f.1 —`existing_stable` reencamina al
-    /// returning-user y cae en el guard— no puede acabar escribiendo el epoch dos veces.
-    @Test("alta born-cloud: sin pendiente, ningún punto escribe (no hay doble registro)")
+    /// Un pendiente ya consumido (el alta lo escribió al sembrar) no se vuelve a escribir en ningún punto del
+    /// guard: no hay doble registro.
+    @Test("sin pendiente, ningún punto escribe (no hay doble registro)")
     func bornCloud_doesNotWriteASecondTime() {
         withSpy { spy in
             var pending = false
@@ -157,6 +156,71 @@ struct CloudConsentRegistrationTests {
                 pending: &pending, persist: { CloudConsentRegistrar.register() })
             #expect(spy.writes.isEmpty)
             #expect(pending)
+        }
+    }
+
+    // MARK: El alta (ticket `borncloud-consent-epoch-written-before-the-guard-decides`)
+
+    @Test("el alta escribe solo tras sembrar una cuenta nueva; ninguna otra acción del claim")
+    func bornCloud_writesOnlyAfterSeeding() {
+        #expect(CloudConsentRegistrationLogic.bornCloudWritesConsent(after: .seedBornCloud))
+        for action in [AccountClaimDecision.AuthAction.routeReturningUser, .waitForLeader,
+                       .showProviderMismatch, .proceedMigration] {
+            #expect(!CloudConsentRegistrationLogic.bornCloudWritesConsent(after: action), "\(action)")
+        }
+    }
+
+    /// EL CRITERIO 1 DEL TICKET. El alta acepta, el claim contesta `existing_stable` y el guard bloquea: ninguno de
+    /// los dos puntos del recorrido escribe. Antes, la pantalla ya había escrito al aceptar.
+    @Test("alta → existing_stable → guard bloquea: cero escrituras y el pendiente sigue sin consumir")
+    func bornCloud_existingStableBlocked_neverWrites() {
+        withSpy { spy in
+            var pending = true
+            if CloudConsentRegistrationLogic.bornCloudWritesConsent(after: .routeReturningUser) {
+                CloudConsentRegistrationLogic.persistForNewAccount(pending: &pending) { CloudConsentRegistrar.register() }
+            }
+            CloudConsentRegistrationLogic.persistIfDue(
+                at: .beforeAdopt, routedBy: .blockedForeignData,
+                pending: &pending, persist: { CloudConsentRegistrar.register() })
+            #expect(spy.writes.isEmpty, "el epoch de quien tiene el móvil caía en el iCloud-KV del dueño")
+            #expect(spy.persistedAcceptedAt == nil)
+            #expect(pending)
+        }
+    }
+
+    /// Control positivo del anterior, y CRITERIO 2: el alta que termina bien escribe una vez, con el T0 de la
+    /// aceptación y no con la hora del claim.
+    @Test("alta → created: escribe una vez, con el T0 de la aceptación")
+    func bornCloud_created_writesOnceWithTheAcceptanceEpoch() {
+        withSpy { spy in
+            var pending = true
+            let acceptedAt = Date(timeIntervalSince1970: 1_760_000_000)
+            for _ in 0..<2 {  // un reintento del alta no vuelve a escribir
+                if CloudConsentRegistrationLogic.bornCloudWritesConsent(after: .seedBornCloud) {
+                    CloudConsentRegistrationLogic.persistForNewAccount(pending: &pending) {
+                        CloudConsentRegistrar.register(now: acceptedAt)
+                    }
+                }
+            }
+            #expect(spy.acceptedAtWrites == 1)
+            #expect(spy.persistedAcceptedAt == 1_760_000_000)
+            #expect(!pending)
+        }
+    }
+
+    /// El alta que encuentra la cuenta ya creada y es del propio dueño sigue al adopt: escribe el guard, una vez.
+    @Test("alta → existing_stable → guard deja pasar: escribe el guard, una vez")
+    func bornCloud_existingStableProceeds_writesOnceBeforeAdopt() {
+        withSpy { spy in
+            var pending = true
+            if CloudConsentRegistrationLogic.bornCloudWritesConsent(after: .routeReturningUser) {
+                CloudConsentRegistrationLogic.persistForNewAccount(pending: &pending) { CloudConsentRegistrar.register() }
+            }
+            #expect(spy.writes.isEmpty)
+            CloudConsentRegistrationLogic.persistIfDue(
+                at: .beforeAdopt, routedBy: .proceed,
+                pending: &pending, persist: { CloudConsentRegistrar.register() })
+            #expect(spy.acceptedAtWrites == 1)
         }
     }
 
@@ -235,12 +299,27 @@ struct CloudConsentRegistrationWiringTests {
                 "el pendiente se arma al aceptar: sin él la escritura diferida no llega nunca")
 
         let flag = try Self.body(of: "private var persistsConsentOnAccept: Bool {", in: src)
-        #expect(flag.contains("case .bornCloud: true"), "el alta conoce su ruta al aceptar y su claim la verifica")
+        #expect(flag.contains("case .bornCloud: false"), """
+            El alta NO conoce su ruta al aceptar: el claim puede contestar existing_stable y seguir por el guard             cross-cuenta (ticket borncloud-consent-epoch-written-before-the-guard-decides).
+            """)
         #expect(flag.contains("case .reentry:   false"))
         #expect(flag.contains("case .beaconRouted: false"), """
             La entrada que encamina el faro (paso 6) ES una re-entrada: su ruta también la decide el guard \
             DESPUÉS del sign-in, así que tampoco puede escribir el consent al aceptar.
             """)
+    }
+
+    /// Criterio 2 del ticket, en el cableado: las dos escrituras diferidas usan la hora de la aceptación, y el alta
+    /// le pasa su escritor al servicio, que solo lo llama tras sembrar.
+    @Test("las escrituras diferidas llevan el T0 de la aceptación, y el alta escribe por su claim")
+    func deferredWrites_useTheAcceptanceEpoch() throws {
+        let src = try Self.code(Self.welcomePath)
+        #expect(src.components(separatedBy: "CloudConsentRegistrar.register(now: consentAcceptedAt ?? .now)").count - 1 == 2)
+        #expect(!src.contains("CloudConsentRegistrar.register()"), "una escritura con la hora del momento")
+        let sheet = try Self.body(of: ".sheet(isPresented: $showConsent) {", in: src)
+        #expect(sheet.contains("consentAcceptedAt = .now"))
+        let born = try Self.body(of: "private func runBornCloudFlow() async {", in: src)
+        #expect(born.contains("registerConsentForNewAccount: { persistConsentForNewAccount() }"))
     }
 
     /// La pantalla tiene que poder NO escribir. Quitar el guard la devuelve a escribir siempre y el

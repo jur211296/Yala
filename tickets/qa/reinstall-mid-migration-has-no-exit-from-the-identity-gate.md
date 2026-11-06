@@ -1,10 +1,10 @@
 ---
 id: reinstall-mid-migration-has-no-exit-from-the-identity-gate
-status: backlog
+status: qa
 priority: medium
 area: "modo-nube, settings"
 created: 2026-10-09
-updated: 2026-10-09
+updated: 2026-11-06
 source: "Paso 0 (D7) de `settings-migrate-blocks-a-second-device-before-its-marker`, 2026-10-09"
 ---
 
@@ -58,3 +58,36 @@ Lo que tienen en común: el iPhone que empezó la ida pierde la prueba de que la
 - [ ] Tras reinstalar a mitad de la ida, el aviso no promete una salida que no existe.
 - [ ] Hay una forma de terminar la activación en ese iPhone, o el caso queda decidido y documentado como aceptado.
 - [ ] Una cuenta con finanzas de otra persona sigue sin poder recibir la migración.
+
+## Decisión y arreglo (2026-11-06, lote nube 2.3)
+
+**Jürgen eligió la opción B, en su forma solo-cliente** (vía bot, 2026-11-06): dejar que decida el servidor. Medido en
+`qa/cloud/g15_01_account_kind.sql`: `claim_account` ya da el relevo (`created`) a un claim de migración cuando el lease
+del líder lleva más de 60 min sin latir y no hay `migrated_at`, y devuelve `created` al mismo `device_id`. No hace falta
+exponer la edad del lease ni tocar el gateway: basta con que la puerta deje llegar al claim.
+
+**Qué cambia:**
+- `StorageMigrationIdentityGateLogic.check`: una cuenta `complete` con ida en curso y el faro de este Apple ID ya no se
+  bloquea; pasa al claim. Las dos redes siguen: otra cuenta de grupos asociada, y la sesión que puede ser de antes de
+  «Empezar desde cero». Sin el faro, sigue «ya tiene finanzas personales».
+- El claim decide: cerrar sesión (mismo `device_id`) → `created`; reinstalado con el lease vencido → relevo, que la
+  identidad comprueba por linaje (`checkForwardLineage`); lease vivo → `claiming_in_progress` y el aviso.
+- El aviso (`migrationInProgressOnAnotherDevice`, en 16 idiomas) ya no nombra «otro dispositivo»: «Hay una activación a
+  medias con esta cuenta. Si la empezaste en este dispositivo, vuelve a intentarlo en una hora. Si fue en otro de tus
+  dispositivos, termínala allí.» («dispositivo» y no «iPhone»: también corre en iPad.)
+- La tarjeta no recuerda ese rechazo (`refusalToRemember`): con el botón apagado el resto de la sesión, el reintento que
+  promete el aviso no existía.
+
+**Criterios:** 1 (el aviso no promete una salida que no existe) cumplido; 2 (hay forma de terminar en ese iPhone)
+cumplido: tras cerrar sesión, al momento; tras reinstalar, en cuanto el lease vence; 3 (una cuenta con finanzas de otra
+persona sigue sin recibir la migración) cumplido: sin el faro de este Apple ID nada cambia, y el relevo prueba el linaje.
+
+**Coste aceptado:** con el lease vivo, la persona ve el consentimiento antes del aviso (la parada pasa al claim, que va
+después). La ida cancelada o fallida en el otro iPhone sigue sin RPC de abort, pero ahora tiene salida: a la hora, relevo.
+
+**Tests:** `StorageMigrationIdentityGateLogicTests` (pasa al claim salvo las dos redes, el caso literal del ticket, no se
+recuerda, el texto en español) y `StorageMigrationIdentityBlockUITests` (hoja con el texto nuevo, botón activo después).
+
+**QA en el iPhone (Yala Dev, staging):** empezar «Activar la nube» con datos, borrar Yala a mitad, reinstalar y volver a
+tocarlo: antes de una hora sale «Hay una activación a medias con esta cuenta…»; pasada la hora, la activación sigue y
+termina. Con «Cerrar sesión» en vez de reinstalar, sigue al momento.

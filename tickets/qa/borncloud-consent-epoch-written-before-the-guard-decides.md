@@ -1,10 +1,10 @@
 ---
 id: borncloud-consent-epoch-written-before-the-guard-decides
-status: backlog
+status: qa
 priority: medium
 area: "modo-nube, onboarding, gdpr"
 created: 2026-09-10
-updated: 2026-10-08
+updated: 2026-11-06
 source: "lente adversarial durante `cloud-sign-in-discovers-account-kind` (bloque [I])"
 ---
 
@@ -71,3 +71,25 @@ el ticket: si el dueño migra después, el drenaje del cutover lo sube como cons
 - La tabla `CloudConsentRegistrationLogic.placement` (`:40-44`) sigue cubriendo solo la re-entrada.
 
 Triage 2026-10-08: abierto · medium → medium · el alta born-cloud sigue escribiendo el consentimiento al aceptar (WelcomeCloudSignInView.swift:280), antes de que el guard decida.
+
+## Arreglo (2026-11-06, lote nube 2.3)
+
+**Causa:** el alta escribía el epoch al aceptar (`persistsConsentOnAccept` en `true` para `.bornCloud`) y al pasar de
+«Entrar» a «Crear cuenta» (`persistForSignUpSwitch`), antes de que el claim dijera si la cuenta era nueva.
+
+**Qué cambia:** el alta deja el epoch PENDIENTE, como la re-entrada, y guarda la hora de la aceptación
+(`consentAcceptedAt`). Lo escribe `BornCloudSignUpService.signUp(registerConsentForNewAccount:)` solo si el claim confirma
+una cuenta nueva (`CloudConsentRegistrationLogic.bornCloudWritesConsent`, `.seedBornCloud`), con ese T0. Si el claim
+contesta `existing_stable`, el alta sigue al guard cross-cuenta, que escribe en `.beforeAdopt` si deja pasar y nunca si
+bloquea; la puerta de Grupos y el sign-in cancelado no escriben. Pasar de entrar a crear sin volver a preguntar ya no
+escribe: viaja el pendiente.
+
+**Tests:** `CloudConsentRegistrationTests` (alta → `existing_stable` → bloqueo: cero escrituras; control: `created` escribe
+una vez con el T0; `existing_stable` → `proceed` escribe el guard), `BornCloudSignUpServiceTests` (el escritor solo corre
+con `created`, en cinco respuestas del claim) y los source-scans de `CloudConsentRegistrationWiringTests` y
+`UXAudit22Decidido15WiringTests`.
+
+**Residual aceptado (review adversarial del 2026-11-06):** si el claim contesta `claiming_in_progress` (otro dispositivo
+lidera) y la persona sale por «Continuar a la app» desde la espera, ese teléfono no deja epoch: antes sí, al aceptar. No
+ha entrado a ninguna cuenta; «Reintentar» lo escribe con su T0, y si más tarde llega al adopt, el paso 5-bis re-emite con
+`now()` (breadcrumb «fallback now()»). El líder ya registró el consentimiento de la cuenta.

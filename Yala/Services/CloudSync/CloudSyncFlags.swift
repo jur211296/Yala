@@ -491,6 +491,18 @@ nonisolated enum StorageModePersistence {
         defaults.bool(forKey: icloudCorpusWipeZoneDoneKey)
     }
 
+    /// «Hay un borrado que ya se llevó la zona y aún no las filas»: lo que lee la tabla de mounts para no adjuntar el
+    /// espejo entre las dos mitades (`SwiftDataConfiguration.shouldMountNeutralForCorpusWipeCrossingTheZone`, ticket
+    /// `late-icloud-wipe-can-re-export-between-its-two-halves`). Dos formas: armado con la zona hecha (un kill entre las
+    /// mitades), o «a medias» (la zona se fue, lo del teléfono no, y la persona aún no ha decidido). La segunda entró por
+    /// la review adversarial del 2026-11-06: una reanudación parada en los cambios de grupos pasa a «a medias» sin
+    /// preguntar, y con el espejo puesto el arranque siguiente re-exportaba igual. La marca de la zona sola no cuenta:
+    /// solo vive con el arm, y un mount es el sitio donde una marca huérfana cuesta más.
+    static func hasICloudCorpusWipeCrossedTheZone(_ defaults: UserDefaults = .standard) -> Bool {
+        (isICloudCorpusWipeArmed(defaults) && isICloudCorpusWipeZoneDone(defaults))
+            || isICloudCorpusWipeLeftHalfway(defaults)
+    }
+
     /// **«El borrado quedó a medias y la persona tiene que decidir».** La zona de iCloud ya se borró, lo del teléfono no,
     /// y el borrado falló delante de ella. Mientras esté puesta, el arranque le enseña «El borrado quedó a medias» en vez
     /// de reanudarlo a ciegas; se retira cuando el borrado termina o cuando elige quedarse con lo que tiene. **No caduca

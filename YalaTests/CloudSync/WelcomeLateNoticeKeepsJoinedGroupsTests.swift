@@ -404,7 +404,9 @@ struct WelcomeLateNoticeKeepsJoinedGroupsTests {
         let settle = try Self.body(of: "private func settleAfterLateICloudWipe() {", in: src)
         #expect(Self.normalized(settle) == """
             cancelWipeGrace() hasExistingData = checkHasExistingData() hasPersonalData = checkHasPersonalData() \
-            hasCompletedOnboarding = false
+            if WelcomeMirrorRelaunchLogic.shouldRelaunch( destination: .privateOnboarding, \
+            mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision) { \
+            WelcomePendingDestinationStore.set(.privateOnboarding) } hasCompletedOnboarding = false
             """, """
             el cierre del borrado tardío cambió: con los grupos conservados, bajar `hasExistingData` a ciegas le dice a la
             app que el teléfono está vacío. Tramo leído: \(Self.normalized(settle))

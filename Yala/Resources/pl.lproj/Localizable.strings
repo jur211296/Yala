@@ -5267,7 +5267,7 @@
 
 /* Storage migrate card, after the identity check refused the live account: it was signed in before a fresh start */
 "storage.migrate.refusedFreshStart" = "Twoje obecne konto Yala może należeć do kogoś innego: było już zalogowane, gdy zaczęto tu od zera. Aby wybrać swoje, odłącz je w sekcji „Grupy” i ponownie stuknij „Włącz chmurę”.";
-"storage.migrate.refusedOtherDevice" = "Inne z Twoich urządzeń przenosi Twoje dane na to konto. Dokończ włączanie chmury tam albo, jeśli się zatrzymało, spróbuj ponownie na tamtym urządzeniu.";
+"storage.migrate.refusedOtherDevice" = "Włączanie chmury dla tego konta nie zostało dokończone. Jeśli zaczęło się tutaj, spróbuj ponownie za godzinę; jeśli na innym z Twoich urządzeń, dokończ je tam.";
 
 /* Storage adopt card: the live session is a different Yala account than the one that migrated (%@ = Apple|Google) */
 "storage.adopt.otherAccountNote" = "Ta kopia w chmurze należy do innego konta Yala (%@). Wyloguj się i zaloguj na tamto konto, aby kontynuować.";
@@ -6036,8 +6036,8 @@
 "storage.migrateBlock.appleSameAccountNote" = "Z Apple Yala zawsze używa konta z tego urządzenia. Aby użyć innego, wybierz Google.";
 "storage.migrateBlock.freshStartSessionTitle" = "To konto może należeć do kogoś innego";
 "storage.migrateBlock.freshStartSessionBody" = "Nic się nie zmieniło. Twoje grupy używają konta, które było już zalogowane na tym urządzeniu, a ponieważ zaczęto tu od zera, może należeć do kogoś innego. Aby przenieść swoje dane do chmury, odłącz je w sekcji „Grupy” i ponownie stuknij „Włącz chmurę”: wtedy wybierzesz swoje konto.";
-"storage.migrateBlock.otherDeviceTitle" = "Inne z Twoich urządzeń przenosi Twoje dane do chmury";
-"storage.migrateBlock.otherDeviceBody" = "Nic się nie zmieniło. Dokończ włączanie chmury na tamtym urządzeniu albo, jeśli się zatrzymało, spróbuj tam ponownie. Gdy się skończy, włączysz chmurę tutaj.";
+"storage.migrateBlock.otherDeviceTitle" = "Włączanie chmury dla tego konta nie zostało dokończone";
+"storage.migrateBlock.otherDeviceBody" = "Nic się nie zmieniło. Jeśli włączanie zaczęło się na tym urządzeniu, spróbuj ponownie za godzinę. Jeśli na innym z Twoich urządzeń, dokończ je tam.";
 
 /* Restaurar: la busqueda termino vacia y el servidor nunca contesto — no sabemos si hay datos (reinstall-without-network-has-no-cloud-door) */
 "welcome.restore.cloudUnverifiedTitle" = "Nie udało się sprawdzić Twoich danych";

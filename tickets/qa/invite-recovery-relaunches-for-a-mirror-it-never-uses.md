@@ -1,10 +1,10 @@
 ---
 id: invite-recovery-relaunches-for-a-mirror-it-never-uses
-status: backlog
+status: qa
 priority: medium
 area: "modo-nube, groups"
 created: 2026-09-11
-updated: 2026-10-08
+updated: 2026-11-06
 source: "medido de camino en la mitad 2 de `groups-entry-on-a-mirrored-store-still-blocks-the-owner` (2026-09-11)"
 ---
 
@@ -52,3 +52,15 @@ que su hermana `.groupsOrganizer` está en la lista de `false`, y las dos cards 
 - Device-QA: que el store del invitado no espeje (panel DEBUG, `personalStoreMountedDecision`).
 
 Triage 2026-10-08: abierto · medium → medium · `requiresMirror` sigue devolviendo `true` para `.inviteRecovery` con el docblock viejo (`WelcomeMirrorRelaunchLogic.swift:98`); el único cambio posterior es `5bb3b4ea5`, del mismo 11-sep.
+
+## Cierre (2026-11-06, lote nube 2.3)
+
+**Ya estaba arreglado, medido en `origin/2.3`.** `WelcomeMirrorRelaunchLogic.requiresMirror(.inviteRecovery)` devuelve
+`false` desde el 2026-10-20 (card t2q8 del QA guiado del TF19, PR #577), con el docblock reescrito: «Tengo una invitación»
+pega un enlace del backend, el mismo que el universal link, y no relanza. Lo fijan
+`NeutralMountRelaunchZeroTests.destinationTable` (fila `.inviteRecovery: false` con su razón) y
+`InviteThreeDoorsTests.bienvenida_tengoUnaInvitacion_noRelanza_yElNeutroAguanta` (no relanza y el neutro aguanta tras el
+join). Los cuatro criterios se cumplen; no hizo falta código.
+
+**QA en el iPhone:** instalación nueva → «Vengo por un grupo» → «Tengo una invitación» → pegar un enlace: no sale «reabre
+Yala» y la invitación se abre.

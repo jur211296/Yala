@@ -123,21 +123,21 @@ struct UXAudit22Decidido15LogicTests {
     }
 
     @Test("Sin volver a preguntar, el alta registra el consentimiento una sola vez y consume el pendiente")
-    func consent_persistForSignUpSwitch_writesOnce() {
+    func consent_persistForNewAccount_writesOnce() {
         var pending = true
         var writes = 0
-        #expect(CloudConsentRegistrationLogic.persistForSignUpSwitch(pending: &pending) { writes += 1 })
+        #expect(CloudConsentRegistrationLogic.persistForNewAccount(pending: &pending) { writes += 1 })
         #expect(writes == 1)
         #expect(!pending, "el pendiente de la re-entrada no puede quedar para otro punto del flujo")
-        #expect(!CloudConsentRegistrationLogic.persistForSignUpSwitch(pending: &pending) { writes += 1 })
+        #expect(!CloudConsentRegistrationLogic.persistForNewAccount(pending: &pending) { writes += 1 })
         #expect(writes == 1, "un segundo paso por el alta no vuelve a escribir")
     }
 
     @Test("Sin pendiente no se escribe nada")
-    func consent_persistForSignUpSwitch_withoutPending() {
+    func consent_persistForNewAccount_withoutPending() {
         var pending = false
         var writes = 0
-        #expect(!CloudConsentRegistrationLogic.persistForSignUpSwitch(pending: &pending) { writes += 1 })
+        #expect(!CloudConsentRegistrationLogic.persistForNewAccount(pending: &pending) { writes += 1 })
         #expect(writes == 0)
     }
 
@@ -322,7 +322,10 @@ struct UXAudit22Decidido15WiringTests {
                                in: src, upTo: "private func progressContent")
         #expect(fn.contains("CloudConsentRegistrationLogic.signUpSwitch(consentAcceptedThisPass: consentAcceptedThisPass)"))
         #expect(fn.contains("case .askConsent:\n            showConsent = true"))
-        #expect(fn.contains("CloudConsentRegistrationLogic.persistForSignUpSwitch(pending: &consentPendingPersistence)"))
+        // 2026-11-06 (ticket `borncloud-consent-epoch-written-before-the-guard-decides`): pasar al alta ya no escribe.
+        // El pendiente viaja al alta y lo escribe su claim cuando confirma una cuenta nueva.
+        #expect(!fn.contains("CloudConsentRegistrar.register"),
+                "escribir aquí deja el epoch aunque el claim conteste existing_stable y el guard bloquee")
         #expect(fn.contains("launchFlow { await runBornCloudFlow() }"))
         #expect(src.contains("consentAcceptedThisPass = true"), "nadie marca la aceptación de esta pasada")
     }
