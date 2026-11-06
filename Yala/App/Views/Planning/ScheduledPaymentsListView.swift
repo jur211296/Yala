@@ -27,6 +27,7 @@ struct ScheduledPaymentsListView: View {
     @Namespace private var viewModeNamespace
 
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     /// Selected day in calendar (nil = show all for the month)
     @State private var selectedDay: Int? = nil
@@ -280,6 +281,13 @@ struct ScheduledPaymentsListView: View {
         .padding(.horizontal, DS.Spacing.lg)
     }
 
+    private func timelineAmount(_ summary: ScheduledPaymentSummary, state: ScheduledPaymentRowState) -> some View {
+        Text(ScheduledPaymentRowView.amountText(summary, appPreferences: appPreferences))
+            .font(DS.Typography.label)
+            .foregroundStyle(ScheduledPaymentRowView.amountColor(state: state, isIncome: summary.payment.isIncome))
+            .lineLimit(1)
+    }
+
     private func timelineRow(_ summary: ScheduledPaymentSummary, isLast: Bool) -> some View {
         let state = summary.rowState
         let isToday = Calendar.current.isDateInToday(summary.dueDate)
@@ -311,16 +319,22 @@ struct ScheduledPaymentsListView: View {
                     }
                 }
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    HStack(alignment: .firstTextBaseline) {
+                    // Con el texto al máximo el importe baja bajo el nombre, entero (barrido final 2.2): al lado se cortaba.
+                    if dynamicTypeSize.isAccessibilitySize {
                         Text(summary.payment.name)
                             .font(DS.Typography.label)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
-                        Spacer(minLength: DS.Spacing.sm)
-                        Text(ScheduledPaymentRowView.amountText(summary, appPreferences: appPreferences))
-                            .font(DS.Typography.label)
-                            .foregroundStyle(ScheduledPaymentRowView.amountColor(state: state, isIncome: summary.payment.isIncome))
-                            .lineLimit(1)
+                        timelineAmount(summary, state: state)
+                    } else {
+                        HStack(alignment: .firstTextBaseline) {
+                            Text(summary.payment.name)
+                                .font(DS.Typography.label)
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+                            Spacer(minLength: DS.Spacing.sm)
+                            timelineAmount(summary, state: state)
+                        }
                     }
                     HStack(spacing: DS.Spacing.sm) {
                         ScheduledPaymentStatusPill(state: state, isIncome: summary.payment.isIncome)

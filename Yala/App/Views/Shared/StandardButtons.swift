@@ -68,6 +68,8 @@ struct YalaSaveButton: View {
 /// Uso: Confirmar acciones, submit forms, CTAs
 struct YalaPrimaryButton: View {
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.isEnabled) private var isEnabledInContext
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let title: String
     let icon: String?
     let action: () -> Void
@@ -78,6 +80,10 @@ struct YalaPrimaryButton: View {
     /// El relleno activo, si no es el acento tal cual (el formulario de registro lo oscurece para que el blanco dé AA,
     /// UX 2.2 · L2-20). `nil` = `theme.accent`.
     var enabledFill: Color?
+    /// En una `safeAreaBar`, iOS atenúa más el texto de un botón desactivado (gris 165 → 131 medido en Nuevo registro y el
+    /// onboarding, barrido final 2.2). Con `true`, a tamaño normal el texto conserva el tono de fuera de la barra
+    /// (decisión de Jürgen, 2026-11-05); con texto de accesibilidad se deja el del sistema.
+    var keepsDisabledToneInBar: Bool
 
     init(
         _ title: String,
@@ -86,6 +92,7 @@ struct YalaPrimaryButton: View {
         isLoading: Bool = false,
         disabledHint: String? = nil,
         enabledFill: Color? = nil,
+        keepsDisabledToneInBar: Bool = false,
         action: @escaping () -> Void
     ) {
         self.title = title
@@ -94,31 +101,54 @@ struct YalaPrimaryButton: View {
         self.isLoading = isLoading
         self.disabledHint = disabledHint
         self.enabledFill = enabledFill
+        self.keepsDisabledToneInBar = keepsDisabledToneInBar
         self.action = action
+    }
+
+    /// Dentro de una `safeAreaBar` iOS atenúa más el texto de un botón desactivado, y ni el entorno ni la opacidad de la
+    /// etiqueta lo evitan (medido el 2026-11-05: 164 fuera de la barra, 129 dentro, 101 marcando la etiqueta como
+    /// habilitada). Lo que se pinta ENCIMA del botón no pasa por ese atenuado: con el tono forzado, el texto va ahí, al 50 %
+    /// que le daba `.plain` fuera de la barra (164 = 72 + 183 × 0,50), y el botón sigue desactivado debajo.
+    private var drawsDisabledToneOutside: Bool {
+        keepsDisabledToneInBar && !dynamicTypeSize.isAccessibilitySize && (isDisabled || isLoading || !isEnabledInContext)
+    }
+
+    private var labelRow: some View {
+        HStack(spacing: DS.Spacing.sm) {
+            if isLoading {
+                ProgressView()
+                    .tint(primaryForeground)
+            } else if let icon {
+                Image(systemName: icon)
+                    .font(DS.Typography.label)
+                    .accessibilityHidden(true)
+            }
+            Text(title)
+                .font(DS.Typography.label)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 50)
+        .foregroundStyle(primaryForeground)
     }
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: DS.Spacing.sm) {
-                if isLoading {
-                    ProgressView()
-                        .tint(primaryForeground)
-                } else if let icon {
-                    Image(systemName: icon)
-                        .font(DS.Typography.label)
-                        .accessibilityHidden(true)
-                }
-                Text(title)
-                    .font(DS.Typography.label)
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 50)
-            .foregroundStyle(primaryForeground)
-            .background(isDisabled ? DS.Semantic.disabledForeground : (enabledFill ?? theme.accent))
-            .clipShape(Capsule())
+            labelRow
+                .opacity(drawsDisabledToneOutside ? 0 : 1)
+                .background(isDisabled ? DS.Semantic.disabledForeground : (enabledFill ?? theme.accent))
+                .clipShape(Capsule())
         }
         .disabled(isDisabled || isLoading)
         .buttonStyle(.plain)
+        .overlay {
+            if drawsDisabledToneOutside {
+                labelRow
+                    .opacity(0.5)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+        }
+        .accessibilityLabel(Text(title))
         .accessibilityIdentifier("primary_button")
         .accessibilityHint(isDisabled ? (disabledHint ?? "") : "")
     }

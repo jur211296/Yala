@@ -1,6 +1,6 @@
 ---
 id: bottom-save-bar-overlaps-the-form-at-the-largest-text-size
-status: backlog
+status: qa
 priority: high
 area: "a11y, design-system, iphone"
 created: 2026-11-05
@@ -46,3 +46,22 @@ la misma vara los otros 18 `safeAreaInset(edge: .bottom)` de `Yala/App` (medido 
 
 A AX5 en el iPhone 17e ningún texto queda debajo de «Guardar»/«Siguiente» sin difuminar, y a tamaño normal las tres
 pantallas se ven igual (diff de píxeles).
+
+## Arreglo (2026-11-05)
+
+Nuevo registro (`SaveAreaPlacement`), Nuevo gasto de Grupos y el onboarding pasan de `safeAreaInset` a
+`safeAreaBar(edge: .bottom)`: mismo sitio para los botones y el borde del scroll se difumina debajo de ellos. Los otros
+`safeAreaInset(edge: .bottom)` de `Yala/App` no se tocaron (no medidos a AX5).
+
+A tamaño normal, dos efectos de la barra corregidos para que nada cambie (decisión de Jürgen, 2026-11-05): el hueco
+sobre los botones (`spacing: DS.Spacing.sm` en Grupos y onboarding) y el tono del «Guardar»/«Siguiente» desactivado,
+que iOS atenúa dentro de la barra (gris 164 → 129): `YalaPrimaryButton(keepsDisabledToneInBar:)` lo devuelve a 164.
+Con texto de accesibilidad queda el tono del sistema.
+
+## Guion de QA (iPhone, 2 min)
+
+1. Ajustes del iPhone › Accesibilidad › Pantalla y tamaño del texto › Texto más grande: al máximo.
+2. Yala › «+» › Manual: desliza el formulario hacia arriba; lo que pasa por debajo de «Guardar» se difumina y no se lee
+   encima del botón.
+3. Grupos › un grupo › «+» de nuevo gasto: lo mismo con «Guardar».
+4. Devuelve el texto a su tamaño: Nuevo registro se ve como siempre.

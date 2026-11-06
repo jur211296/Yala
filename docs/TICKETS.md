@@ -115,7 +115,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ai-text-model-generation-upgrade | done | tickets/done/ai-text-model-generation-upgrade.md |
 | aligned-previous-interval-counts-the-next-midnight | done | tickets/done/aligned-previous-interval-counts-the-next-midnight.md |
 | alternating-definitive-causes-never-reach-the-short-ceiling | done | tickets/done/alternating-definitive-causes-never-reach-the-short-ceiling.md |
-| amounts-cut-or-split-at-the-largest-text-size | backlog | tickets/backlog/amounts-cut-or-split-at-the-largest-text-size.md |
+| amounts-cut-or-split-at-the-largest-text-size | qa | tickets/qa/amounts-cut-or-split-at-the-largest-text-size.md |
 | an-incomplete-inventory-reads-as-the-whole-corpus | done | tickets/done/an-incomplete-inventory-reads-as-the-whole-corpus.md |
 | an-undecodable-migration-phase-reads-as-never-started | done | tickets/done/an-undecodable-migration-phase-reads-as-never-started.md |
 | an-unreadable-migration-journal-reads-as-never-started | done | tickets/done/an-unreadable-migration-journal-reads-as-never-started.md |
@@ -160,7 +160,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | born-cloud-signup-into-existing-account-relaunch-says-nothing | backlog | tickets/backlog/born-cloud-signup-into-existing-account-relaunch-says-nothing.md |
 | born-cloud-signup-lands-on-existing-account-silently | done | tickets/done/born-cloud-signup-lands-on-existing-account-silently.md |
 | borncloud-consent-epoch-written-before-the-guard-decides | backlog | tickets/backlog/borncloud-consent-epoch-written-before-the-guard-decides.md |
-| bottom-save-bar-overlaps-the-form-at-the-largest-text-size | backlog | tickets/backlog/bottom-save-bar-overlaps-the-form-at-the-largest-text-size.md |
+| bottom-save-bar-overlaps-the-form-at-the-largest-text-size | qa | tickets/qa/bottom-save-bar-overlaps-the-form-at-the-largest-text-size.md |
 | branch-2-2-merges-without-waiting-for-ci | done | tickets/done/branch-2-2-merges-without-waiting-for-ci.md |
 | bridge-de-grupos-pierde-la-marca-de-sus-patas | done | tickets/done/bridge-de-grupos-pierde-la-marca-de-sus-patas.md |
 | bridge-synthesis-trusts-a-zero-converted-amount | done | tickets/done/bridge-synthesis-trusts-a-zero-converted-amount.md |
