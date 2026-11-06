@@ -1,11 +1,11 @@
 ---
 id: secondary-currency-prompt-uitest-red-on-iphone-se
-status: backlog
+status: done
 priority: low
 area: "testing, currency"
 created: 2026-10-03
 source: hallazgo de account-form-as-medium-detent-sheet (2026-10-03)
-updated: 2026-10-08
+updated: 2026-11-05
 ---
 
 # `test_secondaryCurrencyPromptAppearsForNonPreferred` sale rojo en el iPhone SE
@@ -38,3 +38,10 @@ que verifique en el SE se encuentra un rojo que parece una regresión del formul
 - `SecondaryCurrencyPromptUITests.dropSecondaryCurrency` sigue volviendo con `app.navigationBars.buttons.firstMatch.tap()` (ahora `:57`). El fichero no tiene commits desde el 2026-10-03, así que la hipótesis sigue sin medir y sin arreglo.
 
 Triage 2026-10-08: abierto · low → low · el test no ha cambiado (sigue el firstMatch de la barra) y solo afecta al carril del SE, no al gate.
+
+## 2026-11-05 · cerrado en el lote T3
+
+Re-medido en el iPhone SE (3.ª gen, iOS 27.2): con el test sin tocar, **verde** (1 de 1). La hipótesis no se pudo ver
+en rojo, pero la fragilidad que señalaba el ticket seguía: se volvía con «el primer botón de la barra». Ahora se toca el
+«‹» del sistema por su identificador (`BackButton`; Divisa no pinta el suyo, `ProfileView.paintsOwnBackButton`) y el
+test exige que exista. Verde 3 de 3 en el SE y 3 de 3 en el iPhone 17 Pro (iOS 27.2), y en el lote.

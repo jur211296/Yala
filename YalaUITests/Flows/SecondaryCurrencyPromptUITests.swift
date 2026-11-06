@@ -54,7 +54,13 @@ final class SecondaryCurrencyPromptUITests: XCTestCase {
             app.buttons["secondary_currency_done"].waitForNonExistence(timeout: 5),
             "El picker de divisa secundaria no se cerró tras «Listo»."
         )
-        app.navigationBars.buttons.firstMatch.tap()
+        // El «‹» del sistema por su identificador, no el primer botón de la barra: en el iPhone SE ese primero podía ser
+        // la X de la hoja de Ajustes, que la cerraba y dejaba el test en el Panel (ticket
+        // `secondary-currency-prompt-uitest-red-on-iphone-se`). Divisa usa el «‹» del sistema
+        // (`ProfileView.paintsOwnBackButton(.currency) == false`).
+        let back = app.navigationBars.buttons["BackButton"].firstMatch
+        XCTAssertTrue(back.waitForExistence(timeout: 5), "Divisa no enseña el «‹» del sistema (BackButton).")
+        back.tap()
         XCTAssertTrue(
             app.buttons["profile_accounts"].waitForExistence(timeout: 5),
             "No volvió al Perfil tras cerrar Divisa."

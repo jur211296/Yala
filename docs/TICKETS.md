@@ -125,7 +125,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | apple-id-change-check-stays-off-after-a-failed-migration | done | tickets/done/apple-id-change-check-stays-off-after-a-failed-migration.md |
 | apple-id-change-should-close-the-private-session | done | tickets/done/apple-id-change-should-close-the-private-session.md |
 | apple-id-close-blocked-has-no-visible-outcome | done | tickets/done/apple-id-close-blocked-has-no-visible-outcome.md |
-| apple-id-close-loss-notice-uitest-fails-on-2-1 | backlog | tickets/backlog/apple-id-close-loss-notice-uitest-fails-on-2-1.md |
+| apple-id-close-loss-notice-uitest-fails-on-2-1 | done | tickets/done/apple-id-close-loss-notice-uitest-fails-on-2-1.md |
 | apple-id-close-notice-does-not-say-what-else-the-close-does | done | tickets/done/apple-id-close-notice-does-not-say-what-else-the-close-does.md |
 | apple-pay-capture-in-a-groups-only-session-has-no-personal-inbox | backlog | tickets/backlog/apple-pay-capture-in-a-groups-only-session-has-no-personal-inbox.md |
 | apple-watch | backlog | tickets/backlog/apple-watch.md |
@@ -169,7 +169,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | budget-days-left-counts-today | done | tickets/done/budget-days-left-counts-today.md |
 | budget-interval-counts-next-period-midnight | done | tickets/done/budget-interval-counts-next-period-midnight.md |
 | budget-tied-to-income-or-expense | backlog | tickets/backlog/budget-tied-to-income-or-expense.md |
-| bulk-edit-uitests-fail-on-the-small-iphone | backlog | tickets/backlog/bulk-edit-uitests-fail-on-the-small-iphone.md |
+| bulk-edit-uitests-fail-on-the-small-iphone | done | tickets/done/bulk-edit-uitests-fail-on-the-small-iphone.md |
 | bulk-move-to-another-currency-account-relabels-the-amount | backlog | tickets/backlog/bulk-move-to-another-currency-account-relabels-the-amount.md |
 | bulk-update-account-leaves-converted-amount-stale | done | tickets/done/bulk-update-account-leaves-converted-amount-stale.md |
 | can-run-domain-reads-the-filler-phase-before-the-journal-connects | done | tickets/done/can-run-domain-reads-the-filler-phase-before-the-journal-connects.md |
@@ -369,7 +369,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | duplicate-exchange-rate-rows-pick-an-arbitrary-rate | backlog | tickets/backlog/duplicate-exchange-rate-rows-pick-an-arbitrary-rate.md |
 | duplicates-mode-rows-dont-say-their-date | done | tickets/done/duplicates-mode-rows-dont-say-their-date.md |
 | edgecases-extreme-minimum-flaky-under-load | done | tickets/done/edgecases-extreme-minimum-flaky-under-load.md |
-| edgecases-minimum-amount-account-chip-never-settles-on-ios-27 | backlog | tickets/backlog/edgecases-minimum-amount-account-chip-never-settles-on-ios-27.md |
+| edgecases-minimum-amount-account-chip-never-settles-on-ios-27 | done | tickets/done/edgecases-minimum-amount-account-chip-never-settles-on-ios-27.md |
 | el-aviso-de-cierre-cita-el-pr-de-otra-sesion | backlog | tickets/backlog/el-aviso-de-cierre-cita-el-pr-de-otra-sesion.md |
 | el-gate-no-corre-un-check-que-el-ci-si-bloquea | done | tickets/done/el-gate-no-corre-un-check-que-el-ci-si-bloquea.md |
 | el-hook-que-prohibe-atribuir-a-una-ia-no-corre-en-este-repo | done | tickets/done/el-hook-que-prohibe-atribuir-a-una-ia-no-corre-en-este-repo.md |
@@ -700,7 +700,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | keyboard-shortcut-command-f-uitest-goes-red-on-a-used-ipad-simulator | done | tickets/done/keyboard-shortcut-command-f-uitest-goes-red-on-a-used-ipad-simulator.md |
 | l10n-check-corre-13-de-17-tests | done | tickets/done/l10n-check-corre-13-de-17-tests.md |
 | la-nocturna-de-ui-no-ha-disparado-ni-una-vez | done | tickets/done/la-nocturna-de-ui-no-ha-disparado-ni-una-vez.md |
-| landscape-records-test-misses-the-first-row-in-long-runs | backlog | tickets/backlog/landscape-records-test-misses-the-first-row-in-long-runs.md |
+| landscape-records-test-misses-the-first-row-in-long-runs | done | tickets/done/landscape-records-test-misses-the-first-row-in-long-runs.md |
 | language-override-bypasses-the-cloud-prefs-channel | backlog | tickets/backlog/language-override-bypasses-the-cloud-prefs-channel.md |
 | large-text-leftovers-outside-the-main-iphone-screens | backlog | tickets/backlog/large-text-leftovers-outside-the-main-iphone-screens.md |
 | late-icloud-notice-can-wipe-while-a-migration-is-uploading | backlog | tickets/backlog/late-icloud-notice-can-wipe-while-a-migration-is-uploading.md |
@@ -763,6 +763,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | new-record-drafts-banner-says-abrir-inbox | backlog | tickets/backlog/new-record-drafts-banner-says-abrir-inbox.md |
 | new-record-with-one-account-keeps-save-off-without-saying-why | backlog | tickets/backlog/new-record-with-one-account-keeps-save-off-without-saying-why.md |
 | new-transaction-account-picker-uitests-fail-on-the-ios-27-lane-pro-max | done | tickets/done/new-transaction-account-picker-uitests-fail-on-the-ios-27-lane-pro-max.md |
+| new-transaction-form-sometimes-never-goes-idle-for-xcuitest | backlog | tickets/backlog/new-transaction-form-sometimes-never-goes-idle-for-xcuitest.md |
 | nightly-ui-suite-hits-its-110-minute-cap-every-night | done | tickets/done/nightly-ui-suite-hits-its-110-minute-cap-every-night.md |
 | no-hay-seed-con-miembro-rechazado | done | tickets/done/no-hay-seed-con-miembro-rechazado.md |
 | no-test-seam-for-account-exists-blocks-xcuitest-of-identity | done | tickets/done/no-test-seam-for-account-exists-blocks-xcuitest-of-identity.md |
@@ -804,7 +805,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | panel-stayed-filtered-after-removing-the-account-chip | done | tickets/done/panel-stayed-filtered-after-removing-the-account-chip.md |
 | panel-trend-chart-labels-overlap | done | tickets/done/panel-trend-chart-labels-overlap.md |
 | partial-sheets-that-never-adapted-to-the-window | backlog | tickets/backlog/partial-sheets-that-never-adapted-to-the-window.md |
-| paywall-inbox-routing-uitest-misses-the-held-paywall-in-a-batch | backlog | tickets/backlog/paywall-inbox-routing-uitest-misses-the-held-paywall-in-a-batch.md |
+| paywall-inbox-routing-uitest-misses-the-held-paywall-in-a-batch | done | tickets/done/paywall-inbox-routing-uitest-misses-the-held-paywall-in-a-batch.md |
 | paywall-storekit-alert-is-never-cleared | done | tickets/done/paywall-storekit-alert-is-never-cleared.md |
 | pdf-statement-pages-without-currency-pick-no-account | backlog | tickets/backlog/pdf-statement-pages-without-currency-pick-no-account.md |
 | pdf-statement-reads-only-the-first-page | done | tickets/done/pdf-statement-reads-only-the-first-page.md |
@@ -1001,7 +1002,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | scheduled-payment-start-date-is-ignored-by-the-calendar | backlog | tickets/backlog/scheduled-payment-start-date-is-ignored-by-the-calendar.md |
 | scheduled-payments-notif-dedup | done | tickets/done/scheduled-payments-notif-dedup.md |
 | scheduled-payments-period-wheel-closes-the-sheet | done | tickets/done/scheduled-payments-period-wheel-closes-the-sheet.md |
-| secondary-currency-prompt-uitest-red-on-iphone-se | backlog | tickets/backlog/secondary-currency-prompt-uitest-red-on-iphone-se.md |
+| secondary-currency-prompt-uitest-red-on-iphone-se | done | tickets/done/secondary-currency-prompt-uitest-red-on-iphone-se.md |
 | secondary-entry-healing-writes-owner-not-session | discarded | tickets/discarded/secondary-entry-healing-writes-owner-not-session.md |
 | secondary-groups-off-wipes-owner | discarded | tickets/discarded/secondary-groups-off-wipes-owner.md |
 | secondary-guest-exit-lock-and-outbox | discarded | tickets/discarded/secondary-guest-exit-lock-and-outbox.md |

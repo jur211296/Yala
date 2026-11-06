@@ -1,10 +1,10 @@
 ---
 id: edgecases-minimum-amount-account-chip-never-settles-on-ios-27
-status: backlog
+status: done
 priority: medium
 area: "qa, xcuitest, transactions"
 created: 2026-10-13
-updated: 2026-10-27
+updated: 2026-11-05
 owner: frank
 deadline: 2026-10-20
 source: "gate del lote 1 de la auditoría UX 2.2 (encargo 2026-10-13-auditoria-ux-2-2-lote-1-primera-vez)"
@@ -61,3 +61,15 @@ dejó de moverse» tumbó **tres** casos de suites distintas: `EdgeCasesUITests.
 `NewTransactionTypeSelectorUITests.test_retappingTheSelectedType_keepsTheSubcategory`. Repetidos los tres juntos tras
 `simctl erase`, pasan **verdes con la base `12601e455` y verdes con el cambio de la rama**. Apunta a lo que ya sugería la
 entrada del lote 2: el rojo aparece con el simulador cargado de una corrida larga y desaparece con uno recién borrado.
+
+## 2026-11-05 · cerrado en el lote T3
+
+En iOS 27.2 el «no dejó de moverse» no salió (17 Pro, 3 de 3 verde con el simulador recién arrancado). En el iPhone SE
+caía con otro motivo, siempre: «`new_transaction_account_chip` existe pero no es alcanzable». En el vídeo, el teclado
+numérico (y≥432) tapa el chip (y≈444). Arreglo en el ayudante compartido `openSelectorFirstRow`: si el teclado tapa el
+chip, sube el formulario con un arrastre por encima del teclado, como haría el dedo; donde el chip cabe, no hace nada.
+Verde 3 de 3 en el SE y 3 de 3 en el 17 Pro, y en el lote.
+
+Hallazgo aparte, abierto en su ticket (`new-transaction-form-sometimes-never-goes-idle-for-xcuitest`): en 1 de 3
+corridas, tras escribir el importe, la app no avisó a XCUITest de que había terminado de animar y cada gesto esperó 60 s
+(el caso pasó en 1.000 s).
