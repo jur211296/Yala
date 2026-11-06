@@ -1349,6 +1349,7 @@ final class DataWipeService {
         defaults.removeObject(forKey: AppPreferences.Keys.panelSectionsOrder)
         defaults.removeObject(forKey: AppPreferences.Keys.moreSectionOrder)
         defaults.removeObject(forKey: AppPreferences.Keys.panelAccountsCollapsed)
+        defaults.removeObject(forKey: AppPreferences.Keys.panelAmountsHidden)
         defaults.removeObject(forKey: AppPreferences.Keys.panelHeroKPIsOrder)
         defaults.removeObject(forKey: AppPreferences.Keys.panelHeroKPIsHidden)
         defaults.removeObject(forKey: AppPreferences.Keys.panelHeroKPIsCustomized)

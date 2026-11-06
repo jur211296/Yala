@@ -8037,3 +8037,12 @@
 "scheduled.editor.logo.none" = "Sem logo";
 "scheduled.editor.logo.auto" = "Automático";
 "scheduled.editor.logo.autoNamed" = "%@ (automático)";
+
+/* VoiceOver label of an amount hidden by the eye button of the Panel */
+"panel.amountHidden" = "Montante oculto";
+
+/* Eye button next to the Panel headline amount: hides every amount on the Panel */
+"panel.hideAmounts" = "Ocultar montantes";
+
+/* Eye button next to the Panel headline amount while amounts are hidden: shows them again */
+"panel.showAmounts" = "Mostrar montantes";

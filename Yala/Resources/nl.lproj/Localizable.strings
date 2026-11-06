@@ -8713,3 +8713,12 @@
 "scheduled.editor.logo.none" = "Geen logo";
 "scheduled.editor.logo.auto" = "Automatisch";
 "scheduled.editor.logo.autoNamed" = "%@ (automatisch)";
+
+/* VoiceOver label of an amount hidden by the eye button of the Panel */
+"panel.amountHidden" = "Bedrag verborgen";
+
+/* Eye button next to the Panel headline amount: hides every amount on the Panel */
+"panel.hideAmounts" = "Bedragen verbergen";
+
+/* Eye button next to the Panel headline amount while amounts are hidden: shows them again */
+"panel.showAmounts" = "Bedragen tonen";

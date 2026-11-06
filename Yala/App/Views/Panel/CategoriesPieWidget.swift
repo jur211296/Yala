@@ -12,6 +12,8 @@ import SwiftUI
 struct CategoriesPieWidget: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(AppPreferences.self) private var appPreferences
+    /// «Ocultar montos» del Panel (`AmountPrivacy`).
+    @Environment(\.amountsHidden) private var amountsHidden
     let categories: [CategorySpendingSummary]
     let currencyCode: String
 
@@ -590,7 +592,7 @@ struct CategoriesPieWidget: View {
     // MARK: - Helpers
 
     private func formattedCurrency(_ value: Double) -> String {
-        appPreferences.currency(value, currencyCode: currencyCode)
+        AmountPrivacy.text(appPreferences.currency(value, currencyCode: currencyCode), hidden: amountsHidden)
     }
 
     private static let percentFormatter: NumberFormatter = {

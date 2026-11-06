@@ -15,6 +15,8 @@ private let geometryChangeThreshold: CGFloat = 0.5
 
 struct TopCategoriesWidget: View {
     @Environment(AppPreferences.self) private var appPreferences
+    /// «Ocultar montos» del Panel (`AmountPrivacy`).
+    @Environment(\.amountsHidden) private var amountsHidden
     let categories: [CategorySpendingSummary]
     let currencyCode: String
 
@@ -148,7 +150,7 @@ struct TopCategoriesWidget: View {
                         )
 
                         if variationDisplay.showsPreviousAmountLabel, let prevAmount = previousTotalAmount {
-                            Text("vs \(appPreferences.number(prevAmount))")
+                            Text("vs \(AmountPrivacy.text(appPreferences.number(prevAmount), hidden: amountsHidden))")
                                 .font(DS.Typography.caption)
                                 .foregroundStyle(.thSecondaryText)
                                 .lineLimit(1)
@@ -341,7 +343,7 @@ struct TopCategoriesWidget: View {
 
     // Helpers (moved inside View to be accessible)
     private func formattedAmount(_ value: Double) -> String {
-        appPreferences.currency(value, currencyCode: currencyCode)
+        AmountPrivacy.text(appPreferences.currency(value, currencyCode: currencyCode), hidden: amountsHidden)
     }
 
     private func formattedPercentage(_ value: Double) -> String {

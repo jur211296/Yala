@@ -800,6 +800,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | panel-budget-spent-diverges-from-planning | done | tickets/done/panel-budget-spent-diverges-from-planning.md |
 | panel-colapsa-la-seleccion-de-cuentas-a-la-primera | done | tickets/done/panel-colapsa-la-seleccion-de-cuentas-a-la-primera.md |
 | panel-defaults-four-sections-four-widgets | done | tickets/done/panel-defaults-four-sections-four-widgets.md |
+| panel-eye-hides-amounts | qa | tickets/qa/panel-eye-hides-amounts.md |
 | panel-lee-el-filtro-de-cuentas-en-singular-fuera-del-saldo | done | tickets/done/panel-lee-el-filtro-de-cuentas-en-singular-fuera-del-saldo.md |
 | panel-new-record-greyed-out-silently-after-a-fresh-onboarding | done | tickets/done/panel-new-record-greyed-out-silently-after-a-fresh-onboarding.md |
 | panel-no-recalcula-al-llegar-tasas-nuevas | done | tickets/done/panel-no-recalcula-al-llegar-tasas-nuevas.md |

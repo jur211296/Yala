@@ -15,6 +15,8 @@ struct WeekdayBarPanelWidget: View {
     var headerInfoButton: AnyView? = nil
 
     @Environment(AppPreferences.self) private var appPreferences
+    /// «Ocultar montos» del Panel (`AmountPrivacy`).
+    @Environment(\.amountsHidden) private var amountsHidden
 
     private var hasData: Bool {
         data.contains(where: { $0.average > 0 })
@@ -134,7 +136,7 @@ struct WeekdayBarPanelWidget: View {
         var parts: [String] = [L10n.WidgetType.weekdayBar]
         for day in WeekdayBarChart.weekdayOrder(firstWeekday: appPreferences.firstWeekday.rawValue) {
             guard let entry = data.first(where: { $0.weekday == day }), entry.average > 0 else { continue }
-            let amount = appPreferences.currency(entry.average, currencyCode: currencyCode)
+            let amount = AmountPrivacy.spoken(appPreferences.currency(entry.average, currencyCode: currencyCode), hidden: amountsHidden)
             parts.append("\(entry.shortName): \(amount)")
         }
         return parts.joined(separator: ". ")

@@ -8711,3 +8711,12 @@
 "scheduled.editor.logo.none" = "Nessun logo";
 "scheduled.editor.logo.auto" = "Automatico";
 "scheduled.editor.logo.autoNamed" = "%@ (automatico)";
+
+/* VoiceOver label of an amount hidden by the eye button of the Panel */
+"panel.amountHidden" = "Importo nascosto";
+
+/* Eye button next to the Panel headline amount: hides every amount on the Panel */
+"panel.hideAmounts" = "Nascondi importi";
+
+/* Eye button next to the Panel headline amount while amounts are hidden: shows them again */
+"panel.showAmounts" = "Mostra importi";

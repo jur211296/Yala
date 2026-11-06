@@ -23,6 +23,8 @@ struct PanelAccountChipsRow: View {
     let onOpenAccount: (Account) -> Void
 
     @Environment(AppPreferences.self) private var appPreferences
+    /// «Ocultar montos» del Panel (`AmountPrivacy`).
+    @Environment(\.amountsHidden) private var amountsHidden
     @Environment(CurrencyConverter.self) private var currencyConverter
     @Environment(\.yalaTheme) private var theme
 
@@ -137,7 +139,7 @@ struct PanelAccountChipsRow: View {
         case .toPay: label = L10n.PanelAccountCard.toPay
         case .spent: label = L10n.PanelAccountCard.spentInPeriod(viewModel.selectedPeriod.displayName)
         }
-        let amount = appPreferences.currency(shown, currencyCode: currency)
+        let amount = AmountPrivacy.spoken(appPreferences.currency(shown, currencyCode: currency), hidden: amountsHidden)
         let name = isGroupsCard ? L10n.Category.System.groups : account.name
         var text = "\(name). \(label): \(isApproximate ? "≈ " : "")\(amount)"
         if isFiltering { text += ". \(L10n.PanelAccountCard.filtering)" }

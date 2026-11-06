@@ -687,6 +687,16 @@ final class AppPreferences {
         }
     }
 
+    /// El ojo junto a la cifra grande del Panel: con `true`, el Panel enseña sus montos como `•••••`
+    /// (`AmountPrivacy`). Se queda entre arranques —quien los oculta para usar la app en público espera encontrarlos
+    /// ocultos al volver— y NO se sincroniza: es la privacidad de este aparato, no de la cuenta.
+    var panelAmountsHidden: Bool = false {
+        didSet {
+            guard oldValue != panelAmountsHidden else { return }
+            persistBool(panelAmountsHidden, forKey: Keys.panelAmountsHidden, synced: false)
+        }
+    }
+
     /// Label mode for the Sankey flow widget in Statistics → Distribution.
     /// `.amount` shows currency-formatted amounts; `.percentage` shows % of base.
     /// Synced via iCloud KV for cross-device consistency.
@@ -1264,6 +1274,7 @@ final class AppPreferences {
         }
         panelPrefsMigratedV2 = defaults.bool(forKey: Keys.panelPrefsMigratedV2)
         panelAccountsCollapsed = loadBool(Keys.panelAccountsCollapsed, defaultIfMissing: true)
+        panelAmountsHidden = defaults.bool(forKey: Keys.panelAmountsHidden)
 
         if let stored = defaults.string(forKey: Keys.sankeyLabelMode),
            let mode = SankeyLabelMode(rawValue: stored) {
@@ -1573,6 +1584,7 @@ final class AppPreferences {
             ]
         }
         static let panelAccountsCollapsed = "panelAccountsCollapsed"
+        static let panelAmountsHidden = "panelAmountsHidden"
         static let sankeyLabelMode = "sankeyLabelMode"
 
         // Hero KPI Preferences (P20-04b)

@@ -17,6 +17,8 @@ private let needPercentFormatter: NumberFormatter = {
 
 struct NeedTrendWidget: View {
     @Environment(AppPreferences.self) private var appPreferences
+    /// «Ocultar montos» del Panel (`AmountPrivacy`).
+    @Environment(\.amountsHidden) private var amountsHidden
     let trendPoints: [NeedTrendPoint]
     /// Las necesidades del filtro: un conjunto, nunca su `.first` (`NeedSelectionLogic`).
     let selectedNeeds: Set<SubcategoryNeed>
@@ -261,7 +263,7 @@ struct NeedTrendWidget: View {
                             )
 
                             if variationDisplay.showsPreviousAmountLabel, let prevAmount = previousTotalAmount {
-                                Text("vs \(appPreferences.number(prevAmount))")
+                                Text("vs \(AmountPrivacy.text(appPreferences.number(prevAmount), hidden: amountsHidden))")
                                     .font(DS.Typography.caption)
                                     .foregroundStyle(.thSecondaryText)
                                     .lineLimit(1)
@@ -405,6 +407,8 @@ struct NeedTrendWidget: View {
 struct NeedTrendChartView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    /// «Ocultar montos» del Panel (`AmountPrivacy`): ejes, promedios y total del tooltip sin cifras.
+    @Environment(\.amountsHidden) private var amountsHidden
 
     let points: [NeedTrendPoint]
     let selectedNeeds: Set<SubcategoryNeed>
@@ -574,7 +578,7 @@ struct NeedTrendChartView: View {
                     .foregroundStyle(.thSecondaryText.opacity(0.1))
                 if let amount = value.as(Double.self) {
                     AxisValueLabel {
-                        Text(YalaFormatter.axisK(amount, domain: yDomain))
+                        Text(AmountPrivacy.text(YalaFormatter.axisK(amount, domain: yDomain), hidden: amountsHidden))
                             .font(DS.Typography.captionSmall)
                             .foregroundStyle(.thSecondaryText)
                     }
@@ -636,7 +640,7 @@ struct NeedTrendChartView: View {
                                     .foregroundStyle(Color.secondary)
                                 Spacer()
                                 Text(
-                                    appPreferences.currency(selectedData.total, currencyCode: currencyCode)
+                                    AmountPrivacy.text(appPreferences.currency(selectedData.total, currencyCode: currencyCode), hidden: amountsHidden)
                                 )
                                 .font(DS.Typography.labelTiny)
                                 .foregroundStyle(Color.primary)
@@ -651,7 +655,7 @@ struct NeedTrendChartView: View {
                                         .foregroundStyle(Color.secondary)
                                     Spacer()
                                     Text(
-                                        appPreferences.currency(avg, currencyCode: currencyCode)
+                                        AmountPrivacy.text(appPreferences.currency(avg, currencyCode: currencyCode), hidden: amountsHidden)
                                     )
                                     .font(DS.Typography.labelTiny)
                                     .foregroundStyle(Color.primary)
@@ -831,6 +835,7 @@ struct NeedTrendChartView: View {
     }
 
     private func formatAxisAmount(_ value: Double) -> String {
+        if amountsHidden { return AmountPrivacy.mask }
         let absValue = abs(value)
         let sign = value < 0 ? "-" : ""
         if absValue >= 1000 {

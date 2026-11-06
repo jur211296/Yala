@@ -16,6 +16,8 @@ struct PieChartVariationHeader: View {
     // MARK: - Settings
 
     @Environment(AppPreferences.self) private var appPreferences
+    /// «Ocultar montos» del Panel (`AmountPrivacy`).
+    @Environment(\.amountsHidden) private var amountsHidden
 
     // MARK: - Properties
 
@@ -126,7 +128,7 @@ struct PieChartVariationHeader: View {
     // MARK: - Helpers
 
     private func formattedCurrency(_ value: Double) -> String {
-        appPreferences.currency(value, currencyCode: currencyCode)
+        AmountPrivacy.text(appPreferences.currency(value, currencyCode: currencyCode), hidden: amountsHidden)
     }
 }
 
