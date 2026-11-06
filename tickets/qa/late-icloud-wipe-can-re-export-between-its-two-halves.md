@@ -1,10 +1,10 @@
 ---
 id: late-icloud-wipe-can-re-export-between-its-two-halves
-status: backlog
+status: qa
 priority: medium
 area: "modo-nube, onboarding"
 created: 2026-09-10
-updated: 2026-10-08
+updated: 2026-11-06
 source: "review adversarial del paso 4 (`welcome-private-fresh-start-skips-icloud-check`), lente CloudKit"
 ---
 
@@ -65,3 +65,45 @@ en `.icloud` desarma en vez de reintentar (`SignOutWipeHookTests.baseDeleteFails
 - Sigue pendiente lo de fondo. El camino tardío sigue llamando a `DataWipeService.wipeAllUserData` con el espejo adjunto (`ContentView.swift:2288`), y no existe un boot-wipe por archivos antes del mount. La reanudación corre con el espejo ya montado, así que la ventana de re-exportación sigue abierta. Criterios 1 y 2 sin cumplir.
 
 Triage 2026-10-08: abierto · medium → medium · la reanudación al arrancar mitiga la reaparición, pero el borrado tardío sigue borrando filas con el espejo adjunto (`ContentView.swift:2288`) y no hay boot-wipe por archivos.
+
+## Arreglo (2026-11-06, lote nube 2.3)
+
+**Causa:** tras borrar la zona, un kill dejaba el corpus local entero; el arranque siguiente montaba el espejo
+(`hasShownWelcomeChooser` ya puesto apaga el neutro que arma el borrado) y lo re-exportaba antes de que la reanudación
+borrara las filas.
+
+**Qué cambia:** mientras un borrado armado tenga la zona ya borrada (`StorageModePersistence.hasICloudCorpusWipeCrossedTheZone`),
+el store monta sin espejo (`SwiftDataConfiguration.shouldMountNeutralForCorpusWipeCrossingTheZone`, confinado a `.icloud`
+sin armar), así que la reanudación borra sin nadie que re-exporte. Si el borrado termina en ese proceso sin espejo, en vez
+del onboarding sale «reabre Yala» con el destino guardado (`settleAfterLateICloudWipe`): el primer corpus no se escribe
+sin espejo, como en la puerta del Welcome. Al terminar o al quedar «a medias», la marca se va con el arm y el espejo
+vuelve.
+
+**Criterios:** 1 (kill entre mitades → los datos no vuelven) cumplido; 3 (la puerta sigue igual) cumplido. **2 queda
+parcial, a propósito:** sin kill, el borrado tardío sigue borrando filas con el espejo adjunto en el mismo proceso; el
+boot-wipe por archivos que lo quitaría del todo exige su propio relanzamiento fuera de `CloudSessionSignOut` y se deja
+aquí anotado.
+
+**Tests:** `CorpusWipeCrossingTheZoneMountTests` (predicado, confinamiento, adaptador sobre el store real con el arm del
+aviso tardío, marca huérfana inerte) y `CorpusWipeCrossingTheZoneWiringTests` (el cierre pide reabrir antes de bajar el
+onboarding).
+
+**QA en el iPhone (Yala Dev):** usar Yala en local, encender iCloud con datos viejos, elegir «empezar de cero» en el aviso
+y cerrar Yala a la fuerza justo tras «Borrando…»; al reabrir sale «reabre Yala», y al reabrir otra vez el onboarding
+empieza vacío y los datos viejos no vuelven.
+
+**Lo que añadió la review adversarial del mismo día (tres hallazgos, los tres corregidos):**
+- **«A medias» también monta sin espejo** hasta que la persona decide («Terminar de borrar» o «Déjalo así»): una
+  reanudación parada en los cambios de grupos pasaba a «a medias» sin preguntar, y el arranque siguiente re-exportaba.
+  El aviso tardío lo pregunta en cada arranque, así que no queda en silencio. «Restaurar» del Welcome retira la marca,
+  así que no hay bucle de relanzamiento.
+- **El aviso «reabre Yala para sincronizar con iCloud» no sale** con ese neutro (`shouldOfferICloudRestart`, término
+  `corpusWipeCrossedTheZone`): reabrir no lo quita y salía en cada arranque.
+- **El cierre del aviso tardío no presenta nada**: guarda el destino, y `presentNextOnboardingScreen` (con su momento de
+  siempre) pide reabrir si el montaje es neutro. Encender el Welcome con la hoja del aviso cerrándose arriesgaba dos
+  presentaciones en el mismo ancla.
+
+**Residual sin cambio:** en la activación de Yala completo, quien tras el kill elige «Privado» descarta el borrado
+pendiente sin borrar las filas importadas (`afterEmptyMeasure` → `discardPendingWipe`): igual que antes de este arreglo.
+Y un dispositivo con un borrado a medias que active la nube desde Ajustes corre la ida con el montaje sin espejo, como ya
+pasaba con el neutro de solo-grupos.

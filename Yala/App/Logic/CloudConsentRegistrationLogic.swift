@@ -15,9 +15,12 @@
 //  regla §prefs de `.claude/rules/swiftdata-cloudkit.md`). Solo mueve la escritura al punto del flujo en
 //  que la ruta ya se conoce.
 //
-//  El alta born-cloud queda FUERA a propósito: su ruta ya se conoce al aceptar (no pasa por el guard) y
-//  su claim VERIFICA el registro (paso 5 de `BornCloudSignUpService`), así que allí sigue escribiendo la
-//  pantalla. Por eso el `pending` es un parámetro y no una constante: en born-cloud llega ya consumido.
+//  El alta born-cloud ENTRÓ el 2026-11-06 (ticket `borncloud-consent-epoch-written-before-the-guard-decides`).
+//  Se la dejó fuera porque «su ruta ya se conoce al aceptar», y no era verdad: el claim puede contestar
+//  `existing_stable`, y entonces el alta sigue por el guard cross-cuenta, que puede acabar en
+//  `.blockedForeignData` o en la puerta de Grupos. Hoy el alta también deja el epoch PENDIENTE y lo escribe
+//  cuando el claim confirma una cuenta nueva (`bornCloudWritesConsent`); si el claim la reencamina, escribe el
+//  guard, como en cualquier re-entrada.
 //
 
 import Foundation
@@ -67,6 +70,16 @@ nonisolated enum CloudConsentRegistrationLogic {
         return true
     }
 
+    // MARK: - El alta
+
+    /// ¿El alta escribe el consentimiento pendiente tras este claim? Solo con una cuenta NUEVA y de quien está delante
+    /// (`.seedBornCloud`). `routeReturningUser` sigue al guard cross-cuenta, que decide por la tabla de arriba; un
+    /// seguidor (`waitForLeader`) no ha entrado a nada, y lo que la variante B enseñe tampoco. El pendiente se queda
+    /// sin consumir: un reintento o la re-entrada lo escriben con el T0 de la aceptación.
+    static func bornCloudWritesConsent(after action: AccountClaimDecision.AuthAction) -> Bool {
+        action == .seedBornCloud
+    }
+
     // MARK: - Pasar de entrar a crear la cuenta en la misma pasada (UX 2.2 · lote decidido 15)
 
     /// Qué pasa con el consentimiento cuando, en la MISMA pantalla, la persona pasa de «Entrar con…» a «Crear cuenta
@@ -83,17 +96,16 @@ nonisolated enum CloudConsentRegistrationLogic {
         consentAcceptedThisPass ? .alreadyAccepted : .askConsent
     }
 
-    /// El registro GDPR del ALTA cuando no se vuelve a preguntar. El alta escribe al aceptar porque su ruta ya se conoce;
-    /// aquí la aceptación fue la de la re-entrada, que dejó su escritura PENDIENTE hasta que el guard cross-cuenta
-    /// decidiera. Ese guard ya no va a decidir nada —no hay adopt—, y la ruta ahora es el alta: se escribe en este
-    /// momento, una sola vez, y se consume el pendiente para que ningún otro punto lo escriba después.
+    /// El registro GDPR del ALTA, en el punto que `bornCloudWritesConsent` elige. Vale igual para la aceptación del
+    /// alta y para la de la re-entrada que pasó al alta sin volver a preguntar (`signUpSwitch == .alreadyAccepted`): las
+    /// dos dejaron el epoch PENDIENTE. Se escribe una sola vez y se consume el pendiente, para que ningún otro punto lo
+    /// escriba después.
     ///
-    /// Sin pendiente no se escribe: o ya se escribió (no hay segunda aceptación que registrar) o no hubo aceptación, y
-    /// entonces `signUpSwitch` habría pedido el consentimiento.
+    /// Sin pendiente no se escribe: o ya se escribió (no hay segunda aceptación que registrar) o no hubo aceptación.
     ///
     /// - Returns: `true` si esta llamada escribió.
     @discardableResult
-    static func persistForSignUpSwitch(pending: inout Bool, persist: () -> Void) -> Bool {
+    static func persistForNewAccount(pending: inout Bool, persist: () -> Void) -> Bool {
         guard pending else { return false }
         pending = false
         persist()

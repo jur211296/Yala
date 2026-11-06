@@ -331,7 +331,7 @@ struct BornCloudSignUpOrderWiringTests {
         let body = try Self.body(of: "private func runBornCloudFlow() async {",
                                  in: try Self.source(Self.viewPath))
         let signIn = try #require(body.range(of: "ensureSignedIn()"))
-        let claim = try #require(body.range(of: "service.signUp()"))
+        let claim = try #require(body.range(of: "service.signUp("))
         let activate = try #require(body.range(of: "service.activateBornCloudStorage("))
         // R2: la vista le pasa el TESTIGO de mount de este proceso. Sin ese argumento la primitiva tendría
         // que leerlo por dentro y su tabla dejaría de ser testeable sin montar un container.

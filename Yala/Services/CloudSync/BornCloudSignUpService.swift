@@ -101,7 +101,8 @@ enum BornCloudBreadcrumb {
         logger.notice("BornCloud claimStampSkipped reason=nil-userID — el runtime quedaría .idle post-relaunch")
     }
 
-    /// El consent no está registrado al llegar aquí (`CloudConsentView` lo escribe ANTES). RUIDOSO y NUNCA
+    /// El consent no está registrado tras sembrar la cuenta (lo escribe el paso 5 o, fuera del Welcome, la pantalla al
+    /// aceptar). RUIDOSO y NUNCA
     /// aborta: el alta no se bloquea por un fallo de trazabilidad, pero tiene que dejar rastro. `missing`
     /// nombra qué falta (`acceptedAt` / `textVersion` / ambas).
     static func consentMissing(_ missing: String) {
@@ -213,7 +214,15 @@ final class BornCloudSignUpService {
     /// resultado, porque los tres efectos van a almacenes distintos.
     ///
     /// NUNCA lanza. NUNCA aborta por el consent (paso 5): eso es trazabilidad, no una precondición.
-    func signUp() async -> BornCloudSignUpOutcome {
+    ///
+    /// - Parameter registerConsentForNewAccount: escribe el consentimiento que la pantalla dejó PENDIENTE. Solo se
+    ///   llama cuando el claim confirma que la cuenta es NUEVA y de quien está delante
+    ///   (`CloudConsentRegistrationLogic.bornCloudWritesConsent`). Hasta el 2026-11-06 el Welcome lo escribía al
+    ///   aceptar, y un claim `existing_stable` que acababa en `.blockedForeignData` o en la puerta de Grupos dejaba el
+    ///   epoch de quien tenía el móvil en el iCloud-KV del dueño (ticket
+    ///   `borncloud-consent-epoch-written-before-the-guard-decides`). El valor por defecto es para quien ya lo escribió
+    ///   al aceptar (la activación de Yala completo, con la sesión de la propia persona).
+    func signUp(registerConsentForNewAccount: () -> Void = {}) async -> BornCloudSignUpOutcome {
         // Sin token, caducada solo si el SDK BORRÓ la sesión. Si la conserva, la renovación no volvió (sin red) y es
         // pasajero: «Activar Yala completo» enseña «Revisa tu conexión» con «Reintentar» en vez de «Tu sesión caducó», y
         // el Welcome no cierra la sesión (ticket `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`).
@@ -299,11 +308,15 @@ final class BornCloudSignUpService {
             BornCloudBreadcrumb.claimStampSkippedNoUserID()
         }
 
-        // 5) Consent: solo se VERIFICA. Lo escribe `CloudConsentView` antes de llegar aquí
-        //    (`CloudConsentView.swift:103-110`, vía `PreferenceSyncService.set`, que espeja en el mismo
-        //    `UserDefaults` que se lee aquí). Falta ⇒ ruido, JAMÁS abortar (molde `runAdoptFlow` paso
-        //    5-bis): el registro GDPR es append-only y su ausencia es un fallo de traza, no del alta.
-        verifyConsentRegistered()
+        // 5) Consent: se escribe el pendiente y se VERIFICA, solo si la cuenta es NUEVA y de quien está delante. Las
+        //    demás salidas no son un alta: `existing_stable` sigue al guard cross-cuenta, que escribe él si deja
+        //    pasar (`CloudConsentRegistrationLogic.placement`), y un seguidor no ha entrado a nada. Falta ⇒ ruido,
+        //    JAMÁS abortar (molde `runAdoptFlow` paso 5-bis): el registro GDPR es append-only y su ausencia es un
+        //    fallo de traza, no del alta.
+        if CloudConsentRegistrationLogic.bornCloudWritesConsent(after: action) {
+            registerConsentForNewAccount()
+            verifyConsentRegistered()
+        }
 
         // 6) KPI de registros/día del alta nube, one-shot por `userID` dentro del servicio. SOLO con
         //    `created` = fila NUEVA server-side (paridad exacta con `MigrationWorkExecutor.performClaim`):

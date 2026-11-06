@@ -33,8 +33,9 @@
 //  la ESCRITURA se difiere hasta que el guard cross-cuenta dice la ruta (tabla:
 //  `CloudConsentRegistrationLogic`). Antes se escribía al aceptar, cuando el único modo que
 //  `PreferenceSyncService` podía resolver era el `.icloud` del DUEÑO ⇒ un intento cross-cuenta que
-//  terminaba BLOQUEADO dejaba el epoch de la otra persona en el iKV de él. El alta born-cloud escribe al
-//  aceptar como siempre: su ruta ya se conoce ahí y su claim la VERIFICA.
+//  terminaba BLOQUEADO dejaba el epoch de la otra persona en el iKV de él. Desde el 2026-11-06 el alta
+//  born-cloud tampoco escribe al aceptar: su claim puede contestar `existing_stable` y acabar en el mismo
+//  guard. Escribe cuando el claim confirma una cuenta nueva (`BornCloudSignUpService.signUp`, paso 5).
 //
 //  Los flags de onboarding se marcan TEMPRANO (`onAdoptStarted`, antes de conducir
 //  la máquina): un kill a mitad del adopt aterriza en MainTab con la card de
@@ -140,11 +141,14 @@ struct WelcomeCloudSignInView: View {
 
     @State private var phase: CloudWelcomeSignInPhase = .intro
     @State private var showConsent = false
-    /// M0 · el usuario ACEPTÓ el consent y su epoch todavía no está escrito. Solo la RE-ENTRADA lo deja
-    /// pendiente: hasta que el guard cross-cuenta decida, escribirlo resolvería el destino con el modo
-    /// del DUEÑO. Se consume al escribir (una sola vez — el epoch conserva su T0 aunque el flujo
-    /// reintente).
+    /// M0 · el usuario ACEPTÓ el consent y su epoch todavía no está escrito. Las tres entradas lo dejan
+    /// pendiente: hasta que la ruta se conozca, escribirlo resolvería el destino con el modo del DUEÑO. Se
+    /// consume al escribir (una sola vez — el epoch conserva su T0 aunque el flujo reintente).
     @State private var consentPendingPersistence = false
+    /// La hora en que la persona aceptó: el epoch del registro, aunque se escriba después (ticket
+    /// `borncloud-consent-epoch-written-before-the-guard-decides`). Escribirlo con la hora del claim o del guard
+    /// falsearía la traza GDPR, que el cutover re-emite tal cual.
+    @State private var consentAcceptedAt: Date?
     /// La persona aceptó el consentimiento EN ESTA PANTALLA (esta pasada). Si después pasa de entrar a crear la cuenta, no
     /// se le vuelve a pedir (`CloudConsentRegistrationLogic.signUpSwitch`).
     @State private var consentAcceptedThisPass = false
@@ -219,6 +223,7 @@ struct WelcomeCloudSignInView: View {
                 showConsent = false
                 consentBackArmed = false
                 consentAcceptedThisPass = true
+                consentAcceptedAt = .now
                 consentPendingPersistence = !persistsConsentOnAccept
                 launchFlow { await runFlowAfterConsent() }
             }, onCancel: {
@@ -310,13 +315,13 @@ struct WelcomeCloudSignInView: View {
         }
     }
 
-    /// M0 · quién ESCRIBE el registro GDPR del consent. El alta born-cloud ya conoce su ruta al aceptar
-    /// (no pasa por el guard cross-cuenta) y su claim la VERIFICA (paso 5 de `BornCloudSignUpService`),
-    /// así que ahí escribe la pantalla, como siempre. La RE-ENTRADA no: su ruta la decide el guard
-    /// DESPUÉS del sign-in, y escribir antes deja el epoch de la invitada en el iKV del DUEÑO.
+    /// M0 · quién ESCRIBE el registro GDPR del consent. Ninguna entrada al aceptar: la RE-ENTRADA conoce su
+    /// ruta cuando decide el guard, DESPUÉS del sign-in, y escribir antes deja el epoch de la invitada en el iKV
+    /// del DUEÑO. El ALTA tampoco (2026-11-06): su claim puede contestar `existing_stable` y seguir por ese mismo
+    /// guard. Escribe el paso 5 de `BornCloudSignUpService` cuando el claim confirma una cuenta nueva.
     private var persistsConsentOnAccept: Bool {
         switch activeEntry {
-        case .bornCloud: true
+        case .bornCloud: false
         case .reentry:   false
         // La entrada que encamina el faro ES una re-entrada: su ruta también la decide el guard DESPUÉS del
         // sign-in, así que tampoco escribe al aceptar.
@@ -336,7 +341,15 @@ struct WelcomeCloudSignInView: View {
             at: point,
             routedBy: decision,
             pending: &consentPendingPersistence,
-            persist: { CloudConsentRegistrar.register() })
+            persist: { CloudConsentRegistrar.register(now: consentAcceptedAt ?? .now) })
+    }
+
+    /// El registro del ALTA: lo llama `BornCloudSignUpService` solo cuando el claim confirma una cuenta nueva
+    /// (`CloudConsentRegistrationLogic.bornCloudWritesConsent`), con el T0 de la aceptación.
+    private func persistConsentForNewAccount() {
+        CloudConsentRegistrationLogic.persistForNewAccount(pending: &consentPendingPersistence) {
+            CloudConsentRegistrar.register(now: consentAcceptedAt ?? .now)
+        }
     }
 
     /// Qué corre al aceptar el consent. Es el ÚNICO punto donde el flujo se bifurca por entrada.
@@ -774,7 +787,7 @@ struct WelcomeCloudSignInView: View {
     /// Dos defensas para un mismatch que llegara desde el ALTA, hoy inalcanzable (la variante B del claim es
     /// solo de la re-entrada) pero mapeado por `BornCloudSignUpFlow`: el alta NO suelta la sesión, así que se
     /// suelta aquí antes de firmar —si no, `ensureSignedIn` reusaría la de Google para «entrar con Apple»—; y
-    /// su consentimiento se escribió al aceptar, para OTRA ruta, así que el del adopt se vuelve a pedir.
+    /// si su consentimiento ya se escribió, fue para OTRA ruta, así que el del adopt se vuelve a pedir.
     private func signInWithAccountMethod(_ method: CloudSignInProvider, from exits: ProviderMismatchLogic.Exits) {
         entryOverride = .reentry(method)
         let consentStillPending = consentPendingPersistence
@@ -811,8 +824,9 @@ struct WelcomeCloudSignInView: View {
     /// el intro del alta, se descarta sin usarse.
     ///
     /// **Y el consentimiento tampoco se repite si ya se aceptó en esta pasada** (lote decidido 2.2 · 15): es el mismo texto
-    /// que la persona aceptó hace un momento antes de «Entrar con…». Se registra para el alta en este punto —la regla
-    /// vive en `CloudConsentRegistrationLogic`— y el alta arranca sin pasar por el intro.
+    /// que la persona aceptó hace un momento antes de «Entrar con…». Su registro sigue PENDIENTE y lo escribe el alta
+    /// cuando el claim confirme una cuenta nueva —la regla vive en `CloudConsentRegistrationLogic`—, así que el alta
+    /// arranca sin pasar por el intro y sin escribir nada aquí.
     private func switchToSignUp(with signUpProvider: CloudSignInProvider) {
         chosenProvider = signUpProvider
         entryOverride = .bornCloud
@@ -821,9 +835,6 @@ struct WelcomeCloudSignInView: View {
         case .askConsent:
             showConsent = true
         case .alreadyAccepted:
-            CloudConsentRegistrationLogic.persistForSignUpSwitch(pending: &consentPendingPersistence) {
-                CloudConsentRegistrar.register()
-            }
             MetricsService.cloudConsentAccepted(path: CloudMigrationController.ConsentPath.bornCloud.rawValue)
             launchFlow { await runBornCloudFlow() }
         }
@@ -1156,7 +1167,8 @@ struct WelcomeCloudSignInView: View {
         guard await ensureSignedIn() else { return }
 
         let service = BornCloudSignUpService(session: LiveCloudSessionProvider())
-        switch BornCloudSignUpFlow.step(for: await service.signUp()) {
+        switch BornCloudSignUpFlow.step(for: await service.signUp(
+            registerConsentForNewAccount: { persistConsentForNewAccount() })) {
         case .activateStorageAndRelaunch:
             // m387 · el alta creó la cuenta de quien está delante, y desde R2 sobre un montaje neutro no relanza: sin
             // esto, el consentimiento de Grupos esperaba a la pestaña o a un arranque.

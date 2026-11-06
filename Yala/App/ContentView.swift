@@ -2861,6 +2861,17 @@ struct ContentView: View {
         cancelWipeGrace()
         hasExistingData = checkHasExistingData()
         hasPersonalData = checkHasPersonalData()
+        // **Si este proceso montó sin espejo, el onboarding no corre aquí** (ticket
+        // `late-icloud-wipe-can-re-export-between-its-two-halves`). Pasa cuando el borrado terminó en un arranque que montó
+        // neutro para que nada re-exportara (`shouldMountNeutralForCorpusWipeCrossingTheZone`). Se guarda el destino y el
+        // `onChange` de `hasCompletedOnboarding` lo encamina como siempre: `presentNextOnboardingScreen` ve el montaje
+        // neutro y pide reabrir en vez de abrir el onboarding. No se enciende aquí ninguna presentación: la hoja del aviso
+        // tardío puede estar cerrándose (review adversarial del 2026-11-06, regla (4) de Presentaciones).
+        if WelcomeMirrorRelaunchLogic.shouldRelaunch(
+            destination: .privateOnboarding,
+            mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision) {
+            WelcomePendingDestinationStore.set(.privateOnboarding)
+        }
         hasCompletedOnboarding = false
     }
 
@@ -3284,7 +3295,19 @@ struct ContentView: View {
         if let pending = WelcomePendingDestinationStore.consume() {
             switch pending {
             case .privateOnboarding:
-                showOnboarding = true
+                // **Con el montaje sin espejo, el onboarding privado no corre: se pide reabrir** (ticket
+                // `late-icloud-wipe-can-re-export-between-its-two-halves`). Lo deja así el borrado tardío que termina en un
+                // arranque neutro (`settleAfterLateICloudWipe`). El destino se vuelve a guardar para el arranque siguiente,
+                // que ya monta el espejo: el neutro de ese borrado se retiró al terminarlo, así que no hay bucle.
+                if WelcomeMirrorRelaunchLogic.shouldRelaunch(
+                    destination: .privateOnboarding,
+                    mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision) {
+                    WelcomePendingDestinationStore.set(.privateOnboarding)
+                    welcomeFlowInitialStep = .mirrorRelaunch
+                    showWelcomeFlow = true
+                } else {
+                    showOnboarding = true
+                }
             case .restoreICloud:
                 showWelcomeRestore = true
             case .inviteRecovery:
