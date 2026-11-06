@@ -28,6 +28,9 @@ repites 3 veces o más en el período».
 
 Código: `AntExpensesCalculator`; tests `AntExpensesCalculatorTests` y `ProductividadLote23UITests`.
 
+Decisión de Jürgen (2026-11-06): esta tarjeta gratis se queda para todos; **Pro tendrá además una versión mejorada con
+IA**, que va en su propio ticket (`insights-ant-expenses-ai-version-for-pro`).
+
 ## Guion de QA para Jürgen (iPhone de pruebas, Yala Dev)
 
 1. Abre **Estadísticas**. Deja el período en **Este mes**.

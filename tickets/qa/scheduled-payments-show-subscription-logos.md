@@ -24,6 +24,8 @@ No son imágenes de las marcas: es un distintivo propio de Yala (licencia de mar
 ## Qué queda fuera
 
 - Los widgets de inicio y el widget de pagos del Panel siguen con el icono de la subcategoría.
+- Logos reales (imágenes de las marcas): Jürgen los quiere (2026-11-06), pero van en su propio ticket
+  (`scheduled-payments-real-brand-logos`) porque antes hay que revisar licencias. Aquí se queda el distintivo propio.
 - El logo elegido a mano no viaja por el modo Nube entre aparatos (el automático por nombre sí se ve en todos).
 - **Antes de publicar 2.3**: desplegar a producción el campo nuevo `CD_brandLogoID` de `CD_ScheduledPayment` en iCloud
   (ya está en los cuatro `.ckdb`).

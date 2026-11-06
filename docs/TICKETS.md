@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1187)
+## Index (1189)
 
 | id | status | path |
 |---|---|---|
@@ -316,6 +316,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | exchange-rates-duplicate-per-day-across-installs | backlog | tickets/backlog/exchange-rates-duplicate-per-day-across-installs.md |
 | group-expense-from-a-receipt-with-ai | qa | tickets/qa/group-expense-from-a-receipt-with-ai.md |
 | insights-small-recurring-spending-card | qa | tickets/qa/insights-small-recurring-spending-card.md |
+| insights-ant-expenses-ai-version-for-pro | backlog | tickets/backlog/insights-ant-expenses-ai-version-for-pro.md |
 | latest-rates-cache-ignores-rate-rows-from-the-mirror-and-the-pull | backlog | tickets/backlog/latest-rates-cache-ignores-rate-rows-from-the-mirror-and-the-pull.md |
 | cash-flow-month-capsule-and-balance-widget-pill-sign-a-zero | backlog | tickets/backlog/cash-flow-month-capsule-and-balance-widget-pill-sign-a-zero.md |
 | cutover-marker-without-a-session-locks-out-the-second-device | backlog | tickets/backlog/cutover-marker-without-a-session-locks-out-the-second-device.md |
@@ -1010,6 +1011,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | scheduled-payments-notif-dedup | done | tickets/done/scheduled-payments-notif-dedup.md |
 | scheduled-payments-period-wheel-closes-the-sheet | done | tickets/done/scheduled-payments-period-wheel-closes-the-sheet.md |
 | scheduled-payments-show-subscription-logos | qa | tickets/qa/scheduled-payments-show-subscription-logos.md |
+| scheduled-payments-real-brand-logos | backlog | tickets/backlog/scheduled-payments-real-brand-logos.md |
 | secondary-currency-prompt-uitest-red-on-iphone-se | done | tickets/done/secondary-currency-prompt-uitest-red-on-iphone-se.md |
 | secondary-entry-healing-writes-owner-not-session | discarded | tickets/discarded/secondary-entry-healing-writes-owner-not-session.md |
 | secondary-groups-off-wipes-owner | discarded | tickets/discarded/secondary-groups-off-wipes-owner.md |
