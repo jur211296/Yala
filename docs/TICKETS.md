@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1171)
+## Index (1175)
 
 | id | status | path |
 |---|---|---|
@@ -248,8 +248,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-activation-master-toggle-mirror-never-reaches-the-apple-id-kv | backlog | tickets/backlog/cloud-activation-master-toggle-mirror-never-reaches-the-apple-id-kv.md |
 | cloud-activation-stalls-without-uploading-until-relaunch | done | tickets/done/cloud-activation-stalls-without-uploading-until-relaunch.md |
 | cloud-activation-time-is-unmeasured-between-the-claim-and-the-cutover | backlog | tickets/backlog/cloud-activation-time-is-unmeasured-between-the-claim-and-the-cutover.md |
+| cloud-activation-uploads-thousands-of-items-for-a-few-records | backlog | tickets/backlog/cloud-activation-uploads-thousands-of-items-for-a-few-records.md |
 | cloud-activation-verify-loops-on-accounts | qa | tickets/qa/cloud-activation-verify-loops-on-accounts.md |
-| cloud-activation-waits-for-icloud-with-no-way-out | qa | tickets/qa/cloud-activation-waits-for-icloud-with-no-way-out.md |
+| cloud-activation-waits-for-icloud-with-no-way-out | done | tickets/done/cloud-activation-waits-for-icloud-with-no-way-out.md |
 | cloud-attest-notice-does-not-cover-a-gateway-rejected-token | backlog | tickets/backlog/cloud-attest-notice-does-not-cover-a-gateway-rejected-token.md |
 | cloud-engine-can-start-with-a-reverse-abort-pending | backlog | tickets/backlog/cloud-engine-can-start-with-a-reverse-abort-pending.md |
 | cloud-fx-rates-blob-two-faces | done | tickets/done/cloud-fx-rates-blob-two-faces.md |
@@ -528,6 +529,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-history-cutoff-needs-synced-state | discarded | tickets/discarded/groups-history-cutoff-needs-synced-state.md |
 | groups-import-splitwise-tricount | backlog | tickets/backlog/groups-import-splitwise-tricount.md |
 | groups-in-group-search | backlog | tickets/backlog/groups-in-group-search.md |
+| groups-intro-sheet-comes-back-after-closing-it | backlog | tickets/backlog/groups-intro-sheet-comes-back-after-closing-it.md |
 | groups-invite-neutral-gate-has-no-way-out-when-the-exit-cell-cannot-wipe | done | tickets/done/groups-invite-neutral-gate-has-no-way-out-when-the-exit-cell-cannot-wipe.md |
 | groups-invite-on-a-mirrored-store-crosses-data | done | tickets/done/groups-invite-on-a-mirrored-store-crosses-data.md |
 | groups-invite-skips-unirme-sheet-if-onboarded | done | tickets/done/groups-invite-skips-unirme-sheet-if-onboarded.md |
@@ -601,9 +603,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | hoja-del-saldo-vivo-ignora-los-filtros-de-sesion | done | tickets/done/hoja-del-saldo-vivo-ignora-los-filtros-de-sesion.md |
 | home-screen-budgets-widget-ignores-favorites | done | tickets/done/home-screen-budgets-widget-ignores-favorites.md |
 | hot-pink-fills-with-white-text-are-below-aa | backlog | tickets/backlog/hot-pink-fills-with-white-text-are-below-aa.md |
-| icloud-drive-off-before-launch-starts-empty-and-silent | qa | tickets/qa/icloud-drive-off-before-launch-starts-empty-and-silent.md |
+| icloud-drive-off-before-launch-starts-empty-and-silent | done | tickets/done/icloud-drive-off-before-launch-starts-empty-and-silent.md |
 | icloud-export-error-latch-never-clears | backlog | tickets/backlog/icloud-export-error-latch-never-clears.md |
 | icloud-kv-prefs-cross-sessions-on-a-lent-phone | done | tickets/done/icloud-kv-prefs-cross-sessions-on-a-lent-phone.md |
+| icloud-restore-preview-counts-categories-twice | backlog | tickets/backlog/icloud-restore-preview-counts-categories-twice.md |
 | icloud-screen-says-not-active-with-drive-off | done | tickets/done/icloud-screen-says-not-active-with-drive-off.md |
 | icloud-sync-status-treats-non-ck-failures-as-success | backlog | tickets/backlog/icloud-sync-status-treats-non-ck-failures-as-success.md |
 | identity-uuid-repair-can-commit-half-done-after-a-read-failure | backlog | tickets/backlog/identity-uuid-repair-can-commit-half-done-after-a-read-failure.md |
@@ -657,6 +660,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | invite-aasa-requires-s-param | backlog | tickets/backlog/invite-aasa-requires-s-param.md |
 | invite-and-app-notices-present-over-other-tab-sheets | done | tickets/done/invite-and-app-notices-present-over-other-tab-sheets.md |
 | invite-backend-stale-config | done | tickets/done/invite-backend-stale-config.md |
+| invite-join-button-covers-paste-with-a-long-link | backlog | tickets/backlog/invite-join-button-covers-paste-with-a-long-link.md |
 | invite-link-creation-blames-the-connection-for-any-rpc-failure | done | tickets/done/invite-link-creation-blames-the-connection-for-any-rpc-failure.md |
 | invite-link-five-causes-one-message | done | tickets/done/invite-link-five-causes-one-message.md |
 | invite-link-on-a-fresh-install-shows-the-welcome-first | done | tickets/done/invite-link-on-a-fresh-install-shows-the-welcome-first.md |
@@ -1034,7 +1038,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | sign-out-block-reason-is-only-logged-on-the-cloud-path | backlog | tickets/backlog/sign-out-block-reason-is-only-logged-on-the-cloud-path.md |
 | sign-out-blocked-by-a-surviving-session-already-dropped-the-account-caches | backlog | tickets/backlog/sign-out-blocked-by-a-surviving-session-already-dropped-the-account-caches.md |
 | sign-out-exits-do-not-verify-the-cloud-session-closed | done | tickets/done/sign-out-exits-do-not-verify-the-cloud-session-closed.md |
-| sign-out-in-place-leaves-a-screen-with-nothing-to-tap | qa | tickets/qa/sign-out-in-place-leaves-a-screen-with-nothing-to-tap.md |
+| sign-out-in-place-leaves-a-screen-with-nothing-to-tap | backlog | tickets/backlog/sign-out-in-place-leaves-a-screen-with-nothing-to-tap.md |
 | sign-out-migration-copy-does-not-fit-a-failed-or-waiting-migration | backlog | tickets/backlog/sign-out-migration-copy-does-not-fit-a-failed-or-waiting-migration.md |
 | sign-out-push-all-runs-a-sync-cycle-past-the-migration-gate | done | tickets/done/sign-out-push-all-runs-a-sync-cycle-past-the-migration-gate.md |
 | sign-out-wipe-abort-in-icloud-says-nothing | backlog | tickets/backlog/sign-out-wipe-abort-in-icloud-says-nothing.md |

@@ -1,10 +1,10 @@
 ---
 id: sign-out-in-place-leaves-a-screen-with-nothing-to-tap
-status: qa
+status: backlog
 priority: high
 area: cloud-sync, sign-out, welcome
 created: 2026-10-28
-updated: 2026-10-28
+updated: 2026-11-05
 source: card 7e60 del tablero (Jürgen, 2.º iPhone, 2026-10-28 ~06:14)
 ---
 
@@ -53,3 +53,21 @@ pantalla. Hace falta una medida en el iPhone (abajo).
 1. No toques nada en el elector. Cierra Yala del todo (desliza hacia arriba en el selector de apps) y ábrela.
 2. Si entra en la app con tu cuenta: el elector lo puso algo que no toca la marca del onboarding. Si vuelve al Welcome:
    algo borró esa marca. Cuéntame cuál de las dos.
+
+## Falla en dispositivo (2026-11-05)
+
+iPhone 14 (iOS 27.2), Yala Dev sobre `origin/2.2` (#809), cuenta en la nube (Google).
+
+1. **Sin red no se puede perder lo pendiente** (por diseño, `SignOutBlockedCopy`): con modo avión y un gasto sin subir,
+   a los ~90 s «No pudimos cerrar tu sesión · Tus últimos cambios no llegaron a la nube…» + OK. Yala no se cierra. La
+   opción «perder los cambios» del guion B3 solo existe en iCloud privado.
+2. **Crash al cerrar sesión con red.** El cierre se completa y a los 10 s Yala se cierra: `EXC_BREAKPOINT` en
+   SwiftData dentro de `ProfileViewModel.loadTransactions()` ← `loadData()` ← `setContext(_:)` ← `onAppear` de
+   `ProfileView.listColumn`, disparado por `SheetBridge.didDismissViewController`. Al cerrarse la hoja de
+   confirmación, Ajustes reaparece y hace `fetchCount` sobre el contexto del almacén que el cierre acaba de cambiar.
+   `.ips`: `~/Claude/entregas/2026-11-05-qa-dispositivo-fisico-device-mcp/evidencia/B3-crash-cerrar-sesion-Yala-2026-11-05-195252.ips`; vídeo `~/Claude/entregas/2026-11-05-qa-dispositivo-fisico-device-mcp/evidencia/B3-iphone-cerrar-sesion-crash.mov`.
+3. **«Ya tengo cuenta» deja en el Welcome.** Reabierta, Ya tengo cuenta › Google (misma cuenta) › «¡Tu cuenta está
+   lista!» › Empezar → vuelve al chooser del Welcome. Vídeo `~/Claude/entregas/2026-11-05-qa-dispositivo-fisico-device-mcp/evidencia/B3b-*`.
+
+Siguiente: arreglar 2 (Ajustes no lee el contexto viejo al reaparecer durante o tras el cambio de almacén; revisar
+los demás `setContext` que corren al cerrar la hoja) y 3. Review adversarial (cierre de sesión). Vuelve a QA con device.

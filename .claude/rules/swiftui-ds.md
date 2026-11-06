@@ -85,6 +85,13 @@ paths:
   `UIApplication.didBecomeActiveNotification` en `PanelActivationObserver`). `RecalculationDebouncer` (Grupos) tiene el
   mismo freno sin repetición; en las capturas del barrido Grupos sí cargó al relanzar en el iPad (no se buscó la carrera
   a propósito). Pin: `PanelColdLaunchActivationTests`.
+- **Un `PasteButton` con un `.onTapGesture` en un PADRE no recibe el dedo (medido el 2026-11-05, iPhone 14, iOS 27.2,
+  QA de Grupos L12-16).** `.dismissKeyboardOnTap()` colgado del `ScrollView` de «Pega tu enlace de invitación» se quedaba
+  con el toque y «Pegar» no hacía nada; quitado, pegaba. ⇒ en una pantalla con `PasteButton`, el gesto que oculta el
+  teclado va en una capa de fondo hermana del contenido (`.background { Color.clear.dismissKeyboardOnTap() }`), que sigue
+  ocultándolo al tocar fuera (medido en el mismo iPhone). El simulador no lo reproduce: allí el `PasteButton` ignora
+  todo toque sintético. Pin: `PasteButtonTapWiringTests`.
+
 - **`.sheet(isPresented:)` con el contenido sacado de OTRO `@State` sale VACÍA si el `body` no lee ese estado fuera del
   cierre (medido el 2026-10-17, iOS 27.0, lote 8).** Buscar ponía `detailTransaction = record` y `showsDetail = true` en
   el mismo toque, y la hoja se presentaba con `if let transaction = detailTransaction` en nil: el cierre se quedó con el

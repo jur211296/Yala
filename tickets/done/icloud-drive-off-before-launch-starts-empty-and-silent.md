@@ -1,12 +1,14 @@
 ---
 id: icloud-drive-off-before-launch-starts-empty-and-silent
-status: qa
+status: done
 priority: high
 area: "sync, icloud"
 created: 2026-10-19
 source: "QA guiado del 2026-10-19 (prueba A · i1o5) · card tablero-con-icloud-drive-apagado-antes-de-abrir-n5zw"
-updated: 2026-10-25
-qa-notes: pide iPhone real con iCloud Drive; el simulador no tiene iCloud
+updated: 2026-11-05
+qa-date: 2026-11-05
+qa-status: passed
+qa-notes: verificado en el iPhone 14 con iCloud real (montaje B2)
 ---
 
 # Con iCloud Drive apagado antes de abrir Yala, la app arranca vacía y no avisa de nada
@@ -99,3 +101,9 @@ equivocado: `yala-dev-with-drive-off-mirrored-to-the-production-container`.
 3. Abre Yala. Esperado: los mismos movimientos, sin ningún aviso. Ajustes › Sincronización iCloud: no dice «iCloud no está
    activo» (card 90yc).
 4. Crea un movimiento. Cierra Yala, enciende Drive, abre: el movimiento sigue, sin aviso de borrado.
+
+## Verificado en dispositivo (2026-11-05)
+
+iPhone 14 (iOS 27.2), Yala Dev sobre `origin/2.2` (#809), iCloud privado con los datos traídos de iCloud. Antes: 1
+registro y S/ -20.00. Yala cerrada → iCloud Drive apagado → al abrir, los mismos datos y ningún aviso. Un registro
+nuevo (S/ 15.00) con Drive apagado; Drive encendido → el registro sigue. Vídeo y capturas: `~/Claude/entregas/2026-11-05-qa-dispositivo-fisico-device-mcp/evidencia/B2-*`.

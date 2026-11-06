@@ -103,8 +103,14 @@ struct InviteRecoveryView: View {
 
                         Spacer(minLength: DS.Spacing.lg)
                     }
+                    .frame(maxWidth: .infinity)
+                    // El toque que oculta el teclado va en una capa de FONDO, hermana del contenido: colgado
+                    // del ScrollView era padre del PasteButton y se quedaba con su toque (iPhone 14, iOS 27.2,
+                    // 2026-11-05: «Pegar» no hacía nada; sin el gesto, pegaba).
+                    .background {
+                        Color.clear.dismissKeyboardOnTap()
+                    }
                 }
-                .dismissKeyboardOnTap()
 
                 VStack(spacing: DS.Spacing.sm) {
                     Spacer()

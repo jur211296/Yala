@@ -1,15 +1,6 @@
 {
-  "originHash" : "6e0042ecbac94ee3bfb26bc31d7ffea9f26a054856db06c7d54422fb9258b4cb",
+  "originHash" : "494be36f30dc3f3f1ebe530432f2203ca513fad426941c6188a9ddebc5807cf9",
   "pins" : [
-    {
-      "identity" : "annotatekit",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/ooolzhas/annotatekit",
-      "state" : {
-        "revision" : "a265f35e392cce8dce6fad00fb5dd03a2624be9b",
-        "version" : "1.0.0"
-      }
-    },
     {
       "identity" : "app-check",
       "kind" : "remoteSourceControl",
