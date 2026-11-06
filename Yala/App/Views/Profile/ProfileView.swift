@@ -1443,9 +1443,7 @@ struct ProfileView: View {
                         .stroke(showsProBadge ? Color.proGold : theme.accent, lineWidth: 4)
                         .frame(width: 100, height: 100)
 
-                    if let imageData = profileStorage.imageData,
-                        let uiImage = UIImage(data: imageData)
-                    {
+                    if let uiImage = profileStorage.image {
                         // User photo
                         Image(uiImage: uiImage)
                             .resizable()
