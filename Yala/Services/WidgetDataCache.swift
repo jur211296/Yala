@@ -106,6 +106,19 @@ struct WidgetTrendPoint: Codable {
     let balance: Double
 }
 
+/// «Mostrar proyectado» de los widgets Gasto y Saldo (card «Flujo proyectado en Tendencias y Panel», 2026-11-06): lo
+/// esperado por día desde mañana, sin filtros de sesión. Cada widget lo acumula sobre su propia curva.
+struct WidgetProjectedDay: Codable {
+    let date: Date
+    let income: Double
+    let expense: Double
+}
+
+struct WidgetProjectedFlow: Codable {
+    let days: [WidgetProjectedDay]
+    let isApproximate: Bool
+}
+
 /// Multi-granularity trend data for different periods
 struct WidgetTrendData: Codable {
     /// Daily points for short periods (last 90 days)
@@ -299,6 +312,10 @@ struct WidgetDataSnapshot: Codable {
     /// Los grupos (widget «Grupos», 2.2). **Opcional y con default**, como `paymentsMonth`: una foto anterior no lo trae
     /// y el widget dice «Abre Yala para ver tus grupos».
     var groups: WidgetGroupsSummary? = nil
+
+    /// Lo esperado por día para «Mostrar proyectado» (Gasto y Saldo). **Opcional y con default**: una foto anterior
+    /// no lo trae y el widget dibuja solo la curva real.
+    var projectedFlow: WidgetProjectedFlow? = nil
 
 }
 
@@ -783,7 +800,17 @@ enum WidgetDataCache {
             allTimeSummary: allTimeSummary,
             periodSummaries: periodSummaries,
             paymentsMonth: paymentsMonth,
-            groups: WidgetGroupsSnapshotBuilder.build(context: context)
+            groups: WidgetGroupsSnapshotBuilder.build(context: context),
+            projectedFlow: buildProjectedFlow(
+                allTransactions: allTransactions,
+                eligibleTransactions: eligibleTransactions,
+                scheduledPayments: scheduledPayments,
+                currencyCode: preferredCurrency,
+                adjustment: adjustment,
+                converter: converter,
+                context: context,
+                now: periodsNow
+            )
         )
 
         // Siri: todas las cuentas (las archivadas hacen falta para leer bien las líneas de una tarjeta), con el saldo
@@ -838,6 +865,50 @@ enum WidgetDataCache {
             transactions: transactions,
             interval: interval,
             adjustment: adjustment
+        )
+    }
+
+    /// «Mostrar proyectado» de Gasto y Saldo: lo esperado cada día desde mañana hasta fin de año (o una semana, si el
+    /// año acaba antes), sin filtros de sesión y con las cuentas de los widgets. Cada widget toma los días de su
+    /// período y los acumula sobre su propia curva (`WidgetInsightsLogic.projectedCumulative`).
+    static func buildProjectedFlow(
+        allTransactions: [TransactionItem],
+        eligibleTransactions: [TransactionItem],
+        scheduledPayments: [ScheduledPayment],
+        currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment,
+        converter: any CurrencyConverting,
+        context: ModelContext,
+        now: Date
+    ) -> WidgetProjectedFlow? {
+        let calendar = Calendar.current
+        guard let month = calendar.dateInterval(of: .month, for: now),
+              let year = calendar.dateInterval(of: .year, for: now),
+              let weekAhead = calendar.date(byAdding: .day, value: 8, to: calendar.startOfDay(for: now)) else { return nil }
+        let horizon = DateInterval(start: month.start, end: max(year.end, weekAhead).addingTimeInterval(-1))
+        let days = ProjectedFlowCalculator.futureDays(in: horizon, today: now, calendar: calendar)
+        guard !days.isEmpty else { return nil }
+        let inputs = ProjectedFlowBuilder.Inputs(
+            today: now,
+            calendar: calendar,
+            overdueWindowStart: month.start,
+            days: days,
+            allTransactions: allTransactions,
+            countedTransactions: eligibleTransactions,
+            hasSessionFilters: false,
+            scheduledPayments: scheduledPayments,
+            paymentFilter: .none,
+            currencyCode: currencyCode,
+            adjustment: adjustment,
+            converter: converter
+        )
+        let built = ProjectedFlowBuilder.build(inputs, context: context)
+        return WidgetProjectedFlow(
+            days: days.map { day in
+                let flow = built.flows[day] ?? ProjectedFlowCalculator.DayFlow()
+                return WidgetProjectedDay(date: day, income: flow.income, expense: flow.expense)
+            },
+            isApproximate: built.isApproximate
         )
     }
 

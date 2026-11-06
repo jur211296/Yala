@@ -82,6 +82,19 @@ struct WidgetTrendPoint: Codable {
     let balance: Double
 }
 
+/// «Mostrar proyectado» de los widgets Gasto y Saldo (card «Flujo proyectado en Tendencias y Panel», 2026-11-06): lo
+/// esperado por día desde mañana, sin filtros de sesión. Cada widget lo acumula sobre su propia curva.
+struct WidgetProjectedDay: Codable {
+    let date: Date
+    let income: Double
+    let expense: Double
+}
+
+struct WidgetProjectedFlow: Codable {
+    let days: [WidgetProjectedDay]
+    let isApproximate: Bool
+}
+
 /// Multi-granularity trend data for different periods
 struct WidgetTrendData: Codable {
     /// Daily points for short periods (last 90 days)
@@ -267,6 +280,10 @@ struct WidgetDataSnapshot: Codable {
     /// Los grupos (widget «Grupos», 2.2). **Opcional y con default**, como `paymentsMonth`: una foto anterior no lo trae
     /// y el widget dice «Abre Yala para ver tus grupos».
     var groups: WidgetGroupsSummary? = nil
+
+    /// Lo esperado por día para «Mostrar proyectado» (Gasto y Saldo). **Opcional y con default**: una foto anterior
+    /// no lo trae y el widget dibuja solo la curva real.
+    var projectedFlow: WidgetProjectedFlow? = nil
 }
 
 // MARK: - WidgetDataService
@@ -527,6 +544,11 @@ enum WidgetDataService {
     private static func filterPoints(_ points: [WidgetTrendPoint], for period: WidgetPeriod, asOf: Date?) -> [WidgetTrendPoint] {
         let interval = asOf.map { period.dateInterval(now: $0) } ?? period.dateInterval()
         return points.filter { interval.contains($0.date) }
+    }
+
+    /// Lo esperado por día para «Mostrar proyectado» (Gasto y Saldo). `nil` con una foto anterior a la proyección.
+    static func getProjectedFlow() -> WidgetProjectedFlow? {
+        loadSnapshot()?.projectedFlow
     }
 
     /// Returns the last update timestamp

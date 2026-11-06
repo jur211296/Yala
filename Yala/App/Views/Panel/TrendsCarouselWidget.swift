@@ -47,6 +47,26 @@ struct TrendsCarouselWidget: View {
         viewModel.processedTrendPoints.isEmpty
     }
 
+    /// «Ver proyectado» encendido (preferencia compartida con Tendencias) y con algo que enseñar.
+    private var isShowingProjection: Bool {
+        size != .small && appPreferences.showsProjectedFlow && viewModel.trendProjection != nil
+    }
+
+    /// La curva real: con la proyección, cortada en hoy (los movimientos con fecha futura van en la línea punteada).
+    private var displayedTrendPoints: [BarPoint] {
+        guard isShowingProjection else { return viewModel.processedTrendPoints }
+        return ProjectedFlowCalculator.pointsUpToToday(
+            viewModel.processedTrendPoints, today: .now, grouping: viewModel.trendGrouping, calendar: .current
+        )
+    }
+
+    private var displayedRawTrendPoints: [BarPoint] {
+        guard isShowingProjection else { return viewModel.rawTrendPoints }
+        return ProjectedFlowCalculator.pointsUpToToday(
+            viewModel.rawTrendPoints, today: .now, grouping: viewModel.trendGrouping, calendar: .current
+        )
+    }
+
     // MARK: - Body
 
     var body: some View {
@@ -55,12 +75,22 @@ struct TrendsCarouselWidget: View {
         } else {
             VStack(alignment: .leading, spacing: DS.Spacing.md) {
                 header
+                if !hasNoTrendData, viewModel.trendProjection != nil {
+                    ProjectedFlowToggle(isOn: isShowingProjection) {
+                        appPreferences.showsProjectedFlow.toggle()
+                    }
+                }
                 // Más alta en los iPhone grandes, con la misma proporción que en el pequeño (`AdaptiveChartHeight`).
                 AdaptiveChartHeight(base: 170) { chartHeight in
                     trendPage(chartHeight: chartHeight)
                         .frame(height: chartHeight)
                 }
+                if isShowingProjection, let projection = viewModel.trendProjection {
+                    ProjectedFlowCaption(projection: projection, currencyCode: currencyCode)
+                }
             }
+            // La píldora funde la línea punteada y la cifra (implícita: en el Panel un `withAnimation` no anima).
+            .dsAnimation(DS.Animation.appear, value: isShowingProjection, reduceMotion: reduceMotion)
             .panelCard()
         }
     }
@@ -177,8 +207,8 @@ struct TrendsCarouselWidget: View {
             .frame(maxWidth: .infinity)
         } else {
             TrendChartView(
-                trendPoints: viewModel.processedTrendPoints,
-                rawPoints: viewModel.rawTrendPoints,
+                trendPoints: displayedTrendPoints,
+                rawPoints: displayedRawTrendPoints,
                 yDomain: viewModel.processedYDomain,
                 grouping: viewModel.trendGrouping,
                 interval: viewModel.currentInterval,
@@ -189,7 +219,8 @@ struct TrendsCarouselWidget: View {
                 chartHeight: chartHeight,
                 liveAnchor: viewModel.trendLiveAnchor,
                 liveAnchorBreakdown: viewModel.trendLiveAnchorBreakdown,
-                liveAnchorIsApproximate: viewModel.trendLiveAnchorIsApproximate
+                liveAnchorIsApproximate: viewModel.trendLiveAnchorIsApproximate,
+                projectedPoints: isShowingProjection ? (viewModel.trendProjection?.points ?? []) : []
             )
         }
     }

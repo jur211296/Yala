@@ -29,6 +29,9 @@ struct PanelTrendData: Equatable {
     /// `true` si el saldo vivo se armó con alguna tasa que no era la de hoy. Lo pinta la hoja
     /// «¿Cuánto tienes hoy?», que existe precisamente porque el saldo es multimoneda.
     var trendLiveAnchorIsApproximate: Bool = false
+    /// «Ver proyectado» (card «Flujo proyectado en Tendencias y Panel»): la continuación hasta el final del período.
+    /// `nil` sin días por delante; la píldora del widget solo decide si se pinta.
+    var trendProjection: ProjectedFlowCalculator.Projection? = nil
 }
 
 struct PanelCategoriesData: Equatable {
@@ -700,6 +703,7 @@ final class PanelViewModel {
     var trendLiveAnchor: BarPoint? { trendChart.trendLiveAnchor }
     var trendLiveAnchorBreakdown: [String: Decimal]? { trendChart.trendLiveAnchorBreakdown }
     var trendLiveAnchorIsApproximate: Bool { trendChart.trendLiveAnchorIsApproximate }
+    var trendProjection: ProjectedFlowCalculator.Projection? { trendChart.trendProjection }
     var currentInterval: DateInterval { trendChart.currentInterval }
     var currentPeriod: DetailPeriod { trendChart.currentPeriod }
     var trendTotalIncome: Double { trendChart.trendTotalIncome }
@@ -1461,6 +1465,7 @@ final class PanelViewModel {
         var newTrendLiveAnchor: BarPoint? = nil
         var newTrendLiveAnchorBreakdown: [String: Decimal]? = nil
         var newTrendLiveAnchorIsApproximate = false
+        var newTrendProjection: ProjectedFlowCalculator.Projection? = nil
         if trendVisible {
             // For balance, use all transactions (no date filter) to calculate running balance
             let transactionsForTrend = trendType == .balance
@@ -1495,6 +1500,12 @@ final class PanelViewModel {
             newTrendLiveAnchor = result.liveAnchor
             newTrendLiveAnchorBreakdown = result.liveAnchorNativeBalances
             newTrendLiveAnchorIsApproximate = result.liveAnchorIsApproximate
+            newTrendProjection = calculateTrendProjection(
+                context: calcContext,
+                realPoints: result.rawPoints,
+                liveAnchorValue: result.liveAnchor?.value,
+                modelContext: context
+            )
         }
 
         // Categories — Distribución
@@ -1591,7 +1602,8 @@ final class PanelViewModel {
                 currentBalance: newBalance,
                 trendLiveAnchor: newTrendLiveAnchor,
                 trendLiveAnchorBreakdown: newTrendLiveAnchorBreakdown,
-                trendLiveAnchorIsApproximate: newTrendLiveAnchorIsApproximate
+                trendLiveAnchorIsApproximate: newTrendLiveAnchorIsApproximate,
+                trendProjection: newTrendProjection
             )
             if newTrend != trendChart { trendChart = newTrend }
         }
@@ -1816,6 +1828,75 @@ final class PanelViewModel {
     }
 
     // MARK: - Calculation Context Builder
+
+    /// «Ver proyectado» del widget de tendencia. Lee lo mismo que la curva: el saldo, las cuentas del número de arriba
+    /// sin los chips (decisión del 2026-10-22); ingresos y gastos, los filtros de sesión sin recorte de fecha.
+    private func calculateTrendProjection(
+        context calcContext: PanelCalculationContext,
+        realPoints: [BarPoint],
+        liveAnchorValue: Double?,
+        modelContext: ModelContext,
+        now: Date = .now
+    ) -> ProjectedFlowCalculator.Projection? {
+        let calendar = Calendar.current
+        let interval = calcContext.effectiveInterval
+        let horizon = ProjectedFlowCalculator.horizon(for: calcContext.period, interval: interval, calendar: calendar)
+        let days = ProjectedFlowCalculator.futureDays(in: horizon, today: now, calendar: calendar)
+        guard !days.isEmpty else { return nil }
+
+        let counted: [TransactionItem]
+        let narrows: Bool
+        let paymentFilter: ProjectedFlowBuilder.PaymentFilter
+        if trendType == .balance {
+            counted = calcContext.balanceTransactions
+            narrows = !selectedAccountIDs.isEmpty
+            paymentFilter = ProjectedFlowBuilder.PaymentFilter(
+                accounts: EntityFilter(included: Set(calcContext.balanceAccounts.map(\.persistentModelID)))
+            )
+        } else {
+            let criteria = buildFilterCriteria()
+            let includeGroupTxs = (UserDefaults.standard.object(
+                forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
+            counted = calcContext.transactions.filter { transaction in
+                guard let account = transaction.account,
+                      calcContext.eligibleAccountIDs.contains(account.persistentModelID) else { return false }
+                guard BridgedTransactionFilter.shouldInclude(
+                    splitExpenseID: transaction.splitExpenseID,
+                    splitSettlementID: transaction.splitSettlementID,
+                    includeGroupsToggle: includeGroupTxs
+                ) else { return false }
+                return FilterService.matchesCriteria(transaction, criteria: criteria)
+            }
+            narrows = ProjectedFlowBuilder.filtersNarrowData(criteria)
+            paymentFilter = ProjectedFlowBuilder.paymentFilter(from: criteria)
+        }
+
+        let inputs = ProjectedFlowBuilder.Inputs(
+            today: now,
+            calendar: calendar,
+            overdueWindowStart: ProjectedFlowBuilder.overdueWindowStart(today: now, calendar: calendar),
+            days: days,
+            allTransactions: calcContext.transactions,
+            countedTransactions: counted,
+            hasSessionFilters: narrows,
+            scheduledPayments: scheduledPayments,
+            paymentFilter: paymentFilter,
+            currencyCode: calcContext.defaultCurrencyCode,
+            adjustment: statsAdjustment,
+            converter: calcContext.converter
+        )
+        let built = ProjectedFlowBuilder.build(inputs, context: modelContext)
+        return ProjectedFlowBuilder.chartProjection(
+            metric: trendType,
+            grouping: calcContext.trendGrouping,
+            realPoints: realPoints,
+            liveAnchorValue: liveAnchorValue,
+            result: built,
+            days: days,
+            today: now,
+            calendar: calendar
+        )
+    }
 
     /// Builds the shared context for all widget calculations
     private func buildCalculationContext(

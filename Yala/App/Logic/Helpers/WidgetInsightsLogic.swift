@@ -27,6 +27,38 @@ nonisolated enum WidgetInsightsLogic {
         return balance - before.balance
     }
 
+    // MARK: - Flujo proyectado (card «Flujo proyectado en Tendencias y Panel», respuesta 12A)
+
+    /// La continuación punteada de un widget: el ancla en el día de la foto y, cada día siguiente hasta `end`, el ancla
+    /// más lo esperado acumulado. `deltas` es lo esperado por día (gasto en «Gasto», ingreso − gasto en «Saldo»), como
+    /// lo deja la app en la foto. Vacío si no queda ningún día por delante. Se mide a la hora de la foto, como el resto
+    /// de las cuentas del widget: el ancla es la última cifra de la curva, calculada entonces.
+    static func projectedCumulative(
+        anchor: Double,
+        deltas: [(date: Date, value: Double)],
+        asOf: Date,
+        end: Date,
+        calendar: Calendar
+    ) -> [(date: Date, value: Double)] {
+        let anchorDay = calendar.startOfDay(for: asOf)
+        let lastDay = calendar.startOfDay(for: end)
+        guard let firstAhead = calendar.date(byAdding: .day, value: 1, to: anchorDay), firstAhead <= lastDay else {
+            return []
+        }
+        var byDay: [Date: Double] = [:]
+        for delta in deltas { byDay[calendar.startOfDay(for: delta.date), default: 0] += delta.value }
+        var points: [(date: Date, value: Double)] = [(anchorDay, anchor)]
+        var value = anchor
+        var cursor = firstAhead
+        while cursor <= lastDay {
+            value += byDay[cursor] ?? 0
+            points.append((cursor, value))
+            guard let next = calendar.date(byAdding: .day, value: 1, to: cursor) else { break }
+            cursor = next
+        }
+        return points
+    }
+
     // MARK: - Gasto contra el período anterior
 
     /// Lo gastado en el período anterior hasta el mismo punto («a esta altura del mes pasado»), y la diferencia.

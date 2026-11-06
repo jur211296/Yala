@@ -223,6 +223,15 @@ final class AppPreferences {
         }
     }
 
+    /// «Ver proyectado» en la gráfica de Tendencias y del Panel (card «Flujo proyectado en Tendencias y Panel»,
+    /// respuesta 9A): una sola clave para las dos pantallas, recordada en este dispositivo. Apagada por defecto.
+    var showsProjectedFlow: Bool = false {
+        didSet {
+            guard oldValue != showsProjectedFlow else { return }
+            persistBool(showsProjectedFlow, forKey: Keys.showsProjectedFlow, synced: false)
+        }
+    }
+
     var averageLineMode: Int = 1 {
         didSet {
             guard oldValue != averageLineMode else { return }
@@ -1161,6 +1170,9 @@ final class AppPreferences {
         if defaults.object(forKey: Keys.showWidgetHints) != nil {
             showWidgetHints = defaults.bool(forKey: Keys.showWidgetHints)
         }
+        if defaults.object(forKey: Keys.showsProjectedFlow) != nil {
+            showsProjectedFlow = defaults.bool(forKey: Keys.showsProjectedFlow)
+        }
         if defaults.object(forKey: Keys.averageLineMode) != nil {
             averageLineMode = defaults.integer(forKey: Keys.averageLineMode)
         }
@@ -1449,6 +1461,7 @@ final class AppPreferences {
         // Widget / Trend
         static let showVariations = "showVariations"
         static let showWidgetHints = "showWidgetHints"
+        static let showsProjectedFlow = "showsProjectedFlow"
         static let averageLineMode = "averageLineMode"
 
         // Voice / Image / AI
