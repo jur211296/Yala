@@ -2078,6 +2078,29 @@ final class AppBootstrapper {
     /// Silent on retry-fail (the user already saw an alert at the original failure);
     /// flag stays true for the next launch until `maxAttempts` is exhausted.
     @MainActor
+    /// **La convergencia de los gastos de grupo, con la app ya montada** (ticket
+    /// `wipe-data-group-rows-return-only-on-the-next-cold-launch`). «Vaciar datos», «Empezar de cero» al volver de «Solo
+    /// grupos» y el borrado por la señal de otro dispositivo que deja a la persona dentro la piden, y hasta este cambio solo
+    /// la consumía el arranque (`retryPendingBridges`): Registros y el Panel se quedaban sin los gastos de grupo hasta
+    /// cerrar y abrir Yala. Con los MISMOS gates que el arranque —store listo y, dentro de `convergeIfPending`, sesión
+    /// privada y dominio abierto—, así que en solo-grupos la petición sigue dormida hasta activar Yala completo. Si el
+    /// store no está listo, la petición se queda y la consume el arranque siguiente, como antes.
+    ///
+    /// Como el arranque, primero recoge el reparto de un vaciado remoto que ya llegó (`resolveIfArrived`). Lo que el origen
+    /// prometió y no repuso (`takeOverIfOverdue`, 72 h) se queda en el arranque: aquí no puede haber vencido.
+    func convergeGroupsBridgeInSession(context: ModelContext) async {
+        // Solo lee el iCloud-KV y las marcas: no escribe en el store, así que no espera al gate.
+        GroupsRemoteWipeDivision.resolveIfArrived()
+        guard GroupsBridgeRestoreConvergenceStore.isPending() else { return }
+        guard await awaitPersonalStoreReady() else {
+            logger.notice("convergeGroupsBridgeInSession deferred — personal store not ready")
+            return
+        }
+        guard GroupsBridgeRestoreConvergence.convergeIfPending(context: context) else { return }
+        // El bridge guarda sin subir `dataVersion`, y Registros recarga por él.
+        SessionState.shared.incrementDataVersion()
+    }
+
     func retryPendingBridges(context: ModelContext) async {
         // El bridge crea TransactionItems personales y guarda el mainContext — diferir hasta que el
         // import personal esté QUIESCENTE (`awaitPersonalImportForBootSave` espera el primer import + la

@@ -1,10 +1,10 @@
 ---
 id: apple-pay-capture-in-a-groups-only-session-has-no-personal-inbox
-status: backlog
+status: qa
 priority: medium
 area: "intents, inbox, sesiones"
 created: 2026-10-08
-updated: 2026-10-08
+updated: 2026-11-06
 source: "medido de paso en `after-session-redesign-review-widgets-siri-applepay-and-web-copy` (punto «Siri y Apple Pay con sesión solo grupos»)"
 ---
 
@@ -37,3 +37,20 @@ source: "medido de paso en `after-session-redesign-review-widgets-siri-applepay-
 
 - [ ] Medido en el simulador: con `-uitest-seed solo-grupos-tras-aviso` y un pago encolado, qué pasa al abrir.
 - [ ] La opción elegida tiene su test de comportamiento.
+
+## Resuelto (2026-11-06, encargo «Lote · Grupos: Vaciar datos y Apple Pay»)
+
+La decisión de producto ya estaba tomada: el 2026-10-27 (encargo S11e) Jürgen eligió la opción 2 y el atajo de Apple
+Pay no encola en «Solo grupos» (`GroupsOnlyIntentGate`, avisa y enlaza a Yala completo). Siri igual. El aviso de la
+Bandeja ya estaba pausado en esa shell (`PersonalRemindersPause`).
+
+Lo que quedaba abierto, y se cierra aquí: los pagos que YA esperaban en la cola (encolados antes de quedarse en solo
+grupos, o por un build anterior) los materializaba `InboundCaptureDrain.drain` como borrador del store personal sin
+sesión privada. Ahora, sin sesión privada (eje, gate de datos), Apple Pay y Siri se quedan en el App Group y se
+convierten en borrador al activar Yala completo. Con sesión privada y «Solo grupos» elegido se materializan como
+siempre: el store personal es real y el aviso espera.
+
+Tests: `PrivateExitInboundCaptureLogicTests` (con y sin sesión privada) y el source-scan del drenaje.
+
+Pendiente de device-QA (no bloquea): con un teléfono en solo grupos sin sesión privada, un pago de Apple Pay que ya
+estaba en cola no aparece como borrador; al activar Yala completo, sí.

@@ -720,14 +720,14 @@ struct FullModeActivationWiringTests {
     func convergence_guardsBeforeWriting() throws {
         let src = try Self.code("Yala/Services/Groups/GroupsBridgeRestoreConvergence.swift")
         let converge = try Self.body(of: "static func convergeIfPending(", in: src)
-        try Self.expectOrder("guard SessionState.shared.hasPrivateSession else { return }",
+        try Self.expectOrder("guard SessionState.shared.hasPrivateSession else { return false }",
                              before: "bridgeRemoteExpenses(ids:", in: converge,
                              "sin sesión privada el bridge borra las transacciones reales que re-puentea")
-        try Self.expectOrder("guard GroupTransactionBridge.isDomainOpenForBridge(defaults: defaults) else { return }",
+        try Self.expectOrder("guard GroupTransactionBridge.isDomainOpenForBridge(defaults: defaults) else { return false }",
                              before: "bridgeRemoteExpenses(ids:", in: converge, "el dominio cerrado no se toca")
         // Las liquidaciones tras un borrado de filas, detrás del mismo guard: en solo-grupos quedarían con la pata
         // virtual sin su borrador, y nadie las re-puentearía después.
-        try Self.expectOrder("guard SessionState.shared.hasPrivateSession else { return }",
+        try Self.expectOrder("guard SessionState.shared.hasPrivateSession else { return false }",
                              before: "reBridgeSettlementLegs(context:", in: converge,
                              "las liquidaciones se re-puentean antes de comprobar que la sesión es privada")
         try Self.expectOrder(

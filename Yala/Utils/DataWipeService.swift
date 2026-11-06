@@ -332,9 +332,11 @@ final class DataWipeService {
     /// esas filas. Por eso aquí se pide la misma convergencia que los dos borrados de iCloud que conservan grupos: los
     /// gastos y las liquidaciones confirmadas vuelven una vez, y el Inbox pregunta la cuenta donde toca.
     ///
-    /// **Cuándo vuelven.** La convergencia la consume `AppBootstrapper.retryPendingBridges` en el ARRANQUE siguiente,
-    /// detrás de sus gates de store listo, dominio abierto y sesión privada. Con sesión privada, el próximo arranque en
-    /// frío. En solo-grupos espera a que la persona active Yala completo: sin eso no hay vida personal que reponer.
+    /// **Cuándo vuelven.** Con sesión privada, en la misma sesión: quien llama y deja a la persona dentro corre
+    /// `AppBootstrapper.convergeGroupsBridgeInSession`, con los gates del arranque (ticket
+    /// `wipe-data-group-rows-return-only-on-the-next-cold-launch`). Si el store no está listo, la consume
+    /// `AppBootstrapper.retryPendingBridges` en el arranque siguiente. En solo-grupos espera a que la persona active Yala
+    /// completo: sin eso no hay vida personal que reponer.
     ///
     /// **Se piden ANTES de borrar, no después** (review adversarial). `wipeAllUserData` guarda por pasos: uno que lanza,
     /// o un proceso que muere, después de borrar las transacciones dejaría los gastos de grupo fuera de lo personal y

@@ -211,10 +211,13 @@ enum GroupsBridgeRestoreConvergence {
     /// 1. **Ya hay sesión privada.** En una sesión solo-grupos el bridge borra las transacciones reales que
     ///    re-puentea; si la app murió antes de completar la activación, se espera a que se complete.
     /// 2. **El bridge está abierto** (sello de «empiezo de cero» y activación a medias, fuera).
-    static func convergeIfPending(context: ModelContext, defaults: UserDefaults = .standard) {
-        guard GroupsBridgeRestoreConvergenceStore.isPending(defaults) else { return }
-        guard SessionState.shared.hasPrivateSession else { return }
-        guard GroupTransactionBridge.isDomainOpenForBridge(defaults: defaults) else { return }
+    ///
+    /// Devuelve si convergió (y retiró la intención): quien converge con la app ya montada avisa a las pantallas.
+    @discardableResult
+    static func convergeIfPending(context: ModelContext, defaults: UserDefaults = .standard) -> Bool {
+        guard GroupsBridgeRestoreConvergenceStore.isPending(defaults) else { return false }
+        guard SessionState.shared.hasPrivateSession else { return false }
+        guard GroupTransactionBridge.isDomainOpenForBridge(defaults: defaults) else { return false }
         do {
             // Sin lo que repone el origen de un vaciado, si la petición lo trae (`GroupsRemoteWipeDivision`).
             let exclusion = GroupsBridgeRestoreConvergenceStore.exclusion(defaults)
@@ -235,11 +238,13 @@ enum GroupsBridgeRestoreConvergence {
             try dedupeSettlementVirtualLegs(context: context)
             GroupsBridgeRestoreConvergenceStore.clear(defaults)
             logger.notice("GroupsBridgeRestoreConvergence done unattended=\(unattended.count, privacy: .public) unattendedSettlements=\(unattendedSettlements.count, privacy: .public)")
+            return true
         } catch {
             logger.notice("GroupsBridgeRestoreConvergence deferred reason=bridgeFailed")
             #if DEBUG
             print("GroupsBridgeRestoreConvergence: Error: \(error)")
             #endif
+            return false
         }
     }
 

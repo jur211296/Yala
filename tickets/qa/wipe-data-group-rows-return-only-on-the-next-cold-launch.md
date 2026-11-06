@@ -1,10 +1,10 @@
 ---
 id: wipe-data-group-rows-return-only-on-the-next-cold-launch
-status: backlog
+status: qa
 priority: medium
 area: "groups, settings"
 created: 2026-09-27
-updated: 2026-10-08
+updated: 2026-11-06
 source: "review adversarial de `wipe-data-keeps-groups-but-drops-their-bridged-rows` (2026-09-27, lentes de momento y de reglas); inferido por lectura, NO reproducido"
 ---
 
@@ -53,3 +53,21 @@ liquidación sin ninguna pata, la re-puentea y el Inbox vuelve a pedir ese pago.
 - Desde el 2026-09-28 (`8993e4ce5`, `ae204458d`, `1c81703ff`) el receptor tardío corta por la hora de la señal y reparte lo que repone. La nota sobre el receptor no se re-midió: su convergencia también espera a un arranque en frío.
 
 Triage 2026-10-08: abierto · medium → medium · DataWipeService marca la convergencia pendiente, pero solo la ejecuta el arranque (retryPendingBridges); «Vaciar datos» no pasa por un swap de container y nadie converge en caliente
+
+## Resuelto (2026-11-06, encargo «Lote · Grupos: Vaciar datos y Apple Pay»)
+
+Decisión: se converge dentro de la sesión, solo donde la persona se queda dentro.
+
+- `AppBootstrapper.convergeGroupsBridgeInSession`: los mismos gates que el arranque (reparto remoto recogido, store
+  listo, y dentro de `convergeIfPending` sesión privada y dominio abierto). Si converge, sube `dataVersion`.
+- La llaman «Vaciar datos» con aterrizaje en el Panel, «Empezar de cero» al volver de «Solo grupos» y el receptor de
+  la señal remota con `skipOnboarding`. En la shell de solo grupos y en el receptor que vuelve al onboarding la
+  petición sigue esperando, como antes.
+- `convergeIfPending` devuelve si convergió.
+
+Medido: `WipeDataGroupRowsInSessionUITests` (semilla `grupos` → vaciar → Registros por enlace sin relanzar) en verde;
+con la llamada quitada, rojo con Registros vacío. Unit: `GroupsConvergeInSessionWiringTests` y los casos de
+`GroupsBridgeRestoreConvergenceTests`.
+
+Pendiente de device-QA (no bloquea): en el iPhone de pruebas con grupos, Ajustes › Vaciar datos → abrir Registros sin
+cerrar la app: los gastos de grupo están ahí y la Bandeja pregunta de qué cuenta salieron.
