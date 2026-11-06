@@ -930,6 +930,12 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncMigration snapshotPageConfirmed table=\(table, privacy: .public) rows=\(rows, privacy: .public)")
     }
 
+    /// La subida de la ida fundió tasas duplicadas antes de enumerar (card i9wh): `days` días con copias, `removed` filas
+    /// borradas.
+    static func migrationSnapshotDuplicateRatesFused(days: Int, removed: Int) {
+        logger.notice("CloudSyncMigration snapshotDuplicateRatesFused days=\(days, privacy: .public) removed=\(removed, privacy: .public)")
+    }
+
     /// El `fetch` de `SyncOutbox` lanzó (ticket `verify-reads-a-failed-local-fetch-as-an-empty-outbox`). `step`
     /// dice QUIÉN lo pedía, y son DOCE: `verify`, `verify-after-push`, `reverse-drain`, `leader-reconcile`,
     /// `adopt-orphan-reconcile`, `runtime-cycle`, `snapshot-page`, `snapshot-residual` y las cuatro relecturas del
