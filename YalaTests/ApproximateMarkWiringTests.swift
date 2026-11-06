@@ -321,8 +321,10 @@ struct ApproximateMarkSecondarySurfacesWiringTests {
         #expect(expense == 4, "se esperaban 4 y hay \(expense)")
         // La etiqueta de VoiceOver de cada pastilla lleva la marca de su importe: sin ella, VoiceOver leería exacto
         // lo que en pantalla sale con «≈».
-        #expect(hero.contains("L10n.Panel.Hero.incomePill(appPreferences.currency(value, currencyCode: currencyCode, isEstimate: isEstimate))"))
-        #expect(hero.contains("L10n.Panel.Hero.expensePill(appPreferences.currency(value, currencyCode: currencyCode, isEstimate: isEstimate))"))
+        // Desde el 2026-11-06 el importe pasa por `AmountPrivacy.spoken` («Monto oculto» con el ojo del Panel puesto): la
+        // marca sigue dentro, en el `appPreferences.currency` que se le pasa.
+        #expect(hero.contains("L10n.Panel.Hero.incomePill(AmountPrivacy.spoken(appPreferences.currency(value, currencyCode: currencyCode, isEstimate: isEstimate), hidden: amountsHidden))"))
+        #expect(hero.contains("L10n.Panel.Hero.expensePill(AmountPrivacy.spoken(appPreferences.currency(value, currencyCode: currencyCode, isEstimate: isEstimate), hidden: amountsHidden))"))
     }
 
     /// El widget de inicio es el único donde la señal no existía: había que producirla.

@@ -45,6 +45,9 @@ struct TrendChartView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @Environment(AppPreferences.self) private var appPreferences
+    /// «Ocultar montos» del Panel (`AmountPrivacy`): ejes, promedio y etiquetas de la gráfica sin cifras; la línea y las
+    /// barras se quedan.
+    @Environment(\.amountsHidden) private var amountsHidden
     @State private var draggingDate: Date?  // For transient drag state
     @State private var pulseAnimate = false
     @State private var showEducationSheet = false
@@ -285,7 +288,7 @@ struct TrendChartView: View {
                     .foregroundStyle(.thSecondaryText.opacity(gridOpacity))
                 AxisValueLabel {
                     if let doubleValue = value.as(Double.self) {
-                        Text(YalaFormatter.axisK(doubleValue, domain: yDomain))
+                        Text(AmountPrivacy.text(YalaFormatter.axisK(doubleValue, domain: yDomain), hidden: amountsHidden))
                             .font(DS.Typography.captionSmall)
                             .foregroundStyle(.thSecondaryText)
                             .opacity(labelOpacity)
@@ -531,6 +534,7 @@ struct TrendChartView: View {
     }
 
     private func formattedAmountShort(_ value: Double) -> String {
+        if amountsHidden { return AmountPrivacy.mask }
         let absValue = abs(value)
         let formattedNumber = absValue.formatted(.number.precision(.fractionLength(0)))
         // Lo que se pinta como cero no lleva signo («-0» o «+0» de un saldo que suma cero en coma flotante).
@@ -546,6 +550,7 @@ struct TrendChartView: View {
     }
 
     private func formatK(_ value: Double) -> String {
+        if amountsHidden { return AmountPrivacy.mask }
         let absValue = abs(value)
         let sign = value < 0 && absValue >= 0.5 ? "-" : ""  // «-0» de un residuo de coma flotante: sin signo
 
@@ -630,8 +635,9 @@ struct TrendChartView: View {
     }
 
     private func formattedAmount(_ value: Double) -> String {
+        if amountsHidden { return AmountPrivacy.mask }
         // Sin signo para lo que se pinta como cero («-0» de un saldo que suma cero en coma flotante).
-        (abs(value) < 0.5 ? 0 : value).formatted(
+        return (abs(value) < 0.5 ? 0 : value).formatted(
             .number
                 .precision(.fractionLength(0))
         )

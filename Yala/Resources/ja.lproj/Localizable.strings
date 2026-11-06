@@ -8713,3 +8713,12 @@
 "scheduled.editor.logo.none" = "ロゴなし";
 "scheduled.editor.logo.auto" = "自動";
 "scheduled.editor.logo.autoNamed" = "%@（自動）";
+
+/* VoiceOver label of an amount hidden by the eye button of the Panel */
+"panel.amountHidden" = "金額は非表示";
+
+/* Eye button next to the Panel headline amount: hides every amount on the Panel */
+"panel.hideAmounts" = "金額を隠す";
+
+/* Eye button next to the Panel headline amount while amounts are hidden: shows them again */
+"panel.showAmounts" = "金額を表示";

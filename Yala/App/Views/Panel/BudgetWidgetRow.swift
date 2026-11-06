@@ -12,6 +12,8 @@ struct BudgetWidgetRow: View {
     let currencyCode: String
 
     @Environment(AppPreferences.self) private var appPreferences
+    /// «Ocultar montos» del Panel (`AmountPrivacy`).
+    @Environment(\.amountsHidden) private var amountsHidden
 
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
@@ -39,7 +41,10 @@ struct BudgetWidgetRow: View {
                     Spacer(minLength: DS.Spacing.sm)
 
                     // En la divisa del presupuesto, que es en la que está lo gastado (antes, la del Panel).
-                    Text(appPreferences.currency(abs(remaining), currencyCode: summary.budget.currencyCode))
+                    Text(AmountPrivacy.text(
+                        appPreferences.currency(abs(remaining), currencyCode: summary.budget.currencyCode),
+                        hidden: amountsHidden
+                    ))
                         .font(DS.Typography.headline)
                         .foregroundStyle(isOver ? Color.overBudgetText : Color.primary)
                         .lineLimit(1)

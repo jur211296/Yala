@@ -312,6 +312,18 @@ enum L10n {
     }
 
     enum Panel {
+        /// VoiceOver de una cifra con «Ocultar montos» puesto (`AmountPrivacy`).
+        static var amountHidden: String {
+            ls("panel.amountHidden", comment: "VoiceOver label of an amount hidden by the eye button of the Panel")
+        }
+        /// El ojo junto al rótulo del hero, con los montos a la vista: los oculta.
+        static var hideAmounts: String {
+            ls("panel.hideAmounts", comment: "Eye button next to the Panel headline amount: hides every amount on the Panel")
+        }
+        /// El ojo con los montos ocultos: los vuelve a enseñar.
+        static var showAmounts: String {
+            ls("panel.showAmounts", comment: "Eye button next to the Panel headline amount while amounts are hidden: shows them again")
+        }
         static var accounts: String {
             ls("panel.accounts", comment: "Accounts section title")
         }

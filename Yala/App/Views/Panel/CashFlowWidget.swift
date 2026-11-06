@@ -11,6 +11,8 @@ import SwiftUI
 struct CashFlowWidget: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    /// «Ocultar montos» del Panel (`AmountPrivacy`): etiquetas, ejes y resumen de VoiceOver sin cifras.
+    @Environment(\.amountsHidden) private var amountsHidden
     let summary: CashFlowSummary
     let size: WidgetSize
     let period: String
@@ -703,14 +705,14 @@ struct CashFlowWidget: View {
                 // con «≈», y dejar la marca solo en el glifo la esconde de quien no puede verlo.
                 .accessibilityValue(activeChartData.isEmpty ? L10n.Accessibility.noData :
                     L10n.Accessibility.cashFlowSummary(
-                        income: appPreferences.currency(
+                        income: AmountPrivacy.spoken(appPreferences.currency(
                             summary.totalIncome, currencyCode: summary.currencyCode,
                             isEstimate: summary.incomeAmountsAreApproximate
-                        ),
-                        expense: appPreferences.currency(
+                        ), hidden: amountsHidden),
+                        expense: AmountPrivacy.spoken(appPreferences.currency(
                             summary.totalExpense, currencyCode: summary.currencyCode,
                             isEstimate: summary.expenseAmountsAreApproximate
-                        )
+                        ), hidden: amountsHidden)
                     ))
                 .chartXScale(domain: dataXDomain)
                 .chartYScale(domain: dataYDomain)
@@ -744,7 +746,7 @@ struct CashFlowWidget: View {
                             .foregroundStyle(.thSecondaryText.opacity(0.1))
                         AxisValueLabel {
                             if let doubleValue = value.as(Double.self) {
-                                Text(YalaFormatter.axisK(doubleValue, domain: dataYDomain))
+                                Text(AmountPrivacy.text(YalaFormatter.axisK(doubleValue, domain: dataYDomain), hidden: amountsHidden))
                                     .font(DS.Typography.captionSmall)
                                     .foregroundStyle(.thSecondaryText)
                             }
@@ -1031,6 +1033,7 @@ struct CashFlowWidget: View {
 
     // Helpers
     private func formatK(_ value: Double) -> String {
+        if amountsHidden { return AmountPrivacy.mask }
         let absValue = abs(value)
         let sign = value < 0 ? "-" : (value > 0 ? "" : "")  // Only negative sign for Y axis usually
         // Note: User image had "-40K".

@@ -32,6 +32,8 @@ struct WeekdayBarChart: View {
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    /// «Ocultar montos» del Panel (`AmountPrivacy`): las cifras sobre las barras salen como `•••••`. Fuera del Panel, `false`.
+    @Environment(\.amountsHidden) private var amountsHidden
 
     private var maxWeekday: Int? {
         data.max(by: { $0.average < $1.average })?.weekday
@@ -62,6 +64,7 @@ struct WeekdayBarChart: View {
     }
 
     private func annotationText(_ value: Double) -> String {
+        if amountsHidden { return AmountPrivacy.mask }
         switch annotationStyle {
         case .compact:
             return YalaFormatter.compactCurrency(value: value)

@@ -8707,3 +8707,12 @@
 "scheduled.editor.logo.none" = "No logo";
 "scheduled.editor.logo.auto" = "Automatic";
 "scheduled.editor.logo.autoNamed" = "%@ (automatic)";
+
+/* VoiceOver label of an amount hidden by the eye button of the Panel */
+"panel.amountHidden" = "Amount hidden";
+
+/* Eye button next to the Panel headline amount: hides every amount on the Panel */
+"panel.hideAmounts" = "Hide amounts";
+
+/* Eye button next to the Panel headline amount while amounts are hidden: shows them again */
+"panel.showAmounts" = "Show amounts";

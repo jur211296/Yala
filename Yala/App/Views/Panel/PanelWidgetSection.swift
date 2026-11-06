@@ -28,7 +28,10 @@ private func askPanelSegment(
     let choice = viewModel.segmentChoice(
         for: target,
         name: name,
-        amountText: amount.map { appPreferences.currency($0, currencyCode: currencyCode) }
+        // Con «Ocultar montos» la pregunta tampoco dice la cifra: es una hoja del Panel, y la hoja no lo cambia.
+        amountText: amount.map {
+            AmountPrivacy.text(appPreferences.currency($0, currencyCode: currencyCode), hidden: appPreferences.panelAmountsHidden)
+        }
     )
     if let ask {
         ask(choice)

@@ -8713,3 +8713,12 @@
 "scheduled.editor.logo.none" = "不显示标志";
 "scheduled.editor.logo.auto" = "自动";
 "scheduled.editor.logo.autoNamed" = "%@（自动）";
+
+/* VoiceOver label of an amount hidden by the eye button of the Panel */
+"panel.amountHidden" = "金额已隐藏";
+
+/* Eye button next to the Panel headline amount: hides every amount on the Panel */
+"panel.hideAmounts" = "隐藏金额";
+
+/* Eye button next to the Panel headline amount while amounts are hidden: shows them again */
+"panel.showAmounts" = "显示金额";

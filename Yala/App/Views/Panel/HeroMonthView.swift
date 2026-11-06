@@ -33,6 +33,8 @@ struct HeroMonthView: View {
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// «Ocultar montos» del Panel (`AmountPrivacy`): lo pone el ojo de este mismo hero.
+    @Environment(\.amountsHidden) private var amountsHidden
 
     // La maqueta (rótulo y período arriba, cifra y detalle debajo, todo a la izquierda) es `HeroHeader`, la misma
     // que usan las pestañas de Estadísticas: así las dos cabeceras no pueden volver a divergir.
@@ -98,6 +100,38 @@ struct HeroMonthView: View {
         }
     }
 
+    /// La cifra grande con el ojo a su derecha. Junto al rótulo no cabía: en un iPhone 17 Pro apartaba «Ver detalle».
+    private func figureWithVisibilityButton(_ figure: AmountText) -> some View {
+        HStack(alignment: .center, spacing: DS.Spacing.sm) {
+            figure
+            amountsVisibilityButton
+        }
+    }
+
+    /// El ojo que oculta y enseña los montos del Panel (`AmountPrivacy`), al lado de la cifra que oculta, como en las
+    /// apps de banco. Ojo abierto con los montos a la vista; tachado con los montos ocultos. La preferencia se queda
+    /// entre arranques (`AppPreferences.panelAmountsHidden`).
+    private var amountsVisibilityButton: some View {
+        let hidden = appPreferences.panelAmountsHidden
+        return Button {
+            DS.Haptic.selection()
+            appPreferences.panelAmountsHidden.toggle()
+        } label: {
+            Image(systemName: hidden ? "eye.slash" : "eye")
+                .font(DS.Typography.title3)
+                .foregroundStyle(.secondary)
+                .contentTransition(.symbolEffect(.replace))
+                // Hueco táctil de 44 pt sin ocupar 44 pt de fila: el margen se suma dentro y se resta fuera, así el ojo
+                // no aparta «Ver detalle» ni empuja el rótulo hacia abajo.
+                .padding(DS.Spacing.sm)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(-DS.Spacing.sm)
+        .accessibilityLabel(hidden ? L10n.Panel.showAmounts : L10n.Panel.hideAmounts)
+        .accessibilityIdentifier("panel_hero_amounts_visibility")
+    }
+
     private func detailHint(showsText: Bool) -> some View {
         HStack(spacing: DS.Spacing.xxs) {
             if showsText {
@@ -133,7 +167,7 @@ struct HeroMonthView: View {
                 // sin ingresos → se muestra el GASTO del período como KPI, con un
                 // comparativo "vs período anterior" (MTD-alineado) que le da lectura.
                 // Sin pills: la naturaleza está forzada a gasto y el número YA es el gasto.
-                AmountText(
+                figureWithVisibilityButton(AmountText(
                     value: periodSummary.expense,
                     currencyCode: currencyCode,
                     font: DS.Typography.panelHeroAmount,
@@ -141,7 +175,7 @@ struct HeroMonthView: View {
                     // Solo el lado del gasto: este número no incluye los ingresos.
                     isEstimate: periodSummary.expenseApproximate,
                     animatesValue: true
-                )
+                ))
 
                 // Gateado también por `showVariations`: `VariationChip` se
                 // auto-oculta con la preferencia off, así que sin este guard el
@@ -155,14 +189,14 @@ struct HeroMonthView: View {
                     }
                 }
             } else {
-                AmountText(
+                figureWithVisibilityButton(AmountText(
                     value: figure.value(income: periodSummary.income, expense: periodSummary.expense),
                     currencyCode: currencyCode,
                     font: DS.Typography.panelHeroAmount,
                     secondaryFont: DS.Typography.panelHeroAmountSecondary,
                     isEstimate: figureIsApproximate,
                     animatesValue: true
-                )
+                ))
 
                 // A tamaños de accesibilidad los dos importes van uno bajo otro (`AdaptiveRowStack`): en fila no
                 // cabían y se cortaban por el medio («S/1,7…10»). Son botones de filtro: van en cápsula, y la elegida
@@ -248,8 +282,8 @@ struct HeroMonthView: View {
         .buttonStyle(.plain)
         // VoiceOver lee qué es y cuánto («Entró S/ 3.101»): sin la línea de debajo, el importe suelto no decía de qué era.
         .accessibilityLabel(isIncome
-            ? L10n.Panel.Hero.incomePill(appPreferences.currency(value, currencyCode: currencyCode, isEstimate: isEstimate))
-            : L10n.Panel.Hero.expensePill(appPreferences.currency(value, currencyCode: currencyCode, isEstimate: isEstimate)))
+            ? L10n.Panel.Hero.incomePill(AmountPrivacy.spoken(appPreferences.currency(value, currencyCode: currencyCode, isEstimate: isEstimate), hidden: amountsHidden))
+            : L10n.Panel.Hero.expensePill(AmountPrivacy.spoken(appPreferences.currency(value, currencyCode: currencyCode, isEstimate: isEstimate), hidden: amountsHidden)))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityIdentifier(isIncome ? "panel_hero_income_pill" : "panel_hero_expense_pill")
     }
@@ -302,9 +336,10 @@ struct HeroMonthView: View {
                     .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(.primary)
                 if let totalBalance {
-                    Text(L10n.Panel.Hero.totalInAccounts(
-                        appPreferences.currency(totalBalance, currencyCode: currencyCode, isEstimate: totalBalanceIsApproximate)
-                    ))
+                    Text(L10n.Panel.Hero.totalInAccounts(AmountPrivacy.text(
+                        appPreferences.currency(totalBalance, currencyCode: currencyCode, isEstimate: totalBalanceIsApproximate),
+                        hidden: amountsHidden
+                    )))
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                 }
@@ -334,7 +369,7 @@ struct HeroMonthView: View {
         let monto = appPreferences.currency(
             valor, currencyCode: currencyCode, isEstimate: esAproximado
         )
-        return "\(summaryLabel) · \(selectedPeriod.displayName), \(monto)"
+        return "\(summaryLabel) · \(selectedPeriod.displayName), \(AmountPrivacy.spoken(monto, hidden: amountsHidden))"
     }
 
 }

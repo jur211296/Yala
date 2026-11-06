@@ -45,7 +45,7 @@ struct DataWipeServiceTests {
         "panelTendenciasOrder", "panelTendenciasHidden", "panelDistribucionOrder",
         "panelDistribucionHidden", "panelPlanificacionOrder", "panelPlanificacionHidden",
         "panelSectionsHidden", "panelSectionsOrder", "moreSectionOrder",
-        "panelAccountsCollapsed", "panelHeroKPIsOrder", "panelHeroKPIsHidden",
+        "panelAccountsCollapsed", "panelAmountsHidden", "panelHeroKPIsOrder", "panelHeroKPIsHidden",
         "panelHeroKPIsCustomized", "panelPrefsMigratedV2",
         // Exchange rate
         "exchangeRate_lastHistoricalLoad", "exchangeRate_lastTodayUpdate",

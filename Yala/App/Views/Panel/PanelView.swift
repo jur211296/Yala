@@ -791,6 +791,9 @@ struct PanelView: View {
                     .environment(\.openPanelRecord, OpenPanelRecordAction { record in
                         sheets.recordDetail = PanelRecordPresentation(record: record)
                     })
+                    // El ojo del hero oculta las cifras de todo el contenido del Panel (`AmountPrivacy`). Las hojas que se
+                    // abren desde aquí cuelgan fuera de este scroll y no lo heredan: abrir un detalle es pedir verlo.
+                    .environment(\.amountsHidden, appPreferences.panelAmountsHidden)
                     // Al final del scroll están a la vista Yala IA y «+» (`showFloatingActions`): el último widget
                     // sube por encima de los dos.
                     .padding(.bottom, DS.Button.fabStackClearance(buttons: 2))
