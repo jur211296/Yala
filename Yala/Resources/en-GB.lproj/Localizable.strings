@@ -1798,6 +1798,7 @@
 "inbox.sourceScreenshot" = "Screenshot";
 "inbox.sourceScreenshotList" = "List";
 "inbox.sourceSiri" = "Siri";
+"inbox.sourceAIConnector" = "Your AI";
 "inbox.sourceSubscription" = "Subscription";
 "inbox.sourceVoice" = "Voice";
 "inbox.subtitleAllDone" = "Inbox at zero, great job.";

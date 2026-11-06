@@ -2012,6 +2012,7 @@
 "inbox.sourceApplePay" = "Apple Pay";
 "inbox.sourceAutomation" = "自动化";
 "inbox.sourceSiri" = "Siri";
+"inbox.sourceAIConnector" = "你的 AI";
 "inbox.errorNoAccount" = "你必须选择一个账户";
 "inbox.errorNoAmount" = "你必须指定金额";
 "inbox.errorNoSubcategory" = "你必须选择一个类别";

@@ -88,7 +88,7 @@ describe("el aviso de iCloud privado (decisión del 2026-10-29)", () => {
     const w = await world();
     const l = await toLogin(w);
     expect(l.consentHtml).toContain("Solo funciona con la nube de Yala.");
-    expect(l.consentHtml).toContain("Si tus datos viven en tu iCloud, Claude no podrá verlos.");
+    expect(l.consentHtml).toContain("Si tus datos viven en tu iCloud, esta aplicación no podrá verlos.");
     expect(l.consentHtml).toContain("Ajustes → «Dónde viven tus datos» → «Activar la nube»");
     expect(l.consentHtml).toContain('name="decision" value="approve"');
   });

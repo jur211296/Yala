@@ -2010,6 +2010,7 @@
 "inbox.sourceApplePay" = "Apple Pay";
 "inbox.sourceAutomation" = "Automatisation";
 "inbox.sourceSiri" = "Siri";
+"inbox.sourceAIConnector" = "Ton IA";
 "inbox.errorNoAccount" = "Select account";
 "inbox.errorNoAmount" = "Specify amount";
 "inbox.errorNoSubcategory" = "Vous devez sélectionner une catégorie";

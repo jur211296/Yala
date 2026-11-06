@@ -165,6 +165,38 @@ Todo desde `mcp/`, salvo donde se diga. Antes de cada paso de Supabase, guardar 
     `claude mcp add --transport http yala https://yala-mcp-production.misty-surf-6866.workers.dev/mcp`, o claude.ai →
     Ajustes → Conectores → *Añadir conector personalizado*.
 
+## Tu IA registra en Yala: la herramienta `apuntar_movimiento` (2026-11-05)
+
+Desde el encargo «Tu IA registra en Yala», el conector ofrece una herramienta de escritura que **solo** deja borradores
+en la Bandeja (`src/writeTool.ts`). No escribe en Supabase: llama a la clase RPC `ConnectorDrafts` del gateway por un
+service binding (`[[env.production.services]]`, `CONNECTOR_DRAFTS`). Por eso el orden es estricto:
+
+1. **El gateway de producción primero**, desde `gateway/`: la migración y luego el código que trae la clase y las rutas
+   de la app (`/connector/drafts`).
+   ```bash
+   npm run migrate:production        # aplica 0004_connector_drafts
+   npm run deploy:production
+   ```
+2. **Después este Worker** (`npm run deploy:production`). Si se despliega antes, la herramienta se ofrece y cada llamada
+   falla con «No se pudo dejar el movimiento en Yala» hasta que llegue el gateway.
+3. **La app que los recoge es 2.3** (`AIConnectorDraftService`). Con una app anterior, lo apuntado espera en la cola
+   (30 días) y entra al actualizar.
+
+Sin el binding, la herramienta no se ofrece y el conector sigue siendo de solo lectura: es la marcha atrás de esta
+parte sin tocar el resto (quitar `[[env.production.services]]` y desplegar). Y una conexión aprobada mientras no había
+binding (con el permiso de solo lectura) no gana la herramienta cuando vuelve: la persona tiene que reconectar
+(`GrantProps.drafts`).
+
+**ChatGPT** ya está en la lista de vueltas OAuth (`authorize.ts`). **Grok** no publica la suya: el primer intento de
+conectarlo deja la vuelta rechazada en el log,
+```bash
+npx wrangler tail --env production --format pretty | grep vuelta_no_permitida
+```
+y se añade exacta en `[env.production.vars]` como `EXTRA_REDIRECT_URIS = "https://…"` (varias, separadas por comas).
+Si el log dice `+query`, la vuelta traía query y la lista compara la URL entera: hay que conseguir la exacta. Una
+entrada mal escrita no tumba el Worker: se ignora y se avisa (`vuelta_extra_mal_escrita`).
+Cómo dar de alta cada IA, para la persona: `CONECTAR-TU-IA.md`.
+
 ## Marcha atrás
 
 Siempre al revés que la subida, para no abrir nunca una ventana con tokens que escriben:

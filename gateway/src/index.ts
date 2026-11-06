@@ -27,6 +27,7 @@ import { sentryOptions } from "./sentry";
 import { handlePushRegister, handlePushUnregister } from "./push/register";
 import { handleMailAddress, handleMailDrafts, handleMailDraftsAck } from "./mail/routes";
 import { handleEmail } from "./mail/email";
+import { handleConnectorDrafts, handleConnectorDraftsAck } from "./connector/routes";
 
 /**
  * Yala Gateway — entrada del Worker.
@@ -113,6 +114,11 @@ app.post("/mail/address", handleMailAddress);
 app.get("/mail/drafts", handleMailDrafts);
 app.post("/mail/drafts/ack", handleMailDraftsAck);
 
+// --- Tu IA registra en Yala (2.3): lo que apuntó Claude/ChatGPT/Grok por el conector espera aquí a la app (src/connector/).
+// Encolar no tiene ruta: el conector llama a la clase RPC `ConnectorDrafts` por su service binding.
+app.get("/connector/drafts", handleConnectorDrafts);
+app.post("/connector/drafts/ack", handleConnectorDraftsAck);
+
 app.notFound(() => jsonError("yala_bad_request", "Not found", 404));
 
 // Un throw sin capturar (D1 caída, binding ausente) salía como 500 en TEXTO PLANO: el SDK de
@@ -137,3 +143,4 @@ const worker = Object.assign(app, {
 });
 export default Sentry.withSentry((env: Env) => sentryOptions(env), worker);
 export { RateLimiter } from "./rate_limiter";
+export { ConnectorDrafts } from "./connector/entrypoint";

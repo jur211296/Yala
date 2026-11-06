@@ -80,7 +80,6 @@ export function configProblems(env: Partial<Env>): string[] {
   if (!env.SUPABASE_OAUTH_CLIENT_SECRET) problems.push("falta el secreto SUPABASE_OAUTH_CLIENT_SECRET (wrangler secret put)");
   if (!validTimezone(env.DEFAULT_TIMEZONE)) problems.push("DEFAULT_TIMEZONE no es una zona IANA válida");
   if (!env.OAUTH_KV) problems.push("falta el KV OAUTH_KV");
-
   if (environment === "production") {
     const ref = supabaseUrl ? SUPABASE_HOST_RE.exec(supabaseUrl.hostname)?.[1] : undefined;
     if (supabaseUrl && !ref) problems.push("SUPABASE_URL no es un proyecto <ref>.supabase.co");

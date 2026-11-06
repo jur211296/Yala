@@ -2012,6 +2012,7 @@
 "inbox.sourceApplePay" = "Apple Pay";
 "inbox.sourceAutomation" = "オートメーション";
 "inbox.sourceSiri" = "Siri";
+"inbox.sourceAIConnector" = "あなたのAI";
 "inbox.errorNoAccount" = "口座を選択してください";
 "inbox.errorNoAmount" = "金額を入力してください";
 "inbox.errorNoSubcategory" = "カテゴリーを選択してください";

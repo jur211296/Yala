@@ -1809,6 +1809,14 @@ final class AppBootstrapper {
                        InboundCaptureDrain.drain(context: ctx) > 0 {
                         bootstrapper.sessionState.incrementDataVersion()
                     }
+                    // Lo apuntado por la IA de la persona que no entró al abrir porque el import seguía activo.
+                    if let ctx = bootstrapper.remoteChangeModelContext {
+                        Task { @MainActor in
+                            if await AIConnectorDraftService.syncIfNeeded(context: ctx) > 0 {
+                                bootstrapper.sessionState.incrementDataVersion()
+                            }
+                        }
+                    }
                     #if DEBUG
                     print("AppBootstrapper: Remote CloudKit change — trailing edge")
                     #endif
@@ -2414,6 +2422,13 @@ final class AppBootstrapper {
         // Bandeja. Solo pregunta con la dirección preparada y los datos en la nube (`BankEmailDraftService.shouldSync`).
         Task { @MainActor in
             if await BankEmailDraftService.syncIfNeeded(context: context) > 0 {
+                sessionState.incrementDataVersion()
+            }
+        }
+        // Tu IA registra en Yala (2.3): lo que Claude, ChatGPT o Grok apuntó por el conector pasa a la Bandeja. Solo con los
+        // datos en la nube y sesión (`AIConnectorDraftService.shouldSync`); corre también en el primer `.active` en frío.
+        Task { @MainActor in
+            if await AIConnectorDraftService.syncIfNeeded(context: context) > 0 {
                 sessionState.incrementDataVersion()
             }
         }

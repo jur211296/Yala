@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1170)
+## Index (1172)
 
 | id | status | path |
 |---|---|---|
@@ -105,6 +105,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ai-calls-have-no-output-token-cap | done | tickets/done/ai-calls-have-no-output-token-cap.md |
 | ai-chat-reads-heavier-than-a-messaging-app | done | tickets/done/ai-chat-reads-heavier-than-a-messaging-app.md |
 | ai-comments-ignore-the-app-language | done | tickets/done/ai-comments-ignore-the-app-language.md |
+| ai-connector-drafts-in-the-inbox | qa | tickets/qa/ai-connector-drafts-in-the-inbox.md |
 | ai-every-call-sends-its-task-and-passes-the-bench | done | tickets/done/ai-every-call-sends-its-task-and-passes-the-bench.md |
 | ai-insights-error-card-shows-raw-english-errors | done | tickets/done/ai-insights-error-card-shows-raw-english-errors.md |
 | ai-model-choice-lives-in-the-app-binary | done | tickets/done/ai-model-choice-lives-in-the-app-binary.md |
@@ -733,6 +734,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | markerless-adopt-stays-blocked-while-another-device-writes-to-the-account | done | tickets/done/markerless-adopt-stays-blocked-while-another-device-writes-to-the-account.md |
 | markerless-adopt-without-full-coverage-never-relays-the-marker | backlog | tickets/backlog/markerless-adopt-without-full-coverage-never-relays-the-marker.md |
 | mcp-connector-counts-future-dated-rows-in-todays-balance | done | tickets/done/mcp-connector-counts-future-dated-rows-in-todays-balance.md |
+| mcp-consent-page-overflows-on-a-phone | backlog | tickets/backlog/mcp-consent-page-overflows-on-a-phone.md |
 | merchant-memory-suggests-across-natures-in-three-more-places | done | tickets/done/merchant-memory-suggests-across-natures-in-three-more-places.md |
 | metrics-drain-purge-drops-unsent-events-when-the-spool-is-full | done | tickets/done/metrics-drain-purge-drops-unsent-events-when-the-spool-is-full.md |
 | migrate-attempt-session-survives-a-relaunch-mid-attempt | backlog | tickets/backlog/migrate-attempt-session-survives-a-relaunch-mid-attempt.md |

@@ -76,7 +76,7 @@ export interface ToolCore {
 
 const ORDER_ID: [string, string] = ["order", "sync_id.asc"];
 
-async function loadPrefs(ctx: ToolContext): Promise<Map<string, string>> {
+export async function loadPrefs(ctx: ToolContext): Promise<Map<string, string>> {
   const { rows } = await ctx.reader.all<PreferenceRow>("user_preferences", [
     ["select", COLUMNS.prefs],
     ["key", "in.(defaultCurrencyCode,firstWeekday,timeZoneIdentifier)"],
@@ -138,7 +138,7 @@ async function loadGroupAdjustment(
   return buildGroupAdjustment([...txs, ...siblings], lookup.accounts, lookup.subcategories, rates);
 }
 
-async function loadLookup(ctx: ToolContext): Promise<Lookup> {
+export async function loadLookup(ctx: ToolContext): Promise<Lookup> {
   const [accounts, categories, subcategories, tags] = await Promise.all([
     ctx.reader.all<AccountRow>("accounts", [["select", COLUMNS.accounts], NOT_DELETED, ORDER_ID]),
     ctx.reader.all<CategoryRow>("categories", [["select", COLUMNS.categories], NOT_DELETED, ORDER_ID]),
@@ -179,7 +179,7 @@ function firstWeekday(prefs: Map<string, string>, args: Record<string, unknown>)
  * escribe gana); y si tampoco, `DEFAULT_TIMEZONE`, que es la única que se supone. Una zona guardada que no es IANA
  * válida se ignora, no rompe la herramienta. La de Claude, en cambio, sí se valida con error: la pidió él.
  */
-async function zoneOf(ctx: ToolContext, args: Record<string, unknown>, prefs: Promise<Map<string, string>>): Promise<{ tz: string; assumed: boolean }> {
+export async function zoneOf(ctx: ToolContext, args: Record<string, unknown>, prefs: Promise<Map<string, string>>): Promise<{ tz: string; assumed: boolean }> {
   const given = typeof args.zona_horaria === "string" && args.zona_horaria ? args.zona_horaria : null;
   if (given) return { tz: assertTimeZone(given), assumed: false };
   const stored = (await prefs).get("timeZoneIdentifier")?.trim();
@@ -194,7 +194,7 @@ async function zoneOf(ctx: ToolContext, args: Record<string, unknown>, prefs: Pr
 }
 
 /** Solo se avisa cuando ni Claude ni la app dieron la zona y se ha tenido que suponer. */
-function zoneNotice(zone: { tz: string; assumed: boolean }): string[] {
+export function zoneNotice(zone: { tz: string; assumed: boolean }): string[] {
   return zone.assumed
     ? [`No se indicó zona horaria: se usa ${zone.tz} para decidir qué día es hoy y dónde empieza cada periodo. Si el usuario está en otra, las cifras del borde del periodo pueden cambiar.`]
     : [];

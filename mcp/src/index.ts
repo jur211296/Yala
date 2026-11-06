@@ -64,7 +64,7 @@ function buildProvider(env: Env, deps: AppDeps): Built {
         if (url.pathname === "/" && request.method === "GET") {
           const label = (e as Env).ENVIRONMENT === "production" ? "Yala MCP" : `Yala MCP (${(e as Env).ENVIRONMENT})`;
           return new Response(
-            `${label}: conector de solo lectura para Claude. Endpoint MCP en /mcp; se autoriza con OAuth contra este Worker.\n`,
+            `${label}: conector de Yala para tu IA (lee tus datos y deja borradores en la Bandeja). Endpoint MCP en /mcp; se autoriza con OAuth contra este Worker.\n`,
             { headers: { "Content-Type": "text/plain; charset=utf-8" } },
           );
         }
@@ -74,7 +74,7 @@ function buildProvider(env: Env, deps: AppDeps): Built {
     authorizeEndpoint: "/authorize",
     tokenEndpoint: "/oauth/token",
     clientRegistrationEndpoint: "/oauth/register",
-    clientRegistrationCallback: registrationPolicy,
+    clientRegistrationCallback: (o) => registrationPolicy(o, env),
     scopesSupported: [SCOPE],
     refreshTokenTTL: GRANT_IDLE_SECONDS,
     refreshTokenIdleTTL: GRANT_IDLE_SECONDS,
@@ -118,7 +118,7 @@ export function createApp(deps: AppDeps = {}) {
       const bucket = ipBucketFor(new URL(request.url).pathname);
       if (bucket && !(await allow(env, bucket, clientIp(request)))) {
         if (bucket === "RL_BROWSER") {
-          const page = errorPage("Demasiados intentos seguidos. Espera un minuto y vuelve a conectar desde Claude.", 429);
+          const page = errorPage("Demasiados intentos seguidos. Espera un minuto y vuelve a conectar desde tu IA.", 429);
           page.headers.set("Retry-After", "60");
           return page;
         }

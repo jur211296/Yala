@@ -2012,6 +2012,7 @@
 "inbox.sourceApplePay" = "Apple Pay";
 "inbox.sourceAutomation" = "Automatisering";
 "inbox.sourceSiri" = "Siri";
+"inbox.sourceAIConnector" = "Je AI";
 "inbox.errorNoAccount" = "Je moet een rekening selecteren";
 "inbox.errorNoAmount" = "Je moet een bedrag opgeven";
 "inbox.errorNoSubcategory" = "Je moet een categorie selecteren";

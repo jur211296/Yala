@@ -6989,6 +6989,10 @@ enum L10n {
         static var sourceSiri: String {
             ls("inbox.sourceSiri", comment: "")
         }
+        /// Un borrador que dejó la IA de la persona (Claude, ChatGPT, Grok) por el conector de Yala.
+        static var sourceAIConnector: String {
+            ls("inbox.sourceAIConnector", comment: "")
+        }
         static var sourceGroupExpense: String {
             ls("inbox.sourceGroupExpense", comment: "")
         }

@@ -19,7 +19,7 @@ enum DraftConversionEligibilityLogic {
     /// blocklist, que ofrecería fuentes futuras por accidente).
     static let convertibleSources: Set<DraftSourceType> = [
         .voice, .receiptPhoto, .screenshotList, .screenshotSingle,
-        .emailAlert, .applePay, .automation, .siri, .manual
+        .emailAlert, .applePay, .automation, .siri, .manual, .aiConnector
     ]
 
     /// `true` si el draft debe mostrar el botón "Convertir a gasto compartido".
