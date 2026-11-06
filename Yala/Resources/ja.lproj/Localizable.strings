@@ -8722,3 +8722,10 @@
 
 /* Eye button next to the Panel headline amount while amounts are hidden: shows them again */
 "panel.showAmounts" = "金額を表示";
+
+/* Flujo proyectado (card «Flujo proyectado en Tendencias y Panel», 2026-11-06) */
+"trend.projected.toggle" = "予測を表示";
+"trend.projected.closing" = "期間末の予測";
+"trend.projected.source.plan" = "キャッシュフロー計画から推定";
+"trend.projected.source.rhythm" = "支出ペースから推定";
+"trend.projected.source.scheduled" = "予定の支払いから推定";

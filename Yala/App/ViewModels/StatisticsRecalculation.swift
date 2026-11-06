@@ -63,7 +63,9 @@ final class StatisticsRecalculation {
             transactions: inputs.transactions,
             allTags: inputs.tags,
             defaultCurrencyCode: inputs.currencyCode,
-            adjustment: adjustment
+            adjustment: adjustment,
+            scheduledPayments: inputs.scheduledPayments,
+            context: context
         )
         calculateInsights(inputs, trends: trends, insights: insights, context: context, adjustment: adjustment)
     }

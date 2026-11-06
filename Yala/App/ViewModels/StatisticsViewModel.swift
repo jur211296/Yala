@@ -199,6 +199,11 @@ final class StatisticsViewModel: Filterable {
     /// educativo "Tu saldo hoy" desde la pill "Hoy ⓘ" del chart.
     var trendLiveAnchorBreakdown: [String: Decimal]? = nil
 
+    /// «Ver proyectado»: la continuación estimada hasta el final del período. `nil` si el período no tiene días por
+    /// delante (entonces no hay control) o en la vista por cuenta. Se calcula siempre que haya días por delante: la
+    /// píldora solo decide si se pinta, y así encenderla no espera a otra pasada.
+    var projection: ProjectedFlowCalculator.Projection? = nil
+
     /// `true` si el saldo vivo se armó con alguna tasa que no era la de hoy. Va a la misma hoja
     /// educativa, que sin la marca declaraba exacto el número que existe para explicar que no lo es.
     var trendLiveAnchorIsApproximate: Bool = false
@@ -406,7 +411,10 @@ final class StatisticsViewModel: Filterable {
         transactions: [TransactionItem],
         allTags: [Tag],
         defaultCurrencyCode: String,
-        adjustment: GroupBridgeStatsAdjustment = .none
+        adjustment: GroupBridgeStatsAdjustment = .none,
+        scheduledPayments: [ScheduledPayment] = [],
+        context: ModelContext? = nil,
+        now: Date = .now
     ) {
         // Enforce metric lock based on filters
         enforceMetricLock()
@@ -467,8 +475,25 @@ final class StatisticsViewModel: Filterable {
             if result.liveAnchor != trendLiveAnchor { trendLiveAnchor = result.liveAnchor }
             if result.liveAnchorNativeBalances != trendLiveAnchorBreakdown { trendLiveAnchorBreakdown = result.liveAnchorNativeBalances }
             if result.liveAnchorIsApproximate != trendLiveAnchorIsApproximate { trendLiveAnchorIsApproximate = result.liveAnchorIsApproximate }
+            let newProjection = calculateProjection(
+                metric: trendType,
+                interval: interval,
+                criteria: criteria,
+                accounts: accounts,
+                transactions: transactions,
+                filtered: filtered,
+                realPoints: result.rawPoints,
+                liveAnchorValue: result.liveAnchor?.value,
+                defaultCurrencyCode: defaultCurrencyCode,
+                adjustment: adjustment,
+                scheduledPayments: scheduledPayments,
+                context: context,
+                now: now
+            )
+            if newProjection != projection { projection = newProjection }
             dataMetric = selectedMetric
         } else {
+            if projection != nil { projection = nil }
             calculatePerAccountTrend(
                 transactions: filtered,
                 accounts: eligibleAccounts,
@@ -494,6 +519,62 @@ final class StatisticsViewModel: Filterable {
             allTags: allTags,
             defaultCurrencyCode: defaultCurrencyCode,
             adjustment: adjustment
+        )
+    }
+
+    // MARK: - Flujo proyectado
+
+    /// La proyección de la tarjeta de tendencia (card «Flujo proyectado en Tendencias y Panel»). Lee los mismos filtros
+    /// que la curva; sin recorte de fecha, porque el ritmo mira los últimos tres meses y los movimientos futuros quedan
+    /// fuera del período de la curva.
+    private func calculateProjection(
+        metric: TrendType,
+        interval: DateInterval,
+        criteria: FilterCriteria,
+        accounts: [Account],
+        transactions: [TransactionItem],
+        filtered: [TransactionItem],
+        realPoints: [PanelViewModel.BarPoint],
+        liveAnchorValue: Double?,
+        defaultCurrencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment,
+        scheduledPayments: [ScheduledPayment],
+        context: ModelContext?,
+        now: Date
+    ) -> ProjectedFlowCalculator.Projection? {
+        let calendar = Calendar.current
+        let horizon = ProjectedFlowCalculator.horizon(for: detailPeriod, interval: interval, calendar: calendar)
+        let days = ProjectedFlowCalculator.futureDays(in: horizon, today: now, calendar: calendar)
+        guard !days.isEmpty else { return nil }
+        var undated = criteria
+        undated.dateInterval = nil
+        let counted = criteria.dateInterval == nil
+            ? filtered
+            : FilterService.filterForTrends(transactions: transactions, accounts: accounts, criteria: undated)
+        let inputs = ProjectedFlowBuilder.Inputs(
+            today: now,
+            calendar: calendar,
+            overdueWindowStart: ProjectedFlowBuilder.overdueWindowStart(today: now, calendar: calendar),
+            days: days,
+            allTransactions: transactions,
+            countedTransactions: counted,
+            hasSessionFilters: ProjectedFlowBuilder.filtersNarrowData(criteria),
+            scheduledPayments: scheduledPayments,
+            paymentFilter: ProjectedFlowBuilder.paymentFilter(from: criteria),
+            currencyCode: defaultCurrencyCode,
+            adjustment: adjustment,
+            converter: CurrencyConverter.shared
+        )
+        let built = ProjectedFlowBuilder.build(inputs, context: context)
+        return ProjectedFlowBuilder.chartProjection(
+            metric: metric,
+            grouping: trendGrouping,
+            realPoints: realPoints,
+            liveAnchorValue: liveAnchorValue,
+            result: built,
+            days: days,
+            today: now,
+            calendar: calendar
         )
     }
 

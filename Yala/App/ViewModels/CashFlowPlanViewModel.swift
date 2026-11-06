@@ -82,6 +82,14 @@ final class CashFlowPlanViewModel {
         plan?.lines?.first { $0.id == lineID }
     }
 
+    /// Un cambio del plan mueve «Ver proyectado» de Tendencias y de los widgets Gasto y Saldo (card «Flujo proyectado en
+    /// Tendencias y Panel»). Guardar solo no basta: Estadísticas recalcula por `dataVersion` y la foto de los widgets por
+    /// `updateCache` (el Panel ya lo veía por `StoreSaveCounter`). Lo encontró la review del 2026-11-06.
+    static func announcePlanChange(_ context: ModelContext) {
+        SessionState.shared.incrementDataVersion()
+        WidgetDataCache.updateCache(context: context)
+    }
+
     func setContext(_ ctx: ModelContext) {
         modelContext = ctx
         loadPlan()
@@ -356,6 +364,7 @@ final class CashFlowPlanViewModel {
 
         do {
             try ctx.save()
+            Self.announcePlanChange(ctx)
         } catch {
             #if DEBUG
             print("CashFlowPlanViewModel: Error creating plan: \(error)")
@@ -374,6 +383,7 @@ final class CashFlowPlanViewModel {
         line.plan = plan
         do {
             try ctx.save()
+            Self.announcePlanChange(ctx)
         } catch {
             #if DEBUG
             print("CashFlowPlanViewModel: Error adding line: \(error)")
@@ -386,6 +396,7 @@ final class CashFlowPlanViewModel {
         ctx.delete(line)
         do {
             try ctx.save()
+            Self.announcePlanChange(ctx)
         } catch {
             #if DEBUG
             print("CashFlowPlanViewModel: Error removing line: \(error)")
@@ -403,6 +414,7 @@ final class CashFlowPlanViewModel {
         }
         do {
             try modelContext?.save()
+            if let modelContext { Self.announcePlanChange(modelContext) }
         } catch {
             #if DEBUG
             print("CashFlowPlanViewModel: Error reordering: \(error)")
@@ -444,6 +456,7 @@ final class CashFlowPlanViewModel {
 
         do {
             try ctx.save()
+            Self.announcePlanChange(ctx)
         } catch {
             #if DEBUG
             print("CashFlowPlanViewModel: Error promoting lines: \(error)")
@@ -470,6 +483,7 @@ final class CashFlowPlanViewModel {
 
         do {
             try ctx.save()
+            Self.announcePlanChange(ctx)
         } catch {
             #if DEBUG
             print("CashFlowPlanViewModel: Error setting override: \(error)")
@@ -495,6 +509,7 @@ final class CashFlowPlanViewModel {
         line.amountChangesRaw = CashFlowAmountChangeLogic.encode(updated)
         do {
             try ctx.save()
+            Self.announcePlanChange(ctx)
         } catch {
             #if DEBUG
             print("CashFlowPlanViewModel: Error setting amount from month onward: \(error)")
@@ -520,6 +535,7 @@ final class CashFlowPlanViewModel {
         line.amountChangesRaw = nil
         do {
             try ctx.save()
+            Self.announcePlanChange(ctx)
         } catch {
             #if DEBUG
             print("CashFlowPlanViewModel: Error changing estimation method: \(error)")
@@ -556,6 +572,7 @@ final class CashFlowPlanViewModel {
             existing.forEach { ctx.delete($0) }
             do {
                 try ctx.save()
+                Self.announcePlanChange(ctx)
             } catch {
                 #if DEBUG
                 print("CashFlowPlanViewModel: Error removing override: \(error)")
@@ -630,6 +647,7 @@ final class CashFlowPlanViewModel {
         plan.startingBalanceDate = date
         do {
             try plan.modelContext?.save()
+            if let planContext = plan.modelContext { Self.announcePlanChange(planContext) }
         } catch {
             #if DEBUG
             print("CashFlowPlanViewModel: Error updating starting balance: \(error)")
@@ -644,6 +662,7 @@ final class CashFlowPlanViewModel {
         plan.showAccumulatedBalance = showAccumulatedBalance
         do {
             try plan.modelContext?.save()
+            if let planContext = plan.modelContext { Self.announcePlanChange(planContext) }
         } catch {
             #if DEBUG
             print("CashFlowPlanViewModel: Error updating horizon: \(error)")
@@ -662,6 +681,7 @@ final class CashFlowPlanViewModel {
 
         do {
             try ctx.save()
+            Self.announcePlanChange(ctx)
         } catch {
             #if DEBUG
             print("CashFlowPlanViewModel: Error resetting plan: \(error)")

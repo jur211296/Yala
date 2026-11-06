@@ -8722,3 +8722,10 @@
 
 /* Eye button next to the Panel headline amount while amounts are hidden: shows them again */
 "panel.showAmounts" = "Pokaż kwoty";
+
+/* Flujo proyectado (card «Flujo proyectado en Tendencias y Panel», 2026-11-06) */
+"trend.projected.toggle" = "Pokaż prognozę";
+"trend.projected.closing" = "Prognoza na koniec okresu";
+"trend.projected.source.plan" = "Szacowane na podstawie planu przepływu środków";
+"trend.projected.source.rhythm" = "Szacowane na podstawie tempa wydatków";
+"trend.projected.source.scheduled" = "Szacowane na podstawie zaplanowanych płatności";

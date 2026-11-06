@@ -1,6 +1,6 @@
 ---
 id: flujo-proyectado-en-tendencias-y-panel
-status: backlog
+status: qa
 priority: medium
 area: "Tendencias, Panel, Flujo de caja, WidgetKit"
 created: 2026-11-06
@@ -138,3 +138,38 @@ entra en esta exploración ni en la implementación de este ticket.
 - El saldo proyectado con varias monedas usa la tasa de hoy para días futuros: es una estimación y va con «≈».
 - Esta card y `cashflow-spend-prediction` (cierre estimado del mes en curso por línea) comparten el cálculo de «lo que
   falta de una línea»: conviene construir ese trozo una sola vez.
+
+## Implementación (2026-11-06)
+
+Hecho según el plan de arriba, con las 13 respuestas. Lo que el plan no decía y se decidió al construir (Paso 0 del
+encargo, en el PR):
+
+- **Horizonte**: los períodos en curso cierran hoy a las 23:59:59 (`DetailPeriod.dateInterval`); la proyección los alarga
+  al período entero (`ProjectedFlowCalculator.horizon`: semana, mes, año). Sin eso la píldora no salía nunca (medido en
+  el simulador).
+- **Pagos ya resueltos**: la frontera es `nextDueDate` (solo avanza al pagar o saltar), más el movimiento enlazado ese
+  día y `lastPaidDate`. Vencidos desde el inicio del mes en curso, sea cual sea el período.
+- **Plan**: lo que falta de cada línea = planeado − real − pagos planificados pendientes de esa línea, nunca negativo;
+  las líneas «pago planificado» no suman aparte. Por lado: sin líneas de ese lado, o con cualquier filtro de sesión,
+  ritmo (90 días, mínimo 14 de historia, sin lo enlazado a un pago).
+- **Widgets**: lo esperado por día va en la foto (`projectedFlow`, opcional) sin filtros; cada widget lo acumula sobre su
+  curva. Guardar el plan avisa a Estadísticas y a los widgets (`CashFlowPlanViewModel.announcePlanChange`).
+- **«Ver el mes anterior»** no apaga la preferencia (compartida con el Panel): mientras se ve, la proyección no se pinta.
+
+### Residuales (no se tocaron)
+
+- Los pagos planificados **de grupo** no se proyectan: se guardan por el importe entero y la curva cuenta «mi parte».
+- Un pago planificado que la persona apunta a mano **sin enlazarlo** entra en el ritmo y además en su día.
+- Con Estadísticas abierta pasada la medianoche, la proyección arranca en «ayer» hasta el siguiente recálculo.
+- La proyección se calcula siempre que hay días por delante, también con la píldora apagada (para que encenderla no
+  espere a otra pasada); sin medir en el iPhone con 2.337 movimientos.
+
+### Guion de QA (iPhone de pruebas, Yala Dev)
+
+1. Panel con período «Este mes»: en la tarjeta de tendencia, toca «Ver proyectado». Debe salir la línea punteada hasta
+   el 30 y, debajo, «Proyectado al cierre» con la cifra y de dónde sale.
+2. Estadísticas › Tendencias: la píldora ya está encendida. Toca «Ver el mes anterior»: la punteada desaparece; apágalo:
+   vuelve.
+3. Mantén pulsado el widget «Gasto» (o «Saldo») en la pantalla de inicio › Editar widget › activa «Mostrar proyectado».
+   Debe salir una línea de puntos del color del widget hasta fin de mes, distinta de la raya gris del mes anterior.
+

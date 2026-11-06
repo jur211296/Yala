@@ -41,6 +41,10 @@ struct TrendChartView: View {
     /// inteligente para no saturar). Default vacío. Usa el formatter puro (sin
     /// `@Environment` → seguro dentro de `.annotation`).
     var dataLabelDates: Set<Date> = []
+    /// «Ver proyectado» (card «Flujo proyectado en Tendencias y Panel»): la continuación estimada desde hoy hasta el
+    /// final del período, punteada en el color de la métrica. El primer punto es el de hoy. Vacío = sin proyección; con
+    /// ella, quien llama pasa la curva real cortada en hoy (los movimientos con fecha futura van en la proyección).
+    var projectedPoints: [PanelViewModel.BarPoint] = []
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -104,7 +108,7 @@ struct TrendChartView: View {
                 calendar.compare($0.date, to: today, toGranularity: .day) != .orderedAscending
             }
 
-            let yBase = min(max(yDomain.lowerBound, 0), yDomain.upperBound)
+            let yBase = min(max(displayYDomain.lowerBound, 0), displayYDomain.upperBound)
 
             // Interpolation Logic:
             // Use .monotone to prevent overshoots at extreme points
@@ -186,6 +190,27 @@ struct TrendChartView: View {
                 .foregroundStyle(.thSecondaryText)  // Explicit Gray for distinction
             }
 
+            // Proyección: punteada en el color de la métrica, más tenue que la real, y en su propia serie para que no
+            // se una a la curva gris de los movimientos futuros (que con la proyección no se pasan).
+            ForEach(projectedPoints, id: \.date) { point in
+                LineMark(
+                    x: .value(dateLabel, point.date),
+                    y: .value(amountLabel, point.value),
+                    series: .value("Serie", "projected")
+                )
+                .interpolationMethod(interpolation)
+                .lineStyle(StrokeStyle(lineWidth: solidLineWidth, lineCap: .round, dash: [2, 4]))
+                .foregroundStyle(primaryLineColor.opacity(0.75 * dimOpacity))
+            }
+            if let lastProjected = projectedPoints.last, projectedPoints.count > 1, !compact {
+                PointMark(
+                    x: .value(dateLabel, lastProjected.date),
+                    y: .value(amountLabel, lastProjected.value)
+                )
+                .symbolSize(30)
+                .foregroundStyle(primaryLineColor.opacity(0.75 * dimOpacity))
+            }
+
             // Single point: LineMark is invisible with 1 point, show a dot instead
             if trendPoints.count == 1, let singlePoint = trendPoints.first {
                 PointMark(
@@ -236,8 +261,8 @@ struct TrendChartView: View {
                 // Invisible anchor point for tooltip — placed ~35% below the chart top
                 // so the bubble doesn't choque con el KPI del header del card (Statistics
                 // tab + Panel widget) ni se salga off-canvas.
-                let tooltipAnchorY = yDomain.upperBound
-                    - (yDomain.upperBound - yDomain.lowerBound) * 0.35
+                let tooltipAnchorY = displayYDomain.upperBound
+                    - (displayYDomain.upperBound - displayYDomain.lowerBound) * 0.35
                 PointMark(
                     x: .value(L10n.Common.selectedDate, activeDate),
                     y: .value("TooltipAnchor", tooltipAnchorY)
@@ -288,7 +313,7 @@ struct TrendChartView: View {
                     .foregroundStyle(.thSecondaryText.opacity(gridOpacity))
                 AxisValueLabel {
                     if let doubleValue = value.as(Double.self) {
-                        Text(AmountPrivacy.text(YalaFormatter.axisK(doubleValue, domain: yDomain), hidden: amountsHidden))
+                        Text(AmountPrivacy.text(YalaFormatter.axisK(doubleValue, domain: displayYDomain), hidden: amountsHidden))
                             .font(DS.Typography.captionSmall)
                             .foregroundStyle(.thSecondaryText)
                             .opacity(labelOpacity)
@@ -297,7 +322,7 @@ struct TrendChartView: View {
             }
         }
         // Y-Axis Scale from ViewModel
-        .chartYScale(domain: yDomain)
+        .chartYScale(domain: displayYDomain)
         // X-Axis Scale from Interval
         .chartXScale(domain: paddedXDomain)
         .chartXAxis {
@@ -459,10 +484,24 @@ struct TrendChartView: View {
         // Extender hasta liveAnchor.date si cae fuera del rango de datos (caso
         // típico: última tx hace varios días pero el período cubre hoy). Esto
         // beneficia también al `todayMarker` que verifica `paddedXDomain.contains(today)`.
-        let effectiveLastDate = max(lastDate, liveAnchor?.date ?? lastDate)
+        let effectiveLastDate = max(lastDate, liveAnchor?.date ?? lastDate, projectedPoints.last?.date ?? lastDate)
         let span = effectiveLastDate.timeIntervalSince(firstDate)
         let padding = max(span * 0.05, 86400)  // At least 1 day padding
         return firstDate.addingTimeInterval(-padding)...effectiveLastDate.addingTimeInterval(padding)
+    }
+
+    /// El dominio Y que se pinta: el del ViewModel, ensanchado para que quepa la proyección (un saldo que baja de cero a
+    /// fin de mes no puede salirse de la gráfica).
+    private var displayYDomain: ClosedRange<Double> {
+        guard let low = projectedPoints.map(\.value).min(),
+              let high = projectedPoints.map(\.value).max() else { return yDomain }
+        guard low < yDomain.lowerBound || high > yDomain.upperBound else { return yDomain }
+        let lower: Double = min(yDomain.lowerBound, low)
+        let upper: Double = max(yDomain.upperBound, high)
+        let padding: Double = (upper - lower) * 0.05
+        let paddedLower: Double = low < yDomain.lowerBound ? lower - padding : lower
+        let paddedUpper: Double = high > yDomain.upperBound ? upper + padding : upper
+        return paddedLower...paddedUpper
     }
 
     // MARK: - Smart Axis Labels
@@ -482,10 +521,18 @@ struct TrendChartView: View {
         }
     }
 
+    /// Las fechas que reparten el eje X: las de la curva y, con «Ver proyectado», las de la proyección (sin la de hoy,
+    /// que ya está en la curva).
+    private var axisDataDates: [Date] {
+        guard projectedPoints.count > 1 else { return trendPoints.map(\.date) }
+        let last = trendPoints.last?.date ?? .distantPast
+        return trendPoints.map(\.date) + projectedPoints.map(\.date).filter { $0 > last }
+    }
+
     /// Axis dates for compact mode: first + last data point only (empty if <2 points).
     private var compactAxisDates: [Date] {
-        guard let firstDate = trendPoints.first?.date,
-              let lastDate = trendPoints.last?.date,
+        guard let firstDate = axisDataDates.first,
+              let lastDate = axisDataDates.last,
               firstDate != lastDate
         else { return trendPoints.first.map { [$0.date] } ?? [] }
         return [firstDate, lastDate]
@@ -502,12 +549,12 @@ struct TrendChartView: View {
         }()
 
         let rawDates = SmartAxisHelper.calculateSmartAxisDates(
-            forDataDates: trendPoints.map(\.date),
+            forDataDates: axisDataDates,
             grouping: calendarUnit
         )
 
-        guard let firstDate = trendPoints.first?.date,
-              let lastDate = trendPoints.last?.date else { return rawDates }
+        guard let firstDate = axisDataDates.first,
+              let lastDate = axisDataDates.last else { return rawDates }
         let deduplicated = SmartAxisHelper.deduplicatedAxisDates(
             rawDates, firstDate: firstDate, lastDate: lastDate,
             forceGrouping: grouping.forceAxisGrouping)
@@ -523,8 +570,8 @@ struct TrendChartView: View {
 
     /// Format axis label based on data span (include year if multiple years)
     private func smartAxisLabel(for date: Date) -> String {
-        guard let firstDate = trendPoints.first?.date,
-            let lastDate = trendPoints.last?.date
+        guard let firstDate = axisDataDates.first,
+            let lastDate = axisDataDates.last
         else {
             return formatDayNumber(date)
         }

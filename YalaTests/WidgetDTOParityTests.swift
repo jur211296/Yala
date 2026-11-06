@@ -40,7 +40,8 @@ struct WidgetDTOParityTests {
         "WidgetTrendData", "WidgetAccountBalance", "WidgetCategory", "WidgetSubcategory",
         "WidgetCashFlowPoint", "WidgetPeriodSummary", "WidgetDataSnapshot",
         "WidgetAccountFlow", "WidgetPaymentsMonth",
-        "WidgetGroupAmount", "WidgetGroupBalance", "WidgetGroupsSummary"
+        "WidgetGroupAmount", "WidgetGroupBalance", "WidgetGroupsSummary",
+        "WidgetProjectedDay", "WidgetProjectedFlow"
     ]
 
     static let writerPath = "Yala/Services/WidgetDataCache.swift"
@@ -188,6 +189,10 @@ struct WidgetDTOParityTests {
                 iOwe: [WidgetGroupAmount(currencyCode: "PEN", amount: 1)], owedToMe: [], activeGroupCount: 1,
                 groups: [WidgetGroupBalance(id: "g", name: "G", iconName: "i", colorHex: "#000000",
                                             iOwe: [], owedToMe: [WidgetGroupAmount(currencyCode: "USD", amount: 1)])]
+            ),
+            // Opcional en las dos copias, con un día para que el recorrido pase por `WidgetProjectedDay`.
+            projectedFlow: WidgetProjectedFlow(
+                days: [WidgetProjectedDay(date: date, income: 0, expense: 1)], isApproximate: false
             )
         )
     }
