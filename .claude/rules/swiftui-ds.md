@@ -199,7 +199,7 @@ paths:
   del almacén soltado: Ajustes hacía `fetchCount` en su `onAppear` y SwiftData abortaba (`swift_weakLoadStrong`,
   EXC_BREAKPOINT). ⇒ el contenido de una presentación desde la que se cierra sesión o se borra la cuenta en la nube
   lleva `.detachesFromSwappedStore()`, que deja de pintarlo en cuanto la generación del host cambia o se queda sin
-  almacén (`SwappedStoreContentLogic`); hoy, la hoja de Ajustes. (2) **El re-arranque vuelve a correr
+  almacén (`SwappedStoreContentLogic`); hoy, la hoja de Ajustes. **La generación con la que se montó viaja por el entorno** (`\.mountedStoreGeneration`, lo pone `YalaApp.windowContent`), no en un `@State` del contenido: si iOS rehace el contenido de la hoja tras el cambio, un `@State` nuevo guardaría la generación nueva con el contexto viejo. (2) **El re-arranque vuelve a correr
   `AppBootstrapper.bootstrap` en el MISMO proceso**, y lo que el sistema solo admite una vez por proceso revienta:
   `BGTaskScheduler.register` de un identificador ya registrado lanza una excepción ObjC que nada atrapa. ⇒ un paso nuevo
   del arranque que registre algo en el sistema lleva su latch de proceso (`BackgroundTaskManager.didRegisterTasks`).

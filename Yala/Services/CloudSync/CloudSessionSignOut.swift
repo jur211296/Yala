@@ -2552,7 +2552,11 @@ final class CloudSessionSignOut {
         StorageModePersistence.armSignOutWipe()
         CloudSyncBreadcrumb.signOutWipeArmed()
         // Card 7e60 · el borrado de la cuenta tampoco deja un destino del Welcome de antes (ver `persistDestinationOnArm`).
-        persistDestinationOnArm()
+        // Retira sin mirar `destinationOnArm`: el borrado no lo trae, y el que quedara es de un cierre anterior que salió
+        // sin armar (la puerta de Grupos que se para por la celda), así que escribirlo mandaría a crear un grupo o a
+        // unirse con la cuenta ya borrada (review adversarial del lote).
+        destinationOnArm = nil
+        WelcomePendingDestinationStore.clear()
         clearLocalSurfacesForArmedWipe()
         phase = .awaitingRelaunch
 
@@ -2676,7 +2680,11 @@ final class CloudSessionSignOut {
         StorageModePersistence.armSignOutWipe()
         CloudSyncBreadcrumb.signOutWipeArmed()
         // Card 7e60 · el borrado de la cuenta tampoco deja un destino del Welcome de antes (ver `persistDestinationOnArm`).
-        persistDestinationOnArm()
+        // Retira sin mirar `destinationOnArm`: el borrado no lo trae, y el que quedara es de un cierre anterior que salió
+        // sin armar (la puerta de Grupos que se para por la celda), así que escribirlo mandaría a crear un grupo o a
+        // unirse con la cuenta ya borrada (review adversarial del lote).
+        destinationOnArm = nil
+        WelcomePendingDestinationStore.clear()
         clearLocalSurfacesForArmedWipe()
         phase = .awaitingRelaunch
         return true

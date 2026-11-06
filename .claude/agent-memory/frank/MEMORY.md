@@ -53,6 +53,7 @@
 ## Cómo mido y cómo entrego
 - [Duo abierto en la Max](reference_duo_abierto_en_la_max.md) — XCTest da negro: enlace + simctl --display; Device Hub con la pantalla libre.
 - [XcodeBuildMCP: la configuración pisa el scheme](feedback_xcodebuildmcp_configuration_pisa_el_scheme.md) — Yala Dev = Debug-Dev; con Debug la nube sale apagada bajo -uitest.
+- [Un crash arreglado destapa el de detrás](feedback_un_crash_arreglado_destapa_el_de_detras.md) — repite el gesto en el iPhone; el cierre en la nube tenía dos en fila.
 - [Sentry vacío no descarta un «crash»](feedback_sentry_vacio_no_descarta_un_crash.md) — pantalla muerta o exit(0) primero; .ips en «Necesita de ti».
 - [Sentry dev: cuadra con las sesiones](feedback_sentry_dev_cuadra_con_las_sesiones.md) — evento cada pocos segundos en simulador = previews o bucle ajeno; mira git log de esa hora.
 - [Gate con globs anchos: subconjunto declarado](feedback_gate_globs_ancho_subconjunto.md) — ContentView/PanelView piden ~90 suites; corre las que ejercen y dilo.

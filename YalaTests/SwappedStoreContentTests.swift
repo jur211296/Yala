@@ -68,19 +68,29 @@ struct SwappedStoreContentTests {
         #expect(setContext.upperBound <= detach.lowerBound)
     }
 
-    @Test("El modificador decide con la generación y el almacén del host, y deja de pintar el contenido")
+    @Test("El modificador decide con la generación del ENTORNO y el almacén del host, y deja de pintar el contenido")
     func modifier_readsTheHostAndDropsTheContent() throws {
         let src = Self.code(try Self.source("Yala/App/Views/Shared/DetachesFromSwappedStoreModifier.swift"))
-        #expect(src.contains("@State private var mountedGeneration = PersonalContainerHost.shared.generation"))
+        // La generación montada viene del entorno (un `@State` rehecho tras el cambio guardaría la nueva).
+        #expect(src.contains("@Environment(\\.mountedStoreGeneration) private var mountedGeneration"))
+        #expect(!src.contains("@State"))
         #expect(src.contains("currentGeneration: host.generation"))
         #expect(src.contains("hostHasContainer: host.container != nil"))
         #expect(src.contains("SwappedStoreContentLogic.isStale("))
-        // La rama suelta pinta un vacío, y `content` solo sale en la otra (una vez en el cuerpo).
+        // La rama suelta pinta un vacío, y `content` solo sale en la otra.
         let stale = try #require(src.range(of: "hostHasContainer: host.container != nil) {"))
         let clear = try #require(src.range(of: "Color.clear"))
         let orElse = try #require(src.range(of: "} else {"))
         #expect(stale.upperBound <= clear.lowerBound && clear.upperBound <= orElse.lowerBound)
-        let afterElse = src[orElse.upperBound...]
-        #expect(afterElse.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("content"))
+        #expect(src[orElse.upperBound...].trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("content"))
+    }
+
+    @Test("La raíz de la ventana publica la generación con la que montó, junto al almacén")
+    func windowRoot_publishesTheMountedGeneration() throws {
+        let src = Self.code(try Self.source("Yala/App/YalaApp.swift"))
+        let lines = src.components(separatedBy: "\n").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        let model = try #require(lines.firstIndex(of: ".modelContainer(container)"))
+        #expect(lines[model - 1] == ".id(containerHost.generation)")
+        #expect(lines[model + 1] == ".environment(\\.mountedStoreGeneration, containerHost.generation)")
     }
 }

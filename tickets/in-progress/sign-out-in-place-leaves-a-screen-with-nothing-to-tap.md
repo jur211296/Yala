@@ -1,6 +1,6 @@
 ---
 id: sign-out-in-place-leaves-a-screen-with-nothing-to-tap
-status: backlog
+status: in-progress
 priority: high
 area: cloud-sync, sign-out, welcome
 created: 2026-10-28
@@ -71,3 +71,26 @@ iPhone 14 (iOS 27.2), Yala Dev sobre `origin/2.2` (#809), cuenta en la nube (Goo
 
 Siguiente: arreglar 2 (Ajustes no lee el contexto viejo al reaparecer durante o tras el cambio de almacén; revisar
 los demás `setContext` que corren al cerrar la hoja) y 3. Review adversarial (cierre de sesión). Vuelve a QA con device.
+
+## Arreglado (2026-11-05, noche, lote «Cerrar sesión con cambios»)
+
+Medido en el iPhone 14 con Yala Dev de la rama:
+
+- **Crash 1 (Ajustes reaparece con el almacén soltado).** La hoja de Ajustes deja de pintar su contenido en cuanto la
+  generación del almacén cambia o el host se queda sin él (`.detachesFromSwappedStore()`, `SwappedStoreContentLogic`).
+  Con el arreglo, el primer crash no salió.
+- **Crash 2, el que el primero tapaba.** Con el primero fuera, el cierre en la nube seguía cerrando Yala a los ~8 s:
+  `AppBootstrapper.rebootstrapAfterSwap` → `BackgroundTaskManager.registerTasks()` → `BGTaskScheduler` lanza
+  `NSInternalInconsistencyException` por registrar dos veces el mismo identificador en el mismo proceso. `.ips` en
+  `~/Claude/entregas/2026-11-05-lote-cerrar-sesion-crash-welcome/evidencia/Yala-2026-11-05-224058.ips`. Ahora
+  `registerTasks()` corre una vez por proceso. **El cambio de almacén en caliente de la nube cerraba Yala siempre en un
+  iPhone real desde la card ypit**: el simulador monta con espejo y nunca lo ejerció.
+- **Bucle «Un último paso: reabre Yala» tras el cierre.** Un destino del Welcome de antes del cierre («Restaurar desde
+  iCloud», que la prueba de la tarde dejó sin consumir) sobrevivía al borrado; el arranque abría Restaurar, Restaurar
+  pedía reabrir y el neutro armado volvía a montar sin espejo, en cada apertura. Ahora cada arm del borrado escribe el
+  destino del cierre o retira el viejo, y Restaurar que pide reabrir marca la elección. Medido: con el arreglo, una
+  sola reapertura y conecta con iCloud.
+
+Tests: `SwappedStoreContentTests`, `BackgroundTaskRegistrationOnceTests`, `SignOutWelcomeDestinationTests` (4
+mutantes, cada uno en rojo). Pendiente: (b), el elector tras «¡Tu cuenta está lista!», que necesita una entrada con
+Google (mano de Jürgen) con trazas puestas.

@@ -60,16 +60,28 @@ struct SignOutWelcomeDestinationTests {
         ])
     }
 
-    @Test("Cada arm del borrado del cierre escribe (o retira) el destino pegado a él")
-    func everyArm_persistsTheDestination() throws {
+    @Test("Cada arm del borrado escribe o retira el destino pegado a él; el borrado de cuenta siempre retira")
+    func everyArm_decidesTheDestination() throws {
         let lines = try Self.codeLines("Yala/Services/CloudSync/CloudSessionSignOut.swift")
         let arms = lines.indices.filter { lines[$0] == "StorageModePersistence.armSignOutWipe()" }
         #expect(arms.count == 4)
+        var persisted = 0
+        var cleared = 0
         for arm in arms {
             // El arm, su rastro y el destino, en ese orden y sin nada en medio que pueda suspender.
             #expect(lines[arm + 1] == "CloudSyncBreadcrumb.signOutWipeArmed()")
-            #expect(lines[arm + 2] == "persistDestinationOnArm()")
+            if lines[arm + 2] == "persistDestinationOnArm()" {
+                persisted += 1
+            } else {
+                // El borrado de la cuenta no trae destino, y el que quedara en `destinationOnArm` sería de un cierre
+                // anterior que salió sin armar: se retira sin escribirlo.
+                #expect(lines[arm + 2] == "destinationOnArm = nil")
+                #expect(lines[arm + 3] == "WelcomePendingDestinationStore.clear()")
+                cleared += 1
+            }
         }
+        #expect(persisted == 2)
+        #expect(cleared == 2)
     }
 
     // MARK: - Restaurar marca la elección
