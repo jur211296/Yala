@@ -1,6 +1,6 @@
 ---
 id: cloud-activation-time-is-unmeasured-between-the-claim-and-the-cutover
-status: backlog
+status: qa
 priority: medium
 area: "modo-nube, telemetría"
 created: 2026-10-23
@@ -55,3 +55,27 @@ Lo que una sola activación en un iPhone deja en Analytics Engine (`blob1 = cana
   por eso.
 - Falta solo la medida: un build con este código (TestFlight o `Yala Dev` contra staging) y una activación con pocos
   datos. La decide y la hace Jürgen; no se pidió desde esta sesión.
+
+## Medido (2026-11-05, noche) — el paso es la subida
+
+Activación del iPhone 14 de pruebas (QA del mismo día, Yala Dev sobre 2.2, instalación `b20327d9` en
+`yala_metrics_staging`), serie `cloudMigrationStep` en segundos del teléfono:
+
+| Paso | Segundos |
+|---|---|
+| consent>auth · claim>identity · identity>upload | 0 · 0 · 1 |
+| **upload>verify** | **459** |
+| verify>cutover.pending | 33 |
+| cutover (servidor, marcador, espejo) | 1 |
+
+La hipótesis 1 (espera al import de iCloud) queda descartada: `identity>upload` 1 s y sin `cloudMigrationImportWaited`
+largo. La 2 se confirma y tiene causa: 3234 de las ~3330 filas eran copias de tipos de cambio del mismo día
+(ticket `cloud-activation-uploads-thousands-of-items-for-a-few-records`, que las funde antes de subir). Ese build no
+traía todavía `cloudSnapshotPageUploaded` (lote N9 está solo en 2.3): el reparto por tabla se midió en el store.
+
+## Guion de QA
+
+Con un build de 2.3 que traiga este arreglo, activar la nube con pocos datos en el iPhone de pruebas y mirar en
+`yala_metrics_staging` la serie de esa instalación: `upload>verify` debería quedar en decenas de segundos,
+`cloudSnapshotPageUploaded` con ~3 páginas de `exchange_rates` y `cloudSnapshotDuplicateRatesFused` con las filas
+borradas.

@@ -165,6 +165,11 @@ enum MetricsCanary: String {
     /// `cloudMigrationStep upload>verify` dice si el paso de la subida se va en una tabla grande (los tipos de cambio de
     /// años, la hipótesis 2 del ticket) o en la latencia por página.
     case cloudSnapshotPageUploaded
+    /// La subida de la ida fundió las tasas duplicadas (mismo día, misma base) antes de enumerar (card i9wh: 3234 tasas
+    /// para 383 días hacían subir «3333 elementos» por 2 registros). `detail` = días con copias; `x` = filas borradas.
+    /// Distinto de cero dice cuánto ahorra a la flota; la causa (cada instalación siembra su año antes del import de
+    /// iCloud) sigue abierta en `exchange-rates-duplicate-per-day-across-installs`.
+    case cloudSnapshotDuplicateRatesFused
     case cloudSyncOutboxMirrorRehydrated
     case cloudSyncOutboxMirrorDivergence
     case cloudSyncMutationRejected
@@ -675,6 +680,11 @@ extension MetricsService {
     /// Una página de la subida de la ida confirmada (`cloudSnapshotPageUploaded`).
     static func cloudSnapshotPageUploaded(table: String, rows: Int, seconds: Double) {
         canary(.cloudSnapshotPageUploaded, detail: "\(table)|\(rows)", value: seconds)
+    }
+
+    /// La fusión de tasas duplicadas de la subida (`cloudSnapshotDuplicateRatesFused`).
+    static func cloudSnapshotDuplicateRatesFused(days: Int, removed: Int) {
+        canary(.cloudSnapshotDuplicateRatesFused, detail: "\(days)", value: Double(removed))
     }
 
     /// Una espera a iCloud que terminó (`cloudMigrationImportWaited`).

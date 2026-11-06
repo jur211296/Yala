@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1171)
+## Index (1183)
 
 | id | status | path |
 |---|---|---|
@@ -249,7 +249,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits | discarded | tickets/discarded/clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits.md |
 | cloud-activation-master-toggle-mirror-never-reaches-the-apple-id-kv | backlog | tickets/backlog/cloud-activation-master-toggle-mirror-never-reaches-the-apple-id-kv.md |
 | cloud-activation-stalls-without-uploading-until-relaunch | done | tickets/done/cloud-activation-stalls-without-uploading-until-relaunch.md |
-| cloud-activation-time-is-unmeasured-between-the-claim-and-the-cutover | backlog | tickets/backlog/cloud-activation-time-is-unmeasured-between-the-claim-and-the-cutover.md |
+| cloud-activation-time-is-unmeasured-between-the-claim-and-the-cutover | qa | tickets/qa/cloud-activation-time-is-unmeasured-between-the-claim-and-the-cutover.md |
+| cloud-activation-uploads-thousands-of-items-for-a-few-records | qa | tickets/qa/cloud-activation-uploads-thousands-of-items-for-a-few-records.md |
 | cloud-activation-verify-loops-on-accounts | qa | tickets/qa/cloud-activation-verify-loops-on-accounts.md |
 | cloud-activation-waits-for-icloud-with-no-way-out | qa | tickets/qa/cloud-activation-waits-for-icloud-with-no-way-out.md |
 | cloud-attest-notice-does-not-cover-a-gateway-rejected-token | backlog | tickets/backlog/cloud-attest-notice-does-not-cover-a-gateway-rejected-token.md |
@@ -312,6 +313,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | currency-change-failure-is-silent-and-half-applied | done | tickets/done/currency-change-failure-is-silent-and-half-applied.md |
 | currency-change-service-tests-mirror-the-logic | done | tickets/done/currency-change-service-tests-mirror-the-logic.md |
 | currency-converter-fetches-the-rate-row-on-every-conversion | done | tickets/done/currency-converter-fetches-the-rate-row-on-every-conversion.md |
+| exchange-rates-duplicate-per-day-across-installs | backlog | tickets/backlog/exchange-rates-duplicate-per-day-across-installs.md |
 | group-expense-from-a-receipt-with-ai | qa | tickets/qa/group-expense-from-a-receipt-with-ai.md |
 | latest-rates-cache-ignores-rate-rows-from-the-mirror-and-the-pull | backlog | tickets/backlog/latest-rates-cache-ignores-rate-rows-from-the-mirror-and-the-pull.md |
 | cash-flow-month-capsule-and-balance-widget-pill-sign-a-zero | backlog | tickets/backlog/cash-flow-month-capsule-and-balance-widget-pill-sign-a-zero.md |
