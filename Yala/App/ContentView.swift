@@ -1105,7 +1105,13 @@ struct ContentView: View {
                 // encenderlo. Buscar en este proceso no traería nada (el store montó sin el espejo), así que se pide
                 // reabrir con el mismo destino durable que escribe el Welcome (`onNeedsMirrorRelaunch` del
                 // contenedor): el arranque siguiente lo consume y vuelve aquí ya con el espejo puesto.
-                // `hasShownWelcomeChooser` ya está en `true` (lo marcó la elección de «Restaurar»).
+                // **`hasShownWelcomeChooser` se marca aquí también** (card 7e60, medido en el iPhone 14 el 2026-11-05).
+                // Este comentario decía que ya estaba en `true` porque lo marcaba la elección de «Restaurar», y no siempre
+                // hay elección: un destino `.restoreICloud` que el arranque consume abre Restaurar sin pasar por el
+                // Welcome, y tras un cierre de sesión la marca está borrada. Sin ella, el neutro armado volvía a montar sin
+                // espejo y esta misma línea pedía reabrir otra vez: «reabre Yala» en cada apertura. Mismo par que el
+                // `onNeedsMirrorRelaunch` del contenedor del Welcome.
+                hasShownWelcomeChooser = true
                 StorageModePersistence.clearGroupsOnlyNeutralMount()
                 WelcomePendingDestinationStore.set(.restoreICloud)
                 returnToWelcomeChooser(dismissing: $showWelcomeRestore, step: .mirrorRelaunch)

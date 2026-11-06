@@ -1289,6 +1289,10 @@ struct ProfileView: View {
                   !showSettingsTour else { return }
             showProTour = true
         }
+        // Card 7e60 · cerrar sesión o borrar la cuenta en la nube cambian el almacén en caliente con esta hoja todavía
+        // montada; al terminar de cerrarse, su contenido volvía a aparecer y leía el almacén soltado (Yala se cerraba).
+        // Va fuera de todo lo que lee `modelContext` y dentro de `presentationSizing`, que es de la hoja.
+        .detachesFromSwappedStore()
         .presentationSizing(.page)
     }
 
