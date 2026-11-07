@@ -35,6 +35,8 @@ struct PanelSectionPreferencesSheet: View {
     @State private var selectedDetent: PresentationDetent = .medium
     @State private var showingReorderSheet = false
     @State private var infoSheetWidget: WidgetType?
+    /// ↻ pregunta antes, como en «Configurar Panel» (revisión por vistas 2.3, PN-8).
+    @State private var confirmingReset = false
 
     private var isLargeDetent: Bool { selectedDetent == .large }
 
@@ -52,13 +54,14 @@ struct PanelSectionPreferencesSheet: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
-                        viewModel.resetSectionPreferences(kind)
+                        confirmingReset = true
                     } label: {
                         Image(systemName: "arrow.counterclockwise")
                             .font(DS.Typography.body).fontWeight(.medium)
                             .foregroundStyle(Color.primary)
                     }
                     .accessibilityLabel(L10n.Widget.resetLayout)
+                    .accessibilityIdentifier("panel_section_prefs_reset")
                 }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Button {
@@ -71,10 +74,20 @@ struct PanelSectionPreferencesSheet: View {
                     .accessibilityLabel(L10n.Action.reorder)
                     .disabled(viewModel.orderedWidgetTypes(in: kind).count < 2)
 
-                    YalaSaveButton(action: { dismiss() })
+                    // Cada interruptor ya se guarda solo: el ✓ cierra, y VoiceOver dice «Listo».
+                    YalaSaveButton(action: { dismiss() }, accessibilityName: L10n.Action.done)
                 }
             }
             .yalaScreenBackground(isLargeDetent ? .subtle : .transparent)
+            // `.alert` y no `confirmationDialog`: anclado a un botón, en iOS 26 este no pinta «Cancelar» (swiftui-ds.md).
+            .alert(L10n.Panel.SectionPrefs.resetTitle(kind.localizedTitle), isPresented: $confirmingReset) {
+                Button(L10n.Action.cancel, role: .cancel) {}
+                Button(L10n.Panel.SectionsConfig.resetConfirm) {
+                    viewModel.resetSectionPreferences(kind)
+                }
+            } message: {
+                Text(L10n.Panel.SectionPrefs.resetMessage)
+            }
         }
         .presentationDetents([.medium, .large], selection: $selectedDetent)
         .presentationDragIndicator(.visible)

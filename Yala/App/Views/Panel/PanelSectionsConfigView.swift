@@ -24,6 +24,8 @@ struct PanelSectionsConfigView: View {
 
     @State private var selectedDetent: PresentationDetent = .medium
     @State private var showingReorderSheet = false
+    /// ↻ pregunta antes (revisión por vistas 2.3, PN-8): devolvía el orden original sin aviso.
+    @State private var confirmingReset = false
 
     private var isLargeDetent: Bool { selectedDetent == .large }
 
@@ -49,13 +51,15 @@ struct PanelSectionsConfigView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
-                        appPreferences.resetPanelSectionsOrder()
+                        confirmingReset = true
                     } label: {
                         Image(systemName: "arrow.counterclockwise")
                             .font(DS.Typography.body).fontWeight(.medium)
                             .foregroundStyle(Color.primary)
                     }
-                    .accessibilityLabel(L10n.Widget.resetLayout)
+                    // Lo que hace de verdad: solo el orden de las secciones; encendidas y apagadas no cambian.
+                    .accessibilityLabel(L10n.Panel.SectionsConfig.resetOrder)
+                    .accessibilityIdentifier("panel_sections_config_reset")
                 }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Button {
@@ -66,11 +70,22 @@ struct PanelSectionsConfigView: View {
                             .foregroundStyle(Color.primary)
                     }
                     .accessibilityLabel(L10n.Action.reorder)
+                    .accessibilityIdentifier("panel_sections_config_reorder")
 
-                    YalaSaveButton(action: { dismiss() })
+                    // Los cambios se aplican al tocarlos: el ✓ solo cierra, y VoiceOver dice «Listo», no «Guardar».
+                    YalaSaveButton(action: { dismiss() }, accessibilityName: L10n.Action.done)
                 }
             }
             .yalaScreenBackground(isLargeDetent ? .subtle : .transparent)
+            // `.alert` y no `confirmationDialog`: anclado a un botón, en iOS 26 este no pinta «Cancelar» (swiftui-ds.md).
+            .alert(L10n.Panel.SectionsConfig.resetOrderTitle, isPresented: $confirmingReset) {
+                Button(L10n.Action.cancel, role: .cancel) {}
+                Button(L10n.Panel.SectionsConfig.resetConfirm) {
+                    appPreferences.resetPanelSectionsOrder()
+                }
+            } message: {
+                Text(L10n.Panel.SectionsConfig.resetOrderMessage)
+            }
         }
         .presentationDetents([.medium, .large], selection: $selectedDetent)
         .presentationDragIndicator(.visible)
@@ -218,6 +233,7 @@ struct PanelSectionsConfigView: View {
                         Text(kind.localizedTitle)
                             .font(DS.Typography.body)
                     }
+                    .accessibilityIdentifier("panel_sections_reorder_row_\(kind.rawValue)")
                 }
                 .onMove { source, destination in
                     DS.Haptic.selection()
@@ -230,7 +246,11 @@ struct PanelSectionsConfigView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    YalaSaveButton(action: { showingReorderSheet = false })
+                    YalaSaveButton(
+                        action: { showingReorderSheet = false },
+                        accessibilityID: "panel_sections_reorder_done",
+                        accessibilityName: L10n.Action.done
+                    )
                 }
             }
         }

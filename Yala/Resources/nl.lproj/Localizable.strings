@@ -8755,3 +8755,21 @@
 "formClarity.transfer.sourceAmountA11y" = "Bedrag dat van %1$@ afgaat, in %2$@";
 /* VoiceOver label of the amount that arrives. %1$@ = account name, %2$@ = currency (e.g. 'dollars (USD)'). */
 "formClarity.transfer.destinationAmountA11y" = "Bedrag dat op %1$@ binnenkomt, in %2$@";
+
+/* Accessibility label of the ↻ button in Configure Panel: puts the sections back in their original order */
+"panel.sectionsConfig.resetOrder" = "Terug naar oorspronkelijke volgorde";
+
+/* Alert title asking before putting the Panel sections back in their original order */
+"panel.sectionsConfig.resetOrder.title" = "Terug naar de oorspronkelijke volgorde?";
+
+/* Alert message: only the order of the Panel sections changes; which ones are on or off stays */
+"panel.sectionsConfig.resetOrder.message" = "De secties gaan terug naar de oorspronkelijke volgorde van het Paneel. Wat je aan- of uitzette, blijft zo.";
+
+/* Alert button that confirms resetting (Panel sections order or a section's widgets) */
+"panel.sectionsConfig.resetOrder.confirm" = "Herstellen";
+
+/* Alert title asking before putting a Panel section's widgets back as they came; %@ is the section name */
+"panel.sectionPrefs.reset.title %@" = "‘%@’ herstellen?";
+
+/* Alert message: the section's widgets go back to how they came (which show, order and size) */
+"panel.sectionPrefs.reset.message" = "De widgets gaan terug naar hoe ze waren: welke je ziet, in welke volgorde en op welk formaat.";
