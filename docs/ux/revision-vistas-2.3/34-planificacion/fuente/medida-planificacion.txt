@@ -1,0 +1,7 @@
+<div class="tbl"><table class="cmp"><tr><th>Qué</th><th>Cifra</th><th>Cómo se midió</th></tr>
+<tr><td>Abrir Planificación (Presupuestos) hasta ver los datos, semilla «realista»</td><td><b>0,74 s de mediana (0,50–1,12)</b>, 8 entradas</td><td>Marca <code>LoadTimeMarks</code> «planificacion» (de elegir la pestaña a que <code>BudgetsViewModel</code> asigna los datos y pinta), leída del log del simulador. iPhone 17 Pro simulado, iOS 27.2, Debug, 7-nov-2026. Cada entrada es la primera tras un arranque en frío por enlace, con el arranque aún compitiendo: es un techo, no el uso normal.</td></tr>
+<tr><td>Lo mismo, sin datos</td><td><b>0,32 s</b>, 1 entrada</td><td>Igual, sin semilla.</td></tr>
+<tr><td>Guardar un presupuesto o apuntar un pago rehace la caché de los widgets</td><td><b>0,40–0,44 s</b> cada vez, 21 veces</td><td>Marca «widgets» del mismo log, tras cada guardado. No se midió si bloquea el hilo principal; en el simulador no se notó.</td></tr>
+<tr><td>Registros, para comparar (revisión de la zona 31)</td><td>0,45 s de mediana</td><td><code>LoadTimesUITests</code>, 30-oct-2026, otro corpus.</td></tr>
+</table></div>
+<p class="sub">Planificación tarda más que Registros con menos datos que pintar: casa con la hipótesis de abajo (lo gastado de cada presupuesto se calcula en el hilo principal). Para confirmarlo hace falta Instruments o la semilla «pesado»; no se hizo.</p>
