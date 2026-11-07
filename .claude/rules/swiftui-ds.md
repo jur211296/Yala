@@ -62,8 +62,11 @@ paths:
   filtrado hasta relanzar (3 de 7 corridas de 10 rondas; con logs que leían la sesión en el `body` no salía: los logs
   tapaban el fallo). ⇒ **el recálculo por filtros de sesión vive en el ViewModel**, con `withObservationTracking`
   rearmado en cada cambio y una clave `Equatable` para no recalcular por escrituras del mismo valor
-  (`PanelViewModel.observeSessionFilters`, `PanelSessionFilterKey`). Estadísticas y Registros siguen con `onChange` (sin
-  medir).
+  (`PanelViewModel.observeSessionFilters`, `PanelSessionFilterKey`). Estadísticas y Registros siguen con `onChange`:
+  medido el 2026-11-06 con el mismo conductor (`StatisticsRecordsFilterObservationUITests`), 0 fallos en 5 corridas de
+  10 rondas en Distribución y en Registros. No dependen solo de ese `onChange`: Distribución tiene además
+  `CategoriesFilterRecalcObservers`, y Registros recalcula al quitar el chip (`onFilterChange`), al cerrar Filtros y al
+  cambiar de pestaña. Quitar uno solo de esos caminos no lo tumba; quitar los dos, sí (mutante, ronda 1).
 
 - **La vuelta a `.active` de una pantalla con freno pasa por `ForegroundResume.whenApplicationActive` (2026-11-04,
   card n34p).** El `guard UIApplication.shared.applicationState == .active else { return }` de antes se saltaba también

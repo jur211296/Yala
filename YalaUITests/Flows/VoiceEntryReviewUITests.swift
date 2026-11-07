@@ -130,7 +130,13 @@ final class VoiceEntryReviewUITests: XCTestCase {
     func test_severalDrafts_showOneRowEach_andSaveTogether() {
         let app = openReview("two")
 
-        XCTAssertEqual(app.buttons.matching(identifier: "voice_draft_row").count, 2, "Tiene que haber una fila por registro.")
+        let rows = app.buttons.matching(identifier: "voice_draft_row")
+        XCTAssertEqual(rows.count, 2, "Tiene que haber una fila por registro.")
+        // El taxi va a «Taxis y apps» y el café se queda en Restaurantes (antes caían los dos en Restaurantes).
+        let taxi = rows.matching(NSPredicate(format: "label CONTAINS 'Taxis y apps'"))
+        XCTAssertEqual(taxi.count, 1, "El taxi tiene que ir a «Taxis y apps»: \(rows.allElementsBoundByIndex.map(\.label))")
+        let food = rows.matching(NSPredicate(format: "label CONTAINS 'Restaurantes'"))
+        XCTAssertEqual(food.count, 1, "Solo el café va a Restaurantes: \(rows.allElementsBoundByIndex.map(\.label))")
         let save = app.buttons["voice_save"]
         XCTAssertTrue(save.isEnabled, "Dos registros completos se tienen que poder guardar juntos.")
         save.tap()

@@ -4461,6 +4461,8 @@
 "groups.splitLines.splitAction" = "分ける";
 "groups.splitLines.splitYourShare" = "負担分を分ける";
 "groups.splitLines.yourShareTitle" = "あなたの負担分";
+"groups.splitLines.summaryOwe %@ %@" = "%2$@さんに%1$@払います";
+"groups.splitLines.summaryRaises %@ %@" = "%1$@が%2$@増えます";
 
 /* Título sheet división por porcentaje */
 "groups.expense.splitSheet.percentageTitle" = "割合（％）で";

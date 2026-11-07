@@ -4449,6 +4449,8 @@
 "groups.splitLines.splitAction" = "Dividir";
 "groups.splitLines.splitYourShare" = "Dividir sua parte";
 "groups.splitLines.yourShareTitle" = "Sua parte";
+"groups.splitLines.summaryOwe %@ %@" = "Você deve %1$@ para %2$@";
+"groups.splitLines.summaryRaises %@ %@" = "%1$@ sobe %2$@";
 
 /* Título sheet división por porcentaje */
 "groups.expense.splitSheet.percentageTitle" = "Por porcentagem";

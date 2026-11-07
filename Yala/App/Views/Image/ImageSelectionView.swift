@@ -1468,7 +1468,8 @@ struct ImageSelectionView: View {
             }
         }
         if profile != "incomplete" {
-            let subcategory = uiTestExpenseSubcategory()
+            // La segunda foto es la del taxi: va a su subcategoría de transporte, no a la de la comida.
+            let subcategory = uiTestExpenseSubcategory(isTaxi: !perPage && !isFirst)
             for draft in made where draft.subcategory == nil {
                 draft.subcategory = subcategory
                 draft.needsUserInput.removeAll { $0 == DraftInputRequirement.subcategory }
@@ -1550,11 +1551,14 @@ struct ImageSelectionView: View {
         }
     }
 
-    private func uiTestExpenseSubcategory() -> Subcategory? {
+    private func uiTestExpenseSubcategory(isTaxi: Bool) -> Subcategory? {
         let descriptor = FetchDescriptor<Subcategory>(sortBy: [SortDescriptor(\.name)])
         do {
             let expense = try modelContext.fetch(descriptor).filter { $0.isVisible && !$0.safeCategory.isIncome }
-            return expense.first { $0.name.hasPrefix("Restaurant") } ?? expense.first
+            let food = expense.first { $0.name.hasPrefix("Restaurant") } ?? expense.first
+            guard isTaxi else { return food }
+            let name = UITestDemoSubcategoryLogic.taxiSubcategory(among: expense.map(\.name), fallback: food?.name)
+            return expense.first { $0.name == name } ?? food
         } catch {
             print("ImageSelectionView: Error fetching subcategories for the UI-test seam: \(error)")
             return nil

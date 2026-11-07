@@ -4466,6 +4466,8 @@
 "groups.splitLines.splitAction" = "Partir";
 "groups.splitLines.splitYourShare" = "Partir tu parte";
 "groups.splitLines.yourShareTitle" = "Tu parte";
+"groups.splitLines.summaryOwe %@ %@" = "Debes %1$@ a %2$@";
+"groups.splitLines.summaryRaises %@ %@" = "%1$@ sube %2$@";
 
 /* Título sheet división por porcentaje */
 "groups.expense.splitSheet.percentageTitle" = "Por porcentaje";

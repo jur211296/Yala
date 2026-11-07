@@ -3736,6 +3736,8 @@
 "groups.splitLines.splitAction" = "Split";
 "groups.splitLines.splitYourShare" = "Split your portion";
 "groups.splitLines.yourShareTitle" = "Your portion";
+"groups.splitLines.summaryOwe %@ %@" = "You owe %1$@ to %2$@";
+"groups.splitLines.summaryRaises %@ %@" = "%1$@ goes up by %2$@";
 
 /* Título sheet división por porcentaje */
 "groups.expense.splitSheet.percentageTitle" = "By percentage";

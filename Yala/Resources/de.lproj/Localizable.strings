@@ -4449,6 +4449,8 @@
 "groups.splitLines.splitAction" = "Aufteilen";
 "groups.splitLines.splitYourShare" = "Deinen Anteil aufteilen";
 "groups.splitLines.yourShareTitle" = "Dein Anteil";
+"groups.splitLines.summaryOwe %@ %@" = "Du schuldest %2$@ %1$@";
+"groups.splitLines.summaryRaises %@ %@" = "%1$@ steigt um %2$@";
 
 /* Título sheet división por porcentaje */
 "groups.expense.splitSheet.percentageTitle" = "Nach Prozent";

@@ -4,7 +4,8 @@
 //
 //  Grupos B, card 6: la hoja «Tu parte» que abre «Partir tu parte» desde la pantalla de éxito de un gasto de grupo y desde
 //  el detalle del registro. Es la misma tarjeta de la Bandeja (`GroupSplitLinesCard`) con el gasto encima y «Guardar»
-//  abajo (maqueta `opcion-b.html`, escenarios 2 y 3). «Guardar» espera a que las líneas cuadren.
+//  abajo (maqueta `opcion-b.html`, escenarios 2 y 3), y la línea resumen debajo de la tarjeta. «Guardar» espera a que las
+//  líneas cuadren.
 //
 
 import SwiftData
@@ -61,13 +62,16 @@ struct GroupSplitLinesSheet: View {
             ScrollView {
                 VStack(spacing: DS.Spacing.xl) {
                     header(target)
-                    GroupSplitLinesCard(
-                        lines: $lines,
-                        share: target.share,
-                        currencyCode: target.currencyCode,
-                        transferSourceName: target.transferSourceName,
-                        transferSourceAccount: target.transferSourceAccount
-                    )
+                    VStack(spacing: DS.Spacing.md) {
+                        GroupSplitLinesCard(
+                            lines: $lines,
+                            share: target.share,
+                            currencyCode: target.currencyCode,
+                            transferSourceName: target.transferSourceName,
+                            transferSourceAccount: target.transferSourceAccount
+                        )
+                        GroupSplitLinesSummaryLine(target: target, lines: lines)
+                    }
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.top, DS.Spacing.lg)

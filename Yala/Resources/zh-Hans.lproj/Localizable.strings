@@ -4461,6 +4461,8 @@
 "groups.splitLines.splitAction" = "拆分";
 "groups.splitLines.splitYourShare" = "拆分你的部分";
 "groups.splitLines.yourShareTitle" = "你的部分";
+"groups.splitLines.summaryOwe %@ %@" = "你欠 %2$@ %1$@";
+"groups.splitLines.summaryRaises %@ %@" = "%1$@ 增加 %2$@";
 
 /* Título sheet división por porcentaje */
 "groups.expense.splitSheet.percentageTitle" = "按百分比";
