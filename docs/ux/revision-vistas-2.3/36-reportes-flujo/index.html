@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reportes y Flujo de caja · revisión por vistas</title><meta name="description" content="Siete problemas de Reportes y Flujo de caja con alternativas maquetadas.">
+<link rel="stylesheet" href="estilo.css"></head>
+<body><nav class="top"><div class="wrap"><a class="on home" href="index.html">Inicio</a><a class="" href="01-estado-actual.html">Hoy, vista a vista</a><a class="" href="02-revision.html">Perfiles y eficiencia</a><a class="" href="11-llego-a-fin-de-mes.html">1 · ¿Llego a fin de mes?</a><a class="" href="12-real-y-estimado.html">2 · Real y estimado</a><a class="" href="13-encontrar-y-armar.html">3 · Encontrar y armar el plan</a><a class="" href="14-leer-un-mes.html">4 · Leer un mes</a><a class="" href="15-texto-grande-y-voiceover.html">5 · Texto grande y VoiceOver</a><a class="" href="16-comparativa.html">6 · Comparativa</a><a class="" href="17-pocos-datos.html">7 · Primera semana</a></div></nav><main class="wrap">
+<header class="ph-h"><div class="kicker">Revisión por vistas 2.3 · zona 36 · 7 de noviembre de 2026</div>
+<h1 class="t">Reportes y Flujo de caja, con «Ver proyectado» en Tendencias, el Panel y los widgets</h1>
+<p class="lead">Cuánto cuesta hoy contestar «¿llego a fin de mes?», leer un mes del plan y entender qué es real y qué es
+estimado, ya con la mejora del flujo de caja mergeada en <code>origin/2.3</code>. <b>No cambia la app y no elige:</b> deja
+siete problemas priorizados, de tres a cuatro alternativas maquetadas para cada uno y una recomendación. Decide Jürgen.</p>
+<div class="case"><span class="ct">El caso</span><span>Ana va por el <b>7 de noviembre</b> y quiere saber <b>si llega a fin de mes</b>: cuánto le quedará el 30. Luego <b>lee un mes</b> del plan (qué entra, qué sale, qué falta) y quiere entender <b>qué parte es real y qué parte es estimada</b>. Lo hace desde el Panel, desde Tendencias y desde Reportes › Flujo de caja; con texto grande y con VoiceOver. <em style="color:var(--ink3)">Datos ficticios en las maquetas; en las capturas, semillas de prueba.</em></span></div>
+</header>
+<div class="kpis">
+<div class="kpi"><b>5</b><small>cifras distintas para «¿cuánto me queda?»: S/ 69,390.71 (Panel), S/ 396.18 (el mes), S/ 86,771.48 (mayo de 2027), S/ 587.18 (al armar) y S/ 2,893.08 (Gráficas)</small></div>
+<div class="kpi"><b>−S/ 7,222</b><small>lo que baja «Proyectado al cierre» solo con crear el plan sugerido (S/ 76,613 con el ritmo → S/ 69,390 con el plan)</small></div>
+<div class="kpi"><b>7</b><small>palabras para dos ideas: Estimado, Planeado, Plan, Proyección, Proyectado, Promedio, Pago programado</small></div>
+<div class="kpi"><b>201-330 ms</b><small>carga de Flujo de caja con 730 días de datos y plan (Debug, simulador): el plan no es lento</small></div>
+</div>
+<h2 class="s">Los siete problemas, por prioridad</h2>
+<p class="sub">Prioridad = cuánto frena el caso guía × cuántos perfiles se traban. Cada página trae las capturas de hoy, las alternativas con maquetas, la comparación, la lente de perfiles, la recomendación y la decisión.</p>
+<div class="idxgrid"><a class="idx-row vcard" href="11-llego-a-fin-de-mes.html" style="display:block;text-decoration:none;color:inherit"><div class="n">Problema 1 · <span class="sev A">severidad alta</span> · 4 alternativas</div><h4>«¿Llego a fin de mes?» tiene cinco cifras distintas y ninguna dice cómo se relaciona con las otras</h4><p>Recomendación: <b>B, y A cuando se reabra la cabecera del mes</b>.</p></a><a class="idx-row vcard" href="12-real-y-estimado.html" style="display:block;text-decoration:none;color:inherit"><div class="n">Problema 2 · <span class="sev A">severidad alta</span> · 4 alternativas</div><h4>Lo real y lo estimado se pintan igual y se nombran de siete formas distintas</h4><p>Recomendación: <b>B + A</b>.</p></a><a class="idx-row vcard" href="13-encontrar-y-armar.html" style="display:block;text-decoration:none;color:inherit"><div class="n">Problema 3 · <span class="sev M">severidad media-alta</span> · 4 alternativas</div><h4>El plan vive escondido y armarlo pide revisar 18 líneas en cinco pantallas de scroll</h4><p>Recomendación: <b>A + D</b>.</p></a><a class="idx-row vcard" href="14-leer-un-mes.html" style="display:block;text-decoration:none;color:inherit"><div class="n">Problema 4 · <span class="sev M">severidad media</span> · 4 alternativas</div><h4>Leer un mes es recorrer 25 tarjetas iguales en el orden en que se crearon</h4><p>Recomendación: <b>A + C</b>.</p></a><a class="idx-row vcard" href="15-texto-grande-y-voiceover.html" style="display:block;text-decoration:none;color:inherit"><div class="n">Problema 5 · <span class="sev M">severidad media</span> · 3 alternativas</div><h4>Con texto grande la zona pierde justo las cifras, y VoiceOver no las oye completas</h4><p>Recomendación: <b>A + B</b>.</p></a><a class="idx-row vcard" href="16-comparativa.html" style="display:block;text-decoration:none;color:inherit"><div class="n">Problema 6 · <span class="sev M">severidad media</span> · 3 alternativas</div><h4>La Comparativa dice «Noviembre» cuando compara una semana, y abre con solo dos filas</h4><p>Recomendación: <b>A + B</b>.</p></a><a class="idx-row vcard" href="17-pocos-datos.html" style="display:block;text-decoration:none;color:inherit"><div class="n">Problema 7 · <span class="sev M">severidad media</span> · 3 alternativas</div><h4>Con una semana de datos, el plan sugerido no tiene ingresos y anuncia «Te faltan al mes S/ 2,573»</h4><p>Recomendación: <b>A</b>.</p></a></div>
+<h2 class="s">Qué decide Jürgen (lo principal de cada uno)</h2><ul><li><b>1 · ¿Llego a fin de mes?:</b> ¿El rótulo del Panel y Tendencias pasa a nombrar la métrica y la fecha («Saldo al 30 de nov.»)? (B)</li><li><b>2 · Real y estimado:</b> ¿«Real» y «Estimado» como únicas palabras de la zona, y «Pago programado» → «pago planificado»? (B)</li><li><b>3 · Encontrar y armar el plan:</b> ¿«Crear mi plan» y el resumen arriba, con las líneas plegadas por grupos (A)?</li><li><b>4 · Leer un mes:</b> ¿Agrupar las líneas por «Te pasaste / Falta / Cubierto» (A)?</li><li><b>5 · Texto grande y VoiceOver:</b> ¿Filas apiladas y cifras que crecen con texto grande en Comparativa, armado y «Proyectado al cierre» (A)?</li><li><b>6 · Comparativa:</b> ¿Rótulos con el tramo exacto («1–7 nov.») y «igual» / «nuevo» en vez de «=+0%» / «N/A» (A)?</li><li><b>7 · Primera semana:</b> ¿El armado pregunta «¿Cuánto recibes al mes?» cuando no hay ingresos en el historial (A)?</li></ul>
+<p class="sub">Las preguntas completas están al final de cada página. Si hubiera que empezar por lo barato: <b>1B</b> (el rótulo
+del Panel dice «Saldo al 30 de nov.»), <b>2B</b> (una palabra para «real» y otra para «estimado»), <b>3D</b> (los chips de
+Reportes dejan de flotar sobre el contenido), <b>5B</b> (lo que oye VoiceOver), <b>6A</b> (rótulos con el tramo exacto) y
+<b>7C</b> (el resumen no dice «te faltan» cuando falta el ingreso) son textos o etiquetas.</p>
+<div class="callout"><b>Lo que reabre decisiones tuyas:</b> 1A y 1C cambian la cifra grande del mes decidida en el lote 18
+(«Este mes te sobran»); 2A y 4B tocan la tarjeta de línea del lienzo «Una sola Yala»; 2B haría que «≈» signifique también
+«estimado» (hoy, «tasa aproximada»); 3C muda Flujo de caja a Planificación; 5C toca los flotantes de toda la app.
+<br><b>Aparte, de cálculo y fuera de esta revisión:</b> sin plan, «Estimado con tu ritmo de gasto» vuelve a contar el sueldo
+que ya entró (problema 2). Merece su propia card con review adversarial.</div>
+<h2 class="s">Vistas cubiertas</h2>
+<div class="tbl"><table class="cmp"><tr><th>Vista</th><th>Qué es</th><th>Estados con captura</th><th>Problemas</th></tr><tr><td><code>FinancialReportView</code></td><td>La página «Reportes financieros»: título, chips «Comparativa · Flujo de caja», botones de gráficas y «···», y el contenido de cada chip. Por defecto vive en <b>Más</b>.</td><td>con datos, vacío, Free, guía, AX3, iPad</td><td>3, 5, 6</td></tr><tr><td><code>PivotRowView</code></td><td>Cada fila de la tabla de la Comparativa: importe del período, el anterior debajo y el cambio.</td><td>dos filas, desglosado por categoría, AX3</td><td>5, 6</td></tr><tr><td><code>NetFlowSummaryView</code></td><td>La tarjeta «Te quedó / Te faltó» bajo la tabla.</td><td>con datos, AX3</td><td>6</td></tr><tr><td><code>CashFlowSetupView</code></td><td>Armar el plan: «¿Con cuánto empiezas?», qué es el flujo de caja, líneas sugeridas, resumen y «Crear mi plan».</td><td>con datos, primera semana, vacío, Free, guía, AX3, iPad</td><td>1, 3, 5, 7</td></tr><tr><td><code>CashFlowTableView</code></td><td>El plan ya creado: tira de meses y el detalle del mes elegido; guía de tres pasos.</td><td>plan recién creado, meses futuros, guía, AX3, iPad</td><td>1, 2, 4</td></tr><tr><td><code>CashFlowMonthDetailView</code></td><td>Un mes: título, cifra «te sobran», «si sigue así…», Ingresos y Gastos con sus líneas, «Agregar línea» y el detalle de cada línea (hoja).</td><td>este mes, meses futuros, detalle de línea, AX3</td><td>1, 2, 4, 5</td></tr><tr><td><code>«Ver proyectado»: Tendencias</code></td><td>Píldora en la tarjeta de tendencia y «Proyectado al cierre» con su fuente y el enlace al plan.</td><td>sin plan (ritmo), con plan, Solo gastos, montos ocultos, AX3</td><td>1, 2, 5</td></tr><tr><td><code>«Ver proyectado»: Panel</code></td><td>La misma píldora y la misma cifra en la tarjeta de tendencia del Panel.</td><td>sin plan, con plan</td><td>1, 2</td></tr><tr><td><code>«Ver proyectado»: widgets</code></td><td>Opción «Mostrar proyectado» de los widgets Gasto y Saldo: una línea punteada, sin cifra.</td><td>Saldo y Gasto, mediano y pequeño, con y sin proyectado (banco de widgets)</td><td>secundarios</td></tr></table></div>
+<p class="sub" style="margin-top:10px"><b>Cargando:</b> la tabla del plan enseña un <code>ProgressView</code> mientras calcula; con
+730 días tarda 201-330 ms y no se llega a ver en una captura. <b>Error y sin conexión:</b> Reportes y el flujo de caja calculan en
+el teléfono y no tienen pantalla de error (los fallos solo se imprimen en DEBUG); lo único que usa la red es el chip «IA» de
+Gráficas (leído en <code>CashFlowChartsSheet</code>, no capturado: no se cortó la red). <b>Sin permisos:</b> no aplica.
+<b>Montos ocultos:</b> el ojo del Panel solo oculta en el Panel, por diseño (<code>AmountPrivacy</code>): Tendencias, Reportes y
+Flujo de caja enseñan las cifras (capturas f01 y f02).</p>
+<h2 class="s">Cómo se hizo</h2>
+<ul class="evl">
+<li><span class="tag obs">Captura</span> Capturas del 7-nov-2026 con la app de <code>origin/2.3</code> (Yala Dev, Debug-Dev), en un iPhone 17 Pro
+y un iPad Pro 13 (M5) con iOS 27.2 creados para la sesión, modo oscuro. Un XCUITest temporal (no commiteado) condujo la app.
+Semillas: <code>realista</code> (caso guía; plan creado con lo sugerido), <code>minimal</code> (primera semana), sin semilla (vacío),
+Free (sin Pro), <code>-uitest-expenses-only</code> (Solo gastos) y <code>-panelAmountsHidden</code>. Período «Este mes».
+Texto grande: AX3, fijado con <code>simctl ui content_size</code>.</li>
+<li><span class="tag obs">Widgets</span> El banco de widgets del repo (<code>qa/widget-render</code>) con la foto que escribió la app con un plan
+sembrado (semilla <code>rendimiento</code>).</li>
+<li><span class="tag obs">VoiceOver</span> Medido en el árbol de accesibilidad (<code>axe describe-ui</code>), no con VoiceOver encendido.</li>
+<li><span class="tag obs">Medido</span> Tiempos con la marca de la app (<code>PERF flujo</code>, DEBUG) y su conductor <code>LoadTimesUITests</code>:
+semilla <code>rendimiento</code> (730 días, varias monedas, con plan) y tres arranques en frío. Nada de Instruments.</li>
+<li><span class="tag src">Código</span> Lectura focalizada de las vistas de la lista y de las hojas del flujo de caja, con fichero y línea.</li>
+<li><span class="tag hip">Perfiles</span> Los siete perfiles de la revisión del usuario nuevo (PR 837), usados como lentes simuladas: no son
+entrevistas. De esa revisión se retoma la primera semana (problema 7); sus fricciones de alta y onboarding no tocan esta zona.</li>
+</ul>
+<p class="foot">Fuente: <code>docs/ux/revision-vistas-2.3/36-reportes-flujo/</code>. El generador está en <code>fuente/</code> (<code>python3 build.py</code>). PDF de respaldo: <code>revision-reportes-flujo.pdf</code>.</p>
+</main>
+<script>
+(function(){
+  // Tocar el elemento resaltado (anillo cian) desplaza la tira a la pantalla siguiente.
+  document.querySelectorAll('.strip').forEach(function(strip){
+    var figs = Array.prototype.slice.call(strip.querySelectorAll(':scope > figure'));
+    figs.forEach(function(fig, i){
+      fig.querySelectorAll('.tap').forEach(function(t){
+        t.style.cursor='pointer';
+        t.addEventListener('click', function(ev){
+          ev.stopPropagation();
+          var next = figs[i+1]; if(!next) return;
+          strip.scrollTo({left: next.offsetLeft - strip.offsetLeft - 16, behavior:'smooth'});
+          next.classList.add('flash'); setTimeout(function(){next.classList.remove('flash')}, 900);
+        });
+      });
+    });
+  });
+})();
+</script></body></html>
