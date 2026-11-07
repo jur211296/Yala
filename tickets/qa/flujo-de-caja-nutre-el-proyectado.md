@@ -1,6 +1,6 @@
 ---
 id: flujo-de-caja-nutre-el-proyectado
-status: in-progress
+status: qa
 priority: medium
 area: "Flujo de caja, Tendencias, Panel"
 created: 2026-11-06
@@ -41,11 +41,13 @@ que el plan alimente bien el proyectado y que se llegue a él desde el proyectad
    en el Panel estima el resto del mes con estas cifras» (con el nombre de cada pantalla en su idioma: Home, Übersicht,
    Inicio…). Opción A de la pregunta 3.
 
-## Preguntas a Jürgen
+## Preguntas a Jürgen y respuestas
 
-En `~/Claude/entregas/2026-11-06-mejorar-flujo-de-caja-para-proyectado/preguntas.md`. Enviadas al bot el 2026-11-07 a
-las 5:00 (regla nocturna); el bot se las pasa a Jürgen. Lo hecho arriba es la opción A de las tres, a la espera de su
-respuesta.
+Enviadas al bot el 2026-11-07 a las 5:00 (regla nocturna). Jürgen, 2026-11-07: **A/A/A**.
+
+1. Lo que queda fuera del plan: ritmo de los últimos 90 días, sumado al plan.
+2. El enlace bajo la cifra, siempre, con texto distinto según haya plan o no.
+3. Se explica dentro de Flujo de caja, sin avisos en el Panel.
 
 ## Guion de QA (iPhone de pruebas, Yala Dev)
 
