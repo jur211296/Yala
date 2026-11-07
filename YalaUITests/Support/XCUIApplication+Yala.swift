@@ -493,12 +493,74 @@ extension XCUIApplication {
     func selectTab(_ tab: RootTab, timeout: TimeInterval = 10, file: StaticString = #filePath, line: UInt = #line) {
         XCTAssertTrue(waitForRootNavigation(timeout: timeout),
                       "No se montó la navegación raíz (ni barra de pestañas ni barra lateral).", file: file, line: line)
-        let entry = tabEntry(tab)
+        var entry = tabEntry(tab)
+        // iPad en vertical: las pestañas de arriba no caben todas y las últimas quedan tras «Página siguiente» (Reportes,
+        // Grupos; medido el 2026-11-06 en el iPad Pro 13, iOS 27.2). La barra lateral las enseña todas: se abre con su
+        // botón del sistema (`ToggleSideBar`, id que no depende del idioma) y se elige ahí.
+        let sidebarToggle = buttons["ToggleSideBar"]
+        if !entry.waitForExistence(timeout: 3), !compactTabBar.exists, sidebarToggle.exists {
+            sidebarToggle.tap()
+            entry = tabEntry(tab)
+        }
         XCTAssertTrue(
             entry.waitForExistence(timeout: timeout),
             "No apareció la pestaña «\(tab.rawValue)»"
                 + (tab == .more ? " (con barra lateral no hay «Más»: cada página está a la vista)." : "."),
             file: file, line: line)
+        entry.tap()
+    }
+
+    /// La barra de pestañas de ABAJO: la forma estrecha de la raíz (iPhone, o iPad con la ventana estrecha). En el iPad a
+    /// pantalla completa no existe (pestañas arriba o barra lateral), así que quien la mida comprueba esa forma a
+    /// propósito, o la usa solo si `exists` (lo que tapa abajo).
+    var compactTabBar: XCUIElement { tabBars.firstMatch }
+
+    /// Hay «Más» en la raíz. En el iPad a pantalla completa no existe (medido en vertical y en horizontal): cada página
+    /// está en las pestañas de arriba o en la barra lateral.
+    func hasMoreTab(timeout: TimeInterval = 10) -> Bool {
+        _ = waitForRootNavigation(timeout: timeout)
+        return tabEntry(.more).waitForExistence(timeout: 3)
+    }
+
+    /// Salta el caso si prueba la pantalla «Más» (sus tarjetas, su editor o la barra de abajo que se configura ahí) y
+    /// la raíz no la tiene: el iPad a pantalla completa. En iPhone no salta nunca: ahí sin «Más» es un fallo.
+    func skipUnlessMoreTab(_ what: String) throws {
+        guard UIDevice.current.userInterfaceIdiom == .pad, !hasMoreTab() else { return }
+        throw XCTSkip("\(what) vive en «Más», y el iPad a pantalla completa no tiene «Más»: cada página está en sus pestañas.")
+    }
+
+    /// Abre un informe de Reportes (`comparativa`, `flujoDeCaja`…) por su tarjeta de «Más» (`more_card_<id>`), que lleva
+    /// a Reportes con ese chip elegido. Sin «Más» (iPad a pantalla completa), por la página Reportes y su chip
+    /// (`report_chip_<id>`): el mismo destino.
+    func openReport(_ id: String, timeout: TimeInterval = 10, file: StaticString = #filePath, line: UInt = #line) {
+        if hasMoreTab(timeout: timeout) {
+            selectTab(.more, timeout: timeout, file: file, line: line)
+            let card = buttons["more_card_\(id)"]
+            XCTAssertTrue(card.waitForExistence(timeout: timeout), "No está la tarjeta «\(id)» en Más.", file: file, line: line)
+            var tries = 0
+            while !card.isHittable, tries < 6 { swipeUp(); tries += 1 }
+            card.tap()
+        } else {
+            selectTab(.reports, timeout: timeout, file: file, line: line)
+            let chip = buttons["report_chip_\(id)"]
+            XCTAssertTrue(chip.waitForExistence(timeout: timeout), "No está el chip «\(id)» en Reportes.", file: file, line: line)
+            chip.tap()
+        }
+    }
+
+    /// Elige una pestaña aunque la barra de abajo del iPhone esté ENCOGIDA: con una lista bajada solo enseña la pestaña
+    /// elegida, y un toque en su sitio (abajo a la izquierda) la despliega sin mover la lista. Sin barra de abajo (iPad),
+    /// como `selectTab`.
+    func selectTabExpandingCompactBar(
+        _ tab: RootTab, timeout: TimeInterval = 5, file: StaticString = #filePath, line: UInt = #line
+    ) {
+        guard compactTabBar.exists else { return selectTab(tab, timeout: timeout, file: file, line: line) }
+        let entry = tabEntry(tab)
+        if !entry.exists {
+            coordinate(withNormalizedOffset: CGVector(dx: 0.08, dy: 0.955)).tap()
+        }
+        XCTAssertTrue(entry.waitForExistence(timeout: timeout), "No se pudo desplegar la barra de pestañas.",
+                      file: file, line: line)
         entry.tap()
     }
 

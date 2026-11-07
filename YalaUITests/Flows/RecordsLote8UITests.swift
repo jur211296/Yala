@@ -34,10 +34,11 @@ final class RecordsLote8UITests: XCTestCase {
 
     // MARK: - L8-1
 
-    func test_more_recordsCardSitsRightUnderPanel() {
+    func test_more_recordsCardSitsRightUnderPanel() throws {
         let app = XCUIApplication()
         app.launchForUITest()
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+        try app.skipUnlessMoreTab("El orden de las tarjetas")
         app.selectTab(.more)
 
         let panel = app.buttons["more_card_panel"]

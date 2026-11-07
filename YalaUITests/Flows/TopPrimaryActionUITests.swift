@@ -79,19 +79,12 @@ final class TopPrimaryActionUITests: XCTestCase {
         // Un poco más abajo, para que nada de lo que sigue devuelva el botón de arriba al umbral.
         app.swipeUp()
 
-        // Con la lista bajada la barra de pestañas se encoge a la pestaña elegida y Panel no está en el árbol: tocarla la
-        // despliega sin mover la lista.
-        let panelTab = app.tabBars.buttons["Panel"].firstMatch
-        if !panelTab.exists {
-            app.coordinate(withNormalizedOffset: CGVector(dx: 0.08, dy: 0.955)).tap()
-        }
-        XCTAssertTrue(panelTab.waitForExistence(timeout: 5), "No se pudo volver a la barra de pestañas.")
-        panelTab.tap()
+        // Con la lista bajada la barra de pestañas del iPhone se encoge a la pestaña elegida y Panel no está en el árbol:
+        // tocarla la despliega sin mover la lista. En el iPad no hay barra de abajo que encoger.
+        app.selectTabExpandingCompactBar(.panel)
         XCTAssertTrue(floating.waitForNonExistence(timeout: 5), "Control: con el Panel delante, el «+» de Presupuestos sigue.")
 
-        let planningTab = app.tabBars.buttons["Planificación"].firstMatch
-        XCTAssertTrue(planningTab.waitForExistence(timeout: 5))
-        planningTab.tap()
+        app.selectTabExpandingCompactBar(.planning)
         XCTAssertTrue(floating.waitForExistence(timeout: 5),
                       "Al volver a Presupuestos con la lista bajada, el «+» flotante ya no estaba.")
     }

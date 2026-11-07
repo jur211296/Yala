@@ -52,7 +52,11 @@ final class LoadTimesUITests: XCTestCase {
                 app.buttons["report_chip_flujoDeCaja"].tap()                     // Flujo de caja
                 settle(app)
             }
-            visitMoreCard("more_card_budgets", in: app)                         // Planificación
+            if app.hasMoreTab() {
+                visitMoreCard("more_card_budgets", in: app)                     // Planificación
+            } else {
+                visitTab(.planning, expecting: "planning_chip_scheduledPayments", in: app) // iPad: sin «Más»
+            }
             openLink("yaladev://records", in: app)                              // Registros
             openLink("yaladev://groups", in: app)                               // Grupos
 
@@ -112,7 +116,7 @@ final class LoadTimesUITests: XCTestCase {
         // Arrastres cortos: la tarjeta suele asomar bajo la barra de pestañas, y un `swipeUp` entero se la pasa.
         // `isHittable` no basta: bajo la barra de pestañas también da `true` y el toque cae en la barra.
         _ = target.waitForExistence(timeout: 10)
-        let barTop = app.tabBars.firstMatch.frame.minY
+        let barTop = app.compactTabBar.exists ? app.compactTabBar.frame.minY : app.windows.firstMatch.frame.maxY
         var drags = 0
         while target.exists && target.frame.maxY > barTop - 8 && drags < 6 {
             let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.6))

@@ -51,10 +51,9 @@ struct CashFlowMonthCapsule: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
-    /// «+3,283»: con signo, sin divisa (la cápsula es estrecha; el resumen de debajo la dice entera).
+    /// «+3,283»: con signo, sin divisa (la cápsula es estrecha; el resumen de debajo la dice entera). Un cero, sin signo.
     private var netFlowText: String {
-        let compact = YalaFormatter.amountCompactTable(value: abs(month.netFlow))
-        return (month.netFlow >= 0 ? "+" : "-") + compact
+        CashFlowMonthSummaryLogic.capsuleNetText(month.netFlow)
     }
 
     /// «octubre de 2026, te sobran S/ 3,283.23».

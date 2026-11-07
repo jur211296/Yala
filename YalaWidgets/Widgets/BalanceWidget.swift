@@ -216,10 +216,19 @@ private extension BalanceEntry {
     var title: String { String(localized: "widget.ui.available", bundle: .main) }
     var periodName: String { period.toWidgetPeriod.localizedDisplayName }
 
-    /// Subir es bueno (índigo) y bajar, malo (rosa): los colores de la app para un saldo.
+    /// Hacia dónde se movió el saldo tal como se pinta la variación (sin decimales): `0` si se pinta como cero.
+    var changeDirection: Int {
+        guard let change else { return 0 }
+        return WidgetAmountSplitter.shownSign(of: change, fractionDigits: 0)
+    }
+
+    /// Subir es bueno (índigo) y bajar, malo (rosa): los colores de la app para un saldo. Un cero, neutro.
     var changeTone: WidgetTone {
-        guard let change, abs(change) >= 0.5 else { return .neutral }
-        return change > 0 ? .good : .bad
+        switch changeDirection {
+        case 1: return .good
+        case -1: return .bad
+        default: return .neutral
+        }
     }
 }
 
@@ -308,11 +317,12 @@ private struct BalanceChangeLine: View {
                 )
                 WidgetPill(
                     text: runs.accessibilityFormatted,
-                    systemImage: entry.changeTone == .neutral ? "equal" : (change > 0 ? "arrow.up" : "arrow.down"),
+                    systemImage: entry.changeDirection == 0 ? "equal" : (entry.changeDirection > 0 ? "arrow.up" : "arrow.down"),
                     tone: entry.changeTone
                 )
                 .accessibilityLabel(Text(String(format: String(localized: "widget.balance.change.a11y", bundle: .main),
-                                                 (change > 0 ? "+" : change < 0 ? "-" : "") + runs.accessibilityFormatted,
+                                                 (entry.changeDirection > 0 ? "+" : entry.changeDirection < 0 ? "-" : "")
+                                                    + runs.accessibilityFormatted,
                                                  entry.periodName)))
             }
             if showsPeriod {

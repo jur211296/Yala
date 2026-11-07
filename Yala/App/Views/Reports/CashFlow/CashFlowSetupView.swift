@@ -399,7 +399,7 @@ struct CashFlowSetupView: View {
             summaryRow(label: L10n.UXL18.summaryExpense, amount: selectedExpense, tint: .primary)
             Divider()
             summaryRow(
-                label: netFlow >= 0 ? L10n.UXL18.summarySurplus : L10n.UXL18.summaryShortfall,
+                label: CashFlowMonthSummaryLogic.isShortfall(netFlow) ? L10n.UXL18.summaryShortfall : L10n.UXL18.summarySurplus,
                 amount: abs(netFlow),
                 tint: .primary,
                 isBold: true

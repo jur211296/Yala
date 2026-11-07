@@ -16,7 +16,7 @@ enum CashFlowMonthSummaryLogic {
 
     /// El rótulo de la cifra grande del mes (sin el monto): «Este mes te sobran», «En noviembre te sobrarían»…
     static func heroLabel(for month: CashFlowMonth) -> String {
-        let surplus = month.netFlow >= 0
+        let surplus = !isShortfall(month.netFlow)
         let name = monthInSentence(month.date)
         if month.isCurrent {
             return surplus ? L10n.UXL18.surplusThisMonth : L10n.UXL18.shortfallThisMonth
@@ -25,6 +25,20 @@ enum CashFlowMonthSummaryLogic {
             return surplus ? L10n.UXL18.surplusPast(name) : L10n.UXL18.shortfallPast(name)
         }
         return surplus ? L10n.UXL18.surplusFuture(name) : L10n.UXL18.shortfallFuture(name)
+    }
+
+    /// `true` si ese mes falta dinero. Un neto que se pinta como cero no es una falta: un residuo de coma flotante
+    /// (`-1e-9`) decía «te faltan S/ 0.00».
+    static func isShortfall(_ netFlow: Double) -> Bool {
+        netFlow < 0 && !CurrencyFormattingHelper.isShownAsZero(netFlow)
+    }
+
+    /// La cifra de la cápsula del mes: «+3,283», «-450»; con signo y sin divisa (la cápsula es estrecha). Lo que se pinta
+    /// como cero va sin signo: un neto de 0 decía «+0», y un residuo negativo, «-0».
+    static func capsuleNetText(_ netFlow: Double) -> String {
+        let compact = YalaFormatter.amountCompactTable(value: abs(netFlow))
+        guard compact != YalaFormatter.amountCompactTable(value: 0) else { return compact }
+        return (netFlow >= 0 ? "+" : "-") + compact
     }
 
     /// El último mes del plan con saldo acumulado: el «a fin de diciembre» de la frase. `nil` si ningún mes lo tiene.
