@@ -8733,3 +8733,6 @@
 "trend.projected.source.plan" = "Szacowane na podstawie planu przepływu środków";
 "trend.projected.source.rhythm" = "Szacowane na podstawie tempa wydatków";
 "trend.projected.source.scheduled" = "Szacowane na podstawie zaplanowanych płatności";
+
+/* Button in the 'use another account' sign-in chooser: sign in with an Apple ID different from the one on this iPhone (opens Apple's web page). */
+"storage.signin.anotherAppleID" = "Inne konto Apple";

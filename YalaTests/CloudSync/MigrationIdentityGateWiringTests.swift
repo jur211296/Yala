@@ -493,7 +493,8 @@ struct MigrationIdentityGateWiringTests {
     @Test func blockView_buttonsArePinned() throws {
         let body = try Self.body(of: "VStack(spacing: DS.Spacing.md) {", in: Self.blockViewPath)
         #expect(Self.lines(body) == [
-            "if block.showsAppleSameAccountNote {",
+            // Ticket `cloud-sign-in-cannot-choose-another-apple-id`: con «Otra cuenta de Apple» la nota deja de ser verdad.
+            "if block.showsAppleSameAccountNote, !CloudRemoteFlags.appleWebSignInEnabled {",
             "Text(L10n.Storage.MigrateBlock.appleSameAccountNote)",
             ".font(DS.Typography.caption)",
             ".foregroundStyle(.secondary)",
@@ -575,7 +576,10 @@ struct MigrationIdentityGateWiringTests {
     /// entrar con la misma cuenta heredaría el rechazo de la sesión anterior.
     @Test func sessionEpoch_bumpsOnEverySignInAndSignOut() throws {
         let auth = Self.lines(try Self.source("Yala/Services/CloudSync/CloudAuthService.swift")).joined(separator: "\n")
-        #expect(Self.occurrences(of: "sessionEpoch += 1", in: auth) == 3)
+        #expect(Self.occurrences(of: "sessionEpoch += 1", in: auth) == 4)
+        let web = Self.lines(try Self.body(of: "func signInWithAppleOnTheWeb() async throws {",
+                                           in: "Yala/Services/CloudSync/CloudAuthService.swift")).joined(separator: "\n")
+        #expect(web.contains("sessionEpoch += 1"), "el inicio de Apple en la web")
         #expect(Self.occurrences(of: "signInWithIdToken(", in: auth) == 2, "un canje nuevo tiene que subir la época")
         #expect(auth.contains("""
             CloudSyncBreadcrumb.authSignedIn()

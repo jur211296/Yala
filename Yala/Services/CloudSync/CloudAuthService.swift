@@ -168,6 +168,9 @@ final class CloudAuthService: NSObject {
     /// en `signOut()`, a diferencia de los pares por-provider que sobreviven). Fuente para el
     /// `provider` del claim (`storedProvider()`).
     private static let keyProvider = "cloudauth.provider"
+    /// La sesión de Apple se abrió por el inicio de sesión WEB (`signInWithAppleOnTheWeb`), con un Apple ID que puede no
+    /// ser el del teléfono. Credencial de sesión, como `keyProvider`: muere con ella y con cualquier otro inicio de sesión.
+    private static let keyAppleOnTheWeb = "cloudauth.appleOnTheWeb"
 
     // MARK: - Init
 
@@ -347,6 +350,22 @@ final class CloudAuthService: NSObject {
     /// este device (o key perdida — los call-sites de claim caen a `?? "apple"` con residual anotado).
     func storedProvider() -> String? { readProfileString(Self.keyProvider) }
 
+    /// `true` si la sesión de Apple viva se abrió por el inicio de sesión web: su Apple ID puede no ser el del teléfono.
+    func sessionIsAppleOnTheWeb() -> Bool { readProfileString(Self.keyAppleOnTheWeb) == "1" }
+
+    /// El proveedor que puede servir de PRUEBA de que la sesión firmó con el Apple ID de este teléfono
+    /// (`BeaconOrphanLogic`, prueba 2). Una sesión de Apple abierta por la web no lo prueba: puede ser otro Apple ID, y
+    /// limpiar el faro con ella es irreversible y viaja a todos los dispositivos (ticket
+    /// `cloud-sign-in-cannot-choose-another-apple-id`, criterio «el faro no se limpia con una sesión de Apple que no es la
+    /// del Apple ID del teléfono»). Con esa sesión devuelve `nil`, que es «no sé»: la prueba 1 (mismo hash) sigue valiendo.
+    func storedProviderProvingThisDevicesAppleID() -> String? {
+        Self.providerProvingThisDevicesAppleID(stored: storedProvider(), appleOnTheWeb: sessionIsAppleOnTheWeb())
+    }
+
+    nonisolated static func providerProvingThisDevicesAppleID(stored: String?, appleOnTheWeb: Bool) -> String? {
+        appleOnTheWeb ? nil : stored
+    }
+
     /// Repone el proveedor de la cuenta de este teléfono tras cerrar una sesión de OTRA cuenta que entró por la puerta de
     /// «Dónde viven tus datos» (`CloudMigrationController.signInToResumeSync`, ticket
     /// `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`). `signOut()` lo borra —es credencial de sesión—, y
@@ -387,6 +406,68 @@ final class CloudAuthService: NSObject {
             self.signInContinuation = continuation
             controller.performRequests()
         }
+    }
+
+    // MARK: - Sign in with Apple en la web (otro Apple ID)
+
+    /// Entrar con un Apple ID DISTINTO del del teléfono (ticket `cloud-sign-in-cannot-choose-another-apple-id`, decisión A
+    /// de Jürgen del 2026-11-06). El inicio nativo solo firma con el Apple ID del dispositivo; este abre la página de Apple
+    /// en una sesión de navegador del sistema SIN las cookies de Safari (`prefersEphemeralWebBrowserSession`), así que la
+    /// persona escribe el Apple ID que quiera. Supabase hace el intercambio (PKCE) con el Services ID web
+    /// (`pe.yala.app.web`), y la cuenta de Yala es la misma que por el nativo: Apple da el mismo identificador a las apps y
+    /// servicios del mismo equipo, y Supabase une por él.
+    ///
+    /// Lo que deja distinto del nativo, a propósito:
+    /// · **no guarda `keyAppleUserID`** y borra el de antes: `refreshCredentialStateIfNeeded` pregunta a iOS por ESE
+    ///   identificador, y para un Apple ID que no es el del teléfono iOS contesta `.notFound` y cerraría la sesión en el
+    ///   siguiente primer plano. Por lo mismo, la revocación de Apple del teléfono ya no la cierra;
+    /// · **deja la marca `keyAppleOnTheWeb`**, que apaga la prueba 2 del faro (`storedProviderProvingThisDevicesAppleID`);
+    /// · **sin canje del código de Apple** (`SIWAExchangeCapture`): lo consume Supabase. Al borrar la cuenta, la revocación
+    ///   del token de Apple no tendrá par para esta sesión (residual escrito en el ticket).
+    ///
+    /// Solo se ofrece con `CloudRemoteFlags.appleWebSignInEnabled`: producción no tiene el proveedor web configurado.
+    func signInWithAppleOnTheWeb() async throws {
+        guard let client else { throw CloudAuthError.notConfigured }
+        guard signInContinuation == nil, !googleSignInInFlight else {
+            throw CloudAuthError.signInAlreadyInFlight
+        }
+        guard let redirect = Self.appleWebRedirectURL() else { throw CloudAuthError.notConfigured }
+        // Comparte el candado del de Google: un inicio de Apple en vuelo y otro cualquiera jamás conviven.
+        googleSignInInFlight = true
+        defer { googleSignInInFlight = false }
+        lastGoogleCredential = nil
+
+        let previousUserID = currentUserID
+        do {
+            try await client.signInWithOAuth(provider: .apple, redirectTo: redirect, scopes: "name email") { session in
+                session.prefersEphemeralWebBrowserSession = true
+            }
+        } catch let error as ASWebAuthenticationSessionError where error.code == .canceledLogin {
+            throw CloudAuthError.cancelled
+        } catch {
+            CloudSyncBreadcrumb.authSignInFailed(reason: "apple-web")
+            throw error
+        }
+        CloudSyncBreadcrumb.authSignedIn()
+        AdoptSessionOwnership.record(nil)
+        sessionEpoch += 1
+        SessionSignInLog.recordSignIn(sub: currentUserID, previousSub: previousUserID, at: Date())
+        writeProfileString("apple", forKey: Self.keyProvider)
+        writeProfileString("1", forKey: Self.keyAppleOnTheWeb)
+        // El perfil y el `appleUserID` capturados eran del Apple ID del teléfono, no de esta sesión.
+        clearCapturedProfile()
+    }
+
+    /// `<esquema de la app>://auth-callback`. El esquema sale del Info.plist (`yala` en producción, `yaladev` en Yala Dev),
+    /// no del de Google, que también vive en `CFBundleURLTypes`. Tiene que estar en la lista de URL de vuelta permitidas
+    /// del Supabase del entorno, o GoTrue manda al `site_url` y la hoja no vuelve nunca.
+    nonisolated static func appleWebRedirectURL(infoDictionary: [String: Any]? = Bundle.main.infoDictionary) -> URL? {
+        guard let types = infoDictionary?["CFBundleURLTypes"] as? [[String: Any]] else { return nil }
+        let schemes = types.flatMap { ($0["CFBundleURLSchemes"] as? [String]) ?? [] }
+        guard let scheme = schemes.first(where: { !$0.isEmpty && !$0.hasPrefix("com.googleusercontent") }) else {
+            return nil
+        }
+        return URL(string: "\(scheme)://auth-callback")
     }
 
     /// Despacho por provider (sesión 2 — un solo call-site para las vistas parametrizadas).
@@ -536,6 +617,7 @@ final class CloudAuthService: NSObject {
         // (`GroupsOutboxOwnershipLogic.owner`, ticket `groups-outbox-rows-without-a-live-session-have-no-exit`).
         SessionSignInLog.recordSignIn(sub: currentUserID, previousSub: previousUserID, at: Date())
         writeProfileString("google", forKey: Self.keyProvider)
+        clearAppleOnTheWebMark()
 
         // Captura de perfil con la MISMA regla anti-sangrado que SIWA (helper compartido). La
         // identidad Google almacenada es el `googleUserID` del PAR (leída ANTES de re-escribirlo).
@@ -690,6 +772,7 @@ final class CloudAuthService: NSObject {
             // Apple ID. Cubre de una vez los caminos de `CloudSessionSignOut` (todos llaman este `signOut()`).
             clearCapturedProfile()
             clearStoredProvider()
+            clearAppleOnTheWebMark()
             // Una sesión DE PASO que se cierra: lo que se escriba en grupos a partir de ahora vuelve a ser de la cuenta de antes
             // (`SessionSignInLog.recordSignOut`, ticket `groups-outbox-rows-without-a-live-session-have-no-exit`).
             if returningToPreviousAccount {
@@ -916,6 +999,16 @@ final class CloudAuthService: NSObject {
         }
     }
 
+    private func clearAppleOnTheWebMark() {
+        do {
+            try profileStore.remove(key: Self.keyAppleOnTheWeb)
+        } catch {
+            #if DEBUG
+            print("CloudAuthService.clearAppleOnTheWebMark: \(error)")
+            #endif
+        }
+    }
+
     /// Borra email/fullName/appleUserID del Keychain propio (sign-out y cambio de cuenta).
     private func clearCapturedProfile() {
         for key in [Self.keyCapturedEmail, Self.keyCapturedFullName, Self.keyAppleUserID] {
@@ -1005,6 +1098,7 @@ extension CloudAuthService: ASAuthorizationControllerDelegate {
                     SessionSignInLog.recordSignIn(sub: self.currentUserID, previousSub: previousUserID, at: Date())
                     // Provider de la sesión (fuente del claim) — espejo del write en signInWithGoogle.
                     self.writeProfileString("apple", forKey: Self.keyProvider)
+                    self.clearAppleOnTheWebMark()
                     // Tras el exchange EXITOSO (hay JWT de Supabase para el Worker). Jamás bloquea/retrasa.
                     SIWAExchangeCapture.dispatch(
                         hook: self.siwaExchangeHook, codeData: siwaCodeData, appleUserID: appleUserID

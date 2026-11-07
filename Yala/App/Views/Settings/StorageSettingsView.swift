@@ -43,6 +43,8 @@ struct StorageSettingsView: View {
     /// Provider elegido en el chooser; lo consume el `onDismiss` del sheet del chooser (con el
     /// anchor YA estable — Google resuelve su presenter por topmost VC). Cancel = queda `nil` → no-op.
     @State private var chosenProvider: CloudSignInProvider?
+    /// «Otra cuenta de Apple» del selector (Apple por la web). Se consume en `onChooserDismissed`, como `chosenProvider`.
+    @State private var chosenAnotherAppleID = false
     /// One-shot del belt del chooser (C-7): el sheet se presentó con sesión viva y se cerró solo;
     /// el `onDismiss` arranca con `.reuseLiveSession`. Cancel/drag-dismiss no lo quema → no-op.
     @State private var reuseLiveSession = false
@@ -165,7 +167,11 @@ struct StorageSettingsView: View {
                 onReuseLiveSession: {
                     reuseLiveSession = true
                     showSignInChooser = false
-                })
+                },
+                onSelectAnotherAppleID: CloudRemoteFlags.appleWebSignInEnabled ? {
+                    chosenAnotherAppleID = true
+                    showSignInChooser = false
+                } : nil)
         }
         .sheet(item: $presentedMigrationBlock, onDismiss: onMigrationBlockDismissed) { block in
             StorageMigrationBlockedView(
@@ -1137,7 +1143,9 @@ struct StorageSettingsView: View {
         case .reuseLiveSession:
             startActivation(path, .reuseLiveSession)
         case .askProvider:
-            guard case .authenticateWith = plan else {
+            switch plan {
+            case .authenticateWith, .authenticateWithAnotherAppleID: break
+            case .reuseLiveSession:
                 // La sesión que iba a reusarse murió con la hoja arriba: que elija método.
                 presentActivationSheet(controller, isAdopt: path == .adopt)
                 return
@@ -1267,7 +1275,14 @@ struct StorageSettingsView: View {
         if reuseLiveSession {
             reuseLiveSession = false
             chosenProvider = nil          // el belt gana: jamás arrastrar una elección previa
+            chosenAnotherAppleID = false
             startActivation(path, .reuseLiveSession)
+            return
+        }
+        if chosenAnotherAppleID {
+            chosenAnotherAppleID = false
+            chosenProvider = nil
+            startActivation(path, .authenticateWithAnotherAppleID)
             return
         }
         guard let provider = chosenProvider else { return }

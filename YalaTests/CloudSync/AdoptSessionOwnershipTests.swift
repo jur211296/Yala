@@ -399,13 +399,15 @@ struct AdoptSessionOwnershipWiringTests {
 
     // MARK: - Sesión y registrador
 
-    /// La marca describe UNA sesión: la borran los dos sitios donde nace una (Apple, Google) y el cierre, también sin
+    /// La marca describe UNA sesión: la borran los tres sitios donde nace una (Apple, Google, Apple en la web desde el
+    /// 2026-11-06) y el cierre, también sin
     /// backend (antes del `guard let client`). Sin eso, una sesión de Grupos firmada después con la misma cuenta la
     /// heredaba (lo cazó la lente de consumidores).
     @Test func authService_clearsTheMarkOnEverySignInAndSignOut() throws {
         let path = "Yala/Services/CloudSync/CloudAuthService.swift"
         let code = Self.lines(try Self.source(path))
-        #expect(code.filter { $0 == "AdoptSessionOwnership.record(nil)" }.count == 3)
+        #expect(code.filter { $0 == "AdoptSessionOwnership.record(nil)" }.count == 4)
+        #expect(code.filter { $0 == "CloudSyncBreadcrumb.authSignedIn()" }.count == 3, "un sign-in nuevo, con su marca")
         for (i, line) in code.enumerated() where line == "CloudSyncBreadcrumb.authSignedIn()" {
             #expect(code[i + 1] == "AdoptSessionOwnership.record(nil)", "tras el sign-in de la línea \(i)")
         }

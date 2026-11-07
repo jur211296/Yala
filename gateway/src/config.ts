@@ -74,6 +74,9 @@ export function handleConfig(c: Ctx): Response {
       // Yala IA en modo nube con herramientas. La app lo trata como fail-closed en TODOS sus builds (no hereda el
       // «ausente = encendido» de DEV), y el gateway corta por su lado con el mismo valor (`ai/explore/index.ts`).
       aiCloudExploreRolloutPercent: parseRolloutPercent(c.env.AI_CLOUD_EXPLORE_ROLLOUT_PERCENT),
+      // «Otra cuenta de Apple» en la app (inicio de sesión web de Apple). Pide el proveedor web de Apple en el Supabase
+      // del entorno: staging lo tiene, producción no (2026-11-06). Ausente, la app lo trata como su `absentDefault`.
+      appleWebSignInRolloutPercent: parseRolloutPercent(c.env.APPLE_WEB_SIGN_IN_ROLLOUT_PERCENT),
     },
     // Forzado de actualización (min-version). YA NO es DARK: desde D-R1 paso 1 el cliente de producción
     // fetchea /config (CloudBackendConfig.isConfigured pasó a true), así que lo único que separa al

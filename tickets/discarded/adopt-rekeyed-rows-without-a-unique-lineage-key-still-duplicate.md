@@ -1,12 +1,20 @@
 ---
 id: adopt-rekeyed-rows-without-a-unique-lineage-key-still-duplicate
-status: backlog
+status: discarded
 priority: medium
 area: "modo-nube, adopt"
 created: 2026-09-25
-updated: 2026-10-08
+updated: 2026-11-06
 source: "ticket `adopt-window-late-leader-identity-export-can-duplicate-after-the-remount` (2026-09-25), residual del Paso 0"
 ---
+
+Why: Discarded 2026-11-06 por la opción 3 del propio ticket (decisión A de Jürgen, encargo «Lote nube: categorías
+duplicadas, Apple ID y tasa de hoy»). El caso solo existe si CloudKit le da la razón al líder desplazado, y eso lo mide el
+canario `cloudRelayIdentityRestored`: **cero eventos en 90 días, en producción y en staging** (medido el 2026-11-06 en
+`yala_metrics` y `yala_metrics_staging`; en la misma ventana sí hay otros canarios del adopt, así que la telemetría llega).
+Sin arreglo parcial por nombre ni cambio de esquema. **Alarma de reapertura**: `.github/workflows/alarma-duplicados-nube.yml`
+mira el canario cada lunes y, si aparece, avisa al bot y sale en rojo; entonces este ticket vuelve a `backlog/` y se decide
+entre las opciones 1 y 2.
 
 # En el adopt, una fila re-identificada que no casa por clave sigue subiendo duplicada
 

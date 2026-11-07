@@ -56,7 +56,10 @@ struct StorageMigrationBlockedView: View {
                     }
 
                     VStack(spacing: DS.Spacing.md) {
-                        if block.showsAppleSameAccountNote {
+                        // La nota provisional («con Apple, Yala usa siempre la cuenta de este dispositivo») deja de ser
+                        // verdad donde «Usar otra cuenta» ofrece «Otra cuenta de Apple» (ticket
+                        // `cloud-sign-in-cannot-choose-another-apple-id`). Con el interruptor apagado sigue siéndolo.
+                        if block.showsAppleSameAccountNote, !CloudRemoteFlags.appleWebSignInEnabled {
                             Text(L10n.Storage.MigrateBlock.appleSameAccountNote)
                                 .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)

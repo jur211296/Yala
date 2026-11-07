@@ -32,6 +32,7 @@ export interface Env {
   // gateway solo distingue 0 (apagado: `chat.explore` sale como `chat.answer`) del resto. Ausente/inválido → 0, también
   // en staging. Encenderlo exige antes el texto de consentimiento nuevo (decisión de Jürgen pendiente).
   AI_CLOUD_EXPLORE_ROLLOUT_PERCENT?: string;
+  APPLE_WEB_SIGN_IN_ROLLOUT_PERCENT?: string;
   // Forzado de actualización (min-version): build de CFBundleVersion por debajo del cual el cliente
   // muestra la pantalla bloqueante. Ausente/inválido → 0 (desactivado). Flip = editar var + deploy.
   MIN_SUPPORTED_BUILD?: string;
