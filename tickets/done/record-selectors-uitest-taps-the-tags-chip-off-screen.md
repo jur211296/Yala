@@ -1,10 +1,10 @@
 ---
 id: record-selectors-uitest-taps-the-tags-chip-off-screen
-status: backlog
+status: done
 priority: low
 area: testing
 created: 2026-10-07
-updated: 2026-10-28
+updated: 2026-11-06
 source: rojo del gate de advisory-ui-tests-fail-every-retry, bisecado contra la base
 ---
 
@@ -87,3 +87,18 @@ runner vivo era el de Mando, en otro simulador) y rojo 3 de 3 con la rama, que s
 selector de cuenta y ninguna semilla `minimal` tiene tarjetas con líneas. La nocturna del 2026-11-05 (16:27 UTC) lo dio
 verde; desde entonces el único cambio en `Views/Transactions` es `545bb1cc9` («con el texto al máximo, cifras enteras y
 «Guardar» sin pisar el formulario»). Hipótesis sin medir: la barra de «Guardar» tapa ahora la segunda fila de chips.
+
+## 2026-11-06 · cerrado (lote XCUITest y neto del flujo, PR a 2.2)
+
+Medido en `2.2` @ `b7cb32539`, iPhone 17 Pro iOS 27.2: rojo 1 de 1 con «existe pero no es alcanzable». En el último
+fotograma del vídeo del `.xcresult` la fila de chips baja a dos líneas («Ahorros USD» y «Mantenimiento y reparaciones»,
+que es largo) y el de etiquetas queda **debajo de la barra de «Guardar»**: desde el barrido final de 2.2 es un
+`safeAreaBar` y el formulario se desplaza por debajo del botón. La hipótesis de la nota anterior era buena.
+
+¿Es también de producto? No: el formulario se desplaza y el chip sube por encima de la barra (medido con el mismo test,
+que arrastra el formulario y entonces lo alcanza y abre el selector). Lo que queda es si a primera vista se nota que hay
+un chip más debajo de la barra; en `2.3` eso ya tiene su ticket, `new-record-chip-row-hides-the-tags-chip-without-a-hint`.
+
+Arreglo, solo del test: `openSelectorFirstRow` sube el formulario con arrastres cortos desde la mitad de la ventana
+hasta que el chip deja de estar tapado, como haría una persona. Verde 1 de 1 con el arreglo; rojo sin él (la corrida de
+arriba).

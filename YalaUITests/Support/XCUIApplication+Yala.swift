@@ -563,6 +563,19 @@ extension XCUIApplication {
             _ = waitForSettledLayout(of: chip, timeout: timeout)
             swipes += 1
         }
+        // Con «Guardar» en una barra (`safeAreaBar`, barrido final 2.2) el formulario se desplaza por DEBAJO del botón, y
+        // cuando la fila de chips baja a una segunda línea, el de etiquetas puede nacer tapado por la barra (en
+        // {20, 767} de 874 pt, medido el 2026-11-06). Una persona sube el formulario con el dedo: aquí, arrastres cortos
+        // desde la mitad de la ventana hasta que el chip quede por encima de la barra.
+        var lifts = 0
+        // El marco antes que `isHittable`: con el chip entero fuera de la ventana, `isHittable` lanza.
+        while lifts < 4 && (!windowFrame.contains(chip.frame) || !chip.isHittable) {
+            let window = windows.firstMatch
+            window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.55))
+                .press(forDuration: 0.05, thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4)))
+            _ = waitForSettledLayout(of: chip, timeout: timeout)
+            lifts += 1
+        }
         XCTAssertTrue(chip.waitForHittable(timeout: timeout), "\(chipID) existe pero no es alcanzable.", file: file, line: line)
         chip.tap()
         let row = descendants(matching: .any)
