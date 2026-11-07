@@ -9,7 +9,7 @@
 | ¿Dónde quedó todo? ¿Qué sigue? | — *(pendiente)* |
 | ¿Por qué se decidió X? ¿Qué manda hoy? | [`docs/DECISIONS.md`](./docs/DECISIONS.md) |
 | ¿Qué pasó el día X? | — *(pendiente)* |
-| ¿Qué hitos y fechas hay? | — *(pendiente)* |
+| ¿Qué hitos y fechas hay? | [`docs/ROADMAP.md`](./docs/ROADMAP.md) |
 | ¿Cómo se trabaja aquí? Reglas duras | [`CLAUDE.md`](./CLAUDE.md) |
 | ¿Esto ya nos mordió antes? | [`docs/aprendizajes-tecnicos.md`](./docs/aprendizajes-tecnicos.md) |
 | ¿Qué hago si se cae en producción? | — *(pendiente)* |
@@ -18,7 +18,7 @@
 | ¿Cómo arranco de cero en otra máquina? | [`docs/HANDOFF.md`](./docs/HANDOFF.md) |
 
 > **Ficheros de más de 60 KB** — `✓` = lleva índice arriba, entra por ahí:
-> ✓ `.claude/rules/swiftdata-cloudkit.md` (284 KB) · ✓ `docs/DECISIONS.md` (266 KB) · ✓ `docs/aprendizajes-tecnicos.md` (211 KB) · ✓ `qa/cloud/README.md` (147 KB) · ✓ `docs/modo-nube/MODO-NUBE-DIFERIDOS.md` (113 KB) · ✓ `tickets/qa/groups-consent-door-spec.md` (98 KB) · ✓ `docs/audit/AUDIT-UI-patterns.md` (94 KB) · ✓ `docs/modo-nube/MODO-NUBE-AUDITORIA-ESCENARIOS.md` (94 KB) · ✗ `docs/TICKETS.md` (93 KB) · ✓ `docs/modo-nube/_archive/groups-backend-v1.md` (72 KB) · ✓ `docs/modo-nube/_archive/fase3-medicion/fase3-REMEDICION-2026-08-04.md` (64 KB) · ✓ `docs/modo-nube/MODO-NUBE-DECISION-RELEASE-2.1.md` (61 KB)
+> ✓ `.claude/rules/swiftdata-cloudkit.md` (340 KB) · ✓ `docs/DECISIONS.md` (278 KB) · ✓ `docs/aprendizajes-tecnicos.md` (218 KB) · ✓ `qa/cloud/README.md` (174 KB) · ✗ `docs/TICKETS.md` (154 KB) · ✗ `.claude/rules/swiftui-ds.md` (115 KB) · ✓ `docs/modo-nube/MODO-NUBE-DIFERIDOS.md` (113 KB) · ✓ `tickets/done/groups-consent-door-spec.md` (99 KB) · ✓ `docs/audit/AUDIT-UI-patterns.md` (94 KB) · ✓ `docs/modo-nube/MODO-NUBE-AUDITORIA-ESCENARIOS.md` (94 KB) · ✗ `docs/ux/mapa-de-flujos-2.2.md` (92 KB) · ✓ `docs/modo-nube/_archive/groups-backend-v1.md` (72 KB)
 
 <!-- INDICE:fin -->
 
