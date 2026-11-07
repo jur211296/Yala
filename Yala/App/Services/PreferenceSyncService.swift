@@ -62,6 +62,10 @@ final class PreferenceSyncService {
         static let remoteOnboarding = "lastOnboardingTimestamp" // iKV
         static let localWipe = "lastKnownWipeTimestamp"       // UserDefaults
         static let localOnboarding = "lastKnownOnboardingTimestamp" // UserDefaults
+        /// La señal aparcada a la espera de la marca del parque, y desde cuándo (reloj de este dispositivo). Ver
+        /// `wipeMarkWait`. Sobreviven a matar la app: el arranque siguiente cierra la espera.
+        static let awaitedMarkSignal = "wipeSignal.awaitedMarkSignal"   // UserDefaults
+        static let awaitedMarkSince = "wipeSignal.awaitedMarkSince"     // UserDefaults
     }
 
     /// Key for notification userInfo
@@ -617,8 +621,34 @@ final class PreferenceSyncService {
             submit: { RouterEntryGate.shared.submit($0) },
             postRemoteOnboardingCompleted: {
                 NotificationCenter.default.post(name: .remoteOnboardingCompleted, object: nil)
-            })
+            },
+            scheduleRecheck: { [weak self] delay in self?.scheduleWipeMarkRecheck(after: delay) })
     }
+
+    /// La vuelta que cierra la espera de la marca (`wipeMarkWait`) si en ese rato no llega ningún cambio del KV. Una sola
+    /// a la vez: la que llega después sustituye a la anterior.
+    private var wipeMarkRecheckTask: Task<Void, Never>?
+
+    private func scheduleWipeMarkRecheck(after delay: TimeInterval) {
+        wipeMarkRecheckTask?.cancel()
+        wipeMarkRecheckTask = Task { @MainActor [weak self] in
+            do {
+                try await Task.sleep(for: .seconds(delay))
+            } catch {
+                return
+            }
+            self?.checkForRemoteWipeSignal()
+        }
+    }
+
+    /// **Cuánto espera el receptor la marca del parque antes de decidir** (ticket
+    /// `wipe-signal-arriving-before-the-fleet-mark-takes-the-origin-seed`). `signalWipeKeepingSetup` sube la marca
+    /// (`lastOnboardingTimestamp`) y la señal (`lastWipeTimestamp`) en el mismo `synchronize`, pero el iCloud KV no garantiza
+    /// el orden de entrega entre claves. Si la señal llega sola, decidir en el acto es decidir «el parque empezó de cero»:
+    /// el receptor resetea sus ajustes, vuelve al onboarding y su corte se lleva la semilla de categorías del origen y sus
+    /// recordatorios, que viajan borrados al origen. Con la espera, una señal sin marca se aparca y se decide cuando llega la
+    /// marca o cuando pasa este rato; un vaciado de los de antes (el origen sí repite la bienvenida) solo se retrasa esto.
+    static let wipeMarkWait: TimeInterval = 20
 
     /// **El cuerpo de la detección, sin el singleton** (card os7l, 2026-11-05; ticket
     /// `remote-wipe-receiver-has-no-behaviour-test`). Recibe el iCloud-KV y el dominio local, y lo que hace con lo que
@@ -632,30 +662,29 @@ final class PreferenceSyncService {
         local: UserDefaults,
         isWipingData: Bool,
         submit: (RouterIntent) -> Void,
-        postRemoteOnboardingCompleted: () -> Void
+        postRemoteOnboardingCompleted: () -> Void,
+        now: Date = .now,
+        scheduleRecheck: (TimeInterval) -> Void = { _ in }
     ) {
         let remoteWipe = iKV.double(forKey: WipeKey.remoteWipe)
         let localWipe = local.double(forKey: WipeKey.localWipe)
         let remoteOnboarding = iKV.double(forKey: WipeKey.remoteOnboarding)
         let localOnboarding = local.double(forKey: WipeKey.localOnboarding)
 
-        // Caso A: Nueva señal de wipe (remoteWipe > localWipe)
-        if remoteWipe > 0 && remoteWipe > localWipe {
-            // Mark as processed so we don't react again
-            local.set(remoteWipe, forKey: WipeKey.localWipe)
-
-            let onboardingAlreadyDone = remoteOnboarding > remoteWipe
-
-            // Bug #6 P0 mitigation: evaluate the decider at SIGNAL TIME (not drain
-            // time). If hasCompletedOnboarding=false right now (fresh-install with
-            // contaminated KV-Store), don't submit the intent — otherwise the
-            // readiness gate would park it across the onboarding session and
-            // process it post-onboarding, wiping the user's fresh data.
+        // Bug #6 P0 mitigation: evaluate the decider at SIGNAL TIME (not drain
+        // time). If hasCompletedOnboarding=false right now (fresh-install with
+        // contaminated KV-Store), don't submit the intent — otherwise the
+        // readiness gate would park it across the onboarding session and
+        // process it post-onboarding, wiping the user's fresh data.
+        //
+        // Una función y no un valor: la usan la señal nueva (caso A) y la que se cierra tras esperar la marca (caso A2), y
+        // la segunda decide con lo que valga AL CERRARSE, no con lo de hace 20 s.
+        func decideNow() -> RemoteWipeSignalDecision {
             let hasCompletedOnboarding = local.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
             // El eje de SESIÓN, evaluado aquí y no solo en el drenaje: este es el punto donde la señal
             // se DETECTA, y el `submit` de abajo es lo único que la hace viajar. Una sesión en la nube
-            // (E) o solo-grupos (F) ni siquiera pone el intent en la cola. La marca de arriba
-            // (`WipeKey.localWipe`) ya salió incondicionalmente, así que la señal queda procesada.
+            // (E) o solo-grupos (F) ni siquiera pone el intent en la cola. La marca de abajo
+            // (`WipeKey.localWipe`) sale incondicionalmente, así que la señal queda procesada.
             let sessionObeysWipeSignal = DestructiveScopeLogic.wipeSignalObeyedByThisSession(
                 confirmedPrivateSession: PrivateSessionMark.confirmedPrivateSession(local),
                 storageMode: CloudSyncFlags.storageMode)
@@ -665,11 +694,31 @@ final class PreferenceSyncService {
                 hasRemoteWipeTimestamp: remoteWipe > 0,
                 sessionObeysWipeSignal: sessionObeysWipeSignal
             )
+            return decision
+        }
+
+        // El ÚNICO emisor del intent: lo llaman la señal nueva con su marca (caso A) y la espera cerrada (caso A2), los
+        // dos después de consumir la señal y de pasar por `decideNow()`.
+        func submitRemoteWipe(skipOnboarding: Bool) {
+            submit(.remoteWipe(skipOnboarding: skipOnboarding))
+        }
+
+        // Caso A: Nueva señal de wipe (remoteWipe > localWipe)
+        if remoteWipe > 0 && remoteWipe > localWipe {
+            // Mark as processed so we don't react again
+            local.set(remoteWipe, forKey: WipeKey.localWipe)
+            // Una espera de una señal anterior ya no vale: manda esta.
+            local.removeObject(forKey: WipeKey.awaitedMarkSignal)
+            local.removeObject(forKey: WipeKey.awaitedMarkSince)
+
+            let onboardingAlreadyDone = remoteOnboarding > remoteWipe
+
+            let decision = decideNow()
 
             #if DEBUG
-            // `sessionObeys` va en el log porque desde el eje de sesión un `shouldProcess=false` ya no
+            // `shouldMark` va en el log porque desde el eje de sesión un `shouldProcess=false` ya no
             // dice por qué: puede ser una instalación sin estado local o una sesión que no obedece.
-            print("PreferenceSyncService: Remote wipe detected (onboardingAlreadyDone=\(onboardingAlreadyDone), shouldProcess=\(decision.shouldProcess), sessionObeys=\(sessionObeysWipeSignal))")
+            print("PreferenceSyncService: Remote wipe detected (onboardingAlreadyDone=\(onboardingAlreadyDone), shouldProcess=\(decision.shouldProcess), shouldMark=\(decision.shouldMarkSignalsAsProcessed))")
             #endif
 
             // Mid-onboarding silencing: mark BOTH timestamps so neither Caso A nor B
@@ -682,7 +731,43 @@ final class PreferenceSyncService {
 
             guard decision.shouldProcess else { return }
 
-            submit(.remoteWipe(skipOnboarding: onboardingAlreadyDone))
+            // Sin la marca del parque, todavía no se decide: puede venir detrás (ver `wipeMarkWait`). La señal ya quedó
+            // consumida arriba; lo que se apunta es la espera, y la cierra el caso A2.
+            if !onboardingAlreadyDone {
+                local.set(remoteWipe, forKey: WipeKey.awaitedMarkSignal)
+                local.set(now.timeIntervalSince1970, forKey: WipeKey.awaitedMarkSince)
+                scheduleRecheck(wipeMarkWait)
+                return
+            }
+
+            submitRemoteWipe(skipOnboarding: onboardingAlreadyDone)
+            return
+        }
+
+        // Caso A2: la señal de arriba, aparcada esperando la marca del parque. Se cierra cuando llega la marca o cuando
+        // vence la espera, lo que pase antes. Va antes del caso B: la marca que llega aquí no es un onboarding remoto
+        // «después de un vaciado ya procesado», es la otra mitad de esta misma señal.
+        let awaitedSignal = local.double(forKey: WipeKey.awaitedMarkSignal)
+        if awaitedSignal > 0 && awaitedSignal == remoteWipe && remoteWipe == localWipe {
+            let onboardingAlreadyDone = remoteOnboarding > remoteWipe
+            let since = local.double(forKey: WipeKey.awaitedMarkSince)
+            let elapsed = now.timeIntervalSince1970 - since
+            // Un reloj que va hacia atrás (elapsed < 0) no alarga la espera: se cierra.
+            if !onboardingAlreadyDone && elapsed >= 0 && elapsed < wipeMarkWait {
+                scheduleRecheck(wipeMarkWait - elapsed)
+                return
+            }
+            local.removeObject(forKey: WipeKey.awaitedMarkSignal)
+            local.removeObject(forKey: WipeKey.awaitedMarkSince)
+
+            #if DEBUG
+            print("PreferenceSyncService: Awaited wipe mark resolved (onboardingAlreadyDone=\(onboardingAlreadyDone), waited=\(elapsed)s)")
+            #endif
+
+            // Lo que valga AHORA: en la espera pudo cambiar la sesión o empezar otro borrado.
+            let decision = decideNow()
+            guard decision.shouldProcess else { return }
+            submitRemoteWipe(skipOnboarding: onboardingAlreadyDone)
             return
         }
 

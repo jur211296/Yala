@@ -167,6 +167,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | bridge-de-grupos-pierde-la-marca-de-sus-patas | done | tickets/done/bridge-de-grupos-pierde-la-marca-de-sus-patas.md |
 | bridge-synthesis-trusts-a-zero-converted-amount | done | tickets/done/bridge-synthesis-trusts-a-zero-converted-amount.md |
 | bridge-virtual-only-currency-mismatch-is-silent | backlog | tickets/backlog/bridge-virtual-only-currency-mismatch-is-silent.md |
+| budget-category-picker-offers-income-categories | qa | tickets/qa/budget-category-picker-offers-income-categories.md |
 | budget-days-left-counts-today | done | tickets/done/budget-days-left-counts-today.md |
 | budget-interval-counts-next-period-midnight | done | tickets/done/budget-interval-counts-next-period-midnight.md |
 | budget-tied-to-income-or-expense | backlog | tickets/backlog/budget-tied-to-income-or-expense.md |
@@ -771,7 +772,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | needsrelaunch-hides-the-groups-section | done | tickets/done/needsrelaunch-hides-the-groups-section.md |
 | neutral-boot-hands-owner-prefs-to-whoever-signs-in-next | done | tickets/done/neutral-boot-hands-owner-prefs-to-whoever-signs-in-next.md |
 | neutral-mount-wiring-scan-is-red-on-2-1 | done | tickets/done/neutral-mount-wiring-scan-is-red-on-2-1.md |
-| new-record-chip-row-hides-the-tags-chip-without-a-hint | backlog | tickets/backlog/new-record-chip-row-hides-the-tags-chip-without-a-hint.md |
+| new-record-chip-row-hides-the-tags-chip-without-a-hint | qa | tickets/qa/new-record-chip-row-hides-the-tags-chip-without-a-hint.md |
 | new-record-drafts-banner-says-abrir-inbox | backlog | tickets/backlog/new-record-drafts-banner-says-abrir-inbox.md |
 | new-record-suggests-previous-descriptions | qa | tickets/qa/new-record-suggests-previous-descriptions.md |
 | new-record-with-one-account-keeps-save-off-without-saying-why | backlog | tickets/backlog/new-record-with-one-account-keeps-save-off-without-saying-why.md |
@@ -788,7 +789,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | notification-delegate-assigned-after-launch | done | tickets/done/notification-delegate-assigned-after-launch.md |
 | notification-tap-opens-inbox-then-inbox-notice-pops-after | done | tickets/done/notification-tap-opens-inbox-then-inbox-notice-pops-after.md |
 | notifications-not-delivered-testflight | done | tickets/done/notifications-not-delivered-testflight.md |
-| old-receivers-of-a-keeping-wipe-delete-the-origin-reminders | backlog | tickets/backlog/old-receivers-of-a-keeping-wipe-delete-the-origin-reminders.md |
+| old-receivers-of-a-keeping-wipe-delete-the-origin-reminders | qa | tickets/qa/old-receivers-of-a-keeping-wipe-delete-the-origin-reminders.md |
 | onboarding-login-should-match-the-sep15-reference | done | tickets/done/onboarding-login-should-match-the-sep15-reference.md |
 | onboarding-purpose-drops-groups-card | done | tickets/done/onboarding-purpose-drops-groups-card.md |
 | onboarding-sigue-los-estilos-del-resto-de-la-app | qa | tickets/qa/onboarding-sigue-los-estilos-del-resto-de-la-app.md |
@@ -1233,7 +1234,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | wipe-division-kv-key-has-no-quota-ceiling | backlog | tickets/backlog/wipe-division-kv-key-has-no-quota-ceiling.md |
 | wipe-division-takeover-can-cross-a-late-origin-before-the-mirror | backlog | tickets/backlog/wipe-division-takeover-can-cross-a-late-origin-before-the-mirror.md |
 | wipe-sheet-still-promises-every-apple-id-device | done | tickets/done/wipe-sheet-still-promises-every-apple-id-device.md |
-| wipe-signal-arriving-before-the-fleet-mark-takes-the-origin-seed | backlog | tickets/backlog/wipe-signal-arriving-before-the-fleet-mark-takes-the-origin-seed.md |
+| wipe-signal-arriving-before-the-fleet-mark-takes-the-origin-seed | qa | tickets/qa/wipe-signal-arriving-before-the-fleet-mark-takes-the-origin-seed.md |
 | wiped-state-reaches-the-discard-gate-with-the-window-open | done | tickets/done/wiped-state-reaches-the-discard-gate-with-the-window-open.md |
 | wire-decoder-accepts-non-finite-money | done | tickets/done/wire-decoder-accepts-non-finite-money.md |
 | worktree-stamp-depends-on-whether-a-rename-is-staged | done | tickets/done/worktree-stamp-depends-on-whether-a-rename-is-staged.md |
