@@ -347,6 +347,17 @@ export const ROUTES: Readonly<Record<TaskId, Route>> = {
     params: { reasoningEffort: "low", responseFormat: "json_object", maxOutputTokens: 1020 },
     retries: 0,
   },
+  // Gastos hormiga Pro (2.3, ticket insights-ant-expenses-ai-version-for-pro): SIN banco todavía. Misma fila que
+  // insights.cards (mismo modelo y esfuerzo) porque la tarea es de la misma familia: leer agregados y escribir una frase,
+  // más juntar ids. Tope: 40 grupos como mucho en `merges` + una frase ≈ 250 tokens de salida; con el razonamiento, 800.
+  // Pasarla por el banco antes de cambiarla.
+  "insights.ants": {
+    mode: "managed",
+    provider: "openai",
+    model: "gpt-6-luna",
+    params: { reasoningEffort: "low", responseFormat: "json_object", maxOutputTokens: 800 },
+    retries: 0,
+  },
   // Solo las mandan versiones anteriores al 2026-10-03 o peticiones sin huella: salen byte a byte como siempre.
   // `gpt-4.1-mini` no tiene apagado anunciado (developers.openai.com/api/docs/deprecations, 2026-10-07).
   "insights.hero": PASS_MINI,

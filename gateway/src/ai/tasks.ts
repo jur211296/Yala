@@ -50,7 +50,7 @@ export const TASKS = {
   // --- Las tres de gpt-4.1-nano (apagado el 2026-10-23): las enruta la tabla desde la sesión 1 ---
   "photo.read": { category: "vision", endpoint: "chat", legacyModel: "gpt-4.1-nano", source: "ImageVisionService.analyze", maxBodyBytes: 32 * MB, requiresImage: true },
   "chat.intent": { category: "suggestions", endpoint: "chat", legacyModel: "gpt-4.1-nano", source: "ChatIntentClassifierService.classifyWithLLM", maxBodyBytes: 32 * KB },
-  "chat.suggestions": { category: "suggestions", endpoint: "chat", legacyModel: "gpt-4.1-nano", source: "ChatSuggestionsLLMService.generate", maxBodyBytes: 64 * KB },
+  "chat.suggestions": { category: "suggestions", endpoint: "chat", legacyModel: "gpt-4.1-nano", source: "ChatSuggestionsLLMService.generate", maxBodyBytes: 128 * KB },
 
   // --- Las de gpt-4.1-mini y whisper-1: el gateway decide desde la sesión 2 ---
   "chat.answer": { category: "chat", endpoint: "chat", legacyModel: "gpt-4.1-mini", source: "ChatAssistantService.runAskFlow", maxBodyBytes: 512 * KB },
@@ -58,7 +58,7 @@ export const TASKS = {
   // `chat.answer`, y el gateway le da al modelo herramientas que leen las tablas del usuario (`ai/explore/`). Solo la
   // pide una app con el flag encendido; nunca se deduce. Mismo cubo que `chat.answer`: una pregunta es un uso.
   "chat.explore": { category: "chat", endpoint: "chat", legacyModel: "gpt-4.1-mini", source: "ChatAssistantService.runAskFlow (modo nube, camino ampliado)", maxBodyBytes: 512 * KB },
-  "chat.rewrite": { category: "suggestions", endpoint: "chat", legacyModel: "gpt-4.1-mini", source: "SuggestionsRewriterService", maxBodyBytes: 64 * KB },
+  "chat.rewrite": { category: "suggestions", endpoint: "chat", legacyModel: "gpt-4.1-mini", source: "SuggestionsRewriterService", maxBodyBytes: 128 * KB },
   "text.parse": { category: "voice", endpoint: "chat", legacyModel: "gpt-4.1-mini", source: "TranscriptionParserService.parseMultiple", maxBodyBytes: 128 * KB, notePairing: "consume" },
   "voice.transcribe": { category: "voice", endpoint: "transcription", legacyModel: "whisper-1", source: "VoiceTranscriptionService", maxBodyBytes: 26 * MB, notePairing: "grant" },
   // Repartir un recibo en un grupo (2.3): líneas del recibo + frase de quién comió qué. La foto gasta foto y la nota gasta
@@ -70,6 +70,9 @@ export const TASKS = {
   "insights.cashflow": { category: "insights", endpoint: "chat", legacyModel: "gpt-4.1-mini", source: "InsightsLLMService.generateCashFlowInsight", maxBodyBytes: 128 * KB },
   "insights.deviation": { category: "insights", endpoint: "chat", legacyModel: "gpt-4.1-mini", source: "InsightsLLMService.generateDeviationInsight", maxBodyBytes: 128 * KB },
   "trends.summary": { category: "insights", endpoint: "chat", legacyModel: "gpt-4.1-mini", source: "TrendsAIService.generate", maxBodyBytes: 256 * KB },
+  // Gastos hormiga Pro (2.3): qué compras pequeñas son la misma tienda escrita de otra forma, y un consejo corto.
+  // Siempre llega con cabecera: ninguna versión instalada la manda.
+  "insights.ants": { category: "insights", endpoint: "chat", legacyModel: "gpt-4.1-mini", source: "AntExpensesAIService.generate", maxBodyBytes: 128 * KB },
   // Retirada de la app el 2026-10-03 (5c12ffcd3); las versiones instaladas anteriores aún la mandan.
   "insights.hero": { category: "insights", endpoint: "chat", legacyModel: "gpt-4.1-mini", source: "InsightsLLMService.generateHeroMessage (versiones anteriores al 2026-10-03)", maxBodyBytes: 256 * KB, deducedOnly: true },
   // Cualquier petición con gpt-4.1-mini que ninguna huella reconoce: sale exactamente como hoy.

@@ -1127,7 +1127,7 @@
 "profile.aliasAvailable" = "Alias disponível";
 "profile.aliasHelper" = "3-20 caracteres. Somente letras, números e underscores.";
 "profile.privacyTitle" = "Onde ficam seus dados";
-"profile.privacyDesc" = "Com sua conta no seu iCloud privado, seus dados ficam no seu dispositivo e no seu iCloud. Com sua conta na nuvem, ficam nos servidores do Yala. O que você registra em um grupo, com seu apelido, fica nos servidores do Yala para que o grupo veja. As funções de IA (voz, imagem e insights) são opcionais: o que você envia passa pelo nosso servidor até um serviço de IA, que processa. A Política de Privacidade informa qual é.";
+"profile.privacyDesc" = "Com sua conta no seu iCloud privado, seus dados ficam no seu dispositivo e no seu iCloud. Com sua conta na nuvem, ficam nos servidores do Yala. O que você registra em um grupo, com seu apelido, fica nos servidores do Yala para que o grupo veja. As funções de IA (voz, imagem e insights) são opcionais: o que você envia passa pelo nosso servidor até um serviço de IA, que processa. A Política de Privacidade informa qual é. Com sua conta na nuvem, a IA também pode ler todos os seus dados necessários para ser precisa e detalhada.";
 "profile.aliasFutureNote" = "Nota: A validação de unicidade do alias estará disponível quando a funcionalidade de despesas compartilhadas for implementada.";
 "profile.proMember" = "Membro PRO";
 "profile.choosePhoto" = "Escolher foto";
@@ -2831,14 +2831,14 @@
 "aiPrivacy.cloudExploreRow" = "Consultar sua conta na nuvem";
 "aiPrivacy.revokeConfirmMessage" = "Pararemos de processar seus dados de IA para esta função. Você pode reativá-la quando quiser.";
 "aiPrivacy.revokeConfirmAction" = "Desativar";
-"aiPrivacy.footerHint" = "Seus dados só são enviados quando você usa uma destas funções, e chegam a um serviço de IA pelo nosso servidor. Não os vendemos nem os usamos para publicidade.";
+"aiPrivacy.footerHint" = "Seus dados só são enviados quando você usa uma destas funções, e chegam a um serviço de IA pelo nosso servidor. Com sua conta na nuvem, a IA também pode ler todos os seus dados necessários para ser precisa e detalhada. Não os vendemos nem os usamos para publicidade.";
 "aiPrivacy.policyLink" = "Política de Privacidade";
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "O Yala registra por você";
-"aiConsent.processingMessage" = "Você dita ou escolhe uma foto do recibo e o Yala registra o gasto. Para isso, envia o áudio ou a foto a um serviço de IA, só naquele momento. Eles não são usados para treinar a IA.";
+"aiConsent.processingMessage" = "Você dita ou escolhe uma foto do recibo e o Yala registra o gasto. Para isso, envia o áudio ou a foto a um serviço de IA, só naquele momento. Com sua conta na nuvem, a IA também pode ler todos os seus dados necessários para ser precisa e detalhada. Eles não são usados para treinar a IA.";
 "aiConsent.insightsTitle" = "Resumo com IA";
-"aiConsent.insightsMessage" = "O Yala analisa suas finanças e mostra como você está indo. Para isso, envia a um serviço de IA um resumo — totais e tendências por categoria, orçamentos e pagamentos recorrentes —, não seu histórico completo de registros. Ele não é usado para treinar a IA.";
+"aiConsent.insightsMessage" = "O Yala analisa suas finanças e mostra como você está indo. Para isso, envia a um serviço de IA um resumo — totais e tendências por categoria, orçamentos, pagamentos recorrentes e os nomes das compras pequenas que você repete, com quantas vezes e quanto somam —, não seu histórico completo de registros. Com sua conta na nuvem, ele também pode ler tudo o que for preciso para ser exato, como cada compra com data e valor. Ele não é usado para treinar a IA.";
 "aiConsent.accept" = "Aceitar e ativar";
 "aiConsent.privacyPolicy" = "Política de privacidade";
 "aiConsent.inlineHintProcessing" = "Seus dados de voz e imagens são processados por um serviço de IA. Não são armazenados permanentemente.";
@@ -3377,7 +3377,7 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Yala IA";
-"aiConsent.chatMessage" = "O Yala responde às suas perguntas sobre suas finanças com os seus próprios números. Para isso, envia a um serviço de IA um resumo dos seus últimos 13 meses: saldos e nomes das suas contas, totais por categoria, comerciantes frequentes, orçamentos, pagamentos recorrentes e seus maiores gastos deste mês. Ele é usado só para responder, não para treinar a IA.";
+"aiConsent.chatMessage" = "O Yala responde às suas perguntas sobre suas finanças com os seus próprios números. Para isso, envia a um serviço de IA um resumo dos seus últimos 13 meses: saldos e nomes das suas contas, totais por categoria, comerciantes frequentes, orçamentos, pagamentos recorrentes e seus maiores gastos deste mês. Com sua conta na nuvem, a IA também pode ler todos os seus dados necessários para ser precisa e detalhada. Ele é usado só para responder, não para treinar a IA.";
 "aiConsent.cloudExploreTitle" = "Yala IA com sua conta na nuvem";
 "aiConsent.cloudExploreMessage" = "O Yala responde às suas perguntas sobre suas finanças com os seus próprios números. Para isso, envia a um serviço de IA um resumo dos seus últimos 13 meses e, quando a pergunta precisa, os dados da sua conta na nuvem necessários para responder: lançamentos de qualquer data com a nota, contas, orçamentos e pagamentos recorrentes. Eles são usados só para responder, não para treinar a IA.";
 "aiConsent.inlineHintChat" = "O resumo das suas finanças é processado por um serviço de IA para responder. Não é armazenado permanentemente.";
@@ -8692,6 +8692,10 @@
 "insights.antExpenses.monthly" = "≈ %@ por mês";
 "insights.antExpenses.row" = "%1$d vezes · %2$@";
 "insights.antExpenses.rule" = "Compras de até %1$@ que você repete %2$d vezes ou mais no período.";
+"insights.antExpenses.ai.title" = "Com a Yala IA";
+"insights.antExpenses.ai.alsoWritten" = "Também escrito como %@";
+"insights.antExpenses.ai.combined" = "Juntando os nomes parecidos: %1$@ em %2$d compras pequenas";
+"insights.antExpenses.ai.cta" = "Junte os nomes parecidos com a Yala IA";
 
 /* Sugerencias de descripción (Nuevo registro, 2.3) */
 "transaction.descriptionSuggestions" = "Descrições que você já usou";

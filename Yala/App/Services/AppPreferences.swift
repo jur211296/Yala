@@ -279,6 +279,21 @@ final class AppPreferences {
         }
     }
 
+    /// Qué texto del permiso de Estadísticas aceptó la persona (`AIConsentRevision`). El permiso era un `Bool` y el texto
+    /// cambió el 2026-11-06 (nombres de las compras pequeñas y la regla de la nube): quien aceptó el anterior tiene 0 y se
+    /// le vuelve a pedir para lo que el texto nuevo añade (decisión A de Jürgen). Lo escribe quien acepta el permiso.
+    var aiInsightsConsentVersion: Int = 0 {
+        didSet {
+            guard oldValue != aiInsightsConsentVersion else { return }
+            persistInt(aiInsightsConsentVersion, forKey: Keys.aiInsightsConsentVersion, synced: false)
+        }
+    }
+
+    /// El permiso de Estadísticas aceptado con el texto vigente.
+    var hasCurrentAIInsightsConsent: Bool {
+        aiInsightsConsentAccepted && aiInsightsConsentVersion >= AIConsentRevision.insights
+    }
+
     // DEPRECATED v2.0.x — feature toggle se acopla al consent. Ver `acceptAIInsightsConsent()`.
     var aiInsightsEnabled: Bool = false {
         didSet {
@@ -291,6 +306,7 @@ final class AppPreferences {
     /// que aún escriben `aiInsightsEnabled = true` durante la transición.
     func acceptAIInsightsConsent() {
         aiInsightsConsentAccepted = true
+        aiInsightsConsentVersion = AIConsentRevision.insights
         aiInsightsEnabled = true
     }
 
@@ -1185,6 +1201,7 @@ final class AppPreferences {
         imageInputEnabled = defaults.bool(forKey: Keys.imageInputEnabled)
         aiDataConsentAccepted = defaults.bool(forKey: Keys.aiDataConsentAccepted)
         aiInsightsConsentAccepted = defaults.bool(forKey: Keys.aiInsightsConsentAccepted)
+        aiInsightsConsentVersion = defaults.integer(forKey: Keys.aiInsightsConsentVersion)
         aiInsightsEnabled = defaults.bool(forKey: Keys.aiInsightsEnabled)
         aiChatConsentAccepted = defaults.bool(forKey: Keys.aiChatConsentAccepted)
         aiCloudExploreConsent = YalaIACloudExploreConsentStore.read(defaults)
@@ -1470,6 +1487,7 @@ final class AppPreferences {
         static let imageInputEnabled = "imageInputEnabled"
         static let aiDataConsentAccepted = "aiDataConsentAccepted"
         static let aiInsightsConsentAccepted = "aiInsightsConsentAccepted"
+        static let aiInsightsConsentVersion = "aiInsightsConsentVersion"
         static let aiInsightsEnabled = "aiInsightsEnabled"
         static let aiInsightsMigratedV1 = "aiInsightsMigratedV1"
         static let aiTogglesRemovedV2 = "aiTogglesRemovedV2"
@@ -1626,5 +1644,18 @@ final class AppPreferences {
         /// tocar SwiftData; la app los materializa como `InboxDraft` al abrir (ver `ApplePayPendingStore`
         /// / `ApplePayDraftService`). Acumula varios pagos hechos antes de abrir la app.
         nonisolated static let pendingApplePayExpenses = "pendingApplePayExpenses"
+    }
+}
+
+/// Las versiones del texto de cada permiso de IA. Sube la de un permiso cuando su texto prometa algo nuevo que la
+/// persona tiene que ver antes de que ocurra; quien aceptó una versión anterior vuelve a ver el permiso para lo nuevo.
+enum AIConsentRevision {
+    /// 2 = 2026-11-06: nombres de las compras pequeñas que se repiten, y en la nube todo lo que haga falta.
+    static let insights = 2
+
+    /// El permiso de Estadísticas aceptado con el texto vigente, leído del almacén (para quien no tiene `AppPreferences`).
+    static func hasCurrentInsightsConsent(_ defaults: UserDefaults = .standard) -> Bool {
+        defaults.bool(forKey: AppPreferences.Keys.aiInsightsConsentAccepted)
+            && defaults.integer(forKey: AppPreferences.Keys.aiInsightsConsentVersion) >= insights
     }
 }

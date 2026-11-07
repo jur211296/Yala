@@ -18,6 +18,9 @@ paths:
   - "Yala/App/Logic/StatsAIAutoRefreshLogic.swift"
   - "Yala/App/ViewModels/InsightsViewModel.swift"
   - "Yala/App/ViewModels/TrendsAIViewModel.swift"
+  - "Yala/Services/AntExpensesAIService.swift"
+  - "Yala/App/Logic/AntExpensesAILogic.swift"
+  - "Yala/App/Services/ReceiptSplitService.swift"
   - "Yala/Services/ChatAssistantService.swift"
   - "Yala/Services/Chat/**"
   - "qa/ai-bank/**"
@@ -28,6 +31,41 @@ paths:
 
 Decisión de Jürgen del 2026-10-07: el gateway elige proveedor, modelo y parámetros de cada llamada de IA, **primero por
 calidad medida y después por precio**. La app ya no decide nada: dice qué tarea pide.
+
+## Modo nube: la IA lee todo lo que haga falta (Jürgen, 2026-11-06)
+
+**Regla de producto para TODA función de IA, las que ya existen y las que vengan.** Con la cuenta en la nube
+(`CloudSyncFlags.storageMode == .cloud`), la IA puede leer todos los datos de la persona que hagan falta para contestar
+con precisión y detalle: es la ventaja de la nube. En privado (iCloud) sigue valiendo lo mínimo de cada función y lo que
+dice su permiso. Cinco cosas que no se tocan sin reabrirlo con Jürgen:
+
+- **Los permisos lo dicen, en los 16 idiomas y de forma general**: la frase «Con tu cuenta en la nube, la IA puede leer
+  además todos tus datos que hagan falta para ser precisa y detallada» está en el permiso de voz y foto
+  (`aiConsent.processingMessage`), en el de Yala IA (`aiConsent.chatMessage`), en el pie de Ajustes › Privacidad de IA
+  (`aiPrivacy.footerHint`) y en la descripción de privacidad de Perfil (`profile.privacyDesc`). El de Estadísticas
+  (`aiConsent.insightsMessage`) lo dice con su ejemplo, y el de Yala IA en la nube (`aiConsent.cloudExploreMessage`) ya lo
+  decía. Un permiso nuevo de IA lleva la frase.
+- **Quedarse corto de contexto en la nube por privacidad es un bug, no una protección.** Una función nueva decide qué
+  envía en los dos modos: el privado, mínimo; el de la nube, lo que haga falta para leer con precisión (notas, fechas,
+  importes sueltos, más meses). Molde: `AntExpensesAILogic.payload(detailed:)` y el `isCloudProvider` de
+  `InsightsViewModel`. Lo que se añade sigue pasando por la tarea del gateway y su tope de cuerpo (`maxBodyBytes`).
+- **Lo que ya existía, alineado el mismo día:** el resumen de Estadísticas manda en la nube la nota del gasto más alto
+  si el permiso se aceptó con el texto vigente (en privado, nunca: card `ve42`); los gastos hormiga Pro mandan en la nube grafías, subcategoría y cada compra con su
+  fecha. Yala IA en la nube tiene su camino ampliado (`chat.explore`, abajo), que ya lee movimientos de cualquier fecha
+  con su nota; su flag sigue a 0 y encenderlo es de Jürgen. Voz y foto leen la entrada de la persona y no necesitan más.
+- **El aviso P1 de abajo («todo dato nuevo del contexto cabe en el aviso») es la regla del modo PRIVADO.** En la nube un
+  tipo nuevo ya está decidido; lo que sigue siendo decisión de Jürgen es un PROVEEDOR nuevo (la política va primero).
+- **La regla vale para leer, no para guardar**: nada de lo que viaja se guarda en el gateway ni en los logs (las claves
+  del registro de uso las fija su test), igual que en privado.
+
+**El permiso de Estadísticas tiene versión desde el 2026-11-06** (`AIConsentRevision.insights`, clave
+`aiInsightsConsentVersion`; decisión A de Jürgen). Quien aceptó el texto anterior (versión 0) sigue con el resumen de
+siempre, y lo NUEVO que el texto añade —hoy, los gastos hormiga con IA— le pide el permiso otra vez con un botón en vez
+de salir solo (`InsightsViewModel.hasCurrentConsentProvider`, `AppPreferences.hasCurrentAIInsightsConsent`). **Una
+función nueva que mande algo que el texto anterior no decía sube la versión de su permiso y mira la vigente**; lo que ya
+salía sigue con el `Bool`. Los demás permisos de IA no tienen versión todavía: la frase general de la nube se añadió sin
+volver a pedirlos: hoy ninguna de esas funciones manda más en la nube que en privado. La primera que lo haga, versiona
+su permiso.
 
 ## El contrato de la tarea
 
@@ -137,8 +175,9 @@ usuario (`gateway/src/ai/explore/`). Diseño y decisiones pendientes: `docs/ai-c
   la petición sale como `chat.answer` byte a byte. Lo fijan `YalaIAChatRoutingTests` y
   `ProxyTaskHeaderTests#standardRouteLeavesAsBefore`. Una lectura nueva en ese camino rompe la promesa del encargo.
 - **Un solo flag, `AI_CLOUD_EXPLORE_ROLLOUT_PERCENT`, a `"0"` en staging y en producción** (`config.test.ts` se pone rojo
-  si cambia). Encenderlo exige antes el texto de consentimiento de la nube (card
-  `tablero-yala-ia-en-la-nube-el-texto-de-consentim-pi5z`): el aviso de hoy no cubre notas ni más de 13 meses.
+  si cambia). El texto de consentimiento de la nube (card `tablero-yala-ia-en-la-nube-el-texto-de-consentim-pi5z`) ya
+  cubre notas y cualquier fecha, y desde el 2026-11-06 todos los permisos dicen la regla «Modo nube»; encender el flag
+  sigue siendo de Jürgen.
 - **En la app falla cerrado en todos los builds.** `CloudRemoteFlags.aiCloudExploreEnabled` no pasa por `decide()`, cuyo
   `absentDefault` es `true` en DEV. No lo «unifiques» con los otros tres.
 - **Con el flag a 0 o sin JWT válido, `chat.explore` se contesta como `chat.answer`**, sin herramientas: nunca un error
@@ -162,7 +201,7 @@ Revisión medida con un banco de 50 preguntas (`docs/ai/revision-ia-2-2.md`). Ci
   a la mitad del Panel. Lo fija `ChatContextLedgerAndHistoryTests` (mutante: rojo).
 - **«Hoy» es el día entero** (`LiveBalanceCalculator.TodayCutoff`): los períodos en curso cierran al final de hoy y la
   elegibilidad no corta por instante. Foto y voz fechan a las 12:00.
-- **Todo dato nuevo del contexto cabe en el aviso P1** («un resumen de tus últimos 13 meses: saldos y nombres de
+- **En privado, todo dato nuevo del contexto cabe en el aviso P1** (en la nube manda la regla «Modo nube» de arriba) («un resumen de tus últimos 13 meses: saldos y nombres de
   cuentas, totales por categoría, comercios frecuentes, presupuestos, pagos recurrentes y tus gastos más grandes de este
   mes»): agregados de esos tipos y de esa ventana. Un tipo nuevo (notas, movimientos sueltos de otros meses, más de 13
   meses) cambia lo que sale del teléfono y es decisión de Jürgen. Y cada carácter del JSON se paga en cada pregunta:

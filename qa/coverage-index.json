@@ -3825,13 +3825,16 @@
     {
       "area": "insights-ant-expenses",
       "codeGlobs": [
-        "Yala/App/Logic/Calculators/AntExpensesCalculator.swift"
+        "Yala/App/Logic/Calculators/AntExpensesCalculator.swift",
+        "Yala/App/Logic/AntExpensesAILogic.swift",
+        "Yala/Services/AntExpensesAIService.swift"
       ],
       "scenarioIDs": [
-        "P23-HORMIGA-01"
+        "P23-HORMIGA-01",
+        "P23-HORMIGA-IA-01"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/Flows/ProductividadLote23UITests#test_insights_showsTheSmallRecurringSpendingCard + unit:YalaTests/AntExpensesCalculatorTests | 2026-11-06 (lote de productividad 2.3, card ea78): tarjeta «Gastos hormiga» en Estadísticas › Resumen › Detalle. Regla sin IA: gastos hasta la mediana del período que se repiten 3+ veces, agrupados por descripción o subcategoría; sin ingresos, devoluciones, transferencias, ajustes ni pagos planificados.",
+      "coverage": "xcuitest:YalaUITests/Flows/ProductividadLote23UITests#test_insights_showsTheSmallRecurringSpendingCard + unit:YalaTests/AntExpensesCalculatorTests | 2026-11-06 (lote de productividad 2.3, card ea78): tarjeta «Gastos hormiga» en Estadísticas › Resumen › Detalle. Regla sin IA: gastos hasta la mediana del período que se repiten 3+ veces, agrupados por descripción o subcategoría; sin ingresos, devoluciones, transferencias, ajustes ni pagos planificados. | 2026-11-06 (ticket insights-ant-expenses-ai-version-for-pro): versión Pro con IA debajo de la regla, dentro de la misma tarjeta; Free sin cambios. La IA junta grafías del mismo comercio (solo ids enviados; cifras sumadas en Swift) y escribe un consejo. Privado: nombre+veces+total; nube: además grafías, subcategoría, compras con fecha y lo del período anterior. Permiso de Estadísticas con versión (AIConsentRevision): con el texto viejo, botón en vez de salir solo. Tarea de gateway insights.ants (staging desplegado; producción antes de publicar 2.3). xcuitest:YalaUITests/Flows/AntExpensesAIProUITests (Pro con IA, Free sin nada nuevo, Pro sin permiso → botón → permiso → bloque; seams -uitest-stats-ai-reply y -uitest-seed-ant-spellings) + unit:YalaTests/AntExpensesAILogicTests + AntExpensesAIViewModelTests (mutantes: privado mandando detalle y marca de versión ignorada, los dos en rojo) + InsightsHighestExpenseNoNoteTests (nota del gasto más alto solo en la nube con el permiso vigente).",
       "owner": "frank",
       "lastVerified": "2026-11-06"
     },

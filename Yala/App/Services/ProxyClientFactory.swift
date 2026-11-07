@@ -31,6 +31,8 @@ nonisolated enum ProxyTask: String, CaseIterable, Sendable {
     case insightsCashflow = "insights.cashflow"
     case insightsDeviation = "insights.deviation"
     case trendsSummary = "trends.summary"
+    /// Gastos hormiga Pro: qué compras pequeñas son la misma tienda escrita de otra forma, y un consejo corto.
+    case insightsAnts = "insights.ants"
     /// Repartir un recibo en un grupo (2.3): la foto del recibo y la frase de quién comió qué. Gasta foto.
     case receiptPhoto = "receipt.photo"
     /// Repartir un recibo dictado en una nota: líneas y reparto. Va tras `voiceTranscribe` y no gasta otra nota.
@@ -44,7 +46,7 @@ nonisolated enum ProxyTask: String, CaseIterable, Sendable {
         case .chatIntent, .chatSuggestions, .chatRewrite: .suggestions
         case .chatAnswer, .chatExplore: .chat
         case .textParse, .voiceTranscribe, .receiptVoice: .voice
-        case .insightsCards, .insightsCashflow, .insightsDeviation, .trendsSummary: .insights
+        case .insightsCards, .insightsCashflow, .insightsDeviation, .trendsSummary, .insightsAnts: .insights
         }
     }
 }

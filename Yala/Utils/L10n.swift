@@ -1523,6 +1523,15 @@ enum L10n {
         static func antExpensesRule(threshold: String, minCount: Int) -> String {
             String(format: ls("insights.antExpenses.rule", comment: ""), threshold, minCount)
         }
+        // Gastos hormiga con IA, solo Pro (ticket insights-ant-expenses-ai-version-for-pro)
+        static var antExpensesAITitle: String { ls("insights.antExpenses.ai.title", comment: "") }
+        static func antExpensesAIAlsoWritten(_ names: String) -> String {
+            String(format: ls("insights.antExpenses.ai.alsoWritten", comment: ""), names)
+        }
+        static func antExpensesAICombined(total: String, count: Int) -> String {
+            String(format: ls("insights.antExpenses.ai.combined", comment: ""), total, count)
+        }
+        static var antExpensesAICta: String { ls("insights.antExpenses.ai.cta", comment: "") }
         static var quickStats: String { ls("insights.quickStats", comment: "") }
         static var comparison: String { ls("insights.comparison", comment: "") }
         static var weekdayAverage: String { ls("insights.weekdayAverage", comment: "") }

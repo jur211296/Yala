@@ -816,6 +816,8 @@ private struct StatsAIAutoRefreshTrigger: ViewModifier {
     private func decide() async {
         do { try await Task.sleep(for: Self.settleDelay) } catch { return }
         Task { @MainActor in await insights.autoRefreshIfNeeded() }
+        // Los gastos hormiga Pro deciden por su cuenta (su propia página y su propio techo).
+        Task { @MainActor in await insights.autoRefreshAntAIIfNeeded() }
     }
 }
 
