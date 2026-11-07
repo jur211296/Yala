@@ -8735,6 +8735,7 @@
 "trend.projected.source.scheduled" = "根据你的计划付款估算";
 "trend.projected.link.setup" = "用现金流计划让估算更准";
 "trend.projected.link.plan" = "查看你的现金流计划";
+"trend.projected.setupNote" = "有了计划，趋势和首页中的「显示预测」会用这些金额估算本月剩余部分。";
 
 /* Button in the 'use another account' sign-in chooser: sign in with an Apple ID different from the one on this iPhone (opens Apple's web page). */
 "storage.signin.anotherAppleID" = "其他 Apple 账户";

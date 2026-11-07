@@ -207,6 +207,11 @@ struct CashFlowSetupView: View {
                     .font(DS.Typography.caption)
                     .foregroundStyle(.thSecondaryText)
                     .fixedSize(horizontal: false, vertical: true)
+                // El plan alimenta «Ver proyectado» (card «Mejorar el flujo de caja para que nutra el Flujo proyectado»).
+                Text(L10n.ProjectedFlow.setupNote)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.thSecondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
         }

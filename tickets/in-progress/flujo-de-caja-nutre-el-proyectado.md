@@ -4,7 +4,7 @@ status: in-progress
 priority: medium
 area: "Flujo de caja, Tendencias, Panel"
 created: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-07
 source: "card del tablero «Mejorar la experiencia del flujo de caja para que nutra el Flujo proyectado» (versión 2.3)"
 ---
 
@@ -37,11 +37,15 @@ que el plan alimente bien el proyectado y que se llegue a él desde el proyectad
 2. **Enlace bajo «Proyectado al cierre»**, en Tendencias y el Panel: sin plan «Afinar con un plan de flujo de caja»,
    con plan «Ver tu plan de flujo de caja»; abre Reportes › Flujo de caja. No sale en «Solo gastos». Textos en los 16
    idiomas. XCUITest `test_trends_projectionWithoutAPlan_linksToSettingUpTheCashFlowPlan`.
+3. **En la pantalla de armar el plan**, bajo «¿Qué es el flujo de caja?»: «Con tu plan, «Ver proyectado» en Tendencias y
+   en el Panel estima el resto del mes con estas cifras» (con el nombre de cada pantalla en su idioma: Home, Übersicht,
+   Inicio…). Opción A de la pregunta 3.
 
 ## Preguntas a Jürgen
 
-En `~/Claude/entregas/2026-11-06-mejorar-flujo-de-caja-para-proyectado/preguntas.md` (se envían a las 5:00 por la
-regla nocturna). Lo hecho arriba es la opción recomendada de las preguntas 1 y 2.
+En `~/Claude/entregas/2026-11-06-mejorar-flujo-de-caja-para-proyectado/preguntas.md`. Enviadas al bot el 2026-11-07 a
+las 5:00 (regla nocturna); el bot se las pasa a Jürgen. Lo hecho arriba es la opción A de las tres, a la espera de su
+respuesta.
 
 ## Guion de QA (iPhone de pruebas, Yala Dev)
 

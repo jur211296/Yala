@@ -8063,6 +8063,7 @@
 "trend.projected.source.scheduled" = "Estimado con tus pagos planificados";
 "trend.projected.link.setup" = "Afiná con un plan de flujo de caja";
 "trend.projected.link.plan" = "Ver tu plan de flujo de caja";
+"trend.projected.setupNote" = "Con tu plan, «Ver proyectado» en Tendencias y en el Panel estima el resto del mes con estas cifras.";
 
 /* Button in the 'use another account' sign-in chooser: sign in with an Apple ID different from the one on this iPhone (opens Apple's web page). */
 "storage.signin.anotherAppleID" = "Otra cuenta de Apple";
