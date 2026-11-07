@@ -1,10 +1,10 @@
 ---
 id: voice-live-transcript-label-says-iphone-on-ipad
-status: backlog
+status: qa
 priority: low
 area: "copy, l10n, ipad, accesibilidad"
 created: 2026-10-29
-updated: 2026-10-29
+updated: 2026-11-06
 source: "medido al cerrar copy-names-this-phone-outside-groups"
 ---
 
@@ -24,3 +24,14 @@ Con VoiceOver, al dictar una nota de voz, la transcripción en vivo se anuncia c
 ## Por dónde va
 
 «Lo que va entendiendo el dispositivo», o sin sujeto («Lo que se va entendiendo»), en los 16 idiomas.
+
+## Arreglo (2026-11-06)
+
+`voice.live.transcriptAccessibility` dice «el dispositivo» en los 16 idiomas, con el término de cada uno (Gerät,
+appareil, apparaat, urządzenie, 端末, 设备…): «Lo que va entendiendo el dispositivo», «What your device is picking up».
+Lo fija `LocalizationParityTests.liveTranscriptLabel_namesNoDeviceModel` (ningún idioma nombra iPhone ni iPad en esa
+clave). La guarda general de «teléfono» no la veía porque no usa esa palabra.
+
+## QA
+
+Simulador, sin el iPhone: grabar una nota de voz y leer con `axe describe-ui` la etiqueta de la transcripción en vivo.

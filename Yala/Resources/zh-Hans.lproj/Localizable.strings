@@ -8550,7 +8550,7 @@
 "panel.createCategoriesHint" = "每笔记录都要归入一个类别，而你还没有任何类别。";
 
 /* VoiceOver label for the live on-device transcript shown while recording a voice entry */
-"voice.live.transcriptAccessibility" = "iPhone 正在识别的内容";
+"voice.live.transcriptAccessibility" = "设备正在识别的内容";
 "settings.wipeLandingToast" = "好了，一切从头开始。创建你的第一个账户就能记账。";
 "icloud.remoteWipeKeptSetup" = "你已在另一台设备上清空了数据。";
 /* Tarjeta de crédito: corte, facturado y aviso (card nmtk) */

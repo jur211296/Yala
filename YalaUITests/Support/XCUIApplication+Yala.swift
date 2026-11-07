@@ -635,11 +635,16 @@ extension XCUIApplication {
         // `.xcresult`). Quieto pero tapado: `waitForHittable` se agotaba con «existe pero no es alcanzable». Con el dedo
         // se sube el formulario; aquí igual, con un arrastre por encima del teclado. En pantallas donde el chip cabe
         // sobre el teclado (iPhone 17 Pro) este bucle no hace nada.
+        //
+        // Sin teclado tapa lo mismo la barra fija de «Guardar» de «Nuevo registro» (`SaveAreaPlacement`: fuera del scroll
+        // mientras no hay teclado). Con una cuenta en dólares (fila del tipo de cambio) y una subcategoría de nombre largo
+        // los chips pasan a tres filas y «Etiquetas» queda debajo de la barra en un iPhone 17 Pro (medido el 2026-11-06,
+        // iOS 27.2, en el vídeo del `.xcresult`): el toque se perdía y el selector no abría. La primera subcategoría es la
+        // del registro más reciente del seed, así que el rojo dependía del día. La persona desliza; aquí igual.
         var lifts = 0
         while lifts < 3 {
-            let keyboard = keyboards.firstMatch
-            guard keyboard.exists, chip.frame.maxY > keyboard.frame.minY else { break }
-            let lift = min(chip.frame.maxY - keyboard.frame.minY + 24, windowFrame.height * 0.3)
+            guard let coverTop = selectorChipCoverTop(over: chip) else { break }
+            let lift = min(chip.frame.maxY - coverTop + 24, windowFrame.height * 0.3)
             let start = coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3))
             start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: -lift)))
             _ = waitForSettledLayout(of: chip, timeout: timeout)
@@ -656,6 +661,24 @@ extension XCUIApplication {
             file: file, line: line
         )
         return row
+    }
+
+    /// El borde de arriba de lo que tapa a `chip` desde abajo: el teclado, o la barra fija de «Guardar» de «Nuevo
+    /// registro» (su línea de lo que falta y el botón). `nil` si nada lo pisa. Con el teclado puesto, «Guardar» va dentro
+    /// del scroll por debajo de los chips y no lo pisa, así que no cuenta.
+    private func selectorChipCoverTop(over chip: XCUIElement) -> CGFloat? {
+        let chipFrame = chip.frame
+        let covers = [
+            keyboards.firstMatch,
+            descendants(matching: .any)["new_transaction_missing_line"].firstMatch,
+            buttons["new_transaction_save"].firstMatch,
+        ]
+        let tops = covers.compactMap { cover -> CGFloat? in
+            guard cover.exists else { return nil }
+            let frame = cover.frame
+            return frame.minY < chipFrame.maxY && frame.maxY > chipFrame.minY ? frame.minY : nil
+        }
+        return tops.min()
     }
 
     /// Abre un selector desde su chip y elige su primera fila (sin acoplarse al nombre del seed).

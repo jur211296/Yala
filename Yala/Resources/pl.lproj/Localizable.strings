@@ -8550,7 +8550,7 @@
 "panel.createCategoriesHint" = "Każdy wpis trafia do kategorii, a nie masz jeszcze żadnej.";
 
 /* VoiceOver label for the live on-device transcript shown while recording a voice entry */
-"voice.live.transcriptAccessibility" = "Co rozpoznaje iPhone";
+"voice.live.transcriptAccessibility" = "Co rozpoznaje urządzenie";
 "settings.wipeLandingToast" = "Gotowe, zaczynasz od zera. Utwórz pierwsze konto, aby zapisywać.";
 "icloud.remoteWipeKeptSetup" = "Dane zostały wyczyszczone na innym urządzeniu.";
 /* Tarjeta de crédito: corte, facturado y aviso (card nmtk) */
