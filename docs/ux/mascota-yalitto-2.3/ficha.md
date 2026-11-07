@@ -31,9 +31,11 @@ nada y no elige**: recomienda y deja las decisiones a Jürgen. «Yalitto» es un
 - **Personajes:** SVG propios generados por `fuente/yalittos.py`. Las cinco direcciones comparten piezas de cara y estados,
   así que cualquier maqueta y animación se ve con cualquiera.
 - **Capturas:** Yala Dev compilada desde `origin/2.3` el 7-nov-2026, simulador iPhone 17 Pro con iOS 27.2, modo oscuro,
-  semilla «realista» con Pro (`-uitest -uitest-pro -uitest-skip-onboarding -uitest-seed realista`; Yala IA con
+  semilla «realista» con Pro (`-uitest -uitest-reset -uitest-pro -uitest-skip-onboarding -uitest-seed realista`; Yala IA con
   `-uitest-ai-chat-ready -uitest-chat-conversation`). Nuevo registro y Registros vacío vienen de las revisiones de vistas
-  2.3 del 6 y 7 de noviembre. La Bandeja y el botón de Yala IA no abren con toques de `axe`; sí con el tap de XcodeBuildMCP.
+  2.3 del 6 y 7 de noviembre. La Bandeja y el botón de Yala IA no abren con toques de `axe`; sí con el tap de XcodeBuildMCP. **Sin `-uitest-reset`
+  la semilla se suma a la que ya tenga el simulador** y todo sale dos veces: la primera tanda de capturas cayó ahí y se
+  rehízo. La lista de presupuestos se recortó por abajo: la semilla trae un presupuesto con nombre de una mascota real.
 - **Verificación:** HTML revisado en Chromium a 390 px (teléfono) y 1280 px (escritorio), en claro y en oscuro, y el PDF
   página a página.
 
@@ -49,9 +51,6 @@ nada y no elige**: recomienda y deja las decisiones a Jürgen. «Yalitto» es un
 
 ## Encontrado (no se tocó)
 
-- Con la semilla «realista» en 2.3, Planificación muestra cada presupuesto **dos veces** y la Bandeja cada borrador dos
-  veces («Almuerzo equipo», «Taxi aeropuerto»), con categoría «Accesorios y juguetes». Visto en el simulador el 7-nov; no
-  se averiguó si es la semilla o la vista.
 - La lista de presupuestos dice «Pasaste tu presupuesto, ¡el próximo período será mejor!» y el muro de Yala IA dice
   «No pudimos cargar los precios. Revisa tu conexión.»: los dos chocan con «sin moralizar» y «sin culpar».
 - `docs/planning/BRAND-VOICE.md` pone como ejemplo bueno «¿Qué tal si cocinamos en casa estos días?», que es opinar sobre

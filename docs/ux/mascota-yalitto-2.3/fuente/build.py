@@ -239,7 +239,7 @@ def cerca_mock():
 def sec_superficies():
     caps = {
         "panel": phone("01-panel.jpg", ov_y("saludo", 76, 18.6, 19) +
-                       ov_b("Tienes 4 pendientes en la Bandeja. ¿Los revisamos?", 32, 28, 64, ["Revisar", "Ahora no"], "tr"), "Panel"),
+                       ov_b("Tienes 2 pendientes en la Bandeja. ¿Los revisamos?", 32, 28, 64, ["Revisar", "Ahora no"], "tr"), "Panel"),
         "registro": phone("02-registro-listo.jpg", ov_y("util", 34, 19, 32, mask=(28, 18, 44, 22, "#0a0614")) +
                           ov_b("Tu primer gasto quedó registrado. El próximo lo puedes dictar con Voz.", 12, 41, 76), "Nuevo registro, listo"),
         "bandeja": phone("03-bandeja.jpg", ov_y("ayuda", 79, 14.2, 16) +
@@ -361,8 +361,7 @@ def sec_reglas():
     <p>La lista de presupuestos ya dice «Pasaste tu presupuesto, ¡el próximo período será mejor!». La voz de marca la permite,
     pero con un personaje al lado se lee como consuelo o como sermón. Si Yalitto entra, conviene que ese texto pase a
     describir y ofrecer: «Te pasaste por S/ 993. ¿Ajustamos el límite?».</p>
-    <p class="muted">Los presupuestos salen dos veces en esta captura. Pasa con la semilla de datos de prueba en 2.3; no es parte de
-    la propuesta (ver «Encontrado» en la ficha).</p></div>
+</div>
   </div>
 </section>"""
 
@@ -422,7 +421,7 @@ def sec_fuentes():
   <p class="sub">Consultadas el 7 de noviembre de 2026. Las de prensa y blogs se citan como lo que son: lo que dice esa fuente.</p>
   <ul class="src">{li}</ul>
   <p class="muted">Capturas: Yala Dev compilada desde <code>origin/2.3</code> el 7-nov-2026, simulador iPhone 17 Pro con iOS 27.2,
-  modo oscuro, semilla de datos ficticios «realista» con Pro activado. Nuevo registro y Registros vacío salen de las revisiones de
+  modo oscuro, semilla de datos ficticios «realista» (desde cero en cada arranque) con Pro activado. Nuevo registro y Registros vacío salen de las revisiones de
   vistas 2.3 del 6 y 7 de noviembre.</p>
 </section>"""
 
