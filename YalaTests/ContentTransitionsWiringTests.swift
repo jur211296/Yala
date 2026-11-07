@@ -64,7 +64,8 @@ struct ContentTransitionsWiringTests {
     static let loadingPlaceholders: [(path: String, count: Int)] = [
         ("Yala/App/Views/Groups/GroupsContainerView.swift", 1),
         // 5 desde el encargo `estadisticas-ia-automatica`: el hero pinta «Analizando…» mientras decide si sale solo.
-        ("Yala/App/Views/Statistics/InsightsTabView.swift", 5),
+        // 6 desde `gastos-hormiga-ia-pro`: la versión con IA de los gastos hormiga tiene su propio «Analizando…».
+        ("Yala/App/Views/Statistics/InsightsTabView.swift", 6),
         ("Yala/App/Views/Statistics/CategoriesTabView.swift", 1),
         ("Yala/App/Views/Statistics/TrendsTabView.swift", 1),
         ("Yala/App/Views/Chat/ChatGreetingBubble.swift", 1),
