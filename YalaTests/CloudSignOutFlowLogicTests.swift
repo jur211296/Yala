@@ -1128,9 +1128,17 @@ struct PausedChannelReasonWiringTests {
         // mutante: cambiar el `Text(...)` por un literal deja las dos computed MUERTAS —Swift no avisa de
         // una computed privada sin usar—, devuelve el copy genérico a las dos pantallas y deja verde todo
         // lo demás. O sea el bug del ticket, entero, invisible.
+        // Desde el 2026-11-06 el texto del desasociar vive en `SignOutBlockedCopy.detachBlockedMessage(for:)`: el copy se
+        // mira en la tabla y el consumo, en la vista (ticket `blocked-copy-mapping-lives-in-three-views-untestable`).
         let sectionFile = try Self.source("Yala/App/Views/Settings/GroupsAssociationSection.swift")
-        let section = try Self.body(of: "private var blockedMessage: String {", in: sectionFile)
+        let section = try Self.body(
+            of: "static func detachBlockedMessage(for notice: CloudSignOutFlowLogic.DetachBlockedNotice?) -> String {",
+            in: try Self.source("Yala/App/Views/Shared/SignOutBlockedCopy.swift"))
         #expect(section.contains("case .channelPaused: return L10n.Groups.Errors.channelPaused"))
+        #expect(try Self.body(of: "private var blockedMessage: String {", in: sectionFile)
+            .contains("SignOutBlockedCopy.detachBlockedMessage(for: blockedNotice)"), """
+            El aviso del desasociar dejó de leer su texto de la tabla compartida.
+            """)
         #expect(sectionFile.contains("Text(blockedMessage)"), """
             El aviso del desasociar dejó de leer su mensaje por motivo: la propiedad queda muerta y el copy
             vuelve al genérico.
@@ -1281,7 +1289,9 @@ struct WelcomeGateTransientBlockWiringTests {
     /// momento no basta sin cobertura, y ese texto no dice lo único que tranquiliza: que no se pierde nada.
     @Test("el desasociar separa la subida fallida del outbox que drena")
     func detachSplitsTheFailedUploadFromTheSettlingOutbox() throws {
-        let section = try Self.source("Yala/App/Views/Settings/GroupsAssociationSection.swift")
+        // El texto del desasociar vive en la tabla compartida desde el 2026-11-06.
+        // Acotado a su función: `message(for:)` tiene las mismas líneas y el scan pasaría por ella.
+        let section = try detachCopyBody()
         #expect(section.contains("case .uploadRetryLater: return L10n.Groups.Errors.uploadRetryLater"), """
             El desasociar dejó de decirle a quien está sin red que sus cambios no llegaron al servidor.
             """)
@@ -1782,7 +1792,8 @@ struct AttestUnavailableSignOutWiringTests {
                             intento += 1
                             phase = .discardingUnsyncedGroups(intento: intento)
             """)), "La rama de la sesión caducada dejó de negarle la salida al invitado, o su botón no retoma el cierre.")
-        let association = Self.squashed(try Self.source("Yala/App/Views/Settings/GroupsAssociationSection.swift"))
+        // El texto del desasociar vive en la tabla compartida desde el 2026-11-06.
+        let association = Self.squashed(try detachCopyBody())
         #expect(association.contains("case .attestUnavailable: return L10n.Groups.Errors.attestUnavailable"))
         #expect(association.contains(
             "case .groupsChangesFromAnotherAccount: return L10n.Groups.Errors.groupsChangesFromAnotherAccount"))
@@ -1813,4 +1824,16 @@ struct AttestUnavailableSignOutWiringTests {
         #expect(lista.components(separatedBy: "GroupLeaveErrorLogic.classify(").count - 1 == 1)
         #expect(lista.components(separatedBy: lectura).count - 1 == 1)
     }
+}
+
+/// El cuerpo de `SignOutBlockedCopy.detachBlockedMessage(for:)`, el texto del aviso del desasociar desde el 2026-11-06. Los
+/// scans lo leen ACOTADO: `message(for:)` del mismo fichero comparte líneas y un `contains` sobre el fichero entero pasaría
+/// por ella aunque el desasociar dijera otra cosa.
+private func detachCopyBody() throws -> String {
+    let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+    let source = try String(contentsOf: root.appendingPathComponent("Yala/App/Views/Shared/SignOutBlockedCopy.swift"),
+                            encoding: .utf8)
+    let start = try #require(source.range(of: "static func detachBlockedMessage(for notice:"))
+    let end = try #require(source.range(of: "static func attestLossMessage(", range: start.upperBound..<source.endIndex))
+    return String(source[start.lowerBound..<end.lowerBound])
 }

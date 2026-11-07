@@ -1,10 +1,10 @@
 ---
 id: uitest-seam-for-a-seeded-groups-association
-status: backlog
+status: done
 priority: low
 area: "testing, groups, modo-nube"
 created: 2026-09-11
-updated: 2026-10-08
+updated: 2026-11-07
 source: "review adversarial de `detach-failure-looks-like-success`"
 ---
 
@@ -58,3 +58,11 @@ hacen sus cuatro vecinos, y como hubo que hacer con `GroupsDetachPendingPurge` e
 - Por qué low: es un hueco de cobertura en pantalla, y la lógica está cubierta por unit.
 
 Triage 2026-10-08: abierto · medium → low · No existe ningún seam -uitest-groups-association, y el XCUITest sigue remitiendo a este ticket para los dos estados sin cubrir
+
+## Hecho (2026-11-07, lote 2.3 de tests y rastros)
+
+- Seam `-uitest-groups-association`: escribe la asociación solo en el espejo LOCAL (`GroupsAccountAssociation.seedLocalForUITest`, DEBUG), con `sub` fijo (`UITestHooks.uitestGroupsAssociationSub`) y proveedor Apple. No finge la sesión ni toca el iCloud-KV. El reset de `-uitest-reset` borra el espejo local (`AppBootstrapper.applyUITestHooksEarly`). En el helper es el parámetro nombrado `groupsAssociation:`.
+- Dos XCUITest nuevos en `GroupsAssociationRowUITests`:
+  - `test_associationWithoutALiveSession_offersSignInAndDetach`: la celda `.associatedNeedsSignIn` ofrece «Entrar» y «Desasociar», no «Asociar». Control: `test_privateWithoutAccount_offersAssociate_andNoDetach`.
+  - `test_detachWithFailingWipe_andASeededAssociation_offersToFinish`: con el borrado que falla, la marca se sella con el `sub` y la sección ofrece «Terminar de soltar la cuenta» en vez de «Desasociar». Control: el mismo gesto sin asociación (`test_detachWithFailingWipe_showsFailureAlert`).
+- La cabecera de la suite y los dos comentarios que remitían aquí, al día.

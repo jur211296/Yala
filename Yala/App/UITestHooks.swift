@@ -645,6 +645,23 @@ final class UITestHooks {
     /// `DevSeedGroups` para el member propio, que es lo que hace que casen.
     nonisolated static let uitestICloudRecordName = "uitest-current-user"
 
+    /// `-uitest-groups-association`: siembra una asociación de la cuenta de Grupos (`GroupsAccountAssociation`) SOLO en el
+    /// espejo local, con un `sub` fijo (`uitestGroupsAssociationSub`), síncrona y sin red. Molde de
+    /// `-uitest-icloud-identity` (ticket `uitest-seam-for-a-seeded-groups-association`).
+    ///
+    /// Existe porque dos estados de «¿Dónde viven tus datos?» no se alcanzaban en el simulador: la celda «asociada sin
+    /// sesión viva» (`.associatedNeedsSignIn`, el segundo móvil) y «Quedó un desasociar a medias», cuya marca
+    /// (`GroupsDetachPendingPurge`) va sellada con el `sub` de la asociación —y sin asociación no había `sub`—.
+    ///
+    /// **No finge la sesión** (`-uitest-fake-cloud-session` es otro eje): combinarlos es lo que produce cada celda. Y no
+    /// toca el iCloud-KV del Apple ID del simulador: lo que se escribiera ahí viajaría a sus otros dispositivos. No fuerza
+    /// ningún predicado: `GroupsAssociationPresence.sectionState` y `hasPendingPurge` deciden enteros. PERSISTE en
+    /// defaults, así que `applyUITestHooksEarly` borra el espejo local en el reset.
+    nonisolated static var seedGroupsAssociation: Bool { hasArg("-uitest-groups-association") }
+
+    /// El `sub` que siembra `-uitest-groups-association`. No es el de ninguna cuenta real: nada del canal lo resuelve.
+    nonisolated static let uitestGroupsAssociationSub = "uitest-groups-association-sub"
+
     /// `-uitest-groups-consent`: da por aceptado el consent de Grupos (§C5) sembrando sus dos keys de
     /// `UserDefaults` desde `AppBootstrapper`, SIN pasar por `GroupsConsentState.register()` —ese camino
     /// escribe por `PreferenceSyncService` (iKV en `.icloud`, outbox en `.cloud`) y un XCUITest no debe

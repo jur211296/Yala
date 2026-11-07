@@ -587,7 +587,7 @@ struct GroupsOutboxOwnershipChannelTests {
 /// en las dos primeras consultas y «en vuelo» en la tercera, que es la de la entrada de `finalizeSessionExit`. Llegar ahí
 /// con el motivo de la migración PRUEBA que lo aceptado dejó pasar el bloqueo de grupos, sin teardown ni `signOut`.
 @MainActor
-@Suite("Cierre de sesión · salir perdiendo los cambios de grupos sin sesión", .serialized)
+@Suite("Cierre de sesión · salir perdiendo los cambios de grupos sin sesión", .serialized, .privateSessionCellPinned)
 struct GroupsNoSessionLossExitTests {
 
     private typealias F = OwnershipFixture
@@ -635,7 +635,8 @@ struct GroupsNoSessionLossExitTests {
         StorageModePersistence.clearSignOutWipeIncludesGroups()
     }
 
-    /// Solo la celda C bloquea por `blockIfGroupsCannotUpload` sin tocar la red. Se exige, no se supone.
+    /// Solo la celda C bloquea por `blockIfGroupsCannotUpload` sin tocar la red. Se exige, no se supone. La marca del eje la
+    /// fija la suite (`.privateSessionCellPinned`, card r9e8); la sesión en la nube y el modo siguen siendo del host.
     private func requirePrivateOnlyCell() throws {
         let path = CloudSignOutFlowLogic.path(
             for: CloudSyncFlags.storageMode, hasLiveSession: CloudAuthService.shared.hasSession,

@@ -183,7 +183,9 @@ struct GroupsBackendInviteModifier: ViewModifier {
                     }
                     // H-2026-07-18-4: un sign-in solo-grupos IN-SESSION no arrancaba el canal (startIfEligible
                     // solo corría en cold boot) → arrancarlo aquí cubre crear-grupo / invite / futuro CTA del
-                    // empty state. D8-safe por el guard de mount-mismatch; no-op temprano con el flag OFF.
+                    // empty state. Seguro a mitad de sesión porque hay un solo store personal montado y el outbox sube solo las filas
+                    // de la sesión (el guard «D8» de mount-mismatch se retiró con la sesión de visita); no-op temprano con el
+                    // flag OFF.
                     // Salvo con una cuenta completa: su alta pasa por el guard cross-cuenta del Welcome, y los grupos que
                     // el canal bajara ahora contarían como «datos de otra cuenta» (`GroupsSignInChannelStartLogic`).
                     // Los grupos que el canal baje desde aquí son de quien acaba de entrar (card t2q8): sin esto, un relanzamiento

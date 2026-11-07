@@ -212,7 +212,7 @@ struct PrivateSignOutMigrationReasonTests {
 
 /// El coordinador es un singleton con fase observable: la suite va en serie y deja la fase y el override como los encontró.
 @MainActor
-@Suite("Cierre por archivos · el escritor se para con la migración en vuelo", .serialized)
+@Suite("Cierre por archivos · el escritor se para con la migración en vuelo", .serialized, .privateSessionCellPinned)
 struct PrivateSignOutMigrationWriterTests {
 
     private let coordinator = CloudSessionSignOut.shared
@@ -223,7 +223,8 @@ struct PrivateSignOutMigrationWriterTests {
         coordinator.migrationRestReadingOverride = nil
     }
 
-    /// La celda del host de test, que tiene que ser privada: en solo-grupos la puerta no participa y `signOut` correría el
+    /// La celda del host de test, que tiene que ser privada (la marca del eje la fija la suite con
+    /// `.privateSessionCellPinned`, card r9e8): en solo-grupos la puerta no participa y `signOut` correría el
     /// cierre de verdad. Se exige ANTES de llamar, no se supone.
     private func requirePrivateCell() throws -> CloudSignOutFlowLogic.Path {
         let path = CloudSignOutFlowLogic.path(
