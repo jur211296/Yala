@@ -8721,6 +8721,8 @@
 "trend.projected.source.plan" = "Estimado com seu plano de fluxo de caixa";
 "trend.projected.source.rhythm" = "Estimado com seu ritmo de gastos";
 "trend.projected.source.scheduled" = "Estimado com seus pagamentos planejados";
+"trend.projected.link.setup" = "Refinar com um plano de fluxo de caixa";
+"trend.projected.link.plan" = "Ver seu plano de fluxo de caixa";
 
 /* Button in the 'use another account' sign-in chooser: sign in with an Apple ID different from the one on this iPhone (opens Apple's web page). */
 "storage.signin.anotherAppleID" = "Outra Conta Apple";

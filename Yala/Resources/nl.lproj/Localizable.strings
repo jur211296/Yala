@@ -8733,6 +8733,8 @@
 "trend.projected.source.plan" = "Geschat met je kasstroomplan";
 "trend.projected.source.rhythm" = "Geschat met je uitgavenritme";
 "trend.projected.source.scheduled" = "Geschat met je geplande betalingen";
+"trend.projected.link.setup" = "Verfijn met een kasstroomplan";
+"trend.projected.link.plan" = "Bekijk je kasstroomplan";
 
 /* Button in the 'use another account' sign-in chooser: sign in with an Apple ID different from the one on this iPhone (opens Apple's web page). */
 "storage.signin.anotherAppleID" = "Ander Apple Account";

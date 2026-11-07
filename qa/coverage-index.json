@@ -3875,7 +3875,7 @@
       ],
       "scenarioIDs": [],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/ProjectedFlowUITests | unit: ProjectedFlowCalculatorTests, ProjectedFlowBuilderPlanTests | 2026-11-06 (card «Flujo proyectado en Tendencias y Panel»): días por delante del período entero, pagos en su día y vencidos mañana, plan o ritmo, ancla por métrica.",
+      "coverage": "xcuitest:YalaUITests/ProjectedFlowUITests | unit: ProjectedFlowCalculatorTests, ProjectedFlowBuilderPlanTests | 2026-11-06 (card «Flujo proyectado en Tendencias y Panel»): días por delante del período entero, pagos en su día y vencidos mañana, plan o ritmo, ancla por métrica. 2026-11-06 (card «Mejorar el flujo de caja para que nutra el Flujo proyectado»): lo que no cubre ninguna línea del plan sigue al ritmo; enlace bajo la cifra a armar o ver el plan.",
       "owner": "frank",
       "lastVerified": "2026-11-06"
     }

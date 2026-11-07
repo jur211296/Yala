@@ -154,6 +154,13 @@ enum ProjectedFlowBuilder {
         let plan = inputs.hasSessionFilters ? nil : planRemaining(inputs, occurrences: occurrences, context: context)
         let rhythm = rhythmPerDay(inputs)
         if rhythm.isApproximate { isApproximate = true }
+        // Lo que ninguna línea del plan cubre («Otros» del flujo de caja) sigue al ritmo: sin esto, un plan con pocas
+        // líneas proyectaba menos gasto que no tener plan (card «Mejorar el flujo de caja para que nutra el Flujo
+        // proyectado»).
+        let uncovered = plan.map { plan in
+            rhythmPerDay(inputs, excluding: { plan.coverage.covers($0) })
+        }
+        if uncovered?.isApproximate == true { isApproximate = true }
 
         var incomeSource: ProjectedFlowCalculator.Source = .scheduledOnly
         var expenseSource: ProjectedFlowCalculator.Source = .scheduledOnly
@@ -166,8 +173,9 @@ enum ProjectedFlowBuilder {
             for day in inputs.days {
                 let fromPlan = spread[day] ?? DayFlow()
                 var flow = DayFlow()
-                flow.income = plan.hasIncomeLines ? fromPlan.income : (rhythm.perDay?.income ?? 0)
-                flow.expense = plan.hasExpenseLines ? fromPlan.expense : (rhythm.perDay?.expense ?? 0)
+                let outside = uncovered?.perDay ?? DayFlow()
+                flow.income = plan.hasIncomeLines ? fromPlan.income + outside.income : (rhythm.perDay?.income ?? 0)
+                flow.expense = plan.hasExpenseLines ? fromPlan.expense + outside.expense : (rhythm.perDay?.expense ?? 0)
                 unplanned[day] = flow
             }
             incomeSource = plan.hasIncomeLines ? .plan : (rhythm.perDay == nil ? .scheduledOnly : .rhythm)
@@ -285,7 +293,12 @@ enum ProjectedFlowBuilder {
 
     // MARK: - Ritmo
 
-    static func rhythmPerDay(_ inputs: Inputs) -> (perDay: DayFlow?, isApproximate: Bool) {
+    /// `excluding`: los movimientos que no entran (los que ya cubre una línea del plan); entran igual en el cálculo de
+    /// cuántos días de historia hay, que es de la persona y no de una categoría.
+    static func rhythmPerDay(
+        _ inputs: Inputs,
+        excluding isExcluded: (TransactionItem) -> Bool = { _ in false }
+    ) -> (perDay: DayFlow?, isApproximate: Bool) {
         let calendar = inputs.calendar
         let todayStart = calendar.startOfDay(for: inputs.today)
         guard let windowStart = calendar.date(
@@ -300,7 +313,7 @@ enum ProjectedFlowBuilder {
             guard tx.balanceAdjustmentType == nil, !inputs.adjustment.isSuppressed(tx) else { continue }
             if firstDate.map({ tx.date < $0 }) ?? true { firstDate = tx.date }
             // Lo enlazado a un pago planificado ya se proyecta en su día: contarlo también en el ritmo lo duplicaría.
-            guard tx.date >= windowStart, tx.scheduledPaymentID == nil else { continue }
+            guard tx.date >= windowStart, tx.scheduledPaymentID == nil, !isExcluded(tx) else { continue }
             let resolved = CashFlowCalculator.resolvedAmount(
                 tx, currencyCode: inputs.currencyCode, adjustment: inputs.adjustment, converter: inputs.converter
             )
@@ -327,6 +340,39 @@ enum ProjectedFlowBuilder {
         let hasIncomeLines: Bool
         let hasExpenseLines: Bool
         let isApproximate: Bool
+        let coverage: PlanCoverage
+    }
+
+    /// Qué movimientos cubre ya una línea activa del plan, con la regla de «Otros» del flujo de caja
+    /// (`CashFlowProjectionCalculator.calculateUncategorizedTotal`): una línea con subcategoría cubre esa subcategoría;
+    /// una sin ella, la categoría entera. Por lado: una línea de gasto no cubre un ingreso de su misma categoría. Lo sin
+    /// categoría no lo cubre ninguna. Una línea «pago planificado» no cubre nada: solo aporta sus pagos, que van en su
+    /// día, y lo demás de su categoría (otra suscripción sin pago) quedaría sin contar; lo enlazado al pago ya sale del
+    /// ritmo por su `scheduledPaymentID` (lo encontró la review del 2026-11-06).
+    struct PlanCoverage {
+        var incomeCategories: Set<PersistentIdentifier> = []
+        var incomeSubcategories: Set<PersistentIdentifier> = []
+        var expenseCategories: Set<PersistentIdentifier> = []
+        var expenseSubcategories: Set<PersistentIdentifier> = []
+
+        init(lines: [CashFlowLine]) {
+            for line in lines where line.isEnabled && line.method != .scheduled {
+                if let subID = line.subcategory?.persistentModelID {
+                    if line.isIncome { incomeSubcategories.insert(subID) } else { expenseSubcategories.insert(subID) }
+                } else if let catID = line.category?.persistentModelID {
+                    if line.isIncome { incomeCategories.insert(catID) } else { expenseCategories.insert(catID) }
+                }
+            }
+        }
+
+        func covers(_ tx: TransactionItem) -> Bool {
+            guard let categoryID = tx.category?.persistentModelID else { return false }
+            let isIncome = TransactionClassificationLogic.isIncome(tx)
+            let categories = isIncome ? incomeCategories : expenseCategories
+            if categories.contains(categoryID) { return true }
+            guard let subID = tx.subcategory?.persistentModelID else { return false }
+            return (isIncome ? incomeSubcategories : expenseSubcategories).contains(subID)
+        }
     }
 
     static func planRemaining(_ inputs: Inputs, occurrences: [Occurrence], context: ModelContext?) -> PlanRemaining? {
@@ -394,7 +440,8 @@ enum ProjectedFlowBuilder {
             remainingByMonth: remainingByMonth,
             hasIncomeLines: hasIncomeLines,
             hasExpenseLines: hasExpenseLines,
-            isApproximate: approximate
+            isApproximate: approximate,
+            coverage: PlanCoverage(lines: lines)
         )
     }
 

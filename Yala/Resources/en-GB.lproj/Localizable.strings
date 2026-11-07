@@ -8052,6 +8052,8 @@
 "trend.projected.source.plan" = "Estimated from your cash flow plan";
 "trend.projected.source.rhythm" = "Estimated from your spending pace";
 "trend.projected.source.scheduled" = "Estimated from your planned payments";
+"trend.projected.link.setup" = "Refine with a cash flow plan";
+"trend.projected.link.plan" = "See your cash flow plan";
 
 /* Button in the 'use another account' sign-in chooser: sign in with an Apple ID different from the one on this iPhone (opens Apple's web page). */
 "storage.signin.anotherAppleID" = "Another Apple Account";

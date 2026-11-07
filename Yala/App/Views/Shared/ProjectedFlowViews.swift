@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 /// «Ver proyectado»: la píldora de la tarjeta de tendencia. Misma forma que «Ver el mes anterior», con la que es
 /// excluyente (respuesta 8A): eso lo resuelve quien la monta.
@@ -42,29 +43,61 @@ struct ProjectedFlowToggle: View {
 
 /// Bajo la gráfica: «Proyectado al cierre  S/ 3.200» y de dónde sale la estimación. La cifra se oculta con «Ocultar
 /// montos» (lo hace `AmountText`), y lleva «≈» si alguna tasa fue aproximada (respuesta 11A).
+///
+/// Debajo, el camino al plan de flujo de caja, que es lo que afina la estimación (card «Mejorar el flujo de caja para
+/// que nutra el Flujo proyectado»): «Afinar con un plan…» sin plan, «Ver tu plan…» con él. No sale en «Solo gastos»,
+/// donde Flujo de caja no existe.
 struct ProjectedFlowCaption: View {
     let projection: ProjectedFlowCalculator.Projection
     let currencyCode: String
 
+    @Query private var plans: [CashFlowPlan]
+    @Environment(SceneNavigation.self) private var navigation
+    @Environment(\.yalaTheme) private var theme
+
+    init(projection: ProjectedFlowCalculator.Projection, currencyCode: String) {
+        self.projection = projection
+        self.currencyCode = currencyCode
+        var descriptor = FetchDescriptor<CashFlowPlan>()
+        descriptor.fetchLimit = 1
+        _plans = Query(descriptor)
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-                Text(L10n.ProjectedFlow.closing)
-                    .font(DS.Typography.caption)
+        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                    Text(L10n.ProjectedFlow.closing)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.thSecondaryText)
+                    AmountText(
+                        value: projection.closingValue,
+                        currencyCode: currencyCode,
+                        font: DS.Typography.subheadlineEmphasized,
+                        isEstimate: projection.isApproximate
+                    )
+                }
+                Text(L10n.ProjectedFlow.source(projection.source))
+                    .font(DS.Typography.captionSmall)
                     .foregroundStyle(.thSecondaryText)
-                AmountText(
-                    value: projection.closingValue,
-                    currencyCode: currencyCode,
-                    font: DS.Typography.subheadlineEmphasized,
-                    isEstimate: projection.isApproximate
-                )
             }
-            Text(L10n.ProjectedFlow.source(projection.source))
-                .font(DS.Typography.captionSmall)
-                .foregroundStyle(.thSecondaryText)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("trend_projected_caption")
+
+            if !SessionState.shared.isExpensesOnlyMode {
+                Button {
+                    navigation.navigateToReport(.flujoDeCaja)
+                } label: {
+                    Text(plans.isEmpty ? L10n.ProjectedFlow.linkSetup : L10n.ProjectedFlow.linkPlan)
+                        .font(DS.Typography.caption.weight(.semibold))
+                        .foregroundStyle(theme.accentText)
+                        .multilineTextAlignment(.leading)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier(plans.isEmpty ? "trend_projected_link_setup" : "trend_projected_link_plan")
+            }
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("trend_projected_caption")
     }
 }
 
