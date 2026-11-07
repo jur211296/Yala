@@ -8736,3 +8736,10 @@
 
 /* Eye button next to the Panel headline amount while amounts are hidden: shows them again */
 "panel.showAmounts" = "Mostrar montos";
+
+/* Flujo proyectado (card «Flujo proyectado en Tendencias y Panel», 2026-11-06) */
+"trend.projected.toggle" = "Ver proyectado";
+"trend.projected.closing" = "Proyectado al cierre";
+"trend.projected.source.plan" = "Estimado con tu plan de flujo de caja";
+"trend.projected.source.rhythm" = "Estimado con tu ritmo de gasto";
+"trend.projected.source.scheduled" = "Estimado con tus pagos planificados";

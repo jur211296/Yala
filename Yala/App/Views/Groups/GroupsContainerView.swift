@@ -405,10 +405,9 @@ struct GroupsContainerView: View {
             }
             .groupsOnboardingSheet(
                 isPresented: $showGroupsOnboarding,
-                onPersistFlag: {
-                    seedSystemGroupCategoriesIfNeeded(in: modelContext)
-                    appPreferences.hasShownGroupsOnboarding = true
-                },
+                onPersistFlag: { markGroupsOnboardingSeen() },
+                // La X aplaza una vez y la segunda la da por vista (Jürgen, 2026-11-06, opción B).
+                onClose: { closeGroupsOnboardingWithX() },
                 // A1 (D-A7): el CTA de sign-in del cierre reusa el MISMO camino que el del
                 // empty state — un solo productor de `.presentGroupsSignIn`.
                 onRequestSignIn: { requestGroupsSignIn() }
@@ -725,6 +724,20 @@ struct GroupsContainerView: View {
         )
         if shouldShow {
             showGroupsOnboarding = true
+        }
+    }
+
+    private func markGroupsOnboardingSeen() {
+        seedSystemGroupCategoriesIfNeeded(in: modelContext)
+        appPreferences.hasShownGroupsOnboarding = true
+    }
+
+    private func closeGroupsOnboardingWithX() {
+        switch GroupsOnboardingLogic.closeOutcome(alreadyPostponed: appPreferences.groupsOnboardingPostponedOnce) {
+        case .postponeOnce:
+            appPreferences.groupsOnboardingPostponedOnce = true
+        case .markSeen:
+            markGroupsOnboardingSeen()
         }
     }
 

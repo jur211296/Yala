@@ -223,6 +223,15 @@ final class AppPreferences {
         }
     }
 
+    /// «Ver proyectado» en la gráfica de Tendencias y del Panel (card «Flujo proyectado en Tendencias y Panel»,
+    /// respuesta 9A): una sola clave para las dos pantallas, recordada en este dispositivo. Apagada por defecto.
+    var showsProjectedFlow: Bool = false {
+        didSet {
+            guard oldValue != showsProjectedFlow else { return }
+            persistBool(showsProjectedFlow, forKey: Keys.showsProjectedFlow, synced: false)
+        }
+    }
+
     var averageLineMode: Int = 1 {
         didSet {
             guard oldValue != averageLineMode else { return }
@@ -477,12 +486,22 @@ final class AppPreferences {
 
     /// Onboarding informativo de la sección Grupos (3 steps). Per-device (no synced) —
     /// cada device muestra una vez al user. Se setea con tap consciente en CTA Step 3
-    /// ("Ir a Grupos") o "Saltar" topRight. NO se setea con "X" topLeft (interrupción
-    /// accidental → reaparece al próximo tap del tab Grupos).
+    /// ("Ir a Grupos") o "Saltar" topRight, y con la SEGUNDA "X": la primera la aplaza
+    /// (`groupsOnboardingPostponedOnce`) y vuelve en la siguiente entrada a Grupos; la segunda
+    /// la da por vista (decisión de Jürgen, 2026-11-06, opción B).
     var hasShownGroupsOnboarding: Bool = false {
         didSet {
             guard oldValue != hasShownGroupsOnboarding else { return }
             persistBool(hasShownGroupsOnboarding, forKey: Keys.hasShownGroupsOnboarding, synced: false)
+        }
+    }
+
+    /// La bienvenida de Grupos ya se cerró UNA vez con la X: vuelve una vez más y la siguiente X la da por vista
+    /// (`GroupsOnboardingLogic.closeOutcome`). Per-device, como `hasShownGroupsOnboarding`.
+    var groupsOnboardingPostponedOnce: Bool = false {
+        didSet {
+            guard oldValue != groupsOnboardingPostponedOnce else { return }
+            persistBool(groupsOnboardingPostponedOnce, forKey: Keys.groupsOnboardingPostponedOnce, synced: false)
         }
     }
 
@@ -1151,6 +1170,9 @@ final class AppPreferences {
         if defaults.object(forKey: Keys.showWidgetHints) != nil {
             showWidgetHints = defaults.bool(forKey: Keys.showWidgetHints)
         }
+        if defaults.object(forKey: Keys.showsProjectedFlow) != nil {
+            showsProjectedFlow = defaults.bool(forKey: Keys.showsProjectedFlow)
+        }
         if defaults.object(forKey: Keys.averageLineMode) != nil {
             averageLineMode = defaults.integer(forKey: Keys.averageLineMode)
         }
@@ -1211,6 +1233,7 @@ final class AppPreferences {
         hasShownWelcomeChooser = defaults.bool(forKey: Keys.hasShownWelcomeChooser)
         hasShownYalaAIOnboarding = defaults.bool(forKey: Keys.hasShownYalaAIOnboarding)
         hasShownGroupsOnboarding = defaults.bool(forKey: Keys.hasShownGroupsOnboarding)
+        groupsOnboardingPostponedOnce = defaults.bool(forKey: Keys.groupsOnboardingPostponedOnce)
         hasSeenTodayFXCoachMark = defaults.bool(forKey: Keys.hasSeenTodayFXCoachMark)
         lastSeenAppVersion = defaults.string(forKey: Keys.lastSeenAppVersion) ?? ""
         expensesOnlyMode = defaults.bool(forKey: Keys.expensesOnlyMode)
@@ -1438,6 +1461,7 @@ final class AppPreferences {
         // Widget / Trend
         static let showVariations = "showVariations"
         static let showWidgetHints = "showWidgetHints"
+        static let showsProjectedFlow = "showsProjectedFlow"
         static let averageLineMode = "averageLineMode"
 
         // Voice / Image / AI
@@ -1485,6 +1509,7 @@ final class AppPreferences {
         static let hasShownWelcomeChooser = "hasShownWelcomeChooser"
         static let hasShownYalaAIOnboarding = "hasShownYalaAIOnboarding"
         static let hasShownGroupsOnboarding = "hasShownGroupsOnboarding"
+        static let groupsOnboardingPostponedOnce = "groupsOnboardingPostponedOnce"
         static let hasSeenTodayFXCoachMark = "hasSeenTodayFXCoachMark"
         /// ADOPCIÓN del dominio Grupos en ESTE dispositivo. Per-device, no sincronizada, NO se
         /// resetea en el wipe normal (exclusión deliberada, ver abajo) pero SÍ en el handover.

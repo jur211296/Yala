@@ -590,8 +590,9 @@ extension View {
 /// solo cierra el sheet; el user queda en `GroupsContainerView` con empty state.
 ///
 /// `onPersistFlag` se invoca en `.complete` (CTA Step 3 "Ir a Grupos") — persiste
-/// flag y dispara seed lazy de categorías sistema. En `.close` (X topLeft) no se
-/// invoca, lo que hace que el onboarding reaparezca al próximo tap del tab.
+/// flag y dispara seed lazy de categorías sistema. En `.close` (X topLeft) se invoca
+/// `onClose`, que decide quien lo monta: la primera X aplaza y la segunda persiste
+/// (`GroupsOnboardingLogic.closeOutcome`).
 ///
 /// A1 (D-A7): `.completeAndSignIn` (CTA "Iniciar sesión" del cierre, solo sin sesión) persiste
 /// igual —el educativo TERMINÓ— y además pide el sign-in. La petición se emite en el
@@ -602,6 +603,7 @@ extension View {
 struct GroupsOnboardingSheetModifier: ViewModifier {
     @Binding var isPresented: Bool
     let onPersistFlag: () -> Void
+    let onClose: () -> Void
     let onRequestSignIn: () -> Void
 
     @State private var signInRequested = false
@@ -620,7 +622,7 @@ struct GroupsOnboardingSheetModifier: ViewModifier {
                     onPersistFlag()
                     signInRequested = true
                 case .close:
-                    break
+                    onClose()
                 }
                 isPresented = false
             }
@@ -632,11 +634,13 @@ extension View {
     func groupsOnboardingSheet(
         isPresented: Binding<Bool>,
         onPersistFlag: @escaping () -> Void,
+        onClose: @escaping () -> Void,
         onRequestSignIn: @escaping () -> Void
     ) -> some View {
         modifier(GroupsOnboardingSheetModifier(
             isPresented: isPresented,
             onPersistFlag: onPersistFlag,
+            onClose: onClose,
             onRequestSignIn: onRequestSignIn
         ))
     }

@@ -415,6 +415,33 @@ struct TrendsTabView: View {
         showsPreviousPeriod && canShowPreviousPeriod && hasComparisonData
     }
 
+    /// «Ver proyectado» tiene algo que enseñar: el período tiene días por delante (respuesta 3A).
+    private var canShowProjection: Bool {
+        trendsViewModel.projection != nil
+    }
+
+    /// La proyección se dibuja: encendida (preferencia compartida con el Panel), disponible y sin la curva del período
+    /// anterior encima (respuesta 8A: son excluyentes).
+    private var isShowingProjection: Bool {
+        appPreferences.showsProjectedFlow && canShowProjection && !isShowingPreviousPeriod
+    }
+
+    /// La curva real que se pinta: con la proyección, cortada en hoy (los movimientos con fecha futura van en la línea
+    /// punteada, respuesta 7A).
+    private var displayedTrendPoints: [BarPoint] {
+        guard isShowingProjection else { return trendsViewModel.trendPoints }
+        return ProjectedFlowCalculator.pointsUpToToday(
+            trendsViewModel.trendPoints, today: .now, grouping: .day, calendar: .current
+        )
+    }
+
+    private var displayedRawTrendPoints: [BarPoint] {
+        guard isShowingProjection else { return trendsViewModel.rawTrendPoints }
+        return ProjectedFlowCalculator.pointsUpToToday(
+            trendsViewModel.rawTrendPoints, today: .now, grouping: .day, calendar: .current
+        )
+    }
+
     /// Check if there's trend data to display
     private var hasTrendData: Bool {
         !trendsViewModel.trendPoints.isEmpty
@@ -513,8 +540,14 @@ struct TrendsTabView: View {
                 }
             }
 
-            if hasTrendData, canShowPreviousPeriod {
-                showPreviousPeriodToggle
+            if hasTrendData, canShowPreviousPeriod || canShowProjection {
+                TrendTogglesRow {
+                    if canShowPreviousPeriod { showPreviousPeriodToggle }
+                } trailing: {
+                    if canShowProjection {
+                        ProjectedFlowToggle(isOn: isShowingProjection) { toggleProjection() }
+                    }
+                }
             }
 
             if hasTrendData, isShowingPreviousPeriod {
@@ -544,8 +577,8 @@ struct TrendsTabView: View {
                 // Más alta en los iPhone grandes, con la misma proporción que en el pequeño (`AdaptiveChartHeight`).
                 AdaptiveChartHeight(base: 170) { chartHeight in
                 TrendChartView(
-                    trendPoints: trendsViewModel.trendPoints,
-                    rawPoints: trendsViewModel.rawTrendPoints,
+                    trendPoints: displayedTrendPoints,
+                    rawPoints: displayedRawTrendPoints,
                     yDomain: trendsViewModel.yDomain,
                     grouping: .day,
                     interval: trendsViewModel.currentInterval,
@@ -556,8 +589,12 @@ struct TrendsTabView: View {
                     chartHeight: chartHeight,
                     liveAnchor: trendsViewModel.trendLiveAnchor,
                     liveAnchorBreakdown: trendsViewModel.trendLiveAnchorBreakdown,
-                    liveAnchorIsApproximate: trendsViewModel.trendLiveAnchorIsApproximate
+                    liveAnchorIsApproximate: trendsViewModel.trendLiveAnchorIsApproximate,
+                    projectedPoints: isShowingProjection ? (trendsViewModel.projection?.points ?? []) : []
                 )
+                }
+                if isShowingProjection, let projection = trendsViewModel.projection {
+                    ProjectedFlowCaption(projection: projection, currencyCode: defaultCurrencyCode)
                 }
             } else {
                 chartEmptyState
@@ -566,6 +603,14 @@ struct TrendsTabView: View {
         // «Ver el mes anterior» funde una gráfica con la otra y la píldora se rellena (card C2). Implícita: en una
         // pestaña un `withAnimation` no anima.
         .animation(reduceMotion ? nil : DS.Animation.appear, value: showsPreviousPeriod)
+        .animation(reduceMotion ? nil : DS.Animation.appear, value: appPreferences.showsProjectedFlow)
+    }
+
+    /// Enciende o apaga «Ver proyectado»; encenderla apaga «Ver el mes anterior» (respuesta 8A).
+    private func toggleProjection() {
+        let turningOn = !isShowingProjection
+        appPreferences.showsProjectedFlow = turningOn
+        if turningOn { showsPreviousPeriod = false }
     }
 
     private var chartEmptyState: some View {
@@ -580,6 +625,9 @@ struct TrendsTabView: View {
     /// sigue al período y al modo de comparación («Ver la semana anterior», «Ver el año anterior»).
     private var showPreviousPeriodToggle: some View {
         Button {
+            // Excluyente con «Ver proyectado» (respuesta 8A) sin tocar su preferencia: es compartida con el Panel, y
+            // mirar el mes anterior aquí no puede apagar la línea punteada allí. Mientras se ve el mes anterior, la
+            // proyección no se pinta (`isShowingProjection`); al apagarlo, vuelve.
             showsPreviousPeriod.toggle()
         } label: {
             HStack(spacing: DS.Spacing.xs) {

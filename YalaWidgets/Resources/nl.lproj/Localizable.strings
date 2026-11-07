@@ -222,3 +222,6 @@
 "widget.groups.archivedOwedLine" = "+ %@ die je nog krijgt in gearchiveerde groepen";
 "widget.groups.archivedOweLine" = "+ %@ die je nog moet betalen in gearchiveerde groepen";
 "widget.ui.receivable" = "Te ontvangen";
+
+/* Flujo proyectado en los widgets Gasto y Saldo (2026-11-06) */
+"widget.intent.showProjected" = "Prognose tonen";

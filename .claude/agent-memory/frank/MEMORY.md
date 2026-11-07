@@ -4,7 +4,7 @@
 > nueva va a su subíndice. Si este fichero pasa de 20 KB, poda o mueve antes de añadir.
 
 ## Subíndices — ábrelos cuando el tema toque
-- [Cómo mido y cómo entrego](indice_medir_y_entregar.md) — 76 entradas: tests, gate, CI, QA, telemetría, mutantes. Antes de medir o preparar QA.
+- [Cómo mido y cómo entrego](indice_medir_y_entregar.md) — 77 entradas: tests, gate, CI, QA, telemetría, mutantes. Antes de medir o preparar QA.
 - [Simulador y capturas](indice_simulador_y_capturas.md) — 85 entradas: axe, XCUITest conductor, iPad y Duo, capturas, vídeo, antes/después.
 - [Lecciones de código y de copy](indice_lecciones_de_codigo.md) — 122 entradas: gates que fallan abiertos, techos, reintentos, herencias de moldes y de copy. Antes de diseñar un arreglo y en la review.
 - [Estado del trabajo](indice_estado_del_trabajo.md) — 93 entradas de proyecto, con fecha: qué espera cada frente. Mide antes de actuar.

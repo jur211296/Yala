@@ -8722,3 +8722,10 @@
 
 /* Eye button next to the Panel headline amount while amounts are hidden: shows them again */
 "panel.showAmounts" = "Bedragen tonen";
+
+/* Flujo proyectado (card «Flujo proyectado en Tendencias y Panel», 2026-11-06) */
+"trend.projected.toggle" = "Prognose tonen";
+"trend.projected.closing" = "Prognose aan het einde van de periode";
+"trend.projected.source.plan" = "Geschat met je kasstroomplan";
+"trend.projected.source.rhythm" = "Geschat met je uitgavenritme";
+"trend.projected.source.scheduled" = "Geschat met je geplande betalingen";

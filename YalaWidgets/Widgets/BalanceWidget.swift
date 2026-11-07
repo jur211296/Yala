@@ -20,6 +20,10 @@ struct BalanceWidgetIntent: WidgetConfigurationIntent {
     @Parameter(title: "widget.period.type", default: .sameAsApp)
     var period: WidgetPeriodOption
 
+    /// «Mostrar proyectado» (respuesta 12A): la continuación punteada hasta el final del período. Apagada por defecto.
+    @Parameter(title: "widget.intent.showProjected", default: false)
+    var showProjected: Bool
+
 }
 
 /// AppEnum wrapper for WidgetPeriod (AppIntents requires AppEnum conformance)
@@ -87,6 +91,9 @@ struct BalanceEntry: TimelineEntry {
     var change: Double? = nil
     /// Cuándo escribió la app la foto: si no es de hoy, el widget lo dice.
     var lastUpdated: Date? = nil
+    /// «Mostrar proyectado»: el saldo esperado desde el día de la foto (el primero es la cifra) hasta el final del
+    /// período. Vacío si está apagado o no quedan días.
+    var projected: [WidgetTrendPoint] = []
 
     static var placeholder: BalanceEntry {
         BalanceEntry(
@@ -143,6 +150,21 @@ struct BalanceWidgetProvider: AppIntentTimelineProvider {
         let lastUpdated = WidgetDataService.getLastUpdated()
         // Las cifras de la foto se calcularon cuando la app la escribió: el período se mide a esa hora, no a la de ahora.
         let asOf = lastUpdated ?? now
+        let calendar = WidgetDataService.widgetConfiguredCalendar()
+        let interval = period.dateInterval(now: asOf)
+        // «Mostrar proyectado»: ingreso − gasto esperado por día, acumulado sobre la cifra del saldo.
+        let projected: [WidgetTrendPoint]
+        if configuration.showProjected, let flow = WidgetDataService.getProjectedFlow() {
+            projected = WidgetInsightsLogic.projectedCumulative(
+                anchor: balance,
+                deltas: flow.days.map { (date: $0.date, value: $0.income - $0.expense) },
+                asOf: asOf,
+                end: ExpenseWidgetProvider.fullPeriodEnd(for: period, interval: interval, asOf: asOf, calendar: calendar),
+                calendar: calendar
+            ).map { WidgetTrendPoint(date: $0.date, balance: $0.value) }
+        } else {
+            projected = []
+        }
 
         return BalanceEntry(
             date: now,
@@ -155,7 +177,8 @@ struct BalanceWidgetProvider: AppIntentTimelineProvider {
             balanceIsApproximate: WidgetDataService.getBalanceIsApproximate(for: period),
             // Con «Comparar con el período anterior» apagado en la app, sin la píldora (como el hero del Panel).
             change: WidgetDataService.showsVariations ? Self.change(for: period, balance: balance, asOf: asOf) : nil,
-            lastUpdated: lastUpdated
+            lastUpdated: lastUpdated,
+            projected: projected
         )
     }
 
@@ -220,7 +243,7 @@ struct SmallBalanceView: View {
                 .padding(.top, WidgetDS.Spacing.xxs)
 
             if entry.trendData.count >= 2 {
-                BalanceTrendChart(points: entry.trendData)
+                BalanceTrendChart(points: entry.trendData, projected: entry.projected)
                     .frame(height: WidgetDS.Chart.sparklineHeight)
                     .padding(.top, WidgetDS.Spacing.sm)
             }
@@ -254,7 +277,7 @@ struct MediumBalanceView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
                 if entry.trendData.count >= 2 {
-                    BalanceTrendChart(points: entry.trendData)
+                    BalanceTrendChart(points: entry.trendData, projected: entry.projected)
                         .frame(maxWidth: .infinity)
                 } else {
                     Text("widget.ui.noData", bundle: .main)
@@ -307,9 +330,11 @@ private struct BalanceChangeLine: View {
 /// ya dicen cuánto; la curva dice cómo se llegó. En tintado NO se tiñe: lo teñido es la cifra (una cosa por widget).
 struct BalanceTrendChart: View {
     let points: [WidgetTrendPoint]
+    /// «Mostrar proyectado»: punteado índigo desde el punto de hoy hasta el final del período.
+    var projected: [WidgetTrendPoint] = []
 
     private var domain: ClosedRange<Double> {
-        let values = points.map(\.balance)
+        let values = points.map(\.balance) + projected.map(\.balance)
         let low = values.min() ?? 0
         let high = values.max() ?? 0
         let pad = max((high - low) * 0.15, 1)
@@ -332,6 +357,14 @@ struct BalanceTrendChart: View {
                     .interpolationMethod(.monotone)
                     .lineStyle(StrokeStyle(lineWidth: WidgetDS.Chart.lineWidth, lineCap: .round, lineJoin: .round))
                     .foregroundStyle(WidgetColors.electricIndigo)
+            }
+            ForEach(projected.count > 1 ? projected : [], id: \.date) { point in
+                LineMark(x: .value("Fecha", point.date), y: .value("Saldo", point.balance),
+                         series: .value("Serie", "proyectado"))
+                    .interpolationMethod(.monotone)
+                    .lineStyle(StrokeStyle(lineWidth: WidgetDS.Chart.lineWidth, lineCap: .round,
+                                           dash: WidgetDS.Chart.projectedDash))
+                    .foregroundStyle(WidgetColors.electricIndigo.opacity(WidgetDS.Chart.projectedOpacity))
             }
             if let last = points.last {
                 PointMark(x: .value("Fecha", last.date), y: .value("Saldo", last.balance))
