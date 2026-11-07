@@ -29,6 +29,10 @@ struct WidgetInfoSheet<Preview: View>: View {
     /// La vista previa y la línea con sus números solo aplican cuando el kind mapea a un WidgetType del Panel y se
     /// pasó un viewModel.
     private var isInPanel: Bool { viewModel != nil && widgetType != nil }
+    /// El ojo del Panel (`AmountPrivacy`) vale también aquí: la ayuda no es un detalle que la persona pidió ver
+    /// (revisión por vistas 2.3, PN-7). Se lee de la preferencia y no del entorno porque esta hoja también se abre desde
+    /// el ▦ de la sección, que cuelga fuera del scroll del Panel y no hereda `amountsHidden`.
+    private var masksAmounts: Bool { isInPanel && appPreferences.panelAmountsHidden }
 
     var body: some View {
         NavigationStack {
@@ -37,8 +41,11 @@ struct WidgetInfoSheet<Preview: View>: View {
                     if isInPanel {
                         previewBox
                     }
-                    if let personalLine {
-                        yourDataBlock(personalLine)
+                    if let shown = personalLine(showing: { AmountPrivacy.text($0, hidden: masksAmounts) }) {
+                        yourDataBlock(
+                            shown,
+                            spoken: personalLine(showing: { AmountPrivacy.spoken($0, hidden: masksAmounts) }) ?? shown
+                        )
                     }
                     chipsRow
                     sectionsBlock
@@ -95,6 +102,7 @@ struct WidgetInfoSheet<Preview: View>: View {
         ZStack {
             previewContent(shownSize)
                 .environment(\.isWidgetPreviewMode, true)
+                .environment(\.amountsHidden, masksAmounts)
                 .environment(appPreferences)
                 .frame(width: isSmall && smallWidth > 0 ? smallWidth : nil)
                 .allowsHitTesting(false)
@@ -133,7 +141,8 @@ struct WidgetInfoSheet<Preview: View>: View {
 
     // MARK: - Con tus datos (UX 2.2 · L3-7, opción B)
 
-    private func yourDataBlock(_ text: String) -> some View {
+    /// `spoken` es lo que lee VoiceOver: con los montos ocultos dice «Monto oculto» en vez de deletrear la máscara.
+    private func yourDataBlock(_ text: String, spoken: String) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
             Text(L10n.Panel.WidgetInfo.YourData.title)
                 .font(DS.Typography.headline)
@@ -142,6 +151,7 @@ struct WidgetInfoSheet<Preview: View>: View {
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+                .accessibilityLabel(spoken)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
@@ -149,13 +159,14 @@ struct WidgetInfoSheet<Preview: View>: View {
     }
 
     /// Lo que el widget dice HOY con los datos de la persona, o `nil` si no hay un dato que contar (sin movimientos,
-    /// o un widget cuya ayuda genérica ya basta).
-    private var personalLine: String? {
+    /// o un widget cuya ayuda genérica ya basta). Cada monto pasa por `showing` ya formateado: así la misma frase sale
+    /// con la cifra, con la máscara del ojo o con «Monto oculto» para VoiceOver.
+    private func personalLine(showing: (String) -> String) -> String? {
         guard let viewModel, isInPanel else { return nil }
         let currency = viewModel.defaultCurrencyCode
         // La marca de aproximado viaja con el número, como en el resto del Panel.
         func money(_ value: Double, isEstimate: Bool = false) -> String {
-            appPreferences.currency(value, currencyCode: currency, isEstimate: isEstimate)
+            showing(appPreferences.currency(value, currencyCode: currency, isEstimate: isEstimate))
         }
         switch kind {
         case .trend:

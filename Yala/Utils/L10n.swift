@@ -767,12 +767,21 @@ enum L10n {
             static func restoreWidgets(_ name: String) -> String {
                 String(format: ls("panel.sectionsConfig.restoreWidgets %@", comment: "Button/accessibility label to restore all widgets of a section"), name)
             }
+            // Revisión por vistas 2.3, PN-8: ↻ dice lo que hace y pregunta antes.
+            static var resetOrder: String { ls("panel.sectionsConfig.resetOrder", comment: "Accessibility label of the ↻ button in Configure Panel: puts the sections back in their original order") }
+            static var resetOrderTitle: String { ls("panel.sectionsConfig.resetOrder.title", comment: "Alert title asking before putting the Panel sections back in their original order") }
+            static var resetOrderMessage: String { ls("panel.sectionsConfig.resetOrder.message", comment: "Alert message: only the order of the Panel sections changes; which ones are on or off stays") }
+            static var resetConfirm: String { ls("panel.sectionsConfig.resetOrder.confirm", comment: "Alert button that confirms resetting (Panel sections order or a section's widgets)") }
         }
 
         enum SectionPrefs {
             static var title: String {
                 ls("panel.sectionPrefs.title", comment: "Per-section preferences sheet title (P20-03)")
             }
+            static func resetTitle(_ section: String) -> String {
+                String(format: ls("panel.sectionPrefs.reset.title %@", comment: "Alert title asking before putting a Panel section's widgets back as they came; %@ is the section name"), section)
+            }
+            static var resetMessage: String { ls("panel.sectionPrefs.reset.message", comment: "Alert message: the section's widgets go back to how they came (which show, order and size)") }
         }
 
         /// Salud financiera (P20-06 — Financial Score).

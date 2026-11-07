@@ -28,6 +28,9 @@ struct BalanceLiveAnchorEducationSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(CurrencyConverter.self) private var currencyConverter
+    /// El ojo del Panel. Esta hoja cuelga de la gráfica, dentro del scroll del Panel, y lo hereda: sus `AmountText` ya
+    /// salían enmascarados y solo la conversión «≈ S/ X hoy» enseñaba la cifra (revisión por vistas 2.3, PN-7).
+    @Environment(\.amountsHidden) private var amountsHidden
 
     @State private var selectedDetent: PresentationDetent = .medium
 
@@ -184,9 +187,14 @@ struct BalanceLiveAnchorEducationSheet: View {
                     forceFullPrecision: false,
                     isEstimate: row.convertedIsApproximate
                 )
-                Text(L10n.Panel.LiveAnchorEducation.breakdownRowConvertedFormat(convertedFormatted))
+                Text(L10n.Panel.LiveAnchorEducation.breakdownRowConvertedFormat(
+                    AmountPrivacy.text(convertedFormatted, hidden: amountsHidden)
+                ))
                     .font(DS.Typography.caption)
                     .foregroundStyle(.thSecondaryText)
+                    .accessibilityLabel(L10n.Panel.LiveAnchorEducation.breakdownRowConvertedFormat(
+                        AmountPrivacy.spoken(convertedFormatted, hidden: amountsHidden)
+                    ))
             }
         }
     }

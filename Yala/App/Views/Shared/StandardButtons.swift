@@ -43,6 +43,9 @@ struct YalaSaveButton: View {
     /// Override del identifier de accesibilidad. Útil cuando dos save buttons
     /// coexisten en sheets anidados (evita queries ambiguas en XCUITest).
     var accessibilityID: String = "toolbar_save_button"
+    /// Lo que dice VoiceOver. Por defecto «Guardar»; una hoja cuyos cambios ya se aplicaron al tocarlos y donde el ✓ solo
+    /// cierra pasa «Listo» (`L10n.Action.done`), como «Configurar Panel».
+    var accessibilityName: String? = nil
 
     var body: some View {
         Button(action: action) {
@@ -56,7 +59,7 @@ struct YalaSaveButton: View {
         .buttonStyle(.borderedProminent)
 
         .buttonBorderShape(.circle)
-        .accessibilityLabel(L10n.Action.save)
+        .accessibilityLabel(accessibilityName ?? L10n.Action.save)
         .accessibilityIdentifier(accessibilityID)
         .accessibilityHint(isDisabled ? (disabledHint ?? "") : "")
     }

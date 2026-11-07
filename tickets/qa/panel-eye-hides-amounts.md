@@ -4,7 +4,7 @@ status: qa
 priority: medium
 area: panel
 created: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-07
 source: "tablero: «Ojo para ocultar montos en el Panel» (tablero-ojo-para-ocultar-montos-en-el-panel-kzvm) y «Ocultar montos con un botón» (tablero-ocultar-montos-con-un-boton-33qw), roadmap 2.3"
 ---
 
@@ -35,6 +35,9 @@ verlo. Estadísticas, Registros y el resto de la app no cambian.
   que sobrevive a un relanzamiento y que no se sincroniza.
 - `PanelAmountsVisibilityUITests` (XCUITest): tocar el ojo oculta los montos, siguen ocultos tras relanzar y otro toque
   los devuelve.
+- `PanelAmountsHiddenHelpUITests` (XCUITest, 2026-11-07): con el ojo puesto, «Con tus datos» de la ayuda de la gráfica
+  de saldo no dice ninguna cifra y VoiceOver dice «Monto oculto». Las demás ayudas con monto y la conversión de «Tu saldo
+  hoy» las fija `PanelNecesariasAccesibilidadWiringTests`.
 
 ## Guion de QA en el iPhone (Yala Dev)
 
@@ -43,6 +46,8 @@ verlo. Estadísticas, Registros y el resto de la app no cambian.
    cuentas pasan a `•••••`.
 3. Baja por todo el Panel: presupuestos, pagos planificados, últimos registros y las gráficas de Tendencias. Ninguna
    cifra de dinero debe verse; los porcentajes sí.
+3b. Con los montos ocultos, toca la **«?»** de la gráfica **Saldo** (en Tendencias). En «Con tus datos» tiene que decir
+   «Hoy tienes S/ ••••• en tus cuentas», sin la cifra (corrección del 7-nov, revisión por vistas 2.3 · PN-7).
 4. Cierra Yala del todo (desliza hacia arriba en el selector de apps) y vuelve a abrirla. Los montos deben seguir ocultos.
 5. Toca el ojo otra vez: vuelven todas las cifras.
 6. Pásalo a **Estadísticas** y **Registros** con los montos ocultos: ahí las cifras se ven (es solo el Panel).
