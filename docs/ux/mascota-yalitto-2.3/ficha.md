@@ -51,7 +51,11 @@ nada y no elige**: recomienda y deja las decisiones a Jürgen. «Yalitto» es un
 
 ## Encontrado (no se tocó)
 
-- La lista de presupuestos dice «Pasaste tu presupuesto, ¡el próximo período será mejor!» y el muro de Yala IA dice
-  «No pudimos cargar los precios. Revisa tu conexión.»: los dos chocan con «sin moralizar» y «sin culpar».
-- `docs/planning/BRAND-VOICE.md` pone como ejemplo bueno «¿Qué tal si cocinamos en casa estos días?», que es opinar sobre
-  el gasto. Si Yalitto se hace, conviene revisar ese ejemplo.
+Cada hallazgo tiene su ticket en `tickets/backlog/`:
+
+- `budget-exceeded-encouragement-reads-as-a-sermon`: «Pasaste tu presupuesto, ¡el próximo período será mejor!» consuela
+  en vez de ofrecer algo.
+- `connection-errors-put-the-fix-on-the-user`: cinco errores de red terminan en «Revisa tu conexión», también el muro de
+  precios de Yala IA.
+- `brand-voice-example-opines-on-spending`: `docs/planning/BRAND-VOICE.md` pone como ejemplo bueno «¿Qué tal si cocinamos
+  en casa estos días?».
