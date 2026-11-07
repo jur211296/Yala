@@ -50,6 +50,7 @@
 - [Encargo sin simulador y el gate](feedback_encargo_sin_simulador_y_el_gate.md) — el gate lo necesita: se pregunta; aprobó usarlo solo para el gate, en cola.
 - [Revisión por dispositivo sin saltar](feedback_revision_por_dispositivo_sin_saltar.md) — Duo entero primero; lo del iPhone se apunta y va al final.
 - [«Eliminar cuenta» es borrar todo](feedback_eliminar_cuenta_es_borrar_todo.md) — al preguntar qué borra un gesto, di antes dónde vive cada dato.
+- [Bug de otra rama: su propio PR](feedback_bug_de_otra_rama_va_en_su_pr.md) — rojo que solo vive en 2.2 con base 2.3: un PR a cada rama (C).
 - [Límite del plan: la persona elige](feedback_limite_del_plan_la_persona_elige.md) — alta masiva sobre el límite Free: elegir qué entra, o pedir Pro; nunca saltarlo.
 - [La condición del encargo puede no ser suya](feedback_la_condicion_del_encargo_puede_no_ser_suya.md) — «sin tapar el +» era de Tim; confirma lo que multiplica alcance.
 - [Una sesión de Yala por máquina](feedback_una_sesion_yala_por_maquina.md) — 5-nov: otra viva en el sim ⇒ pausa sin tocar sim ni CI de UI; retoma al aviso.

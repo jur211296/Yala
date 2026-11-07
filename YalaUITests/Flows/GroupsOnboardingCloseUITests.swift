@@ -42,7 +42,7 @@ final class GroupsOnboardingCloseUITests: XCTestCase {
     /// Sale a Panel y vuelve a Grupos por un enlace abierto desde fuera, con la app viva (`system.open`; `app.open`
     /// relanzaría). Grupos no está en la barra por defecto y la pestaña temporal se va al salir a Panel.
     private func reenterGroups(_ app: XCUIApplication) {
-        let panel = app.tabBars.buttons["Panel"]
+        let panel = app.tabEntry(.panel)
         XCTAssertTrue(panel.waitForExistence(timeout: 10), "No está la pestaña Panel.")
         panel.tap()
         guard let url = URL(string: "yaladev://groups") else { return XCTFail("URL inválida") }
@@ -51,7 +51,7 @@ final class GroupsOnboardingCloseUITests: XCTestCase {
         let open = springboard.alerts.buttons.element(boundBy: 1)
         if springboard.alerts.firstMatch.waitForExistence(timeout: 3), open.exists { open.tap() }
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: 15), "El enlace no trajo Yala delante.")
-        let groups = app.tabBars.buttons["Grupos"]
+        let groups = app.tabEntry(.groups)
         XCTAssertTrue(groups.waitForExistence(timeout: 10), "El enlace no volvió a Grupos.")
         let selected = expectation(for: NSPredicate(format: "isSelected == true"), evaluatedWith: groups)
         wait(for: [selected], timeout: 10)

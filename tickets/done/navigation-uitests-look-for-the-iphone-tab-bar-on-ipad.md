@@ -61,3 +61,22 @@ Triage 2026-10-08: abierto · medium → low · no hay helper de pestañas en `Y
   la barra del iPhone o leen su estado. Van a la card «Los XCUITest que comprueban la barra de pestañas del iPhone
   siguen fallando en iPad». LaunchSlice y el `isSelected` de Deeplink sí pasaron al helper: eran la misma comprobación
   y sin eso esas suites del ticket seguían rojas.
+
+## 2026-11-06 · el resto, hecho (lote XCUITest y neto del flujo)
+
+`grep -rn tabBars YalaUITests` ya solo sale en `YalaUITests/Support/XCUIApplication+Yala.swift`. Por suite:
+
+- **Panel elegido** (ExternalEntryForeignSheet, WidgetEntryToPanel, WidgetEntryBackground): por la entrada de la página,
+  `tabEntry(.panel).isSelected`, que vale en los dos aparatos.
+- **Lo que tapa abajo** (UndoNoticePlacement, BulkEdit, IPhoneLandscape, LoadTimes): `compactTabBar`, la barra de abajo
+  si existe; en iPad no hay y no tapa nada.
+- **La forma estrecha a propósito** (AdaptiveNavigation): `compactTabBar`, en las ramas de iPhone o de ventana estrecha.
+- **Barra encogida del iPhone** (TopPrimaryAction): `selectTabExpandingCompactBar`, que en iPad es `selectTab`.
+- **Suites que entraban por «Más» a un informe** (CashFlowPlan, CreditCardStatement, AccountCardReports):
+  `openReport(_:)` — por la tarjeta de «Más» o, sin «Más», por Reportes y su chip.
+- **Suites que prueban «Más» o la barra de abajo** (CustomTabBar, ProfileSettings ×2, RecordsLote8 «tarjetas»,
+  SettingsLote15 «Pestañas de abajo», LoadTimes): `skipUnlessMoreTab`, que salta con su motivo solo en iPad sin «Más».
+
+Medido además: el iPad a pantalla completa **tampoco tiene «Más» en vertical**, y ahí Reportes y Grupos quedan tras
+«Página siguiente». `selectTab` abre la barra lateral (`ToggleSideBar`) cuando la página no está entre las pestañas de
+arriba. Los rojos de iPad que no son de la barra van a `ipad-uitests-fail-on-layout-differences-not-the-tab-bar`.

@@ -58,7 +58,7 @@ final class WidgetEntryToPanelUITests: XCTestCase {
         add(shot)
         XCTAssertTrue(appeared, "Con Estadísticas delante, \(what) pedido desde el widget tenía que abrirse.",
                       file: file, line: line)
-        XCTAssertTrue(app.tabBars.buttons.element(boundBy: 0).isSelected,
+        XCTAssertTrue(app.tabEntry(.panel).isSelected,
                       "Debajo de la hoja tenía que quedar el Panel.", file: file, line: line)
     }
 

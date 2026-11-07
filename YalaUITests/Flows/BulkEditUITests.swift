@@ -85,7 +85,7 @@ final class BulkEditUITests: XCTestCase {
         let top = window.minY + window.height * 0.25
         for _ in 0..<5 {
             var bottom = window.maxY
-            let tabBar = app.tabBars.firstMatch
+            let tabBar = app.compactTabBar
             if tabBar.exists { bottom = min(bottom, tabBar.frame.minY) }
             let count = app.staticTexts["records_selection_count"]
             // La cifra va dentro de la tarjeta de la barra, con su margen (`DS.Spacing.md`) por encima.

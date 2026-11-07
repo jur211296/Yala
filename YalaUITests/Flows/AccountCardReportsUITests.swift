@@ -45,12 +45,7 @@ final class AccountCardReportsUITests: XCTestCase {
 
     func test_report_byCard_showsTheCardOnceConverted_andByLineShowsBothLines() {
         let app = launch()
-        let moreTab = app.tabEntry(.more)
-        XCTAssertTrue(moreTab.waitForExistence(timeout: 10), "No apareció el tab Más.")
-        moreTab.tap()
-        let cashflowCard = app.buttons["more_card_flujoDeCaja"]
-        XCTAssertTrue(cashflowCard.waitForExistence(timeout: 5), "No apareció la card Flujo de Caja en Más.")
-        cashflowCard.tap()
+        app.openReport("flujoDeCaja")
         let comparativa = app.buttons["report_chip_comparativa"]
         XCTAssertTrue(comparativa.waitForExistence(timeout: 10), "No se abrió Reportes.")
         comparativa.tap()

@@ -170,8 +170,9 @@ final class SettingsLote15UITests: XCTestCase {
 
     // MARK: - L16-13 · Pestañas de abajo
 
-    func test_tabBarConfig_saysTheTwoRules() {
+    func test_tabBarConfig_saysTheTwoRules() throws {
         let app = launch()
+        try app.skipUnlessMoreTab("«Pestañas de abajo»")
         app.selectTab(.more)
         let editor = app.buttons["more_editor_button"]
         XCTAssertTrue(editor.waitForExistence(timeout: 10), "No apareció «Personalizar».")

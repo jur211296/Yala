@@ -145,7 +145,7 @@ final class ExternalEntryForeignSheetUITests: XCTestCase {
         closeForm(app)
         XCTAssertTrue(app.buttons["voice_done"].waitForExistence(timeout: 15),
                       "Al cerrar el formulario, el dictado pedido desde el widget tenía que abrirse (voice_done).")
-        XCTAssertTrue(app.tabBars.buttons.element(boundBy: 0).isSelected,
+        XCTAssertTrue(app.tabEntry(.panel).isSelected,
                       "Debajo del dictado tenía que quedar el Panel.")
     }
 
@@ -215,7 +215,7 @@ final class ExternalEntryForeignSheetUITests: XCTestCase {
 
         assertFormSurvives(app, amountField, seconds: 6, capture: "formulario-tras-enlace-al-panel")
         closeForm(app)
-        let panelTab = app.tabBars.buttons.element(boundBy: 0)
+        let panelTab = app.tabEntry(.panel)
         let selected = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isSelected == true"), object: panelTab)
         XCTAssertEqual(XCTWaiter().wait(for: [selected], timeout: 10), .completed,
                        "Tras cerrar la hoja, el enlace tenía que haber dejado el Panel delante.")

@@ -260,6 +260,13 @@ private extension ExpenseEntry {
         return fraction > 0 ? .bad : .good
     }
 
+    /// «+21 %» o «-4 %» para VoiceOver; lo que se pinta como «0 %» va sin signo.
+    static func signedPercent(_ fraction: Double) -> String {
+        let shown = abs(fraction).formatted(.percent.precision(.fractionLength(0)))
+        guard shown != Double(0).formatted(.percent.precision(.fractionLength(0))) else { return shown }
+        return (fraction >= 0 ? "+" : "-") + shown
+    }
+
     /// Hay gráfica con un día de datos (el día 1 ya tiene su punto) o con la curva del período anterior.
     var hasChart: Bool { !trendData.isEmpty || comparison != nil }
 
@@ -293,7 +300,7 @@ private struct ExpenseComparisonLine: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text(String(
                 format: String(localized: "widget.expense.comparison.a11y", bundle: .main),
-                (fraction >= 0 ? "+" : "-") + abs(fraction).formatted(.percent.precision(.fractionLength(0))),
+                ExpenseEntry.signedPercent(fraction),
                 comparison.previousLabel)))
         } else {
             Text(String(format: String(localized: "widget.expense.perDay", bundle: .main), entry.amountText(entry.dailyAverage)))

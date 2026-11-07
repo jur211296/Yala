@@ -42,7 +42,7 @@ final class UndoNoticePlacementUITests: XCTestCase {
                                  file: file, line: line)
         // La barra flotante de abajo: sus botones quedan por debajo del aviso. (El marco de la barra entera empieza unos
         // puntos por encima de lo que se ve, así que se mide con los botones.)
-        let tabBar = app.tabBars.firstMatch
+        let tabBar = app.compactTabBar
         guard tabBar.exists, tabBar.frame.minY > window.frame.midY else { return }
         // El marco del aviso lleva 4 pt de aire bajo la cápsula (`DS.Spacing.xs`); lo que no puede pisar la barra es la cápsula.
         let capsuleBottom = notice.frame.maxY - 4

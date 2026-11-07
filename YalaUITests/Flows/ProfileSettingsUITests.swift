@@ -38,10 +38,11 @@ final class ProfileSettingsUITests: XCTestCase {
 
     /// En "Más", el avatar de Perfil está en la barra, a la derecha de Personalizar
     /// (la misma chrome que el Panel), y abre el Perfil.
-    func test_moreTabShowsProfileButtonNextToEditor() {
+    func test_moreTabShowsProfileButtonNextToEditor() throws {
         let app = XCUIApplication()
         app.launchForUITest()
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+        try app.skipUnlessMoreTab("La barra de «Más» y su editor")
 
         let moreTab = app.tabEntry(.more)
         XCTAssertTrue(moreTab.waitForExistence(timeout: 10), "No apareció el tab Más.")
@@ -68,10 +69,11 @@ final class ProfileSettingsUITests: XCTestCase {
     /// Flujo — desde el editor del dashboard "Más" (icono del toolbar), abrir la
     /// configuración de la barra de pestañas, quitar un tab y guardar; verificar
     /// que la configuración se guarda y se vuelve al editor.
-    func test_tabBarConfigRemoveTabCompletes() {
+    func test_tabBarConfigRemoveTabCompletes() throws {
         let app = XCUIApplication()
         app.launchForUITest()
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+        try app.skipUnlessMoreTab("La barra de «Más» y su editor")
 
         // Tab "Más" (4º del tab bar) → editor (icono del toolbar).
         let moreTab = app.tabEntry(.more)

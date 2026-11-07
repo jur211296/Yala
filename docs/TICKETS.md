@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1199)
+## Index (1201)
 
 | id | status | path |
 |---|---|---|
@@ -177,7 +177,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | canarios-y-breadcrumbs-sin-emisor | done | tickets/done/canarios-y-breadcrumbs-sin-emisor.md |
 | cancel-reverse-wipes-the-alert-that-just-appeared | backlog | tickets/backlog/cancel-reverse-wipes-the-alert-that-just-appeared.md |
 | capability-upgrade-reemits-a-v1-link-edit-with-a-fresh-hlc | backlog | tickets/backlog/capability-upgrade-reemits-a-v1-link-edit-with-a-fresh-hlc.md |
-| cash-flow-month-capsule-and-balance-widget-pill-sign-a-zero | backlog | tickets/backlog/cash-flow-month-capsule-and-balance-widget-pill-sign-a-zero.md |
+| cash-flow-month-capsule-and-balance-widget-pill-sign-a-zero | done | tickets/done/cash-flow-month-capsule-and-balance-widget-pill-sign-a-zero.md |
 | cash-flow-plan-asks-the-starting-balance-the-account-already-has | done | tickets/done/cash-flow-plan-asks-the-starting-balance-the-account-already-has.md |
 | cashflow-ai-comment-does-not-check-pro | done | tickets/done/cashflow-ai-comment-does-not-check-pro.md |
 | cashflow-amount-changes-from-two-phones-overwrite-each-other | discarded | tickets/discarded/cashflow-amount-changes-from-two-phones-overwrite-each-other.md |
@@ -697,6 +697,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ipad-reports-and-search-get-a-readable-width | backlog | tickets/backlog/ipad-reports-and-search-get-a-readable-width.md |
 | ipad-settings-sheet-size-depends-on-where-it-opens | backlog | tickets/backlog/ipad-settings-sheet-size-depends-on-where-it-opens.md |
 | ipad-sidebar-and-list-detail-for-records-and-planning | done | tickets/done/ipad-sidebar-and-list-detail-for-records-and-planning.md |
+| ipad-uitests-fail-on-layout-differences-not-the-tab-bar | backlog | tickets/backlog/ipad-uitests-fail-on-layout-differences-not-the-tab-bar.md |
 | iphone-duo-closed-width-a-or-b | done | tickets/done/iphone-duo-closed-width-a-or-b.md |
 | iphone-duo-native-app | done | tickets/done/iphone-duo-native-app.md |
 | iphone-duo-title-only-toolbar-buttons-stay-in-a-top-bar | done | tickets/done/iphone-duo-title-only-toolbar-buttons-stay-in-a-top-bar.md |
@@ -1215,6 +1216,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | widget-cache-rebuild-blocks-the-main-thread | done | tickets/done/widget-cache-rebuild-blocks-the-main-thread.md |
 | widget-category-percentages-use-the-signed-total | done | tickets/done/widget-category-percentages-use-the-signed-total.md |
 | widget-de-tc-no-localiza-separadores | done | tickets/done/widget-de-tc-no-localiza-separadores.md |
+| widget-entry-background-uitests-red-on-2-3 | backlog | tickets/backlog/widget-entry-background-uitests-red-on-2-3.md |
 | widget-fallback-summary-uses-ten-rows | discarded | tickets/discarded/widget-fallback-summary-uses-ten-rows.md |
 | widget-period-balance-ignores-group-bridge-adjustment | backlog | tickets/backlog/widget-period-balance-ignores-group-bridge-adjustment.md |
 | widget-snapshot-visitor-overwrites-owner | discarded | tickets/discarded/widget-snapshot-visitor-overwrites-owner.md |
