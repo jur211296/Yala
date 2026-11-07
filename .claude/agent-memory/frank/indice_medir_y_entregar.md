@@ -87,3 +87,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [el-scan-de-adyacencia-no-fija-el-orden](feedback_el_scan_de_adyacencia_no_fija_el_orden.md) — Fijar que un guard va pegado a lo que protege NO impide mover la lectura que lo alimenta por encima del await — el mutan…
 - [Resolver conflictos no se encadena](feedback_resolver_conflictos_no_se_encadena.md) — `;` tras el resolvedor cerró un rebase con marcas; los .strings llevan «=======».
 - [Un `return` suelto no es mutante](feedback_un_return_suelto_no_es_mutante.md) — delante de un switch, Swift lo ejecuta; muta con `if … { return }`.
+- [Plantar estado del host de unit tests](reference_plantar_estado_del_host_de_unit_tests.md) — plist con el sim apagado; Swift Testing no baraja el orden.

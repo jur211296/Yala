@@ -5,6 +5,8 @@ metadata:
   type: feedback
 ---
 
+Volvió a pasar el 2026-11-07 (3 de 3 tras apagar y encender para editar un plist); la misma cura funcionó a la primera.
+
 Si el runner de XCUITest muere con «The test runner failed to initialize for UI testing (Timed out waiting for AX
 loaded notification)», la corrida no ejecutó nada: es entorno, no test. Repetirla tal cual volvió a fallar igual (2 de
 2, 2026-11-06). Lo que la curó: `simctl shutdown` + `boot` del iPhone 17 Pro, y un caso suelto de calentamiento antes del
