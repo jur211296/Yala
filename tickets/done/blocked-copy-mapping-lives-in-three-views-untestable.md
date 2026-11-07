@@ -1,10 +1,10 @@
 ---
 id: blocked-copy-mapping-lives-in-three-views-untestable
-status: backlog
+status: done
 priority: low
 area: "modo-nube, settings, testing"
 created: 2026-09-13
-updated: 2026-10-08
+updated: 2026-11-07
 source: "review adversarial de `groups-killswitch-403-blocks-detach-forever`, lente de tests"
 ---
 
@@ -38,3 +38,10 @@ a esa función», que es una línea estable y no una lista de literales que enve
 - Queda `GroupsAssociationSection.blockedMessage` (`Yala/App/Views/Settings/GroupsAssociationSection.swift:207`), un `switch` privado de la vista. El `gesture` sigue pendiente en `signout-alert-fires-on-detach-blocks-it-did-not-cause`.
 
 Triage 2026-10-08: abierto · medium → low · en parte hecho: Ajustes y la puerta del Welcome ya usan SignOutBlockedCopy; falta el mensaje del desasociar (GroupsAssociationSection.swift:207).
+
+## Hecho (2026-11-07, lote 2.3 de tests y rastros)
+
+- El `switch` privado `GroupsAssociationSection.blockedMessage` pasó a `SignOutBlockedCopy.detachBlockedMessage(for:)`, sin `default` y sin cambiar ningún texto. La vista solo lo llama.
+- Test de comportamiento `DetachBlockedCopyTests`: tabla exhaustiva sobre `BlockReason.allCases` (cada motivo en una sola clase), los cinco motivos compartidos dicen lo mismo que el cierre de sesión, los cinco propios su texto, el resto y `nil` el genérico, las tres combinaciones de dos causas, y control de que los textos son distintos.
+- Los cuatro source-scans que leían el `switch` en la vista miran ahora el cuerpo de la función (acotado: `message(for:)` comparte líneas) y que la vista lo consume.
+- El `gesture` de `signout-alert-fires-on-detach-blocks-it-did-not-cause` queda en ese ticket: no hizo falta para esto.

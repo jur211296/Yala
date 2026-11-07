@@ -954,6 +954,10 @@ final class AppBootstrapper {
             //    Medido el 2026-09-11: es lo que tumbaba el control negativo del seam. Misma familia
             //    que sus vecinas de aquí, con la diferencia de que ésta no la siembra un seam.
             GroupsDetachPendingPurge.clear()
+            //  · el espejo local de la asociación de Grupos: lo siembra `-uitest-groups-association` más abajo y es
+            //    `groups.*`, fuera de SwiftData. Pegado, la corrida siguiente vería «asociada sin sesión» donde espera
+            //    «sin cuenta». Solo el LOCAL: el iCloud-KV es del Apple ID y el seam no lo toca.
+            UserDefaults.standard.removeObject(forKey: GroupsAccountAssociation.localKey)
             //  · el testigo «la puerta de Grupos no pudo preparar este teléfono»: lo siembra
             //    `-uitest-groups-gate-wipe-failed` DESPUÉS de este bloque, y si su test cae antes de tocar «Volver» se
             //    quedaba en el simulador — `cloudSync.*`, fuera del barrido — y la puerta siguiente decía «no pudimos»
@@ -1047,6 +1051,13 @@ final class AppBootstrapper {
         // vez del comportamiento.
         if UITestHooks.seedICloudIdentity {
             GroupICloudIdentitySeed.adopt(UITestHooks.uitestICloudRecordName)
+        }
+        // La asociación de Grupos, sembrada en local antes del primer render de Ajustes (ticket
+        // `uitest-seam-for-a-seeded-groups-association`). Con sesión fingida, la sección ofrece desasociar y la marca de un
+        // desasociar a medias se puede sellar; sin ella, es la celda del segundo móvil.
+        if UITestHooks.seedGroupsAssociation {
+            GroupsAccountAssociation.shared.seedLocalForUITest(
+                sub: UITestHooks.uitestGroupsAssociationSub, provider: "apple")
         }
         // El estado que deja el aviso tardío al conservar los grupos: la marca, atada a la sesión que haya —el llavero del
         // simulador puede guardar una real de otra corrida, y con «sin sesión» apuntado no valdría—. Va con el seed

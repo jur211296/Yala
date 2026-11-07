@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1201)
+## Index (1202)
 
 | id | status | path |
 |---|---|---|
@@ -155,7 +155,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | bank-email-read-reconcile-with-the-ai-cost-control | done | tickets/done/bank-email-read-reconcile-with-the-ai-cost-control.md |
 | barrido-ios27-animaciones-y-vistas-mal-optimizadas | done | tickets/done/barrido-ios27-animaciones-y-vistas-mal-optimizadas.md |
 | beacon-routes-only-never-blocks | done | tickets/done/beacon-routes-only-never-blocks.md |
-| blocked-copy-mapping-lives-in-three-views-untestable | backlog | tickets/backlog/blocked-copy-mapping-lives-in-three-views-untestable.md |
+| blocked-copy-mapping-lives-in-three-views-untestable | done | tickets/done/blocked-copy-mapping-lives-in-three-views-untestable.md |
 | blocked-sign-in-still-binds-the-subscription-to-that-account | backlog | tickets/backlog/blocked-sign-in-still-binds-the-subscription-to-that-account.md |
 | boot-gates-still-read-the-icloud-drive-token | qa | tickets/qa/boot-gates-still-read-the-icloud-drive-token.md |
 | born-cloud-sign-up-over-mirror-imported-rows-skips-the-corpus-check | backlog | tickets/backlog/born-cloud-sign-up-over-mirror-imported-rows-skips-the-corpus-check.md |
@@ -552,7 +552,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-list-notifications-card-cannot-be-dismissed | done | tickets/done/groups-list-notifications-card-cannot-be-dismissed.md |
 | groups-log-expense-via-chat-voice | backlog | tickets/backlog/groups-log-expense-via-chat-voice.md |
 | groups-loop-in-backoff-ignores-the-return-to-foreground | done | tickets/done/groups-loop-in-backoff-ignores-the-return-to-foreground.md |
-| groups-loop-restart-docs-cite-a-retired-mount-guard | backlog | tickets/backlog/groups-loop-restart-docs-cite-a-retired-mount-guard.md |
+| groups-loop-restart-docs-cite-a-retired-mount-guard | done | tickets/done/groups-loop-restart-docs-cite-a-retired-mount-guard.md |
 | groups-merkle-reads-an-unreadable-table-as-an-empty-one | done | tickets/done/groups-merkle-reads-an-unreadable-table-as-an-empty-one.md |
 | groups-next-column-needs-the-capability-level-in-the-drain | done | tickets/done/groups-next-column-needs-the-capability-level-in-the-drain.md |
 | groups-notifications-permission-skipped-when-the-group-arrives-another-way | done | tickets/done/groups-notifications-permission-skipped-when-the-group-arrives-another-way.md |
@@ -1063,6 +1063,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | sign-out-in-place-leaves-a-screen-with-nothing-to-tap | qa | tickets/qa/sign-out-in-place-leaves-a-screen-with-nothing-to-tap.md |
 | sign-out-migration-copy-does-not-fit-a-failed-or-waiting-migration | backlog | tickets/backlog/sign-out-migration-copy-does-not-fit-a-failed-or-waiting-migration.md |
 | sign-out-push-all-runs-a-sync-cycle-past-the-migration-gate | done | tickets/done/sign-out-push-all-runs-a-sync-cycle-past-the-migration-gate.md |
+| sign-out-suites-require-the-private-cell-from-the-host | done | tickets/done/sign-out-suites-require-the-private-cell-from-the-host.md |
 | sign-out-wipe-abort-in-icloud-says-nothing | backlog | tickets/backlog/sign-out-wipe-abort-in-icloud-says-nothing.md |
 | sign-out-wipe-abort-loops-the-groups-gate | done | tickets/done/sign-out-wipe-abort-loops-the-groups-gate.md |
 | signout-alert-fires-on-detach-blocks-it-did-not-cause | done | tickets/done/signout-alert-fires-on-detach-blocks-it-did-not-cause.md |
@@ -1144,7 +1145,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | uitest-compara-fechas-sin-fijar-locale | done | tickets/done/uitest-compara-fechas-sin-fijar-locale.md |
 | uitest-relaunch-without-reset-can-lose-the-new-user-panel | done | tickets/done/uitest-relaunch-without-reset-can-lose-the-new-user-panel.md |
 | uitest-reset-keeps-the-sign-out-wipe-arm | backlog | tickets/backlog/uitest-reset-keeps-the-sign-out-wipe-arm.md |
-| uitest-seam-for-a-seeded-groups-association | backlog | tickets/backlog/uitest-seam-for-a-seeded-groups-association.md |
+| uitest-seam-for-a-seeded-groups-association | done | tickets/done/uitest-seam-for-a-seeded-groups-association.md |
 | uitest-seed-reseeds-the-corpus-without-reset | done | tickets/done/uitest-seed-reseeds-the-corpus-without-reset.md |
 | uitests-leave-the-onboarding-marked-as-seen-through-contentview | backlog | tickets/backlog/uitests-leave-the-onboarding-marked-as-seen-through-contentview.md |
 | undercount-dias-intervalos-cerrados | done | tickets/done/undercount-dias-intervalos-cerrados.md |

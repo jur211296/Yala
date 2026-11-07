@@ -4,7 +4,8 @@
 //
 //  Qué se le dice a la persona cuando un cierre de sesión se bloquea, por motivo.
 //
-//  **Una sola fuente para las pantallas que lo enseñan**: el aviso de Ajustes (`ProfileView`) y la hoja del
+//  **Una sola fuente para las pantallas que lo enseñan**: el aviso de Ajustes (`ProfileView`), el del desasociar
+//  (`GroupsAssociationSection`, desde el 2026-11-06) y la hoja del
 //  cambio de Apple ID (`AppleIDCloseNoticeView`), con título y mensaje, y la puerta de Grupos del Welcome
 //  (`WelcomeGroupsGateView`), que desde el 2026-09-15 lee el mensaje de `.transient`. Vivía como `switch` privado
 //  de `ProfileView` hasta ese día, cuando la hoja se convirtió en su segunda lectora: dos copias del mismo
@@ -105,6 +106,75 @@ enum SignOutBlockedCopy {
         case .groupsCaptureUnfinished: return L10n.Groups.Errors.captureUnfinished
         case .permanent, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .sessionNotClosed, .none:
             return L10n.Settings.signOutBlockedMessage
+        }
+    }
+
+    /// **El mensaje del aviso «No pudimos desasociar» de «¿Dónde viven tus datos?»**, por aviso (ticket
+    /// `blocked-copy-mapping-lives-in-three-views-untestable`). Vivía como `switch` privado de `GroupsAssociationSection`
+    /// hasta el 2026-11-06, y ningún test de comportamiento lo alcanzaba; aquí lo recorre `DetachBlockedCopyTests`.
+    ///
+    /// **Exhaustivo a propósito: sin `default`.** Con uno, un motivo nuevo caía en «inténtalo en un momento» sin que nada
+    /// lo dijera, que es exactamente cómo el canal en pausa acabó anunciándose como un problema de la cuenta.
+    static func detachBlockedMessage(for notice: CloudSignOutFlowLogic.DetachBlockedNotice?) -> String {
+        // `nil` no llega con el aviso presentado (el binding lo enciende justo con el aviso puesto): el texto que no afirma
+        // ninguna causa concreta, como antes.
+        guard let notice else { return L10n.Storage.Groups.detachBlockedTransient }
+        let blockedReason: CloudSignOutFlowLogic.BlockReason
+        switch notice {
+        // **Dos causas a la vez** (2026-10-05, opción B de Jürgen, ticket
+        // `detach-with-a-stuck-groups-drain-names-only-the-first-of-two-causes`): la captura de grupos atascada y, además, lo
+        // que en un cierre abriría la salida de perderlos. El desasociar no tiene esa salida, así que con un solo motivo la
+        // persona arreglaba uno y al reintentar le salía el otro. El texto nombra los dos y dice qué hacer para todo.
+        case .alsoCaptureUnfinished(.noSession): return L10n.Storage.Groups.detachBlockedSessionAndCaptureUnfinished
+        case .alsoCaptureUnfinished(.attestUnavailable): return L10n.Storage.Groups.detachBlockedAttestAndCaptureUnfinished
+        case .alsoCaptureUnfinished(.otherAccount): return L10n.Storage.Groups.detachBlockedOtherAccountAndCaptureUnfinished
+        case .reason(let reason): blockedReason = reason
+        }
+        switch blockedReason {
+        case .sessionExpired: return L10n.Storage.Groups.detachBlockedSession
+        case .permanent: return L10n.Storage.Groups.detachBlockedPermanent
+        case .bridgeUnreadable: return L10n.Storage.Groups.detachBlockedBridge
+        // La sesión en la nube sobrevivió a su cierre (2026-09-26): el gesto se paró antes de soltar nada, así que el
+        // texto dice eso y pide reintentar, que es lo que lo arregla.
+        case .sessionNotClosed: return L10n.Storage.Groups.detachBlockedSessionNotClosed
+        case .detachBusy: return L10n.Storage.Groups.detachBusy
+        // El kill-switch de Grupos no es un problema de la cuenta ni de la conexión, y `.permanent` le
+        // decía las dos cosas. Copy compartido con el cierre de sesión: el hecho es el mismo y el título
+        // de arriba ya dice cuál de los dos gestos falló.
+        case .channelPaused: return L10n.Groups.Errors.channelPaused
+        // El teléfono sin App Attest (2026-09-15): «inténtalo en un momento» dejó de ser verdad. Aquí va el texto SIN
+        // salida, y es la decisión de Jürgen: el desasociar no ofrece soltar la cuenta perdiendo los cambios
+        // (`CloudSessionSignOut.detachGroupsAccount` le pasa `lossExit: nil`). El título ya dice qué gesto falló.
+        case .attestUnavailable: return L10n.Groups.Errors.attestUnavailable
+        // Cambios de grupos de otra cuenta (2026-09-28, ticket `groups-outbox-rows-without-a-live-session-have-no-exit`): el
+        // texto SIN salida, como el del attest. El desasociar no ofrece perderlos.
+        case .groupsChangesFromAnotherAccount: return L10n.Groups.Errors.groupsChangesFromAnotherAccount
+        // **La subida que no llegó al servidor** (2026-09-16). Desde que `classify` separa las dos mitades de
+        // lo pasajero, este gesto también lo recibe: sin red, con un 5xx o con un cortafuegos delante. Antes
+        // caía en el texto de abajo, que dice «inténtalo de nuevo en un momento» —un momento no basta cuando
+        // no hay cobertura— y no cuenta lo único que tranquiliza, que los cambios siguen en el teléfono.
+        // Copy compartido con el cierre de sesión: el hecho es el mismo y el título de arriba ya dice cuál de
+        // los dos gestos falló, igual que con el canal en pausa.
+        case .uploadRetryLater: return L10n.Groups.Errors.uploadRetryLater
+        // **El drain de grupos que no termina** (2026-10-05, opción A de Jürgen): el desasociar comparte el push-all, así
+        // que lo recibe igual que los cierres. Hasta ese día salía como la subida que no llegó, «inténtalo en un rato»,
+        // y esperar no lo cura. Sin salida, como todo el desasociar.
+        case .groupsCaptureUnfinished: return L10n.Groups.Errors.captureUnfinished
+        // `.transient` es el caso corriente, y desde el 2026-09-16 es SOLO el outbox que aún drena: aquí
+        // «inténtalo de nuevo en un momento» es exacto. `.exportUnconfirmed` es del cierre PRIVADO y no puede
+        // llegar a este gesto —el desasociar no espera a iCloud— y cae en el copy que no afirma ninguna causa
+        // concreta, que es lo correcto si alguna vez llegara (el aviso `nil`, igual, en el `guard` de arriba).
+        // `.personalAttestUnavailable` tampoco llega: lo pone solo el paso 1 del cierre en la NUBE, sobre el outbox personal,
+        // y el desasociar no sube nada personal (2026-09-15). Los tres del motor parado, igual (2026-09-25): solo los pone ese
+        // mismo paso 1, y la subida personal que no llegó también. `.cloudSessionExpired`, igual (2026-09-25): solo lo traducen
+        // los pasos 1 y 2 del cierre en la nube. `.signOutSessionSurvived`, igual (2026-09-26): lo ponen solo los cierres de
+        // sesión; el desasociar tiene el suyo, `.sessionNotClosed`. `.migrationInFlight` y `.migrationUnreadable`, igual
+        // (2026-09-27): los pone solo el cierre de una sesión privada. `.personalCaptureUnfinished`, igual (2026-10-05): lo pone
+        // solo el paso 1 del cierre en la nube, sobre el drain personal.
+        case .transient, .exportUnconfirmed, .personalAttestUnavailable, .syncStoppedNeedsUpdate, .syncStoppedMidMigration,
+             .syncStoppedNeedsRelaunch, .personalUploadRetryLater, .cloudSessionExpired, .signOutSessionSurvived,
+             .migrationInFlight, .migrationUnreadable, .personalCaptureUnfinished:
+            return L10n.Storage.Groups.detachBlockedTransient
         }
     }
 

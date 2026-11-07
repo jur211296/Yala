@@ -86,6 +86,9 @@ extension XCUIApplication {
         migrationJournalUnreadable: Bool = false,
         migrationFailed: Bool = false,
         signOutKeepsSession: Bool = false,
+        // Una asociación de la cuenta de Grupos sembrada en local (`-uitest-groups-association`, ticket
+        // `uitest-seam-for-a-seeded-groups-association`). NOMBRADO como sus vecinos: un typo en un string suelto se ignora.
+        groupsAssociation: Bool = false,
         groupsGateMirrorLive: Bool = false,
         groupsGateWipeFailed: Bool = false,
         settlementAmountChange: Bool = false,
@@ -355,6 +358,7 @@ extension XCUIApplication {
         // final y el caso caería culpando al aviso. Su nombre lo fija un test de paridad con `UITestHooks`
         // (`GroupsDetachSessionSurvivesTests`).
         if signOutKeepsSession { args.append("-uitest-sign-out-keeps-session") }
+        if groupsAssociation { args.append("-uitest-groups-association") }
         if groupsGateMirrorLive { args.append("-uitest-groups-gate-mirror-live") }
         if groupsGateWipeFailed { args.append("-uitest-groups-gate-wipe-failed") }
         if let lastSeenAppVersion {

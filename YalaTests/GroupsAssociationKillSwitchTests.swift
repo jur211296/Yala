@@ -123,8 +123,8 @@ struct GroupsAssociationKillSwitchWiringTests {
             `channelOn` dejó de leer el getter compuesto. El remoto a secas ignora el compilado y la capacidad \
             compilada ignora el kill, que es lo que este ticket arregla.
             """)
-        // Desde el `switch` de la puerta: el fichero tiene otro `case .channelPaused:` antes, el del aviso de bloqueo
-        // del desasociar, que es otro enum.
+        // Desde el `switch` de la puerta: hasta el 2026-11-06 el fichero tenía otro `case .channelPaused:` antes, el del
+        // aviso de bloqueo del desasociar (hoy en `SignOutBlockedCopy`), y anclar aquí sigue siendo lo seguro.
         let entrySwitch = try #require(source.range(of: "switch signInEntry {"))
         let paused = try #require(source[entrySwitch.upperBound...].range(of: "case .channelPaused:"))
         let after = source[paused.upperBound...]

@@ -412,23 +412,25 @@ final class GroupsSyncClient {
     // MARK: - Arranque (DARK)
 
     /// Arranca el LOOP de cadencia del canal de Grupos SOLO si `groupsBackendEnabled && hasSession`
-    /// (SESIÓN VIVA, no storageMode — la persona solo-grupos). Con el flag `false` (SIEMPRE esta fase) es
-    /// un NO-OP TOTAL: retorna ANTES de tocar la red o crear modelos. Call-sites DARK en `AppBootstrapper`
+    /// (SESIÓN VIVA, no storageMode — la persona solo-grupos). Con el flag `false` (hoy solo con el kill-switch
+    /// remoto: el default compilado es ON desde D-R1 paso 2) es un NO-OP TOTAL: retorna ANTES de tocar la red o crear
+    /// modelos. Call-sites DARK en `AppBootstrapper`
     /// (cold boot `trigger: nil`; foreground resume `trigger: "foreground"`) y en el modifier de invite
     /// backend (post-sign-in `trigger: "post-sign-in"`). Single-instance (no re-arranca si el loop vive).
     ///
     /// **La decisión de (re)arranque del loop propio vive en `GroupsLoopRestartLogic.shouldStart`** (pura,
-    /// testeada) — SSOT de flag/sesión/single-instance/D8, para no partir la verdad entre guards
+    /// testeada) — SSOT de flag/sesión/single-instance, para no partir la verdad entre guards
     /// dispersos. `trigger` NO-nil emite `groupsLoopRestarted` SOLO si el loop se crea de verdad — y, si ya
     /// vivía, `groupsLoopWoken`, porque desde el 2026-09-16 ese caso **no es un no-op**: despierta el loop que
     /// duerme su backoff (`wakeLoopIfSleeping`, ticket `groups-loop-in-backoff-ignores-the-return-to-foreground`).
     ///
-    /// **D8 (H-2026-07-18-4): AHORA es SEGURO llamarlo MID-SESSION** (foreground / post-sign-in), a
-    /// diferencia de antes (que exigía SOLO cold boot): `shouldStart` incorpora el guard de mount-mismatch
-    /// (`secondaryActive && !secondaryMounted`, idéntico a `CloudSyncRuntime.canRunDomain`) — en la ventana
-    /// de entrada de la sesión secundaria (store del DUEÑO montado + descriptor secundario ya persistido)
-    /// bloquea ANTES del rehydrate, así ni el rehydrate ni el loop drenan la History del dueño a la cuenta
-    /// entrante. El re-arranque en foreground/post-sign-in resucita un loop que murió en silencio (401
+    /// **Es SEGURO llamarlo MID-SESSION** (foreground / post-sign-in, H-2026-07-18-4), y el motivo cambió el
+    /// 2026-09-13. Hasta entonces lo hacía seguro el guard «D8» de mount-mismatch (`secondaryActive &&
+    /// !secondaryMounted`), que bloqueaba en la ventana de entrada de la sesión de visita; ese guard salió de
+    /// `shouldStart` con la sesión de visita (783a4ec9b), y la ventana con él: hay UN solo store personal montado por
+    /// proceso. Que este teléfono no suba cambios de otra persona lo sostiene el dueño por fila del outbox
+    /// (`GroupSyncOutbox.ownerUserID`): la subida solo manda las filas de la sesión. Medido leyendo el código el
+    /// 2026-11-06 (card 0wur), no en un aparato. El re-arranque en foreground/post-sign-in resucita un loop que murió en silencio (401
     /// transitorio en la ventana de expiry → `sessionExpired` → `break loop`; el retry-once del 401 de
     /// abajo cubre el caso común, este re-arranque es la red del residual).
     ///
@@ -2038,8 +2040,8 @@ final class GroupsSyncClient {
     /// `GroupsSyncHardeningTests.signOutPushAll_wiresPurge_beforePendingPreCheck`.
     ///
     /// Los otros dos gates de `startIfEligible` sí implican «sin push»: sin sesión `pushPending` devuelve
-    /// `.sessionExpired` antes de emitir nada, y en la ventana de mount-mismatch de la sesión secundaria
-    /// tocar el outbox del DUEÑO desde la sesión invitada sería el bug, no la cura.
+    /// `.sessionExpired` antes de emitir nada. (El tercero, la ventana de mount-mismatch de la sesión de visita, se
+    /// fue con ella el 2026-09-13.)
     ///
     /// **Incluye las DEAD-LETTER a propósito** (sin filtro por `rejectedReason`, al revés que
     /// `pushPending`): el re-drive de `upstream_400:yala_not_authorized` revive una fila rechazada y la

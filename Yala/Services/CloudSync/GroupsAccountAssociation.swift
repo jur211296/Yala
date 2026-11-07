@@ -268,6 +268,14 @@ final class GroupsAccountAssociation {
         iKV.synchronize()
     }
 
+    #if DEBUG
+    /// Solo para `-uitest-groups-association`: escribe el espejo LOCAL y nada más. No pasa por `associate`, que escribe
+    /// también el iCloud-KV del Apple ID del simulador.
+    func seedLocalForUITest(sub: String, provider: String?, now: Date = .now) {
+        writeLocal(GroupsAssociationRecord(sub: sub, provider: provider, email: nil, kind: nil, associatedAt: now))
+    }
+    #endif
+
     private func writeLocal(_ record: GroupsAssociationRecord) {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601

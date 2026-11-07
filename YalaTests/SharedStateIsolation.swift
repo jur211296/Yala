@@ -105,6 +105,12 @@ enum SharedStateScope: Sendable {
     /// está abierta.
     case ownerKeyValueGate
 
+    /// La marca del eje de sesión privada (`PrivateSessionMark`), que decide la celda de cierre de sesión. Vive en
+    /// `.standard` del host, y una corrida previa —un XCUITest solo-grupos, un test que la apaga— podía dejarla en
+    /// `false`: las suites que exigen la celda C caían en su precondición según el orden de la corrida (card r9e8,
+    /// 2026-11-06). La usa `PrivateSessionCellPin`, que además la ENCIENDE y re-lee el espejo de `SessionState`.
+    case privateSessionCell
+
     @MainActor
     var cells: [SharedStateCell] {
         switch self {
@@ -135,6 +141,9 @@ enum SharedStateScope: Sendable {
                 // Desde el 2026-10-08 el PASO 3 del borrado vacía también el snapshot que lee Siri.
                 SharedStateCell(appGroup, SiriIntentContextCache.storageKey, "App Group"),
             ]
+
+        case .privateSessionCell:
+            return [SharedStateCell(UserDefaults.standard, PrivateSessionMark.userDefaultsKey, "standard")]
 
         case .ownerKeyValueGate:
             return [
@@ -305,4 +314,49 @@ extension Trait where Self == SharedStateIsolation {
     static var wipeAppGroupMirrorIsolated: Self { Self(scope: .wipeAppGroupMirror) }
     /// Entra con la puerta del iCloud-KV del Apple ID abierta: sus dos marcas, limpias y restauradas.
     static var ownerKeyValueGateOpen: Self { Self(scope: .ownerKeyValueGate) }
+}
+
+// MARK: - Celda privada
+
+/// Turno → captura la marca del eje → la ENCIENDE y re-lee el espejo de `SessionState.shared` → ejecuta → restaura la
+/// marca y vuelve a re-leer el espejo. Las suites que exigen la celda C (`.privateSignOut`) o un puente con sesión privada
+/// la llevan en vez de exigírsela al host (card r9e8, 2026-11-06).
+///
+/// **Por `SessionState.refreshPrivateSessionMirror()` y no asignando**: asignar `hasPrivateSession` PERSISTE la marca en
+/// su `didSet`, y apagarla de paso borra otras marcas (`PrivateSessionMark.set(false)`). La re-lectura no escribe nada.
+@MainActor
+func withPrivateSessionCellPinned(perform body: () async throws -> Void) async throws {
+    do {
+        try await withSharedStateIsolated(.privateSessionCell) {
+            PrivateSessionMark.set(true)
+            SessionState.shared.refreshPrivateSessionMirror()
+            try await body()
+        }
+    } catch {
+        // La marca ya la restauró el scope; el espejo se re-lee también con el cuerpo en rojo, o el test siguiente lo
+        // heredaría encendido.
+        SessionState.shared.refreshPrivateSessionMirror()
+        throw error
+    }
+    SessionState.shared.refreshPrivateSessionMirror()
+}
+
+/// Trait de suite: cada test corre con la celda privada encendida. Recursivo, como `SharedStateIsolation`.
+struct PrivateSessionCellPin: SuiteTrait, TestTrait, TestScoping {
+    var isRecursive: Bool { true }
+
+    func provideScope(
+        for test: Test,
+        testCase: Test.Case?,
+        performing function: @concurrent @Sendable () async throws -> Void
+    ) async throws {
+        try await withPrivateSessionCellPinned {
+            try await function()
+        }
+    }
+}
+
+extension Trait where Self == PrivateSessionCellPin {
+    /// Entra con la sesión privada encendida en la marca y en `SessionState.shared`, y la deja como estaba.
+    static var privateSessionCellPinned: Self { Self() }
 }

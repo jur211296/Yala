@@ -1,10 +1,10 @@
 ---
 id: groups-loop-restart-docs-cite-a-retired-mount-guard
-status: backlog
+status: done
 priority: low
 area: "groups, sync"
 created: 2026-09-15
-updated: 2026-10-08
+updated: 2026-11-07
 source: "medición al cerrar `groups-channel-seal-has-no-reachable-producer`"
 ---
 
@@ -82,3 +82,9 @@ No es una decisión de producto: es documentación que miente sobre una garantí
 - Sigue sin medir lo que da prioridad al ticket: si queda alguna ventana de mount-mismatch alcanzable desde `startIfEligible`. Por eso se queda en `low` y no en `very-low`.
 
 Triage 2026-10-08: abierto · low → low · los comentarios siguen prometiendo un guard que se borró en 783a4ec9b, y la seguridad del re-arranque a mitad de sesión sigue sin medir.
+
+## Hecho (2026-11-07, lote 2.3 de tests y rastros)
+
+**La ventana, medida leyendo el código de este árbol (no en un aparato):** sin la sesión de visita no queda ningún segundo store personal montado. `secondaryActive`, `secondaryMounted` y la sesión secundaria ya no existen en `Yala/` salvo `SecondarySessionRetirement`, que borra sus restos antes del montaje (`PersonalContainerSwap.makeContainer`). Las dos candidatas del ticket: dos identidades sobre el store del dueño las separa el dueño por fila del outbox (`GroupSyncOutbox.ownerUserID`, la subida solo manda las filas de la sesión); el swap de persona remonta el container entero por el camino del arranque. No apareció ningún hueco real, así que no hay tarjeta nueva.
+
+Reescritos con eso: la cabecera de `GroupsLoopRestartLogic`, su «(producción hoy)», el docblock de `GroupsSyncClient.startIfEligible` (sin «D8» y con el «SIEMPRE esta fase» del flag, del mismo patrón), el párrafo de `pushAllPendingGroupsForSignOut` que citaba la ventana de la sesión secundaria, el comentario de `GroupsBackendInviteModifier`, el de `flagOff_neverStarts` y el docblock de `GroupsSyncBreadcrumb.groupsLoopStopped` (ahora con `channel-disabled` y `complete-account-adopt-pending`).
