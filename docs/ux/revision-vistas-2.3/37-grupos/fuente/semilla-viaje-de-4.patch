@@ -1,0 +1,62 @@
+diff --git a/Yala/Seed/DevSeedGroups.swift b/Yala/Seed/DevSeedGroups.swift
+index 02850177e..66ded6f1e 100644
+--- a/Yala/Seed/DevSeedGroups.swift
++++ b/Yala/Seed/DevSeedGroups.swift
+@@ -45,7 +45,7 @@ enum DevSeedGroups {
+ 
+         // 2. Miembros: tú + 2 amigos (todos activos)
+         let me = SplitMember(
+-            groupZoneID: zoneID, displayName: "Tú",
++            groupZoneID: zoneID, displayName: "Lucía",  // REV37-TEMP
+             cloudKitUserRecordID: "uitest-current-user",
+             role: "admin", status: .active, isGroupOwner: true, isCurrentUser: true
+         )
+@@ -57,8 +57,13 @@ enum DevSeedGroups {
+             groupZoneID: zoneID, displayName: "Beto",
+             cloudKitUserRecordID: "uitest-member-beto", status: .active
+         )
+-        let members = [me, ana, beto]
+-        if identifiedCoMembers { identify([ana, beto]) }
++        // REV37-TEMP: cuarta persona del caso guía «viaje de 4».
++        let carla = SplitMember(
++            groupZoneID: zoneID, displayName: "Carla",
++            cloudKitUserRecordID: "uitest-member-carla", status: .active
++        )
++        let members = [me, ana, beto, carla]
++        if identifiedCoMembers { identify([ana, beto, carla]) }
+         for m in members { context.insert(m) }
+         let memberIDs = members.map { $0.id.uuidString }
+ 
+@@ -107,6 +112,23 @@ enum DevSeedGroups {
+             }
+         }
+ 
++        // REV37-TEMP: la cena de despedida, S/ 400 que pagó Ana, partida desigual 100/150/100/50.
++        do {
++            let cena = SplitExpense(
++                groupZoneID: zoneID, amount: 400, currencyCode: "PEN",
++                expenseDescription: "Cena de despedida", paidByMemberID: ana.id.uuidString,
++                splitType: "exact", subcategoryName: "Restaurantes"
++            )
++            cena.date = cal.date(byAdding: .day, value: -1, to: Date.now) ?? Date.now
++            context.insert(cena)
++            for (m, a) in [(me, 100.0), (ana, 150.0), (beto, 100.0), (carla, 50.0)] {
++                context.insert(SplitShare(
++                    expenseID: cena.id, memberID: m.id.uuidString, amount: a,
++                    isPaid: m.id == ana.id, groupZoneID: zoneID
++                ))
++            }
++        }
++
+         // UX 2.2 · L13-2: un pago que Ana apuntó y que me toca confirmar. Pendiente a propósito: los que crea la app iOS
+         // nacen confirmados, así que solo llega uno así desde otro dispositivo.
+         if UITestHooks.seedPendingSettlement {
+@@ -162,7 +184,7 @@ enum DevSeedGroups {
+         context.insert(group2)
+         let zone2 = group2.cloudKitZoneID
+         let me2 = SplitMember(
+-            groupZoneID: zone2, displayName: "Tú",
++            groupZoneID: zone2, displayName: "Lucía",  // REV37-TEMP
+             cloudKitUserRecordID: "uitest-current-user",
+             role: "admin", status: .active, isGroupOwner: true, isCurrentUser: true
+         )
