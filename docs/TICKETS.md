@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1202)
+## Index (1206)
 
 | id | status | path |
 |---|---|---|
@@ -164,11 +164,13 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | born-cloud-signup-sends-two-registrations | backlog | tickets/backlog/born-cloud-signup-sends-two-registrations.md |
 | borncloud-consent-epoch-written-before-the-guard-decides | qa | tickets/qa/borncloud-consent-epoch-written-before-the-guard-decides.md |
 | branch-2-2-merges-without-waiting-for-ci | done | tickets/done/branch-2-2-merges-without-waiting-for-ci.md |
+| brand-voice-example-opines-on-spending | backlog | tickets/backlog/brand-voice-example-opines-on-spending.md |
 | bridge-de-grupos-pierde-la-marca-de-sus-patas | done | tickets/done/bridge-de-grupos-pierde-la-marca-de-sus-patas.md |
 | bridge-synthesis-trusts-a-zero-converted-amount | done | tickets/done/bridge-synthesis-trusts-a-zero-converted-amount.md |
 | bridge-virtual-only-currency-mismatch-is-silent | backlog | tickets/backlog/bridge-virtual-only-currency-mismatch-is-silent.md |
 | budget-category-picker-offers-income-categories | qa | tickets/qa/budget-category-picker-offers-income-categories.md |
 | budget-days-left-counts-today | done | tickets/done/budget-days-left-counts-today.md |
+| budget-exceeded-encouragement-reads-as-a-sermon | backlog | tickets/backlog/budget-exceeded-encouragement-reads-as-a-sermon.md |
 | budget-interval-counts-next-period-midnight | done | tickets/done/budget-interval-counts-next-period-midnight.md |
 | budget-tied-to-income-or-expense | backlog | tickets/backlog/budget-tied-to-income-or-expense.md |
 | bulk-edit-uitests-fail-on-the-small-iphone | done | tickets/done/bulk-edit-uitests-fail-on-the-small-iphone.md |
@@ -299,6 +301,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | comparative-and-statistics-pick-the-comparison-with-different-controls | done | tickets/done/comparative-and-statistics-pick-the-comparison-with-different-controls.md |
 | complete-account-invite-adopt-can-pull-groups-before-the-guard | done | tickets/done/complete-account-invite-adopt-can-pull-groups-before-the-guard.md |
 | completed-mode-escalates-a-second-groups-only-device | discarded | tickets/discarded/completed-mode-escalates-a-second-groups-only-device.md |
+| connection-errors-put-the-fix-on-the-user | backlog | tickets/backlog/connection-errors-put-the-fix-on-the-user.md |
 | consecutive-wipes-whole-convergence-ignores-the-second-division | backlog | tickets/backlog/consecutive-wipes-whole-convergence-ignores-the-second-division.md |
 | contrasting-text-helper-is-not-wcag-on-tags-and-account-colors | backlog | tickets/backlog/contrasting-text-helper-is-not-wcag-on-tags-and-account-colors.md |
 | converted-amount-sweep-blind-to-input-changes | backlog | tickets/backlog/converted-amount-sweep-blind-to-input-changes.md |
