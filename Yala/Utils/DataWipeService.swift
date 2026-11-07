@@ -139,6 +139,12 @@ final class DataWipeService {
             // datos» conserva los recordatorios). Quien llama reprograma lo que se queda
             // (`rescheduleSurvivingReminders`); la vuelta de «Solo grupos» lo hace en `resumePersonalReminders`.
             NotificationService.shared.cancelAllNotifications()
+            // Y si el aviso al parque dice que el parque sigue, los conservados nacen de nuevo DESPUÉS de la señal: un
+            // dispositivo con una versión anterior la procesa con el corte viejo, que se lleva lo creado antes de la señal
+            // sin mirar la marca (ticket `old-receivers-of-a-keeping-wipe-delete-the-origin-reminders`).
+            if broadcastSignal && signalKeepsSetup {
+                try recreateKeptRemindersAfterSignal(in: context, signaledAt: signalTimestamp ?? .now)
+            }
         } else if let notifications = rows.notifications {
             NotificationService.shared.deleteNotifications(notifications, context: context)
         } else {
@@ -449,6 +455,41 @@ final class DataWipeService {
                             resetsPreferences: !fleetStartedOver, remoteWipeCut: cut,
                             keepsReminders: fleetStartedOver)
         if cut != nil || fleetStartedOver { rescheduleReminders(context) }
+    }
+
+    /// **Los recordatorios que «Vaciar datos» conserva, re-creados con fecha posterior a la señal** (ticket
+    /// `old-receivers-of-a-keeping-wipe-delete-the-origin-reminders`).
+    ///
+    /// Un dispositivo del mismo iCloud con la 2.1 recibe la señal con la marca de que el parque sigue y entra por
+    /// `skipOnboarding`, pero su borrado no sabe conservar recordatorios: se lleva todo `NotificationItem` creado hasta la
+    /// señal (`RemoteWipeCutLogic.takesDated`), y ese borrado viaja por el espejo al origen. Aquí el origen borra cada
+    /// conservado y lo vuelve a crear igual —mismo nombre, texto, hora, días, tipo, orden y configuración— con un id nuevo
+    /// y `createdAt` estrictamente posterior a la señal. El corte viejo no toca las copias, lleguen antes o después que la
+    /// señal: si llegan antes, son posteriores; si llegan después, no estaban para borrarlas. Las originales ya las borra
+    /// el origen, así que lo que haga con ellas el receptor no cambia nada. Re-fechar la misma fila no basta: si la
+    /// edición llega al receptor después que la señal, la fila vieja se va igual.
+    ///
+    /// Solo en el origen que avisa conservando la cuenta: ni el receptor (sus escrituras viajarían) ni «Empezar de cero»
+    /// sin aviso. Lo programado en el sistema ya se canceló y quien llama reprograma lo que queda
+    /// (`rescheduleSurvivingReminders`), así que el id nuevo no deja avisos huérfanos.
+    static func recreateKeptRemindersAfterSignal(in context: ModelContext, signaledAt: Date, now: Date = .now) throws {
+        let kept = try context.fetch(FetchDescriptor<NotificationItem>())
+        guard !kept.isEmpty else { return }
+        let bornAt = max(now, signaledAt.addingTimeInterval(0.001))
+        for original in kept {
+            let copy = NotificationItem(
+                name: original.name, text: original.text, hour: original.hour, minute: original.minute,
+                type: original.notificationType, isActive: original.isActive, iconName: original.iconName,
+                colorHex: original.colorHex, sortOrder: original.sortOrder)
+            copy.typeRaw = original.typeRaw
+            copy.configurationData = original.configurationData
+            copy.weekdaysRaw = original.weekdaysRaw
+            copy.lastNotifiedDate = original.lastNotifiedDate
+            copy.createdAt = bornAt
+            context.insert(copy)
+            context.delete(original)
+        }
+        try context.save()
     }
 
     /// Lo que hace el arranque (`AppBootstrapper.ensureNotificationsScheduled`) con los avisos, sobre lo que quedó.

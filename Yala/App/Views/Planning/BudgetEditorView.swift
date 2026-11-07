@@ -855,9 +855,11 @@ struct BudgetEditorView: View {
     // MARK: - Categories Sheet
 
     private var categoriesSheetView: some View {
-        CategorySelectorSheet(
-            categories: viewModel.categories,
-            subcategories: viewModel.allSubcategories,
+        // Solo categorías de gasto: un presupuesto no suma ingresos (`budgetCategoryChoices`).
+        let choices = viewModel.budgetCategoryChoices(selected: selectedSubcategories)
+        return CategorySelectorSheet(
+            categories: choices.categories,
+            subcategories: choices.subcategories,
             selectedSubcategories: $selectedSubcategories
         )
     }

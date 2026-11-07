@@ -53,6 +53,32 @@ final class BudgetEditorViewModel {
             .flatMap(\.members)
     }
 
+    /// **Las categorías que ofrece «Elegir categorías»: solo las de gasto** (card dkq6, captura 23 del PR de la revisión del
+    /// usuario nuevo). Lo gastado de un presupuesto solo suma gastos (`BudgetsViewModel.calculateSpending`), así que una
+    /// categoría de ingreso elegida no sumaría nunca y el límite quedaría a cero para siempre. Una de ingreso sigue a la
+    /// vista solo si el presupuesto ya guarda alguna de sus subcategorías, para poder quitarla (molde de
+    /// `budgetAccounts(selected:)`). Las subcategorías son las de lo que se ofrece: «Seleccionar todo» del selector marca
+    /// la lista que recibe, y con la de siempre marcaba también las de ingreso.
+    func budgetCategoryChoices(selected: Set<PersistentIdentifier>) -> (categories: [Category], subcategories: [Subcategory]) {
+        Self.budgetCategoryChoices(categories: categories, subcategories: allSubcategories, selected: selected)
+    }
+
+    static func budgetCategoryChoices(
+        categories: [Category], subcategories: [Subcategory], selected: Set<PersistentIdentifier>
+    ) -> (categories: [Category], subcategories: [Subcategory]) {
+        let categoriesWithSelection = Set(subcategories
+            .filter { selected.contains($0.persistentModelID) }
+            .compactMap { $0.category?.persistentModelID })
+        let offered = categories.filter { !$0.isIncome || categoriesWithSelection.contains($0.persistentModelID) }
+        let offeredIDs = Set(offered.map(\.persistentModelID))
+        let offeredSubcategories = subcategories.filter { subcategory in
+            if selected.contains(subcategory.persistentModelID) { return true }
+            guard let category = subcategory.category else { return false }
+            return offeredIDs.contains(category.persistentModelID)
+        }
+        return (offered, offeredSubcategories)
+    }
+
     // MARK: - Context Injection
 
     func setContext(_ context: ModelContext, deletionService: EntityDeletionService) {
