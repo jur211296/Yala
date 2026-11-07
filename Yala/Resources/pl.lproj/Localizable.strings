@@ -4461,6 +4461,8 @@
 "groups.splitLines.splitAction" = "Podziel";
 "groups.splitLines.splitYourShare" = "Podziel swoją część";
 "groups.splitLines.yourShareTitle" = "Twoja część";
+"groups.splitLines.summaryOwe %@ %@" = "Jesteś winien %2$@ %1$@";
+"groups.splitLines.summaryRaises %@ %@" = "%1$@ rośnie o %2$@";
 
 /* Título sheet división por porcentaje */
 "groups.expense.splitSheet.percentageTitle" = "Według procentów";

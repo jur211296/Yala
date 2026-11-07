@@ -1,10 +1,10 @@
 ---
 id: statistics-and-records-filter-onchange-may-fall-asleep-like-the-panel
-status: backlog
+status: qa
 priority: low
 area: "statistics, records"
 created: 2026-11-05
-updated: 2026-11-05
+updated: 2026-11-06
 source: hallazgo del lote P3 de 2.3 (ticket panel-stayed-filtered-after-removing-the-account-chip)
 ---
 
@@ -26,3 +26,20 @@ recalculan con `onChange(of: sessionState.…)`, el mismo molde. No se sabe si s
 
 El mismo conductor (en el PR del lote P3 está descrito) adaptado a Distribución y a Registros: si no cae en 5 corridas,
 se cierra con esa medida; si cae, se mueve la observación como en el Panel.
+
+## Medido (2026-11-06)
+
+Conductor `YalaUITests/Flows/StatisticsRecordsFilterObservationUITests.swift`, seed `minimal`, 10 rondas (filtrar por
+«Ahorros USD» desde Filtros, quitar con la «x» de la cápsula; en las impares, inicio y volver antes de quitar):
+**Distribución 5 de 5 y Registros 5 de 5, 0 fallos.** No se movió la observación al ViewModel.
+
+Mutantes: con el `onChange` de `DetailContainerView` y `CategoriesFilterRecalcObservers` ciegos a la retirada,
+Distribución cae en la ronda 1; Registros cae si además se quita el `onFilterChange` de la barra. Con uno solo, pasa:
+las dos pantallas tienen un segundo camino de recálculo que el Panel no tenía. El conductor queda como red.
+
+## Guion de QA (iPhone, 2 min)
+
+1. Abre Estadísticas › Distribución. Filtra por una cuenta (··· › Filtrar › la cuenta › Aplicar): la cifra cambia.
+2. Sal a la pantalla de inicio del iPhone y vuelve a Yala. Quita el filtro con la «x» de su cápsula: la cifra vuelve a
+   la de antes.
+3. Repite tres veces. Haz lo mismo en Registros.

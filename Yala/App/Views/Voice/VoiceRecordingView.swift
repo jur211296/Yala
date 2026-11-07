@@ -801,6 +801,8 @@ struct VoiceRecordingView: View {
         let currency = fetchFirstActiveAccountCurrency()
         let expenseNames = fetchSubcategoryNames().expense.sorted()
         let subcategory = expenseNames.first { $0.hasPrefix("Restaurant") } ?? expenseNames.first
+        // El taxi va a su subcategoría de transporte («Taxis y apps» si está sembrada), no a la de la comida.
+        let taxiSubcategory = UITestDemoSubcategoryLogic.taxiSubcategory(among: expenseNames, fallback: subcategory)
         let confidence = ParsedTransaction.TransactionConfidence(amount: 1, date: 1, merchant: 1, subcategory: 1, tags: 1)
         func expense(_ note: String, _ amount: Decimal, subcategory: String?) -> ParsedTransaction {
             ParsedTransaction(
@@ -817,7 +819,7 @@ struct VoiceRecordingView: View {
             return (
                 L10n.UITestDemo.Voice.twoTranscript,
                 [
-                    expense(L10n.UITestDemo.Voice.taxiNote, 12, subcategory: subcategory),
+                    expense(L10n.UITestDemo.Voice.taxiNote, 12, subcategory: taxiSubcategory),
                     expense(L10n.UITestDemo.Voice.coffeeNote, 8, subcategory: subcategory),
                 ]
             )

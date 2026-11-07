@@ -2044,6 +2044,14 @@ enum L10n {
             static var splitYourShare: String { ls("groups.splitLines.splitYourShare") }
             /// Card 6: título de la hoja «Tu parte».
             static var yourShareTitle: String { ls("groups.splitLines.yourShareTitle") }
+            /// Línea resumen bajo la tarjeta: «Debes S/ 510.00 a Pía».
+            static func summaryOwe(_ amount: String, _ name: String) -> String {
+                String(format: ls("groups.splitLines.summaryOwe %@ %@"), amount, name)
+            }
+            /// Línea resumen bajo la tarjeta: «Sip sube S/ 500.00».
+            static func summaryRaises(_ account: String, _ amount: String) -> String {
+                String(format: ls("groups.splitLines.summaryRaises %@ %@"), account, amount)
+            }
         }
         /// **«Empezar de cero» no borró: quedan cambios de grupos sin subir** (ticket
         /// `fresh-start-wipe-kills-unsent-group-writes-silently`). Lo enseñan las tres pantallas del gesto —la puerta

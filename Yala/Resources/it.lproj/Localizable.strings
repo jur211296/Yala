@@ -4459,6 +4459,8 @@
 "groups.splitLines.splitAction" = "Dividi";
 "groups.splitLines.splitYourShare" = "Dividi la tua parte";
 "groups.splitLines.yourShareTitle" = "La tua parte";
+"groups.splitLines.summaryOwe %@ %@" = "Devi %1$@ a %2$@";
+"groups.splitLines.summaryRaises %@ %@" = "%1$@ sale di %2$@";
 
 /* Título sheet división por porcentaje */
 "groups.expense.splitSheet.percentageTitle" = "In percentuale";

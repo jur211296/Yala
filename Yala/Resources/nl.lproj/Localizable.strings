@@ -4461,6 +4461,8 @@
 "groups.splitLines.splitAction" = "Opsplitsen";
 "groups.splitLines.splitYourShare" = "Jouw deel opsplitsen";
 "groups.splitLines.yourShareTitle" = "Jouw deel";
+"groups.splitLines.summaryOwe %@ %@" = "Je bent %2$@ %1$@ schuldig";
+"groups.splitLines.summaryRaises %@ %@" = "%1$@ stijgt met %2$@";
 
 /* Título sheet división por porcentaje */
 "groups.expense.splitSheet.percentageTitle" = "Op percentage";
