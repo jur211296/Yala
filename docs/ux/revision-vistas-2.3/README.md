@@ -5,8 +5,9 @@ principales y lo que queda por decidir. **No añade conclusiones propias**: todo
 zona, que manda si algo no cuadra. Ninguna zona cambia la app; cada una deja problemas priorizados, alternativas
 maquetadas y una recomendación, y decide Jürgen.
 
-> **Índice parcial (7-nov-2026).** Cubre las 3 zonas mergeadas en `origin/2.3` hasta hoy. Las otras 8 aún no habían
-> corrido; un encargo de «índice final», al final de la cola de Yala, completa este mismo README cuando estén las 11.
+> **Índice final (7-nov-2026).** Cierra la serie con lo que había en `origin/2.3` ese día: **3 de las 11 zonas
+> revisadas** (Panel, Registros y Nuevo registro). Las otras 8 quedan **pendientes**: su ficha aún no estaba mergeada y
+> ninguna tenía PR abierto. No se esperó por ellas; cuando aterricen, su ficha manda y este índice se puede ampliar.
 
 El reparto de zonas sale del mapa de cobertura fijo del 6-nov-2026 (`~/Claude/flota/cobertura-vistas-yala-2.3.md`, en la
 Mini), hecho desde las vistas de `Yala/**/Views/` en `origin/2.3`.
@@ -18,14 +19,14 @@ Mini), hecho desde las vistas de `Yala/**/Views/` en `origin/2.3`.
 | 30 · Panel | Revisada | [`30-panel/index.html`](30-panel/index.html) | [`revision-panel.pdf`](30-panel/revision-panel.pdf) |
 | 31 · Registros, filtros, calendario y búsqueda | Revisada | [`31-registros/index.html`](31-registros/index.html) | [`revision-registros.pdf`](31-registros/revision-registros.pdf) |
 | 32 · Nuevo registro, favoritos, voz y foto | Revisada | [`32-nuevo-registro/index.html`](32-nuevo-registro/index.html) | [`revision-nuevo-registro.pdf`](32-nuevo-registro/revision-nuevo-registro.pdf) |
-| 34 · Planificación | En curso en la Mini | — | — |
-| 35 · Estadísticas | Pendiente, en cola, aún no corrió | — | — |
-| 36 · Reportes y Flujo de caja | Pendiente, en cola, aún no corrió | — | — |
-| 37 · Grupos en el uso diario | Pendiente, en cola, aún no corrió | — | — |
-| 38 · Bandeja, Yala IA, correo del banco, Apple Pay y Siri | Pendiente, en cola, aún no corrió | — | — |
-| 39 · Cuentas, tarjetas, categorías, etiquetas y divisas | Pendiente, en cola, aún no corrió | — | — |
-| 40 · Perfil, Más, Ajustes, Pro y ayuda | Pendiente, en cola, aún no corrió | — | — |
-| 41 · Dónde viven tus datos | Pendiente, en cola, aún no corrió | — | — |
+| 34 · Planificación | Pendiente: ficha aún no mergeada al 7-nov | — | — |
+| 35 · Estadísticas | Pendiente: ficha aún no mergeada al 7-nov | — | — |
+| 36 · Reportes y Flujo de caja | Pendiente: ficha aún no mergeada al 7-nov | — | — |
+| 37 · Grupos en el uso diario | Pendiente: ficha aún no mergeada al 7-nov | — | — |
+| 38 · Bandeja, Yala IA, correo del banco, Apple Pay y Siri | Pendiente: ficha aún no mergeada al 7-nov | — | — |
+| 39 · Cuentas, tarjetas, categorías, etiquetas y divisas | Pendiente: ficha aún no mergeada al 7-nov | — | — |
+| 40 · Perfil, Más, Ajustes, Pro y ayuda | Pendiente: ficha aún no mergeada al 7-nov | — | — |
+| 41 · Dónde viven tus datos | Pendiente: ficha aún no mergeada al 7-nov | — | — |
 
 Cada `index.html` enlaza sus páginas y lleva las capturas al lado, en `capturas/`. El PDF de cada zona trae lo mismo en un
 solo archivo.
@@ -136,19 +137,20 @@ que tocan esta zona; la revisión es de 2.3 tal como está.
 
 ## Zonas sin revisar
 
-Ninguna de estas zonas tiene ficha en `origin/2.3` a 7-nov-2026. El motivo es el mismo para todas: **este índice salió
-antes que ellas**. No hay problemas ni decisiones que resumir todavía; el índice final los añadirá.
+Ninguna de estas zonas tiene ficha en `origin/2.3` al cerrar este índice (7-nov-2026), y ninguna tenía PR abierto. El
+motivo es el mismo para todas: **ficha aún no mergeada al 7-nov**. Sin ficha no hay problemas ni decisiones que
+resumir: este índice no los inventa.
 
 | Zona | Vistas que le tocan, según el mapa | Motivo |
 |---|---|---|
-| 34 · Planificación: presupuestos y pagos planificados | PlanningView, BudgetsListView, BudgetRowView, BudgetDetailView, BudgetEditorView, BudgetChartsView, ScheduledPaymentsView, ScheduledPaymentsListView, ScheduledPaymentRowView, ScheduledPaymentDetailView, ScheduledPaymentEditorView | En curso en la Mini: su sesión arrancó el 7-nov y aún no tenía PR |
-| 35 · Estadísticas | StatisticsView, CategoriesTabView, TrendsTabView, RecordsTabView, InsightsTabView, DetailContainerView, PeriodComparisonChartView, SankeyChartView | Pendiente, en cola, aún no corrió |
-| 36 · Reportes y Flujo de caja/proyectado | FinancialReportView, NetFlowSummaryView, PivotRowView, CashFlowSetupView, CashFlowTableView, CashFlowMonthDetailView y «Ver proyectado» en Tendencias, Panel y widgets | Pendiente, en cola, aún no corrió (el mapa la pone después de la mejora de flujo de caja) |
-| 37 · Grupos en el uso diario | GroupsContainerView, GroupCardView, GroupDetailView, GroupRecordsView, GroupBalancesView, GroupStatsView, GroupMembersView, GroupSettingsView, GroupsGlobalSettingsView, GroupFormView, GroupExpenseComposerView, GroupExpenseFormView, GroupExpenseSuccessView, GroupSplitSelectorView, GroupTwoPersonSplitView, GroupReceiptSplitView, MemberPickerView, SettlementFormView, GroupOpeningBalanceFormView | Pendiente, en cola, aún no corrió |
-| 38 · Bandeja, Yala IA, correo del banco, Apple Pay y Siri | InboxView, InboxDraftRowView, InboxApproveSuccessView, InboxBulkApproveSuccessView, GroupDraftLinkCandidatesView, ChatSheetView, ChatAttachmentsView, BankEmailForwardingView, ApplePayAutomationGuideView, SiriShortcutsView | Pendiente, en cola, aún no corrió |
-| 39 · Cuentas, tarjetas, categorías, etiquetas y divisas | AccountFormView, AdjustmentModeSelectorView, AccountsSettingsListView, CategoriesSettingsListView, CategoryDetailView, SubcategoryDetailView, SubcategoryNeedSelectorView, TagsSettingsListView, TagFormView, CurrencySettingsView | Pendiente, en cola, aún no corrió |
-| 40 · Perfil, Más, Ajustes generales, Pro y ayuda | ProfileView, PersonalDetailsView, YalaAccountView, MoreView, PersonalizationSettingsView, ThemeSettingsView, AppIconSettingsView, TabBarConfigView, NotificationsSettingsView, PermissionsSettingsView, SmartInsightsSettingsView, AIPrivacySettingsView, BudgetsFavoritesSettingsView, UsageModeSettingsView, FaceIDProtectionGuideView, SubscriptionView + SubscriptionSuccessView, FAQView, TutorialsListView + TutorialDetailView + TutorialCompletionView, ExportRecordsView, GroupsExportView, UserDataResetView | Pendiente, en cola, aún no corrió |
-| 41 · Dónde viven tus datos: nube, iCloud y cierre de sesión (solo comprensión) | StorageSettingsView, iCloudSyncSettingsView, CloudConsentView, CloudProgressStepsView, StorageSignInChooserView, StorageMigrationBlockedView, ReturnToFullYalaView, SignOutRelaunchView, GroupBatchLeaveView (CloudSyncDebugView solo si es visible al usuario) | Pendiente, en cola, aún no corrió |
+| 34 · Planificación: presupuestos y pagos planificados | PlanningView, BudgetsListView, BudgetRowView, BudgetDetailView, BudgetEditorView, BudgetChartsView, ScheduledPaymentsView, ScheduledPaymentsListView, ScheduledPaymentRowView, ScheduledPaymentDetailView, ScheduledPaymentEditorView | Ficha aún no mergeada al 7-nov |
+| 35 · Estadísticas | StatisticsView, CategoriesTabView, TrendsTabView, RecordsTabView, InsightsTabView, DetailContainerView, PeriodComparisonChartView, SankeyChartView | Ficha aún no mergeada al 7-nov |
+| 36 · Reportes y Flujo de caja/proyectado | FinancialReportView, NetFlowSummaryView, PivotRowView, CashFlowSetupView, CashFlowTableView, CashFlowMonthDetailView y «Ver proyectado» en Tendencias, Panel y widgets | Ficha aún no mergeada al 7-nov. El mapa la pone después de la mejora de flujo de caja, cuyo PR seguía abierto ese día |
+| 37 · Grupos en el uso diario | GroupsContainerView, GroupCardView, GroupDetailView, GroupRecordsView, GroupBalancesView, GroupStatsView, GroupMembersView, GroupSettingsView, GroupsGlobalSettingsView, GroupFormView, GroupExpenseComposerView, GroupExpenseFormView, GroupExpenseSuccessView, GroupSplitSelectorView, GroupTwoPersonSplitView, GroupReceiptSplitView, MemberPickerView, SettlementFormView, GroupOpeningBalanceFormView | Ficha aún no mergeada al 7-nov |
+| 38 · Bandeja, Yala IA, correo del banco, Apple Pay y Siri | InboxView, InboxDraftRowView, InboxApproveSuccessView, InboxBulkApproveSuccessView, GroupDraftLinkCandidatesView, ChatSheetView, ChatAttachmentsView, BankEmailForwardingView, ApplePayAutomationGuideView, SiriShortcutsView | Ficha aún no mergeada al 7-nov |
+| 39 · Cuentas, tarjetas, categorías, etiquetas y divisas | AccountFormView, AdjustmentModeSelectorView, AccountsSettingsListView, CategoriesSettingsListView, CategoryDetailView, SubcategoryDetailView, SubcategoryNeedSelectorView, TagsSettingsListView, TagFormView, CurrencySettingsView | Ficha aún no mergeada al 7-nov |
+| 40 · Perfil, Más, Ajustes generales, Pro y ayuda | ProfileView, PersonalDetailsView, YalaAccountView, MoreView, PersonalizationSettingsView, ThemeSettingsView, AppIconSettingsView, TabBarConfigView, NotificationsSettingsView, PermissionsSettingsView, SmartInsightsSettingsView, AIPrivacySettingsView, BudgetsFavoritesSettingsView, UsageModeSettingsView, FaceIDProtectionGuideView, SubscriptionView + SubscriptionSuccessView, FAQView, TutorialsListView + TutorialDetailView + TutorialCompletionView, ExportRecordsView, GroupsExportView, UserDataResetView | Ficha aún no mergeada al 7-nov |
+| 41 · Dónde viven tus datos: nube, iCloud y cierre de sesión (solo comprensión) | StorageSettingsView, iCloudSyncSettingsView, CloudConsentView, CloudProgressStepsView, StorageSignInChooserView, StorageMigrationBlockedView, ReturnToFullYalaView, SignOutRelaunchView, GroupBatchLeaveView (CloudSyncDebugView solo si es visible al usuario) | Ficha aún no mergeada al 7-nov |
 
 **Fuera de la serie, a propósito** (según el mapa): Onboarding y alta (Welcome, invitación, consentimiento de Grupos,
 entrada a Grupos), que cubre la guía visual del usuario nuevo; los componentes compartidos se miran dentro de la zona que
