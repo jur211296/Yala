@@ -1,0 +1,109 @@
+diff --git a/Yala/App/Views/Settings/BankEmailForwardingView.swift b/Yala/App/Views/Settings/BankEmailForwardingView.swift
+index c0c84f96c..0021fe132 100644
+--- a/Yala/App/Views/Settings/BankEmailForwardingView.swift
++++ b/Yala/App/Views/Settings/BankEmailForwardingView.swift
+@@ -82,6 +82,13 @@ final class BankEmailModel {
+     }
+ 
+     func refresh() async {
++        // REVISIÓN 38 (solo local): variantes para capturar sin conexión y con la prueba agotada.
++        if ProcessInfo.processInfo.arguments.contains("-revision-bank-failed") { phase = .failed; return }
++        if ProcessInfo.processInfo.arguments.contains("-revision-bank-exhausted") {
++            phase = .ready(BankEmailAddressInfo(address: "auto+k7m2xq9wpb@yala-app.pe", pro: false, trialLimit: 5,
++                                                trialUsed: 5, skippedQuota: 3, lastReceivedAtMs: nil, gmailConfirmation: nil))
++            return
++        }
+         if UITestHooks.bankEmailFake {
+             phase = .ready(Self.uiTestInfo(withGmailCode: UITestHooks.bankEmailFakeGmailCode))
+             return
+diff --git a/Yala/Seed/DevSeedDrafts.swift b/Yala/Seed/DevSeedDrafts.swift
+index 2673d2041..2f561ea23 100644
+--- a/Yala/Seed/DevSeedDrafts.swift
++++ b/Yala/Seed/DevSeedDrafts.swift
+@@ -68,5 +68,71 @@ struct DevSeedDrafts {
+             context.insert(draft)
+         }
+     }
++    // REVISIÓN 38 (solo local, no se publica): el caso guía de la revisión por vistas 2.3 —8 borradores, uno dudoso y
++    // uno de grupo con «¿Ya lo apuntaste?»—. Se activa con `-revision-bandeja-8` junto a `-uitest-seed grupos`.
++    @MainActor
++    static func createRevisionCase(in context: ModelContext) {
++        do {
++            let accounts = try context.fetch(FetchDescriptor<Account>())
++            let subs = try context.fetch(FetchDescriptor<Subcategory>())
++            func sub(_ n: String) -> Subcategory? { subs.first { $0.name == n } ?? subs.first }
++            guard let pen = accounts.first(where: { $0.currencyCode == "PEN" && !$0.isSystemAccount }) else { return }
++            let now = Date.now
++            let defs: [(String, Double, DraftSourceType, String?, [String], Double?)] = [
++                ("Wong Benavides", -86.40, .emailAlert, "Supermercados y bodegas", [], 0.98),
++                ("Starbucks Larcomar", -14.90, .applePay, "Restaurantes", [], 1),
++                ("Netflix", -44.90, .scheduledPayment, "Streaming y plataformas", [], 1),
++                ("Taxi al trabajo", -18.00, .siri, "Taxis y apps", [], 0.9),
++                ("PAGO POS 4521*** LIMA", -230.00, .emailAlert, nil, [DraftInputRequirement.subcategory], 0.55),
++            ]
++            for (i, d) in defs.enumerated() {
++                let draft = InboxDraft(
++                    note: d.0, amount: d.1, date: now.addingTimeInterval(Double(-i) * 1800), account: pen,
++                    subcategory: d.3.flatMap(sub), sourceType: d.2, confidenceAmount: d.5, needsUserInput: d.4,
++                    status: .pending)
++                context.insert(draft)
++            }
++            // Los dos de siempre, con su categoría y como dictados por voz.
++            for d in try context.fetch(FetchDescriptor<InboxDraft>()) {
++                if d.note == draftNoteA { d.subcategory = sub("Restaurantes"); d.sourceTypeRaw = DraftSourceType.voice.rawValue }
++                if d.note == draftNoteB { d.subcategory = sub("Taxis y apps"); d.sourceTypeRaw = DraftSourceType.voice.rawValue }
++            }
++            // El dudoso: un movimiento ya apuntado con el mismo importe hoy (al aprobar, aviso de posible duplicado).
++            let dup = TransactionItem(date: now.addingTimeInterval(-7200), amount: -230, currencyCode: "PEN",
++                                      note: "Zara Jockey Plaza", category: sub("Ropa y calzado")?.category, subcategory: sub("Ropa y calzado"), account: pen,
++                                      amountInPreferredCurrency: -230)
++            context.insert(dup)
++
++            // El de grupo: «Cena de despedida» de hoy en Viaje a Cusco, pagada por mí, sin cuenta; y el movimiento que ya
++            // apunté con el mismo importe (el candidato de «¿Ya lo apuntaste?»).
++            let groups = try context.fetch(FetchDescriptor<SplitGroup>())
++            guard let group = groups.first(where: { $0.name == "Viaje a Cusco" }) else { return }
++            let zone = group.cloudKitZoneID
++            let members = try context.fetch(FetchDescriptor<SplitMember>()).filter { $0.groupZoneID == zone }
++            guard let me = members.first(where: { $0.isCurrentUser }) else { return }
++            let expense = SplitExpense(
++                groupZoneID: zone, amount: 120, currencyCode: "PEN", expenseDescription: "Cena de despedida",
++                paidByMemberID: me.id.uuidString, splitType: "equal", subcategoryName: "Restaurantes")
++            expense.date = now
++            context.insert(expense)
++            let per = ((120.0 / Double(members.count)) * 100).rounded() / 100
++            for m in members {
++                context.insert(SplitShare(expenseID: expense.id, memberID: m.id.uuidString, amount: per,
++                                          isPaid: m.id == me.id, groupZoneID: zone))
++            }
++            let cand = TransactionItem(date: now.addingTimeInterval(-3600), amount: -120, currencyCode: "PEN",
++                                       note: "La Lucha Sanguchería", category: sub("Restaurantes")?.category,
++                                       subcategory: sub("Restaurantes"), account: pen, amountInPreferredCurrency: -120)
++            context.insert(cand)
++            let gd = InboxDraft(
++                note: "Cena de despedida", amount: -120, date: now, account: nil, subcategory: nil,
++                sourceType: .groupExpense, confidenceAmount: 1, confidenceDate: 1, confidenceMerchant: 1,
++                needsUserInput: [DraftInputRequirement.account], splitExpenseID: expense.id.uuidString,
++                splitGroupZoneID: zone, originGroupName: "Viaje a Cusco")
++            context.insert(gd)
++        } catch {
++            print("DevSeedDrafts: revision case: Error: \(error)")
++        }
++    }
+ }
+ #endif
+diff --git a/Yala/Seed/DevSeedService.swift b/Yala/Seed/DevSeedService.swift
+index ed1e0429e..98fe724b9 100644
+--- a/Yala/Seed/DevSeedService.swift
++++ b/Yala/Seed/DevSeedService.swift
+@@ -452,6 +452,10 @@ final class DevSeedService {
+             }
+         }
+ 
++        if ProcessInfo.processInfo.arguments.contains("-revision-bandeja-8") {
++            DevSeedDrafts.createRevisionCase(in: context)
++        }
++
+         // Step 10-bis: lo que el aviso tardío se lleva. Sin las categorías propias el Welcome solo ve grupos, que es lo
+         // que tiene que distinguir con la marca y sin ella.
+         if profile == .soloGruposTrasAviso {

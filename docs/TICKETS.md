@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1214)
+## Index (1218)
 
 | id | status | path |
 |---|---|---|
@@ -655,11 +655,13 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | in-app-ai-privacy-claims-need-a-policy-check | done | tickets/done/in-app-ai-privacy-claims-need-a-policy-check.md |
 | in-app-privacy-copy-says-data-never-leaves-the-device | done | tickets/done/in-app-privacy-copy-says-data-never-leaves-the-device.md |
 | inbox-alert-scheduled-count-has-no-singular | done | tickets/done/inbox-alert-scheduled-count-has-no-singular.md |
+| inbox-bulk-save-and-swipe-skip-the-duplicate-check | backlog | tickets/backlog/inbox-bulk-save-and-swipe-skip-the-duplicate-check.md |
 | inbox-convert-draft-to-group-expense | done | tickets/done/inbox-convert-draft-to-group-expense.md |
 | inbox-crash-convert-to-group-expense | done | tickets/done/inbox-crash-convert-to-group-expense.md |
 | inbox-deleting-two-drafts-in-a-row-crashes | done | tickets/done/inbox-deleting-two-drafts-in-a-row-crashes.md |
 | inbox-dismiss-x-does-not-delete-the-draft-for-good | done | tickets/done/inbox-dismiss-x-does-not-delete-the-draft-for-good.md |
 | inbox-header-leaves-no-room-for-drafts-at-large-text | done | tickets/done/inbox-header-leaves-no-room-for-drafts-at-large-text.md |
+| inbox-list-capped-at-500-may-hide-old-pending-drafts | backlog | tickets/backlog/inbox-list-capped-at-500-may-hide-old-pending-drafts.md |
 | inbox-strings-show-a-python-dict-in-four-languages | done | tickets/done/inbox-strings-show-a-python-dict-in-four-languages.md |
 | inbox-success-says-transaction-created | done | tickets/done/inbox-success-says-transaction-created.md |
 | income-amount-color-is-dim-in-dark-mode | done | tickets/done/income-amount-color-is-dim-in-dark-mode.md |
@@ -1092,6 +1094,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | siri-settings-screen-does-not-show-the-new-questions | done | tickets/done/siri-settings-screen-does-not-show-the-new-questions.md |
 | siri-settings-screen-lists-phrases-siri-does-not-know | done | tickets/done/siri-settings-screen-lists-phrases-siri-does-not-know.md |
 | siri-shortcut-error-replies-speak-english-on-a-spanish-iphone | done | tickets/done/siri-shortcut-error-replies-speak-english-on-a-spanish-iphone.md |
+| siri-shortcuts-screen-says-pro-required-for-on-device-users | backlog | tickets/backlog/siri-shortcuts-screen-says-pro-required-for-on-device-users.md |
 | small-screen-leftovers-after-the-iphone-se-audit | backlog | tickets/backlog/small-screen-leftovers-after-the-iphone-se-audit.md |
 | smart-ai-notifications | backlog | tickets/backlog/smart-ai-notifications.md |
 | snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling | done | tickets/done/snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling.md |
