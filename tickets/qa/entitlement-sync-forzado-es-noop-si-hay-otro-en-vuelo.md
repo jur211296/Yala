@@ -1,10 +1,10 @@
 ---
 id: entitlement-sync-forzado-es-noop-si-hay-otro-en-vuelo
-status: backlog
+status: qa
 priority: low
 area: pro
 created: 2026-09-05
-updated: 2026-10-08
+updated: 2026-11-06
 ---
 
 # El Pro de tu cuenta puede no aparecer al entrar, si el arranque estaba mirándolo
@@ -90,3 +90,23 @@ nadie las vuelva a perseguir:
 - Matiz: sin sesión de nube, el sync de arranque sale en el `guard userIDProvider()` (`:84`), antes de marcar `isWorking`. La colisión exige un sync en vuelo con la sesión ya puesta, y eso acota la ventana.
 
 Triage 2026-10-08: abierto · medium → low · el `force` sigue rindiéndose ante `isWorking` (`AccountEntitlementService.swift:85-88`) y `handleSignIn` corta antes de `updateSubscriptionStatus()`; la ventana es estrecha y se repara en el siguiente foreground.
+
+## Resolución (2026-11-06, lote de cuenta e iCloud)
+
+- **Qué cambia para el usuario:** al entrar con su cuenta de Yala mientras el arranque estaba consultando el Pro, el Pro de
+  la cuenta aparece al terminar esa consulta, sin tener que mandar la app a segundo plano.
+- **Cómo:** propuesta 1 del ticket. El reintento diferido de `AccountEntitlementService.sync` (el que encola el `force`
+  que llegó con otro sync en vuelo) re-deriva el estado (`onSnapshotChanged`, por defecto
+  `StoreKitManager.updateSubscriptionStatus()`) si cambió el snapshot; antes tiraba su `Bool`. `handleSignIn` usa el
+  mismo cierre. No se encadenan esperas.
+- **Test:** `AccountEntitlementSyncTests.signInConSyncEnVuelo_elReintentoRederivaElPro` (sesión que cambia durante la
+  red, `handleSignIn` encolado, el reintento trae el Pro de la cuenta nueva y re-deriva una vez).
+
+## Guion de device-QA (iPhone de pruebas, Yala Dev)
+
+La ventana es de segundos y no se puede forzar a mano; este guion solo comprueba que el camino normal no se rompió.
+
+1. En el iPhone 14, con un Apple ID SIN suscripción, borra Yala Dev e instálala desde Xcode.
+2. En la bienvenida, «Ya tengo una cuenta» → entra con la cuenta de Yala que tiene Pro pagado.
+3. Al terminar de entrar, abre Ajustes de Yala: debe decir que tienes Pro, sin salir de la app.
+4. Si dice Free, manda la app a segundo plano y vuelve: si entonces dice Pro, el bug sigue (apúntalo en la card).

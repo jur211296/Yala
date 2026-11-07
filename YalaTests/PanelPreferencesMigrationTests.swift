@@ -201,12 +201,11 @@ struct PanelPreferencesMigrationTests {
         #expect(prefs.panelSectionsHidden == ["health", "distribucion", "tools"])
     }
 
-    // MARK: - Sin cuenta iCloud el seed NO se difiere
+    // MARK: - Desde el init, la siembra fresca se difiere siempre (card cmvc)
 
-    /// Antes, una instalación sin cuenta iCloud esperaba igualmente al hook post-sync
-    /// del paso 8.5 del bootstrap — hasta 15 s a por una señal que en su caso no iba a
-    /// llegar. Sin cuenta no hay iKV del que bajar nada, así que la ambigüedad que
-    /// motivaba el diferido no existe.
+    /// Con iCloud Drive apagado y la sesión de iCloud abierta falta el token de Drive, y el
+    /// `init` sembraba en el acto: si el iCloud-KV viaja igual, esa siembra pisaba el Panel de los
+    /// otros dispositivos. Desde el `init` se difiere siempre; el paso 8.5 decide con la cuenta.
     ///
     /// Se prueba la decisión PURA y no el camino completo a propósito:
     /// `hasRemotePanelPreferences()` lee el `NSUbiquitousKeyValueStore` global del
@@ -214,20 +213,23 @@ struct PanelPreferencesMigrationTests {
     /// contamina. Un test de integración aquí daría verde o rojo según el ORDEN de la
     /// suite, que es peor que no tenerlo.
     @Test func freshSeedDecision_matriz() {
-        // Sin cuenta iCloud: sembrar ya, aunque el llamador pidiera diferir.
-        #expect(PanelPreferencesMigration.freshSeedDecision(
-            deferRequested: true, isICloudAvailable: false) == .seedNow)
-
-        // Con cuenta iCloud: diferir, que es lo que evita pisar la configuración que
-        // aún puede estar bajando.
-        #expect(PanelPreferencesMigration.freshSeedDecision(
-            deferRequested: true, isICloudAvailable: true) == .deferToPostSyncHook)
-
+        // Desde el init: diferir, también sin token de Drive.
+        #expect(PanelPreferencesMigration.freshSeedDecision(deferRequested: true) == .deferToPostSyncHook)
         // Llamado desde el punto seguro (el hook), nunca se difiere.
-        #expect(PanelPreferencesMigration.freshSeedDecision(
-            deferRequested: false, isICloudAvailable: true) == .seedNow)
-        #expect(PanelPreferencesMigration.freshSeedDecision(
-            deferRequested: false, isICloudAvailable: false) == .seedNow)
+        #expect(PanelPreferencesMigration.freshSeedDecision(deferRequested: false) == .seedNow)
+    }
+
+    /// La decisión ya no mira el token de Drive: si vuelve a hacerlo, el `init` sembrará otra vez
+    /// con Drive apagado.
+    @Test func freshSeedDecision_noLeeElTokenDeDrive() throws {
+        let url = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Yala/App/Services/PanelPreferencesMigration.swift")
+        let code = try String(contentsOf: url, encoding: .utf8)
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+        #expect(!code.contains("isICloudAvailable"))
     }
 
     // MARK: - upgrade path — does not trigger setupDefaults

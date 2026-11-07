@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1198)
+## Index (1199)
 
 | id | status | path |
 |---|---|---|
@@ -379,7 +379,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | el-turno-del-simulador-cubre-tambien-la-compilacion | backlog | tickets/backlog/el-turno-del-simulador-cubre-tambien-la-compilacion.md |
 | encargos-markdown-triggers-the-whole-ios-suite | done | tickets/done/encargos-markdown-triggers-the-whole-ios-suite.md |
 | ensure-rates-for-existing-transactions-has-no-callers | backlog | tickets/backlog/ensure-rates-for-existing-transactions-has-no-callers.md |
-| entitlement-sync-forzado-es-noop-si-hay-otro-en-vuelo | backlog | tickets/backlog/entitlement-sync-forzado-es-noop-si-hay-otro-en-vuelo.md |
+| entitlement-sync-forzado-es-noop-si-hay-otro-en-vuelo | qa | tickets/qa/entitlement-sync-forzado-es-noop-si-hay-otro-en-vuelo.md |
 | entry-to-panel-closes-sheets-of-other-tabs | done | tickets/done/entry-to-panel-closes-sheets-of-other-tabs.md |
 | es-419-category-names-use-peruvian-words | backlog | tickets/backlog/es-419-category-names-use-peruvian-words.md |
 | es-ar-detach-and-signout-copy-lost-the-voseo | discarded | tickets/discarded/es-ar-detach-and-signout-copy-lost-the-voseo.md |
@@ -613,6 +613,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | icloud-drive-off-before-launch-starts-empty-and-silent | qa | tickets/qa/icloud-drive-off-before-launch-starts-empty-and-silent.md |
 | icloud-export-error-latch-never-clears | backlog | tickets/backlog/icloud-export-error-latch-never-clears.md |
 | icloud-kv-prefs-cross-sessions-on-a-lent-phone | done | tickets/done/icloud-kv-prefs-cross-sessions-on-a-lent-phone.md |
+| icloud-restore-preview-counts-categories-twice | qa | tickets/qa/icloud-restore-preview-counts-categories-twice.md |
 | icloud-screen-says-not-active-with-drive-off | done | tickets/done/icloud-screen-says-not-active-with-drive-off.md |
 | icloud-sync-status-treats-non-ck-failures-as-success | backlog | tickets/backlog/icloud-sync-status-treats-non-ck-failures-as-success.md |
 | identity-uuid-repair-can-commit-half-done-after-a-read-failure | backlog | tickets/backlog/identity-uuid-repair-can-commit-half-done-after-a-read-failure.md |
@@ -807,7 +808,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | panel-colapsa-la-seleccion-de-cuentas-a-la-primera | done | tickets/done/panel-colapsa-la-seleccion-de-cuentas-a-la-primera.md |
 | panel-defaults-four-sections-four-widgets | done | tickets/done/panel-defaults-four-sections-four-widgets.md |
 | panel-eye-hides-amounts | qa | tickets/qa/panel-eye-hides-amounts.md |
-| panel-fresh-seed-reads-the-icloud-drive-token | backlog | tickets/backlog/panel-fresh-seed-reads-the-icloud-drive-token.md |
+| panel-fresh-seed-reads-the-icloud-drive-token | qa | tickets/qa/panel-fresh-seed-reads-the-icloud-drive-token.md |
 | panel-lee-el-filtro-de-cuentas-en-singular-fuera-del-saldo | done | tickets/done/panel-lee-el-filtro-de-cuentas-en-singular-fuera-del-saldo.md |
 | panel-new-record-greyed-out-silently-after-a-fresh-onboarding | done | tickets/done/panel-new-record-greyed-out-silently-after-a-fresh-onboarding.md |
 | panel-no-recalcula-al-llegar-tasas-nuevas | done | tickets/done/panel-no-recalcula-al-llegar-tasas-nuevas.md |
@@ -1173,7 +1174,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | web-domain-has-no-spf-dkim-dmarc | done | tickets/done/web-domain-has-no-spf-dkim-dmarc.md |
 | weekday-bar-daily-average-unmarked | backlog | tickets/backlog/weekday-bar-daily-average-unmarked.md |
 | welcome-adopt-cancel-dialog-says-from-here | done | tickets/done/welcome-adopt-cancel-dialog-says-from-here.md |
-| welcome-adopt-cancel-then-close-mounts-the-icloud-mirror | backlog | tickets/backlog/welcome-adopt-cancel-then-close-mounts-the-icloud-mirror.md |
+| welcome-adopt-cancel-then-close-mounts-the-icloud-mirror | qa | tickets/qa/welcome-adopt-cancel-then-close-mounts-the-icloud-mirror.md |
 | welcome-adopt-effect-failure-has-no-reason-and-no-cancel | done | tickets/done/welcome-adopt-effect-failure-has-no-reason-and-no-cancel.md |
 | welcome-adopt-exit-offers-retry-on-a-blocked-account | backlog | tickets/backlog/welcome-adopt-exit-offers-retry-on-a-blocked-account.md |
 | welcome-adopt-stalled-session-is-kept-when-settings-reuses-it | backlog | tickets/backlog/welcome-adopt-stalled-session-is-kept-when-settings-reuses-it.md |

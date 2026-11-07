@@ -55,17 +55,14 @@ enum PanelPreferencesMigration {
             // Cuando se invoca desde `AppPreferences.init` (deferFreshSeed=true) DIFERIMOS el seed
             // SIN marcar el sentinel: AppBootstrapper re-invoca esto tras `iCloudFirstImportCompleted`
             // (gateado por MigrationGateLogic), cuando iKV ya está asentado y la decisión es segura.
-            if freshSeedDecision(
-                deferRequested: deferFreshSeed,
-                isICloudAvailable: SwiftDataConfiguration.isICloudAvailable()
-            ) == .deferToPostSyncHook {
+            if freshSeedDecision(deferRequested: deferFreshSeed) == .deferToPostSyncHook {
                 #if DEBUG
                 print("PanelPreferencesMigration: fresh path → defer seed hasta post-sync hook")
                 #endif
                 return
             }
 
-            // Punto seguro (post-sync vía hook, o sin cuenta iCloud) — seed opinionated P20-11
+            // Punto seguro (el hook post-sync del paso 8.5) — seed opinionated P20-11
             // defaults para que la primera apertura del Panel sea "rica pero no saturada".
             appPreferences.setupDefaultsForNewUser()
             appPreferences.panelPrefsMigratedV2 = true
@@ -129,21 +126,16 @@ enum PanelPreferencesMigration {
     /// abren o cierran esa puerta. Mismo motivo por el que el test de la siembra
     /// llama a `setupDefaultsForNewUser()` a mano.
     ///
-    /// **Sin cuenta iCloud no hay iKV del que puedan bajar preferencias**, así que
-    /// «no encuentro nada remoto» deja de ser ambiguo: es una instalación fresca de
-    /// verdad y sembrar no puede pisar nada. Hasta el 2026-11-05 era el mismo predicado con
-    /// el que `MigrationGateLogic.shouldWaitForCloudKit` decide `.runNow`; desde la card dtex
-    /// aquel lee `hasICloudAccount` (token de Drive O CloudKit `.available`) y éste sigue con
-    /// el token, porque corre en `AppPreferences.init`, antes de que CloudKit conteste. Con
-    /// iCloud Drive apagado eso siembra en el `init` en vez de diferir: si el iCloud-KV del
-    /// Apple ID viaja con Drive apagado (sin medir), la siembra pisaría el Panel de los otros
-    /// dispositivos. Ticket `panel-fresh-seed-reads-the-icloud-drive-token`.
-    static func freshSeedDecision(
-        deferRequested: Bool,
-        isICloudAvailable: Bool
-    ) -> FreshSeedDecision {
-        guard deferRequested else { return .seedNow }
-        return isICloudAvailable ? .deferToPostSyncHook : .seedNow
+    /// **Desde `AppPreferences.init` se difiere SIEMPRE** (card cmvc, 2026-11-06). Hasta ese día
+    /// sembraba ya cuando faltaba el token de iCloud Drive, como si eso probara que no hay cuenta.
+    /// No lo prueba: con Drive apagado y la sesión de iCloud abierta el token falta, y si el
+    /// iCloud-KV del Apple ID viaja igual, la siembra del `init` pisaba por last-write-wins el
+    /// Panel que el resto de dispositivos tenía configurado. En el `init` CloudKit aún no
+    /// contestó, así que no hay forma de distinguir; el paso 8.5 del arranque sí (`hasICloudAccount`,
+    /// token O CloudKit `.available`) y re-invoca la migración sin diferir. Sin cuenta, ese paso no
+    /// espera al hook y la siembra llega en cuanto CloudKit contesta (techo de 5 s).
+    static func freshSeedDecision(deferRequested: Bool) -> FreshSeedDecision {
+        deferRequested ? .deferToPostSyncHook : .seedNow
     }
 
     /// Synced per-section keys that carry the user's Panel 2.0 configuration.

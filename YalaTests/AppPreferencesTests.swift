@@ -596,8 +596,9 @@ struct AppPreferencesTests {
         let defaults = Self.makeSuite()
         let prefs = AppPreferences(defaults: defaults)
 
-        // Migration already ran during init (no legacy data → writes flag).
-        #expect(prefs.panelPrefsMigratedV2 == true)
+        // Lo que el `init` deja aquí depende del iCloud-KV global del proceso (`hasRemotePanelPreferences`): sin datos
+        // legacy, la siembra fresca se difiere al paso 8.5 del arranque (card cmvc). Se prueba solo la persistencia.
+        prefs.panelPrefsMigratedV2 = true
         #expect(defaults.bool(forKey: AppPreferences.Keys.panelPrefsMigratedV2) == true)
 
         // Manual toggle still works (e.g. for testing re-migration scenarios)

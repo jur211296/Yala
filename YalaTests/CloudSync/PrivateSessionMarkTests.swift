@@ -571,20 +571,20 @@ struct PrivateSessionMarkWiringTests {
     /// **El eje se escribe por UN solo sitio, y eso es el invariante — no el número.**
     ///
     /// `PrivateSessionMark.set(` aparece exactamente una vez en producción: dentro del `didSet` de
-    /// `SessionState.hasPrivateSession`. Los OCHO puntos donde la sesión privada nace o muere asignan a
+    /// `SessionState.hasPrivateSession`. Los NUEVE puntos donde la sesión privada nace o muere asignan a
     /// esa propiedad, que persiste Y refresca la shell en el mismo render.
     ///
     /// **Un `set` directo sería el bug**: persiste el dato y no mueve la interfaz, así que la pestaña
     /// reducida a Grupos se quedaría puesta hasta el arranque siguiente. Hubo dos hasta el 2026-09-13 y
     /// se unificaron al medir esto.
-    @Test("MUTACIÓN: un solo escritor de la marca, y ocho gestos que pasan por el espejo")
+    @Test("MUTACIÓN: un solo escritor de la marca, y nueve gestos que pasan por el espejo")
     func theMarkHasExactlyOneWriter() {
         #expect(Self.countInProduction("PrivateSessionMark.set(") == 1, """
             apareció un segundo escritor directo de la marca. Si es un alta o una baja nueva, va por
             `SessionState.hasPrivateSession` — si no, persiste el eje sin refrescar la shell.
             """)
-        #expect(Self.countInProduction(".hasPrivateSession = ") == 8, """
-            el eje se enciende o se apaga en OCHO sitios. Un noveno gesto es un alta o una baja nueva:
+        #expect(Self.countInProduction(".hasPrivateSession = ") == 9, """
+            el eje se enciende o se apaga en NUEVE sitios. Un décimo gesto es un alta o una baja nueva:
             decide de qué lado va y corrige el conteo de la cabecera de `PrivateSessionMark`.
 
             El punto del literal NO es cosmético: sin él, `let hasPrivateSession = …` de un lector local
