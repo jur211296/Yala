@@ -8550,7 +8550,7 @@
 "panel.createCategoriesHint" = "每笔记录都要归入一个类别，而你还没有任何类别。";
 
 /* VoiceOver label for the live on-device transcript shown while recording a voice entry */
-"voice.live.transcriptAccessibility" = "iPhone 正在识别的内容";
+"voice.live.transcriptAccessibility" = "设备正在识别的内容";
 "settings.wipeLandingToast" = "好了，一切从头开始。创建你的第一个账户就能记账。";
 "icloud.remoteWipeKeptSetup" = "你已在另一台设备上清空了数据。";
 /* Tarjeta de crédito: corte, facturado y aviso (card nmtk) */
@@ -8726,3 +8726,10 @@
 
 /* Eye button next to the Panel headline amount while amounts are hidden: shows them again */
 "panel.showAmounts" = "显示金额";
+
+/* Flujo proyectado (card «Flujo proyectado en Tendencias y Panel», 2026-11-06) */
+"trend.projected.toggle" = "显示预测";
+"trend.projected.closing" = "期末预测";
+"trend.projected.source.plan" = "根据你的现金流计划估算";
+"trend.projected.source.rhythm" = "根据你的支出节奏估算";
+"trend.projected.source.scheduled" = "根据你的计划付款估算";

@@ -1,6 +1,6 @@
 ---
 id: tag-selector-from-the-panel-form-shows-no-rows-in-2-3
-status: backlog
+status: qa
 priority: medium
 area: "transactions, tags, testing"
 created: 2026-11-06
@@ -28,3 +28,27 @@ Etiquetas, y mirar la pantalla y el árbol. Después, bisecar `origin/2.2..origi
 ## Hecho cuando
 
 El caso vuelve a verde en 2.3 por el arreglo que toque (app o test), con su causa escrita aquí.
+
+## Causa (medida el 2026-11-06, iPhone 17 Pro, iOS 27.2)
+
+No es la app ni un commit de 2.3: es el test, y el rojo dependía del día.
+
+- El selector de subcategoría pone primero la del registro **más reciente** del seed (`recentSubcategories`), así que
+  la primera fila cambia con la fecha. El 6-nov era «Mantenimiento y reparaciones».
+- La cuenta elegida es «Ahorros USD» (las cuentas se ordenan por nombre), que añade la fila del tipo de cambio.
+- Con las dos, los chips pasan a tres filas y el formulario ya no cabe sin deslizar: sin teclado, «Guardar» va fijo
+  abajo (`SaveAreaPlacement`) y «Etiquetas» quedaba debajo de esa barra. El toque del test caía en la barra (vídeo
+  del `.xcresult`: el chip pintado bajo «Guardar», el selector sin abrir). La app sí deja deslizar hasta el chip.
+- Verde en `8283a35ee` el 5-nov y rojo en `b182e5774` el 6-nov sin que el formulario ni sus selectores cambiaran
+  entre medias: lo que cambió fue el día.
+
+## Arreglo
+
+`openSelectorFirstRow` (`YalaUITests/Support/XCUIApplication+Yala.swift`) ya subía el formulario cuando el teclado
+tapaba el chip (iPhone SE); ahora también cuando lo tapa la barra fija de «Guardar» (`selectorChipCoverTop`). Sin
+cambios en la app. Que la fila de chips no avise de que hay más debajo es otra pregunta de producto, con su ticket
+(`record-chip-row-hides-the-tags-chip-without-a-hint`).
+
+## QA
+
+Nada en el iPhone: lo fija el propio XCUITest (`TransactionsCrudUITests/test_recordSelectorsOpenAtMediumDetent`).

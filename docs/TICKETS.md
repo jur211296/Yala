@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1195)
+## Index (1199)
 
 | id | status | path |
 |---|---|---|
@@ -379,7 +379,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | el-turno-del-simulador-cubre-tambien-la-compilacion | backlog | tickets/backlog/el-turno-del-simulador-cubre-tambien-la-compilacion.md |
 | encargos-markdown-triggers-the-whole-ios-suite | done | tickets/done/encargos-markdown-triggers-the-whole-ios-suite.md |
 | ensure-rates-for-existing-transactions-has-no-callers | backlog | tickets/backlog/ensure-rates-for-existing-transactions-has-no-callers.md |
-| entitlement-sync-forzado-es-noop-si-hay-otro-en-vuelo | backlog | tickets/backlog/entitlement-sync-forzado-es-noop-si-hay-otro-en-vuelo.md |
+| entitlement-sync-forzado-es-noop-si-hay-otro-en-vuelo | qa | tickets/qa/entitlement-sync-forzado-es-noop-si-hay-otro-en-vuelo.md |
 | entry-to-panel-closes-sheets-of-other-tabs | done | tickets/done/entry-to-panel-closes-sheets-of-other-tabs.md |
 | es-419-category-names-use-peruvian-words | backlog | tickets/backlog/es-419-category-names-use-peruvian-words.md |
 | es-ar-detach-and-signout-copy-lost-the-voseo | discarded | tickets/discarded/es-ar-detach-and-signout-copy-lost-the-voseo.md |
@@ -418,7 +418,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | floating-buttons-cover-row-amounts-on-ipad-landscape | done | tickets/done/floating-buttons-cover-row-amounts-on-ipad-landscape.md |
 | floating-plus-flashes-when-entering-a-tab | done | tickets/done/floating-plus-flashes-when-entering-a-tab.md |
 | flows-atlas-predates-session-redesign | backlog | tickets/backlog/flows-atlas-predates-session-redesign.md |
-| flujo-proyectado-en-tendencias-y-panel | backlog | tickets/backlog/flujo-proyectado-en-tendencias-y-panel.md |
+| flujo-proyectado-en-tendencias-y-panel | qa | tickets/qa/flujo-proyectado-en-tendencias-y-panel.md |
 | follower-waits-forever-on-a-lease-with-a-null-heartbeat | backlog | tickets/backlog/follower-waits-forever-on-a-lease-with-a-null-heartbeat.md |
 | force-fetch-and-wait-ignores-cancellation | done | tickets/done/force-fetch-and-wait-ignores-cancellation.md |
 | forcesync-returns-ok-without-touching-the-network | backlog | tickets/backlog/forcesync-returns-ok-without-touching-the-network.md |
@@ -536,6 +536,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-history-cutoff-needs-synced-state | discarded | tickets/discarded/groups-history-cutoff-needs-synced-state.md |
 | groups-import-splitwise-tricount | backlog | tickets/backlog/groups-import-splitwise-tricount.md |
 | groups-in-group-search | backlog | tickets/backlog/groups-in-group-search.md |
+| groups-intro-sheet-comes-back-after-closing-it | qa | tickets/qa/groups-intro-sheet-comes-back-after-closing-it.md |
 | groups-invite-neutral-gate-has-no-way-out-when-the-exit-cell-cannot-wipe | done | tickets/done/groups-invite-neutral-gate-has-no-way-out-when-the-exit-cell-cannot-wipe.md |
 | groups-invite-on-a-mirrored-store-crosses-data | done | tickets/done/groups-invite-on-a-mirrored-store-crosses-data.md |
 | groups-invite-skips-unirme-sheet-if-onboarded | done | tickets/done/groups-invite-skips-unirme-sheet-if-onboarded.md |
@@ -612,6 +613,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | icloud-drive-off-before-launch-starts-empty-and-silent | qa | tickets/qa/icloud-drive-off-before-launch-starts-empty-and-silent.md |
 | icloud-export-error-latch-never-clears | backlog | tickets/backlog/icloud-export-error-latch-never-clears.md |
 | icloud-kv-prefs-cross-sessions-on-a-lent-phone | done | tickets/done/icloud-kv-prefs-cross-sessions-on-a-lent-phone.md |
+| icloud-restore-preview-counts-categories-twice | qa | tickets/qa/icloud-restore-preview-counts-categories-twice.md |
 | icloud-screen-says-not-active-with-drive-off | done | tickets/done/icloud-screen-says-not-active-with-drive-off.md |
 | icloud-sync-status-treats-non-ck-failures-as-success | backlog | tickets/backlog/icloud-sync-status-treats-non-ck-failures-as-success.md |
 | identity-uuid-repair-can-commit-half-done-after-a-read-failure | backlog | tickets/backlog/identity-uuid-repair-can-commit-half-done-after-a-read-failure.md |
@@ -667,6 +669,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | invite-aasa-requires-s-param | backlog | tickets/backlog/invite-aasa-requires-s-param.md |
 | invite-and-app-notices-present-over-other-tab-sheets | done | tickets/done/invite-and-app-notices-present-over-other-tab-sheets.md |
 | invite-backend-stale-config | done | tickets/done/invite-backend-stale-config.md |
+| invite-join-button-covers-paste-with-a-long-link | qa | tickets/qa/invite-join-button-covers-paste-with-a-long-link.md |
 | invite-link-creation-blames-the-connection-for-any-rpc-failure | done | tickets/done/invite-link-creation-blames-the-connection-for-any-rpc-failure.md |
 | invite-link-five-causes-one-message | done | tickets/done/invite-link-five-causes-one-message.md |
 | invite-link-on-a-fresh-install-shows-the-welcome-first | done | tickets/done/invite-link-on-a-fresh-install-shows-the-welcome-first.md |
@@ -685,6 +688,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ipad-list-highlights-the-open-row | backlog | tickets/backlog/ipad-list-highlights-the-open-row.md |
 | ipad-locked-pdf-password-may-crash-on-open | backlog | tickets/backlog/ipad-locked-pdf-password-may-crash-on-open.md |
 | ipad-multiple-windows-share-one-navigation-state | done | tickets/done/ipad-multiple-windows-share-one-navigation-state.md |
+| ipad-narrow-bar-announces-more-as-search | backlog | tickets/backlog/ipad-narrow-bar-announces-more-as-search.md |
 | ipad-narrowing-the-window-on-groups-crashes-the-app | done | tickets/done/ipad-narrowing-the-window-on-groups-crashes-the-app.md |
 | ipad-native-app | done | tickets/done/ipad-native-app.md |
 | ipad-planning-chip-switch-leaves-a-detail-without-destination | done | tickets/done/ipad-planning-chip-switch-leaves-a-detail-without-destination.md |
@@ -804,7 +808,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | panel-colapsa-la-seleccion-de-cuentas-a-la-primera | done | tickets/done/panel-colapsa-la-seleccion-de-cuentas-a-la-primera.md |
 | panel-defaults-four-sections-four-widgets | done | tickets/done/panel-defaults-four-sections-four-widgets.md |
 | panel-eye-hides-amounts | qa | tickets/qa/panel-eye-hides-amounts.md |
-| panel-fresh-seed-reads-the-icloud-drive-token | backlog | tickets/backlog/panel-fresh-seed-reads-the-icloud-drive-token.md |
+| panel-fresh-seed-reads-the-icloud-drive-token | qa | tickets/qa/panel-fresh-seed-reads-the-icloud-drive-token.md |
 | panel-lee-el-filtro-de-cuentas-en-singular-fuera-del-saldo | done | tickets/done/panel-lee-el-filtro-de-cuentas-en-singular-fuera-del-saldo.md |
 | panel-new-record-greyed-out-silently-after-a-fresh-onboarding | done | tickets/done/panel-new-record-greyed-out-silently-after-a-fresh-onboarding.md |
 | panel-no-recalcula-al-llegar-tasas-nuevas | done | tickets/done/panel-no-recalcula-al-llegar-tasas-nuevas.md |
@@ -1112,7 +1116,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | sync-runtime-safety-note-assumes-every-prod-device-is-icloud | backlog | tickets/backlog/sync-runtime-safety-note-assumes-every-prod-device-is-icloud.md |
 | synced-prefs-outside-prefsynckey | discarded | tickets/discarded/synced-prefs-outside-prefsynckey.md |
 | tag-chips-change-order-on-every-launch | done | tickets/done/tag-chips-change-order-on-every-launch.md |
-| tag-selector-from-the-panel-form-shows-no-rows-in-2-3 | backlog | tickets/backlog/tag-selector-from-the-panel-form-shows-no-rows-in-2-3.md |
+| tag-selector-from-the-panel-form-shows-no-rows-in-2-3 | qa | tickets/qa/tag-selector-from-the-panel-form-shows-no-rows-in-2-3.md |
 | tag-sheet-new-name-field-never-idles-in-xcuitest | done | tickets/done/tag-sheet-new-name-field-never-idles-in-xcuitest.md |
 | tags-none-label-has-the-wrong-gender | backlog | tickets/backlog/tags-none-label-has-the-wrong-gender.md |
 | tests-borran-el-store-sqlite-abierto | done | tickets/done/tests-borran-el-store-sqlite-abierto.md |
@@ -1121,7 +1125,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | transaction-save-helper-flake-one-per-suite | discarded | tickets/discarded/transaction-save-helper-flake-one-per-suite.md |
 | transaction-service-bulk-block-is-dead-code | backlog | tickets/backlog/transaction-service-bulk-block-is-dead-code.md |
 | transfer-and-adjustment-subcategories-need-a-stable-role | backlog | tickets/backlog/transfer-and-adjustment-subcategories-need-a-stable-role.md |
-| transfer-subcategory-is-looked-up-in-the-current-language | backlog | tickets/backlog/transfer-subcategory-is-looked-up-in-the-current-language.md |
+| transfer-subcategory-is-looked-up-in-the-current-language | qa | tickets/qa/transfer-subcategory-is-looked-up-in-the-current-language.md |
 | transfer-subcategory-unrecognized-in-five-languages | done | tickets/done/transfer-subcategory-unrecognized-in-five-languages.md |
 | trends-aggregators-sum-stored-amounts-from-other-preferred-currencies | done | tickets/done/trends-aggregators-sum-stored-amounts-from-other-preferred-currencies.md |
 | trends-cards-ignore-an-in-place-amount-edit | done | tickets/done/trends-cards-ignore-an-in-place-amount-edit.md |
@@ -1161,7 +1165,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | voice-cancel-does-not-resume-other-apps-audio | done | tickets/done/voice-cancel-does-not-resume-other-apps-audio.md |
 | voice-entry-end-to-end | done | tickets/done/voice-entry-end-to-end.md |
 | voice-language-and-silence-handling-differ-between-chat-and-sheet | backlog | tickets/backlog/voice-language-and-silence-handling-differ-between-chat-and-sheet.md |
-| voice-live-transcript-label-says-iphone-on-ipad | backlog | tickets/backlog/voice-live-transcript-label-says-iphone-on-ipad.md |
+| voice-live-transcript-label-says-iphone-on-ipad | qa | tickets/qa/voice-live-transcript-label-says-iphone-on-ipad.md |
 | voice-note-parser-prompt-knows-six-currencies | done | tickets/done/voice-note-parser-prompt-knows-six-currencies.md |
 | voice-parser-sends-no-json-mode | done | tickets/done/voice-parser-sends-no-json-mode.md |
 | voice-transcription-model-choice | done | tickets/done/voice-transcription-model-choice.md |
@@ -1170,7 +1174,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | web-domain-has-no-spf-dkim-dmarc | done | tickets/done/web-domain-has-no-spf-dkim-dmarc.md |
 | weekday-bar-daily-average-unmarked | backlog | tickets/backlog/weekday-bar-daily-average-unmarked.md |
 | welcome-adopt-cancel-dialog-says-from-here | done | tickets/done/welcome-adopt-cancel-dialog-says-from-here.md |
-| welcome-adopt-cancel-then-close-mounts-the-icloud-mirror | backlog | tickets/backlog/welcome-adopt-cancel-then-close-mounts-the-icloud-mirror.md |
+| welcome-adopt-cancel-then-close-mounts-the-icloud-mirror | qa | tickets/qa/welcome-adopt-cancel-then-close-mounts-the-icloud-mirror.md |
 | welcome-adopt-effect-failure-has-no-reason-and-no-cancel | done | tickets/done/welcome-adopt-effect-failure-has-no-reason-and-no-cancel.md |
 | welcome-adopt-exit-offers-retry-on-a-blocked-account | backlog | tickets/backlog/welcome-adopt-exit-offers-retry-on-a-blocked-account.md |
 | welcome-adopt-stalled-session-is-kept-when-settings-reuses-it | backlog | tickets/backlog/welcome-adopt-stalled-session-is-kept-when-settings-reuses-it.md |

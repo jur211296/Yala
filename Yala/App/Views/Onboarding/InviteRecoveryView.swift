@@ -33,89 +33,98 @@ struct InviteRecoveryView: View {
             ZStack {
                 PanelBackgroundView()
 
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xl) {
-                        Spacer(minLength: DS.Spacing.xl)
+                ScrollViewReader { scroll in
+                    ScrollView {
+                        VStack(spacing: DS.Spacing.xl) {
+                            Spacer(minLength: DS.Spacing.xl)
 
-                        Image(systemName: "link.circle.fill")
-                            .font(.system(size: 56))
-                            // A11Y-DM: verde decorativo de acento positivo en el hero (sistema, adapta a Dark Mode)
-                            .foregroundStyle(.green)
+                            Image(systemName: "link.circle.fill")
+                                .font(.system(size: 56))
+                                // A11Y-DM: verde decorativo de acento positivo en el hero (sistema, adapta a Dark Mode)
+                                .foregroundStyle(.green)
 
-                        VStack(spacing: DS.Spacing.sm) {
-                            Text(L10n.Welcome.Invite.title)
-                                .font(DS.Typography.title2)
-                                .foregroundStyle(.primary)
-                                .multilineTextAlignment(.center)
-                            Text(L10n.Welcome.Invite.body)
-                                .font(DS.Typography.subheadline)
-                                .foregroundStyle(.secondary)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal, DS.Spacing.lg)
-                        }
+                            VStack(spacing: DS.Spacing.sm) {
+                                Text(L10n.Welcome.Invite.title)
+                                    .font(DS.Typography.title2)
+                                    .foregroundStyle(.primary)
+                                    .multilineTextAlignment(.center)
+                                Text(L10n.Welcome.Invite.body)
+                                    .font(DS.Typography.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, DS.Spacing.lg)
+                            }
 
-                        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                            TextField(L10n.Welcome.Invite.placeholder, text: $linkText, axis: .vertical)
-                                .textFieldStyle(.plain)
-                                .lineLimit(2...5)
-                                .focused($inputFocused)
-                                .keyboardType(.URL)
-                                .textContentType(.URL)
-                                .autocorrectionDisabled()
-                                .textInputAutocapitalization(.never)
-                                .padding(DS.Spacing.md)
-                                .background(
-                                    RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-                                        .fill(.thCard)
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-                                        .stroke(
-                                            validationError != nil
-                                                ? DS.Semantic.errorForeground.opacity(0.6)
-                                                : Color.black.opacity(0.06),
-                                            lineWidth: 1
-                                        )
-                                )
-                                .onChange(of: linkText) { _, newValue in
-                                    updateValidation(for: newValue)
+                            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                                TextField(L10n.Welcome.Invite.placeholder, text: $linkText, axis: .vertical)
+                                    .textFieldStyle(.plain)
+                                    .lineLimit(2...5)
+                                    .focused($inputFocused)
+                                    .keyboardType(.URL)
+                                    .textContentType(.URL)
+                                    .autocorrectionDisabled()
+                                    .textInputAutocapitalization(.never)
+                                    .padding(DS.Spacing.md)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                                            .fill(.thCard)
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                                            .stroke(
+                                                validationError != nil
+                                                    ? DS.Semantic.errorForeground.opacity(0.6)
+                                                    : Color.black.opacity(0.06),
+                                                lineWidth: 1
+                                            )
+                                    )
+                                    .onChange(of: linkText) { _, newValue in
+                                        updateValidation(for: newValue)
+                                    }
+
+                                // L12-16 · «Pegar» del sistema: un toque, sin el gesto escondido de mantener pulsado, y sin
+                                // el aviso de iOS de «accedió al portapapeles» (lo pega la persona, no la app).
+                                PasteButton(payloadType: String.self) { strings in
+                                    guard let pasted = strings.first else { return }
+                                    Task { @MainActor in applyPastedText(pasted) }
                                 }
+                                .buttonBorderShape(.capsule)
+                                .labelStyle(.titleAndIcon)
+                                .tint(theme.accent)
+                                .accessibilityIdentifier("invite_recovery_paste")
+                                .id(Self.pasteAnchor)
 
-                            // L12-16 · «Pegar» del sistema: un toque, sin el gesto escondido de mantener pulsado, y sin
-                            // el aviso de iOS de «accedió al portapapeles» (lo pega la persona, no la app).
-                            PasteButton(payloadType: String.self) { strings in
-                                guard let pasted = strings.first else { return }
-                                Task { @MainActor in applyPastedText(pasted) }
+                                if let error = validationError {
+                                    Text(error)
+                                        .font(DS.Typography.caption)
+                                        .foregroundStyle(DS.Semantic.errorForeground)
+                                        .transition(.opacity)
+                                }
                             }
-                            .buttonBorderShape(.capsule)
-                            .labelStyle(.titleAndIcon)
-                            .tint(theme.accent)
-                            .accessibilityIdentifier("invite_recovery_paste")
+                            .padding(.horizontal, DS.Spacing.lg)
 
-                            if let error = validationError {
-                                Text(error)
-                                    .font(DS.Typography.caption)
-                                    .foregroundStyle(DS.Semantic.errorForeground)
-                                    .transition(.opacity)
-                            }
+                            Spacer(minLength: DS.Spacing.lg)
+                        }
+                    }
+                    .dismissKeyboardOnTap()
+                    // Con el teclado, el sistema sube el scroll hasta el CAMPO, y «Pegar» va debajo: se lleva también a la
+                    // vista al escribir y al enfocar (card zdio).
+                    .onChange(of: linkText) { _, _ in scroll.scrollTo(Self.pasteAnchor, anchor: .bottom) }
+                    .onChange(of: inputFocused) { _, focused in revealPaste(focused: focused, scroll: scroll) }
+                    // «Unirme al grupo» va en el borde del scroll, no encima: con un enlace largo y el teclado abierto, el
+                    // botón fijo tapaba media «Pegar» (QA del 2026-11-05, iPhone 14). Así el contenido acaba por encima del
+                    // botón y lo que no quepa se desplaza.
+                    .safeAreaInset(edge: .bottom, spacing: 0) {
+                        YalaPrimaryButton(L10n.Welcome.Invite.join, isDisabled: validatedURL == nil) {
+                            guard let url = validatedURL else { return }
+                            DS.Haptic.success()
+                            onSuccess(url)
                         }
                         .padding(.horizontal, DS.Spacing.lg)
-
-                        Spacer(minLength: DS.Spacing.lg)
+                        .padding(.top, DS.Spacing.sm)
+                        .padding(.bottom, DS.Spacing.lg)
                     }
                 }
-                .dismissKeyboardOnTap()
-
-                VStack(spacing: DS.Spacing.sm) {
-                    Spacer()
-                    YalaPrimaryButton(L10n.Welcome.Invite.join, isDisabled: validatedURL == nil) {
-                        guard let url = validatedURL else { return }
-                        DS.Haptic.success()
-                        onSuccess(url)
-                    }
-                }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.bottom, DS.Spacing.lg)
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -129,6 +138,21 @@ struct InviteRecoveryView: View {
                 autoFillFromClipboardIfNeeded()
                 inputFocused = true
             }
+        }
+    }
+
+    private static let pasteAnchor = "invite_recovery_paste_anchor"
+
+    /// Al enfocar, espera a que el teclado termine de subir (su animación dura ~0,3 s) y lleva «Pegar» a la vista.
+    private func revealPaste(focused: Bool, scroll: ScrollViewProxy) {
+        guard focused else { return }
+        Task { @MainActor in
+            do {
+                try await Task.sleep(for: .milliseconds(350))
+            } catch {
+                return
+            }
+            scroll.scrollTo(Self.pasteAnchor, anchor: .bottom)
         }
     }
 

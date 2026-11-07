@@ -76,6 +76,10 @@ enum WidgetDS {
         /// La línea de referencia (el período anterior): más fina y punteada.
         static let referenceLineWidth: CGFloat = 1.5
         static let referenceDash: [CGFloat] = [3, 3]
+        /// «Mostrar proyectado»: punteado de puntos, en el color de la métrica, para no confundirse con la raya gris del
+        /// período anterior.
+        static let projectedDash: [CGFloat] = [0.5, 4]
+        static let projectedOpacity: Double = 0.8
         /// Área del punto de hoy (`symbolSize` se da en puntos cuadrados: ~6 pt de diámetro).
         static let pointArea: CGFloat = 36
         /// Alto de la mini curva del tamaño pequeño.

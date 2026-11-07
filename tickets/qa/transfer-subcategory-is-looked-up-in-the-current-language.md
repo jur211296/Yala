@@ -1,10 +1,10 @@
 ---
 id: transfer-subcategory-is-looked-up-in-the-current-language
-status: backlog
+status: qa
 priority: low
 area: "transactions, categories, l10n"
 created: 2026-10-29
-updated: 2026-10-29
+updated: 2026-11-06
 source: "review adversarial de S27l (import-transferencias-rollback), hallazgo fuera de alcance"
 ---
 
@@ -27,3 +27,14 @@ Buscar con `Subcategory.transferNames` (los 16 idiomas desde S27l) y quedarse co
 ## Criterio de hecho
 
 - [ ] Con una transferencia creada en español y la app en inglés, una transferencia nueva reutiliza la subcategoría existente.
+
+## Hecho (2026-11-06, lote UI 2.3)
+
+`TransferCategoryResolver` —el único sitio, lo usan el formulario de Nuevo registro y el puente de Grupos— busca la
+subcategoría por los 16 nombres de `Subcategory.transferNames`. Si hay varias, gana la del idioma actual; si no, la
+primera por orden alfabético. No funde las duplicadas que ya existan: eso sigue en
+`transfer-and-adjustment-subcategories-need-a-stable-role`. Test: `TransferCategoryResolverLanguageTests`.
+
+**Guion de QA (iPhone o simulador):** crea una transferencia con Yala en español; cambia el idioma a inglés; crea otra
+transferencia; en Ajustes › Categorías debe haber UNA subcategoría de transferencia («Transferencia entre cuentas»),
+con las dos transferencias dentro.

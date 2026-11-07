@@ -222,3 +222,6 @@
 "widget.groups.archivedOwedLine" = "+ 已归档群组中别人欠你的%@";
 "widget.groups.archivedOweLine" = "+ 你在已归档群组中欠的%@";
 "widget.ui.receivable" = "待收款";
+
+/* Flujo proyectado en los widgets Gasto y Saldo (2026-11-06) */
+"widget.intent.showProjected" = "显示预测";

@@ -1002,6 +1002,7 @@ final class DataWipeService {
         // ya los barre en todo wipe, pero este camino también corre sin él en algún futuro caller —
         // repetirlos es idempotente y deja la purga completa por sí sola.
         defaults.removeObject(forKey: AppPreferences.Keys.hasShownGroupsOnboarding)
+        defaults.removeObject(forKey: AppPreferences.Keys.groupsOnboardingPostponedOnce)
         defaults.removeObject(forKey: AppPreferences.Keys.hasSeenGroupsNotificationPrompt)
 
         // C2 · el latch «este device tuvo sesión de Grupos alguna vez», que gobierna si el empty state
@@ -1274,6 +1275,7 @@ final class DataWipeService {
         defaults.removeObject(forKey: "colorfulIcons")          // Default: true
         defaults.removeObject(forKey: "firstWeekday")           // Default: 2 (Monday)
         defaults.removeObject(forKey: "showWidgetHints")        // Default: true
+        defaults.removeObject(forKey: "showsProjectedFlow")     // Default: false («Ver proyectado»)
         defaults.removeObject(forKey: "defaultCurrencyCode")    // Default: la de la región (CurrencyDefaults.preferred)
         defaults.removeObject(forKey: AppPreferences.Keys.tabConfigJSON)  // Layout custom de tabs ("tabBarConfiguration")
         defaults.removeObject(forKey: "customPeriodStart")      // Rango del período .custom (SessionState)
@@ -1374,6 +1376,7 @@ final class DataWipeService {
         defaults.removeObject(forKey: AppPreferences.Keys.includeGroupTransactionsInStats)  // Default: true
         defaults.removeObject(forKey: AppPreferences.Keys.bridgeGroupExpensesToPersonalAccounts)  // Default: true
         defaults.removeObject(forKey: AppPreferences.Keys.hasShownGroupsOnboarding)
+        defaults.removeObject(forKey: AppPreferences.Keys.groupsOnboardingPostponedOnce)
         defaults.removeObject(forKey: AppPreferences.Keys.hasSeenGroupsNotificationPrompt)
 
         // --- Sync (toggle de usuario en iCloudSyncSettingsView) ---

@@ -222,3 +222,6 @@
 "widget.groups.archivedOwedLine" = "+ アーカイブ済みのグループで貸している%@";
 "widget.groups.archivedOweLine" = "+ アーカイブ済みのグループで借りている%@";
 "widget.ui.receivable" = "未回収";
+
+/* Flujo proyectado en los widgets Gasto y Saldo (2026-11-06) */
+"widget.intent.showProjected" = "予測を表示";

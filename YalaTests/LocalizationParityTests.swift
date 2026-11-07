@@ -291,6 +291,20 @@ struct LocalizationParityTests {
         }
     }
 
+    /// La etiqueta de VoiceOver del dictado en vivo decía «Lo que va entendiendo el iPhone» en los 16 idiomas, y
+    /// el iPad la leía igual (voice-live-transcript-label-says-iphone-on-ipad). No usa «teléfono», así que la guarda
+    /// de abajo no la veía: se fija por clave. Nombra «el dispositivo», con el término de cada idioma.
+    @Test func liveTranscriptLabel_namesNoDeviceModel() throws {
+        let deviceModel = try Regex(#"iPhone|iPad"#)
+        for locale in SupportedLocale.allCases {
+            let strings = StringsFileParser.parseStrings(forLocale: locale.code)
+            let value = try #require(strings["voice.live.transcriptAccessibility"],
+                                     "Locale '\(locale.code)' has no voice.live.transcriptAccessibility")
+            #expect(!value.contains(deviceModel),
+                    "Locale '\(locale.code)': the live-transcript VoiceOver label names a device model: «\(value)»")
+        }
+    }
+
     /// Unas 75 frases decían «este teléfono» y salían igual en el iPad
     /// (copy-names-this-phone-outside-groups). Un texto nuevo que nombre el
     /// aparato como teléfono vuelve a romperlo en cualquier idioma.

@@ -8539,7 +8539,7 @@
 "panel.createCategoriesHint" = "Chaque enregistrement va dans une catégorie, et vous n’en avez pas encore.";
 
 /* VoiceOver label for the live on-device transcript shown while recording a voice entry */
-"voice.live.transcriptAccessibility" = "Ce que l’iPhone comprend";
+"voice.live.transcriptAccessibility" = "Ce que l’appareil comprend";
 "settings.wipeLandingToast" = "C’est fait, tu repars de zéro. Crée ton premier compte pour enregistrer.";
 "icloud.remoteWipeKeptSetup" = "Tu as vidé tes données depuis un autre appareil.";
 /* Tarjeta de crédito: corte, facturado y aviso (card nmtk) */
@@ -8715,3 +8715,10 @@
 
 /* Eye button next to the Panel headline amount while amounts are hidden: shows them again */
 "panel.showAmounts" = "Afficher les montants";
+
+/* Flujo proyectado (card «Flujo proyectado en Tendencias y Panel», 2026-11-06) */
+"trend.projected.toggle" = "Voir la projection";
+"trend.projected.closing" = "Projection en fin de période";
+"trend.projected.source.plan" = "Estimé avec votre plan de trésorerie";
+"trend.projected.source.rhythm" = "Estimé selon votre rythme de dépenses";
+"trend.projected.source.scheduled" = "Estimé avec vos paiements planifiés";

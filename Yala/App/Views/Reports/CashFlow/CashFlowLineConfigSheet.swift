@@ -528,6 +528,7 @@ struct CashFlowLineConfigSheet: View {
         line.amountChangesRaw = nil
         do {
             try viewModel.plan?.modelContext?.save()
+            if let context = viewModel.plan?.modelContext { CashFlowPlanViewModel.announcePlanChange(context) }
         } catch {
             #if DEBUG
             print("CashFlowLineConfigSheet: Error saving: \(error)")

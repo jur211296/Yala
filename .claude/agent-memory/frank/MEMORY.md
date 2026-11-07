@@ -4,7 +4,7 @@
 > nueva va a su subíndice. Si este fichero pasa de 20 KB, poda o mueve antes de añadir.
 
 ## Subíndices — ábrelos cuando el tema toque
-- [Cómo mido y cómo entrego](indice_medir_y_entregar.md) — 76 entradas: tests, gate, CI, QA, telemetría, mutantes. Antes de medir o preparar QA.
+- [Cómo mido y cómo entrego](indice_medir_y_entregar.md) — 77 entradas: tests, gate, CI, QA, telemetría, mutantes. Antes de medir o preparar QA.
 - [Simulador y capturas](indice_simulador_y_capturas.md) — 85 entradas: axe, XCUITest conductor, iPad y Duo, capturas, vídeo, antes/después.
 - [Lecciones de código y de copy](indice_lecciones_de_codigo.md) — 122 entradas: gates que fallan abiertos, techos, reintentos, herencias de moldes y de copy. Antes de diseñar un arreglo y en la review.
 - [Estado del trabajo](indice_estado_del_trabajo.md) — 93 entradas de proyecto, con fecha: qué espera cada frente. Mide antes de actuar.
@@ -36,6 +36,7 @@
 - [No esperes el CI ajeno](feedback_no_esperar_ci_ajeno.md) — ni antes del gate: sigue y rebasa una vez antes de tu PR.
 - [El rerun no recoge el arreglo de la base](feedback_rerun_no_recoge_el_arreglo_de_la_base.md) — reusa el merge original: hace falta update-branch.
 - [Simulador ajeno parado: se pregunta](feedback_simulador_ajeno_parado_se_pregunta.md) — si su sesión espera a Jürgen, aprobó usarlo sin apagarlo.
+- [Segundo simulador en la Max](feedback_segundo_simulador_en_la_max.md) — simulador ajeno ocupado: segundo (tope 2) o iPhone 14; Mini, tope 1.
 - [Los contenedores del simulador también hacen cola](feedback_contenedores_del_simulador_tambien_hacen_cola.md) — limpiar Preferences/tmp con sim TOMADO pisó a la bienvenida; va con sim-lock.
 - [Auditoría UX por lotes: propone, no implementa](feedback_auditoria_ux_lote_propone_no_implementa.md) — solo bugs claros con card; informe.md + HTML acumulado + card por mejora.
 - [Auditoría UI: el glass se queda, se jerarquiza](feedback_auditoria_ui_glass_se_queda_jerarquiza.md) — rellenos sólidos, sin degradados ni brillos; instruir; adaptar; solo el lote.

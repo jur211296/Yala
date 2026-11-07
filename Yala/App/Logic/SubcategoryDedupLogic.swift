@@ -42,8 +42,20 @@ enum SubcategoryDedupLogic {
         guard sub.isDefaultSeed, !sub.isAnySystem, let category = sub.category else { return nil }
         // Misma fórmula que CategoryDeduplicationService.identityKey (icon+color+isIncome),
         // inline para no acoplar Logic → Service.
-        let categoryKey = "\(category.iconName ?? "nil")|\(category.colorHex)|\(category.isIncome)"
-        return "\(categoryKey)|\(sub.sortOrder)|\(sub.iconName ?? "nil")|\(sub.name)"
+        return identityKey(
+            categoryKey: categoryKey(
+                iconName: category.iconName, colorHex: category.colorHex, isIncome: category.isIncome),
+            sortOrder: sub.sortOrder, iconName: sub.iconName, name: sub.name)
+    }
+
+    /// La parte de la categoría de la clave. La comparte la sonda de iCloud (`ICloudCorpusCategoryTally`), que
+    /// cuenta registros de CloudKit sin `@Model`: una sola fórmula para las dos.
+    nonisolated static func categoryKey(iconName: String?, colorHex: String, isIncome: Bool) -> String {
+        "\(iconName ?? "nil")|\(colorHex)|\(isIncome)"
+    }
+
+    nonisolated static func identityKey(categoryKey: String, sortOrder: Int, iconName: String?, name: String) -> String {
+        "\(categoryKey)|\(sortOrder)|\(iconName ?? "nil")|\(name)"
     }
 
     /// Orden determinista para elegir keeper (el que "va antes" se conserva).

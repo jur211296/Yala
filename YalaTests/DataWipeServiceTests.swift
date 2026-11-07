@@ -23,7 +23,7 @@ struct DataWipeServiceTests {
     private static let expectedResetKeys: [String] = [
         // Personalización
         "defaultPeriod", "userTheme", "translucentVariant", "colorfulIcons", "firstWeekday",
-        "showWidgetHints", "defaultCurrencyCode", "tabBarConfiguration",
+        "showWidgetHints", "showsProjectedFlow", "defaultCurrencyCode", "tabBarConfiguration",
         "customPeriodStart", "customPeriodEnd",
         // Visualización
         "showVariations", "decimalPlaces", "currencyDisplayFormat", "useRoundedAmounts",
@@ -56,7 +56,7 @@ struct DataWipeServiceTests {
         // Grupos (toggles personales)
         "includeGroupTransactionsInFeed", "includeGroupsInPanelTotal",
         "includeGroupTransactionsInStats", "bridgeGroupExpensesToPersonalAccounts",
-        "hasShownGroupsOnboarding", "hasSeenGroupsNotificationPrompt",
+        "hasShownGroupsOnboarding", "groupsOnboardingPostponedOnce", "hasSeenGroupsNotificationPrompt",
         // Sync
         "subcatDedupRemoteHookDisabled",
         // Insights visibilidad

@@ -424,3 +424,63 @@ nonisolated enum WelcomeAdoptCancel {
         return .back
     }
 }
+
+/// **Salir hacia atrás de un adopt que no dejó nada devuelve el teléfono a como estaba** (card 0f7h, ticket
+/// `welcome-adopt-cancel-then-close-mounts-the-icloud-mirror`). `onAdoptStarted` marca el onboarding, la sesión privada y
+/// retira el montaje neutro ANTES de conducir la máquina —contra un kill a mitad del adopt—. Si luego la persona cancela
+/// (o vuelve atrás tras el techo) y cierra Yala, el arranque siguiente ya no veía la bienvenida y montaba el espejo de
+/// iCloud privado sin que hubiera elegido nada.
+///
+/// Se deshace solo si consta que el adopt no trajo ni subió nada (decisión A de Jürgen, 2026-11-06): journal legible, fase
+/// `notStarted` (cancelado) o `failedRollback` (su techo), sin el pendiente del efecto, **y** o bien la salida fue del CLAIM
+/// —que no sube ni baja filas—, o bien el teléfono no tiene datos propios (`checkHasExistingData`, que falla cerrado): sin
+/// nada local no hay huérfanas que subir ni corpus que relevar, y nada bajó. `.cancelled` no basta: vale igual para el
+/// claim que para el efecto, que puede haber subido huérfanas. Con cualquier otra cosa se queda como hoy: un kill tiene que
+/// aterrizar en la app, nunca en el seed del onboarding sobre una cuenta existente.
+nonisolated enum WelcomeAdoptBackOut {
+
+    /// Lo que `onAdoptStarted` va a cambiar, leído justo antes.
+    struct Snapshot: Equatable {
+        let hasCompletedOnboarding: Bool
+        let hasPrivateSession: Bool
+        let neutralMountArmed: Bool
+        let freshInstallOwnsNeutralMount: Bool
+
+        static func capture(
+            hasCompletedOnboarding: Bool, hasPrivateSession: Bool, _ defaults: UserDefaults = .standard
+        ) -> Snapshot {
+            Snapshot(
+                hasCompletedOnboarding: hasCompletedOnboarding,
+                hasPrivateSession: hasPrivateSession,
+                neutralMountArmed: defaults.bool(forKey: StorageModePersistence.neutralMountArmedKey),
+                freshInstallOwnsNeutralMount: defaults.bool(
+                    forKey: StorageModePersistence.freshInstallOwnsNeutralMountKey))
+        }
+
+        /// Devuelve el montaje neutro y su dueño a como estaban. El onboarding y la sesión los repone quien llama (viven
+        /// en `@AppStorage` y en `SessionState`).
+        func restoreNeutralMount(_ defaults: UserDefaults = .standard) {
+            if neutralMountArmed {
+                defaults.set(true, forKey: StorageModePersistence.neutralMountArmedKey)
+            }
+            if freshInstallOwnsNeutralMount {
+                defaults.set(true, forKey: StorageModePersistence.freshInstallOwnsNeutralMountKey)
+            }
+        }
+    }
+
+    /// Las salidas del adopt que ocurren en el CLAIM: ahí no se sube ni se baja ninguna fila. `.cancelled` no está porque
+    /// también la deja cancelar el efecto, y las `effect*` son del efecto.
+    static let claimOnlyExits: Set<AdoptClaimExit> = [.stalled, .sessionExpired, .accountUnavailable]
+
+    /// ¿El adopt salió sin dejar nada que un kill tenga que proteger?
+    static func leftNoTrace(
+        journaledPhase: MigrationPhase, adoptEffectJournaled: Bool, journalUnreadable: Bool,
+        adoptClaimExit: AdoptClaimExit?, hasLocalData: Bool
+    ) -> Bool {
+        guard !journalUnreadable, !adoptEffectJournaled,
+              journaledPhase == .notStarted || journaledPhase == .failedRollback else { return false }
+        if let adoptClaimExit, claimOnlyExits.contains(adoptClaimExit) { return true }
+        return !hasLocalData
+    }
+}
