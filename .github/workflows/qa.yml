@@ -126,6 +126,11 @@ jobs:
       # banco simula el orden y los fallos con un `xcrun` falso.
       - name: Calentar el simulador (ci-calentar-simulador.sh)
         run: bash qa/scripts/ci-calentar-simulador-test.sh
+      # El detector de tandas de UI que no ejecutaron ningún test (2026-11-07). Solo se ejerce el
+      # día que el paquete no carga, y ese día un fallo suyo devolvería el verde que mintió del 5 al
+      # 7-nov. Su banco simula el `.xcresult` con un `xcrun` falso y usa el log real del incidente.
+      - name: Tandas de UI sin tests (ci-ui-conteo.sh)
+        run: bash qa/scripts/ci-ui-conteo-test.sh
       # Versión y build de la app y de sus extensiones salen de MARKETING_VERSION y
       # CURRENT_PROJECT_VERSION. El widget llevó su build fijo en 3 de mayo a octubre y nada
       # falló hasta App Store Connect. El banco corre el script sobre el árbol y sobre siete
@@ -477,7 +482,9 @@ jobs:
       # el paso falla si el build no es el esperado, en vez de caer en silencio al 27.0 por defecto.
       # El simulador sigue siendo un iPhone 17 Pro: la imagen no lo trae, y `ci-simulador.sh` lo
       # crea en el runtime iOS 27.0. Desde la imagen 20261022 hay tambien un runtime iOS 27.1,
-      # pero solo admite el iPhone Duo; el script lo descarta (2026-10-23, ver su cabecera).
+      # pero solo admite el iPhone Duo; el script lo descarta (2026-10-23, ver su cabecera). Desde
+      # la 20261104.0337.1 hay un iOS 27.2 completo, MAS NUEVO que el SDK 27.1: el script ya no lo
+      # elige mientras haya otro (2026-11-07), porque ahi el paquete de UI no carga.
       # La rama 2.1 sigue en `macos-26` con 26.6.
       - name: Seleccionar Xcode 27.1
         run: bash qa/scripts/ci-xcode.sh
@@ -777,10 +784,15 @@ jobs:
       # Mismo paso y mismo porque que en el job `tests`.
       - name: Seleccionar Xcode 27.1
         run: bash qa/scripts/ci-xcode.sh
-      # Mismo paso y mismo porque que en el job `tests`.
+      # Mismo paso que en el job `tests`, pero ESTRICTO (2026-11-07): aqui un runtime mas nuevo que
+      # el SDK del Xcode no es un mal menor. El paquete de UI de Xcode 27.1 no carga en el iOS 27.2
+      # (`AppIntentsTesting` pide un simbolo que ese runtime ya no tiene) y la tanda corre cero
+      # tests. Con `SIM_HASTA_SDK=si` el paso falla con el motivo antes de gastar el runner.
       - name: Simulador del runner
         id: sim
         timeout-minutes: 25
+        env:
+          SIM_HASTA_SDK: si
         run: bash qa/scripts/ci-simulador.sh
       # El build lo hizo `ui-build`. Se deja en `.ddp/Build/Products`, donde lo habria dejado el
       # build local: `test-without-building` y `ci-calentar-simulador.sh` lo buscan ahi.
@@ -811,6 +823,8 @@ jobs:
           # Si el reparto falla, el paso falla aqui y el aviso lo cuenta: nunca arranca
           # `xcodebuild` sin lista, que correria el target entero en cada tanda.
           args=$(bash qa/scripts/ci-ui-tandas.sh "$((JOB_INDEX + 1))" "$JOB_TOTAL")
+          # El `.xcresult` y el log van a rutas fijas: los lee el paso siguiente para contar.
+          # `pipefail` (arriba) deja el exit de `xcodebuild`, no el de `tee`.
           # Un argumento por linea y sin espacios (nombres de clase): el troceo es el buscado.
           # shellcheck disable=SC2086
           xcodebuild test-without-building \
@@ -819,14 +833,33 @@ jobs:
             -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
             $args \
             -derivedDataPath .ddp \
+            -resultBundlePath "$RUNNER_TEMP/tanda.xcresult" \
             -parallel-testing-enabled NO \
-            -retry-tests-on-failure
+            -retry-tests-on-failure 2>&1 | tee "$RUNNER_TEMP/tanda.log"
+      # ¿EJECUTO TESTS LA TANDA? (2026-11-07). Del 5 al 7-nov las nueve tandas corrieron CERO tests
+      # (el paquete no cargaba) y el run salia verde: el paso de arriba es `continue-on-error` y su
+      # `failure` era indistinguible de una noche con un test en rojo. Este paso lee el `.xcresult`
+      # y el log, anota el conteo real, y SOLO si no se ejecuto ningun test sale con 1. Sin
+      # `continue-on-error` a proposito: es lo unico de la UI que pone su job en rojo. Un test en
+      # rojo sigue sin hacerlo (la UI sigue advisory). Detalle y estados: `ci-ui-conteo.sh`.
+      - name: ¿Ejecutó tests la tanda?
+        id: conteo
+        if: ${{ always() && steps.ui.outcome != 'skipped' }}
+        timeout-minutes: 5
+        env:
+          TANDA: ${{ matrix.tanda }}
+        run: bash qa/scripts/ci-ui-conteo.sh "$RUNNER_TEMP/tanda.xcresult" "$RUNNER_TEMP/tanda.log"
+      # `sin_tests` cubre los dos estados en rojo del conteo (`no_cargo` y `sin_tests`): para el
+      # aviso es lo mismo, una tanda que no probo nada.
       - name: Resultado de la tanda
         id: salida
         if: ${{ always() }}
         env:
           RESULTADO: ${{ steps.ui.outcome }}
-        run: echo "ui_${{ matrix.tanda }}=$RESULTADO" >> "$GITHUB_OUTPUT"
+          CONTEO: ${{ steps.conteo.outputs.estado }}
+        run: |
+          case "$CONTEO" in no_cargo|sin_tests) RESULTADO=sin_tests ;; esac
+          echo "ui_${{ matrix.tanda }}=$RESULTADO" >> "$GITHUB_OUTPUT"
 
   # --------------------------------------------------------------------------------
   # EL AVISO, EN SU PROPIO CHECK  (2026-09-09, decision del owner)
@@ -940,12 +973,24 @@ jobs:
           # Una variable por tanda (`R_UI_<n>`), de la 1 a la ultima de la matriz.
           UI_TANDAS="1 2 3 4 5 6 7 8 9"
           ui_resumen=""
+          # `sin_tests` (2026-11-07): la tanda no ejecuto NINGUN test (el paquete no cargo, o la
+          # seleccion quedo vacia). No es un rojo de test: va en su propia lista y su propio asunto.
+          ui_cero=""
           for k in $UI_TANDAS; do
             v="R_UI_$k"
             r="${!v:-}"
             ui_resumen="$ui_resumen${ui_resumen:+ / }'$r'"
             [ "$r" != "failure" ] || fallidos="$fallidos\n- UI tests (YalaUITests, tanda $k)"
+            [ "$r" != "sin_tests" ] || ui_cero="$ui_cero${ui_cero:+, }$k"
           done
+          nota_cero=""
+          if [ -n "$ui_cero" ]; then
+            nota_cero=$(printf '%s\n' \
+              "" \
+              "Ademas, la UI NO EJECUTO NINGUN TEST en la(s) tanda(s) $ui_cero: el paquete YalaUITests no cargo" \
+              "o la seleccion quedo vacia. No es un rojo ni un verde: es el entorno. Cada tanda lo explica en" \
+              "su anotacion «Tanda N sin tests» (runtime, conteo y causa de dyld).")
+          fi
 
           # Un paso advisory que no llego a EJECUTARSE deja `outcome` en `skipped`, no en
           # `failure`: el job murio en un paso ANTERIOR (setup, Secrets, build) y GitHub salto
@@ -976,7 +1021,7 @@ jobs:
               v="R_UI_$k"
               r="${!v:-}"
               case "$r" in
-                success|failure) ;;
+                success|failure|sin_tests) ;;
                 *) sin_correr="si" ;;
               esac
             done
@@ -993,7 +1038,8 @@ jobs:
               "Un valor vacio significa que el job (o esa tanda) fue CANCELADO y no llego a dejar" \
               "resultado — casi siempre, su tope de tiempo." \
               "Esto NO es un verde: es un run que no probo nada." \
-              "La causa esta en un paso ANTERIOR del job — mira el log.")
+              "La causa esta en un paso ANTERIOR del job — mira el log." \
+              "$nota_cero")
           elif [ -n "$unit_rojo" ]; then
             asunto="hay unit tests en rojo"
             detalle=$(printf '%s\n' \
@@ -1002,7 +1048,18 @@ jobs:
               "Los unit bloquean: si es un PR, el auto-merge NO lo mergea hasta que se arreglen." \
               "Si es un push a 2.2 o 1.0, ya entro: la rama esta en rojo." \
               "" \
-              "Pasos en rojo:$(printf '%b' "$fallidos")")
+              "Pasos en rojo:$(printf '%b' "$fallidos")" \
+              "$nota_cero")
+          elif [ -n "$ui_cero" ]; then
+            asunto="la UI no ejecuto ningun test"
+            detalle=$(printf '%s\n' \
+              "CI de $REPO ($RAMA): la UI NO EJECUTO NINGUN TEST en la(s) tanda(s) $ui_cero." \
+              "" \
+              "El paquete YalaUITests no cargo en el simulador, o la seleccion quedo vacia. No es un test" \
+              "en rojo ni un verde: esas tandas no probaron nada, y su job sale en rojo por eso." \
+              "Cada tanda lo explica en su anotacion «Tanda N sin tests» (runtime, conteo y causa de dyld)." \
+              "La primera vez fue del 5 al 7-nov de 2026: runtime iOS 27.2 con Xcode 27.1 (ci-simulador.sh)." \
+              "$( [ -z "$fallidos" ] || printf 'Ademas, tandas con tests en rojo:%b' "$fallidos" )")
           elif [ -n "$fallidos" ]; then
             asunto="hay tests de UI en rojo"
             detalle=$(printf '%s\n' \
