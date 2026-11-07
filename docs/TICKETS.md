@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1206)
+## Index (1214)
 
 | id | status | path |
 |---|---|---|
@@ -137,6 +137,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | approximate-mark-ors-over-whole-period | done | tickets/done/approximate-mark-ors-over-whole-period.md |
 | appstorage-onboarding-desarma-el-aislamiento-de-tests | done | tickets/done/appstorage-onboarding-desarma-el-aislamiento-de-tests.md |
 | archived-accounts-still-count-in-the-panel-total | done | tickets/done/archived-accounts-still-count-in-the-panel-total.md |
+| archived-group-still-allows-expenses-and-payments-from-inside | backlog | tickets/backlog/archived-group-still-allows-expenses-and-payments-from-inside.md |
 | archiving-exclusion-open-decisions | backlog | tickets/backlog/archiving-exclusion-open-decisions.md |
 | associate-cta-ignores-the-groups-kill-switch | done | tickets/done/associate-cta-ignores-the-groups-kill-switch.md |
 | association-read-writes-defaults-from-a-view-body | backlog | tickets/backlog/association-read-writes-defaults-from-a-view-body.md |
@@ -166,6 +167,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | branch-2-2-merges-without-waiting-for-ci | done | tickets/done/branch-2-2-merges-without-waiting-for-ci.md |
 | brand-voice-example-opines-on-spending | backlog | tickets/backlog/brand-voice-example-opines-on-spending.md |
 | bridge-de-grupos-pierde-la-marca-de-sus-patas | done | tickets/done/bridge-de-grupos-pierde-la-marca-de-sus-patas.md |
+| bridge-history-import-is-only-offered-when-something-was-already-bridged | backlog | tickets/backlog/bridge-history-import-is-only-offered-when-something-was-already-bridged.md |
 | bridge-synthesis-trusts-a-zero-converted-amount | done | tickets/done/bridge-synthesis-trusts-a-zero-converted-amount.md |
 | bridge-virtual-only-currency-mismatch-is-silent | backlog | tickets/backlog/bridge-virtual-only-currency-mismatch-is-silent.md |
 | budget-category-picker-offers-income-categories | qa | tickets/qa/budget-category-picker-offers-income-categories.md |
@@ -422,8 +424,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | floating-buttons-cover-row-amounts-on-ipad-landscape | done | tickets/done/floating-buttons-cover-row-amounts-on-ipad-landscape.md |
 | floating-plus-flashes-when-entering-a-tab | done | tickets/done/floating-plus-flashes-when-entering-a-tab.md |
 | flows-atlas-predates-session-redesign | backlog | tickets/backlog/flows-atlas-predates-session-redesign.md |
-| flujo-proyectado-en-tendencias-y-panel | qa | tickets/qa/flujo-proyectado-en-tendencias-y-panel.md |
 | flujo-de-caja-nutre-el-proyectado | qa | tickets/qa/flujo-de-caja-nutre-el-proyectado.md |
+| flujo-proyectado-en-tendencias-y-panel | qa | tickets/qa/flujo-proyectado-en-tendencias-y-panel.md |
 | follower-waits-forever-on-a-lease-with-a-null-heartbeat | backlog | tickets/backlog/follower-waits-forever-on-a-lease-with-a-null-heartbeat.md |
 | force-fetch-and-wait-ignores-cancellation | done | tickets/done/force-fetch-and-wait-ignores-cancellation.md |
 | forcesync-returns-ok-without-touching-the-network | backlog | tickets/backlog/forcesync-returns-ok-without-touching-the-network.md |
@@ -478,6 +480,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | gpt-4-1-nano-shuts-down-on-october-23 | done | tickets/done/gpt-4-1-nano-shuts-down-on-october-23.md |
 | group-badge-missing-outside-records | backlog | tickets/backlog/group-badge-missing-outside-records.md |
 | group-balance-service-shares-not-deduped | backlog | tickets/backlog/group-balance-service-shares-not-deduped.md |
+| group-debt-card-reads-pays-to-tu | backlog | tickets/backlog/group-debt-card-reads-pays-to-tu.md |
 | group-detail-reads-the-group-after-leaving-it | done | tickets/done/group-detail-reads-the-group-after-leaving-it.md |
 | group-expense-detail-like-record-detail | backlog | tickets/backlog/group-expense-detail-like-record-detail.md |
 | group-expense-draft-is-deleted-with-its-sheet-open-when-the-expense-is-gone | done | tickets/done/group-expense-draft-is-deleted-with-its-sheet-open-when-the-expense-is-gone.md |
@@ -489,11 +492,14 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | group-notif-credits-payer-not-editor | done | tickets/done/group-notif-credits-payer-not-editor.md |
 | group-presence-predicates-disagree-on-archived-and-hidden | backlog | tickets/backlog/group-presence-predicates-disagree-on-archived-and-hidden.md |
 | group-push-has-no-collapse-id-and-multi-device-duplicates | backlog | tickets/backlog/group-push-has-no-collapse-id-and-multi-device-duplicates.md |
+| group-settings-options-read-their-value-from-a-lazy-section | backlog | tickets/backlog/group-settings-options-read-their-value-from-a-lazy-section.md |
 | group-share-to-zero-leaves-the-recharge-entry-orphaned | backlog | tickets/backlog/group-share-to-zero-leaves-the-recharge-entry-orphaned.md |
+| group-split-amount-field-keeps-the-old-value-and-drops-typed-digits | backlog | tickets/backlog/group-split-amount-field-keeps-the-old-value-and-drops-typed-digits.md |
 | group-split-line-entry-reads-as-a-loose-transfer-in-records | done | tickets/done/group-split-line-entry-reads-as-a-loose-transfer-in-records.md |
 | group-split-lines-recipe-lost-on-payer-or-currency-change | done | tickets/done/group-split-lines-recipe-lost-on-payer-or-currency-change.md |
 | group-split-lines-recipe-lost-when-the-new-leg-is-not-born-in-the-pass | backlog | tickets/backlog/group-split-lines-recipe-lost-when-the-new-leg-is-not-born-in-the-pass.md |
 | group-split-sheet-shows-you-twice | done | tickets/done/group-split-sheet-shows-you-twice.md |
+| group-stats-who-paid-most-bars-cover-the-names | backlog | tickets/backlog/group-stats-who-paid-most-bars-cover-the-names.md |
 | groups-account-association-in-storage-row | done | tickets/done/groups-account-association-in-storage-row.md |
 | groups-actions-do-not-retry-a-401-with-a-forced-token-refresh | backlog | tickets/backlog/groups-actions-do-not-retry-a-401-with-a-forced-token-refresh.md |
 | groups-actions-read-an-offline-token-refresh-as-a-session-expiry | done | tickets/done/groups-actions-read-an-offline-token-refresh-as-a-session-expiry.md |
@@ -1050,6 +1056,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | settlement-amount-edited-after-approval-leaves-the-bank-stale | done | tickets/done/settlement-amount-edited-after-approval-leaves-the-bank-stale.md |
 | settlement-approval-leaves-no-trace-so-a-rebridge-asks-again | done | tickets/done/settlement-approval-leaves-no-trace-so-a-rebridge-asks-again.md |
 | settlement-direction-edited-after-approval-leaves-the-bank-stale | backlog | tickets/backlog/settlement-direction-edited-after-approval-leaves-the-bank-stale.md |
+| settlement-retry-after-a-failed-confirmation-duplicates-the-payment | backlog | tickets/backlog/settlement-retry-after-a-failed-confirmation-duplicates-the-payment.md |
 | share-extension-image-skips-pro-gate | done | tickets/done/share-extension-image-skips-pro-gate.md |
 | share-image-reading-does-not-always-start | done | tickets/done/share-image-reading-does-not-always-start.md |
 | shared-photo-waits-silently-behind-an-open-panel-sheet | done | tickets/done/shared-photo-waits-silently-behind-an-open-panel-sheet.md |
