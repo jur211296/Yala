@@ -889,6 +889,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | private-signout-groups-session-expiry-does-not-say-where-to-sign-in | backlog | tickets/backlog/private-signout-groups-session-expiry-does-not-say-where-to-sign-in.md |
 | pro-saved-entitlement-survives-an-apple-id-switch | backlog | tickets/backlog/pro-saved-entitlement-survives-an-apple-id-switch.md |
 | pro-theme-resets-silently-when-pro-ends | done | tickets/done/pro-theme-resets-silently-when-pro-ends.md |
+| profile-pro-gate-sheets-are-never-opened | backlog | tickets/backlog/profile-pro-gate-sheets-are-never-opened.md |
 | prompts-de-traduccion-corren-xcodebuild-sin-cola | done | tickets/done/prompts-de-traduccion-corren-xcodebuild-sin-cola.md |
 | pt-br-category-strings-keep-portugal-and-unaccented-forms | backlog | tickets/backlog/pt-br-category-strings-keep-portugal-and-unaccented-forms.md |
 | pt-br-group-rows-say-they-lent-you-under-owed-to-you | done | tickets/done/pt-br-group-rows-say-they-lent-you-under-owed-to-you.md |

@@ -866,10 +866,17 @@ private struct DetailContainerSheets: ViewModifier {
                 ImageSelectionView()
             }
             // Si se compra Pro en la hoja, al cerrarse se abre lo que se quería (UX 2.2 · L17-9).
-            .proUpgradeSheet(isPresented: $showUpgradeForVoice, feature: .voiceInput, context: .proFeature) {
+            // «Apuntarlo a mano» abre Nuevo registro, como el «+» (mejoras necesarias 2.3 · V3).
+            .proUpgradeSheet(
+                isPresented: $showUpgradeForVoice, feature: .voiceInput, context: .proFeature,
+                onManualEntry: { recordsViewModel.showNewTransaction = true }
+            ) {
                 openAIEntryAfterUnlock(.voice)
             }
-            .proUpgradeSheet(isPresented: $showUpgradeForImage, feature: .imageInput, context: .proFeature) {
+            .proUpgradeSheet(
+                isPresented: $showUpgradeForImage, feature: .imageInput, context: .proFeature,
+                onManualEntry: { recordsViewModel.showNewTransaction = true }
+            ) {
                 openAIEntryAfterUnlock(.image)
             }
             // Yala IA: columna al lado en ventana ancha, la hoja de siempre en compacta.

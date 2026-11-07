@@ -80,6 +80,9 @@ struct ImageSelectionView: View {
     /// «Apuntarlo a mano» (UX 2.2 · L4-3): cuando la foto o el archivo no se pueden leer, Nuevo registro sube encima y,
     /// al cerrarse, se cierra también esta hoja.
     @State private var showManualEntry = false
+    /// «Apuntarlo a mano» desde el muro de Pro con lo leído a la vista (el aviso de fotos que no entraron): al cerrar el
+    /// formulario se vuelve a «Lo leído», no se cierra la hoja (mejoras necesarias 2.3 · V3).
+    @State private var manualEntryReturnsToReview = false
 
     /// Práctica guiada: recibos de ejemplo que se pueden leer sin tener uno a mano.
     var exampleImages: [UIImage]?
@@ -138,10 +141,14 @@ struct ImageSelectionView: View {
                 .ignoresSafeArea()
         }
         // Si compra Pro ahí, al volver se lee lo que faltaba (UX 2.2 · L17-9).
-        .proUpgradeSheet(isPresented: $showUpgrade, feature: .imageInput, context: .proFeature) {
+        // «Apuntarlo a mano» va al mismo formulario que su botón de los fallos (mejoras necesarias 2.3 · V3).
+        .proUpgradeSheet(
+            isPresented: $showUpgrade, feature: .imageInput, context: .proFeature,
+            onManualEntry: openManualEntryFromProGate
+        ) {
             continueAfterProUnlock()
         }
-        .sheet(isPresented: $showManualEntry, onDismiss: { dismiss() }) {
+        .sheet(isPresented: $showManualEntry, onDismiss: manualEntryClosed) {
             NewTransactionView()
         }
         .sheet(item: $detailDraft, onDismiss: afterDetails) { draft in
@@ -1371,6 +1378,20 @@ struct ImageSelectionView: View {
 
     /// Al cerrar: corta lo que se estuviera leyendo y, en la práctica guiada, da el paso por cumplido con el borrador
     /// que quedó en la Bandeja.
+    private func openManualEntryFromProGate() {
+        manualEntryReturnsToReview = phase == .review
+        showManualEntry = true
+    }
+
+    /// Tras el formulario a mano se cierra la hoja, como siempre; si se abrió con lo leído a la vista, se vuelve ahí.
+    private func manualEntryClosed() {
+        if manualEntryReturnsToReview {
+            manualEntryReturnsToReview = false
+        } else {
+            dismiss()
+        }
+    }
+
     private func tearDown() {
         readTask?.cancel()
         readTask = nil

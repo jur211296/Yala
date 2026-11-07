@@ -8070,6 +8070,20 @@
 /* Button in the 'use another account' sign-in chooser: sign in with an Apple ID different from the one on this iPhone (opens Apple's web page). */
 "storage.signin.anotherAppleID" = "Otra cuenta de Apple";
 
+/* Mejoras necesarias 2.3 · Formulario: monedas claras (M1, T1) */
+/* New record form: line under the amount when choosing an account changes the currency of an amount already typed. %1$@ = plural currency name, %2$@ = ISO code, %3$@ = account name. */
+"formClarity.currencyNotice" = "Ahora en %1$@ (%2$@), la moneda de %3$@";
+/* Same line, for a currency the app has no name for. %1$@ = ISO code, %2$@ = account name. */
+"formClarity.currencyNotice.codeOnly" = "Ahora en %1$@, la moneda de %2$@";
+/* Transfer between currencies: caption above the amount that leaves. %@ = source account name. */
+"formClarity.transfer.sourceCaption" = "Sale de %@";
+/* Transfer between currencies: caption above the amount that arrives. %@ = destination account name. */
+"formClarity.transfer.destinationCaption" = "Llega a %@";
+/* VoiceOver label of the amount that leaves. %1$@ = account name, %2$@ = currency (e.g. 'soles (PEN)'). */
+"formClarity.transfer.sourceAmountA11y" = "Importe que sale de %1$@, en %2$@";
+/* VoiceOver label of the amount that arrives. %1$@ = account name, %2$@ = currency (e.g. 'dollars (USD)'). */
+"formClarity.transfer.destinationAmountA11y" = "Importe que llega a %1$@, en %2$@";
+
 /* Accessibility label of the ↻ button in Configure Panel: puts the sections back in their original order */
 "panel.sectionsConfig.resetOrder" = "Restablecer el orden original";
 
