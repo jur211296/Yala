@@ -37,6 +37,8 @@ struct RemoteWipeSignalDetectionTests {
     private struct Outcome {
         var intents: [RouterIntent] = []
         var remoteOnboardingPosts = 0
+        /// Las vueltas que pidió para cerrar la espera de la marca, en segundos.
+        var rechecks: [TimeInterval] = []
     }
 
     /// Un teléfono con el onboarding hecho y una señal de vaciado de otro dispositivo sin procesar. `privateMark`: `nil`
@@ -51,16 +53,25 @@ struct RemoteWipeSignalDetectionTests {
         return (store, local)
     }
 
-    private func detect(_ store: WipeSignalSpyStore, _ local: UserDefaults, mode: StorageMode) -> Outcome {
+    /// El «ahora» de la detección: fijo, y cada caso lo mueve a mano para cruzar la espera de la marca.
+    private let t0 = Date(timeIntervalSince1970: 1_800_000_000)
+
+    private func detect(_ store: WipeSignalSpyStore, _ local: UserDefaults, mode: StorageMode,
+                        now: Date? = nil) -> Outcome {
         CloudSyncFlags.storageMode = mode
         defer { CloudSyncFlags._testResetStorageModeOverride() }
         var outcome = Outcome()
         PreferenceSyncService.checkForRemoteWipeSignal(
             iKV: store, local: local, isWipingData: false,
             submit: { outcome.intents.append($0) },
-            postRemoteOnboardingCompleted: { outcome.remoteOnboardingPosts += 1 })
+            postRemoteOnboardingCompleted: { outcome.remoteOnboardingPosts += 1 },
+            now: now ?? t0,
+            scheduleRecheck: { outcome.rechecks.append($0) })
         return outcome
     }
+
+    /// Pasada la espera de la marca, con un segundo de margen.
+    private var afterTheWait: Date { t0.addingTimeInterval(PreferenceSyncService.wipeMarkWait + 1) }
 
     @Test("una sesión en la nube no encola el vaciado remoto del Apple ID, y da la señal por procesada")
     func cloudSession_doesNotEnqueue() throws {
@@ -74,12 +85,15 @@ struct RemoteWipeSignalDetectionTests {
     @Test("control: la sesión privada confirmada SÍ encola el vaciado, una vez")
     func confirmedPrivateSession_enqueuesOnce() throws {
         let (store, local) = try phone(privateMark: true)
-        let outcome = detect(store, local, mode: .icloud)
-        #expect(outcome.intents == [.remoteWipe(skipOnboarding: false)])
+        // Sin la marca del parque, la primera pasada aparca la señal (ver los casos de orden de llegada, abajo).
+        let first = detect(store, local, mode: .icloud)
+        #expect(first.intents.isEmpty)
         #expect(local.double(forKey: "lastKnownWipeTimestamp") == 2_000)
+        let outcome = detect(store, local, mode: .icloud, now: afterTheWait)
+        #expect(outcome.intents == [.remoteWipe(skipOnboarding: false)])
 
         // Y la misma señal no vuelve a encolarse en la pasada siguiente.
-        #expect(detect(store, local, mode: .icloud).intents.isEmpty)
+        #expect(detect(store, local, mode: .icloud, now: afterTheWait.addingTimeInterval(60)).intents.isEmpty)
     }
 
     @Test("la marca del eje ausente falla CERRADO: no encola")
@@ -105,5 +119,80 @@ struct RemoteWipeSignalDetectionTests {
             #expect(outcome.intents == [.remoteOnboardingCompleted], "\(mode)")
             #expect(outcome.remoteOnboardingPosts == 1, "\(mode)")
         }
+    }
+
+    // MARK: - Orden de llegada: la señal antes que la marca del parque
+
+    /// **El caso del ticket** `wipe-signal-arriving-before-the-fleet-mark-takes-the-origin-seed`. «Vaciar datos» que se
+    /// queda en el Panel sube la marca y la señal en el mismo `synchronize`, y el iCloud KV no garantiza el orden. Si la
+    /// señal llega sola, el receptor no decide: la consume, la aparca y pide una vuelta. Cuando llega la marca, entra por
+    /// «el parque sigue» (`skipOnboarding: true`): conserva sus ajustes, sus recordatorios y la semilla del origen.
+    @Test("la señal que llega antes que la marca se aparca, y al llegar la marca el receptor se queda en la app")
+    func signalBeforeMark_waits_thenKeepsSetup() throws {
+        let (store, local) = try phone(privateMark: true)
+
+        let alone = detect(store, local, mode: .icloud)
+        #expect(alone.intents.isEmpty, "decidió con la señal sola: el receptor vuelve al onboarding y se lleva la semilla del origen")
+        #expect(alone.rechecks == [PreferenceSyncService.wipeMarkWait], "aparcó la señal sin pedir la vuelta que cierra la espera")
+        #expect(local.double(forKey: "lastKnownWipeTimestamp") == 2_000, "la señal se consume aunque espere")
+
+        // Llega la marca, 3 s después: la otra mitad de la misma señal.
+        store.values["lastOnboardingTimestamp"] = 2_000.001
+        let withMark = detect(store, local, mode: .icloud, now: t0.addingTimeInterval(3))
+        #expect(withMark.intents == [.remoteWipe(skipOnboarding: true)])
+        #expect(withMark.remoteOnboardingPosts == 0, "la marca de esta señal no es un onboarding remoto de otro vaciado")
+
+        // Cerrada la espera, la señal no vuelve a encolar el vaciado (el aviso de onboarding remoto que sigue es el de
+        // siempre tras una señal con marca, y su manejador no hace nada fuera del onboarding).
+        #expect(!detect(store, local, mode: .icloud, now: afterTheWait).intents.contains(.remoteWipe(skipOnboarding: true)))
+        #expect(!detect(store, local, mode: .icloud, now: afterTheWait).intents.contains(.remoteWipe(skipOnboarding: false)))
+    }
+
+    @Test("control: si la marca no llega, al vencer la espera se decide como siempre (el parque empezó de cero)")
+    func signalWithoutMark_afterTheWait_startsOver() throws {
+        let (store, local) = try phone(privateMark: true)
+        _ = detect(store, local, mode: .icloud)
+
+        // Antes de vencer, una pasada (otro cambio del KV) sigue esperando y pide la vuelta por lo que falta.
+        let halfway = detect(store, local, mode: .icloud, now: t0.addingTimeInterval(5))
+        #expect(halfway.intents.isEmpty)
+        #expect(halfway.rechecks == [PreferenceSyncService.wipeMarkWait - 5])
+
+        #expect(detect(store, local, mode: .icloud, now: afterTheWait).intents == [.remoteWipe(skipOnboarding: false)])
+    }
+
+    @Test("la espera sobrevive a cerrar la app: el arranque siguiente la cierra con lo que haya")
+    func awaitedSignal_survivesARelaunch() throws {
+        let (store, local) = try phone(privateMark: true)
+        _ = detect(store, local, mode: .icloud)
+        // La app muere; al volver, la marca ya llegó.
+        store.values["lastOnboardingTimestamp"] = 2_000.001
+        #expect(detect(store, local, mode: .icloud, now: t0.addingTimeInterval(3_600)).intents
+                == [.remoteWipe(skipOnboarding: true)])
+    }
+
+    @Test("con la marca ya presente, la señal no espera nada")
+    func signalWithMark_doesNotWait() throws {
+        let (store, local) = try phone(privateMark: true)
+        store.values["lastOnboardingTimestamp"] = 2_000.001
+        let outcome = detect(store, local, mode: .icloud)
+        #expect(outcome.intents == [.remoteWipe(skipOnboarding: true)])
+        #expect(outcome.rechecks.isEmpty)
+    }
+
+    @Test("una sesión que no obedece la señal no espera: la da por procesada en el acto")
+    func cloudSession_doesNotWait() throws {
+        let (store, local) = try phone(privateMark: true)
+        let outcome = detect(store, local, mode: .cloud)
+        #expect(outcome.rechecks.isEmpty)
+        #expect(detect(store, local, mode: .cloud, now: afterTheWait).intents.isEmpty,
+                "la espera de una sesión que no obedece acabó encolando el vaciado")
+    }
+
+    @Test("la espera se decide con la sesión de AL CERRARLA: si en ese rato pasó a la nube, no encola")
+    func awaitedSignal_rechecksTheSessionWhenItCloses() throws {
+        let (store, local) = try phone(privateMark: true)
+        _ = detect(store, local, mode: .icloud)
+        #expect(detect(store, local, mode: .cloud, now: afterTheWait).intents.isEmpty)
     }
 }
