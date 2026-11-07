@@ -90,7 +90,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch | done | tickets/done/adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch.md |
 | adopt-orphan-with-a-fresh-hlc-beats-the-absent-leaders-edit | backlog | tickets/backlog/adopt-orphan-with-a-fresh-hlc-beats-the-absent-leaders-edit.md |
 | adopt-over-a-device-already-in-cloud-mode-has-no-exit | backlog | tickets/backlog/adopt-over-a-device-already-in-cloud-mode-has-no-exit.md |
-| adopt-rekeyed-rows-without-a-unique-lineage-key-still-duplicate | backlog | tickets/backlog/adopt-rekeyed-rows-without-a-unique-lineage-key-still-duplicate.md |
+| adopt-rekeyed-rows-without-a-unique-lineage-key-still-duplicate | discarded | tickets/discarded/adopt-rekeyed-rows-without-a-unique-lineage-key-still-duplicate.md |
 | adopt-session-close-drops-the-mark-before-the-sign-out-lands | backlog | tickets/backlog/adopt-session-close-drops-the-mark-before-the-sign-out-lands.md |
 | adopt-terminal-claims-ready-without-checking-engine | backlog | tickets/backlog/adopt-terminal-claims-ready-without-checking-engine.md |
 | adopt-uploads-a-foreign-corpus-without-a-lineage-check | done | tickets/done/adopt-uploads-a-foreign-corpus-without-a-lineage-check.md |
@@ -270,7 +270,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-progress-shows-real-steps-and-counts | qa | tickets/qa/cloud-progress-shows-real-steps-and-counts.md |
 | cloud-session-expiry-with-only-group-changes-has-no-sign-in-door | done | tickets/done/cloud-session-expiry-with-only-group-changes-has-no-sign-in-door.md |
 | cloud-session-removed-by-the-sdk-does-not-announce-itself | backlog | tickets/backlog/cloud-session-removed-by-the-sdk-does-not-announce-itself.md |
-| cloud-sign-in-cannot-choose-another-apple-id | backlog | tickets/backlog/cloud-sign-in-cannot-choose-another-apple-id.md |
+| cloud-sign-in-cannot-choose-another-apple-id | qa | tickets/qa/cloud-sign-in-cannot-choose-another-apple-id.md |
 | cloud-sign-in-discovers-account-kind | done | tickets/done/cloud-sign-in-discovers-account-kind.md |
 | cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest | done | tickets/done/cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest.md |
 | cloud-sign-in-uploads-the-boot-exchange-rates-before-letting-in | done | tickets/done/cloud-sign-in-uploads-the-boot-exchange-rates-before-letting-in.md |
@@ -731,7 +731,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged | done | tickets/done/late-remote-wipe-signal-undoes-the-rows-the-origin-reconverged.md |
 | late-remote-wipe-survivors-can-point-at-rows-the-origin-deleted | backlog | tickets/backlog/late-remote-wipe-survivors-can-point-at-rows-the-origin-deleted.md |
 | late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud | done | tickets/done/late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud.md |
-| latest-rates-cache-ignores-rate-rows-from-the-mirror-and-the-pull | backlog | tickets/backlog/latest-rates-cache-ignores-rate-rows-from-the-mirror-and-the-pull.md |
+| latest-rates-cache-ignores-rate-rows-from-the-mirror-and-the-pull | done | tickets/done/latest-rates-cache-ignores-rate-rows-from-the-mirror-and-the-pull.md |
 | leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile | done | tickets/done/leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile.md |
 | leaving-and-reentering-restore-renews-the-hard-cap | done | tickets/done/leaving-and-reentering-restore-renews-the-hard-cap.md |
 | lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait | done | tickets/done/lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait.md |
