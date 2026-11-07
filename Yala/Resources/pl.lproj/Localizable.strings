@@ -8741,3 +8741,21 @@
 
 /* Button in the 'use another account' sign-in chooser: sign in with an Apple ID different from the one on this iPhone (opens Apple's web page). */
 "storage.signin.anotherAppleID" = "Inne konto Apple";
+
+/* Accessibility label of the ↻ button in Configure Panel: puts the sections back in their original order */
+"panel.sectionsConfig.resetOrder" = "Przywróć pierwotną kolejność";
+
+/* Alert title asking before putting the Panel sections back in their original order */
+"panel.sectionsConfig.resetOrder.title" = "Przywrócić pierwotną kolejność?";
+
+/* Alert message: only the order of the Panel sections changes; which ones are on or off stays */
+"panel.sectionsConfig.resetOrder.message" = "Sekcje wrócą do pierwotnej kolejności Panelu. Te, które włączono lub wyłączono, zostaną bez zmian.";
+
+/* Alert button that confirms resetting (Panel sections order or a section's widgets) */
+"panel.sectionsConfig.resetOrder.confirm" = "Przywróć";
+
+/* Alert title asking before putting a Panel section's widgets back as they came; %@ is the section name */
+"panel.sectionPrefs.reset.title %@" = "Przywrócić „%@”?";
+
+/* Alert message: the section's widgets go back to how they came (which show, order and size) */
+"panel.sectionPrefs.reset.message" = "Widżety wrócą do stanu początkowego: które są widoczne, w jakiej kolejności i w jakim rozmiarze.";

@@ -1,6 +1,6 @@
 ---
 name: reference-forzar-una-preferencia-en-un-lanzamiento
-description: Para ver en el simulador algo que -uitest da por visto (tarjeta de avisos de Grupos, etc.), pasar -<clave> NO como argumento de lanzamiento
+description: -<clave> valor al lanzar gana al dominio de registro de -uitest, pero CONGELA la preferencia: un test que la cambia (reset, toggle) no puede partir de ahí
 metadata:
   type: reference
 ---
@@ -17,3 +17,7 @@ Más barato que [[reference-forzar-preferencias-en-el-simulador]] cuando la marc
 la píldora no se encendía nunca. Sirve para FOTOGRAFIAR un estado, no para un test que la cambia; ahí, normaliza el
 estado desde la pantalla. Y `-uitest-reset` borra la clave del disco pero no la de memoria si `AppPreferences` ya la
 leyó: el estado puede venir de la corrida anterior.
+
+Lo volví a pisar el 2026-11-07 con `-panelSectionsOrder planificacion,tendencias` para probar «Restablecer» de
+«Configurar Panel»: el reset «no hacía nada». El orden de partida se puso arrastrando en la hoja ↕ desde el XCUITest
+(`PanelSectionsConfigResetUITests.movePlanningAboveTrends`).

@@ -35,12 +35,37 @@ struct HeroMonthView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// «Ocultar montos» del Panel (`AmountPrivacy`): lo pone el ojo de este mismo hero.
     @Environment(\.amountsHidden) private var amountsHidden
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    /// La cifra crece con el texto de accesibilidad, con techo (pase de estrés 2.2, card eb9i): con los 36 pt fijos de
+    /// `panelHeroAmount`, a AX5 los chips de entradas y salidas medían casi el doble y la jerarquía se invertía. El molde
+    /// es el de Grupos (`GroupSummaryHeader.netFont`). Hasta xxxLarge sigue siendo el token de siempre.
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledFigureSize: CGFloat = 36
+    /// Símbolo y decimales de la cifra, en la misma proporción que el token (17 de 36).
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledFigureSecondarySize: CGFloat = 17
+    /// Techo de la cifra: el `largeTitle` de AX5. Con el `minimumScaleFactor(0.7)` de `AmountText` no baja de 42 pt.
+    private static let figureMaxSize: CGFloat = 60
+    /// Rótulo y chips dejan de crecer en AX2: son detalle de la cifra, no compiten con ella (como en Grupos).
+    private static let sidesMaxTypeSize = DynamicTypeSize.accessibility2
+
+    private var figureFont: Font {
+        guard dynamicTypeSize.isAccessibilitySize else { return DS.Typography.panelHeroAmount }
+        // A11Y-DT: tamaño escalado a mano con techo; el token es fijo a propósito y aquí tiene que crecer.
+        return .system(size: min(scaledFigureSize, Self.figureMaxSize), weight: .semibold)
+    }
+
+    private var figureSecondaryFont: Font {
+        guard dynamicTypeSize.isAccessibilitySize else { return DS.Typography.panelHeroAmountSecondary }
+        // A11Y-DT: el mismo techo, en la proporción del token.
+        return .system(size: min(scaledFigureSecondarySize, Self.figureMaxSize * 17 / 36), weight: .regular)
+    }
 
     // La maqueta (rótulo y período arriba, cifra y detalle debajo, todo a la izquierda) es `HeroHeader`, la misma
     // que usan las pestañas de Estadísticas: así las dos cabeceras no pueden volver a divergir.
     var body: some View {
         HeroHeader {
             labelWithDetailHint
+                .dynamicTypeSize(...Self.sidesMaxTypeSize)
         } period: {
             // El título de la píldora se releva fundido y la cápsula cambia de ancho animada (card C2), como en
             // Estadísticas. Con Reducir movimiento, en seco.
@@ -104,7 +129,10 @@ struct HeroMonthView: View {
     private func figureWithVisibilityButton(_ figure: AmountText) -> some View {
         HStack(alignment: .center, spacing: DS.Spacing.sm) {
             figure
+                .accessibilityIdentifier("panel_hero_figure")
             amountsVisibilityButton
+                // El ojo es detalle de la cifra, como rótulo y chips: deja de crecer en AX2 y no le quita ancho.
+                .dynamicTypeSize(...Self.sidesMaxTypeSize)
         }
     }
 
@@ -170,8 +198,8 @@ struct HeroMonthView: View {
                 figureWithVisibilityButton(AmountText(
                     value: periodSummary.expense,
                     currencyCode: currencyCode,
-                    font: DS.Typography.panelHeroAmount,
-                    secondaryFont: DS.Typography.panelHeroAmountSecondary,
+                    font: figureFont,
+                    secondaryFont: figureSecondaryFont,
                     // Solo el lado del gasto: este número no incluye los ingresos.
                     isEstimate: periodSummary.expenseApproximate,
                     animatesValue: true
@@ -192,8 +220,8 @@ struct HeroMonthView: View {
                 figureWithVisibilityButton(AmountText(
                     value: figure.value(income: periodSummary.income, expense: periodSummary.expense),
                     currencyCode: currencyCode,
-                    font: DS.Typography.panelHeroAmount,
-                    secondaryFont: DS.Typography.panelHeroAmountSecondary,
+                    font: figureFont,
+                    secondaryFont: figureSecondaryFont,
                     isEstimate: figureIsApproximate,
                     animatesValue: true
                 ))
@@ -219,6 +247,8 @@ struct HeroMonthView: View {
                         isEstimate: periodSummary.expenseApproximate
                     )
                 }
+                // Topados en AX2 para que la cifra siga siendo lo mayor del hero (card eb9i, molde de Grupos).
+                .dynamicTypeSize(...Self.sidesMaxTypeSize)
 
                 heroCaption(isIncomeFiltered: isIncomeFiltered, isExpenseFiltered: isExpenseFiltered)
             }
