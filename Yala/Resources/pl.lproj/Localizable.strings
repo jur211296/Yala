@@ -8735,6 +8735,9 @@
 "trend.projected.source.plan" = "Szacowane na podstawie planu przepływu środków";
 "trend.projected.source.rhythm" = "Szacowane na podstawie tempa wydatków";
 "trend.projected.source.scheduled" = "Szacowane na podstawie zaplanowanych płatności";
+"trend.projected.link.setup" = "Doprecyzuj planem przepływu środków";
+"trend.projected.link.plan" = "Zobacz swój plan przepływu środków";
+"trend.projected.setupNote" = "Z planem „Pokaż prognozę” w Trendach i na ekranie Start szacuje resztę miesiąca na podstawie tych kwot.";
 
 /* Button in the 'use another account' sign-in chooser: sign in with an Apple ID different from the one on this iPhone (opens Apple's web page). */
 "storage.signin.anotherAppleID" = "Inne konto Apple";

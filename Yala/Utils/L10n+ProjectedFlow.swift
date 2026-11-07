@@ -30,6 +30,12 @@ extension L10n {
         /// Rótulo de la cifra al final del período, bajo la gráfica.
         static var closing: String { lpf("trend.projected.closing") }
 
+        /// El enlace bajo la cifra al plan de flujo de caja: armarlo si no hay plan, verlo si lo hay.
+        static var linkSetup: String { lpf("trend.projected.link.setup") }
+        static var linkPlan: String { lpf("trend.projected.link.plan") }
+        /// En la pantalla de armar el plan: para qué sirve también el plan.
+        static var setupNote: String { lpf("trend.projected.setupNote") }
+
         /// De dónde sale la estimación de lo no planificado.
         static func source(_ source: ProjectedFlowCalculator.Source) -> String {
             switch source {

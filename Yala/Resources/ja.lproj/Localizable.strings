@@ -8735,6 +8735,9 @@
 "trend.projected.source.plan" = "キャッシュフロー計画から推定";
 "trend.projected.source.rhythm" = "支出ペースから推定";
 "trend.projected.source.scheduled" = "予定の支払いから推定";
+"trend.projected.link.setup" = "キャッシュフロー計画で精度を上げる";
+"trend.projected.link.plan" = "キャッシュフロー計画を見る";
+"trend.projected.setupNote" = "計画があると、推移とホームの「予測を表示」は、月の残りをこの金額で見積もります。";
 
 /* Button in the 'use another account' sign-in chooser: sign in with an Apple ID different from the one on this iPhone (opens Apple's web page). */
 "storage.signin.anotherAppleID" = "別のAppleアカウント";

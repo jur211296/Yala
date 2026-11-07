@@ -423,6 +423,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | floating-plus-flashes-when-entering-a-tab | done | tickets/done/floating-plus-flashes-when-entering-a-tab.md |
 | flows-atlas-predates-session-redesign | backlog | tickets/backlog/flows-atlas-predates-session-redesign.md |
 | flujo-proyectado-en-tendencias-y-panel | qa | tickets/qa/flujo-proyectado-en-tendencias-y-panel.md |
+| flujo-de-caja-nutre-el-proyectado | qa | tickets/qa/flujo-de-caja-nutre-el-proyectado.md |
 | follower-waits-forever-on-a-lease-with-a-null-heartbeat | backlog | tickets/backlog/follower-waits-forever-on-a-lease-with-a-null-heartbeat.md |
 | force-fetch-and-wait-ignores-cancellation | done | tickets/done/force-fetch-and-wait-ignores-cancellation.md |
 | forcesync-returns-ok-without-touching-the-network | backlog | tickets/backlog/forcesync-returns-ok-without-touching-the-network.md |

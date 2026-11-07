@@ -122,4 +122,26 @@ final class ProjectedFlowUITests: XCTestCase {
         XCTAssertTrue(element(again, "trend_projected_caption").waitForExistence(timeout: 15),
                       "Tendencias no recuerda «Ver proyectado» encendido desde el Panel.")
     }
+
+    /// Bajo la cifra, el camino al plan que afina la estimación (card «Mejorar el flujo de caja para que nutra el Flujo
+    /// proyectado»): sin plan, «Afinar con un plan…» lleva a armarlo en Flujo de caja.
+    func test_trends_projectionWithoutAPlan_linksToSettingUpTheCashFlowPlan() throws {
+        if Calendar.current.component(.month, from: .now) == 12, Calendar.current.component(.day, from: .now) == 31 {
+            throw XCTSkip("El 31 de diciembre «Este año» no tiene días por delante.")
+        }
+        let app = launch(deeplink: "statistics")
+        openTrends(app)
+        let toggle = element(app, "trend_projected_toggle")
+        XCTAssertTrue(toggle.waitForExistence(timeout: 15), "Falta «Ver proyectado» con días por delante.")
+        if !element(app, "trend_projected_caption").waitForExistence(timeout: 2) { toggle.tap() }
+        XCTAssertTrue(element(app, "trend_projected_caption").waitForExistence(timeout: 5),
+                      "«Ver proyectado» no enseña la cifra al cierre.")
+
+        XCTAssertFalse(element(app, "trend_projected_link_plan").exists, "Sin plan, el enlace dice «Ver tu plan».")
+        let link = element(app, "trend_projected_link_setup")
+        XCTAssertTrue(scrollTo(app, link), "Sin plan, falta «Afinar con un plan de flujo de caja» bajo la cifra.")
+        link.tap()
+        XCTAssertTrue(element(app, "cashflow_setup_view").waitForExistence(timeout: 15),
+                      "El enlace no lleva a armar el plan en Flujo de caja.")
+    }
 }
