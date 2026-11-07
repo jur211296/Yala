@@ -90,7 +90,9 @@ struct GroupReceiptSplitView: View {
         .proUpgradeSheet(
             isPresented: $showUpgrade,
             feature: lastSource == .voice ? .voiceInput : .imageInput,
-            context: .proFeature
+            context: .proFeature,
+            // «Apuntarlo a mano» vuelve al formulario del gasto, que sigue con lo escrito (mejoras necesarias 2.3 · V3).
+            onManualEntry: { dismiss() }
         ) {
             phase = .capture
         }

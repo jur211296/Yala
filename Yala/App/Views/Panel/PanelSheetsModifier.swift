@@ -185,7 +185,11 @@ struct PanelSheetsModifier: ViewModifier {
                 .onDisappear { navigation.isInboxSheetVisible = false }
             }
             // Si se compra Pro en la hoja, al cerrarse se abre lo que se quería (UX 2.2 · L17-9).
-            .proUpgradeSheet(isPresented: $sheets.showUpgradeForVoice, feature: .voiceInput, context: .proFeature) {
+            // «Apuntarlo a mano» abre Nuevo registro, como el «+» (mejoras necesarias 2.3 · V3).
+            .proUpgradeSheet(
+                isPresented: $sheets.showUpgradeForVoice, feature: .voiceInput, context: .proFeature,
+                onManualEntry: { sheets.showNewTransaction = true }
+            ) {
                 openAIEntryAfterUnlock(.voice)
             }
             // Si la hoja salió por una foto compartida (card fazw), comprar abre el registro por imagen con esa foto y
@@ -193,6 +197,7 @@ struct PanelSheetsModifier: ViewModifier {
             .proUpgradeSheet(
                 isPresented: $sheets.showUpgradeForImage, feature: .imageInput, context: .proFeature,
                 onClosedWithoutUnlock: { SharedImageProGateHold.discard() },
+                onManualEntry: { sheets.showNewTransaction = true },
                 onUnlocked: {
                     if let shared = SharedImageProGateHold.takeForUnlock() {
                         navigation.pendingSharedImageURL = shared

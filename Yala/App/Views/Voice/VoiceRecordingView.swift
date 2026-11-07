@@ -117,7 +117,11 @@ struct VoiceRecordingView: View {
             NewTransactionView()
         }
         // Si compra Pro ahí, al volver el micrófono ya escucha (UX 2.2 · L17-9).
-        .proUpgradeSheet(isPresented: $showUpgrade, feature: .voiceInput, context: .proFeature) {
+        // «Apuntarlo a mano» va al mismo formulario que su botón de los fallos (mejoras necesarias 2.3 · V3).
+        .proUpgradeSheet(
+            isPresented: $showUpgrade, feature: .voiceInput, context: .proFeature,
+            onManualEntry: { showManualEntry = true }
+        ) {
             recordAgain()
         }
     }

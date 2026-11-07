@@ -99,6 +99,9 @@ struct NewTransactionView: View {
     /// Poco alto (un iPhone SE): menos aire entre bloques. Se mide sin contar el teclado, para que el formulario no se
     /// apriete al escribir en un iPhone grande.
     @State private var isCompactHeight = false
+    /// «Ahora en dólares (USD), la moneda de Ahorros USD» (mejoras necesarias 2.3 · M1): el importe ya escrito pasó a
+    /// otra moneda al elegir la cuenta. Lo decide `AmountCurrencyNoticeLogic`.
+    @State private var amountCurrencyNotice: AmountCurrencyNotice?
 
     // Prefill parameters
     let prefillAccountID: PersistentIdentifier?
@@ -906,7 +909,10 @@ struct NewTransactionView: View {
                 } else {
                     amountDisplay
                 }
+                amountCurrencyNoticeLine
             }
+            .animation(reduceMotion ? nil : DS.Animation.appear, value: showsAmountCurrencyNotice)
+            .onChange(of: amountCurrencySnapshot) { old, new in amountCurrencyChanged(from: old, to: new) }
 
             // La equivalencia en la divisa preferida y la tasa en cápsula, también al crear (L2-11). Usa la divisa del
             // IMPORTE (`amountCurrencyCode`), no la de la cuenta: 50 USD en una cuenta en soles siguen siendo dólares.
@@ -1045,6 +1051,47 @@ struct NewTransactionView: View {
 
     private var currencySymbol: String? {
         appPreferences.currencyIdentifier(for: displayCurrencyCode)
+    }
+
+    // MARK: - M1 · El cambio de moneda del importe, con palabras (mejoras necesarias 2.3)
+
+    /// La moneda del importe que se ve y el número escrito: lo que mira el aviso para saber si una cifra cambió de moneda.
+    private var amountCurrencySnapshot: AmountCurrencySnapshot {
+        AmountCurrencySnapshot(currencyCode: displayCurrencyCode, amount: viewModel.amount)
+    }
+
+    private var showsAmountCurrencyNotice: Bool {
+        AmountCurrencyNoticeLogic.isShown(
+            amountCurrencyNotice, currencyCode: displayCurrencyCode, amount: viewModel.amount,
+            isTransfer: viewModel.isTransfer)
+    }
+
+    /// Bajo el importe, con palabras: el número se queda y la moneda cambia (no se convierte nada, L2-16).
+    @ViewBuilder
+    private var amountCurrencyNoticeLine: some View {
+        if showsAmountCurrencyNotice, let notice = amountCurrencyNotice {
+            Label(AmountCurrencyNoticeLogic.text(for: notice), systemImage: "arrow.left.arrow.right")
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, DS.Spacing.lg)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("new_transaction_currency_notice")
+                .transition(.opacity)
+        }
+    }
+
+    private func amountCurrencyChanged(from old: AmountCurrencySnapshot, to new: AmountCurrencySnapshot) {
+        let next = AmountCurrencyNoticeLogic.notice(
+            from: old, to: new, current: amountCurrencyNotice,
+            accountName: viewModel.selectedAccount?.name, isTransfer: viewModel.isTransfer)
+        guard next != amountCurrencyNotice else { return }
+        amountCurrencyNotice = next
+        // VoiceOver no ve cambiar el símbolo: se le dice, como al resto.
+        if let next, old.currencyCode.uppercased() != new.currencyCode.uppercased() {
+            AccessibilityNotification.Announcement(AmountCurrencyNoticeLogic.text(for: next)).post()
+        }
     }
 
     /// Un importe con la divisa del formulario y la preferencia de símbolo o código.

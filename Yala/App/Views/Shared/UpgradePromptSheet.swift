@@ -31,6 +31,19 @@ enum UpgradeContext {
     }
 }
 
+/// «Apuntarlo a mano» en el muro de Pro (mejoras necesarias 2.3 · V3): el muro de voz y foto dice «Apuntar a mano sigue
+/// gratis, como siempre» y no traía cómo. Sale solo donde lo promete el texto y quien presenta la hoja sabe abrir el
+/// formulario; sin salida, el botón no se pinta (un botón que no lleva a nada es peor que ninguno).
+enum ProGateManualEntryLogic {
+    static func offersManualEntry(feature: ProFeature, context: UpgradeContext, hasExit: Bool) -> Bool {
+        guard hasExit, context == .proFeature else { return false }
+        switch feature {
+        case .voiceInput, .imageInput: return true
+        default: return false
+        }
+    }
+}
+
 /// Lo que la hoja enseña en lugar del icono de la función cuando se tocó un tema o un icono (L16-11): cómo se vería.
 enum ProGatePreview: Equatable {
     case theme(AppTheme, variant: TranslucentVariant)
@@ -54,6 +67,8 @@ struct UpgradePromptSheet: View {
     var preview: ProGatePreview?
     /// La compra salió bien dentro de esta hoja. Lo usa `proUpgradeSheet` para abrir la función al cerrarse.
     var onPurchased: () -> Void = {}
+    /// «Apuntarlo a mano» (V3): la hoja se cierra y quien la presentó abre el formulario. `nil` = sin botón.
+    var onManualEntry: (() -> Void)?
 
     // MARK: - State
 
@@ -106,6 +121,19 @@ struct UpgradePromptSheet: View {
                             Task { await purchaseSelected() }
                         }
                         .accessibilityIdentifier("upgrade_prompt_cta")
+
+                        if ProGateManualEntryLogic.offersManualEntry(
+                            feature: feature, context: context, hasExit: onManualEntry != nil) {
+                            // Lo que el texto promete, sin competir con la compra: un botón de texto, en primario.
+                            Button(L10n.Voice.enterManually) {
+                                onManualEntry?()
+                                dismiss()
+                            }
+                            .font(DS.Typography.bodyBold)
+                            .foregroundStyle(.thPrimaryText)
+                            .disabled(store.isPurchasing)
+                            .accessibilityIdentifier("upgrade_prompt_manual_entry")
+                        }
 
                         Button(L10n.Action.notNow) {
                             dismiss()
@@ -329,7 +357,23 @@ extension View {
     ) -> some View {
         modifier(ProUpgradeSheetModifier(
             isPresented: isPresented, feature: feature, context: context,
-            preview: preview, source: source, onClosedWithoutUnlock: nil, onUnlocked: onUnlocked))
+            preview: preview, source: source, onClosedWithoutUnlock: nil, onManualEntry: nil, onUnlocked: onUnlocked))
+    }
+
+    /// La misma hoja con «Apuntarlo a mano» (mejoras necesarias 2.3 · V3): para el muro de voz y foto, que lo promete.
+    /// Sobrecarga aparte y con la salida obligatoria: un segundo cierre opcional en la de arriba haría que el `{ … }`
+    /// final de los demás llamadores se enganchara por la regla vieja («backward matching», avisada como obsoleta).
+    func proUpgradeSheet(
+        isPresented: Binding<Bool>,
+        feature: ProFeature,
+        context: UpgradeContext,
+        onManualEntry: @escaping () -> Void,
+        onUnlocked: @escaping () -> Void
+    ) -> some View {
+        modifier(ProUpgradeSheetModifier(
+            isPresented: isPresented, feature: feature, context: context,
+            preview: nil, source: "featureGate", onClosedWithoutUnlock: nil, onManualEntry: onManualEntry,
+            onUnlocked: onUnlocked))
     }
 
     /// La misma hoja, con lo que hacer si se cierra sin comprar (la foto compartida retenida, card fazw). Sobrecarga
@@ -340,11 +384,13 @@ extension View {
         feature: ProFeature,
         context: UpgradeContext,
         onClosedWithoutUnlock: @escaping () -> Void,
+        onManualEntry: @escaping () -> Void,
         onUnlocked: @escaping () -> Void
     ) -> some View {
         modifier(ProUpgradeSheetModifier(
             isPresented: isPresented, feature: feature, context: context,
-            preview: nil, source: "featureGate", onClosedWithoutUnlock: onClosedWithoutUnlock, onUnlocked: onUnlocked))
+            preview: nil, source: "featureGate", onClosedWithoutUnlock: onClosedWithoutUnlock,
+            onManualEntry: onManualEntry, onUnlocked: onUnlocked))
     }
 }
 
@@ -356,22 +402,35 @@ private struct ProUpgradeSheetModifier: ViewModifier {
     let source: String
     /// Se cerró sin comprar (o sin que la compra dejara Pro activo). Lo usa la foto compartida retenida (card fazw).
     let onClosedWithoutUnlock: (() -> Void)?
+    /// «Apuntarlo a mano» (V3). Corre al TERMINAR de cerrarse la hoja, como `onUnlocked`: abrir el formulario con el muro
+    /// aún bajando serían dos presentaciones a la vez en el mismo ancla.
+    let onManualEntry: (() -> Void)?
     let onUnlocked: (() -> Void)?
 
     @State private var purchased = false
+    @State private var wantsManualEntry = false
 
     func body(content: Content) -> some View {
         content.sheet(isPresented: $isPresented, onDismiss: handleDismiss) {
-            UpgradePromptSheet(feature: feature, context: context, source: source, preview: preview) {
-                purchased = true
-            }
+            UpgradePromptSheet(
+                feature: feature, context: context, source: source, preview: preview,
+                onPurchased: { purchased = true },
+                onManualEntry: onManualEntry.map { _ in { wantsManualEntry = true } }
+            )
         }
     }
 
     private func handleDismiss() {
         let opens = purchased && FeatureGateService.shared.isProUser
+        let manual = wantsManualEntry
         purchased = false
-        if opens { onUnlocked?() } else { onClosedWithoutUnlock?() }
+        wantsManualEntry = false
+        if opens {
+            onUnlocked?()
+        } else {
+            onClosedWithoutUnlock?()
+            if manual { onManualEntry?() }
+        }
     }
 }
 

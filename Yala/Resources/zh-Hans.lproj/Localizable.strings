@@ -8741,3 +8741,17 @@
 
 /* Button in the 'use another account' sign-in chooser: sign in with an Apple ID different from the one on this iPhone (opens Apple's web page). */
 "storage.signin.anotherAppleID" = "其他 Apple 账户";
+
+/* Mejoras necesarias 2.3 · Formulario: monedas claras (M1, T1) */
+/* New record form: line under the amount when choosing an account changes the currency of an amount already typed. %1$@ = plural currency name, %2$@ = ISO code, %3$@ = account name. */
+"formClarity.currencyNotice" = "现已改为%1$@（%2$@），即%3$@的币种";
+/* Same line, for a currency the app has no name for. %1$@ = ISO code, %2$@ = account name. */
+"formClarity.currencyNotice.codeOnly" = "现已改为%1$@，即%2$@的币种";
+/* Transfer between currencies: caption above the amount that leaves. %@ = source account name. */
+"formClarity.transfer.sourceCaption" = "转出：%@";
+/* Transfer between currencies: caption above the amount that arrives. %@ = destination account name. */
+"formClarity.transfer.destinationCaption" = "转入：%@";
+/* VoiceOver label of the amount that leaves. %1$@ = account name, %2$@ = currency (e.g. 'soles (PEN)'). */
+"formClarity.transfer.sourceAmountA11y" = "从%1$@转出的金额，%2$@";
+/* VoiceOver label of the amount that arrives. %1$@ = account name, %2$@ = currency (e.g. 'dollars (USD)'). */
+"formClarity.transfer.destinationAmountA11y" = "转入%1$@的金额，%2$@";

@@ -29,22 +29,61 @@ struct TransferAmountInputView: View {
         return appPreferences.currencyIdentifier(for: account.currencyCode)
     }
 
+    // MARK: - T1 · Cada importe dice su cuenta (mejoras necesarias 2.3)
+
+    private enum Leg { case source, destination }
+
+    /// «Sale de Cuenta Principal» / «Llega a Ahorros USD», encima de su importe. Los chips de cuenta no se mueven.
+    @ViewBuilder
+    private func accountCaption(_ text: String?, identifier: String) -> some View {
+        if let text {
+            Text(text)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier(identifier)
+        }
+    }
+
+    /// «Importe que sale de Cuenta Principal, en soles (PEN)»: antes, solo «Monto origen».
+    private func amountAccessibilityLabel(_ leg: Leg) -> String {
+        let account = leg == .source ? viewModel.sourceAccount : viewModel.destinationAccount
+        guard let account else {
+            return leg == .source ? L10n.Accessibility.sourceAmount : L10n.Accessibility.destinationAmount
+        }
+        let currency = L10n.FormClarity.currencyPhrase(account.currencyCode)
+        return leg == .source
+            ? L10n.FormClarity.transferSourceAmountA11y(account: account.name, currency: currency)
+            : L10n.FormClarity.transferDestinationAmountA11y(account: account.name, currency: currency)
+    }
+
     private static func isEmptyAmount(_ text: String) -> Bool {
         text.isEmpty || text == "0" || text == "0.00" || text == "0,00"
     }
 
     var body: some View {
-        VStack(spacing: DS.Spacing.lg) {
-            // Source Amount (Large)
-            sourceAmountField
+        // Aire más justo entre importes que antes (lg): los rótulos de cuenta (T1) ocupan ese sitio y la transferencia
+        // sigue cabiendo sin desplazar en un iPhone 17 Pro, con la fila de cuentas fuera de la línea de «Guardar».
+        VStack(spacing: DS.Spacing.xs) {
+            // Source Amount (Large), con la cuenta de la que sale encima (mejoras necesarias 2.3 · T1)
+            VStack(spacing: DS.Spacing.xxs) {
+                accountCaption(viewModel.sourceAccount.map { L10n.FormClarity.transferSourceCaption($0.name) },
+                               identifier: "transfer_source_caption")
+                sourceAmountField
+            }
 
             // Arrow visual
             Image(systemName: "arrow.down")
                 .font(DS.Typography.title)
                 .foregroundStyle(.secondary.opacity(0.5))
 
-            // Destination Amount (Large)
-            destinationAmountField
+            // Destination Amount (Large), con la cuenta a la que llega encima (T1)
+            VStack(spacing: DS.Spacing.xxs) {
+                accountCaption(viewModel.destinationAccount.map { L10n.FormClarity.transferDestinationCaption($0.name) },
+                               identifier: "transfer_destination_caption")
+                destinationAmountField
+            }
 
             // Exchange Rate (Clean, Explicit, No Box)
             exchangeRateField
@@ -58,9 +97,10 @@ struct TransferAmountInputView: View {
             Text(currencyLabel(viewModel.sourceAccount))
                 .font(.system(size: currencyLabelSize, weight: .medium, design: .rounded))
                 .foregroundStyle(Color.hotPink.opacity(0.7))
+                .accessibilityHidden(true)
 
             TextField("", text: $viewModel.amountString, prompt: Text(verbatim: "0.00").foregroundStyle(.tertiary))
-                .accessibilityLabel(L10n.Accessibility.sourceAmount)
+                .accessibilityLabel(amountAccessibilityLabel(.source))
                 .font(.system(size: heroAmountSize, weight: .bold, design: .rounded))
                 .foregroundStyle(Color.hotPink)
                 .multilineTextAlignment(.center)
@@ -98,9 +138,10 @@ struct TransferAmountInputView: View {
             Text(currencyLabel(viewModel.destinationAccount))
                 .font(.system(size: currencyLabelSize, weight: .medium, design: .rounded))
                 .foregroundStyle(Color.electricIndigo.opacity(0.7))
+                .accessibilityHidden(true)
 
             TextField("", text: $destinationAmountString, prompt: Text(verbatim: "0.00").foregroundStyle(.tertiary))
-                .accessibilityLabel(L10n.Accessibility.destinationAmount)
+                .accessibilityLabel(amountAccessibilityLabel(.destination))
                 .font(.system(size: heroAmountSize, weight: .bold, design: .rounded))
                 .foregroundStyle(Color.electricIndigo)
                 .multilineTextAlignment(.center)
