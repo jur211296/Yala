@@ -87,3 +87,26 @@ aparecen en ningún sitio**. Pasó del 23 al 29-oct de 2026: las tres tandas se 
   el test.
 - Para leer una tanda: `gh run view <run> --job <id> --log` (con `continue-on-error`,
   `--log-failed` sale vacío) y `grep "Test Suite '.*' (passed|failed)"` dice hasta dónde llegó.
+
+## El runtime del simulador nunca pasa del SDK, y una tanda sin tests no es un verde
+
+Del 5 al 7-nov de 2026 las nueve tandas de UI corrieron **cero tests** y el run salió verde. La
+imagen `xcode-27-arm64` cambió (20261026.0314.1 → 20261104.0337.1) y trajo un runtime iOS 27.2
+completo; con el Xcode 27.1 del CI, `ci-simulador.sh` lo elegía por ser «el más nuevo» y el paquete
+`YalaUITests` no cargaba (`AppIntentsTesting` de 27.1 pide un símbolo que el 27.2 ya no tiene).
+
+- **Orden de runtimes** (`ci-simulador.sh`): casa con el SDK → el más nuevo que NO pase del SDK →
+  solo si no hay otro, el menos nuevo de los posteriores, con aviso. El job `ui` corre en modo
+  estricto (`SIM_HASTA_SDK=si`) y falla con el motivo antes de gastar el runner. Los unit van en
+  modo tolerante: un runtime posterior les funciona, y el estricto dejaría los PR sin CI el día
+  que la imagen pierda el bueno. Banco: `ci-simulador-test.sh`, casos 13-17.
+- **Cada tanda cuenta lo que corrió** (`ci-ui-conteo.sh`, lee el `.xcresult` y el log). Si no
+  ejecutó ningún test, la tanda sale en rojo y el aviso dice «la UI no ejecutó ningún test». Es lo
+  único de la UI que pone su job en rojo: **un test en rojo sigue advisory**. Banco:
+  `ci-ui-conteo-test.sh`.
+- **Antes de culpar a un test o al runner, compara la imagen.** El `Set up job` de cada tanda trae
+  `Runner Image → Version`, y el paso «Simulador del runner» imprime la línea `Entorno:` con imagen,
+  Xcode, SDK y runtime con su build. Dos runs del mismo commit con imágenes distintas no prueban
+  nada del código.
+- Subir el CI a Xcode 27.2 (o al que traiga el runtime nuevo) va con la release, no con un
+  incidente: cambia el compilador de los unit que bloquean el merge.
