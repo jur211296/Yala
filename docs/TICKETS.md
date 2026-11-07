@@ -888,7 +888,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | record-pending-deletion-still-counts-outside-records | done | tickets/done/record-pending-deletion-still-counts-outside-records.md |
 | record-row-voiceover-reads-a-foreign-amount-in-the-preferred-currency | done | tickets/done/record-row-voiceover-reads-a-foreign-amount-in-the-preferred-currency.md |
 | record-selectors-open-at-medium-detent | done | tickets/done/record-selectors-open-at-medium-detent.md |
-| record-selectors-uitest-taps-the-tags-chip-off-screen | backlog | tickets/backlog/record-selectors-uitest-taps-the-tags-chip-off-screen.md |
+| record-selectors-uitest-taps-the-tags-chip-off-screen | done | tickets/done/record-selectors-uitest-taps-the-tags-chip-off-screen.md |
 | records-delete-uitest-counts-only-visible-rows | done | tickets/done/records-delete-uitest-counts-only-visible-rows.md |
 | records-landscape-first-row-only-peeks | backlog | tickets/backlog/records-landscape-first-row-only-peeks.md |
 | records-lote8-uitest-expects-the-old-change-category-title | done | tickets/done/records-lote8-uitest-expects-the-old-change-category-title.md |
