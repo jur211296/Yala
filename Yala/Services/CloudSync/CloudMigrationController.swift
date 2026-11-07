@@ -823,6 +823,7 @@ final class CloudMigrationController {
         }
 
         let provider: CloudSignInProvider
+        var anotherAppleID = false
         switch StorageMigrationSignInLogic.execution(for: plan, sessionIsUsable: sessionIsUsable) {
         case .useLiveSession:
             await continueToClaim(r, consentPath: consentPath, sessionOpenedByThisAttempt: false)
@@ -838,10 +839,19 @@ final class CloudMigrationController {
             return
         case .authenticate(let chosen):
             provider = chosen
+        case .authenticateWithAnotherAppleID:
+            provider = .apple
+            anotherAppleID = true
         }
 
         do {
-            try await CloudAuthService.shared.signIn(with: provider)
+            if anotherAppleID {
+                try await CloudAuthService.shared.signInWithAppleOnTheWeb()
+                // El derecho Pro de la cuenta entrante, como en `signIn(with:)`.
+                Task { @MainActor in await AccountEntitlementService.shared.handleSignIn() }
+            } else {
+                try await CloudAuthService.shared.signIn(with: provider)
+            }
             await continueToClaim(r, consentPath: consentPath, sessionOpenedByThisAttempt: true)
         } catch CloudAuthError.cancelled {
             // Cancel tipado (Google): volver a notStarted SIN alert — un cancel no es fallo

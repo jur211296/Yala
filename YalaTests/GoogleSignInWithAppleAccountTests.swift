@@ -289,7 +289,9 @@ struct GoogleCredentialReuseWiringTests {
     @Test("se olvida al empezar otro inicio de sesión, al cerrar sesión y al recogerla")
     func credentialIsForgottenWhereItMustBe() throws {
         let file = Self.lines(try Self.source(Self.authPath))
-        #expect(file.filter { $0 == "lastGoogleCredential = nil" }.count == 3)
+        #expect(file.filter { $0 == "lastGoogleCredential = nil" }.count == 4)
+        let appleWeb = Self.lines(try Self.body(of: "func signInWithAppleOnTheWeb() async throws {", in: Self.authPath))
+        #expect(appleWeb.contains("lastGoogleCredential = nil"), "Apple en la web también es otro inicio de sesión")
         #expect(file.filter { $0 == "defer { lastGoogleCredential = nil }" }.count == 1)
         let apple = Self.lines(try Self.body(of: "func signInWithApple() async throws {", in: Self.authPath))
         #expect(apple.contains("lastGoogleCredential = nil"))

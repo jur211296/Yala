@@ -1024,18 +1024,26 @@ struct SessionSignInLogWiringTests {
             .joined(separator: "\n")
     }
 
-    @Test("MUTACIÓN: Apple y Google apuntan la entrada tras el canje, con la sesión de antes leída ANTES del canje")
+    @Test("MUTACIÓN: Apple, Google y Apple en la web apuntan la entrada tras el canje, con la sesión de antes leída ANTES")
     func bothSignInsRecordTheEntry() throws {
         let auth = Self.codeOnly(try Self.source("Yala/Services/CloudSync/CloudAuthService.swift"))
-        #expect(auth.components(separatedBy: "SessionSignInLog.recordSignIn(").count - 1 == 2)
-        let pairs = [
-            ("let previousUserID = currentUserID", "SessionSignInLog.recordSignIn(sub: currentUserID, previousSub: previousUserID, at: Date())"),
-            ("let previousUserID = self.currentUserID", "SessionSignInLog.recordSignIn(sub: self.currentUserID, previousSub: previousUserID, at: Date())"),
+        #expect(auth.components(separatedBy: "SessionSignInLog.recordSignIn(").count - 1 == 3)
+        // (dónde empieza el inicio de sesión, la sesión de antes, el canje, el apunte). Cada uno se busca desde el
+        // comienzo de SU función: Google y la web comparten las dos líneas literales.
+        let entries = [
+            ("private func completeGoogleSignIn(", "let previousUserID = currentUserID", "signInWithIdToken(",
+             "SessionSignInLog.recordSignIn(sub: currentUserID, previousSub: previousUserID, at: Date())"),
+            ("func authorizationController(", "let previousUserID = self.currentUserID", "signInWithIdToken(",
+             "SessionSignInLog.recordSignIn(sub: self.currentUserID, previousSub: previousUserID, at: Date())"),
+            ("func signInWithAppleOnTheWeb() async throws {", "let previousUserID = currentUserID", "signInWithOAuth(",
+             "SessionSignInLog.recordSignIn(sub: currentUserID, previousSub: previousUserID, at: Date())"),
         ]
-        for (before, record) in pairs {
-            let previous = try #require(auth.range(of: before), "falta `\(before)`")
-            let recorded = try #require(auth.range(of: record), "falta `\(record)`")
-            let exchange = try #require(auth.range(of: "signInWithIdToken(", range: previous.upperBound..<recorded.lowerBound),
+        for (start, before, exchangeCall, record) in entries {
+            let from = try #require(auth.range(of: start), "falta `\(start)`")
+            let previous = try #require(auth.range(of: before, range: from.upperBound..<auth.endIndex), "falta `\(before)`")
+            let recorded = try #require(auth.range(of: record, range: previous.upperBound..<auth.endIndex),
+                                        "falta `\(record)`")
+            let exchange = try #require(auth.range(of: exchangeCall, range: previous.upperBound..<recorded.lowerBound),
                                         "la sesión de antes no se lee ANTES del canje")
             let signedIn = try #require(auth.range(of: "CloudSyncBreadcrumb.authSignedIn()",
                                                    range: exchange.upperBound..<recorded.lowerBound))

@@ -33,6 +33,10 @@ struct StorageSignInChooserView: View {
     var onSelect: (CloudSignInProvider) -> Void
     /// Belt: hay sesión viva ⇒ el caller baja el sheet y arranca con `.reuseLiveSession`.
     var onReuseLiveSession: () -> Void
+    /// «Otra cuenta de Apple» (Apple por la web, ticket `cloud-sign-in-cannot-choose-another-apple-id`). `nil` = no se
+    /// ofrece: el caller lo pasa solo con `CloudRemoteFlags.appleWebSignInEnabled`. Va debajo de los dos de siempre y
+    /// con menos peso: es la salida de quien ya sabe que el Apple ID del teléfono no es el suyo.
+    var onSelectAnotherAppleID: (() -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
@@ -79,6 +83,14 @@ struct StorageSignInChooserView: View {
                         }
                         .frame(height: 50)
                         .accessibilityIdentifier("storage_signin_google")
+
+                        if let onSelectAnotherAppleID {
+                            YalaSecondaryButton(L10n.Storage.SignIn.anotherAppleID, icon: "apple.logo") {
+                                DS.Haptic.selection()
+                                onSelectAnotherAppleID()
+                            }
+                            .accessibilityIdentifier("storage_signin_another_apple_id")
+                        }
                     }
                     .padding(.horizontal, DS.Spacing.xl)
 

@@ -165,16 +165,18 @@ struct PanelApproximateMarkClearsTests {
         #expect(!breakdown(account, tx, converter).amountsAreApproximate)
     }
 
-    /// Por qué hace falta que alguien reaccione al aviso: sin invalidar, la caché sigue sirviendo el
-    /// escalón de ayer con la fila buena ya en disco. Es lo que veía el Panel antes del arreglo.
-    @Test("Control: con la fila de hoy en disco pero sin reaccionar al aviso, la marca se queda")
-    func todaysRowWithoutInvalidation_keepsTheMark() throws {
+    /// Hasta el 2026-11-06 este caso fijaba lo contrario —«con la fila de hoy en disco pero sin reaccionar al aviso, la
+    /// marca se queda»—, que era justo el bug de `latest-rates-cache-ignores-rate-rows-from-the-mirror-and-the-pull`: la
+    /// fila que trae el espejo o el pull no postea el aviso. Ahora el propio guardado retira la caché. El aviso sigue
+    /// haciendo falta para REPINTAR el Panel (lo fija la suite de cableado de abajo), no para que la caché vea la fila.
+    @Test("Fila de hoy guardada sin el aviso de tasas (espejo, pull) → el saldo deja de ser «≈» igual")
+    func todaysRowSavedWithoutTheRatesNotification_clearsTheMark() throws {
         let (context, converter, account, tx) = try makeScenario()
-        #expect(breakdown(account, tx, converter).amountsAreApproximate)
+        #expect(breakdown(account, tx, converter).amountsAreApproximate, "premisa: sin la fila de hoy es «≈»")
 
         try persistToday(context)
 
-        #expect(breakdown(account, tx, converter).amountsAreApproximate)
+        #expect(!breakdown(account, tx, converter).amountsAreApproximate)
     }
 }
 

@@ -8733,3 +8733,6 @@
 "trend.projected.source.plan" = "キャッシュフロー計画から推定";
 "trend.projected.source.rhythm" = "支出ペースから推定";
 "trend.projected.source.scheduled" = "予定の支払いから推定";
+
+/* Button in the 'use another account' sign-in chooser: sign in with an Apple ID different from the one on this iPhone (opens Apple's web page). */
+"storage.signin.anotherAppleID" = "別のAppleアカウント";

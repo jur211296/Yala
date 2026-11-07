@@ -85,6 +85,9 @@ nonisolated enum StorageMigrationSignInLogic {
         case useLiveSession
         /// Autenticar con este método (no había sesión).
         case authenticate(CloudSignInProvider)
+        /// Autenticar con Apple por la web, con un Apple ID que puede no ser el del teléfono (no había sesión). Ticket
+        /// `cloud-sign-in-cannot-choose-another-apple-id`.
+        case authenticateWithAnotherAppleID
         /// El productor pidió reusar y la sesión ya no sirve (expiró, la cerraron, o su refresh token
         /// murió) → fallar honesto a `notStarted`. JAMÁS avanzar la máquina sin JWT: el claim fallaría
         /// más adelante dejando el journal en una fase transicional. El usuario reintenta y el
@@ -106,8 +109,9 @@ nonisolated enum StorageMigrationSignInLogic {
     static func execution(for plan: Plan, sessionIsUsable: Bool) -> Execution {
         if sessionIsUsable { return .useLiveSession }
         switch plan {
-        case .authenticateWith(let provider): return .authenticate(provider)
-        case .reuseLiveSession:               return .failNoUsableSession
+        case .authenticateWith(let provider):    return .authenticate(provider)
+        case .authenticateWithAnotherAppleID:    return .authenticateWithAnotherAppleID
+        case .reuseLiveSession:                  return .failNoUsableSession
         }
     }
 
@@ -116,5 +120,9 @@ nonisolated enum StorageMigrationSignInLogic {
     enum Plan: Equatable {
         case reuseLiveSession
         case authenticateWith(CloudSignInProvider)
+        /// «Otra cuenta de Apple» del selector de «Usar otra cuenta»: Apple por la web
+        /// (`CloudAuthService.signInWithAppleOnTheWeb`). Solo lo produce ese selector, y solo con
+        /// `CloudRemoteFlags.appleWebSignInEnabled`.
+        case authenticateWithAnotherAppleID
     }
 }

@@ -8722,3 +8722,6 @@
 "trend.projected.source.plan" = "Estimé avec votre plan de trésorerie";
 "trend.projected.source.rhythm" = "Estimé selon votre rythme de dépenses";
 "trend.projected.source.scheduled" = "Estimé avec vos paiements planifiés";
+
+/* Button in the 'use another account' sign-in chooser: sign in with an Apple ID different from the one on this iPhone (opens Apple's web page). */
+"storage.signin.anotherAppleID" = "Autre compte Apple";

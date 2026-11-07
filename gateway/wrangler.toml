@@ -55,6 +55,9 @@ GROUPS_BACKEND_ROLLOUT_PERCENT = "100"
 # encenderlo exige antes el texto de consentimiento nuevo (card de Jürgen) y es un acto deliberado que rompe
 # `test/config.test.ts`. Ver docs/ai-cloud-vs-private-2026-10.md.
 AI_CLOUD_EXPLORE_ROLLOUT_PERCENT = "0"
+# «Otra cuenta de Apple» en la app (inicio de sesión web de Apple). Staging tiene el proveedor web de Apple en su
+# Supabase (Services ID `pe.yala.app.web`); producción NO (2026-11-06). Ver test/config.test.ts.
+APPLE_WEB_SIGN_IN_ROLLOUT_PERCENT = "100"
 # Forzado de actualización (min-version): build por debajo del cual el cliente bloquea. 0 = desactivado.
 # STAGING también en 0 a propósito: un valor > 0 BLOQUEARÍA la app de dogfooding/QA (≠ percents, que
 # encienden superficie). Se sube conscientemente al probar el flujo end-to-end.
@@ -182,6 +185,9 @@ GROUPS_BACKEND_ROLLOUT_PERCENT = "100"
 # encenderlo exige antes el texto de consentimiento nuevo (card de Jürgen) y es un acto deliberado que rompe
 # `test/config.test.ts`. Ver docs/ai-cloud-vs-private-2026-10.md.
 AI_CLOUD_EXPLORE_ROLLOUT_PERCENT = "0"
+# «Otra cuenta de Apple»: APAGADO hasta que el Services ID tenga la URL de vuelta del Supabase de producción y ese
+# Supabase tenga `pe.yala.app.web` + su secreto (decisión A de Jürgen, 2026-11-06).
+APPLE_WEB_SIGN_IN_ROLLOUT_PERCENT = "0"
 # Forzado de actualización (min-version): 0 = desactivado. Se sube al build mínimo soportado cuando
 # haya que forzar una versión crítica (requiere que /config esté vivo en prod — D9/Modo Nube).
 MIN_SUPPORTED_BUILD = "0"

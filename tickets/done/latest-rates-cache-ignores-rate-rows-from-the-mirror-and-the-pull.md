@@ -1,10 +1,10 @@
 ---
 id: latest-rates-cache-ignores-rate-rows-from-the-mirror-and-the-pull
-status: backlog
+status: done
 priority: medium
 area: "currency, fx"
 created: 2026-11-05
-updated: 2026-11-05
+updated: 2026-11-06
 source: "review adversarial del lote N8 · Divisas (2026-11-04)"
 ---
 
@@ -32,3 +32,22 @@ que medir su coste (la caché existe porque `LiveBalanceCalculator` convierte M 
 
 Una fila de tasas de hoy que llega por el espejo o por el pull se usa en la siguiente conversión «a la tasa de hoy», con
 un test que lo fije (las dos rutas de acuerdo tras la llegada).
+
+## Hecho (encargo «Lote nube: categorías duplicadas, Apple ID y tasa de hoy», 2026-11-06)
+
+- La caché de la tasa de hoy (`CurrencyConverter.latestRatesCache`) se retira con los MISMOS tres avisos que ya retiraban
+  la memoria de filas: `.yalaExchangeRatesUpdated`, `ModelContext.didSave` de cualquier contexto y
+  `.NSPersistentStoreRemoteChange` (el único que oye un import del espejo). Coste: una lectura de la fila de hoy en la
+  siguiente conversión tras cada guardado, no por conversión; dentro de una pasada de cálculo no se guarda.
+- Descartado: filtrar por entidad (el import del espejo no dice qué tocó) y que el pull postee el aviso de tasas (no cubre
+  el espejo).
+- Tests: `CurrencyConverterLatestRateArrivalTests` (4): la fila de hoy guardada por otro contexto se usa en la siguiente
+  conversión, exacta y con las dos rutas de acuerdo, y cada aviso retira la caché. Mutante (quitar la retirada): 4 de 4 en
+  rojo. Suites vecinas del converter (caché, memoria de filas, calidad), 27/27.
+- **Lo que no cambia**: el Panel no se repinta solo cuando llega la fila por el espejo o el pull (eso lo hace el aviso de
+  tasas); la siguiente vez que recalcula ya usa la fila buena.
+
+## Sin QA en el teléfono, a propósito
+
+Lo fijan los tests. Un guion con dos teléfonos no discrimina: el que vuelve a tener red baja sus propias tasas y postea el
+aviso de siempre, así que saldría bien también con el bug dentro.

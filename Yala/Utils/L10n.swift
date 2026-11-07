@@ -8804,6 +8804,9 @@ enum L10n {
         enum SignIn {
             static var title: String { ls("storage.signin.title", comment: "") }
             static var body: String { ls("storage.signin.body", comment: "") }
+            /// «Otra cuenta de Apple»: Apple por la web, con un Apple ID distinto del del teléfono (ticket
+            /// `cloud-sign-in-cannot-choose-another-apple-id`).
+            static var anotherAppleID: String { ls("storage.signin.anotherAppleID", comment: "") }
         }
     }
 

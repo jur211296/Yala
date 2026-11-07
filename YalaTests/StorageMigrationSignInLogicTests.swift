@@ -117,6 +117,14 @@ struct StorageMigrationSignInLogicTests {
         #expect(L.execution(for: .authenticateWith(.apple), sessionIsUsable: true) == .useLiveSession)
     }
 
+    /// «Otra cuenta de Apple» (ticket `cloud-sign-in-cannot-choose-another-apple-id`): sin sesión va por Apple en la web;
+    /// con una sesión usable, el belt gana igual que con cualquier otro plan.
+    @Test func execution_otroAppleID_vaPorLaWeb_yElBeltGanaIgual() {
+        #expect(L.execution(for: .authenticateWithAnotherAppleID, sessionIsUsable: false)
+                == .authenticateWithAnotherAppleID)
+        #expect(L.execution(for: .authenticateWithAnotherAppleID, sessionIsUsable: true) == .useLiveSession)
+    }
+
     /// Sin sesión usable, el plan manda: autenticar con lo elegido.
     @Test func execution_sinSesion_autenticaConElProviderElegido() {
         #expect(L.execution(for: .authenticateWith(.google), sessionIsUsable: false)

@@ -1,0 +1,90 @@
+name: Alarma · duplicados al activar la nube
+
+# ---------------------------------------------------------------------------------
+# POR QUE EXISTE  (2026-11-06)
+#
+# El ticket `adopt-rekeyed-rows-without-a-unique-lineage-key-still-duplicate` («al activar la nube, algunas
+# categorias y movimientos antiguos pueden salir duplicados») se cerro por su opcion 3, decision A de Jurgen:
+# el caso solo existe si CloudKit le da la razon al lider desplazado, y eso lo mide el canario
+# `cloudRelayIdentityRestored`. Medido ese dia: CERO eventos en 90 dias, en produccion y en staging.
+#
+# El cierre vale mientras el canario siga a cero. Los canarios hoy se leen a mano con SQL, asi que sin esto
+# un evento del canario no lo veria nadie. Cada lunes se mira la ultima semana (con un dia de solape) y, si
+# aparece, se avisa al bot y el run sale en ROJO: el ticket se REABRE (`tickets/discarded/` -> `backlog/`) y se
+# decide entre las opciones 1 (coordenadas del record en el backend) y 2 (casar por contenido).
+#
+# El token es de SOLO LECTURA (Account Analytics Read, caduca 2027-08-05; copia local en
+# `~/Secrets/yala-cloudflare/analytics-read.token`). Sin el secreto, el run sale en rojo: una alarma que no
+# puede mirar no puede decir «todo en orden».
+# ---------------------------------------------------------------------------------
+
+on:
+  schedule:
+    # Lunes 16:23 UTC = 11:23 en Lima. Fuera de las horas en punto y de los otros vigilantes.
+    - cron: '23 16 * * 1'
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/alarma-duplicados-nube.yml'
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  mirar:
+    name: ¿Aparecio el canario de los duplicados de la nube?
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Contar el canario en produccion (ultimos 8 dias)
+        id: contar
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_ANALYTICS_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CF_TOKEN}" ]; then
+            echo "::error::Falta el secreto CLOUDFLARE_ANALYTICS_READ_TOKEN: la alarma no puede mirar."
+            exit 1
+          fi
+          SQL="SELECT blob3 AS detalle, blob4 AS app, count(DISTINCT blob5) AS telefonos, sum(_sample_interval) AS n FROM yala_metrics WHERE blob1 = 'canary' AND blob2 = 'cloudRelayIdentityRestored' AND timestamp > NOW() - INTERVAL '8' DAY GROUP BY detalle, app FORMAT JSON"
+          curl -sf -X POST "https://api.cloudflare.com/client/v4/accounts/86c270a7776be98639700bd5959b303b/analytics_engine/sql" \
+            -H "Authorization: Bearer ${CF_TOKEN}" --data-binary "${SQL}" > respuesta.json
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          d = json.load(open("respuesta.json"))
+          filas = d.get("data", [])
+          total = sum(int(float(f.get("n", 0))) for f in filas)
+          print(f"total={total}")
+          detalle = "; ".join(f"{f.get('detalle')} (app {f.get('app')}, {f.get('telefonos')} telefonos): {f.get('n')}" for f in filas)
+          print(f"detalle={detalle or 'sin eventos'}")
+          PY
+          echo "Canario cloudRelayIdentityRestored en 8 dias: $(grep '^total=' "$GITHUB_OUTPUT" | tail -1)"
+
+      - name: Avisar si aparecio
+        if: steps.contar.outputs.total != '0'
+        uses: ./.github/actions/avisar
+        with:
+          webhook-url: ${{ secrets.GROK_WEBHOOK_URL }}
+          sender-key: ${{ secrets.GROK_WEBHOOK_SENDER_KEY }}
+          respaldo: 'true'
+          etiqueta: 'alarma-canario'
+          github-token: ${{ github.token }}
+          asunto: 'Reabrir: duplicados al activar la nube (aparecio el canario)'
+          texto: |
+            El canario `cloudRelayIdentityRestored` aparecio en produccion esta semana: ${{ steps.contar.outputs.total }} evento(s).
+            Detalle: ${{ steps.contar.outputs.detalle }}
+
+            El ticket «Al activar la nube, algunas categorias y movimientos antiguos pueden salir duplicados»
+            (`adopt-rekeyed-rows-without-a-unique-lineage-key-still-duplicate`) se cerro el 2026-11-06 porque este
+            canario estaba a cero. Hay que reabrirlo y decidir entre sus opciones 1 y 2.
+
+            Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+      - name: Rojo si aparecio
+        if: steps.contar.outputs.total != '0'
+        run: |
+          echo "::error::El canario cloudRelayIdentityRestored aparecio (${{ steps.contar.outputs.total }}). Reabrir el ticket de duplicados al activar la nube."
+          exit 1
