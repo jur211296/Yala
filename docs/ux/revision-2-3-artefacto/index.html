@@ -1,0 +1,479 @@
+<title>Revisión 2.3 por vistas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+<style>
+/* Lienzo: una barra fija con las 11 vistas; la portada resume (niveles, matriz vista × nivel, lotes, decisiones) y cada vista lista sus hallazgos agrupados por importancia. */
+:root {
+  --bg: #F4F4FA; --surface: #FFFFFF; --sunk: #ECECF5; --ink: #16162A; --muted: #5C5D77; --line: #DFDFEC;
+  --accent: #5E5CE6; --accent-soft: #E9E8FD; --on-accent: #FFFFFF;
+  --c-nec: #C9304E; --c-y22: #0B7F74; --c-dec: #A86A06; --c-dat: #C2410C; --c-red: #4F63B0; --c-men: #6E7089; --c-ver: #6E7089; --c-sin: #8A879F;
+  --ok: #0B7F74; --on-nec: #FFFFFF;
+  --f-display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --f-body: "Instrument Sans", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --r: 14px; --r-s: 8px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0E0E19; --surface: #181828; --sunk: #12121F; --ink: #ECECF7; --muted: #A3A4C0; --line: #2A2A42;
+  --accent: #8C8AFF; --accent-soft: #24234A; --on-accent: #0E0E19;
+  --c-nec: #FF6F88; --c-y22: #3CC9B8; --c-dec: #EDB34E; --c-dat: #FF8D52; --c-red: #96A6F0; --c-men: #9294AE; --c-ver: #9294AE; --c-sin: #8F8CA8;
+  --ok: #3CC9B8; --on-nec: #1A0A10; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0E0E19; --surface: #181828; --sunk: #12121F; --ink: #ECECF7; --muted: #A3A4C0; --line: #2A2A42;
+  --accent: #8C8AFF; --accent-soft: #24234A; --on-accent: #0E0E19;
+  --c-nec: #FF6F88; --c-y22: #3CC9B8; --c-dec: #EDB34E; --c-dat: #FF8D52; --c-red: #96A6F0; --c-men: #9294AE; --c-ver: #9294AE; --c-sin: #8F8CA8;
+  --ok: #3CC9B8; --on-nec: #1A0A10; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.45; -webkit-font-smoothing: antialiased; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+
+/* Barra fija */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
+.top .wrap { display: flex; align-items: center; gap: 14px; padding-block: 10px 0; flex-wrap: wrap; }
+.brand { font-family: var(--f-display); font-weight: 800; font-size: 17px; text-decoration: none; display: flex; align-items: center; gap: 8px; }
+.brand i { width: 22px; height: 22px; border-radius: 7px; background: var(--accent); display: inline-block; position: relative; }
+.brand i::after { content: ""; position: absolute; inset: 6px 5px 6px 5px; border-left: 3px solid var(--on-accent); border-bottom: 3px solid var(--on-accent); transform: skewX(-12deg); }
+.brand small { font-family: var(--f-body); font-weight: 500; font-size: 13px; color: var(--muted); }
+.tabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; width: 100%; padding-bottom: 0; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { flex: none; text-decoration: none; padding: 9px 11px 11px; font-size: 14px; font-weight: 500; color: var(--muted); border-bottom: 2px solid transparent; display: flex; gap: 6px; align-items: center; white-space: nowrap; }
+.tab:hover { color: var(--ink); }
+.tab[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+.tab b { font: 600 11px/1 var(--f-mono); min-width: 18px; padding: 3px 5px; border-radius: 99px; background: color-mix(in srgb, var(--c-nec) 16%, transparent); color: var(--c-nec); text-align: center; }
+.tab b.cero { background: var(--sunk); color: var(--muted); }
+
+main { padding-block: 28px 64px; }
+section { margin-top: 44px; }
+section > header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+section > header h2 { font-size: 24px; font-weight: 700; }
+section > header p { margin: 0; color: var(--muted); font-size: 14px; }
+
+/* Portada */
+.hero { display: grid; gap: 10px; }
+.hero h1 { font-size: clamp(30px, 5.4vw, 52px); font-weight: 800; line-height: 1.02; max-width: 15ch; }
+.hero .lede { font-size: 17px; color: var(--muted); max-width: 60ch; margin: 0; }
+.stats { display: flex; gap: 22px; flex-wrap: wrap; margin-top: 6px; }
+.stats div { display: grid; }
+.stats strong { font: 800 30px/1 var(--f-display); font-variant-numeric: tabular-nums; }
+.stats span { font-size: 13px; color: var(--muted); }
+
+.bar { display: flex; height: 16px; border-radius: 99px; overflow: hidden; gap: 2px; background: var(--sunk); margin-top: 26px; }
+.bar span { display: block; min-width: 3px; }
+.groups { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+.group { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; display: grid; gap: 6px; align-content: start; }
+.group.imp { background: var(--c-nec); border-color: var(--c-nec); color: var(--on-nec); }
+.group .num { font: 800 40px/1 var(--f-display); font-variant-numeric: tabular-nums; }
+.group h3 { font-size: 16px; font-weight: 700; }
+.group p { margin: 0; font-size: 13px; opacity: .85; }
+.group .subs { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 2px; }
+.group.imp .chip { background: rgba(255,255,255,.2); color: inherit; }
+
+/* Chips de clase */
+.chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 99px; white-space: nowrap; color: var(--kc, var(--muted)); background: color-mix(in srgb, var(--kc, var(--muted)) 13%, transparent); line-height: 1.3; }
+.chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.chip.nodot::before { display: none; }
+.chip.ver { background: transparent; border: 1px dashed currentColor; padding: 2px 7px; }
+.chip.sin { background: transparent; border: 1px solid currentColor; padding: 2px 7px; }
+.k-nec { --kc: var(--c-nec); } .k-y22 { --kc: var(--c-y22); } .k-dec { --kc: var(--c-dec); } .k-dat { --kc: var(--c-dat); }
+.k-red { --kc: var(--c-red); } .k-men { --kc: var(--c-men); } .k-ver { --kc: var(--c-ver); } .k-sin { --kc: var(--c-sin); }
+.lotechip { font: 600 12px/1.3 var(--f-mono); padding: 3px 8px; border-radius: var(--r-s); background: var(--accent-soft); color: var(--accent); text-decoration: none; white-space: nowrap; }
+.lotechip.hecho { background: color-mix(in srgb, var(--ok) 14%, transparent); color: var(--ok); }
+a.lotechip:hover { text-decoration: underline; }
+
+/* Matriz */
+.scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
+table.mx { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 14px; }
+.mx th, .mx td { padding: 9px 8px; text-align: center; border-bottom: 1px solid var(--line); }
+.mx tr:last-child td { border-bottom: 0; }
+.mx thead th { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); vertical-align: bottom; }
+.mx th.zn, .mx td.zn { text-align: left; position: sticky; left: 0; background: var(--surface); z-index: 1; }
+.mx td.zn a { text-decoration: none; font-weight: 600; display: flex; gap: 8px; align-items: baseline; }
+.mx td.zn a span { font: 500 11px var(--f-mono); color: var(--muted); }
+.mx tbody tr { cursor: pointer; }
+.mx tbody tr:hover td { background: var(--sunk); }
+.dot { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; font: 600 13px/1 var(--f-mono); color: var(--kc); background: color-mix(in srgb, var(--kc) calc(var(--a) * 1%), transparent); }
+.dot.zero { color: var(--line); background: none; }
+.mx td.tot { font: 700 15px var(--f-mono); }
+.mx td.lts { text-align: left; }
+.mx td.lts div { display: flex; flex-wrap: wrap; gap: 4px; }
+.mx tfoot td { font: 700 13px var(--f-mono); border-top: 1px solid var(--line); background: var(--sunk); }
+
+/* Lotes */
+.lotes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 14px; }
+.lote { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: grid; gap: 10px; align-content: start; }
+.lote .cab { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; }
+.lote .n { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font: 800 17px/1 var(--f-display); background: var(--accent-soft); color: var(--accent); }
+.lote.hecho .n { background: color-mix(in srgb, var(--ok) 15%, transparent); color: var(--ok); }
+.lote h3 { font-size: 16px; font-weight: 700; line-height: 1.25; }
+.lote .meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); }
+.zchip { font-size: 12px; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--line); text-decoration: none; color: var(--muted); white-space: nowrap; }
+.zchip:hover { color: var(--ink); border-color: var(--muted); }
+.adv { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; background: color-mix(in srgb, var(--c-dat) 14%, transparent); color: var(--c-dat); }
+.estado { font-size: 12px; font-weight: 600; }
+.estado.hecho { color: var(--ok); }
+.lote ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; border-top: 1px solid var(--line); padding-top: 8px; }
+.lote li a { display: grid; grid-template-columns: 92px 1fr; gap: 8px; text-decoration: none; padding: 5px 6px; border-radius: 6px; font-size: 13.5px; }
+.lote li a:hover { background: var(--sunk); }
+.lote li a span:first-child { color: var(--muted); font-size: 12px; padding-top: 1px; }
+.lote .pie { font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; justify-self: start; }
+.lote .pie:hover { text-decoration: underline; }
+.hechos { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 14px; margin-bottom: 14px; }
+
+/* Decisiones y notas */
+.decs { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 12px; counter-reset: d; }
+.dec { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; display: grid; gap: 6px; align-content: start; counter-increment: d; position: relative; }
+.dec h3 { font-size: 15.5px; font-weight: 700; padding-right: 30px; }
+.dec h3::after { content: counter(d); position: absolute; top: 12px; right: 14px; font: 700 13px/1 var(--f-mono); color: var(--c-dec); background: color-mix(in srgb, var(--c-dec) 14%, transparent); width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; }
+.dec p { margin: 0; font-size: 14px; color: var(--muted); }
+.dec .zs { display: flex; flex-wrap: wrap; gap: 5px; }
+.notas { display: grid; gap: 10px; }
+.nota { border-left: 3px solid var(--c-dec); padding: 4px 0 4px 14px; display: grid; gap: 2px; }
+.nota.ok { border-color: var(--ok); }
+.nota strong { font-size: 15px; }
+.nota p { margin: 0; font-size: 14px; color: var(--muted); max-width: 75ch; }
+.nota a { font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; }
+.legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: 8px 18px; font-size: 13.5px; }
+.legend div { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: start; }
+.legend p { margin: 0; color: var(--muted); }
+
+/* Vista */
+.back { font-size: 14px; font-weight: 600; color: var(--accent); text-decoration: none; }
+.zhead { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; align-items: end; margin-top: 14px; }
+.zhead h1 { font-size: clamp(26px, 4.4vw, 42px); font-weight: 800; line-height: 1.05; }
+.zhead .estado-z { margin: 8px 0 0; color: var(--muted); max-width: 62ch; }
+.links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.lnk { font-size: 13px; font-weight: 600; text-decoration: none; padding: 6px 10px; border-radius: var(--r-s); border: 1px solid var(--line); background: var(--surface); }
+.lnk:hover { border-color: var(--accent); color: var(--accent); }
+.zcount { display: flex; gap: 14px; text-align: right; }
+.zcount div { display: grid; }
+.zcount strong { font: 800 30px/1 var(--f-display); font-variant-numeric: tabular-nums; }
+.zcount span { font-size: 12px; color: var(--muted); }
+.zcount .imp strong { color: var(--c-nec); }
+.fotos { display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 10px; margin-top: 22px; scrollbar-width: thin; }
+.foto { flex: none; width: 104px; display: grid; gap: 5px; background: none; border: 0; padding: 0; text-align: left; cursor: zoom-in; color: inherit; font: inherit; }
+.foto img { width: 104px; height: 168px; object-fit: cover; object-position: top; border-radius: 12px; border: 1px solid var(--line); background: var(--sunk); display: block; }
+.foto span { font-size: 11.5px; color: var(--muted); line-height: 1.25; }
+.foto b { font: 600 11px var(--f-mono); color: var(--ink); }
+.filtros { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 22px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 92px); z-index: 2; background: var(--bg); padding-block: 8px; }
+.filtros button { font: 600 13px var(--f-body); padding: 7px 12px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); cursor: pointer; }
+.filtros button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.grupo { margin-top: 26px; }
+.grupo > h2 { font-size: 18px; font-weight: 700; display: flex; gap: 10px; align-items: baseline; margin-bottom: 4px; }
+.grupo > h2 small { font: 600 13px var(--f-mono); color: var(--muted); }
+.grupo > p { margin: 0 0 10px; font-size: 13.5px; color: var(--muted); }
+.filas { display: grid; gap: 8px; }
+.fila { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px 12px 12px; position: relative; scroll-margin-top: 150px; }
+.fila::before { content: ""; position: absolute; left: -1px; top: 12px; bottom: 12px; width: 3px; border-radius: 3px; background: var(--kc); }
+.fila.flash { animation: flash 1.6s ease-out; }
+@keyframes flash { 0%, 30% { box-shadow: 0 0 0 3px var(--accent); } 100% { box-shadow: 0 0 0 0 transparent; } }
+@media (prefers-reduced-motion: reduce) { .fila.flash { animation: none; box-shadow: 0 0 0 3px var(--accent); } }
+.mini { width: 52px; height: 78px; border-radius: 8px; border: 1px solid var(--line); object-fit: cover; object-position: top; background: var(--sunk); cursor: zoom-in; padding: 0; display: block; }
+button.mini { overflow: hidden; }
+button.mini img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+.cod { width: 52px; height: 30px; border-radius: 8px; background: var(--sunk); display: grid; place-items: center; font: 600 12px var(--f-mono); color: var(--muted); }
+.cuerpo { display: grid; gap: 6px; min-width: 0; }
+.l1 { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); }
+.l1 .c { font: 600 12px var(--f-mono); color: var(--ink); }
+.sev { display: inline-flex; gap: 4px; align-items: center; }
+.bars { display: inline-flex; gap: 2px; align-items: flex-end; height: 11px; }
+.bars u { width: 3px; border-radius: 1px; background: var(--line); text-decoration: none; }
+.bars u:nth-child(1) { height: 5px; } .bars u:nth-child(2) { height: 8px; } .bars u:nth-child(3) { height: 11px; }
+.bars u.on { background: var(--muted); }
+.texto { font-size: 15px; font-weight: 500; line-height: 1.35; }
+.nota-f { font-size: 13px; color: var(--muted); }
+.l3 { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; font-size: 12.5px; }
+.l3 a.o { color: var(--accent); text-decoration: none; font-weight: 600; }
+.l3 a.o:hover { text-decoration: underline; }
+.vacio { color: var(--muted); font-size: 14px; padding: 12px 0; }
+
+/* Visor */
+.visor { position: fixed; inset: 0; z-index: 20; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(6px); display: grid; place-items: center; padding: max(20px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(20px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.visor figure { margin: 0; display: grid; gap: 8px; justify-items: center; max-height: 100%; }
+.visor img { max-height: calc(100vh - 110px); max-width: min(420px, 100%); width: auto; border-radius: 22px; border: 1px solid var(--line); box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+.visor figcaption { font-size: 13px; color: var(--muted); text-align: center; }
+.visor button { font: 600 14px var(--f-body); padding: 8px 14px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+
+footer.pie { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); display: grid; gap: 6px; }
+footer.pie a { color: var(--accent); }
+
+@media (max-width: 760px) {
+  .groups { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .zhead { grid-template-columns: 1fr; }
+  .zcount { text-align: left; }
+  .filtros { top: calc(env(safe-area-inset-top, 0px) + 88px); }
+}
+@media (max-width: 420px) {
+  .group .num { font-size: 32px; }
+  .fila { grid-template-columns: 40px minmax(0, 1fr); gap: 10px; }
+  .mini, .cod { width: 40px; } .mini { height: 62px; }
+  .lote li a { grid-template-columns: 1fr; gap: 0; }
+}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#portada"><i aria-hidden="true"></i>Revisión 2.3 <small>por vistas · 7-9 nov 2026</small></a>
+    <nav class="tabs" id="tabs" aria-label="Vistas"></nav>
+  </div>
+</header>
+<main class="wrap" id="app"></main>
+<div class="visor" id="visor" hidden role="dialog" aria-modal="true" aria-label="Captura">
+  <figure><img id="visor-img" alt=""><figcaption id="visor-pie"></figcaption><button type="button" id="visor-cerrar">Cerrar</button></figure>
+</div>
+
+<script>
+const D = {"zonas":[{"num":"30","slug":"panel","corto":"Panel","largo":"Panel: lectura del mes, cuentas, nota y gráfica","prs":[846],"estado":"Revisada el 7-nov. Sus necesarias ya salieron en el lote de Panel.","ficha":"https://github.com/jur211296/Yala/blob/2.3/docs/ux/revision-vistas-2.3/30-panel/ficha.md","fotos":[{"n":1,"src":"img/30-p1.jpg","pie":"balance y saldo"},{"n":2,"src":"img/30-p2.jpg","pie":"salud financiera"},{"n":3,"src":"img/30-p3.jpg","pie":"mes recien empezado"},{"n":4,"src":"img/30-p4.jpg","pie":"grafico de tendencia"},{"n":5,"src":"img/30-p5.jpg","pie":"cuentas"},{"n":6,"src":"img/30-p6.jpg","pie":"texto grande"},{"n":7,"src":"img/30-p7.jpg","pie":"ojo montos ocultos"},{"n":8,"src":"img/30-p8.jpg","pie":"configurar panel"},{"n":9,"src":"img/30-p9.jpg","pie":"sin conexion"}]},{"num":"31","slug":"registros","corto":"Registros","largo":"Registros, filtros, calendario y búsqueda","prs":[847],"estado":"Revisada el 7-nov. Sin lote: nadie consolidó todavía sus necesarias.","ficha":"https://github.com/jur211296/Yala/blob/2.3/docs/ux/revision-vistas-2.3/31-registros/ficha.md","fotos":[{"n":1,"src":"img/31-p1.jpg","pie":"buscar"},{"n":2,"src":"img/31-p2.jpg","pie":"filtrar"},{"n":3,"src":"img/31-p3.jpg","pie":"quitar filtros"},{"n":4,"src":"img/31-p4.jpg","pie":"lista larga"},{"n":5,"src":"img/31-p5.jpg","pie":"editar en lote"},{"n":6,"src":"img/31-p6.jpg","pie":"calendario"}]},{"num":"32","slug":"nuevo-registro","corto":"Nuevo registro","largo":"Nuevo registro, favoritos, voz y foto","prs":[848],"estado":"Revisada el 7-nov. El lote de Formulario ya salió; sus secundarios no se clasificaron.","ficha":"https://github.com/jur211296/Yala/blob/2.3/docs/ux/revision-vistas-2.3/32-nuevo-registro/ficha.md","fotos":[{"n":1,"src":"img/32-p1.jpg","pie":"teclado y guardar"},{"n":2,"src":"img/32-p2.jpg","pie":"categoria del cafe"},{"n":3,"src":"img/32-p3.jpg","pie":"texto grande y guardar"},{"n":4,"src":"img/32-p4.jpg","pie":"moneda del importe"},{"n":5,"src":"img/32-p5.jpg","pie":"voz y foto"},{"n":6,"src":"img/32-p6.jpg","pie":"transferencia entre monedas"},{"n":7,"src":"img/32-p7.jpg","pie":"repetir favorito"}]},{"num":"34","slug":"planificacion","corto":"Planificación","largo":"Planificación: presupuestos y pagos planificados","prs":[852],"estado":"Revisada el 7-nov y consolidada el 9-nov.","ficha":"https://github.com/jur211296/Yala/blob/2.3/docs/ux/revision-vistas-2.3/34-planificacion/ficha.md","fotos":[{"n":1,"src":"img/34-p1.jpg","pie":"en el limite"},{"n":2,"src":"img/34-p2.jpg","pie":"presupuesto pasado"},{"n":3,"src":"img/34-p3.jpg","pie":"editar categorias"},{"n":4,"src":"img/34-p4.jpg","pie":"pago vencido"},{"n":5,"src":"img/34-p5.jpg","pie":"deshacer un pago"},{"n":6,"src":"img/34-p6.jpg","pie":"calendario"},{"n":7,"src":"img/34-p7.jpg","pie":"texto grande"}]},{"num":"35","slug":"estadisticas","corto":"Estadísticas","largo":"Estadísticas","prs":[853],"estado":"Revisada el 7-nov y consolidada el 9-nov.","ficha":"https://github.com/jur211296/Yala/blob/2.3/docs/ux/revision-vistas-2.3/35-estadisticas/ficha.md","fotos":[{"n":1,"src":"img/35-p1.jpg","pie":"en que se fue"},{"n":2,"src":"img/35-p2.jpg","pie":"entrar a una categoria"},{"n":3,"src":"img/35-p3.jpg","pie":"texto grande"},{"n":4,"src":"img/35-p4.jpg","pie":"balance y saldo"},{"n":5,"src":"img/35-p5.jpg","pie":"voiceover"},{"n":6,"src":"img/35-p6.jpg","pie":"pocos datos"},{"n":7,"src":"img/35-p7.jpg","pie":"muchos datos"}]},{"num":"36","slug":"reportes-flujo","corto":"Reportes y Flujo","largo":"Reportes y Flujo de caja","prs":[859],"estado":"Revisada el 7-nov y consolidada el 9-nov.","ficha":"https://github.com/jur211296/Yala/blob/2.3/docs/ux/revision-vistas-2.3/36-reportes-flujo/ficha.md","fotos":[{"n":1,"src":"img/36-p1.jpg","pie":"llego a fin de mes"},{"n":2,"src":"img/36-p2.jpg","pie":"real y estimado"},{"n":3,"src":"img/36-p3.jpg","pie":"encontrar y armar"},{"n":4,"src":"img/36-p4.jpg","pie":"leer un mes"},{"n":5,"src":"img/36-p5.jpg","pie":"texto grande y voiceover"},{"n":6,"src":"img/36-p6.jpg","pie":"comparativa"},{"n":7,"src":"img/36-p7.jpg","pie":"pocos datos"}]},{"num":"37","slug":"grupos","corto":"Grupos","largo":"Grupos en el uso diario","prs":[856,857],"estado":"Revisada el 7-nov, con siete tickets, y consolidada el 9-nov.","ficha":"https://github.com/jur211296/Yala/blob/2.3/docs/ux/revision-vistas-2.3/37-grupos/ficha.md","fotos":[{"n":1,"src":"img/37-p1.jpg","pie":"quien debe a quien"},{"n":2,"src":"img/37-p2.jpg","pie":"partir desigual"},{"n":3,"src":"img/37-p3.jpg","pie":"saldar"},{"n":4,"src":"img/37-p4.jpg","pie":"soles y dolares"},{"n":5,"src":"img/37-p5.jpg","pie":"texto grande"},{"n":6,"src":"img/37-p6.jpg","pie":"lo escrito se pierde"},{"n":7,"src":"img/37-p7.jpg","pie":"ipad"}]},{"num":"38","slug":"bandeja-ia","corto":"Bandeja e IA","largo":"Bandeja, Yala IA, correo del banco, Apple Pay y Siri","prs":[860],"estado":"Revisada el 7-nov, con tres tickets, y consolidada el 9-nov.","ficha":"https://github.com/jur211296/Yala/blob/2.3/docs/ux/revision-vistas-2.3/38-bandeja-ia/ficha.md","fotos":[{"n":1,"src":"img/38-p1.jpg","pie":"que llegue solo"},{"n":2,"src":"img/38-p2.jpg","pie":"revisar ocho"},{"n":3,"src":"img/38-p3.jpg","pie":"el dudoso"},{"n":4,"src":"img/38-p4.jpg","pie":"gasto de grupo"},{"n":5,"src":"img/38-p5.jpg","pie":"yala ia sin conexion"},{"n":6,"src":"img/38-p6.jpg","pie":"correo del banco"},{"n":7,"src":"img/38-p7.jpg","pie":"texto grande"}]},{"num":"39","slug":"cuentas","corto":"Cuentas y categorías","largo":"Cuentas, tarjetas, categorías, etiquetas y divisas","prs":[862],"estado":"Revisada y consolidada el 9-nov.","ficha":"https://github.com/jur211296/Yala/blob/2.3/docs/ux/revision-vistas-2.3/39-cuentas-categorias/ficha.md","fotos":[{"n":1,"src":"img/39-p1.jpg","pie":"archivar una tarjeta"},{"n":2,"src":"img/39-p2.jpg","pie":"ordenar categorias"},{"n":3,"src":"img/39-p3.jpg","pie":"crear una categoria"},{"n":4,"src":"img/39-p4.jpg","pie":"ajustar el saldo"},{"n":5,"src":"img/39-p5.jpg","pie":"numero de cuenta"},{"n":6,"src":"img/39-p6.jpg","pie":"monedas secundarias"},{"n":7,"src":"img/39-p7.jpg","pie":"mismas palabras"},{"n":8,"src":"img/39-p8.jpg","pie":"texto grande"}]},{"num":"40","slug":"perfil-ajustes","corto":"Perfil y Ajustes","largo":"Perfil, Más, Ajustes, Pro y ayuda","prs":[864],"estado":"Revisada y consolidada el 9-nov.","ficha":"https://github.com/jur211296/Yala/blob/2.3/docs/ux/revision-vistas-2.3/40-perfil-ajustes/ficha.md","fotos":[{"n":1,"src":"img/40-p1.jpg","pie":"encontrar un ajuste"},{"n":2,"src":"img/40-p2.jpg","pie":"filas que enganan"},{"n":3,"src":"img/40-p3.jpg","pie":"entender pro"},{"n":4,"src":"img/40-p4.jpg","pie":"exportar para el contador"},{"n":5,"src":"img/40-p5.jpg","pie":"pedir ayuda"},{"n":6,"src":"img/40-p6.jpg","pie":"dos modos"},{"n":7,"src":"img/40-p7.jpg","pie":"texto grande"}]},{"num":"41","slug":"nube","corto":"Nube","largo":"Dónde viven tus datos: nube, iCloud y cierre de sesión","prs":[865],"estado":"Revisada y consolidada el 9-nov. Cinco puntos de datos esperan su card de decisión.","ficha":"https://github.com/jur211296/Yala/blob/2.3/docs/ux/revision-vistas-2.3/41-nube-almacenamiento/ficha.md","fotos":[{"n":1,"src":"img/41-p1.jpg","pie":"mismas palabras"},{"n":2,"src":"img/41-p2.jpg","pie":"lo que aceptas"},{"n":3,"src":"img/41-p3.jpg","pie":"volver a icloud"},{"n":4,"src":"img/41-p4.jpg","pie":"dos cuentas"},{"n":5,"src":"img/41-p5.jpg","pie":"cuando algo falla"},{"n":6,"src":"img/41-p6.jpg","pie":"esperas y ya casi esta"},{"n":7,"src":"img/41-p7.jpg","pie":"dos filas y el estado"},{"n":8,"src":"img/41-p8.jpg","pie":"texto grande"}]}],"lotes":[{"id":"P","titulo":"Panel: montos ocultos en la ayuda, texto grande y «Restablecer» que pregunta","puntos":3,"estado":"hecho","url":"https://github.com/jur211296/Yala/pull/854","adv":""},{"id":"F","titulo":"Formulario: monedas claras y «Apuntarlo a mano» en el muro de Pro","puntos":3,"estado":"hecho","url":"https://github.com/jur211296/Yala/pull/855","adv":""},{"id":"1","titulo":"Grupos: pagos que se duplican, dígitos que se pierden y cambios sin aviso","puntos":5,"estado":"pendiente","url":"https://github.com/jur211296/Yala/blob/2.3/encargos/pendientes/2026-11-09-necesarias-01-grupos-dinero-y-datos.md","adv":"todo el lote"},{"id":"2","titulo":"Cifras que no cuadran: ritmo, desglose de presupuesto, día más caro y céntimo del reparto","puntos":4,"estado":"pendiente","url":"https://github.com/jur211296/Yala/blob/2.3/encargos/pendientes/2026-11-09-necesarias-02-cifras-que-no-cuadran.md","adv":"todo el lote"},{"id":"3","titulo":"Bandeja: duplicados en el lote, borradores fuera de la lista y textos de Siri y Apple Pay","puntos":4,"estado":"pendiente","url":"https://github.com/jur211296/Yala/blob/2.3/encargos/pendientes/2026-11-09-necesarias-03-bandeja-duplicados-y-textos.md","adv":"el punto de duplicados"},{"id":"4","titulo":"Planificación: saltar no es pagar, mes cerrado, presupuesto de un día y límite gratis","puntos":5,"estado":"pendiente","url":"https://github.com/jur211296/Yala/blob/2.3/encargos/pendientes/2026-11-09-necesarias-04-planificacion-saltar-y-limites.md","adv":""},{"id":"5","titulo":"Texto grande en Estadísticas, Reportes, Bandeja, Ajustes y Etiquetas","puntos":5,"estado":"pendiente","url":"https://github.com/jur211296/Yala/blob/2.3/encargos/pendientes/2026-11-09-necesarias-05-texto-grande-pantallas-secundarias.md","adv":""},{"id":"6","titulo":"Grupos: saldos que se contradicen y lectura con VoiceOver","puntos":5,"estado":"pendiente","url":"https://github.com/jur211296/Yala/blob/2.3/encargos/pendientes/2026-11-09-necesarias-06-grupos-saldos-y-voiceover.md","adv":""},{"id":"7","titulo":"Estadísticas: textos que dicen lo que no es","puntos":5,"estado":"pendiente","url":"https://github.com/jur211296/Yala/blob/2.3/encargos/pendientes/2026-11-09-necesarias-07-estadisticas-textos.md","adv":""},{"id":"8","titulo":"Flujo de caja: mes equivocado, «vs» sin traducir, vacío y contraste","puntos":4,"estado":"pendiente","url":"https://github.com/jur211296/Yala/blob/2.3/encargos/pendientes/2026-11-09-necesarias-08-flujo-de-caja-mes-y-textos.md","adv":""},{"id":"9","titulo":"Cuentas, categorías, etiquetas y divisas: lo que aparece sin pedirlo","puntos":4,"estado":"pendiente","url":"https://github.com/jur211296/Yala/blob/2.3/encargos/pendientes/2026-11-09-necesarias-09-cuentas-categorias-etiquetas.md","adv":""},{"id":"10","titulo":"Ajustes y Pro: textos que mandan al sitio equivocado","puntos":3,"estado":"pendiente","url":"https://github.com/jur211296/Yala/blob/2.3/encargos/pendientes/2026-11-09-necesarias-10-ajustes-y-pro-textos.md","adv":""},{"id":"11","titulo":"Dónde viven tus datos: textos que mandan a otra fila, cifras y texto grande","puntos":5,"estado":"pendiente","url":"https://github.com/jur211296/Yala/blob/2.3/encargos/pendientes/2026-11-09-necesarias-11-donde-viven-tus-datos-textos-y-texto-grande.md","adv":""}],"decisiones":[{"t":"¿Cuándo entra 2.2 en 2.3?","d":"Arreglos ya hechos en 2.2 no están en 2.3 y no van en ningún lote. Si las ramas divergen, hay que portarlos a mano.","z":["planificacion","estadisticas","grupos","cuentas"]},{"t":"Free ve el flujo de caja avanzado","d":"El recorte de 3 meses y el aviso de Pro nunca actúan. ¿A propósito o se cierra?","z":["reportes-flujo"]},{"t":"Apagar «deudas en una moneda»","d":"Cambia la moneda del grupo para todos, sin preguntar. ¿Se conserva, se pregunta o se deja?","z":["grupos"]},{"t":"Número de cuenta","d":"Se guarda el número completo de una tarjeta. ¿Solo cuatro dígitos, y se recorta lo guardado?","z":["cuentas"]},{"t":"Ajustar el saldo","d":"La opción preelegida puede reescribir todos los meses. ¿«Registro de ajuste» siempre por defecto?","z":["cuentas"]},{"t":"Archivar conserva el historial","d":"La opción A del 8-oct sigue sin hacer y tiene su card. ¿Cuándo entra?","z":["cuentas"]},{"t":"Ancho en el iPad","d":"Cuatro zonas piden ancho legible o dos columnas. ¿Un patrón común antes de tocar cada una?","z":["estadisticas","reportes-flujo","grupos","cuentas"]}],"notas":[{"t":"El índice de la revisión está desactualizado","d":"Su README (PR 850 y 851) dice que las zonas 34 a 41 están pendientes. Todas se revisaron después. La consolidación lo avisa y no lo corrige.","u":"https://github.com/jur211296/Yala/blob/2.3/docs/ux/revision-vistas-2.3/README.md"},{"t":"Registros no tiene lote","d":"La consolidación la dejó fuera. Su ficha marca como baratos B3, F1 + F3, L3, T1 y E2. Sus 15 secundarios no tienen clase.","u":"https://github.com/jur211296/Yala/blob/2.3/docs/ux/revision-vistas-2.3/31-registros/ficha.md"},{"t":"«Beto paga a Tú» no tiene fila propia en la consolidación","d":"Está dentro del problema 1 de Grupos y tiene ticket (PR 857). El lote 6 lo incluye; aquí sale como hallazgo aparte.","u":"https://github.com/jur211296/Yala/blob/2.3/encargos/pendientes/2026-11-09-necesarias-06-grupos-saldos-y-voiceover.md"},{"t":"Planificación tiene un problema 7 que su ficha no lista","d":"La revisión (página 7, texto grande en pagos) lo trae; la ficha y la tabla de la consolidación no. La consolidación lo da por arreglado en 2.2 en su primera decisión. Aquí va como «Ya en 2.2».","u":"https://github.com/jur211296/Yala/blob/2.3/docs/ux/revision-vistas-2.3/34-planificacion/ficha.md"},{"t":"Sin contradicciones de clase","d":"Fichas y consolidación no se contradicen en la clase de ningún hallazgo. Ninguna fuente usa «descartado»: lo que no entra en un lote queda como decisión, rediseño, menor o por verificar.","u":""}],"hallazgos":[{"z":"30","c":"PN-1","k":"dec","s":"A","l":"","t":"«Balance» se lee como lo que tienes; el total de las cuentas no está a la vista","n":"","tk":"","img":"img/30-p1.jpg"},{"z":"30","c":"PN-2","k":"dec","s":"A","l":"","t":"La nota de salud da 99-100 con pocos datos y no ve un presupuesto pasado ni una cuenta en rojo","n":"","tk":"","img":"img/30-p2.jpg"},{"z":"30","c":"PN-6","k":"nec","s":"A","l":"P","t":"Con texto grande la cifra principal es lo más pequeño; acciones y títulos cortados","n":"Cambiar las píldoras (parte B) quedó fuera: es de producto","tk":"","img":"img/30-p6.jpg"},{"z":"30","c":"PN-3","k":"dec","s":"M","l":"","t":"El día 1 del mes: nota 96, gráfica de un punto y −100 %","n":"","tk":"","img":"img/30-p3.jpg"},{"z":"30","c":"PN-4","k":"dec","s":"M","l":"","t":"La gráfica exagera la caída; «+10.3 %» no dice contra qué; «PEN», «x̄» y eje «nov 24»","n":"","tk":"","img":"img/30-p4.jpg"},{"z":"30","c":"PN-5","k":"dec","s":"M","l":"","t":"Cuentas de una en una, sin total ni aviso de rojo; plegar oculta la nota; hueco en el iPad","n":"","tk":"","img":"img/30-p5.jpg"},{"z":"30","c":"PN-7","k":"nec","s":"M","l":"P","t":"Con montos ocultos, la ayuda «?» de la gráfica dice el saldo exacto","n":"","tk":"","img":"img/30-p7.jpg"},{"z":"30","c":"PN-8","k":"nec","s":"B","l":"P","t":"Configurar Panel: iconos sin texto y «Restablecer» sin aviso","n":"Juntar los dos sitios no entró","tk":"","img":"img/30-p8.jpg"},{"z":"30","c":"PN-9","k":"dec","s":"B","l":"","t":"Sin conexión la tasa cae a una tabla y el «≈» no lo dice","n":"No validado en pantalla","tk":"","img":"img/30-p9.jpg"},{"z":"30","c":"S1","k":"men","s":"","l":"","t":"Yala IA y el «+» flotantes tapan los widgets al desplazar","n":"","tk":""},{"z":"30","c":"S2","k":"men","s":"","l":"","t":"Plegar «Tus finanzas» oculta también la nota de salud","n":"","tk":""},{"z":"30","c":"S3","k":"men","s":"","l":"","t":"La hoja de ordenar lista «Herramientas», que está apagada","n":"","tk":""},{"z":"30","c":"S4","k":"men","s":"","l":"","t":"VoiceOver lee la gráfica de tendencia como un solo elemento, sin valores","n":"Ya hay ticket en backlog","tk":""},{"z":"30","c":"S5","k":"men","s":"","l":"","t":"Los chips de las hojas de ayuda no tienen etiqueta para VoiceOver","n":"","tk":""},{"z":"30","c":"S6","k":"men","s":"","l":"","t":"El número del anillo de la nota usa un tamaño fijo de 28 pt","n":"","tk":""},{"z":"30","c":"S7","k":"men","s":"","l":"","t":"En el iPad, Configurar Panel no se adapta (media altura o pantalla completa)","n":"","tk":""},{"z":"30","c":"S8","k":"ver","s":"","l":"","t":"Tras «Vaciar datos», el período por defecto vuelve a «Todo el tiempo»","n":"Leído en el código, sin recorrer","tk":""},{"z":"30","c":"S9","k":"ver","s":"","l":"","t":"«Hoy ⓘ» no abrió su hoja con toques sintéticos: «Tu saldo hoy» sin captura","n":"","tk":""},{"z":"30","c":"S10","k":"men","s":"","l":"","t":"El día 1, Distribución marca −100 % en Necesidades","n":"Es de Estadísticas; salió en el caso","tk":""},{"z":"31","c":"P1","k":"dec","s":"A","l":"","t":"Buscar desaparece justo en Registros y no entiende importes","n":"Lo barato: B3","tk":"","img":"img/31-p1.jpg"},{"z":"31","c":"P2","k":"dec","s":"A","l":"","t":"Filtrar por cuenta y categoría pide 7 toques, dentro de «···»","n":"Lo barato: F1 + F3","tk":"","img":"img/31-p2.jpg"},{"z":"31","c":"P3","k":"dec","s":"A","l":"","t":"Con la lista vacía, el filtro culpable queda fuera de pantalla","n":"Lo barato: L3","tk":"","img":"img/31-p3.jpg"},{"z":"31","c":"P4","k":"dec","s":"MA","l":"","t":"«Todo el tiempo» no dice el año ni deja saltar a un mes: 9 deslizamientos","n":"Lo barato: T1","tk":"","img":"img/31-p4.jpg"},{"z":"31","c":"P5","k":"dec","s":"A","l":"","t":"«Seleccionar todo» marca 2.334 registros y el lote no se deshace","n":"Lo barato: E2","tk":"","img":"img/31-p5.jpg"},{"z":"31","c":"P6","k":"dec","s":"M","l":"","t":"Al tocar un día del calendario, lo que cambia queda fuera de pantalla","n":"","tk":"","img":"img/31-p6.jpg"},{"z":"31","c":"S1","k":"sin","s":"M","l":"","t":"VoiceOver lee cada fila sin su fecha","n":"","tk":""},{"z":"31","c":"S2","k":"sin","s":"A","l":"","t":"En Categorías, los once círculos se llaman «Seleccionar todo» para VoiceOver","n":"","tk":""},{"z":"31","c":"S3","k":"sin","s":"M","l":"","t":"El resumen de Categorías dice subcategorías («Delivery +3») aunque se eligió el grupo","n":"","tk":""},{"z":"31","c":"S4","k":"sin","s":"B","l":"","t":"«2334» sin separador de miles en la selección y al borrar","n":"","tk":""},{"z":"31","c":"S5","k":"sin","s":"B","l":"","t":"«periodo» y «Período» conviven","n":"","tk":""},{"z":"31","c":"S6","k":"sin","s":"B","l":"","t":"«Limpiar filtros» y «Borrar filtros» nombran lo mismo","n":"","tk":""},{"z":"31","c":"S7","k":"sin","s":"B","l":"","t":"«Nota contiene...» con tres puntos y el marcador de monto «0.00» fijo","n":"","tk":""},{"z":"31","c":"S8","k":"sin","s":"M","l":"","t":"Las etiquetas de la fila llevan la pista «Tag» en inglés para VoiceOver","n":"","tk":""},{"z":"31","c":"S9","k":"sin","s":"B","l":"","t":"Edición masiva: la fila «Categoría» dice «Hoy: 3 subcategorías distintas»","n":"","tk":""},{"z":"31","c":"S10","k":"sin","s":"M","l":"","t":"Sin indicador de carga ni de error: un fallo se ve como lista vacía","n":"","tk":""},{"z":"31","c":"S11","k":"sin","s":"B","l":"","t":"Con la lista vacía desaparece el selector Lista/Calendario","n":"","tk":""},{"z":"31","c":"S12","k":"sin","s":"B","l":"","t":"Tarjeta de Siri: importe a 38 pt fijos, «Cuenta: —» y la fecha en números","n":"","tk":""},{"z":"31","c":"S13","k":"sin","s":"M","l":"","t":"iPad: el calendario se aprieta en la columna de la lista y el detalle queda vacío","n":"","tk":""},{"z":"31","c":"S14","k":"sin","s":"B","l":"","t":"iPad: el título de la columna sale cortado («Registr…»)","n":"","tk":""},{"z":"31","c":"S15","k":"sin","s":"B","l":"","t":"Las cabeceras de día quedan fijas sin fondo y se montan sobre las filas","n":"","tk":""},{"z":"32","c":"P1","k":"dec","s":"A","l":"","t":"Con el teclado abierto, lo que falta y «Guardar» quedan debajo: un café cuesta 6 toques + 4 teclas","n":"","tk":"","img":"img/32-p1.jpg"},{"z":"32","c":"P2","k":"dec","s":"A","l":"","t":"Sin categorías recientes al empezar, y buscar «café» no encuentra nada","n":"","tk":"","img":"img/32-p2.jpg"},{"z":"32","c":"P3","k":"y22","s":"A","l":"","t":"Con texto grande, la zona fija de «Guardar» se monta sobre el formulario","n":"2.2 lo arregló y 2.3 no lo tiene (Z1); Z2 queda a decidir","tk":"","img":"img/32-p3.jpg"},{"z":"32","c":"P4","k":"nec","s":"MA","l":"F","t":"El importe escrito en soles pasa a dólares al elegir la cuenta, sin aviso","n":"Entró M1; ordenar las cuentas (M4) queda a decidir","tk":"","img":"img/32-p4.jpg"},{"z":"32","c":"P5","k":"nec","s":"MA","l":"F","t":"Si voz o foto fallan, «a mano» empieza de cero; el muro de Pro promete «a mano» sin botón","n":"Entró el botón (V3); precargar lo entendido (V1) queda a decidir","tk":"","img":"img/32-p5.jpg"},{"z":"32","c":"P6","k":"nec","s":"MA","l":"F","t":"Transferencia entre monedas: dos importes sin nombre y las cuentas lejos","n":"Entró T1 mínimo; «¿cuánto llegó?» (T2) queda a decidir","tk":"","img":"img/32-p6.jpg"},{"z":"32","c":"P7","k":"dec","s":"M","l":"","t":"Repetir un favorito rellena 12.00 y hay que borrarlo; solo vive en el formulario","n":"","tk":"","img":"img/32-p7.jpg"},{"z":"32","c":"S1","k":"sin","s":"A","l":"","t":"«Para guardar, falta…» se monta sobre «Etiquetas» y «Guardar» lo tapa a medias","n":"","tk":""},{"z":"32","c":"S2","k":"sin","s":"B","l":"","t":"En «Ingreso», la fila de favoritos sigue mostrando gastos y transferencias","n":"","tk":""},{"z":"32","c":"S3","k":"sin","s":"B","l":"","t":"El editor de favoritos dice «Gastos · Ingresos», sin transferencia","n":"","tk":""},{"z":"32","c":"S4","k":"sin","s":"M","l":"","t":"Deslizar un favorito en Ajustes lo borra sin preguntar","n":"","tk":""},{"z":"32","c":"S5","k":"sin","s":"B","l":"","t":"Un favorito de transferencia viejo se lista como «Cuenta Principal → …»","n":"","tk":""},{"z":"32","c":"S6","k":"sin","s":"M","l":"","t":"La foto con 7 registros enseña una sola fila en la hoja a media altura","n":"","tk":""},{"z":"32","c":"S7","k":"sin","s":"M","l":"","t":"Voz y foto no anuncian a VoiceOver el cambio de estado ni los fallos","n":"","tk":""},{"z":"32","c":"S8","k":"sin","s":"M","l":"","t":"«Volver a grabar» y «Otra foto» borran lo entendido sin avisar","n":"","tk":""},{"z":"32","c":"S9","k":"sin","s":"B","l":"","t":"Una vista de importe sin usar queda en el código, con un selector de divisa que no se ve","n":"","tk":""},{"z":"32","c":"S10","k":"sin","s":"B","l":"","t":"«Registrar otro» no tiene identificador de accesibilidad para los tests","n":"","tk":""},{"z":"32","c":"S11","k":"sin","s":"B","l":"","t":"Las filas de «¡Listo!» cortan una descripción larga en una línea","n":"","tk":""},{"z":"32","c":"S12","k":"sin","s":"M","l":"","t":"Con texto grande los importes se parten («S/ 3,000. / 00»)","n":"«Esto leí» ya está arreglado en 2.2; Favoritos no","tk":""},{"z":"32","c":"S13","k":"sin","s":"M","l":"","t":"iPad: el importe abre un teclado flotante encima de la hoja","n":"","tk":""},{"z":"32","c":"S14","k":"y22","s":"A","l":"","t":"2.3 no tiene seis arreglos de 2.2 de esta zona: zona fija, formulario a medias, chip de cuenta…","n":"","tk":""},{"z":"32","c":"S15","k":"sin","s":"B","l":"","t":"Con texto grande, «Transferencia» se parte en tres líneas","n":"","tk":""},{"z":"34","c":"P1","k":"dec","s":"A","l":"","t":"Al 90 % dice «Te quedan», «En el límite» y «Hoy te pasaste» a la vez","n":"","tk":"","img":"img/34-p1.jpg"},{"z":"34","c":"P2","k":"red","s":"A","l":"","t":"Al pasarse del presupuesto, la app anima pero no ayuda","n":"","tk":"","img":"img/34-p2.jpg"},{"z":"34","c":"P3","k":"red","s":"A","l":"","t":"Editar qué cuenta un presupuesto: dos puertas y 7 toques","n":"","tk":"","img":"img/34-p3.jpg"},{"z":"34","c":"P4","k":"red","s":"A","l":"","t":"Un pago vencido se mezcla con los próximos","n":"","tk":"","img":"img/34-p4.jpg"},{"z":"34","c":"P5","k":"nec","s":"A","l":"4","t":"Saltar un pago se anuncia como pagado (D3)","n":"Ya tenía card","tk":"","img":"img/34-p5.jpg"},{"z":"34","c":"P5","k":"dec","s":"A","l":"","t":"Apuntar un pago no se deshace (D1); «Ya no está pagado» deja el gasto (D2)","n":"","tk":"","img":"img/34-p5.jpg"},{"z":"34","c":"P6","k":"red","s":"M","l":"","t":"Calendario de pagos con cifras de 6-9 pt","n":"","tk":"","img":"img/34-p6.jpg"},{"z":"34","c":"P7","k":"y22","s":"MA","l":"","t":"Con texto grande se cortan los importes de los pagos y los botones y fechas del detalle","n":"La ficha no lo lista; la consolidación lo da por arreglado en 2.2","tk":"","img":"img/34-p7.jpg"},{"z":"34","c":"S1","k":"nec","s":"","l":"4","t":"Un mes cerrado sigue diciendo «Te quedan»","n":"","tk":""},{"z":"34","c":"S2","k":"y22","s":"","l":"","t":"Barra naranja desde el 75 % sin palabra","n":"El 80 % único ya está en 2.2","tk":""},{"z":"34","c":"S3","k":"y22","s":"","l":"","t":"Decimales mezclados en la lista de presupuestos","n":"","tk":""},{"z":"34","c":"S4","k":"ver","s":"","l":"","t":"Alertas apagadas con avisos pedidos","n":"Pide un teléfono recién instalado","tk":""},{"z":"34","c":"S5","k":"red","s":"","l":"","t":"Borrar un presupuesto no ofrece «Deshacer»","n":"","tk":""},{"z":"34","c":"S6","k":"nec","s":"","l":"4","t":"«No se apunta nada…» bajo los dos botones se lee como explicación de «Ya lo pagué»","n":"","tk":""},{"z":"34","c":"S7","k":"nec","s":"","l":"4","t":"El ✓ del editor se apaga sin decir qué falta","n":"","tk":""},{"z":"34","c":"S8","k":"nec","s":"","l":"4","t":"Un presupuesto «Único» de un solo día no se puede guardar","n":"","tk":""},{"z":"34","c":"S9","k":"nec","s":"","l":"4","t":"Reactivar un presupuesto inactivo no mira el límite gratis","n":"Reproducir antes de arreglar","tk":""},{"z":"34","c":"S10","k":"red","s":"","l":"","t":"«Ya lo apunté» no destaca la coincidencia","n":"","tk":""},{"z":"34","c":"S11","k":"nec","s":"","l":"4","t":"VoiceOver: el segmentado se llama «Tab», selectores sin nombre, fila sin lo que queda","n":"","tk":""},{"z":"34","c":"S12","k":"nec","s":"","l":"2","t":"«Por categoría» de las gráficas de un presupuesto puede no sumar lo gastado","n":"","tk":""},{"z":"34","c":"S13","k":"men","s":"","l":"","t":"Un error al cargar se pinta como «Aún no tienes presupuestos»","n":"","tk":""},{"z":"34","c":"S14","k":"men","s":"","l":"","t":"«Periodo» y «Período»","n":"","tk":""},{"z":"34","c":"S15","k":"men","s":"","l":"","t":"«Categoría» del editor elige una subcategoría","n":"","tk":""},{"z":"34","c":"S16","k":"men","s":"","l":"","t":"El ingreso sale en índigo y en turquesa","n":"","tk":""},{"z":"34","c":"S17","k":"men","s":"","l":"","t":"El teclado tapa «Clasificación» al abrir","n":"","tk":""},{"z":"34","c":"S18","k":"ver","s":"","l":"","t":"Un pago compartido propone USD en un grupo en soles","n":"Visto en Grupos, con la región del simulador","tk":""},{"z":"35","c":"P1","k":"red","s":"A","l":"","t":"«¿En qué se me fue la plata?» no tiene respuesta en un sitio","n":"","tk":"","img":"img/35-p1.jpg"},{"z":"35","c":"P2","k":"dec","s":"A","l":"","t":"Tocar una categoría la filtra en vez de abrirla","n":"Reabre lo decidido el 25-26 oct","tk":"","img":"img/35-p2.jpg"},{"z":"35","c":"P3","k":"nec","s":"A","l":"5","t":"Con texto grande se cortan importes y pestañas","n":"Las fichas de Resumen ya están en 2.2","tk":"","img":"img/35-p3.jpg"},{"z":"35","c":"P4","k":"dec","s":"MA","l":"","t":"«Balance», «Saldo» y «Saldo de cuentas»: tres cifras, nombres casi iguales","n":"Se decide con PN-1 del Panel","tk":"","img":"img/35-p4.jpg"},{"z":"35","c":"P5","k":"dec","s":"MA","l":"","t":"VoiceOver lee las gráficas como recuentos, sin valores","n":"","tk":"","img":"img/35-p5.jpg"},{"z":"35","c":"P6","k":"dec","s":"M","l":"","t":"Con una semana de datos, afirma de más","n":"El bug «este Este mes» va al lote 7","tk":"","img":"img/35-p6.jpg"},{"z":"35","c":"P7","k":"dec","s":"M","l":"","t":"Con diez años de datos, ~2 s congelada","n":"Medir con Instruments antes","tk":"","img":"img/35-p7.jpg"},{"z":"35","c":"S1","k":"nec","s":"","l":"7","t":"«Probaste Mascotas este Este mes»","n":"","tk":""},{"z":"35","c":"S2","k":"dec","s":"","l":"","t":"iPad: Distribución ocupa todo el ancho","n":"Patrón común con 36, 37 y 39","tk":""},{"z":"35","c":"S3","k":"men","s":"","l":"","t":"Los botones flotantes tapan importes al desplazar","n":"","tk":""},{"z":"35","c":"S4","k":"dec","s":"","l":"","t":"La comparación cambia en silencio en Tendencias","n":"","tk":""},{"z":"35","c":"S5","k":"nec","s":"","l":"7","t":"«8 categorías» en pantalla y «7» para VoiceOver","n":"","tk":""},{"z":"35","c":"S6","k":"nec","s":"","l":"7","t":"«11696 registros» sin separador de miles","n":"","tk":""},{"z":"35","c":"S7","k":"nec","s":"","l":"7","t":"Las guías de Tendencias y Registros dicen lo contrario de lo que enseñan","n":"","tk":""},{"z":"35","c":"S8","k":"nec","s":"","l":"7","t":"El Sankey corta sus etiquetas y su botón es «$» con soles","n":"","tk":""},{"z":"35","c":"S9","k":"nec","s":"","l":"7","t":"«insights» en inglés y «Aún no tienes categorías» habiéndolas","n":"","tk":""},{"z":"35","c":"S10","k":"nec","s":"","l":"2","t":"«Día de más gasto» y «tu día más caro» salen de dos cálculos","n":"","tk":""},{"z":"35","c":"S11","k":"men","s":"","l":"","t":"Un toque sintético a veces no llega","n":"Del simulador, no del dedo","tk":""},{"z":"36","c":"P1","k":"dec","s":"A","l":"","t":"«¿Llego a fin de mes?» tiene cinco cifras distintas","n":"Reabre el lote 18","tk":"","img":"img/36-p1.jpg"},{"z":"36","c":"P2","k":"dec","s":"A","l":"","t":"Real y estimado se pintan igual y tienen siete nombres","n":"","tk":"","img":"img/36-p2.jpg"},{"z":"36","c":"P3","k":"red","s":"MA","l":"","t":"El plan vive en Más › Reportes y armarlo pide revisar 18 líneas","n":"","tk":"","img":"img/36-p3.jpg"},{"z":"36","c":"P4","k":"red","s":"M","l":"","t":"Leer un mes es recorrer 25 tarjetas iguales","n":"","tk":"","img":"img/36-p4.jpg"},{"z":"36","c":"P5","k":"nec","s":"M","l":"5","t":"Con texto grande se pierden nombres; «No-viem-bre»","n":"","tk":"","img":"img/36-p5.jpg"},{"z":"36","c":"P6","k":"dec","s":"M","l":"","t":"La Comparativa dice «Noviembre» comparando del 1 al 7","n":"","tk":"","img":"img/36-p6.jpg"},{"z":"36","c":"P7","k":"dec","s":"M","l":"","t":"La primera semana, sin ingresos, dice «Te faltan S/ 2,573»","n":"","tk":"","img":"img/36-p7.jpg"},{"z":"36","c":"S1","k":"nec","s":"","l":"2","t":"Sin plan, el ritmo cuenta dos veces el sueldo","n":"Pide review adversarial","tk":""},{"z":"36","c":"S2","k":"dec","s":"","l":"","t":"iPad: todo el ancho","n":"Patrón común con 35, 37 y 39","tk":""},{"z":"36","c":"S3","k":"nec","s":"","l":"8","t":"«Gastos no considerados» enseña siempre el mes en curso","n":"","tk":""},{"z":"36","c":"S4","k":"men","s":"","l":"","t":"La hoja de configurar una línea es inalcanzable","n":"","tk":""},{"z":"36","c":"S5","k":"dec","s":"","l":"","t":"Free ve el flujo de caja avanzado","n":"¿A propósito o se cierra?","tk":"https://github.com/jur211296/Yala/blob/2.3/tickets/backlog/cash-flow-advanced-gate-never-limits-free-users.md"},{"z":"36","c":"S6","k":"nec","s":"","l":"8","t":"«vs» escrito a mano en los 16 idiomas","n":"","tk":""},{"z":"36","c":"S7","k":"dec","s":"","l":"","t":"Widget: el tramo punteado confunde","n":"Lo decidió la 12A","tk":""},{"z":"36","c":"S8","k":"dec","s":"","l":"","t":"«Disponible» en el widget y «Saldo» en el Panel","n":"","tk":""},{"z":"36","c":"S9","k":"nec","s":"","l":"8","t":"Importes en índigo y rosa como texto, por debajo de AA","n":"","tk":""},{"z":"36","c":"S10","k":"dec","s":"","l":"","t":"Gráficas da otra cifra para la misma línea","n":"","tk":""},{"z":"36","c":"S11","k":"nec","s":"","l":"8","t":"El vacío dice «No hay registros en este periodo»","n":"","tk":""},{"z":"36","c":"S12","k":"ver","s":"","l":"","t":"La proyección depende de «Empezaste con» en 0","n":"Visto solo con la semilla de rendimiento","tk":""},{"z":"37","c":"P1","k":"nec","s":"A","l":"6","t":"Saldos dice «No le debes nada a nadie» encima de «Tú pagas a Ana» (A4)","n":"","tk":"","img":"img/37-p1.jpg"},{"z":"37","c":"P1","k":"nec","s":"A","l":"6","t":"La tarjeta de deuda dice «Beto paga a Tú»","n":"","tk":"https://github.com/jur211296/Yala/blob/2.3/tickets/backlog/group-debt-card-reads-pays-to-tu.md","img":"img/37-p1.jpg"},{"z":"37","c":"P1","k":"dec","s":"A","l":"","t":"«Menos pagos» viene apagado por defecto (A1)","n":"","tk":"","img":"img/37-p1.jpg"},{"z":"37","c":"P2","k":"nec","s":"A","l":"1","t":"Al borrar y escribir 150 quedó «1,100.00»","n":"","tk":"https://github.com/jur211296/Yala/blob/2.3/tickets/backlog/group-split-amount-field-keeps-the-old-value-and-drops-typed-digits.md","img":"img/37-p2.jpg"},{"z":"37","c":"P2","k":"nec","s":"A","l":"2","t":"Un reparto que suma 399,99 se guarda","n":"Medir adónde va el céntimo","tk":"","img":"img/37-p2.jpg"},{"z":"37","c":"P2","k":"red","s":"A","l":"","t":"Partir desigual cuesta 11 toques (B2)","n":"","tk":"","img":"img/37-p2.jpg"},{"z":"37","c":"P3","k":"dec","s":"MA","l":"","t":"Saldar: quién lo apunta, pagar de más y sin confirmación (C1-C3)","n":"","tk":"","img":"img/37-p3.jpg"},{"z":"37","c":"P4","k":"dec","s":"MA","l":"","t":"Soles y dólares no se compensan (D1, D4)","n":"","tk":"","img":"img/37-p4.jpg"},{"z":"37","c":"P5","k":"y22","s":"A","l":"","t":"Con texto grande se corta lo que se decide","n":"Botones de la lista y cabecera ya en 2.2","tk":"","img":"img/37-p5.jpg"},{"z":"37","c":"P5","k":"nec","s":"A","l":"6","t":"VoiceOver lee el importe como «0.00»","n":"","tk":"","img":"img/37-p5.jpg"},{"z":"37","c":"P6","k":"dec","s":"M","l":"","t":"La X tira el gasto a medias sin preguntar (F1)","n":"","tk":"","img":"img/37-p6.jpg"},{"z":"37","c":"P7","k":"dec","s":"M","l":"","t":"En el iPad el detalle se estira de lado a lado","n":"Patrón común con 35, 36 y 39","tk":"","img":"img/37-p7.jpg"},{"z":"37","c":"S1","k":"nec","s":"","l":"6","t":"«¡Están al día!» en un grupo recién creado","n":"","tk":""},{"z":"37","c":"S2","k":"nec","s":"","l":"1","t":"Un grupo archivado deja apuntar gastos y saldar","n":"","tk":"https://github.com/jur211296/Yala/blob/2.3/tickets/backlog/archived-group-still-allows-expenses-and-payments-from-inside.md"},{"z":"37","c":"S3","k":"nec","s":"","l":"1","t":"Reintentar tras fallar la confirmación duplica el pago","n":"","tk":"https://github.com/jur211296/Yala/blob/2.3/tickets/backlog/settlement-retry-after-a-failed-confirmation-duplicates-the-payment.md"},{"z":"37","c":"S4","k":"nec","s":"","l":"1","t":"Un saldo inicial se reemplaza sin avisar","n":"","tk":""},{"z":"37","c":"S5","k":"red","s":"","l":"","t":"Los pagos pendientes de confirmar solo salen en Saldos","n":"","tk":""},{"z":"37","c":"S6","k":"nec","s":"","l":"6","t":"«¿Quién puso más?»: las barras tapan los nombres","n":"","tk":"https://github.com/jur211296/Yala/blob/2.3/tickets/backlog/group-stats-who-paid-most-bars-cover-the-names.md"},{"z":"37","c":"S7","k":"dec","s":"","l":"","t":"Siete palabras para saldar y cuatro nombres para el puente","n":"Pendiente desde 2.2","tk":""},{"z":"37","c":"S8","k":"ver","s":"","l":"","t":"Las opciones de Ajustes del grupo leen de una sección perezosa","n":"Sin reproducir","tk":"https://github.com/jur211296/Yala/blob/2.3/tickets/backlog/group-settings-options-read-their-value-from-a-lazy-section.md"},{"z":"37","c":"S9","k":"dec","s":"","l":"","t":"Apagar «deudas en una moneda» cambia la moneda del grupo para todos","n":"","tk":"https://github.com/jur211296/Yala/blob/2.3/tickets/backlog/group-single-currency-off-changes-the-group-currency-for-everyone.md"},{"z":"37","c":"S10","k":"nec","s":"","l":"1","t":"«Importar todo el historial» solo sale si ya hay movimientos reflejados","n":"","tk":"https://github.com/jur211296/Yala/blob/2.3/tickets/backlog/bridge-history-import-is-only-offered-when-something-was-already-bridged.md"},{"z":"37","c":"S11","k":"red","s":"","l":"","t":"«Desde un recibo» no deja corregir el importe de una línea","n":"","tk":""},{"z":"37","c":"S12","k":"men","s":"","l":"","t":"El «+» tapa el importe al desplazar","n":"","tk":""},{"z":"37","c":"S13","k":"men","s":"","l":"","t":"«Tus grupos te esperan» no dice qué espera","n":"","tk":""},{"z":"37","c":"S14","k":"men","s":"","l":"","t":"«Salir del grupo» tras un rechazo, sin confirmar","n":"El grupo no era tuyo","tk":""},{"z":"38","c":"P1","k":"red","s":"A","l":"","t":"Lo que se apunta solo vive en tres sitios y nada dice si funciona","n":"","tk":"","img":"img/38-p1.jpg"},{"z":"38","c":"P2","k":"dec","s":"A","l":"","t":"Revisar 8: deslizar guarda sin pista","n":"","tk":"","img":"img/38-p2.jpg"},{"z":"38","c":"P3","k":"nec","s":"A","l":"3","t":"Guardar el lote y deslizar no miran duplicados","n":"","tk":"https://github.com/jur211296/Yala/blob/2.3/tickets/backlog/inbox-bulk-save-and-swipe-skip-the-duplicate-check.md","img":"img/38-p3.jpg"},{"z":"38","c":"P3","k":"red","s":"A","l":"","t":"«55 %» sin explicar y un duplicado sin nombre (C1)","n":"","tk":"","img":"img/38-p3.jpg"},{"z":"38","c":"P4","k":"red","s":"MA","l":"","t":"El gasto de grupo pregunta «Elige la cuenta» en vez de «¿Ya lo apuntaste?»","n":"","tk":"","img":"img/38-p4.jpg"},{"z":"38","c":"P5","k":"dec","s":"MA","l":"","t":"Yala IA sin servidor dice «en unos minutos» y apaga la caja","n":"","tk":"","img":"img/38-p5.jpg"},{"z":"38","c":"P6","k":"red","s":"MA","l":"","t":"Correo del banco: cinco pasos y nunca se sabe si funcionó","n":"","tk":"","img":"img/38-p6.jpg"},{"z":"38","c":"P7","k":"nec","s":"M","l":"5","t":"Con texto grande se parten los botones que deciden","n":"","tk":"","img":"img/38-p7.jpg"},{"z":"38","c":"S1","k":"nec","s":"","l":"3","t":"Siri dice «Requiere Yala Pro» a quien no le hace falta","n":"","tk":"https://github.com/jur211296/Yala/blob/2.3/tickets/backlog/siri-shortcuts-screen-says-pro-required-for-on-device-users.md"},{"z":"38","c":"S2","k":"nec","s":"","l":"3","t":"La lista lee 500 borradores con archivados y puede esconder un pendiente","n":"","tk":"https://github.com/jur211296/Yala/blob/2.3/tickets/backlog/inbox-list-capped-at-500-may-hide-old-pending-drafts.md"},{"z":"38","c":"S3","k":"dec","s":"","l":"","t":"Cuatro nombres para la Bandeja","n":"","tk":""},{"z":"38","c":"S4","k":"red","s":"","l":"","t":"Los textos no nombran el correo del banco","n":"","tk":""},{"z":"38","c":"S5","k":"men","s":"","l":"","t":"«Hoy» repetido y una cabecera que pisa","n":"","tk":""},{"z":"38","c":"S6","k":"men","s":"","l":"","t":"El aviso de archivar tapa los botones","n":"Solo con 30 s forzados","tk":""},{"z":"38","c":"S7","k":"men","s":"","l":"","t":"La caja del chat dice «Escribe tu pregunta…»","n":"","tk":""},{"z":"38","c":"S8","k":"men","s":"","l":"","t":"Conversación de ejemplo sin rotular tras el muro","n":"","tk":""},{"z":"38","c":"S9","k":"men","s":"","l":"","t":"«registro automático» sin decir de dónde","n":"","tk":""},{"z":"38","c":"S10","k":"dec","s":"","l":"","t":"«Correos que llegaron sin leerse: 3» al pasar a Pro","n":"","tk":""},{"z":"38","c":"S11","k":"nec","s":"","l":"3","t":"Guía de Apple Pay: «Nombre respectivamente» y un contador mudo","n":"","tk":""},{"z":"38","c":"S12","k":"red","s":"","l":"","t":"El atajo de Apple Pay no enlaza a su guía","n":"","tk":""},{"z":"39","c":"P1","k":"dec","s":"A","l":"","t":"Archivar una tarjeta aparta también lo gastado","n":"La opción A del 8-oct sigue sin hacer","tk":"","img":"img/39-p1.jpg"},{"z":"39","c":"P2","k":"red","s":"A","l":"","t":"Las categorías no se pueden ordenar","n":"","tk":"","img":"img/39-p2.jpg"},{"z":"39","c":"P8","k":"y22","s":"A","l":"","t":"Con texto grande, Cuentas pierde los nombres","n":"","tk":"","img":"img/39-p8.jpg"},{"z":"39","c":"P8","k":"nec","s":"A","l":"5","t":"Con texto grande, Etiquetas pierde la última fila (H2)","n":"","tk":"","img":"img/39-p8.jpg"},{"z":"39","c":"P3","k":"red","s":"MA","l":"","t":"Crear una categoría pide la subcategoría al final: 12 toques","n":"","tk":"","img":"img/39-p3.jpg"},{"z":"39","c":"P4","k":"dec","s":"M","l":"","t":"Ajustar el saldo preelige reescribir todos los meses","n":"","tk":"","img":"img/39-p4.jpg"},{"z":"39","c":"P5","k":"dec","s":"MA","l":"","t":"La lista enseña el número de cuenta en vez del nombre","n":"E1 aprobado el 3-oct","tk":"","img":"img/39-p5.jpg"},{"z":"39","c":"P6","k":"red","s":"M","l":"","t":"«Monedas secundarias» confunde","n":"","tk":"","img":"img/39-p6.jpg"},{"z":"39","c":"P7","k":"dec","s":"M","l":"","t":"«No lo uses al registrar» se dice de cuatro formas","n":"","tk":"","img":"img/39-p7.jpg"},{"z":"39","c":"S1","k":"nec","s":"","l":"9","t":"Saldos con «PEN» en la lista y «S/» en el resto","n":"","tk":""},{"z":"39","c":"S2","k":"dec","s":"","l":"","t":"USD y EUR vienen elegidas sin pedirlo","n":"","tk":""},{"z":"39","c":"S3","k":"nec","s":"","l":"9","t":"Sin secundarias, «Tipo de cambio» enseña dos divisas al azar","n":"","tk":""},{"z":"39","c":"S4","k":"nec","s":"","l":"9","t":"El «+» crea una categoría vacía antes de escribir","n":"Reproducir antes de arreglar","tk":""},{"z":"39","c":"S5","k":"men","s":"","l":"","t":"La cabecera de una categoría nueva dice «Nueva categoría» hasta escribir","n":"","tk":""},{"z":"39","c":"S6","k":"men","s":"","l":"","t":"«Gastos por necesidad» y «Necesidad»","n":"","tk":""},{"z":"39","c":"S7","k":"nec","s":"","l":"9","t":"Etiquetas: la X no pregunta, corta a 20 sin avisar y enseña «#5E5CE6»","n":"","tk":""},{"z":"39","c":"S8","k":"dec","s":"","l":"","t":"Se guarda el número completo de una tarjeta","n":"Privacidad","tk":""},{"z":"39","c":"S9","k":"dec","s":"","l":"","t":"iPad: la ficha va en una hoja de media pantalla","n":"Patrón común con 35, 36 y 37","tk":""},{"z":"39","c":"S10","k":"men","s":"","l":"","t":"Aviso de varias divisas a toda tarjeta nueva","n":"","tk":""},{"z":"40","c":"P1","k":"red","s":"A","l":"","t":"Ajustes son 31 filas sin buscador","n":"","tk":"","img":"img/40-p1.jpg"},{"z":"40","c":"P2","k":"dec","s":"A","l":"","t":"Filas que no abren lo que dicen","n":"","tk":"","img":"img/40-p2.jpg"},{"z":"40","c":"P3","k":"red","s":"A","l":"","t":"Yala Pro enseña primero el precio","n":"","tk":"","img":"img/40-p3.jpg"},{"z":"40","c":"P4","k":"red","s":"MA","l":"","t":"Exportar abre en «Todo», sin «Mes pasado»","n":"","tk":"","img":"img/40-p4.jpg"},{"z":"40","c":"P4","k":"nec","s":"MA","l":"10","t":"Sin registros, Exportar sale gris sin decir por qué (D4)","n":"","tk":"","img":"img/40-p4.jpg"},{"z":"40","c":"P5","k":"red","s":"M","l":"","t":"La ayuda vive al fondo y no se busca","n":"","tk":"","img":"img/40-p5.jpg"},{"z":"40","c":"P6","k":"dec","s":"M","l":"","t":"«Cómo usas Yala» y «Modo de uso», casi homónimos","n":"","tk":"","img":"img/40-p6.jpg"},{"z":"40","c":"P7","k":"nec","s":"M","l":"5","t":"Con texto grande los títulos se parten por sílabas","n":"Los iconos (G1) se preguntan","tk":"","img":"img/40-p7.jpg"},{"z":"40","c":"S1","k":"red","s":"","l":"","t":"Cabecera «Usuario / Editar perfil»","n":"","tk":""},{"z":"40","c":"S2","k":"men","s":"","l":"","t":"«Más sobre tus datos» abre una web","n":"Sin conexión no carga","tk":""},{"z":"40","c":"S3","k":"men","s":"","l":"","t":"Dos «‹» en Proteger con Face ID","n":"","tk":""},{"z":"40","c":"S4","k":"nec","s":"","l":"10","t":"«Cancela en Ajustes» manda al sitio equivocado","n":"","tk":""},{"z":"40","c":"S5","k":"men","s":"","l":"","t":"«Temas» abre «Apariencia»","n":"","tk":""},{"z":"40","c":"S6","k":"red","s":"","l":"","t":"«Abrir el teclado en» vive dentro de Formato","n":"","tk":""},{"z":"40","c":"S7","k":"dec","s":"","l":"","t":"Dos filas sobre dónde están los datos","n":"Se decide en Nube (problema 7)","tk":""},{"z":"40","c":"S8","k":"nec","s":"","l":"10","t":"«Resumen con IA» sin marca Pro","n":"","tk":""},{"z":"40","c":"S9","k":"men","s":"","l":"","t":"Notificaciones no avisa del permiso denegado","n":"","tk":""},{"z":"40","c":"S10","k":"red","s":"","l":"","t":"«Ajustes» está al final de Más","n":"","tk":""},{"z":"40","c":"S11","k":"red","s":"","l":"","t":"«Vaciar datos» junto a Exportar","n":"","tk":""},{"z":"40","c":"S12","k":"men","s":"","l":"","t":"Pestañas: dos textos para lo mismo","n":"","tk":""},{"z":"40","c":"S13","k":"men","s":"","l":"","t":"«Versión 2.2 (Build 7)» en 2.3","n":"Lo pone el release","tk":""},{"z":"40","c":"S14","k":"dec","s":"","l":"","t":"Ajustes tarda ~1 s con diez años de datos","n":"¿Se suma a la card del App Hang de Perfil?","tk":""},{"z":"41","c":"P1","k":"dec","s":"A","l":"","t":"Nueve nombres y seis verbos para dos sitios","n":"","tk":"","img":"img/41-p1.jpg"},{"z":"41","c":"P2","k":"dat","s":"A","l":"","t":"Cifrado y fotos quedan plegados en «Ver los detalles»","n":"","tk":"","img":"img/41-p2.jpg"},{"z":"41","c":"P3","k":"dat","s":"A","l":"","t":"Volver a iCloud promete «en pausa por si vuelves»","n":"","tk":"","img":"img/41-p3.jpg"},{"z":"41","c":"P7","k":"dat","s":"MA","l":"","t":"Con iCloud apagado, el estado afirma una copia que no existe (S2)","n":"","tk":"","img":"img/41-p7.jpg"},{"z":"41","c":"P7","k":"dec","s":"MA","l":"","t":"Dos filas para la misma pregunta (S1)","n":"Va a la card de datos","tk":"","img":"img/41-p7.jpg"},{"z":"41","c":"P4","k":"dat","s":"MA","l":"","t":"«Desasociar» es el botón más llamativo, encima de la acción","n":"","tk":"","img":"img/41-p4.jpg"},{"z":"41","c":"P5","k":"red","s":"M","l":"","t":"43 textos de fallo con solo «Reintentar»","n":"","tk":"","img":"img/41-p5.jpg"},{"z":"41","c":"P6","k":"dec","s":"M","l":"","t":"La subida no dice cuánto falta; «Ya casi está» dice «Sesión cerrada»","n":"","tk":"","img":"img/41-p6.jpg"},{"z":"41","c":"P8","k":"nec","s":"M","l":"11","t":"Con texto grande el estado se aprieta y el pie ocupa media pantalla","n":"","tk":"","img":"img/41-p8.jpg"},{"z":"41","c":"S1","k":"dat","s":"","l":"","t":"«Activar sin borrar» cancela un borrado pedido, en un globo","n":"","tk":""},{"z":"41","c":"S2","k":"men","s":"","l":"","t":"«Iniciar sesión con Apple» y «Continuar con Apple»","n":"","tk":""},{"z":"41","c":"S3","k":"nec","s":"","l":"11","t":"Las cifras de la subida salen con tres formatos","n":"","tk":""},{"z":"41","c":"S4","k":"nec","s":"","l":"11","t":"El consentimiento manda a «Exportar datos», que se llama «Exportar registros»","n":"","tk":""},{"z":"41","c":"S5","k":"dec","s":"","l":"","t":"«Sí, cancelar» no dice qué cancela","n":"","tk":""},{"z":"41","c":"S6","k":"nec","s":"","l":"11","t":"La nota de cuenta rechazada va en naranja como texto, por debajo de AA","n":"","tk":""},{"z":"41","c":"S7","k":"red","s":"","l":"","t":"La tarjeta «Grupos» queda bajo el error con el mismo peso","n":"","tk":""},{"z":"41","c":"S8","k":"nec","s":"","l":"11","t":"«Salir de mis grupos»: palabras internas y manda a otra fila","n":"","tk":""},{"z":"41","c":"S9","k":"dat","s":"","l":"","t":"«Desasociar»: la diferencia entre las dos opciones solo en un párrafo","n":"","tk":""},{"z":"41","c":"S10","k":"ver","s":"","l":"","t":"Paneles de QA en «Sincronización iCloud» de Yala Dev","n":"Comprobar que no llegan a TestFlight","tk":""}],"gh":"https://github.com/jur211296/Yala","consolidacion":"https://github.com/jur211296/Yala/blob/2.3/docs/ux/revision-vistas-2.3/consolidacion-necesarias-2026-11/ficha.md"};
+const K = {
+  nec: { n: "Necesaria", g: "imp", d: "Bug, accesibilidad, texto falso o regresión. Va a un lote." },
+  y22: { n: "Ya en 2.2", g: "imp", d: "2.2 ya lo arregló y 2.3 no lo tiene. Llega con la integración." },
+  dat: { n: "Decisión de datos", g: "dec", d: "Toca datos o seguridad. Espera su card de decisión." },
+  dec: { n: "Decisión", g: "dec", d: "Pide elegir entre alternativas o reabre algo decidido." },
+  red: { n: "Rediseño", g: "des", d: "Mejora de flujo o jerarquía sin defecto objetivo." },
+  men: { n: "Menor", g: "des", d: "Defecto real pero cosmético. Sin lote." },
+  ver: { n: "Por verificar", g: "des", d: "Hipótesis sin reproducir. Sin lote." },
+  sin: { n: "Sin clasificar", g: "sin", d: "Secundarios de Registros y Nuevo registro que nadie consolidó." },
+};
+const ORDEN = ["nec", "y22", "dat", "dec", "red", "men", "ver", "sin"];
+const G = {
+  imp: { n: "Importa", d: "Necesarias, cada una en su lote, y lo que 2.2 ya arregló." },
+  dec: { n: "A decidir", d: "Elige Jürgen. Las alternativas están en la ficha." },
+  des: { n: "Deseable o menor", d: "Rediseños, menores y por verificar. Sin lote." },
+  sin: { n: "Sin clasificar", d: "Nadie los consolidó todavía." },
+};
+const SEV = { A: ["Alta", 3], MA: ["Media-alta", 3], M: ["Media", 2], B: ["Baja", 1] };
+const H = D.hallazgos;
+const Z = Object.fromEntries(D.zonas.map(z => [z.num, z]));
+const PR = n => `${D.gh}/pull/${n}`;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const loteNom = id => id === "P" ? "Lote Panel" : id === "F" ? "Lote Formulario" : `Lote ${String(id).padStart(2, "0")}`;
+const loteNum = id => id === "P" || id === "F" ? "✓" : String(id).padStart(2, "0");
+const loteHecho = id => id === "P" || id === "F";
+const rowId = h => `h-${h.z}-${h.c}-${H.indexOf(h)}`;
+const cuenta = (lista, k) => lista.filter(h => h.k === k).length;
+const grupoDe = h => K[h.k].g;
+let resaltar = null;
+let filtro = "todo";
+
+function chip(k) { return `<span class="chip k-${k} ${k === "ver" || k === "sin" ? k : ""}">${K[k].n}</span>`; }
+function loteChip(id) { return `<a class="lotechip ${loteHecho(id) ? "hecho" : ""}" href="#portada" data-lote="${esc(id)}">${loteNom(id)}</a>`; }
+
+function tabs(actual) {
+  const items = [`<a class="tab" href="#portada" ${actual === "portada" ? 'aria-current="page"' : ""}>Portada</a>`]
+    .concat(D.zonas.map(z => {
+      const n = H.filter(h => h.z === z.num && h.k === "nec").length;
+      return `<a class="tab" href="#${z.slug}" ${actual === z.slug ? 'aria-current="page"' : ""}>${esc(z.corto)} <b class="${n ? "" : "cero"}" title="${n} necesarias">${n}</b></a>`;
+    }));
+  const nav = document.getElementById("tabs");
+  nav.innerHTML = items.join("");
+  const cur = nav.querySelector('[aria-current="page"]');
+  if (cur) nav.scrollLeft = Math.max(0, cur.offsetLeft - (nav.clientWidth - cur.offsetWidth) / 2);
+}
+
+function portada() {
+  const total = H.length;
+  const porGrupo = g => H.filter(h => grupoDe(h) === g);
+  const lotesPend = D.lotes.filter(l => l.estado === "pendiente");
+  const barra = ORDEN.map(k => { const n = cuenta(H, k); return n ? `<span class="k-${k}" style="flex:${n};background:var(--kc)" title="${K[k].n}: ${n}"></span>` : ""; }).join("");
+  const tiles = Object.entries(G).map(([g, m]) => {
+    const l = porGrupo(g);
+    const subs = ORDEN.filter(k => K[k].g === g).map(k => `<span class="chip k-${k} ${k === "ver" || k === "sin" ? k : ""}">${K[k].n} · ${cuenta(l, k)}</span>`).join("");
+    return `<div class="group ${g}"><div class="num">${l.length}</div><h3>${m.n}</h3><p>${m.d}</p><div class="subs">${subs}</div></div>`;
+  }).join("");
+
+  const cols = [["nec"], ["y22"], ["dat", "dec"], ["red"], ["men"], ["ver"], ["sin"]];
+  const colNom = ["Necesaria", "Ya en 2.2", "Decisión", "Rediseño", "Menor", "Por verificar", "Sin clasificar"];
+  const max = Math.max(...D.zonas.flatMap(z => cols.map(c => H.filter(h => h.z === z.num && c.includes(h.k)).length)));
+  const filas = D.zonas.map(z => {
+    const hz = H.filter(h => h.z === z.num);
+    const celdas = cols.map(c => {
+      const n = hz.filter(h => c.includes(h.k)).length;
+      return `<td><span class="dot k-${c[c.length - 1]} ${n ? "" : "zero"}" style="--a:${n ? Math.round(10 + 40 * n / max) : 0}">${n || "·"}</span></td>`;
+    }).join("");
+    const lts = [...new Set(hz.filter(h => h.l).map(h => h.l))].sort((a, b) => (isNaN(a) ? -1 : +a) - (isNaN(b) ? -1 : +b));
+    return `<tr data-ir="${z.slug}"><td class="zn"><a href="#${z.slug}"><span>${z.num}</span>${esc(z.corto)}</a></td>${celdas}<td class="tot">${hz.length}</td><td class="lts"><div>${lts.map(loteChip).join("") || '<span class="muted">—</span>'}</div></td></tr>`;
+  }).join("");
+  const pie = cols.map(c => `<td>${H.filter(h => c.includes(h.k)).length}</td>`).join("");
+
+  const tarjeta = l => {
+    const hs = H.filter(h => h.l === l.id);
+    const zs = [...new Set(hs.map(h => h.z))].map(n => `<a class="zchip" href="#${Z[n].slug}">${esc(Z[n].corto)}</a>`).join("");
+    const li = hs.map(h => `<li><a href="#${Z[h.z].slug}" data-ir-fila="${rowId(h)}"><span>${esc(Z[h.z].corto)}</span><span>${esc(h.t)}</span></a></li>`).join("");
+    const hecho = l.estado === "hecho";
+    return `<article class="lote ${hecho ? "hecho" : ""}" id="lote-${esc(l.id)}">
+      <div class="cab"><div class="n">${loteNum(l.id)}</div><div><h3>${esc(l.titulo)}</h3></div></div>
+      <div class="meta"><span class="estado ${hecho ? "hecho" : ""}">${hecho ? "Mergeado en 2.3" : "Pendiente · sin encolar"}</span><span>·</span><span>${l.puntos} puntos${hs.length !== l.puntos ? ` · ${hs.length} hallazgos` : ""}</span>${l.adv ? `<span class="adv">Review adversarial: ${esc(l.adv)}</span>` : ""}</div>
+      <div class="meta">${zs}</div>
+      <ul>${li}</ul>
+      <a class="pie" href="${l.url}" target="_blank" rel="noopener">${hecho ? "Ver el PR" : "Ver el encargo"} ↗</a>
+    </article>`;
+  };
+
+  const decs = D.decisiones.map(d => `<article class="dec"><h3>${esc(d.t)}</h3><p>${esc(d.d)}</p><div class="zs">${d.z.map(s => { const z = D.zonas.find(x => x.slug === s); return `<a class="zchip" href="#${s}">${esc(z.corto)}</a>`; }).join("")}</div></article>`).join("");
+  const notas = D.notas.map((n, i) => `<div class="nota ${i === D.notas.length - 1 ? "ok" : ""}"><strong>${esc(n.t)}</strong><p>${esc(n.d)}</p>${n.u ? `<a href="${n.u}" target="_blank" rel="noopener">Ver el documento ↗</a>` : ""}</div>`).join("");
+  const leyenda = ORDEN.map(k => `<div>${chip(k)}<p>${K[k].d}</p></div>`).join("");
+
+  return `
+  <div class="hero">
+    <span class="eyebrow">Yala 2.3 · revisión por vistas y consolidación</span>
+    <h1>Todo lo que encontramos, vista por vista</h1>
+    <p class="lede">Once revisiones del 7 al 9 de noviembre y una consolidación en lotes. Lo rojo es lo que hay que arreglar; lo demás espera una decisión o puede esperar.</p>
+    <div class="stats">
+      <div><strong>${total}</strong><span>hallazgos</span></div>
+      <div><strong>${D.zonas.length}</strong><span>vistas</span></div>
+      <div><strong>${lotesPend.length}</strong><span>lotes pendientes</span></div>
+      <div><strong>${D.lotes.length - lotesPend.length}</strong><span>lotes ya hechos</span></div>
+    </div>
+  </div>
+  <div class="bar" role="img" aria-label="${ORDEN.map(k => `${K[k].n} ${cuenta(H, k)}`).join(", ")}">${barra}</div>
+  <div class="groups">${tiles}</div>
+
+  <section>
+    <header><h2>Por vista y por nivel</h2><p>Toca una fila para abrir la vista.</p></header>
+    <div class="scroll"><table class="mx">
+      <thead><tr><th class="zn">Vista</th>${colNom.map(c => `<th>${c}</th>`).join("")}<th>Total</th><th style="text-align:left">Lotes</th></tr></thead>
+      <tbody>${filas}</tbody>
+      <tfoot><tr><td class="zn">Total</td>${pie}<td>${total}</td><td></td></tr></tfoot>
+    </table></div>
+  </section>
+
+  <section id="lotes">
+    <header><h2>Los lotes</h2><p>Once pendientes, en el orden de la consolidación: datos y cifras primero.</p></header>
+    <div class="hechos">${D.lotes.filter(l => l.estado === "hecho").map(tarjeta).join("")}</div>
+    <div class="lotes">${lotesPend.map(tarjeta).join("")}</div>
+  </section>
+
+  <section>
+    <header><h2>Decisiones que frenan algo</h2><p>Las que se repiten entre vistas. Cada ficha trae su lista completa.</p></header>
+    <div class="decs">${decs}</div>
+  </section>
+
+  <section>
+    <header><h2>Lo que no cuadra entre documentos</h2></header>
+    <div class="notas">${notas}</div>
+  </section>
+
+  <section>
+    <header><h2>Qué significa cada nivel</h2><p>La clasificación es la de la consolidación; no se inventó otra.</p></header>
+    <div class="legend">${leyenda}</div>
+  </section>
+
+  <footer class="pie">
+    <span>Entra cada problema priorizado y cada hallazgo secundario de las once fichas, más lo que nombran los lotes y sus tickets. No entran perfiles, eficiencia ni terminología.</span>
+    <span>Fuentes: <a href="${D.consolidacion}" target="_blank" rel="noopener">consolidación (PR 866)</a> · <a href="${PR(854)}" target="_blank" rel="noopener">lote de Panel (PR 854)</a> · <a href="${PR(855)}" target="_blank" rel="noopener">lote de Formulario (PR 855)</a> · índices (<a href="${PR(850)}" target="_blank" rel="noopener">PR 850</a>, <a href="${PR(851)}" target="_blank" rel="noopener">PR 851</a>).</span>
+  </footer>`;
+}
+
+function fila(h) {
+  const z = Z[h.z];
+  const s = SEV[h.s];
+  const izq = h.img
+    ? `<button type="button" class="mini" data-foto="${esc(h.img)}" data-pie="${esc(z.corto + " · " + h.c)}" aria-label="Ver captura de ${esc(h.c)}"><img src="${esc(h.img)}" alt="" loading="lazy"></button>`
+    : `<div class="cod">${esc(h.c)}</div>`;
+  const sev = s ? `<span class="sev"><span class="bars" aria-hidden="true">${[1, 2, 3].map(i => `<u class="${i <= s[1] ? "on" : ""}"></u>`).join("")}</span>${s[0]}</span>` : "";
+  const origen = z.prs.map(n => `<a class="o" href="${PR(n)}" target="_blank" rel="noopener">PR ${n} ↗</a>`).join("");
+  return `<article class="fila k-${h.k}" id="${rowId(h)}">
+    ${izq}
+    <div class="cuerpo">
+      <div class="l1">${chip(h.k)}${h.img ? `<span class="c">${esc(h.c)}</span>` : ""}${sev}</div>
+      <div class="texto">${esc(h.t)}</div>
+      ${h.n ? `<div class="nota-f">${esc(h.n)}</div>` : ""}
+      <div class="l3">${h.l ? loteChip(h.l) : ""}${origen}<a class="o" href="${z.ficha}" target="_blank" rel="noopener">Ficha ↗</a>${h.tk ? `<a class="o" href="${h.tk}" target="_blank" rel="noopener">Ticket ↗</a>` : ""}${h.l && !loteHecho(h.l) ? `<a class="o" href="${D.lotes.find(l => l.id === h.l).url}" target="_blank" rel="noopener">Encargo ↗</a>` : ""}</div>
+    </div>
+  </article>`;
+}
+
+function vista(z) {
+  const hz = H.filter(h => h.z === z.num).sort((a, b) => ORDEN.indexOf(a.k) - ORDEN.indexOf(b.k));
+  const imp = hz.filter(h => grupoDe(h) === "imp").length;
+  const dec = hz.filter(h => grupoDe(h) === "dec").length;
+  const barra = ORDEN.map(k => { const n = cuenta(hz, k); return n ? `<span class="k-${k}" style="flex:${n};background:var(--kc)" title="${K[k].n}: ${n}"></span>` : ""; }).join("");
+  const fotos = z.fotos.map(f => `<button type="button" class="foto" data-foto="${esc(f.src)}" data-pie="${esc(z.corto + " · problema " + f.n + " · " + f.pie)}"><img src="${esc(f.src)}" alt="Captura del problema ${f.n}" loading="lazy"><span><b>${z.num === "30" ? "PN-" : "P"}${f.n}</b> ${esc(f.pie)}</span></button>`).join("");
+  const grupos = Object.keys(G).map(g => {
+    const l = hz.filter(h => grupoDe(h) === g);
+    if (!l.length) return "";
+    return `<div class="grupo" data-g="${g}"><h2>${G[g].n} <small>${l.length}</small></h2><p>${G[g].d}</p><div class="filas">${l.map(fila).join("")}</div></div>`;
+  }).join("");
+  const botones = [["todo", "Todo", hz.length]].concat(Object.keys(G).map(g => [g, G[g].n, hz.filter(h => grupoDe(h) === g).length]).filter(b => b[2]))
+    .map(([id, n, c]) => `<button type="button" data-filtro="${id}" aria-pressed="${filtro === id}">${n} · ${c}</button>`).join("");
+  const enlaces = z.prs.map(n => `<a class="lnk" href="${PR(n)}" target="_blank" rel="noopener">PR ${n} ↗</a>`).join("") + `<a class="lnk" href="${z.ficha}" target="_blank" rel="noopener">Ficha de la zona ↗</a>`;
+  return `
+  <a class="back" href="#portada">← Portada</a>
+  <div class="zhead">
+    <div>
+      <span class="eyebrow">Zona ${z.num}</span>
+      <h1>${esc(z.largo)}</h1>
+      <p class="estado-z">${esc(z.estado)}</p>
+      <div class="links">${enlaces}</div>
+    </div>
+    <div class="zcount"><div class="imp"><strong>${imp}</strong><span>importan</span></div><div><strong>${dec}</strong><span>a decidir</span></div><div><strong>${hz.length}</strong><span>en total</span></div></div>
+  </div>
+  <div class="bar" style="margin-top:18px">${barra}</div>
+  ${fotos ? `<div class="fotos" aria-label="Capturas de los problemas">${fotos}</div>` : ""}
+  <div class="filtros" role="group" aria-label="Filtrar">${botones}</div>
+  <div id="grupos">${grupos}</div>`;
+}
+
+function aplicarFiltro() {
+  document.querySelectorAll(".grupo").forEach(el => { el.hidden = filtro !== "todo" && el.dataset.g !== filtro; });
+  document.querySelectorAll("[data-filtro]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.filtro === filtro)));
+}
+
+function render() {
+  const slug = (location.hash || "#portada").slice(1);
+  const z = D.zonas.find(x => x.slug === slug);
+  const app = document.getElementById("app");
+  tabs(z ? z.slug : "portada");
+  if (z) {
+    if (!document.querySelector(`[data-zona="${z.slug}"]`)) filtro = "todo";
+    app.innerHTML = vista(z);
+    app.dataset.zona = z.slug;
+    aplicarFiltro();
+  } else {
+    app.innerHTML = portada();
+    app.removeAttribute("data-zona");
+  }
+  if (resaltar) {
+    const el = document.getElementById(resaltar);
+    resaltar = null;
+    if (el) { el.scrollIntoView({ block: "center" }); el.classList.add("flash"); return; }
+  }
+  if (pendienteLote) {
+    const el = document.getElementById("lote-" + pendienteLote);
+    pendienteLote = null;
+    if (el) { el.scrollIntoView({ block: "start" }); return; }
+  }
+  window.scrollTo(0, 0);
+}
+let pendienteLote = null;
+
+document.addEventListener("click", e => {
+  const ir = e.target.closest("[data-ir-fila]");
+  if (ir) { resaltar = ir.dataset.irFila; if (location.hash === ir.getAttribute("href")) { e.preventDefault(); render(); } return; }
+  const lt = e.target.closest("[data-lote]");
+  if (lt) { pendienteLote = lt.dataset.lote; if (location.hash === "#portada" || location.hash === "") { e.preventDefault(); render(); } return; }
+  const tr = e.target.closest("tr[data-ir]");
+  if (tr && !e.target.closest("a")) { location.hash = tr.dataset.ir; return; }
+  const f = e.target.closest("[data-filtro]");
+  if (f) { filtro = f.dataset.filtro; aplicarFiltro(); return; }
+  const foto = e.target.closest("[data-foto]");
+  if (foto) { abrirVisor(foto.dataset.foto, foto.dataset.pie); return; }
+});
+
+const visor = document.getElementById("visor");
+function abrirVisor(src, pie) { document.getElementById("visor-img").src = src; document.getElementById("visor-pie").textContent = pie || ""; visor.hidden = false; document.getElementById("visor-cerrar").focus(); }
+function cerrarVisor() { visor.hidden = true; }
+visor.addEventListener("click", e => { if (e.target === visor || e.target.id === "visor-cerrar") cerrarVisor(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !visor.hidden) cerrarVisor(); });
+window.addEventListener("hashchange", render);
+render();
+</script>

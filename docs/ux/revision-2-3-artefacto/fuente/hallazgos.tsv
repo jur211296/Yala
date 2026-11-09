@@ -1,0 +1,235 @@
+# zona|código|clase|severidad|lote|hallazgo|nota|ticket
+# clase: nec necesaria · y22 ya en 2.2 · dec decisión · dat decisión de datos · red rediseño o preferencia · men menor · ver por verificar · sin sin clasificar
+# Problemas: código P1… (Panel: PN-1…). Secundarios: código vacío (se numeran S1… al construir).
+# Fuente de la clase: consolidación (PR 866) para 34-41; ficha de cada zona y encargos de lote (PR 854 y 855) para 30-32.
+30|PN-1|dec|A||«Balance» se lee como lo que tienes; el total de las cuentas no está a la vista||
+30|PN-2|dec|A||La nota de salud da 99-100 con pocos datos y no ve un presupuesto pasado ni una cuenta en rojo||
+30|PN-6|nec|A|P|Con texto grande la cifra principal es lo más pequeño; acciones y títulos cortados|Cambiar las píldoras (parte B) quedó fuera: es de producto|
+30|PN-3|dec|M||El día 1 del mes: nota 96, gráfica de un punto y −100 %||
+30|PN-4|dec|M||La gráfica exagera la caída; «+10.3 %» no dice contra qué; «PEN», «x̄» y eje «nov 24»||
+30|PN-5|dec|M||Cuentas de una en una, sin total ni aviso de rojo; plegar oculta la nota; hueco en el iPad||
+30|PN-7|nec|M|P|Con montos ocultos, la ayuda «?» de la gráfica dice el saldo exacto||
+30|PN-8|nec|B|P|Configurar Panel: iconos sin texto y «Restablecer» sin aviso|Juntar los dos sitios no entró|
+30|PN-9|dec|B||Sin conexión la tasa cae a una tabla y el «≈» no lo dice|No validado en pantalla|
+30||men|||Yala IA y el «+» flotantes tapan los widgets al desplazar||
+30||men|||Plegar «Tus finanzas» oculta también la nota de salud||
+30||men|||La hoja de ordenar lista «Herramientas», que está apagada||
+30||men|||VoiceOver lee la gráfica de tendencia como un solo elemento, sin valores|Ya hay ticket en backlog|
+30||men|||Los chips de las hojas de ayuda no tienen etiqueta para VoiceOver||
+30||men|||El número del anillo de la nota usa un tamaño fijo de 28 pt||
+30||men|||En el iPad, Configurar Panel no se adapta (media altura o pantalla completa)||
+30||ver|||Tras «Vaciar datos», el período por defecto vuelve a «Todo el tiempo»|Leído en el código, sin recorrer|
+30||ver|||«Hoy ⓘ» no abrió su hoja con toques sintéticos: «Tu saldo hoy» sin captura||
+30||men|||El día 1, Distribución marca −100 % en Necesidades|Es de Estadísticas; salió en el caso|
+31|P1|dec|A||Buscar desaparece justo en Registros y no entiende importes|Lo barato: B3|
+31|P2|dec|A||Filtrar por cuenta y categoría pide 7 toques, dentro de «···»|Lo barato: F1 + F3|
+31|P3|dec|A||Con la lista vacía, el filtro culpable queda fuera de pantalla|Lo barato: L3|
+31|P4|dec|MA||«Todo el tiempo» no dice el año ni deja saltar a un mes: 9 deslizamientos|Lo barato: T1|
+31|P5|dec|A||«Seleccionar todo» marca 2.334 registros y el lote no se deshace|Lo barato: E2|
+31|P6|dec|M||Al tocar un día del calendario, lo que cambia queda fuera de pantalla||
+31||sin|M||VoiceOver lee cada fila sin su fecha||
+31||sin|A||En Categorías, los once círculos se llaman «Seleccionar todo» para VoiceOver||
+31||sin|M||El resumen de Categorías dice subcategorías («Delivery +3») aunque se eligió el grupo||
+31||sin|B||«2334» sin separador de miles en la selección y al borrar||
+31||sin|B||«periodo» y «Período» conviven||
+31||sin|B||«Limpiar filtros» y «Borrar filtros» nombran lo mismo||
+31||sin|B||«Nota contiene...» con tres puntos y el marcador de monto «0.00» fijo||
+31||sin|M||Las etiquetas de la fila llevan la pista «Tag» en inglés para VoiceOver||
+31||sin|B||Edición masiva: la fila «Categoría» dice «Hoy: 3 subcategorías distintas»||
+31||sin|M||Sin indicador de carga ni de error: un fallo se ve como lista vacía||
+31||sin|B||Con la lista vacía desaparece el selector Lista/Calendario||
+31||sin|B||Tarjeta de Siri: importe a 38 pt fijos, «Cuenta: —» y la fecha en números||
+31||sin|M||iPad: el calendario se aprieta en la columna de la lista y el detalle queda vacío||
+31||sin|B||iPad: el título de la columna sale cortado («Registr…»)||
+31||sin|B||Las cabeceras de día quedan fijas sin fondo y se montan sobre las filas||
+32|P1|dec|A||Con el teclado abierto, lo que falta y «Guardar» quedan debajo: un café cuesta 6 toques + 4 teclas||
+32|P2|dec|A||Sin categorías recientes al empezar, y buscar «café» no encuentra nada||
+32|P3|y22|A||Con texto grande, la zona fija de «Guardar» se monta sobre el formulario|2.2 lo arregló y 2.3 no lo tiene (Z1); Z2 queda a decidir|
+32|P4|nec|MA|F|El importe escrito en soles pasa a dólares al elegir la cuenta, sin aviso|Entró M1; ordenar las cuentas (M4) queda a decidir|
+32|P5|nec|MA|F|Si voz o foto fallan, «a mano» empieza de cero; el muro de Pro promete «a mano» sin botón|Entró el botón (V3); precargar lo entendido (V1) queda a decidir|
+32|P6|nec|MA|F|Transferencia entre monedas: dos importes sin nombre y las cuentas lejos|Entró T1 mínimo; «¿cuánto llegó?» (T2) queda a decidir|
+32|P7|dec|M||Repetir un favorito rellena 12.00 y hay que borrarlo; solo vive en el formulario||
+32||sin|A||«Para guardar, falta…» se monta sobre «Etiquetas» y «Guardar» lo tapa a medias||
+32||sin|B||En «Ingreso», la fila de favoritos sigue mostrando gastos y transferencias||
+32||sin|B||El editor de favoritos dice «Gastos · Ingresos», sin transferencia||
+32||sin|M||Deslizar un favorito en Ajustes lo borra sin preguntar||
+32||sin|B||Un favorito de transferencia viejo se lista como «Cuenta Principal → …»||
+32||sin|M||La foto con 7 registros enseña una sola fila en la hoja a media altura||
+32||sin|M||Voz y foto no anuncian a VoiceOver el cambio de estado ni los fallos||
+32||sin|M||«Volver a grabar» y «Otra foto» borran lo entendido sin avisar||
+32||sin|B||Una vista de importe sin usar queda en el código, con un selector de divisa que no se ve||
+32||sin|B||«Registrar otro» no tiene identificador de accesibilidad para los tests||
+32||sin|B||Las filas de «¡Listo!» cortan una descripción larga en una línea||
+32||sin|M||Con texto grande los importes se parten («S/ 3,000. / 00»)|«Esto leí» ya está arreglado en 2.2; Favoritos no|
+32||sin|M||iPad: el importe abre un teclado flotante encima de la hoja||
+32||y22|A||2.3 no tiene seis arreglos de 2.2 de esta zona: zona fija, formulario a medias, chip de cuenta…||
+32||sin|B||Con texto grande, «Transferencia» se parte en tres líneas||
+34|P1|dec|A||Al 90 % dice «Te quedan», «En el límite» y «Hoy te pasaste» a la vez||
+34|P2|red|A||Al pasarse del presupuesto, la app anima pero no ayuda||
+34|P3|red|A||Editar qué cuenta un presupuesto: dos puertas y 7 toques||
+34|P4|red|A||Un pago vencido se mezcla con los próximos||
+34|P5|nec|A|4|Saltar un pago se anuncia como pagado (D3)|Ya tenía card|
+34|P5|dec|A||Apuntar un pago no se deshace (D1); «Ya no está pagado» deja el gasto (D2)||
+34|P6|red|M||Calendario de pagos con cifras de 6-9 pt||
+34|P7|y22|MA||Con texto grande se cortan los importes de los pagos y los botones y fechas del detalle|La ficha no lo lista; la consolidación lo da por arreglado en 2.2|
+34||nec||4|Un mes cerrado sigue diciendo «Te quedan»||
+34||y22|||Barra naranja desde el 75 % sin palabra|El 80 % único ya está en 2.2|
+34||y22|||Decimales mezclados en la lista de presupuestos||
+34||ver|||Alertas apagadas con avisos pedidos|Pide un teléfono recién instalado|
+34||red|||Borrar un presupuesto no ofrece «Deshacer»||
+34||nec||4|«No se apunta nada…» bajo los dos botones se lee como explicación de «Ya lo pagué»||
+34||nec||4|El ✓ del editor se apaga sin decir qué falta||
+34||nec||4|Un presupuesto «Único» de un solo día no se puede guardar||
+34||nec||4|Reactivar un presupuesto inactivo no mira el límite gratis|Reproducir antes de arreglar|
+34||red|||«Ya lo apunté» no destaca la coincidencia||
+34||nec||4|VoiceOver: el segmentado se llama «Tab», selectores sin nombre, fila sin lo que queda||
+34||nec||2|«Por categoría» de las gráficas de un presupuesto puede no sumar lo gastado||
+34||men|||Un error al cargar se pinta como «Aún no tienes presupuestos»||
+34||men|||«Periodo» y «Período»||
+34||men|||«Categoría» del editor elige una subcategoría||
+34||men|||El ingreso sale en índigo y en turquesa||
+34||men|||El teclado tapa «Clasificación» al abrir||
+34||ver|||Un pago compartido propone USD en un grupo en soles|Visto en Grupos, con la región del simulador|
+35|P1|red|A||«¿En qué se me fue la plata?» no tiene respuesta en un sitio||
+35|P2|dec|A||Tocar una categoría la filtra en vez de abrirla|Reabre lo decidido el 25-26 oct|
+35|P3|nec|A|5|Con texto grande se cortan importes y pestañas|Las fichas de Resumen ya están en 2.2|
+35|P4|dec|MA||«Balance», «Saldo» y «Saldo de cuentas»: tres cifras, nombres casi iguales|Se decide con PN-1 del Panel|
+35|P5|dec|MA||VoiceOver lee las gráficas como recuentos, sin valores||
+35|P6|dec|M||Con una semana de datos, afirma de más|El bug «este Este mes» va al lote 7|
+35|P7|dec|M||Con diez años de datos, ~2 s congelada|Medir con Instruments antes|
+35||nec||7|«Probaste Mascotas este Este mes»||
+35||dec|||iPad: Distribución ocupa todo el ancho|Patrón común con 36, 37 y 39|
+35||men|||Los botones flotantes tapan importes al desplazar||
+35||dec|||La comparación cambia en silencio en Tendencias||
+35||nec||7|«8 categorías» en pantalla y «7» para VoiceOver||
+35||nec||7|«11696 registros» sin separador de miles||
+35||nec||7|Las guías de Tendencias y Registros dicen lo contrario de lo que enseñan||
+35||nec||7|El Sankey corta sus etiquetas y su botón es «$» con soles||
+35||nec||7|«insights» en inglés y «Aún no tienes categorías» habiéndolas||
+35||nec||2|«Día de más gasto» y «tu día más caro» salen de dos cálculos||
+35||men|||Un toque sintético a veces no llega|Del simulador, no del dedo|
+36|P1|dec|A||«¿Llego a fin de mes?» tiene cinco cifras distintas|Reabre el lote 18|
+36|P2|dec|A||Real y estimado se pintan igual y tienen siete nombres||
+36|P3|red|MA||El plan vive en Más › Reportes y armarlo pide revisar 18 líneas||
+36|P4|red|M||Leer un mes es recorrer 25 tarjetas iguales||
+36|P5|nec|M|5|Con texto grande se pierden nombres; «No-viem-bre»||
+36|P6|dec|M||La Comparativa dice «Noviembre» comparando del 1 al 7||
+36|P7|dec|M||La primera semana, sin ingresos, dice «Te faltan S/ 2,573»||
+36||nec||2|Sin plan, el ritmo cuenta dos veces el sueldo|Pide review adversarial|
+36||dec|||iPad: todo el ancho|Patrón común con 35, 37 y 39|
+36||nec||8|«Gastos no considerados» enseña siempre el mes en curso||
+36||men|||La hoja de configurar una línea es inalcanzable||
+36||dec|||Free ve el flujo de caja avanzado|¿A propósito o se cierra?|cash-flow-advanced-gate-never-limits-free-users.md
+36||nec||8|«vs» escrito a mano en los 16 idiomas||
+36||dec|||Widget: el tramo punteado confunde|Lo decidió la 12A|
+36||dec|||«Disponible» en el widget y «Saldo» en el Panel||
+36||nec||8|Importes en índigo y rosa como texto, por debajo de AA||
+36||dec|||Gráficas da otra cifra para la misma línea||
+36||nec||8|El vacío dice «No hay registros en este periodo»||
+36||ver|||La proyección depende de «Empezaste con» en 0|Visto solo con la semilla de rendimiento|
+37|P1|nec|A|6|Saldos dice «No le debes nada a nadie» encima de «Tú pagas a Ana» (A4)||
+37|P1|nec|A|6|La tarjeta de deuda dice «Beto paga a Tú»||group-debt-card-reads-pays-to-tu.md
+37|P1|dec|A||«Menos pagos» viene apagado por defecto (A1)||
+37|P2|nec|A|1|Al borrar y escribir 150 quedó «1,100.00»||group-split-amount-field-keeps-the-old-value-and-drops-typed-digits.md
+37|P2|nec|A|2|Un reparto que suma 399,99 se guarda|Medir adónde va el céntimo|
+37|P2|red|A||Partir desigual cuesta 11 toques (B2)||
+37|P3|dec|MA||Saldar: quién lo apunta, pagar de más y sin confirmación (C1-C3)||
+37|P4|dec|MA||Soles y dólares no se compensan (D1, D4)||
+37|P5|y22|A||Con texto grande se corta lo que se decide|Botones de la lista y cabecera ya en 2.2|
+37|P5|nec|A|6|VoiceOver lee el importe como «0.00»||
+37|P6|dec|M||La X tira el gasto a medias sin preguntar (F1)||
+37|P7|dec|M||En el iPad el detalle se estira de lado a lado|Patrón común con 35, 36 y 39|
+37||nec||6|«¡Están al día!» en un grupo recién creado||
+37||nec||1|Un grupo archivado deja apuntar gastos y saldar||archived-group-still-allows-expenses-and-payments-from-inside.md
+37||nec||1|Reintentar tras fallar la confirmación duplica el pago||settlement-retry-after-a-failed-confirmation-duplicates-the-payment.md
+37||nec||1|Un saldo inicial se reemplaza sin avisar||
+37||red|||Los pagos pendientes de confirmar solo salen en Saldos||
+37||nec||6|«¿Quién puso más?»: las barras tapan los nombres||group-stats-who-paid-most-bars-cover-the-names.md
+37||dec|||Siete palabras para saldar y cuatro nombres para el puente|Pendiente desde 2.2|
+37||ver|||Las opciones de Ajustes del grupo leen de una sección perezosa|Sin reproducir|group-settings-options-read-their-value-from-a-lazy-section.md
+37||dec|||Apagar «deudas en una moneda» cambia la moneda del grupo para todos||group-single-currency-off-changes-the-group-currency-for-everyone.md
+37||nec||1|«Importar todo el historial» solo sale si ya hay movimientos reflejados||bridge-history-import-is-only-offered-when-something-was-already-bridged.md
+37||red|||«Desde un recibo» no deja corregir el importe de una línea||
+37||men|||El «+» tapa el importe al desplazar||
+37||men|||«Tus grupos te esperan» no dice qué espera||
+37||men|||«Salir del grupo» tras un rechazo, sin confirmar|El grupo no era tuyo|
+38|P1|red|A||Lo que se apunta solo vive en tres sitios y nada dice si funciona||
+38|P2|dec|A||Revisar 8: deslizar guarda sin pista||
+38|P3|nec|A|3|Guardar el lote y deslizar no miran duplicados||inbox-bulk-save-and-swipe-skip-the-duplicate-check.md
+38|P3|red|A||«55 %» sin explicar y un duplicado sin nombre (C1)||
+38|P4|red|MA||El gasto de grupo pregunta «Elige la cuenta» en vez de «¿Ya lo apuntaste?»||
+38|P5|dec|MA||Yala IA sin servidor dice «en unos minutos» y apaga la caja||
+38|P6|red|MA||Correo del banco: cinco pasos y nunca se sabe si funcionó||
+38|P7|nec|M|5|Con texto grande se parten los botones que deciden||
+38||nec||3|Siri dice «Requiere Yala Pro» a quien no le hace falta||siri-shortcuts-screen-says-pro-required-for-on-device-users.md
+38||nec||3|La lista lee 500 borradores con archivados y puede esconder un pendiente||inbox-list-capped-at-500-may-hide-old-pending-drafts.md
+38||dec|||Cuatro nombres para la Bandeja||
+38||red|||Los textos no nombran el correo del banco||
+38||men|||«Hoy» repetido y una cabecera que pisa||
+38||men|||El aviso de archivar tapa los botones|Solo con 30 s forzados|
+38||men|||La caja del chat dice «Escribe tu pregunta…»||
+38||men|||Conversación de ejemplo sin rotular tras el muro||
+38||men|||«registro automático» sin decir de dónde||
+38||dec|||«Correos que llegaron sin leerse: 3» al pasar a Pro||
+38||nec||3|Guía de Apple Pay: «Nombre respectivamente» y un contador mudo||
+38||red|||El atajo de Apple Pay no enlaza a su guía||
+39|P1|dec|A||Archivar una tarjeta aparta también lo gastado|La opción A del 8-oct sigue sin hacer|
+39|P2|red|A||Las categorías no se pueden ordenar||
+39|P8|y22|A||Con texto grande, Cuentas pierde los nombres||
+39|P8|nec|A|5|Con texto grande, Etiquetas pierde la última fila (H2)||
+39|P3|red|MA||Crear una categoría pide la subcategoría al final: 12 toques||
+39|P4|dec|M||Ajustar el saldo preelige reescribir todos los meses||
+39|P5|dec|MA||La lista enseña el número de cuenta en vez del nombre|E1 aprobado el 3-oct|
+39|P6|red|M||«Monedas secundarias» confunde||
+39|P7|dec|M||«No lo uses al registrar» se dice de cuatro formas||
+39||nec||9|Saldos con «PEN» en la lista y «S/» en el resto||
+39||dec|||USD y EUR vienen elegidas sin pedirlo||
+39||nec||9|Sin secundarias, «Tipo de cambio» enseña dos divisas al azar||
+39||nec||9|El «+» crea una categoría vacía antes de escribir|Reproducir antes de arreglar|
+39||men|||La cabecera de una categoría nueva dice «Nueva categoría» hasta escribir||
+39||men|||«Gastos por necesidad» y «Necesidad»||
+39||nec||9|Etiquetas: la X no pregunta, corta a 20 sin avisar y enseña «#5E5CE6»||
+39||dec|||Se guarda el número completo de una tarjeta|Privacidad|
+39||dec|||iPad: la ficha va en una hoja de media pantalla|Patrón común con 35, 36 y 37|
+39||men|||Aviso de varias divisas a toda tarjeta nueva||
+40|P1|red|A||Ajustes son 31 filas sin buscador||
+40|P2|dec|A||Filas que no abren lo que dicen||
+40|P3|red|A||Yala Pro enseña primero el precio||
+40|P4|red|MA||Exportar abre en «Todo», sin «Mes pasado»||
+40|P4|nec|MA|10|Sin registros, Exportar sale gris sin decir por qué (D4)||
+40|P5|red|M||La ayuda vive al fondo y no se busca||
+40|P6|dec|M||«Cómo usas Yala» y «Modo de uso», casi homónimos||
+40|P7|nec|M|5|Con texto grande los títulos se parten por sílabas|Los iconos (G1) se preguntan|
+40||red|||Cabecera «Usuario / Editar perfil»||
+40||men|||«Más sobre tus datos» abre una web|Sin conexión no carga|
+40||men|||Dos «‹» en Proteger con Face ID||
+40||nec||10|«Cancela en Ajustes» manda al sitio equivocado||
+40||men|||«Temas» abre «Apariencia»||
+40||red|||«Abrir el teclado en» vive dentro de Formato||
+40||dec|||Dos filas sobre dónde están los datos|Se decide en Nube (problema 7)|
+40||nec||10|«Resumen con IA» sin marca Pro||
+40||men|||Notificaciones no avisa del permiso denegado||
+40||red|||«Ajustes» está al final de Más||
+40||red|||«Vaciar datos» junto a Exportar||
+40||men|||Pestañas: dos textos para lo mismo||
+40||men|||«Versión 2.2 (Build 7)» en 2.3|Lo pone el release|
+40||dec|||Ajustes tarda ~1 s con diez años de datos|¿Se suma a la card del App Hang de Perfil?|
+41|P1|dec|A||Nueve nombres y seis verbos para dos sitios||
+41|P2|dat|A||Cifrado y fotos quedan plegados en «Ver los detalles»||
+41|P3|dat|A||Volver a iCloud promete «en pausa por si vuelves»||
+41|P7|dat|MA||Con iCloud apagado, el estado afirma una copia que no existe (S2)||
+41|P7|dec|MA||Dos filas para la misma pregunta (S1)|Va a la card de datos|
+41|P4|dat|MA||«Desasociar» es el botón más llamativo, encima de la acción||
+41|P5|red|M||43 textos de fallo con solo «Reintentar»||
+41|P6|dec|M||La subida no dice cuánto falta; «Ya casi está» dice «Sesión cerrada»||
+41|P8|nec|M|11|Con texto grande el estado se aprieta y el pie ocupa media pantalla||
+41||dat|||«Activar sin borrar» cancela un borrado pedido, en un globo||
+41||men|||«Iniciar sesión con Apple» y «Continuar con Apple»||
+41||nec||11|Las cifras de la subida salen con tres formatos||
+41||nec||11|El consentimiento manda a «Exportar datos», que se llama «Exportar registros»||
+41||dec|||«Sí, cancelar» no dice qué cancela||
+41||nec||11|La nota de cuenta rechazada va en naranja como texto, por debajo de AA||
+41||red|||La tarjeta «Grupos» queda bajo el error con el mismo peso||
+41||nec||11|«Salir de mis grupos»: palabras internas y manda a otra fila||
+41||dat|||«Desasociar»: la diferencia entre las dos opciones solo en un párrafo||
+41||ver|||Paneles de QA en «Sincronización iCloud» de Yala Dev|Comprobar que no llegan a TestFlight|
