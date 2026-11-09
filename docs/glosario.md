@@ -81,10 +81,10 @@
 
 <!-- GLOSARIO:generado:inicio - no editar a mano -->
 
-## Dónde se decide cada término (174)
+## Dónde se decide cada término (175)
 
 > **No leas este bloque entero** — está ordenado alfabéticamente para buscar dentro
-> (`grep -i termino docs/glosario.md`), no para leerse. Sale de las 91 decisiones del
+> (`grep -i termino docs/glosario.md`), no para leerse. Sale de las 92 decisiones del
 > repo con `python3 scripts/glosario.py --repo . --apply`, así que **no se edita a mano**:
 > lo que escribas aquí se pierde en la siguiente regeneración. La parte que se mantiene
 > a mano es la de arriba. Un término marcado *(histórico)* solo vive en decisiones
@@ -109,7 +109,8 @@
 - **BridgeModeResolver** — [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-cierre-ltimas-5-entradas-de-la-fase-205)
 - **CAS** — [2026-07-04](docs/DECISIONS.md#2026-07-04-apple-pay--el-intent-deja-de-tocar-swiftdata-patrn-de-cola-app-group), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
 - **CashFlow** — [2026-04-24](docs/DECISIONS.md#2026-04-24-pp2-06c-widgets-small-chart-based), [2026-04-24](docs/DECISIONS.md#2026-04-24-pp2-06d-densidad-cashflow--needs-small)
-- **/cerrar** — [2026-09-30](docs/DECISIONS.md#2026-09-30-el-estado-de-yala-se-lee-de-donde-se-escribe-solo-se-retira-docsestadomd), [2026-08-31](docs/DECISIONS.md#2026-08-31-el-repo-recibe-abrir-higiene-y-reorgdocs-lo-dems-del-estndar-de-casa-no-aplica), [2026-08-29](docs/DECISIONS.md#2026-08-29-los-roles-de-frank-pasan-a-claude)
+- **/cerrar** — [2026-11-09](docs/DECISIONS.md#2026-11-09-la-memoria-de-frank-viaja-en-el-pr-de-la-sesin-que-la-escribi), [2026-09-30](docs/DECISIONS.md#2026-09-30-el-estado-de-yala-se-lee-de-donde-se-escribe-solo-se-retira-docsestadomd), [2026-08-31](docs/DECISIONS.md#2026-08-31-el-repo-recibe-abrir-higiene-y-reorgdocs-lo-dems-del-estndar-de-casa-no-aplica), [2026-08-29](docs/DECISIONS.md#2026-08-29-los-roles-de-frank-pasan-a-claude)
+- **/cerrar-total** — [2026-11-09](docs/DECISIONS.md#2026-11-09-la-memoria-de-frank-viaja-en-el-pr-de-la-sesin-que-la-escribi), [2026-09-30](docs/DECISIONS.md#2026-09-30-el-estado-de-yala-se-lee-de-donde-se-escribe-solo-se-retira-docsestadomd)
 - **ChatSheet** — [2026-04-25](docs/DECISIONS.md#2026-04-25-ai-toggles-removal-completo), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
 - **CI** — [2026-09-30](docs/DECISIONS.md#2026-09-30-el-estado-de-yala-se-lee-de-donde-se-escribe-solo-se-retira-docsestadomd), [2026-09-09](docs/DECISIONS.md#2026-09-09-ci--el-aviso-de-rojos-advisory-es-un-check-propio-y-no-calla-aunque-su-canal-caiga), [2026-08-28](docs/DECISIONS.md#2026-08-28-ci-la-suite-de-simulador-solo-corre-si-el-diff-puede-afectarla), [2026-07-02](docs/DECISIONS.md#2026-07-02-incidente-prod--sync-de-grupos-muerto-4-das-por-campo-sin-deploy-de-schema--hardening), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
 - **.ckdb** — [2026-07-02](docs/DECISIONS.md#2026-07-02-incidente-prod--sync-de-grupos-muerto-4-das-por-campo-sin-deploy-de-schema--hardening), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-cierre-ltimas-5-entradas-de-la-fase-205)
@@ -190,7 +191,7 @@
 - **PendingInviteStore** — [2026-06-08](docs/DECISIONS.md#2026-06-08-fix-invite-drop--persistencia-de-invite-pendiente), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
 - **positiveToast** — [2026-04-21](docs/DECISIONS.md#2026-04-21-sync-status-banner-global-vs-toolbar-indicator), [2026-04-21](docs/DECISIONS.md#2026-04-21-sync-silencioso-por-defecto--banner-pill-global)
 - **PP2** — [2026-04-16](docs/DECISIONS.md#2026-04-1604-20-pico-panel-20-p20-01p20-11), [2026-04-22](docs/DECISIONS.md#2026-04-22-pp2-01-hero-compacto), [2026-04-22](docs/DECISIONS.md#2026-04-22-pp2-03-chrome-compacto-de-widgets), [2026-04-22](docs/DECISIONS.md#2026-04-22-pp2-05-tamao-small--pilotos), [2026-04-24](docs/DECISIONS.md#2026-04-24-pp2-06c-widgets-small-chart-based), [2026-04-24](docs/DECISIONS.md#2026-04-24-pp2-06d-densidad-cashflow--needs-small) +1
-- **PR** — [2026-10-21](docs/DECISIONS.md#2026-10-21-roadmap-de-yala-de-22-a-40--por-tema-y-sin-fechas), [2026-09-30](docs/DECISIONS.md#2026-09-30-el-estado-de-yala-se-lee-de-donde-se-escribe-solo-se-retira-docsestadomd), [2026-09-26](docs/DECISIONS.md#2026-09-26-el-conector-de-claude-emite-sus-propios-tokens), [2026-09-02](docs/DECISIONS.md#2026-09-02-panel--la-jerarqua-manda-el-color-informa-y-las-tarjetas-se-quedan), [2026-08-30](docs/DECISIONS.md#2026-08-30-frank-es-el-agente-de-yala-el-gate-pasa-a-hook-de-git), [2026-08-28](docs/DECISIONS.md#2026-08-28-ci-la-suite-de-simulador-solo-corre-si-el-diff-puede-afectarla) +1
+- **PR** — [2026-11-09](docs/DECISIONS.md#2026-11-09-la-memoria-de-frank-viaja-en-el-pr-de-la-sesin-que-la-escribi), [2026-10-21](docs/DECISIONS.md#2026-10-21-roadmap-de-yala-de-22-a-40--por-tema-y-sin-fechas), [2026-09-30](docs/DECISIONS.md#2026-09-30-el-estado-de-yala-se-lee-de-donde-se-escribe-solo-se-retira-docsestadomd), [2026-09-26](docs/DECISIONS.md#2026-09-26-el-conector-de-claude-emite-sus-propios-tokens), [2026-09-02](docs/DECISIONS.md#2026-09-02-panel--la-jerarqua-manda-el-color-informa-y-las-tarjetas-se-quedan), [2026-08-30](docs/DECISIONS.md#2026-08-30-frank-es-el-agente-de-yala-el-gate-pasa-a-hook-de-git) +2
 - **#Predicate** — [2026-06-19](docs/DECISIONS.md#2026-06-1906-22-groups--saga-del-crash-loop-de-sync-en-restore-de-icloud-5-intentos-cerrada-en-build-32), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
 - **PresentationCoordinator** — [2026-05-26](docs/DECISIONS.md#2026-05-26-refactor-robusto-del-subsistema-de-routing-f0-f11), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
 - **PrivacyInfo** — [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)

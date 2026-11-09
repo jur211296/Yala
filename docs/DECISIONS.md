@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (91 entradas)
+## Índice (92 entradas)
 
-> **No hace falta leer este fichero entero** — son 264 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 266 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-09` [La memoria de Frank viaja en el PR de la sesión que la escribió](#2026-11-09-la-memoria-de-frank-viaja-en-el-pr-de-la-sesin-que-la-escribi)
 - `2026-10-21` [Formulario de registro 2.2 — la cuenta viene puesta, guardar no saca del flujo y lo elegido va relle](#2026-10-21-formulario-de-registro-22--la-cuenta-viene-puesta-guardar-no-saca-del-flujo-y-lo-elegido-va-relleno)
 - `2026-10-21` [Roadmap de Yala de 2.2 a 4.0 — por tema y sin fechas](#2026-10-21-roadmap-de-yala-de-22-a-40--por-tema-y-sin-fechas)
 - `2026-10-07` [IA en el plan free — voz y foto son un cupo de prueba de 5 notas y 5 fotos](#2026-10-07-ia-en-el-plan-free--voz-y-foto-son-un-cupo-de-prueba-de-5-notas-y-5-fotos)
@@ -46,10 +47,10 @@
 - `2026-06-08` [Fix Apple Pay — "No se pudo ejecutar el atajo"](#2026-06-08-fix-apple-pay--no-se-pudo-ejecutar-el-atajo)
 - `2026-06-08` [Fix invite-drop — persistencia de invite pendiente](#2026-06-08-fix-invite-drop--persistencia-de-invite-pendiente)
 - `2026-06-04` [Fix subcategorías duplicadas por re-sync de CloudKit](#2026-06-04-fix-subcategoras-duplicadas-por-re-sync-de-cloudkit)
-- `2026-05-26` [Auditoría sistémica de patrones UI — 13 commits, épico cerrado](#2026-05-26-auditora-sistmica-de-patrones-ui--13-commits-pico-cerrado)
-- `2026-05-26` [Fix migración shortcutID/Tag.id colapsado V2](#2026-05-26-fix-migracin-shortcutidtagid-colapsado-v2)
 - `2026-05-26` [Refactor V3 unificado del CSV-mirror SSOT (7 commits)](#2026-05-26-refactor-v3-unificado-del-csv-mirror-ssot-7-commits)
 - `2026-05-26` [Refactor robusto del subsistema de routing (F0-F11)](#2026-05-26-refactor-robusto-del-subsistema-de-routing-f0-f11)
+- `2026-05-26` [Auditoría sistémica de patrones UI — 13 commits, épico cerrado](#2026-05-26-auditora-sistmica-de-patrones-ui--13-commits-pico-cerrado)
+- `2026-05-26` [Fix migración shortcutID/Tag.id colapsado V2](#2026-05-26-fix-migracin-shortcutidtagid-colapsado-v2)
 - `2026-05-25` [Transfer pair integrity — épico de 6 commits](#2026-05-25-transfer-pair-integrity--pico-de-6-commits)
 - `2026-05-25` [CSV mirror épico — Budget filters + TransactionItem/InboxDraft tags resilientes a CloudKit lazy hydr](#2026-05-25-csv-mirror-pico--budget-filters--transactioniteminboxdraft-tags-resilientes-a-cloudkit-lazy-hydration)
 - `2026-05-22` [Groups — cleanup de TX/drafts huérfanos post soft-delete (FU-02-cleanup)](#2026-05-22-groups--cleanup-de-txdrafts-hurfanos-post-soft-delete-fu-02-cleanup)
@@ -81,10 +82,10 @@
 - `2026-04-24` [PP2-06d densidad CashFlow + Needs `.small`](#2026-04-24-pp2-06d-densidad-cashflow--needs-small)
 - `2026-04-24` [PP2-06c widgets `.small` chart-based](#2026-04-24-pp2-06c-widgets-small-chart-based)
 - `2026-04-24` [PP2-07 polish + Hero rediseñado (cierre épico Panel Polish #2)](#2026-04-24-pp2-07-polish--hero-rediseado-cierre-pico-panel-polish-2)
+- `2026-04-22` [Refactor consent/feature AI Insights](#2026-04-22-refactor-consentfeature-ai-insights)
 - `2026-04-22` [PP2-01 Hero Compacto](#2026-04-22-pp2-01-hero-compacto)
 - `2026-04-22` [PP2-05 tamaño `.small` + pilotos](#2026-04-22-pp2-05-tamao-small--pilotos)
 - `2026-04-22` [PP2-03 Chrome Compacto de Widgets](#2026-04-22-pp2-03-chrome-compacto-de-widgets)
-- `2026-04-22` [Refactor consent/feature AI Insights](#2026-04-22-refactor-consentfeature-ai-insights)
 - `2026-04-21` [Sync Status: Banner Global vs Toolbar Indicator](#2026-04-21-sync-status-banner-global-vs-toolbar-indicator)
 - `2026-04-21` [Sync silencioso por defecto + banner pill global](#2026-04-21-sync-silencioso-por-defecto--banner-pill-global)
 - `2026-04-16` [..04-20] Épico Panel 2.0 (P20-01..P20-11)](#2026-04-1604-20-pico-panel-20-p20-01p20-11)
@@ -117,6 +118,33 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-09] La memoria de Frank viaja en el PR de la sesión que la escribió
+
+**Contexto.** La memoria de Frank (`.claude/agent-memory/frank/`, 444 notas versionadas) ensuciaba el checkout
+principal de `~/Yala`, y eso frenó el `git pull --ff-only` de `lanzar-sesion` el 6 y el 9 de noviembre. Casa quitó el
+síntoma apartando la memoria en el pull (ADR-095 de casa, punto 6). Medido el 9-nov en ~100 transcripts de worktree:
+Claude Code declara la memoria en el worktree, y las notas sueltas del principal las habían movido sesiones a mano.
+
+**Decisión.** Jürgen eligió el 9-nov la opción (a) del ADR-095 de casa. Al cerrar, cada sesión de worktree lleva a su
+PR los cambios de memoria que hizo ella, con `scripts/memoria_al_pr.py`:
+
+- `llevar`, antes del push, commitea en la rama lo del worktree y lo del principal que el transcript de la sesión
+  prueba que escribió ella;
+- `limpiar`, tras el push, devuelve el principal a limpio en esas rutas, solo si `origin/<rama>` ya las tiene.
+
+Lo que escribió otra sesión viva se queda. Lo dudoso no se copia ni se borra: va al cuerpo del PR. El paso está en
+`/cerrar`, bloque 0, y en la cadena autónoma de `CLAUDE.md`.
+
+**Razones.** Una marca de arranque no distingue las notas de otra sesión viva del mismo agente, y el transcript sí:
+lo escribe Claude Code por sesión, con cada ruta escrita y su hora. La opción (b) escribía en la rama principal sin PR,
+y la (c) perdía la historia de la memoria.
+
+**Consecuencias.** `/cerrar-total` es de casa y no corre el paso por sí mismo. Queda descrito en el PR del encargo
+el cambio que le falta allí. Sin respaldo no se borra nada del principal: la copia va a
+`~/Claude/flota/memoria-apartada/Yala/`.
+
+**Estado:** Activa
 
 ### [2026-10-21] Formulario de registro 2.2 — la cuenta viene puesta, guardar no saca del flujo y lo elegido va relleno
 
