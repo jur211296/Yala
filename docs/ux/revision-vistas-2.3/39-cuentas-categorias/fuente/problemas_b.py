@@ -213,7 +213,7 @@ E3 = {
 
 E4 = {
     "code": "D4", "titulo": "Solo palabras: un nombre para el saldo de partida y un par de signos",
-    "que": ("Sin mover nada: al crear dice «Saldo de partida» (hoy «Balance inicial»), los signos son los mismos en "
+    "que": ("Sin mover nada: al crear dice «Saldo de partida» (hoy «Balance inicial», que el rediseño del 3-oct ya anotó como confuso), los signos son los mismos en "
             "todas las cuentas («Tengo / Debo», hoy «Positivo / Negativo» y «A favor / Consumido») y la opción "
             "«saldo de partida» dice que cambia todos los meses."),
     "screens": [
@@ -243,7 +243,8 @@ P4 = {
     "hoy_conteo": "5 toques y 2 deslizamientos",
     "evid": [("obs", "Capturas c08-c10 y c15. Con la semilla, la cuenta no tiene saldo de partida registrado: por eso sale preelegido «saldo de partida» (c09)."),
              ("cod", "<code>AccountFormViewModel.initializeBalanceIfNeeded</code> (líneas 551-562): sin registro de saldo inicial, preelige <code>.changeInitialBalance</code>; al editar, por defecto <code>.byEntry</code> (línea 447)."),
-             ("cod", "Textos: <code>account.balanceEdit.*</code>, <code>account.adjustByEntry</code> / <code>changeInitialBalanceName</code> (selector) y «Balance inicial» al crear.")],
+             ("cod", "Textos: <code>account.balanceEdit.*</code>, <code>account.adjustByEntry</code> / <code>changeInitialBalanceName</code> (selector) y «Balance inicial» al crear."),
+             ("cod", "Rediseño del formulario aprobado el 3-oct-2026, sin hacer salvo «Editar el saldo»: <code>tickets/backlog/account-form-redesign.md</code> (ya señala «Balance inicial» como confuso).")],
     "alts": [E1, E2, E3, E4],
     "reco": ("D2", "Mantiene el rediseño que ya decidiste (L7-6) y le quita sus dos riesgos con poco: el teclado deja ver "
                    "la decisión y lo preelegido nunca reescribe el pasado. D4 va con ella (son textos). D3 vale como atajo "
@@ -291,7 +292,7 @@ F2 = {
 F3 = {
     "code": "E3", "titulo": "El número sale del alta y va a «Más opciones»",
     "que": ("Al crear, el formulario ya no enseña «Número de cuenta»; queda plegado en «Más opciones», junto a "
-            "«Excluir de las estadísticas»."),
+            "«Excluir de las estadísticas». Es lo que ya dice el rediseño del formulario aprobado el 3-oct (sin hacer)."),
     "screens": [
         sheet(shtop("Nueva cuenta", left="x", right="check") + fsec([frm("", "Visa Interbank", icon="text")], "Nombre")
               + fsec([frm("Moneda", "Sol peruano", icon="coins")]) + '<div class="chg">'
@@ -316,13 +317,15 @@ P5 = {
     "hoy_conteo": "—",
     "evid": [("obs", "Capturas c14, c16 y c17 (número ficticio)."),
              ("cod", "<code>AccountsSettingsListView.listAccountRow</code> y <code>accountRow</code>: <code>primaryText</code> es el número si no está vacío (líneas 241-244 y 303-306 del cuerpo)."),
-             ("cod", "El número solo se usa ahí y en el formulario (búsqueda de <code>accountNumber</code> en <code>Yala/App</code>: 3 ficheros).")],
+             ("cod", "El número solo se usa ahí y en el formulario (búsqueda de <code>accountNumber</code> en <code>Yala/App</code>: 3 ficheros)."),
+             ("cod", "Ya aprobado y sin hacer: rediseño de la lista del 3-oct-2026, «nombre siempre; si hay número, enmascarado (••4821)» (<code>tickets/backlog/accounts-settings-list-redesign.md</code>, card en backlog 2.4).")],
     "alts": [F1, F2, F3],
-    "reco": ("E1", "Es el arreglo de la lista y cuesta casi nada; con E2 el campo deja de pedir el número completo. "
-                   "Juntas, la cuenta se llama igual en todas partes y no queda un dato sensible a la vista."),
+    "reco": ("E1", "E1 es lo que ya aprobaste el 3-oct en el rediseño de la lista y sigue sin hacer: esta revisión solo lo "
+                   "confirma con capturas. Lo nuevo es E2: que el campo deje de pedir el número completo. Juntas, la cuenta "
+                   "se llama igual en todas partes y no queda un dato sensible guardado ni a la vista."),
     "hoy_lens": L(P1=("A", "no reconoce su cuenta"), P2=("M", "—"), P3=("M", "—"), P4=("M", "—"), P5=("N", "—"),
                   P6=("A", "dos tarjetas = dos números"), P7=("M", "número truncado")),
-    "decide": ["¿La lista enseña siempre el nombre, con •••• y los últimos cuatro (E1)?",
+    "decide": ["¿Se adelanta el rediseño de la lista ya aprobado (E1, card en backlog 2.4)?",
                "¿El campo pide solo los últimos 4 dígitos (E2)? ¿Se recortan los números completos ya guardados?"],
 }
 

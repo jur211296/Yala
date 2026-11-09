@@ -84,9 +84,12 @@ deja ocho problemas priorizados, de tres a cuatro alternativas maquetadas para c
 <p class="sub">Si hubiera que empezar por lo barato: la fila de cuentas con el nombre y «•••• 0019» (E1), la fila apilada con texto grande y el alto de las listas (H1 + H2), «registro de ajuste»
 siempre preelegido y el teclado con «Listo» (D2), Guardar que dice lo que falta en una categoría nueva (C3), el nombre y el texto
 de las monedas secundarias (F1 + F3) y los arreglos de Etiquetas (G3). Son cambios pequeños que no cierran la puerta a lo grande.</p>
-<div class="callout"><b>Lo que reabre decisiones tuyas:</b> A1 (archivar pregunta si lo gastado sigue contando) cambia la regla del
-3-oct-2026, «archivar enciende Excluir de las estadísticas». G2 («Archivar» para todo) reabriría «Usar al registrar» de la auditoría
-2.2 (L7-11); por eso la recomendada es G1, que la extiende. D2 y D4 se apoyan en «Editar el saldo» (L7-6) sin cambiarlo.</div>
+<div class="callout"><b>Lo que ya decidiste y sigue sin hacer:</b> la opción A del 8-oct-2026 (archivar conserva el historial;
+card «Archivar una cuenta…» en backlog 2.4), el rediseño de la lista de Cuentas del 3-oct (nombre siempre y número enmascarado;
+card «Ajustes › Cuentas: lista clara…», backlog 2.4) y el rediseño del formulario de cuenta del 3-oct (ficha corta con «Más
+opciones», archivar al fondo; solo está hecho «Editar el saldo»). Esta revisión se apoya en ellos: A1, E1 y E3 son esas decisiones
+en pantalla. <b>Lo único que reabre algo:</b> A3 (acciones arriba, frente a «archivar al fondo») y G2 («Archivar» para todo, frente a
+«Usar al registrar» de L7-11); por eso ninguna de las dos es la recomendada.</div>
 <h2 class="s">Vistas cubiertas</h2>
 <div class="tbl"><table class="cmp"><tr><th>Vista</th><th>Qué es</th><th>Estados con captura</th><th>Problemas</th></tr>{filas}</table></div>
 <p class="sub" style="margin-top:10px"><b>Cargando:</b> todas leen en local y no tienen indicador; solo Moneda y tipo de cambio tapa la
@@ -109,7 +112,7 @@ Texto grande: AX3.</li>
 De esa revisión aplican aquí F6 (62 subcategorías sembradas sin preguntar) y F19 (crear una cuenta más); sus alternativas no se repiten.</li>
 <li>{_tag("src", "Antes")} La auditoría UX 2.2 ya decidió en esta zona: «Editar el saldo» con «¿Cómo lo corregimos?» (L7-6), «Usar al registrar»
 con su pie (L7-11), «No se puede eliminar · Ocultarla / Mover sus registros» (L7-10), «Eliminar» al fondo (L7-11), «Más opciones» al crear
-una cuenta (L7-4), la confirmación del cambio de moneda con el antes y el después (L16-3) y la regla de archivar (3-oct). Esta revisión parte de ahí.</li>
+una cuenta (L7-4), la confirmación del cambio de moneda con el antes y el después (L16-3) y la regla de archivar (3-oct). Y decidió sin hacer aún: archivar conserva el historial (8-oct, opción A), la lista de Cuentas con el nombre y el número enmascarado y la ficha corta del formulario (3-oct). Esta revisión parte de ahí.</li>
 </ul>
 <p class="foot">Fuente: <code>docs/ux/revision-vistas-2.3/39-cuentas-categorias/</code>. El generador está en <code>fuente/</code> (<code>python3 build.py</code>). PDF de respaldo: <code>revision-cuentas-categorias.pdf</code>.</p>
 """
