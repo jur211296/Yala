@@ -54,6 +54,8 @@
 - [La condición del encargo puede no ser suya](feedback_la_condicion_del_encargo_puede_no_ser_suya.md) — «sin tapar el +» era de Tim; confirma lo que multiplica alcance.
 - [Regresión: medir contra lo publicado](feedback_regresion_se_mide_contra_lo_publicado.md) — Panel iPad: B→A al saber que la 2.1 no lo tenía.
 - [«Igual a tamaño normal» es al píxel](feedback_igual_a_tamano_normal_es_literal.md) — también el botón desactivado; lo que el sistema cambie se fuerza al aspecto de antes.
+- [El tutorial parte de la pantalla anterior](feedback_tutorial_parte_de_la_pantalla_anterior.md) — enseña lo que existe, sin rediseñar; R1-R3 de registro descartadas.
+- [Cierre de diseño: spec por cards](feedback_cierre_de_diseno_spec_por_cards.md) — artifact limpio + SPEC.md de una fuente, ID estable por card.
 ## Cómo mido y cómo entrego
 - [Vista previa de Vercel protegida](reference_vista_previa_vercel_protegida.md) — 302 al login: `vercel curl --deployment` desde Web/ con el project.json del principal.
 - [Duo abierto en la Max](reference_duo_abierto_en_la_max.md) — XCTest da negro: enlace + simctl --display; Device Hub con la pantalla libre.
