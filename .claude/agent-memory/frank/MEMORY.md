@@ -62,3 +62,4 @@
 - [Verificar HTML y PDF con el Chromium de Playwright](reference_verificar_html_y_pdf_con_chromium_de_playwright.md) — capturas 390/1280, desborde lateral y PDF sin Chrome instalado.
 - [Revisión HTML en la Max](reference_revision_html_en_la_max.md) — sin Pillow ni gs: magick; Chrome headless ≥500 px, mira a 390 con un iframe.
 - [El gancho born-cloud no cambia la tarjeta](feedback_el_gancho_born_cloud_no_cambia_la_tarjeta.md) — añade `-cloudSync.storageMode cloud` o la captura dice «iCloud privado».
+- [Discusión de decisiones con Jürgen](feedback_discusion_de_decisiones_con_jurgen.md) — claridad antes que lo decidido; delega a la recomendación; accesibilidad sin preguntar.

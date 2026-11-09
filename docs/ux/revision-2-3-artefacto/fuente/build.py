@@ -78,22 +78,30 @@ LOTES = [
 ]
 
 DECISIONES = [
+    # título, pregunta, zonas, lo decidido el 9-nov
     ("¿Cuándo entra 2.2 en 2.3?",
      "Arreglos ya hechos en 2.2 no están en 2.3 y no van en ningún lote. Si las ramas divergen, hay que portarlos a mano.",
-     ["planificacion", "estadisticas", "grupos", "cuentas"]),
+     ["planificacion", "estadisticas", "grupos", "cuentas"],
+     "Merge de 2.2 en 2.3 encolado: tras la corrección de 2.2 en curso y su TestFlight. Después, todo lo decidido aquí."),
     ("Free ve el flujo de caja avanzado",
-     "El recorte de 3 meses y el aviso de Pro nunca actúan. ¿A propósito o se cierra?", ["reportes-flujo"]),
+     "El recorte de 3 meses y el aviso de Pro nunca actúan. ¿A propósito o se cierra?", ["reportes-flujo"],
+     "Gratis a propósito: se borra el bloqueo que no actúa y sus textos de Pro."),
     ("Apagar «deudas en una moneda»",
-     "Cambia la moneda del grupo para todos, sin preguntar. ¿Se conserva, se pregunta o se deja?", ["grupos"]),
+     "Cambia la moneda del grupo para todos, sin preguntar. ¿Se conserva, se pregunta o se deja?", ["grupos"],
+     "La moneda del grupo se conserva al apagarlo."),
     ("Número de cuenta",
-     "Se guarda el número completo de una tarjeta. ¿Solo cuatro dígitos, y se recorta lo guardado?", ["cuentas"]),
+     "Se guarda el número completo de una tarjeta. ¿Solo cuatro dígitos, y se recorta lo guardado?", ["cuentas"],
+     "Se elimina el campo, y los números ya guardados se borran del teléfono y de las dos nubes."),
     ("Ajustar el saldo",
-     "La opción preelegida puede reescribir todos los meses. ¿«Registro de ajuste» siempre por defecto?", ["cuentas"]),
+     "La opción preelegida puede reescribir todos los meses. ¿«Registro de ajuste» siempre por defecto?", ["cuentas"],
+     "D2: «Registro de ajuste» preelegido siempre; las dos opciones siguen, con «Listo» en el teclado."),
     ("Archivar conserva el historial",
-     "La opción A del 8-oct sigue sin hacer y tiene su card. ¿Cuándo entra?", ["cuentas"]),
+     "La opción A del 8-oct sigue sin hacer y tiene su card. ¿Cuándo entra?", ["cuentas"],
+     "Se adelanta de 2.4 a 2.3, como lote propio."),
     ("Ancho en el iPad",
      "Cuatro zonas piden ancho legible o dos columnas. ¿Un patrón común antes de tocar cada una?",
-     ["estadisticas", "reportes-flujo", "grupos", "cuentas"]),
+     ["estadisticas", "reportes-flujo", "grupos", "cuentas"],
+     "El ancho legible que ya existe, en las cuatro, ahora; las dos columnas, después y con maqueta."),
 ]
 
 NOTAS = [
@@ -112,8 +120,8 @@ NOTAS = [
      "La consolidación lo da por arreglado en 2.2 en su primera decisión. Aquí va como «Ya en 2.2».",
      f"{BLOB}/docs/ux/revision-vistas-2.3/34-planificacion/ficha.md"),
     ("Sin contradicciones de clase",
-     "Fichas y consolidación no se contradicen en la clase de ningún hallazgo. Ninguna fuente usa «descartado»: "
-     "lo que no entra en un lote queda como decisión, rediseño, menor o por verificar.",
+     "Fichas y consolidación no se contradicen en la clase de ningún hallazgo. Hasta la discusión del 9-nov ninguna "
+     "fuente usaba «descartado»; desde ese día, dos hallazgos lo son, con su motivo.",
      ""),
 ]
 
@@ -178,7 +186,8 @@ def main():
                    "fotos": [{"n": n, **v} for (zz, n), v in sorted(elegidas.items()) if zz == z[0]]}
                   for z in ZONAS],
         "lotes": [{"id": l[0], "titulo": l[1], "puntos": l[2], "estado": l[3], "url": l[4], "adv": l[5]} for l in LOTES],
-        "decisiones": [{"t": d[0], "d": d[1], "z": d[2]} for d in DECISIONES],
+        "decisiones": [{"t": d[0], "d": d[1], "z": d[2], "r": d[3]} for d in DECISIONES],
+        "discusion": f"{BLOB}/docs/ux/revision-2-3-artefacto/fuente/decisiones-discusion.md",
         "notas": [{"t": n[0], "d": n[1], "u": n[2]} for n in NOTAS],
         "hallazgos": filas,
         "gh": GH,

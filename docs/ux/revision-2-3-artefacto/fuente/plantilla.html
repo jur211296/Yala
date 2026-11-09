@@ -8,7 +8,7 @@
 :root {
   --bg: #F4F4FA; --surface: #FFFFFF; --sunk: #ECECF5; --ink: #16162A; --muted: #5C5D77; --line: #DFDFEC;
   --accent: #5E5CE6; --accent-soft: #E9E8FD; --on-accent: #FFFFFF;
-  --c-nec: #C9304E; --c-y22: #0B7F74; --c-dec: #A86A06; --c-dat: #C2410C; --c-red: #4F63B0; --c-men: #6E7089; --c-ver: #6E7089; --c-sin: #8A879F;
+  --c-nec: #C9304E; --c-y22: #0B7F74; --c-dec: #A86A06; --c-dat: #C2410C; --c-red: #4F63B0; --c-men: #6E7089; --c-ver: #6E7089; --c-sin: #8A879F; --c-vad: #7A3FB8; --c-dsc: #7B7A8E;
   --ok: #0B7F74; --on-nec: #FFFFFF;
   --f-display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
   --f-body: "Instrument Sans", -apple-system, "Segoe UI", system-ui, sans-serif;
@@ -18,12 +18,12 @@
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #0E0E19; --surface: #181828; --sunk: #12121F; --ink: #ECECF7; --muted: #A3A4C0; --line: #2A2A42;
   --accent: #8C8AFF; --accent-soft: #24234A; --on-accent: #0E0E19;
-  --c-nec: #FF6F88; --c-y22: #3CC9B8; --c-dec: #EDB34E; --c-dat: #FF8D52; --c-red: #96A6F0; --c-men: #9294AE; --c-ver: #9294AE; --c-sin: #8F8CA8;
+  --c-nec: #FF6F88; --c-y22: #3CC9B8; --c-dec: #EDB34E; --c-dat: #FF8D52; --c-red: #96A6F0; --c-men: #9294AE; --c-ver: #9294AE; --c-sin: #8F8CA8; --c-vad: #C49BF2; --c-dsc: #8E8DA3;
   --ok: #3CC9B8; --on-nec: #1A0A10; color-scheme: dark; } }
 :root[data-theme="dark"] {
   --bg: #0E0E19; --surface: #181828; --sunk: #12121F; --ink: #ECECF7; --muted: #A3A4C0; --line: #2A2A42;
   --accent: #8C8AFF; --accent-soft: #24234A; --on-accent: #0E0E19;
-  --c-nec: #FF6F88; --c-y22: #3CC9B8; --c-dec: #EDB34E; --c-dat: #FF8D52; --c-red: #96A6F0; --c-men: #9294AE; --c-ver: #9294AE; --c-sin: #8F8CA8;
+  --c-nec: #FF6F88; --c-y22: #3CC9B8; --c-dec: #EDB34E; --c-dat: #FF8D52; --c-red: #96A6F0; --c-men: #9294AE; --c-ver: #9294AE; --c-sin: #8F8CA8; --c-vad: #C49BF2; --c-dsc: #8E8DA3;
   --ok: #3CC9B8; --on-nec: #1A0A10; color-scheme: dark; }
 
 * { box-sizing: border-box; }
@@ -69,7 +69,7 @@ section > header p { margin: 0; color: var(--muted); font-size: 14px; }
 
 .bar { display: flex; height: 16px; border-radius: 99px; overflow: hidden; gap: 2px; background: var(--sunk); margin-top: 26px; }
 .bar span { display: block; min-width: 3px; }
-.groups { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+.groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-top: 14px; }
 .group { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; display: grid; gap: 6px; align-content: start; }
 .group.imp { background: var(--c-nec); border-color: var(--c-nec); color: var(--on-nec); }
 .group .num { font: 800 40px/1 var(--f-display); font-variant-numeric: tabular-nums; }
@@ -84,8 +84,9 @@ section > header p { margin: 0; color: var(--muted); font-size: 14px; }
 .chip.nodot::before { display: none; }
 .chip.ver { background: transparent; border: 1px dashed currentColor; padding: 2px 7px; }
 .chip.sin { background: transparent; border: 1px solid currentColor; padding: 2px 7px; }
+.chip.dsc { text-decoration: line-through; }
 .k-nec { --kc: var(--c-nec); } .k-y22 { --kc: var(--c-y22); } .k-dec { --kc: var(--c-dec); } .k-dat { --kc: var(--c-dat); }
-.k-red { --kc: var(--c-red); } .k-men { --kc: var(--c-men); } .k-ver { --kc: var(--c-ver); } .k-sin { --kc: var(--c-sin); }
+.k-vad { --kc: var(--c-vad); } .k-dsc { --kc: var(--c-dsc); } .k-red { --kc: var(--c-red); } .k-men { --kc: var(--c-men); } .k-ver { --kc: var(--c-ver); } .k-sin { --kc: var(--c-sin); }
 .lotechip { font: 600 12px/1.3 var(--f-mono); padding: 3px 8px; border-radius: var(--r-s); background: var(--accent-soft); color: var(--accent); text-decoration: none; white-space: nowrap; }
 .lotechip.hecho { background: color-mix(in srgb, var(--ok) 14%, transparent); color: var(--ok); }
 a.lotechip:hover { text-decoration: underline; }
@@ -128,6 +129,23 @@ table.mx { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 
 .lote .pie { font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; justify-self: start; }
 .lote .pie:hover { text-decoration: underline; }
 .hechos { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 14px; margin-bottom: 14px; }
+
+/* Decidido en la discusión del 9-nov */
+.disc { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--c-vad); border-radius: var(--r); padding: 16px 18px; display: grid; gap: 12px; }
+.disc .nums { display: flex; gap: 22px; flex-wrap: wrap; }
+.disc .nums div { display: grid; }
+.disc .nums strong { font: 800 28px/1 var(--f-display); font-variant-numeric: tabular-nums; }
+.disc .nums span { font-size: 13px; color: var(--muted); }
+.disc h3 { font-size: 15px; font-weight: 700; }
+.disc ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; }
+.disc .porvista { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 8px; }
+.disc .porvista a { display: flex; justify-content: space-between; gap: 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r-s); text-decoration: none; font-size: 14px; }
+.disc .porvista a:hover { border-color: var(--c-vad); }
+.disc .porvista b { font: 600 13px/1.3 var(--f-mono); color: var(--c-vad); white-space: nowrap; }
+.disc .sigue { font-size: 14px; margin: 0; }
+.disc a.lnk2 { font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; }
+.dec .r { color: var(--ink); font-weight: 600; border-top: 1px dashed var(--line); padding-top: 6px; }
+.dec .r::before { content: "Decidido · "; color: var(--c-vad); }
 
 /* Decisiones y notas */
 .decs { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 12px; counter-reset: d; }
@@ -242,13 +260,16 @@ const K = {
   men: { n: "Menor", g: "des", d: "Defecto real pero cosmético. Sin lote." },
   ver: { n: "Por verificar", g: "des", d: "Hipótesis sin reproducir. Sin lote." },
   sin: { n: "Sin clasificar", g: "sin", d: "Secundarios de Registros y Nuevo registro que nadie consolidó." },
+  vad: { n: "Decidido · va", g: "imp", d: "Jürgen lo aprobó en la discusión del 9-nov. Lleva lote o «sin lote aún»; la nota dice qué se eligió." },
+  dsc: { n: "Descartado", g: "fue", d: "Jürgen decidió el 9-nov no hacerlo. La nota dice por qué." },
 };
-const ORDEN = ["nec", "y22", "dat", "dec", "red", "men", "ver", "sin"];
+const ORDEN = ["nec", "y22", "vad", "dat", "dec", "red", "men", "ver", "sin", "dsc"];
 const G = {
-  imp: { n: "Importa", d: "Necesarias, cada una en su lote, y lo que 2.2 ya arregló." },
+  imp: { n: "Importa", d: "Necesarias, lo que 2.2 ya arregló y lo decidido el 9-nov." },
   dec: { n: "A decidir", d: "Elige Jürgen. Las alternativas están en la ficha." },
   des: { n: "Deseable o menor", d: "Rediseños, menores y por verificar. Sin lote." },
   sin: { n: "Sin clasificar", d: "Nadie los consolidó todavía." },
+  fue: { n: "Descartado", d: "Decidido el 9-nov: no se hace." },
 };
 const SEV = { A: ["Alta", 3], MA: ["Media-alta", 3], M: ["Media", 2], B: ["Baja", 1] };
 const H = D.hallazgos;
@@ -264,14 +285,14 @@ const grupoDe = h => K[h.k].g;
 let resaltar = null;
 let filtro = "todo";
 
-function chip(k) { return `<span class="chip k-${k} ${k === "ver" || k === "sin" ? k : ""}">${K[k].n}</span>`; }
+function chip(k) { return `<span class="chip k-${k} ${k === "ver" || k === "sin" || k === "dsc" ? k : ""}">${K[k].n}</span>`; }
 function loteChip(id) { return `<a class="lotechip ${loteHecho(id) ? "hecho" : ""}" href="#portada" data-lote="${esc(id)}">${loteNom(id)}</a>`; }
 
 function tabs(actual) {
   const items = [`<a class="tab" href="#portada" ${actual === "portada" ? 'aria-current="page"' : ""}>Portada</a>`]
     .concat(D.zonas.map(z => {
-      const n = H.filter(h => h.z === z.num && h.k === "nec").length;
-      return `<a class="tab" href="#${z.slug}" ${actual === z.slug ? 'aria-current="page"' : ""}>${esc(z.corto)} <b class="${n ? "" : "cero"}" title="${n} necesarias">${n}</b></a>`;
+      const n = H.filter(h => h.z === z.num && grupoDe(h) === "imp").length;
+      return `<a class="tab" href="#${z.slug}" ${actual === z.slug ? 'aria-current="page"' : ""}>${esc(z.corto)} <b class="${n ? "" : "cero"}" title="${n} que importan">${n}</b></a>`;
     }));
   const nav = document.getElementById("tabs");
   nav.innerHTML = items.join("");
@@ -284,14 +305,15 @@ function portada() {
   const porGrupo = g => H.filter(h => grupoDe(h) === g);
   const lotesPend = D.lotes.filter(l => l.estado === "pendiente");
   const barra = ORDEN.map(k => { const n = cuenta(H, k); return n ? `<span class="k-${k}" style="flex:${n};background:var(--kc)" title="${K[k].n}: ${n}"></span>` : ""; }).join("");
-  const tiles = Object.entries(G).map(([g, m]) => {
+  const tiles = Object.entries(G).filter(([g]) => porGrupo(g).length).map(([g, m]) => {
     const l = porGrupo(g);
-    const subs = ORDEN.filter(k => K[k].g === g).map(k => `<span class="chip k-${k} ${k === "ver" || k === "sin" ? k : ""}">${K[k].n} · ${cuenta(l, k)}</span>`).join("");
+    const subs = ORDEN.filter(k => K[k].g === g && cuenta(l, k)).map(k => `<span class="chip k-${k} ${k === "ver" || k === "sin" || k === "dsc" ? k : ""}">${K[k].n} · ${cuenta(l, k)}</span>`).join("");
     return `<div class="group ${g}"><div class="num">${l.length}</div><h3>${m.n}</h3><p>${m.d}</p><div class="subs">${subs}</div></div>`;
   }).join("");
 
-  const cols = [["nec"], ["y22"], ["dat", "dec"], ["red"], ["men"], ["ver"], ["sin"]];
-  const colNom = ["Necesaria", "Ya en 2.2", "Decisión", "Rediseño", "Menor", "Por verificar", "Sin clasificar"];
+  const cols = [["nec"], ["vad"], ["y22"], ["dat", "dec"], ["red"], ["men"], ["ver"], ["sin"], ["dsc"]].filter(c => H.some(h => c.includes(h.k)));
+  const NOMCOL = { nec: "Necesaria", vad: "Decidido · va", y22: "Ya en 2.2", dec: "Decisión", red: "Rediseño", men: "Menor", ver: "Por verificar", sin: "Sin clasificar", dsc: "Descartado" };
+  const colNom = cols.map(c => NOMCOL[c[c.length - 1]]);
   const max = Math.max(...D.zonas.flatMap(z => cols.map(c => H.filter(h => h.z === z.num && c.includes(h.k)).length)));
   const filas = D.zonas.map(z => {
     const hz = H.filter(h => h.z === z.num);
@@ -318,24 +340,49 @@ function portada() {
     </article>`;
   };
 
-  const decs = D.decisiones.map(d => `<article class="dec"><h3>${esc(d.t)}</h3><p>${esc(d.d)}</p><div class="zs">${d.z.map(s => { const z = D.zonas.find(x => x.slug === s); return `<a class="zchip" href="#${s}">${esc(z.corto)}</a>`; }).join("")}</div></article>`).join("");
+  const decs = D.decisiones.map(d => `<article class="dec"><h3>${esc(d.t)}</h3><p>${esc(d.d)}</p>${d.r ? `<p class="r">${esc(d.r)}</p>` : ""}<div class="zs">${d.z.map(s => { const z = D.zonas.find(x => x.slug === s); return `<a class="zchip" href="#${s}">${esc(z.corto)}</a>`; }).join("")}</div></article>`).join("");
   const notas = D.notas.map((n, i) => `<div class="nota ${i === D.notas.length - 1 ? "ok" : ""}"><strong>${esc(n.t)}</strong><p>${esc(n.d)}</p>${n.u ? `<a href="${n.u}" target="_blank" rel="noopener">Ver el documento ↗</a>` : ""}</div>`).join("");
   const leyenda = ORDEN.map(k => `<div>${chip(k)}<p>${K[k].d}</p></div>`).join("");
+  const va = H.filter(h => h.k === "vad"), nova = H.filter(h => h.k === "dsc");
+  const conLote = va.filter(h => h.l).length;
+  const porVista = D.zonas.map(z => { const n = va.filter(h => h.z === z.num).length; return n ? `<a href="#${z.slug}"><span>${esc(z.corto)}</span><b>${n} va</b></a>` : ""; }).join("");
+  const noVa = nova.map(h => `<li><a href="#${Z[h.z].slug}" data-ir-fila="${rowId(h)}">${esc(Z[h.z].corto)} · ${esc(h.t)}</a>: ${esc(h.n.replace(/^9-nov \(\d+\): descartado; /, ""))}</li>`).join("");
+  const discusion = `
+  <section id="discusion">
+    <header><h2>Decidido en la discusión del 9-nov</h2><p>Jürgen recorrió uno por uno lo que pedía decisión: las siete que frenaban algo, los «a decidir» de cada vista y los «sin clasificar».</p></header>
+    <div class="disc">
+      <div class="nums">
+        <div><strong>${va.length}</strong><span>hallazgos van</span></div>
+        <div><strong>${conLote}</strong><span>con lote existente</span></div>
+        <div><strong>${va.length - conLote}</strong><span>sin lote aún</span></div>
+        <div><strong>${nova.length + 1}</strong><span>no van</span></div>
+      </div>
+      <h3>Lo que va, por vista</h3>
+      <div class="porvista">${porVista}</div>
+      <h3>Lo que no va</h3>
+      <ul>${noVa}<li>Nuevo registro · abrir el formulario con el teclado ya en el importe: queda como está («No abrir»).</li></ul>
+      <h3>Lo que sigue</h3>
+      <p class="sigue">Primero, el merge de 2.2 en 2.3 (tras la corrección de 2.2 en curso y su TestFlight). Después, crear las cards de todo lo decidido, agrupadas en lotes. Cada hallazgo dice en su nota qué opción se eligió.</p>
+      <a class="lnk2" href="${D.discusion}" target="_blank" rel="noopener">Ver el registro completo de la discusión ↗</a>
+    </div>
+  </section>`;
 
   return `
   <div class="hero">
     <span class="eyebrow">Yala 2.3 · revisión por vistas y consolidación</span>
     <h1>Todo lo que encontramos, vista por vista</h1>
-    <p class="lede">Once revisiones del 7 al 9 de noviembre y una consolidación en lotes. Lo rojo es lo que hay que arreglar; lo demás espera una decisión o puede esperar.</p>
+    <p class="lede">Once revisiones del 7 al 9 de noviembre, una consolidación en lotes y la discusión del 9-nov, donde Jürgen decidió cada punto abierto. Lo rojo y lo morado es lo que se hace; lo demás puede esperar.</p>
     <div class="stats">
       <div><strong>${total}</strong><span>hallazgos</span></div>
       <div><strong>${D.zonas.length}</strong><span>vistas</span></div>
       <div><strong>${lotesPend.length}</strong><span>lotes pendientes</span></div>
       <div><strong>${D.lotes.length - lotesPend.length}</strong><span>lotes ya hechos</span></div>
+      <div><strong>${H.filter(h => h.k === "vad" || h.k === "dsc").length}</strong><span>decididos el 9-nov</span></div>
     </div>
   </div>
   <div class="bar" role="img" aria-label="${ORDEN.map(k => `${K[k].n} ${cuenta(H, k)}`).join(", ")}">${barra}</div>
   <div class="groups">${tiles}</div>
+  ${discusion}
 
   <section>
     <header><h2>Por vista y por nivel</h2><p>Toca una fila para abrir la vista.</p></header>
@@ -353,7 +400,7 @@ function portada() {
   </section>
 
   <section>
-    <header><h2>Decisiones que frenan algo</h2><p>Las que se repiten entre vistas. Cada ficha trae su lista completa.</p></header>
+    <header><h2>Decisiones que frenaban algo</h2><p>Las que se repetían entre vistas, con lo que se decidió el 9-nov.</p></header>
     <div class="decs">${decs}</div>
   </section>
 
