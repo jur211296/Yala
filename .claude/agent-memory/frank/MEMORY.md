@@ -59,3 +59,4 @@
 - [Contar el store del iPhone](reference_contar_el_store_del_iphone_con_devicectl.md) — devicectl desde el App Group (no la app) + sqlite3: qué filas sube.
 - [iPhone 14 libre para pruebas](feedback_iphone_14_libre_para_pruebas.md) — siempre en Device MCP; úsalo si sale más rápido o fiel que el simulador.
 - [Borrar en disco lo hace el bot](feedback_borrar_en_disco_lo_hace_el_bot.md) — sandbox niega `rm` y falta espacio: pide al bot de Frank la ruta exacta, solo lo tuyo.
+- [Verificar HTML y PDF con el Chromium de Playwright](reference_verificar_html_y_pdf_con_chromium_de_playwright.md) — capturas 390/1280, desborde lateral y PDF sin Chrome instalado.
