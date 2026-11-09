@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1218)
+## Index (1220)
 
 | id | status | path |
 |---|---|---|
@@ -182,6 +182,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | canarios-y-breadcrumbs-sin-emisor | done | tickets/done/canarios-y-breadcrumbs-sin-emisor.md |
 | cancel-reverse-wipes-the-alert-that-just-appeared | backlog | tickets/backlog/cancel-reverse-wipes-the-alert-that-just-appeared.md |
 | capability-upgrade-reemits-a-v1-link-edit-with-a-fresh-hlc | backlog | tickets/backlog/capability-upgrade-reemits-a-v1-link-edit-with-a-fresh-hlc.md |
+| cash-flow-advanced-gate-never-limits-free-users | backlog | tickets/backlog/cash-flow-advanced-gate-never-limits-free-users.md |
 | cash-flow-month-capsule-and-balance-widget-pill-sign-a-zero | done | tickets/done/cash-flow-month-capsule-and-balance-widget-pill-sign-a-zero.md |
 | cash-flow-plan-asks-the-starting-balance-the-account-already-has | done | tickets/done/cash-flow-plan-asks-the-starting-balance-the-account-already-has.md |
 | cashflow-ai-comment-does-not-check-pro | done | tickets/done/cashflow-ai-comment-does-not-check-pro.md |
@@ -494,6 +495,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | group-push-has-no-collapse-id-and-multi-device-duplicates | backlog | tickets/backlog/group-push-has-no-collapse-id-and-multi-device-duplicates.md |
 | group-settings-options-read-their-value-from-a-lazy-section | backlog | tickets/backlog/group-settings-options-read-their-value-from-a-lazy-section.md |
 | group-share-to-zero-leaves-the-recharge-entry-orphaned | backlog | tickets/backlog/group-share-to-zero-leaves-the-recharge-entry-orphaned.md |
+| group-single-currency-off-changes-the-group-currency-for-everyone | backlog | tickets/backlog/group-single-currency-off-changes-the-group-currency-for-everyone.md |
 | group-split-amount-field-keeps-the-old-value-and-drops-typed-digits | backlog | tickets/backlog/group-split-amount-field-keeps-the-old-value-and-drops-typed-digits.md |
 | group-split-line-entry-reads-as-a-loose-transfer-in-records | done | tickets/done/group-split-line-entry-reads-as-a-loose-transfer-in-records.md |
 | group-split-lines-recipe-lost-on-payer-or-currency-change | done | tickets/done/group-split-lines-recipe-lost-on-payer-or-currency-change.md |
