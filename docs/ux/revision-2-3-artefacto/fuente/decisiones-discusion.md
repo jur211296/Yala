@@ -66,3 +66,36 @@ Decisión: **va** (pasa a «importa», con lote) · **no va** (pasa a «descarta
 | 57 | Nube · «Activar sin borrar» cancela un borrado pedido, en un globo (datos, pregunta 5 de la card) | **Va: A** | Hoja con fases (molde de la decisión 53): dice que el borrado pedido no terminó y que, si se activa la nube, los datos de iCloud se quedan; opciones «Activar y conservar mis datos de iCloud» / «Terminar de borrarlos primero» / «Ahora no» | 2026-11-09 |
 | 58 | Nube · «Sí, cancelar» no dice qué cancela | **Va: A** | Botones que nombran el resultado («Cancelar y quedarme en tu iCloud» / «Seguir activando») y una línea con dónde siguen los datos; nombres de la decisión 51 | 2026-11-09 |
 | 59 | Nube · «Desasociar»: la diferencia entre las dos opciones solo en un párrafo (datos) | **Va: A** | Cada opción con su consecuencia bajo el botón y, arriba, una línea con lo que pasa igual en los dos casos (los grupos siguen en la cuenta; los apuntes de deudas desaparecen). El texto final se escribe tras verificar en el código qué hace cada opción con los gastos pagados. Se llega desde «Cambiar de cuenta» (decisión 55) | 2026-11-09 |
+
+## Sin clasificar (Registros y Nuevo registro)
+
+Cinco ya los resolvieron decisiones anteriores: once «Seleccionar todo» de VoiceOver y «Delivery +3» (15), «2334» sin separador (18), «Limpiar/Borrar filtros» (16), «Para guardar, falta…» montado (20).
+
+Jürgen (9-nov): «Todo lo que sea VoiceOver, texto grande, iPad: aplica lo recomendado. Vamos con lo que realmente necesita una decisión mía». Los grupos 4 a 6 son bugs claros o siguen reglas que ya decidió en esta discusión: van con lo recomendado, sin pregunta.
+
+| # | Hallazgo | Decisión | Motivo | Fecha |
+|---|---|---|---|---|
+| 60 | 31 · VoiceOver lee cada fila sin su fecha | **Va** | La etiqueta de la fila incluye la fecha | 2026-11-09 |
+| 61 | 31 · Las etiquetas de la fila llevan la pista «Tag» en inglés | **Va** | Pista traducida en los 16 idiomas | 2026-11-09 |
+| 62 | 32 · Voz y foto no anuncian a VoiceOver el cambio de estado ni los fallos | **Va** | Anuncio de accesibilidad en cada cambio de fase y en los fallos | 2026-11-09 |
+| 63 | 32 · Con texto grande los importes se parten en Favoritos | **Va** | Mismo arreglo que «Esto leí» en 2.2 | 2026-11-09 |
+| 64 | 32 · Con texto grande «Transferencia» se parte en tres líneas | **Va** | El selector de tipo se apila o abrevia con texto grande | 2026-11-09 |
+| 65 | 32 · Las filas de «¡Listo!» cortan una descripción larga en una línea | **Va** | Dos líneas y luego corte | 2026-11-09 |
+| 66 | 31 · iPad: el calendario se aprieta en la columna de la lista | **Va** | Calendario en la columna de detalle o a ancho legible | 2026-11-09 |
+| 67 | 31 · iPad: el título de la columna sale cortado («Registr…») | **Va** | Título que cabe en la columna | 2026-11-09 |
+| 68 | 32 · iPad: el importe abre un teclado flotante encima de la hoja | **Va** | Hoja a tamaño de página o teclado acoplado | 2026-11-09 |
+| 69 | 32 · En «Ingreso», la fila de favoritos sigue mostrando gastos y transferencias | **Va** | Bug: la fila filtra por el tipo elegido | 2026-11-09 |
+| 70 | 32 · El editor de favoritos dice «Gastos · Ingresos», sin transferencia | **Va** | El texto nombra los tres tipos | 2026-11-09 |
+| 71 | 32 · Deslizar un favorito en Ajustes lo borra sin preguntar | **Va** | Pregunta antes de borrar, como el editor (regla de la decisión 39) | 2026-11-09 |
+| 72 | 32 · Un favorito de transferencia viejo se lista como «Cuenta Principal → …» | **Va** | Muestra las dos cuentas o su nombre | 2026-11-09 |
+| 73 | 31 · «periodo» y «Período» conviven | **Va** | Una sola grafía, «Período» | 2026-11-09 |
+| 74 | 31 · «Nota contiene...» con tres puntos y el marcador «0.00» fijo | **Va** | Puntos suspensivos tipográficos y marcador con el formato de la persona | 2026-11-09 |
+| 75 | 31 · Edición masiva: «Hoy: 3 subcategorías distintas» | **Va** | «Ahora: 3 subcategorías distintas» o similar, sin «Hoy» que parece fecha | 2026-11-09 |
+| 76 | 31 · Tarjeta de Siri: importe a 38 pt fijos, «Cuenta: —» y la fecha en números | **Va** | Importe que escala, la fila sin cuenta se oculta, fecha con mes en letras | 2026-11-09 |
+| 77 | 31 · Con la lista vacía desaparece el selector Lista/Calendario | **Va** | Bug: el selector se queda | 2026-11-09 |
+| 78 | 31 · Sin indicador de carga ni de error: un fallo se ve como lista vacía | **Va** | Estado de carga y de error distinto del vacío | 2026-11-09 |
+| 79 | 31 · Las cabeceras de día quedan fijas sin fondo y se montan sobre las filas | **Va** | Cabecera con fondo (pendiente de la decisión 17) | 2026-11-09 |
+| 80 | 32 · La foto con 7 registros enseña una sola fila en la hoja a media altura | **Va** | La hoja abre a la altura que muestre varias filas | 2026-11-09 |
+| 81 | 32 · «Volver a grabar» y «Otra foto» borran lo entendido sin avisar | **Va** | Preguntan antes de descartar (regla de la decisión 39) | 2026-11-09 |
+| 82 | 32 · Una vista de importe sin usar queda en el código | **Va** | Se borra el código muerto | 2026-11-09 |
+| 83 | 32 · «Registrar otro» no tiene identificador de accesibilidad | **Va** | Se añade el identificador | 2026-11-09 |
