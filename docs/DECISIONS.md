@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (92 entradas)
+## Índice (93 entradas)
 
-> **No hace falta leer este fichero entero** — son 266 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 267 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-09` [Verificación de Google de «Conectar Gmail»: se pide con la lectura en el teléfono](#2026-11-09-verificacin-de-google-de-conectar-gmail-se-pide-con-la-lectura-en-el-telfono)
 - `2026-11-09` [La memoria de Frank viaja en el PR de la sesión que la escribió](#2026-11-09-la-memoria-de-frank-viaja-en-el-pr-de-la-sesin-que-la-escribi)
 - `2026-10-21` [Formulario de registro 2.2 — la cuenta viene puesta, guardar no saca del flujo y lo elegido va relle](#2026-10-21-formulario-de-registro-22--la-cuenta-viene-puesta-guardar-no-saca-del-flujo-y-lo-elegido-va-relleno)
 - `2026-10-21` [Roadmap de Yala de 2.2 a 4.0 — por tema y sin fechas](#2026-10-21-roadmap-de-yala-de-22-a-40--por-tema-y-sin-fechas)
@@ -47,9 +48,9 @@
 - `2026-06-08` [Fix Apple Pay — "No se pudo ejecutar el atajo"](#2026-06-08-fix-apple-pay--no-se-pudo-ejecutar-el-atajo)
 - `2026-06-08` [Fix invite-drop — persistencia de invite pendiente](#2026-06-08-fix-invite-drop--persistencia-de-invite-pendiente)
 - `2026-06-04` [Fix subcategorías duplicadas por re-sync de CloudKit](#2026-06-04-fix-subcategoras-duplicadas-por-re-sync-de-cloudkit)
+- `2026-05-26` [Auditoría sistémica de patrones UI — 13 commits, épico cerrado](#2026-05-26-auditora-sistmica-de-patrones-ui--13-commits-pico-cerrado)
 - `2026-05-26` [Refactor V3 unificado del CSV-mirror SSOT (7 commits)](#2026-05-26-refactor-v3-unificado-del-csv-mirror-ssot-7-commits)
 - `2026-05-26` [Refactor robusto del subsistema de routing (F0-F11)](#2026-05-26-refactor-robusto-del-subsistema-de-routing-f0-f11)
-- `2026-05-26` [Auditoría sistémica de patrones UI — 13 commits, épico cerrado](#2026-05-26-auditora-sistmica-de-patrones-ui--13-commits-pico-cerrado)
 - `2026-05-26` [Fix migración shortcutID/Tag.id colapsado V2](#2026-05-26-fix-migracin-shortcutidtagid-colapsado-v2)
 - `2026-05-25` [Transfer pair integrity — épico de 6 commits](#2026-05-25-transfer-pair-integrity--pico-de-6-commits)
 - `2026-05-25` [CSV mirror épico — Budget filters + TransactionItem/InboxDraft tags resilientes a CloudKit lazy hydr](#2026-05-25-csv-mirror-pico--budget-filters--transactioniteminboxdraft-tags-resilientes-a-cloudkit-lazy-hydration)
@@ -82,9 +83,9 @@
 - `2026-04-24` [PP2-06d densidad CashFlow + Needs `.small`](#2026-04-24-pp2-06d-densidad-cashflow--needs-small)
 - `2026-04-24` [PP2-06c widgets `.small` chart-based](#2026-04-24-pp2-06c-widgets-small-chart-based)
 - `2026-04-24` [PP2-07 polish + Hero rediseñado (cierre épico Panel Polish #2)](#2026-04-24-pp2-07-polish--hero-rediseado-cierre-pico-panel-polish-2)
-- `2026-04-22` [Refactor consent/feature AI Insights](#2026-04-22-refactor-consentfeature-ai-insights)
 - `2026-04-22` [PP2-01 Hero Compacto](#2026-04-22-pp2-01-hero-compacto)
 - `2026-04-22` [PP2-05 tamaño `.small` + pilotos](#2026-04-22-pp2-05-tamao-small--pilotos)
+- `2026-04-22` [Refactor consent/feature AI Insights](#2026-04-22-refactor-consentfeature-ai-insights)
 - `2026-04-22` [PP2-03 Chrome Compacto de Widgets](#2026-04-22-pp2-03-chrome-compacto-de-widgets)
 - `2026-04-21` [Sync Status: Banner Global vs Toolbar Indicator](#2026-04-21-sync-status-banner-global-vs-toolbar-indicator)
 - `2026-04-21` [Sync silencioso por defecto + banner pill global](#2026-04-21-sync-silencioso-por-defecto--banner-pill-global)
@@ -118,6 +119,28 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-09] Verificación de Google de «Conectar Gmail»: se pide con la lectura en el teléfono
+
+**Contexto.** Google tiene que verificar el permiso `gmail.readonly` del proyecto `yala-502622` antes de que
+«Conectar Gmail» pueda salir a todos. Había dos versiones posibles que describir: la fase 1, que lee el correo en el
+iPhone, y la de 2.3, que lo procesaría en el servidor con IA. La política publicada no mencionaba Gmail.
+
+**Decisión.** Jürgen decidió el 9-nov a las 17:48 (Lima) pedir la verificación ya, con la versión de **lectura en el
+teléfono** (opción A) y el video ya editado de esa versión. La política y los términos de la web se dejan listos por
+hotfix desde `1.0`, con la sección «5. Si conectas tu Gmail» y la declaración de Uso Limitado. Dan se encarga de
+Search Console y del dominio.
+
+**Razones.** Es la única versión que existe hoy. Cada frase de la política tiene que ser verdad el día que se
+publica, y lo del servidor (borrado inmediato, token cifrado, proveedor de IA sin entrenamiento) es trabajo de 2.3.
+
+**Consecuencias.** Cuando la lectura pase al servidor, la sección 5 de la política se reescribe antes de publicar esa
+versión, y puede pedir una verificación nueva. El texto alternativo está en
+`docs/verificacion-google/propuesta-politica-y-terminos.md`, en la rama del PR de «Conectar Gmail» mínimo.
+
+**Estado:** Activa
+
+---
 
 ### [2026-11-09] La memoria de Frank viaja en el PR de la sesión que la escribió
 
