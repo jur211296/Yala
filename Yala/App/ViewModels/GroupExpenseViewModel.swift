@@ -24,6 +24,12 @@ final class GroupExpenseViewModel {
     private(set) var editingExpense: SplitExpense?
     var isEditMode: Bool { editingExpense != nil }
 
+    /// «Convertir a gasto compartido» desde Editar de un registro (2.3): el registro que pasa a ser este gasto. Importe,
+    /// moneda, fecha, cuenta y pagador son los suyos y no se editan aquí (`GroupExpenseService.convertPersonalTransaction`
+    /// los toma del registro, no del formulario); el nombre en el grupo, la categoría y el reparto, sí.
+    private(set) var conversionSource: TransactionItem?
+    var isConversion: Bool { conversionSource != nil }
+
     // MARK: - Form State
 
     var amountString: String = ""
@@ -310,6 +316,8 @@ final class GroupExpenseViewModel {
     func save() -> Bool {
         guard canSave else { return false }
         guard let shares = calculatedShares else { return false }
+        // El registro ya se pasó (doble toque antes de que la hoja se cierre): no se vuelve a guardar nada.
+        if isConversion, editingExpense != nil { return true }
 
         isSaving = true
         saveError = nil
@@ -319,7 +327,19 @@ final class GroupExpenseViewModel {
             // M6: pasar selectedAccount solo si Caso A (en Caso B, la cuenta del user no aplica).
             // Una venta no sale de ninguna cuenta (card 7): aunque quede elegida de antes, no se pasa.
             let accountToPass: Account? = isCaseA && !isSale ? selectedAccount : nil
-            if let existing = editingExpense {
+            if let source = conversionSource, editingExpense == nil {
+                // Un segundo toque o un reintento no crean otro: el servicio devuelve el gasto que ya es de este registro.
+                let created = try GroupExpenseService.shared.convertPersonalTransaction(
+                    source,
+                    to: group,
+                    description: expenseDescription.trimmingCharacters(in: .whitespaces),
+                    subcategoryName: subcategoryName,
+                    splitType: splitType.rawValue,
+                    shares: shares
+                )
+                lastCreatedExpenseID = created.id.uuidString
+                editingExpense = created
+            } else if let existing = editingExpense {
                 try GroupExpenseService.shared.updateExpense(
                     existing,
                     in: group,
@@ -403,6 +423,13 @@ final class GroupExpenseViewModel {
             selectedSubcategory = subcategory
             alignSubcategoryWithBridge()
         }
+    }
+
+    /// Prellena el formulario con el registro que se pasa al grupo. El pagador queda en ti (fijado en `init`): el dinero
+    /// salió de tu cuenta.
+    func applyConversion(from transaction: TransactionItem, template: GroupExpensePrefillTemplate) {
+        conversionSource = transaction
+        applyTemplate(template)
     }
 
     func prefill(from expense: SplitExpense, shares: [SplitShare]) {

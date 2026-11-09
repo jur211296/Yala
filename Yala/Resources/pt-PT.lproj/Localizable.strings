@@ -8097,3 +8097,9 @@
 
 /* Alert message: the section's widgets go back to how they came (which show, order and size) */
 "panel.sectionPrefs.reset.message" = "Os widgets voltam a como vieram: quais aparecem, por que ordem e com que tamanho.";
+
+/* «Convertir a gasto compartido» desde Editar de un registro (2.3) */
+"groups.convert.done" = "Agora é uma despesa de «%@»";
+"groups.convert.notice" = "O teu registo fica em %@ e passa a ser esta despesa do grupo: se mudar ou for eliminada no grupo, também muda nos teus registos.";
+"groups.convert.personalSplitHint" = "Para a transformar em despesa partilhada, remove «A minha parte»: este registo guarda só a tua parte.";
+"groups.convert.saveFirstHint" = "Guarda as alterações para a transformar em despesa partilhada.";

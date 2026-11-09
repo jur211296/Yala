@@ -8773,3 +8773,9 @@
 
 /* Alert message: the section's widgets go back to how they came (which show, order and size) */
 "panel.sectionPrefs.reset.message" = "其小组件将恢复初始状态：显示哪些、顺序和大小。";
+
+/* «Convertir a gasto compartido» desde Editar de un registro (2.3) */
+"groups.convert.done" = "现在是“%@”的支出";
+"groups.convert.notice" = "这笔记录保留在%@中，并成为这笔群组支出：如果它在群组中被修改或删除，你的记录也会随之改变。";
+"groups.convert.personalSplitHint" = "要转为共享支出，请先去掉“我的份额”：这笔记录只保存了你的部分。";
+"groups.convert.saveFirstHint" = "请先保存更改，再转为共享支出。";

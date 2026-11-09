@@ -2490,6 +2490,22 @@ enum L10n {
             static var openGroupsSettings: String { ls("groups.settings.openGroupsSettings", comment: "") }
         }
 
+        /// «Convertir a gasto compartido» desde Editar de un registro (2.3).
+        enum Convert {
+            /// En la revisión: el registro se queda en su cuenta y pasa a ser el gasto del grupo. `%@` = la cuenta.
+            static func notice(_ account: String) -> String {
+                String(format: ls("groups.convert.notice", comment: ""), account)
+            }
+            /// El aviso tras convertir: el registro sigue en tus cuentas y ahora es un gasto del grupo. `%@` = el grupo.
+            static func done(_ group: String) -> String {
+                String(format: ls("groups.convert.done", comment: ""), group)
+            }
+            /// En el editor, con «Mi parte»: por qué no se ofrece.
+            static var personalSplitHint: String { ls("groups.convert.personalSplitHint", comment: "") }
+            /// En el editor, con cambios sin guardar.
+            static var saveFirstHint: String { ls("groups.convert.saveFirstHint", comment: "") }
+        }
+
         enum Errors {
             /// surfaced cuando el current user pending intenta una acción que requiere active.
             static var pendingApproval: String { ls("groups.errors.pendingApproval", comment: "") }
