@@ -6,14 +6,21 @@ Junta en una sola página las once revisiones por vistas de 2.3 (7 al 9 de novie
 lotes. Portada con los hallazgos por nivel y por vista, los 13 lotes y las decisiones que frenan algo; una sección
 por vista con cada hallazgo, su nivel, su lote y el enlace al PR, la ficha, el ticket o el encargo de origen.
 
-No decide nada nuevo. La clase de cada hallazgo es la de la consolidación (zonas 34 a 41) o la de la ficha y los
-lotes ya hechos (zonas 30 a 32). Lo que no tenía clase va como «Sin clasificar».
+La clase de cada hallazgo es la de la consolidación (zonas 34 a 41) o la de la ficha y los lotes ya hechos (zonas 30
+a 32). **El 9-nov Jürgen decidió en una discusión uno por uno todo lo que pedía decisión** (las siete que frenaban algo,
+los «a decidir» y los «sin clasificar»): lo que va pasó a la clase `vad` («Decidido · va», del grupo «Importa») con un
+lote existente o «Sin lote aún», y lo que no va, a `dsc` («Descartado»). La nota de cada hallazgo dice qué opción se
+eligió y el número de la decisión en el registro. La portada lleva el bloque «Decidido en la discusión del 9-nov».
+
+**Lo que sigue:** el merge de 2.2 en 2.3 (tras la corrección de 2.2 en curso y su TestFlight) y, después, crear las
+cards de todo lo decidido, agrupadas en lotes.
 
 ## Qué hay aquí
 
 | Fichero | Qué es |
 |---|---|
 | `fuente/hallazgos.tsv` | Los datos: una fila por hallazgo, ocho campos separados por barras (la cabecera los explica). Se edita a mano. |
+| `fuente/decisiones-discusion.md` | El registro de la discusión del 9-nov: cada hallazgo, la decisión, su motivo y la fecha (83 puntos). Es la fuente de las notas `9-nov (N)` de la tabla. |
 | `fuente/build.py` | Lotes, decisiones, notas y metadatos de cada vista; genera `index.html` e `img/`. |
 | `fuente/plantilla.html` | La página (estilo y script). Los datos entran por el marcador `/*__DATOS__*/null`. |
 | `index.html` | La página generada: es lo que se publica. |
