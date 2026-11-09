@@ -87,6 +87,7 @@ class Banco(unittest.TestCase):
         sh(["git", "add", "-A"], self.pr)
         sh(["git", "commit", "-q", "-m", "base"], self.pr)
         sh(["git", "push", "-q", "-u", "origin", "2.2"], self.pr)
+        sh(["git", "remote", "set-head", "origin", "2.2"], self.pr)  # como en Yala: origin/HEAD -> origin/2.2
         self.wt = self.tmp / "worktrees" / "Yala-encargo"
         sh(["git", "worktree", "add", "-q", "-b", "encargo/x", str(self.wt), "origin/2.2"], self.pr)
         self.proyectos = self.tmp / "proyectos"
@@ -141,8 +142,14 @@ class Banco(unittest.TestCase):
         self.assertTrue((self.pr / CARPETA / "feedback_a.md").exists())
         self.assertIn("- [A](feedback_a.md) — nota A", (self.pr / CARPETA / "MEMORY.md").read_text())
         # Con push, el principal vuelve a limpio en esas rutas y queda respaldo.
-        m.llevar(self.ctx(), "frank", seco=False)  # idempotente: no hay segundo commit
+        segundo = m.llevar(self.ctx(), "frank", seco=False)  # idempotente: no hay segundo commit
         self.assertEqual(len(sh(["git", "rev-list", "origin/2.2..HEAD"], self.wt).split()), 1)
+        # y su informe sigue contando lo que la rama ya lleva, no «no tocó notas»
+        seccion = m.seccion_pr(m.planificar(self.ctx(), "frank"))
+        self.assertNotIn("no tocó notas", seccion)
+        self.assertIn("feedback_wt.md` (ya commiteada en la rama)", seccion)
+        self.assertIn("feedback_a.md` (estaba en el checkout principal, ya commiteada en la rama)", seccion)
+        self.assertIsNone(segundo["commit"])
         self.push()
         res = m.limpiar(self.ctx(), "frank")
         self.assertEqual(res["dudas"], [])

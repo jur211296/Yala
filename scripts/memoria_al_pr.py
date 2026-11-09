@@ -211,7 +211,7 @@ def cargar_transcripts(wt: Path) -> tuple[list[dict], list[tuple[Path, list[dict
 
 
 # ------------------------------------------------------------------------------------- plan
-def planificar(ctx: dict, agente: str) -> dict:
+def planificar(ctx: dict, agente: str, base: str | None = None) -> dict:
     wt, principal = ctx["wt"], ctx["principal"]
     carpeta = f".claude/agent-memory/{agente}/"
     indice_rel = carpeta + INDICE
@@ -219,11 +219,16 @@ def planificar(ctx: dict, agente: str) -> dict:
 
     plan = {"agente": agente, "carpeta": carpeta, "worktree": str(wt), "principal": str(principal),
             "transcripts": str(propio_dir), "notas": [], "lineas": [], "dudas": [], "ajenas": [],
-            "del_worktree": []}
+            "del_worktree": [], "en_rama": []}
 
     # 1 · Lo del worktree: de esta sesión por construcción.
     sucio_wt = sucios(wt, carpeta)
     plan["del_worktree"] = sorted(sucio_wt)
+    # Y lo que la rama ya lleva respecto de su base: un segundo `llevar` lo tiene que seguir contando.
+    base = base or "origin/HEAD"
+    corte = git(["merge-base", "HEAD", base], wt, check=False).strip()
+    if corte:
+        plan["en_rama"] = sorted(set(git(["diff", "--name-only", f"{corte}..HEAD", "--", carpeta], wt).split()))
 
     # 2 · Lo del principal: se atribuye por el transcript.
     sucio_pr = sucios(principal, carpeta)
@@ -345,8 +350,8 @@ def respaldar(plan: dict, principal: Path) -> Path:
     return destino
 
 
-def llevar(ctx: dict, agente: str, seco: bool) -> dict:
-    plan = planificar(ctx, agente)
+def llevar(ctx: dict, agente: str, seco: bool, base: str | None = None) -> dict:
+    plan = planificar(ctx, agente, base)
     wt, principal = ctx["wt"], ctx["principal"]
     plan["commit"] = None
     if seco:
@@ -438,16 +443,21 @@ def seccion_pr(plan: dict) -> str:
     a = plan["agente"]
     out = [f"## Memoria de {a}", ""]
     llevadas = [n["ruta"] for n in plan["notas"]]
-    wt = [r for r in plan["del_worktree"]]
-    if not (llevadas or wt or plan["lineas"]):
+    del_principal = set(llevadas)
+    wt = [r for r in plan["del_worktree"] if r not in del_principal]
+    ya = [r for r in plan.get("en_rama", []) if r not in del_principal and r not in wt]
+    if not (llevadas or wt or ya or plan["lineas"]):
         out.append("Esta sesión no tocó notas de memoria: no viaja ninguna.")
     else:
         out.append("Viajan en este PR, y solo porque las escribió esta sesión:")
+        for r in ya:
+            out.append(f"- `{r}` (ya commiteada en la rama)")
         for r in wt:
             out.append(f"- `{r}` (escrita en el worktree)")
         for n in plan["notas"]:
-            extra = "" if n["accion"] == "copiar" else f" ({n['accion']})"
-            out.append(f"- `{n['ruta']}` (estaba en el checkout principal){extra}")
+            extra = {"copiar": "", "ya-en-base": ", ya commiteada en la rama",
+                     "ya-en-worktree": ", también escrita en el worktree"}[n["accion"]]
+            out.append(f"- `{n['ruta']}` (estaba en el checkout principal{extra})")
         if plan["lineas"]:
             out.append(f"- {len(plan['lineas'])} línea(s) del índice `{INDICE}` que enlazan a esas notas")
     out += ["", "**Criterio.** Lo del worktree es de la sesión por construcción. Lo del checkout "
@@ -493,6 +503,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--seco", action="store_true", help="llevar: muestra el plan sin tocar nada")
     p.add_argument("--json", action="store_true", help="salida en JSON")
     p.add_argument("--pr", help="limpiar: añade el resultado al cuerpo de este PR")
+    p.add_argument("--base", help="llevar: rama base del PR (por defecto, origin/HEAD)")
     a = p.parse_args(argv)
 
     ctx = contexto(Path.cwd())
@@ -502,7 +513,7 @@ def main(argv: list[str] | None = None) -> int:
     salida = []
     for ag in agentes(ctx["wt"], a.agente):
         if a.fase == "llevar":
-            plan = llevar(ctx, ag, a.seco)
+            plan = llevar(ctx, ag, a.seco, a.base)
             salida.append(plan if a.json else seccion_pr(plan) + (
                 f"\n\nCommit: {plan['commit']}" if plan.get("commit") else ""))
         else:
