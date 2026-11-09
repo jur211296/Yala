@@ -1,0 +1,479 @@
+<title>Revisión 2.3 por vistas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+<style>
+/* Lienzo: una barra fija con las 11 vistas; la portada resume (niveles, matriz vista × nivel, lotes, decisiones) y cada vista lista sus hallazgos agrupados por importancia. */
+:root {
+  --bg: #F4F4FA; --surface: #FFFFFF; --sunk: #ECECF5; --ink: #16162A; --muted: #5C5D77; --line: #DFDFEC;
+  --accent: #5E5CE6; --accent-soft: #E9E8FD; --on-accent: #FFFFFF;
+  --c-nec: #C9304E; --c-y22: #0B7F74; --c-dec: #A86A06; --c-dat: #C2410C; --c-red: #4F63B0; --c-men: #6E7089; --c-ver: #6E7089; --c-sin: #8A879F;
+  --ok: #0B7F74; --on-nec: #FFFFFF;
+  --f-display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --f-body: "Instrument Sans", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --r: 14px; --r-s: 8px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0E0E19; --surface: #181828; --sunk: #12121F; --ink: #ECECF7; --muted: #A3A4C0; --line: #2A2A42;
+  --accent: #8C8AFF; --accent-soft: #24234A; --on-accent: #0E0E19;
+  --c-nec: #FF6F88; --c-y22: #3CC9B8; --c-dec: #EDB34E; --c-dat: #FF8D52; --c-red: #96A6F0; --c-men: #9294AE; --c-ver: #9294AE; --c-sin: #8F8CA8;
+  --ok: #3CC9B8; --on-nec: #1A0A10; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0E0E19; --surface: #181828; --sunk: #12121F; --ink: #ECECF7; --muted: #A3A4C0; --line: #2A2A42;
+  --accent: #8C8AFF; --accent-soft: #24234A; --on-accent: #0E0E19;
+  --c-nec: #FF6F88; --c-y22: #3CC9B8; --c-dec: #EDB34E; --c-dat: #FF8D52; --c-red: #96A6F0; --c-men: #9294AE; --c-ver: #9294AE; --c-sin: #8F8CA8;
+  --ok: #3CC9B8; --on-nec: #1A0A10; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.45; -webkit-font-smoothing: antialiased; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+
+/* Barra fija */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
+.top .wrap { display: flex; align-items: center; gap: 14px; padding-block: 10px 0; flex-wrap: wrap; }
+.brand { font-family: var(--f-display); font-weight: 800; font-size: 17px; text-decoration: none; display: flex; align-items: center; gap: 8px; }
+.brand i { width: 22px; height: 22px; border-radius: 7px; background: var(--accent); display: inline-block; position: relative; }
+.brand i::after { content: ""; position: absolute; inset: 6px 5px 6px 5px; border-left: 3px solid var(--on-accent); border-bottom: 3px solid var(--on-accent); transform: skewX(-12deg); }
+.brand small { font-family: var(--f-body); font-weight: 500; font-size: 13px; color: var(--muted); }
+.tabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; width: 100%; padding-bottom: 0; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { flex: none; text-decoration: none; padding: 9px 11px 11px; font-size: 14px; font-weight: 500; color: var(--muted); border-bottom: 2px solid transparent; display: flex; gap: 6px; align-items: center; white-space: nowrap; }
+.tab:hover { color: var(--ink); }
+.tab[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+.tab b { font: 600 11px/1 var(--f-mono); min-width: 18px; padding: 3px 5px; border-radius: 99px; background: color-mix(in srgb, var(--c-nec) 16%, transparent); color: var(--c-nec); text-align: center; }
+.tab b.cero { background: var(--sunk); color: var(--muted); }
+
+main { padding-block: 28px 64px; }
+section { margin-top: 44px; }
+section > header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+section > header h2 { font-size: 24px; font-weight: 700; }
+section > header p { margin: 0; color: var(--muted); font-size: 14px; }
+
+/* Portada */
+.hero { display: grid; gap: 10px; }
+.hero h1 { font-size: clamp(30px, 5.4vw, 52px); font-weight: 800; line-height: 1.02; max-width: 15ch; }
+.hero .lede { font-size: 17px; color: var(--muted); max-width: 60ch; margin: 0; }
+.stats { display: flex; gap: 22px; flex-wrap: wrap; margin-top: 6px; }
+.stats div { display: grid; }
+.stats strong { font: 800 30px/1 var(--f-display); font-variant-numeric: tabular-nums; }
+.stats span { font-size: 13px; color: var(--muted); }
+
+.bar { display: flex; height: 16px; border-radius: 99px; overflow: hidden; gap: 2px; background: var(--sunk); margin-top: 26px; }
+.bar span { display: block; min-width: 3px; }
+.groups { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+.group { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; display: grid; gap: 6px; align-content: start; }
+.group.imp { background: var(--c-nec); border-color: var(--c-nec); color: var(--on-nec); }
+.group .num { font: 800 40px/1 var(--f-display); font-variant-numeric: tabular-nums; }
+.group h3 { font-size: 16px; font-weight: 700; }
+.group p { margin: 0; font-size: 13px; opacity: .85; }
+.group .subs { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 2px; }
+.group.imp .chip { background: rgba(255,255,255,.2); color: inherit; }
+
+/* Chips de clase */
+.chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 99px; white-space: nowrap; color: var(--kc, var(--muted)); background: color-mix(in srgb, var(--kc, var(--muted)) 13%, transparent); line-height: 1.3; }
+.chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.chip.nodot::before { display: none; }
+.chip.ver { background: transparent; border: 1px dashed currentColor; padding: 2px 7px; }
+.chip.sin { background: transparent; border: 1px solid currentColor; padding: 2px 7px; }
+.k-nec { --kc: var(--c-nec); } .k-y22 { --kc: var(--c-y22); } .k-dec { --kc: var(--c-dec); } .k-dat { --kc: var(--c-dat); }
+.k-red { --kc: var(--c-red); } .k-men { --kc: var(--c-men); } .k-ver { --kc: var(--c-ver); } .k-sin { --kc: var(--c-sin); }
+.lotechip { font: 600 12px/1.3 var(--f-mono); padding: 3px 8px; border-radius: var(--r-s); background: var(--accent-soft); color: var(--accent); text-decoration: none; white-space: nowrap; }
+.lotechip.hecho { background: color-mix(in srgb, var(--ok) 14%, transparent); color: var(--ok); }
+a.lotechip:hover { text-decoration: underline; }
+
+/* Matriz */
+.scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
+table.mx { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 14px; }
+.mx th, .mx td { padding: 9px 8px; text-align: center; border-bottom: 1px solid var(--line); }
+.mx tr:last-child td { border-bottom: 0; }
+.mx thead th { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); vertical-align: bottom; }
+.mx th.zn, .mx td.zn { text-align: left; position: sticky; left: 0; background: var(--surface); z-index: 1; }
+.mx td.zn a { text-decoration: none; font-weight: 600; display: flex; gap: 8px; align-items: baseline; }
+.mx td.zn a span { font: 500 11px var(--f-mono); color: var(--muted); }
+.mx tbody tr { cursor: pointer; }
+.mx tbody tr:hover td { background: var(--sunk); }
+.dot { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; font: 600 13px/1 var(--f-mono); color: var(--kc); background: color-mix(in srgb, var(--kc) calc(var(--a) * 1%), transparent); }
+.dot.zero { color: var(--line); background: none; }
+.mx td.tot { font: 700 15px var(--f-mono); }
+.mx td.lts { text-align: left; }
+.mx td.lts div { display: flex; flex-wrap: wrap; gap: 4px; }
+.mx tfoot td { font: 700 13px var(--f-mono); border-top: 1px solid var(--line); background: var(--sunk); }
+
+/* Lotes */
+.lotes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 14px; }
+.lote { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: grid; gap: 10px; align-content: start; }
+.lote .cab { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; }
+.lote .n { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font: 800 17px/1 var(--f-display); background: var(--accent-soft); color: var(--accent); }
+.lote.hecho .n { background: color-mix(in srgb, var(--ok) 15%, transparent); color: var(--ok); }
+.lote h3 { font-size: 16px; font-weight: 700; line-height: 1.25; }
+.lote .meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); }
+.zchip { font-size: 12px; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--line); text-decoration: none; color: var(--muted); white-space: nowrap; }
+.zchip:hover { color: var(--ink); border-color: var(--muted); }
+.adv { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; background: color-mix(in srgb, var(--c-dat) 14%, transparent); color: var(--c-dat); }
+.estado { font-size: 12px; font-weight: 600; }
+.estado.hecho { color: var(--ok); }
+.lote ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; border-top: 1px solid var(--line); padding-top: 8px; }
+.lote li a { display: grid; grid-template-columns: 92px 1fr; gap: 8px; text-decoration: none; padding: 5px 6px; border-radius: 6px; font-size: 13.5px; }
+.lote li a:hover { background: var(--sunk); }
+.lote li a span:first-child { color: var(--muted); font-size: 12px; padding-top: 1px; }
+.lote .pie { font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; justify-self: start; }
+.lote .pie:hover { text-decoration: underline; }
+.hechos { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 14px; margin-bottom: 14px; }
+
+/* Decisiones y notas */
+.decs { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 12px; counter-reset: d; }
+.dec { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; display: grid; gap: 6px; align-content: start; counter-increment: d; position: relative; }
+.dec h3 { font-size: 15.5px; font-weight: 700; padding-right: 30px; }
+.dec h3::after { content: counter(d); position: absolute; top: 12px; right: 14px; font: 700 13px/1 var(--f-mono); color: var(--c-dec); background: color-mix(in srgb, var(--c-dec) 14%, transparent); width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; }
+.dec p { margin: 0; font-size: 14px; color: var(--muted); }
+.dec .zs { display: flex; flex-wrap: wrap; gap: 5px; }
+.notas { display: grid; gap: 10px; }
+.nota { border-left: 3px solid var(--c-dec); padding: 4px 0 4px 14px; display: grid; gap: 2px; }
+.nota.ok { border-color: var(--ok); }
+.nota strong { font-size: 15px; }
+.nota p { margin: 0; font-size: 14px; color: var(--muted); max-width: 75ch; }
+.nota a { font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; }
+.legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: 8px 18px; font-size: 13.5px; }
+.legend div { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: start; }
+.legend p { margin: 0; color: var(--muted); }
+
+/* Vista */
+.back { font-size: 14px; font-weight: 600; color: var(--accent); text-decoration: none; }
+.zhead { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; align-items: end; margin-top: 14px; }
+.zhead h1 { font-size: clamp(26px, 4.4vw, 42px); font-weight: 800; line-height: 1.05; }
+.zhead .estado-z { margin: 8px 0 0; color: var(--muted); max-width: 62ch; }
+.links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.lnk { font-size: 13px; font-weight: 600; text-decoration: none; padding: 6px 10px; border-radius: var(--r-s); border: 1px solid var(--line); background: var(--surface); }
+.lnk:hover { border-color: var(--accent); color: var(--accent); }
+.zcount { display: flex; gap: 14px; text-align: right; }
+.zcount div { display: grid; }
+.zcount strong { font: 800 30px/1 var(--f-display); font-variant-numeric: tabular-nums; }
+.zcount span { font-size: 12px; color: var(--muted); }
+.zcount .imp strong { color: var(--c-nec); }
+.fotos { display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 10px; margin-top: 22px; scrollbar-width: thin; }
+.foto { flex: none; width: 104px; display: grid; gap: 5px; background: none; border: 0; padding: 0; text-align: left; cursor: zoom-in; color: inherit; font: inherit; }
+.foto img { width: 104px; height: 168px; object-fit: cover; object-position: top; border-radius: 12px; border: 1px solid var(--line); background: var(--sunk); display: block; }
+.foto span { font-size: 11.5px; color: var(--muted); line-height: 1.25; }
+.foto b { font: 600 11px var(--f-mono); color: var(--ink); }
+.filtros { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 22px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 92px); z-index: 2; background: var(--bg); padding-block: 8px; }
+.filtros button { font: 600 13px var(--f-body); padding: 7px 12px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); cursor: pointer; }
+.filtros button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.grupo { margin-top: 26px; }
+.grupo > h2 { font-size: 18px; font-weight: 700; display: flex; gap: 10px; align-items: baseline; margin-bottom: 4px; }
+.grupo > h2 small { font: 600 13px var(--f-mono); color: var(--muted); }
+.grupo > p { margin: 0 0 10px; font-size: 13.5px; color: var(--muted); }
+.filas { display: grid; gap: 8px; }
+.fila { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px 12px 12px; position: relative; scroll-margin-top: 150px; }
+.fila::before { content: ""; position: absolute; left: -1px; top: 12px; bottom: 12px; width: 3px; border-radius: 3px; background: var(--kc); }
+.fila.flash { animation: flash 1.6s ease-out; }
+@keyframes flash { 0%, 30% { box-shadow: 0 0 0 3px var(--accent); } 100% { box-shadow: 0 0 0 0 transparent; } }
+@media (prefers-reduced-motion: reduce) { .fila.flash { animation: none; box-shadow: 0 0 0 3px var(--accent); } }
+.mini { width: 52px; height: 78px; border-radius: 8px; border: 1px solid var(--line); object-fit: cover; object-position: top; background: var(--sunk); cursor: zoom-in; padding: 0; display: block; }
+button.mini { overflow: hidden; }
+button.mini img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+.cod { width: 52px; height: 30px; border-radius: 8px; background: var(--sunk); display: grid; place-items: center; font: 600 12px var(--f-mono); color: var(--muted); }
+.cuerpo { display: grid; gap: 6px; min-width: 0; }
+.l1 { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); }
+.l1 .c { font: 600 12px var(--f-mono); color: var(--ink); }
+.sev { display: inline-flex; gap: 4px; align-items: center; }
+.bars { display: inline-flex; gap: 2px; align-items: flex-end; height: 11px; }
+.bars u { width: 3px; border-radius: 1px; background: var(--line); text-decoration: none; }
+.bars u:nth-child(1) { height: 5px; } .bars u:nth-child(2) { height: 8px; } .bars u:nth-child(3) { height: 11px; }
+.bars u.on { background: var(--muted); }
+.texto { font-size: 15px; font-weight: 500; line-height: 1.35; }
+.nota-f { font-size: 13px; color: var(--muted); }
+.l3 { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; font-size: 12.5px; }
+.l3 a.o { color: var(--accent); text-decoration: none; font-weight: 600; }
+.l3 a.o:hover { text-decoration: underline; }
+.vacio { color: var(--muted); font-size: 14px; padding: 12px 0; }
+
+/* Visor */
+.visor { position: fixed; inset: 0; z-index: 20; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(6px); display: grid; place-items: center; padding: max(20px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(20px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.visor figure { margin: 0; display: grid; gap: 8px; justify-items: center; max-height: 100%; }
+.visor img { max-height: calc(100vh - 110px); max-width: min(420px, 100%); width: auto; border-radius: 22px; border: 1px solid var(--line); box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+.visor figcaption { font-size: 13px; color: var(--muted); text-align: center; }
+.visor button { font: 600 14px var(--f-body); padding: 8px 14px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+
+footer.pie { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); display: grid; gap: 6px; }
+footer.pie a { color: var(--accent); }
+
+@media (max-width: 760px) {
+  .groups { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .zhead { grid-template-columns: 1fr; }
+  .zcount { text-align: left; }
+  .filtros { top: calc(env(safe-area-inset-top, 0px) + 88px); }
+}
+@media (max-width: 420px) {
+  .group .num { font-size: 32px; }
+  .fila { grid-template-columns: 40px minmax(0, 1fr); gap: 10px; }
+  .mini, .cod { width: 40px; } .mini { height: 62px; }
+  .lote li a { grid-template-columns: 1fr; gap: 0; }
+}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#portada"><i aria-hidden="true"></i>Revisión 2.3 <small>por vistas · 7-9 nov 2026</small></a>
+    <nav class="tabs" id="tabs" aria-label="Vistas"></nav>
+  </div>
+</header>
+<main class="wrap" id="app"></main>
+<div class="visor" id="visor" hidden role="dialog" aria-modal="true" aria-label="Captura">
+  <figure><img id="visor-img" alt=""><figcaption id="visor-pie"></figcaption><button type="button" id="visor-cerrar">Cerrar</button></figure>
+</div>
+
+<script>
+const D = /*__DATOS__*/null;
+const K = {
+  nec: { n: "Necesaria", g: "imp", d: "Bug, accesibilidad, texto falso o regresión. Va a un lote." },
+  y22: { n: "Ya en 2.2", g: "imp", d: "2.2 ya lo arregló y 2.3 no lo tiene. Llega con la integración." },
+  dat: { n: "Decisión de datos", g: "dec", d: "Toca datos o seguridad. Espera su card de decisión." },
+  dec: { n: "Decisión", g: "dec", d: "Pide elegir entre alternativas o reabre algo decidido." },
+  red: { n: "Rediseño", g: "des", d: "Mejora de flujo o jerarquía sin defecto objetivo." },
+  men: { n: "Menor", g: "des", d: "Defecto real pero cosmético. Sin lote." },
+  ver: { n: "Por verificar", g: "des", d: "Hipótesis sin reproducir. Sin lote." },
+  sin: { n: "Sin clasificar", g: "sin", d: "Secundarios de Registros y Nuevo registro que nadie consolidó." },
+};
+const ORDEN = ["nec", "y22", "dat", "dec", "red", "men", "ver", "sin"];
+const G = {
+  imp: { n: "Importa", d: "Necesarias, cada una en su lote, y lo que 2.2 ya arregló." },
+  dec: { n: "A decidir", d: "Elige Jürgen. Las alternativas están en la ficha." },
+  des: { n: "Deseable o menor", d: "Rediseños, menores y por verificar. Sin lote." },
+  sin: { n: "Sin clasificar", d: "Nadie los consolidó todavía." },
+};
+const SEV = { A: ["Alta", 3], MA: ["Media-alta", 3], M: ["Media", 2], B: ["Baja", 1] };
+const H = D.hallazgos;
+const Z = Object.fromEntries(D.zonas.map(z => [z.num, z]));
+const PR = n => `${D.gh}/pull/${n}`;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const loteNom = id => id === "P" ? "Lote Panel" : id === "F" ? "Lote Formulario" : `Lote ${String(id).padStart(2, "0")}`;
+const loteNum = id => id === "P" || id === "F" ? "✓" : String(id).padStart(2, "0");
+const loteHecho = id => id === "P" || id === "F";
+const rowId = h => `h-${h.z}-${h.c}-${H.indexOf(h)}`;
+const cuenta = (lista, k) => lista.filter(h => h.k === k).length;
+const grupoDe = h => K[h.k].g;
+let resaltar = null;
+let filtro = "todo";
+
+function chip(k) { return `<span class="chip k-${k} ${k === "ver" || k === "sin" ? k : ""}">${K[k].n}</span>`; }
+function loteChip(id) { return `<a class="lotechip ${loteHecho(id) ? "hecho" : ""}" href="#portada" data-lote="${esc(id)}">${loteNom(id)}</a>`; }
+
+function tabs(actual) {
+  const items = [`<a class="tab" href="#portada" ${actual === "portada" ? 'aria-current="page"' : ""}>Portada</a>`]
+    .concat(D.zonas.map(z => {
+      const n = H.filter(h => h.z === z.num && h.k === "nec").length;
+      return `<a class="tab" href="#${z.slug}" ${actual === z.slug ? 'aria-current="page"' : ""}>${esc(z.corto)} <b class="${n ? "" : "cero"}" title="${n} necesarias">${n}</b></a>`;
+    }));
+  const nav = document.getElementById("tabs");
+  nav.innerHTML = items.join("");
+  const cur = nav.querySelector('[aria-current="page"]');
+  if (cur) nav.scrollLeft = Math.max(0, cur.offsetLeft - (nav.clientWidth - cur.offsetWidth) / 2);
+}
+
+function portada() {
+  const total = H.length;
+  const porGrupo = g => H.filter(h => grupoDe(h) === g);
+  const lotesPend = D.lotes.filter(l => l.estado === "pendiente");
+  const barra = ORDEN.map(k => { const n = cuenta(H, k); return n ? `<span class="k-${k}" style="flex:${n};background:var(--kc)" title="${K[k].n}: ${n}"></span>` : ""; }).join("");
+  const tiles = Object.entries(G).map(([g, m]) => {
+    const l = porGrupo(g);
+    const subs = ORDEN.filter(k => K[k].g === g).map(k => `<span class="chip k-${k} ${k === "ver" || k === "sin" ? k : ""}">${K[k].n} · ${cuenta(l, k)}</span>`).join("");
+    return `<div class="group ${g}"><div class="num">${l.length}</div><h3>${m.n}</h3><p>${m.d}</p><div class="subs">${subs}</div></div>`;
+  }).join("");
+
+  const cols = [["nec"], ["y22"], ["dat", "dec"], ["red"], ["men"], ["ver"], ["sin"]];
+  const colNom = ["Necesaria", "Ya en 2.2", "Decisión", "Rediseño", "Menor", "Por verificar", "Sin clasificar"];
+  const max = Math.max(...D.zonas.flatMap(z => cols.map(c => H.filter(h => h.z === z.num && c.includes(h.k)).length)));
+  const filas = D.zonas.map(z => {
+    const hz = H.filter(h => h.z === z.num);
+    const celdas = cols.map(c => {
+      const n = hz.filter(h => c.includes(h.k)).length;
+      return `<td><span class="dot k-${c[c.length - 1]} ${n ? "" : "zero"}" style="--a:${n ? Math.round(10 + 40 * n / max) : 0}">${n || "·"}</span></td>`;
+    }).join("");
+    const lts = [...new Set(hz.filter(h => h.l).map(h => h.l))].sort((a, b) => (isNaN(a) ? -1 : +a) - (isNaN(b) ? -1 : +b));
+    return `<tr data-ir="${z.slug}"><td class="zn"><a href="#${z.slug}"><span>${z.num}</span>${esc(z.corto)}</a></td>${celdas}<td class="tot">${hz.length}</td><td class="lts"><div>${lts.map(loteChip).join("") || '<span class="muted">—</span>'}</div></td></tr>`;
+  }).join("");
+  const pie = cols.map(c => `<td>${H.filter(h => c.includes(h.k)).length}</td>`).join("");
+
+  const tarjeta = l => {
+    const hs = H.filter(h => h.l === l.id);
+    const zs = [...new Set(hs.map(h => h.z))].map(n => `<a class="zchip" href="#${Z[n].slug}">${esc(Z[n].corto)}</a>`).join("");
+    const li = hs.map(h => `<li><a href="#${Z[h.z].slug}" data-ir-fila="${rowId(h)}"><span>${esc(Z[h.z].corto)}</span><span>${esc(h.t)}</span></a></li>`).join("");
+    const hecho = l.estado === "hecho";
+    return `<article class="lote ${hecho ? "hecho" : ""}" id="lote-${esc(l.id)}">
+      <div class="cab"><div class="n">${loteNum(l.id)}</div><div><h3>${esc(l.titulo)}</h3></div></div>
+      <div class="meta"><span class="estado ${hecho ? "hecho" : ""}">${hecho ? "Mergeado en 2.3" : "Pendiente · sin encolar"}</span><span>·</span><span>${l.puntos} puntos${hs.length !== l.puntos ? ` · ${hs.length} hallazgos` : ""}</span>${l.adv ? `<span class="adv">Review adversarial: ${esc(l.adv)}</span>` : ""}</div>
+      <div class="meta">${zs}</div>
+      <ul>${li}</ul>
+      <a class="pie" href="${l.url}" target="_blank" rel="noopener">${hecho ? "Ver el PR" : "Ver el encargo"} ↗</a>
+    </article>`;
+  };
+
+  const decs = D.decisiones.map(d => `<article class="dec"><h3>${esc(d.t)}</h3><p>${esc(d.d)}</p><div class="zs">${d.z.map(s => { const z = D.zonas.find(x => x.slug === s); return `<a class="zchip" href="#${s}">${esc(z.corto)}</a>`; }).join("")}</div></article>`).join("");
+  const notas = D.notas.map((n, i) => `<div class="nota ${i === D.notas.length - 1 ? "ok" : ""}"><strong>${esc(n.t)}</strong><p>${esc(n.d)}</p>${n.u ? `<a href="${n.u}" target="_blank" rel="noopener">Ver el documento ↗</a>` : ""}</div>`).join("");
+  const leyenda = ORDEN.map(k => `<div>${chip(k)}<p>${K[k].d}</p></div>`).join("");
+
+  return `
+  <div class="hero">
+    <span class="eyebrow">Yala 2.3 · revisión por vistas y consolidación</span>
+    <h1>Todo lo que encontramos, vista por vista</h1>
+    <p class="lede">Once revisiones del 7 al 9 de noviembre y una consolidación en lotes. Lo rojo es lo que hay que arreglar; lo demás espera una decisión o puede esperar.</p>
+    <div class="stats">
+      <div><strong>${total}</strong><span>hallazgos</span></div>
+      <div><strong>${D.zonas.length}</strong><span>vistas</span></div>
+      <div><strong>${lotesPend.length}</strong><span>lotes pendientes</span></div>
+      <div><strong>${D.lotes.length - lotesPend.length}</strong><span>lotes ya hechos</span></div>
+    </div>
+  </div>
+  <div class="bar" role="img" aria-label="${ORDEN.map(k => `${K[k].n} ${cuenta(H, k)}`).join(", ")}">${barra}</div>
+  <div class="groups">${tiles}</div>
+
+  <section>
+    <header><h2>Por vista y por nivel</h2><p>Toca una fila para abrir la vista.</p></header>
+    <div class="scroll"><table class="mx">
+      <thead><tr><th class="zn">Vista</th>${colNom.map(c => `<th>${c}</th>`).join("")}<th>Total</th><th style="text-align:left">Lotes</th></tr></thead>
+      <tbody>${filas}</tbody>
+      <tfoot><tr><td class="zn">Total</td>${pie}<td>${total}</td><td></td></tr></tfoot>
+    </table></div>
+  </section>
+
+  <section id="lotes">
+    <header><h2>Los lotes</h2><p>Once pendientes, en el orden de la consolidación: datos y cifras primero.</p></header>
+    <div class="hechos">${D.lotes.filter(l => l.estado === "hecho").map(tarjeta).join("")}</div>
+    <div class="lotes">${lotesPend.map(tarjeta).join("")}</div>
+  </section>
+
+  <section>
+    <header><h2>Decisiones que frenan algo</h2><p>Las que se repiten entre vistas. Cada ficha trae su lista completa.</p></header>
+    <div class="decs">${decs}</div>
+  </section>
+
+  <section>
+    <header><h2>Lo que no cuadra entre documentos</h2></header>
+    <div class="notas">${notas}</div>
+  </section>
+
+  <section>
+    <header><h2>Qué significa cada nivel</h2><p>La clasificación es la de la consolidación; no se inventó otra.</p></header>
+    <div class="legend">${leyenda}</div>
+  </section>
+
+  <footer class="pie">
+    <span>Entra cada problema priorizado y cada hallazgo secundario de las once fichas, más lo que nombran los lotes y sus tickets. No entran perfiles, eficiencia ni terminología.</span>
+    <span>Fuentes: <a href="${D.consolidacion}" target="_blank" rel="noopener">consolidación (PR 866)</a> · <a href="${PR(854)}" target="_blank" rel="noopener">lote de Panel (PR 854)</a> · <a href="${PR(855)}" target="_blank" rel="noopener">lote de Formulario (PR 855)</a> · índices (<a href="${PR(850)}" target="_blank" rel="noopener">PR 850</a>, <a href="${PR(851)}" target="_blank" rel="noopener">PR 851</a>).</span>
+  </footer>`;
+}
+
+function fila(h) {
+  const z = Z[h.z];
+  const s = SEV[h.s];
+  const izq = h.img
+    ? `<button type="button" class="mini" data-foto="${esc(h.img)}" data-pie="${esc(z.corto + " · " + h.c)}" aria-label="Ver captura de ${esc(h.c)}"><img src="${esc(h.img)}" alt="" loading="lazy"></button>`
+    : `<div class="cod">${esc(h.c)}</div>`;
+  const sev = s ? `<span class="sev"><span class="bars" aria-hidden="true">${[1, 2, 3].map(i => `<u class="${i <= s[1] ? "on" : ""}"></u>`).join("")}</span>${s[0]}</span>` : "";
+  const origen = z.prs.map(n => `<a class="o" href="${PR(n)}" target="_blank" rel="noopener">PR ${n} ↗</a>`).join("");
+  return `<article class="fila k-${h.k}" id="${rowId(h)}">
+    ${izq}
+    <div class="cuerpo">
+      <div class="l1">${chip(h.k)}${h.img ? `<span class="c">${esc(h.c)}</span>` : ""}${sev}</div>
+      <div class="texto">${esc(h.t)}</div>
+      ${h.n ? `<div class="nota-f">${esc(h.n)}</div>` : ""}
+      <div class="l3">${h.l ? loteChip(h.l) : ""}${origen}<a class="o" href="${z.ficha}" target="_blank" rel="noopener">Ficha ↗</a>${h.tk ? `<a class="o" href="${h.tk}" target="_blank" rel="noopener">Ticket ↗</a>` : ""}${h.l && !loteHecho(h.l) ? `<a class="o" href="${D.lotes.find(l => l.id === h.l).url}" target="_blank" rel="noopener">Encargo ↗</a>` : ""}</div>
+    </div>
+  </article>`;
+}
+
+function vista(z) {
+  const hz = H.filter(h => h.z === z.num).sort((a, b) => ORDEN.indexOf(a.k) - ORDEN.indexOf(b.k));
+  const imp = hz.filter(h => grupoDe(h) === "imp").length;
+  const dec = hz.filter(h => grupoDe(h) === "dec").length;
+  const barra = ORDEN.map(k => { const n = cuenta(hz, k); return n ? `<span class="k-${k}" style="flex:${n};background:var(--kc)" title="${K[k].n}: ${n}"></span>` : ""; }).join("");
+  const fotos = z.fotos.map(f => `<button type="button" class="foto" data-foto="${esc(f.src)}" data-pie="${esc(z.corto + " · problema " + f.n + " · " + f.pie)}"><img src="${esc(f.src)}" alt="Captura del problema ${f.n}" loading="lazy"><span><b>${z.num === "30" ? "PN-" : "P"}${f.n}</b> ${esc(f.pie)}</span></button>`).join("");
+  const grupos = Object.keys(G).map(g => {
+    const l = hz.filter(h => grupoDe(h) === g);
+    if (!l.length) return "";
+    return `<div class="grupo" data-g="${g}"><h2>${G[g].n} <small>${l.length}</small></h2><p>${G[g].d}</p><div class="filas">${l.map(fila).join("")}</div></div>`;
+  }).join("");
+  const botones = [["todo", "Todo", hz.length]].concat(Object.keys(G).map(g => [g, G[g].n, hz.filter(h => grupoDe(h) === g).length]).filter(b => b[2]))
+    .map(([id, n, c]) => `<button type="button" data-filtro="${id}" aria-pressed="${filtro === id}">${n} · ${c}</button>`).join("");
+  const enlaces = z.prs.map(n => `<a class="lnk" href="${PR(n)}" target="_blank" rel="noopener">PR ${n} ↗</a>`).join("") + `<a class="lnk" href="${z.ficha}" target="_blank" rel="noopener">Ficha de la zona ↗</a>`;
+  return `
+  <a class="back" href="#portada">← Portada</a>
+  <div class="zhead">
+    <div>
+      <span class="eyebrow">Zona ${z.num}</span>
+      <h1>${esc(z.largo)}</h1>
+      <p class="estado-z">${esc(z.estado)}</p>
+      <div class="links">${enlaces}</div>
+    </div>
+    <div class="zcount"><div class="imp"><strong>${imp}</strong><span>importan</span></div><div><strong>${dec}</strong><span>a decidir</span></div><div><strong>${hz.length}</strong><span>en total</span></div></div>
+  </div>
+  <div class="bar" style="margin-top:18px">${barra}</div>
+  ${fotos ? `<div class="fotos" aria-label="Capturas de los problemas">${fotos}</div>` : ""}
+  <div class="filtros" role="group" aria-label="Filtrar">${botones}</div>
+  <div id="grupos">${grupos}</div>`;
+}
+
+function aplicarFiltro() {
+  document.querySelectorAll(".grupo").forEach(el => { el.hidden = filtro !== "todo" && el.dataset.g !== filtro; });
+  document.querySelectorAll("[data-filtro]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.filtro === filtro)));
+}
+
+function render() {
+  const slug = (location.hash || "#portada").slice(1);
+  const z = D.zonas.find(x => x.slug === slug);
+  const app = document.getElementById("app");
+  tabs(z ? z.slug : "portada");
+  if (z) {
+    if (!document.querySelector(`[data-zona="${z.slug}"]`)) filtro = "todo";
+    app.innerHTML = vista(z);
+    app.dataset.zona = z.slug;
+    aplicarFiltro();
+  } else {
+    app.innerHTML = portada();
+    app.removeAttribute("data-zona");
+  }
+  if (resaltar) {
+    const el = document.getElementById(resaltar);
+    resaltar = null;
+    if (el) { el.scrollIntoView({ block: "center" }); el.classList.add("flash"); return; }
+  }
+  if (pendienteLote) {
+    const el = document.getElementById("lote-" + pendienteLote);
+    pendienteLote = null;
+    if (el) { el.scrollIntoView({ block: "start" }); return; }
+  }
+  window.scrollTo(0, 0);
+}
+let pendienteLote = null;
+
+document.addEventListener("click", e => {
+  const ir = e.target.closest("[data-ir-fila]");
+  if (ir) { resaltar = ir.dataset.irFila; if (location.hash === ir.getAttribute("href")) { e.preventDefault(); render(); } return; }
+  const lt = e.target.closest("[data-lote]");
+  if (lt) { pendienteLote = lt.dataset.lote; if (location.hash === "#portada" || location.hash === "") { e.preventDefault(); render(); } return; }
+  const tr = e.target.closest("tr[data-ir]");
+  if (tr && !e.target.closest("a")) { location.hash = tr.dataset.ir; return; }
+  const f = e.target.closest("[data-filtro]");
+  if (f) { filtro = f.dataset.filtro; aplicarFiltro(); return; }
+  const foto = e.target.closest("[data-foto]");
+  if (foto) { abrirVisor(foto.dataset.foto, foto.dataset.pie); return; }
+});
+
+const visor = document.getElementById("visor");
+function abrirVisor(src, pie) { document.getElementById("visor-img").src = src; document.getElementById("visor-pie").textContent = pie || ""; visor.hidden = false; document.getElementById("visor-cerrar").focus(); }
+function cerrarVisor() { visor.hidden = true; }
+visor.addEventListener("click", e => { if (e.target === visor || e.target.id === "visor-cerrar") cerrarVisor(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !visor.hidden) cerrarVisor(); });
+window.addEventListener("hashchange", render);
+render();
+</script>
