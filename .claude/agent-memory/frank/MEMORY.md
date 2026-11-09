@@ -7,6 +7,7 @@
 - [Diseña en lienzo antes de construir](feedback_disena_en_lienzo_antes_de_construir.md) — cita vaga de UI: 3-4 propuestas, elige él; el alcance crece.
 - [«Creo que» no es aprobación](feedback_creo_que_no_es_aprobacion.md) — si no reconoce el componente, explicar antes de borrar.
 - [Push: solo lo de la sesión](feedback_push_solo_lo_de_la_sesion.md) — lo pendiente de otros se deja y lo sube su agente.
+- [La memoria no se mueve a mano al principal](feedback_la_memoria_no_se_mueve_a_mano_al_principal.md) — se queda en el worktree; viaja con memoria_al_pr.py.
 - [Levanta sus propias reglas](feedback_jurgen_levanta_sus_reglas.md) — si te pide algo que un default tuyo prohíbe, se hace…
 - [El test se para antes del último gesto](feedback_el_test_que_se_para_antes_del_ultimo_gesto.md) — recorre hasta la confirmación final y sal por Cancelar; B5 vivió semanas.
 - [El tablero antes que el bug](feedback_el_tablero_antes_que_el_bug.md) — prefiere sanear el board antes que atacar producción.
