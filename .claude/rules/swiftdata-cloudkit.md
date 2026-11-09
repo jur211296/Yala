@@ -42,7 +42,7 @@ paths:
 
 ## Índice de reglas (112)
 
-> Este fichero son **325 KB en 112 reglas largas**. No lo leas entero: localiza la regla
+> Este fichero son **327 KB en 112 reglas largas**. No lo leas entero: localiza la regla
 > aquí y lee **solo su tramo** con `sed -n '<linea>,<linea+N>p'`.
 > Los números de línea se desplazan al editar — regenera con
 > `python3 scripts/indexar_doc.py <fichero> --apply`.
@@ -160,7 +160,7 @@ paths:
 | `L1813` | El outbox de Grupos tiene DUEÑO por fila, y la subida solo manda lo de la sesión (2026-09-28). | 7.8 KB |
 | `L1885` | El sello del claim se olvida cuando el teléfono cambia de persona (2026-09-29). | 2.4 KB |
 | `L1908` | La pantalla de la ida y la vuelta pinta pasos con su cifra, y la cifra solo INFORMA (2026-10-23). | 1.8 KB |
-| `L1926` | El drain no carga tablas ENTERAS en cada vuelta: corre en el hilo principal (2026-10-31, YALA-IOS-2). | 2.0 KB |
+| `L1926` | El drain no carga tablas ENTERAS en cada vuelta: corre en el hilo principal (2026-10-31, YALA-IOS-2). | 3.8 KB |
 
 <!-- INDICE:fin -->
 
@@ -1942,3 +1942,21 @@ LWW la que había cambiado otro teléfono ya en v5. Lo fija `CreditCardCycleSync
   en el drain o en el ciclo vuelve a congelar. Lo fijan `DrainIndexesOnlyWhatItTranslatesTests` (testigos
   `lastDrainIndexedEntities` y `lastDrainReadOutboxKeys`) y el orden barrido → fetch → índices de
   `DrainUnitClockUnreadableTests`.
+
+- **Lo que el puente de Grupos deja de más tras una pasada que no vio tus registros se limpia tras CADA sincronización,
+  de la nube y de iCloud (2026-11-09).** Bug de Jürgen (nube, un iPhone): una pasada remota del puente que no ve el
+  registro real ni el préstamo de un gasto que pagaste con cuenta crea el borrador «Elige cuenta» y otro «Préstamo a
+  grupos»; ya pasaba en 2.1. La única limpieza escuchaba `.transactionsImportedFromSync` (solo iCloud) y solo quitaba el
+  borrador. Ahora `GroupBridgeRaceCleaner.convergeAfterSync` corre también tras `.cloudSyncAppliedRemoteChanges`, con la
+  quiescencia de cada almacén (`StorageModeSignalRouter`), y la decisión es pura (`GroupBridgeLeftoverLogic`). Cuatro cosas
+  que no se tocan sin reabrirlo: (1) **una pata sin cuenta no prueba nada**, ni registro real ni préstamo: es el estado
+  en que la pasada remota se equivoca; (2) **el superviviente de los préstamos repetidos es el MÁS NUEVO y, empate, el
+  menor `syncID`** (la regla de «fundir duplicados que llegan de dos dispositivos»): cada pasada del puente borra el
+  préstamo que ve y crea otro, así que quedarse con el viejo borraba el que la última pasada conserva y, con el borrado
+  del viejo llegando después, dejaba el gasto sin ninguno (review adversarial). Con importes o divisas distintos no se
+  toca ninguno, y las hojas «Elige cuenta» no leen un borrador ya borrado (la limpieza puede llegar con la hoja abierta); (3) **la automática solo toca lo nacido desde el primer arranque con el arreglo** (sello por teléfono
+  `groupBridge.leftoverAutoSince`, decisión de Jürgen): lo anterior lo quita la persona desde el aviso de la Bandeja,
+  viendo qué y confirmando; (4) **el disparador no está aislado** (candidatos: el eco del pull personal que re-aplica la
+  cuenta o resucita una fila borrada, y un re-puente sobre un almacén personal sin sus filas); el canario
+  `groupBridgeLeftoversRemoved` lo mide en la flota. Un emisor nuevo de «llegaron filas personales» engancha la
+  limpieza. Lo fijan `GroupBridgeRemotePassBlindTests` y `GroupBridgeLeftoversUITests` (seed `grupos-repetidos`).

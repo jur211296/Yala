@@ -7825,3 +7825,16 @@
 "groups.expense.success.titleSaleCreated" = "Sale added!";
 "groups.expense.success.titleSaleUpdated" = "Sale updated!";
 "bulkEdit.cannotEditSplitRecipeCategory" = "One of the selected records has your portion split into lines, and its category comes from them. Change it from ‘Split your portion’ in its details.";
+
+/* Bandeja · gastos de grupo repetidos (bug 2026-11-09) */
+"inbox.groupLeftovers.bannerTitle" = "Repeated group expenses";
+"inbox.groupLeftovers.bannerMessage" = "They're already in your records with their account, but an extra draft or «Loan to groups» was left behind.";
+"inbox.groupLeftovers.bannerAction" = "Review and remove the extras";
+"inbox.groupLeftovers.intro" = "These group expenses are already in your records with their account. The list shows what's extra. Your records with an account and the group's expenses don't change.";
+"inbox.groupLeftovers.extraDrafts" = "Extra drafts: %d";
+"inbox.groupLeftovers.extraLoans" = "Repeated «Loan to groups»: %d";
+"inbox.groupLeftovers.remove" = "Remove the extras";
+"inbox.groupLeftovers.confirmTitle" = "Remove the extras?";
+"inbox.groupLeftovers.confirmMessage" = "The drafts and loans in the list will be removed. Your records with an account and the group's expenses stay as they are.";
+"inbox.groupLeftovers.confirmAction" = "Remove";
+"inbox.groupLeftovers.failed" = "Couldn't remove them. Try again.";

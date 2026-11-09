@@ -96,6 +96,9 @@ enum DevSeedProfile: String {
     /// Un gasto de grupo en la Bandeja cuyo grupo no está en este teléfono, como lo deja «Sumarlos a mis datos» al
     /// volver a iCloud. Ver `DevSeedGroupRowsWithoutGroup.createForeignGroupDraft`.
     case gastoDeGrupoSinSuGrupo = "gasto-de-grupo-sin-su-grupo"
+    /// El estado del bug del 2026-11-09: dos gastos de grupo pagados con cuenta a los que una pasada ciega del puente dejó
+    /// un borrador «Elige cuenta» y el «Préstamo a grupos» repetido. Ver `DevSeedGroupBridgeLeftovers`.
+    case gruposRepetidos = "grupos-repetidos"
     /// `.movimientosSinCuenta` más la pata real de una cena de grupo pagada desde «Efectivo QA». Ver
     /// `DevSeedGroupRowsWithoutGroup.createGroupLegWithoutAccount`.
     case pataDeGrupoSinCuenta = "pata-de-grupo-sin-cuenta"
@@ -129,7 +132,7 @@ enum DevSeedProfile: String {
         case .minimal, .grupos, .gruposInvitado, .gruposSaldado, .soloGrupos, .deadPointer,
              .gruposSinFlag, .gruposPendiente, .soloGruposTrasAviso, .sinRegistros, .sinCategorias,
              .sinCategoriasConGrupos, .fichaMX,
-             .cuentaConMovimientos, .movimientosSinCuenta, .gastoDeGrupoSinSuGrupo, .pataDeGrupoSinCuenta,
+             .cuentaConMovimientos, .movimientosSinCuenta, .gastoDeGrupoSinSuGrupo, .gruposRepetidos, .pataDeGrupoSinCuenta,
              .tarjetaDosLineas, .cuentasDeGrupos, .tarjetaCorte, .unaCuenta, .formulario: return 7
         case .fichaMXVida: return 365
         case .realista, .ficha, .rendimiento: return 730
@@ -172,6 +175,15 @@ final class DevSeedService {
         // más arriba, en `applyUITestSeed`.
         if profile == .deadPointer {
             seedDeadPointerFixtures(in: context)
+            return
+        }
+        if profile == .gruposRepetidos {
+            defer { isSeeding = false }
+            seedCategoriesIfNeeded(in: context)
+            DevSeedGroupBridgeLeftovers.create(in: context)
+            UserDefaults.standard.set(true, forKey: "devSeedDataExecuted")
+            hasSeeded = true
+            SessionState.shared.incrementDataVersion()
             return
         }
         if profile == .gastoDeGrupoSinSuGrupo {

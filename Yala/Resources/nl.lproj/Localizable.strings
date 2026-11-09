@@ -8593,3 +8593,16 @@
 "groups.expense.success.titleSaleCreated" = "Verkoop toegevoegd!";
 "groups.expense.success.titleSaleUpdated" = "Verkoop bijgewerkt!";
 "bulkEdit.cannotEditSplitRecipeCategory" = "Bij een van de geselecteerde boekingen is jouw deel in regels opgesplitst, en de categorie komt daaruit. Wijzig die via ‘Jouw deel opsplitsen’ in de details.";
+
+/* Bandeja · gastos de grupo repetidos (bug 2026-11-09) */
+"inbox.groupLeftovers.bannerTitle" = "Dubbele groepsuitgaven";
+"inbox.groupLeftovers.bannerMessage" = "Ze staan al met hun rekening in je transacties, maar er bleef een concept of een «Lening aan groepen» te veel over.";
+"inbox.groupLeftovers.bannerAction" = "Bekijken en dubbele verwijderen";
+"inbox.groupLeftovers.intro" = "Deze groepsuitgaven staan al met hun rekening in je transacties. In de lijst staat wat te veel is. Je transacties met rekening en de uitgaven van de groep veranderen niet.";
+"inbox.groupLeftovers.extraDrafts" = "Concepten te veel: %d";
+"inbox.groupLeftovers.extraLoans" = "Dubbele «Lening aan groepen»: %d";
+"inbox.groupLeftovers.remove" = "Dubbele verwijderen";
+"inbox.groupLeftovers.confirmTitle" = "Dubbele verwijderen?";
+"inbox.groupLeftovers.confirmMessage" = "De concepten en leningen uit de lijst worden verwijderd. Je transacties met rekening en de uitgaven van de groep blijven zoals ze zijn.";
+"inbox.groupLeftovers.confirmAction" = "Verwijderen";
+"inbox.groupLeftovers.failed" = "Verwijderen lukte niet. Probeer het opnieuw.";

@@ -626,6 +626,13 @@ struct InboxView: View {
                 .padding(.top, DS.Spacing.sm)
                 .padding(.bottom, DS.Spacing.md)
 
+            // Gastos de grupo a los que les sobra un borrador o un préstamo (bug del 2026-11-09): se quitan aquí, viendo qué.
+            if !isSelectionMode && selectedFilter == .pending {
+                GroupBridgeLeftoversNotice(count: viewModel.groupLeftoverCount) { viewModel.loadData() }
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.bottom, viewModel.groupLeftoverCount > 0 ? DS.Spacing.sm : DS.Spacing.none)
+            }
+
             // Lo común —guardar lo que ya está listo— a un toque (UX 2.2 · L4-7). Antes eran cuatro: ✓,
             // Seleccionar todo, Editar y Aprobar.
             if !isSelectionMode && selectedFilter == .pending && readyDrafts.count >= 2 {
@@ -800,7 +807,7 @@ struct InboxView: View {
     private func draftRow(for draft: InboxDraft) -> some View {
         InboxDraftRowView(
             draft: draft,
-            currencyCode: draft.displayCurrencyCode ?? appPreferences.defaultCurrencyCode.rawValue,
+            currencyCode: viewModel.displayCurrencyCode(for: draft, fallback: appPreferences.defaultCurrencyCode.rawValue),
             isSelectionMode: isSelectionMode,
             isSelected: selectedDraftIDs.contains(draft.persistentModelID),
             onTap: {
