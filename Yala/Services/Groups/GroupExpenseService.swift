@@ -224,6 +224,162 @@ final class GroupExpenseService {
         }
     }
 
+    // MARK: - Pasar un registro personal a un grupo (2.3)
+
+    #if DEBUG
+    /// Seam de tests: el guardado final de la conversión falla después de que el puente haya escrito, para medir el
+    /// `rollback()` (`docs/aprendizajes-tecnicos.md`, «`context.rollback()` aborta la app…»). Estático: resetéalo en `defer`.
+    static var _testFailConversionSave = false
+    #endif
+
+    /// Si un registro se puede pasar a un grupo desde su editor (`PersonalToGroupConversionLogic`).
+    static func conversionVerdict(for transaction: TransactionItem) -> PersonalToGroupConversionLogic.Verdict {
+        guard !transaction.isDeleted, transaction.modelContext != nil else { return .notOffered }
+        let account = transaction.account
+        let hasGroupPointer = transaction.splitExpenseID != nil || transaction.splitSettlementID != nil
+            || transaction.splitGroupZoneID != nil
+        return PersonalToGroupConversionLogic.verdict(
+            PersonalToGroupConversionLogic.Record(
+                amount: transaction.amount,
+                categoryIsIncome: transaction.category?.isIncome,
+                hasGroupPointer: hasGroupPointer,
+                isDerivedGroupLeg: GroupSplitLinesBridgeLogic.isDerivedMarker(transaction.splitLinesRaw)
+                    || GroupCollectedLegLogic.isBridgeWrittenSaleLeg(
+                        adjustmentType: transaction.balanceAdjustmentType, splitLinesRaw: transaction.splitLinesRaw),
+                isTransfer: transaction.transferPairID != nil,
+                isBalanceAdjustment: transaction.balanceAdjustmentType != nil,
+                hasAccount: account != nil,
+                accountIsSystem: account?.isSystemAccount == true,
+                accountIsArchived: account?.isArchived == true,
+                accountCurrencyMatches: account?.currencyCode == transaction.currencyCode,
+                usesPersonalSplit: transaction.splitTotalAmount != nil || transaction.splitMyValue != nil,
+                isGroupPaymentRecord: transaction.approvedDraft?.sourceType == .groupSettlement,
+                isConservedFromDetach: GroupsDetachedBridgeLedger.claimsMovement(transaction)
+            ),
+            hasPrivateSession: SessionState.shared.hasPrivateSession
+        )
+    }
+
+    /// Pasa un gasto personal ya registrado a un grupo: crea el gasto (pagaste tú, con el importe, la moneda y la fecha
+    /// del registro) y el registro pasa a ser su pata real, como al enlazar un movimiento desde la Bandeja
+    /// (`DraftService.linkGroupExpenseDraft`, L13-15). El puente lo conserva (preserve+update: cuenta, nota, etiquetas,
+    /// necesidad y subcategoría intactas, importe y fecha iguales) y solo añade el «Préstamo a grupos» de lo que te deben.
+    /// No queda un segundo gasto en tus cuentas ni en el grupo.
+    ///
+    /// **Un solo guardado.** Lo pendiente del contexto se guarda ANTES de empezar, así que un fallo a mitad (del puente o
+    /// del guardado) se deshace con `rollback()` sin llevarse ediciones ajenas: no hay `await` entre ese guardado y el
+    /// `rollback()`. El registro queda como estaba y no queda un gasto a medias.
+    ///
+    /// **Un registro que ya apunta a un gasto no se vuelve a pasar**: falla sin tocar nada, sea el mismo grupo o no. El
+    /// doble toque lo corta antes el formulario (`GroupExpenseViewModel.save`, que no vuelve a llamar tras convertir);
+    /// aquí llega solo un registro enlazado por OTRO camino (otra ventana, la Bandeja), y devolver ese gasto como si fuera
+    /// el nuevo descartaría en silencio el reparto que la persona acaba de elegir.
+    ///
+    /// Sin borrador en la Bandeja al convertir: el puente corre con `withSkippedDraftCleanup`, como el enlace de L13-15.
+    /// Un registro sin categoría, con el gasto también sin ella, puede volver a pedirla en un re-puente posterior (una
+    /// edición del grupo, el otro dispositivo), igual que cualquier gasto de grupo sin categoría.
+    @discardableResult
+    func convertPersonalTransaction(
+        _ transaction: TransactionItem,
+        to group: SplitGroup,
+        description: String,
+        subcategoryName: String?,
+        splitType: String,
+        shares: [(memberID: String, amount: Double)]
+    ) throws -> SplitExpense {
+        let context = try requireContext()
+
+        // Antes de leer nada del registro: borrado con la revisión abierta (otro dispositivo), leerlo aborta en iOS 27.x.
+        guard !transaction.isDeleted, transaction.modelContext != nil else { throw GroupExpenseServiceError.notConvertible }
+        guard !group.isDeleted, group.modelContext != nil else { throw GroupExpenseServiceError.groupUnavailable }
+        guard Self.conversionVerdict(for: transaction) == .eligible,
+              let account = transaction.account else { throw GroupExpenseServiceError.notConvertible }
+
+        let amount = abs(transaction.amount)
+        guard amount > 0 else { throw GroupExpenseServiceError.invalidAmount }
+        guard !shares.isEmpty else { throw GroupExpenseServiceError.noShares }
+        try validateSharesSum(shares, amount: amount)
+        guard !group.isHiddenForAll, !group.isArchived else { throw GroupExpenseServiceError.groupUnavailable }
+        try validateCurrentUserCanWrite(in: group)
+        // El pagador es quien pasa el registro: el dinero salió de su cuenta.
+        guard let me = try Self.resolveCurrentUserMember(inZone: group.cloudKitZoneID, context: context),
+              me.isActive else { throw GroupExpenseServiceError.inactiveMember }
+        let myID = me.id.uuidString
+        try validateMembersAreSelectable(
+            in: group, memberIDs: Set(shares.map(\.memberID) + [myID]), additionalAllowedMemberIDs: [])
+        // Sin puente que pueda atenderlo, el gasto existiría sin su registro: se cuenta dos veces o ninguna.
+        guard GroupTransactionBridge.shared.isReady, GroupTransactionBridge.isDomainOpenForBridge() else {
+            throw GroupExpenseServiceError.bridgeUnavailable
+        }
+        // Una categoría de ingreso haría del gasto una venta, y el puente borraría el registro (Grupos B · card 8).
+        if let matched = GroupTransactionBridge.matchSubcategory(name: subcategoryName, context: context),
+           !matched.isAnySystem, matched.safeCategory.isIncome {
+            throw GroupExpenseServiceError.notConvertible
+        }
+
+        // Las categorías de sistema de Grupos («Préstamo a grupos»), sembradas ANTES de escribir: su siembra guarda el
+        // contexto entero, y la primera vez en un teléfono la hacía el puente a mitad de la conversión, dejando el gasto y
+        // el enlace en disco aunque el guardado final fallara (medido con `_testFailConversionSave`).
+        seedSystemGroupCategoriesIfNeeded(in: context)
+        if context.hasChanges {
+            do { try context.save() } catch { throw GroupExpenseServiceError.saveFailed(error) }
+        }
+
+        let expense = SplitExpense(
+            groupZoneID: group.cloudKitZoneID,
+            amount: amount,
+            currencyCode: transaction.currencyCode,
+            expenseDescription: description,
+            note: nil,
+            date: transaction.date,
+            paidByMemberID: myID,
+            splitType: splitType,
+            subcategoryName: subcategoryName
+        )
+        expense.lastEditedByMemberID = currentUserMemberID(in: group)
+        context.insert(expense)
+        for share in shares {
+            context.insert(SplitShare(
+                expenseID: expense.id, memberID: share.memberID, amount: share.amount, groupZoneID: group.cloudKitZoneID))
+        }
+        let expenseID = expense.id.uuidString
+        transaction.splitExpenseID = expenseID
+        transaction.splitGroupZoneID = group.cloudKitZoneID
+        transaction.splitTotalAmount = amount
+        transaction.splitType = splitType
+
+        do {
+            let attended = try GroupTransactionBridge.shared.withSkippedDraftCleanup {
+                try GroupTransactionBridge.shared.bridgeExpense(
+                    expense, in: group, accountForCurrentUser: account, isRemoteSync: false, shouldSave: false)
+            }
+            // El registro tiene que seguir siendo la pata real: si el puente lo hubiera retirado, guardar lo borraría.
+            guard attended, !transaction.isDeleted, transaction.splitExpenseID == expenseID,
+                  transaction.account?.persistentModelID == account.persistentModelID else {
+                context.rollback()
+                throw GroupExpenseServiceError.bridgeUnavailable
+            }
+            #if DEBUG
+            if Self._testFailConversionSave { throw CocoaError(.fileWriteUnknown) }
+            #endif
+            try context.save()
+        } catch let error as GroupExpenseServiceError {
+            throw error
+        } catch {
+            #if DEBUG
+            print("GroupExpenseService: Error: converting a personal record to a group expense: \(error)")
+            #endif
+            context.rollback()
+            throw GroupExpenseServiceError.saveFailed(error)
+        }
+
+        requestSyncAfterLocalSave()
+        SessionState.shared.incrementDataVersion()
+        WidgetDataCache.updateCache(context: context)
+        Task { await BudgetAlertService.shared.checkBudgetsAndNotify() }
+        return expense
+    }
+
     /// Delete an expense and its shares.
     func deleteExpense(_ expense: SplitExpense, in group: SplitGroup) throws {
         let context = try requireContext()
@@ -900,6 +1056,12 @@ enum GroupExpenseServiceError: LocalizedError {
     case invalidOpeningBalanceMembers
     /// G6-3: el grupo se migró a la nube de Yala y está congelado en este device — hay que volver a entrar.
     case movedToBackend
+    /// El registro ya no se puede pasar a un grupo (ya es de otro grupo, cambió o dejó de ser un gasto personal).
+    case notConvertible
+    /// El grupo se eliminó o se archivó con la revisión abierta.
+    case groupUnavailable
+    /// El puente no puede atender el gasto ahora (Grupos cerrado en este dispositivo, o tu miembro aún sin resolver).
+    case bridgeUnavailable
     case saveFailed(Error)
 
     /// Lo que ve la persona. Los casos de programación (contexto, importes, repartos) y el fallo al
@@ -931,6 +1093,8 @@ enum GroupExpenseServiceError: LocalizedError {
             return L10n.Groups.OpeningBalance.errorSameMember
         case .movedToBackend:
             return L10n.Groups.Errors.movedToBackend
+        case .notConvertible, .groupUnavailable, .bridgeUnavailable:
+            return L10n.Groups.Errors.actionFailed
         case .saveFailed:
             return L10n.Groups.Errors.actionFailed
         }

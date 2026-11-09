@@ -103,6 +103,14 @@ struct NewTransactionView: View {
     /// otra moneda al elegir la cuenta. Lo decide `AmountCurrencyNoticeLogic`.
     @State private var amountCurrencyNotice: AmountCurrencyNotice?
 
+    // MARK: «Convertir a gasto compartido» (2.3)
+
+    /// Si el registro guardado se puede pasar a un grupo; lo resuelve el `onAppear` (`resolveGroupConversion`).
+    @State private var groupConversionVerdict: PersonalToGroupConversionLogic.Verdict = .notOffered
+    /// Los grupos donde puedes apuntar un gasto. Vacío ⇒ no se ofrece.
+    @State private var groupConversionGroups: [SplitGroup] = []
+    @State private var groupConversionRequest: PersonalToGroupConversionRequest?
+
     // Prefill parameters
     let prefillAccountID: PersistentIdentifier?
     let prefillCategoryID: PersistentIdentifier?
@@ -691,6 +699,7 @@ struct NewTransactionView: View {
             .sheet(isPresented: $viewModel.showSplitCalculator) {
                 splitCalculatorSheetContent
             }
+            .personalToGroupConversionFlow($groupConversionRequest, onFinished: afterGroupConversion)
             .modifier(NewTransactionClosePresentations(
                 hasUnsavedInput: hasUnsavedInput,
                 showDiscardAlert: $showDiscardAlert,
@@ -721,6 +730,7 @@ struct NewTransactionView: View {
             resolveBridgedPointer()
             resolveCategoryOpensSplit()
             loadPendingGroupDraftIfNeeded()
+            resolveGroupConversion()
             openAsDuplicateIfAsked()
             // Force expense type in expenses-only mode
             if sessionState.isExpensesOnlyMode {
@@ -965,6 +975,8 @@ struct NewTransactionView: View {
             // Quick actions bar
             quickActionsBar
                 .padding(.top, compact ? DS.Spacing.none : DS.Spacing.lg)
+
+            groupConversionEntry
         }
         .onChange(of: viewModel.selectedSubcategory) { _, newSubcategory in
             // Sync nature when subcategory changes
@@ -1203,6 +1215,105 @@ struct NewTransactionView: View {
                 }
                 .accessibilityIdentifier("new_transaction_recurring_action")
             }
+        }
+    }
+
+    // MARK: - Convertir a gasto compartido (2.3)
+
+    /// «Convertir a gasto compartido», bajo las acciones: solo al editar un gasto personal guardado y con un grupo donde
+    /// apuntarlo (`PersonalToGroupConversionLogic`). Con «Mi parte» o con cambios sin guardar se ve apagado y dice por qué.
+    /// No va en la fila de acciones: con Duplicar, Eliminar, Mi parte, Favorito y Recurrente una sexta no cabe en un
+    /// iPhone SE.
+    @ViewBuilder
+    private var groupConversionEntry: some View {
+        if isEditingSavedRecord, !isBridgedReadOnly, groupConversionVerdict != .notOffered,
+           !groupConversionGroups.isEmpty, viewModel.transactionType == .expense {
+            // Lo sin guardar primero: el veredicto se leyó del registro GUARDADO, así que quien acaba de quitar «Mi parte»
+            // tiene que guardar, no quitarla otra vez.
+            let hint: String? = hasUnsavedInput
+                ? L10n.Groups.Convert.saveFirstHint
+                : (groupConversionVerdict == .blockedByPersonalSplit ? L10n.Groups.Convert.personalSplitHint : nil)
+            VStack(spacing: DS.Spacing.xs) {
+                Button {
+                    startGroupConversion()
+                } label: {
+                    Label(L10n.Inbox.convertToShared, systemImage: "person.2")
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(hint == nil ? AnyShapeStyle(.thAccentText) : AnyShapeStyle(.tertiary))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, DS.Spacing.sm)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .disabled(hint != nil)
+                .accessibilityIdentifier("new_transaction_convert_to_group")
+                if let hint {
+                    Text(hint)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .accessibilityIdentifier("new_transaction_convert_to_group_hint")
+                }
+            }
+            .padding(.top, DS.Spacing.sm)
+        }
+    }
+
+    /// Una vez al abrir: si el registro se puede pasar a un grupo y a cuáles. Un fallo al leer los grupos no ofrece nada.
+    private func resolveGroupConversion() {
+        guard isEditingSavedRecord, let tx = readableTransactionToEdit else {
+            groupConversionVerdict = .notOffered
+            return
+        }
+        groupConversionVerdict = GroupExpenseService.conversionVerdict(for: tx)
+        guard groupConversionVerdict != .notOffered else { return }
+        do {
+            groupConversionGroups = try GroupService.shared.eligibleGroupsForExpense(context: modelContext)
+        } catch {
+            #if DEBUG
+            print("NewTransactionView: Error: fetching groups for the conversion: \(error)")
+            #endif
+            groupConversionGroups = []
+        }
+    }
+
+    /// Los grupos se vuelven a leer al tocar: con el editor abierto te pudieron sacar de uno, y su fila ya no existe.
+    private func startGroupConversion() {
+        guard let tx = readableTransactionToEdit,
+              GroupExpenseService.conversionVerdict(for: tx) == .eligible else { return }
+        do {
+            groupConversionGroups = try GroupService.shared.eligibleGroupsForExpense(context: modelContext)
+        } catch {
+            #if DEBUG
+            print("NewTransactionView: Error: refetching groups for the conversion: \(error)")
+            #endif
+            groupConversionGroups = []
+        }
+        guard !groupConversionGroups.isEmpty else { return }
+        dismissKeyboard()
+        groupConversionRequest = PersonalToGroupConversionRequest(transaction: tx, groups: groupConversionGroups)
+    }
+
+    /// Al cerrar la revisión: si se pasó, el editor se cierra (el registro ya es del grupo) y sale el aviso con «Ver»;
+    /// si se canceló, el editor sigue igual y el registro no cambió. «Ver» va por el router, como el «Abrir grupo» del
+    /// aviso de un registro de grupo (`handleBridgedCTA`): el editor puede venir de otra hoja (la Bandeja, el flujo de
+    /// caja), y cambiar de pestaña por debajo de ella no se vería.
+    private func afterGroupConversion(_ group: SplitGroup?) {
+        // Sin háptico aquí: la revisión ya vibró al guardar (`GroupExpenseFormView.handleSave`).
+        guard let group else { return }
+        let zoneID = group.cloudKitZoneID
+        let name = group.name
+        dismiss()
+        DraftDiscardUndoNotice.show(
+            message: L10n.Groups.Convert.done(name),
+            systemImage: "person.2",
+            undoTitle: L10n.Inbox.movedToGroupView,
+            noticeIdentifier: "record_converted_to_group_notice",
+            undoIdentifier: "record_converted_to_group_view"
+        ) {
+            RouterEntryGate.shared.submit(.navigate(.groupDetail(groupID: zoneID)))
         }
     }
 

@@ -16,7 +16,7 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (36 entradas)
+## Índice (38 entradas)
 
 > **No hace falta leer este fichero entero** — son 212 KB. Localiza la entrada
 > aquí y salta a ella.
@@ -41,6 +41,7 @@
 - `—` [`xcodebuild test` REINSTALA la app del simulador: el QA que corres después del gate no mira tu](#xcodebuild-test-reinstala-la-app-del-simulador-el-qa-que-corres-despus-del-gate-no-mira-tu)
 - `—` [El árbol de accesibilidad del simulador se degrada tras muchos ciclos launch/stop y solo lo cura](#el-rbol-de-accesibilidad-del-simulador-se-degrada-tras-muchos-ciclos-launchstop-y-solo-lo-cura)
 - `2026-11-05` [`context.rollback()` aborta la app con un campo cambiado antes de un borrado + inserción enlazados (](#contextrollback-aborta-la-app-con-un-campo-cambiado-antes-de-un-borrado--insercin-enlazados-2026-11-05)
+- `2026-11-09` [Un `shouldSave: false` del puente de Grupos no impide que se guarde a mitad (2026-11-09)](#un-shouldsave-false-del-puente-de-grupos-no-impide-que-se-guarde-a-mitad-2026-11-09)
 - `2026-10-26` [Sentry: el `userInfo` de un NSError y la IP de envío se saltan el `sendDefaultPii` (2026-10-26)](#sentry-el-userinfo-de-un-nserror-y-la-ip-de-envo-se-saltan-el-senddefaultpii-2026-10-26)
 - `2026-10-22` [El idioma por app de iOS solo sale si el iPhone tiene más de un idioma (2026-10-22)](#el-idioma-por-app-de-ios-solo-sale-si-el-iphone-tiene-ms-de-un-idioma-2026-10-22)
 - `2026-10-21` [Abrir la página de la app en Atajos desde un botón propio: no hay URL, y `ShortcutsUIButton` no se d](#abrir-la-pgina-de-la-app-en-atajos-desde-un-botn-propio-no-hay-url-y-shortcutsuibutton-no-se-dispara-por-cdigo-2026-10-21)
@@ -671,3 +672,14 @@ deshacer un guardado fallido (ticket `save-error-alert-lies-when-the-context-aut
 `rollback()` en un camino que mezcla ediciones, borrados e inserciones relacionadas, mide ese camino exacto con un
 guardado que falla** (un seam que sustituya al `save()`); que otros `rollback()` del repo funcionen no lo garantiza. Los
 existentes (`AccountRemovalService`, la edición masiva de `RecordsViewModel`) no se han medido con esta forma.
+
+### Un `shouldSave: false` del puente de Grupos no impide que se guarde a mitad (2026-11-09)
+
+Medido con un guardado final forzado a fallar (`GroupExpenseService._testFailConversionSave`): la primera vez que el
+teléfono necesita «Préstamo a grupos», `GroupBridgeSystemEntities.systemSubcategory` siembra las categorías de sistema con
+`seedSystemGroupCategoriesIfNeeded`, que hace `context.save()` del contexto entero. Lo que el llamador llevaba sin guardar
+—el gasto, sus repartos, el enlace del registro— queda en disco aunque luego falle y haga `rollback()`. ⇒ **quien use el
+puente con `shouldSave: false` para guardar todo junto siembra antes de escribir** (`convertPersonalTransaction`). El
+resto de llamadores sigue expuesto: ticket `group-system-category-seed-saves-the-context-mid-bridge`. Y el `rollback()` de
+ese camino (registro editado, gasto, repartos y préstamo insertados, «Grupos» desarchivada) NO aborta: medido en las dos
+formas, a diferencia del de la sección anterior.

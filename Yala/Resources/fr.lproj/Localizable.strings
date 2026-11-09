@@ -8762,3 +8762,9 @@
 
 /* Alert message: the section's widgets go back to how they came (which show, order and size) */
 "panel.sectionPrefs.reset.message" = "Ses widgets reviennent à leur état d’origine : lesquels s’affichent, dans quel ordre et à quelle taille.";
+
+/* «Convertir a gasto compartido» desde Editar de un registro (2.3) */
+"groups.convert.done" = "C’est maintenant une dépense de « %@ »";
+"groups.convert.notice" = "Ton opération reste dans %@ et devient cette dépense du groupe : si elle change ou est supprimée dans le groupe, elle change aussi dans tes opérations.";
+"groups.convert.personalSplitHint" = "Pour la transformer en dépense partagée, retire « Ma part » : cette opération ne garde que ta part.";
+"groups.convert.saveFirstHint" = "Enregistre tes modifications pour la transformer en dépense partagée.";

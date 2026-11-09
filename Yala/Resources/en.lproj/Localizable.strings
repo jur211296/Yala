@@ -8767,3 +8767,9 @@
 
 /* Alert message: the section's widgets go back to how they came (which show, order and size) */
 "panel.sectionPrefs.reset.message" = "Its widgets go back to how they came: which ones show, in what order and at what size.";
+
+/* «Convertir a gasto compartido» desde Editar de un registro (2.3) */
+"groups.convert.done" = "Now an expense in “%@”";
+"groups.convert.notice" = "Your record stays in %@ and becomes this group expense: if it changes or is deleted in the group, it changes in your records too.";
+"groups.convert.personalSplitHint" = "To turn it into a shared expense, remove “My share”: this record only keeps your share.";
+"groups.convert.saveFirstHint" = "Save your changes to turn it into a shared expense.";

@@ -86,6 +86,10 @@ struct GroupExpenseFormView: View {
     /// Flujos manuales (default `true`) muestran `GroupExpenseSuccessView` tras guardar (crear/editar).
     /// Los flujos de Inbox pasan `false` para conservar su cierre directo con su propia semántica.
     let presentsSuccessScreen: Bool
+    /// «Convertir a gasto compartido» desde Editar de un registro (2.3): el registro que pasa a ser este gasto. Con él,
+    /// importe, moneda, fecha, cuenta y pagador quedan fijos (son los del registro) y no hay «¿Lo registramos?»: el
+    /// registro ya existe. Requiere `initialTemplate`.
+    let conversionSource: TransactionItem?
 
     // MARK: - State
 
@@ -162,6 +166,7 @@ struct GroupExpenseFormView: View {
         onSave: @escaping () -> Void,
         onExpenseCreated: ((String) -> Void)? = nil,
         presentsSuccessScreen: Bool = true,
+        conversionSource: TransactionItem? = nil,
         onDelete: ((SplitExpense) -> Void)? = nil
     ) {
         self.group = group
@@ -175,6 +180,7 @@ struct GroupExpenseFormView: View {
         self.onSave = onSave
         self.onExpenseCreated = onExpenseCreated
         self.presentsSuccessScreen = presentsSuccessScreen
+        self.conversionSource = conversionSource
         self.onDelete = onDelete
 
         let vm = GroupExpenseViewModel(group: group, members: members, memberNameLookup: memberNameLookup)
@@ -224,6 +230,25 @@ struct GroupExpenseFormView: View {
         .accessibilityIdentifier("group_expense_notice")
     }
 
+    /// Al pasar un registro: qué pasa con él. Se queda en su cuenta y desde ahora es este gasto del grupo.
+    private var conversionNotice: some View {
+        HStack(alignment: .top, spacing: DS.Spacing.sm) {
+            Image(systemName: "info.circle.fill")
+                .foregroundStyle(.thAccentText)
+                .accessibilityHidden(true)
+            Text(L10n.Groups.Convert.notice(viewModel.selectedAccount?.name ?? ""))
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.thPrimaryText)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(DS.Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .solidCard(padding: 0, radius: DS.Radius.lg)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("group_expense_conversion_notice")
+    }
+
     private var formView: some View {
         NavigationStack {
             // Registro unificado (opción A, 2026-10-31): el mismo molde que Nuevo registro. Arriba, en el sitio del control
@@ -247,6 +272,12 @@ struct GroupExpenseFormView: View {
 
                         groupContextChip
                             .padding(.top, DS.Spacing.sm)
+
+                        if viewModel.isConversion {
+                            conversionNotice
+                                .padding(.horizontal, DS.Spacing.lg)
+                                .padding(.top, DS.Spacing.lg)
+                        }
 
                         Spacer(minLength: DS.Spacing.xl)
 
@@ -296,6 +327,7 @@ struct GroupExpenseFormView: View {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
+                    .accessibilityIdentifier("group_expense_close")
                 }
                 if viewModel.isEditMode, onDelete != nil {
                     ToolbarItem(placement: .topBarTrailing) {
@@ -366,6 +398,8 @@ struct GroupExpenseFormView: View {
                     didInitialPrefill = true
                     if let expense = expenseToEdit {
                         viewModel.prefill(from: expense, shares: existingShares)
+                    } else if let source = conversionSource, let template = initialTemplate {
+                        viewModel.applyConversion(from: source, template: template)
                     } else if let template = initialTemplate {
                         viewModel.applyTemplate(template)
                     }
@@ -413,8 +447,9 @@ struct GroupExpenseFormView: View {
                 SubcategorySelectorSheet(
                     selectedSubcategory: $viewModel.selectedSubcategory,
                     transactionType: .expense,
-                    // Grupos B · card 7: también las de ingreso (una venta).
-                    offersIncome: true,
+                    // Grupos B · card 7: también las de ingreso (una venta). No al pasar un registro: es un gasto, y una
+                    // venta haría que el puente lo retirara de tus cuentas.
+                    offersIncome: !viewModel.isConversion,
                     sizing: .mediumFirst
                 )
             }
@@ -456,6 +491,8 @@ struct GroupExpenseFormView: View {
         RecordPillButton(icon: "calendar", text: dateChipText) {
             showDatePicker = true
         }
+        // Al pasar un registro, la fecha es la suya: cambiarla aquí cambiaría el registro.
+        .disabled(viewModel.isConversion)
         // El chip no era alcanzable desde XCUITest, y sin él la FECHA del prellenado no se podía
         // afirmar: es el campo del bug que `GroupExpensePrefillTemplate.date` existe para impedir
         // (un borrador de hace tres días convirtiéndose en un gasto fechado HOY). El label expone
@@ -539,6 +576,8 @@ struct GroupExpenseFormView: View {
                 .keyboardType(.decimalPad)
                 .focused($focusedField, equals: .amount)
                 .accessibilityIdentifier("group_expense_amount")
+                // Al pasar un registro, el importe es el suyo: el puente lo reescribiría al del gasto.
+                .disabled(viewModel.isConversion)
                 .fixedSize(horizontal: true, vertical: false)
                 .onChange(of: focusedField) { _, newFocus in
                     if newFocus == .amount
@@ -594,6 +633,7 @@ struct GroupExpenseFormView: View {
             .background(Capsule().fill(.thCard))
         }
         .buttonStyle(.plain)
+        .disabled(viewModel.isConversion)
         .accessibilityLabel(L10n.Groups.Expense.currency)
     }
 
@@ -659,7 +699,8 @@ struct GroupExpenseFormView: View {
     private var whoPaysCard: some View {
         let colors = memberColors
         return VStack(spacing: DS.Spacing.lg) {
-            if viewModel.isTwoPersonGroup && expandedSection == nil {
+            // Al pasar un registro pagaste tú: sin las opciones rápidas, que también cambian el pagador.
+            if viewModel.isTwoPersonGroup && !viewModel.isConversion && expandedSection == nil {
                 twoPersonSentence
             } else {
                 splitSentence
@@ -673,7 +714,8 @@ struct GroupExpenseFormView: View {
             if expandedSection == .split {
                 GroupSplitEditorCard(
                     viewModel: viewModel,
-                    onRequestQuickOptions: viewModel.isTwoPersonGroup ? { openQuickOptions() } : nil
+                    onRequestQuickOptions: viewModel.isTwoPersonGroup && !viewModel.isConversion
+                        ? { openQuickOptions() } : nil
                 )
                 .padding(DS.Spacing.lg)
                 .background(
@@ -714,6 +756,8 @@ struct GroupExpenseFormView: View {
                 identifier: "group_expense_paidby_row",
                 a11yLabel: "\(L10n.Groups.Expense.paidByTitle): \(payerSentenceName)"
             ) { toggle(.payer) }
+            // Al pasar un registro, pagaste tú: el dinero salió de tu cuenta.
+            .disabled(viewModel.isConversion)
         }
         let splitPiece = HStack(spacing: DS.Spacing.sm) {
             Text(L10n.Groups.Expense.andDividedLabel)
@@ -892,6 +936,8 @@ struct GroupExpenseFormView: View {
                         dismissKeyboard()
                         showAccountSelector = true
                     }
+                    // Al pasar un registro, la cuenta es la suya y se queda.
+                    .disabled(viewModel.isConversion)
                     .accessibilityIdentifier("group_expense_account_row")
                 }
 
@@ -1100,7 +1146,9 @@ struct GroupExpenseFormView: View {
     /// personales donde registrar — consistente con `isAccountRequired` y el gate Caso C de
     /// `SettlementFormView`. Solo aplica en creación (`lastCreatedExpenseID != nil`).
     private var optInApplies: Bool {
-        !viewModel.effectiveBridgeEnabled
+        // Al pasar un registro no se pregunta: el registro ya está en tus cuentas.
+        !viewModel.isConversion
+            && !viewModel.effectiveBridgeEnabled
             && !viewModel.isGroupsOnlySession
             && viewModel.isCaseA
             && !viewModel.isSale

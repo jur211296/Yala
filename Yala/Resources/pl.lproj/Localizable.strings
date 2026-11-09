@@ -8773,3 +8773,9 @@
 
 /* Alert message: the section's widgets go back to how they came (which show, order and size) */
 "panel.sectionPrefs.reset.message" = "Widżety wrócą do stanu początkowego: które są widoczne, w jakiej kolejności i w jakim rozmiarze.";
+
+/* «Convertir a gasto compartido» desde Editar de un registro (2.3) */
+"groups.convert.done" = "Teraz to wydatek w „%@”";
+"groups.convert.notice" = "Twój wpis zostaje na koncie %@ i staje się tym wydatkiem grupy: jeśli zmieni się lub zostanie usunięty w grupie, zmieni się też w Twoich wpisach.";
+"groups.convert.personalSplitHint" = "Aby zamienić go we wspólny wydatek, usuń „Mój udział”: ten wpis przechowuje tylko Twoją część.";
+"groups.convert.saveFirstHint" = "Zapisz zmiany, aby zamienić go we wspólny wydatek.";

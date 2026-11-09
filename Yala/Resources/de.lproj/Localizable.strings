@@ -8761,3 +8761,9 @@
 
 /* Alert message: the section's widgets go back to how they came (which show, order and size) */
 "panel.sectionPrefs.reset.message" = "Die Widgets kehren zum Ausgangszustand zurück: welche sichtbar sind, in welcher Reihenfolge und in welcher Größe.";
+
+/* «Convertir a gasto compartido» desde Editar de un registro (2.3) */
+"groups.convert.done" = "Jetzt eine Ausgabe in „%@“";
+"groups.convert.notice" = "Dein Eintrag bleibt in %@ und wird zu dieser Gruppenausgabe: Wird sie in der Gruppe geändert oder gelöscht, ändert sie sich auch in deinen Einträgen.";
+"groups.convert.personalSplitHint" = "Um sie in eine geteilte Ausgabe umzuwandeln, entferne „Mein Anteil“: Dieser Eintrag speichert nur deinen Anteil.";
+"groups.convert.saveFirstHint" = "Speichere deine Änderungen, um sie in eine geteilte Ausgabe umzuwandeln.";

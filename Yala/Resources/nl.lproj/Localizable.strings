@@ -8773,3 +8773,9 @@
 
 /* Alert message: the section's widgets go back to how they came (which show, order and size) */
 "panel.sectionPrefs.reset.message" = "De widgets gaan terug naar hoe ze waren: welke je ziet, in welke volgorde en op welk formaat.";
+
+/* «Convertir a gasto compartido» desde Editar de un registro (2.3) */
+"groups.convert.done" = "Nu een uitgave in „%@”";
+"groups.convert.notice" = "Je boeking blijft in %@ en wordt deze groepsuitgave: als die in de groep verandert of wordt verwijderd, verandert hij ook in je boekingen.";
+"groups.convert.personalSplitHint" = "Om er een gedeelde uitgave van te maken, haal je „Mijn deel” weg: deze boeking bewaart alleen jouw deel.";
+"groups.convert.saveFirstHint" = "Sla je wijzigingen op om er een gedeelde uitgave van te maken.";
