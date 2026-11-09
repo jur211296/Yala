@@ -55,6 +55,7 @@
 - [Regresión: medir contra lo publicado](feedback_regresion_se_mide_contra_lo_publicado.md) — Panel iPad: B→A al saber que la 2.1 no lo tenía.
 - [«Igual a tamaño normal» es al píxel](feedback_igual_a_tamano_normal_es_literal.md) — también el botón desactivado; lo que el sistema cambie se fuerza al aspecto de antes.
 ## Cómo mido y cómo entrego
+- [Vista previa de Vercel protegida](reference_vista_previa_vercel_protegida.md) — 302 al login: `vercel curl --deployment` desde Web/ con el project.json del principal.
 - [Duo abierto en la Max](reference_duo_abierto_en_la_max.md) — XCTest da negro: enlace + simctl --display; Device Hub con la pantalla libre.
 - [XcodeBuildMCP: la configuración pisa el scheme](feedback_xcodebuildmcp_configuration_pisa_el_scheme.md) — Yala Dev = Debug-Dev; con Debug la nube sale apagada bajo -uitest.
 - [Un crash arreglado destapa el de detrás](feedback_un_crash_arreglado_destapa_el_de_detras.md) — repite el gesto en el iPhone; el cierre en la nube tenía dos en fila.
