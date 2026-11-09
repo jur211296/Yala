@@ -1,0 +1,366 @@
+//
+//  Revision39CapturasUITests.swift — TEMPORAL, no se publica.
+//  Conductor de capturas de la revisión por vistas 2.3, zona 39 (cuentas, tarjetas, categorías, etiquetas y divisas).
+//  `TEST_RUNNER_REV_OUT=<carpeta>` escribe ahí los PNG; `TEST_RUNNER_REV_AX3=1` lanza con texto grande (AX3);
+//  `TEST_RUNNER_REV_PREFIX` antepone un prefijo. Cada caso tolera fallos: captura lo que alcance.
+//
+
+import XCTest
+
+final class Revision39CapturasUITests: XCTestCase {
+
+    private static let ax3 = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXL"]
+    private var prefix: String { ProcessInfo.processInfo.environment["REV_PREFIX"] ?? "" }
+
+    override func setUp() {
+        super.setUp()
+        continueAfterFailure = true
+    }
+
+    // MARK: - Utilidades
+
+    private func cap(_ name: String, wait: TimeInterval = 0.8) {
+        Thread.sleep(forTimeInterval: wait)
+        guard let dir = ProcessInfo.processInfo.environment["REV_OUT"], !dir.isEmpty else { return }
+        let data = XCUIScreen.main.screenshot().pngRepresentation
+        let url = URL(fileURLWithPath: dir).appendingPathComponent(prefix + name + ".png")
+        do { try data.write(to: url) } catch { print("REV: no se pudo escribir \(url): \(error)") }
+    }
+
+    private func launch(seed: String?, pro: Bool = true, extra: [String] = [], forcePEN: Bool = true) -> XCUIApplication {
+        let app = XCUIApplication()
+        let large = ProcessInfo.processInfo.environment["REV_AX3"] == "1" ? Self.ax3 : []
+        let currency = forcePEN ? ["-defaultCurrencyCode", "PEN"] : ["-AppleLocale", "es_PE"]
+        app.launchForUITest(pro: pro, seed: seed, extraArguments: extra + large + currency)
+        _ = app.waitForUITestReady()
+        Thread.sleep(forTimeInterval: 3)
+        return app
+    }
+
+    @discardableResult
+    private func tapIf(_ el: XCUIElement, timeout: TimeInterval = 8) -> Bool {
+        guard el.waitForExistence(timeout: timeout) else { print("REV: no apareció \(el)"); return false }
+        el.tap()
+        return true
+    }
+
+    private func openSettingsRow(_ app: XCUIApplication, _ id: String) {
+        tapIf(app.buttons["profile_avatar"], timeout: 20)
+        let row = app.buttons[id].firstMatch
+        var n = 0
+        while !(row.exists && row.isHittable) && n < 8 { app.swipeUp(); n += 1 }
+        tapIf(row, timeout: 6)
+    }
+
+    private func scrollCaps(_ app: XCUIApplication, _ base: String, count: Int) {
+        for i in 1...count {
+            app.swipeUp()
+            cap("\(base)-\(i)", wait: 0.6)
+        }
+    }
+
+    private func back(_ app: XCUIApplication) {
+        let b = app.navigationBars.buttons.firstMatch
+        if b.waitForExistence(timeout: 3) { b.tap() }
+        Thread.sleep(forTimeInterval: 0.8)
+    }
+
+    // MARK: - Cuentas
+
+    func test_01_cuentasTarjeta() {
+        let app = launch(seed: "tarjeta-dos-lineas", pro: false)
+        openSettingsRow(app, "profile_accounts")
+        cap("c01-lista-cuentas-free", wait: 1.5)
+        tapIf(app.buttons["Reordenar"].firstMatch, timeout: 4)
+        cap("c02-lista-reordenar")
+        tapIf(app.buttons["Listo"].firstMatch, timeout: 4)
+        if tapIf(app.buttons["accounts_row_Visa QA"], timeout: 6) {
+            cap("c03-form-tarjeta", wait: 1.5)
+            scrollCaps(app, "c03-form-tarjeta-abajo", count: 6)
+            let toggle = app.switches["account_archive_toggle"].firstMatch
+            var n = 0
+            while !(toggle.exists && toggle.isHittable) && n < 6 { app.swipeUp(); n += 1 }
+            if toggle.exists {
+                cap("c04-acciones-antes")
+                toggle.switches.firstMatch.tap()
+                cap("c05-archivar-pregunta-lineas", wait: 1.2)
+                let all = app.alerts.buttons.element(boundBy: 0)
+                if all.waitForExistence(timeout: 3) { all.tap() }
+                cap("c06-archivar-aviso", wait: 1.0)
+            }
+        }
+    }
+
+    func test_02_cuentaSaldo() {
+        let app = launch(seed: "tarjeta-dos-lineas", pro: true)
+        openSettingsRow(app, "profile_accounts")
+        cap("c07-lista-cuentas-pro", wait: 1.5)
+        if tapIf(app.buttons["accounts_row_Ahorros QA"], timeout: 6) {
+            cap("c08-form-ahorros", wait: 1.5)
+            let field = app.textFields["account_balance_field"].firstMatch
+            var n = 0
+            while !(field.exists && field.isHittable) && n < 5 { app.swipeUp(); n += 1 }
+            if field.exists {
+                field.tap()
+                Thread.sleep(forTimeInterval: 0.5)
+                if let v = field.value as? String, !v.isEmpty {
+                    field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: v.count + 2))
+                }
+                field.typeText("1250")
+                cap("c09-saldo-escrito", wait: 0.8)
+                app.swipeUp()
+                cap("c10-como-corregimos", wait: 0.8)
+                app.swipeUp()
+                cap("c11-como-corregimos-abajo", wait: 0.8)
+            }
+        }
+    }
+
+    func test_03_cuentaNuevaConNumero() {
+        let app = launch(seed: "sin-registros", pro: true)
+        openSettingsRow(app, "profile_accounts")
+        cap("c12-lista-dos-cuentas", wait: 1.5)
+        if tapIf(app.buttons["accounts_add_button"], timeout: 5) {
+            cap("c13-nueva-cuenta", wait: 1.5)
+            let name = app.textFields["account_name_field"].firstMatch
+            if name.waitForExistence(timeout: 4) {
+                name.tap(); name.typeText("Visa Interbank")
+            }
+            tapIf(app.buttons["account_type_chip_creditCard"].firstMatch, timeout: 3)
+            let number = app.textFields["Número de cuenta"].firstMatch
+            if number.waitForExistence(timeout: 3) { number.tap(); number.typeText("4557 8812 3456 0019") }
+            cap("c14-nueva-tarjeta-escrita", wait: 0.8)
+            scrollCaps(app, "c14-nueva-tarjeta-abajo", count: 4)
+            let bal = app.textFields["account_balance_field"].firstMatch
+            var n = 0
+            while !(bal.exists && bal.isHittable) && n < 5 { app.swipeDown(); n += 1 }
+            if bal.exists { bal.tap(); bal.typeText("0") }
+            cap("c15-saldo-cero", wait: 0.6)
+            let save = app.buttons["Guardar"].firstMatch
+            if tapIf(save, timeout: 3) {
+                cap("c16-tras-guardar", wait: 2.0)
+                let skip = app.buttons["account_line_offer_skip"].firstMatch
+                if skip.waitForExistence(timeout: 3) { skip.tap(); Thread.sleep(forTimeInterval: 1.5) }
+                cap("c17-lista-con-numero", wait: 1.5)
+            }
+        }
+    }
+
+    // MARK: - Categorías
+
+    func test_04_categorias() {
+        let app = launch(seed: "sin-registros", pro: true)
+        openSettingsRow(app, "profile_categories")
+        cap("k01-categorias", wait: 1.5)
+        scrollCaps(app, "k01-categorias-abajo", count: 3)
+        app.swipeDown(); app.swipeDown(); app.swipeDown()
+        tapIf(app.buttons["categories_edit_button"], timeout: 4)
+        cap("k02-categorias-editar")
+        tapIf(app.buttons["categories_edit_button"], timeout: 4)
+        if tapIf(app.buttons["categories_row_Alimentación"], timeout: 5) {
+            cap("k03-detalle-alimentacion", wait: 1.2)
+            scrollCaps(app, "k03-detalle-alimentacion-abajo", count: 2)
+            let sub = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Restaurantes'")).firstMatch
+            app.swipeDown(); app.swipeDown()
+            if tapIf(sub, timeout: 4) {
+                cap("k04-subcategoria", wait: 1.2)
+                if tapIf(app.buttons.matching(NSPredicate(format: "label CONTAINS 'Necesidad'")).firstMatch, timeout: 3) {
+                    cap("k05-necesidad", wait: 1.2)
+                    back(app)
+                }
+                back(app)
+            }
+            back(app)
+        }
+        if tapIf(app.buttons["categories_add_button"], timeout: 5) {
+            cap("k06-nueva-categoria", wait: 1.5)
+            let f = app.textFields["category_name_field"].firstMatch
+            if f.waitForExistence(timeout: 3) { f.tap(); f.typeText("Bebé") }
+            tapIf(app.buttons["Guardar"].firstMatch, timeout: 3)
+            cap("k07-sin-subcategoria-alerta", wait: 1.0)
+            let ok = app.alerts.buttons.firstMatch
+            if ok.waitForExistence(timeout: 3) { ok.tap() }
+            if tapIf(app.buttons["category_add_subcategory"].firstMatch, timeout: 3) {
+                cap("k08-nueva-subcategoria", wait: 1.2)
+            }
+        }
+    }
+
+    func test_05_categoriaConRegistros() {
+        let app = launch(seed: "realista", pro: true)
+        openSettingsRow(app, "profile_categories")
+        tapIf(app.buttons["categories_edit_button"], timeout: 6)
+        if tapIf(app.buttons["categories_delete_Entretenimiento"].firstMatch, timeout: 4) {
+            cap("k09-no-se-puede-eliminar", wait: 1.2)
+            let cancel = app.alerts.buttons["Cancelar"].firstMatch
+            if cancel.waitForExistence(timeout: 3) { cancel.tap() }
+        }
+        tapIf(app.buttons["categories_edit_button"], timeout: 4)
+        if tapIf(app.buttons["categories_row_Transporte"], timeout: 5) {
+            let f = app.textFields["category_name_field"].firstMatch
+            if f.waitForExistence(timeout: 3) {
+                f.tap()
+                f.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 12))
+                f.typeText("Movilidad")
+                cap("k10-renombrar", wait: 0.6)
+                tapIf(app.buttons["Guardar"].firstMatch, timeout: 3)
+                cap("k11-tras-renombrar", wait: 1.5)
+            }
+        }
+    }
+
+    func test_06_categoriasVacio() {
+        let app = launch(seed: "sin-categorias", pro: true)
+        openSettingsRow(app, "profile_categories")
+        cap("k12-categorias-vacio", wait: 1.5)
+    }
+
+    func test_07_ordenAlRegistrar() {
+        let app = launch(seed: "sin-registros", pro: true)
+        app.revealPanelFAB().tap()
+        tapIf(app.buttons["fab_manual"], timeout: 5)
+        if tapIf(app.buttons["new_transaction_subcategory_chip"].firstMatch, timeout: 6) {
+            cap("k13-selector-al-registrar", wait: 1.5)
+            app.swipeUp()
+            cap("k14-selector-al-registrar-abajo", wait: 1.0)
+        }
+    }
+
+    // MARK: - Etiquetas
+
+    func test_08_etiquetas() {
+        let app = launch(seed: "realista", pro: true)
+        openSettingsRow(app, "profile_tags")
+        cap("e01-etiquetas", wait: 1.5)
+        tapIf(app.buttons["Reordenar"].firstMatch, timeout: 4)
+        cap("e02-etiquetas-reordenar")
+        tapIf(app.buttons["Listo"].firstMatch, timeout: 4)
+        if tapIf(app.buttons["tags_row_Fijo"], timeout: 5) {
+            cap("e03-editar-etiqueta", wait: 1.2)
+            app.swipeUp()
+            cap("e04-editar-etiqueta-abajo", wait: 0.8)
+            if tapIf(app.buttons["Eliminar etiqueta"].firstMatch, timeout: 3) {
+                cap("e05-eliminar-etiqueta", wait: 1.0)
+                let c = app.alerts.buttons["Cancelar"].firstMatch
+                if c.waitForExistence(timeout: 3) { c.tap() }
+            }
+            tapIf(app.buttons["Cerrar"].firstMatch, timeout: 3)
+            Thread.sleep(forTimeInterval: 1)
+        }
+        if tapIf(app.buttons["tags_add_button"], timeout: 5) {
+            cap("e06-nueva-etiqueta", wait: 1.5)
+            let f = app.textFields["tag_name_field"].firstMatch
+            if f.waitForExistence(timeout: 3) { f.tap(); f.typeText("Cumpleaños de mamá 2026") }
+            cap("e07-nueva-etiqueta-escrita", wait: 0.6)
+        }
+    }
+
+    func test_09_etiquetasVacio() {
+        let app = launch(seed: "sin-registros", pro: true)
+        openSettingsRow(app, "profile_tags")
+        cap("e08-etiquetas-vacio", wait: 1.5)
+    }
+
+    // MARK: - Divisas
+
+    func test_10_divisas() {
+        let app = launch(seed: "sin-registros", pro: true, forcePEN: false)
+        openSettingsRow(app, "profile_currency")
+        cap("d01-divisas", wait: 1.5)
+        app.swipeUp()
+        cap("d02-divisas-abajo", wait: 0.8)
+        app.swipeDown()
+        if tapIf(app.buttons["currency_secondary_button"], timeout: 4) {
+            cap("d08-secundarias", wait: 1.2)
+            let gbp = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Libra'")).firstMatch
+            if tapIf(gbp, timeout: 4) {
+                cap("d09-secundaria-elegida", wait: 0.6)
+                tapIf(app.buttons["Cerrar"].firstMatch, timeout: 3)
+                cap("d10-cargando-secundaria", wait: 0.3)
+                cap("d10b-cargando-secundaria", wait: 1.5)
+                cap("d11-tras-secundaria", wait: 10.0)
+            }
+        }
+        let all = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Ver todas'")).firstMatch
+        var n = 0
+        while !(all.exists && all.isHittable) && n < 4 { app.swipeUp(); n += 1 }
+        if tapIf(all, timeout: 4) {
+            cap("d12-ver-todas", wait: 1.5)
+            tapIf(app.buttons["Cerrar"].firstMatch, timeout: 3)
+            Thread.sleep(forTimeInterval: 1)
+        }
+        app.swipeDown(); app.swipeDown()
+        if tapIf(app.buttons["currency_preferred_button"], timeout: 4) {
+            cap("d03-elegir-principal", wait: 1.2)
+            let usd = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Dólar Estadounidense'")).firstMatch
+            if tapIf(usd, timeout: 4) {
+                Thread.sleep(forTimeInterval: 0.6)
+                let close = app.buttons["Cerrar"].firstMatch
+                if close.exists && close.isHittable { close.tap() }
+                cap("d04-confirmar-cambio", wait: 1.5)
+                let ok = app.buttons["currency_change_confirm"].firstMatch
+                if ok.waitForExistence(timeout: 4) {
+                    ok.tap()
+                    cap("d05-cambiando", wait: 0.3)
+                    cap("d06-cambiando-2", wait: 2.0)
+                    cap("d07-tras-cambio", wait: 12.0)
+                }
+            }
+        }
+    }
+
+    func test_11_perfCuentas() {
+        for seed in ["sin-registros", "realista", "pesado"] {
+            let app = launch(seed: seed, pro: true)
+            tapIf(app.buttons["profile_avatar"], timeout: 30)
+            let row = app.buttons["profile_accounts"].firstMatch
+            for _ in 0..<6 {
+                if tapIf(row, timeout: 8) {
+                    Thread.sleep(forTimeInterval: 1.5)
+                    back(app)
+                }
+            }
+            if tapIf(row, timeout: 8) { cap("p-\(seed)-cuentas", wait: 1.5) }
+            app.terminate()
+        }
+    }
+
+    func test_12_archivarYGuardar() {
+        let app = launch(seed: "tarjeta-dos-lineas", pro: true)
+        openSettingsRow(app, "profile_accounts")
+        if tapIf(app.buttons["accounts_row_Visa QA"], timeout: 6) {
+            let toggle = app.switches["account_archive_toggle"].firstMatch
+            var n = 0
+            while !(toggle.exists && toggle.isHittable) && n < 8 { app.swipeUp(); n += 1 }
+            if toggle.exists {
+                toggle.switches.firstMatch.tap()
+                let all = app.alerts.buttons.element(boundBy: 0)
+                if all.waitForExistence(timeout: 3) { all.tap() }
+                Thread.sleep(forTimeInterval: 0.8)
+                tapIf(app.buttons["Guardar"].firstMatch, timeout: 3)
+                cap("c18-lista-tras-archivar", wait: 2.0)
+                app.swipeUp()
+                cap("c19-lista-tras-archivar-abajo", wait: 0.8)
+            }
+        }
+    }
+
+    func test_13_anadirSecundaria() {
+        let app = launch(seed: "realista", pro: true, forcePEN: false)
+        openSettingsRow(app, "profile_currency")
+        if tapIf(app.buttons["currency_secondary_button"], timeout: 4) {
+            let eur = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Euro'")).firstMatch
+            tapIf(eur, timeout: 4)
+            Thread.sleep(forTimeInterval: 0.6)
+            let gbp = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Libra'")).firstMatch
+            if tapIf(gbp, timeout: 4) {
+                cap("d09-secundaria-elegida", wait: 0.6)
+                tapIf(app.buttons["Cerrar"].firstMatch, timeout: 3)
+                cap("d10-cargando-secundaria", wait: 0.2)
+                cap("d10b-cargando-secundaria", wait: 0.8)
+                cap("d10c-cargando-secundaria", wait: 2.5)
+                cap("d11-tras-secundaria", wait: 15.0)
+            }
+        }
+    }
+}
