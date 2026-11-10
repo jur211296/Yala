@@ -66,6 +66,16 @@ final class BalanceCalculatorReopenUITests: XCTestCase {
         field.tap()
         field.typeText("1800")
 
+        // Con el teclado abierto, «Calcúlalo conmigo» queda debajo de la barra de «Siguiente» (`safeAreaBar` desde el
+        // 2026-11-05): XCUITest la cree visible, toca su centro y el toque cae en «Siguiente», que salta al paso 6.
+        // El teclado decimal no tiene «Aceptar»: se cierra arrastrando el paso hacia abajo, como lo cierra una persona.
+        let title = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH '¿Cuánto' OR label BEGINSWITH 'How much'"))
+            .firstMatch
+        XCTAssertTrue(title.waitForExistence(timeout: 5), "No salió el titular del paso del saldo.")
+        title.swipeDown()
+        let keyboardGone = expectation(for: NSPredicate(format: "count == 0"), evaluatedWith: app.keyboards)
+        wait(for: [keyboardGone], timeout: 5)
+
         // «Calcúlalo conmigo» con un saldo ya escrito enseña la vista previa con «Editar», que reabre la calculadora.
         let guided = app.buttons["onboarding_balance_guided"]
         XCTAssertTrue(guided.waitForExistence(timeout: 5))
