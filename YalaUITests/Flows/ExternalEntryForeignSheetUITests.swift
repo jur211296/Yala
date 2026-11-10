@@ -220,4 +220,45 @@ final class ExternalEntryForeignSheetUITests: XCTestCase {
         XCTAssertEqual(XCTWaiter().wait(for: [selected], timeout: 10), .completed,
                        "Tras cerrar la hoja, el enlace tenía que haber dejado el Panel delante.")
     }
+
+    // MARK: - El formulario rehecho retoma lo escrito (card «Nuevo registro a medias vuelve vacío», 2026-11-04)
+
+    /// En el runner del CI, de una a tres veces por noche, SwiftUI rehacía el contenido de la hoja al volver (mismo
+    /// proceso, misma escena: `formularios=3`) y el formulario nacía con «0.00». `-uitest-rebuild-form-on-return` fuerza
+    /// ese rehecho siempre, en los tres caminos que cambian de pestaña. Con el borrador (`NewRecordDraft`) el formulario
+    /// rehecho conserva el importe y, al cerrarlo, sigue preguntando antes de descartar (retoma también la foto de partida).
+    /// Los casos de arriba siguen sin el seam: prueban el camino real, sin rehecho forzado.
+    private func assertRebuiltFormKeepsTheAmount(url: String, extraArguments: [String], capture: String) {
+        let (app, amountField) = launchWithHalfFilledFormInStatistics(
+            extraArguments: extraArguments + ["-uitest-rebuild-form-on-return"])
+        openFromOutside(url)
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 15), "El enlace no trajo Yala delante.")
+        assertFormSurvives(app, amountField, seconds: 6, capture: capture)
+        XCTAssertTrue(lifecycle(app).contains("formulario retomado"),
+                      "El seam no rehízo el formulario: el caso no probó nada. Ciclo de vida: \(lifecycle(app)).")
+        let close = app.buttons["new_transaction_close"]
+        XCTAssertTrue(close.waitForExistence(timeout: 5), "Falta la X de Nuevo registro (new_transaction_close).")
+        close.tap()
+        let discard = app.alerts.buttons["new_transaction_discard_confirm"].firstMatch
+        XCTAssertTrue(discard.waitForExistence(timeout: 5),
+                      "Con el importe retomado, la X tenía que preguntar antes de descartar.")
+        discard.tap()
+    }
+
+    func test_rebuiltForm_sharedPhoto_keepsWhatWasTyped() {
+        assertRebuiltFormKeepsTheAmount(url: "yaladev://shared-image?uitest-stage=readable",
+                                        extraArguments: ["-uitest-image-result", "one"],
+                                        capture: "formulario-rehecho-tras-compartir-foto")
+    }
+
+    func test_rebuiltForm_voiceEntry_keepsWhatWasTyped() {
+        assertRebuiltFormKeepsTheAmount(url: "yaladev://voice-entry",
+                                        extraArguments: ["-uitest-voice-result", "one"],
+                                        capture: "formulario-rehecho-tras-voz")
+    }
+
+    func test_rebuiltForm_panelLink_keepsWhatWasTyped() {
+        assertRebuiltFormKeepsTheAmount(url: "yaladev://panel", extraArguments: [],
+                                        capture: "formulario-rehecho-tras-enlace-al-panel")
+    }
 }

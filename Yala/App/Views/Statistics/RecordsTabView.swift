@@ -457,7 +457,8 @@ struct RecordsTabView: View {
     }
 
     private func recordsList(_ groups: [(date: Date, records: [TransactionItem])]) -> some View {
-        LazyVStack(spacing: DS.Spacing.sm, pinnedViews: [.sectionHeaders]) {
+        // Sin cabeceras fijas: la fecha no tiene fondo y, fija arriba, se escribía encima de las filas al hacer scroll.
+        LazyVStack(spacing: DS.Spacing.sm) {
             ForEach(groups, id: \.date) { group in
                 Section {
                     ForEach(group.records, id: \.persistentModelID) { record in
@@ -522,7 +523,8 @@ struct RecordsTabView: View {
     }
 
     private func duplicateGroupsList(_ groups: [[TransactionItem]], rowIDs: [PersistentIdentifier]) -> some View {
-        LazyVStack(spacing: DS.Spacing.sm, pinnedViews: [.sectionHeaders]) {
+        // Sin cabeceras fijas: la fecha no tiene fondo y, fija arriba, se escribía encima de las filas al hacer scroll.
+        LazyVStack(spacing: DS.Spacing.sm) {
             ForEach(Array(groups.enumerated()), id: \.offset) { _, group in
                 Section {
                     ForEach(group, id: \.persistentModelID) { record in

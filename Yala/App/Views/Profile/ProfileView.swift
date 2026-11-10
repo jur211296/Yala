@@ -821,20 +821,26 @@ struct ProfileView: View {
     /// Una fila que abre un ajuste: en compacta empuja (`NavigationLink`, como siempre); en ancha lo pone en la
     /// columna de detalle, sustituyendo al que hubiera. En ancha, la fila del ajuste abierto va rellena, con el mismo
     /// relleno que lo elegido en Personalización (UX 2.2 · L16-20, opción C; relleno de L16-9).
-    @ViewBuilder
+    ///
+    /// Devuelve `AnyView` a propósito (card YALA-IOS-G, App Hang en producción 2.2 (7)): con `some View`, el tipo de la
+    /// lista anidaba el de esta función una vez por fila, y la primera apertura de Ajustes en cada arranque se iba en
+    /// descifrarlo (`swift_getTypeByMangledName`, ~170 ms de ~180 en el simulador; más en un iPhone). La barrera corta
+    /// ese anidamiento: no la quites sin volver a medir (`ProfileSettingsTypeBarrierWiringTests`).
     private func settingsLink<Label: View>(
         _ destination: ProfileDestination,
         @ViewBuilder label: () -> Label
-    ) -> some View {
+    ) -> AnyView {
         if horizontalSizeClass == .regular {
             let isOpen = detailPath.first == destination
-            Button { detailPath = [destination] } label: {
-                label()
-                    .selectedOptionFill(isOpen, radius: DS.Radius.md)
-            }
-            .accessibilityAddTraits(isOpen ? .isSelected : [])
+            return AnyView(
+                Button { detailPath = [destination] } label: {
+                    label()
+                        .selectedOptionFill(isOpen, radius: DS.Radius.md)
+                }
+                .accessibilityAddTraits(isOpen ? .isSelected : [])
+            )
         } else {
-            NavigationLink(value: destination) { label() }
+            return AnyView(NavigationLink(value: destination) { label() })
         }
     }
 
@@ -1316,6 +1322,10 @@ struct ProfileView: View {
         // Card ulks: un aviso de integridad del shell (vaciado remoto, cambio de Apple ID, iCloud cambiado) cierra Ajustes
         // y sale después. Va en la raíz de la hoja, fuera de su pila: un empuje no la hace desaparecer.
         .modifier(ClosesForShellIntegrityNotice(navigation: navigation) { dismiss() })
+        // Card 7e60 · cerrar sesión o borrar la cuenta en la nube cambian el almacén en caliente con esta hoja todavía
+        // montada; al terminar de cerrarse, su contenido volvía a aparecer y leía el almacén soltado (Yala se cerraba).
+        // Va fuera de todo lo que lee `modelContext` y dentro de `presentationSizing`, que es de la hoja.
+        .detachesFromSwappedStore()
         .presentationSizing(.page)
     }
 
@@ -2153,8 +2163,10 @@ struct ProfileView: View {
         iconColor: Color = .gray,
         textColor: Color = .primary,
         showSpinner: Bool = false
-    ) -> some View {
-        HStack(spacing: DS.Spacing.md) {
+    ) -> AnyView {
+        // `AnyView` por la misma razón que `settingsLink`: cada fila nombraba este tipo y la primera apertura de Ajustes
+        // lo descifraba una vez por fila (card YALA-IOS-G).
+        AnyView(HStack(spacing: DS.Spacing.md) {
             // Conditionally show colored or plain icons based on setting
             if effectiveColorfulIcons {
                 // iOS-style colored icon with rounded square background
@@ -2205,7 +2217,7 @@ struct ProfileView: View {
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.FormRow.paddingV)
-        .contentShape(Rectangle())
+        .contentShape(Rectangle()))
     }
 
 }

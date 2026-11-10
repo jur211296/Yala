@@ -15,6 +15,7 @@ struct NewTransactionView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.yalaTheme) private var theme
     @Environment(SessionState.self) private var sessionState
     @Environment(AppPreferences.self) private var appPreferences
@@ -22,7 +23,11 @@ struct NewTransactionView: View {
     /// Quién abre el registro cuando se toca «Editar» en el aviso tras guardar (UX 2.2 · L2-5).
     @Environment(\.savedRecordEditorOpener) private var savedRecordEditorOpener
 
-    @State private var viewModel = NewTransactionViewModel()
+    /// El modelo del formulario. Con `draft`, el de quien presenta la hoja: si SwiftUI rehace el contenido de la hoja sin
+    /// cerrarla (entrada desde fuera con el formulario a medias), el formulario nuevo retoma lo escrito.
+    @State private var viewModel: NewTransactionViewModel
+    /// Lo escrito mientras la hoja siga abierta, guardado por quien la presenta (`NewRecordDraft`). Solo en un registro nuevo.
+    private let draft: NewRecordDraft?
     @FocusState private var isNoteFieldFocused: Bool
     @FocusState private var isAmountFieldFocused: Bool
 
@@ -75,6 +80,12 @@ struct NewTransactionView: View {
     /// La foto del formulario al abrirse, ya con lo precargado (UX 2.2 · L2-4): si lo de ahora es distinto, hay algo
     /// escrito o elegido a mano y cerrar pregunta.
     @State private var formBaseline: NewTransactionViewModel.FormSnapshot?
+    /// El formulario abrió con lo que se escribía antes de que iOS cerrara Yala (card 77j1): sale la línea que lo dice.
+    @State private var restoredDraft = false
+    /// Este formulario escribió o recuperó el borrador guardado, y por eso lo borra al cerrarse. Otro formulario (uno
+    /// abierto con una cuenta precargada, o la edición de un registro) no toca el borrador pendiente. Con `draft` la marca
+    /// vive en él (`ownsSavedDraft`), porque sobrevive a que la hoja se rehaga; esta es la de quien presenta sin `draft`.
+    @State private var ownsSavedDraftHere = false
     @State private var showDiscardAlert = false
     /// «Hacer recurrente» (L2-15): la hoja corta, y si se pidió el editor completo al cerrarla.
     @State private var showRecurringQuickSheet = false
@@ -131,8 +142,13 @@ struct NewTransactionView: View {
         prefillSubcategoryName: String? = nil,
         prefillFromChatDraft: ChatDraftPrefill? = nil,
         transactionToEdit: TransactionItem? = nil,
-        startsAsDuplicate: Bool = false
+        startsAsDuplicate: Bool = false,
+        draft: NewRecordDraft? = nil
     ) {
+        // El borrador solo vale para un registro nuevo sin precarga de chat: editar carga siempre el guardado.
+        let draft = (transactionToEdit == nil && prefillFromChatDraft == nil && !startsAsDuplicate) ? draft : nil
+        self.draft = draft
+        _viewModel = State(initialValue: draft?.resolveViewModel() ?? NewTransactionViewModel())
         self.prefillAccountID = prefillAccountID
         self.prefillCategoryID = prefillCategoryID
         self.prefillSubcategoryName = prefillSubcategoryName
@@ -416,11 +432,13 @@ struct NewTransactionView: View {
                     }
                     applyAccountPrefillRule(to: newViewModel)
                     viewModel = newViewModel
+                    draft?.adopt(newViewModel)
                     // «Registrar otro» empieza la calculadora de cero (L2-12): antes arrastraba la del registro anterior.
                     splitFieldState.reset()
                     descriptionHint = DescriptionShortcutHintLogic.registerOpening()
                     // El formulario nuevo vuelve a empezar vacío: su foto es la de ahora (L2-4).
                     formBaseline = newViewModel.formSnapshot
+                    draft?.baseline = formBaseline
                     isCreatingAnother = true
                     dsWithAnimation(reduceMotion) {
                         showSuccessScreen = false
@@ -432,6 +450,7 @@ struct NewTransactionView: View {
                     isEditingFromSuccess = true
                     // Ya es la edición de un registro guardado: cerrar sin cambios no pregunta (L2-4).
                     formBaseline = viewModel.formSnapshot
+                    draft?.baseline = formBaseline
                     dsWithAnimation(reduceMotion) {
                         showSuccessScreen = false
                         successData = nil
@@ -445,6 +464,8 @@ struct NewTransactionView: View {
         } else {
             transactionFormView
                 .transition(.opacity)
+                .modifier(NewRecordDraftKeeper(scenePhase: scenePhase, onBackground: keepDraftForRelaunch,
+                                               onLeave: dropOwnDraft))
         }
     }
 
@@ -475,6 +496,8 @@ struct NewTransactionView: View {
 
                         // P1-3: banner CTA contextual cuando la TX es bridgeada.
                         bridgedTxReadOnlyBanner
+
+                        restoredDraftLine
 
                         // Contextual guide for new users (oculto en read-only).
                         if !isBridgedReadOnly {
@@ -723,8 +746,11 @@ struct NewTransactionView: View {
         }
 
         .onAppear {
+            // La hoja se rehízo con el formulario a medias: se retoma lo escrito, sin volver a precargar (pisaría la
+            // cuenta o la categoría que la persona ya eligió).
+            let resumesDraft = formBaseline == nil && (draft?.isResumable ?? false)
             viewModel.setContext(modelContext)
-            prefillFromContext()
+            if !resumesDraft { prefillFromContext() }
             // ANTES del draft: `loadPendingGroupDraftIfNeeded` abre con `guard isBridgedReadOnly`, que ya
             // depende de esta resolución.
             resolveBridgedPointer()
@@ -738,8 +764,14 @@ struct NewTransactionView: View {
             }
             // La foto de lo precargado, una vez: el `onAppear` vuelve a correr al cerrarse una hoja encima (L2-4). Es
             // también la primera aparición: ahí cuenta la apertura para la pista de los atajos (L2-8), solo en uno nuevo.
-            if formBaseline == nil {
+            if formBaseline == nil, resumesDraft, let saved = draft?.baseline {
+                formBaseline = saved
+                UITestHooks.shared.traceLifecycle("formulario retomado")
+            } else if formBaseline == nil {
                 formBaseline = viewModel.formSnapshot
+                draft?.baseline = formBaseline
+                // Después de la foto: lo recuperado cuenta como escrito, y cerrar pregunta antes de descartarlo.
+                restoreDraftIfAny()
                 UITestHooks.shared.noteLifecycle(.freshForm)
                 if transactionToEdit == nil {
                     descriptionHint = DescriptionShortcutHintLogic.registerOpening()
@@ -1585,8 +1617,8 @@ struct NewTransactionView: View {
 
     private static let shortDateFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.dateFormat = "d MMM"
         f.locale = Locale.current
+        f.setLocalizedDateFormatFromTemplate("dMMM")
         return f
     }()
 
@@ -1822,7 +1854,8 @@ struct NewTransactionView: View {
             isDisabled: !viewModel.canSave || viewModel.isSaving,
             isLoading: viewModel.isSaving,
             disabledHint: !viewModel.canSave ? L10n.Accessibility.completeFormHint : nil,
-            enabledFill: Color.selectedFill(theme.accent)
+            enabledFill: Color.selectedFill(theme.accent),
+            keepsDisabledToneInBar: true
         ) {
             saveTransaction()
         }
@@ -2014,6 +2047,7 @@ struct NewTransactionView: View {
             let newViewModel = NewTransactionViewModel()
             newViewModel.setContext(modelContext)
             viewModel = newViewModel
+            draft?.adopt(newViewModel)
         }
 
         // La regla de la cuenta precargada lee el filtro de cuentas y la última usada de ahora (UX 2.2 · L2-1). Se ponen
@@ -2207,6 +2241,94 @@ struct NewTransactionView: View {
                 return
             }
             withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) { saveButtonPulse = false }
+        }
+    }
+
+    // MARK: - Borrador que sobrevive al cierre (card 77j1)
+
+    /// Un registro nuevo abierto a secas: sin cuenta ni categoría precargadas, sin venir del chat ni de duplicar. Solo
+    /// ese recupera el borrador; los demás traen ya lo que la persona pidió.
+    private var opensPlainNewRecord: Bool {
+        transactionToEdit == nil && prefillAccountID == nil && prefillCategoryID == nil
+            && prefillSubcategoryName == nil && prefillFromChatDraft == nil && !startsAsDuplicate
+    }
+
+    /// Se guarda lo de un registro nuevo (también el duplicado de uno guardado), nunca la edición de uno guardado.
+    private var keepsDraft: Bool {
+        !isEditingSavedRecord && !isBridgedReadOnly && !showSuccessScreen
+    }
+
+    private func restoreDraftIfAny() {
+        guard opensPlainNewRecord, let draft = NewRecordDraftStore.load() else { return }
+        viewModel.apply(draft)
+        if sessionState.isExpensesOnlyMode { viewModel.transactionType = .expense }
+        restoredDraft = true
+        setOwnsSavedDraft(true)
+    }
+
+    private var ownsSavedDraft: Bool { draft?.ownsSavedDraft ?? ownsSavedDraftHere }
+
+    private func setOwnsSavedDraft(_ owns: Bool) {
+        if let draft { draft.ownsSavedDraft = owns } else { ownsSavedDraftHere = owns }
+    }
+
+    /// Al pasar a segundo plano: iOS puede cerrar Yala desde ahí sin avisar, y lo escrito se perdía.
+    private func keepDraftForRelaunch() {
+        guard keepsDraft else { return }
+        if hasUnsavedInput {
+            NewRecordDraftStore.save(viewModel.makeDraft())
+            setOwnsSavedDraft(true)
+        } else if ownsSavedDraft {
+            NewRecordDraftStore.clear()
+        }
+    }
+
+    /// Al cerrarse el formulario (guardado, descartado o cerrado sin cambios) su borrador ya no hace falta. Con `draft`
+    /// lo borra quien presenta, en el `onDismiss` de la hoja (`NewRecordDraft.discard`): este `onDisappear` corre también
+    /// cuando la hoja solo se rehace, y tiraría el borrador con el formulario aún abierto.
+    private func dropOwnDraft() {
+        guard draft == nil, ownsSavedDraftHere else { return }
+        NewRecordDraftStore.clear()
+        ownsSavedDraftHere = false
+    }
+
+    /// «Empezar de cero»: el formulario vuelve a como abre siempre y el borrador se borra.
+    private func startOverFromDraft() {
+        let fresh = NewTransactionViewModel()
+        fresh.setContext(modelContext)
+        applyAccountPrefillRule(to: fresh)
+        if sessionState.isExpensesOnlyMode { fresh.transactionType = .expense }
+        viewModel = fresh
+        draft?.adopt(fresh)
+        splitFieldState.reset()
+        formBaseline = fresh.formSnapshot
+        draft?.baseline = formBaseline
+        NewRecordDraftStore.clear()
+        setOwnsSavedDraft(false)
+        dsWithAnimation(reduceMotion) { restoredDraft = false }
+    }
+
+    @ViewBuilder
+    private var restoredDraftLine: some View {
+        if restoredDraft && !isBridgedReadOnly {
+            HStack(spacing: DS.Spacing.sm) {
+                Image(systemName: "arrow.uturn.backward.circle")
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+                Text(L10n.UXL2.draftRestored)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: DS.Spacing.sm)
+                Button(L10n.UXL2.draftStartOver, action: startOverFromDraft)
+                    .font(DS.Typography.label)
+                    .accessibilityIdentifier("new_transaction_draft_start_over")
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.top, DS.Spacing.sm)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("new_transaction_draft_restored")
+            .transition(.opacity)
         }
     }
 
@@ -2582,7 +2704,9 @@ private struct SaveAreaPlacement<SaveArea: View>: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .safeAreaInset(edge: .bottom, spacing: DS.Spacing.none) { inset }
+            // Barra y no inset (barrido final 2.2): con el texto al máximo el formulario se desplaza por debajo de «Guardar»,
+            // y la barra difumina ese borde del scroll en vez de dejar los dos textos uno encima del otro.
+            .safeAreaBar(edge: .bottom, spacing: DS.Spacing.none) { inset }
             .modifier(KeyboardVisibilityReader(isVisible: $isKeyboardVisible))
             // Poco alto (un iPhone SE): se mide el contenedor ignorando el teclado, así que escribir no lo cambia.
             .background { heightProbe }
@@ -2626,6 +2750,22 @@ private struct KeyboardVisibilityReader: ViewModifier {
 
 /// Lo que el formulario observa además de lo de siempre (lote decidido 2.2 · 02, sesión B). En su propio modificador y con
 /// cierres de una línea: el compilador del CI (Xcode 26.6) no tipa más `onChange` en la cadena del `body`.
+/// Guarda el borrador al pasar a segundo plano y lo suelta al cerrarse el formulario (card 77j1). En su propio
+/// modificador, con dos piezas: el `body` del formulario ya va al límite de lo que tipa el compilador del CI.
+private struct NewRecordDraftKeeper: ViewModifier {
+    let scenePhase: ScenePhase
+    let onBackground: () -> Void
+    let onLeave: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            // Ya en `.inactive` (abrir el multitarea, bajar el Centro de Control): si iOS cierra Yala justo después de
+            // mandarla a segundo plano, la escritura de `.background` podía no llegar a disco (medido en XCUITest).
+            .onChange(of: scenePhase) { _, phase in if phase != .active { onBackground() } }
+            .onDisappear { onLeave() }
+    }
+}
+
 private struct NewTransactionFormFollowers: ViewModifier {
     let account: PersistentIdentifier?
     let canSave: Bool

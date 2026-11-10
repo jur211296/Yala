@@ -306,7 +306,9 @@ struct GroupExpenseFormView: View {
             }
             .scrollDismissesKeyboard(.interactively)
             .dismissKeyboardOnTap()
-            .safeAreaInset(edge: .bottom) {
+            // Barra y no inset (barrido final 2.2): con el texto al máximo el formulario se desplaza por debajo de «Guardar»,
+            // y la barra difumina ese borde del scroll.
+            .safeAreaBar(edge: .bottom, spacing: DS.Spacing.sm) {
                 VStack(spacing: DS.Spacing.none) {
                     migratedFrozenHint
 

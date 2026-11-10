@@ -140,6 +140,9 @@ struct TabImplicitAnimationsWiringTests {
          ".dsAnimation(DS.Animation.selection, value: listViewType, reduceMotion: reduceMotion)"),
         ("Yala/App/Views/Statistics/DetailContainerView.swift",
          ".animation(reduceMotion ? nil : DS.Animation.appear, value: showFloatingActions)"),
+        // Registros (página): los flotantes salen al perder de vista la fila de acciones, como en Estadísticas (card rtyu).
+        ("Yala/App/Views/Records/RecordsStandaloneView.swift",
+         ".animation(reduceMotion ? nil : DS.Animation.appear, value: showFloatingActions)"),
         ("Yala/App/Views/Planning/Components/BudgetProgressBar.swift",
          ".animation(reduceMotion ? nil : DS.Animation.number, value: percentage)"),
         ("Yala/App/Views/Planning/ScheduledPaymentsListView.swift",

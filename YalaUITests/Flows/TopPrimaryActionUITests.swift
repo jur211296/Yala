@@ -104,4 +104,64 @@ final class TopPrimaryActionUITests: XCTestCase {
             scrollUntilFloatingShows(app, top: top, floating: floating),
             "Al bajar, el «+» flotante de Estadísticas no apareció.")
     }
+
+    // MARK: - Registros (página), card rtyu
+
+    /// Registros desde Más (`-uitest-deeplink records`): fila arriba y sin flotante; al bajar, flotante; quieto abajo, se
+    /// queda; al volver arriba, se va. Antes de la card rtyu la página no montaba el flotante nunca (97gc leído de más).
+    func test_recordsPage_actionsRowOnTop_floatingOnlyAfterScrolling() {
+        let app = XCUIApplication()
+        app.launchForUITest(pro: true, seed: "realista", deeplink: "records")
+        XCTAssertTrue(app.waitForUITestReady(timeout: 90), "uitest_ready ausente — bootstrap/seed no completó.")
+        assertRecordsPageRevealsTheFloating(app, capturePrefix: "registros-desde-mas")
+    }
+
+    /// Registros como pestaña de la barra personalizada: la misma página, el mismo comportamiento.
+    func test_recordsTab_fromTheCustomTabBar_floatingOnlyAfterScrolling() {
+        let app = XCUIApplication()
+        // Entre comillas de plist: sin ellas `{…}` llega como diccionario y `@AppStorage` lo ignora (testing.md).
+        app.launchForUITest(pro: true, seed: "realista", extraArguments: [
+            "-tabBarConfiguration", #""{\"activeTabs\":[\"panel\",\"records\",\"planning\"]}""#,
+        ])
+        XCTAssertTrue(app.waitForUITestReady(timeout: 90), "uitest_ready ausente — bootstrap/seed no completó.")
+        let recordsTab = app.tabBars.buttons["Registros"].firstMatch
+        XCTAssertTrue(recordsTab.waitForExistence(timeout: 15), "La barra personalizada no lleva la pestaña Registros.")
+        recordsTab.tap()
+        assertRecordsPageRevealsTheFloating(app, capturePrefix: "registros-pestana")
+    }
+
+    private func assertRecordsPageRevealsTheFloating(_ app: XCUIApplication, capturePrefix: String) {
+        let top = app.buttons["stats_action_new"]
+        XCTAssertTrue(top.waitForExistence(timeout: 15), "Falta «Nuevo registro» arriba en Registros (stats_action_new).")
+        XCTAssertTrue(top.waitForHittable(timeout: 5), "«Nuevo registro» no es alcanzable arriba en Registros.")
+        XCTAssertTrue(app.buttons.matching(identifier: "record_row").firstMatch.waitForExistence(timeout: 15),
+                      "Control: Registros no tiene filas que desplazar.")
+        let floating = app.buttons["fab_new_transaction"]
+        XCTAssertFalse(floating.exists, "Con la fila a la vista, el «+» flotante sobra en Registros: volvió a ser fijo.")
+        attach(app, "\(capturePrefix)-arriba")
+
+        let shown = scrollUntilFloatingShows(app, top: top, floating: floating)
+        attach(app, "\(capturePrefix)-abajo")
+        XCTAssertTrue(shown, "Al bajar en Registros, el «+» flotante no apareció.")
+
+        // Quieto abajo: el flotante se queda (no es un destello del desplazamiento).
+        XCTAssertFalse(floating.waitForNonExistence(timeout: 3), "Con la lista quieta abajo, el «+» flotante se fue.")
+        XCTAssertTrue(floating.isHittable, "Con la lista quieta abajo, el «+» flotante no es alcanzable.")
+
+        // De vuelta arriba, se va.
+        var swipes = 0
+        while !top.isHittable && swipes < 12 {
+            app.swipeDown()
+            swipes += 1
+        }
+        XCTAssertTrue(top.waitForHittable(timeout: 5), "Control: no se pudo volver a la fila de arriba.")
+        XCTAssertTrue(floating.waitForNonExistence(timeout: 5), "De vuelta arriba en Registros, el «+» flotante sigue.")
+    }
+
+    private func attach(_ app: XCUIApplication, _ name: String) {
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = name
+        shot.lifetime = .keepAlways
+        add(shot)
+    }
 }

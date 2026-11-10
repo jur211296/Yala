@@ -209,7 +209,7 @@ final class PanelViewModel {
     }()
 
     /// «Octubre de 2026»: el mes del widget de pagos, en el idioma de Yala y con mayúscula solo en la primera letra.
-    /// Con `dateFormat = "MMMM yyyy"` + `.capitalized` salía en el idioma del iPhone y, con la plantilla, «Octubre De
+    /// Con un formato fijo de mes y año + `.capitalized` salía en el idioma del iPhone y, con la plantilla, «Octubre De
     /// 2026» (ticket `month-year-titles-capitalize-every-word`). Es el mismo texto que pinta la pantalla de Pagos.
     static func scheduledPaymentsPeriodLabel(for month: Date, locale: Locale) -> String {
         ScheduledPaymentDateText.monthYear(month, locale: locale)
@@ -217,13 +217,16 @@ final class PanelViewModel {
 
     private static let shortDateFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.dateFormat = "d MMM"
+        f.setLocalizedDateFormatFromTemplate("dMMM")
         return f
     }()
 
     // MARK: - Dependencies
 
-    private var modelContext: ModelContext?
+    /// Card 7e60: el contexto va atado al almacén con el que se dio (`BoundStoreContext`). Tras cerrar sesión en la
+    /// nube, el `onDismiss` de Ajustes del Panel viejo recargaba con el almacén soltado y cerraba Yala.
+    private var boundStore = BoundStoreContext()
+    private var modelContext: ModelContext? { boundStore.liveContext }
 
     /// Exchange rate service - injected or falls back to shared singleton
     private var exchangeRateService: ExchangeRateService = .shared
@@ -272,6 +275,13 @@ final class PanelViewModel {
     /// Un recálculo pedido que se canceló sin correr (salir del Panel en su espera): la próxima vuelta lo hace.
     @ObservationIgnored
     private var hasInterruptedWork = false
+
+    /// Se pidió un recálculo con la app todavía sin activar. En el arranque en frío del iPad el `onAppear` del Panel y
+    /// su cambio de fase a `.active` llegan antes de que UIKit marque la app activa: el freno los descartaba y nada
+    /// volvía a pedir la carga, así que el Panel se quedaba en el esqueleto hasta mandar Yala a segundo plano y volver
+    /// (barrido final 2.2, 2026-11-05, medido en el iPad Pro 13). Lo repite `applicationDidBecomeActive()`.
+    @ObservationIgnored
+    private(set) var missedWhileInactive = false
 
     #if DEBUG
     /// Cuántas veces ha corrido `performCalculation`. Solo para medir: los tests cuentan con él que un
@@ -420,7 +430,7 @@ final class PanelViewModel {
         defaultCurrencyCode: String,
         sessionState: SessionState
     ) {
-        self.modelContext = context
+        boundStore.bind(context)
         if let service = exchangeRateService {
             self.exchangeRateService = service
         }
@@ -2798,7 +2808,17 @@ final class PanelViewModel {
             recalculateTask?.cancel()
             recalculateTask = nil
             pendingReload = false
+            missedWhileInactive = false
         }
+    }
+
+    /// La app pasó a activa (`UIApplication.didBecomeActiveNotification`, `PanelActivationObserver`): repite el
+    /// recálculo que el freno descartó mientras no lo estaba, con la recarga si alguno la pedía. Sin nada pendiente,
+    /// no hace nada: la vuelta a primer plano normal ya recarga por su cuenta.
+    func applicationDidBecomeActive() {
+        guard missedWhileInactive, !isInBackground else { return }
+        missedWhileInactive = false
+        scheduleRecalculation(reload: pendingReload)
     }
 
     /// Cancel any pending recalculation
@@ -2877,7 +2897,14 @@ final class PanelViewModel {
     /// Una ráfaga dentro de la ventana sigue siendo UN cálculo, que corre con todo lo pedido (`pendingReload`).
     private func scheduleRecalculation(reload: Bool) {
         guard !isInBackground else { return }
-        guard isApplicationInForeground() else { return }
+        // Card 7e60: un Panel de un almacén ya soltado no recalcula — sus filas en memoria son de ese almacén.
+        guard !boundStore.isDetached else { return }
+        // Merge 2.2 → 2.3: el freno es «primer plano» (2.3) y lo que descarta se repite al activarse (2.2).
+        guard isApplicationInForeground() else {
+            if reload { pendingReload = true }
+            missedWhileInactive = true
+            return
+        }
         if reload { pendingReload = true }
         hasInterruptedWork = false
         guard recalculateTask == nil else { return }
@@ -2886,7 +2913,7 @@ final class PanelViewModel {
         #endif
         recalculateTask = Task { @MainActor in
             do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, !boundStore.isDetached else { return }
             // Entre aquí y el final no hay ningún `await`: nadie puede sumarse a este cálculo a medias.
             recalculateTask = nil
             let shouldReload = pendingReload

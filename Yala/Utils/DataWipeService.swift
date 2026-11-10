@@ -1245,6 +1245,7 @@ final class DataWipeService {
         defaults.removeObject(forKey: "lastSplitPercentage")
         defaults.removeObject(forKey: DescriptionShortcutHintLogic.openingsKey) // Pista de los atajos del formulario (L2-8)
         defaults.removeObject(forKey: DescriptionShortcutHintLogic.usedKey)
+        defaults.removeObject(forKey: NewRecordDraftStore.key)    // Lo que se escribía en Nuevo registro (card 77j1)
 
         // El estado del servicio de tipos de cambio. Sin esto, `preloadHistoricalIfNeeded` se salta el
         // histórico hasta 30 días después —la key la acaba de escribir el arranque que importó el corpus—
@@ -1435,6 +1436,7 @@ final class DataWipeService {
         // --- Onboarding ---
         defaults.removeObject(forKey: "hasCompletedOnboarding") // Default: false (triggers onboarding)
         defaults.removeObject(forKey: "hasShownWelcomeChooser") // A4: tras wipe vuelve a mostrarse el chooser
+        defaults.removeObject(forKey: WelcomeUnfinishedAccountEntry.key) // Card 7e60: va con el chooser
         defaults.removeObject(forKey: "hasShownYalaAIOnboarding") // Tras wipe vuelve a mostrarse el onboarding del chat
         defaults.removeObject(forKey: "sessionTimestamps")      // Default: [] (UserSegmentService sessions)
         defaults.removeObject(forKey: "secondaryCurrencies")    // Default: "" (no secondary currencies)

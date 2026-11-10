@@ -24,6 +24,9 @@ struct PanelSheetsModifier: ViewModifier {
 
     @Environment(AppPreferences.self) private var appPreferences
 
+    /// Lo escrito en «Nuevo registro» mientras su hoja siga abierta: si SwiftUI rehace el contenido de la hoja (entrada
+    /// desde fuera con el formulario a medias), el formulario lo retoma. Se descarta al cerrarse la hoja.
+    @State private var newRecordDraft = NewRecordDraft()
     @State private var showPracticeAlert = false
 
     /// La hoja de filtros escribe en `SessionState` a través de este puente; el Panel recalcula solo al cambiar.
@@ -95,6 +98,7 @@ struct PanelSheetsModifier: ViewModifier {
                 PanelSectionPreferencesSheet(kind: kind, viewModel: viewModel)
             }
             .sheet(isPresented: $sheets.showNewTransaction, onDismiss: {
+                newRecordDraft.discard()
                 viewModel.reloadAndRecalculate()
             }) {
                 let subcategoryName = viewModel.selectedSubcategoryIDs.first.flatMap { id in
@@ -104,8 +108,10 @@ struct PanelSheetsModifier: ViewModifier {
                 // una cuenta al azar con dos filtradas y la excluida en modo excluir.
                 NewTransactionView(
                     prefillCategoryID: viewModel.selectedCategoryID,
-                    prefillSubcategoryName: subcategoryName
+                    prefillSubcategoryName: subcategoryName,
+                    draft: newRecordDraft
                 )
+                .newRecordSheetIdentity()
                 .presentationDetents([.large])
             }
             .sheet(

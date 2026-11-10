@@ -2,9 +2,10 @@
 
 El molde que saca, para un idioma, las 10 capturas del set B («Primer plano y objetos») en iPhone 6,9", iPhone 6,5" e
 iPad 13", sus hojas de contacto y la vista previa (vídeo) con y sin música. Todo recibe **un solo parámetro: el
-idioma** (`es`, `en`, `pt-BR`). El inglés sirve para en-US y en-GB.
+idioma** (`es`, `en`, `en-GB`, `pt-BR`, `pt-PT`). `en` es en-US; en-GB (libras) y pt-PT (euros) tienen set propio
+desde la 2.2.
 
-Las salidas viven fuera del repo, en `~/Claude/propuestas/ficha-app-store-2.1/<idioma>/` (cámbialo con
+Las salidas viven fuera del repo, en `~/Claude/propuestas/ficha-app-store-2.2/<idioma>/` (cámbialo con
 `YALA_FICHA_SALIDA`). Subirlas a App Store Connect es de Lola; aquí no se sube ni se manda a revisión nada.
 
 ## Una corrida
@@ -52,6 +53,40 @@ YALA_FICHA_SALIDA=~/Claude/propuestas/ficha-app-store-2.2 portada/render.sh es g
   de ASC antes de enviar.
 - En el iPad, el de Yala IA va delante: su chat vive en la columna derecha y detrás quedaría tapado.
 
+## Encabezado en vídeo de iOS 27 (2.2)
+
+El encabezado de la página de producto (21:9, 3840×1646) y el de resultados de búsqueda (3:2, 3840×2560), en vídeo:
+8,4 s a 30 fps, H.264, `.mp4` sin pista de audio y en loop sin corte. Sale de la toma `ia` del vídeo (`video/grabar.sh
+<idioma> ia`):
+
+```bash
+python3 encabezado/render.py es   # → <salida>/es/encabezado/yala-encabezado-{21x9-3840x1646,3x2-3840x2560}.mp4 y _revision/
+```
+
+- **Una idea y nada de texto encima**: el logo y un iPhone en el que le dices un gasto a Yala IA y aparece el registro.
+  Lo único que cambia por idioma es la pantalla grabada.
+- La burbuja y la tarjeta caen dentro de la zona segura de las plantillas de Apple (`FOCO` en `render.py`); el teléfono
+  es grande y se corta por abajo. `_revision/guia-*.png` marca esa zona.
+- **El archivo empieza con la tarjeta ya puesta**, porque el primer fotograma es la portada que enseña Apple. La
+  pantalla se funde de la tarjeta a la bienvenida en 0,8 s y el último fotograma enlaza con el primero.
+- El envío se busca en la grabación (el primer fotograma que cambia), no en la marca `chat_send`, que llega hasta
+  0,6 s tarde.
+
+## Evento dentro de la app y páginas personalizadas (2.2)
+
+```bash
+evento/render.sh es        # → <salida>/es/evento/yala-evento-{tarjeta-3840x2160,detalle-2160x3840}.png (sin texto encima)
+python3 paginas/armar.py <salida>/es <destino>/es   # las láminas reordenadas: voz/, grupos/, yala-ia/, variante-b/
+```
+
+- El evento usa las pantallas `s-programados` y `s-panel` del idioma. Apple pinta el distintivo, el nombre y la
+  descripción sobre la parte de abajo: la imagen no lleva texto.
+- `paginas/armar.py` no compone nada: copia las 10 láminas en el orden de cada página (primero la de su función) y en el
+  de la variante B de la prueba A/B. Los órdenes y los textos (borrador para Lola) están en
+  `docs/evidencia/app-store-2-2-lote-2026-11-04/BORRADOR-textos.md`.
+- **Composición 2.2** (4-nov-2026): Estadísticas en «Gráficas» con la tarjeta de Categorías arriba, y la 06 del iPhone
+  con la **lista** de Grupos (sus chips salen de `OBJ["06_grupos"].chipsLista`).
+
 ## Sumar un idioma (de, fr, it, ja…)
 
 1. **`textos/<idioma>.js`**: el fichero de Lola, con la misma forma que `en.js` (`TXT`, `OBJ`, `VIDEO`).
@@ -92,7 +127,9 @@ el Duo no está hecho: `sets.js` no tiene sus medidas.
 
 | Ruta | Qué es |
 |---|---|
-| `textos/` | Los textos de Lola por idioma, copia literal de `~/Claude/lola-borradores/2.1/textos-capturas/` (16-oct-2026). |
+| `textos/` | Los textos de Lola por idioma, copia literal de `~/Claude/lola-borradores/2.1/textos-capturas/` (16-oct-2026). `en-GB.js` y `pt-PT.js` (4-nov-2026) son borradores de Frank adaptados de los suyos, para que Lola los revise. |
+| `evento/` | `evento.html` y `render.sh`: las dos imágenes del evento dentro de la app. |
+| `paginas/armar.py` | Las láminas reordenadas para las páginas personalizadas y la variante B. |
 | `idiomas.json` | Idioma → `AppleLanguages`, `AppleLocale`, divisa y `.lproj`; el reloj; los simuladores. |
 | `comun.sh` | Lo que comparten los scripts: la configuración del idioma, `udid`, `barra` y `preparar`. |
 | `reloj/` | `reloj.c` y su `compilar.sh`: la app del simulador ve la hora desplazada al reloj de `idiomas.json`. |
@@ -105,6 +142,7 @@ el Duo no está hecho: `sets.js` no tiene sus medidas.
 | `video/grabar.sh` | Graba cada escena del vídeo con `simctl io recordVideo` y apunta los toques. |
 | `video/cortes/<idioma>.json` | Los tramos de cada toma y los toques, medidos por idioma. |
 | `video/tomas.py` · `index.html` · `render.sh` | La pista de pantalla, la composición con las frases de `VIDEO` y el render (HyperFrames + ffmpeg). |
+| `encabezado/` | `encabezado.html` (fondo: logo, estrellas y el iPhone con la pantalla en negro) y `render.py` (la toma `ia` dentro de la pantalla, en loop, con ffmpeg). |
 | `portada/` | `portada.html` (composición del recurso universal, iPhone e iPad) y `render.sh` (Chrome → PNG sin alfa). |
 | `duo/` | `capturas.sh` (exterior e interior del iPhone Duo) y `comun.sh`: posturas y toques por Device Hub (`clic.swift`, `hubmap.py`, `mappt.py`). |
 | `assets/` | El logo y GSAP (licencia estándar de GreenSock). La música (`pop.mp3`, Mixkit) no está en el repo: `YALA_FICHA_MUSICA`. |

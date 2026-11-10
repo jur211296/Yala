@@ -30,6 +30,7 @@ struct TrendsCarouselWidget: View {
 
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @Namespace private var animationNamespace
     @State private var showFilterBlockedMessage: Bool = false
@@ -146,7 +147,48 @@ struct TrendsCarouselWidget: View {
 
     // MARK: - Header
 
+    @ViewBuilder
     private var header: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            accessibilityHeader
+        } else {
+            regularHeader
+        }
+    }
+
+    /// Con el texto al máximo, el selector de métrica le quitaba el ancho a la cifra y la elipsis caía en medio
+    /// («S/54,5….64», barrido final 2.2): título, cifra y selector, uno debajo del otro.
+    private var accessibilityHeader: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+            HStack(spacing: DS.Spacing.xs) {
+                Text(viewModel.trendType.displayName)
+                    .font(DS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(.thPrimaryText)
+                if let headerInfoButton {
+                    headerInfoButton
+                }
+            }
+
+            if !hasNoTrendData {
+                AmountText(
+                    value: currentKPIValue,
+                    currencyCode: currencyCode,
+                    font: DS.Typography.title
+                )
+                .padding(.top, DS.Spacing.xs)
+
+                variationChip
+            }
+
+            if !sessionState.isExpensesOnlyMode {
+                metricSelector
+                    .padding(.top, DS.Spacing.xs)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var regularHeader: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 HStack(spacing: DS.Spacing.xs) {

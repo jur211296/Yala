@@ -198,7 +198,7 @@ describe("criterios", () => {
 
 // ---------- sesión 2 · chat y nota (trabajador A): text.parse, chat.answer, chat.rewrite ----------
 
-import { categoryName, currencySymbol, seedSubcategoryNames, subcategoryName } from "../bench/lib/appCatalog";
+import { categoryName, currencySymbol, lprojFor, seedSubcategoryNames, subcategoryName } from "../bench/lib/appCatalog";
 import { chatDynamicPrompt, chatRegister, chatStaticPrompt, extractNumbers, fidelity, gradeChatAnswer, matchesValue, personaContext, triggersAnomalies } from "../bench/lib/chatAnswer";
 import { toAppJSON } from "../bench/lib/chatContext";
 import { commonWordSet, gradeRewrite, isPolishInflection, isValidSuggestion, parseRewritten, rewriteBody, type RewriteCase } from "../bench/lib/chatRewrite";
@@ -281,7 +281,9 @@ describe("text.parse: el cuerpo de TranscriptionParserService", () => {
   });
 
   it("criterio: fecha y divisa por defecto como la app, signo, subcategoría y ningún movimiento de más", () => {
-    const tx = (o: Record<string, unknown>) => ({ amount: 45.5, date: null, note: "Wong", isExpense: true, subcategoryHint: "Supermercados y bodegas", tagHints: [], currencyHint: null, confidence: { amount: 1, date: 1, merchant: 1, subcategory: 1, tags: 0 }, ...o });
+    // El nombre sale del catálogo de la app, no escrito a mano: el lote 12.4 renombró «bodegas» y el test se quedó atrás.
+    const supermarkets = subcategoryName(lprojFor("es-PE"), "supermarkets");
+    const tx = (o: Record<string, unknown>) => ({ amount: 45.5, date: null, note: "Wong", isExpense: true, subcategoryHint: supermarkets, tagHints: [], currencyHint: null, confidence: { amount: 1, date: 1, merchant: 1, subcategory: 1, tags: 0 }, ...o });
     const k: TextParseCase = { id: "x", locale: "es-PE", today: "2026-10-07", defaultCurrency: "PEN", text: "", expect: [{ amount: 45.5, isExpense: true, date: "2026-10-07", currency: "PEN", sub: ["supermarkets"], merchant: "Wong" }] };
     const g = (txs: unknown[]) => gradeTextParse(JSON.stringify({ transactions: txs }), k);
     expect(g([tx({})]).pass).toBe(true); // sin fecha = hoy; sin divisa = la principal

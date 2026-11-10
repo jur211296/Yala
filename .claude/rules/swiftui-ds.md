@@ -20,6 +20,20 @@ paths:
 - NUNCA `@AppStorage` dentro de `@Observable` (no triggerea updates).
 - Preferir `@Observable` + `@State`/`@Bindable` sobre `ObservableObject`/`@Published`/`@StateObject`.
 - **Preferencias persistentes → `AppPreferences` inyectado via `@Environment`.** NUNCA `@AppStorage` directo en views nuevas.
+- **El contenido de una hoja puede rehacerse SIN cerrarla, y su `@State` nace de cero (medido el 2026-11-04).** Pasaba al
+  entrar a Yala desde fuera con «Nuevo registro» a medias en otra pestaña. Fue en el runner del CI y una vez en local:
+  mismo proceso, misma escena y la barra intacta. El formulario volvía con «0.00» y sin animación de cierre.
+  ⇒ **Lo que la persona escribió no vive solo en un `@State` del contenido de la hoja**: lo guarda quien la presenta y se
+  descarta en el `onDismiss`, no en un `onDisappear` del contenido, que también corre al rehacerse. Molde:
+  `NewRecordDraft`. El rehecho se fuerza en XCUITest con `-uitest-rebuild-form-on-return`
+  (`View.newRecordSheetIdentity()`). Una hoja nueva con formulario largo y el mismo riesgo copia el molde.
+  **Que iOS cierre Yala lo cubre otra pieza, en disco** (card 77j1, decisión A de Jürgen, 2026-11-04):
+  `NewRecordDraftStore` guarda un registro nuevo al dejar de estar activa la app (`.inactive`, no solo `.background`:
+  matada justo al pasar a segundo plano, la escritura de `.background` no llegaba a disco, medido en XCUITest), lo
+  recupera al abrir un registro nuevo a secas con «Empezar de cero» y caduca a las 24 h. Quién lo posee vive en
+  `NewRecordDraft.ownsSavedDraft` (sobrevive al rehecho) y se borra en su `discard()`. Pin:
+  `NewRecordDraftSurvivesCloseUITests` (el cierre se imita esperando a `.runningBackgroundSuspended` antes de
+  `terminate()`).
 - **Un singleton que NO es `@Observable` (`CloudAuthService.shared`) leído desde el body no repinta nada al cambiar, y un
   `@State` que se cambia pero el body no lee, tampoco.** `StorageSettingsView` cambia `refreshTick` cada segundo y ningún
   body lo lee: lo que repinta es que `controller.refresh()` cambie propiedades del controller `@Observable`. Medido por
@@ -91,6 +105,23 @@ paths:
   (`ScheduledPaymentDraftService.skipOccurrencesMissedDuringPause`, antes de levantar la marca y tras `processDuePayments`).
 
 ## Gotchas de vistas
+
+- **Un freno «solo con la app activa» que DESCARTA la petición deja la pantalla sin cargar en el arranque del iPad
+  (medido el 2026-11-05, iPad Pro 13, iOS 27.2, barrido final 2.2).** El Panel pedía su carga en el `onAppear` y en el
+  cambio de fase a `.active`, y los dos llegaban antes de que `UIApplication.applicationState` fuera `.active`: el freno
+  (`guard isApplicationActive() else { return }`) los tiraba y nadie volvía a pedirla (inferido: repetirla al activarse
+  lo cura, medido). El Panel se quedaba en el
+  esqueleto hasta mandar Yala a segundo plano y volver; en el iPhone no pasaba y la 2.1 tampoco lo tenía. ⇒ **un freno
+  así apunta lo que descartó y lo repite al activarse** (`PanelViewModel.missedWhileInactive` +
+  `UIApplication.didBecomeActiveNotification` en `PanelActivationObserver`). `RecalculationDebouncer` (Grupos) tiene el
+  mismo freno sin repetición; en las capturas del barrido Grupos sí cargó al relanzar en el iPad (no se buscó la carrera
+  a propósito). Pin: `PanelColdLaunchActivationTests`.
+- **Un `PasteButton` con un `.onTapGesture` en un PADRE no recibe el dedo (medido el 2026-11-05, iPhone 14, iOS 27.2,
+  QA de Grupos L12-16).** `.dismissKeyboardOnTap()` colgado del `ScrollView` de «Pega tu enlace de invitación» se quedaba
+  con el toque y «Pegar» no hacía nada; quitado, pegaba. ⇒ en una pantalla con `PasteButton`, el gesto que oculta el
+  teclado va en una capa de fondo hermana del contenido (`.background { Color.clear.dismissKeyboardOnTap() }`), que sigue
+  ocultándolo al tocar fuera (medido en el mismo iPhone). El simulador no lo reproduce: allí el `PasteButton` ignora
+  todo toque sintético. Pin: `PasteButtonTapWiringTests`.
 
 - **`.sheet(isPresented:)` con el contenido sacado de OTRO `@State` sale VACÍA si el `body` no lee ese estado fuera del
   cierre (medido el 2026-10-17, iOS 27.0, lote 8).** Buscar ponía `detailTransaction = record` y `showsDetail = true` en
@@ -203,6 +234,32 @@ paths:
   (`onboardingRoutingDeferredForRelaunch` + `SignOutDeferredRoutingLogic`). El simulador no lo reproduce: monta con
   espejo y el cambio en caliente se salta.
 
+- **El cambio de almacén en caliente deja vivo lo que no cuelga de la jerarquía, y cerraba Yala por dos sitios (card
+  7e60, medido en el iPhone 14 el 2026-11-05: el primero tapaba al segundo).** (1) **Una hoja del árbol viejo sigue
+  presentada hasta que UIKit termina de cerrarla**, y en ese rato su contenido vuelve a aparecer con el `modelContext`
+  del almacén soltado: Ajustes hacía `fetchCount` en su `onAppear` y SwiftData abortaba (`swift_weakLoadStrong`,
+  EXC_BREAKPOINT). ⇒ el contenido de una presentación desde la que se cierra sesión o se borra la cuenta en la nube
+  lleva `.detachesFromSwappedStore()`, que deja de pintarlo en cuanto la generación del host cambia o se queda sin
+  almacén (`SwappedStoreContentLogic`); hoy, la hoja de Ajustes. **La generación con la que se montó viaja por el entorno** (`\.mountedStoreGeneration`, lo pone `YalaApp.windowContent`), no en un `@State` del contenido: si iOS rehace el contenido de la hoja tras el cambio, un `@State` nuevo guardaría la generación nueva con el contexto viejo. (2) **El re-arranque vuelve a correr
+  `AppBootstrapper.bootstrap` en el MISMO proceso**, y lo que el sistema solo admite una vez por proceso revienta:
+  `BGTaskScheduler.register` de un identificador ya registrado lanza una excepción ObjC que nada atrapa. ⇒ un paso nuevo
+  del arranque que registre algo en el sistema lleva su latch de proceso (`BackgroundTaskManager.tasksRegistered`).
+  (3) **El `onDismiss` de una hoja corre aunque la vista que la presentó ya no esté montada** (2026-11-06, el tercer
+  cierre: el de Ajustes del Panel viejo llamaba a `reloadAndRecalculate()` y su recarga hacía `fetch` con el almacén
+  soltado). ⇒ el corte va en el ViewModel que guarda el contexto, no en cada llamada: `BoundStoreContext` lo ata a la
+  generación con la que se dio y lo devuelve `nil` con otro almacén montado; quien recalcule con sus arrays (filas de
+  ese almacén) mira `isDetachedFromMountedStore` antes. Hoy, `PanelViewModel` y `DetailContainerViewModel`. Un
+  ViewModel nuevo que recargue desde el `onDismiss` de una hoja que pueda cerrar sesión hace lo mismo.
+  Pin: `SwappedStoreContentTests`, `BoundStoreContextWiringTests`, `BackgroundTaskRegistrationOnceTests`.
+
+- **Un destino del Welcome sobrevive al borrado del cierre de sesión, a propósito, así que cada cierre decide el suyo
+  (card 7e60, medido el 2026-11-05).** Un «Restaurar desde iCloud» de antes del cierre que nadie consumió dejaba a la
+  persona siguiente en «Un último paso: reabre Yala» en cada apertura: Restaurar se abría sin pasar por el Welcome,
+  pedía reabrir para conectar iCloud y, con `hasShownWelcomeChooser` borrado, el neutro armado volvía a montar sin
+  espejo. ⇒ el arm del borrado escribe el destino del cierre o retira el que hubiera (`persistDestinationOnArm`), y
+  todo callback que pida reabrir para el espejo marca `hasShownWelcomeChooser`, como el del contenedor del Welcome. Pin:
+  `SignOutWelcomeDestinationTests`.
+
 - **Una decisión del arranque que lea el eje de sesión NO puede tomarse en el splash (medido el 2026-10-19).**
   `checkInitialSyncState` corre en paralelo a `AppBootstrapper.bootstrap`, y el eje (`PrivateSessionMark`) lo escribe
   el backfill del bootstrap: decidido en el splash, el aviso en frío de «iCloud no está disponible» no salía en ningún
@@ -261,6 +318,20 @@ paths:
   barra del inset, el contenido «cabe» y lo último queda debajo de «Guardar». ⇒ mientras haya un campo con foco, sin
   alto mínimo (`.frame(minHeight: focusedField == nil ? proxy.size.height : nil)`), o el molde de Nuevo registro
   (`SaveAreaPlacement`, que mete «Guardar» en el contenido con el teclado).
+- **Los botones fijos debajo de un scroll van en `.safeAreaBar(edge: .bottom)`, no en `.safeAreaInset` (barrido final
+  2.2, 2026-11-05).** Con el inset y sin fondo, el contenido que se desplaza pasa por debajo de «Guardar» y los dos textos
+  se leen uno encima del otro: a AX5 en Nuevo registro y el onboarding, y en el Duo cerrado también a tamaño normal. La
+  barra reserva el mismo sitio y difumina el borde del scroll bajo ella. Así van Nuevo registro (`SaveAreaPlacement`),
+  Nuevo gasto de Grupos, el onboarding y `YalaStepGuide`; los otros `safeAreaInset(edge: .bottom)` de `Yala/App` no se
+  han medido a AX5. **Dos efectos medidos a tamaño normal:** sin `spacing:` la barra deja otro hueco que el inset (el
+  formulario de Grupos bajaba 4 pt: va con `spacing: DS.Spacing.sm`), y **iOS atenúa el texto de un botón desactivado
+  dentro de la barra** (gris 164 → 129), sin que lo eviten el entorno `isEnabled` ni la opacidad de la etiqueta. Jürgen
+  pidió el tono de siempre a tamaño normal: `YalaPrimaryButton(keepsDisabledToneInBar: true)` pinta ese texto encima del
+  botón, al 50 % de `.plain`; con texto de accesibilidad se deja el del sistema.
+- **Una fila concepto-importe a tamaños de accesibilidad baja el importe a su propia línea; nunca lo corta ni lo parte.**
+  `AdaptiveRowStack`, o el mismo `if dynamicTypeSize.isAccessibilitySize` en línea cuando la fila lleva un
+  `Spacer(minLength:)` distinto (el `HStack` de tamaño normal queda idéntico: `VoiceDraftReviewCard`,
+  `ScheduledPaymentRowView`). Dos botones en una fila van en `ViewThatFits` (fila; si no cabe, uno debajo del otro).
 - **Cambiar el `foregroundStyle` de un `TextField` mientras tiene el foco no se ve hasta que lo pierde (medido el
   2026-11-01, iOS 27.0).** Un monto que pasaba de gris a rosa al escribir el primer dígito se quedó gris con «240»
   escrito. ⇒ el gris de «sin monto» va en el `prompt` (`Text(verbatim: "0.00").foregroundStyle(.tertiary)`) y el texto

@@ -47,6 +47,8 @@ final class SiriShortcutsScreenUITests: XCTestCase {
         button.tap()
 
         let shortcuts = XCUIApplication(bundleIdentifier: "com.apple.shortcuts")
+        // Si el caso cae, Atajos se queda abierto encima del caso siguiente: se cierra pase lo que pase.
+        addTeardownBlock { shortcuts.terminate() }
         XCTAssertTrue(shortcuts.wait(for: .runningForeground, timeout: 15), "El botón no abrió Atajos.")
         // La página de Yala, con sus acciones; no «Todos los atajos». Atajos rotula las acciones de Yala en el idioma del
         // SISTEMA, no en el que `launchForUITest` le pone a Yala: en el simulador del CI (inglés) es «Note with Siri», y
@@ -54,7 +56,11 @@ final class SiriShortcutsScreenUITests: XCTestCase {
         let yalaAction = shortcuts.staticTexts.matching(
             NSPredicate(format: "label IN %@", ["Anotar con Siri", "Note with Siri"])
         ).firstMatch
-        XCTAssertTrue(yalaAction.waitForExistence(timeout: 15), "Atajos no se abrió en la página de Yala.")
+        // 60 s y no 15 (2026-11-05). En el runner, la PRIMERA vez que se abre Atajos tarda más de 15 s en pintar la página
+        // de Yala: cayó así al primer intento en la nocturna y en el dispatch del 4-nov, y en el reintento el MISMO
+        // proceso de Atajos (mismo pid) ya la enseñaba al segundo. La página era la buena; faltaba tiempo. Solo cuesta
+        // cuando tarda.
+        XCTAssertTrue(yalaAction.waitForExistence(timeout: 60), "Atajos no se abrió en la página de Yala.")
         shortcuts.terminate()
     }
 

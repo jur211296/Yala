@@ -16,10 +16,34 @@ struct ScheduledPaymentRowView: View {
     let currencyCode: String
 
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
-        let state = summary.rowState
         NavigationLink(value: summary.payment.persistentModelID) {
+            rowContent
+                .contentShape(Rectangle())
+                .panelCard(small: true)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("scheduled_payment_row")
+    }
+
+    /// Con el texto al máximo el importe baja a su propia línea, entero: al lado del nombre se cortaba («-S/ 60…», iPad
+    /// Pro 13, barrido final 2.2). A tamaño normal, la fila de siempre, con los mismos hijos en el mismo `HStack`.
+    @ViewBuilder
+    private var rowContent: some View {
+        let state = summary.rowState
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                HStack(spacing: DS.Spacing.md) {
+                    paymentIcon
+                        .opacity(ScheduledPaymentListLogic.section(for: state) == .toPay ? 1 : 0.55)
+                    nameAndStatus(state)
+                }
+                amountLabel(state)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
             HStack(spacing: DS.Spacing.md) {
                 Group {
                     // El logo del servicio, si lo hay (card 9nn7, 2.3); si no, el icono de su subcategoría.
@@ -32,41 +56,54 @@ struct ScheduledPaymentRowView: View {
                     // Lo hecho, saltado o pausado, atenuado: lo que falta es lo que llama la atención.
                     .opacity(ScheduledPaymentListLogic.section(for: state) == .toPay ? 1 : 0.55)
 
-                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    Text(summary.payment.name)
-                        .font(DS.Typography.label)
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-
-                    HStack(spacing: DS.Spacing.xs) {
-                        ScheduledPaymentStatusPill(state: state, isIncome: summary.payment.isIncome)
-                        Text(ScheduledPaymentDateText.dayMonth(summary.dueDate))
-                            .font(DS.Typography.captionSmall)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                        if summary.payment.isGroupPayment {
-                            // Gasto compartido (F6): la cuenta es solo un prefill, así que se dice que es compartido.
-                            Image(systemName: "person.2.fill")
-                                .font(DS.Typography.captionSmall)
-                                .foregroundStyle(.secondary)
-                                .accessibilityLabel(L10n.Scheduled.GroupExpense.sharedBadge)
-                        }
-                    }
-                }
+                nameAndStatus(state)
 
                 Spacer(minLength: DS.Spacing.sm)
 
-                Text(Self.amountText(summary, appPreferences: appPreferences))
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(Self.amountColor(state: state, isIncome: summary.payment.isIncome))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                amountLabel(state)
             }
-            .contentShape(Rectangle())
-            .panelCard(small: true)
         }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("scheduled_payment_row")
+    }
+
+    private func nameAndStatus(_ state: ScheduledPaymentRowState) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+            Text(summary.payment.name)
+                .font(DS.Typography.label)
+                .foregroundStyle(.primary)
+                // Con el texto al máximo, dos líneas: en una salía «Recibo ven…».
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+
+            // Con el texto al máximo, la insignia y la fecha una debajo de otra: al lado, «Pagado» salía «Paga…» (QA físico
+            // 2.2, iPhone 14). A tamaño normal, la fila de siempre.
+            statusLineLayout {
+                ScheduledPaymentStatusPill(state: state, isIncome: summary.payment.isIncome)
+                Text(ScheduledPaymentDateText.dayMonth(summary.dueDate))
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                if summary.payment.isGroupPayment {
+                    // Gasto compartido (F6): la cuenta es solo un prefill, así que se dice que es compartido.
+                    Image(systemName: "person.2.fill")
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.secondary)
+                        .accessibilityLabel(L10n.Scheduled.GroupExpense.sharedBadge)
+                }
+            }
+        }
+    }
+
+    private var statusLineLayout: AnyLayout {
+        dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Spacing.xs))
+            : AnyLayout(HStackLayout(spacing: DS.Spacing.xs))
+    }
+
+    private func amountLabel(_ state: ScheduledPaymentRowState) -> some View {
+        Text(Self.amountText(summary, appPreferences: appPreferences))
+            .font(DS.Typography.headline)
+            .foregroundStyle(Self.amountColor(state: state, isIncome: summary.payment.isIncome))
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
     }
 
     // MARK: - Components

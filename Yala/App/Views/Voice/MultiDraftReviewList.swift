@@ -18,6 +18,7 @@ struct MultiDraftReviewList: View {
 
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     typealias Logic = MultiDraftReviewLogic
     typealias Item = MultiDraftReviewLogic.Item<PersistentIdentifier>
@@ -39,6 +40,35 @@ struct MultiDraftReviewList: View {
 
     // MARK: - Resumen
 
+    @ViewBuilder
+    private func summaryTotal(_ items: [Item], code: String?) -> some View {
+        if let code {
+            AmountText(
+                value: Logic.total(items, selection),
+                currencyCode: code,
+                font: DS.Typography.amountLarge,
+                secondaryFont: DS.Typography.subheadline,
+                forceFullPrecision: true,
+                animatesValue: true
+            )
+            .accessibilityIdentifier("multi_review_total")
+        }
+    }
+
+    @ViewBuilder
+    private func summaryToggleAll(pending: [PersistentIdentifier], allMarked: Bool) -> some View {
+        if !pending.isEmpty {
+            Button(allMarked ? L10n.Voice.reviewDeselectAll : L10n.Voice.reviewSelectAll) {
+                selection.setAll(!allMarked, pending: pending)
+                DS.Haptic.selection()
+            }
+            .font(DS.Typography.label)
+            .foregroundStyle(.thAccentText)
+            .frame(minHeight: 44)
+            .accessibilityIdentifier("multi_review_toggle_all")
+        }
+    }
+
     private func summary(_ items: [Item]) -> some View {
         let marked = Logic.marked(items, selection)
         let code = Logic.sharedCurrency(marked.isEmpty ? items : marked)
@@ -46,28 +76,18 @@ struct MultiDraftReviewList: View {
         let pending = items.filter(\.isPending).map(\.id)
         let allMarked = pending.allSatisfy(selection.contains)
         return VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
-                if let code {
-                    AmountText(
-                        value: Logic.total(items, selection),
-                        currencyCode: code,
-                        font: DS.Typography.amountLarge,
-                        secondaryFont: DS.Typography.subheadline,
-                        forceFullPrecision: true,
-                        animatesValue: true
-                    )
-                    .accessibilityIdentifier("multi_review_total")
+            // Con texto de accesibilidad, el total encima de «Quitar todos»: al lado, el total salía «S/2….71» (pase de
+            // estrés 2.2, card 48ri). A tamaño normal, la fila de siempre.
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                    summaryTotal(items, code: code)
+                    summaryToggleAll(pending: pending, allMarked: allMarked)
                 }
-                Spacer(minLength: DS.Spacing.sm)
-                if !pending.isEmpty {
-                    Button(allMarked ? L10n.Voice.reviewDeselectAll : L10n.Voice.reviewSelectAll) {
-                        selection.setAll(!allMarked, pending: pending)
-                        DS.Haptic.selection()
-                    }
-                    .font(DS.Typography.label)
-                    .foregroundStyle(.thAccentText)
-                    .frame(minHeight: 44)
-                    .accessibilityIdentifier("multi_review_toggle_all")
+            } else {
+                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                    summaryTotal(items, code: code)
+                    Spacer(minLength: DS.Spacing.sm)
+                    summaryToggleAll(pending: pending, allMarked: allMarked)
                 }
             }
             Text(countAndRange(items, marked: marked.count))

@@ -31,7 +31,7 @@ final class AccountCardPickersUITests: XCTestCase {
 
     // MARK: - Selector
 
-    /// La tarjeta sale una vez, con sus divisas, y la línea justo debajo. Tocar la tarjeta y la pastilla de dólares deja
+    /// La tarjeta sale una vez, con su divisa en el nombre, y la línea justo debajo. Tocar la tarjeta y la pastilla de dólares deja
     /// el registro en la línea.
     func test_selector_nestsTheLineUnderItsCard_andThePillPicksTheLine() {
         let app = launch()
@@ -45,9 +45,14 @@ final class AccountCardPickersUITests: XCTestCase {
         let lineRow = app.buttons["account_selector_row_\(line)"]
         XCTAssertTrue(cardRow.waitForExistence(timeout: 5), "No está la fila de la tarjeta.")
         XCTAssertTrue(lineRow.exists, "No está la fila de la línea.")
-        XCTAssertTrue(cardRow.label.contains("PEN · USD"), "La tarjeta no dice sus divisas: «\(cardRow.label)».")
+        // Cada fila, una sola divisa; la tarjeta la lleva también en el nombre («Visa QA · PEN»), como la línea de debajo
+        // (Jürgen, 6-nov: antes la tarjeta decía «PEN · USD», como si fuera de las dos a la vez).
+        XCTAssertTrue(cardRow.label.contains("\(card) · PEN"), "La tarjeta no lleva su divisa en el nombre: «\(cardRow.label)».")
+        XCTAssertFalse(cardRow.label.contains("USD"), "La fila de la tarjeta mezcla divisas: «\(cardRow.label)».")
+        XCTAssertFalse(lineRow.label.contains("PEN"), "La fila de la línea mezcla divisas: «\(lineRow.label)».")
         XCTAssertGreaterThan(lineRow.frame.minY, cardRow.frame.minY, "La línea no va debajo de su tarjeta.")
         let dollars = app.buttons["account_selector_row_Dólares QA"]
+        XCTAssertFalse(dollars.label.contains("Dólares QA · "), "Una cuenta sin líneas no lleva la divisa en el nombre.")
         XCTAssertTrue(dollars.frame.maxY <= cardRow.frame.minY || dollars.frame.minY >= lineRow.frame.maxY,
                       "Otra cuenta se mete entre la tarjeta y su línea.")
 

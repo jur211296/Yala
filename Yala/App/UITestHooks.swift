@@ -31,6 +31,15 @@ final class UITestHooks {
         ) { _ in
             MainActor.assumeIsolated { UITestHooks.shared.noteLifecycle(.sceneDisconnected) }
         })
+        guard Self.rebuildsFormOnReturn else { return }
+        lifecycleObservers.append(center.addObserver(
+            forName: UIApplication.willEnterForegroundNotification, object: nil, queue: .main
+        ) { _ in
+            MainActor.assumeIsolated {
+                UITestHooks.shared.formRebuildToken += 1
+                UITestHooks.shared.traceLifecycle("rehecho forzado")
+            }
+        })
     }
 
     // MARK: - Flags (false en release)
@@ -1601,6 +1610,15 @@ final class UITestHooks {
     /// Los últimos sucesos, en orden, con las hojas presentadas en ese instante (`d=`): pestaña elegida, fase de la
     /// escena, hoja que se cierra. Los contadores dicen QUÉ se rehízo; la traza, después de QUÉ.
     private(set) var lifecycleTrace: [String] = []
+
+    /// `-uitest-rebuild-form-on-return`: al volver Yala a primer plano, la hoja de «Nuevo registro» rehace su contenido
+    /// (`.id` nuevo) sin cerrarse, como lo hizo el runner del CI de una a tres veces por noche (card «Nuevo registro a
+    /// medias vuelve vacío», 2026-11-04). Hace determinista lo que en el CI salía por azar: el formulario rehecho tiene
+    /// que retomar lo escrito (`NewRecordDraft`).
+    nonisolated static var rebuildsFormOnReturn: Bool { hasArg("-uitest-rebuild-form-on-return") }
+
+    /// Sube cada vez que Yala vuelve a primer plano con `-uitest-rebuild-form-on-return`. Siempre 0 fuera de los tests.
+    private(set) var formRebuildToken = 0
 
     func traceLifecycle(_ event: @autoclosure () -> String) {
         guard Self.isActive else { return }

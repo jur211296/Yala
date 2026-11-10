@@ -16,6 +16,7 @@ struct InsightsTabView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.openURL) private var openURL
     @Environment(AppPreferences.self) private var appPreferences
 
@@ -581,10 +582,14 @@ struct InsightsTabView: View {
     private func detailModeBody(stats: QuickStats, summary: PeriodSummary) -> some View {
         dailyAverageCard(stats: stats, summary: summary)
 
-        let columns = [
-            GridItem(.flexible(), spacing: DS.Spacing.md),
-            GridItem(.flexible(), spacing: DS.Spacing.md)
-        ]
+        // Con el texto al máximo, una ficha por fila: en media pantalla «Subcategoría principal» se partía en sílabas y el
+        // importe salía cortado («S/ 67,3…», barrido final 2.2). A tamaño normal, las dos columnas de siempre.
+        let columns = dynamicTypeSize.isAccessibilitySize
+            ? [GridItem(.flexible(), spacing: DS.Spacing.md)]
+            : [
+                GridItem(.flexible(), spacing: DS.Spacing.md),
+                GridItem(.flexible(), spacing: DS.Spacing.md)
+            ]
 
         LazyVGrid(columns: columns, spacing: DS.Spacing.md) {
             if let top = stats.topCategory {

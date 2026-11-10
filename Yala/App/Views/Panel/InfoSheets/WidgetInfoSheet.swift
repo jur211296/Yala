@@ -206,7 +206,7 @@ struct WidgetInfoSheet<Preview: View>: View {
             let symbols = calendar.weekdaySymbols
             guard (1...symbols.count).contains(top.weekday) else { return nil }
             return L10n.Panel.WidgetInfo.YourData.weekday(symbols[top.weekday - 1])
-        case .budgets, .recentRecords, .exchangeRate, .expensesByNeed, .periodComparison, .sankey:
+        case .budgets, .recentRecords, .exchangeRate, .expensesByNeed, .sankey:
             return nil
         }
     }
