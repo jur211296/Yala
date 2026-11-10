@@ -59,6 +59,13 @@ Remotion saca **vídeo** para redes y las plantillas sacan **imágenes** para re
 
 Viene de la política 2.1 (PR #469).
 
+## Decisiones de publicación de Jürgen (2026-11-09)
+
+1. **Los posts de X de Yala van siempre en español.** No hay excepción en inglés ni calendario EN para X: las piezas
+   nuevas se producen solo en español neutro latinoamericano. Las versiones EN que ya existen no se borran.
+2. **La semana del 9 al 15 de noviembre se publica pieza por pieza, a mano**, sin reactivar ninguna rutina de
+   publicación. Vale para esa semana; volver a automatizar es otra decisión, y la toma Jürgen.
+
 ## Decisiones de esta reorganización (2026-10-13)
 
 1. **No se movió nada de lo que ya funcionaba.** `App Store/`, `screenshots-appstore/` y `remotion/`
