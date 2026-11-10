@@ -4745,10 +4745,10 @@
 "welcome.cloud.notFoundCta" = "Create my account";
 
 /* Title when foreign local data blocks sign-in */
-"welcome.cloud.blockedTitle" = "This device has data from another account";
+"welcome.cloud.blockedTitle" = "This device already has saved data";
 
 /* Body when foreign local data blocks sign-in */
-"welcome.cloud.blockedBody" = "To protect that data, we can't connect a different account here. Its owner can sign back in anytime.";
+"welcome.cloud.blockedBody" = "To protect it, we can't connect this account here. Whoever saved it can sign back in anytime.";
 
 "welcome.cloud.blockedRestoreHint" = "What if they're yours? If you just started an iCloud restore, wait for it to finish and sign in again.";
 
@@ -8768,3 +8768,16 @@
 "groups.convert.notice" = "Your record stays in %@ and becomes this group expense: if it changes or is deleted in the group, it changes in your records too.";
 "groups.convert.personalSplitHint" = "To turn it into a shared expense, remove “My share”: this record only keeps your share.";
 "groups.convert.saveFirstHint" = "Save your changes to turn it into a shared expense.";
+
+/* Progreso de dejar iCloud aparte al entrar con Google o Apple desde el Welcome */
+"welcome.groups.cloudAsideWorking" = "This device's iCloud data stays in iCloud, untouched. We're finishing uploading the latest changes and getting the device ready to sign in to your account…";
+/* Puerta del Welcome: no se pudo empezar a dejar iCloud aparte */
+"welcome.groups.cloudAsideUnavailableBody" = "Go back and try again in a moment. Nothing has been changed.";
+/* Puerta del Welcome: el borrado del arranque no pudo quitar la copia local de iCloud */
+"welcome.groups.cloudAsideWipeFailedBody" = "When Yala reopened, we couldn't remove the copy of the iCloud data from this device, so it isn't ready for your account. That data is still in iCloud. We won't try again on our own: go back and, if you like, try again later.";
+/* Puerta del Welcome: cambios de grupos sin subir antes de dejar iCloud aparte */
+"welcome.groups.cloudAsideBlockedBody" = "This device has group changes that haven't reached the server yet. Sign back in with that account so they can upload, and then you can sign in to your account here.";
+/* Puerta del Welcome: la espera del export se agotó al dejar iCloud aparte; %d = cuántos */
+"welcome.groups.cloudAsideStalledBody" = "Changes on this device that haven't reached iCloud yet: %d. So they aren't lost, wait for them to arrive before continuing.";
+/* Puerta del Welcome: la espera del export se agotó al dejar iCloud aparte, sin cifra */
+"welcome.groups.cloudAsideStalledBodyUnknown" = "We couldn't confirm that the latest changes on this device reached iCloud. So they aren't lost, wait before continuing.";

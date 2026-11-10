@@ -6194,6 +6194,18 @@ enum L10n {
             /// copia» **con prueba**, que es lo correcto), y a ése la frase le mentía. Ahora dice qué se está
             /// haciendo; el aviso de la espera agotada dice lo que de verdad pasó.
             static var neutralWorking: String { ls("welcome.groups.neutralWorking", comment: "") }
+            /// La entrada con Google o Apple que deja el iCloud privado aparte (opción B, 2026-11-10): los cuatro textos
+            /// que esa entrada dice distinto que «Crear mi primer grupo» en la misma pantalla.
+            static var cloudAsideWorking: String { ls("welcome.groups.cloudAsideWorking", comment: "") }
+            static var cloudAsideUnavailableBody: String { ls("welcome.groups.cloudAsideUnavailableBody", comment: "") }
+            static var cloudAsideWipeFailedBody: String { ls("welcome.groups.cloudAsideWipeFailedBody", comment: "") }
+            static var cloudAsideBlockedBody: String { ls("welcome.groups.cloudAsideBlockedBody", comment: "") }
+            /// La espera del export agotada al dejar iCloud aparte. Sin «si continúas»: esta entrada no ofrece descartar
+            /// nada (quien entra puede no ser el dueño del teléfono), así que solo cabe esperar o volver.
+            static func cloudAsideStalledBody(_ count: Int) -> String {
+                String(format: ls("welcome.groups.cloudAsideStalledBody", comment: "Dejar iCloud aparte con cambios sin subir a iCloud; %d = cuántos"), count)
+            }
+            static var cloudAsideStalledBodyUnknown: String { ls("welcome.groups.cloudAsideStalledBodyUnknown", comment: "") }
             /// El ÚNICO punto de este flujo donde se pregunta, y se llega solo **con prueba** de que no hay
             /// copia (`PrivateSignOutExportGateLogic.CopyChannel.none`): informar diría «tus datos siguen a
             /// salvo en iCloud», y sin copia eso sería mentira.

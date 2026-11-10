@@ -189,6 +189,7 @@
 - [Capturas de hojas con XCUITest](feedback_capturas_de_hojas_con_xcuitest.md) — dentro de Ajustes, XCTAttachment + export; los swipes de axe cierran la hoja.
 - [Capturas: en `_capturas/<slug>`](reference_capturas_sobreviven_en_worktrees_capturas.md) — el worktree se retira; capturas/ dentro muere y ensucia el status.
 - [Regresión aparente: se mide contra la base](feedback_regresion_aparente_se_mide_contra_la_base.md) — worktree de origin y mismos toques antes de arreglar o culparte.
+- [Bienvenida con datos en el iPhone](reference_bienvenida_con_datos_en_el_iphone.md) — `-hasCompletedOnboarding NO` a secas; con «chooser no visto» monta neutro y miente.
 - [El oráculo de bisect exige su build](feedback_el_oraculo_de_bisect_exige_su_build.md) — sin «TEST BUILD SUCCEEDED», 125: si no, corre el binario anterior.
 - [Rojo de compilación en un fichero ajeno](feedback_rojo_de_compilacion_en_fichero_ajeno.md) — relanza; si repite tras editar durante un build, clean antes de bisecar.
 - [Capturas con un conductor XCUITest](feedback_capturas_con_conductor_xcuitest.md) — build del árbol sin tocar, capturas en segundo plano y editar mientras.

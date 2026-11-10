@@ -4751,10 +4751,10 @@
 "welcome.cloud.notFoundCta" = "アカウントを作る";
 
 /* Title when foreign local data blocks sign-in */
-"welcome.cloud.blockedTitle" = "このデバイスには別のアカウントのデータがあります";
+"welcome.cloud.blockedTitle" = "このデバイスにはすでにデータが保存されています";
 
 /* Body when foreign local data blocks sign-in */
-"welcome.cloud.blockedBody" = "データ保護のため、ここでは別のアカウントを接続できません。持ち主はいつでも再度サインインできます。";
+"welcome.cloud.blockedBody" = "データ保護のため、ここではこのアカウントを接続できません。データを保存した人はいつでも再度サインインできます。";
 
 "welcome.cloud.blockedRestoreHint" = "もし自分のデータなら、iCloudからの復元を始めたばかりの可能性があります。完了するまで待ってから、もう一度サインインしてください。";
 
@@ -8774,3 +8774,16 @@
 "groups.convert.notice" = "この記録は%@に残り、このグループの支出になります。グループで変更・削除されると、あなたの記録にも反映されます。";
 "groups.convert.personalSplitHint" = "共有の支出にするには「自分の分」を外してください。この記録にはあなたの分だけが保存されています。";
 "groups.convert.saveFirstHint" = "共有の支出にするには、先に変更を保存してください。";
+
+/* Progreso de dejar iCloud aparte al entrar con Google o Apple desde el Welcome */
+"welcome.groups.cloudAsideWorking" = "この端末の iCloud データは iCloud にそのまま残ります。最新の変更のアップロードを終えて、アカウントにサインインできるよう端末を準備しています…";
+/* Puerta del Welcome: no se pudo empezar a dejar iCloud aparte */
+"welcome.groups.cloudAsideUnavailableBody" = "戻って、少ししてからもう一度お試しください。何も変更されていません。";
+/* Puerta del Welcome: el borrado del arranque no pudo quitar la copia local de iCloud */
+"welcome.groups.cloudAsideWipeFailedBody" = "Yala を開き直したときに、この端末から iCloud データのコピーを削除できなかったため、この端末はまだアカウントに使える状態になっていません。そのデータは iCloud に残っています。自動ではもう一度試しません。戻って、よければ後でもう一度お試しください。";
+/* Puerta del Welcome: cambios de grupos sin subir antes de dejar iCloud aparte */
+"welcome.groups.cloudAsideBlockedBody" = "この端末には、まだサーバーに届いていないグループの変更があります。そのアカウントで再度サインインしてアップロードしてから、ここで自分のアカウントにサインインできます。";
+/* Puerta del Welcome: la espera del export se agotó al dejar iCloud aparte; %d = cuántos */
+"welcome.groups.cloudAsideStalledBody" = "この端末でまだ iCloud に届いていない変更: %d。失われないよう、届くまで待ってから進んでください。";
+/* Puerta del Welcome: la espera del export se agotó al dejar iCloud aparte, sin cifra */
+"welcome.groups.cloudAsideStalledBodyUnknown" = "この端末の最新の変更が iCloud に届いたことを確認できませんでした。失われないよう、少し待ってから進んでください。";

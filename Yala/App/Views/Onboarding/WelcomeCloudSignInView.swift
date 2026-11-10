@@ -125,6 +125,12 @@ struct WelcomeCloudSignInView: View {
     /// (`LateNoticeKeptGroupsMark.recordAtGroupsEntryIfNoGroupsYet`): una sesión que sobrevivió a una reinstalación es
     /// de la persona anterior.
     var onEnterGroupsOnly: (_ offersFullActivation: Bool, _ sessionOpenedHere: Bool) -> Void
+    /// **Opción B de Jürgen (2026-11-10)** · el guard cross-cuenta no deja adoptar sobre lo que hay, y lo que hay es el
+    /// corpus del iCloud privado con copia en iCloud (`ICloudAsideEntryLogic`): se deja en iCloud, sin tocar, y se entra a
+    /// la cuenta en un teléfono neutro. Es un callback y no una fase propia por lo mismo que `onEnterGroupsOnly`: lo que
+    /// sigue es la vuelta al neutro de la puerta del Welcome (`WelcomeGroupsGateView`, propósito `.enterCloudAccount`),
+    /// que es un step de OTRO contenido del cover. Lleva el método con el que se firmó, para retomarlo tras reabrir.
+    var onLeaveICloudAside: (CloudSignInProvider) -> Void
     /// **Paso 6** · «Crear otra cuenta» desde la entrada encaminada por el faro: cerrar este cover y volver
     /// a «Elige dónde quieres guardar tus datos» ENTERO —las dos cards, privado incluido (decisión de
     /// Jürgen 2026-09-09, que deroga el «card nube activa» del ticket)—. Es un callback y no una fase propia
@@ -1313,7 +1319,19 @@ struct WelcomeCloudSignInView: View {
                 // dejar rastro en el device y el registro GDPR real de esa cuenta vive en SU backend;
                 // escribirlo antes de saber la ruta era el bug del chip (caía en el iKV del dueño).
                 await CloudAuthService.shared.signOut()
-                phase = .blockedForeignData
+                // **Opción B (2026-11-10)**: si lo que hay es el corpus del iCloud privado y tiene copia en iCloud, no
+                // se bloquea —ni al dueño ni al teléfono ajeno, que el guard no sabe distinguir—: se deja en iCloud sin
+                // tocar y se entra a la cuenta en un teléfono neutro. Se mide DESPUÉS de soltar la sesión, con la celda
+                // que el cierre privado va a encontrar. Sin copia, o con el teléfono en la nube, el bloqueo de siempre.
+                switch ICloudAsideEntryLogic.exit(
+                    exitCell: WelcomeGroupsGateView.exitCell(),
+                    copyChannel: WelcomeGroupsGateView.copyChannelNow,
+                    hasLegacyCloudKitGroups: CloudSessionSignOut.hasLegacyCloudKitGroupRows(context: modelContext)) {
+                case .leaveICloudAside:
+                    onLeaveICloudAside(provider)
+                case .staysBlocked:
+                    phase = .blockedForeignData
+                }
             case .proceed:
                 // M0: la ruta ya se conoce y es la del PROPIO dueño ⇒ el epoch se escribe AQUÍ, antes de
                 // arrancar la máquina: el paso 5-bis de `adoptBackendAccount` re-emite el epoch
