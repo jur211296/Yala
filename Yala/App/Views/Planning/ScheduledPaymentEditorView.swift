@@ -293,11 +293,15 @@ struct ScheduledPaymentEditorView: View {
             VStack(spacing: DS.Spacing.none) {
                 // Transaction Type (Income/Expense) — oculto en gasto compartido (siempre gasto)
                 if !sessionState.isExpensesOnlyMode && !isGroupExpense {
-                    Picker("", selection: $transactionType) {
+                    // Con nombre para VoiceOver, sin rótulo visible: los selectores de esta pantalla se leían sin
+                    // nombre (lote 04 de mejoras necesarias 2.3).
+                    Picker(L10n.Transaction.type, selection: $transactionType) {
                         Text(NSLocalizedString("transaction.type.expense", comment: "")).tag("expense")
                         Text(NSLocalizedString("transaction.type.income", comment: "")).tag("income")
                     }
+                    .labelsHidden()
                     .pickerStyle(.segmented)
+                    .accessibilityLabel(L10n.Transaction.type)
                     .padding()
                 }
 
@@ -912,11 +916,13 @@ struct ScheduledPaymentEditorView: View {
 
             VStack(spacing: DS.Spacing.none) {
                 // One-time vs Recurring toggle
-                Picker("", selection: $isRecurring) {
+                Picker(L10n.UXL10.when, selection: $isRecurring) {
                     Text(NSLocalizedString("scheduled.recurrence.onetime", comment: "")).tag(false)
                     Text(NSLocalizedString("scheduled.recurrence.recurring", comment: "")).tag(true)
                 }
+                .labelsHidden()
                 .pickerStyle(.segmented)
+                .accessibilityLabel(L10n.UXL10.when)
                 // Sin este id el control es INALCANZABLE desde automatización: un `Picker`
                 // segmentado no aparece como elemento tapeable en el árbol de accesibilidad (sale
                 // como texto), y targetear por el rótulo está prohibido porque está localizado.
@@ -1007,11 +1013,12 @@ struct ScheduledPaymentEditorView: View {
 
             Spacer()
 
-            Picker("", selection: $recurrenceInterval) {
+            Picker(NSLocalizedString("scheduled.every", comment: ""), selection: $recurrenceInterval) {
                 ForEach(1...maxInterval, id: \.self) { num in
                     Text("\(num)").tag(num)
                 }
             }
+            .labelsHidden()
             .pickerStyle(.menu)
             .frame(width: 60)
             .onChange(of: recurrenceType) {
@@ -1021,12 +1028,13 @@ struct ScheduledPaymentEditorView: View {
                 }
             }
 
-            Picker("", selection: $recurrenceType) {
+            Picker(L10n.Scheduled.Detail.frequency, selection: $recurrenceType) {
                 ForEach(RecurrenceType.allCases) { type in
                     Text(recurrenceInterval == 1 ? type.localizedNameSingular : type.localizedNamePlural)
                         .tag(type)
                 }
             }
+            .labelsHidden()
             .pickerStyle(.menu)
         }
         .padding()
@@ -1108,11 +1116,12 @@ struct ScheduledPaymentEditorView: View {
 
             Spacer()
 
-            Picker("", selection: $dayOfMonth) {
+            Picker(NSLocalizedString("scheduled.editor.day.of.month", comment: ""), selection: $dayOfMonth) {
                 ForEach(1...31, id: \.self) { day in
                     Text("\(day)").tag(day)
                 }
             }
+            .labelsHidden()
             .pickerStyle(.menu)
             // Hermano del id del selector de recurrencia: es la otra vía para que un pago
             // recurrente venza HOY (poner aquí el día de hoy) y tampoco era alcanzable.
@@ -1134,19 +1143,21 @@ struct ScheduledPaymentEditorView: View {
             Spacer()
 
             // Month picker
-            Picker("", selection: $yearlyMonth) {
+            Picker(L10n.Scheduled.Recurrence.month, selection: $yearlyMonth) {
                 ForEach(1...12, id: \.self) { month in
                     Text(monthName(month)).tag(month)
                 }
             }
+            .labelsHidden()
             .pickerStyle(.menu)
 
             // Day picker
-            Picker("", selection: $yearlyDay) {
+            Picker(L10n.Scheduled.Recurrence.day, selection: $yearlyDay) {
                 ForEach(1...daysInMonth(yearlyMonth), id: \.self) { day in
                     Text("\(day)").tag(day)
                 }
             }
+            .labelsHidden()
             .pickerStyle(.menu)
         }
         .padding()
@@ -1294,7 +1305,7 @@ struct ScheduledPaymentEditorView: View {
 
                     Spacer()
 
-                    Picker("", selection: $notifyDaysBefore) {
+                    Picker(NSLocalizedString("scheduled.notify.days.before", comment: ""), selection: $notifyDaysBefore) {
                         Text(NSLocalizedString("common.disabled", comment: "")).tag(0)
                         Text("1").tag(1)
                         Text("2").tag(2)
@@ -1304,6 +1315,7 @@ struct ScheduledPaymentEditorView: View {
                         Text("14").tag(14)
                         Text("30").tag(30)
                     }
+                    .labelsHidden()
                     .pickerStyle(.menu)
                 }
                 .padding()

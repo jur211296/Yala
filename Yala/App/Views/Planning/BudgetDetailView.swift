@@ -155,6 +155,7 @@ struct BudgetDetailView: View {
                     limit: budget.limitAmount,
                     spent: summary.spent,
                     currencyCode: budget.currencyCode,
+                    daysRemaining: summary.daysRemaining,
                     alignment: .center,
                     labelFont: DS.Typography.subheadline,
                     amountFont: DS.Typography.largeTitle

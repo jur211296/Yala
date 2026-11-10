@@ -211,6 +211,45 @@ struct ScheduledPaymentDetailView: View {
         ) { linked[$0] != nil || payment.isDateSkipped($0) }
     }
 
+    /// Con el mes en curso hecho, si se pagó, se saltó o las dos cosas: saltar no es pagar (lote 04 de mejoras
+    /// necesarias 2.3; tras «Saltar este mes» el detalle decía «Noviembre de 2026 ya está pagado»).
+    private var settledMonth: ScheduledPaymentDetailLogic.SettledMonth {
+        let linked = linkedByOccurrence
+        return ScheduledPaymentDetailLogic.settledMonth(
+            datesThisMonth: viewModel.getPaymentDatesInMonth(payment: payment, month: .now)
+        ) { linked[$0] != nil }
+    }
+
+    @ViewBuilder
+    private var settledMonthLabel: some View {
+        switch settledMonth {
+        case .paid:
+            Label(
+                L10n.UXL10.monthAlreadyPaid(ScheduledPaymentDateText.monthYear(.now)),
+                systemImage: "checkmark.circle.fill"
+            )
+            .font(DS.Typography.label)
+            .foregroundStyle(theme.accentText)
+            .accessibilityIdentifier("scheduled_detail_month_paid")
+        case .skipped:
+            Label(
+                L10n.UXL10.monthSkipped(ScheduledPaymentDateText.monthYearInline(.now)),
+                systemImage: "forward.end.fill"
+            )
+            .font(DS.Typography.label)
+            .foregroundStyle(.secondary)
+            .accessibilityIdentifier("scheduled_detail_month_skipped")
+        case .mixed:
+            Label(
+                L10n.UXL10.monthSettled(ScheduledPaymentDateText.monthYear(.now)),
+                systemImage: "checkmark.circle"
+            )
+            .font(DS.Typography.label)
+            .foregroundStyle(theme.accentText)
+            .accessibilityIdentifier("scheduled_detail_month_settled")
+        }
+    }
+
     /// A qué fecha apuntan «Ya lo pagué» y «Saltar»: con el mes en curso hecho, a la próxima, y lo dicen (card 3zva).
     private func actionTarget(for date: Date) -> ScheduledPaymentDetailLogic.ActionTarget {
         ScheduledPaymentDetailLogic.actionTarget(
@@ -250,13 +289,7 @@ struct ScheduledPaymentDetailView: View {
                 }
 
                 if currentMonthSettled {
-                    Label(
-                        L10n.UXL10.monthAlreadyPaid(ScheduledPaymentDateText.monthYear(.now)),
-                        systemImage: "checkmark.circle.fill"
-                    )
-                    .font(DS.Typography.label)
-                    .foregroundStyle(theme.accentText)
-                    .accessibilityIdentifier("scheduled_detail_month_paid")
+                    settledMonthLabel
                 }
             }
 
@@ -305,6 +338,8 @@ struct ScheduledPaymentDetailView: View {
             glassButton(skipTitle(target), identifier: "scheduled_detail_skip_button") {
                 skip(date)
             }
+            // La línea de debajo explica Saltar; VoiceOver la oye en el propio botón (lote 04 de mejoras necesarias 2.3).
+            .accessibilityHint(skipHelp(target))
         }
     }
 

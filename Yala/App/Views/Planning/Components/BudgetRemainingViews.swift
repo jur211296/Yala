@@ -13,6 +13,8 @@ struct BudgetRemainingFigure: View {
     let limit: Double
     let spent: Double
     let currencyCode: String
+    /// Como `BudgetSummary.daysRemaining`: con el período cerrado (-1), la cifra es lo que sobró, no lo que queda.
+    var daysRemaining: Int = 1
     var alignment: HorizontalAlignment = .trailing
     var labelFont: Font = DS.Typography.captionSmall
     var amountFont: Font = DS.Typography.headline
@@ -23,11 +25,14 @@ struct BudgetRemainingFigure: View {
 
     private var remaining: Double { BudgetRemainingLogic.remaining(limit: limit, spent: spent) }
     private var isOver: Bool { BudgetRemainingLogic.isOver(limit: limit, spent: spent) }
+    private var label: BudgetRemainingLogic.FigureLabel {
+        BudgetRemainingLogic.figureLabel(limit: limit, spent: spent, daysRemaining: daysRemaining)
+    }
 
     var body: some View {
         VStack(alignment: alignment, spacing: DS.Spacing.xxs) {
             if showsLabel || isOver {
-                Text(isOver ? L10n.UXL9.overLabel : L10n.UXL9.remainingLabel)
+                Text(L10n.UXL9.figureLabel(label))
                     .font(labelFont)
                     .foregroundStyle(isOver ? Color.overBudgetText : Color.secondary)
                     .lineLimit(1)

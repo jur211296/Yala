@@ -1478,6 +1478,7 @@
 "scheduled.tab.recurring" = "Cykliczne";
 "scheduled.tab.subscriptions" = "Subskrypcje";
 "scheduled.tab.all" = "Wszystkie";
+"scheduled.tab.pickerLabel" = "Rodzaj płatności";
 
 // Empty State
 "scheduled.empty.title" = "Nie masz jeszcze zaplanowanych płatności";
@@ -7177,6 +7178,7 @@
 /* Auditoría UX 2.2 · lote 9 (presupuestos) */
 "budgets.l9.remainingLabel" = "Zostało";
 "budgets.l9.overLabel" = "Przekroczono o";
+"budgets.l9.leftoverLabel" = "Zostało niewydane";
 "budgets.l9.spentOfLimit" = "%1$@ z %2$@";
 "budgets.l9.notStarted" = "Jeszcze się nie zaczął";
 "budgets.l9.days.one" = "1 dzień";
@@ -7237,19 +7239,21 @@
 "scheduled.l10.hero.paidOf" = "Zapłacono %1$@ z %2$@";
 "scheduled.l10.hero.scope" = "Bez przychodów i wstrzymanych płatności";
 "scheduled.l10.detail.monthPaid" = "%@: już zapłacone";
+"scheduled.l10.detail.monthSkipped" = "Pominięto: %@";
+"scheduled.l10.detail.monthSettled" = "%@: wszystko załatwione";
 "scheduled.l10.action.paid" = "Już zapłacone";
 "scheduled.l10.action.received" = "Już otrzymane";
 "scheduled.l10.action.skipMonth" = "Pomiń ten miesiąc";
-"scheduled.l10.action.skipHelp" = "Nic nie zostanie zapisane; pozostałe miesiące się nie zmieniają";
+"scheduled.l10.action.skipHelp" = "Jeśli go pominiesz, nic nie zostanie zapisane; pozostałe miesiące się nie zmieniają";
 "scheduled.l10.next.header" = "Następny: %@";
 "scheduled.l10.action.paidMonth" = "Zapłacone za %@";
 "scheduled.l10.action.receivedMonth" = "Otrzymane za %@";
 "scheduled.l10.action.skipNamedMonth" = "Pomiń %@";
-"scheduled.l10.action.skipHelpMonth" = "Za %@ nic nie zostanie zapisane; pozostałe miesiące się nie zmieniają";
+"scheduled.l10.action.skipHelpMonth" = "Jeśli pominiesz %@, nic nie zostanie zapisane; pozostałe miesiące się nie zmieniają";
 "scheduled.l10.action.paidDate" = "Już zapłacona ta z %@";
 "scheduled.l10.action.receivedDate" = "Już otrzymana ta z %@";
 "scheduled.l10.action.skipDate" = "Pomiń tę z %@";
-"scheduled.l10.action.skipHelpDate" = "W dniu %@ nic nie zostanie zapisane; pozostałe daty się nie zmieniają";
+"scheduled.l10.action.skipHelpDate" = "Jeśli pominiesz tę z %@, nic nie zostanie zapisane; pozostałe daty się nie zmieniają";
 "scheduled.l10.action.pause" = "Wstrzymaj tę płatność";
 "scheduled.l10.action.resume" = "Wznów";
 "scheduled.l10.action.pauseHelp" = "Nie przypomnimy o niej ani jej nie policzymy, dopóki jej nie wznowisz";

@@ -75,6 +75,7 @@ struct BudgetRowView: View {
                             limit: summary.budget.limitAmount,
                             spent: summary.spent,
                             currencyCode: currencyCode,
+                            daysRemaining: summary.daysRemaining,
                             alignment: .trailingUnlessStacked(dynamicTypeSize),
                             showsLabel: showsRemainingLabel
                         )
@@ -146,10 +147,22 @@ struct BudgetRowView: View {
         BudgetAtLimitLabel.isShown(spent: summary.spent, limit: summary.budget.limitAmount)
     }
 
-    /// La fila combina sus hijos con etiqueta propia: sin añadirla aquí, VoiceOver no diría «En el límite».
+    /// La fila combina sus hijos con etiqueta propia: sin añadirla aquí, VoiceOver no diría «En el límite». Lleva lo
+    /// que la fila enseña en grande —«Te quedan S/ 392.00»— y los días, también cuando la fila no los pinta porque van
+    /// en el título de la sección (lote 04 de mejoras necesarias 2.3: VoiceOver no decía ni lo uno ni lo otro).
     private var accessibilityLabelText: String {
         let base = L10n.Accessibility.budgetRow(summary.budget.name, Int(summary.percentage), formattedSpent, formattedLimit)
-        return isAtLimit ? "\(base), \(L10n.UXL9.atLimit)" : base
+        var parts = [base, remainingSpoken, L10n.UXL9.shortDays(summary.daysRemaining)]
+        if isAtLimit { parts.append(L10n.UXL9.atLimit) }
+        return parts.joined(separator: ", ")
+    }
+
+    private var remainingSpoken: String {
+        let limit = summary.budget.limitAmount
+        let label = BudgetRemainingLogic.figureLabel(limit: limit, spent: summary.spent, daysRemaining: summary.daysRemaining)
+        let amount = appPreferences.currency(abs(BudgetRemainingLogic.remaining(limit: limit, spent: summary.spent)),
+                                             currencyCode: currencyCode)
+        return "\(L10n.UXL9.figureLabel(label)) \(amount)"
     }
 
     // MARK: - Formatters

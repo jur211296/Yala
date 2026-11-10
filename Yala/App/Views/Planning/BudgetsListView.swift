@@ -258,6 +258,13 @@ struct BudgetsListView: View {
         section.status != .exceeded && !dynamicTypeSize.isAccessibilitySize
     }
 
+    /// ¿El período de la sección ya cerró? `nil` si mezcla cerrados y en curso (los «Único» llevan fechas propias): ahí
+    /// el título no dice nada y cada fila lleva su rótulo.
+    private func sectionIsClosed(_ section: (status: BudgetStatus, budgets: [BudgetSummary])) -> Bool? {
+        let closed = Set(section.budgets.map { $0.daysRemaining < 0 })
+        return closed.count == 1 ? closed.first : nil
+    }
+
     /// «28 días» para el título de la sección, o nil si la sección no comparte fin: los «Único» llevan fechas propias
     /// y los inactivos no corren.
     private func sectionDaysLeft(_ section: (status: BudgetStatus, budgets: [BudgetSummary])) -> String? {
@@ -281,13 +288,15 @@ struct BudgetsListView: View {
                                 .font(DS.Typography.subheadlineEmphasized)
                                 .foregroundStyle(.primary)
                         }
-                        if sectionShowsRemainingLabel(section) {
+                        if sectionShowsRemainingLabel(section), let closed = sectionIsClosed(section) {
                             Spacer(minLength: DS.Spacing.sm)
-                            Text(L10n.UXL9.remainingLabel)
+                            // Con el período ya cerrado, lo que no se gastó sobró (lote 04 de mejoras necesarias 2.3).
+                            Text(closed ? L10n.UXL9.leftoverLabel : L10n.UXL9.remainingLabel)
                                 .font(DS.Typography.captionSmall)
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
                                 .padding(.trailing, DS.Spacing.lg)
+                                .accessibilityIdentifier(closed ? "budgets_section_leftover_label" : "budgets_section_remaining_label")
                         }
                     }
 
@@ -298,7 +307,7 @@ struct BudgetsListView: View {
                             summary: summary,
                             currencyCode: summary.budget.currencyCode,
                             showsDaysLeft: sectionDaysLeft(section) == nil,
-                            showsRemainingLabel: !sectionShowsRemainingLabel(section)
+                            showsRemainingLabel: !sectionShowsRemainingLabel(section) || sectionIsClosed(section) == nil
                         )
                         // Clic secundario en el iPad, pulsación larga en el iPhone: el editor de siempre.
                         .contextMenu {

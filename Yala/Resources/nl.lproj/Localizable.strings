@@ -1478,6 +1478,7 @@
 "scheduled.tab.recurring" = "Terugkerend";
 "scheduled.tab.subscriptions" = "Abonnementen";
 "scheduled.tab.all" = "Alle";
+"scheduled.tab.pickerLabel" = "Soort betaling";
 
 // Empty State
 "scheduled.empty.title" = "Je hebt nog geen geplande betalingen";
@@ -7177,6 +7178,7 @@
 /* Auditoría UX 2.2 · lote 9 (presupuestos) */
 "budgets.l9.remainingLabel" = "Nog over";
 "budgets.l9.overLabel" = "Overschreden met";
+"budgets.l9.leftoverLabel" = "Overgebleven";
 "budgets.l9.spentOfLimit" = "%1$@ van %2$@";
 "budgets.l9.notStarted" = "Nog niet begonnen";
 "budgets.l9.days.one" = "1 dag";
@@ -7237,19 +7239,21 @@
 "scheduled.l10.hero.paidOf" = "Je hebt %1$@ van %2$@ betaald";
 "scheduled.l10.hero.scope" = "Zonder inkomsten en gepauzeerde betalingen";
 "scheduled.l10.detail.monthPaid" = "%@ is al betaald";
+"scheduled.l10.detail.monthSkipped" = "Je hebt %@ overgeslagen";
+"scheduled.l10.detail.monthSettled" = "%@ is bijgewerkt";
 "scheduled.l10.action.paid" = "Al betaald";
 "scheduled.l10.action.received" = "Al ontvangen";
 "scheduled.l10.action.skipMonth" = "Deze maand overslaan";
-"scheduled.l10.action.skipHelp" = "Er wordt niets vastgelegd; de andere maanden blijven hetzelfde";
+"scheduled.l10.action.skipHelp" = "Als je hem overslaat, wordt er niets vastgelegd; de andere maanden blijven hetzelfde";
 "scheduled.l10.next.header" = "Volgende: %@";
 "scheduled.l10.action.paidMonth" = "%@ al betaald";
 "scheduled.l10.action.receivedMonth" = "%@ al ontvangen";
 "scheduled.l10.action.skipNamedMonth" = "%@ overslaan";
-"scheduled.l10.action.skipHelpMonth" = "Voor %@ wordt niets vastgelegd; de andere maanden blijven hetzelfde";
+"scheduled.l10.action.skipHelpMonth" = "Als je %@ overslaat, wordt er niets vastgelegd; de andere maanden blijven hetzelfde";
 "scheduled.l10.action.paidDate" = "Die van %@ al betaald";
 "scheduled.l10.action.receivedDate" = "Die van %@ al ontvangen";
 "scheduled.l10.action.skipDate" = "Die van %@ overslaan";
-"scheduled.l10.action.skipHelpDate" = "Op %@ wordt niets vastgelegd; de andere datums blijven hetzelfde";
+"scheduled.l10.action.skipHelpDate" = "Als je die van %@ overslaat, wordt er niets vastgelegd; de andere datums blijven hetzelfde";
 "scheduled.l10.action.pause" = "Deze betaling pauzeren";
 "scheduled.l10.action.resume" = "Hervatten";
 "scheduled.l10.action.pauseHelp" = "We herinneren je er niet aan en tellen het niet mee tot je het hervat";

@@ -86,6 +86,8 @@ struct PeriodNavigationHeader: View {
         .buttonStyle(.plain)
         .disabled(!enabled)
         .accessibilityLabel(label)
+        // Para XCUITest: el rótulo está localizado y «chevron.left» casa también con el «Atrás» de la barra.
+        .accessibilityIdentifier(systemName == "chevron.left" ? "period_navigation_previous" : "period_navigation_next")
     }
 
     /// Gesture horizontal con disambiguation explícita vs scroll vertical.

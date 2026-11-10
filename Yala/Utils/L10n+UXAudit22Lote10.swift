@@ -71,6 +71,14 @@ extension L10n {
         static func monthAlreadyPaid(_ month: String) -> String {
             String(format: l10("scheduled.l10.detail.monthPaid"), month)
         }
+        /// «Saltaste noviembre de 2026» (el mes en curso, todas sus fechas saltadas).
+        static func monthSkipped(_ month: String) -> String {
+            String(format: l10("scheduled.l10.detail.monthSkipped"), month)
+        }
+        /// «Noviembre de 2026 ya está al día» (unas fechas pagadas y otras saltadas).
+        static func monthSettled(_ month: String) -> String {
+            String(format: l10("scheduled.l10.detail.monthSettled"), month)
+        }
         static var actionPaid: String { l10("scheduled.l10.action.paid") }
         static var actionReceived: String { l10("scheduled.l10.action.received") }
         static var actionSkipMonth: String { l10("scheduled.l10.action.skipMonth") }

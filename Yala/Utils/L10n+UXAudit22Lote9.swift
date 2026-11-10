@@ -31,6 +31,16 @@ extension L10n {
 
         static var remainingLabel: String { l9("budgets.l9.remainingLabel") }
         static var overLabel: String { l9("budgets.l9.overLabel") }
+        /// «Te sobró»: lo que no se gastó en un período que ya cerró.
+        static var leftoverLabel: String { l9("budgets.l9.leftoverLabel") }
+
+        static func figureLabel(_ label: BudgetRemainingLogic.FigureLabel) -> String {
+            switch label {
+            case .remaining: return remainingLabel
+            case .leftover: return leftoverLabel
+            case .over: return overLabel
+            }
+        }
 
         /// «S/ 1,408.00 de S/ 1,800.00»
         static func spentOfLimit(_ spent: String, _ limit: String) -> String {

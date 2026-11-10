@@ -1479,6 +1479,7 @@
 "scheduled.tab.recurring" = "Récurrents";
 "scheduled.tab.subscriptions" = "Abonnements";
 "scheduled.tab.all" = "Tous";
+"scheduled.tab.pickerLabel" = "Type de paiement";
 
 // Empty State
 "scheduled.empty.title" = "Aucun paiement planifié";
@@ -7166,6 +7167,7 @@
 /* Auditoría UX 2.2 · lote 9 (presupuestos) */
 "budgets.l9.remainingLabel" = "Il te reste";
 "budgets.l9.overLabel" = "Dépassé de";
+"budgets.l9.leftoverLabel" = "Il t’est resté";
 "budgets.l9.spentOfLimit" = "%1$@ sur %2$@";
 "budgets.l9.notStarted" = "Pas encore commencé";
 "budgets.l9.days.one" = "1 jour";
@@ -7226,19 +7228,21 @@
 "scheduled.l10.hero.paidOf" = "Tu as payé %1$@ sur %2$@";
 "scheduled.l10.hero.scope" = "Hors revenus et paiements en pause";
 "scheduled.l10.detail.monthPaid" = "%@ est déjà payé";
+"scheduled.l10.detail.monthSkipped" = "Tu as sauté %@";
+"scheduled.l10.detail.monthSettled" = "%@ est à jour";
 "scheduled.l10.action.paid" = "Je l’ai payé";
 "scheduled.l10.action.received" = "Je l’ai reçu";
 "scheduled.l10.action.skipMonth" = "Sauter ce mois-ci";
-"scheduled.l10.action.skipHelp" = "Rien n’est enregistré ; les autres mois ne changent pas";
+"scheduled.l10.action.skipHelp" = "Si tu le sautes, rien n’est enregistré ; les autres mois ne changent pas";
 "scheduled.l10.next.header" = "Prochain : %@";
 "scheduled.l10.action.paidMonth" = "J’ai payé %@";
 "scheduled.l10.action.receivedMonth" = "J’ai reçu %@";
 "scheduled.l10.action.skipNamedMonth" = "Sauter %@";
-"scheduled.l10.action.skipHelpMonth" = "Rien n’est enregistré en %@ ; les autres mois ne changent pas";
+"scheduled.l10.action.skipHelpMonth" = "Si tu sautes %@, rien n’est enregistré ; les autres mois ne changent pas";
 "scheduled.l10.action.paidDate" = "J’ai payé celui du %@";
 "scheduled.l10.action.receivedDate" = "J’ai reçu celui du %@";
 "scheduled.l10.action.skipDate" = "Sauter celui du %@";
-"scheduled.l10.action.skipHelpDate" = "Rien n’est enregistré le %@ ; les autres dates ne changent pas";
+"scheduled.l10.action.skipHelpDate" = "Si tu sautes celui du %@, rien n’est enregistré ; les autres dates ne changent pas";
 "scheduled.l10.action.pause" = "Mettre ce paiement en pause";
 "scheduled.l10.action.resume" = "Reprendre";
 "scheduled.l10.action.pauseHelp" = "On ne te le rappelle pas et on ne le compte pas tant que tu ne l’as pas repris";

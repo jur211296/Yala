@@ -123,12 +123,16 @@ struct ScheduledPaymentsView: View {
     // MARK: - Tab Selector
 
     private var tabSelector: some View {
-        Picker("Tab", selection: $viewModel.selectedTab) {
+        // El nombre es lo que VoiceOver lee del segmentado: decía «Tab» (lote 04 de mejoras necesarias 2.3).
+        Picker(L10n.Scheduled.Tab.pickerLabel, selection: $viewModel.selectedTab) {
             ForEach(ScheduledPaymentsTab.allCases) { tab in
                 Text(tab.localizedName).tag(tab)
             }
         }
         .pickerStyle(.segmented)
+        // Un segmentado no pasa el título del `Picker` a accesibilidad (medido en el árbol: etiqueta vacía).
+        .accessibilityLabel(L10n.Scheduled.Tab.pickerLabel)
+        .accessibilityIdentifier("scheduled_tab_picker")
     }
 
 
