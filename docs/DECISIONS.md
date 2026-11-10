@@ -2,11 +2,15 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (91 entradas)
+## Índice (95 entradas)
 
-> **No hace falta leer este fichero entero** — son 264 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 272 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-10` [Entrar con Google o Apple con tu iCloud privado en el teléfono: se deja iCloud aparte (opción B), y ](#2026-11-10-entrar-con-google-o-apple-con-tu-icloud-privado-en-el-telfono-se-deja-icloud-aparte-opcin-b-y-el-lote-del-9-y-10-nov)
+- `2026-11-09` [Entrar con Google o Apple con tu propio iCloud privado: Yala te pregunta (opción C), y Grupos usa un](#2026-11-09-entrar-con-google-o-apple-con-tu-propio-icloud-privado-yala-te-pregunta-opcin-c-y-grupos-usa-una-sola-cuenta-grupos)
+- `2026-11-09` [Verificación de Google de «Conectar Gmail»: se pide con la lectura en el teléfono](#2026-11-09-verificacin-de-google-de-conectar-gmail-se-pide-con-la-lectura-en-el-telfono)
+- `2026-11-09` [La memoria de Frank viaja en el PR de la sesión que la escribió](#2026-11-09-la-memoria-de-frank-viaja-en-el-pr-de-la-sesin-que-la-escribi)
 - `2026-10-21` [Formulario de registro 2.2 — la cuenta viene puesta, guardar no saca del flujo y lo elegido va relle](#2026-10-21-formulario-de-registro-22--la-cuenta-viene-puesta-guardar-no-saca-del-flujo-y-lo-elegido-va-relleno)
 - `2026-10-21` [Roadmap de Yala de 2.2 a 4.0 — por tema y sin fechas](#2026-10-21-roadmap-de-yala-de-22-a-40--por-tema-y-sin-fechas)
 - `2026-10-07` [IA en el plan free — voz y foto son un cupo de prueba de 5 notas y 5 fotos](#2026-10-07-ia-en-el-plan-free--voz-y-foto-son-un-cupo-de-prueba-de-5-notas-y-5-fotos)
@@ -35,23 +39,23 @@
 - `2026-07-01` [Groups — notificaciones filtradas por participación + copy con voz de marca](#2026-07-01-groups--notificaciones-filtradas-por-participacin--copy-con-voz-de-marca)
 - `2026-07-01` [Groups — pagos planificados de grupo (gasto compartido recurrente)](#2026-07-01-groups--pagos-planificados-de-grupo-gasto-compartido-recurrente)
 - `2026-06-30` [Personalización — toggle "Iconos coloridos" gobierna también "Más"](#2026-06-30-personalizacin--toggle-iconos-coloridos-gobierna-tambin-ms)
-- `2026-06-28` [Groups — rediseño del split de gastos estilo Splitwise](#2026-06-28-groups--rediseo-del-split-de-gastos-estilo-splitwise)
 - `2026-06-28` [..06-30] Groups — sync de "Solo Grupos" no bajaba cambios de otros miembros](#2026-06-2806-30-groups--sync-de-solo-grupos-no-bajaba-cambios-de-otros-miembros)
+- `2026-06-28` [Groups — rediseño del split de gastos estilo Splitwise](#2026-06-28-groups--rediseo-del-split-de-gastos-estilo-splitwise)
 - `2026-06-24` [Rediseño Welcome → Restore → Onboarding + invitaciones (6 commits)](#2026-06-24-rediseo-welcome--restore--onboarding--invitaciones-6-commits)
 - `2026-06-19` [..06-22] Groups — saga del crash-loop de sync en restore de iCloud (5 intentos, CERRADA en build 32)](#2026-06-1906-22-groups--saga-del-crash-loop-de-sync-en-restore-de-icloud-5-intentos-cerrada-en-build-32)
 - `2026-06-19` [Fix identity UUIDs colapsados tras restore lento de iCloud (Tag.id/Account.shortcutID/Subcategory.sh](#2026-06-19-fix-identity-uuids-colapsados-tras-restore-lento-de-icloud-tagidaccountshortcutidsubcategoryshortcutid)
 - `2026-06-14` [Fix doble canal de sync CloudKit en Grupos](#2026-06-14-fix-doble-canal-de-sync-cloudkit-en-grupos)
 - `2026-06-10` [Sesión de cierre pre-release 2.0](#2026-06-10-sesin-de-cierre-pre-release-20)
 - `2026-06-10` [OpenAI API key en Info.plist + PrivacyInfo sin FinancialInfo — diferido consciente a post-2.0](#2026-06-10-openai-api-key-en-infoplist--privacyinfo-sin-financialinfo--diferido-consciente-a-post-20)
-- `2026-06-08` [Fix Apple Pay — "No se pudo ejecutar el atajo"](#2026-06-08-fix-apple-pay--no-se-pudo-ejecutar-el-atajo)
 - `2026-06-08` [Fix invite-drop — persistencia de invite pendiente](#2026-06-08-fix-invite-drop--persistencia-de-invite-pendiente)
+- `2026-06-08` [Fix Apple Pay — "No se pudo ejecutar el atajo"](#2026-06-08-fix-apple-pay--no-se-pudo-ejecutar-el-atajo)
 - `2026-06-04` [Fix subcategorías duplicadas por re-sync de CloudKit](#2026-06-04-fix-subcategoras-duplicadas-por-re-sync-de-cloudkit)
-- `2026-05-26` [Auditoría sistémica de patrones UI — 13 commits, épico cerrado](#2026-05-26-auditora-sistmica-de-patrones-ui--13-commits-pico-cerrado)
 - `2026-05-26` [Fix migración shortcutID/Tag.id colapsado V2](#2026-05-26-fix-migracin-shortcutidtagid-colapsado-v2)
+- `2026-05-26` [Auditoría sistémica de patrones UI — 13 commits, épico cerrado](#2026-05-26-auditora-sistmica-de-patrones-ui--13-commits-pico-cerrado)
 - `2026-05-26` [Refactor V3 unificado del CSV-mirror SSOT (7 commits)](#2026-05-26-refactor-v3-unificado-del-csv-mirror-ssot-7-commits)
 - `2026-05-26` [Refactor robusto del subsistema de routing (F0-F11)](#2026-05-26-refactor-robusto-del-subsistema-de-routing-f0-f11)
-- `2026-05-25` [Transfer pair integrity — épico de 6 commits](#2026-05-25-transfer-pair-integrity--pico-de-6-commits)
 - `2026-05-25` [CSV mirror épico — Budget filters + TransactionItem/InboxDraft tags resilientes a CloudKit lazy hydr](#2026-05-25-csv-mirror-pico--budget-filters--transactioniteminboxdraft-tags-resilientes-a-cloudkit-lazy-hydration)
+- `2026-05-25` [Transfer pair integrity — épico de 6 commits](#2026-05-25-transfer-pair-integrity--pico-de-6-commits)
 - `2026-05-22` [Groups — cleanup de TX/drafts huérfanos post soft-delete (FU-02-cleanup)](#2026-05-22-groups--cleanup-de-txdrafts-hurfanos-post-soft-delete-fu-02-cleanup)
 - `2026-05-22` [Groups — Soft-delete de grupo (FU-02, owner-only, gateado por balance=0)](#2026-05-22-groups--soft-delete-de-grupo-fu-02-owner-only-gateado-por-balance0)
 - `2026-05-20` [Onboarding informativo del tab Grupos (3 steps)](#2026-05-20-onboarding-informativo-del-tab-grupos-3-steps)
@@ -64,9 +68,9 @@
 - `2026-05-08` [Yala AI Onboarding — tutorial de 4 pasos post-consent](#2026-05-08-yala-ai-onboarding--tutorial-de-4-pasos-post-consent)
 - `2026-05-08` [Groups Pulido — Sprint Pulido 2 (9 bugs UX) + Sprint Pulido 3 (cierre diferidos)](#2026-05-08-groups-pulido--sprint-pulido-2-9-bugs-ux--sprint-pulido-3-cierre-diferidos)
 - `2026-05-08` [Fix subcategorías vacías en Grupos + FullModeActivation rediseñado](#2026-05-08-fix-subcategoras-vacas-en-grupos--fullmodeactivation-rediseado)
+- `2026-05-07` [Cleanup sistémico de duplicados CloudKit (TODO #10)](#2026-05-07-cleanup-sistmico-de-duplicados-cloudkit-todo-10)
 - `2026-05-07` [A4 v3.2 — Welcome Hero + Chooser fix unificado (Sprint 2/2.1 polish visual)](#2026-05-07-a4-v32--welcome-hero--chooser-fix-unificado-sprint-221-polish-visual)
 - `2026-05-07` [A4 v3.2 — Fix P0 #2 (nudge dormant sin grupos) + #6 (Welcome Hero residual tras reinstall)](#2026-05-07-a4-v32--fix-p0-2-nudge-dormant-sin-grupos--6-welcome-hero-residual-tras-reinstall)
-- `2026-05-07` [Cleanup sistémico de duplicados CloudKit (TODO #10)](#2026-05-07-cleanup-sistmico-de-duplicados-cloudkit-todo-10)
 - `2026-05-06` [A4 — Landing + AASA + Welcome Chooser (cierra Fase A del épico Grupos)](#2026-05-06-a4--landing--aasa--welcome-chooser-cierra-fase-a-del-pico-grupos)
 - `2026-05-05` [A0-Bridge V2.0 — completa items P0+P1 diferidos](#2026-05-05-a0-bridge-v20--completa-items-p0p1-diferidos)
 - `2026-05-05` [Groups Pulido Final — Subset 3 (A6/A7/A8)](#2026-05-05-groups-pulido-final--subset-3-a6a7a8)
@@ -83,8 +87,8 @@
 - `2026-04-24` [PP2-07 polish + Hero rediseñado (cierre épico Panel Polish #2)](#2026-04-24-pp2-07-polish--hero-rediseado-cierre-pico-panel-polish-2)
 - `2026-04-22` [PP2-01 Hero Compacto](#2026-04-22-pp2-01-hero-compacto)
 - `2026-04-22` [PP2-05 tamaño `.small` + pilotos](#2026-04-22-pp2-05-tamao-small--pilotos)
-- `2026-04-22` [PP2-03 Chrome Compacto de Widgets](#2026-04-22-pp2-03-chrome-compacto-de-widgets)
 - `2026-04-22` [Refactor consent/feature AI Insights](#2026-04-22-refactor-consentfeature-ai-insights)
+- `2026-04-22` [PP2-03 Chrome Compacto de Widgets](#2026-04-22-pp2-03-chrome-compacto-de-widgets)
 - `2026-04-21` [Sync Status: Banner Global vs Toolbar Indicator](#2026-04-21-sync-status-banner-global-vs-toolbar-indicator)
 - `2026-04-21` [Sync silencioso por defecto + banner pill global](#2026-04-21-sync-silencioso-por-defecto--banner-pill-global)
 - `2026-04-16` [..04-20] Épico Panel 2.0 (P20-01..P20-11)](#2026-04-1604-20-pico-panel-20-p20-01p20-11)
@@ -117,6 +121,70 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-10] Entrar con Google o Apple con tu iCloud privado en el teléfono: se deja iCloud aparte (opción B), y el lote del 9 y 10-nov
+**Contexto:** El 9-nov Jürgen eligió la opción C (preguntar al dueño si pasa sus datos de iCloud a la nube). La sesión nocturna midió que no hay prueba fiable de que el iCloud del teléfono sea de quien entra, que «pasar» sería mezclar dos finanzas (fusión ya descartada) y que «dejarlos aparte» pedía un flujo nuevo. El 10-nov a las 6:45 (Lima) Jürgen volvió a la B. Quedaban además otras decisiones del 9 y 10-nov capturadas en el chat.
+**Decisión:** (1) **Opción B** (sustituye a la C): al entrar con Google o Apple desde el Welcome con el corpus del iCloud privado en el teléfono, se abre la nube con la cuenta que entra y los datos de iCloud se quedan en iCloud sin tocar: ni se suben, ni se mezclan, ni se borran de iCloud. No se pregunta. Solo sale la copia local, por la vuelta al neutro que ya usa la puerta de Grupos (espera al export, borrado por archivos antes del mount, relanzar), y tras reabrir se vuelve a la entrada con el mismo método. Sin copia en iCloud, con grupos de la era CloudKit sin migrar o con el teléfono en la nube, sigue el bloqueo, que ya no dice «de otra cuenta». Desde esa pantalla nada de lo que no llegó a iCloud se puede descartar: quien entra puede no ser el dueño. (2) Volver a la nube con la misma cuenta tras volver a iCloud (V4 de la decisión 53) va en 2.3. (3) Yala IA ampliada se enciende en producción en cuanto la 2.2 esté publicada en el App Store. (4) TestFlight de Yala podrá subirse desde la Mini o la Max cuando la Max tenga el certificado de distribución y la llave de App Store Connect. (5) Siri gratis con el modelo del propio iPhone se enciende para quien no tiene Pro y sí tiene el modelo (9-nov, opción A), y las cards de 2.2 en qa pasan a done. (6) Los lotes de mejoras de 2.3 esperan al merge de 2.2 en 2.3. (7) La prueba de «Tu IA registra en Yala» la prepara Dan en staging (gateway y conector).
+**Razones:** (1) no se puede probar que el iCloud es del dueño, y pasar datos mezclaría dos finanzas; dejar iCloud aparte vale igual para el dueño y para el teléfono prestado porque no mueve datos de nadie. Las demás son decisiones de calendario y de operación que Jürgen tomó en el chat.
+**Consecuencias:** (1) vive en `ICloudAsideEntryLogic` y en el propósito `.enterCloudAccount` de `WelcomeGroupsGateView`; un cambio en la vuelta al neutro del cierre privado cambia también esta entrada. (4) cambia la línea de TestFlight de `CLAUDE.md`. (5), (6) y (7) no dejan regla en el repo: se ejecutan fuera de él.
+**Estado:** Activa
+
+### [2026-11-09] Entrar con Google o Apple con tu propio iCloud privado: Yala te pregunta (opción C), y Grupos usa una sola cuenta «Grupos»
+**Contexto:** Dos decisiones de Jürgen del 9-nov, capturadas en el chat y pendientes de pasar al repo. (1) Card «Entrar con Google bloqueado por tus propios datos de iCloud privado»: con los datos de su iCloud privado en el teléfono, el dueño que entra con Google/Apple acababa en «Este dispositivo tiene datos de otra cuenta», porque el guard cross-cuenta (`CrossAccountEntryGuardLogic`) cuenta filas sin claim y no separa las propias de las ajenas. (2) Las cuentas de sistema de Grupos (una por divisa).
+**Decisión:** (1) **Opción C** (sustituye a la B, decidida minutos antes): no se bloquea como «datos de otra cuenta»; Yala le pregunta al dueño si prefiere pasar sus datos de iCloud a la nube o entrar en la nube dejándolos aparte. La protección del teléfono prestado o heredado no se rompe. (2) Las cuentas de sistema de Grupos se presentan como una sola «Grupos».
+**Razones:** (1) mover o no mover datos es una decisión que cambia dónde viven, y en Yala eso se pregunta, no se decide por la persona; la B decidía por ella. (2) Jürgen la aprobó junto con el cierre de las cards de 2.2 que no se prueban en el teléfono.
+**Consecuencias:** quien construya (1) diferencia «datos de mi iCloud privado» de «datos ajenos» antes del guard, y la pantalla de bloqueo deja de nombrar como ajenos los propios. Ese mismo día se ejecutaron también el GO del hotfix de política y términos con la sección de Gmail (PR 871 a 1.0 y 872 a 2.2) y el paso a 2.2 del arreglo de la foto de perfil con el filtro de Sentry de desarrollo (PR 875): no dejan regla en el repo.
+**Estado:** Activa en (2). La (1) quedó superada el 2026-11-10 por la opción B (entrada de arriba).
+
+
+### [2026-11-09] Verificación de Google de «Conectar Gmail»: se pide con la lectura en el teléfono
+
+**Contexto.** Google tiene que verificar el permiso `gmail.readonly` del proyecto `yala-502622` antes de que
+«Conectar Gmail» pueda salir a todos. Había dos versiones posibles que describir: la fase 1, que lee el correo en el
+iPhone, y la de 2.3, que lo procesaría en el servidor con IA. La política publicada no mencionaba Gmail.
+
+**Decisión.** Jürgen decidió el 9-nov a las 17:48 (Lima) pedir la verificación ya, con la versión de **lectura en el
+teléfono** (opción A) y el video ya editado de esa versión. La política y los términos de la web se dejan listos por
+hotfix desde `1.0`, con la sección «5. Si conectas tu Gmail» y la declaración de Uso Limitado. Dan se encarga de
+Search Console y del dominio.
+
+**Razones.** Es la única versión que existe hoy. Cada frase de la política tiene que ser verdad el día que se
+publica, y lo del servidor (borrado inmediato, token cifrado, proveedor de IA sin entrenamiento) es trabajo de 2.3.
+
+**Consecuencias.** Cuando la lectura pase al servidor, la sección 5 de la política se reescribe antes de publicar esa
+versión, y puede pedir una verificación nueva. El texto alternativo está en
+`docs/verificacion-google/propuesta-politica-y-terminos.md`, en la rama del PR de «Conectar Gmail» mínimo.
+
+**Estado:** Activa
+
+---
+
+### [2026-11-09] La memoria de Frank viaja en el PR de la sesión que la escribió
+
+**Contexto.** La memoria de Frank (`.claude/agent-memory/frank/`, 444 notas versionadas) ensuciaba el checkout
+principal de `~/Yala`, y eso frenó el `git pull --ff-only` de `lanzar-sesion` el 6 y el 9 de noviembre. Casa quitó el
+síntoma apartando la memoria en el pull (ADR-095 de casa, punto 6). Medido el 9-nov en ~100 transcripts de worktree:
+Claude Code declara la memoria en el worktree, y las notas sueltas del principal las habían movido sesiones a mano.
+
+**Decisión.** Jürgen eligió el 9-nov la opción (a) del ADR-095 de casa. Al cerrar, cada sesión de worktree lleva a su
+PR los cambios de memoria que hizo ella, con `scripts/memoria_al_pr.py`:
+
+- `llevar`, antes del push, commitea en la rama lo del worktree y lo del principal que el transcript de la sesión
+  prueba que escribió ella;
+- `limpiar`, tras el push, devuelve el principal a limpio en esas rutas, solo si `origin/<rama>` ya las tiene.
+
+Lo que escribió otra sesión viva se queda. Lo dudoso no se copia ni se borra: va al cuerpo del PR. El paso está en
+`/cerrar`, bloque 0, y en la cadena autónoma de `CLAUDE.md`.
+
+**Razones.** Una marca de arranque no distingue las notas de otra sesión viva del mismo agente, y el transcript sí:
+lo escribe Claude Code por sesión, con cada ruta escrita y su hora. La opción (b) escribía en la rama principal sin PR,
+y la (c) perdía la historia de la memoria.
+
+**Consecuencias.** `/cerrar-total` es de casa y no corre el paso por sí mismo. Queda descrito en el PR del encargo
+el cambio que le falta allí. Sin respaldo no se borra nada del principal: la copia va a
+`~/Claude/flota/memoria-apartada/Yala/`.
+
+**Estado:** Activa
 
 ### [2026-10-21] Formulario de registro 2.2 — la cuenta viene puesta, guardar no saca del flujo y lo elegido va relleno
 

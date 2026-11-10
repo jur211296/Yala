@@ -7,6 +7,7 @@
 - [Diseña en lienzo antes de construir](feedback_disena_en_lienzo_antes_de_construir.md) — cita vaga de UI: 3-4 propuestas, elige él; el alcance crece.
 - [«Creo que» no es aprobación](feedback_creo_que_no_es_aprobacion.md) — si no reconoce el componente, explicar antes de borrar.
 - [Push: solo lo de la sesión](feedback_push_solo_lo_de_la_sesion.md) — lo pendiente de otros se deja y lo sube su agente.
+- [La memoria no se mueve a mano al principal](feedback_la_memoria_no_se_mueve_a_mano_al_principal.md) — se queda en el worktree; viaja con memoria_al_pr.py.
 - [Levanta sus propias reglas](feedback_jurgen_levanta_sus_reglas.md) — si te pide algo que un default tuyo prohíbe, se hace…
 - [El test se para antes del último gesto](feedback_el_test_que_se_para_antes_del_ultimo_gesto.md) — recorre hasta la confirmación final y sal por Cancelar; B5 vivió semanas.
 - [El tablero antes que el bug](feedback_el_tablero_antes_que_el_bug.md) — prefiere sanear el board antes que atacar producción.
@@ -54,7 +55,10 @@
 - [Regresión: medir contra lo publicado](feedback_regresion_se_mide_contra_lo_publicado.md) — Panel iPad: B→A al saber que la 2.1 no lo tenía.
 - [«Igual a tamaño normal» es al píxel](feedback_igual_a_tamano_normal_es_literal.md) — también el botón desactivado; lo que el sistema cambie se fuerza al aspecto de antes.
 - [Reparar sus datos: lo nuevo solo, lo suyo con botón](feedback_reparacion_de_datos_se_ensena_y_se_ubica.md) — enseña y confirma; él elige dónde va el botón (Bandeja).
+- [El tutorial parte de la pantalla anterior](feedback_tutorial_parte_de_la_pantalla_anterior.md) — enseña lo que existe, sin rediseñar; R1-R3 de registro descartadas.
+- [Cierre de diseño: spec por cards](feedback_cierre_de_diseno_spec_por_cards.md) — artifact limpio + SPEC.md de una fuente, ID estable por card.
 ## Cómo mido y cómo entrego
+- [Vista previa de Vercel protegida](reference_vista_previa_vercel_protegida.md) — 302 al login: `vercel curl --deployment` desde Web/ con el project.json del principal.
 - [Duo abierto en la Max](reference_duo_abierto_en_la_max.md) — XCTest da negro: enlace + simctl --display; Device Hub con la pantalla libre.
 - [XcodeBuildMCP: la configuración pisa el scheme](feedback_xcodebuildmcp_configuration_pisa_el_scheme.md) — Yala Dev = Debug-Dev; con Debug la nube sale apagada bajo -uitest.
 - [Un crash arreglado destapa el de detrás](feedback_un_crash_arreglado_destapa_el_de_detras.md) — repite el gesto en el iPhone; el cierre en la nube tenía dos en fila.
@@ -69,6 +73,8 @@
 - [La build cortada deja un .app sin Info.plist](feedback_la_build_cortada_deja_un_app_sin_info_plist.md) — deja terminar la del «antes» o restaura y recompila incremental.
 - [Una lectura del body basta para todo el body](feedback_una_lectura_del_body_basta_para_todo_el_body.md) — mutar un repintado: quita todas las lecturas del @State en ese body.
 - [Un seam de reloj arranca bajo el splash](feedback_un_seam_de_reloj_arranca_bajo_el_splash.md) — onAppear no es visible: N=2 vencía tapado; verde con el arreglo antes de fiarte.
+- [Medir un cuelgue de tipos con sample](reference_medir_un_cuelgue_de_tipos_con_sample.md) — App Hang con TypeDecoder: sample del proceso del simulador + conteo inclusivo; Mac quieta.
+- [Diff de píxeles en la misma sesión](feedback_diff_de_pixeles_en_la_misma_sesion.md) — antes y después seguidos; Reducir movimiento cambia el cristal; sin inercia.
 - [Ver un fallo de XCUITest en vídeo](reference_ver_un_fallo_de_xcuitest_en_video.md) — xcresult → mp4 → ffmpeg último fotograma; los .txt no ven las hojas.
 - [Vídeo de un XCUITest en verde](reference_video_de_un_xcuitest_en_verde.md) — el verde no deja mp4: simctl recordVideo alrededor de la corrida.
 - [Fechar un rojo con la nocturna](reference_fechar_un_rojo_con_la_nocturna.md) — `gh run view --log` de qa.yml da el veredicto por caso y día; acota antes de bisecar.
@@ -163,6 +169,7 @@
 - [Capturas de hojas con XCUITest](feedback_capturas_de_hojas_con_xcuitest.md) — dentro de Ajustes, XCTAttachment + export; los swipes de axe cierran la hoja.
 - [Capturas: en `_capturas/<slug>`](reference_capturas_sobreviven_en_worktrees_capturas.md) — el worktree se retira; capturas/ dentro muere y ensucia el status.
 - [Regresión aparente: se mide contra la base](feedback_regresion_aparente_se_mide_contra_la_base.md) — worktree de origin y mismos toques antes de arreglar o culparte.
+- [Bienvenida con datos en el iPhone](reference_bienvenida_con_datos_en_el_iphone.md) — `-hasCompletedOnboarding NO` a secas; con «chooser no visto» monta neutro y miente.
 - [El oráculo de bisect exige su build](feedback_el_oraculo_de_bisect_exige_su_build.md) — sin «TEST BUILD SUCCEEDED», 125: si no, corre el binario anterior.
 - [Rojo de compilación en un fichero ajeno](feedback_rojo_de_compilacion_en_fichero_ajeno.md) — relanza; si repite tras editar durante un build, clean antes de bisecar.
 - [Capturas con un conductor XCUITest](feedback_capturas_con_conductor_xcuitest.md) — build del árbol sin tocar, capturas en segundo plano y editar mientras.

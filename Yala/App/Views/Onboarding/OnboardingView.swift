@@ -888,7 +888,7 @@ struct OnboardingView: View {
                         HStack(spacing: DS.Spacing.md) {
                             Text(accountCurrency.flag)
                                 .font(DS.Typography.title)
-                            Text(accountCurrency.localizedName)
+                            Text(accountCurrency.localizedName.capitalized)
                                 .font(DS.Typography.body)
                                 .foregroundStyle(primaryTextStyle)
                             Spacer()
@@ -1675,7 +1675,7 @@ struct OnboardingView: View {
                     Text(currency.rawValue)
                         .font(DS.Typography.bodyBold)
                         .foregroundStyle(.primary)
-                    Text(currency.localizedName)
+                    Text(currency.localizedName.capitalized)
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }

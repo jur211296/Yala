@@ -1695,7 +1695,7 @@ struct AttestUnavailableSignOutWiringTests {
     func welcomeGateNeverOffersTheLossToTheInvitee() throws {
         let gate = Self.squashed(try Self.source("Yala/App/Views/Onboarding/WelcomeGroupsGateView.swift"))
         #expect(gate.contains(Self.squashed(
-            "let offersLoss = purpose.invitedGroupID == nil && CloudSessionSignOut.shared.offersGroupsLossExit")), """
+            "let offersLoss = purpose.mayDiscardUnsavedChanges && CloudSessionSignOut.shared.offersGroupsLossExit")), """
             La puerta del Welcome dejó de negarle la salida al invitado: la persona del teléfono prestado perdería \
             cambios de grupos que no son suyos.
             """)
@@ -1707,7 +1707,7 @@ struct AttestUnavailableSignOutWiringTests {
         // botón, el invitado vería «Continuar y perderlos» con la decisión intacta dos líneas más arriba (lente de la
         // review, 2026-09-15). Aquí se fija que el cuerpo y el botón leen la misma decisión y que el botón retoma el cierre.
         #expect(gate.contains(Self.squashed("""
-            let offersLoss = purpose.invitedGroupID == nil && CloudSessionSignOut.shared.offersGroupsLossExit
+            let offersLoss = purpose.mayDiscardUnsavedChanges && CloudSessionSignOut.shared.offersGroupsLossExit
             noticeShell(icon: "exclamationmark.triangle",
                         title: L10n.Groups.Errors.attestUnavailableTitle,
                         body: offersLoss
@@ -1727,7 +1727,7 @@ struct AttestUnavailableSignOutWiringTests {
         // La sesión caducada y los cambios de otra cuenta (2026-09-28): la misma rama, el mismo guard del invitado.
         #expect(gate.contains(Self.squashed("""
             let cause = CloudSignOutFlowLogic.lossCause(reason)
-            let offersLoss = purpose.invitedGroupID == nil && (cause == .noSession || cause == .otherAccount)
+            let offersLoss = purpose.mayDiscardUnsavedChanges && (cause == .noSession || cause == .otherAccount)
                 && CloudSessionSignOut.shared.offersGroupsLossExit
             let namesBothCauses = cause == .otherAccount && CloudSessionSignOut.shared.groupsLossReadsUncaptured
             noticeShell(icon: "arrow.trianglehead.2.clockwise.rotate.90",
@@ -1735,7 +1735,9 @@ struct AttestUnavailableSignOutWiringTests {
                         body: offersLoss
                             ? SignOutBlockedCopy.welcomeNoSessionLossMessage(
                                 pending: pending, anotherAccountAndCaptureUnfinished: namesBothCauses)
-                            : SignOutBlockedCopy.welcomeBlockedMessage(anotherAccountAndCaptureUnfinished: namesBothCauses),
+                            : (purpose.isCloudAccountEntry && !namesBothCauses
+                                ? L10n.Welcome.Groups.cloudAsideBlockedBody
+                                : SignOutBlockedCopy.welcomeBlockedMessage(anotherAccountAndCaptureUnfinished: namesBothCauses)),
                         identifier: "welcome_groups_gate_neutral_blocked") {
                 VStack(spacing: DS.Spacing.sm) {
                     YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { leaveAfterBlock() }

@@ -8,7 +8,7 @@ Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 - **Target iOS 26+** — APIs nativas (Liquid Glass, ToolbarSpacer, etc.)
 - Schemes: **Yala** (producción) | **Yala Dev** (con toggle Pro y `DEV_BUILD`) | Tests: YalaTests
 - Simulador: **iPhone 17 Pro**
-- **La subida a TestFlight y a la App Store se hace solo desde la Mini.** El número de build no se escribe en ningún documento: se mira al subir.
+- **La subida a TestFlight y a la App Store se hace desde la Mini o la Max** (Jürgen, 10-nov), con el mismo método: firma automática con `-allowProvisioningUpdates` y la llave de `asc`, sin certificado «Apple Distribution» local. El número de build no se escribe en ningún documento: se mira al subir.
 - 21 SwiftData models. ModelContainer via `SwiftDataConfiguration`. Divisas SSOT en `Yala/Utils/CurrencyUtils.swift` (`CurrencyCode`, 54 divisas).
 
 ## Docs (leer cuando sea relevante)
@@ -125,7 +125,7 @@ Se bifurca según cómo se abrió la sesión, y eso se lee en el encargo o en el
 
 **Sesión interactiva** (Jürgen delante, sin MODO AUTÓNOMO). Tras implementar: resumen **en lenguaje de usuario** (qué cambia para él), build para confirmar, sugerir el siguiente paso y **detenerse**. No encadenar tests, QA ni commits sin que los pida.
 
-**MODO AUTÓNOMO.** Cuenta como tal un encargo con la sección «MODO AUTÓNOMO HASTA TERMINAR», una sesión de la cola en bypass, o Jürgen diciendo «autónomo» o «hasta el final». Ahí se sigue el tren entero sin checkpoints de proceso: implementar → `/gate` → commit → PR → board y `docs/TICKETS.md` → `/cerrar-total` en **modo cola** (ADR-054 de casa, §3 bis del skill).
+**MODO AUTÓNOMO.** Cuenta como tal un encargo con la sección «MODO AUTÓNOMO HASTA TERMINAR», una sesión de la cola en bypass, o Jürgen diciendo «autónomo» o «hasta el final». Ahí se sigue el tren entero sin checkpoints de proceso: implementar → `/gate` → commit → memoria al PR (`python3 scripts/memoria_al_pr.py llevar` antes del push y `limpiar --pr <n>` después; `/cerrar`, bloque 0) → PR → board y `docs/TICKETS.md` → `/cerrar-total` en **modo cola** (ADR-054 de casa, §3 bis del skill).
 
 - **El merge no se espera.** `/cerrar-total` hace `gh pr merge <n> --auto --merge` y comprueba la cola con `gh pr view <n> --json state,autoMergeRequest`: `autoMergeRequest` no nulo es «en cola». Sin tty, `--auto` no imprime nada; lo que vale es esa segunda línea. `MERGED` en el acto también vale. `OPEN` sin cola es un fallo y se dice.
 - **En modo cola no se borra la rama remota**: borrarla cierra el PR sin mergear. La borra GitHub al mergear.
