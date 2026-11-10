@@ -2020,6 +2020,7 @@
 "inbox.duplicateWarningTitle" = "重複の可能性があります";
 "inbox.duplicateWarningMessage" = "似た記録がすでにあります。それでも保存しますか？";
 "inbox.createAnyway" = "それでも保存";
+"inbox.bulkDuplicates.skipped" = "重複の可能性があり未保存：%d件";
 "inbox.saveLater" = "あとで";
 "inbox.deleteTitle" = "ドラフトを削除";
 "inbox.deleteMessage" = "この操作は取り消せません。";
@@ -2767,7 +2768,7 @@
 "tutorials.applePay.step0.desc" = "ショートカットアプリを開いて「オートメーション」へ。下に見当たらない場合は「ライブラリ」の中にあります。";
 "tutorials.applePay.step1.desc" = "「+」をタップし、「Wallet」を選んで使うカードを選択します。表示されたら「すぐに実行」を選びます。";
 "tutorials.applePay.step2.desc" = "求められたら「新規ショートカットを作成」をタップ。Yalaを検索して「Apple Payの支払いを記録」ショートカットを選びます。";
-"tutorials.applePay.step3.desc" = "金額にショートカット入力 → 金額を選択。店舗と名前にも同様に設定。「実行時に表示」があればオフにします。";
+"tutorials.applePay.step3.desc" = "金額にショートカット入力 → 金額を選択。店舗にもショートカット入力 → 店舗を選択。「実行時に表示」があればオフにします。";
 "tutorials.applePay.completion.title" = "Apple Payが連携されました！";
 "tutorials.applePay.completion.desc" = "これで選択したカードでApple Payを使うたびに自動記録されます。各支払いが受信箱にドラフトを作成します。";
 
@@ -6284,6 +6285,8 @@
 "tutorials.applePay.openShortcuts" = "ショートカットを開く";
 "tutorials.applePay.guarantee" = "支払いはドラフトとして届きます。承認するまで記録されません。";
 "tutorials.applePay.pendingDrafts" = "受信箱のApple Pay支払い：%d件";
+"tutorials.applePay.status.none" = "Apple Payの支払いはまだ届いていません。オートメーションを作成すると、支払いごとに受信箱に届きます。";
+"tutorials.applePay.status.lastPayment" = "最後のApple Payの支払いは%@に届きました。";
 "faceIDGuide.guarantee" = "Yalaがあなたの顔を見ることはありません。確認するのはiOSです。";
 "faceIDGuide.previewAction" = "Face IDを要求";
 

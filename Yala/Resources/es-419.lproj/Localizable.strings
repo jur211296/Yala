@@ -2018,6 +2018,7 @@
 "inbox.duplicateWarningTitle" = "Posible duplicado";
 "inbox.duplicateWarningMessage" = "Ya existe un registro parecido. ¿Guardarlo de todas formas?";
 "inbox.createAnyway" = "Guardar de todas formas";
+"inbox.bulkDuplicates.skipped" = "Sin guardar por posible duplicado: %d";
 "inbox.saveLater" = "Dejar para después";
 "inbox.deleteTitle" = "Eliminar borrador";
 "inbox.deleteMessage" = "Esta acción no se puede deshacer.";
@@ -2356,7 +2357,7 @@
 "tutorials.applePay.step0.desc" = "Abre la app Atajos y entra en Automatización. Si no la ves abajo, está en Biblioteca.";
 "tutorials.applePay.step1.desc" = "Toca +, elige Wallet y marca las tarjetas que usas. Si te lo ofrece, elige Ejecutar de inmediato.";
 "tutorials.applePay.step2.desc" = "Si te lo pide, toca Crear nuevo atajo. Busca Yala y elige el atajo «Registrar pago de Apple Pay».";
-"tutorials.applePay.step3.desc" = "En Cantidad selecciona Entrada de atajo y luego Cantidad. Haz lo mismo para Comercio y Nombre respectivamente. Si aparece «Mostrar al ejecutar», desactívalo.";
+"tutorials.applePay.step3.desc" = "En Cantidad selecciona Entrada de atajo y luego Cantidad. En Comercio selecciona Entrada de atajo y luego Comercio. Si aparece «Mostrar al ejecutar», desactívalo.";
 "tutorials.applePay.completion.title" = "¡Apple Pay conectado!";
 "tutorials.applePay.completion.desc" = "Con esto ya tendrás registros automáticos cada vez que uses Apple Pay con las tarjetas seleccionadas. Cada pago creará un borrador en tu bandeja de entrada.";
 
@@ -6298,6 +6299,8 @@
 "tutorials.applePay.openShortcuts" = "Abrir Atajos";
 "tutorials.applePay.guarantee" = "Cada pago llega como borrador: nada se registra sin que lo apruebes.";
 "tutorials.applePay.pendingDrafts" = "Pagos de Apple Pay en tu bandeja: %d";
+"tutorials.applePay.status.none" = "Todavía no llegó ningún pago de Apple Pay. Cuando la automatización esté creada, cada pago llegará a tu bandeja.";
+"tutorials.applePay.status.lastPayment" = "El último pago de Apple Pay llegó el %@.";
 "faceIDGuide.guarantee" = "Yala nunca ve tu rostro: lo comprueba iOS.";
 "faceIDGuide.previewAction" = "Requerir Face ID";
 

@@ -1742,6 +1742,7 @@
 "inbox.status.pending" = "pending";
 "inbox.cannotApprove" = "Can’t save";
 "inbox.createAnyway" = "Save anyway";
+"inbox.bulkDuplicates.skipped" = "Not saved, possible duplicate: %d";
 "inbox.delete" = "Delete";
 "inbox.deleteMessage" = "This action cannot be undone.";
 "inbox.deleteTitle" = "Delete draft";
@@ -3275,7 +3276,7 @@
 "tutorials.applePay.step1.title" = "Create the automation";
 "tutorials.applePay.step2.desc" = "If asked, tap Create New Shortcut. Search for Yala and choose the “Record Apple Pay payment” shortcut.";
 "tutorials.applePay.step2.title" = "Select the Yala shortcut";
-"tutorials.applePay.step3.desc" = "For Amount select Shortcut Input and then Amount. Do the same for Merchant and Name respectively. If you see “Show When Run”, turn it off.";
+"tutorials.applePay.step3.desc" = "For Amount select Shortcut Input and then Amount. For Merchant select Shortcut Input and then Merchant. If you see “Show When Run”, turn it off.";
 "tutorials.applePay.step3.title" = "Configure the parameters";
 "tutorials.applePay.title" = "Record with Apple Pay";
 "tutorials.category.advanced" = "Advanced";
@@ -5516,6 +5517,8 @@
 "tutorials.applePay.openShortcuts" = "Open Shortcuts";
 "tutorials.applePay.guarantee" = "Each payment arrives as a draft: nothing is recorded until you approve it.";
 "tutorials.applePay.pendingDrafts" = "Apple Pay payments in your inbox: %d";
+"tutorials.applePay.status.none" = "No Apple Pay payment has arrived yet. Once the automation is set up, each payment will land in your inbox.";
+"tutorials.applePay.status.lastPayment" = "The last Apple Pay payment arrived on %@.";
 "faceIDGuide.guarantee" = "Yala never sees your face — iOS checks it.";
 "faceIDGuide.previewAction" = "Require Face ID";
 

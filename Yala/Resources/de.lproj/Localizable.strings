@@ -2016,6 +2016,7 @@
 "inbox.duplicateWarningTitle" = "Mögliches Duplikat";
 "inbox.duplicateWarningMessage" = "Es gibt schon einen ähnlichen Eintrag. Trotzdem speichern?";
 "inbox.createAnyway" = "Trotzdem speichern";
+"inbox.bulkDuplicates.skipped" = "Nicht gespeichert, mögliches Duplikat: %d";
 "inbox.saveLater" = "Für später lassen";
 "inbox.deleteTitle" = "Entwurf löschen";
 "inbox.deleteMessage" = "Diese Aktion kann nicht rückgängig gemacht werden.";
@@ -2749,7 +2750,7 @@
 "tutorials.applePay.step0.desc" = "Öffne die Kurzbefehle-App und gehe zu Automation. Siehst du sie unten nicht, findest du sie in der Mediathek.";
 "tutorials.applePay.step1.desc" = "Tippe auf +, wähle Wallet und markiere die Karten, die du nutzt. Wenn angeboten, wähle Sofort ausführen.";
 "tutorials.applePay.step2.desc" = "Falls gefragt, tippe auf Neuen Kurzbefehl erstellen. Suche nach Yala und wähle den Kurzbefehl „Apple-Pay-Zahlung erfassen“.";
-"tutorials.applePay.step3.desc" = "Bei Betrag wähle Kurzbefehleingabe und dann Betrag. Mache dasselbe für Händler und Name. Wenn „Beim Ausführen anzeigen“ erscheint, deaktiviere es.";
+"tutorials.applePay.step3.desc" = "Bei Betrag wähle Kurzbefehleingabe und dann Betrag. Bei Händler wähle Kurzbefehleingabe und dann Händler. Wenn „Beim Ausführen anzeigen“ erscheint, deaktiviere es.";
 "tutorials.applePay.completion.title" = "Apple Pay verbunden!";
 "tutorials.applePay.completion.desc" = "Damit hast du jetzt automatische Erfassungen jedes Mal, wenn du Apple Pay mit den ausgewählten Karten verwendest. Jede Zahlung erstellt einen Entwurf in deinem Posteingang.";
 "subcategory.leasing" = "Leasing";
@@ -6272,6 +6273,8 @@
 "tutorials.applePay.openShortcuts" = "Kurzbefehle öffnen";
 "tutorials.applePay.guarantee" = "Jede Zahlung kommt als Entwurf an: Nichts wird erfasst, bevor du es bestätigst.";
 "tutorials.applePay.pendingDrafts" = "Apple-Pay-Zahlungen in deinem Posteingang: %d";
+"tutorials.applePay.status.none" = "Es ist noch keine Apple-Pay-Zahlung angekommen. Sobald die Automation eingerichtet ist, landet jede Zahlung in deinem Posteingang.";
+"tutorials.applePay.status.lastPayment" = "Die letzte Apple-Pay-Zahlung kam am %@ an.";
 "faceIDGuide.guarantee" = "Yala sieht dein Gesicht nie – das prüft iOS.";
 "faceIDGuide.previewAction" = "Face ID anfordern";
 

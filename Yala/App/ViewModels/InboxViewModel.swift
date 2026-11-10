@@ -38,6 +38,9 @@ enum InboxFilter: String, CaseIterable {
 @MainActor
 @Observable
 final class InboxViewModel {
+    /// Cuántos borradores ya resueltos (archivados y descartados) lee la lista como mucho. Los pendientes no tienen tope.
+    static let resolvedDraftsLimit = 500
+
 
     // MARK: - Dependencies
 
@@ -88,15 +91,28 @@ final class InboxViewModel {
     private func loadAllDrafts() {
         guard let context = modelContext else { return }
 
-        var descriptor = FetchDescriptor<InboxDraft>(
+        // Los pendientes, TODOS; el tope de 500 es solo para lo ya resuelto (archivados y descartados). Con un tope
+        // común, un pendiente creado antes de los 500 más recientes no salía en la lista ni en su contador mientras la
+        // app seguía creyendo que había pendientes (lote 03 de las necesarias 2.3).
+        let pendingRaw = DraftStatus.pending.rawValue
+        let pendingDescriptor = FetchDescriptor<InboxDraft>(
+            predicate: #Predicate<InboxDraft> { $0.statusRaw == pendingRaw },
             sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
         )
-        descriptor.fetchLimit = 500
+        var resolvedDescriptor = FetchDescriptor<InboxDraft>(
+            predicate: #Predicate<InboxDraft> { $0.statusRaw != pendingRaw },
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+        )
+        resolvedDescriptor.fetchLimit = Self.resolvedDraftsLimit
 
         do {
+            let merged = InboxDraftListMerge.newestFirst(
+                pending: try context.fetch(pendingDescriptor),
+                resolved: try context.fetch(resolvedDescriptor)
+            )
             // Sin los gastos de grupo quitados de la Bandeja en este teléfono (`InboxGroupDraftsHiddenHere`).
             let fetched = withoutPendingRemovals(
-                InboxGroupDraftsHiddenHere.visible(try context.fetch(descriptor), context: context)
+                InboxGroupDraftsHiddenHere.visible(merged, context: context)
             )
             if fetched != allDrafts { allDrafts = fetched }
         } catch {
@@ -276,5 +292,13 @@ extension InboxDraft {
     /// volver a pintarse con su borrador ya borrado (card f8rj; mismo molde que `BudgetDetailView.isBudgetValid`).
     var isReadableInInbox: Bool {
         !isDeleted && modelContext != nil
+    }
+}
+
+/// La lista de la Bandeja junta dos lecturas: todos los pendientes y los resueltos más recientes. Mismo orden que la
+/// lectura única de antes: lo más nuevo primero.
+enum InboxDraftListMerge {
+    static func newestFirst(pending: [InboxDraft], resolved: [InboxDraft]) -> [InboxDraft] {
+        (pending + resolved).sorted { $0.createdAt > $1.createdAt }
     }
 }

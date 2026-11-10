@@ -1,10 +1,10 @@
 ---
 id: inbox-list-capped-at-500-may-hide-old-pending-drafts
-status: backlog
+status: done
 priority: low
 area: inbox
 created: 2026-11-07
-updated: 2026-11-07
+updated: 2026-11-10
 source: revisión por vistas 2.3, zona 38, eficiencia (docs/ux/revision-vistas-2.3/38-bandeja-ia/02-revision.html)
 ---
 
@@ -20,3 +20,12 @@ aparecería en la lista mientras la app sigue creyendo que hay pendientes.
 
 Sembrar 600 borradores archivados más nuevos que un pendiente y abrir la Bandeja: ¿sale el pendiente? Si no sale, que el
 límite se aplique por filtro (pendientes sin límite, archivados con el suyo).
+
+## Resuelto (2026-11-10, lote 03 de las necesarias 2.3)
+
+Medido: con 600 archivados más nuevos que un pendiente, el pendiente no salía en la lista ni en su contador. Ahora
+`InboxViewModel.loadAllDrafts` lee TODOS los pendientes y aplica el tope de 500 solo a los resueltos
+(`InboxViewModel.resolvedDraftsLimit`). Nota: la otra lectura de pendientes no era «sin límite» como decía el ticket,
+tiene tope de 200; alimenta «hay pendientes» y «Guardar el siguiente», que miran los más recientes, y no se tocó.
+
+Prueba: `YalaTests/InboxOldPendingDraftTests`. Nada que probar a mano.

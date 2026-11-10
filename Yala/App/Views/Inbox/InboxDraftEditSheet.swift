@@ -1038,32 +1038,17 @@ struct InboxDraftEditSheet: View {
         }
     }
 
-    /// Checks if a similar transaction already exists (same date, amount, account)
+    /// Checks if a similar transaction already exists (same date, amount, account). El criterio es el de toda la Bandeja
+    /// (`InboxDuplicateCheck`); aquí una lectura fallida deja guardar, como siempre: la persona está mirando el borrador.
     private func findDuplicateTransaction(amount: Double, date: Date, account: Account) -> TransactionItem? {
-        let calendar = Calendar.current
-        let startOfDay = calendar.startOfDay(for: date)
-        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? date
-
-        let descriptor = FetchDescriptor<TransactionItem>(
-            predicate: #Predicate<TransactionItem> { transaction in
-                transaction.date >= startOfDay &&
-                transaction.date < endOfDay &&
-                transaction.amount == amount
-            }
-        )
-
-        let transactions: [TransactionItem]
         do {
-            transactions = try modelContext.fetch(descriptor)
+            return try InboxDuplicateCheck.findDuplicate(amount: amount, date: date, account: account, in: modelContext)
         } catch {
             #if DEBUG
             print("InboxDraftEditSheet: Error checking duplicates: \(error)")
             #endif
             return nil
         }
-
-        // Check if any matches the account
-        return transactions.first { $0.account?.persistentModelID == account.persistentModelID }
     }
 
     private func rejectDraft() {

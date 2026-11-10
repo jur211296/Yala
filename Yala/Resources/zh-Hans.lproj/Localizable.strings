@@ -2020,6 +2020,7 @@
 "inbox.duplicateWarningTitle" = "可能重复";
 "inbox.duplicateWarningMessage" = "已存在类似记录。仍要保存吗？";
 "inbox.createAnyway" = "仍然保存";
+"inbox.bulkDuplicates.skipped" = "可能重复，未保存：%d";
 "inbox.saveLater" = "稍后处理";
 "inbox.deleteTitle" = "删除草稿";
 "inbox.deleteMessage" = "此操作无法撤销。";
@@ -2767,7 +2768,7 @@
 "tutorials.applePay.step0.desc" = "打开「快捷指令」应用，进入「自动化」。如果底部没有，它在「资源库」里。";
 "tutorials.applePay.step1.desc" = "轻点「+」，选择 Wallet 并勾选你使用的卡片。如果出现，选择「立即运行」。";
 "tutorials.applePay.step2.desc" = "如有提示，轻点「创建新快捷指令」。搜索 Yala，选择「记录 Apple Pay 付款」快捷指令。";
-"tutorials.applePay.step3.desc" = "金额选择「快捷指令输入」然后选择「金额」。商家和名称分别同样处理。如果有「运行时显示」，将其关闭。";
+"tutorials.applePay.step3.desc" = "金额选择「快捷指令输入」然后选择「金额」。商家同样选择「快捷指令输入」然后选择「商家」。如果有「运行时显示」，将其关闭。";
 "tutorials.applePay.completion.title" = "Apple Pay 已连接!";
 "tutorials.applePay.completion.desc" = "这样,每次用所选卡片使用 Apple Pay 都会自动记录。每笔付款都会在你的收件箱创建一个草稿。";
 
@@ -6284,6 +6285,8 @@
 "tutorials.applePay.openShortcuts" = "打开「快捷指令」";
 "tutorials.applePay.guarantee" = "每笔付款都会以草稿形式到达：你批准之前不会记录任何内容。";
 "tutorials.applePay.pendingDrafts" = "收件箱中的 Apple Pay 付款：%d";
+"tutorials.applePay.status.none" = "还没有收到 Apple Pay 付款。创建自动化后，每笔付款都会进入你的收件箱。";
+"tutorials.applePay.status.lastPayment" = "最近一笔 Apple Pay 付款于 %@ 到达。";
 "faceIDGuide.guarantee" = "Yala 永远看不到你的面容，由 iOS 负责验证。";
 "faceIDGuide.previewAction" = "要求面容 ID";
 

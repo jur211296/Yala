@@ -1,10 +1,10 @@
 ---
 id: siri-shortcuts-screen-says-pro-required-for-on-device-users
-status: backlog
+status: done
 priority: medium
 area: siri
 created: 2026-11-07
-updated: 2026-11-07
+updated: 2026-11-10
 source: revisión por vistas 2.3, zona 38 (docs/ux/revision-vistas-2.3/38-bandeja-ia/, hallazgos secundarios)
 ---
 
@@ -23,3 +23,12 @@ algo que sí puede.
 
 Que la nota dependa de la misma decisión que el intent (`SiriEntryRoute.decide` con el estado del modelo): con el modelo
 listo, sin insignia ni candado (o «Gratis en este iPhone»); sin él, como hoy. Copy nuevo: BRAND-VOICE.md.
+
+## Resuelto (2026-11-10, lote 03 de las necesarias 2.3)
+
+La insignia Pro y «Requiere Yala Pro» salen solo si `SiriEntryRoute.decide` da `.upgrade`
+(`SiriShortcutsProNoteLogic`), la misma decisión que el intent. Con el modelo del iPhone listo, sin Pro: sin insignia ni
+candado. Sin texto nuevo. La card de QA de la decisión del 21-oct no se tocó.
+
+Pruebas: `YalaTests/SiriAndApplePayScreensTruthTests` (la pantalla y el intent deciden igual en todos los casos) y
+`YalaUITests/SiriShortcutsScreenUITests#test_freeUserWith*` con `-uitest-siri-model`.
