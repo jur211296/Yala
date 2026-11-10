@@ -683,7 +683,7 @@ struct GroupInviteNeutralGateWiringTests {
     func theGuestCannotDiscardTheOwnersUnsyncedWork() throws {
         let view = try Self.source("Yala/App/Views/Onboarding/WelcomeGroupsGateView.swift")
         let cta = try #require(view.range(of: "L10n.Welcome.Groups.neutralStalledContinue"))
-        let guardia = try #require(view.range(of: "if purpose.invitedGroupID == nil {"),
+        let guardia = try #require(view.range(of: "if purpose.mayDiscardUnsavedChanges {"),
                                    "el descarte dejó de estar acotado al dueño de los datos")
         #expect(guardia.upperBound < cta.lowerBound, "el guard no cubre el botón que descarta")
     }

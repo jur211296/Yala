@@ -3282,6 +3282,18 @@ struct ContentView: View {
                     welcomeFlowInitialStep = .chooser
                 }
                 showWelcomeFlow = true
+            case .cloudSignInAppleKeepingICloudAside, .cloudSignInGoogleKeepingICloudAside:
+                // **La entrada con Google o Apple que dejó el iCloud privado aparte** (opción B, 2026-11-10). Mismo molde
+                // que `.groupsInvite`: el relanzamiento no lo pidió el destino sino el borrado, y se retoma en LA PUERTA,
+                // que vuelve a medir. En este proceso ya no hay corpus, así que abre y vuelve a la entrada con el mismo
+                // método; si el borrado no pudo, la puerta lo dice en vez de armarlo otra vez.
+                if let provider = ICloudAsideEntryLogic.provider(resuming: pending) {
+                    welcomeFlowInitialStep = .groupsGate(purpose: .enterCloudAccount(
+                        provider: provider, fromExistingChooser: true))
+                } else {
+                    welcomeFlowInitialStep = .chooser
+                }
+                showWelcomeFlow = true
             case .cloudAccount, .cloudSignIn, .fullActivationPrivate, .fullActivationRestore:
                 // Inalcanzables: `requiresMirror` es `false` para las dos primeras, así que el portal del
                 // Welcome nunca las persiste. Si aparecen, la respuesta segura es el recorrido normal — jamás
@@ -3694,6 +3706,16 @@ private struct WelcomeFlowModifier: ViewModifier {
                 // que es el que tiene verify loop, blocker de readiness y salida en background.
                 showWelcomeFlow = false
             },
+            onGroupsGateCloudAccountProceed: { provider, fromExistingChooser in
+                // La puerta de la entrada con otra cuenta abrió: el teléfono ya no tiene datos que dejar aparte. Se vuelve a
+                // la entrada a la cuenta como desde «¡Hola de nuevo!» —en el consentimiento, y de ahí al método—, porque la
+                // sesión no sobrevivió al borrado y la persona tiene que volver a firmar.
+                welcomeCloudEntry = .reentry(provider)  // EXPLÍCITO (jamás heredar el previo)
+                cloudSignInFromExistingChooser = fromExistingChooser
+                adoptStartsAtConsent = true
+                showWelcomeFlow = false
+                showWelcomeCloudSignIn = true
+            },
             onGroupsGateInviteProceed: { zone in
                 // La puerta del invitado abrió: este dispositivo ya no cruza datos de nadie. Se
                 // cierra el Welcome y se RETOMA el join donde estaba — `continueFlow` re-lee el
@@ -3827,6 +3849,16 @@ private struct WelcomeFlowModifier: ViewModifier {
                     LateNoticeKeptGroupsMark.recordAtGroupsEntryIfNoGroupsYet(context: modelContext)
                 }
                 welcomeFlowInitialStep = .groupsGate(purpose: .createGroup)
+                showWelcomeFlow = true
+                showWelcomeCloudSignIn = false
+            },
+            onLeaveICloudAside: { provider in
+                // **Opción B (2026-11-10)** · la entrada encontró el corpus del iCloud privado con copia en iCloud. Se deja
+                // ahí, sin tocar, por la vuelta al neutro de la puerta del Welcome, y tras reabrir se vuelve a esta entrada
+                // con el mismo método. Mismo trío y orden que `onEnterGroupsOnly`: el `onDismiss` de este cover mira
+                // `showWelcomeFlow` y, ya encendido, no pisa el step.
+                welcomeFlowInitialStep = .groupsGate(purpose: .enterCloudAccount(
+                    provider: provider, fromExistingChooser: cloudSignInFromExistingChooser))
                 showWelcomeFlow = true
                 showWelcomeCloudSignIn = false
             },
