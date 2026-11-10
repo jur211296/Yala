@@ -7835,6 +7835,18 @@
 "groups.expense.success.titleSaleUpdated" = "¡Venta actualizada!";
 "bulkEdit.cannotEditSplitRecipeCategory" = "Uno de los registros elegidos tiene tu parte partida en líneas, y su categoría sale de ellas. Cambiala desde «Partir tu parte», en su detalle.";
 
+/* Bandeja · gastos de grupo repetidos (bug 2026-11-09) */
+"inbox.groupLeftovers.bannerTitle" = "Gastos de grupo repetidos";
+"inbox.groupLeftovers.bannerMessage" = "Ya están en tus registros con su cuenta, pero quedó un borrador o un «Préstamo a grupos» de más.";
+"inbox.groupLeftovers.bannerAction" = "Revisar y quitar lo repetido";
+"inbox.groupLeftovers.intro" = "Estos gastos de grupo ya están en tus registros con su cuenta. En la lista está lo que sobra. Tus registros con cuenta y los gastos del grupo no cambian.";
+"inbox.groupLeftovers.extraDrafts" = "Borradores de más: %d";
+"inbox.groupLeftovers.extraLoans" = "«Préstamo a grupos» repetidos: %d";
+"inbox.groupLeftovers.remove" = "Quitar lo repetido";
+"inbox.groupLeftovers.confirmTitle" = "¿Quitar lo repetido?";
+"inbox.groupLeftovers.confirmMessage" = "Se quitan los borradores y los préstamos de la lista. Tus registros con cuenta y los gastos del grupo se quedan como están.";
+"inbox.groupLeftovers.confirmAction" = "Quitar";
+"inbox.groupLeftovers.failed" = "No se pudo quitar. Intentalo de nuevo.";
 /* Progreso de dejar iCloud aparte al entrar con Google o Apple desde el Welcome */
 "welcome.groups.cloudAsideWorking" = "Los datos de iCloud de este dispositivo se quedan en iCloud, sin tocar. Estamos terminando de subir los últimos cambios y dejando el dispositivo listo para entrar a tu cuenta…";
 /* Puerta del Welcome: no se pudo empezar a dejar iCloud aparte */

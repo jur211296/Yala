@@ -6792,6 +6792,27 @@ enum L10n {
         // A0-Bridge V2.0 (P1-3): CTA desde TX bridgeada read-only con draft pendiente
         static var openInbox: String { ls("inbox.openInbox", comment: "") }
 
+        /// Aviso y hoja de los gastos de grupo repetidos (bug del 2026-11-09): borrador «Elige cuenta» o «Préstamo a
+        /// grupos» de más en un gasto que ya está en tus registros. Las cifras van fuera de la frase («Borradores de más:
+        /// 1»), para no depender de plurales en los 16 idiomas.
+        enum GroupLeftovers {
+            static var bannerTitle: String { ls("inbox.groupLeftovers.bannerTitle", comment: "") }
+            static var bannerMessage: String { ls("inbox.groupLeftovers.bannerMessage", comment: "") }
+            static var bannerAction: String { ls("inbox.groupLeftovers.bannerAction", comment: "") }
+            static var intro: String { ls("inbox.groupLeftovers.intro", comment: "") }
+            static func extraDrafts(_ count: Int) -> String {
+                String(format: ls("inbox.groupLeftovers.extraDrafts", comment: ""), count)
+            }
+            static func extraLoans(_ count: Int) -> String {
+                String(format: ls("inbox.groupLeftovers.extraLoans", comment: ""), count)
+            }
+            static var remove: String { ls("inbox.groupLeftovers.remove", comment: "") }
+            static var confirmTitle: String { ls("inbox.groupLeftovers.confirmTitle", comment: "") }
+            static var confirmMessage: String { ls("inbox.groupLeftovers.confirmMessage", comment: "") }
+            static var confirmAction: String { ls("inbox.groupLeftovers.confirmAction", comment: "") }
+            static var failed: String { ls("inbox.groupLeftovers.failed", comment: "") }
+        }
+
         // A0-Bridge V2.0 (P1-4): sheets finalización drafts especializados
         enum GroupExpenseDraft {
             static var title: String { ls("inbox.groupExpenseDraft.title", comment: "") }

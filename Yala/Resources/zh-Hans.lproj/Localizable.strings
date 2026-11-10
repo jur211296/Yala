@@ -8594,6 +8594,18 @@
 "groups.expense.success.titleSaleUpdated" = "已更新销售！";
 "bulkEdit.cannotEditSplitRecipeCategory" = "所选记录中有一条的你的部分已拆分成多行，其分类来自这些行。请在它的详情中通过“拆分你的部分”修改。";
 
+/* Bandeja · gastos de grupo repetidos (bug 2026-11-09) */
+"inbox.groupLeftovers.bannerTitle" = "重复的群组支出";
+"inbox.groupLeftovers.bannerMessage" = "它们已经带着账户记入你的记录，但多出了一条草稿或「向群组借出」。";
+"inbox.groupLeftovers.bannerAction" = "查看并删除重复项";
+"inbox.groupLeftovers.intro" = "这些群组支出已经带着账户记入你的记录。列表里是多出来的部分。你带账户的记录和群组的支出不会改变。";
+"inbox.groupLeftovers.extraDrafts" = "多余的草稿：%d";
+"inbox.groupLeftovers.extraLoans" = "重复的「向群组借出」：%d";
+"inbox.groupLeftovers.remove" = "删除重复项";
+"inbox.groupLeftovers.confirmTitle" = "删除重复项？";
+"inbox.groupLeftovers.confirmMessage" = "将删除列表中的草稿和借出记录。你带账户的记录和群组的支出保持不变。";
+"inbox.groupLeftovers.confirmAction" = "删除";
+"inbox.groupLeftovers.failed" = "未能删除，请重试。";
 /* Progreso de dejar iCloud aparte al entrar con Google o Apple desde el Welcome */
 "welcome.groups.cloudAsideWorking" = "这台设备的 iCloud 数据会原样保留在 iCloud 中。我们正在上传最近的更改，并准备这台设备以登录你的账户…";
 /* Puerta del Welcome: no se pudo empezar a dejar iCloud aparte */

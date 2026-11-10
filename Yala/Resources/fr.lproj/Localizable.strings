@@ -8583,6 +8583,18 @@
 "groups.expense.success.titleSaleUpdated" = "Vente mise à jour !";
 "bulkEdit.cannotEditSplitRecipeCategory" = "Dans l’un des enregistrements sélectionnés, ta part est répartie en lignes, et sa catégorie vient d’elles. Modifie-la depuis « Répartir ta part », dans son détail.";
 
+/* Bandeja · gastos de grupo repetidos (bug 2026-11-09) */
+"inbox.groupLeftovers.bannerTitle" = "Dépenses de groupe en double";
+"inbox.groupLeftovers.bannerMessage" = "Elles sont déjà dans tes opérations avec leur compte, mais il reste un brouillon ou un «Prêt aux groupes» en trop.";
+"inbox.groupLeftovers.bannerAction" = "Vérifier et retirer les doublons";
+"inbox.groupLeftovers.intro" = "Ces dépenses de groupe sont déjà dans tes opérations avec leur compte. La liste montre ce qui est en trop. Tes opérations avec compte et les dépenses du groupe ne changent pas.";
+"inbox.groupLeftovers.extraDrafts" = "Brouillons en trop : %d";
+"inbox.groupLeftovers.extraLoans" = "«Prêt aux groupes» en double : %d";
+"inbox.groupLeftovers.remove" = "Retirer les doublons";
+"inbox.groupLeftovers.confirmTitle" = "Retirer les doublons ?";
+"inbox.groupLeftovers.confirmMessage" = "Les brouillons et prêts de la liste seront retirés. Tes opérations avec compte et les dépenses du groupe restent telles quelles.";
+"inbox.groupLeftovers.confirmAction" = "Retirer";
+"inbox.groupLeftovers.failed" = "Impossible de les retirer. Réessaie.";
 /* Progreso de dejar iCloud aparte al entrar con Google o Apple desde el Welcome */
 "welcome.groups.cloudAsideWorking" = "Les données iCloud de cet appareil restent dans iCloud, intactes. Nous terminons l'envoi des dernières modifications et préparons l'appareil pour te connecter à ton compte…";
 /* Puerta del Welcome: no se pudo empezar a dejar iCloud aparte */
