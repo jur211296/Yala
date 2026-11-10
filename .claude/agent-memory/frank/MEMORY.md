@@ -72,6 +72,8 @@
 - [La build cortada deja un .app sin Info.plist](feedback_la_build_cortada_deja_un_app_sin_info_plist.md) — deja terminar la del «antes» o restaura y recompila incremental.
 - [Una lectura del body basta para todo el body](feedback_una_lectura_del_body_basta_para_todo_el_body.md) — mutar un repintado: quita todas las lecturas del @State en ese body.
 - [Un seam de reloj arranca bajo el splash](feedback_un_seam_de_reloj_arranca_bajo_el_splash.md) — onAppear no es visible: N=2 vencía tapado; verde con el arreglo antes de fiarte.
+- [Medir un cuelgue de tipos con sample](reference_medir_un_cuelgue_de_tipos_con_sample.md) — App Hang con TypeDecoder: sample del proceso del simulador + conteo inclusivo; Mac quieta.
+- [Diff de píxeles en la misma sesión](feedback_diff_de_pixeles_en_la_misma_sesion.md) — antes y después seguidos; Reducir movimiento cambia el cristal; sin inercia.
 - [Ver un fallo de XCUITest en vídeo](reference_ver_un_fallo_de_xcuitest_en_video.md) — xcresult → mp4 → ffmpeg último fotograma; los .txt no ven las hojas.
 - [Vídeo de un XCUITest en verde](reference_video_de_un_xcuitest_en_verde.md) — el verde no deja mp4: simctl recordVideo alrededor de la corrida.
 - [Fechar un rojo con la nocturna](reference_fechar_un_rojo_con_la_nocturna.md) — `gh run view --log` de qa.yml da el veredicto por caso y día; acota antes de bisecar.

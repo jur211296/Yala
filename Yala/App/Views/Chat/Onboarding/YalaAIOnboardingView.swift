@@ -187,6 +187,8 @@ struct YalaAIOnboardingView: View {
                     Text(title)
                         .font(DS.Typography.headline)
                         .foregroundStyle(.thPrimaryText)
+                        // La misma tarjeta que la intro de Grupos, donde el título salía cortado a una línea.
+                        .fixedSize(horizontal: false, vertical: true)
                     if let badge {
                         Text(badge)
                             .font(DS.Typography.captionSmall.weight(.semibold))

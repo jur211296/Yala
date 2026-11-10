@@ -155,6 +155,15 @@ struct ScheduledPaymentsListView: View {
         .accessibilityHidden(true)
     }
 
+    /// Fila de la insignia de estado: en línea a tamaño normal; apilada a tamaños de accesibilidad. Mismos hijos en las
+    /// dos formas (`AnyLayout`).
+    private func statusLineLayout<Content: View>(spacing: CGFloat, @ViewBuilder content: () -> Content) -> some View {
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Spacing.xs))
+            : AnyLayout(HStackLayout(spacing: spacing))
+        return layout { content() }
+    }
+
     // MARK: - View Mode
 
     private var viewModeSelector: some View {
@@ -178,6 +187,9 @@ struct ScheduledPaymentsListView: View {
                 .font(DS.Typography.labelSmall)
                 .fontWeight(.semibold)
                 .foregroundStyle(isSelected ? theme.onAccent : theme.secondaryText)
+                // El círculo es de tamaño fijo: con el texto al máximo el icono crecía fuera de él y los tres se montaban
+                // (QA físico 2.2, iPhone 14). Tope como el de una barra, y el visor de contenido grande al mantenerlo.
+                .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                 .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
                 .background {
                     if isSelected {
@@ -192,6 +204,9 @@ struct ScheduledPaymentsListView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(mode.accessibilityLabel)
+        .accessibilityShowsLargeContentViewer {
+            Label(mode.accessibilityLabel, systemImage: mode.iconName)
+        }
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityIdentifier("scheduled_view_mode_\(mode.rawValue)")
     }
@@ -324,7 +339,7 @@ struct ScheduledPaymentsListView: View {
                         Text(summary.payment.name)
                             .font(DS.Typography.label)
                             .foregroundStyle(.primary)
-                            .lineLimit(1)
+                            .lineLimit(2)
                         timelineAmount(summary, state: state)
                     } else {
                         HStack(alignment: .firstTextBaseline) {
@@ -336,7 +351,8 @@ struct ScheduledPaymentsListView: View {
                             timelineAmount(summary, state: state)
                         }
                     }
-                    HStack(spacing: DS.Spacing.sm) {
+                    // Con el texto al máximo, la insignia y la cuenta una debajo de otra: al lado, «Pagado» salía «Paga…».
+                    statusLineLayout(spacing: DS.Spacing.sm) {
                         ScheduledPaymentStatusPill(state: state, isIncome: summary.payment.isIncome)
                         if let account = summary.payment.account?.name, !summary.payment.isGroupPayment {
                             Text(account)
