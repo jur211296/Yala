@@ -778,10 +778,12 @@ struct TrendsTabView: View {
                 }
             }
         }
-        // Dos cambios que no pasan por `scheduleTrendsRecalc`: otro rango personalizado
+        // Dos cambios que no pasan por el `onChange` del período: otro rango personalizado
         // (el período sigue siendo `.custom`) y una edición que no cambia el número de
         // movimientos. Van aquí y no en la cadena del `body`, que ya va justa de tipado.
-        .onChange(of: sessionState.customDateRange) { resetTrendsAI() }
+        // El rango recalcula las tarjetas (también resetea la IA): con solo el reset, «tu día más caro» se quedaba con
+        // el rango anterior mientras Resumen ya usaba el nuevo (review del lote 02 de mejoras necesarias de 2.3).
+        .onChange(of: sessionState.customDateRange) { scheduleTrendsRecalc() }
         .onChange(of: sessionState.dataVersion) { resetTrendsAI() }
     }
 
@@ -1525,57 +1527,23 @@ struct TrendsTabView: View {
 
     // MARK: - Weekday Spending Calculation
 
-    /// Calcula el promedio de gasto por día de la semana respetando los filtros activos.
-    /// Reusa el patrón de `calculateCashFlowData` (mismo intervalo + criteria).
+    /// Calcula el promedio de gasto por día de la semana respetando los filtros activos. Con la misma entrada que
+    /// «Día de más gasto» de Resumen (`WeekdaySpendingCalculator.forStatistics`): las dos pantallas nombran el mismo día.
     private func calculateWeekdayData() {
         guard !allTransactions.isEmpty else {
             weekdaySpending = []
             return
         }
 
-        let baseInterval = trendsViewModel.panelDateInterval
-        let effectiveInterval: DateInterval = {
-            guard trendsViewModel.detailPeriod == .allTime else { return baseInterval }
-            let dates = allTransactions.map(\.date)
-            guard let first = dates.min(), let last = dates.max() else { return baseInterval }
-            let calendar = Calendar.current
-            let start = calendar.startOfDay(for: first)
-            let end = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: last)) ?? last
-            return DateInterval(start: start, end: end)
-        }()
-
-        var criteria = FilterCriteria(
-            selectedAccounts: trendsViewModel.selectedAccounts,
-            selectedCategories: trendsViewModel.selectedCategories,
-            selectedSubcategories: trendsViewModel.selectedSubcategories,
-            selectedTags: trendsViewModel.selectedTags,
-            selectedNeeds: trendsViewModel.selectedNeeds,
-            selectedCurrencies: trendsViewModel.selectedCurrencies,
-            excludedAccounts: trendsViewModel.excludedAccounts,
-            excludedCategories: trendsViewModel.excludedCategories,
-            excludedSubcategories: trendsViewModel.excludedSubcategories,
-            excludedTags: trendsViewModel.excludedTags,
-            excludedNeeds: trendsViewModel.excludedNeeds,
-            excludedCurrencies: trendsViewModel.excludedCurrencies,
-            transactionTypeFilter: .all,
-            amountCondition: trendsViewModel.amountCondition,
-            searchText: trendsViewModel.searchText,
-            dateInterval: effectiveInterval
-        )
-        criteria.populateTagUUIDs(fromCatalog: tags)
-
-        let filtered = FilterService.filterForTrends(
-            transactions: allTransactions,
-            accounts: accounts,
-            criteria: criteria
-        )
-
         // Proyección "mi parte" (neto) desde el set AMPLIO (con AMBAS hermanas del bridge).
         let adjustment = GroupBridgeStatsAdjustment.build(from: allTransactions, context: modelContext)
 
-        let result = WeekdaySpendingCalculator.calculate(
-            transactions: filtered,
-            interval: effectiveInterval,
+        let result = WeekdaySpendingCalculator.forStatistics(
+            transactions: allTransactions,
+            accounts: accounts,
+            criteria: trendsViewModel.filterCriteria(withTagCatalog: tags),
+            period: trendsViewModel.detailPeriod,
+            interval: trendsViewModel.panelDateInterval,
             currencyCode: defaultCurrencyCode,
             adjustment: adjustment
         )

@@ -95,6 +95,49 @@ struct WeekdaySpendingCalculator {
         }
     }
 
+    /// El gasto por día de la semana de Estadísticas, con UNA entrada: lo leen «Día de más gasto» de Resumen
+    /// (`InsightsCalculator`) y «Gasto por día de la semana» de Tendencias (`TrendsTabView`). Hasta el 2026-11-10 cada
+    /// uno lo calculaba con sus propios filtros e intervalo, y podían nombrar días distintos (lote 02 de mejoras
+    /// necesarias de 2.3): Tendencias no aplicaba «Compartidos / Personales» y, con «Todo», contaba hasta el último
+    /// movimiento fechado (también los de mañana) en vez de hasta hoy.
+    ///
+    /// Los filtros de sesión mandan todos menos el chip Ingresos / Gastos (`selectedTransactionNatures`): este dato es
+    /// siempre de gasto, y con «Ingresos» elegido Resumen lo escondía mientras Tendencias lo enseñaba.
+    static func forStatistics(
+        transactions: [TransactionItem],
+        accounts: [Account],
+        criteria: FilterCriteria,
+        period: DetailPeriod,
+        interval: DateInterval,
+        currencyCode: String,
+        includeBridgedGroupTx: Bool? = nil,
+        adjustment: GroupBridgeStatsAdjustment = .none,
+        converter: CurrencyConverting = CurrencyConverter.shared,
+        calendar: Calendar = .current
+    ) -> [WeekdaySpending] {
+        var criteria = criteria
+        criteria.selectedTransactionNatures = []
+        criteria.transactionTypeFilter = .all
+        criteria.dateInterval = nil
+        let filtered = FilterService.filterForTrends(
+            transactions: transactions,
+            accounts: accounts,
+            criteria: criteria,
+            includeBridgedGroupTx: includeBridgedGroupTx
+        )
+        let inPeriod = filtered.filter { interval.contains($0.date) }
+        let counting = InsightsCalculator.countingInterval(
+            for: period, interval: interval, transactions: transactions, calendar: calendar
+        )
+        return calculate(
+            transactions: inPeriod,
+            interval: counting,
+            currencyCode: currencyCode,
+            adjustment: adjustment,
+            converter: converter
+        )
+    }
+
     /// Counts how many times each weekday (1=Sun..7=Sat) appears in a date interval.
     /// `calendar`: el del proceso por defecto, como siempre; un test que corta el intervalo en otra zona pasa la suya.
     static func weekdayOccurrences(in interval: DateInterval, calendar: Calendar = .current) -> [Int: Int] {

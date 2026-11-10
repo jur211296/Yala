@@ -364,13 +364,19 @@ struct InsightsCalculator {
             amountsAreApproximate: cashFlow.amountsAreApproximate
         )
 
-        // Weekday Spending (computed before Quick Stats for highestAvgWeekday)
-        let weekdaySpending = WeekdaySpendingCalculator.calculate(
-            transactions: periodTxns,
-            interval: countingInterval,
+        // Weekday Spending (computed before Quick Stats for highestAvgWeekday). La misma entrada que «Gasto por día de la
+        // semana» de Tendencias: si no, «Día de más gasto» y «tu día más caro» podían nombrar días distintos.
+        let weekdaySpending = WeekdaySpendingCalculator.forStatistics(
+            transactions: transactions,
+            accounts: accounts,
+            criteria: criteria,
+            period: period,
+            interval: interval,
             currencyCode: currencyCode,
+            includeBridgedGroupTx: includeBridgedGroupTx,
             adjustment: adjustment,
-            converter: converter
+            converter: converter,
+            calendar: calendar
         )
 
         // Highest average weekday

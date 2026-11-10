@@ -629,37 +629,67 @@ final class BudgetsViewModel {
         let adjustment = modelContext.map {
             GroupBridgeStatsAdjustment.build(from: allTransactions, context: $0)
         } ?? .none
-        let filtered = Self.filterTransactions(allTransactions, forBudget: budget, in: interval, adjustment: adjustment)
+        return Self.combinedBreakdown(budget: budget, transactions: allTransactions, interval: interval, adjustment: adjustment)
+    }
+
+    /// «Por categoría» de las gráficas de un presupuesto: los MISMOS movimientos que `calculateSpending`, así que cada
+    /// lista suma lo gastado. Lo que no tiene categoría va a «Sin categoría» (gris) y lo que tiene categoría sin
+    /// subcategoría, a «Sin subcategoría» bajo su categoría (`ingreso-gasto.md`, molde de `TopSubcategoriesCalculator`).
+    /// Hasta el 2026-11-10 se saltaba todo movimiento sin subcategoría: un presupuesto que filtra por cuenta o etiqueta
+    /// los cuenta en lo gastado y el desglose no sumaba (lote 02 de mejoras necesarias de 2.3).
+    static func combinedBreakdown(
+        budget: Budget,
+        transactions: [TransactionItem],
+        interval: DateInterval,
+        adjustment: GroupBridgeStatsAdjustment = .none,
+        converter: CurrencyConverting? = nil
+    ) -> (
+        subcategories: [(name: String, icon: String, color: String, amount: Double, parentCategoryName: String)],
+        parentCategories: [(name: String, icon: String, color: String, amount: Double)]
+    ) {
+        let filtered = filterTransactions(transactions, forBudget: budget, in: interval, adjustment: adjustment)
         guard !filtered.isEmpty else { return ([], []) }
 
-        var subBreakdown: [PersistentIdentifier: (name: String, icon: String, color: String, amount: Double, parentCategoryName: String)] = [:]
-        var parentBreakdown: [PersistentIdentifier: (name: String, icon: String, color: String, amount: Double)] = [:]
+        struct SubKey: Hashable {
+            let subcategoryID: PersistentIdentifier?
+            let categoryID: PersistentIdentifier?
+        }
+        var subBreakdown: [SubKey: (name: String, icon: String, color: String, amount: Double, parentCategoryName: String)] = [:]
+        // Clave `nil` = «Sin categoría».
+        var parentBreakdown: [PersistentIdentifier?: (name: String, icon: String, color: String, amount: Double)] = [:]
 
         for tx in filtered {
-            guard let sub = tx.subcategory else { continue }
-            let absAmount = abs(Self.budgetAmount(of: tx, in: budget.currencyCode, adjustment: adjustment))
-            let cat = sub.safeCategory
-
-            // Subcategory grouping
-            let subKey = sub.persistentModelID
-            if var existing = subBreakdown[subKey] {
-                existing.amount += absAmount
-                subBreakdown[subKey] = existing
-            } else {
-                let color = sub.colorHex ?? cat.colorHex
-                let icon = sub.iconName ?? cat.iconName ?? "tag.fill"
-                subBreakdown[subKey] = (name: sub.name, icon: icon, color: color, amount: absAmount, parentCategoryName: cat.name)
+            let absAmount = abs(budgetAmount(of: tx, in: budget.currencyCode, adjustment: adjustment, converter: converter))
+            // La categoría manda; sin ella, una sola fila aunque el movimiento traiga una subcategoría colgando.
+            guard let cat = tx.category else {
+                let name = L10n.Report.uncategorized
+                let icon = AppConstants.uncategorizedIconName
+                let color = AppConstants.uncategorizedColorHex
+                parentBreakdown[nil, default: (name, icon, color, 0)].amount += absAmount
+                subBreakdown[SubKey(subcategoryID: nil, categoryID: nil), default: (name, icon, color, 0, name)].amount += absAmount
+                continue
             }
 
-            // Parent category grouping
-            let catKey = cat.persistentModelID
-            if var existing = parentBreakdown[catKey] {
-                existing.amount += absAmount
-                parentBreakdown[catKey] = existing
-            } else {
-                let icon = cat.iconName ?? "tag.fill"
-                parentBreakdown[catKey] = (name: cat.name, icon: icon, color: cat.colorHex, amount: absAmount)
+            let subKey = SubKey(subcategoryID: tx.subcategory?.persistentModelID, categoryID: cat.persistentModelID)
+            if subBreakdown[subKey] == nil {
+                if let sub = tx.subcategory {
+                    let color = sub.colorHex ?? cat.colorHex
+                    let icon = sub.iconName ?? cat.iconName ?? "tag.fill"
+                    subBreakdown[subKey] = (name: sub.name, icon: icon, color: color, amount: 0, parentCategoryName: cat.name)
+                } else {
+                    subBreakdown[subKey] = (
+                        name: L10n.Subcategory.noSubcategory, icon: cat.iconName ?? "tag.fill", color: cat.colorHex,
+                        amount: 0, parentCategoryName: cat.name
+                    )
+                }
             }
+            subBreakdown[subKey]?.amount += absAmount
+
+            let catKey: PersistentIdentifier? = cat.persistentModelID
+            if parentBreakdown[catKey] == nil {
+                parentBreakdown[catKey] = (name: cat.name, icon: cat.iconName ?? "tag.fill", color: cat.colorHex, amount: 0)
+            }
+            parentBreakdown[catKey]?.amount += absAmount
         }
 
         return (

@@ -359,4 +359,58 @@ struct GroupExpenseViewModelTests {
         let sum = members.reduce(0.0) { $0 + AmountInputHelper.parseDecimal(vm.exactAmounts[$1.id.uuidString] ?? "") }
         #expect(abs(sum - 100) < 0.0001)
     }
+
+    // MARK: - El céntimo del reparto (lote 02 de mejoras necesarias de 2.3, decisión de Jürgen del 2026-11-10)
+
+    /// Un gasto de 400 cuyas partes suman 399,99 no está cuadrado: la insignia decía «Balanceado» y se guardaba, y ese
+    /// céntimo no era de nadie (las deudas salen de las partes y el pagador puso 400). Ahora «Faltan S/ 0.01».
+    @Test func exactSplit_aCentShort_isNotBalanced() {
+        let (vm, members) = makeViewModel()
+        vm.amountString = "400"
+        vm.splitType = .exact
+        vm.exactAmounts[members[0].id.uuidString] = "200"
+        vm.exactAmounts[members[1].id.uuidString] = "100"
+        vm.exactAmounts[members[2].id.uuidString] = "99.99"
+        #expect(vm.isSharesBalanced == false)
+        #expect(vm.calculatedShares == nil)
+
+        vm.exactAmounts[members[2].id.uuidString] = "100"
+        #expect(vm.isSharesBalanced == true, "Control: al céntimo, sí")
+        let sum = (vm.calculatedShares ?? []).reduce(0.0) { $0 + $1.amount }
+        #expect(abs(sum - 400) < 0.0001)
+    }
+
+    @Test func percentageSplit_aHundredthShortOfAHundred_isNotBalanced() {
+        let (vm, members) = makeViewModel()
+        vm.amountString = "400"
+        vm.splitType = .percentage
+        vm.percentages[members[0].id.uuidString] = "50"
+        vm.percentages[members[1].id.uuidString] = "25"
+        vm.percentages[members[2].id.uuidString] = "24.99"
+        #expect(vm.isSharesBalanced == false)
+    }
+
+    /// Reabrir un gasto por porcentaje guardado sigue cuadrando: un gasto de 10,01 guardado a 33,4/33,3/33,3 tiene
+    /// partes 3,34/3,33/3,34, que reabiertas a un decimal daban 33,4 + 33,3 + 33,4 = 100,1. Con «Porcentaje» exigido al
+    /// céntimo eso ya no se podía guardar ni para cambiar la nota (lo cazó la review del lote 02).
+    @Test func prefill_percentageOfASmallTotal_reopensBalanced() {
+        let (vm, members) = makeViewModel()
+        let expense = SplitExpense()
+        expense.expenseDescription = "Café"
+        expense.amount = 10.01
+        expense.currencyCode = "USD"
+        expense.splitType = "percentage"
+        expense.paidByMemberID = members[0].id.uuidString
+        let shares = zip(members, [3.34, 3.33, 3.34]).map { member, amount -> SplitShare in
+            let share = SplitShare()
+            share.memberID = member.id.uuidString
+            share.amount = amount
+            return share
+        }
+        vm.prefill(from: expense, shares: shares)
+
+        let sum = members.reduce(0.0) { $0 + AmountInputHelper.parseDecimal(vm.percentages[$1.id.uuidString] ?? "") }
+        #expect(abs(sum - 100) < 0.0001)
+        #expect(vm.isSharesBalanced == true)
+    }
 }

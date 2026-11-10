@@ -146,7 +146,8 @@ final class GroupExpenseViewModel {
         // `canSave` sigue exigiendo monto válido y al menos un participante.
         if selectedMembers.count <= 1 { return true }
         guard calculatedShares != nil else { return splitType == .equal && !selectedMemberIDs.isEmpty }
-        return abs(remainingToAllocate) < 0.02
+        // Al céntimo, como el calculador: con 0,02 la insignia decía «Balanceado» sobre 399,99 de 400.
+        return abs(remainingToAllocate) < GroupSplitCalculator.balanceTolerance
     }
 
     var isAmountValid: Bool { amount > 0 }
@@ -403,16 +404,18 @@ final class GroupExpenseViewModel {
         selectedMemberIDs = Set(template.participantIDs.map { $0.uuidString }).intersection(activeIDs)
 
         exactAmounts = [:]; percentages = [:]; sharesCounts = [:]
+        var templatePercentages: [(id: String, percentage: Double)] = []
         for (uuid, value) in template.values {
             let id = uuid.uuidString
             guard activeIDs.contains(id) else { continue }
             switch template.splitType {
             case .exact: exactAmounts[id] = AmountInputHelper.formatWithGrouping(value)
-            case .percentage: percentages[id] = String(format: "%.1f", value)
+            case .percentage: templatePercentages.append((id: id, percentage: value))
             case .shares: sharesCounts[id] = String(Int(value.rounded()))
             case .equal: break
             }
         }
+        if !templatePercentages.isEmpty { loadPercentages(templatePercentages) }
 
         if let account = template.accountPrefill {
             selectedAccount = account
@@ -457,6 +460,7 @@ final class GroupExpenseViewModel {
             : [:]
 
         // Populate per-type fields from existing shares
+        var sharePercentages: [(id: String, percentage: Double)] = []
         for share in shares {
             let id = share.memberID
             switch splitType {
@@ -464,13 +468,14 @@ final class GroupExpenseViewModel {
                 exactAmounts[id] = AmountInputHelper.formatWithGrouping(share.amount)
             case .percentage:
                 let pct = expense.amount > 0 ? (share.amount / expense.amount) * 100 : 0
-                percentages[id] = String(format: "%.1f", pct)
+                sharePercentages.append((id: id, percentage: pct))
             case .shares:
                 sharesCounts[id] = sharesCountStrings[id] ?? "1"
             case .equal:
                 break
             }
         }
+        if !sharePercentages.isEmpty { loadPercentages(sharePercentages) }
 
         // M6: si edit Caso A `.full/.completed`, recupera la cuenta personal real bridgeada.
         // Si TX aún no llegó vía sync personal (race), `selectedAccount` queda nil y form
@@ -583,11 +588,19 @@ final class GroupExpenseViewModel {
     /// 300 entre 3 iguales da 33.4/33.3/33.3 (el pagador recibe el remanente), no 33.3×3.
     private func distributePercentage(_ amounts: [(id: String, amount: Double)]) {
         guard amount > 0 else { return }
+        loadPercentages(amounts.map { (id: $0.id, percentage: $0.amount / amount * 100) })
+    }
+
+    /// Escribe los porcentajes a un decimal haciendo que sumen 100: el remanente del redondeo va al pagador si
+    /// participa, si no al primero. Lo usan también la edición de un gasto guardado (`prefill`), las plantillas y el
+    /// editor de pagos planificados: con «Porcentaje» exigido al céntimo (lote 02 de mejoras necesarias de 2.3), un gasto
+    /// de 10,01 a 25 % cada uno se reabría con 25,0 ×3 + 25,1 = 100,1 y ya no dejaba guardar (lo cazó la review).
+    func loadPercentages(_ values: [(id: String, percentage: Double)]) {
         var byID: [String: Double] = [:]
-        for entry in amounts { byID[entry.id] = ((entry.amount / amount * 100) * 10).rounded() / 10 }
+        for entry in values { byID[entry.id] = (max(0, entry.percentage) * 10).rounded() / 10 }
         let sum = byID.values.reduce(0, +)
         let diff = ((100 - sum) * 10).rounded() / 10
-        if abs(diff) >= 0.05, let target = remainderTargetID(among: amounts.map(\.id)) {
+        if abs(diff) >= 0.05, let target = remainderTargetID(among: values.map(\.id)) {
             byID[target, default: 0] += diff
         }
         for (id, pct) in byID { percentages[id] = String(format: "%.1f", pct) }

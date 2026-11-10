@@ -1466,15 +1466,18 @@ struct ScheduledPaymentEditorView: View {
         vm.splitType = splitConfigType
         vm.selectedMemberIDs = Set(splitParticipantIDs.map { $0.uuidString })
         vm.exactAmounts = [:]; vm.percentages = [:]; vm.sharesCounts = [:]
+        var percentages: [(id: String, percentage: Double)] = []
         for (uuid, value) in splitValues {
             let id = uuid.uuidString
             switch splitConfigType {
             case .exact: vm.exactAmounts[id] = AmountInputHelper.formatWithGrouping(value)
-            case .percentage: vm.percentages[id] = String(format: "%.1f", value)
+            case .percentage: percentages.append((id: id, percentage: value))
             case .shares: vm.sharesCounts[id] = String(Int(value.rounded()))
             case .equal: break
             }
         }
+        // Que sumen 100 al reabrir: «Porcentaje» se exige al céntimo desde el lote 02 de mejoras necesarias de 2.3.
+        if !percentages.isEmpty { vm.loadPercentages(percentages) }
     }
 
     private func resetSplitConfig() {
