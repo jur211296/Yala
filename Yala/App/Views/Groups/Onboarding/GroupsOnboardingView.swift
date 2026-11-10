@@ -229,6 +229,9 @@ struct GroupsOnboardingView: View {
                 Text(title)
                     .font(DS.Typography.headline)
                     .foregroundStyle(.thPrimaryText)
+                    // Como el cuerpo: sin esto la pila lo comprimía a una línea y salía «Salda deudas con un par de toq…»
+                    // en un iPhone de 390 pt con el texto a tamaño normal (QA físico 2.2, iPhone 14).
+                    .fixedSize(horizontal: false, vertical: true)
                 Text(body)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.thSecondaryText)

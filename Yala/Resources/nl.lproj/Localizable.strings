@@ -4748,10 +4748,10 @@
 "welcome.cloud.notFoundCta" = "Account aanmaken";
 
 /* Title when foreign local data blocks sign-in */
-"welcome.cloud.blockedTitle" = "Dit apparaat bevat gegevens van een ander account";
+"welcome.cloud.blockedTitle" = "Op dit apparaat staan al gegevens";
 
 /* Body when foreign local data blocks sign-in */
-"welcome.cloud.blockedBody" = "Om die gegevens te beschermen kunnen we hier geen ander account koppelen. De eigenaar kan altijd weer inloggen.";
+"welcome.cloud.blockedBody" = "Om ze te beschermen kunnen we dit account hier niet koppelen. Wie ze heeft opgeslagen, kan altijd weer inloggen.";
 
 "welcome.cloud.blockedRestoreHint" = "En als ze van jou zijn? Als je net een iCloud-herstel bent gestart, wacht dan tot het klaar is en meld je opnieuw aan.";
 
@@ -8593,3 +8593,16 @@
 "groups.expense.success.titleSaleCreated" = "Verkoop toegevoegd!";
 "groups.expense.success.titleSaleUpdated" = "Verkoop bijgewerkt!";
 "bulkEdit.cannotEditSplitRecipeCategory" = "Bij een van de geselecteerde boekingen is jouw deel in regels opgesplitst, en de categorie komt daaruit. Wijzig die via ‘Jouw deel opsplitsen’ in de details.";
+
+/* Progreso de dejar iCloud aparte al entrar con Google o Apple desde el Welcome */
+"welcome.groups.cloudAsideWorking" = "De iCloud-gegevens van dit apparaat blijven onaangeroerd in iCloud. We ronden het uploaden van de laatste wijzigingen af en maken het apparaat klaar om in te loggen op je account…";
+/* Puerta del Welcome: no se pudo empezar a dejar iCloud aparte */
+"welcome.groups.cloudAsideUnavailableBody" = "Ga terug en probeer het zo nog eens. Er is niets gewijzigd.";
+/* Puerta del Welcome: el borrado del arranque no pudo quitar la copia local de iCloud */
+"welcome.groups.cloudAsideWipeFailedBody" = "Bij het opnieuw openen van Yala kon de kopie van de iCloud-gegevens niet van dit apparaat worden verwijderd, dus het is niet klaar voor je account. Die gegevens staan nog in iCloud. We proberen het niet zelf opnieuw: ga terug en probeer het later nog eens als je wilt.";
+/* Puerta del Welcome: cambios de grupos sin subir antes de dejar iCloud aparte */
+"welcome.groups.cloudAsideBlockedBody" = "Op dit apparaat staan groepswijzigingen die de server nog niet hebben bereikt. Log opnieuw in met dat account zodat ze worden geüpload, daarna kun je hier inloggen op je account.";
+/* Puerta del Welcome: la espera del export se agotó al dejar iCloud aparte; %d = cuántos */
+"welcome.groups.cloudAsideStalledBody" = "Wijzigingen op dit apparaat die iCloud nog niet hebben bereikt: %d. Wacht tot ze aankomen voordat je verdergaat, zodat ze niet verloren gaan.";
+/* Puerta del Welcome: la espera del export se agotó al dejar iCloud aparte, sin cifra */
+"welcome.groups.cloudAsideStalledBodyUnknown" = "We konden niet bevestigen dat de laatste wijzigingen op dit apparaat iCloud hebben bereikt. Wacht nog even voordat je verdergaat, zodat ze niet verloren gaan.";

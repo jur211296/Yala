@@ -710,7 +710,7 @@ struct GroupsOrganizerWiringTests {
     @Test("MUTACIÓN: el espejo de la celda usa los mismos términos que el dispatch")
     func exitCellMirrorsTheDispatch() throws {
         let code = try Self.code(Self.gateView)
-        let cell = try #require(Self.bodyOf("private static func exitCell() -> CloudSignOutFlowLogic.Path {", in: code))
+        let cell = try #require(Self.bodyOf("static func exitCell() -> CloudSignOutFlowLogic.Path {", in: code))
         for termino in ["for: CloudSyncFlags.storageMode",
                         "hasLiveSession: CloudAuthService.shared.hasSession",
                         "groupsBackendEnabled: CloudSyncFlags.groupsBackendCompiledCapability",

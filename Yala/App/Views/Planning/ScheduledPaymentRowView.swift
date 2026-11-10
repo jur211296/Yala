@@ -63,9 +63,12 @@ struct ScheduledPaymentRowView: View {
             Text(summary.payment.name)
                 .font(DS.Typography.label)
                 .foregroundStyle(.primary)
-                .lineLimit(1)
+                // Con el texto al máximo, dos líneas: en una salía «Recibo ven…».
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
 
-            HStack(spacing: DS.Spacing.xs) {
+            // Con el texto al máximo, la insignia y la fecha una debajo de otra: al lado, «Pagado» salía «Paga…» (QA físico
+            // 2.2, iPhone 14). A tamaño normal, la fila de siempre.
+            statusLineLayout {
                 ScheduledPaymentStatusPill(state: state, isIncome: summary.payment.isIncome)
                 Text(ScheduledPaymentDateText.dayMonth(summary.dueDate))
                     .font(DS.Typography.captionSmall)
@@ -80,6 +83,12 @@ struct ScheduledPaymentRowView: View {
                 }
             }
         }
+    }
+
+    private var statusLineLayout: AnyLayout {
+        dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Spacing.xs))
+            : AnyLayout(HStackLayout(spacing: DS.Spacing.xs))
     }
 
     private func amountLabel(_ state: ScheduledPaymentRowState) -> some View {

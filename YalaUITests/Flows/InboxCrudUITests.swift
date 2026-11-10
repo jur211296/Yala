@@ -337,12 +337,17 @@ final class InboxCrudUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["inbox_bulk_success_summary"].exists, "La pantalla final no dice cuánto se guardó.")
         back.tap()
 
-        // Sin pendientes la Bandeja se cierra sola: se vuelve a abrir para mirar la lista, no su ausencia.
+        // El seed solo trae esos dos borradores: sin pendientes, la Bandeja se cierra sola (como en 1.0). Se espera a que
+        // termine de irse: mirarla mientras se cerraba la daba por abierta, y «Archivados» desaparecía bajo el dedo
+        // (nocturna del 7-nov, 3 de 3). Después se vuelve a abrir para mirar la lista, no su ausencia.
         let pendingFilter = app.buttons["inbox_filter_pending"]
-        if !pendingFilter.waitForExistence(timeout: 3) {
-            openInbox(app)
-            XCTAssertTrue(pendingFilter.waitForExistence(timeout: 5), "No se pudo volver a abrir la Bandeja.")
-        }
+        XCTAssertTrue(back.waitForNonExistence(timeout: 10), "La pantalla final no se cerró al volver a la Bandeja.")
+        XCTAssertTrue(
+            pendingFilter.waitForNonExistence(timeout: 10),
+            "Sin borradores pendientes, la Bandeja no se cerró sola al volver de la pantalla final."
+        )
+        openInbox(app)
+        XCTAssertTrue(pendingFilter.waitForExistence(timeout: 5), "No se pudo volver a abrir la Bandeja.")
         XCTAssertFalse(app.buttons["inbox_draft_row_\(draftA)"].exists, "El primer borrador completo sigue en pendientes.")
         XCTAssertFalse(app.buttons["inbox_draft_row_\(draftB)"].exists, "El segundo borrador completo sigue en pendientes.")
         app.buttons["inbox_filter_archived"].tap()
