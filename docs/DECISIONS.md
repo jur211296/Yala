@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (94 entradas)
+## Índice (95 entradas)
 
-> **No hace falta leer este fichero entero** — son 269 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 272 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-10` [Entrar con Google o Apple con tu iCloud privado en el teléfono: se deja iCloud aparte (opción B), y ](#2026-11-10-entrar-con-google-o-apple-con-tu-icloud-privado-en-el-telfono-se-deja-icloud-aparte-opcin-b-y-el-lote-del-9-y-10-nov)
 - `2026-11-09` [Entrar con Google o Apple con tu propio iCloud privado: Yala te pregunta (opción C), y Grupos usa un](#2026-11-09-entrar-con-google-o-apple-con-tu-propio-icloud-privado-yala-te-pregunta-opcin-c-y-grupos-usa-una-sola-cuenta-grupos)
 - `2026-11-09` [Verificación de Google de «Conectar Gmail»: se pide con la lectura en el teléfono](#2026-11-09-verificacin-de-google-de-conectar-gmail-se-pide-con-la-lectura-en-el-telfono)
 - `2026-11-09` [La memoria de Frank viaja en el PR de la sesión que la escribió](#2026-11-09-la-memoria-de-frank-viaja-en-el-pr-de-la-sesin-que-la-escribi)
@@ -121,12 +122,19 @@ Cada decisión sigue esta estructura:
 
 ## Decisiones Activas
 
+### [2026-11-10] Entrar con Google o Apple con tu iCloud privado en el teléfono: se deja iCloud aparte (opción B), y el lote del 9 y 10-nov
+**Contexto:** El 9-nov Jürgen eligió la opción C (preguntar al dueño si pasa sus datos de iCloud a la nube). La sesión nocturna midió que no hay prueba fiable de que el iCloud del teléfono sea de quien entra, que «pasar» sería mezclar dos finanzas (fusión ya descartada) y que «dejarlos aparte» pedía un flujo nuevo. El 10-nov a las 6:45 (Lima) Jürgen volvió a la B. Quedaban además otras decisiones del 9 y 10-nov capturadas en el chat.
+**Decisión:** (1) **Opción B** (sustituye a la C): al entrar con Google o Apple desde el Welcome con el corpus del iCloud privado en el teléfono, se abre la nube con la cuenta que entra y los datos de iCloud se quedan en iCloud sin tocar: ni se suben, ni se mezclan, ni se borran de iCloud. No se pregunta. Solo sale la copia local, por la vuelta al neutro que ya usa la puerta de Grupos (espera al export, borrado por archivos antes del mount, relanzar), y tras reabrir se vuelve a la entrada con el mismo método. Sin copia en iCloud, con grupos de la era CloudKit sin migrar o con el teléfono en la nube, sigue el bloqueo, que ya no dice «de otra cuenta». Desde esa pantalla nada de lo que no llegó a iCloud se puede descartar: quien entra puede no ser el dueño. (2) Volver a la nube con la misma cuenta tras volver a iCloud (V4 de la decisión 53) va en 2.3. (3) Yala IA ampliada se enciende en producción en cuanto la 2.2 esté publicada en el App Store. (4) TestFlight de Yala podrá subirse desde la Mini o la Max cuando la Max tenga el certificado de distribución y la llave de App Store Connect. (5) Siri gratis con el modelo del propio iPhone se enciende para quien no tiene Pro y sí tiene el modelo (9-nov, opción A), y las cards de 2.2 en qa pasan a done. (6) Los lotes de mejoras de 2.3 esperan al merge de 2.2 en 2.3. (7) La prueba de «Tu IA registra en Yala» la prepara Dan en staging (gateway y conector).
+**Razones:** (1) no se puede probar que el iCloud es del dueño, y pasar datos mezclaría dos finanzas; dejar iCloud aparte vale igual para el dueño y para el teléfono prestado porque no mueve datos de nadie. Las demás son decisiones de calendario y de operación que Jürgen tomó en el chat.
+**Consecuencias:** (1) vive en `ICloudAsideEntryLogic` y en el propósito `.enterCloudAccount` de `WelcomeGroupsGateView`; un cambio en la vuelta al neutro del cierre privado cambia también esta entrada. (4) cambia la línea de TestFlight de `CLAUDE.md`. (5), (6) y (7) no dejan regla en el repo: se ejecutan fuera de él.
+**Estado:** Activa
+
 ### [2026-11-09] Entrar con Google o Apple con tu propio iCloud privado: Yala te pregunta (opción C), y Grupos usa una sola cuenta «Grupos»
 **Contexto:** Dos decisiones de Jürgen del 9-nov, capturadas en el chat y pendientes de pasar al repo. (1) Card «Entrar con Google bloqueado por tus propios datos de iCloud privado»: con los datos de su iCloud privado en el teléfono, el dueño que entra con Google/Apple acababa en «Este dispositivo tiene datos de otra cuenta», porque el guard cross-cuenta (`CrossAccountEntryGuardLogic`) cuenta filas sin claim y no separa las propias de las ajenas. (2) Las cuentas de sistema de Grupos (una por divisa).
 **Decisión:** (1) **Opción C** (sustituye a la B, decidida minutos antes): no se bloquea como «datos de otra cuenta»; Yala le pregunta al dueño si prefiere pasar sus datos de iCloud a la nube o entrar en la nube dejándolos aparte. La protección del teléfono prestado o heredado no se rompe. (2) Las cuentas de sistema de Grupos se presentan como una sola «Grupos».
 **Razones:** (1) mover o no mover datos es una decisión que cambia dónde viven, y en Yala eso se pregunta, no se decide por la persona; la B decidía por ella. (2) Jürgen la aprobó junto con el cierre de las cards de 2.2 que no se prueban en el teléfono.
 **Consecuencias:** quien construya (1) diferencia «datos de mi iCloud privado» de «datos ajenos» antes del guard, y la pantalla de bloqueo deja de nombrar como ajenos los propios. Ese mismo día se ejecutaron también el GO del hotfix de política y términos con la sección de Gmail (PR 871 a 1.0 y 872 a 2.2) y el paso a 2.2 del arreglo de la foto de perfil con el filtro de Sentry de desarrollo (PR 875): no dejan regla en el repo.
-**Estado:** Activa
+**Estado:** Activa en (2). La (1) quedó superada el 2026-11-10 por la opción B (entrada de arriba).
 
 
 ### [2026-11-09] Verificación de Google de «Conectar Gmail»: se pide con la lectura en el teléfono

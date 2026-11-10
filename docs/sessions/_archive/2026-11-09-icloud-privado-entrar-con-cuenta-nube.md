@@ -1,5 +1,10 @@
 # Entrar con Google o Apple teniendo tu propio iCloud privado — espera decisión
 
+> **Resuelta el 2026-11-10.** Jürgen eligió la opción B (clave t1503u-icloud): se abre la nube con la cuenta que
+> entra y los datos de iCloud se quedan en iCloud sin tocar, por la vuelta al neutro de la puerta del Welcome. Se
+> construyó en la sesión del 10-nov (`ICloudAsideEntryLogic`, propósito `.enterCloudAccount`); la decisión está en
+> `docs/DECISIONS.md` (2026-11-10). Esta acta queda como registro de lo medido.
+
 Sesión nocturna del 2026-11-09. Card del tablero: «Entrar con Google bloqueado por tus propios datos de
 iCloud privado («datos de otra cuenta»)». Decisión de partida de Jürgen (9-nov, clave `t1488u`): opción C,
 preguntarle al dueño si pasa sus datos de iCloud a la nube o entra dejándolos aparte, sin romper la
