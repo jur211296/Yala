@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1234)
+## Index (1235)
 
 | id | status | path |
 |---|---|---|
@@ -700,6 +700,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | invite-neutral-gate-forgets-the-group-card-answer | done | tickets/done/invite-neutral-gate-forgets-the-group-card-answer.md |
 | invite-neutral-gate-reopens-the-welcome-without-recomputing-readiness | backlog | tickets/backlog/invite-neutral-gate-reopens-the-welcome-without-recomputing-readiness.md |
 | invite-on-a-fresh-install-mounts-the-icloud-mirror-after-a-relaunch | done | tickets/done/invite-on-a-fresh-install-mounts-the-icloud-mirror-after-a-relaunch.md |
+| invite-paste-under-join-button-on-iphone-18-pro | backlog | tickets/backlog/invite-paste-under-join-button-on-iphone-18-pro.md |
 | invite-recovery-relaunches-for-a-mirror-it-never-uses | qa | tickets/qa/invite-recovery-relaunches-for-a-mirror-it-never-uses.md |
 | invite-refresh-forzado-es-noop-si-hay-otro-en-vuelo | done | tickets/done/invite-refresh-forzado-es-noop-si-hay-otro-en-vuelo.md |
 | invite-sign-in-with-a-complete-account-blocks-on-its-own-groups | done | tickets/done/invite-sign-in-with-a-complete-account-blocks-on-its-own-groups.md |
