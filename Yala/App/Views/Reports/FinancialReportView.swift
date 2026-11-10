@@ -256,6 +256,8 @@ struct FinancialReportView: View {
             }
             .padding(.top, DS.Spacing.sm)
             .yalaSafeBottomPadding()
+            // Ventana ancha: la Comparativa a 700 pt, centrada (decisión 7 de la revisión 2.3).
+            .readableColumn()
         }
         .scrollViewGlassEdges()
     }

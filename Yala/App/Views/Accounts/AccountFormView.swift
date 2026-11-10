@@ -198,6 +198,9 @@ struct AccountFormView: View {
             }
         }
         .yalaSheetDetents(sheetDetents, selection: $selectedDetent)
+        // Tamaño de página, como Ajustes: en el iPad la ficha dejaba de ser una hoja centrada de media pantalla
+        // (decisión 7 de la revisión 2.3). En el iPhone es la hoja de siempre.
+        .presentationSizing(.page)
         .presentationDragIndicator(.visible)
         .modifier(AccountRemovalPresentation(
             target: $removalTarget,
@@ -381,6 +384,8 @@ struct AccountFormView: View {
                     }
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.xxl)
+                    // A tamaño de página (abajo, `presentationSizing`), el formulario a 700 pt y centrado.
+                    .readableColumn()
                     .dismissKeyboardOnTap()
                 }
                 .scrollDismissesKeyboard(.interactively)

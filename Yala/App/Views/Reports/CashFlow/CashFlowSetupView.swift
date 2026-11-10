@@ -111,6 +111,8 @@ struct CashFlowSetupView: View {
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.top, DS.Spacing.sm)
             .yalaSafeBottomPadding()
+            // Ventana ancha: el armado del plan a 700 pt, centrado (decisión 7 de la revisión 2.3).
+            .readableColumn()
         }
         .onChange(of: transactions.count) { _, _ in refreshTodayBalance() }
         .onAppear {

@@ -46,6 +46,8 @@ struct GroupStatsView: View {
                 }
                 .padding(.top, DS.Spacing.sm)
                 .padding(.bottom, DS.Spacing.safeBottom)
+                // Ventana ancha: las estadísticas del grupo a 700 pt, centradas (decisión 7 de la revisión 2.3).
+                .readableColumn()
             }
             .scrollViewGlassEdges()
             .onAppear { loadStats() }

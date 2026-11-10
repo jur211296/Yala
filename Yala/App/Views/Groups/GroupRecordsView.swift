@@ -156,6 +156,8 @@ struct GroupRecordsView: View {
             .padding(.bottom, DS.Spacing.safeBottom)
             // Card C3: borrar un gasto, quitar un saldo inicial o llegar uno nuevo se anima; la primera carga no.
             .animatesRowEdits(ids: days.flatMap { $0.value.map(\.id) })
+            // Ventana ancha (la lista plegada, el iPad en horizontal): los gastos a 700 pt, centrados (decisión 7).
+            .readableColumn()
         }
         .scrollViewGlassEdges()
         .refreshable { await onRefresh?() }

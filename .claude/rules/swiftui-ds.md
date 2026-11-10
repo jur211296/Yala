@@ -719,7 +719,13 @@ La tabla vista por vista y lo que queda en cards: `docs/fluidez/AUDITORIA-FLUIDE
 - **El detalle de registro es hoja en compacta y columna en regular** (`TransactionDetailSheet(presentation:)`): el
   iPhone no cambia de hoja a empuje. En columna, Editar abre el editor directo; el encadenado «cerrar hoja → editor»
   solo existe en la hoja.
-- Ancho legible: `DS.Adaptive.readableWidth` (700) en el contenido de una columna de detalle.
+- Ancho legible: `DS.Adaptive.readableWidth` (700) en el contenido de una columna de detalle. **Desde el 2026-11-10
+  (decisión 7 de la revisión 2.3) también en las páginas que iban de lado a lado**: Distribución, Reportes (Comparativa,
+  armado del plan y mes), las tres páginas del detalle de un grupo y el formulario de cuenta, con `readableColumn()`
+  (`DesignSystem/ReadableColumn.swift`) DENTRO del scroll, en el contenido: el scroll sigue a todo lo ancho. Las barras
+  de chips y el título grande se quedan donde están. El formulario de cuenta abre además a tamaño de página
+  (`.presentationSizing(.page)`), como Ajustes. Lo fija `ReadableWidthIPadUITests` (iPad Pro 13). Dos columnas en esas
+  vistas se diseñan aparte, con maqueta: no se improvisan sobre esta pieza.
 - **Una `List` con `contentMargins` propios, en la columna de detalle, arranca pegada a la columna de lista**
   (medido 2026-10-03, iPad mini y Pro 13, Pro Max girado). Junto a la columna la lista tiene área segura (400 pt en el
   mini girado) y el sistema se queda con el MAYOR entre ese área y el margen, no con la suma: el margen desaparece justo
