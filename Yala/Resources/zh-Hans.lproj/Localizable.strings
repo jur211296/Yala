@@ -4751,10 +4751,10 @@
 "welcome.cloud.notFoundCta" = "创建账户";
 
 /* Title when foreign local data blocks sign-in */
-"welcome.cloud.blockedTitle" = "此设备上有另一个账户的数据";
+"welcome.cloud.blockedTitle" = "此设备上已保存了数据";
 
 /* Body when foreign local data blocks sign-in */
-"welcome.cloud.blockedBody" = "为保护这些数据，无法在此连接其他账户。数据所有者可以随时重新登录。";
+"welcome.cloud.blockedBody" = "为保护这些数据，无法在此连接此账户。保存数据的人可以随时重新登录。";
 
 "welcome.cloud.blockedRestoreHint" = "如果这些数据是你的呢？如果你刚开始从 iCloud 恢复，请等它完成后再登录。";
 
@@ -8774,3 +8774,16 @@
 "groups.convert.notice" = "这笔记录保留在%@中，并成为这笔群组支出：如果它在群组中被修改或删除，你的记录也会随之改变。";
 "groups.convert.personalSplitHint" = "要转为共享支出，请先去掉“我的份额”：这笔记录只保存了你的部分。";
 "groups.convert.saveFirstHint" = "请先保存更改，再转为共享支出。";
+
+/* Progreso de dejar iCloud aparte al entrar con Google o Apple desde el Welcome */
+"welcome.groups.cloudAsideWorking" = "这台设备的 iCloud 数据会原样保留在 iCloud 中。我们正在上传最近的更改，并准备这台设备以登录你的账户…";
+/* Puerta del Welcome: no se pudo empezar a dejar iCloud aparte */
+"welcome.groups.cloudAsideUnavailableBody" = "请返回，稍后再试一次。没有做任何更改。";
+/* Puerta del Welcome: el borrado del arranque no pudo quitar la copia local de iCloud */
+"welcome.groups.cloudAsideWipeFailedBody" = "重新打开 Yala 时，未能从这台设备上移除 iCloud 数据的副本，所以它还没有为你的账户准备好。这些数据仍在 iCloud 中。我们不会自动重试：请返回，如果愿意，稍后再试一次。";
+/* Puerta del Welcome: cambios de grupos sin subir antes de dejar iCloud aparte */
+"welcome.groups.cloudAsideBlockedBody" = "这台设备上有尚未上传到服务器的群组更改。请重新登录该账号让它们上传，之后就可以在这里登录你的账户了。";
+/* Puerta del Welcome: la espera del export se agotó al dejar iCloud aparte; %d = cuántos */
+"welcome.groups.cloudAsideStalledBody" = "这台设备上尚未到达 iCloud 的更改：%d。为避免丢失，请等它们到达后再继续。";
+/* Puerta del Welcome: la espera del export se agotó al dejar iCloud aparte, sin cifra */
+"welcome.groups.cloudAsideStalledBodyUnknown" = "无法确认这台设备上最近的更改已到达 iCloud。为避免丢失，请稍等再继续。";
