@@ -62,6 +62,8 @@ struct CashFlowTableView: View {
                             }
                         }
                     }
+                    // Ventana ancha: la tira de meses y el mes a 700 pt, centrados (decisión 7 de la revisión 2.3).
+                    .readableColumn()
                 } else {
                     ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)

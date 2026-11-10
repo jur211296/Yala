@@ -310,6 +310,8 @@ struct CategoriesTabView: View {
             }
         }
         .padding(.top, DS.Spacing.sm)
+        // Ventana ancha: el contenido a 700 pt, centrado (decisión 7 de la revisión 2.3). En el iPhone no cambia nada.
+        .readableColumn()
     }
 
     @ViewBuilder
