@@ -11,6 +11,11 @@ import SwiftUI
 struct BudgetRowView: View {
     let summary: BudgetSummary
     let currencyCode: String
+    /// Los días que quedan, en la fila. La lista los quita cuando ya los dice el título de la sección (todos los
+    /// presupuestos del período comparten fin): repetidos en cada fila, no dejaban sitio y los importes perdían los decimales.
+    var showsDaysLeft = true
+    /// «Te quedan» sobre la cifra; la lista lo quita cuando ya lo dice el título de la sección.
+    var showsRemainingLabel = true
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
@@ -39,8 +44,9 @@ struct BudgetRowView: View {
                     // Budget name
                     VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                         HStack(spacing: DS.Spacing.xs) {
+                            // body (peso normal): la cifra de la derecha es lo único en semibold de la fila.
                             Text(summary.budget.name)
-                                .font(DS.Typography.headline)
+                                .font(DS.Typography.body)
                                 .foregroundStyle(.primary)
                                 .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
 
@@ -69,7 +75,8 @@ struct BudgetRowView: View {
                             limit: summary.budget.limitAmount,
                             spent: summary.spent,
                             currencyCode: currencyCode,
-                            alignment: .trailingUnlessStacked(dynamicTypeSize)
+                            alignment: .trailingUnlessStacked(dynamicTypeSize),
+                            showsLabel: showsRemainingLabel
                         )
                     }
                 }
@@ -78,7 +85,8 @@ struct BudgetRowView: View {
                 BudgetProgressBar(
                     percentage: summary.percentage,
                     color: summary.color,
-                    isExceeded: summary.status == .exceeded
+                    isExceeded: summary.status == .exceeded,
+                    height: DS.Sizing.budgetRowProgressBarHeight
                 )
 
                 // «En el límite» junto al naranja (Jürgen, 2026-11-05): el color avisa y la palabra lo nombra.
@@ -130,7 +138,7 @@ struct BudgetRowView: View {
             spent: summary.spent,
             limit: summary.budget.limitAmount,
             currencyCode: currencyCode,
-            suffix: L10n.UXL9.shortDays(summary.daysRemaining)
+            suffix: showsDaysLeft ? L10n.UXL9.shortDays(summary.daysRemaining) : nil
         )
     }
 

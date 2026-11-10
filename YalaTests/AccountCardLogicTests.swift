@@ -136,6 +136,35 @@ struct AccountCardLogicTests {
                 == "Visa · USD 3")
     }
 
+    // MARK: - La tarjeta en un selector
+
+    /// Jürgen, 6-nov: en la hoja «Cuenta» la principal decía «Sapphire» con «PEN · USD» debajo. Ahora su nombre lleva su
+    /// divisa, con la forma de la línea de debajo, y una sola vez.
+    @Test func headName_addsItsOwnCurrency_once() {
+        #expect(AccountCardLogic.headName("Sapphire", currencyCode: "PEN") == "Sapphire · PEN")
+        #expect(AccountCardLogic.headName("BCP Débito", currencyCode: "pen") == "BCP Débito · PEN")
+        #expect(AccountCardLogic.headName("Visa · PEN", currencyCode: "PEN") == "Visa · PEN")
+        #expect(AccountCardLogic.headName("Visa · PEN 2", currencyCode: "PEN") == "Visa · PEN 2")
+        // Un «· USD» que no es su divisa no cuenta: sigue llevando la suya.
+        #expect(AccountCardLogic.headName("Viajes · USD", currencyCode: "PEN") == "Viajes · USD · PEN")
+    }
+
+    @Test func headsWithLiveLines_onlyPrincipalsWithALiveValidLine() {
+        let roles = AccountLineLogic.resolve(standardNodes)
+        #expect(AccountCardLogic.headsWithLiveLines(standardNodes, roles: roles) == [card])
+
+        // Su única línea archivada: la tarjeta se lee suelta en el selector.
+        let archived = [node(card, "PEN"), node(usd, "USD", parent: card, archived: true)]
+        #expect(AccountCardLogic.headsWithLiveLines(archived, roles: AccountLineLogic.resolve(archived)).isEmpty)
+
+        // Un enlace roto (misma divisa que la principal) no hace tarjeta.
+        let broken = [node(card, "PEN"), node(usd, "PEN", parent: card)]
+        #expect(AccountCardLogic.headsWithLiveLines(broken, roles: AccountLineLogic.resolve(broken)).isEmpty)
+
+        // La línea viva cuenta aunque no se pase la principal entre los nodos (la hoja la pinta con su divisa igual).
+        #expect(AccountCardLogic.headsWithLiveLines([node(usd, "USD", parent: card)], roles: roles) == [card])
+    }
+
     // MARK: - Archivar
 
     @Test func linesToArchive_theLiveLines_evenWithThePrincipalAlreadyArchived() {

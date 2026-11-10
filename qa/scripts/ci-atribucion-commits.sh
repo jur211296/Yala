@@ -22,6 +22,14 @@
 #                     en ningún remoto: lo que el próximo push subiría, rebases incluidos.
 #   · otro evento   → nada que revisar (schedule, workflow_dispatch); sale 0 y lo dice.
 #
+# **Lo ya publicado no se vuelve a revisar** (2026-11-10). Un commit que ya está en una rama
+# protegida (`ATRIBUCION_PROTEGIDAS`, por defecto 2.2 2.3 1.0) no se puede reescribir: está
+# publicado, y el merge de una rama en otra lo conserva. Sin esto, el PR que mergeaba 2.2 en 2.3
+# quedó rojo por tres commits viejos de 2.2 que la regla ya no puede arreglar. Se revisan solo los
+# commits nuevos: `rev-list <rango> --not origin/2.2 origin/2.3 origin/1.0`, menos la rama a la que
+# se empuja (en un push a 2.2, origin/2.2 YA es el commit nuevo y lo taparía todo) y la propia
+# cabeza del PR. La regla para los commits nuevos no cambia.
+#
 # Fail-closed: si no puede leer el evento o traer los commits, sale 1. Un verde que no miró
 # nada es justo el fallo que vino a quitar.
 #
@@ -64,6 +72,24 @@ traer() {
     for c in "$@"; do git cat-file -e "$c^{commit}" 2>/dev/null || return 1; done
 }
 
+# Las ramas protegidas del remoto, para excluir lo ya publicado. Si una no existe o no se puede
+# traer, no se excluye: revisar de más es el lado seguro.
+PROTEGIDAS="${ATRIBUCION_PROTEGIDAS:-2.2 2.3 1.0}"
+EXCLUIR=()
+excluir_publicado() { # rama-propia (la que se empuja o la cabeza del PR; no se excluye)
+    local propia="${1:-}" r
+    git remote get-url origin >/dev/null 2>&1 || return 0
+    for r in $PROTEGIDAS; do
+        [ "$r" = "$propia" ] && continue
+        git ls-remote --exit-code --heads origin "$r" >/dev/null 2>&1 || continue
+        if git fetch -q --no-tags --filter=tree:0 origin "+refs/heads/$r:refs/remotes/origin/$r" 2>/dev/null; then
+            EXCLUIR+=("refs/remotes/origin/$r")
+        fi
+    done
+    [ "${#EXCLUIR[@]}" -gt 0 ] && echo "Ya publicado, no se revisa: ${EXCLUIR[*]#refs/remotes/}"
+    return 0
+}
+
 malos=0
 revisar() { # fichero-de-mensaje  autor  correo  committer  correo-committer  etiqueta
     local salida
@@ -99,13 +125,15 @@ case "${GITHUB_EVENT_NAME:-}" in
         titulo=$(evento pull_request.title)
         [ -n "$base" ] && [ -n "$head" ] || { echo "::error title=Candado anti-atribución::el evento del PR no trae base y head"; exit 1; }
         traer "$base" "$head" || { echo "::error title=Candado anti-atribución::no pude traer los commits del PR"; exit 1; }
-        revisar_commits "$base..$head"
+        excluir_publicado "$(evento pull_request.head.ref)"
+        revisar_commits "$base..$head" ${EXCLUIR[@]+--not "${EXCLUIR[@]}"}
         # Lo que escribirá GitHub al mergear. El committer de ese commit es GitHub.
         printf 'Merge pull request #%s from %s\n\n%s\n' "$num" "$rama" "$titulo" > "$TMP/titulo"
         revisar "$TMP/titulo" "Merge" "merge@github.invalid" "GitHub" "noreply@github.com" "título del PR «$titulo»"
         ;;
     push)
         antes=$(evento before); despues=$(evento after)
+        rama_push=$(evento ref); rama_push=${rama_push#refs/heads/}
         [ -n "$despues" ] || { echo "::error title=Candado anti-atribución::el evento del push no trae el commit"; exit 1; }
         if [ -z "$antes" ] || [ "$antes" = "$CERO" ]; then
             # Rama nueva: no hay base con la que acotar. Se mira el commit empujado.
@@ -114,7 +142,8 @@ case "${GITHUB_EVENT_NAME:-}" in
             revisar_commits -1 "$despues"
         else
             traer "$antes" "$despues" || { echo "::error title=Candado anti-atribución::no pude traer $antes..$despues"; exit 1; }
-            revisar_commits "$antes..$despues"
+            excluir_publicado "$rama_push"
+            revisar_commits "$antes..$despues" ${EXCLUIR[@]+--not "${EXCLUIR[@]}"}
         fi
         ;;
     "")

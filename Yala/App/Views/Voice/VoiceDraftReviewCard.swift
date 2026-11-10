@@ -26,6 +26,7 @@ struct VoiceDraftReviewCard: View {
     @Query private var allTags: [Tag]
 
     @State private var activeField: ChatDraftField?
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var isSaved: Bool { draft.status == .approved }
 
@@ -67,51 +68,77 @@ struct VoiceDraftReviewCard: View {
     // MARK: - Fila
 
     private var row: some View {
-        HStack(spacing: DS.ListRow.spacing) {
-            ChatDraftCategoryIcon(subcategory: draft.subcategory)
+        rowContent
+            .padding(.top, DS.ListRow.paddingV)
+            .padding(.bottom, isSaved ? DS.ListRow.paddingV : DS.Spacing.sm)
+            .padding(.horizontal, DS.ListRow.paddingH)
+            .contentShape(Rectangle())
+    }
 
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title)
-                    .font(DS.Typography.label)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                Text(subtitle)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(
-                        draft.subcategory == nil
-                            ? AnyShapeStyle(DS.Semantic.warningForeground) : AnyShapeStyle(.secondary)
-                    )
-                    .lineLimit(1)
-            }
-
-            Spacer(minLength: DS.Spacing.sm)
-
-            VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
-                Text(draft.amount == nil ? L10n.Chat.Draft.missingAmount : formattedAmount)
-                    .font(draft.amount == nil ? DS.Typography.caption : DS.Typography.headline)
-                    .foregroundStyle(
-                        draft.amount == nil ? AnyShapeStyle(DS.Semantic.warningForeground) : AnyShapeStyle(amountColor)
-                    )
-                    .monospacedDigit()
-
-                if isSaved {
-                    HStack(spacing: DS.Spacing.xs) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(DS.Typography.labelTiny)
-                            .foregroundStyle(DS.Semantic.successForeground)
-                        Text(L10n.Chat.Draft.savedBadge)
-                            .font(DS.Typography.labelTiny)
-                            .foregroundStyle(.secondary)
-                    }
-                    .accessibilityElement(children: .combine)
-                    .accessibilityIdentifier("voice_draft_saved")
+    /// Con el texto al máximo el importe baja a su propia línea, entero: a su lado se partía en «S/ / 25.0 / 0»
+    /// (barrido final 2.2). A tamaño normal, la fila de siempre, con los mismos hijos en el mismo `HStack`.
+    @ViewBuilder
+    private var rowContent: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                HStack(spacing: DS.ListRow.spacing) {
+                    ChatDraftCategoryIcon(subcategory: draft.subcategory)
+                    rowTexts
                 }
+                amountColumn(alignment: .leading)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            HStack(spacing: DS.ListRow.spacing) {
+                ChatDraftCategoryIcon(subcategory: draft.subcategory)
+
+                rowTexts
+
+                Spacer(minLength: DS.Spacing.sm)
+
+                amountColumn(alignment: .trailing)
             }
         }
-        .padding(.top, DS.ListRow.paddingV)
-        .padding(.bottom, isSaved ? DS.ListRow.paddingV : DS.Spacing.sm)
-        .padding(.horizontal, DS.ListRow.paddingH)
-        .contentShape(Rectangle())
+    }
+
+    private var rowTexts: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title)
+                .font(DS.Typography.label)
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+            Text(subtitle)
+                .font(DS.Typography.caption)
+                .foregroundStyle(
+                    draft.subcategory == nil
+                        ? AnyShapeStyle(DS.Semantic.warningForeground) : AnyShapeStyle(.secondary)
+                )
+                .lineLimit(1)
+        }
+    }
+
+    private func amountColumn(alignment: HorizontalAlignment) -> some View {
+        VStack(alignment: alignment, spacing: DS.Spacing.xs) {
+            Text(draft.amount == nil ? L10n.Chat.Draft.missingAmount : formattedAmount)
+                .font(draft.amount == nil ? DS.Typography.caption : DS.Typography.headline)
+                .foregroundStyle(
+                    draft.amount == nil ? AnyShapeStyle(DS.Semantic.warningForeground) : AnyShapeStyle(amountColor)
+                )
+                .monospacedDigit()
+
+            if isSaved {
+                HStack(spacing: DS.Spacing.xs) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(DS.Typography.labelTiny)
+                        .foregroundStyle(DS.Semantic.successForeground)
+                    Text(L10n.Chat.Draft.savedBadge)
+                        .font(DS.Typography.labelTiny)
+                        .foregroundStyle(.secondary)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("voice_draft_saved")
+            }
+        }
     }
 
     /// La nota es lo que el usuario dijo («Almuerzo»); sin nota, la subcategoría hace de título.

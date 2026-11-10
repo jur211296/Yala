@@ -1,0 +1,12 @@
+# Propuestas de la revisión que se miraron a mano y NO se aplican. `idioma:clave`, admite `*`.
+# Cada bloque dice por qué.
+
+# «X» es la abreviatura del miércoles en español (distingue de martes «M»).
+es-419:weekday.short.wednesday
+# «Na segunda às…»: el revisor lo cambió a «Em segunda», que es incorrecto.
+pt-BR:notifications.upcoming.week.*
+# Ejemplo localizado a propósito a la moneda del país del idioma.
+*:report.l18.example.currency
+# Frases de Siri: tienen que casar con las que enseña Atajos; no se reescriben en una revisión de texto.
+*:siriShortcuts.*
+*:shortcut.siri*

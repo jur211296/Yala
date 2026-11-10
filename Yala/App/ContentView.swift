@@ -351,6 +351,8 @@ struct ContentView: View {
             hasPersonalData = checkHasPersonalData()
         }
         .onChange(of: hasCompletedOnboarding) { _, newValue in
+            // Card 7e60: la entrada en la cuenta terminó; la marca de «a medias» ya no encamina nada.
+            if newValue { WelcomeUnfinishedAccountEntry.clear() }
             // Paso 8 · la oferta de «Activar Yala completo» a quien vino a estrenar Yala por la nube y resultó
             // tener una cuenta de grupos. Se consume en la primera transición, sea cual sea, y solo se ofrece
             // si lo que quedó montado es de verdad solo-grupos: desde otro modo la activación no tiene chooser.
@@ -1113,7 +1115,13 @@ struct ContentView: View {
                 // encenderlo. Buscar en este proceso no traería nada (el store montó sin el espejo), así que se pide
                 // reabrir con el mismo destino durable que escribe el Welcome (`onNeedsMirrorRelaunch` del
                 // contenedor): el arranque siguiente lo consume y vuelve aquí ya con el espejo puesto.
-                // `hasShownWelcomeChooser` ya está en `true` (lo marcó la elección de «Restaurar»).
+                // **`hasShownWelcomeChooser` se marca aquí también** (card 7e60, medido en el iPhone 14 el 2026-11-05).
+                // Este comentario decía que ya estaba en `true` porque lo marcaba la elección de «Restaurar», y no siempre
+                // hay elección: un destino `.restoreICloud` que el arranque consume abre Restaurar sin pasar por el
+                // Welcome, y tras un cierre de sesión la marca está borrada. Sin ella, el neutro armado volvía a montar sin
+                // espejo y esta misma línea pedía reabrir otra vez: «reabre Yala» en cada apertura. Mismo par que el
+                // `onNeedsMirrorRelaunch` del contenedor del Welcome.
+                hasShownWelcomeChooser = true
                 StorageModePersistence.clearGroupsOnlyNeutralMount()
                 WelcomePendingDestinationStore.set(.restoreICloud)
                 returnToWelcomeChooser(dismissing: $showWelcomeRestore, step: .mirrorRelaunch)
@@ -3360,6 +3368,13 @@ struct ContentView: View {
             MetricsService.used(.altaBienvenida)  // embudo del alta (telemetría propia): primera pantalla
             welcomeFlowInitialStep = .hero
             showWelcomeFlow = true
+        } else if WelcomeUnfinishedAccountEntry.reopensAtChooser(
+            hasShownWelcomeChooser: hasShownWelcomeChooser,
+            accountEntryUnfinished: WelcomeUnfinishedAccountEntry.isMarked()) {
+            // Card 7e60 (Jürgen, 2026-11-06): eligió entrar en una cuenta y Yala se cerró antes de terminar. Vuelve a
+            // elegir; el alta privada de abajo es solo para quien eligió «Es mi primera vez».
+            welcomeFlowInitialStep = .chooser
+            showWelcomeFlow = true
         } else {
             showOnboarding = true
         }
@@ -3561,6 +3576,7 @@ private struct WelcomeFlowModifier: ViewModifier {
                     startFreshPrivateOnboarding()
                 case .restore:
                     hasShownWelcomeChooser = true
+                    WelcomeUnfinishedAccountEntry.mark()
                     showWelcomeFlow = false
                     showWelcomeRestore = true
                 case .invite:
@@ -3577,6 +3593,7 @@ private struct WelcomeFlowModifier: ViewModifier {
                 // H4: sub-elección de "Ya tengo una cuenta" (o su bypass — hoy en
                 // prod DARK siempre .restoreICloud = flujo restore actual intacto).
                 hasShownWelcomeChooser = true
+                WelcomeUnfinishedAccountEntry.mark()
                 switch option {
                 case .restoreICloud:
                     showWelcomeFlow = false
@@ -3616,6 +3633,7 @@ private struct WelcomeFlowModifier: ViewModifier {
                 // onboarding normal, y el corpus local lo gobierna el guard cross-cuenta si
                 // el claim acaba encaminando al returning-user.
                 hasShownWelcomeChooser = true
+                WelcomeUnfinishedAccountEntry.mark()
                 welcomeCloudEntry = .bornCloud
                 cloudSignInFromExistingChooser = false
                 showWelcomeFlow = false
@@ -3642,6 +3660,7 @@ private struct WelcomeFlowModifier: ViewModifier {
                 // (jamás heredar el del intento anterior). Aquí NO se limpian prefs residuales: no
                 // es un fresh start.
                 hasShownWelcomeChooser = true
+                WelcomeUnfinishedAccountEntry.mark()
                 welcomeCloudEntry = .beaconRouted(accountProvider: provider)
                 cloudSignInFromExistingChooser = false
                 showWelcomeFlow = false
@@ -3985,6 +4004,8 @@ private struct WelcomeFlowModifier: ViewModifier {
     /// "Soy nuevo → privacidad total": el camino de siempre, extraído a un helper para que el
     /// callback de A4 y la rama `.new` histórica no puedan divergir.
     private func startFreshPrivateOnboarding() {
+        // Card 7e60: eligió el alta privada; si Yala se cierra ahora, reabrir sigue en su Paso 1.
+        WelcomeUnfinishedAccountEntry.clear()
         // Segunda barrera vs data residual: el alert "Detectamos tu cuenta" del Hero cubre
         // el caso iCloud-con-data, pero falla en (1) sim sin iCloud, (2) timeout del fetch,
         // (3) CloudKit mirror sync que llega post-Hero. Si hay data al momento del tap,

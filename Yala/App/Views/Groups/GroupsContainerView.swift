@@ -18,6 +18,7 @@ struct GroupsContainerView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
     @Environment(\.openURL) private var openURL
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.scenePhase) private var scenePhase
     /// Size class de la VENTANA (se lee fuera del split: dentro, la columna de lista es compacta). Decide si el grupo
     /// abierto va en la columna de detalle o empujado.
@@ -142,7 +143,8 @@ struct GroupsContainerView: View {
                     .transition(.identity)
                 } else {
                     ScrollView {
-                        VStack(spacing: DS.Spacing.lg) {
+                        // xxl entre bloques (cabecera, acciones, lista); entre tarjetas sigue `lg` en su LazyVStack.
+                        VStack(spacing: DS.Spacing.xxl) {
                             // Global summary
                             if let summary = viewModel.globalSummary {
                                 VStack(spacing: DS.Spacing.xs) {
@@ -1212,7 +1214,12 @@ struct GroupsContainerView: View {
     /// «Nuevo grupo» va al lado en tarjeta; sin ninguno, solo «Nuevo grupo». Las mismas dos acciones que el flotante.
     private var topActions: some View {
         let canAddExpense = !viewModel.eligibleGroupsForExpense().isEmpty
-        return HStack(spacing: DS.Spacing.sm) {
+        // A tamaños de accesibilidad las dos no caben a lo ancho y salían «Nu…» y «N…» (pase de estrés 2.2, card ysol):
+        // una debajo de otra. `AnyLayout` para que cambiar el tamaño de texto no cambie su identidad.
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Spacing.sm))
+            : AnyLayout(HStackLayout(spacing: DS.Spacing.sm))
+        return layout {
             if canAddExpense {
                 TopPrimaryActionPill(
                     title: L10n.Groups.Expense.newExpense,

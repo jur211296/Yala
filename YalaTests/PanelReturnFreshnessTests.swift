@@ -232,7 +232,7 @@ struct PanelReturnFreshnessWiringTests {
         let load = try #require(vm.range(of: "    func loadData() {\n        guard let context = modelContext else { return }"))
         #expect(vm[load.upperBound...].prefix(260).contains("lastLoadStamp = currentDataStamp()"))
         #expect(vm.contains("{ UIApplication.shared.applicationState != .background }"))
-        #expect(vm.contains("guard isApplicationInForeground() else { return }"))
+        #expect(vm.contains("guard isApplicationInForeground() else {"))
         #expect(vm.contains("guard recalculateTask == nil else { return }"))
     }
 }

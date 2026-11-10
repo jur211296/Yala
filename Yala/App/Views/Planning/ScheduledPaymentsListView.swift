@@ -27,6 +27,7 @@ struct ScheduledPaymentsListView: View {
     @Namespace private var viewModeNamespace
 
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     /// Selected day in calendar (nil = show all for the month)
     @State private var selectedDay: Int? = nil
@@ -154,6 +155,22 @@ struct ScheduledPaymentsListView: View {
         .accessibilityHidden(true)
     }
 
+    /// Fila de la insignia de estado: en línea a tamaño normal; apilada a tamaños de accesibilidad. Mismos hijos en las
+    /// dos formas (`AnyLayout`).
+    @ViewBuilder
+    private func timelineBrandBadge(_ summary: ScheduledPaymentSummary) -> some View {
+        if let brand = summary.payment.subscriptionBrand {
+            SubscriptionBrandBadge(brand: brand, diameter: DS.Icon.badgeSmall, isDecorative: true)
+        }
+    }
+
+    private func statusLineLayout<Content: View>(spacing: CGFloat, @ViewBuilder content: () -> Content) -> some View {
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Spacing.xs))
+            : AnyLayout(HStackLayout(spacing: spacing))
+        return layout { content() }
+    }
+
     // MARK: - View Mode
 
     private var viewModeSelector: some View {
@@ -177,6 +194,9 @@ struct ScheduledPaymentsListView: View {
                 .font(DS.Typography.labelSmall)
                 .fontWeight(.semibold)
                 .foregroundStyle(isSelected ? theme.onAccent : theme.secondaryText)
+                // El círculo es de tamaño fijo: con el texto al máximo el icono crecía fuera de él y los tres se montaban
+                // (QA físico 2.2, iPhone 14). Tope como el de una barra, y el visor de contenido grande al mantenerlo.
+                .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                 .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
                 .background {
                     if isSelected {
@@ -191,6 +211,9 @@ struct ScheduledPaymentsListView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(mode.accessibilityLabel)
+        .accessibilityShowsLargeContentViewer {
+            Label(mode.accessibilityLabel, systemImage: mode.iconName)
+        }
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityIdentifier("scheduled_view_mode_\(mode.rawValue)")
     }
@@ -280,6 +303,13 @@ struct ScheduledPaymentsListView: View {
         .padding(.horizontal, DS.Spacing.lg)
     }
 
+    private func timelineAmount(_ summary: ScheduledPaymentSummary, state: ScheduledPaymentRowState) -> some View {
+        Text(ScheduledPaymentRowView.amountText(summary, appPreferences: appPreferences))
+            .font(DS.Typography.label)
+            .foregroundStyle(ScheduledPaymentRowView.amountColor(state: state, isIncome: summary.payment.isIncome))
+            .lineLimit(1)
+    }
+
     private func timelineRow(_ summary: ScheduledPaymentSummary, isLast: Bool) -> some View {
         let state = summary.rowState
         let isToday = Calendar.current.isDateInToday(summary.dueDate)
@@ -311,23 +341,31 @@ struct ScheduledPaymentsListView: View {
                     }
                 }
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    HStack(alignment: .center, spacing: DS.Spacing.sm) {
-                        // El logo del servicio delante del nombre (card 9nn7, 2.3). El día sigue en el círculo de la
-                        // línea, que es lo que la ordena.
-                        if let brand = summary.payment.subscriptionBrand {
-                            SubscriptionBrandBadge(brand: brand, diameter: DS.Icon.badgeSmall, isDecorative: true)
+                    // Con el texto al máximo el importe baja bajo el nombre, entero (barrido final 2.2): al lado se cortaba.
+                    // El logo del servicio va delante del nombre en las dos formas (card 9nn7, 2.3). El día sigue en el
+                    // círculo de la línea, que es lo que la ordena.
+                    if dynamicTypeSize.isAccessibilitySize {
+                        HStack(alignment: .center, spacing: DS.Spacing.sm) {
+                            timelineBrandBadge(summary)
+                            Text(summary.payment.name)
+                                .font(DS.Typography.label)
+                                .foregroundStyle(.primary)
+                                .lineLimit(2)
                         }
-                        Text(summary.payment.name)
-                            .font(DS.Typography.label)
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                        Spacer(minLength: DS.Spacing.sm)
-                        Text(ScheduledPaymentRowView.amountText(summary, appPreferences: appPreferences))
-                            .font(DS.Typography.label)
-                            .foregroundStyle(ScheduledPaymentRowView.amountColor(state: state, isIncome: summary.payment.isIncome))
-                            .lineLimit(1)
+                        timelineAmount(summary, state: state)
+                    } else {
+                        HStack(alignment: .center, spacing: DS.Spacing.sm) {
+                            timelineBrandBadge(summary)
+                            Text(summary.payment.name)
+                                .font(DS.Typography.label)
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+                            Spacer(minLength: DS.Spacing.sm)
+                            timelineAmount(summary, state: state)
+                        }
                     }
-                    HStack(spacing: DS.Spacing.sm) {
+                    // Con el texto al máximo, la insignia y la cuenta una debajo de otra: al lado, «Pagado» salía «Paga…».
+                    statusLineLayout(spacing: DS.Spacing.sm) {
                         ScheduledPaymentStatusPill(state: state, isIncome: summary.payment.isIncome)
                         if let account = summary.payment.account?.name, !summary.payment.isGroupPayment {
                             Text(account)

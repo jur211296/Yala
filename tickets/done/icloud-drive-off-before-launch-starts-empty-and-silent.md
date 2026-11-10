@@ -1,0 +1,109 @@
+---
+id: icloud-drive-off-before-launch-starts-empty-and-silent
+status: done
+priority: high
+area: "sync, icloud"
+created: 2026-10-19
+source: "QA guiado del 2026-10-19 (prueba A · i1o5) · card tablero-con-icloud-drive-apagado-antes-de-abrir-n5zw"
+updated: 2026-11-05
+qa-date: 2026-11-05
+qa-status: passed
+qa-notes: verificado en el iPhone 14 con iCloud real (montaje B2)
+---
+
+# Con iCloud Drive apagado antes de abrir Yala, la app arranca vacía y no avisa de nada
+
+## El síntoma, en lenguaje de usuario
+
+Tengo mis movimientos en Yala con iCloud. Cierro Yala, apago iCloud Drive en Ajustes y vuelvo a abrirla: la app
+está vacía y no me dice por qué. Ni «iCloud no está disponible» ni nada. Sigue así cada vez que la abro, hasta que
+enciendo iCloud otra vez.
+
+## Lo medido
+
+- **iPhone de QA, 19-oct** (Yala Dev desde 3e59c0689): store con 37 movimientos y 4 cuentas; Jürgen cierra Yala y
+  apaga iCloud Drive. Al abrir: `iCloudSync` da `noAccount`, setup OK, `UserSegmentService` «pre-import tx=0», store
+  con 0 movimientos y 1 cuenta. Ningún aviso, tampoco al relanzar. Guards del aviso en `UserDefaults`:
+  `hasPrivateSession=true`, `storageMode=icloud`, `hasCompletedOnboarding=true` (pasan).
+- **Código**: el único productor del aviso era la gracia de 5 s de `ContentView`, que arranca en la caída
+  `hasPersonalData` true→false (`RemoteWipeGraceLogic.personalDataChanged`). `@State hasPersonalData` nace en
+  `false` y la primera medida (`checkInitialSyncState`) también da `false` ⇒ no hay caída, no hay gracia, no hay aviso.
+- **Inferido**: la «1 cuenta» del store vacío es la cuenta de sistema de Grupos (`GroupBridgeSystemEntities`, la única
+  cuenta que se crea fuera del formulario); `checkHasPersonalData` la excluye, así que el store cuenta como vacío. Y el
+  15-oct el aviso salió porque el vaciado ocurrió con el proceso vivo.
+
+## Qué cambia
+
+El arranque en frío pide el aviso «iCloud no está disponible en este dispositivo» (con «Entendido») cuando el store
+personal está vacío, el onboarding está hecho, la sesión es privada con iCloud (el mismo eje que la gracia) y la cuenta
+de iCloud no está disponible (sin token de iCloud Drive, o CloudKit dijo `notAuthenticated`). No depende de la caída.
+
+- Decide DESPUÉS del bootstrap (`requestColdStartICloudNoticeAfterBootstrap`, al final de la tarea del arranque):
+  el eje de sesión lo escribe el backfill del bootstrap, que corre en paralelo al splash, y decidido en el splash el
+  aviso no salía (medido en el XCUITest con `-uitest-reset`; en un teléfono real pasa en el primer arranque tras
+  actualizar). Re-mide el store antes de decidir.
+- **Una vez por proceso, y cede a la gracia** (review adversarial del 19-oct, dos hallazgos reales): la marca y el
+  «ya se miró» viven en `ColdStartICloudNotice` (del proceso), porque con varias ventanas el `ContentView` que asciende
+  volvía a pedir el aviso y drenaba la petición en cola como si fuera de la gracia (con iCloud de vuelta, podía acabar
+  en «Tus datos fueron eliminados»). Y si había filas antes de re-medir, la caída es de la gracia: pedir los dos sacaba
+  el aviso dos veces (`coldStartDefersToTheGrace`).
+- Va por la cola del router (`.presentRemoteWipeNotice`), como la gracia, y el drenaje re-mide todo.
+- **Una petición del arranque solo enseña «iCloud no está disponible»**: si al drenar iCloud ya volvió, se retira sin
+  aviso. Nunca sale «Tus datos fueron eliminados» ni «Empezar de cero» por este camino: los datos vuelven solos con la
+  importación.
+- Decisión pura: `RemoteWipeGraceLogic.coldStartRequestsICloudNotice` y `coldStartDrainPresents`, con el predicado de
+  «iCloud no disponible» compartido con `noticeDecision`.
+- Bajo `-uitest` el chequeo está apagado salvo con `-uitest-cold-start-icloud-check`: el simulador nunca tiene token de
+  iCloud y sin eso saldría en todo XCUITest que arranca sin seed.
+
+**Residual aceptado:** quien tenga el onboarding hecho, sesión privada, iCloud apagado y haya borrado a mano todas sus
+cuentas y categorías verá el aviso en cada arranque. Es cierto (iCloud no está) y solo tiene «Entendido».
+
+## Tests
+
+- `YalaTests/RemoteWipeGraceLogicTests`: la decisión en frío con sus cuatro controles (con datos, sin onboarding,
+  sesión que no obedece —también la de la nube, con el predicado real—, iCloud disponible), el drenaje que solo
+  presenta el aviso de iCloud, y la paridad del predicado con la gracia. Más el cableado (source-scan) del productor,
+  del arranque y del drenaje.
+- `YalaUITests/Flows/ColdStartICloudUnavailableUITests`: el caso de la card y cuatro controles con el seam puesto
+  (iCloud disponible, store con datos, sin onboarding, sesión solo-grupos).
+
+## Device-QA para Jürgen (repetir A · i1o5, con Yala CERRADA al apagar Drive)
+
+1. En el iPhone de QA, instala la build con este cambio (Yala Dev) y comprueba que tienes movimientos.
+2. Cierra Yala del todo (desliza hacia arriba en el selector de apps).
+3. Ajustes › tu nombre › iCloud › iCloud Drive → apágalo.
+4. Abre Yala. **Esperado:** sale «iCloud no está disponible en este dispositivo» con un solo botón, «Entendido». No
+   sale «Empezar de cero» ni «Tus datos fueron eliminados».
+5. Toca «Entendido». **Esperado:** te quedas en el Panel (vacío), no te manda al Welcome.
+6. Ajustes › iCloud › iCloud Drive → enciéndelo. Vuelve a Yala y espera un minuto. **Esperado:** tus movimientos
+   vuelven solos y no sale ningún aviso de borrado.
+
+Vuelto a backlog en el barrido de QA 2026-10-24: el arreglo del PR #562 falló en el iPhone el 19-oct (ver la card) y no ha tenido segunda vuelta; la card pasa a «lista para lanzar».
+
+## Segunda vuelta (lote 12.2, 2026-10-25): la causa era el contenedor
+
+No era iOS vaciando la copia: con Drive apagado el store se montaba `.localNoMirror` con `cloudKitDatabase: .automatic`, que
+toma el primer contenedor de los entitlements, y en `Yala Dev` ese es el de PRODUCCIÓN. El espejo cambiaba de contenedor,
+vaciaba la copia y reimportaba de otro sitio; al encender Drive volvía al `.dev` y todo regresaba. Las dos mediciones (15 y
+19-oct) fueron en `Yala Dev`. En `Yala` `.automatic` ya era el mismo contenedor, así que en producción este vaciado no
+debería pasar.
+
+Arreglo: `.localNoMirror` nombra el contenedor (`.private(cloudKitContainerIdentifier)`). El «hecha cuando» cambia
+(decisión D3 del encargo): con Drive apagado los datos siguen ahí y no sale ningún aviso. El aviso de «iCloud no
+disponible» del arranque queda para el teléfono sin cuenta (lee `hasICloudAccount`). Lo que dejó atrás el contenedor
+equivocado: `yala-dev-with-drive-off-mirrored-to-the-production-container`.
+
+### Guion (iPhone de QA, `Yala Dev` de este build)
+
+1. Con iCloud Drive ENCENDIDO, instala y abre Yala Dev una vez (que monte con este build). Apunta cuántos movimientos ves.
+2. Cierra Yala del todo. Ajustes › tu nombre › iCloud › iCloud Drive: apágalo.
+3. Abre Yala. Esperado: los mismos movimientos, sin ningún aviso. Ajustes › Sincronización iCloud: no dice «iCloud no está
+   activo» (card 90yc).
+4. Crea un movimiento. Cierra Yala, enciende Drive, abre: el movimiento sigue, sin aviso de borrado.
+
+## Verificado en dispositivo (2026-11-05)
+
+iPhone 14 (iOS 27.2), Yala Dev sobre `origin/2.2` (#809), iCloud privado con los datos traídos de iCloud. Antes: 1
+registro y S/ -20.00. Yala cerrada → iCloud Drive apagado → al abrir, los mismos datos y ningún aviso. Un registro
+nuevo (S/ 15.00) con Drive apagado; Drive encendido → el registro sigue. Vídeo y capturas: `~/Claude/entregas/2026-11-05-qa-dispositivo-fisico-device-mcp/evidencia/B2-*`.

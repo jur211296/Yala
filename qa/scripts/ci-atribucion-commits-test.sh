@@ -72,8 +72,12 @@ pr() { # base head titulo → evento de PR
     evento "{\"pull_request\":{\"number\":7,\"title\":$(python3 -I -c 'import json,sys;print(json.dumps(sys.argv[1]))' "$3"),\"base\":{\"sha\":\"$1\"},\"head\":{\"sha\":\"$2\",\"label\":\"jur:rama\"}}}"
 }
 
-ev_push() { # before after → evento de push
-    evento "$(printf '{"before":"%s","after":"%s"}' "$1" "$2")"
+ev_push() { # before after [rama] → evento de push
+    evento "$(printf '{"before":"%s","after":"%s","ref":"refs/heads/%s"}' "$1" "$2" "${3:-main}")"
+}
+
+pr_ref() { # base head titulo rama-cabeza → evento de PR con head.ref
+    evento "{\"pull_request\":{\"number\":7,\"title\":\"$3\",\"base\":{\"sha\":\"$1\"},\"head\":{\"sha\":\"$2\",\"ref\":\"$4\",\"label\":\"jur:$4\"}}}"
 }
 
 echo "== pull_request: los commits del PR y el título que GitHub copia al merge"
@@ -141,6 +145,37 @@ correr "" "/no/existe"; t $? 1 "commit sin subir con trailer, tapado por uno lim
 g reset -q --hard origin/main
 commit "feat: limpio sin subir"
 correr "" "/no/existe"; t $? 0 "solo commits limpios sin subir"
+
+echo "== Lo ya publicado en una rama protegida no se revisa (merge de 2.2 en 2.3, 10-nov)"
+# Un remoto con 2.3 y 2.2; en 2.2 hay un commit viejo con trailer, ya publicado.
+nuevo_repo publicado
+g clone -q --bare . "$BASE_TMP/pub.git"; g remote add origin "$BASE_TMP/pub.git"
+g push -q origin main:2.3; g push -q origin main:2.2
+g checkout -q -b r22 origin/2.2 2>/dev/null || g checkout -q -b r22 main
+commit "feat: viejo de 2.2
+
+$TRAILER"; g push -q origin HEAD:2.2
+g checkout -q main; B=$(git rev-parse HEAD)          # la base del PR: 2.3
+g checkout -q -b merge-22; g merge -q --no-ff r22 -m "Merge 2.2 en 2.3" >/dev/null
+correr pull_request "$(pr_ref "$B" "$(git rev-parse HEAD)" "Merge 2.2 en 2.3" merge-22)"
+t $? 0 "PR que trae 2.2 a 2.3 con un commit viejo firmado (ya publicado)" "Ya publicado, no se revisa"
+commit "fix: nuevo del PR
+
+$TRAILER"
+correr pull_request "$(pr_ref "$B" "$(git rev-parse HEAD)" "Merge 2.2 en 2.3" merge-22)"
+t $? 1 "el mismo PR con un commit NUEVO firmado: la regla sigue" "Hay 1 con atribución"
+# Push a 2.2 de un commit firmado: origin/2.2 ya ES ese commit, y no puede taparlo.
+g checkout -q r22; A=$(git rev-parse HEAD)
+commit "fix: directo a 2.2
+
+$TRAILER"; g push -q origin HEAD:2.2
+correr push "$(ev_push "$A" "$(git rev-parse HEAD)" 2.2)"
+t $? 1 "push a 2.2 de un commit firmado (su propia rama no lo excluye)" "Hay 1 con atribución"
+# Push a 2.3 del merge: los de 2.2 ya estaban publicados.
+g checkout -q main; A=$(git rev-parse HEAD); g merge -q --no-ff r22~1 -m "Merge 2.2 en 2.3" >/dev/null
+g push -q origin HEAD:2.3
+correr push "$(ev_push "$A" "$(git rev-parse HEAD)" 2.3)"
+t $? 0 "push a 2.3 del merge: lo de 2.2 ya estaba publicado" "Ya publicado, no se revisa"
 
 echo "== Fail-closed y eventos sin commits"
 nuevo_repo raros

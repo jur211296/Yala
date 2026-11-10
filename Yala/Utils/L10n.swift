@@ -664,16 +664,6 @@ enum L10n {
                 static var largeHowA: String { ls("panel.widgetInfo.expensesByNeed.largeHowA", comment: "Panel Polish #2 — ExpensesByNeed L: respuesta") }
             }
 
-            enum PeriodComparison {
-                static var title: String { ls("panel.widgetInfo.periodComparison.title", comment: "Stats Trends — Title sheet pedagógico Comparativa de período") }
-                static var chip1: String { ls("panel.widgetInfo.periodComparison.chip1", comment: "Stats Trends — Chip 1 Comparativa (Comparación)") }
-                static var chip2: String { ls("panel.widgetInfo.periodComparison.chip2", comment: "Stats Trends — Chip 2 Comparativa (Por período)") }
-                static var whatQ: String { ls("panel.widgetInfo.periodComparison.whatQ", comment: "Stats Trends — Comparativa: pregunta '¿Qué estás viendo?'") }
-                static var whatA: String { ls("panel.widgetInfo.periodComparison.whatA", comment: "Stats Trends — Comparativa: respuesta") }
-                static var howQ: String { ls("panel.widgetInfo.periodComparison.howQ", comment: "Stats Trends — Comparativa: pregunta '¿Con qué comparo?'") }
-                static var howA: String { ls("panel.widgetInfo.periodComparison.howA", comment: "Stats Trends — Comparativa: respuesta") }
-            }
-
             enum Sankey {
                 static var title: String { ls("panel.widgetInfo.sankey.title", comment: "Stats Categories — Title sheet pedagógico Sankey (Flujo del dinero)") }
                 static var chip1: String { ls("panel.widgetInfo.sankey.chip1", comment: "Stats Categories — Chip 1 Sankey (Flujo)") }

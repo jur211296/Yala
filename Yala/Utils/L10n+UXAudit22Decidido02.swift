@@ -43,6 +43,12 @@ extension L10n {
 
         static var discardTitle: String { l2d("l2d.discard.title") }
 
+        // MARK: - Borrador que sobrevive al cierre (card 77j1)
+
+        /// Línea sobre el formulario cuando trae lo que se escribía antes de que iOS cerrara Yala.
+        static var draftRestored: String { l2d("l2d.draft.restored") }
+        static var draftStartOver: String { l2d("l2d.draft.startOver") }
+
         // MARK: - L2-5 · El aviso tras guardar
 
         static func savedExpense(_ amount: String) -> String { String(format: l2d("l2d.saved.expense"), amount) }

@@ -81,6 +81,13 @@ final class BackgroundTaskManager {
 
     /// Registers all background tasks with the system
     /// Call this early in app lifecycle (e.g., in bootstrap)
+    ///
+    /// **Una vez por PROCESO, no por arranque** (card 7e60, medido en el iPhone 14 el 2026-11-05). iOS solo admite un
+    /// manejador por identificador, y registrar otra vez lanza `NSInternalInconsistencyException` desde
+    /// `BGTaskScheduler`: una excepción ObjC que no se atrapa. El cambio de almacén en caliente (cerrar sesión o borrar
+    /// la cuenta en la nube, `PersonalContainerSwap`) vuelve a correr `AppBootstrapper.bootstrap` en el mismo proceso, y
+    /// ahí Yala se cerraba sola. Los manejadores no capturan el almacén: lo leen de `modelContainer`, que el
+    /// re-arranque repone con `setModelContainer`, así que los del primer registro sirven al almacén nuevo.
     func registerTasks() {
         // Una vez por proceso: el swap de persona re-ejecuta el bootstrap y registrar dos veces el mismo
         // identifier es un crash (ver `tasksRegistered`).

@@ -30,7 +30,7 @@ struct StatisticsNewTransactionSheetAnchorWiringTests {
         let statistics = try Self.source("Yala/App/Views/Statistics/StatisticsView.swift")
         let stackEnd = try #require(statistics.range(of: "NavigationStack {"))
         let sheet = try #require(
-            statistics.range(of: ".sheet(isPresented: $recordsViewModel.showNewTransaction)"),
+            statistics.range(of: ".sheet(isPresented: $recordsViewModel.showNewTransaction,"),
             "StatisticsView ya no presenta la hoja de Nuevo registro.")
         #expect(sheet.lowerBound > stackEnd.upperBound)
         // Fuera de la pila: entre el cierre del `NavigationStack { … }` y la hoja no hay otro `NavigationStack`, y la hoja
@@ -38,7 +38,7 @@ struct StatisticsNewTransactionSheetAnchorWiringTests {
         let title = try #require(statistics.range(of: ".navigationBarTitleDisplayMode(.large)"))
         let between = statistics[title.upperBound..<sheet.lowerBound]
         #expect(between.contains("}"), "La hoja tiene que ir por fuera de la llave que cierra el NavigationStack.")
-        #expect(statistics.contains("NewTransactionView()"))
+        #expect(statistics.contains("NewTransactionView(draft: newRecordDraft)"))
         // Lo que la hoja recibía del entorno dentro de Estadísticas: el «Editar» del aviso tras guardar.
         #expect(statistics.contains(".environment(\\.savedRecordEditorOpener, recordsViewModel.savedRecordEditorOpener)"))
         // Y le pasa a la pila el MISMO ViewModel cuyo `showNewTransaction` escriben los botones.
@@ -47,7 +47,7 @@ struct StatisticsNewTransactionSheetAnchorWiringTests {
 
     @Test func detailContainer_doesNotPresentItAnymore_andReloadsOnClose() throws {
         let detail = try Self.source("Yala/App/Views/Statistics/DetailContainerView.swift")
-        #expect(!detail.contains(".sheet(isPresented: $recordsViewModel.showNewTransaction)"),
+        #expect(!detail.contains(".sheet(isPresented: $recordsViewModel.showNewTransaction"),
                 "La hoja de Nuevo registro volvió al contenido raíz de la pila de Estadísticas.")
         #expect(!detail.contains("NewTransactionView()"))
         #expect(detail.contains(".onChange(of: recordsViewModel.showNewTransaction)"),

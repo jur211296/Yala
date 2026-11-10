@@ -454,10 +454,18 @@ struct CashFlowBarsChart: View {
             .chartLegend(.hidden)
             .accessibilityHidden(true)
         } else {
-            Text("widget.ui.notEnoughData", bundle: .main)
-                .font(WidgetDS.Typography.caption)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // La línea de cero de la gráfica, con el aviso encima: el bloque se lee como una gráfica sin barras y no como
+            // un hueco con un texto suelto (card dz6c).
+            VStack(spacing: WidgetDS.Spacing.sm) {
+                Text("widget.ui.notEnoughData", bundle: .main)
+                    .font(WidgetDS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                Capsule()
+                    .fill(WidgetColors.track)
+                    .frame(height: WidgetDS.Chart.referenceLineWidth)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .accessibilityElement(children: .combine)
         }
     }
 }

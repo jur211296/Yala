@@ -1,0 +1,53 @@
+[
+ {
+  "k": "inbox.groupSettlementAmountChange.title",
+  "categoria": "regional",
+  "gravedad": "media",
+  "propuesta": "Ha cambiado el importe",
+  "motivo": "«Monto» es latinoamericano; en el resto de la app en español de España se usa «importe».",
+  "fuente": "llm",
+  "actual": "Ha cambiado el monto",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": true
+ },
+ {
+  "k": "welcome.groups.inviteCloudSignInBody",
+  "categoria": "terminologia",
+  "gravedad": "baja",
+  "propuesta": "En este teléfono están los datos de una cuenta en la nube que no tiene la sesión abierta, y tus gastos del grupo acabarían en ella. Si es tuya, entra con ella desde «Ya tengo una cuenta» y seguirás con tu invitación. Si no lo es, únete desde tu propio teléfono.",
+  "motivo": "El botón citado es «Ya tengo una cuenta» en el original, pero la traducción lo cita como «Ya tengo cuenta» y puede no coincidir con la etiqueta real.",
+  "fuente": "llm",
+  "actual": "En este teléfono están los datos de una cuenta en la nube que no tiene la sesión abierta, y tus gastos del grupo acabarían en ella. Si es tuya, entra con ella desde «Ya tengo cuenta» y seguirás con tu invitación. Si no lo es, únete desde tu propio teléfono.",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": false,
+  "no_aplicada_por": "categoría terminologia"
+ },
+ {
+  "k": "whatsNew.v21.groups.description",
+  "categoria": "registro",
+  "gravedad": "media",
+  "propuesta": "Comparte gastos con quien quieras. Invita con un enlace, apunta con ellos y Yala calcula quién le debe a quién. Sin hacer cuentas y sin momentos incómodos.",
+  "motivo": "«apuntad» es imperativo de vosotros y rompe el tuteo singular del resto de la frase y de la app.",
+  "fuente": "llm",
+  "actual": "Comparte gastos con quien quieras. Invita con un enlace, apuntad juntos y Yala calcula quién le debe a quién. Sin hacer cuentas y sin momentos incómodos.",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": false,
+  "no_aplicada_por": "registro hacia lo formal"
+ },
+ {
+  "k": "report.grouping.hint",
+  "categoria": "regional",
+  "gravedad": "baja",
+  "propuesta": "Añade niveles para ver más detalle. Arrastra para reordenar la prioridad.",
+  "motivo": "«Agrega» es el uso latinoamericano; en España se dice «Añade», como en el resto de la app («Añadir»).",
+  "fuente": "llm",
+  "actual": "Agrega niveles para ver más detalle. Arrastra para reordenar la prioridad.",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": false,
+  "no_aplicada_por": "gravedad baja"
+ }
+]

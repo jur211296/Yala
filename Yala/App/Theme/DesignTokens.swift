@@ -302,10 +302,6 @@ enum DS {
         /// Indigo→negro vertical — fondo unificado del flow Welcome (Hero + Chooser).
         static let heroIndigoBlack: [Color] = [.electricIndigo, .black]
 
-        /// Índigo→rosa para barras de intensidad de gasto (calendario de Registros):
-        /// índigo = gasto bajo, rosa = día de mayor gasto del periodo.
-        static let spendingHeat: [Color] = [.electricIndigo, .hotPink]
-
         /// Theme-aware accent→negro vertical — fondo principal de vistas en los 4
         /// themes translucent (Liquid Glass + Translucent Indigo/Rosa/Teal).
         ///
@@ -776,6 +772,13 @@ enum DS {
 
         /// Altura de progress bars compactos (CashFlowDetailLineRow, badges).
         static let progressBarHeight: CGFloat = 4
+
+        /// Altura por defecto de `BudgetProgressBar`.
+        static let budgetProgressBarHeight: CGFloat = 6
+
+        /// `BudgetProgressBar` en la fila de la lista de Presupuestos: a 6 pt el carril de un presupuesto sin gastar
+        /// casi no se veía (1,1:1 contra la tarjeta). Se engrosa, no se oscurece.
+        static let budgetRowProgressBarHeight: CGFloat = 8
     }
 }
 
