@@ -667,15 +667,16 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | in-app-ai-privacy-claims-need-a-policy-check | done | tickets/done/in-app-ai-privacy-claims-need-a-policy-check.md |
 | in-app-privacy-copy-says-data-never-leaves-the-device | done | tickets/done/in-app-privacy-copy-says-data-never-leaves-the-device.md |
 | inbox-alert-scheduled-count-has-no-singular | done | tickets/done/inbox-alert-scheduled-count-has-no-singular.md |
-| inbox-bulk-save-and-swipe-skip-the-duplicate-check | backlog | tickets/backlog/inbox-bulk-save-and-swipe-skip-the-duplicate-check.md |
+| inbox-bulk-save-and-swipe-skip-the-duplicate-check | done | tickets/done/inbox-bulk-save-and-swipe-skip-the-duplicate-check.md |
 | inbox-convert-draft-to-group-expense | done | tickets/done/inbox-convert-draft-to-group-expense.md |
 | inbox-crash-convert-to-group-expense | done | tickets/done/inbox-crash-convert-to-group-expense.md |
 | inbox-deleting-two-drafts-in-a-row-crashes | done | tickets/done/inbox-deleting-two-drafts-in-a-row-crashes.md |
 | inbox-dismiss-x-does-not-delete-the-draft-for-good | done | tickets/done/inbox-dismiss-x-does-not-delete-the-draft-for-good.md |
 | inbox-header-leaves-no-room-for-drafts-at-large-text | done | tickets/done/inbox-header-leaves-no-room-for-drafts-at-large-text.md |
-| inbox-list-capped-at-500-may-hide-old-pending-drafts | backlog | tickets/backlog/inbox-list-capped-at-500-may-hide-old-pending-drafts.md |
+| inbox-list-capped-at-500-may-hide-old-pending-drafts | done | tickets/done/inbox-list-capped-at-500-may-hide-old-pending-drafts.md |
 | inbox-strings-show-a-python-dict-in-four-languages | done | tickets/done/inbox-strings-show-a-python-dict-in-four-languages.md |
 | inbox-success-says-transaction-created | done | tickets/done/inbox-success-says-transaction-created.md |
+| inbox-swipe-save-success-sheet-shows-blank | backlog | tickets/backlog/inbox-swipe-save-success-sheet-shows-blank.md |
 | income-amount-color-is-dim-in-dark-mode | done | tickets/done/income-amount-color-is-dim-in-dark-mode.md |
 | indice-readme-barre-worktrees-anidados | discarded | tickets/discarded/indice-readme-barre-worktrees-anidados.md |
 | indice-readme-cuenta-los-ficheros-de-los-worktrees-anidados | discarded | tickets/discarded/indice-readme-cuenta-los-ficheros-de-los-worktrees-anidados.md |
@@ -1113,7 +1114,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | siri-settings-screen-does-not-show-the-new-questions | done | tickets/done/siri-settings-screen-does-not-show-the-new-questions.md |
 | siri-settings-screen-lists-phrases-siri-does-not-know | done | tickets/done/siri-settings-screen-lists-phrases-siri-does-not-know.md |
 | siri-shortcut-error-replies-speak-english-on-a-spanish-iphone | done | tickets/done/siri-shortcut-error-replies-speak-english-on-a-spanish-iphone.md |
-| siri-shortcuts-screen-says-pro-required-for-on-device-users | backlog | tickets/backlog/siri-shortcuts-screen-says-pro-required-for-on-device-users.md |
+| siri-shortcuts-screen-says-pro-required-for-on-device-users | done | tickets/done/siri-shortcuts-screen-says-pro-required-for-on-device-users.md |
 | small-screen-leftovers-after-the-iphone-se-audit | backlog | tickets/backlog/small-screen-leftovers-after-the-iphone-se-audit.md |
 | smart-ai-notifications | backlog | tickets/backlog/smart-ai-notifications.md |
 | snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling | done | tickets/done/snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling.md |

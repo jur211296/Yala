@@ -7111,6 +7111,10 @@ enum L10n {
         static var createAnyway: String {
             ls("inbox.createAnyway", comment: "")
         }
+        /// Pantalla final del lote: cuántos se quedaron en la Bandeja por parecerse a un registro que ya existe.
+        static func bulkSkippedDuplicates(_ count: Int) -> String {
+            String(format: ls("inbox.bulkDuplicates.skipped", comment: ""), count)
+        }
         static func deleteConfirmMessage(_ count: Int) -> String {
             String(format: ls("inbox.deleteConfirmMessage", comment: ""), count)
         }
@@ -7821,6 +7825,10 @@ enum L10n {
         static var applePayGuarantee: String { ls("tutorials.applePay.guarantee", comment: "") }
         static func applePayPendingDrafts(_ count: Int) -> String {
             String(format: ls("tutorials.applePay.pendingDrafts", comment: ""), count)
+        }
+        static var applePayNoPaymentYet: String { ls("tutorials.applePay.status.none", comment: "") }
+        static func applePayLastPayment(_ day: String) -> String {
+            String(format: ls("tutorials.applePay.status.lastPayment", comment: ""), day)
         }
         // Step Descriptions
         static var createAccountStep0Desc: String { ls("tutorials.createAccount.step0.desc", comment: "") }

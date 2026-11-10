@@ -2018,6 +2018,7 @@
 "inbox.duplicateWarningTitle" = "Doublon possible";
 "inbox.duplicateWarningMessage" = "Un enregistrement similaire existe déjà. L’enregistrer quand même ?";
 "inbox.createAnyway" = "Enregistrer quand même";
+"inbox.bulkDuplicates.skipped" = "Non enregistrés, doublon possible : %d";
 "inbox.saveLater" = "Laisser pour plus tard";
 "inbox.deleteTitle" = "Supprimer le brouillon";
 "inbox.deleteMessage" = "Cette action ne peut pas être annulée.";
@@ -2748,7 +2749,7 @@
 "tutorials.applePay.step0.desc" = "Ouvre l'app Raccourcis et va dans Automatisation. Si tu ne la vois pas en bas, elle est dans Bibliothèque.";
 "tutorials.applePay.step1.desc" = "Touche +, choisis Wallet et sélectionne les cartes que tu utilises. Si c'est proposé, choisis Exécuter immédiatement.";
 "tutorials.applePay.step2.desc" = "Si on te le demande, touche Créer un raccourci. Cherche Yala et choisis le raccourci « Enregistrer un paiement Apple Pay ».";
-"tutorials.applePay.step3.desc" = "Dans Montant sélectionne Entrée du raccourci puis Quantité. Fais la même chose pour Commerçant et Nom respectivement. Si « Afficher à l'exécution » apparaît, désactive-le.";
+"tutorials.applePay.step3.desc" = "Dans Montant sélectionne Entrée du raccourci puis Quantité. Dans Commerçant sélectionne Entrée du raccourci puis Commerçant. Si « Afficher à l'exécution » apparaît, désactive-le.";
 "tutorials.applePay.completion.title" = "Apple Pay connecté !";
 "tutorials.applePay.completion.desc" = "Avec ça tu auras maintenant des enregistrements automatiques chaque fois que tu utilises Apple Pay avec les cartes sélectionnées. Chaque paiement créera un brouillon dans ta boîte de réception.";
 "subcategory.fuel" = "Carburant";
@@ -6273,6 +6274,8 @@
 "tutorials.applePay.openShortcuts" = "Ouvrir Raccourcis";
 "tutorials.applePay.guarantee" = "Chaque paiement arrive en brouillon : rien n'est enregistré sans ton accord.";
 "tutorials.applePay.pendingDrafts" = "Paiements Apple Pay dans ta boîte de réception : %d";
+"tutorials.applePay.status.none" = "Aucun paiement Apple Pay n’est encore arrivé. Une fois l’automatisation créée, chaque paiement arrivera dans ta boîte de réception.";
+"tutorials.applePay.status.lastPayment" = "Le dernier paiement Apple Pay est arrivé le %@.";
 "faceIDGuide.guarantee" = "Yala ne voit jamais ton visage : c'est iOS qui le vérifie.";
 "faceIDGuide.previewAction" = "Exiger Face ID";
 

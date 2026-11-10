@@ -2020,6 +2020,7 @@
 "inbox.duplicateWarningTitle" = "Mogelijk duplicaat";
 "inbox.duplicateWarningMessage" = "Er bestaat al een vergelijkbare registratie. Toch opslaan?";
 "inbox.createAnyway" = "Toch opslaan";
+"inbox.bulkDuplicates.skipped" = "Niet opgeslagen, mogelijk dubbel: %d";
 "inbox.saveLater" = "Bewaar voor later";
 "inbox.deleteTitle" = "Concept verwijderen";
 "inbox.deleteMessage" = "Deze actie kan niet ongedaan worden gemaakt.";
@@ -2767,7 +2768,7 @@
 "tutorials.applePay.step0.desc" = "Open de Opdrachten-app en ga naar Automatisering. Zie je die onderaan niet, dan staat hij in Bibliotheek.";
 "tutorials.applePay.step1.desc" = "Tik op +, kies Wallet en selecteer de kaarten die je gebruikt. Als het wordt aangeboden, kies Direct uitvoeren.";
 "tutorials.applePay.step2.desc" = "Als erom wordt gevraagd, tik op Maak nieuwe opdracht. Zoek naar Yala en kies de opdracht ‘Apple Pay-betaling boeken’.";
-"tutorials.applePay.step3.desc" = "Voor Bedrag kies je Opdrachtinvoer en daarna Bedrag. Doe hetzelfde voor Verkoper en Naam. Zie je ‘Toon bij uitvoeren’, zet het dan uit.";
+"tutorials.applePay.step3.desc" = "Voor Bedrag kies je Opdrachtinvoer en daarna Bedrag. Voor Verkoper kies je Opdrachtinvoer en daarna Verkoper. Zie je ‘Toon bij uitvoeren’, zet het dan uit.";
 "tutorials.applePay.completion.title" = "Apple Pay verbonden!";
 "tutorials.applePay.completion.desc" = "Hiermee heb je nu automatische boekingen elke keer dat je met de geselecteerde kaarten Apple Pay gebruikt. Elke betaling maakt een concept in je inbox.";
 
@@ -6284,6 +6285,8 @@
 "tutorials.applePay.openShortcuts" = "Open Opdrachten";
 "tutorials.applePay.guarantee" = "Elke betaling komt binnen als concept: er wordt niets geboekt tot je het goedkeurt.";
 "tutorials.applePay.pendingDrafts" = "Apple Pay-betalingen in je inbox: %d";
+"tutorials.applePay.status.none" = "Er is nog geen Apple Pay-betaling binnengekomen. Zodra de automatisering is aangemaakt, komt elke betaling in je inbox.";
+"tutorials.applePay.status.lastPayment" = "De laatste Apple Pay-betaling kwam binnen op %@.";
 "faceIDGuide.guarantee" = "Yala ziet je gezicht nooit: dat controleert iOS.";
 "faceIDGuide.previewAction" = "Face ID vereisen";
 

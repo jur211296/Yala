@@ -1710,6 +1710,7 @@
 "inbox.status.pending" = "pendente";
 "inbox.cannotApprove" = "Não é possível guardar";
 "inbox.createAnyway" = "Guardar mesmo assim";
+"inbox.bulkDuplicates.skipped" = "Não guardados, possível duplicado: %d";
 "inbox.delete" = "Eliminar";
 "inbox.deleteMessage" = "Esta ação não pode ser desfeita.";
 "inbox.deleteTitle" = "Eliminar rascunho";
@@ -3259,7 +3260,7 @@
 "tutorials.applePay.step1.title" = "Cria a automatização";
 "tutorials.applePay.step2.desc" = "Se pedir, toca em Criar novo atalho. Procura Yala e escolhe o atalho «Registrar pagamento Apple Pay».";
 "tutorials.applePay.step2.title" = "Seleciona o atalho do Yala";
-"tutorials.applePay.step3.desc" = "Em Valor seleciona Entrada do atalho e depois Quantidade. Faz o mesmo para Comerciante e Nome respetivamente. Se aparecer «Mostrar ao executar», desativa-o.";
+"tutorials.applePay.step3.desc" = "Em Valor seleciona Entrada do atalho e depois Quantidade. Em Comerciante seleciona Entrada do atalho e depois Comerciante. Se aparecer «Mostrar ao executar», desativa-o.";
 "tutorials.applePay.step3.title" = "Configura os parâmetros";
 "tutorials.applePay.title" = "Registar com Apple Pay";
 "tutorials.category.advanced" = "Avançado";
@@ -5521,6 +5522,8 @@
 "tutorials.applePay.openShortcuts" = "Abrir Atalhos";
 "tutorials.applePay.guarantee" = "Cada pagamento chega como rascunho: nada é registado sem a tua aprovação.";
 "tutorials.applePay.pendingDrafts" = "Pagamentos Apple Pay na tua caixa de entrada: %d";
+"tutorials.applePay.status.none" = "Ainda não chegou nenhum pagamento Apple Pay. Quando a automatização estiver criada, cada pagamento vai chegar à tua caixa de entrada.";
+"tutorials.applePay.status.lastPayment" = "O último pagamento Apple Pay chegou a %@.";
 "faceIDGuide.guarantee" = "O Yala nunca vê o teu rosto: quem verifica é o iOS.";
 "faceIDGuide.previewAction" = "Pedir Face ID";
 

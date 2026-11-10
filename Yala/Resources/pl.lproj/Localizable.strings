@@ -2020,6 +2020,7 @@
 "inbox.duplicateWarningTitle" = "Możliwy duplikat";
 "inbox.duplicateWarningMessage" = "Podobny wpis już istnieje. Zapisać mimo to?";
 "inbox.createAnyway" = "Zapisz mimo to";
+"inbox.bulkDuplicates.skipped" = "Niezapisane, możliwy duplikat: %d";
 "inbox.saveLater" = "Zostaw na później";
 "inbox.deleteTitle" = "Usuń szkic";
 "inbox.deleteMessage" = "Tej operacji nie można cofnąć.";
@@ -2767,7 +2768,7 @@
 "tutorials.applePay.step0.desc" = "Otwórz aplikację Skróty i przejdź do Automatyzacji. Jeśli nie widzisz jej na dole, jest w Bibliotece.";
 "tutorials.applePay.step1.desc" = "Stuknij +, wybierz Wallet i zaznacz karty, których używasz. Jeśli jest dostępne, wybierz Uruchom natychmiast.";
 "tutorials.applePay.step2.desc" = "Jeśli pojawi się pytanie, stuknij Utwórz nowy skrót. Wyszukaj Yala i wybierz skrót „Zapisz płatność Apple Pay”.";
-"tutorials.applePay.step3.desc" = "Dla pola Kwota wybierz Wejście skrótu, a następnie Kwota. Zrób to samo dla Sprzedawca i Nazwa. Jeśli pojawi się „Pokaż przy uruchomieniu”, wyłącz to.";
+"tutorials.applePay.step3.desc" = "Dla pola Kwota wybierz Wejście skrótu, a następnie Kwota. Dla pola Sprzedawca wybierz Wejście skrótu, a następnie Sprzedawca. Jeśli pojawi się „Pokaż przy uruchomieniu”, wyłącz to.";
 "tutorials.applePay.completion.title" = "Apple Pay połączone!";
 "tutorials.applePay.completion.desc" = "Od teraz przy każdej płatności Apple Pay wybranymi kartami powstanie automatyczny wpis. Każda płatność utworzy szkic w skrzynce.";
 
@@ -6284,6 +6285,8 @@
 "tutorials.applePay.openShortcuts" = "Otwórz Skróty";
 "tutorials.applePay.guarantee" = "Każda płatność trafia jako szkic: nic nie zostanie zapisane bez Twojej zgody.";
 "tutorials.applePay.pendingDrafts" = "Płatności Apple Pay w skrzynce: %d";
+"tutorials.applePay.status.none" = "Nie dotarła jeszcze żadna płatność Apple Pay. Gdy automatyzacja będzie utworzona, każda płatność trafi do skrzynki.";
+"tutorials.applePay.status.lastPayment" = "Ostatnia płatność Apple Pay dotarła %@.";
 "faceIDGuide.guarantee" = "Yala nigdy nie widzi Twojej twarzy — sprawdza ją iOS.";
 "faceIDGuide.previewAction" = "Wymagaj Face ID";
 

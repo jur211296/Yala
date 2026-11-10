@@ -56,6 +56,11 @@ struct InboxView: View {
     @State private var saveReadyCount = 0
     @State private var saveReadySummary = InboxBulkApproveSummaryLogic.Summary(total: nil, currencyCode: nil, accountName: nil)
     @State private var saveReadyLeftover: String?
+    /// Lo que el lote dejó en la Bandeja por posible duplicado (lote 03 de las necesarias 2.3).
+    @State private var saveReadyDuplicatesLine: String?
+    /// Deslizar para guardar un borrador que se parece a un registro que ya existe: pregunta, como el borrador abierto.
+    @State private var swipeDuplicateDraft: InboxDraft?
+    @State private var showSwipeDuplicateAlert = false
 
     // Group conversion flow (draft personal de gasto → SplitExpense de grupo). Approach A: el
     // edit sheet cierra y notifica; InboxView rutea. Un solo sheet activo a la vez (delays).
@@ -513,6 +518,7 @@ struct InboxView: View {
                 confirmCount: readyDrafts.count,
                 summary: saveReadySummary,
                 leftover: saveReadyLeftover,
+                duplicatesLine: saveReadyDuplicatesLine,
                 onConfirm: saveReadyDrafts,
                 onViewRecords: {
                     showSaveReadySuccess = false
@@ -523,6 +529,11 @@ struct InboxView: View {
                     showSaveReadySuccess = false
                     dismissIfNoPendingDrafts()
                 }
+            ))
+            .modifier(InboxSwipeDuplicatePresentation(
+                isPresented: $showSwipeDuplicateAlert,
+                draft: swipeDuplicateDraft,
+                onSaveAnyway: saveSwipedDuplicateAnyway
             ))
             .safeAreaInset(edge: .bottom) {
                 if isSelectionMode {
@@ -971,17 +982,25 @@ struct InboxView: View {
         }
         draftService.setContext(modelContext)
         do {
-            let transactions = try draftService.bulkApprove(ready, currencyConverter: currencyConverter)
+            let outcome = try draftService.bulkApproveOutcome(ready, currencyConverter: currencyConverter)
+            let transactions = outcome.transactions
             viewModel.loadData()
+            saveReadyDuplicatesLine = InboxBulkDuplicatesLogic.skippedLine(outcome.skippedAsPossibleDuplicate)
             saveReadyCount = transactions.count
             saveReadySummary = InboxBulkApproveSummaryLogic.summary(
                 of: transactions.map {
                     .init(amount: $0.amount, currencyCode: $0.currencyCode, accountName: $0.account?.name)
                 }
             )
-            saveReadyLeftover = InboxSaveReadyLogic.leftoverLine(viewModel.filteredDrafts(for: .pending))
-            guard !transactions.isEmpty else { return }
-            DS.Haptic.success()
+            // Lo saltado por parecido tiene su propia línea: aquí contarlo otra vez se leía como dos borradores.
+            let skippedIDs = Set(outcome.skippedPossibleDuplicates.map(\.persistentModelID))
+            saveReadyLeftover = InboxSaveReadyLogic.leftoverLine(
+                viewModel.filteredDrafts(for: .pending).filter { !skippedIDs.contains($0.persistentModelID) }
+            )
+            // Con nada guardado por parecido también sale la pantalla final, que lo dice: una segunda alerta pedida
+            // mientras se cierra la confirmación puede no llegar a presentarse.
+            guard InboxBulkDuplicatesLogic.showsSummary(saved: transactions.count, skipped: outcome.skippedAsPossibleDuplicate) else { return }
+            if !transactions.isEmpty { DS.Haptic.success() }
             // La alerta de confirmación se está cerrando: la hoja de éxito espera a que termine (mismo anchor).
             Task {
                 do { try await Task.sleep(for: .milliseconds(400)) } catch { return }
@@ -1078,7 +1097,7 @@ struct InboxView: View {
         }
     }
 
-    private func approveDraft(_ draft: InboxDraft) {
+    private func approveDraft(_ draft: InboxDraft, skipDuplicateCheck: Bool = false) {
         // Gasto planificado de grupo: no se aprueba inline (crearía una TX personal por el path
         // genérico). Abre el form dedicado que crea el SplitExpense de grupo.
         if draft.requiresApprovalForm {
@@ -1093,6 +1112,22 @@ struct InboxView: View {
         if account.isArchived {
             showArchivedAccountAlert = true
             return
+        }
+
+        // Posible duplicado: pregunta antes de guardar, como el borrador abierto (lote 03 de las necesarias 2.3). Una
+        // lectura que falla guarda, como el borrador abierto: el aviso diría «ya existe» sin saberlo.
+        if !skipDuplicateCheck {
+            do {
+                if try InboxDuplicateCheck.possibleDuplicate(of: draft, in: modelContext) != nil {
+                    swipeDuplicateDraft = draft
+                    showSwipeDuplicateAlert = true
+                    return
+                }
+            } catch {
+                #if DEBUG
+                print("InboxView: Error checking duplicates: \(error)")
+                #endif
+            }
         }
 
         // DB work OUTSIDE animation — only animate UI state changes
@@ -1130,6 +1165,19 @@ struct InboxView: View {
             if case DraftServiceError.groupExpenseTargetMissing = error {
                 draftService.retireStaleGroupExpenseDraftWithoutSheet(draft)
             }
+        }
+    }
+
+    /// «Guardar de todas formas» del aviso de deslizar. El aviso se está cerrando: la pantalla de éxito espera a que
+    /// termine (mismo molde que «Guardar los listos»).
+    private func saveSwipedDuplicateAnyway(_ draft: InboxDraft) {
+        Task {
+            do { try await Task.sleep(for: .milliseconds(400)) } catch { return }
+            // Si en ese rato se abrió otra hoja, no se guarda: la pantalla de éxito no podría salir y el borrador sigue
+            // en la Bandeja para volver a intentarlo.
+            guard selectedDraft == nil, !showSwipeSuccessView,
+                  draft.isReadableInInbox, draft.status == .pending else { return }
+            approveDraft(draft, skipDuplicateCheck: true)
         }
     }
 
@@ -1184,6 +1232,7 @@ private struct InboxSaveReadyPresentations: ViewModifier {
     let confirmCount: Int
     let summary: InboxBulkApproveSummaryLogic.Summary
     let leftover: String?
+    let duplicatesLine: String?
     let onConfirm: () -> Void
     let onViewRecords: () -> Void
     let onBackToInbox: () -> Void
@@ -1202,9 +1251,45 @@ private struct InboxSaveReadyPresentations: ViewModifier {
                     approvedCount: count,
                     summary: summary,
                     leftoverLine: leftover,
+                    duplicatesLine: duplicatesLine,
                     onViewRecords: onViewRecords,
                     onBackToInbox: onBackToInbox
                 )
             }
+    }
+}
+
+// MARK: - Deslizar para guardar un posible duplicado (lote 03 de las necesarias 2.3)
+
+/// El aviso «Posible duplicado» al deslizar, con las dos salidas del borrador abierto. Aparte del cuerpo de
+/// `InboxView` por el mismo motivo que `InboxSaveReadyPresentations`.
+private struct InboxSwipeDuplicatePresentation: ViewModifier {
+    @Binding var isPresented: Bool
+    let draft: InboxDraft?
+    let onSaveAnyway: (InboxDraft) -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .alert(L10n.Inbox.duplicateWarningTitle, isPresented: $isPresented, presenting: draft) { pending in
+                Button(L10n.Common.cancel, role: .cancel) {}
+                    .accessibilityIdentifier("inbox_swipe_duplicate_cancel")
+                Button(L10n.Inbox.createAnyway) { onSaveAnyway(pending) }
+                    .accessibilityIdentifier("inbox_swipe_duplicate_save_anyway")
+            } message: { _ in
+                Text(L10n.Inbox.duplicateWarningMessage)
+            }
+    }
+}
+
+/// Qué dice el lote de lo que dejó por posible duplicado. Pura: la fija `InboxDuplicateCheckTests`.
+enum InboxBulkDuplicatesLogic {
+    static func skippedLine(_ skipped: Int) -> String? {
+        skipped > 0 ? L10n.Inbox.bulkSkippedDuplicates(skipped) : nil
+    }
+
+    /// Cuándo sale la pantalla final: con algo guardado, como siempre, y también con nada guardado si algo se quedó
+    /// por parecido, para decirlo. Sin nada guardado por otros motivos (fechas futuras) se queda como estaba.
+    static func showsSummary(saved: Int, skipped: Int) -> Bool {
+        saved > 0 || skipped > 0
     }
 }

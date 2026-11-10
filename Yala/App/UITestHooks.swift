@@ -753,6 +753,12 @@ final class UITestHooks {
     /// el aviso trae SOLO borradores de Siri; con `-uitest-inbox-alert`, la muestra de siempre y la línea de Siri.
     nonisolated static var showInboxAlertSiri: Bool { hasArg("-uitest-inbox-alert-siri") }
 
+    /// `-uitest-inbox-duplicate-draft`: la semilla de borradores añade un registro ya guardado con el mismo día, importe
+    /// y cuenta que «Almuerzo equipo» (`DevSeedDrafts`). Es el caso del correo del banco y Apple Pay que traen el mismo
+    /// pago: el lote y deslizar tienen que verlo como posible duplicado (lote 03 de las necesarias 2.3). No decide nada:
+    /// solo pone el registro gemelo; la comprobación es la de producción.
+    nonisolated static var seedInboxDuplicateDraft: Bool { hasArg("-uitest-inbox-duplicate-draft") }
+
     /// `-uitest-siri-model <available|deviceNotEligible|appleIntelligenceNotEnabled|modelNotReady|languageNotSupported>`:
     /// finge el estado del modelo del iPhone para «Anotar con Siri» sin Pro (L15-6, encendido el 2026-10-21). El
     /// simulador no tiene el modelo de Apple: con `available` la lectura del dictado es un stub fijo

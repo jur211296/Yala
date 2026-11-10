@@ -82,6 +82,40 @@ final class SiriShortcutsScreenUITests: XCTestCase {
         XCTAssertTrue(message.label.contains("2 pagos"), "Se perdió el mensaje de siempre: «\(message.label)».")
     }
 
+    // MARK: - «Requiere Yala Pro» solo a quien de verdad le hace falta (lote 03 de las necesarias 2.3)
+
+    /// Sin Pro y con el modelo del iPhone listo, «Anota un gasto en Yala» funciona gratis: la pantalla no pide Pro.
+    func test_freeUserWithTheIPhoneModelReady_isNotToldSiriNeedsPro() {
+        let app = openSiriScreen(model: "available")
+        let phrase = app.staticTexts["«Anota un gasto en Yala»"]
+        XCTAssertTrue(phrase.waitForExistence(timeout: 5), "No apareció la frase de Siri.")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "siri-modelo-listo"
+        shot.lifetime = .keepAlways
+        add(shot)
+        XCTAssertFalse(app.staticTexts["Requiere Yala Pro"].exists, "La pantalla dice «Requiere Yala Pro» a quien puede usar Siri gratis.")
+    }
+
+    /// Control: sin el modelo, Siri abre la hoja de Pro, y la pantalla lo sigue diciendo.
+    func test_freeUserWithoutTheIPhoneModel_isStillToldSiriNeedsPro() {
+        let app = openSiriScreen(model: "deviceNotEligible")
+        XCTAssertTrue(app.staticTexts["«Anota un gasto en Yala»"].waitForExistence(timeout: 5), "No apareció la frase de Siri.")
+        XCTAssertTrue(app.staticTexts["Requiere Yala Pro"].exists, "Sin el modelo del iPhone, la pantalla dejó de decir que hace falta Pro.")
+    }
+
+    private func openSiriScreen(model: String) -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchForUITest(extraArguments: ["-uitest-siri-model", model])
+        XCTAssertTrue(app.waitForUITestReady(), "La app no señaló uitest_ready.")
+        let profile = app.buttons["profile_avatar"]
+        XCTAssertTrue(profile.waitForExistence(timeout: 20), "No apareció profile_avatar.")
+        profile.tap()
+        XCTAssertTrue(app.buttons["profile_accounts"].waitForExistence(timeout: 10), "No se abrió Ajustes.")
+        scrollTo(app.buttons["Siri y Atajos"], in: app)
+        app.buttons["Siri y Atajos"].tap()
+        return app
+    }
+
     private func scrollTo(_ element: XCUIElement, in app: XCUIApplication) {
         var attempts = 0
         while !(element.exists && element.isHittable) && attempts < 12 {

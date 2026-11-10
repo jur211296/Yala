@@ -67,6 +67,17 @@ struct DevSeedDrafts {
             )
             context.insert(draft)
         }
+
+        // `-uitest-inbox-duplicate-draft`: el registro gemelo del borrador A (mismo día, importe y cuenta), como si el
+        // mismo pago hubiera llegado ya por otro camino y estuviera guardado.
+        if UITestHooks.seedInboxDuplicateDraft, let first = defs.first {
+            let twin = TransactionItem(date: first.date, amount: first.amount, currencyCode: account.currencyCode)
+            twin.note = first.note
+            twin.account = account
+            twin.subcategory = subcategory
+            twin.category = subcategory.safeCategory
+            context.insert(twin)
+        }
     }
 }
 #endif

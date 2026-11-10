@@ -2018,6 +2018,7 @@
 "inbox.duplicateWarningTitle" = "Possibile duplicato";
 "inbox.duplicateWarningMessage" = "Esiste già una registrazione simile. Salvarla comunque?";
 "inbox.createAnyway" = "Salva comunque";
+"inbox.bulkDuplicates.skipped" = "Non salvati, possibile duplicato: %d";
 "inbox.saveLater" = "Lascia per dopo";
 "inbox.deleteTitle" = "Elimina bozza";
 "inbox.deleteMessage" = "Questa azione non può essere annullata.";
@@ -2749,7 +2750,7 @@
 "tutorials.applePay.step0.desc" = "Apri l'app Comandi Rapidi e vai in Automazione. Se non la vedi in basso, è in Libreria.";
 "tutorials.applePay.step1.desc" = "Tocca +, scegli Wallet e seleziona le carte che usi. Se compare, scegli Esegui immediatamente.";
 "tutorials.applePay.step2.desc" = "Se richiesto, tocca Crea nuovo comando rapido. Cerca Yala e scegli il comando rapido «Registra pagamento Apple Pay».";
-"tutorials.applePay.step3.desc" = "In Importo seleziona Input del comando rapido e poi Quantità. Fai lo stesso per Esercente e Nome rispettivamente. Se compare «Mostra durante l'esecuzione», disattivalo.";
+"tutorials.applePay.step3.desc" = "In Importo seleziona Input del comando rapido e poi Quantità. In Esercente seleziona Input del comando rapido e poi Esercente. Se compare «Mostra durante l'esecuzione», disattivalo.";
 "tutorials.applePay.completion.title" = "Apple Pay connesso!";
 "tutorials.applePay.completion.desc" = "Con questo avrai registrazioni automatiche ogni volta che usi Apple Pay con le carte selezionate. Ogni pagamento creerà una bozza nella tua casella in arrivo.";
 "subcategory.fuel" = "Carburante";
@@ -6282,6 +6283,8 @@
 "tutorials.applePay.openShortcuts" = "Apri Comandi Rapidi";
 "tutorials.applePay.guarantee" = "Ogni pagamento arriva come bozza: nulla viene registrato finché non lo approvi.";
 "tutorials.applePay.pendingDrafts" = "Pagamenti Apple Pay nella tua casella: %d";
+"tutorials.applePay.status.none" = "Non è ancora arrivato nessun pagamento Apple Pay. Quando l’automazione sarà creata, ogni pagamento arriverà nella tua casella.";
+"tutorials.applePay.status.lastPayment" = "L’ultimo pagamento Apple Pay è arrivato il %@.";
 "faceIDGuide.guarantee" = "Yala non vede mai il tuo volto: lo verifica iOS.";
 "faceIDGuide.previewAction" = "Richiedi Face ID";
 

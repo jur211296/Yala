@@ -1809,6 +1809,7 @@
 "inbox.status.pending" = "pendiente";
 "inbox.cannotApprove" = "No se puede guardar";
 "inbox.createAnyway" = "Guardar de todas formas";
+"inbox.bulkDuplicates.skipped" = "Sin guardar por posible duplicado: %d";
 "inbox.delete" = "Eliminar";
 "inbox.deleteMessage" = "Esta acción no se puede deshacer.";
 "inbox.deleteTitle" = "Eliminar borrador";
@@ -3283,7 +3284,7 @@
 "tutorials.applePay.step1.title" = "Crea la automatización";
 "tutorials.applePay.step2.desc" = "Si te lo pide, tocá Crear nuevo atajo. Buscá Yala y elegí el atajo «Registrar pago de Apple Pay».";
 "tutorials.applePay.step2.title" = "Selecciona el atajo de Yala";
-"tutorials.applePay.step3.desc" = "En Cantidad seleccioná Entrada de atajo y luego Cantidad. Hacé lo mismo para Comercio y Nombre respectivamente. Si aparece «Mostrar al ejecutar», desactivalo.";
+"tutorials.applePay.step3.desc" = "En Cantidad seleccioná Entrada de atajo y luego Cantidad. En Comercio seleccioná Entrada de atajo y luego Comercio. Si aparece «Mostrar al ejecutar», desactivalo.";
 "tutorials.applePay.step3.title" = "Configura los parámetros";
 "tutorials.applePay.title" = "Registrar con Apple Pay";
 "tutorials.category.advanced" = "Avanzado";
@@ -5525,6 +5526,8 @@
 "tutorials.applePay.openShortcuts" = "Abrir Atajos";
 "tutorials.applePay.guarantee" = "Cada pago llega como borrador: nada se registra sin que lo apruebes.";
 "tutorials.applePay.pendingDrafts" = "Pagos de Apple Pay en tu bandeja: %d";
+"tutorials.applePay.status.none" = "Todavía no llegó ningún pago de Apple Pay. Cuando la automatización esté creada, cada pago va a llegar a tu bandeja.";
+"tutorials.applePay.status.lastPayment" = "El último pago de Apple Pay llegó el %@.";
 "faceIDGuide.guarantee" = "Yala nunca ve tu rostro: lo comprueba iOS.";
 "faceIDGuide.previewAction" = "Requerir Face ID";
 
