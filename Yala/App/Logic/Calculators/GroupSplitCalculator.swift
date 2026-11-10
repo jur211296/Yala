@@ -70,14 +70,21 @@ enum GroupSplitCalculator {
 
     // MARK: - Exact Split
 
+    /// Lo que cuenta como «cuadra»: medio céntimo, solo para el ruido de coma flotante (133.33 + 133.33 + 133.34 da
+    /// 400.00000000000006). Hasta el 2026-11-10 eran dos céntimos: un gasto de 400 con partes que sumaban 399,99 se
+    /// guardaba, la insignia decía «Balanceado» y ese céntimo no era de nadie —las deudas salen de las partes y el
+    /// pagador puso 400—. Decisión de Jürgen (lote 02 de mejoras necesarias de 2.3): no se guarda hasta cuadrar. La
+    /// usa también la insignia del formulario (`GroupExpenseViewModel.isSharesBalanced`).
+    static let balanceTolerance = 0.005
+
     /// Each participant.value is the exact amount they owe.
-    /// Validates that sum of values equals total (within tolerance).
+    /// Validates that sum of values equals total, al céntimo (`balanceTolerance`).
     private static func exactSplit(
         total: Double,
         participants: [Participant]
     ) -> [(memberID: String, amount: Double)]? {
         let sum = participants.reduce(0.0) { $0 + $1.value }
-        guard abs(sum - total) < 0.02 else { return nil }
+        guard abs(sum - total) < balanceTolerance else { return nil }
         guard participants.allSatisfy({ $0.value >= 0 }) else { return nil }
 
         return participants.map { (memberID: $0.memberID, amount: roundTwo($0.value)) }
@@ -86,13 +93,14 @@ enum GroupSplitCalculator {
     // MARK: - Percentage Split
 
     /// Each participant.value is their percentage (0–100).
-    /// Validates that percentages sum to 100 (within tolerance).
+    /// Validates that percentages sum to 100 (con el mismo margen de coma flotante que «Monto»). Antes admitía 0,1 %, y
+    /// la diferencia iba entera al último por `adjustLastForRounding` (en 400, hasta 0,36).
     private static func percentageSplit(
         total: Double,
         participants: [Participant]
     ) -> [(memberID: String, amount: Double)]? {
         let sumPct = participants.reduce(0.0) { $0 + $1.value }
-        guard abs(sumPct - 100) < 0.1 else { return nil }
+        guard abs(sumPct - 100) < balanceTolerance else { return nil }
         guard participants.allSatisfy({ $0.value >= 0 }) else { return nil }
 
         var results = participants.map { p in

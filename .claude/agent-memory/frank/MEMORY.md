@@ -96,6 +96,7 @@
 - [Medir un cuelgue de tipos con sample](reference_medir_un_cuelgue_de_tipos_con_sample.md) — App Hang con TypeDecoder: sample del proceso del simulador + conteo inclusivo; Mac quieta.
 - [Diff de píxeles en la misma sesión](feedback_diff_de_pixeles_en_la_misma_sesion.md) — antes y después seguidos; Reducir movimiento cambia el cristal; sin inercia.
 - [Ver un fallo de XCUITest en vídeo](reference_ver_un_fallo_de_xcuitest_en_video.md) — xcresult → mp4 → ffmpeg último fotograma; los .txt no ven las hojas.
+- [Centinela en la Max y AX colgado](reference_centinela_en_la_max_y_ax_colgado.md) — Mando invalida el veredicto; tras axe, reinicia el sim; el reparto no se rellena por XCUITest.
 - [Vídeo de un XCUITest en verde](reference_video_de_un_xcuitest_en_verde.md) — el verde no deja mp4: simctl recordVideo alrededor de la corrida.
 - [Fechar un rojo con la nocturna](reference_fechar_un_rojo_con_la_nocturna.md) — `gh run view --log` de qa.yml da el veredicto por caso y día; acota antes de bisecar.
 - [Un seam de contador dispara sus one-shots](feedback_un_seam_de_contador_dispara_sus_one_shots.md) — fijar «5 registros» sin primer ni checklist sacaba hojas encima.
