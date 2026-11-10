@@ -3,7 +3,7 @@ id: ipad-reports-and-search-get-a-readable-width
 status: backlog
 priority: low
 area: "ipad, reports, search, adaptativo"
-updated: 2026-10-08
+updated: 2026-11-10
 created: 2026-09-29
 source: "fase 1 del carril adaptativo (ipad-sidebar-and-list-detail-for-records-and-planning), 2026-09-29"
 ---
@@ -39,3 +39,10 @@ suya ([[ipad-list-detail-for-groups-and-settings-and-chat-inspector]]); estas do
 - `DS.Adaptive.readableWidth` se aplica hoy en `BudgetDetailView`, `TransactionDetailSheet`, `AccountDetailSheet`, `ChatSheetView`, `StepGuide`, `FollowerWindowRoot` y, vía `readableListMargin`, en las listas de ajustes.
 
 Triage 2026-10-08: abierto · low → low · `FinancialReportView.swift` y `GlobalSearchView.swift` siguen sin ningún `maxWidth` ni `readableWidth`; el tope solo lo usan detalles, ajustes, chat y `StepGuide`.
+
+## Reportes, hecho en el lote 2.3 del ancho legible (2026-11-10)
+
+La decisión 7 de la revisión 2.3 (opción C, Jürgen, 9-nov) llevó Reportes al ancho legible: la Comparativa, el armado
+del plan y el mes del flujo de caja van a 700 pt centrados (`readableColumn()`), medido en el iPad Pro 13 por
+`ReadableWidthIPadUITests` (1.001 pt en la base, ≤ 700 con el arreglo). **Queda Buscar**, que esa decisión no cubre:
+`GlobalSearchView.swift` sigue sin tope. Este ticket sigue abierto solo por Buscar.
