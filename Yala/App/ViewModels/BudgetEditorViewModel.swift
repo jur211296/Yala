@@ -29,6 +29,12 @@ final class BudgetEditorViewModel {
 
     private(set) var showSaveError = false
 
+    /// ¿Cabe un presupuesto activo más con `currentCount` activos? El del plan gratis (`FeatureGateService`), inyectable
+    /// en los tests: el editor no puede saltarse el límite al reactivar uno (lote 04 de mejoras necesarias 2.3).
+    var canHaveAnotherActiveBudget: (_ currentCount: Int) -> Bool = { count in
+        FeatureGateService.shared.canCreate(.budgets, currentCount: count)
+    }
+
     // MARK: - Computed Properties
 
     /// A0-Bridge: excluye cuentas sistema de pickers manuales.
@@ -220,6 +226,25 @@ final class BudgetEditorViewModel {
         return Array(names.prefix(2)) + [andMore]
     }
 
+    // MARK: - Límite del plan al reactivar
+
+    /// Encender «Activo» en un presupuesto que estaba inactivo suma uno a los activos, igual que crear uno: con el
+    /// límite del plan gratis lleno, no se deja. La persona elige cuál desactiva o pasa a Pro; el límite no se salta.
+    /// Un presupuesto nuevo no pasa por aquí: «Nuevo presupuesto» ya abre el muro antes del editor.
+    func activationExceedsPlanLimit(existing: Budget?, isActive: Bool) -> Bool {
+        guard let existing, !existing.isActive, isActive, let context = modelContext else { return false }
+        do {
+            let active = try context.fetchCount(FetchDescriptor<Budget>(predicate: #Predicate { $0.isActive }))
+            return !canHaveAnotherActiveBudget(active)
+        } catch {
+            #if DEBUG
+            print("BudgetEditorViewModel: Error counting active budgets: \(error)")
+            #endif
+            // Sin recuento no se sabe si cabe: no se activa por encima de un límite que no se pudo medir.
+            return true
+        }
+    }
+
     // MARK: - Save Operation
 
     func saveBudget(
@@ -240,6 +265,8 @@ final class BudgetEditorViewModel {
         includeSharedExpenses: Bool
     ) -> PersistentIdentifier? {
         guard let context = modelContext else { return nil }
+        // El editor ya lo frena al encender el interruptor; esto cubre cualquier otro camino al guardado.
+        guard !activationExceedsPlanLimit(existing: existing, isActive: isActive) else { return nil }
 
         // Convert PersistentIdentifiers to model objects
         let accountsArray = activeAccounts.filter { selectedAccounts.contains($0.persistentModelID) }

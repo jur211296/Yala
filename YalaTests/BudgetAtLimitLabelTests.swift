@@ -62,7 +62,9 @@ struct BudgetAtLimitLabelTests {
         #expect(row.contains("BudgetAtLimitLabel.isShown(spent: summary.spent, limit: summary.budget.limitAmount)"))
         #expect(row.contains("BudgetAtLimitLabel()"))
         #expect(row.contains(".accessibilityLabel(accessibilityLabelText)"))
-        #expect(row.contains("isAtLimit ? \"\\(base), \\(L10n.UXL9.atLimit)\" : base"))
+        // Desde el lote 04 de mejoras necesarias 2.3 la etiqueta junta partes (lo que queda, los días): «En el límite»
+        // sigue entrando cuando toca.
+        #expect(row.contains("if isAtLimit { parts.append(L10n.UXL9.atLimit) }"))
     }
 
     @Test func budgetDetail_showsTheLabel() throws {

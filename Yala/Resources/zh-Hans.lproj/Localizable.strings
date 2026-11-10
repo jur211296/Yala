@@ -1478,6 +1478,7 @@
 "scheduled.tab.recurring" = "周期";
 "scheduled.tab.subscriptions" = "订阅";
 "scheduled.tab.all" = "全部";
+"scheduled.tab.pickerLabel" = "付款类型";
 
 // Empty State
 "scheduled.empty.title" = "你还没有任何计划付款";
@@ -7180,6 +7181,7 @@
 /* Auditoría UX 2.2 · lote 9 (presupuestos) */
 "budgets.l9.remainingLabel" = "还剩";
 "budgets.l9.overLabel" = "超出";
+"budgets.l9.leftoverLabel" = "结余";
 "budgets.l9.spentOfLimit" = "%1$@ / %2$@";
 "budgets.l9.notStarted" = "尚未开始";
 "budgets.l9.days.one" = "1 天";
@@ -7240,19 +7242,21 @@
 "scheduled.l10.hero.paidOf" = "已支付 %1$@，共 %2$@";
 "scheduled.l10.hero.scope" = "不含收入和已暂停的付款";
 "scheduled.l10.detail.monthPaid" = "%@ 已付清";
+"scheduled.l10.detail.monthSkipped" = "已跳过 %@";
+"scheduled.l10.detail.monthSettled" = "%@ 已处理完";
 "scheduled.l10.action.paid" = "我已支付";
 "scheduled.l10.action.received" = "我已收到";
 "scheduled.l10.action.skipMonth" = "跳过本月";
-"scheduled.l10.action.skipHelp" = "不会记录任何内容，其他月份保持不变";
+"scheduled.l10.action.skipHelp" = "跳过后不会记录任何内容，其他月份保持不变";
 "scheduled.l10.next.header" = "下一次：%@";
 "scheduled.l10.action.paidMonth" = "已支付 %@";
 "scheduled.l10.action.receivedMonth" = "已收到 %@";
 "scheduled.l10.action.skipNamedMonth" = "跳过 %@";
-"scheduled.l10.action.skipHelpMonth" = "%@ 不会记录任何内容，其他月份保持不变";
+"scheduled.l10.action.skipHelpMonth" = "跳过 %@ 后不会记录任何内容，其他月份保持不变";
 "scheduled.l10.action.paidDate" = "已支付 %@ 的这笔";
 "scheduled.l10.action.receivedDate" = "已收到 %@ 的这笔";
 "scheduled.l10.action.skipDate" = "跳过 %@ 的这笔";
-"scheduled.l10.action.skipHelpDate" = "%@ 不会记录任何内容，其他日期保持不变";
+"scheduled.l10.action.skipHelpDate" = "跳过 %@ 的这笔后不会记录任何内容，其他日期保持不变";
 "scheduled.l10.action.pause" = "暂停此付款";
 "scheduled.l10.action.resume" = "恢复";
 "scheduled.l10.action.pauseHelp" = "恢复之前不会提醒你，也不会计入";

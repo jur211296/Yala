@@ -41,6 +41,8 @@ struct BudgetEditorView: View {
 
     // Active status
     @State private var isActive: Bool = true
+    /// El muro del plan al encender «Activo» con el límite gratis lleno (lote 04 de mejoras necesarias 2.3).
+    @State private var showPlanLimitSheet = false
 
     // Alert notifications
     @State private var alertEnabled: Bool = false
@@ -161,6 +163,7 @@ struct BudgetEditorView: View {
             .sheet(isPresented: $showCategoriesSheet) {
                 categoriesSheetView
             }
+            .proUpgradeSheet(isPresented: $showPlanLimitSheet, feature: .budgets, context: .limitReached)
             .onChange(of: showCategoriesSheet) { _, isPresenting in
                 if isPresenting { dismissKeyboard() }
             }
@@ -347,7 +350,16 @@ struct BudgetEditorView: View {
             Text(L10n.Budgets.state(isActive: true))
                 .font(DS.Typography.body)
         }
+        .accessibilityIdentifier("budget_active_toggle")
+        // Reactivar suma un activo: con el límite gratis lleno, el interruptor vuelve y sale el muro del plan, donde la
+        // persona elige pasar a Pro (o cierra y desactiva otro).
+        .onChange(of: isActive) { _, nowActive in guardActivationAgainstPlanLimit(nowActive) }
+    }
 
+    private func guardActivationAgainstPlanLimit(_ nowActive: Bool) {
+        guard nowActive, viewModel.activationExceedsPlanLimit(existing: budget, isActive: true) else { return }
+        isActive = false
+        showPlanLimitSheet = true
     }
 
     // MARK: - Show in Widget (UX 2.2 · L9-12)
@@ -871,11 +883,19 @@ struct BudgetEditorView: View {
         guard !name.isEmpty, !limitAmount.isEmpty, parsedAmount > 0 else {
             return false
         }
-        // For unique budgets, validate date range
-        if selectedPeriodType == .unique && startDate >= endDate {
+        // Un «Único» va de un día a otro, los dos incluidos: el mismo día vale (lote 04 de mejoras necesarias 2.3).
+        if selectedPeriodType == .unique
+            && !Self.uniqueRangeIsValid(start: startDate, end: endDate, calendar: .current) {
             return false
         }
         return true
+    }
+
+    /// Los selectores son de día y guardan la hora del momento en que se tocaron, y el período cuenta días enteros
+    /// (`BudgetPeriodInterval.unique`): se comparan días, no instantes. Con `inicio < fin` un presupuesto de un solo día
+    /// no se podía guardar y el ✓ se apagaba sin decir por qué.
+    static func uniqueRangeIsValid(start: Date, end: Date, calendar: Calendar) -> Bool {
+        calendar.startOfDay(for: start) <= calendar.startOfDay(for: end)
     }
 
     private var isValidCustomThreshold: Bool {
@@ -990,6 +1010,10 @@ struct BudgetEditorView: View {
     private func saveBudget() {
         let amount = AmountInputHelper.parseDecimal(limitAmount)
         guard amount > 0 else { return }
+        guard !viewModel.activationExceedsPlanLimit(existing: budget, isActive: isActive) else {
+            showPlanLimitSheet = true
+            return
+        }
 
         let saved = viewModel.saveBudget(
             existing: budget,

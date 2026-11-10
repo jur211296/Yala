@@ -2610,6 +2610,7 @@
 "scheduled.summary.paid" = "Paid";
 "scheduled.summary.pending" = "Pending";
 "scheduled.tab.all" = "All";
+"scheduled.tab.pickerLabel" = "Payment type";
 "scheduled.tab.recurring" = "Recurring";
 "scheduled.tab.subscriptions" = "Subscriptions";
 "scheduled.unlink" = "Not paid anymore";
@@ -6412,6 +6413,7 @@
 /* Auditoría UX 2.2 · lote 9 (presupuestos) */
 "budgets.l9.remainingLabel" = "Left to spend";
 "budgets.l9.overLabel" = "You went over by";
+"budgets.l9.leftoverLabel" = "Left over";
 "budgets.l9.spentOfLimit" = "%1$@ of %2$@";
 "budgets.l9.notStarted" = "Not started yet";
 "budgets.l9.days.one" = "1 day";
@@ -6472,19 +6474,21 @@
 "scheduled.l10.hero.paidOf" = "You’ve paid %1$@ of %2$@";
 "scheduled.l10.hero.scope" = "Excludes income and paused payments";
 "scheduled.l10.detail.monthPaid" = "%@ is already paid";
+"scheduled.l10.detail.monthSkipped" = "You skipped %@";
+"scheduled.l10.detail.monthSettled" = "%@ is all caught up";
 "scheduled.l10.action.paid" = "I’ve paid it";
 "scheduled.l10.action.received" = "I’ve received it";
 "scheduled.l10.action.skipMonth" = "Skip this month";
-"scheduled.l10.action.skipHelp" = "Nothing gets recorded; the other months stay the same";
+"scheduled.l10.action.skipHelp" = "If you skip it, nothing gets recorded; the other months stay the same";
 "scheduled.l10.next.header" = "Next: %@";
 "scheduled.l10.action.paidMonth" = "I’ve paid %@";
 "scheduled.l10.action.receivedMonth" = "I’ve received %@";
 "scheduled.l10.action.skipNamedMonth" = "Skip %@";
-"scheduled.l10.action.skipHelpMonth" = "Nothing gets recorded for %@; the other months stay the same";
+"scheduled.l10.action.skipHelpMonth" = "If you skip %@, nothing gets recorded; the other months stay the same";
 "scheduled.l10.action.paidDate" = "I’ve paid the %@ one";
 "scheduled.l10.action.receivedDate" = "I’ve received the %@ one";
 "scheduled.l10.action.skipDate" = "Skip the %@ one";
-"scheduled.l10.action.skipHelpDate" = "Nothing gets recorded on %@; the other dates stay the same";
+"scheduled.l10.action.skipHelpDate" = "If you skip the %@ one, nothing gets recorded; the other dates stay the same";
 "scheduled.l10.action.pause" = "Pause this payment";
 "scheduled.l10.action.resume" = "Resume";
 "scheduled.l10.action.pauseHelp" = "We won’t remind you or count it until you resume it";

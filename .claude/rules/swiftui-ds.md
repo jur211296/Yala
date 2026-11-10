@@ -106,6 +106,13 @@ paths:
 
 ## Gotchas de vistas
 
+- **Un `Picker` segmentado NO pasa su título a accesibilidad; uno `.menu` con `.labelsHidden()` sí (medido el
+  2026-11-10, iOS 27.2, lote 04 de mejoras necesarias 2.3).** Con `Picker("Tipo de pago", …).pickerStyle(.segmented)`
+  el `TabGroup` salió con etiqueta vacía en `axe describe-ui`; con `.accessibilityLabel(…)` encima, «Tipo de pago». El
+  `.menu` del día del mes, con título y `.labelsHidden()`, sí lleva el nombre (XCUITest
+  `PlanningNecesariasLote04UITests#test_paymentEditor_selectorsHaveNames`). ⇒ un selector nuevo lleva título
+  siempre, nunca `Picker("")`; si es segmentado, además `.accessibilityLabel`.
+
 - **Un freno «solo con la app activa» que DESCARTA la petición deja la pantalla sin cargar en el arranque del iPad
   (medido el 2026-11-05, iPad Pro 13, iOS 27.2, barrido final 2.2).** El Panel pedía su carga en el `onAppear` y en el
   cambio de fase a `.active`, y los dos llegaban antes de que `UIApplication.applicationState` fuera `.active`: el freno

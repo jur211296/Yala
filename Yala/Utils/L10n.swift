@@ -4678,6 +4678,8 @@ enum L10n {
             static var recurring: String { ls("scheduled.tab.recurring", comment: "") }
             static var subscriptions: String { ls("scheduled.tab.subscriptions", comment: "") }
             static var all: String { ls("scheduled.tab.all", comment: "") }
+            /// Nombre del segmentado para VoiceOver («Tipo de pago»).
+            static var pickerLabel: String { ls("scheduled.tab.pickerLabel", comment: "") }
         }
 
         enum Widget {

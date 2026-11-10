@@ -153,6 +153,24 @@ enum ScheduledPaymentDetailLogic {
         return datesThisMonth.allSatisfy(isCovered)
     }
 
+    /// Cómo quedó hecho el mes en curso, para no rotular «ya está pagado» un mes que se saltó (lote 04 de mejoras
+    /// necesarias 2.3, card «Tras Saltar este mes…»: `currentMonthSettled` cuenta lo pagado Y lo saltado).
+    enum SettledMonth: Equatable {
+        /// Todas sus fechas pagadas: «Noviembre de 2026 ya está pagado».
+        case paid
+        /// Todas saltadas, ninguna pagada: «Saltaste noviembre de 2026».
+        case skipped
+        /// Unas pagadas y otras saltadas (semanal, diario): «Noviembre de 2026 ya está al día».
+        case mixed
+    }
+
+    /// Solo tiene sentido con `currentMonthSettled` en `true`: cada fecha del mes está pagada o saltada.
+    static func settledMonth(datesThisMonth: [Date], isPaid: (Date) -> Bool) -> SettledMonth {
+        let paid = datesThisMonth.filter(isPaid).count
+        if paid == datesThisMonth.count { return .paid }
+        return paid == 0 ? .skipped : .mixed
+    }
+
     /// A qué fecha apuntan «Ya lo pagué» y «Saltar» del detalle, y cómo se nombran.
     enum ActionTarget: Equatable {
         /// La fecha que toca es del mes en curso: los textos de siempre («Ya lo pagué», «Saltar este mes»).

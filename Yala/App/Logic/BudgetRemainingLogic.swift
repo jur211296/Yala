@@ -24,6 +24,16 @@ enum BudgetRemainingLogic {
         remaining(limit: limit, spent: spent) < 0
     }
 
+    /// Qué rótulo lleva la cifra. En un período cerrado lo que no se gastó ya no «queda»: sobró (lote 04 de mejoras
+    /// necesarias 2.3; el mes pasado decía «Te quedan S/ 266.00»). Pasarse se dice igual abierto o cerrado.
+    enum FigureLabel: Equatable { case remaining, leftover, over }
+
+    /// `daysRemaining` como en `BudgetSummary`: -1 = cerrado, 0 = aún no empieza, > 0 = en curso.
+    static func figureLabel(limit: Double, spent: Double, daysRemaining: Int) -> FigureLabel {
+        if isOver(limit: limit, spent: spent) { return .over }
+        return daysRemaining < 0 ? .leftover : .remaining
+    }
+
     /// Lo que se puede gastar al día para no pasarse: lo que queda entre los días que faltan, hoy incluido.
     /// Solo en un período EN CURSO (`daysRemaining > 0`; -1 = cerrado, 0 = aún no empieza) y con algo por gastar.
     static func perDay(remaining: Double, daysRemaining: Int) -> Double? {

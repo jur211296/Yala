@@ -1479,6 +1479,7 @@
 "scheduled.tab.recurring" = "Ricorrenti";
 "scheduled.tab.subscriptions" = "Abbonamenti";
 "scheduled.tab.all" = "Tutti";
+"scheduled.tab.pickerLabel" = "Tipo di pagamento";
 
 // Empty State
 "scheduled.empty.title" = "Nessun pagamento programmato";
@@ -7178,6 +7179,7 @@
 /* Auditoría UX 2.2 · lote 9 (presupuestos) */
 "budgets.l9.remainingLabel" = "Ti restano";
 "budgets.l9.overLabel" = "Hai superato di";
+"budgets.l9.leftoverLabel" = "Ti è avanzato";
 "budgets.l9.spentOfLimit" = "%1$@ di %2$@";
 "budgets.l9.notStarted" = "Non ancora iniziato";
 "budgets.l9.days.one" = "1 giorno";
@@ -7238,19 +7240,21 @@
 "scheduled.l10.hero.paidOf" = "Hai pagato %1$@ su %2$@";
 "scheduled.l10.hero.scope" = "Esclusi entrate e pagamenti in pausa";
 "scheduled.l10.detail.monthPaid" = "%@ è già pagato";
+"scheduled.l10.detail.monthSkipped" = "Hai saltato %@";
+"scheduled.l10.detail.monthSettled" = "%@ è in regola";
 "scheduled.l10.action.paid" = "L’ho già pagato";
 "scheduled.l10.action.received" = "L’ho già ricevuto";
 "scheduled.l10.action.skipMonth" = "Salta questo mese";
-"scheduled.l10.action.skipHelp" = "Non si registra nulla; gli altri mesi restano uguali";
+"scheduled.l10.action.skipHelp" = "Se lo salti, non si registra nulla; gli altri mesi restano uguali";
 "scheduled.l10.next.header" = "Prossimo: %@";
 "scheduled.l10.action.paidMonth" = "Ho già pagato %@";
 "scheduled.l10.action.receivedMonth" = "Ho già ricevuto %@";
 "scheduled.l10.action.skipNamedMonth" = "Salta %@";
-"scheduled.l10.action.skipHelpMonth" = "Non si registra nulla a %@; gli altri mesi restano uguali";
+"scheduled.l10.action.skipHelpMonth" = "Se salti %@, non si registra nulla; gli altri mesi restano uguali";
 "scheduled.l10.action.paidDate" = "Ho già pagato quello del %@";
 "scheduled.l10.action.receivedDate" = "Ho già ricevuto quello del %@";
 "scheduled.l10.action.skipDate" = "Salta quello del %@";
-"scheduled.l10.action.skipHelpDate" = "Non si registra nulla il %@; le altre date restano uguali";
+"scheduled.l10.action.skipHelpDate" = "Se salti quello del %@, non si registra nulla; le altre date restano uguali";
 "scheduled.l10.action.pause" = "Metti in pausa questo pagamento";
 "scheduled.l10.action.resume" = "Riprendi";
 "scheduled.l10.action.pauseHelp" = "Non te lo ricordiamo né lo contiamo finché non lo riprendi";
