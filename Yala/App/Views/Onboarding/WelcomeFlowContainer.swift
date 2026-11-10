@@ -104,6 +104,10 @@ struct WelcomeFlowContainer: View {
     /// El `groupID` VIAJA en el callback y no lo lee `ContentView` de un estado suyo: así no hay un segundo
     /// sitio donde el propósito pueda quedarse desfasado respecto al step que se está pintando.
     var onGroupsGateInviteProceed: (String) -> Void
+    /// **La puerta de la entrada con otra cuenta abrió** (opción B, 2026-11-10): el teléfono ya no tiene datos que dejar
+    /// aparte, así que se vuelve a la entrada a la cuenta con el método que viaja. Como el del invitado, **no pasa por
+    /// `leaveWelcome`**: el dispositivo acaba de quedar neutro a propósito y no hay espejo que evaluar.
+    var onGroupsGateCloudAccountProceed: (_ provider: CloudSignInProvider, _ fromExistingChooser: Bool) -> Void
     /// G3: fetch VIVO del corpus local para la puerta (mismo closure que alimenta el guard cross-cuenta
     /// del sign-in de nube — un snapshot no vale, el mirror puede estar re-importando).
     var hasLocalDataNow: @MainActor @Sendable () -> Bool
@@ -151,6 +155,7 @@ struct WelcomeFlowContainer: View {
         onBeaconRoutesToCloudSignIn: @escaping (CloudSignInProvider?) -> Void,
         onNeedsMirrorRelaunch: @escaping (WelcomeMirrorRelaunchLogic.Destination) -> Void,
         onGroupsGateNeutralReturnArmed: @escaping (WelcomeGroupsGateView.Purpose) -> Void,
+        onGroupsGateCloudAccountProceed: @escaping (CloudSignInProvider, Bool) -> Void,
         onGroupsGateInviteProceed: @escaping (String) -> Void,
         hasLocalDataNow: @escaping @MainActor @Sendable () -> Bool,
         welcomeDeviceDataNow: @escaping @MainActor @Sendable () -> Bool,
@@ -170,12 +175,19 @@ struct WelcomeFlowContainer: View {
         self.onNeedsMirrorRelaunch = onNeedsMirrorRelaunch
         self.onGroupsGateNeutralReturnArmed = onGroupsGateNeutralReturnArmed
         self.onGroupsGateInviteProceed = onGroupsGateInviteProceed
+        self.onGroupsGateCloudAccountProceed = onGroupsGateCloudAccountProceed
         self.hasLocalDataNow = hasLocalDataNow
         self.welcomeDeviceDataNow = welcomeDeviceDataNow
         self.welcomeDeviceDataReading = welcomeDeviceDataReading
         self.performICloudCorpusWipe = performICloudCorpusWipe
         self.performDeviceCorpusWipe = performDeviceCorpusWipe
         self._step = State(initialValue: initialStep)
+    }
+
+    /// A dónde vuelve «Volver» desde la puerta, según su propósito.
+    private func groupsGateBackStep(_ purpose: WelcomeGroupsGateView.Purpose) -> WelcomeFlowStep {
+        guard case .enterCloudAccount(_, let fromExistingChooser) = purpose else { return .groupsChooser }
+        return fromExistingChooser ? WelcomeBackStepLogic.existingBranchOrigin(options: visibleExistingOptions) : .chooser
     }
 
     private var visibleExistingOptions: [WelcomeAccountChoiceLogic.ExistingOption] {
@@ -273,19 +285,29 @@ struct WelcomeFlowContainer: View {
                     // este contexto y no cruza ninguna frontera.
                     // El detector del WELCOME, no el entero: los grupos que conservó el aviso tardío son de quien está
                     // delante (`groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`).
-                    hasLocalDataNow: { welcomeDeviceDataNow() },
+                    //
+                    // **Salvo la entrada con otra cuenta, que mide con el detector ENTERO**: es el mismo que su guard
+                    // cross-cuenta (`WelcomeCloudSignInView.hasLocalDataNow`). Con el del Welcome, unos grupos conservados
+                    // que el guard sí cuenta harían que esta puerta dejara pasar y el guard volviera a mandar aquí: un bucle.
+                    hasLocalDataNow: {
+                        purpose.isCloudAccountEntry ? hasLocalDataNow() : welcomeDeviceDataNow()
+                    },
                     onProceed: {
                         // El destino del `.proceed` lo decide el propósito, y por eso la rama del invitado
                         // NO pasa por `leaveWelcome`: aquel evalúa si el destino elegido necesita el mirror
                         // y aquí no hay destino que elegir — quien viene por una invitación va a su join,
                         // sobre un dispositivo que acaba de quedar neutro o que nunca dejó de estarlo.
-                        if let groupID = purpose.invitedGroupID {
+                        if case .enterCloudAccount(let provider, let fromExistingChooser) = purpose {
+                            onGroupsGateCloudAccountProceed(provider, fromExistingChooser)
+                        } else if let groupID = purpose.invitedGroupID {
                             onGroupsGateInviteProceed(groupID)
                         } else {
                             leaveWelcome(to: .groupsOrganizer) { onSelectGroupsOrganizer() }
                         }
                     },
-                    onBack: { goTo(.groupsChooser) },
+                    // La entrada con otra cuenta vuelve a donde se abrió: «¡Hola de nuevo!» (o su bypass), o el chooser si
+                    // llegó por el faro o desde Grupos, como hacía el «Volver» del bloqueo.
+                    onBack: { goTo(groupsGateBackStep(purpose)) },
                     onNeutralReturnArmed: { onGroupsGateNeutralReturnArmed(purpose) }
                 )
                 .transition(.opacity)

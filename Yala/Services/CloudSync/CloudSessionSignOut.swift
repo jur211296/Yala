@@ -878,6 +878,21 @@ final class CloudSessionSignOut {
         }
     }
 
+    /// ¿El store de grupos guarda grupos de la era CloudKit que nunca migraron al canal backend? No están en ningún otro
+    /// sitio —la Fase 3 retiró su transporte—, así que la entrada con otra cuenta no deja iCloud aparte con ellos
+    /// (`ICloudAsideEntryLogic`): la vuelta al neutro se los llevaría. Solo lee.
+    static func hasLegacyCloudKitGroupRows(context: ModelContext) -> Bool {
+        do {
+            return try context.fetchCount(FetchDescriptor<SplitGroup>(
+                predicate: #Predicate { !$0.isBackendGroup && $0.movedToBackendAt == nil })) > 0
+        } catch {
+            #if DEBUG
+            print("CloudSessionSignOut: Error contando grupos de la era CloudKit: \(error)")
+            #endif
+            return true  // ante la duda, hay: se queda el bloqueo y no se borra nada
+        }
+    }
+
     /// ¿El store de grupos guarda ALGÚN grupo, del canal que sea? Es el término que cuenta la puerta de Grupos del Welcome
     /// (`ContentView.checkHasGroupsData`), y lo que decide si su vuelta al neutro se lleva el store
     /// (`CloudSignOutFlowLogic.wipeForgetsGroups`). Solo lee.

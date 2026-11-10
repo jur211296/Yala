@@ -190,6 +190,11 @@ struct WelcomeMirrorRelaunchLogicTests {
             // backend y su dispositivo acaba de quedar en blanco A PROPÓSITO. En `true` le pediríamos reabrir
             // para adjuntar el espejo que la puerta acaba de quitar — deshaciendo el arreglo.
             .groupsInvite: false,
+            // La entrada con Google o Apple que dejó el iCloud privado aparte (opción B, 2026-11-10): también acaba de
+            // volver al neutro a propósito. En `true` el espejo volvería a bajar el iCloud que se quiso dejar fuera, y la
+            // entrada lo encontraría otra vez: un bucle.
+            .cloudSignInAppleKeepingICloudAside: false,
+            .cloudSignInGoogleKeepingICloudAside: false,
         ]
         #expect(Set(expected.keys) == Set(Destination.allCases),
                 "toda salida del Welcome tiene que declarar si necesita el mirror")
