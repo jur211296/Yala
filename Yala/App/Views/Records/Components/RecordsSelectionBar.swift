@@ -145,3 +145,22 @@ struct RecordsSelectToolbarButton: View {
         .hiddenInVerticalBar()
     }
 }
+
+/// «Seleccionar los 2.334» / «Deseleccionar todo», arriba a la derecha del modo selección, igual en Registros y en
+/// Estadísticas › Registros (decisión 18 de 2.3, E2). Dice cuántos marca: antes decía «Seleccionar todo» y marcaba el
+/// período entero, también lo que no se veía en pantalla.
+struct RecordsSelectAllButton: View {
+    let viewModel: RecordsViewModel
+
+    var body: some View {
+        let allSelected = viewModel.allRecordsSelected
+        Button(allSelected ? L10n.Export.deselectAll : L10n.RecordsBulkUndo.selectAll(viewModel.selectableRecordCount)) {
+            if allSelected {
+                viewModel.deselectAll()
+            } else {
+                viewModel.selectAll()
+            }
+        }
+        .accessibilityIdentifier("records_select_all_button")
+    }
+}

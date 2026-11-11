@@ -7111,7 +7111,7 @@
 "records.l8.changedTo" = "Maintenant : %@";
 "records.l8.changedToWithNeed" = "Maintenant : %1$@ (%2$@ · %3$@)";
 "records.l8.undo" = "Annuler";
-"records.l8.selectHint" = "Touchez les enregistrements voulus";
+"records.l8.selectHint" = "Touchez les enregistrements ou « Sélectionner le jour »";
 "search.l8.recent" = "Récents";
 "filters.l8.discardTitle" = "Abandonner les filtres ?";
 "filters.l8.discardMessage" = "Tes choix ne seront pas appliqués.";
@@ -8872,3 +8872,10 @@
 "cashflow.monthEnd.leftIn" = "Reste à entrer";
 "cashflow.monthEnd.leftOut" = "Reste à sortir";
 "cashFlowPlan.estimateLeft" = "Estimé restant";
+
+/* Registros · selección en lote con «Deshacer» (decisión 18 de 2.3) */
+"records.bulk23.deleteSpan" = "Du %1$@ au %2$@";
+"records.bulk23.deleteOnDay" = "Le %@";
+"records.bulk23.deleteTotal" = "%@ au total";
+"records.bulk23.selectDay" = "Sélectionner le jour";
+"records.bulk23.deselectDay" = "Désélectionner le jour";

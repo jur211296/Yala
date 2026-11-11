@@ -727,15 +727,7 @@ struct DetailContainerView: View {
         }
 
         ToolbarItem(placement: .topBarTrailing) {
-            let allSelected = recordsViewModel.selectedRecordIDs.count ==
-                recordsViewModel.groupedRecords.flatMap(\.records).count
-            Button(allSelected ? L10n.Export.deselectAll : L10n.Export.selectAll) {
-                if allSelected {
-                    recordsViewModel.deselectAll()
-                } else {
-                    recordsViewModel.selectAll()
-                }
-            }
+            RecordsSelectAllButton(viewModel: recordsViewModel)
         }
     }
 
@@ -1044,8 +1036,8 @@ private struct DetailContainerSheets: ViewModifier {
             .modifier(RecordsBulkDeleteAlert(
                 isPresented: $showDeleteConfirmation,
                 viewModel: recordsViewModel
-            ) {
-                recordsViewModel.deleteSelected(context: modelContext)
+            ) { nameFor in
+                recordsViewModel.deleteSelected(context: modelContext, nameFor: nameFor)
                 reloadAndRecalculate()
             })
             .sheet(isPresented: $showBulkEditSheet) {

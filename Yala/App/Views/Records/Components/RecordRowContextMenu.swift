@@ -34,12 +34,33 @@ extension RecordBulkActionLogic.DeleteDialog {
         }
     }
 
-    var messageText: String {
+    /// «Del 8 nov 2024 al 7 nov 2026 · S/ 477,091 en total. Tendrás unos segundos para deshacerlo.» (decisión 18 de
+    /// 2.3, E1 + E2). Sin resumen (uno solo, o nada que borrar), solo lo de los grupos y el plazo para deshacer.
+    func messageText(preferences: AppPreferences) -> String {
         switch message {
-        case .cannotUndo: L10n.Common.cannotUndo
-        case .cannotUndoKeepingGroupRecords(let count): "\(L10n.Records.groupRecordsKept(count)) \(L10n.Common.cannotUndo)"
-        case .deleteFromGroup: L10n.Records.groupRecordsDeleteFromGroup
+        case .undoable:
+            return [summaryText(preferences: preferences), L10n.UXL08D.undoSeconds].compactMap { $0 }.joined(separator: " ")
+        case .undoableKeepingGroupRecords(let count):
+            return [summaryText(preferences: preferences), L10n.Records.groupRecordsKept(count), L10n.UXL08D.undoSeconds]
+                .compactMap { $0 }.joined(separator: " ")
+        case .deleteFromGroup:
+            return L10n.Records.groupRecordsDeleteFromGroup
         }
+    }
+
+    private func summaryText(preferences: AppPreferences) -> String? {
+        guard let summary else { return nil }
+        let style = Date.FormatStyle(date: .abbreviated, time: .omitted).locale(AppLocale.current)
+        let first = summary.firstDate.formatted(style)
+        let last = summary.lastDate.formatted(style)
+        var parts = [Calendar.current.isDate(summary.firstDate, inSameDayAs: summary.lastDate)
+            ? L10n.RecordsBulkUndo.deleteOnDay(first)
+            : L10n.RecordsBulkUndo.deleteSpan(from: first, to: last)]
+        if let total = summary.total, let currencyCode = summary.currencyCode {
+            let amount = preferences.currency(total, currencyCode: currencyCode)
+            parts.append(L10n.RecordsBulkUndo.deleteTotal(summary.isApproximate ? "≈ \(amount)" : amount))
+        }
+        return parts.joined(separator: " · ") + "."
     }
 }
 
@@ -83,7 +104,8 @@ struct RecordsBulkDeleteAlert: ViewModifier {
     @Environment(AppPreferences.self) private var appPreferences
     @Binding var isPresented: Bool
     let viewModel: RecordsViewModel
-    let onDelete: () -> Void
+    /// Recibe cómo se llama cada registro, para el aviso «Eliminaste «Uber · S/ 26» · Deshacer» si se borra uno solo.
+    let onDelete: ((TransactionItem) -> String) -> Void
 
     func body(content: Content) -> some View {
         content.alert(title, isPresented: $isPresented) {
@@ -93,21 +115,30 @@ struct RecordsBulkDeleteAlert: ViewModifier {
                 Button(L10n.Action.delete, role: .destructive) {
                     // Al confirmar, no al tocar la papelera de la barra: ahí solo se pregunta (card C4).
                     DS.Haptic.warning()
-                    onDelete()
+                    let preferences = appPreferences
+                    onDelete { RecordDeleteConfirmationText.undoName(for: $0, preferences: preferences) }
                 }
             } else {
                 Button(L10n.Common.understood, role: .cancel) {}
             }
         } message: {
-            Text(viewModel.bulkDeleteDialog.messageText)
+            Text(viewModel.bulkDeleteDialog.messageText(preferences: appPreferences))
         }
     }
 
+    /// El registro, si se borra uno solo: la pregunta y el aviso lo nombran.
+    private var singleRecord: TransactionItem? {
+        guard case .deleteCount(1) = viewModel.bulkDeleteDialog.title,
+              viewModel.selectedRecordIDs.count == 1,
+              let id = viewModel.selectedRecordIDs.first,
+              let record = viewModel.groupedRecords.lazy.flatMap(\.records).first(where: { $0.persistentModelID == id }),
+              !record.isDeleted, record.modelContext != nil
+        else { return nil }
+        return record
+    }
+
     private var title: String {
-        if case .deleteCount(1) = viewModel.bulkDeleteDialog.title,
-           viewModel.selectedRecordIDs.count == 1,
-           let id = viewModel.selectedRecordIDs.first,
-           let record = viewModel.groupedRecords.lazy.flatMap(\.records).first(where: { $0.persistentModelID == id }) {
+        if let record = singleRecord {
             return RecordDeleteConfirmationText.title(for: record, preferences: appPreferences)
         }
         return viewModel.bulkDeleteDialog.titleText

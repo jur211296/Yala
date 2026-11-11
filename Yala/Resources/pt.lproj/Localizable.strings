@@ -7110,7 +7110,7 @@
 "records.l8.changedTo" = "Agora é %@";
 "records.l8.changedToWithNeed" = "Agora é %1$@ (%2$@ · %3$@)";
 "records.l8.undo" = "Desfazer";
-"records.l8.selectHint" = "Toque nos registros que quiser";
+"records.l8.selectHint" = "Toque nos registros ou em “Selecionar dia”";
 "search.l8.recent" = "Recentes";
 "filters.l8.discardTitle" = "Descartar os filtros?";
 "filters.l8.discardMessage" = "O que você escolheu não será aplicado.";
@@ -8871,3 +8871,10 @@
 "cashflow.monthEnd.leftIn" = "Falta entrar";
 "cashflow.monthEnd.leftOut" = "Falta sair";
 "cashFlowPlan.estimateLeft" = "Estimado que falta";
+
+/* Registros · selección en lote con «Deshacer» (decisión 18 de 2.3) */
+"records.bulk23.deleteSpan" = "De %1$@ a %2$@";
+"records.bulk23.deleteOnDay" = "Em %@";
+"records.bulk23.deleteTotal" = "%@ no total";
+"records.bulk23.selectDay" = "Selecionar dia";
+"records.bulk23.deselectDay" = "Desmarcar dia";

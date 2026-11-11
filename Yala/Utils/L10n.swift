@@ -1872,15 +1872,15 @@ enum L10n {
         static var viewModeListA11y: String { ls("records.viewModeListA11y", comment: "A11y: botón vista lista") }
         static var viewModeCalendarA11y: String { ls("records.viewModeCalendarA11y", comment: "A11y: botón vista calendario") }
         static func deleteConfirmTitle(_ count: Int) -> String {
-            String(format: ls("records.deleteConfirmTitle", comment: ""), count)
+            String(format: ls("records.deleteConfirmTitle", comment: ""), locale: AppLocale.current, count)
         }
         /// Barra del modo selección: «1 seleccionado», «3 seleccionados». Plural en el `.stringsdict`.
         static func selectedCount(_ count: Int) -> String {
-            String(format: ls("records.selectedCount", comment: "Modo selección: cuántos registros hay elegidos"), count)
+            String(format: ls("records.selectedCount", comment: "Modo selección: cuántos registros hay elegidos"), locale: AppLocale.current, count)
         }
         /// Borrado en lote: los elegidos que vienen de un grupo se quedan. Plural en el `.stringsdict`.
         static func groupRecordsKept(_ count: Int) -> String {
-            String(format: ls("records.groupRecordsKept", comment: "Borrado en lote: cuántos de los elegidos vienen de un grupo y no se borran"), count)
+            String(format: ls("records.groupRecordsKept", comment: "Borrado en lote: cuántos de los elegidos vienen de un grupo y no se borran"), locale: AppLocale.current, count)
         }
         static var groupRecordsOnlyTitle: String { ls("records.groupRecordsOnlyTitle", comment: "Borrado en lote: todo lo elegido viene de un grupo") }
         static var groupRecordsDeleteFromGroup: String { ls("records.groupRecordsDeleteFromGroup", comment: "Borrado en lote: por qué lo de un grupo se borra desde el grupo") }

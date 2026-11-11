@@ -75,18 +75,18 @@ struct RecordBulkActionLogicTests {
 
     @Test func deleteDialog_plainSelection() {
         let dialog = RecordBulkActionLogic.deleteDialog(deletable: 3, groupRecords: 0)
-        #expect(dialog == .init(title: .deleteCount(3), message: .cannotUndo, offersDelete: true))
+        #expect(dialog == .init(title: .deleteCount(3), message: .undoable, offersDelete: true))
     }
 
     @Test func deleteDialog_mixedSelection_saysWhatStays() {
         let dialog = RecordBulkActionLogic.deleteDialog(deletable: 2, groupRecords: 1)
-        #expect(dialog == .init(title: .deleteCount(2), message: .cannotUndoKeepingGroupRecords(1), offersDelete: true))
+        #expect(dialog == .init(title: .deleteCount(2), message: .undoableKeepingGroupRecords(1), offersDelete: true))
     }
 
     /// Nada elegido: no habla de grupos ni ofrece borrar.
     @Test func deleteDialog_emptySelection() {
         let dialog = RecordBulkActionLogic.deleteDialog(deletable: 0, groupRecords: 0)
-        #expect(dialog == .init(title: .deleteCount(0), message: .cannotUndo, offersDelete: false))
+        #expect(dialog == .init(title: .deleteCount(0), message: .undoable, offersDelete: false))
     }
 
     /// Todo de grupo: nada que borrar, y la confirmación no ofrece «Eliminar».
@@ -122,15 +122,30 @@ struct RecordsViewModelBulkGroupRecordsTests {
         return try context.fetchCount(FetchDescriptor<TransactionItem>(predicate: #Predicate { $0.id == id })) == 1
     }
 
+    /// El borrado en lote espera unos segundos con «Deshacer» (decisión 18 de 2.3): el plazo se vence a mano.
+    private func deleteSelectedAndCommit(_ vm: RecordsViewModel, context: ModelContext) async {
+        let pending = RecordPendingDeletion.shared
+        let timer = ManualBatchTimer()
+        pending.batchSleep = { try await timer.sleep($0) }
+        defer {
+            pending.undoAll()
+            pending.batchSleep = { try await Task.sleep(for: $0) }
+        }
+        vm.deleteSelected(context: context)
+        guard await timer.settle(until: { timer.pendingCount == 1 }) else { return }
+        timer.fireAll()
+        _ = await timer.settle { pending.pendingIDs.isEmpty }
+    }
+
     @Test("Borrar en lote se salta el registro de grupo y borra el resto")
-    func bulkDelete_keepsTheGroupRecord() throws {
+    func bulkDelete_keepsTheGroupRecord() async throws {
         let context = try makeTestContext()
         let (vm, personal, group) = try makeSelection(context: context)
 
         #expect(vm.selectionDeleteDialog(context: context)
-                == .init(title: .deleteCount(1), message: .cannotUndoKeepingGroupRecords(1), offersDelete: true))
+                == .init(title: .deleteCount(1), message: .undoableKeepingGroupRecords(1), offersDelete: true))
 
-        vm.deleteSelected(context: context)
+        await deleteSelectedAndCommit(vm, context: context)
 
         #expect(try !exists(personal, in: context), "el gasto personal tenía que borrarse")
         #expect(try exists(group, in: context), "la pata del gasto de grupo se borró desde Registros")
@@ -233,7 +248,7 @@ struct RecordsViewModelBulkGroupRecordsTests {
 
     /// Sin registros de grupo, el borrado en lote es el de siempre.
     @Test("Sin registros de grupo, el borrado en lote no cambia")
-    func bulkDelete_withoutGroupRecords_deletesAll() throws {
+    func bulkDelete_withoutGroupRecords_deletesAll() async throws {
         let context = try makeTestContext()
         let account = makeTestAccount(context: context)
         let a = TransactionItem(date: .now, amount: -1, currencyCode: account.currencyCode, note: "A", account: account)
@@ -244,8 +259,9 @@ struct RecordsViewModelBulkGroupRecordsTests {
         let vm = RecordsViewModel()
         vm.selectedRecordIDs = [a.persistentModelID, b.persistentModelID]
 
-        #expect(vm.selectionDeleteDialog(context: context) == .init(title: .deleteCount(2), message: .cannotUndo, offersDelete: true))
-        vm.deleteSelected(context: context)
+        let dialog = vm.selectionDeleteDialog(context: context)
+        #expect(dialog.title == .deleteCount(2) && dialog.message == .undoable && dialog.offersDelete)
+        await deleteSelectedAndCommit(vm, context: context)
 
         #expect(try !exists(a, in: context))
         #expect(try !exists(b, in: context))

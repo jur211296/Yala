@@ -478,7 +478,14 @@ struct RecordsTabView: View {
                         .modifier(RecordRowContextMenu(record: record, viewModel: viewModel))
                     }
                 } header: {
-                    RecordDateSectionView(date: group.date)
+                    RecordDateSectionView(
+                        date: group.date,
+                        dayAction: viewModel.isSelectionMode
+                            ? .init(isDaySelected: viewModel.isDayFullySelected(group.records)) {
+                                viewModel.toggleDaySelection(group.records)
+                            }
+                            : nil
+                    )
                 }
             }
         }
