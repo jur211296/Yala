@@ -131,3 +131,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de diseñar un arreglo con
 - [Un motivo que abre una pérdida hereda sus falsos positivos](feedback_un_motivo_que_abre_una_perdida_hereda_sus_falsos_positivos.md) — todo 401 era «caducada»; prueba aparte.
 - [El mecanismo nuevo quita la tolerancia del viejo](feedback_el_modificador_nuevo_quita_la_tolerancia.md) — `.hidden` en TabView abortó donde quitar la pestaña se toleraba.
 - [El fallo que se traga es gemelo del que aborta](feedback_el_fallo_que_se_traga_es_gemelo_del_que_aborta.md) — `_ = deleteFiles` dejaba el mismo bucle.
+- [Arreglar una frase: mira el rótulo de encima](feedback_arreglar_una_frase_mira_el_rotulo_de_encima.md) — Saldos: neto cero dejaba «Estás a mano» sobre «Tú pagas a Ana».
