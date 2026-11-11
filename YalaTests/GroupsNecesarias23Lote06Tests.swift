@@ -106,8 +106,10 @@ struct GroupsNecesarias23Lote06Tests {
         #expect(Logic.pairRole(fromMemberID: "beto", toMemberID: me, currentUserMemberID: nil) == .others)
     }
 
-    /// Los textos de VoiceOver de una deuda que te pagan y de un pago, en español (los XCUITest corren en es).
-    @Test func spokenTexts_readFromYou() {
+    /// Los textos de VoiceOver de una deuda que te pagan y de un pago, en español. El idioma se fija aquí: sin él, el
+    /// texto sale en el idioma del simulador, y en el runner del CI (`en_US`) es «Beto pays you», no «te paga».
+    @Test(.appLanguageStateIsolated) func spokenTexts_readFromYou() {
+        LanguageManager.overrideLanguage = "es"
         #expect(L10n.GroupsNecesarias06.debtA11yToMe(from: "Beto", amounts: "S/ 30.00").contains("te paga"))
         #expect(!L10n.GroupsNecesarias06.debtA11yToMe(from: "Beto", amounts: "S/ 30.00").contains("Tú"))
         #expect(!L10n.GroupsNecesarias06.paysYou.isEmpty)
