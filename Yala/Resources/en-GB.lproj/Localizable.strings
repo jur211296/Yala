@@ -928,7 +928,7 @@
 "cashFlowPlan.chartDeviationUnder" = "Saved";
 "cashFlowPlan.chartNeedMoreData" = "You need at least 2 months of data";
 "cashFlowPlan.chartPlanned" = "Planned";
-"cashFlowPlan.chartProjection" = "Balance projection";
+"cashFlowPlan.chartProjection" = "Estimated balance";
 "cashFlowPlan.chartProjectionSubtitle" = "Accumulated balance over time";
 "cashFlowPlan.chartRollingAvg" = "Rolling average";
 "cashFlowPlan.chartSavings" = "Monthly savings";
@@ -966,7 +966,7 @@
 "cashFlowPlan.executionPercent" = "%d%% spent";
 "cashFlowPlan.expenseSection" = "Expenses";
 "cashFlowPlan.frequency" = "Frequency";
-"cashFlowPlan.futureMonth" = "Forecast";
+"cashFlowPlan.futureMonth" = "Estimated";
 "cashFlowPlan.incomeSection" = "Income";
 "cashFlowPlan.incomeVsExpense" = "Income vs Expense";
 "cashFlowPlan.lastMonth" = "Last month";
@@ -1003,8 +1003,8 @@
 "cashFlowPlan.plan" = "Estimated";
 "cashFlowPlan.promoteCategory" = "Add to plan";
 "cashFlowPlan.rangeLabel" = "Range";
-"cashFlowPlan.real" = "Spent";
-"cashFlowPlan.realIncome" = "Received";
+"cashFlowPlan.real" = "Actual";
+"cashFlowPlan.realIncome" = "Actual";
 "cashFlowPlan.realVsPlan" = "Actual vs Plan";
 "cashFlowPlan.recommendedBadge" = "Recommended";
 "cashFlowPlan.resetConfirmation" = "Reset your plan? All lines and adjustments will be deleted. This action cannot be undone.";
@@ -7153,7 +7153,7 @@
 /* Crear el plan: total de gastos al mes */
 "cashflow.l18.summary.expense" = "Expenses per month";
 /* Crear el plan: lo que sobra al mes */
-"cashflow.l18.summary.surplus" = "Left over each month";
+"cashflow.l18.summary.surplus" = "Left each month";
 /* Crear el plan: lo que falta al mes */
 "cashflow.l18.summary.shortfall" = "Short each month";
 
@@ -7192,15 +7192,15 @@
 /* Ajustar monto: el mes elegido y los siguientes */
 "cashflow.l18.scope.alsoFollowing" = "That month and the ones after";
 /* Flujo de caja: rótulo de la cifra del mes en curso cuando sobra */
-"cashflow.l18.hero.surplusThisMonth" = "This month you have left over";
+"cashflow.l18.hero.surplusThisMonth" = "This month you'd have left";
 /* Flujo de caja: rótulo de la cifra del mes en curso cuando falta */
-"cashflow.l18.hero.shortfallThisMonth" = "This month you're short by";
+"cashflow.l18.hero.shortfallThisMonth" = "This month you'd be short by";
 /* Flujo de caja: rótulo de un mes que viene cuando sobraría; %@ = «noviembre» */
-"cashflow.l18.hero.surplusFuture" = "In %@ you'd have left over";
+"cashflow.l18.hero.surplusFuture" = "In %@ you'd have left";
 /* Flujo de caja: rótulo de un mes que viene cuando faltaría; %@ = «noviembre» */
 "cashflow.l18.hero.shortfallFuture" = "In %@ you'd be short by";
 /* Flujo de caja: rótulo de un mes pasado cuando sobró; %@ = «septiembre» */
-"cashflow.l18.hero.surplusPast" = "In %@ you had left over";
+"cashflow.l18.hero.surplusPast" = "In %@ you had left";
 /* Flujo de caja: rótulo de un mes pasado cuando faltó; %@ = «septiembre» */
 "cashflow.l18.hero.shortfallPast" = "In %@ you were short by";
 /* Flujo de caja: saldo al final del plan; %1$@ = «diciembre», %2$@ = monto */
@@ -7998,7 +7998,6 @@
 
 /* Flujo proyectado (card «Flujo proyectado en Tendencias y Panel», 2026-11-06) */
 "trend.projected.toggle" = "Show projection";
-"trend.projected.closing" = "Projected at period end";
 "trend.projected.source.plan" = "Estimated from your cash flow plan";
 "trend.projected.source.rhythm" = "Estimated from your spending pace";
 "trend.projected.source.scheduled" = "Estimated from your planned payments";
@@ -8108,3 +8107,11 @@
 
 /* Health sheet headline when there is data but not enough for a score yet */
 "panel.health.total.headline.notYet" = "No score yet";
+
+/* «Al 30 tendrías» y real/estimado del flujo de caja (decisiones 30 y 31 de la revisión 2.3, 2026-11-11) */
+"trend.projected.closing.balance" = "By %@ you'd have";
+"trend.projected.closing.expense" = "Spending by %@";
+"trend.projected.closing.income" = "Income by %@";
+"cashflow.monthEnd.leftIn" = "Still to come in";
+"cashflow.monthEnd.leftOut" = "Still to go out";
+"cashFlowPlan.estimateLeft" = "Estimated to go";

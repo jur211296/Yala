@@ -840,7 +840,7 @@
 "cashFlowPlan.addLine" = "添加行";
 "cashFlowPlan.thisMonth" = "本月";
 "cashFlowPlan.pastMonth" = "过去";
-"cashFlowPlan.futureMonth" = "预测";
+"cashFlowPlan.futureMonth" = "估算";
 "cashFlowPlan.executionPercent" = "已支出 %d%%";
 "cashFlowPlan.densityFull" = "完整";
 "cashFlowPlan.densityIcons" = "图标";
@@ -858,8 +858,8 @@
 "cashFlowPlan.trendLabel" = "趋势";
 "cashFlowPlan.rangeLabel" = "范围";
 "cashFlowPlan.plan" = "估算";
-"cashFlowPlan.real" = "已支出";
-"cashFlowPlan.realIncome" = "已收到";
+"cashFlowPlan.real" = "实际";
+"cashFlowPlan.realIncome" = "实际";
 "cashFlowPlan.difference" = "差额";
 "cashFlowPlan.adjustAmount" = "调整金额";
 "cashFlowPlan.othersTitle" = "未计入计划的支出";
@@ -949,7 +949,7 @@
 "cashFlowPlan.noCategories" = "没有有历史的类别";
 
 // Charts redesign (Inc 7)
-"cashFlowPlan.chartProjection" = "余额预测";
+"cashFlowPlan.chartProjection" = "估算余额";
 "cashFlowPlan.chartDeviation" = "需查看的支出";
 "cashFlowPlan.chartDeviationSubtitle" = "你超出计划支出的子类别";
 "cashFlowPlan.chartSavings" = "月度储蓄";
@@ -7960,9 +7960,9 @@
 /* Ajustar monto: el mes elegido y los siguientes */
 "cashflow.l18.scope.alsoFollowing" = "那个月及之后";
 /* Flujo de caja: rótulo de la cifra del mes en curso cuando sobra */
-"cashflow.l18.hero.surplusThisMonth" = "本月结余";
+"cashflow.l18.hero.surplusThisMonth" = "本月预计结余";
 /* Flujo de caja: rótulo de la cifra del mes en curso cuando falta */
-"cashflow.l18.hero.shortfallThisMonth" = "本月缺口";
+"cashflow.l18.hero.shortfallThisMonth" = "本月预计缺口";
 /* Flujo de caja: rótulo de un mes que viene cuando sobraría; %@ = «noviembre» */
 "cashflow.l18.hero.surplusFuture" = "%@预计结余";
 /* Flujo de caja: rótulo de un mes que viene cuando faltaría; %@ = «noviembre» */
@@ -8766,7 +8766,6 @@
 
 /* Flujo proyectado (card «Flujo proyectado en Tendencias y Panel», 2026-11-06) */
 "trend.projected.toggle" = "显示预测";
-"trend.projected.closing" = "期末预测";
 "trend.projected.source.plan" = "根据你的现金流计划估算";
 "trend.projected.source.rhythm" = "根据你的支出节奏估算";
 "trend.projected.source.scheduled" = "根据你的计划付款估算";
@@ -8876,3 +8875,11 @@
 
 /* Health sheet headline when there is data but not enough for a score yet */
 "panel.health.total.headline.notYet" = "暂无评分";
+
+/* «Al 30 tendrías» y real/estimado del flujo de caja (decisiones 30 y 31 de la revisión 2.3, 2026-11-11) */
+"trend.projected.closing.balance" = "%@预计余额";
+"trend.projected.closing.expense" = "截至%@的支出";
+"trend.projected.closing.income" = "截至%@的收入";
+"cashflow.monthEnd.leftIn" = "待入账";
+"cashflow.monthEnd.leftOut" = "待支出";
+"cashFlowPlan.estimateLeft" = "估算剩余";

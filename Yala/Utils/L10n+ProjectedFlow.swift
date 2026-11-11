@@ -27,8 +27,15 @@ extension L10n {
     enum ProjectedFlow {
         /// La píldora de la tarjeta de tendencia.
         static var toggle: String { lpf("trend.projected.toggle") }
-        /// Rótulo de la cifra al final del período, bajo la gráfica.
-        static var closing: String { lpf("trend.projected.closing") }
+        /// Rótulo de la cifra al final del período, bajo la gráfica: dice de qué es y hasta cuándo (decisión 30 de 2.3).
+        /// `%@` = día y mes («30 de noviembre»).
+        static func closingBalance(_ day: String) -> String { String(format: lpf("trend.projected.closing.balance"), day) }
+        static func closingExpense(_ day: String) -> String { String(format: lpf("trend.projected.closing.expense"), day) }
+        static func closingIncome(_ day: String) -> String { String(format: lpf("trend.projected.closing.income"), day) }
+
+        /// La cuenta de «Al 30 tendrías» en el mes en curso del flujo de caja: lo que falta entrar y salir hasta fin de mes.
+        static var leftToComeIn: String { lpf("cashflow.monthEnd.leftIn") }
+        static var leftToGoOut: String { lpf("cashflow.monthEnd.leftOut") }
 
         /// El enlace bajo la cifra al plan de flujo de caja: armarlo si no hay plan, verlo si lo hay.
         static var linkSetup: String { lpf("trend.projected.link.setup") }
@@ -45,4 +52,10 @@ extension L10n {
             }
         }
     }
+}
+
+extension L10n.CashFlowPlan {
+    /// Lo que falta de una línea en el mes en curso: es una estimación, y se dice con la misma palabra que el resto de lo
+    /// estimado del flujo de caja (decisión 31 de 2.3).
+    static var estimateLeft: String { lpf("cashFlowPlan.estimateLeft") }
 }

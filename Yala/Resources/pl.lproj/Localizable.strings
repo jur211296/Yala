@@ -840,7 +840,7 @@
 "cashFlowPlan.addLine" = "Dodaj linię";
 "cashFlowPlan.thisMonth" = "Ten miesiąc";
 "cashFlowPlan.pastMonth" = "Miniony";
-"cashFlowPlan.futureMonth" = "Prognoza";
+"cashFlowPlan.futureMonth" = "Szacowane";
 "cashFlowPlan.executionPercent" = "Wydano %d%%";
 "cashFlowPlan.densityFull" = "Pełna";
 "cashFlowPlan.densityIcons" = "Ikony";
@@ -858,8 +858,8 @@
 "cashFlowPlan.trendLabel" = "Trend";
 "cashFlowPlan.rangeLabel" = "Zakres";
 "cashFlowPlan.plan" = "Szacowane";
-"cashFlowPlan.real" = "Wydano";
-"cashFlowPlan.realIncome" = "Otrzymano";
+"cashFlowPlan.real" = "Rzeczywiste";
+"cashFlowPlan.realIncome" = "Rzeczywiste";
 "cashFlowPlan.difference" = "Różnica";
 "cashFlowPlan.adjustAmount" = "Dostosuj kwotę";
 "cashFlowPlan.othersTitle" = "Wydatki nieujęte w planie";
@@ -949,7 +949,7 @@
 "cashFlowPlan.noCategories" = "Brak kategorii z historią";
 
 // Charts redesign (Inc 7)
-"cashFlowPlan.chartProjection" = "Prognoza salda";
+"cashFlowPlan.chartProjection" = "Szacowane saldo";
 "cashFlowPlan.chartDeviation" = "Wydatki do przeglądu";
 "cashFlowPlan.chartDeviationSubtitle" = "Podkategorie, w których wydałeś więcej niż planowano";
 "cashFlowPlan.chartSavings" = "Oszczędności miesięczne";
@@ -7960,9 +7960,9 @@
 /* Ajustar monto: el mes elegido y los siguientes */
 "cashflow.l18.scope.alsoFollowing" = "Ten i kolejne miesiące";
 /* Flujo de caja: rótulo de la cifra del mes en curso cuando sobra */
-"cashflow.l18.hero.surplusThisMonth" = "W tym miesiącu zostaje ci";
+"cashflow.l18.hero.surplusThisMonth" = "W tym miesiącu zostałoby ci";
 /* Flujo de caja: rótulo de la cifra del mes en curso cuando falta */
-"cashflow.l18.hero.shortfallThisMonth" = "W tym miesiącu brakuje ci";
+"cashflow.l18.hero.shortfallThisMonth" = "W tym miesiącu brakowałoby ci";
 /* Flujo de caja: rótulo de un mes que viene cuando sobraría; %@ = «noviembre» */
 "cashflow.l18.hero.surplusFuture" = "W okresie %@ zostałoby ci";
 /* Flujo de caja: rótulo de un mes que viene cuando faltaría; %@ = «noviembre» */
@@ -8766,7 +8766,6 @@
 
 /* Flujo proyectado (card «Flujo proyectado en Tendencias y Panel», 2026-11-06) */
 "trend.projected.toggle" = "Pokaż prognozę";
-"trend.projected.closing" = "Prognoza na koniec okresu";
 "trend.projected.source.plan" = "Szacowane na podstawie planu przepływu środków";
 "trend.projected.source.rhythm" = "Szacowane na podstawie tempa wydatków";
 "trend.projected.source.scheduled" = "Szacowane na podstawie zaplanowanych płatności";
@@ -8876,3 +8875,11 @@
 
 /* Health sheet headline when there is data but not enough for a score yet */
 "panel.health.total.headline.notYet" = "Jeszcze bez oceny";
+
+/* «Al 30 tendrías» y real/estimado del flujo de caja (decisiones 30 y 31 de la revisión 2.3, 2026-11-11) */
+"trend.projected.closing.balance" = "Saldo na %@ wyniosłoby";
+"trend.projected.closing.expense" = "Wydatki do %@";
+"trend.projected.closing.income" = "Przychody do %@";
+"cashflow.monthEnd.leftIn" = "Jeszcze wpłynie";
+"cashflow.monthEnd.leftOut" = "Jeszcze wypłynie";
+"cashFlowPlan.estimateLeft" = "Szacowane pozostałe";

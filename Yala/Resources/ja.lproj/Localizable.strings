@@ -840,7 +840,7 @@
 "cashFlowPlan.addLine" = "項目を追加";
 "cashFlowPlan.thisMonth" = "今月";
 "cashFlowPlan.pastMonth" = "過去";
-"cashFlowPlan.futureMonth" = "予測";
+"cashFlowPlan.futureMonth" = "予定";
 "cashFlowPlan.executionPercent" = "%d%%使用";
 "cashFlowPlan.densityFull" = "詳細";
 "cashFlowPlan.densityIcons" = "アイコン";
@@ -858,8 +858,8 @@
 "cashFlowPlan.trendLabel" = "推移";
 "cashFlowPlan.rangeLabel" = "範囲";
 "cashFlowPlan.plan" = "予定";
-"cashFlowPlan.real" = "支出済み";
-"cashFlowPlan.realIncome" = "受取済み";
+"cashFlowPlan.real" = "実績";
+"cashFlowPlan.realIncome" = "実績";
 "cashFlowPlan.difference" = "差額";
 "cashFlowPlan.adjustAmount" = "金額を調整";
 "cashFlowPlan.othersTitle" = "計画外の支出";
@@ -949,7 +949,7 @@
 "cashFlowPlan.noCategories" = "履歴のあるカテゴリーがありません";
 
 // Charts redesign (Inc 7)
-"cashFlowPlan.chartProjection" = "残高予測";
+"cashFlowPlan.chartProjection" = "予定残高";
 "cashFlowPlan.chartDeviation" = "確認すべき支出";
 "cashFlowPlan.chartDeviationSubtitle" = "計画より多く使ったサブカテゴリー";
 "cashFlowPlan.chartSavings" = "月々の貯蓄";
@@ -7960,9 +7960,9 @@
 /* Ajustar monto: el mes elegido y los siguientes */
 "cashflow.l18.scope.alsoFollowing" = "その月以降すべて";
 /* Flujo de caja: rótulo de la cifra del mes en curso cuando sobra */
-"cashflow.l18.hero.surplusThisMonth" = "今月残る額";
+"cashflow.l18.hero.surplusThisMonth" = "今月残る見込み";
 /* Flujo de caja: rótulo de la cifra del mes en curso cuando falta */
-"cashflow.l18.hero.shortfallThisMonth" = "今月足りない額";
+"cashflow.l18.hero.shortfallThisMonth" = "今月足りない見込み";
 /* Flujo de caja: rótulo de un mes que viene cuando sobraría; %@ = «noviembre» */
 "cashflow.l18.hero.surplusFuture" = "%@に残る見込み";
 /* Flujo de caja: rótulo de un mes que viene cuando faltaría; %@ = «noviembre» */
@@ -8766,7 +8766,6 @@
 
 /* Flujo proyectado (card «Flujo proyectado en Tendencias y Panel», 2026-11-06) */
 "trend.projected.toggle" = "予測を表示";
-"trend.projected.closing" = "期間末の予測";
 "trend.projected.source.plan" = "キャッシュフロー計画から推定";
 "trend.projected.source.rhythm" = "支出ペースから推定";
 "trend.projected.source.scheduled" = "予定の支払いから推定";
@@ -8876,3 +8875,11 @@
 
 /* Health sheet headline when there is data but not enough for a score yet */
 "panel.health.total.headline.notYet" = "まだスコアはありません";
+
+/* «Al 30 tendrías» y real/estimado del flujo de caja (decisiones 30 y 31 de la revisión 2.3, 2026-11-11) */
+"trend.projected.closing.balance" = "%@時点の見込み残高";
+"trend.projected.closing.expense" = "%@までの支出";
+"trend.projected.closing.income" = "%@までの収入";
+"cashflow.monthEnd.leftIn" = "これからの入金";
+"cashflow.monthEnd.leftOut" = "これからの出金";
+"cashFlowPlan.estimateLeft" = "残り（予定）";

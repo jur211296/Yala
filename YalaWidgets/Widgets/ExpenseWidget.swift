@@ -52,6 +52,8 @@ struct ExpenseEntry: TimelineEntry {
     /// «Mostrar proyectado»: el gasto acumulado esperado desde el día de la foto (el primero es el ancla, el último
     /// punto de la línea rosa) hasta el final del período. Vacío si está apagado o no quedan días.
     var projected: [Double] = []
+    /// La cifra corta del tramo estimado: el gasto esperado al final del período y ese día (decisión 34 de 2.3).
+    var projectedEnd: WidgetInsightsLogic.ProjectedEnd? = nil
 
     static var placeholder: ExpenseEntry {
         let current: [Double] = [120, 180, 640, 700, 760, 900, 1_350, 1_420, 1_510, 1_690, 2_060, 2_150, 2_240, 2_600,
@@ -149,18 +151,19 @@ struct ExpenseWidgetProvider: AppIntentTimelineProvider {
             return WidgetTrendPoint(date: day, balance: value)
         }
         // «Mostrar proyectado»: lo esperado por día que dejó la app, acumulado sobre el último punto de la línea.
-        let projected: [Double]
+        let projectedPoints: [(date: Date, value: Double)]
         if configuration.showProjected, !cumulative.isEmpty, let flow = WidgetDataService.getProjectedFlow() {
-            projected = WidgetInsightsLogic.projectedCumulative(
+            projectedPoints = WidgetInsightsLogic.projectedCumulative(
                 anchor: cumulative.last ?? 0,
                 deltas: flow.days.map { (date: $0.date, value: $0.expense) },
                 asOf: asOf,
                 end: Self.fullPeriodEnd(for: period, interval: interval, asOf: asOf, calendar: calendar),
                 calendar: calendar
-            ).map(\.value)
+            )
         } else {
-            projected = []
+            projectedPoints = []
         }
+        let projected = projectedPoints.map(\.value)
 
         return ExpenseEntry(
             date: now,
@@ -179,7 +182,8 @@ struct ExpenseWidgetProvider: AppIntentTimelineProvider {
                 total: totalExpense, start: start, end: interval.end, now: asOf, calendar: calendar),
             periodDays: periodDays,
             lastUpdated: lastUpdated,
-            projected: projected
+            projected: projected,
+            projectedEnd: WidgetInsightsLogic.projectedEnd(projectedPoints)
         )
     }
 
@@ -372,6 +376,9 @@ struct MediumExpenseView: View {
                             .lineLimit(2)
                             .minimumScaleFactor(0.8)
                     }
+                    if let end = entry.projectedEnd {
+                        WidgetProjectedEndLine(end: end, amountText: entry.amountText(end.value))
+                    }
                     WidgetFreshnessNote(lastUpdated: entry.lastUpdated, now: entry.date)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -441,13 +448,14 @@ struct ExpensePaceChart: View {
                     .lineStyle(StrokeStyle(lineWidth: WidgetDS.Chart.lineWidth, lineCap: .round, lineJoin: .round))
                     .foregroundStyle(WidgetColors.hotPink)
             }
-            // «Mostrar proyectado»: rosa punteado de trazo corto, distinto del gris de raya larga del período anterior.
+            // «Mostrar proyectado»: punteado de trazo corto en el color de lo estimado (decisión 34 de 2.3), distinto
+            // del rosa de lo gastado y del gris de raya larga del período anterior.
             ForEach(projected, id: \.day) { point in
                 LineMark(x: .value("Día", point.day), y: .value("Gasto", point.value), series: .value("Serie", "proyectado"))
                     .interpolationMethod(.monotone)
                     .lineStyle(StrokeStyle(lineWidth: WidgetDS.Chart.lineWidth, lineCap: .round,
                                            dash: WidgetDS.Chart.projectedDash))
-                    .foregroundStyle(WidgetColors.hotPink.opacity(WidgetDS.Chart.projectedOpacity))
+                    .foregroundStyle(WidgetColors.estimate.opacity(WidgetDS.Chart.projectedOpacity))
             }
             if let last = current.last {
                 PointMark(x: .value("Día", last.day), y: .value("Gasto", last.value))

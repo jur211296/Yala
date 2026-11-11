@@ -39,6 +39,9 @@ final class CashFlowPlanViewModel {
     private(set) var plan: CashFlowPlan?
     var hasPlan: Bool { plan != nil }
     private(set) var projection: CashFlowProjection?
+    /// «Al 30 de noviembre tendrías» del mes en curso, con su cuenta (decisión 30 de 2.3): la misma cifra que «Ver
+    /// proyectado» del Panel. `nil` sin plan o sin cuentas que sumen.
+    private(set) var monthEnd: MonthEndBalanceLogic.Result?
     /// Sube cuando un cambio del plan llega sin hoja de por medio que recalcule al cerrarse (borrar una
     /// línea desde su menú, guardar el horizonte). `CashFlowTableView` lo observa y recalcula: la proyección
     /// es un valor calculado y no ve sola que el plan cambió. Antes, la línea borrada seguía en pantalla y el
@@ -612,10 +615,13 @@ final class CashFlowPlanViewModel {
         allIncomeCategories: [Category] = [],
         scheduledPayments: [ScheduledPayment],
         currencyCode: String,
-        converter: CurrencyConverting
+        converter: CurrencyConverting,
+        accounts: [Account] = [],
+        includeGroups: Bool = true
     ) {
         guard let plan else {
             projection = nil
+            monthEnd = nil
             return
         }
 
@@ -653,6 +659,16 @@ final class CashFlowPlanViewModel {
             currencyCode: currencyCode,
             adjustment: adjustment,
             converter: converter
+        )
+        monthEnd = MonthEndBalanceLogic.compute(
+            accounts: accounts,
+            transactions: transactions,
+            scheduledPayments: scheduledPayments,
+            currencyCode: currencyCode,
+            includeGroups: includeGroups,
+            adjustment: adjustment,
+            converter: converter,
+            context: modelContext
         )
         LoadTimeMarks.ready(.cashFlow)
     }
