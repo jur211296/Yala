@@ -53,6 +53,11 @@ final class InboxViewModel {
     /// Gastos de grupo pendientes sin su grupo en este teléfono: se les ofrece «Quitar de aquí»
     /// (`InboxGroupDraftsHiddenHere`).
     private(set) var hideableHereIDs: Set<PersistentIdentifier> = []
+    /// Divisa del gasto de grupo de cada borrador que no tiene cuenta, por `splitExpenseID` (`InboxDraftDisplayCurrencyLogic`).
+    private(set) var groupExpenseCurrencies: [String: String] = [:]
+    /// Gastos de grupo a los que les sobra un borrador «Elige cuenta» o un «Préstamo a grupos» repetido
+    /// (`GroupBridgeLeftoversNotice`, bug del 2026-11-09).
+    private(set) var groupLeftoverCount = 0
     /// Borradores que la Bandeja ya quitó de la lista y que se borran o descartan después de la animación
     /// (`InboxView.removeDraftWithAnimation`). Una recarga en esa espera —la del borrado anterior, un `dataVersion`— no
     /// los devuelve: su fila volvería a montarse y leería el `InboxDraft` cuando se borre (crash de TestFlight 2.2 (2),
@@ -74,7 +79,50 @@ final class InboxViewModel {
         loadAllDrafts()
         loadPendingDrafts()
         loadHideableHere()
+        loadGroupExpenseCurrencies()
+        loadGroupLeftovers()
         LoadTimeMarks.ready(.inbox)
+    }
+
+    private func loadGroupLeftovers() {
+        guard let context = modelContext else { return }
+        do {
+            let count = try GroupBridgeRaceCleaner.leftovers(in: context, since: nil).plan.expenseIDs.count
+            if count != groupLeftoverCount { groupLeftoverCount = count }
+        } catch {
+            #if DEBUG
+            print("InboxViewModel: Error loading group leftovers: \(error)")
+            #endif
+        }
+    }
+
+    /// La divisa con la que se pinta el importe de un borrador en la Bandeja.
+    func displayCurrencyCode(for draft: InboxDraft, fallback: String) -> String {
+        InboxDraftDisplayCurrencyLogic.currency(
+            draftCurrency: draft.displayCurrencyCode,
+            groupExpenseCurrency: draft.splitExpenseID.flatMap { groupExpenseCurrencies[$0] },
+            fallback: fallback)
+    }
+
+    /// Un borrador de gasto de grupo sin cuenta no sabe su divisa: la del gasto del que viene (bug del 2026-11-09).
+    private func loadGroupExpenseCurrencies() {
+        guard let context = modelContext else { return }
+        let ids = InboxDraftDisplayCurrencyLogic.groupExpenseIDsNeedingCurrency(
+            allDrafts.map { ($0.splitExpenseID, $0.displayCurrencyCode) })
+        guard !ids.isEmpty else {
+            if !groupExpenseCurrencies.isEmpty { groupExpenseCurrencies = [:] }
+            return
+        }
+        do {
+            let expenses = try context.fetch(FetchDescriptor<SplitExpense>(predicate: #Predicate { ids.contains($0.id) }))
+            var map: [String: String] = [:]
+            for expense in expenses { map[expense.id.uuidString] = expense.currencyCode }
+            if map != groupExpenseCurrencies { groupExpenseCurrencies = map }
+        } catch {
+            #if DEBUG
+            print("InboxViewModel: Error loading group expense currencies: \(error)")
+            #endif
+        }
     }
 
     /// Qué borradores pendientes se pueden quitar de la Bandeja solo aquí.

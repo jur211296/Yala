@@ -8,7 +8,7 @@ Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 - **Target iOS 26+** — APIs nativas (Liquid Glass, ToolbarSpacer, etc.)
 - Schemes: **Yala** (producción) | **Yala Dev** (con toggle Pro y `DEV_BUILD`) | Tests: YalaTests
 - Simulador: **iPhone 17 Pro**
-- **La subida a TestFlight y a la App Store se hace desde la Mini**; desde el 10-nov también podrá hacerse desde la Max cuando tenga el certificado de distribución y la llave de App Store Connect. El número de build no se escribe en ningún documento: se mira al subir.
+- **La subida a TestFlight y a la App Store se hace desde la Mini o la Max** (Jürgen, 10-nov), con el mismo método: firma automática con `-allowProvisioningUpdates` y la llave de `asc`, sin certificado «Apple Distribution» local. El número de build no se escribe en ningún documento: se mira al subir. Archivar y exportar va dentro del tmux de la sesión: por `ssh` directo el llavero no abre y `codesign` falla con `errSecInternalComponent`.
 - 21 SwiftData models. ModelContainer via `SwiftDataConfiguration`. Divisas SSOT en `Yala/Utils/CurrencyUtils.swift` (`CurrencyCode`, 54 divisas).
 
 ## Docs (leer cuando sea relevante)

@@ -33,7 +33,7 @@
 - [El iPhone de pruebas es el 14 por cable](feedback_el_iphone_de_pruebas_es_el_14_por_cable.md) — el 18 Pro Max es el suyo personal; elige por modelo, no por el primer UDID.
 - [QA físico: datos dev, no preguntes](feedback_qa_fisico_datos_dev_no_preguntes.md) — borrar/vaciar en el iPhone 14 lo decides tú; contáctale solo urgente o su mano.
 - [Tester de Sandbox del iPhone 14](reference_tester_sandbox_iphone_14.md) — ya existe en ASC; no crear otro; contraseña en 1Password o la pone Jürgen.
-- [Conducir el iPhone real con Device MCP](reference_conducir_el_iphone_real_con_device_mcp.md) — stdio, teclado inglés, open_url con aprobación, devicectl --payload-url.
+- [Conducir el iPhone real con Device MCP](reference_conducir_el_iphone_real_con_device_mcp.md) — sin Pro: xcodebuild+devicectl; screenshot sin overwrite; Siri por Atajos; teclado inglés.
 - [Maquetas con piezas reales de la app](feedback_maquetas_con_piezas_reales_de_la_app.md) — recibos «feos»; varias funciones; alta tipo chat.
 - [Probar un artifact en el iPhone 14](reference_probar_un_artifact_en_el_iphone_14.md) — Safari con sesión; captura a 390 o fallan los toques; el móvil simulado atrapa el scroll.
 - [Sin firma de IA en commits](feedback_sin_firma_de_ia_en_commits.md) — el hook rechaza Co-Authored-By de Claude; manda la casa sobre el entorno.
@@ -76,6 +76,7 @@
 - [Discusión de decisiones con Jürgen](feedback_discusion_de_decisiones_con_jurgen.md) — claridad antes que lo decidido; delega a la recomendación; accesibilidad sin preguntar.
 - [Regresión: medir contra lo publicado](feedback_regresion_se_mide_contra_lo_publicado.md) — Panel iPad: B→A al saber que la 2.1 no lo tenía.
 - [«Igual a tamaño normal» es al píxel](feedback_igual_a_tamano_normal_es_literal.md) — también el botón desactivado; lo que el sistema cambie se fuerza al aspecto de antes.
+- [Reparar sus datos: lo nuevo solo, lo suyo con botón](feedback_reparacion_de_datos_se_ensena_y_se_ubica.md) — enseña y confirma; él elige dónde va el botón (Bandeja).
 - [El tutorial parte de la pantalla anterior](feedback_tutorial_parte_de_la_pantalla_anterior.md) — enseña lo que existe, sin rediseñar; R1-R3 de registro descartadas.
 - [Cierre de diseño: spec por cards](feedback_cierre_de_diseno_spec_por_cards.md) — artifact limpio + SPEC.md de una fuente, ID estable por card.
 ## Cómo mido y cómo entrego

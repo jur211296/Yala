@@ -19,3 +19,14 @@ Medido el 2026-11-05 en la Max (Device MCP 0.5.0 gratis, iPhone 14 iOS 27.2 por 
   [[el-iphone-de-pruebas-es-el-14-por-cable]].
 - La Max no tenía cuenta de desarrollador en Xcode: Jürgen la añadió (Xcode › Settings › Accounts); sin ella,
   0 identidades y `No Accounts`.
+
+Medido el 2026-11-09 (Device MCP con tools en sesión, versión gratis):
+
+- **`build_and_run` es de la licencia Pro.** Sin ella: `xcodebuild -scheme "Yala Dev" -configuration Debug-Dev
+  -destination id=<udid> -allowProvisioningUpdates build` y `xcrun devicectl device install app --device <udid> <.app>`.
+- **`save_screenshot` con `overwrite: true` pide aprobación en la Max** y caduca a los 2 min, colgando el batch:
+  usa siempre un nombre nuevo.
+- **Atajos sirve de Siri sin voz**: Atajos › Yala Dev › la acción lanza el App Intent; vale para el camino de la hoja
+  de Pro. La galería de widgets y Atajos enseñan contactos y apps personales: no las captures.
+- **StoreKit en Yala Dev instalada así**: «No pudimos cargar los precios». Lo de compras va con TestFlight
+  ([[qa-en-yala-dev-antes-que-prod]]).

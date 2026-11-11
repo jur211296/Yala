@@ -8808,6 +8808,19 @@
 "groups.convert.personalSplitHint" = "Um sie in eine geteilte Ausgabe umzuwandeln, entferne „Mein Anteil“: Dieser Eintrag speichert nur deinen Anteil.";
 "groups.convert.saveFirstHint" = "Speichere deine Änderungen, um sie in eine geteilte Ausgabe umzuwandeln.";
 
+
+/* Bandeja · gastos de grupo repetidos (bug 2026-11-09) */
+"inbox.groupLeftovers.bannerTitle" = "Doppelte Gruppenausgaben";
+"inbox.groupLeftovers.bannerMessage" = "Sie sind schon mit ihrem Konto in deinen Einträgen, aber ein Entwurf oder ein «Darlehen an Gruppen» ist zu viel.";
+"inbox.groupLeftovers.bannerAction" = "Prüfen und Doppeltes entfernen";
+"inbox.groupLeftovers.intro" = "Diese Gruppenausgaben sind schon mit ihrem Konto in deinen Einträgen. In der Liste steht, was zu viel ist. Deine Einträge mit Konto und die Ausgaben der Gruppe ändern sich nicht.";
+"inbox.groupLeftovers.extraDrafts" = "Überzählige Entwürfe: %d";
+"inbox.groupLeftovers.extraLoans" = "Doppelte «Darlehen an Gruppen»: %d";
+"inbox.groupLeftovers.remove" = "Doppeltes entfernen";
+"inbox.groupLeftovers.confirmTitle" = "Doppeltes entfernen?";
+"inbox.groupLeftovers.confirmMessage" = "Die Entwürfe und Darlehen aus der Liste werden entfernt. Deine Einträge mit Konto und die Ausgaben der Gruppe bleiben, wie sie sind.";
+"inbox.groupLeftovers.confirmAction" = "Entfernen";
+"inbox.groupLeftovers.failed" = "Entfernen hat nicht geklappt. Versuch es noch einmal.";
 /* Progreso de dejar iCloud aparte al entrar con Google o Apple desde el Welcome */
 "welcome.groups.cloudAsideWorking" = "Die iCloud-Daten dieses Geräts bleiben unverändert in iCloud. Wir laden die letzten Änderungen hoch und machen das Gerät bereit für die Anmeldung bei deinem Konto…";
 /* Puerta del Welcome: no se pudo empezar a dejar iCloud aparte */
