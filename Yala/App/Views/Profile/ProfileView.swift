@@ -529,7 +529,7 @@ struct ProfileView: View {
         isGroupsOnlyShell ? viewModel.hasExportableGroups : viewModel.hasTransactions
     }
 
-    /// Hint de accesibilidad cuando "Exportar datos" está deshabilitada (D6).
+    /// Por qué "Exportar datos" está deshabilitada (D6): va en el subtítulo de la fila, a la vista (D4 de la zona 40).
     private var exportDisabledHint: String {
         isGroupsOnlyShell
             ? L10n.Accessibility.noGroupsToExport
@@ -1756,15 +1756,17 @@ struct ProfileView: View {
                 } label: {
                     // L20-4: «Exportar registros · Para Excel o Google Sheets». En solo grupos exporta los grupos, no
                     // registros: conserva «Exportar datos» con el mismo subtítulo (el archivo también se abre ahí).
+                    // Lote 10 de las mejoras necesarias 2.3 (D4 de la zona 40): apagada, la fila dice por qué en su
+                    // subtítulo, a la vista. Antes salía gris con «Para Excel o Google Sheets» y el motivo solo lo
+                    // oía VoiceOver, en la pista; con el motivo en la etiqueta, la pista ya no se repite.
                     settingsRowContent(
                         icon: "square.and.arrow.up.fill",
                         title: isGroupsOnlyShell ? L10n.Settings.exportData : L10n.UXL20D.exportRecordsRow,
-                        subtitle: L10n.Settings.exportDataSubtitle,
+                        subtitle: isExportEnabled ? L10n.Settings.exportDataSubtitle : exportDisabledHint,
                         iconColor: .mint
                     )
                     .opacity(isExportEnabled ? 1.0 : 0.5)
                 }
-                .accessibilityHint(isExportEnabled ? "" : exportDisabledHint)
                 .disabled(!isExportEnabled)
                 .buttonStyle(.plain)
                 .coachMarkAnchor("proExportExtended")

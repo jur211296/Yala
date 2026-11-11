@@ -7706,7 +7706,7 @@
 "uxpro.trial.chargeYearly" = "如果继续使用,将按每年 %@ 扣费。";
 "uxpro.trial.chargeMonthly" = "如果继续使用,将按每月 %@ 扣费。";
 "uxpro.trial.cancelTitle" = "最晚提前一天";
-"uxpro.trial.cancelBody" = "在“设置”中取消,就不会扣费。";
+"uxpro.trial.cancelBody" = "在设备的“设置”中取消,就不会扣费。";
 "uxpro.cta.startTrialDays" = "免费试用 %lld 天";
 "uxpro.included.title" = "Pro 包含什么";
 "uxpro.feature.voice" = "开口记账";

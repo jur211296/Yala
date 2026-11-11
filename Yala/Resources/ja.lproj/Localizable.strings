@@ -7706,7 +7706,7 @@
 "uxpro.trial.chargeYearly" = "続ける場合は年額%@が請求されます。";
 "uxpro.trial.chargeMonthly" = "続ける場合は月額%@が請求されます。";
 "uxpro.trial.cancelTitle" = "前日まで";
-"uxpro.trial.cancelBody" = "設定からキャンセルすれば、料金はかかりません。";
+"uxpro.trial.cancelBody" = "デバイスの「設定」からキャンセルすれば、料金はかかりません。";
 "uxpro.cta.startTrialDays" = "%lld日間無料で試す";
 "uxpro.included.title" = "Proに含まれるもの";
 "uxpro.feature.voice" = "話して記録";
