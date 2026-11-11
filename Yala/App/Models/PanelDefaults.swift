@@ -88,7 +88,14 @@ enum PanelDefaults {
     ///
     /// Es un array y no un `Set` por el mismo motivo que `SectionDefaults.hidden`:
     /// el orden tiene que ser estable entre arranques.
-    static let hiddenSections: [PanelSectionKind] = [.health, .distribucion, .tools]
+    ///
+    /// La salud nace a la vista desde la 2.3 (lote 1 de la nota de salud, 11-nov-2026): en «Tus finanzas», en su tarjeta
+    /// chata. A quien venía con la lista de fábrica anterior la enciende una vez
+    /// `PanelPreferencesMigration.showHealthOnceIfUntouched`.
+    static let hiddenSections: [PanelSectionKind] = [.distribucion, .tools]
+
+    /// La lista de fábrica hasta la 2.2, con la salud oculta. Solo la lee la migración de arriba.
+    static let hiddenSectionsUntil22: [String] = ["health", "distribucion", "tools"]
 
     /// Orden global de las secciones reordenables. Vacío a propósito: el orden de
     /// declaración de `PanelSectionKind` ya entrega Tendencias → Planificación →

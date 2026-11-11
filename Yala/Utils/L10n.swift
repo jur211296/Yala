@@ -858,9 +858,15 @@ enum L10n {
             static var improveActivity: String { ls("panel.health.improve.activity", comment: "Health: what would raise the score most (rhythm)") }
             static var improveBills: String { ls("panel.health.improve.bills", comment: "Health: what would raise the score most (commitments)") }
             static var improveNothing: String { ls("panel.health.improve.nothing", comment: "Health: all three parts are fine") }
-            static func floorNote(_ floor: Int) -> String {
-                String(format: ls("panel.health.floorNote", comment: "Health: the total never goes below this number. %d = floor"), floor)
-            }
+            static var scaleNote: String { ls("panel.health.scaleNote", comment: "Health sheet: the scale of the total score") }
+            // Lote 1 de la nota de salud (11-nov-2026): el mensaje breve de la tarjeta, siempre un paso concreto.
+            static var cardStepActivity: String { ls("panel.health.card.step.activity", comment: "Health card: step to raise rhythm") }
+            static var cardStepBudget: String { ls("panel.health.card.step.budget", comment: "Health card: step to raise budgets") }
+            static var cardStepBills: String { ls("panel.health.card.step.bills", comment: "Health card: step to raise planned payments") }
+            static var cardStepGood: String { ls("panel.health.card.step.good", comment: "Health card: every part is doing well") }
+            static var cardStartActivity: String { ls("panel.health.card.start.activity", comment: "Health card, no score: rhythm has no data") }
+            static var cardStartBudget: String { ls("panel.health.card.start.budget", comment: "Health card, no score: budgets have no data") }
+            static var cardStartBills: String { ls("panel.health.card.start.bills", comment: "Health card, no score: planned payments have no data") }
             // Revisión 2.3, decisión 9 (PN-2): sin nota hasta tener dos de tres partes, y lo que la nota no ve.
             static var missingAllParts: String {
                 ls("panel.health.missing.all", comment: "Health card without a score and no part with data: the score needs data in two of the three parts")
@@ -8277,6 +8283,8 @@ enum L10n {
         static var v22FasterEntryDescription: String { ls("whatsNew.v22.fasterEntry.description", comment: "") }
         static var v22LeftToPayTitle: String { ls("whatsNew.v22.leftToPay.title", comment: "") }
         static var v22LeftToPayDescription: String { ls("whatsNew.v22.leftToPay.description", comment: "") }
+        static var v23HealthScoreTitle: String { ls("whatsNew.v23.healthScore.title", comment: "") }
+        static var v23HealthScoreDescription: String { ls("whatsNew.v23.healthScore.description", comment: "") }
     }
 
     // MARK: - App Update

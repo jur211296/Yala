@@ -78,7 +78,7 @@
 
 // Detail sheet — Budget
 "panel.health.budget.sheet.title" = "予算の状況";
-"panel.health.budget.sheet.explanation" = "今月の予算の進み具合を見ています。余裕があれば加点、超過すると少し減点します。あくまで指針として活用してください。";
+"panel.health.budget.sheet.explanation" = "予算の進み具合を見ています。少しの超過はほとんど影響しません。大きく下がるのは支出が上限の2倍に近づいたときだけです。";
 "panel.health.budget.headline.high" = "予算は順調です！";
 "panel.health.budget.headline.mid" = "上限をしっかり意識できています";
 "panel.health.budget.headline.low" = "少し調整すれば大丈夫";
@@ -88,7 +88,7 @@
 
 // Detail sheet — Activity
 "panel.health.activity.sheet.title" = "あなたのリズム";
-"panel.health.activity.sheet.explanation" = "この期間中に支出を記録していない日が連続した最長期間を測定します。2日までは普通ですが、それを超えるとリズムに影響が出ます。";
+"panel.health.activity.sheet.explanation" = "この期間中に記録しなかった日が続いた最長日数を測ります。最後の記録から今日までの日数も含みます。3日間は猶予があり、4日目から少しずつリズムが下がります。";
 "panel.health.activity.headline.high" = "良いリズムです！🎉";
 "panel.health.activity.headline.mid" = "リズムは順調です";
 "panel.health.activity.headline.low" = "リズムが少し落ちています";
@@ -6875,7 +6875,7 @@
 "panel.health.part.budget" = "予算の上限に対する状況。";
 
 /* Health breakdown: what the rhythm part measures */
-"panel.health.part.activity" = "記録しない日が何日続いたか。2日までは問題なし。";
+"panel.health.part.activity" = "記録しない日が今日まで何日続いたか。3日までは問題なし。";
 
 /* Health breakdown: what the commitments part measures */
 "panel.health.part.bills" = "残高で今後の支払いをまかなえるか、収入のうちどれだけが支払いに回るか。";
@@ -6887,7 +6887,7 @@
 "panel.health.improve.budget" = "スコアを上げるには：いちばん超えている予算を見直しましょう。";
 
 /* Health: what would raise the score most (rhythm) */
-"panel.health.improve.activity" = "スコアを上げるには：少なくとも2日に1回は記録しましょう。";
+"panel.health.improve.activity" = "スコアを上げるには：記録しない日を3日より長く続けないようにしましょう。";
 
 /* Health: what would raise the score most (commitments) */
 "panel.health.improve.bills" = "スコアを上げるには：予定支払いを見直しましょう。残高への負担が大きいです。";
@@ -6895,8 +6895,6 @@
 /* Health: all three parts are fine */
 "panel.health.improve.nothing" = "評価に入っている項目は順調です。この調子で。";
 
-/* Health: the total never goes below this number. %d = floor */
-"panel.health.floorNote" = "総合スコアは%d未満にはなりません。";
 
 /* Live balance sheet: heading of the per-currency sum */
 "panel.liveAnchorEducation.sumTitle" = "通貨ごとの合計";
@@ -8902,3 +8900,33 @@
 "cashflow.monthEnd.leftIn" = "これからの入金";
 "cashflow.monthEnd.leftOut" = "これからの出金";
 "cashFlowPlan.estimateLeft" = "残り（予定）";
+
+/* Health sheet: the scale of the total score (0 to 100, no floor) */
+"panel.health.scaleNote" = "スコアは0〜100です。";
+
+/* Health card (compact): one concrete step when rhythm is the part that would raise the score most */
+"panel.health.card.step.activity" = "今週記録してリズムを上げましょう。";
+
+/* Health card (compact): one concrete step when budgets are the part that would raise the score most */
+"panel.health.card.step.budget" = "いちばん余裕のない予算を見直してスコアを上げましょう。";
+
+/* Health card (compact): one concrete step when planned payments are the part that would raise the score most */
+"panel.health.card.step.bills" = "予定している支払いを見直してスコアを上げましょう。";
+
+/* Health card (compact): every part is doing well (90 or more) */
+"panel.health.card.step.good" = "順調です。この調子で記録を続けましょう。";
+
+/* Health card (compact), no score yet: rhythm has no data */
+"panel.health.card.start.activity" = "支出を記録するとスコアが表示されます。";
+
+/* Health card (compact), no score yet: budgets have no data */
+"panel.health.card.start.budget" = "予算を作るとスコアが表示されます。";
+
+/* Health card (compact), no score yet: planned payments have no data */
+"panel.health.card.start.bills" = "支払いを予定するとスコアが表示されます。";
+
+/* What's New 2.3: the financial health score is more precise */
+"whatsNew.v23.healthScore.title" = "健全性スコアがより正確に";
+
+/* What's New 2.3: what changed in the financial health score and how to raise it */
+"whatsNew.v23.healthScore.description" = "最後の記録からの日数を数えるようになり、3日間の猶予があります。予算を少し超えてもほとんど影響しません。スコアを上げるには、こまめに記録して上限に気をつけましょう。パネルの「資産状況」で確認できます。";
