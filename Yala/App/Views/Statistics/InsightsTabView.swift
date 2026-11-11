@@ -1036,7 +1036,8 @@ struct InsightsTabView: View {
             BudgetProgressBar(
                 percentage: budget.usagePercent,
                 color: budget.colorHex ?? "4A90D9",
-                isExceeded: budget.usagePercent >= 100,
+                // Rosa solo si te pasaste, como en Planificación: justo el límite no es pasarse (decisión 23 de 2.3).
+                isExceeded: BudgetRemainingLogic.isOver(limit: budget.limit, spent: budget.spent),
                 simplified: true
             )
             .frame(height: 6)

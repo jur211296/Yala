@@ -7184,6 +7184,8 @@
 "budgets.l9.perDay" = "每天可花 %@";
 "budgets.l9.countsAllExpenses" = "统计你的全部支出";
 "budgets.l9.atLimit" = "接近上限";
+"budgets.l9.reachedLimit" = "已达上限";
+"budgets.l9.overLimitWord" = "已超出";
 "budgets.l9.limitLabel" = "上限";
 "budgets.l9.whatCountsTitle" = "统计哪些支出？";
 "budgets.l9.allExpensesChip" = "我的全部支出";
@@ -8642,8 +8644,12 @@
 "bulkEdit.cannotEditSplitRecipeCategory" = "所选记录中有一条的你的部分已拆分成多行，其分类来自这些行。请在它的详情中通过“拆分你的部分”修改。";
 
 /* «Cuánto puedo gastar hoy» (2.3): el cupo del día de un presupuesto */
-"budgets.daily.canSpend" = "今天还能花 %@";
-"budgets.daily.overToday" = "今天超出 %@";
+"budgets.daily.plan" = "还剩 %1$@，共 %2$@：每天约 %3$@。";
+"budgets.daily.planFromStartOfDay" = "今天开始时还有 %2$@，可用 %1$@：每天约 %3$@。";
+"budgets.daily.lastDay" = "最后一天：还剩 %@。";
+"budgets.daily.lastDayFromStartOfDay" = "最后一天开始时还有 %@。";
+"budgets.daily.spentToday" = "今天已花 %@。";
+"budgets.daily.spentTodayAbove" = "今天已花 %1$@，比这多 %2$@。";
 
 /* «Correo del banco» (2.3): reenvío de los avisos del banco a Yala */
 "bankEmail.title" = "银行邮件";

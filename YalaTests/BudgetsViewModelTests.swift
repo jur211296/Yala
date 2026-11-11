@@ -26,13 +26,12 @@ struct BudgetsViewModelTests {
     }
 
     @MainActor
-    @Test("Status is exceeded when spending equals limit")
-    func statusExceededAtLimit() async {
+    @Test("Gastar justo el límite deja el presupuesto en Activos: llegaste, no te pasaste (decisión 23 de 2.3)")
+    func statusActiveAtExactLimit() async {
         let vm = BudgetsViewModel()
 
-        // Test logic: isActive=true, spending == limit → .exceeded
         let status = vm.calculateBudgetStatus(isActive: true, spending: 1000, limit: 1000)
-        #expect(status == .exceeded)
+        #expect(status == .active)
     }
 
     @MainActor

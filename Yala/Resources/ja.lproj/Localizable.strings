@@ -7184,6 +7184,8 @@
 "budgets.l9.perDay" = "1日あたり%@使えます";
 "budgets.l9.countsAllExpenses" = "すべての支出を対象にします";
 "budgets.l9.atLimit" = "上限間近";
+"budgets.l9.reachedLimit" = "上限に到達";
+"budgets.l9.overLimitWord" = "超過";
 "budgets.l9.limitLabel" = "上限";
 "budgets.l9.whatCountsTitle" = "対象にする支出は？";
 "budgets.l9.allExpensesChip" = "すべての支出";
@@ -8642,8 +8644,12 @@
 "bulkEdit.cannotEditSplitRecipeCategory" = "選択した記録の1件は負担分が行に分けられていて、カテゴリはその行から決まります。詳細の「負担分を分ける」から変更してください。";
 
 /* «Cuánto puedo gastar hoy» (2.3): el cupo del día de un presupuesto */
-"budgets.daily.canSpend" = "今日使えるのは%@";
-"budgets.daily.overToday" = "今日は%@超過";
+"budgets.daily.plan" = "%1$@、%2$@：1日あたり約%3$@。";
+"budgets.daily.planFromStartOfDay" = "今日の開始時点で%1$@、%2$@：1日あたり約%3$@。";
+"budgets.daily.lastDay" = "最終日：残り%@。";
+"budgets.daily.lastDayFromStartOfDay" = "最終日の開始時点で%@。";
+"budgets.daily.spentToday" = "今日はここまで%@。";
+"budgets.daily.spentTodayAbove" = "今日はここまで%1$@で、それより%2$@多めです。";
 
 /* «Correo del banco» (2.3): reenvío de los avisos del banco a Yala */
 "bankEmail.title" = "銀行のメール";

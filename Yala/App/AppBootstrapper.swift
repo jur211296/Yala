@@ -1349,6 +1349,10 @@ final class AppBootstrapper {
         if UITestHooks.seedTodayRecord {
             DevSeedTodayRecord.create(in: context)
         }
+        // Cuatro presupuestos con lo gastado exacto: al día, en el límite, justo al límite y pasado (decisión 23 de 2.3).
+        if UITestHooks.seedBudgetStates {
+            DevSeedBudgetStates.create(in: context)
+        }
         // Un gasto sin categoría: el trozo «Sin categoría» de la tarta y los rankings (decisión A, 2026-10-23).
         if UITestHooks.seedUncategorizedExpense {
             DevSeedUncategorizedExpense.create(in: context)
