@@ -422,7 +422,7 @@ struct ActivationRestoreDiscardTests {
         // aviso pasa por ese único borrado; la tabla de `ICloudWipeScope.lateNotice` la fija
         // `ActivationLateNoticeKeepsGroupsTests`.
         let late = try Self.call(of: "LateICloudMirrorNoticeView(", in: src)
-        #expect(late.contains("performWipe: { await performLateICloudWipe(finishingPendingWipe: notice == .wipeLeftHalfway) }"), """
+        #expect(late.contains("performWipe: { await performLateICloudWipe(finishingPendingWipe: notice.finishesPendingWipe) }"), """
             el aviso del espejo tardío dejó de pasar por `performLateICloudWipe`. Con un scope escrito a mano, quien
             activó Yala completo vuelve a perder sus grupos (`.handover`), o el Welcome deja de sellar el dominio de
             otra persona (`.importedRows`). Tramo leído: \(late)

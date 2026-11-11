@@ -1397,6 +1397,12 @@ struct ProfileView: View {
                     // muerto el resto de la sesión, sin `onDismiss` que rescate porque nunca se
                     // presentó. Es el modo de fallo de la regla (4) de Presentaciones.
                     RouterEntryGate.shared.submit(.presentGroupsSignIn(pendingJoin: ""))
+                }, onFinishPendingICloudWipe: { notice in
+                    // Revisión 2.3, decisión 57: terminar el borrado pendiente es la hoja que ya lo hace en el arranque,
+                    // anclada en `ContentView`. Mismo molde que arriba: este sheet se cierra y el router retiene el aviso
+                    // hasta que el anchor quede libre.
+                    dismiss()
+                    RouterEntryGate.shared.submit(.presentLateICloudMirrorNotice(notice))
                 })
             case .yalaAccount:
                 // §3.3.5: mapa/explainer del enlace privado ↔ nube. Los desenlaces disparan el @State

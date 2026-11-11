@@ -439,12 +439,58 @@ nonisolated enum LateICloudNotice: Equatable, Sendable, Identifiable {
     /// Un borrado de iCloud que la persona pidió se canceló al activar la nube. Solo informa: en la nube no hay nada que
     /// ofrecer terminar.
     case wipeCancelledInCloud
+    /// La persona eligió en Ajustes «Terminar de borrar y empezar de cero» con un borrado armado que no llegó a empezar
+    /// (revisión 2.3, decisión 57, opción 1 de Jürgen): abre en su «¿seguro?», que dice que se va también lo de iCloud.
+    /// El borrado a medias va por `.wipeLeftHalfway`, que ya lo cuenta.
+    case finishArmedWipe
+    /// Lo mismo con el borrado A MEDIAS: abre en el «¿seguro?» de «Terminar de borrar» (`.confirmingFinish`), no en la
+    /// pantalla del borrado a medias, cuyo botón principal es «Déjalo así»: lo contrario de lo que se acaba de elegir.
+    case finishHalfwayWipe
 
     var id: String {
         switch self {
         case .corpus(let corpus): return "corpus:\(corpus.id)"
         case .wipeLeftHalfway: return "wipeLeftHalfway"
         case .wipeCancelledInCloud: return "wipeCancelledInCloud"
+        case .finishArmedWipe: return "finishArmedWipe"
+        case .finishHalfwayWipe: return "finishHalfwayWipe"
         }
+    }
+
+    /// ¿Este aviso TERMINA el borrado que se armó, con su alcance (`performLateICloudWipe(finishingPendingWipe:)`)? El
+    /// del corpus EMPIEZA uno nuevo y el del borrado cancelado no borra.
+    var finishesPendingWipe: Bool {
+        switch self {
+        case .wipeLeftHalfway, .finishArmedWipe, .finishHalfwayWipe: return true
+        case .corpus, .wipeCancelledInCloud: return false
+        }
+    }
+
+    /// ¿Lo abrió Ajustes para terminar un borrado pendiente? Esos dos conservan el borrado como estaba si fallan sin tocar
+    /// nada, y su alcance (`LateICloudMirrorNoticeView.runPhase`).
+    var finishesFromSettings: Bool {
+        switch self {
+        case .finishArmedWipe, .finishHalfwayWipe: return true
+        case .corpus, .wipeLeftHalfway, .wipeCancelledInCloud: return false
+        }
+    }
+
+    /// El aviso que termina el borrado pendiente desde Ajustes, en su «¿seguro?»: el de a medias o el de sin empezar.
+    static func finishingPendingWipe(leftHalfway: Bool) -> LateICloudNotice {
+        leftHalfway ? .finishHalfwayWipe : .finishArmedWipe
+    }
+
+    /// **¿Terminar el borrado pendiente se lleva también los grupos de este dispositivo?** Con el alcance `.handover`
+    /// (la puerta privada del Welcome, o un borrado sin alcance apuntado) se purgan el dominio de Grupos y su sesión. Es
+    /// la MISMA resolución que `ContentView.performLateICloudWipe(finishingPendingWipe: true)`: los textos lo dicen solo
+    /// cuando es verdad (revisión 2.3, decisión 57, review adversarial).
+    static func finishingPendingWipePurgesGroups(
+        leftHalfway: Bool,
+        armedWith: ICloudWipeScope? = StorageModePersistence.icloudCorpusWipeScope(),
+        sessionBornFromFullActivation: Bool = PrivateSessionMark.isBornFromFullActivation()
+    ) -> Bool {
+        ICloudWipeScope.lateNotice(
+            .resolve(finishingPendingWipe: true, leftHalfway: leftHalfway, armedWith: armedWith),
+            sessionBornFromFullActivation: sessionBornFromFullActivation).purgesGroupsDomain
     }
 }

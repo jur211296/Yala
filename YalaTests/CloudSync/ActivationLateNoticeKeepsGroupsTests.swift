@@ -209,7 +209,7 @@ struct ActivationLateNoticeKeepsGroupsTests {
         let src = try Self.code("Yala/App/ContentView.swift")
 
         let sheet = try Self.balanced(after: "LateICloudMirrorNoticeView(", open: "(", close: ")", in: src)
-        #expect(sheet.contains("performWipe: { await performLateICloudWipe(finishingPendingWipe: notice == .wipeLeftHalfway) }"),
+        #expect(sheet.contains("performWipe: { await performLateICloudWipe(finishingPendingWipe: notice.finishesPendingWipe) }"),
                 "Tramo leído: \(sheet)")
         #expect(sheet.contains("onWiped: { settleAfterLateICloudWipe() }"), "Tramo leído: \(sheet)")
 

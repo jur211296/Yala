@@ -4624,9 +4624,9 @@
 "storage.adopt.title" = "Cloud inschakelen op dit apparaat";
 "storage.adopt.body" = "Dit account heeft je gegevens al in de cloud. Laten we het inschakelen op dit apparaat.";
 "storage.adopt.button" = "Inschakelen op dit apparaat";
-"storage.revert.title" = "Terug naar iCloud";
-"storage.revert.body" = "Ga terug naar de privémodus. Je gegevens staan dan op je apparaat en in je iCloud, zonder iets te verliezen.";
-"storage.revert.button" = "Terug naar iCloud";
+"storage.revert.title" = "Terug naar je iCloud";
+"storage.revert.body" = "Je gegevens komen terug op dit apparaat en in je iCloud. Voordat je begint, vertellen we wat er met alles gebeurt.";
+"storage.revert.button" = "Terug naar je iCloud";
 "storage.revert.ineligible" = "Je kunt nu niet terug naar iCloud vanaf dit apparaat.";
 "storage.sync.title" = "Synchronisatie";
 "storage.sync.upToDate" = "Alles gesynchroniseerd";
@@ -4645,12 +4645,9 @@
 "storage.confirm.migrate2Title" = "Weet je het zeker?";
 "storage.confirm.migrate2Body" = "De cloud wordt ingeschakeld voor dit apparaat.";
 "storage.confirm.migrate2Confirm" = "Ja, cloud inschakelen";
-"storage.confirm.revertTitle" = "Terug naar iCloud?";
-"storage.confirm.revertBody" = "Je gegevens staan weer op dit apparaat en in je iCloud. Je verliest niets.";
 "storage.confirm.revertContinue" = "Doorgaan";
 "storage.confirm.revert2Title" = "Weet je het zeker?";
 "storage.confirm.revert2Body" = "De cloud wordt uitgeschakeld voor dit apparaat.";
-"storage.confirm.revert2Confirm" = "Ja, terug naar iCloud";
 "storage.errors.title" = "Er ging iets mis";
 "storage.errors.generic" = "Er ging iets niet goed. Probeer het opnieuw.";
 "storage.errors.adoptOtherAccount" = "Dit is niet het account dat je op dit apparaat aan het inschakelen was. Probeer het opnieuw met hetzelfde account.";
@@ -5207,8 +5204,6 @@
 /* Alcance del desenlace Eliminar mi cuenta */
 "settings.yalaAccountDeleteScope" = "Alles wordt verwijderd, voorgoed.";
 
-/* Frase de que la Reversa ES el desenlace funcional (§3.3.5) */
-"storage.revert.desenlaceNote" = "Zo ontkoppel je je account van dit apparaat: het wordt gepauzeerd voor als je terugkomt.";
 
 /* Header de la subseccion Tu cuenta en Seguridad (§3.2) */
 "settings.accountSubsectionTitle" = "Je account";
@@ -6466,13 +6461,24 @@
 "storage.pendingICloudWipe.title" = "Een verwijdering is niet klaar";
 
 /* Dialog body: the cloud cannot finish that deletion; activating now cancels it */
-"storage.pendingICloudWipe.body" = "Je vroeg eerder om je iCloud-gegevens te wissen en dat is niet afgerond. Als je de cloud aanzet, wordt dat wissen geannuleerd.";
+"storage.pendingICloudWipe.body" = "Je vroeg om je gegevens te verwijderen en opnieuw te beginnen, en dat is niet afgerond. Als je de cloud inschakelt, gebeurt die verwijdering niet en blijven je iCloud-gegevens staan.";
 
 /* Dialog button: activate the cloud and cancel the pending iCloud deletion */
-"storage.pendingICloudWipe.proceed" = "Aanzetten zonder wissen";
+"storage.pendingICloudWipe.proceed" = "Inschakelen en mijn iCloud-gegevens houden";
 
 /* Dialog cancel button: do not activate the cloud, keep the pending iCloud deletion */
 "storage.pendingICloudWipe.wait" = "Niet nu";
+"storage.pendingICloudWipe.bodyHalfway" = "Wat in je iCloud stond, is al verwijderd. Als je de cloud inschakelt, gaat wat er op dit apparaat over is naar je Yala-account.";
+"storage.pendingICloudWipe.proceedHalfway" = "Inschakelen met wat hier over is";
+"storage.pendingICloudWipe.proceedDetail" = "De verwijdering gebeurt niet: je schakelt de cloud in en je iCloud-gegevens blijven daar staan.";
+"storage.pendingICloudWipe.proceedDetailHalfway" = "De verwijdering wordt niet afgerond: je schakelt de cloud in met wat er op dit apparaat over is.";
+"storage.pendingICloudWipe.finish" = "Verwijderen afronden en opnieuw beginnen";
+"storage.pendingICloudWipe.finishDetail" = "Je gegevens worden van dit apparaat en uit je iCloud verwijderd. Er blijft geen kopie.";
+"storage.pendingICloudWipe.finishDetailHalfway" = "Wat er op dit apparaat over is, wordt verwijderd. Er blijft geen kopie.";
+"storage.pendingICloudWipe.finishConfirmBody" = "Je gegevens worden van dit apparaat en uit je iCloud verwijderd, ook wat je sindsdien hebt gemaakt, en je begint opnieuw. Er blijft geen kopie.";
+"storage.pendingICloudWipe.finishDetailWithGroups" = "Je gegevens worden van dit apparaat en uit je iCloud verwijderd. Er blijft geen kopie. Ook je groepen en je Yala-account verdwijnen van dit apparaat.";
+"storage.pendingICloudWipe.finishDetailHalfwayWithGroups" = "Wat er op dit apparaat over is, wordt verwijderd. Er blijft geen kopie. Ook je groepen en je Yala-account verdwijnen van dit apparaat.";
+"storage.pendingICloudWipe.finishConfirmBodyWithGroups" = "Je gegevens worden van dit apparaat en uit je iCloud verwijderd, ook wat je sindsdien hebt gemaakt, en je begint opnieuw. Er blijft geen kopie. Ook je groepen en je Yala-account verdwijnen van dit apparaat.";
 
 /* Sheet title on launch in cloud mode: a pending iCloud deletion was cancelled */
 "welcome.privateICloud.cancelledInCloudTitle" = "Een verwijdering is niet afgerond";
@@ -6732,15 +6738,10 @@
 /* Volver a iCloud: datos previos en el iCloud del teléfono (reverse-to-icloud-merges-prior-icloud-data-without-asking) */
 "storage.revert.prior.checking" = "Je iCloud wordt gecontroleerd…";
 "storage.revert.prior.title" = "Je iCloud heeft al Yala-gegevens";
-"storage.revert.prior.body" = "De iCloud van dit apparaat heeft Yala-gegevens die niet in je account staan: %@. Als je ze toevoegt, verschijnen ze naast die van jou. Als je zonder begint, worden ze uit je iCloud verwijderd.";
-"storage.revert.prior.bodyNoCount" = "De iCloud van dit apparaat heeft Yala-gegevens die niet in je account staan. Als je ze toevoegt, verschijnen ze naast die van jou. Als je zonder begint, worden ze uit je iCloud verwijderd.";
 "storage.revert.prior.groupRecords" = "%d groepsrecords";
 "storage.revert.prior.groupsNote" = "Groepsrecords kunnen zonder hun groep binnenkomen.";
 "storage.revert.prior.merge" = "Toevoegen aan mijn gegevens";
 "storage.revert.prior.discard" = "Zonder beginnen";
-"storage.revert.prior.discardConfirmTitle" = "Uit je iCloud verwijderen?";
-"storage.revert.prior.discardConfirmBody" = "Ze worden verwijderd uit je iCloud en van de apparaten die die met deze Apple ID gebruiken. Er blijft geen kopie en we kunnen ze niet terughalen. Daarna begint de terugkeer naar iCloud.";
-"storage.revert.prior.discardConfirm" = "Verwijderen en terug naar iCloud";
 "storage.revert.prior.checkFailedTitle" = "We konden je iCloud niet controleren";
 "storage.revert.prior.checkFailedBody" = "Voordat je teruggaat, kijken we of je iCloud al Yala-gegevens heeft, zodat we ze niet ongevraagd mengen. Misschien ligt het aan je verbinding: probeer het opnieuw.";
 "storage.revert.prior.stalledTitle" = "iCloud deed er te lang over om te reageren";
@@ -6750,6 +6751,26 @@
 "storage.revert.prior.wiping" = "Oude gegevens worden verwijderd… %d tot nu toe";
 "storage.revert.prior.noAccountTitle" = "Log in bij iCloud op dit apparaat";
 "storage.revert.prior.noAccountBody" = "Voordat je teruggaat, kijken we wat er in je iCloud staat, en dit apparaat is niet ingelogd bij iCloud. Log in via Instellingen en probeer het opnieuw.";
+"storage.revert.sheet.title" = "Terug naar je iCloud";
+"storage.revert.sheet.dataTitle" = "Je gegevens";
+"storage.revert.sheet.dataDetail" = "Komen naar dit apparaat en gaan naar je iCloud.";
+"storage.revert.sheet.accountTitle" = "Je Yala-account";
+"storage.revert.sheet.accountDetail" = "Blijft ingelogd voor je groepen.";
+"storage.revert.sheet.storedTitle" = "Wat erin staat";
+"storage.revert.sheet.storedDetail" = "Je financiën blijven bewaard, ongebruikt.";
+"storage.revert.sheet.cloudAgainTitle" = "Ermee terug naar de cloud";
+"storage.revert.sheet.cloudAgainDetail" = "Kan vandaag niet.";
+"storage.revert.sheet.continue" = "Doorgaan";
+"storage.revert.sheet.priorBody" = "In de iCloud van dit apparaat staan Yala-gegevens die niet in je account staan: %@.";
+"storage.revert.sheet.priorBodyNoCount" = "In de iCloud van dit apparaat staan Yala-gegevens die niet in je account staan.";
+"storage.revert.sheet.mergeDetail" = "Ze verschijnen naast die van jou.";
+"storage.revert.sheet.discardDetail" = "Verwijdert ze uit je iCloud en van de apparaten die die met deze Apple ID gebruiken. Er blijft geen kopie.";
+"storage.revert.sheet.confirmTitle" = "Terug naar je iCloud?";
+"storage.revert.sheet.confirmMerge" = "Toegevoegd aan je gegevens: %@.";
+"storage.revert.sheet.confirmMergeNoCount" = "De Yala-gegevens uit je iCloud worden aan die van jou toegevoegd.";
+"storage.revert.sheet.confirmDiscard" = "Verwijderd uit je iCloud: %@. Er blijft geen kopie en we kunnen ze niet terughalen.";
+"storage.revert.sheet.confirmDiscardNoCount" = "De Yala-gegevens uit je iCloud worden verwijderd. Er blijft geen kopie en we kunnen ze niet terughalen.";
+"storage.revert.sheet.confirmDiscardButton" = "Verwijderen en terug naar je iCloud";
 
 /* Swipe action: hides a group expense draft from the Inbox on this phone only */
 "inbox.hideHere" = "Hier verwijderen";

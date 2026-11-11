@@ -42,7 +42,7 @@ paths:
 
 ## Índice de reglas (115)
 
-> Este fichero son **330 KB en 115 reglas largas**. No lo leas entero: localiza la regla
+> Este fichero son **331 KB en 115 reglas largas**. No lo leas entero: localiza la regla
 > aquí y lee **solo su tramo** con `sed -n '<linea>,<linea+N>p'`.
 > Los números de línea se desplazan al editar — regenera con
 > `python3 scripts/indexar_doc.py <fichero> --apply`.
@@ -134,36 +134,36 @@ paths:
 | `L1732` | La marca «a medias» ya no es solo del aviso tardío: la escribe también la puerta privada, y quién la TERMINA depende del | 2.9 KB |
 | `L1734` | El arm del borrado del corpus de iCloud se retira al SALIR de la puerta desde cualquier fase, y en la nube no se reanuda | 5.8 KB |
 | `L1736` | En la puerta privada del Welcome, un teléfono que no se deja leer NO tiene datos: tiene su propia pantalla (2026-10-12). | 1.4 KB |
-| `L1738` | El alcance del borrado del aviso del espejo tardío lo decide QUÉ borrado es: empezar uno se queda en lo personal, termin | 3.7 KB |
-| `L1740` | Los grupos que el aviso tardío conserva son de la persona que vuelve al onboarding, también si vuelve al Welcome (2026-1 | 2.9 KB |
-| `L1742` | `ubiquityIdentityToken` mide iCloud DRIVE, no CloudKit — y `.localNoMirror` adjunta el espejo igual, así que usarlo como | 2.0 KB |
-| `L1744` | Un mount del store personal NOMBRA su contenedor: `.automatic` toma el PRIMERO de los entitlements, y en `Yala Dev` ese  | 1.2 KB |
-| `L1746` | El testigo del mount MIENTE en los hosts de test, y por eso `attachesCloudKitMirror` necesita un seam en cualquier gate  | 2.6 KB |
-| `L1748` | Una salida que borra lo local con el espejo montado borra ARCHIVOS antes del mount, nunca FILAS, y solo después de confi | 1.7 KB |
-| `L1750` | Lo que espera en el App Group no está en el historial: el cierre privado lo materializa ANTES de contar, y con el borrad | 1.4 KB |
-| `L1752` | `CKDatabase.modifyRecordZones` solo LANZA por un fallo de la operación entera: los fallos por ZONA llegan dentro del tup | 1.1 KB |
-| `L1754` | Un campo Codable NUEVO y no opcional en el snapshot del App Group apaga TODOS los widgets, y el DTO está DUPLICADO en do | 2.1 KB |
-| `L1756` | «ARCHIVOS, nunca FILAS» es una regla sobre el ESPEJO, y el store de Grupos tiene otro camino de salida: su DRAIN. Ahí lo | 4.6 KB |
-| `L1758` | Un token que no llega NO es una sesión caducada: pregúntale al SDK si la conserva (2026-09-15). | 2.4 KB |
-| `L1760` | El canal personal separa lo mismo desde el 2026-09-16, y cada sitio decide por su cuenta | 2.9 KB |
-| `L1762` | La puerta para volver a entrar en la nube es UNA, y el aviso del cierre la nombra (2026-09-25). | 2.1 KB |
-| `L1783` | Que `signOut()` volviera no dice que la sesión se fuera: pregúntale a su valor de retorno (2026-09-26). | 3.1 KB |
-| `L1811` | Tras un borrado de filas que conserva los grupos (`.importedRows`), las patas de las liquidaciones vuelven por la CONVER | 2.4 KB |
-| `L1813` | «Vaciar datos» de Ajustes es el TERCER borrado que conserva los grupos, y pide lo mismo (2026-09-27). | 2.2 KB |
-| `L1814` | El dispositivo que RECIBE la señal de «Vaciar datos» pide la convergencia SOLO si su borrado se lleva lo que el origen y | 2.9 KB |
-| `L1815` | Aprobar el borrador de una liquidación deja una MARCA: un borrador aprobado NUEVO, enlazado a la transacción real (2026- | 5.2 KB |
-| `L1816` | Si cambia el importe de una liquidación ya aprobada, el Inbox AVISA, y el aviso no se enlaza a la transacción (2026-10-0 | 1.7 KB |
-| `L1817` | El receptor tardío de «Vaciar datos» se lleva solo lo que existía al vaciar: corta por la hora de la señal (2026-09-28). | 3.6 KB |
-| `L1818` | El libro de conservados al desasociar frena el puente solo mientras el movimiento conservado SIGUE en el Panel (2026-10- | 3.3 KB |
-| `L1819` | Una fila de grupo SIN cuenta se clasifica con UNA regla, y «no se sabe» no se toca (2026-10-16). | 2.5 KB |
-| `L1820` | «Vaciar datos» dice QUÉ repone, y el receptor del orden normal repone el resto (2026-09-28). | 3.1 KB |
-| `L1821` | Y lo que el origen promete y no repone, lo repone el receptor pasadas 72 horas (2026-09-28). | 2.8 KB |
-| `L1822` | «Vaciar datos» ya no repite la bienvenida, y el receptor tiene que conservar lo mismo que el origen (2026-10-29). | 1.7 KB |
-| `L1837` | El outbox de Grupos tiene DUEÑO por fila, y la subida solo manda lo de la sesión (2026-09-28). | 7.8 KB |
-| `L1909` | El sello del claim se olvida cuando el teléfono cambia de persona (2026-09-29). | 2.4 KB |
-| `L1932` | La pantalla de la ida y la vuelta pinta pasos con su cifra, y la cifra solo INFORMA (2026-10-23). | 1.8 KB |
-| `L1950` | El drain no carga tablas ENTERAS en cada vuelta: corre en el hilo principal (2026-10-31, YALA-IOS-2). | 2.0 KB |
-| `L1970` | La subida de la ida funde las tasas duplicadas ANTES del baseline del historial (2026-11-05, card i9wh). | 1.8 KB |
+| `L1738` | El alcance del borrado del aviso del espejo tardío lo decide QUÉ borrado es: empezar uno se queda en lo personal, termin | 4.7 KB |
+| `L1750` | Los grupos que el aviso tardío conserva son de la persona que vuelve al onboarding, también si vuelve al Welcome (2026-1 | 2.9 KB |
+| `L1752` | `ubiquityIdentityToken` mide iCloud DRIVE, no CloudKit — y `.localNoMirror` adjunta el espejo igual, así que usarlo como | 2.0 KB |
+| `L1754` | Un mount del store personal NOMBRA su contenedor: `.automatic` toma el PRIMERO de los entitlements, y en `Yala Dev` ese  | 1.2 KB |
+| `L1756` | El testigo del mount MIENTE en los hosts de test, y por eso `attachesCloudKitMirror` necesita un seam en cualquier gate  | 2.6 KB |
+| `L1758` | Una salida que borra lo local con el espejo montado borra ARCHIVOS antes del mount, nunca FILAS, y solo después de confi | 1.7 KB |
+| `L1760` | Lo que espera en el App Group no está en el historial: el cierre privado lo materializa ANTES de contar, y con el borrad | 1.4 KB |
+| `L1762` | `CKDatabase.modifyRecordZones` solo LANZA por un fallo de la operación entera: los fallos por ZONA llegan dentro del tup | 1.1 KB |
+| `L1764` | Un campo Codable NUEVO y no opcional en el snapshot del App Group apaga TODOS los widgets, y el DTO está DUPLICADO en do | 2.1 KB |
+| `L1766` | «ARCHIVOS, nunca FILAS» es una regla sobre el ESPEJO, y el store de Grupos tiene otro camino de salida: su DRAIN. Ahí lo | 4.6 KB |
+| `L1768` | Un token que no llega NO es una sesión caducada: pregúntale al SDK si la conserva (2026-09-15). | 2.4 KB |
+| `L1770` | El canal personal separa lo mismo desde el 2026-09-16, y cada sitio decide por su cuenta | 2.9 KB |
+| `L1772` | La puerta para volver a entrar en la nube es UNA, y el aviso del cierre la nombra (2026-09-25). | 2.1 KB |
+| `L1793` | Que `signOut()` volviera no dice que la sesión se fuera: pregúntale a su valor de retorno (2026-09-26). | 3.1 KB |
+| `L1821` | Tras un borrado de filas que conserva los grupos (`.importedRows`), las patas de las liquidaciones vuelven por la CONVER | 2.4 KB |
+| `L1823` | «Vaciar datos» de Ajustes es el TERCER borrado que conserva los grupos, y pide lo mismo (2026-09-27). | 2.2 KB |
+| `L1824` | El dispositivo que RECIBE la señal de «Vaciar datos» pide la convergencia SOLO si su borrado se lleva lo que el origen y | 2.9 KB |
+| `L1825` | Aprobar el borrador de una liquidación deja una MARCA: un borrador aprobado NUEVO, enlazado a la transacción real (2026- | 5.2 KB |
+| `L1826` | Si cambia el importe de una liquidación ya aprobada, el Inbox AVISA, y el aviso no se enlaza a la transacción (2026-10-0 | 1.7 KB |
+| `L1827` | El receptor tardío de «Vaciar datos» se lleva solo lo que existía al vaciar: corta por la hora de la señal (2026-09-28). | 3.6 KB |
+| `L1828` | El libro de conservados al desasociar frena el puente solo mientras el movimiento conservado SIGUE en el Panel (2026-10- | 3.3 KB |
+| `L1829` | Una fila de grupo SIN cuenta se clasifica con UNA regla, y «no se sabe» no se toca (2026-10-16). | 2.5 KB |
+| `L1830` | «Vaciar datos» dice QUÉ repone, y el receptor del orden normal repone el resto (2026-09-28). | 3.1 KB |
+| `L1831` | Y lo que el origen promete y no repone, lo repone el receptor pasadas 72 horas (2026-09-28). | 2.8 KB |
+| `L1832` | «Vaciar datos» ya no repite la bienvenida, y el receptor tiene que conservar lo mismo que el origen (2026-10-29). | 1.7 KB |
+| `L1847` | El outbox de Grupos tiene DUEÑO por fila, y la subida solo manda lo de la sesión (2026-09-28). | 7.8 KB |
+| `L1919` | El sello del claim se olvida cuando el teléfono cambia de persona (2026-09-29). | 2.4 KB |
+| `L1942` | La pantalla de la ida y la vuelta pinta pasos con su cifra, y la cifra solo INFORMA (2026-10-23). | 1.8 KB |
+| `L1960` | El drain no carga tablas ENTERAS en cada vuelta: corre en el hilo principal (2026-10-31, YALA-IOS-2). | 2.0 KB |
+| `L1980` | La subida de la ida funde las tasas duplicadas ANTES del baseline del historial (2026-11-05, card i9wh). | 1.8 KB |
 
 <!-- INDICE:fin -->
 
@@ -1736,6 +1736,16 @@ LWW la que había cambiado otro teléfono ya en v5. Lo fija `CreditCardCycleSync
 - **En la puerta privada del Welcome, un teléfono que no se deja leer NO tiene datos: tiene su propia pantalla (2026-10-12).** Ticket `private-gate-device-notice-has-no-forward-exit`, decisión de Jürgen «solo lo alcanzable». El detector del Welcome falla CERRADO (`checkHasWelcomeDeviceData`), y en la puerta eso enseñaba «Ya hay datos en este teléfono» con borrar o volver sin un dato detrás. La puerta lee ahora `ContentView.readWelcomeDeviceDataForTheGate` (`DeviceDataReading`: `none` · `present` · `unreadable`, regla pura `deviceDataReading(personal:groups:groupsKeptForThisPerson:)`) y `decide(…, deviceData:)` da `.deviceUnreadable`: «No pudimos revisar este teléfono» con «Reintentar» (vuelve a medir) y «Volver» (`leaveGate`), sin ningún borrado. El corpus de iCloud sigue ganando. **Solo la puerta**: el alert de «Es mi primera vez» y las puertas de organizador e invitado conservan el detector que falla cerrado, a propósito. Un `catch` del lector no escribe valor: lo no leído se queda `nil`. Seam `-uitest-private-gate-device-reading <present|unreadable>` (finge la lectura; el simulador nunca llega por sí solo). Residual: con un fetch que falla SIEMPRE, la rama privada queda cerrada (antes ofrecía borrar). Y «Activar Yala completo» no se añadió: la pantalla de datos del teléfono solo es alcanzable, inferido, desde un alta de grupos a medias (`groups-entry-left-half-done-reaches-the-private-gate-with-group-rows`).
 
 - **El alcance del borrado del aviso del espejo tardío lo decide QUÉ borrado es: empezar uno se queda en lo personal, terminar uno usa el alcance con que se armó (2026-09-27).** Quien se lleva el testigo del espejo tardío —el Welcome privado sin iCloud o sin red, y «Activar Yala completo → privado» igual— sigue adelante: la validación se aplaza, no se tira. Su aviso borraba con `.handover` y días después «Empezar de cero» le purgaba los grupos (a los que se unió después de elegir privado, o los que la activación existía para conservar), con su sesión de Grupos y el sello. ⇒ todo borrado del aviso pasa por **un solo** `ContentView.performLateICloudWipe(finishingPendingWipe:)`, cuyo alcance es `ICloudWipeScope.lateNotice(_:sessionBornFromFullActivation:)`: `.startFresh` (el aviso con el corpus) es `.importedRows` para todas las sesiones; `.finishPending` («Terminar de borrar» del aviso a medias y la reanudación del arranque) es el alcance que ese borrado APUNTÓ al entrar. Seis cosas que no se tocan sin reabrirlo: **(1)** empezar es `.importedRows` porque el testigo solo lo dejan dos puertas y las dos garantizan que los grupos son de la persona: la del Welcome sigue a `startFreshPrivateOnboarding`, que solo arranca con el teléfono vacío —cuenta `SplitGroup`— o tras borrarlo con el handover; la de la activación existe para conservarlos. **Si aparece una tercera puerta que deje el testigo, revisa esa premisa**; **(2)** el apunte lo escribe el borrado, no las vistas: `performICloudCorpusWipe` llama a `StorageModePersistence.recordICloudCorpusWipeScope(scope)` antes de su primer `await` (solo con el arm puesto). Es un sub-estado del borrado pendiente (`cloudSync.icloudCorpusWipeScope`): sobrevive al paso a «a medias», se va cuando no queda ni arm ni «a medias», y un borrado nuevo lo sobrescribe **solo si llega a las filas**: `.zoneOnly` no deja nada que terminar, y apuntado encima de un «a medias» ajeno haría que ese se terminara solo con la zona. Qué borrado es lo decide `ICloudWipeScope.LateWipe.resolve`: termina quien lo dice y también cualquiera con «a medias» puesto (el «Terminar de borrar» del aviso con el corpus cuyo propio borrado quedó a medias sigue presentado como `.corpus`). Así el borrado a medias de la puerta del Welcome (`.leaveForLateNotice`) se sigue terminando con su `.handover` y sella el dominio de la persona anterior, y el del propio aviso no se lleva los grupos; **(3)** sin apunte (un arm de un build anterior) manda de dónde nació la sesión: `PrivateSessionMark.isBornFromFullActivation` ? `.importedRows` : `.handover` — el criterio de antes. La marca la escribe solo `completeFullActivation`, antes de encender el eje (kill-safe), vive y muere con el eje, y el borrado del Welcome la retira antes de armarse (`clearBornFromFullActivation`); **(4)** los `rawValue` de `ICloudWipeScope` son formato persistido: renombrar un case deja los apuntes viejos en el alcance de reserva; **(5)** con los grupos conservados, sus `TransactionItem` puenteadas se van con el resto: se pide `GroupsBridgeRestoreConvergenceStore.markSettlementLegsPending()` y después `markPending()` —en ese orden, y es el mismo par en «Restaurar → Empezar desde cero» de la activación— (ver la entrada de las liquidaciones tras un borrado de filas); **(6)** tras el borrado las señales se RE-MIDEN siempre (`settleAfterLateICloudWipe`): el alcance ya no se puede releer ahí —sus marcas se retiran antes— y `hasExistingData` cuenta también los grupos. El copy no cambia: «tus registros, tus cuentas y tus presupuestos» ya describe `.importedRows`. Tickets `activation-private-gate-leaves-a-late-notice-that-purges-groups` y `late-notice-of-a-welcome-private-session-purges-groups-joined-later`.
+  **Y el alcance se pierde con el arm (review adversarial del 2026-11-11, decisión 57 de la revisión 2.3).**
+  `clearICloudCorpusWipeArm` y `disarmFailedICloudCorpusWipe` borran también `icloudCorpusWipeScope` si no hay «a
+  medias», y `armICloudCorpusWipe` no lo vuelve a poner: un reintento tras un fallo sin daños rearma SIN alcance y
+  cae en `.handover` (purga los grupos que el apunte conservaba). ⇒ quien termine un borrado YA armado (hoy, «Terminar
+  de borrar y empezar de cero» de Ajustes: `LateICloudNotice.finishArmedWipe` / `.finishHalfwayWipe`) guarda el
+  alcance al abrir y lo vuelve a apuntar al rearmar, y en el fallo sin daños NO retira el arm: ya estaba antes de que
+  la persona llegara. Un texto que diga qué se lleva terminar pregunta el alcance con
+  `LateICloudNotice.finishingPendingWipePurgesGroups`, la misma resolución que el borrado. Pin:
+  `PendingICloudWipeCloudWiringTests` (`settingsFinish_keepsTheWipeAndItsScope`,
+  `finishPurgesGroups_onlyWithTheHandoverScope`).
 
 - **Los grupos que el aviso tardío conserva son de la persona que vuelve al onboarding, también si vuelve al Welcome (2026-10-06).** Ticket `groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`, decisión A de Jürgen. Tras «Empezar de cero» del aviso (`.importedRows`), «Cancelar» en el paso 1 del onboarding lleva al Welcome, y el Welcome contaba esos grupos como datos de OTRA persona: «Es mi primera vez → privado» ofrecía el handover (grupos, sesión, sello). ⇒ el aviso deja `LateNoticeKeptGroupsMark` y el Welcome decide con `WelcomeKeptGroupsLogic`. Cinco cosas que no se tocan sin reabrirlo: **(1)** la marca la escribe `performLateICloudWipe` en la rama `!scope.purgesGroupsDomain`, detrás del corte del fallo y antes de que el llamador desarme (un kill reanuda y la reescribe), **atada al `sub` de la sesión de Grupos** de ese momento (o a «sin sesión»), y **solo la invalida OTRA cuenta abierta**: sin sesión sigue valiendo, porque el guard cross-cuenta del Welcome cierra la sesión que la propia persona acaba de abrir y una caducada también se va (lo cazó la review: atarla a «la misma sesión o nada» devolvía el handover); **(2)** muere al completarse el onboarding (la transición en `ContentView` y el barrido del arranque `retireIfOnboardingCompleted`), dentro de `DataWipeService.wipeLocalGroupsDomain` y en el borrado del cierre de sesión. Un escritor nuevo del dominio que purgue grupos sin pasar por `wipeLocalGroupsDomain` tiene que retirarla; **(3)** con la marca, **ningún borrado del Welcome purga los grupos ni retira la sesión**: el de «Encontramos datos» de la puerta privada pasa a `.importedRows`, y los dos del teléfono (`performDeviceCorpusWipe` y el del alert, `ShellDataAlertsModifier.performFreshStartWipe`) borran solo lo personal, sin resetear preferencias, sin subir antes los cambios de grupos y con la convergencia de lo puenteado; «Es mi primera vez» sin datos personales no levanta el alert ni hace las cuatro limpiezas de la persona anterior, y el portal del relanzamiento no arma el retiro de la sesión. Nombre y divisa: los borra el que BORRA (la puerta privada y el alert, como siempre), no el camino que no borra nada. Un borrado nuevo del Welcome consulta `WelcomeKeptGroupsLogic`; **(4)** **el guard cross-cuenta de la nube y el borrado del teléfono ya decidido (`.freshStartDeviceWipe`, que pregunta qué queda) siguen con el detector entero** (`hasLocalDataNow`); **(5)** el término del ESPEJO de las puertas de organizador e invitación no cambia: con el espejo puesto (lo normal tras el aviso) vuelven al neutro igual, y esa vuelta es un cierre de sesión que sube los grupos y los recupera al volver a entrar; su término de DATOS (`checkHasWelcomeDeviceData`) solo decide con el mount neutro. Lo fijan `WelcomeKeptGroupsTests` y `WelcomeLateNoticeKeptGroupsUITests` (seam `-uitest-late-notice-kept-groups` + seed `solo-grupos-tras-aviso`, que no deja nada personal, con el handover real como control).
 
