@@ -33,6 +33,10 @@ struct VariationChip: View {
     /// - Income/Balance context: +% = purple (good, earned more), -% = pink (bad, earned less)
     var isExpenseContext: Bool = true
 
+    /// La Comparativa de Reportes (decisión 32 de 2.3): «igual» en vez de «= +0 %» y «nuevo» en vez de «N/A». El resto de
+    /// la app sigue con el signo y las siglas.
+    var usesWords: Bool = false
+
     // MARK: - Size Configuration
 
     enum ChipSize {
@@ -90,6 +94,9 @@ struct VariationChip: View {
         // Hide entirely when showVariations is OFF, or when the Panel says the month just started.
         if !appPreferences.showVariations || hidesPeriodVariations {
             EmptyView()
+        } else if usesWords, let variation, abs(variation) < 0.05 {
+            wordChip(L10n.UXL18.changeSame)
+                .accessibilityLabel(Self.accessibilityText(for: variation))
         } else if let variation = variation {
             // Show formatted variation percentage
             HStack(spacing: DS.Spacing.xxs) {
@@ -109,6 +116,8 @@ struct VariationChip: View {
                         .fill(variationColor.opacity(0.1))
                 )
                 .accessibilityLabel(Self.accessibilityText(for: variation))
+        } else if showNAWhenNil && usesWords {
+            wordChip(L10n.UXL18.changeNew)
         } else if showNAWhenNil {
             // Show "N/A" for items without previous data (when comparison is active)
             Text("N/A")
@@ -122,6 +131,19 @@ struct VariationChip: View {
                 )
         }
         // When variation is nil and showNAWhenNil is false, show nothing (for headers)
+    }
+
+    /// «igual» / «nuevo»: el mismo gris que «N/A», sin color de bueno o malo.
+    private func wordChip(_ text: String) -> some View {
+        Text(text)
+            .font(size.font)
+            .foregroundStyle(DS.Semantic.disabledForeground)
+            .padding(.horizontal, size.horizontalPadding)
+            .padding(.vertical, size.verticalPadding)
+            .background(
+                Capsule()
+                    .fill(DS.Semantic.neutralBackground)
+            )
     }
 }
 

@@ -7092,6 +7092,18 @@
 "report.l18.net.captionGainBefore" = "Income minus expenses. In %1$@ you had %2$@ left over.";
 /* Comparativa: igual, cuando antes faltó; %1$@ = «septiembre», %2$@ = monto */
 "report.l18.net.captionLossBefore" = "Income minus expenses. In %1$@ you were short by %2$@.";
+
+/* Comparativa: el chip de cambio cuando no cambió (antes «= +0 %») */
+"report.l18.change.same" = "same";
+
+/* Comparativa: el chip de cambio cuando antes no había nada (antes «N/A») */
+"report.l18.change.new" = "new";
+
+/* Comparativa: pie del neto con un tramo de días; %1$@ = «1–7 de octubre», %2$@ = monto */
+"report.l18.net.captionGainBeforeRange" = "Income minus expenses. Over %1$@ you had %2$@ left over.";
+
+/* Comparativa: igual, cuando en ese tramo faltó; %1$@ = «1–7 de octubre», %2$@ = monto */
+"report.l18.net.captionLossBeforeRange" = "Income minus expenses. Over %1$@ you were short by %2$@.";
 /* VoiceOver de una fila: %1$@ monto, %2$@ período, %3$@ monto anterior, %4$@ período anterior */
 "report.l18.row.amountsA11y" = "%1$@ in %2$@, %3$@ in %4$@";
 /* Desglosar: título del ejemplo de cómo quedará la tabla */
@@ -7144,6 +7156,21 @@
 "cashflow.l18.summary.surplus" = "Left over each month";
 /* Crear el plan: lo que falta al mes */
 "cashflow.l18.summary.shortfall" = "Short each month";
+
+/* Crear el plan sin ingresos a la vista: la pregunta */
+"cashflow.l18.income.title" = "How much do you get each month?";
+
+/* Crear el plan sin ingresos a la vista: por qué se pregunta */
+"cashflow.l18.income.body" = "We don't see any income in your records yet. Add this amount and your plan is complete.";
+
+/* Crear el plan sin ingresos a la vista: seguir sin escribir el ingreso */
+"cashflow.l18.income.unknown" = "I don't know yet";
+
+/* Resumen al crear el plan cuando la persona aún no sabe su ingreso (en vez de «Te faltan al mes») */
+"cashflow.l18.summary.incomeMissing" = "Your income is missing";
+
+/* Nombre de la línea del ingreso escrito si no hay ninguna categoría de ingreso */
+"cashflow.l18.income.lineName" = "What you get each month";
 /* Hoja del saldo inicial: lo que hay hoy en las cuentas; %@ = monto */
 "cashflow.l18.sheet.todayBalance" = "Today you have %@ in your accounts";
 /* Hoja del saldo inicial: usar el saldo de hoy */

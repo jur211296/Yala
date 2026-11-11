@@ -29,11 +29,22 @@ enum ComparativeLabelsLogic {
     }
 
     /// El nombre del período que se mira.
+    ///
+    /// Revisión 2.3, decisión 32 (opción A): un período EN CURSO («Este mes» el día 7) se nombra por el tramo que de
+    /// verdad entra («1–7 nov»), no por el mes entero, que es lo que hacía creer que la tabla comparaba noviembre
+    /// entero. El tramo acaba en el mismo día que el anterior (`ComparisonPhraseLogic.comparedInterval`): el último día
+    /// con movimientos, o hoy. Sin `mode` o sin alineación (mes pasado, rodantes, rango propio), el nombre de siempre.
     static func currentName(
         period: DetailPeriod, customRange: DateInterval?,
+        mode: ComparisonMode? = nil, dataEnd: Date? = nil,
         now: Date = .now, calendar: Calendar = .current, locale: Locale = AppLocale.current
     ) -> Name {
         let interval = period.dateInterval(customRange: customRange, now: now, calendar: calendar)
+        if let mode, let elapsed = elapsedInterval(
+            of: interval, period: period, mode: mode, dataEnd: dataEnd, now: now, calendar: calendar
+        ) {
+            return name(of: elapsed, now: now, calendar: calendar, locale: locale)
+        }
         switch period {
         case .thisMonth, .lastMonth:
             return monthName(of: interval.start, now: now, calendar: calendar, locale: locale)
@@ -42,6 +53,22 @@ enum ComparativeLabelsLogic {
         default:
             return name(of: interval, now: now, calendar: calendar, locale: locale)
         }
+    }
+
+    /// Lo que ya pasó de un período en curso: de su inicio al final del día de `asOf` (el último día con movimientos, o
+    /// hoy). `nil` si el período no se alinea con el anterior (`DateAlignmentHelper.aggregatePreviousNeedsAlignment`, la
+    /// misma puerta que recorta el anterior) o si ya terminó.
+    static func elapsedInterval(
+        of interval: DateInterval, period: DetailPeriod, mode: ComparisonMode, dataEnd: Date?,
+        now: Date, calendar: Calendar
+    ) -> DateInterval? {
+        guard DateAlignmentHelper.aggregatePreviousNeedsAlignment(period: period, comparisonMode: mode) else { return nil }
+        let asOf = dataEnd.map { min($0, now) } ?? now
+        let startOfDay = calendar.startOfDay(for: asOf)
+        guard startOfDay >= interval.start, startOfDay < interval.end,
+              let nextDay = calendar.date(byAdding: .day, value: 1, to: startOfDay),
+              let endOfDay = calendar.date(byAdding: .second, value: -1, to: nextDay) else { return nil }
+        return DateInterval(start: interval.start, end: min(endOfDay, interval.end))
     }
 
     /// El nombre del tramo con el que se compara (`nil` en «Todo el tiempo»).
@@ -84,11 +111,13 @@ enum ComparativeLabelsLogic {
         }
     }
 
-    /// La frase de arriba: «Octubre comparado con setiembre» o «Octubre comparado con el 1–21 de setiembre».
-    static func heading(current: Name, compared: Name) -> String {
-        compared.isDayRange
-            ? L10n.UXL18.headingRange(current.column, compared.inSentence)
-            : L10n.UXL18.heading(current.column, compared.inSentence)
+    /// La frase de arriba: «Octubre comparado con setiembre», «Octubre comparado con el 1–21 de setiembre» o, con un
+    /// tramo de días a cada lado (decisión 32 de 2.3), «1–7 de noviembre comparado con el 1–7 de octubre».
+    static func heading(current: Name, compared: Name, locale: Locale = AppLocale.current) -> String {
+        let currentText = current.isDayRange ? capitalizedFirst(current.inSentence, locale: locale) : current.column
+        return compared.isDayRange
+            ? L10n.UXL18.headingRange(currentText, compared.inSentence)
+            : L10n.UXL18.heading(currentText, compared.inSentence)
     }
 
     // MARK: - Nombres
