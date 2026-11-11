@@ -34,10 +34,14 @@ struct AIPrivacySettingsView: View {
     @State private var showRevokeInsightsDialog = false
     @State private var showRevokeCloudExploreDialog = false
     @State private var showChatUpgrade = false
+    @State private var showInsightsUpgrade = false
 
     /// Yala IA es de Pro: sin Pro su fila lleva la marca y encenderla abre la hoja de Pro, no el permiso (UX 2.2 ·
     /// L14-11, opción D). Antes se aceptaba el permiso y la función seguía bloqueada.
     private var isChatLocked: Bool { !FeatureGateService.shared.canAccess(.chatAssistant) }
+    /// Resumen con IA también es de Pro (`FeatureGateService.isProOnly`, `.smartInsightsAI`) y su fila no lo decía
+    /// (lote 10 de las mejoras necesarias 2.3). Misma regla que Yala IA: marca y hoja de Pro.
+    private var isInsightsLocked: Bool { !FeatureGateService.shared.canAccess(.smartInsightsAI) }
 
     var body: some View {
         // UX 2.2 · L14-11: cada función con el nombre que tiene en la app y una línea que dice qué hace. La línea va en
@@ -61,8 +65,12 @@ struct AIPrivacySettingsView: View {
                 Text(L10n.UXL14D.chatLine)
             }
             YalaSettingsSection {
-                YalaSettingsToggleRow(L10n.AIPrivacy.insightsRow, isOn: $insightsToggle)
-                    .accessibilityIdentifier("ai_privacy_insights_row")
+                YalaSettingsToggleRow(L10n.AIPrivacy.insightsRow, isOn: $insightsToggle) {
+                    if isInsightsLocked {
+                        ProBadge(size: .small)
+                    }
+                }
+                .accessibilityIdentifier("ai_privacy_insights_row")
             } footer: {
                 Text(L10n.UXL14D.insightsLine)
             }
@@ -129,7 +137,11 @@ struct AIPrivacySettingsView: View {
             }
         }
         .onChange(of: insightsToggle) { _, newValue in
-            if newValue && !appPreferences.aiInsightsConsentAccepted {
+            if newValue && !appPreferences.aiInsightsConsentAccepted && isInsightsLocked {
+                // Sin Pro el permiso no sirve de nada: la fila vuelve a apagado y sale la hoja de Pro.
+                insightsToggle = false
+                showInsightsUpgrade = true
+            } else if newValue && !appPreferences.aiInsightsConsentAccepted {
                 showInsightsConsentAlert = true
             } else if !newValue && appPreferences.aiInsightsConsentAccepted {
                 showRevokeInsightsDialog = true
@@ -155,6 +167,7 @@ struct AIPrivacySettingsView: View {
         .chatConsentAlert(isPresented: $showChatConsentAlert)
         .insightsConsentAlert(isPresented: $showInsightsConsentAlert)
         .proUpgradeSheet(isPresented: $showChatUpgrade, feature: .chatAssistant, context: .proFeature)
+        .proUpgradeSheet(isPresented: $showInsightsUpgrade, feature: .smartInsightsAI, context: .proFeature)
         .confirmationDialog(
             L10n.UXL14D.revokeTitle(L10n.AIPrivacy.processingRow),
             isPresented: $showRevokeDataDialog,

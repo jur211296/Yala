@@ -7706,7 +7706,7 @@
 "uxpro.trial.chargeYearly" = "Blijf je, dan betaal je %@ per jaar.";
 "uxpro.trial.chargeMonthly" = "Blijf je, dan betaal je %@ per maand.";
 "uxpro.trial.cancelTitle" = "Tot een dag van tevoren";
-"uxpro.trial.cancelBody" = "Zeg op in Instellingen en je betaalt niets.";
+"uxpro.trial.cancelBody" = "Zeg op in de Instellingen van je apparaat en je betaalt niets.";
 "uxpro.cta.startTrialDays" = "%lld dagen gratis proberen";
 "uxpro.included.title" = "Wat Pro bevat";
 "uxpro.feature.voice" = "Noteer met je stem";

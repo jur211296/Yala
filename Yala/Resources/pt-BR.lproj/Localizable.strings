@@ -7694,7 +7694,7 @@
 "uxpro.trial.chargeYearly" = "Se continuar, são cobrados %@ por ano.";
 "uxpro.trial.chargeMonthly" = "Se continuar, são cobrados %@ por mês.";
 "uxpro.trial.cancelTitle" = "Até um dia antes";
-"uxpro.trial.cancelBody" = "Cancele nos Ajustes e nada é cobrado.";
+"uxpro.trial.cancelBody" = "Cancele nos Ajustes do seu dispositivo e nada é cobrado.";
 "uxpro.cta.startTrialDays" = "Testar grátis por %lld dias";
 "uxpro.included.title" = "O que o Pro inclui";
 "uxpro.feature.voice" = "Registre falando";
