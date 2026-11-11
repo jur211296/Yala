@@ -45,14 +45,22 @@ struct CashFlowDetailLineRow: View {
                 }
 
                 if let real = lineResult.realAmount, hasRealData, lineResult.plannedAmount > 0 {
-                    BudgetProgressBar(
-                        percentage: real / lineResult.plannedAmount * 100,
-                        color: "",
-                        isExceeded: CashFlowLineSideLogic.progressIsAlarm(
-                            progress: real / lineResult.plannedAmount, isIncome: lineResult.isIncome
-                        ),
-                        simplified: true
-                    )
+                    // Mes en curso: lo real sólido y lo que falta rayado (decisión 31 de 2.3). Cerrado o superado, la
+                    // barra de siempre.
+                    if let segments = CashFlowRealEstimateBarLogic.segments(
+                        real: real, planned: lineResult.plannedAmount, isCurrentMonth: month.isCurrent
+                    ) {
+                        CashFlowRealEstimateBar(segments: segments)
+                    } else {
+                        BudgetProgressBar(
+                            percentage: real / lineResult.plannedAmount * 100,
+                            color: "",
+                            isExceeded: CashFlowLineSideLogic.progressIsAlarm(
+                                progress: real / lineResult.plannedAmount, isIncome: lineResult.isIncome
+                            ),
+                            simplified: true
+                        )
+                    }
                 }
             }
             .padding(DS.Spacing.lg)
@@ -123,8 +131,9 @@ struct CashFlowDetailLineRow: View {
         if hasRealData, let real = lineResult.realAmount {
             let remaining = lineResult.plannedAmount - real
             let isOver = remaining < 0
-            // Un ingreso cobrado entero dice «Recibido» y lo cobrado, no «Te falta recibir S/ 0.00».
-            let fullyReceived = lineResult.isIncome && abs(remaining) < 0.005
+            // Un ingreso cobrado entero dice «Real» y lo cobrado, no «Te falta recibir S/ 0.00»; en el mes en curso, un
+            // gasto ya hecho entero tampoco dice «Estimado que falta S/ 0.00» (decisión 31 de 2.3).
+            let fullyReceived = (lineResult.isIncome || month.isCurrent) && abs(remaining) < 0.005
             VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
                 Text(fullyReceived ? L10n.CashFlowPlan.realIncome : trailingLabel(isOver: isOver))
                     .font(DS.Typography.captionSmall)
@@ -158,6 +167,9 @@ struct CashFlowDetailLineRow: View {
     }
 
     private func trailingLabel(isOver: Bool) -> String {
+        // Lo que falta en el mes en curso es una estimación: «Estimado que falta», la misma palabra que el resto de lo
+        // estimado de la zona (decisión 31 de 2.3). Pasarse o recibir de más ya es real.
+        if month.isCurrent && !isOver { return L10n.CashFlowPlan.estimateLeft }
         if lineResult.isIncome {
             return isOver ? L10n.UXL18.receivedExtra : L10n.UXL18.toReceive
         }

@@ -223,3 +223,6 @@
 
 /* Flujo proyectado en los widgets Gasto y Saldo (2026-11-06) */
 "widget.intent.showProjected" = "Show projection";
+
+/* Cifra corta del tramo estimado de «Mostrar proyectado» (decisión 34 de la revisión 2.3, 2026-11-11) */
+"widget.projected.endCaption" = "Estimated %1$@ by %2$@";

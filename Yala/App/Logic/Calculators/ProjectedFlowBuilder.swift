@@ -83,7 +83,9 @@ enum ProjectedFlowBuilder {
             points: ProjectedFlowCalculator.bucketed(daily, grouping: grouping, calendar: calendar),
             closingValue: closing,
             isApproximate: result.isApproximate,
-            source: result.source(for: metric)
+            source: result.source(for: metric),
+            metric: metric,
+            endDate: days.last ?? calendar.startOfDay(for: today)
         )
     }
 

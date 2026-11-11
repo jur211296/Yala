@@ -831,7 +831,7 @@
 "cashFlowPlan.addFromExpenses" = "Desde mis gastos";
 "cashFlowPlan.addFromIncome" = "Desde mis ingresos";
 "cashFlowPlan.addFromExpensesDesc" = "Elige una subcategoría con historial";
-"cashFlowPlan.addFromScheduled" = "Desde pago programado";
+"cashFlowPlan.addFromScheduled" = "Desde pago planificado";
 "cashFlowPlan.addFromScheduledDesc" = "Usa un pago activo como línea fija";
 "cashFlowPlan.addLine" = "Agregar línea";
 "cashFlowPlan.addOverride" = "Agregar ajuste";
@@ -869,7 +869,7 @@
 "cashFlowPlan.chartDeviationUnder" = "Ahorraste";
 "cashFlowPlan.chartNeedMoreData" = "Necesitas al menos 2 meses de datos";
 "cashFlowPlan.chartPlanned" = "Planeado";
-"cashFlowPlan.chartProjection" = "Proyección de saldo";
+"cashFlowPlan.chartProjection" = "Saldo estimado";
 "cashFlowPlan.chartProjectionSubtitle" = "Saldo acumulado en el tiempo";
 "cashFlowPlan.chartRollingAvg" = "Promedio móvil";
 "cashFlowPlan.chartSavings" = "Ahorro mensual";
@@ -908,7 +908,7 @@
 "cashFlowPlan.executionPercent" = "%d%% ejecutado";
 "cashFlowPlan.expenseSection" = "Gastos";
 "cashFlowPlan.frequency" = "Frecuencia";
-"cashFlowPlan.futureMonth" = "Proyección";
+"cashFlowPlan.futureMonth" = "Estimado";
 "cashFlowPlan.incomeSection" = "Ingresos";
 "cashFlowPlan.incomeVsExpense" = "Ingreso vs Gasto";
 "cashFlowPlan.lastMonth" = "Último mes";
@@ -926,7 +926,7 @@
 "cashFlowPlan.monthsBack" = "Meses hacia atrás";
 "cashFlowPlan.monthsWithActivity" = "%d de 12 meses";
 "cashFlowPlan.noCategories" = "No hay categorías con historial";
-"cashFlowPlan.noScheduledPayments" = "No tienes pagos programados disponibles";
+"cashFlowPlan.noScheduledPayments" = "No tienes pagos planificados disponibles";
 "cashFlowPlan.otherExpenses" = "Gastos no considerados";
 "cashFlowPlan.otherExpensesDesc" = "Gastos de categorías sin línea en tu plan";
 "cashFlowPlan.otherIncome" = "Ingresos no considerados";
@@ -946,14 +946,14 @@
 "cashFlowPlan.plan" = "Estimado";
 "cashFlowPlan.promoteCategory" = "Agregar al plan";
 "cashFlowPlan.rangeLabel" = "Rango";
-"cashFlowPlan.real" = "Gastado";
-"cashFlowPlan.realIncome" = "Recibido";
+"cashFlowPlan.real" = "Real";
+"cashFlowPlan.realIncome" = "Real";
 "cashFlowPlan.realVsPlan" = "Real vs Plan";
 "cashFlowPlan.recommendedBadge" = "Recomendado";
 "cashFlowPlan.resetConfirmation" = "¿Reiniciar tu plan? Se eliminarán todas las líneas y ajustes. Esta acción no se puede deshacer.";
 "cashFlowPlan.resetPlan" = "Reiniciar plan";
-"cashFlowPlan.scheduled" = "Pago programado";
-"cashFlowPlan.scheduledDesc" = "Usa el monto de tu pago programado";
+"cashFlowPlan.scheduled" = "Pago planificado";
+"cashFlowPlan.scheduledDesc" = "Usa el monto de tu pago planificado";
 "cashFlowPlan.selectAll" = "Seleccionar todo";
 "cashFlowPlan.showAccumulatedBalance" = "Mostrar acumulado";
 "cashFlowPlan.startingBalance" = "¿Con cuánto empiezas? (opcional)";
@@ -7169,7 +7169,7 @@
 /* Crear el plan: total de gastos al mes */
 "cashflow.l18.summary.expense" = "Gastos al mes";
 /* Crear el plan: lo que sobra al mes */
-"cashflow.l18.summary.surplus" = "Te sobran al mes";
+"cashflow.l18.summary.surplus" = "Te queda al mes";
 /* Crear el plan: lo que falta al mes */
 "cashflow.l18.summary.shortfall" = "Te faltan al mes";
 
@@ -7208,15 +7208,15 @@
 /* Ajustar monto: el mes elegido y los siguientes */
 "cashflow.l18.scope.alsoFollowing" = "Ese mes y los siguientes";
 /* Flujo de caja: rótulo de la cifra del mes en curso cuando sobra */
-"cashflow.l18.hero.surplusThisMonth" = "Este mes te sobran";
+"cashflow.l18.hero.surplusThisMonth" = "Este mes te quedaría";
 /* Flujo de caja: rótulo de la cifra del mes en curso cuando falta */
-"cashflow.l18.hero.shortfallThisMonth" = "Este mes te faltan";
+"cashflow.l18.hero.shortfallThisMonth" = "Este mes te faltaría";
 /* Flujo de caja: rótulo de un mes que viene cuando sobraría; %@ = «noviembre» */
-"cashflow.l18.hero.surplusFuture" = "En %@ te sobrarían";
+"cashflow.l18.hero.surplusFuture" = "En %@ te quedaría";
 /* Flujo de caja: rótulo de un mes que viene cuando faltaría; %@ = «noviembre» */
 "cashflow.l18.hero.shortfallFuture" = "En %@ te faltarían";
 /* Flujo de caja: rótulo de un mes pasado cuando sobró; %@ = «septiembre» */
-"cashflow.l18.hero.surplusPast" = "En %@ te sobraron";
+"cashflow.l18.hero.surplusPast" = "En %@ te quedó";
 /* Flujo de caja: rótulo de un mes pasado cuando faltó; %@ = «septiembre» */
 "cashflow.l18.hero.shortfallPast" = "En %@ te faltaron";
 /* Flujo de caja: saldo al final del plan; %1$@ = «diciembre», %2$@ = monto */
@@ -8014,7 +8014,6 @@
 
 /* Flujo proyectado (card «Flujo proyectado en Tendencias y Panel», 2026-11-06) */
 "trend.projected.toggle" = "Ver proyectado";
-"trend.projected.closing" = "Proyectado al cierre";
 "trend.projected.source.plan" = "Estimado con tu plan de flujo de caja";
 "trend.projected.source.rhythm" = "Estimado con tu ritmo de gasto";
 "trend.projected.source.scheduled" = "Estimado con tus pagos planificados";
@@ -8124,3 +8123,11 @@
 
 /* Health sheet headline when there is data but not enough for a score yet */
 "panel.health.total.headline.notYet" = "Todavía no hay nota";
+
+/* «Al 30 tendrías» y real/estimado del flujo de caja (decisiones 30 y 31 de la revisión 2.3, 2026-11-11) */
+"trend.projected.closing.balance" = "Al %@ tendrías";
+"trend.projected.closing.expense" = "Gastos al %@";
+"trend.projected.closing.income" = "Ingresos al %@";
+"cashflow.monthEnd.leftIn" = "Falta entrar";
+"cashflow.monthEnd.leftOut" = "Falta salir";
+"cashFlowPlan.estimateLeft" = "Estimado que falta";

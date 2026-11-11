@@ -840,7 +840,7 @@
 "cashFlowPlan.addLine" = "Regel toevoegen";
 "cashFlowPlan.thisMonth" = "Deze maand";
 "cashFlowPlan.pastMonth" = "Verleden";
-"cashFlowPlan.futureMonth" = "Vooruitzicht";
+"cashFlowPlan.futureMonth" = "Geschat";
 "cashFlowPlan.executionPercent" = "%d%% besteed";
 "cashFlowPlan.densityFull" = "Volledig";
 "cashFlowPlan.densityIcons" = "Iconen";
@@ -858,8 +858,8 @@
 "cashFlowPlan.trendLabel" = "Trend";
 "cashFlowPlan.rangeLabel" = "Bereik";
 "cashFlowPlan.plan" = "Geschat";
-"cashFlowPlan.real" = "Uitgegeven";
-"cashFlowPlan.realIncome" = "Ontvangen";
+"cashFlowPlan.real" = "Werkelijk";
+"cashFlowPlan.realIncome" = "Werkelijk";
 "cashFlowPlan.difference" = "Verschil";
 "cashFlowPlan.adjustAmount" = "Bedrag aanpassen";
 "cashFlowPlan.othersTitle" = "Niet meegenomen uitgaven";
@@ -949,7 +949,7 @@
 "cashFlowPlan.noCategories" = "Geen categorieën met geschiedenis";
 
 // Charts redesign (Inc 7)
-"cashFlowPlan.chartProjection" = "Saldoprojectie";
+"cashFlowPlan.chartProjection" = "Geschat saldo";
 "cashFlowPlan.chartDeviation" = "Uitgaven om te bekijken";
 "cashFlowPlan.chartDeviationSubtitle" = "Subcategorieën waarin je meer hebt uitgegeven dan gepland";
 "cashFlowPlan.chartSavings" = "Maandelijkse besparingen";
@@ -7960,9 +7960,9 @@
 /* Ajustar monto: el mes elegido y los siguientes */
 "cashflow.l18.scope.alsoFollowing" = "Die maand en de volgende";
 /* Flujo de caja: rótulo de la cifra del mes en curso cuando sobra */
-"cashflow.l18.hero.surplusThisMonth" = "Deze maand hou je over";
+"cashflow.l18.hero.surplusThisMonth" = "Deze maand hou je naar verwachting over";
 /* Flujo de caja: rótulo de la cifra del mes en curso cuando falta */
-"cashflow.l18.hero.shortfallThisMonth" = "Deze maand kom je tekort";
+"cashflow.l18.hero.shortfallThisMonth" = "Deze maand kom je naar verwachting tekort";
 /* Flujo de caja: rótulo de un mes que viene cuando sobraría; %@ = «noviembre» */
 "cashflow.l18.hero.surplusFuture" = "In %@ hou je over";
 /* Flujo de caja: rótulo de un mes que viene cuando faltaría; %@ = «noviembre» */
@@ -8766,7 +8766,6 @@
 
 /* Flujo proyectado (card «Flujo proyectado en Tendencias y Panel», 2026-11-06) */
 "trend.projected.toggle" = "Prognose tonen";
-"trend.projected.closing" = "Prognose aan het einde van de periode";
 "trend.projected.source.plan" = "Geschat met je kasstroomplan";
 "trend.projected.source.rhythm" = "Geschat met je uitgavenritme";
 "trend.projected.source.scheduled" = "Geschat met je geplande betalingen";
@@ -8876,3 +8875,11 @@
 
 /* Health sheet headline when there is data but not enough for a score yet */
 "panel.health.total.headline.notYet" = "Nog geen score";
+
+/* «Al 30 tendrías» y real/estimado del flujo de caja (decisiones 30 y 31 de la revisión 2.3, 2026-11-11) */
+"trend.projected.closing.balance" = "Op %@ heb je dan";
+"trend.projected.closing.expense" = "Uitgaven tot %@";
+"trend.projected.closing.income" = "Inkomsten tot %@";
+"cashflow.monthEnd.leftIn" = "Nog binnen te komen";
+"cashflow.monthEnd.leftOut" = "Nog uit te geven";
+"cashFlowPlan.estimateLeft" = "Geschat nog te gaan";

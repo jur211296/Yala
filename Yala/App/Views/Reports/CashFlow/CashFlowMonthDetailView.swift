@@ -158,20 +158,47 @@ struct CashFlowMonthDetailView: View {
         }
     }
 
-    /// La cifra grande del mes con las frases de C2 debajo.
+    /// «Al 30 de noviembre tendrías» del mes en curso (decisión 30 de 2.3): la misma cifra que el Panel. Otro mes, o sin
+    /// cuentas que sumen, no la tiene.
+    private var currentMonthEnd: MonthEndBalanceLogic.Result? {
+        month.isCurrent ? viewModel.monthEnd : nil
+    }
+
+    /// La cifra grande del mes con las frases de C2 debajo. En el mes en curso, la cifra es «Al 30 de noviembre
+    /// tendrías» con su cuenta, y lo que entra menos lo que sale pasa a una línea.
     private var monthSummary: some View {
         HeroHeader {
-            HeroHeaderLabel(text: CashFlowMonthSummaryLogic.heroLabel(for: month))
+            HeroHeaderLabel(text: CashFlowMonthSummaryLogic.heroLabel(for: month, monthEndDate: currentMonthEnd?.endDate))
         } period: {
             EmptyView()
         } content: {
-            AmountText(
-                value: abs(month.netFlow),
-                currencyCode: currencyCode,
-                font: DS.Typography.panelHeroAmount,
-                secondaryFont: DS.Typography.panelHeroAmountSecondary
-            )
-            .accessibilityIdentifier("cashflow_month_net")
+            if let end = currentMonthEnd {
+                AmountText(
+                    value: end.closing,
+                    currencyCode: currencyCode,
+                    font: DS.Typography.panelHeroAmount,
+                    secondaryFont: DS.Typography.panelHeroAmountSecondary,
+                    isEstimate: end.isApproximate
+                )
+                .accessibilityIdentifier("cashflow_month_end_closing")
+
+                monthEndBreakdown(end)
+
+                Text(L10n.ProjectedFlow.source(end.source))
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                netLine
+            } else {
+                AmountText(
+                    value: abs(month.netFlow),
+                    currencyCode: currencyCode,
+                    font: DS.Typography.panelHeroAmount,
+                    secondaryFont: DS.Typography.panelHeroAmountSecondary
+                )
+                .accessibilityIdentifier("cashflow_month_net")
+            }
 
             if viewModel.plan?.showAccumulatedBalance ?? true {
                 if let end = CashFlowMonthSummaryLogic.projectedEnd(of: viewModel.projection?.months ?? []),
@@ -190,6 +217,56 @@ struct CashFlowMonthDetailView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("cashflow_month_summary")
+    }
+
+    /// La cuenta de «Al 30 tendrías»: «Tienes hoy» (o «Debes hoy», sin signo, como el Panel), «Falta entrar» y «Falta
+    /// salir». Con texto de accesibilidad, el importe baja bajo su nombre.
+    private func monthEndBreakdown(_ end: MonthEndBalanceLogic.Result) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+            monthEndRow(
+                label: end.today < 0 && !CurrencyFormattingHelper.isShownAsZero(end.today)
+                    ? L10n.Panel.Hero.oweToday : L10n.Panel.Hero.haveToday,
+                value: abs(end.today),
+                identifier: "cashflow_month_end_today"
+            )
+            monthEndRow(label: L10n.ProjectedFlow.leftToComeIn, value: end.incomeLeft, identifier: "cashflow_month_end_in")
+            monthEndRow(label: L10n.ProjectedFlow.leftToGoOut, value: end.expenseLeft, identifier: "cashflow_month_end_out")
+        }
+        .padding(.top, DS.Spacing.xxs)
+    }
+
+    private func monthEndRow(label: String, value: Double, identifier: String) -> some View {
+        AdaptiveRowStack(spacing: DS.Spacing.sm, stackedSpacing: DS.Spacing.xxs) {
+            Text(label)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
+        } trailing: {
+            AmountText(
+                value: value,
+                currencyCode: currencyCode,
+                font: DS.Typography.subheadline.monospacedDigit()
+            )
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier(identifier)
+    }
+
+    /// «Este mes te quedaría S/ 396.18» / «Este mes te faltaría S/ 120»: lo que entra menos lo que sale en el mes entero,
+    /// que antes era la cifra grande. El importe va en `AmountText` para que «Ocultar montos» lo tape.
+    private var netLine: some View {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+            Text(CashFlowMonthSummaryLogic.netLabel(for: month))
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            AmountText(
+                value: abs(month.netFlow),
+                currencyCode: currencyCode,
+                font: DS.Typography.subheadlineEmphasized.monospacedDigit()
+            )
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("cashflow_month_net_line")
     }
 
     /// «Empezaste con S/ X · Cambiar» (L18-10): sustituye al lápiz tachado del pie.
