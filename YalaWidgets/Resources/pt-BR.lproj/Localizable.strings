@@ -16,8 +16,8 @@
 "widget.gallery.quickImage.desc" = "Registre a partir de uma foto ou arquivo. Toque para escolher.";
 "widget.gallery.cashFlow" = "Entradas e saídas";
 "widget.gallery.cashFlow.desc" = "O que entrou e saiu no período. Toque para ver em Tendências.";
-"widget.gallery.balance" = "Disponível";
-"widget.gallery.balance.desc" = "Seu dinheiro disponível e a tendência. Toque para ver o Painel.";
+"widget.gallery.balance" = "Saldo";
+"widget.gallery.balance.desc" = "O que você tem nas suas contas e a tendência. Toque para ver o Painel.";
 "widget.gallery.budgets" = "Orçamentos";
 "widget.gallery.budgets.desc" = "Como vão seus orçamentos. Toque para ver Orçamentos.";
 "widget.gallery.latestRecords" = "Últimos Registros";
@@ -34,8 +34,8 @@
 "widget.gallery.topSubcategories.desc" = "Suas subcategorias com mais gastos. Toque para ver Distribuição por subcategoria.";
 
 // MARK: - Gallery (Lock Screen accessory widgets)
-"widget.gallery.accessoryBalance" = "Disponível";
-"widget.gallery.accessoryBalance.desc" = "Seu dinheiro disponível na tela bloqueada. Toque para ver o Painel.";
+"widget.gallery.accessoryBalance" = "Saldo";
+"widget.gallery.accessoryBalance.desc" = "O que você tem nas suas contas, na tela bloqueada. Toque para ver o Painel.";
 "widget.gallery.accessoryExpense" = "Despesas";
 "widget.gallery.accessoryExpense.desc" = "Seus gastos na tela bloqueada. Toque para ver o Resumo de Estatísticas.";
 "widget.gallery.accessoryBudget" = "Orçamento";
@@ -46,8 +46,8 @@
 // MARK: - Intent titles and descriptions
 "widget.intent.cashFlow.title" = "Entradas e saídas";
 "widget.intent.cashFlow.desc" = "Mostra o que entrou e saiu no período";
-"widget.intent.balance.title" = "Disponível";
-"widget.intent.balance.desc" = "Mostra seu dinheiro disponível";
+"widget.intent.balance.title" = "Saldo";
+"widget.intent.balance.desc" = "Mostra o que você tem nas suas contas";
 "widget.intent.expense.title" = "Despesas";
 "widget.intent.expense.desc" = "Mostra suas despesas totais";
 "widget.intent.categoriesPie.title" = "Categorias em círculo";
@@ -64,7 +64,7 @@
 "widget.intent.scheduledPayments.desc" = "Mostra seus próximos pagamentos agendados";
 "widget.intent.latestRecords.title" = "Últimos Registros";
 "widget.intent.latestRecords.desc" = "Mostra seus registros mais recentes";
-"widget.intent.accessoryBalance.title" = "Disponível";
+"widget.intent.accessoryBalance.title" = "Saldo";
 "widget.intent.accessoryBalance.desc" = "Saldo do período";
 "widget.intent.accessoryExpense.title" = "Despesas";
 "widget.intent.accessoryExpense.desc" = "Despesas do período";
@@ -161,7 +161,6 @@
 "widget.groupsOnly.cta" = "Ativar Yala completo";
 
 /* UX 2.2 · lote decidido 08 — estados vacíos de los widgets (L15-2) */
-"widget.ui.available" = "Disponível";
 "widget.empty.openYalaBalance" = "Abra o Yala para ver seu saldo";
 "widget.empty.openYala" = "Abra o Yala para ver seus dados";
 "widget.empty.openYalaShort" = "Abra o Yala";

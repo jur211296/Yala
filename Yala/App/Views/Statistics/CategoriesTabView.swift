@@ -375,7 +375,7 @@ struct CategoriesTabView: View {
                 HeroHeaderLabel(text: StatsHeroCaptionLogic.distribution(
                     isBalanceMode: isBalanceMode,
                     natures: viewModel.selectedTransactionNatures
-                ).text)
+                ).text(isClosed: PeriodTenseLogic.isClosed(period: sessionState.selectedPeriod, customRange: sessionState.customDateRange)))
                     .accessibilityIdentifier("stats_hero_caption")
             }
         } period: {

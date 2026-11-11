@@ -119,7 +119,6 @@
 // KPI fallback (aiSubtitle takes the KPI slot when available)
 // Markdown bold (**amount**) renders via AttributedString(markdown:)
 
-"panel.hero.availableLabel" = "可用";
 
 // MARK: - Trend Widget
 
@@ -3524,7 +3523,6 @@
 
 "statistics.sankey.title" = "资金流";
 "statistics.sankey.expenses" = "支出";
-"statistics.sankey.available" = "可用";
 "statistics.sankey.others" = "其他";
 "statistics.sankey.planned" = "已计划";
 "statistics.sankey.plannedRecurring" = "周期";
@@ -5492,12 +5490,6 @@
 /* Cuerpo del aviso al tocar la tarjeta de un grupo pendiente de aprobación */
 "groups.card.pendingNotice.body" = "群组管理员尚未批准你的申请。批准后，你就可以打开该群组并查看它的支出。获批后我们会通知你。";
 
-/* Stats hero caption: the figure is the accounts balance (stock), same as Panel KPI */
-"stats.hero.captionAccountsBalance" = "账户余额";
-
-/* Stats hero caption: the figure is income minus expenses for the period (flow) */
-"stats.hero.captionNetPeriod" = "期间收支";
-
 /* Stats hero caption: the figure is only the income side for the period */
 "stats.hero.captionIncomePeriod" = "期间收入";
 
@@ -6768,9 +6760,6 @@
 /* Note in the 'records without account' sheet when group records keep their currency */
 "orphanedRecords.groupKeptCurrencyNote" = "其他货币的群组支出按原样移动，不做换算：金额由群组决定。";
 
-/* Panel hero label: income minus expenses of a named month. %@ = month name */
-"panel.hero.balanceOfMonth" = "%@收支";
-
 /* Panel hero label when only expenses are shown. %@ = month name */
 "panel.hero.expensesOfMonth" = "%@支出";
 
@@ -6785,9 +6774,6 @@
 
 /* Line under the panel hero when the period has no income or expenses yet */
 "panel.hero.noMovements" = "此期间还没有记录";
-
-/* Second line under the panel hero with no movements: the money in the accounts. %@ = amount */
-"panel.hero.totalInAccounts" = "你的账户里有 %@";
 
 /* Small hint next to the panel hero label: tapping opens Statistics */
 "panel.hero.seeDetail" = "详情";
@@ -8817,3 +8803,11 @@
 "tag.colorName.custom" = "自定义颜色";
 "tag.nameCount %lld %lld" = "%1$lld/%2$lld";
 "tag.nameLimitReached %lld %lld" = "%1$lld/%2$lld：无法再输入更多";
+
+/* Decisión 8 de la revisión 2.3 (2026-11-11): «Tienes hoy» (lo de las cuentas) y «Te queda» (entró − salió) */
+"panel.hero.haveToday" = "今日余额";
+"panel.hero.oweToday" = "今日欠款";
+"panel.hero.leftNow" = "剩余";
+"panel.hero.leftPast" = "结余";
+"panel.hero.leftInMonth" = "%@结余";
+"stats.hero.captionAccountsBalanceClosed" = "期末余额";

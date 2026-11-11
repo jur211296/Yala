@@ -564,7 +564,7 @@
 "accessibility.inbox" = "Bandeja de entrada";
 "accessibility.invalidThreshold" = "Ingresa un valor de umbral válido";
 "accessibility.maxCurrenciesSelected" = "Cantidad máxima de monedas seleccionada";
-"accessibility.metricBalance" = "Balance";
+"accessibility.metricBalance" = "Saldo";
 "accessibility.metricExpense" = "Gasto";
 "accessibility.metricIncome" = "Ingreso";
 "accessibility.needTrend" = "Gráfica de gastos por necesidad";
@@ -627,7 +627,7 @@
 "account.adjustmentPreview" = "Se creará un ajuste de %@";
 "account.archive" = "Archivar cuenta";
 "account.archived" = "Archivada";
-"account.balance" = "Balance";
+"account.balance" = "Saldo";
 "account.changeInitialBalanceDesc" = "Escribe con cuánto empezó la cuenta y recalculamos su saldo de hoy con tus registros. Úsalo si el saldo de partida estaba mal.";
 "account.changeInitialBalanceName" = "Cambiar saldo inicial";
 "account.configure" = "Configurar cuenta";
@@ -643,7 +643,7 @@
 "account.excludeFromStats" = "Excluir de las estadísticas";
 "account.existingInitialBalance" = "Ya tienes un saldo inicial de %@. ¿Deseas modificarlo?";
 "account.finalBalance" = "Saldo final";
-"account.initialBalance" = "Balance inicial";
+"account.initialBalance" = "Saldo inicial";
 "account.initialBalanceNote" = "Saldo inicial";
 "account.modifyInitialBalance" = "Modificar saldo inicial";
 "account.name" = "Nombre";
@@ -2174,7 +2174,6 @@
 "panel.health.voiceover.noData" = "sin datos";
 "panel.health.voiceover.score" = "%d de 100";
 "panel.health.voiceover.summary" = "Salud financiera: %1$@. Presupuesto %2$@. Actividad %3$@. Pagos %4$@.";
-"panel.hero.availableLabel" = "Disponible";
 "panel.insightMenuDifferentAngle" = "Otro enfoque";
 "panel.insightMenuHideHour" = "Esconder una hora";
 "panel.insightMenuHideToday" = "Esconder hoy";
@@ -2256,8 +2255,8 @@
 "panel.widgetInfo.budgets.smallWhatA" = "Tus dos presupuestos favoritos con lo gastado en el período y el porcentaje sobre el límite.";
 "panel.widgetInfo.budgets.smallWhatQ" = "¿Qué estás viendo?";
 "panel.widgetInfo.budgets.title" = "Presupuestos favoritos";
-"panel.widgetInfo.cashFlow.balanceA" = "Cada registro del flujo se contabiliza al tipo de cambio del día en que ocurrió. Tu balance refleja lo que tienes hoy al tipo de cambio vigente. Si tienes cuentas en distintas monedas, la diferencia es ganancia o pérdida cambiaria latente.";
-"panel.widgetInfo.cashFlow.balanceQ" = "¿Por qué el flujo total no coincide con mi balance?";
+"panel.widgetInfo.cashFlow.balanceA" = "Cada registro del flujo se contabiliza al tipo de cambio del día en que ocurrió. Tu saldo refleja lo que tienes hoy al tipo de cambio vigente. Si tienes cuentas en distintas monedas, la diferencia es ganancia o pérdida cambiaria latente.";
+"panel.widgetInfo.cashFlow.balanceQ" = "¿Por qué el flujo total no coincide con mi saldo?";
 "panel.widgetInfo.cashFlow.chip1" = "Ingresos";
 "panel.widgetInfo.cashFlow.chip2" = "Gastos";
 "panel.widgetInfo.cashFlow.chip3" = "Sigue el período elegido";
@@ -2266,9 +2265,9 @@
 "panel.widgetInfo.cashFlow.largeHowQ" = "¿Cómo interactúo con la gráfica?";
 "panel.widgetInfo.cashFlow.largeWhatA" = "La evolución de tus ingresos y gastos a lo largo del periodo, agrupados por día, semana o mes según el intervalo seleccionado.";
 "panel.widgetInfo.cashFlow.largeWhatQ" = "¿Qué estás viendo?";
-"panel.widgetInfo.cashFlow.mediumWhatA" = "Lo mismo que el tamaño compacto (ingresos, gastos y balance), con más espacio para ver los importes a detalle.";
+"panel.widgetInfo.cashFlow.mediumWhatA" = "Lo mismo que el tamaño compacto (ingresos, gastos y lo que te queda), con más espacio para ver los importes a detalle.";
 "panel.widgetInfo.cashFlow.mediumWhatQ" = "¿Qué estás viendo?";
-"panel.widgetInfo.cashFlow.smallWhatA" = "Tu balance del periodo: la diferencia entre lo que ingresaste y lo que gastaste, con dos barras que comparan ambos totales.";
+"panel.widgetInfo.cashFlow.smallWhatA" = "Lo que te queda en el periodo: la diferencia entre lo que ingresaste y lo que gastaste, con dos barras que comparan ambos totales.";
 "panel.widgetInfo.cashFlow.smallWhatQ" = "¿Qué estás viendo?";
 "panel.widgetInfo.cashFlow.title" = "Entradas y salidas";
 "panel.widgetInfo.categoriesPie.chip1" = "Categorías";
@@ -2283,8 +2282,8 @@
 "panel.widgetInfo.categoriesPie.smallWhatA" = "Cómo se reparte tu gasto entre categorías en el período activo. Las burbujas marcan las categorías con más peso.";
 "panel.widgetInfo.categoriesPie.smallWhatQ" = "¿Qué estás viendo?";
 "panel.widgetInfo.categoriesPie.title" = "Distribución por categoría";
-"panel.widgetInfo.exchangeRate.balanceImpactA" = "Yala calcula tu balance en tu moneda principal usando el tipo de cambio actual sobre el saldo de cada cuenta. Por eso, si el tipo de cambio cambia y no apuntas nada, tu balance puede subir o bajar.";
-"panel.widgetInfo.exchangeRate.balanceImpactQ" = "¿Cómo afecta el tipo de cambio a mi balance?";
+"panel.widgetInfo.exchangeRate.balanceImpactA" = "Yala calcula tu saldo en tu moneda principal usando el tipo de cambio actual sobre el saldo de cada cuenta. Por eso, si el tipo de cambio cambia y no apuntas nada, tu saldo puede subir o bajar.";
+"panel.widgetInfo.exchangeRate.balanceImpactQ" = "¿Cómo afecta el tipo de cambio a mi saldo?";
 "panel.widgetInfo.exchangeRate.chip1" = "Varias monedas";
 "panel.widgetInfo.exchangeRate.chip2" = "Tasas actuales";
 "panel.widgetInfo.exchangeRate.chip3" = "Puedes tocarla";
@@ -2383,9 +2382,9 @@
 "panel.widgetInfo.trend.fxMatchQ" = "¿Por qué el último punto puede no coincidir con mi saldo total?";
 "panel.widgetInfo.trend.largeHowA" = "Mantén el dedo sobre la gráfica para ver el valor en cada punto. Cambia entre saldo, ingresos y gastos con los botones de arriba.";
 "panel.widgetInfo.trend.largeHowQ" = "¿Cómo interactúo con la gráfica?";
-"panel.widgetInfo.trend.largeWhatA" = "La evolución día a día de tu balance, tus ingresos o tus gastos del periodo.";
+"panel.widgetInfo.trend.largeWhatA" = "La evolución día a día de tu saldo, tus ingresos o tus gastos del periodo.";
 "panel.widgetInfo.trend.largeWhatQ" = "¿Qué estás viendo?";
-"panel.widgetInfo.trend.smallWhatA" = "Tu balance, ingresos o gastos del periodo según el filtro activo, con una mini-gráfica de evolución.";
+"panel.widgetInfo.trend.smallWhatA" = "Tu saldo, ingresos o gastos del periodo según el filtro activo, con una mini-gráfica de evolución.";
 "panel.widgetInfo.trend.smallWhatQ" = "¿Qué estás viendo?";
 "panel.widgetInfo.trend.title" = "Tendencia de saldo";
 "panel.widgetInfo.weekdayBar.chip1" = "Días de la semana";
@@ -2900,7 +2899,6 @@
 "statistics.periodComparison" = "Comparación con período anterior";
 "statistics.previousPeriod" = "Período anterior";
 "statistics.records" = "Registros";
-"statistics.sankey.available" = "Disponible";
 "statistics.sankey.expenses" = "Gastos";
 "statistics.sankey.otherFunds" = "Otros fondos";
 "statistics.sankey.others" = "Otros";
@@ -2949,7 +2947,7 @@
 "stats.trends.comparisonTitle" = "Comparativa";
 "stats.trends.generateAI" = "Generar con IA";
 "stats.trends.heroOnset" = "Tu primer período con Yala";
-"stats.trends.heroStable" = "Tu balance se mantiene estable";
+"stats.trends.heroStable" = "Lo que te queda se mantiene estable";
 "stats.trends.heroVarDown %d %@" = "%d%% por debajo vs %@ · Ánimo, paso a paso";
 "stats.trends.heroVarUp %d %@" = "%d%% por encima vs %@ · Sigue así";
 "stats.trends.insight.onsetNoPrevious" = "Aún no hay un periodo anterior con el que comparar.";
@@ -3511,7 +3509,7 @@
 "widget.hint.tagsPie" = "Distribución del gasto por etiquetas asignadas.";
 "widget.hint.topCategories" = "Las categorías donde más has gastado en este período.";
 "widget.hint.topSubcategories" = "Las subcategorías con mayor gasto, filtradas por categoría.";
-"widget.hint.trend" = "Muestra la evolución de tu balance, ingresos o gastos en el período seleccionado.";
+"widget.hint.trend" = "Muestra la evolución de tu saldo, ingresos o gastos en el período seleccionado.";
 "widget.list" = "Lista";
 "widget.main" = "Principal";
 "widget.noDataForPeriod" = "Aún no hay datos para este periodo";
@@ -4737,12 +4735,6 @@
 
 /* Cuerpo del aviso al tocar la tarjeta de un grupo pendiente de aprobación */
 "groups.card.pendingNotice.body" = "El admin del grupo todavía no ha aprobado tu solicitud. Cuando lo haga podrás abrir el grupo y ver sus gastos. Te avisaremos cuando te aprueben.";
-
-/* Stats hero caption: the figure is the accounts balance (stock), same as Panel KPI */
-"stats.hero.captionAccountsBalance" = "Saldo de cuentas";
-
-/* Stats hero caption: the figure is income minus expenses for the period (flow) */
-"stats.hero.captionNetPeriod" = "Balance del período";
 
 /* Stats hero caption: the figure is only the income side for the period */
 "stats.hero.captionIncomePeriod" = "Ingresos del período";
@@ -6016,9 +6008,6 @@
 /* Note in the 'records without account' sheet when group records keep their currency */
 "orphanedRecords.groupKeptCurrencyNote" = "Los gastos de grupo en otra moneda pasan tal cual, sin convertir: su importe lo manda el grupo.";
 
-/* Panel hero label: income minus expenses of a named month. %@ = month name */
-"panel.hero.balanceOfMonth" = "Balance de %@";
-
 /* Panel hero label when only expenses are shown. %@ = month name */
 "panel.hero.expensesOfMonth" = "Gastos de %@";
 
@@ -6033,9 +6022,6 @@
 
 /* Line under the panel hero when the period has no income or expenses yet */
 "panel.hero.noMovements" = "Aún no tienes registros en este período";
-
-/* Second line under the panel hero with no movements: the money in the accounts. %@ = amount */
-"panel.hero.totalInAccounts" = "Tienes %@ en tus cuentas";
 
 /* Small hint next to the panel hero label: tapping opens Statistics */
 "panel.hero.seeDetail" = "Ver detalle";
@@ -8065,3 +8051,11 @@
 "tag.colorName.custom" = "Color propio";
 "tag.nameCount %lld %lld" = "%1$lld de %2$lld";
 "tag.nameLimitReached %lld %lld" = "%1$lld de %2$lld: el resto no cabe";
+
+/* Decisión 8 de la revisión 2.3 (2026-11-11): «Tienes hoy» (lo de las cuentas) y «Te queda» (entró − salió) */
+"panel.hero.haveToday" = "Tienes hoy";
+"panel.hero.oweToday" = "Debes hoy";
+"panel.hero.leftNow" = "Te queda";
+"panel.hero.leftPast" = "Te quedó";
+"panel.hero.leftInMonth" = "En %@ te quedó";
+"stats.hero.captionAccountsBalanceClosed" = "Tenías al cierre";

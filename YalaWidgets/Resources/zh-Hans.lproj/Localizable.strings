@@ -16,8 +16,8 @@
 "widget.gallery.quickImage.desc" = "通过照片或文件记录。轻点选择。";
 "widget.gallery.cashFlow" = "收入与支出";
 "widget.gallery.cashFlow.desc" = "本期的收入与支出。轻点在趋势中查看。";
-"widget.gallery.balance" = "可用";
-"widget.gallery.balance.desc" = "你的可用资金及其走势。轻点查看面板。";
+"widget.gallery.balance" = "余额";
+"widget.gallery.balance.desc" = "你账户里的钱及其走势。轻点查看面板。";
 "widget.gallery.budgets" = "预算";
 "widget.gallery.budgets.desc" = "你的预算进度。轻点查看预算。";
 "widget.gallery.latestRecords" = "最新记录";
@@ -34,8 +34,8 @@
 "widget.gallery.topSubcategories.desc" = "你支出最多的子分类。轻点按子分类查看分布。";
 
 // MARK: - Gallery (Lock Screen accessory widgets)
-"widget.gallery.accessoryBalance" = "可用";
-"widget.gallery.accessoryBalance.desc" = "在锁定屏幕上显示可用资金。轻点查看面板。";
+"widget.gallery.accessoryBalance" = "余额";
+"widget.gallery.accessoryBalance.desc" = "在锁定屏幕上显示你账户里的钱。轻点查看面板。";
 "widget.gallery.accessoryExpense" = "支出";
 "widget.gallery.accessoryExpense.desc" = "在锁定屏幕上显示支出。轻点查看统计中的概览。";
 "widget.gallery.accessoryBudget" = "预算";
@@ -46,8 +46,8 @@
 // MARK: - Intent titles and descriptions
 "widget.intent.cashFlow.title" = "收入与支出";
 "widget.intent.cashFlow.desc" = "显示本期的收入与支出";
-"widget.intent.balance.title" = "可用";
-"widget.intent.balance.desc" = "显示你的可用资金";
+"widget.intent.balance.title" = "余额";
+"widget.intent.balance.desc" = "显示你账户里的钱";
 "widget.intent.expense.title" = "支出";
 "widget.intent.expense.desc" = "显示你的总支出";
 "widget.intent.categoriesPie.title" = "分类圆环";
@@ -64,7 +64,7 @@
 "widget.intent.scheduledPayments.desc" = "显示你即将到期的计划付款";
 "widget.intent.latestRecords.title" = "最新记录";
 "widget.intent.latestRecords.desc" = "显示你最近的记录";
-"widget.intent.accessoryBalance.title" = "可用";
+"widget.intent.accessoryBalance.title" = "余额";
 "widget.intent.accessoryBalance.desc" = "时段余额";
 "widget.intent.accessoryExpense.title" = "支出";
 "widget.intent.accessoryExpense.desc" = "时段支出";
@@ -161,7 +161,6 @@
 "widget.groupsOnly.cta" = "激活完整 Yala";
 
 /* UX 2.2 · lote decidido 08 — estados vacíos de los widgets (L15-2) */
-"widget.ui.available" = "可用";
 "widget.empty.openYalaBalance" = "打开 Yala 查看你的余额";
 "widget.empty.openYala" = "打开 Yala 查看你的数据";
 "widget.empty.openYalaShort" = "打开 Yala";

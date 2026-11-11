@@ -722,7 +722,8 @@ final class StatisticsViewModel: Filterable {
             plannedPending: plannedPending,
             plannedSplit: .byKind,
             propagatePlannedToCategories: true,
-            adjustment: adjustment
+            adjustment: adjustment,
+            periodIsClosed: PeriodTenseLogic.isClosed(period: detailPeriod, customRange: customDateRange)
         )
         if newData != sankeyData { sankeyData = newData }
     }

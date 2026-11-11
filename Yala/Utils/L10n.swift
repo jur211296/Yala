@@ -947,14 +947,25 @@ enum L10n {
             /// Label inline arriba del monto disponible — desambigua qué
             /// representa el monto. Se compone con el `displayName` del
             /// período actual ("Disponible · Este mes", "Available · This year").
-            static var availableLabel: String {
-                ls("panel.hero.availableLabel", comment: "Hero — available amount label, composed with period display name")
+            // Decisión 8 de la revisión 2.3 (9-nov-2026): el mismo vocabulario en toda la app. «Tienes» es lo que hay
+            // en las cuentas; «Te queda» es lo que entró menos lo que salió. Estadísticas usa estas mismas claves.
+            static var haveToday: String {
+                ls("panel.hero.haveToday", comment: "Panel hero label of the big figure: the money in the accounts today. Does not follow the period")
+            }
+            static var oweToday: String {
+                ls("panel.hero.oweToday", comment: "Panel hero label of the big figure when the accounts add up to a debt. The figure is shown without sign")
+            }
+            static var leftNow: String {
+                ls("panel.hero.leftNow", comment: "Label before the amount of income minus expenses for a period still in progress (\"what you have left\"). Never \"surplus\"")
+            }
+            static var leftPast: String {
+                ls("panel.hero.leftPast", comment: "Label before the amount of income minus expenses for a period that already ended (\"what you had left\")")
+            }
+            static func leftInMonth(_ month: String) -> String {
+                String(format: ls("panel.hero.leftInMonth", comment: "Label before the amount of income minus expenses of last month, with its name (\"In October you had left\"). %@ = month name"), month)
             }
 
             // UX 2.2 · L3-1/L3-2/L3-3: el rótulo dice qué mide la cifra y una línea dice de dónde sale.
-            static func balanceOfMonth(_ month: String) -> String {
-                String(format: ls("panel.hero.balanceOfMonth", comment: "Panel hero label: income minus expenses of a named month. %@ = month name"), month)
-            }
             static func expensesOfMonth(_ month: String) -> String {
                 String(format: ls("panel.hero.expensesOfMonth", comment: "Panel hero label when only expenses are shown. %@ = month name"), month)
             }
@@ -971,9 +982,6 @@ enum L10n {
             }
             static var noMovements: String {
                 ls("panel.hero.noMovements", comment: "Line under the panel hero when the period has no income or expenses yet")
-            }
-            static func totalInAccounts(_ amount: String) -> String {
-                String(format: ls("panel.hero.totalInAccounts", comment: "Second line under the panel hero with no movements: the money in the accounts. %@ = amount"), amount)
             }
             static var seeDetail: String {
                 ls("panel.hero.seeDetail", comment: "Small hint next to the panel hero label: tapping opens Statistics")
@@ -1722,7 +1730,6 @@ enum L10n {
         enum Sankey {
             static var title: String { ls("statistics.sankey.title", comment: "") }
             static var expenses: String { ls("statistics.sankey.expenses", comment: "") }
-            static var available: String { ls("statistics.sankey.available", comment: "") }
             static var others: String { ls("statistics.sankey.others", comment: "") }
             static var planned: String { ls("statistics.sankey.planned", comment: "") }
             static var plannedRecurring: String { ls("statistics.sankey.plannedRecurring", comment: "") }
@@ -9452,11 +9459,10 @@ enum L10n {
         /// El caso lo deriva `StatsHeroCaptionLogic` del mismo estado que elige el número
         /// — no es fijo por pestaña (ver la cabecera de ese fichero).
         enum Hero {
-            static var captionAccountsBalance: String {
-                ls("stats.hero.captionAccountsBalance", comment: "Stats hero caption: the figure is the accounts balance (stock), same as Panel KPI")
-            }
-            static var captionNetPeriod: String {
-                ls("stats.hero.captionNetPeriod", comment: "Stats hero caption: the figure is income minus expenses for the period (flow)")
+            /// El saldo de las cuentas al cierre de un período que ya terminó. En curso, «Tienes hoy»
+            /// (`L10n.Panel.Hero.haveToday`), y el neto, «Te queda» / «Te quedó»: las palabras del Panel.
+            static var captionAccountsBalanceClosed: String {
+                ls("stats.hero.captionAccountsBalanceClosed", comment: "Stats hero caption: the figure is what the accounts had at the end of a period that already ended (\"You had at the close\")")
             }
             static var captionIncomePeriod: String {
                 ls("stats.hero.captionIncomePeriod", comment: "Stats hero caption: the figure is only the income side for the period")

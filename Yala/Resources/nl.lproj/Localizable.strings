@@ -119,7 +119,6 @@
 // KPI fallback (aiSubtitle takes the KPI slot when available)
 // Markdown bold (**amount**) renders via AttributedString(markdown:)
 
-"panel.hero.availableLabel" = "Beschikbaar";
 
 // MARK: - Trend Widget
 
@@ -3524,7 +3523,6 @@
 
 "statistics.sankey.title" = "Geldstroom";
 "statistics.sankey.expenses" = "Uitgaven";
-"statistics.sankey.available" = "Beschikbaar";
 "statistics.sankey.others" = "Overige";
 "statistics.sankey.planned" = "Gepland";
 "statistics.sankey.plannedRecurring" = "Terugkerend";
@@ -5492,12 +5490,6 @@
 /* Cuerpo del aviso al tocar la tarjeta de un grupo pendiente de aprobación */
 "groups.card.pendingNotice.body" = "De groepsbeheerder heeft je verzoek nog niet goedgekeurd. Zodra dat gebeurt, kun je de groep openen en de uitgaven bekijken. We laten het je weten zodra je bent goedgekeurd.";
 
-/* Stats hero caption: the figure is the accounts balance (stock), same as Panel KPI */
-"stats.hero.captionAccountsBalance" = "Rekeningsaldo";
-
-/* Stats hero caption: the figure is income minus expenses for the period (flow) */
-"stats.hero.captionNetPeriod" = "Saldo in de periode";
-
 /* Stats hero caption: the figure is only the income side for the period */
 "stats.hero.captionIncomePeriod" = "Inkomsten in de periode";
 
@@ -6768,9 +6760,6 @@
 /* Note in the 'records without account' sheet when group records keep their currency */
 "orphanedRecords.groupKeptCurrencyNote" = "Groepsuitgaven in een andere valuta gaan ongewijzigd mee, zonder omrekening: het bedrag bepaalt de groep.";
 
-/* Panel hero label: income minus expenses of a named month. %@ = month name */
-"panel.hero.balanceOfMonth" = "Saldo %@";
-
 /* Panel hero label when only expenses are shown. %@ = month name */
 "panel.hero.expensesOfMonth" = "Uitgaven %@";
 
@@ -6785,9 +6774,6 @@
 
 /* Line under the panel hero when the period has no income or expenses yet */
 "panel.hero.noMovements" = "Nog geen bewegingen in deze periode";
-
-/* Second line under the panel hero with no movements: the money in the accounts. %@ = amount */
-"panel.hero.totalInAccounts" = "Je hebt %@ op je rekeningen";
 
 /* Small hint next to the panel hero label: tapping opens Statistics */
 "panel.hero.seeDetail" = "Details";
@@ -8817,3 +8803,11 @@
 "tag.colorName.custom" = "Eigen kleur";
 "tag.nameCount %lld %lld" = "%1$lld van %2$lld";
 "tag.nameLimitReached %lld %lld" = "%1$lld van %2$lld: meer past er niet in";
+
+/* Decisión 8 de la revisión 2.3 (2026-11-11): «Tienes hoy» (lo de las cuentas) y «Te queda» (entró − salió) */
+"panel.hero.haveToday" = "Je hebt vandaag";
+"panel.hero.oweToday" = "Je staat vandaag rood";
+"panel.hero.leftNow" = "Je houdt over";
+"panel.hero.leftPast" = "Je hield over";
+"panel.hero.leftInMonth" = "In %@ hield je over";
+"stats.hero.captionAccountsBalanceClosed" = "Saldo aan het einde";

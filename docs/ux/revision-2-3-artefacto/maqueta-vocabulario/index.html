@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tienes hoy · Te queda</title>
+<style>
+:root{--bg:#f4f5fb;--card:#fff;--ink:#14142b;--sub:#6b6b85;--line:#e3e4ef;--in:#0f7a80;--out:#d6006b;--indigo:#3d36b3;--chip:#ecebfb}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d0d18;--card:#1a1a2b;--ink:#f2f2fa;--sub:#a3a3bd;--line:#2c2c44;--in:#00c2cb;--out:#ff4da6;--indigo:#818cf8;--chip:#26264a}}
+:root[data-theme="dark"]{--bg:#0d0d18;--card:#1a1a2b;--ink:#f2f2fa;--sub:#a3a3bd;--line:#2c2c44;--in:#00c2cb;--out:#ff4da6;--indigo:#818cf8;--chip:#26264a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif}
+main{max-width:1180px;margin:0 auto;padding:24px 16px 64px}
+h1{font-size:26px;margin:0 0 4px}h2{font-size:19px;margin:36px 0 10px}
+p.lead{color:var(--sub);margin:0 0 20px;max-width:760px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.phone{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:16px}
+.tag{font-size:12px;font-weight:600;color:var(--indigo);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.label{font-size:15px;color:var(--sub);font-weight:500}
+.pill{font-size:13px;border-radius:999px;background:var(--chip);padding:4px 10px;white-space:nowrap}
+.fig{font-size:34px;font-weight:600;margin:4px 0 6px;letter-spacing:-.01em}.fig small{font-size:17px;font-weight:400;opacity:.6}
+.eye{font-size:16px;color:var(--sub);margin-left:6px}
+.month{font-size:15px;color:var(--sub)}.month b{color:var(--ink);font-weight:600}
+.pills{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.np{font-size:13px;border:1px solid var(--line);border-radius:999px;padding:4px 10px}
+.np.in::before{content:"↗ ";color:var(--in);font-weight:700}.np.out::before{content:"↘ ";color:var(--out);font-weight:700}
+.np.sel{background:var(--out);border-color:var(--out);color:#fff}.np.sel::before{color:#fff}
+.chipf{display:inline-block;margin-top:8px;font-size:13px;font-weight:600;color:#fff;background:var(--indigo);border-radius:999px;padding:4px 10px}
+.note{font-size:13px;color:var(--sub);margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;font-size:14px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}th{color:var(--sub);font-weight:600}
+td.old{color:var(--sub);text-decoration:line-through}
+.wg{display:flex;gap:16px;flex-wrap:wrap}
+.widget{width:170px;height:170px;border-radius:22px;background:var(--card);border:1px solid var(--line);padding:14px;display:flex;flex-direction:column;justify-content:space-between}
+.widget .t{font-size:13px;font-weight:600;color:var(--indigo)}.widget .v{font-size:26px;font-weight:600}.widget .s{font-size:12px;color:var(--sub)}
+</style>
+</head>
+<body>
+<main>
+<h1>Tienes hoy · Te queda</h1>
+<p class="lead">Maqueta de la decisión 8 de la revisión 2.3 (opción C, 9-nov), con el detalle fino ya resuelto. Cifras
+ficticias. La cifra grande es lo que hay en tus cuentas y no sigue al período; la línea de debajo es lo que entró menos
+lo que salió, y es lo único que mueven el período y las píldoras.</p>
+
+<h2>Panel · el hero</h2>
+<div class="grid">
+  <div class="phone"><div class="tag">Mes típico</div>
+    <div class="row"><span class="label">Tienes hoy</span><span class="pill">Este mes</span></div>
+    <div class="fig">S/ 64,690<small>.04</small><span class="eye">👁</span></div>
+    <div class="month">Te queda <b>S/ 6,882.40</b></div>
+    <div class="pills"><span class="np in">S/ 12,910.40</span><span class="np out">S/ 6,028.00</span></div>
+  </div>
+  <div class="phone"><div class="tag">Mes pasado (cerrado)</div>
+    <div class="row"><span class="label">Tienes hoy</span><span class="pill">Mes pasado</span></div>
+    <div class="fig">S/ 64,690<small>.04</small><span class="eye">👁</span></div>
+    <div class="month">En octubre te quedó <b>S/ 4,120.00</b></div>
+    <div class="pills"><span class="np in">S/ 11,800.00</span><span class="np out">S/ 7,680.00</span></div>
+    <div class="note">La cifra grande no cambia con el período. El mes cerrado va en pasado.</div>
+  </div>
+  <div class="phone"><div class="tag">Una cuenta elegida</div>
+    <div class="row"><span class="label">Tienes hoy</span><span class="pill">Este mes</span></div>
+    <div class="fig">S/ 380<small>.00</small><span class="eye">👁</span></div>
+    <div class="month">Te queda <b>S/ 120.00</b></div>
+    <div class="pills"><span class="np in">S/ 500.00</span><span class="np out">S/ 380.00</span></div>
+    <div class="note">Con el chip de «Efectivo» puesto, la cifra es el saldo de esa cuenta.</div>
+  </div>
+  <div class="phone"><div class="tag">Varias monedas</div>
+    <div class="row"><span class="label">Tienes hoy</span><span class="pill">Este mes</span></div>
+    <div class="fig">≈ S/ 183,023<small>.25</small><span class="eye">👁</span></div>
+    <div class="month">Te queda <b>S/ 6,882.40</b></div>
+    <div class="pills"><span class="np in">S/ 12,910.40</span><span class="np out">S/ 6,028.00</span></div>
+  </div>
+  <div class="phone"><div class="tag">Saldo en rojo</div>
+    <div class="row"><span class="label">Debes hoy</span><span class="pill">Este mes</span></div>
+    <div class="fig">S/ 1,284<small>.30</small><span class="eye">👁</span></div>
+    <div class="month">Te queda <b>−S/ 210.00</b></div>
+    <div class="pills"><span class="np in">S/ 900.00</span><span class="np out">S/ 1,110.00</span></div>
+    <div class="note">La cifra va sin signo: el rótulo ya dice que es deuda. Un mes en rojo lleva su signo.</div>
+  </div>
+  <div class="phone"><div class="tag">Píldora de gastos puesta</div>
+    <div class="row"><span class="label">Tienes hoy</span><span class="pill">Este mes</span></div>
+    <div class="fig">S/ 64,690<small>.04</small><span class="eye">👁</span></div>
+    <div class="month">Gastos de noviembre <b>S/ 6,028.00</b></div>
+    <div class="pills"><span class="np in" style="opacity:.45">S/ 12,910.40</span><span class="np out sel">S/ 6,028.00</span></div>
+    <span class="chipf">Viendo solo gastos ✕</span>
+  </div>
+  <div class="phone"><div class="tag">Modo «Solo gastos»</div>
+    <div class="row"><span class="label">Gastos de noviembre</span><span class="pill">Este mes</span></div>
+    <div class="fig">S/ 6,028<small>.00</small><span class="eye">👁</span></div>
+    <div class="month">↘ 12 % vs período anterior</div>
+    <div class="note">Se conserva como estaba; el rótulo pasa de «Gastado» a «Gastos de noviembre».</div>
+  </div>
+  <div class="phone"><div class="tag">Ojo cerrado</div>
+    <div class="row"><span class="label">Tienes hoy</span><span class="pill">Este mes</span></div>
+    <div class="fig">S/ ••••<span class="eye">🙈</span></div>
+    <div class="month">Te queda <b>S/ ••••</b></div>
+    <div class="pills"><span class="np in">S/ ••••</span><span class="np out">S/ ••••</span></div>
+  </div>
+</div>
+<p class="lead" style="margin-top:12px">VoiceOver lee el hero como «Tienes hoy, S/ 64,690.04. Te queda S/ 6,882.40, Este mes»
+y cada píldora como «Entró S/ 12,910.40» / «Salió S/ 6,028.00».</p>
+
+<h2>Estadísticas · los mismos nombres</h2>
+<table>
+<tr><th>Dónde</th><th>Antes</th><th>Período en curso</th><th>Período cerrado</th></tr>
+<tr><td>Resumen, Tendencias y Registros (entró − salió)</td><td class="old">Balance del período</td><td>Te queda</td><td>Te quedó</td></tr>
+<tr><td>Distribución sin filtros (saldo de las cuentas)</td><td class="old">Saldo de cuentas</td><td>Tienes hoy</td><td>Tenías al cierre</td></tr>
+<tr><td>Tendencias, botón de la gráfica de saldo (VoiceOver)</td><td class="old">Balance</td><td colspan="2">Saldo (igual que en pantalla)</td></tr>
+<tr><td>Tendencias, línea bajo la cifra</td><td class="old">Tu balance se mantiene estable</td><td colspan="2">Lo que te queda se mantiene estable</td></tr>
+<tr><td>Flujo de Distribución, nodo del sobrante</td><td class="old">Disponible</td><td>Te queda</td><td>Te quedó</td></tr>
+</table>
+
+<h2>Widgets</h2>
+<div class="wg">
+  <div class="widget"><div class="t">💼 Saldo</div><div class="v">S/ 64,690</div><div class="s">Este mes · ↗ 1.6 %</div></div>
+  <div class="widget"><div class="t">Resumen del mes</div><div><div class="s">Saldo</div><div class="v" style="font-size:20px">S/ 64,690</div><div class="s">Gastado S/ 6,028</div></div><div class="s"></div></div>
+</div>
+<p class="lead" style="margin-top:12px">«Disponible» pasa a «Saldo» en el título, en la galería y al configurarlo. El widget
+enseña el saldo al cierre del período que elijas, así que no dice «hoy».</p>
+
+<h2>Lo que no cambia aquí</h2>
+<table>
+<tr><th>Texto</th><th>Por qué se queda</th></tr>
+<tr><td>«Disponible» del plan de flujo de caja</td><td>Es del lote «Al 30 tendrías» (decisión 30), que usará estas palabras.</td></tr>
+<tr><td>«Tu balance» en Grupos</td><td>Es lo que debes o te deben entre personas: otro concepto.</td></tr>
+<tr><td>«Disponible» de la tarjeta en el onboarding</td><td>Es la línea de crédito que te queda: otro concepto.</td></tr>
+</table>
+</main>
+</body>
+</html>

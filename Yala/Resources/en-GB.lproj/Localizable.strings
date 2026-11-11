@@ -2204,7 +2204,6 @@
 "panel.health.voiceover.noData" = "no data";
 "panel.health.voiceover.score" = "%d out of 100";
 "panel.health.voiceover.summary" = "Financial health: %1$@. Budget %2$@. Activity %3$@. Bills %4$@.";
-"panel.hero.availableLabel" = "Available";
 "panel.insightMenuDifferentAngle" = "Different angle";
 "panel.insightMenuHideHour" = "Hide for one hour";
 "panel.insightMenuHideToday" = "Hide for today";
@@ -2922,7 +2921,6 @@
 "statistics.periodComparison" = "Comparison with previous period";
 "statistics.previousPeriod" = "Previous period";
 "statistics.records" = "Records";
-"statistics.sankey.available" = "Available";
 "statistics.sankey.expenses" = "Expenses";
 "statistics.sankey.otherFunds" = "Other funds";
 "statistics.sankey.others" = "Others";
@@ -4722,12 +4720,6 @@
 /* Cuerpo del aviso al tocar la tarjeta de un grupo pendiente de aprobación */
 "groups.card.pendingNotice.body" = "The group admin hasn't approved your request yet. Once they do, you'll be able to open the group and see its expenses. We'll let you know when you're approved.";
 
-/* Stats hero caption: the figure is the accounts balance (stock), same as Panel KPI */
-"stats.hero.captionAccountsBalance" = "Account balance";
-
-/* Stats hero caption: the figure is income minus expenses for the period (flow) */
-"stats.hero.captionNetPeriod" = "Balance for the period";
-
 /* Stats hero caption: the figure is only the income side for the period */
 "stats.hero.captionIncomePeriod" = "Income for the period";
 
@@ -6000,9 +5992,6 @@
 /* Note in the 'records without account' sheet when group records keep their currency */
 "orphanedRecords.groupKeptCurrencyNote" = "Group expenses in another currency move as they are, without converting: the group sets their amount.";
 
-/* Panel hero label: income minus expenses of a named month. %@ = month name */
-"panel.hero.balanceOfMonth" = "%@ balance";
-
 /* Panel hero label when only expenses are shown. %@ = month name */
 "panel.hero.expensesOfMonth" = "%@ expenses";
 
@@ -6017,9 +6006,6 @@
 
 /* Line under the panel hero when the period has no income or expenses yet */
 "panel.hero.noMovements" = "No records in this period yet";
-
-/* Second line under the panel hero with no movements: the money in the accounts. %@ = amount */
-"panel.hero.totalInAccounts" = "You have %@ in your accounts";
 
 /* Small hint next to the panel hero label: tapping opens Statistics */
 "panel.hero.seeDetail" = "See details";
@@ -8049,3 +8035,11 @@
 "tag.colorName.custom" = "Custom colour";
 "tag.nameCount %lld %lld" = "%1$lld of %2$lld";
 "tag.nameLimitReached %lld %lld" = "%1$lld of %2$lld: there’s no room for more";
+
+/* Decisión 8 de la revisión 2.3 (2026-11-11): «Tienes hoy» (lo de las cuentas) y «Te queda» (entró − salió) */
+"panel.hero.haveToday" = "You have today";
+"panel.hero.oweToday" = "You owe today";
+"panel.hero.leftNow" = "Remaining";
+"panel.hero.leftPast" = "Was left";
+"panel.hero.leftInMonth" = "Left in %@";
+"stats.hero.captionAccountsBalanceClosed" = "Balance at close";

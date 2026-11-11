@@ -16,8 +16,8 @@
 "widget.gallery.quickImage.desc" = "Registra da una foto o da un file. Tocca per sceglierlo.";
 "widget.gallery.cashFlow" = "Entrate e uscite";
 "widget.gallery.cashFlow.desc" = "Quello che è entrato e uscito nel periodo. Tocca per vederlo in Tendenze.";
-"widget.gallery.balance" = "Disponibile";
-"widget.gallery.balance.desc" = "Il tuo denaro disponibile e il suo andamento. Tocca per vedere il Panel.";
+"widget.gallery.balance" = "Saldo";
+"widget.gallery.balance.desc" = "Quello che hai sui tuoi conti e il suo andamento. Tocca per vedere il Panel.";
 "widget.gallery.budgets" = "Budget";
 "widget.gallery.budgets.desc" = "Come vanno i tuoi budget. Tocca per vedere Budget.";
 "widget.gallery.latestRecords" = "Ultimi registri";
@@ -34,8 +34,8 @@
 "widget.gallery.topSubcategories.desc" = "Le tue sottocategorie con più spese. Tocca per vedere Distribuzione per sottocategoria.";
 
 // MARK: - Gallery (Lock Screen accessory widgets)
-"widget.gallery.accessoryBalance" = "Disponibile";
-"widget.gallery.accessoryBalance.desc" = "Il tuo denaro disponibile nella schermata di blocco. Tocca per vedere il Panel.";
+"widget.gallery.accessoryBalance" = "Saldo";
+"widget.gallery.accessoryBalance.desc" = "Quello che hai sui tuoi conti, nella schermata di blocco. Tocca per vedere il Panel.";
 "widget.gallery.accessoryExpense" = "Spese";
 "widget.gallery.accessoryExpense.desc" = "Le tue spese nella schermata di blocco. Tocca per vedere la Panoramica di Statistiche.";
 "widget.gallery.accessoryBudget" = "Budget";
@@ -46,8 +46,8 @@
 // MARK: - Intent titles and descriptions
 "widget.intent.cashFlow.title" = "Entrate e uscite";
 "widget.intent.cashFlow.desc" = "Mostra quello che è entrato e uscito nel periodo";
-"widget.intent.balance.title" = "Disponibile";
-"widget.intent.balance.desc" = "Mostra il tuo denaro disponibile";
+"widget.intent.balance.title" = "Saldo";
+"widget.intent.balance.desc" = "Mostra quello che hai sui tuoi conti";
 "widget.intent.expense.title" = "Spese";
 "widget.intent.expense.desc" = "Mostra le tue spese totali";
 "widget.intent.categoriesPie.title" = "Categorie in cerchio";
@@ -64,7 +64,7 @@
 "widget.intent.scheduledPayments.desc" = "Mostra i tuoi prossimi pagamenti pianificati";
 "widget.intent.latestRecords.title" = "Ultimi registri";
 "widget.intent.latestRecords.desc" = "Mostra le tue registrazioni più recenti";
-"widget.intent.accessoryBalance.title" = "Disponibile";
+"widget.intent.accessoryBalance.title" = "Saldo";
 "widget.intent.accessoryBalance.desc" = "Saldo del periodo";
 "widget.intent.accessoryExpense.title" = "Spese";
 "widget.intent.accessoryExpense.desc" = "Spese del periodo";
@@ -161,7 +161,6 @@
 "widget.groupsOnly.cta" = "Attiva Yala completo";
 
 /* UX 2.2 · lote decidido 08 — estados vacíos de los widgets (L15-2) */
-"widget.ui.available" = "Disponibile";
 "widget.empty.openYalaBalance" = "Apri Yala per vedere il tuo saldo";
 "widget.empty.openYala" = "Apri Yala per vedere i tuoi dati";
 "widget.empty.openYalaShort" = "Apri Yala";

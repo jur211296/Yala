@@ -119,7 +119,6 @@
 // KPI fallback (aiSubtitle takes the KPI slot when available)
 // Markdown bold (**amount**) renders via AttributedString(markdown:)
 
-"panel.hero.availableLabel" = "Dostępne";
 
 // MARK: - Trend Widget
 
@@ -3524,7 +3523,6 @@
 
 "statistics.sankey.title" = "Przepływ pieniędzy";
 "statistics.sankey.expenses" = "Wydatki";
-"statistics.sankey.available" = "Dostępne";
 "statistics.sankey.others" = "Inne";
 "statistics.sankey.planned" = "Planowane";
 "statistics.sankey.plannedRecurring" = "Cykliczne";
@@ -5492,12 +5490,6 @@
 /* Cuerpo del aviso al tocar la tarjeta de un grupo pendiente de aprobación */
 "groups.card.pendingNotice.body" = "Administrator grupy jeszcze nie zatwierdził Twojej prośby. Gdy to zrobi, będziesz mieć dostęp do grupy i jej wydatków. Damy Ci znać, gdy zostaniesz zatwierdzony.";
 
-/* Stats hero caption: the figure is the accounts balance (stock), same as Panel KPI */
-"stats.hero.captionAccountsBalance" = "Saldo kont";
-
-/* Stats hero caption: the figure is income minus expenses for the period (flow) */
-"stats.hero.captionNetPeriod" = "Bilans okresu";
-
 /* Stats hero caption: the figure is only the income side for the period */
 "stats.hero.captionIncomePeriod" = "Przychody w okresie";
 
@@ -6768,9 +6760,6 @@
 /* Note in the 'records without account' sheet when group records keep their currency */
 "orphanedRecords.groupKeptCurrencyNote" = "Wydatki grupowe w innej walucie przechodzą bez zmian, bez przeliczania: ich kwotę ustala grupa.";
 
-/* Panel hero label: income minus expenses of a named month. %@ = month name */
-"panel.hero.balanceOfMonth" = "Bilans: %@";
-
 /* Panel hero label when only expenses are shown. %@ = month name */
 "panel.hero.expensesOfMonth" = "Wydatki: %@";
 
@@ -6785,9 +6774,6 @@
 
 /* Line under the panel hero when the period has no income or expenses yet */
 "panel.hero.noMovements" = "Brak wpisów w tym okresie";
-
-/* Second line under the panel hero with no movements: the money in the accounts. %@ = amount */
-"panel.hero.totalInAccounts" = "Masz %@ na swoich kontach";
 
 /* Small hint next to the panel hero label: tapping opens Statistics */
 "panel.hero.seeDetail" = "Szczegóły";
@@ -8817,3 +8803,11 @@
 "tag.colorName.custom" = "Własny kolor";
 "tag.nameCount %lld %lld" = "%1$lld z %2$lld";
 "tag.nameLimitReached %lld %lld" = "%1$lld z %2$lld: więcej się nie zmieści";
+
+/* Decisión 8 de la revisión 2.3 (2026-11-11): «Tienes hoy» (lo de las cuentas) y «Te queda» (entró − salió) */
+"panel.hero.haveToday" = "Masz dziś";
+"panel.hero.oweToday" = "Dziś na minusie";
+"panel.hero.leftNow" = "Zostaje ci";
+"panel.hero.leftPast" = "Zostało ci";
+"panel.hero.leftInMonth" = "W miesiącu %@ zostało ci";
+"stats.hero.captionAccountsBalanceClosed" = "Saldo na koniec";
