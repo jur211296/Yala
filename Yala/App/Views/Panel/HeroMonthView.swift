@@ -81,6 +81,8 @@ struct HeroMonthView: View {
             .animation(reduceMotion ? nil : DS.Animation.selection, value: customDateRange)
         } content: {
             summaryRow
+            // Días 1 y 2 de «Este mes»: «Día N de 31» con dos atajos al selector (decisión 10 de 2.3).
+            PanelMonthStartLine(selectedPeriod: selectedPeriod, onSelectPeriod: onSelectPeriod)
         }
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isHeader)

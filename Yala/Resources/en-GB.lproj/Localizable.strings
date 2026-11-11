@@ -6138,6 +6138,12 @@
 
 /* Balance chart: label of the dashed average line. %@ = short amount */
 "panel.trend.averageLabel" = "Average %@";
+"panel.trend.versusDate" = "vs %@";
+"panel.trend.today" = "today";
+"panel.trend.startEnd.a11y" = "Balance, %1$@: %2$@; %3$@: %4$@";
+"panel.monthStart.dayOfMonth" = "Day %1$d of %2$d";
+"panel.monthStart.last30Days" = "See last 30 days";
+"panel.monthStart.previousMonth" = "See %@";
 
 /* Primary button of the voice/photo AI notice */
 "aiConsent.processingAccept" = "Turn on";

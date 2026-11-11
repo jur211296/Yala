@@ -135,6 +135,8 @@ struct PanelPeriodComparisonData: Equatable {
     var period: DetailPeriod = .thisMonth
     var currentTotal: Double = 0
     var previousTotal: Double? = nil
+    /// La fecha real del período anterior contra la que se mide `deltaPercent`: el chip la dice («vs 20 oct»).
+    var previousReferenceDate: Date? = nil
     var supportsComparison: Bool = true
 
     var deltaPercent: Double? {
@@ -3173,7 +3175,8 @@ final class PanelViewModel {
         // Total del período anterior ALINEADO al día equivalente del último día
         // con datos del actual (MTD-vs-MTD, p20-15): == último punto VISIBLE de la
         // curva anterior, no el fin del período anterior COMPLETO.
-        let previousTotal: Double? = DateAlignmentHelper.alignedPreviousTotal(
+        // El total y su fecha salen del mismo recorte: la fecha es la que dice el chip («vs 20 oct», decisión 11 de 2.3).
+        let previousReference = DateAlignmentHelper.alignedPreviousReference(
             previousPoints: previousResult.points,
             currentPoints: currentResult.points,
             currentInterval: context.effectiveInterval,
@@ -3181,6 +3184,7 @@ final class PanelViewModel {
             period: context.period,
             comparisonMode: mode
         )
+        let previousTotal: Double? = previousReference?.value
 
         let newData = PanelPeriodComparisonData(
             currentPoints: currentResult.points,
@@ -3194,6 +3198,7 @@ final class PanelViewModel {
             period: context.period,
             currentTotal: currentTotal,
             previousTotal: previousTotal,
+            previousReferenceDate: previousReference?.date,
             supportsComparison: true
         )
         if newData != periodComparisonWidget { periodComparisonWidget = newData }

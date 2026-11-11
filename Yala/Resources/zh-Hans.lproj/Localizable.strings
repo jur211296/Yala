@@ -6906,6 +6906,12 @@
 
 /* Balance chart: label of the dashed average line. %@ = short amount */
 "panel.trend.averageLabel" = "平均 %@";
+"panel.trend.versusDate" = "对比 %@";
+"panel.trend.today" = "今天";
+"panel.trend.startEnd.a11y" = "余额，%1$@：%2$@；%3$@：%4$@";
+"panel.monthStart.dayOfMonth" = "第 %1$d 天，共 %2$d 天";
+"panel.monthStart.last30Days" = "查看最近 30 天";
+"panel.monthStart.previousMonth" = "查看%@";
 
 /* Primary button of the voice/photo AI notice */
 "aiConsent.processingAccept" = "开启";

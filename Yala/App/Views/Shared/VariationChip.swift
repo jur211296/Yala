@@ -13,6 +13,8 @@ struct VariationChip: View {
     // MARK: - Settings
 
     @Environment(AppPreferences.self) private var appPreferences
+    /// Los días 1 y 2 de «Este mes» el Panel no compara con el período anterior: solo el monto (decisión 10 de 2.3).
+    @Environment(\.hidesPeriodVariations) private var hidesPeriodVariations
 
     // MARK: - Properties
 
@@ -85,8 +87,8 @@ struct VariationChip: View {
 
     @ViewBuilder
     var body: some View {
-        // Hide entirely when showVariations is OFF
-        if !appPreferences.showVariations {
+        // Hide entirely when showVariations is OFF, or when the Panel says the month just started.
+        if !appPreferences.showVariations || hidesPeriodVariations {
             EmptyView()
         } else if let variation = variation {
             // Show formatted variation percentage
@@ -121,6 +123,14 @@ struct VariationChip: View {
         }
         // When variation is nil and showNAWhenNil is false, show nothing (for headers)
     }
+}
+
+// MARK: - Mes recién empezado
+
+extension EnvironmentValues {
+    /// `true` en el Panel los días 1 y 2 de «Este mes» (`PanelEarlyMonthLogic`): las comparaciones con el período
+    /// anterior (chips de variación, «vs S/ X») no se pintan; queda el monto. Fuera del Panel, siempre `false`.
+    @Entry var hidesPeriodVariations: Bool = false
 }
 
 // MARK: - Accesibilidad
