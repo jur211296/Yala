@@ -188,6 +188,7 @@
 - [Montar el simulador del Duo](reference_montar_el_simulador_del_duo.md) — Xcode 27.2: runtime propio del Duo, no se deja instalado; aviso de PosterBoard.
 - [Conducir el Duo sin pantalla propia](reference_conducir_el_duo_sin_pantalla_propia.md) — screencapture vía osascript; carrusel por argumento, no arrastre.
 - [Conducir el simulador con axe](reference_conducir_simulador_con_axe.md) — describe-ui filtrado y tap por id: una fracción de snapshot_ui; sin tildes.
+- [AX timeout tras una tanda con axe](feedback_xcuitest_ax_timeout_tras_una_tanda_con_axe.md) — el runner no arranca; reinicia el simulador antes del gate.
 - [Portapapeles y PasteButton en el simulador](reference_portapapeles_y_pastebutton_en_simulador.md) — pbcopy no llega en iOS 27; el PasteButton ignora toques sintéticos: typeText + guion.
 - [Capturas de hojas con XCUITest](feedback_capturas_de_hojas_con_xcuitest.md) — dentro de Ajustes, XCTAttachment + export; los swipes de axe cierran la hoja.
 - [Capturas: en `_capturas/<slug>`](reference_capturas_sobreviven_en_worktrees_capturas.md) — el worktree se retira; capturas/ dentro muere y ensucia el status.

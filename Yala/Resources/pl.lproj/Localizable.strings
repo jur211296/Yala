@@ -3280,12 +3280,12 @@
 "contextualGuide.dismiss" = "Rozumiem";
 "guide.panel.title" = "To twój przegląd";
 "guide.panel.message" = "Zobacz na pierwszy rzut oka, ile wydałeś i ile zostało. Stuknij Nowy wpis, aby dodać wydatek.";
-"guide.trends.title" = "Jak idą wydatki?";
-"guide.trends.message" = "Wykres pokazuje, czy wydajesz więcej, czy mniej niż wcześniej. Linia w górę = więcej wydatków.";
+"guide.trends.title" = "Jak idą twoje finanse?";
+"guide.trends.message" = "Wykres pokazuje saldo, dochody lub wydatki w czasie. Gdy linia rośnie, ta wartość wzrosła.";
 "guide.categories.title" = "Gdzie idą twoje pieniądze?";
 "guide.categories.message" = "Zobacz, ile wydajesz na każdą rzecz: jedzenie, transport itd. Największy wycinek = najwięcej wydatków.";
-"guide.records.title" = "Wszystkie wydatki";
-"guide.records.message" = "Tu masz wszystkie zapisane wydatki, posortowane według daty. Stuknij wybrany, aby zobaczyć szczegóły.";
+"guide.records.title" = "Wszystkie wpisy";
+"guide.records.message" = "Tu masz dochody i wydatki z okresu, posortowane według daty. Stuknij wybrany wpis, aby zobaczyć szczegóły.";
 "guide.budgets.title" = "Ustaw limity wydatków";
 "guide.budgets.message" = "Budżet to maksimum, jakie chcesz wydać na daną rzecz. Przykład: nie wydaj więcej niż 500 na jedzenie w tym miesiącu.";
 "guide.scheduled.title" = "Cykliczne wydatki";
@@ -4210,15 +4210,18 @@
 "stats.distribution.insightTitlePro" = "Rozkład w okresie";
 "stats.distribution.aiFootnote" = "Podsumowanie AI";
 "stats.distribution.modeCharts" = "Wykresy";
-"stats.distribution.insight.onset %@" = "Twój okres %@ zaczyna się kształtować. Wkrótce zobaczysz wyraźniejsze wzorce.";
-"stats.distribution.insight.newCategory %@ %@" = "Spróbowałeś %@ w tym %@.";
+"stats.distribution.insight.onsetNoMovements" = "W tym okresie nie ma jeszcze operacji. Gdy je zapiszesz, zobaczysz tu, jak się rozkładają.";
+"stats.distribution.empty.noTagMovementsTitle" = "Brak operacji z etykietą w tym okresie";
+"stats.distribution.empty.noSubcategoryMovementsTitle" = "Brak operacji z podkategorią w tym okresie";
+"stats.distribution.empty.noMovementsTitle" = "Brak operacji w tym okresie";
+"stats.distribution.insight.newCategoryInPeriod %@" = "W tym okresie spróbowałeś %@.";
 "stats.distribution.insight.concentrated %d %@" = "%d%% Twoich wydatków przypada na %@. Czy to pasuje do Twoich priorytetów?";
 "stats.distribution.insight.balanced %d" = "Twoje wydatki są rozłożone: żadna kategoria nie przekracza %d%%. Zrównoważony rozkład.";
 "stats.distribution.insight.shiftedUp %d %@ %@" = "%2$@ wzrosło o %1$d%% vs %3$@. Zobaczmy co się zmieniło w tym okresie.";
 "stats.distribution.insight.shiftedDown %d %@ %@" = "%2$@ spadło o %1$d%% vs %3$@. Dobra korekta.";
 "stats.distribution.insight.topSub %d %@ %@" = "%2$@ stanowi %1$d%% w %3$@. Twoja największa konkretna pozycja.";
 
-"stats.trends.insight.onset %@" = "To Twój pierwszy %@ z Yala";
+"stats.trends.insight.onsetNoPrevious" = "Nie ma jeszcze poprzedniego okresu do porównania.";
 "stats.trends.insight.varUpExpense %d %@" = "Twoje wydatki wzrosły o %d%% w porównaniu z %@. Dostosujmy razem.";
 "stats.trends.insight.varDownExpense %d %@" = "Twoje wydatki spadły o %d%% w porównaniu z %@. Tak trzymaj.";
 "stats.trends.insight.varUpIncome %d %@" = "Twoje przychody wzrosły o %d%% w porównaniu z %@. Dobra robota.";

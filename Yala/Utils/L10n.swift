@@ -9205,12 +9205,15 @@ enum L10n {
     // MARK: - Stats Records polish (stats-polish-panel-alignment)
 
     enum Stats {
+        // `locale: .current` pone el separador de miles con el formato de los importes de al lado
+        // (`CurrencyFormattingHelper`, `NumberFormatter` con el locale del sistema): sin él salía «11696 registros»
+        // junto a «S/ 1,359,134» (lote 07 de mejoras necesarias 2.3).
         enum Records {
             static var motivationalOne: String {
                 ls("stats.records.motivationalOne", comment: "Records hero motivational subtitle when filteredCount == 1")
             }
             static func motivationalMany(_ count: Int) -> String {
-                String(format: ls("stats.records.motivationalMany %d", comment: "Records hero motivational subtitle when filteredCount >= 2 (use %d placeholder)"), count)
+                String(format: ls("stats.records.motivationalMany %d", comment: "Records hero motivational subtitle when filteredCount >= 2 (use %d placeholder)"), locale: .current, count)
             }
         }
         enum Insights {
@@ -9218,7 +9221,7 @@ enum L10n {
                 ls("stats.insights.motivationalOne", comment: "Insights hero motivational subtitle when transactionCount == 1")
             }
             static func motivationalMany(_ count: Int) -> String {
-                String(format: ls("stats.insights.motivationalMany %d", comment: "Insights hero motivational subtitle when transactionCount >= 2 (use %d placeholder)"), count)
+                String(format: ls("stats.insights.motivationalMany %d", comment: "Insights hero motivational subtitle when transactionCount >= 2 (use %d placeholder)"), locale: .current, count)
             }
             static var detailHeader: String {
                 ls("stats.insights.detailHeader", comment: "Detail mode section header — generic 'Your numbers' (period shown as subtitle)")
@@ -9274,8 +9277,10 @@ enum L10n {
                 String(format: ls("stats.trends.heroVarDown %d %@", comment: "Hero subtitle when balance variation negative ≥5% (params: percent, previousPeriod label e.g. 'Abr 26')"), percent, previousPeriod)
             }
             enum Insight {
-                static func onset(_ period: String) -> String {
-                    String(format: ls("stats.trends.insight.onset %@", comment: "Trend Insight: user has no previous period (first %@: period name)"), period)
+                /// Sin período anterior con datos. No lleva el nombre del período: «Este mes» es un rótulo y dentro de
+                /// una frase salía «tu primer Este mes» (lote 07 de mejoras necesarias 2.3).
+                static var onsetNoPrevious: String {
+                    ls("stats.trends.insight.onsetNoPrevious", comment: "Trend Insight: there is no previous period with data to compare with")
                 }
                 static func varUpExpense(_ percent: Int, _ previousPeriod: String) -> String {
                     String(format: ls("stats.trends.insight.varUpExpense %d %@", comment: "Trend Insight: expense rose %d%% vs %@ (previous period label)"), percent, previousPeriod)
@@ -9358,6 +9363,17 @@ enum L10n {
             static func heroSubtitle3(_ cats: Int, _ subs: Int, _ tags: Int) -> String {
                 String(format: ls("stats.distribution.heroSubtitle3 %d %d %d", comment: "Hero subtitle 3 dimensions (categories + subcategories + tags)"), cats, subs, tags)
             }
+            // Vacíos de las tarjetas de Distribución cuando el período no trae movimientos de esa dimensión. Antes decían
+            // «Aún no tienes categorías / subcategorías / etiquetas» aunque existieran (lote 07 de mejoras necesarias 2.3).
+            static var emptyNoMovementsTitle: String {
+                ls("stats.distribution.empty.noMovementsTitle", comment: "Distribution list empty state: no movements in the period")
+            }
+            static var emptyNoSubcategoryMovementsTitle: String {
+                ls("stats.distribution.empty.noSubcategoryMovementsTitle", comment: "Distribution subcategory list empty state: no movements with a subcategory in the period")
+            }
+            static var emptyNoTagMovementsTitle: String {
+                ls("stats.distribution.empty.noTagMovementsTitle", comment: "Distribution tag chart empty state: no tagged movements in the period")
+            }
             static func insightTitleFree(_ period: String) -> String {
                 String(format: ls("stats.distribution.insightTitleFree %@", comment: "Distribution Insight Card title for Free users (param: period name)"), period)
             }
@@ -9371,11 +9387,13 @@ enum L10n {
                 ls("stats.distribution.modeCharts", comment: "Content mode pill label: charts view (pies + sankey + need bars)")
             }
             enum Insight {
-                static func onset(_ period: String) -> String {
-                    String(format: ls("stats.distribution.insight.onset %@", comment: "Distribution Insight: empty or no comparable data"), period)
+                // Sin el nombre del período: «Este mes» es un rótulo, y en «este %@» salía «este Este mes» (lote 07 de
+                // mejoras necesarias 2.3). La tarjeta ya está dentro del período elegido.
+                static var onsetNoMovements: String {
+                    ls("stats.distribution.insight.onsetNoMovements", comment: "Distribution Insight: no movements in the selected period")
                 }
-                static func newCategory(_ name: String, _ period: String) -> String {
-                    String(format: ls("stats.distribution.insight.newCategory %@ %@", comment: "Distribution Insight: user tried a new category this period"), name, period)
+                static func newCategoryInPeriod(_ name: String) -> String {
+                    String(format: ls("stats.distribution.insight.newCategoryInPeriod %@", comment: "Distribution Insight: user tried a new category in the selected period (param: category name)"), name)
                 }
                 static func concentrated(_ percent: Int, _ topCategory: String) -> String {
                     String(format: ls("stats.distribution.insight.concentrated %d %@", comment: "Distribution Insight: spending concentrated in top category (>=40%)"), percent, topCategory)

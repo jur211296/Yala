@@ -165,6 +165,10 @@ struct SankeyChartView: View {
     @State private var layout: SankeyLayout?
     @State private var scrollProgress: CGFloat = 0
     @State private var visibleRatio: CGFloat = 1
+    /// Los bordes por los que queda Sankey por ver, que se funden en vez de partir las etiquetas en seco.
+    @State private var fadeEdges: SankeyEdgeFadeLogic.Edges = .none
+    /// El ancho del fundido, el de los carruseles (`fadesTowardVerticalBar`).
+    private let edgeFadeWidth: CGFloat = 32
 
     // MARK: - Body
 
@@ -191,6 +195,7 @@ struct SankeyChartView: View {
                 .frame(width: totalWidth, height: cardHeight)
             }
             .frame(height: cardHeight)
+            .mask { edgeFadeMask }
             .onScrollGeometryChange(for: ScrollMetrics.self) { geom in
                 ScrollMetrics(
                     offsetX: geom.contentOffset.x,
@@ -203,6 +208,10 @@ struct SankeyChartView: View {
                 visibleRatio = m.contentW > 0
                     ? min(max(m.containerW / m.contentW, 0), 1)
                     : 1
+                let edges = SankeyEdgeFadeLogic.edges(
+                    offsetX: m.offsetX, contentWidth: m.contentW, containerWidth: m.containerW
+                )
+                if edges != fadeEdges { fadeEdges = edges }
             }
 
             if visibleRatio < 1 {
@@ -211,6 +220,17 @@ struct SankeyChartView: View {
         }
         .onAppear { layout = buildLayout() }
         .onChange(of: visibleData) { layout = buildLayout() }
+    }
+
+    /// Opaco en el centro y transparente hacia el borde por el que queda contenido (lote 07 de 2.3).
+    private var edgeFadeMask: some View {
+        HStack(spacing: 0) {
+            LinearGradient(colors: [.clear, .black], startPoint: .leading, endPoint: .trailing)
+                .frame(width: fadeEdges.leading ? edgeFadeWidth : 0)
+            Rectangle().fill(.black)
+            LinearGradient(colors: [.black, .clear], startPoint: .leading, endPoint: .trailing)
+                .frame(width: fadeEdges.trailing ? edgeFadeWidth : 0)
+        }
     }
 
     private var scrollIndicator: some View {

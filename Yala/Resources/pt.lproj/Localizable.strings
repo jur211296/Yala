@@ -1059,8 +1059,8 @@
 "insights.intelligentInsights" = "Observações";
 "insights.funFact" = "Curiosidade";
 "insights.emptyTitle" = "Sem dados ainda";
-"insights.emptyBody" = "Registre despesas para ver seus insights";
-"insights.fewTransactions" = "Registre mais para desbloquear todos os insights";
+"insights.emptyBody" = "Registre despesas para ver suas observações";
+"insights.fewTransactions" = "Registre mais para desbloquear todas as observações";
 "insights.monthly" = "mensal";
 "insights.perDay" = "por dia";
 "insights.ofTotal" = "do total";
@@ -1071,7 +1071,7 @@
 "insights.goToSettings" = "Ir para ajustes";
 "insights.notInterested" = "Não me interessa";
 "insights.offlineCached" = "Sem conexão. Mostrando última análise.";
-"insights.offlineNoCache" = "Sem conexão. Insights personalizados estarão disponíveis ao conectar.";
+"insights.offlineNoCache" = "Sem conexão. As observações personalizadas estarão disponíveis ao conectar.";
 
 "trend.filterBlockedMessage" = "Remova primeiro os filtros de categoria ou necessidade";
 "trend.filterBlockedTitle" = "Opção não disponível";
@@ -3269,12 +3269,12 @@
 "contextualGuide.dismiss" = "Entendi";
 "guide.panel.title" = "Este é seu resumo";
 "guide.panel.message" = "Veja de relance quanto gastou e quanto resta. Toque em Novo registro para adicionar um gasto.";
-"guide.trends.title" = "Como estão seus gastos?";
-"guide.trends.message" = "Este gráfico mostra se você está gastando mais ou menos que antes. Se a linha sobe, está gastando mais.";
+"guide.trends.title" = "Como está o seu dinheiro?";
+"guide.trends.message" = "Este gráfico acompanha seu saldo, suas receitas ou suas despesas ao longo do tempo. Se a linha sobe, esse número cresceu.";
 "guide.categories.title" = "Para onde vai seu dinheiro?";
 "guide.categories.message" = "Veja quanto gasta em cada coisa: comida, transporte, etc. A fatia maior mostra onde gasta mais.";
-"guide.records.title" = "Todos os seus gastos";
-"guide.records.message" = "Aqui estão todos os gastos registrados, ordenados por data. Toque em um para ver detalhes.";
+"guide.records.title" = "Todos os seus registros";
+"guide.records.message" = "Aqui estão suas receitas e despesas do período, ordenadas por data. Toque em um para ver detalhes.";
 "guide.budgets.title" = "Defina limites de gastos";
 "guide.budgets.message" = "Um orçamento é o máximo que você quer gastar em algo. Exemplo: Não gastar mais de R$ 500 em comida este mês.";
 "guide.scheduled.title" = "Gastos que se repetem";
@@ -4178,15 +4178,18 @@
 "stats.distribution.insightTitlePro" = "Distribuição do período";
 "stats.distribution.aiFootnote" = "Resumo com IA";
 "stats.distribution.modeCharts" = "Gráficos";
-"stats.distribution.insight.onset %@" = "Seu período %@ está tomando forma. Em breve você verá padrões mais claros.";
-"stats.distribution.insight.newCategory %@ %@" = "Você experimentou %@ neste %@.";
+"stats.distribution.insight.onsetNoMovements" = "Ainda não há movimentações neste período. Quando você registrar, verá aqui como elas se dividem.";
+"stats.distribution.empty.noTagMovementsTitle" = "Sem movimentações com etiqueta neste período";
+"stats.distribution.empty.noSubcategoryMovementsTitle" = "Sem movimentações com subcategoria neste período";
+"stats.distribution.empty.noMovementsTitle" = "Sem movimentações neste período";
+"stats.distribution.insight.newCategoryInPeriod %@" = "Você experimentou %@ neste período.";
 "stats.distribution.insight.concentrated %d %@" = "%d%% dos seus gastos se concentram em %@. Combina com suas prioridades?";
 "stats.distribution.insight.balanced %d" = "Seus gastos se repartem: nenhuma categoria ultrapassa %d%%. Distribuição equilibrada.";
 "stats.distribution.insight.shiftedUp %d %@ %@" = "%2$@ subiu %1$d%% vs %3$@. Vamos ver o que mudou neste período.";
 "stats.distribution.insight.shiftedDown %d %@ %@" = "%2$@ baixou %1$d%% vs %3$@. Bom ajuste.";
 "stats.distribution.insight.topSub %d %@ %@" = "%2$@ representa %1$d%% dentro de %3$@. Sua maior rubrica específica.";
 
-"stats.trends.insight.onset %@" = "Este é seu primeiro %@ com Yala";
+"stats.trends.insight.onsetNoPrevious" = "Ainda não há um período anterior para comparar.";
 "stats.trends.insight.varUpExpense %d %@" = "Você aumentou seus gastos em %d%% vs %@. Vamos ajustar juntos.";
 "stats.trends.insight.varDownExpense %d %@" = "Você reduziu seus gastos em %d%% vs %@. Continue assim.";
 "stats.trends.insight.varUpIncome %d %@" = "Sua renda cresceu %d%% vs %@. Bom trabalho.";

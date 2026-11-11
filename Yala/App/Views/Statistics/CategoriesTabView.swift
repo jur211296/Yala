@@ -418,9 +418,10 @@ struct CategoriesTabView: View {
 
     /// Subtítulo dimensional dinámico. 3 variantes según qué dimensiones tienen data.
     private func heroDimensionalSubtitle() -> String? {
-        // Cuenta categorías y subcategorías REALES: el trozo «Sin categoría» suma en la tarta pero no es una de ellas.
-        let catCount = categorySpending.filter { !$0.isUncategorized }.count
-        let subCount = subcategorySpending.filter { !$0.isUncategorized }.count
+        // El mismo recuento que la tarta le da a VoiceOver (`DistributionCountLogic`): categorías y subcategorías
+        // REALES con importe en el período. Ni «Sin categoría» ni «Sin subcategoría» ni las de importe cero.
+        let catCount = DistributionCountLogic.categoryCount(categorySpending)
+        let subCount = DistributionCountLogic.subcategoryCount(subcategorySpending)
         let tagCount = tagSpending.count
         let activeDims = [catCount > 0, subCount > 0, tagCount > 0].filter { $0 }.count
         switch activeDims {
@@ -661,8 +662,9 @@ struct CategoriesTabView: View {
             if tagSpending.isEmpty {
                 emptyState(
                     icon: "tag",
-                    title: L10n.Empty.noTags,
-                    subtitle: L10n.Statistics.noExpensesInPeriod
+                    // Lo que falta es movimiento etiquetado en el período, no etiquetas (lote 07 de 2.3).
+                    title: L10n.Stats.Distribution.emptyNoTagMovementsTitle,
+                    subtitle: L10n.Statistics.noDataToShow
                 )
                 .frame(height: 320)
             } else {
@@ -698,7 +700,7 @@ struct CategoriesTabView: View {
                         .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                     Spacer()
-                    SankeyLabelModeToggle(mode: $prefs.sankeyLabelMode)
+                    SankeyLabelModeToggle(mode: $prefs.sankeyLabelMode, currencyCode: defaultCurrencyCode)
                 }
                 sankeyCardBody.panelCard()
             }
@@ -975,7 +977,8 @@ struct CategoriesTabView: View {
             if categorySpending.isEmpty {
                 emptyState(
                     icon: "chart.bar.xaxis",
-                    title: L10n.Empty.noCategories,
+                    // Las categorías existen: lo que falta son movimientos del período (lote 07 de 2.3).
+                    title: L10n.Stats.Distribution.emptyNoMovementsTitle,
                     subtitle: L10n.Statistics.noDataToShow
                 )
                 .frame(maxWidth: .infinity, minHeight: 200)
@@ -996,7 +999,7 @@ struct CategoriesTabView: View {
             if subcategorySpending.isEmpty {
                 emptyState(
                     icon: "list.bullet.indent",
-                    title: L10n.Empty.noSubcategories,
+                    title: L10n.Stats.Distribution.emptyNoSubcategoryMovementsTitle,
                     subtitle: L10n.Statistics.noDataToShow
                 )
                 .frame(maxWidth: .infinity, minHeight: 200)
@@ -1333,9 +1336,10 @@ struct CategoriesTabView: View {
     private func findingText(_ finding: DistributionInsightFinding) -> String {
         switch finding {
         case .onset:
-            return L10n.Stats.Distribution.Insight.onset(periodDisplayName)
-        case .newCategory(let name, let period):
-            return L10n.Stats.Distribution.Insight.newCategory(name, period)
+            return L10n.Stats.Distribution.Insight.onsetNoMovements
+        case .newCategory(let name, _):
+            // El nombre del período no entra en la frase: «este Este mes» (lote 07 de mejoras necesarias 2.3).
+            return L10n.Stats.Distribution.Insight.newCategoryInPeriod(name)
         case .concentrated(let percent, let topCat):
             return L10n.Stats.Distribution.Insight.concentrated(percent, topCat)
         case .balanced(let maxPercent):
