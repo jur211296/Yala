@@ -242,7 +242,7 @@ struct AccountsSettingsListView: View {
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
             .scrollDisabled(true)
-            .frame(height: cards.reduce(0) { $0 + rowHeight + CGFloat($1.lines.count) * lineRowHeight })
+            .contentSizedListHeight(estimated: cards.reduce(0) { $0 + rowHeight + CGFloat($1.lines.count) * lineRowHeight })
             .solidCard()
             .environment(\.editMode, .constant(viewModel.isEditMode ? .active : .inactive))
         }

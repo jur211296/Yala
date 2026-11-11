@@ -554,49 +554,29 @@ struct InboxView: View {
 
     // MARK: - Selection Bar
 
+    /// Con texto de accesibilidad «Editar» baja a su propia línea, a todo lo ancho: junto al contador se partía por
+    /// sílabas («Edi-tar», «seleccio-nados»; lote 05 de 2.3, zona 38 P7). A tamaño normal, la barra de siempre.
     private var selectionBar: some View {
-        HStack(spacing: DS.Spacing.lg) {
-            // Select all / Deselect all
-            Button {
-                DS.Haptic.selection()
-                dsWithAnimation(reduceMotion) {
-                    if selectedDraftIDs.count == filteredDrafts.count {
-                        selectedDraftIDs.removeAll()
-                    } else {
-                        selectedDraftIDs = Set(filteredDrafts.map { $0.persistentModelID })
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                    HStack(spacing: DS.Spacing.lg) {
+                        selectAllButton
+                        selectedCountText
                     }
+                    bulkEditButton(fillsWidth: true)
                 }
-            } label: {
-                Image(systemName: selectedDraftIDs.count == filteredDrafts.count ? "checkmark.circle.fill" : "circle")
-                    .font(DS.Typography.title)
-                    .foregroundStyle(theme.accentText)
-                    .frame(minWidth: 44, minHeight: 44)
+            } else {
+                HStack(spacing: DS.Spacing.lg) {
+                    selectAllButton
+
+                    selectedCountText
+
+                    Spacer()
+
+                    bulkEditButton(fillsWidth: false)
+                }
             }
-            .accessibilityLabel(selectedDraftIDs.count == filteredDrafts.count ? L10n.Filters.deselectAll : L10n.Filters.selectAll)
-
-            // Count
-            Text(L10n.Inbox.selectedCount(selectedDraftIDs.count))
-                .font(DS.Typography.label)
-
-            Spacer()
-
-            // Actions button
-            Button {
-                showBulkActions = true
-            } label: {
-                Text(L10n.Action.edit)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.thOnAccent)
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.vertical, DS.Spacing.sm)
-                    .frame(minHeight: 44)
-                    .background(
-                        Capsule()
-                            .fill(selectedDraftIDs.isEmpty ? DS.Semantic.disabledForeground : theme.accent)
-                    )
-            }
-            .disabled(selectedDraftIDs.isEmpty)
-            .accessibilityHint(selectedDraftIDs.isEmpty ? L10n.Accessibility.selectAtLeastOneDraft : "")
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.md)
@@ -605,6 +585,53 @@ struct InboxView: View {
                 .fill(.ultraThinMaterial)
                 .ignoresSafeArea()
         )
+    }
+
+    /// Select all / Deselect all
+    private var selectAllButton: some View {
+        Button {
+            DS.Haptic.selection()
+            dsWithAnimation(reduceMotion) {
+                if selectedDraftIDs.count == filteredDrafts.count {
+                    selectedDraftIDs.removeAll()
+                } else {
+                    selectedDraftIDs = Set(filteredDrafts.map { $0.persistentModelID })
+                }
+            }
+        } label: {
+            Image(systemName: selectedDraftIDs.count == filteredDrafts.count ? "checkmark.circle.fill" : "circle")
+                .font(DS.Typography.title)
+                .foregroundStyle(theme.accentText)
+                .frame(minWidth: 44, minHeight: 44)
+        }
+        .accessibilityLabel(selectedDraftIDs.count == filteredDrafts.count ? L10n.Filters.deselectAll : L10n.Filters.selectAll)
+    }
+
+    private var selectedCountText: some View {
+        Text(L10n.Inbox.selectedCount(selectedDraftIDs.count))
+            .font(DS.Typography.label)
+            .accessibilityIdentifier("inbox_selected_count")
+    }
+
+    /// Actions button. `fillsWidth`: apilado, a todo lo ancho de la barra.
+    private func bulkEditButton(fillsWidth: Bool) -> some View {
+        Button {
+            showBulkActions = true
+        } label: {
+            Text(L10n.Action.edit)
+                .font(DS.Typography.headline)
+                .foregroundStyle(.thOnAccent)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.sm)
+                .frame(maxWidth: fillsWidth ? .infinity : nil, minHeight: 44)
+                .background(
+                    Capsule()
+                        .fill(selectedDraftIDs.isEmpty ? DS.Semantic.disabledForeground : theme.accent)
+                )
+        }
+        .disabled(selectedDraftIDs.isEmpty)
+        .accessibilityHint(selectedDraftIDs.isEmpty ? L10n.Accessibility.selectAtLeastOneDraft : "")
+        .accessibilityIdentifier("inbox_bulk_edit")
     }
 
     private var selectedDrafts: [InboxDraft] {

@@ -22,6 +22,7 @@ struct NetFlowSummaryView: View {
     var previousPeriodName: String = ""
 
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     private var showVariations: Bool { appPreferences.showVariations }
 
     private var caption: String {
@@ -34,30 +35,24 @@ struct NetFlowSummaryView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            HStack(spacing: DS.Spacing.sm) {
-                Text(currentAmount >= 0 ? L10n.UXL18.netGain : L10n.UXL18.netLoss)
-                    .font(DS.Typography.label)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.primary)
+            // Con texto de accesibilidad «Te quedó» va solo en su línea y la cifra con el cambio debajo: en una fila el
+            // título se partía por sílabas («Te que-dó») y la cifra se cortaba (lote 05 de 2.3, zona 36 P5).
+            if dynamicTypeSize.isAccessibilitySize {
+                title
+                HStack(spacing: DS.Spacing.sm) {
+                    amount
+                    Spacer(minLength: DS.Spacing.sm)
+                    chip
+                }
+            } else {
+                HStack(spacing: DS.Spacing.sm) {
+                    title
 
-                Spacer(minLength: DS.Spacing.sm)
+                    Spacer(minLength: DS.Spacing.sm)
 
-                AmountText(
-                    value: abs(currentAmount),
-                    currencyCode: currencyCode,
-                    font: DS.Typography.label.weight(.semibold),
-                    tint: .color(currentAmount >= 0 ? Color.electricIndigo : Color.hotPink)
-                )
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
+                    amount
 
-                if showVariations && showsComparison {
-                    VariationChip(
-                        variation: variation,
-                        size: .small,
-                        showNAWhenNil: previousAmount == nil,
-                        isExpenseContext: false
-                    )
+                    chip
                 }
             }
 
@@ -70,5 +65,35 @@ struct NetFlowSummaryView: View {
         .solidCard()
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("report_net_summary")
+    }
+
+    private var title: some View {
+        Text(currentAmount >= 0 ? L10n.UXL18.netGain : L10n.UXL18.netLoss)
+            .font(DS.Typography.label)
+            .fontWeight(.semibold)
+            .foregroundStyle(.primary)
+    }
+
+    private var amount: some View {
+        AmountText(
+            value: abs(currentAmount),
+            currencyCode: currencyCode,
+            font: DS.Typography.label.weight(.semibold),
+            tint: .color(currentAmount >= 0 ? Color.electricIndigo : Color.hotPink)
+        )
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
+    }
+
+    @ViewBuilder
+    private var chip: some View {
+        if showVariations && showsComparison {
+            VariationChip(
+                variation: variation,
+                size: .small,
+                showNAWhenNil: previousAmount == nil,
+                isExpenseContext: false
+            )
+        }
     }
 }

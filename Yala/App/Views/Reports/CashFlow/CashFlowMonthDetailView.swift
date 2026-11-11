@@ -31,6 +31,7 @@ struct CashFlowMonthDetailView: View {
     @State private var showDeleteLineConfirmation = false
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(AppPreferences.self) private var appPreferences
     /// Para el pago de las tarjetas del mes (card nmtk): todas, porque qué es línea lo decide `AccountLineLogic` con todas.
     @Query private var accounts: [Account]
@@ -92,40 +93,68 @@ struct CashFlowMonthDetailView: View {
 
     // MARK: - El mes (L18-11)
 
+    /// Con texto de accesibilidad el mes, su estado y «Llevas el…» van uno debajo del otro: en una fila el mes se partía
+    /// por sílabas («No-viem-bre») y la frase de la derecha quedaba en una columna estrecha (lote 05 de 2.3, zona 36 P5).
+    @ViewBuilder
     private var monthTitleRow: some View {
-        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
-            // Título de la pantalla: con mayúscula («Octubre de 2026»); el formato del mes la da en minúscula.
-            Text(ComparativeLabelsLogic.capitalizedFirst(
-                month.date.formatted(.dateTime.month(.wide).year()), locale: AppLocale.current
-            ))
-                .font(DS.Typography.headline)
-                .foregroundStyle(.primary)
-                .accessibilityIdentifier("cashflow_month_title")
-
-            if month.isCurrent {
-                Text(L10n.CashFlowPlan.thisMonth)
-                    .font(DS.Typography.captionSmall)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.thOnAccent)
-                    .padding(.horizontal, DS.Spacing.sm)
-                    .padding(.vertical, DS.Spacing.xxs)
-                    .background(Capsule().fill(theme.accent))
-            } else {
-                Text(month.isPast ? L10n.CashFlowPlan.pastMonth : L10n.CashFlowPlan.futureMonth)
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                monthTitle
+                monthStatus
+                spentShare
+                    .multilineTextAlignment(.leading)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                monthTitle
 
-            Spacer(minLength: DS.Spacing.sm)
+                monthStatus
 
-            if let share = CashFlowMonthSummaryLogic.spentShare(of: month) {
-                Text(L10n.UXL18.spentShare(share))
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
+                Spacer(minLength: DS.Spacing.sm)
+
+                spentShare
                     .multilineTextAlignment(.trailing)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("cashflow_month_spent_share")
             }
+        }
+    }
+
+    private var monthTitle: some View {
+        // Título de la pantalla: con mayúscula («Octubre de 2026»); el formato del mes la da en minúscula.
+        Text(ComparativeLabelsLogic.capitalizedFirst(
+            month.date.formatted(.dateTime.month(.wide).year()), locale: AppLocale.current
+        ))
+            .font(DS.Typography.headline)
+            .foregroundStyle(.primary)
+            .accessibilityIdentifier("cashflow_month_title")
+    }
+
+    @ViewBuilder
+    private var monthStatus: some View {
+        if month.isCurrent {
+            Text(L10n.CashFlowPlan.thisMonth)
+                .font(DS.Typography.captionSmall)
+                .fontWeight(.semibold)
+                .foregroundStyle(.thOnAccent)
+                .padding(.horizontal, DS.Spacing.sm)
+                .padding(.vertical, DS.Spacing.xxs)
+                .background(Capsule().fill(theme.accent))
+        } else {
+            Text(month.isPast ? L10n.CashFlowPlan.pastMonth : L10n.CashFlowPlan.futureMonth)
+                .font(DS.Typography.captionSmall)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    /// «Llevas el 68 % de lo que planeaste gastar»; sin plan de gasto, nada. La alineación la pone quien la coloca.
+    @ViewBuilder
+    private var spentShare: some View {
+        if let share = CashFlowMonthSummaryLogic.spentShare(of: month) {
+            Text(L10n.UXL18.spentShare(share))
+                .font(DS.Typography.captionSmall)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("cashflow_month_spent_share")
         }
     }
 
