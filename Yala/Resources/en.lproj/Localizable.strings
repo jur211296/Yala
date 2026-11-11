@@ -6316,7 +6316,7 @@
 "accountDetail.empty" = "No activity in this period";
 
 /* Note under Archive toggle when archiving turned on Exclude from statistics */
-"account.archiveExcludedNotice" = "Once archived, this account stops counting toward your totals and statistics, and its records are hidden in Records. To keep it counting, turn off \"Exclude from statistics\".";
+"account.archiveKeepsHistoryNotice" = "An archived account doesn't count toward your balance and doesn't show up among your Panel accounts or when you add a record. Its expenses and income still count in the Panel, Records and Statistics.";
 
 
 /* Chat draft card (Yala IA) — redesign A */

@@ -109,10 +109,13 @@ con Registros en moneda y monto, `PanelPiesFilterParityTests`.
 seguir siendo la misma regla:
 
 ```swift
-guard !account.excludeFromStatistics else { return false }
+guard account.keepsHistory else { return false }
 return EntityFilter(included: selectedAccountIDs, excluded: excludedAccountIDs)
     .matches(account.persistentModelID)
 ```
+
+Es la regla del HISTORIAL (ingresos y gastos): una cuenta archivada entra. El saldo la deja fuera en sus piezas base
+(sección «Archivar saca del saldo…», abajo).
 
 Si tocas una, toca la otra. `BalanceKPIParityTests` fija la paridad y falla si divergen.
 
@@ -127,29 +130,48 @@ Un borrador de cuentas nuevo pasa por ese embudo: un ID que sobrevive a su cuent
 explique. Lo que NO cubre: una cuenta que borra OTRO dispositivo y llega por sync deja su ID en la sesión hasta que
 cambie el filtro.
 
-## Archivar no decide la suma: la decide «Excluir de las estadísticas»
+## Archivar saca del saldo y conserva el historial: dos preguntas, `AccountScopeLogic`
 
-Decisión de Jürgen (2026-10-03): una cuenta suma o no según `excludeFromStatistics`, nunca según
-`isArchived`. Archivar desde el formulario de cuenta solo **enciende** ese toggle y lo avisa
-(`AccountFormViewModel.setArchived`); el usuario puede volver a incluirla a mano. Por eso:
+Decisión de Jürgen (opción A del 2026-10-08, adelantada a 2.3 en la decisión 6 del 2026-11-09; sustituye a la del
+2026-10-03, «archivar solo enciende Excluir»). Una cuenta contesta DOS preguntas, y cada pantalla hace la suya:
 
-- **Excluir no es solo «no suma»: también oculta sus movimientos en Registros** (`RecordsViewModel`
-  descarta las transacciones de cuentas excluidas). Un aviso que hable de excluir tiene que decirlo.
-- **Desarchivar no re-incluye.** Solo se deshace la auto-exclusión si el usuario desarchiva en la
-  misma edición en que archivó y no tocó el toggle entre medias.
-- **Un conteo de «cuentas que suman» filtra por el toggle, no por archivada**
-  (`PanelTotalAccountsLogic.countableAccounts`, el «en N cuentas» del panorama), salvo las cuentas
-  sistema de Grupos que archiva la propia app. Archivar sigue escondiendo la cuenta de listas y
-  selectores; eso no cambia.
-- **Yala IA y el conector de Claude siguen la misma regla desde el 2026-10-09**: el contexto del chat
-  (`FullFinancialContextBuilder`) suma por el toggle y lista las cuentas de `countableAccounts`, y `mcp/` lo porta
-  (`balances.ts`, `summary.ts`). `MCPAppParityGoldenTests` ata los dos: si cambias la regla en uno, regenera el golden
-  y cambia el otro. Archivar sigue escondiendo la cuenta de `listar_cuentas` del conector, como de las listas de la app.
-- **Dos sitios archivan SIN excluir, a propósito**: el downgrade de plan
-  (`DowngradeResolutionSheet.archiveExcessItems`; excluir ahí ocultaría el historial y nada lo
-  re-incluye al volver a Pro, decisión pendiente de Jürgen) y `GroupBridgeSystemEntities` (cuentas
-  sistema, que se desarchivan solas). Igual que las cuentas archivadas antes del 2026-10-03, que no
-  se migraron: si no están excluidas, siguen sumando y contando, coherentes entre sí.
+- **¿Suma en un saldo?** `Account.sumsInBalance`: ni excluida ni archivada por la persona. La leen las piezas base del saldo, así que
+  lo heredan todos sus consumidores: `LiveBalanceCalculator` (sus cuentas contables y `entersBalance`, la regla de filas
+  de la curva y el saldo de período del widget), la curva de saldo (`TrendDataProcessor.fillBalanceBuckets`), el
+  «en N cuentas» (`PanelTotalAccountsLogic.countableAccounts`) y las cuentas del saldo del Panel
+  (`PanelBalanceScopeLogic.accounts`: cifra, curva, hoja «¿Cuánto tienes hoy?» y proyección). Las piezas que ya reciben
+  filas filtradas por historial quitan solo `isArchivedByThePerson` (la curva, la proyección del saldo de Estadísticas
+  con sus pagos planificados y la del widget).
+- **¿Se ven sus movimientos?** `Account.keepsHistory`: archivada siempre; activa, si no está excluida. Registros, la
+  elegibilidad del Panel y de Estadísticas (ingresos y gastos de cualquier período), `FilterService.filterForTrends`,
+  el día más caro, los widgets, Spotlight, Yala IA y el aviso de informe.
+
+Cinco cosas que no se tocan sin reabrirlo:
+
+- **Archivar no toca «Excluir»**, ni en el formulario ni en las líneas de la tarjeta (`AccountLineService.archiveLines`
+  ya no tiene ese parámetro). Con la cuenta archivada el formulario no enseña «Excluir» (no haría nada) y el aviso dice
+  lo que pasa (`account.archiveKeepsHistoryNotice`).
+- **Una archivada con «Excluir» encendido enseña su historial sin tocar el dato.** Lo dejaba así archivar desde el
+  formulario entre el 2026-10-03 y esta decisión, también en la 2.1 publicada, y no se distingue de quien excluyó a mano
+  y luego archivó: los dos ven el historial. Al desarchivar, el flag guardado vuelve a mandar (como antes: desarchivar
+  nunca re-incluyó). No hay migración. Las archivadas sin excluir —el downgrade de plan, las de antes del 2026-10-03, las
+  que la persona volvió a incluir— **dejan de sumar en el saldo**: es la opción A («archivada deja de sumar por sí
+  sola»), y su historial sigue.
+- **Las cuentas sistema de Grupos que archiva la propia app siguen sumando** (`GroupBridgeSystemEntities` archiva las
+  duplicadas tras una carrera entre dispositivos y conservan sus movimientos): no son un archivado de la persona. El
+  «en N cuentas» las deja fuera, como siempre (`countableAccounts`).
+- **Un consumidor nuevo elige su pregunta**, no lee `excludeFromStatistics` a pelo: con el flag solo, o la archivada
+  suma en un saldo o su historial desaparece. Si calcula un saldo con piezas propias, filtra por `sumsInBalance`; si es
+  un flujo, por `keepsHistory`. El saldo de UNA cuenta (`AccountBalanceCalculator`: su ficha, Ajustes › Cuentas) no es
+  un agregado y sigue con todas.
+- **Yala IA y el conector de Claude siguen la misma regla**: `FullFinancialContextBuilder` cuenta los movimientos por
+  `keepsHistory`, lista como excluidas solo las que ocultan su historial y suma el saldo con `countableAccounts`;
+  `mcp/` lo porta (`balances.ts`, `summary.ts`). `MCPAppParityGoldenTests` ata los dos: si cambias la regla en uno,
+  regenera el golden y cambia el otro. Archivar sigue escondiendo la cuenta de listas y selectores, de `listar_cuentas`
+  del conector y del carrusel.
+
+Lo fijan `ArchivedAccountKeepsHistoryTests` (las cuatro combinaciones de los dos flags en Registros, Estadísticas, el
+saldo del Panel y de Distribución) y el XCUITest `ArchivedAccountKeepsHistoryUITests`.
 
 ## El toggle `includeGroupsInPanelTotal` es del total agregado
 

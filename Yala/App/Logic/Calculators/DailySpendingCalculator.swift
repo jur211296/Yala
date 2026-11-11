@@ -10,8 +10,8 @@ import Foundation
 /// Calcula el gasto por día (en la divisa preferida) para el calendario de Registros.
 ///
 /// Replica el criterio de `RecordsViewModel.calculateSummary` para que la suma de
-/// las barras cuadre con el chip "gasto" del hero: excluye cuentas marcadas como
-/// `excludeFromStatistics`, ajustes de saldo y transferencias
+/// las barras cuadre con el chip "gasto" del hero: excluye las cuentas que ocultan su
+/// historial (`Account.keepsHistory`), ajustes de saldo y transferencias
 /// (`balanceAdjustmentType != nil`), y clasifica con la regla canónica
 /// (`TransactionClassificationLogic.isIncome`): **la categoría decide el bucket** y el
 /// signo del monto solo es fallback cuando `category == nil`. La acumulación es signed,
@@ -102,7 +102,7 @@ struct DailySpendingCalculator {
     ) -> DayTotals {
         var totals = DayTotals()
         for record in records {
-            guard let account = record.account, !account.excludeFromStatistics else { continue }
+            guard let account = record.account, account.keepsHistory else { continue }
             if record.balanceAdjustmentType != nil { continue }  // excluye ajustes y transferencias
             guard !adjustment.isSuppressed(record) else { continue }
 

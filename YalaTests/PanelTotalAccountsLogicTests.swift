@@ -70,9 +70,10 @@ struct PanelTotalAccountsLogicTests {
                 type: "checking", excludeFromStatistics: excluded, isArchived: archived)
     }
 
-    /// El conteo «en N cuentas» lo decide el toggle de excluir, igual que el saldo: una archivada
-    /// que el usuario volvió a incluir cuenta; una activa excluida, no.
-    @Test func countable_followsExcludeToggle_notArchive() {
+    /// El conteo «en N cuentas» sigue al saldo (`Account.sumsInBalance`): ni la excluida ni ninguna
+    /// archivada cuentan, tenga o no «Excluir» encendido (decisión 6 de 2.3; hasta entonces una
+    /// archivada sin excluir sumaba y contaba).
+    @Test func countable_leavesOutExcludedAndArchived() {
         let accts = [
             makeAccount("Activa", excluded: false, archived: false),
             makeAccount("Archivada excluida", excluded: true, archived: true),
@@ -80,7 +81,7 @@ struct PanelTotalAccountsLogicTests {
             makeAccount("Activa excluida", excluded: true, archived: false),
         ]
         let names = PanelTotalAccountsLogic.countableAccounts(accts).map(\.name)
-        #expect(names == ["Activa", "Archivada re-incluida"])
+        #expect(names == ["Activa"])
     }
 
     /// Las cuentas de Grupos que archiva la propia app no son del usuario ni se auto-excluyen:

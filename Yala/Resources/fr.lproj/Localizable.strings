@@ -6311,7 +6311,7 @@
 "accountDetail.empty" = "Aucun enregistrement sur cette période";
 
 /* Note under Archive toggle when archiving turned on Exclude from statistics */
-"account.archiveExcludedNotice" = "Une fois archivé, ce compte n'est plus compté dans tes totaux et statistiques, et ses enregistrements sont masqués dans Enregistrements. Pour qu'il continue de compter, désactive « Exclure des statistiques ».";
+"account.archiveKeepsHistoryNotice" = "Un compte archivé ne compte pas dans ton solde et n'apparaît ni parmi les comptes du Panel ni quand tu ajoutes un enregistrement. Ses dépenses et revenus comptent toujours dans le Panel, Enregistrements et Statistiques.";
 
 
 /* Chat draft card (Yala IA) — redesign A */

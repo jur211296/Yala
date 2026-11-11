@@ -3786,7 +3786,7 @@ enum L10n {
             ls("account.excludeFromStats", comment: "")
         }
         /// Aviso bajo «Archivar cuenta» cuando archivar encendió «Excluir de las estadísticas».
-        static var archiveExcludedNotice: String { ls("account.archiveExcludedNotice", comment: "") }
+        static var archiveKeepsHistoryNotice: String { ls("account.archiveKeepsHistoryNotice", comment: "") }
         static var delete: String { ls("account.delete", comment: "") }
         static var deleteError: String { ls("account.deleteError", comment: "") }
         /// «¿Eliminar «Tarjeta BCP»?» — la confirmación de borrar una cuenta (auditoría UX 2.2, lote 7, B1).

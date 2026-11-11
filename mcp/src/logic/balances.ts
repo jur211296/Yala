@@ -10,8 +10,7 @@
  * - Total: port de `LiveBalanceCalculator.liveBalanceBreakdown`
  *   (Yala/App/Logic/Calculators/LiveBalanceCalculator.swift:111) con el filtro de cuentas del chat
  *   (`FullFinancialContextBuilder.buildBalances` = `PanelTotalAccountsLogic.countableAccounts`: fuera las excluidas de
- *   estadísticas y las cuentas sistema de Grupos que archiva la app; una archivada a mano suma si no está excluida,
- *   porque archivar no decide la suma desde el 2026-10-03). Agrupa por
+ *   estadísticas y las archivadas, que salen del saldo y conservan su historial, decisión 6 de 2.3). Agrupa por
  *   la divisa DEL MOVIMIENTO y convierte cada bolsa con la tasa de HOY (`convertCheckedWithLatestRate`: la fila del
  *   día UTC de hoy, y si le falta la divisa, las anteriores o la tabla estática). Es «lo que tienes hoy», no la suma
  *   de conversiones históricas. Los gastos de grupo NO se ajustan: el saldo es el dinero que de verdad se movió.
@@ -102,7 +101,8 @@ export function computeBalances(
 
   const countable = new Map<string, AccountRow>();
   for (const a of accounts) {
-    if (a.exclude_from_statistics !== true && !(a.is_system_account === true && a.is_archived === true)) countable.set(a.sync_id, a);
+    // Suma en el saldo: ni excluida ni archivada (port de `Account.sumsInBalance`, decisión 6 de 2.3).
+    if (a.exclude_from_statistics !== true && a.is_archived !== true) countable.set(a.sync_id, a);
   }
 
   const native = new Map<string, number>();

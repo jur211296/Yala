@@ -212,8 +212,9 @@ const listarCuentas: ToolCore = {
   plan: "gratis",
   description:
     "Devuelve las cuentas del usuario en Yala con su saldo de hoy en la divisa de cada cuenta, y el total de las cuentas " +
-    "que cuentan para estadísticas convertido a su divisa preferida. Como en la app, lo fechado después de hoy no está en " +
-    "ningún saldo. Las cuentas archivadas solo salen si se piden.",
+    "que suman en el saldo (ni excluidas de estadísticas ni archivadas) convertido a su divisa preferida. Como en la app, " +
+    "lo fechado después de hoy no está en ningún saldo. Las cuentas archivadas solo salen si se piden, y no suman: sus " +
+    "movimientos siguen contando en los gastos e ingresos.",
   async run(ctx, args) {
     const prefsP = loadPrefs(ctx);
     prefsP.catch(() => undefined); // si la zona falla antes de esperarla, que su rechazo no quede suelto

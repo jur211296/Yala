@@ -200,7 +200,7 @@ final class ChatSuggestionsLLMService {
             // sistema de Grupos y el ajuste necesita las dos hermanas antes de filtrar cuentas.
             let adjustment = GroupBridgeStatsAdjustment.build(from: monthTxs, context: modelContext)
             let txs = monthTxs.filter {
-                $0.balanceAdjustmentType == nil && $0.account?.excludeFromStatistics != true
+                $0.balanceAdjustmentType == nil && $0.account?.keepsHistory != false
             }
 
             // Tags: CSV-mirror SSOT via resolver + catalog construido del fetch local. Su fallo

@@ -189,7 +189,7 @@ struct MCPAppParityGoldenTests {
         // El saldo de HOY corta en el `now` del escenario (`LiveBalanceCalculator.TodayCutoff`): lo fechado después no
         // cuenta, como en el Panel y en la lista de cuentas.
         let live = LiveBalanceCalculator.liveBalanceBreakdown(
-            // Las cuentas que suma el Panel (archivar no decide la suma, 2026-10-03), que es también lo que el
+            // Las cuentas que suma el Panel (ni excluidas ni archivadas, decisión 6 de 2.3), que es también lo que el
             // chat lista en `balances` y lo que porta `computeBalances` del conector.
             accounts: PanelTotalAccountsLogic.countableAccounts(accounts.map(\.model)),
             transactions: allTx,
