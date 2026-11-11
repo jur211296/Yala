@@ -267,7 +267,7 @@ struct AccountsSettingsListView: View {
 
             HStack(spacing: DS.Spacing.xs) {
                 if !sessionState.isExpensesOnlyMode {
-                    Text(viewModel.formattedBalance(for: line))
+                    Text(viewModel.formattedBalance(for: line, displayFormat: appPreferences.currencyDisplayFormat))
                         .font(DS.Typography.subheadlineEmphasized)
                         .lineLimit(1)
                         .fixedSize(horizontal: true, vertical: false)
@@ -330,7 +330,7 @@ struct AccountsSettingsListView: View {
         } trailing: {
             HStack(spacing: DS.Spacing.xs) {
                 if !sessionState.isExpensesOnlyMode {
-                    Text(viewModel.formattedBalance(for: account))
+                    Text(viewModel.formattedBalance(for: account, displayFormat: appPreferences.currencyDisplayFormat))
                         .font(DS.Typography.headline)
                         .lineLimit(1)
                         .fixedSize(horizontal: !isAccessibilityText, vertical: false)
@@ -405,7 +405,7 @@ struct AccountsSettingsListView: View {
 
             HStack(spacing: DS.Spacing.xs) {
                 if !sessionState.isExpensesOnlyMode {
-                    Text(viewModel.formattedBalance(for: account))
+                    Text(viewModel.formattedBalance(for: account, displayFormat: appPreferences.currencyDisplayFormat))
                         .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                 }

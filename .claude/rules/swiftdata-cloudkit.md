@@ -42,7 +42,7 @@ paths:
 
 ## Índice de reglas (115)
 
-> Este fichero son **329 KB en 115 reglas largas**. No lo leas entero: localiza la regla
+> Este fichero son **330 KB en 115 reglas largas**. No lo leas entero: localiza la regla
 > aquí y lee **solo su tramo** con `sed -n '<linea>,<linea+N>p'`.
 > Los números de línea se desplazan al editar — regenera con
 > `python3 scripts/indexar_doc.py <fichero> --apply`.
@@ -163,7 +163,7 @@ paths:
 | `L1909` | El sello del claim se olvida cuando el teléfono cambia de persona (2026-09-29). | 2.4 KB |
 | `L1932` | La pantalla de la ida y la vuelta pinta pasos con su cifra, y la cifra solo INFORMA (2026-10-23). | 1.8 KB |
 | `L1950` | El drain no carga tablas ENTERAS en cada vuelta: corre en el hilo principal (2026-10-31, YALA-IOS-2). | 2.0 KB |
-| `L1970` | La subida de la ida funde las tasas duplicadas ANTES del baseline del historial (2026-11-05, card i9wh). | 1005 B |
+| `L1970` | La subida de la ida funde las tasas duplicadas ANTES del baseline del historial (2026-11-05, card i9wh). | 1.8 KB |
 
 <!-- INDICE:fin -->
 
@@ -1976,3 +1976,12 @@ LWW la que había cambiado otro teléfono ya en v5. Lo fija `CreditCardCycleSync
   Superviviente el menor `syncID` (la regla de «Fundir duplicados que llegan de dos dispositivos»), tasas fundidas de la
   más vieja a la más nueva, sin `rollback` si el guardado falla (`.localFailure`). La causa de fondo sigue abierta:
   `exchange-rates-duplicate-per-day-across-installs`.
+
+- **Un alta que INSERTA antes de que la persona guarde queda en disco con el primer guardado de otro (medido el
+  2026-11-10, lote 09 de mejoras necesarias 2.3).** El «+» de Categorías inserta la categoría vacía al abrir el
+  formulario y el nombre solo se escribe al guardarla; guardar su primera subcategoría (`SubcategoryDetailView`) guarda
+  el contexto entero, y cerrar la app ahí dejaba una categoría SIN NOMBRE en la lista
+  (`CuentasCategoriasNecesariasLote09UITests`, rojo en la base). La red es `NewCategoryDraftMark`: marca al insertar,
+  la retiran guardar y descartar, y si sigue puesta al abrir Categorías o al arrancar (detrás de
+  `awaitPersonalStoreReady`) borra el borrador sin nombre y sin registros. Hoy es la única alta así en `Yala/App`; una
+  nueva que inserte antes de guardar necesita su marca o no insertar hasta el guardado.

@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1241)
+## Index (1243)
 
 | id | status | path |
 |---|---|---|
@@ -69,6 +69,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | account-form-redesign | backlog | tickets/backlog/account-form-redesign.md |
 | account-goldens-freeze-read-test-times-out | done | tickets/done/account-goldens-freeze-read-test-times-out.md |
 | account-line-relink-can-diverge-when-two-phones-repair-the-same-collapse | backlog | tickets/backlog/account-line-relink-can-diverge-when-two-phones-repair-the-same-collapse.md |
+| accounts-categories-tags-lote-09-necessary-2-3 | done | tickets/done/accounts-categories-tags-lote-09-necessary-2-3.md |
 | accounts-need-more-visibility-in-the-ui | backlog | tickets/backlog/accounts-need-more-visibility-in-the-ui.md |
 | accounts-settings-list-redesign | backlog | tickets/backlog/accounts-settings-list-redesign.md |
 | activation-discard-gate-exits-without-wiping-when-icloud-is-unreachable | done | tickets/done/activation-discard-gate-exits-without-wiping-when-icloud-is-unreachable.md |

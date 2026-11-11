@@ -185,6 +185,7 @@ final class CategoryDetailViewModel {
 
         do {
             try context.save()
+            if isNewCategory { NewCategoryDraftMark.clear() }
             SessionState.shared.incrementDataVersion()
             return true
         } catch {
@@ -216,6 +217,7 @@ final class CategoryDetailViewModel {
         releaseDeletedCategory()
         do {
             try context.save()
+            NewCategoryDraftMark.clear()
         } catch {
             #if DEBUG
             print("CategoryDetailViewModel: Error discarding new category: \(error)")

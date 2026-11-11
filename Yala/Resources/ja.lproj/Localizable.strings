@@ -8797,3 +8797,23 @@
 "welcome.groups.cloudAsideStalledBody" = "この端末でまだ iCloud に届いていない変更: %d。失われないよう、届くまで待ってから進んでください。";
 /* Puerta del Welcome: la espera del export se agotó al dejar iCloud aparte, sin cifra */
 "welcome.groups.cloudAsideStalledBodyUnknown" = "この端末の最新の変更が iCloud に届いたことを確認できませんでした。失われないよう、少し待ってから進んでください。";
+
+/* Lote 09 de mejoras necesarias 2.3: nombre de los colores de etiqueta y aviso del largo del nombre */
+"tag.colorName.orange" = "オレンジ";
+"tag.colorName.green" = "グリーン";
+"tag.colorName.blue" = "ブルー";
+"tag.colorName.pink" = "ピンク";
+"tag.colorName.indigo" = "インディゴ";
+"tag.colorName.yellow" = "イエロー";
+"tag.colorName.cyan" = "シアン";
+"tag.colorName.purple" = "パープル";
+"tag.colorName.oceanBlue" = "オーシャンブルー";
+"tag.colorName.coral" = "コーラル";
+"tag.colorName.brown" = "ブラウン";
+"tag.colorName.red" = "レッド";
+"tag.colorName.turquoise" = "ターコイズ";
+"tag.colorName.lavender" = "ラベンダー";
+"tag.colorName.skyBlue" = "スカイブルー";
+"tag.colorName.custom" = "カスタムカラー";
+"tag.nameCount %lld %lld" = "%1$lld/%2$lld";
+"tag.nameLimitReached %lld %lld" = "%1$lld/%2$lld:これ以上は入力できません";

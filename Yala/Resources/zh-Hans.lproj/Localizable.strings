@@ -8797,3 +8797,23 @@
 "welcome.groups.cloudAsideStalledBody" = "这台设备上尚未到达 iCloud 的更改：%d。为避免丢失，请等它们到达后再继续。";
 /* Puerta del Welcome: la espera del export se agotó al dejar iCloud aparte, sin cifra */
 "welcome.groups.cloudAsideStalledBodyUnknown" = "无法确认这台设备上最近的更改已到达 iCloud。为避免丢失，请稍等再继续。";
+
+/* Lote 09 de mejoras necesarias 2.3: nombre de los colores de etiqueta y aviso del largo del nombre */
+"tag.colorName.orange" = "橙色";
+"tag.colorName.green" = "绿色";
+"tag.colorName.blue" = "蓝色";
+"tag.colorName.pink" = "粉色";
+"tag.colorName.indigo" = "靛蓝";
+"tag.colorName.yellow" = "黄色";
+"tag.colorName.cyan" = "青色";
+"tag.colorName.purple" = "紫色";
+"tag.colorName.oceanBlue" = "海蓝";
+"tag.colorName.coral" = "珊瑚色";
+"tag.colorName.brown" = "棕色";
+"tag.colorName.red" = "红色";
+"tag.colorName.turquoise" = "绿松石色";
+"tag.colorName.lavender" = "薰衣草紫";
+"tag.colorName.skyBlue" = "天蓝";
+"tag.colorName.custom" = "自定义颜色";
+"tag.nameCount %lld %lld" = "%1$lld/%2$lld";
+"tag.nameLimitReached %lld %lld" = "%1$lld/%2$lld：无法再输入更多";
