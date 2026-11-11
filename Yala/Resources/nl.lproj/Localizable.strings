@@ -78,7 +78,7 @@
 
 // Detail sheet — Budget
 "panel.health.budget.sheet.title" = "Je budget";
-"panel.health.budget.sheet.explanation" = "We kijken hoe je het doet ten opzichte van je budgetten deze maand. Ruimte over geeft punten; eroverheen gaan trekt er een beetje af. Niets dramatisch — gewoon een kompas.";
+"panel.health.budget.sheet.explanation" = "We kijken hoe je ervoor staat met je budgetten. Een beetje erover telt nauwelijks; het daalt pas echt als je uitgaven het dubbele van de limiet naderen.";
 "panel.health.budget.headline.high" = "Je budgetten ademen rustig!";
 "panel.health.budget.headline.mid" = "Je houdt je grenzen in de gaten";
 "panel.health.budget.headline.low" = "Een kleine bijstelling en je bent er";
@@ -88,7 +88,7 @@
 
 // Detail sheet — Activity
 "panel.health.activity.sheet.title" = "Je ritme";
-"panel.health.activity.sheet.explanation" = "Meet de langste reeks dagen zonder uitgaven te registreren in deze periode. Tot 2 dagen zonder registratie is normaal — daarna voel je je ritme.";
+"panel.health.activity.sheet.explanation" = "Meet de langste reeks dagen zonder registratie in deze periode, inclusief de dagen sinds je laatste registratie tot vandaag. Je hebt 3 dagen speling; vanaf de vierde daalt je ritme beetje bij beetje.";
 "panel.health.activity.headline.high" = "Je hebt een geweldig ritme! 🎉";
 "panel.health.activity.headline.mid" = "Je ritme is prima";
 "panel.health.activity.headline.low" = "Je ritme is wat gezakt";
@@ -6875,7 +6875,7 @@
 "panel.health.part.budget" = "Hoe je ervoor staat binnen de grenzen van je budgetten.";
 
 /* Health breakdown: what the rhythm part measures */
-"panel.health.part.activity" = "Hoeveel dagen achter elkaar je niets vastlegt. Tot 2 is prima.";
+"panel.health.part.activity" = "Hoeveel dagen achter elkaar je niets registreert, tot vandaag. Tot 3 is prima.";
 
 /* Health breakdown: what the commitments part measures */
 "panel.health.part.bills" = "Of je saldo de komende betalingen dekt, en hoeveel van je inkomen ze kosten.";
@@ -6887,7 +6887,7 @@
 "panel.health.improve.budget" = "Om je score te verhogen: bekijk het budget waar je het verst overheen gaat.";
 
 /* Health: what would raise the score most (rhythm) */
-"panel.health.improve.activity" = "Om je score te verhogen: leg minstens om de twee dagen iets vast.";
+"panel.health.improve.activity" = "Om je score te verhogen: laat niet meer dan drie dagen voorbijgaan zonder te registreren.";
 
 /* Health: what would raise the score most (commitments) */
 "panel.health.improve.bills" = "Om je score te verhogen: bekijk je geplande betalingen; ze drukken zwaar op je saldo.";
@@ -6895,8 +6895,6 @@
 /* Health: all three parts are fine */
 "panel.health.improve.nothing" = "Wat al meetelt, gaat goed. Ga zo door.";
 
-/* Health: the total never goes below this number. %d = floor */
-"panel.health.floorNote" = "De totaalscore komt nooit onder %d.";
 
 /* Live balance sheet: heading of the per-currency sum */
 "panel.liveAnchorEducation.sumTitle" = "De som, valuta per valuta";
@@ -8902,3 +8900,33 @@
 "cashflow.monthEnd.leftIn" = "Nog binnen te komen";
 "cashflow.monthEnd.leftOut" = "Nog uit te geven";
 "cashFlowPlan.estimateLeft" = "Geschat nog te gaan";
+
+/* Health sheet: the scale of the total score (0 to 100, no floor) */
+"panel.health.scaleNote" = "De score loopt van 0 tot 100.";
+
+/* Health card (compact): one concrete step when rhythm is the part that would raise the score most */
+"panel.health.card.step.activity" = "Registreer deze week iets om je ritme te verhogen.";
+
+/* Health card (compact): one concrete step when budgets are the part that would raise the score most */
+"panel.health.card.step.budget" = "Bekijk je krapste budget om je score te verhogen.";
+
+/* Health card (compact): one concrete step when planned payments are the part that would raise the score most */
+"panel.health.card.step.bills" = "Bekijk je geplande betalingen om je score te verhogen.";
+
+/* Health card (compact): every part is doing well (90 or more) */
+"panel.health.card.step.good" = "Het gaat goed. Blijf registreren om het zo te houden.";
+
+/* Health card (compact), no score yet: rhythm has no data */
+"panel.health.card.start.activity" = "Registreer je uitgaven om je score te zien.";
+
+/* Health card (compact), no score yet: budgets have no data */
+"panel.health.card.start.budget" = "Maak een budget om je score te zien.";
+
+/* Health card (compact), no score yet: planned payments have no data */
+"panel.health.card.start.bills" = "Plan een betaling om je score te zien.";
+
+/* What's New 2.3: the financial health score is more precise */
+"whatsNew.v23.healthScore.title" = "Je gezondheidsscore, preciezer";
+
+/* What's New 2.3: what changed in the financial health score and how to raise it */
+"whatsNew.v23.healthScore.description" = "Hij telt nu de dagen sinds je laatste registratie, met 3 dagen speling, en een budget een beetje overschrijden telt nauwelijks. Verhoog hem door vaak te registreren en op je limieten te letten. Je vindt hem in het Panel, onder Je financiën.";

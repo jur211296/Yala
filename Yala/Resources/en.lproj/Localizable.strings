@@ -78,7 +78,7 @@
 
 // Detail sheet — Budget
 "panel.health.budget.sheet.title" = "Your budget";
-"panel.health.budget.sheet.explanation" = "We check how you're doing against your budgets this month. Room to spare adds points; going over drops it a bit. Nothing dramatic — just a compass.";
+"panel.health.budget.sheet.explanation" = "We check how you're doing with your budgets. Going a little over barely counts; it only really drops when your spending gets close to double the limit.";
 "panel.health.budget.headline.high" = "Your budgets are breathing easy!";
 "panel.health.budget.headline.mid" = "You're minding your limits";
 "panel.health.budget.headline.low" = "A small tweak and you're set";
@@ -88,7 +88,7 @@
 
 // Detail sheet — Activity
 "panel.health.activity.sheet.title" = "Your rhythm";
-"panel.health.activity.sheet.explanation" = "Measures the longest streak of days without recording any expense in this period. Up to 2 days off is fine — beyond that, your rhythm starts to slip.";
+"panel.health.activity.sheet.explanation" = "Measures the longest streak of days without recording in this period, counting the days from your last record until today. You get 3 days of grace; from the fourth, your rhythm drops little by little.";
 "panel.health.activity.headline.high" = "You're in a great rhythm! 🎉";
 "panel.health.activity.headline.mid" = "Your rhythm is looking good";
 "panel.health.activity.headline.low" = "Your rhythm dropped a bit";
@@ -6869,7 +6869,7 @@
 "panel.health.part.budget" = "How you’re doing against your budget limits.";
 
 /* Health breakdown: what the rhythm part measures */
-"panel.health.part.activity" = "How many days in a row you go without recording. Up to 2 is fine.";
+"panel.health.part.activity" = "How many days in a row you go without recording, up to today. Up to 3 is fine.";
 
 /* Health breakdown: what the commitments part measures */
 "panel.health.part.bills" = "Whether your balance covers upcoming payments, and how much of your income they take.";
@@ -6881,7 +6881,7 @@
 "panel.health.improve.budget" = "To raise your score: check the budget you’re furthest over.";
 
 /* Health: what would raise the score most (rhythm) */
-"panel.health.improve.activity" = "To raise your score: record something at least every two days.";
+"panel.health.improve.activity" = "To raise your score: don't let more than three days go by without recording.";
 
 /* Health: what would raise the score most (commitments) */
 "panel.health.improve.bills" = "To raise your score: review your planned payments; they weigh a lot on your balance.";
@@ -6889,8 +6889,6 @@
 /* Health: all three parts are fine */
 "panel.health.improve.nothing" = "What already counts is doing well. Keep it up.";
 
-/* Health: the total never goes below this number. %d = floor */
-"panel.health.floorNote" = "The total score never goes below %d.";
 
 /* Live balance sheet: heading of the per-currency sum */
 "panel.liveAnchorEducation.sumTitle" = "The sum, currency by currency";
@@ -8896,3 +8894,33 @@
 "cashflow.monthEnd.leftIn" = "Still to come in";
 "cashflow.monthEnd.leftOut" = "Still to go out";
 "cashFlowPlan.estimateLeft" = "Estimated to go";
+
+/* Health sheet: the scale of the total score (0 to 100, no floor) */
+"panel.health.scaleNote" = "The score goes from 0 to 100.";
+
+/* Health card (compact): one concrete step when rhythm is the part that would raise the score most */
+"panel.health.card.step.activity" = "Record something this week to raise your rhythm.";
+
+/* Health card (compact): one concrete step when budgets are the part that would raise the score most */
+"panel.health.card.step.budget" = "Check your tightest budget to raise your score.";
+
+/* Health card (compact): one concrete step when planned payments are the part that would raise the score most */
+"panel.health.card.step.bills" = "Check your planned payments to raise your score.";
+
+/* Health card (compact): every part is doing well (90 or more) */
+"panel.health.card.step.good" = "You're doing well. Keep recording to stay there.";
+
+/* Health card (compact), no score yet: rhythm has no data */
+"panel.health.card.start.activity" = "Record your expenses to see your score.";
+
+/* Health card (compact), no score yet: budgets have no data */
+"panel.health.card.start.budget" = "Create a budget to see your score.";
+
+/* Health card (compact), no score yet: planned payments have no data */
+"panel.health.card.start.bills" = "Plan a payment to see your score.";
+
+/* What's New 2.3: the financial health score is more precise */
+"whatsNew.v23.healthScore.title" = "A more precise health score";
+
+/* What's New 2.3: what changed in the financial health score and how to raise it */
+"whatsNew.v23.healthScore.description" = "It now counts the days since your last record, with 3 days of grace, and going a little over a budget barely counts. To raise it, record often and watch your limits. You'll find it on the Panel, under Your finances.";

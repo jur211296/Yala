@@ -78,7 +78,7 @@
 
 // Detail sheet — Budget
 "panel.health.budget.sheet.title" = "你的预算";
-"panel.health.budget.sheet.explanation" = "我们看看本月你的预算执行得怎么样。还有余地会加分;超出会稍微扣点分。没什么大不了 — 只是一个参考。";
+"panel.health.budget.sheet.explanation" = "我们会看你的预算执行情况。稍微超出几乎不扣分；只有支出接近限额的两倍时才会明显下降。";
 "panel.health.budget.headline.high" = "你的预算很轻松!";
 "panel.health.budget.headline.mid" = "你在控制好你的额度";
 "panel.health.budget.headline.low" = "稍微调整一下就搞定";
@@ -88,7 +88,7 @@
 
 // Detail sheet — Activity
 "panel.health.activity.sheet.title" = "你的节奏";
-"panel.health.activity.sheet.explanation" = "测量在这个期间内没有记录支出的最长连续天数。最多 2 天不记录是正常的 — 超过这个范围,你的节奏就会受到影响。";
+"panel.health.activity.sheet.explanation" = "衡量本期间内连续未记账的最长天数，包括从你上次记账到今天的天数。你有 3 天宽限期；从第四天起，你的节奏会逐渐下降。";
 "panel.health.activity.headline.high" = "你的节奏很棒！🎉";
 "panel.health.activity.headline.mid" = "你的节奏不错";
 "panel.health.activity.headline.low" = "你的节奏有所下降";
@@ -6875,7 +6875,7 @@
 "panel.health.part.budget" = "你在各项预算额度内的情况。";
 
 /* Health breakdown: what the rhythm part measures */
-"panel.health.part.activity" = "连续多少天没有记账。2 天以内没问题。";
+"panel.health.part.activity" = "截至今天，你连续多少天没有记账。3 天以内没问题。";
 
 /* Health breakdown: what the commitments part measures */
 "panel.health.part.bills" = "你的余额能否覆盖即将到来的付款，以及这些付款占你收入的比例。";
@@ -6887,7 +6887,7 @@
 "panel.health.improve.budget" = "想提高评分：看看超支最多的那项预算。";
 
 /* Health: what would raise the score most (rhythm) */
-"panel.health.improve.activity" = "想提高评分：至少每两天记一笔。";
+"panel.health.improve.activity" = "想提高分数：不要连续超过三天不记账。";
 
 /* Health: what would raise the score most (commitments) */
 "panel.health.improve.bills" = "想提高评分：检查你的计划付款，它们对余额压力较大。";
@@ -6895,8 +6895,6 @@
 /* Health: all three parts are fine */
 "panel.health.improve.nothing" = "已计分的部分都不错，继续保持。";
 
-/* Health: the total never goes below this number. %d = floor */
-"panel.health.floorNote" = "总分不会低于 %d。";
 
 /* Live balance sheet: heading of the per-currency sum */
 "panel.liveAnchorEducation.sumTitle" = "逐个货币相加";
@@ -8902,3 +8900,33 @@
 "cashflow.monthEnd.leftIn" = "待入账";
 "cashflow.monthEnd.leftOut" = "待支出";
 "cashFlowPlan.estimateLeft" = "估算剩余";
+
+/* Health sheet: the scale of the total score (0 to 100, no floor) */
+"panel.health.scaleNote" = "分数范围为 0 到 100。";
+
+/* Health card (compact): one concrete step when rhythm is the part that would raise the score most */
+"panel.health.card.step.activity" = "本周记一笔，提升你的节奏。";
+
+/* Health card (compact): one concrete step when budgets are the part that would raise the score most */
+"panel.health.card.step.budget" = "看看你最紧的预算，提高分数。";
+
+/* Health card (compact): one concrete step when planned payments are the part that would raise the score most */
+"panel.health.card.step.bills" = "看看你的计划付款，提高分数。";
+
+/* Health card (compact): every part is doing well (90 or more) */
+"panel.health.card.step.good" = "你做得不错。继续记账保持下去。";
+
+/* Health card (compact), no score yet: rhythm has no data */
+"panel.health.card.start.activity" = "记录你的支出即可查看分数。";
+
+/* Health card (compact), no score yet: budgets have no data */
+"panel.health.card.start.budget" = "创建一个预算即可查看分数。";
+
+/* Health card (compact), no score yet: planned payments have no data */
+"panel.health.card.start.bills" = "计划一笔付款即可查看分数。";
+
+/* What's New 2.3: the financial health score is more precise */
+"whatsNew.v23.healthScore.title" = "财务健康分数，更精准了";
+
+/* What's New 2.3: what changed in the financial health score and how to raise it */
+"whatsNew.v23.healthScore.description" = "现在会计算你上次记账以来的天数，有 3 天宽限期；预算稍微超出几乎不扣分。想提高分数，就经常记账并留意限额。你可以在面板的「你的财务」中看到它。";

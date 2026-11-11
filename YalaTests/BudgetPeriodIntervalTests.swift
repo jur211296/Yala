@@ -149,7 +149,8 @@ struct BudgetPeriodIntervalTests {
     }
 
     /// El bucket del score es `Calendar.dateInterval(of:)` (semiabierto). Un gasto que llena el
-    /// presupuesto el 1 de marzo a las 00:00 excedía también febrero: 94 en vez de 97.
+    /// presupuesto el 1 de marzo a las 00:00 excedía también febrero. Desde el lote 1 de la nota de salud el gasto va al
+    /// doble del límite (pasarse un poco casi no resta y ya no separaría los dos casos): 77 en vez de 53.
     @Test("Score: el gasto del día 1 a medianoche no excede el mes anterior")
     func financialScore_midnightSpendStaysInItsBucket() {
         let cal = Calendar.current
@@ -158,12 +159,12 @@ struct BudgetPeriodIntervalTests {
         budget.createdAt = cal.date(from: DateComponents(year: 2026, month: 1, day: 1))!
         let tx = TransactionItem(
             date: cal.date(from: DateComponents(year: 2026, month: 3, day: 1))!,
-            amount: -100,
+            amount: -200,
             currencyCode: "USD",
             note: nil,
             category: YalaCategory(name: "Food", colorHex: "#FF0000", isIncome: false),
             tags: [],
-            amountInPreferredCurrency: -100,
+            amountInPreferredCurrency: -200,
             preferredCurrencyCode: "USD"
         )
 
@@ -180,8 +181,8 @@ struct BudgetPeriodIntervalTests {
             calendar: cal
         )
 
-        // Enero 100 · febrero 100 · marzo 92 (excedido) → 97. Con el bug, febrero también 92 → 94.
-        #expect(score.budget == 97)
+        // Enero 100 · febrero 100 · marzo 30 (el doble) → 230 / 3 = 76. Con el bug, febrero también 30 → 53.
+        #expect(score.budget == 76)
     }
 
     // MARK: - 2. Días que quedan: hoy cuenta

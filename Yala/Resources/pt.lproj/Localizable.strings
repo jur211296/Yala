@@ -78,7 +78,7 @@
 
 // Detail sheet — Orçamento
 "panel.health.budget.sheet.title" = "Seu orçamento";
-"panel.health.budget.sheet.explanation" = "Olhamos como você está indo com seus orçamentos do mês. Se sobra espaço, soma pontos; se passou do limite, cai um pouquinho. Nada dramático — só uma bússola.";
+"panel.health.budget.sheet.explanation" = "Vemos como você está com seus orçamentos. Passar um pouco quase não tira pontos; só cai de verdade quando o gasto chega perto do dobro do limite.";
 "panel.health.budget.headline.high" = "Seus orçamentos estão tranquilos!";
 "panel.health.budget.headline.mid" = "Você está cuidando bem dos limites";
 "panel.health.budget.headline.low" = "Um ajustezinho e fica redondo";
@@ -88,7 +88,7 @@
 
 // Detail sheet — Atividade
 "panel.health.activity.sheet.title" = "Seu ritmo";
-"panel.health.activity.sheet.explanation" = "Mede a maior sequência de dias sem registrar gastos neste período. Até 2 dias sem registrar é normal — além disso, seu ritmo se nota.";
+"panel.health.activity.sheet.explanation" = "Mede a maior sequência de dias sem registrar neste período, contando os dias desde o seu último registro até hoje. Você tem 3 dias de folga; a partir do quarto, seu ritmo cai aos poucos.";
 "panel.health.activity.headline.high" = "Você está num ótimo ritmo! 🎉";
 "panel.health.activity.headline.mid" = "Seu ritmo está bom";
 "panel.health.activity.headline.low" = "Seu ritmo caiu um pouco";
@@ -6863,7 +6863,7 @@
 "panel.health.part.budget" = "Como você está em relação aos limites dos seus orçamentos.";
 
 /* Health breakdown: what the rhythm part measures */
-"panel.health.part.activity" = "Quantos dias seguidos você fica sem registrar. Até 2 está ok.";
+"panel.health.part.activity" = "Quantos dias seguidos você passa sem registrar, até hoje. Até 3 está ok.";
 
 /* Health breakdown: what the commitments part measures */
 "panel.health.part.bills" = "Se seu saldo cobre os pagamentos que vêm, e quanto da sua renda vai para eles.";
@@ -6875,7 +6875,7 @@
 "panel.health.improve.budget" = "Para subir sua nota: revise o orçamento que mais está estourando.";
 
 /* Health: what would raise the score most (rhythm) */
-"panel.health.improve.activity" = "Para subir sua nota: registre algo pelo menos a cada dois dias.";
+"panel.health.improve.activity" = "Para subir sua nota: não deixe passar mais de três dias sem registrar.";
 
 /* Health: what would raise the score most (commitments) */
 "panel.health.improve.bills" = "Para subir sua nota: revise seus pagamentos planejados; eles pesam muito no seu saldo.";
@@ -6883,8 +6883,6 @@
 /* Health: all three parts are fine */
 "panel.health.improve.nothing" = "O que já conta vai bem. Continue assim.";
 
-/* Health: the total never goes below this number. %d = floor */
-"panel.health.floorNote" = "A nota total nunca fica abaixo de %d.";
 
 /* Live balance sheet: heading of the per-currency sum */
 "panel.liveAnchorEducation.sumTitle" = "A soma, moeda por moeda";
@@ -8890,3 +8888,33 @@
 "cashflow.monthEnd.leftIn" = "Falta entrar";
 "cashflow.monthEnd.leftOut" = "Falta sair";
 "cashFlowPlan.estimateLeft" = "Estimado que falta";
+
+/* Health sheet: the scale of the total score (0 to 100, no floor) */
+"panel.health.scaleNote" = "A nota vai de 0 a 100.";
+
+/* Health card (compact): one concrete step when rhythm is the part that would raise the score most */
+"panel.health.card.step.activity" = "Registre algo esta semana para subir seu ritmo.";
+
+/* Health card (compact): one concrete step when budgets are the part that would raise the score most */
+"panel.health.card.step.budget" = "Revise seu orçamento mais apertado para subir sua nota.";
+
+/* Health card (compact): one concrete step when planned payments are the part that would raise the score most */
+"panel.health.card.step.bills" = "Revise seus pagamentos planejados para subir sua nota.";
+
+/* Health card (compact): every part is doing well (90 or more) */
+"panel.health.card.step.good" = "Você vai bem. Continue registrando para manter.";
+
+/* Health card (compact), no score yet: rhythm has no data */
+"panel.health.card.start.activity" = "Registre seus gastos para ver sua nota.";
+
+/* Health card (compact), no score yet: budgets have no data */
+"panel.health.card.start.budget" = "Crie um orçamento para ver sua nota.";
+
+/* Health card (compact), no score yet: planned payments have no data */
+"panel.health.card.start.bills" = "Planeje um pagamento para ver sua nota.";
+
+/* What's New 2.3: the financial health score is more precise */
+"whatsNew.v23.healthScore.title" = "Sua nota de saúde, mais precisa";
+
+/* What's New 2.3: what changed in the financial health score and how to raise it */
+"whatsNew.v23.healthScore.description" = "Agora ela conta os dias desde o seu último registro, com 3 dias de folga, e passar um pouco de um orçamento quase não tira pontos. Para subir, registre com frequência e cuide dos seus limites. Ela fica no Painel, em Suas finanças.";

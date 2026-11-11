@@ -362,6 +362,8 @@ final class AppBootstrapper {
             // clobbear la config que el sync aún no había bajado. Aquí (post-hook, o sin cuenta
             // iCloud vía el gate de arriba) la decisión sobre fresh-vs-existente ya es segura.
             PanelPreferencesMigration.runIfNeeded(appPreferences: appPreferences)
+            // La nota de salud a la vista, una vez, para quien nunca tocó Configurar Panel (opción A de Jürgen).
+            PanelPreferencesMigration.showHealthOnceIfUntouched(appPreferences: appPreferences)
         }
 
         // 9. Update widget cache

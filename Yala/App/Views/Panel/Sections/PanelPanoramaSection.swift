@@ -26,7 +26,9 @@ struct PanelPanoramaSection: View {
         let isExpanded = !appPreferences.panelAccountsCollapsed
         // Sin la frase de IA ni su botón desde el 2026-10-03 (`panel-accounts-redesign`). Sin la línea «Tienes X en
         // N cuentas» desde el lote 3 de la auditoría UX 2.2 (L3-1): el saldo lo cuenta el hero y cada cuenta el suyo.
-        // Plegada enseña las cuentas en chips (L3-9, variante 3); desplegada, el carrusel y la salud.
+        // Plegada enseña las cuentas en chips (L3-9, variante 3) y la nota de salud chata; desplegada, el carrusel y la
+        // salud. La nota va en las dos (lote 1 de la nota de salud, 11-nov-2026): «Tus finanzas» llega plegada, y la
+        // tarjeta chata es la que ocupa poco.
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             header
 
@@ -34,7 +36,17 @@ struct PanelPanoramaSection: View {
                 content
                     .padding(.top, DS.Spacing.sm)
                     .transition(.opacity.combined(with: .move(edge: .top)))
-            } else if accountsVisible && !viewModel.accounts.isEmpty {
+            } else if (accountsVisible && !viewModel.accounts.isEmpty) || healthVisible {
+                collapsedContent
+                    .transition(.opacity)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var collapsedContent: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            if accountsVisible && !viewModel.accounts.isEmpty {
                 PanelAccountChipsRow(
                     viewModel: viewModel,
                     orderedCards: viewModel.orderedActiveAccountCards(
@@ -46,7 +58,9 @@ struct PanelPanoramaSection: View {
                     onEditAccount: { accountFormSheet = AccountFormSheet(account: $0) },
                     onOpenAccount: { accountDetail = AccountDetailPresentation(account: $0) }
                 )
-                .transition(.opacity)
+            }
+            if healthVisible {
+                PanelHealthSection(viewModel: viewModel, sessionState: sessionState)
             }
         }
     }
