@@ -114,11 +114,11 @@ struct SankeyFlowCalculatorTests {
         #expect(result.totalIncome == 1500)
         #expect(result.totalExpense == 0)
         #expect(result.pool == 0)
-        // Col 0 = 2 income subcats. Col 1 = "Disponible" only (no "Gastos", pool == 0).
+        // Col 0 = 2 income subcats. Col 1 = "Te queda" only (no "Gastos", pool == 0).
         #expect(result.nodes(in: .income).count == 2)
         let poolNodes = result.nodes(in: .pool)
         #expect(poolNodes.count == 1)
-        #expect(poolNodes.first?.name == L10n.Statistics.Sankey.available)
+        #expect(poolNodes.first?.name == SankeyFlowCalculator.leftoverLabel(periodIsClosed: false))
         #expect(poolNodes.first?.amount == 1500)
         #expect(result.nodes(in: .expenseCategory).isEmpty)
         #expect(result.nodes(in: .expenseSubcategory).isEmpty)
@@ -237,7 +237,7 @@ struct SankeyFlowCalculatorTests {
         let pool = result.nodes(in: .pool)
         #expect(pool.count == 2)
         #expect(pool.first { $0.name == L10n.Statistics.Sankey.expenses }?.amount == 300)
-        #expect(pool.first { $0.name == L10n.Statistics.Sankey.available }?.amount == 700)
+        #expect(pool.first { $0.name == SankeyFlowCalculator.leftoverLabel(periodIsClosed: false) }?.amount == 700)
     }
 
     @Test func compute_expenseGreaterThanIncome_emitsDeficitNotCap() {
@@ -583,7 +583,7 @@ struct SankeyFlowCalculatorTests {
         )
         let pool = result.nodes(in: .pool)
         // "Gastos" es tappable: filtra los gastos del período (tap filter por pool,
-        // añadido en 59a84be4). "Disponible" NO es tappable (no es un gasto filtrable).
+        // añadido en 59a84be4). "Te queda" NO es tappable (no es un gasto filtrable).
         #expect(pool.first { $0.id == "pool_expenses" }?.isTappable == true)
         #expect(pool.first { $0.id == "pool_available" }?.isTappable == false)
     }

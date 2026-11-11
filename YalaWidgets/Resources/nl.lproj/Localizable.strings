@@ -16,8 +16,8 @@
 "widget.gallery.quickImage.desc" = "Boek vanuit een foto of bestand. Tik om het te kiezen.";
 "widget.gallery.cashFlow" = "In en uit";
 "widget.gallery.cashFlow.desc" = "Wat er deze periode in- en uitging. Tik om het in Trends te zien.";
-"widget.gallery.balance" = "Beschikbaar";
-"widget.gallery.balance.desc" = "Je beschikbare geld en het verloop. Tik om het Panel te zien.";
+"widget.gallery.balance" = "Saldo";
+"widget.gallery.balance.desc" = "Wat je op je rekeningen hebt en het verloop. Tik om het Panel te zien.";
 "widget.gallery.budgets" = "Budgetten";
 "widget.gallery.budgets.desc" = "Hoe je budgetten ervoor staan. Tik om Budgetten te zien.";
 "widget.gallery.latestRecords" = "Recente boekingen";
@@ -34,8 +34,8 @@
 "widget.gallery.topSubcategories.desc" = "Je subcategorieën met de meeste uitgaven. Tik om Verdeling per subcategorie te zien.";
 
 // MARK: - Gallery (Lock Screen accessory widgets)
-"widget.gallery.accessoryBalance" = "Beschikbaar";
-"widget.gallery.accessoryBalance.desc" = "Je beschikbare geld op het toegangsscherm. Tik om het Panel te zien.";
+"widget.gallery.accessoryBalance" = "Saldo";
+"widget.gallery.accessoryBalance.desc" = "Wat je op je rekeningen hebt, op het toegangsscherm. Tik om het Panel te zien.";
 "widget.gallery.accessoryExpense" = "Uitgaven";
 "widget.gallery.accessoryExpense.desc" = "Je uitgaven op het toegangsscherm. Tik om het Overzicht in Statistieken te zien.";
 "widget.gallery.accessoryBudget" = "Budget";
@@ -46,8 +46,8 @@
 // MARK: - Intent titles and descriptions
 "widget.intent.cashFlow.title" = "In en uit";
 "widget.intent.cashFlow.desc" = "Toont wat er deze periode in- en uitging";
-"widget.intent.balance.title" = "Beschikbaar";
-"widget.intent.balance.desc" = "Toont je beschikbare geld";
+"widget.intent.balance.title" = "Saldo";
+"widget.intent.balance.desc" = "Toont wat je op je rekeningen hebt";
 "widget.intent.expense.title" = "Uitgaven";
 "widget.intent.expense.desc" = "Toont je totale uitgaven";
 "widget.intent.categoriesPie.title" = "Categorieën in een cirkel";
@@ -64,7 +64,7 @@
 "widget.intent.scheduledPayments.desc" = "Toont je aankomende geplande betalingen";
 "widget.intent.latestRecords.title" = "Recente boekingen";
 "widget.intent.latestRecords.desc" = "Toont je meest recente boekingen";
-"widget.intent.accessoryBalance.title" = "Beschikbaar";
+"widget.intent.accessoryBalance.title" = "Saldo";
 "widget.intent.accessoryBalance.desc" = "Saldo van de periode";
 "widget.intent.accessoryExpense.title" = "Uitgaven";
 "widget.intent.accessoryExpense.desc" = "Uitgaven van de periode";
@@ -161,7 +161,6 @@
 "widget.groupsOnly.cta" = "Volledige Yala activeren";
 
 /* UX 2.2 · lote decidido 08 — estados vacíos de los widgets (L15-2) */
-"widget.ui.available" = "Beschikbaar";
 "widget.empty.openYalaBalance" = "Open Yala om je saldo te zien";
 "widget.empty.openYala" = "Open Yala om je gegevens te zien";
 "widget.empty.openYalaShort" = "Open Yala";

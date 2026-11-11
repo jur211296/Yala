@@ -213,7 +213,7 @@ struct BalanceWidgetView: View {
 
 /// Lo que comparten los dos tamaños: el título, la variación y su tono.
 private extension BalanceEntry {
-    var title: String { String(localized: "widget.ui.available", bundle: .main) }
+    var title: String { String(localized: "widget.ui.balance", bundle: .main) }
     var periodName: String { period.toWidgetPeriod.localizedDisplayName }
 
     /// Hacia dónde se movió el saldo tal como se pinta la variación (sin decimales): `0` si se pinta como cero.

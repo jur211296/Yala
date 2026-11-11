@@ -119,7 +119,6 @@
 // KPI fallback (aiSubtitle takes the KPI slot when available)
 // Markdown bold (**amount**) renders via AttributedString(markdown:)
 
-"panel.hero.availableLabel" = "利用可能";
 
 // MARK: - Trend Widget
 
@@ -3524,7 +3523,6 @@
 
 "statistics.sankey.title" = "お金の流れ";
 "statistics.sankey.expenses" = "支出";
-"statistics.sankey.available" = "利用可能";
 "statistics.sankey.others" = "その他";
 "statistics.sankey.planned" = "計画済み";
 "statistics.sankey.plannedRecurring" = "定期";
@@ -5492,12 +5490,6 @@
 /* Cuerpo del aviso al tocar la tarjeta de un grupo pendiente de aprobación */
 "groups.card.pendingNotice.body" = "グループの管理者がまだリクエストを承認していません。承認されると、グループを開いて支出を見られるようになります。承認されたらお知らせします。";
 
-/* Stats hero caption: the figure is the accounts balance (stock), same as Panel KPI */
-"stats.hero.captionAccountsBalance" = "口座残高";
-
-/* Stats hero caption: the figure is income minus expenses for the period (flow) */
-"stats.hero.captionNetPeriod" = "期間の収支";
-
 /* Stats hero caption: the figure is only the income side for the period */
 "stats.hero.captionIncomePeriod" = "期間の収入";
 
@@ -6768,9 +6760,6 @@
 /* Note in the 'records without account' sheet when group records keep their currency */
 "orphanedRecords.groupKeptCurrencyNote" = "別の通貨のグループの支出は換算せずそのまま移動します。金額はグループが決めます。";
 
-/* Panel hero label: income minus expenses of a named month. %@ = month name */
-"panel.hero.balanceOfMonth" = "%@の収支";
-
 /* Panel hero label when only expenses are shown. %@ = month name */
 "panel.hero.expensesOfMonth" = "%@の支出";
 
@@ -6785,9 +6774,6 @@
 
 /* Line under the panel hero when the period has no income or expenses yet */
 "panel.hero.noMovements" = "この期間の記録はまだありません";
-
-/* Second line under the panel hero with no movements: the money in the accounts. %@ = amount */
-"panel.hero.totalInAccounts" = "口座に%@あります";
 
 /* Small hint next to the panel hero label: tapping opens Statistics */
 "panel.hero.seeDetail" = "詳細";
@@ -8817,3 +8803,11 @@
 "tag.colorName.custom" = "カスタムカラー";
 "tag.nameCount %lld %lld" = "%1$lld/%2$lld";
 "tag.nameLimitReached %lld %lld" = "%1$lld/%2$lld:これ以上は入力できません";
+
+/* Decisión 8 de la revisión 2.3 (2026-11-11): «Tienes hoy» (lo de las cuentas) y «Te queda» (entró − salió) */
+"panel.hero.haveToday" = "今日の残高";
+"panel.hero.oweToday" = "今日の不足額";
+"panel.hero.leftNow" = "残り";
+"panel.hero.leftPast" = "残った額";
+"panel.hero.leftInMonth" = "%@に残った額";
+"stats.hero.captionAccountsBalanceClosed" = "期末残高";

@@ -246,7 +246,7 @@ struct TrendsTabView: View {
             // Qué es la cifra. Sigue a la métrica: `heroKPIValue` devuelve uno
             // de tres números, así que el rótulo no puede ser fijo.
             if hasRecords, summary != nil {
-                HeroHeaderLabel(text: StatsHeroCaptionLogic.trends(metric: trendsViewModel.selectedMetric).text)
+                HeroHeaderLabel(text: StatsHeroCaptionLogic.trends(metric: trendsViewModel.selectedMetric).text(isClosed: PeriodTenseLogic.isClosed(period: sessionState.selectedPeriod, customRange: sessionState.customDateRange)))
                     .accessibilityIdentifier("stats_hero_caption")
             }
         } period: {

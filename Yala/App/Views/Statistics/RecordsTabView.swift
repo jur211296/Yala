@@ -297,7 +297,7 @@ struct RecordsTabView: View {
                 HeroHeaderLabel(text: StatsHeroCaptionLogic.records(
                     natures: viewModel.selectedTransactionNatures,
                     expensesOnly: expensesOnly
-                ).text)
+                ).text(isClosed: PeriodTenseLogic.isClosed(period: sessionState.selectedPeriod, customRange: sessionState.customDateRange)))
                     .accessibilityIdentifier("stats_hero_caption")
             }
         } figure: {

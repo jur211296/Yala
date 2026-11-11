@@ -119,7 +119,6 @@
 // KPI fallback (aiSubtitle toma el rol de KPI cuando está disponible)
 // Markdown bold (**monto**) se renderiza via AttributedString(markdown:)
 
-"panel.hero.availableLabel" = "Disponible";
 
 // MARK: - Trend Widget
 
@@ -320,8 +319,8 @@
 "account.name" = "Nombre";
 "account.type" = "Tipo";
 "account.currency" = "Moneda";
-"account.balance" = "Balance";
-"account.initialBalance" = "Balance inicial";
+"account.balance" = "Saldo";
+"account.initialBalance" = "Saldo inicial";
 "account.sign" = "Signo";
 "account.positive" = "Positivo";
 "account.negative" = "Negativo";
@@ -1675,7 +1674,7 @@
 "accessibility.destinationAmount" = "Monto destino";
 "accessibility.exchangeRate" = "Tipo de cambio";
 "accessibility.draftRow %@ %@ %@" = "Borrador: %@, %@, %@";
-"accessibility.metricBalance" = "Balance";
+"accessibility.metricBalance" = "Saldo";
 "accessibility.metricIncome" = "Ingreso";
 "accessibility.metricExpense" = "Gasto";
 "accessibility.colorOption %@" = "Color %@";
@@ -1736,7 +1735,7 @@
 "settings.expensesOnlyActive" = "Activo";
 "settings.categoryHidden" = "(oculta)";
 
-"widget.hint.trend" = "Muestra la evolución de tu balance, ingresos o gastos en el período seleccionado.";
+"widget.hint.trend" = "Muestra la evolución de tu saldo, ingresos o gastos en el período seleccionado.";
 "widget.hint.topCategories" = "Las categorías donde más has gastado en este período.";
 "widget.hint.topSubcategories" = "Las subcategorías con mayor gasto, filtradas por categoría.";
 "widget.hint.categoriesPie" = "Distribución porcentual del gasto por categoría.";
@@ -3503,7 +3502,6 @@
 
 "statistics.sankey.title" = "Flujo de dinero";
 "statistics.sankey.expenses" = "Gastos";
-"statistics.sankey.available" = "Disponible";
 "statistics.sankey.others" = "Otros";
 "statistics.sankey.planned" = "Planificados";
 "statistics.sankey.plannedRecurring" = "Recurrentes";
@@ -3552,14 +3550,12 @@
 "panel.widgetInfo.cashFlow.smallWhatQ" = "¿Qué estás viendo?";
 
 /* Panel Polish #2 — CashFlow S: respuesta a '¿Qué estás viendo?' */
-"panel.widgetInfo.cashFlow.smallWhatA" = "Tu balance del periodo: la diferencia entre lo que ingresaste y lo que gastaste, con dos barras que comparan ambos totales.";
-
+"panel.widgetInfo.cashFlow.smallWhatA" = "Lo que te queda en el periodo: la diferencia entre lo que ingresaste y lo que gastaste, con dos barras que comparan ambos totales.";
 /* Panel Polish #2 — CashFlow M: pregunta '¿Qué estás viendo?' */
 "panel.widgetInfo.cashFlow.mediumWhatQ" = "¿Qué estás viendo?";
 
 /* Panel Polish #2 — CashFlow M: respuesta a '¿Qué estás viendo?' */
-"panel.widgetInfo.cashFlow.mediumWhatA" = "Lo mismo que el tamaño compacto (ingresos, gastos y balance), con más espacio para ver los importes a detalle.";
-
+"panel.widgetInfo.cashFlow.mediumWhatA" = "Lo mismo que el tamaño compacto (ingresos, gastos y lo que te queda), con más espacio para ver los importes a detalle.";
 /* Panel Polish #2 — CashFlow L: pregunta '¿Qué estás viendo?' */
 "panel.widgetInfo.cashFlow.largeWhatQ" = "¿Qué estás viendo?";
 
@@ -3573,21 +3569,19 @@
 "panel.widgetInfo.cashFlow.largeHowA" = "Mantén el dedo sobre las barras para ver el detalle exacto de un punto concreto.";
 
 /* Panel Polish #2 — CashFlow: pregunta '¿Qué es el balance?' (común a S/M/L) */
-"panel.widgetInfo.cashFlow.balanceQ" = "¿Por qué el flujo total no coincide con mi balance?";
+"panel.widgetInfo.cashFlow.balanceQ" = "¿Por qué el flujo total no coincide con mi saldo?";
 /* Panel Polish #2 — CashFlow: respuesta a '¿Qué es el balance?' */
-"panel.widgetInfo.cashFlow.balanceA" = "Cada registro del flujo se contabiliza al tipo de cambio del día en que ocurrió. Tu balance refleja lo que tienes hoy al tipo de cambio vigente. Si tienes cuentas en distintas monedas, la diferencia es ganancia o pérdida cambiaria latente.";
+"panel.widgetInfo.cashFlow.balanceA" = "Cada registro del flujo se contabiliza al tipo de cambio del día en que ocurrió. Tu saldo refleja lo que tienes hoy al tipo de cambio vigente. Si tienes cuentas en distintas monedas, la diferencia es ganancia o pérdida cambiaria latente.";
 /* Panel Polish #2 — Trend S: pregunta '¿Qué estás viendo?' */
 "panel.widgetInfo.trend.smallWhatQ" = "¿Qué estás viendo?";
 
 /* Panel Polish #2 — Trend S: respuesta a '¿Qué estás viendo?' */
-"panel.widgetInfo.trend.smallWhatA" = "Tu balance, ingresos o gastos del periodo según el filtro activo, con una mini-gráfica de evolución.";
-
+"panel.widgetInfo.trend.smallWhatA" = "Tu saldo, ingresos o gastos del periodo según el filtro activo, con una mini-gráfica de evolución.";
 /* Panel Polish #2 — Trend L: pregunta '¿Qué estás viendo?' */
 "panel.widgetInfo.trend.largeWhatQ" = "¿Qué estás viendo?";
 
 /* Panel Polish #2 — Trend L: respuesta a '¿Qué estás viendo?' */
-"panel.widgetInfo.trend.largeWhatA" = "La evolución día a día de tu balance, tus ingresos o tus gastos del periodo.";
-
+"panel.widgetInfo.trend.largeWhatA" = "La evolución día a día de tu saldo, tus ingresos o tus gastos del periodo.";
 /* Panel Polish #2 — Trend L: pregunta '¿Cómo interactúo con la gráfica?' */
 "panel.widgetInfo.trend.largeHowQ" = "¿Cómo interactúo con la gráfica?";
 
@@ -3934,9 +3928,8 @@
 "panel.widgetInfo.weekdayBar.largeWhatA" = "Cuánto gastas en promedio cada día de la semana en el período activo. Sobre cada barra con gasto se ve el monto exacto.";
 "panel.widgetInfo.trend.fxMatchQ" = "¿Por qué el último punto puede no coincidir con mi saldo total?";
 "panel.widgetInfo.trend.fxMatchA" = "El último punto refleja tu saldo al tipo de cambio actual. Los puntos previos usan el tipo de cambio del día de cada registro. La diferencia es ganancia o pérdida por fluctuación cambiaria — solo aparece si tienes cuentas en distintas monedas.";
-"panel.widgetInfo.exchangeRate.balanceImpactQ" = "¿Cómo afecta el tipo de cambio a mi balance?";
-"panel.widgetInfo.exchangeRate.balanceImpactA" = "Yala calcula tu balance en tu moneda principal usando el tipo de cambio actual sobre el saldo de cada cuenta. Por eso, si el tipo de cambio cambia y no apuntas nada, tu balance puede subir o bajar.";
-
+"panel.widgetInfo.exchangeRate.balanceImpactQ" = "¿Cómo afecta el tipo de cambio a mi saldo?";
+"panel.widgetInfo.exchangeRate.balanceImpactA" = "Yala calcula tu saldo en tu moneda principal usando el tipo de cambio actual sobre el saldo de cada cuenta. Por eso, si el tipo de cambio cambia y no apuntas nada, tu saldo puede subir o bajar.";
 // MARK: - A0-Bridge Settings & Filters
 "settings.sectionGroups" = "Grupos";
 "settings.sectionGroupsHint" = "Configura cómo Yala mezcla tus cuentas y registros de grupos con tus datos personales.";
@@ -4157,7 +4150,7 @@
 "stats.trends.regenerate" = "Actualizar";
 "stats.trends.aiFootnote" = "Resumen con IA";
 "stats.trends.heroOnset" = "Tu primer período con Yala";
-"stats.trends.heroStable" = "Tu balance se mantiene estable";
+"stats.trends.heroStable" = "Lo que te queda se mantiene estable";
 "stats.trends.heroVarUp %d %@" = "%d%% por encima vs %@ · Sigue así";
 "stats.trends.heroVarDown %d %@" = "%d%% por debajo vs %@ · Ánimo, paso a paso";
 // MARK: Distribution
@@ -5506,12 +5499,6 @@
 /* Cuerpo del aviso al tocar la tarjeta de un grupo pendiente de aprobación */
 "groups.card.pendingNotice.body" = "El admin del grupo todavía no aprueba tu solicitud. Cuando lo haga vas a poder abrir el grupo y ver sus gastos. Te avisaremos cuando te aprueben.";
 
-/* Stats hero caption: the figure is the accounts balance (stock), same as Panel KPI */
-"stats.hero.captionAccountsBalance" = "Saldo de cuentas";
-
-/* Stats hero caption: the figure is income minus expenses for the period (flow) */
-"stats.hero.captionNetPeriod" = "Balance del período";
-
 /* Stats hero caption: the figure is only the income side for the period */
 "stats.hero.captionIncomePeriod" = "Ingresos del período";
 
@@ -6782,9 +6769,6 @@
 /* Note in the 'records without account' sheet when group records keep their currency */
 "orphanedRecords.groupKeptCurrencyNote" = "Los gastos de grupo en otra moneda pasan tal cual, sin convertir: su importe lo manda el grupo.";
 
-/* Panel hero label: income minus expenses of a named month. %@ = month name */
-"panel.hero.balanceOfMonth" = "Balance de %@";
-
 /* Panel hero label when only expenses are shown. %@ = month name */
 "panel.hero.expensesOfMonth" = "Gastos de %@";
 
@@ -6799,9 +6783,6 @@
 
 /* Line under the panel hero when the period has no income or expenses yet */
 "panel.hero.noMovements" = "Aún no tienes registros en este período";
-
-/* Second line under the panel hero with no movements: the money in the accounts. %@ = amount */
-"panel.hero.totalInAccounts" = "Tienes %@ en tus cuentas";
 
 /* Small hint next to the panel hero label: tapping opens Statistics */
 "panel.hero.seeDetail" = "Ver detalle";
@@ -8831,3 +8812,11 @@
 "tag.colorName.custom" = "Color propio";
 "tag.nameCount %lld %lld" = "%1$lld de %2$lld";
 "tag.nameLimitReached %lld %lld" = "%1$lld de %2$lld: el resto no cabe";
+
+/* Decisión 8 de la revisión 2.3 (2026-11-11): «Tienes hoy» (lo de las cuentas) y «Te queda» (entró − salió) */
+"panel.hero.haveToday" = "Tienes hoy";
+"panel.hero.oweToday" = "Debes hoy";
+"panel.hero.leftNow" = "Te queda";
+"panel.hero.leftPast" = "Te quedó";
+"panel.hero.leftInMonth" = "En %@ te quedó";
+"stats.hero.captionAccountsBalanceClosed" = "Tenías al cierre";

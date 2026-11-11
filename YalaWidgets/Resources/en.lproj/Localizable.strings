@@ -16,8 +16,8 @@
 "widget.gallery.quickImage.desc" = "Record from a photo or a file. Tap to choose it.";
 "widget.gallery.cashFlow" = "Money in and out";
 "widget.gallery.cashFlow.desc" = "What came in and went out this period. Tap to see it in Trends.";
-"widget.gallery.balance" = "Available";
-"widget.gallery.balance.desc" = "Your available money and its trend. Tap to see the Panel.";
+"widget.gallery.balance" = "Balance";
+"widget.gallery.balance.desc" = "What you have in your accounts and its trend. Tap to see the Panel.";
 "widget.gallery.budgets" = "Budgets";
 "widget.gallery.budgets.desc" = "How your budgets are going. Tap to see Budgets.";
 "widget.gallery.latestRecords" = "Latest Records";
@@ -34,8 +34,8 @@
 "widget.gallery.topSubcategories.desc" = "Your subcategories with the most spending. Tap to see Distribution by subcategory.";
 
 // MARK: - Gallery (Lock Screen accessory widgets)
-"widget.gallery.accessoryBalance" = "Available";
-"widget.gallery.accessoryBalance.desc" = "Your available money on the Lock Screen. Tap to see the Panel.";
+"widget.gallery.accessoryBalance" = "Balance";
+"widget.gallery.accessoryBalance.desc" = "What you have in your accounts, on the Lock Screen. Tap to see the Panel.";
 "widget.gallery.accessoryExpense" = "Expenses";
 "widget.gallery.accessoryExpense.desc" = "Your spending on the Lock Screen. Tap to see the Statistics Overview.";
 "widget.gallery.accessoryBudget" = "Budget";
@@ -46,8 +46,8 @@
 // MARK: - Intent titles and descriptions
 "widget.intent.cashFlow.title" = "Money in and out";
 "widget.intent.cashFlow.desc" = "Shows what came in and went out this period";
-"widget.intent.balance.title" = "Available";
-"widget.intent.balance.desc" = "Shows your available money";
+"widget.intent.balance.title" = "Balance";
+"widget.intent.balance.desc" = "Shows what you have in your accounts";
 "widget.intent.expense.title" = "Expenses";
 "widget.intent.expense.desc" = "Shows your total expenses";
 "widget.intent.categoriesPie.title" = "Category circle";
@@ -64,7 +64,7 @@
 "widget.intent.scheduledPayments.desc" = "Shows your upcoming scheduled payments";
 "widget.intent.latestRecords.title" = "Latest Records";
 "widget.intent.latestRecords.desc" = "Shows your most recent records";
-"widget.intent.accessoryBalance.title" = "Available";
+"widget.intent.accessoryBalance.title" = "Balance";
 "widget.intent.accessoryBalance.desc" = "Period balance";
 "widget.intent.accessoryExpense.title" = "Expenses";
 "widget.intent.accessoryExpense.desc" = "Period expenses";
@@ -161,7 +161,6 @@
 "widget.groupsOnly.cta" = "Activate full Yala";
 
 /* UX 2.2 · lote decidido 08 — estados vacíos de los widgets (L15-2) */
-"widget.ui.available" = "Available";
 "widget.empty.openYalaBalance" = "Open Yala to see your balance";
 "widget.empty.openYala" = "Open Yala to see your data";
 "widget.empty.openYalaShort" = "Open Yala";

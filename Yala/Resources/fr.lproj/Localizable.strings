@@ -119,7 +119,6 @@
 // KPI fallback (aiSubtitle prend la place du KPI quand disponible)
 // Le gras markdown (**montant**) se rend via AttributedString(markdown:)
 
-"panel.hero.availableLabel" = "Disponible";
 
 // MARK: - Trend Widget
 
@@ -3514,7 +3513,6 @@
 
 "statistics.sankey.title" = "Flux d'argent";
 "statistics.sankey.expenses" = "Dépenses";
-"statistics.sankey.available" = "Disponible";
 "statistics.sankey.others" = "Autres";
 "statistics.sankey.planned" = "Planifiés";
 "statistics.sankey.plannedRecurring" = "Récurrents";
@@ -5481,12 +5479,6 @@
 /* Cuerpo del aviso al tocar la tarjeta de un grupo pendiente de aprobación */
 "groups.card.pendingNotice.body" = "L'administrateur du groupe n'a pas encore approuvé ta demande. Dès qu'il l'aura fait, tu pourras ouvrir le groupe et voir ses dépenses. On te préviendra quand tu seras accepté.";
 
-/* Stats hero caption: the figure is the accounts balance (stock), same as Panel KPI */
-"stats.hero.captionAccountsBalance" = "Solde des comptes";
-
-/* Stats hero caption: the figure is income minus expenses for the period (flow) */
-"stats.hero.captionNetPeriod" = "Solde de la période";
-
 /* Stats hero caption: the figure is only the income side for the period */
 "stats.hero.captionIncomePeriod" = "Revenus de la période";
 
@@ -6757,9 +6749,6 @@
 /* Note in the 'records without account' sheet when group records keep their currency */
 "orphanedRecords.groupKeptCurrencyNote" = "Les dépenses de groupe dans une autre devise passent telles quelles, sans conversion : leur montant est fixé par le groupe.";
 
-/* Panel hero label: income minus expenses of a named month. %@ = month name */
-"panel.hero.balanceOfMonth" = "Solde de %@";
-
 /* Panel hero label when only expenses are shown. %@ = month name */
 "panel.hero.expensesOfMonth" = "Dépenses de %@";
 
@@ -6774,9 +6763,6 @@
 
 /* Line under the panel hero when the period has no income or expenses yet */
 "panel.hero.noMovements" = "Aucun enregistrement sur cette période";
-
-/* Second line under the panel hero with no movements: the money in the accounts. %@ = amount */
-"panel.hero.totalInAccounts" = "Tu as %@ sur tes comptes";
 
 /* Small hint next to the panel hero label: tapping opens Statistics */
 "panel.hero.seeDetail" = "Détails";
@@ -8806,3 +8792,11 @@
 "tag.colorName.custom" = "Couleur personnalisée";
 "tag.nameCount %lld %lld" = "%1$lld sur %2$lld";
 "tag.nameLimitReached %lld %lld" = "%1$lld sur %2$lld : impossible d’en ajouter plus";
+
+/* Decisión 8 de la revisión 2.3 (2026-11-11): «Tienes hoy» (lo de las cuentas) y «Te queda» (entró − salió) */
+"panel.hero.haveToday" = "Tu as aujourd'hui";
+"panel.hero.oweToday" = "Tu dois aujourd'hui";
+"panel.hero.leftNow" = "Il te reste";
+"panel.hero.leftPast" = "Il t'est resté";
+"panel.hero.leftInMonth" = "En %@, il t'est resté";
+"stats.hero.captionAccountsBalanceClosed" = "Solde à la clôture";

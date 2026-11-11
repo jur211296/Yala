@@ -248,7 +248,7 @@ struct InsightsTabView: View {
         } caption: {
             // Qué es la cifra: el neto, o el gasto en «Solo gastos».
             if showsFigure {
-                HeroHeaderLabel(text: StatsHeroCaptionLogic.insights(expensesOnly: expensesOnly).text)
+                HeroHeaderLabel(text: StatsHeroCaptionLogic.insights(expensesOnly: expensesOnly).text(isClosed: PeriodTenseLogic.isClosed(period: sessionState.selectedPeriod, customRange: sessionState.customDateRange)))
                     .accessibilityIdentifier("stats_hero_caption")
             }
         } figure: {

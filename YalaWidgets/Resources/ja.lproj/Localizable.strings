@@ -16,8 +16,8 @@
 "widget.gallery.quickImage.desc" = "写真やファイルから記録します。タップして選びます。";
 "widget.gallery.cashFlow" = "入金と出金";
 "widget.gallery.cashFlow.desc" = "期間内の入金と出金。タップすると推移で表示します。";
-"widget.gallery.balance" = "利用可能";
-"widget.gallery.balance.desc" = "使えるお金とその推移。タップするとパネルを表示します。";
+"widget.gallery.balance" = "残高";
+"widget.gallery.balance.desc" = "口座にあるお金とその推移。タップするとパネルを表示します。";
 "widget.gallery.budgets" = "予算";
 "widget.gallery.budgets.desc" = "予算の進み具合。タップすると予算を表示します。";
 "widget.gallery.latestRecords" = "最新の記録";
@@ -34,8 +34,8 @@
 "widget.gallery.topSubcategories.desc" = "支出の多いサブカテゴリ。タップするとサブカテゴリ別の内訳を表示します。";
 
 // MARK: - Gallery (Lock Screen accessory widgets)
-"widget.gallery.accessoryBalance" = "利用可能";
-"widget.gallery.accessoryBalance.desc" = "ロック画面に使えるお金を表示。タップするとパネルを表示します。";
+"widget.gallery.accessoryBalance" = "残高";
+"widget.gallery.accessoryBalance.desc" = "口座にあるお金をロック画面に表示。タップするとパネルを表示します。";
 "widget.gallery.accessoryExpense" = "支出";
 "widget.gallery.accessoryExpense.desc" = "ロック画面に支出を表示。タップすると統計の概要を表示します。";
 "widget.gallery.accessoryBudget" = "予算";
@@ -46,8 +46,8 @@
 // MARK: - Intent titles and descriptions
 "widget.intent.cashFlow.title" = "入金と出金";
 "widget.intent.cashFlow.desc" = "期間内の入金と出金を表示します";
-"widget.intent.balance.title" = "利用可能";
-"widget.intent.balance.desc" = "使えるお金を表示します";
+"widget.intent.balance.title" = "残高";
+"widget.intent.balance.desc" = "口座にあるお金を表示します";
 "widget.intent.expense.title" = "支出";
 "widget.intent.expense.desc" = "合計支出を表示";
 "widget.intent.categoriesPie.title" = "カテゴリの円グラフ";
@@ -64,7 +64,7 @@
 "widget.intent.scheduledPayments.desc" = "予定支払いを表示";
 "widget.intent.latestRecords.title" = "最新の記録";
 "widget.intent.latestRecords.desc" = "最近の記録を表示";
-"widget.intent.accessoryBalance.title" = "利用可能";
+"widget.intent.accessoryBalance.title" = "残高";
 "widget.intent.accessoryBalance.desc" = "期間の残高";
 "widget.intent.accessoryExpense.title" = "支出";
 "widget.intent.accessoryExpense.desc" = "期間の支出";
@@ -161,7 +161,6 @@
 "widget.groupsOnly.cta" = "Yalaの全機能を有効化";
 
 /* UX 2.2 · lote decidido 08 — estados vacíos de los widgets (L15-2) */
-"widget.ui.available" = "利用可能";
 "widget.empty.openYalaBalance" = "Yalaを開くと残高が表示されます";
 "widget.empty.openYala" = "Yalaを開くとデータが表示されます";
 "widget.empty.openYalaShort" = "Yalaを開く";
