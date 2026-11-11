@@ -3891,7 +3891,7 @@
 "storage.consent.title" = "Your data in Yala's cloud";
 "storage.consent.pointServers" = "Our team can see it to give you support and smart features. We don't use end-to-end encryption.";
 "storage.consent.pointPhotos" = "They aren't backed up to the cloud or seen on other devices. If you want to keep them, save them before switching devices.";
-"storage.consent.pointAccess" = "No iCloud needed. There's no Yala password or email recovery: if you lose that login, export your data first (Settings → Export Data).";
+"storage.consent.pointAccess" = "No iCloud needed. There's no Yala password or email recovery: if you lose that login, export your data first (Settings → Export records).";
 "storage.consent.footer" = "You can switch back to private mode whenever you want, without losing anything.";
 "storage.consent.privacyLink" = "View the privacy policy";
 
@@ -4366,10 +4366,10 @@
 "settings.batchLeaveNoneLeft" = "You haven't left any groups.";
 
 /* D10 batch: stat label for groups left/deleted */
-"settings.batchLeaveStatLeft" = "Left";
+"settings.batchLeaveStatLeft" = "Groups you left";
 
 /* D10 batch: stat label for groups whose ownership was transferred */
-"settings.batchLeaveStatTransferred" = "Transferred";
+"settings.batchLeaveStatTransferred" = "Groups you handed over before leaving";
 
 /* D10 batch: section header for groups needing manual attention */
 "settings.batchLeaveNeedsDecisionHeader" = "Need your decision";
@@ -4458,10 +4458,10 @@
 "settings.batchLeaveStopped" = "You've stopped leaving your groups.";
 
 /* D10 batch: stat label for groups not processed after stop (D3) */
-"settings.batchLeaveStatSkipped" = "Skipped";
+"settings.batchLeaveStatSkipped" = "Groups you're still in";
 
 /* D10 batch: body explaining how to relaunch after stop (D3) */
-"settings.batchLeaveStoppedBody" = "You can pick it up again any time from “Clear Data”.";
+"settings.batchLeaveStoppedBody" = "You can pick it up again any time with “Leave all my groups”, in Groups Settings.";
 
 /* Feed row title for a confirmed settlement in group records */
 "groups.settlement.entryDescription" = "Payment";

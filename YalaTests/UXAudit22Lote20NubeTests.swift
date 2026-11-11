@@ -254,7 +254,9 @@ struct UXAudit22Lote20NubeWiringTests {
 
     @Test("L20-11: con sesión viva, un solo botón; nunca los dos proveedores")
     func sheet_liveSessionShowsOneButton() throws {
-        let footer = try Self.body(of: "private var footer: some View {", in: try Self.code(Self.sheet))
+        // Desde el 2026-11-11 los botones viven en `footerButtons` (fijos al pie, o dentro del desplazamiento con texto de
+        // accesibilidad: revisión 2.3, zona 41, lote 11).
+        let footer = try Self.body(of: "private var footerButtons: some View {", in: try Self.code(Self.sheet))
         let ask = try #require(footer.firstIndex(of: "case .askProvider:"))
         let live = try #require(footer.firstIndex(of: "case .reuseLiveSession(let provider):"))
         #expect(Array(footer[(ask + 1)..<live]) == ["providerButton(.apple)", "providerButton(.google)"])

@@ -3896,7 +3896,7 @@
 "storage.consent.title" = "Os teus dados na nuvem da Yala";
 "storage.consent.pointServers" = "A nossa equipa pode vê-los para te dar apoio e funcionalidades inteligentes. Não usamos encriptação de ponta a ponta.";
 "storage.consent.pointPhotos" = "Não são guardadas na nuvem nem aparecem noutros dispositivos. Se quiseres mantê-las, guarda-as antes de mudar de dispositivo.";
-"storage.consent.pointAccess" = "Sem depender do iCloud. Não há palavra-passe da Yala nem recuperação por email: se perderes esse acesso, exporta os teus dados antes (Definições → Exportar dados).";
+"storage.consent.pointAccess" = "Sem depender do iCloud. Não há palavra-passe da Yala nem recuperação por email: se perderes esse acesso, exporta os teus dados antes (Definições → Exportar registos).";
 "storage.consent.footer" = "Podes voltar ao modo privado quando quiseres, sem perder nada.";
 "storage.consent.privacyLink" = "Ver a política de privacidade";
 
@@ -4371,10 +4371,10 @@
 "settings.batchLeaveNoneLeft" = "Não saíste de nenhum grupo.";
 
 /* D10 batch: stat label for groups left/deleted */
-"settings.batchLeaveStatLeft" = "Saídos";
+"settings.batchLeaveStatLeft" = "Grupos que deixaste";
 
 /* D10 batch: stat label for groups whose ownership was transferred */
-"settings.batchLeaveStatTransferred" = "Transferidos";
+"settings.batchLeaveStatTransferred" = "Grupos que transferiste antes de sair";
 
 /* D10 batch: section header for groups needing manual attention */
 "settings.batchLeaveNeedsDecisionHeader" = "Precisam da tua decisão";
@@ -4463,10 +4463,10 @@
 "settings.batchLeaveStopped" = "Paraste a saída.";
 
 /* D10 batch: stat label for groups not processed after stop (D3) */
-"settings.batchLeaveStatSkipped" = "Por processar";
+"settings.batchLeaveStatSkipped" = "Grupos em que continuas";
 
 /* D10 batch: body explaining how to relaunch after stop (D3) */
-"settings.batchLeaveStoppedBody" = "Podes retomar quando quiseres em «Limpar dados».";
+"settings.batchLeaveStoppedBody" = "Podes retomar quando quiseres em «Sair de todos os meus grupos», nas Definições de Grupos.";
 
 /* Feed row title for a confirmed settlement in group records */
 "groups.settlement.entryDescription" = "Pagamento";

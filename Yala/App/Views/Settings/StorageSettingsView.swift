@@ -27,6 +27,8 @@ struct StorageSettingsView: View {
     /// El controller de producción (SSOT del runner). `nil` solo si el backend no está configurado — en
     /// ese caso la fila de Profile ni aparece, pero se degrada elegante por si se navega directo.
     private var controller: CloudMigrationController? { CloudMigrationController.shared }
+    /// Texto de accesibilidad: la tarjeta de estado apila el icono encima del texto (revisión 2.3, zona 41, problema 8).
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     /// La hoja única de activar la nube (UX 2.2 · L20-11/12): consentimiento, confirmación y método en un solo paso. Va
     /// por `.sheet(item:)` con lo que enseña DENTRO (la ruta y la cifra): con `isPresented` y la cifra en otro `@State`, la
@@ -315,25 +317,59 @@ struct StorageSettingsView: View {
 
     private func statusCard(_ controller: CloudMigrationController) -> some View {
         let isCloud = (CloudSyncFlags.storageMode == .cloud)
-        return HStack(spacing: DS.Spacing.lg) {
-            Image(systemName: isCloud ? "cloud.fill" : "lock.icloud.fill")
-                .font(DS.Typography.title)
-                .foregroundStyle(isCloud ? DS.Semantic.infoForeground : DS.Semantic.successForeground)
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(isCloud ? L10n.Storage.Status.cloudTitle : L10n.Storage.Status.icloudTitle)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.primary)
-                Text(isCloud ? L10n.Storage.Status.cloudBody : L10n.Storage.Status.icloudBody)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
+        let icon = Image(systemName: isCloud ? "cloud.fill" : "lock.icloud.fill")
+            .font(DS.Typography.title)
+            .foregroundStyle(isCloud ? DS.Semantic.infoForeground : DS.Semantic.successForeground)
+        let text = VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+            Text(isCloud ? L10n.Storage.Status.cloudTitle : L10n.Storage.Status.icloudTitle)
+                .font(DS.Typography.headline)
+                .foregroundStyle(.primary)
+            Text(isCloud ? L10n.Storage.Status.cloudBody : L10n.Storage.Status.icloudBody)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+        }
+        // Con texto de accesibilidad el icono va ENCIMA y el texto ocupa todo el ancho: al lado, «iCloud privado» se
+        // partía en dos líneas y la frase ocupaba once en media columna (revisión 2.3, zona 41, problema 8). A tamaño
+        // normal, la fila de siempre.
+        return Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                    icon
+                    text
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                HStack(spacing: DS.Spacing.lg) {
+                    icon
+                    text
+                    Spacer()
+                }
             }
-            Spacer()
         }
         .storageCardStyle()
         .accessibilityIdentifier("storage_status_card")
     }
 
     // MARK: - Migrate / Adopt card
+
+    /// Una nota de aviso de la tarjeta: naranja solo el icono y el texto en `.secondary`, como la nota de la vuelta y la
+    /// puerta de firmar de esta pantalla. Como TEXTO, `warningForeground` sobre la tarjeta blanca no llega a AA (revisión
+    /// 2.3, zona 41: «cuenta rechazada» y «otra cuenta» iban en naranja).
+    private func warningNote(_ text: String, identifier: String) -> some View {
+        Label {
+            Text(text)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        } icon: {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(DS.Typography.caption)
+                .foregroundStyle(DS.Semantic.warningForeground)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier(identifier)
+    }
+
 
     private func migrateCard(_ controller: CloudMigrationController) -> some View {
         // El marcador de un líder en el mirror → copy de ADOPT (evita el falso "migrar" sobre cuenta poblada). Y desde
@@ -355,10 +391,8 @@ struct StorageSettingsView: View {
             switch decision {
             case .reuseLiveSession(let provider):
                 if let refusal {
-                    Text(L10n.Storage.Migrate.refusedNote(for: refusal))
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(DS.Semantic.warningForeground)
-                        .accessibilityIdentifier("storage_account_refused_note")
+                    warningNote(L10n.Storage.Migrate.refusedNote(for: refusal),
+                                identifier: "storage_account_refused_note")
                 } else {
                     // C-7: con sesión viva no se pregunta el método — decirlo ANTES, para que saltarse
                     // el chooser no sea una sorpresa. Cumple la promesa de `groups.signin.accountNote`.
@@ -370,10 +404,7 @@ struct StorageSettingsView: View {
             case .blockedOtherAccount(let provider):
                 // Esta copia pertenece a otra cuenta de Yala: adoptarla desde la sesión actual
                 // mezclaría dos identidades. Se explica y se deshabilita el botón.
-                Text(accountMismatchNote(provider))
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(DS.Semantic.warningForeground)
-                    .accessibilityIdentifier("storage_account_mismatch_note")
+                warningNote(accountMismatchNote(provider), identifier: "storage_account_mismatch_note")
             case .askProvider:
                 EmptyView()
             }

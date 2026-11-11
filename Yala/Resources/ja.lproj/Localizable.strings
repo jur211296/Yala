@@ -4661,7 +4661,7 @@
 "storage.consent.title" = "Yala のクラウドにあるあなたのデータ";
 "storage.consent.pointServers" = "サポートやスマート機能を提供するため、私たちのチームが見ることがあります。エンドツーエンドの暗号化は使用していません。";
 "storage.consent.pointPhotos" = "クラウドにバックアップされず、他の端末にも表示されません。残したい場合は、機種変更の前に保存してください。";
-"storage.consent.pointAccess" = "iCloudは不要です。Yalaのパスワードやメールによる復旧はないため、そのログインを失う前にデータを書き出してください（設定 → データをエクスポート）。";
+"storage.consent.pointAccess" = "iCloudは不要です。Yalaのパスワードやメールによる復旧はないため、そのログインを失う前にデータを書き出してください（設定 → 記録をエクスポート）。";
 "storage.consent.footer" = "いつでもプライベートモードに戻せます。何も失われません。";
 "storage.consent.privacyLink" = "プライバシーポリシーを見る";
 
@@ -5136,10 +5136,10 @@
 "settings.batchLeaveNoneLeft" = "どのグループからも退出していません。";
 
 /* D10 batch: stat label for groups left/deleted */
-"settings.batchLeaveStatLeft" = "退出済み";
+"settings.batchLeaveStatLeft" = "退出したグループ";
 
 /* D10 batch: stat label for groups whose ownership was transferred */
-"settings.batchLeaveStatTransferred" = "移譲済み";
+"settings.batchLeaveStatTransferred" = "移譲してから退出したグループ";
 
 /* D10 batch: section header for groups needing manual attention */
 "settings.batchLeaveNeedsDecisionHeader" = "対応が必要";
@@ -5228,10 +5228,10 @@
 "settings.batchLeaveStopped" = "退出を中止しました。";
 
 /* D10 batch: stat label for groups not processed after stop (D3) */
-"settings.batchLeaveStatSkipped" = "未処理";
+"settings.batchLeaveStatSkipped" = "まだ参加しているグループ";
 
 /* D10 batch: body explaining how to relaunch after stop (D3) */
-"settings.batchLeaveStoppedBody" = "「データを消去」からいつでも再開できます。";
+"settings.batchLeaveStoppedBody" = "「グループ設定」の「すべてのグループから退出」からいつでも再開できます。";
 
 /* Feed row title for a confirmed settlement in group records */
 "groups.settlement.entryDescription" = "支払い";

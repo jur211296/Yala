@@ -4659,7 +4659,7 @@
 "storage.consent.title" = "I tuoi dati nel cloud di Yala";
 "storage.consent.pointServers" = "Il nostro team può vederli per darti assistenza e funzioni intelligenti. Non usiamo la crittografia end-to-end.";
 "storage.consent.pointPhotos" = "Non vengono salvate nel cloud né viste su altri dispositivi. Se vuoi conservarle, salvale prima di cambiare dispositivo.";
-"storage.consent.pointAccess" = "Senza dipendere da iCloud. Non c’è una password Yala né il recupero via email: se perdi quell’accesso, esporta prima i tuoi dati (Impostazioni → Esporta dati).";
+"storage.consent.pointAccess" = "Senza dipendere da iCloud. Non c’è una password Yala né il recupero via email: se perdi quell’accesso, esporta prima i tuoi dati (Impostazioni → Esporta registrazioni).";
 "storage.consent.footer" = "Puoi tornare alla modalità privata quando vuoi, senza perdere nulla.";
 "storage.consent.privacyLink" = "Vedi l’informativa sulla privacy";
 
@@ -5134,10 +5134,10 @@
 "settings.batchLeaveNoneLeft" = "Non sei uscito da nessun gruppo.";
 
 /* D10 batch: stat label for groups left/deleted */
-"settings.batchLeaveStatLeft" = "Usciti";
+"settings.batchLeaveStatLeft" = "Gruppi che hai lasciato";
 
 /* D10 batch: stat label for groups whose ownership was transferred */
-"settings.batchLeaveStatTransferred" = "Trasferiti";
+"settings.batchLeaveStatTransferred" = "Gruppi trasferiti prima di uscire";
 
 /* D10 batch: section header for groups needing manual attention */
 "settings.batchLeaveNeedsDecisionHeader" = "Richiedono la tua decisione";
@@ -5226,10 +5226,10 @@
 "settings.batchLeaveStopped" = "Hai interrotto l'uscita.";
 
 /* D10 batch: stat label for groups not processed after stop (D3) */
-"settings.batchLeaveStatSkipped" = "Non elaborati";
+"settings.batchLeaveStatSkipped" = "Gruppi in cui sei ancora";
 
 /* D10 batch: body explaining how to relaunch after stop (D3) */
-"settings.batchLeaveStoppedBody" = "Puoi riprenderla quando vuoi da «Cancella dati».";
+"settings.batchLeaveStoppedBody" = "Puoi riprenderla quando vuoi con «Esci da tutti i miei gruppi», in Impostazioni dei Gruppi.";
 
 /* Feed row title for a confirmed settlement in group records */
 "groups.settlement.entryDescription" = "Pagamento";
