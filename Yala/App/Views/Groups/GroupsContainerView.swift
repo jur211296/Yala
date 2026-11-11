@@ -824,7 +824,7 @@ struct GroupsContainerView: View {
                 return
             }
         }
-        guard let initial = wantedGroup ?? eligibles.first else { return }
+        guard let initial = wantedGroup ?? lastUsedOrFirst(of: eligibles) else { return }
         navigation.pendingNewGroupExpense = false
         navigation.pendingNewGroupExpenseGroupID = nil
         expenseComposerPayload = ExpenseComposerPayload(groups: eligibles, initialGroup: initial)
@@ -1246,9 +1246,17 @@ struct GroupsContainerView: View {
     /// «Nuevo gasto», de arriba o del flotante: el composer con los grupos donde se puede apuntar.
     private func startNewExpense() {
         let eligibles = viewModel.eligibleGroupsForExpense()
-        if let first = eligibles.first {
-            expenseComposerPayload = ExpenseComposerPayload(groups: eligibles, initialGroup: first)
+        if let initial = lastUsedOrFirst(of: eligibles) {
+            expenseComposerPayload = ExpenseComposerPayload(groups: eligibles, initialGroup: initial)
         }
+    }
+
+    /// «Nuevo gasto» abre en el último grupo donde se apuntó un gasto; si ya no admite gastos, en el primero
+    /// (decisión 39 de 2.3, F3).
+    private func lastUsedOrFirst(of eligibles: [SplitGroup]) -> SplitGroup? {
+        let id = LastExpenseGroupMark.initialGroupID(
+            eligibleIDs: eligibles.map(\.id), lastID: LastExpenseGroupMark.lastGroupID())
+        return eligibles.first { $0.id == id }
     }
 
     // MARK: - FAB

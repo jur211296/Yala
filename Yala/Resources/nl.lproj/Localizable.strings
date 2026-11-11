@@ -3052,7 +3052,7 @@
 
 // Bridge personal integration (per-group override)
 "groups.settings.personalIntegrationSectionTitle" = "Tonen in je rekeningen";
-"groups.settings.personalIntegrationToggleLabel" = "Uitgaven van deze groep vastleggen op mijn persoonlijke rekeningen";
+"groups.settings.personalIntegrationToggleLabel" = "Tonen in je rekeningen";
 "groups.settings.personalIntegrationHintInheritOn" = "Je neemt je algemene instelling over (Aan).";
 "groups.settings.personalIntegrationHintLocalOff" = "Alleen in deze groep: uit.";
 "groups.settings.personalIntegrationHintBlockedByGlobal" = "Om dit hier in te schakelen, schakel het eerst in bij Groepsinstellingen.";
@@ -3420,13 +3420,13 @@
 "groups.expense.eachPays" = "Iedereen betaalt";
 
 // GC-05: Settlements
-"groups.settlement.title" = "Betaling boeken";
+"groups.settlement.title" = "Verrekenen";
 "groups.settlement.payTo" = "betaalt aan";
-"groups.settlement.registerPayment" = "Betaling boeken";
+"groups.settlement.registerPayment" = "Verrekenen";
 "groups.settlement.confirm" = "Bevestigen";
 "groups.settlement.reject" = "Weigeren";
 "groups.settlement.settle" = "Afrekenen";
-"groups.settlement.settleHint" = "Opent het formulier om deze betaling te boeken";
+"groups.settlement.settleHint" = "Opent het formulier om deze schuld te verrekenen";
 "groups.settlement.confirmQuestion" = "Deze betaling als bevestigd markeren?";
 "groups.settlement.rejectQuestion" = "Deze betaling weigeren?";
 
@@ -3992,9 +3992,9 @@
 "groups.bridge.upsellGroupInviteSettlement" = "Activeer Yala volledig om deze betaling met je echte rekening af te stemmen.";
 
 // Bridge opt-out — alert post-save (F2c)
-"groups.bridge.optoutAlertTitle" = "Ook in je persoonlijke Yala vastleggen?";
+"groups.bridge.optoutAlertTitle" = "Tonen in je rekeningen?";
 "groups.bridge.optoutAlertBody" = "Je kunt een persoonlijke boeking op je rekening aanmaken om deze uitgave weer te geven, of deze alleen binnen de groep houden.";
-"groups.bridge.optoutAlertYes" = "Ja, vastleggen";
+"groups.bridge.optoutAlertYes" = "Ja, tonen";
 "groups.bridge.optoutAlertNo" = "Alleen in de groep";
 
 // Bridge deactivation sheet (F5)
@@ -4006,7 +4006,7 @@
 // Groups Global Settings sheet (F3a)
 "groups.globalSettings.title" = "Groepsinstellingen";
 "groups.globalSettings.bridgeSectionTitle" = "Tonen in je rekeningen";
-"groups.globalSettings.bridgeToggleLabel" = "Groepsuitgaven vastleggen op mijn persoonlijke rekeningen";
+"groups.globalSettings.bridgeToggleLabel" = "Tonen in je rekeningen";
 "groups.globalSettings.bridgeCaption" = "Als dit aanstaat, wordt elke uitgave die je betaalt of afrekent ook vastgelegd op de persoonlijke rekening die je kiest. Je saldo weerspiegelt de werkelijkheid.";
 "groups.globalSettings.visibilitySectionTitle" = "Zichtbaarheid";
 "groups.globalSettings.visibilityCaption" = "Bepaal of groepsboekingen verschijnen in je Panel, statistieken en Boekingen.";
@@ -5539,7 +5539,7 @@
 "groups.shareableSummary.owedLabel" = "Eigen deel";
 
 /* Shareable group summary: heading of the minimum list of transfers needed to settle. */
-"groups.shareableSummary.settleUp" = "Te vereffenen";
+"groups.shareableSummary.settleUp" = "Om quitte te staan";
 
 /* Shareable group summary: shown instead of the transfer list when nothing is owed in that currency. Celebratory, not neutral. */
 "groups.shareableSummary.allSettled" = "Alles vereffend!";
@@ -8390,7 +8390,7 @@
 /* Sección de ajustes del grupo (antes «Integración personal») */
 "groups.l19.options.personalSection" = "In je rekeningen";
 /* Interruptor del puente con las cuentas personales */
-"groups.l19.options.personalToggle" = "Wat ik hier betaal in mijn rekeningen vastleggen";
+"groups.l19.options.personalToggle" = "Tonen in je rekeningen";
 /* Pie del interruptor cuando sigue el ajuste general */
 "groups.l19.options.personalInherit" = "Zoals in Groepsinstellingen.";
 /* Miembros: rótulo sobre la cifra */
@@ -8902,3 +8902,9 @@
 "cashflow.monthEnd.leftIn" = "Nog binnen te komen";
 "cashflow.monthEnd.leftOut" = "Nog uit te geven";
 "cashFlowPlan.estimateLeft" = "Geschat nog te gaan";
+
+/* Grupos (decisión 39 de 2.3): preguntar antes de tirar lo escrito y conservarlo al cambiar de grupo */
+"groups.discard.expenseTitle" = "Deze uitgave weggooien?";
+"groups.discard.paymentTitle" = "Deze betaling weggooien?";
+"groups.discard.openingBalanceTitle" = "Dit beginsaldo weggooien?";
+"groups.expense.groupChangedNotice" = "Je hebt van groep gewisseld: wat je hebt ingevuld blijft staan; wie betaalde en de verdeling beginnen opnieuw.";

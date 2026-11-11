@@ -312,6 +312,55 @@ final class GroupExpenseViewModel {
         self.modelContext = ctx
     }
 
+    // MARK: - No tirar lo escrito (decisión 39 de 2.3)
+
+    /// Todo lo que la persona puede cambiar en el formulario. Lo compara la X con la foto de partida
+    /// (`GroupFormDiscardLogic`): si algo cambió, pregunta antes de cerrar.
+    struct FormSnapshot: Equatable {
+        let expenseDescription: String
+        let amountString: String
+        let note: String
+        let date: Date
+        let currencyCode: String
+        let paidByMemberID: String
+        let splitType: SplitType
+        let selectedMemberIDs: Set<String>
+        let exactAmounts: [String: String]
+        let percentages: [String: String]
+        let sharesCounts: [String: String]
+        let subcategoryName: String?
+        let accountID: PersistentIdentifier?
+    }
+
+    var formSnapshot: FormSnapshot {
+        FormSnapshot(
+            expenseDescription: expenseDescription, amountString: amountString, note: note, date: date,
+            currencyCode: currencyCode, paidByMemberID: paidByMemberID, splitType: splitType,
+            selectedMemberIDs: selectedMemberIDs, exactAmounts: exactAmounts, percentages: percentages,
+            sharesCounts: sharesCounts, subcategoryName: subcategoryName, accountID: selectedAccount?.persistentModelID
+        )
+    }
+
+    /// Lo que viaja a otro grupo al cambiarlo (F3). Quién pagó y el reparto se quedan: son personas de este grupo.
+    var carryOver: GroupExpenseCarryOver {
+        GroupExpenseCarryOver(
+            expenseDescription: expenseDescription, amountString: amountString, note: note, date: date,
+            currencyCode: currencyCode, subcategory: selectedSubcategory, account: selectedAccount
+        )
+    }
+
+    /// Lo escrito en otro grupo, sobre este formulario recién montado. Quién pagó y el reparto quedan como los deja el
+    /// `init` de este grupo (pagas tú, a partes iguales entre todos).
+    func applyCarryOver(_ carried: GroupExpenseCarryOver) {
+        expenseDescription = carried.expenseDescription
+        amountString = carried.amountString
+        note = carried.note
+        date = carried.date
+        currencyCode = carried.currencyCode
+        selectedSubcategory = carried.subcategory
+        selectedAccount = carried.account
+    }
+
     // MARK: - Actions
 
     func save() -> Bool {

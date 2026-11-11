@@ -3052,7 +3052,7 @@
 
 // Bridge personal integration (per-group override)
 "groups.settings.personalIntegrationSectionTitle" = "Pokaż na Twoich kontach";
-"groups.settings.personalIntegrationToggleLabel" = "Zapisuj wydatki tej grupy na moich osobistych kontach";
+"groups.settings.personalIntegrationToggleLabel" = "Pokaż na Twoich kontach";
 "groups.settings.personalIntegrationHintInheritOn" = "Dziedziczysz ustawienie ogólne (Włączone).";
 "groups.settings.personalIntegrationHintLocalOff" = "Tylko w tej grupie: wyłączone.";
 "groups.settings.personalIntegrationHintBlockedByGlobal" = "Aby włączyć tę opcję tutaj, najpierw włącz ją w Ustawieniach grup.";
@@ -3070,7 +3070,7 @@
 "groups.balance.noDebts" = "Wszystko rozliczone!";
 "groups.balance.pendingDebts" = "Oczekujące długi";
 "groups.balance.settlements" = "Płatności";
-"groups.balance.confirmed" = "Potwierdzone";
+"groups.balance.confirmed" = "Potwierdzona";
 "groups.balance.pending" = "Oczekujące";
 "groups.expense.noExpenses" = "Brak wydatków";
 "groups.expense.youPaid" = "Zapłaciłeś %@";
@@ -3420,13 +3420,13 @@
 "groups.expense.eachPays" = "Każdy płaci";
 
 // GC-05: Settlements
-"groups.settlement.title" = "Zarejestruj płatność";
+"groups.settlement.title" = "Rozlicz";
 "groups.settlement.payTo" = "płaci osobie";
-"groups.settlement.registerPayment" = "Zarejestruj płatność";
+"groups.settlement.registerPayment" = "Rozlicz";
 "groups.settlement.confirm" = "Potwierdź";
 "groups.settlement.reject" = "Odrzuć";
 "groups.settlement.settle" = "Rozlicz";
-"groups.settlement.settleHint" = "Otwiera formularz, by zarejestrować tę płatność";
+"groups.settlement.settleHint" = "Otwiera formularz, aby rozliczyć ten dług";
 "groups.settlement.confirmQuestion" = "Oznaczyć tę płatność jako potwierdzoną?";
 "groups.settlement.rejectQuestion" = "Odrzucić tę płatność?";
 
@@ -3992,9 +3992,9 @@
 "groups.bridge.upsellGroupInviteSettlement" = "Aktywuj pełnego Yala, aby uzgodnić tę płatność ze swoim prawdziwym kontem.";
 
 // Bridge opt-out — alert post-save (F2c)
-"groups.bridge.optoutAlertTitle" = "Zapisać także w Twoim osobistym Yala?";
+"groups.bridge.optoutAlertTitle" = "Pokazać na Twoich kontach?";
 "groups.bridge.optoutAlertBody" = "Możesz utworzyć osobisty wpis na swoim koncie, aby odzwierciedlić ten wydatek, albo zostawić go tylko w grupie.";
-"groups.bridge.optoutAlertYes" = "Tak, zapisz";
+"groups.bridge.optoutAlertYes" = "Tak, pokaż";
 "groups.bridge.optoutAlertNo" = "Tylko w grupie";
 
 // Bridge deactivation sheet (F5)
@@ -4006,7 +4006,7 @@
 // Groups Global Settings sheet (F3a)
 "groups.globalSettings.title" = "Ustawienia grup";
 "groups.globalSettings.bridgeSectionTitle" = "Pokaż na Twoich kontach";
-"groups.globalSettings.bridgeToggleLabel" = "Zapisuj wydatki grupowe na moich osobistych kontach";
+"groups.globalSettings.bridgeToggleLabel" = "Pokaż na Twoich kontach";
 "groups.globalSettings.bridgeCaption" = "Gdy włączone, każdy wydatek, który płacisz lub rozliczasz, jest też zapisywany na wybranym koncie osobistym. Twoje saldo odzwierciedla rzeczywistość.";
 "groups.globalSettings.visibilitySectionTitle" = "Widoczność";
 "groups.globalSettings.visibilityCaption" = "Decyduj, czy wpisy grupowe pojawiają się w Twoim Panelu, statystykach i Wpisach.";
@@ -5539,7 +5539,7 @@
 "groups.shareableSummary.owedLabel" = "Część";
 
 /* Shareable group summary: heading of the minimum list of transfers needed to settle. */
-"groups.shareableSummary.settleUp" = "Do rozliczenia";
+"groups.shareableSummary.settleUp" = "Żeby się rozliczyć";
 
 /* Shareable group summary: shown instead of the transfer list when nothing is owed in that currency. Celebratory, not neutral. */
 "groups.shareableSummary.allSettled" = "Wszystko rozliczone!";
@@ -8390,7 +8390,7 @@
 /* Sección de ajustes del grupo (antes «Integración personal») */
 "groups.l19.options.personalSection" = "Na twoich kontach";
 /* Interruptor del puente con las cuentas personales */
-"groups.l19.options.personalToggle" = "Zapisuj na moich kontach to, co tu płacę";
+"groups.l19.options.personalToggle" = "Pokaż na Twoich kontach";
 /* Pie del interruptor cuando sigue el ajuste general */
 "groups.l19.options.personalInherit" = "Tak jak w Ustawieniach grup.";
 /* Miembros: rótulo sobre la cifra */
@@ -8902,3 +8902,9 @@
 "cashflow.monthEnd.leftIn" = "Jeszcze wpłynie";
 "cashflow.monthEnd.leftOut" = "Jeszcze wypłynie";
 "cashFlowPlan.estimateLeft" = "Szacowane pozostałe";
+
+/* Grupos (decisión 39 de 2.3): preguntar antes de tirar lo escrito y conservarlo al cambiar de grupo */
+"groups.discard.expenseTitle" = "Odrzucić ten wydatek?";
+"groups.discard.paymentTitle" = "Odrzucić tę płatność?";
+"groups.discard.openingBalanceTitle" = "Odrzucić to saldo początkowe?";
+"groups.expense.groupChangedNotice" = "Zmieniono grupę: to, co wpisano, zostaje; kto zapłacił i podział zaczynają się od nowa.";

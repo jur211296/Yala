@@ -138,7 +138,8 @@ final class GroupsNecesarias23Lote06UITests: XCTestCase {
             .matching(NSPredicate(format: "identifier BEGINSWITH 'group_settlement_menu_'")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 10), "No apareció el pago de Beto.")
         XCTAssertTrue(row.label.hasPrefix("Beto te pagó S/ 10.00"), "El pago se lee «\(row.label)».")
-        XCTAssertTrue(row.label.contains("Confirmada"), "El pago no dice su estado: «\(row.label)».")
+        // Decisión 40 de 2.3: lo registrado es un «Pago», y su estado concuerda con él.
+        XCTAssertTrue(row.label.contains("Confirmado"), "El pago no dice su estado: «\(row.label)».")
     }
 
     // MARK: - 5 · Un grupo sin gastos no está «al día»

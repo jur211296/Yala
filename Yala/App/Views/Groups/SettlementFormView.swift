@@ -61,6 +61,18 @@ struct SettlementFormView: View {
     @State private var showsMissingAmount = false
     @FocusState private var amountFocused: Bool
 
+    /// Decisión 39 de 2.3 (F1): lo que la persona puede cambiar aquí. El importe llega precargado con la deuda, así que
+    /// solo pregunta si se cambió algo respecto a lo de partida.
+    private struct FormSnapshot: Equatable {
+        let amountString: String
+        let note: String
+        let date: Date
+        let useSuggestedAmount: Bool
+        let accountID: PersistentIdentifier?
+    }
+    @State private var formBaseline: FormSnapshot?
+    @State private var showDiscardAlert = false
+
     // MARK: - Init
 
     init(
@@ -75,7 +87,32 @@ struct SettlementFormView: View {
         self.memberNameLookup = memberNameLookup
         self.currentUserMemberID = currentUserMemberID
         self.onSave = onSave
-        self._amountString = State(initialValue: AmountInputHelper.formatWithGrouping(debt.amount))
+        let initialAmount = AmountInputHelper.formatWithGrouping(debt.amount)
+        let initialDate = Date.now
+        self._amountString = State(initialValue: initialAmount)
+        self._date = State(initialValue: initialDate)
+        self._formBaseline = State(initialValue: FormSnapshot(
+            amountString: initialAmount, note: "", date: initialDate, useSuggestedAmount: false, accountID: nil))
+    }
+
+    private var formSnapshot: FormSnapshot {
+        FormSnapshot(amountString: amountString, note: note, date: date, useSuggestedAmount: useSuggestedAmount,
+                     accountID: selectedAccount?.persistentModelID)
+    }
+
+    /// Algo distinto de lo que había al abrir. Con el pago ya apuntado (el «Sí» del puente en curso) no hay nada que perder.
+    private var hasUnsavedInput: Bool {
+        guard !optInInFlight else { return false }
+        return GroupFormDiscardLogic.asksBeforeDiscarding(current: formSnapshot, baseline: formBaseline)
+    }
+
+    private func closeOrAskToDiscard() {
+        if hasUnsavedInput {
+            amountFocused = false
+            showDiscardAlert = true
+        } else {
+            dismiss()
+        }
     }
 
     // MARK: - Body
@@ -161,10 +198,17 @@ struct SettlementFormView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
-                        dismiss()
+                        closeOrAskToDiscard()
                     }
+                    .accessibilityIdentifier("settlement_form_close")
                 }
             }
+            .asksBeforeDiscardingGroupForm(
+                hasUnsavedInput: hasUnsavedInput,
+                title: L10n.GroupsDiscard.paymentTitle,
+                isPresented: $showDiscardAlert,
+                onDiscard: { dismiss() }
+            )
             .alert(L10n.Common.error, isPresented: $showSaveError) {
                 Button(L10n.Common.ok) {}
             } message: {

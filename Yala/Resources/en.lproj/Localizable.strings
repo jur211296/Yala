@@ -3460,13 +3460,13 @@
 "groups.expense.eachPays" = "Each pays";
 
 // GC-05: Settlements
-"groups.settlement.title" = "Log payment";
+"groups.settlement.title" = "Settle";
 "groups.settlement.payTo" = "pays to";
-"groups.settlement.registerPayment" = "Log payment";
+"groups.settlement.registerPayment" = "Settle";
 "groups.settlement.confirm" = "Confirm";
 "groups.settlement.reject" = "Reject";
 "groups.settlement.settle" = "Settle";
-"groups.settlement.settleHint" = "Opens the form to log this payment";
+"groups.settlement.settleHint" = "Opens the form to settle this debt";
 "groups.settlement.confirmQuestion" = "Mark this payment as confirmed?";
 "groups.settlement.rejectQuestion" = "Reject this payment?";
 
@@ -4254,9 +4254,9 @@
 "groups.reconnect.deletedForAll.cta" = "Got it";
 
 // MARK: Bridge opt-out (F7 consolidation)
-"groups.bridge.optoutAlertTitle" = "Also log in your personal Yala?";
+"groups.bridge.optoutAlertTitle" = "Show in your accounts?";
 "groups.bridge.optoutAlertBody" = "You can create a personal record in your account to reflect this expense, or keep it only inside the group.";
-"groups.bridge.optoutAlertYes" = "Yes, log it";
+"groups.bridge.optoutAlertYes" = "Yes, show it";
 "groups.bridge.optoutAlertNo" = "Group only";
 "groups.bridge.deactivationSheetTitle" = "Stop showing in your accounts";
 "groups.bridge.deactivationSheetBody" = "You already have records created automatically in your accounts. Choose what to do with them.";
@@ -4264,13 +4264,13 @@
 "groups.bridge.deactivationOptionDelete" = "Delete from my accounts";
 "groups.globalSettings.title" = "Groups Settings";
 "groups.globalSettings.bridgeSectionTitle" = "Show in your accounts";
-"groups.globalSettings.bridgeToggleLabel" = "Log group expenses in my personal accounts";
+"groups.globalSettings.bridgeToggleLabel" = "Show in your accounts";
 "groups.globalSettings.bridgeCaption" = "When on, every expense you pay or settle is also logged in the personal account you choose. Your balance reflects reality.";
 "groups.globalSettings.visibilitySectionTitle" = "Visibility";
 "groups.globalSettings.visibilityCaption" = "Choose whether group records appear in your Panel, Statistics and Records.";
 "groups.globalSettings.includeGroupTransactionsInFeedLabel" = "Include group records in Records";
 "groups.settings.personalIntegrationSectionTitle" = "Show in your accounts";
-"groups.settings.personalIntegrationToggleLabel" = "Log this group's expenses in my personal accounts";
+"groups.settings.personalIntegrationToggleLabel" = "Show in your accounts";
 "groups.settings.personalIntegrationHintInheritOn" = "Inheriting your general setting (Enabled).";
 "groups.settings.personalIntegrationHintLocalOff" = "Only in this group: disabled.";
 "groups.settings.personalIntegrationHintBlockedByGlobal" = "To enable this here, first enable it in Groups Settings.";
@@ -8384,7 +8384,7 @@
 /* Sección de ajustes del grupo (antes «Integración personal») */
 "groups.l19.options.personalSection" = "In your accounts";
 /* Interruptor del puente con las cuentas personales */
-"groups.l19.options.personalToggle" = "Record what I pay here in my accounts";
+"groups.l19.options.personalToggle" = "Show in your accounts";
 /* Pie del interruptor cuando sigue el ajuste general */
 "groups.l19.options.personalInherit" = "Same as in Groups Settings.";
 /* Miembros: rótulo sobre la cifra */
@@ -8896,3 +8896,9 @@
 "cashflow.monthEnd.leftIn" = "Still to come in";
 "cashflow.monthEnd.leftOut" = "Still to go out";
 "cashFlowPlan.estimateLeft" = "Estimated to go";
+
+/* Grupos (decisión 39 de 2.3): preguntar antes de tirar lo escrito y conservarlo al cambiar de grupo */
+"groups.discard.expenseTitle" = "Discard this expense?";
+"groups.discard.paymentTitle" = "Discard this payment?";
+"groups.discard.openingBalanceTitle" = "Discard this opening balance?";
+"groups.expense.groupChangedNotice" = "You changed groups: what you typed stays; who paid and the split start over.";
