@@ -674,6 +674,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | inbox-crash-convert-to-group-expense | done | tickets/done/inbox-crash-convert-to-group-expense.md |
 | inbox-deleting-two-drafts-in-a-row-crashes | done | tickets/done/inbox-deleting-two-drafts-in-a-row-crashes.md |
 | inbox-dismiss-x-does-not-delete-the-draft-for-good | done | tickets/done/inbox-dismiss-x-does-not-delete-the-draft-for-good.md |
+| inbox-does-not-close-after-saving-the-last-ready-drafts-in-2-3 | backlog | tickets/backlog/inbox-does-not-close-after-saving-the-last-ready-drafts-in-2-3.md |
 | inbox-header-leaves-no-room-for-drafts-at-large-text | done | tickets/done/inbox-header-leaves-no-room-for-drafts-at-large-text.md |
 | inbox-list-capped-at-500-may-hide-old-pending-drafts | done | tickets/done/inbox-list-capped-at-500-may-hide-old-pending-drafts.md |
 | inbox-strings-show-a-python-dict-in-four-languages | done | tickets/done/inbox-strings-show-a-python-dict-in-four-languages.md |
