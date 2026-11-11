@@ -181,6 +181,54 @@ final class GroupsLote19DecididoUITests: XCTestCase {
         XCTAssertTrue(app.buttons["group_archived_unarchive"].exists, "Quien administra no ve «Desarchivar».")
     }
 
+    /// Ticket `archived-group-still-allows-expenses-and-payments-from-inside` (lote 2.3, 10-nov): dentro de un grupo
+    /// archivado no salen el «+» de Gastos ni «Saldar». Con el mismo grupo sin archivar salen los dos (control: si no, la
+    /// ausencia de después no probaría nada).
+    func test_archivedGroup_offersNoNewExpenseNorSettle() {
+        let app = launch(seed: "grupos")
+        openFirstGroup(app)
+        XCTAssertTrue(app.buttons["group_detail_fab_new_expense"].waitForExistence(timeout: 10),
+                      "Control: el grupo sin archivar no enseña el «+».")
+        app.buttons["group_detail_tab_balances"].tap()
+        XCTAssertTrue(app.buttons["group_debt_settle"].firstMatch.waitForExistence(timeout: 10),
+                      "Control: el grupo sin archivar no ofrece «Saldar».")
+
+        openSettings(app)
+        let archive = reveal(app, app.buttons["group_settings_archive"])
+        archive.tap()
+        let confirm = app.sheets.buttons.matching(NSPredicate(format: "label == %@", "Archivar grupo")).firstMatch
+        if confirm.waitForExistence(timeout: 3) { confirm.tap() }
+
+        let showArchived = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "archivados")).firstMatch
+        XCTAssertTrue(showArchived.waitForExistence(timeout: 10), "La lista no ofrece ver los archivados.")
+        reveal(app, showArchived)
+        showArchived.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["group_archived_notice"].waitForNonExistence(timeout: 15),
+                      "El aviso de archivado no se retiró.")
+        let cards = app.buttons.matching(identifier: "group_card")
+        cards.element(boundBy: cards.count - 1).tap()
+        XCTAssertTrue(app.descendants(matching: .any)["group_archived_banner"].waitForExistence(timeout: 10),
+                      "El detalle del grupo archivado no montó.")
+        XCTAssertTrue(app.descendants(matching: .any)["group_detail_ready"].waitForExistence(timeout: 10))
+
+        attach("archivado-gastos")
+        XCTAssertFalse(app.buttons["group_detail_fab_new_expense"].exists,
+                       "Un grupo archivado sigue ofreciendo apuntar un gasto.")
+        app.buttons["group_detail_tab_balances"].tap()
+        XCTAssertTrue(app.descendants(matching: .any)["group_balance_summary"].waitForExistence(timeout: 10),
+                      "No se abrió Saldos.")
+        attach("archivado-saldos")
+        XCTAssertFalse(app.buttons["group_debt_settle"].firstMatch.exists,
+                       "Un grupo archivado sigue ofreciendo «Saldar».")
+    }
+
+    private func attach(_ name: String) {
+        let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        shot.name = name
+        shot.lifetime = .keepAlways
+        add(shot)
+    }
+
     // MARK: - L19-11 · Salir con deuda
 
     func test_leaveWithDebt_offersSettleFirst() {

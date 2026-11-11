@@ -430,6 +430,9 @@ struct SettlementFormView: View {
             // seleccionada; en una sesión solo-grupos o con el bridge OFF no aplica (solo TX virtual).
             let accountToPass = (!sessionState.hasPrivateSession || !bridgeEnabled) ? nil : selectedAccount
 
+            // Nace confirmado en un solo guardado y dispara el puente con la cuenta (Caso C proactivo). Antes eran dos
+            // guardados, y si fallaba el de confirmar, reintentar apuntaba el pago dos veces (ticket
+            // settlement-retry-after-a-failed-confirmation-duplicates-the-payment).
             let settlement = try GroupExpenseService.shared.createSettlement(
                 in: group,
                 fromMemberID: debt.fromMemberID,
@@ -438,14 +441,8 @@ struct SettlementFormView: View {
                 currencyCode: effectiveCurrency,
                 note: note.isEmpty ? nil : note,
                 date: date,
-                accountForCurrentUser: accountToPass
-            )
-
-            // Marca confirmed + dispara bridge con cuenta (Caso C proactivo end-to-end).
-            try GroupExpenseService.shared.confirmSettlement(
-                settlement,
-                in: group,
-                accountForCurrentUser: accountToPass
+                accountForCurrentUser: accountToPass,
+                confirmed: true
             )
 
             DS.Haptic.success()

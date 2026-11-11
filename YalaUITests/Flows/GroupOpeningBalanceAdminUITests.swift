@@ -137,6 +137,62 @@ final class GroupOpeningBalanceAdminUITests: XCTestCase {
         )
     }
 
+    /// Rellena el formulario abierto con «quién debe», «a quién» y el monto, y toca «Guardar».
+    private func fillAndSave(_ app: XCUIApplication, debtor: String, creditor: String, amount: String) {
+        XCTAssertTrue(app.buttons["opening_balance_debtor"].waitForExistence(timeout: 5))
+        app.buttons["opening_balance_debtor"].tap()
+        let debtorRow = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", debtor)).firstMatch
+        XCTAssertTrue(debtorRow.waitForExistence(timeout: 5), "El selector de «Quién debe» no ofrece a \(debtor).")
+        debtorRow.tap()
+        XCTAssertTrue(app.buttons["opening_balance_creditor"].waitForExistence(timeout: 5))
+        app.buttons["opening_balance_creditor"].tap()
+        let creditorRow = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", creditor)).firstMatch
+        XCTAssertTrue(creditorRow.waitForExistence(timeout: 5), "El selector de «A quién» no ofrece a \(creditor).")
+        creditorRow.tap()
+        let field = app.textFields["opening_balance_amount"]
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        field.tap()
+        field.typeText(amount)
+        let save = app.buttons["opening_balance_save"]
+        XCTAssertTrue(save.waitForHittable(timeout: 5), "«Guardar» no se puede tocar.")
+        save.tap()
+    }
+
+    /// Lote 2.3 de Grupos (10-nov): añadir un saldo inicial entre dos personas que ya tienen uno lo reemplazaba sin
+    /// avisar, en cualquier sentido. Ahora pregunta; «Cancelar» deja el formulario y el saldo como estaban, y
+    /// «Reemplazar» guarda lo de siempre (queda uno solo).
+    func test_addingASecondOpeningBalanceBetweenTheSamePair_asksBeforeReplacing() {
+        let app = launchToMembers(asAdmin: true)
+
+        let add = reveal(app, app.buttons["opening_balance_add"])
+        XCTAssertTrue(add.waitForExistence(timeout: 5))
+        add.tap()
+        fillAndSave(app, debtor: "Beto", creditor: "Ana", amount: "75")
+        // Control: el primero no pregunta nada, se guarda y cierra.
+        XCTAssertFalse(app.buttons["opening_balance_replace_confirm"].exists, "El primer saldo ya preguntó.")
+        XCTAssertTrue(app.buttons["opening_balance_debtor"].waitForNonExistence(timeout: 10), "El primero no se guardó.")
+
+        // El segundo, en el otro sentido entre las mismas dos personas.
+        reveal(app, app.buttons["opening_balance_add"]).tap()
+        fillAndSave(app, debtor: "Ana", creditor: "Beto", amount: "30")
+        let replace = app.buttons["opening_balance_replace_confirm"].firstMatch
+        XCTAssertTrue(replace.waitForExistence(timeout: 5), "Reemplazar el saldo de Beto y Ana no preguntó antes.")
+        attachScreenshot("6-pregunta-antes-de-reemplazar")
+
+        app.buttons["opening_balance_replace_cancel"].firstMatch.tap()
+        XCTAssertTrue(app.buttons["opening_balance_debtor"].waitForExistence(timeout: 5),
+                      "«Cancelar» cerró el formulario.")
+
+        app.buttons["opening_balance_save"].tap()
+        XCTAssertTrue(replace.waitForExistence(timeout: 5), "Al volver a guardar no preguntó.")
+        replace.tap()
+        XCTAssertTrue(app.buttons["opening_balance_debtor"].waitForNonExistence(timeout: 10),
+                      "«Reemplazar» no guardó.")
+        let edges = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "opening_balance_edge_"))
+        XCTAssertTrue(reveal(app, edges.firstMatch).waitForExistence(timeout: 5))
+        XCTAssertEqual(edges.count, 1, "Reemplazar dejó dos saldos iniciales entre Ana y Beto.")
+    }
+
     /// CONTROL: un miembro que no es admin sigue sin ver los saldos iniciales.
     func test_memberWhoIsNotAdmin_stillDoesNotSeeOpeningBalances() {
         let app = launchToMembers(asAdmin: false)

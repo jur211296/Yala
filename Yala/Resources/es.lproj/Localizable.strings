@@ -4518,6 +4518,10 @@
 "groups.openingBalance.approvalPromptSkip" = "No, empieza en cero";
 "groups.openingBalance.errorNotAdmin" = "Solo un administrador del grupo puede gestionar los saldos iniciales.";
 "groups.openingBalance.errorSameMember" = "Elige dos miembros distintos.";
+"groups.openingBalance.replaceTitle" = "Ya hay un saldo inicial entre %1$@ y %2$@";
+"groups.openingBalance.replaceMessage" = "Ahora dice: %@. Si sigues, se cambia por el que acabas de escribir.";
+"groups.openingBalance.replaceConfirm" = "Reemplazar";
+"groups.openingBalance.errorLockedBySettlements" = "Quienes están en este saldo inicial ya tienen pagos confirmados, así que ya no se puede cambiar ni quitar.";
 "groups.openingBalance.serverRejected.title" = "Tu cambio no llegó al grupo";
 "groups.openingBalance.serverRejected.notAdmin" = "Solo el dueño o un administrador del grupo puede cambiar los saldos iniciales, y ahora no lo eres. El saldo vuelve a quedar como está en el grupo.";
 "groups.openingBalance.serverRejected.locked" = "Quienes están en ese saldo inicial ya tienen pagos confirmados, así que ya no se puede cambiar. El saldo vuelve a quedar como está en el grupo.";

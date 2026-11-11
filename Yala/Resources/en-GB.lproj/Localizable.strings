@@ -3744,6 +3744,10 @@
 "groups.openingBalance.approvalPromptSkip" = "No, start at zero";
 "groups.openingBalance.errorNotAdmin" = "Only a group admin can manage opening balances.";
 "groups.openingBalance.errorSameMember" = "Choose two different members.";
+"groups.openingBalance.replaceTitle" = "There's already an opening balance between %1$@ and %2$@";
+"groups.openingBalance.replaceMessage" = "Right now it says: %@. If you continue, it's replaced by the one you just entered.";
+"groups.openingBalance.replaceConfirm" = "Replace";
+"groups.openingBalance.errorLockedBySettlements" = "The people in this opening balance already have confirmed payments, so it can't be changed or removed any more.";
 "groups.openingBalance.serverRejected.title" = "Your change didn't reach the group";
 "groups.openingBalance.serverRejected.notAdmin" = "Only the group's owner or an admin can change opening balances, and you aren't one right now. The balance goes back to how it is in the group.";
 "groups.openingBalance.serverRejected.locked" = "The people in that opening balance already have confirmed payments, so it can't be changed any more. The balance goes back to how it is in the group.";

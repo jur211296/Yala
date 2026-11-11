@@ -4502,6 +4502,10 @@
 "groups.openingBalance.approvalPromptSkip" = "Non, commencer à zéro";
 "groups.openingBalance.errorNotAdmin" = "Seul un administrateur du groupe peut gérer les soldes initiaux.";
 "groups.openingBalance.errorSameMember" = "Choisis deux membres différents.";
+"groups.openingBalance.replaceTitle" = "Il y a déjà un solde initial entre %1$@ et %2$@";
+"groups.openingBalance.replaceMessage" = "Pour l'instant : %@. Si tu continues, il sera remplacé par celui que tu viens de saisir.";
+"groups.openingBalance.replaceConfirm" = "Remplacer";
+"groups.openingBalance.errorLockedBySettlements" = "Les personnes de ce solde initial ont déjà des paiements confirmés, il ne peut donc plus être modifié ni supprimé.";
 "groups.openingBalance.serverRejected.title" = "Ta modification n'a pas atteint le groupe";
 "groups.openingBalance.serverRejected.notAdmin" = "Seul le propriétaire ou un administrateur du groupe peut modifier les soldes initiaux, et ce n'est plus ton cas. Le solde redevient tel qu'il est dans le groupe.";
 "groups.openingBalance.serverRejected.locked" = "Les personnes de ce solde initial ont déjà des paiements confirmés, il ne peut donc plus être modifié. Le solde redevient tel qu'il est dans le groupe.";

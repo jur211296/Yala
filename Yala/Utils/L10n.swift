@@ -2300,6 +2300,20 @@ enum L10n {
             // Errores
             static var errorNotAdmin: String { ls("groups.openingBalance.errorNotAdmin", comment: "") }
             static var errorSameMember: String { ls("groups.openingBalance.errorSameMember", comment: "") }
+            /// Editar o quitar un saldo inicial con pagos confirmados de quienes están en él (lote 2.3 de Grupos). Antes
+            /// salía el aviso de BORRAR un gasto (`groups.bridge.deleteExpenseBlocked`).
+            static var errorLockedBySettlements: String {
+                ls("groups.openingBalance.errorLockedBySettlements", comment: "")
+            }
+            /// Añadir uno entre dos personas que ya tienen otro editable en esa moneda: se pregunta antes de reemplazarlo.
+            static func replaceTitle(_ first: String, _ second: String) -> String {
+                String(format: ls("groups.openingBalance.replaceTitle", comment: ""), first, second)
+            }
+            /// «Ahora dice: Beto le debe a Ana · S/ 50.00. Si sigues, …».
+            static func replaceMessage(_ current: String) -> String {
+                String(format: ls("groups.openingBalance.replaceMessage", comment: ""), current)
+            }
+            static var replaceConfirm: String { ls("groups.openingBalance.replaceConfirm", comment: "") }
             // El servidor rechazó la subida (card 6n1o, g27_01): aviso en el detalle del grupo.
             static var serverRejectedTitle: String { ls("groups.openingBalance.serverRejected.title", comment: "") }
             static var serverRejectedNotAdmin: String { ls("groups.openingBalance.serverRejected.notAdmin", comment: "") }

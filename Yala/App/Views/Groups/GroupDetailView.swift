@@ -362,8 +362,9 @@ struct GroupDetailView: View {
         // de una pestaña (card 8atf).
         .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: showNudgeBanner)
 
-        // FAB — new expense (only on records tab). G6-3: oculto en grupos congelados (sin escrituras).
-        if selectedTab == .records && viewModel.canCurrentUserParticipate && !group.isMigratedFrozen {
+        // FAB — new expense (only on records tab). G6-3: oculto en grupos congelados (sin escrituras), y en los
+        // archivados (ticket archived-group-still-allows-expenses-and-payments-from-inside).
+        if selectedTab == .records && viewModel.canRecordNewEntries && !group.isMigratedFrozen {
             newExpenseFAB
         }
     }
@@ -661,7 +662,7 @@ struct GroupDetailView: View {
                 groupColorHex: group.colorHex,
                 balancesWereConverted: viewModel.balancesWereConverted,
                 debtsWereConverted: viewModel.debtsWereConverted,
-                onSettleDebt: viewModel.canCurrentUserParticipate ? { viewModel.activeSheet = .settlement($0) } : nil,
+                onSettleDebt: viewModel.canRecordNewEntries ? { viewModel.activeSheet = .settlement($0) } : nil,
                 onConfirmSettlement: viewModel.canCurrentUserParticipate ? { viewModel.confirmSettlement($0) } : nil,
                 onRejectSettlement: viewModel.canCurrentUserParticipate ? { viewModel.rejectSettlement($0) } : nil,
                 onDeleteSettlement: viewModel.canCurrentUserParticipate ? { viewModel.deleteConfirmedSettlement($0) } : nil,

@@ -42,6 +42,10 @@ struct GroupOpeningBalanceFormView: View {
     @FocusState private var amountFocused: Bool
     /// Lote 12.3 (card rhgi, molde de L13-9): «Guardar» siempre activo; tocarlo con algo pendiente marca el campo y lo dice.
     @State private var showsMissingField = false
+    /// Lote 2.3 de Grupos: añadir uno entre dos personas que ya tienen otro lo reemplaza, y antes se preguntaba nada.
+    @State private var showReplaceConfirmation = false
+    @State private var replaceTitle = ""
+    @State private var replaceMessage = ""
 
     init(
         group: SplitGroup,
@@ -122,6 +126,16 @@ struct GroupOpeningBalanceFormView: View {
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.top, DS.Spacing.md)
+            }
+            // Comparte ancla con el aviso de error: por eso, si guardar falla tras «Reemplazar», ese aviso espera a que
+            // este termine de cerrarse (`performSave(afterConfirmation:)`). Encendido en la misma vuelta, UIKit lo tira.
+            .alert(replaceTitle, isPresented: $showReplaceConfirmation) {
+                Button(L10n.Groups.OpeningBalance.replaceConfirm) { performSave(afterConfirmation: true) }
+                    .accessibilityIdentifier("opening_balance_replace_confirm")
+                Button(L10n.Action.cancel, role: .cancel) {}
+                    .accessibilityIdentifier("opening_balance_replace_cancel")
+            } message: {
+                Text(replaceMessage)
             }
             .dismissKeyboardOnTap()
             .yalaScreenBackground(.subtle)
@@ -300,6 +314,39 @@ struct GroupOpeningBalanceFormView: View {
             return
         }
         showsMissingField = false
+        if expenseToEdit == nil, askBeforeReplacing() { return }
+        performSave()
+    }
+
+    /// Si añadir este saldo reemplazaría el que ya tienen esas dos personas en esa moneda, prepara la pregunta y devuelve
+    /// `true`. Lo que se guarda al confirmar no cambia: `setOpeningBalance` edita ese mismo saldo, como siempre.
+    private func askBeforeReplacing() -> Bool {
+        let existing: SplitExpense?
+        do {
+            existing = try GroupExpenseService.shared.openingBalanceThatAddingWouldReplace(
+                in: group,
+                debtorMemberID: debtorMemberID,
+                creditorMemberID: creditorMemberID,
+                currencyCode: selectedCurrency.rawValue
+            )
+        } catch {
+            errorMessage = OpeningBalanceErrorCopyLogic.message(for: error)
+            showError = true
+            return true
+        }
+        guard let existing else { return false }
+        let name = { (id: String) in memberNameLookup[id] ?? "?" }
+        let currentDebtor = GroupExpenseService.shared.openingBalanceDebtorMemberID(of: existing) ?? ""
+        replaceTitle = L10n.Groups.OpeningBalance.replaceTitle(name(debtorMemberID), name(creditorMemberID))
+        replaceMessage = L10n.Groups.OpeningBalance.replaceMessage(
+            L10n.Groups.OpeningBalance.feedRow(name(currentDebtor), name(existing.paidByMemberID))
+                + " · " + appPreferences.currency(existing.amount, currencyCode: existing.currencyCode)
+        )
+        showReplaceConfirmation = true
+        return true
+    }
+
+    private func performSave(afterConfirmation: Bool = false) {
         do {
             if let edit = expenseToEdit {
                 try GroupExpenseService.shared.updateOpeningBalance(
@@ -325,8 +372,20 @@ struct GroupOpeningBalanceFormView: View {
             onSave()
             dismiss()
         } catch {
-            errorMessage = GroupsUserFacingErrorLogic.message(for: error)
-            showError = true
+            errorMessage = OpeningBalanceErrorCopyLogic.message(for: error)
+            guard afterConfirmation else {
+                showError = true
+                return
+            }
+            // El aviso de «Reemplazar» aún se está cerrando (~0,3-0,5 s): el de error, después.
+            Task { @MainActor in
+                do {
+                    try await Task.sleep(for: .milliseconds(600))
+                } catch {
+                    return
+                }
+                showError = true
+            }
         }
     }
 }

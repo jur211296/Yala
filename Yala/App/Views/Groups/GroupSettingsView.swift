@@ -542,6 +542,9 @@ struct GroupSettingsView: View {
     // MARK: - Personal Integration (Bridge Override per-grupo, F4)
 
     @State private var showPerGroupDeactivationSheet: Bool = false
+    /// Ticket bridge-history-import-is-only-offered-when-something-was-already-bridged: al volver a encenderlo en un
+    /// grupo con gastos, la hoja que ofrece importar su historial (antes no salía nunca por grupo).
+    @State private var showPerGroupActivationSheet: Bool = false
     @State private var showGroupsGlobalSettings: Bool = false
 
     private var personalIntegrationState: OverrideStateLogic.UIState {
@@ -570,11 +573,17 @@ struct GroupSettingsView: View {
                     // OFF estando ON → setOverride(false) (override OFF explícito).
                     let override: Bool? = newValue ? nil : false
                     try BridgeModeResolver.shared.setOverride(for: group, override: override, in: modelContext)
-                    // Si user desactivó (newValue==false) Y hay TX bridgeadas para este
-                    // grupo, presenta BridgeDeactivationSheet scoped (plan F4) para que
-                    // el user decida freeze vs delete.
-                    if !newValue && hasBridgedTransactionsForGroup() {
-                        showPerGroupDeactivationSheet = true
+                    // Al apagar con TX bridgeadas en este grupo, BridgeDeactivationSheet scoped (plan F4) para que el
+                    // user decida freeze vs delete. Al encender con gastos en el grupo, la de activación, que ofrece
+                    // importar su historial (la misma regla que Ajustes de Grupos: `BridgeToggleSheetLogic`).
+                    switch BridgeToggleSheetLogic.sheet(
+                        turningOn: newValue,
+                        hasGroupExpenses: newValue && hasExpensesInGroup(),
+                        hasBridgedTransactions: !newValue && hasBridgedTransactionsForGroup()
+                    ) {
+                    case .activation: showPerGroupActivationSheet = true
+                    case .deactivation: showPerGroupDeactivationSheet = true
+                    case nil: break
                     }
                 } catch {
                     #if DEBUG
@@ -610,6 +619,13 @@ struct GroupSettingsView: View {
             .sheet(isPresented: $showGroupsGlobalSettings) {
                 GroupsGlobalSettingsView()
             }
+            .sheet(isPresented: $showPerGroupActivationSheet) {
+                BridgeActivationSheet(
+                    scope: .perGroup(zoneID: group.cloudKitZoneID, groupName: group.name),
+                    onConfirm: {},
+                    onCancel: { setPerGroupOverride(false) }
+                )
+            }
             .sheet(isPresented: $showPerGroupDeactivationSheet) {
                 BridgeDeactivationSheet(
                     scope: .perGroup(zoneID: group.cloudKitZoneID, groupName: group.name),
@@ -623,12 +639,33 @@ struct GroupSettingsView: View {
     /// Revierte el override per-grupo cuando user cancela el sheet de deactivation
     /// (restauración del intent: si user cancela, no quiere desactivar).
     private func revertPerGroupOverride() {
+        setPerGroupOverride(nil)
+    }
+
+    /// Cancelar la hoja de activación deja el grupo apagado otra vez (`false`), como estaba; la de desactivar vuelve a
+    /// heredar (`nil`).
+    private func setPerGroupOverride(_ override: Bool?) {
         do {
-            try BridgeModeResolver.shared.setOverride(for: group, override: nil, in: modelContext)
+            try BridgeModeResolver.shared.setOverride(for: group, override: override, in: modelContext)
         } catch {
             #if DEBUG
-            print("revertPerGroupOverride failed: \(error)")
+            print("setPerGroupOverride failed: \(error)")
             #endif
+        }
+    }
+
+    /// ¿Tiene este grupo gastos que la hoja de activación pueda importar? Los mismos que cuenta la hoja.
+    private func hasExpensesInGroup() -> Bool {
+        let zoneID = group.cloudKitZoneID
+        do {
+            return try modelContext.fetchCount(FetchDescriptor<SplitExpense>(
+                predicate: #Predicate<SplitExpense> { $0.groupZoneID == zoneID }
+            )) > 0
+        } catch {
+            #if DEBUG
+            print("hasExpensesInGroup: fetchCount failed: \(error)")
+            #endif
+            return false
         }
     }
 

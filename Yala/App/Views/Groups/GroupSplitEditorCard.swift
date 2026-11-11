@@ -131,6 +131,11 @@ struct GroupSplitMemberList: View {
     var avatarColor: (SplitMember) -> Color
 
     @FocusState private var focusedMember: String?
+    /// Dónde está el cursor de cada campo del reparto (ticket
+    /// `group-split-amount-field-keeps-the-old-value-and-drops-typed-digits`). Al entrar en uno, el cursor va al final del
+    /// número: el toque lo dejaba donde caía, delante si era a la izquierda, y entonces borrar no hacía nada y escribir
+    /// «150» sobre «200.00» dejaba «1,200.00» (medido con el dedo en el iPhone 14 el 2026-11-10).
+    @State private var splitSelections: [String: TextSelection] = [:]
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
@@ -337,15 +342,34 @@ struct GroupSplitMemberList: View {
                     .font(DS.Typography.title3)
                     .foregroundStyle(DS.Semantic.disabledForeground.opacity(DS.Opacity.overlay))
             }
-            TextField("", text: binding(for: id, in: keyPath))
+            TextField("", text: binding(for: id, in: keyPath), selection: selectionBinding(for: id))
                 .keyboardType(keyboard)
                 .multilineTextAlignment(.trailing)
                 .font(DS.Typography.title3)
                 .focused($focusedMember, equals: id)
+                .onChange(of: focusedMember == id) { _, isFocused in
+                    guard isFocused else {
+                        splitSelections[id] = nil
+                        return
+                    }
+                    moveCaretToEnd(of: id, in: keyPath)
+                }
+                .onChange(of: viewModel.splitType) { _, _ in
+                    // Otro tipo, otro texto en el campo: un cursor del anterior no le vale.
+                    splitSelections[id] = nil
+                }
                 .onChange(of: viewModel[keyPath: keyPath][id] ?? "") { _, newValue in
                     let filtered = filter(newValue)
                     if filtered != newValue {
                         viewModel[keyPath: keyPath][id] = filtered
+                        // El filtro reescribe el número (coma de miles, tercer decimal, ceros delante): la posición que
+                        // iOS guardó era del texto de antes. El cursor va al final del nuevo, donde lo dejaba UIKit
+                        // cuando el campo no tenía `selection`.
+                        if focusedMember == id {
+                            splitSelections[id] = TextSelection(insertionPoint: filtered.endIndex)
+                        } else {
+                            splitSelections[id] = nil
+                        }
                     }
                     // Inclusión implícita: con valor participa, vacío se excluye.
                     viewModel.setParticipation(id, included: !filtered.trimmingCharacters(in: .whitespaces).isEmpty)
@@ -365,6 +389,25 @@ struct GroupSplitMemberList: View {
             get: { viewModel[keyPath: keyPath][memberID] ?? "" },
             set: { viewModel[keyPath: keyPath][memberID] = $0 }
         )
+    }
+
+    private func selectionBinding(for memberID: String) -> Binding<TextSelection?> {
+        Binding(
+            get: { splitSelections[memberID] },
+            set: { splitSelections[memberID] = $0 }
+        )
+    }
+
+    /// Una vuelta del main actor después del foco: el toque coloca su cursor al recibir el foco, y puesto antes, el
+    /// toque lo volvía a mover.
+    private func moveCaretToEnd(
+        of memberID: String,
+        in keyPath: ReferenceWritableKeyPath<GroupExpenseViewModel, [String: String]>
+    ) {
+        Task { @MainActor in
+            let text = viewModel[keyPath: keyPath][memberID] ?? ""
+            splitSelections[memberID] = TextSelection(insertionPoint: text.endIndex)
+        }
     }
 }
 
