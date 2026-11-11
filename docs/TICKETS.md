@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1238)
+## Index (1241)
 
 | id | status | path |
 |---|---|---|
@@ -1128,6 +1128,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | start-fresh-dialog-promises-what-the-gate-undoes | qa | tickets/qa/start-fresh-dialog-promises-what-the-gate-undoes.md |
 | statistics-and-records-filter-onchange-may-fall-asleep-like-the-panel | qa | tickets/qa/statistics-and-records-filter-onchange-may-fall-asleep-like-the-panel.md |
 | statistics-calculators-count-an-unwritten-conversion-as-zero | done | tickets/done/statistics-calculators-count-an-unwritten-conversion-as-zero.md |
+| statistics-daily-average-says-per-day-in-this-month | backlog | tickets/backlog/statistics-daily-average-says-per-day-in-this-month.md |
 | statistics-first-entry-takes-a-second-to-render | qa | tickets/qa/statistics-first-entry-takes-a-second-to-render.md |
 | statistics-summary-guide-banner-stays-pinned-over-the-cards | done | tickets/done/statistics-summary-guide-banner-stays-pinned-over-the-cards.md |
 | stats-aggregators-sum-stored-amounts-from-other-preferred-currencies | done | tickets/done/stats-aggregators-sum-stored-amounts-from-other-preferred-currencies.md |
@@ -1285,5 +1286,6 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | yala-ia-answer-renders-model-links-as-tappable | done | tickets/done/yala-ia-answer-renders-model-links-as-tappable.md |
 | yala-ia-classifies-uncategorized-movements-as-expense | done | tickets/done/yala-ia-classifies-uncategorized-movements-as-expense.md |
 | yala-ia-context-sums-stored-amounts-from-other-preferred-currencies | done | tickets/done/yala-ia-context-sums-stored-amounts-from-other-preferred-currencies.md |
+| yala-web-embeddable-in-claude-with-mcp-apps | backlog | tickets/backlog/yala-web-embeddable-in-claude-with-mcp-apps.md |
 | yearly-scheduled-payment-on-feb-29-skips-common-years | done | tickets/done/yearly-scheduled-payment-on-feb-29-skips-common-years.md |
 | zone-decisions-still-per-row | backlog | tickets/backlog/zone-decisions-still-per-row.md |

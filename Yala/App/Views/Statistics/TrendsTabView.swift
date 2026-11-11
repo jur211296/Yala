@@ -1051,11 +1051,11 @@ struct TrendsTabView: View {
     /// callsite (helper pure-logic L10n-free).
     private func findingText(_ finding: TrendInsightFinding) -> String {
         let prev = strippedComparisonLabel(comparisonPeriodText)
-        let period = periodDisplayName
 
         switch finding {
         case .onset:
-            return L10n.Stats.Trends.Insight.onset(period)
+            // Sin el nombre del período: salía «Este es tu primer Este mes con Yala» (lote 07 de 2.3).
+            return L10n.Stats.Trends.Insight.onsetNoPrevious
         case .variationUp(let percent, let metric):
             switch metric {
             case .expense: return L10n.Stats.Trends.Insight.varUpExpense(percent, prev)
