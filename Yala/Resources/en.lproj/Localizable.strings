@@ -70,7 +70,7 @@
 "panel.health.subScore.bills" = "Commitments";
 // Detail sheet — Total
 "panel.health.total.sheet.title" = "Your financial health";
-"panel.health.total.sheet.explanation" = "Your score comes from three parts. Each weighs what it says next to it; if one has no data yet, the others share its weight.";
+"panel.health.total.sheet.explanation" = "Your score comes from three parts. Each weighs what it says next to it; if one has no data yet, the others share its weight. With data in fewer than two, there’s no score yet.";
 "panel.health.total.headline.high" = "You're crushing it!";
 "panel.health.total.headline.mid" = "Great rhythm going";
 "panel.health.total.headline.low" = "Small steps, big changes";
@@ -8822,3 +8822,24 @@
 "panel.hero.leftPast" = "Was left";
 "panel.hero.leftInMonth" = "Left in %@";
 "stats.hero.captionAccountsBalanceClosed" = "Balance at close";
+
+/* Health card without a score and no part with data: the score needs data in two of the three parts */
+"panel.health.missing.all" = "No score yet: it shows once two of the three parts have data.";
+
+/* Health card without a score: only one part has data. %1$@ and %2$@ = names of the two parts still without data */
+"panel.health.missing.two" = "No score yet: it needs two of the three parts, and %1$@ and %2$@ have no data.";
+
+/* Health card: what is going wrong and the score does not count. %@ = items joined with ' · ' */
+"panel.health.unseen" = "Not counted in your score: %@.";
+
+/* Health card item: an account with a negative balance. %@ = account name */
+"panel.health.unseen.negativeAccount" = "%@ below zero";
+
+/* Health card item: a budget already over its limit that does not count yet. %@ = budget name */
+"panel.health.unseen.overBudget" = "%@ already over its limit";
+
+/* Health sheet headline for a score ≥ 90 while something is going wrong */
+"panel.health.total.headline.highWithAlerts" = "Good score, but something needs a look";
+
+/* Health sheet headline when there is data but not enough for a score yet */
+"panel.health.total.headline.notYet" = "No score yet";

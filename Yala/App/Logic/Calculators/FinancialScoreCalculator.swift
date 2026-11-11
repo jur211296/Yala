@@ -5,8 +5,9 @@
 //  Financial Score period-aware (Panel 2.0 + Statistics → Insights).
 //
 //  Invariantes:
-//  - Sub-scores `Int?`. `nil` no diluye el total; el resto re-pondera. Todos
-//    `nil` → total `nil`.
+//  - Sub-scores `Int?`. `nil` no diluye el total; el resto re-pondera. Con menos
+//    de dos partes con datos → total `nil` (decisión 9 de la revisión 2.3, PN-2:
+//    una sola parte daba 100 con pocos datos).
 //  - Composite con piso suave de 50 (brand-voice). Sub-scores sin piso.
 //  - Compromisos opera sobre el ciclo natural completo del período (no truncado
 //    a hoy) para incluir pendientes del resto del mes/año.
@@ -28,6 +29,17 @@ struct FinancialScore: Equatable {
     /// Compromisos (0–100) o `nil` para períodos cortos / sin pagos activos.
     /// Mantiene el nombre de propiedad `bills` por compatibilidad con la UI/L10n.
     let bills: Int?
+
+    /// Lo que va mal hoy y la nota mira o no (decisión 9 de la revisión 2.3, PN-2 · B). Vacío si el período no
+    /// incluye hoy.
+    var alerts = FinancialScoreAlerts()
+
+    /// Las partes sin datos, en el orden de la tarjeta.
+    var partsWithoutData: [FinancialScoreDetailKind] {
+        [(FinancialScoreDetailKind.budget, budget), (.activity, activity), (.bills, bills)]
+            .filter { $0.1 == nil }
+            .map(\.0)
+    }
 }
 
 enum FinancialScoreCalculator {
@@ -64,6 +76,10 @@ enum FinancialScoreCalculator {
 
     /// La nota total no baja de este suelo; la hoja lo dice.
     static var totalFloor: Int { totalSoftFloor }
+
+    /// Partes con datos que hacen falta para dar una nota (decisión 9 de la revisión 2.3, PN-2 · A: «dos de tres»).
+    /// Con una sola, la nota era esa parte re-ponderada al 100 % y daba 100 con dos registros.
+    static let minimumPartsForTotal = 2
 
     // Budget penalties por bucket (réplica de la lógica monthly anterior aplicada localmente).
     private static let budgetPenaltyExceeded     = 8
@@ -146,12 +162,25 @@ enum FinancialScoreCalculator {
             adjustment: adjustment
         )
         let total = computeTotal(budget: budget, rhythm: rhythm, commitments: commitments)
-        return FinancialScore(total: total, budget: budget, activity: rhythm, bills: commitments)
+        let alerts = FinancialScoreAlertsLogic.alerts(
+            transactions: transactions,
+            budgets: budgets,
+            accounts: accounts,
+            periodInterval: interval,
+            now: now,
+            calendar: calendar,
+            adjustment: adjustment,
+            converter: converter
+        )
+        return FinancialScore(total: total, budget: budget, activity: rhythm, bills: commitments, alerts: alerts)
     }
 
     // MARK: - Weighted total con re-normalización
 
     private static func computeTotal(budget: Int?, rhythm: Int?, commitments: Int?) -> Int? {
+        let partsWithData = [budget, rhythm, commitments].compactMap { $0 }.count
+        guard partsWithData >= minimumPartsForTotal else { return nil }
+
         var weightedSum: Double = 0
         var totalWeight: Double = 0
 
@@ -218,8 +247,9 @@ enum FinancialScoreCalculator {
     }
 
     /// Para `unique`, el bucket = rango del propio budget. Para los demás,
-    /// exige `bucket.start >= startOfDay(createdAt)`.
-    private static func bucketIsValid(
+    /// exige `bucket.start >= startOfDay(createdAt)`. Interno: las alertas de la nota lo usan para decir si un
+    /// presupuesto pasado cuenta en ella (`FinancialScoreAlertsLogic`).
+    static func bucketIsValid(
         _ bucket: DateInterval, for budget: Budget, calendar: Calendar
     ) -> Bool {
         if budget.periodType == BudgetPeriodType.unique.rawValue {

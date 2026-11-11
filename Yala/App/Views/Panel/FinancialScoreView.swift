@@ -32,6 +32,7 @@ struct FinancialScoreView: View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             if !hideHeader { header }
             bodyContent
+            notesBlock
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .solidCard(padding: DS.Spacing.xl, radius: DS.Panel.widgetRadius)
@@ -91,6 +92,32 @@ struct FinancialScoreView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxWidth: .infinity)
+    }
+
+    /// Revisión 2.3, decisión 9 (PN-2): sin nota, qué falta para tenerla; y lo que va mal y la nota no ve.
+    @ViewBuilder
+    private var notesBlock: some View {
+        let missing = FinancialScoreCopy.missingLine(for: score)
+        let unseen = FinancialScoreCopy.unseenLine(for: score, isExpensesOnlyMode: sessionState.isExpensesOnlyMode)
+        if missing != nil || unseen != nil {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                if let missing {
+                    Text(missing)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("health_missing_parts")
+                }
+                if let unseen {
+                    Text(unseen)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("health_unseen")
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
 
     @ViewBuilder

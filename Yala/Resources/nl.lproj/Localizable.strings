@@ -70,7 +70,7 @@
 "panel.health.subScore.bills" = "Verplichtingen";
 // Detail sheet — Total
 "panel.health.total.sheet.title" = "Je financiële gezondheid";
-"panel.health.total.sheet.explanation" = "Je score bestaat uit drie delen. Elk telt zoveel als ernaast staat; heeft een deel nog geen gegevens, dan verdelen de andere zijn gewicht.";
+"panel.health.total.sheet.explanation" = "Je score bestaat uit drie delen. Elk telt zoveel als ernaast staat; heeft een deel nog geen gegevens, dan verdelen de andere zijn gewicht. Met gegevens in minder dan twee delen is er nog geen score.";
 "panel.health.total.headline.high" = "Je doet het geweldig!";
 "panel.health.total.headline.mid" = "Lekker bezig";
 "panel.health.total.headline.low" = "Kleine stappen, grote verandering";
@@ -8828,3 +8828,24 @@
 "panel.hero.leftPast" = "Je hield over";
 "panel.hero.leftInMonth" = "In %@ hield je over";
 "stats.hero.captionAccountsBalanceClosed" = "Saldo aan het einde";
+
+/* Health card without a score and no part with data: the score needs data in two of the three parts */
+"panel.health.missing.all" = "Nog geen score: die verschijnt zodra twee van de drie delen gegevens hebben.";
+
+/* Health card without a score: only one part has data. %1$@ and %2$@ = names of the two parts still without data */
+"panel.health.missing.two" = "Nog geen score: er zijn twee van de drie delen nodig, en %1$@ en %2$@ hebben geen gegevens.";
+
+/* Health card: what is going wrong and the score does not count. %@ = items joined with ' · ' */
+"panel.health.unseen" = "Niet in je score: %@.";
+
+/* Health card item: an account with a negative balance. %@ = account name */
+"panel.health.unseen.negativeAccount" = "%@ in de min";
+
+/* Health card item: a budget already over its limit that does not count yet. %@ = budget name */
+"panel.health.unseen.overBudget" = "%@ al over de limiet";
+
+/* Health sheet headline for a score ≥ 90 while something is going wrong */
+"panel.health.total.headline.highWithAlerts" = "Goede score, maar er is iets om na te kijken";
+
+/* Health sheet headline when there is data but not enough for a score yet */
+"panel.health.total.headline.notYet" = "Nog geen score";

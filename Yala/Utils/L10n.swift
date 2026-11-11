@@ -861,6 +861,28 @@ enum L10n {
             static func floorNote(_ floor: Int) -> String {
                 String(format: ls("panel.health.floorNote", comment: "Health: the total never goes below this number. %d = floor"), floor)
             }
+            // Revisión 2.3, decisión 9 (PN-2): sin nota hasta tener dos de tres partes, y lo que la nota no ve.
+            static var missingAllParts: String {
+                ls("panel.health.missing.all", comment: "Health card without a score and no part with data: the score needs data in two of the three parts")
+            }
+            static func missingTwoParts(_ first: String, _ second: String) -> String {
+                String(format: ls("panel.health.missing.two", comment: "Health card without a score: only one part has data. %1$@ and %2$@ = names of the two parts still without data (e.g. Budgets, Commitments)"), first, second)
+            }
+            static func unseen(_ items: String) -> String {
+                String(format: ls("panel.health.unseen", comment: "Health card: line with what is going wrong and the score does not count. %@ = list of items joined with ' · '"), items)
+            }
+            static func unseenNegativeAccount(_ name: String) -> String {
+                String(format: ls("panel.health.unseen.negativeAccount", comment: "Health card, item of the 'not counted' line: an account with a negative balance. %@ = account name"), name)
+            }
+            static func unseenOverBudget(_ name: String) -> String {
+                String(format: ls("panel.health.unseen.overBudget", comment: "Health card, item of the 'not counted' line: a budget already over its limit that does not count yet. %@ = budget name"), name)
+            }
+            static var totalHeadlineHighWithAlerts: String {
+                ls("panel.health.total.headline.highWithAlerts", comment: "Health sheet headline for a total score ≥ 90 while something is going wrong (over budget, account below zero)")
+            }
+            static var totalHeadlineNotYet: String {
+                ls("panel.health.total.headline.notYet", comment: "Health sheet headline when there is data but not enough for a score yet")
+            }
 
             // MARK: Detail sheet — Activity.
             static var activitySheetTitle: String {

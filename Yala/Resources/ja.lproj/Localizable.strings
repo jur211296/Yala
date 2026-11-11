@@ -70,7 +70,7 @@
 "panel.health.subScore.bills" = "支払い負担";
 // Detail sheet — Total
 "panel.health.total.sheet.title" = "金融の健全性";
-"panel.health.total.sheet.explanation" = "スコアは3つの要素から決まります。各要素の比重は横に表示。データがない要素の比重は他の要素で分け合います。";
+"panel.health.total.sheet.explanation" = "スコアは3つの要素から決まります。各要素の比重は横に表示。データがない要素の比重は他の要素で分け合います。データのある要素が2つ未満なら、スコアはまだ出ません。";
 "panel.health.total.headline.high" = "絶好調です！";
 "panel.health.total.headline.mid" = "いいリズムですね";
 "panel.health.total.headline.low" = "小さな一歩から始めましょう";
@@ -8828,3 +8828,24 @@
 "panel.hero.leftPast" = "残った額";
 "panel.hero.leftInMonth" = "%@に残った額";
 "stats.hero.captionAccountsBalanceClosed" = "期末残高";
+
+/* Health card without a score and no part with data: the score needs data in two of the three parts */
+"panel.health.missing.all" = "まだスコアはありません。3つのうち2つの要素にデータがそろうと表示されます。";
+
+/* Health card without a score: only one part has data. %1$@ and %2$@ = names of the two parts still without data */
+"panel.health.missing.two" = "まだスコアはありません。3つのうち2つの要素が必要で、%1$@と%2$@のデータがありません。";
+
+/* Health card: what is going wrong and the score does not count. %@ = items joined with ' · ' */
+"panel.health.unseen" = "スコアに含まれないもの：%@。";
+
+/* Health card item: an account with a negative balance. %@ = account name */
+"panel.health.unseen.negativeAccount" = "%@がマイナス";
+
+/* Health card item: a budget already over its limit that does not count yet. %@ = budget name */
+"panel.health.unseen.overBudget" = "%@は上限超過";
+
+/* Health sheet headline for a score ≥ 90 while something is going wrong */
+"panel.health.total.headline.highWithAlerts" = "良いスコアですが、確認したいことがあります";
+
+/* Health sheet headline when there is data but not enough for a score yet */
+"panel.health.total.headline.notYet" = "まだスコアはありません";

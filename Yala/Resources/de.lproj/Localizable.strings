@@ -70,7 +70,7 @@
 "panel.health.subScore.bills" = "Verpflichtungen";
 // Detail sheet — Gesamt
 "panel.health.total.sheet.title" = "Deine finanzielle Gesundheit";
-"panel.health.total.sheet.explanation" = "Deine Note setzt sich aus drei Teilen zusammen. Jeder zählt so viel, wie daneben steht; hat einer noch keine Daten, teilen die anderen sein Gewicht.";
+"panel.health.total.sheet.explanation" = "Deine Note setzt sich aus drei Teilen zusammen. Jeder zählt so viel, wie daneben steht; hat einer noch keine Daten, teilen die anderen sein Gewicht. Haben weniger als zwei Teile Daten, gibt es noch keine Note.";
 "panel.health.total.headline.high" = "Du machst das super!";
 "panel.health.total.headline.mid" = "Guter Rhythmus";
 "panel.health.total.headline.low" = "Kleine Schritte, große Wirkung";
@@ -8816,3 +8816,24 @@
 "panel.hero.leftPast" = "Übrig geblieben";
 "panel.hero.leftInMonth" = "Im %@ übrig geblieben";
 "stats.hero.captionAccountsBalanceClosed" = "Kontostand am Ende";
+
+/* Health card without a score and no part with data: the score needs data in two of the three parts */
+"panel.health.missing.all" = "Noch keine Note: Sie erscheint, sobald zwei der drei Teile Daten haben.";
+
+/* Health card without a score: only one part has data. %1$@ and %2$@ = names of the two parts still without data */
+"panel.health.missing.two" = "Noch keine Note: Sie braucht zwei der drei Teile, und für %1$@ und %2$@ fehlen Daten.";
+
+/* Health card: what is going wrong and the score does not count. %@ = items joined with ' · ' */
+"panel.health.unseen" = "Nicht in deiner Note: %@.";
+
+/* Health card item: an account with a negative balance. %@ = account name */
+"panel.health.unseen.negativeAccount" = "%@ im Minus";
+
+/* Health card item: a budget already over its limit that does not count yet. %@ = budget name */
+"panel.health.unseen.overBudget" = "%@ schon über dem Limit";
+
+/* Health sheet headline for a score ≥ 90 while something is going wrong */
+"panel.health.total.headline.highWithAlerts" = "Gute Note, aber da ist etwas zu prüfen";
+
+/* Health sheet headline when there is data but not enough for a score yet */
+"panel.health.total.headline.notYet" = "Noch keine Note";
