@@ -18,3 +18,7 @@ lo mismo.
 XCUITest. Si ya salió el AX timeout, no repitas a ciegas: reinicia. Relacionado: [[conducir-simulador-con-axe]] y la
 regla de `testing.md` de no apagar entre corridas (vale para corridas seguidas, no para salir de este estado).
 Y los chips de Estadísticas a veces ignoran el primer `axe tap --id`: comprueba con `describe-ui` y repite.
+
+**No hace falta `axe` para caer ahí** (lote 10 de 2.3, 2026-11-10, Max): simulador recién arrancado, `YalaTests`
+entero (13.435 casos) y justo después el XCUITest del gate → el mismo AX timeout. La misma cura (reiniciar dentro de
+`sim-lock.sh` + 45 s) dio la corrida buena. Tras una tanda larga de unit tests, reinicia antes del XCUITest.
