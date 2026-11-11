@@ -2,15 +2,16 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (98 entradas)
+## Índice (99 entradas)
 
-> **No hace falta leer este fichero entero** — son 278 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 279 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-10` [El correo del banco llega a un dominio aparte, yalainbox.com, solo para recibir](#2026-11-10-el-correo-del-banco-llega-a-un-dominio-aparte-yalainboxcom-solo-para-recibir)
 - `2026-11-10` [Orden del 10-nov: 2.2 en verde y en TestFlight antes que los lotes de 2.3, que corren de a dos sin d](#2026-11-10-orden-del-10-nov-22-en-verde-y-en-testflight-antes-que-los-lotes-de-23-que-corren-de-a-dos-sin-declarar-el-catlogo-de-textos)
 - `2026-11-10` [Entrar con Google o Apple con tu iCloud privado en el teléfono: se deja iCloud aparte (opción B), y ](#2026-11-10-entrar-con-google-o-apple-con-tu-icloud-privado-en-el-telfono-se-deja-icloud-aparte-opcin-b-y-el-lote-del-9-y-10-nov)
-- `2026-11-09` [Entrar con Google o Apple con tu propio iCloud privado: Yala te pregunta (opción C), y Grupos usa un](#2026-11-09-entrar-con-google-o-apple-con-tu-propio-icloud-privado-yala-te-pregunta-opcin-c-y-grupos-usa-una-sola-cuenta-grupos)
 - `2026-11-09` [Verificación de Google de «Conectar Gmail»: se pide con la lectura en el teléfono](#2026-11-09-verificacin-de-google-de-conectar-gmail-se-pide-con-la-lectura-en-el-telfono)
+- `2026-11-09` [Entrar con Google o Apple con tu propio iCloud privado: Yala te pregunta (opción C), y Grupos usa un](#2026-11-09-entrar-con-google-o-apple-con-tu-propio-icloud-privado-yala-te-pregunta-opcin-c-y-grupos-usa-una-sola-cuenta-grupos)
 - `2026-11-09` [La memoria de Frank viaja en el PR de la sesión que la escribió](#2026-11-09-la-memoria-de-frank-viaja-en-el-pr-de-la-sesin-que-la-escribi)
 - `2026-11-06` [IA en la nube: lee todo lo que haga falta, y el permiso lo dice](#2026-11-06-ia-en-la-nube-lee-todo-lo-que-haga-falta-y-el-permiso-lo-dice)
 - `2026-11-05` [Decisiones de Jürgen del 5-nov — deploys, umbral del 80 %, «en el límite» y el candado de commits](#2026-11-05-decisiones-de-jrgen-del-5-nov--deploys-umbral-del-80--en-el-lmite-y-el-candado-de-commits)
@@ -50,15 +51,15 @@
 - `2026-06-14` [Fix doble canal de sync CloudKit en Grupos](#2026-06-14-fix-doble-canal-de-sync-cloudkit-en-grupos)
 - `2026-06-10` [Sesión de cierre pre-release 2.0](#2026-06-10-sesin-de-cierre-pre-release-20)
 - `2026-06-10` [OpenAI API key en Info.plist + PrivacyInfo sin FinancialInfo — diferido consciente a post-2.0](#2026-06-10-openai-api-key-en-infoplist--privacyinfo-sin-financialinfo--diferido-consciente-a-post-20)
-- `2026-06-08` [Fix invite-drop — persistencia de invite pendiente](#2026-06-08-fix-invite-drop--persistencia-de-invite-pendiente)
 - `2026-06-08` [Fix Apple Pay — "No se pudo ejecutar el atajo"](#2026-06-08-fix-apple-pay--no-se-pudo-ejecutar-el-atajo)
+- `2026-06-08` [Fix invite-drop — persistencia de invite pendiente](#2026-06-08-fix-invite-drop--persistencia-de-invite-pendiente)
 - `2026-06-04` [Fix subcategorías duplicadas por re-sync de CloudKit](#2026-06-04-fix-subcategoras-duplicadas-por-re-sync-de-cloudkit)
-- `2026-05-26` [Fix migración shortcutID/Tag.id colapsado V2](#2026-05-26-fix-migracin-shortcutidtagid-colapsado-v2)
 - `2026-05-26` [Auditoría sistémica de patrones UI — 13 commits, épico cerrado](#2026-05-26-auditora-sistmica-de-patrones-ui--13-commits-pico-cerrado)
+- `2026-05-26` [Fix migración shortcutID/Tag.id colapsado V2](#2026-05-26-fix-migracin-shortcutidtagid-colapsado-v2)
 - `2026-05-26` [Refactor V3 unificado del CSV-mirror SSOT (7 commits)](#2026-05-26-refactor-v3-unificado-del-csv-mirror-ssot-7-commits)
 - `2026-05-26` [Refactor robusto del subsistema de routing (F0-F11)](#2026-05-26-refactor-robusto-del-subsistema-de-routing-f0-f11)
-- `2026-05-25` [CSV mirror épico — Budget filters + TransactionItem/InboxDraft tags resilientes a CloudKit lazy hydr](#2026-05-25-csv-mirror-pico--budget-filters--transactioniteminboxdraft-tags-resilientes-a-cloudkit-lazy-hydration)
 - `2026-05-25` [Transfer pair integrity — épico de 6 commits](#2026-05-25-transfer-pair-integrity--pico-de-6-commits)
+- `2026-05-25` [CSV mirror épico — Budget filters + TransactionItem/InboxDraft tags resilientes a CloudKit lazy hydr](#2026-05-25-csv-mirror-pico--budget-filters--transactioniteminboxdraft-tags-resilientes-a-cloudkit-lazy-hydration)
 - `2026-05-22` [Groups — cleanup de TX/drafts huérfanos post soft-delete (FU-02-cleanup)](#2026-05-22-groups--cleanup-de-txdrafts-hurfanos-post-soft-delete-fu-02-cleanup)
 - `2026-05-22` [Groups — Soft-delete de grupo (FU-02, owner-only, gateado por balance=0)](#2026-05-22-groups--soft-delete-de-grupo-fu-02-owner-only-gateado-por-balance0)
 - `2026-05-20` [Onboarding informativo del tab Grupos (3 steps)](#2026-05-20-onboarding-informativo-del-tab-grupos-3-steps)
@@ -71,16 +72,16 @@
 - `2026-05-08` [Yala AI Onboarding — tutorial de 4 pasos post-consent](#2026-05-08-yala-ai-onboarding--tutorial-de-4-pasos-post-consent)
 - `2026-05-08` [Groups Pulido — Sprint Pulido 2 (9 bugs UX) + Sprint Pulido 3 (cierre diferidos)](#2026-05-08-groups-pulido--sprint-pulido-2-9-bugs-ux--sprint-pulido-3-cierre-diferidos)
 - `2026-05-08` [Fix subcategorías vacías en Grupos + FullModeActivation rediseñado](#2026-05-08-fix-subcategoras-vacas-en-grupos--fullmodeactivation-rediseado)
-- `2026-05-07` [Cleanup sistémico de duplicados CloudKit (TODO #10)](#2026-05-07-cleanup-sistmico-de-duplicados-cloudkit-todo-10)
 - `2026-05-07` [A4 v3.2 — Welcome Hero + Chooser fix unificado (Sprint 2/2.1 polish visual)](#2026-05-07-a4-v32--welcome-hero--chooser-fix-unificado-sprint-221-polish-visual)
+- `2026-05-07` [Cleanup sistémico de duplicados CloudKit (TODO #10)](#2026-05-07-cleanup-sistmico-de-duplicados-cloudkit-todo-10)
 - `2026-05-07` [A4 v3.2 — Fix P0 #2 (nudge dormant sin grupos) + #6 (Welcome Hero residual tras reinstall)](#2026-05-07-a4-v32--fix-p0-2-nudge-dormant-sin-grupos--6-welcome-hero-residual-tras-reinstall)
 - `2026-05-06` [A4 — Landing + AASA + Welcome Chooser (cierra Fase A del épico Grupos)](#2026-05-06-a4--landing--aasa--welcome-chooser-cierra-fase-a-del-pico-grupos)
 - `2026-05-05` [A0-Bridge V2.0 — completa items P0+P1 diferidos](#2026-05-05-a0-bridge-v20--completa-items-p0p1-diferidos)
 - `2026-05-05` [Groups Pulido Final — Subset 3 (A6/A7/A8)](#2026-05-05-groups-pulido-final--subset-3-a6a7a8)
 - `2026-05-05` [A0-Bridge — rediseño completo del bridge SplitExpense ↔ TransactionItem (modelo M5)](#2026-05-05-a0-bridge--rediseo-completo-del-bridge-splitexpense--transactionitem-modelo-m5)
 - `2026-05-04` [Groups Pulido Final — Subset 2 (A9/A10/A12/A13)](#2026-05-04-groups-pulido-final--subset-2-a9a10a12a13)
-- `2026-04-28` [3 fixes runtime post-QA chat-registrar-transacciones](#2026-04-28-3-fixes-runtime-post-qa-chat-registrar-transacciones)
 - `2026-04-28` [Traducciones reales — 4 locales completos (nl, pl, zh-Hans, ja)](#2026-04-28-traducciones-reales--4-locales-completos-nl-pl-zh-hans-ja)
+- `2026-04-28` [3 fixes runtime post-QA chat-registrar-transacciones](#2026-04-28-3-fixes-runtime-post-qa-chat-registrar-transacciones)
 - `2026-04-27` [Sankey con rama Planificados](#2026-04-27-sankey-con-rama-planificados)
 - `2026-04-27` [Chat → Registrar transacciones (Opción C híbrida)](#2026-04-27-chat--registrar-transacciones-opcin-c-hbrida)
 - `2026-04-26` [Yala IA — pivot a context-rich (Opción B)](#2026-04-26-yala-ia--pivot-a-context-rich-opcin-b)
@@ -124,6 +125,13 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-10] El correo del banco llega a un dominio aparte, yalainbox.com, solo para recibir
+**Contexto:** Tres decisiones de Jürgen del 10-nov (20:05, 20:18 y 20:24, Lima), capturadas en el chat y pendientes de pasar al repo, sobre dónde recibe Yala los correos que el banco reenvía para crear borradores. La de las 20:05 (un subdominio de yala-app.pe, como `auto@correo.yala-app.pe`) la sustituyó la de las 20:18: no se puede sin tocar los MX de Google del dominio principal. Las incorpora la sesión del lote 09 de mejoras necesarias 2.3, que no las ejecuta.
+**Decisión:** El correo del banco va en un dominio propio, **yalainbox.com**, solo para recibir: registrado en Cloudflare Registrar, con su zona propia y Cloudflare Email Routing hacia el gateway de producción (`yala-gateway-production`). Las direcciones son `auto+<código>@yalainbox.com`. No se toca el correo de Google de yala-app.pe ni se reenvía desde Gmail.
+**Razones:** un subdominio de yala-app.pe obligaría a tocar los MX que usa el correo de Google del dominio principal; un dominio aparte aísla la recepción automática del correo de la empresa.
+**Consecuencias:** cualquier texto o código que muestre o valide la dirección de reenvío usa `@yalainbox.com`, nunca `@yala-app.pe`. La configuración del dominio y del enrutado vive fuera del repo (Cloudflare y el gateway).
+**Estado:** Activa
 
 ### [2026-11-10] Orden del 10-nov: 2.2 en verde y en TestFlight antes que los lotes de 2.3, que corren de a dos sin declarar el catálogo de textos
 **Contexto:** Tres decisiones de Jürgen del 10-nov (10:47, 12:50 y 12:55, Lima), capturadas en el chat y pendientes de pasar al repo. Las incorpora la sesión del lote 05 de las mejoras necesarias 2.3 (texto grande), que no las ejecuta.

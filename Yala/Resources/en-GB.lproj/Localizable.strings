@@ -8029,3 +8029,23 @@
 "welcome.groups.cloudAsideStalledBody" = "Changes on this device that haven't reached iCloud yet: %d. So they aren't lost, wait for them to arrive before continuing.";
 /* Puerta del Welcome: la espera del export se agotó al dejar iCloud aparte, sin cifra */
 "welcome.groups.cloudAsideStalledBodyUnknown" = "We couldn't confirm that the latest changes on this device reached iCloud. So they aren't lost, wait before continuing.";
+
+/* Lote 09 de mejoras necesarias 2.3: nombre de los colores de etiqueta y aviso del largo del nombre */
+"tag.colorName.orange" = "Orange";
+"tag.colorName.green" = "Green";
+"tag.colorName.blue" = "Blue";
+"tag.colorName.pink" = "Pink";
+"tag.colorName.indigo" = "Indigo";
+"tag.colorName.yellow" = "Yellow";
+"tag.colorName.cyan" = "Cyan";
+"tag.colorName.purple" = "Purple";
+"tag.colorName.oceanBlue" = "Ocean blue";
+"tag.colorName.coral" = "Coral";
+"tag.colorName.brown" = "Brown";
+"tag.colorName.red" = "Red";
+"tag.colorName.turquoise" = "Turquoise";
+"tag.colorName.lavender" = "Lavender";
+"tag.colorName.skyBlue" = "Sky blue";
+"tag.colorName.custom" = "Custom colour";
+"tag.nameCount %lld %lld" = "%1$lld of %2$lld";
+"tag.nameLimitReached %lld %lld" = "%1$lld of %2$lld: there’s no room for more";

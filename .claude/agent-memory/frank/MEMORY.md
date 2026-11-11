@@ -79,6 +79,7 @@
 - [El tutorial parte de la pantalla anterior](feedback_tutorial_parte_de_la_pantalla_anterior.md) — enseña lo que existe, sin rediseñar; R1-R3 de registro descartadas.
 - [Cierre de diseño: spec por cards](feedback_cierre_de_diseno_spec_por_cards.md) — artifact limpio + SPEC.md de una fuente, ID estable por card.
 ## Cómo mido y cómo entrego
+- [decisiones.py no está en la Max](reference_decisiones_py_no_esta_en_la_max.md) — incorporar-lote no corre ahí: decisión al repo y avisar.
 - [Vista previa de Vercel protegida](reference_vista_previa_vercel_protegida.md) — 302 al login: `vercel curl --deployment` desde Web/ con el project.json del principal.
 - [Duo abierto en la Max](reference_duo_abierto_en_la_max.md) — XCTest da negro: enlace + simctl --display; Device Hub con la pantalla libre.
 - [XcodeBuildMCP: la configuración pisa el scheme](feedback_xcodebuildmcp_configuration_pisa_el_scheme.md) — Yala Dev = Debug-Dev; con Debug la nube sale apagada bajo -uitest.

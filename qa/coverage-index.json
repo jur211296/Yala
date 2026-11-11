@@ -3902,6 +3902,24 @@
       "coverage": "xcuitest:YalaUITests/ProjectedFlowUITests | unit: ProjectedFlowCalculatorTests, ProjectedFlowBuilderPlanTests | 2026-11-06 (card «Flujo proyectado en Tendencias y Panel»): días por delante del período entero, pagos en su día y vencidos mañana, plan o ritmo, ancla por métrica. 2026-11-06 (card «Mejorar el flujo de caja para que nutra el Flujo proyectado»): lo que no cubre ninguna línea del plan sigue al ritmo; enlace bajo la cifra a armar o ver el plan; la pantalla de armar el plan dice que alimenta el proyectado. | 2026-11-10 (lote 02 de mejoras necesarias de 2.3, decisión de Jürgen): sin plan el ritmo proyecta lo que falta de cada mes (ritmo × días del mes − lo que el mes ya tiene, real o fechado), en ingreso y gasto; el sueldo cobrado ya no se vuelve a contar. Lo no cubierto por el plan sigue la misma regla. unit: ProjectedFlowCalculatorTests (builder_rhythmWithoutPlan_*)",
       "owner": "frank",
       "lastVerified": "2026-11-10"
+    },
+    {
+      "area": "cuentas-categorias-etiquetas-lote09-necesarias-2-3",
+      "codeGlobs": [
+        "Yala/App/Logic/CuentasCategoriasLote09Logic.swift",
+        "Yala/App/Views/Settings/CurrencySettingsView.swift",
+        "Yala/App/ViewModels/AccountsSettingsListViewModel.swift",
+        "Yala/App/Views/Settings/AccountsSettingsListView.swift",
+        "Yala/App/ViewModels/CategoriesSettingsListViewModel.swift",
+        "Yala/App/ViewModels/CategoryDetailViewModel.swift",
+        "Yala/App/Views/Tags/TagFormView.swift",
+        "Yala/App/ViewModels/TagFormViewModel.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/CuentasCategoriasNecesariasLote09UITests + unit:YalaTests/CuentasCategoriasNecesariasLote09Tests | 2026-11-10 (lote 09 de mejoras necesarias 2.3, zona 39): sin monedas secundarias «Tipo de cambio» no enseña divisas que nadie eligió (solo «Ver todas»); la lista de cuentas escribe el saldo con la preferencia código/símbolo, como el Panel; la categoría nueva que quedó a medias al cerrarse la app (insertada sin nombre y guardada con su primera subcategoría) se borra al abrir Categorías o al arrancar (`NewCategoryDraftMark`, solo con la marca de este teléfono y sin registros); el formulario de etiqueta avisa del límite de 20 («20 de 20: el resto no cabe»), nombra el color («Seleccionado: Amarillo», también para VoiceOver) y su X pregunta con cambios. Cada XCUITest, rojo en la base y verde con el arreglo.",
+      "owner": "",
+      "lastVerified": "2026-11-10"
     }
   ]
 }

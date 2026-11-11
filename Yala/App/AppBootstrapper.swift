@@ -570,6 +570,18 @@ final class AppBootstrapper {
             CashFlowOverrideLineMigration.migrateIfNeeded(in: context, scope: .all)
         }
 
+        // 16.4.10. La categoría nueva que quedó a medias al cerrarse la app: el «+» de Categorías la inserta sin nombre y
+        //      guardar su primera subcategoría la guarda así (lote 09 de mejoras necesarias 2.3). Solo mira si este
+        //      teléfono dejó la marca; detrás de la puerta como el resto de guardados del arranque.
+        Task { @MainActor in
+            guard NewCategoryDraftMark.isArmed() else { return }
+            guard await awaitPersonalStoreReady() else {
+                SaveBreadcrumb.deferred("AppBootstrapper.newCategoryDraftSweep", "import not quiescent")
+                return
+            }
+            NewCategoryDraftMark.sweepIfArmed(in: context)
+        }
+
         // 16.5. Retry bridge operations that failed in a previous launch
         Task { @MainActor in
             await retryPendingBridges(context: context)

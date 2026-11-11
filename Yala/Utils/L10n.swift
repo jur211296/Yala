@@ -4345,6 +4345,35 @@ enum L10n {
         static func colorSelected(_ hex: String) -> String {
             String(format: ls("tag.colorSelected", comment: ""), hex)
         }
+        /// El nombre de un color de etiqueta («Naranja»); fuera de la paleta, «Color propio» (lote 09 de mejoras 2.3).
+        static func colorName(hex: String) -> String {
+            guard let color = TagPaletteColor(hex: hex) else { return ls("tag.colorName.custom") }
+            switch color {
+            case .orange: return ls("tag.colorName.orange")
+            case .green: return ls("tag.colorName.green")
+            case .blue: return ls("tag.colorName.blue")
+            case .pink: return ls("tag.colorName.pink")
+            case .indigo: return ls("tag.colorName.indigo")
+            case .yellow: return ls("tag.colorName.yellow")
+            case .cyan: return ls("tag.colorName.cyan")
+            case .purple: return ls("tag.colorName.purple")
+            case .oceanBlue: return ls("tag.colorName.oceanBlue")
+            case .coral: return ls("tag.colorName.coral")
+            case .brown: return ls("tag.colorName.brown")
+            case .red: return ls("tag.colorName.red")
+            case .turquoise: return ls("tag.colorName.turquoise")
+            case .lavender: return ls("tag.colorName.lavender")
+            case .skyBlue: return ls("tag.colorName.skyBlue")
+            }
+        }
+        /// «17 de 20»: el nombre se acerca al límite.
+        static func nameCount(_ count: Int, of limit: Int) -> String {
+            String(format: ls("tag.nameCount %lld %lld", comment: ""), count, limit)
+        }
+        /// «20 de 20: el resto no cabe»: lo que se escriba de más se corta.
+        static func nameLimitReached(_ limit: Int) -> String {
+            String(format: ls("tag.nameLimitReached %lld %lld", comment: ""), limit, limit)
+        }
     }
 
     // MARK: - Alert

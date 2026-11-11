@@ -30,6 +30,8 @@ struct TagFormView: View {
 
     // Delete confirmation
     @State private var isShowingDeleteConfirmation: Bool = false
+    /// «¿Descartar cambios?» de la X y del gesto de cerrar, como Cuentas y Categorías (lote 09 de mejoras 2.3).
+    @State private var isShowingDiscardChanges: Bool = false
     /// Cuántos registros llevan la etiqueta, contado al pedir eliminarla. El mensaje de la alerta se vuelve a evaluar al
     /// cerrarse, con la etiqueta ya borrada: leer su relación ahí aborta en iOS 27.x (card 1w89).
     @State private var deleteDialogRecordCount = 0
@@ -71,7 +73,7 @@ struct TagFormView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
-                        dismiss()
+                        requestClose()
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
@@ -118,6 +120,10 @@ struct TagFormView: View {
                     supportsColorPicking: false
                 )
             }
+            .modifier(DiscardAccountChangesAlert(isPresented: $isShowingDiscardChanges) { dismiss() })
+            .onSheetDismissAttempt(isActive: viewModel.hasUnsavedChanges) {
+                isShowingDiscardChanges = true
+            }
             .onChange(of: isPresentingColorPicker) { _, isPresenting in
                 if isPresenting { dismissKeyboard() }
             }
@@ -149,12 +155,22 @@ struct TagFormView: View {
                         .focused($isNameFieldFocused)
                         .accessibilityIdentifier("tag_name_field")
                         .onChange(of: viewModel.name) { oldValue, newValue in
-                            if newValue.count > 20 {
-                                viewModel.name = String(newValue.prefix(20))
+                            if newValue.count > TagNameLimit.maxLength {
+                                viewModel.name = String(newValue.prefix(TagNameLimit.maxLength))
                             }
                         }
                 }
                 .padding()
+
+                // El nombre se corta a 20: se avisa al acercarse y al llegar, no en silencio (lote 09 de mejoras 2.3).
+                if let caption = TagNameLimit.caption(forLength: viewModel.name.count) {
+                    Text(nameCaptionText(caption))
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding([.horizontal, .bottom])
+                        .accessibilityIdentifier("tag_name_count")
+                }
             }
         }
     }
@@ -218,7 +234,7 @@ struct TagFormView: View {
                             }
                             .buttonStyle(.plain)
                             .contentShape(Circle())
-                            .accessibilityLabel(L10n.Accessibility.colorOption(hex))
+                            .accessibilityLabel(L10n.Accessibility.colorOption(L10n.Tag.colorName(hex: hex)))
                             .accessibilityAddTraits(viewModel.selectedColorHex.uppercased() == hex.uppercased() ? .isSelected : [])
                         }
 
@@ -238,7 +254,7 @@ struct TagFormView: View {
                         .accessibilityLabel(L10n.Accessibility.selectColor)
                     }
 
-                    Text(L10n.Tag.colorSelected(viewModel.selectedColorHex))
+                    Text(L10n.Tag.colorSelected(L10n.Tag.colorName(hex: viewModel.selectedColorHex)))
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -303,7 +319,24 @@ struct TagFormView: View {
         }
     }
 
+    private func nameCaptionText(_ caption: TagNameLimit.Caption) -> String {
+        switch caption {
+        case .count(let count): return L10n.Tag.nameCount(count, of: TagNameLimit.maxLength)
+        case .limitReached: return L10n.Tag.nameLimitReached(TagNameLimit.maxLength)
+        }
+    }
+
     // MARK: - Actions
+
+    /// La X: con algo cambiado pregunta antes de tirarlo; sin cambios, cierra.
+    private func requestClose() {
+        if viewModel.hasUnsavedChanges {
+            isNameFieldFocused = false
+            isShowingDiscardChanges = true
+        } else {
+            dismiss()
+        }
+    }
 
     private func saveTag() {
         if viewModel.saveTag() {
