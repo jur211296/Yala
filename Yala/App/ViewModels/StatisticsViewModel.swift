@@ -209,7 +209,7 @@ final class StatisticsViewModel: Filterable {
     var trendLiveAnchorIsApproximate: Bool = false
 
     /// Trend grouping based on period
-    var trendGrouping: TrendGrouping = .month
+    var trendGrouping: TrendGrouping = .day
 
     /// Date interval for the current period
     var currentInterval: DateInterval = DateInterval(start: Date.now, end: Date.now)
@@ -419,12 +419,24 @@ final class StatisticsViewModel: Filterable {
         // Enforce metric lock based on filters
         enforceMetricLock()
 
-        // Always use day grouping so chart data reaches today
-        trendGrouping = .day
-
         // Get interval
         let interval = panelDateInterval
         currentInterval = interval
+
+        // Por día hasta unos tres meses de datos y por mes a partir de ahí (G2 de la decisión 28): con diez años, la
+        // curva pintaba ~3.650 puntos y el eje no se leía. El último punto sigue valiendo lo de hoy: el saldo de un mes
+        // se valora a su cierre o a hoy (`BalanceValuation.closingInstant`), y el saldo vivo va aparte (`liveAnchor`).
+        let newGrouping = StatisticsChartGranularityLogic.curveGrouping(
+            dataSpanDays: StatisticsChartGranularityLogic.dataSpanDays(
+                earliestDate: StatisticsChartGranularityLogic.earliestDate(
+                    of: transactions.lazy.map(\.date), in: interval),
+                interval: interval,
+                now: now
+            ),
+            intervalEndsAfterToday: interval.end > LiveBalanceCalculator.TodayCutoff(asOf: now, calendar: Calendar.current)
+                .startOfTomorrow
+        )
+        if newGrouping != trendGrouping { trendGrouping = newGrouping }
 
         // Build filter criteria and apply
         let criteria = buildTrendFilterCriteria(interval: interval, allTags: allTags)

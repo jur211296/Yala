@@ -1,10 +1,10 @@
 ---
 id: statistics-first-entry-takes-a-second-to-render
-status: qa
+status: done
 priority: low
 area: "performance, statistics"
 created: 2026-10-30
-updated: 2026-11-05
+updated: 2026-11-11
 card: tablero-entrar-en-estadisticas-tarda-1-s-casi-to-7zc7
 source: "encargo eficiencia-carga-por-vista (S27e), Time Profiler en el simulador"
 ---
@@ -48,3 +48,20 @@ Max no hay iPhone, así que la medida que pide el criterio sigue pendiente.
 4. Responde: **¿se nota la espera? (sí / no)** y, si sí, cuánto más o menos (medio segundo, un segundo…).
 
 Si no se nota, se cierra. Si se nota, se elige una de las tres vías en una sesión aparte.
+
+## Medido en el iPhone y cerrado (2026-11-11, lote 2.3 «Estadísticas con diez años»)
+
+La medida que pedía el criterio ya está, y la vía la eligió Jürgen el 9-nov (decisión 28 de la revisión 2.3, opción
+G1 + G2 + G3). iPhone 14, iOS 27.2, Release-Dev optimizado con la semilla «pesado» (11.633 registros), Instruments Time
+Profiler, «Todo el tiempo»:
+
+- **Antes**: la primera entrada colgaba el hilo principal 7,5 s en el `onAppear` (Resumen 4,1 s, Tendencias 1,2 s,
+  Registros 0,7 s, carga 0,4 s) y 150 ms después corría otra pasada completa de 2,4 s; la segunda entrada, 1,9 s + 2,0 s.
+- **Después**: la pestaña cambia en el acto con la barra de chips y un esqueleto; la primera pasada corre una sola vez,
+  en tramos (6,9 s en cuatro cuelgues de 0,7 a 4 s, con el esqueleto a la vista), y la segunda entrada no recalcula
+  (0,75 s, todo pintar).
+
+No hay un punto caliente único: es acceso a SwiftData por movimiento repartido entre calculadores (`isIncome`,
+`InsightsCalculator`, `FinancialScoreCalculator.calculateRhythm`). Bajar los 6,9 s pide sacar el cálculo del hilo
+principal (copiar los datos a valores), que queda fuera de la decisión 28. Con datos normales (2.337 movimientos) la
+espera ya era de ~1 s en el simulador en Debug, y ahora además no bloquea el toque.

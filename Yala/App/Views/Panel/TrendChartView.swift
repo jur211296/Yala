@@ -540,6 +540,7 @@ struct TrendChartView: View {
             case .day: return .day
             case .week: return .weekOfYear
             case .month: return .month
+            case .year: return .year
             }
         }()
 
@@ -668,6 +669,8 @@ struct TrendChartView: View {
             return PanelTrendSummaryLogic.shortDate(date, today: .now, calendar: .current, locale: AppLocale.current)
         case .month:
             return Self.periodMonthFormatter.string(from: date).lowercased().replacing(".", with: "")
+        case .year:
+            return TrendGrouping.yearLabel(for: date)
         }
     }
 

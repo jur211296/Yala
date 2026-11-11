@@ -248,8 +248,11 @@ struct TrendDataProcessor {
         }
 
         // 5. Apply smoothing only for balance on long periods (visual only)
+        // Solo con puntos diarios: la media de 14 puntos sobre puntos por mes (Estadísticas con datos largos, G2 de la
+        // decisión 28) promediaría más de un año y aplanaría la curva.
         let shouldSmooth =
-            smoothingPeriods.contains(period)
+            grouping == .day
+            && smoothingPeriods.contains(period)
             && metric == .balance
             && rawPoints.count > smoothingThreshold
 
