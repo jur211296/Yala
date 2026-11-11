@@ -172,17 +172,16 @@ struct BudgetDetailView: View {
             }
 
             // Progress bar
+            // Barra y palabra del mismo estado (decisión 23 de 2.3), con el umbral de `BudgetStatusCounter`.
+            let status = BudgetStatusCounter.classify(spent: summary.spent, limit: budget.limitAmount)
             BudgetProgressBar(
                 percentage: summary.percentage,
                 color: summary.color,
-                isExceeded: summary.status == .exceeded
+                isExceeded: status == .overLimit
             )
             .padding(.horizontal, DS.Spacing.xl)
 
-            // «En el límite» junto al naranja (Jürgen, 2026-11-05), con el umbral de `BudgetStatusCounter`.
-            if BudgetAtLimitLabel.isShown(spent: summary.spent, limit: budget.limitAmount) {
-                BudgetAtLimitLabel(font: DS.Typography.label)
-            }
+            BudgetStatusLabel(status: status, font: DS.Typography.label)
 
             // Porcentaje y los días que quedan (o «Cerrado» / «Aún no empieza»).
             HStack {
@@ -199,8 +198,7 @@ struct BudgetDetailView: View {
             }
             .padding(.horizontal, DS.Spacing.sm)
 
-            // «Hoy puedes gastar S/ 42.30» (2.3): el cupo del día sustituye al «al día» fijo de antes, que no bajaba al
-            // gastar y habría dado otra cifra por día en la misma tarjeta.
+            // El cupo del día (2.3), en tono neutro (decisión 23): una guía para llegar a fin de período, no un aviso.
             DailyAllowanceLine(summary: summary, font: DS.Typography.subheadline)
 
             if budget.countsAllExpenses {

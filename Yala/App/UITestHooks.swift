@@ -129,6 +129,11 @@ final class UITestHooks {
     /// mes» también el día 1 (card 30pv). Aditivo al perfil de `-uitest-seed`.
     nonisolated static var seedTodayRecord: Bool { hasArg("-uitest-seed-today-record") }
 
+    /// `-uitest-seed-budget-states`: añade cuatro presupuestos de 1.000 con lo gastado exacto —al día, en el límite (90 %,
+    /// con el cupo de hoy superado), justo al límite (100 %) y pasado (118 %)— (`DevSeedBudgetStates`). Aditivo al perfil
+    /// de `-uitest-seed`.
+    nonisolated static var seedBudgetStates: Bool { hasArg("-uitest-seed-budget-states") }
+
     /// `-uitest-seed-uncategorized-expense`: añade un gasto de 40 SIN categoría en la cuenta principal
     /// (`DevSeedUncategorizedExpense`), para ver el trozo «Sin categoría» de la tarta. Aditivo al perfil de `-uitest-seed`.
     nonisolated static var seedUncategorizedExpense: Bool { hasArg("-uitest-seed-uncategorized-expense") }

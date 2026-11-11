@@ -7173,6 +7173,8 @@
 "budgets.l9.perDay" = "Tu peux dépenser %@ par jour";
 "budgets.l9.countsAllExpenses" = "Compte toutes tes dépenses";
 "budgets.l9.atLimit" = "Proche de la limite";
+"budgets.l9.reachedLimit" = "Limite atteinte";
+"budgets.l9.overLimitWord" = "Dépassé";
 "budgets.l9.limitLabel" = "Limite";
 "budgets.l9.whatCountsTitle" = "Quelles dépenses comptent ?";
 "budgets.l9.allExpensesChip" = "Toutes mes dépenses";
@@ -8631,8 +8633,12 @@
 "bulkEdit.cannotEditSplitRecipeCategory" = "Dans l’un des enregistrements sélectionnés, ta part est répartie en lignes, et sa catégorie vient d’elles. Modifie-la depuis « Répartir ta part », dans son détail.";
 
 /* «Cuánto puedo gastar hoy» (2.3): el cupo del día de un presupuesto */
-"budgets.daily.canSpend" = "Aujourd'hui, tu peux dépenser %@";
-"budgets.daily.overToday" = "Aujourd'hui, tu as dépassé de %@";
+"budgets.daily.plan" = "Il reste %1$@ et %2$@ : environ %3$@ par jour.";
+"budgets.daily.planFromStartOfDay" = "Tu as commencé la journée avec %2$@ pour %1$@ : environ %3$@ par jour.";
+"budgets.daily.lastDay" = "Dernier jour : il reste %@.";
+"budgets.daily.lastDayFromStartOfDay" = "Tu as commencé le dernier jour avec %@.";
+"budgets.daily.spentToday" = "Aujourd'hui, tu en es à %@.";
+"budgets.daily.spentTodayAbove" = "Aujourd'hui, tu en es à %1$@, soit %2$@ de plus.";
 
 /* «Correo del banco» (2.3): reenvío de los avisos del banco a Yala */
 "bankEmail.title" = "E-mails de la banque";

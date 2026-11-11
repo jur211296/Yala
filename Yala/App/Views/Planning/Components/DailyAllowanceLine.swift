@@ -2,9 +2,11 @@
 //  DailyAllowanceLine.swift
 //  Yala
 //
-//  «Hoy puedes gastar S/ 42.30» (2.3, variante A): el cupo del día de un presupuesto, que baja con cada gasto de hoy
-//  (`DailyAllowanceLogic`). Una sola vista para la fila del widget del Panel y el detalle del presupuesto. Sin cupo
-//  que enseñar (período cerrado, presupuesto ya agotado) no pinta nada.
+//  El cupo del día de un presupuesto (2.3), como guía neutra (decisión 23 de la revisión 2.3, Jürgen 2026-11-09):
+//  «Quedan 5 días y S/ 400: unos S/ 80 al día. Hoy llevas S/ 120, S/ 40 más que eso». Sin rosa ni alerta: pasarse un
+//  día es válido, y el estado del presupuesto ya lo dicen la barra y su palabra. La cuenta es la de siempre
+//  (`DailyAllowanceLogic`). Una sola vista para la fila del widget del Panel y el detalle del presupuesto. Sin cupo que
+//  enseñar (período cerrado, presupuesto ya agotado) no pinta nada.
 //
 
 import SwiftUI
@@ -16,9 +18,9 @@ struct DailyAllowanceLine: View {
     @Environment(AppPreferences.self) private var appPreferences
 
     /// Un presupuesto desactivado no tiene cupo: no cuenta para nada hasta que se reactive.
-    private var state: DailyAllowanceLogic.State? {
+    private var guide: DailyAllowanceLogic.Guide? {
         guard summary.status != .inactive else { return nil }
-        return DailyAllowanceLogic.state(
+        return DailyAllowanceLogic.guide(
             limit: summary.budget.limitAmount,
             spent: summary.spent,
             spentToday: summary.spentToday,
@@ -27,16 +29,15 @@ struct DailyAllowanceLine: View {
     }
 
     var body: some View {
-        if let state {
-            let isOver = if case .overToday = state { true } else { false }
-            HStack(spacing: DS.Spacing.xs) {
-                Image(systemName: isOver ? "exclamationmark.circle.fill" : "sun.max.fill")
-                    .foregroundStyle(isOver ? AnyShapeStyle(Color.overBudgetText) : AnyShapeStyle(ThemeColor.thAccentText))
+        if let guide {
+            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                Image(systemName: "sun.max.fill")
+                    .foregroundStyle(ThemeColor.thAccentText)
                     .accessibilityHidden(true)
-                Text(text(for: state))
-                    .foregroundStyle(isOver ? Color.overBudgetText : Color.secondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                // La frase entera, en varias líneas si hace falta: encogida a una sola no se leía.
+                Text(text(for: guide))
+                    .foregroundStyle(Color.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .font(font)
             .accessibilityElement(children: .combine)
@@ -44,23 +45,22 @@ struct DailyAllowanceLine: View {
         }
     }
 
-    /// La cifra en negrita dentro de la frase: es lo que se lee de un vistazo.
-    private func text(for state: DailyAllowanceLogic.State) -> AttributedString {
-        let amount: Double
-        let sentence: String
-        switch state {
-        case .available(let value):
-            amount = value
-            sentence = L10n.DailyAllowance.canSpendToday(appPreferences.currency(value, currencyCode: summary.budget.currencyCode))
-        case .overToday(let value):
-            amount = value
-            sentence = L10n.DailyAllowance.overToday(appPreferences.currency(value, currencyCode: summary.budget.currencyCode))
-        }
+    /// El cupo del día en negrita: es lo que se lee de un vistazo.
+    private func text(for guide: DailyAllowanceLogic.Guide) -> AttributedString {
+        let code = summary.budget.currencyCode
+        let perDay = appPreferences.currency(guide.perDay, currencyCode: code)
+        let sentence = L10n.DailyAllowance.guide(
+            daysRemaining: guide.daysRemaining,
+            leftAtStartOfDay: appPreferences.currency(guide.leftAtStartOfDay, currencyCode: code),
+            perDay: perDay,
+            spentToday: guide.spentToday > 0 ? appPreferences.currency(guide.spentToday, currencyCode: code) : nil,
+            overPerDay: guide.overPerDay > 0 ? appPreferences.currency(guide.overPerDay, currencyCode: code) : nil
+        )
         var attributed = AttributedString(sentence)
-        let amountText = appPreferences.currency(amount, currencyCode: summary.budget.currencyCode)
-        if let range = attributed.range(of: amountText) {
+        // El último día no nombra el cupo (es todo lo que queda): no hay nada que resaltar.
+        if guide.daysRemaining > 1, let range = attributed.range(of: perDay) {
             attributed[range].font = font.weight(.semibold)
-            if case .available = state { attributed[range].foregroundColor = Color.primary }
+            attributed[range].foregroundColor = Color.primary
         }
         return attributed
     }
