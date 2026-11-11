@@ -4513,6 +4513,10 @@
 "groups.openingBalance.approvalPromptSkip" = "Nee, begin bij nul";
 "groups.openingBalance.errorNotAdmin" = "Alleen een beheerder van de groep kan beginsaldi beheren.";
 "groups.openingBalance.errorSameMember" = "Kies twee verschillende leden.";
+"groups.openingBalance.replaceTitle" = "Er is al een beginsaldo tussen %1$@ en %2$@";
+"groups.openingBalance.replaceMessage" = "Nu staat er: %@. Als je doorgaat, wordt het vervangen door het saldo dat je net hebt ingevoerd.";
+"groups.openingBalance.replaceConfirm" = "Vervangen";
+"groups.openingBalance.errorLockedBySettlements" = "De personen in dit beginsaldo hebben al bevestigde betalingen, dus het kan niet meer worden gewijzigd of verwijderd.";
 "groups.openingBalance.serverRejected.title" = "Je wijziging is niet bij de groep aangekomen";
 "groups.openingBalance.serverRejected.notAdmin" = "Alleen de eigenaar of een beheerder van de groep kan beginsaldi wijzigen, en dat ben je nu niet. Het saldo staat weer zoals in de groep.";
 "groups.openingBalance.serverRejected.locked" = "De personen in dit beginsaldo hebben al bevestigde betalingen, dus het kan niet meer worden gewijzigd. Het saldo staat weer zoals in de groep.";

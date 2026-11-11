@@ -125,6 +125,18 @@ final class GroupDetailViewModel {
         return currentUserMember?.isActive == true
     }
 
+    /// Apuntar algo NUEVO desde dentro: el «+» de Gastos y «Saldar» de Saldos. Además de poder escribir, que el grupo no
+    /// esté archivado: la lista de Grupos ya no ofrece un archivado en «Nuevo gasto»
+    /// (`GroupsViewModel.eligibleGroupsForExpense`), y dentro se seguía pudiendo (ticket
+    /// `archived-group-still-allows-expenses-and-payments-from-inside`). Confirmar o rechazar lo que ya existe, editar y el
+    /// «Saldar primero» de salir del grupo siguen con `canCurrentUserParticipate`: son cierres, no apuntes nuevos.
+    var canRecordNewEntries: Bool {
+        GroupArchivedEntryLogic.allowsNewEntries(
+            canParticipate: canCurrentUserParticipate,
+            isArchived: !isGroupGone && group.isArchived
+        )
+    }
+
     /// Card 0vbn: en un grupo del backend, como `is_group_admin` (cualquier fila mía activa y admin), no la fila canónica.
     /// La misma decisión que `GroupService.requireCurrentUserAdmin` aplica al guardar.
     var isCurrentUserAdmin: Bool {
@@ -513,7 +525,8 @@ final class GroupDetailViewModel {
             let message: String
             switch error {
             case GroupExpenseServiceError.expenseHasAssociatedSettlements:
-                message = L10n.Groups.Bridge.deleteExpenseBlocked
+                // Lote 2.3 de Grupos: el de siempre hablaba de borrar un gasto.
+                message = L10n.Groups.OpeningBalance.errorLockedBySettlements
             default:
                 message = L10n.Groups.Errors.actionFailed
             }
