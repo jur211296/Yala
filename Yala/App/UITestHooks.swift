@@ -1271,6 +1271,13 @@ final class UITestHooks {
     nonisolated static let seededGroupSaleName = "Venta de bici"
     nonisolated static let seededSaleGroupName = "Ventas con Ana"
 
+    /// `-uitest-seed-group-cross-debts`: con el perfil `grupos`, dos grupos más (mejoras necesarias 2.3 · lote 06).
+    /// «Piso compartido», con «Menos pagos» apagado: debes S/ 40 a Ana y Beto te debe S/ 30 (pagó 10 de 40), y tu nombre
+    /// es «Lucía», no «Tú», para ver dónde la app lo cambia. Y «Grupo sin gastos», recién creado y sin nada apuntado.
+    nonisolated static var seedGroupCrossDebts: Bool { hasArg("-uitest-seed-group-cross-debts") }
+    nonisolated static let seededCrossDebtsGroupName = "Piso compartido"
+    nonisolated static let seededEmptyGroupName = "Grupo sin gastos"
+
     /// `-uitest-scheduled-due-today`: añade al seed UN pago planificado «una sola vez» que vence
     /// HOY (`DevSeedScheduledPayments.dueTodayName`). Los 8 del fixture base se reparten por el
     /// mes y `min(day, 28)` capa los días 29-31, así que NINGUNO vence hoy de forma garantizada.

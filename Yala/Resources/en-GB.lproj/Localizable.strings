@@ -6622,6 +6622,17 @@
 "groups.l13.success.shareDetail" = "We added it as a group expense, without touching your accounts.";
 "groups.l13.youPayTo" = "You pay";
 "groups.l13.debtA11yMe" = "You pay %1$@: %2$@";
+"groups.n23l06.summaryBoth" = "You're owed %1$@ and you owe %2$@.";
+"groups.n23l06.summaryEvenCaption" = "In this group you're owed as much as you owe";
+"groups.n23l06.paysYou" = "pays you";
+"groups.n23l06.debtA11yToMe" = "%1$@ pays you: %2$@";
+"groups.n23l06.expenseAmountA11y" = "Expense amount";
+"groups.n23l06.settlementAmountA11y" = "Payment amount";
+"groups.n23l06.settlementCurrencyA11y" = "Payment currency";
+"groups.n23l06.amountEmptyA11y" = "no amount";
+"groups.n23l06.settlementA11y.fromMe" = "You paid %1$@ %2$@, %3$@. %4$@.";
+"groups.n23l06.settlementA11y.toMe" = "%1$@ paid you %2$@, %3$@. %4$@.";
+"groups.n23l06.settlementA11y.others" = "%1$@ paid %2$@ %3$@, %4$@. %5$@.";
 "groups.l13.pending.rejectMessageOther" = "We'll remove this payment and the debt stays as it was.";
 
 /* UX 2.2 · lote 14 (Yala IA) */

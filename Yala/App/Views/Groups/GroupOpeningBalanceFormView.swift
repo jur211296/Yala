@@ -213,6 +213,10 @@ struct GroupOpeningBalanceFormView: View {
                     .background(Capsule().fill(theme.accent.opacity(0.12)))
             }
             .buttonStyle(.plain)
+            // Lote 06 de mejoras 2.3: VoiceOver leía «S/» sin decir qué es.
+            .accessibilityLabel(L10n.Groups.Expense.currency)
+            .accessibilityValue(AppLocale.current.localizedString(forCurrencyCode: selectedCurrency.rawValue)
+                                ?? selectedCurrency.rawValue)
             .accessibilityIdentifier("opening_balance_currency")
 
             TextField("0.00", text: $amountString)
@@ -223,6 +227,9 @@ struct GroupOpeningBalanceFormView: View {
                 .focused($amountFocused)
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
+                // Lote 06 de mejoras 2.3: sin nombre, VoiceOver leía el ejemplo «0.00».
+                .accessibilityLabel(L10n.Transaction.amount)
+                .accessibilityValue(amountString.isEmpty ? L10n.GroupsNecesarias06.amountEmptyA11y : amountString)
                 .accessibilityIdentifier("opening_balance_amount")
                 .overlay(alignment: .bottom) {
                     if markedMissingField == .amount {

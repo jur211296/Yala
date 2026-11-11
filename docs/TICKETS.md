@@ -489,7 +489,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | gpt-4-1-nano-shuts-down-on-october-23 | done | tickets/done/gpt-4-1-nano-shuts-down-on-october-23.md |
 | group-badge-missing-outside-records | backlog | tickets/backlog/group-badge-missing-outside-records.md |
 | group-balance-service-shares-not-deduped | backlog | tickets/backlog/group-balance-service-shares-not-deduped.md |
-| group-debt-card-reads-pays-to-tu | backlog | tickets/backlog/group-debt-card-reads-pays-to-tu.md |
+| group-debt-card-reads-pays-to-tu | done | tickets/done/group-debt-card-reads-pays-to-tu.md |
 | group-detail-reads-the-group-after-leaving-it | done | tickets/done/group-detail-reads-the-group-after-leaving-it.md |
 | group-expense-detail-like-record-detail | backlog | tickets/backlog/group-expense-detail-like-record-detail.md |
 | group-expense-draft-is-deleted-with-its-sheet-open-when-the-expense-is-gone | done | tickets/done/group-expense-draft-is-deleted-with-its-sheet-open-when-the-expense-is-gone.md |
@@ -509,7 +509,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | group-split-lines-recipe-lost-on-payer-or-currency-change | done | tickets/done/group-split-lines-recipe-lost-on-payer-or-currency-change.md |
 | group-split-lines-recipe-lost-when-the-new-leg-is-not-born-in-the-pass | backlog | tickets/backlog/group-split-lines-recipe-lost-when-the-new-leg-is-not-born-in-the-pass.md |
 | group-split-sheet-shows-you-twice | done | tickets/done/group-split-sheet-shows-you-twice.md |
-| group-stats-who-paid-most-bars-cover-the-names | backlog | tickets/backlog/group-stats-who-paid-most-bars-cover-the-names.md |
+| group-stats-who-paid-most-bars-cover-the-names | done | tickets/done/group-stats-who-paid-most-bars-cover-the-names.md |
 | group-system-category-seed-saves-the-context-mid-bridge | backlog | tickets/backlog/group-system-category-seed-saves-the-context-mid-bridge.md |
 | groups-account-association-in-storage-row | done | tickets/done/groups-account-association-in-storage-row.md |
 | groups-actions-do-not-retry-a-401-with-a-forced-token-refresh | backlog | tickets/backlog/groups-actions-do-not-retry-a-401-with-a-forced-token-refresh.md |

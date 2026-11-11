@@ -7390,6 +7390,17 @@
 "groups.l13.success.shareDetail" = "Zapisana jako wydatek grupy, bez ruszania twoich kont.";
 "groups.l13.youPayTo" = "Ty płacisz";
 "groups.l13.debtA11yMe" = "Płacisz %1$@: %2$@";
+"groups.n23l06.summaryBoth" = "Inni są ci winni %1$@, a ty masz do oddania %2$@.";
+"groups.n23l06.summaryEvenCaption" = "W tej grupie inni są ci winni tyle, ile ty masz do oddania";
+"groups.n23l06.paysYou" = "płaci tobie";
+"groups.n23l06.debtA11yToMe" = "%1$@ płaci tobie: %2$@";
+"groups.n23l06.expenseAmountA11y" = "Kwota wydatku";
+"groups.n23l06.settlementAmountA11y" = "Kwota płatności";
+"groups.n23l06.settlementCurrencyA11y" = "Waluta płatności";
+"groups.n23l06.amountEmptyA11y" = "brak kwoty";
+"groups.n23l06.settlementA11y.fromMe" = "Twoja płatność dla %1$@: %2$@, %3$@. %4$@.";
+"groups.n23l06.settlementA11y.toMe" = "Płatność od %1$@ dla ciebie: %2$@, %3$@. %4$@.";
+"groups.n23l06.settlementA11y.others" = "Płatność od %1$@ dla %2$@: %3$@, %4$@. %5$@.";
 "groups.l13.pending.rejectMessageOther" = "Usuniemy tę płatność, a dług zostanie bez zmian.";
 
 /* UX 2.2 · lote 14 (Yala IA) */

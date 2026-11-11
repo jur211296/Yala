@@ -148,6 +148,10 @@ enum DevSeedGroups {
             sale = (expense, saleGroup)
         }
 
+        if UITestHooks.seedGroupCrossDebts {
+            seedCrossDebtsGroups(in: context)
+        }
+
         // ── 2º grupo "Viaje a Lima" (yo owner/activo). Habilita el chip EDITABLE del
         //    composer "Nuevo gasto" (>1 grupo elegible) y el cambio de grupo en el picker.
         //    Ordena DESPUÉS de "Viaje a Cusco" (Cusco < Lima) → no altera el primer
@@ -210,6 +214,62 @@ enum DevSeedGroups {
                 print("DevSeedGroups: bridge de la venta: \(error)")
             }
         }
+    }
+
+    /// `-uitest-seed-group-cross-debts` (mejoras necesarias 2.3 · lote 06). «Piso compartido», con «Menos pagos»
+    /// apagado: Ana pagó una cena de S/ 120 a partes iguales (Lucía y Beto le deben S/ 40 cada uno) y tú, un taxi de S/ 80
+    /// con Beto (te debe S/ 40), del que Beto ya te pagó S/ 10, confirmados. Quedas debiendo S/ 40 a Ana y Beto te debe
+    /// S/ 30: en neto debes S/ 10, y la frase de Saldos no puede decir que nadie te debe nada. Tu nombre es «Lucía» para
+    /// ver dónde la app escribe «Tú». «Grupo sin gastos» es un grupo recién creado: tú y Ana, nada apuntado.
+    private static func seedCrossDebtsGroups(in context: ModelContext) {
+        let group = SplitGroup(
+            name: UITestHooks.seededCrossDebtsGroupName, iconName: "house", currencyCode: "PEN", isOwner: true)
+        group.isBackendGroup = true  // C3: ver el porqué en el primer grupo de `create`.
+        context.insert(group)
+        let zone = group.cloudKitZoneID
+        let me = SplitMember(
+            groupZoneID: zone, displayName: "Lucía", cloudKitUserRecordID: "uitest-current-user",
+            role: "admin", status: .active, isGroupOwner: true, isCurrentUser: true)
+        let ana = SplitMember(groupZoneID: zone, displayName: "Ana", cloudKitUserRecordID: "uitest-member-ana", status: .active)
+        let beto = SplitMember(groupZoneID: zone, displayName: "Beto", cloudKitUserRecordID: "uitest-member-beto", status: .active)
+        for m in [me, ana, beto] { context.insert(m) }
+
+        let today = Date.now
+        let cena = SplitExpense(
+            groupZoneID: zone, amount: 120, currencyCode: "PEN", expenseDescription: "Cena en casa",
+            paidByMemberID: ana.id.uuidString, splitType: "equal", subcategoryName: "Restaurantes")
+        cena.date = today
+        context.insert(cena)
+        for m in [me, ana, beto] {
+            context.insert(SplitShare(
+                expenseID: cena.id, memberID: m.id.uuidString, amount: 40, isPaid: m.id == ana.id, groupZoneID: zone))
+        }
+        let taxi = SplitExpense(
+            groupZoneID: zone, amount: 80, currencyCode: "PEN", expenseDescription: "Taxi",
+            paidByMemberID: me.id.uuidString, splitType: "exact", subcategoryName: "Transporte")
+        taxi.date = today
+        context.insert(taxi)
+        for m in [me, beto] {
+            context.insert(SplitShare(
+                expenseID: taxi.id, memberID: m.id.uuidString, amount: 40, isPaid: m.id == me.id, groupZoneID: zone))
+        }
+        let payment = SplitSettlement(
+            groupZoneID: zone, fromMemberID: beto.id.uuidString, toMemberID: me.id.uuidString,
+            amount: 10, currencyCode: "PEN", date: today)
+        payment.isConfirmed = true
+        payment.recordedByMemberID = beto.id.uuidString
+        context.insert(payment)
+
+        let empty = SplitGroup(
+            name: UITestHooks.seededEmptyGroupName, iconName: "person.2", currencyCode: "PEN", isOwner: true)
+        empty.isBackendGroup = true
+        context.insert(empty)
+        let emptyZone = empty.cloudKitZoneID
+        context.insert(SplitMember(
+            groupZoneID: emptyZone, displayName: "Lucía", cloudKitUserRecordID: "uitest-current-user",
+            role: "admin", status: .active, isGroupOwner: true, isCurrentUser: true))
+        context.insert(SplitMember(
+            groupZoneID: emptyZone, displayName: "Ana", cloudKitUserRecordID: "uitest-member-ana", status: .active))
     }
 
     /// Perfil `.ficha`: los grupos de las capturas y el vídeo de la ficha, en el idioma y la divisa de la app. Es el

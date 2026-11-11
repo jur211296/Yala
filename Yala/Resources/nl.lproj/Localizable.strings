@@ -7390,6 +7390,17 @@
 "groups.l13.success.shareDetail" = "Als groepsuitgave toegevoegd, zonder je rekeningen te raken.";
 "groups.l13.youPayTo" = "Jij betaalt aan";
 "groups.l13.debtA11yMe" = "Jij betaalt aan %1$@: %2$@";
+"groups.n23l06.summaryBoth" = "Je krijgt nog %1$@ en jij moet nog %2$@ betalen.";
+"groups.n23l06.summaryEvenCaption" = "In deze groep krijg je evenveel als je moet betalen";
+"groups.n23l06.paysYou" = "betaalt jou";
+"groups.n23l06.debtA11yToMe" = "%1$@ betaalt jou: %2$@";
+"groups.n23l06.expenseAmountA11y" = "Bedrag van de uitgave";
+"groups.n23l06.settlementAmountA11y" = "Bedrag van de betaling";
+"groups.n23l06.settlementCurrencyA11y" = "Valuta van de betaling";
+"groups.n23l06.amountEmptyA11y" = "geen bedrag";
+"groups.n23l06.settlementA11y.fromMe" = "Je hebt %1$@ %2$@ betaald, %3$@. %4$@.";
+"groups.n23l06.settlementA11y.toMe" = "%1$@ heeft jou %2$@ betaald, %3$@. %4$@.";
+"groups.n23l06.settlementA11y.others" = "%1$@ heeft %2$@ %3$@ betaald, %4$@. %5$@.";
 "groups.l13.pending.rejectMessageOther" = "We halen deze betaling weg en de schuld blijft zoals hij was.";
 
 /* UX 2.2 · lote 14 (Yala IA) */

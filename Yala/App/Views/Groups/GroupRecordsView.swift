@@ -36,6 +36,8 @@ struct GroupRecordsView: View {
     /// Banda de balance del header (scrollea junto a los registros). nil → no se muestra.
     var headerBalance: GroupHeaderBalance?
     var debtsWereConverted: Bool = false
+    /// Las deudas de Saldos, para que la frase de la cifra diga lo mismo aquí (lote 06 de mejoras 2.3).
+    var headerDebts: [Debt] = []
     var onTapBalance: (() -> Void)?
     /// Pull-to-refresh: fuerza un fetch de CloudKit. Aplicado aquí (no en GroupDetailView) para
     /// acotar el `.refreshable` a este ScrollView y NO heredarlo por environment a los sheets del
@@ -86,7 +88,9 @@ struct GroupRecordsView: View {
                         balance: headerBalance,
                         scope: .group,
                         isEstimate: debtsWereConverted,
-                        onTap: onTapBalance
+                        onTap: onTapBalance,
+                        crossDebts: GroupBalancesPresentationLogic.crossDebts(
+                            debts: headerDebts, currentUserMemberID: currentMemberID)
                     )
                     .padding(.bottom, DS.Spacing.sm)
                     // Va arriba y no se mueve cuando una fila se va: sin animación, su frase no se funde con la

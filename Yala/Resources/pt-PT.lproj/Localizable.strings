@@ -6627,6 +6627,17 @@
 "groups.l13.success.shareDetail" = "Registámo-la como despesa de grupo, sem mexer nas tuas contas.";
 "groups.l13.youPayTo" = "Tu pagas a";
 "groups.l13.debtA11yMe" = "Pagas a %1$@: %2$@";
+"groups.n23l06.summaryBoth" = "Devem-te %1$@ e tu deves %2$@.";
+"groups.n23l06.summaryEvenCaption" = "Neste grupo devem-te o mesmo que deves";
+"groups.n23l06.paysYou" = "paga-te";
+"groups.n23l06.debtA11yToMe" = "%1$@ paga-te: %2$@";
+"groups.n23l06.expenseAmountA11y" = "Valor da despesa";
+"groups.n23l06.settlementAmountA11y" = "Valor do pagamento";
+"groups.n23l06.settlementCurrencyA11y" = "Moeda do pagamento";
+"groups.n23l06.amountEmptyA11y" = "sem valor";
+"groups.n23l06.settlementA11y.fromMe" = "Pagaste %2$@ a %1$@, %3$@. %4$@.";
+"groups.n23l06.settlementA11y.toMe" = "%1$@ pagou-te %2$@, %3$@. %4$@.";
+"groups.n23l06.settlementA11y.others" = "%1$@ pagou %3$@ a %2$@, %4$@. %5$@.";
 "groups.l13.pending.rejectMessageOther" = "Retiramos este pagamento e a dívida fica como estava.";
 
 /* UX 2.2 · lote 14 (Yala IA) */

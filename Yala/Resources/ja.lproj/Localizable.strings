@@ -7390,6 +7390,17 @@
 "groups.l13.success.shareDetail" = "口座には触れず、グループの支出として記録しました。";
 "groups.l13.youPayTo" = "あなた →";
 "groups.l13.debtA11yMe" = "あなた → %1$@：%2$@";
+"groups.n23l06.summaryBoth" = "受け取る額は%1$@、支払う額は%2$@です。";
+"groups.n23l06.summaryEvenCaption" = "このグループでは受け取る額と支払う額が同じです";
+"groups.n23l06.paysYou" = "→ あなた";
+"groups.n23l06.debtA11yToMe" = "%1$@ → あなた：%2$@";
+"groups.n23l06.expenseAmountA11y" = "支出の金額";
+"groups.n23l06.settlementAmountA11y" = "支払いの金額";
+"groups.n23l06.settlementCurrencyA11y" = "支払いの通貨";
+"groups.n23l06.amountEmptyA11y" = "未入力";
+"groups.n23l06.settlementA11y.fromMe" = "あなた → %1$@：%2$@、%3$@。%4$@。";
+"groups.n23l06.settlementA11y.toMe" = "%1$@ → あなた：%2$@、%3$@。%4$@。";
+"groups.n23l06.settlementA11y.others" = "%1$@ → %2$@：%3$@、%4$@。%5$@。";
 "groups.l13.pending.rejectMessageOther" = "この支払いを削除します。借りはそのままです。";
 
 /* UX 2.2 · lote 14 (Yala IA) */

@@ -7390,6 +7390,17 @@
 "groups.l13.success.shareDetail" = "已作为群组费用记录，不影响你的账户。";
 "groups.l13.youPayTo" = "你付给";
 "groups.l13.debtA11yMe" = "你付给 %1$@：%2$@";
+"groups.n23l06.summaryBoth" = "别人欠你 %1$@，你欠别人 %2$@。";
+"groups.n23l06.summaryEvenCaption" = "在这个群组里别人欠你的和你欠别人的一样多";
+"groups.n23l06.paysYou" = "付给你";
+"groups.n23l06.debtA11yToMe" = "%1$@ 付给你：%2$@";
+"groups.n23l06.expenseAmountA11y" = "支出金额";
+"groups.n23l06.settlementAmountA11y" = "付款金额";
+"groups.n23l06.settlementCurrencyA11y" = "付款币种";
+"groups.n23l06.amountEmptyA11y" = "未填写";
+"groups.n23l06.settlementA11y.fromMe" = "你付给 %1$@ %2$@，%3$@。%4$@。";
+"groups.n23l06.settlementA11y.toMe" = "%1$@ 付给你 %2$@，%3$@。%4$@。";
+"groups.n23l06.settlementA11y.others" = "%1$@ 付给 %2$@ %3$@，%4$@。%5$@。";
 "groups.l13.pending.rejectMessageOther" = "我们会删除这笔付款，欠款保持不变。";
 
 /* UX 2.2 · lote 14 (Yala IA) */

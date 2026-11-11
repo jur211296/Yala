@@ -577,6 +577,9 @@ struct GroupExpenseFormView: View {
                 .multilineTextAlignment(.center)
                 .keyboardType(.decimalPad)
                 .focused($focusedField, equals: .amount)
+                // Lote 06 de mejoras 2.3: sin nombre, VoiceOver leía el ejemplo «0.00».
+                .accessibilityLabel(L10n.GroupsNecesarias06.expenseAmountA11y)
+                .accessibilityValue(amountA11yValue)
                 .accessibilityIdentifier("group_expense_amount")
                 // Al pasar un registro, el importe es el suyo: el puente lo reescribiría al del gasto.
                 .disabled(viewModel.isConversion)
@@ -637,6 +640,16 @@ struct GroupExpenseFormView: View {
         .buttonStyle(.plain)
         .disabled(viewModel.isConversion)
         .accessibilityLabel(L10n.Groups.Expense.currency)
+        // Lote 06 de mejoras 2.3: decía «Moneda» sin decir cuál.
+        .accessibilityValue(AppLocale.current.localizedString(forCurrencyCode: viewModel.currencyCode)
+                            ?? viewModel.currencyCode)
+    }
+
+    /// «S/ 400.00», o «sin importe» con el campo vacío.
+    private var amountA11yValue: String {
+        viewModel.amount > 0
+            ? appPreferences.currency(viewModel.amount, currencyCode: viewModel.currencyCode)
+            : L10n.GroupsNecesarias06.amountEmptyA11y
     }
 
     // MARK: - Group Context Chip
