@@ -15,3 +15,9 @@ empezar: por suerte los dos desvíos tenían motivo y se anotaron, pero pudo ser
 
 **How to apply:** en el Paso 0 de cualquier encargo de cards, vuelca `tablero ver` de todas a un fichero y léelo
 antes de lanzar a nadie. Al cerrar, `--nota` sustituye: repite lo que había ([[tablero-nota-sustituye]]).
+
+**Otra vez el 2026-11-10, y vale también para UN encargo con su card:** el lote 01 de Grupos 2.3 decía «solo estos 5
+puntos», y la nota de su card traía dos decisiones del 9-nov marcadas «Lote 1» (Saldar C1-C3 y la moneda del grupo).
+Lo vi al mover la card a hecha, con el PR ya abierto. Jürgen eligió card propia y cerrar el lote: no hubo retrabajo,
+pero se habría perdido sin mirar. ⇒ `tablero ver` de la card del encargo es parte del Paso 0, y si la nota y el
+encargo no casan, se pregunta en ese momento.
