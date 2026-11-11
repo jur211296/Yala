@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (99 entradas)
+## Índice (100 entradas)
 
-> **No hace falta leer este fichero entero** — son 279 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 280 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-11` [Las propuestas de mejora se entregan como artifact visual, no como Markdown](#2026-11-11-las-propuestas-de-mejora-se-entregan-como-artifact-visual-no-como-markdown)
 - `2026-11-10` [El correo del banco llega a un dominio aparte, yalainbox.com, solo para recibir](#2026-11-10-el-correo-del-banco-llega-a-un-dominio-aparte-yalainboxcom-solo-para-recibir)
 - `2026-11-10` [Orden del 10-nov: 2.2 en verde y en TestFlight antes que los lotes de 2.3, que corren de a dos sin d](#2026-11-10-orden-del-10-nov-22-en-verde-y-en-testflight-antes-que-los-lotes-de-23-que-corren-de-a-dos-sin-declarar-el-catlogo-de-textos)
 - `2026-11-10` [Entrar con Google o Apple con tu iCloud privado en el teléfono: se deja iCloud aparte (opción B), y ](#2026-11-10-entrar-con-google-o-apple-con-tu-icloud-privado-en-el-telfono-se-deja-icloud-aparte-opcin-b-y-el-lote-del-9-y-10-nov)
@@ -125,6 +126,13 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-11] Las propuestas de mejora se entregan como artifact visual, no como Markdown
+**Contexto:** Decisión de Jürgen del 11-nov (14:11, Lima), capturada en el chat y pendiente de pasar al repo. Vino de la propuesta de la nota de salud del Panel, que se entregó en Markdown; se encargó una mini sesión para rehacerla. La incorpora la sesión del lote de la nube de 2.3 (volver a iCloud), que no la ejecuta.
+**Decisión:** Toda propuesta de mejora para Jürgen (alternativas, maquetas, recomendaciones de una revisión) se le entrega como artifact visual de Claude, no como un `.md`.
+**Razones:** Jürgen decide mirando, y lee desde el móvil: un Markdown con rutas o maquetas en texto no le deja comparar las opciones.
+**Consecuencias:** una sesión que proponga en vez de implementar publica su propuesta como artifact y le pasa el enlace; el `.md` puede quedar como fuente o anexo, nunca como la entrega.
+**Estado:** Activa
 
 ### [2026-11-10] El correo del banco llega a un dominio aparte, yalainbox.com, solo para recibir
 **Contexto:** Tres decisiones de Jürgen del 10-nov (20:05, 20:18 y 20:24, Lima), capturadas en el chat y pendientes de pasar al repo, sobre dónde recibe Yala los correos que el banco reenvía para crear borradores. La de las 20:05 (un subdominio de yala-app.pe, como `auto@correo.yala-app.pe`) la sustituyó la de las 20:18: no se puede sin tocar los MX de Google del dominio principal. Las incorpora la sesión del lote 09 de mejoras necesarias 2.3, que no las ejecuta.
