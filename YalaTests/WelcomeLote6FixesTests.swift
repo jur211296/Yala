@@ -67,7 +67,9 @@ struct WelcomeLote6FixesTests {
         let code = Self.codeOnly(try Self.source("Yala/Utils/L10n.swift"))
         for key in ["welcome.restore.foundAccounts", "welcome.restore.foundTransactions", "welcome.restore.foundBudgets",
                     "welcome.restore.foundGroups", "welcome.privateICloud.foundCategories"] {
-            #expect(code.contains("String.localizedStringWithFormat(ls(\"\(key)\""), "\(key) no pasa por la regla de plural")
+            // Desde el 2026-11-11 con el formato de número del idioma de la app (`L10n.formatWithAppLocale`, que también
+            // resuelve el plural del `.stringsdict`): revisión 2.3, zona 41, lote 11.
+            #expect(code.contains("L10n.formatWithAppLocale(ls(\"\(key)\""), "\(key) no pasa por la regla de plural")
             #expect(!code.contains("String(format: ls(\"\(key)\""), "\(key) sigue con String(format:)")
         }
     }

@@ -46,9 +46,9 @@ extension L10n {
         /// «Pasarán 32 registros, 2 cuentas y 6 presupuestos.» Cada cifra con su plural (stringsdict).
         static func willMove(records: Int, accounts: Int, budgets: Int) -> String {
             String(format: l20n("l20n.sheet.willMove"),
-                   String.localizedStringWithFormat(l20n("l20n.count.records"), records),
-                   String.localizedStringWithFormat(l20n("l20n.count.accounts"), accounts),
-                   String.localizedStringWithFormat(l20n("l20n.count.budgets"), budgets))
+                   L10n.formatWithAppLocale(l20n("l20n.count.records"), records),
+                   L10n.formatWithAppLocale(l20n("l20n.count.accounts"), accounts),
+                   L10n.formatWithAppLocale(l20n("l20n.count.budgets"), budgets))
         }
 
         // MARK: - L20-18 · reabrir Yala

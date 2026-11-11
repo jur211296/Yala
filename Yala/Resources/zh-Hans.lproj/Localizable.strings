@@ -4661,7 +4661,7 @@
 "storage.consent.title" = "你在 Yala 云端的数据";
 "storage.consent.pointServers" = "我们的团队可以查看这些数据，以便为你提供支持和智能功能。我们不使用端到端加密。";
 "storage.consent.pointPhotos" = "不会备份到云端，也不会在其他设备上显示。如需保留，请在更换设备前先保存。";
-"storage.consent.pointAccess" = "无需依赖 iCloud。没有 Yala 密码，也没有电子邮件找回：如果失去该登录方式，请先导出数据（设置 → 导出数据）。";
+"storage.consent.pointAccess" = "无需依赖 iCloud。没有 Yala 密码，也没有电子邮件找回：如果失去该登录方式，请先导出数据（设置 → 导出记录）。";
 "storage.consent.footer" = "你可以随时切换回私密模式，不会丢失任何内容。";
 "storage.consent.privacyLink" = "查看隐私政策";
 
@@ -5136,10 +5136,10 @@
 "settings.batchLeaveNoneLeft" = "未离开任何群组。";
 
 /* D10 batch: stat label for groups left/deleted */
-"settings.batchLeaveStatLeft" = "已离开";
+"settings.batchLeaveStatLeft" = "已退出的群组";
 
 /* D10 batch: stat label for groups whose ownership was transferred */
-"settings.batchLeaveStatTransferred" = "已转让";
+"settings.batchLeaveStatTransferred" = "转让后退出的群组";
 
 /* D10 batch: section header for groups needing manual attention */
 "settings.batchLeaveNeedsDecisionHeader" = "需要你的决定";
@@ -5228,10 +5228,10 @@
 "settings.batchLeaveStopped" = "已停止离开群组。";
 
 /* D10 batch: stat label for groups not processed after stop (D3) */
-"settings.batchLeaveStatSkipped" = "未处理";
+"settings.batchLeaveStatSkipped" = "仍在其中的群组";
 
 /* D10 batch: body explaining how to relaunch after stop (D3) */
-"settings.batchLeaveStoppedBody" = "你可以随时在「清除数据」中继续。";
+"settings.batchLeaveStoppedBody" = "你可以随时在「群组设置」中用「退出我的所有群组」继续。";
 
 /* Feed row title for a confirmed settlement in group records */
 "groups.settlement.entryDescription" = "付款";

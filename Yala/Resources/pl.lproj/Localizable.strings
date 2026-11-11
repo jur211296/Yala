@@ -4661,7 +4661,7 @@
 "storage.consent.title" = "Twoje dane w chmurze Yala";
 "storage.consent.pointServers" = "Nasz zespół może je zobaczyć, żeby udzielić Ci wsparcia i dodawać inteligentne funkcje. Nie stosujemy szyfrowania end-to-end.";
 "storage.consent.pointPhotos" = "Nie są zapisywane w chmurze ani widoczne na innych urządzeniach. Jeśli chcesz je zachować, zapisz je przed zmianą urządzenia.";
-"storage.consent.pointAccess" = "Bez zależności od iCloud. Nie ma hasła Yala ani odzyskiwania przez e-mail: jeśli utracisz ten dostęp, najpierw wyeksportuj dane (Ustawienia → Eksportuj dane).";
+"storage.consent.pointAccess" = "Bez zależności od iCloud. Nie ma hasła Yala ani odzyskiwania przez e-mail: jeśli utracisz ten dostęp, najpierw wyeksportuj dane (Ustawienia → Eksportuj wpisy).";
 "storage.consent.footer" = "Możesz wrócić do trybu prywatnego, kiedy zechcesz, bez utraty czegokolwiek.";
 "storage.consent.privacyLink" = "Zobacz politykę prywatności";
 
@@ -5136,10 +5136,10 @@
 "settings.batchLeaveNoneLeft" = "Nie opuszczono żadnej grupy.";
 
 /* D10 batch: stat label for groups left/deleted */
-"settings.batchLeaveStatLeft" = "Opuszczone";
+"settings.batchLeaveStatLeft" = "Grupy, które opuszczono";
 
 /* D10 batch: stat label for groups whose ownership was transferred */
-"settings.batchLeaveStatTransferred" = "Przekazane";
+"settings.batchLeaveStatTransferred" = "Grupy przekazane przed wyjściem";
 
 /* D10 batch: section header for groups needing manual attention */
 "settings.batchLeaveNeedsDecisionHeader" = "Wymagają Twojej decyzji";
@@ -5228,10 +5228,10 @@
 "settings.batchLeaveStopped" = "Zatrzymano opuszczanie grup.";
 
 /* D10 batch: stat label for groups not processed after stop (D3) */
-"settings.batchLeaveStatSkipped" = "Pominięte";
+"settings.batchLeaveStatSkipped" = "Grupy, w których nadal jesteś";
 
 /* D10 batch: body explaining how to relaunch after stop (D3) */
-"settings.batchLeaveStoppedBody" = "Możesz to wznowić w dowolnej chwili z poziomu „Wyczyść dane”.";
+"settings.batchLeaveStoppedBody" = "Możesz to wznowić w dowolnej chwili przyciskiem „Opuść wszystkie moje grupy” (Ustawienia grup).";
 
 /* Feed row title for a confirmed settlement in group records */
 "groups.settlement.entryDescription" = "Płatność";

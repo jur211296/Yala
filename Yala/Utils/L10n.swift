@@ -6063,13 +6063,13 @@ enum L10n {
             /// La sonda alcanzó su tope de registros: la cifra es un MÍNIMO y el copy no puede
             /// presentarla como un total.
             static func foundAtLeast(_ count: Int) -> String {
-                String(format: ls("welcome.privateICloud.foundAtLeast", comment: ""), count)
+                L10n.formatWithAppLocale(ls("welcome.privateICloud.foundAtLeast", comment: ""), count)
             }
             /// El restore no tiene clave propia para categorías (su pantalla no las enseña), así que
             /// ésta sí es nueva. Va con las otras cifras y no en `Welcome.Restore` porque su única
             /// consumidora es esta pantalla.
             static func foundCategories(_ count: Int) -> String {
-                String.localizedStringWithFormat(ls("welcome.privateICloud.foundCategories", comment: ""), count)
+                L10n.formatWithAppLocale(ls("welcome.privateICloud.foundCategories", comment: ""), count)
             }
             /// La sonda agotó su tope antes de llegar a ningún tipo contable: hay datos, pero no sabemos
             /// cuántos. Un aviso que pide confirmar un borrado irreversible no puede salir en blanco.
@@ -6468,16 +6468,16 @@ enum L10n {
             /// La copia de iCloud es anterior a la nube de Yala (card lokl del lote N3, decisión A de Jürgen).
             static var foundPreCloudNote: String { ls("welcome.restore.foundPreCloudNote", comment: "") }
             static func foundAccounts(_ count: Int) -> String {
-                String.localizedStringWithFormat(ls("welcome.restore.foundAccounts", comment: ""), count)
+                L10n.formatWithAppLocale(ls("welcome.restore.foundAccounts", comment: ""), count)
             }
             static func foundTransactions(_ count: Int) -> String {
-                String.localizedStringWithFormat(ls("welcome.restore.foundTransactions", comment: ""), count)
+                L10n.formatWithAppLocale(ls("welcome.restore.foundTransactions", comment: ""), count)
             }
             static func foundBudgets(_ count: Int) -> String {
-                String.localizedStringWithFormat(ls("welcome.restore.foundBudgets", comment: ""), count)
+                L10n.formatWithAppLocale(ls("welcome.restore.foundBudgets", comment: ""), count)
             }
             static func foundGroups(_ count: Int) -> String {
-                String.localizedStringWithFormat(ls("welcome.restore.foundGroups", comment: ""), count)
+                L10n.formatWithAppLocale(ls("welcome.restore.foundGroups", comment: ""), count)
             }
             static var continueAction: String { ls("welcome.restore.continue", comment: "") }
             static var notFoundTitle: String { ls("welcome.restore.notFoundTitle", comment: "") }
@@ -8396,7 +8396,7 @@ enum L10n {
             static var previewUnreadable: String { ls("storage.migrate.previewUnreadable", comment: "") }
             /// "%1$lld movimientos · %2$lld categorías · %3$lld cuentas · %4$lld presupuestos".
             static func previewResult(_ tx: Int, _ cat: Int, _ acc: Int, _ budgets: Int) -> String {
-                String(format: ls("storage.migrate.previewResult", comment: ""), tx, cat, acc, budgets)
+                L10n.formatWithAppLocale(ls("storage.migrate.previewResult", comment: ""), tx, cat, acc, budgets)
             }
             /// C-7: con sesión de nube viva la migración REUSA esa cuenta y no pregunta el método.
             /// `%@` = nombre visible del proveedor (`ProviderMismatchLogic.displayName`, jamás el
@@ -8456,7 +8456,7 @@ enum L10n {
                 }
                 static var bodyNoCount: String { ls("storage.revert.prior.bodyNoCount", comment: "") }
                 static func groupRecords(_ count: Int) -> String {
-                    String(format: ls("storage.revert.prior.groupRecords", comment: ""), count)
+                    L10n.formatWithAppLocale(ls("storage.revert.prior.groupRecords", comment: ""), count)
                 }
                 static var groupsNote: String { ls("storage.revert.prior.groupsNote", comment: "") }
                 static var merge: String { ls("storage.revert.prior.merge", comment: "") }
@@ -8471,7 +8471,7 @@ enum L10n {
                 static var wipeFailed: String { ls("storage.revert.prior.wipeFailed", comment: "") }
                 static var wipeStopped: String { ls("storage.revert.prior.wipeStopped", comment: "") }
                 static func wiping(_ deleted: Int) -> String {
-                    String(format: ls("storage.revert.prior.wiping", comment: ""), deleted)
+                    L10n.formatWithAppLocale(ls("storage.revert.prior.wiping", comment: ""), deleted)
                 }
                 static var noAccountTitle: String { ls("storage.revert.prior.noAccountTitle", comment: "") }
                 static var noAccountBody: String { ls("storage.revert.prior.noAccountBody", comment: "") }
@@ -8484,14 +8484,14 @@ enum L10n {
             /// Plural en `Localizable.stringsdict` (ticket `storage-sync-sign-in-count-has-no-plural`): con `String(format:)`
             /// salía «Inicia sesión para subir 1 cambios».
             static func needsSignIn(_ count: Int) -> String {
-                String.localizedStringWithFormat(ls("storage.sync.needsSignIn", comment: ""), count)
+                L10n.formatWithAppLocale(ls("storage.sync.needsSignIn", comment: ""), count)
             }
             /// La sincronización espera a que inicies sesión y la cola no se dejó contar: sin cifra.
             static var needsSignInUncounted: String { ls("storage.sync.needsSignInUncounted", comment: "") }
             /// Quedan cambios sin subir y el motor no completó su último ciclo (sin red, en backoff o parado por el gate de
             /// dominio). Plural en el `.stringsdict`.
             static func waitingForConnection(_ count: Int) -> String {
-                String.localizedStringWithFormat(ls("storage.sync.waitingForConnection", comment: ""), count)
+                L10n.formatWithAppLocale(ls("storage.sync.waitingForConnection", comment: ""), count)
             }
             /// Lo mismo cuando las colas no se dejaron contar: sin cifra, pero tampoco «Todo sincronizado».
             static var waitingForConnectionUncounted: String {
@@ -8499,7 +8499,7 @@ enum L10n {
             }
             /// El motor está parado y esperar no lo arranca (card 39ww del lote N3). Plural en el `.stringsdict`.
             static func stopped(_ count: Int) -> String {
-                String.localizedStringWithFormat(ls("storage.sync.stopped", comment: ""), count)
+                L10n.formatWithAppLocale(ls("storage.sync.stopped", comment: ""), count)
             }
             /// Lo mismo sin cifra: la cola a cero o sin contar.
             static var stoppedUncounted: String { ls("storage.sync.stoppedUncounted", comment: "") }
@@ -8526,7 +8526,8 @@ enum L10n {
             static var reviewDetail: String { ls("storage.steps.reviewDetail", comment: "") }
             static var uploadToICloud: String { ls("storage.steps.uploadToICloud", comment: "") }
             static var keepUsing: String { ls("storage.steps.keepUsing", comment: "") }
-            /// «650 de 1.537». Las cifras llegan ya formateadas con el idioma de la app.
+            /// «650 de 1,537» o «650 de 1537», según el idioma de la app: el mismo formato que las demás cifras de la pantalla
+            /// (`L10n.formatWithAppLocale`).
             static func uploadedCount(_ done: Int, of total: Int) -> String {
                 String(format: ls("storage.steps.uploadedCount", comment: ""), number(done), number(total))
             }
@@ -8536,6 +8537,7 @@ enum L10n {
             static func wipedCount(_ count: Int) -> String {
                 String(format: ls("storage.steps.wipedCount", comment: ""), number(count))
             }
+            /// La cifra suelta con el idioma de la app; los textos de los pasos la reciben ya formateada (`%@`).
             private static func number(_ value: Int) -> String {
                 value.formatted(.number.locale(AppLocale.current))
             }
@@ -8551,7 +8553,7 @@ enum L10n {
             /// Espera de la vuelta a iCloud (`reverseUpload`), ticket `reverse-upload-has-no-ceiling-and-no-exit`.
             static var reverseUploading: String { ls("storage.progress.reverseUploading", comment: "") }
             static func reversePending(_ count: Int) -> String {
-                String(format: ls("storage.progress.reversePending", comment: ""), count)
+                L10n.formatWithAppLocale(ls("storage.progress.reversePending", comment: ""), count)
             }
             static var reverseICloudFull: String { ls("storage.progress.reverseICloudFull", comment: "") }
             static var reverseICloudUnavailable: String {
@@ -9468,6 +9470,19 @@ enum L10n {
         }
     }
 
+}
+
+// MARK: - Cifras con el idioma de la app
+
+extension L10n {
+    /// Una frase con cifras, con el formato de número del idioma de la APP (`AppLocale`): «1,537» en un teléfono es-PE,
+    /// «1537» en es-ES, «1.537» en alemán. Revisión 2.3, zona 41 (lote de mejoras necesarias 11): «Dónde viven tus datos»
+    /// sacaba tres formatos en la misma subida —«650 de 1537» (idioma), «5,006 cambios» (`localizedStringWithFormat`,
+    /// que usa la REGIÓN de formato) y cifras sin agrupar (`String(format:)` sin locale)—. Sirve también para claves con
+    /// plural del `.stringsdict`, como `localizedStringWithFormat`.
+    static func formatWithAppLocale(_ format: String, _ arguments: CVarArg...) -> String {
+        String(format: format, locale: AppLocale.current, arguments: arguments)
+    }
 }
 
 // MARK: - App Locale

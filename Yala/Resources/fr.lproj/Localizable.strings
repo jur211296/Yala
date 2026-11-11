@@ -4650,7 +4650,7 @@
 "storage.consent.title" = "Tes données dans le cloud Yala";
 "storage.consent.pointServers" = "Notre équipe peut les consulter pour t'offrir de l'assistance et des fonctions intelligentes. Nous n'utilisons pas de chiffrement de bout en bout.";
 "storage.consent.pointPhotos" = "Elles ne sont pas sauvegardées dans le cloud ni visibles sur d’autres appareils. Si tu veux les garder, enregistre-les avant de changer d’appareil.";
-"storage.consent.pointAccess" = "Sans dépendre d’iCloud. Il n’y a ni mot de passe Yala ni récupération par e-mail : si tu perds cet accès, exporte d’abord tes données (Réglages → Exporter les données).";
+"storage.consent.pointAccess" = "Sans dépendre d’iCloud. Il n’y a ni mot de passe Yala ni récupération par e-mail : si tu perds cet accès, exporte d’abord tes données (Réglages → Exporter les enregistrements).";
 "storage.consent.footer" = "Tu peux revenir au mode privé quand tu veux, sans rien perdre.";
 "storage.consent.privacyLink" = "Voir la politique de confidentialité";
 
@@ -5125,10 +5125,10 @@
 "settings.batchLeaveNoneLeft" = "Tu n'as quitté aucun groupe.";
 
 /* D10 batch: stat label for groups left/deleted */
-"settings.batchLeaveStatLeft" = "Quittés";
+"settings.batchLeaveStatLeft" = "Groupes que tu as quittés";
 
 /* D10 batch: stat label for groups whose ownership was transferred */
-"settings.batchLeaveStatTransferred" = "Transférés";
+"settings.batchLeaveStatTransferred" = "Groupes transmis avant de partir";
 
 /* D10 batch: section header for groups needing manual attention */
 "settings.batchLeaveNeedsDecisionHeader" = "Besoin de ta décision";
@@ -5217,10 +5217,10 @@
 "settings.batchLeaveStopped" = "Tu as arrêté l'opération.";
 
 /* D10 batch: stat label for groups not processed after stop (D3) */
-"settings.batchLeaveStatSkipped" = "Non traités";
+"settings.batchLeaveStatSkipped" = "Groupes où tu es encore";
 
 /* D10 batch: body explaining how to relaunch after stop (D3) */
-"settings.batchLeaveStoppedBody" = "Tu peux reprendre quand tu veux depuis « Effacer les données ».";
+"settings.batchLeaveStoppedBody" = "Tu peux reprendre quand tu veux avec « Quitter tous mes groupes », dans Réglages des groupes.";
 
 /* Feed row title for a confirmed settlement in group records */
 "groups.settlement.entryDescription" = "Paiement";

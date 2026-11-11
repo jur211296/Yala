@@ -606,10 +606,8 @@ struct MigrationIdentityGateWiringTests {
         #expect(view.contains("""
             case .reuseLiveSession(let provider):
             if let refusal {
-            Text(L10n.Storage.Migrate.refusedNote(for: refusal))
-            .font(DS.Typography.caption)
-            .foregroundStyle(DS.Semantic.warningForeground)
-            .accessibilityIdentifier("storage_account_refused_note")
+            warningNote(L10n.Storage.Migrate.refusedNote(for: refusal),
+            identifier: "storage_account_refused_note")
             } else {
             Text(accountReuseNote(provider))
             """), "con el rechazo, la tarjeta no promete la cuenta")
