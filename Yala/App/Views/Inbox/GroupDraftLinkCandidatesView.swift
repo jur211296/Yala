@@ -16,6 +16,7 @@ struct GroupDraftLinkCandidatesView: View {
     let onPick: (TransactionItem) -> Void
 
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
@@ -51,34 +52,59 @@ struct GroupDraftLinkCandidatesView: View {
         return Button {
             onPick(tx)
         } label: {
-            HStack(spacing: DS.Spacing.md) {
-                Image(systemName: "link")
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.thAccentText)
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(title)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-                    Text(detail)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-                Spacer(minLength: DS.Spacing.sm)
-                Text(amount)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.primary)
-            }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.Spacing.md)
-            .background(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).fill(.thCard))
-            .contentShape(Rectangle())
+            rowContent(title: title, detail: detail, amount: amount)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.md)
+                .background(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).fill(.thCard))
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
         .accessibilityHint(L10n.Inbox.GroupDraft.linkRowHint)
         .accessibilityIdentifier("group_draft_link_candidate")
+    }
+
+    /// Con texto de accesibilidad el importe baja bajo el nombre: a su lado se partía en tres líneas («S/ / 120.0 / 0»)
+    /// y el nombre quedaba en «La Luc…» (lote 05 de 2.3, zona 38 P7). A tamaño normal, la fila de siempre.
+    @ViewBuilder
+    private func rowContent(title: String, detail: String, amount: String) -> some View {
+        let icon = Image(systemName: "link")
+            .font(DS.Typography.subheadline)
+            .foregroundStyle(.thAccentText)
+            .accessibilityHidden(true)
+        let amountText = Text(amount)
+            .font(DS.Typography.headline)
+            .foregroundStyle(.primary)
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                HStack(spacing: DS.Spacing.md) {
+                    icon
+                    // Con la fila entera para el nombre, que use dos líneas antes que cortarse («La Lucha Sang…»).
+                    labels(title: title, detail: detail, lineLimit: 2)
+                }
+                amountText
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            HStack(spacing: DS.Spacing.md) {
+                icon
+                labels(title: title, detail: detail, lineLimit: 1)
+                Spacer(minLength: DS.Spacing.sm)
+                amountText
+            }
+        }
+    }
+
+    private func labels(title: String, detail: String, lineLimit: Int) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+            Text(title)
+                .font(DS.Typography.body)
+                .foregroundStyle(.primary)
+                .lineLimit(lineLimit)
+            Text(detail)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(lineLimit)
+        }
     }
 }

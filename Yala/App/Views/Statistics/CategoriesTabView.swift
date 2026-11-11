@@ -2005,14 +2005,13 @@ private struct CategoryRowView: View {
             }
 
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                // Name and Amount
-                HStack {
+                // Nombre e importe. Con texto de accesibilidad el importe baja a su línea: en la misma fila se cortaba
+                // («S/2,3….00») y el nombre se partía por sílabas (lote 05 de 2.3, zona 35 P3).
+                AdaptiveRowStack {
                     Text(summary.name)
                         .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
-
-                    Spacer()
-
+                } trailing: {
                     AmountText(
                         value: summary.amount,
                         currencyCode: currencyCode,
@@ -2101,14 +2100,13 @@ private struct SubcategoryRowView: View {
             }
 
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                // Name and Amount
-                HStack {
+                // Nombre e importe. Con texto de accesibilidad el importe baja a su línea: en la misma fila se cortaba
+                // («S/2,3….00») y el nombre se partía por sílabas (lote 05 de 2.3, zona 35 P3).
+                AdaptiveRowStack {
                     Text(summary.subcategoryName)
                         .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
-
-                    Spacer()
-
+                } trailing: {
                     AmountText(
                         value: summary.amount,
                         currencyCode: currencyCode,

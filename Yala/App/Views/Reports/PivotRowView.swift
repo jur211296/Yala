@@ -33,6 +33,7 @@ struct PivotRowView: View {
     var previousPeriodColumnName: String = ""
 
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     private var showVariations: Bool { appPreferences.showVariations }
 
     /// Currency to use for formatting this node
@@ -46,80 +47,126 @@ struct PivotRowView: View {
     private var shownPrevious: Double? { node.previousAmount.map { node.isIncome ? $0 : -$0 } }
 
     var body: some View {
-        HStack(spacing: DS.Spacing.sm) {
-            iconView
+        rowContent
+            .padding(.leading, DS.Spacing.lg + CGFloat(max(0, level - 1)) * (DS.Spacing.lg / 2))
+            .padding(.trailing, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.sm)
+            .contentShape(Rectangle())
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(accessibilityText)
+            .accessibilityIdentifier("pivot_row_\(node.dimension.rawValue)_\(node.label)")
+    }
 
-            Text(node.label)
-                .font(level == 0 ? DS.Typography.label : DS.Typography.caption)
-                .fontWeight(level == 0 ? .semibold : .regular)
-                .foregroundStyle(.primary)
-                // Con el monto anterior debajo, la fila ya tiene dos líneas: el nombre largo usa la segunda en vez de
-                // cortarse («Supermerca…»).
-                .lineLimit(2)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            // El monto del período y, debajo, el anterior con su nombre («en 1–21 sept S/ 11,249»): con tres columnas
-            // los nombres de las subcategorías se cortaban («Factura…»).
-            VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
-                AmountText(
-                    value: shownAmount,
-                    currencyCode: displayCurrency,
-                    font: level == 0
-                        ? DS.Typography.label.weight(.semibold)
-                        : DS.Typography.labelSmall.weight(.medium),
-                    isEstimate: node.isApproximate
-                )
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-
+    /// Con texto de accesibilidad la fila se apila: el nombre a todo lo ancho y las cifras debajo. En una sola fila la
+    /// cifra (con prioridad) dejaba al nombre sin sitio y desaparecía, y aun así se cortaba («S/3,….00»; lote 05 de 2.3,
+    /// zona 36 P5). A tamaño normal, la fila de siempre.
+    @ViewBuilder
+    private var rowContent: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                HStack(spacing: DS.Spacing.sm) {
+                    iconView
+                    nameText
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                    currentAmount
+                    Spacer(minLength: DS.Spacing.sm)
+                    variationChip(minWidth: nil)
+                }
                 if showsComparison {
-                    HStack(spacing: DS.Spacing.xxs) {
-                        Text(L10n.UXL18.inPeriod(previousPeriodColumnName))
-                            .font(DS.Typography.captionSmall)
-                            .foregroundStyle(.tertiary)
-                            .lineLimit(1)
-                        if let previous = shownPrevious {
-                            AmountText(
-                                value: previous,
-                                currencyCode: displayCurrency,
-                                font: DS.Typography.captionSmall,
-                                secondaryFont: DS.Typography.captionSmall,
-                                tint: .secondary,
-                                isEstimate: node.previousIsApproximate
-                            )
-                            .lineLimit(1)
-                        } else {
-                            Text("—")
-                                .font(DS.Typography.captionSmall)
-                                .foregroundStyle(.tertiary)
-                        }
-                    }
-                    .minimumScaleFactor(0.6)
+                    previousLine
                 }
             }
-            .frame(minWidth: widths.current, alignment: .trailing)
-            // Con la fila justa (texto grande) cede el nombre y no la cifra.
-            .layoutPriority(1)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            HStack(spacing: DS.Spacing.sm) {
+                iconView
 
-            if showsComparison && showVariations {
-                VariationChip(
-                    variation: node.variation,
-                    size: .small,
-                    showNAWhenNil: node.previousAmount == nil,
-                    isExpenseContext: !node.isIncome
-                )
-                // Un cambio largo («+385.2%») no se parte en dos líneas: la columna crece y el nombre cede.
-                .fixedSize()
-                .frame(minWidth: widths.change, alignment: .trailing)
+                nameText
+                    // Con el monto anterior debajo, la fila ya tiene dos líneas: el nombre largo usa la segunda en vez
+                    // de cortarse («Supermerca…»).
+                    .lineLimit(2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                // El monto del período y, debajo, el anterior con su nombre («en 1–21 sept S/ 11,249»): con tres
+                // columnas los nombres de las subcategorías se cortaban («Factura…»).
+                VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
+                    currentAmount
+
+                    if showsComparison {
+                        previousLine
+                    }
+                }
+                .frame(minWidth: widths.current, alignment: .trailing)
+                // Con la fila justa (texto grande) cede el nombre y no la cifra.
+                .layoutPriority(1)
+
+                variationChip(minWidth: widths.change)
             }
         }
-        .padding(.leading, DS.Spacing.lg + CGFloat(max(0, level - 1)) * (DS.Spacing.lg / 2))
-        .padding(.trailing, DS.Spacing.lg)
-        .padding(.vertical, DS.Spacing.sm)
-        .contentShape(Rectangle())
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityText)
-        .accessibilityIdentifier("pivot_row_\(node.dimension.rawValue)_\(node.label)")
+    }
+
+    private var nameText: some View {
+        Text(node.label)
+            .font(level == 0 ? DS.Typography.label : DS.Typography.caption)
+            .fontWeight(level == 0 ? .semibold : .regular)
+            .foregroundStyle(.primary)
+    }
+
+    private var currentAmount: some View {
+        AmountText(
+            value: shownAmount,
+            currencyCode: displayCurrency,
+            font: level == 0
+                ? DS.Typography.label.weight(.semibold)
+                : DS.Typography.labelSmall.weight(.medium),
+            isEstimate: node.isApproximate
+        )
+        .lineLimit(1)
+        .minimumScaleFactor(0.6)
+    }
+
+    /// «en 1–21 sept S/ 11,249»: el monto del período anterior con su nombre.
+    private var previousLine: some View {
+        HStack(spacing: DS.Spacing.xxs) {
+            Text(L10n.UXL18.inPeriod(previousPeriodColumnName))
+                .font(DS.Typography.captionSmall)
+                .foregroundStyle(.tertiary)
+                .lineLimit(1)
+            if let previous = shownPrevious {
+                AmountText(
+                    value: previous,
+                    currencyCode: displayCurrency,
+                    font: DS.Typography.captionSmall,
+                    secondaryFont: DS.Typography.captionSmall,
+                    tint: .secondary,
+                    isEstimate: node.previousIsApproximate
+                )
+                .lineLimit(1)
+            } else {
+                Text("—")
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .minimumScaleFactor(0.6)
+    }
+
+    /// `minWidth`: la columna «Cambio» en la fila de siempre; apilada, sin columna.
+    @ViewBuilder
+    private func variationChip(minWidth: CGFloat?) -> some View {
+        if showsComparison && showVariations {
+            VariationChip(
+                variation: node.variation,
+                size: .small,
+                showNAWhenNil: node.previousAmount == nil,
+                isExpenseContext: !node.isIncome
+            )
+            // Un cambio largo («+385.2%») no se parte en dos líneas: la columna crece y el nombre cede.
+            .fixedSize()
+            .frame(minWidth: minWidth, alignment: .trailing)
+        }
     }
 
     /// Lo que lee VoiceOver: el nombre, cada monto con su período y el cambio («Sin cambio» si no cambió).
@@ -176,8 +223,37 @@ struct PivotHeaderRow: View {
     let widths: PivotColumnWidths
 
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            stackedHeader
+        } else {
+            columnsHeader
+        }
+    }
+
+    /// Con texto de accesibilidad las filas se apilan (cifra a la izquierda, cambio a la derecha) y la cabecera sigue
+    /// esa forma: con sus columnas fijas «Cambio» se salía por la derecha (lote 05 de 2.3, zona 36 P5).
+    private var stackedHeader: some View {
+        HStack(spacing: DS.Spacing.sm) {
+            Text(currentName)
+                .font(DS.Typography.captionSmall.weight(.semibold))
+                .foregroundStyle(.primary)
+            Spacer(minLength: DS.Spacing.sm)
+            if appPreferences.showVariations {
+                Text(L10n.UXL18.columnChange)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.Spacing.sm)
+        .accessibilityHidden(true)
+        .accessibilityIdentifier("pivot_header_row")
+    }
+
+    private var columnsHeader: some View {
         HStack(spacing: DS.Spacing.sm) {
             Spacer(minLength: 0)
             Text(currentName)

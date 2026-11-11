@@ -602,21 +602,35 @@ struct DetailContainerView: View {
     // MARK: - Navigation Chips Bar
 
     private var navigationChipsBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: DS.Spacing.sm) {
-                ForEach(DetailViewTab.allCases) { tab in
-                    navigationChipButton(for: tab)
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: DS.Spacing.sm) {
+                    ForEach(DetailViewTab.allCases) { tab in
+                        navigationChipButton(for: tab)
+                            .id(tab)
+                    }
                 }
+                .padding(.horizontal, DS.Spacing.lg)
             }
-            .padding(.horizontal, DS.Spacing.lg)
+            .fadesTowardVerticalBar()
+            // Al pulsar, el cristal interactivo del chip se hincha por encima de su cápsula; sin esto el scroll lo
+            // recortaba en recto arriba y abajo (QA de Jürgen, 2026-10-27). Cabe en el aire de `navigationChipsInset`.
+            // Grupos ya lo lleva.
+            .scrollClipDisabled()
+            // La cápsula cambia de ancho con la página, en el mismo movimiento. Implícita: un `withAnimation` no anima
+            // dentro de una pestaña.
+            .animation(reduceMotion ? nil : StagedTabSelection<DetailViewTab>.animation, value: selectedTab)
+            .onAppear { revealSelectedChip(proxy) }
+            .onChange(of: selectedTab) { _, _ in revealSelectedChip(proxy) }
         }
-        .fadesTowardVerticalBar()
-        // Al pulsar, el cristal interactivo del chip se hincha por encima de su cápsula; sin esto el scroll lo recortaba
-        // en recto arriba y abajo (QA de Jürgen, 2026-10-27). Cabe en el aire de `navigationChipsInset`. Grupos ya lo lleva.
-        .scrollClipDisabled()
-        // La cápsula cambia de ancho con la página, en el mismo movimiento. Implícita: un `withAnimation` no anima
-        // dentro de una pestaña.
-        .animation(reduceMotion ? nil : StagedTabSelection<DetailViewTab>.animation, value: selectedTab)
+    }
+
+    /// Con texto de accesibilidad el chip elegido («Distribución») no cabía y salía cortado contra el borde
+    /// (lote 05 de 2.3, zona 35 P3): la fila se desplaza lo justo para enseñarlo entero. Ancla `nil` = el mínimo
+    /// desplazamiento, ninguno si ya se ve; y solo a esos tamaños, para que el tamaño normal quede como estaba.
+    private func revealSelectedChip(_ proxy: ScrollViewProxy) {
+        guard dynamicTypeSize.isAccessibilitySize else { return }
+        proxy.scrollTo(selectedTab, anchor: nil)
     }
 
     private func navigationChipButton(for tab: DetailViewTab) -> some View {

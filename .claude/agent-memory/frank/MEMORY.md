@@ -61,6 +61,7 @@
 - [Revisión por dispositivo sin saltar](feedback_revision_por_dispositivo_sin_saltar.md) — Duo entero primero; lo del iPhone se apunta y va al final.
 - [«Eliminar cuenta» es borrar todo](feedback_eliminar_cuenta_es_borrar_todo.md) — al preguntar qué borra un gesto, di antes dónde vive cada dato.
 - [Bug de otra rama: su propio PR](feedback_bug_de_otra_rama_va_en_su_pr.md) — rojo que solo vive en 2.2 con base 2.3: un PR a cada rama (C).
+- [El worktree de un lote 2.3 puede nacer en 2.2](feedback_el_worktree_de_un_lote_2_3_puede_nacer_en_2_2.md) — compara HEAD con la `Base:` del encargo; `reset --keep`.
 - [Límite del plan: la persona elige](feedback_limite_del_plan_la_persona_elige.md) — alta masiva sobre el límite Free: elegir qué entra, o pedir Pro; nunca saltarlo.
 - [La condición del encargo puede no ser suya](feedback_la_condicion_del_encargo_puede_no_ser_suya.md) — «sin tapar el +» era de Tim; confirma lo que multiplica alcance.
 - [Una sesión de Yala por máquina](feedback_una_sesion_yala_por_maquina.md) — 5-nov: otra viva en el sim ⇒ pausa sin tocar sim ni CI de UI; retoma al aviso.
@@ -190,6 +191,7 @@
 - [Portapapeles y PasteButton en el simulador](reference_portapapeles_y_pastebutton_en_simulador.md) — pbcopy no llega en iOS 27; el PasteButton ignora toques sintéticos: typeText + guion.
 - [Capturas de hojas con XCUITest](feedback_capturas_de_hojas_con_xcuitest.md) — dentro de Ajustes, XCTAttachment + export; los swipes de axe cierran la hoja.
 - [Capturas: en `_capturas/<slug>`](reference_capturas_sobreviven_en_worktrees_capturas.md) — el worktree se retira; capturas/ dentro muere y ensucia el status.
+- [Reportes a AX3, por la pestaña](reference_reportes_a_ax3_por_la_pestana.md) — la tarjeta de «Más» no se alcanza; `-tabBarConfiguration` con reports.
 - [Regresión aparente: se mide contra la base](feedback_regresion_aparente_se_mide_contra_la_base.md) — worktree de origin y mismos toques antes de arreglar o culparte.
 - [Bienvenida con datos en el iPhone](reference_bienvenida_con_datos_en_el_iphone.md) — `-hasCompletedOnboarding NO` a secas; con «chooser no visto» monta neutro y miente.
 - [El oráculo de bisect exige su build](feedback_el_oraculo_de_bisect_exige_su_build.md) — sin «TEST BUILD SUCCEEDED», 125: si no, corre el binario anterior.

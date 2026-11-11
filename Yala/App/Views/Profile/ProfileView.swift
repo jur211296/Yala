@@ -24,6 +24,7 @@ struct ProfileView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @ScaledMetric(relativeTo: .largeTitle) private var avatarIconSize: CGFloat = 40 // A11Y-DT: @ScaledMetric
 
@@ -2166,29 +2167,9 @@ struct ProfileView: View {
     ) -> AnyView {
         // `AnyView` por la misma razón que `settingsLink`: cada fila nombraba este tipo y la primera apertura de Ajustes
         // lo descifraba una vez por fila (card YALA-IOS-G).
-        AnyView(HStack(spacing: DS.Spacing.md) {
-            // Conditionally show colored or plain icons based on setting
-            if effectiveColorfulIcons {
-                // iOS-style colored icon with rounded square background
-                Image(systemName: icon)
-                    .font(DS.Typography.subheadline).fontWeight(.medium)
-                    .foregroundStyle(.white)
-                    .frame(width: 28, height: 28)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(iconColor)
-                    )
-                    .accessibilityHidden(true)
-            } else {
-                // Plain icon without background
-                Image(systemName: icon)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.primary)
-                    .frame(width: 28)
-                    .accessibilityHidden(true)
-            }
-
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+        AnyView(settingsRowLayout(
+            icon: settingsRowIcon(icon: icon, iconColor: iconColor),
+            labels: VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(title)
                     .font(DS.Typography.body)
                     .foregroundStyle(textColor)
@@ -2199,25 +2180,78 @@ struct ProfileView: View {
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-            }
-
-            Spacer()
-
-            // H-2026-07-18-6: spinner inline en la fila mientras el cierre de sesión trabaja
-            // (reemplaza el chevron — el resto de filas conservan el chevron por default false).
-            if showSpinner {
-                ProgressView()
-                    .controlSize(.small)
-            } else {
-                Image(systemName: "chevron.right")
-                    .font(DS.Typography.labelSmall.weight(.medium))
-                    .foregroundStyle(.tertiary)
-                    .accessibilityHidden(true)
-            }
-        }
+            },
+            accessory: settingsRowAccessory(showSpinner: showSpinner)
+        )
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.FormRow.paddingV)
         .contentShape(Rectangle()))
+    }
+
+    /// Con texto de accesibilidad el icono va encima del título, que se queda con el ancho de la fila: a su lado los
+    /// títulos de una palabra se partían por sílabas («Personaliza-ción», «Notificacio-nes»; lote 05 de 2.3, zona 40
+    /// P7). El icono se queda: si sobra con esos tamaños es otra decisión (G1 de la revisión). A tamaño normal, la fila
+    /// de siempre.
+    @ViewBuilder
+    private func settingsRowLayout<Icon: View, Labels: View, Accessory: View>(
+        icon: Icon, labels: Labels, accessory: Accessory
+    ) -> some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                icon
+                HStack(spacing: DS.Spacing.md) {
+                    labels
+                    Spacer()
+                    accessory
+                }
+            }
+        } else {
+            HStack(spacing: DS.Spacing.md) {
+                icon
+                labels
+                Spacer()
+                accessory
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func settingsRowIcon(icon: String, iconColor: Color) -> some View {
+        // Conditionally show colored or plain icons based on setting
+        if effectiveColorfulIcons {
+            // iOS-style colored icon with rounded square background
+            Image(systemName: icon)
+                .font(DS.Typography.subheadline).fontWeight(.medium)
+                .foregroundStyle(.white)
+                .frame(width: 28, height: 28)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(iconColor)
+                )
+                .accessibilityHidden(true)
+        } else {
+            // Plain icon without background
+            Image(systemName: icon)
+                .font(DS.Typography.body)
+                .foregroundStyle(.primary)
+                .frame(width: 28)
+                .accessibilityHidden(true)
+        }
+    }
+
+    @ViewBuilder
+    private func settingsRowAccessory(showSpinner: Bool) -> some View {
+        // H-2026-07-18-6: spinner inline en la fila mientras el cierre de sesión trabaja
+        // (reemplaza el chevron — el resto de filas conservan el chevron por default false).
+        if showSpinner {
+            ProgressView()
+                .controlSize(.small)
+        } else {
+            Image(systemName: "chevron.right")
+                .font(DS.Typography.labelSmall.weight(.medium))
+                .foregroundStyle(.tertiary)
+                .accessibilityHidden(true)
+        }
     }
 
 }

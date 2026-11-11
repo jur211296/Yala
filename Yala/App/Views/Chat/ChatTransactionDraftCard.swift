@@ -26,6 +26,7 @@ struct ChatTransactionDraftCard: View {
     var onTapSavedTransaction: ((PersistentIdentifier) -> Void)? = nil
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -210,53 +211,78 @@ struct ChatTransactionDraftCard: View {
         .accessibilityIdentifier("chat_draft_chip_\(field.rawValue)")
     }
 
+    /// Con texto de accesibilidad los tres botones van uno debajo del otro, «Guardar» a todo lo ancho: en una fila se
+    /// partían por sílabas («Des-car-tar», «De-talles», «Gua rdar»; lote 05 de 2.3, zona 38 P7). A tamaño normal, la
+    /// fila de siempre.
     private var footer: some View {
-        HStack(spacing: DS.Spacing.xs) {
-            Button(L10n.Chat.Draft.discardButton) {
-                    onDiscard(draft.id)
-            }
-            .font(DS.Typography.label)
-            .foregroundStyle(.secondary)
-            .frame(minHeight: 44)
-            .padding(.horizontal, DS.Spacing.sm)
-            .disabled(isSaving)
-
-            Button(L10n.Chat.Draft.detailsButton) {
-                    showingDetails = true
-            }
-            .font(DS.Typography.label)
-            .foregroundStyle(theme.accentText)
-            .frame(minHeight: 44)
-            .padding(.horizontal, DS.Spacing.sm)
-            .disabled(isSaving)
-            .accessibilityIdentifier("chat_draft_details")
-
-            Spacer()
-
-            Button {
-                onSave(draft.id)
-            } label: {
-                HStack(spacing: DS.Spacing.xs) {
-                    if isSaving {
-                        ProgressView().controlSize(.small)
-                    }
-                    Text(L10n.Chat.Draft.saveButton)
-                        .font(DS.Typography.label)
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                    discardButton
+                    detailsButton
+                    saveButton(fillsWidth: true)
                 }
-                .padding(.horizontal, DS.Spacing.lg)
-                .frame(minHeight: 44)
-                // Apagado se VE apagado: con fondo y texto explícitos, `.disabled` no atenúa nada y el botón
-                // parecía activo sin hacer nada (medido el 2026-10-04 con la subcategoría sin elegir).
-                .background(canSave ? theme.accent : DS.Semantic.disabledForeground.opacity(0.35))
-                .foregroundStyle(canSave ? theme.onAccent : Color.secondary)
-                .clipShape(Capsule())
+            } else {
+                HStack(spacing: DS.Spacing.xs) {
+                    discardButton
+
+                    detailsButton
+
+                    Spacer()
+
+                    saveButton(fillsWidth: false)
+                }
             }
-            .buttonStyle(.plain)
-            .disabled(!canSave || isSaving)
-            .accessibilityIdentifier("chat_draft_save")
         }
         .padding(.horizontal, DS.Spacing.sm)
         .padding(.vertical, DS.Spacing.xs)
+    }
+
+    private var discardButton: some View {
+        Button(L10n.Chat.Draft.discardButton) {
+                onDiscard(draft.id)
+        }
+        .font(DS.Typography.label)
+        .foregroundStyle(.secondary)
+        .frame(minHeight: 44)
+        .padding(.horizontal, DS.Spacing.sm)
+        .disabled(isSaving)
+    }
+
+    private var detailsButton: some View {
+        Button(L10n.Chat.Draft.detailsButton) {
+                showingDetails = true
+        }
+        .font(DS.Typography.label)
+        .foregroundStyle(theme.accentText)
+        .frame(minHeight: 44)
+        .padding(.horizontal, DS.Spacing.sm)
+        .disabled(isSaving)
+        .accessibilityIdentifier("chat_draft_details")
+    }
+
+    private func saveButton(fillsWidth: Bool) -> some View {
+        Button {
+            onSave(draft.id)
+        } label: {
+            HStack(spacing: DS.Spacing.xs) {
+                if isSaving {
+                    ProgressView().controlSize(.small)
+                }
+                Text(L10n.Chat.Draft.saveButton)
+                    .font(DS.Typography.label)
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .frame(maxWidth: fillsWidth ? .infinity : nil, minHeight: 44)
+            // Apagado se VE apagado: con fondo y texto explícitos, `.disabled` no atenúa nada y el botón
+            // parecía activo sin hacer nada (medido el 2026-10-04 con la subcategoría sin elegir).
+            .background(canSave ? theme.accent : DS.Semantic.disabledForeground.opacity(0.35))
+            .foregroundStyle(canSave ? theme.onAccent : Color.secondary)
+            .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .disabled(!canSave || isSaving)
+        .accessibilityIdentifier("chat_draft_save")
     }
 
     private var isSaving: Bool { draft.status == .saving }
