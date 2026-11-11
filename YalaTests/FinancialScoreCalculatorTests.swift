@@ -436,9 +436,9 @@ struct FinancialScoreCalculatorTests {
         #expect(score.total == nil)
     }
 
-    @Test func total_onlyRhythmPresent_appliesSoftFloor() {
-        // 3 días consecutivos → rhythm 100. Budget/Commitments nil → reweight 100%.
-        // Total = 100 → no aplica floor.
+    @Test func total_onlyRhythmPresent_hasNoScore() {
+        // 3 días consecutivos → rhythm 100. Budget/Commitments nil. Hasta la revisión 2.3 (decisión 9, PN-2) la nota era
+        // esa parte re-ponderada al 100 % y daba 100 con tres registros; ahora hacen falta dos de las tres partes.
         let txs = [
             makeTx(amount: 10, date: date(2026, 3, 15)),
             makeTx(amount: 10, date: date(2026, 3, 16)),
@@ -446,7 +446,8 @@ struct FinancialScoreCalculatorTests {
         ]
         let score = calculate(transactions: txs, now: now)
         #expect(score.activity == 100)
-        #expect(score.total == 100)
+        #expect(score.total == nil)
+        #expect(score.partsWithoutData == [.budget, .bills])
     }
 
     @Test func total_weights_40_25_35() {

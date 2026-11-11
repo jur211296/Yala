@@ -2172,7 +2172,7 @@
 "panel.health.total.headline.high" = "Estás a arrasar!";
 "panel.health.total.headline.low" = "Pequenos passos, grandes mudanças";
 "panel.health.total.headline.mid" = "Ótimo ritmo";
-"panel.health.total.sheet.explanation" = "A tua nota sai de três partes. Cada uma pesa o que diz ao lado; se uma ainda não tem dados, as outras dividem o peso dela.";
+"panel.health.total.sheet.explanation" = "A tua nota sai de três partes. Cada uma pesa o que diz ao lado; se uma ainda não tem dados, as outras dividem o peso dela. Com dados em menos de duas, ainda não há nota.";
 "panel.health.total.sheet.title" = "A tua saúde financeira";
 "panel.health.voiceover.noData" = "sem dados";
 "panel.health.voiceover.score" = "%d de 100";
@@ -8092,3 +8092,24 @@
 "panel.hero.leftPast" = "Restou";
 "panel.hero.leftInMonth" = "Em %@ restou";
 "stats.hero.captionAccountsBalanceClosed" = "Saldo no fecho";
+
+/* Health card without a score and no part with data: the score needs data in two of the three parts */
+"panel.health.missing.all" = "Ainda sem nota: aparece quando duas das três partes tiverem dados.";
+
+/* Health card without a score: only one part has data. %1$@ and %2$@ = names of the two parts still without data */
+"panel.health.missing.two" = "Ainda sem nota: precisa de duas das três partes, e faltam dados de %1$@ e %2$@.";
+
+/* Health card: what is going wrong and the score does not count. %@ = items joined with ' · ' */
+"panel.health.unseen" = "Fora da tua nota: %@.";
+
+/* Health card item: an account with a negative balance. %@ = account name */
+"panel.health.unseen.negativeAccount" = "%@ no negativo";
+
+/* Health card item: a budget already over its limit that does not count yet. %@ = budget name */
+"panel.health.unseen.overBudget" = "%@ já passou do limite";
+
+/* Health sheet headline for a score ≥ 90 while something is going wrong */
+"panel.health.total.headline.highWithAlerts" = "Boa nota, mas há algo a ver";
+
+/* Health sheet headline when there is data but not enough for a score yet */
+"panel.health.total.headline.notYet" = "Ainda não há nota";

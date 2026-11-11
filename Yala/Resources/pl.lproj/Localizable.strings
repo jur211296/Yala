@@ -70,7 +70,7 @@
 "panel.health.subScore.bills" = "Zobowiązania";
 // Detail sheet — Total
 "panel.health.total.sheet.title" = "Twoja kondycja finansowa";
-"panel.health.total.sheet.explanation" = "Twoja ocena składa się z trzech części. Każda waży tyle, ile podano obok; jeśli któraś nie ma jeszcze danych, pozostałe dzielą się jej wagą.";
+"panel.health.total.sheet.explanation" = "Twoja ocena składa się z trzech części. Każda waży tyle, ile podano obok; jeśli któraś nie ma jeszcze danych, pozostałe dzielą się jej wagą. Gdy dane ma mniej niż dwie części, oceny jeszcze nie ma.";
 "panel.health.total.headline.high" = "Świetnie sobie radzisz!";
 "panel.health.total.headline.mid" = "Dobre tempo, tak trzymaj";
 "panel.health.total.headline.low" = "Małe kroki, duże zmiany";
@@ -8855,3 +8855,24 @@
 "panel.hero.leftPast" = "Zostało ci";
 "panel.hero.leftInMonth" = "W miesiącu %@ zostało ci";
 "stats.hero.captionAccountsBalanceClosed" = "Saldo na koniec";
+
+/* Health card without a score and no part with data: the score needs data in two of the three parts */
+"panel.health.missing.all" = "Jeszcze bez oceny: pojawi się, gdy dwie z trzech części będą miały dane.";
+
+/* Health card without a score: only one part has data. %1$@ and %2$@ = names of the two parts still without data */
+"panel.health.missing.two" = "Jeszcze bez oceny: potrzeba dwóch z trzech części, a brakuje danych dla: %1$@ i %2$@.";
+
+/* Health card: what is going wrong and the score does not count. %@ = items joined with ' · ' */
+"panel.health.unseen" = "Poza Twoją oceną: %@.";
+
+/* Health card item: an account with a negative balance. %@ = account name */
+"panel.health.unseen.negativeAccount" = "%@ na minusie";
+
+/* Health card item: a budget already over its limit that does not count yet. %@ = budget name */
+"panel.health.unseen.overBudget" = "%@ już ponad limitem";
+
+/* Health sheet headline for a score ≥ 90 while something is going wrong */
+"panel.health.total.headline.highWithAlerts" = "Dobra ocena, ale coś wymaga uwagi";
+
+/* Health sheet headline when there is data but not enough for a score yet */
+"panel.health.total.headline.notYet" = "Jeszcze bez oceny";

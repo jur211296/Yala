@@ -70,7 +70,7 @@
 "panel.health.subScore.bills" = "Impegni";
 // Detail sheet — Totale
 "panel.health.total.sheet.title" = "La tua salute finanziaria";
-"panel.health.total.sheet.explanation" = "Il tuo voto nasce da tre parti. Ognuna pesa quanto indicato accanto; se una non ha ancora dati, le altre si dividono il suo peso.";
+"panel.health.total.sheet.explanation" = "Il tuo voto nasce da tre parti. Ognuna pesa quanto indicato accanto; se una non ha ancora dati, le altre si dividono il suo peso. Con dati in meno di due parti, non c’è ancora un voto.";
 "panel.health.total.headline.high" = "Stai spaccando!";
 "panel.health.total.headline.mid" = "Ottimo ritmo";
 "panel.health.total.headline.low" = "Piccoli passi, grandi cambiamenti";
@@ -8853,3 +8853,24 @@
 "panel.hero.leftPast" = "Ti è rimasto";
 "panel.hero.leftInMonth" = "A %@ ti è rimasto";
 "stats.hero.captionAccountsBalanceClosed" = "Saldo alla chiusura";
+
+/* Health card without a score and no part with data: the score needs data in two of the three parts */
+"panel.health.missing.all" = "Ancora nessun voto: arriva quando due delle tre parti hanno dati.";
+
+/* Health card without a score: only one part has data. %1$@ and %2$@ = names of the two parts still without data */
+"panel.health.missing.two" = "Ancora nessun voto: servono due delle tre parti, e mancano dati di %1$@ e %2$@.";
+
+/* Health card: what is going wrong and the score does not count. %@ = items joined with ' · ' */
+"panel.health.unseen" = "Fuori dal tuo voto: %@.";
+
+/* Health card item: an account with a negative balance. %@ = account name */
+"panel.health.unseen.negativeAccount" = "%@ in negativo";
+
+/* Health card item: a budget already over its limit that does not count yet. %@ = budget name */
+"panel.health.unseen.overBudget" = "%@ ha già superato il limite";
+
+/* Health sheet headline for a score ≥ 90 while something is going wrong */
+"panel.health.total.headline.highWithAlerts" = "Buon voto, ma c’è qualcosa da controllare";
+
+/* Health sheet headline when there is data but not enough for a score yet */
+"panel.health.total.headline.notYet" = "Ancora nessun voto";
