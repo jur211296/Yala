@@ -33,6 +33,11 @@ struct CashFlowSetupView: View {
     @State private var showStartingBalanceSheet = false
     @State private var showVariableLines = false
     @State private var editingLine: SuggestedLine?
+    /// Decisión 33 de 2.3: lo que la persona contestó a «¿Cuánto recibes al mes?» (`nil` = nada escrito) y si contestó
+    /// «Aún no lo sé».
+    @State private var typedIncome: Double?
+    @State private var incomeUnknown = false
+    @State private var showIncomeSheet = false
 
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.yalaTheme) private var theme
@@ -65,7 +70,20 @@ struct CashFlowSetupView: View {
             .reduce(0) { $0 + $1.suggestedAmount }
     }
 
-    private var netFlow: Double { selectedIncome - selectedExpense }
+    /// Sin ninguna línea de ingreso que sugerir, el armado pregunta el ingreso antes de dar el resumen.
+    private var asksForIncome: Bool {
+        CashFlowSetupLogic.asksForIncome(suggestedIncomeLines: incomeLines.count, suggestedLines: viewModel.suggestedLines.count)
+    }
+
+    /// Hasta que la persona escribe su ingreso o dice «Aún no lo sé», no hay resumen ni «Crear mi plan».
+    private var awaitsIncomeAnswer: Bool { asksForIncome && typedIncome == nil && !incomeUnknown }
+
+    private var summaryOutcome: CashFlowSetupLogic.SummaryOutcome {
+        CashFlowSetupLogic.summaryOutcome(
+            suggestedIncome: selectedIncome, expense: selectedExpense,
+            asksForIncome: asksForIncome, typedIncome: typedIncome
+        )
+    }
 
     private var allSelected: Bool {
         viewModel.suggestedLines.allSatisfy(\.isSelected)
@@ -99,11 +117,16 @@ struct CashFlowSetupView: View {
                     if !incomeLines.isEmpty {
                         lineSection(title: L10n.UXL18.sectionIn, lines: incomeLines)
                     }
+                    if asksForIncome {
+                        incomeQuestion
+                    }
                     if !recurringExpenseLines.isEmpty || !variableExpenseLines.isEmpty {
                         expenseSection
                     }
-                    summarySection
-                    createButton
+                    if !awaitsIncomeAnswer {
+                        summarySection
+                        createButton
+                    }
                 }
             }
             // Implícita en el contenedor común: en una pestaña un `withAnimation` no anima (card oxyr).
@@ -143,6 +166,76 @@ struct CashFlowSetupView: View {
                 typedStartingBalance = amount
             }
         }
+        .sheet(isPresented: $showIncomeSheet) {
+            CashFlowStartingBalanceSheet(
+                title: L10n.UXL18.incomeQuestionTitle,
+                initialAmount: typedIncome ?? 0,
+                initialDate: nil,
+                todayBalance: nil,
+                currencyCode: currencyCode,
+                showsDate: false
+            ) { amount, _ in
+                typedIncome = amount > 0 ? amount : nil
+            }
+        }
+    }
+
+    // MARK: - ¿Cuánto recibes al mes? (decisión 33 de 2.3, opción A)
+
+    /// La primera semana el sueldo aún no está en el historial: en vez de un resumen con «Te faltan al mes», se pregunta
+    /// lo único que una semana de datos no puede adivinar. «Aún no lo sé» deja seguir sin bloquear.
+    private var incomeQuestion: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(L10n.UXL18.incomeQuestionTitle)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.primary)
+                    .accessibilityAddTraits(.isHeader)
+                Text(L10n.UXL18.incomeQuestionBody)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Button {
+                showIncomeSheet = true
+            } label: {
+                HStack(spacing: DS.Spacing.sm) {
+                    AmountText(
+                        value: typedIncome ?? 0,
+                        currencyCode: currencyCode,
+                        font: DS.Typography.title3.monospacedDigit(),
+                        tint: typedIncome == nil ? .color(Color(uiColor: .tertiaryLabel)) : .color(Color.amountTint(isIncome: true))
+                    )
+                    Spacer(minLength: DS.Spacing.sm)
+                    Image(systemName: "pencil")
+                        .font(DS.Typography.body)
+                        .foregroundStyle(theme.accentText)
+                        .accessibilityHidden(true)
+                }
+                .padding(DS.Spacing.md)
+                .background(theme.background, in: RoundedRectangle(cornerRadius: DS.Radius.md))
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(L10n.UXL18.incomeQuestionTitle)
+            .accessibilityIdentifier("cashflow_setup_income_amount")
+            if typedIncome == nil && !incomeUnknown {
+                Button {
+                    incomeUnknown = true
+                } label: {
+                    Text(L10n.UXL18.incomeQuestionUnknown)
+                        .font(DS.Typography.label.weight(.semibold))
+                        .foregroundStyle(theme.accentText)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("cashflow_setup_income_unknown")
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.lg)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("cashflow_setup_income_question")
     }
 
     // MARK: - ¿Con cuánto empiezas? (L18-5 / L18-10)
@@ -401,16 +494,25 @@ struct CashFlowSetupView: View {
 
     private var summarySection: some View {
         VStack(spacing: DS.Spacing.sm) {
-            summaryRow(label: L10n.UXL18.summaryIncome, amount: selectedIncome,
-                       tint: Color.amountTint(isIncome: true))
+            if summaryOutcome != .incomeMissing {
+                summaryRow(label: L10n.UXL18.summaryIncome, amount: selectedIncome + (typedIncome ?? 0),
+                           tint: Color.amountTint(isIncome: true))
+            }
             summaryRow(label: L10n.UXL18.summaryExpense, amount: selectedExpense, tint: .primary)
             Divider()
-            summaryRow(
-                label: CashFlowMonthSummaryLogic.isShortfall(netFlow) ? L10n.UXL18.summaryShortfall : L10n.UXL18.summarySurplus,
-                amount: abs(netFlow),
-                tint: .primary,
-                isBold: true
-            )
+            switch summaryOutcome {
+            case .surplus(let amount):
+                summaryRow(label: L10n.UXL18.summarySurplus, amount: amount, tint: .primary, isBold: true)
+            case .shortfall(let amount):
+                summaryRow(label: L10n.UXL18.summaryShortfall, amount: amount, tint: .primary, isBold: true)
+            case .incomeMissing:
+                // Sin ingreso no se sabe si falta o sobra: se dice lo que falta saber, no una cifra que asusta.
+                Text(L10n.UXL18.summaryIncomeMissing)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier("cashflow_setup_summary_income_missing")
+            }
         }
         .padding(DS.Spacing.lg)
         .solidCard()
@@ -440,7 +542,11 @@ struct CashFlowSetupView: View {
             icon: "plus.circle.fill",
             isDisabled: viewModel.suggestedLines.filter(\.isSelected).isEmpty
         ) {
-            viewModel.createPlan(startingBalance: startingBalance)
+            viewModel.createPlan(
+                startingBalance: startingBalance,
+                typedIncome: asksForIncome ? typedIncome : nil,
+                incomeCategory: CashFlowSetupLogic.typedIncomeCategory(in: categories)
+            )
         }
     }
 }

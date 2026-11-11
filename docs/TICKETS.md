@@ -977,6 +977,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reopened-balance-calculator-reads-a-grouped-amount-as-zero | done | tickets/done/reopened-balance-calculator-reads-a-grouped-amount-as-zero.md |
 | repair-queue-has-no-exit-for-partial-rate-rows | done | tickets/done/repair-queue-has-no-exit-for-partial-rate-rows.md |
 | reparacion-de-tasas-no-avisa-al-panel | done | tickets/done/reparacion-de-tasas-no-avisa-al-panel.md |
+| report-comparative-exact-range-and-first-week-income-2-3 | done | tickets/done/report-comparative-exact-range-and-first-week-income-2-3.md |
 | report-grouping-sheet-row-center-does-not-respond | done | tickets/done/report-grouping-sheet-row-center-does-not-respond.md |
 | rescue-discarded-groups-pull | discarded | tickets/discarded/rescue-discarded-groups-pull.md |
 | resolved-amount-trusts-a-zero-converted-amount | done | tickets/done/resolved-amount-trusts-a-zero-converted-amount.md |

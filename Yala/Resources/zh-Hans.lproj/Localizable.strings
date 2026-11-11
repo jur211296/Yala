@@ -7849,6 +7849,18 @@
 "report.l18.net.captionGainBefore" = "收入减去支出。%1$@结余%2$@。";
 /* Comparativa: igual, cuando antes faltó; %1$@ = «septiembre», %2$@ = monto */
 "report.l18.net.captionLossBefore" = "收入减去支出。%1$@缺口%2$@。";
+
+/* Comparativa: el chip de cambio cuando no cambió (antes «= +0 %») */
+"report.l18.change.same" = "持平";
+
+/* Comparativa: el chip de cambio cuando antes no había nada (antes «N/A») */
+"report.l18.change.new" = "新增";
+
+/* Comparativa: pie del neto con un tramo de días; %1$@ = «1–7 de octubre», %2$@ = monto */
+"report.l18.net.captionGainBeforeRange" = "收入减去支出。%1$@结余%2$@。";
+
+/* Comparativa: igual, cuando en ese tramo faltó; %1$@ = «1–7 de octubre», %2$@ = monto */
+"report.l18.net.captionLossBeforeRange" = "收入减去支出。%1$@缺口%2$@。";
 /* VoiceOver de una fila: %1$@ monto, %2$@ período, %3$@ monto anterior, %4$@ período anterior */
 "report.l18.row.amountsA11y" = "%2$@ %1$@,%4$@ %3$@";
 /* Desglosar: título del ejemplo de cómo quedará la tabla */
@@ -7901,6 +7913,21 @@
 "cashflow.l18.summary.surplus" = "每月结余";
 /* Crear el plan: lo que falta al mes */
 "cashflow.l18.summary.shortfall" = "每月缺口";
+
+/* Crear el plan sin ingresos a la vista: la pregunta */
+"cashflow.l18.income.title" = "你每月收入多少?";
+
+/* Crear el plan sin ingresos a la vista: por qué se pregunta */
+"cashflow.l18.income.body" = "你的记录里还没有收入。填上这个金额，你的计划就完整了。";
+
+/* Crear el plan sin ingresos a la vista: seguir sin escribir el ingreso */
+"cashflow.l18.income.unknown" = "还不确定";
+
+/* Resumen al crear el plan cuando la persona aún no sabe su ingreso (en vez de «Te faltan al mes») */
+"cashflow.l18.summary.incomeMissing" = "缺少你的收入";
+
+/* Nombre de la línea del ingreso escrito si no hay ninguna categoría de ingreso */
+"cashflow.l18.income.lineName" = "每月收入";
 /* Hoja del saldo inicial: lo que hay hoy en las cuentas; %@ = monto */
 "cashflow.l18.sheet.todayBalance" = "你今天账户里有%@";
 /* Hoja del saldo inicial: usar el saldo de hoy */

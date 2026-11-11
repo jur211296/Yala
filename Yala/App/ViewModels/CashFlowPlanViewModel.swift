@@ -339,11 +339,29 @@ final class CashFlowPlanViewModel {
 
     // MARK: - Create Plan
 
-    func createPlan(startingBalance: Double) {
+    /// `typedIncome`: lo que la persona contestó a «¿Cuánto recibes al mes?» (decisión 33 de 2.3) cuando no había
+    /// ningún ingreso que sugerir. Entra como una línea de ingreso con ese monto fijo, atada a `incomeCategory` para que
+    /// el sueldo real cuente en ella al llegar (`CashFlowSetupLogic.typedIncomeCategory`).
+    func createPlan(startingBalance: Double, typedIncome: Double? = nil, incomeCategory: Category? = nil) {
         guard let ctx = modelContext else { return }
 
         let newPlan = CashFlowPlan(name: "", startingBalance: startingBalance)
         ctx.insert(newPlan)
+
+        var sortOffset = 0
+        if let typedIncome, typedIncome > 0 {
+            let line = CashFlowLine(
+                name: incomeCategory?.name ?? L10n.UXL18.typedIncomeLineName,
+                isIncome: true,
+                sortOrder: 0,
+                estimationMethod: .manual,
+                manualAmount: typedIncome,
+                category: incomeCategory
+            )
+            ctx.insert(line)
+            line.plan = newPlan
+            sortOffset = 1
+        }
 
         let selectedSuggestions = suggestedLines.filter(\.isSelected)
         for (index, suggestion) in selectedSuggestions.enumerated() {
@@ -351,7 +369,7 @@ final class CashFlowPlanViewModel {
             let line = CashFlowLine(
                 name: suggestion.name,
                 isIncome: suggestion.isIncome,
-                sortOrder: index,
+                sortOrder: index + sortOffset,
                 estimationMethod: method,
                 manualAmount: method == .manual ? suggestion.suggestedAmount : nil,
                 category: suggestion.category,

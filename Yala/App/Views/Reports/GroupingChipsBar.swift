@@ -65,6 +65,7 @@ struct GroupingChipsBar: View {
         .buttonStyle(.plain)
         .accessibilityLabel(dimension.displayName(expensesOnly: sessionState.isExpensesOnlyMode))
         .accessibilityAddTraits(.isSelected)
+        .accessibilityIdentifier("report_grouping_chip_\(dimension.rawValue)")
     }
 
     // MARK: - Drill Down Button

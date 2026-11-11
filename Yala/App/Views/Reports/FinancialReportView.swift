@@ -246,7 +246,8 @@ struct FinancialReportView: View {
                             variation: viewModel.netFlowVariation,
                             currencyCode: preferredCurrencyCode,
                             showsComparison: viewModel.supportsComparison,
-                            previousPeriodName: comparedPeriodName?.inSentence ?? ""
+                            previousPeriodName: comparedPeriodName?.inSentence ?? "",
+                            previousIsDayRange: comparedPeriodName?.isDayRange ?? false
                         )
                     }
                 } else {
@@ -276,9 +277,14 @@ struct FinancialReportView: View {
         PivotColumnWidths(current: currentColumnWidth, change: changeColumnWidth)
     }
 
-    /// El nombre del período que se mira («Octubre»).
+    /// El nombre del período que se mira («Octubre»; en curso, el tramo que entra: «1–7 nov», decisión 32 de 2.3).
     private var currentPeriodName: ComparativeLabelsLogic.Name {
-        ComparativeLabelsLogic.currentName(period: viewModel.detailPeriod, customRange: viewModel.customDateRange)
+        ComparativeLabelsLogic.currentName(
+            period: viewModel.detailPeriod,
+            customRange: viewModel.customDateRange,
+            mode: viewModel.supportsComparison ? sessionState.comparisonMode : nil,
+            dataEnd: viewModel.currentDataEnd
+        )
     }
 
     /// El nombre del tramo con el que se compara («setiembre», «1–21 sept»); `nil` en «Todo el tiempo».
