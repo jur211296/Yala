@@ -98,6 +98,7 @@
 - [Una lectura del body basta para todo el body](feedback_una_lectura_del_body_basta_para_todo_el_body.md) — mutar un repintado: quita todas las lecturas del @State en ese body.
 - [Un seam de reloj arranca bajo el splash](feedback_un_seam_de_reloj_arranca_bajo_el_splash.md) — onAppear no es visible: N=2 vencía tapado; verde con el arreglo antes de fiarte.
 - [Medir un cuelgue de tipos con sample](reference_medir_un_cuelgue_de_tipos_con_sample.md) — App Hang con TypeDecoder: sample del proceso del simulador + conteo inclusivo; Mac quieta.
+- [Medir Release en el iPhone con semilla](reference_medir_release_en_el_iphone_con_semilla.md) — copia con DEBUG en Release-Dev, -uitest sin reset; xctrace por pid.
 - [Diff de píxeles en la misma sesión](feedback_diff_de_pixeles_en_la_misma_sesion.md) — antes y después seguidos; Reducir movimiento cambia el cristal; sin inercia.
 - [Ver un fallo de XCUITest en vídeo](reference_ver_un_fallo_de_xcuitest_en_video.md) — xcresult → mp4 → ffmpeg último fotograma; los .txt no ven las hojas.
 - [Centinela en la Max y AX colgado](reference_centinela_en_la_max_y_ax_colgado.md) — Mando invalida el veredicto; tras axe, reinicia el sim; el reparto no se rellena por XCUITest.
