@@ -207,6 +207,7 @@ struct CashFlowWidget: View {
             case .day: return .day
             case .week: return .weekOfYear
             case .month: return .month
+            case .year: return .year
             }
         }()
 
@@ -217,9 +218,13 @@ struct CashFlowWidget: View {
 
         guard let firstDate = activeChartData.first?.date,
               let lastDate = activeChartData.last?.date else { return rawDates }
-        return SmartAxisHelper.deduplicatedAxisDates(
+        let deduplicated = SmartAxisHelper.deduplicatedAxisDates(
             rawDates, firstDate: firstDate, lastDate: lastDate,
             forceGrouping: grouping.forceAxisGrouping)
+        // Barras por año: la penúltima marca caía pegada a la última, anclada al borde («2023 2025» se tocaban en el
+        // iPhone 14; G2 de la decisión 28). El mismo filtro que la curva de Tendencias.
+        guard grouping == .year else { return deduplicated }
+        return SmartAxisHelper.droppingCrowdedNeighbors(deduplicated)
     }
 
     /// Format axis label based on data span and grouping
@@ -248,6 +253,7 @@ struct CashFlowWidget: View {
             case .day: return .day
             case .week: return .weekOfYear
             case .month: return .month
+            case .year: return .year
             }
         }()
 
@@ -517,7 +523,8 @@ struct CashFlowWidget: View {
     /// La barra bajo el dedo (la misma que enseña el tooltip): cambia solo al pasar de una barra a la siguiente.
     private var selectedBarDate: Date? {
         guard let selectedDate else { return nil }
-        let granularity: Calendar.Component = grouping == .month ? .month : (grouping == .week ? .weekOfYear : .day)
+        // La unidad de la barra: con barras por año, el dedo cae casi nunca en el 1 de enero (G2 de la decisión 28).
+        let granularity = calendarUnit(for: grouping)
         return activeChartData.first { Calendar.current.isDate($0.date, equalTo: selectedDate, toGranularity: granularity) }?
             .date
     }
@@ -678,8 +685,8 @@ struct CashFlowWidget: View {
                             }
                         }
 
-                        // Net Flow Line - always indigo regardless of theme
-                        if grouping == .month {
+                        // Net Flow Line - always indigo regardless of theme. También con barras por año (G2).
+                        if grouping == .month || grouping == .year {
                             LineMark(
                                 x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
                                 y: .value("Net", data.net)
@@ -766,8 +773,7 @@ struct CashFlowWidget: View {
                             let selectedData = activeChartData.first(where: {
                                 Calendar.current.isDate(
                                     $0.date, equalTo: activeDate,
-                                    toGranularity: grouping == .month
-                                        ? .month : (grouping == .week ? .weekOfYear : .day))
+                                    toGranularity: calendarUnit(for: grouping))
                             }),
                             let xPos = proxy.position(forX: selectedData.date)
                         {
@@ -862,7 +868,7 @@ struct CashFlowWidget: View {
 
                 // Legend (only for bidirectional mode, hidden in waterfall — colors are self-evident)
                 if !isWaterfallMode && !hasOnlyExpenses && !hasOnlyIncome {
-                    CashFlowLegendView(showNet: grouping == .month)
+                    CashFlowLegendView(showNet: grouping == .month || grouping == .year)
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -1051,6 +1057,7 @@ struct CashFlowWidget: View {
         case .day: return .day
         case .week: return .weekOfYear
         case .month: return .month
+        case .year: return .year
         }
     }
 
@@ -1073,6 +1080,7 @@ struct CashFlowWidget: View {
         switch grouping {
         case .day, .week: formatter = Self.tooltipDayFormatter
         case .month: formatter = Self.tooltipMonthFormatter
+        case .year: return TrendGrouping.yearLabel(for: date)
         }
         return formatter.string(from: date).lowercased().replacing(".", with: "")
     }

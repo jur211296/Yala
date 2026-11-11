@@ -68,6 +68,9 @@ struct CategoriesTabView: View {
     // MARK: - State
 
     @State private var categorySpending: [CategorySpendingSummary] = []
+    /// La página ya tiene su primer cálculo; hasta entonces, esqueleto (G1 de la decisión 28).
+    @State private var pageCalculated = false
+    @State private var firstCalculationTask: Task<Void, Never>?
     @State private var subcategorySpending: [SubcategorySpendingSummary] = []
     @State private var tagSpending: [TagSpendingSummary] = []
     @State private var needTrendPoints: [NeedTrendPoint] = []
@@ -237,10 +240,11 @@ struct CategoriesTabView: View {
     /// resuelva cada tramo por separado (mismo molde que `ContentView.body`).
     private func scrollLifecycle(_ content: some View) -> some View {
         content
-            .onAppear {
-                calculateData()
-                recomputeSankey()
-            }
+            // G1 de la decisión 28: el primer cálculo ya no va en el `onAppear`. Montándose debajo (`StagedTabPages`), el
+            // chip no cambiaba hasta terminarlo; ahora la página se enseña en el acto con el esqueleto y las cifras
+            // llegan una vuelta después.
+            .onAppear { scheduleFirstCalculation() }
+            .onDisappear { firstCalculationTask?.cancel() }
             .onChange(of: viewModel.sankeyInputKey) { recomputeSankey() }
             // Datos nuevos: cualquier mutador (alta, borrado, edición del importe, sync) acaba en una recarga del
             // contenedor, detrás de su debounce, y esa recarga avanza `dataGeneration`. Antes se miraba
@@ -294,19 +298,24 @@ struct CategoriesTabView: View {
     private var scrollContent: some View {
         VStack(spacing: DS.Spacing.md) {
             StatsGuideSlot()
-            heroSummary
-            // La acción principal arriba, como en el Panel; el flotante solo al bajar (card kzhe).
-            StatsQuickActionsSlot()
-            filterBarPanel
+            if pageCalculated {
+                heroSummary
+                // La acción principal arriba, como en el Panel; el flotante solo al bajar (card kzhe).
+                StatsQuickActionsSlot()
+                filterBarPanel
 
-            if hasNoData {
-                YalaEmptyState(
-                    icon: "chart.pie",
-                    title: L10n.Empty.noData
-                )
-                .padding(.top, DS.Spacing.xxxxl)
+                if hasNoData {
+                    YalaEmptyState(
+                        icon: "chart.pie",
+                        title: L10n.Empty.noData
+                    )
+                    .padding(.top, DS.Spacing.xxxxl)
+                } else {
+                    populatedScrollContent
+                }
             } else {
-                populatedScrollContent
+                // El saldo de la cabecera también sale de este cálculo: hasta tenerlo, esqueleto en su sitio.
+                StatisticsCardsSkeleton()
             }
         }
         .padding(.top, DS.Spacing.sm)
@@ -753,6 +762,18 @@ struct CategoriesTabView: View {
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
+        }
+    }
+
+    /// El primer cálculo de la página, una vuelta después de aparecer (G1 de la decisión 28).
+    private func scheduleFirstCalculation() {
+        firstCalculationTask?.cancel()
+        firstCalculationTask = Task { @MainActor in
+            do { try await Task.sleep(for: .milliseconds(30)) } catch { return }
+            guard !Task.isCancelled else { return }
+            calculateData()
+            recomputeSankey()
+            if !pageCalculated { pageCalculated = true }
         }
     }
 

@@ -70,6 +70,54 @@ final class StatisticsRecalculation {
         calculateInsights(inputs, trends: trends, insights: insights, context: context, adjustment: adjustment)
     }
 
+    /// La misma pasada que `run`, en tres tramos con una vuelta del bucle principal entre medias (G1 de la decisión 28).
+    ///
+    /// Medido el 2026-11-11 en el iPhone 14 con diez años: Registros 0,7 s, Tendencias 1,2 s y Resumen 4,1 s, seguidos.
+    /// Todo vive en el hilo principal (los `@Model` son suyos), así que no se puede llevar a otro hilo; lo que sí se
+    /// puede es devolverle el control entre tramos para que pinte y atienda toques. Devuelve `false` si se canceló a
+    /// medias: lo calculado hasta ahí se queda y la pasada siguiente lo completa.
+    func runInSteps(
+        _ inputs: Inputs,
+        records: RecordsViewModel,
+        trends: StatisticsViewModel,
+        insights: InsightsViewModel,
+        context: ModelContext
+    ) async -> Bool {
+        let adjustment = GroupBridgeStatsAdjustment.build(from: inputs.transactions, context: context)
+        records.applyFilters(
+            transactions: inputs.transactions,
+            accounts: inputs.accounts,
+            categories: inputs.categories,
+            tags: inputs.tags,
+            context: context,
+            currencyCode: inputs.currencyCode
+        )
+        guard await Self.yieldToMainLoop() else { return false }
+        trends.calculateTrendData(
+            accounts: inputs.accounts,
+            transactions: inputs.transactions,
+            allTags: inputs.tags,
+            defaultCurrencyCode: inputs.currencyCode,
+            adjustment: adjustment,
+            scheduledPayments: inputs.scheduledPayments,
+            context: context
+        )
+        guard await Self.yieldToMainLoop() else { return false }
+        calculateInsights(inputs, trends: trends, insights: insights, context: context, adjustment: adjustment)
+        return true
+    }
+
+    /// Una vuelta del bucle principal: un milisegundo de espera deja pasar un fotograma y los toques pendientes.
+    /// `Task.yield()` no basta: la continuación vuelve a la cola principal y puede correr en el mismo vaciado.
+    private static func yieldToMainLoop() async -> Bool {
+        do {
+            try await Task.sleep(for: .milliseconds(1))
+        } catch {
+            return false
+        }
+        return !Task.isCancelled
+    }
+
     private func calculateInsights(
         _ inputs: Inputs,
         trends: StatisticsViewModel,

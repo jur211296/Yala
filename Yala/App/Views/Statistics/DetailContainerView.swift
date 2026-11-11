@@ -68,6 +68,17 @@ struct DetailContainerView: View {
     @State private var isInBackground = false
     /// La pasada de cálculo de las cuatro pestañas (y la firma de la Salud Financiera, que vive con ella).
     @State private var recalculation = StatisticsRecalculation()
+    /// Ya hubo una pasada completa: hasta entonces las pestañas enseñan el esqueleto (G1 de la decisión 28).
+    @State private var hasCalculatedOnce = false
+    /// Lo que leyó la última pasada completa: entrar sin que nada cambie no recalcula (`StatisticsEntryFreshness`).
+    @State private var lastCalculationStamp: StatisticsCalculationStamp?
+    /// Hay una pasada pedida que aún no terminó (en su espera, a medias o cancelada al salir).
+    @State private var calculationInFlight = false
+    /// La persona ya entró alguna vez. La página está montada desde el arranque y sus observadores piden pasadas aunque
+    /// nunca se haya abierto (cambiar el período en el Panel): sin entrar, esas pasadas no cargan el histórico.
+    @State private var hasEnteredOnce = false
+    /// La pasada que está corriendo ahora (su espera o sus tramos); `nil` en cuanto sale, por donde salga.
+    @State private var liveCalculationID: UUID?
     /// Ancho del chip Registros: decide si lista y registro abierto caben lado a lado.
     @State private var recordsWidth: CGFloat = 0
     private let isFromSearch: Bool  // Skip session sync when coming from global search
@@ -271,10 +282,10 @@ struct DetailContainerView: View {
             .appliesPendingRemoteChanges(sessionState)
             // Menú contextual de las filas de Registros: confirmación de borrado y selector de categoría.
             .modifier(RecordRowActionsPresenter(viewModel: recordsViewModel))
-            .onAppear {
-                dataViewModel.setContext(modelContext)
-                performRecalculation()
-            }
+            // G1 de la decisión 28: entrar ya no calcula aquí. Con diez años de datos el cálculo síncrono del `onAppear`
+            // dejaba el Panel congelado 7,5 s en el iPhone 14 sin señal de nada; ahora la pestaña se pinta en el acto
+            // (con el esqueleto si aún no hay cifras) y la pasada corre una vuelta después, una sola vez.
+            .onAppear { requestCalculationOnEntry() }
             .onDisappear {
                 recalculateTask?.cancel()
                 recordsViewModel.exitDuplicateMode()   // modo efímero
@@ -312,16 +323,16 @@ struct DetailContainerView: View {
                 if navigation.selectedDetailTab != newTab {
                     navigation.selectedDetailTab = newTab
                 }
-                // .categories también consume insightData.periodSummary (gate >=5 tx
-                // del Distribution Insight Card) — disparar recalculation también ahí.
+                // La pasada no mira qué chip se ve (`StatisticsRecalculation`): cambiar a Resumen o a Distribución solo
+                // calcula si algo cambió desde la última (medido: repetía 2 s sobre los mismos datos).
                 if newTab == .insights || newTab == .categories {
-                    scheduleRecalculation(reload: false)
+                    requestCalculationOnEntry()
                 }
             }
             .onChange(of: navigation.selectedMainTab) { _, newTab in
                 // Sync filters when navigating to Statistics tab (view may already be mounted)
                 if newTab == .statistics && !isFromSearch {
-                    recalculateData()
+                    requestCalculationOnEntry()
                 }
             }
             // Sin `onChange(of: dataViewModel.allTransactions)` (retirado el 2026-10-30, encargo
@@ -373,6 +384,18 @@ struct DetailContainerView: View {
             // `statistics-summary-guide-banner-stays-pinned-over-the-cards`). Como la del Panel, se va con el contenido.
             tabContent
                 .environment(\.statsQuickActions, statsQuickActions)
+                // Tapadas por el esqueleto, las páginas siguen montadas y en el árbol de accesibilidad: VoiceOver leería
+                // cifras vacías y un toque las buscaría debajo. Hasta la primera pasada, fuera del árbol.
+                .accessibilityHidden(!hasCalculatedOnce)
+                // Hasta la primera pasada, el esqueleto encima de las páginas (G1 de la decisión 28). Bajo la barra de
+                // chips, que sigue a la vista y se puede tocar.
+                .overlay {
+                    if !hasCalculatedOnce {
+                        StatisticsLoadingSkeleton()
+                            .transition(.loadingPlaceholder)
+                    }
+                }
+                .animation(reduceMotion ? nil : DS.Animation.appear, value: hasCalculatedOnce)
             // Implícita: en una pestaña el `withAnimation` de la guía no anima, ni a ella ni a lo de debajo (card oxyr).
             .animation(reduceMotion ? nil : DS.Animation.appear, value: statisticsGuidesDismissed)
             .navigationChipsInset {
@@ -735,50 +758,108 @@ struct DetailContainerView: View {
     /// `applicationState` check mirrors PanelView and prevents work during snapshot time.
     private func scheduleRecalculation(reload: Bool) {
         if reload { pendingReload = true }
+        // Pedida y no terminada: si el freno la descarta, la próxima entrada sabe que falta (`hasInterruptedWork`).
+        calculationInFlight = true
         guard !isInBackground, UIApplication.shared.applicationState == .active else { return }
         recalculateTask?.cancel()
+        let calculationID = UUID()
+        liveCalculationID = calculationID
         recalculateTask = Task { @MainActor in
-            do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
+            defer { if liveCalculationID == calculationID { liveCalculationID = nil } }
+            do { try await Task.sleep(for: StatisticsEntryTiming.calculationDelay) } catch { return }
             // Card 7e60: con el almacén de esta pantalla ya soltado (cerrar sesión en la nube), ni recarga ni recalcula.
+            guard !Task.isCancelled else { return }
+            // Sin haber entrado nunca no se carga el histórico: la primera entrada lo pide (`calculationInFlight` sigue
+            // en `true` y obliga). Antes la carga iba en el `onAppear`, así que estas pasadas corrían con todo vacío.
+            guard hasEnteredOnce else { return }
+            // Idempotente: solo trae los datos si el contexto es nuevo (la primera entrada, o tras cambiar de almacén).
+            dataViewModel.setContext(modelContext)
             guard !Task.isCancelled, !dataViewModel.isDetachedFromMountedStore else { return }
             if pendingReload {
                 dataViewModel.loadData()
                 pendingReload = false
             }
-            performCalculation()
+            await performCalculation()
         }
     }
 
-    /// Initial onAppear calculation. `setContext` already fetched if the context was new,
-    /// so this only runs the synchronous calc pass. Subsequent reloads go through
-    /// `reloadAndRecalculate` (dataVersion / scene foreground).
-    private func performRecalculation() {
-        performCalculation()
+    /// Entrar en Estadísticas, o pasar a un chip que antes pedía una pasada: calcula solo si hace falta, y nunca en el
+    /// acto (G1 de la decisión 28). Si la app aún no está activa (arranque en frío con Estadísticas delante, el iPad),
+    /// espera a que lo esté en vez de perder la petición (`ForegroundResume`).
+    private func requestCalculationOnEntry() {
+        hasEnteredOnce = true
+        // Una pasada viva ya traerá las cifras: pedir otra la reiniciaría desde cero (cambiar de chip mientras corre).
+        if liveCalculationID != nil, recalculateTask?.isCancelled == false { return }
+        let now = currentCalculationStamp()
+        let needed = StatisticsEntryFreshness.needsCalculation(
+            last: lastCalculationStamp,
+            now: now,
+            hasInterruptedWork: calculationInFlight || pendingReload
+        )
+        guard needed else { return }
+        let reload = StatisticsEntryFreshness.needsReload(last: lastCalculationStamp, now: now)
+        ForegroundResume.whenApplicationActive("estadisticas") {
+            isInBackground = false
+            scheduleRecalculation(reload: reload)
+        }
     }
 
-    /// Runs all calculations from cached ViewModel data (no SwiftData fetch).
-    private func performCalculation() {
-        recalculation.run(
-            StatisticsRecalculation.Inputs(
-                transactions: dataViewModel.allTransactions,
-                accounts: dataViewModel.accounts,
-                categories: dataViewModel.categories,
-                tags: dataViewModel.tags,
-                budgets: dataViewModel.budgets,
-                scheduledPayments: dataViewModel.scheduledPayments,
-                period: sessionState.selectedPeriod,
-                customRange: sessionState.customDateRange,
-                comparisonMode: sessionState.comparisonMode,
-                currencyCode: appPreferences.defaultCurrencyCode.rawValue,
-                dataVersion: sessionState.dataVersion,
-                includeGroupTransactionsInStats: appPreferences.includeGroupTransactionsInStats
-            ),
-            records: recordsViewModel,
-            trends: trendsViewModel,
-            insights: insightsViewModel,
-            context: modelContext
+    /// Lo que lee la pasada y puede cambiar sin que un observador lo oiga.
+    private func currentCalculationStamp() -> StatisticsCalculationStamp {
+        StatisticsCalculationStamp(
+            dataVersion: sessionState.dataVersion,
+            storeSaves: StoreSaveCounter.shared.count,
+            day: Calendar.current.startOfDay(for: .now),
+            sessionFilters: PanelSessionFilterKey(sessionState),
+            comparisonMode: sessionState.comparisonMode,
+            currencyCode: appPreferences.defaultCurrencyCode.rawValue,
+            includeGroupTransactionsInStats: appPreferences.includeGroupTransactionsInStats,
+            includeGroupTransactionsInFeed: appPreferences.includeGroupTransactionsInFeed,
+            insightsTone: appPreferences.insightsTone,
+            insightsFocus: appPreferences.insightsFocus,
+            firstWeekday: userConfiguredCalendar().firstWeekday
         )
+    }
+
+    /// Runs all calculations from cached ViewModel data (no SwiftData fetch). La primera, con el esqueleto delante, en
+    /// tramos que ceden el hilo principal; las demás, de una vez: en tramos, con las cifras a la vista, Registros y
+    /// Resumen enseñarían un rato períodos distintos en la misma pantalla.
+    private func performCalculation() async {
+        let inputs = calculationInputs()
+        let finished: Bool
+        if hasCalculatedOnce {
+            recalculation.run(
+                inputs, records: recordsViewModel, trends: trendsViewModel, insights: insightsViewModel,
+                context: modelContext)
+            finished = true
+        } else {
+            finished = await recalculation.runInSteps(
+                inputs, records: recordsViewModel, trends: trendsViewModel, insights: insightsViewModel,
+                context: modelContext)
+        }
+        guard finished, !Task.isCancelled else { return }
+        // La firma se toma al TERMINAR: lo que la propia pasada guarde (tasas, la Salud Financiera) ya cuenta.
+        lastCalculationStamp = currentCalculationStamp()
+        calculationInFlight = false
+        if !hasCalculatedOnce { hasCalculatedOnce = true }
         LoadTimeMarks.ready(.statistics)
+    }
+
+    private func calculationInputs() -> StatisticsRecalculation.Inputs {
+        StatisticsRecalculation.Inputs(
+            transactions: dataViewModel.allTransactions,
+            accounts: dataViewModel.accounts,
+            categories: dataViewModel.categories,
+            tags: dataViewModel.tags,
+            budgets: dataViewModel.budgets,
+            scheduledPayments: dataViewModel.scheduledPayments,
+            period: sessionState.selectedPeriod,
+            customRange: sessionState.customDateRange,
+            comparisonMode: sessionState.comparisonMode,
+            currencyCode: appPreferences.defaultCurrencyCode.rawValue,
+            dataVersion: sessionState.dataVersion,
+            includeGroupTransactionsInStats: appPreferences.includeGroupTransactionsInStats
+        )
     }
 
     private func handleEditAction() {

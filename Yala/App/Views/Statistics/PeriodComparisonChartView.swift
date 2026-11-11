@@ -365,6 +365,7 @@ struct PeriodComparisonChartView: View {
         switch grouping {
         case .day, .week: formatter = Self.periodDayFormatter
         case .month: formatter = Self.periodMonthFormatter
+        case .year: return TrendGrouping.yearLabel(for: date)
         }
         return formatter.string(from: date).lowercased().replacing(".", with: "")
     }

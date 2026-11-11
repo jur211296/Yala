@@ -68,6 +68,19 @@ paths:
   el cálculo lea fuera del almacén (una preferencia, el reloj) necesita su observador o entrar en la firma.
   La espera de 150 ms del Panel es ahora FIJA desde la primera petición: lo que llega dentro se suma, no la reinicia.
 
+- **Entrar en Estadísticas no calcula en el `onAppear`, y solo calcula si cambió su firma (2026-11-11, G1 de la
+  decisión 28).** Medido en el iPhone 14 con diez años (Release optimizado): el `onAppear` bloqueaba 7,5 s y el cambio
+  de pestaña pedía otra pasada completa 150 ms después; volver a Resumen o a Distribución, otra. Ahora la entrada pasa
+  por `DetailContainerView.requestCalculationOnEntry` (una sola pasada, diferida, en tramos con
+  `StatisticsRecalculation.runInSteps`) y el esqueleto (`StatisticsLoadingSkeleton`) tapa las páginas hasta la primera.
+  Tendencias y Distribución hacen su primer cálculo una vuelta después de aparecer, con `StatisticsCardsSkeleton` en su
+  sitio. ⇒ **una entrada nueva de la pasada que pueda cambiar sin que un observador del contenedor lo oiga entra en
+  `StatisticsCalculationStamp`**, o volver a la pestaña enseña cifras viejas. Y la carga del histórico se movió del
+  `onAppear` a la pasada: como la página está montada desde el arranque, sus observadores piden pasadas aunque nunca se
+  haya abierto (cambiar el período en el Panel), y sin `hasEnteredOnce` cargaban y calculaban los diez años en segundo
+  plano. Una pasada nueva que cargue datos mira lo mismo. Pin: `StatisticsEntryFreshnessTests`,
+  `StatisticsRespondsWithSkeletonUITests` (seam `-uitest-stats-calculation-delay-seconds`, solo alarga la espera).
+
 - **Un `onChange(of:)` sobre un `@Observable` puede DORMIRSE tras volver a primer plano, y el que recalcula una pantalla
   no puede depender de él (medido el 2026-11-05, iOS 27.2, lote P3, ticket
   `panel-stayed-filtered-after-removing-the-account-chip`).** En `PanelShell`, tras ir a inicio y volver, SwiftUI dejó de

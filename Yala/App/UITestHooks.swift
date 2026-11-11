@@ -1522,6 +1522,21 @@ final class UITestHooks {
         #endif
     }
 
+    /// `-uitest-stats-calculation-delay-seconds <N>`: alarga la espera antes de la pasada de Estadísticas (G1 de la
+    /// decisión 28). Con los datos de un XCUITest la pasada dura décimas y el esqueleto no llega a verse; alargada, el
+    /// test puede comprobar que la pestaña respondió al toque antes de tener cifras. Solo cambia CUÁNTO se espera.
+    nonisolated static var statisticsCalculationDelaySeconds: Double? {
+        #if DEBUG
+        guard isActive,
+              let raw = parseValue(after: "-uitest-stats-calculation-delay-seconds", from: ProcessInfo.processInfo.arguments),
+              let seconds = Double(raw), seconds > 0
+        else { return nil }
+        return seconds
+        #else
+        return nil
+        #endif
+    }
+
     nonisolated static var deeplinkTarget: String? {
         #if DEBUG
         guard isActive else { return nil }

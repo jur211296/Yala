@@ -493,6 +493,7 @@ struct ExchangeRateWidget: View {
         case .day: formatter = Self.tooltipDayFormatter
         case .week: formatter = Self.tooltipWeekFormatter
         case .month: formatter = Self.tooltipMonthFormatter
+        case .year: return TrendGrouping.yearLabel(for: date)
         }
         return formatter.string(from: date)
     }
@@ -505,7 +506,11 @@ struct ExchangeRateWidget: View {
               let lastDate = chartPoints.last?.date else {
             return []
         }
-        return SmartAxisHelper.calculateSmartAxisDates(from: firstDate, to: lastDate)
+        // Con más de tres años el eje dice solo el año (G2 de la decisión 28): sin quitar repetidas, las marcas
+        // lineales podían decir «2023 · 2023 · 2024».
+        return SmartAxisHelper.deduplicatedAxisDates(
+            SmartAxisHelper.calculateSmartAxisDates(from: firstDate, to: lastDate),
+            firstDate: firstDate, lastDate: lastDate, forceGrouping: nil)
     }
 
     /// Calculate X-axis domain from chart points
