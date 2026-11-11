@@ -216,6 +216,8 @@ struct SettlementFormView: View {
                     .tag(true)
             }
             .pickerStyle(.segmented)
+            // Un segmentado no pasa su título a VoiceOver (regla de `swiftui-ds.md`); lote 06 de mejoras 2.3.
+            .accessibilityLabel(L10n.GroupsNecesarias06.settlementCurrencyA11y)
             .padding(.horizontal, DS.Spacing.lg)
         }
     }
@@ -325,6 +327,11 @@ struct SettlementFormView: View {
                     .multilineTextAlignment(.center)
                     .keyboardType(.decimalPad)
                     .focused($amountFocused)
+                    // Lote 06 de mejoras 2.3: sin nombre, VoiceOver leía el ejemplo «0.00».
+                    .accessibilityLabel(L10n.GroupsNecesarias06.settlementAmountA11y)
+                    .accessibilityValue(parsedAmount > 0
+                                        ? appPreferences.currency(parsedAmount, currencyCode: effectiveCurrency)
+                                        : L10n.GroupsNecesarias06.amountEmptyA11y)
                     .accessibilityIdentifier("settlement_form_amount")
                     .onChange(of: amountString) { _, newValue in
                         let filtered = AmountInputHelper.filterAmountInput(newValue)

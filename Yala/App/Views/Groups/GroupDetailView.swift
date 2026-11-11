@@ -645,6 +645,7 @@ struct GroupDetailView: View {
                 } : nil,
                 headerBalance: viewModel.headerBalance,
                 debtsWereConverted: viewModel.debtsWereConverted,
+                headerDebts: viewModel.debts,
                 onTapBalance: { selectPage(.balances) },
                 onRefresh: { await viewModel.refreshFromCloud(force: true) },
                 budgetProgress: viewModel.budgetProgress,
@@ -667,7 +668,9 @@ struct GroupDetailView: View {
                 onDeleteSettlement: viewModel.canCurrentUserParticipate ? { viewModel.deleteConfirmedSettlement($0) } : nil,
                 // El dueño o un admin gestiona los saldos iniciales (card yd2w; el servicio decide igual).
                 onAddOpeningBalance: viewModel.canManageOpeningBalances
-                    ? { viewModel.activeSheet = .newOpeningBalance } : nil
+                    ? { viewModel.activeSheet = .newOpeningBalance } : nil,
+                hasExpenses: !viewModel.expenses.isEmpty,
+                hasSettlements: !viewModel.settlements.isEmpty
             )
 
         case .stats:

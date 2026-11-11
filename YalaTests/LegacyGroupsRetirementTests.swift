@@ -636,7 +636,9 @@ struct LegacyGroupsRetirementWiringTests {
         // `create`, justo debajo de su `SplitGroup(`.
         // 9 desde el 2026-11-05: `createAsRejectedMember` (perfil `grupos-rechazado`, lote T4) nace backend justo
         // debajo de su `SplitGroup(`, como su hermano `createAsPendingMember`.
-        #expect(constructions == 9,"Cambió el número de grupos del seed; revisa que todos sigan siendo backend.")
+        // 11 desde el 2026-11-10: «Piso compartido» y «Grupo sin gastos» (`-uitest-seed-group-cross-debts`, mejoras
+        // necesarias 2.3 · lote 06) nacen backend en `seedCrossDebtsGroups`, cada uno justo debajo de su `SplitGroup(`.
+        #expect(constructions == 11,"Cambió el número de grupos del seed; revisa que todos sigan siendo backend.")
         #expect(marks == constructions,
                 "Un grupo del seed volvió a nacer legacy: la retirada lo oculta y los XCUITest de Grupos se quedan sin datos.")
     }

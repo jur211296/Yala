@@ -37,6 +37,10 @@ struct GroupBalancesView: View {
     /// UX 2.2 · L13-10: «Añadir saldo inicial» también aquí, junto a las deudas. Solo quien creó el grupo puede (`nil`
     /// para los demás: no se pinta).
     var onAddOpeningBalance: (() -> Void)?
+    /// Lote 06 de mejoras 2.3: el grupo tiene algún gasto o pago apuntado. Sin nada, Saldos dice «Sin gastos» y no
+    /// «¡Están al día!», que en un grupo recién creado era falso.
+    var hasExpenses = true
+    var hasSettlements = true
 
     @ScaledMetric(relativeTo: .body) private var avatarSize: CGFloat = 32 // A11Y-DT: @ScaledMetric
     @ScaledMetric(relativeTo: .body) private var largeAvatarSize: CGFloat = 40 // A11Y-DT: @ScaledMetric
@@ -67,9 +71,11 @@ struct GroupBalancesView: View {
     var body: some View {
         let pending = pendingForMe
         if balances.isEmpty && debts.isEmpty && pending.isEmpty {
+            let isNew = GroupBalancesPresentationLogic.emptyState(
+                hasExpenses: hasExpenses, hasSettlements: hasSettlements) == .noEntries
             YalaEmptyState(
-                icon: "checkmark.circle",
-                title: L10n.Groups.Balance.noDebts,
+                icon: isNew ? "receipt" : "checkmark.circle",
+                title: isNew ? L10n.Groups.Expense.noExpenses : L10n.Groups.Balance.noDebts,
                 actionTitle: onAddOpeningBalance == nil ? nil : L10n.Groups.OpeningBalance.addButton,
                 action: onAddOpeningBalance,
                 actionAccessibilityIdentifier: "balances_opening_balance_add"
@@ -219,7 +225,8 @@ struct GroupBalancesView: View {
             owedToMe: summary.owedToMe,
             iOwe: summary.iOwe,
             scope: .group,
-            isEstimate: debtsWereConverted
+            isEstimate: debtsWereConverted,
+            crossDebts: GroupBalancesPresentationLogic.crossDebts(debts: debts, currentUserMemberID: currentUserMemberID)
         )
     }
 
@@ -248,9 +255,7 @@ struct GroupBalancesView: View {
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) { pairLabel(card, from: fromName, to: toName) }
             }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(card.fromMemberID == currentUserMemberID
-                ? L10n.UXL13.debtA11yMe(to: toName, amounts: amountsText)
-                : L10n.UXL13.debtA11y(from: fromName, to: toName, amounts: amountsText))
+            .accessibilityLabel(debtA11yLabel(card, from: fromName, to: toName, amounts: amountsText))
 
             HStack(alignment: .firstTextBaseline) {
                 Text(amountsText)
@@ -270,27 +275,46 @@ struct GroupBalancesView: View {
         // Sin identificador en la tarjeta: en un contenedor pisa el de su botón «Saldar» (regla de `testing.md`).
     }
 
-    /// «Beto paga a Tú» / «Tú pagas a Ana»: cuando el que paga eres tú, la frase va en segunda persona (con «Tú» +
-    /// «paga a» salía «Tú paga a Ana», «You pays to»).
+    /// «Tú pagas a Ana» / «Beto te paga» / «Beto paga a Ana»: lo tuyo va en segunda persona (con «Tú» + «paga a» salía
+    /// «Tú paga a Ana», «You pays to», y del otro lado «Beto paga a Tú»; lote 06 de mejoras 2.3).
     @ViewBuilder
     private func pairLabel(_ card: GroupBalancesPresentationLogic.DebtCard, from: String, to: String) -> some View {
-        let iPay = card.fromMemberID == currentUserMemberID
+        let role = GroupBalancesPresentationLogic.pairRole(
+            fromMemberID: card.fromMemberID, toMemberID: card.toMemberID, currentUserMemberID: currentUserMemberID)
         HStack(spacing: DS.Spacing.sm) {
             avatar(from, size: avatarSize)
-            Text(iPay ? L10n.UXL13.youPayTo : from)
+            Text(role == .youPay ? L10n.UXL13.youPayTo : from)
                 .font(DS.Typography.subheadlineEmphasized)
                 .lineLimit(1)
         }
         HStack(spacing: DS.Spacing.sm) {
-            if !iPay {
-                Text(L10n.Groups.Settlement.payTo)
+            switch role {
+            case .paysYou:
+                Text(L10n.GroupsNecesarias06.paysYou)
                     .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
+            case .youPay, .others:
+                if role == .others {
+                    Text(L10n.Groups.Settlement.payTo)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                }
+                avatar(to, size: avatarSize)
+                Text(to)
+                    .font(DS.Typography.subheadlineEmphasized)
+                    .lineLimit(1)
             }
-            avatar(to, size: avatarSize)
-            Text(to)
-                .font(DS.Typography.subheadlineEmphasized)
-                .lineLimit(1)
+        }
+    }
+
+    private func debtA11yLabel(
+        _ card: GroupBalancesPresentationLogic.DebtCard, from: String, to: String, amounts: String
+    ) -> String {
+        switch GroupBalancesPresentationLogic.pairRole(
+            fromMemberID: card.fromMemberID, toMemberID: card.toMemberID, currentUserMemberID: currentUserMemberID) {
+        case .youPay: L10n.UXL13.debtA11yMe(to: to, amounts: amounts)
+        case .paysYou: L10n.GroupsNecesarias06.debtA11yToMe(from: from, amounts: amounts)
+        case .others: L10n.UXL13.debtA11y(from: from, to: to, amounts: amounts)
         }
     }
 
@@ -452,6 +476,29 @@ struct GroupBalancesView: View {
         }
         .padding(.horizontal, DS.FormRow.paddingH)
         .padding(.vertical, DS.FormRow.paddingV)
+        // Lote 06 de mejoras 2.3: VoiceOver leía la fila a trozos («Tú», «flecha», «·»); ahora, una frase.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(settlementA11yLabel(settlement))
+    }
+
+    private func settlementA11yLabel(_ settlement: SplitSettlement) -> String {
+        let amount = appPreferences.currency(settlement.amount, currencyCode: settlement.currencyCode)
+        let date = Self.dateFormatter.string(from: settlement.date)
+        let status = statusText(settlement)
+        switch GroupBalancesPresentationLogic.pairRole(
+            fromMemberID: settlement.fromMemberID, toMemberID: settlement.toMemberID,
+            currentUserMemberID: currentUserMemberID) {
+        case .youPay:
+            return L10n.GroupsNecesarias06.settlementFromMe(
+                to: name(settlement.toMemberID), amount: amount, date: date, status: status)
+        case .paysYou:
+            return L10n.GroupsNecesarias06.settlementToMe(
+                from: name(settlement.fromMemberID), amount: amount, date: date, status: status)
+        case .others:
+            return L10n.GroupsNecesarias06.settlementOthers(
+                from: name(settlement.fromMemberID), to: name(settlement.toMemberID), amount: amount, date: date,
+                status: status)
+        }
     }
 
     /// L13-2: un pendiente que queda en la lista espera a otra persona, y lo dice: «Falta que Beto lo confirme».
