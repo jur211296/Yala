@@ -8820,6 +8820,19 @@
 "groups.convert.personalSplitHint" = "共有の支出にするには「自分の分」を外してください。この記録にはあなたの分だけが保存されています。";
 "groups.convert.saveFirstHint" = "共有の支出にするには、先に変更を保存してください。";
 
+
+/* Bandeja · gastos de grupo repetidos (bug 2026-11-09) */
+"inbox.groupLeftovers.bannerTitle" = "重複したグループの支出";
+"inbox.groupLeftovers.bannerMessage" = "口座付きですでに記録に入っていますが、下書きか「グループへの貸付」が余分に残っています。";
+"inbox.groupLeftovers.bannerAction" = "確認して重複を削除";
+"inbox.groupLeftovers.intro" = "これらのグループの支出は口座付きですでに記録に入っています。リストにあるのは余分なものです。口座付きの記録とグループの支出は変わりません。";
+"inbox.groupLeftovers.extraDrafts" = "余分な下書き：%d";
+"inbox.groupLeftovers.extraLoans" = "重複した「グループへの貸付」：%d";
+"inbox.groupLeftovers.remove" = "重複を削除";
+"inbox.groupLeftovers.confirmTitle" = "重複を削除しますか？";
+"inbox.groupLeftovers.confirmMessage" = "リストの下書きと貸付を削除します。口座付きの記録とグループの支出はそのままです。";
+"inbox.groupLeftovers.confirmAction" = "削除";
+"inbox.groupLeftovers.failed" = "削除できませんでした。もう一度お試しください。";
 /* Progreso de dejar iCloud aparte al entrar con Google o Apple desde el Welcome */
 "welcome.groups.cloudAsideWorking" = "この端末の iCloud データは iCloud にそのまま残ります。最新の変更のアップロードを終えて、アカウントにサインインできるよう端末を準備しています…";
 /* Puerta del Welcome: no se pudo empezar a dejar iCloud aparte */

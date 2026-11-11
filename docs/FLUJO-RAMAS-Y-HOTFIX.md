@@ -32,7 +32,7 @@ que verse hoy.
 5. **Merge también a `2.2`:** PR de `1.0` contra `2.2`, o `git merge origin/1.0` en una rama nacida de `origin/2.2`.
    Sin este paso, la 2.2 vuelve a traer el bug.
 
-La subida del build a TestFlight y a la App Store sigue siendo de Jürgen, desde la Mini.
+La subida del build a TestFlight y a la App Store sigue siendo de Jürgen, desde la Mini o la Max (10-nov).
 
 ## La web
 

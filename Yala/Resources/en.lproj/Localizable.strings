@@ -8814,6 +8814,19 @@
 "groups.convert.personalSplitHint" = "To turn it into a shared expense, remove “My share”: this record only keeps your share.";
 "groups.convert.saveFirstHint" = "Save your changes to turn it into a shared expense.";
 
+
+/* Bandeja · gastos de grupo repetidos (bug 2026-11-09) */
+"inbox.groupLeftovers.bannerTitle" = "Repeated group expenses";
+"inbox.groupLeftovers.bannerMessage" = "They're already in your records with their account, but an extra draft or «Loan to groups» was left behind.";
+"inbox.groupLeftovers.bannerAction" = "Review and remove the extras";
+"inbox.groupLeftovers.intro" = "These group expenses are already in your records with their account. The list shows what's extra. Your records with an account and the group's expenses don't change.";
+"inbox.groupLeftovers.extraDrafts" = "Extra drafts: %d";
+"inbox.groupLeftovers.extraLoans" = "Repeated «Loan to groups»: %d";
+"inbox.groupLeftovers.remove" = "Remove the extras";
+"inbox.groupLeftovers.confirmTitle" = "Remove the extras?";
+"inbox.groupLeftovers.confirmMessage" = "The drafts and loans in the list will be removed. Your records with an account and the group's expenses stay as they are.";
+"inbox.groupLeftovers.confirmAction" = "Remove";
+"inbox.groupLeftovers.failed" = "Couldn't remove them. Try again.";
 /* Progreso de dejar iCloud aparte al entrar con Google o Apple desde el Welcome */
 "welcome.groups.cloudAsideWorking" = "This device's iCloud data stays in iCloud, untouched. We're finishing uploading the latest changes and getting the device ready to sign in to your account…";
 /* Puerta del Welcome: no se pudo empezar a dejar iCloud aparte */

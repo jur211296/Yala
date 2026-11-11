@@ -1783,7 +1783,14 @@ final class AppBootstrapper {
     /// Subscribe a `.transactionsImportedFromSync` (cada import successful de CKSync personal).
     /// Dispara `GroupBridgeRaceCleaner` para borrar drafts pendientes Caso A obsoletos —
     /// su TX cuenta real ya llegó vía sync personal, el draft ya no aplica.
+    ///
+    /// **Y la nube también** (bug del 2026-11-09): la limpieza solo escuchaba el import de iCloud, así que con la cuenta en
+    /// la nube el borrador «Elige cuenta» y el «Préstamo a grupos» repetido que deja una pasada del puente que no vio tu
+    /// registro se quedaban para siempre. Tras cada sincronización de cualquiera de los dos almacenes,
+    /// `convergeAfterSync` quita lo que sobra, solo lo nacido desde que se instaló el arreglo (lo de antes, el aviso de la
+    /// Bandeja). El sello de «desde cuándo» se pone aquí, en el arranque, y no en la primera sincronización.
     private func observeTransactionsImportedFromSync() {
+        _ = GroupBridgeRaceCleaner.leftoverAutoSince()
         NotificationCenter.default.addObserver(
             forName: .transactionsImportedFromSync,
             object: nil,
@@ -1792,6 +1799,17 @@ final class AppBootstrapper {
             MainActor.assumeIsolated {
                 guard let context = AppBootstrapper.shared.raceCleanerModelContext else { return }
                 _ = GroupBridgeRaceCleaner.cleanupPendingDraftsWithMatchingTX(in: context)
+                GroupBridgeRaceCleaner.convergeAfterSync(in: context)
+            }
+        }
+        NotificationCenter.default.addObserver(
+            forName: .cloudSyncAppliedRemoteChanges,
+            object: nil,
+            queue: .main
+        ) { _ in
+            MainActor.assumeIsolated {
+                guard let context = AppBootstrapper.shared.raceCleanerModelContext else { return }
+                GroupBridgeRaceCleaner.convergeAfterSync(in: context)
             }
         }
     }

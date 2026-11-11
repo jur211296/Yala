@@ -8057,6 +8057,19 @@
 "groups.convert.personalSplitHint" = "Para a transformar em despesa partilhada, remove «A minha parte»: este registo guarda só a tua parte.";
 "groups.convert.saveFirstHint" = "Guarda as alterações para a transformar em despesa partilhada.";
 
+
+/* Bandeja · gastos de grupo repetidos (bug 2026-11-09) */
+"inbox.groupLeftovers.bannerTitle" = "Despesas de grupo repetidas";
+"inbox.groupLeftovers.bannerMessage" = "Já estão nos teus registos com a conta, mas sobrou um rascunho ou um «Empréstimo a grupos» a mais.";
+"inbox.groupLeftovers.bannerAction" = "Rever e retirar o que se repete";
+"inbox.groupLeftovers.intro" = "Estas despesas de grupo já estão nos teus registos com a conta. Na lista está o que sobra. Os teus registos com conta e as despesas do grupo não mudam.";
+"inbox.groupLeftovers.extraDrafts" = "Rascunhos a mais: %d";
+"inbox.groupLeftovers.extraLoans" = "«Empréstimo a grupos» repetidos: %d";
+"inbox.groupLeftovers.remove" = "Retirar o que se repete";
+"inbox.groupLeftovers.confirmTitle" = "Retirar o que se repete?";
+"inbox.groupLeftovers.confirmMessage" = "Os rascunhos e empréstimos da lista vão ser retirados. Os teus registos com conta e as despesas do grupo ficam como estão.";
+"inbox.groupLeftovers.confirmAction" = "Retirar";
+"inbox.groupLeftovers.failed" = "Não foi possível retirar. Tenta de novo.";
 /* Progreso de dejar iCloud aparte al entrar con Google o Apple desde el Welcome */
 "welcome.groups.cloudAsideWorking" = "Os dados do iCloud deste dispositivo continuam no iCloud, intactos. Estamos a terminar de enviar as últimas alterações e a preparar o dispositivo para entrares na tua conta…";
 /* Puerta del Welcome: no se pudo empezar a dejar iCloud aparte */

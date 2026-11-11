@@ -8820,6 +8820,19 @@
 "groups.convert.personalSplitHint" = "Aby zamienić go we wspólny wydatek, usuń „Mój udział”: ten wpis przechowuje tylko Twoją część.";
 "groups.convert.saveFirstHint" = "Zapisz zmiany, aby zamienić go we wspólny wydatek.";
 
+
+/* Bandeja · gastos de grupo repetidos (bug 2026-11-09) */
+"inbox.groupLeftovers.bannerTitle" = "Powtórzone wydatki grupowe";
+"inbox.groupLeftovers.bannerMessage" = "Są już w Twoich zapisach z kontem, ale został dodatkowy szkic lub «Pożyczka dla grup».";
+"inbox.groupLeftovers.bannerAction" = "Sprawdź i usuń powtórzenia";
+"inbox.groupLeftovers.intro" = "Te wydatki grupowe są już w Twoich zapisach z kontem. Na liście jest to, co zbędne. Twoje zapisy z kontem i wydatki grupy się nie zmieniają.";
+"inbox.groupLeftovers.extraDrafts" = "Zbędne szkice: %d";
+"inbox.groupLeftovers.extraLoans" = "Powtórzone «Pożyczka dla grup»: %d";
+"inbox.groupLeftovers.remove" = "Usuń powtórzenia";
+"inbox.groupLeftovers.confirmTitle" = "Usunąć powtórzenia?";
+"inbox.groupLeftovers.confirmMessage" = "Szkice i pożyczki z listy zostaną usunięte. Twoje zapisy z kontem i wydatki grupy pozostaną bez zmian.";
+"inbox.groupLeftovers.confirmAction" = "Usuń";
+"inbox.groupLeftovers.failed" = "Nie udało się usunąć. Spróbuj ponownie.";
 /* Progreso de dejar iCloud aparte al entrar con Google o Apple desde el Welcome */
 "welcome.groups.cloudAsideWorking" = "Dane z iCloud na tym urządzeniu zostają w iCloud, nietknięte. Kończymy wysyłać ostatnie zmiany i przygotowujemy urządzenie do zalogowania się na Twoje konto…";
 /* Puerta del Welcome: no se pudo empezar a dejar iCloud aparte */
