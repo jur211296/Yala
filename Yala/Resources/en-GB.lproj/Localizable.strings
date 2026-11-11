@@ -3854,9 +3854,9 @@
 "storage.adopt.title" = "Turn on the cloud on this device";
 "storage.adopt.body" = "This account already has your data in the cloud. Let’s turn it on for this device.";
 "storage.adopt.button" = "Turn on for this device";
-"storage.revert.title" = "Go back to iCloud";
-"storage.revert.body" = "Return to private mode. Your data will live on your device and in your iCloud, without losing anything.";
-"storage.revert.button" = "Go back to iCloud";
+"storage.revert.title" = "Go back to your iCloud";
+"storage.revert.body" = "Your data comes back to this device and to your iCloud. Before you start, here’s what happens to each thing.";
+"storage.revert.button" = "Go back to your iCloud";
 "storage.revert.ineligible" = "You can’t go back to iCloud from this device right now.";
 "storage.sync.title" = "Sync";
 "storage.sync.upToDate" = "All synced";
@@ -3875,12 +3875,9 @@
 "storage.confirm.migrate2Title" = "Are you sure?";
 "storage.confirm.migrate2Body" = "The cloud will be turned on for this device.";
 "storage.confirm.migrate2Confirm" = "Yes, turn on the cloud";
-"storage.confirm.revertTitle" = "Go back to iCloud?";
-"storage.confirm.revertBody" = "Your data goes back to living on this device and in your iCloud. You don't lose anything.";
 "storage.confirm.revertContinue" = "Continue";
 "storage.confirm.revert2Title" = "Are you sure?";
 "storage.confirm.revert2Body" = "The cloud will be turned off for this device.";
-"storage.confirm.revert2Confirm" = "Yes, go back to iCloud";
 "storage.errors.title" = "Something went wrong";
 "storage.errors.generic" = "Something didn’t work. Please try again.";
 "storage.errors.adoptOtherAccount" = "That isn’t the account you were turning on for this device. Try again with the same account.";
@@ -4437,8 +4434,6 @@
 /* Alcance del desenlace Eliminar mi cuenta */
 "settings.yalaAccountDeleteScope" = "Everything is deleted, for good.";
 
-/* Frase de que la Reversa ES el desenlace funcional (§3.3.5) */
-"storage.revert.desenlaceNote" = "It’s how you unlink your account from this device: it’s paused in case you come back.";
 
 /* Header de la subseccion Tu cuenta en Seguridad (§3.2) */
 "settings.accountSubsectionTitle" = "Your account";
@@ -5698,13 +5693,24 @@
 "storage.pendingICloudWipe.title" = "You have a deletion that didn't finish";
 
 /* Dialog body: the cloud cannot finish that deletion; activating now cancels it */
-"storage.pendingICloudWipe.body" = "You asked to delete your iCloud data earlier and it didn't finish. If you turn on the cloud, that deletion is cancelled.";
+"storage.pendingICloudWipe.body" = "You asked to delete your data and start over, and it didn’t finish. If you turn on the cloud, that deletion won’t happen and your iCloud data stays.";
 
 /* Dialog button: activate the cloud and cancel the pending iCloud deletion */
-"storage.pendingICloudWipe.proceed" = "Turn on without deleting";
+"storage.pendingICloudWipe.proceed" = "Turn on and keep my iCloud data";
 
 /* Dialog cancel button: do not activate the cloud, keep the pending iCloud deletion */
 "storage.pendingICloudWipe.wait" = "Not now";
+"storage.pendingICloudWipe.bodyHalfway" = "What was in your iCloud is already deleted. If you turn on the cloud, what’s left on this device moves to your Yala account.";
+"storage.pendingICloudWipe.proceedHalfway" = "Turn on with what’s left here";
+"storage.pendingICloudWipe.proceedDetail" = "The deletion won’t happen: you turn on the cloud and your iCloud data stays there.";
+"storage.pendingICloudWipe.proceedDetailHalfway" = "The deletion won’t finish: you turn on the cloud with what’s left on this device.";
+"storage.pendingICloudWipe.finish" = "Finish deleting and start over";
+"storage.pendingICloudWipe.finishDetail" = "Your data is deleted from this device and from your iCloud. No copy is kept.";
+"storage.pendingICloudWipe.finishDetailHalfway" = "What’s left on this device is deleted. No copy is kept.";
+"storage.pendingICloudWipe.finishConfirmBody" = "Your data is deleted from this device and from your iCloud, including anything you created since you asked, and you start over. No copy is kept.";
+"storage.pendingICloudWipe.finishDetailWithGroups" = "Your data is deleted from this device and from your iCloud. No copy is kept. Your groups and your Yala account are also removed from this device.";
+"storage.pendingICloudWipe.finishDetailHalfwayWithGroups" = "What’s left on this device is deleted. No copy is kept. Your groups and your Yala account are also removed from this device.";
+"storage.pendingICloudWipe.finishConfirmBodyWithGroups" = "Your data is deleted from this device and from your iCloud, including anything you created since you asked, and you start over. No copy is kept. Your groups and your Yala account are also removed from this device.";
 
 /* Sheet title on launch in cloud mode: a pending iCloud deletion was cancelled */
 "welcome.privateICloud.cancelledInCloudTitle" = "A deletion didn't finish";
@@ -5964,15 +5970,10 @@
 /* Volver a iCloud: datos previos en el iCloud del teléfono (reverse-to-icloud-merges-prior-icloud-data-without-asking) */
 "storage.revert.prior.checking" = "Checking your iCloud…";
 "storage.revert.prior.title" = "Your iCloud already has Yala data";
-"storage.revert.prior.body" = "This device’s iCloud has Yala data that isn’t in your account: %@. If you add it, it’ll show up next to yours. If you start without it, it’s deleted from your iCloud.";
-"storage.revert.prior.bodyNoCount" = "This device’s iCloud has Yala data that isn’t in your account. If you add it, it’ll show up next to yours. If you start without it, it’s deleted from your iCloud.";
 "storage.revert.prior.groupRecords" = "%d group records";
 "storage.revert.prior.groupsNote" = "Group records may arrive without their group.";
 "storage.revert.prior.merge" = "Add it to my data";
 "storage.revert.prior.discard" = "Start without it";
-"storage.revert.prior.discardConfirmTitle" = "Delete it from your iCloud?";
-"storage.revert.prior.discardConfirmBody" = "It’s deleted from your iCloud and from the devices that use it with this Apple ID. No copy is kept and we can’t recover it. Then the return to iCloud starts.";
-"storage.revert.prior.discardConfirm" = "Delete and return to iCloud";
 "storage.revert.prior.checkFailedTitle" = "We couldn’t check your iCloud";
 "storage.revert.prior.checkFailedBody" = "Before returning, we check whether your iCloud already has Yala data, so we don’t mix it in without telling you. It might be your connection: try again.";
 "storage.revert.prior.stalledTitle" = "iCloud took too long to respond";
@@ -5982,6 +5983,26 @@
 "storage.revert.prior.wiping" = "Deleting the earlier data… %d so far";
 "storage.revert.prior.noAccountTitle" = "Sign in to iCloud on this device";
 "storage.revert.prior.noAccountBody" = "Before returning, we check what’s in your iCloud, and this device isn’t signed in to iCloud. Sign in from Settings and try again.";
+"storage.revert.sheet.title" = "Go back to your iCloud";
+"storage.revert.sheet.dataTitle" = "Your data";
+"storage.revert.sheet.dataDetail" = "Comes down to this device and goes up to your iCloud.";
+"storage.revert.sheet.accountTitle" = "Your Yala account";
+"storage.revert.sheet.accountDetail" = "Stays signed in for your groups.";
+"storage.revert.sheet.storedTitle" = "What’s in it";
+"storage.revert.sheet.storedDetail" = "Your finances stay saved, unused.";
+"storage.revert.sheet.cloudAgainTitle" = "Going back to the cloud with it";
+"storage.revert.sheet.cloudAgainDetail" = "Not possible today.";
+"storage.revert.sheet.continue" = "Continue";
+"storage.revert.sheet.priorBody" = "This device’s iCloud has Yala data that isn’t in your account: %@.";
+"storage.revert.sheet.priorBodyNoCount" = "This device’s iCloud has Yala data that isn’t in your account.";
+"storage.revert.sheet.mergeDetail" = "It shows up alongside yours.";
+"storage.revert.sheet.discardDetail" = "Deletes it from your iCloud and from the devices that use it with this Apple ID. No copy is kept.";
+"storage.revert.sheet.confirmTitle" = "Go back to your iCloud?";
+"storage.revert.sheet.confirmMerge" = "Added to your data: %@.";
+"storage.revert.sheet.confirmMergeNoCount" = "The Yala data that was in your iCloud is added to yours.";
+"storage.revert.sheet.confirmDiscard" = "Deleted from your iCloud: %@. No copy is kept and we can’t recover it.";
+"storage.revert.sheet.confirmDiscardNoCount" = "The Yala data that was in your iCloud is deleted. No copy is kept and we can’t recover it.";
+"storage.revert.sheet.confirmDiscardButton" = "Delete and go back to your iCloud";
 
 /* Swipe action: hides a group expense draft from the Inbox on this phone only */
 "inbox.hideHere" = "Remove here";

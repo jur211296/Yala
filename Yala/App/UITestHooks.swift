@@ -201,6 +201,9 @@ final class UITestHooks {
     /// diálogo y lo que hace cada botón son los de producción. No escribe el arm de verdad porque el arranque del XCUITest
     /// lo reanudaría (`ContentView.runLateICloudMirrorCheck`) y borraría la semilla. Solo DEBUG.
     nonisolated static var fakePendingICloudWipe: Bool { hasArg("-uitest-pending-icloud-wipe") }
+    /// El mismo borrado pendiente, pero A MEDIAS (la zona de iCloud ya se borró): la hoja de «Dónde viven tus datos» dice
+    /// la verdad de ese estado (revisión 2.3, decisión 57). Finge solo la ENTRADA, como el de arriba.
+    nonisolated static var fakePendingICloudWipeHalfway: Bool { hasArg("-uitest-pending-icloud-wipe-halfway") }
 
     /// Valor de `-uitest-fake-beacon <apple|google|…>`: finge que el faro de iCloud-KV dice que este Apple ID
     /// YA tiene una cuenta en la nube creada con ese método (el `#if DEBUG` vive en las lecturas de

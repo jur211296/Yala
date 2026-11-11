@@ -473,11 +473,13 @@ struct PendingICloudWipeCloudWiringTests {
 
     // MARK: La puerta de Ajustes
 
-    @Test("«Activar la nube» pregunta por el borrado pendiente antes que nada")
+    @Test("«Activar la nube» pregunta por el borrado pendiente antes que nada, en una hoja (revisión 2.3, decisión 57)")
     func storage_asksBeforeEverything() throws {
         let src = try Self.code(Self.storage)
-        #expect(src.contains(
-            "UITestHooks.fakePendingICloudWipe || StorageModePersistence.hasPendingICloudCorpusWipe()"))
+        #expect(src.contains("""
+            UITestHooks.fakePendingICloudWipe || UITestHooks.fakePendingICloudWipeHalfway
+                        || StorageModePersistence.hasPendingICloudCorpusWipe()
+            """))
         // Desde la card vbf9 el toque vive en `tapActivate` (lo llaman el botón y el aviso del Panel): el botón lo llama, y
         // el orden se mira dentro.
         let button = try Self.slice(from: "isLoading: controller.isCheckingMigrationIdentity", to: ".accessibilityIdentifier(\"storage_migrate_button\")", in: src)
@@ -485,17 +487,94 @@ struct PendingICloudWipeCloudWiringTests {
         let tap = try Self.slice(from: "private func tapActivate(", to: "private func beginAdoptFromPanelOfferIfRequested(", in: src)
         try Self.expectOrder("pendingICloudWipeWaived = false", before: "guard !hasPendingICloudWipe else {", in: tap,
                              "un «sin borrar» de un intento anterior se arrastraría al siguiente")
-        try Self.expectOrder("confirmPendingICloudWipe = true", before: "beginActivation(controller, isAdopt: isAdopt)", in: tap,
-                             "con un borrado pendiente, el diálogo va antes del consentimiento")
-        #expect(!tap.contains("activationRequest = "), "el toque saltaba el diálogo directo a la hoja de activar")
-        let dialog = try Self.slice(from: ".confirmationDialog(L10n.Storage.PendingICloudWipe.title,",
-                                    to: "} message: {", in: src)
-        try Self.expectOrder("pendingICloudWipeWaived = true", before: "beginActivation(controller, isAdopt: isAdopt)", in: dialog,
-                             "«Activar la nube sin borrar» tiene que dejar la renuncia ANTES de seguir")
-        let wait = try Self.slice(from: "Button(L10n.Storage.PendingICloudWipe.wait) {", to: "}", in: dialog)
-        #expect(wait.trimmingCharacters(in: .whitespacesAndNewlines) == "StorageModePersistence.clearICloudCorpusWipeWaiver()",
+        try Self.expectOrder(
+            "pendingWipeRequest = PendingICloudWipeRequest(",
+            before: "beginActivation(controller, isAdopt: isAdopt)", in: tap,
+            "con un borrado pendiente, la hoja va antes del consentimiento")
+        #expect(!tap.contains("activationRequest = "), "el toque saltaba la hoja directo a la de activar")
+        #expect(!src.contains(".confirmationDialog(L10n.Storage.PendingICloudWipe.title,"), "volvió el globo")
+
+        // Cada salida, en el `onDismiss` de la hoja, con su efecto y ninguno más.
+        let dismissed = try Self.body(of: "private func onPendingWipeSheetDismissed() {", in: src)
+        let activate = try Self.slice(from: "case .activateKeeping:", to: "case .finishWipe:", in: dismissed)
+        try Self.expectOrder("pendingICloudWipeWaived = true", before: "beginActivation(controller, isAdopt: answer.isAdopt)",
+                             in: activate, "«Activar y conservar» tiene que dejar la renuncia ANTES de seguir")
+        #expect(activate.contains("guard let controller, !controller.isWorking, showsMigrateCard else { return }"))
+        let finish = try Self.slice(from: "case .finishWipe:", to: "case .notNow:", in: dismissed)
+        #expect(finish.contains(
+            "onFinishPendingICloudWipe?(LateICloudNotice.finishingPendingWipe(leftHalfway: pendingWipeLeftHalfway))"))
+        #expect(!finish.contains("pendingICloudWipeWaived"), "terminar el borrado no puede apuntar la renuncia")
+        #expect(!finish.contains("beginActivation"), "terminar el borrado no puede seguir a activar")
+        let notNow = try Self.slice(from: "case .notNow:", to: "\n}", in: dismissed + "\n}")
+        #expect(notNow.contains("StorageModePersistence.clearICloudCorpusWipeWaiver()"),
                 "«Ahora no» solo retira una renuncia vieja: el borrado se queda como estaba")
-        #expect(!dialog.contains("role: .cancel"), "en iOS 26 el diálogo anclado no pinta el botón de cancelar")
+        #expect(!notNow.contains("beginActivation"))
+    }
+
+    @Test("terminar desde Ajustes abre la hoja del borrado con el aviso de su estado, y esa hoja TERMINA el armado")
+    func storage_finishOpensTheExistingWipeSheet() throws {
+        #expect(LateICloudNotice.finishingPendingWipe(leftHalfway: true) == .finishHalfwayWipe)
+        #expect(LateICloudNotice.finishingPendingWipe(leftHalfway: false) == .finishArmedWipe)
+        #expect(LateICloudNotice.finishArmedWipe.finishesPendingWipe)
+        #expect(LateICloudNotice.finishHalfwayWipe.finishesPendingWipe)
+        #expect(LateICloudNotice.finishArmedWipe.finishesFromSettings && LateICloudNotice.finishHalfwayWipe.finishesFromSettings)
+        #expect(!LateICloudNotice.wipeLeftHalfway.finishesFromSettings, "el aviso del arranque conserva su trato de siempre")
+        #expect(LateICloudNotice.wipeLeftHalfway.finishesPendingWipe)
+        #expect(!LateICloudNotice.wipeCancelledInCloud.finishesPendingWipe)
+        let profile = try Self.code("Yala/App/Views/Profile/ProfileView.swift")
+        let wiring = try Self.slice(from: "onFinishPendingICloudWipe: { notice in", to: "})", in: profile)
+        try Self.expectOrder("dismiss()", before: "RouterEntryGate.shared.submit(.presentLateICloudMirrorNotice(notice))",
+                             in: wiring, "Ajustes se cierra y el aviso espera en el router a que el anchor quede libre")
+        let content = try Self.code("Yala/App/ContentView.swift")
+        #expect(content.contains("performLateICloudWipe(finishingPendingWipe: notice.finishesPendingWipe)"))
+        // «Mantener» y la barra no retiran el arm: `onKeep` lo haría y el borrado que pidió se perdería.
+        let notice = try Self.code("Yala/App/Views/Shared/LateICloudMirrorNoticeView.swift")
+        let confirm = try Self.slice(from: "case .confirmingArmedFinish:", to: "case .groupsPending(let block) where", in: notice)
+        #expect(confirm.contains("primaryAction: { dismiss() },"))
+        #expect(confirm.contains("phase = .wiping"))
+        #expect(!confirm.contains("onKeep"))
+        #expect(notice.contains("|| phase == .confirmingArmedFinish {"), "la barra haría `onKeep` en el «¿seguro?» nuevo")
+        // Sin borrado pendiente (terminó o se retiró con el aviso en la cola), no se arma uno nuevo: sin alcance sería
+        // `.handover`.
+        #expect(confirm.contains("guard StorageModePersistence.hasPendingICloudCorpusWipe() else { dismiss(); return }"))
+        #expect(notice.contains("case .finishHalfwayWipe: _phase = State(initialValue: .confirmingFinish)"))
+    }
+
+    /// Review adversarial de la decisión 57: un fallo sin daños desde Ajustes NO retira el borrado que la persona pidió
+    /// (antes de abrir ya estaba armado), y un reintento rearma con SU alcance. Sin esto, el reintento caía en `.handover`
+    /// y purgaba los grupos que el alcance apuntado conservaba.
+    @Test("desde Ajustes, un fallo conserva el borrado y el reintento conserva su alcance")
+    func settingsFinish_keepsTheWipeAndItsScope() throws {
+        let notice = try Self.code("Yala/App/Views/Shared/LateICloudMirrorNoticeView.swift")
+        let run = try Self.body(of: "private func runPhase() async {", in: notice)
+        try Self.expectOrder("StorageModePersistence.armICloudCorpusWipe()",
+                             before: "StorageModePersistence.recordICloudCorpusWipeScope(scopeAtOpen)", in: run,
+                             "el alcance solo se apunta con el arm puesto (`recordICloudCorpusWipeScope` lo exige)")
+        try Self.expectOrder("StorageModePersistence.recordICloudCorpusWipeScope(scopeAtOpen)",
+                             before: "let failure = await performWipe()", in: run, "el alcance va antes de borrar")
+        let untouched = try Self.slice(from: "case .untouched:", to: "phase = .failed", in: run)
+        #expect(untouched.contains("if !notice.finishesFromSettings {"),
+                "desde Ajustes, el fallo sin daños retiraba el borrado que la persona pidió")
+        #expect(notice.contains("scopeAtOpen = notice.finishesFromSettings ? StorageModePersistence.icloudCorpusWipeScope() : nil"))
+    }
+
+    /// Los textos dicen que terminar se lleva los grupos solo cuando el alcance lo hace, con la MISMA resolución que el
+    /// borrado (`ContentView.performLateICloudWipe`).
+    @Test("terminar se lleva los grupos solo con el alcance de traspaso")
+    func finishPurgesGroups_onlyWithTheHandoverScope() {
+        #expect(!LateICloudNotice.finishingPendingWipePurgesGroups(
+            leftHalfway: false, armedWith: .importedRows, sessionBornFromFullActivation: false))
+        #expect(LateICloudNotice.finishingPendingWipePurgesGroups(
+            leftHalfway: true, armedWith: .handover, sessionBornFromFullActivation: false))
+        for halfway in [false, true] {
+            for born in [false, true] {
+                let expected = ICloudWipeScope.lateNotice(
+                    .resolve(finishingPendingWipe: true, leftHalfway: halfway, armedWith: nil),
+                    sessionBornFromFullActivation: born).purgesGroupsDomain
+                #expect(LateICloudNotice.finishingPendingWipePurgesGroups(
+                    leftHalfway: halfway, armedWith: nil, sessionBornFromFullActivation: born) == expected)
+            }
+        }
     }
 
     @Test("la renuncia se apunta al arrancar la migración y NO retira el borrado; todo arranque pasa por ahí")
@@ -517,8 +596,8 @@ struct PendingICloudWipeCloudWiringTests {
             """)
         #expect(Self.occurrences(of: "waivePendingICloudCorpusWipeForTheCloud()", in: src) == 1)
         let flag = try Self.body(of: ".onChange(of: showsMigrateCard) { _, shown in", in: src)
-        #expect(flag.contains("if !shown { confirmPendingICloudWipe = false }"), """
-            sin bajar el flag, el diálogo reaparece solo cuando la tarjeta vuelve
+        #expect(flag.contains("if !shown { pendingWipeRequest = nil }"), """
+            sin bajarla, la hoja reaparece sola cuando la tarjeta vuelve
             """)
     }
 
@@ -528,7 +607,12 @@ struct PendingICloudWipeCloudWiringTests {
         let hooks = try Self.code("Yala/App/UITestHooks.swift")
         #expect(launcher.contains("args.append(\"-uitest-pending-icloud-wipe\")"))
         #expect(hooks.contains("hasArg(\"-uitest-pending-icloud-wipe\")"))
-        #expect(Self.occurrences(of: "UITestHooks.fakePendingICloudWipe", in: try Self.code(Self.storage)) == 1,
+        #expect(launcher.contains("args.append(\"-uitest-pending-icloud-wipe-halfway\")"))
+        #expect(hooks.contains("hasArg(\"-uitest-pending-icloud-wipe-halfway\")"))
+        let storage = try Self.code(Self.storage)
+        #expect(Self.occurrences(of: "UITestHooks.fakePendingICloudWipe ", in: storage) == 1,
                 "el seam finge la entrada en la tarjeta y en ningún otro sitio")
+        #expect(Self.occurrences(of: "UITestHooks.fakePendingICloudWipeHalfway", in: storage) == 2,
+                "el de «a medias» finge la entrada y su estado, y nada más")
     }
 }

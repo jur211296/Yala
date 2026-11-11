@@ -629,7 +629,7 @@ struct ContentView: View {
                 },
                 // El alcance no lo decide esta vista: el aviso EMPIEZA un borrado, el borrado a medias TERMINA el que
                 // se armó (`performLateICloudWipe`).
-                performWipe: { await performLateICloudWipe(finishingPendingWipe: notice == .wipeLeftHalfway) },
+                performWipe: { await performLateICloudWipe(finishingPendingWipe: notice.finishesPendingWipe) },
                 onWiped: { settleAfterLateICloudWipe() }
             )
         }

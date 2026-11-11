@@ -57,6 +57,12 @@ struct LateICloudMirrorNoticeView: View {
     var onWiped: () -> Void
 
     @State private var phase: Phase
+    /// El alcance del borrado pendiente al abrir desde Ajustes. Un fallo con los cambios de grupos sin subir desarma el
+    /// borrado y con él su alcance, y el reintento rearmaría sin alcance: `.handover`, que purga los grupos que el alcance
+    /// apuntado conservaba (review adversarial de la decisión 57). `runPhase` lo devuelve al rearmar.
+    private let scopeAtOpen: ICloudWipeScope?
+    /// ¿Terminar se lleva también los grupos de este dispositivo? Lo dice el «¿seguro?» de sin empezar.
+    private let finishPurgesGroups: Bool
     @Environment(\.dismiss) private var dismiss
 
     /// La fase inicial la decide QUÉ se presenta, no la vista al montarse: el borrado a medias empieza en su pantalla.
@@ -72,7 +78,12 @@ struct LateICloudMirrorNoticeView: View {
         case .corpus: _phase = State(initialValue: .notice)
         case .wipeLeftHalfway: _phase = State(initialValue: .leftHalfway)
         case .wipeCancelledInCloud: _phase = State(initialValue: .cancelledInCloud)
+        case .finishArmedWipe: _phase = State(initialValue: .confirmingArmedFinish)
+        case .finishHalfwayWipe: _phase = State(initialValue: .confirmingFinish)
         }
+        scopeAtOpen = notice.finishesFromSettings ? StorageModePersistence.icloudCorpusWipeScope() : nil
+        finishPurgesGroups = notice == .finishArmedWipe
+            && LateICloudNotice.finishingPendingWipePurgesGroups(leftHalfway: false)
     }
 
     private enum Phase: Equatable {
@@ -84,6 +95,9 @@ struct LateICloudMirrorNoticeView: View {
         /// El «¿seguro?» de «Terminar de borrar». Puede llegar días después del fallo, y se lleva también lo creado
         /// entretanto: un toque no basta (review adversarial del 2026-09-26).
         case confirmingFinish
+        /// El «¿seguro?» de «Terminar de borrar y empezar de cero» desde Ajustes, con el borrado armado sin empezar
+        /// (revisión 2.3, decisión 57): se va lo de este dispositivo Y lo de iCloud. «Mantener» cierra sin tocar el arm.
+        case confirmingArmedFinish
         /// El borrado no corrió: quedan cambios de grupos sin subir (ticket
         /// `fresh-start-wipe-kills-unsent-group-writes-silently`). Nada se tocó.
         case groupsPending(CloudSessionSignOut.FreshStartGroupsBlock)
@@ -123,7 +137,8 @@ struct LateICloudMirrorNoticeView: View {
                                 // El aviso del borrado cancelado en la nube solo informa: `onKeep` retiraría un testigo
                                 // que no es suyo.
                                 dismiss()
-                            } else if phase == .failed || phase == .leftHalfway || phase == .confirmingFinish {
+                            } else if phase == .failed || phase == .leftHalfway || phase == .confirmingFinish
+                                        || phase == .confirmingArmedFinish {
                                 // Tras un fallo la barra es «luego», como «Dejarlo por ahora»: el arm ya se retiró al
                                 // entrar en la fase, y `onKeep` retiraría el testigo y el aviso no volvería a preguntar
                                 // (ticket `late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed`).
@@ -217,7 +232,33 @@ struct LateICloudMirrorNoticeView: View {
                 primary: L10n.Welcome.PrivateICloud.wipeConfirmKeep,
                 primaryAction: { phase = .leftHalfway },
                 destructive: L10n.Settings.deleteAllDataAction,
-                destructiveAction: { phase = .wiping })
+                destructiveAction: {
+                    // Desde Ajustes el aviso pudo esperar en la cola: sin borrado pendiente no se arma uno nuevo.
+                    if notice.finishesFromSettings && !StorageModePersistence.hasPendingICloudCorpusWipe() {
+                        dismiss()
+                    } else {
+                        phase = .wiping
+                    }
+                })
+        case .confirmingArmedFinish:
+            // Desde Ajustes, con el borrado armado sin empezar: la persona ya eligió terminarlo, y aquí lo confirma con lo
+            // que se lleva. «Mantener» cierra sin retirar el arm: `onKeep` lo retiraría y el borrado que pidió se perdería.
+            noticeBody(
+                icon: "trash",
+                title: L10n.Settings.wipeDataSecondConfirmTitle,
+                body: finishPurgesGroups
+                    ? L10n.Storage.PendingICloudWipe.finishConfirmBodyWithGroups
+                    : L10n.Storage.PendingICloudWipe.finishConfirmBody,
+                identifier: "late_icloud_armed_finish_confirm",
+                primary: L10n.Welcome.PrivateICloud.wipeConfirmKeep,
+                primaryAction: { dismiss() },
+                destructive: L10n.Settings.deleteAllDataAction,
+                destructiveAction: {
+                    // El aviso pudo esperar en la cola del router: si el borrado ya terminó o se retiró, no se arma uno
+                    // nuevo (sin alcance sería `.handover`). Se cierra sin borrar.
+                    guard StorageModePersistence.hasPendingICloudCorpusWipe() else { dismiss(); return }
+                    phase = .wiping
+                })
         case .groupsPending(let block) where block.offersLossExit:
             // **Esperar no los va a subir**: la salida «perderlos» (ticket
             // `fresh-start-has-no-way-out-when-group-writes-can-never-upload`). La que no destruye va arriba, como en
@@ -344,7 +385,8 @@ struct LateICloudMirrorNoticeView: View {
     private var isGroupsPending: Bool {
         switch phase {
         case .groupsPending, .confirmingGroupsLoss: return true
-        case .notice, .confirming, .wiping, .failed, .leftHalfway, .confirmingFinish, .cancelledInCloud: return false
+        case .notice, .confirming, .wiping, .failed, .leftHalfway, .confirmingFinish, .confirmingArmedFinish,
+             .cancelledInCloud: return false
         }
     }
 
@@ -393,6 +435,10 @@ struct LateICloudMirrorNoticeView: View {
     private func runPhase() async {
         guard phase == .wiping else { return }
         StorageModePersistence.armICloudCorpusWipe()
+        // Desde Ajustes se termina el borrado que se pidió, con SU alcance, también en un reintento.
+        if notice.finishesFromSettings, let scopeAtOpen, StorageModePersistence.icloudCorpusWipeScope() == nil {
+            StorageModePersistence.recordICloudCorpusWipeScope(scopeAtOpen)
+        }
         let failure = await performWipe()
         guard !Task.isCancelled else { return }
         if let failure {
@@ -416,7 +462,12 @@ struct LateICloudMirrorNoticeView: View {
                 if let block { phase = .groupsPending(block) }
             case .untouched:
                 // Nada se tocó: sin arm, el testigo sigue y el aviso vuelve a preguntar. «Volver a intentarlo» re-arma.
-                StorageModePersistence.clearICloudCorpusWipeArm()
+                // **Desde Ajustes el borrado ya estaba armado antes de abrir** (revisión 2.3, decisión 57): se queda como
+                // estaba, con su alcance, y Ajustes lo sigue preguntando. Retirarlo perdía en silencio lo que la persona
+                // pidió.
+                if !notice.finishesFromSettings {
+                    StorageModePersistence.clearICloudCorpusWipeArm()
+                }
                 phase = .failed
             case .leftHalfway:
                 StorageModePersistence.leaveICloudCorpusWipeHalfway()

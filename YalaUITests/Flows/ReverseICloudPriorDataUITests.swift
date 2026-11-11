@@ -64,13 +64,29 @@ final class ReverseICloudPriorDataUITests: XCTestCase {
         return app
     }
 
+    /// Un botón de la hoja de volver (revisión 2.3, decisión 53). Ya no son globos (`app.sheets`): es una hoja con fases.
     private func sheetButton(_ app: XCUIApplication, _ id: String) -> XCUIElement {
-        app.sheets.buttons[id].firstMatch
+        app.buttons[id].firstMatch
+    }
+
+    /// La fase 1 de la hoja, «qué pasa», y «Seguir». **La regresión de la decisión 53**: antes del arreglo el toque abría
+    /// un globo sin esta fase, y la tarjeta prometía «queda en pausa por si vuelves».
+    private func continuePastWhatHappens(_ app: XCUIApplication) {
+        XCTAssertTrue(app.descendants(matching: .any)["storage_revert_sheet"].waitForExistence(timeout: 5),
+                      "«Volver a tu iCloud» no abrió su hoja con fases.")
+        XCTAssertTrue(app.descendants(matching: .any)["storage_revert_fact_cloud_again"].exists,
+                      "La hoja no dice que volver a la nube con esta cuenta hoy no se puede.")
+        XCTAssertTrue(app.descendants(matching: .any)["storage_revert_fact_account"].exists,
+                      "La hoja no dice qué pasa con tu cuenta de Yala.")
+        let next = sheetButton(app, "storage_revert_continue")
+        XCTAssertTrue(next.exists, "La primera fase no ofrece «Seguir».")
+        next.tap()
     }
 
     /// La CONDICIÓN: sin nada ajeno en iCloud, las confirmaciones de siempre y ningún aviso nuevo.
     func test_nothingInICloud_showsTheUsualConfirmation() {
         let app = tapRevert(prior: "none")
+        continuePastWhatHappens(app)
 
         XCTAssertTrue(sheetButton(app, "storage_revert_confirm").waitForExistence(timeout: 5),
                       "Sin datos en iCloud, «Volver a iCloud» no abrió su confirmación de siempre.")
@@ -82,6 +98,7 @@ final class ReverseICloudPriorDataUITests: XCTestCase {
     /// «Cancelar» a la vista; cancelar no abre un segundo «¿Seguro?».
     func test_nothingInICloud_singleConfirmation_cancelStops() {
         let app = tapRevert(prior: "none")
+        continuePastWhatHappens(app)
 
         let confirm = sheetButton(app, "storage_revert_confirm")
         XCTAssertTrue(confirm.waitForExistence(timeout: 5), "«Volver a iCloud» no abrió la confirmación que empieza la vuelta.")
@@ -91,11 +108,29 @@ final class ReverseICloudPriorDataUITests: XCTestCase {
 
         XCTAssertFalse(confirm.waitForExistence(timeout: 3), "«Cancelar» dejó la confirmación abierta o abrió otra.")
         XCTAssertFalse(app.descendants(matching: .any)["storage_progress_card"].exists, "«Cancelar» empezó la vuelta.")
+        XCTAssertTrue(app.buttons["storage_revert_button"].waitForExistence(timeout: 3),
+                      "Tras «Cancelar», la tarjeta de volver ya no está.")
+    }
+
+    /// «Ahora no» en la primera fase cierra la hoja sin empezar nada.
+    func test_whatHappens_notNowStartsNothing() {
+        let app = tapRevert(prior: "none")
+        XCTAssertTrue(app.descendants(matching: .any)["storage_revert_sheet"].waitForExistence(timeout: 5))
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "despues-1-volver-que-pasa"
+        shot.lifetime = .keepAlways
+        add(shot)
+        sheetButton(app, "storage_revert_not_now").tap()
+
+        XCTAssertFalse(app.descendants(matching: .any)["storage_revert_sheet"].waitForExistence(timeout: 3),
+                       "«Ahora no» dejó la hoja abierta.")
+        XCTAssertFalse(app.descendants(matching: .any)["storage_progress_card"].exists, "«Ahora no» empezó la vuelta.")
     }
 
     /// Con datos ajenos, el aviso sale ANTES de las confirmaciones, y «Sumarlos» lleva a la confirmación de siempre (una sola desde L20-17).
     func test_priorData_asksFirst_andMergeGoesOnToTheConfirmation() {
         let app = tapRevert(prior: "found")
+        continuePastWhatHappens(app)
 
         let merge = sheetButton(app, "storage_revert_prior_merge")
         XCTAssertTrue(merge.waitForExistence(timeout: 5), """
@@ -104,15 +139,26 @@ final class ReverseICloudPriorDataUITests: XCTestCase {
         XCTAssertTrue(sheetButton(app, "storage_revert_prior_discard").exists, "El aviso no ofrece «Empezar sin ellos».")
         XCTAssertFalse(sheetButton(app, "storage_revert_confirm").exists,
                        "La confirmación de siempre se abrió detrás del aviso.")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "despues-2-volver-que-hacer-con-lo-que-hay"
+        shot.lifetime = .keepAlways
+        add(shot)
         merge.tap()
 
         XCTAssertTrue(sheetButton(app, "storage_revert_confirm").waitForExistence(timeout: 5),
                       "«Sumarlos a mis datos» no llegó al «¿Seguro?» que empieza la vuelta.")
+        XCTAssertTrue(app.descendants(matching: .any)["storage_revert_confirm_line"].exists,
+                      "La confirmación no repite lo que se suma.")
+        let confirmShot = XCTAttachment(screenshot: app.screenshot())
+        confirmShot.name = "despues-3-volver-confirmar"
+        confirmShot.lifetime = .keepAlways
+        add(confirmShot)
     }
 
     /// «Ahora no» se ve y no deja nada abierto detrás: ni la confirmación de la vuelta ni la del borrado.
     func test_priorData_notNowLeavesNothingOpen() {
         let app = tapRevert(prior: "found")
+        continuePastWhatHappens(app)
 
         let wait = sheetButton(app, "storage_revert_prior_wait")
         XCTAssertTrue(wait.waitForExistence(timeout: 5), "El aviso de datos previos no ofrece «Ahora no».")
@@ -128,6 +174,7 @@ final class ReverseICloudPriorDataUITests: XCTestCase {
     /// El caso del QA del 2026-10-15: solo gastos de grupo de otra cuenta. La sonda vieja no los contaba.
     func test_onlyGroupRecords_alsoAsks() {
         let app = tapRevert(prior: "foundGroups")
+        continuePastWhatHappens(app)
 
         XCTAssertTrue(sheetButton(app, "storage_revert_prior_merge").waitForExistence(timeout: 5),
                       "Con solo registros de grupos en iCloud, «Volver a iCloud» no avisó.")
@@ -135,6 +182,7 @@ final class ReverseICloudPriorDataUITests: XCTestCase {
 
     /// Pulsa «Empezar sin ellos» y confirma el borrado.
     private func discardAndConfirm(_ app: XCUIApplication) {
+        continuePastWhatHappens(app)
         let discard = sheetButton(app, "storage_revert_prior_discard")
         XCTAssertTrue(discard.waitForExistence(timeout: 5), "No salió el aviso de datos previos.")
         discard.tap()
@@ -148,6 +196,7 @@ final class ReverseICloudPriorDataUITests: XCTestCase {
     /// `progress` un borrado empezado pinta el paso «borrando»: si «Cancelar» borrara, ese paso saldría.
     func test_discardConfirmation_showsCancel_andCancelDeletesNothing() {
         let app = tapRevert(prior: "found", wipe: "progress")
+        continuePastWhatHappens(app)
 
         let discard = sheetButton(app, "storage_revert_prior_discard")
         XCTAssertTrue(discard.waitForExistence(timeout: 5), "No salió el aviso de datos previos.")
@@ -155,7 +204,7 @@ final class ReverseICloudPriorDataUITests: XCTestCase {
 
         let confirm = sheetButton(app, "storage_revert_prior_discard_confirm")
         XCTAssertTrue(confirm.waitForExistence(timeout: 5), "«Empezar sin ellos» no pidió confirmar el borrado.")
-        let cancel = sheetButton(app, "storage_revert_prior_discard_cancel")
+        let cancel = sheetButton(app, "storage_revert_cancel")
         XCTAssertTrue(cancel.exists, "«¿Borrarlos de tu iCloud?» no enseña «Cancelar»: solo se sale tocando fuera.")
         let shot = XCTAttachment(screenshot: app.screenshot())
         shot.name = "despues-cchh-borrarlos-con-cancelar"

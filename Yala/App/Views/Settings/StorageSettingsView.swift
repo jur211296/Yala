@@ -24,11 +24,17 @@ struct StorageSettingsView: View {
     /// `ContentView` y presentarlo desde aquí sería un segundo anchor del mismo sheet. Opcional para que
     /// los demás call-sites y las previews no cambien.
     var onAssociateGroupsAccount: (() -> Void)?
+    /// Revisión 2.3, decisión 57: «Terminar de borrar y empezar de cero» de la hoja del borrado pendiente. Lo cablea
+    /// `ProfileView`: cierra Ajustes y pide por el router la hoja que termina ese borrado (`LateICloudMirrorNoticeView`,
+    /// anclada en `ContentView`). Desde aquí no se borra nada.
+    var onFinishPendingICloudWipe: ((LateICloudNotice) -> Void)?
     /// El controller de producción (SSOT del runner). `nil` solo si el backend no está configurado — en
     /// ese caso la fila de Profile ni aparece, pero se degrada elegante por si se navega directo.
     private var controller: CloudMigrationController? { CloudMigrationController.shared }
     /// Texto de accesibilidad: la tarjeta de estado apila el icono encima del texto (revisión 2.3, zona 41, problema 8).
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    /// El acento del tema, para el botón de volver (secundario, sin naranja: revisión 2.3, decisión 53).
+    @Environment(\.yalaTheme) private var theme
 
     /// La hoja única de activar la nube (UX 2.2 · L20-11/12): consentimiento, confirmación y método en un solo paso. Va
     /// por `.sheet(item:)` con lo que enseña DENTRO (la ruta y la cifra): con `isPresented` y la cifra en otro `@State`, la
@@ -50,31 +56,30 @@ struct StorageSettingsView: View {
     /// One-shot del belt del chooser (C-7): el sheet se presentó con sesión viva y se cerró solo;
     /// el `onDismiss` arranca con `.reuseLiveSession`. Cancel/drag-dismiss no lo quema → no-op.
     @State private var reuseLiveSession = false
-    /// **El diálogo del borrado de iCloud pendiente** (ticket
-    /// `late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud`). Sale al tocar «Activar la nube» o
-    /// «Activar en este dispositivo» si la persona pidió borrar su iCloud y el borrado no terminó: en la nube ya no se
-    /// puede terminar, así que se le pregunta en vez de retirarlo en silencio en el arranque.
-    @State private var confirmPendingICloudWipe = false
+    /// **La hoja del borrado de iCloud pendiente** (ticket
+    /// `late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud`; desde la revisión 2.3, decisión 57, una
+    /// hoja y no un globo). Sale al tocar «Activar la nube» o «Activar en este dispositivo» si la persona pidió empezar de
+    /// cero y el borrado no terminó: en la nube ya no se puede terminar, así que se le pregunta en vez de retirarlo en
+    /// silencio en el arranque.
+    @State private var pendingWipeRequest: PendingICloudWipeRequest?
+    /// One-shot de esa hoja: lo quema la elección y lo CONSUME su `onDismiss`. Deslizar no lo quema → no-op.
+    @State private var pendingWipeAnswer: PendingICloudWipeAnswer?
     /// «Activar la nube sin borrar» de ESTE intento. Lo convierte en la renuncia durable `startActivation`, cuando la
     /// migración arranca —echarse atrás antes, en el consentimiento o las confirmaciones, no deja nada—, y la renuncia no
     /// retira el borrado: lo retira el arranque en la nube si el dispositivo llega (`retireWaivedInCloud`). Cada toque del
     /// botón lo baja antes de volver a mirar.
     @State private var pendingICloudWipeWaived = false
-    /// La única confirmación de «Volver a iCloud» (L20-17): antes eran dos que decían lo mismo.
-    @State private var confirmRevert = false
-    /// Lo que el iCloud del teléfono sumaría a la vuelta, si la pregunta encontró algo
-    /// (`CloudMigrationController.checkICloudBeforeReverse`). Copiado para presentarlo: el aviso no se queda sin cifras si
-    /// la tarjeta se repinta.
-    @State private var revertPriorData: ICloudForeignCorpus?
-    @State private var showRevertPriorData = false
-    /// «Empezar sin ellos» pide su propio «¿seguro?»: borra de iCloud y no tiene vuelta.
-    @State private var confirmDiscardPriorData = false
+    /// **La hoja de «Volver a tu iCloud»** (revisión 2.3, decisión 53, V2): qué pasa, qué hacer con lo que ya hay en tu
+    /// iCloud y confirmar, en una sola presentación con fases. Sustituye a los tres globos de antes. Va por
+    /// `.sheet(item:)` con lo que enseña DENTRO —la respuesta de iCloud y su cifra—, como la hoja de activar.
+    @State private var returnRequest: ReturnToICloudRequest?
+    /// One-shot de la hoja: lo quema su botón de confirmar y lo CONSUME el `onDismiss`, que es quien empieza la vuelta
+    /// (regla 4 de presentaciones). «Ahora no», «Cancelar» y deslizar no lo queman → no-op.
+    @State private var returnChoice: ReturnToICloudChoice?
     /// La pregunta a iCloud no contestó, o no hay iCloud al que preguntar: la vuelta no empieza y se ofrece reintentar.
     /// `revertCheckFailedNotice` elige el texto (`ReverseICloudPriorDataLogic.checkFailedNotice`).
     @State private var showRevertCheckFailed = false
     @State private var revertCheckFailedNotice: ReverseICloudPriorDataLogic.CheckFailedNotice = .cannotCheck
-    /// La persona eligió «Sumarlos a mis datos» y la confirmación de siempre es la de esa vuelta. Lo baja cada toque del botón.
-    @State private var revertMergesPriorData = false
     /// Confirmación de «Cancelar y seguir en la nube» en la espera de la vuelta a iCloud. Un solo diálogo, colgado
     /// del propio botón: no encadena con los de `StorageConfirmations`.
     @State private var confirmCancelReverse = false
@@ -200,17 +205,16 @@ struct StorageSettingsView: View {
             guard id != nil, let block = controller?.migrationIdentityBlock else { return }
             presentedMigrationBlock = block
         }
-        .modifier(StorageConfirmations(
-            confirmRevert: $confirmRevert,
-            onRevert: startConfirmedReverse))
-        .modifier(StorageRevertPriorDataDialogs(
-            priorData: revertPriorData,
-            showPriorData: $showRevertPriorData,
-            confirmDiscard: $confirmDiscardPriorData,
+        .modifier(StoragePendingWipePresentation(
+            request: $pendingWipeRequest,
+            onChoose: choosePendingWipe,
+            onDismissed: onPendingWipeSheetDismissed))
+        .modifier(StorageReturnToICloudPresentations(
+            request: $returnRequest,
             showCheckFailed: $showRevertCheckFailed,
             notice: revertCheckFailedNotice,
-            onMerge: chooseMergingPriorData,
-            onDiscard: { Task { await controller?.startReverseDiscardingICloudPriorData() } },
+            onConfirm: chooseReturn,
+            onDismissed: onReturnSheetDismissed,
             onRetryCheck: retryRevertCheck))
         .alert(L10n.Storage.Errors.title, isPresented: $showError, presenting: controller?.lastError) { _ in
             Button(L10n.Common.ok, role: .cancel) { controller?.lastError = nil }
@@ -237,7 +241,7 @@ struct StorageSettingsView: View {
         // Y el diálogo del borrado pendiente, que cuelga del botón de la tarjeta: si la tarjeta se va con él abierto —sale
         // de `.idle` o se cierra la entrada—, no puede reaparecer solo cuando vuelva.
         .onChange(of: showsMigrateCard) { _, shown in
-            if !shown { confirmPendingICloudWipe = false }
+            if !shown { pendingWipeRequest = nil }
         }
     }
 
@@ -423,25 +427,6 @@ struct StorageSettingsView: View {
             // Card vbf9: «Activar» del aviso del Panel llega aquí y arranca lo mismo que este botón, una vez. Cuelga de la
             // tarjeta: solo existe cuando la tarjeta se ofrece, así que no hace falta repetir sus condiciones.
             .onAppear { beginAdoptFromPanelOfferIfRequested(controller, isAdopt: isAdopt) }
-            .confirmationDialog(L10n.Storage.PendingICloudWipe.title,
-                                isPresented: $confirmPendingICloudWipe, titleVisibility: .visible) {
-                Button(L10n.Storage.PendingICloudWipe.proceed) {
-                    // El botón de la tarjeta pudo deshabilitarse con el diálogo abierto: no se arranca encima.
-                    guard !controller.isWorking else { return }
-                    pendingICloudWipeWaived = true
-                    beginActivation(controller, isAdopt: isAdopt)
-                }
-                .accessibilityIdentifier("storage_pending_icloud_wipe_proceed")
-                // «Ahora no» deja el borrado como estaba y retira una renuncia de un intento anterior que no llegó a la
-                // nube. **Sin `role: .cancel`, a propósito**: en iOS 26 el diálogo anclado al botón no pinta el de
-                // cancelar, y la única salida visible sería tocar fuera (medido con el XCUITest de esta pantalla).
-                Button(L10n.Storage.PendingICloudWipe.wait) {
-                    StorageModePersistence.clearICloudCorpusWipeWaiver()
-                }
-                .accessibilityIdentifier("storage_pending_icloud_wipe_wait")
-            } message: {
-                Text(L10n.Storage.PendingICloudWipe.body)
-            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .storageCardStyle()
@@ -456,7 +441,16 @@ struct StorageSettingsView: View {
     /// `-uitest-pending-icloud-wipe` finge la ENTRADA —el estado real arrancaría el borrado en el propio arranque del
     /// XCUITest—; el diálogo, lo que hace cada botón y el retiro al arrancar la migración son los de producción.
     private var hasPendingICloudWipe: Bool {
-        UITestHooks.fakePendingICloudWipe || StorageModePersistence.hasPendingICloudCorpusWipe()
+        UITestHooks.fakePendingICloudWipe || UITestHooks.fakePendingICloudWipeHalfway
+            || StorageModePersistence.hasPendingICloudCorpusWipe()
+    }
+
+    /// ¿El borrado pendiente quedó A MEDIAS (iCloud ya se borró)? Decide qué verdad cuenta la hoja y qué hoja termina el
+    /// borrado (`LateICloudNotice.finishingPendingWipe`). Leído en vivo, al tocar y al terminar.
+    /// «A medias» es también el borrado armado que ya cruzó la zona (un kill justo después de borrarla): iCloud ya está
+    /// vacío y la hoja no puede decir que sus datos se quedan (review adversarial de la decisión 57).
+    private var pendingWipeLeftHalfway: Bool {
+        UITestHooks.fakePendingICloudWipeHalfway || StorageModePersistence.hasICloudCorpusWipeCrossedTheZone()
     }
 
     /// El toque de «Activar la nube» / «Activar en este dispositivo», una vez resuelto el borrado pendiente. Con sesión
@@ -469,7 +463,11 @@ struct StorageSettingsView: View {
     private func tapActivate(_ controller: CloudMigrationController, isAdopt: Bool) {
         pendingICloudWipeWaived = false
         guard !hasPendingICloudWipe else {
-            confirmPendingICloudWipe = true
+            pendingWipeAnswer = nil
+            let halfway = pendingWipeLeftHalfway
+            pendingWipeRequest = PendingICloudWipeRequest(
+                leftHalfway: halfway, isAdopt: isAdopt,
+                finishPurgesGroups: LateICloudNotice.finishingPendingWipePurgesGroups(leftHalfway: halfway))
             return
         }
         beginActivation(controller, isAdopt: isAdopt)
@@ -530,6 +528,34 @@ struct StorageSettingsView: View {
         Task { await controller?.startMigration(consentPath: path, signIn: plan) }
     }
 
+    /// La elección de la hoja del borrado pendiente: quema el one-shot y baja la hoja. Lo demás corre en su `onDismiss`.
+    private func choosePendingWipe(_ choice: PendingICloudWipeChoice) {
+        guard let request = pendingWipeRequest else { return }
+        pendingWipeAnswer = PendingICloudWipeAnswer(choice: choice, isAdopt: request.isAdopt)
+        pendingWipeRequest = nil
+    }
+
+    /// **Lo que hace cada salida de la hoja del borrado pendiente, con la hoja ya abajo** (regla 4 de presentaciones: la
+    /// hoja de activar y la del borrado no se piden con esta aún bajando).
+    private func onPendingWipeSheetDismissed() {
+        guard let answer = pendingWipeAnswer else { return }
+        pendingWipeAnswer = nil
+        switch answer.choice {
+        case .activateKeeping:
+            // El botón de la tarjeta pudo deshabilitarse, o la tarjeta irse, con la hoja abierta: no se arranca encima.
+            guard let controller, !controller.isWorking, showsMigrateCard else { return }
+            pendingICloudWipeWaived = true
+            beginActivation(controller, isAdopt: answer.isAdopt)
+        case .finishWipe:
+            // Solo si sigue pendiente y la tarjeta sigue: pudo terminar, retirarse o cambiar de estado con la hoja arriba.
+            guard hasPendingICloudWipe, showsMigrateCard else { return }
+            onFinishPendingICloudWipe?(LateICloudNotice.finishingPendingWipe(leftHalfway: pendingWipeLeftHalfway))
+        case .notNow:
+            // Deja el borrado como estaba y retira una renuncia de un intento anterior que no llegó a la nube.
+            StorageModePersistence.clearICloudCorpusWipeWaiver()
+        }
+    }
+
     // MARK: - Revert card
 
     @ViewBuilder
@@ -539,9 +565,12 @@ struct StorageSettingsView: View {
             Text(L10n.Storage.Revert.title)
                 .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
-            Text(L10n.Storage.Revert.body)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
+            // Solo con la vuelta a mano: promete la hoja, y sin botón (otro dispositivo, mapa ilegible) no hay hoja.
+            if eligibility == .eligible {
+                Text(L10n.Storage.Revert.body)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+            }
             // La última vuelta no llegó a iCloud —la espera no drenó, o el servidor no la dejó empezar—: se dice por qué
             // ANTES del botón, para que volver a intentarlo sea una decisión informada. Sale del journal, así que sigue
             // aquí tras el relanzamiento.
@@ -559,10 +588,8 @@ struct StorageSettingsView: View {
                 .accessibilityElement(children: .combine)
                 .accessibilityIdentifier("storage_revert_last_attempt_note")
             }
-            // §3.3.5: la Reversa ES el desenlace funcional del enlace privado ↔ nube.
-            Text(L10n.Storage.Revert.desenlaceNote)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
+            // Sin «queda en pausa por si vuelves» (revisión 2.3, decisión 53): volver a la nube con esta cuenta hoy no se
+            // puede, y la hoja lo dice en su fila. Lo que pasa con cada cosa vive en la hoja, no aquí.
 
             if eligibility == .eligible {
                 Button {
@@ -587,13 +614,15 @@ struct StorageSettingsView: View {
                         }
                     }
                     .font(DS.Typography.body.weight(.medium))
-                    .foregroundStyle(DS.Semantic.warningForeground)
+                    // Sin naranja (decisión 53): volver no borra nada, y el naranja quedaba igual que «Empezar sin ellos».
+                    // Secundario con el acento como texto (`accentText`, legible sobre la tarjeta en los diez temas).
+                    .foregroundStyle(.thAccentText)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, DS.Spacing.sm)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.bordered)
-                .tint(DS.Semantic.warningForeground)
+                .tint(theme.accent)
                 .disabled(controller.isWorking || controller.isCheckingICloudBeforeReverse)
                 .accessibilityIdentifier("storage_revert_button")
             } else {
@@ -615,26 +644,23 @@ struct StorageSettingsView: View {
 
     // MARK: - Volver a iCloud: pregunta previa
 
-    /// El toque de «Volver a iCloud»: antes de las confirmaciones, pregunta a iCloud qué sumaría la vuelta (ticket
-    /// `reverse-to-icloud-merges-prior-icloud-data-without-asking`). Nada ajeno → las confirmaciones de siempre; algo
-    /// ajeno → el aviso con la elección; sin respuesta → no empieza.
+    /// El toque de «Volver a tu iCloud»: antes de abrir la hoja, pregunta a iCloud qué sumaría la vuelta (ticket
+    /// `reverse-to-icloud-merges-prior-icloud-data-without-asking`). Nada ajeno → la hoja sin la fase de elegir; algo
+    /// ajeno → la hoja con ella; sin respuesta → no empieza y se ofrece reintentar.
     private func beginRevert() async {
         guard let controller else { return }
-        revertMergesPriorData = false
-        // Un flag que se quedó en `true` porque UIKit no llegó a presentar su diálogo dejaría el botón sin respuesta: cada
-        // toque lo volvería a poner en `true`, que no cambia nada. Cada toque empieza con los tres abajo.
-        confirmRevert = false
-        showRevertPriorData = false
+        returnChoice = nil
+        // Un flag que se quedó en `true` porque UIKit no llegó a presentar su alerta dejaría el botón sin respuesta: cada
+        // toque lo volvería a poner en `true`, que no cambia nada. Cada toque empieza con él abajo.
         showRevertCheckFailed = false
         let gate = await controller.checkICloudBeforeReverse()
         switch gate {
         case nil:
             return
         case .proceed:
-            confirmRevert = true
+            returnRequest = ReturnToICloudRequest(priorData: nil)
         case .ask(let corpus):
-            revertPriorData = corpus
-            showRevertPriorData = true
+            returnRequest = ReturnToICloudRequest(priorData: corpus)
         case .cannotCheck, .needsICloud:
             // El texto lo elige el motivo: el plazo de la revisión no culpa a la conexión (card dfja).
             revertCheckFailedNotice = gate.flatMap(ReverseICloudPriorDataLogic.checkFailedNotice) ?? .cannotCheck
@@ -656,22 +682,26 @@ struct StorageSettingsView: View {
         }
     }
 
-    /// «Sumarlos a mis datos» lleva a la confirmación de siempre, que es la que empieza la vuelta. Elegir qué hacer con lo
-    /// ajeno no es confirmar la vuelta: por eso sigue habiendo una (L20-17 fundió las dos de antes, no esta).
-    private func chooseMergingPriorData() {
-        revertMergesPriorData = true
-        confirmRevert = true
+    /// La confirmación de la hoja: quema el one-shot y baja la hoja. La vuelta empieza en su `onDismiss`.
+    private func chooseReturn(_ choice: ReturnToICloudChoice) {
+        returnChoice = choice
+        returnRequest = nil
     }
 
-    /// El «Sí, volver a iCloud» de la confirmación: la vuelta de siempre, o la que suma lo ajeno si la persona lo eligió.
-    private func startConfirmedReverse() {
-        let merging = revertMergesPriorData
-        revertMergesPriorData = false
+    /// **El único sitio que empieza la vuelta desde esta pantalla**, con la hoja ya abajo: la de siempre, la que suma lo
+    /// que había en tu iCloud o la que lo borra antes (y no empieza si el borrado no termina). Sin elección, no-op.
+    private func onReturnSheetDismissed() {
+        guard let choice = returnChoice else { return }
+        returnChoice = nil
+        // La hoja pudo quedarse abierta mientras la pantalla cambiaba de estado: la vuelta solo empieza si la tarjeta que
+        // la ofrecía sigue ofreciéndola (`.discardPrior` lo vuelve a mirar dentro; las otras dos, no).
+        guard let controller, controller.uiState == .cloudActive, !controller.isWorking,
+              controller.reverseEligibility() == .eligible else { return }
         Task {
-            if merging {
-                await controller?.startReverseMergingICloudPriorData()
-            } else {
-                await controller?.startReverse()
+            switch choice {
+            case .plain: await controller.startReverse()
+            case .mergePrior: await controller.startReverseMergingICloudPriorData()
+            case .discardPrior: await controller.startReverseDiscardingICloudPriorData()
             }
         }
     }
@@ -1322,74 +1352,25 @@ struct StorageSettingsView: View {
     }
 }
 
-// MARK: - Confirmación de volver a iCloud (una sola, UX 2.2 · L20-17)
-//
-// Eran dos —«¿Volver a iCloud?» y «¿Seguro?»— que decían lo mismo. Volver es la salida segura y reversible: basta una
-// pregunta que diga lo que pasa y que no se pierde nada. «Migrar» ya no tiene diálogos aquí: su confirmación es el
-// botón de entrar de la hoja única (L20-11).
-//
-// B6 (lote 20, medido en el simulador el 2026-10-17): en iOS 26 estos diálogos salen como globo y NO pintan el botón con
-// `role: .cancel`, también colgados de la raíz de la pantalla. El de no hacer nada va SIN rol, el molde del diálogo del
-// borrado pendiente de esta misma pantalla. No le devuelvas el rol: la única salida visible volvería a ser tocar fuera.
+// MARK: - Volver a tu iCloud: la hoja y el aviso de la pregunta previa
 
-private struct StorageConfirmations: ViewModifier {
-    @Binding var confirmRevert: Bool
-    let onRevert: () -> Void
-
-    func body(content: Content) -> some View {
-        content
-            .confirmationDialog(L10n.Storage.Confirm.revertTitle,
-                                isPresented: $confirmRevert, titleVisibility: .visible) {
-                Button(L10n.Storage.Confirm.revert2Confirm, role: .destructive) { onRevert() }
-                    .accessibilityIdentifier("storage_revert_confirm")
-                Button(L10n.Common.cancel) {}
-                    .accessibilityIdentifier("storage_revert_cancel")
-            } message: {
-                Text(L10n.Storage.Confirm.revertBody)
-            }
-    }
-}
-
-// MARK: - Datos previos en iCloud antes de volver
-
-/// Los avisos de la pregunta previa a «Volver a iCloud». Cuelgan de la RAÍZ, como `StorageConfirmations`: un
-/// `.confirmationDialog` colgado del botón no pinta su «Cancelar» en iOS 26, y aquí no hacer nada es una de las salidas.
-/// Tres modificadores, el tope que el compilador del CI aguanta por `ViewModifier`.
-private struct StorageRevertPriorDataDialogs: ViewModifier {
-    let priorData: ICloudForeignCorpus?
-    @Binding var showPriorData: Bool
-    @Binding var confirmDiscard: Bool
+/// La hoja con fases de «Volver a tu iCloud» (revisión 2.3, decisión 53, V2) y la alerta de la pregunta que no se pudo
+/// hacer. Cuelgan de la RAÍZ de la pantalla, como la hoja de activar. **La hoja sustituye a tres globos** —«Tu iCloud ya
+/// tiene datos de Yala», «¿Borrarlos de tu iCloud?» y «¿Volver a iCloud?»—: en iOS 26 salían anclados al botón con letra
+/// de 9-10 pt y sin pintar el `role: .cancel` (B6 del lote 20). Dos modificadores: el tope del compilador del CI es tres
+/// por `ViewModifier`.
+private struct StorageReturnToICloudPresentations: ViewModifier {
+    @Binding var request: ReturnToICloudRequest?
     @Binding var showCheckFailed: Bool
     let notice: ReverseICloudPriorDataLogic.CheckFailedNotice
-    let onMerge: () -> Void
-    let onDiscard: () -> Void
+    let onConfirm: (ReturnToICloudChoice) -> Void
+    let onDismissed: () -> Void
     let onRetryCheck: () -> Void
 
     func body(content: Content) -> some View {
         content
-            .confirmationDialog(L10n.Storage.Revert.Prior.title,
-                                isPresented: $showPriorData, titleVisibility: .visible) {
-                Button(L10n.Storage.Revert.Prior.merge) { onMerge() }
-                    .accessibilityIdentifier("storage_revert_prior_merge")
-                Button(L10n.Storage.Revert.Prior.discard, role: .destructive) { confirmDiscard = true }
-                    .accessibilityIdentifier("storage_revert_prior_discard")
-                // «Ahora no» visible y sin rol: es una decisión sobre datos, y en este estilo iOS no pinta el `.cancel`
-                // (medido en el simulador, como el diálogo del borrado pendiente).
-                Button(L10n.Storage.PendingICloudWipe.wait) {}
-                    .accessibilityIdentifier("storage_revert_prior_wait")
-            } message: {
-                Text(priorData.map { ReverseICloudPriorDataLogic.message($0) } ?? L10n.Storage.Revert.Prior.bodyNoCount)
-            }
-            .confirmationDialog(L10n.Storage.Revert.Prior.discardConfirmTitle,
-                                isPresented: $confirmDiscard, titleVisibility: .visible) {
-                Button(L10n.Storage.Revert.Prior.discardConfirm, role: .destructive) { onDiscard() }
-                    .accessibilityIdentifier("storage_revert_prior_discard_confirm")
-                // Sin rol, como «Ahora no»: borra de iCloud sin vuelta, así que la salida tiene que verse (regla B6 de
-                // `swiftui-ds.md`; con `role: .cancel` el globo no la pintaba).
-                Button(L10n.Common.cancel) {}
-                    .accessibilityIdentifier("storage_revert_prior_discard_cancel")
-            } message: {
-                Text(L10n.Storage.Revert.Prior.discardConfirmBody)
+            .sheet(item: $request, onDismiss: onDismissed) { request in
+                ReturnToICloudSheet(request: request, onConfirm: onConfirm)
             }
             // Título y mensaje cambian con el motivo; los botones van literales (regla del `actions` de un `.alert`).
             .alert(ReverseICloudPriorDataLogic.checkFailedTitle(notice),
@@ -1401,6 +1382,27 @@ private struct StorageRevertPriorDataDialogs: ViewModifier {
                 Text(ReverseICloudPriorDataLogic.checkFailedBody(notice))
             }
     }
+}
+
+/// La hoja del borrado pendiente (revisión 2.3, decisión 57). Cuelga de la RAÍZ, como la de volver: antes era un globo
+/// anclado al botón de activar.
+private struct StoragePendingWipePresentation: ViewModifier {
+    @Binding var request: PendingICloudWipeRequest?
+    let onChoose: (PendingICloudWipeChoice) -> Void
+    let onDismissed: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .sheet(item: $request, onDismiss: onDismissed) { request in
+                PendingICloudWipeSheet(request: request, onChoose: onChoose)
+            }
+    }
+}
+
+/// La elección de la hoja del borrado pendiente, con la cara de la tarjeta que la abrió (migrar o adopt).
+private struct PendingICloudWipeAnswer {
+    let choice: PendingICloudWipeChoice
+    let isAdopt: Bool
 }
 
 private extension View {
