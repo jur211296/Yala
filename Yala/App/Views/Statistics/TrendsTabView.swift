@@ -1852,12 +1852,13 @@ struct TrendsTabView: View {
             customRange: sessionState.customDateRange
         )
 
-        // Get eligible accounts (archived accounts still count; same as StatisticsViewModel): incluidas y ocultas.
+        // Las cuentas cuyos movimientos se ven (`Account.keepsHistory`, como StatisticsViewModel): incluidas y ocultas.
+        // La curva de saldo deja fuera las archivadas en `TrendDataProcessor.fillBalanceBuckets`.
         let accountFilter = EntityFilter(
             included: trendsViewModel.selectedAccounts, excluded: trendsViewModel.excludedAccounts
         )
         let eligibleAccounts = accounts.filter { account in
-            !account.excludeFromStatistics && accountFilter.matches(account.persistentModelID)
+            account.keepsHistory && accountFilter.matches(account.persistentModelID)
         }
 
         // For balance: we need ALL transactions (no date filter) to calculate running balance

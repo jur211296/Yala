@@ -6322,7 +6322,7 @@
 "accountDetail.empty" = "此期间没有记录";
 
 /* Note under Archive toggle when archiving turned on Exclude from statistics */
-"account.archiveExcludedNotice" = "归档后，此账户将不再计入你的总额和统计，其记录也会在“记录”中隐藏。如需继续计入，请关闭“从统计中排除”。";
+"account.archiveKeepsHistoryNotice" = "归档的账户不计入你的余额，也不会出现在面板的账户中或记账时。它的支出和收入仍会计入面板、“记录”和“统计”。";
 
 
 /* Chat draft card (Yala IA) — redesign A */

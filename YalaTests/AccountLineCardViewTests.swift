@@ -220,7 +220,9 @@ struct AccountLineCardViewTests {
 
         #expect(visa.isArchived)
         #expect(usd.isArchived)
-        #expect(usd.excludeFromStatistics, "como archivar cada una desde su formulario")
+        // Archivar no toca «Excluir»: la línea sale del saldo y conserva su historial (decisión 6 de 2.3).
+        #expect(!usd.excludeFromStatistics, "archivar no excluye")
+        #expect(!visa.excludeFromStatistics, "archivar no excluye")
     }
 
     @Test func archivingTheCard_onlyTheCard_leavesTheLinesAsStandalone() throws {
@@ -277,7 +279,7 @@ struct AccountLineCardViewTests {
         usd.parentAccountID = visa.shortcutID
         try context.save()
         let all = try context.fetch(FetchDescriptor<Account>())
-        let archived = AccountLineService.archiveLines(of: visa, among: all, excludeFromStatistics: false)
+        let archived = AccountLineService.archiveLines(of: visa, among: all)
         visa.isArchived = true
         #expect(archived == 1)
         #expect(usd.isArchived)

@@ -5,8 +5,8 @@
 //  Dos reglas del contexto de Yala IA (`FullFinancialContextBuilder`), tickets
 //  `chat-context-treats-archived-accounts-as-excluded` y `chat-compares-with-the-month-in-progress`:
 //
-//  1. **Suma las mismas cuentas que el Panel.** Decide «Excluir de las estadísticas», no estar
-//     archivada (`.claude/rules/session-filters.md`, «Archivar no decide la suma»).
+//  1. **Suma las mismas cuentas que el Panel.** Una cuenta archivada sale del saldo y conserva su historial,
+//     tenga o no «Excluir» (`AccountScopeLogic`, decisión 6 de 2.3; `.claude/rules/session-filters.md`).
 //  2. **Trae el mes pasado hasta el mismo día** (`periods.last_month_to_date`, `total_last_month_to_date`)
 //     y compara contra eso, con los bordes del mes: día 15, 31 frente a un mes de 30, febrero,
 //     día 1 y la medianoche del día siguiente al equivalente.
@@ -97,11 +97,11 @@ struct ChatContextPanelParityAndMonthToDateTests {
     }
 
     /// Lo que el Panel suma: `PanelViewModel.computeEligibleAccounts` (privada) sin filtro de cuentas
-    /// —solo `excludeFromStatistics`— y el saldo vivo de `displayedBalanceInDefaultCurrency`. Si el
+    /// —solo `keepsHistory`— y el saldo vivo de `displayedBalanceInDefaultCurrency`, que deja fuera las archivadas. Si el
     /// Panel cambia de regla, `BalanceKPIParityTests` ya lo ve; aquí se copia como espejo declarado.
     private func panelTotal(_ accounts: [Account], _ txs: [TransactionItem]) -> Double {
         LiveBalanceCalculator.liveBalance(
-            accounts: accounts.filter { !$0.excludeFromStatistics },
+            accounts: accounts.filter(\.keepsHistory),
             transactions: txs,
             preferredCurrencyCode: "USD",
             converter: MockCurrencyConverter(fixedRate: 1.0)
@@ -110,10 +110,10 @@ struct ChatContextPanelParityAndMonthToDateTests {
 
     // MARK: - 1. Suma las mismas cuentas que el Panel
 
-    @Test func archivedAccountIncludedAgain_sumsLikeThePanel() {
+    @Test func archivedAccount_keepsItsHistory_butLeavesTheBalance() {
         let now = date(2026, 10, 15)
         let checking = account("Checking")
-        let oldCard = account("Old card", archived: true)  // archivada, «Excluir» apagado a mano
+        let oldCard = account("Old card", archived: true)  // archivada sin excluir (downgrade, o antes del 3-oct)
         let txs = [
             tx(1000, date(2026, 10, 1), checking),
             tx(300, date(2026, 10, 2), oldCard),
@@ -127,15 +127,17 @@ struct ChatContextPanelParityAndMonthToDateTests {
         // Movimientos: el gasto de la archivada cuenta, como en el Panel.
         #expect(context.periods.currentMonth.expense == 140)
         #expect(context.periods.currentMonth.income == 1300)
-        // Saldo: el total del chat es el del Panel, y la archivada sale en la lista de cuentas.
+        // Saldo: el total del chat es el del Panel, sin la archivada, que tampoco sale en la lista de cuentas.
         #expect(context.balances.totalBalance == panelTotal(accounts, txs))
-        #expect(context.balances.totalBalance == 1160)
-        #expect(context.balances.accounts.map(\.name).sorted() == ["Checking", "Old card"])
+        #expect(context.balances.totalBalance == 900)
+        #expect(context.balances.accounts.map(\.name) == ["Checking"])
         // Y no se le dice al modelo que está excluida: no lo está.
         #expect(context.metadata.excludedAccounts.isEmpty)
     }
 
-    @Test func archivedAndExcluded_doesNotSum_andIsListedAsExcluded() {
+    /// Archivada con «Excluir» encendido (lo dejaba así archivar desde el formulario hasta la decisión 6 de 2.3): su
+    /// historial vuelve a contar y no se le presenta al modelo como excluida; el saldo la sigue dejando fuera.
+    @Test func archivedAndExcluded_keepsItsHistory_andIsNotListedAsExcluded() {
         let now = date(2026, 10, 15)
         let checking = account("Checking")
         let savings = account("Savings", excluded: true, archived: true)
@@ -149,12 +151,12 @@ struct ChatContextPanelParityAndMonthToDateTests {
 
         let context = build(txs, accounts: accounts, now: now)
 
-        #expect(context.periods.currentMonth.expense == 100)
-        #expect(context.periods.currentMonth.income == 1000)
+        #expect(context.periods.currentMonth.expense == 600)
+        #expect(context.periods.currentMonth.income == 6000)
         #expect(context.balances.totalBalance == panelTotal(accounts, txs))
         #expect(context.balances.totalBalance == 900)
         #expect(context.balances.accounts.map(\.name) == ["Checking"])
-        #expect(context.metadata.excludedAccounts == ["Savings"])
+        #expect(context.metadata.excludedAccounts.isEmpty)
     }
 
     /// Las cuentas sistema de Grupos que archiva la propia app no son «cuentas» para el conteo del

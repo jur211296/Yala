@@ -6322,7 +6322,7 @@
 "accountDetail.empty" = "この期間の記録はありません";
 
 /* Note under Archive toggle when archiving turned on Exclude from statistics */
-"account.archiveExcludedNotice" = "アーカイブすると、この口座は合計と統計に含まれなくなり、記録は「記録」に表示されなくなります。引き続き含めるには「統計から除外」をオフにしてください。";
+"account.archiveKeepsHistoryNotice" = "アーカイブした口座は残高に含まれず、パネルの口座一覧や記録の追加時にも表示されません。支出と収入は引き続きパネル、「記録」、「統計」に反映されます。";
 
 
 /* Chat draft card (Yala IA) — redesign A */

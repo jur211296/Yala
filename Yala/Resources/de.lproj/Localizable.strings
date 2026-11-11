@@ -6310,7 +6310,7 @@
 "accountDetail.empty" = "Keine Einträge in diesem Zeitraum";
 
 /* Note under Archive toggle when archiving turned on Exclude from statistics */
-"account.archiveExcludedNotice" = "Archiviert zählt dieses Konto nicht mehr zu deinen Summen und Statistiken, und seine Einträge werden in „Einträge“ ausgeblendet. Damit es weiter zählt, deaktiviere „Aus Statistiken ausschließen“.";
+"account.archiveKeepsHistoryNotice" = "Ein archiviertes Konto zählt nicht zu deinem Saldo und erscheint weder bei den Konten im Panel noch beim Erfassen. Seine Ausgaben und Einnahmen zählen weiter im Panel, in „Einträge“ und in „Statistiken“.";
 
 
 /* Chat draft card (Yala IA) — redesign A */

@@ -358,7 +358,7 @@ struct FilterService {
     ///
     /// - Parameters:
     ///   - transactions: All transactions
-    ///   - accounts: All accounts (used to filter by excludeFromStatistics)
+    ///   - accounts: All accounts (used to filter by `Account.keepsHistory`)
     ///   - criteria: Filter criteria
     /// - Returns: Filtered transactions for trend calculation
     static func filterForTrends(
@@ -373,10 +373,11 @@ struct FilterService {
         let includeFlag = includeBridgedGroupTx
             ?? (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool)
             ?? true
-        // Determine eligible accounts (not excluded from statistics; archived accounts still count)
+        // Las cuentas cuyos movimientos se ven: las archivadas siempre, las activas si no están excluidas
+        // (`Account.keepsHistory`, decisión 6 de 2.3).
         let accountFilter = criteria.accountFilter
         let eligibleAccounts = accounts.filter { account in
-            guard !account.excludeFromStatistics else { return false }
+            guard account.keepsHistory else { return false }
             return accountFilter.matches(account.persistentModelID)
         }
         let eligibleAccountIDs = Set(eligibleAccounts.map { $0.persistentModelID })

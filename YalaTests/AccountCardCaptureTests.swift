@@ -381,7 +381,7 @@ struct AccountCardCaptureTests {
         // 100 en soles + 80 dólares convertidos: más que los 100 de la principal sola.
         #expect(spent > 100)
 
-        // Archivar la línea no le quita su gasto (archivar no decide la suma).
+        // Archivar la línea no le quita su gasto (archivar conserva el historial).
         f.line.isArchived = true
         try f.context.save()
         #expect(BudgetsViewModel.filterTransactions(all, forBudget: budget, in: interval).count == 2)

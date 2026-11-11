@@ -149,7 +149,8 @@ enum SpotlightIndexService {
                 isIncome: TransactionClassificationLogic.isIncome(tx),
                 isTransfer: tx.transferPairID != nil,
                 isBalanceAdjustment: tx.balanceAdjustmentType != nil,
-                accountExcludedFromStatistics: tx.account?.excludeFromStatistics ?? false,
+                // «Oculta su historial» (`Account.keepsHistory`): una cuenta archivada sigue enseñando sus registros.
+                accountExcludedFromStatistics: tx.account.map { !$0.keepsHistory } ?? false,
                 isGroupBridged: tx.splitExpenseID != nil || tx.splitSettlementID != nil,
                 isPendingDeletion: pendingDeletion.hides(tx.persistentModelID, transferPairID: tx.transferPairID)
             )

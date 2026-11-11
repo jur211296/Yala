@@ -1677,14 +1677,15 @@ final class PanelViewModel {
         return (trend, cashFlow, need)
     }
 
-    /// Compute eligible accounts and their IDs (archived accounts still count)
+    /// Las cuentas cuyos movimientos cuentan en el Panel y sus IDs: las archivadas también (su historial se ve,
+    /// `Account.keepsHistory`); el saldo deja fuera las archivadas después (`PanelBalanceScopeLogic`, `LiveBalanceCalculator`).
     private func computeEligibleAccounts(from accounts: [Account]) -> (accounts: [Account], ids: Set<PersistentIdentifier>) {
         // Espeja `StatisticsViewModel.computeEligibleAccounts`: el filtro es un
         // conjunto y las dos pantallas tienen que resolverlo igual, o sus
         // números vuelven a divergir.
         let accountFilter = EntityFilter(included: selectedAccountIDs, excluded: excludedAccountIDs)
         let eligible = accounts.filter { account in
-            guard !account.excludeFromStatistics else { return false }
+            guard account.keepsHistory else { return false }
             return accountFilter.matches(account.persistentModelID)
         }
         return (eligible, Set(eligible.map { $0.persistentModelID }))
@@ -1805,7 +1806,7 @@ final class PanelViewModel {
     // MARK: - Filter Criteria Builder
 
     /// Builds FilterCriteria from SessionState for use with FilterService.
-    /// Accounts NOT included — pre-filtered by eligibleAccountIDs (handles excludeFromStatistics).
+    /// Accounts NOT included — pre-filtered by eligibleAccountIDs (handles `Account.keepsHistory`).
     func buildFilterCriteria(
         dateInterval: DateInterval? = nil,
         includeCategories: Bool = true
@@ -3258,7 +3259,7 @@ final class PanelViewModel {
 
         // Todos los montos numéricos del Hero (pills del mes, trend "vs mes
         // anterior", card "Disponible · Período") respetan `eligibleAccountIDs`,
-        // que engloba cuenta seleccionada + `excludeFromStatistics`. Filtros
+        // que engloba cuenta seleccionada + `Account.keepsHistory`. Filtros
         // finos (categoría, subcategoría, need, focused date) NO aplican al
         // Hero por decisión de producto. El estado del calculator y la IA
         // reaccionan naturalmente a estos inputs — su lógica no se modifica.

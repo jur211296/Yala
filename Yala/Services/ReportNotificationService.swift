@@ -561,8 +561,10 @@ final class ReportNotificationService {
     }
 
     private func fetchAccounts(context: ModelContext) -> [Account] {
+        // Las cuentas cuyo historial se ve (`Account.keepsHistory`): las archivadas entran en los ingresos y gastos del
+        // aviso, y su saldo las deja fuera (`LiveBalanceCalculator`, decisión 6 de 2.3).
         let descriptor = FetchDescriptor<Account>(
-            predicate: #Predicate { !$0.excludeFromStatistics }
+            predicate: #Predicate { !$0.excludeFromStatistics || $0.isArchived }
         )
 
         do {

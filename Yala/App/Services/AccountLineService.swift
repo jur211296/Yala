@@ -162,16 +162,15 @@ enum AccountLineService {
     }
 
     /// Archiva las líneas vivas de `principal` (la cascada de archivar la tarjeta). No guarda: va en la transacción de
-    /// quien archiva la principal. `excludeFromStatistics` = lo que hace archivar desde el formulario; el downgrade de
-    /// plan archiva sin excluir (`session-filters.md`). Devuelve cuántas archivó.
+    /// quien archiva la principal. No toca «Excluir de las estadísticas»: archivar ya saca la línea del saldo y conserva
+    /// su historial (`AccountScopeLogic`, decisión 6 de 2.3). Devuelve cuántas archivó.
     @discardableResult
-    static func archiveLines(of principal: Account, among accounts: [Account], excludeFromStatistics: Bool) -> Int {
+    static func archiveLines(of principal: Account, among accounts: [Account]) -> Int {
         let ids = Set(AccountCardLogic.linesToArchive(
             principalID: principal.shortcutID, nodes: accounts.map { AccountLineNode($0) }))
         var archived = 0
         for account in accounts where ids.contains(account.shortcutID) {
             account.isArchived = true
-            if excludeFromStatistics { account.excludeFromStatistics = true }
             archived += 1
         }
         return archived

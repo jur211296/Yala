@@ -1,10 +1,10 @@
 ---
 id: archiving-exclusion-open-decisions
-status: backlog
+status: done
 priority: medium
 area: "accounts, panel, subscription"
 created: 2026-10-03
-updated: 2026-10-08
+updated: 2026-11-11
 source: hallazgos de archived-accounts-still-count-in-the-panel-total, 2026-10-03
 ---
 
@@ -51,3 +51,21 @@ Con la respuesta al punto 1 se cierran casi solas la 2 y la 3.
 - Registros sigue descartando las cuentas excluidas (`Yala/App/ViewModels/RecordsViewModel.swift:290`, `:354`). No hay migración de las archivadas de antes del 03-oct.
 
 Triage 2026-10-08: abierto · medium → medium · las tres preguntas siguen sin respuesta; el downgrade archiva sin excluir (DowngradeResolutionSheet.swift:313) y Registros oculta las excluidas.
+
+## Hecho (2026-11-11, decisión 6 de la revisión 2.3: opción A, adelantada de 2.4)
+
+Archivar saca la cuenta del saldo y conserva su historial. Las tres preguntas quedan contestadas sin migrar datos:
+
+1. **Archivar ya no enciende «Excluir de las estadísticas»** (formulario y líneas de la tarjeta). Una cuenta archivada
+   deja de sumar en el saldo (cifra, curva, «en N cuentas», Distribución, widgets, aviso de informe, Yala IA y el
+   conector), y sus gastos e ingresos siguen en Registros, el Panel y Estadísticas. Con la cuenta archivada el
+   formulario no enseña «Excluir» y avisa de lo que pasa (16 idiomas).
+2. **El downgrade** archiva sin excluir, como antes: esas cuentas dejan de sumar y su historial sigue.
+3. **Las archivadas de antes**: las archivadas sin excluir dejan de sumar; las que se archivaron con «Excluir»
+   encendido (del 2026-10-03 a hoy, también en 2.1) vuelven a enseñar su historial sin tocar el dato.
+
+Las dos reglas viven en `AccountScopeLogic` (`sumsInBalance` y `keepsHistory`) y en `.claude/rules/session-filters.md`.
+Las cuentas sistema de Grupos que archiva la propia app siguen sumando (no son un archivado de la persona).
+Pruebas: `ArchivedAccountKeepsHistoryTests`, `AccountScopeLogicTests`, XCUITest `ArchivedAccountKeepsHistoryUITests`
+(rojo en la base: aviso viejo, «Excluir» encendido, Panel en «Salió S/ 0.00» y Taxi fuera de Registros). Review
+adversarial con tres lentes. QA en el simulador por Frank; nada que pruebe Jürgen a mano.

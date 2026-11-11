@@ -10,7 +10,7 @@
 //
 //  Design choices:
 //  - Solo respeta filtros de cuenta (`eligibleAccountIDs`, que ya engloba
-//    `excludeFromStatistics` + cuenta seleccionada del Panel) y excluye
+//    `Account.keepsHistory` + cuenta seleccionada del Panel) y excluye
 //    balance adjustments. Filtros finos (categoría, subcategoría, need,
 //    focused date, tags, naturaleza) NO aplican al Hero por decisión de
 //    producto — el Hero refleja la visión total agregada por cuenta.

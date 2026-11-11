@@ -111,7 +111,7 @@ struct AccountCardRouteTests {
         AccountCardLogic.linesByHead(nodes, node: { $0 }, id: \.id)
     }
 
-    /// Una línea archivada sigue siendo de la tarjeta: archivar no decide la suma, así que su gasto sigue en el presupuesto de
+    /// Una línea archivada sigue siendo de la tarjeta: archivar conserva el historial, así que su gasto sigue en el presupuesto de
     /// la tarjeta y sus movimientos en el filtro. Las cuentas sin líneas no aparecen.
     @Test func linesByHead_includesArchivedLines_andOnlyCardsWithLines() {
         let withArchived = nodes + [node(archivedLine, "JPY", parent: card, archived: true)]

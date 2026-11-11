@@ -140,7 +140,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | appstorage-onboarding-desarma-el-aislamiento-de-tests | done | tickets/done/appstorage-onboarding-desarma-el-aislamiento-de-tests.md |
 | archived-accounts-still-count-in-the-panel-total | done | tickets/done/archived-accounts-still-count-in-the-panel-total.md |
 | archived-group-still-allows-expenses-and-payments-from-inside | backlog | tickets/backlog/archived-group-still-allows-expenses-and-payments-from-inside.md |
-| archiving-exclusion-open-decisions | backlog | tickets/backlog/archiving-exclusion-open-decisions.md |
+| archiving-exclusion-open-decisions | done | tickets/done/archiving-exclusion-open-decisions.md |
 | associate-cta-ignores-the-groups-kill-switch | done | tickets/done/associate-cta-ignores-the-groups-kill-switch.md |
 | association-read-writes-defaults-from-a-view-body | backlog | tickets/backlog/association-read-writes-defaults-from-a-view-body.md |
 | attest-copy-still-says-the-security-check-our-server-requires | done | tickets/done/attest-copy-still-says-the-security-check-our-server-requires.md |

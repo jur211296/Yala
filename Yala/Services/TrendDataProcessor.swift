@@ -334,6 +334,11 @@ struct TrendDataProcessor {
         valuationCap: Date,
         converter: CurrencyConverting
     ) {
+        // Quien llama pasa las filas de las cuentas cuyo historial se ve (ya sin las excluidas), y una cuenta archivada
+        // está ahí pero no suma en un saldo (`Account.sumsInBalance`, decisión 6 de 2.3). Sin este filtro la curva acababa
+        // lejos de la cifra, que ya la deja fuera. Solo quita las archivadas: el resto del filtrado es de quien llama.
+        let transactions = transactions.filter { $0.account?.isArchivedByThePerson != true }
+
         // Start with 0 - initial balance is now a transaction
         var native: [String: Decimal] = [:]
 

@@ -5559,7 +5559,7 @@
 "accountDetail.empty" = "Sem registos neste período";
 
 /* Note under Archive toggle when archiving turned on Exclude from statistics */
-"account.archiveExcludedNotice" = "Ao arquivar, esta conta deixa de contar nos teus totais e estatísticas, e os registos dela ficam ocultos em Registos. Para que continue a contar, desativa \"Excluir das estatísticas\".";
+"account.archiveKeepsHistoryNotice" = "Uma conta arquivada não conta no teu saldo nem aparece nas contas do Painel ou ao registar. As despesas e receitas dela continuam a contar no Painel, em Registos e em Estatísticas.";
 
 
 /* Chat draft card (Yala IA) — redesign A */

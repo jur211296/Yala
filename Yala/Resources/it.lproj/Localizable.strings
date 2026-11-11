@@ -6320,7 +6320,7 @@
 "accountDetail.empty" = "Nessuna registrazione in questo periodo";
 
 /* Note under Archive toggle when archiving turned on Exclude from statistics */
-"account.archiveExcludedNotice" = "Una volta archiviato, questo conto non conta più nei tuoi totali e nelle statistiche, e le sue registrazioni vengono nascoste in Registri. Per continuare a includerlo, disattiva «Escludi dalle statistiche».";
+"account.archiveKeepsHistoryNotice" = "Un conto archiviato non conta nel tuo saldo e non compare tra i conti del Panel né quando registri. Le sue spese e entrate continuano a contare nel Panel, in Registri e in Statistiche.";
 
 
 /* Chat draft card (Yala IA) — redesign A */

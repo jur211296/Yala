@@ -78,8 +78,10 @@ struct AccountCardAIContextTests {
         #expect(abs(built.balances.totalBalance - (-1_250 + 175 * 3.7)) < 0.0001)
     }
 
-    @Test("Una línea archivada sale aparte y no entra en el total de la tarjeta, como en el Panel")
-    func archivedLineIsListedApart() throws {
+    /// Una línea archivada no suma en ningún saldo (decisión 6 de 2.3): ni en la tarjeta ni aparte. Hasta entonces se
+    /// listaba suelta porque sumaba en el total. Su gasto sigue en los períodos (lo cubren los tests del historial).
+    @Test("Una línea archivada no sale en los saldos ni entra en el total, como en el Panel")
+    func archivedLineIsLeftOutOfTheBalances() throws {
         let model = try makeTestContext()
         let card = Account(name: "Visa QA", currencyCode: "PEN", colorHex: "#3D36B3", iconName: "creditcard.fill", type: "creditCard")
         let line = Account(name: "Visa QA · USD", currencyCode: "USD", colorHex: "#3D36B3", iconName: "creditcard.fill", type: "creditCard")
@@ -98,10 +100,10 @@ struct AccountCardAIContextTests {
             currencyCode: "PEN", currencyDisplay: "S/", converter: MockCurrencyConverter(fixedRate: 3.7),
             language: "es", country: "PE", includeAnomalies: false, now: now)
         let entries = built.balances.accounts
-        #expect(entries.map(\.name) == ["Visa QA", "Visa QA · USD"])
+        #expect(entries.map(\.name) == ["Visa QA"])
         let head = try #require(entries.first { $0.name == "Visa QA" })
         #expect(head.lines == nil)
         #expect(head.cardTotal == nil)
-        #expect(entries.first { $0.name == "Visa QA · USD" }?.balance == -100)
+        #expect(abs(built.balances.totalBalance - (-1_000)) < 0.0001, "total: \(built.balances.totalBalance)")
     }
 }

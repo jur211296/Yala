@@ -6322,7 +6322,7 @@
 "accountDetail.empty" = "Brak operacji w tym okresie";
 
 /* Note under Archive toggle when archiving turned on Exclude from statistics */
-"account.archiveExcludedNotice" = "Po zarchiwizowaniu to konto przestaje się liczyć do sum i statystyk, a jego operacje są ukryte we „Wpisach”. Aby nadal się liczyło, wyłącz „Wyklucz ze statystyk”.";
+"account.archiveKeepsHistoryNotice" = "Zarchiwizowane konto nie liczy się do salda i nie pojawia się wśród kont w Panelu ani przy dodawaniu wpisów. Jego wydatki i przychody nadal liczą się w Panelu, we „Wpisach” i w „Statystykach”.";
 
 
 /* Chat draft card (Yala IA) — redesign A */

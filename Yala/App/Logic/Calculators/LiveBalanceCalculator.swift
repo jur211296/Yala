@@ -154,10 +154,10 @@ struct LiveBalanceCalculator {
         asOf now: Date = .now,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> Breakdown {
-        // Las cuentas marcadas "excluir de estadísticas" nunca entran, se filtre
-        // por cuenta o no.
+        // Las cuentas excluidas de estadísticas y las archivadas nunca entran en un saldo, se filtre por cuenta o no
+        // (`AccountScopeLogic`: archivar saca del saldo y conserva el historial, decisión 6 de 2.3).
         let countableIDs = Set(
-            accounts.filter { !$0.excludeFromStatistics }
+            accounts.filter(\.sumsInBalance)
                 .map { $0.persistentModelID }
         )
 
@@ -205,8 +205,12 @@ struct LiveBalanceCalculator {
     /// la curva del widget de inicio y su saldo de período: hasta el 2026-10-23 ese saldo de período contaba también
     /// las filas sin cuenta y no coincidía con el último punto de la curva (card
     /// `tablero-la-cifra-y-la-curva-del-widget-de-saldo-zyah`).
+    ///
+    /// Y solo si su cuenta suma en un saldo (`Account.sumsInBalance`): una cuenta archivada sale del saldo y de su curva
+    /// aunque sus movimientos sigan en ingresos y gastos (decisión 6 de 2.3). Quien llama ya dejó fuera las excluidas;
+    /// las archivadas le llegan porque su historial se ve.
     static func entersBalance(_ transaction: TransactionItem) -> Bool {
-        transaction.account != nil
+        transaction.account?.sumsInBalance == true
     }
 
     /// Lo que una fila suma al saldo, en su divisa NATIVA. Es la mitad de la regla del saldo vivo; la otra es

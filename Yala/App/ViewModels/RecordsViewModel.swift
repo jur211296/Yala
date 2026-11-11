@@ -344,7 +344,8 @@ final class RecordsViewModel: Filterable {
             forKey: AppPreferences.Keys.includeGroupTransactionsInFeed
         ) as? Bool ?? true
 
-        // Pre-filter: hide transactions from accounts excluded from statistics
+        // Pre-filter: hide transactions from accounts that hide their history (`Account.keepsHistory`: an archived
+        // account always shows them, decisión 6 de 2.3)
         // Lo que espera su borrado con «Deshacer» no se ve (UX 2.2 · L15-13, `RecordPendingDeletion`).
         let pendingDeletion = RecordPendingDeletion.shared
         // La entrada de una recarga de tu parte se oculta con su salida (card oibr): no lleva puntero de grupo (D4).
@@ -354,7 +355,7 @@ final class RecordsViewModel: Filterable {
         let eligibleTransactions = transactions.filter { tx in
             if pendingDeletion.hides(tx.persistentModelID, transferPairID: tx.transferPairID) { return false }
             guard let account = tx.account else { return true }
-            if account.excludeFromStatistics { return false }
+            if !account.keepsHistory { return false }
             if !includeGroupTxs && (tx.splitExpenseID != nil || tx.splitSettlementID != nil) {
                 return false
             }
@@ -444,7 +445,7 @@ final class RecordsViewModel: Filterable {
         for group in groupedRecords {
             for record in group.records {
                 guard let account = record.account else { continue }
-                if account.excludeFromStatistics { continue }
+                if !account.keepsHistory { continue }
                 // Excluir patas de préstamo derivadas del bridge (préstamo a grupos).
                 if statsAdjustment.isSuppressed(record) { continue }
 

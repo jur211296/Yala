@@ -297,7 +297,7 @@ nonisolated enum AccountCardLogic {
 
     /// Las líneas de cada cabeza con líneas, por identificador cualquiera (`PersistentIdentifier` en el filtro de sesión,
     /// `UUID` en los presupuestos). Solo aparecen las cabezas que tienen alguna. **Incluye las líneas archivadas** (siguen
-    /// siendo de la tarjeta para `resolve`): archivar no decide la suma (`session-filters.md`), así que archivar una línea no
+    /// siendo de la tarjeta para `resolve`): archivar conserva el historial (`session-filters.md`), así que archivar una línea no
     /// le quita su gasto al presupuesto de la tarjeta ni sus movimientos al filtro (review del 2026-10-18).
     static func linesByHead<E, ID: Hashable>(
         _ accounts: [E], node: (E) -> AccountLineNode, id: (E) -> ID
