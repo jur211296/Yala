@@ -151,7 +151,8 @@ enum SmartAxisHelper {
         if let grouping = forceGrouping {
             switch grouping {
             case .month:
-                dateFormat = multipleYears ? "MMMyy" : "MMM"
+                // El año con cuatro cifras: «nov 24» se leía como el día 24 (decisión 11 de la revisión 2.3).
+                dateFormat = multipleYears ? "MMMyyyy" : "MMM"
             case .weekOfYear:
                 dateFormat = "dMMM"
             default:
@@ -169,9 +170,9 @@ enum SmartAxisHelper {
 
     private static func spanBasedFormat(days: Double, multipleYears: Bool, isSinglePoint: Bool) -> String {
         if isSinglePoint || days == 0 {
-            return multipleYears ? "dMMMyy" : "dMMM"
+            return multipleYears ? "dMMMyyyy" : "dMMM"
         } else if days > 60 {
-            return multipleYears ? "MMMyy" : "MMM"
+            return multipleYears ? "MMMyyyy" : "MMM"
         } else if days > 14 {
             return "dMMM"
         } else {

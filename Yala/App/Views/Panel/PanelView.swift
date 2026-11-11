@@ -766,7 +766,11 @@ struct PanelView: View {
                             viewModel: viewModel,
                             sessionState: sessionState,
                             defaultCurrencyCodeRaw: appPreferences.defaultCurrencyCode.rawValue,
-                            showVariations: appPreferences.showVariations,
+                            // Días 1 y 2 de «Este mes»: como con la preferencia apagada, sin «vs S/ X» en las tarjetas
+                            // (decisión 10 de 2.3). Los chips sueltos los apaga `hidesPeriodVariations`.
+                            showVariations: appPreferences.showVariations && !PanelEarlyMonthLogic.hidesVariations(
+                                period: sessionState.selectedPeriod, now: .now, calendar: .current
+                            ),
                             sectionPrefsPresentation: $sheets.sectionPrefsPresentation,
                             showBudgetFavoritesSettings: $sheets.showBudgetFavoritesSettings,
                             showCustomPeriodPicker: $sheets.showCustomPeriodPicker,
@@ -794,6 +798,11 @@ struct PanelView: View {
                     // El ojo del hero oculta las cifras de todo el contenido del Panel (`AmountPrivacy`). Las hojas que se
                     // abren desde aquí cuelgan fuera de este scroll y no lo heredan: abrir un detalle es pedir verlo.
                     .environment(\.amountsHidden, appPreferences.panelAmountsHidden)
+                    // Los días 1 y 2 de «Este mes» no se compara con el período anterior: solo el monto (decisión 10 de
+                    // 2.3). Lo leen `VariationChip` y los «vs» de las tarjetas, así no se escapa ninguno.
+                    .environment(\.hidesPeriodVariations, PanelEarlyMonthLogic.hidesVariations(
+                        period: sessionState.selectedPeriod, now: .now, calendar: .current
+                    ))
                     // Al final del scroll están a la vista Yala IA y «+» (`showFloatingActions`): el último widget
                     // sube por encima de los dos.
                     .padding(.bottom, DS.Button.fabStackClearance(buttons: 2))

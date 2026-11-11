@@ -276,22 +276,17 @@ struct TrendChartView: View {
                         Text(periodLabel(for: activeDate))
                             .font(DS.Typography.captionSmall)
                             .foregroundStyle(.thSecondaryText)
-                        Text("\(formattedAmount(rawValue)) \(currencyCode)")
+                        // «S/ 65,879» como el resto del Panel, no «65,879 PEN» (decisión 11 de 2.3).
+                        Text(tooltipAmount(rawValue))
                             .font(DS.Typography.labelSmall)
                             .foregroundStyle(.thPrimaryText)
 
-                        // Average in tooltip
+                        // Average in tooltip: «Promedio S/ 66,287», no «x̄» (decisión 11 de 2.3).
                         if let avg = totalAverageValue {
                             Divider()
-                            HStack {
-                                Text("x̄")
-                                    .font(DS.Typography.labelTiny)
-                                    .foregroundStyle(.thSecondaryText)
-                                    .frame(width: 10)
-                                Text("\(formattedAmount(avg)) \(currencyCode)")
-                                    .font(DS.Typography.labelTiny)
-                                    .foregroundStyle(.primary)
-                            }
+                            Text(L10n.Panel.trendAverageLabel(tooltipAmount(avg)))
+                                .font(DS.Typography.labelTiny)
+                                .foregroundStyle(.thSecondaryText)
                         }
                     }
                     .padding(.horizontal, DS.Spacing.sm)
@@ -653,17 +648,11 @@ struct TrendChartView: View {
         return f
     }()
 
-    private static let periodDayFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = AppLocale.current
-        f.setLocalizedDateFormatFromTemplate("dMMMyy")
-        return f
-    }()
-
     private static let periodMonthFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.setLocalizedDateFormatFromTemplate("MMMyy")
+        // El año con cuatro cifras: «nov 26» se leía como el día 26 (decisión 11 de la revisión 2.3).
+        f.setLocalizedDateFormatFromTemplate("MMMyyyy")
         return f
     }()
 
@@ -672,13 +661,27 @@ struct TrendChartView: View {
         Self.dayNumberFormatter.string(from: date)
     }
 
+    /// La fecha del globo: «7 nov», con el año (cuatro cifras) solo si no es el de hoy, como el chip de la gráfica.
     private func periodLabel(for date: Date) -> String {
-        let formatter: DateFormatter
         switch grouping {
-        case .day, .week: formatter = Self.periodDayFormatter
-        case .month: formatter = Self.periodMonthFormatter
+        case .day, .week:
+            return PanelTrendSummaryLogic.shortDate(date, today: .now, calendar: .current, locale: AppLocale.current)
+        case .month:
+            return Self.periodMonthFormatter.string(from: date).lowercased().replacing(".", with: "")
         }
-        return formatter.string(from: date).lowercased().replacing(".", with: "")
+    }
+
+    /// La cifra del globo: con el símbolo de la moneda (o su código, si la persona lo eligió así en Ajustes) y sin
+    /// decimales. Texto ya resuelto: dentro de un `.annotation` no llega el entorno (`swiftui-ds.md`).
+    private func tooltipAmount(_ value: Double) -> String {
+        if amountsHidden { return AmountPrivacy.mask }
+        return CurrencyFormattingHelper.currency(
+            abs(value) < 0.5 ? 0 : value,
+            decimals: 0,
+            identifier: appPreferences.currencyIdentifier(for: currencyCode),
+            forceSign: false,
+            isEstimate: false
+        )
     }
 
     private func formattedAmount(_ value: Double) -> String {

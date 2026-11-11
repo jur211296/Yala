@@ -154,6 +154,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | balance-chart-voiceover-reads-base-to-monto | backlog | tickets/backlog/balance-chart-voiceover-reads-base-to-monto.md |
 | balance-figure-counts-future-dated-rows-the-curve-never-draws | done | tickets/done/balance-figure-counts-future-dated-rows-the-curve-never-draws.md |
 | bank-email-forwarding-to-the-inbox | done | tickets/done/bank-email-forwarding-to-the-inbox.md |
+| balance-chip-compares-against-the-day-after-in-the-previous-month | backlog | tickets/backlog/balance-chip-compares-against-the-day-after-in-the-previous-month.md |
 | bank-email-measure-a-week-of-real-peruvian-alerts | backlog | tickets/backlog/bank-email-measure-a-week-of-real-peruvian-alerts.md |
 | bank-email-read-reconcile-with-the-ai-cost-control | done | tickets/done/bank-email-read-reconcile-with-the-ai-cost-control.md |
 | barrido-ios27-animaciones-y-vistas-mal-optimizadas | done | tickets/done/barrido-ios27-animaciones-y-vistas-mal-optimizadas.md |
@@ -707,6 +708,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | invite-recovery-relaunches-for-a-mirror-it-never-uses | qa | tickets/qa/invite-recovery-relaunches-for-a-mirror-it-never-uses.md |
 | invite-refresh-forzado-es-noop-si-hay-otro-en-vuelo | done | tickets/done/invite-refresh-forzado-es-noop-si-hay-otro-en-vuelo.md |
 | invite-sign-in-with-a-complete-account-blocks-on-its-own-groups | done | tickets/done/invite-sign-in-with-a-complete-account-blocks-on-its-own-groups.md |
+| ipad-account-form-uitest-times-out-inside-a-long-run | backlog | tickets/backlog/ipad-account-form-uitest-times-out-inside-a-long-run.md |
 | ipad-and-duo-panel-and-statistics-use-the-width | done | tickets/done/ipad-and-duo-panel-and-statistics-use-the-width.md |
 | ipad-drop-unreadable-file-fails-silently | done | tickets/done/ipad-drop-unreadable-file-fails-silently.md |
 | ipad-group-detail-keeps-the-first-group-after-switching | done | tickets/done/ipad-group-detail-keeps-the-first-group-after-switching.md |

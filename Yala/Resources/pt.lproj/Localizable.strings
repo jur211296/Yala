@@ -6894,6 +6894,12 @@
 
 /* Balance chart: label of the dashed average line. %@ = short amount */
 "panel.trend.averageLabel" = "Média %@";
+"panel.trend.versusDate" = "vs %@";
+"panel.trend.today" = "hoje";
+"panel.trend.startEnd.a11y" = "Saldo, %1$@: %2$@; %3$@: %4$@";
+"panel.monthStart.dayOfMonth" = "Dia %1$d de %2$d";
+"panel.monthStart.last30Days" = "Ver últimos 30 dias";
+"panel.monthStart.previousMonth" = "Ver %@";
 
 /* Primary button of the voice/photo AI notice */
 "aiConsent.processingAccept" = "Ativar";

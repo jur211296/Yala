@@ -1012,6 +1012,31 @@ enum L10n {
         static func trendAverageLabel(_ value: String) -> String {
             String(format: ls("panel.trend.averageLabel", comment: "Balance chart: label of the dashed average line. %@ = short amount"), value)
         }
+        /// Junto al chip de variación de la gráfica: contra qué fecha compara (decisión 11 de 2.3). %@ = «20 oct».
+        static func trendVersusDate(_ date: String) -> String {
+            String(format: ls("panel.trend.versusDate", comment: "Trend chart: next to the % chip, the date of the previous period it compares against. %@ = short date, e.g. '20 Oct'"), date)
+        }
+        /// La fila de inicio y fin bajo la gráfica de saldo: «1 nov S/ X → hoy S/ Y».
+        static var trendToday: String {
+            ls("panel.trend.today", comment: "Balance chart start-to-end row: the word for 'today' in '1 Nov S/ X → today S/ Y'. Lowercase mid-sentence")
+        }
+        /// VoiceOver de la fila de inicio y fin. %1$@ = fecha de inicio, %2$@ = saldo de inicio, %3$@ = «hoy» o fecha
+        /// final, %4$@ = saldo final.
+        static func trendStartEndAccessibility(_ startDate: String, _ startAmount: String, _ endDate: String, _ endAmount: String) -> String {
+            String(format: ls("panel.trend.startEnd.a11y", comment: "VoiceOver for the balance chart start-to-end row. %1$@ = start date, %2$@ = start balance, %3$@ = 'today' or end date, %4$@ = end balance"), startDate, startAmount, endDate, endAmount)
+        }
+        /// Los días 1 y 2 de «Este mes» (decisión 10 de 2.3): la línea del hero que dice que el mes acaba de empezar.
+        enum MonthStart {
+            static func dayOfMonth(_ day: Int, _ total: Int) -> String {
+                String(format: ls("panel.monthStart.dayOfMonth", comment: "Panel hero, first two days of the month: 'Day 1 of 31'. %1$d = day of month, %2$d = days in month"), day, total)
+            }
+            static var last30Days: String {
+                ls("panel.monthStart.last30Days", comment: "Panel hero, first two days of the month: link that switches the period selector to 'Last 30 days'")
+            }
+            static func previousMonth(_ month: String) -> String {
+                String(format: ls("panel.monthStart.previousMonth", comment: "Panel hero, first two days of the month: link that switches the period selector to last month. %@ = month name, e.g. 'October'"), month)
+            }
+        }
         /// La cola de avisos del Panel (UX 2.2 · L3-8).
         enum Notices {
             static func position(_ index: Int, _ total: Int) -> String {

@@ -30,7 +30,10 @@ struct TrendsCarouselWidget: View {
 
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.amountsHidden) private var amountsHidden
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    /// Días 1 y 2 de «Este mes»: sin comparaciones, solo el monto (decisión 10 de 2.3).
+    @Environment(\.hidesPeriodVariations) private var hidesPeriodVariations
 
     @Namespace private var animationNamespace
     @State private var showFilterBlockedMessage: Bool = false
@@ -86,6 +89,7 @@ struct TrendsCarouselWidget: View {
                     trendPage(chartHeight: chartHeight)
                         .frame(height: chartHeight)
                 }
+                startEndRow
                 if isShowingProjection, let projection = viewModel.trendProjection {
                     ProjectedFlowCaption(projection: projection, currencyCode: currencyCode)
                 }
@@ -223,17 +227,119 @@ struct TrendsCarouselWidget: View {
         }
     }
 
-    /// Delta % chip rendered inline next to the KPI in regular layouts.
+    /// Delta % chip rendered inline next to the KPI in regular layouts. Dice contra qué fecha compara («vs 20 oct»,
+    /// decisión 11 de 2.3): solo, el «+10.3 %» no decía con qué, y con la línea bajando se leía como un error.
     @ViewBuilder
     private var variationChip: some View {
         let data = viewModel.periodComparisonWidget
         if data.supportsComparison, let delta = data.deltaPercent {
-            VariationChip(
-                variation: delta,
-                size: .small,
-                isExpenseContext: data.trendType == .expense
+            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
+                VariationChip(
+                    variation: delta,
+                    size: .small,
+                    isExpenseContext: data.trendType == .expense
+                )
+                // El chip se esconde solo (preferencia o mes recién empezado); su «vs» se va con él.
+                if appPreferences.showVariations, !hidesPeriodVariations, let date = data.previousReferenceDate {
+                    Text(L10n.Panel.trendVersusDate(
+                        PanelTrendSummaryLogic.shortDate(date, today: .now, calendar: .current, locale: AppLocale.current)
+                    ))
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.thSecondaryText)
+                    .lineLimit(1)
+                    .accessibilityIdentifier("panel_trend_versus_date")
+                }
+            }
+        }
+    }
+
+    // MARK: - Inicio y fin (decisión 11 de 2.3, opción B)
+
+    /// Bajo la gráfica de saldo, de dónde partió y dónde está, con el % del cambio: el eje no arranca en cero y la línea
+    /// exageraba la caída. Con montos ocultos queda el %; los días 1 y 2 del mes, solo los montos.
+    @ViewBuilder
+    private var startEndRow: some View {
+        if viewModel.dataTrendType == .balance,
+           !hasNoTrendData,
+           let summary = PanelTrendSummaryLogic.startEnd(
+               rawPoints: viewModel.rawTrendPoints,
+               liveAnchor: viewModel.trendLiveAnchor,
+               today: .now,
+               calendar: .current
+           ) {
+            let startDate = PanelTrendSummaryLogic.shortDate(
+                summary.startDate, today: .now, calendar: .current, locale: AppLocale.current)
+            let endDate = summary.endIsToday
+                ? L10n.Panel.trendToday
+                : PanelTrendSummaryLogic.shortDate(summary.endDate, today: .now, calendar: .current, locale: AppLocale.current)
+            let variation = hidesPeriodVariations ? nil : summary.variation
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                    startEndSide(date: startDate, value: summary.startValue)
+                    startEndArrow
+                    startEndSide(date: endDate, value: summary.endValue, isEstimate: summary.endIsToday && viewModel.trendLiveAnchorIsApproximate)
+                    startEndVariation(variation)
+                }
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    startEndSide(date: startDate, value: summary.startValue)
+                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                        startEndArrow
+                        startEndSide(date: endDate, value: summary.endValue, isEstimate: summary.endIsToday && viewModel.trendLiveAnchorIsApproximate)
+                        startEndVariation(variation)
+                    }
+                }
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(startEndAccessibilityLabel(summary, startDate: startDate, endDate: endDate, variation: variation))
+            .accessibilityIdentifier("panel_trend_start_end")
+        }
+    }
+
+    private func startEndSide(date: String, value: Double, isEstimate: Bool = false) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
+            Text(date)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.thSecondaryText)
+            AmountText(
+                value: value,
+                currencyCode: currencyCode,
+                font: DS.Typography.labelSmall,
+                secondaryFont: DS.Typography.captionSmall,
+                isEstimate: isEstimate
             )
         }
+        .lineLimit(1)
+        .fixedSize()
+    }
+
+    private var startEndArrow: some View {
+        Image(systemName: "arrow.right")
+            .font(DS.Typography.captionSmall)
+            .foregroundStyle(.thSecondaryText)
+            .accessibilityHidden(true)
+    }
+
+    @ViewBuilder
+    private func startEndVariation(_ variation: Double?) -> some View {
+        if let variation {
+            Text("· \(PreviousPeriodHelper.formatVariationValue(variation))")
+                .font(DS.Typography.labelSmall)
+                .foregroundStyle(.thSecondaryText)
+                .lineLimit(1)
+                .fixedSize()
+        }
+    }
+
+    private func startEndAccessibilityLabel(
+        _ summary: PanelTrendSummaryLogic.StartEnd, startDate: String, endDate: String, variation: Double?
+    ) -> String {
+        let amount: (Double) -> String = { value in
+            AmountPrivacy.text(appPreferences.currency(value, currencyCode: currencyCode), hidden: amountsHidden)
+        }
+        let base = L10n.Panel.trendStartEndAccessibility(
+            startDate, amount(summary.startValue), endDate, amount(summary.endValue))
+        guard let variation else { return base }
+        return "\(base). \(VariationChip.accessibilityText(for: variation))"
     }
 
     // MARK: - Trend chart page
