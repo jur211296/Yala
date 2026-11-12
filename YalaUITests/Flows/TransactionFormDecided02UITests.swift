@@ -48,6 +48,15 @@ final class TransactionFormDecided02UITests: XCTestCase {
         app.descendants(matching: .any)[id].firstMatch
     }
 
+    /// Fuera el teclado con un toque en la pregunta del monto, que no es un control. Con el teclado abierto lo que falta
+    /// lo dice la barra de encima del teclado y la línea no está (G1, revisión 2.3): para leer la línea, se cierra.
+    private func dismissKeyboard(_ app: XCUIApplication) {
+        let question = element(app, "new_transaction_amount_question")
+        XCTAssertTrue(question.waitForExistence(timeout: 5), "Falta la pregunta del monto.")
+        question.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5), "El teclado no se cerró.")
+    }
+
     private func formIsGone(_ app: XCUIApplication, timeout: TimeInterval = 8) -> Bool {
         app.textFields["new_transaction_amount"].waitForNonExistence(timeout: timeout)
     }
@@ -82,6 +91,7 @@ final class TransactionFormDecided02UITests: XCTestCase {
         let before = line.label
 
         typeAmount(app, "25")
+        dismissKeyboard(app)
         XCTAssertTrue(line.waitForExistence(timeout: 3))
         XCTAssertNotEqual(line.label, before, "Con el monto puesto, la línea debía dejar de nombrarlo.")
 
@@ -98,6 +108,7 @@ final class TransactionFormDecided02UITests: XCTestCase {
         openForm(app)
         app.buttons["new_transaction_type_transfer"].tap()
         typeAmount(app, "10")
+        dismissKeyboard(app)
         let line = element(app, "new_transaction_missing_line")
         XCTAssertTrue(line.waitForExistence(timeout: 5), "Sin origen ni destino, la línea debía nombrarlos.")
 

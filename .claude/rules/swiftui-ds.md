@@ -337,7 +337,16 @@ paths:
   (medido el 2026-11-01, Nuevo gasto de Grupos, iOS 27.0):** el alto que mide el `GeometryReader` deja de descontar la
   barra del inset, el contenido «cabe» y lo último queda debajo de «Guardar». ⇒ mientras haya un campo con foco, sin
   alto mínimo (`.frame(minHeight: focusedField == nil ? proxy.size.height : nil)`), o el molde de Nuevo registro
-  (`SaveAreaPlacement`, que mete «Guardar» en el contenido con el teclado).
+  (`SaveAreaPlacement`: en la `.safeAreaBar` pinta «Guardar» sin teclado y, con teclado, la barra fina de lo que falta y
+  «Guardar», que el área segura del teclado deja encima de él; G1, revisión 2.3).
+- **En el iPad, `.keyboardType(.decimalPad)` abre un teclado numérico FLOTANTE en un globo encima del contenido, además
+  del acoplado (medido el 2026-11-11, iPad Air 11, iOS 27.2; en el Pro 13 no salía).** Tapaba la descripción y la
+  pregunta del importe de Nuevo registro, y pasar la hoja a tamaño de página no lo quitaba. ⇒ un campo de importe usa
+  `.amountKeyboard()` (`Transactions/Components/AmountKeyboard.swift`: `.numbersAndPunctuation` en iPad, que sale solo
+  acoplado; el campo tiene que filtrar lo que se escribe). Hoy solo lo llevan los cuatro campos de Nuevo registro; el
+  resto de `.decimalPad` de la app no está medido. En XCUITest, el flotante se ve como teclas «1» por encima del
+  acoplado, y **un simulador con `HardwareKeyboardLastSeen = 1` no pinta ningún teclado**: un caso que mida teclados
+  exige uno en pantalla (`KeyboardSaveBar23UITests`).
 - **Los botones fijos debajo de un scroll van en `.safeAreaBar(edge: .bottom)`, no en `.safeAreaInset` (barrido final
   2.2, 2026-11-05).** Con el inset y sin fondo, el contenido que se desplaza pasa por debajo de «Guardar» y los dos textos
   se leen uno encima del otro: a AX5 en Nuevo registro y el onboarding, y en el Duo cerrado también a tamaño normal. La

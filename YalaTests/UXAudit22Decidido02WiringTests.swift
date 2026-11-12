@@ -71,7 +71,8 @@ struct UXAudit22Decidido02WiringTests {
         let code = Self.codeOnly(try Self.source(Self.form))
         #expect(code.contains("DatePickerSheet(selectedDate: $viewModel.transactionDate, quickPick: true)"))
         let destination = try Self.section(
-            Self.source(Self.form), from: "$viewModel.showDestinationAccountSelector) {", to: ".sheet(")
+            // Sin el `) {` de cierre: la hoja lleva un `onDismiss` que devuelve el teclado (G1, revisión 2.3).
+            Self.source(Self.form), from: "isPresented: $viewModel.showDestinationAccountSelector", to: ".sheet(")
         #expect(destination.contains("offersCreatingAccount: true"))
         // Ya no hay ★ en la barra: la estrella solo guarda (L2-13).
         #expect(!code.contains("Image(systemName: \"star.fill\")"))
