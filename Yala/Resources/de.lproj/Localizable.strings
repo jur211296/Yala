@@ -8923,3 +8923,10 @@
 "records.list.loading" = "Deine Einträge werden geladen…";
 "records.list.loadErrorTitle" = "Deine Einträge konnten nicht geladen werden";
 "records.list.loadErrorMessage" = "Beim Lesen ist etwas schiefgelaufen. Versuch es gleich noch einmal.";
+
+/* Nuevo registro 2.3, decisión 81: «Volver a grabar» y «Otra foto» preguntan antes de descartar lo entendido */
+"entryDiscard.voice.title" = "Verwerfen, was ich verstanden habe?";
+"entryDiscard.voice.message" = "Wenn du erneut aufnimmst, wird alles Nichtgespeicherte gelöscht und bleibt nicht im Posteingang.";
+"entryDiscard.photo.title" = "Verwerfen, was ich gelesen habe?";
+"entryDiscard.photo.message" = "Wenn du ein anderes Foto wählst, wird alles Nichtgespeicherte gelöscht und bleibt nicht im Posteingang.";
+"entryDiscard.keepReviewing" = "Weiter prüfen";

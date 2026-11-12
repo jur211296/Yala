@@ -8167,3 +8167,10 @@
 "records.list.loading" = "Loading your records…";
 "records.list.loadErrorTitle" = "We couldn't load your records";
 "records.list.loadErrorMessage" = "Something went wrong reading them. Try again in a moment.";
+
+/* Nuevo registro 2.3, decisión 81: «Volver a grabar» y «Otra foto» preguntan antes de descartar lo entendido */
+"entryDiscard.voice.title" = "Discard what I heard?";
+"entryDiscard.voice.message" = "To record again, anything you didn’t save is deleted and won’t stay in your Inbox.";
+"entryDiscard.photo.title" = "Discard what I read?";
+"entryDiscard.photo.message" = "To choose another photo, anything you didn’t save is deleted and won’t stay in your Inbox.";
+"entryDiscard.keepReviewing" = "Keep reviewing";

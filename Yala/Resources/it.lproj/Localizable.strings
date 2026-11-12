@@ -8933,3 +8933,10 @@
 "records.list.loading" = "Caricamento delle tue registrazioni…";
 "records.list.loadErrorTitle" = "Non siamo riusciti a caricare le tue registrazioni";
 "records.list.loadErrorMessage" = "Qualcosa è andato storto nel leggerle. Riprova tra un momento.";
+
+/* Nuevo registro 2.3, decisión 81: «Volver a grabar» y «Otra foto» preguntan antes de descartar lo entendido */
+"entryDiscard.voice.title" = "Scartare quello che ho capito?";
+"entryDiscard.voice.message" = "Per registrare di nuovo, quello che non hai salvato viene eliminato e non resta in Posta in arrivo.";
+"entryDiscard.photo.title" = "Scartare quello che ho letto?";
+"entryDiscard.photo.message" = "Per scegliere un’altra foto, quello che non hai salvato viene eliminato e non resta in Posta in arrivo.";
+"entryDiscard.keepReviewing" = "Continua a controllare";

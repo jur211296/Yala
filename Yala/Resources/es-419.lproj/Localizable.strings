@@ -8944,3 +8944,10 @@
 "records.list.loading" = "Cargando tus registros…";
 "records.list.loadErrorTitle" = "No pudimos cargar tus registros";
 "records.list.loadErrorMessage" = "Algo salió mal al leerlos. Intenta de nuevo en un momento.";
+
+/* Nuevo registro 2.3, decisión 81: «Volver a grabar» y «Otra foto» preguntan antes de descartar lo entendido */
+"entryDiscard.voice.title" = "¿Descartar lo que entendí?";
+"entryDiscard.voice.message" = "Para grabar otra vez, lo que no guardaste se borra y no queda en tu Bandeja.";
+"entryDiscard.photo.title" = "¿Descartar lo que leí?";
+"entryDiscard.photo.message" = "Para elegir otra foto, lo que no guardaste se borra y no queda en tu Bandeja.";
+"entryDiscard.keepReviewing" = "Seguir revisando";

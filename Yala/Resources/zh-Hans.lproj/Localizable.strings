@@ -8935,3 +8935,10 @@
 "records.list.loading" = "正在加载你的记录…";
 "records.list.loadErrorTitle" = "无法加载你的记录";
 "records.list.loadErrorMessage" = "读取时出了点问题。请稍后再试。";
+
+/* Nuevo registro 2.3, decisión 81: «Volver a grabar» y «Otra foto» preguntan antes de descartar lo entendido */
+"entryDiscard.voice.title" = "要丢弃我听到的内容吗？";
+"entryDiscard.voice.message" = "重新录音后，未保存的内容会被删除，也不会留在收件箱。";
+"entryDiscard.photo.title" = "要丢弃我读到的内容吗？";
+"entryDiscard.photo.message" = "换一张照片后，未保存的内容会被删除，也不会留在收件箱。";
+"entryDiscard.keepReviewing" = "继续检查";
