@@ -723,6 +723,11 @@ La tabla vista por vista y lo que queda en cards: `docs/fluidez/AUDITORIA-FLUIDE
     no caben a la vez (iPad mini en vertical: 744 pt, antes de plegar la página; hoy, Yala IA abierto al lado), el
     split SUPERPONE la lista sobre el detalle; con la visibilidad fija la superposición no se retira nunca y tapa el
     detalle, y sin el botón no hay forma de volver a la lista después de retirarla.
+- **La columna de lista de un `ListDetailSplit` no admite título grande (medido el 2026-11-12, iPad Pro 13, iOS 27.2,
+  decisión 67 de 2.3).** `.navigationBarTitleDisplayMode(.large)` no cambia nada ahí: el título va siempre en la barra,
+  junto a los botones y al de la barra lateral, y con cuatro botones salía «Registr…». Lo que funciona es dejarle sitio:
+  en Registros, «Seleccionar» va con su icono en esa columna (`RecordsSelectToolbarButton(iconOnly:)`). Pin:
+  `RecordsCalendarWeek23UITests#test_iPad_listColumnTitle_fitsWhole`.
 - **Un `navigationDestination` de la columna de lista presenta en la de detalle** (medido con presupuestos): sus filas
   no se tocaron. En compacta, empuja como siempre.
 - **Y lo que eso presenta no puede empujar nada por su cuenta si la columna de detalle no lleva su `NavigationStack`**
