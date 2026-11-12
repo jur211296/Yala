@@ -120,7 +120,7 @@ struct CurrencyPickerSheet: View {
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(info.name.capitalized)
-                        .font(DS.Typography.body)
+                        .font(DS.Typography.body.weight(isSelected ? .semibold : .regular))
                         .foregroundStyle(.primary)
                     Text(info.code)
                         .font(DS.Typography.caption)
@@ -131,16 +131,22 @@ struct CurrencyPickerSheet: View {
 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                         .font(DS.Typography.headline)
                         .accessibilityHidden(true)
                 }
             }
             .padding(.horizontal, DS.FormRow.paddingH)
             .padding(.vertical, DS.FormRow.paddingV)
+            // La moneda que está puesta, rellena (UX 2.2 · L16-9), como las demás hojas de selección de Ajustes.
+            .selectedOptionFill(isSelected)
+            .padding(.horizontal, DS.Spacing.xs)
+            .padding(.vertical, DS.Spacing.xxs)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityIdentifier("currency_row_\(currency.rawValue)")
     }
 }
 

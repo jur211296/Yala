@@ -59,6 +59,10 @@ final class AccountsCrudUITests: XCTestCase {
         let saveButton = app.buttons["toolbar_save_button"]
         XCTAssertTrue(saveButton.waitForExistence(timeout: 5), "No apareció toolbar_save_button.")
         saveButton.tap()
+        // Desde S12j, tras crear la cuenta la hoja ofrece añadirle otra divisa: «Ahora no» la cierra como antes.
+        let notNow = app.buttons["account_line_offer_skip"]
+        XCTAssertTrue(notNow.waitForExistence(timeout: 5), "Tras crear la cuenta no se ofreció otra divisa.")
+        notNow.tap()
 
         XCTAssertTrue(
             app.buttons["accounts_row_\(accountName)"].waitForExistence(timeout: 5),
@@ -103,5 +107,62 @@ final class AccountsCrudUITests: XCTestCase {
         let gone = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: notice)
         wait(for: [gone], timeout: 5)
         XCTAssertEqual(archive.value as? String, "1", "Re-incluir la cuenta la desarchivó.")
+    }
+
+    /// «Eliminar cuenta» pregunta antes de borrar: Cancelar la deja y Eliminar la quita.
+    /// Ticket `deleting-an-account-asks-nothing` (auditoría UX 2.2, lote 7, B1): hasta entonces borraba al
+    /// primer toque y cerraba la hoja. Los botones van por su etiqueta y no por posición: con textos largos
+    /// iOS los apila y pone Cancelar abajo, así que el índice cambia según el idioma. `launchForUITest` fija
+    /// el idioma a `es`, y una alerta no deja pasar `accessibilityIdentifier` a sus botones.
+    /// Desde el merge 2.1 → 2.2 (2026-10-17) la alerta es solo para una cuenta VACÍA: con movimientos pregunta la
+    /// hoja de mover o borrar (`AccountRemovalUITests`). Por eso usa «Dólares QA», la vacía de `cuenta-con-movimientos`.
+    func test_deleteAccount_asksFirst_cancelKeepsIt_confirmDeletesIt() {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: "cuenta-con-movimientos")
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        app.openProfile()
+        app.openSettingsSection("profile_accounts")
+
+        let rowID = "accounts_row_Dólares QA"
+        XCTAssertTrue(app.buttons[rowID].waitForExistence(timeout: 5), "El seed no dejó «Dólares QA».")
+
+        openDeleteAlert(app: app, rowID: rowID)
+        let alert = app.alerts.firstMatch
+        XCTAssertEqual(alert.buttons.count, 2, "La confirmación tiene que ofrecer Cancelar y Eliminar.")
+        alert.buttons["Cancelar"].tap()
+        XCTAssertTrue(alert.waitForNonExistence(timeout: 5), "Cancelar no cerró la alerta.")
+        XCTAssertTrue(
+            app.switches["account_archive_toggle"].exists,
+            "Cancelar cerró el formulario: la cuenta pudo haberse borrado."
+        )
+
+        // Mismo formulario, segunda vez: ahora sí.
+        let delete = app.buttons["account_delete_button"]
+        XCTAssertTrue(delete.waitForHittable(timeout: 3), "«Eliminar cuenta» dejó de estar a la vista tras cancelar.")
+        delete.tap()
+        XCTAssertTrue(app.alerts.firstMatch.waitForExistence(timeout: 5), "El segundo toque no preguntó.")
+        app.alerts.firstMatch.buttons["Eliminar"].tap()
+        XCTAssertTrue(
+            app.buttons[rowID].waitForNonExistence(timeout: 5), "Confirmar no borró la cuenta.")
+    }
+
+    private func openDeleteAlert(app: XCUIApplication, rowID: String) {
+        app.buttons[rowID].tap()
+
+        let delete = app.buttons["account_delete_button"]
+        XCTAssertTrue(delete.waitForExistence(timeout: 5), "No apareció «Eliminar cuenta» en el formulario.")
+        var swipes = 0
+        while !delete.isHittable && swipes < 8 {
+            app.swipeUp()
+            swipes += 1
+        }
+        XCTAssertTrue(delete.waitForHittable(timeout: 3), "«Eliminar cuenta» no quedó a la vista.")
+        delete.tap()
+
+        XCTAssertTrue(
+            app.alerts.firstMatch.waitForExistence(timeout: 5),
+            "«Eliminar cuenta» no preguntó: borró al primer toque."
+        )
     }
 }

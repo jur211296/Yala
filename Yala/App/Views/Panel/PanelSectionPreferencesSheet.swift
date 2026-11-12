@@ -150,13 +150,14 @@ struct PanelSectionPreferencesSheet: View {
                     HStack(spacing: DS.Spacing.md) {
                         Image(systemName: type.iconName)
                             .font(DS.Typography.body)
-                            .foregroundStyle(.tint)
+                            .foregroundStyle(.thAccentText)
                             .frame(width: 28)
                         Text(type.displayName)
                             .font(DS.Typography.body)
                     }
                 }
                 .onMove { source, destination in
+                    DS.Haptic.selection()
                     viewModel.moveWidgetInSection(kind, from: source, to: destination)
                 }
                 .deleteDisabled(true)
@@ -187,7 +188,7 @@ struct PanelSectionPreferencesSheet: View {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: type.iconName)
                     .font(DS.Typography.body)
-                    .foregroundStyle(.tint)
+                    .foregroundStyle(.thAccentText)
                     .frame(width: 28)
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     HStack(spacing: DS.Spacing.xs) {

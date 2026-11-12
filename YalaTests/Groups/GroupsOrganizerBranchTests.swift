@@ -373,7 +373,8 @@ struct GroupsOrganizerWiringTests {
     }
 
     private static let gateView = "Yala/App/Views/Onboarding/WelcomeGroupsGateView.swift"
-    private static let nameView = "Yala/App/Views/Groups/GroupsOrganizerNameView.swift"
+    /// Desde UX 2.2 · L12-12 el alta la escribe el formulario del primer grupo, que sustituyó a «¿Cómo te llamas?».
+    private static let nameView = "Yala/App/Views/Groups/GroupFormView.swift"
     private static func count(_ needle: String, in haystack: String) -> Int {
         haystack.components(separatedBy: needle).count - 1
     }
@@ -471,7 +472,10 @@ struct GroupsOrganizerWiringTests {
         let armed = try #require(Self.bodyOf("onGroupsGateNeutralReturnArmed: {", in: content), """
             `ContentView` dejó de cablear el aviso de la vuelta al neutro.
             """)
-        #expect(armed.contains("WelcomePendingDestinationStore.set(.groupsOrganizer)"), """
+        // Desde la card ypit el destino sale de `Purpose.destinationAfterNeutralReturn`, que para el organizador es
+        // siempre `.groupsOrganizer` (`WelcomeGroupsGateDestinationTests`), y el coordinador lo escribe además pegado al arm.
+        #expect(armed.contains("if let destination = purpose.destinationAfterNeutralReturn {")
+                && armed.contains("WelcomePendingDestinationStore.set(destination)"), """
             sin persistir el destino, quien vuelve a abrir la app aterriza en el chooser y tiene que volver
             a elegir «Vengo por un grupo» — el camino muerto, movido un paso más adelante.
             """)
@@ -706,7 +710,7 @@ struct GroupsOrganizerWiringTests {
     @Test("MUTACIÓN: el espejo de la celda usa los mismos términos que el dispatch")
     func exitCellMirrorsTheDispatch() throws {
         let code = try Self.code(Self.gateView)
-        let cell = try #require(Self.bodyOf("private static func exitCell() -> CloudSignOutFlowLogic.Path {", in: code))
+        let cell = try #require(Self.bodyOf("static func exitCell() -> CloudSignOutFlowLogic.Path {", in: code))
         for termino in ["for: CloudSyncFlags.storageMode",
                         "hasLiveSession: CloudAuthService.shared.hasSession",
                         "groupsBackendEnabled: CloudSyncFlags.groupsBackendCompiledCapability",
@@ -783,7 +787,12 @@ struct GroupsOrganizerWiringTests {
         // UNO desde el 2026-09-10. Hubo un segundo —el caso `.presentName` del router, por donde entraba la
         // card «Solo grupos» del onboarding (C2)— y se retiró con la card (ADR 2026-09-09 §7): solo-grupos se
         // abre desde el Welcome, así que el alta solo se escribe detrás de su pantalla del nombre.
-        #expect(Set(callSites) == Set(["GroupsOrganizerNameView.swift"]), """
+        // Desde UX 2.2 · L12-12 (2026-10-21) ese único sitio es el formulario del primer grupo: el nombre de la persona
+        // va dentro de él y «¿Cómo te llamas?» se retiró.
+        // Y desde el 2026-10-22, el caso `.presentName` del router otra vez, pero solo para quien vuelve con la misma cuenta
+        // y ya está en sus grupos con nombre: no se le pide rellenar el formulario del primer grupo
+        // (`ReturningGroupsMemberLogic`). Va detrás de la cadena entera, como el formulario.
+        #expect(Set(callSites) == Set(["GroupFormView.swift", "ContentView.swift"]), """
             el alta se escribe detrás de la cadena y en ningún otro sitio. Un call-site nuevo es, con casi
             total seguridad, una escritura del trío adelantada. Que la cadena tenga una sola ENTRADA lo fija
             `GroupsGateWiringTests.organizerBranchHasOneEntry`. Encontrado: \(callSites)
@@ -881,7 +890,10 @@ struct GroupsOrganizerWiringTests {
     func nameViewCompletesTheSetup() throws {
         let code = try Self.code(Self.nameView)
         #expect(code.contains("GroupsOrganizerOnboarding.completeSetup("),
-                "el CTA del nombre es lo que escribe el trío")
+                "el formulario del primer grupo es lo que escribe el trío")
+        // Y solo en esa rama: el formulario de la pestaña no puede escribir el alta de nadie.
+        #expect(code.contains("if isFirstGroupSetup && !setupWritten {"),
+                "el alta va detrás de la rama del primer grupo y una sola vez por presentación")
     }
 
     /// **C3 · `completeSetup` tiene que RESPETAR el veredicto del alta.** Sin el `guard`, los seeds y el
@@ -982,8 +994,13 @@ struct WelcomeBackDestinationTests {
         let cover = try #require(Self.bodyOf("private var welcomeRestoreCover: some View {", in: src),
                                  "no está `welcomeRestoreCover`")
         let back = try #require(Self.bodyOf("onBack: {", in: cover), "no está el `onBack:` del restore")
-        #expect(back.contains("returnToWelcomeChooser(dismissing: $showWelcomeRestore, step: .chooser)"), """
-            `WelcomeRestoreView` sí viene del chooser de nivel 1 — su destino no cambia.
+        // UX 2.2 · L6-11: Restaurar vuelve a «¡Hola de nuevo!» (el sub-chooser de quien ya tiene cuenta), de donde
+        // se vino; solo sin sub-chooser visible vuelve al de nivel 1. La elección la fija `WelcomeBackStepLogic`
+        // (tests en `UXAudit22Lote6LogicTests`); aquí se fija que el «Atrás» del restore la consulta.
+        let compact = back.replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "\n", with: "")
+        #expect(compact.contains("letback=welcomeRestoreOrigin??WelcomeBackStepLogic.existingBranchOrigin(")
+                && compact.contains("returnToWelcomeChooser(dismissing:$showWelcomeRestore,step:back)"), """
+            El «Atrás» de `WelcomeRestoreView` ya no vuelve a «¡Hola de nuevo!».
             Cuerpo leído: \(back)
             """)
     }

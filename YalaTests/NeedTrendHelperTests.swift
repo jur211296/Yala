@@ -176,7 +176,9 @@ struct NeedTrendHelperTests {
         #expect(result.isEmpty)
     }
 
-    @Test func noCategoryTransactions_excluded() {
+    /// Hasta el 2026-10-23 un gasto sin categoría se excluía. Decisión A de Jürgen: no tiene necesidad, así que cae
+    /// en «Sin clasificar» y la gráfica suma el gasto del período.
+    @Test func noCategoryTransactions_countAsUnclassified() {
         let tx = makeTransaction(
             amount: -100,
             date: date(2026, 3, 5)
@@ -190,7 +192,9 @@ struct NeedTrendHelperTests {
             converter: MockCurrencyConverter()
         )
 
-        #expect(result.isEmpty)
+        #expect(result.count == 1)
+        #expect(result.first?.unclassified == 100)
+        #expect(result.first?.essential == 0)
     }
 
     @Test func multiCurrency_conversionApplied() {
@@ -254,7 +258,7 @@ Tests generated:
 3. mixedNeeds_correctDistribution - Multiple need types distributed correctly with total check
 4. incomeTransactions_excluded - Income categories are filtered out
 5. balanceAdjustments_excluded - Balance adjustments are filtered out
-6. noCategoryTransactions_excluded - Transactions without category are filtered out
+6. noCategoryTransactions_countAsUnclassified - Transactions without category count as «Sin clasificar»
 7. multiCurrency_conversionApplied - Currency conversion uses MockCurrencyConverter rate
 8. unclassified_whenSubcategoryHasNoNeed - Unclassified need goes to unclassified bucket
 

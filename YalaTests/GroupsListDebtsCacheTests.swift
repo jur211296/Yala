@@ -239,9 +239,10 @@ struct GroupsListDebtsCacheTests {
 
     // MARK: - Grupos archivados (el orden respecto al guard de recalculate es load-bearing)
 
-    /// Un grupo archivado ANTES de arrancar no llega a cargar gastos (`fetchData()` corta), así que
-    /// su tarjeta no muestra deudas. Igual que antes del cache, donde fallaba el guard del body.
-    @Test func cachedDebts_emptyForGroupArchivedBeforeLoad() throws {
+    /// Un grupo archivado ANTES de arrancar también carga sus gastos desde L19-9 (auditoría UX 2.2, decisión B de
+    /// Jürgen): archivar no salda nada. Su tarjeta enseña la deuda, que va al resumen de los archivados y NO al total.
+    /// Hasta ese día `fetchData()` cortaba en los archivados y «Debes» bajaba al archivar como si se hubiera pagado.
+    @Test func cachedDebts_groupArchivedBeforeLoad_keepsItsDebtInTheArchivedSummary() throws {
         let context = try makeTestContext()
         try withServices(context) {
             let f = try seedGroup(context, name: "Viejo")
@@ -252,7 +253,9 @@ struct GroupsListDebtsCacheTests {
             vm.setContext(context)
 
             #expect(vm.archivedGroups.count == 1)
-            #expect(vm.currentUserDebts(for: f.group).isEmpty)
+            #expect(vm.currentUserDebts(for: f.group).first?.amount == 50)
+            #expect(vm.archivedSummary?.totalIOwe["PEN"] == 50)
+            #expect((vm.globalSummary?.totalIOwe["PEN"] ?? 0) == 0, "El total de la lista no suma lo archivado")
         }
     }
 

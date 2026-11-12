@@ -30,6 +30,50 @@ final class AccountSelectorViewModel {
         accounts.filter { !$0.isArchived && !$0.isSystemAccount }
     }
 
+    /// Tarjeta con varias divisas (entrega 3): las cuentas como se eligen, cada tarjeta una vez con sus líneas debajo. El
+    /// rol de cada cuenta se resuelve sobre TODAS (archivadas incluidas), como en el Panel.
+    func cards(of shown: [Account]) -> [AccountCard<Account>] {
+        let roles = AccountLineLogic.resolve(accounts.map { AccountLineNode($0) })
+        return AccountCardLogic.cards(shown, roles: roles, id: \.shortcutID, currencyCode: \.currencyCode)
+    }
+
+    /// Las principales con alguna línea viva: su fila lleva su divisa en el nombre («Sapphire · PEN»), también cuando sus
+    /// líneas no salen en la hoja (una divisa fija, o la línea es el origen de la transferencia).
+    var headsWithLines: Set<UUID> {
+        let roles = AccountLineLogic.resolve(accounts.map { AccountLineNode($0) })
+        return AccountCardLogic.headsWithLiveLines(activeAccounts.map { AccountLineNode($0) }, roles: roles)
+    }
+
+    /// El nombre de la fila de `account` en la hoja: una principal con líneas, con su divisa.
+    func rowName(for account: Account, headsWithLines: Set<UUID>) -> String {
+        guard headsWithLines.contains(account.shortcutID) else { return account.name }
+        return AccountCardLogic.headName(account.name, currencyCode: account.currencyCode)
+    }
+
+    /// Lo que guarda el llamador al tocar `account` (decisión D3 del encargo): con `routingCurrency`, la cuenta de su tarjeta en
+    /// esa divisa (`AccountCardLogic.route`); sin ella, o si no se encuentra, la cuenta tocada.
+    func resolvedSelection(for account: Account, routingCurrency: String?) -> Account {
+        guard let routingCurrency else { return account }
+        let nodes = accounts.map { AccountLineNode($0) }
+        guard let route = AccountCardLogic.route(chosenID: account.shortcutID, currencyCode: routingCurrency, nodes: nodes),
+              let target = activeAccounts.first(where: { $0.shortcutID == route.accountID }) else { return account }
+        return target
+    }
+
+    /// Lo que guarda la hoja al tocar `account` con `current` elegida. Una línea tocada a propósito se guarda tal cual; la
+    /// tarjeta, por `resolvedSelection`. Salvo cuando ese enrutado devuelve justo `current`, una línea de esa tarjeta (card
+    /// y1z6): la divisa del importe ya iba en la de la línea, la hoja se cerraba sin cambiar nada y no había forma de volver a
+    /// la principal. Tocar la tarjeta nunca deja las cosas igual: ahí es la principal.
+    func selection(for account: Account, current: PersistentIdentifier?, routingCurrency: String?) -> Account {
+        let roles = AccountLineLogic.resolve(accounts.map { AccountLineNode($0) })
+        if roles[account.shortcutID]?.isLine ?? false { return account }
+        let routed = resolvedSelection(for: account, routingCurrency: routingCurrency)
+        if let current, current != account.persistentModelID, routed.persistentModelID == current {
+            return account
+        }
+        return routed
+    }
+
     // MARK: - Context Injection
 
     func setContext(_ context: ModelContext) {

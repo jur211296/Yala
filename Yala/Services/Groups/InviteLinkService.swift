@@ -205,6 +205,9 @@ enum InviteLinkService {
         let icon: String?
         let color: String?
         let members: [String]?
+        /// L12-17 · quién invita (`u` del enlace): «Lucía te invita» en la tarjeta del grupo. Opcional Codable back-compat:
+        /// una marca persistida antes no lo trae y decodifica a `nil`, que pinta «Te invitaron a este grupo».
+        var inviter: String? = nil
 
         nonisolated static let empty = BrandedMetadata(name: nil, icon: nil, color: nil, members: nil)
 
@@ -233,7 +236,8 @@ enum InviteLinkService {
             name: items.first(where: { $0.name == "n" })?.value,
             icon: items.first(where: { $0.name == "i" })?.value,
             color: items.first(where: { $0.name == "c" })?.value,
-            members: membersRaw?.split(separator: ",").map(String.init)
+            members: membersRaw?.split(separator: ",").map(String.init),
+            inviter: items.first(where: { $0.name == "u" })?.value
         )
     }
 

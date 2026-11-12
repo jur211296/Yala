@@ -11,7 +11,7 @@
 
 import SwiftUI
 
-/// Secciones reordenables del dashboard "Más" (Panel es la card hero fija aparte).
+/// Secciones reordenables del dashboard "Más" (Panel y Registros son las cards hero fijas aparte).
 enum MoreSectionKind: String, CaseIterable, Identifiable {
     case statistics
     case planning
@@ -57,8 +57,7 @@ struct MoreView: View {
     /// GC-08: sin sesión privada en este teléfono solo Grupos es accesible; el dashboard personal se
     /// oculta y se muestra el CTA «Activar Yala completo». Reactivo por el espejo observable del eje.
     private var isGroupsFocusedShell: Bool {
-        ShellModeLogic.effective(
-            hasPrivateSession: sessionState.hasPrivateSession) == .groupsFocused
+        sessionState.isGroupsFocusedShell
     }
 
     private let gridColumns = [
@@ -98,6 +97,7 @@ struct MoreView: View {
             .navigationTitle(L10n.Tab.more)
             .navigationBarTitleDisplayMode(.inline)
             .yalaScreenBackground(.panel)
+            .prefersToolbarItemsInVerticalBar()
             .toolbar {
                 if !isGroupsFocusedShell {
                     ToolbarItem(placement: .topBarTrailing) {
@@ -117,12 +117,18 @@ struct MoreView: View {
                 }
             }
         }
+        // Sin `.transaction { $0.animation = nil }` (card C5, 2026-11-02): lo puso `c6d44bac8` (2026-01-15) contra un
+        // parpadeo al abrir Ajustes desde la vista Más de entonces, y su propio mensaje dice que no lo arregló; ese mismo
+        // día el apagado de `ContentView` sobre la `TabView` cubrió el parpadeo. Lo único que hacía era apagar las
+        // animaciones de Ajustes solo cuando se abría desde aquí. Desde el Panel y Grupos nunca lo llevó.
         .sheet(isPresented: $showProfile) {
             ProfileView()
-                .transaction { $0.animation = nil }
         }
-        .sheet(isPresented: $showEditor) {
+        .sheet(isPresented: $showEditor, onDismiss: { navigation.isEditingTabBarLayout = false }) {
             MoreEditorSheet()
+                // La barra de pestañas espera a que se cierre el editor para montar lo elegido (card fozu).
+                .onAppear { navigation.isEditingTabBarLayout = true }
+                .onDisappear { navigation.isEditingTabBarLayout = false }
         }
     }
 
@@ -132,6 +138,10 @@ struct MoreView: View {
     private var dashboardContent: some View {
         heroPanelCard
 
+        // Registros, junto a Panel: la lista de movimientos es lo que más se mira y antes vivía al fondo, en
+        // «Más herramientas» (auditoría UX 2.2, L8-1, opción B).
+        heroRecordsCard
+
         ForEach(orderedSectionKinds) { kind in
             sectionView(kind)
         }
@@ -139,17 +149,47 @@ struct MoreView: View {
 
     /// Card destacada de Panel (full-width, layout horizontal).
     private var heroPanelCard: some View {
-        Button {
+        heroCard(
+            icon: ConfigurableTab.panel.iconName,
+            title: L10n.Tab.panel,
+            subtitle: L10n.More.Subtitle.panel,
+            tint: iconColor(.electricIndigo),
+            identifier: "more_card_panel"
+        ) {
             RouterEntryGate.shared.submit(.navigate(.panel))
-        } label: {
+        }
+    }
+
+    /// Registros, con la misma forma que Panel y justo debajo (L8-1).
+    private var heroRecordsCard: some View {
+        heroCard(
+            icon: ConfigurableTab.records.iconName,
+            title: ConfigurableTab.records.displayName,
+            subtitle: L10n.More.Subtitle.records,
+            tint: iconColor(.yellow),
+            identifier: "more_card_records"
+        ) {
+            RouterEntryGate.shared.submit(.navigate(.recordsStandalone))
+        }
+    }
+
+    private func heroCard(
+        icon: String,
+        title: String,
+        subtitle: String,
+        tint: Color,
+        identifier: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
             HStack(spacing: DS.Spacing.md) {
-                AccentIconBadge(systemName: ConfigurableTab.panel.iconName, font: DS.Typography.headline, tint: iconColor(.electricIndigo))
+                AccentIconBadge(systemName: icon, font: DS.Typography.headline, tint: tint)
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(L10n.Tab.panel)
+                    Text(title)
                         .font(DS.Typography.subheadlineEmphasized)
                         .foregroundStyle(.primary)
-                    Text(L10n.More.Subtitle.panel)
+                    Text(subtitle)
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
@@ -167,7 +207,7 @@ struct MoreView: View {
         }
         .buttonStyle(.plain)
         .contentShape(Rectangle())
-        .accessibilityIdentifier("more_card_panel")
+        .accessibilityIdentifier(identifier)
         .accessibilityElement(children: .combine)
     }
 
@@ -176,7 +216,7 @@ struct MoreView: View {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: kind.icon)
                     .font(DS.Typography.headline)
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
                 Text(kind.title)
                     .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
@@ -240,10 +280,8 @@ struct MoreView: View {
             }
             return reports
         case .tools:
+            // Registros ya no va aquí: sube junto a Panel (`heroRecordsCard`, L8-1).
             return [
-                NavItem(id: "records", icon: ConfigurableTab.records.iconName, title: ConfigurableTab.records.displayName, subtitle: L10n.More.Subtitle.records, iconColor: iconColor(.yellow)) {
-                    RouterEntryGate.shared.submit(.navigate(.recordsStandalone))
-                },
                 NavItem(id: "groups", icon: ConfigurableTab.groups.iconName, title: ConfigurableTab.groups.displayName, subtitle: L10n.More.Subtitle.groups, iconColor: iconColor(.hotPink)) {
                     RouterEntryGate.shared.submit(.navigate(.groups))
                 },
@@ -256,6 +294,12 @@ struct MoreView: View {
 
     // MARK: - Activate Full Yala (GC-08)
 
+    /// Card p0iu: quien eligió «Solo grupos» sobre Yala completo ve «Volver a Yala completo»; el mismo intent lleva a la
+    /// vuelta (`ContentView`), no a la activación.
+    private var returnEntry: UsageModeLogic.ReturnEntry {
+        UsageModeLogic.returnEntry(hasPrivateSession: sessionState.hasPrivateSession)
+    }
+
     private var activateFullYalaButton: some View {
         Button {
             RouterEntryGate.shared.submit(.presentFullModeActivation)
@@ -263,7 +307,7 @@ struct MoreView: View {
             HStack(spacing: DS.FormRow.iconSpacing) {
                 Image(systemName: "sparkles")
                     .font(DS.Typography.label)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.thOnAccent)
                     .frame(width: DS.FormRow.iconWidth, height: DS.FormRow.iconWidth)
                     .background(
                         RoundedRectangle(cornerRadius: 6)
@@ -271,11 +315,11 @@ struct MoreView: View {
                     )
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(L10n.Groups.Activate.title)
+                    Text(returnEntry == .comeBack ? L10n.UsageMode.backTitle : L10n.Groups.Activate.title)
                         .font(DS.Typography.body)
                         .foregroundStyle(.primary)
 
-                    Text(L10n.Groups.Activate.subtitle)
+                    Text(returnEntry == .comeBack ? L10n.UsageMode.backSubtitle : L10n.Groups.Activate.subtitle)
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }

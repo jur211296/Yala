@@ -11,6 +11,8 @@ import type { OpenAIChatBody, ProviderKeys, Usage } from "./providers/types";
 import { type ChatBody, multipartField, resolveChatTask, resolveTranscriptionTask } from "./resolve";
 import { routeFor } from "./routes";
 import { TASKS, TASK_HEADER, type TaskId, type TaskInfo } from "./tasks";
+import { gateExplore, TIME_ZONE_HEADER, USER_TOKEN_HEADER, type ExploreGate } from "./explore";
+import { runExplore, type ExploreStats } from "./explore/loop";
 
 type Ctx = Context<{ Bindings: Env }>;
 
@@ -81,6 +83,8 @@ function logRoute(entry: {
   ms: number;
   usage: Usage | null;
   attempts: number;
+  /** Solo `chat.explore`: por qué salió con o sin herramientas y, con ellas, qué hizo. Nombres, nunca argumentos. */
+  explore?: { gate: ExploreGate["mode"]; tzAssumed?: boolean; stats?: ExploreStats };
 }): void {
   console.log(
     JSON.stringify({
@@ -100,6 +104,22 @@ function logRoute(entry: {
       out: entry.usage?.outputTokens ?? null,
       reasoning: entry.usage?.reasoningTokens ?? null,
       attempts: entry.attempts,
+      ...(entry.explore
+        ? {
+            explore: entry.explore.gate,
+            ...(entry.explore.tzAssumed ? { exploreTzAssumed: true } : {}),
+            ...(entry.explore.stats
+              ? {
+                  rounds: entry.explore.stats.rounds,
+                  tools: entry.explore.stats.tools,
+                  toolChars: entry.explore.stats.resultChars,
+                  toolErrors: entry.explore.stats.toolErrors,
+                  forcedFinal: entry.explore.stats.forcedFinal,
+                  ...(entry.explore.stats.fellBack ? { fellBack: true } : {}),
+                }
+              : {}),
+          }
+        : {}),
     }),
   );
 }
@@ -183,9 +203,43 @@ export async function handleChatCompletions(c: Ctx): Promise<Response> {
     return jsonError("yala_model_not_allowed", `La tarea ${res.task} no acepta el modelo ${clip(requested ?? "(vacío)")}.`, 400);
   }
 
+  // Yala IA en modo nube: ¿esta pregunta tiene herramientas? Si no (flag apagado, sin usuario), sale como `chat.answer`.
+  const explore =
+    res.task === "chat.explore"
+      ? await gateExplore(c.env, { userToken: c.req.header(USER_TOKEN_HEADER), timeZone: c.req.header(TIME_ZONE_HEADER) })
+      : null;
+
   const gate = await gateAIRequest(c.env, claims, category, info.notePairing);
   if (gate.blocked) return gate.blocked;
   const started = Date.now();
+
+  if (explore?.mode === "tools" && route.mode === "managed") {
+    // Una pregunta = un uso de la cuota `chat`, haga las llamadas que haga (topes por pregunta en `explore/loop.ts`).
+    const result = await runExplore(body as OpenAIChatBody, route, {
+      openaiKey: c.env.OPENAI_API_KEY,
+      toolContext: explore.toolContext,
+      timeZone: explore.timeZone,
+    });
+    const refunded = isProviderFailure(result.status);
+    if (refunded) await refundQuota(c.env, claims, category, gate.ticket);
+    logRoute({
+      task: res.task,
+      how: res.how,
+      headerUnknown: res.headerUnknown,
+      category,
+      quota: quotaLabel(gate.ticket, refunded),
+      provider: route.provider,
+      requested,
+      model: result.model ?? route.model,
+      status: result.status,
+      ms: Date.now() - started,
+      usage: result.usage,
+      attempts: result.attempts,
+      explore: { gate: "tools", tzAssumed: explore.timeZoneAssumed, stats: result.stats },
+    });
+    if (result.status >= 400) console.log(`[gw-ai] ${res.task} ${route.provider} ${result.status} ${upstreamErrorKind(result.body)}`);
+    return new Response(result.body, { status: result.status, headers: { "content-type": "application/json" } });
+  }
 
   if (route.mode === "passthrough") {
     const { resp, usage, model } = await passthrough(c, "/chat/completions", bytes);
@@ -211,6 +265,7 @@ export async function handleChatCompletions(c: Ctx): Promise<Response> {
     ms: Date.now() - started,
     usage: result.usage,
     attempts: result.attempts,
+    ...(explore ? { explore: { gate: explore.mode } } : {}),
   });
   // Solo el tipo y el código del error del proveedor: su mensaje podría citar el contenido de la petición.
   if (result.status >= 400) console.log(`[gw-ai] ${res.task} ${route.provider} ${result.status} ${upstreamErrorKind(result.body)}`);

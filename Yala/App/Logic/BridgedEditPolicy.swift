@@ -48,6 +48,11 @@ enum BridgedEditPolicy {
         /// seguir viendo la policy de siempre. El único que puede afirmar lo contrario es quien tiene
         /// `ModelContext` para preguntárselo al store.
         var pointerResolves: Bool = true
+        /// Grupos B: una pata derivada de una línea de tu parte (lleva la marca `{"of":…}` en `splitLinesRaw`), también la
+        /// ENTRADA de una recarga, que no lleva puntero de grupo (D4). La escribe el puente desde la receta en cada pasada:
+        /// editarla suelta se perdería, y borrarla dejaría la transferencia a medias (D8). Todo bloqueado. La pata por cobrar
+        /// de una venta (card 8, `GroupSaleBridgeLogic.isReceivable`) entra aquí por lo mismo.
+        var isSplitLineLeg: Bool = false
     }
 
     /// Clasificación de la TX en edición.
@@ -85,6 +90,7 @@ enum BridgedEditPolicy {
         // justifica en «el grupo es la fuente de verdad» y aquí no hay grupo que mande. La dirección
         // segura ante un puntero muerto es DEVOLVERLE el control al usuario, nunca quitárselo.
         guard s.pointerResolves else { return .notBridged }
+        if s.isSplitLineLeg { return .derivedVirtual }
         // Settlement manda: su TX puede tener también cuenta de sistema, pero se distingue por
         // `splitSettlementID` y se gestiona íntegra desde el grupo.
         if s.hasSplitSettlementID { return .settlement }

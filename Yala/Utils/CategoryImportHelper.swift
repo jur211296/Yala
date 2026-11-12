@@ -96,6 +96,80 @@ enum CategoryImportHelper {
         return newCategory
     }
 
+    // MARK: - Resolver por naturaleza (ticket `csv-import-leaves-no-origin-mark-and-reuses-opposite-categories`)
+
+    /// Resuelve la categoría y la subcategoría de una fila importada mirando su naturaleza, no solo el nombre.
+    ///
+    /// Hasta el 2026-10-25 el importador cogía la primera categoría con ese nombre (`.first`, sin orden), así que con
+    /// «Otros» de gasto y de ingreso a la vez una «Bonificación» de +1.500 podía caer en la de gasto, y con solo la de
+    /// gasto se le creaba la subcategoría ahí: un ingreso que Registros y Estadísticas restaban de los gastos como un
+    /// reembolso. El orden de preferencia lo decide `CategoryImportNatureLogic.choose`.
+    static func resolveForImport(
+        categoryName: String,
+        subcategoryName: String,
+        isIncome: Bool,
+        allowCreating: Bool,
+        in context: ModelContext
+    ) throws -> ImportCategoryResolution {
+        // Ordenadas por `sortOrder`: con dos candidatas igual de buenas gana siempre la misma.
+        let categories = try context.fetch(FetchDescriptor<Category>(
+            predicate: #Predicate { category in category.name == categoryName },
+            sortBy: [SortDescriptor(\.sortOrder)]
+        ))
+        // Por nombre y luego por categoría en memoria: las relaciones dentro de `#Predicate` dan problemas.
+        let namedSubcategories = try context.fetch(FetchDescriptor<Subcategory>(
+            predicate: #Predicate { sub in sub.name == subcategoryName }
+        ))
+        func subcategory(in category: Category) -> Subcategory? {
+            namedSubcategories.first { $0.category === category }
+        }
+
+        let candidates = categories.enumerated().map { index, category in
+            CategoryImportNatureLogic.Candidate(
+                index: index, isIncome: category.isIncome, hasSubcategory: subcategory(in: category) != nil)
+        }
+
+        let category: Category
+        switch CategoryImportNatureLogic.choose(candidates: candidates, isIncome: isIncome, allowCreating: allowCreating) {
+        case .unknownCategory:
+            return .unknownCategory
+        case .use(let index):
+            category = categories[index]
+        case .createWithRowNature:
+            category = createCategory(named: categoryName, isIncome: isIncome, in: context)
+        }
+
+        if let existing = subcategory(in: category) {
+            return .resolved(category, existing)
+        }
+        guard allowCreating else { return .unknownSubcategory }
+        return .resolved(category, try fetchOrCreateSubcategory(
+            named: subcategoryName, in: category, isIncome: category.isIncome, in: context))
+    }
+
+    private static func createCategory(named name: String, isIncome: Bool, in context: ModelContext) -> Category {
+        let allCategories: [Category]
+        do {
+            allCategories = try context.fetch(FetchDescriptor<Category>())
+        } catch {
+            #if DEBUG
+            print("CategoryImportHelper: Error fetching all categories: \(error)")
+            #endif
+            allCategories = []
+        }
+        let category = Category(
+            name: name,
+            colorHex: AppConstants.defaultColorHex,
+            isIncome: isIncome,
+            isDefaultSeed: false,
+            isVisible: true,
+            sortOrder: (allCategories.map { $0.sortOrder }.max() ?? 0) + 1,
+            subcategories: []
+        )
+        context.insert(category)
+        return category
+    }
+
     // MARK: - Subcategorías
 
     /// Devuelve una subcategoría existente dentro de la categoría padre
@@ -166,5 +240,53 @@ enum CategoryImportHelper {
 
         context.insert(newSubcategory)
         return newSubcategory
+    }
+}
+
+/// Lo que resolvió `CategoryImportHelper.resolveForImport` para una fila.
+enum ImportCategoryResolution {
+    case resolved(Category, Subcategory)
+    /// Modo estricto sin ninguna categoría con ese nombre.
+    case unknownCategory
+    /// Modo estricto: la categoría elegida no tiene esa subcategoría.
+    case unknownSubcategory
+}
+
+/// Qué categoría usa una fila importada cuando hay varias con su nombre, o solo una de la naturaleza contraria.
+/// Lógica pura: el signo de la fila (`isIncome`) frente a la naturaleza de cada candidata.
+nonisolated enum CategoryImportNatureLogic {
+
+    struct Candidate: Equatable {
+        /// Posición en la lista que se le pasó a `choose`.
+        let index: Int
+        let isIncome: Bool
+        /// La categoría ya tiene una subcategoría con el nombre de la fila.
+        let hasSubcategory: Bool
+    }
+
+    enum Choice: Equatable {
+        case use(index: Int)
+        /// Ninguna sirve: se crea una categoría con ese nombre y la naturaleza del signo (solo con `allowCreating`).
+        case createWithRowNature
+        case unknownCategory
+    }
+
+    /// En este orden:
+    /// 1. La de la naturaleza del signo que ya tiene la subcategoría.
+    /// 2. La contraria que ya la tiene: es un reembolso («Comida › Restaurantes» con +20) o una transferencia en
+    ///    «Otros», que vive en la «Otros» de gasto y lleva los dos signos. Yala los modela así y no se tocan.
+    /// 3. La de la naturaleza del signo, aunque aún no tenga la subcategoría (se le crea en modo «crear»).
+    /// 4. Solo la contraria, sin la subcategoría: en modo «crear» se crea la de la naturaleza correcta —una
+    ///    «Bonificación» de +1.500 en «Otros» ya no se cuelga de la «Otros» de gasto—; en modo estricto se usa la que
+    ///    hay y la fila sale con «subcategoría desconocida», como antes.
+    static func choose(candidates: [Candidate], isIncome: Bool, allowCreating: Bool) -> Choice {
+        guard !candidates.isEmpty else { return allowCreating ? .createWithRowNature : .unknownCategory }
+        let sameNature = candidates.filter { $0.isIncome == isIncome }
+        let opposite = candidates.filter { $0.isIncome != isIncome }
+        if let match = sameNature.first(where: \.hasSubcategory) { return .use(index: match.index) }
+        if let refund = opposite.first(where: \.hasSubcategory) { return .use(index: refund.index) }
+        if let match = sameNature.first { return .use(index: match.index) }
+        if allowCreating { return .createWithRowNature }
+        return .use(index: candidates[0].index)
     }
 }

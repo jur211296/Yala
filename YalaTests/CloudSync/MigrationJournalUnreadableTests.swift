@@ -279,6 +279,34 @@ struct MigrationJournalUnreadableConsumerTests {
         #expect(!MigrationRuntimeGate.canRun(read: .phase(.done), cloudWithMirrorOn: false, personalMountMismatch: true))
     }
 
+    /// Card jbjj: el canario del par roto solo con el journal conectado. El control (par roto de verdad, fase estable
+    /// leída) sigue diciendo que sí; sin journal, en fase transitoria, ilegible o sin espejo, no.
+    @Test func pairViolation_onlyWithAConnectedJournal_andAStableReadPhase() {
+        #expect(MigrationRuntimeGate.isStorageModePairViolation(read: .phase(.notStarted), cloudWithMirrorOn: true,
+                                                                journalConnected: true))
+        #expect(MigrationRuntimeGate.isStorageModePairViolation(read: .phase(.done), cloudWithMirrorOn: true,
+                                                                journalConnected: true))
+        // La vuelta a iCloud: relanzado con el journal aún sin conectar, la lectura es el relleno `.notStarted`.
+        #expect(!MigrationRuntimeGate.isStorageModePairViolation(read: .phase(.notStarted), cloudWithMirrorOn: true,
+                                                                 journalConnected: false))
+        // Ya conectado, la fase de verdad es transitoria: el par es el legítimo.
+        #expect(!MigrationRuntimeGate.isStorageModePairViolation(read: .phase(.reverseMountMirror), cloudWithMirrorOn: true,
+                                                                 journalConnected: true))
+        #expect(!MigrationRuntimeGate.isStorageModePairViolation(read: .unreadable, cloudWithMirrorOn: true,
+                                                                 journalConnected: true))
+        #expect(!MigrationRuntimeGate.isStorageModePairViolation(read: .phase(.done), cloudWithMirrorOn: false,
+                                                                 journalConnected: true))
+    }
+
+    /// Sin `configure` no hay journal: un `MigrationPhaseStore` recién creado lo dice, y el swap de persona lo suelta.
+    @Test func phaseStore_withoutConfigure_isNotConnected() {
+        let defaults = UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+        let store = MigrationPhaseStore(defaults: defaults)
+        #expect(!store.isJournalConnected)
+        store.releaseContainerForSwap()
+        #expect(!store.isJournalConnected)
+    }
+
     @Test func prefsDrain_unreadable_doesNotDrain_andTheControlDoes() {
         #expect(!PrefsCutoverDrain.isLeaderPostRelaunchPhase(JournaledPhaseRead.unreadable))
         #expect(PrefsCutoverDrain.isLeaderPostRelaunchPhase(JournaledPhaseRead.phase(.done)))
@@ -427,6 +455,8 @@ struct MigrationJournalUnreadableWiringTests {
             "#if DEBUG",
             "if UITestHooks.migrationJournalUnreadable { throw MigrationJournalSeamError.fetchFailed }",
             "if let seeded = UITestHooks.failedMigrationJournalRow { return seeded }",
+            // `-uitest-cloud-progress` (ticket `cloud-progress-shows-real-steps-and-counts`): el mismo molde, otra fase.
+            "if let seeded = UITestHooks.fakeCloudProgressJournalRow { return seeded }",
             "#endif",
             "var descriptor = FetchDescriptor<MigrationState>()",
             "descriptor.fetchLimit = 1",
@@ -597,6 +627,15 @@ struct MigrationJournalUnreadableWiringTests {
             "claimDefinitiveCause = _runner?.lastClaimDefinitiveCause",
             "reverseUploadSample = _runner?.lastReverseUploadSample",
             "reverseSessionExpiry = _runner?.lastReverseSessionExpiry",
+            // Los pasos con su cifra (ticket `cloud-progress-shows-real-steps-and-counts`): lo que el runner publica, el seam
+            // de XCUITest y la primera muestra de la vuelta.
+            "uploadProgress = _runner?.snapshotUploadProgress",
+            "runnerAwaitingImport = _runner?.isAwaitingImportQuiescence ?? false",
+            "#if DEBUG",
+            "if let fake = UITestHooks.fakeCloudProgress { applyFakeCloudProgress(fake) }",
+            "#endif",
+            "reverseFirstPending = CloudProgressStepsLogic.firstPending(",
+            "previous: reverseFirstPending, phase: journaledPhase, pending: reverseUploadSample?.pending)",
             "readLiveSession()",
             "refreshSyncBanner()",
             // Desde `cloud-sync-status-says-all-synced-with-changes-still-pending`: ¿completó el motor su último ciclo?
@@ -684,7 +723,8 @@ struct MigrationJournalUnreadableWiringTests {
             "case .unreadable: phaseLabel = \"unreadable\"",
             "}",
             "let cloudWithMirrorOn = StorageModePersistence.isCloudWithMirrorOn()",
-            "if cloudWithMirrorOn, case .phase(let phase) = read, MigrationRuntimeGate.isDomainStablePhase(phase) {",
+            "if MigrationRuntimeGate.isStorageModePairViolation(read: read, cloudWithMirrorOn: cloudWithMirrorOn,",
+            "journalConnected: MigrationPhaseStore.shared.isJournalConnected) {",
             "CloudSyncBreadcrumb.storageModePairViolation(phase: phaseLabel)",
             "if !pairViolationCanaryFired {",
             "pairViolationCanaryFired = true",
@@ -789,22 +829,17 @@ struct MigrationJournalUnreadableWiringTests {
     /// Las dos ramas nuevas de la pantalla que no inventan cifras.
     @Test func storageScreen_doesNotInventCounts() throws {
         let view = "Yala/App/Views/Settings/StorageSettingsView.swift"
-        let migrate = Self.lines(try Self.body(of: "private func migrateCard(_ controller: CloudMigrationController) -> some View {",
-                                               in: view))
-        let dry = try #require(migrate.firstIndex(of: "switch dryRun {"))
-        #expect(Array(migrate[dry..<(dry + 13)]) == [
-            "switch dryRun {",
-            "case let .counts(transactions, categories, accounts, budgets):",
-            "Text(L10n.Storage.Migrate.previewResult(transactions, categories, accounts, budgets))",
-            ".font(DS.Typography.caption.monospaced())",
-            ".foregroundStyle(.tertiary)",
+        // Desde UX 2.2 · L20-11 la cifra de «lo que pasaría» la enseña la hoja de activar, no la tarjeta.
+        let sheet = Self.lines(try Self.body(of: "private var previewLine: String? {",
+                                             in: "Yala/App/Views/Settings/CloudActivationSheet.swift"))
+        #expect(sheet == [
+            "switch preview {",
+            "case let .counts(transactions, _, accounts, budgets):",
+            "return L10n.UXL20N.willMove(records: transactions, accounts: accounts, budgets: budgets)",
             "case .unreadable:",
-            "Text(L10n.Storage.Migrate.previewUnreadable)",
-            ".font(DS.Typography.caption)",
-            ".foregroundStyle(.secondary)",
-            ".accessibilityIdentifier(\"storage_preview_unreadable\")",
+            "return L10n.Storage.Migrate.previewUnreadable",
             "case nil:",
-            "EmptyView()",
+            "return nil",
             "}",
         ])
         let sync = Self.lines(try Self.body(of: "private func syncStatusSection(_ controller: CloudMigrationController) -> some View {",

@@ -2,7 +2,8 @@
 //  MemberPickerView.swift
 //  Yala
 //
-//  Selector de un miembro (single select) — p. ej. "Pagado por".
+//  Selector de un miembro (single select). El título lo pone quien lo abre: hoy solo lo usa
+//  Saldos iniciales, y con el «Pagado por» fijo de antes sus dos selectores decían algo falso.
 //
 
 import SwiftUI
@@ -11,12 +12,17 @@ struct MemberPickerView: View {
 
     @Environment(\.dismiss) private var dismiss
 
+    /// Qué se elige (p. ej. «Quién debe»). Sin valor por defecto a propósito.
+    let title: String
     let members: [SplitMember]
     let groupColorHex: String
 
     @ScaledMetric(relativeTo: .body) private var avatarSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
 
     @Binding var selectedMemberID: String
+
+    /// Abre a media altura con el fondo de «Configurar panel»: glass del sistema; `.subtle` al estirarla.
+    @State private var selectedDetent: PresentationDetent = .medium
 
     var body: some View {
         NavigationStack {
@@ -44,8 +50,8 @@ struct MemberPickerView: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.top, DS.Spacing.sm)
             }
-            .yalaScreenBackground(.subtle)
-            .navigationTitle(L10n.Groups.Expense.paidByTitle)
+            .yalaScreenBackground(selectedDetent == .large ? .subtle : .transparent)
+            .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -55,6 +61,7 @@ struct MemberPickerView: View {
                 }
             }
         }
+        .presentationDetents([.medium, .large], selection: $selectedDetent)
     }
 
     // MARK: - Row
@@ -71,7 +78,7 @@ struct MemberPickerView: View {
                 if selectedMemberID == id {
                     Image(systemName: "checkmark")
                         .font(DS.Typography.body)
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                 }
             }
             .padding(.horizontal, DS.FormRow.paddingH)

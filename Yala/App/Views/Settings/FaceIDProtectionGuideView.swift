@@ -30,6 +30,7 @@ struct FaceIDProtectionGuideView: View {
         YalaStepGuide(
             navigationTitle: L10n.Settings.faceIDProtection,
             rootIdentifier: "faceid_guide_root",
+            progressID: StepGuideProgressStore.faceID,
             header: StepGuideHeader(
                 systemImage: "faceid",
                 tint: DS.Semantic.successForeground,
@@ -98,7 +99,7 @@ private struct HomeScreenMenuPreview: View {
         } else {
             Image(systemName: "app.fill")
                 .font(DS.Typography.title2)
-                .foregroundStyle(.thAccent)
+                .foregroundStyle(.thAccentText)
                 .frame(width: iconSize, height: iconSize)
                 .accessibilityHidden(true)
         }

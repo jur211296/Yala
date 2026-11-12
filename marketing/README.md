@@ -41,6 +41,9 @@ borradores, plantillas y herramientas. Publicar en App Store Connect o en redes 
   renderizado por código. Piezas 9:16 y 16:9 del pack 2.1. Empieza por
   [`remotion/docs/OPERACION.md`](remotion/docs/OPERACION.md).
 
+- `motion-piloto/`: **piloto de Claude Motion** (4-nov-2026). Tres piezas, el veredicto y cuándo usarlo
+  en lugar de los reels de HyperFrames. Empieza por [`motion-piloto/README.md`](motion-piloto/README.md).
+
 Las tres son hermanas y ninguna sustituye a otra: el generador saca **capturas** para la ficha,
 Remotion saca **vídeo** para redes y las plantillas sacan **imágenes** para redes.
 
@@ -55,6 +58,13 @@ Remotion saca **vídeo** para redes y las plantillas sacan **imágenes** para re
 - Nunca «no almacenamos nada en servidores».
 
 Viene de la política 2.1 (PR #469).
+
+## Decisiones de publicación de Jürgen (2026-11-09)
+
+1. **Los posts de X de Yala van siempre en español.** No hay excepción en inglés ni calendario EN para X: las piezas
+   nuevas se producen solo en español neutro latinoamericano. Las versiones EN que ya existen no se borran.
+2. **La semana del 9 al 15 de noviembre se publica pieza por pieza, a mano**, sin reactivar ninguna rutina de
+   publicación. Vale para esa semana; volver a automatizar es otra decisión, y la toma Jürgen.
 
 ## Decisiones de esta reorganización (2026-10-13)
 

@@ -29,6 +29,16 @@ struct GroupExpenseSuccessData {
     let participants: [Participant]
     let debt: GroupExpenseDebt
     let isEditMode: Bool
+    /// Auditoría UX 2.2 · L13-3: quién eres (para decir quién te debe sin contarte) y qué apuntó Yala en tus finanzas.
+    var currentUserMemberID: String? = nil
+    var personalOutcome: GroupExpensePersonalOutcome = .none
+    /// Grupos B (card 6): el gasto guardado, y si se ofrece «Partir tu parte» en el bloque de qué apuntó Yala
+    /// (`GroupSplitLinesEntryLogic.offersSplit`: puente activo, fuera de la sesión solo-grupos y con parte propia).
+    var splitExpenseID: String? = nil
+    var offersSplitLines: Bool = false
+    /// Grupos B · card 00xj: pagaste tú con una categoría de ingreso (`GroupExpenseViewModel.isSale`). El título dice
+    /// «¡Venta agregada!» en vez de «¡Gasto agregado!».
+    var isSale: Bool = false
 
     /// Participante con su parte del gasto. `id` estable = memberID (los nombres pueden repetirse).
     struct Participant: Identifiable {
@@ -43,13 +53,14 @@ struct GroupExpenseSuccessData {
 struct GroupExpenseSuccessView: View {
     private static let dateFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.dateFormat = "d MMM yyyy"
         f.locale = AppLocale.current
+        f.setLocalizedDateFormatFromTemplate("dMMMy")
         return f
     }()
 
     @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
     @ScaledMetric(relativeTo: .body) private var avatarSize: CGFloat = 32 // A11Y-DT: @ScaledMetric
+    @ScaledMetric(relativeTo: .body) private var infoIconSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
 
     let data: GroupExpenseSuccessData
     let onAccept: () -> Void
@@ -66,6 +77,7 @@ struct GroupExpenseSuccessView: View {
     @State private var showAmount = false
     @State private var showDetails = false
     @State private var showActions = false
+    @State private var showsSplitLines = false
 
     private var heroColor: Color { DS.Semantic.successForeground }
 
@@ -140,18 +152,31 @@ struct GroupExpenseSuccessView: View {
         // propaga a TODOS los elementos hijos y PISA sus identifiers propios (los botones
         // group_expense_success_accept/_edit/_add_another reportaban este id → XCUI no los hallaba).
         .onAppear(perform: runEntranceAnimation)
+        .sheet(isPresented: $showsSplitLines) {
+            if let splitExpenseID = data.splitExpenseID {
+                GroupSplitLinesSheet(splitExpenseID: splitExpenseID)
+            }
+        }
     }
 
     // MARK: - Hero
 
+    private var heroTitle: String {
+        switch GroupExpenseSuccessLogic.title(isSale: data.isSale, isEditMode: data.isEditMode) {
+        case .expenseCreated: L10n.Groups.Expense.Success.titleCreated
+        case .expenseUpdated: L10n.Groups.Expense.Success.titleUpdated
+        case .saleCreated: L10n.Groups.Expense.Success.titleSaleCreated
+        case .saleUpdated: L10n.Groups.Expense.Success.titleSaleUpdated
+        }
+    }
+
     private var heroArea: some View {
         VStack(spacing: DS.Spacing.lg) {
-            Text(data.isEditMode
-                ? L10n.Groups.Expense.Success.titleUpdated
-                : L10n.Groups.Expense.Success.titleCreated)
+            Text(heroTitle)
                 .font(DS.Typography.headline)
                 .foregroundStyle(.secondary)
                 .opacity(showHero ? 1.0 : 0.0)
+                .accessibilityIdentifier("group_expense_success_title")
 
             heroCircle
 
@@ -165,8 +190,13 @@ struct GroupExpenseSuccessView: View {
             .scaleEffect(showAmount ? 1.0 : 0.8)
             .opacity(showAmount ? 1.0 : 0.0)
 
-            debtIndicator
-                .opacity(showAmount ? 1.0 : 0.0)
+            // L13-3 (decisión de Jürgen del 15-oct, variante 1): dos líneas que dicen qué pasó con tu dinero — quién te
+            // debe (o a quién debes) y qué apuntamos en tus finanzas, y de qué cuenta salió.
+            VStack(spacing: DS.Spacing.md) {
+                debtLine
+                moneyLine
+            }
+            .opacity(showAmount ? 1.0 : 0.0)
         }
     }
 
@@ -220,26 +250,127 @@ struct GroupExpenseSuccessView: View {
         }
     }
 
-    @ViewBuilder
-    private var debtIndicator: some View {
+    private var debtLine: some View {
+        let format = { (value: Double) in appPreferences.currency(value, currencyCode: data.currencyCode) }
         switch data.debt {
         case .theyOweMe(let amount):
-            debtLabel(L10n.Groups.Summary.owedToMe, amount: amount, color: DS.Semantic.successForeground)
+            return infoRow(icon: "person.2.fill", color: DS.Semantic.successForeground,
+                           title: L10n.UXL13.successOwedTitle(format(amount)), detail: debtorsDetail)
+                .accessibilityIdentifier("group_expense_success_debt_line")
         case .iOwe(let amount):
-            debtLabel(L10n.Groups.Summary.iOwe, amount: amount, color: .hotPink)
+            return infoRow(icon: "person.2.fill", color: .hotPink,
+                           title: L10n.UXL13.successIOweTitle(format(amount)),
+                           detail: L10n.UXL13.successIOweTo(data.paidByName))
+                .accessibilityIdentifier("group_expense_success_debt_line")
         case .settled:
+            return infoRow(icon: "checkmark", color: .secondary, title: L10n.UXL13.successSettledTitle, detail: nil)
+                .accessibilityIdentifier("group_expense_success_debt_line")
+        }
+    }
+
+    /// «Ana y Beto, S/ 50.00 cada uno» si todos deben lo mismo; si no, cada uno con lo suyo.
+    private var debtorsDetail: String? {
+        let debtors = GroupExpenseSuccessLogic.debtors(
+            participants: data.participants.map { (id: $0.id, name: $0.name, amount: $0.amount) },
+            currentUserMemberID: data.currentUserMemberID
+        )
+        guard !debtors.isEmpty else { return nil }
+        if debtors.count == 1 { return debtors[0].name }
+        if GroupExpenseSuccessLogic.allEqual(debtors.map(\.amount)) {
+            let formatter = ListFormatter()
+            formatter.locale = AppLocale.current
+            let names = formatter.string(from: debtors.map(\.name)) ?? debtors.map(\.name).joined(separator: ", ")
+            return L10n.UXL13.successOwedEach(
+                names: names,
+                amount: appPreferences.currency(debtors[0].amount, currencyCode: data.currencyCode)
+            )
+        }
+        return debtors
+            .map { "\($0.name) \(appPreferences.currency($0.amount, currencyCode: data.currencyCode))" }
+            .joined(separator: " · ")
+    }
+
+    @ViewBuilder
+    private var moneyLine: some View {
+        let format = { (value: Double) in appPreferences.currency(value, currencyCode: data.currencyCode) }
+        switch data.personalOutcome {
+        case .chargedToAccount(let accountName):
+            infoRow(icon: "creditcard.fill", color: .electricIndigo,
+                    title: L10n.UXL13.successAccountTitle(amount: format(data.totalAmount), account: accountName),
+                    detail: L10n.UXL13.successAccountDetail, offersSplit: data.offersSplitLines,
+                    contentIdentifier: "group_expense_success_money_line")
+        case .waitingInInbox:
+            infoRow(icon: "tray.full.fill", color: .electricIndigo,
+                    title: L10n.UXL13.successInboxTitle,
+                    detail: L10n.UXL13.successInboxDetail(format(data.totalAmount)))
+                .accessibilityIdentifier("group_expense_success_money_line")
+        case .shareAsGroupExpense(let amount):
+            infoRow(icon: "chart.pie.fill", color: .electricIndigo,
+                    title: L10n.UXL13.successShareTitle(format(amount)),
+                    detail: L10n.UXL13.successShareDetail, offersSplit: data.offersSplitLines,
+                    contentIdentifier: "group_expense_success_money_line")
+        case .none:
             EmptyView()
         }
     }
 
-    private func debtLabel(_ label: String, amount: Double, color: Color) -> some View {
-        HStack(spacing: DS.Spacing.xs) {
-            Text(label)
-            Text(appPreferences.currency(amount, currencyCode: data.currencyCode))
-                .fontWeight(.semibold)
+    /// - Parameter offersSplit: Grupos B (card 6): el enlace «Partir tu parte» dentro del bloque, bajo el texto (maqueta
+    ///   `opcion-b.html`, escenarios 2 y 3). Va fuera del elemento combinado para que se pueda tocar por sí solo.
+    private func infoRow(
+        icon: String, color: Color, title: String, detail: String?, offersSplit: Bool = false,
+        contentIdentifier: String? = nil
+    ) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            // Con el enlace dentro, el id va en el texto y no en el bloque: en el bloque pisaría el del enlace.
+            if let contentIdentifier {
+                infoRowContent(icon: icon, color: color, title: title, detail: detail)
+                    .accessibilityIdentifier(contentIdentifier)
+            } else {
+                infoRowContent(icon: icon, color: color, title: title, detail: detail)
+            }
+            if offersSplit {
+                Button {
+                    showsSplitLines = true
+                } label: {
+                    Label(L10n.Groups.SplitLines.splitYourShare, systemImage: "scissors")
+                        .font(DS.Typography.subheadlineEmphasized)
+                        .foregroundStyle(.thAccentText)
+                        .padding(.leading, infoIconSize + DS.Spacing.md)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("group_expense_success_split")
+            }
         }
-        .font(DS.Typography.subheadline)
-        .foregroundStyle(color)
+        .padding(DS.Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+    }
+
+    private func infoRowContent(icon: String, color: Color, title: String, detail: String?) -> some View {
+        HStack(spacing: DS.Spacing.md) {
+            Image(systemName: icon)
+                .font(DS.Typography.subheadlineEmphasized)
+                .foregroundStyle(.white)
+                .frame(width: infoIconSize, height: infoIconSize)
+                .background(color, in: Circle())
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(title)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let detail {
+                    Text(detail)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: - Details
@@ -257,8 +388,9 @@ struct GroupExpenseSuccessView: View {
                 detailRow(icon: "tag", label: L10n.Transaction.category, value: subcategory)
             }
 
-            if let account = data.accountName {
-                detailRow(icon: "creditcard", label: L10n.Account.selectAccount,
+            // Con la línea «−S/ 150 en Cuenta» arriba, la fila de la cuenta repetiría lo mismo.
+            if let account = data.accountName, !isChargedToAccount {
+                detailRow(icon: "creditcard", label: L10n.Transaction.account,
                           value: account, dotColorHex: data.accountColorHex)
             }
 
@@ -387,6 +519,11 @@ struct GroupExpenseSuccessView: View {
     }
 
     // MARK: - Helpers
+
+    private var isChargedToAccount: Bool {
+        if case .chargedToAccount = data.personalOutcome { return true }
+        return false
+    }
 
     private var formattedDate: String {
         Self.dateFormatter.string(from: data.date)

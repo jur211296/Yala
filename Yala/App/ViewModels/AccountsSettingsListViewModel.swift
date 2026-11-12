@@ -20,8 +20,16 @@ final class AccountsSettingsListViewModel {
 
     // MARK: - Data
 
-    private(set) var accounts: [Account] = []
-    private(set) var transactions: [TransactionItem] = []
+    /// Sin las cuentas ya borradas: Editar cuenta elimina una línea y sigue abierto (S30), así que la lista de debajo puede
+    /// repintarse con la línea borrada antes de recargar, y leer un modelo borrado aborta en el iPhone 27.x
+    /// (`swiftui-ds.md`, filas con un `@Model` borrado).
+    var accounts: [Account] { loadedAccounts.filter { !$0.isDeleted && $0.modelContext != nil } }
+    private var loadedAccounts: [Account] = []
+    /// Sin los registros ya borrados: «Eliminar» con la hoja de mover o borrar puede borrar los de la cuenta con el
+    /// formulario aún abierto, y la lista de debajo —que los recorre para el saldo de cada fila— se repinta antes de
+    /// recargar (card gxa9).
+    var transactions: [TransactionItem] { loadedTransactions.filter { !$0.isDeleted && $0.modelContext != nil } }
+    private var loadedTransactions: [TransactionItem] = []
 
     // MARK: - UI State
 
@@ -59,10 +67,23 @@ final class AccountsSettingsListViewModel {
         accounts.filter { $0.isSystemAccount && !$0.isArchived }
     }
 
+    /// Las tarjetas activas en el orden guardado: una por cuenta principal o suelta, con sus líneas en otra divisa
+    /// dentro (`AccountCardLogic`). Desde la entrega 1 `billableUserAccounts` deja fuera las líneas, así que las tarjetas
+    /// se arman con TODAS las cuentas de usuario vivas.
+    var orderedCards: [AccountCard<Account>] {
+        sortedByUserOrder(accounts.filter { !$0.isArchived && !$0.isSystemAccount })
+            .accountCards(roles: accounts.lineRoles)
+    }
+
+    /// La cabeza de cada tarjeta: lo que se reordena y lo que cuenta para el límite Free.
     var orderedActiveAccounts: [Account] {
+        orderedCards.map(\.head)
+    }
+
+    private func sortedByUserOrder(_ list: [Account]) -> [Account] {
         let indexByName = accountSortIndex
 
-        return activeAccounts.sorted { a, b in
+        return list.sorted { a, b in
             let ia = indexByName[a.name]
             let ib = indexByName[b.name]
 
@@ -106,12 +127,12 @@ final class AccountsSettingsListViewModel {
         // Load accounts
         let accountDescriptor = FetchDescriptor<Account>(sortBy: [SortDescriptor(\Account.name)])
         do {
-            accounts = try context.fetch(accountDescriptor)
+            loadedAccounts = try context.fetch(accountDescriptor)
         } catch {
             #if DEBUG
             print("AccountsSettingsListViewModel: Error loading accounts: \(error)")
             #endif
-            accounts = []
+            loadedAccounts = []
         }
 
         // Perf-note: fetches all transactions for per-account balance calculation.
@@ -120,12 +141,13 @@ final class AccountsSettingsListViewModel {
             sortBy: [SortDescriptor(\TransactionItem.date, order: .reverse), SortDescriptor(\TransactionItem.createdAt, order: .reverse)]
         )
         do {
-            transactions = try context.fetch(transactionDescriptor)
+            // Lo que espera su borrado con «Deshacer» no cuenta en el saldo de cada cuenta (`RecordPendingDeletion`).
+            loadedTransactions = RecordPendingDeletion.shared.visible(try context.fetch(transactionDescriptor))
         } catch {
             #if DEBUG
             print("AccountsSettingsListViewModel: Error loading transactions: \(error)")
             #endif
-            transactions = []
+            loadedTransactions = []
         }
     }
 
@@ -159,16 +181,22 @@ final class AccountsSettingsListViewModel {
 
     // MARK: - Reorder Logic
 
+    /// Mueve tarjetas enteras. El orden guardado lleva cada línea justo detrás de su principal: sin ellas, reordenar
+    /// borraba su posición y el Panel las mandaba al final (review de la entrega 1).
     func moveAccount(from source: IndexSet, to destination: Int) -> [String] {
-        var currentOrder = orderedActiveAccounts.map { $0.name }
-        currentOrder.move(fromOffsets: source, toOffset: destination)
+        var cards = orderedCards
+        cards.move(fromOffsets: source, toOffset: destination)
+        let currentOrder = AccountCardLogic.sortOrderNames(cards) { $0.name }
         accountsSortOrderNames = currentOrder
         return currentOrder
     }
 
     // MARK: - Helper for Edit
 
+    /// La hoja de editar vuelve a crear el formulario con esto mientras se cierra, también con la cuenta ya eliminada:
+    /// entonces no se lee su nombre (iOS 27.x aborta al leer un modelo borrado, card gxa9) y `accounts` ya no la trae.
     func existingNamesExcluding(_ account: Account) -> [String] {
-        accounts.map { $0.name }.filter { $0 != account.name }
+        guard !account.isDeleted, account.modelContext != nil else { return accounts.map(\.name) }
+        return accounts.map { $0.name }.filter { $0 != account.name }
     }
 }

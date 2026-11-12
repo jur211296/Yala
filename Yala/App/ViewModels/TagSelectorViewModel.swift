@@ -22,11 +22,6 @@ final class TagSelectorViewModel {
 
     private(set) var tags: [Tag] = []
 
-    // MARK: - UI State
-
-    var showNewTagSheet = false
-    var tagCountBeforeSheet = 0
-
     // MARK: - Computed Properties
 
     var activeTags: [Tag] {
@@ -59,15 +54,73 @@ final class TagSelectorViewModel {
         }
     }
 
-    // MARK: - Actions
+    // MARK: - Etiqueta nueva solo con el nombre (UX 2.2 · L2-10)
 
-    func prepareForNewTag() {
-        tagCountBeforeSheet = activeTags.count
-        showNewTagSheet = true
+    /// Lo escrito en «Nueva etiqueta».
+    var newTagName = ""
+
+    var trimmedNewTagName: String { newTagName.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+    /// «Crear» se enciende con un nombre de 1 a 20 caracteres, el mismo límite del editor completo.
+    var canCreateTag: Bool { TagQuickCreateLogic.isValidName(trimmedNewTagName) }
+
+    /// Crea la etiqueta con el icono `tag.fill` y el siguiente color libre (`Tag.nextAvailableColor`); se cambian luego en
+    /// Ajustes › Etiquetas. Un nombre que ya existe elige esa etiqueta (y la reactiva si estaba archivada). Devuelve la
+    /// etiqueta que hay que poner, o `nil` si no se pudo guardar.
+    func createOrPickTag() -> Tag? {
+        guard let context = modelContext, canCreateTag else { return nil }
+        let name = trimmedNewTagName
+        if let existing = TagQuickCreateLogic.match(name, in: tags, name: \.name) {
+            if !existing.isActive {
+                existing.isActive = true
+                guard save(context) else { return nil }
+            }
+            newTagName = ""
+            loadTags()
+            return existing
+        }
+        let tag = Tag(
+            name: name,
+            colorHex: Tag.nextAvailableColor(excluding: tags.map(\.colorHex)),
+            iconName: "tag.fill",
+            isActive: true
+        )
+        context.insert(tag)
+        guard save(context) else {
+            context.delete(tag)
+            return nil
+        }
+        newTagName = ""
+        loadTags()
+        return tag
     }
 
-    func closeNewTagSheet() {
-        showNewTagSheet = false
-        loadTags()
+    private func save(_ context: ModelContext) -> Bool {
+        do {
+            try context.save()
+            SessionState.shared.incrementDataVersion()
+            return true
+        } catch {
+            #if DEBUG
+            print("TagSelectorViewModel: Error: guardar la etiqueta nueva: \(error)")
+            #endif
+            return false
+        }
+    }
+}
+
+/// Crear una etiqueta desde la hoja (UX 2.2 · L2-10). Lógica pura para fijarla con tests.
+enum TagQuickCreateLogic {
+    static let maxNameLength = 20
+
+    static func isValidName(_ trimmed: String) -> Bool {
+        !trimmed.isEmpty && trimmed.count <= maxNameLength
+    }
+
+    /// La etiqueta que ya se llama así, sin distinguir mayúsculas ni espacios en los extremos (el criterio de
+    /// `TagFormViewModel.isNameUnique`).
+    static func match<T>(_ name: String, in tags: [T], name keyPath: KeyPath<T, String>) -> T? {
+        let wanted = name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return tags.first { $0[keyPath: keyPath].trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == wanted }
     }
 }

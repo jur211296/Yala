@@ -13,12 +13,18 @@ import SwiftUI
 struct AccountFormView: View {
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.modelContext) private var modelContext
     @Environment(EntityDeletionService.self) private var deletionService
     @Environment(SessionState.self) private var sessionState
 
     @State private var viewModel: AccountFormViewModel
     @State private var showBalanceCalculator: Bool = false
+    /// «Eliminar cuenta» pregunta antes de borrar (ticket `deleting-an-account-asks-nothing`).
+    @State private var showDeleteConfirmation: Bool = false
+    /// El nombre de la cuenta, copiado al pedir eliminarla. El título de la alerta se vuelve a evaluar al cerrarse, con la
+    /// cuenta ya eliminada y el formulario aún presentado: leerla ahí aborta en iOS 27.x (card 1w89).
+    @State private var deleteDialogAccountName = ""
     @State private var calcFieldState = BalanceCalculatorFieldState()
     /// La hoja «¿Qué hacemos con lo que hay dentro?» de eliminar una cuenta con movimientos: la cuenta, con su
     /// nombre y su divisa leídos al tocar «Eliminar» (la hoja se sigue pintando con la cuenta ya eliminada).
@@ -26,15 +32,39 @@ struct AccountFormView: View {
     /// La hoja eliminó la cuenta: al cerrarse, se cierra también el formulario (en su `onDismiss`, no
     /// mientras la hoja sigue montada — dos `dismiss` a la vez dejan presentaciones colgadas).
     @State private var accountWasRemoved: Bool = false
+    /// La X o el gesto de cerrar con algo escrito (L7-5).
+    @State private var showDiscardChangesAlert: Bool = false
+    /// «Más opciones» plegado al crear la cuenta (L7-4).
+    @State private var showsMoreOptions: Bool = false
+    /// Tarjeta con varias divisas: las hojas de añadir una línea y de vincular una cuenta existente.
+    @State private var showsAddLine: Bool = false
+    @State private var showsLinkAccount: Bool = false
+    /// Desvincular convierte la línea en otra cuenta que cuenta para el límite Free: sin hueco, se ofrece Pro.
+    @State private var showsUpgradeToUnlink: Bool = false
+    /// Cuenta ya creada: la hoja pregunta si añadirle otra divisa en vez de cerrarse (S12j). Es una fase de esta hoja y
+    /// no un `.alert`: tras el aviso de divisa secundaria, dos alertas seguidas del mismo ancla pueden perder la segunda
+    /// (`swiftui-ds.md`), y el formulario se quedaría abierto con la cuenta guardada y un «Guardar» que la duplica.
+    @State private var isOfferingLine: Bool = false
+    /// «Añadir línea» sobre la cuenta recién creada, con su propio ViewModel de edición. `item` y no `isPresented`: la
+    /// hoja saca su contenido de este estado (`swiftui-ds.md`, hojas vacías).
+    @State private var lineOfferTarget: AccountLineOfferTarget?
     @FocusState private var focusedField: Field?
-    /// Abre a media altura (ticket `account-form-as-medium-detent-sheet`); se puede tirar hacia arriba.
-    @State private var selectedDetent: PresentationDetent = .medium
+    /// Crear abre a media altura (ticket `account-form-as-medium-detent-sheet`) y se puede tirar hacia arriba; editar abre
+    /// a pantalla completa (S30, Jürgen 2026-10-30): ahí se revisa todo lo de la cuenta, no un solo campo.
+    @State private var selectedDetent: PresentationDetent
+    /// Eliminar una línea desde el selector de moneda (S30): la línea vacía que espera su confirmación corta, y la que
+    /// se está eliminando con la hoja de «¿Qué hacemos con lo que hay dentro?» (al cerrarse, el formulario sigue abierto).
+    @State private var lineAwaitingDeleteConfirmation: Account?
+    @State private var lineAwaitingDeleteCurrency: String = ""
+    @State private var showsLineDeleteConfirmation: Bool = false
+    @State private var lineBeingRemoved: UUID?
     @Environment(\.usesLargeSheets) private var usesLargeSheets
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
-    /// Con un tamaño de texto de accesibilidad, media altura enseña un solo campo: la hoja abre grande.
+    /// Editar abre grande (S30). Al crear, con un tamaño de texto de accesibilidad, media altura enseña un solo campo: la
+    /// hoja también abre grande.
     private var sheetDetents: Set<PresentationDetent> {
-        dynamicTypeSize.isAccessibilitySize ? [.large] : [.medium, .large]
+        viewModel.isEditing || dynamicTypeSize.isAccessibilitySize ? [.large] : [.medium, .large]
     }
 
     /// Grande si el usuario la arrastró o si no hay medium que mostrar: la ventana ancha
@@ -49,9 +79,14 @@ struct AccountFormView: View {
     }
 
     init(existingNames: [String], accountToEdit: Account? = nil) {
+        _selectedDetent = State(initialValue: accountToEdit == nil ? .medium : .large)
+        // Mira antes de leer: quien presenta el formulario puede volver a crearlo con la cuenta ya eliminada mientras se
+        // cierra (manda el `@State` de la primera vez, pero el ViewModel se construye igual y lee la cuenta), y en iOS
+        // 27.x leer un modelo borrado aborta (card 1w89). Esa construcción se descarta: da igual que sea un alta.
+        let readableAccount = accountToEdit.flatMap { !$0.isDeleted && $0.modelContext != nil ? $0 : nil }
         _viewModel = State(
             initialValue: AccountFormViewModel(
-                accountToEdit: accountToEdit,
+                accountToEdit: readableAccount,
                 existingNames: existingNames
             ))
     }
@@ -60,54 +95,32 @@ struct AccountFormView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
-                        generalSection
-                        ContextualGuideBanner.accountForm(accountType: viewModel.selectedType)
-                        currencySection
-                        if viewModel.selectedType == .creditCard {
-                            creditCardSection
-                        }
-                        if viewModel.showAdjustmentMode {
-                            adjustmentSection
-                        }
-                        balanceSection
-
-                        // Balance calculator link (only for new accounts, not editing)
-                        if !viewModel.isEditing && !sessionState.isExpensesOnlyMode {
-                            Button {
-                                showBalanceCalculator = true
-                            } label: {
-                                HStack(spacing: DS.Spacing.xs) {
-                                    Image(systemName: "questionmark.circle")
-                                        .font(DS.Typography.subheadline)
-                                    Text(L10n.Onboarding.accountBalanceLearnMore)
-                                        .font(DS.Typography.subheadline)
-                                        .fontWeight(.semibold)
-                                }
-                                .foregroundStyle(Color.electricIndigo)
-                            }
-                            .buttonStyle(.plain)
-                        }
-
-                        actionsSection
-                    }
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.vertical, DS.Spacing.xxl)
-                    .dismissKeyboardOnTap()
+            Group {
+                if isOfferingLine {
+                    AccountLineOfferView(
+                        accountName: viewModel.createdAccount?.name ?? viewModel.trimmedName,
+                        onAdd: openLineOnCreatedAccount,
+                        onSkip: { dismiss() }
+                    )
+                } else {
+                    formContent
                 }
-                .scrollDismissesKeyboard(.interactively)
+            }
             .yalaScreenBackground(isLargeDetent ? .subtle : .transparent)
-            .navigationTitle(L10n.Account.configure)
+            // «Nueva cuenta» o «Editar cuenta»: alta y edición compartían «Configurar cuenta» (L7-4).
+            .navigationTitle(viewModel.isEditing ? L10n.Account.edit : L10n.Account.new)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
-                        dismiss()
+                        requestClose()
                     }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
-                    YalaSaveButton(action: { saveAccount() }, isDisabled: !viewModel.canSave)
+                // Con la cuenta ya creada no hay nada que guardar: otro toque la crearía dos veces.
+                if !isOfferingLine {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        YalaSaveButton(action: { saveAccount() }, isDisabled: !viewModel.canSave)
+                    }
                 }
             }
             .sheet(isPresented: $viewModel.isPresentingColorPicker) {
@@ -124,6 +137,7 @@ struct AccountFormView: View {
                             viewModel.updateColorFromCustom()
                         }
                         .buttonStyle(.borderedProminent)
+                        .foregroundStyle(.thOnAccent)
 
                         Spacer()
                     }
@@ -150,6 +164,20 @@ struct AccountFormView: View {
                     onDismiss: { showBalanceCalculator = false }
                 )
             }
+            .sheet(isPresented: $showsAddLine) {
+                AddAccountLineSheet(viewModel: viewModel)
+            }
+            .sheet(isPresented: $showsLinkAccount) {
+                LinkAccountLineSheet(viewModel: viewModel)
+            }
+            // Al cerrar «Añadir línea» (con la línea o sin ella) termina el alta: se cierra el formulario.
+            .sheet(item: $lineOfferTarget, onDismiss: { dismiss() }) { target in
+                AddAccountLineSheet(viewModel: target.viewModel)
+            }
+            // Si compra Pro ahí, al cerrarse se desvincula la línea, que es lo que se quería (UX 2.2 · L17-9).
+            .proUpgradeSheet(isPresented: $showsUpgradeToUnlink, feature: .accounts, context: .limitReached) {
+                viewModel.unlink()
+            }
             .onChange(of: viewModel.isPresentingColorPicker) { _, isPresenting in
                 if isPresenting { focusedField = nil }
             }
@@ -157,6 +185,8 @@ struct AccountFormView: View {
                 calcFieldState.reset()
             }
             .onAppear {
+                // Antes del contexto: decide qué pide el campo del saldo al abrir una cuenta ya creada (L7-6).
+                viewModel.editsTodayBalance = !sessionState.isExpensesOnlyMode
                 viewModel.setContext(modelContext)
                 // Auto-focus name field for new accounts
                 if !viewModel.isEditing {
@@ -195,32 +225,20 @@ struct AccountFormView: View {
                 Text(L10n.Common.saveError)
             }
         )
-        .alert(
-            L10n.Account.secondaryCurrencyTitle,
-            isPresented: Binding(
-                get: { viewModel.currencyToSuggestAsSecondary != nil },
-                set: { if !$0 { viewModel.currencyToSuggestAsSecondary = nil } }
-            ),
-            actions: {
-                Button(L10n.Account.secondaryCurrencyAccept) {
-                    acceptSecondaryCurrency()
-                    dismiss()
-                }
-                Button(L10n.Account.secondaryCurrencyReject, role: .cancel) {
-                    viewModel.currencyToSuggestAsSecondary = nil
-                    dismiss()
-                }
+        .modifier(SecondaryCurrencySuggestionAlert(
+            suggestion: $viewModel.secondaryCurrencySuggestion,
+            preferred: CurrencyDefaults.currentPreferred,
+            onAccept: { new, old in
+                acceptSecondaryCurrency(new, replacing: old)
+                closeOrOfferLine()
             },
-            message: {
-                if let code = viewModel.currencyToSuggestAsSecondary {
-                    Text(L10n.Account.secondaryCurrencyMessage(
-                        code.rawValue,
-                        CurrencyDefaults.currentPreferred,
-                        code.rawValue
-                    ))
-                }
-            }
-        )
+            onDecline: { closeOrOfferLine() }
+        ))
+        .modifier(DiscardAccountChangesAlert(isPresented: $showDiscardChangesAlert) { dismiss() })
+        .modifier(AccountLinesAlerts(viewModel: viewModel))
+        .modifier(AccountLineDeleteConfirmation(
+            isPresented: $showsLineDeleteConfirmation, line: lineAwaitingDeleteConfirmation,
+            currencyCode: lineAwaitingDeleteCurrency, onConfirm: deleteEmptyLine))
         .alert(
             viewModel.pendingCurrencyConversion.map { Self.currencyConversionTitle($0) } ?? "",
             isPresented: Binding(
@@ -275,14 +293,111 @@ struct AccountFormView: View {
                 Text(L10n.Account.CurrencyChange.ratesUnavailableMessage)
             }
         )
+        .modifier(AccountDeleteConfirmation(
+            isPresented: $showDeleteConfirmation,
+            accountName: deleteDialogAccountName,
+            recordCount: viewModel.accountTransactions.count,
+            onConfirm: handleDeleteTapped
+        ))
         .overlay {
             if viewModel.isConvertingCurrency {
                 currencyConversionOverlay
             }
         }
         // A media conversión el histórico está partido entre dos divisas: cerrar el formulario ahí
-        // dejaría la cuenta en un estado que ninguna pantalla sabe leer.
-        .interactiveDismissDisabled(viewModel.isConvertingCurrency)
+        // dejaría la cuenta en un estado que ninguna pantalla sabe leer. Y con algo escrito, el gesto de
+        // cerrar pregunta antes de tirarlo, como la X (L7-5).
+        // Con la cuenta ya creada (la pregunta de otra divisa) no queda nada que descartar.
+        .onSheetDismissAttempt(isActive: !isOfferingLine && (viewModel.isConvertingCurrency || viewModel.hasUnsavedChanges)) {
+            guard !viewModel.isConvertingCurrency else { return }
+            showDiscardChangesAlert = true
+        }
+    }
+
+    /// El formulario de siempre. Fuera del `body` desde S12j, que lo alterna con la pregunta de otra divisa: anidado
+    /// en el `if` del `body`, la expresión crecía (el CI compila con Xcode 26.6, que tipa peor: `swiftui-ds.md`).
+    private var formContent: some View {
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
+                        generalSection
+                        ContextualGuideBanner.accountForm(accountType: viewModel.selectedType)
+                        currencySection
+                        // Tarjeta con varias divisas: una línea dice de qué tarjeta es; una tarjeta de crédito (o una
+                        // cuenta que ya tiene líneas) enseña «Otras divisas» a la vista (decisión 3 de Jürgen).
+                        if viewModel.isCurrencyLockedAsLine || viewModel.hasBrokenLink {
+                            lineMembershipSection
+                        } else if showsLinesUpFront {
+                            cardLinesSection
+                        }
+                        // Recordatorio y día de pago: solo la principal, o la notificación llegaría doble.
+                        if viewModel.selectedType == .creditCard && viewModel.ownsCardSettings {
+                            creditCardSection
+                        }
+                        // Una tarjeta con líneas: un segmento por divisa, y cada línea con su saldo inicial (S30).
+                        if viewModel.showsLineCurrencyPicker {
+                            lineCurrencyPicker
+                        }
+                        if let line = viewModel.selectedLine {
+                            // Sin borrador no se pinta nada: el bloque de la principal bajo el segmento de una línea
+                            // haría que lo escrito fuera a la cuenta equivocada.
+                            if let draft = viewModel.lineDraft(for: line) {
+                                AccountLineBalanceEditor(
+                                    draft: draft,
+                                    currencyCode: normalizeCurrencyCode(line.currencyCode),
+                                    isCreditCard: viewModel.selectedType == .creditCard,
+                                    onDelete: { requestDeleteLine(line) }
+                                )
+                                // Una vista por línea: con la misma, el foco y lo escrito pasaban de USD a EUR.
+                                .id(line.shortcutID)
+                            }
+                        } else if usesBalanceEditor {
+                            // «Editar el saldo» (pantalla 8 del rediseño, auditoría UX 2.2, L7-6).
+                            balanceEditSection
+                        } else {
+                            if viewModel.showAdjustmentMode {
+                                adjustmentSection
+                            }
+                            balanceSection
+                        }
+
+                        // La ayuda para calcular el saldo, con la tarjeta rosa del onboarding (L7-2, variante 1):
+                        // el enlace índigo de 15 pt que había aquí no se veía, y es donde la gente se atasca.
+                        if !viewModel.isEditing && !sessionState.isExpensesOnlyMode {
+                            guidedBalanceCard
+                        }
+
+                        if viewModel.isEditing {
+                            actionsSection
+                            // En el resto de tipos, «Otras divisas» está disponible pero más discreta: al final.
+                            if viewModel.canManageLines && !showsLinesUpFront {
+                                cardLinesSection
+                            }
+                        } else {
+                            // Al crear, «Archivar» no tiene sentido y «Excluir» es una decisión avanzada: va
+                            // plegado bajo «Más opciones», como en el rediseño aprobado (L7-4).
+                            newAccountMoreOptionsSection
+                        }
+                    }
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.xxl)
+                    .dismissKeyboardOnTap()
+                }
+                .scrollDismissesKeyboard(.interactively)
+    }
+
+    /// La X: con algo escrito pregunta «¿Descartar cambios?», como la Bandeja y Categorías (L7-5).
+    private func requestClose() {
+        if !isOfferingLine && viewModel.hasUnsavedChanges {
+            focusedField = nil
+            showDiscardChangesAlert = true
+        } else {
+            dismiss()
+        }
+    }
+
+    /// Edición fuera del modo «solo gastos»: el saldo se edita con la pantalla «Editar el saldo» (L7-6).
+    private var usesBalanceEditor: Bool {
+        viewModel.isEditing && viewModel.editsTodayBalance
     }
 
     // MARK: - Texto del aviso de conversión
@@ -306,9 +421,20 @@ struct AccountFormView: View {
         _ pending: AccountFormViewModel.PendingCurrencyConversion
     ) -> String {
         var paragraphs: [String] = []
+        // Lo primero, la cifra que la persona entiende: en cuánto queda su saldo (L7-7).
+        if let balance = pending.balancePreview {
+            paragraphs.append(L10n.UXL7.currencyBalanceLine(
+                formatPlanAmount(balance.before, currencyCode: pending.fromCurrencyCode, isEstimate: false),
+                formatPlanAmount(balance.after, currencyCode: pending.toCurrencyCode, isEstimate: !balance.isExact)
+            ))
+        }
         if pending.rowCount > 0 {
-            paragraphs.append(L10n.Account.CurrencyChange.confirmMessage(
-                pending.fromCurrencyCode, pending.toCurrencyCode))
+            var line = L10n.Account.CurrencyChange.confirmMessage(pending.fromCurrencyCode, pending.toCurrencyCode)
+            // Con una cuenta recién creada, el único «registro» es el saldo de partida: se nombra (L7-7).
+            if pending.includesInitialBalance {
+                line += " " + L10n.UXL7.currencyIncludesInitialBalance
+            }
+            paragraphs.append(line)
         }
         if pending.draftCount > 0 {
             paragraphs.append(L10n.Account.CurrencyChange.draftsLine(
@@ -387,22 +513,7 @@ struct AccountFormView: View {
 
                 SubsectionDivider()
 
-                NavigationLink {
-                    AccountTypeSelectorView(selectedType: $viewModel.selectedType)
-                } label: {
-                    HStack {
-                        Text(L10n.Account.type)
-                            .foregroundStyle(.primary)
-                        Spacer()
-                        Text(viewModel.selectedType.localizedName)
-                            .foregroundStyle(.secondary)
-                        Image(systemName: "chevron.right")
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.tertiary)
-                    }
-                    .padding()
-                }
-                .buttonStyle(.plain)
+                AccountTypeChips(selectedType: $viewModel.selectedType)
 
                 SubsectionDivider()
 
@@ -422,7 +533,19 @@ struct AccountFormView: View {
     private var currencySection: some View {
         SectionBox(title: L10n.Account.currency) {
             VStack(alignment: .leading, spacing: DS.Spacing.none) {
-                if viewModel.isCurrencyEditable {
+                if viewModel.isCurrencyLockedAsLine {
+                    // Una línea de tarjeta no cambia de divisa: es lo que la hace línea.
+                    currencyRow(showsChevron: false, currency: viewModel.balanceDisplayCurrency)
+                        .accessibilityIdentifier("account_currency_locked")
+
+                    Text(L10n.Account.Lines.currencyLocked)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal)
+                        .padding(.bottom)
+                        .accessibilityIdentifier("account_currency_locked_reason")
+                } else if viewModel.isCurrencyEditable {
                     NavigationLink {
                         CurrencySelectorView(selectedCurrency: $viewModel.selectedCurrency)
                             .swipeBack()
@@ -431,6 +554,17 @@ struct AccountFormView: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("account_currency_link")
+
+                    // La tarjeta no puede pasar a la divisa de una de sus líneas: el guardado se bloquea y aquí dice por qué.
+                    if let collision = viewModel.currencyCollidingLine {
+                        Text(L10n.Account.Lines.currencyCollision(collision))
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(DS.Semantic.errorForeground)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.horizontal)
+                            .padding(.bottom)
+                            .accessibilityIdentifier("account_currency_line_collision")
+                    }
                 } else {
                     // Sin `NavigationLink`: no hay destino al que llegar, así que tampoco hay tap.
                     // El motivo va debajo y no en un alert porque se puede leer ANTES de intentarlo
@@ -475,6 +609,9 @@ struct AccountFormView: View {
             }
         }
         .padding()
+        // Dentro del label y tras el padding: sin esto el `Spacer` deja el centro de la fila muerto y solo
+        // respondían la bandera y el chevron (`swiftui-ds.md`, medido el 2026-10-17 con XCUITest).
+        .contentShape(Rectangle())
     }
 
     /// Los motivos del bloqueo, como lista legible. El orden lo fija el ViewModel para que el texto
@@ -510,6 +647,7 @@ struct AccountFormView: View {
                             .foregroundStyle(.tertiary)
                     }
                     .padding()
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
 
@@ -529,8 +667,10 @@ struct AccountFormView: View {
                         Text(L10n.Account.adjustmentDate)
                             .font(DS.Typography.body)
                         Spacer()
+                        // Hasta hoy, como en «Editar el saldo»: un ajuste fechado mañana no cuenta en el saldo de hoy.
                         DateFieldButton(
                             date: $viewModel.adjustmentDate,
+                            maxDate: nil,
                             title: L10n.Account.adjustmentDate
                         )
                     }
@@ -590,54 +730,22 @@ struct AccountFormView: View {
                 SubsectionDivider()
 
                 // Balance input
-                HStack {
-                    Spacer()
-                    VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
-                        Text(
-                            viewModel.selectedAdjustmentMode == .changeInitialBalance
-                                ? L10n.Account.initialBalance : L10n.Account.newBalance
-                        )
+                balanceInput(
+                    caption: viewModel.selectedAdjustmentMode == .changeInitialBalance
+                        ? L10n.Account.initialBalance : L10n.Account.newBalance
+                )
+                .padding()
+
+                // Por qué «Guardar» sigue apagado en una cuenta nueva: falta el saldo (L7-1, molde del onboarding).
+                if !viewModel.isEditing && viewModel.parsedBalanceAmount == nil {
+                    Text(L10n.UXL7.balanceRequiredHint)
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
-
-                        ZStack(alignment: .trailing) {
-                            // Placeholder
-                            if viewModel.balanceText.isEmpty {
-                                Text("0.00")
-                                    .font(DS.Typography.largeTitle)
-                                    .foregroundStyle(DS.Semantic.disabledForeground.opacity(DS.Opacity.overlay))
-                            }
-
-                            TextField("", text: $viewModel.balanceText)
-                                .keyboardType(.decimalPad)
-                                .multilineTextAlignment(.trailing)
-                                .font(DS.Typography.largeTitle)
-                                .focused($focusedField, equals: .balance)
-                                .accessibilityIdentifier("account_balance_field")
-                        }
-                        .onChange(of: focusedField) { _, newField in
-                            let isFocused = newField == .balance
-                            // When field gains focus, clear placeholder values
-                            if isFocused
-                                && (viewModel.balanceText == "0" || viewModel.balanceText == "0.00" || viewModel.balanceText == "0,00")
-                            {
-                                viewModel.balanceText = ""
-                            }
-                            // When field loses focus, format if has value
-                            if !isFocused && !viewModel.balanceText.isEmpty {
-                                let amount = AmountInputHelper.parseDecimal(viewModel.balanceText)
-                                viewModel.balanceText = AmountInputHelper.formatWithGrouping(amount)
-                            }
-                        }
-                        .onChange(of: viewModel.balanceText) { _, newValue in
-                            let filtered = AmountInputHelper.filterAmountInput(newValue)
-                            if filtered != newValue {
-                                viewModel.balanceText = filtered
-                            }
-                        }
-                    }
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .padding(.horizontal)
+                        .padding(.bottom)
+                        .accessibilityIdentifier("account_balance_required_hint")
                 }
-                .padding()
 
                 // Show calculated final balance for "Cambiar saldo inicial" mode
                 if viewModel.isEditing
@@ -767,7 +875,7 @@ struct AccountFormView: View {
                     SubsectionDivider()
 
                     Button(role: .destructive) {
-                        handleDeleteTapped()
+                        requestDelete()
                     } label: {
                         HStack {
                             Spacer()
@@ -782,15 +890,366 @@ struct AccountFormView: View {
         }
     }
 
-    private var creditCardSection: some View {
-        SectionBox(title: L10n.Account.CreditCard.sectionTitle) {
-            VStack(spacing: DS.Spacing.none) {
-                Toggle(isOn: $viewModel.creditCardPaymentReminder) {
-                    Text(L10n.Account.CreditCard.paymentReminder)
+    /// El campo grande del saldo, con su rótulo encima. Lo comparten el alta y «Editar el saldo».
+    private func balanceInput(caption: String) -> some View {
+        HStack {
+            Spacer()
+            VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
+                if !caption.isEmpty {
+                    Text(caption)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
                 }
-                .padding()
 
-                if viewModel.creditCardPaymentReminder {
+                ZStack(alignment: .trailing) {
+                    // «Ej. 1500», como el onboarding (L7-1): el «0.00» gris se leía como un valor ya puesto.
+                    if viewModel.balanceText.isEmpty {
+                        Text(L10n.Onboarding.balancePlaceholder)
+                            .font(DS.Typography.largeTitle)
+                            .foregroundStyle(DS.Semantic.disabledForeground.opacity(DS.Opacity.overlay))
+                            .accessibilityHidden(true)
+                    }
+
+                    TextField("", text: $viewModel.balanceText)
+                        .keyboardType(.decimalPad)
+                        .multilineTextAlignment(.trailing)
+                        .font(DS.Typography.largeTitle)
+                        .focused($focusedField, equals: .balance)
+                        .accessibilityIdentifier("account_balance_field")
+                }
+                .onChange(of: focusedField) { _, newField in
+                    let isFocused = newField == .balance
+                    // When field gains focus, clear placeholder values
+                    if isFocused
+                        && (viewModel.balanceText == "0" || viewModel.balanceText == "0.00" || viewModel.balanceText == "0,00")
+                    {
+                        viewModel.balanceText = ""
+                    }
+                    // When field loses focus, format if has value
+                    if !isFocused && !viewModel.balanceText.isEmpty {
+                        let amount = AmountInputHelper.parseDecimal(viewModel.balanceText)
+                        viewModel.balanceText = AmountInputHelper.formatWithGrouping(amount)
+                    }
+                }
+                .onChange(of: viewModel.balanceText) { _, newValue in
+                    let filtered = AmountInputHelper.filterAmountInput(newValue)
+                    if filtered != newValue {
+                        viewModel.balanceText = filtered
+                    }
+                }
+            }
+        }
+    }
+
+    /// El selector de signo, con los rótulos de tarjeta cuando toca.
+    private var signPicker: some View {
+        HStack(spacing: DS.Spacing.md) {
+            Text(L10n.Account.sign)
+                .font(DS.Typography.subheadline)
+            Spacer()
+            Picker(L10n.Account.sign, selection: $viewModel.isPositive) {
+                if viewModel.selectedType == .creditCard {
+                    Text(L10n.Account.Sign.inFavor).tag(true)
+                    Text(L10n.Account.Sign.consumed).tag(false)
+                } else {
+                    Text(L10n.Account.positive).tag(true)
+                    Text(L10n.Account.negative).tag(false)
+                }
+            }
+            .pickerStyle(.segmented)
+        }
+    }
+
+    // MARK: - Nueva cuenta: ayuda del saldo y «Más opciones» (L7-2, L7-4)
+
+    /// La tarjeta rosa del onboarding («¿No sabes tu saldo? Toca aquí y te ayudamos a calcularlo»), a todo el
+    /// ancho bajo la caja del saldo (L7-2, variante 1). Rosa de marca sólido, sin degradado ni halo.
+    private var guidedBalanceCard: some View {
+        Button {
+            focusedField = nil
+            showBalanceCalculator = true
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                        .fill(Color.white)
+                        .frame(width: 44, height: 44)
+                    Image(systemName: "plus.forwardslash.minus")
+                        .font(.system(size: 20, weight: .semibold)) // A11Y-DT: icono de la tarjeta, como el onboarding
+                        .foregroundStyle(Color.emphasisPinkFill)
+                }
+                .accessibilityHidden(true)
+
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                    Text(L10n.Onboarding.balanceGuidedTitle)
+                        .font(DS.Typography.bodyBold)
+                        .foregroundStyle(Color.white)
+                    Text(L10n.Onboarding.balanceGuidedSubtitle)
+                        .font(DS.Typography.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Color.white)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 15, weight: .bold)) // A11Y-DT: chevron de la tarjeta destacada
+                    .foregroundStyle(Color.white)
+                    .accessibilityHidden(true)
+            }
+            .padding(DS.Spacing.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.emphasisPinkFill)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("account_balance_guided_card")
+    }
+
+    /// Al crear: solo «Excluir de las estadísticas», plegado (L7-4). Archivar llega al editar la cuenta.
+    private var newAccountMoreOptionsSection: some View {
+        SectionBox(title: "") {
+            VStack(spacing: DS.Spacing.none) {
+                Button {
+                    dsWithAnimation(reduceMotion, DS.Animation.appear) { showsMoreOptions.toggle() }
+                } label: {
+                    HStack {
+                        Text(L10n.Common.moreOptions)
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Image(systemName: "chevron.down")
+                            .font(DS.Typography.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.secondary)
+                            .rotationEffect(.degrees(showsMoreOptions ? 180 : 0))
+                            .accessibilityHidden(true)
+                    }
+                    .padding()
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("account_more_options")
+
+                if showsMoreOptions {
+                    SubsectionDivider()
+                    Toggle(isOn: $viewModel.excludeFromStatistics) {
+                        Text(L10n.Account.excludeFromStats)
+                    }
+                    .onChange(of: viewModel.excludeFromStatistics) { _, excluded in
+                        viewModel.excludeChanged(to: excluded)
+                    }
+                    .accessibilityIdentifier("account_exclude_stats_toggle")
+                    .padding()
+                }
+            }
+        }
+    }
+
+    // MARK: - Editar el saldo (L7-6)
+
+    /// La pantalla 8 del rediseño de cuentas, adelantada sola: lo que dice Yala, cuánto tiene la persona de
+    /// verdad hoy, la diferencia, cómo se corrige (las dos opciones de siempre, contadas en llano) y en
+    /// cuánto queda la cuenta al guardar. El cálculo vive en `AccountBalanceCorrectionLogic`.
+    private var balanceEditSection: some View {
+        // Con un cambio de moneda pendiente el campo se vacía al guardar y el ajuste no se aplica: enseñar la
+        // diferencia o «queda en» prometería una cifra que no queda (review de L7-6). Solo el saldo de hoy.
+        let correction = viewModel.isCurrencyChangeRequested ? nil : viewModel.balanceCorrection
+        let fixes = correction?.needsCorrection == true
+        let currency = viewModel.balanceDisplayCurrency
+        return VStack(spacing: DS.Spacing.xxl) {
+            SectionBox(title: L10n.UXL7.BalanceEdit.sectionTitle) {
+                VStack(spacing: DS.Spacing.none) {
+                    HStack {
+                        Text(L10n.UXL7.BalanceEdit.yalaSays)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(formatAmount(viewModel.currentBalance, currency: currency))
+                            .font(DS.Typography.headline)
+                            .strikethrough(fixes)
+                            .foregroundStyle(fixes ? Color.secondary : Color.primary)
+                            .accessibilityIdentifier("account_balance_yala_says")
+                    }
+                    .padding()
+
+                    SubsectionDivider()
+
+                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                        Text(L10n.UXL7.BalanceEdit.question)
+                            .font(DS.Typography.bodyBold)
+                            .foregroundStyle(.primary)
+                        Text(L10n.UXL7.BalanceEdit.questionHint)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal)
+                    .padding(.top)
+
+                    signPicker
+                        .padding()
+
+                    balanceInput(caption: "")
+                        .padding(.horizontal)
+                        .padding(.bottom)
+
+                    if let correction {
+                        SubsectionDivider()
+                        if fixes {
+                            HStack {
+                                Text(L10n.UXL7.BalanceEdit.difference)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                Text(formatAdjustment(correction.difference, currency: currency))
+                                    .font(DS.Typography.headline)
+                                    .foregroundStyle(correction.difference >= 0
+                                        ? DS.Semantic.successForeground : DS.Semantic.errorForeground)
+                                    .accessibilityIdentifier("account_balance_difference")
+                            }
+                            .padding()
+                        } else {
+                            Text(L10n.UXL7.BalanceEdit.matches)
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding()
+                        }
+                    }
+                }
+            }
+
+            if let correction, fixes {
+                SectionBox(title: L10n.UXL7.BalanceEdit.howTitle) {
+                    VStack(spacing: DS.Spacing.sm) {
+                        correctionOption(
+                            .byEntry,
+                            title: L10n.UXL7.BalanceEdit.byEntryTitle,
+                            description: L10n.UXL7.BalanceEdit.byEntryDesc,
+                            icon: "plus.forwardslash.minus"
+                        )
+                        if viewModel.selectedAdjustmentMode == .byEntry {
+                            HStack {
+                                Text(L10n.Account.adjustmentDate)
+                                    .font(DS.Typography.body)
+                                Spacer()
+                                // Hasta hoy: un ajuste fechado mañana no cuenta en el «Saldo hoy» de la ficha,
+                                // y «Al guardar, queda en» no sería verdad hoy.
+                                DateFieldButton(
+                                    date: $viewModel.adjustmentDate,
+                                    maxDate: nil,
+                                    title: L10n.Account.adjustmentDate
+                                )
+                            }
+                            .padding(.horizontal, DS.Spacing.sm)
+                        }
+                        correctionOption(
+                            .changeInitialBalance,
+                            title: L10n.UXL7.BalanceEdit.initialTitle,
+                            description: L10n.UXL7.BalanceEdit.initialDesc,
+                            icon: "flag"
+                        )
+                        if viewModel.selectedAdjustmentMode == .changeInitialBalance {
+                            Text(L10n.UXL7.BalanceEdit.initialChange(
+                                formatAmount(correction.currentInitialBalance, currency: currency),
+                                formatAmount(correction.newInitialBalance, currency: currency)
+                            ))
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, DS.Spacing.sm)
+                            .accessibilityIdentifier("account_balance_initial_change")
+                        }
+                    }
+                    .padding()
+                }
+
+                Text(L10n.UXL7.BalanceEdit.result(
+                    viewModel.trimmedName.isEmpty ? (viewModel.accountToEdit?.name ?? "") : viewModel.trimmedName,
+                    formatAmount(correction.resultingBalance, currency: currency)
+                ))
+                .font(DS.Typography.subheadline)
+                .fontWeight(.semibold)
+                .foregroundStyle(.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, DS.Spacing.xs)
+                .accessibilityIdentifier("account_balance_result")
+            }
+        }
+        .onChange(of: viewModel.selectedAdjustmentMode) {
+            viewModel.adjustmentModeChanged()
+        }
+        .disabled(viewModel.isCurrencyChangeRequested)
+    }
+
+    /// Una de las dos formas de corregir, como tarjeta: la elegida, rellena de índigo (criterio de foco).
+    private func correctionOption(
+        _ mode: AdjustmentMode, title: String, description: String, icon: String
+    ) -> some View {
+        let isSelected = viewModel.selectedAdjustmentMode == mode
+        return Button {
+            dsWithAnimation(reduceMotion, DS.Animation.selection) { viewModel.selectedAdjustmentMode = mode }
+        } label: {
+            HStack(alignment: .top, spacing: DS.Spacing.md) {
+                Image(systemName: icon)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(isSelected ? Color.white : Color.electricIndigo)
+                    .frame(width: 28)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(title)
+                        .font(DS.Typography.bodyBold)
+                        .foregroundStyle(isSelected ? Color.white : Color.primary)
+                    Text(description)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(isSelected ? Color.white.opacity(0.85) : Color.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(DS.Typography.caption)
+                        .fontWeight(.bold)
+                        .foregroundStyle(Color.white)
+                        .accessibilityHidden(true)
+                }
+            }
+            .padding(DS.Spacing.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                    .fill(isSelected ? Color.selectedIndigoFill : Color.primary.opacity(0.06))
+            )
+            .contentShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityIdentifier("account_balance_fix_\(mode == .byEntry ? "entry" : "initial")")
+    }
+
+    /// Tarjeta de crédito (card nmtk, D1-A de Jürgen): día de corte y día de pago siempre a la vista, y el aviso en su
+    /// propia sección. Antes el día de pago solo salía con el aviso encendido: quien no quería aviso no podía guardarlo.
+    private var creditCardSection: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.xl) {
+            SectionBox(title: L10n.Account.CreditCard.sectionTitle) {
+                VStack(alignment: .leading, spacing: DS.Spacing.none) {
+                    HStack {
+                        Text(L10n.Account.CreditCard.statementDay)
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Picker(L10n.Account.CreditCard.statementDay, selection: $viewModel.creditCardStatementDay) {
+                            Text(L10n.Account.CreditCard.statementDayNone).tag(Int?.none)
+                            ForEach(CreditCardStatementLogic.dayRange, id: \.self) { day in
+                                Text("\(day)").tag(Int?.some(day))
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .accessibilityIdentifier("account_cc_statement_day")
+                    }
+                    .padding()
+
                     SubsectionDivider()
 
                     HStack {
@@ -798,15 +1257,93 @@ struct AccountFormView: View {
                             .foregroundStyle(.primary)
                         Spacer()
                         Picker(L10n.Account.CreditCard.paymentDay, selection: $viewModel.creditCardPaymentDay) {
-                            ForEach(1...28, id: \.self) { day in
+                            ForEach(CreditCardStatementLogic.dayRange, id: \.self) { day in
                                 Text("\(day)").tag(day)
                             }
                         }
                         .pickerStyle(.menu)
+                        .accessibilityIdentifier("account_cc_payment_day")
                     }
                     .padding()
+
+                    Text(cycleFooter)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal)
+                        .padding(.bottom)
+                        .accessibilityIdentifier("account_cc_cycle_footer")
                 }
             }
+
+            SectionBox(title: L10n.Account.CreditCard.reminderSection) {
+                VStack(alignment: .leading, spacing: DS.Spacing.none) {
+                    Toggle(isOn: $viewModel.creditCardPaymentReminder) {
+                        Text(L10n.Account.CreditCard.paymentReminder)
+                    }
+                    .padding()
+                    .accessibilityIdentifier("account_cc_reminder_toggle")
+
+                    if viewModel.creditCardPaymentReminder {
+                        if viewModel.creditCardStatementDay != nil {
+                            SubsectionDivider()
+
+                            HStack {
+                                Text(L10n.Account.CreditCard.reminderWhen)
+                                    .foregroundStyle(.primary)
+                                Spacer()
+                                Picker(L10n.Account.CreditCard.reminderWhen,
+                                       selection: $viewModel.creditCardReminderDaysBefore) {
+                                    ForEach(viewModel.creditCardReminderLeadOptions, id: \.self) { days in
+                                        Text(Self.reminderLeadLabel(days)).tag(days)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+                                .accessibilityIdentifier("account_cc_reminder_when")
+                            }
+                            .padding()
+                        }
+
+                        if let footer = reminderFooter {
+                            Text(footer)
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .padding(.horizontal)
+                                .padding(.bottom)
+                                .accessibilityIdentifier("account_cc_reminder_footer")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// «Lo que gastes hasta el 15 lo pagas el 5 del mes siguiente.», o qué da el día de corte si no lo hay.
+    private var cycleFooter: String {
+        guard let statementDay = viewModel.creditCardStatementDay else {
+            return L10n.Account.CreditCard.cycleFooterNoStatement
+        }
+        let payment = viewModel.creditCardPaymentDay
+        return payment > statementDay
+            ? L10n.Account.CreditCard.cycleFooterSameMonth(statementDay, payment)
+            : L10n.Account.CreditCard.cycleFooterNextMonth(statementDay, payment)
+    }
+
+    /// «Te avisamos el lunes 2 de noviembre con lo que tienes que pagar.»; sin día de corte, que avisa el mismo día y sin
+    /// importe.
+    private var reminderFooter: String? {
+        guard viewModel.creditCardStatementDay != nil else { return L10n.Account.CreditCard.reminderFooterNoStatement }
+        guard let day = viewModel.nextCreditCardReminderDay() else { return nil }
+        return L10n.Account.CreditCard.reminderFooterNext(
+            day.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(AppLocale.current)))
+    }
+
+    static func reminderLeadLabel(_ days: Int) -> String {
+        switch days {
+        case 0: return L10n.Account.CreditCard.reminderSameDay
+        case 1: return L10n.Account.CreditCard.reminderOneDayBefore
+        default: return L10n.Account.CreditCard.reminderDaysBefore(days)
         }
     }
 
@@ -837,11 +1374,34 @@ struct AccountFormView: View {
 
     private func saveAccount() {
         if viewModel.saveAccount(context: modelContext) {
-            if viewModel.currencyToSuggestAsSecondary == nil {
-                dismiss()
+            DS.Haptic.success()
+            if viewModel.secondaryCurrencySuggestion == nil {
+                closeOrOfferLine()
             }
             // else: alert will show and dismiss after user responds
         }
+    }
+
+    /// Tras guardar: si se acaba de crear una cuenta que puede tener líneas, la hoja pregunta por otra divisa
+    /// (S12j); si no —editar, o una cuenta que no admite líneas—, se cierra como siempre.
+    private func closeOrOfferLine() {
+        if viewModel.offersLineAfterCreate {
+            focusedField = nil
+            isOfferingLine = true
+        } else {
+            dismiss()
+        }
+    }
+
+    /// «Añadir línea en otra divisa» sobre la cuenta recién creada: la hoja de siempre, con un ViewModel que la edita.
+    private func openLineOnCreatedAccount() {
+        guard let account = viewModel.createdAccount else {
+            dismiss()
+            return
+        }
+        let lineViewModel = AccountFormViewModel(accountToEdit: account, existingNames: [])
+        lineViewModel.setContext(modelContext)
+        lineOfferTarget = AccountLineOfferTarget(viewModel: lineViewModel)
     }
 
     /// El usuario dijo que sí: convierte y guarda.
@@ -854,19 +1414,17 @@ struct AccountFormView: View {
     ) {
         Task {
             if await viewModel.confirmCurrencyConversion(pending, context: modelContext) {
-                if viewModel.currencyToSuggestAsSecondary == nil {
+                if viewModel.secondaryCurrencySuggestion == nil {
                     dismiss()
                 }
             }
         }
     }
 
-    private func acceptSecondaryCurrency() {
-        guard let code = viewModel.currencyToSuggestAsSecondary else { return }
+    /// Añade la moneda nueva a las que enseña el Panel, o la pone en el sitio de `old` (L7-8).
+    private func acceptSecondaryCurrency(_ code: String, replacing old: String?) {
         let raw = UserDefaults.standard.string(forKey: "secondaryCurrencies") ?? ""
-        var existing = raw.split(separator: ",").map(String.init).filter { !$0.isEmpty }
-        existing.append(code.rawValue)
-        let newValue = existing.joined(separator: ",")
+        let newValue = SecondaryCurrencySuggestionLogic.applying(code, replacing: old, to: raw)
         PreferenceSyncService.shared.set(string: newValue, forKey: "secondaryCurrencies")
         SessionState.shared.needsExchangeRateWidgetRefresh = true
 
@@ -883,6 +1441,33 @@ struct AccountFormView: View {
     }
 
     // MARK: - Eliminación de cuenta
+
+    /// El toque en «Eliminar cuenta». Con algo dentro abre directamente la hoja de mover o borrar, que ya
+    /// pregunta y dice qué pasa con cada cosa; vacía, pide la confirmación corta (`AccountDeleteConfirmation`).
+    /// Merge 2.1 → 2.2 (2026-10-17): la alerta del lote 7 decía que los registros «quedan en Registros, sin
+    /// cuenta», y con la hoja de 2.1 eso ya no pasa nunca; delante de la hoja habría sido una segunda pregunta
+    /// que contradice a la primera.
+    private func requestDelete() {
+        guard let account = viewModel.accountToEdit else { return }
+        lineBeingRemoved = nil
+        do {
+            let inventory = try AccountRemovalService.inventory(of: account, context: modelContext)
+            if inventory.shape.needsQuestion {
+                accountWasRemoved = false
+                removalTarget = AccountRemovalTarget(
+                    account: account, name: account.name, currencyCode: account.currencyCode)
+            } else {
+                deleteDialogAccountName = account.name
+                showDeleteConfirmation = true
+            }
+        } catch {
+            #if DEBUG
+            print("AccountFormView: Error reading account inventory: \(error)")
+            #endif
+            viewModel.deleteErrorMessage = L10n.Account.Removal.failedUnreadable
+            viewModel.isShowingDeleteError = true
+        }
+    }
 
     /// Con algo dentro (movimientos, programados, favoritos o borradores pendientes) pregunta qué hacer con ello;
     /// vacía, se elimina como siempre. Card `tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst`.
@@ -901,6 +1486,7 @@ struct AccountFormView: View {
                 return
             }
             try deletionService.deleteAccount(account)
+            viewModel.releaseDeletedAccount()
             dismiss()
         } catch AccountRemovalService.Failure.unreadable {
             viewModel.deleteErrorMessage = L10n.Account.Removal.failedUnreadable
@@ -918,20 +1504,273 @@ struct AccountFormView: View {
     /// Antes suelta las filas que el formulario tenía cargadas: sigue montado mientras la hoja se cierra, y su
     /// `body` no debe leer filas ya borradas.
     private func removeAccount(_ account: Account) throws {
+        // Una línea (S30) se elimina con la tarjeta delante: el formulario sigue editándola. Se mira ANTES de eliminar.
+        let removesTheEditedAccount = lineBeingRemoved == nil
         viewModel.releaseLoadedRows()
         deletionService.setContext(modelContext)
         try deletionService.deleteAccount(account)
+        // Eliminada la cuenta del formulario, la hoja de eliminar sigue encima hasta cerrarse y el formulario debajo se
+        // repinta: lo suelta para no leerla (card 1w89).
+        if removesTheEditedAccount {
+            viewModel.releaseDeletedAccount()
+        }
     }
 
     /// La hoja se cerró. Si eliminó la cuenta, se cierra también el formulario; si no (cancelar, o un error que
     /// deshizo todo), el formulario vuelve a leer sus filas, que soltó antes de guardar.
     private func removalSheetDismissed() {
+        // Era una línea (S30): la tarjeta sigue, así que el formulario se queda abierto con lo que haya ahora.
+        if lineBeingRemoved != nil {
+            // Cancelar deja la divisa que estaba elegida; eliminar vuelve a la de la cuenta.
+            let removed = accountWasRemoved
+            lineBeingRemoved = nil
+            accountWasRemoved = false
+            viewModel.afterLineRemoved(keepingSelection: !removed)
+            return
+        }
         if accountWasRemoved {
             accountWasRemoved = false
             dismiss()
         } else {
+            viewModel.loadAccounts()
             viewModel.loadTransactions()
             viewModel.loadPlans()
+        }
+    }
+
+    // MARK: - Editar cuenta con varias divisas (S30)
+
+    /// Un segmento por divisa: la de la cuenta primero, luego sus líneas.
+    private var lineCurrencyPicker: some View {
+        Picker(L10n.Account.Lines.currencyPicker, selection: $viewModel.selectedLineID) {
+            Text(currencySegmentLabel(viewModel.selectedCurrency.rawValue)).tag(UUID?.none)
+            ForEach(viewModel.cardLines, id: \.shortcutID) { line in
+                Text(currencySegmentLabel(line.currencyCode)).tag(UUID?.some(line.shortcutID))
+            }
+        }
+        .pickerStyle(.segmented)
+        .onChange(of: viewModel.selectedLineID) { focusedField = nil }
+        .accessibilityIdentifier("account_line_currency_picker")
+    }
+
+    private func currencySegmentLabel(_ rawCode: String) -> String {
+        let code = normalizeCurrencyCode(rawCode)
+        guard let currency = CurrencyCode(rawValue: code) else { return code }
+        return "\(currencyInfo(for: currency).flag) \(code)"
+    }
+
+    /// «Eliminar la línea»: con algo dentro abre la hoja que pregunta qué hacer con ello (la misma de eliminar una
+    /// cuenta); vacía, la confirmación corta. Un fallo al leer no se toma por «vacía».
+    private func requestDeleteLine(_ line: Account) {
+        focusedField = nil
+        do {
+            if try viewModel.lineRemovalNeedsQuestion(line) {
+                accountWasRemoved = false
+                lineBeingRemoved = line.shortcutID
+                removalTarget = AccountRemovalTarget(account: line, name: line.name, currencyCode: line.currencyCode)
+            } else {
+                lineAwaitingDeleteConfirmation = line
+                lineAwaitingDeleteCurrency = normalizeCurrencyCode(line.currencyCode)
+                showsLineDeleteConfirmation = true
+            }
+        } catch {
+            #if DEBUG
+            print("AccountFormView: Error reading line inventory: \(error)")
+            #endif
+            viewModel.deleteErrorMessage = L10n.Account.Removal.failedUnreadable
+            viewModel.isShowingDeleteError = true
+        }
+    }
+
+    /// La línea vacía, confirmada: se elimina y el formulario vuelve a la divisa de la cuenta.
+    private func deleteEmptyLine(_ line: Account) {
+        lineAwaitingDeleteConfirmation = nil
+        deletionService.setContext(modelContext)
+        do {
+            try deletionService.deleteAccount(line)
+            viewModel.afterLineRemoved()
+        } catch {
+            #if DEBUG
+            print("AccountFormView: Error deleting line: \(error)")
+            #endif
+            // Una vuelta del main actor después: se pide desde el botón de la confirmación, y dos alertas encadenadas en
+            // el mismo ancla pierden la segunda (`swiftui-ds.md`).
+            let message = error.localizedDescription
+            Task { @MainActor in
+                viewModel.deleteErrorMessage = message
+                viewModel.isShowingDeleteError = true
+            }
+        }
+    }
+
+    // MARK: - Tarjeta con varias divisas (entrega 2)
+
+    /// «Otras divisas» va a la vista en una tarjeta de crédito, o en cualquier cuenta que ya tenga líneas.
+    private var showsLinesUpFront: Bool {
+        viewModel.canManageLines && (viewModel.selectedType == .creditCard || !viewModel.cardLines.isEmpty)
+    }
+
+    /// Las líneas de la tarjeta y las dos formas de añadir una: crear una nueva o vincular una cuenta que ya existe.
+    private var cardLinesSection: some View {
+        SectionBox(title: L10n.Account.Lines.sectionTitle) {
+            VStack(alignment: .leading, spacing: DS.Spacing.none) {
+                ForEach(viewModel.cardLines, id: \.persistentModelID) { line in
+                    HStack(spacing: DS.Spacing.md) {
+                        let code = normalizeCurrencyCode(line.currencyCode)
+                        Text(currencyInfo(for: CurrencyCode(rawValue: code) ?? .usd).flag)
+                            .font(DS.Typography.title)
+                            .accessibilityHidden(true)
+                        Text(L10n.Account.Lines.lineLabel(code))
+                            .font(DS.Typography.body)
+                        Spacer()
+                    }
+                    .padding()
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("account_line_\(normalizeCurrencyCode(line.currencyCode))")
+                    SubsectionDivider()
+                }
+
+                if !viewModel.addableLineCurrencies.isEmpty {
+                    lineActionRow(title: L10n.Account.Lines.add, icon: "plus.circle", id: "account_lines_add") {
+                        focusedField = nil
+                        showsAddLine = true
+                    }
+                    SubsectionDivider()
+                }
+                lineActionRow(title: L10n.Account.Lines.link, icon: "link", id: "account_lines_link") {
+                    focusedField = nil
+                    showsLinkAccount = true
+                }
+
+                if viewModel.selectedType == .creditCard {
+                    Text(L10n.Account.Lines.sectionFooter)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal)
+                        .padding(.bottom)
+                }
+            }
+        }
+    }
+
+    private func lineActionRow(title: String, icon: String, id: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: icon)
+                    .font(DS.Typography.body)
+                    .accessibilityHidden(true)
+                Text(title)
+                    .font(DS.Typography.body)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
+            }
+            .foregroundStyle(.thAccentText)
+            .padding()
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(id)
+    }
+
+    /// Una línea: de qué tarjeta es y «Desvincular». Una cuenta con un enlace que ya no vale: por qué se ve suelta.
+    private var lineMembershipSection: some View {
+        SectionBox(title: L10n.Account.Lines.sectionTitle) {
+            VStack(alignment: .leading, spacing: DS.Spacing.none) {
+                Group {
+                    if let principal = viewModel.principalOfLine {
+                        Text(L10n.Account.Lines.isLineOf(
+                            currencyCode: normalizeCurrencyCode(viewModel.accountToEdit?.currencyCode ?? ""),
+                            cardName: principal.name))
+                    } else {
+                        Text(L10n.Account.Lines.broken)
+                    }
+                }
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding()
+                .accessibilityIdentifier("account_line_membership")
+
+                SubsectionDivider()
+
+                Button {
+                    if viewModel.unlinkFitsTheFreeLimit {
+                        viewModel.unlink()
+                    } else {
+                        showsUpgradeToUnlink = true
+                    }
+                } label: {
+                    HStack(spacing: DS.Spacing.md) {
+                        Image(systemName: "minus.circle")
+                            .accessibilityHidden(true)
+                        Text(L10n.Account.Lines.unlink)
+                        Spacer()
+                    }
+                    .foregroundStyle(.thAccentText)
+                    .padding()
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("account_line_unlink")
+
+                Text(L10n.Account.Lines.unlinkFooter)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal)
+                    .padding(.bottom)
+            }
+        }
+    }
+}
+
+// MARK: - Avisos de la tarjeta con varias divisas
+
+/// «¿Archivar también sus líneas?» y el error de añadir, vincular o desvincular. Los botones de un `.alert` van con
+/// texto fijo (`swiftui-ds.md`); lo que cambia es el título y el mensaje.
+private struct AccountLinesAlerts: ViewModifier {
+    @Bindable var viewModel: AccountFormViewModel
+
+    func body(content: Content) -> some View {
+        content
+            .alert(L10n.Account.Lines.archiveTitle, isPresented: $viewModel.isAskingArchiveLines) {
+                Button(L10n.Account.Lines.archiveAll) { viewModel.answerArchiveLines(true) }
+                Button(L10n.Account.Lines.archiveOnlyCard) { viewModel.answerArchiveLines(false) }
+                Button(L10n.Common.cancel, role: .cancel) { viewModel.answerArchiveLines(nil) }
+            } message: {
+                Text(L10n.Account.Lines.archiveMessage(viewModel.accountToEdit?.name ?? viewModel.trimmedName))
+            }
+            .alert(L10n.Common.error, isPresented: $viewModel.isShowingLineActionError) {
+                Button(L10n.Common.understood, role: .cancel) {}
+            } message: {
+                Text(viewModel.lineActionError ?? "")
+            }
+    }
+}
+
+// MARK: - Confirmación de eliminar una línea vacía (S30)
+
+/// «¿Eliminar la línea en USD?» para una línea sin nada dentro. Botones literales: el builder de `actions` de un `.alert`
+/// no admite etiquetas que dependan del estado (`swiftui-ds.md`); el título y el mensaje sí pueden variar.
+private struct AccountLineDeleteConfirmation: ViewModifier {
+    @Binding var isPresented: Bool
+    /// La línea y su divisa, leídas al tocar «Eliminar»: el aviso se sigue pintando mientras se cierra.
+    let line: Account?
+    let currencyCode: String
+    let onConfirm: (Account) -> Void
+
+    func body(content: Content) -> some View {
+        content.alert(
+            L10n.Account.Lines.deleteConfirmTitle(currencyCode), isPresented: $isPresented, presenting: line
+        ) { target in
+            Button(L10n.Common.cancel, role: .cancel) {}
+            Button(L10n.Action.delete, role: .destructive) { onConfirm(target) }
+        } message: { _ in
+            Text(L10n.Account.Lines.deleteConfirmMessage)
         }
     }
 }
@@ -961,5 +1800,36 @@ private struct AccountRemovalPresentation: ViewModifier {
                 deleteAccount: deleteAccount
             ) { accountWasRemoved = true }
         }
+    }
+}
+
+// MARK: - Confirmación de borrado
+
+/// La alerta de «Eliminar cuenta» para una cuenta VACÍA (`requestDelete`). Con algo dentro la pregunta es la hoja
+/// de mover o borrar, así que aquí `recordCount` llega a 0 y la rama con registros no se alcanza desde la app.
+///
+/// Va en un modificador propio y no en la cadena del `body`, que ya lleva siete alertas: el compilador del CI
+/// (Xcode 26.6) se rinde antes con cadenas largas (`swiftui-ds.md`). Los botones van con texto fijo: el
+/// builder de `actions` de un `.alert` no admite etiquetas que dependan del estado.
+///
+struct AccountDeleteConfirmation: ViewModifier {
+    @Binding var isPresented: Bool
+    let accountName: String
+    let recordCount: Int
+    let onConfirm: () -> Void
+
+    func body(content: Content) -> some View {
+        content.alert(L10n.Account.deleteConfirmTitle(accountName), isPresented: $isPresented) {
+            Button(L10n.Action.delete, role: .destructive) { onConfirm() }
+            Button(L10n.Action.cancel, role: .cancel) {}
+        } message: {
+            Text(Self.message(recordCount: recordCount))
+        }
+    }
+
+    static func message(recordCount: Int) -> String {
+        recordCount > 0
+            ? L10n.Account.deleteConfirmMessage(recordCount)
+            : L10n.Account.deleteConfirmMessageEmpty
     }
 }

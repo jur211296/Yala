@@ -158,7 +158,10 @@ export function focusInstruction(focus: InsightFocus): string {
 // ---------- insights.cards ----------
 
 export interface CardsFilters {
+  /** De qué tipo son las listas de abajo: «Solo …» (`include`) u ocultas, «Excluyendo …» (`exclude`). */
   mode: "include" | "exclude";
+  /** Ocultos que conviven con los incluidos de `mode: "include"` (opción B, 2026-10-25): la app los manda en `excluded_*`. */
+  excluded?: { accounts?: string[]; categories?: string[]; subcategories?: string[]; tags?: string[]; needs?: string[]; currencies?: string[] };
   accounts?: string[];
   categories?: string[];
   subcategories?: string[];
@@ -228,22 +231,37 @@ function comparisonRef(mode: "month" | "year"): string {
   return mode === "year" ? m[1] : m[2];
 }
 
-/** Réplica de `InsightsViewModel.buildFilterContext`. */
+/** Réplica de `InsightsViewModel.buildFilterContext`: por dimensión, primero «Solo …» y luego «Excluyendo …»; `mode` es
+ *  `mixed` cuando hay de los dos tipos. */
 export function cardsFilterContext(f: CardsFilters): Record<string, unknown> {
-  const out: Record<string, unknown> = { mode: f.mode };
+  const out: Record<string, unknown> = {};
   const descriptions: string[] = [];
-  const verb = f.mode === "exclude" ? "Excluyendo" : "Solo";
-  const list = (key: string, label: string, names?: string[]) => {
-    if (!names?.length) return;
-    out[key] = names;
-    descriptions.push(`${verb} ${label}: ${names.join(", ")}`);
-  };
-  list("accounts", "cuentas", f.accounts);
-  list("categories", "categorías", f.categories);
-  list("subcategories", "subcategorías", f.subcategories);
-  list("tags", "etiquetas", f.tags);
-  list("needs", "naturalezas", f.needs);
-  list("currencies", "monedas", f.currencies);
+  let hasIncluded = false;
+  let hasExcluded = false;
+  const dims = [
+    ["accounts", "cuentas"],
+    ["categories", "categorías"],
+    ["subcategories", "subcategorías"],
+    ["tags", "etiquetas"],
+    ["needs", "naturalezas"],
+    ["currencies", "monedas"],
+  ] as const;
+  for (const [key, label] of dims) {
+    const named = f[key];
+    const included = f.mode === "include" ? named : undefined;
+    const excluded = f.mode === "exclude" ? named : f.excluded?.[key];
+    if (included?.length) {
+      hasIncluded = true;
+      out[key] = included;
+      descriptions.push(`Solo ${label}: ${included.join(", ")}`);
+    }
+    if (excluded?.length) {
+      hasExcluded = true;
+      out[`excluded_${key}`] = excluded;
+      descriptions.push(`Excluyendo ${label}: ${excluded.join(", ")}`);
+    }
+  }
+  out.mode = hasIncluded && hasExcluded ? "mixed" : hasExcluded ? "exclude" : "include";
   if (f.transactionType) {
     out.transaction_type = f.transactionType.kind;
     descriptions.push(`Solo ${f.transactionType.displayName.toLowerCase()}`);
@@ -322,7 +340,8 @@ function cardsFilterPrompt(payload: Record<string, unknown>): string {
   const f = payload.active_filters as { summary?: string; mode?: string } | undefined;
   if (!f?.summary) return "";
   const fn = from(readRepoFile(PATHS.insights), "func generateInsights(");
-  const tpl = swiftMultilineAfter(fn, "func generateInsights(", f.mode === "exclude" ? 0 : 1);
+  // Orden de las ramas en el Swift: `mixed`, `exclude` y, por defecto, `include`.
+  const tpl = swiftMultilineAfter(fn, "func generateInsights(", f.mode === "mixed" ? 0 : f.mode === "exclude" ? 1 : 2);
   return interpolate(tpl, { summary: f.summary });
 }
 

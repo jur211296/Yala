@@ -18,6 +18,8 @@ struct YalaApp: App {
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
+        // Tiempo hasta contenido útil (solo DEBUG): el arranque en frío cuenta desde que nace el proceso.
+        MainActor.assumeIsolated { LoadTimeMarks.begin(.coldLaunch) }
         // Clear default gray background for paged TabView
         UIView.appearance(whenContainedInInstancesOf: [UIPageViewController.self]).backgroundColor = .clear
         UIScrollView.appearance(whenContainedInInstancesOf: [UIPageViewController.self]).backgroundColor = .clear
@@ -123,6 +125,10 @@ struct YalaApp: App {
                 // eje 1c midió.
                 .id(containerHost.generation)
                 .modelContainer(container)
+                // Card 7e60 · con qué almacén se montó este árbol. Lo heredan sus hojas, y una hoja que sobrevive al
+                // cambio en caliente se queda con el del árbol viejo aunque iOS rehaga su contenido
+                // (`detachesFromSwappedStore()`).
+                .environment(\.mountedStoreGeneration, containerHost.generation)
         } else {
             SignOutRelaunchView()
         }
@@ -136,6 +142,8 @@ struct YalaApp: App {
         }
             // Las hojas se dimensionan por el espacio de ESTA ventana, no por el aparato.
             .sizesSheetsByWindow()
+            // El pliegue del iPhone Duo abierto, para las rejillas en dos columnas (`readsVerticalFold(_:)`).
+            .publishesVerticalFold()
             .preferredColorScheme(themeManager.userChoice == .system ? nil : themeManager.resolved.baseColorScheme)
             .tint(themeManager.resolved.accent)
             .environment(\.yalaTheme, themeManager.resolved)
@@ -240,6 +248,14 @@ struct YalaApp: App {
             // Drop transient router intents. Persistence-backed intents
             // re-emit on next .active via handleBecameActive().
             AppRouter.shared.resetTransients()
+            #if DEBUG
+            if UITestHooks.isActive {
+                bootstrapper.uitestWentToBackground = true
+                if let container = sharedModelContainer {
+                    bootstrapper.uitestGroupPushChangeInBackground(context: container.mainContext)
+                }
+            }
+            #endif
         }
     }
 }

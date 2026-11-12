@@ -125,6 +125,38 @@ final class AdaptiveNavigationUITests: XCTestCase {
         }
     }
 
+    /// Planificación: el botón de gráficas del detalle abre las gráficas, y se vuelve al detalle y a la lista.
+    /// Hasta el lote 9 de la auditoría UX 2.2 no hacía nada, ni en iPhone ni en iPad: el detalle lo presenta la
+    /// columna de lista del split y su `navigationDestination(isPresented:)` no tenía pila donde empujar.
+    func test_budgetDetailOpensItsCharts_andBackReturnsToTheList() {
+        let app = launch(deeplink: "budgets")
+        let budgetRows = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'budget_row_'"))
+        XCTAssertTrue(budgetRows.firstMatch.waitForExistence(timeout: 15), "No hay presupuestos sembrados.")
+        budgetRows.element(boundBy: 0).tap()
+
+        let detail = app.scrollViews["budget_detail"]
+        XCTAssertTrue(detail.waitForExistence(timeout: 10), "No se abrió el detalle del presupuesto.")
+        let chartsButton = app.buttons["budget_detail_charts_button"]
+        XCTAssertTrue(chartsButton.waitForHittable(timeout: 5), "El detalle no enseña el botón de gráficas.")
+        chartsButton.tap()
+
+        let charts = app.scrollViews["budget_charts"]
+        XCTAssertTrue(charts.waitForExistence(timeout: 10), "El botón de gráficas no abrió las gráficas.")
+        XCTAssertFalse(detail.isHittable, "Las gráficas se empujan sobre el detalle.")
+
+        // El «Atrás» del sistema de las gráficas, no el primer botón de cualquier barra: en ancho ese es el de la barra
+        // lateral.
+        app.navigationBars.buttons["BackButton"].firstMatch.tap()
+        XCTAssertTrue(detail.waitForHittable(timeout: 5), "Atrás desde las gráficas no volvió al detalle.")
+
+        if expectsWideWindow {
+            XCTAssertTrue(budgetRows.element(boundBy: 0).isHittable, "La lista de presupuestos dejó de verse.")
+        } else {
+            app.navigationBars.buttons.element(boundBy: 0).tap()
+            XCTAssertTrue(budgetRows.firstMatch.waitForHittable(timeout: 5), "Atrás desde el detalle no volvió a la lista.")
+        }
+    }
+
     /// Planificación: abrir otro presupuesto enseña SU gastado. En ancho el detalle se reutilizaba y el resumen se
     /// quedaba con el gastado del primero, con el límite y las categorías ya del nuevo (medido el 2026-10-12 en el
     /// iPad: «Fijos casa» con los S/ 1,168.00 de «Comidas fuera»). El gastado esperado es el que enseña la propia fila.
@@ -324,7 +356,7 @@ final class AdaptiveNavigationUITests: XCTestCase {
 
         let rows = app.buttons.matching(identifier: "record_row")
         XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 15), "No hay filas de registro.")
-        let chatEntry = app.buttons["fab_chat"]
+        let chatEntry = app.buttons["stats_action_ai"]  // Registros sin flotante (card 97gc): la fila de arriba
         XCTAssertTrue(chatEntry.waitForExistence(timeout: 10), "No aparece la entrada de Yala IA en Registros.")
         chatEntry.tap()
 
@@ -385,18 +417,41 @@ final class AdaptiveNavigationUITests: XCTestCase {
         }
     }
 
-    /// Fase 2b: Estadísticas › Resumen en pares en ancho: «Tu salud financiera» y «Resumen inteligente» en la misma
+    /// iPhone Duo (card a5kf, 2026-10-30): el avatar va en la MISMA barra que la bandeja del Panel. Con barras
+    /// horizontales (iPhone, iPad, Duo abierto en vertical) comparten fila; con barra vertical (Duo cerrado, abierto en
+    /// horizontal o a medio plegar) comparten columna, y arriba no queda una franja aparte con el avatar. Antes, en el
+    /// Duo abierto en horizontal, la bandeja bajaba a la barra vertical y el avatar se quedaba arriba a la derecha: ni
+    /// misma fila ni misma columna. En el iPhone del CI pasa por la fila; la postura del Duo se pone en Device Hub y el
+    /// caso se corre por UDID en el Duo.
+    func test_profileAvatar_sharesTheInboxBar() {
+        let app = launch(deeplink: "panel")
+        let inbox = app.buttons["panel_inbox_button"].firstMatch
+        let avatar = app.buttons["profile_avatar"].firstMatch
+        XCTAssertTrue(inbox.waitForExistence(timeout: 15), "No está la bandeja del Panel.")
+        XCTAssertTrue(avatar.waitForExistence(timeout: 5), "No está el avatar del Panel.")
+        // En el Duo la bandeja puede pintarse un instante fuera de su sitio en el primer arranque: se lee quieta.
+        XCTAssertTrue(app.waitForSettledLayout(of: inbox), "La bandeja no dejó de moverse.")
+        XCTAssertTrue(app.waitForSettledLayout(of: avatar), "El avatar no dejó de moverse.")
+        let sameRow = abs(inbox.frame.midY - avatar.frame.midY) < 4
+        let sameColumn = abs(inbox.frame.midX - avatar.frame.midX) < 4
+        XCTAssertTrue(
+            sameRow || sameColumn,
+            "El avatar no va en la barra de la bandeja (bandeja \(inbox.frame), avatar \(avatar.frame)): "
+                + "quedó en una barra aparte.")
+    }
+
+    /// Fase 2b: Estadísticas › Resumen en pares en ancho: «Tu salud financiera» y «Resumen con IA» en la misma
     /// fila. En iPhone, uno debajo de otro.
     func test_statisticsSummary_pairsTheCards_inWideWindow() {
         if expectsWideWindow { XCUIDevice.shared.orientation = .landscapeLeft }
         let app = launch(deeplink: "statistics")
         let health = label("Tu salud financiera", in: app)
-        let smart = label("Resumen inteligente", in: app)
+        let smart = label("Resumen con IA", in: app)
         XCTAssertTrue(health.waitForExistence(timeout: 15), "No está «Tu salud financiera».")
-        XCTAssertTrue(smart.waitForExistence(timeout: 10), "No está «Resumen inteligente».")
+        XCTAssertTrue(smart.waitForExistence(timeout: 10), "No está «Resumen con IA».")
 
         if expectsWideWindow {
-            XCTAssertGreaterThan(smart.frame.minX, health.frame.maxX, "«Resumen inteligente» no está al lado de la salud financiera.")
+            XCTAssertGreaterThan(smart.frame.minX, health.frame.maxX, "«Resumen con IA» no está al lado de la salud financiera.")
             XCTAssertLessThan(abs(smart.frame.midY - health.frame.midY), 60, "Las dos tarjetas no están en la misma fila.")
         } else {
             XCTAssertGreaterThan(smart.frame.minY, health.frame.maxY, "En iPhone el Resumen dejó de ir en una columna.")

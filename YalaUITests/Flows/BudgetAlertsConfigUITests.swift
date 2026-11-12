@@ -27,8 +27,8 @@ final class BudgetAlertsConfigUITests: XCTestCase {
         XCTAssertTrue(planningTab.waitForExistence(timeout: 10), "No apareció el tab Planificación.")
         planningTab.tap()
 
-        let fab = app.buttons["budgets_create_fab"]
-        XCTAssertTrue(fab.waitForExistence(timeout: 5), "No apareció budgets_create_fab.")
+        let fab = app.buttons["budgets_create_button"]
+        XCTAssertTrue(fab.waitForExistence(timeout: 5), "No apareció budgets_create_button.")
         fab.tap()
 
         XCTAssertTrue(

@@ -225,7 +225,17 @@ extension Color {
     // MARK: - Primary Brand Colors
 
     /// Electric Indigo: El equilibrio entre la seriedad bancaria y la tecnología moderna.
-    static let electricIndigo = Color(hex: "6366F1")
+    /// Es el acento de los temas índigo, y los botones rellenos llevan texto blanco encima: #6063F1 da 4,61:1 (AA).
+    /// Hasta el 2026-10-17 era #6366F1 (4,47:1); se oscureció solo la luminosidad, mismo tono (ΔE 2,2). Lo fija
+    /// `BrandAccentContrastTests`, junto con las copias del hex (widgets, `AccentColor`, `LaunchBackground`, Sankey).
+    static let electricIndigo = Color(hex: "6063F1")
+
+    /// Índigo de TEXTO en los temas oscuros (`YalaTheme.accentText`, card 1c9w): el mismo que usa la web para lo mismo.
+    /// ≥ 4,6:1 en todas las superficies oscuras de los temas; `electricIndigo` se queda en 3,2–4,5 ahí.
+    static let indigoTextOnDark = Color(hex: "818CF8")
+
+    /// Rosa de TEXTO en los temas Rosa (`YalaTheme.accentText`): `hotPink` como texto da 4,48 sobre la tarjeta de Rosa.
+    static let pinkTextOnDark = Color(hex: "FF4DA6")
 
     /// Neon Cyan: Representa el 'dinero digital' y el optimismo.
     static let neonCyan = Color(hex: "00F3FF")
@@ -239,12 +249,122 @@ extension Color {
     /// Priority Nature: Softer Cyan for „Priority" expenses.
     static let priorityNeed = Color(hex: "00C2CB")
 
-    /// Turquesa oscurecido para el MONTO de un ingreso sobre tarjeta blanca.
-    /// `priorityNeed` (#00C2CB) sólo alcanza 2,19 de contraste sobre blanco y
-    /// no llega al mínimo AA de 4,5; éste da 5,1 conservando el matiz. Medido
-    /// el 2026-09-02. Para superficies rellenas (chips, barras, anillos) sigue
-    /// usándose `priorityNeed`: el requisito de contraste es del TEXTO.
-    static let incomeAmount = Color(hex: "0F7A80")
+    /// Turquesa del MONTO de un ingreso. Adaptativo (card elwl, 2026-10-25):
+    /// - Claro: #0F7A80, oscurecido para la tarjeta blanca (`priorityNeed` da 2,19 sobre blanco; éste 5,1). Medido el
+    ///   2026-09-02.
+    /// - Oscuro: `priorityNeed` (#00C2CB), el turquesa de marca. El fijo de antes daba 3,3:1 sobre la tarjeta del tema
+    ///   Oscuro (#1C1C1E) y 2,9 sobre la de Índigo; éste da ≥ 6,3:1 en todas las superficies oscuras de los temas
+    ///   (lo fija `ThemeTokenContrastTests`).
+    /// Para superficies rellenas (chips, barras, anillos) sigue usándose `priorityNeed`: el requisito es del TEXTO.
+    static let incomeAmount = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark ? UIColor(Color.incomeAmountDark) : UIColor(Color.incomeAmountLight)
+    })
+    /// Las dos mitades de `incomeAmount`, para medirlas (`ThemeTokenContrastTests`).
+    static let incomeAmountLightHex = "0F7A80"
+    static let incomeAmountDarkHex = "00C2CB"
+    static let incomeAmountLight = Color(hex: incomeAmountLightHex)
+    static let incomeAmountDark = Color(hex: incomeAmountDarkHex)
+
+    // MARK: - Lo que debes y lo que te deben en Grupos (decisión de Jürgen, 2026-10-30)
+
+    /// «Debes» en la lista de Grupos: el rosa de marca (Jürgen, 2026-11-03: «el rojo no me encanta con nuestro design
+    /// system»). En claro, `hotPink` oscurecido para que el TEXTO llegue a AA; en oscuro, `pinkTextOnDark`. Como texto
+    /// llega a AA sobre fondo y tarjeta de los diez temas (lo fija `ThemeTokenContrastTests`).
+    static let groupOweAmount = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark ? UIColor(Color(hex: groupOweAmountDarkHex)) : UIColor(Color(hex: groupOweAmountLightHex))
+    })
+    static let groupOweAmountLightHex = "C80066"
+    static let groupOweAmountDarkHex = "FF4DA6"
+
+    /// «Te deben» en la lista de Grupos: verde. Mismo peso que `groupOweAmount` y la misma medida AA.
+    static let groupOwedAmount = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark ? UIColor(Color(hex: groupOwedAmountDarkHex)) : UIColor(Color(hex: groupOwedAmountLightHex))
+    })
+    static let groupOwedAmountLightHex = "15803D"
+    static let groupOwedAmountDarkHex = "4ADE80"
+
+    /// Turquesa de RELLENO sólido con texto o icono blanco encima (5,1:1), igual en claro y en oscuro: la píldora de
+    /// ingresos del hero, la ficha de categorías y el consentimiento de Yala IA. Hasta el 2026-10-25 usaban
+    /// `incomeAmount`, que desde entonces se aclara en oscuro y con blanco encima no llegaría a AA.
+    static let incomeFill = Color(hex: incomeAmountLightHex)
+
+    /// El tono de un IMPORTE de movimiento, el mismo que el Panel en toda la app (UX 2.2 · L4-14, decisión de Jürgen
+    /// 2026-10-14): el ingreso en `incomeAmount`, el gasto en el color del texto. Se colorea la excepción; el signo
+    /// del importe ya dice que es gasto. Antes la Bandeja, Registros y otras pantallas pintaban el gasto en rosa y el
+    /// ingreso en índigo, y el mismo borrador salía en blanco al revisarlo y en rosa en la Bandeja.
+    static func amountTint(isIncome: Bool) -> Color {
+        isIncome ? Color.incomeAmount : Color.primary
+    }
+
+    /// El monto GRANDE que se escribe en los tres formularios de registro (Nuevo registro, la aprobación de un borrador de
+    /// la Bandeja y Nuevo gasto de Grupos): el mismo en las tres (registro unificado, Jürgen 2026-10-31). Gasto en
+    /// `hotPink`, ingreso en `incomeAmount`. Antes Nuevo registro pintaba el ingreso en índigo, la aprobación el gasto en
+    /// blanco y Grupos en el acento del tema. No es el importe de una lista: ahí manda `amountTint`, que colorea solo el
+    /// ingreso. Como texto grande (64 pt en negrita), `hotPink` sobre blanco da 3,77:1, por encima del 3:1 de AA.
+    static func recordFormAmount(isIncome: Bool) -> Color {
+        isIncome ? Color.incomeAmount : Color.hotPink
+    }
+
+    // MARK: - Rellenos sólidos del onboarding (UX 2.2 · L1UI, variante 2 elegida por Jürgen el 2026-10-13)
+
+    /// Índigo profundo: la tarjeta ELEGIDA del onboarding y las fichas de resultado de la calculadora del saldo.
+    /// Texto blanco encima con contraste AA holgado (#3D36B3, 8,8:1); `electricIndigo` lo pasa justo (4,61:1).
+    static let selectedIndigoFill = Color(hex: "3D36B3")
+
+    /// Relleno del botón destacado de una alerta del sistema (el «Activar» del aviso de voz y foto) en el modo OSCURO.
+    /// La alerta lo toma del `AccentColor` del catálogo, que en oscuro tiene que valer esto y en claro `electricIndigo`
+    /// (lo fija `AlertActionIndigoParityTests`). Con blanco encima da 5,09:1, AA (`electricIndigo`, #6063F1, da 4,61:1).
+    static let alertActionIndigo = Color(hex: "585BEC")
+
+    /// Tinte con el que se presenta esa alerta. Medido en píxeles el 2026-10-17 (iOS 27.0): el texto del botón destacado
+    /// sale del tinte de SwiftUI de quien presenta la alerta, y si el tinte coincide con el relleno sale NEGRO, en claro
+    /// y en oscuro, sea cual sea el relleno (también sobre #3D36B3). No responde a `.tint` ni a `foregroundStyle` en el
+    /// propio botón, y el mismo tinte colorea «Política de privacidad» y «Cancelar».
+    /// - Oscuro: blanco. El texto del botón sale blanco (5,09:1) y los otros dos también, sobre cristal oscuro.
+    /// - Claro: el mismo `electricIndigo` del relleno, así que el sistema pone negro (4,55:1, AA). Blanco obligaría a
+    ///   pintar en blanco los otros dos botones sobre el cristal claro, donde no se leen. Es un límite de la alerta del
+    ///   sistema; solo lo usa el tema Claro (y Sistema de día): el resto de temas son oscuros.
+    static let alertActionTint = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark ? .white : UIColor(Color.electricIndigo)
+    })
+
+    /// Rosa profundo: la tarjeta «¿No sabes tu saldo?». `hotPink` (#FF0080) con texto blanco da 3,8:1;
+    /// este tono da 5,2:1 sin dejar de ser el rosa de marca.
+    static let emphasisPinkFill = Color(hex: "D6006B")
+
+    /// TEXTO de «te pasaste» de un presupuesto (UX 2.2 · L9-1): `hotPink` sobre tarjeta blanca da 3,77 y no llega al AA
+    /// de 4,5, así que en claro va el rosa profundo (#D6006B, 5,2) y en oscuro el de siempre, que ahí sí contrasta.
+    static let overBudgetText = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark ? UIColor(Color.hotPink) : UIColor(Color.emphasisPinkFill)
+    })
+
+    /// Dorado de Yala Pro, sólido (UX 2.2 · L16-12, variante 1 elegida por Jürgen el 2026-10-15): el aro del avatar y
+    /// las insignias Pro. Antes era el degradado amarillo-naranja de `DS.Gradients.proBadge`, y nada de degradados.
+    static let proGold = Color(hex: "F5B400")
+
+    /// Texto sobre `proGold`: casi negro. El blanco sobre ese dorado da 1,9:1 y no se lee; éste pasa de 11:1.
+    static let proGoldInk = Color(hex: "1C1500")
+
+    /// Dorado de Yala IA cuando es TEXTO, icono o borde sobre la tarjeta (UX 2.2 · L14-5, la píldora «Yala IA» y su botón
+    /// flotante): `proGold` en oscuro (9,1:1 sobre la tarjeta) y, en claro, un dorado oscuro (#8A6100, 5,5:1 sobre
+    /// blanco): `proGold` sobre blanco da 1,8:1 y no se lee. Sólido, sin el degradado `proBadge` de antes.
+    static let proGoldOnCard = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark ? UIColor(Color.proGold) : UIColor(Color(hex: "8A6100"))
+    })
+
+    /// TEXTO en el rosa de marca que tiene que leerse en los dos modos (UX 2.2 · L11-11, «Los lunes son tu día más caro»):
+    /// el mismo par que `overBudgetText`, con nombre propio porque no habla de presupuestos.
+    static let emphasisPinkText = overBudgetText
+
+    /// Barra de un período que NO pasó el límite en el historial de un presupuesto (UX 2.2 · L9-7): neutra y sólida, para
+    /// que el rosa marque solo los que se pasaron.
+    static let budgetBarNeutral = Color(uiColor: .systemGray3) // A11Y-DM: gris de sistema, adapta claro/oscuro
+
+    /// Rosa claro para texto sobre los rellenos índigo (lo que resta en la cuenta de la calculadora).
+    static let pinkOnIndigo = Color(hex: "FF99CC")
+
+    /// Rojo del círculo de «resta» de la calculadora. Es un glifo sobre relleno, no texto.
+    static let subtractSign = Color(hex: "E5484D")
 
     // MARK: - Need Colors (Distinct from brand colors)
 
@@ -332,6 +452,41 @@ struct YalaFormatter {
         return "\(sign)\(formattedNumber)"
     }
 
+    /// Etiqueta del eje Y con los decimales que pide el rango del eje.
+    ///
+    /// `axisK(_:)` redondea a miles enteros, y en un eje estrecho todas las marcas salen iguales:
+    /// el saldo de una cuenta nueva de S/ 1.800 pintaba «2K 2K 2K», y un eje de 0 a 1.800 pintaba
+    /// 1.500 como «2K» (auditoría UX 2.2, lote 3, B3). Aquí los decimales salen del paso entre
+    /// marcas, y los ceros de sobra se quitan: «1.75K 1.8K 1.85K», «1K 1.5K 2K», «94K 96K 98K».
+    ///
+    /// El paso se estima como un quinto del rango: el eje pide unas tres marcas y Swift Charts
+    /// puede poner hasta cinco. Un paso real mayor solo deja decimales que se recortan.
+    static func axisK(_ value: Double, domain: ClosedRange<Double>) -> String {
+        let absValue = abs(value)
+        let sign = value < 0 ? "-" : ""
+        let step = (domain.upperBound - domain.lowerBound) / 5
+        if absValue >= 1000 {
+            return sign + trimmedDecimal(absValue / 1000, decimals: axisDecimals(forStep: step / 1000)) + "K"
+        }
+        return sign + trimmedDecimal(absValue, decimals: axisDecimals(forStep: step))
+    }
+
+    /// 0 decimales si el paso es de al menos una unidad, 1 si es de una décima, 2 si es menor.
+    private static func axisDecimals(forStep step: Double) -> Int {
+        guard step.isFinite, step > 0 else { return 0 }
+        if step >= 1 { return 0 }
+        if step >= 0.1 { return 1 }
+        return 2
+    }
+
+    private static func trimmedDecimal(_ value: Double, decimals: Int) -> String {
+        var text = String(format: "%.\(decimals)f", value)
+        guard decimals > 0 else { return text }
+        while text.hasSuffix("0") { text.removeLast() }
+        if text.hasSuffix(".") { text.removeLast() }
+        return text
+    }
+
     /// Compact axis label: 1500 → "2K", -40000 → "-40K", 500 → "500"
     static func axisK(_ value: Double) -> String {
         let absValue = abs(value)
@@ -343,3 +498,4 @@ struct YalaFormatter {
         }
     }
 }
+

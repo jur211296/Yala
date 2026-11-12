@@ -102,6 +102,47 @@ enum DevSeedGroups {
             }
         }
 
+        // UX 2.2 · L13-2: un pago que Ana apuntó y que me toca confirmar. Pendiente a propósito: los que crea la app iOS
+        // nacen confirmados, así que solo llega uno así desde otro dispositivo.
+        if UITestHooks.seedPendingSettlement {
+            let pending = SplitSettlement(
+                groupZoneID: zoneID, fromMemberID: ana.id.uuidString, toMemberID: me.id.uuidString,
+                amount: 50, currencyCode: "PEN", date: Date.now
+            )
+            pending.recordedByMemberID = ana.id.uuidString
+            context.insert(pending)
+        }
+
+        // Grupos B · card 10: un grupo aparte, «Ventas con Ana», con solo una venta tuya de S/ 50 y el pago de Ana por
+        // confirmar. Aparte porque en «Viaje a Cusco» tus partes de la cena y el almuerzo ya cubren la venta (lo más
+        // antiguo primero) y el pago de Ana cubriría el hospedaje, no la venta.
+        var sale: (expense: SplitExpense, group: SplitGroup)?
+        if UITestHooks.seedGroupSale {
+            let saleGroup = SplitGroup(name: UITestHooks.seededSaleGroupName, iconName: "bag", currencyCode: "PEN", isOwner: true)
+            saleGroup.isBackendGroup = true
+            context.insert(saleGroup)
+            let saleZone = saleGroup.cloudKitZoneID
+            let me3 = SplitMember(
+                groupZoneID: saleZone, displayName: "Tú", cloudKitUserRecordID: "uitest-current-user",
+                role: "admin", status: .active, isGroupOwner: true, isCurrentUser: true)
+            let ana3 = SplitMember(
+                groupZoneID: saleZone, displayName: "Ana", cloudKitUserRecordID: "uitest-member-ana", status: .active)
+            context.insert(me3)
+            context.insert(ana3)
+            let expense = SplitExpense(
+                groupZoneID: saleZone, amount: 50, currencyCode: "PEN", expenseDescription: UITestHooks.seededGroupSaleName,
+                paidByMemberID: me3.id.uuidString, splitType: "exact", subcategoryName: L10n.Subcategory.freelance)
+            expense.date = cal.date(byAdding: .day, value: -3, to: Date.now) ?? Date.now
+            context.insert(expense)
+            context.insert(SplitShare(expenseID: expense.id, memberID: ana3.id.uuidString, amount: 50, groupZoneID: saleZone))
+            let payment = SplitSettlement(
+                groupZoneID: saleZone, fromMemberID: ana3.id.uuidString, toMemberID: me3.id.uuidString,
+                amount: 50, currencyCode: "PEN", date: Date.now)
+            payment.recordedByMemberID = ana3.id.uuidString
+            context.insert(payment)
+            sale = (expense, saleGroup)
+        }
+
         // ── 2º grupo "Viaje a Lima" (yo owner/activo). Habilita el chip EDITABLE del
         //    composer "Nuevo gasto" (>1 grupo elegible) y el cambio de grupo en el picker.
         //    Ordena DESPUÉS de "Viaje a Cusco" (Cusco < Lima) → no altera el primer
@@ -153,6 +194,15 @@ enum DevSeedGroups {
             try context.save()
         } catch {
             print("DevSeedGroups: save error: \(error)")
+        }
+
+        // El resto de la semilla no pasa por el puente; la venta sí, para que exista su pata por cobrar.
+        if let sale {
+            do {
+                try GroupTransactionBridge.shared.bridgeExpense(sale.expense, in: sale.group)
+            } catch {
+                print("DevSeedGroups: bridge de la venta: \(error)")
+            }
         }
     }
 
@@ -397,7 +447,7 @@ enum DevSeedGroups {
     /// Variante SALDADA (perfil `.gruposSaldado`): el MISMO dataset de `create` (2 grupos, multi-moneda,
     /// yo owner) MÁS las liquidaciones CONFIRMADAS que dejan el neto del usuario actual en CERO en todos
     /// sus grupos y monedas. Es el único perfil con grupos VIVOS y SIN deuda, que es el estado que ofrece
-    /// el batch D10 "También salir de mis grupos" de la hoja de Vaciar (`canLeaveAllGroups` exige
+    /// el batch D10 «Salir de todos mis grupos» de Ajustes de Grupos (`offersLeaveAllGroups` exige
     /// `hasGroups && !hasOutstandingDebt`): `create` deja al usuario acreedor por construcción (+190 PEN y
     /// +46,66 USD en Cusco, +140 PEN en Lima) y `createAsInvitee` lo deja deudor, así que ninguno de los
     /// dos ejercita esa rama.
@@ -525,6 +575,11 @@ enum DevSeedGroups {
             isOwner: false
         )
         group.isBackendGroup = true  // C3: ver el porqué en `create(in:)`.
+        // Card jqgy: con `-uitest-invitee-frozen`, el grupo se movió a la nube y «Tú» aún no volvió a entrar.
+        if UITestHooks.inviteeGroupFrozen {
+            group.isBackendGroup = false
+            group.movedToBackendAt = Date.now
+        }
         context.insert(group)
         let zoneID = group.cloudKitZoneID
 
@@ -534,9 +589,11 @@ enum DevSeedGroups {
             cloudKitUserRecordID: "uitest-member-ana",
             role: "admin", status: .active, isGroupOwner: true
         )
+        // Con `-uitest-invitee-admin`, admin sin ser dueño (card yd2w).
         let me = SplitMember(
             groupZoneID: zoneID, displayName: "Tú",
             cloudKitUserRecordID: "uitest-current-user",
+            role: UITestHooks.inviteeIsAdmin ? "admin" : "member",
             status: .active, isCurrentUser: true
         )
         let beto = SplitMember(
@@ -572,6 +629,22 @@ enum DevSeedGroups {
                 )
                 context.insert(share)
             }
+        }
+
+        // Card jqgy: en el grupo congelado ya había un saldo inicial de antes de la migración (Beto le debe 50 a Ana),
+        // para ver que la sección lo enseña pero no deja tocarlo.
+        if UITestHooks.inviteeGroupFrozen {
+            let opening = SplitExpense(
+                groupZoneID: zoneID, amount: 50, currencyCode: "PEN",
+                expenseDescription: L10n.Groups.OpeningBalance.entryDescription,
+                paidByMemberID: ana.id.uuidString, splitType: "exact",
+                isOpeningBalance: true
+            )
+            context.insert(opening)
+            context.insert(SplitShare(
+                expenseID: opening.id, memberID: beto.id.uuidString, amount: 50,
+                isPaid: false, groupZoneID: zoneID
+            ))
         }
 
         do {

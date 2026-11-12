@@ -65,6 +65,50 @@ struct GroupBridgeStatsAdjustmentTests {
         return sub
     }
 
+    // MARK: - Grupos B: líneas de tu parte
+
+    @Test func splitLines_aTransferLegIsNeverTheRealLeg_theLoanNetsAgainstTheExpense() throws {
+        let ctx = try makeTestContext()
+        let eid = UUID().uuidString
+        let groups = makeTestAccount(context: ctx, name: "Grupos")
+        groups.isSystemAccount = true
+        // Si la entrada de una recarga llegara con el puntero, por orden sería «la real» y el préstamo se netearía contra
+        // ella: el gasto saldría entero.
+        let entry = makeLeg(ctx, amount: 20, system: false, splitExpenseID: eid)
+        entry.balanceAdjustmentType = TransactionItem.adjustmentTypeTransfer
+        let real = makeLeg(ctx, amount: -200, system: false, splitExpenseID: eid)
+        let lent = makeLeg(ctx, amount: 120, system: true, splitExpenseID: eid,
+                           subcategory: systemSubcat(ctx, name: "loanToGroups"), account: groups)
+        let out = makeLeg(ctx, amount: -20, system: true, splitExpenseID: eid, account: groups)
+        out.balanceAdjustmentType = TransactionItem.adjustmentTypeTransfer
+        try ctx.save()
+
+        let adj = GroupBridgeStatsAdjustment.build(from: [entry, real, lent, out])
+
+        #expect(adj.amount(real) == -80)
+        #expect(!adj.isAdjusted(entry))
+        #expect(adj.isSuppressed(lent))
+        #expect(!adj.isSuppressed(out))
+    }
+
+    @Test func splitLines_super_realNetsToTheFirstLine_andTheExtraLineCountsAsIs() throws {
+        let ctx = try makeTestContext()
+        let eid = UUID().uuidString
+        let groups = makeTestAccount(context: ctx, name: "Grupos")
+        groups.isSystemAccount = true
+        let real = makeLeg(ctx, amount: -200, system: false, splitExpenseID: eid)
+        let lent = makeLeg(ctx, amount: 120, system: true, splitExpenseID: eid,
+                           subcategory: systemSubcat(ctx, name: "loanToGroups"), account: groups)
+        let hogar = makeLeg(ctx, amount: -20, system: true, splitExpenseID: eid, account: groups)
+        try ctx.save()
+
+        let adj = GroupBridgeStatsAdjustment.build(from: [real, lent, hogar])
+
+        #expect(adj.amount(real) == -80)
+        #expect(adj.amount(hogar) == -20)
+        #expect(adj.isSuppressed(lent))
+    }
+
     // MARK: - Caso A full
 
     @Test func casoAFull_realLeg_showsMyShare_lentSuppressed() throws {

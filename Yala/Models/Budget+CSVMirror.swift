@@ -103,6 +103,26 @@ extension Budget {
         return ids
     }
 
+    /// Las cuentas cuyo gasto cuenta este presupuesto: las que guarda MÁS las líneas vivas de las tarjetas que guarda
+    /// (tarjeta con varias divisas, entrega 3, decisión D2). Solo para CALCULAR el gasto: lo que se guarda, se sincroniza y se
+    /// edita sigue siendo `resolvedAccountIDs`. Sin contexto, o si el fetch de cuentas falla, devuelve lo guardado, como antes.
+    func spendingAccountIDs(scheduleBackfill: Bool = false) -> Set<UUID>? {
+        guard let ids = resolvedAccountIDs(scheduleBackfill: scheduleBackfill), !ids.isEmpty else {
+            return resolvedAccountIDs(scheduleBackfill: false)
+        }
+        guard let context = modelContext else { return ids }
+        do {
+            let all = try context.fetch(FetchDescriptor<Account>())
+            let linesByHead = AccountCardLogic.linesByHead(all, node: { AccountLineNode($0) }, id: { $0.shortcutID })
+            return AccountCardLogic.includingLines(ids, linesByHead: linesByHead)
+        } catch {
+            #if DEBUG
+            print("Budget+CSVMirror: Error: fetch de cuentas para las líneas de la tarjeta: \(error)")
+            #endif
+            return ids
+        }
+    }
+
     func resolvedAccountIDs(scheduleBackfill: Bool = false) -> Set<UUID>? {
         if let set = accountIDsSet { return set }
         let m2m = accounts ?? []

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Yala · portada de la ficha</title>
+<link rel="stylesheet" href="../capturas/lamina.css">
+<style>
+  /* Guía de revisión (&guia=1): la zona segura del recurso universal en las plantillas de Apple. No sale en los entregables. */
+  .guia{position:absolute;z-index:50;border:8px dashed #39FF6A;pointer-events:none}
+  .guia span{position:absolute;left:0;bottom:0;background:#39FF6A;color:#000;font:800 40px/1 var(--fuente);padding:10px 16px}
+  .bloque{position:absolute;z-index:6;display:flex;flex-direction:column;align-items:flex-start}
+  .lema{font-weight:850;line-height:1.04;letter-spacing:-.025em;white-space:nowrap}
+  .lema u{position:relative;text-decoration:none;color:var(--acento);white-space:nowrap}
+  .lema u::after{content:"";position:absolute;left:.02em;right:.02em;bottom:-.06em;height:.1em;border-radius:.05em;background:var(--acento)}
+  .bajada{font-weight:600;color:var(--sub);line-height:1.3}
+  .bloque .logo{position:static}
+  .escena{position:absolute}
+</style>
+</head><body>
+<div id="raiz"></div>
+<script>
+// Portada de la ficha (22-oct-2026): el RECURSO UNIVERSAL 16:9 de App Store Connect (5244×2950, PNG sin alfa), que Apple
+// usa de encabezado de la página de producto y de resultado de búsqueda.
+//   portada.html?idioma=es|en|pt-BR&aparato=iphone|ipad&dir=<carpeta con s-ia/s-foto o i-ia/i-foto>[&guia=1]
+// Respecto a la de 2.1 (todo dentro de la zona segura de 1402×962), el texto y los equipos llenan el lienzo: en el iPad
+// y en la búsqueda Apple enseña el lienzo entero (capturas de Jürgen del 22-oct) y ahí la de 2.1 se veía diminuta.
+// El set del iPhone lleva dos iPhone 17 Pro; el del iPad, dos iPad Pro 13". Pantallas reales del simulador (molde).
+const q = new URLSearchParams(location.search);
+const IDIOMA = q.get("idioma") || "es", APARATO = q.get("aparato") || "iphone", DIR = q.get("dir") || ".";
+const W = 5244, H = 2950, SEGURO = [1921, 660, 1402, 962];
+
+// Lema: el cierre de VIDEO en textos/<idioma>.js (de Lola). Bajada: la de la portada de 2.1 en español; en y pt-BR,
+// traducción de Frank, pendiente de que Lola la revise.
+const TXT = {
+  "es":    {lema: "Tus finanzas,<br>sin <u>esfuerzo</u>.", bajada: "Escríbelo, tómale foto o dilo.<br>Yala IA lo ordena."},
+  "en":    {lema: "Your finances,<br><u>effortlessly</u>.", bajada: "Type it, snap it or say it.<br>Yala AI sorts it out."},
+  "pt-BR": {lema: "Suas finanças,<br>sem <u>esforço</u>.", bajada: "Escreva, tire uma foto ou fale.<br>A Yala IA organiza."},
+}[IDIOMA];
+
+const TRAZO = "M50 0 C54 36 64 46 100 50 C64 54 54 64 50 100 C46 64 36 54 0 50 C36 46 46 36 50 0 Z";
+const COLOR = {rosa: "#FF2D78", azul: "#6164EB", teal: "#3BD6F0", violeta: "#8B5CF6"};
+const estrella = ([x, y, s, c, r]) =>
+  `<svg class="estrella" viewBox="0 0 100 100" style="left:${x}px;top:${y}px;width:${s}px;height:${s}px;transform:rotate(${r || 0}deg)"><path d="${TRAZO}" fill="${COLOR[c]}"/></svg>`;
+
+// iPhone 17 Pro: h = alto del teléfono entero (proporción 0,4773). iPad Pro 13" vertical: h = alto entero (0,7676).
+function iphone(e) {
+  const w = e.h * 0.4773 / 1.072;
+  const botones = [["left", 15.5, 2.6], ["left", 22.5, 4.8], ["left", 29, 4.8], ["right", 24, 8.2]]
+    .map(([lado, top, h]) => `<i class="boton" style="${lado}:-${w * 0.009}px;top:${top}%;height:${h}%"></i>`).join("");
+  return `<div class="escena" style="left:${e.x}px;top:${e.y}px;z-index:${e.z}">
+    <div class="phone" style="--w:${w}px;transform:${e.t}">
+      <div class="sombra"></div><div class="grosor"></div>${botones}<div class="cuerpo"></div>
+      <div class="pantalla"><img src="${DIR}/${e.img}"><div class="isla"></div></div></div></div>`;
+}
+function ipad(e) {
+  const w = e.h * 0.7676 / 1.06;
+  return `<div class="escena" style="left:${e.x}px;top:${e.y}px;z-index:${e.z}">
+    <div class="tablet" style="--w:${w}px;transform:${e.t}">
+      <div class="sombra"></div><div class="grosor"></div><div class="cuerpo"></div>
+      <div class="pantalla"><img src="${DIR}/${e.img}"></div></div></div>`;
+}
+const bloque = (x, y, logoW, fsLema, fsBajada, gap) => `<div class="bloque" style="left:${x}px;top:${y}px">
+  <img class="logo" src="../assets/logo.png" style="width:${logoW}px;height:${logoW * 620 / 820}px;margin:0 0 ${gap * .55}px -${logoW * .04}px">
+  <div class="lema" style="font-size:${fsLema}px">${TXT.lema}</div>
+  <div class="bajada" style="font-size:${fsBajada}px;margin-top:${gap}px">${TXT.bajada}</div></div>`;
+
+const ESTRELLAS = [[420, 380, 110, "teal", 8], [4880, 2520, 100, "rosa", -10], [2380, 230, 70, "azul", 12], [300, 2560, 80, "violeta", -6],
+                   [2460, 2700, 64, "teal", 4], [5000, 330, 70, "rosa", -12], [120, 1450, 60, "azul", -14], [2560, 1480, 58, "rosa", 6]];
+
+// Composición: bloque de texto a la izquierda, centrado en vertical; los dos equipos a la derecha llenan el alto.
+const PIEZA = {
+  iphone: () => bloque(520, 860, 560, 250, 96, 70)
+    + iphone({img: "s-ia.png",   h: 2560, x: 2700, y: 210, t: "rotateZ(-5deg)", z: 3})
+    + iphone({img: "s-foto.png", h: 2560, x: 3640, y: 190, t: "rotateZ(4deg)",  z: 4}),
+  // En el iPad, el de Yala IA va DELANTE y a la izquierda: su chat vive en la columna derecha y detrás quedaría tapado.
+  // El de la foto, detrás y a la derecha, asoma con la hoja «Esto leí» entera.
+  ipad: () => bloque(290, 860, 480, 200, 82, 58)
+    + ipad({img: "i-ia.png",   h: 2100, x: 2160, y: 460, t: "rotateZ(-3deg)", z: 4})
+    + ipad({img: "i-foto.png", h: 2100, x: 3370, y: 330, t: "rotateZ(3deg)",  z: 3}),
+}[APARATO];
+
+document.documentElement.lang = IDIOMA;
+document.body.style.width = W + "px"; document.body.style.height = H + "px";
+const guia = q.get("guia") ? `<div class="guia" style="left:${SEGURO[0]}px;top:${SEGURO[1]}px;width:${SEGURO[2]}px;height:${SEGURO[3]}px"><span>ZONA SEGURA DE APPLE</span></div>` : "";
+document.getElementById("raiz").innerHTML =
+  `<div class="lienzo" data-acento="rosa" style="width:${W}px;height:${H}px">${ESTRELLAS.map(estrella).join("")}${PIEZA()}${guia}</div>`;
+// El bloque de texto, centrado en vertical sobre el lienzo.
+const b = document.querySelector(".bloque"); b.style.top = ((H - b.offsetHeight) / 2) + "px";
+</script>
+</body></html>

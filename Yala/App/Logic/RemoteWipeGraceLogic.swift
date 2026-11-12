@@ -106,7 +106,12 @@ nonisolated struct RemoteWipeGraceLogic: Equatable {
     /// **Qué aviso, o si hay que esperar.** Medido en el iPhone de QA el 15-oct:
     ///
     ///  · **Con iCloud Drive apagado** iOS vacía la copia local del espejo y las filas desaparecen sin que nadie las
-    ///    borrara. `iCloudSyncService` pasa a `.noAccount` por el token de iCloud (`iCloudTokenPresent == false`).
+    ///    borrara. `iCloudSyncService` pasa a `.noAccount` sin cuenta de iCloud (`iCloudAccountPresent == false`).
+    ///    **Corrección del 2026-10-24 (card n5zw):** no era iOS. Con Drive apagado el store se montaba con
+    ///    `cloudKitDatabase: .automatic`, que toma el PRIMER contenedor de los entitlements: en `Yala Dev` el de
+    ///    producción, así que el espejo cambiaba de contenedor y vaciaba la copia (las dos mediciones fueron en
+    ///    `Yala Dev`). Desde ese día `.localNoMirror` nombra su contenedor y con Drive apagado no cae nada; la cuenta
+    ///    es `iCloudSyncService.hasICloudAccount`, que con Drive apagado y CloudKit vivo dice que sí.
     ///    La otra puerta de `.noAccount` es CloudKit diciendo `notAuthenticated` (`mirrorReportedNotAuthenticated`).
     ///    En los dos casos el aviso de borrado mentía y su «Empezar de cero» mezclaba después los datos reales con
     ///    los del onboarding. Va PRIMERO: sin cuenta no hay importación que esperar.
@@ -123,10 +128,10 @@ nonisolated struct RemoteWipeGraceLogic: Equatable {
     /// evento de importación, con o sin error.
     /// Una actividad con fecha FUTURA (el reloj se atrasó) no retiene: no hay forma de saber cuándo fue, y retener
     /// hasta que el reloj la alcance podría ser días.
-    static func noticeDecision(iCloudTokenPresent: Bool, mirrorReportedNotAuthenticated: Bool,
+    static func noticeDecision(iCloudAccountPresent: Bool, mirrorReportedNotAuthenticated: Bool,
                                firstImportCompleted: Bool, isImporting: Bool, lastImportActivityAt: Date?,
                                droppedAt: Date, now: Date) -> NoticeDecision {
-        guard !iCloudUnavailable(iCloudTokenPresent: iCloudTokenPresent,
+        guard !iCloudUnavailable(iCloudAccountPresent: iCloudAccountPresent,
                                  mirrorReportedNotAuthenticated: mirrorReportedNotAuthenticated) else {
             return .present(.iCloudUnavailable)
         }
@@ -142,17 +147,19 @@ nonisolated struct RemoteWipeGraceLogic: Equatable {
         return .present(.dataRemoved)
     }
 
-    /// **«iCloud no está disponible»**, la misma pregunta para la gracia y para el arranque en frío: sin token de iCloud
-    /// (iCloud Drive apagado, sin sesión de iCloud) o con CloudKit diciendo `notAuthenticated`. Un solo predicado, o el
+    /// **«iCloud no está disponible»**, la misma pregunta para la gracia y para el arranque en frío: sin cuenta de iCloud
+    /// (`hasICloudAccount`: ni token de Drive ni CloudKit `.available`) o con CloudKit diciendo `notAuthenticated`. Un solo predicado, o el
     /// arranque pediría un aviso que el drenaje no enseñaría.
-    static func iCloudUnavailable(iCloudTokenPresent: Bool, mirrorReportedNotAuthenticated: Bool) -> Bool {
-        !iCloudTokenPresent || mirrorReportedNotAuthenticated
+    static func iCloudUnavailable(iCloudAccountPresent: Bool, mirrorReportedNotAuthenticated: Bool) -> Bool {
+        !iCloudAccountPresent || mirrorReportedNotAuthenticated
     }
 
     // MARK: - El arranque en frío (card `tablero-con-icloud-drive-apagado-antes-de-abrir-n5zw`)
 
-    /// **Si el ARRANQUE pide el aviso de «iCloud no está disponible».** Medido en el iPhone de QA el 19-oct: con Yala
-    /// CERRADA al apagar iCloud Drive, iOS vacía la copia local antes de que la app mida nada. `hasPersonalData` nace en
+    /// **Si el ARRANQUE pide el aviso de «iCloud no está disponible».** Medido en el iPhone de QA el 19-oct, con `Yala Dev`:
+    /// con Yala CERRADA al apagar iCloud Drive, la copia local llegaba vacía antes de que la app midiera nada (no era
+    /// iOS: era el contenedor equivocado de `.automatic`, ver `noticeDecision`; desde el 2026-10-24 ya no cae nada y esto
+    /// queda para el teléfono sin cuenta de iCloud). `hasPersonalData` nace en
     /// `false` y la primera medida también da `false`, así que no hay caída, la gracia no arranca y la app se quedaba
     /// vacía y muda, también al relanzar. El arranque lo pide por su cuenta con las mismas condiciones que hacen verdad
     /// el aviso: store personal vacío, onboarding hecho, una sesión de las que guardan sus datos en el iCloud del Apple ID
@@ -161,10 +168,10 @@ nonisolated struct RemoteWipeGraceLogic: Equatable {
     /// Con iCloud disponible no pide nada: el store vacío puede ser la importación que trae los datos, y el arranque no
     /// vio caer nada que justifique «tus datos fueron eliminados».
     static func coldStartRequestsICloudNotice(hasPersonalData: Bool, hasCompletedOnboarding: Bool,
-                                              sessionObeysWipeSignal: Bool, iCloudTokenPresent: Bool,
+                                              sessionObeysWipeSignal: Bool, iCloudAccountPresent: Bool,
                                               mirrorReportedNotAuthenticated: Bool) -> Bool {
         !hasPersonalData && hasCompletedOnboarding && sessionObeysWipeSignal
-            && iCloudUnavailable(iCloudTokenPresent: iCloudTokenPresent,
+            && iCloudUnavailable(iCloudAccountPresent: iCloudAccountPresent,
                                  mirrorReportedNotAuthenticated: mirrorReportedNotAuthenticated)
     }
 

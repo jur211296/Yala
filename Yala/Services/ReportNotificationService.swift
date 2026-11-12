@@ -96,6 +96,8 @@ final class ReportNotificationService {
 
     /// Sends report notifications that are due based on their configuration
     func sendDueReports(context: ModelContext) async {
+        // Card p0iu: con «Solo grupos» elegido sobre Yala completo, los avisos personales esperan (`PersonalRemindersPause`).
+        guard !PersonalRemindersPause.isPaused() else { return }
         guard !isSendingReports else { return }
         isSendingReports = true
         defer { isSendingReports = false }
@@ -126,7 +128,12 @@ final class ReportNotificationService {
             let delivered = await send(
                 title: report.localizedName,
                 body: Self.formatReportBody(effectiveConfig, reportType: report.notificationType, data: data),
-                deepLink: "statistics"
+                // La pestaña y el período del aviso: el número que dice es el primero que se ve al tocarlo (UX 2.2 ·
+                // L11-2). Antes abría Estadísticas donde estuviera, con otro período y otra cifra.
+                deepLink: StatisticsDeepLink.reportDeepLink(
+                    type: report.notificationType,
+                    dayPreference: report.reportConfig.dayPreference
+                )
             )
 
             // Marca de dedup SOLO con entrega confirmada por iOS (paridad con
@@ -153,6 +160,16 @@ final class ReportNotificationService {
                 #endif
             }
         }
+    }
+
+    /// El texto que mandaría ahora un informe con esta configuración, con los datos de verdad. Lo usa «Probar» del
+    /// editor, que mandaba un importe de ejemplo en dólares («En la semana gastaste $350.00») a quien lleva sus cuentas
+    /// en soles y gastó otra cosa (auditoría UX 2.2 · lote 11 · B7). Misma coacción de Solo Gastos que el envío.
+    func previewBody(config: ReportConfig, type: NotificationType, context: ModelContext) -> String {
+        var effectiveConfig = config
+        effectiveConfig.dataType = Self.effectiveDataType(config.dataType, expensesOnly: isExpensesOnly())
+        let data = calculateReportData(config: effectiveConfig, type: type, context: context)
+        return Self.formatReportBody(effectiveConfig, reportType: type, data: data)
     }
 
     // MARK: - Timing Check
@@ -222,12 +239,36 @@ final class ReportNotificationService {
         let currencyCode = CurrencyDefaults.currentPreferred
 
         // Balance del reporte: TC actual sobre saldo nativo (LiveBalanceCalculator)
-        // en vez de suma de snapshots históricos.
-        let balance = LiveBalanceCalculator.liveBalance(
-            accounts: accounts,
-            transactions: transactions,
-            preferredCurrencyCode: currencyCode
-        )
+        // en vez de suma de snapshots históricos. Sobre TODO el histórico: con los movimientos del período,
+        // «Así cierra tu saldo hoy» decía lo que entró menos lo que salió hoy, no el saldo de las cuentas
+        // (auditoría UX 2.2 · lote 11 · B12). El de un período cerrado («Así cerró tu saldo en septiembre») es el saldo
+        // a su cierre: lo apuntado después, aunque sea el día del aviso, no entra (UX 2.2 · L11-12).
+        let balance: Double
+        if config.dataType != .balance {
+            balance = 0
+        } else if Self.reportsClosedPeriod(config, type: type) {
+            // Y valorado con el tipo de cambio de ese cierre, como lo enseña Estadísticas para un período cerrado
+            // (`BalanceValuation`); con la tasa de hoy, el aviso y la pantalla que abre daban dos cifras.
+            let breakdown = LiveBalanceCalculator.liveBalanceBreakdown(
+                accounts: accounts,
+                transactions: fetchAllTransactions(context: context),
+                preferredCurrencyCode: currencyCode,
+                asOf: interval.end
+            )
+            let valuation = BalanceValuation(
+                currencies: Set(breakdown.nativeBalances.keys),
+                to: currencyCode,
+                closingDates: [interval.end],
+                converter: CurrencyConverter.shared
+            )
+            balance = valuation.doubleValue(breakdown.nativeBalances, at: interval.end)
+        } else {
+            balance = LiveBalanceCalculator.liveBalance(
+                accounts: accounts,
+                transactions: fetchAllTransactions(context: context),
+                preferredCurrencyCode: currencyCode
+            )
+        }
 
         // Netea los gastos de grupo bridgeados a "mi parte". El fetch por rango
         // (`transactions`) trae AMBAS hermanas del bridge (comparten fecha).
@@ -256,7 +297,8 @@ final class ReportNotificationService {
             balance: balance,
             totalExpense: NSDecimalNumber(decimal: totals.totalExpense).doubleValue,
             totalIncome: NSDecimalNumber(decimal: totals.totalIncome).doubleValue,
-            topCategory: topCategories.first?.category.name,
+            // La mayor categoría REAL: «Sin categoría» suma en el desglose pero no se nombra como categoría.
+            topCategory: topCategories.first(where: { !$0.isUncategorized })?.name,
             hasExpenseActivity: totals.hasExpenseActivity,
             hasIncomeActivity: totals.hasIncomeActivity
         )
@@ -324,9 +366,22 @@ final class ReportNotificationService {
         )
     }
 
-    static func getIntervalForReportType(_ config: ReportConfig, type: NotificationType) -> DateInterval {
-        let calendar = Calendar.current
-        let now = Date.now
+    /// `true` si el informe cuenta un período YA CERRADO: el semanal del lunes (la semana de lunes a domingo que acaba
+    /// de terminar) y el mensual del día 1 (el mes anterior). Su texto nombra ese período y su saldo es el de su cierre.
+    static func reportsClosedPeriod(_ config: ReportConfig, type: NotificationType) -> Bool {
+        switch type {
+        case .weeklyReport: return config.dayPreference == .monday
+        case .monthlyReport: return config.dayPreference == .firstDay
+        default: return false
+        }
+    }
+
+    static func getIntervalForReportType(
+        _ config: ReportConfig,
+        type: NotificationType,
+        now: Date = .now,
+        calendar: Calendar = .current
+    ) -> DateInterval {
 
         // Daily: today only
         if type == .dailyReport {
@@ -334,16 +389,26 @@ final class ReportNotificationService {
             // R1: If now == startOfDay (exact midnight), use previous full day
             if now <= todayStart {
                 let yesterdayStart = calendar.date(byAdding: .day, value: -1, to: todayStart) ?? todayStart
-                return DateInterval(start: yesterdayStart, end: todayStart)
+                // 23:59:59 de ayer: el filtro es cerrado (`<= end`) y lo fechado hoy a las 00:00 entraba en el informe
+                // de ayer (CLAUDE.md, «Cálculos con fechas»).
+                let yesterdayEnd = calendar.date(byAdding: .second, value: -1, to: todayStart) ?? todayStart
+                return DateInterval(start: yesterdayStart, end: yesterdayEnd)
             }
             return DateInterval(start: todayStart, end: now)
         }
 
         // Weekly/Monthly: use config.dayPreference
         switch config.dayPreference {
-        case .sunday, .monday:
-            // Weekly: last 7 days
-            let weekStart = calendar.date(byAdding: .day, value: -7, to: now) ?? now
+        case .monday:
+            // El del lunes cuenta la semana que acaba de cerrar, de lunes a domingo (UX 2.2 · L11-12, decisión B de
+            // Jürgen: «El lunes a las 9:00, con lo que gastaste del lunes 6 al domingo 12»). Hasta el 2026-10-18 contaba
+            // hoy y los seis días anteriores, así que el lunes a las 9:00 eran de martes a lunes por la mañana.
+            return closedWeek(before: now, calendar: calendar)
+        case .sunday:
+            // Semanal del domingo: hoy y los seis días anteriores, de lunes a domingo, los mismos que «Últimos 7 días»,
+            // que es lo que abre el aviso (UX 2.2 · L11-2).
+            let startOfToday = calendar.startOfDay(for: now)
+            let weekStart = calendar.date(byAdding: .day, value: -6, to: startOfToday) ?? startOfToday
             return DateInterval(start: weekStart, end: now)
         case .firstDay:
             // First day of month: report previous month
@@ -362,8 +427,52 @@ final class ReportNotificationService {
         }
     }
 
-    static func formatReportBody(_ config: ReportConfig, reportType: NotificationType, data: ReportData) -> String {
+    /// La semana de lunes a domingo anterior a la que contiene `now`. Lunes fijo, no el primer día de la semana del
+    /// calendario: el informe sale los lunes y habla de la semana que acaba de cerrar. Cierra en el último segundo del
+    /// domingo, como los períodos cerrados (`DateInterval` es cerrado en los dos extremos).
+    nonisolated static func closedWeek(before now: Date, calendar: Calendar) -> DateInterval {
+        let startOfToday = calendar.startOfDay(for: now)
+        // `weekday`: domingo = 1 … sábado = 7. Días desde el lunes de esta semana.
+        let daysSinceMonday = (calendar.component(.weekday, from: now) + 5) % 7
+        let thisMonday = calendar.date(byAdding: .day, value: -daysSinceMonday, to: startOfToday) ?? startOfToday
+        let previousMonday = calendar.date(byAdding: .day, value: -7, to: thisMonday) ?? thisMonday
+        let previousSundayEnd = calendar.date(byAdding: .second, value: -1, to: thisMonday) ?? thisMonday
+        return DateInterval(start: previousMonday, end: previousSundayEnd)
+    }
+
+    static func formatReportBody(
+        _ config: ReportConfig,
+        reportType: NotificationType,
+        data: ReportData,
+        now: Date = .now,
+        calendar: Calendar = .current
+    ) -> String {
         let currencyCode = CurrencyDefaults.currentPreferred
+
+        // El semanal del lunes y el mensual del día 1 hablan de un período ya cerrado: lo nombran («la semana pasada»,
+        // «septiembre») en vez de decir «esta semana» o «este mes» (UX 2.2 · L11-12).
+        if reportsClosedPeriod(config, type: reportType) {
+            let interval = getIntervalForReportType(config, type: reportType, now: now, calendar: calendar)
+            let closed: L10n.UXL11D.ClosedPeriod = reportType == .monthlyReport
+                ? .month(L10n.UXL11D.monthName(of: interval.start))
+                : .lastWeek
+            switch config.dataType {
+            case .balance:
+                let formatted = YalaFormatterStatic.currency(value: data.balance, currencyCode: currencyCode, forceFullPrecision: true)
+                return L10n.UXL11D.closedReport(.balance, closed, value: formatted)
+            case .expenses:
+                guard data.hasExpenseActivity else { return L10n.UXL11D.closedReportNoExpenses(closed) }
+                let formatted = YalaFormatterStatic.currency(value: data.totalExpense, currencyCode: currencyCode, forceFullPrecision: true)
+                return L10n.UXL11D.closedReport(.expenses, closed, value: formatted)
+            case .income:
+                guard data.hasIncomeActivity else { return L10n.Notifications.emptyIncome }
+                let formatted = YalaFormatterStatic.currency(value: data.totalIncome, currencyCode: currencyCode, forceFullPrecision: true)
+                return L10n.UXL11D.closedReport(.income, closed, value: formatted)
+            case .topCategory:
+                guard let topCategory = data.topCategory else { return L10n.Notifications.emptyTopCategory }
+                return L10n.UXL11D.closedReport(.topCategory, closed, value: topCategory)
+            }
+        }
 
         let period = reportType.periodKeySuffix
 
@@ -435,6 +544,17 @@ final class ReportNotificationService {
         } catch {
             #if DEBUG
             print("ReportNotificationService: Error fetching transactions: \(error)")
+            #endif
+            return []
+        }
+    }
+
+    private func fetchAllTransactions(context: ModelContext) -> [TransactionItem] {
+        do {
+            return try context.fetch(FetchDescriptor<TransactionItem>())
+        } catch {
+            #if DEBUG
+            print("ReportNotificationService: Error fetching all transactions: \(error)")
             #endif
             return []
         }

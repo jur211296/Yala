@@ -16,6 +16,13 @@ final class FinancialReportViewModel: Filterable {
 
     var groupingState = ReportGroupingState()
 
+    /// Con la agrupación por cuenta, cómo sale una tarjeta con varias divisas (entrega 4, Paso 0 D1): entera, convertida
+    /// a la divisa preferida, o línea a línea. Como el resto de la agrupación, no se guarda entre sesiones.
+    var accountCardGrouping: AccountCardGrouping = .byCard
+
+    /// Si alguna cuenta tiene líneas: sin ninguna, la pantalla no enseña el selector «Por tarjeta · Por línea».
+    private(set) var hasAccountCards = false
+
     // MARK: - Sheet State
 
     var showFiltersSheet = false
@@ -67,9 +74,34 @@ final class FinancialReportViewModel: Filterable {
         set { SessionState.shared.searchText = newValue }
     }
 
-    var isExcludeMode: Bool {
-        get { SessionState.shared.isExcludeMode }
-        set { SessionState.shared.isExcludeMode = newValue }
+    var excludedAccounts: Set<PersistentIdentifier> {
+        get { SessionState.shared.excludedAccountIDs }
+        set { SessionState.shared.excludedAccountIDs = newValue }
+    }
+
+    var excludedCategories: Set<PersistentIdentifier> {
+        get { SessionState.shared.excludedCategoryIDs }
+        set { SessionState.shared.excludedCategoryIDs = newValue }
+    }
+
+    var excludedSubcategories: Set<PersistentIdentifier> {
+        get { SessionState.shared.excludedSubcategoryIDs }
+        set { SessionState.shared.excludedSubcategoryIDs = newValue }
+    }
+
+    var excludedNeeds: Set<SubcategoryNeed> {
+        get { SessionState.shared.excludedNeeds }
+        set { SessionState.shared.excludedNeeds = newValue }
+    }
+
+    var excludedTags: Set<PersistentIdentifier> {
+        get { SessionState.shared.excludedTags }
+        set { SessionState.shared.excludedTags = newValue }
+    }
+
+    var excludedCurrencies: Set<CurrencyCode> {
+        get { SessionState.shared.excludedCurrencies }
+        set { SessionState.shared.excludedCurrencies = newValue }
     }
 
     var sharedExpenseFilter: SharedExpenseFilter = .all
@@ -105,6 +137,15 @@ final class FinancialReportViewModel: Filterable {
     private(set) var netFlowCurrent: Double = 0
     private(set) var netFlowPrevious: Double?
     private(set) var netFlowVariation: Double?
+
+    /// «Todo el tiempo» no tiene período anterior: `PreviousPeriodHelper` devuelve el mismo intervalo y la
+    /// tabla se comparaba consigo misma («+0 %» en cada fila). Con `false` no hay columna anterior ni chip.
+    private(set) var supportsComparison: Bool = true
+
+    /// El último día con movimientos del período que se mira: el anterior se recorta a ese mismo día
+    /// (`DateAlignmentHelper.alignedPreviousItems`), así que los nombres de la tabla (UX 2.2 · L18-3) lo necesitan para
+    /// decir el tramo que de verdad entra.
+    private(set) var currentDataEnd: Date?
 
     /// Whether there is data to display
     var hasData: Bool { !rootNodes.isEmpty }
@@ -146,6 +187,7 @@ final class FinancialReportViewModel: Filterable {
         let resolvedPeriod = period ?? detailPeriod
         let resolvedMode = comparisonMode ?? SessionState.shared.comparisonMode
         let resolvedExpensesOnly = expensesOnly ?? SessionState.shared.isExpensesOnlyMode
+        let supportsComparison = resolvedPeriod != .allTime
         let interval = resolvedPeriod.dateInterval(customRange: customDateRange, now: now)
         let previousInterval = PreviousPeriodHelper.previousInterval(
             for: resolvedPeriod,
@@ -164,15 +206,18 @@ final class FinancialReportViewModel: Filterable {
                 selectedNeeds: selectedNeeds,
                 selectedTransactionNatures: selectedTransactionNatures,
                 selectedCurrencies: selectedCurrencies,
-                isExcludeMode: isExcludeMode,
+                excludedAccounts: excludedAccounts,
+                excludedCategories: excludedCategories,
+                excludedSubcategories: excludedSubcategories,
+                excludedTags: excludedTags,
+                excludedNeeds: excludedNeeds,
+                excludedCurrencies: excludedCurrencies,
                 transactionTypeFilter: Self.transactionTypeFilter(expensesOnly: resolvedExpensesOnly),
                 amountCondition: amountCondition,
                 searchText: searchText,
                 dateInterval: dateInterval
             )
-            criteria.populateTagUUIDs(
-                from: allTags.filter { selectedTags.contains($0.persistentModelID) }
-            )
+            criteria.populateTagUUIDs(fromCatalog: allTags)
             return criteria
         }
 
@@ -192,17 +237,24 @@ final class FinancialReportViewModel: Filterable {
         let currentTxns = currentFiltered.filter { $0.balanceAdjustmentType == nil }
         // WTD/MTD/YTD: recorta el previo al span de días del actual (p20-15).
         // No-op en modo año, cerrados y rodantes (`aggregatePreviousNeedsAlignment`).
-        let previousTxns = DateAlignmentHelper.alignedPreviousItems(
-            previousFiltered.filter { $0.balanceAdjustmentType == nil },
-            currentDates: currentTxns.map(\.date),
-            currentInterval: interval,
-            previousInterval: previousInterval,
-            period: resolvedPeriod,
-            comparisonMode: resolvedMode
-        ) { $0.date }
+        let previousTxns: [TransactionItem]
+        if supportsComparison {
+            previousTxns = DateAlignmentHelper.alignedPreviousItems(
+                previousFiltered.filter { $0.balanceAdjustmentType == nil },
+                currentDates: currentTxns.map(\.date),
+                currentInterval: interval,
+                previousInterval: previousInterval,
+                period: resolvedPeriod,
+                comparisonMode: resolvedMode
+            ) { $0.date }
+        } else {
+            previousTxns = []
+        }
 
         // Build pivot tree
         let hierarchy = groupingState.activeDimensions
+        let cards = AccountCardIndex(accounts: accounts)
+        hasAccountCards = cards.hasCards
         rootNodes = PivotTableCalculator.buildTree(
             currentTransactions: currentTxns,
             previousTransactions: previousTxns,
@@ -210,7 +262,9 @@ final class FinancialReportViewModel: Filterable {
             preferredCurrency: preferredCurrency,
             allTags: allTags,
             adjustment: adjustment,
-            converter: converter
+            converter: converter,
+            accountGrouping: accountCardGrouping,
+            cards: cards
         )
 
         // Flatten for rendering
@@ -235,5 +289,7 @@ final class FinancialReportViewModel: Filterable {
         netFlowVariation = netFlowPrevious.flatMap {
             PreviousPeriodHelper.calculateVariation(currentAmount: netFlowCurrent, previousAmount: $0)
         }
+        self.supportsComparison = supportsComparison
+        currentDataEnd = currentTxns.map(\.date).max()
     }
 }

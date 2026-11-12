@@ -295,19 +295,36 @@ extension View {
 
 // MARK: - Skeleton Placeholder
 
-/// Modifier para mostrar placeholder skeleton mientras carga
+/// Modifier para mostrar placeholder skeleton mientras carga.
+///
+/// Al terminar de cargar, el esqueleto se funde encima de los datos (card C1, 2026-11-01). Siguen siendo dos ramas, así
+/// que los datos se montan de nuevo al cargar, como siempre. Lo que cambia es la salida del esqueleto: se queda encima
+/// (`zIndex`) y, desde el primer fotograma del fundido, ni se lee ni se toca (`AnyTransition.loadingPlaceholder`). Los
+/// datos entran debajo ya opacos (`.identity`): mientras dura el fundido hay una sola copia de cada botón en el árbol
+/// de accesibilidad, que es lo que tumbó el primer intento (card pjum). Con Reducir movimiento, en seco.
 struct YalaSkeletonModifier: ViewModifier {
     let isLoading: Bool
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     func body(content: Content) -> some View {
-        if isLoading {
-            content
-                .redacted(reason: .placeholder)
-                .shimmer()
-        } else {
-            content
+        ZStack {
+            if isLoading {
+                content
+                    .redacted(reason: .placeholder)
+                    .shimmer()
+                    .transition(.loadingPlaceholder)
+                    .zIndex(1)
+            } else {
+                content
+                    .transition(.identity)
+            }
         }
+        .animation(reduceMotion ? nil : Self.fade, value: isLoading)
     }
+
+    /// `DS.Animation.appear`; un XCUITest la alarga para mirar a mitad del fundido (`UITestHooks.skeletonFadeSeconds`).
+    private static let fade: Animation = UITestHooks.skeletonFadeSeconds.map { .easeInOut(duration: $0) } ?? DS.Animation.appear
 }
 
 extension View {
@@ -337,9 +354,16 @@ struct AIConsentAlertModifier: ViewModifier {
     var onAccepted: (PendingAIInput) -> Void
 
     func body(content: Content) -> some View {
-        content
+        // El ancla de la alerta es una vista vacía de fondo con su propio tinte, para no teñir la pantalla que hay debajo.
+        // Con el tinte de la app, «Activar» salía con texto negro sobre el púrpura en el tema oscuro (Jürgen, 2026-10-17).
+        // `alertActionTint` explica por qué este tinte lo deja en blanco en oscuro, y por qué en claro sigue negro.
+        content.background {
+            Color.clear
+            // UX 2.2 · L4-2: el aviso dice qué gana la persona y el botón bueno va destacado (`.defaultAction` lo pinta
+            // en negrita). Sigue siendo una alerta del sistema: no admite relleno ni un enlace pequeño, y pasarla a hoja
+            // tocaría las cinco pantallas que la presentan justo antes de otra hoja (la de voz o foto).
             .alert(L10n.AIConsent.processingTitle, isPresented: $isPresented) {
-                Button(L10n.AIConsent.accept) {
+                Button(L10n.AIConsent.processingAccept) {
                     aiDataConsentAccepted = true
                     let input = pendingInput
                     Task { @MainActor in
@@ -347,6 +371,7 @@ struct AIConsentAlertModifier: ViewModifier {
                         onAccepted(input)
                     }
                 }
+                .keyboardShortcut(.defaultAction)
                 Button(L10n.AIConsent.privacyPolicy) {
                     openURL(AppConstants.privacyURL)
                 }
@@ -354,6 +379,8 @@ struct AIConsentAlertModifier: ViewModifier {
             } message: {
                 Text(L10n.AIConsent.processingMessage)
             }
+            .tint(Color.alertActionTint)
+        }
     }
 }
 
@@ -408,6 +435,52 @@ extension View {
         onAccepted: @escaping () -> Void = {}
     ) -> some View {
         modifier(ChatConsentAlertModifier(isPresented: isPresented, onAccepted: onAccepted))
+    }
+}
+
+// MARK: - Cloud Explore Consent Alert (N1)
+
+/// El texto N1 de Yala IA con la cuenta en la nube (decisión 1A de Jürgen, 2026-10-18). Lo presentan el chat, antes de
+/// la primera pregunta con el camino ampliado, y Ajustes › Privacidad de la IA, al encender su fila. Cada uno decide qué
+/// hace con cada respuesta: en el chat «Ahora no» se recuerda y la pregunta sale por el camino de siempre; en Ajustes no
+/// cambia nada. «Política de privacidad» no es una respuesta en ninguno de los dos.
+struct CloudExploreConsentAlertModifier: ViewModifier {
+    @Binding var isPresented: Bool
+    @Environment(\.openURL) private var openURL
+
+    var onAccept: () -> Void
+    var onDecline: () -> Void
+    var onPrivacyPolicy: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .alert(L10n.AIConsent.cloudExploreTitle, isPresented: $isPresented) {
+                Button(L10n.Common.accept) { onAccept() }
+                Button(L10n.AIConsent.privacyPolicy) {
+                    onPrivacyPolicy()
+                    openURL(AppConstants.privacyURL)
+                }
+                Button(L10n.Action.notNow, role: .cancel) { onDecline() }
+            } message: {
+                Text(L10n.AIConsent.cloudExploreMessage)
+            }
+    }
+}
+
+extension View {
+    /// Adds the N1 consent alert (Yala IA with the cloud account).
+    func cloudExploreConsentAlert(
+        isPresented: Binding<Bool>,
+        onAccept: @escaping () -> Void,
+        onDecline: @escaping () -> Void,
+        onPrivacyPolicy: @escaping () -> Void
+    ) -> some View {
+        modifier(CloudExploreConsentAlertModifier(
+            isPresented: isPresented,
+            onAccept: onAccept,
+            onDecline: onDecline,
+            onPrivacyPolicy: onPrivacyPolicy
+        ))
     }
 }
 
@@ -539,7 +612,7 @@ struct GroupsOnboardingSheetModifier: ViewModifier {
             signInRequested = false
             onRequestSignIn()
         }) {
-            GroupsOnboardingView { result in
+            GroupsOnboardingView(consentPath: "tab") { result in
                 switch result {
                 case .complete:
                     onPersistFlag()

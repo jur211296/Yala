@@ -1,3 +1,5 @@
+import { MANIFEST_VERSION } from "./sync/manifest";
+import { GROUP_MANIFEST_VERSION } from "./groups/manifest";
 import type { Context } from "hono";
 import type { Env } from "./env";
 import { ROUTES } from "./ai/routes";
@@ -69,6 +71,9 @@ export function handleConfig(c: Ctx): Response {
       cloudModeRolloutPercent: parseRolloutPercent(c.env.CLOUD_MODE_ROLLOUT_PERCENT),
       cloudOnboardingChoiceRolloutPercent: parseRolloutPercent(c.env.CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT),
       groupsBackendRolloutPercent: parseRolloutPercent(c.env.GROUPS_BACKEND_ROLLOUT_PERCENT),
+      // Yala IA en modo nube con herramientas. La app lo trata como fail-closed en TODOS sus builds (no hereda el
+      // «ausente = encendido» de DEV), y el gateway corta por su lado con el mismo valor (`ai/explore/index.ts`).
+      aiCloudExploreRolloutPercent: parseRolloutPercent(c.env.AI_CLOUD_EXPLORE_ROLLOUT_PERCENT),
     },
     // Forzado de actualización (min-version). YA NO es DARK: desde D-R1 paso 1 el cliente de producción
     // fetchea /config (CloudBackendConfig.isConfigured pasó a true), así que lo único que separa al
@@ -80,6 +85,15 @@ export function handleConfig(c: Ctx): Response {
     // IA: lo que la app necesita saber de la tabla tarea → modelo para preparar la petición (sesión 2).
     ai: {
       photoMaxEdge: photoMaxEdge(),
+    },
+    // Versión del capability_manifest de ESTE Worker. La app la lee del pull y del Merkle, no de aquí; aquí la lee
+    // el guard de despliegue (`scripts/check-manifest-not-older.mjs`), que no deja desplegar un Worker con un
+    // manifest más viejo que el que ya está: los teléfonos que hablan la versión nueva verían rechazadas sus filas.
+    // Y la del manifest de GRUPOS (card u8cl), por lo mismo: un Worker con el de Grupos más viejo poda o rechaza
+    // columnas que los teléfonos nuevos ya mandan.
+    sync: {
+      manifestVersion: MANIFEST_VERSION,
+      groupsManifestVersion: GROUP_MANIFEST_VERSION,
     },
   };
   return new Response(JSON.stringify(body), {

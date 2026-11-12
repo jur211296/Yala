@@ -438,9 +438,11 @@ struct WelcomePrivateICloudGateView: View {
     private var noICloudContent: some View {
         switch unverifiedExit {
         case .proceedWatchingTheMirror:
+            // El título dice el hecho y no un fallo (UX 2.2 · L1-3): quien acaba de llegar no hizo nada
+            // mal. Solo aquí: la puerta que vuelve sí viene de un «no pudimos» y conserva su título.
             noticeContent(
                 icon: "icloud.slash",
-                title: L10n.Welcome.PrivateICloud.noAccountTitle,
+                title: L10n.Welcome.PrivateICloud.noAccountProceedTitle,
                 body: noICloudBody,
                 cta: unverifiedExitLabel,
                 identifier: "welcome_private_icloud_no_account",
@@ -1162,6 +1164,12 @@ struct WelcomePrivateICloudGateView: View {
             parts.append(L10n.Welcome.PrivateICloud.foundUnknownAmount)
         }
         return parts.joined(separator: forVoiceOver ? ", " : " · ")
+    }
+
+    /// El «mes año» del «desde …», con el mismo formatter que la línea de cifras: lo usan también las píldoras del aviso
+    /// tardío (`ICloudCorpusChipsLogic`, UX 2.2 · L6-6), que cuentan el mismo hecho.
+    static func monthYearText(_ date: Date) -> String {
+        monthYear.string(from: date)
     }
 
     /// `DateFormatter` no es `Sendable`, así que vive en el MainActor con su única consumidora.

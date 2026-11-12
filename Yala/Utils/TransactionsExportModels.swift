@@ -45,6 +45,15 @@ enum AmountFilterCondition: Hashable {
         }
     }
 
+    /// La regla del filtro de monto en toda la app: el importe SIN signo, en la moneda del registro. Un gasto de 150 es
+    /// «mayor que 100» igual que un ingreso de 150. La usan Registros, Estadísticas e Informe (`FilterService`), las
+    /// tartas y tops del Panel y Exportar; hasta el 2026-10-28 las dos últimas comparaban con signo y «Mayor a 100» dejaba
+    /// fuera todos los gastos (tickets `panel-pies-amount-filter-uses-signed-amount`,
+    /// `export-wizard-amount-filter-in-hidden-currency`). Un consumidor nuevo del monto pasa por aquí.
+    func matches(signedAmount: Double) -> Bool {
+        matches(abs(Decimal(signedAmount)))
+    }
+
     /// Indica si la condición aplica algún filtro real (distinto de "cualquiera").
     var isActive: Bool {
         switch self {
@@ -79,6 +88,8 @@ enum ExportColumn: String, CaseIterable, Hashable, Identifiable {
     case amount
     case currency
     case account
+    /// La tarjeta con varias divisas de la cuenta (entrega 4). Solo se ofrece si hay alguna tarjeta con líneas.
+    case card
     case category
     case subcategory
     case tags
@@ -96,6 +107,7 @@ enum ExportColumn: String, CaseIterable, Hashable, Identifiable {
         case .amount: return "amount"
         case .currency: return "currency"
         case .account: return "account"
+        case .card: return "card"
         case .category: return "category"
         case .subcategory: return "subcategory"
         case .tags: return "tags"
@@ -112,6 +124,7 @@ enum ExportColumn: String, CaseIterable, Hashable, Identifiable {
         case .amount: return L10n.Export.columnAmount
         case .currency: return L10n.Export.columnCurrency
         case .account: return L10n.Export.columnAccount
+        case .card: return L10n.Export.columnCard
         case .category: return L10n.Export.columnCategory
         case .subcategory: return L10n.Export.columnSubcategory
         case .tags: return L10n.Export.columnTags
@@ -128,6 +141,7 @@ enum ExportColumn: String, CaseIterable, Hashable, Identifiable {
         case .amount: return L10n.Export.columnAmountDesc
         case .currency: return L10n.Export.columnCurrencyDesc
         case .account: return L10n.Export.columnAccountDesc
+        case .card: return L10n.Export.columnCardDesc
         case .category: return L10n.Export.columnCategoryDesc
         case .subcategory: return L10n.Export.columnSubcategoryDesc
         case .tags: return L10n.Export.columnTagsDesc
@@ -148,9 +162,16 @@ struct ExportColumns: Equatable {
     /// Orden base para construir el encabezado del CSV.
     static let defaultOrder: [ExportColumn] = ExportColumn.allCases
 
-    /// Estado por defecto: todas las columnas activas.
+    /// Estado por defecto: todas las columnas activas menos la de tarjeta, que solo existe para quien tiene una tarjeta
+    /// con varias divisas: el asistente la enciende al ver una (`ExportColumnsStepView`). Sin tarjetas, el fichero es el
+    /// de siempre, también en la copia de «exportar todo» del cierre de sesión.
     static var `default`: ExportColumns {
-        ExportColumns(activeColumns: Set(ExportColumn.allCases))
+        ExportColumns(activeColumns: Set(ExportColumn.allCases).subtracting([.card]))
+    }
+
+    /// Las columnas que el asistente ofrece, en su orden: sin tarjetas, la de tarjeta no sale.
+    static func offeredOrder(hasAccountCards: Bool) -> [ExportColumn] {
+        hasAccountCards ? defaultOrder : defaultOrder.filter { $0 != .card }
     }
 
     /// Inicializador principal.
@@ -183,6 +204,12 @@ struct ExportColumns: Equatable {
     /// Desactiva una columna concreta.
     mutating func deactivate(_ column: ExportColumn) {
         activeColumns.remove(column)
+    }
+
+    /// La columna como interruptor (`$columns[isActive: .date]`), para un `Toggle` sin `Binding(get:set:)`.
+    subscript(isActive column: ExportColumn) -> Bool {
+        get { activeColumns.contains(column) }
+        set { set(column, isActive: newValue) }
     }
 
     /// Cambia el estado (on/off) de una columna.
@@ -247,6 +274,12 @@ struct ExportFilters: Equatable {
     /// Si es `nil` o cadena vacía, no se filtra por nota.
     var noteContains: String?
 
+    // MARK: Necesidad
+
+    /// Necesidades del gasto elegidas (L20-2, 2026-10-19). Vacío = todas. Hasta entonces el asistente pintaba sus fichas
+    /// y no las pasaba aquí: el filtro no recortaba nada. Con «Ocultar», las elegidas se quitan, como el resto.
+    var selectedNeeds: [SubcategoryNeed] = []
+
     // MARK: Estado por defecto
 
     /// Estado por defecto recomendado para iniciar el flujo:
@@ -292,8 +325,17 @@ struct ExportFilters: Equatable {
 
     // MARK: Helpers de periodo
 
-    /// Devuelve el `DateInterval` efectivo a aplicar al filtrar transacciones.
-    func effectiveDateInterval() -> DateInterval {
-        return DateInterval(start: dateFrom, end: dateTo)
+    /// Devuelve el `DateInterval` efectivo a aplicar al filtrar transacciones, y el que enseña el resumen.
+    ///
+    /// Los períodos en curso («Últimos 30 días», «Este mes», «Todo el tiempo»…) cierran en el INICIO de mañana, y un
+    /// `DateInterval` es cerrado en los dos extremos: sin el segundo de menos, un registro fechado mañana a medianoche
+    /// (lo que guarda `DatePicker` con solo la fecha) entraba en la exportación y el resumen decía que el período
+    /// terminaba mañana. Solo se resta si el fin es una medianoche: «Mes pasado» y el personalizado ya cierran en
+    /// 23:59:59, y `allTransactions` en `.distantFuture`, y ninguno pierde un instante real.
+    func effectiveDateInterval(calendar: Calendar = .current) -> DateInterval {
+        guard dateTo != .distantFuture, dateTo > dateFrom, calendar.startOfDay(for: dateTo) == dateTo else {
+            return DateInterval(start: dateFrom, end: dateTo)
+        }
+        return DateInterval(start: dateFrom, end: dateTo.addingTimeInterval(-1))
     }
 }

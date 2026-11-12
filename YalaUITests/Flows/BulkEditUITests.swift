@@ -36,7 +36,46 @@ final class BulkEditUITests: XCTestCase {
         }
         recordsChip.tap()
 
-        app.openRecordsSelectMode()
+        enterSelectMode(app)
+    }
+
+    /// Entra en el modo selección por «Seleccionar» de la barra de arriba (L8-12) y comprueba que entró.
+    ///
+    /// Antes entraba por el menú «···», y en el runner del CI el toque en «Seleccionar» del menú se perdía a veces: la
+    /// barra seguía en modo normal, tocar una fila abría su detalle y el caso moría en `bulk_edit_button` (nocturnas del
+    /// 26 al 29-oct). Sin comprobar el modo, el rojo salía tres pasos más tarde y apuntaba a la edición masiva.
+    private func enterSelectMode(_ app: XCUIApplication) {
+        let select = app.buttons["records_select_visible"]
+        XCTAssertTrue(select.waitForExistence(timeout: 10), "«Seleccionar» no está en la barra de Registros.")
+        select.tap()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["records_selection_hint"].waitForExistence(timeout: 10),
+            "Tocar «Seleccionar» no activó el modo selección (records_selection_hint)."
+        )
+    }
+
+    /// Elige las dos primeras filas y espera a que la barra diga «2 seleccionados». Cada fila se toca cuando es
+    /// alcanzable: en el CI la primera salía a veces con el punto de impacto en `{-1, -1}` y el toque se perdía.
+    private func selectFirstTwoRows(_ app: XCUIApplication) {
+        let rows = app.buttons.matching(identifier: "record_row")
+        XCTAssertTrue(rows.element(boundBy: 0).waitForExistence(timeout: 10), "No hay filas de transacción para seleccionar.")
+        XCTAssertGreaterThanOrEqual(rows.count, 2, "El seed no produjo ≥2 transacciones para edición masiva.")
+        for index in 0..<2 {
+            let row = rows.element(boundBy: index)
+            XCTAssertTrue(row.waitForHittable(timeout: 10), "La fila \(index) no es alcanzable para elegirla.")
+            row.tap()
+        }
+        let count = app.staticTexts["records_selection_count"]
+        let two = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label BEGINSWITH '2'"), object: count)
+        XCTAssertEqual(XCTWaiter().wait(for: [two], timeout: 10), .completed,
+                       "Tras tocar dos filas la barra no dice «2 seleccionados» (dice «\(count.exists ? count.label : "nada")»).")
+    }
+
+    /// Abre «Editar» de la barra de selección.
+    private func openBulkEdit(_ app: XCUIApplication) {
+        let editButton = app.buttons["bulk_edit_button"]
+        XCTAssertTrue(editButton.waitForExistence(timeout: 10), "No apareció el botón de editar masivo.")
+        editButton.tap()
     }
 
     /// Smoke: modo selección → seleccionar 2 TX → editar masivo abre BulkEditSheet.
@@ -48,14 +87,8 @@ final class BulkEditUITests: XCTestCase {
 
         enterRecordsSelectionMode(app)
 
-        let rows = app.buttons.matching(identifier: "record_row")
-        XCTAssertTrue(rows.element(boundBy: 0).waitForExistence(timeout: 5), "No hay filas de transacción (record_row) para seleccionar.")
-        rows.element(boundBy: 0).tap()
-        rows.element(boundBy: 1).tap()
-
-        let editButton = app.buttons["bulk_edit_button"]
-        XCTAssertTrue(editButton.waitForExistence(timeout: 5), "No apareció el botón de editar masivo.")
-        editButton.tap()
+        selectFirstTwoRows(app)
+        openBulkEdit(app)
 
         XCTAssertTrue(
             app.buttons["bulk_edit_option_note"].waitForExistence(timeout: 5),
@@ -73,14 +106,10 @@ final class BulkEditUITests: XCTestCase {
         enterRecordsSelectionMode(app)
 
         // Seleccionar 2 transacciones (el seed minimal produce varias).
-        let rows = app.buttons.matching(identifier: "record_row")
-        XCTAssertTrue(rows.element(boundBy: 0).waitForExistence(timeout: 5), "No hay filas de transacción para seleccionar.")
-        XCTAssertGreaterThanOrEqual(rows.count, 2, "El seed no produjo ≥2 transacciones para edición masiva.")
-        rows.element(boundBy: 0).tap()
-        rows.element(boundBy: 1).tap()
+        selectFirstTwoRows(app)
 
         // Abrir editar masivo → opción Nota.
-        app.buttons["bulk_edit_button"].tap()
+        openBulkEdit(app)
         let noteOption = app.buttons["bulk_edit_option_note"]
         XCTAssertTrue(noteOption.waitForExistence(timeout: 5), "No se montó BulkEditSheet (bulk_edit_option_note).")
         noteOption.tap()
@@ -95,15 +124,64 @@ final class BulkEditUITests: XCTestCase {
         XCTAssertTrue(saveNote.waitForExistence(timeout: 5), "No apareció toolbar_save_button en el editor de nota.")
         saveNote.tap()
 
-        // De vuelta en BulkEditSheet: el cambio aplicado habilita "Done"; cerrar con él.
-        let done = app.buttons["bulk_edit_done"]
-        XCTAssertTrue(done.waitForExistence(timeout: 5), "No apareció bulk_edit_done tras aplicar la nota (el cambio no se registró).")
-        done.tap()
+        // De vuelta en BulkEditSheet (L8-13): la nota queda PENDIENTE en el resumen y «Aplicar» la aplica.
+        XCTAssertTrue(
+            app.staticTexts["bulk_edit_summary_note"].waitForExistence(timeout: 5),
+            "La nota no quedó en el resumen de lo que va a cambiar (bulk_edit_summary_note)."
+        )
+        let apply = app.buttons["bulk_edit_apply"]
+        XCTAssertTrue(apply.waitForExistence(timeout: 5), "No apareció «Aplicar a N registros» (bulk_edit_apply).")
+        XCTAssertTrue(apply.isEnabled, "«Aplicar» sigue apagado con un cambio pendiente.")
+        apply.tap()
 
         // El flujo completó: vuelve a la lista en modo normal (menú (···) disponible).
         XCTAssertTrue(
             app.recordsOverflowMenu.waitForExistence(timeout: 5),
             "Tras la edición masiva no se volvió a la lista en modo normal."
+        )
+    }
+
+    /// Auditoría UX 2.2 · L8-13: elegir primero y aplicar después. Elegir una cuenta NO la aplica: queda en el resumen
+    /// («Cuenta → …») con «Aplicar» encendido; al aplicar, los dos registros pasan a esa cuenta, y al volver a abrir
+    /// «Editar varios» con los mismos elegidos la fila dice «Hoy: <esa cuenta>».
+    func test_bulkEditAccount_isPendingUntilApply_andThenTheRecordsChange() {
+        let app = XCUIApplication()
+        app.launchForUITest()
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        enterRecordsSelectionMode(app)
+        selectFirstTwoRows(app)
+        openBulkEdit(app)
+
+        let apply = app.buttons["bulk_edit_apply"]
+        XCTAssertTrue(apply.waitForExistence(timeout: 5), "No se montó BulkEditSheet (bulk_edit_apply).")
+        XCTAssertFalse(apply.isEnabled, "«Aplicar» encendido sin nada pendiente.")
+
+        // Elegir la primera cuenta del selector (sin acoplarse al nombre del seed).
+        let accountRow = app.openSelectorFirstRow(chip: "bulk_edit_option_account", rowPrefix: "account_selector_row_")
+        let accountName = String(accountRow.identifier.dropFirst("account_selector_row_".count))
+        accountRow.tap()
+
+        let summaryLine = app.staticTexts["bulk_edit_summary_account"]
+        XCTAssertTrue(summaryLine.waitForExistence(timeout: 5), "La cuenta elegida no quedó en el resumen (bulk_edit_summary_account).")
+        XCTAssertTrue(summaryLine.label.contains(accountName), "El resumen no nombra la cuenta elegida: «\(summaryLine.label)».")
+        XCTAssertTrue(apply.isEnabled, "«Aplicar» sigue apagado con la cuenta pendiente.")
+        apply.tap()
+
+        XCTAssertTrue(
+            app.recordsOverflowMenu.waitForExistence(timeout: 5),
+            "Tras aplicar no se volvió a la lista en modo normal."
+        )
+
+        // Los mismos dos registros ya tienen esa cuenta.
+        enterSelectMode(app)
+        selectFirstTwoRows(app)
+        openBulkEdit(app)
+        let accountOption = app.buttons["bulk_edit_option_account"]
+        XCTAssertTrue(accountOption.waitForExistence(timeout: 5), "No se volvió a montar BulkEditSheet.")
+        XCTAssertTrue(
+            accountOption.label.contains(accountName),
+            "Tras aplicar, los registros no dicen «Hoy: \(accountName)»: «\(accountOption.label)»."
         )
     }
 }

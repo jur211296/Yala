@@ -208,6 +208,21 @@ enum PersonalContainerSwap {
     ///  6. **Remonte + re-bootstrap** — con el testigo del mount recapturado.
     @discardableResult
     static func attemptSignOutSwap() async -> Outcome {
+        // **El cambio corre en su propia tarea, sin la cancelación de quien lo pide** (card ypit, review). Desde la puerta de
+        // Grupos del Welcome lo pide un `.task(id:)` de una vista que este mismo cambio desmonta en el paso 2: heredada, esa
+        // cancelación hacía que `awaitVerifiedRelease` devolviera el veredicto pesimista en su primer sondeo (aborto con la
+        // tolerancia a cero) y, si salía bien, que el re-bootstrap corriera cancelado (tasas, StoreKit y red fallando en
+        // seco). Un cambio a medias no se puede abandonar: o se consuma o se repone.
+        await Task { @MainActor in await performSignOutSwap() }.value
+    }
+
+    /// `true` desde que el contenedor nuevo se monta hasta que el re-bootstrap termina. En esa ventana la jerarquía nueva
+    /// ya existe y el coordinador del cierre sigue en `.awaitingRelaunch` (lo devuelve a `.idle` al volver de aquí), así
+    /// que el cover terminal no debe armarse: diría «cierra Yala» a quien ya no tiene nada que reabrir. Lo lee
+    /// `SignOutRelaunchNetModifier`.
+    private(set) static var inPlaceRemountInFlight = false
+
+    private static func performSignOutSwap() async -> Outcome {
         guard PersonalSwapReleaseLogic.mountAdmitsSwap(
             mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision
         ) else {
@@ -268,6 +283,8 @@ enum PersonalContainerSwap {
             CloudSyncBreadcrumb.swapRemountFailed()
             return .abortedRemount
         }
+        inPlaceRemountInFlight = true
+        defer { inPlaceRemountInFlight = false }
         PersonalContainerHost.shared.adoptAfterSwap(fresh)
         await AppBootstrapper.shared.rebootstrapAfterSwap(container: fresh)
 

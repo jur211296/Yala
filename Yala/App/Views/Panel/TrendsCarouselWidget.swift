@@ -29,14 +29,16 @@ struct TrendsCarouselWidget: View {
     var headerInfoButton: AnyView? = nil
 
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @Namespace private var animationNamespace
     @State private var showFilterBlockedMessage: Bool = false
 
     // MARK: - Data
 
+    /// Solo lo INCLUIDO («Solo Comida») convierte la vista en gastos; ocultar una categoría no.
     private var hasCategoryFilters: Bool {
-        guard !sessionState.isExcludeMode else { return false }
         return !sessionState.selectedCategoryIDs.isEmpty
             || !sessionState.selectedSubcategoryIDs.isEmpty
             || !sessionState.selectedNeeds.isEmpty
@@ -89,8 +91,7 @@ struct TrendsCarouselWidget: View {
                 AmountText(
                     value: trendTotalForCurrentMetric,
                     currencyCode: currencyCode,
-                    font: DS.Typography.headline, secondaryFont: DS.Typography.caption,
-                    forceSign: viewModel.trendType == .balance
+                    font: DS.Typography.headline, secondaryFont: DS.Typography.caption
                 )
 
                 TrendChartView(
@@ -116,7 +117,48 @@ struct TrendsCarouselWidget: View {
 
     // MARK: - Header
 
+    @ViewBuilder
     private var header: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            accessibilityHeader
+        } else {
+            regularHeader
+        }
+    }
+
+    /// Con el texto al máximo, el selector de métrica le quitaba el ancho a la cifra y la elipsis caía en medio
+    /// («S/54,5….64», barrido final 2.2): título, cifra y selector, uno debajo del otro.
+    private var accessibilityHeader: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+            HStack(spacing: DS.Spacing.xs) {
+                Text(viewModel.trendType.displayName)
+                    .font(DS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(.thPrimaryText)
+                if let headerInfoButton {
+                    headerInfoButton
+                }
+            }
+
+            if !hasNoTrendData {
+                AmountText(
+                    value: currentKPIValue,
+                    currencyCode: currencyCode,
+                    font: DS.Typography.title
+                )
+                .padding(.top, DS.Spacing.xs)
+
+                variationChip
+            }
+
+            if !sessionState.isExpensesOnlyMode {
+                metricSelector
+                    .padding(.top, DS.Spacing.xs)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var regularHeader: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 HStack(spacing: DS.Spacing.xs) {
@@ -133,8 +175,7 @@ struct TrendsCarouselWidget: View {
                         AmountText(
                             value: currentKPIValue,
                             currencyCode: currencyCode,
-                            font: DS.Typography.title,
-                            forceSign: viewModel.trendType == .balance
+                            font: DS.Typography.title
                         )
 
                         // Variation chip right of the "vs" label.
@@ -203,6 +244,8 @@ struct TrendsCarouselWidget: View {
                 metricButton(for: type)
             }
         }
+        // El círculo de la métrica elegida se desliza (card C2). Implícita: en el Panel un `withAnimation` no anima.
+        .dsAnimation(DS.Animation.selection, value: viewModel.trendType, reduceMotion: reduceMotion)
         .filterBlockedPopover(
             isPresented: $showFilterBlockedMessage,
             title: L10n.Trend.filterBlockedTitle,

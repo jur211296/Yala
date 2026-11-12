@@ -13,12 +13,6 @@ import SwiftUI
 @Observable
 final class ScheduledPaymentsViewModel {
 
-    private static let monthYearFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "MMMM yyyy"
-        return f
-    }()
-
     // MARK: - Dependencies
 
     private var modelContext: ModelContext?
@@ -101,9 +95,6 @@ final class ScheduledPaymentsViewModel {
     /// Cached paid amounts — pre-computed in calculatePaymentData(), consumed by calculateMonthlyTotal()
     private(set) var cachedPaidAmounts: [String: [PaidOccurrenceInfo]] = [:]
 
-    /// Payment status filter (all/paid/pending)
-    var paymentStatusFilter: PaymentStatusFilter = .all
-
     /// Smart label for the selected month
     var monthYearLabel: String {
         let calendar = Calendar.current
@@ -117,7 +108,7 @@ final class ScheduledPaymentsViewModel {
                   calendar.isDate(selectedMonth, equalTo: nextMonth, toGranularity: .month) {
             return L10n.Period.nextMonth
         } else {
-            return Self.monthYearFormatter.string(from: selectedMonth).capitalized
+            return ScheduledPaymentDateText.monthYear(selectedMonth)
         }
     }
 
@@ -152,7 +143,11 @@ final class ScheduledPaymentsViewModel {
         var paid: Double = 0
         var pending: Double = 0
         for summary in allSummaries {
+            // Misma regla que el total del mes (`calculateMonthlyTotal`): lo pagado cuenta siempre, aunque el pago ya no
+            // esté activo (una sola vez aprobada, última fecha antes del fin); lo pendiente, solo si está activo. Un pago
+            // pausado salía en «Pendiente» y no en el total, y las cifras dejaban de sumar.
             guard !summary.isSkippedForMonth,
+                  summary.isPaidForMonth || summary.payment.isActive,
                   summary.payment.transactionType != "income" else { continue }
             let amount = summary.displayAmount
             let sourceCurrency = summary.displayCurrencyCode
@@ -186,25 +181,6 @@ final class ScheduledPaymentsViewModel {
     }
 
     private func invalidateMonthlyTotals() { cachedMonthlyTotals = nil }
-
-    /// Grouped payments filtered by paymentStatusFilter
-    var filteredGroupedPayments: [(status: DueStatus, payments: [ScheduledPaymentSummary])] {
-        if paymentStatusFilter == .all { return groupedPayments }
-
-        return groupedPayments.compactMap { section in
-            let filtered: [ScheduledPaymentSummary]
-            switch paymentStatusFilter {
-            case .paid:
-                filtered = section.payments.filter { $0.isPaidForMonth }
-            case .pending:
-                filtered = section.payments.filter { !$0.isPaidForMonth && !$0.isSkippedForMonth }
-            case .all:
-                filtered = section.payments
-            }
-            guard !filtered.isEmpty else { return nil }
-            return (status: section.status, payments: filtered)
-        }
-    }
 
     // MARK: - Filter Computed Properties
 
@@ -247,7 +223,8 @@ final class ScheduledPaymentsViewModel {
         )
 
         do {
-            let fetched = try context.fetch(descriptor)
+            // Un pago que espera su borrado con «Deshacer» ya no sale (UX 2.2 · L10-15).
+            let fetched = ScheduledPaymentPendingDeletion.shared.visible(try context.fetch(descriptor))
             if fetched != allPayments {
                 allPayments = fetched
                 // Clean up skipped dates older than 1 year (prevents unbounded growth via iCloud sync)
@@ -289,18 +266,23 @@ final class ScheduledPaymentsViewModel {
         loadPayments()
     }
 
-    func unskipOccurrence(payment: ScheduledPayment, date: Date) {
-        guard let context = modelContext else { return }
+    /// `true` si la fecha volvió y se guardó: el «Deshacer» del aviso vibra solo entonces (card C3).
+    @discardableResult
+    func unskipOccurrence(payment: ScheduledPayment, date: Date) -> Bool {
+        guard let context = modelContext else { return false }
         payment.unskipDate(date)
         ScheduledPaymentDraftService.recreateDraftIfNeeded(for: payment, date: date, context: context)
+        var saved = false
         do {
             try persistAndRefresh(context: context)
+            saved = true
         } catch {
             #if DEBUG
             print("ScheduledPaymentsViewModel: Error saving unskip: \(error)")
             #endif
         }
         loadPayments()
+        return saved
     }
 
     private func rejectPendingDraft(for payment: ScheduledPayment) {
@@ -319,6 +301,81 @@ final class ScheduledPaymentsViewModel {
         } catch {
             #if DEBUG
             print("ScheduledPaymentsViewModel: Error rejecting draft: \(error)")
+            #endif
+        }
+    }
+
+    // MARK: - Pausar / reanudar (UX 2.2 · L10-7)
+
+    /// Pausa o reanuda un pago desde el detalle o la pulsación larga de la fila. Pausado no avisa ni cuenta en las cifras
+    /// (B11). Al reanudar, la próxima fecha pasa a la primera desde hoy: lo que cayó en pausa no deja un borrador en la
+    /// Bandeja por un pago que la persona decidió no hacer.
+    func setPaused(_ payment: ScheduledPayment, paused: Bool) {
+        guard let context = modelContext else { return }
+        if paused {
+            guard payment.isActive else { return }
+            payment.isActive = false
+        } else {
+            guard payment.isPausedByUser else { return }
+            payment.nextDueDate = ScheduledPaymentListLogic.resumedNextDueDate(
+                current: payment.nextDueDate, today: Date.now
+            ) { month in
+                getPaymentDatesInMonth(payment: payment, month: month)
+            }
+            payment.isActive = true
+        }
+        do {
+            try persistAndRefresh(context: context)
+            // Pausar o reanudar, una vez guardado (card C4; mapa de `DS.Haptic`).
+            DS.Haptic.success()
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentsViewModel: Error saving pause: \(error)")
+            #endif
+        }
+        loadPayments()
+        calculatePaymentData(payments: allPayments)
+    }
+
+    // MARK: - «Ya lo pagué» → «Apuntarlo ahora» (UX 2.2 · L10-9, L10-11)
+
+    /// El borrador con el que se apunta una fecha (`ScheduledPaymentPayNow.draftForPaying`, compartido con el widget).
+    func draftForPaying(_ payment: ScheduledPayment, occurrence: Date) -> (draft: InboxDraft, isNew: Bool)? {
+        guard let context = modelContext else { return nil }
+        return ScheduledPaymentPayNow.draftForPaying(payment, occurrence: occurrence, context: context)
+    }
+
+    /// «Apuntarlo ahora» en un toque (`ScheduledPaymentPayNow.recordPaymentNow`, la misma lógica que el botón del widget
+    /// de Pagos planificados). Lanza lo que lance la Bandeja.
+    @discardableResult
+    func recordPaymentNow(
+        _ payment: ScheduledPayment,
+        occurrence: Date,
+        amount: Double,
+        draftService: DraftService,
+        currencyConverter: CurrencyConverter
+    ) throws -> TransactionItem? {
+        guard let context = modelContext else { return nil }
+        let transaction = try ScheduledPaymentPayNow.recordPaymentNow(
+            payment, occurrence: occurrence, amount: amount, draftService: draftService,
+            currencyConverter: currencyConverter, context: context)
+        guard transaction != nil else { return nil }
+        loadPayments()
+        calculatePaymentData(payments: allPayments)
+        return transaction
+    }
+
+    /// Deshace un alta a medias: si el borrador se CREÓ para «Pagar ahora» (`draftForPaying` con `isNew`) y la persona
+    /// cerró sin guardar, no se queda en la Bandeja como un pendiente que nadie pidió. Uno que ya esperaba ahí no se toca.
+    func discardUnusedPayNowDraft(_ draft: InboxDraft) {
+        guard let context = modelContext, draft.status == .pending, draft.approvedTransaction == nil else { return }
+        context.delete(draft)
+        do {
+            try context.save()
+            SessionState.shared.incrementDataVersion()
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentsViewModel: Error discarding pay-now draft: \(error)")
             #endif
         }
     }
@@ -532,8 +589,9 @@ final class ScheduledPaymentsViewModel {
         guard let context = modelContext else { return [] }
         let calendar = Calendar.current
         let referenceDay = calendar.startOfDay(for: referenceDate)
-        guard let windowStart = calendar.date(byAdding: .day, value: -15, to: referenceDay),
-              let windowEnd = calendar.date(byAdding: .day, value: 16, to: referenceDay) else { return [] }
+        let window = ScheduledPaymentDetailLogic.linkWindowDays
+        guard let windowStart = calendar.date(byAdding: .day, value: -window, to: referenceDay),
+              let windowEnd = calendar.date(byAdding: .day, value: window + 1, to: referenceDay) else { return [] }
 
         do {
             var descriptor = FetchDescriptor<TransactionItem>(
@@ -546,11 +604,16 @@ final class ScheduledPaymentsViewModel {
             descriptor.fetchLimit = 100 // Perf: candidate picker — window-bounded + unlinked
             var transactions = try context.fetch(descriptor)
 
-            // Filter by transaction type (income matches income, expense matches expense)
+            // Mismo tipo (gasto con gasto, ingreso con ingreso) y nunca una transferencia ni un ajuste de saldo: la lista
+            // ofrecía «Transferencia a Ahorros» y hasta la entrada de una transferencia como gasto a vincular.
             let isPaymentIncome = payment.transactionType == "income"
             transactions = transactions.filter { tx in
-                let isTxIncome = tx.category?.isIncome ?? false
-                return isTxIncome == isPaymentIncome
+                ScheduledPaymentDetailLogic.isLinkCandidate(
+                    adjustmentType: tx.balanceAdjustmentType,
+                    categoryIsIncome: tx.category?.isIncome,
+                    amount: tx.amount,
+                    paymentIsIncome: isPaymentIncome
+                )
             }
 
             // Sort: note match > subcategory > currency > account > amount proximity > recency
@@ -580,9 +643,9 @@ final class ScheduledPaymentsViewModel {
                     if tx1AccountMatch != tx2AccountMatch { return tx1AccountMatch }
                 }
 
-                // 5. Amount proximity
-                let diff1 = abs(tx1.amount - payment.amount)
-                let diff2 = abs(tx2.amount - payment.amount)
+                // 5. Amount proximity (magnitudes: el gasto se guarda en negativo)
+                let diff1 = ScheduledPaymentDetailLogic.amountDistance(transactionAmount: tx1.amount, paymentAmount: payment.amount)
+                let diff2 = ScheduledPaymentDetailLogic.amountDistance(transactionAmount: tx2.amount, paymentAmount: payment.amount)
                 if diff1 != diff2 { return diff1 < diff2 }
 
                 // 6. Most recent first
@@ -612,6 +675,8 @@ final class ScheduledPaymentsViewModel {
         guard let context = modelContext else { return }
         do {
             try persistAndRefresh(context: context)
+            // «Ya lo apunté»: el pago queda pagado con ese registro (card C4; mapa de `DS.Haptic`).
+            DS.Haptic.success()
         } catch {
             #if DEBUG
             print("ScheduledPaymentsViewModel: Error associating transaction: \(error)")
@@ -739,8 +804,9 @@ final class ScheduledPaymentsViewModel {
         let converter = CurrencyConverter.shared
         let targetCurrency = preferredCurrencyCode
 
-        // Only count expenses (exclude income payments)
-        let expensePayments = subscriptions.filter { $0.isActive && $0.transactionType != "income" }
+        // Only count expenses (exclude income payments). Un pago inactivo cuenta solo lo que ya se pagó: antes se descartaba
+        // entero y un pago de una sola vez aprobado este mes desaparecía del total.
+        let expensePayments = subscriptions.filter { $0.transactionType != "income" }
 
         let paidAmounts = cachedPaidAmounts
 
@@ -757,7 +823,7 @@ final class ScheduledPaymentsViewModel {
                     let info = remainingInfos.removeFirst()
                     amount = info.amount
                     currency = info.currencyCode
-                } else if !isSkipped {
+                } else if !isSkipped && payment.isActive {
                     amount = payment.amount
                     currency = payment.currencyCode
                 } else {
@@ -854,8 +920,10 @@ final class ScheduledPaymentsViewModel {
 
 // MARK: - Subscriptions View Mode
 
+/// Lista · Línea de tiempo · Calendario (UX 2.2 · L10-1: Jürgen pidió la línea de tiempo como otra vista).
 enum PaymentsViewMode: String, CaseIterable, Identifiable {
     case list
+    case timeline
     case calendar
 
     var id: String { rawValue }
@@ -863,7 +931,16 @@ enum PaymentsViewMode: String, CaseIterable, Identifiable {
     var iconName: String {
         switch self {
         case .list: return "list.bullet"
+        case .timeline: return "calendar.day.timeline.left"
         case .calendar: return "calendar"
+        }
+    }
+
+    var accessibilityLabel: String {
+        switch self {
+        case .list: return L10n.UXL10.viewList
+        case .timeline: return L10n.UXL10.viewTimeline
+        case .calendar: return L10n.UXL10.viewCalendar
         }
     }
 }

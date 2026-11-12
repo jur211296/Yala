@@ -111,7 +111,7 @@ struct ProxyTaskHeaderTests {
             #expect(line.contains("category: \"\(task.category.rawValue)\""), "\(task.rawValue): el cubo de la app no es el del gateway")
             #expect(!line.contains("deducedOnly"), "\(task.rawValue) solo la deduce el gateway: con cabecera se ignoraría")
         }
-        #expect(ProxyTask.allCases.count == 11)
+        #expect(ProxyTask.allCases.count == 12)
     }
 
     @Test("cada tarea sale por el SDK con su X-Yala-Task, su cubo y el token")
@@ -131,6 +131,57 @@ struct ProxyTaskHeaderTests {
             }
             expectTask(sent, task)
         }
+    }
+
+    // MARK: - Cabeceras extra (camino ampliado de Yala IA en la nube)
+
+    @Test("las cabeceras extra se AÑADEN y nunca pisan el token, la tarea ni el cubo")
+    func extraHeadersNeverOverrideTheTaskHeaders() {
+        let headers = ProxyClientFactory.headers(
+            token: "t",
+            task: .chatAnswer,
+            extraHeaders: ["X-Yala-Task": "chat.explore", "Authorization": "Bearer otro", "X-Yala-Category": "vision", "X-Yala-User-Token": "jwt"]
+        )
+        #expect(headers == ["Authorization": "Bearer t", "X-Yala-Task": "chat.answer", "X-Yala-Category": "chat", "X-Yala-User-Token": "jwt"])
+    }
+
+    @Test("chat.explore sale con el JWT del usuario, la zona y 30 s de espera")
+    func chatExploreLeavesWithItsHeaders() async {
+        let route = YalaIAChatRoute.cloudExplore(userToken: "jwt-supabase", timeZone: "America/Lima")
+        let sent = await capture {
+            do {
+                let client = try await ProxyClientFactory.makeOpenAI(task: route.task, extraHeaders: route.extraHeaders, timeout: route.timeout)
+                _ = try await client.chats(query: .init(messages: [.user(.init(content: .string("hola")))], model: .gpt4_1_mini))
+            } catch {
+                Issue.record("chat.explore: \(error)")
+            }
+        }
+        expectTask(sent, .chatExplore)
+        for item in sent {
+            #expect(item.request.value(forHTTPHeaderField: "X-Yala-User-Token") == "jwt-supabase")
+            #expect(item.request.value(forHTTPHeaderField: "X-Yala-Time-Zone") == "America/Lima")
+            #expect(item.request.timeoutInterval == 30)
+        }
+    }
+
+    @Test("la ruta de siempre sale EXACTAMENTE como antes: chat.answer, sin cabeceras nuevas, 20 s")
+    func standardRouteLeavesAsBefore() async {
+        let route = YalaIAChatRoute.standard
+        let sent = await capture {
+            do {
+                let client = try await ProxyClientFactory.makeOpenAI(task: route.task, extraHeaders: route.extraHeaders, timeout: route.timeout)
+                _ = try await client.chats(query: .init(messages: [.user(.init(content: .string("hola")))], model: .gpt4_1_mini))
+            } catch {
+                Issue.record("chat.answer: \(error)")
+            }
+        }
+        expectTask(sent, .chatAnswer)
+        for item in sent {
+            #expect(item.request.value(forHTTPHeaderField: "X-Yala-User-Token") == nil)
+            #expect(item.request.value(forHTTPHeaderField: "X-Yala-Time-Zone") == nil)
+            #expect(item.request.timeoutInterval == 20)
+        }
+        #expect(ProxyClientFactory.headers(token: "t", task: .chatAnswer).count == 3)
     }
 
     // MARK: - Servicio a servicio

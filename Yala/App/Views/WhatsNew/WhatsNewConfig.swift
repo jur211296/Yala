@@ -22,9 +22,18 @@ enum WhatsNewConfig {
             return version2_0
         case "2.1":
             return version2_1
+        case "2.2":
+            return version2_2
         default:
             return nil
         }
+    }
+
+    /// Lo que enseña Ajustes › Ayuda › Novedades (UX 2.2 · L5-15): la hoja de la versión que corre. `nil` si esa
+    /// versión no tiene entrada (entonces la fila no se pinta).
+    static func current(version: String) -> (features: [WhatsNewFeature], version: String)? {
+        guard let features = features(for: version), !features.isEmpty else { return nil }
+        return (features, version)
     }
 
     // MARK: - Version 1.1
@@ -132,6 +141,38 @@ enum WhatsNewConfig {
             iconColor: .blue,
             title: L10n.WhatsNew.v21DataTitle,
             description: L10n.WhatsNew.v21DataDescription
+        ),
+    ]
+
+    // MARK: - Version 2.2
+
+    /// Las cuatro que se ven en el día a día (brief del 23-oct, card mbcb): tarjeta en dos monedas (#547–#550),
+    /// Siri (#552, #584), anotar en menos toques (#600, #602) y lo que te falta pagar (#543).
+    // A11Y-DM: paleta decorativa por feature del carrusel (colores de sistema, adaptan a Dark Mode)
+    private static let version2_2: [WhatsNewFeature] = [
+        WhatsNewFeature(
+            icon: "creditcard.fill",
+            iconColor: .indigo,
+            title: L10n.WhatsNew.v22DualCurrencyTitle,
+            description: L10n.WhatsNew.v22DualCurrencyDescription
+        ),
+        WhatsNewFeature(
+            icon: "waveform",
+            iconColor: .pink,
+            title: L10n.WhatsNew.v22SiriTitle,
+            description: L10n.WhatsNew.v22SiriDescription
+        ),
+        WhatsNewFeature(
+            icon: "square.and.pencil",
+            iconColor: .orange,
+            title: L10n.WhatsNew.v22FasterEntryTitle,
+            description: L10n.WhatsNew.v22FasterEntryDescription
+        ),
+        WhatsNewFeature(
+            icon: "calendar.badge.checkmark",
+            iconColor: .green,
+            title: L10n.WhatsNew.v22LeftToPayTitle,
+            description: L10n.WhatsNew.v22LeftToPayDescription
         ),
     ]
 }

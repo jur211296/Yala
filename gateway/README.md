@@ -32,6 +32,7 @@ Proxy seguro de Yala a **OpenAI** y al proveedor de **tasas de cambio**. Las API
    npx wrangler secret put DEV_SHARED_SECRET           # solo staging
    npx wrangler secret put APP_STORE_API_KEY
    npx wrangler secret put GROUPS_ENC_KEY              # G7: cifrado at-rest de columnas † de grupos (pgcrypto)
+   npx wrangler secret put SENTRY_DSN                  # avisos de errores (Sentry `yala-gateway`); ausente = sin avisos. Local: .dev.vars
    # PUSH_ROLE_JWT (G8-3): credencial de máquina `yala_push` del fan-out de silent push. NO se teclea a mano:
    node scripts/mint-push-role-jwt.mjs <path-al-legacy-jwt-secret> | npx wrangler secret put PUSH_ROLE_JWT
    # repetir con --env production donde aplique (sin DEV_SHARED_SECRET en prod)

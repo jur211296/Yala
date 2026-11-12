@@ -88,6 +88,24 @@ enum GroupsOnboardingLogic {
     ) -> Bool {
         isLastStep && flagOn && !hasSession
     }
+
+    /// **UX 2.2 · L12-4 (decisión B de Jürgen, 2026-10-18): el paso 3 ES el consentimiento.** ¿Su botón principal
+    /// acepta? Solo con el canal de Grupos encendido (sin canal no hay nada que guardar en la nube de Yala y la hoja
+    /// tampoco se presentaría: sus productores van detrás del mismo flag) y sin un consentimiento que ya valga para
+    /// la sesión viva. Con uno válido el paso informa y no vuelve a pedir nada; la hoja aparte se queda para quien no
+    /// vio el educativo o tiene que volver a aceptar un texto nuevo.
+    ///
+    /// - Parameter isConsented: `GroupsConsentState.isAccepted`, la misma señal que deciden las puertas.
+    static func lastStepAcceptsConsent(isLastStep: Bool, flagOn: Bool, isConsented: Bool) -> Bool {
+        isLastStep && flagOn && !isConsented
+    }
+
+    /// Tras aceptar en el paso 3, adónde sigue: sin sesión, a la cuenta (el consentimiento queda sin sello y
+    /// `GroupsConsentRegistrar.handleSignIn` lo sella al entrar); con sesión, a Grupos. Es el MISMO resultado que
+    /// ya daban los dos botones del cierre, así que quien presenta el educativo no cambia.
+    static func resultAfterAcceptingConsent(hasSession: Bool) -> GroupsOnboardingResult {
+        hasSession ? .complete : .completeAndSignIn
+    }
 }
 
 /// Origen del trigger del onboarding — telemetría para distinguir entry points si

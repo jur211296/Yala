@@ -46,8 +46,9 @@ final class NewTransactionViewModel {
         }
     }
 
-    /// Monto como string para el teclado numérico
-    var amountString: String = "0.00" {
+    /// Monto como string para el teclado numérico. Vacío = nada escrito: el campo enseña el «0.00» gris de ejemplo
+    /// (UX 2.2 · L2-16). Antes arrancaba en «0.00» escrito, en el color del tipo, y parecía ya puesto.
+    var amountString: String = "" {
         didSet {
             // Update destination amount if we have a valid transfer context
             if needsExchangeRate {
@@ -85,13 +86,15 @@ final class NewTransactionViewModel {
 
     // MARK: - Transfer Exchange Rate
 
-    /// Tipo de cambio para transferencias entre divisas
+    /// Tipo de cambio para transferencias entre divisas, y en un gasto o ingreso en otra divisa, de la del importe a la
+    /// preferida (UX 2.2 · L2-11).
     var exchangeRate: Double = 1.0
 
     /// Monto en divisa destino (calculado o editado manualmente)
     var destinationAmount: Double = 0.0
 
-    /// Indica si el tipo de cambio fue editado manualmente
+    /// Indica si el tipo de cambio fue editado manualmente. En un gasto o ingreso en otra divisa, la tasa editada es la
+    /// que se guarda (L2-11): el importe convertido sale de monto × tasa.
     var isExchangeRateManual: Bool = false
 
     // MARK: - Sheet States
@@ -137,9 +140,14 @@ final class NewTransactionViewModel {
         return formatter.string(from: NSNumber(value: amount)) ?? "0.00"
     }
 
-    /// Color del monto según el tipo de transacción
+    /// Color del monto según el tipo: el de los tres formularios de registro (`Color.recordFormAmount`, registro
+    /// unificado). La transferencia, en el gris de su tipo.
     var amountColor: Color {
-        transactionType.color
+        switch transactionType {
+        case .expense: return Color.recordFormAmount(isIncome: false)
+        case .income: return Color.recordFormAmount(isIncome: true)
+        case .transfer: return transactionType.color
+        }
     }
 
     /// Indica si es una transferencia
@@ -189,7 +197,45 @@ final class NewTransactionViewModel {
            editing.account?.persistentModelID == account.persistentModelID {
             return normalizeCurrencyCode(editing.currencyCode)
         }
+        if !isTransfer,
+           let override = amountCurrencyOverride,
+           override.accountID == selectedAccount?.persistentModelID {
+            return override.currencyCode
+        }
         return effectiveCurrencyCode
+    }
+
+    /// La divisa de un importe que llega de fuera con su propia divisa —un favorito o la copia de un registro— y no es
+    /// la de su cuenta (card `tablero-desde-un-movimiento-en-dolares-de-una-cu-4k2q`): 50 USD en una cuenta en soles
+    /// siguen siendo 50 USD, sin convertir, mientras la cuenta sea esa. Elegir otra cuenta la descarta, como al editar.
+    struct AmountCurrencyOverride: Equatable {
+        let currencyCode: String
+        let accountID: PersistentIdentifier
+    }
+
+    var amountCurrencyOverride: AmountCurrencyOverride?
+
+    /// Fija la divisa del importe si no es la de la cuenta; si lo es, no hace falta nada.
+    func keepAmountCurrency(_ code: String?, for account: Account?) {
+        guard let code, let account else {
+            amountCurrencyOverride = nil
+            return
+        }
+        let normalized = normalizeCurrencyCode(code)
+        amountCurrencyOverride = normalized == normalizeCurrencyCode(account.currencyCode)
+            ? nil
+            : AmountCurrencyOverride(currencyCode: normalized, accountID: account.persistentModelID)
+    }
+
+    /// Suelta el registro (y su pareja de transferencia) que el formulario acaba de borrar. El formulario sigue presentado
+    /// mientras se cierra y su `body` lee `amountCurrencyCode`, que leía el registro: en iOS 27.x leer un modelo borrado
+    /// aborta (card 1w89). La divisa que se enseñaba —leída ANTES de borrar— se conserva, como al duplicar.
+    func releaseDeletedRecord(keepingAmountCurrency code: String) {
+        if !isTransfer {
+            keepAmountCurrency(code, for: selectedAccount)
+        }
+        editingTransaction = nil
+        editingTransferPair = nil
     }
 
     // MARK: - Context Setup
@@ -286,28 +332,64 @@ final class NewTransactionViewModel {
         return source.persistentModelID != dest.persistentModelID
     }
 
-    /// Prepara el estado para una transferencia, seleccionando cuentas por defecto si es necesario
+    /// Prepara el estado para una transferencia (UX 2.2 · L2-1): el origen es la cuenta que ya tenía el formulario (la de
+    /// la regla de la cuenta precargada, o la que eligió la persona) y, si no había, la misma regla. El destino va vacío
+    /// salvo que haya exactamente dos cuentas: entonces, la otra. Antes ponía la primera por nombre en los dos, también
+    /// con cinco cuentas, y la persona pasaba dinero a una cuenta que no había elegido.
     func prepareForTransfer(allAccounts: [Account]) {
-        // Only use non-archived accounts for auto-selection
-        let eligible = allAccounts.filter { !$0.isArchived }
-
-        // Ensure source account is set (use selected if available)
         if sourceAccount == nil {
             sourceAccount = selectedAccount
         }
-
-        // If still nil, try to pick first eligible account
         if sourceAccount == nil {
-            sourceAccount = eligible.first
+            sourceAccount = prefilledAccount()
         }
+        if destinationAccount == nil {
+            let destinationID = TransactionAccountPrefillLogic.transferDestination(
+                candidates: prefillCandidates(),
+                filter: accountPrefillFilter,
+                source: sourceAccount?.persistentModelID
+            )
+            destinationAccount = destinationID.flatMap { id in accounts.first { $0.persistentModelID == id } }
+        }
+    }
 
-        // Auto-select destination if nil
-        if destinationAccount == nil, let source = sourceAccount {
-            // Pick first eligible account that is not source
-            destinationAccount = eligible.first {
-                $0.persistentModelID != source.persistentModelID
-            }
+    // MARK: - Cuenta precargada (UX 2.2 · L2-1)
+
+    /// El filtro de cuentas de `SessionState` en el momento de abrir el formulario. Lo pone la vista.
+    var accountPrefillFilter: TransactionAccountPrefillLogic.Filter<PersistentIdentifier> = .none
+
+    /// La última cuenta usada (`LastUsedAccountStore`) al abrir el formulario. La pone la vista.
+    var lastUsedAccountShortcutID: String?
+
+    /// Las cuentas cargadas tal como las ve la regla.
+    func prefillCandidates() -> [TransactionAccountPrefillLogic.Candidate<PersistentIdentifier>] {
+        let roles = AccountLineLogic.resolve(accounts.map { AccountLineNode($0) })
+        return accounts.map { account in
+            TransactionAccountPrefillLogic.Candidate(
+                id: account.persistentModelID,
+                shortcutID: account.shortcutID.uuidString,
+                isActive: !account.isArchived && !account.isSystemAccount,
+                isLine: roles[account.shortcutID]?.isLine ?? false
+            )
         }
+    }
+
+    /// La cuenta que da la regla, o `nil`.
+    func prefilledAccount() -> Account? {
+        guard let id = TransactionAccountPrefillLogic.account(
+            candidates: prefillCandidates(),
+            filter: accountPrefillFilter,
+            lastUsedShortcutID: lastUsedAccountShortcutID
+        ) else { return nil }
+        return accounts.first { $0.persistentModelID == id }
+    }
+
+    /// Pone la cuenta de la regla en un registro nuevo. No pisa una cuenta ya puesta.
+    func applyAccountPrefillRule() {
+        guard selectedAccount == nil, let account = prefilledAccount() else { return }
+        selectedAccount = account
+        sourceAccount = account
+        currencyCode = account.currencyCode
     }
 
     var isSubcategoryValid: Bool {
@@ -320,6 +402,90 @@ final class NewTransactionViewModel {
 
     var canSave: Bool {
         isAmountValid && isAccountValid && isTransferAccountsValid && isSubcategoryValid
+    }
+
+    // MARK: - Lo que falta para guardar (UX 2.2 · L2-2)
+
+    /// Un campo obligatorio que aún no está.
+    enum MissingField: Equatable {
+        case amount, account, category, sourceAccount, destinationAccount
+
+        /// Cómo se nombra en la línea de encima de «Guardar» («la cuenta», «la categoría»…).
+        var phrase: String {
+            switch self {
+            case .amount: return L10n.UXL2.missingAmount
+            case .account: return L10n.UXL2.missingAccount
+            case .category: return L10n.UXL2.missingCategory
+            case .sourceAccount: return L10n.UXL2.missingSourceAccount
+            case .destinationAccount: return L10n.UXL2.missingDestinationAccount
+            }
+        }
+    }
+
+    /// Lo que falta, en el orden en que se ve en pantalla (monto, cuenta, categoría).
+    var missingFieldsForSave: [MissingField] {
+        var missing: [MissingField] = []
+        if !isAmountValid { missing.append(.amount) }
+        if isTransfer {
+            if sourceAccount == nil { missing.append(.sourceAccount) }
+            if destinationAccount == nil { missing.append(.destinationAccount) }
+        } else {
+            if selectedAccount == nil { missing.append(.account) }
+            if selectedSubcategory == nil { missing.append(.category) }
+        }
+        return missing
+    }
+
+    /// La línea viva sobre «Guardar» mientras está apagado: «Para guardar, falta la cuenta y la categoría», o «Elige dos
+    /// cuentas distintas» si origen y destino coinciden. `nil` cuando se puede guardar.
+    var saveBlockedMessage: String? {
+        guard !canSave else { return nil }
+        if isTransfer, sourceAccount != nil, destinationAccount != nil, !isTransferAccountsValid {
+            return L10n.UXL2.chooseTwoDifferentAccounts
+        }
+        let phrases = missingFieldsForSave.map(\.phrase)
+        guard !phrases.isEmpty else { return nil }
+        return L10n.UXL2.missingToSave(phrases.formatted(.list(type: .and).locale(AppLocale.current)))
+    }
+
+    /// ¿Este chip lleva el borde de «falta»? Solo con monto: el formulario recién abierto no se llena de bordes.
+    func marksMissing(_ field: MissingField) -> Bool {
+        isAmountValid && missingFieldsForSave.contains(field)
+    }
+
+    // MARK: - ¿Hay algo escrito? (UX 2.2 · L2-4)
+
+    /// Lo que la persona puede escribir o elegir en el formulario. Dos fotos iguales = nada cambió.
+    struct FormSnapshot: Equatable {
+        let type: TransactionType
+        let amount: Double
+        let account: PersistentIdentifier?
+        let source: PersistentIdentifier?
+        let destination: PersistentIdentifier?
+        let subcategory: PersistentIdentifier?
+        /// La naturaleza efectiva (la elegida o la de la subcategoría): la elegida se rellena en un `onChange` después de
+        /// abrir, y compararla a secas daba «cambió» en un registro que nadie tocó.
+        let need: SubcategoryNeed?
+        let day: Date
+        let tags: [PersistentIdentifier]
+        let note: String
+        let splitTotal: Double?
+    }
+
+    var formSnapshot: FormSnapshot {
+        FormSnapshot(
+            type: transactionType,
+            amount: amount,
+            account: selectedAccount?.persistentModelID,
+            source: isTransfer ? sourceAccount?.persistentModelID : nil,
+            destination: isTransfer ? destinationAccount?.persistentModelID : nil,
+            subcategory: selectedSubcategory?.persistentModelID,
+            need: selectedNeed ?? selectedSubcategory?.need,
+            day: Calendar.current.startOfDay(for: transactionDate),
+            tags: selectedTags.map(\.persistentModelID),
+            note: note,
+            splitTotal: splitTotalAmount
+        )
     }
 
     // MARK: - Field Validation States
@@ -353,6 +519,35 @@ final class NewTransactionViewModel {
         if isTransfer { return .valid }
         return selectedSubcategory != nil
             ? .valid : .invalid(message: L10n.Validation.selectSubcategory)
+    }
+
+    // MARK: - Tarjeta con varias divisas (entrega 3)
+
+    /// La cuenta de la tarjeta de `account` en la divisa `currency` (`AccountCardLogic.route`): la decisión 6 de Jürgen, se
+    /// elige la tarjeta y la divisa del importe decide la línea. Si la tarjeta no tiene cuenta en esa divisa, la cuenta
+    /// elegida tal cual (no se salta a la principal: una línea archivada o una divisa sin línea no cambian de cuenta). Una
+    /// cuenta sin líneas vuelve tal cual.
+    func routed(_ account: Account, toCurrency currency: String) -> Account {
+        let nodes = accounts.map { AccountLineNode($0) }
+        guard let route = AccountCardLogic.route(chosenID: account.shortcutID, currencyCode: currency, nodes: nodes),
+              !route.isFallback,
+              let target = accounts.first(where: { $0.shortcutID == route.accountID }) else { return account }
+        return target
+    }
+
+    /// Las cuentas de la tarjeta de `account` (la principal y sus líneas vivas), si tiene líneas; si no, vacío. Son las
+    /// pastillas de divisa del formulario.
+    func cardMembers(of account: Account?) -> [Account] {
+        guard let account else { return [] }
+        let members = AccountCardLogic.liveMembers(of: account.shortcutID, nodes: accounts.map { AccountLineNode($0) })
+        guard members.count > 1 else { return [] }
+        return members.compactMap { member in accounts.first { $0.shortcutID == member.id } }
+    }
+
+    /// Elegir una divisa de la tarjeta es elegir su línea (o la principal).
+    func selectCardMember(_ member: Account) {
+        selectedAccount = member
+        currencyCode = member.currencyCode
     }
 
     // MARK: - Prefill
@@ -399,9 +594,11 @@ final class NewTransactionViewModel {
         if let accountID = draft.accountID,
             let account = accounts.first(where: { $0.persistentModelID == accountID })
         {
-            selectedAccount = account
+            // Con una tarjeta, la divisa del borrador decide la línea (entrega 3).
+            let target = routed(account, toCurrency: draft.currencyCode)
+            selectedAccount = target
             sourceAccount = account
-            currencyCode = account.currencyCode
+            currencyCode = target.currencyCode
         } else {
             currencyCode = draft.currencyCode
         }
@@ -433,6 +630,62 @@ final class NewTransactionViewModel {
                 selectedTags = matched
             }
         }
+    }
+
+    // MARK: - Borrador que sobrevive al cierre (card 77j1)
+
+    /// Lo escrito en el formulario, para guardarlo al pasar a segundo plano (`NewRecordDraftStore`). Las entidades van
+    /// por su identidad estable: el `PersistentIdentifier` no se puede volver a buscar con seguridad tras relanzar.
+    func makeDraft(now: Date = .now) -> SavedNewRecordDraft {
+        SavedNewRecordDraft(
+            savedAt: now,
+            type: transactionType.rawValue,
+            amountString: amountString,
+            currencyCode: currencyCode,
+            accountID: selectedAccount?.shortcutID,
+            sourceAccountID: isTransfer ? sourceAccount?.shortcutID : nil,
+            destinationAccountID: isTransfer ? destinationAccount?.shortcutID : nil,
+            subcategoryID: selectedSubcategory?.shortcutID,
+            need: selectedNeed?.rawValue,
+            date: transactionDate,
+            tagIDs: selectedTags.map(\.id),
+            note: note,
+            exchangeRate: exchangeRate,
+            isExchangeRateManual: isExchangeRateManual,
+            destinationAmount: destinationAmount
+        )
+    }
+
+    /// Vuelve a poner en el formulario un borrador guardado. Lo que ya no existe (una cuenta archivada o borrada, una
+    /// subcategoría, una etiqueta) se queda como estaba: vacío, para que la persona lo elija otra vez.
+    func apply(_ draft: SavedNewRecordDraft) {
+        if let type = TransactionType(rawValue: draft.type) {
+            transactionType = type
+        }
+        if let id = draft.accountID, let account = accounts.first(where: { $0.shortcutID == id }) {
+            selectedAccount = account
+        }
+        if let id = draft.sourceAccountID, let account = accounts.first(where: { $0.shortcutID == id }) {
+            sourceAccount = account
+        }
+        if let id = draft.destinationAccountID, let account = accounts.first(where: { $0.shortcutID == id }) {
+            destinationAccount = account
+        }
+        currencyCode = draft.currencyCode
+        if let id = draft.subcategoryID {
+            let all = categories.flatMap { $0.subcategories ?? [] }
+            selectedSubcategory = all.first { $0.shortcutID == id }
+        }
+        selectedNeed = draft.need.flatMap(SubcategoryNeed.init(rawValue:))
+        transactionDate = draft.date
+        if !draft.tagIDs.isEmpty {
+            selectedTags = tags.filter { draft.tagIDs.contains($0.id) }
+        }
+        note = draft.note
+        exchangeRate = draft.exchangeRate
+        isExchangeRateManual = draft.isExchangeRateManual
+        amountString = draft.amountString
+        destinationAmount = draft.destinationAmount
     }
 
     // MARK: - Numeric Keypad
@@ -524,6 +777,54 @@ final class NewTransactionViewModel {
         }
     }
 
+    // MARK: - Tipo de cambio de un gasto o ingreso en otra divisa (UX 2.2 · L2-11)
+
+    /// ¿El importe está en una divisa que no es la preferida? Entonces el formulario enseña la equivalencia y la tasa.
+    var showsForeignEquivalence: Bool {
+        !isTransfer && effectiveAccount != nil
+            && normalizeCurrencyCode(amountCurrencyCode) != normalizeCurrencyCode(CurrencyDefaults.currentPreferred)
+    }
+
+    /// Carga la tasa de la divisa del importe a la preferida para la fecha del registro, también al crear (antes solo se
+    /// cargaba al editar, y una cuenta en dólares no enseñaba cuánto era en soles). Una tasa escrita a mano se respeta si
+    /// `keepManual`; al cambiar de cuenta se descarta.
+    ///
+    /// Al editar sin cambiar de cuenta ni de día se queda la tasa guardada en el registro, la que ya enseñaba.
+    func loadForeignExchangeRate(context: ModelContext, keepManual: Bool) async {
+        guard showsForeignEquivalence else { return }
+        if keepManual && isExchangeRateManual { return }
+        if let editing = editingTransaction,
+           editing.account?.persistentModelID == selectedAccount?.persistentModelID,
+           Calendar.current.isDate(editing.date, inSameDayAs: transactionDate),
+           editing.exchangeRate != 1.0 {
+            exchangeRate = editing.exchangeRate
+            isExchangeRateManual = false
+            return
+        }
+        let from = amountCurrencyCode
+        let to = CurrencyDefaults.currentPreferred
+        let date = transactionDate
+        if Calendar.current.isDateInToday(date) {
+            await ExchangeRateService.shared.updateTodayIfNeeded(context: context)
+        }
+        await ExchangeRateService.shared.ensureRates(for: DateInterval(start: date, duration: 0), context: context)
+        // Mientras llegaba la tasa la persona pudo cambiar de cuenta o de fecha: solo vale si sigue siendo la misma pregunta.
+        guard showsForeignEquivalence, amountCurrencyCode == from, transactionDate == date,
+              !(keepManual && isExchangeRateManual) else { return }
+        if let rate = CurrencyConverter.shared.getDisplayRate(from: from, to: to, date: date, context: context),
+           CurrencyConverter.isUsableRate(rate) {
+            exchangeRate = rate
+            isExchangeRateManual = false
+        }
+    }
+
+    /// La tasa escrita a mano en la cápsula (L2-11).
+    func setManualForeignRate(_ rate: Double) {
+        guard rate > 0, rate.isFinite else { return }
+        exchangeRate = rate
+        isExchangeRateManual = true
+    }
+
     // MARK: - Editing State
 
     /// Transaction being edited (if any)
@@ -543,6 +844,8 @@ final class NewTransactionViewModel {
         showValidationErrors = true
         if Calendar.current.compare(transactionDate, to: Date.now, toGranularity: .day) == .orderedDescending {
             showFutureDateAlert = true
+            // Validación que no deja seguir (card C4; mapa de `DS.Haptic`): vibra con la alerta.
+            DS.Haptic.error()
             return false
         }
         return canSave
@@ -573,6 +876,8 @@ final class NewTransactionViewModel {
             // Memoria per-device (App Group) para fallback de QuickExpenseIntent.
             if let savedAccount = result.first?.account {
                 LastUsedAccountStore.write(savedAccount.shortcutID.uuidString)
+                // Con la última cuenta usada cambia la moneda de la notificación de Apple Pay (L15-8).
+                ApplePayDraftService.refreshCurrencyHint(context: context)
             }
 
             // Update widget cache deferred — don't block save UI
@@ -608,6 +913,7 @@ final class NewTransactionViewModel {
             print("Error saving transaction: \(error)")
             #endif
             saveError = L10n.Common.saveError
+            DS.Haptic.error()
             isSaving = false
             return nil
         }
@@ -628,14 +934,31 @@ final class NewTransactionViewModel {
 
         // `convertChecked`: el flujo principal de la app PERSISTE este número. `convert` tira la
         // calidad de la tasa, así que una conversión aproximada nacía sellada como definitiva.
-        let outcome = CurrencyConverter.shared.convertChecked(
-            Decimal(finalAmount),
-            from: stampedCurrency,
-            to: preferredCode,
-            on: transactionDate,
-            context: context
-        )
-        let amountInPreferred = outcome.amount
+        //
+        // Con la tasa escrita a mano en la cápsula (UX 2.2 · L2-11) manda esa: es la que usó su banco y la que la persona
+        // vio en la equivalencia. Es exacta por definición.
+        let amountInPreferred: Decimal
+        let isExactConversion: Bool
+        if let manualRate = ForeignManualRateLogic.manualRate(
+            isManual: isExchangeRateManual,
+            isTransfer: isTransfer,
+            rate: exchangeRate,
+            amountCurrency: stampedCurrency,
+            preferredCurrency: preferredCode
+        ) {
+            amountInPreferred = ForeignManualRateLogic.converted(finalAmount, rate: manualRate)
+            isExactConversion = true
+        } else {
+            let outcome = CurrencyConverter.shared.convertChecked(
+                Decimal(finalAmount),
+                from: stampedCurrency,
+                to: preferredCode,
+                on: transactionDate,
+                context: context
+            )
+            amountInPreferred = outcome.amount
+            isExactConversion = outcome.quality.isExact
+        }
 
         let effectiveRate: Double
         if abs(finalAmount) > 0.0001 {
@@ -672,7 +995,7 @@ final class NewTransactionViewModel {
             transaction.amountInPreferredCurrency =
                 (amountInPreferred as NSDecimalNumber).doubleValue
             transaction.preferredCurrencyCode = preferredCode
-            transaction.isExchangeRateProvisional = !outcome.quality.isExact
+            transaction.isExchangeRateProvisional = !isExactConversion
             // Save need override if different from subcategory's need
             transaction.needOverride = selectedNeed?.rawValue
         } else {
@@ -688,7 +1011,7 @@ final class NewTransactionViewModel {
                 exchangeRate: abs(effectiveRate),
                 amountInPreferredCurrency: (amountInPreferred as NSDecimalNumber).doubleValue,
                 preferredCurrencyCode: preferredCode,
-                isExchangeRateProvisional: !outcome.quality.isExact
+                isExchangeRateProvisional: !isExactConversion
             )
             // Save need override for new transactions
             transaction.needOverride = selectedNeed?.rawValue
@@ -856,141 +1179,19 @@ final class NewTransactionViewModel {
     }
 
     private func ensureTransferCategory(context: ModelContext) throws -> Subcategory {
-        // Use first expense category with localized subcategory name
-        let subcategoryName = L10n.Transfer.categoryName
-
-        // Check if transfer subcategory already exists in any expense category
-        let descriptor = FetchDescriptor<Subcategory>(
-            predicate: #Predicate { $0.name == subcategoryName && $0.category?.isIncome == false }
-        )
-
-        let fetchedSubcategories: [Subcategory]
-        do {
-            fetchedSubcategories = try context.fetch(descriptor)
-        } catch {
-            #if DEBUG
-            print("[NewTransactionViewModel] Error fetching transfer subcategory: \(error)")
-            #endif
-            fetchedSubcategories = []
-        }
-        if let existing = fetchedSubcategories.first {
-            return existing
-        }
-
-        // Find first expense category
-        let catDescriptor = FetchDescriptor<Category>(
-            predicate: #Predicate { $0.isIncome == false },
-            sortBy: [SortDescriptor(\.sortOrder)]
-        )
-
-        let fetchedExpenseCategories: [Category]
-        do {
-            fetchedExpenseCategories = try context.fetch(catDescriptor)
-        } catch {
-            #if DEBUG
-            print("[NewTransactionViewModel] Error fetching expense categories: \(error)")
-            #endif
-            fetchedExpenseCategories = []
-        }
-
-        let category: Category
-        if let existingCat = fetchedExpenseCategories.first {
-            category = existingCat
-        } else {
-            // Fallback: create expense category if somehow missing
-            category = Category(
-                name: L10n.Category.other,
-                colorHex: "#64748B",
-                isIncome: false
-            )
-            context.insert(category)
-        }
-
-        // Create subcategory within "Otros"
-        let subcategory = Subcategory(
-            name: subcategoryName,
-            colorHex: nil,
-            natureRawValue: SubcategoryNeed.unclassified.rawValue,
-            iconName: "arrow.left.arrow.right",
-            category: category
-        )
-        context.insert(subcategory)
-
-        return subcategory
+        try TransferCategoryResolver.outflow(context: context)
     }
 
-    /// Ensures the income transfer subcategory exists for incoming transfers
     private func ensureIncomeTransferCategory(context: ModelContext) throws -> Subcategory {
-        let subcategoryName = L10n.Transfer.categoryName
-
-        // Check if transfer subcategory already exists in any income category
-        let descriptor = FetchDescriptor<Subcategory>(
-            predicate: #Predicate { $0.name == subcategoryName && $0.category?.isIncome == true }
-        )
-
-        let fetchedIncomeSubcategories: [Subcategory]
-        do {
-            fetchedIncomeSubcategories = try context.fetch(descriptor)
-        } catch {
-            #if DEBUG
-            print("[NewTransactionViewModel] Error fetching income transfer subcategory: \(error)")
-            #endif
-            fetchedIncomeSubcategories = []
-        }
-        if let existing = fetchedIncomeSubcategories.first {
-            return existing
-        }
-
-        // Find first income category
-        let catDescriptor = FetchDescriptor<Category>(
-            predicate: #Predicate { $0.isIncome == true },
-            sortBy: [SortDescriptor(\.sortOrder)]
-        )
-
-        let fetchedIncomeCategories: [Category]
-        do {
-            fetchedIncomeCategories = try context.fetch(catDescriptor)
-        } catch {
-            #if DEBUG
-            print("[NewTransactionViewModel] Error fetching income categories: \(error)")
-            #endif
-            fetchedIncomeCategories = []
-        }
-
-        let category: Category
-        if let existingCat = fetchedIncomeCategories.first {
-            category = existingCat
-        } else {
-            // Fallback: create income category if somehow missing
-            category = Category(
-                name: L10n.Category.incomeCategory,
-                colorHex: "#14B8A6",
-                isIncome: true
-            )
-            context.insert(category)
-        }
-
-        // Create subcategory within "Ingresos"
-        let subcategory = Subcategory(
-            name: subcategoryName,
-            colorHex: nil,
-            natureRawValue: SubcategoryNeed.unclassified.rawValue,
-            iconName: "arrow.left.arrow.right",
-            category: category
-        )
-        context.insert(subcategory)
-
-        return subcategory
+        try TransferCategoryResolver.inflow(context: context)
     }
 
     // MARK: - Notification Primer
 
+    /// El tercer registro es el RESPALDO del permiso de notificaciones (UX 2.2 · L5-14): lo normal es pedirlo al
+    /// guardar el primer pago planificado o encender la alerta de un presupuesto (`NotificationPrimerMoments`).
     func checkNotificationPrimer() async {
-        let count = UserDefaults.standard.integer(forKey: "transactionsSavedCount")
-        guard count >= 3, !UserDefaults.standard.bool(forKey: "hasSeenNotificationPrimer") else { return }
-        let status = await NotificationService.shared.checkPermissionStatus()
-        UserDefaults.standard.set(true, forKey: "hasSeenNotificationPrimer")
-        if status == .notDetermined {
+        if await NotificationPrimerMoments.claim(.records) {
             showNotificationPrimer = true
         }
     }
@@ -1008,31 +1209,13 @@ final class NewTransactionViewModel {
         splitTotalAmount != nil && splitType != nil
     }
 
-    /// Snapshot intencional: `forceFullPrecision: true` ignora `decimalPlaces` (siempre 2),
-    /// así que este callsite es inmune al bug de reactividad. YalaFormatter deprecated permitido.
-    var splitDescription: String? {
-        guard let type = splitType, let total = splitTotalAmount else { return nil }
-        let formattedTotal = YalaFormatterStatic.number(value: total, forceFullPrecision: true)
-        switch type {
-        case .percentage:
-            if let pct = splitMyValue {
-                let pctStr = pct == pct.rounded() ? String(Int(pct)) : String(format: "%.1f", pct)
-                return L10n.Split.descPercentage(pctStr, formattedTotal)
-            }
-        case .equal:
-            if let people = splitMyValue {
-                return L10n.Split.descEqual(Int(people))
-            }
-        case .shares:
-            if let my = splitMyValue, let totalShares = splitDivisor {
-                return L10n.Split.descShares(Int(my), Int(totalShares))
-            }
-        case .exact:
-            if let exact = splitMyValue {
-                return L10n.Split.descExact(YalaFormatterStatic.number(value: exact, forceFullPrecision: true))
-            }
-        }
-        return nil
+    /// El chip del formulario tras «Mi parte» (UX 2.2 · L2-12): «Tu parte de S/ 120.00 · ÷ 3 personas», «· 60 %»,
+    /// «· 2 de 5 partes», «· monto exacto». `format` pone la moneda (la vista, con la preferencia de símbolo o código).
+    /// Antes decía «% ÷ 3 personas», sin el total del que salía.
+    func splitChipText(format: (Double) -> String) -> String? {
+        guard let type = splitType, let total = splitTotalAmount, let myValue = splitMyValue else { return nil }
+        if type == .shares, splitDivisor == nil { return nil }
+        return SplitSummaryLogic.chipText(type: type, total: total, myValue: myValue, divisor: splitDivisor, format: format)
     }
 
     func applySplitResult(amount: Double, splitType: SplitType, totalAmount: Double, myValue: Double, divisor: Double?) {
@@ -1071,7 +1254,7 @@ final class NewTransactionViewModel {
     /// Resetea el formulario a valores iniciales
     func reset() {
         transactionType = .expense
-        amountString = "0"
+        amountString = ""
         selectedAccount = nil
         sourceAccount = nil
         destinationAccount = nil
@@ -1084,6 +1267,7 @@ final class NewTransactionViewModel {
         isExchangeRateManual = false
         showValidationErrors = false
         isSaving = false
+        amountCurrencyOverride = nil
         clearSplitData()
     }
 }

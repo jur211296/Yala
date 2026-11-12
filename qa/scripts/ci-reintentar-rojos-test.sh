@@ -173,6 +173,64 @@ vuelta 1 65 "Failed${TAB}A/x()"
 vuelta 2 0 "Passed${TAB}A/x()"
 caso reusado 0 2 "" "YalaTests/A/x()"
 
+# 14-19. El simulador no arranca el runner (run 38969099625, 16-oct): `xcodebuild` sale con 65,
+#     no corre ningún test y el `.xcresult` trae un caso `Failed` cuyo identificador es el TEXTO
+#     del error. Antes se repetía como si fuera un test: `-only-testing:YalaTests/Yala encountered
+#     an error`, 0 tests, paso en rojo. Ahora se relanza la selección entera.
+ERR="Yala encountered an error"
+sin_pseudo() { ! grep -q -- "encountered" "$@"; }
+
+# 14. Arranca a la segunda: la vuelta 2 es la selección ENTERA y sale verde.
+prepara arranque_fallido
+vuelta 1 65 "Failed${TAB}${ERR}"
+vuelta 2 0 "Passed${TAB}A/a()" "Passed${TAB}A/b()"
+caso arranque_fallido 0 2 "" "(arranque fallido x1)"
+afirma "arranque: la vuelta 2 relanza la selección entera, no el pseudo-caso" \
+  bash -c 'grep -qx -- "-only-testing:YalaTests" "$0" && grep -qx -- "-skip-testing:YalaTests/Ctx" "$0" && ! grep -q encountered "$0"' "$T/arranque_fallido/args.2"
+afirma "arranque: lo anota como infraestructura rescatada" grep -q "::warning title=Arranque fallido rescatado::" "$T/arranque_fallido/log"
+afirma "arranque: tests_primera dice que la 1.ª vuelta no corrió nada" grep -qx "tests_primera=0" "$T/arranque_fallido/out"
+
+# 15. Arranca a la segunda con un rojo dentro: la tercera repite SOLO ese rojo.
+prepara arranque_y_rojo
+vuelta 1 65 "Failed${TAB}${ERR}"
+vuelta 2 65 "Passed${TAB}A/a()" "Failed${TAB}A/x()"
+vuelta 3 0 "Passed${TAB}A/x()"
+caso arranque_y_rojo 0 3 "" "YalaTests/A/x()"
+afirma "arranque y rojo: la 3.ª vuelta repite solo el rojo real" \
+  bash -c '[ "$(grep -c -- "-only-testing" "$0")" = 1 ] && grep -qx -- "-only-testing:YalaTests/A/x()" "$0"' "$T/arranque_y_rojo/args.3"
+
+# 16. No arranca nunca: rojo con un fallo de infraestructura explícito, sin repetir el pseudo.
+prepara infraestructura
+vuelta 1 65 "Failed${TAB}${ERR}"
+vuelta 2 65 "Failed${TAB}${ERR}"
+vuelta 3 65 "Failed${TAB}${ERR}"
+caso infraestructura 65 3 "(fallo de infraestructura: 3 vuelta(s) sin correr ningún test — YalaTests/${ERR})" ""
+afirma "infraestructura: ninguna vuelta pide el pseudo-caso" sin_pseudo "$T/infraestructura/args.1" "$T/infraestructura/args.2" "$T/infraestructura/args.3"
+afirma "infraestructura: el error lo dice" grep -q "::error title=Fallo de infraestructura::" "$T/infraestructura/log"
+
+# 17. Una relanzada que sale exit 0 con CERO tests tampoco es verde.
+prepara arranque_vacio
+vuelta 1 65 "Failed${TAB}${ERR}"
+vuelta 2 0
+caso arranque_vacio 1 2 "(fallo de infraestructura: 2 vuelta(s) sin correr ningún test)" "" --vueltas 2
+
+# 18. El pseudo-caso junto a tests que sí corrieron: el rojo real se repite y se rescata, el
+#     pseudo-caso no se repite y deja el paso en rojo (nada lo puede rescatar).
+prepara pseudo_con_tests
+vuelta 1 65 "Passed${TAB}A/a()" "Failed${TAB}A/x()" "Failed${TAB}${ERR}"
+vuelta 2 0 "Passed${TAB}A/x()"
+caso pseudo_con_tests 1 2 "YalaTests/${ERR}" "YalaTests/A/x()"
+afirma "pseudo con tests: la repetición no lo pide" sin_pseudo "$T/pseudo_con_tests/args.2"
+
+# 19. Solo el pseudo-caso rojo, con tests en verde: caída segura sin repetir nada, y lo nombra.
+prepara solo_pseudo
+vuelta 1 65 "Passed${TAB}A/a()" "Failed${TAB}${ERR}"
+caso solo_pseudo 65 1 "(sin identificar: xcodebuild salió con 65 y el .xcresult no nombra ningún caso rojo — mira el log); YalaTests/${ERR}" ""
+
+# 20. Una repetición de rojos con 0 tests se anota como infraestructura, no como rescate.
+afirma "fantasma: la repetición sin tests se anota como infraestructura" \
+  grep -q "::warning title=Repetición sin tests::" "$T/fantasma/log"
+
 # 13. Llamada mal formada.
 prepara mal
 caso mal 2 0 "" "" --vueltas x

@@ -8,7 +8,7 @@
 //
 //  Cada test está escrito para MORIR si se revierte la decisión que prueba, no solo para recorrer el
 //  camino feliz. Los cuatro que más importan en ese sentido: la unión de monedas (`debtWithoutExpense…`),
-//  la simplificación incondicional (`paymentsAreAlwaysSimplified…`), la frontera del saldo inicial
+//  que los pagos sigan la opción del grupo (`paymentsFollowTheGroupOption_…`), la frontera del saldo inicial
 //  (`openingBalanceIsDebtButNotSpending`) y el dedup de CloudKit (`duplicateExpensesDoNotInflate…`).
 //
 
@@ -113,8 +113,8 @@ private func threeMembers() -> [SplitMember] {
 @MainActor
 struct GroupShareableSummaryLogicTests {
 
-    /// AC del ticket: nombre del grupo, total gastado, desglose por miembro y lista mínima de pagos.
-    @Test("AC · total, quién pagó qué y los pagos mínimos para saldar")
+    /// AC del ticket: nombre del grupo, total gastado, desglose por miembro y los pagos para saldar.
+    @Test("AC · total, quién pagó qué y los pagos para saldar")
     func buildsTheWholeSummary() throws {
         let group = makeGroup()
         let e1 = makeExpense(amount: 900, paidByMemberID: ana)
@@ -239,12 +239,11 @@ struct GroupShareableSummaryLogicTests {
         #expect(usdBlock.payments[0].fromName == "Beto")
     }
 
-    /// El resumen responde «cómo saldamos esto en los menos pagos posibles», así que simplifica
-    /// SIEMPRE — aunque el grupo tenga la preferencia apagada y su pestaña Balances muestre otra cosa.
-    @Test("Los pagos se simplifican aunque el grupo tenga simplifyDebts apagado")
-    func paymentsAreAlwaysSimplified() throws {
+    /// UX 2.2 · L13-6 (decisión B): los pagos siguen la opción «Simplificar deudas» del grupo, como Saldos. Con la opción
+    /// APAGADA la cadena A→B→C son dos transferencias, las mismas que enseña la pestaña.
+    @Test("L13-6 · con «Simplificar deudas» apagado, los pagos son los de Saldos (sin simplificar)")
+    func paymentsFollowTheGroupOption_off() throws {
         let group = makeGroup(simplifyDebts: false)
-        // Cadena A→B→C: sin simplificar son dos transferencias; simplificada, una sola.
         let e1 = makeExpense(amount: 100, paidByMemberID: beto)
         let e2 = makeExpense(amount: 100, paidByMemberID: carla)
         let shares = [
@@ -258,7 +257,32 @@ struct GroupShareableSummaryLogicTests {
         )
 
         let block = try #require(snapshot.blocks.first)
-        // Con `simplifyDebts: false` el servicio devolvería DOS deudas (Ana→Beto y Beto→Carla).
+        let pairs = Set(block.payments.map { "\($0.fromName)→\($0.toName):\($0.amount)" })
+        #expect(pairs == ["Ana→Beto:100.0", "Beto→Carla:100.0"])
+        // La misma respuesta que la pestaña: el resumen y Saldos leen el MISMO cálculo con la MISMA opción.
+        let saldos = GroupBalanceService.calculateDebts(
+            expenses: [e1, e2], shares: shares, settlements: [], simplifyDebts: group.simplifyDebts)
+        #expect(Set(saldos.map { "\($0.fromMemberID)→\($0.toMemberID):\($0.amount)" })
+                == Set(block.payments.map { "\($0.fromMemberID)→\($0.toMemberID):\($0.amount)" }))
+    }
+
+    /// Con la opción ENCENDIDA, la misma cadena se salda en un solo pago, como en Saldos.
+    @Test("L13-6 · con «Simplificar deudas» encendido, un solo pago")
+    func paymentsFollowTheGroupOption_on() throws {
+        let group = makeGroup(simplifyDebts: true)
+        let e1 = makeExpense(amount: 100, paidByMemberID: beto)
+        let e2 = makeExpense(amount: 100, paidByMemberID: carla)
+        let shares = [
+            makeShare(expenseID: e1.id, memberID: ana, amount: 100),
+            makeShare(expenseID: e2.id, memberID: beto, amount: 100)
+        ]
+
+        let snapshot = GroupShareableSummaryLogic.build(
+            group: group, members: threeMembers(), expenses: [e1, e2], shares: shares,
+            settlements: [], unknownMemberName: sinNombre
+        )
+
+        let block = try #require(snapshot.blocks.first)
         #expect(block.payments.count == 1)
         #expect(block.payments[0].fromName == "Ana")
         #expect(block.payments[0].toName == "Carla")

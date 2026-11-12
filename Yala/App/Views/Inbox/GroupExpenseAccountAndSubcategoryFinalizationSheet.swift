@@ -23,6 +23,9 @@ struct GroupExpenseAccountAndSubcategoryFinalizationSheet: View {
 
     let draft: InboxDraft
     let onApproved: () -> Void
+    /// UX 2.2 · L13-7: quien abre la hoja justo tras «Sí, registrar» necesita saber en qué cuenta quedó (la pantalla de
+    /// éxito lo dice). Recibe el nombre de la cuenta al aprobar o al enlazar un movimiento.
+    var onRegistered: ((String) -> Void)? = nil
 
     // MARK: - Environment
 
@@ -40,10 +43,31 @@ struct GroupExpenseAccountAndSubcategoryFinalizationSheet: View {
     @State private var resolvedCurrency: String = ""
     @State private var saveErrorMessage: String? = nil
     @State private var showSaveError: Bool = false
+    /// Cards 9o4n y ouka: el gasto ya estaba en las cuentas (otro borrador lo aprobó) o ya no existe (borrado en remoto
+    /// con la hoja abierta). El «OK» del aviso cierra la hoja, y el borrador se retira al desaparecer: con la hoja
+    /// montada, borrarlo la tumbaría.
+    @State private var retirementOnClose: GroupExpenseDraftRetirement? = nil
+    /// UX 2.2 · L13-15: movimientos que ya apuntaste y pueden ser este gasto.
+    @State private var linkCandidates: [TransactionItem] = []
+    /// Grupos B (card 5): «Partir» tu parte en líneas.
+    @State private var split = GroupDraftSplitState()
+
+    @Query private var accounts: [Account]
 
     // MARK: - Body
 
+    /// Bug del 2026-11-09: la limpieza tras una sincronización puede retirar este borrador con la hoja abierta (ya lo
+    /// tenía la de iCloud). Leer un `InboxDraft` borrado aborta en el iPhone (regla de filas montadas de `swiftui-ds.md`):
+    /// sin borrador, la hoja no pinta nada y se cierra.
     var body: some View {
+        if draft.isDeleted || draft.modelContext == nil {
+            Color.clear.onAppear { dismiss() }
+        } else {
+            content
+        }
+    }
+
+    private var content: some View {
         NavigationStack {
             GroupDraftFinalizationScaffold(
                 bannerMessage: String(format: L10n.Inbox.GroupExpenseAccountSubcategoryDraft.banner, groupName),
@@ -52,8 +76,15 @@ struct GroupExpenseAccountAndSubcategoryFinalizationSheet: View {
                 currencyCode: resolvedCurrency,
                 date: draft.effectiveDate,
                 hint: hintMessage,
-                finalizeDisabled: selectedAccount == nil || selectedSubcategory == nil,
-                onFinalize: { handleFinalize() }
+                finalizeDisabled: selectedAccount == nil
+                    || (split.isSplitting ? !split.canApprove(accounts: accounts, sourceAccount: selectedAccount) : selectedSubcategory == nil),
+                onFinalize: { handleFinalize() },
+                // Con «Partir» abierto, la tarjeta ocupa el sitio de «¿Ya lo apuntaste?»: enlazar un movimiento no parte nada.
+                accessory: split.isSplitting
+                    ? AnyView(GroupDraftSplitCard(state: split, sourceAccount: selectedAccount))
+                    : linkCandidates.isEmpty ? nil : AnyView(
+                        GroupDraftLinkCandidatesView(candidates: linkCandidates) { link($0) }
+                    )
             ) {
                 SelectionChip(
                     icon: "creditcard",
@@ -63,13 +94,18 @@ struct GroupExpenseAccountAndSubcategoryFinalizationSheet: View {
                 ) {
                     showAccountSelector = true
                 }
-                SelectionChip(
-                    icon: "tag",
-                    text: selectedSubcategory?.name ?? L10n.Inbox.GroupExpenseDraft.assignSubcategory,
-                    isSelected: selectedSubcategory != nil,
-                    color: selectedSubcategory.map { Color(hex: $0.safeCategory.colorHex) }
-                ) {
-                    showSubcategorySelector = true
+                if !split.isSplitting {
+                    SelectionChip(
+                        icon: "tag",
+                        text: selectedSubcategory?.name ?? L10n.Inbox.GroupExpenseDraft.assignSubcategory,
+                        isSelected: selectedSubcategory != nil,
+                        color: selectedSubcategory.map { Color(hex: $0.safeCategory.colorHex) }
+                    ) {
+                        showSubcategorySelector = true
+                    }
+                    if split.offersSplit {
+                        GroupDraftSplitChip { split.start(selectedSubcategoryID: selectedSubcategory?.shortcutID) }
+                    }
                 }
             }
             .navigationTitle(L10n.Inbox.GroupExpenseAccountSubcategoryDraft.title)
@@ -96,11 +132,15 @@ struct GroupExpenseAccountAndSubcategoryFinalizationSheet: View {
                 )
             }
             .alert(L10n.Common.error, isPresented: $showSaveError) {
-                Button(L10n.Common.ok) {}
+                Button(L10n.Common.ok) { closeIfDraftRetires() }
             } message: {
                 Text(saveErrorMessage ?? L10n.Common.unknownError)
             }
-            .onAppear { loadMetadata() }
+            .onAppear {
+                loadMetadata()
+                split.load(draft: draft, context: modelContext)
+            }
+            .onDisappear { retireDraftOnClose() }
         }
     }
 
@@ -127,6 +167,9 @@ struct GroupExpenseAccountAndSubcategoryFinalizationSheet: View {
         case .settlementAmountChanged:
             // Solo lo llevan avisos de liquidación, que tienen su hoja (`GroupSettlementAmountChangeSheet`); un gasto no.
             return ""
+        case .splitLinesMismatch:
+            // Grupos B: lo lleva un aviso que solo pide la categoría (`GroupExpenseDraftFinalizationSheet`); por si llegara.
+            return String(format: L10n.Groups.Bridge.draftReasonSplitLinesMismatch, group)
         }
     }
 
@@ -152,23 +195,77 @@ struct GroupExpenseAccountAndSubcategoryFinalizationSheet: View {
         } else {
             groupName = draft.originGroupName ?? ""
         }
+        do {
+            linkCandidates = try DraftService.shared.groupExpenseLinkCandidates(for: draft)
+        } catch {
+            #if DEBUG
+            print("GroupExpenseAccountAndSubcategoryFinalizationSheet: link candidates failed: \(error)")
+            #endif
+            linkCandidates = []
+        }
+    }
+
+    /// UX 2.2 · L13-15: enlaza el movimiento elegido con el gasto y cierra, como al finalizar.
+    private func link(_ transaction: TransactionItem) {
+        do {
+            let linked = try DraftService.shared.linkGroupExpenseDraft(draft, to: transaction)
+            DS.Haptic.success()
+            onRegistered?(linked.account?.name ?? "")
+            onApproved()
+            dismiss()
+        } catch {
+            #if DEBUG
+            print("GroupExpenseAccountAndSubcategoryFinalizationSheet: link failed: \(error)")
+            #endif
+            retirementOnClose = GroupExpenseDraftRetirement(after: error)
+            saveErrorMessage = GroupsUserFacingErrorLogic.message(for: error)
+            DS.Haptic.error()
+            showSaveError = true
+        }
     }
 
     private func handleFinalize() {
-        guard let account = selectedAccount, let subcategory = selectedSubcategory else { return }
+        guard let account = selectedAccount else { return }
+        // Con «Partir»: la categoría la llevan las líneas (la primera de gasto va a la pata real) y, si hay varias, la
+        // receta. Sin «Partir», la de siempre.
+        let splitLines = split.isSplitting ? split.approvalLines : nil
+        let subcategory = split.isSplitting ? split.draftSubcategory(context: modelContext) : selectedSubcategory
+        guard split.isSplitting || subcategory != nil else { return }
         draft.account = account
         draft.subcategory = subcategory
         do {
-            _ = try DraftService.shared.approveDraft(draft, currencyConverter: currencyConverter)
+            _ = try DraftService.shared.approveDraft(draft, currencyConverter: currencyConverter, splitLines: splitLines)
             DS.Haptic.success()
+            onRegistered?(account.name)
             onApproved()
             dismiss()
         } catch {
             #if DEBUG
             print("GroupExpenseAccountAndSubcategoryFinalizationSheet: approve failed: \(error)")
             #endif
-            saveErrorMessage = error.localizedDescription
+            retirementOnClose = GroupExpenseDraftRetirement(after: error)
+            saveErrorMessage = GroupsUserFacingErrorLogic.message(for: error)
+            DS.Haptic.error()
             showSaveError = true
+        }
+    }
+
+    private func closeIfDraftRetires() {
+        guard retirementOnClose != nil else { return }
+        dismiss()
+    }
+
+    /// Al desaparecer la hoja, y solo tras `groupExpenseAlreadyRegistered` o `groupExpenseTargetMissing`: el servicio
+    /// vuelve a medir antes de borrar.
+    private func retireDraftOnClose() {
+        guard let retirement = retirementOnClose else { return }
+        retirementOnClose = nil
+        do {
+            try DraftService.shared.retireGroupExpenseDraft(draft, after: retirement)
+        } catch {
+            #if DEBUG
+            print("GroupExpenseAccountAndSubcategoryFinalizationSheet: retire failed: \(error)")
+            #endif
         }
     }
 }

@@ -53,6 +53,15 @@ enum RecordContextActionLogic {
         let accountIsNil: Bool
         let accountIsSystem: Bool
         let subcategoryIsSystem: Bool
+        /// Grupos B: pata derivada de una línea de tu parte (también la entrada de una recarga, sin puntero). Cuenta como
+        /// de grupo: la escribe el puente.
+        var isSplitLineLeg: Bool = false
+        /// Grupos B · card 6u5f: la pata que lleva tu parte partida en líneas. Su categoría la pone el puente desde las
+        /// líneas; se cambia en «Partir tu parte», no suelta.
+        var holdsSplitRecipe: Bool = false
+
+        /// Lo que viene de un grupo y por eso lo manda el grupo.
+        var isGroupRecord: Bool { hasSplitExpenseID || hasSplitSettlementID || isSplitLineLeg }
     }
 
     struct Actions: Equatable {
@@ -63,7 +72,7 @@ enum RecordContextActionLogic {
     }
 
     static func actions(_ s: Shape) -> Actions {
-        let isGroupRecord = s.hasSplitExpenseID || s.hasSplitSettlementID
+        let isGroupRecord = s.isGroupRecord
         // Transferencias y ajustes de saldo llevan subcategoría de sistema obligatoria (`bulkUpdateSubcategory` ya
         // rechaza las transferencias). En lo de grupo, lo mismo que `BridgedEditPolicy` le deja al editor.
         let bridged = BridgedEditPolicy.classify(BridgedEditPolicy.TxShape(
@@ -72,15 +81,80 @@ enum RecordContextActionLogic {
             accountIsNil: s.accountIsNil,
             accountIsSystem: s.accountIsSystem,
             subcategoryIsSystem: s.subcategoryIsSystem,
-            hasPendingPointerDraft: false))
+            hasPendingPointerDraft: false,
+            isSplitLineLeg: s.isSplitLineLeg))
         let canChangeCategory = !s.hasBalanceAdjustmentType
             && !s.subcategoryIsSystem
+            && !s.holdsSplitRecipe
             && BridgedEditPolicy.canEditSubcategoryAndTags(bridged)
         return Actions(
             canEdit: true,
             canDuplicate: !isGroupRecord,
             canChangeCategory: canChangeCategory,
             canDelete: !isGroupRecord)
+    }
+}
+
+// MARK: - Edición y borrado en lote de registros
+
+/// Qué deja hacer el modo selección (borrar y «Editar varios») con un registro. **El mismo criterio que el menú
+/// contextual y el editor**: lo que viene de un grupo lo manda el grupo. Antes el lote no miraba nada, y borrar o cambiar
+/// el monto de un gasto de grupo desde aquí descuadraba tus cuentas con las del grupo: el grupo seguía diciendo
+/// «Pagaste S/ 80» y el registro ya no estaba (auditoría UX 2.2, lote 8).
+///
+/// Las transferencias tienen su propio bloqueo dentro de cada operación de `RecordsViewModel`; esto no lo sustituye.
+enum RecordBulkActionLogic {
+
+    enum Operation: Equatable, CaseIterable {
+        case delete, amount, note, account, subcategory, tags
+    }
+
+    static func allows(_ operation: Operation, _ s: RecordContextActionLogic.Shape) -> Bool {
+        let isGroupRecord = s.isGroupRecord
+        guard isGroupRecord else { return true }
+        // Como el menú: sin el fetch al store de grupos que haría falta para saber si el gasto sigue vivo, todo registro
+        // con puntero de grupo cuenta como de grupo (`pointerResolves` por defecto). El huérfano se arregla en el editor.
+        let classification = BridgedEditPolicy.classify(BridgedEditPolicy.TxShape(
+            hasSplitExpenseID: s.hasSplitExpenseID,
+            hasSplitSettlementID: s.hasSplitSettlementID,
+            accountIsNil: s.accountIsNil,
+            accountIsSystem: s.accountIsSystem,
+            subcategoryIsSystem: s.subcategoryIsSystem,
+            hasPendingPointerDraft: false,
+            isSplitLineLeg: s.isSplitLineLeg))
+        switch operation {
+        // Borrar y el monto: los del grupo (M6, `RecordContextActionLogic.canDelete`). La nota, igual: el editor la
+        // deja dentro de los campos del grupo (`centralContent`, bloqueado en todo registro de grupo).
+        case .delete, .amount, .note: return false
+        case .account: return BridgedEditPolicy.canEditAccount(classification)
+        case .subcategory: return !s.holdsSplitRecipe && BridgedEditPolicy.canEditSubcategoryAndTags(classification)
+        case .tags: return BridgedEditPolicy.canEditSubcategoryAndTags(classification)
+        }
+    }
+
+    /// La confirmación del borrado en lote. `deletable` son los elegidos que se pueden borrar y `groupRecords` los que
+    /// vienen de un grupo, que se quedan.
+    struct DeleteDialog: Equatable {
+        enum Title: Equatable { case deleteCount(Int), onlyGroupRecords }
+        enum Message: Equatable { case cannotUndo, cannotUndoKeepingGroupRecords(Int), deleteFromGroup }
+        let title: Title
+        let message: Message
+        let offersDelete: Bool
+    }
+
+    static func deleteDialog(deletable: Int, groupRecords: Int) -> DeleteDialog {
+        guard deletable > 0 else {
+            // Nada elegido (la barra no sale sin selección, pero la lógica no lo da por hecho): nada que borrar y nada
+            // que explicar de grupos.
+            guard groupRecords > 0 else {
+                return DeleteDialog(title: .deleteCount(0), message: .cannotUndo, offersDelete: false)
+            }
+            return DeleteDialog(title: .onlyGroupRecords, message: .deleteFromGroup, offersDelete: false)
+        }
+        return DeleteDialog(
+            title: .deleteCount(deletable),
+            message: groupRecords > 0 ? .cannotUndoKeepingGroupRecords(groupRecords) : .cannotUndo,
+            offersDelete: true)
     }
 }
 
@@ -118,5 +192,28 @@ enum ReceiptDropLogic {
 
     static func decide(canAccessImageInput: Bool) -> Decision {
         canAccessImageInput ? .present : .upgrade
+    }
+
+    /// Los estados en los que lo soltado se RECHAZA (UX 2.2 · L15-12). Con una hoja o un aviso cualquiera abiertos se
+    /// acepta y la hoja de lectura espera a que se cierren, como una foto compartida. Aquí no: la ventana no opera
+    /// (arranque, cierre de sesión, borrado, actualización obligatoria) o hay una pregunta del sistema que contestar
+    /// antes de usar Yala (`FollowerWindowGateLogic.attentionBlockers`), y lo soltado se quedaría en `PendingImages/`
+    /// esperando a algo que no se sabe cuándo llega.
+    static let refusingBlockers: Set<String> = FollowerWindowGateLogic.attentionBlockers.union([
+        "splash", "bootstrapPending", "forceUpdate", "wipingData", "signOutRelaunch", "signOutWorking",
+        "followerBusy", "followerNeedsLeader",
+    ])
+
+    static func refusesWhile(shellBlocker: String?) -> Bool {
+        guard let shellBlocker else { return false }
+        return refusingBlockers.contains(shellBlocker)
+    }
+
+    /// El nombre de un archivo de una tanda soltada: el de `SharedImageBatch` (que la hoja agrupa y cuenta), con `.pdf`
+    /// si es un PDF para que la hoja lo trocee en páginas.
+    static func batchFileName(batchID: String, index: Int, droppedCount: Int, isPDF: Bool) -> String {
+        let name = SharedImageBatch.fileName(batchID: batchID, index: index, sharedCount: max(droppedCount, index + 1))
+        guard isPDF else { return name }
+        return (name as NSString).deletingPathExtension + ".pdf"
     }
 }

@@ -3,12 +3,12 @@
 El Worker no se despliega solo: `deploy:staging` y `deploy:production` los corre Jürgen a mano (`README.md`, «Deploy»).
 Aquí se apunta lo que está mergeado y espera despliegue, con cómo comprobarlo. Lo desplegado se borra de aquí.
 
-## 2026-10-15 · «Eliminar mi cuenta» olvida el contador de uso de la cuenta
+**Nada pendiente** (2026-11-02). Los dos entornos corren el manifest de Grupos **v3** (g29_01, card xi74: el autor de
+gastos y liquidaciones), desplegado desde la rama `encargo/2026-11-02-grupos-autor-del-gasto` sobre `origin/2.2`, sin
+más cambios de gateway que ése: staging `453090c6`, producción `9b651957`. Personal sigue en v6. Detalle en
+`docs/RUNBOOK-staging-ddl.md`, entrada g29_01.
 
-- **Qué cambia:** `/account/delete` pide al Durable Object `RateLimiter` del cubo `sub:<sub>` que borre su estado
-  (op `forget`). Ticket `account-deletion-leaves-attest-key-and-usage-counter-in-cloudflare`.
-- **Sin migración de D1**: no cambia ninguna tabla. Solo código del Worker.
-- **Desplegar:** `cd gateway && npm run deploy:staging`, y después `npm run deploy:production`.
-- **Comprobar:** en `npx wrangler tail [--env production]`, un borrado de cuenta no imprime
-  `[account-delete] quota cleanup falló`. Hasta desplegar, el contador de la cuenta se sigue quedando en producción
-  aunque la política ya diga que se borra.
+**Sigue en pie el guard de `predeploy:*`** (`scripts/check-manifest-not-older.mjs`): para el despliegue si el árbol trae
+un manifest más viejo que el desplegado. **`1.0` no trae ese guard**, así que desde `1.0` nada lo para: el Worker de
+producción no se despliega desde `1.0` ni desde ninguna rama sin `manifest_version: 3`. Forzar desde 2.2:
+`ALLOW_MANIFEST_DOWNGRADE=1`, y solo junto con los `*_rollback.sql`.

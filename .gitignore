@@ -54,3 +54,6 @@ qa/results/
 .agents/
 .claude/sessions/tests-passed
 docs/modo-nube/briefs/
+
+# AnnotateKit: notas enviadas desde Yala Dev (capturas de pantalla, locales)
+.annotate/

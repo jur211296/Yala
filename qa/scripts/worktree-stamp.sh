@@ -16,8 +16,14 @@
 # describen el mismo disco pero producen textos distintos ⇒ `git add` de un fichero nuevo
 # cambiaba la huella y bloqueaba el commit con «el codigo cambio desde que paso /gate»,
 # que era falso. Costó un gate re-corrido y un rato de diagnóstico el 2026-09-01; la
-# cabecera anterior llegó a PROMETER lo contrario de lo que hacía. Banco de pruebas de
-# los 7 casos (incluido ése): `qa/scripts/worktree-stamp-test.sh`.
+# cabecera anterior llegó a PROMETER lo contrario de lo que hacía. Banco de pruebas:
+# `qa/scripts/worktree-stamp-test.sh`.
+#
+# Lo mismo con un fichero MOVIDO, y por eso `--no-renames` (2026-10-26): sin stagear, git
+# lista los dos lados (la ruta vieja borrada, la nueva sin trackear); tras `git add`,
+# `git diff HEAD` lo detecta como renombre y solo nombra la nueva. La vieja desaparecía de
+# la huella y el pre-commit bloqueaba sin que cambiara un byte (medido en el lote 12.4, con
+# tickets movidos de carpeta). Con `--no-renames` el lado viejo sale siempre, como `ausente`.
 #
 # Composición: HEAD + una línea por fichero que difiere de HEAD o está sin trackear,
 # con la MISMA forma para todos —ruta, permisos y sha256 del contenido en disco—, o
@@ -30,9 +36,10 @@ cd "$(git rev-parse --show-toplevel 2>/dev/null)" || exit 1
     git rev-parse HEAD 2>/dev/null
 
     {
-        # Difieren de HEAD: modificados, añadidos, borrados y los dos lados de un rename.
-        # Cubre staged y unstaged a la vez.
-        git diff HEAD --name-only -z 2>/dev/null
+        # Difieren de HEAD: modificados, añadidos, borrados y los dos lados de un rename
+        # (`--no-renames`: sin él, un rename staged esconde la ruta vieja). Cubre staged y
+        # unstaged a la vez.
+        git diff HEAD --name-only --no-renames -z 2>/dev/null
         # Sin trackear. Excluye lo ignorado por .gitignore.
         git ls-files --others --exclude-standard -z 2>/dev/null
     } | sort -z -u | while IFS= read -r -d '' f; do

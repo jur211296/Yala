@@ -17,9 +17,9 @@ import { dayInZone, resolvePeriod, type PeriodKind } from "../src/logic/dates";
 import { buildRateBook, convertOn, utcDateKey } from "../src/logic/fx";
 import { STATIC_RATES_PER_USD } from "../src/logic/fx-static";
 import { buildGroupAdjustment, LOAN_TO_GROUPS_NAMES } from "../src/logic/groups";
-import { buildLookup } from "../src/logic/lookup";
+import { buildLookup, categoryOf } from "../src/logic/lookup";
 import { listRecurring } from "../src/logic/recurring";
-import { summarize } from "../src/logic/summary";
+import { summarize, txKindOf, type TxKind } from "../src/logic/summary";
 import type {
   AccountRow,
   BudgetRow,
@@ -46,6 +46,7 @@ interface Expected {
   budgets: Record<string, number>;
   recurring: { suscripciones_mensual: number; recurrentes_mensual: number };
   groups: Record<string, { amount: number; amountInPreferred: number; suppressed: boolean }>;
+  kinds: Record<string, TxKind>;
   conversions: { value: number; quality: string }[];
 }
 
@@ -187,6 +188,12 @@ for (const s of golden.scenarios) {
         close(groups.amountInPreferred(tx), want.amountInPreferred, `amountInPreferred ${id}`, 1e-6);
         expect(groups.isSuppressed(tx), `suprimida ${id}`).toBe(want.suppressed);
       }
+    });
+
+    it("tipo de cada movimiento en buscar_movimientos (TransactionClassificationLogic)", () => {
+      // Todos los movimientos del escenario, no solo los que la app nombró: uno sin `expected` sería un hueco.
+      const got = Object.fromEntries(s.rows.tx_items.map((t) => [t.sync_id, txKindOf(t, categoryOf(lookup, t))]));
+      expect(got).toEqual(exp.kinds);
     });
 
     it("conversiones sueltas con la tasa del día (CurrencyConverter.convertChecked)", () => {

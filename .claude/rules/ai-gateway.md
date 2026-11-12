@@ -13,6 +13,15 @@ paths:
   - "Yala/Services/TranscriptionParserService.swift"
   - "Yala/Services/AIPromptLanguage.swift"
   - "Yala/Services/InsightsLLMService.swift"
+  - "Yala/Services/TrendsAIService.swift"
+  - "Yala/Services/StatsAIAutoRefreshStore.swift"
+  - "Yala/App/Logic/StatsAIAutoRefreshLogic.swift"
+  - "Yala/App/ViewModels/InsightsViewModel.swift"
+  - "Yala/App/ViewModels/TrendsAIViewModel.swift"
+  - "Yala/Services/ChatAssistantService.swift"
+  - "Yala/Services/Chat/**"
+  - "qa/ai-bank/**"
+  - "gateway/scripts/yala-ia-bank.ts"
 ---
 
 # Proxy de IA: el gateway decide, la app dice qué pide (2026-10-07)
@@ -38,6 +47,11 @@ calidad medida y después por precio**. La app ya no decide nada: dice qué tare
   OpenAI». Una fila de otro proveedor necesita su `LEGACY_OVERRIDES` de OpenAI, o `routeFor` lanza (test en
   `ai.routing.test.ts`). Encender otro proveedor exige además los textos de permisos y consentimiento en los 16 idiomas,
   la política de privacidad web publicada (producción de la web sigue a la rama 1.0), DPA y clave como secret.
+  **La política va primero, y lo vigila un test** (2026-10-25, card `buer`): `gateway/test/ai.policy-providers.test.ts`
+  exige que cada proveedor de una fila activa (`ROUTES` + `LEGACY_OVERRIDES`) salga en `privacyProvidersText` de los seis
+  idiomas de la web. Encender Gemini sin tocar la política lo pone rojo en el job `gateway` del CI. El orden: política
+  en `Web/` (es de Lola) → publicada en 1.0 → fila a `ROUTES`. Su control negativo se retira el día que la política
+  nombre a Gemini.
 - **Las filas `managed` ignoran los parámetros del cuerpo** (modelo, temperatura, formato): manda la fila. Un
   `maxOutputTokens` demasiado bajo trunca el JSON y la app lo rechaza: se fija con el p99 del banco ×2.
 
@@ -95,3 +109,79 @@ calidad medida y después por precio**. La app ya no decide nada: dice qué tare
   la nota cruda. **Un cambio del prompt de la foto se juzga también por el acierto, no solo por la nota**: el 2026-10-10
   un prompt que pedía «nunca dejes vacíos comercio y nota» inventó movimientos en una página de resumen
   (`results/2026-10-10-nota-despues-v2/REPORT-nota.md`).
+
+## Yala IA en la nube: el camino ampliado (`chat.explore`, 2026-10-18)
+
+En modo nube, con el flag encendido, el modelo pide datos con herramientas que el gateway ejecuta contra las tablas del
+usuario (`gateway/src/ai/explore/`). Diseño y decisiones pendientes: `docs/ai-cloud-vs-private-2026-10.md`.
+
+- **En privado no se toca nada.** `YalaIAChatRouting.resolve` devuelve `.standard` sin leer el flag ni pedir el token, y
+  la petición sale como `chat.answer` byte a byte. Lo fijan `YalaIAChatRoutingTests` y
+  `ProxyTaskHeaderTests#standardRouteLeavesAsBefore`. Una lectura nueva en ese camino rompe la promesa del encargo.
+- **Un solo flag, `AI_CLOUD_EXPLORE_ROLLOUT_PERCENT`, a `"0"` en staging y en producción** (`config.test.ts` se pone rojo
+  si cambia). Encenderlo exige antes el texto de consentimiento de la nube (card
+  `tablero-yala-ia-en-la-nube-el-texto-de-consentim-pi5z`): el aviso de hoy no cubre notas ni más de 13 meses.
+- **En la app falla cerrado en todos los builds.** `CloudRemoteFlags.aiCloudExploreEnabled` no pasa por `decide()`, cuyo
+  `absentDefault` es `true` en DEV. No lo «unifiques» con los otros tres.
+- **Con el flag a 0 o sin JWT válido, `chat.explore` se contesta como `chat.answer`**, sin herramientas: nunca un error
+  nuevo. La fila de `chat.explore` es la de `chat.answer` (test): si cambias el modelo de una, cambia la otra.
+- **Las herramientas son las del conector MCP**: `mcp/src/toolCore.ts` y lo que importa no pueden depender de ningún
+  paquete (el CI del gateway no instala los del conector; lo fija `ai.explore.test.ts`). Su esquema JSON vive en
+  `explore/tools.ts` y tiene que casar con el `zod` del conector salvo dos diferencias declaradas (sin `zona_horaria`,
+  `limite` hasta 50): `mcp/test/toolSchemas.test.ts`.
+- **Lista cerrada propia**: solo `GET` a las nueve tablas de `EXPLORE_TABLES`, con el JWT del usuario y nunca
+  `service_role`. Una herramienta que lea otra tabla necesita añadirla ahí, o lanza sin tocar la red.
+- **Una pregunta = un uso de la cuota `chat`**, con topes por pregunta (`EXPLORE_LIMITS`). El log `ai_route` lleva
+  rondas, nombres de herramientas, caracteres y tokens; nunca argumentos ni resultados (test).
+
+## Yala IA: el contexto, el prompt y la ruta del chat (2026-10-20)
+
+Revisión medida con un banco de 50 preguntas (`docs/ai/revision-ia-2-2.md`). Cinco cosas que no se tocan sin reabrirlo:
+
+- **Los saldos del contexto salen del libro ENTERO, las estadísticas de 13 meses.** `build(modelContext:)` lee todos los
+  movimientos y los pasa a `buildFromArrays(balanceLedger:)`; el saldo de cada cuenta va por `AccountBalanceCalculator` y
+  el total por `LiveBalanceCalculator`, con `asOf: now`. Con la ventana, un saldo inicial viejo dejaba el saldo de Yala IA
+  a la mitad del Panel. Lo fija `ChatContextLedgerAndHistoryTests` (mutante: rojo).
+- **«Hoy» es el día entero** (`LiveBalanceCalculator.TodayCutoff`): los períodos en curso cierran al final de hoy y la
+  elegibilidad no corta por instante. Foto y voz fechan a las 12:00.
+- **Todo dato nuevo del contexto cabe en el aviso P1** («un resumen de tus últimos 13 meses: saldos y nombres de
+  cuentas, totales por categoría, comercios frecuentes, presupuestos, pagos recurrentes y tus gastos más grandes de este
+  mes»): agregados de esos tipos y de esa ventana. Un tipo nuevo (notas, movimientos sueltos de otros meses, más de 13
+  meses) cambia lo que sale del teléfono y es decisión de Jürgen. Y cada carácter del JSON se paga en cada pregunta:
+  medir con el banco antes de añadir (de 8,2k a 12,8k tokens en esta revisión).
+- **Lo que el modelo calcula mal, se le da calculado**: mes más caro, totales por año, «el mismo mes del año pasado»,
+  lo que queda de los presupuestos. El banco midió que leyendo 12 filas se saltaba diciembre y que sumaba mal cuatro
+  presupuestos. Un campo agregado lleva un nombre que no se confunda con el de un elemento
+  (`all_budgets_remaining`, no `budgets_remaining`: con el segundo contestó «te quedan S/ 1.859 en Comidas fuera»).
+- **`ChatIntentClassifierService.preRoute` solo da `ask`, y nunca con una cifra o un verbo de apuntar.** Ahorra
+  `chat.intent` (~1,4 s) en las preguntas claras. `YalaIAQuestionRouteTests` lo pasa por las 115 frases del banco de
+  `chat.intent`: un patrón nuevo que contradiga una etiqueta lo pone rojo.
+
+**El banco se repite así**: `YalaIABankDumpTests` (apagado sin `TEST_RUNNER_YALA_AI_BANK_DIR`) vuelca las peticiones
+reales sobre `realista`, y `gateway/scripts/yala-ia-bank.ts` las manda a staging con el token del bypass de desarrollo.
+Baja el centinela de la semilla de categorías antes de sembrar: puesto, la semilla sale sin categorías y el banco mide
+un libro sin gastos.
+
+## Los textos con IA de Estadísticas salen solos (encargo `estadisticas-ia-automatica`, 2026-11-03)
+
+Pro con la IA aceptada ve el resumen (Resumen, Distribución) y el análisis de Tendencias sin tocar nada. Lo que no se
+toca sin reabrirlo:
+
+- **Una sola decisión, `StatsAIAutoRefreshLogic.decide`**, para las dos páginas: ≥5 registros, mismas cifras = lo guardado
+  (aunque tenga más de 24 h), antirrebote de 10 min por ranura (también para la primera), cambio relevante (±3 registros
+  o un total ±10 %) y, sin él, una regeneración al día si lo guardado tiene 24 h. **Techo: 4 automáticas por página y
+  día**; lo manual no cuenta. Un texto de IA nuevo en Estadísticas pasa por ella, o se dispara sin techo.
+- **La ranura no lleva cifras** (período, filtros por nombre con `InsightsViewModel.aiFilterIdentity`, tono, enfoque,
+  idioma, divisa): es lo que se enseña mientras se regenera. Nunca `hashValue` en una ranura o una huella: cambia en cada
+  lanzamiento y cada arranque sería una primera vez pagada.
+- **El intento se apunta al pedirlo** (`StatsAIAutoRefreshStore.recordGeneration`), no al recibirlo: un fallo también
+  gasta y así el techo acota los reintentos. Sin red no se apunta ni se llama.
+- **La petición automática va en una tarea propia**, fuera del `.task(id:)` que la decide: cambiar de pestaña recalcula,
+  sube la versión y cancelaría una llamada ya pagada.
+- **Un fallo automático es silencioso**: lo guardado se queda; sin nada, vuelve el botón de siempre (ni la tarjeta de
+  error ni el aviso V2-06, que son de lo pedido a mano).
+- **Coste medido** (banco del 2026-10-07): `insights.cards` 0,48 USD/1000 y `trends.summary` 4,49 USD/1000. Con el techo,
+  como mucho ≈0,02 USD por usuario y día; lo normal, una de cada (≈0,005). Si cambia el modelo de una de las dos filas
+  de `routes.ts`, rehaz la cuenta antes de tocar el techo.
+- XCUITest: `-uitest-stats-ai-reply` contesta sin red con `StatsAIUITestReply`; la decisión sigue siendo la de producción.
+  Sus claves (`StatsAIAutoRefreshStore.storageKeys`) las borran «Vaciar datos» y `-uitest-reset`.

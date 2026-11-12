@@ -20,6 +20,10 @@ struct PersonalDetailsView: View {
     @State private var editedAlias: String = ""
     @State private var aliasValidationMessage: String = ""
     @State private var isAliasValid: Bool = true
+    /// Hasta que `onAppear` carga lo guardado, los campos están vacíos: guardar antes borraría el nombre.
+    @State private var didLoadValues = false
+    /// «Más sobre tus datos» abre la política de privacidad dentro de Yala (UX 2.2 · L16-2, con el molde de L16-19).
+    @State private var webPage: InAppWebPage?
 
     private let maxNameLength = 30
 
@@ -60,15 +64,25 @@ struct PersonalDetailsView: View {
             .navigationTitle(L10n.Profile.personalDetails)
             .navigationBarTitleDisplayMode(.inline)
             .yalaScreenBackground(.subtle)
+            // UX 2.2 · L16-2: «Listo» arriba a la derecha, que es como se cierra una hoja que guarda. El «‹» de antes era el de
+            // una pantalla empujada y no decía que guardaba.
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(L10n.Action.done) {
                         saveAndDismiss()
                     }
+                    .accessibilityIdentifier("personal_details_done")
                 }
             }
+            .inAppSafari($webPage)
             .onAppear {
                 loadCurrentValues()
+            }
+            // Cerrar la hoja deslizando hacia abajo NO pasa por el botón de atrás: sin esto, el nombre o el avatar
+            // que se acababan de cambiar se perdían sin aviso (auditoría UX 2.2, lote 16). `persistChanges` es
+            // idempotente, así que el atrás (que también guarda) no escribe dos cosas distintas.
+            .onDisappear {
+                persistChanges()
             }
             .onChange(of: selectedPhotoItem) { _, newItem in
                 Task {
@@ -158,7 +172,7 @@ struct PersonalDetailsView: View {
 
                 Image(systemName: selectedIcon)
                     .font(.system(size: avatarSize))
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
             } else {
                 // Default
                 Circle()
@@ -167,7 +181,7 @@ struct PersonalDetailsView: View {
 
                 Image(systemName: "person.fill")
                     .font(.system(size: avatarSize))
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
             }
 
             // Edit badge overlay
@@ -177,7 +191,7 @@ struct PersonalDetailsView: View {
                 .overlay {
                     Image(systemName: "pencil")
                         .font(DS.Typography.labelSmall)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.thOnAccent)
                 }
                 .offset(x: 35, y: 35)
         }
@@ -203,6 +217,7 @@ struct PersonalDetailsView: View {
                             .foregroundStyle(.primary)
                         Spacer()
                         TextField(L10n.Profile.yourName, text: $editedName)
+                            .accessibilityIdentifier("personal_details_name_field")
                             .multilineTextAlignment(.trailing)
                             .foregroundStyle(.primary)
                     }
@@ -226,16 +241,25 @@ struct PersonalDetailsView: View {
 
     // MARK: - Privacy Disclaimer
 
+    /// UX 2.2 · L16-2: dos líneas y «Más sobre tus datos». El párrafo de seis líneas (iCloud, la nube, los grupos, el alias,
+    /// la IA) es lo que cuenta la política de privacidad, y ahí lleva el enlace.
     private var privacyDisclaimer: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Profile.privacyTitle)
                 .font(DS.Typography.label)
                 .foregroundStyle(.primary)
 
-            Text(L10n.Profile.privacyDesc)
+            Text(L10n.UXL15.personalDataNote)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
 
+            Button(L10n.UXL15.moreAboutYourData) {
+                webPage = InAppWebPage(url: AppConstants.privacyURL)
+            }
+            .font(DS.Typography.caption.weight(.semibold))
+            .foregroundStyle(theme.accentText)
+            .accessibilityIdentifier("personal_details_more_about_data")
         }
         .padding(.horizontal, DS.Spacing.sm)
     }
@@ -243,7 +267,10 @@ struct PersonalDetailsView: View {
     // MARK: - Helpers
 
     private func loadCurrentValues() {
-        editedName = appPreferences.userName
+        didLoadValues = true
+        // UX 2.2 · L16-2: el nombre de serie («Usuario») no se escribe en el campo: el campo sale vacío con la pista «Tu
+        // nombre» y la persona escribe sin borrar nada. Si lo deja vacío, se guarda el de serie, como antes.
+        editedName = PersonalNameFieldLogic.fieldValue(stored: appPreferences.userName, defaultName: L10n.Profile.defaultName)
         editedAlias = appPreferences.userAlias
         selectedIcon = appPreferences.userProfileIcon
 
@@ -292,6 +319,15 @@ struct PersonalDetailsView: View {
     }
 
     private func saveAndDismiss() {
+        persistChanges()
+        // «Listo» guarda (preferencias locales, no falla): éxito (card C4). El cierre deslizando guarda sin vibrar.
+        DS.Haptic.success()
+        dismiss()
+    }
+
+    /// Guarda nombre, alias y avatar. Lo llaman el botón de atrás y el cierre deslizando (`onDisappear`).
+    private func persistChanges() {
+        guard didLoadValues else { return }
         let trimmedName = editedName.trimmingCharacters(in: .whitespacesAndNewlines)
         appPreferences.userName = trimmedName.isEmpty ? L10n.Profile.defaultName : trimmedName
 
@@ -315,9 +351,6 @@ struct PersonalDetailsView: View {
             ProfileImageStorage.shared.delete()
             appPreferences.userProfileIcon = ""
         }
-
-        // Dismiss the sheet
-        dismiss()
     }
 }
 
@@ -330,20 +363,23 @@ struct IconPickerSheet: View {
     var onSelect: () -> Void
 
     /// Available icons for profile avatar
-    private let availableIcons: [(name: String, symbol: String)] = [
-        ("Persona", "person.fill"),
-        ("Cara feliz", "face.smiling.fill"),
-        ("Estrella", "star.fill"),
-        ("Corazón", "heart.fill"),
-        ("Rayo", "bolt.fill"),
-        ("Corona", "crown.fill"),
-        ("Hoja", "leaf.fill"),
-        ("Llama", "flame.fill"),
-        ("Luna", "moon.fill"),
-        ("Sol", "sun.max.fill"),
-        ("Nube", "cloud.fill"),
-        ("Gota", "drop.fill"),
-    ]
+    /// Nombres localizados: antes eran literales en español y así salían en los 16 idiomas.
+    private var availableIcons: [(name: String, symbol: String)] {
+        [
+            (L10n.Profile.iconPerson, "person.fill"),
+            (L10n.Profile.iconSmiley, "face.smiling.fill"),
+            (L10n.Profile.iconStar, "star.fill"),
+            (L10n.Profile.iconHeart, "heart.fill"),
+            (L10n.Profile.iconBolt, "bolt.fill"),
+            (L10n.Profile.iconCrown, "crown.fill"),
+            (L10n.Profile.iconLeaf, "leaf.fill"),
+            (L10n.Profile.iconFlame, "flame.fill"),
+            (L10n.Profile.iconMoon, "moon.fill"),
+            (L10n.Profile.iconSun, "sun.max.fill"),
+            (L10n.Profile.iconCloud, "cloud.fill"),
+            (L10n.Profile.iconDrop, "drop.fill"),
+        ]
+    }
 
     private let columns = [
         GridItem(.adaptive(minimum: 70, maximum: 80), spacing: DS.Spacing.md)
@@ -373,6 +409,7 @@ struct IconPickerSheet: View {
 
     private func iconButton(_ icon: (name: String, symbol: String)) -> some View {
         Button {
+            DS.Haptic.selection()
             selectedIcon = icon.symbol
             onSelect()
             dismiss()
@@ -388,8 +425,8 @@ struct IconPickerSheet: View {
                     Image(systemName: icon.symbol)
                         .font(DS.Typography.largeTitle)
                         .foregroundStyle(selectedIcon == icon.symbol
-                                         ? .white
-                                         : theme.accent)
+                                         ? theme.onAccent
+                                         : theme.accentText)
                 }
 
                 Text(icon.name)

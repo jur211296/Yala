@@ -152,6 +152,14 @@ final class SubcategoryTransferViewModel {
         SessionState.shared.incrementDataVersion()
     }
 
+    /// Nombres que tuvo «Sin asignar» antes de llevar tildes (lote 12.4, 2026-10-25). La subcategoría se crea con el
+    /// texto del idioma y luego se BUSCA por nombre: sin esto, quien ya la tenía con el nombre viejo recibía una segunda.
+    nonisolated static let legacyUnassignedNames: Set<String> = ["Nao atribuido", "Non attribue"]
+
+    nonisolated static func isUnassignedName(_ name: String, current: String) -> Bool {
+        name == current || legacyUnassignedNames.contains(name)
+    }
+
     /// Gets or creates the "Unassigned" subcategory in the "Others" category
     func getOrCreateUnassignedSubcategory(for sourceSubcategory: Subcategory) -> Subcategory? {
         guard let context = modelContext else { return nil }
@@ -185,7 +193,8 @@ final class SubcategoryTransferViewModel {
 
         // Find or create "Unassigned" subcategory
         var unassignedSubcategory: Subcategory? = allSubcategories.first {
-            $0.name == unassignedName && $0.safeCategory.persistentModelID == category.persistentModelID
+            Self.isUnassignedName($0.name, current: unassignedName)
+                && $0.safeCategory.persistentModelID == category.persistentModelID
         }
 
         if unassignedSubcategory == nil {

@@ -15,6 +15,10 @@ struct SubscriptionSuccessView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
 
+    /// La función de la que venía la compra (UX 2.2 · L17-9): el subtítulo dice «Ya puedes…» con ella, y al tocar
+    /// «Comenzar» quien abrió la compra la abre. `nil` desde el paywall.
+    var feature: ProFeature?
+
     // MARK: - State
 
     @State private var showConfetti = false
@@ -39,19 +43,12 @@ struct SubscriptionSuccessView: View {
             VStack(spacing: DS.Spacing.xxl) {
                 Spacer()
 
-                // Animated spark
-                ZStack {
-                    // Glow
-                    YalaSpark(size: .large, animated: false)
-                        .scaleEffect(5.0)
-                        .blur(radius: 30)
-                        .opacity(0.5)
-
-                    YalaSpark(size: .large, animated: true)
-                        .scaleEffect(4.0)
-                        .shadow(color: Color.orange.opacity(0.5), radius: 10, y: 5)
-                }
-                .scaleEffect(crownScale)
+                // La estrella, sólida y sin halo ni sombra (UX 2.2 · L17-9: la bienvenida pierde el brillo).
+                YalaSpark(size: .large, animated: true, solid: true)
+                    .scaleEffect(3.0)
+                    .frame(height: 100)
+                    .scaleEffect(crownScale)
+                    .accessibilityHidden(true)
 
                 // Title
                 VStack(spacing: DS.Spacing.md) {
@@ -60,7 +57,7 @@ struct SubscriptionSuccessView: View {
                         .foregroundStyle(.thPrimaryText)
                         .multilineTextAlignment(.center)
 
-                    Text(L10n.Subscription.Success.subtitle)
+                    Text(subtitle)
                         .font(DS.Typography.body)
                         .foregroundStyle(.thSecondaryText)
                         .multilineTextAlignment(.center)
@@ -78,6 +75,7 @@ struct SubscriptionSuccessView: View {
                 YalaPrimaryButton(L10n.Subscription.Success.continueButton) {
                     dismiss()
                 }
+                .accessibilityIdentifier("subscription_success_continue")
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.xxl)
             }
@@ -89,42 +87,26 @@ struct SubscriptionSuccessView: View {
 
     // MARK: - Subviews
 
-    private var unlockedFeaturesList: some View {
-        VStack(spacing: DS.Spacing.md) {
-            unlockedFeatureRow(icon: "infinity", text: L10n.Subscription.featureUnlimitedAccounts, color: .blue)
-            unlockedFeatureRow(icon: "chart.pie.fill", text: L10n.Subscription.featureUnlimitedBudgets, color: .purple)
-            unlockedFeatureRow(icon: "waveform", text: L10n.Subscription.featureVoice, color: .hotPink)
-            unlockedFeatureRow(icon: "photo.on.rectangle", text: L10n.Subscription.featureImage, color: .teal)
-            unlockedFeatureRow(icon: "paintpalette.fill", text: L10n.Subscription.featureThemes, color: .orange)
-            unlockedFeatureRow(icon: "app.fill", text: L10n.Subscription.featurePremiumIcons, color: .pink)
-            unlockedFeatureRow(icon: "sparkles", text: L10n.Subscription.featureAIAssistant, color: .electricIndigo)
+    private var subtitle: String {
+        switch feature {
+        case .voiceInput: return L10n.UXPro.welcomeVoice
+        case .imageInput: return L10n.UXPro.welcomePhoto
+        case .smartInsightsAI: return L10n.UXPro.welcomeInsights
+        case .chatAssistant: return L10n.UXPro.welcomeChat
+        case .accounts: return L10n.UXPro.welcomeAccounts
+        case .budgets: return L10n.UXPro.welcomeBudgets
+        case .proThemes: return L10n.UXPro.welcomeTheme
+        case .premiumIcons: return L10n.UXPro.welcomeIcon
+        case .cashFlowAdvanced: return L10n.UXPro.welcomeCashFlow
+        case nil: return L10n.Subscription.Success.subtitle
         }
-        .padding(.horizontal, DS.Spacing.xl)
     }
 
-    private func unlockedFeatureRow(icon: String, text: String, color: Color) -> some View {
-        HStack(spacing: DS.Spacing.md) {
-            Image(systemName: icon)
-                .font(DS.Typography.iconMedium)
-                .foregroundStyle(.white)
-                .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
-                .background(
-                    RoundedRectangle(cornerRadius: DS.Radius.sm)
-                        .fill(color)
-                )
-                .accessibilityHidden(true)
-
-            Text(text)
-                .font(DS.Typography.body)
-                .foregroundStyle(.thPrimaryText)
-
-            Spacer()
-
-            Image(systemName: "checkmark.circle.fill")
-                .font(DS.Typography.title)
-                .foregroundStyle(DS.Semantic.successForeground)
-                .accessibilityHidden(true)
-        }
+    /// Decisión B de Jürgen (2026-10-21): las mismas fichas de «Qué incluye Pro» que el paywall (`ProIncludedGrid`). La
+    /// lista de antes tenía los nombres viejos («Registro por voz ilimitado»…) y decía lo mismo con otras palabras.
+    private var unlockedFeaturesList: some View {
+        ProIncludedGrid()
+            .padding(.horizontal, DS.Spacing.lg)
     }
 
     // MARK: - Animation

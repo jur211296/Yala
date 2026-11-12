@@ -36,8 +36,8 @@ final class BudgetsCrudUITests: XCTestCase {
         openPlanningBudgets(app)
 
         XCTAssertTrue(
-            app.buttons["budgets_create_fab"].waitForExistence(timeout: 5),
-            "No se montó BudgetsListView (budgets_create_fab) tras abrir el tab Planificación."
+            app.buttons["budgets_create_button"].waitForExistence(timeout: 5),
+            "No se montó BudgetsListView (budgets_create_button) tras abrir el tab Planificación."
         )
     }
 
@@ -50,8 +50,8 @@ final class BudgetsCrudUITests: XCTestCase {
 
         openPlanningBudgets(app)
 
-        let fab = app.buttons["budgets_create_fab"]
-        XCTAssertTrue(fab.waitForExistence(timeout: 5), "No apareció budgets_create_fab.")
+        let fab = app.buttons["budgets_create_button"]
+        XCTAssertTrue(fab.waitForExistence(timeout: 5), "No apareció budgets_create_button.")
         fab.tap()
 
         // Nombre (el editor auto-enfoca este campo para presupuestos nuevos).

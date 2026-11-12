@@ -17,9 +17,13 @@ struct ScheduledPaymentSummaryPlannerTests {
 
     private typealias Planner = ScheduledPaymentSummaryPlanner
 
+    /// En la zona del PROCESO, no fijada a Lima: el `dayKey` del plan sale del formatter del tracker
+    /// (`ScheduledPaymentNotificationTracker.dateKeyString`), que formatea en la zona del proceso a propósito —es la
+    /// misma clave que marca el tracker—, y la app llama al planner con `Calendar.current`. Con el calendario fijado a
+    /// Lima y el simulador en otra zona, el día cortado en Lima se nombraba en la otra (card orwz).
     private var calendar: Calendar {
         var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "America/Lima") ?? .current
+        cal.timeZone = .current
         return cal
     }
 

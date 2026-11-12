@@ -17,6 +17,8 @@ struct PanelWidgetsGrid: View {
 
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// El pliegue del iPhone Duo abierto en horizontal: cada par de widgets pone uno a cada lado.
+    @State private var fold: ClosedRange<CGFloat>?
 
     var body: some View {
         let rows = WidgetConfigManager.makeLayoutRows(
@@ -29,6 +31,7 @@ struct PanelWidgetsGrid: View {
                 rowView(for: row)
             }
         }
+        .readsVerticalFold($fold)
     }
 
     @ViewBuilder
@@ -37,7 +40,8 @@ struct PanelWidgetsGrid: View {
         case .fullWidth(let config):
             widgetView(for: config).clipped()
         case .halfWidthPair(let left, let right):
-            HStack(alignment: .top, spacing: DS.Spacing.lg) {
+            let pair = foldAwarePairLayout(spacing: DS.Spacing.lg, fold: fold)
+            pair {
                 widgetView(for: left)
                     .frame(maxWidth: .infinity)
                     .clipped()

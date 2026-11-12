@@ -21,7 +21,6 @@ struct ProfileView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
-    @Environment(\.requestReview) private var requestReview
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.yalaTheme) private var theme
@@ -50,6 +49,8 @@ struct ProfileView: View {
     // Import result - shown as alert after ImportIntroSheet dismisses
     @State private var importResult: ImportResult?
     @State private var showImportResult: Bool = false
+    /// Hay un resultado de importar esperando a que la hoja termine de cerrarse para enseñarse.
+    @State private var importResultAwaitingDismiss: Bool = false
 
     // Permission denied alert
 
@@ -59,6 +60,13 @@ struct ProfileView: View {
     @State private var showUpgradeForInsights = false
     @State private var showUpgradeForChat = false
     @State private var showSupportSheet = false
+    /// Ajustes › Ayuda › Novedades (UX 2.2 · L5-15).
+    @State private var showWhatsNewSheet = false
+    /// Privacidad o términos, en la hoja de Safari dentro de Yala (UX 2.2 · L16-19).
+    @State private var legalPage: InAppWebPage?
+    private static var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+    }
 
     // Coach mark: Settings tour
     @State private var showSettingsTour = false
@@ -106,11 +114,20 @@ struct ProfileView: View {
     /// Paso 9 · segundo gesto del cierre privado SIN copia en iCloud (confirmación reforzada). Es un alert
     /// que encadena el `onDismiss` de la hoja: contenedores distintos, sin carrera en el mismo anchor.
     @State private var showSignOutNoCopyConfirm = false
+    /// El mismo segundo gesto en la celda sin cuenta de Yala, con el verbo de su fila: «Quitar y borrar» (decisión A de
+    /// Jürgen, 2026-10-19). Alerta APARTE y no un texto según el estado: el `actions` de un `.alert` no lo admite.
+    @State private var showRemoveDataNoCopyConfirm = false
     /// El camino que confirmó la hoja sin copia, para que el segundo gesto ejecute ESE y no otro.
     @State private var pendingNoCopyPath: CloudSignOutFlowLogic.Path?
     /// Paso 9 · el aviso de la espera del export agotada, con su salida de emergencia. Alert DEDICADO con
     /// botones literales: el `actions` de un `.alert` no admite labels que dependan del estado.
     @State private var showSignOutExportAlert = false
+    /// El aviso de los 45 s en la celda sin cuenta: «Quitar mis datos igualmente» (decisión A, 2026-10-19).
+    @State private var showRemoveDataExportAlert = false
+    /// Si la salida EN CURSO es la de «Quitar mis datos», fijado al confirmarla con su camino. No se recalcula al enseñar
+    /// el aviso: a mitad de un cierre de la celda D se sueltan las credenciales y el camino del momento ya sería el de la
+    /// celda C, y el re-aviso le hablaría de quitar datos a quien pidió cerrar sesión (review del lote decidido 15).
+    @State private var exitInProgressRemovesDeviceData: Bool?
     /// Cuántos cambios no llegaron a iCloud en el bloqueo que se está mostrando (0 = no se pudo contar).
     @State private var signOutExportPending = 0
     /// El aviso del teléfono sin App Attest que ofrece cerrar sesión perdiendo los cambios de grupos (2026-09-15). Alert
@@ -140,6 +157,16 @@ struct ProfileView: View {
     @State private var showSignOutRescueExportError = false
     /// Mientras se genera ese archivo, un indicador: la exportación corre en el hilo principal y con un historial largo tarda.
     @State private var isExportingBeforeLosingChanges = false
+    /// L20-8 (decisión de Jürgen, 2026-10-18): «Exportar antes» en las hojas de cerrar sesión sin copia y de eliminar la
+    /// cuenta de la nube. Qué hoja lo pidió, para volver a ella al cerrar la de compartir (o el aviso de error).
+    /// `.signOutExportNotice` (L20-7): «Exportar mis registros» desde el aviso de los 45 s; al cerrar la hoja de compartir
+    /// vuelve ESE aviso, porque el cierre sigue parado esperando una decisión.
+    private enum LossExportReturn { case signOut, deleteAccount, signOutExportNotice }
+    @State private var pendingLossExport: LossExportReturn?
+    @State private var lossExportReturn: LossExportReturn?
+    @State private var lossExportFile: ExportedFile?
+    @State private var lossExportErrorMessage = ""
+    @State private var showLossExportError = false
     /// Qué bloqueó el cierre, para elegir el mensaje del aviso. **Es el motivo entero y no un `Bool`**
     /// desde el 2026-09-13: eran dos mensajes y son tres —sesión caducada, canal de Grupos en pausa, y el
     /// resto—, así que un `Bool` ya no los separa. Solo lo leen los mensajes; qué alert se presenta lo
@@ -181,6 +208,7 @@ struct ProfileView: View {
         showSignOutPendingAlert = false
         showSignOutBlockedAlert = false
         showSignOutExportAlert = false
+        showRemoveDataExportAlert = false
         showSignOutAttestLossAlert = false
         showSignOutPersonalAttestAlert = false
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
@@ -265,7 +293,14 @@ struct ProfileView: View {
             // propio de `GroupsAssociationSection` existe para evitar. Quien los enseña es esa sección,
             // por el veredicto de retorno, no por la fase. `.sessionNotClosed` (2026-09-26) es el tercero, y por lo mismo.
             case .bridgeUnreadable, .detachBusy, .sessionNotClosed: break
-            case .exportUnconfirmed: showSignOutExportAlert = true
+            case .exportUnconfirmed:
+                // Sin cuenta de Yala la fila dice «Quitar mis datos»: su aviso habla de quitar, no de cerrar sesión. Decide
+                // el camino que se confirmó, no el de ahora.
+                if exitInProgressRemovesDeviceData ?? signOutRowRemovesDeviceData {
+                    showRemoveDataExportAlert = true
+                } else {
+                    showSignOutExportAlert = true
+                }
             }
         }
     }
@@ -315,6 +350,52 @@ struct ProfileView: View {
         }
     }
 
+    /// L20-8 · **El punto único de «exportar todo, sin asistente»** antes de perderlo (cerrar sesión sin copia en iCloud y
+    /// eliminar la cuenta de la nube). Todos los registros (`ExportFilters.allTransactions`), en Excel, como pide «Para
+    /// Excel o Google Sheets» (L20-4), y la hoja de compartir. Un turno después del toque: la hoja de alcance se está
+    /// desmontando. Al cerrar la de compartir —o el aviso de error— vuelve la hoja de alcance de la que salió
+    /// (`returnFromLossExport`): exportar no decide nada por la persona. `scheduleTagBackfill: false`, como el rescate: el
+    /// relleno de etiquetas guardaría cambios por subir justo antes de borrar.
+    private func exportEverythingBeforeLosingIt(returningTo destination: LossExportReturn) {
+        lossExportReturn = destination
+        isExportingBeforeLosingChanges = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            defer { isExportingBeforeLosingChanges = false }
+            do {
+                let result = try TransactionsExportService.export(
+                    format: .xlsx, using: .allTransactions, columns: .default, in: modelContext,
+                    scheduleTagBackfill: false)
+                lossExportFile = ExportedFile(urls: [result.fileURL])
+            } catch {
+                #if DEBUG
+                print("ProfileView: Error exportando antes de perder los datos: \(error)")
+                #endif
+                lossExportErrorMessage = SignOutBlockedCopy.personalExportFailureMessage(for: error)
+                showLossExportError = true
+            }
+        }
+    }
+
+    /// Vuelve a la hoja de alcance que pidió la exportación, recalculada (la celda pudo cambiar entretanto). Un turno
+    /// después: la hoja de compartir o el aviso se están desmontando en el mismo anchor.
+    private func returnFromLossExport() {
+        guard let destination = lossExportReturn else { return }
+        lossExportReturn = nil
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            switch destination {
+            case .signOut:
+                guard signOutCoordinator.phase == .idle, signOutScope == nil else { return }
+                signOutScope = makeSignOutScope()
+            case .deleteAccount:
+                guard deletionService.phase != .working, deleteAccountScope == nil else { return }
+                deleteAccountScope = DeleteAccountScope(summary: GroupService.shared.accountDeletionGroupsSummary())
+            case .signOutExportNotice:
+                guard case .blocked(_, .exportUnconfirmed) = signOutCoordinator.phase else { return }
+                syncSignOutUI(from: signOutCoordinator.phase)
+            }
+        }
+    }
+
     /// Tras la hoja de compartir o el aviso de error de la exportación: el cierre sigue parado en el aviso de tus datos, y se
     /// vuelve a enseñar, que es lo que la persona dejó a medias. Si ya no está ahí —otro gesto lo reconoció—, no enciende nada.
     /// Desde el 2026-09-28 ese aviso lo abre también la sesión caducada (`personalLossCause`).
@@ -358,7 +439,8 @@ struct ProfileView: View {
         let hasICloudCopy: Bool
         switch path {
         case .privateSignOut, .privateWithGroupsSignOut:
-            hasICloudCopy = CloudSessionSignOut.privateCopyChannel() == .iCloud
+            // QA/XCUITest: la celda sin copia (L20-8); el seam es inerte en release.
+            hasICloudCopy = !UITestHooks.privateSignOutNoCopy && CloudSessionSignOut.privateCopyChannel() == .iCloud
         case .cloudSecureSignOut, .groupsOnlySignOut:
             hasICloudCopy = true
         }
@@ -383,7 +465,9 @@ struct ProfileView: View {
     /// preservados— mientras el dispatch resuelve `.groupsOnlySignOut` y arma el borrado del store de
     /// grupos: la hoja mentiría, y encima desaparecería la fila «Salir de Yala en este dispositivo».
     private var signOutRowPath: CloudSignOutFlowLogic.Path {
-        CloudSignOutFlowLogic.path(
+        // Card n533 · ata el body a los cambios de sesión: `CloudAuthService` no es observable.
+        CloudSessionRevision.shared.track()
+        return CloudSignOutFlowLogic.path(
             for: CloudSyncFlags.storageMode,
             hasLiveSession: CloudAuthService.shared.hasSession,
             groupsBackendEnabled: CloudSyncFlags.groupsBackendCompiledCapability,
@@ -393,9 +477,38 @@ struct ProfileView: View {
     /// H-2026-07-18-6: caption honesto mientras el sign-out solo-grupos ESPERA a que se asienten writes
     /// internos (retry interno) — el bloqueo típico es transitorio y antes obligaba a tocar la fila varias
     /// veces. Compartido por las filas "Cerrar sesión" y "Cerrar sesión de grupos" (D2).
+    ///
+    /// **UX 2.2 · L20-7 (decisión de Jürgen, 2026-10-18): la espera de iCloud se ve.** Cuando lo que se espera es que lo
+    /// último llegue a iCloud (`iCloudExportWait`), en vez del pie gris de una línea sale una tarjeta con progreso: qué
+    /// está pasando y cuántos cambios faltan. Las demás esperas del cierre no suben a iCloud y conservan su pie.
     @ViewBuilder
     private var signOutWorkingCaption: some View {
-        if signOutCoordinator.phase == .working && signOutCoordinator.waitingForPending {
+        if signOutCoordinator.phase == .working, let wait = signOutCoordinator.iCloudExportWait {
+            HStack(alignment: .center, spacing: DS.Spacing.md) {
+                ProgressView()
+                    .controlSize(.regular)
+                    .tint(theme.accent)
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(L10n.UXCS.signOutUploadTitle)
+                        .font(DS.Typography.subheadlineEmphasized)
+                        .foregroundStyle(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if let pending = wait.pending, pending > 0 {
+                        Text(L10n.UXCS.signOutUploadPending(pending))
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(DS.Spacing.md)
+            .background(theme.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.bottom, DS.FormRow.paddingV)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("profile_signout_upload_card")
+        } else if signOutCoordinator.phase == .working && signOutCoordinator.waitingForPending {
             Text(L10n.Settings.signOutWorking)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
@@ -449,7 +562,9 @@ struct ProfileView: View {
     /// es inerte fuera de DEBUG (`hasArg` → false) y solo lo fuerza a `true` para QA/XCUITest del diálogo
     /// D5 en el simulador, donde no hay sign-in backend real (SIWA/Google no corren). NO crea sesión real.
     private var deleteAccountRowHasSession: Bool {
-        UITestHooks.fakeBackendSession || CloudAuthService.shared.hasSession
+        // Card n533 · sin esto, la sesión que entra con Ajustes abierto no sacaba «Tu cuenta de Yala» (medido).
+        CloudSessionRevision.shared.track()
+        return UITestHooks.fakeBackendSession || CloudAuthService.shared.hasSession
     }
 
     /// §3.3.5: la fila/pantalla "Tu cuenta de Yala" — con sesión backend viva, fuera de secundaria (M1,
@@ -459,6 +574,85 @@ struct ProfileView: View {
     /// [FLAG]) SÍ tiene cuenta que explicar (su desenlace de borrado lo gatea `YalaAccountLogic`).
     private var showsYalaAccountRow: Bool {
         deleteAccountRowHasSession
+    }
+
+    /// L20-5: la fila de «Vaciar datos» promete conservar solo lo que hay — la cuenta de Yala si hay sesión, los grupos si
+    /// hay alguno. Decía «Tu cuenta y tus grupos se conservan» también a quien no tenía ninguno de los dos.
+    private var wipeRowSubtitle: String {
+        switch ExportRecordsLogic.wipeRowKeeps(hasYalaAccount: deleteAccountRowHasSession,
+                                               hasGroups: viewModel.hasExportableGroups) {
+        case .accountAndGroups: return L10n.Settings.wipeDataSubtitle
+        case .account: return L10n.UXL20D.wipeRowKeepsAccount
+        case .groups: return L10n.UXL20D.wipeRowKeepsGroups
+        case .nothing: return L10n.UXL20D.wipeRowKeepsNothing
+        }
+    }
+
+    /// El segundo gesto del cierre sin copia en iCloud, el mismo con «Cerrar sesión y borrar» o «Quitar y borrar».
+    private func confirmNoCopySignOut() {
+        let path = pendingNoCopyPath
+        pendingNoCopyPath = nil
+        // La celda pudo cambiar con el aviso abierto (una sesión que caduca): se enseña su hoja —un
+        // turno después, para no presentar mientras este aviso se desmonta— en vez de no hacer nada.
+        let live = makeSignOutScope()
+        guard live.path == path, DestructiveScopeLogic.requiresNoCopyConfirmation(live.operation) else {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { signOutScope = live }
+            return
+        }
+        exitInProgressRemovesDeviceData = path.map { DestructiveScopeLogic.signOutRemovesDeviceData(path: $0) }
+        Task {
+            await CloudSessionSignOut.shared.signOut(
+                context: modelContext, confirmedPath: path, confirmedWithoutICloudCopy: true)
+        }
+    }
+
+    /// UX 2.2 · L20-6: sin cuenta de Yala (celda C) la fila de salida se llama «Quitar mis datos de este iPhone» y va en su
+    /// propia tarjeta al final de Ajustes, separada de «Calificar». La regla vive en `DestructiveScopeLogic`, y la hoja que
+    /// abre la lee del MISMO camino (`SignOutScope.path`).
+    private var signOutRowRemovesDeviceData: Bool {
+        DestructiveScopeLogic.signOutRemovesDeviceData(path: signOutRowPath)
+    }
+
+    /// «Siguen en tu iCloud», solo si hay copia: sin ella la hoja dice que no queda ninguna, y el subtítulo mentiría. Es la
+    /// misma pregunta que hace la hoja al tocar (`makeSignOutScope`).
+    private var removeDeviceDataSubtitle: String? {
+        guard !UITestHooks.privateSignOutNoCopy, CloudSessionSignOut.privateCopyChannel() == .iCloud else { return nil }
+        return L10n.UXCS.removeDeviceDataSubtitle
+    }
+
+    /// La fila de salida, UNA sola construcción para los dos sitios donde puede ir (su id lo cuenta un test).
+    private var signOutRow: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button {
+                requestSignOut()
+            } label: {
+                settingsRowContent(
+                    icon: "rectangle.portrait.and.arrow.right",
+                    title: signOutRowRemovesDeviceData ? L10n.UXCS.removeDeviceDataRow : L10n.Settings.signOut,
+                    subtitle: signOutRowRemovesDeviceData ? removeDeviceDataSubtitle : nil,
+                    iconColor: .red,
+                    showSpinner: signOutCoordinator.phase == .working)
+            }
+            .buttonStyle(.plain)
+            .disabled(signOutCoordinator.phase == .working || deletionService.phase == .working)
+            .accessibilityIdentifier("profile_security_signout")
+
+            signOutWorkingCaption
+        }
+    }
+
+    /// L20-6: la tarjeta suelta del final, sin cabecera (ninguna decidida), con el mismo bloque que las secciones.
+    private var removeDeviceDataSection: some View {
+        signOutRow
+            .solidCard()
+            .padding(.horizontal, DS.Spacing.lg)
+    }
+
+    /// La alerta final de «Eliminar mi cuenta». Desde el 2026-10-29 es la misma en las tres celdas: también en la cuenta de
+    /// grupos con sesión privada (D) se van la cuenta y los datos, así que el texto de la celda D que dejó L20-10 («Lo de este
+    /// dispositivo se queda») se retiró.
+    private var deleteAccountFinalMessage: String {
+        L10n.Settings.deleteAccountFinalMessage
     }
 
     /// §3.2: subtítulo dinámico de la fila "Dónde viven tus datos" — refleja el modo real.
@@ -491,16 +685,16 @@ struct ProfileView: View {
     }
 
     /// GC-08: en modo solo-grupos el perfil se reduce a lo esencial de grupos +
-    /// opciones universales; se ocultan las filas de finanzas personales.
+    /// opciones universales; se ocultan las filas de finanzas personales. Desde la card p0iu, también cuando la
+    /// persona eligió «Solo grupos» sobre Yala completo: la misma pregunta que la shell, del espejo observable.
     private var isGroupsOnlyShell: Bool {
-        !SessionState.shared.hasPrivateSession
+        sessionState.isGroupsFocusedShell
     }
 
     /// Shell reducida a Grupos: oculta la sección «Organización» (finanzas personales).
-    /// Reactivo por el espejo observable del eje 1.
+    /// Reactivo por los espejos observables del eje 1 y de la vista «Solo grupos».
     private var isGroupsFocusedShell: Bool {
-        ShellModeLogic.effective(
-            hasPrivateSession: sessionState.hasPrivateSession) == .groupsFocused
+        sessionState.isGroupsFocusedShell
     }
 
     /// Gatea la fila «Activar Yala completo». Es la MISMA pregunta que `isGroupsFocusedShell` y por eso
@@ -571,18 +765,75 @@ struct ProfileView: View {
         }
     }
 
+    /// «Hacerlo ahora» al terminar un tutorial (UX 2.2 · L16-16): lo de Ajustes se abre aquí mismo, en el sitio de la
+    /// pila donde estaba el tutorial; lo de fuera cierra Ajustes y va por el router, que retiene el intent hasta que esta
+    /// hoja se haya ido (`RouterConsumerGateLogic`, el mismo camino que «Primeros pasos»).
+    private func doTutorialNow(_ tutorial: Tutorial) {
+        let isWide = horizontalSizeClass == .regular
+        switch TutorialDoItNowLogic.target(for: tutorial) {
+        case .settings(let destination):
+            if isWide {
+                detailPath = [destination]
+            } else {
+                var path = NavigationPath()
+                path.append(destination)
+                navigationPath = path
+            }
+        case .importFile:
+            // La hoja de importar se pide sin tocar la pila: vaciarla y presentar a la vez pedía la hoja en plena
+            // animación de volver atrás (review del lote decidido 15). Al cerrarla se vuelve al cierre del tutorial.
+            activeSheet = .importIntro
+        case .newRecord:
+            // Las hojas de nuevo registro y de la Bandeja las drena el Panel, y solo con el Panel delante: se va al Panel
+            // primero, como las demás entradas (`YalaCommands`, el aviso de la Bandeja).
+            leaveSettings(then: [.navigate(.panel), .presentNewTransaction])
+        case .newBudget:
+            // La pantalla, sin abrir el editor encima: el editor lo drena Planificación en cuanto llega, y si Ajustes se
+            // abrió desde Planificación su hoja aún se está cerrando en el mismo anchor.
+            leaveSettings(then: [.navigate(.budgets)])
+        case .newScheduledPayment:
+            leaveSettings(then: [.navigate(.scheduledPayments)])
+        case .panel:
+            leaveSettings(then: [.navigate(.panel)])
+        case .inbox:
+            leaveSettings(then: [.navigate(.panel), .presentInboxSheet])
+        }
+    }
+
+    private func leaveSettings(then intents: [RouterIntent]) {
+        dismiss()
+        for intent in intents { RouterEntryGate.shared.submit(intent) }
+    }
+
     /// Una fila que abre un ajuste: en compacta empuja (`NavigationLink`, como siempre); en ancha lo pone en la
-    /// columna de detalle, sustituyendo al que hubiera.
-    @ViewBuilder
+    /// columna de detalle, sustituyendo al que hubiera. En ancha, la fila del ajuste abierto va rellena, con el mismo
+    /// relleno que lo elegido en Personalización (UX 2.2 · L16-20, opción C; relleno de L16-9).
+    ///
+    /// Devuelve `AnyView` a propósito (card YALA-IOS-G, App Hang en producción 2.2 (7)): con `some View`, el tipo de la
+    /// lista anidaba el de esta función una vez por fila, y la primera apertura de Ajustes en cada arranque se iba en
+    /// descifrarlo (`swift_getTypeByMangledName`, ~170 ms de ~180 en el simulador; más en un iPhone). La barrera corta
+    /// ese anidamiento: no la quites sin volver a medir (`ProfileSettingsTypeBarrierWiringTests`).
     private func settingsLink<Label: View>(
         _ destination: ProfileDestination,
         @ViewBuilder label: () -> Label
-    ) -> some View {
+    ) -> AnyView {
         if horizontalSizeClass == .regular {
-            Button { detailPath = [destination] } label: { label() }
+            let isOpen = detailPath.first == destination
+            return AnyView(
+                Button { detailPath = [destination] } label: {
+                    label()
+                        .selectedOptionFill(isOpen, radius: DS.Radius.md)
+                }
+                .accessibilityAddTraits(isOpen ? .isSelected : [])
+            )
         } else {
-            NavigationLink(value: destination) { label() }
+            return AnyView(NavigationLink(value: destination) { label() })
         }
+    }
+
+    /// ¿Es el ajuste abierto directamente desde la lista, con la lista al lado?
+    private func isRootOfDetailColumn(_ destination: ProfileDestination) -> Bool {
+        horizontalSizeClass == .regular && detailPath.count == 1 && detailPath.first == destination
     }
 
     /// La lista de Ajustes: la columna de lista del split en ancha, la raíz de la pila en compacta.
@@ -609,11 +860,20 @@ struct ProfileView: View {
                             preferenciasSection
                             datosSection
                             seguridadSection
+                            if showsAccountSection {
+                                cuentaSection
+                            }
                             ayudaSection
                             legalSection
 
+                            // UX 2.2 · L20-6: «Quitar mis datos de este iPhone», sola y al final.
+                            if signOutRowRemovesDeviceData {
+                                removeDeviceDataSection
+                            }
+
                             // Version info
-                            Text(L10n.Settings.versionInfo)
+                            Text(AppVersionInfo.footer())
+                                .accessibilityIdentifier("profile_version_footer")
                                 .font(DS.Typography.captionSmall)
                                 .foregroundStyle(.tertiary)
                                 .padding(.top, DS.Spacing.sm)
@@ -621,7 +881,14 @@ struct ProfileView: View {
                         .padding(.vertical, DS.Spacing.xxl)
                     }
                     .scrollDisabled(false)
-                    .onAppear { settingsScrollProxy = scrollProxy }
+                    .onAppear {
+                        settingsScrollProxy = scrollProxy
+                        LoadTimeMarks.ready(.settings)
+                    }
+                    // iPhone Duo cerrado: la lista ocupa también la columna de la barra vertical y la cabecera se centra en
+                    // la pantalla entera, sin el hueco a la derecha. Excepción a la regla A, decidida por Jürgen el
+                    // 2026-10-25 viendo también cómo pasan las filas bajo la hora y la X al desplazar.
+                    .extendsUnderVerticalBar()
             }
             .navigationTitle(L10n.Profile.title)
             .navigationBarTitleDisplayMode(.inline)
@@ -644,7 +911,15 @@ struct ProfileView: View {
                     }
                 }
             }
-            .sheet(item: $activeSheet) { item in
+            .sheet(item: $activeSheet, onDismiss: {
+                // El resultado de importar sale cuando la hoja YA se fue: con un retardo fijo de 200 ms, en un iPhone
+                // real la animación de cierre duraba más y SwiftUI descartaba el aviso, así que «Importación
+                // completada» salía unas veces sí y otras no (ticket `import-completed-alert-is-sometimes-lost`).
+                if importResultAwaitingDismiss {
+                    importResultAwaitingDismiss = false
+                    showImportResult = true
+                }
+            }) { item in
                 switch item {
                 case .personalDetails:
                     PersonalDetailsView()
@@ -653,18 +928,14 @@ struct ProfileView: View {
                         accounts: viewModel.accounts,
                         categories: viewModel.categories,
                         onImportCompleted: { result in
-                            // Store result and show alert after sheet animation completes
-                            activeSheet = nil
+                            // El aviso se pide en el `onDismiss` de esta hoja, no aquí.
                             importResult = result
-                            // Small delay to ensure sheet is fully dismissed
-                            Task {
-                                try? await Task.sleep(for: .milliseconds(200))
-                                showImportResult = true
-                            }
+                            importResultAwaitingDismiss = true
+                            activeSheet = nil
                         }
                     )
                 case .exportWizard:
-                    ExportFiltersStepView()
+                    ExportRecordsView()
                 case .groupsExport:
                     GroupsExportView(onFinish: { activeSheet = nil })
                 }
@@ -679,133 +950,6 @@ struct ProfileView: View {
             } message: { result in
                 Text(result.message)
             }
-            // H4 + D4 + paso 9: «Cerrar sesión» — hoja de alcance (3 filas 📱/☁️/👥) de la celda que toca, con
-            // la operación resuelta al tocar (`makeSignOutScope`). El botón fija `pendingSignOutScope` y cierra la
-            // hoja; el `onDismiss` actúa YA con la hoja fuera (anti-carrera): o el segundo gesto del cierre sin
-            // copia, o el cierre. El cover terminal lo dueña el root vía `.phase`.
-            .sheet(item: $signOutScope, onDismiss: {
-                guard let scope = pendingSignOutScope else { return }
-                pendingSignOutScope = nil
-                // La celda pudo cambiar con la hoja abierta (una sesión que caduca, un evento del espejo): se
-                // enseña la hoja de la celda de AHORA en vez de ejecutar un borrado que nadie leyó.
-                let live = makeSignOutScope()
-                guard live.operation == scope.operation else {
-                    signOutScope = live
-                    return
-                }
-                if DestructiveScopeLogic.requiresNoCopyConfirmation(scope.operation) {
-                    pendingNoCopyPath = scope.path
-                    showSignOutNoCopyConfirm = true
-                } else {
-                    Task { await CloudSessionSignOut.shared.signOut(context: modelContext, confirmedPath: scope.path) }
-                }
-            }) { scope in
-                DestructiveScopeSheet(config: .make(
-                    operation: scope.operation,
-                    cloudLabel: scope.cloudLabel,
-                    onConfirm: { pendingSignOutScope = scope }))
-            }
-            // Paso 9 · el segundo gesto del cierre privado sin copia en iCloud: no se bloquea, se avisa.
-            .alert(L10n.Settings.signOutNoCopyConfirmTitle, isPresented: $showSignOutNoCopyConfirm) {
-                Button(L10n.Settings.signOutNoCopyConfirmAction, role: .destructive) {
-                    let path = pendingNoCopyPath
-                    pendingNoCopyPath = nil
-                    // La celda pudo cambiar con el aviso abierto (una sesión que caduca): se enseña su hoja —un
-                    // turno después, para no presentar mientras este aviso se desmonta— en vez de no hacer nada.
-                    let live = makeSignOutScope()
-                    guard live.path == path, DestructiveScopeLogic.requiresNoCopyConfirmation(live.operation) else {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { signOutScope = live }
-                        return
-                    }
-                    Task {
-                        await CloudSessionSignOut.shared.signOut(
-                            context: modelContext, confirmedPath: path, confirmedWithoutICloudCopy: true)
-                    }
-                }
-                .accessibilityIdentifier("signout_no_copy_confirm")
-                Button(L10n.Common.cancel, role: .cancel) { pendingNoCopyPath = nil }
-                    .accessibilityIdentifier("signout_no_copy_cancel")
-            } message: {
-                Text(L10n.Settings.signOutNoCopyConfirmMessage)
-            }
-            // Paso 9 · la espera del export se agotó: el aviso cuenta lo que no llegó a iCloud y ofrece cerrar
-            // igualmente o seguir esperando (decisión de Jürgen del 2026-09-09). Nunca borra sin este gesto.
-            .alert(L10n.Settings.signOutExportPendingTitle, isPresented: $showSignOutExportAlert) {
-                Button(L10n.Settings.signOutExportDiscardButton, role: .destructive) {
-                    Task { await CloudSessionSignOut.shared.exitDiscardingUnconfirmed(context: modelContext) }
-                }
-                .accessibilityIdentifier("signout_export_discard")
-                // «Esperar» sigue esperando y cierra solo cuando llega lo último: no cancela el cierre.
-                Button(L10n.Settings.signOutWaitButton, role: .cancel) {
-                    Task { await CloudSessionSignOut.shared.resumeWaitingForExport(context: modelContext) }
-                }
-                .accessibilityIdentifier("signout_export_wait")
-            } message: {
-                Text(signOutExportPending > 0
-                     ? L10n.Settings.signOutExportPendingMessage(signOutExportPending)
-                     : L10n.Settings.signOutExportPendingMessageUnknown)
-            }
-            // El teléfono sin App Attest (2026-09-15, decisión de Jürgen): el aviso cuenta los cambios de grupos que se
-            // pierden y ofrece cerrar igualmente. «Ahora no» reconoce el bloqueo y no pierde nada. Botones literales y
-            // sin `accessibilityIdentifier`: SwiftUI no los propaga a los botones de un `.alert`. Desde el 2026-09-28 es
-            // también el de la sesión caducada y el de los cambios de otra cuenta: título y mensaje salen del motivo.
-            .alert(SignOutBlockedCopy.groupsLossTitle(for: signOutGroupsLossReason), isPresented: $showSignOutAttestLossAlert) {
-                Button(L10n.Groups.Errors.attestUnavailableSignOutLossButton, role: .destructive) {
-                    Task { await CloudSessionSignOut.shared.exitDiscardingUnsyncedGroups(context: modelContext) }
-                }
-                Button(L10n.Action.notNow, role: .cancel) {
-                    CloudSessionSignOut.shared.acknowledgeBlocked()
-                }
-            } message: {
-                Text(SignOutBlockedCopy.groupsLossMessage(for: signOutGroupsLossReason, pending: signOutAttestLossPending,
-                                                          readsUncaptured: signOutGroupsLossReadsUncaptured))
-            }
-            // Tus datos en la nube con el teléfono sin App Attest (2026-09-15, decisión de Jürgen): el aviso cuenta los cambios
-            // que no llegaron y ofrece, en este orden, exportar los movimientos, cerrar sesión perdiéndolos o dejarlo. Exportar
-            // no toca el cierre, que sigue parado: al cerrar la hoja de compartir vuelve este aviso. Botones literales y sin
-            // `accessibilityIdentifier`, como el de grupos.
-            //
-            // **Desde el 2026-09-28 es también el de la sesión caducada** (ticket
-            // `cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit`): título y mensaje salen de la causa, y
-            // el mensaje dice primero cómo subirlos. «Exportar» va primero y no es destructivo; **no se marca como acción
-            // preferida** (`.keyboardShortcut(.defaultAction)`): sería el primer uso en la app, este aviso no se puede montar en
-            // el simulador para verlo, y `swiftui-ds.md` mide que un cambio así en el `actions` de un `.alert` rompió flujos de
-            // otras pantallas (review adversarial, 2026-09-28).
-            .alert(SignOutBlockedCopy.personalLossTitle(for: signOutPersonalLossCause), isPresented: $showSignOutPersonalAttestAlert) {
-                Button(L10n.Settings.signOutAttestExportButton) {
-                    exportAllTransactionsBeforeLosingThem()
-                }
-                Button(L10n.Settings.signOutAttestLossButton, role: .destructive) {
-                    Task { await CloudSessionSignOut.shared.exitDiscardingUnsyncedPersonalChanges(context: modelContext) }
-                }
-                Button(L10n.Action.notNow, role: .cancel) {
-                    CloudSessionSignOut.shared.acknowledgeBlocked()
-                }
-            } message: {
-                Text(SignOutBlockedCopy.personalLossMessage(for: signOutPersonalLossCause, pending: signOutPersonalAttestPending))
-            }
-            .sheet(item: $signOutRescueExportFile, onDismiss: { returnToPersonalAttestNotice() }) { file in
-                ShareSheet(activityItems: file.urls)
-                    .yalaSheetDetents([.medium, .large])
-            }
-            .alert(L10n.Export.exportError, isPresented: $showSignOutRescueExportError) {
-                Button(L10n.Common.ok, role: .cancel) { returnToPersonalAttestNotice() }
-            } message: {
-                Text(signOutRescueExportErrorMessage)
-            }
-            .alert(L10n.Settings.signOutBlockedTitle, isPresented: $showSignOutBlockedAlert) {
-                signOutBlockedButtons
-            } message: {
-                Text(signOutBlockedMessage)
-            }
-            // H-2026-07-18-6: bloqueo TRANSITORIO (solo-grupos, tras agotar el retry interno) —
-            // copy que invita a esperar, no a revisar la conexión. Solo un bool se pone a la vez
-            // (rutas mutuamente excluyentes en `syncSignOutUI`).
-            .alert(L10n.Settings.signOutPendingTitle, isPresented: $showSignOutPendingAlert) {
-                signOutBlockedButtons
-            } message: {
-                Text(L10n.Settings.signOutPendingMessage)
-            }
             .onChange(of: signOutCoordinator.phase) { _, newPhase in
                 syncSignOutUI(from: newPhase)
             }
@@ -814,53 +958,6 @@ struct ProfileView: View {
             // armado, solo informar); con `.awaitingRelaunch` el sheet se cierra solo para
             // despejar el anchor del cover terminal del root (dueño único).
             .onAppear { syncSignOutUI(from: signOutCoordinator.phase) }
-            // G5-D1b + D4: eliminar cuenta — DOBLE confirmación. Paso 1 = hoja de alcance (📱/☁️/👥 + líneas
-            // D5: deudas/desvío/copia congelada/huella legacy). "Continuar" fija `pendingDeleteAccountFinal`;
-            // el desvío SEGURO "Ver mis grupos" (D5, id preservado para `DeleteAccountDialogUITests`) fija
-            // `pendingViewGroups`. El `onDismiss` actúa YA con la hoja fuera: presenta el alert 2 (irreversible,
-            // contenedor DISTINTO → sin carrera) o salta al tab Grupos + cierra Ajustes. INFORMA, jamás bloquea.
-            .sheet(item: $deleteAccountScope, onDismiss: {
-                // Defense-in-depth: captura el intent y resetea AMBOS flags ANTES de actuar (aunque sean
-                // mutuamente excluyentes por construcción, evita un flag stale en un dismiss posterior).
-                let goFinal = pendingDeleteAccountFinal
-                let goViewGroups = pendingViewGroups
-                pendingDeleteAccountFinal = false
-                pendingViewGroups = false
-                if goFinal {
-                    showDeleteAccountFinal = true
-                } else if goViewGroups {
-                    // Selecciona el tab ANTES del dismiss (patrón de FullModeActivationView): el estado del
-                    // tab vive en el singleton SessionState y sobrevive al cierre del sheet de Ajustes.
-                    navigation.selectMainTab(.groups)
-                    dismiss()
-                }
-            }) { scope in
-                DestructiveScopeSheet(config: .make(
-                    operation: deleteAccountScopeOperation,
-                    cloudLabel: .cloudAccount,  // eliminar-cuenta = SIEMPRE la cuenta de Yala (backend)
-                    hasOutstandingDebt: scope.summary.hasOutstandingDebt,
-                    hasLegacyCloudKitFootprint: scope.summary.hasLegacyCloudKitFootprint,
-                    onConfirm: { pendingDeleteAccountFinal = true },
-                    onSecondary: { pendingViewGroups = true }))
-            }
-            .alert(L10n.Settings.deleteAccountFinalTitle, isPresented: $showDeleteAccountFinal) {
-                Button(L10n.Settings.deleteAccountFinalAction, role: .destructive) {
-                    Task { await AccountDeletionService.shared.deleteAccount(context: modelContext) }
-                }
-                Button(L10n.Common.cancel, role: .cancel) {}
-            } message: {
-                Text(L10n.Settings.deleteAccountFinalMessage)
-            }
-            .alert(L10n.Settings.deleteAccountErrorTitle, isPresented: $showDeleteAccountError) {
-                Button(L10n.Settings.deleteAccountRetry) {
-                    Task { await AccountDeletionService.shared.deleteAccount(context: modelContext) }
-                }
-                Button(L10n.Common.cancel, role: .cancel) {
-                    AccountDeletionService.shared.acknowledgeFailure()
-                }
-            } message: {
-                Text(L10n.Settings.deleteAccountErrorMessage)
-            }
             .onChange(of: deletionService.phase) { _, newPhase in
                 syncDeletionUI(from: newPhase)
             }
@@ -879,7 +976,263 @@ struct ProfileView: View {
             .onAppear {
                 viewModel.setContext(modelContext)
                 profileStorage.migrateFromUserDefaultsIfNeeded()
+                #if DEBUG
+                // Seam de las cards nve0/n533: la sesión fingida que llega tarde, con Ajustes delante.
+                CloudAuthService.shared.armUITestDelayedFakeSession()
+                #endif
             }
+    }
+
+
+    // MARK: - Presentaciones del cierre de sesión y del borrado de cuenta
+
+    /// B5 (lote 20, medido en el simulador el 2026-10-17): estas hojas y alertas colgaban de la RAÍZ de la pila de Ajustes
+    /// (`listColumn`). Con «Tu cuenta de Yala» empujada encima —desde el paso 9, la única puerta de «Eliminar mi cuenta»— la
+    /// hoja de alcance sí salía, pero la alerta que la sigue («Esto es definitivo») no: tras «Continuar» no pasaba nada y no
+    /// había forma de eliminar la cuenta. Lo mismo le pasaba al segundo gesto del cierre sin copia y a los avisos de bloqueo
+    /// de un cierre lanzado desde ahí. Ahora cuelgan del contenedor (`body`, fuera de la pila), que siempre está en pantalla.
+    /// Un solo anchor por estado, como antes: no las dupliques en `YalaAccountView`. Los `onChange`/`onAppear` que las
+    /// encienden se quedan en `listColumn`.
+    private func signOutPresentations<Content: View>(_ content: Content) -> some View {
+        content
+        // H4 + D4 + paso 9: «Cerrar sesión» — hoja de alcance (3 filas 📱/☁️/👥) de la celda que toca, con
+        // la operación resuelta al tocar (`makeSignOutScope`). El botón fija `pendingSignOutScope` y cierra la
+        // hoja; el `onDismiss` actúa YA con la hoja fuera (anti-carrera): o el segundo gesto del cierre sin
+        // copia, o el cierre. El cover terminal lo dueña el root vía `.phase`.
+        .sheet(item: $signOutScope, onDismiss: {
+            if pendingLossExport == .signOut {
+                pendingLossExport = nil
+                exportEverythingBeforeLosingIt(returningTo: .signOut)
+                return
+            }
+            guard let scope = pendingSignOutScope else { return }
+            pendingSignOutScope = nil
+            // La celda pudo cambiar con la hoja abierta (una sesión que caduca, un evento del espejo): se
+            // enseña la hoja de la celda de AHORA en vez de ejecutar un borrado que nadie leyó.
+            let live = makeSignOutScope()
+            guard live.operation == scope.operation else {
+                signOutScope = live
+                return
+            }
+            if DestructiveScopeLogic.requiresNoCopyConfirmation(scope.operation) {
+                pendingNoCopyPath = scope.path
+                if DestructiveScopeLogic.signOutRemovesDeviceData(path: scope.path) {
+                    showRemoveDataNoCopyConfirm = true
+                } else {
+                    showSignOutNoCopyConfirm = true
+                }
+            } else {
+                exitInProgressRemovesDeviceData = DestructiveScopeLogic.signOutRemovesDeviceData(path: scope.path)
+                Task { await CloudSessionSignOut.shared.signOut(context: modelContext, confirmedPath: scope.path) }
+            }
+        }) { scope in
+            DestructiveScopeSheet(config: .make(
+                operation: scope.operation,
+                cloudLabel: scope.cloudLabel,
+                onConfirm: { pendingSignOutScope = scope },
+                // L20-8: solo las celdas sin copia lo ofrecen (lo decide `DestructiveScopeLogic.secondaryActions`).
+                onExport: { pendingLossExport = .signOut },
+                // L20-6: la fila «Quitar mis datos de este iPhone» abre su hoja con el mismo verbo.
+                removesDeviceData: DestructiveScopeLogic.signOutRemovesDeviceData(path: scope.path)))
+        }
+        // L20-8: el archivo de todo, antes de cerrar sesión sin copia o de eliminar la cuenta de la nube.
+        .sheet(item: $lossExportFile, onDismiss: { returnFromLossExport() }) { file in
+            ShareSheet(activityItems: file.urls)
+                .yalaSheetDetents([.medium, .large])
+        }
+        .alert(L10n.Export.exportError, isPresented: $showLossExportError) {
+            Button(L10n.Common.ok, role: .cancel) { returnFromLossExport() }
+        } message: {
+            Text(lossExportErrorMessage)
+        }
+        // Paso 9 · el segundo gesto del cierre privado sin copia en iCloud: no se bloquea, se avisa.
+        .alert(L10n.Settings.signOutNoCopyConfirmTitle, isPresented: $showSignOutNoCopyConfirm) {
+            Button(L10n.Settings.signOutNoCopyConfirmAction, role: .destructive) { confirmNoCopySignOut() }
+                .accessibilityIdentifier("signout_no_copy_confirm")
+            Button(L10n.Common.cancel, role: .cancel) { pendingNoCopyPath = nil }
+                .accessibilityIdentifier("signout_no_copy_cancel")
+        } message: {
+            Text(L10n.Settings.signOutNoCopyConfirmMessage)
+        }
+        // Decisión A de Jürgen (2026-10-19): sin cuenta de Yala, el segundo gesto usa el verbo de la fila.
+        .alert(L10n.Settings.signOutNoCopyConfirmTitle, isPresented: $showRemoveDataNoCopyConfirm) {
+            Button(L10n.UXL15.removeDataNoCopyConfirm, role: .destructive) { confirmNoCopySignOut() }
+                .accessibilityIdentifier("signout_no_copy_confirm")
+            Button(L10n.Common.cancel, role: .cancel) { pendingNoCopyPath = nil }
+                .accessibilityIdentifier("signout_no_copy_cancel")
+        } message: {
+            Text(L10n.Settings.signOutNoCopyConfirmMessage)
+        }
+        // Paso 9 · la espera del export se agotó: el aviso cuenta lo que no llegó a iCloud y ofrece cerrar
+        // igualmente o seguir esperando (decisión de Jürgen del 2026-09-09). Nunca borra sin este gesto.
+        //
+        // UX 2.2 · L20-7 (decisión de Jürgen, 2026-10-18): **la salida que no pierde nada va primero.** «Exportar mis
+        // registros» (el archivo de todo, sin asistente: L20-8) · «Esperar» · «Cerrar sesión igualmente» al final, como
+        // el aviso equivalente de la nube. Ninguno lleva `role: .cancel`: iOS manda ese botón al final y desordenaría la
+        // lista (medido el 2026-10-19, iOS 27.0: con «Esperar» como `.cancel` sale Exportar · Cerrar sesión igualmente ·
+        // Esperar). **El precio, también medido: sin ningún `.cancel`, SwiftUI añade un «Cancelar» suyo al final**, que
+        // cierra el aviso y deja el cierre parado (tocar la fila lo vuelve a enseñar). Cuál de las dos formas prefiere
+        // Jürgen está preguntado en la card de L20-7. Exportar no toca el cierre, que sigue parado: al cerrar la hoja de
+        // compartir vuelve este aviso. Los textos son literales: un `actions` que dependa del `@State` rompe la app
+        // (`swiftui-ds.md`).
+        .alert(L10n.Settings.signOutExportPendingTitle, isPresented: $showSignOutExportAlert) {
+            Button(L10n.Settings.signOutAttestExportButton) {
+                exportEverythingBeforeLosingIt(returningTo: .signOutExportNotice)
+            }
+            .accessibilityIdentifier("signout_export_export")
+            // «Esperar» sigue esperando y cierra solo cuando llega lo último: no cancela el cierre.
+            Button(L10n.Settings.signOutWaitButton) {
+                Task { await CloudSessionSignOut.shared.resumeWaitingForExport(context: modelContext) }
+            }
+            .accessibilityIdentifier("signout_export_wait")
+            Button(L10n.Settings.signOutExportDiscardButton, role: .destructive) {
+                Task { await CloudSessionSignOut.shared.exitDiscardingUnconfirmed(context: modelContext) }
+            }
+            .accessibilityIdentifier("signout_export_discard")
+        } message: {
+            Text(signOutExportPending > 0
+                 ? L10n.Settings.signOutExportPendingMessage(signOutExportPending)
+                 : L10n.Settings.signOutExportPendingMessageUnknown)
+        }
+        // El mismo aviso en la celda sin cuenta de Yala (decisión A de Jürgen, 2026-10-19): «Quitar mis datos igualmente»
+        // y «Si los quitas ahora…». Mismos botones y mismo orden que el de arriba (L20-7), con el verbo de la fila.
+        .alert(L10n.Settings.signOutExportPendingTitle, isPresented: $showRemoveDataExportAlert) {
+            Button(L10n.Settings.signOutAttestExportButton) {
+                exportEverythingBeforeLosingIt(returningTo: .signOutExportNotice)
+            }
+            .accessibilityIdentifier("signout_export_export")
+            Button(L10n.Settings.signOutWaitButton) {
+                Task { await CloudSessionSignOut.shared.resumeWaitingForExport(context: modelContext) }
+            }
+            .accessibilityIdentifier("signout_export_wait")
+            Button(L10n.UXL15.removeDataExportDiscard, role: .destructive) {
+                Task { await CloudSessionSignOut.shared.exitDiscardingUnconfirmed(context: modelContext) }
+            }
+            .accessibilityIdentifier("signout_export_discard")
+        } message: {
+            Text(signOutExportPending > 0
+                 ? L10n.UXL15.removeDataExportPendingMessage(signOutExportPending)
+                 : L10n.UXL15.removeDataExportPendingMessageUnknown)
+        }
+        // El teléfono sin App Attest (2026-09-15, decisión de Jürgen): el aviso cuenta los cambios de grupos que se
+        // pierden y ofrece cerrar igualmente. «Ahora no» reconoce el bloqueo y no pierde nada. Botones literales y
+        // sin `accessibilityIdentifier`: SwiftUI no los propaga a los botones de un `.alert`. Desde el 2026-09-28 es
+        // también el de la sesión caducada y el de los cambios de otra cuenta: título y mensaje salen del motivo.
+        .alert(SignOutBlockedCopy.groupsLossTitle(for: signOutGroupsLossReason), isPresented: $showSignOutAttestLossAlert) {
+            Button(L10n.Groups.Errors.attestUnavailableSignOutLossButton, role: .destructive) {
+                Task { await CloudSessionSignOut.shared.exitDiscardingUnsyncedGroups(context: modelContext) }
+            }
+            Button(L10n.Action.notNow, role: .cancel) {
+                CloudSessionSignOut.shared.acknowledgeBlocked()
+            }
+        } message: {
+            Text(SignOutBlockedCopy.groupsLossMessage(for: signOutGroupsLossReason, pending: signOutAttestLossPending,
+                                                      readsUncaptured: signOutGroupsLossReadsUncaptured))
+        }
+        // Tus datos en la nube con el teléfono sin App Attest (2026-09-15, decisión de Jürgen): el aviso cuenta los cambios
+        // que no llegaron y ofrece, en este orden, exportar los movimientos, cerrar sesión perdiéndolos o dejarlo. Exportar
+        // no toca el cierre, que sigue parado: al cerrar la hoja de compartir vuelve este aviso. Botones literales y sin
+        // `accessibilityIdentifier`, como el de grupos.
+        //
+        // **Desde el 2026-09-28 es también el de la sesión caducada** (ticket
+        // `cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit`): título y mensaje salen de la causa, y
+        // el mensaje dice primero cómo subirlos. «Exportar» va primero y no es destructivo; **no se marca como acción
+        // preferida** (`.keyboardShortcut(.defaultAction)`): sería el primer uso en la app, este aviso no se puede montar en
+        // el simulador para verlo, y `swiftui-ds.md` mide que un cambio así en el `actions` de un `.alert` rompió flujos de
+        // otras pantallas (review adversarial, 2026-09-28).
+        .alert(SignOutBlockedCopy.personalLossTitle(for: signOutPersonalLossCause), isPresented: $showSignOutPersonalAttestAlert) {
+            Button(L10n.Settings.signOutAttestExportButton) {
+                exportAllTransactionsBeforeLosingThem()
+            }
+            Button(L10n.Settings.signOutAttestLossButton, role: .destructive) {
+                Task { await CloudSessionSignOut.shared.exitDiscardingUnsyncedPersonalChanges(context: modelContext) }
+            }
+            Button(L10n.Action.notNow, role: .cancel) {
+                CloudSessionSignOut.shared.acknowledgeBlocked()
+            }
+        } message: {
+            Text(SignOutBlockedCopy.personalLossMessage(for: signOutPersonalLossCause, pending: signOutPersonalAttestPending))
+        }
+        .sheet(item: $signOutRescueExportFile, onDismiss: { returnToPersonalAttestNotice() }) { file in
+            ShareSheet(activityItems: file.urls)
+                .yalaSheetDetents([.medium, .large])
+        }
+        .alert(L10n.Export.exportError, isPresented: $showSignOutRescueExportError) {
+            Button(L10n.Common.ok, role: .cancel) { returnToPersonalAttestNotice() }
+        } message: {
+            Text(signOutRescueExportErrorMessage)
+        }
+        .alert(L10n.Settings.signOutBlockedTitle, isPresented: $showSignOutBlockedAlert) {
+            signOutBlockedButtons
+        } message: {
+            Text(signOutBlockedMessage)
+        }
+        // H-2026-07-18-6: bloqueo TRANSITORIO (solo-grupos, tras agotar el retry interno) —
+        // copy que invita a esperar, no a revisar la conexión. Solo un bool se pone a la vez
+        // (rutas mutuamente excluyentes en `syncSignOutUI`).
+        .alert(L10n.Settings.signOutPendingTitle, isPresented: $showSignOutPendingAlert) {
+            signOutBlockedButtons
+        } message: {
+            Text(L10n.Settings.signOutPendingMessage)
+        }
+    }
+
+    private func deleteAccountPresentations<Content: View>(_ content: Content) -> some View {
+        content
+        // G5-D1b + D4: eliminar cuenta — DOBLE confirmación. Paso 1 = hoja de alcance (📱/☁️/👥 + líneas
+        // D5: deudas/desvío/copia congelada/huella legacy). "Continuar" fija `pendingDeleteAccountFinal`;
+        // el desvío SEGURO "Ver mis grupos" (D5, id preservado para `DeleteAccountDialogUITests`) fija
+        // `pendingViewGroups`. El `onDismiss` actúa YA con la hoja fuera: presenta el alert 2 (irreversible,
+        // contenedor DISTINTO → sin carrera) o salta al tab Grupos + cierra Ajustes. INFORMA, jamás bloquea.
+        .sheet(item: $deleteAccountScope, onDismiss: {
+            // Defense-in-depth: captura el intent y resetea AMBOS flags ANTES de actuar (aunque sean
+            // mutuamente excluyentes por construcción, evita un flag stale en un dismiss posterior).
+            let goFinal = pendingDeleteAccountFinal
+            let goViewGroups = pendingViewGroups
+            let goExport = pendingLossExport == .deleteAccount
+            pendingDeleteAccountFinal = false
+            pendingViewGroups = false
+            if goExport { pendingLossExport = nil }
+            if goExport {
+                exportEverythingBeforeLosingIt(returningTo: .deleteAccount)
+            } else if goFinal {
+                showDeleteAccountFinal = true
+            } else if goViewGroups {
+                // Selecciona el tab ANTES del dismiss (patrón de FullModeActivationView): el estado del
+                // tab vive en el singleton SessionState y sobrevive al cierre del sheet de Ajustes.
+                navigation.selectMainTab(.groups)
+                dismiss()
+            }
+        }) { scope in
+            DestructiveScopeSheet(config: .make(
+                operation: deleteAccountScopeOperation,
+                cloudLabel: .cloudAccount,  // eliminar-cuenta = SIEMPRE la cuenta de Yala (backend)
+                hasOutstandingDebt: scope.summary.hasOutstandingDebt,
+                hasLegacyCloudKitFootprint: scope.summary.hasLegacyCloudKitFootprint,
+                onConfirm: { pendingDeleteAccountFinal = true },
+                onSecondary: { pendingViewGroups = true },
+                // L20-8: solo la cuenta de la nube lo ofrece (lo decide `DestructiveScopeLogic.secondaryActions`).
+                onExport: { pendingLossExport = .deleteAccount }))
+        }
+        .alert(L10n.Settings.deleteAccountFinalTitle, isPresented: $showDeleteAccountFinal) {
+            Button(L10n.Settings.deleteAccountFinalAction, role: .destructive) {
+                Task { await AccountDeletionService.shared.deleteAccount(context: modelContext) }
+            }
+            Button(L10n.Common.cancel, role: .cancel) {}
+        } message: {
+            // L20-10: el texto de su celda (en la cuenta de grupos con sesión privada, lo de este teléfono se queda).
+            Text(deleteAccountFinalMessage)
+        }
+        .alert(L10n.Settings.deleteAccountErrorTitle, isPresented: $showDeleteAccountError) {
+            Button(L10n.Settings.deleteAccountRetry) {
+                Task { await AccountDeletionService.shared.deleteAccount(context: modelContext) }
+            }
+            Button(L10n.Common.cancel, role: .cancel) {
+                AccountDeletionService.shared.acknowledgeFailure()
+            }
+        } message: {
+            Text(L10n.Settings.deleteAccountErrorMessage)
+        }
     }
 
     /// Como la app Ajustes: en una hoja ancha, la lista y el ajuste abierto a la vez (`ListDetailSplit`); en
@@ -893,7 +1246,10 @@ struct ProfileView: View {
     /// a lado y otras mide 810 pt y la lista flota sobre el ajuste (ticket
     /// `ipad-settings-sheet-size-depends-on-where-it-opens`).
     var body: some View {
-        settingsContainer
+        deleteAccountPresentations(signOutPresentations(
+            settingsContainer
+                // UX 2.2 · L16-16: «Hacerlo ahora» del cierre de un tutorial, que vive dentro de esta pila.
+                .environment(\.tutorialDoItNow, TutorialDoItNowAction { doTutorialNow($0) })))
         .coachMarkOverlay(
             steps: SettingsTourSteps.steps,
             isPresented: $showSettingsTour,
@@ -906,6 +1262,9 @@ struct ProfileView: View {
             isPresented: $showProTour,
             currentIndex: $proTourIndex,
             scrollProxy: settingsScrollProxy,
+            // «Omitir guía» salta el tour Pro ENTERO, no solo esta fase: antes avanzaba a la siguiente y el tour
+            // volvía a salir en el Panel o en Estadísticas (auditoría UX 2.2 · lote 5 · B7).
+            onSkip: { ProTourManager.shared.skipTour() },
             onComplete: {
                 ProTourManager.shared.advancePhase()
             }
@@ -916,6 +1275,8 @@ struct ProfileView: View {
             // de primer uso (F1c). También en solo-grupos: varios anclajes apuntan a
             // filas (Cuentas, Categorías…) ocultas en ese modo.
             guard !UITestHooks.isActive, !isGroupsOnlyShell else { return }
+            // Quien volvió por «Ya tengo una cuenta» con sus datos no ve el tour de principiante.
+            ReturningUserBeginnerTips.settleIfPending(context: modelContext)
             if !appPreferences.hasSeenSettingsTour {
                 do { try await Task.sleep(for: .seconds(0.8)) } catch { return }
                 if !appPreferences.hasSeenSettingsTour {
@@ -934,6 +1295,10 @@ struct ProfileView: View {
                   !showSettingsTour else { return }
             showProTour = true
         }
+        // Card 7e60 · cerrar sesión o borrar la cuenta en la nube cambian el almacén en caliente con esta hoja todavía
+        // montada; al terminar de cerrarse, su contenido volvía a aparecer y leía el almacén soltado (Yala se cerraba).
+        // Va fuera de todo lo que lee `modelContext` y dentro de `presentationSizing`, que es de la hoja.
+        .detachesFromSwappedStore()
         .presentationSizing(.page)
     }
 
@@ -950,9 +1315,7 @@ struct ProfileView: View {
             case .tags:
                 TagsSettingsListView()
             case .themes:
-                ThemeSettingsView {
-                    dismiss()
-                }
+                ThemeSettingsView()
             case .personalization:
                 PersonalizationSettingsView()
             case .currency:
@@ -973,8 +1336,6 @@ struct ProfileView: View {
                 FavoritesListView(mode: .manage)
             case .budgets:
                 BudgetsFavoritesSettingsView()
-            case .planned:
-                ScheduledPaymentsSettingsView()
             case .userDataReset:
                 UserDataResetView(onRequestCloseSettings: {
                     dismiss()
@@ -985,6 +1346,10 @@ struct ProfileView: View {
                 SiriShortcutsView()
             case .aiPrivacy:
                 AIPrivacySettingsView()
+            case .permissions:
+                PermissionsSettingsView()
+            case .usageMode:
+                UsageModeSettingsView(onLeaveSettings: { intents in leaveSettings(then: intents) })
             case .storageMode:
                 // Paso 10 · el CTA de asociar cierra ESTE sheet y emite el intent: el sheet del
                 // sign-in de Grupos tiene dueño único (`GroupsBackendInviteModifier`, anclado en
@@ -1021,6 +1386,28 @@ struct ProfileView: View {
             }
         }
         .announcesShownInDetailColumn()
+        // Con la lista al lado, el primer ajuste del detalle no lleva «‹»: la lista ya es la vuelta (UX 2.2 · L16-20).
+        // Lo que ese ajuste empuje sí la lleva. El «‹» del sistema se oculta aquí; el propio de cada pantalla, con el
+        // valor de entorno.
+        //
+        // **Y se oculta también en las pantallas que pintan su propio «‹»**: este modificador, por fuera, manda sobre
+        // el `swipeBack()` de la pantalla, así que con `false` el del sistema volvía y salían dos «‹» (medido el
+        // 2026-10-25 en Ajustes › Categorías, iPhone Duo cerrado: dos chevrons en la barra vertical).
+        .navigationBarBackButtonHidden(isRootOfDetailColumn(destination) || paintsOwnBackButton(destination))
+        .environment(\.settingsListIsAlongside, isRootOfDetailColumn(destination))
+    }
+
+    /// Las pantallas de Ajustes que pintan su propio «‹» (`YalaToolbarButton` y `swipeBack()`). Las demás usan el del
+    /// sistema. Sin `default`: una pantalla nueva tiene que decidirlo aquí.
+    private func paintsOwnBackButton(_ destination: ProfileDestination) -> Bool {
+        switch destination {
+        case .accounts, .categories, .tags, .themes, .personalization, .appIcon, .notifications, .budgets,
+             .subscription, .tips, .faq, .siriShortcuts, .permissions, .usageMode:
+            true
+        case .currency, .favorites, .userDataReset, .faceIDProtectionGuide, .iCloudSync, .aiPrivacy, .storageMode,
+             .yalaAccount:
+            false
+        }
     }
 
     // MARK: - Header
@@ -1032,23 +1419,12 @@ struct ProfileView: View {
                 activeSheet = .personalDetails
             } label: {
                 ZStack {
-                    // Pro users get golden gradient ring
+                    // Aro sólido: dorado con Pro, el color de acento sin él (UX 2.2 · L16-12). Antes, degradado.
                     Circle()
-                        .stroke(
-                            LinearGradient(
-                                colors: showsProBadge
-                                    ? DS.Gradients.proBadge
-                                    : [theme.accent, theme.accent.opacity(0.6)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 4
-                        )
+                        .stroke(showsProBadge ? Color.proGold : theme.accent, lineWidth: 4)
                         .frame(width: 100, height: 100)
 
-                    if let imageData = profileStorage.imageData,
-                        let uiImage = UIImage(data: imageData)
-                    {
+                    if let uiImage = profileStorage.image {
                         // User photo
                         Image(uiImage: uiImage)
                             .resizable()
@@ -1063,7 +1439,7 @@ struct ProfileView: View {
 
                         Image(systemName: appPreferences.userProfileIcon.isEmpty ? "person.fill" : appPreferences.userProfileIcon)
                             .font(.system(size: avatarIconSize))
-                            .foregroundStyle(theme.accent)
+                            .foregroundStyle(theme.accentText)
                     }
 
                     // Spark badge for Pro users
@@ -1071,7 +1447,10 @@ struct ProfileView: View {
                         ZStack {
                             Circle()
                                 .fill(.thCard)
-                            YalaSpark(size: .medium, animated: true)
+                            // Chispa cian sólida, la de la variante elegida (UX 2.2 · L16-12): la dorada iba en degradado.
+                            YalaSparkShape()
+                                .fill(Color.neonCyan)
+                                .frame(width: 14, height: 14)
                         }
                         .frame(width: 28, height: 28)
                         .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
@@ -1095,24 +1474,14 @@ struct ProfileView: View {
             Button(L10n.Profile.edit) {
                 activeSheet = .personalDetails
             }
+            .accessibilityIdentifier("profile_edit_button")
             .font(DS.Typography.label)
             .foregroundStyle(.primary)
 
         }
         .padding(.top, DS.Spacing.sm)
         .padding(.bottom, showsProBadge ? DS.Spacing.lg : 0)
-        .background(
-            Group {
-                if showsProBadge {
-                    LinearGradient(
-                        // A11Y-DM: tinte dorado Pro sutil decorativo (casi invisible, adapta a Dark Mode)
-                        colors: [Color.yellow.opacity(0.03), Color.clear],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                }
-            }
-        )
+        // Sin el tinte dorado en degradado que llevaba detrás con Pro (UX 2.2 · L16-12): se veía como un rectángulo.
         .sheet(isPresented: $showUpgradeForVoice) {
             UpgradePromptSheet(feature: .voiceInput, context: .proFeature)
         }
@@ -1129,28 +1498,23 @@ struct ProfileView: View {
 
     // MARK: - Pro Badge with Cyan Spark
 
-    /// Custom Pro badge with cyan spark so it stands out against the gold background
+    /// La insignia «Yala Pro» de la cabecera: dorado sólido con el texto oscuro (UX 2.2 · L16-12, variante 1). Antes,
+    /// «PRO» en blanco sobre el degradado amarillo-naranja.
     private var proBadgeWithCyanSpark: some View {
         HStack(spacing: DS.Spacing.xs) {
-            // Cyan spark (instead of gold)
             YalaSparkShape()
-                .fill(Color.cyan) // DS-OK: decorative section accent
+                .fill(Color.proGoldInk)
                 .frame(width: 12, height: 12)
+                .accessibilityHidden(true)
 
-            Text("PRO")
-                .font(DS.Typography.labelSmall)
-                .foregroundStyle(.white)
+            Text(verbatim: "Yala Pro")
+                .font(DS.Typography.labelSmall.weight(.bold))
+                .foregroundStyle(Color.proGoldInk)
         }
         .padding(.horizontal, DS.Spacing.sm)
         .padding(.vertical, DS.Spacing.xs)
-        .background(
-            LinearGradient(
-                colors: DS.Gradients.proBadge,
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
-        .clipShape(Capsule())
+        .background(Capsule().fill(Color.proGold))
+        .accessibilityIdentifier("profile_pro_badge")
     }
 
     // MARK: - Sections
@@ -1158,43 +1522,60 @@ struct ProfileView: View {
     /// CTA «Activar Yala completo» para quien tiene la shell reducida a Grupos. Abre el flujo guiado
     /// (FullModeActivationView vía router), que enciende el eje 1 y con eso des-reduce la shell.
     /// Molde de `MoreView.activateFullYalaButton`.
+    /// UX 2.2 · L19-15 (decisión de Jürgen, 2026-10-18): en solo grupos, la puerta al resto de Yala se DESTACA. Era una fila
+    /// más sobre tarjeta blanca; ahora va rellena del color de la app (el mismo relleno que `YalaPrimaryButton`), con el
+    /// texto en blanco. Sin degradado ni brillo.
+    ///
+    /// Card p0iu: quien eligió «Solo grupos» sobre Yala completo ve «Volver a Yala completo · Tus cuentas y registros te
+    /// esperan», y el toque cierra Ajustes antes de pedir la vuelta: puede acabar sin hoja, cambiando la shell, y eso no se
+    /// hace con Ajustes encima (molde de «Vaciar datos»). El router NO retiene este intent: es `ContentView` quien espera
+    /// a que la hoja se haya ido (`beginReturnToFull`).
+    private var returnEntry: UsageModeLogic.ReturnEntry {
+        UsageModeLogic.returnEntry(hasPrivateSession: sessionState.hasPrivateSession)
+    }
+
     private var activateFullYalaSection: some View {
         Button {
-            RouterEntryGate.shared.submit(.presentFullModeActivation)
+            if returnEntry == .comeBack {
+                leaveSettings(then: [.presentFullModeActivation])
+            } else {
+                RouterEntryGate.shared.submit(.presentFullModeActivation)
+            }
         } label: {
             HStack(spacing: DS.FormRow.iconSpacing) {
-                Image(systemName: "sparkles")
+                Image(systemName: returnEntry == .comeBack ? "arrow.uturn.backward" : "sparkles")
                     .font(DS.Typography.label)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(theme.onAccent)
                     .frame(width: DS.FormRow.iconWidth, height: DS.FormRow.iconWidth)
                     .background(
                         RoundedRectangle(cornerRadius: 6)
-                            .fill(theme.accent)
+                            .fill(theme.onAccent.opacity(0.2))
                     )
+                    .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(L10n.Groups.Activate.title)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.primary)
+                    Text(returnEntry == .comeBack ? L10n.UsageMode.backTitle : L10n.Groups.Activate.title)
+                        .font(DS.Typography.bodyBold)
+                        .foregroundStyle(theme.onAccent)
 
-                    Text(L10n.Groups.Activate.subtitle)
+                    Text(returnEntry == .comeBack ? L10n.UsageMode.backSubtitle : L10n.Groups.Activate.subtitle)
                         .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.onAccent.opacity(0.85))
                 }
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
                     .font(DS.Typography.chevron)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(theme.onAccent.opacity(0.8))
+                    .accessibilityHidden(true)
             }
             .padding(.horizontal, DS.FormRow.paddingH)
             .padding(.vertical, DS.FormRow.paddingV)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .solidCard(radius: DS.Radius.xl)
-        .dsSubtleShadow()
+        .background(theme.accent, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .padding(.horizontal, DS.Spacing.lg)
         .accessibilityIdentifier("profile_activate_full_yala")
     }
@@ -1202,6 +1583,16 @@ struct ProfileView: View {
     private var organizacionSection: some View {
         SectionBox(title: L10n.Settings.organization) {
             VStack(spacing: DS.Spacing.none) {
+                // «Yala Pro» con el estado del plan, arriba de la primera sección (UX 2.2 · L17-1). Antes era
+                // «Administrar suscripciones», la 14.ª fila, dentro de Seguridad, y no decía si eras Pro.
+                settingsLink(ProfileDestination.subscription) {
+                    settingsRowContent(
+                        icon: "sparkles", title: L10n.Subscription.title,
+                        subtitle: ProPresentation.settingsStatusLine, iconColor: .orange)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("profile_yala_pro")
+                SubsectionDivider()
                 profileRow(
                     icon: "creditcard.fill", title: L10n.Settings.accounts, iconColor: DS.Semantic.successForeground,
                     destination: .accounts)
@@ -1226,11 +1617,15 @@ struct ProfileView: View {
                     destination: .budgets)
                     .coachMarkAnchor("settingsBudgets")
                 SubsectionDivider()
-                profileRow(
-                    icon: "calendar.badge.clock", title: L10n.Settings.plannedPayments,
-                    iconColor: .cyan,
-                    destination: .planned
-                )
+                // Una sola lista de pagos planificados (UX 2.2 · L10-15): la fila cierra Ajustes y abre Planificación ›
+                // Pagos planificados. Antes abría otra lista de lo mismo, con otro formato y borrado sin confirmar.
+                Button {
+                    dismiss()
+                    RouterEntryGate.shared.submit(.navigate(.scheduledPayments))
+                } label: {
+                    settingsRowContent(icon: "calendar.badge.clock", title: L10n.Settings.plannedPayments, iconColor: .cyan)
+                }
+                .buttonStyle(.plain)
                 .accessibilityIdentifier("profile_planned")
                 .coachMarkAnchor("settingsPlanned")
                 SubsectionDivider()
@@ -1246,6 +1641,17 @@ struct ProfileView: View {
     private var preferenciasSection: some View {
         SectionBox(title: L10n.Settings.preferences) {
             VStack(spacing: DS.Spacing.none) {
+                // «Cómo usas Yala» (card p0iu, entrada A): la primera, y en los dos modos — el mismo sitio sirve para ir y
+                // para volver. El subtítulo dice el modo de ahora.
+                settingsLink(ProfileDestination.usageMode) {
+                    settingsRowContent(
+                        icon: "square.grid.2x2.fill", title: L10n.UsageMode.rowTitle,
+                        subtitle: isGroupsFocusedShell ? L10n.UsageMode.groupsOnlyTitle : L10n.UsageMode.fullTitle,
+                        iconColor: theme.accent)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("profile_usage_mode")
+                SubsectionDivider()
                 // Personalización (formato, calendario, modo solo-gastos…) es de
                 // finanzas personales: oculta en solo-grupos.
                 if !isGroupsOnlyShell {
@@ -1274,13 +1680,24 @@ struct ProfileView: View {
                     profileRow(
                         icon: "app.fill", title: L10n.Settings.appIcon,
                         iconColor: .blue, destination: .appIcon)
+                    .accessibilityIdentifier("profile_app_icon")
                     .coachMarkAnchor("settingsAppIcon")
                 }
                 SubsectionDivider()
                 profileRow(
                     icon: "paintpalette.fill", title: L10n.Settings.theme, iconColor: .pink,
                     destination: .themes)
+                .accessibilityIdentifier("profile_theme")
                 .coachMarkAnchor("settingsTheme")
+                // D23: «Siri y Atajos» es una preferencia de cómo registras, no seguridad. Registra gastos personales: fuera
+                // de alcance en solo-grupos.
+                if !isGroupsOnlyShell {
+                    SubsectionDivider()
+                    profileRow(
+                        icon: "mic.badge.plus", title: String(localized: "settings.siriShortcuts"),
+                        iconColor: .blue, destination: .siriShortcuts)
+                    .accessibilityIdentifier("profile_siri_shortcuts")
+                }
             }
         }
         .padding(.horizontal, DS.Spacing.lg)
@@ -1298,8 +1715,11 @@ struct ProfileView: View {
                 Button {
                     activeSheet = isGroupsOnlyShell ? .groupsExport : .exportWizard
                 } label: {
+                    // L20-4: «Exportar registros · Para Excel o Google Sheets». En solo grupos exporta los grupos, no
+                    // registros: conserva «Exportar datos» con el mismo subtítulo (el archivo también se abre ahí).
                     settingsRowContent(
-                        icon: "square.and.arrow.up.fill", title: L10n.Settings.exportData,
+                        icon: "square.and.arrow.up.fill",
+                        title: isGroupsOnlyShell ? L10n.Settings.exportData : L10n.UXL20D.exportRecordsRow,
                         subtitle: L10n.Settings.exportDataSubtitle,
                         iconColor: .mint
                     )
@@ -1326,7 +1746,9 @@ struct ProfileView: View {
                 // La fila "iCloud" se oculta en Modo Nube (`.cloud`): `iCloudSyncSettingsView` mentiría
                 // (el store personal ya no lo espeja el mirror). Cada bloque condicional lleva su divisor
                 // arriba ⇒ nunca queda un divisor colgante si una fila anterior se oculta.
-                if CloudSyncFlags.storageMode != .cloud {
+                // UX 2.2 · L19-15 (decisión de Jürgen, 2026-10-18): en solo grupos, tampoco. No hay datos personales que
+                // sincronizar, y la fila hablaba de iCloud a quien no sabía dónde estaban sus grupos.
+                if CloudSyncFlags.storageMode != .cloud && !isGroupsFocusedShell {
                     SubsectionDivider()
                     profileRow(
                         icon: "icloud.fill",
@@ -1348,7 +1770,12 @@ struct ProfileView: View {
                 // lectura (`GroupsAssociationPresence`) — leerlo dos veces es cómo divergen, y divergían.
                 // Quien decide qué se ofrece DENTRO bajo el kill es `offersCloudMigrationEntry`, en
                 // `StorageSettingsView` — abrir la fila no abre la migración.
-                if StorageRowGateLogic.isVisible(
+                //
+                // UX 2.2 · L19-15: en solo grupos la fila no sale (opción 1 de
+                // `groups-only-session-storage-screen-says-data-lives-in-icloud`). Su pantalla decía «tus datos viven en
+                // tu iCloud privado» a quien no tiene datos personales, y su sección de Grupos es `.notApplicable` ahí, así
+                // que no se pierde la puerta de desasociar: en solo grupos soltar la cuenta es «Cerrar sesión».
+                if !isGroupsFocusedShell, StorageRowGateLogic.isVisible(
                     isConfigured: CloudBackendConfig.isConfigured,
                     remoteEnabled: CloudRemoteFlags.cloudModeEnabled,
                     isEngaged: StorageRowGateLogic.isEngaged(
@@ -1377,7 +1804,7 @@ struct ProfileView: View {
                     // sistema (adapta a Dark Mode) → sin marcador A11Y-DM.
                     settingsRowContent(
                         icon: "arrow.counterclockwise", title: L10n.Settings.wipeData,
-                        subtitle: L10n.Settings.wipeDataSubtitle, iconColor: .red)
+                        subtitle: wipeRowSubtitle, iconColor: .red)
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("profile_security_reset_data")
@@ -1386,6 +1813,9 @@ struct ProfileView: View {
         .padding(.horizontal, DS.Spacing.lg)
     }
 
+    /// D23 (decisión de Jürgen, 2026-10-23, opción B): «Seguridad y cuenta» se parte en dos bloques que dicen lo que tienen.
+    /// Aquí solo lo que protege y controla —Face ID, Permisos, Privacidad y datos IA—; la cuenta va en `cuentaSection`,
+    /// «Siri y Atajos» en Preferencias y «Valorar / Recomendar Yala» al final de «¿Necesitas ayuda?».
     private var seguridadSection: some View {
         SectionBox(title: L10n.Settings.security) {
             VStack(spacing: DS.Spacing.none) {
@@ -1395,35 +1825,21 @@ struct ProfileView: View {
                     iconColor: DS.Semantic.successForeground,
                     destination: .faceIDProtectionGuide)
                     .accessibilityIdentifier("profile_security_faceid")
-                // Atajos de Siri: registran gastos personales — fuera de alcance en solo-grupos.
-                if !isGroupsOnlyShell {
-                    SubsectionDivider()
-                    profileRow(
-                        icon: "mic.badge.plus", title: String(localized: "settings.siriShortcuts"),
-                        iconColor: .blue, destination: .siriShortcuts)
-                }
                 SubsectionDivider()
-                Button {
-                    if let url = URL(string: UIApplication.openSettingsURLString) {
-                        openURL(url)
-                    }
-                } label: {
-                    settingsRowContent(
-                        icon: "lock.shield.fill", title: L10n.Settings.permissions,
-                        iconColor: .blue)
-                }
-                .buttonStyle(.plain)
-                // Privacidad IA (chat) y Suscripción Pro: ligadas a finanzas personales.
-                // En solo-grupos el upgrade fluye por "Activar Yala completo".
+                // UX 2.2 · L16-14: una pantalla propia con el estado de cada permiso. Antes saltaba a Configuración de iOS
+                // con el mismo chevron que las pantallas de dentro, sin avisar.
+                profileRow(
+                    icon: "lock.shield.fill", title: L10n.Settings.permissions,
+                    iconColor: .blue, destination: .permissions)
+                .accessibilityIdentifier("profile_permissions")
+                // Privacidad IA (chat): ligada a finanzas personales. En solo-grupos el upgrade fluye por
+                // "Activar Yala completo".
                 if !isGroupsOnlyShell {
                     SubsectionDivider()
                     profileRow(
                         icon: "hand.raised.fill", title: L10n.Settings.aiPrivacy,
                         iconColor: .indigo, destination: .aiPrivacy)
-                    SubsectionDivider()
-                    profileRow(
-                        icon: "creditcard.fill", title: L10n.Settings.subscriptions,
-                        iconColor: .purple, destination: .subscription)
+                    .accessibilityIdentifier("profile_ai_privacy")
                 }
                 #if DEBUG
                 if Bundle.main.bundleIdentifier?.hasSuffix(".dev") == true {
@@ -1433,28 +1849,23 @@ struct ProfileView: View {
                     devSeedDataRow
                 }
                 #endif
-                SubsectionDivider()
-                Button {
-                    requestReview()
-                } label: {
-                    settingsRowContent(
-                        icon: "star.bubble.fill", title: L10n.Settings.rateApp,
-                        iconColor: .yellow)
-                }
-                .buttonStyle(.plain)
-                // §3.2: subsección "Tu cuenta" — SOLO con sesión backend viva. Para VIVO sin sesión (TODO
-                // device prod) nada se inserta. Agrupa «Tu cuenta de Yala →» (mapa/explainer, §3.3.5), que
-                // desde el paso 9 es también la puerta de «Eliminar mi cuenta»; «Cerrar sesión» sigue debajo.
+            }
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+    }
+
+    /// D23 · «Tu cuenta», su propio bloque (antes una subsección al final de la seguridad). Sale solo si tiene alguna fila:
+    /// «Tu cuenta de Yala» con sesión backend viva y «Cerrar sesión» cuando no se fue a su tarjeta propia (L20-6).
+    private var showsAccountSection: Bool {
+        showsYalaAccountRow || !signOutRowRemovesDeviceData
+    }
+
+    private var cuentaSection: some View {
+        SectionBox(title: L10n.Settings.accountSubsectionTitle) {
+            VStack(spacing: DS.Spacing.none) {
+                // §3.2: «Tu cuenta de Yala →» (mapa/explainer, §3.3.5) — SOLO con sesión backend viva. Desde el paso 9
+                // es también la puerta de «Eliminar mi cuenta»; «Cerrar sesión» sigue debajo.
                 if showsYalaAccountRow {
-                    SubsectionDivider()
-                    Text(L10n.Settings.accountSubsectionTitle)
-                        .font(DS.Typography.labelSmall)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, DS.Spacing.lg)
-                        .padding(.top, DS.Spacing.md)
-                        .padding(.bottom, DS.Spacing.xs)
-                        .accessibilityAddTraits(.isHeader)
                     settingsLink(ProfileDestination.yalaAccount) {
                         settingsRowContent(
                             icon: "person.crop.circle.badge.checkmark",
@@ -1465,26 +1876,14 @@ struct ProfileView: View {
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("profile_yala_account")
                 }
-                // H4 + paso 9: «Cerrar sesión» — SIEMPRE al final, UNA fila y el mismo verbo en las cuatro celdas
-                // del ADR 2026-09-09 (§6: «dos botones y nada más»), sin subtítulo: el detalle de qué se borra y
-                // qué queda vive en la hoja de alcance, que nombra su celda. «Eliminar mi cuenta» ya no está
-                // aquí: vive dentro de «Tu cuenta de Yala» (a dos toques), como pide la App Store 5.1.1(v).
-                SubsectionDivider()
-                VStack(alignment: .leading, spacing: 0) {
-                    Button {
-                        requestSignOut()
-                    } label: {
-                        settingsRowContent(
-                            icon: "rectangle.portrait.and.arrow.right",
-                            title: L10n.Settings.signOut,
-                            iconColor: .red,
-                            showSpinner: signOutCoordinator.phase == .working)
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(signOutCoordinator.phase == .working || deletionService.phase == .working)
-                    .accessibilityIdentifier("profile_security_signout")
-
-                    signOutWorkingCaption
+                // H4 + paso 9: «Cerrar sesión» — SIEMPRE al final, UNA fila y el mismo verbo en las celdas CON cuenta de
+                // Yala (ADR 2026-09-09, §6: «dos botones y nada más»), sin subtítulo: el detalle de qué se borra y qué
+                // queda vive en la hoja de alcance, que nombra su celda. «Eliminar mi cuenta» ya no está aquí: vive
+                // dentro de «Tu cuenta de Yala» (a dos toques), como pide la App Store 5.1.1(v).
+                // UX 2.2 · L20-6: sin cuenta de Yala la fila se va a su propia tarjeta, al final de Ajustes.
+                if !signOutRowRemovesDeviceData {
+                    if showsYalaAccountRow { SubsectionDivider() }
+                    signOutRow
                 }
             }
         }
@@ -1617,6 +2016,24 @@ struct ProfileView: View {
                     icon: "questionmark.circle.fill", title: L10n.Settings.faq,
                     iconColor: .orange, destination: .faq)
                 SubsectionDivider()
+                // Volver a ver las Novedades de esta versión (UX 2.2 · L5-15): cerrada la hoja, no había forma.
+                if let whatsNew = WhatsNewConfig.current(version: Self.appVersion) {
+                    Button {
+                        showWhatsNewSheet = true
+                    } label: {
+                        settingsRowContent(
+                            icon: "sparkles", title: L10n.Settings.whatsNew,
+                            iconColor: .pink)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("profile_help_whats_new")
+                    .sheet(isPresented: $showWhatsNewSheet) {
+                        WhatsNewSheet(features: whatsNew.features, version: whatsNew.version) {
+                            showWhatsNewSheet = false
+                        }
+                    }
+                    SubsectionDivider()
+                }
                 Button {
                     showSupportSheet = true
                 } label: {
@@ -1625,9 +2042,32 @@ struct ProfileView: View {
                         iconColor: .teal)
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("profile_help_contact")
                 .sheet(isPresented: $showSupportSheet) {
                     SupportFormSheet()
                 }
+                // D23: «Valorar» y «Recomendar» cierran «¿Necesitas ayuda?»; bajo «Seguridad» no decían lo que eran.
+                SubsectionDivider()
+                // UX 2.2 · L16-15: «Valorar Yala» abre «Escribir una reseña» en la App Store. `requestReview()` lo decide
+                // Apple (unas pocas veces al año) y casi siempre el toque no hacía nada.
+                Button {
+                    openURL(AppStoreLinks.writeReviewURL)
+                } label: {
+                    settingsRowContent(
+                        icon: "star.bubble.fill", title: L10n.Settings.rateApp,
+                        iconColor: .yellow)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("profile_rate_app")
+                SubsectionDivider()
+                // Y «Recomendar Yala» comparte el enlace de la App Store, que es la otra mitad de lo que la fila decía.
+                ShareLink(item: AppStoreLinks.listingURL, message: Text(L10n.UXL15.recommendMessage)) {
+                    settingsRowContent(
+                        icon: "square.and.arrow.up.fill", title: L10n.UXL15.recommendYala,
+                        iconColor: .green)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("profile_recommend_app")
             }
         }
         .padding(.horizontal, DS.Spacing.lg)
@@ -1636,26 +2076,31 @@ struct ProfileView: View {
     private var legalSection: some View {
         SectionBox(title: L10n.Settings.legal) {
             VStack(spacing: DS.Spacing.none) {
+                // UX 2.2 · L16-19: dentro de Yala, en la hoja de Safari con «Listo». Con `openURL` se acababa en Safari y
+                // la vuelta era el «◂ Yala» de la barra de estado.
                 Button {
-                    openURL(AppConstants.privacyURL)
+                    legalPage = InAppWebPage(url: AppConstants.privacyURL)
                 } label: {
                     settingsRowContent(
                         icon: "hand.raised.fill", title: L10n.Settings.privacy,
                         iconColor: .gray)
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("profile_legal_privacy")
                 SubsectionDivider()
                 Button {
-                    openURL(AppConstants.termsURL)
+                    legalPage = InAppWebPage(url: AppConstants.termsURL)
                 } label: {
                     settingsRowContent(
                         icon: "doc.text.fill", title: L10n.Settings.terms,
                         iconColor: .gray)
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("profile_legal_terms")
             }
         }
         .padding(.horizontal, DS.Spacing.lg)
+        .inAppSafari($legalPage)
     }
 
 
@@ -1680,8 +2125,10 @@ struct ProfileView: View {
         iconColor: Color = .gray,
         textColor: Color = .primary,
         showSpinner: Bool = false
-    ) -> some View {
-        HStack(spacing: DS.Spacing.md) {
+    ) -> AnyView {
+        // `AnyView` por la misma razón que `settingsLink`: cada fila nombraba este tipo y la primera apertura de Ajustes
+        // lo descifraba una vez por fila (card YALA-IOS-G).
+        AnyView(HStack(spacing: DS.Spacing.md) {
             // Conditionally show colored or plain icons based on setting
             if effectiveColorfulIcons {
                 // iOS-style colored icon with rounded square background
@@ -1732,7 +2179,7 @@ struct ProfileView: View {
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.FormRow.paddingV)
-        .contentShape(Rectangle())
+        .contentShape(Rectangle()))
     }
 
 }

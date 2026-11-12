@@ -169,6 +169,9 @@ enum CloudSyncReconciler {
                 // Guard de clasificación: `account == nil` (p.ej. dangler I8f-1 sin resolver) es
                 // NO-clasificable → no participa (ni se poda ni cuenta como "forma presente").
                 guard let account = tx.account else { continue }
+                // Grupos B: una pata derivada de una línea de tu parte (marca `{"of":…}`) no es la forma vieja
+                // `-myShare`: convive con la real por diseño (D1). Podarla borraría tus líneas en cada pull.
+                if GroupSplitLinesBridgeLogic.isDerivedMarker(tx.splitLinesRaw) { continue }
                 if account.isSystemAccount {
                     if tx.amount < 0 { virtualNegatives.append(tx) }
                 } else {
@@ -252,6 +255,7 @@ enum CloudSyncReconciler {
                 for tx in loser.transactions ?? [] { tx.account = winner }
                 for sched in loser.scheduledPayments ?? [] { sched.account = winner }
                 for fav in loser.favoritePayments ?? [] { fav.account = winner }
+                for fav in loser.destinationFavoritePayments ?? [] { fav.destinationAccount = winner }
                 for draft in loser.inboxDrafts ?? [] { draft.account = winner }
                 for budget in loser.budgets ?? [] {
                     budgetsToResync.insert(budget.persistentModelID)

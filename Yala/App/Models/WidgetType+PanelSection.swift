@@ -47,6 +47,25 @@ enum PanelSectionKind: String, CaseIterable, Hashable {
         }
     }
 
+    /// Nombre en «Configurar Panel». Igual que `localizedTitle` salvo las cuentas, que en el Panel viven bajo
+    /// «Tus finanzas»: con dos nombres la persona no reconocía la sección (UX 2.2 · L3-6).
+    var configTitle: String {
+        self == .accounts ? L10n.Panel.panoramaTitle : localizedTitle
+    }
+
+    /// Una línea de qué hay en cada sección, para atreverse a encender lo que no se conoce (UX 2.2 · L3-6).
+    var configDescription: String {
+        switch self {
+        case .accounts:      return L10n.Panel.SectionsConfig.descAccounts
+        case .health:        return L10n.Panel.SectionsConfig.descHealth
+        case .tendencias:    return L10n.Panel.SectionsConfig.descTrends
+        case .distribucion:  return L10n.Panel.SectionsConfig.descDistribution
+        case .planificacion: return L10n.Panel.SectionsConfig.descPlanning
+        case .latestRecords: return L10n.Panel.SectionsConfig.descLatestRecords
+        case .tools:         return L10n.Panel.SectionsConfig.descTools
+        }
+    }
+
     /// Sections the user can hide from the config sheet. P20-11 flipped
     /// `.latestRecords` to toggleable so the user can customize every section.
     var canBeHidden: Bool { true }

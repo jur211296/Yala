@@ -17,12 +17,32 @@ struct PendingInboxNotification: Equatable {
     var scheduledPayments: Int = 0
     var subscriptions: Int = 0
     var automations: Int = 0  // applePay + automation
+    /// Dictados de «Anotar con Siri», que pasan fuera de la app: van en su propia línea del aviso, «Borradores de Siri:
+    /// N» (auditoría UX 2.2, lote 15, L15-7, opción C). La voz y la foto de DENTRO de la app no cuentan: ya los estás
+    /// viendo. No deciden el tipo del aviso (`notificationType`): solos, el aviso es el genérico de la Bandeja.
+    var siriDrafts: Int = 0
 
-    var total: Int { scheduledPayments + subscriptions + automations }
+    var total: Int { scheduledPayments + subscriptions + automations + siriDrafts }
     var isEmpty: Bool { total == 0 }
 
+    /// Suma un borrador nuevo según de dónde vino. Los que no se avisan (voz, foto, grupos…) no cuentan.
+    mutating func count(sourceTypeRaw: String) {
+        switch sourceTypeRaw {
+        case DraftSourceType.scheduledPayment.rawValue:
+            scheduledPayments += 1
+        case DraftSourceType.subscription.rawValue:
+            subscriptions += 1
+        case DraftSourceType.applePay.rawValue, DraftSourceType.automation.rawValue:
+            automations += 1
+        case DraftSourceType.siri.rawValue:
+            siriDrafts += 1
+        default:
+            break
+        }
+    }
+
     /// Builds breakdown message for mixed type
-    /// Example: "2 pagos planificados y 3 registros automáticos"
+    /// Example: "2 pagos, 1 suscripción y 3 registros automáticos"
     var mixedMessageBreakdown: String {
         var parts: [String] = []
         if scheduledPayments > 0 {
@@ -34,7 +54,15 @@ struct PendingInboxNotification: Equatable {
         if automations > 0 {
             parts.append(L10n.Inbox.Alert.Message.Mixed.automations(automations))
         }
-        return parts.joined(separator: L10n.Inbox.Alert.Message.Mixed.connector)
+        return Self.joinedBreakdown(parts, locale: AppLocale.current)
+    }
+
+    /// Une las partes como las une el idioma («2 pagos, 1 suscripción y 1 registro automático»). Con un conector
+    /// fijo, tres tipos salían con dos «y» seguidas («2 pagos y 1 suscripciones y 1 registros automáticos»).
+    static func joinedBreakdown(_ parts: [String], locale: Locale) -> String {
+        let formatter = ListFormatter()
+        formatter.locale = locale
+        return formatter.string(from: parts) ?? parts.joined(separator: ", ")
     }
 
     /// Predominant type for message selection
@@ -78,6 +106,16 @@ enum KeyboardPanelRequest: Equatable {
     case settings
 }
 
+/// Un valor de una dimensión de filtro: lo que se toca en un segmento de una gráfica o en una cápsula de la barra.
+enum SegmentFilterTarget: Hashable {
+    case account(PersistentIdentifier)
+    case category(PersistentIdentifier)
+    case subcategory(PersistentIdentifier)
+    case tag(PersistentIdentifier)
+    case need(SubcategoryNeed)
+    case currency(CurrencyCode)
+}
+
 /// Global session state to manage synchronization between views
 @MainActor
 @Observable
@@ -115,6 +153,55 @@ class SessionState {
                     customRange: customDateRange)
             }
         }
+    }
+
+    // MARK: - Elegir el período
+
+    /// Pone a la vez el tipo de período y, si es `.custom`, su rango. El rango va primero porque `selectedPeriod`
+    /// calcula el intervalo con el rango que haya en ese momento.
+    private func applyPeriod(_ period: DetailPeriod, customRange: DateInterval?) {
+        if period == .custom, let customRange {
+            customDateRange = customRange
+        }
+        selectedPeriod = period
+    }
+
+    /// El período que elige la persona (menú, flechas, rango propio). Si un aviso había puesto el suyo para esa
+    /// visita (`applyVisitPeriod`), desde aquí el período ya es de ella y no se le devuelve el anterior al salir.
+    func choosePeriod(_ period: DetailPeriod, customRange: DateInterval? = nil, stepUnit: PeriodStepLogic.Unit? = nil) {
+        periodBeforeVisit = nil
+        periodStepUnit = stepUnit
+        applyPeriod(period, customRange: customRange)
+    }
+
+    /// El tamaño de paso con el que las flechas de Estadísticas llegaron al rango propio de ahora (UX 2.2 · L11-3).
+    /// Cualquier otra elección lo borra.
+    private(set) var periodStepUnit: PeriodStepLogic.Unit?
+
+    // MARK: - Período de una visita (UX 2.2 · L11-2)
+
+    /// Lo que tenía puesto la persona antes de que un aviso abriera Estadísticas con su propio período. Se le devuelve
+    /// al salir de Estadísticas (`endVisitPeriod`); `nil` si no hay ninguna visita en curso.
+    private(set) var periodBeforeVisit: PeriodStepLogic.Selection?
+
+    /// El informe abre Estadísticas con el período del que habla. Vale para esa visita: el de antes se guarda una vez
+    /// —dos avisos seguidos no pisan el original— y vuelve con `endVisitPeriod`.
+    func applyVisitPeriod(_ period: DetailPeriod, customRange: DateInterval? = nil) {
+        if periodBeforeVisit == nil {
+            periodBeforeVisit = PeriodStepLogic.Selection(period: selectedPeriod, customRange: customDateRange)
+        }
+        periodStepUnit = nil
+        applyPeriod(period, customRange: customRange)
+    }
+
+    /// Al salir de Estadísticas: vuelve el período que había antes del aviso, si lo hay.
+    func endVisitPeriod() {
+        guard let saved = periodBeforeVisit else { return }
+        periodBeforeVisit = nil
+        periodStepUnit = nil
+        // También sin rango: si no había uno propio, el «hoy» del informe diario no se queda guardado como tal.
+        customDateRange = saved.customRange
+        selectedPeriod = saved.period
     }
 
     // MARK: - Trend Metric State
@@ -187,26 +274,278 @@ class SessionState {
     // MARK: - Global Filter State (shared between Panel and Statistics)
 
     /// Selected account IDs (empty = all accounts)
-    var selectedAccountIDs: Set<PersistentIdentifier> = [] { didSet { resetExcludeModeIfNeeded() } }
+    ///
+    /// Tarjeta con varias divisas (entrega 3, decisión D1 del encargo): el conjunto se NORMALIZA al escribirlo, así que todo
+    /// lector —los ~25 que construyen filtros, la elegibilidad del Panel y de Estadísticas, el saldo vivo— ve la tarjeta con sus
+    /// líneas sin saber que existen. Poner la tarjeta añade sus líneas, quitarla las quita, y una línea elegida sola se
+    /// respeta (`AccountCardLogic.normalizedSelection`). Lo que se PINTA cuenta tarjetas: `shownAccountSelection`.
+    var selectedAccountIDs: Set<PersistentIdentifier> = [] {
+        didSet {
+            normalizeAccountSelection(from: oldValue)
+            if overlaps(excludedAccountIDs, selectedAccountIDs) { excludedAccountIDs.subtract(selectedAccountIDs) }
+        }
+    }
+
+    /// Principal → sus líneas vivas, por `persistentModelID`. Lo instala el arranque con el contexto montado
+    /// (`installAccountLinesSource`); sin él (tests de unidad que no lo instalan), el filtro se guarda tal cual, como antes.
+    @ObservationIgnored var accountLinesByHead: (() -> [PersistentIdentifier: Set<PersistentIdentifier>])?
+    @ObservationIgnored private var isNormalizingAccountSelection = false
+    @ObservationIgnored private var isNormalizingExcludedAccounts = false
+
+    /// Instala la fuente de `accountLinesByHead`. El contexto se captura débil: un contenedor que se cambia en caliente no se
+    /// queda vivo por esto, y el arranque siguiente instala el nuevo. Un fetch que falla no expande (el filtro de antes).
+    func installAccountLinesSource(_ context: ModelContext) {
+        accountLinesByHead = { [weak context] in
+            guard let context else { return [:] }
+            do {
+                let accounts = try context.fetch(FetchDescriptor<Account>())
+                return AccountCardLogic.linesByHead(
+                    accounts, node: { AccountLineNode($0) }, id: { $0.persistentModelID })
+            } catch {
+                #if DEBUG
+                print("SessionState: Error: fetch de cuentas para el filtro de tarjetas: \(error)")
+                #endif
+                return [:]
+            }
+        }
+    }
+
+    private func normalizeAccountSelection(from oldValue: Set<PersistentIdentifier>) {
+        // Vaciar un filtro vacío (`clearFilters` tras un borrado) no tiene nada que normalizar: sin fetch.
+        guard !isNormalizingAccountSelection, !(oldValue.isEmpty && selectedAccountIDs.isEmpty),
+              let linesByHead = accountLinesByHead?(), !linesByHead.isEmpty else { return }
+        let normalized = AccountCardLogic.normalizedSelection(
+            old: oldValue, new: selectedAccountIDs, linesByHead: linesByHead)
+        guard normalized != selectedAccountIDs else { return }
+        isNormalizingAccountSelection = true
+        selectedAccountIDs = normalized
+        isNormalizingAccountSelection = false
+    }
+
+    /// Lo mismo para las cuentas OCULTAS: ocultar una tarjeta oculta sus líneas, y quitarla las vuelve a enseñar. Sin
+    /// esto, «Sin Visa» dejaba sumando la línea en dólares de esa tarjeta.
+    private func normalizeExcludedAccounts(from oldValue: Set<PersistentIdentifier>) {
+        guard !isNormalizingExcludedAccounts, !(oldValue.isEmpty && excludedAccountIDs.isEmpty),
+              let linesByHead = accountLinesByHead?(), !linesByHead.isEmpty else { return }
+        let normalized = AccountCardLogic.normalizedSelection(
+            old: oldValue, new: excludedAccountIDs, linesByHead: linesByHead)
+        guard normalized != excludedAccountIDs else { return }
+        isNormalizingExcludedAccounts = true
+        excludedAccountIDs = normalized
+        isNormalizingExcludedAccounts = false
+    }
+
+    /// Tras vincular o añadir una línea: si su tarjeta está en el filtro, la línea entra también. La normalización solo corre
+    /// al escribir el filtro, y sin esto el saldo y Registros dejaban fuera la línea nueva mientras el carrusel marcaba la
+    /// tarjeta entera (review del 2026-10-18).
+    func reapplyAccountSelection() {
+        if !selectedAccountIDs.isEmpty {
+            let current = selectedAccountIDs
+            selectedAccountIDs = current
+        }
+        if !excludedAccountIDs.isEmpty {
+            let current = excludedAccountIDs
+            excludedAccountIDs = current
+        }
+    }
+
+    /// La selección tal como se PINTA: cada tarjeta una vez (sin las líneas cuya tarjeta también está). Para píldoras,
+    /// contadores y marcas de «seleccionada»; para filtrar y sumar, `selectedAccountIDs`.
+    func shownAccountSelection(_ selection: Set<PersistentIdentifier>) -> Set<PersistentIdentifier> {
+        guard let linesByHead = accountLinesByHead?(), !linesByHead.isEmpty else { return selection }
+        return AccountCardLogic.shownSelection(selection, linesByHead: linesByHead)
+    }
+
+    /// Para las lecturas que son de UNA cuenta por diseño (prellenar el formulario, saltar a Registros): una cuenta de lo que
+    /// se pinta, nunca una línea de una tarjeta que también está elegida. Con varias tarjetas sigue sin ser estable, como
+    /// `.first` de siempre (regla «No colapses un conjunto a `.first` para calcular»).
+    func representativeAccountID(in selection: Set<PersistentIdentifier>) -> PersistentIdentifier? {
+        shownAccountSelection(selection).first
+    }
 
     /// Selected category IDs (empty = all categories)
-    var selectedCategoryIDs: Set<PersistentIdentifier> = [] { didSet { resetExcludeModeIfNeeded() } }
+    var selectedCategoryIDs: Set<PersistentIdentifier> = [] {
+        didSet { if overlaps(excludedCategoryIDs, selectedCategoryIDs) { excludedCategoryIDs.subtract(selectedCategoryIDs) } }
+    }
 
     /// Selected subcategory IDs (empty = all subcategories)
     /// Changed from names to IDs to handle duplicate subcategory names across categories
-    var selectedSubcategoryIDs: Set<PersistentIdentifier> = [] { didSet { resetExcludeModeIfNeeded() } }
+    var selectedSubcategoryIDs: Set<PersistentIdentifier> = [] {
+        didSet { if overlaps(excludedSubcategoryIDs, selectedSubcategoryIDs) { excludedSubcategoryIDs.subtract(selectedSubcategoryIDs) } }
+    }
 
     /// Selected natures (empty = all natures)
-    var selectedNeeds: Set<SubcategoryNeed> = [] { didSet { resetExcludeModeIfNeeded() } }
+    var selectedNeeds: Set<SubcategoryNeed> = [] {
+        didSet { if overlaps(excludedNeeds, selectedNeeds) { excludedNeeds.subtract(selectedNeeds) } }
+    }
 
     /// Selected tags (empty = all tags)
-    var selectedTags: Set<PersistentIdentifier> = [] { didSet { resetExcludeModeIfNeeded() } }
+    var selectedTags: Set<PersistentIdentifier> = [] {
+        didSet { if overlaps(excludedTags, selectedTags) { excludedTags.subtract(selectedTags) } }
+    }
 
     /// Selected budget ID for widget highlighting (nil = none selected)
     var selectedBudgetID: PersistentIdentifier?
 
     /// Selected currencies (empty = all currencies)
-    var selectedCurrencies: Set<CurrencyCode> = [] { didSet { resetExcludeModeIfNeeded() } }
+    var selectedCurrencies: Set<CurrencyCode> = [] {
+        didSet {
+            if overlaps(excludedCurrencies, selectedCurrencies) { excludedCurrencies.subtract(selectedCurrencies) }
+            revalidateAmountCurrency()
+        }
+    }
+
+    // MARK: - Lo oculto (opción B de Jürgen, 2026-10-12)
+
+    // Los `selected*` de arriba son los INCLUIDOS («solo estos»); estos, los EXCLUIDOS («todos menos estos») de cada
+    // dimensión. Conviven: «Solo Comida» y «Sin Uber» a la vez. Hasta el 2026-10-25 había un solo interruptor global
+    // (`isExcludeMode`) que daba a todos los conjuntos un mismo significado y los vaciaba al cambiar. Un id no puede estar
+    // en los dos: marcarlo en uno lo quita del otro (`overlaps`). La regla de coincidencia es `EntityFilter.matches`.
+
+    var excludedAccountIDs: Set<PersistentIdentifier> = [] {
+        didSet {
+            normalizeExcludedAccounts(from: oldValue)
+            if overlaps(selectedAccountIDs, excludedAccountIDs) { selectedAccountIDs.subtract(excludedAccountIDs) }
+        }
+    }
+    var excludedCategoryIDs: Set<PersistentIdentifier> = [] {
+        didSet { if overlaps(selectedCategoryIDs, excludedCategoryIDs) { selectedCategoryIDs.subtract(excludedCategoryIDs) } }
+    }
+    var excludedSubcategoryIDs: Set<PersistentIdentifier> = [] {
+        didSet { if overlaps(selectedSubcategoryIDs, excludedSubcategoryIDs) { selectedSubcategoryIDs.subtract(excludedSubcategoryIDs) } }
+    }
+    var excludedNeeds: Set<SubcategoryNeed> = [] {
+        didSet { if overlaps(selectedNeeds, excludedNeeds) { selectedNeeds.subtract(excludedNeeds) } }
+    }
+    var excludedTags: Set<PersistentIdentifier> = [] {
+        didSet { if overlaps(selectedTags, excludedTags) { selectedTags.subtract(excludedTags) } }
+    }
+    var excludedCurrencies: Set<CurrencyCode> = [] {
+        didSet {
+            if overlaps(selectedCurrencies, excludedCurrencies) { selectedCurrencies.subtract(excludedCurrencies) }
+            revalidateAmountCurrency()
+        }
+    }
+
+    /// ¿Hay que quitar del otro conjunto lo que acaba de entrar en este? El último en escribir gana. Se comprueba ANTES de
+    /// asignar —y no con un `inout`, que reescribe siempre y dispararía el `didSet` del gemelo en bucle—: si no hay
+    /// solape no se toca nada. Durante un volcado en bloque (la hoja de Registros, que ya entrega los dos conjuntos
+    /// disjuntos) no actúa.
+    private func overlaps<T: Hashable>(_ other: Set<T>, _ written: Set<T>) -> Bool {
+        !isBatchingFilterUpdate && !other.isDisjoint(with: written)
+    }
+
+    /// Filtros de entidad por dimensión, para los calculadores (incluidos + excluidos juntos: un conjunto sin su
+    /// gemelo invierte o pierde el filtro).
+    var accountFilter: EntityFilter<PersistentIdentifier> {
+        EntityFilter(included: selectedAccountIDs, excluded: excludedAccountIDs)
+    }
+
+    /// Todo lo oculto, como un solo valor que observar: las pantallas recalculan cuando cambia cualquiera de sus seis
+    /// conjuntos (antes observaban `isExcludeMode`).
+    struct ExcludedFilterSets: Equatable {
+        var accounts: Set<PersistentIdentifier>
+        var categories: Set<PersistentIdentifier>
+        var subcategories: Set<PersistentIdentifier>
+        var needs: Set<SubcategoryNeed>
+        var tags: Set<PersistentIdentifier>
+        var currencies: Set<CurrencyCode>
+
+        static let none = ExcludedFilterSets(
+            accounts: [], categories: [], subcategories: [], needs: [], tags: [], currencies: []
+        )
+    }
+
+    /// También se escribe de golpe: lo usan los tests para guardar y restaurar lo oculto alrededor de un caso.
+    var excludedFilterSets: ExcludedFilterSets {
+        get {
+            ExcludedFilterSets(
+                accounts: excludedAccountIDs, categories: excludedCategoryIDs, subcategories: excludedSubcategoryIDs,
+                needs: excludedNeeds, tags: excludedTags, currencies: excludedCurrencies
+            )
+        }
+        set {
+            excludedAccountIDs = newValue.accounts
+            excludedCategoryIDs = newValue.categories
+            excludedSubcategoryIDs = newValue.subcategories
+            excludedNeeds = newValue.needs
+            excludedTags = newValue.tags
+            excludedCurrencies = newValue.currencies
+        }
+    }
+
+    /// Hay algo oculto en alguna dimensión.
+    var hasExcludedFilters: Bool {
+        !excludedAccountIDs.isEmpty || !excludedCategoryIDs.isEmpty || !excludedSubcategoryIDs.isEmpty
+            || !excludedNeeds.isEmpty || !excludedTags.isEmpty || !excludedCurrencies.isEmpty
+    }
+
+    /// Copia los filtros de entidad de la sesión (incluidos y excluidos) a un criterio. Las etiquetas por UUID las rellena
+    /// quien tenga el catálogo (`populateTagUUIDs(fromCatalog:)`).
+    func applyEntityFilters(to criteria: inout FilterCriteria) {
+        criteria.selectedAccounts = selectedAccountIDs
+        criteria.selectedCategories = selectedCategoryIDs
+        criteria.selectedSubcategories = selectedSubcategoryIDs
+        criteria.selectedTags = selectedTags
+        criteria.selectedNeeds = selectedNeeds
+        criteria.selectedCurrencies = selectedCurrencies
+        criteria.excludedAccounts = excludedAccountIDs
+        criteria.excludedCategories = excludedCategoryIDs
+        criteria.excludedSubcategories = excludedSubcategoryIDs
+        criteria.excludedTags = excludedTags
+        criteria.excludedNeeds = excludedNeeds
+        criteria.excludedCurrencies = excludedCurrencies
+    }
+
+    // MARK: - Tocar un segmento: «Ver solo» / «Ocultar» / «Quitar el filtro»
+
+    /// Cómo está ese valor en el filtro de su dimensión.
+    func membership(of target: SegmentFilterTarget) -> EntityFilterMembership {
+        switch target {
+        case .account(let id): return EntityFilter(included: selectedAccountIDs, excluded: excludedAccountIDs).membership(of: id)
+        case .category(let id): return EntityFilter(included: selectedCategoryIDs, excluded: excludedCategoryIDs).membership(of: id)
+        case .subcategory(let id): return EntityFilter(included: selectedSubcategoryIDs, excluded: excludedSubcategoryIDs).membership(of: id)
+        case .tag(let id): return EntityFilter(included: selectedTags, excluded: excludedTags).membership(of: id)
+        case .need(let need): return EntityFilter(included: selectedNeeds, excluded: excludedNeeds).membership(of: need)
+        case .currency(let code): return EntityFilter(included: selectedCurrencies, excluded: excludedCurrencies).membership(of: code)
+        }
+    }
+
+    /// «Ocultar X»: entra en los excluidos de su dimensión (y sale de los incluidos). Las demás dimensiones no cambian.
+    func hide(_ target: SegmentFilterTarget) {
+        switch target {
+        case .account(let id): excludedAccountIDs.insert(id)
+        case .category(let id): excludedCategoryIDs.insert(id)
+        case .subcategory(let id): excludedSubcategoryIDs.insert(id)
+        case .tag(let id): excludedTags.insert(id)
+        case .need(let need): excludedNeeds.insert(need)
+        case .currency(let code): excludedCurrencies.insert(code)
+        }
+    }
+
+    /// «Quitar el filtro»: el valor sale de los dos conjuntos de su dimensión.
+    func clearFilter(_ target: SegmentFilterTarget) {
+        switch target {
+        case .account(let id):
+            selectedAccountIDs.remove(id)
+            excludedAccountIDs.remove(id)
+        case .category(let id):
+            selectedCategoryIDs.remove(id)
+            excludedCategoryIDs.remove(id)
+        case .subcategory(let id):
+            selectedSubcategoryIDs.remove(id)
+            excludedSubcategoryIDs.remove(id)
+        case .tag(let id):
+            selectedTags.remove(id)
+            excludedTags.remove(id)
+        case .need(let need):
+            selectedNeeds.remove(need)
+            excludedNeeds.remove(need)
+        case .currency(let code):
+            selectedCurrencies.remove(code)
+            excludedCurrencies.remove(code)
+        }
+    }
 
     /// Selected transaction natures for filtering income/expense (empty = all)
     var selectedTransactionNatures: Set<TransactionNature> = []
@@ -217,34 +556,49 @@ class SessionState {
     }
 
     /// Amount filter condition
-    var amountCondition: AmountFilterCondition = .any { didSet { resetExcludeModeIfNeeded() } }
+    var amountCondition: AmountFilterCondition = .any {
+        didSet { if !amountCondition.isActive, amountCurrency != nil { amountCurrency = nil } }
+    }
 
-    /// Search text for note filtering
-    var searchText: String = "" { didSet { resetExcludeModeIfNeeded() } }
+    /// La moneda en la que compara el monto aplicado: la única que quedaba a la vista al aplicarlo
+    /// (`RecordsAmountFilterCurrencyLogic`). El monto compara cada registro en SU moneda, así que solo vale mientras esa
+    /// siga siendo la única a la vista. `nil` con un monto activo: lo escribió alguien que no sabe la moneda (tests, un
+    /// escritor nuevo) y la guarda no lo toca. **Un escritor nuevo de un monto activo pasa por `applyAmountFilter`.**
+    private(set) var amountCurrency: CurrencyCode?
 
-    /// Guard against re-entrant didSet calls during exclude mode transitions
-    private var isSwitchingExcludeMode = false
+    /// Aplica un monto con la moneda en la que compara. Lo escribe la hoja de Registros › Filtros.
+    func applyAmountFilter(_ condition: AmountFilterCondition, in currency: CurrencyCode?) {
+        amountCondition = condition
+        amountCurrency = condition.isActive ? currency : nil
+    }
 
-    /// Exclude mode: when true, selected entity filters hide matching items instead of showing only them
-    var isExcludeMode: Bool = false {
-        didSet {
-            guard oldValue != isExcludeMode else { return }
-            // Clear entity selections when switching mode to avoid confusion
-            // Don't call clearFilters() — it resets isExcludeMode itself, causing a loop
-            isSwitchingExcludeMode = true
-            selectedAccountIDs.removeAll()
-            selectedCategoryIDs.removeAll()
-            selectedSubcategoryIDs.removeAll()
-            selectedNeeds.removeAll()
-            selectedTags.removeAll()
-            selectedCurrencies.removeAll()
-            selectedTransactionNatures.removeAll()
-            amountCondition = .any
-            searchText = ""
-            globalFilters.clearAll()
-            isSwitchingExcludeMode = false
+    /// Las monedas con registros (`CurrenciesWithRecords`, la cuenta de la hoja). Lo instala el arranque; sin él (tests de
+    /// unidad), la guarda del monto no actúa. `nil` del cierre: no se pudo contar, y tampoco actúa.
+    @ObservationIgnored var currenciesWithRecords: (() -> [CurrencyCode]?)?
+
+    func installCurrenciesWithRecordsSource(_ context: ModelContext) {
+        currenciesWithRecords = { [weak context] in
+            guard let context else { return nil }
+            return CurrenciesWithRecords.load(in: context)
         }
     }
+
+    /// Vacía el monto cuando su moneda deja de ser la única a la vista, lo cambie quien lo cambie: la ✕ de una moneda en la
+    /// barra, «Ver solo / Ocultar» desde un segmento, o el primer registro en una moneda nueva (ticket
+    /// `applied-amount-filter-keeps-filtering-after-its-currency-changes`). Hasta el 2026-10-28 solo lo decidía la hoja
+    /// al aplicar, y el monto seguía comparando cada registro en su propia moneda. Vaciar y no avisar: la cápsula del
+    /// monto desaparece de la barra, que es lo que se ve.
+    func revalidateAmountCurrency() {
+        guard !isBatchingFilterUpdate, amountCondition.isActive, let stamped = amountCurrency,
+              let available = currenciesWithRecords?() else { return }
+        guard !RecordsAmountFilterCurrencyLogic.keepsAmount(
+            appliedIn: stamped, included: selectedCurrencies, excluded: excludedCurrencies, available: available
+        ) else { return }
+        amountCondition = .any
+    }
+
+    /// Search text for note filtering
+    var searchText: String = ""
 
     // MARK: - Filter Criteria State
 
@@ -266,33 +620,20 @@ class SessionState {
             || !selectedTags.isEmpty || !selectedCurrencies.isEmpty
             || !selectedTransactionNatures.isEmpty
             || amountCondition.isActive || !searchText.isEmpty
+            || hasExcludedFilters
     }
 
-    /// Check if any exclude-eligible filter is active (transaction type is NOT excludable)
-    private var hasActiveExcludeFilters: Bool {
-        !selectedAccountIDs.isEmpty || !selectedCategoryIDs.isEmpty
-            || !selectedSubcategoryIDs.isEmpty || !selectedNeeds.isEmpty
-            || !selectedTags.isEmpty || !selectedCurrencies.isEmpty
-            || amountCondition.isActive || !searchText.isEmpty
-    }
+    /// Volcado en bloque en curso: `overlaps` no recorta.
+    @ObservationIgnored private var isBatchingFilterUpdate = false
 
-    /// Auto-reset exclude mode when no exclude-eligible filters remain
-    func resetExcludeModeIfNeeded() {
-        guard !isSwitchingExcludeMode, !isBatchingFilterUpdate, isExcludeMode, !hasActiveExcludeFilters else { return }
-        isSwitchingExcludeMode = true
-        isExcludeMode = false
-        isSwitchingExcludeMode = false
-    }
-
-    /// Guard against resetExcludeModeIfNeeded during batch filter commits
-    private var isBatchingFilterUpdate = false
-
-    /// Batch-set multiple filter properties without triggering intermediate resetExcludeModeIfNeeded calls.
-    /// Use when committing filter values from a sheet where isExcludeMode was already set.
+    /// Escribe varios conjuntos de golpe sin que `overlaps` recorte uno con el valor intermedio de otro. Para la hoja
+    /// de Registros, que entrega incluidos y excluidos ya disjuntos.
     func performBatchFilterUpdate(_ block: () -> Void) {
         isBatchingFilterUpdate = true
         block()
         isBatchingFilterUpdate = false
+        // Con las dos listas y el monto ya escritos: la guarda no actuó a mitad del volcado.
+        revalidateAmountCurrency()
     }
 
     // MARK: - Actions
@@ -305,12 +646,44 @@ class SessionState {
         selectedNeeds.removeAll()
         selectedTags.removeAll()
         selectedCurrencies.removeAll()
+        excludedAccountIDs.removeAll()
+        excludedCategoryIDs.removeAll()
+        excludedSubcategoryIDs.removeAll()
+        excludedNeeds.removeAll()
+        excludedTags.removeAll()
+        excludedCurrencies.removeAll()
         selectedTransactionNatures.removeAll()
         selectedBudgetID = nil
-        isExcludeMode = false
         amountCondition = .any
         searchText = ""
         globalFilters.clearAll()
+    }
+
+    /// Quita del filtro de cuentas una cuenta que se acaba de eliminar. Sin esto el filtro sobrevivía a la cuenta: el
+    /// chip no se pintaba (ningún ID resolvía) y el Panel enseñaba 0 sin nada que explicara por qué (ticket
+    /// `saldo-con-seleccion-no-contable-diverge-entre-panel-y-estadisticas`). Lo llama el embudo de los borrados,
+    /// `EntityDeletionService.deleteAccount`.
+    func forgetDeletedAccount(_ id: PersistentIdentifier) {
+        if selectedAccountIDs.contains(id) { selectedAccountIDs.remove(id) }
+        if excludedAccountIDs.contains(id) { excludedAccountIDs.remove(id) }
+    }
+
+    /// Lo mismo para categorías, subcategorías y etiquetas (ticket `combined-filters-edge-cases-after-option-b`, borde 2):
+    /// un valor oculto que se borra dejaba su id en `excluded*`, y la barra del Panel salía sin cápsulas y sin ✕ porque
+    /// `hasExcludedFilters` contaba el id y `ExcludedFilterChips` no encontraba nada que pintar. Se va de las dos listas.
+    /// Lo llaman los borrados de la persona (`EntityDeletionService` y la lista de Categorías de Ajustes); lo que borra
+    /// otro dispositivo, el deduplicador o una fusión deja el id, como con las cuentas.
+    func forgetDeletedFilterValues(
+        categories: Set<PersistentIdentifier> = [],
+        subcategories: Set<PersistentIdentifier> = [],
+        tags: Set<PersistentIdentifier> = []
+    ) {
+        if !selectedCategoryIDs.isDisjoint(with: categories) { selectedCategoryIDs.subtract(categories) }
+        if !excludedCategoryIDs.isDisjoint(with: categories) { excludedCategoryIDs.subtract(categories) }
+        if !selectedSubcategoryIDs.isDisjoint(with: subcategories) { selectedSubcategoryIDs.subtract(subcategories) }
+        if !excludedSubcategoryIDs.isDisjoint(with: subcategories) { excludedSubcategoryIDs.subtract(subcategories) }
+        if !selectedTags.isDisjoint(with: tags) { selectedTags.subtract(tags) }
+        if !excludedTags.isDisjoint(with: tags) { excludedTags.subtract(tags) }
     }
 
     /// Toggle account filter (single-select behavior for Panel compatibility)
@@ -385,6 +758,9 @@ class SessionState {
 
     /// Reset to default state
     func resetToDefaults() {
+        // Primero, olvidar la visita de un informe: el cambio de pestaña de abajo la cerraría y devolvería el período
+        // de antes del borrado encima del de fábrica.
+        periodBeforeVisit = nil
         selectedPeriod = .allTime
         customDateRange = nil
         clearFilters()
@@ -415,11 +791,33 @@ class SessionState {
         didSet {
             // El widget no ve esta marca: se la publica el embudo, también cuando el espejo solo se re-lee
             // (`refreshPrivateSessionMirror`), porque lo que el widget enseña depende del valor, no de quién lo escribió.
-            WidgetDataCache.publishSessionShell(hasPrivateSession: hasPrivateSession)
+            WidgetDataCache.publishSessionShell(
+                hasPrivateSession: hasPrivateSession, prefersGroupsOnlyView: prefersGroupsOnlyView)
+            // La marca de vista muere con la sesión (`PrivateSessionMark.set(false)`): el espejo, con ella.
+            if !hasPrivateSession && prefersGroupsOnlyView {
+                isRefreshingGroupsOnlyViewMirror = true
+                prefersGroupsOnlyView = false
+                isRefreshingGroupsOnlyViewMirror = false
+            }
             guard !isRefreshingPrivateSessionMirror else { return }
             PrivateSessionMark.set(hasPrivateSession)
         }
     }
+
+    /// **«Solo grupos» elegido sobre Yala completo** (card p0iu): el espejo OBSERVABLE de `GroupsOnlyViewMark`, y el
+    /// embudo de sus escrituras. Asignar aquí PERSISTE la marca. Solo cambia la shell (`effectiveShellMode`) y la pausa
+    /// de los avisos personales; los gates de datos siguen leyendo `hasPrivateSession`. Quien la enciende y la apaga
+    /// con todos sus efectos es `UsageModeService`.
+    var prefersGroupsOnlyView: Bool = GroupsOnlyViewMark.isOn() {
+        didSet {
+            WidgetDataCache.publishSessionShell(
+                hasPrivateSession: hasPrivateSession, prefersGroupsOnlyView: prefersGroupsOnlyView)
+            guard !isRefreshingGroupsOnlyViewMirror else { return }
+            GroupsOnlyViewMark.set(prefersGroupsOnlyView)
+        }
+    }
+
+    @ObservationIgnored private var isRefreshingGroupsOnlyViewMirror = false
 
     /// Re-lee la marca y pone el espejo al día **sin persistir nada**.
     ///
@@ -436,6 +834,13 @@ class SessionState {
     /// la marca, así que una asignación volvería a persistir justo lo que se acaba de borrar y la
     /// AUSENCIA —que es lo que hace estricto a `confirmedPrivateSession`— no existiría nunca.
     func refreshPrivateSessionMirror() {
+        // La marca de vista muere por los mismos caminos (`PrivateSessionMark.clear`), y tampoco pasa por aquí.
+        let vistaPersistida = GroupsOnlyViewMark.isOn()
+        if vistaPersistida != prefersGroupsOnlyView {
+            isRefreshingGroupsOnlyViewMirror = true
+            prefersGroupsOnlyView = vistaPersistida
+            isRefreshingGroupsOnlyViewMirror = false
+        }
         let persistido = PrivateSessionMark.hasPrivateSession()
         guard persistido != hasPrivateSession else { return }
         isRefreshingPrivateSessionMirror = true
@@ -450,8 +855,17 @@ class SessionState {
     /// Modo EFECTIVO de la shell (tab bar + visibilidad de secciones personales), derivado del eje 1:
     /// sin vida personal en este teléfono, la app es solo Grupos.
     var effectiveShellMode: ShellMode {
-        ShellModeLogic.effective(hasPrivateSession: hasPrivateSession)
+        ShellModeLogic.effective(hasPrivateSession: hasPrivateSession, prefersGroupsOnlyView: prefersGroupsOnlyView)
     }
+
+    /// «Solo grupos» elegido sobre una sesión privada viva: la vuelta no es «Activar Yala completo» sino «Volver».
+    var isGroupsOnlyByChoice: Bool { hasPrivateSession && prefersGroupsOnlyView }
+
+    /// Card p0iu · lo que cuenta la hoja de la vuelta. Vive aquí, en un `@Observable`, y no en un `@State` de
+    /// `ContentView`: la hoja se presenta con `.sheet(isPresented:)` y su contenido sale de este valor, y con un
+    /// `@State` que el `body` no lee el cierre se queda con el valor de antes (`swiftui-ds.md`, «Gotchas de vistas»):
+    /// la hoja enseñaría la activación —la bienvenida— a quien vuelve. `nil` = la activación de siempre.
+    var returnToFullSummary: UsageModeLogic.SavedSummary?
 
     /// Conveniencia: `effectiveShellMode == .groupsFocused`.
     var isGroupsFocusedShell: Bool { effectiveShellMode == .groupsFocused }
@@ -466,6 +880,11 @@ class SessionState {
     /// Flag indicating data wipe is in progress
     /// When true, ContentView shows a loading overlay to prevent @Query observers from crashing
     var isWipingData: Bool = false
+
+    /// «Vaciar datos» terminó en el Panel y falta su aviso («Listo, empezaste de cero…», encargo S27i). Lo arma
+    /// `UserDataResetView` antes de bajar `isWipingData`, y `ContentView` lo consume al ver caer ese flag: el aviso sale
+    /// con el Panel ya montado, no detrás de la capa de borrado.
+    var wipeLandingToastPending: Bool = false
 
     /// Flag to trigger exchange rate reload after data wipe
     /// Set to true after wipe completes, observed by YalaApp to reload rates
@@ -494,6 +913,14 @@ class SessionState {
 
     func incrementDataVersion() {
         dataVersion += 1
+        // El primer registro en una moneda nueva cambia lo que queda a la vista sin tocar el filtro.
+        revalidateAmountCurrency()
+        // El aviso de la tarjeta lleva lo facturado: un pago, un gasto o editar la tarjeta lo cambian (card nmtk). Sin
+        // contexto (antes del arranque, o en tests) no hace nada; con él, un replan single-flight en segundo plano.
+        CreditCardReminderScheduler.shared.requestReplan()
+        // Un saldo de grupo que cambia rehace la foto del widget «Grupos» (los escritores de Grupos no llaman a
+        // `WidgetDataCache.updateCache`). Sin contexto no hace nada; si los grupos no cambiaron, tampoco.
+        WidgetGroupsRefresh.shared.requestCheck()
     }
 
     /// Peticiones de asentamiento tras un borrado DELIBERADO hecho fuera de `ContentView` —hoy, «Vaciar datos»—. Lo
@@ -536,6 +963,14 @@ class SessionState {
     /// Consumption routed via AppRouter.enqueue(.presentTrialOffer); the flag itself remains here.
     var needsPostOnboardingTrial: Bool = UserDefaults.standard.bool(forKey: "needsPostOnboardingTrial") {
         didSet { UserDefaults.standard.set(needsPostOnboardingTrial, forKey: "needsPostOnboardingTrial") }
+    }
+
+    /// Ya llegó un momento de la oferta de prueba (tras un registro guardado o al completar «Primeros pasos»)
+    /// y la oferta aún no se presentó. Es la red del arranque: el intent es transitorio y, sin esta marca, una
+    /// oferta pedida y tirada por un paso a segundo plano no volvería hasta el siguiente registro. Ver
+    /// `TrialOfferMomentLogic` (UX 2.2 · L1-12). Se apaga junto con `needsPostOnboardingTrial` en el drenaje.
+    var trialOfferMomentReached: Bool = UserDefaults.standard.bool(forKey: "trialOfferMomentReached") {
+        didSet { UserDefaults.standard.set(trialOfferMomentReached, forKey: "trialOfferMomentReached") }
     }
 
     // MARK: - Splash State

@@ -121,11 +121,17 @@ nonisolated enum Emit {
 struct ColumnEmitter<Model: AnyObject> {
     let column: String
     let group: String?
+    /// Versión del manifest que estrena la columna (`since` en `capability_manifest.json`). Una columna con
+    /// `since` mayor que la versión que habla el teléfono (`SyncCapability.declaredLevel`) ni se emite ni se
+    /// hashea: el backend aún no la conoce. Las de antes de que existiera esto son 1.
+    let since: Int
     let build: (Model, Calendar) -> CanonValue
 
-    init(_ column: String, group: String? = nil, _ build: @escaping (Model, Calendar) -> CanonValue) {
+    init(_ column: String, group: String? = nil, since: Int = 1,
+         _ build: @escaping (Model, Calendar) -> CanonValue) {
         self.column = column
         self.group = group
+        self.since = since
         self.build = build
     }
 }
@@ -152,8 +158,15 @@ struct EntityEmission<Model: AnyObject> {
         self.columnKeyPaths = columnKeyPaths
     }
 
-    /// Set de columnas emitidas (para el parity contra el manifest).
+    /// Set de columnas emitidas (para el parity contra el manifest). TODAS, con cualquier `since`.
     var columns: Set<String> { Set(emitters.map(\.column)) }
+
+    /// Los emisores que existen en la versión `level` del manifest (`since <= level`). Lo que viaja y lo que
+    /// se hashea sale de aquí, nunca de `emitters` a secas.
+    func emitters(upTo level: Int) -> [ColumnEmitter<Model>] { emitters.filter { $0.since <= level } }
+
+    /// Columnas que existen en la versión `level` del manifest.
+    func columns(upTo level: Int) -> Set<String> { Set(emitters(upTo: level).map(\.column)) }
 
     /// columna → group_key (solo las columnas agrupadas). Para el parity y la expansión de grupos.
     var groupByColumn: [String: String] {
@@ -199,6 +212,9 @@ enum EntityEmissionMap {
             ColumnEmitter("split_my_value", group: "tx_split") { m, _ in Emit.money(m.splitMyValue) },
             ColumnEmitter("split_divisor", group: "tx_split") { m, _ in Emit.money(m.splitDivisor) },
             ColumnEmitter("created_at") { m, _ in .timestamp(m.createdAt) },
+            // Grupos B (card 1): la receta de tu parte en líneas, tal cual se guarda. Columna posterior al lanzamiento:
+            // no viaja hasta que el backend anuncia la versión que la conoce.
+            ColumnEmitter("split_lines_raw", since: SyncCapability.splitLinesSince) { m, _ in Emit.text(m.splitLinesRaw) },
         ],
         columnKeyPaths: [
             \TransactionItem.date: ["date", "local_day"],
@@ -226,6 +242,7 @@ enum EntityEmissionMap {
             \TransactionItem.splitMyValue: ["split_my_value"],
             \TransactionItem.splitDivisor: ["split_divisor"],
             \TransactionItem.createdAt: ["created_at"],
+            \TransactionItem.splitLinesRaw: ["split_lines_raw"],
         ]
     )
 
@@ -463,6 +480,11 @@ enum EntityEmissionMap {
             ColumnEmitter("amount") { m, _ in Emit.money(m.amount) },
             ColumnEmitter("note") { m, _ in Emit.text(m.note) },
             ColumnEmitter("account_ref") { m, _ in Emit.ref(m.account?.shortcutID) },
+            // Card da5d: el destino de un favorito de transferencia (UX 2.2 · L2-14). Columna posterior al lanzamiento:
+            // no viaja hasta que el backend anuncia la versión que la conoce.
+            ColumnEmitter("destination_account_ref", since: SyncCapability.favoriteDestinationSince) { m, _ in
+                Emit.ref(m.destinationAccount?.shortcutID)
+            },
             ColumnEmitter("subcategory_ref") { m, _ in Emit.ref(m.subcategory?.shortcutID) },
             ColumnEmitter("tag_refs") { m, _ in Emit.uuidArray(m.resolvedTagIDs()) },
             ColumnEmitter("need_override") { m, _ in Emit.text(m.needOverride) },
@@ -476,6 +498,7 @@ enum EntityEmissionMap {
             \FavoritePayment.amount: ["amount"],
             \FavoritePayment.note: ["note"],
             \FavoritePayment.account: ["account_ref"],
+            \FavoritePayment.destinationAccount: ["destination_account_ref"],
             \FavoritePayment.subcategory: ["subcategory_ref"],
             \FavoritePayment.tags: ["tag_refs"],
             \FavoritePayment.tagIDs: ["tag_refs"],
@@ -543,6 +566,23 @@ enum EntityEmissionMap {
             ColumnEmitter("is_system_account") { m, _ in .bool(m.isSystemAccount) },
             ColumnEmitter("credit_card_payment_reminder") { m, _ in .bool(m.creditCardPaymentReminder) },
             ColumnEmitter("credit_card_payment_day") { m, _ in .int(m.creditCardPaymentDay) },
+            // Tarjeta con varias divisas: el `shortcutID` de la principal, que ES su sync_id (`sync_id_source =
+            // Account.shortcutID`). Viaja como una referencia, pero cruda: si la principal aún no ha llegado, el
+            // UUID se guarda igual y la línea se lee suelta hasta que llegue (`AccountLineLogic`).
+            ColumnEmitter("parent_account_id", since: SyncCapability.accountLinksSince) { m, _ in
+                Emit.ref(m.parentAccountID)
+            },
+            // Card nmtk: el día de corte (nil = sin corte) y los días de antelación del aviso. Columnas posteriores al
+            // lanzamiento: no viajan hasta que el backend anuncia la versión que las conoce.
+            ColumnEmitter("credit_card_statement_day", since: SyncCapability.creditCardCycleSince) { m, _ in
+                Emit.int(m.creditCardStatementDay)
+            },
+            // 0 viaja como NULL: la columna nace NULL en toda cuenta que el servidor ya tenía, y la hoja del Merkle del
+            // servidor dice `null`. Con `0` en la del teléfono, `accounts` divergía para siempre (lo cazó la review). El
+            // applier lee NULL como 0.
+            ColumnEmitter("credit_card_reminder_days_before", since: SyncCapability.creditCardCycleSince) { m, _ in
+                Emit.int(m.creditCardReminderDaysBefore == 0 ? nil : m.creditCardReminderDaysBefore)
+            },
         ],
         columnKeyPaths: [
             \Account.name: ["name"],
@@ -557,6 +597,9 @@ enum EntityEmissionMap {
             \Account.isSystemAccount: ["is_system_account"],
             \Account.creditCardPaymentReminder: ["credit_card_payment_reminder"],
             \Account.creditCardPaymentDay: ["credit_card_payment_day"],
+            \Account.parentAccountID: ["parent_account_id"],
+            \Account.creditCardStatementDay: ["credit_card_statement_day"],
+            \Account.creditCardReminderDaysBefore: ["credit_card_reminder_days_before"],
         ]
     )
 
@@ -696,6 +739,11 @@ enum EntityEmissionMap {
             ColumnEmitter("estimation_method") { m, _ in .string(m.estimationMethod) },
             ColumnEmitter("manual_amount") { m, _ in Emit.money(m.manualAmount) },
             ColumnEmitter("custom_months_raw") { m, _ in Emit.csvTextArray(m.customMonthsRaw) },
+            // UX 2.2 · L18-8: los cambios de monto «desde este mes», tal cual se guardan (`yyyy-MM=monto,…`). Columna
+            // posterior al lanzamiento: no viaja hasta que el backend anuncia la versión que la conoce.
+            ColumnEmitter("amount_changes_raw", since: SyncCapability.cashFlowAmountChangesSince) { m, _ in
+                Emit.text(m.amountChangesRaw)
+            },
             ColumnEmitter("category_ref") { m, _ in Emit.ref(m.category?.syncID) },
             ColumnEmitter("subcategory_ref") { m, _ in Emit.ref(m.subcategory?.shortcutID) },
             ColumnEmitter("scheduled_payment_ref") { m, _ in Emit.ref(m.scheduledPayment?.id) },
@@ -709,6 +757,7 @@ enum EntityEmissionMap {
             \CashFlowLine.estimationMethod: ["estimation_method"],
             \CashFlowLine.manualAmount: ["manual_amount"],
             \CashFlowLine.customMonthsRaw: ["custom_months_raw"],
+            \CashFlowLine.amountChangesRaw: ["amount_changes_raw"],
             \CashFlowLine.category: ["category_ref"],
             \CashFlowLine.subcategory: ["subcategory_ref"],
             \CashFlowLine.scheduledPayment: ["scheduled_payment_ref"],
@@ -803,5 +852,23 @@ enum EntityEmissionMap {
             cashFlowOverride.table: (cashFlowOverride.columns, cashFlowOverride.groupByColumn),
             groupBridgePreference.table: (groupBridgePreference.columns, groupBridgePreference.groupByColumn),
         ]
+    }
+
+    /// tabla Postgres → (columna → `since`), solo las columnas posteriores a la versión 1. Para el test que lo ata
+    /// al `since` del manifest (`SyncCapability`): una columna con `since` solo en el JSON se emitiría en `v1` y el
+    /// Worker viejo rechazaría la fila entera.
+    static var sinceCatalog: [String: [String: Int]] {
+        func later<M>(_ e: EntityEmission<M>) -> [String: Int] {
+            Dictionary(uniqueKeysWithValues: e.emitters.filter { $0.since > 1 }.map { ($0.column, $0.since) })
+        }
+        return [
+            transactionItem.table: later(transactionItem), scheduledPayment.table: later(scheduledPayment),
+            budget.table: later(budget), inboxDraft.table: later(inboxDraft), category.table: later(category),
+            favoritePayment.table: later(favoritePayment), merchantMemory.table: later(merchantMemory),
+            exchangeRate.table: later(exchangeRate), account.table: later(account), subcategory.table: later(subcategory),
+            tag.table: later(tag), notificationItem.table: later(notificationItem), cashFlowPlan.table: later(cashFlowPlan),
+            cashFlowLine.table: later(cashFlowLine), cashFlowOverride.table: later(cashFlowOverride),
+            groupBridgePreference.table: later(groupBridgePreference),
+        ].filter { !$0.value.isEmpty }
     }
 }

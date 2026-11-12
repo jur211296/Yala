@@ -138,6 +138,7 @@ struct AutocompleteSuggestionsView: View {
                 }
                 .padding(.horizontal, DS.Spacing.lg)
             }
+            .fadesTowardVerticalBar()
             .frame(height: 44)
         }
     }
@@ -214,14 +215,10 @@ struct AutocompleteHelper {
             }
         }
 
-        // Filter subcategories by transaction type using the category relationship
+        // Misma regla que la hoja «Subcategoría»: sin sistema ni ocultas. Antes solo filtraba por tipo, así que
+        // «!aju» proponía «Ajustes de saldo» y «!tra», «Transferencia entre cuentas» para un gasto (lote 2, B6).
         let filteredSubcategories = allSubcategories.filter { subcategory in
-            let category = subcategory.safeCategory
-            switch transactionType {
-            case .expense: return !category.isIncome
-            case .income: return category.isIncome
-            case .transfer: return false
-            }
+            ManualSubcategoryPickerLogic.isPickable(subcategory, for: transactionType)
         }
 
         // Filter by query if not empty

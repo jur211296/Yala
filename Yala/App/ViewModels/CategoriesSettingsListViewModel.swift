@@ -21,7 +21,10 @@ final class CategoriesSettingsListViewModel {
 
     // MARK: - Data
 
-    private(set) var categories: [Category] = []
+    /// Sin las categorías ya borradas: Eliminar una categoría desde su detalle deja la lista debajo, que puede repintarse con ella antes de
+    /// recargar, y en iOS 27.x leer un modelo borrado aborta (card 1w89). Molde de `AccountsSettingsListViewModel.accounts`.
+    var categories: [Category] { loadedCategories.filter { !$0.isDeleted && $0.modelContext != nil } }
+    private var loadedCategories: [Category] = []
 
     // MARK: - UI State
 
@@ -31,6 +34,15 @@ final class CategoriesSettingsListViewModel {
     var showCannotDeleteAlert = false
     var categoryToDeleteName = ""
     var transactionCountForAlert = 0
+    /// La categoría sin registros que espera el «sí» del usuario. Hasta el lote 7 de la auditoría UX 2.2 (B2)
+    /// el «−» de Editar la borraba al primer toque, sin preguntar, junto con todas sus subcategorías.
+    var categoryPendingDeletion: Category?
+    var showDeleteConfirmation = false
+    /// La categoría con registros del aviso «No se puede eliminar», para «Ocultarla» o «Mover sus registros…»
+    /// (auditoría UX 2.2, lote 7, L7-10).
+    var categoryWithRecords: Category?
+    /// La categoría cuyos registros se van a mover (abre la hoja de destino).
+    var categoryToMove: Category?
 
     // MARK: - Computed Properties
 
@@ -72,12 +84,12 @@ final class CategoriesSettingsListViewModel {
         guard let context = modelContext else { return }
         let descriptor = FetchDescriptor<Category>(sortBy: [SortDescriptor(\Category.name)])
         do {
-            categories = try context.fetch(descriptor)
+            loadedCategories = try context.fetch(descriptor)
         } catch {
             #if DEBUG
             print("CategoriesSettingsListViewModel: Error loading categories: \(error)")
             #endif
-            categories = []
+            loadedCategories = []
         }
     }
 
@@ -107,22 +119,75 @@ final class CategoriesSettingsListViewModel {
 
     // MARK: - Category Deletion
 
+    /// Se puede borrar (o vaciar moviendo sus registros) salvo las de sistema y las que guardan subcategorías de
+    /// sistema, como «Otros» con «Ajustes de saldo» (review de UX 2.2 · L7-10).
+    func canDelete(_ category: Category) -> Bool {
+        !category.isSystem && !CategoryRecordsMoveService.holdsSystemSubcategories(category)
+    }
+
     func handleCategoryDelete(_ category: Category) {
-        guard let context = modelContext else { return }
+        guard modelContext != nil else { return }
+        guard canDelete(category) else { return }
 
         // Las categorías sistema no se borran (esta ruta usa context.delete directo,
         // sin pasar por EntityDeletionService). Defensa: el botón "−" tampoco se
         // renderiza para ellas porque viven en la sección read-only.
         guard !category.isSystem else { return }
 
-        let count = countTransactionsInCategory(category)
-        if count > 0 {
+        // Si no se puede contar, se trata como «con registros»: el aviso ofrece ocultarla o moverlos, nunca
+        // borrarla a ciegas.
+        let count = recordCount(of: category)
+        if count != 0 {
             categoryToDeleteName = category.name
-            transactionCountForAlert = count
+            categoryWithRecords = category
+            transactionCountForAlert = max(count ?? 0, 0)
             showCannotDeleteAlert = true
             return
         }
 
+        categoryPendingDeletion = category
+        showDeleteConfirmation = true
+    }
+
+    /// «Ocultarla» desde el aviso: deja de aparecer al registrar y su historial se queda (L7-10).
+    func hideCategoryWithRecords() {
+        defer { categoryWithRecords = nil }
+        guard let context = modelContext, let category = categoryWithRecords else { return }
+        category.isVisible = false
+        do {
+            try context.save()
+            SessionState.shared.incrementDataVersion()
+            loadCategories()
+        } catch {
+            #if DEBUG
+            print("CategoriesSettingsListViewModel: Error hiding category: \(error)")
+            #endif
+        }
+    }
+
+    /// «Mover sus registros…» desde el aviso: abre la hoja de destino.
+    func startMovingRecords() {
+        categoryToMove = categoryWithRecords
+        categoryWithRecords = nil
+    }
+
+    /// El usuario dijo que sí en la confirmación: borra la categoría pendiente y sus subcategorías.
+    func confirmCategoryDeletion() {
+        defer { categoryPendingDeletion = nil }
+        guard let context = modelContext, let category = categoryPendingDeletion else { return }
+        guard canDelete(category) else { return }
+        // Se vuelve a contar: entre la pregunta y el «sí» pudo llegar un registro por sync.
+        let count = recordCount(of: category)
+        guard count == 0 else {
+            categoryToDeleteName = category.name
+            categoryWithRecords = category
+            transactionCountForAlert = max(count ?? 0, 0)
+            showCannotDeleteAlert = true
+            return
+        }
+
+        let categoryID = category.persistentModelID
+        let subcategoryIDs = Set((category.subcategories ?? []).map(\.persistentModelID))
         // Delete subcategories first to avoid SwiftUI @Query conflicts
         for subcategory in category.subcategories ?? [] {
             context.delete(subcategory)
@@ -131,7 +196,10 @@ final class CategoriesSettingsListViewModel {
 
         do {
             try context.save()
+            // Borrado confirmado y guardado (card C4; mapa de `DS.Haptic`).
+            DS.Haptic.warning()
             context.processPendingChanges()
+            SessionState.shared.forgetDeletedFilterValues(categories: [categoryID], subcategories: subcategoryIDs)
             WidgetDataCache.updateCache(context: context)
             SessionState.shared.incrementDataVersion()
             loadCategories()
@@ -142,8 +210,16 @@ final class CategoriesSettingsListViewModel {
         }
     }
 
-    private func countTransactionsInCategory(_ category: Category) -> Int {
-        guard let service = deletionService else { return 0 }
-        return service.transactionCount(forCategory: category)
+    /// Los registros de la categoría y de sus subcategorías; `nil` si no se pudo leer (L7-10).
+    private func recordCount(of category: Category) -> Int? {
+        guard let context = modelContext else { return nil }
+        do {
+            return try CategoryRecordsMoveService.recordCount(of: category, context: context)
+        } catch {
+            #if DEBUG
+            print("CategoriesSettingsListViewModel: Error counting records: \(error)")
+            #endif
+            return nil
+        }
     }
 }

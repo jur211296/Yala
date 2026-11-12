@@ -93,4 +93,60 @@ struct AccountBillableCountTests {
         #expect(billable.count == 4)
         #expect(!(billable.count > (ProFeature.accounts.freeLimit ?? Int.max)))
     }
+
+    // MARK: - Tarjeta con varias divisas: la tarjeta cuenta una vez (decisión 5 de Jürgen, 2026-10-10)
+
+    private func makeCard(lineCurrencies: [String]) -> (principal: Account, lines: [Account]) {
+        let principal = makeAccount(isSystem: false, isArchived: false)  // PEN
+        let lines = lineCurrencies.map { currency -> Account in
+            let line = Account(name: "Visa \(currency)", currencyCode: currency, colorHex: "#6366F1",
+                               iconName: "creditcard", type: "creditCard")
+            line.parentAccountID = principal.shortcutID
+            return line
+        }
+        return (principal, lines)
+    }
+
+    @Test func isBillableUserAccount_line_false_principal_true() {
+        let card = makeCard(lineCurrencies: ["USD"])
+        #expect(card.lines[0].isBillableUserAccount == false)
+        #expect(card.principal.isBillableUserAccount == true)
+    }
+
+    @Test func billableUserAccounts_cardWithTwoLines_countsOnce() {
+        let card = makeCard(lineCurrencies: ["USD", "EUR"])
+        let billable = ([card.principal] + card.lines).billableUserAccounts
+        #expect(billable.count == 1)
+        #expect(billable.first === card.principal)
+    }
+
+    @Test func billableUserAccounts_orphanLine_countsAsTheLooseAccountItLooksLike() {
+        // La principal no está en la lista (borrada, o aún no ha llegado): la línea se ve suelta y cuenta.
+        let card = makeCard(lineCurrencies: ["USD"])
+        #expect(card.lines.billableUserAccounts.count == 1)
+    }
+
+    @Test func billableUserAccounts_duplicateLine_countsTheLoserOnly() {
+        // Dos líneas USD de la misma tarjeta (dos teléfonos): la que pierde el desempate se ve suelta y cuenta.
+        let card = makeCard(lineCurrencies: ["USD", "USD"])
+        let billable = ([card.principal] + card.lines).billableUserAccounts
+        #expect(billable.count == 2)
+    }
+
+    @Test func billableUserAccounts_archivedLine_neverCounts() {
+        let card = makeCard(lineCurrencies: ["USD"])
+        card.lines[0].isArchived = true
+        #expect(([card.principal] + card.lines).billableUserAccounts.count == 1)
+        #expect(card.lines.billableUserAccounts.isEmpty, "archivada no cuenta ni como huérfana")
+    }
+
+    @Test func billableUserAccounts_lineOfAnyAccountType_isExcluded() {
+        // Decisión 3: cualquier tipo de cuenta puede tener líneas.
+        let principal = Account(name: "Efectivo", currencyCode: "PEN", colorHex: "#6366F1",
+                                iconName: "banknote", type: "cash")
+        let line = Account(name: "Efectivo USD", currencyCode: "USD", colorHex: "#6366F1",
+                           iconName: "banknote", type: "cash")
+        line.parentAccountID = principal.shortcutID
+        #expect([principal, line].billableUserAccounts.count == 1)
+    }
 }

@@ -60,9 +60,12 @@ struct PanelCalculationContext {
     /// Does NOT have: date filter
     let transactionsWithoutDateFilter: [TransactionItem]
 
-    /// Transactions for balance calculation (includes adjustments, no date filter)
-    /// Same filters as filteredTransactions but without date filter
-    /// INCLUDES adjustments (needed for running balance calculation)
+    /// Las cuentas que suma un saldo (curva de saldo y hoja «¿Cuánto tienes hoy?»): las elegibles, sin las de sistema
+    /// de Grupos con el interruptor del total apagado. Las mismas que el número de arriba (`PanelBalanceScopeLogic`).
+    let balanceAccounts: [Account]
+
+    /// Los movimientos de un saldo: todos los de `balanceAccounts`, sin recorte de fecha y SIN los chips de filtro
+    /// (decisión de Jürgen del 2026-10-22: los chips no mueven un saldo). Incluye ajustes y saldos iniciales.
     let balanceTransactions: [TransactionItem]
 
     // MARK: - Period & Interval

@@ -3,7 +3,8 @@
 //  YalaWidgets
 //
 //  Widget showing upcoming scheduled payments.
-//  Medium: 3 payments. Large: 7. Default sorting (overdue first, then by date).
+//  Medium: 3 payments. Large: 7. Extragrande vertical (iPhone, iOS 27): el mes en calendario + 4 +
+//  lo que falta pagar este mes. Default sorting (overdue first, then by date).
 //  Configurable: selection mode (auto/custom).
 //
 
@@ -40,10 +41,29 @@ struct ScheduledPaymentsWidgetIntent: WidgetConfigurationIntent {
 // MARK: - Timeline Entry
 
 struct ScheduledPaymentsEntry: TimelineEntry {
-    let date: Date
+    var date: Date
     let payments: [WidgetScheduledPayment]
     let currencyDisplayFormat: String
     let isPlaceholder: Bool
+    /// La persona no tiene ningún pago planificado: el widget invita a crear uno en vez de enseñar «Sin pagos
+    /// pendientes» con un ✓, que se leía como «estás al día» (UX 2.2 · L15-2).
+    var hasNoPayments: Bool = false
+    /// Divisa principal: la de «Te falta pagar este mes» del extragrande vertical.
+    var currencyCode: String = "PEN"
+    /// El mes de pagos que calculó la app (`WidgetDataCache.buildPaymentsMonth`); `nil` en una foto anterior a 2.2.
+    var paymentsMonth: WidgetPaymentsMonth?
+    /// Cuándo escribió la app la foto.
+    var lastUpdated: Date? = nil
+    /// Lo marcado como pagado desde el widget que la app aún no ha apuntado (`ScheduledPaymentWidgetPaidStore`).
+    var paidRequests: [ScheduledPaymentWidgetPaidRequest] = []
+
+    /// El mes de pagos SOLO si es el mes de `date`: una foto de otro mes (la app no se abre desde el día 1) pintaría
+    /// días y una cifra que ya no son de este calendario.
+    func paymentsMonth(for date: Date, calendar: Calendar = .current) -> WidgetPaymentsMonth? {
+        guard let paymentsMonth,
+              calendar.isDate(paymentsMonth.monthStart, equalTo: date, toGranularity: .month) else { return nil }
+        return paymentsMonth
+    }
 
     static var placeholder: ScheduledPaymentsEntry {
         ScheduledPaymentsEntry(
@@ -135,7 +155,13 @@ struct ScheduledPaymentsEntry: TimelineEntry {
                 )
             ],
             currencyDisplayFormat: "symbol",
-            isPlaceholder: true
+            isPlaceholder: true,
+            paymentsMonth: WidgetPaymentsMonth(
+                monthStart: Calendar.current.dateInterval(of: .month, for: Date())?.start ?? Date(),
+                pendingDays: [],
+                paidDays: [],
+                remainingToPay: 2_013.70
+            )
         )
     }
 }
@@ -159,37 +185,40 @@ struct ScheduledPaymentsProvider: AppIntentTimelineProvider {
 
     func timeline(for configuration: ScheduledPaymentsWidgetIntent, in context: Context) async -> Timeline<ScheduledPaymentsEntry> {
         let entry = createEntry(for: configuration, family: context.family)
-
-        // Refresh at midnight or after 4 hours
-        let midnight = Calendar.current.startOfDay(for: Date().addingTimeInterval(86400))
-        let fourHours = Calendar.current.date(byAdding: .hour, value: 4, to: Date()) ?? Date()
-        let refreshDate = min(midnight, fourHours)
-
-        return Timeline(entries: [entry], policy: .after(refreshDate))
+        // A medianoche cambian «Hoy», «Mañana» y «En N días».
+        return WidgetRefresh.dayAwareTimeline(entry) { midnight in
+            var next = entry
+            next.date = midnight
+            return next
+        }
     }
+
+    /// Filas del extragrande vertical: debajo del calendario caben cinco con la fila compacta de 2.2.
+    static let extraLargePortraitLimit = 5
 
     /// Cuántas filas caben por tamaño.
     static func paymentLimit(for family: WidgetFamily) -> Int {
-        family == .systemLarge ? 7 : 3
+        if family.isExtraLargePortrait { return extraLargePortraitLimit }
+        return family == .systemLarge ? 7 : 3
     }
 
     private func createEntry(for configuration: ScheduledPaymentsWidgetIntent, family: WidgetFamily) -> ScheduledPaymentsEntry {
         let limit = Self.paymentLimit(for: family)
-        var payments: [WidgetScheduledPayment]
+        let payments: [WidgetScheduledPayment]
 
-        if configuration.selectionMode == .custom,
-           let selected = configuration.selectedPayments,
-           !selected.isEmpty {
-            // Custom mode: filter by selected IDs and maintain selection order
-            let allPayments = WidgetDataService.getScheduledPayments(filter: .all, limit: 100)
-            payments = selected.compactMap { entity in
-                allPayments.first { $0.id == entity.id }
-            }
-            payments = Array(payments.prefix(limit))
-        } else {
-            // Automatic mode: next N by date (overdue first)
-            payments = WidgetDataService.getScheduledPayments(filter: .all, limit: limit)
-        }
+        // Automático: los próximos por fecha (vencidos primero). Lo elegido a mano que ya no existe vuelve a eso en vez
+        // de dejar el widget vacío (UX 2.2 · L15-2, `WidgetSelectionFallback`).
+        let allPayments = WidgetDataService.getScheduledPayments(filter: .all, limit: 100)
+        let selectedIDs = configuration.selectionMode == .custom
+            ? (configuration.selectedPayments ?? []).map(\.id)
+            : []
+        payments = WidgetSelectionFallback.resolve(
+            selectedIDs: selectedIDs,
+            available: allPayments,
+            automatic: allPayments,
+            id: \.id,
+            limit: limit
+        )
 
         let displayFormat = WidgetDataService.getCurrencyDisplayFormat()
 
@@ -197,7 +226,13 @@ struct ScheduledPaymentsProvider: AppIntentTimelineProvider {
             date: Date(),
             payments: payments,
             currencyDisplayFormat: displayFormat,
-            isPlaceholder: false
+            isPlaceholder: false,
+            hasNoPayments: allPayments.isEmpty,
+            currencyCode: WidgetDataService.getPreferredCurrency(),
+            paymentsMonth: WidgetDataService.getPaymentsMonth(),
+            lastUpdated: WidgetDataService.getLastUpdated(),
+            paidRequests: ScheduledPaymentWidgetPaidStore.peekAll(
+                defaults: UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)).map(\.request)
         )
     }
 }
@@ -209,144 +244,183 @@ struct ScheduledPaymentsWidgetView: View {
     var entry: ScheduledPaymentsEntry
 
     var body: some View {
-        VStack(alignment: .leading, spacing: family == .systemLarge ? WDS.Spacing.md : WDS.Spacing.sm) {
-            // Header
-            WidgetHeader(
-                title: String(localized: "widget.ui.upcomingPayments", bundle: .main),
-                icon: "calendar.badge.clock"
-            )
+        if family.isExtraLargePortrait {
+            ScheduledPaymentsPortraitView(entry: entry)
+        } else {
+            list
+        }
+    }
 
-            if entry.payments.isEmpty {
-                Spacer()
-                HStack {
-                    Spacer()
-                    VStack(spacing: WDS.Spacing.xs) {
-                        Image(systemName: "checkmark.circle")
-                            .font(.title2) // A11Y-DT: widget empty state icon
-                            .foregroundStyle(WidgetColors.success)
-                        Text("widget.ui.noPayments", bundle: .main)
-                            .font(WDS.Typography.body)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                }
-                Spacer()
-            } else {
-                // Payments list
-                ForEach(entry.payments.prefix(ScheduledPaymentsProvider.paymentLimit(for: family)), id: \.id) { payment in
-                    PaymentRowView(
-                        payment: payment,
-                        displayFormat: entry.currencyDisplayFormat
-                    )
-                }
+    private var isLarge: Bool { family == .systemLarge }
 
+    /// Mediano y grande: la lista de próximos pagos.
+    private var list: some View {
+        VStack(alignment: .leading, spacing: isLarge ? WidgetDS.Spacing.md : WidgetDS.Spacing.sm) {
+            ScheduledPaymentsHeader(entry: entry)
+
+            if entry.hasNoPayments {
                 Spacer(minLength: 0)
+                WidgetCreateFirstView(icon: "calendar.badge.plus", message: "widget.empty.noPaymentsYet")
+                Spacer(minLength: 0)
+            } else if entry.payments.isEmpty {
+                Spacer(minLength: 0)
+                Label {
+                    Text("widget.ui.noPayments", bundle: .main)
+                } icon: {
+                    Image(systemName: "checkmark.circle.fill")
+                }
+                .font(WidgetDS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
+                Spacer(minLength: 0)
+            } else {
+                let rows = Array(entry.payments.prefix(ScheduledPaymentsProvider.paymentLimit(for: family)))
+                VStack(alignment: .leading, spacing: WidgetDS.Spacing.none) {
+                    ForEach(Array(rows.enumerated()), id: \.element.id) { index, payment in
+                        if index > 0 { Spacer(minLength: WidgetDS.Spacing.xs) }
+                        PaymentRowView(payment: payment, displayFormat: entry.currencyDisplayFormat, now: entry.date,
+                                       paidRequests: entry.paidRequests, allowsMarkPaid: !entry.isPlaceholder)
+                    }
+                    if isLarge {
+                        Spacer(minLength: WidgetDS.Spacing.sm)
+                        WidgetFreshnessNote(lastUpdated: entry.lastUpdated, now: entry.date)
+                    }
+                }
+                .frame(maxHeight: .infinity, alignment: .top)
             }
         }
-        .padding(WDS.Spacing.xs)
-        .clipped()
-        .widgetURL(WidgetURLHelper.url(for: "planning"))
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .widgetURL(WidgetURLHelper.url(
+            for: entry.hasNoPayments ? WidgetDeepLink.newScheduledPayment : "planning/scheduled-payments"))
+    }
+}
+
+/// «Pagos planificados» y, a la derecha, lo que falta pagar este mes (la cifra que calcula la app; sin ella, o en
+/// cero, nada).
+struct ScheduledPaymentsHeader: View {
+    let entry: ScheduledPaymentsEntry
+    var subtitle: String? = nil
+
+    var body: some View {
+        WidgetCardHeader(
+            title: String(localized: "widget.ui.upcomingPayments", bundle: .main),
+            systemImage: "calendar",
+            tint: WidgetColors.electricIndigo
+        ) {
+            if let subtitle {
+                WidgetHeaderDetail(text: subtitle)
+            } else if let month = entry.paymentsMonth(for: entry.date), month.remainingToPay > 0.005 {
+                let symbol = CurrencySymbols.display(for: entry.currencyCode, format: entry.currencyDisplayFormat)
+                WidgetHeaderDetail(text: String(
+                    format: String(localized: "widget.payments.leftShort", bundle: .main),
+                    WidgetAmountSplitter.split(value: month.remainingToPay, symbol: symbol, fractionDigits: 0).accessibilityFormatted))
+            }
+        }
     }
 }
 
 // MARK: - Payment Row
 
+/// Un pago: insignia sólida con su icono y color, el nombre, cuándo vence («Hoy», «Mañana», «En 3 días», «Vencido · 28
+/// oct.») y el importe con signo. Solo el ingreso lleva color; el vencido avisa en el «cuándo», sin cambiar el icono.
+///
+/// El pago de HOY que se puede apuntar en un toque lleva al final «Ya lo pagué» (✓, decisión B de Jürgen, 2026-11-03):
+/// lo marca sin abrir Yala (`MarkScheduledPaymentPaidIntent`). Tocado, la fila dice «Pagado» hasta que la app lo apunte.
 struct PaymentRowView: View {
     let payment: WidgetScheduledPayment
     let displayFormat: String
+    var now: Date = Date()
+    var paidRequests: [ScheduledPaymentWidgetPaidRequest] = []
+    /// En el placeholder y la galería no hay pago que marcar.
+    var allowsMarkPaid: Bool = true
 
     var body: some View {
-        HStack(spacing: WDS.Spacing.sm) {
-            // Icon badge con color de la subcategoría/payment
-            ZStack {
-                Circle()
-                    .fill(paymentColor.opacity(0.2))
-                    .frame(width: WDS.ListItem.iconSizeCompact,
-                           height: WDS.ListItem.iconSizeCompact)
-
-                Image(systemName: iconName)
-                    .font(.system(size: WDS.Icon.sm)) // A11Y-DT: widget fixed layout
-                    .foregroundStyle(payment.isOverdue ? WidgetColors.overdue : paymentColor)
-                    .widgetAccentable()
+        HStack(spacing: WidgetDS.Spacing.sm) {
+            info
+            if isRequested {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(WidgetDS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(WidgetColors.accentText)
+                    .accessibilityHidden(true)
+            } else if showsMarkPaid {
+                Button(intent: MarkScheduledPaymentPaidIntent(paymentID: payment.id, occurrence: payment.nextDueDate)) {
+                    Image(systemName: "checkmark.circle")
+                        .font(WidgetDS.Typography.headline)
+                        .foregroundStyle(WidgetColors.accentText)
+                        .frame(minWidth: 28, minHeight: 28) // A11Y-DT: área de toque del botón del widget
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text(payment.isIncome ? "widget.payments.markReceived" : "widget.payments.markPaid",
+                                         bundle: .main))
+                .accessibilityIdentifier("widget_payment_mark_paid_\(payment.id)")
             }
+        }
+    }
 
-            // Name and date
-            VStack(alignment: .leading, spacing: 0) {
+    private var showsMarkPaid: Bool {
+        allowsMarkPaid && ScheduledPaymentWidgetPayLogic.showsButton(
+            canMarkPaid: payment.canMarkPaid ?? false, nextDueDate: payment.nextDueDate, now: now, calendar: .current)
+    }
+
+    private var isRequested: Bool {
+        ScheduledPaymentWidgetPayLogic.isRequested(
+            paymentID: payment.id, nextDueDate: payment.nextDueDate, requests: paidRequests, calendar: .current)
+    }
+
+    private var info: some View {
+        HStack(spacing: WidgetDS.Spacing.sm) {
+            WidgetBadge(systemImage: iconName, color: WidgetColors.fill(hex: payment.colorHex))
+
+            VStack(alignment: .leading, spacing: WidgetDS.Spacing.none) {
                 Text(payment.name)
-                    .font(WDS.Typography.label)
+                    .font(WidgetDS.Typography.label)
+                    .foregroundStyle(.primary)
                     .lineLimit(1)
-
-                Text(formattedDate)
-                    .font(WDS.Typography.tiny)
-                    .foregroundStyle(payment.isOverdue ? WidgetColors.overdue : .secondary)
+                Text(dueText)
+                    .font(WidgetDS.Typography.captionSmall)
+                    .foregroundStyle(isOverdue && !isRequested ? WidgetColors.alertText : Color.secondary)
                     .lineLimit(1)
             }
 
-            Spacer()
+            Spacer(minLength: WidgetDS.Spacing.xs)
 
-            // Amount
             WidgetAmountText(
                 value: payment.isIncome ? abs(payment.amount) : -abs(payment.amount),
                 currencyCode: payment.currencyCode,
                 displayFormat: displayFormat,
-                font: WDS.Typography.value,
-                secondaryFont: WDS.Typography.valueSecondary,
-                tint: .color(amountColor),
+                font: WidgetDS.Typography.subheadlineEmphasized,
+                secondaryFont: WidgetDS.Typography.captionSmall,
+                tint: payment.isIncome ? .color(WidgetColors.incomeText) : .primary,
                 forceSign: true,
                 isEstimate: payment.isVariableAmount ?? false,
                 fractionDigits: 2
             )
-            .widgetAccentable()
+            .fixedSize()
         }
+        .accessibilityElement(children: .combine)
     }
 
-    // Icono con fallback para backwards compatibility
+    private var label: WidgetInsightsLogic.DueLabel {
+        WidgetInsightsLogic.dueLabel(due: payment.nextDueDate, isOverdue: payment.isOverdue, now: now, calendar: .current)
+    }
+
+    private var isOverdue: Bool { label == .overdue }
+
+    // Icono con fallback para fotos antiguas (sin icono propio).
     private var iconName: String {
-        if payment.isOverdue {
-            return "exclamationmark"
-        }
-        if let icon = payment.iconName {
-            return icon
-        }
-        // Fallback basado en paymentCategory
+        if let icon = payment.iconName { return icon }
         return payment.paymentCategory == "subscription"
             ? "creditcard.and.123"
             : "arrow.trianglehead.2.clockwise.rotate.90"
     }
 
-    // Color con fallback para backwards compatibility
-    private var paymentColor: Color {
-        Color(hex: payment.colorHex ?? "#6366F1")
+    private var dueText: String {
+        if isRequested {
+            return String(localized: payment.isIncome ? "widget.payments.received" : "widget.payments.paid", bundle: .main)
+        }
+        return WidgetDateText.due(payment.nextDueDate, isOverdue: payment.isOverdue, now: now)
     }
-
-    private var amountColor: Color {
-        if payment.isIncome {
-            return WidgetColors.income
-        }
-        if payment.isOverdue {
-            return WidgetColors.overdue
-        }
-        return WidgetColors.expense
-    }
-
-    private var formattedDate: String {
-        if payment.isOverdue {
-            return String(localized: "widget.ui.overdue", bundle: .main)
-        }
-
-        let calendar = Calendar.current
-
-        if calendar.isDateInToday(payment.nextDueDate) {
-            return String(localized: "widget.ui.today", bundle: .main)
-        } else if calendar.isDateInTomorrow(payment.nextDueDate) {
-            return String(localized: "widget.ui.tomorrow", bundle: .main)
-        } else {
-            let formatter = DateFormatter()
-            formatter.setLocalizedDateFormatFromTemplate("dMMM")
-            return formatter.string(from: payment.nextDueDate)
-        }
-    }
-
 }
 
 // MARK: - Widget Definition
@@ -361,12 +435,13 @@ struct ScheduledPaymentsWidget: Widget {
             provider: ScheduledPaymentsProvider()
         ) { entry in
             ScheduledPaymentsWidgetView(entry: entry)
+                .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder)
                 .invitesToActivateFullWhenGroupsOnly()
-                .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
+                .containerBackground(for: .widget) { WidgetCardBackground() }
         }
         .configurationDisplayName("widget.gallery.scheduledPayments")
         .description("widget.gallery.scheduledPayments.desc")
-        .supportedFamilies([.systemMedium, .systemLarge])
+        .supportedFamilies(WidgetFamilies.addingExtraLargePortrait([.systemMedium, .systemLarge]))
     }
 }
 

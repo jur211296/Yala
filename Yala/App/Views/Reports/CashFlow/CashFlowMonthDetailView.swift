@@ -3,9 +3,16 @@
 //  Yala
 //
 //  Full-width detail view for the selected month in cash flow.
-//  Shows income/expense sections with lines, other expenses, and summary.
+//
+//  Auditoría UX 2.2 · lote 18 decidido:
+//  - L18-11 (opción C, variante 2): arriba, el mes («octubre de 2026 · Este mes» y «Llevas el 68 % de lo que planeaste
+//    gastar») y su resumen en frases —«Este mes te sobran S/ 3,283», «Si sigue así, a fin de diciembre tendrías S/ X»,
+//    «Empezaste con S/ 0 · Cambiar»— en lugar del pie «Disponible / Acumulado» con «?» y un lápiz (L18-10).
+//  - Lienzo «Una sola Yala»: el resumen es la cifra grande de los heros, «Ingresos» y «Gastos» son títulos de sección
+//    de la app con su total en blanco a la derecha, y cada línea es una tarjeta como un presupuesto (2A).
 //
 
+import SwiftData
 import SwiftUI
 
 struct CashFlowMonthDetailView: View {
@@ -15,31 +22,36 @@ struct CashFlowMonthDetailView: View {
     let transactions: [TransactionItem]
     var onCellDetailDismiss: (() -> Void)?
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var incomeCollapsed = false
     @State private var expenseCollapsed = false
     @State private var selectedCellLineID: UUID?
+    /// La línea que el menú contextual pidió borrar; el diálogo la confirma o la suelta.
+    @State private var pendingDeleteLine: CashFlowLine?
+    @State private var showDeleteLineConfirmation = false
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    /// Para el pago de las tarjetas del mes (card nmtk): todas, porque qué es línea lo decide `AccountLineLogic` con todas.
+    @Query private var accounts: [Account]
 
     var body: some View {
-        VStack(spacing: DS.Spacing.md) {
-            // Transition bar
-            transitionBar
+        VStack(alignment: .leading, spacing: DS.Spacing.xl) {
+            monthTitleRow
 
-            // Income section
-            incomeSection
-                .solidCard()
-
-            // Expense section
-            expenseSection
-                .solidCard()
-
-            // Summary card
-            summaryCard
-                .solidCard()
+            monthSummary
                 .coachMarkAnchor("cfTableAvailable")
+
+            incomeSection
+
+            expenseSection
+
+            cardPayments
         }
+        // Plegar Ingresos o Gastos recoge sus filas. Implícita: el `withAnimation` del rótulo no anima dentro de una
+        // pestaña (card 8atf; regla de `swiftui-ds.md`).
+        .animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.fast), value: incomeCollapsed)
+        .animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.fast), value: expenseCollapsed)
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.bottom, DS.Spacing.lg)
         .sheet(isPresented: Binding(
@@ -58,169 +70,180 @@ struct CashFlowMonthDetailView: View {
                 )
             }
         }
+        // Alerta y no `confirmationDialog`: dentro del scroll, iOS 26 pinta el diálogo como un globo anclado sin
+        // «Cancelar» (medido; regla de `swiftui-ds.md`), y borrar una línea es una decisión sobre datos: la salida
+        // de no borrar tiene que verse.
+        .alert(
+            L10n.CashFlowPlan.deleteLineConfirmation,
+            isPresented: $showDeleteLineConfirmation,
+            presenting: pendingDeleteLine
+        ) { line in
+            Button(L10n.Action.delete, role: .destructive) {
+                viewModel.removeLine(line)
+                pendingDeleteLine = nil
+            }
+            .accessibilityIdentifier("cashflow_line_delete_confirm")
+            Button(L10n.Action.cancel, role: .cancel) {
+                pendingDeleteLine = nil
+            }
+            .accessibilityIdentifier("cashflow_line_delete_cancel")
+        }
     }
 
-    // MARK: - Transition Bar
+    // MARK: - El mes (L18-11)
 
-    private var transitionBar: some View {
-        HStack(spacing: DS.Spacing.sm) {
-            Text(month.date.formatted(.dateTime.month(.wide).year()))
+    private var monthTitleRow: some View {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+            // Título de la pantalla: con mayúscula («Octubre de 2026»); el formato del mes la da en minúscula.
+            Text(ComparativeLabelsLogic.capitalizedFirst(
+                month.date.formatted(.dateTime.month(.wide).year()), locale: AppLocale.current
+            ))
                 .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
+                .accessibilityIdentifier("cashflow_month_title")
 
             if month.isCurrent {
                 Text(L10n.CashFlowPlan.thisMonth)
                     .font(DS.Typography.captionSmall)
                     .fontWeight(.semibold)
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(.thOnAccent)
                     .padding(.horizontal, DS.Spacing.sm)
                     .padding(.vertical, DS.Spacing.xxs)
-                    .background(
-                        Capsule()
-                            .fill(theme.accent.opacity(0.12))
-                    )
-            } else if month.isPast {
-                Text(L10n.CashFlowPlan.pastMonth)
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.tertiary)
+                    .background(Capsule().fill(theme.accent))
             } else {
-                Text(L10n.CashFlowPlan.futureMonth)
+                Text(month.isPast ? L10n.CashFlowPlan.pastMonth : L10n.CashFlowPlan.futureMonth)
                     .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.secondary)
             }
 
-            Spacer()
+            Spacer(minLength: DS.Spacing.sm)
 
-            // Execution % for current month
-            if month.isCurrent {
-                let totalPlanned = month.expenseLines.reduce(0.0) { $0 + $1.plannedAmount }
-                let totalReal = month.expenseLines.reduce(0.0) { $0 + ($1.realAmount ?? 0) }
-                if totalPlanned > 0 {
-                    let percent = Int((totalReal / totalPlanned) * 100)
-                    Text(L10n.CashFlowPlan.executionPercent(percent))
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
-                }
+            if let share = CashFlowMonthSummaryLogic.spentShare(of: month) {
+                Text(L10n.UXL18.spentShare(share))
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.trailing)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("cashflow_month_spent_share")
             }
         }
-        .padding(.horizontal, DS.Spacing.xs)
     }
 
-    // MARK: - Income Section
+    /// La cifra grande del mes con las frases de C2 debajo.
+    private var monthSummary: some View {
+        HeroHeader {
+            HeroHeaderLabel(text: CashFlowMonthSummaryLogic.heroLabel(for: month))
+        } period: {
+            EmptyView()
+        } content: {
+            AmountText(
+                value: abs(month.netFlow),
+                currencyCode: currencyCode,
+                font: DS.Typography.panelHeroAmount,
+                secondaryFont: DS.Typography.panelHeroAmountSecondary
+            )
+            .accessibilityIdentifier("cashflow_month_net")
+
+            if viewModel.plan?.showAccumulatedBalance ?? true {
+                if let end = CashFlowMonthSummaryLogic.projectedEnd(of: viewModel.projection?.months ?? []),
+                   let balance = end.accumulatedBalance {
+                    Text(L10n.UXL18.projectedEnd(
+                        CashFlowMonthSummaryLogic.monthName(end.date),
+                        appPreferences.currency(balance, currencyCode: currencyCode)
+                    ))
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("cashflow_month_projected_end")
+                }
+                startingBalanceRow
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("cashflow_month_summary")
+    }
+
+    /// «Empezaste con S/ X · Cambiar» (L18-10): sustituye al lápiz tachado del pie.
+    private var startingBalanceRow: some View {
+        HStack(spacing: DS.Spacing.xs) {
+            Text(L10n.UXL18.startedWith(
+                appPreferences.currency(viewModel.plan?.startingBalance ?? 0, currencyCode: currencyCode)
+            ))
+            .font(DS.Typography.caption)
+            .foregroundStyle(.secondary)
+            Button {
+                viewModel.showEditStartingBalance = true
+            } label: {
+                Text("· " + L10n.UXL18.change)
+                    .font(DS.Typography.caption.weight(.semibold))
+                    .foregroundStyle(theme.accentText)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            // Suelto en el rotor de VoiceOver, «Cambiar» no dice qué cambia.
+            .accessibilityLabel(L10n.CashFlowPlan.editStartingBalance)
+            .accessibilityIdentifier("cashflow_change_starting_balance")
+        }
+    }
+
+    // MARK: - Secciones
 
     private var incomeSection: some View {
-        VStack(spacing: DS.Spacing.none) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             sectionHeader(
                 title: L10n.CashFlowPlan.incomeSection,
                 total: month.totalIncome,
-                isIncome: true,
                 isCollapsed: $incomeCollapsed
             )
 
             if !incomeCollapsed {
-                Divider().padding(.horizontal, DS.Spacing.lg)
                 lineRows(for: month.incomeLines)
-                addLineButton(isIncome: true)
-
                 uncategorizedRow(
                     result: month.otherIncome,
                     label: L10n.CashFlowPlan.otherIncomeLabel,
                     action: { viewModel.showOthersIncomeBreakdown = true }
                 )
+                addLineButton(isIncome: true)
             }
         }
     }
 
-    // MARK: - Expense Section
-
     private var expenseSection: some View {
-        VStack(spacing: DS.Spacing.none) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             sectionHeader(
                 title: L10n.CashFlowPlan.expenseSection,
                 total: month.totalExpense,
-                isIncome: false,
                 isCollapsed: $expenseCollapsed
             )
             .coachMarkAnchor("cfTableCell")
 
             if !expenseCollapsed {
-                Divider().padding(.horizontal, DS.Spacing.lg)
                 lineRows(for: month.expenseLines)
-
-                addLineButton(isIncome: false)
-                    .coachMarkAnchor("cfTableAdd")
-
                 uncategorizedRow(
                     result: month.otherExpenses,
                     label: L10n.CashFlowPlan.otherExpensesLabel,
                     action: { viewModel.showOthersBreakdown = true }
                 )
+                addLineButton(isIncome: false)
+                    .coachMarkAnchor("cfTableAdd")
             }
         }
     }
 
-    // MARK: - Summary Card
+    // MARK: - Pago de tarjetas (D4-A)
 
-    private var summaryCard: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            // Available (net flow)
-            HStack {
-                HStack(spacing: DS.Spacing.xs) {
-                    Text(L10n.CashFlowPlan.available)
-                        .font(DS.Typography.label)
-                        .foregroundStyle(.secondary)
-                    InfoHintButton(
-                        title: L10n.CashFlowPlan.availableHintTitle,
-                        message: L10n.CashFlowPlan.availableHintMessage
-                    )
-                }
-                Spacer()
-                AmountText(
-                    value: month.netFlow,
-                    currencyCode: currencyCode,
-                    font: DS.Typography.amount.weight(.bold).monospacedDigit()
-                )
-            }
-
-            if viewModel.plan?.showAccumulatedBalance ?? true {
-                Divider()
-
-                // Accumulated
-                HStack {
-                    HStack(spacing: DS.Spacing.xs) {
-                        Text(L10n.CashFlowPlan.accumulated)
-                            .font(DS.Typography.label)
-                            .foregroundStyle(.secondary)
-                        InfoHintButton(
-                            title: L10n.CashFlowPlan.accumulatedHintTitle,
-                            message: L10n.CashFlowPlan.accumulatedHintMessage
-                        )
-                        Spacer()
-                        Button {
-                            viewModel.showEditStartingBalance = true
-                        } label: {
-                            Image(systemName: "pencil.circle")
-                                .font(DS.Typography.label)
-                                .foregroundStyle(.tertiary)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    Spacer()
-                    if let balance = month.accumulatedBalance {
-                        AmountText(
-                            value: balance,
-                            currencyCode: currencyCode,
-                            font: DS.Typography.amount.weight(.bold).monospacedDigit()
-                        )
-                    } else {
-                        Text("—")
-                            .font(DS.Typography.amount)
-                            .foregroundStyle(.tertiary)
-                    }
+    /// El pago de lo facturado de cada tarjeta cuya fecha de pago cae en este mes. Informa, no suma.
+    @ViewBuilder
+    private var cardPayments: some View {
+        let payments = CreditCardStatementSummary.payments(
+            accounts: accounts, inMonthOf: month.date, now: .now, calendar: .current)
+        if !payments.isEmpty {
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                ForEach(payments, id: \.accountID) { card in
+                    CashFlowCardPaymentRow(card: card)
                 }
             }
         }
-        .padding(DS.Spacing.lg)
     }
 
     // MARK: - Line Rows
@@ -238,7 +261,10 @@ struct CashFlowMonthDetailView: View {
                     selectedCellLineID = lineResult.lineID
                 },
                 onDeleteLine: line.map { l in
-                    { viewModel.removeLine(l) }
+                    {
+                        pendingDeleteLine = l
+                        showDeleteLineConfirmation = true
+                    }
                 }
             )
         }
@@ -249,15 +275,13 @@ struct CashFlowMonthDetailView: View {
     @ViewBuilder
     private func uncategorizedRow(result: CashFlowOtherResult?, label: String, action: @escaping () -> Void) -> some View {
         if let result, result.plannedAmount > 0 {
-            Divider()
-                .padding(.horizontal, DS.Spacing.lg)
-                .dashPattern()
-
             Button(action: action) {
                 HStack(spacing: DS.Spacing.md) {
-                    Image(systemName: "ellipsis.circle")
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.tertiary)
+                    Image(systemName: "ellipsis")
+                        .font(DS.Typography.label)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 40, height: 40)
+                        .background(Circle().fill(DS.Semantic.neutralBackground))
                     Text(label)
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(.secondary)
@@ -266,13 +290,16 @@ struct CashFlowMonthDetailView: View {
                     AmountText(
                         value: displayAmount,
                         currencyCode: currencyCode,
-                        font: DS.Typography.amountSmall.monospacedDigit(),
+                        font: DS.Typography.headline.monospacedDigit(),
                         tint: .secondary
                     )
+                    Image(systemName: "chevron.right")
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.tertiary)
                 }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.Spacing.md)
+                .padding(DS.Spacing.lg)
                 .contentShape(Rectangle())
+                .solidCard(radius: DS.Radius.md)
             }
             .buttonStyle(.plain)
         }
@@ -280,41 +307,36 @@ struct CashFlowMonthDetailView: View {
 
     // MARK: - Section Header
 
-    private func sectionHeader(title: String, total: Double, isIncome: Bool, isCollapsed: Binding<Bool>) -> some View {
+    /// Título de sección de la app (sin mayúsculas) con su total en blanco a la derecha; tocarlo pliega la sección.
+    private func sectionHeader(title: String, total: Double, isCollapsed: Binding<Bool>) -> some View {
         Button {
-            withAnimation(.easeInOut(duration: DS.Animation.fast)) {
-                isCollapsed.wrappedValue.toggle()
-            }
+            // Lo anima la implícita de `incomeCollapsed` / `expenseCollapsed` (card oxyr).
+            isCollapsed.wrappedValue.toggle()
         } label: {
             HStack(spacing: DS.Spacing.sm) {
-                Image(systemName: isIncome ? "arrow.up.right" : "arrow.down.right")
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(isIncome ? Color.electricIndigo : Color.hotPink)
-
                 Text(title)
-                    .font(DS.Typography.label)
-                    .fontWeight(.semibold)
+                    .font(DS.Typography.title3.weight(.bold))
                     .foregroundStyle(.primary)
-
-                Image(systemName: "chevron.down")
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.tertiary)
-                    .rotationEffect(.degrees(isCollapsed.wrappedValue ? -90 : 0))
 
                 Spacer()
 
                 AmountText(
                     value: total,
                     currencyCode: currencyCode,
-                    font: DS.Typography.amountSmall.weight(.bold).monospacedDigit(),
-                    tint: .color(isIncome ? Color.electricIndigo : Color.hotPink)
+                    font: DS.Typography.headline.monospacedDigit()
                 )
+
+                Image(systemName: isCollapsed.wrappedValue ? "chevron.down" : "chevron.up")
+                    .font(DS.Typography.label)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(Color.primary)
+                    .frame(width: DS.Panel.headerAccessorySize, height: DS.Panel.headerAccessorySize)
+                    .glassEffect(.regular.interactive(), in: Circle())
             }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.Spacing.md)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(.isHeader)
     }
 
     // MARK: - Add Line Button
@@ -330,33 +352,17 @@ struct CashFlowMonthDetailView: View {
         } label: {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: "plus.circle")
-                    .font(DS.Typography.caption)
+                    .font(DS.Typography.subheadline)
                 Text(L10n.CashFlowPlan.addLine)
-                    .font(DS.Typography.caption)
+                    .font(DS.Typography.subheadline.weight(.semibold))
             }
-            .foregroundStyle(theme.accent)
+            .foregroundStyle(theme.accentText)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.Spacing.md)
+            .padding(.horizontal, DS.Spacing.xs)
+            .padding(.vertical, DS.Spacing.sm)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-    }
-}
-
-// MARK: - Dash Pattern Extension
-
-private extension View {
-    func dashPattern() -> some View {
-        self.overlay(
-            GeometryReader { geo in
-                Path { path in
-                    path.move(to: CGPoint(x: 0, y: geo.size.height / 2))
-                    path.addLine(to: CGPoint(x: geo.size.width, y: geo.size.height / 2))
-                }
-                .stroke(style: StrokeStyle(lineWidth: 0.5, dash: [4, 3]))
-                .foregroundStyle(.quaternary)
-            }
-        )
+        .accessibilityIdentifier(isIncome ? "cashflow_add_line_income" : "cashflow_add_line_expense")
     }
 }

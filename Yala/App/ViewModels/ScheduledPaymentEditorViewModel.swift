@@ -74,6 +74,29 @@ final class ScheduledPaymentEditorViewModel {
         }
     }
 
+    // MARK: - Cuenta por defecto (UX 2.2 · L10-4)
+
+    /// La cuenta del último registro apuntado que siga activa; si no hay, la única cuenta activa. `nil` si hay varias y
+    /// ningún registro: la persona elige.
+    func lastUsedAccount() -> Account? {
+        let active = activeAccounts
+        guard let context = modelContext, !active.isEmpty else { return nil }
+        var descriptor = FetchDescriptor<TransactionItem>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
+        descriptor.fetchLimit = 30 // Perf: solo hace falta el último con una cuenta activa
+        do {
+            let recent = try context.fetch(descriptor)
+            let activeIDs = Set(active.map(\.persistentModelID))
+            if let account = recent.lazy.compactMap(\.account).first(where: { activeIDs.contains($0.persistentModelID) }) {
+                return account
+            }
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentEditorViewModel: Error fetching last used account: \(error)")
+            #endif
+        }
+        return active.count == 1 ? active.first : nil
+    }
+
     // MARK: - Save Operation
 
     func savePayment(
@@ -115,6 +138,16 @@ final class ScheduledPaymentEditorViewModel {
         // Convert selectedWeekdays set to comma-separated string
         let weekdaysStr = selectedWeekdays.sorted().map { String($0) }.joined(separator: ",")
 
+        // El primer vencimiento es la primera fecha del calendario desde la de inicio, no la de inicio: si no, el pago
+        // «vencía» ese día y dejaba un borrador en la Bandeja por una fecha que no toca (B10 del lote 10).
+        let dueDate = isRecurring
+            ? Self.firstDueDate(
+                start: paymentDate, recurrenceType: recurrenceType, recurrenceInterval: recurrenceInterval,
+                dayOfMonth: dayOfMonth, weekdays: weekdaysStr, yearlyMonth: yearlyMonth, yearlyDay: yearlyDay,
+                endDate: endDate
+            )
+            : paymentDate
+
         let paymentID: UUID
 
         if let existingPayment = existing {
@@ -134,7 +167,7 @@ final class ScheduledPaymentEditorViewModel {
             existingPayment.isRecurring = isRecurring
             existingPayment.recurrenceType = recurrenceType.rawValue
             existingPayment.recurrenceInterval = recurrenceInterval
-            existingPayment.nextDueDate = paymentDate
+            existingPayment.nextDueDate = dueDate
             existingPayment.dayOfMonth = recurrenceType == .monthly ? dayOfMonth : nil
             existingPayment.selectedWeekdays = recurrenceType == .weekly ? weekdaysStr : nil
             existingPayment.yearlyMonth = recurrenceType == .yearly ? yearlyMonth : nil
@@ -168,7 +201,7 @@ final class ScheduledPaymentEditorViewModel {
                 isRecurring: isRecurring,
                 recurrenceType: recurrenceType.rawValue,
                 recurrenceInterval: recurrenceInterval,
-                nextDueDate: paymentDate,
+                nextDueDate: dueDate,
                 dayOfMonth: recurrenceType == .monthly ? dayOfMonth : nil,
                 selectedWeekdays: recurrenceType == .weekly ? weekdaysStr : nil,
                 yearlyMonth: recurrenceType == .yearly ? yearlyMonth : nil,
@@ -202,9 +235,38 @@ final class ScheduledPaymentEditorViewModel {
             #if DEBUG
             print("ScheduledPaymentEditorViewModel: Error saving payment: \(error)")
             #endif
+            DS.Haptic.error()
             showSaveError = true
             return nil
         }
+    }
+
+    /// La primera fecha del calendario del pago en `start` o después (`ScheduledPaymentDateCalculator.firstOccurrence`).
+    /// Si no hay ninguna (una fecha de fin anterior), `start`, como antes.
+    static func firstDueDate(
+        start: Date,
+        recurrenceType: RecurrenceType,
+        recurrenceInterval: Int,
+        dayOfMonth: Int?,
+        weekdays: String,
+        yearlyMonth: Int?,
+        yearlyDay: Int?,
+        endDate: Date?,
+        calendar: Calendar = .current
+    ) -> Date {
+        let params = ScheduledPaymentDateCalculator.PaymentParams(
+            isRecurring: true,
+            recurrenceType: recurrenceType.rawValue,
+            recurrenceInterval: recurrenceInterval,
+            nextDueDate: start,
+            createdAt: start,
+            endDate: endDate,
+            dayOfMonth: recurrenceType == .monthly ? dayOfMonth : nil,
+            selectedWeekdays: recurrenceType == .weekly ? weekdays : nil,
+            yearlyMonth: recurrenceType == .yearly ? yearlyMonth : nil,
+            yearlyDay: recurrenceType == .yearly ? yearlyDay : nil
+        )
+        return ScheduledPaymentDateCalculator.firstOccurrence(onOrAfter: start, params: params, calendar: calendar) ?? start
     }
 
     // MARK: - Delete Operation
@@ -222,6 +284,7 @@ final class ScheduledPaymentEditorViewModel {
             #if DEBUG
             print("ScheduledPaymentEditorViewModel: Error deleting payment: \(error)")
             #endif
+            // Sin háptico: este borrado corre diferido, con el editor ya cerrado y sin alerta que lo explique.
             showSaveError = true
             return false
         }

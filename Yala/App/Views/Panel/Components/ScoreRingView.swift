@@ -17,6 +17,8 @@ struct ScoreRingView<Foreground: ShapeStyle>: View {
     let foreground: Foreground
     var trackOpacity: Double = 0.15
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         let clamped = max(0, min(1, progress))
         ZStack {
@@ -29,7 +31,8 @@ struct ScoreRingView<Foreground: ShapeStyle>: View {
                     style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
-                .animation(.spring(duration: 0.6), value: clamped)
+                // Con Reducir movimiento, el anillo llega a su valor sin recorrerlo (card C6).
+                .animation(reduceMotion ? nil : DS.Animation.number, value: clamped)
         }
         .frame(width: size, height: size)
     }

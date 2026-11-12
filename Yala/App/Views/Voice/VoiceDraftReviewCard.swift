@@ -26,6 +26,7 @@ struct VoiceDraftReviewCard: View {
     @Query private var allTags: [Tag]
 
     @State private var activeField: ChatDraftField?
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var isSaved: Bool { draft.status == .approved }
 
@@ -67,51 +68,77 @@ struct VoiceDraftReviewCard: View {
     // MARK: - Fila
 
     private var row: some View {
-        HStack(spacing: DS.ListRow.spacing) {
-            ChatDraftCategoryIcon(subcategory: draft.subcategory)
+        rowContent
+            .padding(.top, DS.ListRow.paddingV)
+            .padding(.bottom, isSaved ? DS.ListRow.paddingV : DS.Spacing.sm)
+            .padding(.horizontal, DS.ListRow.paddingH)
+            .contentShape(Rectangle())
+    }
 
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title)
-                    .font(DS.Typography.label)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                Text(subtitle)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(
-                        draft.subcategory == nil
-                            ? AnyShapeStyle(DS.Semantic.warningForeground) : AnyShapeStyle(.secondary)
-                    )
-                    .lineLimit(1)
-            }
-
-            Spacer(minLength: DS.Spacing.sm)
-
-            VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
-                Text(draft.amount == nil ? L10n.Chat.Draft.missingAmount : formattedAmount)
-                    .font(draft.amount == nil ? DS.Typography.caption : DS.Typography.headline)
-                    .foregroundStyle(
-                        draft.amount == nil ? AnyShapeStyle(DS.Semantic.warningForeground) : AnyShapeStyle(amountColor)
-                    )
-                    .monospacedDigit()
-
-                if isSaved {
-                    HStack(spacing: DS.Spacing.xs) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(DS.Typography.labelTiny)
-                            .foregroundStyle(DS.Semantic.successForeground)
-                        Text(L10n.Chat.Draft.savedBadge)
-                            .font(DS.Typography.labelTiny)
-                            .foregroundStyle(.secondary)
-                    }
-                    .accessibilityElement(children: .combine)
-                    .accessibilityIdentifier("voice_draft_saved")
+    /// Con el texto al máximo el importe baja a su propia línea, entero: a su lado se partía en «S/ / 25.0 / 0»
+    /// (barrido final 2.2). A tamaño normal, la fila de siempre, con los mismos hijos en el mismo `HStack`.
+    @ViewBuilder
+    private var rowContent: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                HStack(spacing: DS.ListRow.spacing) {
+                    ChatDraftCategoryIcon(subcategory: draft.subcategory)
+                    rowTexts
                 }
+                amountColumn(alignment: .leading)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            HStack(spacing: DS.ListRow.spacing) {
+                ChatDraftCategoryIcon(subcategory: draft.subcategory)
+
+                rowTexts
+
+                Spacer(minLength: DS.Spacing.sm)
+
+                amountColumn(alignment: .trailing)
             }
         }
-        .padding(.top, DS.ListRow.paddingV)
-        .padding(.bottom, isSaved ? DS.ListRow.paddingV : DS.Spacing.sm)
-        .padding(.horizontal, DS.ListRow.paddingH)
-        .contentShape(Rectangle())
+    }
+
+    private var rowTexts: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title)
+                .font(DS.Typography.label)
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+            Text(subtitle)
+                .font(DS.Typography.caption)
+                .foregroundStyle(
+                    draft.subcategory == nil
+                        ? AnyShapeStyle(DS.Semantic.warningForeground) : AnyShapeStyle(.secondary)
+                )
+                .lineLimit(1)
+        }
+    }
+
+    private func amountColumn(alignment: HorizontalAlignment) -> some View {
+        VStack(alignment: alignment, spacing: DS.Spacing.xs) {
+            Text(draft.amount == nil ? L10n.Chat.Draft.missingAmount : formattedAmount)
+                .font(draft.amount == nil ? DS.Typography.caption : DS.Typography.headline)
+                .foregroundStyle(
+                    draft.amount == nil ? AnyShapeStyle(DS.Semantic.warningForeground) : AnyShapeStyle(amountColor)
+                )
+                .monospacedDigit()
+
+            if isSaved {
+                HStack(spacing: DS.Spacing.xs) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(DS.Typography.labelTiny)
+                        .foregroundStyle(DS.Semantic.successForeground)
+                    Text(L10n.Chat.Draft.savedBadge)
+                        .font(DS.Typography.labelTiny)
+                        .foregroundStyle(.secondary)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("voice_draft_saved")
+            }
+        }
     }
 
     /// La nota es lo que el usuario dijo («Almuerzo»); sin nota, la subcategoría hace de título.
@@ -177,47 +204,10 @@ struct VoiceDraftReviewCard: View {
 
     // MARK: - Edición
 
-    /// Los selectores devuelven IDs; aquí vuelven a ser modelos contra lo cargado (nunca `model(for:)`, que fabrica
-    /// un objeto aunque ya no exista). Importe y nota se corrigen en el formulario completo.
     private var editing: ChatDraftEditing {
-        ChatDraftEditing(
-            onAmountChange: { _ in },
-            onAccountChange: { id in
-                draft.account = allAccounts.first { $0.persistentModelID == id }
-                persistChange()
-            },
-            onSubcategoryChange: { id in
-                draft.subcategory = allSubcategories.first { $0.persistentModelID == id }
-                persistChange()
-            },
-            onDateChange: { date in
-                draft.date = date
-                persistChange()
-            },
-            onTagsChange: { ids in
-                draft.setTags(from: allTags.filter { ids.contains($0.persistentModelID) })
-                persistChange()
-            },
-            onNoteChange: { _ in }
+        VoiceDraftFieldEditing.editing(
+            draft: draft, accounts: allAccounts, subcategories: allSubcategories, tags: allTags, context: modelContext
         )
-    }
-
-    /// Lo que falta se recalcula con el mismo criterio que la Bandeja (`needsUserInput`), para que su fila diga lo
-    /// mismo si el usuario cierra sin guardar.
-    private func persistChange() {
-        var needs: [String] = []
-        if draft.account == nil { needs.append(DraftInputRequirement.account) }
-        if draft.subcategory == nil { needs.append(DraftInputRequirement.subcategory) }
-        if draft.amount == nil { needs.append(DraftInputRequirement.amount) }
-        draft.needsUserInput = needs
-        draft.updatedAt = Date.now
-        do {
-            try modelContext.save()
-        } catch {
-            #if DEBUG
-            print("VoiceDraftReviewCard: Error saving draft change: \(error)")
-            #endif
-        }
     }
 
     // MARK: - Datos
@@ -230,15 +220,74 @@ struct VoiceDraftReviewCard: View {
     /// El borrador guarda el importe con signo: negativo es gasto.
     private var isExpense: Bool { (draft.amount ?? -1) < 0 }
 
+    /// Sin signo, como en 2.1: «S/ -251.81» en «Esto leí» parecía un error de lectura (card ex73, 2026-10-25). Lo que
+    /// dice si es gasto o ingreso es el color: el ingreso va teñido y el gasto en el color del texto. La Bandeja conserva
+    /// el signo (UX 2.2 · L4-14).
     private var formattedAmount: String {
         guard let amount = draft.amount else { return "–" }
         let code = draft.account?.currencyCode ?? appPreferences.defaultCurrencyCode.rawValue
-        return appPreferences.currency(abs(amount), currencyCode: code, forceFullPrecision: true)
+        return appPreferences.currency(
+            VoiceEntryFlowLogic.reviewDisplayedAmount(amount), currencyCode: code, forceFullPrecision: true)
     }
 
     /// Se colorea la excepción, no la norma: el gasto va en el color del texto y el ingreso en el tono oscurecido que
     /// sí se lee sobre la tarjeta (`.claude/rules/swiftui-ds.md`).
     private var amountColor: Color {
-        isExpense ? Color.primary : Color.incomeAmount
+        Color.amountTint(isIncome: !isExpense)
+    }
+}
+
+/// Lo que escriben los selectores de una fila de «Esto leí» en su borrador. Lo comparten la tarjeta de un registro y la
+/// fila de la hoja de varios (`MultiDraftReviewList`).
+enum VoiceDraftFieldEditing {
+    /// Los selectores devuelven IDs; aquí vuelven a ser modelos contra lo cargado (nunca `model(for:)`, que fabrica
+    /// un objeto aunque ya no exista). Importe y nota se corrigen en el formulario completo.
+    @MainActor
+    static func editing(
+        draft: InboxDraft,
+        accounts: [Account],
+        subcategories: [Subcategory],
+        tags: [Tag],
+        context: ModelContext
+    ) -> ChatDraftEditing {
+        ChatDraftEditing(
+            onAmountChange: { _ in },
+            onAccountChange: { id in
+                draft.account = accounts.first { $0.persistentModelID == id }
+                persist(draft, context: context)
+            },
+            onSubcategoryChange: { id in
+                draft.subcategory = subcategories.first { $0.persistentModelID == id }
+                persist(draft, context: context)
+            },
+            onDateChange: { date in
+                draft.date = date
+                persist(draft, context: context)
+            },
+            onTagsChange: { ids in
+                draft.setTags(from: tags.filter { ids.contains($0.persistentModelID) })
+                persist(draft, context: context)
+            },
+            onNoteChange: { _ in }
+        )
+    }
+
+    /// Lo que falta se recalcula con el mismo criterio que la Bandeja (`needsUserInput`), para que su fila diga lo
+    /// mismo si el usuario cierra sin guardar.
+    @MainActor
+    static func persist(_ draft: InboxDraft, context: ModelContext) {
+        var needs: [String] = []
+        if draft.account == nil { needs.append(DraftInputRequirement.account) }
+        if draft.subcategory == nil { needs.append(DraftInputRequirement.subcategory) }
+        if draft.amount == nil { needs.append(DraftInputRequirement.amount) }
+        draft.needsUserInput = needs
+        draft.updatedAt = Date.now
+        do {
+            try context.save()
+        } catch {
+            #if DEBUG
+            print("VoiceDraftReviewCard: Error saving draft change: \(error)")
+            #endif
+        }
     }
 }

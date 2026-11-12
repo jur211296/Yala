@@ -40,18 +40,54 @@ enum DeltaEmitter {
     ///   - changedColumns: columnas Postgres TOCADAS (PATCH parcial). En un INSERT = todas las columnas.
     ///   - hlc: el HLC de la transacción de History (el mismo para todas las unidades de esta emisión).
     ///   - calendar: calendario para derivar `local_day` (inyectable para determinismo; default `.current`).
+    ///   - capabilityLevel: versión del manifest que habla el teléfono (`SyncCapability`). Una columna posterior
+    ///     NO viaja aunque esté en `changedColumns`: el backend todavía no la conoce y rechazaría la fila entera.
     /// - Returns: `fields` (dominio limpio) + `field_hlcs` (por unidad).
     static func emit<Model: AnyObject>(
         model: Model,
         emission: EntityEmission<Model>,
         changedColumns: Set<String>,
         hlc: String,
-        calendar: Calendar = .current
+        calendar: Calendar = .current,
+        capabilityLevel: Int = SyncCapability.declaredLevel
     ) -> Result {
+        let emitters = emission.emitters(upTo: capabilityLevel)
+        // Una fila entera (alta, foto de la migración, remap) con un enlace de tarjeta que esta versión no puede
+        // mandar: se apunta para reemitirlo al subir (`SyncCapability`). Con el enlace a `nil` no hace falta: la
+        // columna nace NULL en el servidor. Los cambios sueltos los apunta el drain, antes de filtrar.
+        if capabilityLevel < SyncCapability.accountLinksSince, changedColumns.contains("parent_account_id"),
+           let account = model as? Account, account.parentAccountID != nil {
+            SyncCapability.noteSuppressedAccountLink(account.shortcutID)
+        }
+        // Lo mismo con los cambios de monto «desde este mes» de una línea del flujo de caja (v3, UX 2.2 · L18-8).
+        if capabilityLevel < SyncCapability.cashFlowAmountChangesSince, changedColumns.contains("amount_changes_raw"),
+           let line = model as? CashFlowLine, line.amountChangesRaw != nil {
+            SyncCapability.noteSuppressedCashFlowAmountChange(line.id)
+        }
+        // Y con el destino de un favorito de transferencia (v4, card da5d).
+        if capabilityLevel < SyncCapability.favoriteDestinationSince, changedColumns.contains("destination_account_ref"),
+           let favorite = model as? FavoritePayment, favorite.destinationAccount != nil, let syncID = favorite.syncID {
+            SyncCapability.noteSuppressedFavoriteDestination(syncID)
+        }
+        // Y con el día de corte y los días de aviso de una tarjeta (v5, card nmtk): solo las que no están en su valor por
+        // defecto, que es el NULL con el que nacen en el servidor.
+        if capabilityLevel < SyncCapability.creditCardCycleSince,
+           !changedColumns.isDisjoint(with: SyncCapability.creditCardCycleColumns),
+           let account = model as? Account {
+            var withValue: Set<String> = []
+            if account.creditCardStatementDay != nil { withValue.insert("credit_card_statement_day") }
+            if account.creditCardReminderDaysBefore != 0 { withValue.insert("credit_card_reminder_days_before") }
+            SyncCapability.noteSuppressedCreditCardCycle(account.shortcutID, columns: withValue.intersection(changedColumns))
+        }
+        // Y con la receta de líneas de tu parte de un gasto de grupo (v6, Grupos B · card 1).
+        if capabilityLevel < SyncCapability.splitLinesSince, changedColumns.contains("split_lines_raw"),
+           let item = model as? TransactionItem, item.splitLinesRaw != nil, let syncID = item.syncID {
+            SyncCapability.noteSuppressedSplitLines(syncID)
+        }
         // 1) Índices de grupo desde los emisores: group_key → [columnas], y columna → group_key.
         var columnsByGroup: [String: [String]] = [:]
         var groupByColumn: [String: String] = [:]
-        for emitter in emission.emitters {
+        for emitter in emitters {
             guard let group = emitter.group else { continue }
             columnsByGroup[group, default: []].append(emitter.column)
             groupByColumn[emitter.column] = group
@@ -70,7 +106,7 @@ enum DeltaEmitter {
 
         // 3) Construir `fields` para las columnas objetivo (leyendo el estado ACTUAL del modelo).
         var fields: [String: CanonValue] = [:]
-        for emitter in emission.emitters where targetColumns.contains(emitter.column) {
+        for emitter in emitters where targetColumns.contains(emitter.column) {
             fields[emitter.column] = emitter.build(model, calendar)
         }
 

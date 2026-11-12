@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: groups
 created: 2026-09-07
-updated: 2026-10-08
+updated: 2026-10-28
 ---
 
 # El reloj del recordatorio de deuda no ve las ediciones ni los pagos retro-fechados
@@ -29,7 +29,9 @@ parcialmente, resetea el contador».
 `updatedAt`, y la actividad se mide con `createdAt`. Si Ana corrige hoy un gasto de hace dos
 meses de 100 a 500, el reloj sigue en −60 días: esta noche sale «lleva semanas sin moverse: le
 debes 500 a Ana», sobre una deuda que cambió hoy. Cubre también
-`GroupExpenseService.updateOpeningBalance`, que tampoco toca `createdAt`.
+`GroupExpenseService.updateOpeningBalance`, que tampoco toca `createdAt`. Y desde la card t3fq (2026-10-28) también el ALTA de un saldo
+inicial sobre una pareja que ya tenía uno: `setOpeningBalance` edita el que había y su `createdAt` viejo se queda, así
+que un saldo rehecho hoy puede adelantar el aviso.
 
 ## Por qué no se arregló en el PR original
 

@@ -73,6 +73,27 @@ final class WidgetEntryToPanelUITests: XCTestCase {
                               capture: "imagen-desde-estadisticas")
     }
 
+    /// Lote 15 de la auditoría UX 2.2: en una sesión solo grupos no hay Panel. El toque del widget «Nuevo registro»
+    /// abría Yala en Grupos y no pasaba nada; ahora ofrece activar Yala completo, como el toque de un widget de datos.
+    func test_newTransactionInAGroupsOnlySession_offersToActivateFullYala() {
+        let app = XCUIApplication()
+        app.launchForUITest(groupInvite: true)
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        XCUIDevice.shared.press(.home)
+        XCTAssertTrue(app.wait(for: .runningBackground, timeout: 15), "Yala no pasó a segundo plano.")
+        openFromOutside("yaladev://new-transaction")
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 15), "El enlace no trajo Yala delante.")
+
+        let activation = app.buttons["onboarding_next_button"]
+        let appeared = activation.waitForExistence(timeout: 15)
+        let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        shot.name = "nuevo-registro-en-solo-grupos"
+        shot.lifetime = .keepAlways
+        add(shot)
+        XCTAssertTrue(appeared, "En solo grupos, el widget «Nuevo registro» tenía que ofrecer activar Yala completo.")
+    }
+
     func test_newTransactionFromStatistics_goesToThePanelAndOpens() {
         let app = openFromStatistics("yaladev://new-transaction")
         assertOpensOnThePanel(app, app.textFields["new_transaction_amount"], what: "el Nuevo registro",

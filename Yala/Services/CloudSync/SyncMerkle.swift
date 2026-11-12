@@ -85,7 +85,8 @@ enum SyncMerkle {
     /// **`throws` desde el 2026-09-22** (ticket `verify-reads-a-failed-local-fetch-as-an-empty-outbox`): una
     /// lectura local que falla ya no se ensambla como un corpus vacío. El único consumidor de producción es
     /// `verifyIntegrity`, que lo convierte en `.skipped(localMerkleFetchFailed)`.
-    static func computeLocalMerkle(context: ModelContext) throws -> LocalMerkle {
+    static func computeLocalMerkle(context: ModelContext,
+                                   capabilityLevel: Int = SyncCapability.declaredLevel) throws -> LocalMerkle {
         var digests: [String: Data] = [:]
         var entities: [String: EntitySummary] = [:]
 
@@ -102,53 +103,53 @@ enum SyncMerkle {
         let computed: [(String, [(String, Data)])] = try [
             (EntityEmissionMap.transactionItem.table,
              collectLeaves(TransactionItem.self, emission: EntityEmissionMap.transactionItem,
-                           identity: { $0.syncID }, overrides: overrides, context: context)),
+                           identity: { $0.syncID }, overrides: overrides, level: capabilityLevel, context: context)),
             (EntityEmissionMap.inboxDraft.table,
              collectLeaves(InboxDraft.self, emission: EntityEmissionMap.inboxDraft,
-                           identity: { $0.syncID }, overrides: overrides, context: context)),
+                           identity: { $0.syncID }, overrides: overrides, level: capabilityLevel, context: context)),
             (EntityEmissionMap.category.table,
              collectLeaves(Category.self, emission: EntityEmissionMap.category,
-                           identity: { $0.syncID }, overrides: overrides, context: context)),
+                           identity: { $0.syncID }, overrides: overrides, level: capabilityLevel, context: context)),
             (EntityEmissionMap.favoritePayment.table,
              collectLeaves(FavoritePayment.self, emission: EntityEmissionMap.favoritePayment,
-                           identity: { $0.syncID }, overrides: overrides, context: context)),
+                           identity: { $0.syncID }, overrides: overrides, level: capabilityLevel, context: context)),
             (EntityEmissionMap.merchantMemory.table,
              collectLeaves(MerchantMemory.self, emission: EntityEmissionMap.merchantMemory,
-                           identity: { $0.syncID }, overrides: overrides, context: context)),
+                           identity: { $0.syncID }, overrides: overrides, level: capabilityLevel, context: context)),
             (EntityEmissionMap.exchangeRate.table,
              collectLeaves(ExchangeRate.self, emission: EntityEmissionMap.exchangeRate,
-                           identity: { $0.syncID }, overrides: overrides, context: context)),
+                           identity: { $0.syncID }, overrides: overrides, level: capabilityLevel, context: context)),
             (EntityEmissionMap.budget.table,
              collectLeaves(Budget.self, emission: EntityEmissionMap.budget,
-                           identity: { $0.id }, overrides: overrides, context: context)),
+                           identity: { $0.id }, overrides: overrides, level: capabilityLevel, context: context)),
             (EntityEmissionMap.scheduledPayment.table,
              collectLeaves(ScheduledPayment.self, emission: EntityEmissionMap.scheduledPayment,
-                           identity: { $0.id }, overrides: overrides, context: context)),
+                           identity: { $0.id }, overrides: overrides, level: capabilityLevel, context: context)),
             // I12 commit B: las 8 restantes. Identidad = `shortcutID` (Account/Subcategory) o `id` (resto).
             (EntityEmissionMap.account.table,
              collectLeaves(Account.self, emission: EntityEmissionMap.account,
-                           identity: { $0.shortcutID }, overrides: overrides, context: context)),
+                           identity: { $0.shortcutID }, overrides: overrides, level: capabilityLevel, context: context)),
             (EntityEmissionMap.subcategory.table,
              collectLeaves(Subcategory.self, emission: EntityEmissionMap.subcategory,
-                           identity: { $0.shortcutID }, overrides: overrides, context: context)),
+                           identity: { $0.shortcutID }, overrides: overrides, level: capabilityLevel, context: context)),
             (EntityEmissionMap.tag.table,
              collectLeaves(Tag.self, emission: EntityEmissionMap.tag,
-                           identity: { $0.id }, overrides: overrides, context: context)),
+                           identity: { $0.id }, overrides: overrides, level: capabilityLevel, context: context)),
             (EntityEmissionMap.notificationItem.table,
              collectLeaves(NotificationItem.self, emission: EntityEmissionMap.notificationItem,
-                           identity: { $0.id }, overrides: overrides, context: context)),
+                           identity: { $0.id }, overrides: overrides, level: capabilityLevel, context: context)),
             (EntityEmissionMap.cashFlowPlan.table,
              collectLeaves(CashFlowPlan.self, emission: EntityEmissionMap.cashFlowPlan,
-                           identity: { $0.id }, overrides: overrides, context: context)),
+                           identity: { $0.id }, overrides: overrides, level: capabilityLevel, context: context)),
             (EntityEmissionMap.cashFlowLine.table,
              collectLeaves(CashFlowLine.self, emission: EntityEmissionMap.cashFlowLine,
-                           identity: { $0.id }, overrides: overrides, context: context)),
+                           identity: { $0.id }, overrides: overrides, level: capabilityLevel, context: context)),
             (EntityEmissionMap.cashFlowOverride.table,
              collectLeaves(CashFlowOverride.self, emission: EntityEmissionMap.cashFlowOverride,
-                           identity: { $0.id }, overrides: overrides, context: context)),
+                           identity: { $0.id }, overrides: overrides, level: capabilityLevel, context: context)),
             (EntityEmissionMap.groupBridgePreference.table,
              collectLeaves(GroupBridgePreference.self, emission: EntityEmissionMap.groupBridgePreference,
-                           identity: { $0.id }, overrides: overrides, context: context)),
+                           identity: { $0.id }, overrides: overrides, level: capabilityLevel, context: context)),
         ]
         for (table, leaves) in computed {
             let digest = entityDigest(leaves)
@@ -209,7 +210,7 @@ enum SyncMerkle {
     /// La distinción entre las dos es lo que separa «sé lo que hay y una fila no cabe» de «no sé lo que hay».
     private static func collectLeaves<M: PersistentModel>(
         _ type: M.Type, emission: EntityEmission<M>, identity: (M) -> UUID?,
-        overrides: [UUID: [String: UUID]], context: ModelContext
+        overrides: [UUID: [String: UUID]], level: Int, context: ModelContext
     ) throws -> [(String, Data)] {
         let models: [M]
         // El seam va DENTRO del `do`, no antes: así el camino de error que recorre un test es el `catch` REAL
@@ -229,7 +230,7 @@ enum SyncMerkle {
             guard let syncID = identity(model) else { continue }  // sin identidad → aún no participa
             do {
                 let payload = try channel1Payload(model: model, emission: emission,
-                                                  overrides: overrides[syncID] ?? [:])
+                                                  overrides: overrides[syncID] ?? [:], capabilityLevel: level)
                 let sid = syncID.uuidString.lowercased()
                 leaves.append((sid, leafDigest(syncID: sid, payload: payload)))
             } catch {
@@ -248,11 +249,14 @@ enum SyncMerkle {
     /// estaría obsoleto). El calendario pasado a los builders es IRRELEVANTE (solo `local_day` lo usa y
     /// está excluida) → el hash es independiente del huso del device. `internal` para tests.
     static func channel1Payload<M>(
-        model: M, emission: EntityEmission<M>, overrides: [String: UUID] = [:]
+        model: M, emission: EntityEmission<M>, overrides: [String: UUID] = [:],
+        capabilityLevel: Int = SyncCapability.declaredLevel
     ) throws -> String {
         var fields: [String: CanonValue] = [:]
         let calendar = Calendar(identifier: .gregorian)
-        for emitter in emission.emitters where !channel1ExcludedColumns.contains(emitter.column) {
+        // Solo las columnas de la versión del manifest que se le pidió al servidor (`SyncCapability`): el servidor
+        // proyecta la fila a esa misma versión, y una columna de más divergiría en todas las filas.
+        for emitter in emission.emitters(upTo: capabilityLevel) where !channel1ExcludedColumns.contains(emitter.column) {
             var value = emitter.build(model, calendar)
             if case .null = value, let target = overrides[emitter.column] {
                 value = .uuid(target)  // conocimiento del wire preservado por SyncDanglingRef
@@ -403,7 +407,10 @@ extension CloudSyncEngine {
         // solo `reason` era lo que hacía que la vuelta a iCloud esperase 72 h ante un «no» definitivo del servidor
         // (ticket `reverse-verify-network-bucket-hides-a-definitive-server-no`). El breadcrumb se conserva EN LOS
         // TRES para no perder el rastro que ya existía.
-        let outcome = await client.fetchMerkle()
+        // La versión del manifest se fija UNA vez para toda la comparación: la cabecera que se pide, el eco que se
+        // exige y las columnas que se hashean en local tienen que ser la misma (`SyncCapability`).
+        let capabilityLevel = SyncCapability.declaredLevel
+        let outcome = await client.fetchMerkle(capabilityLevel: capabilityLevel)
         let remote: RemoteMerkle
         switch outcome {
         case .snapshot(let snapshot):
@@ -425,8 +432,17 @@ extension CloudSyncEngine {
             CloudSyncBreadcrumb.merkleSkippedNotQuiescent(reason: "canon-version:\(remote.canonVersion)")
             return .skipped(reason: MerkleSkipReason.canonVersionMismatch)
         }
-        guard remote.capabilitySet == SyncPullClient.capabilitySet else {
+        guard remote.capabilitySet == SyncCapability.header(forLevel: capabilityLevel) else {
             CloudSyncBreadcrumb.merkleSkippedNotQuiescent(reason: "capability-set:\(remote.capabilitySet)")
+            return .skipped(reason: MerkleSkipReason.capabilitySetMismatch)
+        }
+        // Un Worker que no anuncia la versión (anterior a `SyncCapability`, o tras un rollback) devuelve el eco de la
+        // cabecera sin saber proyectarla: con `v2` hashearía sin las columnas nuevas y TODA la tabla divergiría.
+        // Se salta y se apunta lo que anunció, para que el siguiente ciclo baje de versión.
+        guard (remote.manifestVersion ?? 1) >= capabilityLevel else {
+            SyncCapability.recordBackendManifestVersion(remote.manifestVersion)
+            CloudSyncBreadcrumb.merkleSkippedNotQuiescent(
+                reason: "capability-unsupported:\(remote.manifestVersion ?? 1)<\(capabilityLevel)")
             return .skipped(reason: MerkleSkipReason.capabilitySetMismatch)
         }
 
@@ -441,7 +457,7 @@ extension CloudSyncEngine {
         let local: SyncMerkle.LocalMerkle
         do {
             try beforeLocalTree?()
-            local = try SyncMerkle.computeLocalMerkle(context: context)
+            local = try SyncMerkle.computeLocalMerkle(context: context, capabilityLevel: capabilityLevel)
         } catch {
             #if DEBUG
             print("CloudSyncEngine.verifyIntegrity: cómputo del árbol local falló: \(error)")

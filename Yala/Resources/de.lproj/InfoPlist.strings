@@ -1,4 +1,4 @@
-"NSMicrophoneUsageDescription" = "Yala nutzt das Mikrofon, um Spracheingaben für deine Ausgaben aufzunehmen. Die Audiodatei wird zur Transkription an OpenAI gesendet.";
-"NSPhotoLibraryUsageDescription" = "Yala nutzt deine Fotos, um Ausgabendetails aus Screenshots und Belegen zu extrahieren. Ausgewählte Bilder werden an OpenAI gesendet.";
+"NSMicrophoneUsageDescription" = "Yala nutzt das Mikrofon, um Spracheingaben für deine Ausgaben aufzunehmen. Die Audiodatei wird zur Transkription an einen KI-Dienst gesendet.";
+"NSPhotoLibraryUsageDescription" = "Yala nutzt deine Fotos, um Ausgabendetails aus Screenshots und Belegen zu extrahieren. Ausgewählte Bilder werden an einen KI-Dienst gesendet.";
 "NSPhotoLibraryAddUsageDescription" = "Yala speichert die Gruppenübersichten, die du sichern möchtest, in deiner Fotomediathek. Ohne deine Aufforderung wird nichts gespeichert.";
-"NSCameraUsageDescription" = "Yala nutzt die Kamera, um deine Belege zu fotografieren und Ausgaben anzulegen. Das Foto wird zum Auslesen an OpenAI gesendet.";
+"NSCameraUsageDescription" = "Yala nutzt die Kamera, um deine Belege zu fotografieren und Ausgaben anzulegen. Das Foto wird zum Auslesen an einen KI-Dienst gesendet.";

@@ -43,6 +43,9 @@ enum AccountRemovalService {
         let outsidePartners: [PersistentIdentifier: TransactionItem]
         let scheduled: [ScheduledPayment]
         let favorites: [FavoritePayment]
+        /// Favoritos de transferencia que llevan dinero A esta cuenta (UX 2.2 · L2-14): al mover, su destino pasa a la
+        /// cuenta destino; al soltar, se quedan sin destino.
+        let destinationFavorites: [FavoritePayment]
         let pendingDrafts: [InboxDraft]
         /// Presupuestos cuyo filtro incluye esta cuenta, con las cuentas que les quedarían sin ella.
         let budgets: [(budget: Budget, remaining: [Account])]
@@ -61,7 +64,9 @@ enum AccountRemovalService {
                             hasSplitExpenseID: tx.splitExpenseID != nil,
                             hasSplitSettlementID: tx.splitSettlementID != nil
                         )),
-                        isGroupRecord: tx.splitExpenseID != nil || tx.splitSettlementID != nil,
+                        // Grupos B: la entrada de una recarga de tu parte tampoco se borra aquí: la escribe el puente.
+                        isGroupRecord: tx.splitExpenseID != nil || tx.splitSettlementID != nil
+                            || GroupSplitLinesBridgeLogic.isDerivedMarker(tx.splitLinesRaw),
                         transferPartnerAccount: outsidePartners[tx.persistentModelID]?.account?.persistentModelID
                     )
                 },
@@ -120,7 +125,9 @@ enum AccountRemovalService {
             }
 
             let scheduled = try context.fetch(FetchDescriptor<ScheduledPayment>()).filter { belongs($0.account) }
-            let favorites = try context.fetch(FetchDescriptor<FavoritePayment>()).filter { belongs($0.account) }
+            let allFavorites = try context.fetch(FetchDescriptor<FavoritePayment>())
+            let favorites = allFavorites.filter { belongs($0.account) }
+            let destinationFavorites = allFavorites.filter { belongs($0.destinationAccount) }
             let pending = DraftStatus.pending.rawValue
             let drafts = try context.fetch(FetchDescriptor<InboxDraft>(
                 predicate: #Predicate { $0.statusRaw == pending })).filter { belongs($0.account) }
@@ -146,6 +153,7 @@ enum AccountRemovalService {
                 outsidePartners: partners,
                 scheduled: scheduled,
                 favorites: favorites,
+                destinationFavorites: destinationFavorites,
                 pendingDrafts: drafts,
                 budgets: budgets
             )
@@ -171,6 +179,82 @@ enum AccountRemovalService {
             #endif
             throw Failure.unreadable
         }
+    }
+
+    // MARK: - Saldos que enseña la hoja
+
+    /// El saldo de una cuenta destino antes de mover y el que le quedaría después.
+    struct BalancePreview: Equatable {
+        let before: Decimal
+        let after: Decimal
+        /// Alguna fila se convirtió sin la tasa exacta de su fecha (arrastrada de otro día o de la tabla estática):
+        /// la cifra es aproximada y la mudanza, que pide las tasas antes, puede dar otra.
+        let isApproximate: Bool
+    }
+
+    /// El saldo de la cuenta que se va y, por cada destino PERMITIDO, cómo quedaría el suyo (propuesta A de la card
+    /// rd7z: «Banco QA: S/ 1,000.00 → S/ 942.00»).
+    ///
+    /// **Repite lo que hace `move` con las filas, sin escribir nada**: la transferencia cuya otra pata está en el
+    /// destino se quita entera (las dos patas), el resto entra en el destino y, si `AccountRemovalLogic.rowConverts`
+    /// lo dice, con su importe reexpresado a la tasa de SU fecha —el mismo `convertChecked` de `convertHistory`—. No
+    /// pide tasas a la red: con las que hay en el store; si alguna no es exacta, la cifra se marca aproximada. El
+    /// saldo es el de `AccountBalanceCalculator`: solo lo fechado hasta hoy.
+    static func balancePreviews(
+        of inventory: Inventory,
+        destinations: [Account],
+        context: ModelContext,
+        now: Date = .now
+    ) throws -> (source: Decimal, byDestination: [PersistentIdentifier: BalancePreview]) {
+        let allTransactions: [TransactionItem]
+        do {
+            allTransactions = try context.fetch(FetchDescriptor<TransactionItem>())
+        } catch {
+            #if DEBUG
+            print("AccountRemovalService: Error: \(error)")
+            #endif
+            throw Failure.unreadable
+        }
+        let cutoff = LiveBalanceCalculator.TodayCutoff(asOf: now)
+        let source = AccountBalanceCalculator.currentBalance(transactions: inventory.transactions, asOf: now)
+        let balances = AccountBalanceCalculator.batchCalculateBalances(
+            accounts: destinations, transactions: allTransactions, asOf: now)
+        let shape = inventory.shape
+        var previews: [PersistentIdentifier: BalancePreview] = [:]
+        for destination in destinations {
+            let destinationID = destination.persistentModelID
+            guard case .allowed = AccountRemovalLogic.moveVerdict(shape, to: destinationShape(destination)) else {
+                continue
+            }
+            let target = normalizeCurrencyCode(destination.currencyCode)
+            var incoming: [Decimal] = []
+            var removed: [Decimal] = []
+            var isApproximate = false
+            for (tx, row) in zip(inventory.transactions, shape.rows) {
+                if row.transferPartnerAccount == destinationID {
+                    if let partner = inventory.outsidePartners[tx.persistentModelID], cutoff.counts(partner.date) {
+                        removed.append(Decimal(partner.amount))
+                    }
+                    continue
+                }
+                guard cutoff.counts(tx.date) else { continue }
+                guard AccountRemovalLogic.rowConverts(row, to: target) else {
+                    incoming.append(Decimal(tx.amount))
+                    continue
+                }
+                let converted = CurrencyConverter.shared.convertChecked(
+                    Decimal(tx.amount), from: tx.currencyCode, to: target, on: tx.date, context: context)
+                // `convertHistory` guarda el importe como `Double`: el saldo se suma desde ahí.
+                incoming.append(Decimal((converted.amount as NSDecimalNumber).doubleValue))
+                if !converted.quality.isExact { isApproximate = true }
+            }
+            let before = balances[destinationID] ?? 0
+            previews[destinationID] = BalancePreview(
+                before: before,
+                after: AccountRemovalLogic.balanceAfterMove(before, incoming: incoming, removed: removed),
+                isApproximate: isApproximate)
+        }
+        return (source, previews)
     }
 
     // MARK: - Mover
@@ -257,6 +341,13 @@ enum AccountRemovalService {
         }
         inventory.scheduled.forEach { $0.account = destination }
         inventory.favorites.forEach { $0.account = destination }
+        inventory.destinationFavorites.forEach { $0.destinationAccount = destination }
+        // Un favorito «esta → destino» (o «destino → esta») acabaría con origen y destino iguales: se queda sin destino,
+        // que el formulario señala como lo que falta.
+        for favorite in inventory.favorites + inventory.destinationFavorites
+        where favorite.destinationAccount?.persistentModelID == favorite.account?.persistentModelID {
+            favorite.destinationAccount = nil
+        }
         inventory.pendingDrafts.forEach { $0.account = destination }
         for entry in inventory.budgets {
             let accounts = entry.remaining.contains { $0.persistentModelID == destinationID }
@@ -300,6 +391,7 @@ enum AccountRemovalService {
         inventory.transactions.forEach { context.delete($0) }
         inventory.scheduled.forEach { $0.account = nil }
         inventory.favorites.forEach { $0.account = nil }
+        inventory.destinationFavorites.forEach { $0.destinationAccount = nil }
         inventory.pendingDrafts.forEach { $0.account = nil }
         for entry in inventory.budgets {
             setBudgetAccounts(entry.budget, entry.remaining)

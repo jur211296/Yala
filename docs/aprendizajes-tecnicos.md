@@ -16,9 +16,9 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (30 entradas)
+## Índice (35 entradas)
 
-> **No hace falta leer este fichero entero** — son 204 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 211 KB. Localiza la entrada
 > aquí y salta a ella.
 
 - `—` [Sync de Grupos (CKSyncEngine) NO debe arrancar/`save()` sobre el `mainContext` compartido antes](#sync-de-grupos-cksyncengine-no-debe-arrancarsave-sobre-el-maincontext-compartido-antes)
@@ -40,6 +40,11 @@
 - `—` [`accessibilityIdentifier` NO se propaga dentro de un `.alert` de SwiftUI: el botón existe en pantall](#accessibilityidentifier-no-se-propaga-dentro-de-un-alert-de-swiftui-el-botn-existe-en-pantalla-y-el-id-llega-vaco-al-rbol)
 - `—` [`xcodebuild test` REINSTALA la app del simulador: el QA que corres después del gate no mira tu](#xcodebuild-test-reinstala-la-app-del-simulador-el-qa-que-corres-despus-del-gate-no-mira-tu)
 - `—` [El árbol de accesibilidad del simulador se degrada tras muchos ciclos launch/stop y solo lo cura](#el-rbol-de-accesibilidad-del-simulador-se-degrada-tras-muchos-ciclos-launchstop-y-solo-lo-cura)
+- `2026-10-26` [Sentry: el `userInfo` de un NSError y la IP de envío se saltan el `sendDefaultPii` (2026-10-26)](#sentry-el-userinfo-de-un-nserror-y-la-ip-de-envo-se-saltan-el-senddefaultpii-2026-10-26)
+- `2026-10-22` [El idioma por app de iOS solo sale si el iPhone tiene más de un idioma (2026-10-22)](#el-idioma-por-app-de-ios-solo-sale-si-el-iphone-tiene-ms-de-un-idioma-2026-10-22)
+- `2026-10-21` [Abrir la página de la app en Atajos desde un botón propio: no hay URL, y `ShortcutsUIButton` no se d](#abrir-la-pgina-de-la-app-en-atajos-desde-un-botn-propio-no-hay-url-y-shortcutsuibutton-no-se-dispara-por-cdigo-2026-10-21)
+- `2026-10-18` [El CI compila con Xcode 26.6: lo que solo existe en el SDK de iOS 27 va tras `#if compiler(>=6.3)` (](#el-ci-compila-con-xcode-266-lo-que-solo-existe-en-el-sdk-de-ios-27-va-tras-if-compiler63-2026-10-18)
+- `2026-10-15` [Notificaciones locales en el simulador: `UNErrorDomain 2003` con el permiso concedido; se cura reini](#notificaciones-locales-en-el-simulador-unerrordomain-2003-con-el-permiso-concedido-se-cura-reinicindolo-2026-10-15)
 - `2026-09-28` [Un build INCREMENTAL puede fallar con «`Category` no conforma `Hashable`» en código que no tocaste: ](#un-build-incremental-puede-fallar-con-category-no-conforma-hashable-en-cdigo-que-no-tocaste-es-el-compilador-y-lo-cura-un-clean-2026-09-28)
 - `2026-09-28` [Cada `xcodebuild test` deja ~400 MB de contenedor muerto en el simulador, y una tanda de mutantes ll](#cada-xcodebuild-test-deja-400-mb-de-contenedor-muerto-en-el-simulador-y-una-tanda-de-mutantes-llena-el-disco-2026-09-28)
 - `2026-09-23` [Una tanda de mutantes: `-collect-test-diagnostics never`, o cada mutante muerto cuesta 10 min (2026-](#una-tanda-de-mutantes--collect-test-diagnostics-never-o-cada-mutante-muerto-cuesta-10-min-2026-09-23)
@@ -598,3 +603,57 @@ el permiso concedido (`authStatus=2`). El log de la app lo decía: cada `UNUserN
 porque no pasan por ese repositorio. Tras `simctl shutdown` + `boot`, el mismo arranque dio `notificationCenter.add OK` y
 el resumen llegó a su hora. **Antes de culpar al planificador de notificaciones, lanza la app con el log a la vista y
 busca 2003**; si sale, reinicia el simulador. Un `simctl push` que sí llega no prueba que el simulador acepte las locales.
+
+### El CI compila con Xcode 26.6: lo que solo existe en el SDK de iOS 27 va tras `#if compiler(>=6.3)` (2026-10-18)
+
+**Qué pasó.** La Mini tiene Xcode 27.1 (Swift 6.4, SDK iOS 27.1) y el job `tests` del CI, Xcode 26.6 (Swift 6.2, SDK
+iOS 26). `@available(iOS 27, *)` no basta: protege en tiempo de ejecución, pero el símbolo tiene que existir al compilar.
+`.system.open` (`AppSchema.SystemIntent.open`, `anyAppleOS 27.0`) y el framework `AppIntentsTesting` no existen en el SDK
+de iOS 26, así que el PR habría compilado aquí y roto el CI.
+
+**Cómo se hace.** En la app, `#if compiler(>=6.3)` alrededor del tipo (`OpenAccountIntent`), y el test que lo mira, igual.
+En un target de tests que importa un framework nuevo, `#if canImport(AppIntentsTesting)` alrededor del fichero entero. En
+el CI esas piezas no existen y el resto compila igual. **Antes de usar una API marcada `anyAppleOS 27.0`, mira con qué
+Xcode compila el CI** (`.github/workflows/qa.yml`, «Seleccionar Xcode»).
+
+### Abrir la página de la app en Atajos desde un botón propio: no hay URL, y `ShortcutsUIButton` no se dispara por código (2026-10-21)
+
+**Qué pasó.** L15-4 pedía un botón relleno de Yala, «Abrir mis atajos de Yala». El enlace oficial (`ShortcutsLink`) lleva a
+la página de la app en Atajos, pero solo con los estilos de Apple. Medido en iOS 27.0: `shortcuts://` con `app-shortcuts`,
+`apps`, `open-app-shortcuts` o `bundleIdentifier` (cinco formas) abre siempre «Todos los atajos»; y `ShortcutsUIButton`
+(el `UIButton` público de `_AppIntents_UIKit`) tiene `allTargets` vacío y `allControlEvents == 0`: responde a sus dos
+reconocedores de gestos, así que `sendActions(for: .touchUpInside)` y `.primaryActionTriggered` no hacen nada.
+
+**Cómo se hace.** El botón de Apple ENCIMA del de Yala, del mismo tamaño y con `alpha = 0.02` (por debajo de 0,01 UIKit
+deja de entregarle toques); el de Yala con `.allowsHitTesting(false)` y, para VoiceOver, un solo elemento con rasgo de
+botón y sin acción propia, que al activarse toca en su centro. Molde: `ShortcutsPageButtonOverlay`
+(`Yala/App/Views/Settings/ShortcutsPageOpener.swift`). Lo fija `SiriShortcutsScreenUITests`, que espera a Atajos en
+primer plano con la página de Yala.
+
+### El idioma por app de iOS solo sale si el iPhone tiene más de un idioma (2026-10-22)
+
+La auditoría de 2.2 (L16-5, opción C) propuso que la fila «Idioma de la app» llevara al idioma por app de los Ajustes
+de iOS. Medido en el simulador (iOS 27.0): con un solo idioma en General › Idioma y región, la página de Yala en los
+Ajustes de iOS **no tiene fila «Idioma»** (solo Siri, Buscar, Actualización en 2.º plano, Datos celulares); con dos
+idiomas (`es-PE` y `en-US`) aparece «Idioma · Español (Latinoamérica)». Quien tiene un solo idioma —la mayoría, y
+justo quien eligió idioma en el onboarding porque el suyo no está entre los 16— no tendría dónde cambiarlo.
+⇒ no mandes a nadie a los Ajustes de iOS a cambiar el idioma sin una salida para quien tiene uno solo. Saber cuántos
+idiomas tiene el iPhone desde la app (`Locale.preferredLanguages`) es inferido, no medido.
+Capturas: `~/Claude/entregas/Yala--lote-decidido-2-2-15-ajustes-ayuda-y-preferencias/capturas/L16-5-*.png`.
+
+### Sentry: el `userInfo` de un NSError y la IP de envío se saltan el `sendDefaultPii` (2026-10-26)
+
+**Qué pasó.** Con `sendDefaultPii = false` y un `beforeSend` que tapaba el mensaje de la excepción, el primer error de
+prueba de la app llegó a `yala-ios` con el correo y el importe falsos **tres veces**: en el contexto «user info» y en
+`mechanism.description` y `mechanism.data` de la excepción. El SDK copia el `userInfo` entero del NSError ahí, y no
+pasa por ningún filtro propio. El del gateway llegó con `user.ip_address` (la IP de quien envía) y los dos con
+`user.geo` («Lima»): Sentry infiere la IP del envío si el evento no dice lo contrario. Y el SDK 11 de Cloudflare ya no
+tiene `sendDefaultPii`: su equivalente es `dataCollection`, con cada categoría apagada a mano.
+
+**Cómo se cierra.** En `beforeSend`: fuera el contexto «user info» y `mechanism.data`, `mechanism.desc` por la misma
+limpieza que el mensaje, y `sdk.settings.infer_ip = "never"` (`ErrorReportingService.swift`, `gateway/src/sentry.ts`).
+La ciudad (`user.geo`) siguió llegando: la pone el servidor con la IP de la conexión y se apaga en el proyecto de
+Sentry (Security & Privacy › Prevent Storing of IP Addresses), no en el código.
+
+**La lección.** Una limpieza por lista negra no se da por buena leyendo el código: se manda un evento con datos
+falsos reconocibles y se busca cada uno en el JSON entero del evento (API de Sentry, `/events/<id>/`).

@@ -31,3 +31,79 @@ extension View {
             }
     }
 }
+
+/// El chip de una barra de navegación: icono, nombre y cápsula de acento si está elegido. Lo comparten Estadísticas,
+/// Planificación, Reportes y el detalle de grupo (lienzo «Una sola Yala», 2026-10-26); antes cada pantalla tenía su copia.
+///
+/// `showsTitleWhenUnselected`: con `false`, el nombre solo en el elegido (Estadísticas y Grupos, decisiones L11-1 y
+/// L12-1: con todos los nombres el último se cortaba). Con `true`, en todos (Planificación y Reportes, donde caben).
+///
+/// El chip pinta `isSelected` tal cual: si cambia dentro de una transacción animada, la cápsula cambia de ancho y los
+/// vecinos se recolocan en el mismo movimiento. Para que eso se vea, la pantalla monta sus páginas con
+/// `StagedTabPages` y pone `animatesSwitch` (Estadísticas y el detalle de grupo); sin ellos (Planificación y Reportes,
+/// cuyos chips no cambian de ancho) el cambio llega sin animación, como siempre.
+struct NavigationChipButton: View {
+    let title: String
+    let icon: String
+    let isSelected: Bool
+    var showsTitleWhenUnselected = false
+    /// `true` si la pantalla anima la fila ella misma (`StagedTabPages` + `.animation(_:value:)` en la fila). Con
+    /// `false`, el toque llega con las animaciones apagadas; y apagadas así, ninguna transacción anidada las enciende
+    /// (medido en el simulador, iOS 27.0).
+    var animatesSwitch = false
+    let action: () -> Void
+
+    @Environment(\.yalaTheme) private var theme
+
+    private var showsTitle: Bool { isSelected || showsTitleWhenUnselected }
+
+    /// El nombre entra fundido cuando la cápsula ya ha empezado a abrir sitio, y se va en el acto: con un fundido de
+    /// salida asomaba un resto del nombre al borde de la cápsula mientras esta se cerraba (medido en el simulador).
+    private static let titleTransition: AnyTransition = .asymmetric(
+        insertion: .opacity.animation(.easeOut(duration: DS.Animation.fast).delay(0.08)),
+        removal: .identity
+    )
+
+    var body: some View {
+        Button {
+            // Háptico de selección al cambiar de chip, en las cuatro filas (card pjum). Tocar el que ya está, nada.
+            if !isSelected { DS.Haptic.selection() }
+            if animatesSwitch {
+                action()
+            } else {
+                // Sin animación: el título grande de la pantalla parpadeaba al cambiar de chip.
+                var transaction = Transaction()
+                transaction.disablesAnimations = true
+                withTransaction(transaction) { action() }
+            }
+        } label: {
+            HStack(spacing: DS.Spacing.sm) {
+                Image(systemName: icon)
+                    .font(DS.Typography.subheadline)
+                    .accessibilityHidden(true)
+                if showsTitle {
+                    Text(title)
+                        .font(DS.Typography.label)
+                        .lineLimit(1)
+                        .transition(Self.titleTransition)
+                }
+            }
+            .padding(.horizontal, showsTitle ? DS.Spacing.lg : DS.Spacing.md)
+            .padding(.vertical, DS.Spacing.sm)
+            .frame(minWidth: 44)
+            .foregroundStyle(isSelected ? theme.onAccent : .primary)
+            .background(Capsule().fill(isSelected ? theme.accent : Color.clear))
+            // Lo que se va (el nombre que sale) se recorta a la cápsula mientras esta se estrecha.
+            .clipShape(.capsule)
+            .glassEffect(isSelected ? .clear : .regular.interactive(), in: .capsule)
+        }
+        .buttonStyle(.plain)
+        // El nombre se lee aunque el chip enseñe solo el icono.
+        .accessibilityLabel(title)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+}
+
+extension NavigationChipButton {
+    static let switchAnimation: Animation = DS.Animation.selection
+}

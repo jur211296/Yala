@@ -18,7 +18,7 @@
 //  lanza `sessionExpired` ANTES de tocar la red o el contexto (no-op verificable en tests).
 //
 //  **UNA EXCEPCIÓN, deliberada y asimétrica (D-R1 paso 2): `forgetUser()`.** Todos los demás métodos son
-//  ENTRADAS —crear, unirse, invitar, revocar, aprobar, expulsar, salir, renombrarse— y el kill remoto
+//  ENTRADAS —crear, unirse, invitar, revocar, aprobar, expulsar, salir, renombrarse, cambiar un rol— y el kill remoto
 //  existe justo para cerrarlas. `forgetUser` es un TEARDOWN: lo invoca el borrado de cuenta para
 //  anonimizar y transferir lo que el usuario YA subió, y eso sigue existiendo con el canal apagado. Si
 //  compartiera el gate compuesto, un kill remoto no retendría datos «hasta que se levante»: haría fallar
@@ -64,14 +64,18 @@ final class GroupBackendMembershipService {
 
     private let client: GroupsMembershipClient
     private let sessionCheck: @MainActor () -> Bool
+    /// El `sub` de la sesión viva, para apuntar el intento de creación (card 5d22). Inyectable en tests.
+    private let currentUserID: @MainActor () -> String?
     private let logger = Logger(subsystem: "com.yala.app", category: "GroupsMembership")
 
     init(
         client: GroupsMembershipClient,
-        sessionCheck: @escaping @MainActor () -> Bool = { CloudAuthService.shared.hasSession }
+        sessionCheck: @escaping @MainActor () -> Bool = { CloudAuthService.shared.hasSession },
+        currentUserID: @escaping @MainActor () -> String? = { CloudAuthService.shared.currentUserID }
     ) {
         self.client = client
         self.sessionCheck = sessionCheck
+        self.currentUserID = currentUserID
     }
 
     /// Gate compartido de las ENTRADAS: sin canal O sin sesión → `sessionExpired` sin request ni
@@ -129,25 +133,56 @@ final class GroupBackendMembershipService {
         )
         // C1 write-site (1): grupo del canal BACKEND → particiona enqueue/drain/routing (C2-C5).
         group.isBackendGroup = true
+
+        // Card y1ru · un reintento tras una respuesta perdida reusa la zona del intento pendiente con el mismo nombre
+        // (`PendingGroupCreationStore.reusableZone`): acuñar otra creaba un SEGUNDO grupo si el primer toque ya se había
+        // guardado. La identidad local (`id`) no cambia: en un grupo del backend la zona no se deriva de ella.
+        let creatorID = currentUserID()
+        let reusedZone = creatorID.flatMap { PendingGroupCreationStore.reusableZone(userID: $0, name: name) }
+        if let reusedZone { group.cloudKitZoneID = reusedZone }
         let zoneID = group.cloudKitZoneID
 
-        // RPC PRIMERO. Un throw aquí NO ha tocado el contexto todavía.
-        let result = try await client.createGroup(
-            groupID: zoneID,
-            name: name,
-            currencyCode: currencyCode,
-            iconName: iconName,
-            colorHex: colorHex,
-            displayName: displayName,
-            defaultSplitType: defaultSplitType,
-            simplifyDebts: simplifyDebts,
-            showDebtsInSingleCurrency: showDebtsInSingleCurrency,
-            membersCanInvite: membersCanInvite
-        )
+        // Card 5d22 · el intento se apunta ANTES del RPC: si el servidor lo guarda y la respuesta se pierde, la zona que
+        // baje después la adopta el pull como dueño (`adoptPendingCreations`). Sin `sub` no se apunta: no habría con qué
+        // atarlo a esta persona.
+        if let creatorID { PendingGroupCreationStore.record(zoneID: zoneID, userID: creatorID, name: name) }
 
+        // RPC PRIMERO. Un throw aquí NO ha tocado el contexto todavía.
+        let result: CreateGroupResult
+        do {
+            result = try await client.createGroup(
+                groupID: zoneID,
+                name: name,
+                currencyCode: currencyCode,
+                iconName: iconName,
+                colorHex: colorHex,
+                displayName: displayName,
+                defaultSplitType: defaultSplitType,
+                simplifyDebts: simplifyDebts,
+                showDebtsInSingleCurrency: showDebtsInSingleCurrency,
+                membersCanInvite: membersCanInvite
+            )
+        } catch GroupsRPCError.groupExists where reusedZone != nil {
+            // Card y1ru · la zona reusada ya existe en el servidor: es el grupo del toque anterior, que se guardó y perdió
+            // la respuesta. Es el éxito: el `member_key` del dueño es el `sub` (el servidor lo fuerza), y la zona solo
+            // se reusa con la misma sesión que la apuntó. Una zona acuñada ahora no puede existir: ahí sigue siendo error.
+            result = CreateGroupResult(groupID: zoneID, memberKey: creatorID ?? "")
+        } catch {
+            if Self.createMayHaveCommitted(error) {
+                // Ambiguo: el servidor pudo guardarlo. El intento se queda, y si un pull ya trajo la zona durante el
+                // `await`, se adopta ahora mismo (el pull no la volverá a traer).
+                Self.adoptPendingCreations(context: context, currentUserID: creatorID)
+            } else if reusedZone == nil {
+                PendingGroupCreationStore.remove(zoneID: zoneID)
+            }
+            // Card y1ru: con una zona REUSADA, un rechazo claro de ESTE toque (sesión caducada, canal apagado…) no dice
+            // nada del toque anterior, que pudo guardarse: el apunte se queda para que el pull lo adopte (review
+            // adversarial del 2026-10-28). Sin él, el grupo guardado bajaba sin dueño y el siguiente «Crear» hacía otro.
+            throw error
+        }
         // A partir de aquí el pull PUDO correr (ver el header). Todo lo que sigue resuelve por identidad
         // antes de insertar, y va entero dentro del mismo `saveUnderOutboxAuthor`.
-        return try saveUnderOutboxAuthor(context) {
+        let created = try saveUnderOutboxAuthor(context) {
             // GRUPO — identidad = la ZONA. Con filas ya presentes (born-remote del pull) se adoptan TODAS,
             // criterio ANY-row de la familia; la que se devuelve es la CANÓNICA (más antigua por `createdAt`,
             // el mismo criterio de `GroupService.group(for:)` y de `GroupsSyncClient.fetchSplitGroupRows`, o
@@ -210,6 +245,74 @@ final class GroupBackendMembershipService {
             // La CANÓNICA de la zona, o la recién insertada si la zona no existía.
             return zoneRows.first ?? group
         }
+        // Card 5d22: el intento se retira solo con la materialización ya EN DISCO. Si el guardado lanza, el servidor tiene
+        // el grupo y lo local no: el intento se queda para que el pull lo adopte (review adversarial del lote 12.1).
+        PendingGroupCreationStore.remove(zoneID: zoneID)
+        return created
+    }
+
+    // MARK: - Card 5d22 · la creación que se guardó sin respuesta
+
+    /// ¿Puede el servidor haber guardado el grupo aunque el RPC haya fallado? Solo con los errores que no dicen nada de
+    /// lo que pasó allí: el pasajero (sin red, 5xx, el token que no se renueva) y la respuesta que no se lee (un 200
+    /// cuyo cuerpo no decodifica: guardado seguro). Un rechazo con código (`yala_*`), la sesión caducada o el canal
+    /// apagado dicen que no se guardó.
+    nonisolated static func createMayHaveCommitted(_ error: Error) -> Bool {
+        guard let rpc = error as? GroupsRPCError else { return false }
+        switch rpc {
+        case .transient, .decoding: return true
+        default: return false
+        }
+    }
+
+    /// Adopta como dueño los grupos que esta persona creó y cuya respuesta se perdió: si ya hay filas de la zona
+    /// apuntada, con la MISMA sesión, escribe lo que el éxito de `createGroup` escribe y el pull no trae (`isOwner`,
+    /// el miembro propio como `isCurrentUser`/`isGroupOwner`) y retira el intento cuando ya está todo. La llaman el
+    /// final de cada página del pull (`GroupsSyncClient.applyPulledPage`) y el `catch` ambiguo de `createGroup`.
+    ///
+    /// Sin filas de la zona no hace nada: el servidor pudo no guardarlo, y el intento caduca solo. Con el grupo y sin
+    /// el miembro propio (llega en otra página) marca el grupo y espera al miembro. Con otra sesión no toca nada: el
+    /// grupo es de quien lo creó, no de quien esté ahora en el teléfono.
+    static func adoptPendingCreations(context: ModelContext, currentUserID: String?) {
+        guard let currentUserID else { return }
+        let mine = PendingGroupCreationStore.pending().filter { $0.userID == currentUserID }
+        guard !mine.isEmpty else { return }
+        var settled: [String] = []
+        var changed = false
+        let previous = context.author
+        context.author = GroupsSyncClient.outboxSaveAuthor
+        defer { context.author = previous }
+        do {
+            for entry in mine {
+                let groupRows = try groupRows(zoneID: entry.zoneID, context: context)
+                guard !groupRows.isEmpty else { continue }
+                // Solo lo que cambia: esto corre al final de CADA página del pull, y un save por página sin nada que
+                // guardar sería una transacción de History para nada.
+                for row in groupRows
+                where !row.isOwner || !row.isBackendGroup || row.initialMemberImportStartedAt != nil {
+                    row.isOwner = true
+                    row.isBackendGroup = true
+                    row.initialMemberImportStartedAt = nil
+                    changed = true
+                }
+                let memberRows = try memberRows(zoneID: entry.zoneID, memberKey: entry.userID, context: context)
+                for row in memberRows where !row.isCurrentUser || !row.isGroupOwner {
+                    row.isCurrentUser = true
+                    row.isGroupOwner = true
+                    changed = true
+                }
+                if !memberRows.isEmpty { settled.append(entry.zoneID) }
+            }
+            if changed { try context.save() }
+        } catch {
+            // El intento se queda y la página siguiente lo vuelve a intentar. Sin `rollback()`: el contexto es el
+            // compartido, y deshacer se llevaría ediciones de la persona que no son de aquí.
+            #if DEBUG
+            print("GroupBackendMembershipService: adoptPendingCreations falló: \(error)")
+            #endif
+            return
+        }
+        settled.forEach { PendingGroupCreationStore.remove(zoneID: $0) }
     }
 
     // MARK: - Resolución por identidad (post-`await`)
@@ -251,6 +354,13 @@ final class GroupBackendMembershipService {
     func remove(groupID: String, memberKey: String) async throws -> MemberActionResult {
         try ensureEligible()
         return try await client.removeMember(groupID: groupID, memberKey: memberKey)
+    }
+
+    /// L19-3: RPC only (`set_member_role`, g22_01). Es una ENTRADA más: gate compuesto, la corta el kill. Quien
+    /// escribe el rol en local tras el éxito es `GroupService.changeRole`, no este service.
+    func setRole(groupID: String, memberKey: String, role: String) async throws -> SetMemberRoleResult {
+        try ensureEligible()
+        return try await client.setMemberRole(groupID: groupID, memberKey: memberKey, role: role)
     }
 
     func leave(groupID: String) async throws -> MemberActionResult {

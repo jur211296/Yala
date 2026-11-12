@@ -24,9 +24,11 @@ enum AccountTagDuplicateCountLogic {
 
     /// Identidad de contenido de una cuenta: las copias del mismo registro lógico
     /// comparten estos campos (difieren solo en el `shortcutID` regenerado / recordName).
-    /// Incluye `isSystemAccount` para no mezclar la cuenta virtual de grupos con las del usuario.
+    /// Incluye `isSystemAccount` para no mezclar la cuenta virtual de grupos con las del usuario, y el enlace de
+    /// la tarjeta con varias divisas (`parentAccountID`): dos copias del mismo registro comparten el enlace, y una
+    /// línea no es la misma cuenta que una cuenta suelta con el mismo nombre y divisa, ni que la línea de otra tarjeta.
     static func accountIdentity(_ account: Account) -> String {
-        "\(account.name)|\(account.type)|\(account.currencyCode)|\(account.isSystemAccount)"
+        "\(account.name)|\(account.type)|\(account.currencyCode)|\(account.isSystemAccount)|\(account.parentAccountID?.uuidString ?? "-")"
     }
 
     /// Identidad de contenido de un tag.

@@ -53,6 +53,28 @@ nonisolated enum YalaAccountLogic {
         }
     }
 
+    /// UX 2.2 · L20-9 (decisión de Jürgen, 2026-10-18): **arriba, con qué cuenta estás.** El correo si lo hay —el de la
+    /// sesión primero, porque Apple solo entrega el correo en el primer inicio de sesión—, si no el nombre capturado, y si
+    /// no, nada (la vista enseña entonces la línea del método de siempre). Un texto vacío o de espacios cuenta como ausente.
+    enum Identity: Equatable { case email(String), name(String), none }
+
+    static func identity(sessionEmail: String?, capturedEmail: String?, capturedName: String?) -> Identity {
+        func clean(_ s: String?) -> String? {
+            guard let s = s?.trimmingCharacters(in: .whitespacesAndNewlines), !s.isEmpty else { return nil }
+            return s
+        }
+        if let email = clean(sessionEmail) ?? clean(capturedEmail) { return .email(email) }
+        if let name = clean(capturedName) { return .name(name) }
+        return .none
+    }
+
+    /// L20-9 · «Dónde viven tus datos» es una fila que abre esa pantalla, **salvo en solo grupos sin sesión privada**: ahí
+    /// esa pantalla ya no se ofrece (L19-15, que la oculta en Ajustes porque hablaba de iCloud a quien no tiene datos
+    /// personales), y enlazarla desde aquí la reabriría por otra puerta. Ahí queda como texto.
+    static func dataLocationOpensStorage(_ location: DataLocation) -> Bool {
+        location != .groupsOnlyNoPrivate
+    }
+
     /// Modelo de la pantalla. `canDeleteAccount` lo deriva el callsite de `AccountDeletionRowLogic.shouldShow(...)`
     /// —toda sesión en la nube salvo la visita M1—, así que la pantalla nunca ofrece un borrado que el servicio
     /// no haría. `hasPrivateSession` es el mismo eje que el cierre de sesión y va SIN valor por defecto a

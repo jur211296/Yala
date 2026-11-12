@@ -1216,7 +1216,8 @@ struct RemoteUnbridgeWiringTests {
                 """)
         #expect(src.contains("pointerResolves: bridgedPointerResolves"),
                 "La policy volvió a decidir sin saber si el puntero resuelve.")
-        #expect(src.contains("guard let tx = transactionToEdit, bridgedPointerResolves else { return false }"),
+        // Desde la card 1w89 lee el registro por el accesor que mira si está borrado (`DeletedModelFormGuardWiringTests`).
+        #expect(src.contains("guard let tx = readableTransactionToEdit, bridgedPointerResolves else { return false }"),
                 "`isBridgedReadOnly` volvió al criterio «puntero no nulo».")
         // El guard de Duplicar/Borrar. `isBridgedCasoA` es el que desactiva Borrar, así que sin él la
         // huérfana de cuenta real sigue sin poder eliminarse aunque el resto del form se desbloquee.

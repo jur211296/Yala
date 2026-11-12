@@ -2,6 +2,70 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>account.deleteConfirmMessage</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Deze rekening heeft %d boeking. Die wordt niet verwijderd: hij blijft in Boekingen, zonder rekening. Wil je de rekening alleen niet meer zien, archiveer haar dan. Dit kan niet ongedaan worden gemaakt.</string>
+			<key>other</key>
+			<string>Deze rekening heeft %d boekingen. Ze worden niet verwijderd: ze blijven in Boekingen, zonder rekening. Wil je de rekening alleen niet meer zien, archiveer haar dan. Dit kan niet ongedaan worden gemaakt.</string>
+		</dict>
+	</dict>
+	<key>category.cannotDeleteMessage</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Deze categorie heeft een subcategorie met %d boeking. Verwijder of verplaats eerst die boeking uit de subcategorie om deze categorie te kunnen verwijderen.</string>
+			<key>other</key>
+			<string>Deze categorie heeft subcategorieën met %d boekingen. Verwijder of verplaats eerst de boekingen uit elke subcategorie om deze categorie te kunnen verwijderen.</string>
+		</dict>
+	</dict>
+	<key>subcategory.deleteTransactionsConfirmMessage</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d boeking wordt permanent verwijderd. Deze actie kan niet ongedaan worden gemaakt.</string>
+			<key>other</key>
+			<string>%d boekingen worden permanent verwijderd. Deze actie kan niet ongedaan worden gemaakt.</string>
+		</dict>
+	</dict>
+	<key>subcategory.transferDescription</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Er staat %1$d boeking in "%2$@". Kies wat je ermee wilt doen voordat je verwijdert.</string>
+			<key>other</key>
+			<string>Er staan %1$d boekingen in "%2$@". Kies wat je ermee wilt doen voordat je verwijdert.</string>
+		</dict>
+	</dict>
 	<key>panel.panorama.collapsedSummary</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -29,7 +93,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Verwijder %d boekingen?</string>
+			<string>Verwijder %d boeking?</string>
 			<key>other</key>
 			<string>Verwijder %d boekingen?</string>
 		</dict>
@@ -45,9 +109,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d subcategoriey geselecteerd</string>
+			<string>%d subcategorie geselecteerd</string>
 			<key>other</key>
-			<string>%d subcategorieies geselecteerd</string>
+			<string>%d subcategorieën geselecteerd</string>
 		</dict>
 	</dict>
 	<key>import.recordsImported</key>
@@ -61,7 +125,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d boekingen succesvol geïmporteerd.</string>
+			<string>%d boeking succesvol geïmporteerd.</string>
 			<key>other</key>
 			<string>%d boekingen succesvol geïmporteerd.</string>
 		</dict>
@@ -77,7 +141,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d automatische boekingen toegevoegd aan je inbox.</string>
+			<string>%d automatische boeking toegevoegd aan je inbox.</string>
 			<key>other</key>
 			<string>%d automatische boekingen toegevoegd aan je inbox.</string>
 		</dict>
@@ -93,9 +157,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d subcategoriey geselecteerd</string>
+			<string>%d subcategorie geselecteerd</string>
 			<key>other</key>
-			<string>%d subcategorieies geselecteerd</string>
+			<string>%d subcategorieën geselecteerd</string>
 		</dict>
 	</dict>
 	<key>scheduled.widget.daysAgo</key>
@@ -109,7 +173,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d dagen geleden</string>
+			<string>%d dag geleden</string>
 			<key>other</key>
 			<string>%d dagen geleden</string>
 		</dict>
@@ -125,7 +189,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Over %d dagen</string>
+			<string>Over %d dag</string>
 			<key>other</key>
 			<string>Over %d dagen</string>
 		</dict>
@@ -141,7 +205,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d actieve betalingen</string>
+			<string>%d actieve betaling</string>
 			<key>other</key>
 			<string>%d actieve betalingen</string>
 		</dict>
@@ -157,7 +221,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d dagen geleden</string>
+			<string>%d dag geleden</string>
 			<key>other</key>
 			<string>%d dagen geleden</string>
 		</dict>
@@ -173,7 +237,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Over %d dagen</string>
+			<string>Over %d dag</string>
 			<key>other</key>
 			<string>Over %d dagen</string>
 		</dict>
@@ -189,7 +253,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d dagen niet opgeslagen in iCloud</string>
+			<string>%d dag niet opgeslagen in iCloud</string>
 			<key>other</key>
 			<string>%d dagen niet opgeslagen in iCloud</string>
 		</dict>
@@ -205,7 +269,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d dagen sinds laatste synchronisatie</string>
+			<string>%d dag sinds laatste synchronisatie</string>
 			<key>other</key>
 			<string>%d dagen sinds laatste synchronisatie</string>
 		</dict>
@@ -221,7 +285,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Nog %d dagen</string>
+			<string>Nog %d dag</string>
 			<key>other</key>
 			<string>Nog %d dagen</string>
 		</dict>
@@ -237,7 +301,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Selecteer %d rekeningen om te behouden</string>
+			<string>Selecteer %d rekening om te behouden</string>
 			<key>other</key>
 			<string>Selecteer %d rekeningen om te behouden</string>
 		</dict>
@@ -253,7 +317,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Selecteer %d budgets om te behouden</string>
+			<string>Selecteer %d budget om te behouden</string>
 			<key>other</key>
 			<string>Selecteer %d budgets om te behouden</string>
 		</dict>
@@ -269,7 +333,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Je hebt deze periode %d gedeelde uitgaven</string>
+			<string>Je hebt deze periode %d gedeelde uitgave</string>
 			<key>other</key>
 			<string>Je hebt deze periode %d gedeelde uitgaven</string>
 		</dict>
@@ -301,7 +365,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d gedeelde uitgaven. Doen jullie ALLES samen?</string>
+			<string>%d gedeelde uitgave. Doen jullie ALLES samen?</string>
 			<key>other</key>
 			<string>%d gedeelde uitgaven. Doen jullie ALLES samen?</string>
 		</dict>
@@ -317,9 +381,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d uitgaven geregistreerd!</string>
+			<string>%d boeking!</string>
 			<key>other</key>
-			<string>%d uitgaven geregistreerd!</string>
+			<string>%d boekingen!</string>
 		</dict>
 	</dict>
 	<key>groups.activate.importPrompt</key>
@@ -349,7 +413,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Je groep heeft %d nieuwe uitgaven sinds je laatste bezoek.</string>
+			<string>Je groep heeft %d nieuwe uitgave sinds je laatste bezoek.</string>
 			<key>other</key>
 			<string>Je groep heeft %d nieuwe uitgaven sinds je laatste bezoek.</string>
 		</dict>
@@ -365,7 +429,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d stappen</string>
+			<string>%d stap</string>
 			<key>other</key>
 			<string>%d stappen</string>
 		</dict>
@@ -466,6 +530,22 @@
 			<string>%d boekingen omrekenen?</string>
 		</dict>
 	</dict>
+	<key>storage.sync.needsSignIn</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Meld je aan om %d wijziging te uploaden</string>
+			<key>other</key>
+			<string>Meld je aan om %d wijzigingen te uploaden</string>
+		</dict>
+	</dict>
 	<key>storage.sync.waitingForConnection</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -480,6 +560,832 @@
 			<string>%d wijziging wacht op verbinding</string>
 			<key>other</key>
 			<string>%d wijzigingen wachten op verbinding</string>
+		</dict>
+	</dict>
+	<key>welcome.restore.foundAccounts</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%d rekeningen</string>
+			<key>one</key>
+			<string>%d rekening</string>
+			<key>other</key>
+			<string>%d rekeningen</string>
+		</dict>
+	</dict>
+	<key>welcome.restore.foundTransactions</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%d records</string>
+			<key>one</key>
+			<string>%d record</string>
+			<key>other</key>
+			<string>%d records</string>
+		</dict>
+	</dict>
+	<key>welcome.restore.foundBudgets</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%d budgetten</string>
+			<key>one</key>
+			<string>%d budget</string>
+			<key>other</key>
+			<string>%d budgetten</string>
+		</dict>
+	</dict>
+	<key>welcome.restore.foundGroups</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%d gedeelde groepen</string>
+			<key>one</key>
+			<string>%d gedeelde groep</string>
+			<key>other</key>
+			<string>%d gedeelde groepen</string>
+		</dict>
+	</dict>
+	<key>welcome.privateICloud.foundCategories</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%d categorieën</string>
+			<key>one</key>
+			<string>%d categorie</string>
+			<key>other</key>
+			<string>%d categorieën</string>
+		</dict>
+	</dict>
+	<key>inbox.pendingBadge</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d in afwachting</string>
+			<key>other</key>
+			<string>%d in afwachting</string>
+		</dict>
+	</dict>
+	<key>inbox.selectedCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d geselecteerd</string>
+			<key>other</key>
+			<string>%d geselecteerd</string>
+		</dict>
+	</dict>
+	<key>inbox.deleteConfirmMessage</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Weet je zeker dat je %d concept wilt verwijderen?</string>
+			<key>other</key>
+			<string>Weet je zeker dat je %d concepten wilt verwijderen?</string>
+		</dict>
+	</dict>
+	<key>inbox.approveableCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d van %2$d klaar om op te slaan</string>
+			<key>other</key>
+			<string>%1$d van %2$d klaar om op te slaan</string>
+		</dict>
+	</dict>
+	<key>inbox.alert.message.scheduled</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d geplande betaling is aan je inbox toegevoegd.</string>
+			<key>other</key>
+			<string>%d geplande betalingen zijn aan je inbox toegevoegd.</string>
+		</dict>
+	</dict>
+	<key>inbox.alert.message.subscriptions</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d abonnement is aan je inbox toegevoegd.</string>
+			<key>other</key>
+			<string>%d abonnementen zijn aan je inbox toegevoegd.</string>
+		</dict>
+	</dict>
+	<key>inbox.alert.message.mixed.scheduled</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d betaling</string>
+			<key>other</key>
+			<string>%d betalingen</string>
+		</dict>
+	</dict>
+	<key>inbox.alert.message.mixed.subscriptions</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d abonnement</string>
+			<key>other</key>
+			<string>%d abonnementen</string>
+		</dict>
+	</dict>
+	<key>inbox.alert.message.mixed.automations</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d automatische boeking</string>
+			<key>other</key>
+			<string>%d automatische boekingen</string>
+		</dict>
+	</dict>
+	<key>records.selectedCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d geselecteerd</string>
+			<key>other</key>
+			<string>%d geselecteerd</string>
+		</dict>
+	</dict>
+	<key>records.groupRecordsKept</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d komt uit een groep en wordt hier niet verwijderd: verwijder hem in de groep.</string>
+			<key>other</key>
+			<string>%d komen uit een groep en worden hier niet verwijderd: verwijder ze in de groep.</string>
+		</dict>
+	</dict>
+	<key>search.resultsCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d resultaat</string>
+			<key>other</key>
+			<string>%d resultaten</string>
+		</dict>
+	</dict>
+	<key>scheduled.frequency.every.days</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Elke dag</string>
+			<key>other</key>
+			<string>Elke %d dagen</string>
+		</dict>
+	</dict>
+	<key>scheduled.frequency.every.weeks</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Elke week</string>
+			<key>other</key>
+			<string>Elke %d weken</string>
+		</dict>
+	</dict>
+	<key>scheduled.frequency.every.months</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Elke maand</string>
+			<key>other</key>
+			<string>Elke %d maanden</string>
+		</dict>
+	</dict>
+	<key>scheduled.frequency.every.years</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Elk jaar</string>
+			<key>other</key>
+			<string>Elke %d jaar</string>
+		</dict>
+	</dict>
+	<key>import.preview.failuresHeader</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d rij wordt niet geïmporteerd</string>
+			<key>other</key>
+			<string>%d rijen worden niet geïmporteerd</string>
+		</dict>
+	</dict>
+	<key>records.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d boeking</string>
+			<key>other</key>
+			<string>%d boekingen</string>
+		</dict>
+	</dict>
+	<key>category.cannotDelete.records</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Ze heeft %d boeking.</string>
+			<key>other</key>
+			<string>Ze heeft %d boekingen.</string>
+		</dict>
+	</dict>
+	<key>import.result.notImported</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d rij is niet geïmporteerd:</string>
+			<key>other</key>
+			<string>%d rijen zijn niet geïmporteerd:</string>
+		</dict>
+	</dict>
+	<key>import.preview.futureIgnored</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d rij heeft een datum in de toekomst en blijft buiten.</string>
+			<key>other</key>
+			<string>%d rijen hebben een datum in de toekomst en blijven buiten.</string>
+		</dict>
+	</dict>
+	<key>import.preview.importButton</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d boeking importeren</string>
+			<key>other</key>
+			<string>%d boekingen importeren</string>
+		</dict>
+	</dict>
+	<key>tag.deleteConfirm.message</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Het label verdwijnt van %d boeking; de boeking blijft. Dit kan niet ongedaan worden gemaakt.</string>
+			<key>other</key>
+			<string>Het label verdwijnt van %d boekingen; de boekingen blijven. Dit kan niet ongedaan worden gemaakt.</string>
+		</dict>
+	</dict>
+	<key>import.preview.more</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>… en nog %d</string>
+			<key>other</key>
+			<string>… en nog %d</string>
+		</dict>
+	</dict>
+	<key>records.l8b.duplicates.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d mogelijk duplicaat</string>
+			<key>other</key>
+			<string>%d mogelijke duplicaten</string>
+		</dict>
+	</dict>
+	<key>records.l8b.duplicates.groups</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d groep</string>
+			<key>other</key>
+			<string>%d groepen</string>
+		</dict>
+	</dict>
+	<key>records.l8b.duplicates.groupSize</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d gelijke boeking</string>
+			<key>other</key>
+			<string>%d gelijke boekingen</string>
+		</dict>
+	</dict>
+	<key>records.l8b.duplicates.removeTitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d herhaling verwijderen?</string>
+			<key>other</key>
+			<string>%d herhalingen verwijderen?</string>
+		</dict>
+	</dict>
+	<key>records.l8b.duplicates.keptShared</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d komt uit Groepen en blijft: verwijder hem daar.</string>
+			<key>other</key>
+			<string>%d komen uit Groepen en blijven: verwijder ze daar.</string>
+		</dict>
+	</dict>
+	<key>records.l8b.bulk.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d boeking bewerken</string>
+			<key>other</key>
+			<string>%d boekingen bewerken</string>
+		</dict>
+	</dict>
+	<key>records.l8b.bulk.distinctAccounts</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d rekening</string>
+			<key>other</key>
+			<string>%d verschillende rekeningen</string>
+		</dict>
+	</dict>
+	<key>records.l8b.bulk.distinctSubcategories</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d subcategorie</string>
+			<key>other</key>
+			<string>%d verschillende subcategorieën</string>
+		</dict>
+	</dict>
+	<key>records.l8b.bulk.summaryTitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Je wijzigt in %d boeking:</string>
+			<key>other</key>
+			<string>Je wijzigt in %d boekingen:</string>
+		</dict>
+	</dict>
+	<key>records.l8b.bulk.apply</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Toepassen op %d boeking</string>
+			<key>other</key>
+			<string>Toepassen op %d boekingen</string>
+		</dict>
+	</dict>
+	<key>l20d.export.willExport</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d boeking wordt geëxporteerd</string>
+			<key>other</key>
+			<string>%d boekingen worden geëxporteerd</string>
+		</dict>
+	</dict>
+	<key>l20d.export.exportCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d boeking exporteren</string>
+			<key>other</key>
+			<string>%d boekingen exporteren</string>
+		</dict>
+	</dict>
+	<key>l20n.count.records</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d boeking</string>
+			<key>other</key>
+			<string>%d boekingen</string>
+		</dict>
+	</dict>
+	<key>l20n.count.accounts</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d rekening</string>
+			<key>other</key>
+			<string>%d rekeningen</string>
+		</dict>
+	</dict>
+	<key>l20n.count.budgets</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d budget</string>
+			<key>other</key>
+			<string>%d budgetten</string>
+		</dict>
+	</dict>
+	<key>stepGuide.remaining</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Nog %d stap · je voortgang wordt bewaard</string>
+			<key>other</key>
+			<string>Nog %d stappen · je voortgang wordt bewaard</string>
+		</dict>
+	</dict>
+	<key>usageMode.back.savedTitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Je hebt %d bewaarde boeking</string>
+			<key>other</key>
+			<string>Je hebt %d bewaarde boekingen</string>
+		</dict>
+	</dict>
+	<key>usageMode.back.savedQuestion</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Wat doen we ermee?</string>
+			<key>other</key>
+			<string>Wat doen we ermee?</string>
+		</dict>
+	</dict>
+	<key>usageMode.count.records</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d boeking</string>
+			<key>other</key>
+			<string>%d boekingen</string>
+		</dict>
+	</dict>
+	<key>usageMode.count.accounts</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d rekening</string>
+			<key>other</key>
+			<string>%d rekeningen</string>
+		</dict>
+	</dict>
+	<key>usageMode.count.budgets</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d budget</string>
+			<key>other</key>
+			<string>%d budgetten</string>
+		</dict>
+	</dict>
+	<key>account.removal.recordCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d boeking</string>
+			<key>other</key>
+			<string>%d boekingen</string>
 		</dict>
 	</dict>
 </dict>

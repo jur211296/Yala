@@ -63,9 +63,12 @@ final class GroupsEducationalUITests: XCTestCase {
     /// además el CTA de identidad — que para quien nunca tuvo cuenta dice «crear», no «iniciar sesión».
     /// Que el botón exista es lo que este caso afirma; el copy exacto lo fija la tabla de
     /// `GroupsOnboardingLogic` y la revisión humana contra BRAND-VOICE.
+    ///
+    /// Desde UX 2.2 · L12-4 el cierre ES el consentimiento cuando falta: este caso lo siembra aceptado para que el cierre
+    /// vuelva a ser el de la cuenta. El del consentimiento va en el caso siguiente.
     func test_educational_lastStep_offersIdentityCTA_whenNoSession() {
         let app = XCUIApplication()
-        app.launchForUITest(seed: nil, deeplink: "groups", groupsEducativo: true)
+        app.launchForUITest(seed: nil, deeplink: "groups", groupsConsent: true, groupsEducativo: true)
         // Convención del repo: esperar la señal, jamás un sleep. El educativo lo monta el `onAppear` del
         // tab, que llega DESPUÉS del bootstrap; sin este anclaje el primer caso de la corrida mide el
         // arranque en vez del comportamiento (medido: fallaba solo el primero en ejecutarse).
@@ -85,6 +88,66 @@ final class GroupsEducationalUITests: XCTestCase {
             hacerlo (`GroupsOnboardingLogic.shouldShowSignInCTA`): es la conversión del paso A1.
             """
         )
+    }
+
+    /// **UX 2.2 · L12-4/L12-5 (decisiones B de Jürgen): el paso 3 ES el consentimiento.** Sin sesión y sin
+    /// consentimiento, su botón principal es «Aceptar y continuar»; aceptar cierra el educativo y sigue a la cuenta,
+    /// sin pasar por la hoja «Grupos en la nube», que contaba lo mismo otra vez.
+    func test_educational_lastStep_isTheConsent_andAcceptingGoesStraightToTheAccount() {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: nil, deeplink: "groups", groupsEducativo: true)
+        XCTAssertTrue(app.waitForUITestReady(), "La app no llegó a `uitest_ready`.")
+
+        let cta = app.buttons["groups_onboarding_cta"]
+        XCTAssertTrue(cta.waitForExistence(timeout: 30), "El educativo no se montó.")
+        cta.tap()
+        XCTAssertTrue(cta.waitForExistence(timeout: 5), "El educativo no avanzó al step 2.")
+        cta.tap()
+
+        let accept = app.buttons["groups_onboarding_consent_accept"]
+        XCTAssertTrue(accept.waitForExistence(timeout: 5),
+                      "El paso 3 no ofrece «Aceptar y continuar»: sin consentimiento, el cierre tiene que ser el consentimiento.")
+        XCTAssertFalse(app.buttons["groups_onboarding_signin_cta"].exists,
+                       "Con el consentimiento por dar, el principal no puede ser el de la cuenta (dos pantallas para una decisión).")
+        accept.tap()
+
+        XCTAssertTrue(app.buttons["groups_signin_button_google"].waitForExistence(timeout: 15),
+                      "Tras aceptar en el paso 3, la cadena tiene que seguir a la cuenta.")
+        XCTAssertTrue(app.staticTexts["groups_signin_either_way"].exists,
+                      "«Conecta tu cuenta» no dice que los dos botones entran o crean la cuenta (L12-7).")
+        XCTAssertFalse(app.buttons["groups_consent_accept"].exists,
+                       "Salió la hoja del consentimiento después de aceptarlo en el paso 3.")
+    }
+
+    /// **El segundo botón del paso del consentimiento se llama «Ahora no»** (decisión B de Jürgen, 2026-10-21): «Ir a
+    /// Grupos» se leía como el mismo destino que «Aceptar y continuar». Sigue saliendo sin aceptar. Se afirma el texto
+    /// porque el cambio ES el texto; las dos lenguas del simulador (es y en) caben en la lista.
+    func test_educational_consentStep_secondaryButtonSaysNotNow() {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: nil, deeplink: "groups", groupsEducativo: true)
+        XCTAssertTrue(app.waitForUITestReady(), "La app no llegó a `uitest_ready`.")
+
+        let cta = app.buttons["groups_onboarding_cta"]
+        XCTAssertTrue(cta.waitForExistence(timeout: 30), "El educativo no se montó.")
+        cta.tap()
+        XCTAssertTrue(cta.waitForExistence(timeout: 5), "El educativo no avanzó al step 2.")
+        cta.tap()
+
+        XCTAssertTrue(app.buttons["groups_onboarding_consent_accept"].waitForExistence(timeout: 5),
+                      "El paso 3 no es el del consentimiento.")
+        let secondary = app.buttons["groups_onboarding_cta"]
+        XCTAssertTrue(secondary.waitForExistence(timeout: 5), "El paso 3 perdió su segundo botón.")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "educativo-grupos-paso-3"
+        shot.lifetime = .keepAlways
+        add(shot)
+        XCTAssertTrue(["Ahora no", "Not now"].contains(secondary.label),
+                      "El segundo botón dice «\(secondary.label)», no «Ahora no».")
+
+        // Sale sin aceptar: no hay hoja de la cuenta detrás.
+        secondary.tap()
+        XCTAssertFalse(app.buttons["groups_signin_button_google"].waitForExistence(timeout: 3),
+                       "«Ahora no» no puede seguir a la cuenta: sale sin aceptar.")
     }
 
     /// La otra dirección, y la que impide que el seam se lea como «el educativo sale siempre»: **sin el

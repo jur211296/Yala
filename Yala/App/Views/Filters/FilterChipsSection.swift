@@ -29,6 +29,9 @@ struct FilterChipsSection<Item: Identifiable, ChipContent: View>: View {
     /// Whether to show an empty state placeholder when items is empty
     var showEmptyPlaceholder: Bool = true
 
+    /// Ver `FilterSectionHeader.parenthesizesStatus`.
+    var parenthesizesStatus: Bool = true
+
     /// Builder for individual chip content
     @ViewBuilder let chipContent: (Item) -> ChipContent
 
@@ -40,7 +43,8 @@ struct FilterChipsSection<Item: Identifiable, ChipContent: View>: View {
             FilterSectionHeader(
                 icon: icon,
                 title: title,
-                status: status
+                status: status,
+                parenthesizesStatus: parenthesizesStatus
             )
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.top, DS.Spacing.md)

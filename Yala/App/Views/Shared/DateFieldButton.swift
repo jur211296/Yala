@@ -20,7 +20,7 @@ struct DateFieldButton: View {
         Button { showSheet = true } label: {
             Text(date.formatted(date: .abbreviated, time: .omitted))
                 .font(DS.Typography.body)
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
         }
         .buttonStyle(.plain)
         .contentShape(Rectangle())

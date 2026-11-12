@@ -23,6 +23,8 @@ enum RootCommand: Equatable {
     case yalaAI
     case settings
     case section(ConfigurableTab)
+    /// ⌘Z: deshace el último borrado mientras dura su aviso (UX 2.2 · L15-13).
+    case undoDeletion
 }
 
 /// Lo que la ventana ofrece a los atajos globales.
@@ -33,6 +35,8 @@ struct RootCommandActions {
     let canSearch: Bool
     /// Shell de solo grupos: el Panel no es alcanzable, así que lo que abre sobre él no se ofrece.
     let isGroupsOnly: Bool
+    /// ⌘Z: hay en pantalla el aviso de un borrado con «Deshacer» (`UndoNoticeState`).
+    var canUndoDeletion: Bool = false
     let perform: (RootCommand) -> Void
 }
 
@@ -41,6 +45,8 @@ struct RecordCommandActions {
     let hasOpenRecord: Bool
     /// ⌫: el registro abierto se puede borrar (`RecordContextActionLogic`).
     let canDeleteOpenRecord: Bool
+    /// El registro abierto viene de un grupo: «Eliminar» sale apagado con su motivo (UX 2.2 · L15-13).
+    var openRecordIsFromGroup: Bool = false
     let editOpenRecord: () -> Void
     let deleteOpenRecord: () -> Void
     let move: (KeyboardCommandLogic.Direction) -> Void
@@ -69,6 +75,17 @@ struct YalaCommands: Commands {
                 .disabled(root == nil)
         }
 
+        // ⌘Z deshace el último borrado durante los segundos de su aviso (UX 2.2 · L15-13). SUSTITUYE al grupo de
+        // deshacer del sistema solo mientras hay aviso: sumarse a él deja dos ⌘Z en el menú y UIKit cierra la app al
+        // reconstruirlo («Replacement elements contain duplicates», medido el 2026-10-20). Fuera de esos segundos el
+        // grupo del sistema queda intacto, con el deshacer de los campos de texto.
+        if root?.canUndoDeletion == true {
+            CommandGroup(replacing: .undoRedo) {
+                Button(L10n.Inbox.undoDiscard) { root?.perform(.undoDeletion) }
+                    .keyboardShortcut("z", modifiers: .command)
+            }
+        }
+
         CommandGroup(replacing: .appSettings) {
             Button(L10n.Settings.title) { root?.perform(.settings) }
                 .keyboardShortcut(",", modifiers: .command)
@@ -93,9 +110,15 @@ struct YalaCommands: Commands {
             Button(L10n.Action.edit) { records?.editOpenRecord() }
                 .keyboardShortcut("e", modifiers: .command)
                 .disabled(records?.hasOpenRecord != true)
-            Button(L10n.Action.delete, role: .destructive) { records?.deleteOpenRecord() }
-                .keyboardShortcut(.delete, modifiers: [])
-                .disabled(records?.canDeleteOpenRecord != true)
+            Button(role: .destructive) { records?.deleteOpenRecord() } label: {
+                Text(L10n.Action.delete)
+                // Apagado en un registro de grupo, y el porqué (UX 2.2 · L15-13).
+                if records?.openRecordIsFromGroup == true {
+                    Text(L10n.UXL08D.deleteFromGroup)
+                }
+            }
+            .keyboardShortcut(.delete, modifiers: [])
+            .disabled(records?.canDeleteOpenRecord != true)
             Divider()
             Button(L10n.Keyboard.previousRecord) { records?.move(.previous) }
                 .keyboardShortcut(.upArrow, modifiers: [])
@@ -123,6 +146,11 @@ enum RootCommandPerformer {
     }
 
     static func perform(_ command: RootCommand, navigation: SceneNavigation, canSearch: Bool) {
+        // Deshacer no abre nada: el aviso vive en su propia ventana y no cuenta como algo presentado.
+        if command == .undoDeletion {
+            DraftDiscardUndoNotice.performActiveUndo()
+            return
+        }
         guard keyboardMayAct(navigation) else { return }
         // Lo que el atajo encole en el router va a ESTA ventana, la que recibió la tecla.
         SceneRegistry.shared.noteFocused(navigation.id)
@@ -144,6 +172,8 @@ enum RootCommandPerformer {
             navigation.selectMainTab(.panel)
         case .section(let tab):
             navigation.selectMainTab(tab.appTab)
+        case .undoDeletion:
+            break
         }
     }
 }

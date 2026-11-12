@@ -107,6 +107,16 @@ struct ApplePayTransactionIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
+        // Con Yala solo en grupos no se registra nada (encargo S11e): el borrador caería en una Bandeja que esa shell no
+        // enseña. El aviso dice cómo volver, y su toque abre la vuelta o la activación. El pago no se encola.
+        if case .blocked(let entry) = GroupsOnlyIntentGate.current() {
+            await NotificationService.shared.sendNotification(
+                title: NSLocalizedString(GroupsOnlyIntentGate.applePayTitleKey, comment: ""),
+                body: NSLocalizedString(GroupsOnlyIntentGate.applePayBodyKey(for: entry), comment: ""),
+                deepLink: GroupsOnlyIntentGate.activationDeepLink
+            )
+            return .result()
+        }
         guard let amountString = amount else {
             await notifyFailure()
             return .result()
@@ -137,10 +147,18 @@ struct ApplePayTransactionIntent: AppIntent {
         )
         IntentSignalBreadcrumb.set("applePay")
 
-        let notifCurrency = parsed.currency ?? "USD"
+        // «Pago de S/ 25,90 en Tambo por revisar · Tócalo para aprobarlo.» (auditoría UX 2.2, lote 15, L15-8): es un
+        // borrador por aprobar, no un registro. La moneda es la que pondrá el borrador (`ApplePayCurrencyHint`): sin
+        // símbolo, la de la última cuenta usada; antes caía a dólares y contradecía a la Bandeja.
+        let notifCurrency = ApplePayCurrencyHint.notificationCurrency(
+            parsedCurrency: parsed.currency,
+            ambiguousSymbol: parsed.ambiguousSymbol,
+            hint: ApplePayCurrencyHint.read(),
+            lastUsedAccountID: LastUsedAccountStore.read(),
+            defaultCurrency: SiriIntentContextCache.read()?.defaultCurrency
+        )
         let notifAmount = YalaFormatterStatic.currency(value: abs(parsed.amount), currencyCode: notifCurrency, forceFullPrecision: true)
-        let noteText = merchantText.isEmpty ? "" : " — \(merchantText)"
-        let notifBody = L10n.Shortcut.Notification.body(L10n.Shortcut.Notification.expense, notifAmount, noteText)
+        let notifTitle = L10n.Shortcut.Notification.applePayTitle(amount: notifAmount, merchant: merchantText)
 
         // Sin ProvidesDialog/ShowsSnippetView: la automation Wallet corre con la pantalla
         // bloqueada, donde iOS no puede presentar UI → reportaría "no se pudo ejecutar el
@@ -149,8 +167,8 @@ struct ApplePayTransactionIntent: AppIntent {
         // notificationCenter.add() (~ms), muy por debajo del budget, y await garantiza el envío
         // antes de que el proceso del intent termine.
         await NotificationService.shared.sendNotification(
-            title: L10n.Shortcut.Notification.title,
-            body: notifBody,
+            title: notifTitle,
+            body: L10n.Shortcut.Notification.applePayBody,
             deepLink: "inbox"
         )
 
@@ -181,7 +199,8 @@ struct SiriNaturalEntryIntent: AppIntent {
     static var title: LocalizedStringResource = "shortcut.siriNatural.title"
     static var description = IntentDescription("shortcut.siriNatural.description")
 
-    static var openAppWhenRun: Bool = false
+    /// En segundo plano siempre, salvo sin Pro: entonces abre Yala en la hoja de Pro (`continueInForeground`).
+    static var supportedModes: IntentModes { [.background, .foreground(.dynamic)] }
 
     @Parameter(title: "shortcut.siriNatural.param.text",
                requestValueDialog: "shortcut.siriNatural.dialog.askText")
@@ -191,22 +210,40 @@ struct SiriNaturalEntryIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetView {
-        // Step 1: Get text (request if not provided via Siri phrase)
+        // Step 0: con Yala solo en grupos no se anota (encargo S11e). Antes que Pro y antes de pedir el texto: dictarlo
+        // para tirarlo sería perderlo. Siri lo dice y abre Yala en la vuelta o la activación.
+        if case .blocked(let entry) = GroupsOnlyIntentGate.current() {
+            return .result(dialog: await openFullModeActivation(entry), view: EmptyView())
+        }
+
+        // Step 1: ¿Pro? Se mira ANTES de pedir el texto: sin Pro, dictarlo para tirarlo era perderlo. Sin Pro, Siri lo
+        // dice y abre Yala en la hoja de Pro de la voz (auditoría UX 2.2, lote 15, L15-6, opción B). Si el modelo del
+        // iPhone está listo, el usuario gratis anota igual leyendo el texto en el teléfono (`SiriOnDeviceEntry`,
+        // encendido el 2026-10-21). Cada invocación deja la señal del gate (`siriEntryRoute`), sin datos personales.
+        let isProUser = UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)?.bool(forKey: AppPreferences.Keys.isProUser) ?? false
+        let modelState = SiriOnDeviceEntry.modelState
+        let route = SiriEntryRoute.decide(
+            isPro: isProUser,
+            onDeviceEnabled: SiriOnDeviceEntry.isEnabled,
+            model: modelState
+        )
+        MetricsService.canaryFromIntent(
+            .siriEntryRoute, detail: "route=\(route.rawValue) model=\(modelState.rawValue)"
+        )
+        if route == .upgrade {
+            return .result(dialog: await openProSheet(), view: EmptyView())
+        }
+
+        // Step 2: Get text (request if not provided via Siri phrase)
         let finalText: String
         if let existingText = text, !existingText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             finalText = existingText.trimmingCharacters(in: .whitespacesAndNewlines)
         } else {
-            let requested = try await $text.requestValue("shortcut.siriNatural.dialog.askText")
+            let requested = try await $text.requestValue(IntentSpeech.dialog("shortcut.siriNatural.dialog.askText"))
             guard !requested.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-                return .result(dialog: "shortcut.siriNatural.error.noText", view: EmptyView())
+                return .result(dialog: IntentSpeech.dialog("shortcut.siriNatural.error.noText"), view: EmptyView())
             }
             finalText = requested.trimmingCharacters(in: .whitespacesAndNewlines)
-        }
-
-        // Step 2: Pro gate — LLM parsing requires Pro subscription
-        let isProUser = UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)?.bool(forKey: AppPreferences.Keys.isProUser) ?? false
-        guard isProUser else {
-            return .result(dialog: "shortcut.siriNatural.error.proRequired", view: EmptyView())
         }
 
         // Step 3: Leer el contexto cacheado por la app (subcategorías para el LLM + divisa + cuentas).
@@ -221,45 +258,45 @@ struct SiriNaturalEntryIntent: AppIntent {
         // crea el draft con "account" en needsUserInput (evita el falso "no hay cuentas" por caché
         // ausente/stale).
         if let cachedContext, !cachedContext.hasRealAccount {
-            return .result(dialog: "shortcut.error.noAccount", view: EmptyView())
+            return .result(dialog: IntentSpeech.dialog("shortcut.error.noAccount"), view: EmptyView())
         }
 
-        // Step 4: Parse with LLM (con offline fallback). Las subcategorías salen de la caché.
-        var parsedTransactions: [ParsedTransaction] = []
-        var isOfflineFallback = false
-        do {
-            parsedTransactions = try await TranscriptionParserService.shared.parseMultiple(
-                text: finalText,
+        // Step 4: Parse with LLM (con offline fallback). Las subcategorías salen de la caché. Sin el consentimiento de
+        // IA el texto no sale del teléfono: solo la lectura local del monto (auditoría UX 2.2, lote 15).
+        // En el teléfono (`.onDevice`) el texto no sale de él, así que no hace falta ese consentimiento.
+        let aiConsentAccepted = UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted)
+        let (parsedTransactions, isOfflineFallback) = await Self.parseTransactions(
+            finalText,
+            consentAccepted: route == .onDevice || aiConsentAccepted
+        ) { text in
+            if route == .onDevice {
+                let started = ContinuousClock.now
+                do {
+                    let parsed = try await SiriOnDeviceEntry.parse(
+                        text,
+                        expenseSubcategories: cachedContext?.expenseSubcategories ?? [],
+                        incomeSubcategories: cachedContext?.incomeSubcategories ?? []
+                    )
+                    Self.reportOnDeviceParse(parsed.contains { $0.amount != nil } ? "ok" : "noAmount", since: started)
+                    return parsed
+                } catch {
+                    // Cae a la lectura local del monto (`parseTransactions`): el borrador básico de siempre.
+                    Self.reportOnDeviceParse(SiriOnDeviceEntry.failureDetail(error), since: started)
+                    throw error
+                }
+            }
+            return try await TranscriptionParserService.shared.parseMultiple(
+                text: text,
                 expenseSubcategories: cachedContext?.expenseSubcategories ?? [],
                 incomeSubcategories: cachedContext?.incomeSubcategories ?? [],
                 currency: cachedContext?.parserCurrency ?? .unknown
             )
-        } catch {
-            #if DEBUG
-            print("SiriNaturalEntryIntent: LLM parsing failed: \(error)")
-            #endif
-            // Offline fallback: AmountParser para extracción básica del monto.
-            isOfflineFallback = true
-            if let parsed = AmountParser.parse(finalText) {
-                parsedTransactions = [ParsedTransaction(
-                    amount: parsed.amount,
-                    date: nil,
-                    note: finalText,
-                    isExpense: true,
-                    subcategoryHint: nil,
-                    tagHints: [],
-                    currencyHint: nil,
-                    confidence: ParsedTransaction.TransactionConfidence(
-                        amount: parsed.confidence, date: 0.0, merchant: 0.0, subcategory: 0.0, tags: 0.0
-                    )
-                )]
-            }
         }
 
         // Pre-flight quality gate: descarta transactions sin amount. Si TODAS fallan → error.
         let validParsed = parsedTransactions.filter { $0.amount != nil }
         guard !validParsed.isEmpty else {
-            return .result(dialog: "shortcut.siriNatural.error.parsingFailedHelp", view: EmptyView())
+            return .result(dialog: IntentSpeech.dialog("shortcut.siriNatural.error.parsingFailedHelp"), view: EmptyView())
         }
         let partialFailures = parsedTransactions.count - validParsed.count
 
@@ -277,7 +314,8 @@ struct SiriNaturalEntryIntent: AppIntent {
         // Step 6: Notificación local (la app refresca la Bandeja al abrir).
         let firstParsed = validParsed.first
         let firstNote = (firstParsed?.note).flatMap { $0.isEmpty ? nil : $0 } ?? finalText
-        let notifBody = isOfflineFallback
+        // «(sin conexión)» solo es verdad si se intentó leer en el servidor y falló; sin consentimiento no se intentó.
+        let notifBody = isOfflineFallback && aiConsentAccepted && route == .server
             ? String(localized: "shortcut.siriNatural.notification.bodyOffline")
             : String(localized: "shortcut.siriNatural.notification.body \(firstNote)")
         await NotificationService.shared.sendNotification(
@@ -312,7 +350,91 @@ struct SiriNaturalEntryIntent: AppIntent {
             isExpense: snippetIsExpense,
             isDraft: true
         )
-        return .result(dialog: IntentDialog(stringLiteral: dialogText), view: snippet)
+        return .result(dialog: IntentSpeech.resolved(dialogText), view: snippet)
+    }
+
+    /// Sin Pro: Siri dice «Activa Yala Pro…» y Yala se abre en la hoja de Pro de la voz (el atajo `voice-entry`, que sin
+    /// Pro presenta esa hoja; con Pro —si el App Group iba atrasado—, la grabación de voz). Si la persona no deja abrir
+    /// Yala, Siri se queda en el aviso, como antes.
+    @MainActor
+    private func openProSheet() async -> IntentDialog {
+        let dialog = IntentSpeech.dialog("shortcut.siriNatural.error.proRequired")
+        do {
+            // Sin diálogo propio: el aviso va en el resultado, y pasarlo también aquí podía decirse dos veces.
+            try await continueInForeground(nil, alwaysConfirm: false)
+        } catch {
+            #if DEBUG
+            print("SiriNaturalEntryIntent: no se abrió Yala para la hoja de Pro: \(error)")
+            #endif
+            return dialog
+        }
+        if let url = WidgetURLHelper.url(for: "voice-entry") {
+            await UIApplication.shared.open(url)
+        }
+        return dialog
+    }
+
+    /// Con Yala solo en grupos: Siri dice el aviso y Yala se abre en la vuelta a Yala completo (o en su activación), por
+    /// el enlace de siempre. Si la persona no deja abrir Yala, Siri se queda en el aviso. Mismo molde que `openProSheet`.
+    @MainActor
+    private func openFullModeActivation(_ entry: UsageModeLogic.ReturnEntry) async -> IntentDialog {
+        let dialog = IntentSpeech.resolved(GroupsOnlyIntentGate.message(for: entry))
+        do {
+            try await continueInForeground(nil, alwaysConfirm: false)
+        } catch {
+            #if DEBUG
+            print("SiriNaturalEntryIntent: no se abrió Yala para volver a Yala completo: \(error)")
+            #endif
+            return dialog
+        }
+        if let url = WidgetURLHelper.url(for: GroupsOnlyIntentGate.activationDeepLink) {
+            await UIApplication.shared.open(url)
+        }
+        return dialog
+    }
+
+    /// La señal de una lectura en el teléfono: cómo salió y cuánto tardó (para medirla frente al servidor).
+    @MainActor
+    private static func reportOnDeviceParse(_ detail: String, since started: ContinuousClock.Instant) {
+        let elapsed = ContinuousClock.now - started
+        let milliseconds = Double(elapsed.components.seconds) * 1000 + Double(elapsed.components.attoseconds) / 1e15
+        MetricsService.canaryFromIntent(.siriOnDeviceParse, detail: detail, value: milliseconds.rounded())
+    }
+
+    /// Lee el texto dictado. Con el consentimiento de IA lo manda a `remote` (el LLM, a través del servidor) y, si
+    /// falla, cae a la lectura local del monto. **Sin el consentimiento, `remote` no se llama**: el texto no sale del
+    /// teléfono y queda la lectura local, como sin conexión. Hasta el lote 15 de la auditoría UX 2.2 el atajo mandaba
+    /// el texto a OpenAI aunque la persona no hubiera aceptado el aviso de «Procesamiento de voz e imágenes»: la voz y
+    /// la foto de la app lo piden siempre (`AppBootstrapper.executeAction`) y este atajo no lo miraba.
+    @MainActor
+    static func parseTransactions(
+        _ text: String,
+        consentAccepted: Bool,
+        remote: (String) async throws -> [ParsedTransaction]
+    ) async -> (transactions: [ParsedTransaction], isOfflineFallback: Bool) {
+        if consentAccepted {
+            do {
+                return (try await remote(text), false)
+            } catch {
+                #if DEBUG
+                print("SiriNaturalEntryIntent: LLM parsing failed: \(error)")
+                #endif
+            }
+        }
+        // Lectura local: AmountParser para extracción básica del monto.
+        guard let parsed = AmountParser.parse(text) else { return ([], true) }
+        return ([ParsedTransaction(
+            amount: parsed.amount,
+            date: nil,
+            note: text,
+            isExpense: true,
+            subcategoryHint: nil,
+            tagHints: [],
+            currencyHint: nil,
+            confidence: ParsedTransaction.TransactionConfidence(
+                amount: parsed.confidence, date: 0.0, merchant: 0.0, subcategory: 0.0, tags: 0.0
+            )
+        )], true)
     }
 }
 

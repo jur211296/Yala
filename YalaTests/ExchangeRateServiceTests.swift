@@ -29,7 +29,10 @@ struct ExchangeRateServiceTests {
         formatter.dateFormat = "yyyy-MM-dd"
         formatter.timeZone = TimeZone(identifier: "UTC")
 
-        let calendar = Calendar.current
+        // La fecha se corta en la MISMA zona en que se formatea: con `Calendar.current` el día cambiaba en
+        // cualquier zona al este de UTC.
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC") ?? .gmt
         let date = calendar.date(from: DateComponents(year: 2025, month: 3, day: 15))!
         let key = formatter.string(from: date)
         #expect(key == "2025-03-15")
@@ -40,7 +43,10 @@ struct ExchangeRateServiceTests {
         formatter.dateFormat = "yyyy-MM-dd"
         formatter.timeZone = TimeZone(identifier: "UTC")
 
-        let calendar = Calendar.current
+        // La fecha se corta en la MISMA zona en que se formatea: con `Calendar.current` el día cambiaba en
+        // cualquier zona al este de UTC.
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC") ?? .gmt
         let date = calendar.date(from: DateComponents(year: 2025, month: 1, day: 5))!
         let key = formatter.string(from: date)
         #expect(key == "2025-01-05")

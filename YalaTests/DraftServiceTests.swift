@@ -17,7 +17,8 @@ struct DraftServiceTests {
     @Test func errorNoContext_hasDescription() {
         let error = DraftServiceError.noContext
         #expect(error.errorDescription != nil)
-        #expect(error.errorDescription?.contains("No ModelContext") == true)
+        // Lote 13: el genérico localizado, nunca el texto de desarrollo en inglés.
+        #expect(error.errorDescription == L10n.Common.saveError)
     }
 
     @Test func errorMissingAccount_hasDescription() {
@@ -40,10 +41,11 @@ struct DraftServiceTests {
         #expect(error.errorDescription != nil)
     }
 
-    @Test func errorSaveFailed_includesUnderlying() {
+    @Test func errorSaveFailed_showsTheGenericMessage() {
         let underlying = NSError(domain: "test", code: 42, userInfo: [NSLocalizedDescriptionKey: "disk full"])
         let error = DraftServiceError.saveFailed(underlying)
         #expect(error.errorDescription != nil)
-        #expect(error.errorDescription?.contains("Save failed") == true)
+        #expect(error.errorDescription == L10n.Common.saveError)
+        #expect(error.errorDescription?.contains("disk full") == false)
     }
 }

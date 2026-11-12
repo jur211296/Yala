@@ -222,6 +222,16 @@ export const ROUTES: Readonly<Record<TaskId, Route>> = {
     params: { reasoningEffort: "none", responseFormat: "text", maxOutputTokens: 512 },
     retries: 0,
   },
+  // Yala IA en modo nube con el camino ampliado: MISMO modelo y parámetros que `chat.answer` (la sesión no cambia de
+  // modelo; eso lo decide Jürgen). Lo distinto lo pone `ai/explore/`: las herramientas y el bucle. Con el flag
+  // `AI_CLOUD_EXPLORE_ROLLOUT_PERCENT` a 0 sale exactamente como `chat.answer`.
+  "chat.explore": {
+    mode: "managed",
+    provider: "openai",
+    model: "gpt-6-luna",
+    params: { reasoningEffort: "none", responseFormat: "text", maxOutputTokens: 512 },
+    retries: 0,
+  },
   // 100 % en 14 reescrituras × 2 (igual que mini), p95 2,1 s contra el corte de 8 s, 0,056 USD por 1 000 (mini: 0,198).
   "chat.rewrite": {
     mode: "managed",
@@ -312,6 +322,10 @@ export const ROUTES: Readonly<Record<TaskId, Route>> = {
  * política de privacidad web publicada, DPA y nivel de pago, la clave como secret del Worker y su `LEGACY_OVERRIDES` de
  * OpenAI). No las lee ningún código: encender una = moverla a `ROUTES` y poner en `LEGACY_OVERRIDES` la fila de OpenAI
  * que hoy está en `ROUTES`.
+ *
+ * **Primero la política**: `test/ai.policy-providers.test.ts` se pone rojo si una fila activa usa un proveedor que la
+ * lista de proveedores de la política web (`Web/src/i18n/translations.ts`, seis idiomas) no nombra. Se actualiza y se
+ * publica la política (rama 1.0) ANTES de encender; nunca se relaja el test para encender.
  */
 export const PREPARED_ROUTES: Readonly<Partial<Record<TaskId, ManagedRoute>>> = {
   // Tendencias, banco del 2026-10-07: 100 % como gpt-6.1-sol, a un tercio del precio (1,47 USD por 1 000; ~2,95 desde el

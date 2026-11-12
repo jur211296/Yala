@@ -58,7 +58,7 @@ struct BalanceHelper {
                 )
             }
 
-            let isIncome = tx.category?.isIncome ?? (tx.amount >= 0)
+            let isIncome = TransactionClassificationLogic.isIncome(tx)
 
             // Apply Category Filter if present
             if let categoryID = categoryFilter {

@@ -133,4 +133,50 @@ final class GroupsEmptyStateUITests: XCTestCase {
             "Sin consent no debe ofrecerse el empty state estándar: el tap no podría crear el grupo."
         )
     }
+
+    /// **Aceptar desde «Un último paso» cambia la pestaña en el acto** (auditoría UX 2.2, lote 12, 2026-10-15). El
+    /// estado vacío lee el consent de `UserDefaults`, que no repinta nada: la hoja se cerraba, la pestaña seguía en «Un
+    /// último paso» y solo relanzar la app la ponía al día. Ahora `GroupsConsentState` avisa y la pestaña se re-decide.
+    func test_acceptingConsentFromTheEmptyState_turnsTheTabIntoTheStandardEmptyState() {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: nil, groupInvite: true, cloudSession: true)
+
+        let consentCTA = app.descendants(matching: .any)["groups_empty_state_consent"].firstMatch
+        XCTAssertTrue(consentCTA.waitForExistence(timeout: 30), "Falta el estado «Un último paso».")
+        app.buttons["groups_empty_state_consent"].firstMatch.tap()
+
+        let accept = app.buttons["groups_consent_accept"]
+        XCTAssertTrue(accept.waitForExistence(timeout: 15), "No se abrió el consentimiento de Grupos.")
+        accept.tap()
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)["groups_empty_state"].firstMatch.waitForExistence(timeout: 10),
+            "Tras aceptar, la pestaña debe ofrecer crear un grupo sin relanzar la app."
+        )
+        XCTAssertFalse(consentCTA.exists, "«Un último paso» sigue en pantalla tras aceptar.")
+    }
+
+    /// **Conectar la cuenta cambia la pestaña en el acto** (card nve0, reporte de Jürgen del 22-oct en producción). La
+    /// pestaña leía la sesión de `CloudAuthService`, que no es observable: al cerrarse la hoja de cuenta nada la repintaba,
+    /// y «Crea tu cuenta de Yala» seguía más de 10 s, hasta que otra cosa movía la vista. Ahora el servicio avisa de cada
+    /// cambio de sesión y la pestaña se re-decide.
+    ///
+    /// El simulador no puede iniciar sesión de verdad, así que `-uitest-fake-cloud-session-after 6` hace aparecer la
+    /// sesión fingida seis segundos después de que se monte «Crea tu cuenta», con la pestaña delante: el mismo cambio que
+    /// deja la hoja de cuenta al cerrarse. Sin el aviso, la tarjeta no cambia nunca en esta corrida. Seis y no menos: la
+    /// tarjeta se monta debajo del splash del arranque, y con 2 s cambiaba antes de que el test llegara a verla (medido).
+    func test_sessionArrivingWithTheTabOpen_turnsCreateAccountIntoTheConsentStepRightAway() {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: nil, groupInvite: true, cloudSessionAfterSeconds: 6)
+
+        let createAccount = app.descendants(matching: .any)["groups_empty_state_create_account"].firstMatch
+        XCTAssertTrue(createAccount.waitForExistence(timeout: 30), "Sin sesión, la pestaña debe empezar en «Crea tu cuenta».")
+
+        // Los 6 s de la sesión, como mucho, más margen: el criterio de la card es «al instante», y antes no llegaba nunca.
+        let consent = app.descendants(matching: .any)["groups_empty_state_consent"].firstMatch
+        XCTAssertTrue(
+            consent.waitForExistence(timeout: 10),
+            "Con la sesión ya conectada, la pestaña debe pasar a «Acepta cómo se guardan tus grupos» sin esperar.")
+        XCTAssertFalse(createAccount.exists, "«Crea tu cuenta de Yala» sigue en pantalla con la sesión ya conectada.")
+    }
 }

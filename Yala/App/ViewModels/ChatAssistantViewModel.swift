@@ -53,9 +53,50 @@ final class ChatAssistantViewModel {
     /// Inyectable para tests (suite aislada); producción usa `.standard`.
     private let defaults: UserDefaults
 
-    init(defaults: UserDefaults = .standard) {
+    /// ¿Existe ahora el camino ampliado de la nube? Inyectable para tests; producción lee el modo y el flag.
+    private let cloudExploreAvailable: @MainActor () -> Bool
+
+    init(
+        defaults: UserDefaults = .standard,
+        cloudExploreAvailable: @escaping @MainActor () -> Bool = { @MainActor in YalaIAChatRouting.cloudExploreAvailableNow() }
+    ) {
         self.defaults = defaults
+        self.cloudExploreAvailable = cloudExploreAvailable
         self.contextHintDismissed = defaults.bool(forKey: "hasSeenChatContextHint")
+    }
+
+    // MARK: - N1: Yala IA con tu cuenta en la nube
+
+    /// La pregunta de N1 está en pantalla. La pinta `ChatSheetView`; la contestan los tres métodos de abajo.
+    var showsCloudExploreConsent = false
+
+    /// Lo que la persona quiso enviar cuando salió N1: sale en cuanto conteste.
+    private var questionAwaitingCloudExploreConsent: (text: String, forceIntent: ChatIntent?)?
+
+    /// «Aceptar»: se recuerda y la pregunta sale por el camino ampliado (lo decide `YalaIAChatRouteLogic`).
+    func acceptCloudExploreConsent() async {
+        YalaIACloudExploreConsentStore.write(.accepted, defaults)
+        await sendQuestionAwaitingCloudExploreConsent()
+    }
+
+    /// «Ahora no»: se recuerda el rechazo, N1 no vuelve a salir y la pregunta sale por el camino de siempre.
+    func declineCloudExploreConsent() async {
+        YalaIACloudExploreConsentStore.write(.declined, defaults)
+        await sendQuestionAwaitingCloudExploreConsent()
+    }
+
+    /// «Política de privacidad»: no es una respuesta. No se apunta nada, la pregunta vuelve a la caja y N1 saldrá otra
+    /// vez al enviarla.
+    func postponeCloudExploreConsent() {
+        guard let pending = questionAwaitingCloudExploreConsent else { return }
+        questionAwaitingCloudExploreConsent = nil
+        if inputText.isEmpty { inputText = pending.text }
+    }
+
+    private func sendQuestionAwaitingCloudExploreConsent() async {
+        guard let pending = questionAwaitingCloudExploreConsent else { return }
+        questionAwaitingCloudExploreConsent = nil
+        await sendQuestion(pending.text, forceIntent: pending.forceIntent)
     }
 
     // MARK: - Persistence (day-calendar `chat_session_<YYYY-MM-DD>`)
@@ -68,18 +109,20 @@ final class ChatAssistantViewModel {
 
     #if DEBUG
     /// `-uitest-chat-conversation`: guarda una conversación de hoy en el mismo sitio y formato que `persistSession`.
-    static func seedTodayConversationForUITest(defaults: UserDefaults = .standard) {
+    /// Con `withLinks` (`-uitest-chat-links`), la respuesta trae un tercer párrafo con dos enlaces markdown: uno a
+    /// yala-app.pe, que se puede tocar, y otro a otro dominio, que sale como texto (`YalaIAAnswerLinkPolicy`).
+    static func seedTodayConversationForUITest(defaults: UserDefaults = .standard, withLinks: Bool = false) {
         let now = Date.now
+        // Con negritas y dos párrafos, como responde el asistente (reglas 5 y 7 de su prompt): así la captura del hilo
+        // enseña la jerarquía del texto dentro de la burbuja.
+        var answer = "Este mes llevas **S/ 120** en Transporte, un **20% más** que el mes pasado (antes S/ 100).\n\n"
+            + "La mayor parte es **Taxi**: S/ 85 en 6 viajes."
+        if withLinks {
+            answer += "\n\nMás en la [ayuda de Yala](https://yala-app.pe/ayuda) o en [este enlace](https://example.com/?gasto=85)."
+        }
         let messages = [
             ChatMessage(role: .user, text: "¿Cuánto gasté en transporte este mes?", timestamp: now),
-            // Con negritas y dos párrafos, como responde el asistente (reglas 5 y 7 de su prompt): así la captura del
-            // hilo enseña la jerarquía del texto dentro de la burbuja.
-            ChatMessage(
-                role: .assistant,
-                text: "Este mes llevas **S/ 120** en Transporte, un **20% más** que el mes pasado (antes S/ 100).\n\n"
-                    + "La mayor parte es **Taxi**: S/ 85 en 6 viajes.",
-                timestamp: now
-            ),
+            ChatMessage(role: .assistant, text: answer, timestamp: now),
         ]
         do {
             let data = try JSONEncoder().encode(ChatPersistedSession(messages: messages, allTurns: []))
@@ -296,6 +339,18 @@ final class ChatAssistantViewModel {
         guard !trimmed.isEmpty else { return }
         guard let context = modelContext else { return }
         guard !isLoading else { return }
+
+        // N1 antes de la primera pregunta con el camino ampliado (decisión 1A). La respuesta se guarda en el teléfono,
+        // así que sale una sola vez; sin aceptarla, la ruta es la de siempre.
+        if YalaIAChatRouteLogic.needsCloudExploreConsentPrompt(
+            available: cloudExploreAvailable(),
+            consent: YalaIACloudExploreConsentStore.read(defaults)
+        ) {
+            questionAwaitingCloudExploreConsent = (trimmed, forceIntent)
+            inputText = ""
+            showsCloudExploreConsent = true
+            return
+        }
 
         errorMessage = nil
         isLoading = true
@@ -623,14 +678,54 @@ final class ChatAssistantViewModel {
         Task { await loadSuggestions() }
     }
 
-    /// Reinicia el contexto de conversación sin afectar el listado de mensajes visible
-    /// — útil para "Reiniciar contexto": el user limpia memoria del LLM y empieza fresh
-    /// pero conserva la persistencia / sugerencias.
-    func resetConversationContext() {
+    /// «Nueva conversación» (UX 2.2 · L14-7, opción C): borra el hilo y lo que la IA recuerda del día, sin preguntar.
+    /// Devuelve lo borrado para el «Deshacer» del aviso; `nil` si no había nada que borrar.
+    @discardableResult
+    func resetConversationContext() -> ChatConversationSnapshot? {
+        let snapshot = messages.isEmpty ? nil : ChatConversationSnapshot(messages: messages, allTurns: allTurns)
         messages = []
         allTurns = []
         errorMessage = nil
         clearPersistedSession()
+        return snapshot
+    }
+
+    /// «Deshacer» del aviso «Conversación borrada»: devuelve el hilo tal como estaba y lo vuelve a guardar. Si desde el
+    /// borrado ya se empezó otra conversación —también una pregunta en vuelo o esperando el permiso de la nube, que aún
+    /// no está en el hilo—, no hace nada: mezclar las dos daría un hilo que nadie escribió.
+    @discardableResult
+    func restoreConversation(_ snapshot: ChatConversationSnapshot) -> Bool {
+        guard messages.isEmpty, allTurns.isEmpty, !isLoading, questionAwaitingCloudExploreConsent == nil else {
+            return false
+        }
+        messages = snapshot.messages
+        allTurns = snapshot.allTurns
+        persistSession()
+        return true
+    }
+
+    // MARK: - Guardar los N (UX 2.2 · L14-9)
+
+    /// Los registros de un mensaje que «Guardar los N» guardaría: pendientes y con todo lo que `saveDraft` exige.
+    func draftsReadyToSave(messageID: UUID) -> [ChatTransactionDraft] {
+        guard let message = messages.first(where: { $0.id == messageID }) else { return [] }
+        return (message.attachments ?? []).flatMap { attachment -> [ChatTransactionDraft] in
+            guard case .drafts(let drafts) = attachment else { return [] }
+            return drafts.filter { $0.status == .pending && $0.isReadyToSave }
+        }
+    }
+
+    /// Guarda uno tras otro, por el mismo camino que el «Guardar» de cada tarjeta. `saveDraft` marca `.saving` antes de
+    /// su primer `await`, así que un segundo toque mientras corre salta los que ya están en vuelo y no duplica nada.
+    func saveAllReadyDrafts(messageID: UUID) async {
+        let ready = draftsReadyToSave(messageID: messageID)
+        for draft in ready {
+            await saveDraft(messageID: messageID, draftID: draft.id, vibrates: false)
+        }
+        // Un toque, una vibración: con cinco listos vibraba cinco veces seguidas (card pjum).
+        if ready.contains(where: { locateDraft(messageID: messageID, draftID: $0.id)?.draft.status == .saved }) {
+            DS.Haptic.success()
+        }
     }
 
     // MARK: - Draft Lifecycle (chat → register)
@@ -638,7 +733,8 @@ final class ChatAssistantViewModel {
     /// Save de un draft → crea TransactionItem real, mark `.saved`, persistSession.
     /// Es bloqueante visualmente: durante `.saving` el card debe deshabilitar Save/Edit.
     /// Permite retry desde `.failed` (resetea a `.saving`).
-    func saveDraft(messageID: UUID, draftID: UUID) async {
+    /// `vibrates`: el éxito vibra aquí salvo que lo guarde «Guardar los N», que vibra una vez al final.
+    func saveDraft(messageID: UUID, draftID: UUID, vibrates: Bool = true) async {
         guard let context = modelContext else { return }
         guard let location = locateDraft(messageID: messageID, draftID: draftID) else { return }
         var draft = location.draft
@@ -797,6 +893,7 @@ final class ChatAssistantViewModel {
 
         do {
             try TransactionService.shared.create(transaction)
+            if vibrates { DS.Haptic.success() }
             draft.status = .saved
             draft.savedTransactionID = transaction.persistentModelID
             // La divisa que REALMENTE se estampó, congelada en el borrador. La tarjeta ya guardada
@@ -843,6 +940,38 @@ final class ChatAssistantViewModel {
         RouterEntryGate.shared.submit(.presentNewTransactionFromChatDraft(prefill))
     }
 
+    /// La cuenta de la tarjeta de `account` en `dictatedCurrency` si `account` es la cabeza de una tarjeta con líneas
+    /// (`AccountCardLogic.route`); si es una línea, una cuenta sin líneas o el fetch falla, `account` tal cual.
+    ///
+    /// `currentAccountID` es la cuenta que el borrador tenía antes de este cambio. Si el enrutado devuelve justo esa cuenta
+    /// —una línea de esta tarjeta—, tocar la tarjeta es pedir la principal y se respeta tal cual (card y1z6): al elegir la
+    /// línea, `draft.currencyCode` pasa a su divisa, y enrutar la tarjeta con ella devolvía la misma línea, así que el
+    /// selector parecía no responder y no había forma de volver a la principal.
+    static func cardAccount(
+        for account: Account, dictatedCurrency: String, currentAccountID: PersistentIdentifier? = nil,
+        in context: ModelContext
+    ) -> Account {
+        do {
+            let all = try context.fetch(FetchDescriptor<Account>())
+            let nodes = all.map { AccountLineNode($0) }
+            let roles = AccountLineLogic.resolve(nodes)
+            guard !(roles[account.shortcutID]?.isLine ?? false),
+                  let route = AccountCardLogic.route(
+                    chosenID: account.shortcutID, currencyCode: dictatedCurrency, nodes: nodes),
+                  let target = all.first(where: { $0.shortcutID == route.accountID }) else { return account }
+            if let currentAccountID, currentAccountID != account.persistentModelID,
+               target.persistentModelID == currentAccountID {
+                return account
+            }
+            return target
+        } catch {
+            #if DEBUG
+            print("ChatAssistantViewModel: Error: fetch de cuentas para la tarjeta: \(error)")
+            #endif
+            return account
+        }
+    }
+
     /// Update inline de un campo del draft (ej. user cambia monto en TextField, o
     /// elige otra cuenta en el menu picker). Recalcula `needsUserInput`.
     /// Permite update también desde `.failed` (el user puede ajustar antes de retry).
@@ -875,6 +1004,7 @@ final class ChatAssistantViewModel {
         }
         // Double-optional permite distinguir "no cambies" (nil-outer) de "set a nil" (.some(nil)).
         if case .some(let value) = accountID {
+            let previousAccountID = draft.accountID
             draft.accountID = value
             // La divisa VIAJA con la cuenta. `updateDraft` no acepta `currencyCode` y no debe: la
             // divisa no es un campo que el usuario edite aparte, es una consecuencia de la cuenta
@@ -893,7 +1023,14 @@ final class ChatAssistantViewModel {
             if let id = value, let context = modelContext,
                 let account = context.model(for: id) as? Account
             {
-                draft.currencyCode = account.currencyCode
+                // Tarjeta con varias divisas (entrega 3, decisión 6 de Jürgen): si se eligió la TARJETA, la divisa dictada
+                // decide la línea, y el borrador apunta a esa cuenta concreta. Sin línea en esa divisa, la principal y su
+                // divisa, como con cualquier cuenta. Una línea elegida a propósito se respeta.
+                let target = Self.cardAccount(
+                    for: account, dictatedCurrency: draft.currencyCode,
+                    currentAccountID: previousAccountID, in: context)
+                draft.accountID = target.persistentModelID
+                draft.currencyCode = target.currencyCode
             }
         }
         if case .some(let value) = subcategoryID {
@@ -953,6 +1090,8 @@ final class ChatAssistantViewModel {
         draft.status = .discarded
         replaceDraft(draft, at: location)
         persistSession()
+        // Descartar es el borrado del borrador, sin pregunta: el toque es la confirmación (card C8; mapa de `DS.Haptic`).
+        DS.Haptic.warning()
     }
 
     /// Tap en quick-reply chip de ambiguous → reenvía el texto con `forceIntent`
@@ -1070,4 +1209,10 @@ final class ChatAssistantViewModel {
         }
     }
 
+}
+
+/// Lo que «Nueva conversación» borra, para poder deshacerlo.
+struct ChatConversationSnapshot {
+    let messages: [ChatMessage]
+    let allTurns: [QAPair]
 }

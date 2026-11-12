@@ -64,6 +64,10 @@ enum GroupInviteOnboardingOutcome: Equatable {
     /// arranque siguiente, que es la misma jaula con un paso más. Tapear el enlace otra vez lo recrea
     /// entero (`persistIntent`), así que no se pierde nada: «ahora no» significa ahora no, no nunca.
     case declined
+    /// **L12-17 · «Unirme» en la tarjeta del grupo, sin cuenta o sin consentimiento.** No es una unión ni un alta: la hoja
+    /// apunta el «sí» en la invitación (`PendingJoinStore.markGroupCardAccepted`) y se cierra para que la cadena siga a
+    /// cuenta y consentimiento. Al volver, la hoja une sola con el nombre que se escribió en la tarjeta.
+    case continueToAccount
 }
 
 enum GroupInviteOnboardingLogic {

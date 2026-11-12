@@ -50,12 +50,28 @@ enum LanguageManager {
     /// La lección de verificación que dejó, porque sigue valiendo: un E2E que compruebe el idioma
     /// **puede salir verde sin estar arreglado**, porque `applyRemoteValues` lo restaura desde el
     /// iCloud KV. Un test que pasa por la razón equivocada es una familia de fallo ya pagada aquí.
-    static var sharedDefaults: UserDefaults {
-        return UserDefaults(suiteName: SharedContainerService.appGroupIdentifier) ?? .standard
-    }
+    ///
+    /// **Una sola instancia por proceso** (2026-10-30, encargo `eficiencia-carga-por-vista`): `ls()` lo lee en cada
+    /// texto traducido, y crear un `UserDefaults(suiteName:)` en cada lectura costaba ~110 ms del arranque solo en las
+    /// etiquetas de la gráfica de tendencia (perfil de Instruments). El App Group es constante en el proceso y varias
+    /// instancias del mismo dominio ven las mismas escrituras, así que guardarla no cambia ningún valor leído.
+    static var sharedDefaults: UserDefaults { cachedSharedDefaults }
+    private static let cachedSharedDefaults: UserDefaults =
+        UserDefaults(suiteName: SharedContainerService.appGroupIdentifier) ?? .standard
 
     /// Supported locales as the typed enum. Use `.code/.nativeName/.flag` properties.
     static var supportedLanguages: [SupportedLocale] { SupportedLocale.selectableCases }
+
+    /// El idioma base («es», «pt», «en») de una localización de Yala.
+    ///
+    /// `Bundle.main.preferredLocalizations.first` es la VARIANTE con que Yala pinta («es-419» en un teléfono es-PE,
+    /// «es-AR», «es-ES», «pt-BR», «pt-PT», «en-GB»). Comparada con una lista de idiomas base, una variante se lee como
+    /// «idioma sin soporte» y cae al inglés: las imágenes de ejemplo de «Prueba el registro con foto» salían en inglés
+    /// en cualquier teléfono en español o portugués (medido el 2026-10-14 en un simulador es-PE), y el enlace de
+    /// privacidad llevaba a la página en inglés.
+    static func baseLanguageCode(of localization: String) -> String {
+        Locale(identifier: localization).language.languageCode?.identifier ?? localization
+    }
 
     /// Whether the device's preferred language is one of our supported locales.
     static var deviceLanguageIsSupported: Bool {
@@ -249,9 +265,23 @@ enum L10n {
     enum PanelAccountCard {
         static var balance: String { ls("panel.accounts.card.balance", comment: "Label above the amount on a Panel account card") }
         static var toPay: String { ls("panel.accounts.card.toPay", comment: "Label above the amount on a credit card account with debt") }
+        /// Etiqueta de la tarjeta (y del chip) de la cuenta que filtra el Panel (UX 2.2 · L3-16).
+        static var filtering: String { ls("panel.accounts.card.filtering", comment: "Tag on the account card that is filtering the Panel") }
+        /// Chip «Agregar» al final de la fila de cuentas de «Tus finanzas» (UX 2.2 · L3-9, variante 3).
+        static var addChip: String { ls("panel.accounts.addChip", comment: "Last chip in the Panel account chips row: adds an account") }
+        /// Rótulo del total convertido de una tarjeta con varias divisas.
+        static var total: String { ls("panel.accounts.card.total", comment: "Label of the converted total on a card with lines in several currencies") }
         static func spentInPeriod(_ period: String) -> String {
             String(format: ls("panel.accounts.card.spentInPeriod %@", comment: "Label above the amount in expenses-only mode"), period)
         }
+    }
+
+    /// «Por tarjeta · Por línea» en la tabla de informes y en el flujo de caja por cuenta (tarjeta con varias divisas,
+    /// entrega 4).
+    enum AccountCardGrouping {
+        static var byCard: String { ls("accountCardGrouping.byCard", comment: "Report and cash flow by account: show a card with several currencies as one row, converted") }
+        static var byLine: String { ls("accountCardGrouping.byLine", comment: "Report and cash flow by account: show each line of a card in its own currency") }
+        static var label: String { ls("accountCardGrouping.label", comment: "Accessibility label of the By card / By line segmented control") }
     }
 
     /// Vista de una cuenta (la hoja que abre el toque en su tarjeta del Panel).
@@ -261,9 +291,16 @@ enum L10n {
         static var topCategories: String { ls("accountDetail.topCategories", comment: "Section with top expense categories") }
         static var latest: String { ls("accountDetail.latest", comment: "Section with latest records") }
         static var empty: String { ls("accountDetail.empty", comment: "No records in the period") }
+        static var linePicker: String { ls("accountDetail.linePicker", comment: "Picker that chooses which currency line of a card to show") }
         static func chartLabel(account: String, period: String) -> String {
             String(format: ls("accountDetail.chartLabel %@ %@", comment: "Accessibility label of the balance chart"), account, period)
         }
+        // UX 2.2 · L3-11: la cuenta del saldo en la ficha.
+        static func balanceOn(_ date: String) -> String {
+            String(format: ls("accountDetail.balanceOn", comment: "Account sheet, balance equation: balance on a date. %@ = date"), date)
+        }
+        static var balanceToday: String { ls("accountDetail.balanceToday", comment: "Account sheet, balance equation: last line when the period runs until today") }
+        static var equationTitle: String { ls("accountDetail.equationTitle", comment: "Account sheet: heading of the balance equation for the period") }
     }
 
     /// Varias ventanas (iPad, iPhone Duo abierto): fase 4 del carril adaptativo.
@@ -350,6 +387,28 @@ enum L10n {
         // MARK: - Panel Polish #2 — Widget Info Sheets (sheet pedagógica)
 
         enum WidgetInfo {
+            /// «Con tus datos»: la línea del «?» con los números de la persona (UX 2.2 · L3-7, opción B).
+            enum YourData {
+                static var title: String { ls("panel.widgetInfo.yourData.title", comment: "Widget help sheet: heading of the line with the user's own numbers") }
+                static func trend(_ total: String) -> String {
+                    String(format: ls("panel.widgetInfo.yourData.trend", comment: "Widget help, balance chart: what the user has today. %@ = amount"), total)
+                }
+                static func cashFlow(income: String, expense: String) -> String {
+                    String(format: ls("panel.widgetInfo.yourData.cashFlow", comment: "Widget help, cash flow: income and expenses of the period. %1$@ = income, %2$@ = expenses"), income, expense)
+                }
+                static func topSpending(name: String, amount: String) -> String {
+                    String(format: ls("panel.widgetInfo.yourData.topSpending", comment: "Widget help, spending breakdown: where the user spends most. %1$@ = category, %2$@ = amount"), name, amount)
+                }
+                static func topTag(name: String, amount: String) -> String {
+                    String(format: ls("panel.widgetInfo.yourData.topTag", comment: "Widget help, tags: tag with most spending. %1$@ = tag, %2$@ = amount"), name, amount)
+                }
+                static func scheduled(total: String, pending: Int) -> String {
+                    String(format: ls("panel.widgetInfo.yourData.scheduled", comment: "Widget help, planned payments: total this month and how many are still to pay. %1$@ = amount, %2$d = count"), total, pending)
+                }
+                static func weekday(_ day: String) -> String {
+                    String(format: ls("panel.widgetInfo.yourData.weekday", comment: "Widget help, weekday chart: the day with the highest average spending. %@ = weekday name"), day)
+                }
+            }
             static var addToPanel: String {
                 ls("panel.widgetInfo.addToPanel", comment: "Panel Polish #2 — CTA en sheet pedagógica para restaurar widget oculto")
             }
@@ -601,16 +660,6 @@ enum L10n {
                 static var largeHowA: String { ls("panel.widgetInfo.expensesByNeed.largeHowA", comment: "Panel Polish #2 — ExpensesByNeed L: respuesta") }
             }
 
-            enum PeriodComparison {
-                static var title: String { ls("panel.widgetInfo.periodComparison.title", comment: "Stats Trends — Title sheet pedagógico Comparativa de período") }
-                static var chip1: String { ls("panel.widgetInfo.periodComparison.chip1", comment: "Stats Trends — Chip 1 Comparativa (Comparación)") }
-                static var chip2: String { ls("panel.widgetInfo.periodComparison.chip2", comment: "Stats Trends — Chip 2 Comparativa (Por período)") }
-                static var whatQ: String { ls("panel.widgetInfo.periodComparison.whatQ", comment: "Stats Trends — Comparativa: pregunta '¿Qué estás viendo?'") }
-                static var whatA: String { ls("panel.widgetInfo.periodComparison.whatA", comment: "Stats Trends — Comparativa: respuesta") }
-                static var howQ: String { ls("panel.widgetInfo.periodComparison.howQ", comment: "Stats Trends — Comparativa: pregunta '¿Con qué comparo?'") }
-                static var howA: String { ls("panel.widgetInfo.periodComparison.howA", comment: "Stats Trends — Comparativa: respuesta") }
-            }
-
             enum Sankey {
                 static var title: String { ls("panel.widgetInfo.sankey.title", comment: "Stats Categories — Title sheet pedagógico Sankey (Flujo del dinero)") }
                 static var chip1: String { ls("panel.widgetInfo.sankey.chip1", comment: "Stats Categories — Chip 1 Sankey (Flujo)") }
@@ -693,6 +742,14 @@ enum L10n {
             static var title: String { ls("panel.sectionsConfig.title", comment: "Panel sections config sheet title") }
             static var footer: String { ls("panel.sectionsConfig.footer", comment: "Footer hint in Panel sections config") }
             static var emptySection: String { ls("panel.sectionsConfig.emptySection", comment: "Subtitle shown when every widget in a section is individually hidden") }
+            // UX 2.2 · L3-6: qué hay en cada sección.
+            static var descAccounts: String { ls("panel.sectionsConfig.desc.accounts", comment: "Panel sections config: what the accounts section shows") }
+            static var descHealth: String { ls("panel.sectionsConfig.desc.health", comment: "Panel sections config: what the financial health section shows") }
+            static var descTrends: String { ls("panel.sectionsConfig.desc.trends", comment: "Panel sections config: what the trends section shows") }
+            static var descDistribution: String { ls("panel.sectionsConfig.desc.distribution", comment: "Panel sections config: what the distribution section shows") }
+            static var descPlanning: String { ls("panel.sectionsConfig.desc.planning", comment: "Panel sections config: what the planning section shows") }
+            static var descLatestRecords: String { ls("panel.sectionsConfig.desc.latestRecords", comment: "Panel sections config: what the latest records section shows") }
+            static var descTools: String { ls("panel.sectionsConfig.desc.tools", comment: "Panel sections config: what the tools section shows") }
             static func restoreWidgets(_ name: String) -> String {
                 String(format: ls("panel.sectionsConfig.restoreWidgets %@", comment: "Button/accessibility label to restore all widgets of a section"), name)
             }
@@ -771,6 +828,25 @@ enum L10n {
             }
             static var budgetCTACreate: String {
                 ls("panel.health.budget.cta.create", comment: "CTA label: Create first budget")
+            }
+            // UX 2.2 · L3-13: con presupuestos creados este mes, la nota de presupuestos aún no cuenta.
+            static var budgetHeadlineStartsNextMonth: String {
+                ls("panel.health.budget.headline.startsNextMonth", comment: "Health budget sheet when budgets exist but none counts yet")
+            }
+            // UX 2.2 · L3-14: de dónde sale la nota.
+            static func partTitle(_ name: String, weight: Int) -> String {
+                String(format: ls("panel.health.part.title", comment: "Health breakdown row: part name and its weight. %1$@ = name, %2$d = percent"), name, weight)
+            }
+            static var partBudget: String { ls("panel.health.part.budget", comment: "Health breakdown: what the budgets part measures") }
+            static var partActivity: String { ls("panel.health.part.activity", comment: "Health breakdown: what the rhythm part measures") }
+            static var partBills: String { ls("panel.health.part.bills", comment: "Health breakdown: what the commitments part measures") }
+            static var partNotCounting: String { ls("panel.health.part.notCounting", comment: "Health breakdown: a part without data, so it does not count") }
+            static var improveBudget: String { ls("panel.health.improve.budget", comment: "Health: what would raise the score most (budgets)") }
+            static var improveActivity: String { ls("panel.health.improve.activity", comment: "Health: what would raise the score most (rhythm)") }
+            static var improveBills: String { ls("panel.health.improve.bills", comment: "Health: what would raise the score most (commitments)") }
+            static var improveNothing: String { ls("panel.health.improve.nothing", comment: "Health: all three parts are fine") }
+            static func floorNote(_ floor: Int) -> String {
+                String(format: ls("panel.health.floorNote", comment: "Health: the total never goes below this number. %d = floor"), floor)
             }
 
             // MARK: Detail sheet — Activity.
@@ -861,6 +937,43 @@ enum L10n {
             static var availableLabel: String {
                 ls("panel.hero.availableLabel", comment: "Hero — available amount label, composed with period display name")
             }
+
+            // UX 2.2 · L3-1/L3-2/L3-3: el rótulo dice qué mide la cifra y una línea dice de dónde sale.
+            static func balanceOfMonth(_ month: String) -> String {
+                String(format: ls("panel.hero.balanceOfMonth", comment: "Panel hero label: income minus expenses of a named month. %@ = month name"), month)
+            }
+            static func expensesOfMonth(_ month: String) -> String {
+                String(format: ls("panel.hero.expensesOfMonth", comment: "Panel hero label when only expenses are shown. %@ = month name"), month)
+            }
+            static func incomeOfMonth(_ month: String) -> String {
+                String(format: ls("panel.hero.incomeOfMonth", comment: "Panel hero label when only income is shown. %@ = month name"), month)
+            }
+            /// VoiceOver de la pastilla de ingresos del hero: qué es y cuánto. Clave propia y no `accountDetail.moneyIn`: misma
+            /// palabra hoy, pero acoplar dos pantallas por un literal es cómo acaban cambiando juntas.
+            static func incomePill(_ amount: String) -> String {
+                String(format: ls("panel.hero.incomePill", comment: "VoiceOver label of the income pill under the panel hero. %@ = amount"), amount)
+            }
+            static func expensePill(_ amount: String) -> String {
+                String(format: ls("panel.hero.expensePill", comment: "VoiceOver label of the expense pill under the panel hero. %@ = amount"), amount)
+            }
+            static var noMovements: String {
+                ls("panel.hero.noMovements", comment: "Line under the panel hero when the period has no income or expenses yet")
+            }
+            static func totalInAccounts(_ amount: String) -> String {
+                String(format: ls("panel.hero.totalInAccounts", comment: "Second line under the panel hero with no movements: the money in the accounts. %@ = amount"), amount)
+            }
+            static var seeDetail: String {
+                ls("panel.hero.seeDetail", comment: "Small hint next to the panel hero label: tapping opens Statistics")
+            }
+            static var onlyExpensesChip: String {
+                ls("panel.hero.onlyExpensesChip", comment: "Chip under the panel hero while the expenses-only filter is on")
+            }
+            static var onlyIncomeChip: String {
+                ls("panel.hero.onlyIncomeChip", comment: "Chip under the panel hero while the income-only filter is on")
+            }
+            static var clearNatureFilter: String {
+                ls("panel.hero.clearNatureFilter", comment: "VoiceOver label of the chip that removes the income/expense filter")
+            }
         }
         static var totalBalance: String {
             ls("panel.totalBalance", comment: "Total balance label")
@@ -874,7 +987,27 @@ enum L10n {
         /// Píldora de IA en la fila de acciones del Panel. Clave propia y no la
         /// de `cashFlowPlan`: misma palabra hoy, pero acoplar dos pantallas por
         /// un literal es cómo acaban cambiando juntas sin querer.
-        static var aiPill: String { ls("panel.aiPill", comment: "Panel quick actions — short label for the AI assistant pill (IA/AI/KI per locale)") }
+        /// Nombre de la línea discontinua de la gráfica de saldo (UX 2.2 · L3-17). %@ = cifra corta («99K»).
+        static func trendAverageLabel(_ value: String) -> String {
+            String(format: ls("panel.trend.averageLabel", comment: "Balance chart: label of the dashed average line. %@ = short amount"), value)
+        }
+        /// La cola de avisos del Panel (UX 2.2 · L3-8).
+        enum Notices {
+            static func position(_ index: Int, _ total: Int) -> String {
+                String(format: ls("panel.notices.position", comment: "Panel notices pager: which notice of how many. %1$d = position, %2$d = total"), index, total)
+            }
+            static var next: String { ls("panel.notices.next", comment: "Panel notices pager: button that shows the next notice") }
+        }
+        /// Botón rosa del Panel sin cuentas, en lugar de la fila de acciones apagada (UX 2.2 · L3-10).
+        static var createFirstAccount: String { ls("panel.createFirstAccount", comment: "Panel with no accounts: pink button that creates the first account") }
+        static var createFirstAccountHint: String { ls("panel.createFirstAccountHint", comment: "Line under the create-first-account button on the Panel") }
+        /// Línea bajo «Crear categorías» del Panel: hay cuenta pero ninguna categoría con la que registrar (card omw5).
+        static var createCategoriesHint: String { ls("panel.createCategoriesHint", comment: "Line under the create-categories button on the Panel: there is an account but no category to record with") }
+
+        /// Palabra bajo el icono de voz y de foto en la fila de acciones del Panel (UX 2.2 · L4-1). Corta a
+        /// propósito: va debajo del icono, dentro del mismo botón, y no puede ensanchar la fila.
+        static var voiceShort: String { ls("panel.voiceShort", comment: "Panel quick actions — one short word under the voice icon") }
+        static var photoShort: String { ls("panel.photoShort", comment: "Panel quick actions — one short word under the photo icon") }
 
         static var fabVoice: String {
             ls("panel.fabVoice", comment: "")
@@ -991,6 +1124,9 @@ enum L10n {
             static var breakdownToggle: String {
                 ls("panel.liveAnchorEducation.breakdownToggle", comment: "Section header above the per-currency rows: 'By currency'")
             }
+            /// UX 2.2 · L3-15: título de la suma moneda por moneda, y la segunda frase de la explicación corta.
+            static var sumTitle: String { ls("panel.liveAnchorEducation.sumTitle", comment: "Live balance sheet: heading of the per-currency sum") }
+            static var bodyShortWhy: String { ls("panel.liveAnchorEducation.bodyShortWhy", comment: "Live balance sheet: why the balance moves on its own (second sentence)") }
             static func breakdownRowConvertedFormat(_ converted: String) -> String {
                 String(format: ls("panel.liveAnchorEducation.breakdownRowConvertedFormat", comment: "Per-row conversion suffix, e.g. '≈ S/ 1,140 hoy'"), converted)
             }
@@ -1187,6 +1323,7 @@ enum L10n {
         static var resetPlan: String { ls("cashFlowPlan.resetPlan", comment: "") }
         static var resetConfirmation: String { ls("cashFlowPlan.resetConfirmation", comment: "") }
         static var deleteLineConfirmation: String { ls("cashFlowPlan.deleteLineConfirmation", comment: "") }
+        static var deleteLine: String { ls("cashFlowPlan.deleteLine", comment: "") }
         static func suggestPayment(_ name: String) -> String {
             String(format: ls("cashFlowPlan.suggestPayment", comment: ""), name)
         }
@@ -1204,6 +1341,9 @@ enum L10n {
         static var cellDetailOf: String { ls("cashFlowPlan.cellDetailOf", comment: "") }
         static func cellDetailRemaining(_ amount: String) -> String {
             String(format: ls("cashFlowPlan.cellDetailRemaining", comment: ""), amount)
+        }
+        static func cellDetailPendingIncome(_ amount: String) -> String {
+            String(format: ls("cashFlowPlan.cellDetailPendingIncome", comment: ""), amount)
         }
         static var cellDetailRecentTransactions: String { ls("cashFlowPlan.cellDetailRecentTransactions", comment: "") }
         static var cellDetailSpent: String { ls("cashFlowPlan.cellDetailSpent", comment: "") }
@@ -1231,6 +1371,7 @@ enum L10n {
 
         // Add Line redesign (Inc 6)
         static var addFromExpenses: String { ls("cashFlowPlan.addFromExpenses", comment: "") }
+        static var addFromIncome: String { ls("cashFlowPlan.addFromIncome", comment: "") }
         static var addFromExpensesDesc: String { ls("cashFlowPlan.addFromExpensesDesc", comment: "") }
         static var addFromScheduled: String { ls("cashFlowPlan.addFromScheduled", comment: "") }
         static var addFromScheduledDesc: String { ls("cashFlowPlan.addFromScheduledDesc", comment: "") }
@@ -1390,7 +1531,6 @@ enum L10n {
         static var offlineNoCache: String { ls("insights.offlineNoCache", comment: "") }
         static var aiSectionTitle: String { ls("insights.aiSectionTitle", comment: "") }
         static var aiToggle: String { ls("insights.aiToggle", comment: "") }
-        static var aiCaption: String { ls("insights.aiCaption", comment: "") }
         static var metricsSection: String { ls("insights.metricsSection", comment: "") }
         static var chartsSection: String { ls("insights.chartsSection", comment: "") }
         static var analysisSection: String { ls("insights.analysisSection", comment: "") }
@@ -1474,7 +1614,6 @@ enum L10n {
         static var focusLabel: String { ls("insights.focusLabel", comment: "") }
 
         // AI teaser
-        static var aiTeaser: String { ls("insights.aiTeaser", comment: "") }
         static var aiTeaserPlaceholder1: String { ls("insights.aiTeaserPlaceholder1", comment: "") }
         static var aiTeaserPlaceholder2: String { ls("insights.aiTeaserPlaceholder2", comment: "") }
 
@@ -1636,11 +1775,25 @@ enum L10n {
         static var noRecords: String { ls("records.noRecords", comment: "") }
         static var noRecordsThisDay: String { ls("records.noRecordsThisDay", comment: "Calendario: día seleccionado sin registros") }
         static var detailPlaceholder: String { ls("records.detailPlaceholder", comment: "iPad/ventana ancha: columna de detalle vacía en Registros") }
+        /// «Por cobrar»: la pata de una venta de grupo que aún no te pagan (Grupos B · card 8).
+        static var receivable: String { ls("records.receivable", comment: "Fila de Registros: lo que te deben por una venta en un grupo") }
+        /// «Cobrado»: la parte de una venta de grupo que ya te pagaron (Grupos B · card 10).
+        static var collected: String { ls("records.collected", comment: "Fila de Registros: lo cobrado de una venta en un grupo") }
         static var viewModeListA11y: String { ls("records.viewModeListA11y", comment: "A11y: botón vista lista") }
         static var viewModeCalendarA11y: String { ls("records.viewModeCalendarA11y", comment: "A11y: botón vista calendario") }
         static func deleteConfirmTitle(_ count: Int) -> String {
             String(format: ls("records.deleteConfirmTitle", comment: ""), count)
         }
+        /// Barra del modo selección: «1 seleccionado», «3 seleccionados». Plural en el `.stringsdict`.
+        static func selectedCount(_ count: Int) -> String {
+            String(format: ls("records.selectedCount", comment: "Modo selección: cuántos registros hay elegidos"), count)
+        }
+        /// Borrado en lote: los elegidos que vienen de un grupo se quedan. Plural en el `.stringsdict`.
+        static func groupRecordsKept(_ count: Int) -> String {
+            String(format: ls("records.groupRecordsKept", comment: "Borrado en lote: cuántos de los elegidos vienen de un grupo y no se borran"), count)
+        }
+        static var groupRecordsOnlyTitle: String { ls("records.groupRecordsOnlyTitle", comment: "Borrado en lote: todo lo elegido viene de un grupo") }
+        static var groupRecordsDeleteFromGroup: String { ls("records.groupRecordsDeleteFromGroup", comment: "Borrado en lote: por qué lo de un grupo se borra desde el grupo") }
 
         enum Duplicates {
             static var menuTitle: String { ls("records.duplicates.menuTitle", comment: "") }
@@ -1657,6 +1810,8 @@ enum L10n {
     enum Filters {
         static var title: String { ls("filters.title", comment: "") }
         static var all: String { ls("filters.all", comment: "") }
+        /// «Todas» para cuentas, categorías, etiquetas y monedas (UX 2.2 · L3-5): en español salía «Categorías (Todos)».
+        static var allFeminine: String { ls("filters.allFeminine", comment: "Filter status when nothing narrows a feminine noun list (accounts, categories, tags, currencies)") }
         static var allAccounts: String { ls("filters.allAccounts", comment: "") }
         static var allCategories: String { ls("filters.allCategories", comment: "") }
         static var clearFilters: String { ls("filters.clearFilters", comment: "") }
@@ -1717,6 +1872,8 @@ enum L10n {
         static var currency: String { ls("filters.currency", comment: "") }
         static var includeMode: String { ls("filters.includeMode", comment: "") }
         static var excludeMode: String { ls("filters.excludeMode", comment: "") }
+        static var includeModeExplanation: String { ls("filters.includeModeExplanation", comment: "Filters sheet: what the include mode does") }
+        static var excludeModeExplanation: String { ls("filters.excludeModeExplanation", comment: "Filters sheet: what the exclude mode does") }
         static var nothingExcluded: String { ls("filters.nothingExcluded", comment: "") }
         static func datePrefix(_ date: String) -> String { String(format: ls("filters.datePrefix %@", comment: ""), date) }
     }
@@ -1743,7 +1900,6 @@ enum L10n {
         static var saveAsRecurring: String { ls("action.saveAsRecurring", comment: "") }
         static var savedAsFavorite: String { ls("action.savedAsFavorite", comment: "") }
         static var savedAsRecurring: String { ls("action.savedAsRecurring", comment: "") }
-        static var duplicated: String { ls("action.duplicated", comment: "") }
         static var select: String { ls("action.select", comment: "") }
         static var retry: String { ls("action.retry", comment: "") }
         static var later: String { ls("action.later", comment: "") }
@@ -1797,6 +1953,11 @@ enum L10n {
         static var sharesYouPay: String { ls("split.sharesYouPay", comment: "") }
         static var sharesOf: String { ls("split.sharesOf", comment: "") }
         static var sharesParts: String { ls("split.sharesParts", comment: "") }
+        /// «1 parte» / «2 partes»: la etiqueta que va detrás de un número de partes.
+        static func sharesUnit(_ count: Int) -> String {
+            count == 1 ? sharesPart : sharesParts
+        }
+        static var sharesPart: String { ls("split.sharesPart", comment: "") }
         // Chip detail labels (renderiza "Tu: X · Resto: Y" debajo del monto en GroupExpenseFormView)
         static var totalLabel: String { ls("split.totalLabel", comment: "") }
         static var youLabel: String { ls("split.you", comment: "") }
@@ -1817,6 +1978,36 @@ enum L10n {
 
     enum Groups {
         static var detailPlaceholder: String { ls("groups.detailPlaceholder", comment: "iPad/ventana ancha: columna de detalle vacía en Grupos") }
+
+        /// Grupos B · tarjeta «Tu parte» y hoja de una línea (`GroupSplitLinesCard`, `GroupSplitLineSheet`).
+        enum SplitLines {
+            static func title(_ share: String) -> String { String(format: ls("groups.splitLines.title %@"), share) }
+            static var addLine: String { ls("groups.splitLines.addLine") }
+            static var balanced: String { ls("groups.splitLines.balanced") }
+            static func missing(_ amount: String) -> String { String(format: ls("groups.splitLines.missing %@"), amount) }
+            static func over(_ amount: String) -> String { String(format: ls("groups.splitLines.over %@"), amount) }
+            static var kindTransfer: String { ls("groups.splitLines.kindTransfer") }
+            static func transferTo(_ account: String) -> String { String(format: ls("groups.splitLines.transferTo %@"), account) }
+            static var transferSubtitle: String { ls("groups.splitLines.transferSubtitle") }
+            static var chooseCategory: String { ls("groups.splitLines.chooseCategory") }
+            static var chooseAccount: String { ls("groups.splitLines.chooseAccount") }
+            static var destinationUnavailable: String { ls("groups.splitLines.destinationUnavailable") }
+            static var sheetTitle: String { ls("groups.splitLines.sheetTitle") }
+            static func from(_ account: String) -> String { String(format: ls("groups.splitLines.from %@"), account) }
+            static func transferExplanation(_ account: String) -> String {
+                String(format: ls("groups.splitLines.transferExplanation %@"), account)
+            }
+            static var transferExplanationNoAccount: String { ls("groups.splitLines.transferExplanationNoAccount") }
+            static var saveLine: String { ls("groups.splitLines.saveLine") }
+            static var deleteLine: String { ls("groups.splitLines.deleteLine") }
+            static var kindPicker: String { ls("groups.splitLines.kindPicker") }
+            /// Card 5: la pastilla de la hoja de la Bandeja que abre la tarjeta «Tu parte».
+            static var splitAction: String { ls("groups.splitLines.splitAction") }
+            /// Card 6: el enlace de la pantalla de éxito y del detalle del registro.
+            static var splitYourShare: String { ls("groups.splitLines.splitYourShare") }
+            /// Card 6: título de la hoja «Tu parte».
+            static var yourShareTitle: String { ls("groups.splitLines.yourShareTitle") }
+        }
         /// **«Empezar de cero» no borró: quedan cambios de grupos sin subir** (ticket
         /// `fresh-start-wipe-kills-unsent-group-writes-silently`). Lo enseñan las tres pantallas del gesto —la puerta
         /// privada del Welcome, el aviso del espejo tardío y el alert del shell—, seguido del motivo de la subida
@@ -2005,6 +2196,8 @@ enum L10n {
         enum Stats {
             static var totalSpent: String { ls("groups.stats.totalSpent", comment: "") }
             static var myPortion: String { ls("groups.stats.myPortion", comment: "") }
+            /// UX 2.2 · L13-13: bajo «Mi parte», qué mide («lo que te tocaba»).
+            static var myPortionHint: String { ls("groups.stats.myPortionHint", comment: "") }
             static var whoMadeMostPayments: String { ls("groups.stats.whoMadeMostPayments", comment: "") }
             static var categories: String { ls("groups.stats.categories", comment: "") }
             static var monthlyTrend: String { ls("groups.stats.monthlyTrend", comment: "") }
@@ -2026,6 +2219,12 @@ enum L10n {
         // MARK: - Bridge (A0-Bridge)
 
         enum OpeningBalance {
+            /// UX 2.2 · L13-10: línea de ayuda bajo el título del formulario.
+            static var formHelp: String { ls("groups.openingBalance.formHelp", comment: "") }
+            /// Lote 12.3 (card rhgi): la línea con lo que falta al tocar «Guardar».
+            static var missingDebtor: String { ls("groups.openingBalance.missingDebtor", comment: "") }
+            static var missingCreditor: String { ls("groups.openingBalance.missingCreditor", comment: "") }
+            static var missingDistinctPeople: String { ls("groups.openingBalance.missingDistinctPeople", comment: "") }
             /// Descripción del SplitExpense de saldo inicial (también label base del feed).
             static var entryDescription: String { ls("groups.openingBalance.entryDescription", comment: "") }
             /// Fila del feed: "%1$@ le debe a %2$@".
@@ -2041,6 +2240,8 @@ enum L10n {
             static var sectionTitle: String { ls("groups.openingBalance.sectionTitle", comment: "") }
             static var addButton: String { ls("groups.openingBalance.addButton", comment: "") }
             static var emptyState: String { ls("groups.openingBalance.emptyState", comment: "") }
+            /// Card jqgy: nota de la sección en un grupo congelado (neutra para los tres estados: volver a entrar, actualizar, pausa).
+            static var frozenNote: String { ls("groups.openingBalance.frozenNote", comment: "") }
             /// Rollup por miembro: "%@ debe" (deudor neto).
             static var rollupOwes: String { ls("groups.openingBalance.rollupOwes", comment: "") }
             /// Rollup por miembro: "a %@ le deben" (acreedor neto).
@@ -2053,8 +2254,13 @@ enum L10n {
             static var approvalPromptAdd: String { ls("groups.openingBalance.approvalPromptAdd", comment: "") }
             static var approvalPromptSkip: String { ls("groups.openingBalance.approvalPromptSkip", comment: "") }
             // Errores
-            static var errorNotOwner: String { ls("groups.openingBalance.errorNotOwner", comment: "") }
+            static var errorNotAdmin: String { ls("groups.openingBalance.errorNotAdmin", comment: "") }
             static var errorSameMember: String { ls("groups.openingBalance.errorSameMember", comment: "") }
+            // El servidor rechazó la subida (card 6n1o, g27_01): aviso en el detalle del grupo.
+            static var serverRejectedTitle: String { ls("groups.openingBalance.serverRejected.title", comment: "") }
+            static var serverRejectedNotAdmin: String { ls("groups.openingBalance.serverRejected.notAdmin", comment: "") }
+            static var serverRejectedLocked: String { ls("groups.openingBalance.serverRejected.locked", comment: "") }
+            static var serverRejectedGroupClosed: String { ls("groups.openingBalance.serverRejected.groupClosed", comment: "") }
         }
 
         enum Bridge {
@@ -2070,6 +2276,8 @@ enum L10n {
             static var editPartialBannerCaseB: String { ls("groups.bridge.editPartialBannerCaseB", comment: "") }
             static var draftReasonRemoteCreate: String { ls("groups.bridge.draftReasonRemoteCreate", comment: "") }
             static var draftReasonCurrencyChanged: String { ls("groups.bridge.draftReasonCurrencyChanged", comment: "") }
+            /// Grupos B: las líneas de tu parte ya no cuadran. %@ = nombre del grupo.
+            static var draftReasonSplitLinesMismatch: String { ls("groups.bridge.draftReasonSplitLinesMismatch", comment: "") }
             // Activation/deactivation modals (F12)
             static var activateTitle: String { ls("groups.bridge.activateTitle", comment: "") }
             static func activateBody(_ count: Int) -> String {
@@ -2088,6 +2296,12 @@ enum L10n {
             static var deactivateOptionKeep: String { ls("groups.bridge.deactivateOptionKeep", comment: "") }
             // Deactivation sheet (F5)
             static var deactivationSheetTitle: String { ls("groups.bridge.deactivationSheetTitle", comment: "") }
+            /// UX 2.2 · L13-14: confirmación de «Eliminar de mis cuentas». El cuerpo lleva el número entre los dos puntos y el
+            /// punto, sin concordancia de plural a propósito.
+            static var deleteConfirmTitle: String { ls("groups.bridge.deleteConfirmTitle", comment: "") }
+            static func deleteConfirmMessage(_ count: Int) -> String {
+                String(format: ls("groups.bridge.deleteConfirmMessage", comment: ""), count)
+            }
             static var deactivationSheetBody: String { ls("groups.bridge.deactivationSheetBody", comment: "") }
             static var deactivationOptionFreeze: String { ls("groups.bridge.deactivationOptionFreeze", comment: "") }
             static var deactivationOptionDelete: String { ls("groups.bridge.deactivationOptionDelete", comment: "") }
@@ -2218,6 +2432,8 @@ enum L10n {
             static var personalIntegrationHintInheritOn: String { ls("groups.settings.personalIntegrationHintInheritOn", comment: "") }
             static var personalIntegrationHintLocalOff: String { ls("groups.settings.personalIntegrationHintLocalOff", comment: "") }
             static var personalIntegrationHintBlockedByGlobal: String { ls("groups.settings.personalIntegrationHintBlockedByGlobal", comment: "") }
+            /// UX 2.2 · L13-14: enlace bajo el aviso, abre Ajustes de Grupos.
+            static var openGroupsSettings: String { ls("groups.settings.openGroupsSettings", comment: "") }
         }
 
         enum Errors {
@@ -2374,6 +2590,9 @@ enum L10n {
         enum SignIn {
             static var title: String { ls("groups.signin.title", comment: "") }
             static var body: String { ls("groups.signin.body", comment: "") }
+            /// Lo mismo cuando NO hay invitación detrás (crear un grupo, o la pestaña sin sesión): `body` habla de «tu
+            /// invitación» y a esa persona no la invitó nadie (auditoría UX 2.2, lote 12).
+            static var bodyNoInvite: String { ls("groups.signin.bodyNoInvite", comment: "") }
             /// Invariante R9: esta será LA cuenta si algún día migra lo personal.
             static var accountNote: String { ls("groups.signin.accountNote", comment: "") }
             static var error: String { ls("groups.signin.error", comment: "") }
@@ -2414,6 +2633,26 @@ enum L10n {
             /// "Le debes a %@" — el usuario actual le debe a otro miembro (perspectiva iOwe).
             static func youOwe(_ name: String) -> String {
                 String(format: ls("groups.card.youOwe", comment: ""), name)
+            }
+            /// «y %d más» — las personas que no caben en las tres filas de la tarjeta.
+            static func andMore(_ count: Int) -> String {
+                String(format: ls("groups.card.andMore", comment: ""), count)
+            }
+        }
+
+        /// El rótulo de la cifra grande de la lista: el neto en tu moneda principal (Yala completo, 2026-11-03).
+        enum Hero {
+            /// «Te deben en total · en S/»
+            static func netOwedToMe(_ symbol: String) -> String {
+                String(format: ls("groups.hero.netOwedToMe", comment: ""), symbol)
+            }
+            /// «Debes en total · en S/»
+            static func netIOwe(_ symbol: String) -> String {
+                String(format: ls("groups.hero.netIOwe", comment: ""), symbol)
+            }
+            /// «Estás a mano · en S/»
+            static func netEven(_ symbol: String) -> String {
+                String(format: ls("groups.hero.netEven", comment: ""), symbol)
             }
         }
 
@@ -2553,6 +2792,9 @@ enum L10n {
             enum Success {
                 static var titleCreated: String { ls("groups.expense.success.titleCreated", comment: "") }
                 static var titleUpdated: String { ls("groups.expense.success.titleUpdated", comment: "") }
+                /// Card 00xj: la pantalla de éxito de una venta de grupo.
+                static var titleSaleCreated: String { ls("groups.expense.success.titleSaleCreated", comment: "Éxito: se guardó una venta de grupo") }
+                static var titleSaleUpdated: String { ls("groups.expense.success.titleSaleUpdated", comment: "Éxito: se editó una venta de grupo") }
                 static var group: String { ls("groups.expense.success.group", comment: "") }
                 static var splitLabel: String { ls("groups.expense.success.splitLabel", comment: "") }
                 static var participants: String { ls("groups.expense.success.participants", comment: "") }
@@ -2571,7 +2813,37 @@ enum L10n {
             static var remaining: String { ls("groups.expense.remaining", comment: "") }
             static func remainingAmount(_ amount: String) -> String { String(format: ls("groups.expense.remainingAmount", comment: ""), amount) }
             static var balanced: String { ls("groups.expense.balanced", comment: "") }
+            /// UX 2.2 · L13-4: «¿Eliminar «Mercado»?» y su alcance.
+            static func deleteTitle(_ name: String) -> String {
+                name.trimmingCharacters(in: .whitespaces).isEmpty
+                    ? ls("groups.expense.deleteTitleUnnamed", comment: "")
+                    : String(format: ls("groups.expense.deleteTitle", comment: ""), name)
+            }
+            static var deleteMessage: String { ls("groups.expense.deleteMessage", comment: "") }
+            /// UX 2.2 · L13-9: la línea sobre «Guardar» con lo que falta.
+            static var missingDescription: String { ls("groups.expense.missingDescription", comment: "") }
+            static var missingAmount: String { ls("groups.expense.missingAmount", comment: "") }
+            static var missingPayer: String { ls("groups.expense.missingPayer", comment: "") }
+            static var missingParticipants: String { ls("groups.expense.missingParticipants", comment: "") }
+            static var missingSplit: String { ls("groups.expense.missingSplit", comment: "") }
+            static var missingAccount: String { ls("groups.expense.missingAccount", comment: "") }
             static var eachPays: String { ls("groups.expense.eachPays", comment: "") }
+            /// «Salen S/ 240.00 de tu cuenta y te deben S/ 160.00»: bajo los selectores, cuando pagas tú (registro unificado).
+            static func outflowLine(_ paidOut: String, _ owedToYou: String) -> String {
+                String(format: ls("groups.expense.outflowLine", comment: ""), paidOut, owedToYou)
+            }
+            /// «Salen S/ 240.00 de tu cuenta»: lo mismo cuando nadie te debe nada.
+            static func outflowLineNoDebt(_ paidOut: String) -> String {
+                String(format: ls("groups.expense.outflowLineNoDebt", comment: ""), paidOut)
+            }
+            /// «Ana te debe S/ 120.00. Cuenta como ingreso cuando te pague.»: una venta con un solo deudor (Grupos B · card 7).
+            static func saleLineOne(_ debtor: String, _ owed: String) -> String {
+                String(format: ls("groups.expense.saleLineOne", comment: ""), debtor, owed)
+            }
+            /// «Te deben S/ 120.00. Cuenta como ingreso cuando te paguen.»: una venta con varios deudores.
+            static func saleLineMany(_ owed: String) -> String {
+                String(format: ls("groups.expense.saleLineMany", comment: ""), owed)
+            }
         }
 
         enum Settlement {
@@ -2824,15 +3096,6 @@ enum L10n {
             static var step2BridgeAwareness: String { ls("groups.onboarding.step2.bridgeAwareness", comment: "") }
 
             // Step 3 — Privacy + CTA
-            static var step3Title: String { ls("groups.onboarding.step3.title", comment: "") }
-            static var step3Subtitle: String { ls("groups.onboarding.step3.subtitle", comment: "") }
-            /// C2 · el HECHO sustantivo, y va el primero. Los otros dos puntos tranquilizan («tu privacidad,
-            /// primero») sin decir nunca DÓNDE se guardan los gastos del grupo; el consent sí lo dice, pero
-            /// llega después de pedir identidad. Sin promesa de cifrado, a propósito: `GroupsConsentView`
-            /// evita esa palabra por lo mismo (G7 no aterrizó — «protegidos» es lo honesto).
-            static var step3Point0: String { ls("groups.onboarding.step3.point0", comment: "") }
-            static var step3Point1: String { ls("groups.onboarding.step3.point1", comment: "") }
-            static var step3Point2: String { ls("groups.onboarding.step3.point2", comment: "") }
             static var step3CTA: String { ls("groups.onboarding.step3.cta", comment: "") }
             /// A1 (D-A7): CTA de sign-in del cierre. Solo se pinta sin sesión Yala viva
             /// (`GroupsOnboardingLogic.shouldShowSignInCTA`).
@@ -2840,8 +3103,6 @@ enum L10n {
             /// C2 · la variante del mismo CTA para quien NUNCA tuvo cuenta. «Iniciar sesión» le pide volver
             /// a un sitio donde no ha estado; el hecho es que se le está creando una cuenta de Yala.
             static var step3CreateAccountCTA: String { ls("groups.onboarding.step3.createAccountCTA", comment: "") }
-            /// F6 awareness: hint que el bridge es configurable en Ajustes de Grupos.
-            static var step3BridgeAwareness: String { ls("groups.onboarding.step3.bridgeAwareness", comment: "") }
         }
     }
 
@@ -2863,7 +3124,7 @@ enum L10n {
         static var processingRow: String { ls("aiPrivacy.processingRow", comment: "") }
         static var chatRow: String { ls("aiPrivacy.chatRow", comment: "") }
         static var insightsRow: String { ls("aiPrivacy.insightsRow", comment: "") }
-        static var revokeConfirmTitle: String { ls("aiPrivacy.revokeConfirmTitle", comment: "") }
+        static var cloudExploreRow: String { ls("aiPrivacy.cloudExploreRow", comment: "") }
         static var revokeConfirmMessage: String { ls("aiPrivacy.revokeConfirmMessage", comment: "") }
         static var revokeConfirmAction: String { ls("aiPrivacy.revokeConfirmAction", comment: "") }
         static var footerHint: String { ls("aiPrivacy.footerHint", comment: "") }
@@ -2873,6 +3134,9 @@ enum L10n {
     enum AIConsent {
         static var processingTitle: String { ls("aiConsent.processingTitle", comment: "") }
         static var processingMessage: String { ls("aiConsent.processingMessage", comment: "") }
+        /// Botón principal del aviso de voz y foto (UX 2.2 · L4-2). Propio: el «Aceptar y activar» lo comparten el chat y
+        /// el resumen inteligente.
+        static var processingAccept: String { ls("aiConsent.processingAccept", comment: "Primary button of the voice/photo AI notice") }
         static var insightsTitle: String { ls("aiConsent.insightsTitle", comment: "") }
         static var insightsMessage: String { ls("aiConsent.insightsMessage", comment: "") }
         static var accept: String { ls("aiConsent.accept", comment: "") }
@@ -2882,6 +3146,9 @@ enum L10n {
         static var inlineHintBoth: String { ls("aiConsent.inlineHintBoth", comment: "") }
         static var chatTitle: String { ls("aiConsent.chatTitle", comment: "") }
         static var chatMessage: String { ls("aiConsent.chatMessage", comment: "") }
+        /// N1: Yala IA con la cuenta en la nube puede consultar más datos (decisión 1A, 2026-10-18).
+        static var cloudExploreTitle: String { ls("aiConsent.cloudExploreTitle", comment: "") }
+        static var cloudExploreMessage: String { ls("aiConsent.cloudExploreMessage", comment: "") }
         static var inlineHintChat: String { ls("aiConsent.inlineHintChat", comment: "") }
         static var inlineHintMultiple: String { ls("aiConsent.inlineHintMultiple", comment: "") }
     }
@@ -2889,7 +3156,6 @@ enum L10n {
     // MARK: - Chat Assistant
 
     enum Chat {
-        static var title: String { ls("chat.title", comment: "") }
         static var inputPlaceholder: String { ls("chat.inputPlaceholder", comment: "") }
         static var send: String { ls("chat.send", comment: "") }
         static var emptySubtitle: String { ls("chat.emptySubtitle", comment: "") }
@@ -3070,6 +3336,8 @@ enum L10n {
         static var newPayment: String { ls("accessibility.newPayment", comment: "") }
         static var importingHint: String { ls("accessibility.importingHint", comment: "") }
         static func variationIncrease(_ value: String) -> String { String(format: ls("accessibility.variationIncrease %@", comment: ""), value) }
+        /// Un cambio que redondea a cero (UX 2.2 · L18-4): «Sin cambio», no «Aumento +0 %».
+        static var variationNoChange: String { ls("accessibility.variationNoChange", comment: "") }
         static func variationDecrease(_ value: String) -> String { String(format: ls("accessibility.variationDecrease %@", comment: ""), value) }
         static var processing: String { ls("accessibility.processing", comment: "") }
         static func removeTab(_ name: String) -> String { String(format: ls("accessibility.removeTab %@", comment: ""), name) }
@@ -3091,6 +3359,7 @@ enum L10n {
     enum Search {
         static var noResults: String { ls("search.noResults", comment: "") }
         static var tryAnotherTerm: String { ls("search.tryAnotherTerm", comment: "") }
+        /// Plural en el `.stringsdict` («1 resultado»).
         static func resultsCount(_ count: Int) -> String { String(format: ls("search.resultsCount", comment: ""), count) }
 
         enum Filter {
@@ -3352,6 +3621,11 @@ enum L10n {
         static var exchangeRate: String {
             ls("transaction.exchangeRate", comment: "")
         }
+        /// Fila «Tipo de cambio» del detalle cuando la conversión no se escribió y no hay tasa de la fecha
+        /// del registro: sustituye al importe, que nunca se pinta como 0.
+        static var exchangeRateMissingForDay: String {
+            ls("transaction.exchangeRateMissingForDay", comment: "")
+        }
         static var willReceive: String { ls("transaction.willReceive", comment: "") }
         static var createAnother: String {
             ls("transaction.createAnother", comment: "")
@@ -3453,13 +3727,20 @@ enum L10n {
         static var archiveExcludedNotice: String { ls("account.archiveExcludedNotice", comment: "") }
         static var delete: String { ls("account.delete", comment: "") }
         static var deleteError: String { ls("account.deleteError", comment: "") }
+        /// «¿Eliminar «Tarjeta BCP»?» — la confirmación de borrar una cuenta (auditoría UX 2.2, lote 7, B1).
+        static func deleteConfirmTitle(_ name: String) -> String {
+            String(format: ls("account.deleteConfirmTitle", comment: ""), name)
+        }
+        /// Cuántos registros tiene y a dónde van: no se borran, quedan en Registros sin cuenta (plural).
+        /// `localizedStringWithFormat` y no `String(format:)`: con 2202 registros, «2,202».
+        static func deleteConfirmMessage(_ count: Int) -> String {
+            String.localizedStringWithFormat(ls("account.deleteConfirmMessage", comment: ""), count)
+        }
+        static var deleteConfirmMessageEmpty: String { ls("account.deleteConfirmMessageEmpty", comment: "") }
         static var addAccount: String { ls("account.addAccount", comment: "") }
 
         // MARK: - Eliminar con movimientos (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst)
         enum Removal {
-            static func title(_ name: String) -> String {
-                String(format: ls("account.removal.title", comment: ""), name)
-            }
             static func convertNote(_ to: String) -> String {
                 String(format: ls("account.removal.convertNote", comment: ""), to)
             }
@@ -3472,12 +3753,25 @@ enum L10n {
             static func collapsedNote(_ source: String, _ destination: String) -> String {
                 String(format: ls("account.removal.collapsedNote", comment: ""), source, destination)
             }
-            static var intro: String { ls("account.removal.intro", comment: "") }
+            /// Propuesta A de la card rd7z (2026-10-29): cabecera, pregunta y tarjeta de mover con su destino y saldo.
+            static var question: String { ls("account.removal.question", comment: "") }
+            static func recordCount(_ count: Int) -> String {
+                String.localizedStringWithFormat(ls("account.removal.recordCount", comment: ""), count)
+            }
+            static func destinationLine(_ name: String) -> String {
+                String(format: ls("account.removal.destinationLine", comment: ""), name)
+            }
+            static var change: String { ls("account.removal.change", comment: "") }
+            static func balanceChange(_ name: String, _ before: String, _ after: String) -> String {
+                String(format: ls("account.removal.balanceChange", comment: ""), name, before, after)
+            }
+            static func moveActionNamed(_ name: String) -> String {
+                String(format: ls("account.removal.moveActionNamed", comment: ""), name)
+            }
             static var countRecords: String { ls("account.removal.countRecords", comment: "") }
             static var countScheduled: String { ls("account.removal.countScheduled", comment: "") }
             static var countFavorites: String { ls("account.removal.countFavorites", comment: "") }
             static var countDrafts: String { ls("account.removal.countDrafts", comment: "") }
-            static var choiceHeader: String { ls("account.removal.choiceHeader", comment: "") }
             static var moveTitle: String { ls("account.removal.moveTitle", comment: "") }
             static var moveSubtitle: String { ls("account.removal.moveSubtitle", comment: "") }
             static var noDestination: String { ls("account.removal.noDestination", comment: "") }
@@ -3488,7 +3782,6 @@ enum L10n {
             static var destinationBlockedCurrency: String { ls("account.removal.destinationBlockedCurrency", comment: "") }
             static var partnersNote: String { ls("account.removal.partnersNote", comment: "") }
             static var plansNote: String { ls("account.removal.plansNote", comment: "") }
-            static var moveAction: String { ls("account.removal.moveAction", comment: "") }
             static var deleteAction: String { ls("account.removal.deleteAction", comment: "") }
             static var confirmDeleteTitle: String { ls("account.removal.confirmDeleteTitle", comment: "") }
             static var confirmDeleteCount: String { ls("account.removal.confirmDeleteCount", comment: "") }
@@ -3636,6 +3929,70 @@ enum L10n {
             static func paymentNotification(_ accountName: String) -> String {
                 String(format: ls("account.creditCard.paymentNotification", comment: ""), accountName)
             }
+        }
+
+        // MARK: - Tarjeta con varias divisas (entrega 2)
+        enum Lines {
+            /// VoiceOver de la pastilla de divisa del formulario cuando la cuenta elegida es una tarjeta con varias divisas.
+            static func cardCurrencyChip(_ currencyCode: String) -> String {
+                String(format: ls("account.lines.cardCurrencyChip", comment: "VoiceOver label of a currency pill next to a multi-currency card in the transaction form. %@ = ISO code"), currencyCode)
+            }
+            static func lineLabel(_ currencyCode: String) -> String {
+                String(format: ls("account.lines.lineLabel %@", comment: ""), currencyCode)
+            }
+            static var sectionTitle: String { ls("account.lines.sectionTitle", comment: "") }
+            static var sectionFooter: String { ls("account.lines.sectionFooter", comment: "") }
+            static var add: String { ls("account.lines.add", comment: "") }
+            /// Tras crear una cuenta (S12j): la pregunta que descubre que puede tener varias divisas.
+            static var offerTitle: String { ls("account.lines.offerTitle", comment: "Title shown right after creating an account, offering to add a line in another currency") }
+            static func offerMessage(_ accountName: String) -> String {
+                String(format: ls("account.lines.offerMessage %@", comment: "Body of the post-create offer. %@ = the new account's name"), accountName)
+            }
+            static var link: String { ls("account.lines.link", comment: "") }
+            static var addTitle: String { ls("account.lines.addTitle", comment: "") }
+            static func addFooter(_ lineName: String) -> String {
+                String(format: ls("account.lines.addFooter %@", comment: ""), lineName)
+            }
+            static var addBalance: String { ls("account.lines.addBalance", comment: "") }
+            static var linkTitle: String { ls("account.lines.linkTitle", comment: "") }
+            static func linkFooter(_ cardName: String) -> String {
+                String(format: ls("account.lines.linkFooter %@", comment: ""), cardName)
+            }
+            static var linkEmpty: String { ls("account.lines.linkEmpty", comment: "") }
+            static var rejectSameCurrency: String { ls("account.lines.reject.sameCurrency", comment: "") }
+            static var rejectHasLines: String { ls("account.lines.reject.hasLines", comment: "") }
+            static func rejectCurrencyTaken(_ currencyCode: String) -> String {
+                String(format: ls("account.lines.reject.currencyTaken %@", comment: ""), currencyCode)
+            }
+            static var rejectOther: String { ls("account.lines.reject.other", comment: "") }
+            static func isLineOf(currencyCode: String, cardName: String) -> String {
+                String(format: ls("account.lines.isLineOf %@ %@", comment: ""), currencyCode, cardName)
+            }
+            /// Editar cuenta con varias divisas (S30): el selector de moneda, el pie del saldo de una línea y eliminarla.
+            static var currencyPicker: String { ls("account.lines.currencyPicker", comment: "VoiceOver label of the currency segmented control in Edit account") }
+            static func lineBalanceFooter(_ currencyCode: String) -> String {
+                String(format: ls("account.lines.lineBalanceFooter %@", comment: "Footer under a line's initial balance. %@ = ISO code"), currencyCode)
+            }
+            static func delete(_ currencyCode: String) -> String {
+                String(format: ls("account.lines.delete %@", comment: "Button that deletes one currency line. %@ = ISO code"), currencyCode)
+            }
+            static func deleteConfirmTitle(_ currencyCode: String) -> String {
+                String(format: ls("account.lines.deleteConfirmTitle %@", comment: "Title of the confirmation to delete an empty line. %@ = ISO code"), currencyCode)
+            }
+            static var deleteConfirmMessage: String { ls("account.lines.deleteConfirmMessage", comment: "") }
+            static var unlink: String { ls("account.lines.unlink", comment: "") }
+            static var unlinkFooter: String { ls("account.lines.unlinkFooter", comment: "") }
+            static var broken: String { ls("account.lines.broken", comment: "") }
+            static var currencyLocked: String { ls("account.lines.currencyLocked", comment: "") }
+            static func currencyCollision(_ currencyCode: String) -> String {
+                String(format: ls("account.lines.currencyCollision %@", comment: ""), currencyCode)
+            }
+            static var archiveTitle: String { ls("account.lines.archiveTitle", comment: "") }
+            static func archiveMessage(_ cardName: String) -> String {
+                String(format: ls("account.lines.archiveMessage %@", comment: ""), cardName)
+            }
+            static var archiveAll: String { ls("account.lines.archiveAll", comment: "") }
+            static var archiveOnlyCard: String { ls("account.lines.archiveOnlyCard", comment: "") }
         }
 
     }
@@ -4026,35 +4383,9 @@ enum L10n {
         static var period: String { ls("export.period", comment: "") }
         static var selectAll: String { ls("export.selectAll", comment: "") }
         static var deselectAll: String { ls("export.deselectAll", comment: "") }
-        static var customizeFile: String { ls("export.customizeFile", comment: "") }
-        static var csvGeneratedSuccess: String {
-            ls("export.csvGeneratedSuccess", comment: "")
-        }
         /// F1 review G5-D2: el usuario pidió incluir grupos y el CSV de grupos falló — cero silencios.
         static var groupsExportFailedNote: String {
             ls("export.groupsExportFailedNote", comment: "")
-        }
-        static var confirmExport: String { ls("export.confirmExport", comment: "") }
-        static var selectColumns: String {
-            ls("export.selectColumns", comment: "")
-        }
-        static var availableColumns: String {
-            ls("export.availableColumns", comment: "")
-        }
-        static var columnsDescription: String {
-            ls("export.columnsDescription", comment: "")
-        }
-        static var summaryAndExport: String {
-            ls("export.summaryAndExport", comment: "")
-        }
-        static var summaryDescription: String {
-            ls("export.summaryDescription", comment: "")
-        }
-        static var filtersSummary: String {
-            ls("export.filtersSummary", comment: "")
-        }
-        static var columnsToExport: String {
-            ls("export.columnsToExport", comment: "")
         }
         static var exportToCSV: String {
             ls("export.exportToCSV", comment: "")
@@ -4065,9 +4396,10 @@ enum L10n {
         static var exportError: String {
             ls("export.exportError", comment: "")
         }
-        static var exportCompleted: String {
-            ls("export.exportCompleted", comment: "")
-        }
+        // B4 (lote 20, ticket `export-errors-are-hardcoded-in-spanish`): los tres motivos de `TransactionsExportError`.
+        static var errorInvalidDateRange: String { ls("export.error.invalidDateRange", comment: "") }
+        static var errorNoTransactions: String { ls("export.error.noTransactions", comment: "") }
+        static var errorFileWriteFailed: String { ls("export.error.fileWriteFailed", comment: "") }
         static var backToSettings: String {
             ls("export.backToSettings", comment: "")
         }
@@ -4150,6 +4482,9 @@ enum L10n {
         static var columnAmountDesc: String { ls("export.column.amount.description", comment: "") }
         static var columnCurrencyDesc: String { ls("export.column.currency.description", comment: "") }
         static var columnAccountDesc: String { ls("export.column.account.description", comment: "") }
+        /// Columna con la tarjeta con varias divisas de la cuenta (entrega 4).
+        static var columnCard: String { ls("export.column.card", comment: "Export column with the card the account belongs to") }
+        static var columnCardDesc: String { ls("export.column.card.description", comment: "Description of the card export column") }
         static var columnCategoryDesc: String { ls("export.column.category.description", comment: "") }
         static var columnSubcategoryDesc: String { ls("export.column.subcategory.description", comment: "") }
         static var columnTagsDesc: String { ls("export.column.tags.description", comment: "") }
@@ -4334,6 +4669,26 @@ enum L10n {
             static var account: String { ls("scheduled.editor.account", comment: "") }
             static var subcategory: String { ls("scheduled.editor.subcategory", comment: "") }
             static var preview: String { ls("scheduled.editor.preview", comment: "") }
+            /// Estado de UN pago («Activo»). `common.active` es el rótulo de un filtro de Cuentas («Activas»).
+            static var active: String { ls("scheduled.active", comment: "") }
+            /// VoiceOver del ✓ apagado: «Para guardar, falta: cuenta y subcategoría».
+            static func saveMissing(_ fields: String) -> String {
+                String(format: ls("scheduled.editor.save.missing", comment: ""), fields)
+            }
+        }
+
+        /// «Cada 2 meses»: la frecuencia de un pago que se repite cada N (N > 1) días, semanas, meses o años.
+        enum Frequency {
+            static func every(_ interval: Int, _ type: RecurrenceType) -> String {
+                let key: String
+                switch type {
+                case .daily: key = "scheduled.frequency.every.days"
+                case .weekly: key = "scheduled.frequency.every.weeks"
+                case .monthly: key = "scheduled.frequency.every.months"
+                case .yearly: key = "scheduled.frequency.every.years"
+                }
+                return String(format: ls(key, comment: ""), interval)
+            }
         }
 
         enum Detail {
@@ -4442,8 +4797,10 @@ enum L10n {
         static var appLanguage: String {
             ls("settings.appLanguage", comment: "")
         }
-        static var appLanguageRestart: String {
-            ls("settings.appLanguageRestart", comment: "")
+        /// Pie de «Idioma de la app». El cambio se aplica en caliente (`.languageDidChange` reconstruye la app):
+        /// decía «Reinicia la app para aplicar el cambio», que era falso (auditoría UX 2.2, lote 16).
+        static var appLanguageAppliesNow: String {
+            ls("settings.appLanguageAppliesNow", comment: "Footer under the in-app language row: the change applies immediately")
         }
         static var imageInputEnabled: String {
             ls("settings.imageInputEnabled", comment: "")
@@ -4463,7 +4820,6 @@ enum L10n {
             ls("settings.defaultCurrency", comment: "")
         }
         static var currentIcon: String { ls("settings.currentIcon", comment: "") }
-        static var resetAllData: String { ls("settings.resetAllData", comment: "") }
         static var deleteAllData: String {
             ls("settings.deleteAllData", comment: "")
         }
@@ -4490,7 +4846,10 @@ enum L10n {
             ls("settings.recommendedCurrencies", comment: "")
         }
 
-        static var versionInfo: String { ls("settings.versionInfo", comment: "") }
+        /// Pie de Ajustes con la versión REAL del bundle. Antes era un texto fijo («Versión 1.0.0 (Build 1)»).
+        static func versionInfo(version: String, build: String) -> String {
+            String(format: ls("settings.versionInfo", comment: "Settings footer: %1$@ = marketing version, %2$@ = build"), version, build)
+        }
 
         // Sections
         static var organization: String { ls("settings.organization", comment: "") }
@@ -4516,6 +4875,8 @@ enum L10n {
         static var rateApp: String { ls("settings.rateApp", comment: "") }
         static var tutorials: String { ls("settings.tutorials", comment: "") }
         static var faq: String { ls("settings.faq", comment: "") }
+        /// Ajustes › Ayuda › Novedades: volver a ver la hoja de la versión (UX 2.2 · L5-15).
+        static var whatsNew: String { ls("settings.whatsNew", comment: "") }
         static var contact: String { ls("settings.contact", comment: "") }
         static var privacy: String { ls("settings.privacy", comment: "") }
         static var terms: String { ls("settings.terms", comment: "") }
@@ -4628,9 +4989,6 @@ enum L10n {
             ls("settings.autoFocusNone", comment: "")
         }
         // resetData removed (duplicate)
-        static var resetDataDescription: String {
-            ls("settings.resetDataDescription", comment: "")
-        }
         // deleteAllData removed (duplicate)
         static var deleteDataConfirmation: String {
             ls("settings.deleteDataConfirmation", comment: "")
@@ -4641,13 +4999,11 @@ enum L10n {
         static var wipeDataSecondConfirmTitle: String {
             ls("settings.wipeDataSecondConfirmTitle", comment: "")
         }
+        /// Aviso tras «Vaciar datos» con la persona en el Panel vacío (encargo S27i, texto de Jürgen del 2026-10-29).
+        static var wipeLandingToast: String { ls("settings.wipeLandingToast", comment: "") }
         /// Fase 1 (§3.2): subtítulos de una línea de las filas de Ajustes.
         static var exportDataSubtitle: String { ls("settings.exportDataSubtitle", comment: "") }
         static var wipeDataSubtitle: String { ls("settings.wipeDataSubtitle", comment: "") }
-        /// Descripción de "Borrar datos" en modo solo-grupos (sin finanzas personales).
-        static var resetDataDescriptionGroupsOnly: String {
-            ls("settings.resetDataDescriptionGroupsOnly", comment: "")
-        }
         // D4: `deleteDataWarningGroupsOnly` RETIRADA — sustituida por las filas de la hoja (5a).
         // Cierre de sesión universal (H4 — privada y nube)
         /// La fila «Cerrar sesión» no lleva subtítulo desde el paso 9 del rediseño (2026-09-11): es el mismo
@@ -4835,11 +5191,11 @@ enum L10n {
         static var wipeExportBeforeButton: String { ls("settings.wipeExportBeforeButton", comment: "") }
         static var wipeExportBeforeCloudCaption: String { ls("settings.wipeExportBeforeCloudCaption", comment: "") }
         // D10 — batch "salir de todos mis grupos"
-        static var wipeLeaveGroupsButton: String { ls("settings.wipeLeaveGroupsButton", comment: "") }
         static var batchLeaveTitle: String { ls("settings.batchLeaveTitle", comment: "") }
         static var batchLeaveProgress: String { ls("settings.batchLeaveProgress", comment: "") }
         static var batchLeaveAllDone: String { ls("settings.batchLeaveAllDone", comment: "") }
         static var batchLeaveSomeNeedDecision: String { ls("settings.batchLeaveSomeNeedDecision", comment: "") }
+        static var batchLeaveNoneLeft: String { ls("settings.batchLeaveNoneLeft", comment: "") }
         static var batchLeaveStatLeft: String { ls("settings.batchLeaveStatLeft", comment: "") }
         static var batchLeaveStatTransferred: String { ls("settings.batchLeaveStatTransferred", comment: "") }
         static var batchLeaveNeedsDecisionHeader: String { ls("settings.batchLeaveNeedsDecisionHeader", comment: "") }
@@ -4938,6 +5294,12 @@ enum L10n {
         static var message: String { ls("support.message", comment: "") }
         static var messagePlaceholder: String { ls("support.messagePlaceholder", comment: "") }
         static var send: String { ls("support.send", comment: "") }
+        /// Aviso cuando iOS no puede abrir `mailto:` (no hay app de correo): el formulario se queda abierto.
+        static var noMailTitle: String { ls("support.noMailTitle", comment: "Alert title when no email app can open the support message") }
+        static func noMailMessage(_ email: String) -> String {
+            String(format: ls("support.noMailMessage", comment: "Alert body: %@ = support email address"), email)
+        }
+        static var copyMessage: String { ls("support.copyMessage", comment: "Button that copies the support message to the clipboard") }
     }
 
     // MARK: - Profile
@@ -4976,6 +5338,19 @@ enum L10n {
         }
         static var choosePhoto: String { ls("profile.choosePhoto", comment: "") }
         static var chooseIcon: String { ls("profile.chooseIcon", comment: "") }
+        /// Nombre visible de cada icono de perfil (`IconPickerSheet`). Antes eran literales en español en los 16 idiomas.
+        static var iconPerson: String { ls("profile.icon.person", comment: "Name of a profile avatar icon") }
+        static var iconSmiley: String { ls("profile.icon.smiley", comment: "Name of a profile avatar icon") }
+        static var iconStar: String { ls("profile.icon.star", comment: "Name of a profile avatar icon") }
+        static var iconHeart: String { ls("profile.icon.heart", comment: "Name of a profile avatar icon") }
+        static var iconBolt: String { ls("profile.icon.bolt", comment: "Name of a profile avatar icon") }
+        static var iconCrown: String { ls("profile.icon.crown", comment: "Name of a profile avatar icon") }
+        static var iconLeaf: String { ls("profile.icon.leaf", comment: "Name of a profile avatar icon") }
+        static var iconFlame: String { ls("profile.icon.flame", comment: "Name of a profile avatar icon") }
+        static var iconMoon: String { ls("profile.icon.moon", comment: "Name of a profile avatar icon") }
+        static var iconSun: String { ls("profile.icon.sun", comment: "Name of a profile avatar icon") }
+        static var iconCloud: String { ls("profile.icon.cloud", comment: "Name of a profile avatar icon") }
+        static var iconDrop: String { ls("profile.icon.drop", comment: "Name of a profile avatar icon") }
         static var removeAvatar: String { ls("profile.removeAvatar", comment: "") }
         static var editAvatar: String { ls("profile.editAvatar", comment: "") }
     }
@@ -5227,6 +5602,28 @@ enum L10n {
         }
 
         static var emptyTitle: String { ls("budgets.empty.title", comment: "") }
+
+        /// Vacío de UN tipo de período: «Aún no tienes presupuestos anuales». El genérico («Aún no tienes
+        /// presupuestos») mentía a quien tiene presupuestos de otro tipo (auditoría UX 2.2, lote 9).
+        static func emptyTitle(for periodType: BudgetPeriodType) -> String {
+            switch periodType {
+            case .weekly: ls("budgets.empty.weekly.title", comment: "")
+            case .monthly: ls("budgets.empty.monthly.title", comment: "")
+            case .yearly: ls("budgets.empty.yearly.title", comment: "")
+            case .unique: ls("budgets.empty.unique.title", comment: "")
+            }
+        }
+
+        /// Estado de UN presupuesto («Activo» / «Inactivo»). `BudgetStatus.localizedName` es el rótulo de una
+        /// SECCIÓN de la lista («Activos») y `common.active` el de un filtro («Activas»).
+        static func state(isActive: Bool) -> String {
+            isActive ? ls("budgets.state.active", comment: "") : ls("budgets.state.inactive", comment: "")
+        }
+
+        /// VoiceOver de la línea del límite en las gráficas («Límite: S/ 600.00»).
+        static func chartLimitAccessibility(_ amount: String) -> String {
+            String(format: ls("budgets.charts.limitAccessibility", comment: ""), amount)
+        }
         static var emptyMessage: String { ls("budgets.empty.message", comment: "") }
 
         // Shared expenses
@@ -5392,8 +5789,6 @@ enum L10n {
     enum Comparison {
         static var month: String { ls("comparison.month", comment: "Month comparison") }
         static var year: String { ls("comparison.year", comment: "Year comparison") }
-        static var monthShort: String { ls("comparison.monthShort", comment: "Short for previous period") }
-        static var yearShort: String { ls("comparison.yearShort", comment: "Short for previous year") }
     }
 
     // MARK: - Validation
@@ -5530,6 +5925,9 @@ enum L10n {
             // accesibilidad y de los 16 locales; sin call-sites, la key no sobrevive.
             static var cloudTitle: String { ls("welcome.new.cloudTitle", comment: "") }
             static var cloudBody: String { ls("welcome.new.cloudBody", comment: "") }
+            /// Pregunta de pie de «Es mi primera vez»: la salida a grupos de quien solo viene a dividir gastos (propuesta B).
+            static var groupsQuestion: String { ls("welcome.new.groupsQuestion", comment: "") }
+            static var groupsAction: String { ls("welcome.new.groupsAction", comment: "") }
             // `cloudWarning` RETIRADA (2026-08-11, W2): la renuncia inline de §k.6 sermoneaba —
             // decisión del owner. La idea sigue en el flujo: el `cloudBody` recortado dice quién
             // puede ver los datos, y el consent la lleva completa. Sin call-sites, la key tampoco
@@ -5567,7 +5965,7 @@ enum L10n {
             /// ésta sí es nueva. Va con las otras cifras y no en `Welcome.Restore` porque su única
             /// consumidora es esta pantalla.
             static func foundCategories(_ count: Int) -> String {
-                String(format: ls("welcome.privateICloud.foundCategories", comment: ""), count)
+                String.localizedStringWithFormat(ls("welcome.privateICloud.foundCategories", comment: ""), count)
             }
             /// La sonda agotó su tope antes de llegar a ningún tipo contable: hay datos, pero no sabemos
             /// cuántos. Un aviso que pide confirmar un borrado irreversible no puede salir en blanco.
@@ -5586,6 +5984,9 @@ enum L10n {
             /// Estado K: no hay iCloud en el dispositivo. Distinto de `errorTitle`, y no es un matiz: allí
             /// hay un remedio (reintentar) y aquí no.
             static var noAccountTitle: String { ls("welcome.privateICloud.noAccountTitle", comment: "") }
+            /// El título de la salida que SIGUE (UX 2.2 · L1-3): el hecho («este teléfono no tiene iCloud
+            /// activo»), no un fallo nuestro. La salida que vuelve atrás conserva `noAccountTitle`.
+            static var noAccountProceedTitle: String { ls("welcome.privateICloud.noAccountProceedTitle", comment: "") }
             static var noAccountBody: String { ls("welcome.privateICloud.noAccountBody", comment: "") }
             static var noAccountCta: String { ls("welcome.privateICloud.noAccountCta", comment: "") }
             static var errorTitle: String { ls("welcome.privateICloud.errorTitle", comment: "") }
@@ -5697,6 +6098,9 @@ enum L10n {
             static var createBody: String { ls("welcome.groups.createBody", comment: "") }
             static var joinTitle: String { ls("welcome.groups.joinTitle", comment: "") }
             static var joinBody: String { ls("welcome.groups.joinBody", comment: "") }
+            /// Card 2osn · pregunta de pie para quien ya tiene una cuenta de Grupos: lleva a «¡Hola de nuevo!».
+            static var signInQuestion: String { ls("welcome.groups.signInQuestion", comment: "") }
+            static var signInAction: String { ls("welcome.groups.signInAction", comment: "") }
             /// G3 · la PUERTA de la rama organizador, mientras re-mide el canal.
             static var checking: String { ls("welcome.groups.checking", comment: "") }
             /// G3 · el canal sigue apagado tras el refresh forzado. Tono del único sitio donde el kill se
@@ -5717,6 +6121,18 @@ enum L10n {
             /// copia» **con prueba**, que es lo correcto), y a ése la frase le mentía. Ahora dice qué se está
             /// haciendo; el aviso de la espera agotada dice lo que de verdad pasó.
             static var neutralWorking: String { ls("welcome.groups.neutralWorking", comment: "") }
+            /// La entrada con Google o Apple que deja el iCloud privado aparte (opción B, 2026-11-10): los cuatro textos
+            /// que esa entrada dice distinto que «Crear mi primer grupo» en la misma pantalla.
+            static var cloudAsideWorking: String { ls("welcome.groups.cloudAsideWorking", comment: "") }
+            static var cloudAsideUnavailableBody: String { ls("welcome.groups.cloudAsideUnavailableBody", comment: "") }
+            static var cloudAsideWipeFailedBody: String { ls("welcome.groups.cloudAsideWipeFailedBody", comment: "") }
+            static var cloudAsideBlockedBody: String { ls("welcome.groups.cloudAsideBlockedBody", comment: "") }
+            /// La espera del export agotada al dejar iCloud aparte. Sin «si continúas»: esta entrada no ofrece descartar
+            /// nada (quien entra puede no ser el dueño del teléfono), así que solo cabe esperar o volver.
+            static func cloudAsideStalledBody(_ count: Int) -> String {
+                String(format: ls("welcome.groups.cloudAsideStalledBody", comment: "Dejar iCloud aparte con cambios sin subir a iCloud; %d = cuántos"), count)
+            }
+            static var cloudAsideStalledBodyUnknown: String { ls("welcome.groups.cloudAsideStalledBodyUnknown", comment: "") }
             /// El ÚNICO punto de este flujo donde se pregunta, y se llega solo **con prueba** de que no hay
             /// copia (`PrivateSignOutExportGateLogic.CopyChannel.none`): informar diría «tus datos siguen a
             /// salvo en iCloud», y sin copia eso sería mentira.
@@ -5810,10 +6226,11 @@ enum L10n {
             static var neutralMigrationBody: String { ls("welcome.groups.neutralMigrationBody", comment: "") }
             /// CTA de las pantallas con una sola salida: vuelta al step con las otras vías intactas.
             static var gateBack: String { ls("welcome.groups.gateBack", comment: "") }
-            /// G3 · el único dato que el alta del organizador pide (decisión del owner: solo nombre).
-            static var nameTitle: String { ls("welcome.groups.nameTitle", comment: "") }
             static var nameBody: String { ls("welcome.groups.nameBody", comment: "") }
-            static var nameCta: String { ls("welcome.groups.nameCta", comment: "") }
+            /// Card ycke (C2) · cerrar el formulario del primer grupo sin tu nombre: la pregunta de una línea que deja entrar
+            /// en Grupos sin crear el grupo.
+            static var closeNameTitle: String { ls("welcome.groups.closeNameTitle", comment: "") }
+            static var closeNameBody: String { ls("welcome.groups.closeNameBody", comment: "") }
         }
 
         /// Alta born-cloud desde la card «nube» de "Soy nuevo" (A5 de D-A7). Solo tres keys propias:
@@ -5822,10 +6239,6 @@ enum L10n {
         enum BornCloud {
             static var title: String { ls("welcome.bornCloud.title", comment: "") }
             static var subtitle: String { ls("welcome.bornCloud.subtitle", comment: "") }
-            /// W4 (decisión del owner 2026-08-11, punto 16): la nota del alta dice SOLO que la cuenta
-            /// queda ligada al método. La de `Cloud.providerNote` empieza por «entra con el mismo método
-            /// que usaste», que aquí no significa nada: el usuario no ha usado ninguno todavía.
-            static var providerNote: String { ls("welcome.bornCloud.providerNote", comment: "") }
             /// Progreso del claim: la cuenta se está CREANDO, no verificando.
             static var creating: String { ls("welcome.bornCloud.creating", comment: "") }
             /// R2 · el alta terminó SIN relanzamiento (el proceso montó el store neutro). Copy propio y no
@@ -5848,6 +6261,8 @@ enum L10n {
 
         enum MirrorRelaunch {
             static var title: String { ls("welcome.mirrorRelaunch.title", comment: "") }
+            /// Por qué hay que reabrir (UX 2.2 · L1-4, decisión de Jürgen: el reinicio se queda y se explica).
+            static var privacyNote: String { ls("welcome.mirrorRelaunch.privacyNote", comment: "") }
             /// R0 · el cuerpo dice ya la variante AUTO-EXIT («ve a la pantalla de inicio y vuelve»), porque
             /// desde este chip el terminal se cierra solo al pasar a background y pedir que el usuario
             /// mate la app a mano sería instrucción de más.
@@ -5866,13 +6281,19 @@ enum L10n {
             // Sesión 2 Google: subtitle del intro con provider .google + nota §13 (ambos
             // providers) + pantalla R9 de provider-mismatch (sub-first, H4).
             static var subtitleGoogle: String { ls("welcome.cloud.subtitleGoogle", comment: "") }
-            static var providerNote: String { ls("welcome.cloud.providerNote", comment: "") }
-            static var providerMismatchTitle: String { ls("welcome.cloud.providerMismatchTitle", comment: "") }
+            /// UX 2.2 · lote decidido 15 (QA de 2.1, 19-oct): el aviso dice que en este iPhone ya se usó OTRA cuenta de Yala.
+            /// «Esa cuenta usa otro método» sonaba a que la cuenta de Google ya estaba en uso. Keys nuevas: el cuerpo pasa
+            /// de uno a dos argumentos, y una traducción vieja con un solo `%@` no puede quedar viva.
+            static var providerMismatchTitle: String { ls("welcome.cloud.otherAccountUsedTitle", comment: "") }
             /// Body con el nombre VISIBLE del método conocido ("Apple"/"Google").
-            static func providerMismatchBody(_ providerName: String) -> String {
-                String(format: ls("welcome.cloud.providerMismatchBody", comment: ""), providerName)
+            /// `accountProvider`: con qué método se creó la cuenta usada en este iPhone. `chosenProvider`: el que se acaba de
+            /// elegir.
+            static func providerMismatchBody(accountProvider: String, chosenProvider: String) -> String {
+                String(format: ls("welcome.cloud.otherAccountUsedBody", comment: ""), accountProvider, chosenProvider)
             }
-            static var providerMismatchBodyGeneric: String { ls("welcome.cloud.providerMismatchBodyGeneric", comment: "") }
+            static func providerMismatchBodyGeneric(chosenProvider: String) -> String {
+                String(format: ls("welcome.cloud.otherAccountUsedBodyGeneric", comment: ""), chosenProvider)
+            }
             /// Paso 6 · el intro al que encamina el faro dice de dónde viene. Solo el nombre VISIBLE del
             /// método («Apple»/«Google»), nunca un correo (decisión de Jürgen, 2026-09-09).
             static func beaconOrigin(_ providerName: String) -> String {
@@ -5941,16 +6362,16 @@ enum L10n {
             static var foundTitleAnonymous: String { ls("welcome.restore.foundTitleAnonymous", comment: "") }
             static var foundBody: String { ls("welcome.restore.foundBody", comment: "") }
             static func foundAccounts(_ count: Int) -> String {
-                String(format: ls("welcome.restore.foundAccounts", comment: ""), count)
+                String.localizedStringWithFormat(ls("welcome.restore.foundAccounts", comment: ""), count)
             }
             static func foundTransactions(_ count: Int) -> String {
-                String(format: ls("welcome.restore.foundTransactions", comment: ""), count)
+                String.localizedStringWithFormat(ls("welcome.restore.foundTransactions", comment: ""), count)
             }
             static func foundBudgets(_ count: Int) -> String {
-                String(format: ls("welcome.restore.foundBudgets", comment: ""), count)
+                String.localizedStringWithFormat(ls("welcome.restore.foundBudgets", comment: ""), count)
             }
             static func foundGroups(_ count: Int) -> String {
-                String(format: ls("welcome.restore.foundGroups", comment: ""), count)
+                String.localizedStringWithFormat(ls("welcome.restore.foundGroups", comment: ""), count)
             }
             static var continueAction: String { ls("welcome.restore.continue", comment: "") }
             static var notFoundTitle: String { ls("welcome.restore.notFoundTitle", comment: "") }
@@ -6183,6 +6604,14 @@ enum L10n {
         static var balanceManualOption: String { ls("onboarding.balanceManualOption", comment: "") }
         static var balanceManualHint: String { ls("onboarding.balanceManualHint", comment: "") }
         static var balanceGuidedIncompleteHint: String { ls("onboarding.balanceGuidedIncompleteHint", comment: "") }
+        // UX 2.2 · L1UI (pasada UI del lote 1)
+        static var balanceGuidedTitle: String { ls("onboarding.balanceGuided.title", comment: "") }
+        static var balanceGuidedSubtitle: String { ls("onboarding.balanceGuided.subtitle", comment: "") }
+        static var balancePlaceholder: String { ls("onboarding.balance.placeholder", comment: "") }
+        static var balanceRequiredHint: String { ls("onboarding.balance.requiredHint", comment: "") }
+        /// «Paso **N** de M», con el número en markdown para pintarlo en negrita.
+        static var progressStepFormat: String { ls("onboarding.progress.step", comment: "") }
+        static var accountNameAllTogetherFormat: String { ls("onboarding.accountName.allTogether", comment: "") }
         static var privacyLocalShort: String { ls("onboarding.privacyLocalShort", comment: "") }
         static var privacyNoTrackingShort: String { ls("onboarding.privacyNoTrackingShort", comment: "") }
         static var privacyIcloudShort: String { ls("onboarding.privacyIcloudShort", comment: "") }
@@ -6230,6 +6659,11 @@ enum L10n {
         static var calcCurrentSpending: String { ls("onboarding.calc.currentSpending", comment: "") }
         static var calcYourBalance: String { ls("onboarding.calc.yourBalance", comment: "") }
         static var calcCreditCardTip: String { ls("onboarding.calc.creditCard.tip", comment: "") }
+        static var calcResultBalance: String { ls("onboarding.calc.result.balance", comment: "") }
+        static var calcResultAvailable: String { ls("onboarding.calc.result.available", comment: "") }
+        static var calcCreditCardOwed: String { ls("onboarding.calc.creditCard.owed", comment: "") }
+        /// «Línea **%1$@** − Disponible **%2$@**», cifras en markdown.
+        static var calcCreditCardFormulaFormat: String { ls("onboarding.calc.creditCard.formula", comment: "") }
         // Simple account explanations (cash/checking/savings)
         // Shared expenses (patrimonial only)
         static var calcSharedExpenses: String { ls("onboarding.calc.sharedExpenses", comment: "") }
@@ -6250,13 +6684,12 @@ enum L10n {
         static var purposeExpensesDesc: String { ls("onboarding.purpose.expensesDesc", comment: "") }
         static var purposeControl: String { ls("onboarding.purpose.control", comment: "") }
         static var purposeControlDesc: String { ls("onboarding.purpose.controlDesc", comment: "") }
-        // Accounts step (binary: una cuenta vs varias)
-        static var accountsTitle: String { ls("onboarding.accounts.title", comment: "") }
+        /// Que el modo se cambia luego (UX 2.2 · L1-5): quita el miedo a equivocarse al elegir.
+        static var purposeChangeLaterHint: String { ls("onboarding.purpose.changeLaterHint", comment: "") }
+        // «Todo junto en una sola cuenta»: primera opción del paso «¿Dónde está tu dinero?» (UX 2.2 · L1-9).
         static var accountsSingle: String { ls("onboarding.accounts.single", comment: "") }
         static var accountsSingleDesc: String { ls("onboarding.accounts.singleDesc", comment: "") }
-        static var accountsMultiple: String { ls("onboarding.accounts.multiple", comment: "") }
-        static var accountsMultipleDesc: String { ls("onboarding.accounts.multipleDesc", comment: "") }
-        // Account type step (fullControl only)
+        // «¿Dónde está tu dinero?»: una sola cuenta o un tipo de cuenta (antes, dos pasos)
         static var accountTypeTitle: String { ls("onboarding.accountType.title", comment: "") }
         static var accountTypeSubtitle: String { ls("onboarding.accountType.subtitle", comment: "") }
         static var accountTypeCheckingHint: String { ls("onboarding.accountType.checkingHint", comment: "") }
@@ -6273,6 +6706,10 @@ enum L10n {
         static var currencyNameSubtitleSingle: String { ls("onboarding.currencyName.subtitleSingle", comment: "") }
         static var currencyNameTitleSeparate: String { ls("onboarding.currencyName.titleSeparate", comment: "") }
         static var currencyNameSubtitleSeparate: String { ls("onboarding.currencyName.subtitleSeparate", comment: "") }
+        /// «Solo gastos» tiene su propio copy (UX 2.2 · L1-11): el de una sola cuenta habla de «llevar el control»,
+        /// justo lo que esa persona acaba de decir que no quiere.
+        static var currencyNameTitleExpenses: String { ls("onboarding.currencyName.titleExpenses", comment: "") }
+        static var currencyNameSubtitleExpenses: String { ls("onboarding.currencyName.subtitleExpenses", comment: "") }
         // Balance step
         static var balanceTitle: String { ls("onboarding.balance.title", comment: "") }
         static var balanceSubtitle: String { ls("onboarding.balance.subtitle", comment: "") }
@@ -6303,6 +6740,13 @@ enum L10n {
     enum BulkEdit {
         static var currencyWarning: String {
             ls("bulkEdit.currencyWarning", comment: "")
+        }
+        static var cannotEditGroupRecords: String {
+            ls("bulkEdit.cannotEditGroupRecords", comment: "Editar varios: la selección lleva registros de un grupo")
+        }
+        /// Card 6u5f: la categoría de la pata que lleva tu parte partida en líneas sale de ellas; se cambia en «Partir tu parte».
+        static var cannotEditSplitRecipeCategory: String {
+            ls("bulkEdit.cannotEditSplitRecipeCategory", comment: "Editar varios: un registro tiene tu parte partida en líneas")
         }
         static func editCount(_ count: Int) -> String {
             String(format: ls("bulkEdit.editCount", comment: ""), count)
@@ -6348,12 +6792,35 @@ enum L10n {
         // A0-Bridge V2.0 (P1-3): CTA desde TX bridgeada read-only con draft pendiente
         static var openInbox: String { ls("inbox.openInbox", comment: "") }
 
+        /// Aviso y hoja de los gastos de grupo repetidos (bug del 2026-11-09): borrador «Elige cuenta» o «Préstamo a
+        /// grupos» de más en un gasto que ya está en tus registros. Las cifras van fuera de la frase («Borradores de más:
+        /// 1»), para no depender de plurales en los 16 idiomas.
+        enum GroupLeftovers {
+            static var bannerTitle: String { ls("inbox.groupLeftovers.bannerTitle", comment: "") }
+            static var bannerMessage: String { ls("inbox.groupLeftovers.bannerMessage", comment: "") }
+            static var bannerAction: String { ls("inbox.groupLeftovers.bannerAction", comment: "") }
+            static var intro: String { ls("inbox.groupLeftovers.intro", comment: "") }
+            static func extraDrafts(_ count: Int) -> String {
+                String(format: ls("inbox.groupLeftovers.extraDrafts", comment: ""), count)
+            }
+            static func extraLoans(_ count: Int) -> String {
+                String(format: ls("inbox.groupLeftovers.extraLoans", comment: ""), count)
+            }
+            static var remove: String { ls("inbox.groupLeftovers.remove", comment: "") }
+            static var confirmTitle: String { ls("inbox.groupLeftovers.confirmTitle", comment: "") }
+            static var confirmMessage: String { ls("inbox.groupLeftovers.confirmMessage", comment: "") }
+            static var confirmAction: String { ls("inbox.groupLeftovers.confirmAction", comment: "") }
+            static var failed: String { ls("inbox.groupLeftovers.failed", comment: "") }
+        }
+
         // A0-Bridge V2.0 (P1-4): sheets finalización drafts especializados
         enum GroupExpenseDraft {
             static var title: String { ls("inbox.groupExpenseDraft.title", comment: "") }
             static var assignSubcategory: String { ls("inbox.groupExpenseDraft.assignSubcategory", comment: "") }
             /// Banner explicativo (asignar categoría). Formato: %@ = nombre del grupo.
             static var banner: String { ls("inbox.groupExpenseDraft.banner", comment: "") }
+            /// Card 9o4n: el borrador de cuenta de un gasto de grupo que ya está en tus cuentas (otro borrador lo aprobó).
+            static var alreadyRegistered: String { ls("inbox.groupExpenseDraft.alreadyRegistered", comment: "") }
         }
 
         enum GroupSettlementDraft {
@@ -6363,6 +6830,29 @@ enum L10n {
             static var banner: String { ls("inbox.groupSettlementDraft.banner", comment: "") }
             /// Error al finalizar el borrador de una liquidación cuyo pago ya está registrado (hay marca de aprobación).
             static var alreadyRegistered: String { ls("inbox.groupSettlementDraft.alreadyRegistered", comment: "") }
+            /// UX 2.2 · L13-12: el borrador de un pago, con nombre. «Pago a Ana · Viaje a Cusco» / «Pago de Ana · …».
+            static func paidTo(_ name: String, group: String) -> String {
+                String(format: ls("inbox.groupSettlementDraft.paidTo", comment: ""), name, group)
+            }
+            static func paidBy(_ name: String, group: String) -> String {
+                String(format: ls("inbox.groupSettlementDraft.paidBy", comment: ""), name, group)
+            }
+            /// Grupos B · card 10: lo que el pago cobra de una venta. «Cobras «%1$@»: %2$@ de %3$@ cuentan como ingreso hoy.»
+            static func collectsOneToday(_ sale: String, _ amount: String, _ category: String) -> String {
+                String(format: ls("inbox.groupSettlementDraft.collectsOneToday", comment: ""), sale, amount, category)
+            }
+            /// Igual, con un pago que no es de hoy. %4$@ = la fecha del pago.
+            static func collectsOneOn(_ sale: String, _ amount: String, _ category: String, _ date: String) -> String {
+                String(format: ls("inbox.groupSettlementDraft.collectsOneOn", comment: ""), sale, amount, category, date)
+            }
+            /// Un pago que cobra varias ventas. %@ = el total cobrado.
+            static func collectsManyToday(_ amount: String) -> String {
+                String(format: ls("inbox.groupSettlementDraft.collectsManyToday", comment: ""), amount)
+            }
+            /// Igual, con un pago que no es de hoy. %2$@ = la fecha del pago.
+            static func collectsManyOn(_ amount: String, _ date: String) -> String {
+                String(format: ls("inbox.groupSettlementDraft.collectsManyOn", comment: ""), amount, date)
+            }
         }
 
         /// Aviso de que cambió el importe de una liquidación ya aprobada a una cuenta real (ticket
@@ -6420,6 +6910,10 @@ enum L10n {
         enum GroupDraft {
             static var finalize: String { ls("inbox.groupDraft.finalize", comment: "") }
             static var fromGroup: String { ls("inbox.groupDraft.fromGroup", comment: "") }
+            /// UX 2.2 · L13-15: «¿Ya lo apuntaste?» con los movimientos parecidos del día.
+            static var linkTitle: String { ls("inbox.groupDraft.linkTitle", comment: "") }
+            static var linkHint: String { ls("inbox.groupDraft.linkHint", comment: "") }
+            static var linkRowHint: String { ls("inbox.groupDraft.linkRowHint", comment: "") }
         }
         static var pending: String {
             ls("inbox.pending", comment: "")
@@ -6456,6 +6950,14 @@ enum L10n {
         }
         static var bulkHint: String {
             ls("inbox.bulkHint", comment: "")
+        }
+        /// Estado del borrador como lo lee VoiceOver en la fila («pendiente», «aprobado», «rechazado»).
+        static func status(_ status: DraftStatus) -> String {
+            switch status {
+            case .pending: ls("inbox.status.pending", comment: "")
+            case .approved: ls("inbox.status.approved", comment: "")
+            case .rejected: ls("inbox.status.rejected", comment: "")
+            }
         }
         static var newTag: String {
             ls("inbox.newTag", comment: "")
@@ -6576,6 +7078,40 @@ enum L10n {
         static var reject: String {
             ls("inbox.reject", comment: "")
         }
+        /// Menú «⋯» del editor del borrador (UX 2.2 · L4-5).
+        static var discardToArchived: String { ls("inbox.draft.discardToArchived", comment: "Draft editor menu — moves the draft to Archived") }
+        static var deleteForever: String { ls("inbox.draft.deleteForever", comment: "Draft editor menu — deletes the draft for good") }
+        /// Aviso tras descartar desde el editor, con su botón para deshacerlo.
+        static var movedToArchived: String { ls("inbox.draft.movedToArchived", comment: "Toast after discarding a draft") }
+        /// UX 2.2 · L13-11: aviso tras convertir un borrador en gasto de grupo, con «Ver».
+        static func movedToGroup(_ group: String) -> String {
+            String(format: ls("inbox.movedToGroup", comment: ""), group)
+        }
+        static var movedToGroupView: String { ls("inbox.movedToGroupView", comment: "") }
+        static var undoDiscard: String { ls("inbox.draft.undo", comment: "Toast button — undo the discard") }
+        /// Editor de un descartado: «Lo descartaste el 13 oct.» (UX 2.2 · L4-9).
+        static func discardedOn(_ date: String) -> String {
+            String(format: ls("inbox.draft.discardedOn", comment: "Draft editor of a discarded draft: when it was discarded. %@ = short date"), date)
+        }
+        /// La frase fija bajo el título de la Bandeja (UX 2.2 · L4-8).
+        static var explainer: String { ls("inbox.explainer", comment: "Fixed line under the Inbox title: what lands here") }
+        /// «Guardar los N listos» (UX 2.2 · L4-7).
+        static func saveReady(_ count: Int) -> String {
+            String(format: ls("inbox.saveReady", comment: "Inbox button above the list: save every ready draft at once. %d = count (2 or more)"), count)
+        }
+        static func saveReadyConfirmTitle(_ count: Int) -> String {
+            String(format: ls("inbox.saveReady.confirmTitle", comment: "Confirmation before saving every ready draft. %d = count"), count)
+        }
+        static var saveReadyConfirmMessage: String { ls("inbox.saveReady.confirmMessage", comment: "Confirmation message before saving every ready draft") }
+        static var saveReadyConfirmButton: String { ls("inbox.saveReady.confirmButton", comment: "Confirmation button: save them") }
+        /// En la pantalla final, lo que no se guardó y por qué (UX 2.2 · L4-7).
+        static func stillPending(_ count: Int) -> String {
+            String(format: ls("inbox.stillPending", comment: "Bulk save success: how many drafts are still pending. %d = count"), count)
+        }
+        /// Bajo «N transacciones creadas»: «S/ 60.50 en total» (UX 2.2 · L4-13).
+        static func bulkSuccessTotal(_ amount: String) -> String {
+            String(format: ls("inbox.bulkSuccess.total", comment: "Bulk approve success — total saved, e.g. «S/ 60.50 en total»"), amount)
+        }
         static var approveAll: String {
             ls("inbox.approveAll", comment: "")
         }
@@ -6631,6 +7167,11 @@ enum L10n {
                 }
             }
 
+            /// «Borradores de Siri: 2», en su propia línea del aviso (auditoría UX 2.2, L15-7).
+            static func siriDrafts(_ count: Int) -> String {
+                String(format: ls("inbox.alert.siriDrafts", comment: ""), count)
+            }
+
             enum Message {
                 static func scheduled(_ count: Int) -> String {
                     String(format: ls("inbox.alert.message.scheduled", comment: ""), count)
@@ -6652,24 +7193,12 @@ enum L10n {
                     static func automations(_ count: Int) -> String {
                         String(format: ls("inbox.alert.message.mixed.automations", comment: ""), count)
                     }
-                    static var connector: String {
-                        ls("inbox.alert.message.mixed.connector", comment: "")
-                    }
                 }
             }
         }
 
         static func pendingBadge(_ count: Int) -> String {
             String(format: ls("inbox.pendingBadge", comment: ""), count)
-        }
-        static var subtitleAllDone: String {
-            ls("inbox.subtitleAllDone", comment: "")
-        }
-        static var subtitleOnePending: String {
-            ls("inbox.subtitleOnePending", comment: "")
-        }
-        static func subtitleMultiplePending(_ count: Int) -> String {
-            String(format: ls("inbox.subtitleMultiplePending", comment: ""), count)
         }
     }
 
@@ -6678,6 +7207,10 @@ enum L10n {
     enum Voice {
         static var title: String {
             ls("voice.title", comment: "")
+        }
+        /// Card tjws: la etiqueta de VoiceOver de la frase en vivo mientras se graba (lo que entiende el iPhone).
+        static var liveTranscriptAccessibility: String {
+            ls("voice.live.transcriptAccessibility", comment: "VoiceOver label for the live on-device transcript")
         }
         static var recording: String {
             ls("voice.recording", comment: "")
@@ -6768,17 +7301,36 @@ enum L10n {
             String(format: ls("voice.review.saveMany", comment: ""), count)
         }
         static var reviewInboxNote: String { ls("voice.review.inboxNote", comment: "") }
+        static var reviewSelectAll: String { ls("voice.review.selectAll", comment: "") }
+        static var reviewDeselectAll: String { ls("voice.review.deselectAll", comment: "") }
+        static func reviewSelectedOf(_ selected: Int, _ total: Int) -> String {
+            String(format: ls("voice.review.selectedOf", comment: ""), selected, total)
+        }
+        static func reviewSaveSelected(_ count: Int, amount: String) -> String {
+            String(format: ls("voice.review.saveSelected", comment: ""), count, amount)
+        }
+        static var reviewMissingHint: String { ls("voice.review.missingHint", comment: "") }
+        static var reviewLeftInInbox: String { ls("voice.review.leftInInbox", comment: "") }
+        static func reviewIncludeA11y(_ name: String) -> String {
+            String(format: ls("voice.review.includeA11y", comment: ""), name)
+        }
         static var failureNoConnectionTitle: String { ls("voice.failure.noConnection.title", comment: "") }
         static var failureMicTitle: String { ls("voice.failure.mic.title", comment: "") }
         static var failureNoVoiceTitle: String { ls("voice.failure.noVoice.title", comment: "") }
         static var failureNoVoiceMessage: String { ls("voice.failure.noVoice.message", comment: "") }
         static var failureNoAmountTitle: String { ls("voice.failure.noAmount.title", comment: "") }
+        /// Salida a mano cuando la voz o la foto no pueden (UX 2.2 · L4-3).
+        static var enterManually: String { ls("voice.enterManually", comment: "Secondary button when voice/photo fails: open the manual entry form") }
         static var failureNoAmountMessage: String { ls("voice.failure.noAmount.message", comment: "") }
         static var failureGenericTitle: String { ls("voice.failure.generic.title", comment: "") }
         static var failureGenericMessage: String { ls("voice.failure.generic.message", comment: "") }
         /// El plan free probó la voz con su cupo de prueba entero (lo decide el gateway: `yala_trial_exhausted`).
         static var failureTrialUsedUpTitle: String { ls("voice.failure.trialUsedUp.title", comment: "Free plan used up its trial voice notes") }
         static var failureTrialUsedUpMessage: String { ls("voice.failure.trialUsedUp.message", comment: "Free plan used up its trial voice notes: Pro has no limit") }
+        static var failureBusyTitle: String { ls("voice.failure.busy.title", comment: "Gateway burst limit (429): wait a minute") }
+        static var failureBusyMessage: String { ls("voice.failure.busy.message", comment: "Gateway burst limit (429): wait a minute") }
+        static var failureDailyLimitTitle: String { ls("voice.failure.dailyLimit.title", comment: "Daily voice quota reached (429)") }
+        static var failureDailyLimitMessage: String { ls("voice.failure.dailyLimit.message", comment: "Daily voice quota reached (429)") }
         /// Botón que abre la hoja de Yala Pro desde el cupo de prueba agotado (voz y foto).
         static var trialSeePro: String { ls("ai.trial.seePro", comment: "Button that opens Yala Pro when the trial is used up") }
     }
@@ -6919,6 +7471,11 @@ enum L10n {
                     : String(format: ls("image.entry.photoFailedMany", comment: ""), count)
             }
             static var otherPhoto: String { ls("image.entry.otherPhoto", comment: "") }
+            /// Qué contraseña pide un PDF del banco (UX 2.2 · L4-15).
+            static var passwordHint: String { ls("image.entry.passwordHint", comment: "Hint under the PDF password message: which password it usually is") }
+            /// iPad: soltar un recibo (UX 2.2 · L4-11).
+            static var dropHint: String { ls("image.entry.dropHint", comment: "Hint in the photo/file sheet on iPad: you can drop a receipt on the window") }
+            static var dropToRead: String { ls("image.entry.dropToRead", comment: "Label shown while dragging a file over the window") }
             static var cancelReading: String { ls("image.entry.cancelReading", comment: "") }
             static var failureNoAmountTitle: String { ls("image.entry.failure.noAmount.title", comment: "") }
             static var failureNoAmountMessage: String { ls("image.entry.failure.noAmount.message", comment: "") }
@@ -6934,6 +7491,10 @@ enum L10n {
             /// El plan free probó la foto con su cupo de prueba entero (`yala_trial_exhausted` del gateway).
             static var failureTrialUsedUpTitle: String { ls("image.entry.failure.trialUsedUp.title", comment: "Free plan used up its trial photos") }
             static var failureTrialUsedUpMessage: String { ls("image.entry.failure.trialUsedUp.message", comment: "Free plan used up its trial photos: Pro has no limit") }
+            static var failureBusyTitle: String { ls("image.entry.failure.busy.title", comment: "Gateway burst limit (429): wait a minute") }
+            static var failureBusyMessage: String { ls("image.entry.failure.busy.message", comment: "Gateway burst limit (429): wait a minute") }
+            static var failureDailyLimitTitle: String { ls("image.entry.failure.dailyLimit.title", comment: "Daily photo quota reached (429)") }
+            static var failureDailyLimitMessage: String { ls("image.entry.failure.dailyLimit.message", comment: "Daily photo quota reached (429)") }
 
             // Un PDF página a página (ticket pdf-statement-reads-only-the-first-page, 2026-10-08).
             static func readingPageProgress(_ current: Int, _ total: Int) -> String {
@@ -6962,6 +7523,11 @@ enum L10n {
                     ? ls("image.entry.trialLeftOutOne", comment: "")
                     : String(format: ls("image.entry.trialLeftOutMany", comment: ""), count)
             }
+            static func dailyLimitLeftOut(_ count: Int) -> String {
+                count == 1
+                    ? ls("image.entry.dailyLimitLeftOutOne", comment: "")
+                    : String(format: ls("image.entry.dailyLimitLeftOutMany", comment: ""), count)
+            }
         }
     }
 
@@ -6987,6 +7553,10 @@ enum L10n {
             String(format: ls("stepGuide.progress", comment: ""), current, total)
         }
         static var markDone: String { ls("stepGuide.markDone", comment: "") }
+        /// «Te faltan 2 pasos · tu avance se guarda» (plural en el `.stringsdict`; L15-10).
+        static func remaining(_ count: Int) -> String {
+            String(format: ls("stepGuide.remaining", comment: ""), count)
+        }
         static var stuck: String { ls("stepGuide.stuck", comment: "") }
         static var whatYouWillSee: String { ls("stepGuide.whatYouWillSee", comment: "") }
         static var phaseDone: String { ls("stepGuide.phaseDone", comment: "") }
@@ -7008,6 +7578,12 @@ enum L10n {
         static var planMonthly: String { ls("subscription.planMonthly", comment: "") }
         static var planYearly: String { ls("subscription.planYearly", comment: "") }
         static var perYear: String { ls("subscription.perYear", comment: "") }
+        /// «/ mes» sin precio, para ir detrás de `displayPrice` como `perYear`. `perMonth("")` dejaba un espacio de más.
+        static var perMonthUnit: String { ls("subscription.perMonthUnit", comment: "") }
+        /// Título del aviso cuando «Restaurar compras» falla por algo que no es cancelar.
+        static var restoreErrorTitle: String { ls("subscription.restoreErrorTitle", comment: "") }
+        /// Apple devolvió una compra cuya firma no se pudo verificar.
+        static var verificationFailed: String { ls("subscription.error.verificationFailed", comment: "") }
         static func perMonth(_ price: String) -> String {
             String(format: ls("subscription.perMonth", comment: ""), price)
         }
@@ -7040,6 +7616,7 @@ enum L10n {
     enum TrialOffer {
         static var title: String { ls("subscription.trialOffer.title", comment: "") }
         static var subtitle: String { ls("subscription.trialOffer.subtitle", comment: "") }
+        static var pricesUnavailable: String { ls("subscription.trialOffer.pricesUnavailable", comment: "Oferta de prueba: no cargaron los precios de la App Store") }
         static var startTrial: String { ls("subscription.trialOffer.startTrial", comment: "") }
         static var maybeLater: String { ls("subscription.trialOffer.maybeLater", comment: "") }
     }
@@ -7350,6 +7927,9 @@ enum L10n {
             static func modifiedExpense(_ member: String, _ desc: String, _ myShare: String) -> String {
                 String(format: ls("notifications.groups.modifiedExpense", comment: ""), member, desc, myShare)
             }
+            static func modifiedExpenseNoDesc(_ member: String, _ myShare: String) -> String {
+                String(format: ls("notifications.groups.modifiedExpenseNoDesc", comment: ""), member, myShare)
+            }
             static func settlement(_ member: String, _ amount: String) -> String {
                 String(format: ls("notifications.groups.settlement", comment: ""), member, amount)
             }
@@ -7381,19 +7961,6 @@ enum L10n {
         // Test notification
         static var testNotification: String { ls("notifications.testNotification", comment: "") }
 
-        // Test report samples (by period)
-        static var testBalanceDaily: String { ls("notifications.testReport.balance.daily", comment: "") }
-        static var testBalanceWeekly: String { ls("notifications.testReport.balance.weekly", comment: "") }
-        static var testBalanceMonthly: String { ls("notifications.testReport.balance.monthly", comment: "") }
-        static var testExpensesDaily: String { ls("notifications.testReport.expenses.daily", comment: "") }
-        static var testExpensesWeekly: String { ls("notifications.testReport.expenses.weekly", comment: "") }
-        static var testExpensesMonthly: String { ls("notifications.testReport.expenses.monthly", comment: "") }
-        static var testIncomeDaily: String { ls("notifications.testReport.income.daily", comment: "") }
-        static var testIncomeWeekly: String { ls("notifications.testReport.income.weekly", comment: "") }
-        static var testIncomeMonthly: String { ls("notifications.testReport.income.monthly", comment: "") }
-        static var testTopCategoryDaily: String { ls("notifications.testReport.topCategory.daily", comment: "") }
-        static var testTopCategoryWeekly: String { ls("notifications.testReport.topCategory.weekly", comment: "") }
-        static var testTopCategoryMonthly: String { ls("notifications.testReport.topCategory.monthly", comment: "") }
         static var testScheduledPayment: String { ls("notifications.testReport.scheduledPayment", comment: "") }
 
         // Section headers
@@ -7419,6 +7986,17 @@ enum L10n {
             /// "Hoy vence: %@ por %@" (name, amount)
             static func dueToday(_ name: String, _ amount: String) -> String {
                 String(format: ls("notifications.scheduledPayment.dueToday", comment: ""), name, amount)
+            }
+
+            /// "Mañana toca pagar %@ por %@" (name, amount): el aviso con un día de antelación. Con `dueSoon` salía
+            /// «En 1 días toca pagar…».
+            static func dueTomorrow(_ name: String, _ amount: String) -> String {
+                String(format: ls("notifications.scheduledPayment.dueTomorrow", comment: ""), name, amount)
+            }
+
+            /// "Mañana llega %@ de %@" (amount, name)
+            static func dueTomorrowIncome(_ amount: String, _ name: String) -> String {
+                String(format: ls("notifications.scheduledPayment.dueTomorrow.income", comment: ""), amount, name)
             }
 
             /// "En %d día(s) vence: %@ por %@" (days, name, amount)
@@ -7472,6 +8050,11 @@ enum L10n {
         static var accept: String { ls("notificationPrimer.accept", comment: "") }
         static var reject: String { ls("notificationPrimer.reject", comment: "") }
         static var hint: String { ls("notificationPrimer.hint", comment: "") }
+        // En contexto (UX 2.2 · L5-14)
+        static var scheduledTitle: String { ls("notificationPrimer.scheduled.title", comment: "Primer after the first planned payment") }
+        static var scheduledBenefit: String { ls("notificationPrimer.scheduled.benefit", comment: "Primer after the first planned payment") }
+        static var budgetTitle: String { ls("notificationPrimer.budget.title", comment: "Primer when a budget alert is turned on") }
+        static var budgetBenefit: String { ls("notificationPrimer.budget.benefit", comment: "Primer when a budget alert is turned on") }
     }
 
     // MARK: - What's New
@@ -7516,6 +8099,15 @@ enum L10n {
         static var v21LoggingDescription: String { ls("whatsNew.v21.logging.description", comment: "") }
         static var v21DataTitle: String { ls("whatsNew.v21.data.title", comment: "") }
         static var v21DataDescription: String { ls("whatsNew.v21.data.description", comment: "") }
+        // 2.2 (UX 2.2 · L5-15). Texto a revisar antes de publicar: ticket `whats-new-2-2-review-before-release`.
+        static var v22DualCurrencyTitle: String { ls("whatsNew.v22.dualCurrency.title", comment: "") }
+        static var v22DualCurrencyDescription: String { ls("whatsNew.v22.dualCurrency.description", comment: "") }
+        static var v22SiriTitle: String { ls("whatsNew.v22.siri.title", comment: "") }
+        static var v22SiriDescription: String { ls("whatsNew.v22.siri.description", comment: "") }
+        static var v22FasterEntryTitle: String { ls("whatsNew.v22.fasterEntry.title", comment: "") }
+        static var v22FasterEntryDescription: String { ls("whatsNew.v22.fasterEntry.description", comment: "") }
+        static var v22LeftToPayTitle: String { ls("whatsNew.v22.leftToPay.title", comment: "") }
+        static var v22LeftToPayDescription: String { ls("whatsNew.v22.leftToPay.description", comment: "") }
     }
 
     // MARK: - App Update
@@ -7569,7 +8161,8 @@ enum L10n {
         static var dataFoundMessage: String { ls("icloud.dataFoundMessage", comment: "") }
         static var dataFoundAction: String { ls("icloud.dataFoundAction", comment: "") }
         static var remoteOnboardingCompleted: String { ls("icloud.remoteOnboardingCompleted", comment: "") }
-        static var remoteRestoreCompleted: String { ls("icloud.remoteRestoreCompleted", comment: "") }
+        /// Aviso del dispositivo que recibe «Vaciar datos» de otro que siguió usando Yala (encargo S27i).
+        static var remoteWipeKeptSetup: String { ls("icloud.remoteWipeKeptSetup", comment: "") }
         enum SyncIndicator {
             static var failed: String { ls("icloud.syncIndicator.failed", comment: "") }
             static func stalled(_ days: Int) -> String {
@@ -7756,6 +8349,8 @@ enum L10n {
             static var desenlaceNote: String { ls("storage.revert.desenlaceNote", comment: "") }
             static var button: String { ls("storage.revert.button", comment: "") }
             static var ineligible: String { ls("storage.revert.ineligible", comment: "") }
+            /// `ReverseEligibility.degradedNoMap`: no es pasajero, así que no dice «ahora mismo» (card i9qh del QA del 19-oct).
+            static var ineligibleOtherDevice: String { ls("storage.revert.ineligibleOtherDevice", comment: "") }
 
             /// El aviso de datos previos en iCloud antes de volver (ticket
             /// `reverse-to-icloud-merges-prior-icloud-data-without-asking`).
@@ -7790,8 +8385,10 @@ enum L10n {
         enum Sync {
             static var title: String { ls("storage.sync.title", comment: "") }
             static var upToDate: String { ls("storage.sync.upToDate", comment: "") }
+            /// Plural en `Localizable.stringsdict` (ticket `storage-sync-sign-in-count-has-no-plural`): con `String(format:)`
+            /// salía «Inicia sesión para subir 1 cambios».
             static func needsSignIn(_ count: Int) -> String {
-                String(format: ls("storage.sync.needsSignIn", comment: ""), count)
+                String.localizedStringWithFormat(ls("storage.sync.needsSignIn", comment: ""), count)
             }
             /// La sincronización espera a que inicies sesión y la cola no se dejó contar: sin cifra.
             static var needsSignInUncounted: String { ls("storage.sync.needsSignInUncounted", comment: "") }
@@ -7805,6 +8402,41 @@ enum L10n {
                 ls("storage.sync.waitingForConnectionUncounted", comment: "")
             }
             static var signInButton: String { ls("storage.sync.signInButton", comment: "") }
+            /// La segunda línea del aviso del Panel (card pz4v): la primera es la misma de esta pantalla.
+            static var panelNoticeBody: String { ls("panel.syncSignIn.body", comment: "") }
+        }
+
+        /// Los pasos con su cifra de «Activar la nube» y «Volver a iCloud» (opción B, ticket
+        /// `cloud-progress-shows-real-steps-and-counts`).
+        enum Steps {
+            static var forwardTitle: String { ls("storage.steps.forwardTitle", comment: "") }
+            static var reverseTitle: String { ls("storage.steps.reverseTitle", comment: "") }
+            static var connect: String { ls("storage.steps.connect", comment: "") }
+            static var prepare: String { ls("storage.steps.prepare", comment: "") }
+            static var upload: String { ls("storage.steps.upload", comment: "") }
+            static var confirm: String { ls("storage.steps.confirm", comment: "") }
+            static var waitICloud: String { ls("storage.steps.waitICloud", comment: "") }
+            static var waitICloudDetail: String { ls("storage.steps.waitICloudDetail", comment: "") }
+            static var keepOpen: String { ls("storage.steps.keepOpen", comment: "") }
+            static var wipePrior: String { ls("storage.steps.wipePrior", comment: "") }
+            static var bring: String { ls("storage.steps.bring", comment: "") }
+            static var review: String { ls("storage.steps.review", comment: "") }
+            static var reviewDetail: String { ls("storage.steps.reviewDetail", comment: "") }
+            static var uploadToICloud: String { ls("storage.steps.uploadToICloud", comment: "") }
+            static var keepUsing: String { ls("storage.steps.keepUsing", comment: "") }
+            /// «650 de 1.537». Las cifras llegan ya formateadas con el idioma de la app.
+            static func uploadedCount(_ done: Int, of total: Int) -> String {
+                String(format: ls("storage.steps.uploadedCount", comment: ""), number(done), number(total))
+            }
+            static func pendingCount(_ count: Int) -> String {
+                String(format: ls("storage.steps.pendingCount", comment: ""), number(count))
+            }
+            static func wipedCount(_ count: Int) -> String {
+                String(format: ls("storage.steps.wipedCount", comment: ""), number(count))
+            }
+            private static func number(_ value: Int) -> String {
+                value.formatted(.number.locale(AppLocale.current))
+            }
         }
 
         enum Progress {
@@ -7928,6 +8560,10 @@ enum L10n {
             /// enseña. En una sesión solo-grupos esa sección no existe (`groups-only-session-storage-screen-says-data-lives-in-icloud`).
             static var freshStartSessionBody: String { ls("storage.migrateBlock.freshStartSessionBody", comment: "") }
             static var useAnotherAccount: String { ls("storage.migrateBlock.useAnotherAccount", comment: "") }
+            /// «Desasociarla y seguir» (card 9mc6): la cuenta de grupos que bloquea llegó del iCloud de otra instalación.
+            static var detachAndContinue: String { ls("storage.migrateBlock.detachAndContinue", comment: "") }
+            /// Bajo «Desasociarla y seguir»: soltarla aquí no la suelta en la copia local de otro dispositivo (review del 9mc6).
+            static var detachNote: String { ls("storage.migrateBlock.detachNote", comment: "") }
             /// Otro dispositivo de esta misma persona está llevando sus datos a esa cuenta (ticket
             /// `settings-migrate-blocks-a-second-device-before-its-marker`, opción A de Jürgen del 2026-10-08). El título es su
             /// texto. El cuerpo nombra las dos salidas —terminar allí, o reintentar allí si se paró— y no promete que aquí se
@@ -8133,7 +8769,6 @@ enum L10n {
             static var pointAccess: String { ls("storage.consent.pointAccess", comment: "") }
             /// Es un alivio, no una advertencia: va al pie y con jerarquía secundaria.
             static var footer: String { ls("storage.consent.footer", comment: "") }
-            static var accept: String { ls("storage.consent.accept", comment: "") }
             static var privacyLink: String { ls("storage.consent.privacyLink", comment: "") }
         }
 
@@ -8141,7 +8776,6 @@ enum L10n {
         enum SignIn {
             static var title: String { ls("storage.signin.title", comment: "") }
             static var body: String { ls("storage.signin.body", comment: "") }
-            static var note: String { ls("storage.signin.note", comment: "") }
         }
     }
 
@@ -8156,14 +8790,16 @@ enum L10n {
         }
 
         enum Notification {
-            static var title: String { ls("shortcut.notification.title", comment: "") }
-            static var expense: String { ls("shortcut.notification.expense", comment: "") }
-            static var income: String { ls("shortcut.notification.income", comment: "") }
             static var errorTitle: String { ls("shortcut.notification.errorTitle", comment: "") }
             static var errorBody: String { ls("shortcut.notification.errorBody", comment: "") }
-            static func body(_ type: String, _ amount: String, _ note: String) -> String {
-                String(format: ls("shortcut.notification.body", comment: ""), type, amount, note)
+            /// «Pago de S/ 25,90 en Tambo por revisar» (sin comercio, «Pago de S/ 25,90 por revisar»). Auditoría UX 2.2,
+            /// L15-8: hasta entonces decía «Se ha registrado un gasto», y era un borrador por aprobar.
+            static func applePayTitle(amount: String, merchant: String) -> String {
+                merchant.isEmpty
+                    ? String(format: ls("shortcut.applePay.notification.titleNoMerchant", comment: ""), amount)
+                    : String(format: ls("shortcut.applePay.notification.title", comment: ""), amount, merchant)
             }
+            static var applePayBody: String { ls("shortcut.applePay.notification.body", comment: "") }
         }
     }
 
@@ -8221,9 +8857,17 @@ enum L10n {
         static var skip: String { ls("tipkit.skip", comment: "") }
         static var next: String { ls("tipkit.next", comment: "") }
         static var done: String { ls("tipkit.done", comment: "") }
+        /// «1 de 9» en la píldora de la guía sombreada (UX 2.2 · L5-10).
+        static func stepProgress(_ current: Int, _ total: Int) -> String {
+            String(format: ls("tipkit.stepProgress", comment: "Coach mark step N of M"), current, total)
+        }
         // TipKit standalone tips
         static var comparison: String { ls("tipkit.comparison.title", comment: "") }
-        static var comparisonMessage: String { ls("tipkit.comparison.message", comment: "") }
+        /// Dice para qué sirven los dos chips de la comparación (card g6nw, 2026-10-31). Hasta entonces explicaba «P-1» y
+        /// «A-1», los círculos retirados en L11-4; no nombra los chips porque su texto cambia con el período.
+        static var comparisonMessage: String {
+            ls("tipkit.comparison.message", comment: "Comparison tip: what the two chips compare with")
+        }
         // AI Charts tips
         static var aiChartsPro: String { ls("tipkit.aiCharts.pro.title", comment: "") }
         static var aiChartsProMessage: String { ls("tipkit.aiCharts.pro.message", comment: "") }
@@ -8232,20 +8876,8 @@ enum L10n {
         // Grupo D: Settings
         static var settingsAccounts: String { ls("tipkit.settings.accounts.title", comment: "") }
         static var settingsAccountsMessage: String { ls("tipkit.settings.accounts.message", comment: "") }
-        static var settingsCategories: String { ls("tipkit.settings.categories.title", comment: "") }
-        static var settingsCategoriesMessage: String { ls("tipkit.settings.categories.message", comment: "") }
-        static var settingsTags: String { ls("tipkit.settings.tags.title", comment: "") }
-        static var settingsTagsMessage: String { ls("tipkit.settings.tags.message", comment: "") }
-        static var settingsBudgets: String { ls("tipkit.settings.budgets.title", comment: "") }
-        static var settingsBudgetsMessage: String { ls("tipkit.settings.budgets.message", comment: "") }
-        static var settingsPlanned: String { ls("tipkit.settings.planned.title", comment: "") }
-        static var settingsPlannedMessage: String { ls("tipkit.settings.planned.message", comment: "") }
         static var settingsPersonalization: String { ls("tipkit.settings.personalization.title", comment: "") }
         static var settingsPersonalizationMessage: String { ls("tipkit.settings.personalization.message", comment: "") }
-        static var settingsAppIcon: String { ls("tipkit.settingsAppIcon.title", comment: "") }
-        static var settingsAppIconMessage: String { ls("tipkit.settingsAppIcon.message", comment: "") }
-        static var settingsTheme: String { ls("tipkit.settingsTheme.title", comment: "") }
-        static var settingsThemeMessage: String { ls("tipkit.settingsTheme.message", comment: "") }
         static var settingsTutorials: String { ls("tipkit.settings.tutorials.title", comment: "") }
         static var settingsTutorialsMessage: String { ls("tipkit.settings.tutorials.message", comment: "") }
         // Cash Flow Setup Tour
@@ -8276,10 +8908,10 @@ enum L10n {
         static var proPremiumIconsMessage: String { ls("tipkit.pro.premiumIcons.message", comment: "") }
         static var proProThemesTitle: String { ls("tipkit.pro.proThemes.title", comment: "") }
         static var proProThemesMessage: String { ls("tipkit.pro.proThemes.message", comment: "") }
-        static var proFabTitle: String { ls("tipkit.pro.fab.title", comment: "") }
-        static var proFabMessage: String { ls("tipkit.pro.fab.message", comment: "") }
+        static var proQuickEntryTitle: String { ls("tipkit.pro.quickEntry.title", comment: "") }
+        static var proQuickEntryMessage: String { ls("tipkit.pro.quickEntry.message", comment: "") }
         static var proChatFabTitle: String { ls("tipkit.pro.chatFab.title", comment: "") }
-        static var proChatFabMessage: String { ls("tipkit.pro.chatFab.message", comment: "") }
+        static var proQuickAIMessage: String { ls("tipkit.pro.quickAI.message", comment: "") }
         static var proAiSummaryTitle: String { ls("tipkit.pro.aiSummary.title", comment: "") }
         static var proAiSummaryMessage: String { ls("tipkit.pro.aiSummary.message", comment: "") }
     }
@@ -8479,31 +9111,18 @@ enum L10n {
             static var step2Card3Title: String { ls("yalaAI.onboarding.step2.card3.title", comment: "") }
             static var step2Card3Body: String { ls("yalaAI.onboarding.step2.card3.body", comment: "") }
 
-            // Step 3 — Tone (3 options + quote in preview)
-            static var step3Title: String { ls("yalaAI.onboarding.step3.title", comment: "") }
-            static var step3Subtitle: String { ls("yalaAI.onboarding.step3.subtitle", comment: "") }
+            // Step 3 — Tone (descripción de cada opción; el paso «Hazla a tu manera» vive en L10n+UXAudit22Lote14)
             static var step3ToneNormalDescription: String { ls("yalaAI.onboarding.step3.toneNormalDescription", comment: "") }
             static var step3ToneConsiderateDescription: String { ls("yalaAI.onboarding.step3.toneConsiderateDescription", comment: "") }
             static var step3ToneSarcasticDescription: String { ls("yalaAI.onboarding.step3.toneSarcasticDescription", comment: "") }
-            static var step3ToneNormalQuote: String { ls("yalaAI.onboarding.step3.toneNormalQuote", comment: "") }
-            static var step3ToneConsiderateQuote: String { ls("yalaAI.onboarding.step3.toneConsiderateQuote", comment: "") }
-            static var step3ToneSarcasticQuote: String { ls("yalaAI.onboarding.step3.toneSarcasticQuote", comment: "") }
 
-            // Step 4 — Focus / style (3 options + quote in preview)
-            static var step4Title: String { ls("yalaAI.onboarding.step4.title", comment: "") }
-            static var step4Subtitle: String { ls("yalaAI.onboarding.step4.subtitle", comment: "") }
+            // Step 3 — Focus / style (descripción y frase de ejemplo de cada opción)
             static var step4FocusBalancedDescription: String { ls("yalaAI.onboarding.step4.focusBalancedDescription", comment: "") }
             static var step4FocusSaverDescription: String { ls("yalaAI.onboarding.step4.focusSaverDescription", comment: "") }
             static var step4FocusCautiousDescription: String { ls("yalaAI.onboarding.step4.focusCautiousDescription", comment: "") }
             static var step4FocusBalancedQuote: String { ls("yalaAI.onboarding.step4.focusBalancedQuote", comment: "") }
             static func step4FocusSaverQuote(_ perMonth: String) -> String { String(format: ls("yalaAI.onboarding.step4.focusSaverQuote", comment: ""), perMonth) }
             static var step4FocusCautiousQuote: String { ls("yalaAI.onboarding.step4.focusCautiousQuote", comment: "") }
-
-            // Step 5 — Done
-            static var step5Title: String { ls("yalaAI.onboarding.step5.title", comment: "") }
-            static var step5Subtitle: String { ls("yalaAI.onboarding.step5.subtitle", comment: "") }
-            static func step5Tip(_ coffee: String) -> String { String(format: ls("yalaAI.onboarding.step5.tip", comment: ""), coffee) }
-            static var step5CTA: String { ls("yalaAI.onboarding.step5.cta", comment: "") }
         }
     }
 
@@ -8751,5 +9370,52 @@ enum AppLocale {
         formatter.locale = current
         formatter.dateFormat = dateFormat
         return formatter
+    }
+}
+
+// MARK: - UX 2.2 · lote 6 (primera vez con datos previos o en la nube)
+
+/// Los textos nuevos del lote 6 de la auditoría UX 2.2, juntos para que el lote se lea y se revise de una vez. Las
+/// claves sí van en el espacio de nombres de su pantalla (`welcome.*`, `storage.consent.*`, `groups.fullActivation.*`).
+extension L10n {
+    enum UXLote6 {
+        /// L6-1 · la ayuda de «¡Hola de nuevo!» para quien no recuerda dónde guardó sus datos.
+        static var existingDontRemember: String { ls("welcome.existing.dontRemember", comment: "") }
+        /// L6-8 · el título de la entrada a la que lleva el faro («Es mi primera vez» con una cuenta previa).
+        static var beaconTitle: String { ls("welcome.cloud.beaconTitle", comment: "") }
+        /// L6-8 · bajo «Crear otra cuenta»: la anterior no se borra.
+        static var beaconCreateAnotherNote: String { ls("welcome.cloud.createAnotherNote", comment: "") }
+        /// L6-9 · el botón de «Tu cuenta no está disponible».
+        static var writeToSupport: String { ls("welcome.cloud.accountBlockedWrite", comment: "") }
+        /// L6-9 · el asunto del correo a soporte desde esa pantalla.
+        static var accountBlockedMailSubject: String { ls("welcome.cloud.accountBlockedMailSubject", comment: "") }
+        /// L6-7 · «reabre Yala» tras entrar en la nube: ese terminal no se cierra solo al ir a inicio.
+        static var relaunchBodyCloseFully: String { ls("welcome.relaunch.bodyCloseFully", comment: "") }
+        /// L6-5 · el botón de «Encontramos tus datos».
+        static var restoreBringBack: String { ls("welcome.restore.bringBack", comment: "") }
+        /// L6-5 · los nombres de las filas del recibo (la palabra sola; el número va a la derecha).
+        static var restoreRowTransactions: String { ls("welcome.restore.row.transactions", comment: "") }
+        static var restoreRowAccounts: String { ls("welcome.restore.row.accounts", comment: "") }
+        static var restoreRowCategories: String { ls("welcome.restore.row.categories", comment: "") }
+        static var restoreRowBudgets: String { ls("welcome.restore.row.budgets", comment: "") }
+        static var restoreRowGroups: String { ls("welcome.restore.row.groups", comment: "") }
+        /// L6-4 · la frase que abre el consentimiento y los títulos de sus tres fichas.
+        static var consentLead: String { ls("storage.consent.lead", comment: "") }
+        static var consentServersTitle: String { ls("storage.consent.serversTitle", comment: "") }
+        static var consentPhotosTitle: String { ls("storage.consent.photosTitle", comment: "") }
+        static var consentAccessTitle: String { ls("storage.consent.accessTitle", comment: "") }
+        /// L6-4 · el botón del consentimiento, por contexto (`CloudConsentCopyLogic`).
+        static var consentAcceptEnter: String { ls("storage.consent.acceptEnter", comment: "") }
+        static var consentAcceptCreate: String { ls("storage.consent.acceptCreate", comment: "") }
+        static var consentAcceptMove: String { ls("storage.consent.acceptMove", comment: "") }
+        /// L6-6 · el aviso tardío de iCloud.
+        static var lateLead: String { ls("welcome.privateICloud.lateLead", comment: "") }
+        static var lateMerge: String { ls("welcome.privateICloud.lateMerge", comment: "") }
+        static var lateWipe: String { ls("welcome.privateICloud.lateWipe", comment: "") }
+        static var lateMergeExplainer: String { ls("welcome.privateICloud.lateMergeExplainer", comment: "") }
+        /// L6-9 · «Tu cuenta ya tiene finanzas personales» → Ajustes, donde se cierra la sesión.
+        static var blockedGoToSignOut: String { ls("groups.fullActivation.blockedGoToSignOut", comment: "") }
+        /// L6-10 · el ejemplo de «¿Traemos tus gastos de grupo?».
+        static var historyExample: String { ls("groups.fullActivation.historyExample", comment: "") }
     }
 }

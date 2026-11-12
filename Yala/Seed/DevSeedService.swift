@@ -66,6 +66,14 @@ enum DevSeedProfile: String {
     /// (`SetupChecklistManager.markFirstCreation` lo ofrece solo si lo guardado es lo único de su tipo). Ver
     /// `FirstExpensePracticeAlertUITests`.
     case sinRegistros = "sin-registros"
+    /// Lo que dejaba un onboarding cuya semilla de categorías no corrió (card omw5): cuentas, ninguna categoría y el
+    /// centinela de la semilla puesto, como en un teléfono que ya sembró en una vida anterior. Ver
+    /// `PanelCreateCategoriesUITests`.
+    case sinCategorias = "sin-categorias"
+    /// `.sinCategorias` con las categorías de sistema de Grupos, que crear o unirse a un grupo siembra VISIBLES (S12h,
+    /// 2026-10-27): el caso de quien tiene grupos y se quedó sin categorías propias. El selector no ofrece las de sistema,
+    /// así que el Panel tiene que seguir pidiendo categorías. Ver `PanelCreateCategoriesUITests`.
+    case sinCategoriasConGrupos = "sin-categorias-con-grupos"
     /// Capturas de la ficha de la App Store en es-MX: tres grupos con nombres de México, montos en MXN y
     /// saldos abiertos, sin vida personal (la captura es de Grupos y una cuenta en PEN delataría el seed).
     /// Ver `DevSeedGroups.createFichaMX`.
@@ -88,9 +96,32 @@ enum DevSeedProfile: String {
     /// Un gasto de grupo en la Bandeja cuyo grupo no está en este teléfono, como lo deja «Sumarlos a mis datos» al
     /// volver a iCloud. Ver `DevSeedGroupRowsWithoutGroup.createForeignGroupDraft`.
     case gastoDeGrupoSinSuGrupo = "gasto-de-grupo-sin-su-grupo"
+    /// El estado del bug del 2026-11-09: dos gastos de grupo pagados con cuenta a los que una pasada ciega del puente dejó
+    /// un borrador «Elige cuenta» y el «Préstamo a grupos» repetido. Ver `DevSeedGroupBridgeLeftovers`.
+    case gruposRepetidos = "grupos-repetidos"
     /// `.movimientosSinCuenta` más la pata real de una cena de grupo pagada desde «Efectivo QA». Ver
     /// `DevSeedGroupRowsWithoutGroup.createGroupLegWithoutAccount`.
     case pataDeGrupoSinCuenta = "pata-de-grupo-sin-cuenta"
+    /// Tarjeta con varias divisas (entrega 2): «Visa QA» en soles con su línea en dólares, más dos cuentas sueltas.
+    /// Ver `DevSeedAccountLines`.
+    case tarjetaDosLineas = "tarjeta-dos-lineas"
+    /// Las cuentas de Grupos en una sola tarjeta (card extra del 2026-11-03): una cuenta propia y tres grupos que aportan a
+    /// «Grupos PEN» y «Grupos USD». Ver `DevSeedGroupsAccountCard`.
+    case cuentasDeGrupos = "cuentas-de-grupos"
+    /// `.tarjetaDosLineas` con día de corte (card nmtk): un corte hace 10 días, lo facturado antes y lo gastado después,
+    /// el aviso 3 días antes y tres meses de sueldo y gastos para que el flujo de caja proponga un plan. Ver
+    /// `DevSeedAccountLines.createWithStatement`.
+    case tarjetaCorte = "tarjeta-corte"
+    /// El formulario de registro tras un onboarding de una sola cuenta: categorías y «Cuenta Principal», sin registros
+    /// (UX 2.2 · L2-1 y L2-6). Ver `DevSeedTransactionForm`.
+    case unaCuenta = "una-cuenta"
+    /// El formulario de registro con favoritos: las dos cuentas de siempre, sin registros, y cuatro favoritos (un gasto, un
+    /// ingreso, una transferencia con destino y una transferencia vieja sin destino). UX 2.2 · L2-13 y L2-14.
+    case formulario
+    /// Medir los tiempos de carga con datos realistas: la vida personal de `.realista` (730 días, varias monedas,
+    /// presupuestos, pagos planificados, borradores en la Bandeja) más los grupos de `.grupos` y un plan de flujo de caja
+    /// (`DevSeedCashFlow`). Es el corpus de `LoadTimesUITests`.
+    case rendimiento
 
     /// Días de historial de transacciones a generar (escala el volumen).
     /// `minimal`/`grupos`/`gruposInvitado`/`gruposSaldado`/`soloGrupos`/`deadPointer`/`gruposSinFlag`
@@ -99,10 +130,12 @@ enum DevSeedProfile: String {
     var daysBack: Int {
         switch self {
         case .minimal, .grupos, .gruposInvitado, .gruposSaldado, .soloGrupos, .deadPointer,
-             .gruposSinFlag, .gruposPendiente, .soloGruposTrasAviso, .sinRegistros, .fichaMX,
-             .cuentaConMovimientos, .movimientosSinCuenta, .gastoDeGrupoSinSuGrupo, .pataDeGrupoSinCuenta: return 7
+             .gruposSinFlag, .gruposPendiente, .soloGruposTrasAviso, .sinRegistros, .sinCategorias,
+             .sinCategoriasConGrupos, .fichaMX,
+             .cuentaConMovimientos, .movimientosSinCuenta, .gastoDeGrupoSinSuGrupo, .gruposRepetidos, .pataDeGrupoSinCuenta,
+             .tarjetaDosLineas, .cuentasDeGrupos, .tarjetaCorte, .unaCuenta, .formulario: return 7
         case .fichaMXVida: return 365
-        case .realista, .ficha: return 730
+        case .realista, .ficha, .rendimiento: return 730
         case .pesado: return 3650
         }
     }
@@ -111,7 +144,7 @@ enum DevSeedProfile: String {
     var seedsGroups: Bool {
         self == .grupos || self == .gruposInvitado || self == .gruposSaldado || self == .soloGrupos
             || self == .gruposSinFlag || self == .gruposPendiente || self == .soloGruposTrasAviso
-            || self == .fichaMX || self == .fichaMXVida || self == .ficha
+            || self == .fichaMX || self == .fichaMXVida || self == .ficha || self == .rendimiento
     }
 
     /// Si siembra vida personal (cuentas, transacciones, presupuestos, tags, pagos, drafts).
@@ -144,6 +177,15 @@ final class DevSeedService {
             seedDeadPointerFixtures(in: context)
             return
         }
+        if profile == .gruposRepetidos {
+            defer { isSeeding = false }
+            seedCategoriesIfNeeded(in: context)
+            DevSeedGroupBridgeLeftovers.create(in: context)
+            UserDefaults.standard.set(true, forKey: "devSeedDataExecuted")
+            hasSeeded = true
+            SessionState.shared.incrementDataVersion()
+            return
+        }
         if profile == .gastoDeGrupoSinSuGrupo {
             defer { isSeeding = false }
             seedCategoriesIfNeeded(in: context)
@@ -156,7 +198,8 @@ final class DevSeedService {
             SessionState.shared.incrementDataVersion()
             return
         }
-        if profile == .cuentaConMovimientos || profile == .movimientosSinCuenta || profile == .pataDeGrupoSinCuenta {
+        if profile == .cuentaConMovimientos || profile == .movimientosSinCuenta || profile == .pataDeGrupoSinCuenta
+            || profile == .tarjetaDosLineas || profile == .tarjetaCorte || profile == .cuentasDeGrupos {
             defer { isSeeding = false }
             seedCategoriesIfNeeded(in: context)
             // Tipos de cambio de la semana: mover a «Dólares QA» convierte con la tasa de cada día, y en el
@@ -165,7 +208,13 @@ final class DevSeedService {
             let end = Date.now
             let start = Calendar.current.date(byAdding: .day, value: -7, to: end) ?? end
             DevSeedExchangeRates.create(startDate: start, endDate: end, rng: &rng, in: context)
-            if profile == .movimientosSinCuenta {
+            if profile == .cuentasDeGrupos {
+                DevSeedGroupsAccountCard.create(subcategoryLookup: buildSubcategoryLookup(in: context), in: context)
+            } else if profile == .tarjetaDosLineas {
+                DevSeedAccountLines.create(subcategoryLookup: buildSubcategoryLookup(in: context), in: context)
+            } else if profile == .tarjetaCorte {
+                DevSeedAccountLines.createWithStatement(subcategoryLookup: buildSubcategoryLookup(in: context), in: context)
+            } else if profile == .movimientosSinCuenta {
                 DevSeedAccountRemoval.createOrphaned(subcategoryLookup: buildSubcategoryLookup(in: context), in: context)
             } else if profile == .pataDeGrupoSinCuenta {
                 DevSeedGroupRowsWithoutGroup.createGroupLegWithoutAccount(
@@ -176,6 +225,39 @@ final class DevSeedService {
             do { try context.save() } catch {
                 print("DevSeedService: cuenta-con-movimientos save error: \(error)")
             }
+            // Escribió tipos de cambio: el conversor lo tiene que saber (ver el final de `seed`).
+            NotificationCenter.default.post(name: .yalaExchangeRatesUpdated, object: nil)
+            UserDefaults.standard.set(true, forKey: "devSeedDataExecuted")
+            hasSeeded = true
+            SessionState.shared.incrementDataVersion()
+            return
+        }
+        if profile == .unaCuenta || profile == .formulario {
+            defer { isSeeding = false }
+            seedCategoriesIfNeeded(in: context)
+            if profile == .unaCuenta {
+                DevSeedTransactionForm.createOneAccount(in: context)
+            } else {
+                DevSeedTransactionForm.createWithFavorites(subcategoryLookup: buildSubcategoryLookup(in: context), in: context)
+            }
+            do { try context.save() } catch {
+                print("DevSeedService: \(profile.rawValue) save error: \(error)")
+            }
+            UserDefaults.standard.set(true, forKey: "devSeedDataExecuted")
+            hasSeeded = true
+            SessionState.shared.incrementDataVersion()
+            return
+        }
+        if profile == .sinCategorias || profile == .sinCategoriasConGrupos {
+            defer { isSeeding = false }
+            _ = DevSeedAccounts.create(in: context)
+            if profile == .sinCategoriasConGrupos {
+                seedSystemGroupCategoriesIfNeeded(in: context)
+            }
+            do { try context.save() } catch {
+                print("DevSeedService: sin-categorias save error: \(error)")
+            }
+            UserDefaults.standard.set(true, forKey: CategorySeedSentinel.currentKey)
             UserDefaults.standard.set(true, forKey: "devSeedDataExecuted")
             hasSeeded = true
             SessionState.shared.incrementDataVersion()
@@ -274,6 +356,17 @@ final class DevSeedService {
                 in: context
             )
 
+            // Step 8.5: del 1 al 4 del mes, un gasto de vivienda (card 04ek). Solo `realista`: la ficha y el perfil de
+            // medida conservan sus cifras.
+            if profile == .realista {
+                DevSeedTransactions.createEarlyMonthHousing(
+                    now: endDate,
+                    account: accounts.cuentaPrincipal,
+                    subcategoryLookup: subcategoryLookup,
+                    in: context
+                )
+            }
+
             // Step 9: Create initial balances
             updateStep(L10n.DevSeed.stepInitialBalances, progress: 0.96)
             DevSeedTransactions.createInitialBalances(
@@ -329,6 +422,14 @@ final class DevSeedService {
             }
         }
 
+        // Step 10-ter: el plan de flujo de caja del perfil de medida (sin plan, Flujo de caja no proyecta nada).
+        if profile == .rendimiento {
+            do { try context.save() } catch {
+                print("DevSeedService: rendimiento pre-cashflow save error: \(error)")
+            }
+            DevSeedCashFlow.create(in: context, currencyCode: CurrencyDefaults.currentPreferred)
+        }
+
         // Final save
         updateStep(L10n.DevSeed.stepSaving, progress: 0.98)
         do { try context.save() } catch {
@@ -338,6 +439,14 @@ final class DevSeedService {
         // Mark as executed
         UserDefaults.standard.set(true, forKey: "devSeedDataExecuted")
         hasSeeded = true
+
+        // La semilla escribe tipos de cambio (y la ficha los reescribe en su divisa): como todo escritor de tasas, avisa
+        // al conversor (`currency-fx.md`). Sin el aviso, el «saldo de hoy» seguía con lo que el conversor resolvió antes
+        // de sembrar —la tabla estática—, y la curva de la ficha caía de golpe el último día (ticket
+        // `ficha-mx-vida-rates-jump-on-the-last-day`, medido: 14.835 USD × 17,2 de la tabla en vez de × 18,30 sembrado).
+        if profile.seedsPersonalData {
+            NotificationCenter.default.post(name: .yalaExchangeRatesUpdated, object: nil)
+        }
 
         // Notify UI to refresh all data-dependent views
         SessionState.shared.incrementDataVersion()

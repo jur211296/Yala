@@ -140,7 +140,10 @@ struct TrendDataProcessorTests {
             period: .thisMonth,
             grouping: .day,
             interval: interval,
-            currencyCode: "PEN"
+            currencyCode: "PEN",
+            // Movimientos fechados en días futuros para tener varios buckets: «hoy» se mueve al final del rango, o el
+            // corte del saldo de hoy (`TodayCutoff`, 2026-10-18) los dejaría fuera.
+            asOf: endDate
         )
         #expect(!result.rawPoints.isEmpty)
         // First point: 100 (running balance after tx1)
@@ -302,6 +305,31 @@ struct TrendDataProcessorTests {
         #expect(result.yDomain.upperBound >= 500)
     }
 
+    /// Con un rango que acaba después de hoy, la curva de saldo para en hoy: lo fechado en el futuro no entra en el
+    /// saldo hasta su fecha (decisión A de Jürgen, 2026-10-18), y la curva acababa en el último movimiento futuro.
+    @Test func processTrendData_balance_rangeEndingInTheFuture_stopsToday() {
+        let calendar = Calendar.current
+        let now = Date()
+        let today = calendar.startOfDay(for: now)
+        let future = calendar.date(byAdding: .day, value: 5, to: today)!
+        let interval = DateInterval(start: today, end: calendar.date(byAdding: .day, value: 10, to: today)!)
+        let result = TrendDataProcessor.processTrendData(
+            transactions: [
+                makeTransaction(amount: 1000, amountInPreferred: 1000, date: today),
+                makeTransaction(amount: -200, amountInPreferred: -200, date: future),
+            ],
+            accounts: [],
+            metric: .balance,
+            period: .custom,
+            grouping: .day,
+            interval: interval,
+            currencyCode: "PEN",
+            asOf: now
+        )
+        #expect(result.rawPoints.last?.value == 1000)
+        #expect(result.rawPoints.allSatisfy { $0.date < future })
+    }
+
     // MARK: - processTrendData: Leading Zeros Removal
 
     @Test func processTrendData_removesLeadingZeros() {
@@ -322,7 +350,10 @@ struct TrendDataProcessorTests {
             period: .thisMonth,
             grouping: .day,
             interval: interval,
-            currencyCode: "PEN"
+            currencyCode: "PEN",
+            // Movimientos fechados en días futuros para tener varios buckets: «hoy» se mueve al final del rango, o el
+            // corte del saldo de hoy (`TodayCutoff`, 2026-10-18) los dejaría fuera.
+            asOf: endDate
         )
         // Leading zero buckets should be removed
         // Only the bucket containing day3 should remain
@@ -357,7 +388,10 @@ struct TrendDataProcessorTests {
             grouping: .day,
             interval: interval,
             currencyCode: "PEN",
-            liveBalanceOverride: .init(value: liveBalance, nativeBalances: [:], amountsAreApproximate: false)
+            liveBalanceOverride: .init(value: liveBalance, nativeBalances: [:], amountsAreApproximate: false),
+            // Movimientos fechados en días futuros para tener varios buckets: «hoy» se mueve al final del rango, o el
+            // corte del saldo de hoy (`TodayCutoff`, 2026-10-18) los dejaría fuera.
+            asOf: endDate
         )
 
         #expect(result.liveAnchor != nil)

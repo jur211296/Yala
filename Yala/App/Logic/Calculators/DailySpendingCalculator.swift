@@ -42,6 +42,18 @@ struct DailySpendingCalculator {
         let spendingByDay: [Date: Double]
         /// Mayor gasto diario del periodo — define la escala del gradiente.
         let maxSpending: Double
+        /// Ingreso por día, con el mismo criterio que el chip «ingresos» del hero (UX 2.2 · L8-10): el calendario
+        /// marca con un punto los días en que entró dinero. Solo días con ingreso neto positivo.
+        var incomeByDay: [Date: Double] = [:]
+        /// Días que tienen algún registro en la lista (aunque no sumen gasto ni ingreso: transferencias, ajustes).
+        /// VoiceOver solo dice «Sin registros este día» cuando el día de verdad no tiene ninguno.
+        var daysWithRecords: Set<Date> = []
+    }
+
+    /// Lo que sumó un día: el gasto y el ingreso netos, con el criterio del resumen de Registros.
+    struct DayTotals: Equatable {
+        var expense: Double = 0
+        var income: Double = 0
     }
 
     /// - Parameter groups: los grupos ya agrupados por día (`groupedRecords`).
@@ -55,29 +67,57 @@ struct DailySpendingCalculator {
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> Result {
         var spendingByDay: [Date: Double] = [:]
+        var incomeByDay: [Date: Double] = [:]
+        var daysWithRecords: Set<Date> = []
 
         for group in groups {
-            var dayExpense: Double = 0
-            for record in group.records {
-                guard let account = record.account, !account.excludeFromStatistics else { continue }
-                if record.balanceAdjustmentType != nil { continue }  // excluye ajustes y transferencias
-                guard !adjustment.isSuppressed(record) else { continue }
-
-                // La categoría decide el bucket; acumulación signed (paridad literal con
-                // `RecordsViewModel.calculateSummary`): un monto de signo contrario a su
-                // categoría reduce el gasto del día (reembolso), no suma magnitud.
-                let amount = CashFlowCalculator.resolvedAmount(
-                    record, currencyCode: currencyCode, adjustment: adjustment, converter: converter
-                ).value
-                if !TransactionClassificationLogic.isIncome(record) {
-                    dayExpense -= amount
-                }
+            if !group.records.isEmpty { daysWithRecords.insert(group.date) }
+            let totals = dayTotals(
+                records: group.records, adjustment: adjustment, currencyCode: currencyCode, converter: converter)
+            if totals.expense >= RecordsCalendarDaySummaryLogic.minimumAmount {
+                spendingByDay[group.date] = totals.expense
             }
-            if dayExpense > 0 {
-                spendingByDay[group.date] = dayExpense
+            if totals.income >= RecordsCalendarDaySummaryLogic.minimumAmount {
+                incomeByDay[group.date] = totals.income
             }
         }
 
-        return Result(spendingByDay: spendingByDay, maxSpending: spendingByDay.values.max() ?? 0)
+        return Result(
+            spendingByDay: spendingByDay,
+            maxSpending: spendingByDay.values.max() ?? 0,
+            incomeByDay: incomeByDay,
+            daysWithRecords: daysWithRecords
+        )
+    }
+
+    /// El gasto y el ingreso de un día (los registros de un grupo de `groupedRecords`). Es el mismo bucle que
+    /// `RecordsViewModel.calculateSummary` —sin ajustes de saldo ni transferencias, con «mi parte» de los gastos de
+    /// grupo y la acumulación signed—, así que la suma de los días cuadra con el hero. Lo usan las barras del
+    /// calendario y el resumen del día elegido («Gastaste … · Entró …»).
+    static func dayTotals(
+        records: [TransactionItem],
+        adjustment: GroupBridgeStatsAdjustment = .none,
+        currencyCode: String,
+        converter: CurrencyConverting = CurrencyConverter.shared
+    ) -> DayTotals {
+        var totals = DayTotals()
+        for record in records {
+            guard let account = record.account, !account.excludeFromStatistics else { continue }
+            if record.balanceAdjustmentType != nil { continue }  // excluye ajustes y transferencias
+            guard !adjustment.isSuppressed(record) else { continue }
+
+            // La categoría decide el bucket; acumulación signed (paridad literal con
+            // `RecordsViewModel.calculateSummary`): un monto de signo contrario a su
+            // categoría reduce el bucket del día (reembolso), no suma magnitud.
+            let amount = CashFlowCalculator.resolvedAmount(
+                record, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+            ).value
+            if TransactionClassificationLogic.isIncome(record) {
+                totals.income += amount
+            } else {
+                totals.expense -= amount
+            }
+        }
+        return totals
     }
 }

@@ -1,0 +1,72 @@
+{
+  "_meta": {
+    "about": "Banco de preguntas de Yala IA sobre la semilla `realista` (730 días, cuenta principal en PEN y ahorros en USD, 6 presupuestos, 8 pagos programados, sin grupos). Lo vuelca YalaIABankDumpTests y lo repite gateway/scripts/yala-ia-bank.ts contra staging.",
+    "lang": "Idioma de la app con el que se pregunta (AppLocale): cambia la regla de idioma y el trato del prompt.",
+    "expect": "ask = responde con datos; register = borrador; nodata = dice que no tiene ese dato; offtopic = redirige."
+  },
+  "questions": [
+    { "id": "S01", "kind": "saldos", "lang": "es-419", "expect": "ask", "q": "¿Cuánto dinero tengo en total?" },
+    { "id": "S02", "kind": "saldos", "lang": "es-419", "expect": "ask", "q": "¿Cuánto tengo en mi cuenta de ahorros?" },
+    { "id": "S03", "kind": "saldos", "lang": "es-419", "expect": "ask", "q": "¿Cuánto tengo en dólares?" },
+    { "id": "S04", "kind": "saldos", "lang": "en", "expect": "ask", "q": "What's my total balance right now?" },
+    { "id": "S05", "kind": "saldos", "lang": "es-419", "expect": "ask", "q": "¿Mi saldo subió o bajó este mes?" },
+
+    { "id": "G01", "kind": "gastos", "lang": "es-419", "expect": "ask", "q": "¿Cuánto llevo gastado este mes?" },
+    { "id": "G02", "kind": "gastos", "lang": "es-419", "expect": "ask", "q": "¿En qué categoría gasto más este mes?" },
+    { "id": "G03", "kind": "gastos", "lang": "es-419", "expect": "ask", "q": "¿Cuánto gasté en Uber este mes?" },
+    { "id": "G04", "kind": "gastos", "lang": "es-419", "expect": "ask", "q": "¿Cuánto gasté en comida el mes pasado?" },
+    { "id": "G05", "kind": "gastos", "lang": "es-419", "expect": "ask", "q": "¿Cuánto gasté en supermercado en lo que va del año?" },
+    { "id": "G06", "kind": "gastos", "lang": "pt-BR", "expect": "ask", "q": "Quanto gastei com restaurantes este mês?" },
+    { "id": "G07", "kind": "gastos", "lang": "es-419", "expect": "ask", "q": "¿Cuál fue mi gasto más grande este mes?" },
+    { "id": "G08", "kind": "gastos", "lang": "es-419", "expect": "ask", "q": "¿Cuánto gasté ayer?" },
+    { "id": "G09", "kind": "gastos", "lang": "es-419", "expect": "ask", "q": "¿Cuánto gasté la semana pasada?" },
+
+    { "id": "C01", "kind": "comparativas", "lang": "es-419", "expect": "ask", "q": "¿Estoy gastando más o menos que el mes pasado?" },
+    { "id": "C02", "kind": "comparativas", "lang": "es-419", "expect": "ask", "q": "Compara lo que llevo gastado este mes con el mismo mes del año pasado" },
+    { "id": "C03", "kind": "comparativas", "lang": "es-419", "expect": "ask", "q": "¿Cuánto gasté en mayo?" },
+    { "id": "C04", "kind": "comparativas", "lang": "es-419", "expect": "ask", "q": "¿En qué mes del último año gasté más?" },
+    { "id": "C05", "kind": "comparativas", "lang": "es-419", "expect": "ask", "q": "¿Cuánto gasté en total el año pasado?" },
+    { "id": "C06", "kind": "comparativas", "lang": "es-419", "expect": "ask", "q": "¿Cuánto ahorré cada mes en los últimos 6 meses?" },
+    { "id": "C07", "kind": "comparativas", "lang": "en", "expect": "ask", "q": "How does my transport spending compare to three months ago?" },
+    { "id": "C08", "kind": "comparativas", "lang": "es-419", "expect": "ask", "q": "¿Cuánto gasté en restaurantes en julio?" },
+
+    { "id": "I01", "kind": "ingresos", "lang": "es-419", "expect": "ask", "q": "¿Cuánto gané este mes?" },
+    { "id": "I02", "kind": "ingresos", "lang": "es-419", "expect": "ask", "q": "¿Cuánto me pagaron por trabajos freelance este año?" },
+    { "id": "I03", "kind": "ingresos", "lang": "es-419", "expect": "ask", "q": "¿Cuál es mi tasa de ahorro este año?" },
+
+    { "id": "P01", "kind": "presupuestos", "lang": "es-419", "expect": "ask", "q": "¿Cómo voy con mis presupuestos?" },
+    { "id": "P02", "kind": "presupuestos", "lang": "es-419", "expect": "ask", "q": "¿Me queda presupuesto para salir a comer?" },
+    { "id": "P03", "kind": "presupuestos", "lang": "es-419", "expect": "ask", "q": "¿Qué presupuesto está más en riesgo?" },
+    { "id": "P04", "kind": "presupuestos", "lang": "en", "expect": "ask", "q": "Am I over budget on anything?" },
+
+    { "id": "R01", "kind": "planificados", "lang": "es-419", "expect": "ask", "q": "¿Qué pagos tengo pendientes en los próximos días?" },
+    { "id": "R02", "kind": "planificados", "lang": "es-419", "expect": "ask", "q": "¿Cuánto pago al mes en suscripciones?" },
+    { "id": "R03", "kind": "planificados", "lang": "es-419", "expect": "ask", "q": "¿Cuándo me toca pagar el alquiler?" },
+    { "id": "R04", "kind": "planificados", "lang": "pt-BR", "expect": "ask", "q": "Quais assinaturas eu pago todo mês?" },
+
+    { "id": "X01", "kind": "puedo-gastar", "lang": "es-419", "expect": "ask", "q": "¿Puedo gastar 500 soles en unas zapatillas este mes?" },
+    { "id": "X02", "kind": "puedo-gastar", "lang": "es-419", "expect": "ask", "q": "¿Me alcanza para un viaje de 3000 soles el próximo mes?" },
+    { "id": "X03", "kind": "puedo-gastar", "lang": "en", "expect": "ask", "q": "Can I afford a 200 dollar dinner this week?" },
+    { "id": "X04", "kind": "puedo-gastar", "lang": "es-419", "expect": "ask", "q": "¿Cuánto puedo gastar por día hasta fin de mes?" },
+
+    { "id": "M01", "kind": "divisas", "lang": "es-419", "expect": "ask", "q": "¿Cuánto vale en soles lo que tengo en dólares?" },
+    { "id": "M02", "kind": "divisas", "lang": "es-419", "expect": "ask", "q": "¿Cuánto me ingresó en dólares este mes?" },
+
+    { "id": "GR01", "kind": "grupos", "lang": "es-419", "expect": "nodata", "q": "¿Cuánto me deben en mis grupos?" },
+    { "id": "GR02", "kind": "grupos", "lang": "es-419", "expect": "nodata", "q": "¿Cuánto gasté en el viaje con mis amigos?" },
+
+    { "id": "N01", "kind": "registrar", "lang": "es-419", "expect": "register", "q": "Gasté 45 soles en el cine" },
+    { "id": "N02", "kind": "registrar", "lang": "es-419", "expect": "register", "q": "Anota 120 de supermercado y 30 de taxi" },
+    { "id": "N03", "kind": "registrar", "lang": "en", "expect": "register", "q": "I spent 12 dollars on coffee" },
+    { "id": "N04", "kind": "registrar", "lang": "pt-BR", "expect": "register", "q": "Paguei 80 reais de gasolina" },
+    { "id": "N05", "kind": "registrar", "lang": "es-419", "expect": "register", "q": "Me pagaron 1500 por un proyecto" },
+
+    { "id": "T01", "kind": "multiturno", "lang": "es-419", "expect": "ask", "q": "¿Y el mes pasado?",
+      "turns": [{ "q": "¿Cuánto gasté en restaurantes este mes?", "a": "Este mes llevas gastado en Restaurantes lo que ves en tu Panel." }] },
+    { "id": "T02", "kind": "multiturno", "lang": "es-419", "expect": "ask", "q": "¿Y con el de Hogar?",
+      "turns": [{ "q": "¿Cómo voy con el presupuesto de Movilidad?", "a": "Vas bien con Movilidad." }] },
+
+    { "id": "O01", "kind": "fuera-de-tema", "lang": "es-419", "expect": "offtopic", "q": "¿Cuál es la capital de Francia?" },
+    { "id": "O02", "kind": "sin-datos", "lang": "es-419", "expect": "nodata", "q": "¿Cuánto gasté en enero de 2023?" }
+  ]
+}

@@ -47,7 +47,9 @@ final class InboxConvertToGroupUITests: XCTestCase {
     /// borrado no debe re-renderizarse) y el borrador convertido no debe volver como borrador de grupo.
     func test_convertDraftToGroupExpense_survivesAndReplacesDraft() {
         let app = XCUIApplication()
-        app.launchForUITest(pro: true, seed: "grupos-invitado")
+        // El aviso «Movido a…» dura 5 s y se busca después de esperar hasta 10 s a la otra fila: en un runner frío del CI
+        // podía haberse ido ya. Molde: `UXAudit22Lote08UITests`.
+        app.launchForUITest(pro: true, seed: "grupos-invitado", extraArguments: ["-uitest-undo-notice-seconds", "30"])
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
         openInbox(app)
@@ -93,6 +95,12 @@ final class InboxConvertToGroupUITests: XCTestCase {
 
         // 2. Assert explícito anti-crash: el proceso sigue en foreground.
         XCTAssertEqual(app.state, .runningForeground, "La app no está en foreground tras Guardar (posible crash).")
+
+        // UX 2.2 · L13-11: el borrador ya no está, y la Bandeja dice adónde fue («Movido a «X»» con «Ver»).
+        XCTAssertTrue(
+            app.descendants(matching: .any)["inbox_moved_to_group_notice"].waitForExistence(timeout: 5),
+            "Tras convertir, la Bandeja no dijo adónde fue el borrador."
+        )
 
         // 3. El borrador convertido NO vuelve a la Bandeja (ticket `shared-scheduled-expense-shows-twice-in-inbox`).
         //    Hasta el 2026-10-10 la plantilla del formulario no llevaba la categoría del borrador: el gasto nacía sin

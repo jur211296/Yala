@@ -109,45 +109,43 @@ struct FilterServiceTests {
         #expect(AmountFilterCondition.between(min: 50, max: 150).isActive)
     }
 
-    // MARK: - Exclude Mode: FilterCriteria Tests
+    // MARK: - Ocultos («Sin X»): FilterCriteria (opción B, 2026-10-25)
 
-    @Test func excludeModeAloneDoesNotActivateFilters() throws {
+    @Test func excludedAloneActivatesFilters() throws {
         var criteria = FilterCriteria.empty
-        criteria.isExcludeMode = true
-        #expect(!criteria.hasActiveFilters)
-        #expect(criteria.activeFilterCount == 0)
-    }
-
-    @Test func excludeModePreservedWithActiveFilters() throws {
-        var criteria = FilterCriteria.empty
-        criteria.isExcludeMode = true
         let account = Account(name: "Test", currencyCode: "PEN", colorHex: "#000", iconName: "creditcard", type: "bank")
-        criteria.selectedAccounts.insert(account.persistentModelID)
+        criteria.excludedAccounts.insert(account.persistentModelID)
         #expect(criteria.hasActiveFilters)
-        #expect(criteria.isExcludeMode)
+        #expect(criteria.activeFilterCount == 1)
     }
 
-    @Test func activeFilterCountNotAffectedByExcludeMode() throws {
+    @Test func includedAndExcludedCountSeparately() throws {
         var criteria = FilterCriteria.empty
-        criteria.isExcludeMode = true
         let account = Account(name: "Test", currencyCode: "PEN", colorHex: "#000", iconName: "creditcard", type: "bank")
         let tag = Tag(name: "Tag1", colorHex: "#000", iconName: "tag")
         criteria.selectedAccounts.insert(account.persistentModelID)
-        criteria.selectedTags.insert(tag.persistentModelID)
+        criteria.excludedTags.insert(tag.persistentModelID)
         #expect(criteria.activeFilterCount == 2)
     }
 
-    @Test func clearAllResetsExcludeMode() throws {
+    /// Cada oculto es su cápsula: con dos tiene que salir la ✕ de «borrar todo» (`activeFilterCount > 1`).
+    @Test func twoHiddenValuesOfOneDimension_countTwice() throws {
         var criteria = FilterCriteria.empty
-        criteria.isExcludeMode = true
-        criteria.selectedNeeds.insert(.essential)
+        criteria.excludedNeeds = [.essential, .optional]
+        #expect(criteria.activeFilterCount == 2)
+    }
+
+    @Test func clearAllClearsExcluded() throws {
+        var criteria = FilterCriteria.empty
+        criteria.excludedNeeds.insert(.essential)
+        criteria.excludedCurrencies.insert(.usd)
         criteria.selectedAccounts.insert(Account(name: "A", currencyCode: "PEN", colorHex: "#000", iconName: "creditcard", type: "bank").persistentModelID)
         criteria.clearAll()
-        #expect(!criteria.isExcludeMode)
+        #expect(!criteria.hasExcludedEntities)
         #expect(!criteria.hasActiveFilters)
     }
 
-    // MARK: - Exclude Mode: matchesCriteria Tests
+    // MARK: - Ocultos («Sin X»): matchesCriteria
 
     @Test func excludeAccountFiltersOutMatchingTransaction() throws {
         let accountA = Account(name: "A", currencyCode: "PEN", colorHex: "#000", iconName: "creditcard", type: "bank")
@@ -156,8 +154,7 @@ struct FilterServiceTests {
         let txB = makeTransaction(account: accountB)
 
         var criteria = FilterCriteria.empty
-        criteria.isExcludeMode = true
-        criteria.selectedAccounts.insert(accountA.persistentModelID)
+        criteria.excludedAccounts.insert(accountA.persistentModelID)
 
         #expect(!FilterService.matchesCriteria(txA, criteria: criteria))
         #expect(FilterService.matchesCriteria(txB, criteria: criteria))
@@ -170,8 +167,7 @@ struct FilterServiceTests {
         let txB = makeTransaction(category: catB)
 
         var criteria = FilterCriteria.empty
-        criteria.isExcludeMode = true
-        criteria.selectedCategories.insert(catA.persistentModelID)
+        criteria.excludedCategories.insert(catA.persistentModelID)
 
         #expect(!FilterService.matchesCriteria(txA, criteria: criteria))
         #expect(FilterService.matchesCriteria(txB, criteria: criteria))
@@ -185,8 +181,7 @@ struct FilterServiceTests {
         let txB = makeTransaction(subcategory: subB)
 
         var criteria = FilterCriteria.empty
-        criteria.isExcludeMode = true
-        criteria.selectedSubcategories.insert(subA.persistentModelID)
+        criteria.excludedSubcategories.insert(subA.persistentModelID)
 
         #expect(!FilterService.matchesCriteria(txA, criteria: criteria))
         #expect(FilterService.matchesCriteria(txB, criteria: criteria))
@@ -200,8 +195,7 @@ struct FilterServiceTests {
         let txO = makeTransaction(subcategory: subOptional)
 
         var criteria = FilterCriteria.empty
-        criteria.isExcludeMode = true
-        criteria.selectedNeeds.insert(.essential)
+        criteria.excludedNeeds.insert(.essential)
 
         #expect(!FilterService.matchesCriteria(txE, criteria: criteria))
         #expect(FilterService.matchesCriteria(txO, criteria: criteria))
@@ -214,9 +208,8 @@ struct FilterServiceTests {
         let txB = makeTransaction(tags: [tagB])
 
         var criteria = FilterCriteria.empty
-        criteria.isExcludeMode = true
-        criteria.selectedTags.insert(tagA.persistentModelID)
-        criteria.populateTagUUIDs(from: [tagA])  // CSV-mirror SSOT
+        criteria.excludedTags.insert(tagA.persistentModelID)
+        criteria.populateTagUUIDs(fromCatalog: [tagA, tagB])  // CSV-mirror SSOT
 
         #expect(!FilterService.matchesCriteria(txAB, criteria: criteria))
         #expect(FilterService.matchesCriteria(txB, criteria: criteria))
@@ -227,19 +220,18 @@ struct FilterServiceTests {
         let txPEN = makeTransaction(currencyCode: "PEN")
 
         var criteria = FilterCriteria.empty
-        criteria.isExcludeMode = true
-        criteria.selectedCurrencies.insert(.usd)
+        criteria.excludedCurrencies.insert(.usd)
 
         #expect(!FilterService.matchesCriteria(txUSD, criteria: criteria))
         #expect(FilterService.matchesCriteria(txPEN, criteria: criteria))
     }
 
-    @Test func amountConditionNotAffectedByExcludeMode() throws {
+    @Test func amountConditionKeepsIncludeSemanticsWithExcluded() throws {
         let txSmall = makeTransaction(amount: 50)
         let txBig = makeTransaction(amount: 150)
 
         var criteria = FilterCriteria.empty
-        criteria.isExcludeMode = true
+        criteria.excludedCurrencies.insert(.usd)
         criteria.amountCondition = .greaterThan(100)
 
         // Amount uses inclusion semantics always
@@ -247,12 +239,12 @@ struct FilterServiceTests {
         #expect(FilterService.matchesCriteria(txBig, criteria: criteria))
     }
 
-    @Test func searchTextNotAffectedByExcludeMode() throws {
+    @Test func searchTextKeepsIncludeSemanticsWithExcluded() throws {
         let txGrocery = makeTransaction(note: "grocery store")
         let txGas = makeTransaction(note: "gas station")
 
         var criteria = FilterCriteria.empty
-        criteria.isExcludeMode = true
+        criteria.excludedCurrencies.insert(.usd)
         criteria.searchText = "grocery"
 
         // Search uses inclusion semantics always

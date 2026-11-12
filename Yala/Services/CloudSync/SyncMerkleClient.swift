@@ -21,6 +21,8 @@ struct RemoteMerkle: Equatable, Decodable {
 
     let canonVersion: String
     let capabilitySet: String
+    /// Versión del `capability_manifest.json` del Worker (`SyncCapability`). `nil` = un Worker anterior.
+    let manifestVersion: Int?
     /// Root del Canal 1 (16 tablas, orden UTF-8 asc; tabla vacía = sha256("")).
     let root: String
     /// tabla Postgres → (count de filas VIVAS del Canal 1, entityHash hex).
@@ -32,6 +34,7 @@ struct RemoteMerkle: Equatable, Decodable {
     enum CodingKeys: String, CodingKey {
         case canonVersion = "canon_version"
         case capabilitySet = "capability_set"
+        case manifestVersion = "manifest_version"
         case root
         case entities
         case channel2Root = "channel2_root"
@@ -82,8 +85,9 @@ final class SyncMerkleClient {
         self.canRenewSession = canRenewSession
     }
 
-    /// GET /sync/merkle con el capability-set v1. Nunca lanza por red/HTTP (→ `.transient`).
-    func fetchMerkle() async -> MerkleFetchOutcome {
+    /// GET /sync/merkle con la versión del manifest `capabilityLevel` (`SyncCapability`). Nunca lanza por red/HTTP
+    /// (→ `.transient`).
+    func fetchMerkle(capabilityLevel: Int = SyncCapability.declaredLevel) async -> MerkleFetchOutcome {
         // Sin token: caducada solo si el SDK borró la sesión; si la conserva, la renovación no volvió y es pasajero.
         // Ver `SyncPullClient.pull`.
         guard let token = await tokenProvider(), !token.isEmpty else {
@@ -97,7 +101,7 @@ final class SyncMerkleClient {
         var request = URLRequest(url: baseURL.appendingPathComponent("sync/merkle"))
         request.httpMethod = "GET"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue(SyncPullClient.capabilitySet, forHTTPHeaderField: "X-Yala-Capability-Set")
+        request.setValue(SyncCapability.header(forLevel: capabilityLevel), forHTTPHeaderField: "X-Yala-Capability-Set")
         if let attest = await attestProvider(), !attest.isEmpty {
             request.setValue("Bearer \(attest)", forHTTPHeaderField: "X-Yala-Attest-Session")
         }

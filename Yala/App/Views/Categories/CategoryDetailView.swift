@@ -17,13 +17,16 @@ struct CategoryDetailView: View {
     @State private var viewModel: CategoryDetailViewModel
 
     // UI State
-    @State private var showVisibilityInfo: Bool = false
     @State private var showDiscardDialog: Bool = false
     @State private var showMissingSubcategoriesAlert: Bool = false
     @State private var showIconColorPicker: Bool = false
     @State private var showDeleteConfirmation: Bool = false
     @State private var showCannotDeleteAlert: Bool = false
     @State private var transactionCount: Int = 0
+    /// «Mover sus registros…» desde el aviso de «No se puede eliminar» (L7-10).
+    @State private var showMoveRecordsSheet: Bool = false
+    /// No se pudo contar lo que hay dentro: no se borra nada a ciegas.
+    @State private var showCountFailed: Bool = false
 
     // Subcategory editing/deletion states
     @State private var isEditingSubcategories: Bool = false
@@ -35,7 +38,12 @@ struct CategoryDetailView: View {
     @FocusState private var isNameFieldFocused: Bool
 
     init(category: Category, isNewCategory: Bool = false) {
-        _viewModel = State(initialValue: CategoryDetailViewModel(category: category, isNewCategory: isNewCategory))
+        // Mira antes de leer: la lista vuelve a crear esta pantalla en su `NavigationLink` con la categoría ya borrada
+        // mientras se cierra (manda el `@State` de la primera vez, pero el ViewModel se construye igual), y en iOS 27.x
+        // leer un modelo borrado aborta (card 1w89).
+        _viewModel = State(initialValue: CategoryDetailViewModel(
+            category: category, isNewCategory: isNewCategory,
+            readsCategory: !category.isDeleted && category.modelContext != nil))
     }
 
     private func handleBack() {
@@ -61,6 +69,8 @@ struct CategoryDetailView: View {
                 header
                 detailsSection
                 subcategoriesSection
+                // «Eliminar» al fondo, como en cuentas y etiquetas: en medio se tocaba sin querer (L7-11).
+                deleteSection
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.xxl)
@@ -68,7 +78,8 @@ struct CategoryDetailView: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .yalaScreenBackground(.subtle)
-        .navigationTitle(L10n.Category.editTitle)
+        // Una categoría recién creada no se «edita» todavía (auditoría UX 2.2, lote 7, B4).
+        .navigationTitle(viewModel.isNewCategory ? L10n.Category.new : L10n.Category.editTitle)
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
@@ -83,38 +94,29 @@ struct CategoryDetailView: View {
                 )
             }
         }
-        .alert(L10n.Category.hiddenTitle, isPresented: $showVisibilityInfo) {
-            Button(L10n.Common.understood, role: .cancel) {}
-        } message: {
-            Text(L10n.Category.hiddenDescription)
-        }
         .alert(L10n.Category.addOneSubcategory, isPresented: $showMissingSubcategoriesAlert) {
             Button(L10n.Common.understood, role: .cancel) {}
         } message: {
             Text(L10n.Category.requiresSubcategory)
         }
-        .confirmationDialog(
-            L10n.Alert.discardChanges,
-            isPresented: $showDiscardDialog,
-            titleVisibility: .visible
-        ) {
-            Button(L10n.Alert.discardChanges, role: .destructive) {
+        // Alertas y no `confirmationDialog`: en iOS 26 el diálogo sale como popover y no pinta el botón
+        // de cancelar, así que «Seguir editando» y «Cancelar» no se veían; y el de descartar decía
+        // «Descartar» tres veces (auditoría UX 2.2, lote 7, B3). Textos del molde de la Bandeja.
+        .alert(L10n.Inbox.discardChangesTitle, isPresented: $showDiscardDialog) {
+            Button(L10n.Inbox.discardChanges, role: .destructive) {
                 if viewModel.isNewCategory {
                     viewModel.discardNewCategory()
                 }
                 dismiss()
             }
-            Button(L10n.Alert.keepEditing, role: .cancel) {}
+            Button(L10n.Inbox.keepEditing, role: .cancel) {}
         } message: {
-            Text(L10n.Alert.discardChanges)
+            Text(L10n.Inbox.discardChangesMessage)
         }
-        .confirmationDialog(
-            L10n.Category.deleteConfirmTitle,
-            isPresented: $showDeleteConfirmation,
-            titleVisibility: .visible
-        ) {
+        .alert(L10n.Category.deleteConfirmTitle, isPresented: $showDeleteConfirmation) {
             Button(L10n.Category.delete, role: .destructive) {
                 if viewModel.deleteCategory() {
+                    DS.Haptic.warning()
                     dismiss()
                 }
             }
@@ -122,19 +124,27 @@ struct CategoryDetailView: View {
         } message: {
             Text(L10n.Category.deleteConfirmMessage)
         }
-        .alert(
-            L10n.Category.cannotDeleteTitle,
-            isPresented: $showCannotDeleteAlert
-        ) {
+        .modifier(CategoryCannotDeleteAlert(
+            isPresented: $showCannotDeleteAlert,
+            recordCount: transactionCount,
+            onHide: hideCategory,
+            onMove: { showMoveRecordsSheet = true }
+        ))
+        .alert(L10n.Common.error, isPresented: $showCountFailed) {
             Button(L10n.Common.understood, role: .cancel) {}
         } message: {
-            Text(L10n.Category.cannotDeleteMessage(transactionCount))
+            Text(L10n.UXL7.Categories.countFailed)
         }
-        .confirmationDialog(
-            L10n.Subcategory.deleteConfirmTitle,
-            isPresented: $showSubcategoryDeleteConfirmation,
-            titleVisibility: .visible
-        ) {
+        .sheet(isPresented: $showMoveRecordsSheet) {
+            CategoryMoveRecordsSheet(category: viewModel.category) {
+                // Mover sus registros la elimina: se suelta lo cargado antes de cerrar (card 1w89).
+                viewModel.releaseDeletedCategory()
+                dismiss()
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+        }
+        .alert(L10n.Subcategory.deleteConfirmTitle, isPresented: $showSubcategoryDeleteConfirmation) {
             Button(L10n.Subcategory.delete, role: .destructive) {
                 if let subcategory = subcategoryToDelete {
                     _ = viewModel.deleteSubcategory(subcategory)
@@ -241,41 +251,45 @@ struct CategoryDetailView: View {
 
                     SubsectionDivider()
 
+                    // «Usar al registrar» con su pie, y sin alerta al apagarlo: la alerta salía antes de guardar,
+                    // como si ya estuviera hecho, y decía lo mismo que este pie (L7-11).
                     Toggle(isOn: $viewModel.isVisible) {
-                        Text(L10n.Category.show)
+                        Text(L10n.UXL7.Categories.useWhenRecording)
                     }
-
                     .padding()
-                    .onChange(of: viewModel.isVisible) { _, newValue in
-                        if newValue == false {
-                            showVisibilityInfo = true
-                        }
-                    }
+                    .accessibilityIdentifier("category_use_when_recording_toggle")
+
+                    Text(L10n.UXL7.Categories.useWhenRecordingFooter)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal)
+                        .padding(.bottom)
                 }
             }
+        }
+    }
 
-            // Delete button (only for user-created categories, not system categories)
-            if !viewModel.isNewCategory && !viewModel.isSystemCategory {
-                SectionBox(title: "") {
-                    Button {
-                        transactionCount = viewModel.countTransactionsInCategory()
-                        if transactionCount > 0 {
-                            showCannotDeleteAlert = true
-                        } else {
-                            showDeleteConfirmation = true
-                        }
-                    } label: {
-                        HStack {
-                            Spacer()
-                            Text(L10n.Category.delete)
-                                .foregroundStyle(DS.Semantic.errorForeground)
-                            Spacer()
-                        }
-                        .padding()
-                        .contentShape(Rectangle())
+    // Delete button (only for user-created categories, not system categories)
+    @ViewBuilder
+    private var deleteSection: some View {
+        if !viewModel.isNewCategory && !viewModel.isSystemCategory {
+            SectionBox(title: "") {
+                Button {
+                    requestDelete()
+                } label: {
+                    HStack {
+                        Spacer()
+                        Text(L10n.Category.delete)
+                            .foregroundStyle(DS.Semantic.errorForeground)
+                        Spacer()
                     }
-                    .buttonStyle(.plain)
+                    .padding()
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("category_delete_button")
             }
         }
     }
@@ -364,7 +378,7 @@ struct CategoryDetailView: View {
                     } label: {
                         HStack(spacing: DS.Spacing.md) {
                             Image(systemName: "plus.circle.fill")
-                                .foregroundStyle(.thAccent)
+                                .foregroundStyle(.thAccentText)
                             Text(L10n.Category.addSubcategory)
                                 .foregroundStyle(.primary)
                             Spacer()
@@ -456,7 +470,7 @@ struct CategoryDetailView: View {
                 .fill(Color(hex: viewModel.colorHex))
                 .frame(width: 36, height: 36)
                 .overlay(
-                    Image(systemName: subcategory.iconName ?? viewModel.category.iconName ?? "tag")
+                    Image(systemName: subcategory.iconName ?? viewModel.readableCategory?.iconName ?? "tag")
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(.white)
                 )
@@ -472,12 +486,37 @@ struct CategoryDetailView: View {
 
     // MARK: - Actions
 
+    /// Con registros no se borra: se ofrece ocultarla o mover sus registros (L7-10). El recuento cuenta también
+    /// los registros que solo llevan una de sus subcategorías, y si no se puede leer, no se borra nada.
+    private func requestDelete() {
+        guard let count = viewModel.recordCountForDeletion() else {
+            showCountFailed = true
+            return
+        }
+        transactionCount = count
+        if count > 0 {
+            showCannotDeleteAlert = true
+        } else {
+            showDeleteConfirmation = true
+        }
+    }
+
+    /// «Ocultarla»: deja de aparecer al registrar y su historial se queda (L7-10).
+    private func hideCategory() {
+        viewModel.isVisible = false
+        if viewModel.saveCategory() {
+            dismiss()
+        }
+    }
+
     private func saveCategory() {
         if viewModel.isNewCategory && viewModel.subcategories.isEmpty {
             showMissingSubcategoriesAlert = true
+            DS.Haptic.error()
             return
         }
         if viewModel.saveCategory() {
+            DS.Haptic.success()
             dismiss()
         }
     }

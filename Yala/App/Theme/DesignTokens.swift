@@ -131,12 +131,33 @@ enum DS {
 
         /// Delay between staggered items
         static let staggerDelay: Double = 0.05
+
+        // MARK: Curvas con nombre (card pjum, 2026-10-31)
+        //
+        // Una curva por intención, para que la misma cosa se mueva igual en toda la app. Dentro de una pestaña se
+        // aplican con `.animation(_:value:)` (o `dsAnimation`), nunca con `withAnimation`: `ContentView` apaga las
+        // transacciones que cruzan la `TabView`. Con Reducir movimiento, `nil` (lo resuelve `dsAnimation`).
+
+        /// Cambio de selección: chips, segmentos, píldoras, pestañas internas. Rápida y sin rebote.
+        static let selection: SwiftUI.Animation = .snappy(duration: normal)
+
+        /// Algo que aparece o se va dentro de la pantalla: avisos, secciones plegables, flotantes, esqueleto → datos.
+        static let appear: SwiftUI.Animation = .easeInOut(duration: normal)
+
+        /// Una cifra que cambia de valor, con `.contentTransition(.numericText(value:))`.
+        static let number: SwiftUI.Animation = .snappy(duration: slow)
     }
 
     // MARK: - Haptic Feedback
 
     /// Centralized haptic feedback helpers.
     /// Usage: `DS.Haptic.success()`, `DS.Haptic.selection()`
+    ///
+    /// Mapa (card pjum, 2026-10-31): **selección** → `selection()` (chip, segmento, opción de una lista);
+    /// **éxito** → `success()` (guardar, aprobar, confirmar, deshacer que repone); **aviso** → `error()` (validación que
+    /// no deja seguir, error al guardar); **borrado** → `warning()` (golpe rígido, al confirmar que se borra). `light()` y
+    /// `medium()`, para acciones sin resultado (enviar, empezar a grabar). Uno por gesto: si el ViewModel ya vibra, la
+    /// vista no repite. No dependen de Reducir movimiento: los gobierna el ajuste de vibraciones del sistema.
     enum Haptic {
         /// Success feedback - use after completing important actions (save, confirm)
         static func success() {
@@ -161,6 +182,11 @@ enum DS {
         /// Warning/rigid impact - use for destructive actions (delete)
         static func warning() {
             UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
+        }
+
+        /// Aviso: algo no se pudo hacer (falta un campo obligatorio, el guardado falló). Notificación `.error`.
+        static func error() {
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
         }
     }
 
@@ -204,6 +230,24 @@ enum DS {
         static let infoForeground = Color.blue
         static let undoForeground = Color.teal
         static let imageAccent = Color.teal
+    }
+
+    // MARK: - Acciones del formulario de registro (UX 2.2 · L2-20)
+
+    /// Las tres acciones del formulario, cada una con su color: ficha rellena e icono blanco encima, sin degradados ni
+    /// brillo (decisión de Jürgen, 21-oct). Los tonos son los de la maqueta, oscurecidos para que el blanco dé ≥ 4,5:1
+    /// (`UXAudit22Decidido02BLogicTests`).
+    enum FormAction {
+        /// «Mi parte»: turquesa (#0E7490, 5,4:1).
+        static let splitHex = "0E7490"
+        /// «Favorito»: naranja (#C2410C, 5,2:1).
+        static let favoriteHex = "C2410C"
+        /// «Recurrente»: violeta (#6D28D9, 7,1:1).
+        static let recurringHex = "6D28D9"
+
+        static let split = Color(hex: splitHex)
+        static let favorite = Color(hex: favoriteHex)
+        static let recurring = Color(hex: recurringHex)
     }
 
     // MARK: - Shadow
@@ -257,10 +301,6 @@ enum DS {
 
         /// Indigo→negro vertical — fondo unificado del flow Welcome (Hero + Chooser).
         static let heroIndigoBlack: [Color] = [.electricIndigo, .black]
-
-        /// Índigo→rosa para barras de intensidad de gasto (calendario de Registros):
-        /// índigo = gasto bajo, rosa = día de mayor gasto del periodo.
-        static let spendingHeat: [Color] = [.electricIndigo, .hotPink]
 
         /// Theme-aware accent→negro vertical — fondo principal de vistas en los 4
         /// themes translucent (Liquid Glass + Translucent Indigo/Rosa/Teal).
@@ -519,11 +559,20 @@ enum DS {
         /// 408 + 32 de márgenes = 440. El margen de la isla del iPhone girado NO cuenta: el split lo suma encima
         /// (pedida a 520, la columna midió 582 en el Pro Max girado, medido 2026-10-01). El mínimo es también el
         /// umbral de dos columnas: por debajo, la lista se aparta al abrir algo (`listYieldsToDetail`) y la página se
-        /// pliega a la pila (`foldsForAccessibilityText`) — en el Pro Max girado el split no la pone AL LADO del
+        /// pliega a la pila (`foldsToSingleColumn`) — en el Pro Max girado el split no la pone AL LADO del
         /// detalle a ningún ancho que lea AX5 (a 522 y a 582 la superponía sobre «Elige un…»).
         static let listColumnAccessibilityMinWidth: CGFloat = 440
         static let listColumnAccessibilityIdealWidth: CGFloat = 460
         static let listColumnAccessibilityMaxWidth: CGFloat = 520
+
+        /// El ancho ideal de la columna de lista: el de siempre, o —con un pliegue vertical que cruce el split (iPhone Duo
+        /// abierto en horizontal)— el que deja la separación de las dos columnas sobre el pliegue, si cae entre el mínimo y
+        /// el máximo de la columna. `fold` va en el espacio del split, que empieza en el borde de la lista.
+        static func listColumnIdealWidth(_ widths: ListColumnWidths, fold: ClosedRange<CGFloat>?) -> CGFloat {
+            guard let fold else { return widths.ideal }
+            let hinge = (fold.lowerBound + fold.upperBound) / 2
+            return (widths.min...widths.max).contains(hinge) ? hinge : widths.ideal
+        }
 
         /// Anchos de la columna de lista según el tamaño del texto: con los de accesibilidad, más ancha.
         static func listColumnWidths(isAccessibilityText: Bool) -> ListColumnWidths {
@@ -616,9 +665,10 @@ enum DS {
         // MARK: Headings
         /// Screen titles, large headers
         static let largeTitle = Font.largeTitle.weight(.semibold)
-        /// Titular de las pantallas de entrada del Welcome: serif del sistema (New York), cálido, en el
-        /// tamaño de `largeTitle` y con Dynamic Type. Solo para el Welcome (referencia del 15-sep).
-        static let welcomeHeadline = Font.system(.largeTitle, design: .serif, weight: .bold)
+        /// Titular de las pantallas de entrada del Welcome: el `largeTitle` sans de la app, con Dynamic Type.
+        /// Fue serif (New York) desde la referencia del 15-sep hasta que Jürgen lo retiró el 2026-10-26 (D2 B de
+        /// `onboarding-sigue-los-estilos-del-resto-de-la-app`): era el único serif de la app.
+        static let welcomeHeadline = largeTitle
         /// Section headers
         static let title = Font.title2.weight(.semibold)
         /// Subsection headers
@@ -702,6 +752,14 @@ enum DS {
         /// Símbolo y decimales de `panelHeroAmount`. Mantiene la misma
         /// proporción respecto al entero que la pareja `heroAmount`/`Secondary`.
         static let panelHeroAmountSecondary = Font.system(size: 17, weight: .regular)
+
+        /// Cifra protagonista DENTRO de una tarjeta, bajo un hero de página (el «Promedio diario» de Estadísticas ›
+        /// Resumen). Por debajo de `panelHeroAmount` (36) a propósito: con `heroAmount` (44) la tarjeta se leía antes
+        /// que el balance de la página. 28 elegido entre sus vecinos: 36 empata con el balance y 22 se confunde con
+        /// los `headline` de las celdas.
+        static let cardHeroAmount = Font.system(size: 28, weight: .semibold)
+        /// Símbolo y decimales de `cardHeroAmount`, en la misma proporción que las otras parejas.
+        static let cardHeroAmountSecondary = Font.system(size: 15, weight: .regular)
     }
 
     // MARK: - Sizing
@@ -714,6 +772,13 @@ enum DS {
 
         /// Altura de progress bars compactos (CashFlowDetailLineRow, badges).
         static let progressBarHeight: CGFloat = 4
+
+        /// Altura por defecto de `BudgetProgressBar`.
+        static let budgetProgressBarHeight: CGFloat = 6
+
+        /// `BudgetProgressBar` en la fila de la lista de Presupuestos: a 6 pt el carril de un presupuesto sin gastar
+        /// casi no se veía (1,1:1 contra la tarjeta). Se engrosa, no se oscurece.
+        static let budgetRowProgressBarHeight: CGFloat = 8
     }
 }
 

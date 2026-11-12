@@ -57,7 +57,7 @@ enum PDFPageImport {
 
     /// ¿Se puede abrir como PDF? Bloqueado cuenta como sí: la contraseña se pide después, en la hoja. Lo usa el soltar en el
     /// iPad para no guardar en `PendingImages/` lo que nunca se va a poder leer.
-    static func canOpen(_ data: Data) -> Bool {
+    nonisolated static func canOpen(_ data: Data) -> Bool {
         guard let document = PDFDocument(data: data) else { return false }
         return document.isLocked || document.pageCount > 0
     }

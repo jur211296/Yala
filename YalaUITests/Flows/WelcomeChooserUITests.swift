@@ -17,7 +17,7 @@ final class WelcomeChooserUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    func testExistingChooser_withCloudConfigured_showsThreeCards_andGoogleIntro() throws {
+    func testExistingChooser_withCloudConfigured_showsThreeCards_andGoogleOpensTheConsent() throws {
         let app = XCUIApplication()
         // Sin skipOnboarding (el flow Welcome ES el sujeto) y sin seed (no hace falta data).
         app.launchForUITest(
@@ -44,12 +44,20 @@ final class WelcomeChooserUITests: XCTestCase {
         XCTAssertTrue(app.buttons["welcome_existing_cloud"].exists, "No apareció la card de Apple.")
         let googleCard = app.buttons["welcome_existing_google"]
         XCTAssertTrue(googleCard.exists, "No apareció la card de Google.")
+        // UX 2.2 · L6-1: con los dos caminos a la vista, la ayuda de «¿No te acuerdas?» está.
+        XCTAssertTrue(app.descendants(matching: .any)["welcome_existing_dont_remember"].exists,
+                      "No apareció la ayuda para quien no recuerda dónde guardó sus datos.")
 
-        // Card Google → intro con el botón Google (SIN tapearlo — nada de sign-in real).
+        // UX 2.2 · L6-3: la card Google abre DIRECTAMENTE el consentimiento (sin la pantalla intermedia que repetía
+        // el botón). Nada se firma: el test no acepta.
         googleCard.tap()
-        let googleButton = app.descendants(matching: .any)
-            .matching(identifier: "welcome_cloud_signin_button_google").firstMatch
-        XCTAssertTrue(googleButton.waitForExistence(timeout: 10), "No apareció el botón de Google en el intro.")
+        let consentAccept = app.buttons["storage_consent_accept"]
+        XCTAssertTrue(consentAccept.waitForExistence(timeout: 10),
+                      "La card de Google no abrió el consentimiento de la nube.")
+        // Lo que importa es que el consentimiento es lo que está DELANTE, sin un toque más. La pantalla de la entrada
+        // sigue montada debajo de la hoja (es la salida si se cancela Apple/Google), y con una hoja presentada la vista
+        // de fondo sigue entera en el árbol: un `exists` sobre su botón no dice nada (`.claude/rules/testing.md`).
+        XCTAssertTrue(consentAccept.isHittable, "El consentimiento no quedó delante: hay otra pantalla que tocar antes.")
 
         // Paso 6 · CONTROL del test del faro de abajo: «Crear otra cuenta» es SOLO de la entrada a la que
         // encamina el faro. Quien entra por «Ya tengo cuenta» dijo que tenía una; si no la tiene, «No
@@ -57,12 +65,10 @@ final class WelcomeChooserUITests: XCTestCase {
         XCTAssertFalse(app.buttons["welcome_cloud_create_another"].exists,
                        "«Crear otra cuenta» apareció en la re-entrada normal: se coló fuera del faro.")
 
-        // Back → de vuelta al chooser (nivel 1, por el onBack del cover).
-        let backButton = app.buttons["welcome_back_button"].firstMatch
-        XCTAssertTrue(backButton.waitForExistence(timeout: 10), "No apareció el botón Volver del intro.")
-        backButton.tap()
-        XCTAssertTrue(app.buttons["welcome_chooser_restore"].waitForExistence(timeout: 10),
-                      "El back no volvió al chooser.")
+        // L6-3 + L6-11: cancelar el consentimiento vuelve a «¡Hola de nuevo!», de donde se salió, y no al chooser.
+        app.buttons["storage_consent_cancel"].tap()
+        XCTAssertTrue(app.buttons["welcome_existing_restore"].waitForExistence(timeout: 10),
+                      "Cancelar el consentimiento no volvió a «¡Hola de nuevo!».")
     }
 
     /// A4 + A5 de D-A7: el 2º nivel de "Soy nuevo" y el destino REAL de su card de nube. Mismo
@@ -118,6 +124,84 @@ final class WelcomeChooserUITests: XCTestCase {
         backButton.tap()
         XCTAssertTrue(app.buttons["welcome_chooser_new"].waitForExistence(timeout: 10),
                       "El back no volvió al chooser.")
+    }
+
+    /// **La salida a grupos de «Es mi primera vez»** (propuesta B del estudio de solo-grupos, decisión de Jürgen del
+    /// 24-oct). Quien viene solo a dividir gastos y entra por la puerta de los nuevos encuentra, bajo la elección de
+    /// nube, «¿Solo vienes a dividir gastos? Empieza por aquí»: lleva al MISMO 2.º nivel de grupos que la fila del
+    /// elector, y su «Volver» devuelve a «Es mi primera vez», no al elector.
+    ///
+    /// Discrimina las dos mitades: las cards de grupos prueban que se llegó al 2.º nivel y no a otro sitio, y la card de
+    /// nube tras el «Volver» prueba el origen — con el «Volver» fijo al elector de siempre, sale `welcome_chooser_new`.
+    /// Con faro o con una sola opción de nube esta pantalla no se monta (lo fijan los hermanos de abajo) y B no se ve.
+    func testNewChooser_groupsFooter_opensGroupsAndBackReturnsHere() throws {
+        let app = XCUIApplication()
+        app.launchForUITest(
+            reset: true,
+            skipOnboarding: false,
+            seed: nil,
+            fakeAttestSupport: true,
+            extraArguments: ["-uitest-cloud-chooser"]
+        )
+        let heroCTA = app.buttons["welcome_hero_cta"]
+        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
+        heroCTA.tap()
+
+        let newBranch = app.buttons["welcome_chooser_new"]
+        XCTAssertTrue(newBranch.waitForExistence(timeout: 10), "No apareció la card «Es mi primera vez».")
+        newBranch.tap()
+
+        let cloudCard = app.buttons["welcome_new_cloud"]
+        XCTAssertTrue(cloudCard.waitForExistence(timeout: 10), "No apareció «Es mi primera vez» con la elección de nube.")
+        let groupsExit = app.buttons["welcome_new_start_groups"]
+        XCTAssertTrue(groupsExit.exists, "Falta la pregunta de pie «¿Solo vienes a dividir gastos?».")
+        groupsExit.tap()
+
+        XCTAssertTrue(app.buttons["welcome_groups_create"].waitForExistence(timeout: 10),
+                      "«Empieza por aquí» no llevó al 2.º nivel de grupos.")
+        XCTAssertTrue(app.buttons["welcome_groups_join"].exists, "Falta la card de unirse en el 2.º nivel de grupos.")
+
+        let backButton = app.buttons["welcome_back_button"].firstMatch
+        XCTAssertTrue(backButton.waitForExistence(timeout: 10), "No apareció el botón Volver del 2.º nivel.")
+        backButton.tap()
+        XCTAssertTrue(cloudCard.waitForExistence(timeout: 10),
+                      "El «Volver» del 2.º nivel no devolvió a «Es mi primera vez», de donde se vino.")
+    }
+
+    /// Card 2osn (QA guiado de 2.1, 19-oct): en «¿Cómo empiezas?» quien ya tiene una cuenta de Grupos no tenía salida —solo
+    /// crear o unirse con un enlace—. La pregunta de pie «¿Ya tienes una cuenta? Entra aquí» lo lleva a «¡Hola de nuevo!»,
+    /// y su «Volver» devuelve al 2.º nivel de grupos, no al elector. Con `-uitest-cloud-chooser` hay varias entradas a una
+    /// cuenta, así que «¡Hola de nuevo!» se enseña (sin bypass).
+    func testGroupsChooser_signInFooter_opensExistingAndBackReturnsHere() throws {
+        let app = XCUIApplication()
+        app.launchForUITest(
+            reset: true,
+            skipOnboarding: false,
+            seed: nil,
+            extraArguments: ["-uitest-cloud-chooser"]
+        )
+        let heroCTA = app.buttons["welcome_hero_cta"]
+        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
+        heroCTA.tap()
+
+        let groupsBranch = app.buttons["welcome_chooser_invite"]
+        XCTAssertTrue(groupsBranch.waitForExistence(timeout: 10), "No apareció la fila de grupos del elector.")
+        groupsBranch.tap()
+
+        let createCard = app.buttons["welcome_groups_create"]
+        XCTAssertTrue(createCard.waitForExistence(timeout: 10), "No apareció el 2.º nivel de grupos.")
+        let signIn = app.buttons["welcome_groups_sign_in"]
+        XCTAssertTrue(signIn.exists, "Falta la pregunta de pie «¿Ya tienes una cuenta?» en el 2.º nivel de grupos.")
+        signIn.tap()
+
+        XCTAssertTrue(app.buttons["welcome_existing_cloud"].waitForExistence(timeout: 10),
+                      "«Entra aquí» no llevó a «¡Hola de nuevo!».")
+
+        let backButton = app.buttons["welcome_back_button"].firstMatch
+        XCTAssertTrue(backButton.waitForExistence(timeout: 10), "No apareció el botón Volver de «¡Hola de nuevo!».")
+        backButton.tap()
+        XCTAssertTrue(createCard.waitForExistence(timeout: 10),
+                      "El «Volver» de «¡Hola de nuevo!» no devolvió al 2.º nivel de grupos, de donde se vino.")
     }
 
     /// **Sin App Attest, «Es mi primera vez» no ofrece la nube** (ticket
@@ -203,6 +287,10 @@ final class WelcomeChooserUITests: XCTestCase {
                       "«Crear otra cuenta» no llegó al chooser, o lo recortó sin la card privada.")
         XCTAssertTrue(app.buttons["welcome_new_cloud"].exists,
                       "«Crear otra cuenta» abrió el chooser sin la card de la nube.")
+        // Es la misma pantalla de «Es mi primera vez», así que trae su salida a grupos (propuesta B, 24-oct). El aviso del
+        // faro de arriba, no: ahí la persona aún no ha pedido elegir.
+        XCTAssertTrue(app.buttons["welcome_new_start_groups"].exists,
+                      "«Crear otra cuenta» abrió «Es mi primera vez» sin la salida a grupos.")
     }
 
     /// **«Crear otra cuenta» sin App Attest: el chooser con UNA card, la privada** (ticket
@@ -363,40 +451,76 @@ final class WelcomeChooserUITests: XCTestCase {
                       "La card «Crear mi primer grupo» no se pinta: ¿`onCreate` sin cablear?")
         createCard.tap()
 
-        // **C2 · la puerta abre y lo PRIMERO que sale es el educativo**, no el nombre. Antes de C2 esta
-        // rama pedía identidad sin haber contado nunca qué es un grupo ni dónde viven sus gastos.
+        // **C2 · la puerta abre y lo PRIMERO que sale es el educativo**, no el nombre. Desde UX 2.2 · L12-12 arranca en
+        // su Step 3 (esta rama ya eligió crear un grupo): un solo toque, y sin la «‹» de volver a pasos que no enseña.
         let educationalCTA = app.buttons["groups_onboarding_cta"]
         XCTAssertTrue(educationalCTA.waitForExistence(timeout: 20),
                       "La puerta no dejó pasar, o la rama no empieza por el educativo (C2).")
-        // Tres steps: dos «Continuar» y el cierre, que es el que marca `hasShownGroupsOnboarding` y deja
-        // que la cadena avance.
-        educationalCTA.tap()
-        XCTAssertTrue(educationalCTA.waitForExistence(timeout: 5), "El educativo no avanzó al step 2.")
-        educationalCTA.tap()
-        XCTAssertTrue(educationalCTA.waitForExistence(timeout: 5), "El educativo no avanzó al step 3.")
+        XCTAssertTrue(app.buttons["groups_onboarding_privacy_link"].exists,
+                      "El educativo de esta rama no arrancó en su Step 3, el del consentimiento (L12-12).")
         educationalCTA.tap()
 
         // Y AHORA sí: con sesión y consent fingidos, la cadena se salta sign-in y consent por condiciones
-        // vivas ⇒ el siguiente paso es el nombre.
-        let nameField = app.textFields["groups_organizer_name_field"]
-        XCTAssertTrue(nameField.waitForExistence(timeout: 20),
-                      "Tras el educativo, la rama no llegó al paso del nombre.")
-        nameField.tap()
-        nameField.typeText("Ana")
-
-        let nameCTA = app.buttons["groups_organizer_name_cta"]
-        XCTAssertTrue(nameCTA.waitForExistence(timeout: 10), "No apareció el CTA del alta.")
-        nameCTA.tap()
-
-        // El desmontaje del campo es la señal de que el cover se fue de verdad — `exists` del fondo no
-        // probaría nada (`.claude/rules/testing.md`).
-        XCTAssertTrue(waitForNonExistence(of: nameField, timeout: 15),
-                      "El cover del nombre no se desmontó tras completar el alta.")
-
-        // Y el último paso: el formulario de grupo, directo, sin que el usuario haya tenido que buscarlo.
+        // vivas ⇒ el siguiente paso es el formulario del grupo, con el nombre de la persona DENTRO (L12-12).
+        let yourName = app.textFields["group_form_your_name_input"]
+        XCTAssertTrue(yourName.waitForExistence(timeout: 20),
+                      "Tras el educativo, la rama no llegó al formulario con «Tu nombre en el grupo».")
         let groupNameInput = app.textFields["group_form_name_input"]
-        XCTAssertTrue(groupNameInput.waitForExistence(timeout: 20),
-                      "El alta terminó pero el formulario de grupo no se abrió solo.")
+        XCTAssertTrue(groupNameInput.exists, "El formulario no trae el nombre del grupo junto al de la persona.")
+
+        // Sin el nombre de la persona no se crea (antes se dejaba y los demás te veían como «Usuario»).
+        let save = app.buttons["group_form_save"]
+        XCTAssertTrue(save.waitForExistence(timeout: 5), "No apareció el botón de crear.")
+        groupNameInput.tap()
+        groupNameInput.typeText("Depa Miraflores")
+        XCTAssertFalse(save.isEnabled, "Con el nombre del grupo pero sin el de la persona, «crear» tiene que estar apagado.")
+        yourName.tap()
+        yourName.typeText("Ana")
+        XCTAssertTrue(save.waitUntilEnabledForWelcome(timeout: 5), "Con los dos nombres, «crear» tiene que encenderse.")
+    }
+
+    /// **Card apsn · con el arranque todavía en curso, «Crear mi primer grupo» no deja la pantalla en negro.** En un iPhone
+    /// recién instalado el arranque tardaba ~10 s (el histórico de tasas, que ya no lo alarga), y mientras tanto el bloqueo
+    /// `bootstrapPending` retiene el educativo: el Welcome se iba y debajo no había nada. Ahora se ve la pantalla de carga
+    /// de la app hasta que el educativo sube.
+    ///
+    /// `-uitest-slow-bootstrap 25` reproduce ese arranque lento: en el simulador, sin App Attest, acaba en ~1 s y la espera
+    /// no existe. Sin el arreglo, `shell_waiting_brand` no aparece nunca (el fondo vacío no lleva id).
+    func testGroupsOrganizer_withTheStartupStillRunning_showsTheLoadingScreenNotBlack() throws {
+        let app = XCUIApplication()
+        app.launchForUITest(
+            reset: true,
+            skipOnboarding: false,
+            seed: nil,
+            cloudSession: true,
+            slowBootstrapSeconds: 25,
+            groupsConsent: true,
+            groupsEducativo: true
+        )
+
+        let heroCTA = app.buttons["welcome_hero_cta"]
+        XCTAssertTrue(heroCTA.waitForExistence(timeout: 20), "No apareció el CTA del Hero.")
+        heroCTA.tap()
+        let inviteBranch = app.buttons["welcome_chooser_invite"]
+        XCTAssertTrue(inviteBranch.waitForExistence(timeout: 10), "No apareció la card «Vengo por un grupo».")
+        inviteBranch.tap()
+        let createCard = app.buttons["welcome_groups_create"]
+        XCTAssertTrue(createCard.waitForExistence(timeout: 10), "No apareció la card «Crear mi primer grupo».")
+        createCard.tap()
+
+        // El arranque sigue: el educativo no puede subir todavía, y lo que se ve es la pantalla de carga. Primero, que el
+        // Welcome se fue de verdad: la pantalla de espera ya estaba montada debajo desde el arranque.
+        let welcomeGone = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: createCard)
+        wait(for: [welcomeGone], timeout: 10)
+        let educationalCTA = app.buttons["groups_onboarding_cta"]
+        XCTAssertTrue(
+            app.descendants(matching: .any)["shell_waiting_brand"].firstMatch.waitForExistence(timeout: 5),
+            "Con el arranque en curso, tras «Crear mi primer grupo» tiene que verse la pantalla de carga, no el fondo vacío.")
+        XCTAssertFalse(educationalCTA.exists, "El educativo subió antes de asentar el arranque: el seam no reprodujo la espera.")
+
+        // Y en cuanto asienta, el educativo sube sin otro gesto.
+        XCTAssertTrue(educationalCTA.waitForExistence(timeout: 45),
+                      "Tras asentar el arranque, la rama no siguió al educativo.")
     }
 
     /// **Tras un borrado de arranque que no pudo borrar, la puerta de Grupos lo dice y NO vuelve a armar** (ticket
@@ -502,9 +626,11 @@ final class WelcomeChooserUITests: XCTestCase {
 
         let back = app.buttons["welcome_back_button"].firstMatch
         XCTAssertTrue(back.exists, "No apareció el botón Volver.")
-        // El chevron suelto medía 44 pt de ancho (su marco de toque); la píldora con la palabra pasa de 80.
-        XCTAssertGreaterThan(back.frame.width, 60,
-                             "El Volver volvió a ser un chevron sin palabra: la píldora lleva el texto a la vista.")
+        // Jürgen, 2026-10-25: el «‹» del Welcome es el botón atrás del sistema, como en el resto de la app (antes, una
+        // píldora con la palabra dibujada encima). Vive en la barra de navegación, que es lo que lo lleva a la barra
+        // vertical en el iPhone Duo cerrado.
+        XCTAssertTrue(app.navigationBars.buttons["welcome_back_button"].exists,
+                      "El Volver ya no está en la barra de navegación: volvió a ser un botón dibujado encima.")
 
         let startNew = app.buttons["welcome_existing_start_new"]
         XCTAssertTrue(startNew.exists, "No apareció la pregunta de pie «¿Es tu primera vez en Yala?».")
@@ -542,8 +668,15 @@ final class WelcomeChooserUITests: XCTestCase {
         XCTAssertLessThan(google.frame.minY, apple.frame.minY, "Con el faro de Google, Google va primero.")
 
         let note = app.descendants(matching: .any)["welcome_existing_used_on_this_device"]
-        XCTAssertTrue(note.exists, "Falta «La que usaste en este iPhone».")
+        XCTAssertTrue(note.exists, "Falta «La que usaste en este dispositivo».")
         XCTAssertGreaterThan(note.frame.minY, google.frame.minY, "La nota va bajo el botón de Google…")
         XCTAssertLessThan(note.frame.minY, apple.frame.minY, "…y antes del de Apple.")
+    }
+}
+
+private extension XCUIElement {
+    func waitUntilEnabledForWelcome(timeout: TimeInterval) -> Bool {
+        let enabled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isEnabled == true"), object: self)
+        return XCTWaiter().wait(for: [enabled], timeout: timeout) == .completed
     }
 }

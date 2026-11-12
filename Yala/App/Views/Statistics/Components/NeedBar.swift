@@ -51,7 +51,7 @@ struct NeedBar: View {
             Circle()
                 .fill(color)
                 .frame(width: 8, height: 8)
-            Text("\(label) \(Int(percent))%")
+            Text("\(label) \(Int(percent.rounded()))%")
                 .font(DS.Typography.captionSmall)
                 .foregroundStyle(.secondary)
         }

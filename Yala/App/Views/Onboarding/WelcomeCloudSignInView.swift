@@ -83,6 +83,11 @@ struct WelcomeCloudSignInView: View {
     /// recorta» al decidir el `.notFound`, y adoptar mueve datos personales a la nube — es el registro
     /// GDPR de esa cuenta. Un gesto, y es el que él protegió.
     var startsAtConsent: Bool = false
+    /// UX 2.2 · L6-3: la entrada la abrió «¡Hola de nuevo!» y arranca en el consentimiento (`startsAtConsent`). Ahí el
+    /// consentimiento ES la primera pantalla —el intro repetía el botón «Iniciar sesión con Apple» que la persona
+    /// acababa de tocar—, así que cancelarlo vuelve a «¡Hola de nuevo!» (`onBack`) en vez de dejar el intro. La puerta
+    /// de Grupos, que también arranca en el consentimiento, no lo pide: allí cancelar deja el intro, que es su salida.
+    var cancelConsentGoesBack: Bool = false
     /// **Bloque [I]** · el estado de sesión de este dispositivo, evaluado EN el momento de la decisión y
     /// no al montar la pantalla: entre una cosa y otra puede asentar un import de iCloud, o el usuario
     /// puede llegar aquí desde la puerta de Grupos con el onboarding ya completado.
@@ -119,6 +124,12 @@ struct WelcomeCloudSignInView: View {
     /// (`LateNoticeKeptGroupsMark.recordAtGroupsEntryIfNoGroupsYet`): una sesión que sobrevivió a una reinstalación es
     /// de la persona anterior.
     var onEnterGroupsOnly: (_ offersFullActivation: Bool, _ sessionOpenedHere: Bool) -> Void
+    /// **Opción B de Jürgen (2026-11-10)** · el guard cross-cuenta no deja adoptar sobre lo que hay, y lo que hay es el
+    /// corpus del iCloud privado con copia en iCloud (`ICloudAsideEntryLogic`): se deja en iCloud, sin tocar, y se entra a
+    /// la cuenta en un teléfono neutro. Es un callback y no una fase propia por lo mismo que `onEnterGroupsOnly`: lo que
+    /// sigue es la vuelta al neutro de la puerta del Welcome (`WelcomeGroupsGateView`, propósito `.enterCloudAccount`),
+    /// que es un step de OTRO contenido del cover. Lleva el método con el que se firmó, para retomarlo tras reabrir.
+    var onLeaveICloudAside: (CloudSignInProvider) -> Void
     /// **Paso 6** · «Crear otra cuenta» desde la entrada encaminada por el faro: cerrar este cover y volver
     /// a «Elige dónde quieres guardar tus datos» ENTERO —las dos cards, privado incluido (decisión de
     /// Jürgen 2026-09-09, que deroga el «card nube activa» del ticket)—. Es un callback y no una fase propia
@@ -131,6 +142,7 @@ struct WelcomeCloudSignInView: View {
     /// R2: el alta sin relanzar arranca el motor del dominio EN ESTA SESIÓN y `startShared` necesita un
     /// contexto. Es el mismo `mainContext` que el bootstrap le pasa en el paso 14.7.
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.openURL) private var openURL
 
     @State private var phase: CloudWelcomeSignInPhase = .intro
     @State private var showConsent = false
@@ -139,6 +151,9 @@ struct WelcomeCloudSignInView: View {
     /// del DUEÑO. Se consume al escribir (una sola vez — el epoch conserva su T0 aunque el flujo
     /// reintente).
     @State private var consentPendingPersistence = false
+    /// La persona aceptó el consentimiento EN ESTA PANTALLA (esta pasada). Si después pasa de entrar a crear la cuenta, no
+    /// se le vuelve a pedir (`CloudConsentRegistrationLogic.signUpSwitch`).
+    @State private var consentAcceptedThisPass = false
     /// A5: el método que el usuario tapeó en el intro del ALTA (en `.reentry` no se usa — ahí el
     /// provider lo trae el `Entry`). Se fija ANTES de abrir el consent y de ahí sale el `provider`
     /// que ve `CloudAuthService`.
@@ -150,11 +165,17 @@ struct WelcomeCloudSignInView: View {
     /// Bloque [I] · latch del auto-arranque en el consent (ver el `onAppear`). Sin él, cancelar el consent
     /// lo reabre en bucle: sus condiciones vuelven a cumplirse todas.
     @State private var didAutoOpenConsent = false
+    /// El primer consentimiento —el que abre la entrada desde «¡Hola de nuevo!»— devuelve allí al cancelarlo; se
+    /// gasta al cerrarlo, aceptado o no.
+    @State private var consentBackArmed = true
     /// Task del flujo/poll en vuelo — se cancela en onDisappear (el Task nace de un
     /// callback, NO de `.task`, así que el desmontaje no lo cancela solo).
     @State private var flowTask: Task<Void, Never>?
     /// H-2026-07-17-5: detector de drive aparcado del poll (auto-resume + botón manual).
     @State private var autoResumeState = WelcomeAdoptAutoResume.State()
+    /// «Esto puede tardar unos minutos» solo cuando la conexión ya está tardando (card hov2): con una cuenta casi vacía
+    /// entrar dura segundos, y el aviso de minutos sobraba.
+    @State private var adoptSlowHintVisible = false
     /// Fase journaleada del tick anterior del poll — alimenta `machineAdvanced` (un avance
     /// real repone intentos de auto-resume). `nil` = primer tick (jamás cuenta como avance).
     @State private var lastObservedPhase: MigrationPhase?
@@ -200,11 +221,22 @@ struct WelcomeCloudSignInView: View {
         // Estructuralmente lo garantiza que el ÚNICO productor del flujo sea este `onAccept`: los
         // botones del intro solo abren el sheet, nunca firman.
         .sheet(isPresented: $showConsent) {
-            CloudConsentView(path: consentPath, persistsOnAccept: persistsConsentOnAccept) {
+            CloudConsentView(path: consentPath, persistsOnAccept: persistsConsentOnAccept, onAccept: {
                 showConsent = false
+                consentBackArmed = false
+                consentAcceptedThisPass = true
                 consentPendingPersistence = !persistsConsentOnAccept
                 launchFlow { await runFlowAfterConsent() }
-            }
+            }, onCancel: {
+                showConsent = false
+                // Solo el consentimiento que abrió la entrada (`consentBackArmed`, un solo uso): uno que se reabre
+                // después —«Crear cuenta con…» tras «No encontramos una cuenta», o otro método— deja el intro del
+                // alta, no salta a «¡Hola de nuevo!» (review de UX 2.2 · L6-3).
+                let goesBack = WelcomeBackStepLogic.consentCancelReturnsBack(
+                    requested: cancelConsentGoesBack && consentBackArmed, isAtIntro: phase == .intro)
+                consentBackArmed = false
+                if goesBack { onBack() }
+            })
         }
         .onDisappear { flowTask?.cancel() }
         // El diálogo de «Cancelar la activación» cuelga del `body` y no del botón: el botón sale del árbol en la misma
@@ -352,7 +384,7 @@ struct WelcomeCloudSignInView: View {
 
     // MARK: - Contenido por fase
 
-    /// **El intro tiene la forma de la referencia del 15-sep** (`WelcomeForm.swift`): titular serif sin
+    /// **El intro tiene la forma de la referencia del 15-sep** (`WelcomeForm.swift`): titular sin
     /// logo y una tarjeta con lo que se pulsa. Las demás fases —progreso, error, relanzamiento— no son una
     /// pantalla de entrada y se quedan con el logo centrado de siempre.
     @ViewBuilder
@@ -495,11 +527,24 @@ struct WelcomeCloudSignInView: View {
             // Icono de CUENTA y no de wifi: el 403 llega con la conexión perfectamente sana, y el copy
             // de `.error` —que empieza por «Revisa tu conexión»— mandaba a la gente a mirar su router.
             // Sin botón de reintentar a propósito: esperar no despierta una cuenta bloqueada.
-            messageContent(
-                icon: "person.crop.circle.badge.xmark",
-                title: L10n.Welcome.Cloud.accountBlockedTitle,
-                body: L10n.Welcome.Cloud.accountBlockedBody(AppConstants.supportEmail))
-                .accessibilityIdentifier("welcome_cloud_account_blocked")
+            //
+            // UX 2.2 · L6-9: el texto manda a escribir un correo y el correo no se podía tocar. Ahora el botón ES la
+            // instrucción: abre el correo con el destinatario y el asunto puestos. La flecha de atrás sigue ahí.
+            VStack(spacing: DS.Spacing.lg) {
+                messageContent(
+                    icon: "person.crop.circle.badge.xmark",
+                    title: L10n.Welcome.Cloud.accountBlockedTitle,
+                    body: L10n.Welcome.Cloud.accountBlockedBody(AppConstants.supportEmail))
+                    .accessibilityIdentifier("welcome_cloud_account_blocked")
+                if let mailURL = SupportMailLinkLogic.url(
+                    to: AppConstants.supportEmail, subject: L10n.UXLote6.accountBlockedMailSubject) {
+                    YalaPrimaryButton(L10n.UXLote6.writeToSupport, icon: "envelope.fill") {
+                        openURL(mailURL)
+                    }
+                    .padding(.horizontal, DS.Spacing.xl)
+                    .accessibilityIdentifier("welcome_cloud_account_blocked_write")
+                }
+            }
         }
     }
 
@@ -537,7 +582,9 @@ struct WelcomeCloudSignInView: View {
                 .frame(height: WelcomeFormLayout.buttonHeight)
                 .accessibilityIdentifier("welcome_borncloud_signup_google")
 
-                Text(L10n.Welcome.BornCloud.providerNote)
+                // Decisión A de Jürgen (2026-10-19): la misma frase y key que Ajustes. La cuenta no queda «ligada al método»:
+                // con el mismo correo, Apple y Google abren la misma cuenta (medido en el backend, L20-9).
+                Text(L10n.Settings.yalaAccountLinkingNote)
                     .font(DS.Typography.caption)
                     .foregroundStyle(.white.opacity(0.6))
                     .multilineTextAlignment(.center)
@@ -561,7 +608,9 @@ struct WelcomeCloudSignInView: View {
 
     private var reentryIntro: some View {
         WelcomeFormScreen(
-            title: L10n.Welcome.Cloud.title,
+            // UX 2.2 · L6-8: quien llega por el faro tocó «Es mi primera vez»; el título dice lo que pasó («ya hay una
+            // cuenta con este Apple ID») en vez de mandarle a entrar en algo que no sabe que tiene.
+            title: isBeaconRouted ? L10n.UXLote6.beaconTitle : L10n.Welcome.Cloud.title,
             subtitle: reentrySubtitle.text,
             subtitleIdentifier: reentrySubtitle.identifier
         ) {
@@ -583,9 +632,9 @@ struct WelcomeCloudSignInView: View {
                     .frame(height: WelcomeFormLayout.buttonHeight)
                     .accessibilityIdentifier("welcome_cloud_signin_button_google")
                 }
-                // Nota §13 del primer sign-in (AMBOS providers): entra con el método que usaste, y la
-                // cuenta queda ligada a él. La primera mitad es lo que la separa de la del alta (W4).
-                Text(L10n.Welcome.Cloud.providerNote)
+                // Nota §13 del primer sign-in (AMBOS providers). Desde la decisión A de Jürgen (2026-10-19), la frase de
+                // Ajustes: con el mismo correo, Apple y Google abren la misma cuenta.
+                Text(L10n.Settings.yalaAccountLinkingNote)
                     .font(DS.Typography.caption)
                     .foregroundStyle(.white.opacity(0.6))
                     .multilineTextAlignment(.center)
@@ -602,6 +651,14 @@ struct WelcomeCloudSignInView: View {
                         onCreateAnotherAccount()
                     }
                     .accessibilityIdentifier("welcome_cloud_create_another")
+                    // L6-8: crear otra no borra la que ya existe, y la persona tiene que saberlo antes de tocarlo.
+                    Text(L10n.UXLote6.beaconCreateAnotherNote)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.white.opacity(0.7))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity)
+                        .accessibilityIdentifier("welcome_cloud_create_another_note")
                 }
             }
             .welcomeFormCard()
@@ -653,7 +710,7 @@ struct WelcomeCloudSignInView: View {
             messageContent(
                 icon: "person.crop.circle.badge.exclamationmark",
                 title: L10n.Welcome.Cloud.providerMismatchTitle,
-                body: providerMismatchBody(accountProvider: exits.accountProvider))
+                body: providerMismatchBody(exits))
                 .accessibilityIdentifier("welcome_cloud_provider_mismatch")
             VStack(spacing: DS.Spacing.md) {
                 // Las acciones toman el método de `exits` y no un literal por `case`: así un botón no puede firmar
@@ -701,11 +758,13 @@ struct WelcomeCloudSignInView: View {
 
     /// Body del mismatch R9: con provider CONOCIDO interpola su nombre visible; nil o
     /// desconocido → copy genérico (jamás interpolar un rawValue del wire en UI).
-    private func providerMismatchBody(accountProvider: CloudSignInProvider?) -> String {
-        if let name = ProviderMismatchLogic.displayName(forProvider: accountProvider?.rawValue) {
-            return L10n.Welcome.Cloud.providerMismatchBody(name)
+    private func providerMismatchBody(_ exits: ProviderMismatchLogic.Exits) -> String {
+        // El método elegido es siempre uno de los dos conocidos (`createWith` sale de la sesión que se acaba de firmar).
+        let chosen = exits.createWith == .apple ? "Apple" : "Google"
+        if let name = ProviderMismatchLogic.displayName(forProvider: exits.accountProvider?.rawValue) {
+            return L10n.Welcome.Cloud.providerMismatchBody(accountProvider: name, chosenProvider: chosen)
         }
-        return L10n.Welcome.Cloud.providerMismatchBodyGeneric
+        return L10n.Welcome.Cloud.providerMismatchBodyGeneric(chosenProvider: chosen)
     }
 
     /// «Iniciar sesión con <método del faro>», desde el mismatch. **Sin volver a pedir el consentimiento**
@@ -753,14 +812,27 @@ struct WelcomeCloudSignInView: View {
     /// botones, y no otra vez en la pantalla de la que se sale.
     ///
     /// **vb1f (opción C): con Google, viaja también la credencial** (`pendingGoogleCredential`, recogida antes de soltar
-    /// la sesión). El consentimiento se sigue pidiendo; lo que no se repite es la hoja de Google. No hace falta tocarla
-    /// aquí: `ensureSignedIn` la gasta en el siguiente inicio de sesión y solo si es de Google, así que si la persona
-    /// cierra el consentimiento y elige Apple en el intro del alta, se descarta sin usarse.
+    /// la sesión): lo que no se repite es la hoja de Google. No hace falta tocarla aquí: `ensureSignedIn` la gasta en el
+    /// siguiente inicio de sesión y solo si es de Google, así que si la persona cierra el consentimiento y elige Apple en
+    /// el intro del alta, se descarta sin usarse.
+    ///
+    /// **Y el consentimiento tampoco se repite si ya se aceptó en esta pasada** (lote decidido 2.2 · 15): es el mismo texto
+    /// que la persona aceptó hace un momento antes de «Entrar con…». Se registra para el alta en este punto —la regla
+    /// vive en `CloudConsentRegistrationLogic`— y el alta arranca sin pasar por el intro.
     private func switchToSignUp(with signUpProvider: CloudSignInProvider) {
         chosenProvider = signUpProvider
         entryOverride = .bornCloud
         phase = .intro
-        showConsent = true
+        switch CloudConsentRegistrationLogic.signUpSwitch(consentAcceptedThisPass: consentAcceptedThisPass) {
+        case .askConsent:
+            showConsent = true
+        case .alreadyAccepted:
+            CloudConsentRegistrationLogic.persistForSignUpSwitch(pending: &consentPendingPersistence) {
+                CloudConsentRegistrar.register()
+            }
+            MetricsService.cloudConsentAccepted(path: CloudMigrationController.ConsentPath.bornCloud.rawValue)
+            launchFlow { await runBornCloudFlow() }
+        }
     }
 
     private func progressContent(_ text: String, hint: String?) -> some View {
@@ -787,15 +859,26 @@ struct WelcomeCloudSignInView: View {
             ProgressView(value: fraction)
                 .tint(.white)
                 .padding(.horizontal, DS.Spacing.xl)
+            // UX 2.2 · L6-13. Decidido por la sesión: la opción B pedía las cifras en vivo de Restaurar, pero aquí no
+            // suben (el adopt no baja filas: las trae el primer pull, ya con esta pantalla desmontada; review del
+            // 2026-10-17). Lo que sí avanza es la barra, así que se dice en número: «45 %».
+            Text(fraction.formatted(.percent.precision(.fractionLength(0))))
+                .font(DS.Typography.subheadline.monospacedDigit())
+                .foregroundStyle(.white.opacity(0.8))
+                .contentTransition(.numericText())
+                .accessibilityIdentifier("welcome_cloud_adopt_percent")
             Text(L10n.Welcome.Cloud.adopting)
                 .font(DS.Typography.headline)
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
-            Text(L10n.Welcome.Cloud.adoptingHint)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.white.opacity(0.7))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, DS.Spacing.xl)
+            if adoptSlowHintVisible {
+                Text(L10n.Welcome.Cloud.adoptingHint)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.white.opacity(0.7))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, DS.Spacing.xl)
+                    .accessibilityIdentifier("welcome_cloud_adopt_slow_hint")
+            }
             // #36 (H1): pre-espera de quiescencia en curso (hasta 300s) — estado honesto,
             // misma key que la card de Almacenamiento. Leer la propiedad @Observable en
             // body registra la dependencia.
@@ -822,6 +905,17 @@ struct WelcomeCloudSignInView: View {
             }
         }
         .accessibilityIdentifier("welcome_cloud_adopting")
+        .task {
+            // La pista sale si la conexión sigue aquí pasado el plazo. La `.task` muere con la pantalla, así que una
+            // conexión que termina antes no la enseña nunca.
+            do {
+                try await Task.sleep(for: WelcomeAdoptSlowHint.delay)
+            } catch {
+                return
+            }
+            adoptSlowHintVisible = true
+        }
+        .onDisappear { adoptSlowHintVisible = false }
     }
 
     /// «Cancelar la activación» durante el adopt (ticket `welcome-adopt-effect-failure-has-no-reason-and-no-cancel`,
@@ -882,23 +976,11 @@ struct WelcomeCloudSignInView: View {
         }
     }
 
+    /// UX 2.2 · L6-7: el mismo mensaje de «reabre Yala» que el del Welcome (`WelcomeRelaunchMessage`), con la
+    /// instrucción de cerrarla del todo: este terminal NO se cierra solo al ir a inicio (ver su docblock).
     private var relaunchContent: some View {
-        VStack(spacing: DS.Spacing.lg) {
-            Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90")
-                .font(.system(size: 44))
-                .foregroundStyle(.white.opacity(0.8))
-                .accessibilityHidden(true)
-            Text(L10n.Storage.Relaunch.title)
-                .font(DS.Typography.title2)
-                .foregroundStyle(.white)
-                .multilineTextAlignment(.center)
-            Text(L10n.Storage.Relaunch.body)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.white.opacity(0.7))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, DS.Spacing.xl)
-        }
-        .accessibilityIdentifier("welcome_cloud_relaunch")
+        WelcomeRelaunchMessage(kind: .cloudAccount)
+            .accessibilityIdentifier("welcome_cloud_relaunch")
     }
 
     /// R2 · el alta terminó y NO hay nada que reabrir. Es una pantalla de continuidad, no una terminal de
@@ -1074,6 +1156,9 @@ struct WelcomeCloudSignInView: View {
         let service = BornCloudSignUpService(session: LiveCloudSessionProvider())
         switch BornCloudSignUpFlow.step(for: await service.signUp()) {
         case .activateStorageAndRelaunch:
+            // m387 · el alta creó la cuenta de quien está delante, y desde R2 sobre un montaje neutro no relanza: sin
+            // esto, el consentimiento de Grupos esperaba a la pestaña o a un arranque.
+            GroupsConsentRegistrar.shared.sealAfterSessionAccepted()
             // El par se escribe ANTES de sembrar nada — en born-cloud es trivialmente cierto porque
             // no hay nada pre-relanzamiento que sembrar. La primitiva DEVUELVE la fase terminal;
             // jamás mata el proceso.
@@ -1186,6 +1271,8 @@ struct WelcomeCloudSignInView: View {
                 // sabe pedir lo que falte en este dispositivo. Los dos destinos comparten rama porque van al
                 // mismo sitio; lo único que los separa es la oferta de «Activar Yala completo» al terminar
                 // (paso 8), y viaja como argumento.
+                // m387 · la puerta acepta la sesión: es la de quien sigue a Grupos.
+                GroupsConsentRegistrar.shared.sealAfterSessionAccepted()
                 onEnterGroupsOnly(destino == .enterGroupsOnlyOfferingFullActivation, sessionOpenedHere)
                 return
             // `.adoptAsComplete` es el destino NORMAL de esta puerta: sigue al guard cross-cuenta y al
@@ -1212,7 +1299,19 @@ struct WelcomeCloudSignInView: View {
                 // dejar rastro en el device y el registro GDPR real de esa cuenta vive en SU backend;
                 // escribirlo antes de saber la ruta era el bug del chip (caía en el iKV del dueño).
                 await CloudAuthService.shared.signOut()
-                phase = .blockedForeignData
+                // **Opción B (2026-11-10)**: si lo que hay es el corpus del iCloud privado y tiene copia en iCloud, no
+                // se bloquea —ni al dueño ni al teléfono ajeno, que el guard no sabe distinguir—: se deja en iCloud sin
+                // tocar y se entra a la cuenta en un teléfono neutro. Se mide DESPUÉS de soltar la sesión, con la celda
+                // que el cierre privado va a encontrar. Sin copia, o con el teléfono en la nube, el bloqueo de siempre.
+                switch ICloudAsideEntryLogic.exit(
+                    exitCell: WelcomeGroupsGateView.exitCell(),
+                    copyChannel: WelcomeGroupsGateView.copyChannelNow,
+                    hasLegacyCloudKitGroups: CloudSessionSignOut.hasLegacyCloudKitGroupRows(context: modelContext)) {
+                case .leaveICloudAside:
+                    onLeaveICloudAside(provider)
+                case .staysBlocked:
+                    phase = .blockedForeignData
+                }
             case .proceed:
                 // M0: la ruta ya se conoce y es la del PROPIO dueño ⇒ el epoch se escribe AQUÍ, antes de
                 // arrancar la máquina: el paso 5-bis de `adoptBackendAccount` re-emite el epoch

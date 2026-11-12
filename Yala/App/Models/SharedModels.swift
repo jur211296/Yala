@@ -198,8 +198,13 @@ enum DetailPeriod: String, CaseIterable, Identifiable {
     ) -> DateInterval {
         let startOfToday = calendar.startOfDay(for: now)
 
-        // End of today (start of tomorrow) to include all transactions from today
-        let endOfToday = calendar.date(byAdding: .day, value: 1, to: startOfToday) ?? now
+        // Fin de hoy: el último segundo, 23:59:59. `DateInterval` es CERRADO, así que acabar en la medianoche de mañana
+        // contaba en «Este mes» (y en todos los períodos en curso) lo fechado mañana a las 00:00, la hora que guarda el
+        // selector de fecha, mientras el saldo de hoy ya lo dejaba fuera (ticket
+        // `period-totals-count-a-row-dated-at-tomorrows-midnight`). Igual que ya cierran los períodos cerrados. Espejo:
+        // `WidgetPeriod.dateInterval()`.
+        let startOfTomorrow = calendar.date(byAdding: .day, value: 1, to: startOfToday) ?? now
+        let endOfToday = calendar.date(byAdding: .second, value: -1, to: startOfTomorrow) ?? startOfTomorrow
 
         switch self {
         case .thisWeek:
@@ -207,12 +212,15 @@ enum DetailPeriod: String, CaseIterable, Identifiable {
                 from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now)) ?? startOfToday
             return DateInterval(start: startOfWeek, end: endOfToday)
 
+        // «Últimos 7 días» son hoy y los seis anteriores: siete días, no ocho. Antes arrancaba en
+        // `startOfToday − 7` y contaba ocho (y «Últimos 30 días», treinta y uno), en totales, promedios y
+        // comparativas de Estadísticas, Panel y widgets. Espejo: `WidgetPeriod.dateInterval()`.
         case .last7Days:
-            let start = calendar.date(byAdding: .day, value: -7, to: startOfToday) ?? startOfToday
+            let start = calendar.date(byAdding: .day, value: -6, to: startOfToday) ?? startOfToday
             return DateInterval(start: start, end: endOfToday)
 
         case .last30Days:
-            let start = calendar.date(byAdding: .day, value: -30, to: startOfToday) ?? startOfToday
+            let start = calendar.date(byAdding: .day, value: -29, to: startOfToday) ?? startOfToday
             return DateInterval(start: start, end: endOfToday)
 
         case .thisMonth:
@@ -276,23 +284,30 @@ enum DetailPeriod: String, CaseIterable, Identifiable {
         now: Date = .now
     ) -> DateInterval? {
         let endOfMonth = calendar.endOfMonth(for: now)
+        // El fin de semana y de mes de `Calendar` es la medianoche siguiente, y `DateInterval` es cerrado: un pago del
+        // lunes siguiente o del día 1 del mes siguiente contaba como planificado de este período (y del siguiente). Un fin
+        // en medianoche se queda en 23:59:59; un rango propio que ya cierra así no se toca.
+        func closed(_ start: Date, _ end: Date) -> DateInterval {
+            let last = calendar.startOfDay(for: end) == end ? end.addingTimeInterval(-1) : end
+            return DateInterval(start: start, end: max(start, last))
+        }
 
         switch self {
         case .thisWeek:
             let startOfWeek = calendar.startOfWeek(for: now)
             let endOfWeek = calendar.date(byAdding: .weekOfYear, value: 1, to: startOfWeek) ?? endOfMonth
-            return DateInterval(start: startOfWeek, end: min(endOfWeek, endOfMonth))
+            return closed(startOfWeek, min(endOfWeek, endOfMonth))
 
         case .thisMonth:
-            return DateInterval(start: calendar.startOfMonth(for: now), end: endOfMonth)
+            return closed(calendar.startOfMonth(for: now), endOfMonth)
 
         case .thisYear:
-            return DateInterval(start: calendar.startOfYear(for: now), end: endOfMonth)
+            return closed(calendar.startOfYear(for: now), endOfMonth)
 
         case .custom:
             let startOfToday = calendar.startOfDay(for: now)
             guard let range = customRange, range.end > startOfToday else { return nil }
-            return DateInterval(start: range.start, end: min(range.end, endOfMonth))
+            return closed(range.start, min(range.end, endOfMonth))
 
         case .last7Days, .last30Days, .lastMonth, .lastYear, .allTime:
             return nil
@@ -396,12 +411,26 @@ struct ChartTransaction: Identifiable {
 }
 
 struct CategorySpendingSummary: Identifiable, Equatable {
-    let category: Category
+    /// `nil` es el trozo «Sin categoría»: los movimientos sin categoría del lado que dice su signo, para que el desglose
+    /// sume el total del período (decisión A de Jürgen, 2026-10-23). No se puede seleccionar como filtro.
+    let category: Category?
     let amount: Double
     let percentage: Double
     var previousAmount: Double? = nil  // For period comparison
 
-    var id: PersistentIdentifier { category.persistentModelID }
+    /// `nil` para «Sin categoría». Es también la clave con la que se casa el período anterior.
+    var id: PersistentIdentifier? { category?.persistentModelID }
+
+    var isUncategorized: Bool { category == nil }
+    var name: String { category?.name ?? L10n.Report.uncategorized }
+    var colorHex: String { category?.colorHex ?? AppConstants.uncategorizedColorHex }
+    var iconName: String? { category == nil ? AppConstants.uncategorizedIconName : category?.iconName }
+
+    /// Si está en un conjunto de categorías elegidas. «Sin categoría» no se puede elegir: nunca lo está.
+    func isSelected(in selectedIDs: Set<PersistentIdentifier>) -> Bool {
+        guard let id else { return false }
+        return selectedIDs.contains(id)
+    }
 
     /// Variation percentage vs previous period
     var variation: Double? {
@@ -409,7 +438,7 @@ struct CategorySpendingSummary: Identifiable, Equatable {
     }
 
     static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.category.persistentModelID == rhs.category.persistentModelID
+        lhs.id == rhs.id
             && lhs.amount == rhs.amount
             && lhs.percentage == rhs.percentage
             && lhs.previousAmount == rhs.previousAmount
@@ -455,6 +484,14 @@ struct SubcategorySpendingSummary: Identifiable, Equatable {
     /// PersistentIdentifier for filtering (nil for "No Subcategory" case)
     var persistentID: PersistentIdentifier? {
         subcategory?.persistentModelID
+    }
+
+    /// La fila «Sin categoría» (decisión A de Jürgen, 2026-10-23): la única sin categoría padre.
+    var isUncategorized: Bool { category == nil }
+
+    /// El icono de la fila: el de la subcategoría, el de su categoría o, en «Sin categoría», el del trozo.
+    var iconName: String? {
+        isUncategorized ? AppConstants.uncategorizedIconName : (subcategory?.iconName ?? category?.iconName)
     }
 
     /// Variation percentage vs previous period

@@ -8,6 +8,7 @@
 //  Espejo simplificado de GroupExpenseDetailSheet.
 //
 
+import SwiftData
 import SwiftUI
 
 struct GroupOpeningBalanceDetailSheet: View {
@@ -19,13 +20,66 @@ struct GroupOpeningBalanceDetailSheet: View {
     /// memberID del deudor (la única share del saldo inicial).
     let debtorMemberID: String?
     let memberNameLookup: [String: String]
-    let isOwner: Bool
+    /// El dueño o un admin que puede escribir en el grupo (card yd2w): enseña Editar y Eliminar.
+    let canManage: Bool
     let onEdit: () -> Void
     let onDelete: () -> Void
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.usesLargeSheets) private var usesLargeSheets
     @State private var showDeleteConfirm = false
+    /// Lo que la hoja pinta del saldo inicial, copiado al crearla. «Eliminar» lo borra del todo (`onDelete`) y la hoja
+    /// sigue presentada mientras baja: en iOS 27.x leer un modelo borrado aborta (card 1w89).
+    @State private var shownAtOpen: Shown
+
+    /// El saldo inicial vivo mientras se puede leer (un cambio que llega por sync se sigue viendo); borrado, la copia.
+    private var shown: Shown {
+        !expense.isDeleted && expense.modelContext != nil ? Shown(reading: expense) : shownAtOpen
+    }
+
+    /// Lo que se ve del saldo inicial.
+    struct Shown {
+        let amount: Double
+        let currencyCode: String
+        let paidByMemberID: String
+        let date: Date
+
+        /// Mira antes de leer: quien presenta la hoja puede volver a crearla con el saldo ya borrado (manda el `@State`
+        /// de la primera vez, pero el `init` corre igual).
+        init(reading expense: SplitExpense) {
+            guard !expense.isDeleted, expense.modelContext != nil else {
+                self.init(amount: 0, currencyCode: "", paidByMemberID: "", date: .distantPast)
+                return
+            }
+            self.init(
+                amount: expense.amount, currencyCode: expense.currencyCode,
+                paidByMemberID: expense.paidByMemberID, date: expense.date)
+        }
+
+        init(amount: Double, currencyCode: String, paidByMemberID: String, date: Date) {
+            self.amount = amount
+            self.currencyCode = currencyCode
+            self.paidByMemberID = paidByMemberID
+            self.date = date
+        }
+    }
+
+    init(
+        expense: SplitExpense,
+        debtorMemberID: String?,
+        memberNameLookup: [String: String],
+        canManage: Bool,
+        onEdit: @escaping () -> Void,
+        onDelete: @escaping () -> Void
+    ) {
+        self.expense = expense
+        self.debtorMemberID = debtorMemberID
+        self.memberNameLookup = memberNameLookup
+        self.canManage = canManage
+        self.onEdit = onEdit
+        self.onDelete = onDelete
+        _shownAtOpen = State(initialValue: Shown(reading: expense))
+    }
 
     private var detent: PresentationDetent {
         usesLargeSheets ? .large : .medium
@@ -36,7 +90,7 @@ struct GroupOpeningBalanceDetailSheet: View {
     }
 
     private var creditorName: String {
-        memberNameLookup[expense.paidByMemberID] ?? "?"
+        memberNameLookup[shown.paidByMemberID] ?? "?"
     }
 
     var body: some View {
@@ -51,7 +105,7 @@ struct GroupOpeningBalanceDetailSheet: View {
                 VStack(spacing: DS.Spacing.lg) {
                     hero
                     detailsCard
-                    if isOwner {
+                    if canManage {
                         deleteButton
                     }
                 }
@@ -68,7 +122,7 @@ struct GroupOpeningBalanceDetailSheet: View {
                     }
                     .accessibilityIdentifier("group_opening_balance_detail_close")
                 }
-                if isOwner {
+                if canManage {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button(L10n.Action.edit) {
                             onEdit()
@@ -89,6 +143,10 @@ struct GroupOpeningBalanceDetailSheet: View {
                     onDelete()
                     dismiss()
                 }
+                .accessibilityIdentifier("group_opening_balance_detail_delete_confirm")
+                // Lote 13: sin esta salida el diálogo solo se cerraba tocando fuera. Sin `role: .cancel`: con él,
+                // el diálogo (sale como popover en iOS 26) no la pinta (.claude/rules/swiftui-ds.md).
+                Button(L10n.Common.cancel) {}
             }
         }
         .accessibilityIdentifier("group_opening_balance_detail_sheet")
@@ -108,8 +166,8 @@ struct GroupOpeningBalanceDetailSheet: View {
                 }
 
                 AmountText(
-                    value: expense.amount,
-                    currencyCode: expense.currencyCode,
+                    value: shown.amount,
+                    currencyCode: shown.currencyCode,
                     font: DS.Typography.largeTitle,
                     secondaryFont: DS.Typography.body,
                     tint: .primary,
@@ -132,7 +190,7 @@ struct GroupOpeningBalanceDetailSheet: View {
             detailRow(
                 icon: "calendar",
                 label: L10n.Groups.OpeningBalance.dateLabel,
-                value: Self.dateFormatter.string(from: expense.date)
+                value: Self.dateFormatter.string(from: shown.date)
             )
         }
         .padding(.vertical, DS.Spacing.sm)

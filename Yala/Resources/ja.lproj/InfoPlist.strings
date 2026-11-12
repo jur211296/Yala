@@ -1,4 +1,4 @@
-"NSMicrophoneUsageDescription" = "Yalaは、音声入力で支出を作成するためにマイクを使用します。音声は文字起こしのためにOpenAIに送信されます。";
-"NSPhotoLibraryUsageDescription" = "Yalaは、スクリーンショットや領収書から支出の詳細を抽出するために写真を使用します。選択した画像はOpenAIに送信されます。";
+"NSMicrophoneUsageDescription" = "Yalaは、音声入力で支出を作成するためにマイクを使用します。音声は文字起こしのためにAIサービスに送信されます。";
+"NSPhotoLibraryUsageDescription" = "Yalaは、スクリーンショットや領収書から支出の詳細を抽出するために写真を使用します。選択した画像はAIサービスに送信されます。";
 "NSPhotoLibraryAddUsageDescription" = "Yala は、保存を選んだグループのまとめを写真に保存します。お客様の操作なしに保存されることはありません。";
-"NSCameraUsageDescription" = "Yalaはレシートを撮影して支出を作成するためにカメラを使用します。写真は読み取りのためOpenAIに送信されます。";
+"NSCameraUsageDescription" = "Yalaはレシートを撮影して支出を作成するためにカメラを使用します。写真は読み取りのためAIサービスに送信されます。";

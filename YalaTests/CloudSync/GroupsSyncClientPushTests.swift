@@ -142,6 +142,46 @@ struct GroupsSyncClientPushTests {
         #expect(stub.callCount > 0)
     }
 
+    /// Card th4n: con una vuelta EN VUELO, pedir un ciclo espera a que acabe y devuelve su resultado. Antes devolvía
+    /// `false` en el acto y quien pedía (abrir un grupo desde su aviso) recargaba lo de antes. La vuelta es la fingida del
+    /// seam de XCUITest: este cliente no tiene sesión, así que la espera es la única forma de que vea el cambio.
+    @Test func syncNowFromUI_withARunInFlight_waitsForItsChange() async throws {
+        let client = GroupsSyncClient(
+            tokenProvider: { nil }, urlSession: CountingStub(), sessionCheck: { false }, outboxMirror: nil,
+            onRemoteChangesApplied: {}, onRemoteChanges: { _ in })
+        var applied = false
+        client.uitestRunFakeRemoteCycle(lasting: .milliseconds(150)) { applied = true }
+
+        let result = await client.syncNowFromUI(timeout: .seconds(5))
+        #expect(applied, "Volvió antes de que la vuelta en vuelo aplicara su cambio.")
+        #expect(result)
+    }
+
+    /// Sin vuelta en vuelo, nada que esperar: las puertas cortan como siempre.
+    @Test func syncNowFromUI_withNoRunInFlight_returnsAtOnce() async throws {
+        let client = GroupsSyncClient(
+            tokenProvider: { nil }, urlSession: CountingStub(), sessionCheck: { false }, outboxMirror: nil,
+            onRemoteChangesApplied: {}, onRemoteChanges: { _ in })
+        let clock = ContinuousClock()
+        let start = clock.now
+        let result = await client.syncNowFromUI(timeout: .seconds(5))
+        #expect(!result)
+        #expect(clock.now - start < .seconds(1))
+    }
+
+    /// El tope sigue mandando: una vuelta en vuelo que no acaba no cuelga a quien espera.
+    @Test func syncNowFromUI_withASlowRunInFlight_givesUpAtTheTimeout() async throws {
+        let client = GroupsSyncClient(
+            tokenProvider: { nil }, urlSession: CountingStub(), sessionCheck: { false }, outboxMirror: nil,
+            onRemoteChangesApplied: {}, onRemoteChanges: { _ in })
+        client.uitestRunFakeRemoteCycle(lasting: .seconds(3)) {}
+        let clock = ContinuousClock()
+        let start = clock.now
+        let result = await client.syncNowFromUI(timeout: .milliseconds(200))
+        #expect(!result)
+        #expect(clock.now - start < .seconds(2))
+    }
+
     /// El ciclo del trigger por save usa los mismos gates. Flag OFF ⇒ no se pide red.
     @Test func syncNowAfterLocalSave_flagOff_noNetwork() async throws {
         CloudSyncFlags.groupsBackendEnabled = false

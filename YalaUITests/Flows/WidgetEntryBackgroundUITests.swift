@@ -50,12 +50,10 @@ final class WidgetEntryBackgroundUITests: XCTestCase {
         XCTAssertTrue(statsTab.waitForExistence(timeout: 10), "No apareció el tab Estadísticas.")
         statsTab.tap()
 
-        let fabMenu = app.buttons["fab_new_transaction"]
-        XCTAssertTrue(fabMenu.waitForExistence(timeout: 10), "Falta el «+» de Estadísticas (fab_new_transaction).")
-        fabMenu.tap()
-        let manual = app.buttons["fab_manual"]
-        XCTAssertTrue(manual.waitForExistence(timeout: 5), "No se expandió el menú del «+» (fab_manual).")
-        manual.tap()
+        // Desde la card kzhe «Nuevo registro» está arriba, bajo el hero, como en el Panel.
+        let newRecord = app.buttons["stats_action_new"]
+        XCTAssertTrue(newRecord.waitForExistence(timeout: 10), "Falta «Nuevo registro» arriba en Estadísticas (stats_action_new).")
+        newRecord.tap()
         let amountField = app.textFields["new_transaction_amount"]
         XCTAssertTrue(amountField.waitForExistence(timeout: 10), "No se abrió Nuevo registro (new_transaction_amount).")
         amountField.tap()
@@ -74,9 +72,8 @@ final class WidgetEntryBackgroundUITests: XCTestCase {
     }
 
     private func closeForm(_ app: XCUIApplication) {
-        let close = app.buttons["new_transaction_close"]
-        XCTAssertTrue(close.waitForExistence(timeout: 5), "Falta la X de Nuevo registro (new_transaction_close).")
-        close.tap()
+        // Con el importe escrito, la X pregunta antes de descartar (UX 2.2 · L2-4).
+        app.closeNewTransactionDiscarding()
     }
 
     private func assertPanelSelected(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {

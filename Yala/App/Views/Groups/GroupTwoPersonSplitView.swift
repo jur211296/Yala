@@ -85,7 +85,7 @@ struct GroupTwoPersonSplitView: View {
                 if isActive {
                     Image(systemName: "checkmark.circle.fill")
                         .font(DS.Typography.headline)
-                        .foregroundStyle(theme.accent)
+                        .foregroundStyle(theme.accentText)
                 }
             }
             .padding(.horizontal, DS.Spacing.lg)
@@ -106,7 +106,7 @@ struct GroupTwoPersonSplitView: View {
                 Image(systemName: "slider.horizontal.3")
             }
             .font(DS.Typography.subheadlineEmphasized)
-            .foregroundStyle(theme.accent)
+            .foregroundStyle(theme.accentText)
             .frame(maxWidth: .infinity)
             .padding(.vertical, DS.Spacing.md)
             .contentShape(Rectangle())
@@ -125,9 +125,9 @@ struct GroupTwoPersonSplitView: View {
         return choice.debtText(otherName: otherName, amountStr: amountStr)
     }
 
-    /// Verde (te deben) / hot pink (debes) — misma convención que `GroupHeaderBalanceBar`.
+    /// El color del texto, te deban o debas: en Grupos los montos no llevan color (Jürgen, 2026-10-30).
     private func debtColor(for choice: TwoPersonSplitOptions.Choice) -> Color {
-        choice.debtDirection == .theyOweMe ? DS.Semantic.successForeground : .hotPink
+        Color.primary
     }
 
     private func accessibilityLabel(for choice: TwoPersonSplitOptions.Choice, subtitle: String?) -> String {

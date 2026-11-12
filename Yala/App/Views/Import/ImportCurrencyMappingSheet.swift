@@ -60,7 +60,7 @@ struct ImportCurrencyMappingSheet: View {
         VStack(spacing: DS.Spacing.sm) {
             Image(systemName: "dollarsign.arrow.circlepath")
                 .font(DS.Typography.amountLarge)
-                .foregroundStyle(.thAccent)
+                .foregroundStyle(.thAccentText)
                 .padding(.bottom, DS.Spacing.sm)
 
             Text(L10n.Import.currenciesDetected(sortedCurrencies.count))
@@ -95,8 +95,8 @@ struct ImportCurrencyMappingSheet: View {
         let currency = CurrencyCode(rawValue: currencyCode) ?? .pen
         let info = currencyInfo(for: currency)
         let selectedAccount = currencyAccountMap[currencyCode]
-        let availableAccounts = accounts.filter {
-            normalizeCurrencyCode($0.currencyCode) == currencyCode && !$0.isArchived
+        let availableAccounts = ImportAccountChoiceLogic.importableAccounts(accounts).filter {
+            normalizeCurrencyCode($0.currencyCode) == currencyCode
         }
         let isExpanded = expandedCurrency == currencyCode
 
@@ -183,6 +183,16 @@ struct ImportCurrencyMappingSheet: View {
 
         Button {
             currencyAccountMap[currencyCode] = account
+            // Tarjeta con varias divisas (entrega 3): las otras divisas sin cuenta van a las líneas de esa tarjeta. Se
+            // pueden cambiar a mano; una ya elegida no se toca.
+            let filled = AccountCardLogic.importAssignments(
+                chosenID: account.shortcutID,
+                currencies: sortedCurrencies,
+                assigned: Set(currencyAccountMap.keys),
+                nodes: accounts.map { AccountLineNode($0) })
+            for (currency, id) in filled {
+                if let member = accounts.first(where: { $0.shortcutID == id }) { currencyAccountMap[currency] = member }
+            }
             dsWithAnimation(reduceMotion) {
                 expandedCurrency = nil
             }
@@ -205,7 +215,7 @@ struct ImportCurrencyMappingSheet: View {
 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                 } else {
                     Image(systemName: "circle")
                         .foregroundStyle(.tertiary)

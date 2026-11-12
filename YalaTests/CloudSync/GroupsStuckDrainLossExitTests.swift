@@ -742,7 +742,7 @@ struct GroupsStuckDrainHealthyPhoneCopyTests {
 
     /// El texto exacto que eligió Jürgen, en español.
     private static let jurgen = "Algunos de los últimos cambios de tus grupos no se pudieron preparar para subirlos. "
-        + "Siguen guardados en este teléfono y no se pierden. Cierra y vuelve a abrir Yala; si sigue pasando, actualízala."
+        + "Siguen guardados en este dispositivo y no se pierden. Cierra y vuelve a abrir Yala; si sigue pasando, actualízala."
 
     private static let locales = ["de", "en", "en-GB", "es", "es-419", "es-AR", "es-ES", "fr", "it", "ja", "nl", "pl",
                                   "pt", "pt-BR", "pt-PT", "zh-Hans"]

@@ -143,7 +143,9 @@ final class SessionExitsPerCellUITests: XCTestCase {
 
         // Se espera el TEXTO del motivo, no «un alert»: `alerts.firstMatch` casaba al instante con otra cosa (medido).
         let survived = app.alerts.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "sigue abierta")).firstMatch
-        let exportPending = app.alerts.buttons["Cerrar sesión igualmente"].firstMatch
+        // En la celda sin cuenta de Yala el botón habla de quitar los datos (decisión A de Jürgen, 2026-10-19).
+        let exportPending = app.alerts.buttons.matching(NSPredicate(
+            format: "label IN %@", ["Cerrar sesión igualmente", "Quitar mis datos igualmente"])).firstMatch
         let deadline = Date().addingTimeInterval(120)
         while !survived.exists && Date() < deadline {
             if exportPending.exists { exportPending.tap() }
@@ -278,7 +280,9 @@ final class SessionExitsPerCellUITests: XCTestCase {
         let migration = app.alerts.staticTexts
             .matching(NSPredicate(format: "label CONTAINS %@", "todavía no terminó")).firstMatch
         let survived = app.alerts.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "sigue abierta")).firstMatch
-        let exportPending = app.alerts.buttons["Cerrar sesión igualmente"].firstMatch
+        // En la celda sin cuenta de Yala el botón habla de quitar los datos (decisión A de Jürgen, 2026-10-19).
+        let exportPending = app.alerts.buttons.matching(NSPredicate(
+            format: "label IN %@", ["Cerrar sesión igualmente", "Quitar mis datos igualmente"])).firstMatch
         let deadline = Date().addingTimeInterval(120)
         while !survived.exists && !migration.exists && Date() < deadline {
             if exportPending.exists { exportPending.tap() }

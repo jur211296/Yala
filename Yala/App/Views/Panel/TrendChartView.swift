@@ -48,6 +48,19 @@ struct TrendChartView: View {
     @State private var draggingDate: Date?  // For transient drag state
     @State private var pulseAnimate = false
     @State private var showEducationSheet = false
+    /// Ancho de la píldora «Hoy»: con él se mantiene dentro del área de dibujo y no tapa la escala de la derecha
+    /// (UX 2.2 · L3-17).
+    @State private var todayPillWidth: CGFloat = 0
+    /// Ancho de la gráfica: con él se sabe cuánto ocupa cada etiqueta del eje X y cuáles se pisarían (UX 2.2 · L3-17).
+    @State private var chartWidth: CGFloat = 0
+
+    /// La hoja «Tu saldo hoy» explica la diferencia por tipo de cambio; sin saldo en otra moneda no
+    /// hay ninguna y ni la píldora ni el punto la abren.
+    private var explainsCurrencyDifference: Bool {
+        LiveAnchorEducationLogic.explainsCurrencyDifference(
+            liveAnchorBreakdown, preferredCurrencyCode: currencyCode
+        )
+    }
 
     var body: some View {
         // Disable animations completely to prevent interpolation between data states
@@ -96,19 +109,25 @@ struct TrendChartView: View {
             let interpolation: InterpolationMethod = .monotone
             let solidLineWidth: CGFloat = compact ? 3 : 2
 
+            // Los rótulos de los ejes, traducidos UNA vez por repintado y no en cada punto: con «Todo» son cientos de
+            // puntos y seis búsquedas de `L10n` por punto (2026-10-30, encargo `eficiencia-carga-por-vista`).
+            let dateLabel = L10n.Common.date
+            let amountLabel = L10n.Common.amount
+            let baseLabel = L10n.Common.base
+
             // Past & Today: Solid Line & Area
             ForEach(pastPoints, id: \.date) { point in
                 AreaMark(
-                    x: .value(L10n.Common.date, point.date),
-                    yStart: .value(L10n.Common.base, yBase),
-                    yEnd: .value(L10n.Common.amount, point.value)
+                    x: .value(dateLabel, point.date),
+                    yStart: .value(baseLabel, yBase),
+                    yEnd: .value(amountLabel, point.value)
                 )
                 .interpolationMethod(interpolation)
                 .foregroundStyle(areaGradient.opacity(dimOpacity))
 
                 LineMark(
-                    x: .value(L10n.Common.date, point.date),
-                    y: .value(L10n.Common.amount, point.value)
+                    x: .value(dateLabel, point.date),
+                    y: .value(amountLabel, point.value)
                 )
                 .interpolationMethod(interpolation)
                 .lineStyle(StrokeStyle(lineWidth: solidLineWidth))
@@ -117,8 +136,8 @@ struct TrendChartView: View {
                 // DATA ANNOTATIONS FOR WEEK VIEW
                 if period == .thisWeek || period == .last7Days {
                     PointMark(
-                        x: .value(L10n.Common.date, point.date),
-                        y: .value(L10n.Common.amount, point.value)
+                        x: .value(dateLabel, point.date),
+                        y: .value(amountLabel, point.value)
                     )
                     .symbolSize(0)  // Invisible point just for annotation context
                     .annotation(position: .top, spacing: DS.Spacing.xs) {
@@ -131,8 +150,8 @@ struct TrendChartView: View {
                 // Visible markers per point (short series, e.g. group months)
                 if showPointMarks {
                     PointMark(
-                        x: .value(L10n.Common.date, point.date),
-                        y: .value(L10n.Common.amount, point.value)
+                        x: .value(dateLabel, point.date),
+                        y: .value(amountLabel, point.value)
                     )
                     .symbolSize(30)
                     .foregroundStyle(primaryLineColor.opacity(dimOpacity))
@@ -141,8 +160,8 @@ struct TrendChartView: View {
                 // Value labels on selected dates (smart subset to avoid clutter)
                 if dataLabelDates.contains(point.date) {
                     PointMark(
-                        x: .value(L10n.Common.date, point.date),
-                        y: .value(L10n.Common.amount, point.value)
+                        x: .value(dateLabel, point.date),
+                        y: .value(amountLabel, point.value)
                     )
                     .symbolSize(0)  // Invisible point just for annotation context
                     .annotation(position: .top, spacing: DS.Spacing.xs) {
@@ -156,8 +175,8 @@ struct TrendChartView: View {
             // Future: Dashed Line (Overlaps at Today to connect)
             ForEach(futurePoints, id: \.date) { point in
                 LineMark(
-                    x: .value(L10n.Common.date, point.date),
-                    y: .value(L10n.Common.amount, point.value)
+                    x: .value(dateLabel, point.date),
+                    y: .value(amountLabel, point.value)
                 )
                 .interpolationMethod(interpolation)
                 .lineStyle(StrokeStyle(lineWidth: solidLineWidth, dash: [5, 5]))
@@ -266,7 +285,7 @@ struct TrendChartView: View {
                     .foregroundStyle(.thSecondaryText.opacity(gridOpacity))
                 AxisValueLabel {
                     if let doubleValue = value.as(Double.self) {
-                        Text(formatK(doubleValue))
+                        Text(YalaFormatter.axisK(doubleValue, domain: yDomain))
                             .font(DS.Typography.captionSmall)
                             .foregroundStyle(.thSecondaryText)
                             .opacity(labelOpacity)
@@ -300,6 +319,8 @@ struct TrendChartView: View {
             }
         }
         .chartXSelection(value: $draggingDate)  // Native iOS 17+ selection - works with scroll
+        // Una vibración por punto al recorrer la gráfica, no por fotograma del arrastre (card C4).
+        .sensoryFeedback(.selection, trigger: scrubbedPointDate) { old, new in new != nil && old != new }
         .chartOverlay { proxy in
             ZStack {
                 todayHintPillOverlay(proxy: proxy)
@@ -312,6 +333,7 @@ struct TrendChartView: View {
             L10n.Accessibility.dataPoints(trendPoints.count))
         .compactChartAxes(compact: compact)
         .frame(height: chartHeight)
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { chartWidth = $0 }
         .onAppear {
             if !reduceMotion { pulseAnimate = true }
         }
@@ -324,7 +346,6 @@ struct TrendChartView: View {
                 BalanceLiveAnchorEducationSheet(
                     liveAnchorValue: anchor.value,
                     liveAnchorIsApproximate: liveAnchorIsApproximate,
-                    historicalValue: rawPoints.last?.value,
                     nativeBalances: breakdown,
                     preferredCurrencyCode: currencyCode
                 )
@@ -346,10 +367,14 @@ struct TrendChartView: View {
                let xPos = proxy.position(forX: today)
             {
                 let frame = geo[plotFrame]
-                let absoluteX = xPos + frame.origin.x
+                // La píldora no sale del área de dibujo: con «hoy» pegado al borde derecho, la mitad caía sobre la
+                // etiqueta más alta de la escala («Hoy ⓘ 00K», UX 2.2 · L3-17).
+                let halfWidth = todayPillWidth / 2
+                let absoluteX = min(max(xPos + frame.origin.x, frame.minX + halfWidth), frame.maxX - halfWidth)
                 let absoluteY = frame.origin.y + DS.Spacing.md
 
-                TodayHintGlassPill { showEducationSheet = true }
+                TodayHintGlassPill(action: explainsCurrencyDifference ? { showEducationSheet = true } : nil)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { todayPillWidth = $0 }
                     .position(x: absoluteX, y: absoluteY)
             }
         }
@@ -401,10 +426,16 @@ struct TrendChartView: View {
                 .position(x: absoluteX, y: absoluteY)
                 .onTapGesture { showEducationSheet = true }
                 .accessibilityElement()
-                .accessibilityLabel(L10n.Panel.LiveAnchorEducation.dotA11yLabel)
-                .accessibilityAddTraits(.isButton)
+                // Sin hoja que abrir, VoiceOver no puede prometer «Toca para ver el detalle».
+                .accessibilityLabel(
+                    explainsCurrencyDifference
+                        ? L10n.Panel.LiveAnchorEducation.dotA11yLabel
+                        : L10n.Widget.today
+                )
+                .accessibilityAddTraits(explainsCurrencyDifference ? .isButton : [])
                 .coachMarkAnchor("todayFXHint")
-                .allowsHitTesting(true)
+                // Sin otra moneda no hay hoja que abrir (B1, lote 3): el punto se dibuja, no se toca.
+                .allowsHitTesting(explainsCurrencyDifference)
             }
         }
     }
@@ -474,9 +505,17 @@ struct TrendChartView: View {
 
         guard let firstDate = trendPoints.first?.date,
               let lastDate = trendPoints.last?.date else { return rawDates }
-        return SmartAxisHelper.deduplicatedAxisDates(
+        let deduplicated = SmartAxisHelper.deduplicatedAxisDates(
             rawDates, firstDate: firstDate, lastDate: lastDate,
             forceGrouping: grouping.forceAxisGrouping)
+        // Con «Todo el tiempo» la penúltima fecha caía pegada a la última y se pisaban («abr 26oct 26», UX 2.2 · L3-17).
+        // Lo que ocupa una etiqueta sale de su texto más largo (~7,5 pt por carácter a `labelTiny`, medido: «abr 26» son
+        // 45 pt) y del ancho del área de dibujo: el medido menos la escala de la derecha (~44 pt).
+        guard chartWidth > 0 else { return deduplicated }
+        let longest = deduplicated.map { smartAxisLabel(for: $0).count }.max() ?? 0
+        let plotWidth = max(1, Double(chartWidth) - (compact ? 0 : 44))
+        let fraction = min(0.5, Double(longest) * 7.5 / plotWidth)
+        return SmartAxisHelper.droppingCrowdedNeighbors(deduplicated, labelWidthFraction: fraction)
     }
 
     /// Format axis label based on data span (include year if multiple years)
@@ -520,6 +559,12 @@ struct TrendChartView: View {
         data.first(where: { Calendar.current.isDate($0.date, inSameDayAs: date) })?.value
     }
 
+    /// El punto bajo el dedo mientras se recorre la gráfica: cambia solo al pasar de un punto al siguiente.
+    private var scrubbedPointDate: Date? {
+        guard let draggingDate else { return nil }
+        return closestPoint(to: draggingDate, in: trendPoints)?.date
+    }
+
     private func closestPoint(to date: Date, in data: [PanelViewModel.BarPoint]) -> PanelViewModel
         .BarPoint?
     {
@@ -557,14 +602,14 @@ struct TrendChartView: View {
     private static let periodDayFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = "d MMM yy"
+        f.setLocalizedDateFormatFromTemplate("dMMMyy")
         return f
     }()
 
     private static let periodMonthFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = "MMM yy"
+        f.setLocalizedDateFormatFromTemplate("MMMyy")
         return f
     }()
 
@@ -605,7 +650,8 @@ struct TrendChartView: View {
                 .foregroundStyle(.thSecondaryText.opacity(0.5))
                 .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
                 .annotation(position: .top, alignment: .leading) {
-                    Text(formatK(avg))
+                    // Con su nombre: sola, «99K» no decía qué era la línea discontinua (UX 2.2 · L3-17).
+                    Text(L10n.Panel.trendAverageLabel(formatK(avg)))
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(.thSecondaryText)
                 }

@@ -19,20 +19,26 @@ struct CashFlowAddLineSheet: View {
     @Environment(AppPreferences.self) private var appPreferences
 
     @State private var isIncome: Bool = false
+    /// El selector en pastilla de «Nuevo registro» (lienzo «Una sola Yala»), con solo gasto e ingreso.
+    @State private var lineType: TransactionType = .expense
 
     @Query(sort: \Category.sortOrder) private var categories: [Category]
-    @Query(filter: #Predicate<ScheduledPayment> { $0.isActive }) private var scheduledPayments: [ScheduledPayment]
+    @Query(filter: #Predicate<ScheduledPayment> { $0.isActive }) private var storedScheduledPayments: [ScheduledPayment]
+    /// Sin el pago que espera su borrado con «Deshacer» (`ScheduledPaymentPendingDeletion`).
+    private var scheduledPayments: [ScheduledPayment] { ScheduledPaymentPendingDeletion.shared.visible(storedScheduledPayments) }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: DS.Spacing.xl) {
-                    // Type toggle
-                    Picker("", selection: $isIncome) {
-                        Text(L10n.CashFlowPlan.expenseSection).tag(false)
-                        Text(L10n.CashFlowPlan.incomeSection).tag(true)
+                    // Type toggle: el de «Nuevo registro»
+                    TransactionTypeSelectorView(
+                        selectedType: $lineType,
+                        availableTypes: [.expense, .income]
+                    ) { type in
+                        isIncome = type == .income
                     }
-                    .pickerStyle(.segmented)
+                    .padding(.horizontal, -DS.Spacing.lg)
 
                     // 3 flow options
                     VStack(spacing: DS.Spacing.none) {
@@ -48,8 +54,10 @@ struct CashFlowAddLineSheet: View {
                         } label: {
                             flowRow(
                                 icon: "chart.bar.fill",
-                                title: L10n.CashFlowPlan.addFromExpenses,
-                                subtitle: L10n.CashFlowPlan.addFromExpensesDesc,
+                                title: isIncome ? L10n.CashFlowPlan.addFromIncome : L10n.CashFlowPlan.addFromExpenses,
+                                subtitle: isIncome
+                                    ? L10n.UXL18.fromHistoryIncomeExample
+                                    : L10n.UXL18.fromHistoryExpenseExample,
                                 trailing: nil
                             )
                         }
@@ -69,7 +77,9 @@ struct CashFlowAddLineSheet: View {
                             flowRow(
                                 icon: "calendar.badge.clock",
                                 title: L10n.CashFlowPlan.addFromScheduled,
-                                subtitle: L10n.CashFlowPlan.addFromScheduledDesc,
+                                subtitle: isIncome
+                                    ? L10n.UXL18.fromScheduledIncomeExample
+                                    : L10n.UXL18.fromScheduledExpenseExample,
                                 trailing: available.isEmpty ? nil : "\(available.count)"
                             )
                         }
@@ -88,7 +98,7 @@ struct CashFlowAddLineSheet: View {
                             flowRow(
                                 icon: "pencil.line",
                                 title: L10n.CashFlowPlan.addCustomLine,
-                                subtitle: L10n.CashFlowPlan.addCustomLineDesc,
+                                subtitle: L10n.UXL18.customExample,
                                 trailing: nil
                             )
                         }
@@ -113,6 +123,7 @@ struct CashFlowAddLineSheet: View {
         .presentationDetents([.large])
         .onAppear {
             isIncome = viewModel.addLineIsIncome
+            lineType = viewModel.addLineIsIncome ? .income : .expense
         }
     }
 
@@ -120,18 +131,23 @@ struct CashFlowAddLineSheet: View {
 
     private func flowRow(icon: String, title: String, subtitle: String, trailing: String?) -> some View {
         HStack(spacing: DS.Spacing.md) {
+            // El icono de 40 de la app (lienzo «Una sola Yala»).
             Image(systemName: icon)
-                .font(DS.Typography.body)
-                .foregroundStyle(theme.accent)
-                .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
+                .font(DS.Typography.label)
+                .foregroundStyle(theme.accentText)
+                .frame(width: 40, height: 40)
+                .background(Circle().fill(theme.accent.opacity(0.14)))
+                .accessibilityHidden(true)
 
+            // L18-13: cada camino con un ejemplo en una línea, para saber cuál conviene.
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(title)
                     .font(DS.Typography.body)
                     .foregroundStyle(.primary)
                 Text(subtitle)
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.tertiary)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             Spacer()
@@ -165,7 +181,10 @@ struct CashFlowAddLineSheet: View {
 
     private var availableScheduledPayments: [ScheduledPayment] {
         let linkedIDs = Set((viewModel.plan?.lines ?? []).compactMap { $0.scheduledPayment?.persistentModelID })
-        return scheduledPayments.filter { !linkedIDs.contains($0.persistentModelID) }
+        return scheduledPayments.filter {
+            !linkedIDs.contains($0.persistentModelID)
+                && CashFlowLineSideLogic.scheduledPaymentMatchesSide(transactionType: $0.transactionType, isIncome: isIncome)
+        }
     }
 
     private func categorySpending(for cats: [Category]) -> [PersistentIdentifier: Double] {
@@ -231,7 +250,7 @@ struct CashFlowAddFromExpensesView: View {
             .scrollDismissesKeyboard(.interactively)
         }
         .yalaScreenBackground(.subtle)
-        .navigationTitle(L10n.CashFlowPlan.addFromExpenses)
+        .navigationTitle(isIncome ? L10n.CashFlowPlan.addFromIncome : L10n.CashFlowPlan.addFromExpenses)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -277,12 +296,15 @@ struct CashFlowAddFromExpensesView: View {
 
                             Spacer()
 
-                            let avg = averageAmount(for: cat)
-                            if avg > 0 {
-                                Text(YalaFormatter.amountCompactTable(value: avg))
+                            // L18-13: el número dice qué es: lo de los 6 últimos meses, en la divisa del plan.
+                            let total = sixMonthTotal(for: cat)
+                            if total > 0 {
+                                Text(L10n.UXL18.inSixMonths(appPreferences.currency(total, currencyCode: currencyCode)))
                                     .font(DS.Typography.caption)
-                                    .foregroundStyle(.tertiary)
+                                    .foregroundStyle(.secondary)
                                     .monospacedDigit()
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.8)
                             }
 
                             let isSelected = selectedCategory?.persistentModelID == cat.persistentModelID
@@ -292,7 +314,7 @@ struct CashFlowAddFromExpensesView: View {
                                     .font(DS.Typography.caption)
                             } else {
                                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                                    .foregroundStyle(isSelected ? theme.accent : .secondary)
+                                    .foregroundStyle(isSelected ? theme.accentText : .secondary)
                             }
                         }
                         .padding(.horizontal, DS.Spacing.lg)
@@ -334,7 +356,7 @@ struct CashFlowAddFromExpensesView: View {
                                     Spacer()
 
                                     Image(systemName: selectedSubcategory?.persistentModelID == sub.persistentModelID ? "checkmark.circle.fill" : "circle")
-                                        .foregroundStyle(selectedSubcategory?.persistentModelID == sub.persistentModelID ? theme.accent : .secondary)
+                                        .foregroundStyle(selectedSubcategory?.persistentModelID == sub.persistentModelID ? theme.accentText : .secondary)
                                         .font(DS.Typography.caption)
                                 }
                                 .padding(.leading, DS.Spacing.xxl)
@@ -396,7 +418,7 @@ struct CashFlowAddFromExpensesView: View {
                                     ? AnyShapeStyle(theme.accent.opacity(0.15))
                                     : AnyShapeStyle(Color.clear)
                             )
-                            .foregroundStyle(selectedMethod == method ? theme.accent : .secondary)
+                            .foregroundStyle(selectedMethod == method ? theme.accentText : .secondary)
                             .clipShape(Capsule())
                             .overlay(
                                 Capsule().stroke(selectedMethod == method ? theme.accent.opacity(0.3) : theme.secondaryText.opacity(DS.Opacity.subtle), lineWidth: 1)
@@ -419,7 +441,7 @@ struct CashFlowAddFromExpensesView: View {
                 value: amount,
                 currencyCode: currencyCode,
                 font: DS.Typography.headline.weight(.semibold).monospacedDigit(),
-                tint: .color(isIncome ? Color.electricIndigo : Color.hotPink)
+                tint: .color(Color.amountTint(isIncome: isIncome))
             )
         }
         .padding(DS.Spacing.lg)
@@ -429,26 +451,30 @@ struct CashFlowAddFromExpensesView: View {
     // MARK: - Helpers
 
     private func averageAmount(for category: Category) -> Double {
+        sixMonthTotal(for: category) / 6
+    }
+
+    /// Lo que movió una categoría en los 6 últimos meses, en la divisa del plan (`CashFlowCalculator.resolvedAmount`):
+    /// antes sumaba el importe de cada movimiento en su divisa y lo pintaba con el símbolo del plan.
+    private func sixMonthTotal(for category: Category) -> Double {
+        sixMonthTotal { $0.category?.persistentModelID == category.persistentModelID }
+    }
+
+    private func sixMonthTotal(matching matches: (TransactionItem) -> Bool) -> Double {
         let calendar = Calendar.current
         let sixMonthsAgo = calendar.date(byAdding: .month, value: -6, to: .now) ?? .now
         var total: Double = 0
-        for tx in transactions where tx.date >= sixMonthsAgo {
-            guard tx.category?.persistentModelID == category.persistentModelID else { continue }
-            total += abs(tx.amount)
+        for tx in transactions where tx.date >= sixMonthsAgo && matches(tx) {
+            total += abs(CashFlowCalculator.resolvedAmount(
+                tx, currencyCode: currencyCode, adjustment: .none, converter: CurrencyConverter.shared
+            ).value)
         }
-        return total / 6
+        return total
     }
 
     private func computePreview() -> Double {
         if let sub = selectedSubcategory {
-            let calendar = Calendar.current
-            let sixMonthsAgo = calendar.date(byAdding: .month, value: -6, to: .now) ?? .now
-            var total: Double = 0
-            for tx in transactions where tx.date >= sixMonthsAgo {
-                guard tx.subcategory?.persistentModelID == sub.persistentModelID else { continue }
-                total += abs(tx.amount)
-            }
-            return total / 6
+            return sixMonthTotal { $0.subcategory?.persistentModelID == sub.persistentModelID } / 6
         }
         if let cat = selectedCategory {
             return averageAmount(for: cat)
@@ -547,7 +573,13 @@ struct CashFlowAddFromScheduledView: View {
                             Text(payment.name)
                                 .font(DS.Typography.body)
                                 .foregroundStyle(.primary)
-                            Text(payment.recurrenceType.capitalized)
+                            // La misma regla que la lista de pagos: decía «Monthly» (el valor guardado, en inglés)
+                            // en cualquier idioma, también a un pago de una sola vez.
+                            Text(ScheduledPaymentDetailLogic.frequencyText(
+                                isRecurring: payment.isRecurring,
+                                recurrenceType: payment.recurrenceType,
+                                interval: payment.recurrenceInterval
+                            ))
                                 .font(DS.Typography.captionSmall)
                                 .foregroundStyle(.tertiary)
                         }
@@ -566,7 +598,7 @@ struct CashFlowAddFromScheduledView: View {
                         )
 
                         Image(systemName: selectedPayment?.persistentModelID == payment.persistentModelID ? "checkmark.circle.fill" : "circle")
-                            .foregroundStyle(selectedPayment?.persistentModelID == payment.persistentModelID ? theme.accent : .secondary)
+                            .foregroundStyle(selectedPayment?.persistentModelID == payment.persistentModelID ? theme.accentText : .secondary)
                     }
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.md)
@@ -598,16 +630,21 @@ struct CashFlowAddFromScheduledView: View {
     }
 
     private var previewCard: some View {
-        let amount = abs(selectedPayment?.amount ?? 0)
+        // El mismo importe que la fila del pago: convertido a la divisa del plan. Antes pintaba
+        // `abs(payment.amount)` con el símbolo del plan, así que 100 USD salían como «S/ 100».
+        let converted = selectedPayment.map {
+            ScheduledPaymentAmountConversion.magnitude(of: $0, in: currencyCode, converter: CurrencyConverter.shared)
+        }
         return HStack {
             Text(L10n.CashFlowPlan.plan)
                 .font(DS.Typography.body)
                 .foregroundStyle(.secondary)
             Spacer()
             AmountText(
-                value: amount,
+                value: converted?.amount ?? 0,
                 currencyCode: currencyCode,
-                font: DS.Typography.headline.weight(.semibold).monospacedDigit()
+                font: DS.Typography.headline.weight(.semibold).monospacedDigit(),
+                isEstimate: (selectedPayment?.isVariableAmount ?? false) || (converted?.isApproximate ?? false)
             )
         }
         .padding(DS.Spacing.lg)

@@ -22,9 +22,12 @@ final class TrendsInsightCardUITests: XCTestCase {
 
     /// Entra por deeplink a Estadísticas: así vale para la barra de pestañas del iPhone y
     /// para la barra lateral del iPad.
-    private func launch(pro: Bool = false) -> XCUIApplication {
+    private func launch(pro: Bool = false, insightsAIConsent: Bool = false, statsAIReply: Bool = false) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchForUITest(pro: pro, seed: "realista", deeplink: "statistics")
+        app.launchForUITest(
+            pro: pro, seed: "realista", deeplink: "statistics",
+            insightsAIConsent: insightsAIConsent, statsAIReply: statsAIReply
+        )
         return app
     }
 
@@ -47,7 +50,7 @@ final class TrendsInsightCardUITests: XCTestCase {
         XCTAssertTrue(element(app, "trends_insight_bullet_weekday").exists, "Falta el bullet del día de la semana.")
         XCTAssertFalse(element(app, "trends_insight_bullet_comparison").exists,
                        "En «Todo el tiempo» no debería haber bullet de Comparativa.")
-        XCTAssertTrue(app.buttons["Refinar con IA"].exists, "Free debería ver el CTA de upsell.")
+        XCTAssertTrue(app.buttons["Generar con IA"].exists, "Free debería ver el CTA de upsell.")
     }
 
     /// V2-01: con un período comparable aparece el bullet de Comparativa, en su
@@ -78,6 +81,28 @@ final class TrendsInsightCardUITests: XCTestCase {
 
         XCTAssertTrue(element(app, "trends_insight_title").waitForExistence(timeout: 10), "La card de resumen no se montó.")
         XCTAssertTrue(element(app, "trends_insight_bullet_weekday").exists, "Pro pre-IA debería ver los bullets de reglas.")
-        XCTAssertTrue(element(app, "trends_insight_generate_ai").exists, "Falta el CTA «Generar análisis IA».")
+        XCTAssertTrue(element(app, "trends_insight_generate_ai").exists, "Falta el CTA «Generar con IA».")
+    }
+
+    /// Encargo `estadisticas-ia-automatica`: Pro con la IA aceptada abre Tendencias y el análisis ya está, sin tocar
+    /// «Generar con IA». La llamada la contesta el seam (`-uitest-stats-ai-reply`); la decisión es la de producción.
+    func test_pro_withConsent_analysisArrivesWithoutATap() {
+        let app = launch(pro: true, insightsAIConsent: true, statsAIReply: true)
+        openTrends(app)
+
+        let bullet = element(app, "trends_insight_ai_bullet")
+        XCTAssertTrue(bullet.waitForExistence(timeout: 15), "El análisis con IA no salió solo al abrir Tendencias.")
+        XCTAssertTrue(app.staticTexts["Análisis de prueba de la IA."].exists, "El análisis no es el que contestó la IA.")
+        XCTAssertFalse(element(app, "trends_insight_generate_ai").exists, "Con el análisis a la vista sobra «Generar».")
+    }
+
+    /// Y sin el consentimiento no se genera nada: los bullets de reglas con su botón, aunque la IA contestaría.
+    func test_pro_withoutConsent_nothingIsGenerated() {
+        let app = launch(pro: true, statsAIReply: true)
+        openTrends(app)
+
+        XCTAssertTrue(element(app, "trends_insight_generate_ai").waitForExistence(timeout: 10), "Falta el CTA «Generar con IA».")
+        XCTAssertFalse(element(app, "trends_insight_ai_bullet").waitForExistence(timeout: 4),
+                       "Sin consentimiento se generó un análisis solo.")
     }
 }

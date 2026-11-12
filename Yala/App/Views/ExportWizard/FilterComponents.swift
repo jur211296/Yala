@@ -14,6 +14,9 @@ struct FilterSectionHeader: View {
     let icon: String
     let title: String
     let status: String
+    /// Filtros de Registros dice el estado entero («Todas las cuentas», «Ninguna oculta») y va sin paréntesis
+    /// (UX 2.2 · L8-16). Exportar y Presupuestos siguen con «(Todas)».
+    var parenthesizesStatus: Bool = true
 
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
@@ -26,7 +29,7 @@ struct FilterSectionHeader: View {
                 .font(DS.Typography.body)
                 .foregroundStyle(.primary)
 
-            Text("(\(status))")
+            Text(parenthesizesStatus ? "(\(status))" : status)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
         }
@@ -72,6 +75,8 @@ struct FilterSelectionRow: View {
 struct AmountFilterView: View {
     @Binding var condition: AmountFilterCondition
     var currencyCode: CurrencyCode?
+    /// Lo que dice sin moneda. `nil`: «Selecciona una única moneda…».
+    var noCurrencyMessage: String? = nil
 
     // Estados locales para los campos de texto
     @State private var value1: String = ""
@@ -138,6 +143,7 @@ struct AmountFilterView: View {
                     .font(DS.Typography.caption)
                     .fontWeight(.semibold)
                     .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("filters_amount_currency")
             }
 
             TextField("0.00", text: text)
@@ -157,7 +163,7 @@ struct AmountFilterView: View {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "info.circle")
                         .foregroundStyle(.secondary)
-                    Text(L10n.Export.selectSingleCurrency)
+                    Text(noCurrencyMessage ?? L10n.Export.selectSingleCurrency)
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -256,7 +262,7 @@ struct MultiSelectionList<T: Identifiable & Hashable>: View {
 
                                         if selection.contains(item) {
                                             Image(systemName: "checkmark")
-                                                .foregroundStyle(theme.accent)
+                                                .foregroundStyle(theme.accentText)
                                                 .font(DS.Typography.headline)
                                         }
                                     }

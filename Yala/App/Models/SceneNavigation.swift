@@ -33,6 +33,14 @@ final class SceneNavigation: Identifiable {
     /// Currently selected main tab (Panel, Statistics, etc.)
     var selectedMainTab: AppTab = .panel {
         didSet {
+            if oldValue != selectedMainTab, let screen = LoadTimeMarks.screen(for: selectedMainTab) {
+                LoadTimeMarks.begin(screen)
+            }
+            // Al salir de Estadísticas vuelve el período que tenía la persona antes de que un informe pusiera el suyo
+            // (UX 2.2 · L11-2). Sin visita en curso no hace nada.
+            if oldValue == .statistics && selectedMainTab != .statistics {
+                SessionState.shared.endVisitPeriod()
+            }
             // Clear temporary tab when navigating to a permanent tab
             if selectedMainTab != temporaryTab?.appTab && selectedMainTab != .more {
                 temporaryTab = nil
@@ -51,7 +59,11 @@ final class SceneNavigation: Identifiable {
 
     /// Currently selected tab within Reports (Comparativa, Flujo de caja).
     /// SSOT de la ventana para que el «Más» del dashboard pueda enlazar a una sub-pestaña de Informes.
-    var selectedReportTab: ReportTab = .comparativa
+    var selectedReportTab: ReportTab = .comparativa {
+        didSet {
+            if oldValue != selectedReportTab, selectedReportTab == .flujoDeCaja { LoadTimeMarks.begin(.cashFlow) }
+        }
+    }
 
     /// Pending Task that finalizes a deferred main tab selection (when the
     /// destination tab is hidden in "More" and we need to mount it via
@@ -84,6 +96,7 @@ final class SceneNavigation: Identifiable {
             stored: stored,
             reduceToGroupsOnly: isGroupsFocusedShell)
         let decision = MainTabSelectionLogic.decide(requested: tab, config: config)
+        UITestHooks.shared.traceLifecycle("pestaña \(decision.selectedTab)")
 
         pendingTabSelectionTask?.cancel()
         if decision.requiresDelay, let temp = decision.temporaryTab {
@@ -137,11 +150,47 @@ final class SceneNavigation: Identifiable {
         selectMainTab(.groups)
     }
 
+    /// L13-8 · «Crear grupo» de la hoja «Para dividir un gasto, primero crea un grupo»: el formulario de grupo en la
+    /// pestaña y, al crearlo, el gasto.
+    func navigateToGroupsAndCreateGroupForExpense() {
+        pendingExpenseAfterNewGroup = true
+        pendingNewGroupForm = true
+        selectMainTab(.groups)
+    }
+
     // MARK: - Destinos pendientes
 
     /// Pending group ID for deep link navigation to specific group.
     /// Set by AppRouter.navigate(.groupDetail) handler, read by GroupsContainerView.
     var pendingGroupID: String?
+
+    /// El grupo que esta ventana acaba de abrir desde su aviso (card th4n). Lo pone `GroupsContainerView` al consumir un
+    /// `pendingGroupID` que vino de una notificación, y lo consume el detalle de ese grupo: recarga lo que ya está en el
+    /// teléfono y espera al ciclo en vuelo antes de enseñar el grupo. Con el detalle ya abierto, el cambio de valor es lo
+    /// que lo dispara. Un valor nuevo en cada toque (`token`): dos avisos del mismo grupo son dos aperturas.
+    var groupOpenedFromNotification: GroupNotificationEntry?
+
+    /// Zona del grupo cuyos AJUSTES debe abrir esta ventana: el botón de cada grupo que «necesita tu decisión» al
+    /// salir de varios grupos (auditoría UX 2.2 · L19-13). Lo consume `GroupsContainerView` (abre el detalle) y el
+    /// detalle de ese grupo (abre sus ajustes).
+    var pendingGroupSettingsZoneID: String?
+
+    /// Presupuesto que esta ventana debe abrir al llegar a Presupuestos: el de la alerta tocada (UX 2.2 · L9-5). Lo pone
+    /// `ContentView.handleMainTabIntent` al drenar `.navigate(.budgets)` y lo consume `BudgetsListView`.
+    var pendingBudgetID: UUID?
+
+    /// Pago planificado que esta ventana debe abrir al llegar a Pagos planificados: el del recordatorio tocado (UX 2.2 ·
+    /// L10-13). Lo pone `ContentView.handleMainTabIntent` y lo consume `ScheduledPaymentsView`.
+    var pendingScheduledPaymentID: UUID?
+
+    /// La parte de Estadísticas que esta ventana debe poner a la vista al llegar (UX 2.2 · L15-3: «Entradas y salidas»
+    /// en Tendencias, las subcategorías en Distribución). Lo pone `ContentView.handleMainTabIntent` y lo consume la
+    /// pestaña de esa parte (`TrendsTabView`, `CategoriesTabView`).
+    var pendingStatisticsFocus: StatisticsDeepLink.Focus?
+
+    /// Cuenta (`shortcutID`) cuya ficha debe abrir el Panel de esta ventana: la tarjeta del aviso de pago (L10-14). Lo
+    /// pone `ContentView.handleMainTabIntent` y lo consume `PanelView`.
+    var pendingAccountID: UUID?
 
     /// Registro que esta ventana debe abrir al llegar a Registros (una ventana abierta con «Abrir en una ventana
     /// nueva» desde la fila). Lo consume `RecordsStandaloneView` cuando sus datos ya cargaron.
@@ -152,15 +201,55 @@ final class SceneNavigation: Identifiable {
     /// elegible (espeja el patrón de `pendingGroupID`).
     var pendingNewGroupExpense: Bool = false
 
+    /// El grupo con el que debe abrirse ese composer (UX 2.2 · L12-18: «Apuntar un gasto» al entrar en un grupo). `nil` =
+    /// el primero elegible, como el FAB del Panel. Lo consume `GroupsContainerView` junto con `pendingNewGroupExpense`.
+    var pendingNewGroupExpenseGroupID: UUID?
+
+    /// L12-18 · lo que pidió «Ya estás en «X»» al cerrarse: apuntar un gasto en ese grupo o abrirlo. Lo deja la hoja de
+    /// invitación y lo aplica el `onDismiss` de su cover (`ContentView`), cuando el ancla ya está libre: pedir el
+    /// formulario de gasto con el cover aún bajando son dos presentaciones a la vez (review adversarial del 2026-10-21).
+    var pendingInviteFollowUp: InviteFollowUp?
+
+    enum InviteFollowUp: Equatable {
+        case addExpense(groupID: UUID)
+        case viewGroup(groupID: UUID)
+    }
+
     /// G3 · último paso de la rama organizador del Welcome: abrir el FORMULARIO de grupo nuevo al aterrizar
     /// en el tab. Espeja `pendingNewGroupExpense` —mismo molde, mismo consumidor— pero es su hermano y no
     /// el mismo flag: aquel exige un grupo elegible para consumirse y este existe precisamente porque
     /// todavía no hay ninguno. Lo consume `GroupsContainerView` al montar.
     var pendingNewGroupForm: Bool = false
 
+    /// UX 2.2 · L12-11 (decisión B de Jürgen): la persona tocó «Crear grupo» y antes hubo que mandarla a la cuenta o al
+    /// consentimiento. Lo arma `GroupsContainerView.requestCreateGroup` al ceder el anchor y lo consume la cadena de
+    /// `GroupsBackendInviteModifier` al terminar, que vuelve a pedir el formulario; cancelar cualquier paso lo retira.
+    /// Sin esto la cadena terminaba en la pestaña y la persona creía que algo había fallado.
+    var pendingCreateGroupAfterIdentity: Bool = false
+
+    /// UX 2.2 · L13-8 (decisión B de Jürgen): «Grupo» del botón + sin ningún grupo pidió crear uno PARA apuntar un gasto.
+    /// Al crearlo, la pestaña abre el gasto con el aviso «Ahora apunta el gasto»; cancelar el formulario lo retira, para
+    /// que el gasto no salte horas después. Distinto de `pendingNewGroupExpense`, que espera a un grupo que ya existe.
+    var pendingExpenseAfterNewGroup: Bool = false
+
+    /// UX 2.2 · L12-12: el grupo (su id) que acaba de crear el formulario de la rama «Crear mi primer grupo» de la
+    /// bienvenida, para que la pestaña proponga invitar al aterrizar (L12-10), como tras crear desde ella misma.
+    var pendingCreatedGroupInviteID: String?
+
+    /// L12-12 · el formulario de la rama de bienvenida está encima de todo. Mientras lo esté, la pestaña (que ya se montó
+    /// debajo al escribirse el alta) no presenta nada propio: ni la hoja de invitar ni el aviso de notificaciones, que
+    /// chocarían con el cover y entre sí. Lo pone y lo quita `ContentView`.
+    var isWelcomeGroupFormOpen: Bool = false
+
     /// ⌘K y ⌘, (iPad con teclado): lo que el Panel debe abrir al estar delante. Lo consume `PanelView`, que es quien
     /// tiene Yala IA y Ajustes en una hoja propia; `RootCommandPerformer` lo pone junto con la selección del Panel.
     var pendingKeyboardPanelRequest: KeyboardPanelRequest?
+
+    /// UX 2.2 · L16-5 (opción B de Jürgen, 2026-10-23): el ajuste al que vuelve Ajustes tras cambiar el idioma con el
+    /// selector de Yala. Cambiar el idioma reconstruye la app (`.languageDidChange`) y cierra la hoja de Ajustes; el
+    /// Panel recién montado la reabre aquí (`PanelSettingsReturnOpening`). Solo lo consume un Panel que APARECE o queda
+    /// delante, no uno que ya lo estaba: ése tiene la hoja de Ajustes encima.
+    var pendingSettingsReturn: ProfileDestination?
 
     /// ⌘F: cada pulsación lo incrementa y `GlobalSearchView` enfoca su campo. Un contador y no un flag: la segunda
     /// pulsación con Buscar ya delante también tiene que enfocar.
@@ -215,6 +304,12 @@ final class SceneNavigation: Identifiable {
     /// drain: con el shell tapado, un intent que setee un sheet propio ESPERA en cola en vez de consumirse tapado
     /// (Clase D). Default "splash": el splash siempre cubre el boot antes del primer recompute.
     var shellModalBlocker: String? = "splash"
+
+    /// True mientras el editor de Más (desde donde se elige la barra de pestañas) está abierto en esta ventana. Lo
+    /// escribe SOLO `MoreView`, y `MainTabView` lo baja al desmontarse. Mientras dura, la barra sigue con la
+    /// configuración que tenía montada y se vuelve a montar con la nueva al cerrarse el editor (card fozu): montarla
+    /// en caliente cerraba la app o dejaba pestañas en negro, y montarla con el editor abierto lo cerraba de golpe.
+    var isEditingTabBarLayout: Bool = false
 
     /// True mientras MainTabView tiene un sheet propio presentado (downgrade /
     /// trialExpired / milestone). Escrito SOLO por MainTabView. Consultado por

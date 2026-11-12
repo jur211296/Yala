@@ -16,9 +16,27 @@ struct SubcategorySelectorSheet: View {
     @Environment(\.modelContext) private var modelContext
 
     @State private var viewModel = SubcategorySelectorViewModel()
+    /// Buscador de la hoja (UX 2.2 · L2-3): nombre de la categoría y de su grupo, sin tildes ni mayúsculas.
+    @State private var searchText = ""
+
+    private var isSearching: Bool { !CategorySearchLogic.folded(searchText).isEmpty }
+
+    private var visibleGroups: [(category: Category, subcategories: [Subcategory])] {
+        CategorySearchLogic.filter(
+            viewModel.groupedSubcategories,
+            query: searchText,
+            groupName: { $0.name },
+            itemName: { $0.name }
+        )
+    }
 
     @Binding var selectedSubcategory: Subcategory?
     let transactionType: TransactionType
+    /// Grupos B · card 7: el gasto de grupo ofrece también las categorías de ingreso (una venta), con «Gasto | Ingreso»
+    /// arriba. Abre en el tipo de lo que ya está elegido. Solo lo pide ese formulario: los demás selectores no cambian.
+    var offersIncome: Bool = false
+    @State private var shownType: TransactionType = .expense
+    @Environment(\.yalaTheme) private var theme
 
     /// Cómo abre la hoja (`SelectorSheetSizing`): `.mediumFirst` desde un registro nuevo, `.large` en el resto.
     var sizing: SelectorSheetSizing = .large
@@ -46,6 +64,9 @@ struct SubcategorySelectorSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: DS.Spacing.xl) {
+                    if offersIncome {
+                        typePill
+                    }
                     if viewModel.isEmpty {
                         YalaEmptyState(
                             icon: "tag.fill",
@@ -53,7 +74,8 @@ struct SubcategorySelectorSheet: View {
                             message: L10n.Empty.activateCategoriesMessage,
                             actionTitle: L10n.Empty.activateCategoriesAction,
                             action: {
-                                seedCategoriesIfNeeded(in: modelContext)
+                                // Una petición: el centinela de la semilla no la anula (card omw5).
+                                seedDefaultCategoriesOnUserRequest(in: modelContext)
                                 seedSystemGroupCategoriesIfNeeded(in: modelContext)
                                 viewModel.loadData()
                             }
@@ -61,8 +83,8 @@ struct SubcategorySelectorSheet: View {
                         .frame(maxWidth: .infinity)
                         .padding(.top, DS.Spacing.xxxl)
                     } else {
-                        // Recientes section (if any)
-                        if !viewModel.recentSubcategories.isEmpty {
+                        // Recientes section (if any). Mientras se busca, solo los resultados.
+                        if !isSearching, !viewModel.recentSubcategories.isEmpty {
                             VStack(alignment: .leading, spacing: DS.Spacing.md) {
                                 HStack(spacing: DS.Spacing.sm) {
                                     Image(systemName: "clock.arrow.circlepath")
@@ -83,6 +105,7 @@ struct SubcategorySelectorSheet: View {
                                             categoryColor: subcategory.safeCategory.colorHex,
                                             isSelected: isSelected(subcategory),
                                             action: {
+                                                DS.Haptic.selection()
                                                 selectedSubcategory = subcategory
                                                 dismiss()
                                             }
@@ -95,8 +118,18 @@ struct SubcategorySelectorSheet: View {
                                 .padding(.vertical, DS.Spacing.xs)
                         }
 
+                        if isSearching, visibleGroups.isEmpty {
+                            Text(L10n.UXL2B.categorySearchEmpty(searchText.trimmingCharacters(in: .whitespacesAndNewlines)))
+                                .font(DS.Typography.subheadline)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                                .frame(maxWidth: .infinity)
+                                .padding(.top, DS.Spacing.xl)
+                                .accessibilityIdentifier("subcategory_selector_search_empty")
+                        }
+
                         // All categories
-                        ForEach(viewModel.groupedSubcategories, id: \.category.persistentModelID) {
+                        ForEach(visibleGroups, id: \.category.persistentModelID) {
                             group in
                             SubcategoryGridSection(
                                 category: group.category,
@@ -104,6 +137,7 @@ struct SubcategorySelectorSheet: View {
                                 columns: columns,
                                 selectedSubcategory: $selectedSubcategory,
                                 onSelect: { subcategory in
+                                    DS.Haptic.selection()
                                     selectedSubcategory = subcategory
                                     dismiss()
                                 }
@@ -115,7 +149,13 @@ struct SubcategorySelectorSheet: View {
                 .padding(.vertical, DS.Spacing.xl)
             }
             .yalaScreenBackground(sheetBackground)
+            // «Categoría» (UX 2.2 · L2-3): la clave dice «subcategory» por historia; su texto ya es «Categoría».
             .navigationTitle(L10n.Transaction.subcategory)
+            .searchable(
+                text: $searchText,
+                placement: .navigationBarDrawer(displayMode: .always),
+                prompt: L10n.Common.search
+            )
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -127,8 +167,23 @@ struct SubcategorySelectorSheet: View {
         }
         .selectorSheetSizing(sizing, selectedDetent: $selectedDetent)
         .onAppear {
-            viewModel.setContext(modelContext, transactionType: transactionType)
+            shownType = SubcategorySelectorTypeLogic.initialType(
+                requested: transactionType, offersIncome: offersIncome,
+                selectedIsIncome: selectedSubcategory.map { $0.safeCategory.isIncome })
+            viewModel.setContext(modelContext, transactionType: shownType)
         }
+        .onChange(of: shownType) { _, newType in viewModel.transactionType = newType }
+    }
+
+    /// «Gasto | Ingreso» (card 7). Los dos segmentos heredan el id del contenedor, en ese orden.
+    private var typePill: some View {
+        GenericSegmentedPill(
+            options: [TransactionType.expense, .income],
+            selection: $shownType,
+            labelProvider: { $0.displayName },
+            selectedFillColorProvider: { _ in theme.accent }
+        )
+        .accessibilityIdentifier("subcategory_selector_type")
     }
 
     private func isSelected(_ subcategory: Subcategory) -> Bool {
@@ -206,10 +261,14 @@ struct SubcategoryGridItem: View {
                     }
                 }
 
+                // Dos líneas y, si no caben, la letra encoge hasta un 80 % antes de cortar: con la letra fija,
+                // «Cuidado personal y belleza», «Salud y atención médica» o «Telefonía y comunicaciones»
+                // salían cortadas con «…» y no se sabía cuál se elegía. Auditoría UX 2.2, lote 2, B8.
                 Text(subcategory.name)
                     .font(DS.Typography.captionSmall)
                     .foregroundStyle(isSelected ? Color(hex: effectiveColor) : .primary)
                     .lineLimit(2)
+                    .minimumScaleFactor(0.8)
                     .multilineTextAlignment(.center)
                     .frame(height: 28)
             }

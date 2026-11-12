@@ -8,7 +8,7 @@ Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 - **Target iOS 26+** — APIs nativas (Liquid Glass, ToolbarSpacer, etc.)
 - Schemes: **Yala** (producción) | **Yala Dev** (con toggle Pro y `DEV_BUILD`) | Tests: YalaTests
 - Simulador: **iPhone 17 Pro**
-- **La subida a TestFlight y a la App Store se hace solo desde la Mini.** El número de build no se escribe en ningún documento: se mira al subir.
+- **La subida a TestFlight y a la App Store se hace desde la Mini o la Max** (Jürgen, 10-nov), con el mismo método: firma automática con `-allowProvisioningUpdates` y la llave de `asc`, sin certificado «Apple Distribution» local. El número de build no se escribe en ningún documento: se mira al subir. Archivar y exportar va dentro del tmux de la sesión: por `ssh` directo el llavero no abre y `codesign` falla con `errSecInternalComponent`.
 - 21 SwiftData models. ModelContainer via `SwiftDataConfiguration`. Divisas SSOT en `Yala/Utils/CurrencyUtils.swift` (`CurrencyCode`, 54 divisas).
 
 ## Docs (leer cuando sea relevante)
@@ -47,7 +47,7 @@ La SSOT de proceso y tickets es **este repo**. No uses Obsidian / YalaWiki como 
 
 - **`DateInterval` es CERRADO en ambos extremos (`start` Y `end` inclusivos)** — al construir un `end` que coincide exactamente con el `start` de otro período/bucket adyacente (ej. `DateInterval(start: startOfLastMonth, end: startOfThisMonth)`), ese instante compartido se cuenta en AMBOS lados: `.contains(_:)` devuelve `true` para los dos, y con predicados manuales (`date >= start && date <= end`) el mismo double-count. Ocurre en la práctica porque `DatePicker(displayedComponents: [.date])` normaliza la hora elegida a medianoche exacta (00:00:00) — una transacción fechada "1 de julio" cae en `.lastMonth` (junio) en vez de solo `.thisMonth`. **Fix**: restar 1 segundo al `end` cuando representa "hasta el inicio de X, sin incluir X" (`calendar.date(byAdding: .second, value: -1, to: startOfX)`). Costó el bug de "Mes/Año pasado incluye día 1 del actual" replicado en 4 archivos independientes (`DetailPeriod.dateInterval()` en `SharedModels.swift`, su mirror en `WidgetDataService.swift`, `PreviousPeriodHelper.previousPeriodInterval` [ancla en `.end` que cambia → re-anclar en `.start`, invariante], y `FullFinancialContextBuilder.buildIntervals` [cadena de buckets adyacentes `lastMonth`/`twoMonthsAgo`/`threeMonthsAgo`/semanas] + `ReportNotificationService.getIntervalForReportType`). Al añadir un período/bucket nuevo con boundary en medianoche, verificar el mismo patrón.
 
-- **Corolario, medido el 2026-09-02: «el fichero está en la lista de arreglados» NO significa que lo estén todas sus ramas.** `PreviousPeriodHelper` ya figuraba arriba como corregido y sin embargo su rama `.thisMonth` (y `sameIntervalPreviousYear`) seguían sin restar el segundo: una TX del día 1 a medianoche contaminaba la columna «anterior» del informe **los 730 días barridos**, el hero de Estadísticas 28/730 y la comparativa interanual 2/730. Al revisar este patrón, recorre **todas las ramas del switch**, no el fichero. Y busca las instancias **escritas a mano fuera del helper**: aparecieron dos (`AnomalyDetectionCalculator`, donde la TX entraba en su propia línea base y apagaba su detección de anomalía, y el `prevInterval` del hero en `PanelViewModel`). Dos avisos más: (1) **el `-1s` no siempre es incondicional** — una función compartida por períodos EN CURSO (cierran en medianoche) y CERRADOS (ya cierran en 23:59:59) debe condicionarlo (`calendar.startOfDay(for: end) == end`), o les quita un instante real; (2) **su trampa gemela es contar días**: `dateComponents([.day])` TRUNCA, así que sobre un intervalo que cierra en 23:59:59 devuelve uno de menos — normaliza (`end.addingTimeInterval(1)`) antes de contar, o el denominador de cualquier promedio diario se queda corto.
+- **Corolario, medido el 2026-09-02: «el fichero está en la lista de arreglados» NO significa que lo estén todas sus ramas.** `PreviousPeriodHelper` ya figuraba arriba como corregido y sin embargo su rama `.thisMonth` (y `sameIntervalPreviousYear`) seguían sin restar el segundo: una TX del día 1 a medianoche contaminaba la columna «anterior» del informe **los 730 días barridos**, el hero de Estadísticas 28/730 y la comparativa interanual 2/730. Al revisar este patrón, recorre **todas las ramas del switch**, no el fichero. Y busca las instancias **escritas a mano fuera del helper**: aparecieron dos (`AnomalyDetectionCalculator`, donde la TX entraba en su propia línea base y apagaba su detección de anomalía, y el `prevInterval` del hero en `PanelViewModel`). Dos avisos más: (1) **el `-1s` no siempre es incondicional** — una función que reciba intervalos que cierran en medianoche (rangos propios, `Calendar.dateInterval(of:)`) y otros que ya cierran en 23:59:59 debe condicionarlo (`calendar.startOfDay(for: end) == end`), o les quita un instante real. **Desde el 2026-10-25 los períodos EN CURSO de `DetailPeriod.dateInterval` y `WidgetPeriod.dateInterval` también cierran en 23:59:59** (antes, en la medianoche de mañana, y «Este mes» contaba lo fechado mañana a las 00:00); un consumidor que ancle el período anterior lo hace por días de calendario, no restando `duration` (`PreviousPeriodHelper.previousStartByDays`: el segundo de menos y el cambio de hora lo sacaban de la medianoche); (2) **su trampa gemela es contar días**: `dateComponents([.day])` TRUNCA, así que sobre un intervalo que cierra en 23:59:59 devuelve uno de menos — normaliza (`end.addingTimeInterval(1)`) antes de contar, o el denominador de cualquier promedio diario se queda corto.
 
 ### Documentation & copy
 - Describir features desde la perspectiva del USUARIO, no técnica.
@@ -82,24 +82,26 @@ La rama depende de **dónde corre la sesión** —comprobable con un comando— 
 
 | Dónde corre | Cómo entrega |
 |---|---|
-| **Árbol principal** (`~/Yala`) | Commit directo en `2.1`. Sin rama y sin PR, **también para código**. |
+| **Árbol principal** (`~/Yala`) | Commit directo en `2.2`. Sin rama y sin PR, **también para código**. |
 | **Worktree** (`lanzar-sesion`, Grokbot) | Rama + PR, siempre. |
 
 Se comprueba con `git rev-parse --git-common-dir`: si devuelve algo distinto de `.git`, es worktree. «Quién está trabajando primero» NO es comprobable y por eso no es el criterio: dos sesiones que arranquen a la vez se creerían ambas la primera.
 
-Dos condiciones innegociables para commitear directo en `2.1`:
+Dos condiciones innegociables para commitear directo en `2.2`:
 
 1. **`/gate` en verde.** Sin PR, el gate es la única red que queda. Si no pasa, no hay commit.
 2. **El árbol es tuyo.** Si `git status` trae cambios que no son de esta sesión, parar y avisar. Dos sesiones sobre el mismo árbol se arrastran y el aislamiento por hunks no funciona.
 
-**Sin nada que compilar** —diffs que caen ENTEROS en `docs/` · `tickets/` · `marketing/` · `Web/` · `.github/` · `README.md` · `CLAUDE.md` · `LICENSE*`— va directo a `2.1` **desde cualquier sesión**, worktree incluido, y el gate salta a la validación del índice.
+**Sin nada que compilar** —diffs que caen ENTEROS en `docs/` · `tickets/` · `marketing/` · `Web/` · `.github/` · `README.md` · `CLAUDE.md` · `LICENSE*`— va directo a `2.2` **desde cualquier sesión**, worktree incluido, y el gate salta a la validación del índice.
 
 Esta lista **ya no es** «la del job `changes` de `.github/workflows/qa.yml` menos `.claude/`». Las dos responden preguntas distintas —«¿hay que compilar antes de commitear?» aquí, «¿puede este diff romper el build?» allí— y divergen en dos sitios, los dos a propósito:
 
 - **`.claude/` está aquí fuera y allí dentro.** Hooks, rules y permisos no rompen el build —por eso el CI los deja pasar— pero cambian cómo trabaja todo el mundo, así que van por PR.
 - **`.github/` está aquí dentro y allí fuera** (2026-09-03). En local no hay nada que compilar, así que el gate no aporta; en CI un cambio al workflow **tiene** que disparar la suite, o el CI dejaría de probar sus propios cambios — que es justo lo que hay que evitar después de un día ejecutando cero tests.
 
-**El release sigue siendo de Jürgen**, y un PR abierto lo mergea él salvo que pida otra cosa. Un encargo en **MODO AUTÓNOMO ya lo pide**: ahí la sesión deja su propio PR **en cola de auto-merge** y cierra sin esperar al CI (ADR-054 de casa). GitHub lo mergea cuando pasan `tests` y `coverage-index`, que el ruleset de `2.1` exige. Mergear no es release; subir un build sigue siendo suyo. Lo que desaparece es el PR como trámite para el trabajo de una sesión única, no su criterio.
+**Ramas desde el 22-oct-2026** (2.1 publicada): `1.0` es la oficial de la app y de la web —Vercel publica desde ella—, solo admite PR con CI verde y recibe cada versión al publicarse. El trabajo se integra en `2.2`. Un arreglo urgente sobre lo publicado sale de `1.0`, se etiqueta `v2.1.x` y se mergea también a `2.2`: `docs/FLUJO-RAMAS-Y-HOTFIX.md`. Un cambio en `Web/` que deba verse ya es un hotfix: en `2.2` no se publica hasta la próxima versión.
+
+**El release sigue siendo de Jürgen**, y un PR abierto lo mergea él salvo que pida otra cosa. Un encargo en **MODO AUTÓNOMO ya lo pide**: ahí la sesión deja su propio PR **en cola de auto-merge** y cierra sin esperar al CI (ADR-054 de casa). GitHub lo mergea cuando pasan `tests` y `coverage-index`, que el ruleset de `2.2` exige. Mergear no es release; subir un build sigue siendo suyo. Lo que desaparece es el PR como trámite para el trabajo de una sesión única, no su criterio.
 
 **Documentación: dos superficies, no cinco.** El ticket en `tickets/` (qué y por qué, mientras el trabajo vive) y la regla durable en `.claude/rules/` (lo que el yo-futuro no debe romper). Git y el cuerpo de cada PR ya guardan el qué y el cuándo; `docs/DECISIONS.md` es narrativa de proceso, no bitácora de cada commit.
 
@@ -123,7 +125,7 @@ Se bifurca según cómo se abrió la sesión, y eso se lee en el encargo o en el
 
 **Sesión interactiva** (Jürgen delante, sin MODO AUTÓNOMO). Tras implementar: resumen **en lenguaje de usuario** (qué cambia para él), build para confirmar, sugerir el siguiente paso y **detenerse**. No encadenar tests, QA ni commits sin que los pida.
 
-**MODO AUTÓNOMO.** Cuenta como tal un encargo con la sección «MODO AUTÓNOMO HASTA TERMINAR», una sesión de la cola en bypass, o Jürgen diciendo «autónomo» o «hasta el final». Ahí se sigue el tren entero sin checkpoints de proceso: implementar → `/gate` → commit → PR → board y `docs/TICKETS.md` → `/cerrar-total` en **modo cola** (ADR-054 de casa, §3 bis del skill).
+**MODO AUTÓNOMO.** Cuenta como tal un encargo con la sección «MODO AUTÓNOMO HASTA TERMINAR», una sesión de la cola en bypass, o Jürgen diciendo «autónomo» o «hasta el final». Ahí se sigue el tren entero sin checkpoints de proceso: implementar → `/gate` → commit → memoria al PR (`python3 scripts/memoria_al_pr.py llevar` antes del push y `limpiar --pr <n>` después; `/cerrar`, bloque 0) → PR → board y `docs/TICKETS.md` → `/cerrar-total` en **modo cola** (ADR-054 de casa, §3 bis del skill).
 
 - **El merge no se espera.** `/cerrar-total` hace `gh pr merge <n> --auto --merge` y comprueba la cola con `gh pr view <n> --json state,autoMergeRequest`: `autoMergeRequest` no nulo es «en cola». Sin tty, `--auto` no imprime nada; lo que vale es esa segunda línea. `MERGED` en el acto también vale. `OPEN` sin cola es un fallo y se dice.
 - **En modo cola no se borra la rama remota**: borrarla cierra el PR sin mergear. La borra GitHub al mergear.
@@ -136,7 +138,7 @@ Se bifurca según cómo se abrió la sesión, y eso se lee en el encargo o en el
 
 **Git:** cada comando de lectura una sola vez, secuencialmente. No matar shells con git en curso.
 
-**Tags:** semver con prefijo `v` → `v1.0.0`. Nunca sin prefijo ni sin 3 componentes.
+**Tags:** semver con prefijo `v` → `v1.0.0`. Nunca sin prefijo ni sin 3 componentes. Única excepción: `v2.1`, que el cierre de 2.1 pidió con ese nombre y convive con `v2.1.0` en el mismo commit.
 
 
 ## Antes de cerrar una release
@@ -146,3 +148,6 @@ nunca contra CloudKit de producción. Se miran en el iPhone más pequeño y el m
 Type al máximo y en modo oscuro. Lo barato se arregla; lo demás va a `tickets/backlog/`, con
 capturas del antes y el después en `qa/evidencia-estres-AAAAMMDD/`. El procedimiento:
 `~/Claude/casa/docs/pase-estres.md`.
+
+**Revisión de traducciones** (lote 12.4): `qa/l10n-review/review.py --since <tag anterior>` revisa con Sonnet lo que
+cambió en los 16 idiomas, y `apply.py` aplica lo que pasa sus filtros. Cómo y qué no aplica: `qa/l10n-review/README.md`.

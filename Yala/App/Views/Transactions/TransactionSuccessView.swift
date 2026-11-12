@@ -38,8 +38,8 @@ struct TransactionSuccessData {
 struct TransactionSuccessView: View {
     private static let dateFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.dateFormat = "d MMM yyyy"
         f.locale = AppLocale.current
+        f.setLocalizedDateFormatFromTemplate("dMMMy")
         return f
     }()
 
@@ -82,6 +82,7 @@ struct TransactionSuccessView: View {
                     Spacer()
                     Button(L10n.Action.edit, action: onEdit)
                         .buttonStyle(.bordered)
+                        .accessibilityIdentifier("transaction_success_edit")
                 }
                 .padding(.horizontal, DS.Spacing.xl)
                 .padding(.top, DS.Spacing.lg)
@@ -222,6 +223,8 @@ struct TransactionSuccessView: View {
             }
         }
         .onAppear {
+            // Momento de éxito: aquí se pide la oferta de prueba armada (UX 2.2 · L1-12, `TrialOfferMomentLogic`).
+            TrialOfferMoments.noteRecordSaved()
             if reduceMotion {
                 showHero = true
                 showCheckmark = true
@@ -296,11 +299,11 @@ struct TransactionSuccessView: View {
                 }
             }
 
-            // Note
+            // «Descripción», como en el formulario (UX 2.2 · L2-5): antes decía «Nota».
             if !data.note.isEmpty {
                 detailRow(
                     icon: "text.alignleft",
-                    label: L10n.Transaction.note,
+                    label: L10n.Transaction.description,
                     value: data.note
                 )
             }
@@ -376,7 +379,7 @@ struct TransactionSuccessView: View {
                 .frame(width: 20)
                 .accessibilityHidden(true)
 
-            Text(L10n.Account.selectAccount)
+            Text(L10n.Transaction.account)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
 
@@ -430,7 +433,7 @@ struct TransactionSuccessView: View {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "arrow.down.circle")
                         .font(DS.Typography.subheadline)
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                         .frame(width: 20)
                         .accessibilityHidden(true)
 

@@ -1,5 +1,5 @@
 ---
-updated: 2026-10-12
+updated: 2026-11-01
 tags: [runbook, staging, ddl, owner]
 ---
 
@@ -486,6 +486,286 @@ Entre el deploy anterior y este no cambió nada más de `gateway/src`, `wrangler
 La app nueva sin el campo cae al aviso de siempre, que sigue bloqueando.
 
 ---
+
+## `g18_01_account_parent_account_id.sql` — tarjeta con varias divisas (staging 2026-10-18, producción 2026-10-22)
+
+> **Producción: aplicada el 2026-10-22** (Frank, con el token de gestión por `/database/query`, rol `postgres`). Antes:
+> backup físico del día `2037455155` (07:50 UTC) y foto de `accounts` (0 filas). Después: la consulta del paso 1 da `1`,
+> `authenticated` hereda UPDATE, y PostgREST sirve la columna (`select=parent_account_id` → 200; una columna inventada →
+> 400). Worker de producción `ea8206c8` → `2e2c05c4` (manifest v3, que incluye v2). Lo de abajo queda como registro.
+
+**Staging: aplicada el 2026-10-18** (`fostjbbwstyuunmmefuk`, con el token de gestión, que esta vez sí respondía 200) y
+re-aplicada para comprobar que es idempotente. Worker de staging desplegado el mismo día: `914f5402` → `0207e3eb` →
+`af424141` (este último con el guard de despliegue y `sync.manifestVersion` en `/config`). Sonda
+`bash qa/cloud/g18_01-staging-probe.sh` **10/10** y goldens `test/sync.goldens.test.ts` **13/13** contra staging.
+**Producción: pendiente, la hace Jürgen** (card «Aplicar en producción el DDL de parentAccountID de Modo Nube»). Medido
+ese día en producción, solo lectura: `accounts` tiene 21 columnas y ninguna es `parent_account_id`.
+
+Qué es: `accounts.parent_account_id uuid` nullable, sin FK, para enlazar una línea en otra divisa con la cuenta principal
+de su tarjeta. Va con el Worker de `manifest_version: 2` (`qa/cloud/README.md`, entrada g18_01, explica por qué).
+
+### Los pasos en producción, en orden (`kefvaiymtgytemwbltlz`)
+
+1. **Medir antes.** Supabase → proyecto de producción → *SQL Editor* → *New query*:
+   ```sql
+   select count(*) from information_schema.columns
+    where table_schema = 'public' and table_name = 'accounts' and column_name = 'parent_account_id';
+   ```
+   Tiene que dar `0`. Si da `1`, ya está aplicada: salta al paso 3.
+2. **Aplicar.** *New query* → pega `qa/cloud/g18_01_account_parent_account_id.sql` entero → *Run*. Tiene que salir el
+   aviso `g18_01 OK · accounts.parent_account_id uuid nullable, grants heredados`. Si sale un error, no se aplicó nada
+   (va en transacción): para y avisa a Frank. Con `apply_migration` del MCP, quita antes el `begin;` y el `commit;`.
+3. **Comprobar.** Repite la consulta del paso 1: ahora da `1`.
+4. **Desplegar el Worker de producción, SOLO después del paso 3**, desde `2.2` ya con este PR mergeado:
+   `cd gateway && npm ci && npm run deploy:production`. Antes de subir, el `predeploy` comprueba que el manifest no
+   es más viejo que el desplegado (`check-manifest-not-older: OK (desplegado v1, este árbol v2)`). Apunta el
+   `Current Version ID` que imprime y el anterior (`npx wrangler deployments list --env production`). Ese deploy lleva
+   también lo que `gateway/RUNBOOK.md` tenga pendiente (hoy, el contador de uso de «Eliminar mi cuenta»).
+5. **Comprobar el Worker.** `curl -s -A yala https://yala-gateway-production.misty-surf-6866.workers.dev/config`: tiene
+   que traer `"sync":{"manifestVersion":2}`. **Ojo: con solo teléfonos 2.1 en producción, un DDL que no entró no da
+   ningún error** (los 2.1 piden `v1`, que no incluye la columna). Lo que lo prueba es el paso 3; si dudas, repítelo.
+   Con un iPhone con un build 2.2 en la nube, `npx wrangler tail --env production` no debe enseñar
+   `[sync-merkle] … 502`; si lo enseña, vuelve al Worker anterior (marcha atrás) y repite los pasos 2 y 3.
+
+**Marcha atrás.** Worker: `npx wrangler rollback <id anterior> --env production`. Columna: `g18_01_rollback.sql`, que aborta
+si alguna cuenta ya tiene un enlace. **Cuidado con desplegar después el Worker desde `2.1`** (o desde cualquier rama sin
+`manifest_version: 2`): con `v2`, TODA alta de cuenta de un 2.2 lleva la columna (a NULL), y un Worker viejo la rechaza
+entera (`unknown_column`); el teléfono la aparta para siempre, también lo que tuviera en cola sin red. Desde esta rama el
+`predeploy` lo impide (`gateway/scripts/check-manifest-not-older.mjs`), pero **2.1 no trae ese guard hasta que se mezcle
+2.2 en 2.1**: hasta entonces, el Worker de producción no se despliega desde 2.1.
+
+## `g21_01_cashflow_line_amount_changes.sql` — cambios «desde este mes» del flujo de caja (aplicada en los dos entornos el 2026-10-22)
+
+> **Aplicada el 2026-10-22 en staging y producción** (Frank, misma vía que g18_01), re-aplicada en staging para comprobar
+> que es idempotente. Staging: Worker `af424141` → `043cdff6`, `/config` anuncia `manifestVersion 3`, sonda g21 de un
+> solo uso **10/10** (push v3 entra; pull v3 baja la columna; pull v1/v2 la podan; Merkle 200 en v1/v2/v3; un push v2 no
+> la borra) y goldens `test/sync.goldens.test.ts` **13/13**. Producción: DDL tras g18_01, Worker `ea8206c8` →
+> `2e2c05c4` con `manifestVersion 3`, PostgREST sirve la columna. **Sin medir con tráfico real**: en 3 min de
+> `wrangler tail` no entró ninguna petición de teléfonos. Marcha atrás de producción: `npx wrangler rollback ea8206c8
+> --env production` **solo** junto con los dos `*_rollback.sql` (ver el guard de manifest).
+>
+> **La sonda `qa/cloud/g18_01-staging-probe.sh` da ahora 7/10 en staging, y no es un fallo:** sus tres rojos son la
+> aserción literal `manifest_version == 2`, y el Worker anuncia 3. Las siete comprobaciones funcionales pasan.
+
+**Ni staging ni producción.** La sesión que lo escribió no lo aplicó en staging a propósito: con el Worker de staging en
+`manifest_version: 2`, el DDL solo es inocuo, pero desplegar ahí el Worker v3 que lo necesita habría cambiado lo que
+prueban otras sesiones a la vez. **Lo aplica Jürgen** (card «Aplicar el DDL g21_01 y desplegar el Worker v3»).
+
+Qué es: `cashflow_lines.amount_changes_raw text` nullable, con los cambios de monto «este mes y los siguientes» de una
+línea del plan (`yyyy-MM=monto,…`). Va con el Worker de `manifest_version: 3` (`qa/cloud/README.md`, entrada g21_01).
+
+**Depende de g18_01.** El Worker v3 sirve también la columna de la v2 (`accounts.parent_account_id`): en un entorno sin
+g18_01, el Merkle de `accounts` de cualquier teléfono que pida `v2` o `v3` da 502. Si g18_01 sigue pendiente en ese
+entorno, va primero (su sección, arriba).
+
+### Los pasos, en orden (staging `fostjbbwstyuunmmefuk` primero; luego producción `kefvaiymtgytemwbltlz`)
+
+1. **Medir antes.** *SQL Editor* → *New query*:
+   ```sql
+   select column_name from information_schema.columns
+    where table_schema = 'public'
+      and ((table_name = 'accounts' and column_name = 'parent_account_id')
+        or (table_name = 'cashflow_lines' and column_name = 'amount_changes_raw'));
+   ```
+   Tiene que salir `parent_account_id`. Si falta, aplica antes g18_01. Si ya sale `amount_changes_raw`, salta al paso 4.
+2. **Aplicar.** *New query* → pega `qa/cloud/g21_01_cashflow_line_amount_changes.sql` entero → *Run*. Tiene que salir el
+   aviso `g21_01 OK · cashflow_lines.amount_changes_raw text nullable, grants heredados`. Con un error no se aplicó nada
+   (va en transacción): para y avisa a Frank.
+3. **Comprobar.** Repite la consulta del paso 1: salen las dos columnas.
+4. **Desplegar el Worker, SOLO después del paso 3**, desde `2.2` con este PR mergeado: `cd gateway && npm ci && npm run
+   deploy:staging` (staging) o `npm run deploy:production`. El `predeploy` tiene que decir `check-manifest-not-older: OK
+   (desplegado v…, este árbol v3)`. Apunta el `Current Version ID` y el anterior.
+5. **Comprobar el Worker.** `curl -s -A yala <url del gateway>/config` trae `"sync":{"manifestVersion":3}`. Con un iPhone
+   con esta build en la nube, `npx wrangler tail` (con `--env production` en producción) no debe enseñar
+   `[sync-merkle] … 502`.
+
+**Marcha atrás.** Worker: `npx wrangler rollback <id anterior>`. Columna: `g21_01_rollback.sql`, idempotente, que aborta si
+alguna línea ya tiene cambios. Tras volver el Worker atrás, un teléfono que ya apuntó «backend = 3» manda la columna hasta
+su siguiente pull, y el Worker v2 rechaza esas filas enteras (`unknown_column`) en ese hueco.
+
+## `g29_01_group_change_author.sql` — quién hizo cada cambio de un grupo (APLICADA, 2026-11-02)
+
+**Estado:** **APLICADA en staging y en producción el 2026-11-02**, con el Worker del manifest de Grupos **v3** en los dos
+(`g29_01-remote.sh … state`: las dos columnas `text` y los dos readers con la columna al final; `/config` de los dos da
+`"sync":{"manifestVersion":6,"groupsManifestVersion":3}`). Worker de staging `925a42da…` → `453090c6-70d6-42cd-ba77-1d32ecac83b2`;
+producción `d0737d7a…` → `9b651957-c662-40d5-ad21-b6ef870d5a85`. Sonda de staging `g29_01-staging-probe.sh`, 12/12.
+
+Qué es: `split_expenses.last_edited_by_member_key` y `split_settlements.recorded_by_member_key`, `text` nullable en claro,
+con su grant de UPDATE por columna (en Grupos no se hereda) y los dos readers del pull recreados con la columna al final.
+`apply_group_delta` no cambia. Card xi74.
+
+### Si hay que repetirla (staging `fostjbbwstyuunmmefuk` primero; luego producción `kefvaiymtgytemwbltlz`)
+
+1. **Medir.** `bash qa/cloud/g29_01-remote.sh <staging|production> state`. Con las dos columnas `text` y los readers en
+   `true` ya está: salta al paso 3.
+2. **Aplicar.** `bash qa/cloud/g29_01-remote.sh <staging|production> apply`. Responde `[]` y luego el estado. Aborta entera
+   si un reader no está en la versión medida (md5 en §1 del fichero).
+3. **Worker, SOLO después del paso 2**, desde `2.2` con este cambio: `cd gateway && npm ci && npm run deploy:staging` o
+   `npm run deploy:production`. El `predeploy` dice `check-manifest-not-older: OK (… grupos desplegado v2, este árbol v3)`.
+4. **Comprobar.** `curl -s -A yala <url del gateway>/config` trae `"groupsManifestVersion":3`. En staging, además,
+   `GROUPS_ENC_KEY="$(cat ~/Secrets/yala-groups-enc/staging.key)" bash qa/cloud/g29_01-staging-probe.sh` → `12/12 PASS`.
+
+**Marcha atrás.** Worker: `npx wrangler rollback <id anterior>` (último recurso: un teléfono con «backend = 3» apuntado
+manda las columnas a un Worker v2 hasta su siguiente pull, `unknown_column`). Columnas y readers:
+`bash qa/cloud/g29_01-remote.sh <entorno> rollback` (no aborta con datos: solo se pierde quién hizo cada cambio).
+
+## `g28_01_tx_items_split_lines.sql` — las líneas de tu parte de un gasto de grupo (APLICADA, 2026-11-01)
+
+**Estado:** **APLICADA en staging y en producción el 2026-11-01**, con el Worker v6 en los dos (medido con `g28_01-remote.sh … state`: `text`, nullable, grant heredado; `/config` de los dos da `"sync":{"manifestVersion":6,"groupsManifestVersion":2}`). Worker de staging `0d84adaf…` → `925a42da-8047-4150-8293-691e78a4aa03`; producción `36fc05ae…` → `d0737d7a-2964-4463-b70d-e7a10f37cb6f`. La sonda de staging, 15/15.
+
+Qué es: `tx_items.split_lines_raw text`, nullable, con la receta de tu parte en líneas. Va con el Worker de
+`manifest_version: 6` (`qa/cloud/README.md`, entrada g28_01). La aplicó la sesión de la card 1 de Grupos B por la
+Management API, sin pasar por el *SQL Editor*.
+
+### Si hay que repetirla (staging `fostjbbwstyuunmmefuk` primero; luego producción `kefvaiymtgytemwbltlz`)
+
+1. **Medir.** `bash qa/cloud/g28_01-remote.sh <staging|production> state`. Con `"tipo":"text"` ya está: salta al paso 3.
+2. **Aplicar.** `bash qa/cloud/g28_01-remote.sh <staging|production> apply`. Responde `[]` y luego el estado con
+   `"tipo":"text","nullable":"YES","grant_update":true`. Con un error no se aplicó nada (va en transacción, con
+   `lock_timeout` de 5 s: si choca con tráfico, se relanza).
+3. **Worker, SOLO después del paso 2**, desde `2.2` con este cambio: `cd gateway && npm ci && npm run deploy:staging` o
+   `npm run deploy:production`. El `predeploy` dice `check-manifest-not-older: OK (personal desplegado v5, este árbol v6 …)`.
+   Apunta el `Current Version ID` y el anterior.
+4. **Comprobar.** `curl -s -A yala <url del gateway>/config` trae `"manifestVersion":6`. En staging, además,
+   `bash qa/cloud/g28_01-staging-probe.sh` → `15/15 PASS`.
+
+**Marcha atrás.** Worker: `npx wrangler rollback <id anterior>` (último recurso: en el hueco, un teléfono con «backend = 6»
+apuntado pierde sus altas de movimientos con `unknown_column`; detalle en la cabecera de `g28_01_rollback.sql`). Columna:
+`bash qa/cloud/g28_01-remote.sh <entorno> rollback`, que aborta si algún movimiento ya tiene receta.
+
+## `g26_01_credit_card_cycle.sql` — el día de corte y el aviso de la tarjeta (aplicada según la card nmtk)
+
+**Nombre:** se escribió como `g25_01` y se renombró a `g26_01` al rebasar sobre 2.2 (2026-10-30): `g25_01` ya era `groups_forget_user` (`g25_01_forget_user_keeps_an_admin.sql`) y los dos traían un `g25_01_rollback.sql`. **Estado:** la card nmtk dice que se aplicó con el Worker v5 el 2026-10-27; medido el 2026-10-30, `/config` de staging y de producción da `"sync":{"manifestVersion":5,"groupsManifestVersion":2}`. Re-aplicarla es un no-op (salvo el comentario de las columnas, que pasaría a decir g26_01).
+
+**Ni staging ni producción.** La sesión que lo escribió (card nmtk) no despliega backend. **Lo aplica Jürgen** o una sesión
+de despliegues autorizada. **Va después de g24_01**: el Worker v5 pide también la columna de g24_01.
+
+Qué es: `accounts.credit_card_statement_day integer` y `accounts.credit_card_reminder_days_before integer`, nullable. Van
+con el Worker de `manifest_version: 5` (`qa/cloud/README.md`, entrada g26_01).
+
+### Los pasos, en orden (staging `fostjbbwstyuunmmefuk` primero; luego producción `kefvaiymtgytemwbltlz`)
+
+1. **Medir antes.** *SQL Editor* → *New query*:
+   ```sql
+   select column_name from information_schema.columns
+    where table_schema = 'public' and table_name = 'accounts'
+      and column_name in ('credit_card_statement_day', 'credit_card_reminder_days_before');
+   ```
+   Si ya salen las dos, salta al paso 4.
+2. **Aplicar.** *New query* → pega `qa/cloud/g26_01_credit_card_cycle.sql` entero → *Run*. Tiene que salir el aviso
+   `g26_01 OK · accounts.credit_card_statement_day y credit_card_reminder_days_before integer nullable, grants heredados`.
+   Con un error no se aplicó nada (va en transacción): para y avisa a Frank.
+3. **Comprobar.** Repite la consulta del paso 1: salen las dos.
+4. **Desplegar el Worker, SOLO después del paso 3** (y de g24_01), desde `2.2` con este cambio mergeado: `cd gateway && npm
+   ci && npm run deploy:staging` (staging) o `npm run deploy:production`. El `predeploy` tiene que decir
+   `check-manifest-not-older: OK (desplegado v4, este árbol v5)` (o `v3` si g24_01 tampoco estaba). Apunta el
+   `Current Version ID` y el anterior.
+5. **Comprobar el Worker.** `curl -s -A yala <url del gateway>/config` trae `"sync":{"manifestVersion":5,"groupsManifestVersion":2}`. Con un iPhone
+   con esta build en la nube, `npx wrangler tail` (con `--env production` en producción) no debe enseñar
+   `[sync-merkle] … 502`.
+
+**Marcha atrás.** Worker: `npx wrangler rollback <id anterior>`. Columnas: `g26_01_rollback.sql`, idempotente, que aborta
+si alguna cuenta ya tiene día de corte o días de aviso.
+
+## `g24_01_favorite_destination.sql` — el destino de un favorito de transferencia (PREPARADA, sin aplicar)
+
+**Ni staging ni producción.** La sesión que lo escribió (lote 12.2, card da5d) no despliega backend. **Lo aplica Jürgen**
+o una sesión de despliegues autorizada (card da5d, en «blocked» hasta entonces).
+
+Qué es: `favorite_payments.destination_account_ref uuid` nullable, con el `shortcutID` de la cuenta destino de un favorito
+de transferencia. Va con el Worker de `manifest_version: 4` (`qa/cloud/README.md`, entrada g24_01). No depende de nada más
+que de g18_01 y g21_01, ya aplicadas en los dos entornos.
+
+### Los pasos, en orden (staging `fostjbbwstyuunmmefuk` primero; luego producción `kefvaiymtgytemwbltlz`)
+
+1. **Medir antes.** *SQL Editor* → *New query*:
+   ```sql
+   select column_name from information_schema.columns
+    where table_schema = 'public' and table_name = 'favorite_payments' and column_name = 'destination_account_ref';
+   ```
+   Si ya sale `destination_account_ref`, salta al paso 4.
+2. **Aplicar.** *New query* → pega `qa/cloud/g24_01_favorite_destination.sql` entero → *Run*. Tiene que salir el aviso
+   `g24_01 OK · favorite_payments.destination_account_ref uuid nullable, grants heredados`. Con un error no se aplicó nada
+   (va en transacción): para y avisa a Frank.
+3. **Comprobar.** Repite la consulta del paso 1: sale la columna.
+4. **Desplegar el Worker, SOLO después del paso 3**, desde `2.2` con este cambio mergeado: `cd gateway && npm ci && npm run
+   deploy:staging` (staging) o `npm run deploy:production`. El `predeploy` tiene que decir `check-manifest-not-older: OK
+   (desplegado v3, este árbol v4)`. Apunta el `Current Version ID` y el anterior.
+5. **Comprobar el Worker.** `curl -s -A yala <url del gateway>/config` trae `"sync":{"manifestVersion":4}`. Con un iPhone
+   con esta build en la nube, `npx wrangler tail` (con `--env production` en producción) no debe enseñar
+   `[sync-merkle] … 502`.
+
+**Marcha atrás.** Worker: `npx wrangler rollback <id anterior>`. Columna: `g24_01_rollback.sql`, idempotente, que aborta si
+algún favorito ya tiene destino. Tras volver el Worker atrás, un teléfono que ya apuntó «backend = 4» manda la columna hasta
+su siguiente pull, y el Worker v3 rechaza esas filas enteras (`unknown_column`) en ese hueco.
+
+## `g22_01_set_member_role.sql` — hacer o quitar administrador en un grupo de la nube (aplicada en los dos entornos el 2026-10-22)
+
+> **Aplicada el 2026-10-22 en staging y producción** (Frank, con el token de gestión por `/database/query`, envuelta en
+> `begin;`/`commit;`, autorizado por Jürgen en el encargo). Antes, en los dos: `set_member_role` no existía y los md5 eran
+> los de partida (`e716f203…` / `a4bbcff1…`). Después, en los dos: una fila con `prosecdef = true`,
+> `proconfig = {search_path=public}`, `anon_puede = false`, `authenticated_puede = true`, y los md5 nuevos
+> (`efce7084…` / `f4820b99…`). Workers: staging `043cdff6` → `2574d9e8`, producción `2e2c05c4` → `9769f3fd`; `/config`
+> sigue anunciando `manifestVersion 3` en los dos. Sonda en staging con el usuario A de test: `set_member_role` sobre un
+> grupo ajeno contesta `yala_not_authorized` (el RPC existe y decide) y el control `nonexistent_rpc_probe`, 404
+> `unknown rpc`. Falta la prueba con dos teléfonos (paso 5): ticket `groups-set-member-role-deploy`, en `qa`.
+
+Qué es: un RPC nuevo, `public.set_member_role(text, text, text)`, que un admin activo usa para hacer admin a otro miembro
+activo o quitárselo, y dos RPC redefinidos: `remove_member` y `leave_group` dejan además `role = 'member'` (quien sale
+deja de ser admin, también si vuelve a entrar) y `remove_member` toma el mismo candado que `set_member_role`. No toca
+tablas ni columnas. Va con el Worker que lo tiene en la allowlist (`gateway/src/groups/rpc.ts`) y con la app 2.2 que lo
+llama. El detalle de las reglas y del banco, en `qa/cloud/README.md` (entrada g22_01).
+
+**La migración trae una guarda por md5** sobre los dos cuerpos que redefine, y sus md5 de partida salen del DDL del repo
+(medidos en el banco), **no de staging ni de producción**: si el cuerpo vivo difiere aunque sea en un espacio, la
+migración aborta sin tocar nada. Por eso el paso 1 los mide.
+
+**Sin dependencias de otras migraciones pendientes**: lee `group_members`, `split_groups`, `is_group_admin` y
+`server_hlc`, que están en los dos entornos desde el 2026-07-16.
+
+### Los pasos, en orden (staging `fostjbbwstyuunmmefuk` primero; luego producción `kefvaiymtgytemwbltlz`)
+
+1. **Medir antes.** *SQL Editor* → *New query*:
+   ```sql
+   select p.proname, p.prosecdef, p.proconfig,
+          has_function_privilege('anon', p.oid, 'EXECUTE') as anon_puede,
+          has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated_puede
+     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname = 'set_member_role';
+   ```
+   Tiene que salir vacío. Si ya sale una fila, está aplicada: salta al paso 3. Y los dos cuerpos que se redefinen:
+   ```sql
+   select p.proname, md5(p.prosrc)
+     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname in ('remove_member', 'leave_group');
+   ```
+   Tienen que salir `remove_member e716f203c405437c95c82e47deae61b5` y `leave_group a4bbcff1bca1ac1cec09f372d577d1cc`
+   (o, si ya está aplicada, `efce7084cb5cb5c902948f156c09f148` y `f4820b999e862b2f0ee6192855982318`). **Si sale otro,
+   para y avisa a Frank**: el cuerpo vivo no es el del molde, la guarda abortaría, y hay que exportar el vivo
+   (`select pg_get_functiondef('public.remove_member(text,text)'::regprocedure)`) para rehacer la migración sobre él.
+2. **Aplicar.** *New query* → pega `qa/cloud/g22_01_set_member_role.sql` entero → *Run*. El fichero no trae
+   `begin;`/`commit;`: el *SQL Editor* lo envuelve en una transacción, igual que `apply_migration` del conector. Con
+   `psql`, `psql -1 -v ON_ERROR_STOP=1 -f qa/cloud/g22_01_set_member_role.sql "$..._DB_URL"`. Tiene que salir el aviso
+   `g22_01 OK · set_member_role creada; remove_member y leave_group dejan role = member; grants intactos`. Con un
+   error no se aplicó nada: para y avisa a Frank.
+3. **Comprobar.** Repite las dos consultas del paso 1: una fila con `prosecdef = true`, `proconfig = {search_path=public}`,
+   `anon_puede = false` y `authenticated_puede = true`, y los md5 nuevos (`efce7084…`, `f4820b99…`).
+4. **Desplegar el Worker, SOLO después del paso 3**, desde `2.2` con el PR de L19-3 mergeado: `cd gateway && npm ci &&
+   npm run deploy:staging` (staging) o `npm run deploy:production`. Apunta el `Current Version ID` que imprime y el
+   anterior (`npx wrangler deployments list`, con `--env production` en producción). Ese deploy lleva también lo que
+   `gateway/RUNBOOK.md` y las secciones de arriba tengan pendiente para ese entorno: el Worker de `2.2` es el de
+   `manifest_version: 3`, así que **si g18_01 o g21_01 siguen sin aplicar en ese entorno, van antes** (sus secciones,
+   arriba), o el Merkle de los teléfonos 2.2 da 502.
+5. **Comprobar el Worker** con un build de `Yala Dev` contra staging (en producción, con un build 2.2 de TestFlight): en
+   un grupo de la nube con otra persona, hazla administradora y quítaselo; en su teléfono, tras sincronizar, la insignia
+   cambia. `npx wrangler tail` no debe enseñar `[groups-rpc] set_member_role upstream 404` (DDL sin aplicar) ni
+   `rejected: yala_bad_input` (la app manda un rol que el RPC no conoce).
+
+**Marcha atrás.** Primero el Worker: `npx wrangler rollback <id anterior>` (con `--env production` en producción). Después
+la función: `qa/cloud/g22_01_rollback.sql`, idempotente y con su propia guarda: borra `set_member_role` y devuelve
+`remove_member` y `leave_group` a su cuerpo del DDL (md5 de partida). Los roles que ya se cambiaron se quedan como
+están: son el estado real del grupo. Con la función retirada y la app 2.2 instalada, hacer o quitar administrador en un grupo de la nube da el
+error genérico hasta que vuelva.
 
 ## Referencias
 

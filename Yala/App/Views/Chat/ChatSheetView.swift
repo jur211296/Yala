@@ -18,6 +18,14 @@ struct ChatSheetView: View {
     @State private var viewModel = ChatAssistantViewModel()
     @State private var showAISettingsSheet = false
     @State private var showTopicsSheet = false
+    /// El permiso de voz y foto que pide el micrófono antes de grabar la primera vez.
+    @State private var showVoiceConsentAlert = false
+    @State private var pendingVoiceConsentInput: PendingAIInput = .voice
+    /// El tema elegido en la hoja de Temas sale al CERRARSE esa hoja: si toca preguntar N1, su aviso no puede pedirse
+    /// con la hoja todavía arriba.
+    @State private var topicAwaitingSheetDismissal: ChatTopicExample?
+    /// La ficha «Apunta un gasto» del saludo pone aquí el foco: el gasto se escribe en la caja de siempre.
+    @FocusState private var isInputFocused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Cómo está montado el chat. `.sheet`: la hoja de siempre, con su barra de navegación (iPhone, ventana
@@ -59,6 +67,8 @@ struct ChatSheetView: View {
         }
         .onDisappear {
             viewModel.persistSession()
+            // Deshacer sobre un chat cerrado no se vería: el aviso de «Conversación borrada» se va con él, y solo ese.
+            DraftDiscardUndoNotice.hide(noticeIdentifier: Self.conversationDeletedNoticeID)
         }
         .onChange(of: sessionState.chatDraftSavedSignal) { _, _ in
             consumeChatDraftSavedSignal()
@@ -96,30 +106,88 @@ struct ChatSheetView: View {
 
             if let error = viewModel.errorMessage {
                 errorBanner(error)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
 
-            if viewModel.showQuestionCounter {
+            // Las últimas diez preguntas del día llevan su contador. Con el tope alcanzado lo dice la propia caja
+            // (UX 2.2 · L14-8), y esta línea se quita para no repetir «vuelve mañana».
+            if viewModel.showQuestionCounter && viewModel.canAskMore {
                 Text(L10n.Chat.questionsRemaining(viewModel.questionsRemaining))
                     .font(DS.Typography.captionSmall)
                     .foregroundStyle(.secondary)
                     .padding(.top, DS.Spacing.xs)
+                    .accessibilityIdentifier("chat_question_counter")
             }
 
             chatInputBar
         }
+        .modifier(ChatFeedbackModifier(
+            errorMessage: viewModel.errorMessage, isRecording: viewModel.isRecording, reduceMotion: reduceMotion))
         .dismissKeyboardOnTap()
         .yalaScreenBackground(.subtle)
         .sheet(isPresented: $showAISettingsSheet) {
             AIPersonalizationSheet()
         }
-        .sheet(isPresented: $showTopicsSheet) {
+        .sheet(isPresented: $showTopicsSheet, onDismiss: sendTopicAwaitingSheetDismissal) {
+            // Las áreas se arman al montar la hoja con los datos del usuario (UX 2.2 · L14-6). Dentro del cierre y no
+            // en un `@State` aparte: un estado que el `body` no lee fuera del cierre llega vacío a la hoja
+            // (`.claude/rules/swiftui-ds.md`, medido aquí: la hoja salía sin áreas).
             ChatTopicsSheet(
-                suggestions: viewModel.suggestions,
-                isLoading: viewModel.suggestionsLoading,
-                onSelect: { suggestion in
-                    Task { await viewModel.sendSuggestion(suggestion) }
-                }
+                areas: ChatTopicAreasLogic.areas(for: ChatTopicAreasLogic.input(from: modelContext)),
+                onSelect: { example in topicAwaitingSheetDismissal = example }
             )
+        }
+        .aiConsentAlert(isPresented: $showVoiceConsentAlert, pendingInput: $pendingVoiceConsentInput) { _ in
+            Task { await viewModel.startVoiceInput() }
+        }
+        .cloudExploreConsentAlert(
+            isPresented: $viewModel.showsCloudExploreConsent,
+            onAccept: { Task { await viewModel.acceptCloudExploreConsent() } },
+            onDecline: { Task { await viewModel.declineCloudExploreConsent() } },
+            onPrivacyPolicy: { viewModel.postponeCloudExploreConsent() }
+        )
+    }
+
+    /// Una pregunta se envía; un ejemplo de Apuntar se escribe en la caja con el teclado abierto, para que el usuario
+    /// ponga su importe antes de enviarlo.
+    private func sendTopicAwaitingSheetDismissal() {
+        guard let example = topicAwaitingSheetDismissal else { return }
+        topicAwaitingSheetDismissal = nil
+        if example.sends {
+            Task { await viewModel.sendQuestion(example.text) }
+        } else {
+            viewModel.inputText = example.text
+            isInputFocused = true
+        }
+    }
+
+    /// «Nueva conversación» (UX 2.2 · L14-7, opción C): borra sin preguntar y deja unos segundos «Conversación
+    /// borrada · Deshacer», el mismo aviso que la Bandeja. Antes era «Reiniciar contexto de conversación», sin deshacer.
+    private static let conversationDeletedNoticeID = "chat_conversation_deleted_notice"
+
+    private func startNewConversation() {
+        var snapshot: ChatConversationSnapshot?
+        dsWithAnimation(reduceMotion, DS.Animation.appear) {
+            snapshot = viewModel.resetConversationContext()
+        }
+        guard let snapshot else { return }
+        // Borra sin preguntar: el toque es la confirmación del borrado (card C8; mapa de `DS.Haptic`).
+        DS.Haptic.warning()
+        let viewModel = viewModel
+        let reduceMotion = reduceMotion
+        DraftDiscardUndoNotice.show(
+            message: L10n.UXL14D.conversationDeleted,
+            systemImage: "trash",
+            undoTitle: L10n.UXL8.undo,
+            noticeIdentifier: Self.conversationDeletedNoticeID,
+            undoIdentifier: "chat_conversation_undo"
+        ) {
+            var restored = false
+            dsWithAnimation(reduceMotion, DS.Animation.appear) {
+                restored = viewModel.restoreConversation(snapshot)
+            }
+            // Éxito solo si de verdad volvió: con una pregunta nueva en marcha no se repone nada.
+            if restored { DS.Haptic.success() }
         }
     }
 
@@ -169,10 +237,12 @@ struct ChatSheetView: View {
                     ChatGreetingBubble(suggestions: [], isPreparing: false, onSelect: sendSuggestion)
                     unavailableState
                 } else {
-                    ChatGreetingBubble(
+                    // UX 2.2 · L14-4: el saludo dice las dos cosas que hace, apuntar y preguntar.
+                    ChatTwoUsesGreeting(
                         suggestions: Array(viewModel.suggestions.prefix(3)),
                         isPreparing: viewModel.suggestions.isEmpty && viewModel.suggestionsLoading,
-                        onSelect: sendSuggestion
+                        onSelect: sendSuggestion,
+                        onLogExpense: { isInputFocused = true }
                     )
                 }
             }
@@ -216,16 +286,14 @@ struct ChatSheetView: View {
         viewModel.isRecording || viewModel.isTranscribing
     }
 
-    /// Una sola línea centrada al final del hilo: «Reiniciar contexto». Sin contador debajo, para que entre respuesta y
+    /// Una sola línea centrada al final del hilo: «Nueva conversación». Sin contador debajo, para que entre respuesta y
     /// respuesta no haya más interrupciones grises que la fecha de arriba.
     private var resetContextRow: some View {
         Button {
-            withAnimation(.easeInOut(duration: 0.25)) {
-                viewModel.resetConversationContext()
-            }
+            startNewConversation()
         } label: {
             HStack(spacing: DS.Spacing.xs) {
-                Image(systemName: "arrow.counterclockwise")
+                Image(systemName: "square.and.pencil")
                 Text(L10n.Chat.resetContext)
             }
             .font(DS.Typography.caption)
@@ -234,6 +302,7 @@ struct ChatSheetView: View {
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity)
         .padding(.top, DS.Spacing.sm)
+        .accessibilityIdentifier("chat_new_conversation")
     }
 
     private var unavailableState: some View {
@@ -252,7 +321,7 @@ struct ChatSheetView: View {
             } label: {
                 Text(L10n.Chat.retry)
                     .font(DS.Typography.body.weight(.semibold))
-                    .foregroundStyle(Color.contrastingText(for: theme.accent))
+                    .foregroundStyle(theme.onAccent)
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.sm)
                     .background(Capsule().fill(theme.accent))
@@ -276,6 +345,8 @@ struct ChatSheetView: View {
                     ForEach(viewModel.messages) { message in
                         ChatMessageBubble(message: message, viewModel: viewModel)
                             .id(message.id)
+                            // Cada mensaje entra subiendo y fundido, no de golpe (card pjum).
+                            .transition(.opacity.combined(with: .move(edge: .bottom)))
                     }
 
                     if viewModel.showContextHint {
@@ -291,6 +362,7 @@ struct ChatSheetView: View {
                     if viewModel.isLoading {
                         ChatLoadingIndicator()
                             .id("loading")
+                            .transition(.opacity)
                     }
 
                     // Reset contexto: aparece cuando hay turnos guardados y no está cargando.
@@ -302,11 +374,18 @@ struct ChatSheetView: View {
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.md)
+                // Implícitas: en la columna del iPad el chat vive junto a una pestaña, donde `withAnimation` no anima.
+                .dsAnimation(DS.Animation.appear, value: viewModel.messages.count, reduceMotion: reduceMotion)
+                .dsAnimation(DS.Animation.appear, value: viewModel.isLoading, reduceMotion: reduceMotion)
+                // La tarjeta de un borrador que pasa a guardado, descartado o fallido (card C8): aquí y no en la tarjeta,
+                // para que lo de debajo suba a la vez que ella se encoge.
+                .dsAnimation(DS.Animation.appear, value: draftStatuses, reduceMotion: reduceMotion)
                 .readableChatWidth()
             }
             .scrollDismissesKeyboard(.interactively)
             .onChange(of: viewModel.messages.count) { _, _ in
-                withAnimation {
+                // Con Reducir movimiento, sin desplazamiento animado (card oxyr).
+                withAnimation(reduceMotion ? nil : .default) {
                     // Si hay turnos completos, scroll hasta el botón de reset (último elemento del stack).
                     // Si está cargando, al indicador. Sino, al último mensaje.
                     let target: AnyHashable
@@ -323,11 +402,22 @@ struct ChatSheetView: View {
                 }
             }
             .onChange(of: viewModel.isLoading) { _, isLoading in
+                // Con Reducir movimiento, sin desplazamiento animado (card oxyr).
                 if isLoading {
-                    withAnimation { proxy.scrollTo("loading", anchor: .bottom) }
+                    withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("loading", anchor: .bottom) }
                 } else if viewModel.turnCount > 0 {
-                    withAnimation { proxy.scrollTo("resetContext", anchor: .bottom) }
+                    withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("resetContext", anchor: .bottom) }
                 }
+            }
+        }
+    }
+
+    /// El estado de cada borrador del hilo, en orden: cambia cuando uno se guarda, se descarta o falla.
+    private var draftStatuses: [ChatTransactionDraft.Status] {
+        viewModel.messages.flatMap { message in
+            (message.attachments ?? []).flatMap { attachment -> [ChatTransactionDraft.Status] in
+                guard case .drafts(let drafts) = attachment else { return [] }
+                return drafts.map(\.status)
             }
         }
     }
@@ -358,15 +448,20 @@ struct ChatSheetView: View {
                     accent: theme.accent,
                     reduceMotion: reduceMotion,
                     onCancel: { viewModel.cancelVoiceInput() },
-                    onDone: { Task { await viewModel.stopVoiceInput() } }
+                    onDone: {
+                        // Enviar lo dictado, como enviar texto: golpe ligero (card C8).
+                        DS.Haptic.light()
+                        Task { await viewModel.stopVoiceInput() }
+                    }
                 )
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             } else {
                 idleInputBar
             }
         }
-        .animation(.easeInOut(duration: 0.25), value: isVoiceActive)
-        .animation(.easeInOut(duration: 0.2), value: viewModel.isTranscribing)
+        // El panel de voz sube y se funde; con Reducir movimiento, en seco (card C6).
+        .animation(reduceMotion ? nil : DS.Animation.appear, value: isVoiceActive)
+        .animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.isTranscribing)
         .readableChatWidth()
     }
 
@@ -385,20 +480,34 @@ struct ChatSheetView: View {
             topicsButton
 
             HStack(alignment: .bottom, spacing: DS.Spacing.sm) {
-                TextField(L10n.Chat.inputPlaceholder, text: $viewModel.inputText, axis: .vertical)
-                    .font(DS.Typography.body)
-                    .lineLimit(1...4)
-                    .textFieldStyle(.plain)
-                    .frame(minHeight: inputControlSize)
-                    .disabled(!viewModel.isAIAvailable)
-                    .accessibilityIdentifier("chat_input")
+                if viewModel.canAskMore {
+                    TextField(L10n.Chat.inputPlaceholder, text: $viewModel.inputText, axis: .vertical)
+                        .font(DS.Typography.body)
+                        .lineLimit(1...4)
+                        .textFieldStyle(.plain)
+                        .frame(minHeight: inputControlSize)
+                        .disabled(!viewModel.isAIAvailable)
+                        .focused($isInputFocused)
+                        .accessibilityIdentifier("chat_input")
 
-                if hasTypedText {
-                    sendButton
-                        .transition(.scale.combined(with: .opacity))
+                    if hasTypedText {
+                        sendButton
+                            .transition(.scale.combined(with: .opacity))
+                    } else {
+                        micButton
+                            .transition(.scale.combined(with: .opacity))
+                    }
                 } else {
-                    micButton
-                        .transition(.scale.combined(with: .opacity))
+                    // UX 2.2 · L14-8 (opción B): con el tope la caja se apaga y dice cuándo vuelve. Antes dejaba
+                    // escribir y el botón de enviar se apagaba sin más. La medianoche es la del teléfono: es su
+                    // contador (`ChatAssistantService.questionsToday`) el que apaga la caja.
+                    Text(L10n.UXL14D.limitBox)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.thSecondaryText)
+                        .frame(maxWidth: .infinity, minHeight: inputControlSize, alignment: .leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.trailing, DS.Spacing.sm)
+                        .accessibilityIdentifier("chat_limit_box")
                 }
             }
             .animation(.easeOut(duration: 0.15), value: hasTypedText)
@@ -408,6 +517,7 @@ struct ChatSheetView: View {
             .background(.thCard)
             .clipShape(ChatBubbleShape())
         }
+        // Con el tope no se atenúa la barra entera: el aviso de la caja tiene que leerse (contraste AA). Se atenúa el «+».
         .opacity(viewModel.isAIAvailable ? 1 : 0.5)
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.sm)
@@ -424,7 +534,8 @@ struct ChatSheetView: View {
                 .background(Circle().fill(.thCard))
         }
         .buttonStyle(.plain)
-        .disabled(isVoiceActive || !viewModel.isAIAvailable)
+        .disabled(isVoiceActive || !viewModel.isAIAvailable || !viewModel.canAskMore)
+        .opacity(viewModel.canAskMore ? 1 : 0.5)
         .accessibilityLabel(L10n.Chat.topicsButton)
         .accessibilityIdentifier("chat_topics")
     }
@@ -447,11 +558,12 @@ struct ChatSheetView: View {
 
     private var sendButton: some View {
         Button {
+            DS.Haptic.light()
             Task { await viewModel.sendQuestion(viewModel.inputText) }
         } label: {
             Image(systemName: "arrow.up")
                 .font(.system(size: 16, weight: .bold)) // A11Y-DT: send icon
-                .foregroundStyle(Color.contrastingText(for: theme.accent))
+                .foregroundStyle(theme.onAccent)
                 .frame(width: inputControlSize, height: inputControlSize)
                 .background(Circle().fill(theme.accent))
         }
@@ -469,11 +581,44 @@ struct ChatSheetView: View {
     }
 
     private func toggleVoiceInput() async {
-        if viewModel.isRecording {
+        // El audio va a transcribirse con un servicio de IA: sin el permiso de voz y foto se pide antes (decisión A de
+        // Jürgen, `ChatVoiceInputGateLogic`).
+        switch ChatVoiceInputGateLogic.action(
+            isRecording: viewModel.isRecording,
+            dataConsentAccepted: appPreferences.aiDataConsentAccepted
+        ) {
+        case .stop:
             await viewModel.stopVoiceInput()
-        } else {
+        case .askConsent:
+            pendingVoiceConsentInput = .voice
+            showVoiceConsentAlert = true
+        case .start:
             await viewModel.startVoiceInput()
         }
+    }
+}
+
+/// El banner de error entra y sale con `.appear` y vibra `error()` al aparecer; empezar a grabar vibra `medium()`
+/// (card C8; mapa de `DS.Haptic`). Aparte del `body` de `ChatSheetView`: como mucho tres modificadores por
+/// `ViewModifier` y cierres de una línea, por el compilador del CI (`swiftui-ds.md`).
+private struct ChatFeedbackModifier: ViewModifier {
+    let errorMessage: String?
+    let isRecording: Bool
+    let reduceMotion: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .dsAnimation(DS.Animation.appear, value: errorMessage, reduceMotion: reduceMotion)
+            .onChange(of: errorMessage) { old, new in Self.errorChanged(from: old, to: new) }
+            .onChange(of: isRecording) { was, now in Self.recordingChanged(from: was, to: now) }
+    }
+
+    private static func errorChanged(from old: String?, to new: String?) {
+        if new != nil, new != old { DS.Haptic.error() }
+    }
+
+    private static func recordingChanged(from was: Bool, to now: Bool) {
+        if now, !was { DS.Haptic.medium() }
     }
 }
 

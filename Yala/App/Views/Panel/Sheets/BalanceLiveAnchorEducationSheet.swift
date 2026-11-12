@@ -8,6 +8,10 @@ import SwiftUI
 /// Sheet educativo que explica al usuario por qué su saldo "hoy" puede
 /// diferir del último punto de la curva histórica cuando tiene dinero en
 /// varias monedas. Se abre desde la pill "Hoy" y desde el overlay del dot.
+///
+/// UX 2.2 · L3-15 (opción B): un solo título (el de la barra), la explicación en dos frases y la SUMA a la vista,
+/// moneda por moneda al cambio de hoy, hasta el total. Antes listaba PEN y USD sin decir que sumados daban el saldo,
+/// y explicaba la diferencia en un párrafo de cinco líneas.
 struct BalanceLiveAnchorEducationSheet: View {
     let liveAnchorValue: Double
     /// `true` si las divisas de abajo convertidas con una tasa que no era la de hoy pesan en el
@@ -18,7 +22,6 @@ struct BalanceLiveAnchorEducationSheet: View {
     /// opción B), que sustituye al OR por divisa del 2026-09-08. Consecuencia aceptada: 30 USD con
     /// la tasa caducada ya no marcan un saldo de 42.000 €; su fila del desglose sí lleva «≈».
     let liveAnchorIsApproximate: Bool
-    let historicalValue: Double?
     let nativeBalances: [String: Decimal]
     let preferredCurrencyCode: String
 
@@ -30,8 +33,7 @@ struct BalanceLiveAnchorEducationSheet: View {
 
     /// Umbral para considerar un balance multi-moneda "esencialmente cero"
     /// tras la conversión al TC actual. Filtra rows del breakdown con saldo
-    /// residual (EUR -0.00, etc.) y omite la línea histórica del párrafo
-    /// cuando la diferencia con `liveAnchorValue` es despreciable.
+    /// residual (EUR -0.00, etc.).
     private static let nearZeroEpsilon: Double = 0.01
 
     private var isLargeDetent: Bool { selectedDetent == .large }
@@ -43,7 +45,7 @@ struct BalanceLiveAnchorEducationSheet: View {
                     VStack(alignment: .leading, spacing: DS.Spacing.lg) {
                         todayBalanceSection
                         explanationSection
-                        breakdownSection
+                        sumSection
                     }
                     .padding(.horizontal, DS.Spacing.xl)
                     .padding(.vertical, DS.Spacing.lg)
@@ -69,9 +71,6 @@ struct BalanceLiveAnchorEducationSheet: View {
 
     private var todayBalanceSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-            Text(L10n.Panel.LiveAnchorEducation.todayQuestion)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.thPrimaryText)
             AmountText(
                 value: liveAnchorValue,
                 currencyCode: preferredCurrencyCode,
@@ -85,48 +84,25 @@ struct BalanceLiveAnchorEducationSheet: View {
 
     // MARK: - Explanation
 
+    /// Dos frases: qué es el número y por qué se mueve solo.
     private var explanationSection: some View {
         let identifier = appPreferences.currencyIdentifier(for: preferredCurrencyCode)
-        return VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-            Text(L10n.Panel.LiveAnchorEducation.whyQuestion)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.thPrimaryText)
-                .fixedSize(horizontal: false, vertical: true)
-            Text(explanationBody(preferredIdentifier: identifier))
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.thSecondaryText)
-                .fixedSize(horizontal: false, vertical: true)
-        }
+        return Text(
+            L10n.Panel.LiveAnchorEducation.bodyLineOneFormat(identifier) + " "
+                + L10n.Panel.LiveAnchorEducation.bodyShortWhy
+        )
+        .font(DS.Typography.subheadline)
+        .foregroundStyle(.thSecondaryText)
+        .fixedSize(horizontal: false, vertical: true)
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private func explanationBody(preferredIdentifier: String) -> String {
-        var parts: [String] = [
-            L10n.Panel.LiveAnchorEducation.bodyLineOneFormat(preferredIdentifier)
-        ]
-        if let historical = historicalValue, abs(historical - liveAnchorValue) > Self.nearZeroEpsilon {
-            // SIN marca a propósito, y es la única excepción de esta hoja: `historicalValue` es el
-            // último punto de la curva —montos convertidos al TC de SU día, no al de hoy— y quien
-            // sabría si aquellas conversiones fueron aproximadas es el acumulador de
-            // `TrendDataProcessor`, que hoy no lo calcula (`fx-historical-balance-curve-unmarked`).
-            // Marcarlo con `liveAnchorIsApproximate` sería atribuirle la incertidumbre de OTRO
-            // número: justo lo que este ticket viene a corregir.
-            let formatted = appPreferences.currency(
-                historical,
-                currencyCode: preferredCurrencyCode,
-                forceFullPrecision: false
-            )
-            parts.append(L10n.Panel.LiveAnchorEducation.bodyLineTwoFormat(formatted))
-        }
-        parts.append(L10n.Panel.LiveAnchorEducation.bodyLineThree)
-        return parts.joined(separator: " ")
     }
 
     // MARK: - Breakdown
 
-    private var breakdownSection: some View {
+    /// La suma: cada moneda pasada a la principal al cambio de hoy, y el total, que es la cifra de arriba.
+    private var sumSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            Text(L10n.Panel.LiveAnchorEducation.breakdownToggle)
+            Text(L10n.Panel.LiveAnchorEducation.sumTitle)
                 .font(DS.Typography.headline)
                 .foregroundStyle(.thPrimaryText)
 
@@ -135,9 +111,12 @@ struct BalanceLiveAnchorEducationSheet: View {
                     if index > 0 {
                         Divider()
                     }
-                    breakdownRow(row)
+                    breakdownRow(row, sign: index == 0 ? nil : "+")
                         .padding(.vertical, DS.Spacing.sm)
                 }
+                Divider()
+                totalRow
+                    .padding(.vertical, DS.Spacing.sm)
             }
             .padding(.horizontal, DS.Spacing.md)
             .background(.thCard, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
@@ -145,8 +124,36 @@ struct BalanceLiveAnchorEducationSheet: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func breakdownRow(_ row: BreakdownRow) -> some View {
+    private var totalRow: some View {
         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+            Text(verbatim: "=")
+                .font(DS.Typography.label)
+                .foregroundStyle(.thSecondaryText)
+                .frame(width: DS.Spacing.md, alignment: .center)
+                .accessibilityHidden(true)
+            Text(L10n.Panel.LiveAnchorEducation.title)
+                .font(DS.Typography.label)
+                .foregroundStyle(.thPrimaryText)
+            Spacer()
+            AmountText(
+                value: liveAnchorValue,
+                currencyCode: preferredCurrencyCode,
+                font: DS.Typography.headline,
+                secondaryFont: DS.Typography.caption,
+                isEstimate: liveAnchorIsApproximate
+            )
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("live_anchor_sum_total")
+    }
+
+    private func breakdownRow(_ row: BreakdownRow, sign: String?) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+            Text(verbatim: sign ?? " ")
+                .font(DS.Typography.label)
+                .foregroundStyle(.thSecondaryText)
+                .frame(width: DS.Spacing.md, alignment: .center)
+                .accessibilityHidden(true)
             Text(row.code)
                 .font(DS.Typography.label)
                 .foregroundStyle(.thPrimaryText)

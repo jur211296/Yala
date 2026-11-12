@@ -108,6 +108,24 @@ sin reabrirlo:
   y la medianoche local cae en el día anterior en zonas al este de Greenwich. Un periodo cerrado se valora a su
   CIERRE, no a su último movimiento.
 
+## El saldo de HOY deja fuera lo fechado después de hoy (2026-10-18)
+
+Decisión A de Jürgen (ticket `balance-figure-counts-future-dated-rows-the-curve-never-draws`): un movimiento con fecha
+futura no entra en el saldo hasta que llega su fecha, para que cifra y curva digan lo mismo. El corte es UNO,
+`LiveBalanceCalculator.TodayCutoff` (por día: cuenta si `date <` final del día de hoy según el calendario), y lo usan el
+saldo vivo, el P&L cambiario (viaja en `Breakdown.cutoff`: si el P&L sumara una fila que el saldo no, el FIFO descuadra
+y la divisa desaparece), el saldo por cuenta (`AccountBalanceCalculator`), el formulario de cuenta, la curva por cuenta
+y la métrica saldo de `TrendDataProcessor` (también con un rango que acaba en el futuro). Tres cosas que no se tocan sin
+reabrirlo:
+
+- **Un saldo nuevo de hoy pasa por `TodayCutoff`**, no por `<= now` ni por `interval.contains`: el instante deja fuera
+  la foto de hoy a las 12:00, y el intervalo cerrado mete la medianoche de mañana.
+- **La salud financiera NO usa el corte** (`asOf: .distantFuture`): su cobertura resta lo pendiente, y lo pendiente ya
+  descuenta lo pagado con un movimiento enlazado aunque sea futuro. Con el corte, ese pago no estaba en ningún lado.
+- **El widget se rehace al cambiar de día** (`WidgetDataCache.refreshIfBuiltOnAnotherDay`, desde la vuelta a primer
+  plano y `.NSCalendarDayChanged`): la extensión solo relee la foto. El conector `mcp/` todavía no corta (ticket
+  `mcp-connector-counts-future-dated-rows-in-todays-balance`). Pin: `BalanceFutureDatedCutoffTests`.
+
 ## Reabrir una fila para que el reparador la recalcule NO es neutro
 
 `isExchangeRateProvisional = true` parece una marca inocente —«que la mire otro»— y no lo es:

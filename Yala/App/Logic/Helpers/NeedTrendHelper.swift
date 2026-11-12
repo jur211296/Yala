@@ -37,12 +37,13 @@ struct NeedTrendHelper {
         for tx in transactions {
             // Strict Filter:
             // 1. Exclude balance adjustments and transfers
-            // 2. Must have a category
-            // 3. Category must NOT be income (Excludes Incomes)
-            // 4. Excluir patas de préstamo derivadas del bridge (préstamo a grupos).
+            // 2. Solo gastos, con la regla de toda la app (la categoría manda; sin categoría, el signo). Un gasto sin
+            //    categoría no tiene necesidad y cae en «Sin clasificar» (decisión A de Jürgen, 2026-10-23): hasta
+            //    entonces se quedaba fuera y la gráfica sumaba menos que el gasto del período.
+            // 3. Excluir patas de préstamo derivadas del bridge (préstamo a grupos).
             guard !adjustment.isSuppressed(tx) else { continue }
             guard tx.balanceAdjustmentType == nil else { continue }
-            guard let category = tx.category, !category.isIncome else { continue }
+            guard !TransactionClassificationLogic.isIncome(tx) else { continue }
 
             // Use TrendGrouping extension for consistent date bucketing
             let dateKey = grouping.dateKey(for: tx.date, calendar: calendar)
@@ -85,7 +86,7 @@ struct NeedTrendHelper {
                 // Accumulate signed amount (Expenses usually negative, Refunds positive)
                 let amount = doubleAmount
 
-                let need = tx.subcategory?.need ?? .unclassified
+                let need = tx.category == nil ? .unclassified : (tx.subcategory?.need ?? .unclassified)
 
                 switch need {
                 case .essential: essential += amount

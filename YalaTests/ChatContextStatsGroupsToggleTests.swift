@@ -262,7 +262,8 @@ struct ChatContextStatsGroupsToggleWiringTests {
     func runAskFlow_passesTheStatsToggle() throws {
         let src = try Self.source("Yala/Services/ChatAssistantService.swift")
         let start = try #require(src.range(of: "private func runAskFlow("))
-        let end = try #require(src.range(of: "let systemPrompt = buildSystemPrompt(", range: start.upperBound..<src.endIndex))
+        // Desde el 2026-10-20 el prompt lo arma `makeAskQuery` justo después del builder.
+        let end = try #require(src.range(of: "query = try makeAskQuery(", range: start.upperBound..<src.endIndex))
         let body = String(src[start.upperBound..<end.lowerBound])
 
         #expect(body.contains(

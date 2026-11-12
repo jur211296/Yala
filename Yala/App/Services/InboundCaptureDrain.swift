@@ -2,8 +2,8 @@
 //  InboundCaptureDrain.swift
 //  Yala
 //
-//  El ÚNICO sitio que convierte las capturas que esperan en el App Group —gastos de Apple Pay y dictados de
-//  Siri— en borradores del store personal. Lo llaman el arranque, la vuelta a primer plano, el final de una
+//  El ÚNICO sitio que convierte las capturas que esperan en el App Group —gastos de Apple Pay, dictados de
+//  Siri y los «Ya lo pagué» del widget de Pagos planificados— en borradores o registros del store personal. Lo llaman el arranque, la vuelta a primer plano, el final de una
 //  ráfaga de cambios remotos y el cierre de una sesión privada.
 //
 //  ## Por qué un solo sitio
@@ -36,12 +36,15 @@ enum InboundCaptureDrain {
         context: ModelContext,
         wipeArmed: Bool = StorageModePersistence.isSignOutWipeArmed(),
         applePay: @MainActor (ModelContext) -> Int = { ApplePayDraftService.processPending(context: $0) },
-        siri: @MainActor (ModelContext) -> Int = { SiriDraftService.processPending(context: $0) }
+        siri: @MainActor (ModelContext) -> Int = { SiriDraftService.processPending(context: $0) },
+        widgetPaid: @MainActor (ModelContext) -> Int = { ScheduledPaymentPayNow.processWidgetPaidRequests(context: $0) }
     ) -> Int {
         guard !wipeArmed else { return 0 }
         let applePayCreated = applePay(context)
         let siriCreated = siri(context)
-        return applePayCreated + siriCreated
+        // «Ya lo pagué» del widget de Pagos planificados: el registro con la lógica de «Apuntarlo ahora».
+        let widgetPaidCreated = widgetPaid(context)
+        return applePayCreated + siriCreated + widgetPaidCreated
     }
 
     /// Cuántas capturas de Apple Pay y Siri esperan todavía en el App Group. Las colas son inyectables para

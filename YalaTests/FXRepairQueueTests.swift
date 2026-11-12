@@ -59,6 +59,18 @@ struct FXRepairQueueTests {
         CurrencyDefaults.currentPreferred == "JPY" ? "PEN" : "JPY"
     }
 
+    /// La fila PARCIAL de estos tests: la base y la preferida, sin la divisa de la transacción.
+    ///
+    /// **Nunca como literal `["USD": 1.0, preferred: 3.75]`.** La preferida sale del entorno, y con el
+    /// `UserDefaults` limpio es la de la región del simulador: en el runner del CI (`en_US`) es "USD".
+    /// Ahí el literal repite la clave y Swift aborta el PROCESO de tests entero («Dictionary literal
+    /// contains duplicate keys»), no solo el test. Si la preferida ES la base, su tasa ya es 1.0.
+    private func partialRates(preferred: String) -> [String: Double] {
+        var rates = ["USD": 1.0]
+        if preferred != "USD" { rates[preferred] = 3.75 }
+        return rates
+    }
+
     // MARK: - AC 5: dos pasadas no reescriben dos veces
 
     /// **El test del ticket.** Fila parcial (existe, pero sin la divisa de la transacción) y sin red:
@@ -70,7 +82,7 @@ struct FXRepairQueueTests {
         let foreign = foreignCode
 
         // Fila PARCIAL: trae la base y la preferida, pero NO la divisa de la transacción.
-        let context = try makeContext(on: date, rates: ["USD": 1.0, preferred: 3.75])
+        let context = try makeContext(on: date, rates: partialRates(preferred: preferred))
         let tx = TransactionItem(date: date, amount: 1000, currencyCode: foreign)
         context.insert(tx)
         try context.save()
@@ -107,7 +119,7 @@ struct FXRepairQueueTests {
         let preferred = CurrencyDefaults.currentPreferred
         let foreign = foreignCode
 
-        let context = try makeContext(on: date, rates: ["USD": 1.0, preferred: 3.75])
+        let context = try makeContext(on: date, rates: partialRates(preferred: preferred))
         let tx = TransactionItem(date: date, amount: 1000, currencyCode: foreign)
         context.insert(tx)
         try context.save()
@@ -232,7 +244,7 @@ struct FXRepairQueueTests {
         let foreign = foreignCode
 
         let context = try makeContext(
-            on: date, rates: ["USD": 1.0, preferred: 3.75, foreign: 150.0])
+            on: date, rates: partialRates(preferred: preferred).merging([foreign: 150.0]) { _, new in new })
         let provider = RecordingRateProvider()
         let service = ExchangeRateService(provider: provider)
 
@@ -254,7 +266,7 @@ struct FXRepairQueueTests {
         let foreign = foreignCode
 
         // Fila PARCIAL: existe y trae la preferida, pero no la divisa que hace falta.
-        let context = try makeContext(on: date, rates: ["USD": 1.0, preferred: 3.75])
+        let context = try makeContext(on: date, rates: partialRates(preferred: preferred))
         let provider = RecordingRateProvider()
         let service = ExchangeRateService(provider: provider)
 

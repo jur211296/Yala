@@ -114,7 +114,7 @@ nonisolated enum StorageRowGateLogic {
     /// `isEngaged`— y el kill jamás la ha tocado.
     ///
     /// **Y gatea el RENDER de la card, que no es lo mismo que gatear la migración.** El flujo que arranca
-    /// esa card —consent, doble confirmación, chooser, `startMigration`— no vuelve a preguntar por el
+    /// esa card —la hoja única de activar (UX 2.2 · L20-11), `startMigration`— no vuelve a preguntar por el
     /// flag en ningún punto, así que quien tapeó «Migrar a la nube» un segundo antes de que aterrizara el
     /// snapshot nuevo terminaba migrando con el kill ya puesto. Por eso el mismo término se re-mide en
     /// `StorageSettingsView.proceedToSignInStep`, que es el último sitio antes del punto de no retorno.

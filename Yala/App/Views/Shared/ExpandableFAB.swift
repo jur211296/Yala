@@ -47,12 +47,13 @@ struct ExpandableFAB: View {
     )
     private static let fabScaleTransition: AnyTransition = .scale(scale: 0.8, anchor: .bottomTrailing).combined(with: .opacity)
 
+    // Sin envoltorio: los anima la implícita del `VStack` del `body` (card oxyr).
     private func toggleMenu() {
-        dsWithAnimation(reduceMotion, Self.fabSpring) { showMenu.toggle() }
+        showMenu.toggle()
     }
 
     private func dismissMenu() {
-        dsWithAnimation(reduceMotion, Self.fabSpring) { showMenu = false }
+        showMenu = false
     }
 
     // MARK: - Body
@@ -64,6 +65,8 @@ struct ExpandableFAB: View {
             }
             mainButton
         }
+        // Implícita: en una pestaña un `withAnimation` no anima (card oxyr).
+        .animation(reduceMotion ? nil : Self.fabSpring, value: showMenu)
     }
 
     // MARK: - Main Button
@@ -75,7 +78,7 @@ struct ExpandableFAB: View {
         } label: {
             Image(systemName: showMenu ? "xmark" : "plus")
                 .font(DS.Typography.title)
-                .foregroundStyle(theme.usesMaterial || showMenu ? .white : Color.contrastingText(for: mainTint))
+                .foregroundStyle(theme.usesMaterial || showMenu ? .white : theme.onFill(mainTint))
                 .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
                 .rotationEffect(.degrees(showMenu ? 90 : 0))
                 .modifier(FABSurfaceModifier(base: showMenu ? DS.Semantic.disabledForeground : mainTint))

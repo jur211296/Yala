@@ -116,11 +116,24 @@ private enum Apply {
     static func boolOpt<M>(_ kp: ReferenceWritableKeyPath<M, Bool?>) -> ColumnApplier<M> {
         ColumnApplier { m, v, _ in m[keyPath: kp] = WireValueDecoder.bool(v) }
     }
+    /// uuid → `UUID?` crudo (no se resuelve a un objeto). `null` o un string que no es UUID → `nil`. Para un enlace
+    /// que se guarda como UUID y no como relación (`Account.parentAccountID`): no hay nada que resolver ni que
+    /// apuntar como colgado, el UUID se conserva aunque el destino no haya llegado.
+    static func uuidOpt<M>(_ kp: ReferenceWritableKeyPath<M, UUID?>) -> ColumnApplier<M> {
+        ColumnApplier { m, v, _ in m[keyPath: kp] = WireValueDecoder.uuid(v) }
+    }
     static func intReq<M>(_ kp: ReferenceWritableKeyPath<M, Int>) -> ColumnApplier<M> {
         ColumnApplier { m, v, _ in if let i = WireValueDecoder.int(v) { m[keyPath: kp] = i } }
     }
     static func intOpt<M>(_ kp: ReferenceWritableKeyPath<M, Int?>) -> ColumnApplier<M> {
         ColumnApplier { m, v, _ in m[keyPath: kp] = WireValueDecoder.int(v) }
+    }
+    /// int → `Int` donde NULL significa 0 (el emisor manda 0 como NULL para casar con las filas que nacieron sin la
+    /// columna). Un valor que no es entero tampoco pisa nada.
+    static func intNullAsZero<M>(_ kp: ReferenceWritableKeyPath<M, Int>) -> ColumnApplier<M> {
+        ColumnApplier { m, v, _ in
+            if case .null = v { m[keyPath: kp] = 0 } else if let i = WireValueDecoder.int(v) { m[keyPath: kp] = i }
+        }
     }
     static func dateReq<M>(_ kp: ReferenceWritableKeyPath<M, Date>) -> ColumnApplier<M> {
         ColumnApplier { m, v, _ in if let d = WireValueDecoder.date(v) { m[keyPath: kp] = d } }
@@ -218,6 +231,7 @@ enum EntityApplyMap {
             "split_my_value": Apply.moneyOpt(\.splitMyValue),
             "split_divisor": Apply.moneyOpt(\.splitDivisor),
             "created_at": Apply.dateReq(\.createdAt),
+            "split_lines_raw": Apply.textOpt(\.splitLinesRaw),
         ]
     )
 
@@ -335,6 +349,13 @@ enum EntityApplyMap {
             "account_ref": ColumnApplier { m, v, ctx in
                 m.account = try resolveRef(v, entity: "favorite_payments", column: "account_ref",
                                        rowSyncID: m.syncID, context: ctx) {
+                    try findAccount(byShortcutID: $0, context: ctx)
+                }
+            },
+            // Card da5d (`since: 4`): solo llega si este teléfono pidió `v4` (`SyncCapability`).
+            "destination_account_ref": ColumnApplier { m, v, ctx in
+                m.destinationAccount = try resolveRef(v, entity: "favorite_payments", column: "destination_account_ref",
+                                                  rowSyncID: m.syncID, context: ctx) {
                     try findAccount(byShortcutID: $0, context: ctx)
                 }
             },
@@ -532,6 +553,12 @@ enum EntityApplyMap {
             "is_system_account": Apply.boolReq(\.isSystemAccount),
             "credit_card_payment_reminder": Apply.boolReq(\.creditCardPaymentReminder),
             "credit_card_payment_day": Apply.intReq(\.creditCardPaymentDay),
+            // Tarjeta con varias divisas (`since: 2`): solo llega si este teléfono pidió `v2` (`SyncCapability`).
+            "parent_account_id": Apply.uuidOpt(\.parentAccountID),
+            // Card nmtk (`since: 5`): solo llegan si este teléfono pidió `v5` (`SyncCapability`). En los días de aviso,
+            // NULL es 0: así viaja el «mismo día» (`EntityEmissionMap.account`).
+            "credit_card_statement_day": Apply.intOpt(\.creditCardStatementDay),
+            "credit_card_reminder_days_before": Apply.intNullAsZero(\.creditCardReminderDaysBefore),
         ]
     )
 
@@ -663,6 +690,7 @@ enum EntityApplyMap {
             "estimation_method": Apply.stringReq(\.estimationMethod),
             "manual_amount": Apply.moneyOpt(\.manualAmount),
             "custom_months_raw": Apply.csvOpt(\.customMonthsRaw),
+            "amount_changes_raw": Apply.textOpt(\.amountChangesRaw),
             "category_ref": ColumnApplier { m, v, ctx in
                 m.category = try resolveRef(v, entity: "cashflow_lines", column: "category_ref",
                                         rowSyncID: m.id, context: ctx) {
@@ -882,6 +910,11 @@ enum EntityApplyMap {
             guard let row = try findFavoritePayment(bySyncID: dangler.rowSyncID, context: context) else { return .rowGone }
             guard let t = try findAccount(byShortcutID: target, context: context) else { return .targetMissing }
             row.account = t
+            return .resolved
+        case (favoritePayment.table, "destination_account_ref"):
+            guard let row = try findFavoritePayment(bySyncID: dangler.rowSyncID, context: context) else { return .rowGone }
+            guard let t = try findAccount(byShortcutID: target, context: context) else { return .targetMissing }
+            row.destinationAccount = t
             return .resolved
         case (favoritePayment.table, "subcategory_ref"):
             guard let row = try findFavoritePayment(bySyncID: dangler.rowSyncID, context: context) else { return .rowGone }

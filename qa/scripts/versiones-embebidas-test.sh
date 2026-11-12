@@ -12,8 +12,9 @@
 
 set -uo pipefail
 
-RAIZ="$(cd "$(dirname "$0")/../.." && pwd)"
-SCRIPT="$RAIZ/qa/scripts/versiones-embebidas.py"
+# `VERSIONES_BANCO_RAIZ` lo usa el propio banco en el caso 8, para correrse sobre una copia con otro build.
+RAIZ="${VERSIONES_BANCO_RAIZ:-$(cd "$(dirname "$0")/../.." && pwd)}"
+SCRIPT="$(cd "$(dirname "$0")" && pwd)/versiones-embebidas.py"
 TMP_BASE="$(mktemp -d "${TMPDIR:-/tmp}/versiones-embebidas.XXXXXX")"
 trap 'rm -r "${TMP_BASE}"' EXIT
 
@@ -77,21 +78,39 @@ editar "$D/Yala.xcodeproj/project.pbxproj" '/INFOPLIST_FILE = YalaShare/s|$|\
 				GENERATE_INFOPLIST_FILE = NO;|'
 caso "share sin la clave y sin generar" 1 "$D"
 
-# 6. Una sola configuración con otro build.
+# 6. Una sola configuración con otro build. «Otro» es el actual + 100, nunca un número fijo: con un `3` fijo y el
+#    proyecto en el build 3 la mutación no cambiaba nada, el caso salía con 0 y el job se ponía rojo (atascó el #665,
+#    card 8pyt). El caso 8 corre el banco entero con el proyecto en ese build.
+ACTUAL="$(grep -oE 'CURRENT_PROJECT_VERSION = [0-9]+;' "$RAIZ/Yala.xcodeproj/project.pbxproj" | head -1 | grep -oE '[0-9]+')"
+OTRO=$((ACTUAL + 100))
 D="$(copia)"
-editar "$D/Yala.xcodeproj/project.pbxproj" '0,/CURRENT_PROJECT_VERSION = [0-9]+;/s//CURRENT_PROJECT_VERSION = 3;/'
-grep -q 'CURRENT_PROJECT_VERSION = 3;' "$D/Yala.xcodeproj/project.pbxproj" || {
+editar "$D/Yala.xcodeproj/project.pbxproj" "0,/CURRENT_PROJECT_VERSION = [0-9]+;/s//CURRENT_PROJECT_VERSION = ${OTRO};/"
+grep -q "CURRENT_PROJECT_VERSION = ${OTRO};" "$D/Yala.xcodeproj/project.pbxproj" || {
   # BSD sed no entiende `0,/re/`: se hace con awk sobre la primera aparición.
-  awk '!h && /CURRENT_PROJECT_VERSION = [0-9]+;/ {sub(/= [0-9]+;/, "= 3;"); h=1} {print}' \
+  awk -v otro="${OTRO}" '!h && /CURRENT_PROJECT_VERSION = [0-9]+;/ {sub(/= [0-9]+;/, "= " otro ";"); h=1} {print}' \
     "$RAIZ/Yala.xcodeproj/project.pbxproj" > "$D/Yala.xcodeproj/project.pbxproj"
 }
-caso "una configuración con CURRENT_PROJECT_VERSION = 3" 1 "$D"
+caso "una configuración con CURRENT_PROJECT_VERSION = ${OTRO} (las demás en ${ACTUAL})" 1 "$D"
 
 # 7. El build fijado por build setting en vez de en el plist.
 D="$(copia)"
 editar "$D/Yala.xcodeproj/project.pbxproj" '/INFOPLIST_FILE = YalaWidgets/s|$|\
 				INFOPLIST_KEY_CFBundleVersion = 3;|'
 caso "INFOPLIST_KEY_CFBundleVersion = 3" 1 "$D"
+
+# 8. El banco entero con el proyecto en el build 3, el que atascó el #665. Solo desde fuera: dentro no se repite.
+if [ -z "${VERSIONES_BANCO_RAIZ:-}" ]; then
+  N=$((N + 1))
+  D="$(copia)"
+  editar "$D/Yala.xcodeproj/project.pbxproj" 's/CURRENT_PROJECT_VERSION = [0-9]+;/CURRENT_PROJECT_VERSION = 3;/g'
+  if VERSIONES_BANCO_RAIZ="$D" bash "$0" > "$TMP_BASE/salida-build-3" 2>&1; then
+    echo "✓ el banco entero con el proyecto en el build 3"
+  else
+    echo "✗ el banco entero con el proyecto en el build 3 no pasa:"
+    sed 's/^/    /' "$TMP_BASE/salida-build-3"
+    FALLOS=$((FALLOS + 1))
+  fi
+fi
 
 echo
 if [ "$FALLOS" -eq 0 ]; then

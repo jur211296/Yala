@@ -1,4 +1,4 @@
-"NSMicrophoneUsageDescription" = "Yala uses the microphone to record voice input for creating transactions. Your audio is sent to OpenAI for transcription.";
-"NSPhotoLibraryUsageDescription" = "Yala uses your photos to extract transaction details from screenshots and receipts. Selected images are sent to OpenAI for processing.";
+"NSMicrophoneUsageDescription" = "Yala uses the microphone to record voice input for creating transactions. Your audio is sent to an AI service for transcription.";
+"NSPhotoLibraryUsageDescription" = "Yala uses your photos to extract transaction details from screenshots and receipts. Selected images are sent to an AI service for processing.";
 "NSPhotoLibraryAddUsageDescription" = "Yala saves the group summaries you choose to save to your photo library. Nothing is saved without you asking for it.";
-"NSCameraUsageDescription" = "Yala uses the camera to photograph your receipts and create transactions. The photo is sent to OpenAI to be read.";
+"NSCameraUsageDescription" = "Yala uses the camera to photograph your receipts and create transactions. The photo is sent to an AI service to be read.";

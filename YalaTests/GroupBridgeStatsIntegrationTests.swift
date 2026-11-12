@@ -147,9 +147,9 @@ struct GroupBridgeStatsIntegrationTests {
 
         // "Comida" (la categoría del gasto real) debe valer mi parte; la lent (income) no entra
         // a los buckets de gasto (nature income) y además está suprimida.
-        let comida = result.first { $0.category.name == "Comida" }?.amount
+        let comida = result.first { $0.category?.name == "Comida" }?.amount
         #expect(comida == 100)
-        #expect(!result.contains { $0.category.name == "Préstamo a grupos" })
+        #expect(!result.contains { $0.category?.name == "Préstamo a grupos" })
     }
 
     // MARK: - Weekday: el día del gasto suma mi parte

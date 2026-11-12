@@ -38,6 +38,23 @@ enum GroupsSyncBreadcrumb {
         logger.notice("GroupsSync pushDeadLettered reason=\(reason, privacy: .public)")
     }
 
+    /// Card e6fd: `rows` saldos iniciales que el servidor rechazó para siempre se DESCARTARON del teléfono (outbox y copia
+    /// local), y `groupsReset` grupos vuelven a bajar desde 0 para enseñar lo que tiene el servidor.
+    static func groupsOpeningBalanceRejectionSettled(rows: Int, groupsReset: Int) {
+        logger.notice("GroupsSync openingBalanceRejectionSettled rows=\(rows, privacy: .public) groupsReset=\(groupsReset, privacy: .public)")
+    }
+
+    /// Card m76a: repartos huérfanos de saldos iniciales rechazados que se retiraron tras el re-pull.
+    static func groupsOpeningBalanceOrphanSharesRemoved(count: Int) {
+        logger.notice("GroupsSync openingBalanceOrphanSharesRemoved count=\(count, privacy: .public)")
+    }
+
+    /// Card e6fd: el descarte de un saldo rechazado espera al ciclo siguiente. `reason` = `drain-unfinished` (algo sigue en el
+    /// History sin traducir) o `live-outbox:<n>` (n grupos con cambios aún por subir, que el re-pull pisaría en pantalla).
+    static func groupsOpeningBalanceRejectionDeferred(reason: String) {
+        logger.notice("GroupsSync openingBalanceRejectionDeferred reason=\(reason, privacy: .public)")
+    }
+
     /// `count` filas de meta de grupo se PURGARON del outbox por noop `group_not_found` (el grupo no existe
     /// server-side — nace solo vía `create_group`; anti retry-storm de meta legacy). Deja de ser silenciosa.
     static func groupsMetaPurgedGroupNotFound(count: Int) {
@@ -183,18 +200,29 @@ enum GroupsSyncBreadcrumb {
     /// su cursor por-grupo a 0 → el próximo pull re-visita el contenido que RLS ocultaba mientras estaba
     /// pendiente (el cursor había avanzado sin bajar ese contenido). `> 0` esporádico = re-join sano;
     /// sostenido = revisar aprobaciones. Sin PII (solo el count — JAMÁS el group_id).
+    /// Card u8cl: la subida de versión del manifest de Grupos se cumplió (filas re-encoladas y grupos que vuelven a bajar).
+    static func groupsCapabilityUpgradeApplied(level: Int, reemitted: Int, groupsReset: Int) {
+        logger.notice("GroupsSync capabilityUpgradeApplied level=\(level, privacy: .public) reemitted=\(reemitted, privacy: .public) groupsReset=\(groupsReset, privacy: .public)")
+    }
+
+    /// Card u8cl: la subida no se pudo cumplir (lectura, encolado o cursores); la petición se queda y el ciclo se corta.
+    static func groupsCapabilityUpgradeFailed(errorType: String) {
+        logger.error("GroupsSync capabilityUpgradeFailed error=\(errorType, privacy: .public)")
+    }
+
+    /// Card y1cd: el pull corrigió quién es dueño de algún grupo (filas de grupo + miembro propio que cambiaron).
+    static func groupsOwnershipReconciled(rows: Int) {
+        logger.notice("GroupsSync ownershipReconciled rows=\(rows, privacy: .public)")
+    }
+
     static func groupsRejoinCursorReset(groups: Int) {
         logger.notice("GroupsSync rejoinCursorReset groups=\(groups, privacy: .public) — re-join pendingApproval→active; cursor por-grupo reseteado para re-pull del hueco")
     }
 
     // MARK: - Partición POR-GRUPO (G5-A)
-
-    /// [C2] Un enqueue a CKSyncEngine se SALTÓ porque el grupo es del canal BACKEND (`isBackendGroup`) — sus
-    /// records NUNCA deben ir a CloudKit (sync por el canal backend). `site` = slug del choke point
-    /// (`enqueueSave`/`enqueueDeletion`/`createZone`/`createShare`/`zoneRecovery`/`recordRecovery`). Sin PII.
-    static func groupsCkEnqueueSkippedBackendGroup(site: String) {
-        logger.notice("GroupsSync ckEnqueueSkippedBackendGroup site=\(site, privacy: .public)")
-    }
+    //
+    // Los cuatro rastros `groupsCk*` de esta partición (el lado CloudKit) se retiraron el 2026-10-25 (card `yf9t`):
+    // los emitía `SplitSyncManager`, que se fue con el transporte CloudKit de Grupos, y no tenían llamador.
 
     /// [C2-bis] El drain del canal backend SALTÓ un change porque su `group_id` NO pertenece a un grupo
     /// backend (grupo CloudKit vivo bajo flag ON, o tombstone de un grupo ya borrado localmente) — evita
@@ -202,31 +230,6 @@ enum GroupsSyncBreadcrumb {
     /// `entity` = slug del `entity_type` (tabla/clase, sin PII). El group_id JAMÁS se loguea.
     static func groupsDrainSkippedNonBackendGroup(entity: String) {
         logger.notice("GroupsSync drainSkippedNonBackendGroup entity=\(entity, privacy: .public)")
-    }
-
-    /// [G6-3 C2] El uploader encoló el MARCADOR de migración (`GroupMeta` con `movedToBackendAt` +
-    /// `backendReInviteToken`) a CKSyncEngine — la ÚNICA escritura CloudKit legítima sobre un grupo
-    /// `isBackendGroup=true`. Sin PII (jamás el group_id ni el token).
-    static func groupsCkMigrationMarkerEnqueued() {
-        logger.notice("GroupsSync ckMigrationMarkerEnqueued — marcador de migración encolado (única escritura CK legítima post-freeze)")
-    }
-
-    /// [G6-3 C2] El GUARD SIMÉTRICO de PULL saltó aplicar un record CloudKit fetcheado cuyo grupo local es
-    /// `isBackendGroup=true` (ya migrado) — la zona CloudKit queda como red de SOLO-LECTURA: un miembro
-    /// rezagado o el eco del propio marcador NO pisa las ediciones backend post-migración. `site` =
-    /// `applyRemote`/`conflict`/`bridge`. `reason` distingue en Console.app qué invariante disparó el
-    /// descarte (`backendGroup`/`deletion`/`backendZone`). Sin PII.
-    static func groupsCkPullSkippedBackendGroup(site: String, reason: String = "backendZone") {
-        logger.notice("GroupsSync ckPullSkippedBackendGroup site=\(site, privacy: .public) reason=\(reason, privacy: .public)")
-    }
-
-    /// [C-4] Un batch de records fetcheados NO llegó a persistir (save fallido / handler sin contexto)
-    /// con el token del engine YA avanzado: CloudKit no lo re-entrega. Invalida el testigo del ciclo ⇒
-    /// la migración a backend NO arranca en esta sesión. `reason` = `save-failed` | `no-context`.
-    /// Sin PII. Fuera de `#if DEBUG` como todo `SplitSync*`/`GroupsSync*` (excepción consciente: el
-    /// comportamiento solo se valida del todo en CloudKit Production vía Console.app).
-    static func groupsCkFetchApplyFailed(reason: String) {
-        logger.notice("GroupsSync ckFetchApplyFailed reason=\(reason, privacy: .public) — token avanzado sin apply; migración diferida")
     }
 
     // MARK: - Ciclo de vida del loop (H-2026-07-18-4)

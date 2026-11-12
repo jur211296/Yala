@@ -42,12 +42,13 @@
 //  La que NO lo es —el cierre de la nube— hace otro borrado, así que la puerta lo mide
 //  ANTES y enseña una pantalla con salida en vez de arrancar.
 //
-//  **Lo que se lleva el store de Grupos, dicho con precisión:** `forgetsGroups = kind.pushesGroups ||
-//  hasBackendGroupRows(context:)`, así que con `.privateOnly` el marker `includesGroups` **se pone si hay
-//  filas del canal backend en el store** — y `hasBackendGroupRows` devuelve `true` ante un error de fetch,
-//  a propósito. O sea que «el store de Grupos sobrevive» es cierto solo cuando no hay nada del backend
-//  dentro. Es la semántica del cierre privado del paso 9 y no se toca aquí: cambiarla sería una segunda
-//  verdad frente a Ajustes.
+//  **Lo que se lleva el store de Grupos: entero, si tiene algún grupo** (ticket
+//  `welcome-groups-gate-loops-on-legacy-cloudkit-groups`, decisión A de Jürgen del 2026-10-29). Esta vista llama al cierre
+//  con `neutralReturnFromGroupsGate: true`, y la fórmula del arm (`CloudSignOutFlowLogic.wipeForgetsGroups`) marca el
+//  store para borrar aunque sus grupos sean de la era CloudKit y nunca migraran. Hasta ese día, con `.privateOnly` solo lo marcaba si había filas del canal backend:
+//  los grupos viejos sobrevivían, la puerta los volvía a contar al arrancar y pedía el mismo borrado en bucle (caso
+//  Pia). El cierre desde Ajustes conserva la regla de antes, a la espera de su propia decisión
+//  (`private-sign-out-keeps-legacy-cloudkit-groups`).
 //
 //  **Se informa, no se pregunta** (decisión de Jürgen en el ticket padre) — con una excepción que su
 //  propia premisa impone: informar dice «tus datos personales siguen a salvo en iCloud», y eso solo es
@@ -81,11 +82,42 @@ struct WelcomeGroupsGateView: View {
         /// reconciler llama a `drive` también en el trigger `.boot`, y el ADR 2026-09-09 prohíbe borrar el
         /// corpus de alguien en un arranque sin que nadie mire.
         case acceptInvite(groupID: String)
+        /// **Entrar con Google o Apple dejando el iCloud privado aparte** (opción B de Jürgen, 2026-11-10,
+        /// `ICloudAsideEntryLogic`). La entrada a la cuenta encontró en el teléfono el corpus del iCloud privado con copia
+        /// en iCloud: se deja ahí sin tocar, se vacía la copia local y se vuelve a la entrada con el mismo método. Se
+        /// INFORMA y se arranca, como el organizador —la persona acaba de tocar «Entrar con…»—, pero con las salidas del
+        /// invitado: quien entra puede no ser el dueño del teléfono, así que nada de lo que no llegó a iCloud se descarta.
+        ///
+        /// `fromExistingChooser` dice de dónde vino la entrada: de «¡Hola de nuevo!» o de otra puerta (el faro, Grupos). Lo
+        /// usan «Volver» y la vuelta a la entrada, para no llevar a la persona a una pantalla que no vio. Tras reabrir no
+        /// viaja —el destino no lleva carga— y vale `true`, la entrada más común.
+        case enterCloudAccount(provider: CloudSignInProvider, fromExistingChooser: Bool)
 
         /// El `groupID` de la invitación, o `nil` en la rama del organizador.
         var invitedGroupID: String? {
             if case .acceptInvite(let groupID) = self { return groupID }
             return nil
+        }
+
+        /// ¿Puede quien está delante DESCARTAR cambios que no llegaron a subir («Continuar igualmente», «Continuar y
+        /// perderlos»)? Solo el organizador, que es el dueño de los datos por cómo llegó aquí. El invitado y la entrada
+        /// con otra cuenta pueden estar en un teléfono prestado: lo que perderían no es suyo.
+        var mayDiscardUnsavedChanges: Bool { self == .createGroup }
+
+        /// ¿Es la entrada con Google o Apple que deja iCloud aparte? Elige los textos que no hablan de un grupo.
+        var isCloudAccountEntry: Bool {
+            if case .enterCloudAccount = self { return true }
+            return false
+        }
+
+        /// A dónde vuelve el Welcome cuando la vuelta al neutro queda armada: la misma puerta, para seguir donde iba. El
+        /// invitado solo si hay sobre `{groupID, token}` de ESTA invitación: sin él no hay join que retomar, y un destino
+        /// sin nada detrás llevaría a una puerta vacía. Lo escriben el coordinador pegado al arm (card ypit) y `ContentView`
+        /// al ver la fase; los dos con esta misma regla.
+        var destinationAfterNeutralReturn: WelcomeMirrorRelaunchLogic.Destination? {
+            if case .enterCloudAccount(let provider, _) = self { return ICloudAsideEntryLogic.destination(after: provider) }
+            guard let groupID = invitedGroupID else { return .groupsOrganizer }
+            return GroupInviteResumeStore.peek()?.groupID == groupID ? .groupsInvite : nil
         }
     }
 
@@ -275,7 +307,8 @@ struct WelcomeGroupsGateView: View {
         case .wipeFailed:
             noticeShell(icon: "exclamationmark.triangle",
                         title: L10n.Welcome.Groups.wipeFailedTitle,
-                        body: L10n.Welcome.Groups.wipeFailedBody,
+                        body: purpose.isCloudAccountEntry
+                            ? L10n.Welcome.Groups.cloudAsideWipeFailedBody : L10n.Welcome.Groups.wipeFailedBody,
                         identifier: "welcome_groups_gate_wipe_failed") {
                 VStack(spacing: DS.Spacing.sm) {
                     YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { leaveAfterWipeFailure() }
@@ -296,7 +329,8 @@ struct WelcomeGroupsGateView: View {
             // esta vista observa. Aquí se decide ANTES de arrancar, así que no hay nada que deshacer.
             noticeShell(icon: "exclamationmark.triangle",
                         title: L10n.Welcome.Groups.neutralUnavailableTitle,
-                        body: L10n.Welcome.Groups.neutralUnavailableBody,
+                        body: purpose.isCloudAccountEntry
+                            ? L10n.Welcome.Groups.cloudAsideUnavailableBody : L10n.Welcome.Groups.neutralUnavailableBody,
                         identifier: "welcome_groups_gate_neutral_unavailable") {
                 YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { onBack() }
                     .accessibilityIdentifier("welcome_groups_gate_neutral_unavailable_back")
@@ -370,7 +404,8 @@ struct WelcomeGroupsGateView: View {
         case .idle, .working, .awaitingRelaunch:
             // `.awaitingRelaunch` sigue enseñando el progreso a propósito: el terminal de verdad es el
             // cover del cierre de sesión, y esta pantalla solo tiene que no parpadear mientras lo releva.
-            progressContent(text: L10n.Welcome.Groups.neutralWorking,
+            progressContent(text: purpose.isCloudAccountEntry
+                                ? L10n.Welcome.Groups.cloudAsideWorking : L10n.Welcome.Groups.neutralWorking,
                             identifier: "welcome_groups_gate_neutral_working")
         case .blocked(let pending, .exportUnconfirmed):
             // La espera se agotó. Las mismas dos salidas que el cierre de Ajustes, y por la misma decisión
@@ -378,9 +413,7 @@ struct WelcomeGroupsGateView: View {
             // destruye nada.
             noticeShell(icon: "exclamationmark.icloud",
                         title: L10n.Welcome.Groups.neutralStalledTitle,
-                        body: pending > 0
-                            ? L10n.Welcome.Groups.neutralStalledBody(pending)
-                            : L10n.Welcome.Groups.neutralStalledBodyUnknown,
+                        body: stalledBody(pending: pending),
                         identifier: "welcome_groups_gate_neutral_stalled") {
                 VStack(spacing: DS.Spacing.sm) {
                     YalaPrimaryButton(L10n.Welcome.Groups.neutralStalledWait) {
@@ -396,7 +429,7 @@ struct WelcomeGroupsGateView: View {
                     // estaría descartando no es suyo. Sin el botón, la única salida es esperar o volver, y
                     // el criterio del ticket —«lo que el dueño escribió y no llegó a subir no se pierde»—
                     // deja de depender de a quién le den el móvil.
-                    if purpose.invitedGroupID == nil {
+                    if purpose.mayDiscardUnsavedChanges {
                         Button(role: .destructive) {
                             intento += 1
                             phase = .discardingUnconfirmed(intento: intento)
@@ -420,7 +453,7 @@ struct WelcomeGroupsGateView: View {
             // ahora»): primero la que no destruye. **Al INVITADO no se le ofrece**, por lo mismo que el «Continuar
             // igualmente» del export de arriba: los cambios que perdería no son suyos. Sin la salida de un cierre
             // (`offersGroupsLossExit`) tampoco: queda el texto sin salida y volver.
-            let offersLoss = purpose.invitedGroupID == nil && CloudSessionSignOut.shared.offersGroupsLossExit
+            let offersLoss = purpose.mayDiscardUnsavedChanges && CloudSessionSignOut.shared.offersGroupsLossExit
             noticeShell(icon: "exclamationmark.triangle",
                         title: L10n.Groups.Errors.attestUnavailableTitle,
                         body: offersLoss
@@ -562,7 +595,7 @@ struct WelcomeGroupsGateView: View {
             // `stuck-groups-drain-hides-held-rows-of-another-account`): lo atascado puede ser tuyo. También al INVITADO, sin la
             // salida: con el texto de siempre volvería a enterarse de las causas de una en una (review adversarial).
             let cause = CloudSignOutFlowLogic.lossCause(reason)
-            let offersLoss = purpose.invitedGroupID == nil && (cause == .noSession || cause == .otherAccount)
+            let offersLoss = purpose.mayDiscardUnsavedChanges && (cause == .noSession || cause == .otherAccount)
                 && CloudSessionSignOut.shared.offersGroupsLossExit
             let namesBothCauses = cause == .otherAccount && CloudSessionSignOut.shared.groupsLossReadsUncaptured
             noticeShell(icon: "arrow.trianglehead.2.clockwise.rotate.90",
@@ -570,7 +603,9 @@ struct WelcomeGroupsGateView: View {
                         body: offersLoss
                             ? SignOutBlockedCopy.welcomeNoSessionLossMessage(
                                 pending: pending, anotherAccountAndCaptureUnfinished: namesBothCauses)
-                            : SignOutBlockedCopy.welcomeBlockedMessage(anotherAccountAndCaptureUnfinished: namesBothCauses),
+                            : (purpose.isCloudAccountEntry && !namesBothCauses
+                                ? L10n.Welcome.Groups.cloudAsideBlockedBody
+                                : SignOutBlockedCopy.welcomeBlockedMessage(anotherAccountAndCaptureUnfinished: namesBothCauses)),
                         identifier: "welcome_groups_gate_neutral_blocked") {
                 VStack(spacing: DS.Spacing.sm) {
                     YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { leaveAfterBlock() }
@@ -591,6 +626,17 @@ struct WelcomeGroupsGateView: View {
                 }
             }
         }
+    }
+
+    /// El cuerpo de la espera agotada. La entrada con otra cuenta tiene el suyo: el de las otras ramas dice «si continúas
+    /// ahora, se perderán», y aquí no hay botón de continuar.
+    private func stalledBody(pending: Int) -> String {
+        if purpose.isCloudAccountEntry {
+            return pending > 0
+                ? L10n.Welcome.Groups.cloudAsideStalledBody(pending) : L10n.Welcome.Groups.cloudAsideStalledBodyUnknown
+        }
+        return pending > 0
+            ? L10n.Welcome.Groups.neutralStalledBody(pending) : L10n.Welcome.Groups.neutralStalledBodyUnknown
     }
 
     private func progressContent(text: String, identifier: String) -> some View {
@@ -677,6 +723,10 @@ struct WelcomeGroupsGateView: View {
             evaluateInvite()
             return
         }
+        if case .enterCloudAccount = purpose {
+            evaluateCloudAccountEntry()
+            return
+        }
 
         // Hermeticidad: bajo `-uitest` no se toca red, igual que el `.task` del container. Los getters ya
         // devuelven su default (ON bajo `Yala Dev`), así que el XCUITest recorre la rama buena.
@@ -734,6 +784,43 @@ struct WelcomeGroupsGateView: View {
         }
     }
 
+    /// **La puerta de la entrada con otra cuenta, re-medida aquí** (opción B, 2026-11-10). Como la del invitado: entre la
+    /// entrada a la cuenta y este render puede haber mediado el relanzamiento que esta pantalla provoca, así que quien llega
+    /// tras la vuelta al neutro encuentra el teléfono vacío y sigue a la entrada sin tocar nada.
+    ///
+    /// **Mira solo los DATOS, no el espejo**, a diferencia del organizador: la entrada a la cuenta adopta con el espejo
+    /// montado por su propio camino (relanza para apagarlo), y lo único que le cierra el paso es lo que hay en el store —el
+    /// mismo `hasLocalDataNow` del guard cross-cuenta—. Con el espejo como término, un teléfono vacío sin montar neutro
+    /// volvería a esta pantalla sin nada que dejar aparte.
+    ///
+    /// Síncrona y sin suspensiones: las lecturas son locales.
+    private func evaluateCloudAccountEntry() {
+        guard hasLocalDataNow() else {
+            GroupsGateWipeFailureMarker.clear()
+            onProceed()
+            return
+        }
+        phase = cloudAccountEntryPhase()
+    }
+
+    /// A qué pantalla entra la vuelta al neutro de la entrada con otra cuenta. Las dos comprobaciones de siempre contra un
+    /// progreso eterno —la fase del coordinador y la celda— y la del bucle (la marca del borrado que no pudo), y después
+    /// la MISMA decisión que tomó la entrada a la cuenta (`ICloudAsideEntryLogic`): sin copia en iCloud no se borra nada.
+    private func cloudAccountEntryPhase() -> Phase {
+        guard CloudSessionSignOut.shared.phase == .idle else { return .unavailable }
+        let celda = Self.exitCell()
+        if celda != .cloudSecureSignOut, GroupsGateWipeFailureMarker.isPending() { return .wipeFailed }
+        switch ICloudAsideEntryLogic.exit(
+            exitCell: celda, copyChannel: Self.copyChannelNow,
+            hasLegacyCloudKitGroups: CloudSessionSignOut.hasLegacyCloudKitGroupRows(context: modelContext)) {
+        case .leaveICloudAside:
+            intento += 1
+            return .returningToNeutral(withoutICloudCopy: false, intento: intento)
+        case .staysBlocked:
+            return .unavailable
+        }
+    }
+
     /// A qué pantalla entra la vuelta al neutro del invitado. Comparte con la del organizador las dos
     /// comprobaciones que impiden un progreso eterno —la fase del coordinador y la celda de cierre— y se
     /// separa en el último paso: aquí **siempre** se pregunta, con o sin copia en iCloud, y el canal de
@@ -788,8 +875,11 @@ struct WelcomeGroupsGateView: View {
     /// boot-wipe lo consume, y caduca solo.
     private func beginNeutralReturn(withoutICloudCopy: Bool) {
         if let groupID = purpose.invitedGroupID,
-           let token = PendingJoinStore.entry(zoneName: groupID)?.inviteToken {
-            GroupInviteResumeStore.set(groupID: groupID, token: token)
+           let entry = PendingJoinStore.entry(zoneName: groupID),
+           let token = entry.inviteToken {
+            // Card we8a: la respuesta a la tarjeta del grupo cruza también, o la tarjeta vuelve a salir vacía.
+            GroupInviteResumeStore.set(groupID: groupID, token: token,
+                                       groupCardAcceptedAt: entry.groupCardAcceptedAt, displayName: entry.displayName)
         }
         intento += 1
         phase = .returningToNeutral(withoutICloudCopy: withoutICloudCopy, intento: intento)
@@ -811,6 +901,16 @@ struct WelcomeGroupsGateView: View {
         if SwiftDataConfiguration.isUITesting { return UITestHooks.groupsGateMirrorLive }
         #endif
         return CloudSessionSignOut.personalMountAttachesMirror
+    }
+
+    /// **El canal de copia con el mismo seam que el eje del mount** (review adversarial del 2026-11-10). Bajo `-uitest` el
+    /// testigo del mount miente (`mountAttachesMirrorNow`) y `privateCopyChannel()` diría `.iCloud` sobre un store que no
+    /// espeja: un XCUITest recorrería la vuelta al neutro donde producción enseña el bloqueo. Lo leen la puerta de la
+    /// entrada con otra cuenta y la propia entrada (`WelcomeCloudSignInView`), para decidir lo mismo.
+    static var copyChannelNow: PrivateSignOutExportGateLogic.CopyChannel {
+        PrivateSignOutExportGateLogic.copyChannel(
+            mountAttachesMirror: mountAttachesMirrorNow,
+            mirrorReportedNotAuthenticated: iCloudSyncService.shared.mirrorReportedNotAuthenticated)
     }
 
     /// A qué pantalla entra la vuelta al neutro. **Se decide ANTES de tocar nada**, y eso cierra los tres
@@ -851,7 +951,7 @@ struct WelcomeGroupsGateView: View {
     /// La celda de cierre de ESTE dispositivo. Espejo exacto del dispatch de `CloudSessionSignOut.signOut`,
     /// con sus términos en el mismo orden: si divergieran, la puerta prometería un borrado que el
     /// coordinador no va a hacer.
-    private static func exitCell() -> CloudSignOutFlowLogic.Path {
+    static func exitCell() -> CloudSignOutFlowLogic.Path {
         CloudSignOutFlowLogic.path(
             for: CloudSyncFlags.storageMode,
             hasLiveSession: CloudAuthService.shared.hasSession,
@@ -878,7 +978,9 @@ struct WelcomeGroupsGateView: View {
         await CloudSessionSignOut.shared.signOut(
             context: modelContext,
             confirmedPath: celda,
-            confirmedWithoutICloudCopy: withoutICloudCopy)
+            confirmedWithoutICloudCopy: withoutICloudCopy,
+            destinationOnArm: purpose.destinationAfterNeutralReturn,
+            neutralReturnFromGroupsGate: true)
         // Cinturón del cinturón: si el coordinador volvió sin tocar su fase, no arrancó nada. Sin esto la
         // pantalla se queda en un progreso que no avanza y sin botón de volver.
         if CloudSessionSignOut.shared.phase == .idle { phase = .unavailable }

@@ -2,6 +2,70 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>account.deleteConfirmMessage</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Esta conta tem %d registro. Ele não é apagado: fica em Registros, sem conta. Se você só quer parar de vê-la, arquive-a. Não é possível desfazer.</string>
+			<key>other</key>
+			<string>Esta conta tem %d registros. Eles não são apagados: ficam em Registros, sem conta. Se você só quer parar de vê-la, arquive-a. Não é possível desfazer.</string>
+		</dict>
+	</dict>
+	<key>category.cannotDeleteMessage</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Esta categoria tem uma subcategoria com %d registro. Para excluí-la, primeiro exclua esse registro ou mova-o para outra subcategoria.</string>
+			<key>other</key>
+			<string>Esta categoria tem subcategorias com %d registros. Para excluí-la, primeiro exclua esses registros ou mova-os para outra subcategoria.</string>
+		</dict>
+	</dict>
+	<key>subcategory.deleteTransactionsConfirmMessage</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d registro será excluído permanentemente. Esta ação não pode ser desfeita.</string>
+			<key>other</key>
+			<string>%d registros serão excluídos permanentemente. Esta ação não pode ser desfeita.</string>
+		</dict>
+	</dict>
+	<key>subcategory.transferDescription</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Há %1$d registro em "%2$@". Escolha o que fazer com ele antes de excluir.</string>
+			<key>other</key>
+			<string>Há %1$d registros em "%2$@". Escolha o que fazer com eles antes de excluir.</string>
+		</dict>
+	</dict>
 	<key>panel.panorama.collapsedSummary</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -317,9 +381,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d despesa registrada!</string>
+			<string>%d registro!</string>
 			<key>other</key>
-			<string>%d despesas registradas!</string>
+			<string>%d registros!</string>
 		</dict>
 	</dict>
 	<key>groups.activate.importPrompt</key>
@@ -461,9 +525,25 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Converter %d lançamento?</string>
+			<string>Converter %d registro?</string>
 			<key>other</key>
-			<string>Converter %d lançamentos?</string>
+			<string>Converter %d registros?</string>
+		</dict>
+	</dict>
+	<key>storage.sync.needsSignIn</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Entre para enviar %d alteração</string>
+			<key>other</key>
+			<string>Entre para enviar %d alterações</string>
 		</dict>
 	</dict>
 	<key>storage.sync.waitingForConnection</key>
@@ -480,6 +560,832 @@
 			<string>%d alteração aguardando conexão</string>
 			<key>other</key>
 			<string>%d alterações aguardando conexão</string>
+		</dict>
+	</dict>
+	<key>welcome.restore.foundAccounts</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%d contas</string>
+			<key>one</key>
+			<string>%d conta</string>
+			<key>other</key>
+			<string>%d contas</string>
+		</dict>
+	</dict>
+	<key>welcome.restore.foundTransactions</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%d registros</string>
+			<key>one</key>
+			<string>%d registro</string>
+			<key>other</key>
+			<string>%d registros</string>
+		</dict>
+	</dict>
+	<key>welcome.restore.foundBudgets</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%d orçamentos</string>
+			<key>one</key>
+			<string>%d orçamento</string>
+			<key>other</key>
+			<string>%d orçamentos</string>
+		</dict>
+	</dict>
+	<key>welcome.restore.foundGroups</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%d grupos compartilhados</string>
+			<key>one</key>
+			<string>%d grupo compartilhado</string>
+			<key>other</key>
+			<string>%d grupos compartilhados</string>
+		</dict>
+	</dict>
+	<key>welcome.privateICloud.foundCategories</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%d categorias</string>
+			<key>one</key>
+			<string>%d categoria</string>
+			<key>other</key>
+			<string>%d categorias</string>
+		</dict>
+	</dict>
+	<key>inbox.pendingBadge</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d pendente</string>
+			<key>other</key>
+			<string>%d pendentes</string>
+		</dict>
+	</dict>
+	<key>inbox.selectedCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d selecionado</string>
+			<key>other</key>
+			<string>%d selecionados</string>
+		</dict>
+	</dict>
+	<key>inbox.deleteConfirmMessage</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Tem certeza de que quer excluir %d rascunho?</string>
+			<key>other</key>
+			<string>Tem certeza de que quer excluir %d rascunhos?</string>
+		</dict>
+	</dict>
+	<key>inbox.approveableCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d de %2$d pronto para salvar</string>
+			<key>other</key>
+			<string>%1$d de %2$d prontos para salvar</string>
+		</dict>
+	</dict>
+	<key>inbox.alert.message.scheduled</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d pagamento agendado foi adicionado à sua caixa.</string>
+			<key>other</key>
+			<string>%d pagamentos agendados foram adicionados à sua caixa.</string>
+		</dict>
+	</dict>
+	<key>inbox.alert.message.subscriptions</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d assinatura foi adicionada à sua caixa.</string>
+			<key>other</key>
+			<string>%d assinaturas foram adicionadas à sua caixa.</string>
+		</dict>
+	</dict>
+	<key>inbox.alert.message.mixed.scheduled</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d pagamento</string>
+			<key>other</key>
+			<string>%d pagamentos</string>
+		</dict>
+	</dict>
+	<key>inbox.alert.message.mixed.subscriptions</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d assinatura</string>
+			<key>other</key>
+			<string>%d assinaturas</string>
+		</dict>
+	</dict>
+	<key>inbox.alert.message.mixed.automations</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d registro automático</string>
+			<key>other</key>
+			<string>%d registros automáticos</string>
+		</dict>
+	</dict>
+	<key>records.selectedCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d selecionado</string>
+			<key>other</key>
+			<string>%d selecionados</string>
+		</dict>
+	</dict>
+	<key>records.groupRecordsKept</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d vem de um grupo e não é excluído aqui: exclua no grupo.</string>
+			<key>other</key>
+			<string>%d vêm de um grupo e não são excluídos aqui: exclua no grupo.</string>
+		</dict>
+	</dict>
+	<key>search.resultsCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d resultado</string>
+			<key>other</key>
+			<string>%d resultados</string>
+		</dict>
+	</dict>
+	<key>scheduled.frequency.every.days</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Todo dia</string>
+			<key>other</key>
+			<string>A cada %d dias</string>
+		</dict>
+	</dict>
+	<key>scheduled.frequency.every.weeks</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Toda semana</string>
+			<key>other</key>
+			<string>A cada %d semanas</string>
+		</dict>
+	</dict>
+	<key>scheduled.frequency.every.months</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Todo mês</string>
+			<key>other</key>
+			<string>A cada %d meses</string>
+		</dict>
+	</dict>
+	<key>scheduled.frequency.every.years</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Todo ano</string>
+			<key>other</key>
+			<string>A cada %d anos</string>
+		</dict>
+	</dict>
+	<key>import.preview.failuresHeader</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d linha não vai entrar</string>
+			<key>other</key>
+			<string>%d linhas não vão entrar</string>
+		</dict>
+	</dict>
+	<key>records.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d registro</string>
+			<key>other</key>
+			<string>%d registros</string>
+		</dict>
+	</dict>
+	<key>category.cannotDelete.records</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Tem %d registro.</string>
+			<key>other</key>
+			<string>Tem %d registros.</string>
+		</dict>
+	</dict>
+	<key>import.result.notImported</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d linha não entrou:</string>
+			<key>other</key>
+			<string>%d linhas não entraram:</string>
+		</dict>
+	</dict>
+	<key>import.preview.futureIgnored</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d linha tem data futura e fica de fora.</string>
+			<key>other</key>
+			<string>%d linhas têm data futura e ficam de fora.</string>
+		</dict>
+	</dict>
+	<key>import.preview.importButton</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Importar %d registro</string>
+			<key>other</key>
+			<string>Importar %d registros</string>
+		</dict>
+	</dict>
+	<key>tag.deleteConfirm.message</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Ela sai de %d registro; o registro não é excluído. Não dá para desfazer.</string>
+			<key>other</key>
+			<string>Ela sai de %d registros; os registros não são excluídos. Não dá para desfazer.</string>
+		</dict>
+	</dict>
+	<key>import.preview.more</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>… e mais %d</string>
+			<key>other</key>
+			<string>… e mais %d</string>
+		</dict>
+	</dict>
+	<key>records.l8b.duplicates.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d possível duplicado</string>
+			<key>other</key>
+			<string>%d possíveis duplicados</string>
+		</dict>
+	</dict>
+	<key>records.l8b.duplicates.groups</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d grupo</string>
+			<key>other</key>
+			<string>%d grupos</string>
+		</dict>
+	</dict>
+	<key>records.l8b.duplicates.groupSize</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d registro igual</string>
+			<key>other</key>
+			<string>%d registros iguais</string>
+		</dict>
+	</dict>
+	<key>records.l8b.duplicates.removeTitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Remover %d repetido?</string>
+			<key>other</key>
+			<string>Remover %d repetidos?</string>
+		</dict>
+	</dict>
+	<key>records.l8b.duplicates.keptShared</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d vem de Grupos e fica: exclua por lá.</string>
+			<key>other</key>
+			<string>%d vêm de Grupos e ficam: exclua por lá.</string>
+		</dict>
+	</dict>
+	<key>records.l8b.bulk.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Editar %d registro</string>
+			<key>other</key>
+			<string>Editar %d registros</string>
+		</dict>
+	</dict>
+	<key>records.l8b.bulk.distinctAccounts</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d conta</string>
+			<key>other</key>
+			<string>%d contas diferentes</string>
+		</dict>
+	</dict>
+	<key>records.l8b.bulk.distinctSubcategories</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d subcategoria</string>
+			<key>other</key>
+			<string>%d subcategorias diferentes</string>
+		</dict>
+	</dict>
+	<key>records.l8b.bulk.summaryTitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Você vai mudar em %d registro:</string>
+			<key>other</key>
+			<string>Você vai mudar em %d registros:</string>
+		</dict>
+	</dict>
+	<key>records.l8b.bulk.apply</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Aplicar a %d registro</string>
+			<key>other</key>
+			<string>Aplicar a %d registros</string>
+		</dict>
+	</dict>
+	<key>l20d.export.willExport</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Vai sair %d registro</string>
+			<key>other</key>
+			<string>Vão sair %d registros</string>
+		</dict>
+	</dict>
+	<key>l20d.export.exportCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Exportar %d registro</string>
+			<key>other</key>
+			<string>Exportar %d registros</string>
+		</dict>
+	</dict>
+	<key>l20n.count.records</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d registro</string>
+			<key>other</key>
+			<string>%d registros</string>
+		</dict>
+	</dict>
+	<key>l20n.count.accounts</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d conta</string>
+			<key>other</key>
+			<string>%d contas</string>
+		</dict>
+	</dict>
+	<key>l20n.count.budgets</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d orçamento</string>
+			<key>other</key>
+			<string>%d orçamentos</string>
+		</dict>
+	</dict>
+	<key>stepGuide.remaining</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Falta %d passo · seu progresso fica salvo</string>
+			<key>other</key>
+			<string>Faltam %d passos · seu progresso fica salvo</string>
+		</dict>
+	</dict>
+	<key>usageMode.back.savedTitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Você tem %d registro salvo</string>
+			<key>other</key>
+			<string>Você tem %d registros salvos</string>
+		</dict>
+	</dict>
+	<key>usageMode.back.savedQuestion</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>O que fazemos com ele?</string>
+			<key>other</key>
+			<string>O que fazemos com eles?</string>
+		</dict>
+	</dict>
+	<key>usageMode.count.records</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d registro</string>
+			<key>other</key>
+			<string>%d registros</string>
+		</dict>
+	</dict>
+	<key>usageMode.count.accounts</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d conta</string>
+			<key>other</key>
+			<string>%d contas</string>
+		</dict>
+	</dict>
+	<key>usageMode.count.budgets</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d orçamento</string>
+			<key>other</key>
+			<string>%d orçamentos</string>
+		</dict>
+	</dict>
+	<key>account.removal.recordCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d registro</string>
+			<key>other</key>
+			<string>%d registros</string>
 		</dict>
 	</dict>
 </dict>

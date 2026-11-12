@@ -17,7 +17,8 @@ import WidgetKit
 /// Sustituye el contenido de un widget de datos por la invitación cuando la sesión es solo grupos.
 ///
 /// Se aplica en el `Widget` (el cierre de su configuración), no dentro de cada vista: un solo sitio por widget, y la
-/// vista de datos no tiene que saber nada de sesiones. Los de entrada rápida no lo llevan: abren una acción, no datos.
+/// vista de datos no tiene que saber nada de sesiones. Los de entrada rápida no lo llevan: abren una acción, no datos. El de
+/// Grupos tampoco: sus datos existen en solo grupos y los enseña (decisión de Jürgen del 2026-11-03).
 struct GroupsOnlyInviteModifier: ViewModifier {
     func body(content: Content) -> some View {
         if WidgetDataService.isGroupsOnlySession {
@@ -56,12 +57,12 @@ struct GroupsOnlyInviteView: View {
             }
             .accessibilityLabel(Text("widget.groupsOnly.cta", bundle: .main))
         case .accessoryRectangular:
-            VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
+            VStack(alignment: .leading, spacing: WidgetDS.Spacing.xxs) {
                 Text("widget.groupsOnly.title", bundle: .main)
-                    .font(WDS.Typography.label)
+                    .font(WidgetDS.Typography.labelSmall)
                     .lineLimit(2)
                 Text("widget.groupsOnly.cta", bundle: .main)
-                    .font(WDS.Typography.labelSmall)
+                    .font(WidgetDS.Typography.labelTiny)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .widgetAccentable()
@@ -70,27 +71,27 @@ struct GroupsOnlyInviteView: View {
         case .accessoryInline:
             Text("widget.groupsOnly.cta", bundle: .main)
         default:
-            VStack(alignment: .leading, spacing: WDS.Spacing.sm) {
+            VStack(alignment: .leading, spacing: WidgetDS.Spacing.sm) {
                 Image(systemName: "person.crop.circle.badge.plus")
                     .font(.title2) // A11Y-DT: icono de la invitación, mismo tamaño que el estado vacío de los widgets
                     .foregroundStyle(WidgetColors.primary)
                 Spacer(minLength: 0)
                 Text("widget.groupsOnly.title", bundle: .main)
-                    .font(WDS.Typography.title)
+                    .font(WidgetDS.Typography.headline)
                     .foregroundStyle(.primary)
                     .lineLimit(3)
                     .minimumScaleFactor(0.8)
-                HStack(spacing: WDS.Spacing.xxs) {
+                HStack(spacing: WidgetDS.Spacing.xxs) {
                     Text("widget.groupsOnly.cta", bundle: .main)
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
                     Image(systemName: "chevron.right")
                 }
-                .font(WDS.Typography.label)
+                .font(WidgetDS.Typography.labelSmall)
                 .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-            .padding(WDS.Spacing.xs)
+            .padding(WidgetDS.Spacing.xs)
         }
     }
 }

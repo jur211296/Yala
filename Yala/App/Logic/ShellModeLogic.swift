@@ -27,12 +27,18 @@ nonisolated enum ShellMode: Equatable {
 }
 
 nonisolated enum ShellModeLogic {
-    /// `.groupsFocused` cuando no hay sesión privada en este dispositivo; `.full` en caso contrario.
+    /// `.groupsFocused` cuando no hay sesión privada en este dispositivo, **o** cuando la hay y la persona eligió
+    /// «Solo grupos» en «Cómo usas Yala»; `.full` en el resto.
     ///
     /// **Una sesión nacida en la nube tiene vida personal y por eso sale `.full`**: la marca la
     /// enciende el onboarding personal, que toda alta completa recorre — sea privada o en la nube. Las
     /// cuatro celdas del ADR §2 se reparten así sin ningún término más.
-    static func effective(hasPrivateSession: Bool) -> ShellMode {
-        hasPrivateSession ? .full : .groupsFocused
+    ///
+    /// **El segundo término es solo de VISTA** (card p0iu, 2026-10-26): `GroupsOnlyViewMark` reduce la shell sin
+    /// apagar la sesión privada, así que los gates de DATOS —que leen el eje directamente— no cambian. Sin término por
+    /// defecto a propósito: un llamador nuevo que lo olvidara pintaría la app completa a quien eligió solo grupos.
+    static func effective(hasPrivateSession: Bool, prefersGroupsOnlyView: Bool) -> ShellMode {
+        guard hasPrivateSession else { return .groupsFocused }
+        return prefersGroupsOnlyView ? .groupsFocused : .full
     }
 }

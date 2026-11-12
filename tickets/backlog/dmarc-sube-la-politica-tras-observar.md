@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: web, dns
 created: 2026-09-08
-updated: 2026-09-08
+updated: 2026-10-23
 source: seguimiento de web-domain-has-no-spf-dkim-dmarc, cerrado el 2026-09-08
 ---
 
@@ -115,3 +115,15 @@ calendario de arriba: una semana de informes, `p=quarantine` primero, `p=reject`
 si no hay sorpresas.
 
 **No hay trabajo pendiente aquí hasta esa fecha.** El ticket no espera a nadie: espera al calendario.
+
+## 2026-10-23 · Subido a `p=quarantine`
+
+Jürgen pasó un informe de Google (16-oct): 2 correos, los dos desde servidores de Google con SPF y DKIM en `pass` y
+alineados; ningún otro remitente. Con su OK, Frank cambió el registro en punto.pe. El panel no edita: se añadió el TXT
+nuevo y se borró el viejo. Medido con `dig` en `ns` y `ns2`: solo cambió `_dmarc`, y el serial pasó de `2026101200` a
+`2026102301`; los demás TXT, MX, A y DKIM siguen iguales.
+
+    _dmarc.yala-app.pe → "v=DMARC1; p=quarantine; rua=mailto:admin@yala-app.pe"
+
+**Queda el último escalón:** `p=reject` hacia el 6-nov si los informes siguen limpios
+(card `tablero-dmarc-pasar-de-p-quarantine-a-p-reject-s-svjz`).

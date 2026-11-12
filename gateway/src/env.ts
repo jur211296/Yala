@@ -26,6 +26,10 @@ export interface Env {
   CLOUD_MODE_ROLLOUT_PERCENT?: string;
   CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT?: string;
   GROUPS_BACKEND_ROLLOUT_PERCENT?: string;
+  // Yala IA en modo nube con herramientas (`chat.explore`, `ai/explore/`). La app lo lee de /config con su cohorte; el
+  // gateway solo distingue 0 (apagado: `chat.explore` sale como `chat.answer`) del resto. Ausente/inválido → 0, también
+  // en staging. Encenderlo exige antes el texto de consentimiento nuevo (decisión de Jürgen pendiente).
+  AI_CLOUD_EXPLORE_ROLLOUT_PERCENT?: string;
   // Forzado de actualización (min-version): build de CFBundleVersion por debajo del cual el cliente
   // muestra la pantalla bloqueante. Ausente/inválido → 0 (desactivado). Flip = editar var + deploy.
   MIN_SUPPORTED_BUILD?: string;
@@ -62,6 +66,9 @@ export interface Env {
   // PUSH_ROLE_JWT`. Ausente → el fan-out es no-op silencioso (log 1 vez, junto al de APNs). ⚠️ si el owner
   // revoca el legacy secret (rotación de firmas), el fan-out muere en silencio (401) → re-acuñar. NUNCA a URL.
   PUSH_ROLE_JWT?: string;
+  // Avisos de errores en Sentry (proyecto `yala-gateway`, src/sentry.ts). `wrangler secret put SENTRY_DSN` (staging) /
+  // `--env production`; `.dev.vars` en local. Ausente → el SDK no arranca. NUNCA en wrangler.toml ni en el repo.
+  SENTRY_DSN?: string;
 }
 
 /** true solo en el entorno no-prod, donde se acepta el bypass de dev/test. */

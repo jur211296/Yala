@@ -51,8 +51,19 @@ struct RecordsCalendarView: View {
     @Binding var selectedDay: Date?
     @Binding var calendarMonth: Date
 
+    /// Cómo entra el mes nuevo: empujado desde el lado de la flecha o del deslizamiento, fundido desde el menú (card C2).
+    /// El viejo se va en el acto: fundidos en sitio, los números de los dos meses quedarían uno encima del otro.
+    @State private var monthMotion: PeriodTitleMotion = .fade
+    /// Sube solo cuando la persona cambia de mes aquí (flechas, deslizar, menú): un mes que ajusta Registros al cambiar el
+    /// período o los filtros cambia en seco, con la página.
+    @State private var monthSteps = 0
+
     private var calendar: Calendar {
         var c = Calendar.current
+        // Las iniciales de los días en el idioma de Yala, no en el del iPhone (con el idioma cambiado dentro de la
+        // app salían en el del sistema). El locale va ANTES que `firstWeekday`: fijarlo después devuelve el primer día
+        // al del locale cuando la preferencia coincidía con el de la región (medido en la review del lote 8).
+        c.locale = AppLocale.current
         c.firstWeekday = appPreferences.firstWeekday.rawValue
         return c
     }
@@ -64,17 +75,24 @@ struct RecordsCalendarView: View {
         let layout = RecordsCalendarLayout.resolve(
             range: range, firstWeekday: appPreferences.firstWeekday.rawValue, calendar: calendar)
 
-        return Group {
+        return VStack(spacing: DS.Spacing.none) {
             switch layout {
             case .continuous(let weeks):
                 continuousCalendar(weeks: weeks, range: range, spending: spending)
             case .paged(let months):
                 pagedCalendar(months: months, spending: spending)
             }
+            if !spending.incomeByDay.isEmpty {
+                incomeLegend
+            }
         }
         .padding(DS.Spacing.md)
         .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        // El día elegido se rellena y el mes cambia animados (card C2). Implícitas: en una pestaña un `withAnimation` no
+        // anima.
+        .dsAnimation(DS.Animation.selection, value: selectedDay, reduceMotion: reduceMotion)
+        .dsAnimation(DS.Animation.appear, value: monthSteps, reduceMotion: reduceMotion)
     }
 
     // MARK: - Effective range (acotado a los datos visibles)
@@ -173,11 +191,16 @@ struct RecordsCalendarView: View {
             monthNavigationHeader(months: months)
             VStack(spacing: DS.Spacing.xs) {
                 weekdayHeaders
-                ForEach(Array(weeks.enumerated()), id: \.offset) { _, week in
-                    weekRow(week, spending: spending, inRange: {
-                        calendar.isDate($0, equalTo: calendarMonth, toGranularity: .month)
-                    })
+                VStack(spacing: DS.Spacing.xs) {
+                    ForEach(Array(weeks.enumerated()), id: \.offset) { _, week in
+                        weekRow(week, spending: spending, inRange: {
+                            calendar.isDate($0, equalTo: calendarMonth, toGranularity: .month)
+                        })
+                    }
                 }
+                // Un mes, una vista: el nuevo entra con `monthMotion` y el viejo se va en el acto.
+                .id(monthInterval.start)
+                .transition(monthMotion.transition)
             }
             .contentShape(Rectangle())
             .simultaneousGesture(monthSwipeGesture(months: months))
@@ -210,6 +233,8 @@ struct RecordsCalendarView: View {
                     Text(monthName(calendarMonth, withYear: true))
                         .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
+                        // En seco: fundido, «octubre» quedaba encima de «noviembre» mientras entra el mes (vídeo, card C2).
+                        .transaction { $0.animation = nil }
                     Image(systemName: "chevron.down")
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(.secondary)
@@ -227,7 +252,7 @@ struct RecordsCalendarView: View {
         _ systemName: String, enabled: Bool, label: String, action: @escaping () -> Void
     ) -> some View {
         Button {
-            dsWithAnimation(reduceMotion) { action() }
+            action()
         } label: {
             Image(systemName: systemName)
                 .font(DS.Typography.headline)
@@ -253,17 +278,19 @@ struct RecordsCalendarView: View {
 
     private func navigate(months: [Date], to index: Int) {
         guard months.indices.contains(index) else { return }
-        dsWithAnimation(reduceMotion) {
-            calendarMonth = months[index]
-            selectedDay = nil
-        }
+        let current = months.firstIndex { calendar.isDate($0, equalTo: calendarMonth, toGranularity: .month) } ?? index
+        // El mes siguiente entra por la derecha y el anterior por la izquierda, como el gesto.
+        monthMotion = .push(from: index > current ? .trailing : .leading)
+        monthSteps += 1
+        calendarMonth = months[index]
+        selectedDay = nil
     }
 
     private func selectMonth(_ month: Date) {
-        dsWithAnimation(reduceMotion) {
-            calendarMonth = month
-            selectedDay = nil
-        }
+        monthMotion = .fade
+        monthSteps += 1
+        calendarMonth = month
+        selectedDay = nil
     }
 
     // MARK: - Week row + day cell (shared)
@@ -276,6 +303,8 @@ struct RecordsCalendarView: View {
                 dayCell(
                     date: date,
                     expense: spending.spendingByDay[date] ?? 0,
+                    income: spending.incomeByDay[date] ?? 0,
+                    hasRecords: spending.daysWithRecords.contains(date),
                     maxSpending: spending.maxSpending,
                     inRange: inRange(date)
                 )
@@ -283,16 +312,19 @@ struct RecordsCalendarView: View {
         }
     }
 
-    private func dayCell(date: Date, expense: Double, maxSpending: Double, inRange: Bool) -> some View {
+    private func dayCell(
+        date: Date, expense: Double, income: Double, hasRecords: Bool, maxSpending: Double, inRange: Bool
+    ) -> some View {
         let isToday = calendar.isDateInToday(date)
         let isSelected = selectedDay.map { calendar.isDate($0, inSameDayAs: date) } ?? false
         let dayNum = calendar.component(.day, from: date)
-        let hasExpense = expense > 0 && inRange
+        let hasExpense = expense >= RecordsCalendarDaySummaryLogic.minimumAmount && inRange
+        // L8-10: el día de cobro salía en blanco. Un punto índigo (relleno, no texto) marca que entró dinero; el
+        // importe lo dice el resumen del día al elegirlo.
+        let hasIncome = income >= RecordsCalendarDaySummaryLogic.minimumAmount && inRange
 
         return Button {
-            dsWithAnimation(reduceMotion) {
-                selectedDay = isSelected ? nil : calendar.startOfDay(for: date)
-            }
+            selectedDay = isSelected ? nil : calendar.startOfDay(for: date)
         } label: {
             VStack(spacing: DS.Spacing.xxs) {
                 dayNumber(dayNum, isSelected: isSelected, isToday: isToday, inRange: inRange)
@@ -303,9 +335,13 @@ struct RecordsCalendarView: View {
                     Text(CompactAmountFormatter.string(expense))
                         // A11Y-DT: micro-monto en celda de 7 columnas; el a11yLabel da el monto completo.
                         .font(.system(size: 9, weight: .medium))
-                        .foregroundStyle(isSelected ? Color.white : Color.secondary)
+                        .foregroundStyle(isSelected ? theme.onAccent : Color.secondary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
+                }
+
+                if hasIncome {
+                    incomeDot(isSelected: isSelected)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -323,17 +359,49 @@ struct RecordsCalendarView: View {
         }
         .buttonStyle(.plain)
         .disabled(!inRange)
-        .accessibilityLabel(a11yLabel(date: date, expense: hasExpense ? expense : nil))
+        // Con gasto o ingreso, `records_calendar_day_active_<día>`: el XCUITest busca un día con resumen sin conocer
+        // las fechas del seed.
+        .accessibilityIdentifier(
+            "records_calendar_day_\(hasExpense || hasIncome ? "active_" : "")\(Self.dayKey(date, calendar: calendar))"
+        )
+        .accessibilityLabel(a11yLabel(
+            date: date,
+            expense: hasExpense ? expense : nil,
+            income: hasIncome ? income : nil,
+            hasRecords: hasRecords && inRange
+        ))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    /// Sobre el día elegido (relleno de acento) el índigo no se vería: ahí va en blanco, como el número.
+    private func incomeDot(isSelected: Bool) -> some View {
+        Circle()
+            .fill(isSelected ? Color.white : theme.accent)
+            .frame(width: DS.Chip.dotSize, height: DS.Chip.dotSize)
+            .accessibilityHidden(true)
+    }
+
+    /// Qué es el punto, dicho una vez debajo del calendario y solo si algún día lo lleva.
+    private var incomeLegend: some View {
+        HStack(spacing: DS.Spacing.xs) {
+            incomeDot(isSelected: false)
+            Text(L10n.UXL8B.calendarIncomeLegend)
+                .font(DS.Typography.captionSmall)
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 0)
+        }
+        .padding(.top, DS.Spacing.xs)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("records_calendar_income_legend")
     }
 
     @ViewBuilder
     private func dayNumber(_ dayNum: Int, isSelected: Bool, isToday: Bool, inRange: Bool) -> some View {
         let text = Text("\(dayNum)").font(.caption2.weight(isToday || isSelected ? .bold : .medium))
         if isSelected {
-            text.foregroundStyle(.white)
+            text.foregroundStyle(theme.onAccent)
         } else if isToday {
-            text.foregroundStyle(theme.accent)
+            text.foregroundStyle(theme.accentText)
         } else if inRange {
             text.foregroundStyle(.primary)
         } else {
@@ -349,25 +417,44 @@ struct RecordsCalendarView: View {
 
     // MARK: - Formatting
 
-    private static let monthFormatter = makeMonthFormatter(template: "MMMM")
-    private static let monthYearFormatter = makeMonthFormatter(template: "MMMMyyyy")
+    /// Por llamada y no `static let`: el idioma se cambia en caliente dentro de la app y un formatter guardado se
+    /// quedaba con el anterior.
+    private static var monthFormatter: DateFormatter { makeMonthFormatter(template: "MMMM") }
+    private static var monthYearFormatter: DateFormatter { makeMonthFormatter(template: "MMMMyyyy") }
 
     private static func makeMonthFormatter(template: String) -> DateFormatter {
         let formatter = DateFormatter()
-        formatter.locale = .current
+        formatter.locale = AppLocale.current
         formatter.setLocalizedDateFormatFromTemplate(template)
         return formatter
     }
 
+    /// Mayúscula solo en la primera letra: `capitalized` la ponía en cada palabra y el mes salía «Octubre De 2026».
     private func monthName(_ date: Date, withYear: Bool) -> String {
-        (withYear ? Self.monthYearFormatter : Self.monthFormatter).string(from: date).capitalized
+        (withYear ? Self.monthYearFormatter : Self.monthFormatter).string(from: date)
+            .capitalizingFirstLetter(locale: AppLocale.current)
     }
 
-    private func a11yLabel(date: Date, expense: Double?) -> String {
-        let dateStr = date.formatted(.dateTime.day().month(.wide))
+    /// Clave estable del día para los ids de XCUITest (`records_calendar_day_2026-10-17`), sin depender del idioma.
+    static func dayKey(_ date: Date, calendar: Calendar) -> String {
+        let c = calendar.dateComponents([.year, .month, .day], from: date)
+        return String(format: "%04d-%02d-%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0)
+    }
+
+    /// L8-10: el día de solo ingresos decía «Sin registros este día». Ahora dice lo mismo que el resumen del día
+    /// («Gastaste …, Entró …»), y «Sin registros» solo cuando el día no tiene ninguno.
+    private func a11yLabel(date: Date, expense: Double?, income: Double?, hasRecords: Bool) -> String {
+        let dateStr = date.formatted(.dateTime.day().month(.wide).locale(AppLocale.current))
+        var parts: [String] = [dateStr]
         if let expense {
-            return "\(dateStr), \(appPreferences.currency(expense, currencyCode: currencyCode))"
+            parts.append(L10n.UXL8B.daySpent(appPreferences.currency(expense, currencyCode: currencyCode)))
         }
-        return "\(dateStr), \(L10n.Records.noRecordsThisDay)"
+        if let income {
+            parts.append(L10n.UXL8B.dayIncome(appPreferences.currency(income, currencyCode: currencyCode)))
+        }
+        if expense == nil && income == nil && !hasRecords {
+            parts.append(L10n.Records.noRecordsThisDay)
+        }
+        return parts.joined(separator: ", ")
     }
 }

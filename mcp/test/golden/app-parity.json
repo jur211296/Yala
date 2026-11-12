@@ -147,11 +147,11 @@
           "total" : 12223.70616
         },
         "budgets" : {
-          "00000000-0000-4000-8000-000000006001" : 3737.305468,
+          "00000000-0000-4000-8000-000000006001" : 4118.8054679999996,
           "00000000-0000-4000-8000-000000006002" : 396,
-          "00000000-0000-4000-8000-000000006003" : 203,
-          "00000000-0000-4000-8000-000000006004" : 3316.305468,
-          "00000000-0000-4000-8000-000000006005" : 1132.516809,
+          "00000000-0000-4000-8000-000000006003" : 219.5,
+          "00000000-0000-4000-8000-000000006004" : 3697.805468,
+          "00000000-0000-4000-8000-000000006005" : 1248.122869,
           "00000000-0000-4000-8000-000000006006" : 3252.1162789999998,
           "00000000-0000-4000-8000-000000006007" : 485.189189
         },
@@ -256,6 +256,43 @@
             "suppressed" : true
           }
         },
+        "kinds" : {
+          "00000000-0000-4000-8000-00000000700a" : "ingreso",
+          "00000000-0000-4000-8000-00000000700b" : "ingreso",
+          "00000000-0000-4000-8000-00000000700c" : "ingreso",
+          "00000000-0000-4000-8000-00000000700d" : "gasto",
+          "00000000-0000-4000-8000-00000000700e" : "ingreso",
+          "00000000-0000-4000-8000-00000000700f" : "gasto",
+          "00000000-0000-4000-8000-00000000701a" : "gasto",
+          "00000000-0000-4000-8000-00000000701b" : "gasto",
+          "00000000-0000-4000-8000-00000000701c" : "ingreso",
+          "00000000-0000-4000-8000-00000000701d" : "ingreso",
+          "00000000-0000-4000-8000-00000000701e" : "gasto",
+          "00000000-0000-4000-8000-00000000701f" : "ingreso",
+          "00000000-0000-4000-8000-000000007001" : "ajuste_de_saldo",
+          "00000000-0000-4000-8000-000000007002" : "ajuste_de_saldo",
+          "00000000-0000-4000-8000-000000007003" : "ingreso",
+          "00000000-0000-4000-8000-000000007004" : "gasto",
+          "00000000-0000-4000-8000-000000007005" : "gasto",
+          "00000000-0000-4000-8000-000000007006" : "gasto",
+          "00000000-0000-4000-8000-000000007007" : "gasto",
+          "00000000-0000-4000-8000-000000007008" : "gasto",
+          "00000000-0000-4000-8000-000000007009" : "gasto",
+          "00000000-0000-4000-8000-000000007010" : "gasto",
+          "00000000-0000-4000-8000-000000007011" : "gasto",
+          "00000000-0000-4000-8000-000000007012" : "transferencia",
+          "00000000-0000-4000-8000-000000007013" : "transferencia",
+          "00000000-0000-4000-8000-000000007014" : "gasto",
+          "00000000-0000-4000-8000-000000007015" : "gasto",
+          "00000000-0000-4000-8000-000000007016" : "gasto",
+          "00000000-0000-4000-8000-000000007017" : "ingreso",
+          "00000000-0000-4000-8000-000000007018" : "gasto",
+          "00000000-0000-4000-8000-000000007019" : "gasto",
+          "00000000-0000-4000-8000-000000007020" : "gasto",
+          "00000000-0000-4000-8000-000000007021" : "ingreso",
+          "00000000-0000-4000-8000-000000007022" : "gasto",
+          "00000000-0000-4000-8000-000000007023" : "gasto"
+        },
         "periods" : {
           "anio_actual" : {
             "aproximado" : {
@@ -263,23 +300,23 @@
               "ingresos" : false,
               "neto" : true
             },
-            "gasto_medio_diario" : 9.414339,
-            "gastos" : 2419.48504,
-            "ingresos" : 7120,
-            "neto" : 4700.5149600000004,
-            "tasa_de_ahorro_pct" : 66.018468999999996
+            "gasto_medio_diario" : 10.90072,
+            "gastos" : 2801.48504,
+            "ingresos" : 7470,
+            "neto" : 4668.5149600000004,
+            "tasa_de_ahorro_pct" : 62.496853999999999
           },
           "mes_actual" : {
             "aproximado" : {
               "gastos" : true,
-              "ingresos" : false,
+              "ingresos" : true,
               "neto" : true
             },
-            "gasto_medio_diario" : 138.10607400000001,
-            "gastos" : 1933.48504,
-            "ingresos" : 4120,
-            "neto" : 2186.51496,
-            "tasa_de_ahorro_pct" : 53.070751000000001
+            "gasto_medio_diario" : 165.39178899999999,
+            "gastos" : 2315.48504,
+            "ingresos" : 4470,
+            "neto" : 2154.51496,
+            "tasa_de_ahorro_pct" : 48.199440000000003
           },
           "mes_pasado" : {
             "aproximado" : {
@@ -1551,6 +1588,11 @@
         "groups" : {
 
         },
+        "kinds" : {
+          "00000000-0000-4000-8000-000000007101" : "gasto",
+          "00000000-0000-4000-8000-000000007102" : "gasto",
+          "00000000-0000-4000-8000-000000007103" : "ingreso"
+        },
         "periods" : {
           "anio_actual" : {
             "aproximado" : {
@@ -1736,6 +1778,440 @@
 
             ],
             "transfer_pair_id" : null
+          }
+        ]
+      }
+    },
+    {
+      "budgetPeriod" : {
+        "desde" : "2026-09-01",
+        "hasta" : "2026-09-30"
+      },
+      "conversions" : [
+        {
+          "amount" : 80,
+          "dateKey" : "2026-09-10",
+          "from" : "USD",
+          "to" : "PEN"
+        }
+      ],
+      "description" : "Tarjeta con varias divisas (entrega 4): una principal en soles con su línea en dólares, una línea rota (en la misma divisa que su principal, se lee suelta) y una cuenta suelta en dólares. El presupuesto de la tarjeta cuenta el gasto de su línea convertido; el de la línea sola, solo la línea; uno por la cuenta de la línea rota no arrastra a la principal, y la principal no arrastra a la línea rota. Un ingreso SIN categoría (cuenta como ingreso por su signo, también en el `tipo`) y una transferencia con la forma que la app escribe (`balance_adjustment_type = \"transfer\"` y par): fuera de ingresos y gastos, y `tipo` transferencia.",
+      "expected" : {
+        "balances" : {
+          "accounts" : {
+            "00000000-0000-4000-8000-000000001201" : 1695,
+            "00000000-0000-4000-8000-000000001202" : -80,
+            "00000000-0000-4000-8000-000000001203" : 60,
+            "00000000-0000-4000-8000-000000001204" : -45
+          },
+          "aproximado" : true,
+          "total" : 1292.5
+        },
+        "budgets" : {
+          "00000000-0000-4000-8000-000000006201" : 1546,
+          "00000000-0000-4000-8000-000000006202" : 296,
+          "00000000-0000-4000-8000-000000006203" : 40,
+          "00000000-0000-4000-8000-000000006204" : 417.83783799999998
+        },
+        "conversions" : [
+          {
+            "quality" : "carried",
+            "value" : 296
+          }
+        ],
+        "groups" : {
+
+        },
+        "kinds" : {
+          "00000000-0000-4000-8000-000000007201" : "gasto",
+          "00000000-0000-4000-8000-000000007202" : "gasto",
+          "00000000-0000-4000-8000-000000007203" : "gasto",
+          "00000000-0000-4000-8000-000000007204" : "gasto",
+          "00000000-0000-4000-8000-000000007205" : "ingreso",
+          "00000000-0000-4000-8000-000000007206" : "ingreso",
+          "00000000-0000-4000-8000-000000007207" : "transferencia",
+          "00000000-0000-4000-8000-000000007208" : "transferencia"
+        },
+        "periods" : {
+          "anio_actual" : {
+            "aproximado" : {
+              "gastos" : false,
+              "ingresos" : false,
+              "neto" : false
+            },
+            "gasto_medio_diario" : 6.8190660000000003,
+            "gastos" : 1752.5,
+            "ingresos" : 3045,
+            "neto" : 1292.5,
+            "tasa_de_ahorro_pct" : 42.446634000000003
+          },
+          "mes_actual" : {
+            "aproximado" : {
+              "gastos" : false,
+              "ingresos" : false,
+              "neto" : false
+            },
+            "gasto_medio_diario" : 125.17857100000001,
+            "gastos" : 1752.5,
+            "ingresos" : 3045,
+            "neto" : 1292.5,
+            "tasa_de_ahorro_pct" : 42.446634000000003
+          },
+          "mes_pasado" : {
+            "aproximado" : {
+              "gastos" : false,
+              "ingresos" : false,
+              "neto" : false
+            },
+            "gasto_medio_diario" : 0,
+            "gastos" : 0,
+            "ingresos" : 0,
+            "neto" : 0,
+            "tasa_de_ahorro_pct" : null
+          }
+        },
+        "recurring" : {
+          "recurrentes_mensual" : 0,
+          "suscripciones_mensual" : 0
+        }
+      },
+      "id" : "tarjeta-con-una-linea",
+      "now" : "2026-09-15T12:00:00Z",
+      "preferredCurrency" : "PEN",
+      "rows" : {
+        "accounts" : [
+          {
+            "currency_code" : "PEN",
+            "exclude_from_statistics" : false,
+            "is_archived" : false,
+            "is_system_account" : false,
+            "name" : "Visa",
+            "parent_account_id" : null,
+            "sync_id" : "00000000-0000-4000-8000-000000001201",
+            "type" : "creditCard"
+          },
+          {
+            "currency_code" : "USD",
+            "exclude_from_statistics" : false,
+            "is_archived" : false,
+            "is_system_account" : false,
+            "name" : "Visa · USD",
+            "parent_account_id" : "00000000-0000-4000-8000-000000001201",
+            "sync_id" : "00000000-0000-4000-8000-000000001202",
+            "type" : "creditCard"
+          },
+          {
+            "currency_code" : "PEN",
+            "exclude_from_statistics" : false,
+            "is_archived" : false,
+            "is_system_account" : false,
+            "name" : "Visa · PEN",
+            "parent_account_id" : "00000000-0000-4000-8000-000000001201",
+            "sync_id" : "00000000-0000-4000-8000-000000001203",
+            "type" : "creditCard"
+          },
+          {
+            "currency_code" : "USD",
+            "exclude_from_statistics" : false,
+            "is_archived" : false,
+            "is_system_account" : false,
+            "name" : "Dólares",
+            "parent_account_id" : null,
+            "sync_id" : "00000000-0000-4000-8000-000000001204",
+            "type" : "creditCard"
+          }
+        ],
+        "budgets" : [
+          {
+            "account_ids" : [
+              "00000000-0000-4000-8000-000000001201"
+            ],
+            "currency_code" : "PEN",
+            "include_shared_expenses" : true,
+            "is_active" : true,
+            "limit_amount" : 2000,
+            "name" : "Tarjeta",
+            "natures" : null,
+            "period_type" : "monthly",
+            "subcategory_ids" : [
+
+            ],
+            "sync_id" : "00000000-0000-4000-8000-000000006201",
+            "tag_refs" : [
+
+            ]
+          },
+          {
+            "account_ids" : [
+              "00000000-0000-4000-8000-000000001202"
+            ],
+            "currency_code" : "PEN",
+            "include_shared_expenses" : true,
+            "is_active" : true,
+            "limit_amount" : 2000,
+            "name" : "Solo la línea",
+            "natures" : null,
+            "period_type" : "monthly",
+            "subcategory_ids" : [
+
+            ],
+            "sync_id" : "00000000-0000-4000-8000-000000006202",
+            "tag_refs" : [
+
+            ]
+          },
+          {
+            "account_ids" : [
+              "00000000-0000-4000-8000-000000001203"
+            ],
+            "currency_code" : "PEN",
+            "include_shared_expenses" : true,
+            "is_active" : true,
+            "limit_amount" : 2000,
+            "name" : "Línea rota",
+            "natures" : null,
+            "period_type" : "monthly",
+            "subcategory_ids" : [
+
+            ],
+            "sync_id" : "00000000-0000-4000-8000-000000006203",
+            "tag_refs" : [
+
+            ]
+          },
+          {
+            "account_ids" : [
+              "00000000-0000-4000-8000-000000001201"
+            ],
+            "currency_code" : "USD",
+            "include_shared_expenses" : true,
+            "is_active" : true,
+            "limit_amount" : 500,
+            "name" : "Tarjeta en dólares",
+            "natures" : null,
+            "period_type" : "monthly",
+            "subcategory_ids" : [
+
+            ],
+            "sync_id" : "00000000-0000-4000-8000-000000006204",
+            "tag_refs" : [
+
+            ]
+          }
+        ],
+        "categories" : [
+          {
+            "is_income" : false,
+            "is_visible" : true,
+            "name" : "Comida",
+            "sort_order" : 259,
+            "sync_id" : "00000000-0000-4000-8000-000000002201"
+          },
+          {
+            "is_income" : true,
+            "is_visible" : true,
+            "name" : "Sueldo",
+            "sort_order" : 260,
+            "sync_id" : "00000000-0000-4000-8000-000000002202"
+          }
+        ],
+        "exchange_rates" : [
+          {
+            "base" : "USD",
+            "date_key" : "2026-09-01",
+            "rates" : {
+              "PEN" : "3.70",
+              "USD" : "1"
+            },
+            "sync_id" : "00000000-0000-4000-8000-000000009201",
+            "timestamp" : "2026-09-01T12:00:00Z"
+          }
+        ],
+        "scheduled_payments" : [
+
+        ],
+        "subcategories" : [
+
+        ],
+        "tags" : [
+
+        ],
+        "tx_items" : [
+          {
+            "account_ref" : "00000000-0000-4000-8000-000000001201",
+            "amount" : -1250,
+            "amount_in_preferred_currency" : -1250,
+            "balance_adjustment_type" : null,
+            "category_ref" : "00000000-0000-4000-8000-000000002201",
+            "currency_code" : "PEN",
+            "date" : "2026-09-05T12:00:00Z",
+            "is_exchange_rate_provisional" : false,
+            "local_day" : null,
+            "need_override" : null,
+            "note" : null,
+            "preferred_currency_code" : "PEN",
+            "scheduled_payment_ref" : null,
+            "split_expense_id" : null,
+            "subcategory_ref" : null,
+            "sync_id" : "00000000-0000-4000-8000-000000007201",
+            "tag_refs" : [
+
+            ],
+            "transfer_pair_id" : null
+          },
+          {
+            "account_ref" : "00000000-0000-4000-8000-000000001202",
+            "amount" : -80,
+            "amount_in_preferred_currency" : -296,
+            "balance_adjustment_type" : null,
+            "category_ref" : "00000000-0000-4000-8000-000000002201",
+            "currency_code" : "USD",
+            "date" : "2026-09-10T12:00:00Z",
+            "is_exchange_rate_provisional" : false,
+            "local_day" : null,
+            "need_override" : null,
+            "note" : null,
+            "preferred_currency_code" : "PEN",
+            "scheduled_payment_ref" : null,
+            "split_expense_id" : null,
+            "subcategory_ref" : null,
+            "sync_id" : "00000000-0000-4000-8000-000000007202",
+            "tag_refs" : [
+
+            ],
+            "transfer_pair_id" : null
+          },
+          {
+            "account_ref" : "00000000-0000-4000-8000-000000001203",
+            "amount" : -40,
+            "amount_in_preferred_currency" : -40,
+            "balance_adjustment_type" : null,
+            "category_ref" : "00000000-0000-4000-8000-000000002201",
+            "currency_code" : "PEN",
+            "date" : "2026-09-11T12:00:00Z",
+            "is_exchange_rate_provisional" : false,
+            "local_day" : null,
+            "need_override" : null,
+            "note" : null,
+            "preferred_currency_code" : "PEN",
+            "scheduled_payment_ref" : null,
+            "split_expense_id" : null,
+            "subcategory_ref" : null,
+            "sync_id" : "00000000-0000-4000-8000-000000007203",
+            "tag_refs" : [
+
+            ],
+            "transfer_pair_id" : null
+          },
+          {
+            "account_ref" : "00000000-0000-4000-8000-000000001204",
+            "amount" : -45,
+            "amount_in_preferred_currency" : -166.5,
+            "balance_adjustment_type" : null,
+            "category_ref" : "00000000-0000-4000-8000-000000002201",
+            "currency_code" : "USD",
+            "date" : "2026-09-12T12:00:00Z",
+            "is_exchange_rate_provisional" : false,
+            "local_day" : null,
+            "need_override" : null,
+            "note" : null,
+            "preferred_currency_code" : "PEN",
+            "scheduled_payment_ref" : null,
+            "split_expense_id" : null,
+            "subcategory_ref" : null,
+            "sync_id" : "00000000-0000-4000-8000-000000007204",
+            "tag_refs" : [
+
+            ],
+            "transfer_pair_id" : null
+          },
+          {
+            "account_ref" : "00000000-0000-4000-8000-000000001201",
+            "amount" : 3000,
+            "amount_in_preferred_currency" : 3000,
+            "balance_adjustment_type" : null,
+            "category_ref" : "00000000-0000-4000-8000-000000002202",
+            "currency_code" : "PEN",
+            "date" : "2026-09-01T12:00:00Z",
+            "is_exchange_rate_provisional" : false,
+            "local_day" : null,
+            "need_override" : null,
+            "note" : null,
+            "preferred_currency_code" : "PEN",
+            "scheduled_payment_ref" : null,
+            "split_expense_id" : null,
+            "subcategory_ref" : null,
+            "sync_id" : "00000000-0000-4000-8000-000000007205",
+            "tag_refs" : [
+
+            ],
+            "transfer_pair_id" : null
+          },
+          {
+            "account_ref" : "00000000-0000-4000-8000-000000001201",
+            "amount" : 45,
+            "amount_in_preferred_currency" : 45,
+            "balance_adjustment_type" : null,
+            "category_ref" : null,
+            "currency_code" : "PEN",
+            "date" : "2026-09-03T12:00:00Z",
+            "is_exchange_rate_provisional" : false,
+            "local_day" : null,
+            "need_override" : null,
+            "note" : "Devolución sin categoría",
+            "preferred_currency_code" : "PEN",
+            "scheduled_payment_ref" : null,
+            "split_expense_id" : null,
+            "subcategory_ref" : null,
+            "sync_id" : "00000000-0000-4000-8000-000000007206",
+            "tag_refs" : [
+
+            ],
+            "transfer_pair_id" : null
+          },
+          {
+            "account_ref" : "00000000-0000-4000-8000-000000001201",
+            "amount" : -100,
+            "amount_in_preferred_currency" : -100,
+            "balance_adjustment_type" : "transfer",
+            "category_ref" : null,
+            "currency_code" : "PEN",
+            "date" : "2026-09-04T12:00:00Z",
+            "is_exchange_rate_provisional" : false,
+            "local_day" : null,
+            "need_override" : null,
+            "note" : null,
+            "preferred_currency_code" : "PEN",
+            "scheduled_payment_ref" : null,
+            "split_expense_id" : null,
+            "subcategory_ref" : null,
+            "sync_id" : "00000000-0000-4000-8000-000000007207",
+            "tag_refs" : [
+
+            ],
+            "transfer_pair_id" : "T2"
+          },
+          {
+            "account_ref" : "00000000-0000-4000-8000-000000001203",
+            "amount" : 100,
+            "amount_in_preferred_currency" : 100,
+            "balance_adjustment_type" : "transfer",
+            "category_ref" : null,
+            "currency_code" : "PEN",
+            "date" : "2026-09-04T12:00:00Z",
+            "is_exchange_rate_provisional" : false,
+            "local_day" : null,
+            "need_override" : null,
+            "note" : null,
+            "preferred_currency_code" : "PEN",
+            "scheduled_payment_ref" : null,
+            "split_expense_id" : null,
+            "subcategory_ref" : null,
+            "sync_id" : "00000000-0000-4000-8000-000000007208",
+            "tag_refs" : [
+
+            ],
+            "transfer_pair_id" : "T2"
           }
         ]
       }

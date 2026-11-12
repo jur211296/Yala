@@ -16,6 +16,8 @@ struct SettlementFormView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
     @Environment(SessionState.self) private var sessionState
+    @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // MARK: - Input
 
@@ -43,10 +45,21 @@ struct SettlementFormView: View {
     // Opt-out: alert post-save cuando bridge effective OFF en Caso C.
     @State private var pendingOptInSettlementID: String?
     @State private var showOptInAlert: Bool = false
+    /// UX 2.2 · L13-7: tras «Sí, registrar», el borrador del pago se completa ahí mismo con la hoja de la Bandeja.
+    @State private var optInDraftToComplete: InboxDraft?
+    /// Del «Sí» al cierre: el botón sigue apagado (el pago ya está apuntado; tocarlo otra vez lo duplicaría) y el cierre
+    /// corre una sola vez.
+    @State private var optInInFlight = false
+    /// La hoja llegó a montarse (solo su `onAppear` lo prueba).
+    @State private var optInSheetAppeared = false
 
     // Toggle del segmented control superior: alterna entre el monto original
     // (`debt.currencyCode`) y el sugerido convertido a `group.currencyCode`.
     @State private var useSuggestedAmount: Bool = false
+
+    /// Lote 12.3 (card rhgi, molde de L13-9): «Apuntar pago» siempre activo; tocarlo sin importe marca el campo y lo dice.
+    @State private var showsMissingAmount = false
+    @FocusState private var amountFocused: Bool
 
     // MARK: - Init
 
@@ -73,15 +86,21 @@ struct SettlementFormView: View {
     /// es cross-currency y existe un tipo de cambio que produzca un delta significativo.
     /// Si la conversión devuelve el mismo monto (sin rate disponible) → nil para ocultar
     /// el segmented silenciosamente.
-    private var suggestedAmount: Double? {
+    private var suggestedAmount: Double? { suggestedAmount(on: date) }
+
+    /// Con el tipo de cambio del día del pago (decisión A, 2026-11-02): es el mismo con el que ese pago cubre una venta en
+    /// otra divisa (`GroupTransactionBridge.convertAtPaymentDay`), así que pagar lo sugerido la deja cobrada entera.
+    private func suggestedAmount(on paymentDate: Date) -> Double? {
         guard group.showDebtsInSingleCurrency,
               debt.currencyCode != group.currencyCode
         else { return nil }
 
-        let converted = CurrencyConverter.shared.convertWithLatestRate(
+        let converted = GroupTransactionBridge.convertAtPaymentDay(
             Decimal(debt.amount),
             from: debt.currencyCode,
-            to: group.currencyCode
+            to: group.currencyCode,
+            on: paymentDate,
+            context: modelContext
         )
         let result = NSDecimalNumber(decimal: converted).doubleValue
         guard abs(result - debt.amount) > 0.01 else { return nil }
@@ -120,10 +139,15 @@ struct SettlementFormView: View {
                     detailsSection
 
                     // Submit button
-                    YalaPrimaryButton(L10n.Groups.Settlement.registerPayment, icon: "checkmark.circle.fill") {
-                        handleSave()
+                    VStack(spacing: DS.Spacing.sm) {
+                        missingAmountHint
+                        // El id va en el botón y no en la pila: puesto en el contenedor pisaría el de la línea de arriba.
+                        YalaPrimaryButton(L10n.Groups.Settlement.registerPayment, icon: "checkmark.circle.fill") {
+                            handleSave()
+                        }
+                        .accessibilityIdentifier("settlement_form_save")
                     }
-                    .disabled(parsedAmount <= 0 || isSaving)
+                    .disabled(isSaving || optInInFlight)
                     .padding(.horizontal, DS.Spacing.lg)
                 }
                 .padding(.top, DS.Spacing.lg)
@@ -152,6 +176,11 @@ struct SettlementFormView: View {
             } message: {
                 Text(L10n.Groups.Bridge.optoutAlertBody)
             }
+            // Elegir la cuenta lo registra; cerrar sin elegir lo deja en la Bandeja. En los dos casos el formulario se cierra.
+            .sheet(item: $optInDraftToComplete, onDismiss: finishOptIn) { draft in
+                GroupSettlementDraftFinalizationSheet(draft: draft, onApproved: {})
+                    .onAppear { optInSheetAppeared = true }
+            }
             .sheet(isPresented: $showAccountSelector) {
                 AccountSelectorSheet(
                     selectedAccount: $selectedAccount,
@@ -162,6 +191,7 @@ struct SettlementFormView: View {
             // M6: NO defaults — selectedAccount inicial nil, user siempre elige.
             // Cambio de currency → reset amount al canónico + nullify selectedAccount si
             // deja de ser compatible (selectivo: preserva la cuenta si sigue OK).
+            .onChange(of: date) { oldDate, _ in refreshSuggestedAmount(changedFrom: oldDate) }
             .onChange(of: useSuggestedAmount) { _, _ in
                 let newAmount = AmountInputHelper.formatWithGrouping(effectiveCanonicalAmount)
                 if amountString != newAmount {
@@ -180,9 +210,9 @@ struct SettlementFormView: View {
     private var currencySegmentedControl: some View {
         if let suggested = suggestedAmount {
             Picker("", selection: $useSuggestedAmount) {
-                Text("\(debt.currencyCode) \(AmountInputHelper.formatWithGrouping(debt.amount))")
+                Text("\(appPreferences.currencyDisplayFormat.label(for: debt.currencyCode)) \(AmountInputHelper.formatWithGrouping(debt.amount))")
                     .tag(false)
-                Text("≈ \(group.currencyCode) \(AmountInputHelper.formatWithGrouping(suggested))")
+                Text("≈ \(appPreferences.currencyDisplayFormat.label(for: group.currencyCode)) \(AmountInputHelper.formatWithGrouping(suggested))")
                     .tag(true)
             }
             .pickerStyle(.segmented)
@@ -202,7 +232,9 @@ struct SettlementFormView: View {
 
     @ViewBuilder
     private var accountSection: some View {
-        if sessionState.hasPrivateSession && bridgeEnabled {
+        if sessionState.hasPrivateSession && bridgeEnabled
+            && SettlementFormAccountLogic.asksForAccount(
+                currentUserMemberID: currentUserMemberID, payerMemberID: debt.fromMemberID) {
             SectionBox(title: L10n.Groups.Settlement.fromAccount) {
                 Button {
                     showAccountSelector = true
@@ -282,15 +314,18 @@ struct SettlementFormView: View {
     private var amountSection: some View {
         VStack(spacing: DS.Spacing.xs) {
             HStack(spacing: DS.Spacing.sm) {
-                Text(effectiveCurrency)
+                // Lote 13: respeta la preferencia «S/» / «PEN», como el formulario de gasto.
+                Text(appPreferences.currencyDisplayFormat.label(for: effectiveCurrency))
                     .font(DS.Typography.headline)
-                    .foregroundStyle(.thAccent)
+                    .foregroundStyle(.thAccentText)
 
                 TextField("0.00", text: $amountString)
                     .font(.system(size: 36, weight: .bold, design: .rounded)) // A11Y-DT: amount display
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
                     .keyboardType(.decimalPad)
+                    .focused($amountFocused)
+                    .accessibilityIdentifier("settlement_form_amount")
                     .onChange(of: amountString) { _, newValue in
                         let filtered = AmountInputHelper.filterAmountInput(newValue)
                         if filtered != newValue {
@@ -299,8 +334,51 @@ struct SettlementFormView: View {
                     }
             }
             .frame(maxWidth: .infinity)
+            .overlay(alignment: .bottom) {
+                if markedMissingAmount {
+                    Capsule()
+                        .fill(DS.Semantic.errorForeground)
+                        .frame(height: 2)
+                        .accessibilityHidden(true)
+                }
+            }
         }
         .padding(.horizontal, DS.Spacing.lg)
+    }
+
+    // MARK: - Qué falta (card rhgi)
+
+    /// Solo después de tocar «Apuntar pago», y mientras siga faltando: al escribir el importe se va sola.
+    private var markedMissingAmount: Bool {
+        showsMissingAmount && SettlementMissingFieldLogic.amountMissing(parsedAmount)
+    }
+
+    /// Una línea sobre «Apuntar pago» con lo que falta (la de L13-9 en el gasto de grupo).
+    @ViewBuilder
+    private var missingAmountHint: some View {
+        if markedMissingAmount {
+            HStack(spacing: DS.Spacing.xs) {
+                Image(systemName: "exclamationmark.circle.fill")
+                    .font(DS.Typography.caption)
+                    .accessibilityHidden(true)
+                Text(L10n.Groups.Expense.missingAmount)
+                    .font(DS.Typography.subheadline)
+            }
+            .foregroundStyle(DS.Semantic.errorForeground)
+            .frame(maxWidth: .infinity)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("settlement_form_missing_hint")
+            .transition(.opacity)
+        }
+    }
+
+    private func showMissingAmount() {
+        DS.Haptic.error()
+        dsWithAnimation(reduceMotion) {
+            showsMissingAmount = true
+            amountFocused = true
+        }
+        UIAccessibility.post(notification: .announcement, argument: L10n.Groups.Expense.missingAmount)
     }
 
     // MARK: - Details Section
@@ -326,12 +404,25 @@ struct SettlementFormView: View {
 
     // MARK: - Actions
 
+    /// Al cambiar la fecha con el sugerido elegido, el importe sigue al tipo de cambio de la fecha nueva, salvo que la
+    /// persona lo haya escrito a mano.
+    private func refreshSuggestedAmount(changedFrom oldDate: Date) {
+        guard useSuggestedAmount, let old = suggestedAmount(on: oldDate),
+              amountString == AmountInputHelper.formatWithGrouping(old),
+              let new = suggestedAmount(on: date) else { return }
+        amountString = AmountInputHelper.formatWithGrouping(new)
+    }
+
     private var parsedAmount: Double {
         AmountInputHelper.parseDecimal(amountString)
     }
 
     private func handleSave() {
-        guard parsedAmount > 0 else { return }
+        guard !SettlementMissingFieldLogic.amountMissing(parsedAmount) else {
+            showMissingAmount()
+            return
+        }
+        showsMissingAmount = false
         isSaving = true
 
         do {
@@ -382,16 +473,19 @@ struct SettlementFormView: View {
             #if DEBUG
             print("SettlementFormView: Error saving: \(error)")
             #endif
-            saveErrorMessage = error.localizedDescription
+            saveErrorMessage = GroupsUserFacingErrorLogic.message(for: error)
             showSaveError = true
             isSaving = false
         }
     }
 
+    /// «Sí, registrar» pide la cuenta ahí mismo (UX 2.2 · L13-7, decisión B): crea el borrador del pago y abre su hoja.
     private func confirmOptIn() {
         guard let settlementID = pendingOptInSettlementID else { return }
+        pendingOptInSettlementID = nil
+        let draft: InboxDraft
         do {
-            try DraftService.shared.createGroupSettlementOptInDraft(
+            draft = try DraftService.shared.createGroupSettlementOptInDraft(
                 splitSettlementID: settlementID,
                 groupZoneID: group.cloudKitZoneID
             )
@@ -399,8 +493,36 @@ struct SettlementFormView: View {
             #if DEBUG
             print("SettlementFormView: createGroupSettlementOptInDraft failed: \(error)")
             #endif
+            onSave()
+            dismiss()
+            return
         }
-        pendingOptInSettlementID = nil
+        optInSheetAppeared = false
+        optInInFlight = true
+        presentOptInSheet(draft, attempt: 1)
+    }
+
+    /// La alerta se está cerrando: la hoja se pide un momento después y se comprueba que llegó. Si UIKit la descarta,
+    /// un reintento; si tampoco, el borrador se queda en la Bandeja y el formulario se cierra igual.
+    private func presentOptInSheet(_ draft: InboxDraft, attempt: Int) {
+        Task { @MainActor in
+            do { try await Task.sleep(for: .milliseconds(350)) } catch { return }
+            guard optInInFlight else { return }
+            optInDraftToComplete = draft
+            do { try await Task.sleep(for: .milliseconds(1500)) } catch { return }
+            guard optInInFlight, !optInSheetAppeared else { return }
+            optInDraftToComplete = nil
+            if attempt < 2 {
+                presentOptInSheet(draft, attempt: attempt + 1)
+            } else {
+                finishOptIn()
+            }
+        }
+    }
+
+    private func finishOptIn() {
+        guard optInInFlight else { return }
+        optInInFlight = false
         onSave()
         dismiss()
     }

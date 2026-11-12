@@ -9,58 +9,61 @@
 import SwiftUI
 
 struct InboxBulkApproveSuccessView: View {
-    @Environment(\.yalaTheme) private var theme
-    @ScaledMetric(relativeTo: .largeTitle) private var checkmarkSize: CGFloat = 40 // A11Y-DT: @ScaledMetric
+    @Environment(AppPreferences.self) private var appPreferences
 
     let approvedCount: Int
+    /// Total y cuenta de lo aprobado; cada parte sale solo si es la misma para todos.
+    var summary: InboxBulkApproveSummaryLogic.Summary = .init(total: nil, currencyCode: nil, accountName: nil)
+    /// Lo que no se guardó y qué le falta (UX 2.2 · L4-7): antes «2 transacciones creadas» no decía que uno se quedó.
+    var leftoverLine: String? = nil
     let onViewRecords: () -> Void
     let onBackToInbox: () -> Void
+
+    private var summaryLine: String? {
+        var parts: [String] = []
+        if let total = summary.total, let code = summary.currencyCode {
+            parts.append(L10n.Inbox.bulkSuccessTotal(appPreferences.currency(total, currencyCode: code, forceFullPrecision: true)))
+        }
+        if let account = summary.accountName { parts.append(account) }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
 
     var body: some View {
         VStack(spacing: DS.Spacing.xxl) {
             Spacer()
 
-            // Success circle (matching ImageSelectionView style)
-            ZStack {
-                // Main circle with gradient
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: DS.Gradients.success,
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 100, height: 100)
-                    .shadow(color: DS.Semantic.successForeground.opacity(0.4), radius: 16, x: 0, y: 8)
-
-                // Glass overlay
-                Circle()
-                    .fill(DS.Colors.backgroundSubtle)
-                    .frame(width: 100, height: 100)
-                    .mask(
-                        LinearGradient(
-                            colors: [.white, .clear],
-                            startPoint: .top,
-                            endPoint: .center
-                        )
-                    )
-
-                // Checkmark icon
-                Image(systemName: "checkmark")
-                    .font(.system(size: checkmarkSize, weight: .medium))
-                    .foregroundStyle(.white)
-            }
+            // El mismo check que al aprobar uno (UX 2.2 · L4-13, variante 2): verde SUAVE —el tinte al 15 % del verde
+            // de éxito, como los indicadores de Últimos registros—, sin halo, degradado ni sombra.
+            InboxApproveSuccessCheck(isVisible: true)
 
             // Count and label
             VStack(spacing: DS.Spacing.sm) {
                 Text("\(approvedCount)")
                     .font(Font.system(.largeTitle, design: .rounded).weight(.bold))
-                    .foregroundStyle(.thAccent)
+                    .foregroundStyle(.thAccentText)
 
                 Text(approvedCount == 1 ? L10n.Inbox.transactionCreated : L10n.Inbox.transactionsCreated)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
+
+                // «S/ 60.50 en total · Cuenta Principal»: lo que se guardó, no solo cuántos.
+                if let summaryLine {
+                    Text(summaryLine)
+                        .font(DS.Typography.subheadline.weight(.medium))
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, DS.Spacing.xl)
+                        .accessibilityIdentifier("inbox_bulk_success_summary")
+                }
+
+                if let leftoverLine {
+                    Label(leftoverLine, systemImage: "exclamationmark.circle")
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(DS.Semantic.warningForeground)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, DS.Spacing.xl)
+                        .accessibilityIdentifier("inbox_bulk_success_leftover")
+                }
             }
 
             Spacer()
@@ -71,24 +74,30 @@ struct InboxBulkApproveSuccessView: View {
                 YalaPrimaryButton(L10n.Inbox.viewInRecords, icon: "list.bullet.rectangle") {
                     onViewRecords()
                 }
+                .accessibilityIdentifier("inbox_bulk_success_records")
 
                 // Secondary: Back to Inbox
                 YalaSecondaryButton(L10n.Inbox.backToInbox, icon: "tray") {
                     onBackToInbox()
                 }
+                .accessibilityIdentifier("inbox_bulk_success_back")
             }
             .padding(.horizontal, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(.thBackground)
+        // Momento de éxito: aquí se pide la oferta de prueba armada (UX 2.2 · L1-12, `TrialOfferMomentLogic`).
+        .onAppear { TrialOfferMoments.noteRecordSaved() }
     }
 }
 
 #Preview {
     InboxBulkApproveSuccessView(
-        approvedCount: 5,
+        approvedCount: 2,
+        summary: .init(total: 60.5, currencyCode: "PEN", accountName: "Cuenta Principal"),
         onViewRecords: {},
         onBackToInbox: {}
     )
+    .previewAppPreferences()
 }

@@ -22,6 +22,48 @@ struct LimitReachedBanner: View {
     // MARK: - Body
 
     var body: some View {
+        if feature == .budgets, let limit = feature.freeLimit {
+            budgetsNeutralBanner(limit: limit)
+        } else {
+            alertBanner
+        }
+    }
+
+    /// Presupuestos (UX 2.2 · L9-9): informa sin alarmar. Sin rojo ni estrella con brillo, y la cifra es el límite del
+    /// plan, no «6 de 3».
+    private func budgetsNeutralBanner(limit: Int) -> some View {
+        HStack(spacing: DS.Spacing.md) {
+            Image(systemName: "info.circle")
+                .font(DS.Typography.body)
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+
+            Text(L10n.UXL9.freePlanBanner(limit))
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.thPrimaryText)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: DS.Spacing.sm)
+
+            Button {
+                onUpgrade()
+            } label: {
+                Text(L10n.UXL9.seePro)
+                    .font(DS.Typography.labelSmall)
+                    .foregroundStyle(.thAccentText)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("budgets_free_plan_see_pro")
+        }
+        .padding(DS.Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                .fill(Color(.tertiarySystemFill))
+        )
+        .accessibilityIdentifier("budgets_free_plan_banner")
+    }
+
+    private var alertBanner: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "exclamationmark.circle.fill")
                 .font(DS.Typography.title)
@@ -47,10 +89,11 @@ struct LimitReachedBanner: View {
             } label: {
                 HStack(spacing: DS.Spacing.xs) {
                     YalaSpark(size: .small, animated: false)
-                    Text(L10n.FeatureGate.upgrade)
+                    // «Probar Pro gratis» o «Pasarme a Pro»: «Actualizar» sonaba a la App Store (UX 2.2 · L17-4).
+                    Text(ProPresentation.upgradeButtonTitle)
                         .font(DS.Typography.labelSmall)
                 }
-                .foregroundStyle(.white)
+                .foregroundStyle(.thOnAccent)
                 .padding(.horizontal, DS.Spacing.md)
                 .padding(.vertical, DS.Spacing.xs)
                 .background(theme.accent)

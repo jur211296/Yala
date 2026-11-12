@@ -129,8 +129,7 @@ private enum CoachMarkLayout {
     static let darkDimOpacity: Double = 0.75
     static let tooltipGap: CGFloat = 80
     static let visibilityMargin: CGFloat = 100
-    static let spotlightBorderWidth: CGFloat = 2
-    static let spotlightGlowRadius: CGFloat = 12
+    static let spotlightBorderWidth: CGFloat = 2.5
 }
 
 // MARK: - Coach Mark Overlay
@@ -142,6 +141,9 @@ struct CoachMarkOverlay: View {
     let scrollProxy: ScrollViewProxy?
     @Binding var currentIndex: Int
     @Binding var isPresented: Bool
+    /// Lo que hace «Omitir guía». `nil` = lo mismo que terminarla (`onComplete`), que es lo justo cuando la guía es
+    /// una sola pantalla. Una guía de varias fases (el tour Pro) pasa aquí cómo darla por vista ENTERA.
+    let onSkip: (() -> Void)?
     let onComplete: () -> Void
 
     @Environment(\.yalaTheme) private var theme
@@ -200,20 +202,20 @@ struct CoachMarkOverlay: View {
                     .opacity(isVisible ? 1 : 0)
                     .allowsHitTesting(true)
                     .contentShape(Rectangle())
+                    // Tocar la zona oscura cierra la guía, como «Omitir guía» (UX 2.2 · L5-9): antes avanzaba al
+                    // paso siguiente, y en iOS tocar fuera cierra.
                     .onTapGesture {
                         guard !isTransitioning else { return }
-                        advance()
+                        dismissAndComplete(skipped: true)
                     }
 
-                // Bright border around spotlight for dark themes
-                if isDarkTheme {
-                    SpotlightBorderShape(spotlight: AnimatableRect(rect), cornerRadius: cornerRadius)
-                        .stroke(theme.accent.opacity(0.8), lineWidth: CoachMarkLayout.spotlightBorderWidth)
-                        .shadow(color: theme.accent.opacity(0.5), radius: CoachMarkLayout.spotlightGlowRadius)
-                        .ignoresSafeArea()
-                        .opacity(isVisible ? 1 : 0)
-                        .allowsHitTesting(false)
-                }
+                // Borde sólido del color de la app alrededor del foco, sin brillo (UX 2.2 · L5-10, variante 1).
+                // Antes era un borde difuso con sombra de color, y solo en temas oscuros.
+                SpotlightBorderShape(spotlight: AnimatableRect(rect), cornerRadius: cornerRadius)
+                    .stroke(theme.accent, lineWidth: CoachMarkLayout.spotlightBorderWidth)
+                    .ignoresSafeArea()
+                    .opacity(isVisible ? 1 : 0)
+                    .allowsHitTesting(false)
 
                 // Tooltip card
                 tooltipCard(step: step, targetFrame: frame)
@@ -229,6 +231,12 @@ struct CoachMarkOverlay: View {
                     .onTapGesture { }
             }
         }
+        // Card v84b: el Panel monta la guía dentro de su pestaña, donde `ContentView` apaga las transacciones y un
+        // `withAnimation` no anima nada: el oscurecido, el foco y la tarjeta salían en seco. Implícitas aquí, en el
+        // contenedor común, animan igual dentro de una pestaña y en una hoja (Ajustes).
+        .animation(reduceMotion ? nil : DS.Animation.appear, value: isVisible)
+        .animation(reduceMotion ? nil : DS.Animation.appear, value: showTooltip)
+        .animation(reduceMotion ? nil : DS.Animation.selection, value: currentIndex)
         .onAppear {
             handleStepTransition(initial: true)
         }
@@ -270,50 +278,38 @@ struct CoachMarkOverlay: View {
             scrollThenShow(step: step, initial: initial, gen: gen)
         } else if shouldScroll && initial {
             // First appearance, target already visible — scroll to center then show
-            withAnimation(.easeInOut(duration: DS.Animation.normal)) {
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.normal)) {
                 scrollProxy?.scrollTo(step.id, anchor: .center)
             }
             Task {
                 try? await Task.sleep(for: .seconds(DS.Animation.normal + 0.1))
                 guard transitionGeneration == gen else { return }
                 scrollSettleToken += 1
-                dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.slow)) {
-                    isVisible = true
-                }
+                isVisible = true
                 try? await Task.sleep(for: .seconds(DS.Animation.fast))
                 guard transitionGeneration == gen else { return }
                 isTransitioning = false
-                dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.normal)) {
-                    showTooltip = true
-                }
+                showTooltip = true
             }
         } else if initial {
             // No scroll proxy — fade in directly
             Task {
                 try? await Task.sleep(for: .milliseconds(50))
                 guard transitionGeneration == gen else { return }
-                dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.slow)) {
-                    isVisible = true
-                }
+                isVisible = true
                 try? await Task.sleep(for: .seconds(DS.Animation.fast))
                 guard transitionGeneration == gen else { return }
                 isTransitioning = false
-                dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.normal)) {
-                    showTooltip = true
-                }
+                showTooltip = true
             }
         } else {
             // Target visible, no scroll — crossfade tooltip
-            dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.normal)) {
-                showTooltip = false
-            }
+            showTooltip = false
             Task {
                 try? await Task.sleep(for: .seconds(DS.Animation.fast))
                 guard transitionGeneration == gen else { return }
                 isTransitioning = false
-                dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.normal)) {
-                    showTooltip = true
-                }
+                showTooltip = true
             }
         }
     }
@@ -321,13 +317,11 @@ struct CoachMarkOverlay: View {
     private func scrollThenShow(step: CoachMarkStep, initial: Bool, gen: UInt) {
         // Hide tooltip during scroll (spotlight stays dimmed)
         if !initial {
-            dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.fast)) {
-                showTooltip = false
-            }
+            showTooltip = false
         }
 
         // Scroll to the target
-        withAnimation(.easeInOut(duration: DS.Animation.normal)) {
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.normal)) {
             scrollProxy?.scrollTo(step.id, anchor: .center)
         }
 
@@ -338,15 +332,11 @@ struct CoachMarkOverlay: View {
             scrollSettleToken += 1
             isTransitioning = false
             if !isVisible {
-                dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.slow)) {
-                    isVisible = true
-                }
+                isVisible = true
             }
             try? await Task.sleep(for: .seconds(DS.Animation.fast))
             guard transitionGeneration == gen else { return }
-            dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.normal)) {
-                showTooltip = true
-            }
+            showTooltip = true
         }
     }
 
@@ -357,6 +347,17 @@ struct CoachMarkOverlay: View {
         let isAbove = targetFrame.midY > screenHeight * 0.4
 
         return VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            // El avance en una píldora rellena, arriba (UX 2.2 · L5-10): «1/9» abajo casi no se veía.
+            if steps.count > 1 {
+                Text(L10n.TipKit.stepProgress(currentIndex + 1, steps.count))
+                    .font(DS.Typography.labelSmall.bold())
+                    .foregroundStyle(.thOnAccent)
+                    .padding(.horizontal, DS.Spacing.sm)
+                    .padding(.vertical, DS.Spacing.xxs)
+                    .background(Capsule().fill(theme.accent))
+                    .accessibilityIdentifier("coach_mark_progress")
+            }
+
             Text(step.title)
                 .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
@@ -370,20 +371,16 @@ struct CoachMarkOverlay: View {
             HStack {
                 // Skip button
                 Button {
-                    dismissAndComplete()
+                    dismissAndComplete(skipped: true)
                 } label: {
                     Text(L10n.TipKit.skip)
                         .font(DS.Typography.labelSmall)
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("coach_mark_skip")
 
                 Spacer()
-
-                // Step indicator
-                Text("\(currentIndex + 1)/\(steps.count)")
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.tertiary)
 
                 // Next / Done button
                 Button {
@@ -391,7 +388,7 @@ struct CoachMarkOverlay: View {
                 } label: {
                     Text(currentIndex < steps.count - 1 ? L10n.TipKit.next : L10n.TipKit.done)
                         .font(DS.Typography.bodyBold)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.thOnAccent)
                         .padding(.horizontal, DS.Spacing.lg)
                         .padding(.vertical, DS.Spacing.sm)
                         .background(theme.accent)
@@ -431,24 +428,28 @@ struct CoachMarkOverlay: View {
         guard !isTransitioning else { return }
         if currentIndex < steps.count - 1 {
             // The spotlight shape animates automatically via animatableData
-            dsWithAnimation(reduceMotion, .spring(duration: 0.45, bounce: 0.15)) {
-                currentIndex += 1
-            }
+            currentIndex += 1
         } else {
             dismissAndComplete()
         }
     }
 
-    private func dismissAndComplete() {
+    private func dismissAndComplete(skipped: Bool = false) {
         isTransitioning = true
-        dsWithAnimation(reduceMotion, .easeIn(duration: DS.Animation.fast)) {
-            showTooltip = false
-            isVisible = false
-        }
+        showTooltip = false
+        isVisible = false
         Task {
-            try? await Task.sleep(for: .seconds(DS.Animation.fast + 0.05))
+            // Lo que dura el fundido de salida (`DS.Animation.appear`) antes de desmontar el overlay.
+            do {
+                try await Task.sleep(for: .seconds(reduceMotion ? 0.05 : DS.Animation.normal + 0.05))
+            } catch {
+                // Cancelada: se cierra igual, sin esperar al fundido.
+                #if DEBUG
+                print("CoachMarkOverlay: cierre sin esperar al fundido: \(error)")
+                #endif
+            }
             isPresented = false
-            onComplete()
+            if skipped, let onSkip { onSkip() } else { onComplete() }
         }
     }
 }
@@ -464,6 +465,7 @@ extension View {
         isPresented: Binding<Bool>,
         currentIndex: Binding<Int>,
         scrollProxy: ScrollViewProxy? = nil,
+        onSkip: (() -> Void)? = nil,
         onComplete: @escaping () -> Void
     ) -> some View {
         self.overlayPreferenceValue(CoachMarkAnchorKey.self) { anchors in
@@ -476,6 +478,7 @@ extension View {
                         scrollProxy: scrollProxy,
                         currentIndex: currentIndex,
                         isPresented: isPresented,
+                        onSkip: onSkip,
                         onComplete: onComplete
                     )
                 }

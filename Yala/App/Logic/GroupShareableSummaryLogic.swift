@@ -43,12 +43,10 @@
 //     de mostrar su sección de pagos, para no afirmar «todo saldado» sobre unas deudas que se están
 //     contando en otro sitio.
 //
-//  Y una que se aparta de la pantalla a propósito: **los pagos van SIEMPRE simplificados**
-//  (`simplifyDebts: true`), tenga el grupo la preferencia puesta o no. Lo que este resumen responde
-//  es «cómo saldamos esto en los menos pagos posibles», que es la pregunta del cierre del viaje. El
-//  precio, dicho para que nadie lo descubra por sorpresa: en un grupo con la preferencia APAGADA,
-//  la lista de aquí puede no coincidir con la de la pestaña Balances — misma deuda total, distinto
-//  reparto de transferencias.
+//  Y los pagos siguen la opción «Simplificar deudas» del grupo (`group.simplifyDebts`), igual que la
+//  pestaña Saldos (UX 2.2 · L13-6, decisión B de Jürgen, 2026-10-18). Hasta entonces el resumen
+//  simplificaba SIEMPRE, y en un grupo con la opción apagada la imagen decía «Ana → Tú S/ 50» mientras
+//  Saldos decía «Ana → Tú S/ 80» para la misma deuda: dos respuestas a la misma pregunta.
 //
 
 import Foundation
@@ -69,7 +67,7 @@ enum GroupShareableSummaryLogic {
         var id: String { memberID }
     }
 
-    /// Una transferencia de la lista mínima para saldar (salida de `DebtSimplificationService`).
+    /// Una transferencia para saldar (salida de `GroupBalanceService.calculateDebts`, simplificada o no según el grupo).
     struct PaymentLine: Identifiable, Equatable {
         let fromMemberID: String
         let toMemberID: String
@@ -167,13 +165,13 @@ enum GroupShareableSummaryLogic {
             nameByMemberID[memberID] ?? unknownMemberName
         }
 
-        // Deudas vivas del grupo, simplificadas y por moneda (el servicio agrupa por divisa
-        // internamente y simplifica cada una por separado).
+        // Deudas vivas del grupo, por moneda (el servicio agrupa por divisa internamente), con la misma
+        // opción de simplificar que usa Saldos (`GroupDetailViewModel.recalculate`).
         let rawDebts = GroupBalanceService.calculateDebts(
             expenses: uniqueExpenses,
             shares: uniqueShares,
             settlements: settlements,
-            simplifyDebts: true
+            simplifyDebts: group.simplifyDebts
         )
 
         // Regla 4 de la cabecera: con el ajuste encendido los pagos van todos a la moneda del grupo,

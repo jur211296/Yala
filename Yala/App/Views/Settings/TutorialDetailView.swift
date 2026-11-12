@@ -151,7 +151,7 @@ struct TutorialDetailView: View {
             VStack(spacing: DS.Spacing.xs) {
                 Text(L10n.Tutorials.stepLabel(stepNumber))
                     .font(DS.Typography.headline)
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
 
                 Text(step.title)
                     .font(DS.Typography.bodyBold)
@@ -267,7 +267,7 @@ struct TutorialDetailView: View {
             } label: {
                 Text(isIntroPage ? L10n.Tutorials.start : L10n.Tutorials.next)
                     .font(DS.Typography.bodyBold)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.thOnAccent)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, DS.Spacing.md)
                     .background(theme.accent)

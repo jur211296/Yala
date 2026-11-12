@@ -3,7 +3,7 @@
 //  Yala
 //
 //  Vista detalle de un grupo — fullScreenCover "app within app".
-//  Navigation chips: Gastos / Balances / Estadísticas.
+//  Navigation chips: Gastos / Saldos / Estadísticas.
 //
 
 import SwiftUI
@@ -73,6 +73,8 @@ struct GroupDetailView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(SceneNavigation.self) private var navigation
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // MARK: - Input
 
@@ -89,7 +91,10 @@ struct GroupDetailView: View {
     // MARK: - State
 
     @State private var viewModel: GroupDetailViewModel
-    @State private var selectedTab: GroupDetailTab = .records
+    /// Las pestañas montadas y la que se ve. Chip y página cambian juntos (`StagedTabPages`, card pjum): la nueva se
+    /// monta invisible debajo y, ya montada, la fila y la página cambian en el mismo movimiento.
+    @State private var pages = StagedTabSelection<GroupDetailTab>(.records)
+    private var selectedTab: GroupDetailTab { pages.shown }
     @State private var showNudgeBanner = false
     @State private var showShareSheet = false
     @State private var wasArchivedOnAppear = false
@@ -105,64 +110,32 @@ struct GroupDetailView: View {
 
     // MARK: - Body
 
+    /// El grupo se puede leer. Salir de él (y «Transferir y salir») lo borra del todo y sube `dataVersion`, y un borrado
+    /// por sync hace lo mismo con el detalle abierto: el `body` se vuelve a evaluar ANTES de que el `onChange` de abajo
+    /// lo cierre, y en iOS 27.x leer un modelo borrado aborta (ticket `group-detail-reads-the-group-after-leaving-it`).
+    /// Molde de `GroupSettingsView.isGroupReadable`. Con él borrado, el detalle no pinta contenido mientras se va.
+    private var isGroupReadable: Bool {
+        !group.isDeleted && group.modelContext != nil
+    }
+
+    /// El título: con el grupo borrado, el nombre de la última carga (`viewModel.groupName`), sin leerlo.
+    private var groupTitle: String {
+        isGroupReadable ? group.name : viewModel.groupName
+    }
+
     var body: some View {
         ZStack {
-            VStack(spacing: 0) {
-                if let nudge = NudgeService.shared.currentNudge, showNudgeBanner {
-                    GroupNudgeBanner(
-                        nudge: nudge,
-                        message: NudgeService.shared.currentNudgeMessage ?? "",
-                        onAction: {
-                            NudgeService.shared.recordInteracted(nudge)
-                            withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
-                            handleNudgeAction(nudge)
-                        },
-                        onDismiss: {
-                            NudgeService.shared.recordDismissed(nudge)
-                            withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
-                        },
-                        onAutoDismiss: {
-                            NudgeService.shared.recordDismissed(nudge, autoDismissed: true)
-                            withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
-                        }
-                    )
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.top, DS.Spacing.sm)
-                }
-
-                // banner pending/rejected/migrado. Refresh ya cubierto por onChange(dataVersion) abajo.
-                // C-10: los tres estados congelados muestran banner. Un grupo congelado JAMÁS queda mudo.
-                if group.migrationState == .frozenRejoinable {
-                    // G6-3: grupo congelado por migración → banner "se movió" + CTA re-join (la RED es el guard
-                    // service-level; esto es la UX primaria — los botones de escritura se ocultan abajo).
-                    MigratedGroupBanner(mode: .rejoin, onAction: { handleMigratedRejoin() })
-                } else if group.migrationState == .frozenNeedsUpdate {
-                    // C-10: este build no puede volver a entrar nunca → la salida real es el App Store.
-                    MigratedGroupBanner(mode: .needsUpdate, onAction: { openAppStoreForRejoin() })
-                } else if group.migrationState == .frozenPaused {
-                    // C-10: kill remoto del canal. Sin CTA: no hay nada que el usuario pueda hacer, y
-                    // decirle que actualice sería falso (su app está perfecta).
-                    MigratedGroupBanner(mode: .paused, onAction: nil)
-                } else if viewModel.currentUserMember?.isPendingApproval == true {
-                    PendingApprovalBanner(state: .pending, onLeave: nil)
-                } else if viewModel.currentUserMember?.isRejected == true {
-                    PendingApprovalBanner(state: .rejected, onLeave: { discardRejectedGroup() })
-                }
-
-                tabContent
-                    .yalaSkeleton(!viewModel.isReady)
-            }
-
-            // FAB — new expense (only on records tab). G6-3: oculto en grupos congelados (sin escrituras).
-            if selectedTab == .records && viewModel.canCurrentUserParticipate && !group.isMigratedFrozen {
-                newExpenseFAB
+            // Con el grupo ya borrado no se pinta nada encima del fondo mientras la pantalla se cierra: los avisos, las
+            // pestañas y el botón de nuevo gasto leen el grupo y sus miembros, que se borraron con él.
+            if isGroupReadable {
+                groupContent
             }
         }
         .yalaScreenBackground(.panel)
         .navigationChipsInset {
             navigationChipsBar
         }
-        .navigationTitle(group.name)
+        .navigationTitle(groupTitle)
         .navigationBarTitleDisplayMode(.large)
         // Empujado (compacta): push nativo con swipe-back desde el borde izquierdo + chevron custom, y tab bar
         // oculto para conservar el look inmersivo que tenía como fullScreenCover. En columna (ventana ancha)
@@ -178,86 +151,74 @@ struct GroupDetailView: View {
                 }
             }
 
-            ToolbarSpacer(.fixed, placement: .topBarTrailing)
-
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    viewModel.activeSheet = .members
-                } label: {
-                    ZStack(alignment: .topTrailing) {
-                        HStack(spacing: DS.Spacing.xxs) {
-                            Image(systemName: "person.2.fill")
-                            Text("\(viewModel.activeMembers.count)")
-                                .font(DS.Typography.subheadline)
-                        }
-                        .fontWeight(.medium)
-                        .foregroundStyle(Color.primary)
-
-                        // Badge de solicitudes pendientes — movido del engranaje: las solicitudes
-                        // son de personas y se aprueban/rechazan en la sheet de Miembros.
-                        if viewModel.isCurrentUserAdmin && !viewModel.pendingApprovalMembers.isEmpty {
-                            Circle()
-                                .fill(DS.Semantic.errorForeground)
-                                .frame(width: 8, height: 8)
-                                .offset(x: DS.Spacing.xxs, y: -DS.Spacing.xxs)
-                        }
-                    }
-                }
-                .accessibilityLabel(membersButtonA11yLabel)
-                .accessibilityIdentifier("group_members_button")
-            }
-
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    viewModel.activeSheet = .settings
-                } label: {
-                    Image(systemName: "gearshape")
-                        .fontWeight(.medium)
-                        .foregroundStyle(Color.primary)
-                }
-                .accessibilityLabel(L10n.Groups.Settings.title)
-                // Sin identifier, la única forma de alcanzar Ajustes del grupo desde un XCUITest era
-                // el label localizado, que está prohibido — así que ningún test llegaba a esa
-                // pantalla. Lo añade el resumen compartible porque es lo que necesita para probar su
-                // punto de entrada; el botón no cambia en nada más.
-                .accessibilityIdentifier("group_settings_button")
-                .buttonBorderShape(.circle)
+            // Miembros y Ajustes leen los miembros del grupo: con él borrado se van con el contenido.
+            if isGroupReadable {
+                groupToolbarItems
             }
         }
         .sheet(item: $viewModel.activeSheet, onDismiss: {
+            // Al cerrarse Ajustes tras salir del grupo, el grupo ya está borrado: se suelta y no se recarga nada.
+            guard isGroupReadable else {
+                viewModel.releaseDeletedGroup()
+                return
+            }
             // Reemplazo de sheet: si el detalle pidió editar, sube el editor
             // (conserva el gasto); si no, cierre normal (recarga datos).
             if let expense = viewModel.consumePendingEditFromDetail() {
                 viewModel.activeSheet = expense.isOpeningBalance ? .editOpeningBalance(expense) : .editExpense(expense)
+            } else if let next = viewModel.consumeAfterSheetDismiss() {
+                // L19-4/L19-10/L19-11: «Saldar primero» y «Ver los saldos» desde Ajustes o Miembros.
+                viewModel.loadData()
+                switch next {
+                case .settle(let debt): viewModel.activeSheet = .settlement(debt)
+                case .showBalances: selectPage(.balances)
+                }
             } else {
                 viewModel.loadData()
+                // Card 6n1o: un rechazo del servidor que llegó con la hoja delante sale ahora, sin otra hoja detrás.
+                OpeningBalanceServerRejectionObserver.present(viewModel, windowID: navigation.id)
             }
         }) { sheet in
-            sheetContent(for: sheet)
+            presentedSheet(for: sheet)
         }
         .sheet(isPresented: $showShareSheet) {
             if let url = viewModel.shareURL {
-                ActivityView(activityItems: [url])
+                // L12-14 · el enlace viaja con un texto que dice qué es y qué hacer si aún no tiene Yala.
+                ActivityView(activityItems: [GroupInviteShareMessage.text(
+                    inviterName: UserDefaults.standard.string(forKey: AppPreferences.Keys.userName),
+                    defaultName: L10n.Profile.defaultName,
+                    groupName: groupTitle,
+                    url: url)])
                 }
         }
-        .alert(L10n.Common.error, isPresented: $viewModel.showActionError) {
+        .alert(viewModel.actionErrorTitle ?? L10n.Common.error, isPresented: $viewModel.showActionError) {
             Button(L10n.Common.ok) {}
         } message: {
             Text(viewModel.actionErrorMessage ?? L10n.Groups.Errors.actionFailed)
         }
+        .modifier(OpeningBalanceServerRejectionObserver(viewModel: viewModel))
         .appliesPendingRemoteChanges(sessionState)
+        .task { await openSettingsIfRequested() }
         .onAppear {
             wasArchivedOnAppear = group.isArchived
+            // Card th4n: abierto desde su aviso, el grupo espera al cambio que avisa antes de enseñarse.
+            let fromNotification = consumeNotificationEntry()
+            if fromNotification { viewModel.beginNotificationEntry() }
             viewModel.setContext(modelContext)
             // Traer cambios remotos al abrir el grupo: los gastos de otros aún no sincronizados
             // aparecen sin depender del pull (el empty state de records no tiene pull-to-refresh).
-            Task { await viewModel.refreshFromCloud(force: false) }
+            if fromNotification {
+                viewModel.startNotificationEntry()
+            } else {
+                Task { await viewModel.refreshFromCloud(force: false) }
+            }
             // Only evaluate if no nudge is already showing (avoid overriding GroupsContainer nudge)
             if NudgeService.shared.currentNudge == nil {
                 NudgeService.shared.evaluate()
             }
             if NudgeService.shared.currentNudge != nil {
-                withAnimation(.easeOut(duration: 0.3)) { showNudgeBanner = true }
+                // Lo anima la implícita de `showNudgeBanner` (card oxyr).
+                showNudgeBanner = true
             }
         }
         .onDisappear {
@@ -276,6 +237,11 @@ struct GroupDetailView: View {
                 break
             }
         }
+        // Card th4n: el aviso de ESTE grupo con el detalle ya abierto (en segundo plano o delante) no lo vuelve a montar;
+        // sin esto se quedaba con lo de antes hasta tirar para refrescar.
+        .modifier(GroupNotificationEntryObserver(entry: navigation.groupOpenedFromNotification, onChange: {
+            if consumeNotificationEntry() { viewModel.startNotificationEntry() }
+        }))
         .onChange(of: sessionState.dataVersion) {
             // Dismiss-first: las condiciones leen el modelo `group` directo (no dependen de la
             // salida de loadData) → decidir cerrar ANTES, sin carrera con el reload debounced,
@@ -288,6 +254,9 @@ struct GroupDetailView: View {
                 isArchived: group.isArchived,
                 wasArchivedOnAppear: wasArchivedOnAppear
             ) {
+                // Con el grupo borrado (salir de él, «Transferir y salir», un borrado por sync), el ViewModel lo suelta
+                // antes de cerrar: ni la recarga con freno pendiente ni el cierre de la hoja de Ajustes vuelven a leerlo.
+                if !isGroupReadable { viewModel.releaseDeletedGroup() }
                 close()
                 return
             }
@@ -296,7 +265,149 @@ struct GroupDetailView: View {
         }
     }
 
+    /// `true` (y lo consume) si esta ventana acaba de abrir ESTE grupo desde su aviso (card th4n).
+    private func consumeNotificationEntry() -> Bool {
+        guard let entry = navigation.groupOpenedFromNotification, entry.groupID == group.id else { return false }
+        navigation.groupOpenedFromNotification = nil
+        return true
+    }
+
+    /// Lo que se ve del grupo: avisos, pestañas y el botón de nuevo gasto. Solo con el grupo vivo (`isGroupReadable`).
+    @ViewBuilder
+    private var groupContent: some View {
+        VStack(spacing: 0) {
+            if let nudge = NudgeService.shared.currentNudge, showNudgeBanner {
+                GroupNudgeBanner(
+                    nudge: nudge,
+                    message: NudgeService.shared.currentNudgeMessage ?? "",
+                    onAction: {
+                        NudgeService.shared.recordInteracted(nudge)
+                        // Lo anima la implícita de `showNudgeBanner` (card oxyr).
+                        showNudgeBanner = false
+                        handleNudgeAction(nudge)
+                    },
+                    onDismiss: {
+                        NudgeService.shared.recordDismissed(nudge)
+                        // Lo anima la implícita de `showNudgeBanner` (card oxyr).
+                        showNudgeBanner = false
+                    },
+                    onAutoDismiss: {
+                        NudgeService.shared.recordDismissed(nudge, autoDismissed: true)
+                        // Lo anima la implícita de `showNudgeBanner` (card oxyr).
+                        showNudgeBanner = false
+                    }
+                )
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.top, DS.Spacing.sm)
+            }
+
+            // banner pending/rejected/migrado. Refresh ya cubierto por onChange(dataVersion) abajo.
+            // C-10: los tres estados congelados muestran banner. Un grupo congelado JAMÁS queda mudo.
+            if group.migrationState == .frozenRejoinable {
+                // G6-3: grupo congelado por migración → banner "se movió" + CTA re-join (la RED es el guard
+                // service-level; esto es la UX primaria — los botones de escritura se ocultan abajo).
+                MigratedGroupBanner(mode: .rejoin, onAction: { handleMigratedRejoin() })
+            } else if group.migrationState == .frozenNeedsUpdate {
+                // C-10: este build no puede volver a entrar nunca → la salida real es el App Store.
+                MigratedGroupBanner(mode: .needsUpdate, onAction: { openAppStoreForRejoin() })
+            } else if group.migrationState == .frozenPaused {
+                // C-10: kill remoto del canal. Sin CTA: no hay nada que el usuario pueda hacer, y
+                // decirle que actualice sería falso (su app está perfecta).
+                MigratedGroupBanner(mode: .paused, onAction: nil)
+            } else if viewModel.currentUserMember?.isPendingApproval == true {
+                PendingApprovalBanner(state: .pending, onLeave: nil)
+            } else if viewModel.currentUserMember?.isRejected == true {
+                PendingApprovalBanner(state: .rejected, onLeave: { discardRejectedGroup() })
+            }
+
+            // UX 2.2 · L19-9 (decisión B de Jürgen, 18-oct): un grupo archivado lo dice dentro. Antes se veía igual que
+            // uno activo y nada avisaba de que estaba en Archivados. Desarchivar es de administrador
+            // (`GroupService.setArchived`); a un miembro se le dice quién puede.
+            if group.isArchived && !group.isMigratedFrozen {
+                ArchivedGroupBanner(
+                    onUnarchive: viewModel.isCurrentUserAdmin ? { unarchiveFromBanner() } : nil
+                )
+            }
+
+            // L19-1 · alguien pidió unirse: se ve sin abrir Miembros, y «Revisar» lleva a su tarjeta. Solo para quien
+            // puede aceptar, y no en un grupo congelado (ahí aprobar no llega a ningún sitio).
+            if let requestTitle = GroupJoinRequestsLogic.bannerTitle(
+                pendingNames: viewModel.pendingApprovalMembers.map(\.resolvedDisplayName),
+                canReview: viewModel.isCurrentUserAdmin && !group.isMigratedFrozen
+            ) {
+                GroupJoinRequestsBanner(
+                    pendingNames: viewModel.pendingApprovalMembers.map(\.resolvedDisplayName),
+                    title: requestTitle,
+                    onReview: { viewModel.activeSheet = .members }
+                )
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.top, DS.Spacing.sm)
+            }
+
+            tabContent
+                .yalaSkeleton(!viewModel.isReady)
+                // Solo en XCUITest: el esqueleto es una copia redactada de las filas y está en el árbol de accesibilidad,
+                // así que un test no distingue «cargando» de «listo» por las filas (card th4n).
+                .overlay(alignment: .topLeading) {
+                    if UITestHooks.isActive, viewModel.isReady {
+                        Color.clear.frame(width: 1, height: 1)
+                            .accessibilityElement()
+                            .accessibilityIdentifier("group_detail_ready")
+                    }
+                }
+        }
+        // El aviso de grupos entra y se funde al cerrarlo. Implícita: el `withAnimation` del aviso no anima dentro
+        // de una pestaña (card 8atf).
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: showNudgeBanner)
+
+        // FAB — new expense (only on records tab). G6-3: oculto en grupos congelados (sin escrituras).
+        if selectedTab == .records && viewModel.canCurrentUserParticipate && !group.isMigratedFrozen {
+            newExpenseFAB
+        }
+    }
+
+    /// L19-13 · «Abrir sus ajustes» desde el resultado de salir de varios grupos: el detalle llega empujado y abre su
+    /// hoja de Ajustes. Espera a que se cierren las hojas de Ajustes de Grupos que lo pidieron: una hoja nueva pedida
+    /// mientras otra se desmonta se puede perder.
+    private func openSettingsIfRequested() async {
+        guard navigation.pendingGroupSettingsZoneID == group.cloudKitZoneID else { return }
+        navigation.pendingGroupSettingsZoneID = nil
+        do {
+            try await Task.sleep(for: .milliseconds(600))
+        } catch {
+            return
+        }
+        viewModel.activeSheet = .settings
+    }
+
+    /// L19-9 · «Desarchivar» del banner. Mismo servicio y mismo copy de error que la fila de Ajustes del grupo.
+    private func unarchiveFromBanner() {
+        do {
+            try GroupService.shared.setArchived(group, isArchived: false)
+            DS.Haptic.success()
+            viewModel.loadData()
+        } catch {
+            viewModel.actionErrorMessage = GroupActionErrorLogic.message(for: error)
+            viewModel.showActionError = true
+        }
+    }
+
     // MARK: - Sheet Content
+
+    /// La hoja presentada. Con el grupo borrado, solo Ajustes se sigue construyendo (no lee el grupo borrado: card gxa9),
+    /// porque es desde donde se sale y sigue presentada mientras se cierra. Las demás leen el grupo, sus miembros o sus
+    /// gastos, borrados con él (un borrado por sync puede pillar cualquiera abierta): no pintan nada mientras bajan.
+    @ViewBuilder
+    private func presentedSheet(for sheet: GroupSheet) -> some View {
+        if isGroupReadable || Self.isSettings(sheet) {
+            sheetContent(for: sheet)
+        }
+    }
+
+    private static func isSettings(_ sheet: GroupSheet) -> Bool {
+        if case .settings = sheet { return true }
+        return false
+    }
 
     @ViewBuilder
     private func sheetContent(for sheet: GroupSheet) -> some View {
@@ -341,7 +452,7 @@ struct GroupDetailView: View {
                 memberNameLookup: viewModel.memberNameLookup,
                 groupChip: .readOnly,
                 expenseToEdit: expense,
-                existingShares: viewModel.sharesForExpense(expense),
+                existingShares: sharesForExpenseSheet(expense),
                 onSave: {},
                 onDelete: viewModel.canCurrentUserParticipate ? { viewModel.deleteExpense($0) } : nil
             )
@@ -351,9 +462,9 @@ struct GroupDetailView: View {
         case .openingBalanceDetail(let expense):
             GroupOpeningBalanceDetailSheet(
                 expense: expense,
-                debtorMemberID: viewModel.sharesForExpense(expense).first?.memberID,
+                debtorMemberID: sharesForExpenseSheet(expense).first?.memberID,
                 memberNameLookup: viewModel.memberNameLookup,
-                isOwner: group.isOwner,
+                canManage: viewModel.canManageOpeningBalances,
                 onEdit: { viewModel.requestEditFromDetail(expense) },
                 onDelete: { viewModel.removeOpeningBalance(expense) }
             )
@@ -365,6 +476,16 @@ struct GroupDetailView: View {
                 memberNameLookup: viewModel.memberNameLookup,
                 expenseToEdit: expense,
                 existingDebtorMemberID: viewModel.sharesForExpense(expense).first?.memberID,
+                onSave: {}
+            )
+            .yalaSheetDetents([.large])
+            .presentationDragIndicator(.visible)
+
+        case .newOpeningBalance:
+            GroupOpeningBalanceFormView(
+                group: group,
+                members: viewModel.activeMembers,
+                memberNameLookup: viewModel.memberNameLookup,
                 onSave: {}
             )
             .yalaSheetDetents([.large])
@@ -385,6 +506,57 @@ struct GroupDetailView: View {
 
     // MARK: - Members Button
 
+    /// Miembros y Ajustes del grupo, en la barra. Fuera del `body` para pintarlos solo con el grupo vivo (`isGroupReadable`).
+    @ToolbarContentBuilder
+    private var groupToolbarItems: some ToolbarContent {
+        ToolbarSpacer(.fixed, placement: .topBarTrailing)
+
+        ToolbarItem(placement: .topBarTrailing) {
+            Button {
+                viewModel.activeSheet = .members
+            } label: {
+                ZStack(alignment: .topTrailing) {
+                    HStack(spacing: DS.Spacing.xxs) {
+                        Image(systemName: "person.2.fill")
+                        Text("\(viewModel.activeMembers.count)")
+                            .font(DS.Typography.subheadline)
+                    }
+                    .fontWeight(.medium)
+                    .foregroundStyle(Color.primary)
+
+                    // Badge de solicitudes pendientes — movido del engranaje: las solicitudes
+                    // son de personas y se aprueban/rechazan en la sheet de Miembros.
+                    if viewModel.isCurrentUserAdmin && !viewModel.pendingApprovalMembers.isEmpty {
+                        Circle()
+                            .fill(DS.Semantic.errorForeground)
+                            .frame(width: 8, height: 8)
+                            .offset(x: DS.Spacing.xxs, y: -DS.Spacing.xxs)
+                    }
+                }
+            }
+            .accessibilityLabel(membersButtonA11yLabel)
+            .accessibilityIdentifier("group_members_button")
+        }
+
+        ToolbarItem(placement: .topBarTrailing) {
+            Button {
+                viewModel.activeSheet = .settings
+            } label: {
+                Image(systemName: "gearshape")
+                    .fontWeight(.medium)
+                    .foregroundStyle(Color.primary)
+            }
+            .accessibilityLabel(L10n.Groups.Settings.title)
+            // Sin identifier, la única forma de alcanzar Ajustes del grupo desde un XCUITest era
+            // el label localizado, que está prohibido — así que ningún test llegaba a esa
+            // pantalla. Lo añade el resumen compartible porque es lo que necesita para probar su
+            // punto de entrada; el botón no cambia en nada más.
+            .accessibilityIdentifier("group_settings_button")
+            .buttonBorderShape(.circle)
+        }
+    }
+
+
     private var membersButtonA11yLabel: String {
         let base = L10n.Groups.Detail.memberCount(viewModel.activeMembers.count)
         if viewModel.isCurrentUserAdmin && !viewModel.pendingApprovalMembers.isEmpty {
@@ -404,45 +576,46 @@ struct GroupDetailView: View {
             }
             .scrollTargetLayout()
         }
+        .fadesTowardVerticalBar()
         .contentMargins(.horizontal, DS.Spacing.lg)
         .scrollTargetBehavior(.viewAligned)
         .scrollClipDisabled()
+        // La cápsula cambia de ancho con la página, en el mismo movimiento. Implícita: un `withAnimation` no anima
+        // dentro de una pestaña.
+        .animation(reduceMotion ? nil : StagedTabSelection<GroupDetailTab>.animation, value: selectedTab)
     }
 
-    @ViewBuilder
     private func navigationChipButton(for tab: GroupDetailTab) -> some View {
-        let isSelected = selectedTab == tab
-
-        Button {
-            var transaction = Transaction()
-            transaction.disablesAnimations = true
-            withTransaction(transaction) {
-                selectedTab = tab
-            }
-        } label: {
-            HStack(spacing: DS.Spacing.sm) {
-                Image(systemName: tab.icon)
-                    .font(DS.Typography.subheadline)
-                Text(tab.displayName)
-                    .font(DS.Typography.label)
-            }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.Spacing.sm)
-            .foregroundStyle(isSelected ? .white : .primary)
-            .background(
-                Capsule()
-                    .fill(isSelected ? theme.accent : Color.clear)
-            )
-            .glassEffect(isSelected ? .clear : .regular.interactive(), in: .capsule)
+        // Icono en las tres y nombre solo en la elegida, como las pestañas de Estadísticas (UX 2.2 · L12-1, decisión
+        // B de Jürgen del 2026-10-18: la solución de L11-1). Con los tres nombres «Estadísticas» salía cortada contra
+        // el borde de un iPhone 17 Pro.
+        // Chip y página cambian juntos (card pjum): la pestaña nueva se monta invisible debajo y, ya montada, la fila
+        // y la página se animan a la vez. Antes (card yc6k) la fila se animaba primero y la página llegaba de golpe
+        // después; animarlas a la vez sin montar antes dejaba el chip saltando de ancho en un fotograma.
+        NavigationChipButton(
+            title: tab.displayName, icon: tab.icon, isSelected: selectedTab == tab, animatesSwitch: true
+        ) {
+            selectPage(tab)
         }
-        .buttonStyle(.plain)
+        .accessibilityIdentifier("group_detail_tab_\(tab.rawValue)")
     }
 
     // MARK: - Tab Content
 
-    @ViewBuilder
+    /// Cambia de pestaña desde la fila o desde fuera de ella (tocar el saldo, «Ver los saldos»).
+    private func selectPage(_ tab: GroupDetailTab) {
+        StagedTabSelection.select(tab, in: $pages, reduceMotion: reduceMotion)
+    }
+
     private var tabContent: some View {
-        switch selectedTab {
+        StagedTabPages(selection: $pages) { tab in
+            page(for: tab)
+        }
+    }
+
+    @ViewBuilder
+    private func page(for tab: GroupDetailTab) -> some View {
+        switch tab {
         case .records:
             GroupRecordsView(
                 expenses: viewModel.expenses,
@@ -470,11 +643,7 @@ struct GroupDetailView: View {
                 } : nil,
                 headerBalance: viewModel.headerBalance,
                 debtsWereConverted: viewModel.debtsWereConverted,
-                onTapBalance: {
-                    var transaction = Transaction()
-                    transaction.disablesAnimations = true
-                    withTransaction(transaction) { selectedTab = .balances }
-                },
+                onTapBalance: { selectPage(.balances) },
                 onRefresh: { await viewModel.refreshFromCloud(force: true) },
                 budgetProgress: viewModel.budgetProgress,
                 budgetColorHex: group.colorHex
@@ -486,12 +655,17 @@ struct GroupDetailView: View {
                 debts: viewModel.debts,
                 settlements: viewModel.settlements,
                 memberNameLookup: viewModel.memberNameLookup,
+                currentUserMemberID: viewModel.currentUserMember?.id.uuidString,
+                groupColorHex: group.colorHex,
                 balancesWereConverted: viewModel.balancesWereConverted,
                 debtsWereConverted: viewModel.debtsWereConverted,
                 onSettleDebt: viewModel.canCurrentUserParticipate ? { viewModel.activeSheet = .settlement($0) } : nil,
                 onConfirmSettlement: viewModel.canCurrentUserParticipate ? { viewModel.confirmSettlement($0) } : nil,
                 onRejectSettlement: viewModel.canCurrentUserParticipate ? { viewModel.rejectSettlement($0) } : nil,
-                onDeleteSettlement: viewModel.canCurrentUserParticipate ? { viewModel.deleteConfirmedSettlement($0) } : nil
+                onDeleteSettlement: viewModel.canCurrentUserParticipate ? { viewModel.deleteConfirmedSettlement($0) } : nil,
+                // El dueño o un admin gestiona los saldos iniciales (card yd2w; el servicio decide igual).
+                onAddOpeningBalance: viewModel.canManageOpeningBalances
+                    ? { viewModel.activeSheet = .newOpeningBalance } : nil
             )
 
         case .stats:
@@ -545,7 +719,7 @@ struct GroupDetailView: View {
     private func handleMigratedRejoin() {
         guard GroupBackendCapability.current == .canRejoin else { return }
         guard let token = group.backendReInviteToken, !token.isEmpty else {
-            DS.Haptic.warning()
+            DS.Haptic.error()
             viewModel.actionErrorMessage = L10n.Groups.Errors.actionFailed
             viewModel.showActionError = true
             return
@@ -577,8 +751,18 @@ struct GroupDetailView: View {
         }
     }
 
+    /// Los repartos del gasto de una hoja que lo borra: con él ya borrado, ninguno (se fueron con él). La hoja se vuelve a
+    /// construir mientras se cierra, y leer `expense.id` de un modelo borrado puede abortar en iOS 27.x (card gxa9).
+    private func sharesForExpenseSheet(_ expense: SplitExpense) -> [SplitShare] {
+        guard !expense.isDeleted, expense.modelContext != nil else { return [] }
+        return viewModel.sharesForExpense(expense)
+    }
+
     private func membersForExpenseForm(_ expense: SplitExpense) -> [SplitMember] {
-        let referencedMemberIDs = Set([expense.paidByMemberID] + viewModel.sharesForExpense(expense).map(\.memberID))
+        // Con el gasto ya borrado (la hoja de edición se está cerrando tras «Eliminar»), los activos: leerlo aborta en
+        // iOS 27.x (card 1w89).
+        guard !expense.isDeleted, expense.modelContext != nil else { return viewModel.activeMembers }
+        let referencedMemberIDs = Set([expense.paidByMemberID] + sharesForExpenseSheet(expense).map(\.memberID))
         return viewModel.members.filter { member in
             member.isActive || referencedMemberIDs.contains(member.id.uuidString)
         }
@@ -635,31 +819,44 @@ private struct MigratedGroupBanner: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: DS.Spacing.sm) {
-            Image(systemName: iconName)
-                .font(DS.Typography.title2)
-                .foregroundStyle(DS.Semantic.warningForeground)
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            HStack(alignment: .top, spacing: DS.Spacing.sm) {
+                Image(systemName: iconName)
+                    .font(DS.Typography.title2)
+                    .foregroundStyle(DS.Semantic.warningForeground)
+                    .accessibilityHidden(true)
 
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(L10n.Groups.Migrated.bannerTitle)
-                    .font(DS.Typography.subheadlineEmphasized)
-                Text(bodyText)
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
-                // C-10: honestidad sobre datos stale. Lo que se ve es la foto de CloudKit del instante
-                // del freeze; la verdad ya vive en el backend y se separa cada día.
-                Text(L10n.Groups.Migrated.readOnlyNote)
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
+                if mode == .rejoin {
+                    // UX 2.2 · L19-19 (decisión de Jürgen, 2026-10-18): una frase, no tres. «Se movió a la nube de
+                    // Yala», «vuelve a entrar» y «lo que ves es la copia de cuando se movió» decían lo mismo en tres
+                    // líneas que nadie leía; la copia vieja ya la cuenta «para verlo al día».
+                    Text(L10n.UXCS.migratedRejoinSentence)
+                        .font(DS.Typography.subheadlineEmphasized)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                        Text(L10n.Groups.Migrated.bannerTitle)
+                            .font(DS.Typography.subheadlineEmphasized)
+                        Text(bodyText)
+                            .font(DS.Typography.captionSmall)
+                            .foregroundStyle(.secondary)
+                        // C-10: honestidad sobre datos stale. Lo que se ve es la foto de CloudKit del instante
+                        // del freeze; la verdad ya vive en el backend y se separa cada día.
+                        Text(L10n.Groups.Migrated.readOnlyNote)
+                            .font(DS.Typography.captionSmall)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Spacer(minLength: 0)
             }
 
-            Spacer()
-
+            // L19-19: el botón tenía forma de texto naranja y no se veía que se podía tocar. Ahora es el botón relleno
+            // de la app, debajo de la frase. Es el mismo componente para las dos salidas («Volver a entrar» y
+            // «Actualizar»): las dos tenían el mismo defecto.
             if let ctaTitle, let onAction {
-                Button(ctaTitle, action: onAction)
-                    .font(DS.Typography.label)
-                    .foregroundStyle(DS.Semantic.warningForeground)
-                    .disabled(!isActionEnabled)
+                YalaPrimaryButton(ctaTitle, isDisabled: !isActionEnabled, action: onAction)
+                    .accessibilityIdentifier("group_migrated_cta")
             }
         }
         .padding(DS.Spacing.md)
@@ -672,6 +869,48 @@ private struct MigratedGroupBanner: View {
             guard mode == .needsUpdate, AppUpdateService.shared.appStoreURL == nil else { return }
             await AppUpdateService.shared.checkForUpdate()
         }
+    }
+}
+
+/// L19-9 · «Grupo archivado · Desarchivar».
+private struct ArchivedGroupBanner: View {
+    /// `nil` para quien no administra: no puede desarchivar, y el banner lo dice en vez de enseñar un botón que fallaría.
+    var onUnarchive: (() -> Void)?
+
+    var body: some View {
+        HStack(alignment: .center, spacing: DS.Spacing.sm) {
+            Image(systemName: "archivebox.fill")
+                .font(DS.Typography.title3)
+                .foregroundStyle(.thAccentText)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(L10n.UXL19.archivedBannerTitle)
+                    .font(DS.Typography.subheadlineEmphasized)
+                if onUnarchive == nil {
+                    Text(L10n.UXL19.archivedBannerMemberHint)
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Spacer(minLength: DS.Spacing.sm)
+
+            if let onUnarchive {
+                Button(L10n.UXL19.unarchive, action: onUnarchive)
+                    .font(DS.Typography.label.weight(.semibold))
+                    .foregroundStyle(.thAccentText)
+                    .frame(minHeight: 44)
+                    .accessibilityIdentifier("group_archived_unarchive")
+            }
+        }
+        .padding(.horizontal, DS.Spacing.md)
+        .padding(.vertical, DS.Spacing.sm)
+        .background(.thAccent.opacity(0.12), in: RoundedRectangle(cornerRadius: DS.Radius.md))
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.top, DS.Spacing.sm)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("group_archived_banner")
     }
 }
 
@@ -725,5 +964,16 @@ private struct GroupDetailPushedChrome: ViewModifier {
         content
             .swipeBack(isEnabled: isPushed)
             .toolbar(isPushed ? .hidden : .automatic, for: .tabBar)
+    }
+}
+
+/// Card th4n: el aviso de ESTE grupo con el detalle ya abierto. Aparte del `body` para no alargar su cadena de
+/// modificadores (el compilador del CI se rinde antes; regla de `swiftui-ds.md`).
+private struct GroupNotificationEntryObserver: ViewModifier {
+    let entry: GroupNotificationEntry?
+    let onChange: () -> Void
+
+    func body(content: Content) -> some View {
+        content.onChange(of: entry) { onChange() }
     }
 }

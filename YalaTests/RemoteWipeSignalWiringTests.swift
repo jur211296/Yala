@@ -271,7 +271,7 @@ struct RemoteWipeSignalWiringTests {
             + "guard RemoteWipeGraceLogic.coldStartRequestsICloudNotice( "
             + "hasPersonalData: hasPersonalData, hasCompletedOnboarding: hasCompletedOnboarding, "
             + "sessionObeysWipeSignal: sessionObeysWipeSignal, "
-            + "iCloudTokenPresent: sync.isAccountAvailable, "
+            + "iCloudAccountPresent: sync.hasICloudAccount, "
             + "mirrorReportedNotAuthenticated: sync.mirrorReportedNotAuthenticated) else { return } "
             + "ColdStartICloudNotice.requestPending = true "
             + "RouterEntryGate.shared.submit(.presentRemoteWipeNotice) }"
@@ -301,8 +301,10 @@ struct RemoteWipeSignalWiringTests {
         // drenaje y el reintento de la red (1) —desde el 2026-10-07, para que el seam del XCUITest del
         // desarme los alcance a los dos—; la red lo apaga antes de re-encenderlo (1); el desarme del cap
         // lo apaga (1); y lo apagan las tres salidas —«Empezar de cero», «Ahora no» y la llegada de la
-        // señal explícita— (3).
-        #expect(try Self.countInProduction("showRemoteWipeAlert = ") == 6, """
+        // señal explícita— (3). Y desde el 2026-10-23 (L20-15, el aviso pasa a hoja) un SÉPTIMO, que solo apaga:
+        // `answerRemoteWipeNotice()`, al tocar un botón de la hoja, la cierra sin soltar la condición viva; la salida
+        // elegida corre en su `onDismiss`.
+        #expect(try Self.countInProduction("showRemoteWipeAlert = ") == 7, """
             las asignaciones al flag del aviso cambiaron de número en `Yala/`. Si añadiste un escritor,
             pregúntate primero si debería ser un `submit(.presentRemoteWipeNotice)`: quien enciende este
             aviso desde fuera del drenaje se salta la matriz de readiness y desmonta lo que el anchor
@@ -617,8 +619,9 @@ struct RemoteWipeSignalWiringTests {
                                              + "GroupsBridgeRestoreConvergenceStore.markPending(defaults)"),
                                 "el receptor ya no pide la convergencia, o no pide las liquidaciones antes que los gastos")
         let borra = try #require(cuerpo.range(of: "try wipeAllUserData" + abre + "in: context, reseedInitialData: false, "
-                                              + "broadcastSignal: false, remoteWipeCut: cut) "
-                                              + "if cut != nil { rescheduleReminders(context) }"),
+                                              + "broadcastSignal: false, resetsPreferences: !fleetStartedOver, "
+                                              + "remoteWipeCut: cut, keepsReminders: fleetStartedOver) "
+                                              + "if cut != nil || fleetStartedOver { rescheduleReminders(context) }"),
                                  "el receptor ya no borra con el corte de la señal, o no reprograma los avisos")
         #expect(pide.upperBound <= borra.lowerBound, "el receptor pide después de borrar: un corte en medio pierde la petición")
         #expect(Self.count("let cut = RemoteWipeCutLogic.cut(signaledAt: signaledAt, fleetStartedOver: fleetStartedOver)",
@@ -648,17 +651,27 @@ struct RemoteWipeSignalWiringTests {
                                                 + "GroupTransactionBridge.isDomainOpenForBridge(defaults: defaults)) }"), """
             «Vaciar datos» ya no escribe el reparto, lo escribe sin avisar al parque o con otra hora que la de la señal.             Cuerpo encontrado: \(cuerpo.prefix(600))
             """)
-        let borra = try #require(cuerpo.range(of: "try wipeAllUserData" + abre + "in: context, reseedInitialData: false, "
-                                              + "broadcastSignal: broadcastSignal, signalTimestamp: signalTimestamp)"),
+        let borra = try #require(cuerpo.range(of: "try wipeAllUserData" + abre + "in: context, reseedInitialData: "
+                                              + "keepsPersonSettings, broadcastSignal: broadcastSignal, resetsPreferences: "
+                                              + "!keepsPersonSettings, signalTimestamp: signalTimestamp, keepsReminders: "
+                                              + "keepsPersonSettings, signalKeepsSetup: keepsPersonSettings)"),
                                  "el vaciado ya no emite la señal con la hora del reparto")
         #expect(reparte.upperBound <= borra.lowerBound, "el reparto se escribe después de la señal y del borrado")
         #expect(fuente.contains("PreferenceSyncService.shared.signalWipeInitiated(at: signalTimestamp ?? .now)"),
                 "la señal ya no sale con la hora que le pasa el vaciado")
+        // Y la del vaciado que se queda en el Panel (encargo S27i), con la misma hora.
+        #expect(fuente.contains("PreferenceSyncService.shared.signalWipeKeepingSetup(at: signalTimestamp ?? .now)"),
+                "la señal del vaciado que conserva los ajustes ya no sale con la hora del reparto")
         let prefs = try Self.code("Yala/App/Services/PreferenceSyncService.swift")
         #expect(prefs.contains("func signalWipeInitiated(at date: Date = .now) { let timestamp = date.timeIntervalSince1970"),
                 "la señal ya no escribe la hora que recibe")
-        #expect(try Self.countInProduction("GroupsRemoteWipeDivision.declare" + abre) == 1,
-                "el reparto se escribe desde más de un sitio, o desde ninguno")
+        // Dos desde el encargo S27i: «Vaciar datos» y el borrado de la cuenta con sesión privada, que declara el reparto
+        // VACÍO (la cuenta de grupos ya no existe) para que el receptor no espere 30 días uno que nadie escribe.
+        #expect(try Self.countInProduction("GroupsRemoteWipeDivision.declare" + abre) == 2,
+                "el reparto se escribe desde otro sitio más, o dejó de escribirse en uno de los dos")
+        let cierre = try Self.code("Yala/Services/CloudSync/CloudSessionSignOut.swift")
+        #expect(cierre.contains("GroupsRemoteWipeDivision.declare(context: context, signaledAt: signaledAt, domainOpen: false)"),
+                "el borrado de la cuenta con sesión privada ya no declara el reparto vacío con la hora de su señal")
     }
 
     /// **El receptor del orden normal apunta que espera el reparto, antes de borrar; el tardío no.** Los casos de

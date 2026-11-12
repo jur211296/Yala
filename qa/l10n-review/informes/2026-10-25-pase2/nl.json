@@ -1,0 +1,13 @@
+[
+ {
+  "k": "settings.currencyCode",
+  "categoria": "sin_traducir",
+  "gravedad": "media",
+  "motivo": "Idéntica al inglés (posible resto sin traducir).",
+  "fuente": "determinista",
+  "actual": "Code (PEN, USD)",
+  "protegida": false,
+  "aplicada": false,
+  "no_aplicada_por": "sin propuesta"
+ }
+]

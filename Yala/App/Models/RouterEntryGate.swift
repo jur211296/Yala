@@ -115,6 +115,23 @@ final class RouterEntryGate {
         AppRouter.shared.enqueue(intent)
     }
 
+    /// La hoja de la Bandeja acaba de aparecer (por una notificación, el botón del Panel o el propio aviso): lo que el
+    /// aviso de borradores nuevos iba a contar ya está a la vista. Se retira el que esperase en cola —si no, salía al
+    /// cerrar la hoja— y se dan por avisados los borradores del último chequeo, para que el siguiente primer plano no
+    /// vuelva a avisar de ellos (ticket `notification-tap-opens-inbox-then-inbox-notice-pops-after`).
+    func inboxSheetDidAppear() {
+        let dropped = AppRouter.shared.drop { if case .showInboxAlert = $0 { return true }; return false }
+        for id in dropped {
+            MetricsService.routingIntentSuperseded(droppedID: id, by: "inboxSheetVisible")
+        }
+        AppBootstrapper.shared.commitPendingInboxAlertSignatures()
+        #if DEBUG
+        if !dropped.isEmpty {
+            logger.debug("RouterEntryGate: drop \(dropped.count, privacy: .public) queued inbox alert(s) — inbox sheet appeared")
+        }
+        #endif
+    }
+
     /// Drain every entry from the DeferredIntentBuffer through `submit(_:)`.
     /// Called once at cold-launch (post-bootstrap) and once per `scenePhase`
     /// transition to `.active`. NOT called from `submit` itself (would loop).

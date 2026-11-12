@@ -20,6 +20,13 @@ import SwiftUI
 
 struct GroupsOnboardingDemo: View {
 
+    /// Las tres cifras de la demo salen de aquí para que cuadren entre sí: Sofía paga `expense` en un grupo
+    /// de `memberCount` personas y a ti te toca `share`. Hasta el 2026-10-15 la tarjeta decía «3 miembros
+    /// activos» con S/ 50 y «Debes S/ 25», que son las cuentas de un grupo de dos (auditoría UX 2.2, lote 12).
+    nonisolated static let expense: Double = 50
+    nonisolated static let memberCount = 2
+    nonisolated static var share: Double { expense / Double(memberCount) }
+
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -48,8 +55,8 @@ struct GroupsOnboardingDemo: View {
     private var currencyCode: String { appPreferences.defaultCurrencyCode.rawValue }
     private var memberName: String { L10n.Groups.Onboarding.step1DemoMemberName }
     private var groupName: String { L10n.Groups.Onboarding.step1DemoGroupName }
-    private var formattedFifty: String { appPreferences.currency(50, currencyCode: currencyCode) }
-    private var formattedTwentyFive: String { appPreferences.currency(25, currencyCode: currencyCode) }
+    private var formattedFifty: String { appPreferences.currency(Self.expense, currencyCode: currencyCode) }
+    private var formattedTwentyFive: String { appPreferences.currency(Self.share, currencyCode: currencyCode) }
 
     private var showsNotif: Bool {
         stage == .notifVisible || stage == .balanceChanged || stage == .holding
@@ -60,7 +67,7 @@ struct GroupsOnboardingDemo: View {
     }
 
     private var displayedBalance: Double {
-        balanceState == .debt ? 25 : 0
+        balanceState == .debt ? Self.share : 0
     }
 
     var body: some View {

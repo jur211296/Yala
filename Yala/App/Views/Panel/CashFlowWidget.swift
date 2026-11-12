@@ -512,6 +512,14 @@ struct CashFlowWidget: View {
 
     @State private var selectedDate: Date?
 
+    /// La barra bajo el dedo (la misma que enseña el tooltip): cambia solo al pasar de una barra a la siguiente.
+    private var selectedBarDate: Date? {
+        guard let selectedDate else { return nil }
+        let granularity: Calendar.Component = grouping == .month ? .month : (grouping == .week ? .weekOfYear : .day)
+        return activeChartData.first { Calendar.current.isDate($0.date, equalTo: selectedDate, toGranularity: granularity) }?
+            .date
+    }
+
     @ViewBuilder
     private var contentView: some View {
         if size == .large {
@@ -736,7 +744,7 @@ struct CashFlowWidget: View {
                             .foregroundStyle(.thSecondaryText.opacity(0.1))
                         AxisValueLabel {
                             if let doubleValue = value.as(Double.self) {
-                                Text(formatK(doubleValue))
+                                Text(YalaFormatter.axisK(doubleValue, domain: dataYDomain))
                                     .font(DS.Typography.captionSmall)
                                     .foregroundStyle(.thSecondaryText)
                             }
@@ -744,6 +752,8 @@ struct CashFlowWidget: View {
                     }
                 }
                 .chartXSelection(value: $selectedDate)  // Native iOS 17+ selection
+                // Una vibración por barra al recorrer la gráfica, no por fotograma del arrastre (card C4).
+                .sensoryFeedback(.selection, trigger: selectedBarDate) { old, new in new != nil && old != new }
                 .chartOverlay { proxy in
                     GeometryReader { geo in
                         let plotFrame = proxy.plotFrame.map { geo[$0] } ?? geo.frame(in: .local)
@@ -880,20 +890,21 @@ struct CashFlowWidget: View {
                                     isEstimate: summary.incomeAmountsAreApproximate
                                 )
                             }
-                            // Bar
-                            ZStack(alignment: .leading) {
-                                // Track
-                                Capsule()
-                                    .fill(.thPrimaryText.opacity(0.05))
-                                    .frame(height: 8)
-
-                                // Fill - teal color for income
-                                let incomeRatio = maxVal > 0 ? (summary.totalIncome / maxVal) : 0
-                                Capsule()
-                                    .fill(Color.incomeGraph)
-                                    .frame(width: max(incomeBarWidth * incomeRatio, 6), height: 8)
-                            }
-                            .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { incomeBarWidth = $0 }
+                            // Bar. El relleno va en `overlay` del carril, no a su lado en un `ZStack`: con el ancho
+                            // medido fijado en un hermano, el `ZStack` no podía ser más estrecho que la medida
+                            // anterior y la barra no encogía nunca (iPhone Duo al plegar o girar: la tarjeta se salía
+                            // por la derecha y descentraba a sus vecinas).
+                            let incomeRatio = maxVal > 0 ? (summary.totalIncome / maxVal) : 0
+                            Capsule()
+                                .fill(.thPrimaryText.opacity(0.05))
+                                .frame(height: 8)
+                                .overlay(alignment: .leading) {
+                                    // Fill - teal color for income
+                                    Capsule()
+                                        .fill(Color.incomeGraph)
+                                        .frame(width: max(incomeBarWidth * incomeRatio, 6), height: 8)
+                                }
+                                .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { incomeBarWidth = $0 }
                         }
                         .opacity(isIncomeDimmed ? 0.4 : 1.0)
                     }
@@ -912,20 +923,17 @@ struct CashFlowWidget: View {
                                 isEstimate: summary.expenseAmountsAreApproximate
                             )
                         }
-                        // Bar
-                        ZStack(alignment: .leading) {
-                            // Track
-                            Capsule()
-                                .fill(.thPrimaryText.opacity(0.05))
-                                .frame(height: 8)
-
-                            // Fill
-                            let expenseRatio = maxVal > 0 ? (summary.totalExpense / maxVal) : 0
-                            Capsule()
-                                .fill(Color.expenseGraph)
-                                .frame(width: max(expenseBarWidth * expenseRatio, 6), height: 8)
-                        }
-                        .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { expenseBarWidth = $0 }
+                        // Bar: el relleno va en `overlay` para que no fije el ancho que se mide (ver la barra de ingresos).
+                        let expenseRatio = maxVal > 0 ? (summary.totalExpense / maxVal) : 0
+                        Capsule()
+                            .fill(.thPrimaryText.opacity(0.05))
+                            .frame(height: 8)
+                            .overlay(alignment: .leading) {
+                                Capsule()
+                                    .fill(Color.expenseGraph)
+                                    .frame(width: max(expenseBarWidth * expenseRatio, 6), height: 8)
+                            }
+                            .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { expenseBarWidth = $0 }
                     }
                     .opacity(isExpenseDimmed ? 0.4 : 1.0)
                 }
@@ -1046,14 +1054,14 @@ struct CashFlowWidget: View {
     private static let tooltipDayFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = "d MMM yy"
+        f.setLocalizedDateFormatFromTemplate("dMMMyy")
         return f
     }()
 
     private static let tooltipMonthFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = "MMM yy"
+        f.setLocalizedDateFormatFromTemplate("MMMyy")
         return f
     }()
 

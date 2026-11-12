@@ -91,6 +91,94 @@ struct ScheduledPaymentNotificationServiceTests {
         return payment
     }
 
+    // MARK: - UX 2.2 · L10-13: el aviso lleva el pago y el formato de la app
+
+    @MainActor
+    private final class SentBody {
+        var body: String?
+        var deepLink: String?
+    }
+
+    @Test func dueToday_carriesThePaymentID_andTheAppAmountFormat() async throws {
+        let context = try makeTestContext()
+        let (service, _) = try makeService(context: context)
+        let sent = SentBody()
+        service.sendOverride = { _, body, deepLink in
+            sent.body = body
+            sent.deepLink = deepLink
+            return true
+        }
+        let payment = try seedDueTodayPaymentWithDraft(context: context)
+
+        await service.checkAllPaymentNotifications()
+
+        // Tocarlo abre el detalle de ESTE pago, no la lista.
+        #expect(sent.deepLink == AlertDeepLink.scheduledPayment.deepLink(for: payment.id))
+        // El monto con el formato de la app (con espacio y la preferencia de símbolo o código), no «$15».
+        let formatted = YalaFormatterStatic.currency(value: 15, currencyCode: "USD")
+        #expect(sent.body?.contains(formatted) == true, "cuerpo: \(sent.body ?? "nil") · esperado: \(formatted)")
+    }
+
+    // MARK: - Una pasada a la vez (ticket notices-come-out-one-after-another-by-priority)
+
+    /// Dos pasadas solapadas —el arranque en frío y el primer `.active`— leían el tracker antes de que la otra marcara, y el
+    /// mismo pago salía dos veces. El envío falso suspende, así que sin la guarda la segunda pasada entra mientras la
+    /// primera espera su `send` y lo manda otra vez.
+    @Test func twoOverlappingPasses_sendThePaymentOnce() async throws {
+        let context = try makeTestContext()
+        let (service, log) = try makeService(context: context)
+        service.sendOverride = { title, _, deepLink in
+            log.record(title: title, deepLink: deepLink)
+            do {
+                try await Task.sleep(for: .milliseconds(50))
+            } catch {
+                print("Test: Error: \(error)")
+            }
+            return true
+        }
+        try seedDueTodayPaymentWithDraft(context: context)
+
+        async let first: Void = service.checkAllPaymentNotifications()
+        async let second: Void = service.checkAllPaymentNotifications()
+        _ = await (first, second)
+
+        #expect(log.count == 1, "dos pasadas solapadas mandaron \(log.count) avisos del mismo pago")
+
+        // La guarda se suelta: un pago nuevo en una pasada posterior sale.
+        try seedDueTodayPaymentWithDraft(context: context)
+        await service.checkAllPaymentNotifications()
+        #expect(log.count == 2, "tras la pasada solapada la guarda se quedó puesta")
+    }
+
+    /// Review adversarial: la pasada que llega durante otra no se tira, se repite al terminar. Un pago que aparece mientras
+    /// la primera manda el suyo (la primera ya lo leyó) sale en la repetición; sin ella se quedaba para el siguiente
+    /// primer plano (el borrado parcial de `DataWipeService` pide su pasada justo así).
+    @Test func aPassRequestedDuringAnother_runsAfterIt() async throws {
+        let context = try makeTestContext()
+        let (service, log) = try makeService(context: context)
+        var seededDuringTheFirstSend = false
+        service.sendOverride = { title, _, deepLink in
+            log.record(title: title, deepLink: deepLink)
+            if !seededDuringTheFirstSend {
+                seededDuringTheFirstSend = true
+                do {
+                    try self.seedDueTodayPaymentWithDraft(context: context)
+                    try await Task.sleep(for: .milliseconds(50))
+                } catch {
+                    print("Test: Error: \(error)")
+                }
+            }
+            return true
+        }
+        try seedDueTodayPaymentWithDraft(context: context)
+
+        async let first: Void = service.checkAllPaymentNotifications()
+        async let second: Void = service.checkAllPaymentNotifications()
+        _ = await (first, second)
+
+        #expect(log.count == 2, "el pago que apareció durante la primera pasada salió \(log.count - 1) veces")
+    }
+
     // MARK: - (1) markNotified solo con entrega confirmada
 
     @Test func dueToday_sendFails_doesNotMarkDedup() async throws {
@@ -123,24 +211,6 @@ struct ScheduledPaymentNotificationServiceTests {
 
         await service.checkAllPaymentNotifications()
         #expect(log.count == 1, "el dedup del día suprime el segundo pass")
-    }
-
-    @Test func creditCard_sendFails_doesNotMarkDedup() async throws {
-        let context = try makeTestContext()
-        let (service, log) = try makeService(context: context, sendResult: false)
-        let account = Account(name: "Visa", currencyCode: "USD", colorHex: "#4A90D9", iconName: "creditcard", type: AccountType.creditCard.rawValue)
-        account.creditCardPaymentReminder = true
-        account.creditCardPaymentDay = Calendar.current.component(.day, from: .now)
-        context.insert(account)
-        try context.save()
-
-        await service.checkAndNotifyCreditCardPayments()
-        #expect(log.count == 1)
-        #expect(!service.tracker.hasNotifiedCreditCard(accountID: account.shortcutID, date: .now))
-
-        service.sendOverride = { _, _, _ in true }
-        await service.checkAndNotifyCreditCardPayments()
-        #expect(service.tracker.hasNotifiedCreditCard(accountID: account.shortcutID, date: .now))
     }
 
     // MARK: - (2) Quiescencia: difiere sin marcar
@@ -219,7 +289,9 @@ struct ScheduledPaymentNotificationServiceTests {
 
     // MARK: - Gate honesto en el service
 
-    @Test func masterToggleOff_silencesPaymentLoop_butNotCreditCard() async throws {
+    /// El aviso de la tarjeta ya no pasa por aquí (card nmtk, `CreditCardReminderSchedulerTests`): el toggle maestro
+    /// sigue silenciando los pagos planificados.
+    @Test func masterToggleOff_silencesPaymentLoop() async throws {
         let context = try makeTestContext()
         let (service, log) = try makeService(context: context, seedActiveItem: false)
         let item = NotificationItem(
@@ -227,42 +299,10 @@ struct ScheduledPaymentNotificationServiceTests {
         )
         context.insert(item)
         try seedDueTodayPaymentWithDraft(context: context)
-
-        let account = Account(name: "Visa", currencyCode: "USD", colorHex: "#4A90D9", iconName: "creditcard", type: AccountType.creditCard.rawValue)
-        account.creditCardPaymentReminder = true
-        account.creditCardPaymentDay = Calendar.current.component(.day, from: .now)
-        context.insert(account)
         try context.save()
 
         await service.checkAllPaymentNotifications()
         #expect(log.count == 0, "toggle maestro OFF = silencio de pagos")
-
-        // La tarjeta tiene opt-in propio per-account: el toggle de pagos no la silencia.
-        await service.checkAndNotifyCreditCardPayments()
-        #expect(log.count == 1)
-        #expect(log.entries.last?.deepLink == "accounts")
-    }
-
-    @Test func activeItemWithFutureHour_defersCreditCardToo() async throws {
-        let context = try makeTestContext()
-        let (service, log) = try makeService(context: context, seedActiveItem: false)
-        // Hora 23:59 — salvo que el test corra exactamente a medianoche, la ventana está cerrada.
-        let item = NotificationItem(
-            name: "Pagos", text: "", hour: 23, minute: 59, type: .scheduledPayments, isActive: true
-        )
-        context.insert(item)
-
-        let account = Account(name: "Visa", currencyCode: "USD", colorHex: "#4A90D9", iconName: "creditcard", type: AccountType.creditCard.rawValue)
-        account.creditCardPaymentReminder = true
-        account.creditCardPaymentDay = Calendar.current.component(.day, from: .now)
-        context.insert(account)
-        try context.save()
-
-        // Guard de flakiness: si el reloj real ya pasó las 23:59, el caso no aplica.
-        guard service.gateDecision(context: context) == .waitForHour else { return }
-
-        await service.checkAndNotifyCreditCardPayments()
-        #expect(log.count == 0, "con item activo, la tarjeta espera la ventana horaria")
     }
 
     // MARK: - (4) Flip one-shot del toggle maestro

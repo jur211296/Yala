@@ -14,7 +14,8 @@ for n in (d if isinstance(d,list) else [d]): w(n)'
 # esperar <texto> [segundos]: hasta que una línea del árbol lo contenga.
 esperar() {
   local fin=$(( $(date +%s) + ${2:-20} ))
-  while [ "$(date +%s)" -lt "$fin" ]; do arbol | grep -qF -- "$1" && return 0; sleep 0.7; done
+  # `grep` sin `-q`: ver lanzar.sh (con `pipefail`, cortar la tubería da falso con árboles grandes).
+  while [ "$(date +%s)" -lt "$fin" ]; do arbol | grep -F -- "$1" >/dev/null && return 0; sleep 0.7; done
   echo "✗ no apareció «$1»" >&2; return 1
 }
 # Toques «físicos» (touch down/up). Medido el 16-oct-2026 con axe 1.8.0: el toque por defecto del simulador no abría

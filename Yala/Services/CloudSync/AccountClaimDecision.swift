@@ -65,6 +65,38 @@ nonisolated enum AccountClaimDecision {
         case showProviderMismatch
     }
 
+    /// El alta nube que vuelve a pedir la cuenta que ESTE teléfono creó y en la que sigue viviendo (S12h, 2026-10-27).
+    ///
+    /// El servidor solo repite `created` a quien la creó mientras nadie haya escrito nada personal en ella (g16_01). Pero
+    /// el alta arranca el motor en sesión antes del onboarding, y el motor sube enseguida lo que encuentra (borrados,
+    /// tipos de cambio): el segundo alta —volver al Welcome y «Empezar de cero» otra vez, un reintento— recibía
+    /// `existing_stable`, se convertía en un adopt de su propia cuenta y entraba sin onboarding ni categorías. Con el modo
+    /// ya en `.cloud`, ese adopt quedaba pendiente para siempre y sin salida. Medido en el iPhone de Jürgen el 27-oct: alta
+    /// `created` a las 20:56:21 y, 26 s después, un adopt sobre esa misma cuenta bloqueado por linaje.
+    ///
+    /// Lo que prueba «es mi cuenta y sigo dentro» es el PAR sello + modo: el sello del claim de ese `userID` dice que la
+    /// sembró este teléfono (solo lo escribe el alta; `recordOwner` borra los de otras cuentas, toda otra entrada a
+    /// `.cloud` lo pisa con `routeReturningUser`, y todo borrado del corpus los olvida), y el modo persistido sigue en
+    /// `.cloud` (cerrar sesión y eliminar la cuenta lo devuelven a `.icloud`). La marca de alta nube es solo un cinturón:
+    /// nadie la borra nunca, así que dice «alguna vez nació aquí una cuenta», no «sigo dentro». Con otra sesión el sello
+    /// no casa (se busca por el `userID` vivo) y vuelve el adopt de siempre.
+    ///
+    /// **Residual aceptado (review adversarial S12h, H1).** El servidor también contesta `existing_stable` al creador
+    /// cuando OTRO dispositivo ya entró en la cuenta (g16_02), y esta regla no lo distingue. Si el teléfono abandona el
+    /// onboarding, otro entra con «Ya tengo cuenta» y el primero repite el alta, su onboarding crea la cuenta inicial y
+    /// escribe preferencias (nombre, divisa, periodo) junto a las del otro; las categorías solo si aquí no hay ninguna
+    /// propia. Sobra, no se pierde nada (el síntoma de `claim-replay-can-seed-beside-a-phone-that-adopted-silently`), y
+    /// sin la regla ese mismo caso acababa en el adopt sin salida. Lo mismo con una cuenta que otro dispositivo devolvió
+    /// a iCloud (H3): antes adopt atascado, ahora un alta cuyo push rechaza el servidor.
+    static func bornCloudReclaimState(
+        _ state: ClaimState,
+        thisDeviceSeededThisAccount: Bool,
+        deviceStillInBornCloudMode: Bool
+    ) -> ClaimState {
+        guard state == .existingStable, thisDeviceSeededThisAccount, deviceStillInBornCloudMode else { return state }
+        return .created
+    }
+
     /// Routes the client after a claim (§f.1).
     ///
     /// - `claimingInProgress` → `waitForLeader`, regardless of branch (a follower never seeds/adopts

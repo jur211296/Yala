@@ -86,6 +86,108 @@ enum GroupBridgeRaceCleaner {
         return deleted
     }
 
+    // MARK: - Lo que le sobra al puente: borrador «Elige cuenta» y préstamo repetido (bug del 2026-11-09)
+
+    /// Desde cuándo actúa la limpieza AUTOMÁTICA de lo que sobra (`GroupBridgeLeftoverLogic`). Se sella la primera vez
+    /// que se pide, que es el primer arranque con el arreglo: lo de antes se queda para el aviso de la Bandeja, donde la
+    /// persona ve qué se quita (decisión de Jürgen, «solo lo nuevo + botón»). Es del TELÉFONO: no viaja.
+    static let leftoverAutoSinceKey = "groupBridge.leftoverAutoSince"
+
+    static func leftoverAutoSince(defaults: UserDefaults = .standard, now: Date = .now) -> Date {
+        if let stamped = defaults.object(forKey: leftoverAutoSinceKey) as? Date { return stamped }
+        defaults.set(now, forKey: leftoverAutoSinceKey)
+        return now
+    }
+
+    /// Lo que sobra hoy, leído del store. LANZA si no puede leer: una lectura fallida no es «no sobra nada».
+    struct Leftovers {
+        let plan: GroupBridgeLeftoverLogic.Plan
+        let drafts: [InboxDraft]
+        let legs: [TransactionItem]
+    }
+
+    static func leftovers(in context: ModelContext, since: Date?) throws -> Leftovers {
+        let loanIDs = try GroupBridgeSystemEntities.subcategoryIDs(roles: [.loanToGroups], context: context)[.loanToGroups] ?? []
+        let legs = try context.fetch(FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { $0.splitExpenseID != nil && $0.splitSettlementID == nil }))
+        let drafts = try context.fetch(FetchDescriptor<InboxDraft>(
+            predicate: #Predicate { $0.sourceTypeRaw == "groupExpense" && $0.splitExpenseID != nil && $0.statusRaw == "pending" }))
+        let plan = GroupBridgeLeftoverLogic.plan(
+            legs: legs.map { tx in
+                .init(expenseID: tx.splitExpenseID ?? "",
+                      accountKey: tx.account?.shortcutID.uuidString,
+                      accountIsSystem: tx.account?.isSystemAccount == true,
+                      isLoanToGroups: tx.subcategory.map { loanIDs.contains($0.persistentModelID) } ?? false,
+                      isManagedApart: GroupSplitLinesBridgeLogic.isDerivedMarker(tx.splitLinesRaw)
+                          || GroupCollectedLegLogic.isCollected(tx.splitLinesRaw),
+                      amount: tx.amount, currencyCode: tx.currencyCode, createdAt: tx.createdAt,
+                      tiebreak: tx.syncID?.uuidString ?? "")
+            },
+            drafts: drafts.map { draft in
+                .init(expenseID: draft.splitExpenseID, isPending: draft.status == .pending,
+                      isGroupExpense: draft.sourceType == .groupExpense, isOptIn: draft.optInPersonalOnly,
+                      needsAccount: draft.needsUserInput.contains(DraftInputRequirement.account),
+                      createdAt: draft.createdAt)
+            },
+            onlyCreatedSince: since)
+        return Leftovers(plan: plan, drafts: drafts, legs: legs)
+    }
+
+    /// Quita lo que sobra y guarda. Devuelve cuántos gastos se arreglaron. Las filas de la Bandeja se podan antes de
+    /// borrar (crash de iOS 27 con la fila montada, `InboxRowPruneCoordinator`).
+    @discardableResult
+    static func removeLeftovers(in context: ModelContext, since: Date?) throws -> Int {
+        let found = try leftovers(in: context, since: since)
+        guard !found.plan.isEmpty else { return 0 }
+        for index in found.plan.draftIndices {
+            let draft = found.drafts[index]
+            InboxRowPruneCoordinator.shared.pruneRow(draft.persistentModelID)
+            context.delete(draft)
+        }
+        for index in found.plan.legIndices { context.delete(found.legs[index]) }
+        // Sin `rollback()` si falla: el contexto es el compartido del arranque y se llevaría cambios ajenos sin guardar
+        // (regla de `swiftdata-cloudkit.md`). Lo borrado queda pendiente y lo guarda el siguiente `save()`, que es lo que
+        // se quería quitar.
+        SaveBreadcrumb.willSave("GroupBridgeRaceCleaner.removeLeftovers")
+        try context.save()
+        SaveBreadcrumb.didSave("GroupBridgeRaceCleaner.removeLeftovers")
+        SessionState.shared.incrementDataVersion()
+        return found.plan.expenseIDs.count
+    }
+
+    /// La limpieza AUTOMÁTICA tras una sincronización, en los dos almacenes: la nube (`.cloudSyncAppliedRemoteChanges`) e
+    /// iCloud (`.transactionsImportedFromSync`). Solo lo nuevo (`leftoverAutoSince`), y solo con el almacén quieto: borra y
+    /// guarda, y en iCloud el import puede estar a medias. Difiere si no lo está: corre en la siguiente.
+    ///
+    /// En iCloud corre DESPUÉS de `cleanupPendingDraftsWithMatchingTX`, la limpieza de antes, que sigue igual: quita
+    /// borradores sin fecha de corte (y sin mirar su estado). Lo de «solo lo nuevo» es de esta pasada, no de aquella.
+    static func convergeAfterSync(in context: ModelContext) {
+        let quiet: Bool
+        switch StorageModeSignalRouter.quiescenceSource(mode: CloudSyncFlags.storageMode) {
+        case .cloudEngine: quiet = SyncQuiescenceCoordinator.shared.isQuiescentForEngineSaves
+        case .icloudImport: quiet = iCloudSyncService.shared.isImportQuiescent
+        }
+        do {
+            let fixed = try autoRemoveLeftovers(in: context, isQuiet: quiet, since: leftoverAutoSince())
+            if fixed > 0 { MetricsService.canary(.groupBridgeLeftoversRemoved, detail: "\(fixed)") }
+        } catch {
+            #if DEBUG
+            print("GroupBridgeRaceCleaner: convergeAfterSync: Error: \(error)")
+            #endif
+        }
+    }
+
+    /// El cuerpo de la limpieza automática, sin los singletons: con el almacén a medias no toca nada, y nunca quita lo
+    /// anterior a `since`.
+    @discardableResult
+    static func autoRemoveLeftovers(in context: ModelContext, isQuiet: Bool, since: Date) throws -> Int {
+        guard isQuiet else {
+            SaveBreadcrumb.deferred("GroupBridgeRaceCleaner.convergeAfterSync", "store not quiescent")
+            return 0
+        }
+        return try removeLeftovers(in: context, since: since)
+    }
+
     /// Pure-logic helper para tests sin contexto.
     /// Recibe colección de drafts + closure que indica si existe TX real para cada splitID.
     /// Devuelve los drafts que deberían eliminarse.

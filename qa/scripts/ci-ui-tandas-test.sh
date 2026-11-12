@@ -58,6 +58,21 @@ reparto() {
 echo "Árbol real ($REAL)"
 reparto "$REAL" 2 "real en 2"
 reparto "$REAL" 3 "real en 3"
+# El número de tandas lo decide la matriz del job `ui`; las salidas `ui_N` y su lectura en el aviso se
+# escriben a mano (qa.yml, «CUANTAS TANDAS»). Si divergen, una tanda corre y nadie lee su resultado, o
+# el aviso espera una que no existe y grita «no llegó a correr» cada noche.
+QA_YML="$AQUI/../../.github/workflows/qa.yml"
+n_matriz=$(sed -nE 's/^ +tanda: \[([0-9, ]+)\]$/\1/p' "$QA_YML" | tr ',' '\n' | grep -c '[0-9]')
+n_salidas=$(grep -cE '^ +ui_[0-9]+: \$\{\{ steps\.salida\.outputs\.ui_[0-9]+ \}\}' "$QA_YML")
+n_lectura=$(grep -cE '^ +R_UI_[0-9]+: \$\{\{ needs\.ui\.outputs\.ui_[0-9]+ \}\}' "$QA_YML")
+lista=$(sed -nE 's/^ +UI_TANDAS="([0-9 ]+)"$/\1/p' "$QA_YML")
+esperada=$(seq 1 "$n_matriz" | tr '\n' ' ' | sed 's/ $//')
+if [ "$n_matriz" -gt 0 ] && [ "$n_salidas" = "$n_matriz" ] && [ "$n_lectura" = "$n_matriz" ] && [ "$lista" = "$esperada" ]; then
+  ok "qa.yml: $n_matriz tandas en la matriz, en las salidas y en el aviso"
+else
+  mal "qa.yml: matriz $n_matriz, salidas $n_salidas, lectura $n_lectura, UI_TANDAS «${lista}»"
+fi
+[ "$n_matriz" -gt 3 ] && reparto "$REAL" "$n_matriz" "real en $n_matriz"
 n1=$(UI_TESTS_DIR="$REAL" bash "$SCRIPT" 1 2 2>/dev/null | grep -c .)
 if [ "$n1" -gt 0 ]; then ok "real: la tanda 1 lleva $n1 suites"; else mal "real: la tanda 1 sale vacía"; fi
 
@@ -96,15 +111,56 @@ else
   mal "falso: la hija de una base propia aparece en los argumentos ($hija)"
 fi
 
-# Equilibrio: la diferencia entre tandas no pasa del grupo más pesado.
-pesos=$(for k in 1 2; do UI_TESTS_DIR="$REAL" bash "$SCRIPT" "$k" 2 2>&1 >/dev/null | sed -nE 's/.* ([0-9]+) casos:.*/\1/p'; done | tr '\n' ' ')
+# Equilibrio: con la tabla real, la diferencia entre tandas no pasa del fichero más pesado (en segundos).
+pesos=$(for k in 1 2; do UI_TESTS_DIR="$REAL" bash "$SCRIPT" "$k" 2 2>&1 >/dev/null | sed -nE 's/.* ([0-9]+) s:.*/\1/p'; done | tr '\n' ' ')
 # Dos números separados por espacio: el troceo es el buscado.
 # shellcheck disable=SC2086
 set -- $pesos
-max=$(for f in "$REAL"/Flows/*.swift; do grep -cE '^\s*func test' "$f"; done | sort -n | tail -1)
-d=$(( $1 > $2 ? $1 - $2 : $2 - $1 ))
-if [ "$d" -le "$max" ]; then ok "real: tandas de $1 y $2 casos (diferencia $d ≤ $max)"
-else mal "real: tandas descompensadas ($1 y $2 casos, más que el fichero más pesado: $max)"; fi
+max=$(python3 -I -c 'import json,sys; print(max(json.load(open(sys.argv[1]))["suites"].values()))' "$AQUI/../ci-ui-tiempos.json")
+if [ "$#" -eq 2 ]; then
+  d=$(( $1 > $2 ? $1 - $2 : $2 - $1 ))
+  if [ "$d" -le "$max" ]; then ok "real: tandas de $1 y $2 s (diferencia $d ≤ $max)"
+  else mal "real: tandas descompensadas ($1 y $2 s, más que la suite más pesada: $max)"; fi
+else
+  mal "real: no se leen los segundos de las tandas («$pesos»)"
+fi
+
+echo "Tabla de tiempos"
+# Árbol falso de cuatro suites de un caso. Por casos, 2 tandas irían 2 y 2; con la tabla, la lenta va sola.
+mkdir -p "$T/b/Flows"
+for s in Lenta Rapida1 Rapida2 Rapida3; do
+  printf 'import XCTest\nfinal class %sUITests: XCTestCase { func test_a() {} }\n' "$s" > "$T/b/Flows/$s.swift"
+done
+printf '{"suites": {"LentaUITests": 600, "Rapida1UITests": 10, "Rapida2UITests": 10, "Rapida3UITests": 10}}\n' > "$T/b.json"
+uno=$(UI_TESTS_DIR="$T/b" UI_TIEMPOS="$T/b.json" bash "$SCRIPT" 1 2 2>/dev/null)
+if [ "$uno" = "-only-testing:YalaUITests/LentaUITests" ]; then ok "tabla: la suite lenta va sola en su tanda"
+else mal "tabla: la suite lenta no va sola («$(tr '\n' ' ' <<<"$uno")»)"; fi
+reparto "$T/b" 2 "tabla en 2"
+# Una suite que la tabla no conoce pesa 46 s por caso: con 20 casos (920 s) pesa más que la lenta y va sola.
+{ echo "import XCTest"; echo "final class NuevaUITests: XCTestCase {"; for i in $(seq 1 20); do echo "    func test_$i() {}"; done; echo "}"; } > "$T/b/Flows/Nueva.swift"
+uno=$(UI_TESTS_DIR="$T/b" UI_TIEMPOS="$T/b.json" bash "$SCRIPT" 1 2 2>/dev/null)
+if [ "$uno" = "-only-testing:YalaUITests/NuevaUITests" ]; then ok "tabla: una suite nueva pesa 46 s por caso"
+else mal "tabla: la suite nueva no pesa por sus casos («$(tr '\n' ' ' <<<"$uno")»)"; fi
+# Una tabla rota o ausente no deja el paso sin lista: reparte por casos.
+echo "no es json" > "$T/roto.json"
+if [ -n "$(UI_TESTS_DIR="$T/b" UI_TIEMPOS="$T/roto.json" bash "$SCRIPT" 1 2 2>/dev/null)" ]; then ok "tabla rota: reparte igual"
+else mal "tabla rota: la tanda sale sin lista"; fi
+if [ -n "$(UI_TESTS_DIR="$T/b" UI_TIEMPOS="$T/no-existe.json" bash "$SCRIPT" 1 2 2>/dev/null)" ]; then ok "sin tabla: reparte igual"
+else mal "sin tabla: la tanda sale sin lista"; fi
+
+echo "Generador de la tabla (ci-ui-tiempos.sh)"
+mkdir -p "$T/logs"
+{ echo "2026-11-04T00:00:00Z Test Case '-[YalaUITests.AUITests test_a]' failed (30.5 seconds)."
+  echo "2026-11-04T00:00:00Z Test Case '-[YalaUITests.AUITests test_a]' passed (20.0 seconds)."
+  echo "2026-11-04T00:00:00Z Test Case '-[YalaUITests.BUITests test_b]' skipped (0.2 seconds)."; } > "$T/logs/1.log"
+if UI_TIEMPOS_SALIDA="$T/gen.json" bash "$AQUI/ci-ui-tiempos.sh" 1 --log-dir "$T/logs" 2>/dev/null \
+   && [ "$(python3 -I -c 'import json,sys; print(json.load(open(sys.argv[1]))["suites"])' "$T/gen.json")" = "{'AUITests': 50, 'BUITests': 0}" ]; then
+  ok "generador: suma reintentos y cuenta las suites saltadas"
+else mal "generador: la tabla no es la esperada"; fi
+echo "sin casos" > "$T/logs/2.log"
+if UI_TIEMPOS_SALIDA="$T/gen2.json" bash "$AQUI/ci-ui-tiempos.sh" 1 --log-dir "$T/logs" 2>/dev/null || [ -e "$T/gen2.json" ]; then
+  mal "generador: acepta un run con una tanda sin casos"
+else ok "generador: rechaza un run con una tanda sin casos"; fi
 
 echo "Entrada que no cuadra"
 for malo in "0 2" "3 2" "1 0" "x 2" "1"; do

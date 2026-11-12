@@ -145,27 +145,25 @@ struct RestoreDataPresenceWiringTests {
     /// El consumidor que este ticket arregló. Cada término, su card.
     @Test("cada término del resumen tiene card en la pantalla del hallazgo")
     func everyTerm_hasCardInFoundScreen() throws {
+        // UX 2.2 · L6-5: la pantalla del hallazgo es una lista tipo recibo y sus filas salen de
+        // `RestoreFoundRowsLogic.rows(for:)` (la vista solo las pinta). La invariante es la misma: cada término
+        // que enciende «hay datos» tiene su fila, con SU cifra y no la del vecino.
         let lista = try Self.body(
-            of: "private func visibleCountItems(for s: ICloudAccountSummary) -> [CountItem] {",
+            of: "static func rows(for summary: ICloudAccountSummary) -> [Row] {",
+            in: Self.code("Yala/App/Logic/RestoreFoundRowsLogic.swift"))
+        let vista = try Self.body(
+            of: "private func receiptList(for summary: ICloudAccountSummary) -> some View {",
             in: Self.code("Yala/App/Views/Onboarding/WelcomeRestoreView.swift"))
+        #expect(vista.contains("RestoreFoundRowsLogic.rows(for:"), "la pantalla ya no pinta las filas de la lógica")
 
         let terminos = try Self.terminosDelResumen()
         #expect(!terminos.isEmpty, "sin términos no se comprueba nada: ver el control positivo")
         for termino in terminos {
-            // **No basta con que la CONDICIÓN esté: tiene que añadir algo.** Comprobar solo el `if`
-            // dejaba vivo el mutante que de verdad importa —el que vacía su cuerpo—, y ese es
-            // exactamente el defecto que este fichero existe para cazar: una rama que mira el término
-            // y no pinta nada se lee igual que no tenerla. Medido el 2026-09-21: con el `contains` a
-            // secas, el mutante SOBREVIVÍA.
-            let rama = try Self.body(of: "s.\(termino) > 0 {", in: lista)
-            #expect(rama.contains("items.append(CountItem("), Comment(rawValue: """
-                `\(termino)` enciende `hasAnyData` y `visibleCountItems` no añade su card. Esa
-                combinación no es un detalle cosmético: `countCards` con cero items cae en su
-                `default` y dibuja un grid vacío bajo «Encontramos tus datos en iCloud:».
-                """))
-            #expect(rama.contains("count: s.\(termino)"), Comment(rawValue: """
-                la card de `\(termino)` se añade con OTRA cifra: el `if` mira un término y el número
-                que se enseña es el del vecino. Compila, y en pantalla son dos números creíbles.
+            #expect(lista.range(of: #"Row\(kind: \.[a-z]+, count: summary\.\#(termino)\)"#,
+                                options: .regularExpression) != nil, Comment(rawValue: """
+                `\(termino)` enciende `hasAnyData` y `RestoreFoundRowsLogic.rows` no tiene su fila, o la
+                construye con OTRA cifra: la pantalla diría «Encontramos tus datos» sobre una lista que no lo
+                enseña.
                 """))
         }
     }
@@ -174,8 +172,13 @@ struct RestoreDataPresenceWiringTests {
     /// hizo visible el bug: enseñaba llegar unos datos que la pantalla siguiente negaba.
     @Test("cada término del resumen tiene chip en la pantalla de progreso")
     func everyTerm_hasChipInProgressScreen() throws {
-        let chips = try Self.body(of: "private var liveCounts: some View {",
-                                  in: Self.code("Yala/App/Views/Onboarding/RestoreProgressView.swift"))
+        // UX 2.2 · L6-13: los chips viven en `RestoreLiveCountsRow`, compartido con la entrada a la nube; el
+        // progreso solo lo monta.
+        let progreso = try Self.body(of: "private var liveCounts: some View {",
+                                     in: Self.code("Yala/App/Views/Onboarding/RestoreProgressView.swift"))
+        #expect(progreso.contains("RestoreLiveCountsRow(counts:"), "el progreso ya no monta la fila de cifras")
+        let chips = try Self.body(of: "var body: some View {",
+                                  in: Self.code("Yala/App/Views/Onboarding/RestoreLiveCountsRow.swift"))
 
         let terminos = try Self.terminosDelResumen()
         #expect(!terminos.isEmpty)
@@ -195,12 +198,15 @@ struct RestoreDataPresenceWiringTests {
     @Test("los grupos se PINTAN aunque no decidan")
     func groupsStillHaveTheirCard() throws {
         let lista = try Self.body(
-            of: "private func visibleCountItems(for s: ICloudAccountSummary) -> [CountItem] {",
+            of: "private func receiptList(for summary: ICloudAccountSummary) -> some View {",
             in: Self.code("Yala/App/Views/Onboarding/WelcomeRestoreView.swift"))
-        let rama = try Self.body(of: "s.groupsCount > 0 {", in: lista)
-        #expect(rama.contains("count: s.groupsCount"))
-        let chips = try Self.body(of: "private var liveCounts: some View {",
-                                  in: Self.code("Yala/App/Views/Onboarding/RestoreProgressView.swift"))
+        #expect(lista.contains("RestoreFoundRowsLogic.rows(for:"))
+        let filas = try Self.body(
+            of: "static func rows(for summary: ICloudAccountSummary) -> [Row] {",
+            in: Self.code("Yala/App/Logic/RestoreFoundRowsLogic.swift"))
+        #expect(filas.contains("Row(kind: .groups, count: summary.groupsCount)"))
+        let chips = try Self.body(of: "var body: some View {",
+                                  in: Self.code("Yala/App/Views/Onboarding/RestoreLiveCountsRow.swift"))
         #expect(chips.contains("counts?.groupsCount"))
     }
 

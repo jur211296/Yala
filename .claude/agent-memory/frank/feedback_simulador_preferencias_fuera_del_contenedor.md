@@ -1,6 +1,6 @@
 ---
 name: simulador-preferencias-fuera-del-contenedor
-description: Si `removeObject` no tiene efecto y la key no está en ningún dominio enumerable, deja de buscar al escritor: es el simulador, y la salida es `simctl erase`.
+description: Si `removeObject` no tiene efecto o una «instalación limpia» trae datos (el App Group sobrevive a `simctl uninstall`), es el simulador: `simctl erase`.
 metadata:
   type: feedback
 ---
@@ -27,3 +27,9 @@ era. **Lo zanjó `xcrun simctl erase` en tres minutos**, sin tocar una línea de
 - **No siembres estado con `xcrun simctl spawn <udid> defaults write`**: escribe en el segundo, parece «no
   tomar» y envenena el simulador. Edita el plist del contenedor o pasa un launch arg.
 - La sonda que cerró el caso imprimía **los DOMINIOS**, no el valor — [[feedback_instrumentar_gana_a_razonar]].
+
+**Y el App Group tampoco se va con `simctl uninstall`** (medido el 2026-10-13, iOS 27.0). Reinstalé Yala Dev para
+una captura de «instalación limpia» y salió «Detectamos datos previos… ¿Borrar todo?»: el contenedor
+`Shared/AppGroup/<uuid>` era de mi recorrido de media hora antes, con su store dentro. En un iPhone real borrar la
+app sí lo vacía; en el simulador **«limpia» exige `simctl erase`**. Antes de reportar como bug algo que solo pasa
+«en una instalación nueva», mira la fecha de ese contenedor (`simctl get_app_container <udid> <bundle> groups`).

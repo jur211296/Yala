@@ -39,8 +39,9 @@
 //     consentimiento).
 //
 //  Y un snapshot SIN sello (`userID == nil`) también vale: es la forma que tiene el consent adoptado del
-//  build anterior —que se escribía sin identidad ninguna— y la del seam `-uitest-groups-consent`. En
-//  cuanto haya sesión, `GroupsConsentState.adoptLegacyIfNeeded` lo RE-SELLA con el `sub` vivo.
+//  build anterior —que se escribía sin identidad ninguna—, la del seam `-uitest-groups-consent` y, desde
+//  UX 2.2 · L12-4, la del que se acepta en el paso 3 del educativo antes de iniciar sesión. En cuanto haya
+//  sesión, `GroupsConsentRegistrar.adoptLegacyIfNeeded` lo RE-SELLA con el `sub` vivo.
 //
 
 import Foundation

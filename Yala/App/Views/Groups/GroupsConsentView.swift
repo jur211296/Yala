@@ -33,13 +33,11 @@ struct GroupsConsentView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Spacing.xl) {
+                    // UX 2.2 · L12-5 (decisión B de Jürgen, 2026-10-18): UN solo título. Antes salía en la barra y otra
+                    // vez como cabecera; se queda el de dentro, que es el que se lee.
                     header
-                    VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-                        ForEach(Array(Self.points.enumerated()), id: \.offset) { _, point in
-                            consentPoint(point)
-                        }
-                    }
-                    .padding(.horizontal, DS.Spacing.lg)
+                    GroupsConsentPoints()
+                        .padding(.horizontal, DS.Spacing.lg)
 
                     Button {
                         openURL(AppConstants.privacyURL)
@@ -56,7 +54,6 @@ struct GroupsConsentView: View {
                 .padding(.vertical, DS.Spacing.xxl)
             }
             .yalaScreenBackground(.subtle)
-            .navigationTitle(L10n.Groups.Consent.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -68,35 +65,17 @@ struct GroupsConsentView: View {
     }
 
     private var header: some View {
-        HStack(spacing: DS.Spacing.lg) {
-            Image(systemName: "person.2.fill")
-                .font(DS.Typography.title)
-                .foregroundStyle(DS.Semantic.infoForeground)
-            Text(L10n.Groups.Consent.title)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.primary)
-            Spacer()
-        }
-        .padding(.horizontal, DS.Spacing.lg)
-    }
-
-    private func consentPoint(_ text: String) -> some View {
-        HStack(alignment: .top, spacing: DS.Spacing.md) {
-            Image(systemName: "info.circle.fill")
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-                .padding(.top, DS.Spacing.xxs)
-            Text(text)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.primary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
+        Text(L10n.Groups.Consent.title)
+            .font(DS.Typography.title2)
+            .foregroundStyle(.primary)
+            .accessibilityAddTraits(.isHeader)
+            .padding(.horizontal, DS.Spacing.lg)
     }
 
     private var ctaSection: some View {
         VStack(spacing: DS.Spacing.md) {
             YalaPrimaryButton(L10n.Groups.Consent.accept, icon: "checkmark.shield") {
-                registerConsent()
+                Self.registerAcceptance(path: path)
                 onAccept()
             }
             .accessibilityIdentifier("groups_consent_accept")
@@ -113,18 +92,47 @@ struct GroupsConsentView: View {
     /// El registro contra la cuenta NO bloquea al usuario: aceptó de verdad y un fallo nuestro de red no
     /// puede castigarle. La caché local se escribe siempre y las cinco tablas de routing la leen, así que
     /// la puerta no depende del request.
-    private func registerConsent() {
+    ///
+    /// Desde UX 2.2 · L12-4 hay DOS sitios donde se acepta (esta hoja y el paso 3 del educativo), y los dos pasan por
+    /// aquí: un segundo escritor es como el registro legal empieza a divergir.
+    static func registerAcceptance(path: String) {
         GroupsConsentRegistrar.shared.register(path: path)
         MetricsService.cloudConsentAccepted(path: "groups")
     }
+}
 
-    /// Los 4 puntos de §8, en orden.
-    private static var points: [String] {
+/// Los cuatro puntos del consentimiento de Grupos, cada uno con su icono en el índigo de la marca (UX 2.2 · L12-5,
+/// decisión B: nube, persona, candado, salida; antes eran cuatro «i» iguales en el azul del sistema y no se leía
+/// ninguno). Una sola pieza para la hoja y para el paso 3 del educativo, que desde L12-4 ES el consentimiento: así los
+/// dos sitios donde se acepta enseñan el mismo texto.
+struct GroupsConsentPoints: View {
+    /// Los 4 puntos de §8, en orden, con su icono.
+    static var points: [(icon: String, text: String)] {
         [
-            L10n.Groups.Consent.point1,
-            L10n.Groups.Consent.point2,
-            L10n.Groups.Consent.point3,
-            L10n.Groups.Consent.point4,
+            ("icloud.fill", L10n.Groups.Consent.point1),
+            ("person.fill", L10n.Groups.Consent.point2),
+            ("lock.fill", L10n.Groups.Consent.point3),
+            ("rectangle.portrait.and.arrow.right", L10n.Groups.Consent.point4),
         ]
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+            ForEach(Array(Self.points.enumerated()), id: \.offset) { _, point in
+                HStack(alignment: .top, spacing: DS.Spacing.md) {
+                    Image(systemName: point.icon)
+                        .font(DS.Typography.body.weight(.semibold))
+                        .foregroundStyle(Color.electricIndigo)
+                        .frame(width: 28)
+                        .accessibilityHidden(true)
+                    Text(point.text)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.thPrimaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .accessibilityElement(children: .combine)
+            }
+        }
     }
 }

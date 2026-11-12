@@ -107,7 +107,9 @@ struct BornCloudSignUpServiceTests {
         provider: @escaping @MainActor () -> String = { "apple" },
         consentRegistered: Bool = true,
         beaconStore: FakeBeaconStore = FakeBeaconStore(),
-        stub: ClaimStubHTTP = ClaimStubHTTP()
+        stub: ClaimStubHTTP = ClaimStubHTTP(),
+        claimStore injectedClaimStore: CloudClaimActionStore? = nil,
+        storage: UserDefaults? = nil
     ) -> (sut: BornCloudSignUpService, stub: ClaimStubHTTP, beacon: FakeBeaconStore,
           claimStore: CloudClaimActionStore, consent: UserDefaults) {
         let consent = makeIsolatedDefaults(prefix: "bornCloud.consent")
@@ -115,7 +117,7 @@ struct BornCloudSignUpServiceTests {
             consent.set(1_760_000_000, forKey: PrefSyncKey.cloudConsentAcceptedAt.rawValue)
             consent.set(CloudConsentText.version, forKey: PrefSyncKey.cloudConsentTextVersion.rawValue)
         }
-        let claimStore = CloudClaimActionStore(
+        let claimStore = injectedClaimStore ?? CloudClaimActionStore(
             defaults: makeIsolatedDefaults(prefix: "bornCloud.claim"))
         let sut = BornCloudSignUpService(
             session: FakeSession(token: token, userID: userID, sessionKept: sessionKept),
@@ -125,6 +127,7 @@ struct BornCloudSignUpServiceTests {
             beacon: CloudBeacon(store: beaconStore),
             claimStore: claimStore,
             consentDefaults: consent,
+            storageDefaults: storage ?? makeIsolatedDefaults(prefix: "bornCloud.storage"),
             now: { Date(timeIntervalSince1970: 1_760_000_500) })
         return (sut, stub, beaconStore, claimStore, consent)
     }
@@ -330,6 +333,78 @@ struct BornCloudSignUpServiceTests {
         #expect(await sut.signUp() == .seeded,
                 "MEDIDO: desde .bornCloud el mismatch es inalcanzable — el usuario dijo explícitamente «soy nuevo»")
         #expect(claimStore.action(forUserID: "sub-born") == .seedBornCloud)
+    }
+
+    // MARK: - S12h · la re-entrada del alta en la cuenta que este teléfono creó
+
+    /// El teléfono que acaba de crear la cuenta y sigue en ella (sello `seedBornCloud` de ese `userID` + modo `.cloud`
+    /// con la marca de alta nube). El servidor ya no repite `created` porque el motor subió algo: el alta sigue.
+    private func bornHereStorage() -> UserDefaults {
+        let storage = makeIsolatedDefaults(prefix: "bornCloud.storage.bornHere")
+        StorageModePersistence.writeCloudArmed(defaults: storage)
+        StorageModePersistence.markBornCloud(defaults: storage)
+        return storage
+    }
+
+    private func claimStoreStamped(_ action: AccountClaimDecision.AuthAction?) -> CloudClaimActionStore {
+        let store = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "bornCloud.claim.stamped"))
+        if let action { store.record(action, forUserID: "sub-born") }
+        return store
+    }
+
+    private func existingStableStub() -> ClaimStubHTTP {
+        let stub = ClaimStubHTTP()
+        stub.body = Data(#"{"state":"existing_stable"}"#.utf8)
+        return stub
+    }
+
+    @Test("S12h · existing_stable de la cuenta nacida aquí, sin salir de ella → sigue el alta: .seeded, sin faro ni registro")
+    func existingStable_ofOwnBornAccount_continuesTheSignUp() async throws {
+        try await withMetrics { metricsDefaults in
+            let (sut, _, beacon, claimStore, _) = makeSUT(
+                stub: existingStableStub(), claimStore: claimStoreStamped(.seedBornCloud), storage: bornHereStorage())
+
+            #expect(await sut.signUp() == .seeded,
+                    "el adopt de su propia cuenta entraba sin onboarding ni categorías y quedaba pendiente para siempre")
+            #expect(claimStore.action(forUserID: "sub-born") == .seedBornCloud)
+            #expect(!beaconIsWritten(beacon), "el faro lo escribió el `created` de verdad; la re-entrada no lo pisa")
+            #expect(registers(metricsDefaults).isEmpty, "la cuenta ya se contó al crearse")
+        }
+    }
+
+    /// Las tres pruebas hacen falta: quitar cualquiera devuelve el camino de siempre (un 2.º teléfono, una cuenta ajena
+    /// o un teléfono que ya salió de la cuenta no pueden re-sembrar).
+    @Test("S12h · MUTACIÓN: sin el sello de alta, con el modo iCloud o sin la marca de alta nube → adopt como siempre",
+          arguments: ["sinSello", "selloDeAdopt", "modoICloud", "sinMarcaBornCloud"])
+    func existingStable_withoutAllThreeProofs_routesReturningUser(_ caso: String) async throws {
+        let storage = makeIsolatedDefaults(prefix: "bornCloud.storage.\(caso)")
+        if caso != "modoICloud" { StorageModePersistence.writeCloudArmed(defaults: storage) }
+        if caso != "sinMarcaBornCloud" { StorageModePersistence.markBornCloud(defaults: storage) }
+        let stamp: AccountClaimDecision.AuthAction? = switch caso {
+        case "sinSello": nil
+        case "selloDeAdopt": .routeReturningUser
+        default: .seedBornCloud
+        }
+        let (sut, _, _, _, _) = makeSUT(stub: existingStableStub(), claimStore: claimStoreStamped(stamp), storage: storage)
+        #expect(await sut.signUp() == .routeReturningUser)
+    }
+
+    @Test("S12h · el sello de OTRA cuenta no vale: el de ese userID es el que prueba quién la creó")
+    func existingStable_stampOfAnotherAccount_routesReturningUser() async throws {
+        let store = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "bornCloud.claim.other"))
+        store.record(.seedBornCloud, forUserID: "sub-otra")
+        let (sut, _, _, _, _) = makeSUT(stub: existingStableStub(), claimStore: store, storage: bornHereStorage())
+        #expect(await sut.signUp() == .routeReturningUser)
+    }
+
+    @Test("S12h · la tabla pura: solo `existing_stable` con las dos pruebas cambia; lo demás pasa tal cual")
+    func reclaimState_pureTable() {
+        typealias D = AccountClaimDecision
+        #expect(D.bornCloudReclaimState(.existingStable, thisDeviceSeededThisAccount: true, deviceStillInBornCloudMode: true) == .created)
+        #expect(D.bornCloudReclaimState(.existingStable, thisDeviceSeededThisAccount: false, deviceStillInBornCloudMode: true) == .existingStable)
+        #expect(D.bornCloudReclaimState(.existingStable, thisDeviceSeededThisAccount: true, deviceStillInBornCloudMode: false) == .existingStable)
+        #expect(D.bornCloudReclaimState(.claimingInProgress, thisDeviceSeededThisAccount: true, deviceStillInBornCloudMode: true) == .claimingInProgress)
+        #expect(D.bornCloudReclaimState(.created, thisDeviceSeededThisAccount: false, deviceStillInBornCloudMode: false) == .created)
     }
 
     @Test("faro del MISMO sub (reintento tras un created previo): sigue siendo el camino de siembra")

@@ -63,11 +63,12 @@ struct ScheduledPaymentsWidget: View {
             if data.activeCount == 0 || data.monthlyTotal == 0 {
                 smallEmptyState
             } else {
-                HStack(alignment: .center, spacing: DS.Spacing.sm) {
+                // En columna: compartiendo fila con el anillo, la cifra no cabía en media tarjeta y salía «S/ 2,…».
+                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                     smallKPIBlock
-                    Spacer(minLength: 0)
                     smallRing
                         .accessibilityLabel(ringAccessibilityLabel)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
                 }
             }
         }
@@ -243,20 +244,20 @@ struct ScheduledPaymentsWidget: View {
                 filterButton(for: filterOption)
             }
         }
+        // El círculo elegido se desliza (card C2). Implícita: en el Panel un `withAnimation` no anima.
+        .dsAnimation(DS.Animation.selection, value: filter, reduceMotion: reduceMotion)
     }
 
     private func filterButton(for filterOption: ScheduledPaymentsWidgetFilter) -> some View {
         let isSelected = filter == filterOption
 
         return Button {
-            dsWithAnimation(reduceMotion, .spring(response: 0.3, dampingFraction: 0.7)) {
-                filter = filterOption
-            }
+            filter = filterOption
         } label: {
             Image(systemName: filterOption.iconName)
                 .font(DS.Typography.labelSmall)
                 .fontWeight(.semibold)
-                .foregroundStyle(isSelected ? .white : theme.secondaryText)
+                .foregroundStyle(isSelected ? theme.onAccent : theme.secondaryText)
                 .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
                 .background {
                     if isSelected {
@@ -350,7 +351,7 @@ struct ScheduledPaymentsWidget: View {
                 } else if item.isPaid {
                     Image(systemName: "checkmark.circle.fill")
                         .font(DS.Typography.captionSmall)
-                        .foregroundStyle(theme.accent)
+                        .foregroundStyle(theme.accentText)
                         .accessibilityHidden(true)
                 }
             }

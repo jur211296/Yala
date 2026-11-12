@@ -13,6 +13,7 @@
 
 import Foundation
 import SwiftData
+import UserNotifications
 
 // MARK: - RemoteChangeSet
 
@@ -24,11 +25,13 @@ struct RemoteChangeSet {
     var newMembers: [(id: UUID, groupID: UUID)] = []
     /// members nuevos con status `pendingApproval`. Solo se appendea cuando current user es admin del grupo.
     var newPendingMembers: [(id: UUID, groupID: UUID)] = []
+    /// L12-20 · grupos donde el admin acaba de aprobar a ESTA persona (su miembro pasó de pendiente a activo).
+    var selfApprovedGroups: [UUID] = []
 
     var isEmpty: Bool {
         newExpenses.isEmpty && modifiedExpenses.isEmpty
             && newSettlements.isEmpty && newMembers.isEmpty
-            && newPendingMembers.isEmpty
+            && newPendingMembers.isEmpty && selfApprovedGroups.isEmpty
     }
 }
 
@@ -87,6 +90,13 @@ final class GroupNotificationService {
         #endif
         guard let item, item.isActive else { return }
 
+        // L12-20 · «Ya estás en «X»». Va antes que el resto y sin el límite de 5 min: es un aviso por persona y grupo
+        // que llega una sola vez, y lo que la aprobación trae detrás (el re-pull entero del grupo) sí queda dentro del
+        // límite, porque este aviso estampa la hora del grupo — si no, la persona recibiría también «N gastos nuevos».
+        for groupID in Set(changes.selfApprovedGroups) {
+            notifySelfApproved(groupID: groupID)
+        }
+
         // Group RAW ids by group first (cheap, no fetch). We only pay for the
         // per-record fetches (participation filter) on groups that pass the
         // rate-limit — an initial history import would otherwise trigger N×2
@@ -121,12 +131,75 @@ final class GroupNotificationService {
                 #if DEBUG
                 print("GroupNotif[#16-debug]: scheduling title=\"\(title)\" body=\"\(body)\" deepLink=\(deepLink)")
                 #endif
+                // El genérico del servidor que trajo ESTA tanda ya sonó; el rico lo sustituye, no se suma (ticket
+                // `notices-come-out-one-after-another-by-priority`). Se retira DESPUÉS de que el rico salga: si iOS no lo
+                // acepta (o un borrado lo calla), el genérico es lo único que queda. Y solo el reciente del mismo grupo
+                // (`GroupServerNoticeReplacementLogic.freshWindow`).
+                let groupLinks = GroupServerNoticeReplacementLogic.groupLinks(
+                    groupID: groupID, zoneID: zoneID(ofGroup: groupID))
                 Task {
-                    await NotificationService.shared.sendNotification(
+                    let sent = await NotificationService.shared.sendNotification(
                         title: title, body: body, deepLink: deepLink
                     )
+                    guard sent else { return }
+                    let center = UNUserNotificationCenter.current()
+                    let now = Date.now
+                    let generic = await center.deliveredNotifications()
+                        .filter {
+                            GroupServerNoticeReplacementLogic.isReplacedServerNotice(
+                                $0.request.content.userInfo, deliveredAt: $0.date, now: now, groupLinks: groupLinks)
+                        }
+                        .map(\.request.identifier)
+                    if !generic.isEmpty { center.removeDeliveredNotifications(withIdentifiers: generic) }
                 }
             }
+        }
+    }
+
+    /// El `group_id` del servidor de un grupo local (`SplitGroup.cloudKitZoneID`), o `nil` si no se deja leer: entonces solo
+    /// se retira el genérico que nombre el `id` local, y el otro se queda (avisar de más, no de menos).
+    private func zoneID(ofGroup groupID: UUID) -> String? {
+        guard let modelContext else { return nil }
+        do {
+            var descriptor = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.id == groupID })
+            descriptor.fetchLimit = 1
+            return try modelContext.fetch(descriptor).first?.cloudKitZoneID
+        } catch {
+            #if DEBUG
+            print("GroupNotificationService: Error fetching group zone: \(error)")
+            #endif
+            return nil
+        }
+    }
+
+    /// L12-20 · el aviso al ser aprobado. Sin nombre de grupo legible (la fila aún no bajó), el título genérico.
+    private func notifySelfApproved(groupID: UUID) {
+        guard let modelContext else { return }
+        let name: String?
+        do {
+            var descriptor = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.id == groupID })
+            descriptor.fetchLimit = 1
+            name = try modelContext.fetch(descriptor).first?.name
+        } catch {
+            #if DEBUG
+            print("GroupNotificationService: Error fetching approved group: \(error)")
+            #endif
+            name = nil
+        }
+        let title = name.map { L10n.UXD14.readyTitle($0) } ?? L10n.UXD14.readyTitleNoName
+        let deepLink = "groups/\(groupID.uuidString)"
+        lastNotifiedDates[groupID] = Date.now
+        persistTimestamp(for: groupID)
+        Task {
+            // El servidor ya avisó con su texto genérico; este es el rico que lo sustituye, no un segundo aviso.
+            let center = UNUserNotificationCenter.current()
+            let generic = await center.deliveredNotifications()
+                .filter { GroupApprovalNoticeLogic.isServerMembershipNotice($0.request.content.userInfo) }
+                .map(\.request.identifier)
+            if !generic.isEmpty { center.removeDeliveredNotifications(withIdentifiers: generic) }
+            await NotificationService.shared.sendNotification(
+                title: title, body: L10n.UXD14.approvedBody, deepLink: deepLink
+            )
         }
     }
 
@@ -189,6 +262,7 @@ final class GroupNotificationService {
                 currentMemberID: cmid,
                 paidByMemberID: expense.paidByMemberID,
                 lastEditedByMemberID: expense.lastEditedByMemberID,
+                myOtherMemberIDs: myMemberIDs(inZone: expense.groupZoneID),
                 myShareAmount: myShare
             ) {
             case .notify(let share): return (expense, share)
@@ -212,7 +286,8 @@ final class GroupNotificationService {
             return GroupNotificationRecipientLogic.shouldNotifySettlement(
                 currentMemberID: cmid,
                 toMemberID: settlement.toMemberID,
-                recordedByMemberID: settlement.recordedByMemberID
+                recordedByMemberID: settlement.recordedByMemberID,
+                myOtherMemberIDs: myMemberIDs(inZone: settlement.groupZoneID)
             ) ? settlement : nil
         } catch {
             #if DEBUG
@@ -252,6 +327,22 @@ final class GroupNotificationService {
             print("GroupNotificationService: Error resolving current member for zone \(zoneName): \(error)")
             #endif
             return nil
+        }
+    }
+
+    /// Card xi74: TODAS mis filas de la zona (`GroupExpenseService.resolveAllCurrentUserMembers`), para reconocer como mío
+    /// un cambio firmado con mi otra fila. Un fallo de lectura devuelve el conjunto vacío: la decisión cae a la canónica,
+    /// que es lo de antes.
+    private func myMemberIDs(inZone zoneID: String) -> Set<String> {
+        guard let modelContext else { return [] }
+        do {
+            let members = try modelContext.fetch(FetchDescriptor<SplitMember>(predicate: #Predicate { $0.groupZoneID == zoneID }))
+            return Set(GroupExpenseService.resolveAllCurrentUserMembers(from: members).map(\.id.uuidString))
+        } catch {
+            #if DEBUG
+            print("GroupNotificationService: Error resolving my members for zone \(zoneID): \(error)")
+            #endif
+            return []
         }
     }
 
@@ -311,15 +402,20 @@ final class GroupNotificationService {
         // Formato canónico off-MainActor: respeta decimalPlaces / formato de moneda del usuario
         // (evita drift visual entre la notificación y el resto de la app).
         let formattedShare = YalaFormatterStatic.currency(value: myShare, currencyCode: expense.currencyCode)
+        return (groupName, Self.expenseBody(
+            isNew: isNew, memberName: memberName,
+            description: expense.expenseDescription, formattedShare: formattedShare))
+    }
 
-        if isNew {
-            if expense.expenseDescription.isEmpty {
-                return (groupName, L10n.Notifications.Group.newExpenseNoDesc(memberName, formattedShare))
-            }
-            return (groupName, L10n.Notifications.Group.newExpense(memberName, expense.expenseDescription, formattedShare))
-        } else {
-            let desc = expense.expenseDescription.isEmpty ? L10n.Notifications.Group.fallbackGroup : expense.expenseDescription
-            return (groupName, L10n.Notifications.Group.modifiedExpense(memberName, desc, formattedShare))
+    /// El cuerpo del aviso de un gasto nuevo o editado. Sin descripción, «agregó un gasto» / «actualizó un gasto»:
+    /// hasta el lote 19 de la auditoría UX, el editado sin descripción decía «actualizó 'Grupo'», con el nombre de
+    /// reserva del GRUPO en el sitio del gasto.
+    static func expenseBody(isNew: Bool, memberName: String, description: String, formattedShare: String) -> String {
+        switch (isNew, description.isEmpty) {
+        case (true, true): return L10n.Notifications.Group.newExpenseNoDesc(memberName, formattedShare)
+        case (true, false): return L10n.Notifications.Group.newExpense(memberName, description, formattedShare)
+        case (false, true): return L10n.Notifications.Group.modifiedExpenseNoDesc(memberName, formattedShare)
+        case (false, false): return L10n.Notifications.Group.modifiedExpense(memberName, description, formattedShare)
         }
     }
 

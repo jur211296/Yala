@@ -5,7 +5,7 @@ priority: low
 area: "testing"
 created: 2026-09-11
 source: "corrida completa de YalaTests durante `detach-history-replay-can-tombstone-groups-on-next-launch`"
-updated: 2026-10-08
+updated: 2026-10-13
 ---
 
 # `SpikeR3ContainerReleaseTests` «eje 4b» se pone rojo en la suite completa y verde en solitario
@@ -82,3 +82,17 @@ justo después, sin recompilar. El cambio de esa sesión no toca el container ni
 - `b48dafcea` (2026-10-05) aún cita en su gate «rojo: flaky conocido SpikeR3 eje 4a, con ticket». Sigue sin entrada en la Lista Negra de `.claude/rules/testing.md`.
 
 Triage 2026-10-08: abierto · low → low · sigue cayendo en gates del 5-oct y no se ha tocado su causa, pero es un rojo de instrumento y el borrado real sigue fallando cerrado.
+
+## 2026-10-13 · eje 4a en la primera corrida tras borrar el simulador
+
+Gate de la pasada UI del lote 1 de la auditoría UX 2.2 (9714 casos, 982 suites, iPhone 17 Pro iOS 27.0): el simulador se
+borró y arrancó justo antes, y cayó **solo** el 4a (`harness.log.contains("EJE 4a ✅")`). La suite aislada, sobre el mismo
+árbol y ya caliente, pasó a la primera. Otra vez el patrón del 2026-10-03: la primera corrida tras arrancar.
+
+
+## Medido el 2026-10-14 (gate del lote 7 de la auditoría UX 2.2)
+
+Suite completa de `YalaTests` con `Yala Dev` en el iPhone 17 Pro (iOS 27.0) recién borrado: 9.763 de 9.764 en verde; el
+único rojo, «R3 eje 4a · wipe in-process con release verificado…» (`SpikeR3ContainerReleaseTests.swift:88`,
+`harness.log.contains("EJE 4a ✅")`). Aislado, la suite pasa 2 de 2 (6 casos). El cambio del lote no toca el store ni
+el harness. Sigue sin entrada en la Lista Negra.

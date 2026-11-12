@@ -2,13 +2,12 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 // @ts-expect-error — módulo .mjs sin tipos: es el script del `predeploy`.
 import { decideManifestGuard } from "../scripts/manifest-guard.mjs";
+import { GROUP_MANIFEST_VERSION } from "../src/groups/manifest";
+import { MANIFEST_VERSION } from "../src/sync/manifest";
 
 /**
  * Guard de despliegue (card u8cl, pieza 3): no deja desplegar un Worker con el manifest PERSONAL o el de GRUPOS más viejo
  * que el desplegado. Hasta el 2026-10-28 solo miraba el personal.
- *
- * En 1.0 desde el 2026-11-04 (arreglo urgente «Un despliegue del gateway desde la rama 1.0 bajaría el manifest del
- * Worker»): es el mismo guard de 2.2/2.3, sin el test de `/config`, que en esta rama no publica las versiones.
  */
 describe("check-manifest-not-older — los dos manifests", () => {
   const config = (personal?: number, groups?: number) => ({
@@ -44,11 +43,12 @@ describe("check-manifest-not-older — los dos manifests", () => {
     expect(decideManifestGuard({ localPersonal: 1, localGroups: 2, config: {} }).deployed.personal).toBe(1);
   });
 
-  it("este árbol (1.0) contra lo desplegado el 2026-11-04 (personal v6, grupos v3): no se despliega", () => {
-    const read = (f: string) => (JSON.parse(readFileSync(new URL(`../../${f}`, import.meta.url), "utf8")) as { manifest_version: number }).manifest_version;
-    const d = decideManifestGuard({ localPersonal: read("capability_manifest.json"), localGroups: read("group_capability_manifest.json"), config: config(6, 3) });
-    expect(d.ok).toBe(false);
-    expect(d.downgrades.map((x: { channel: string }) => x.channel)).toEqual(["personal", "grupos"]);
+  it("/config publica las dos versiones de ESTE Worker", async () => {
+    const { default: app } = await import("../src/index");
+    const res = await app.request("/config", { method: "GET" }, {});
+    const body = (await res.json()) as { sync: { manifestVersion: number; groupsManifestVersion: number } };
+    expect(body.sync.manifestVersion).toBe(MANIFEST_VERSION);
+    expect(body.sync.groupsManifestVersion).toBe(GROUP_MANIFEST_VERSION);
   });
 
   it("los dos predeploy pasan por el guard", () => {

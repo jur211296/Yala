@@ -34,6 +34,9 @@ struct WidgetPreferredCurrencyTests {
     private let comida = YalaCategory(name: "Comida", colorHex: "#FF0000", isIncome: false)
     private let sueldo = YalaCategory(name: "Sueldo", colorHex: "#00FF00", isIncome: true)
     private var mercado: Subcategory { Subcategory(name: "Mercado", category: comida) }
+    /// Las filas llevan cuenta: desde el 2026-10-23 una fila sin cuenta no entra en el saldo
+    /// (`LiveBalanceCalculator.entersBalance`), y aquí lo que se mide es la divisa, no eso.
+    private let cuenta = Account(name: "Cuenta", currencyCode: "PEN", colorHex: "#000", iconName: "x", type: "bank")
 
     /// Mediodía de hace `dias` días: lejos de la medianoche para que ningún cambio de día lo mueva.
     private func haceDias(_ dias: Int) -> Date {
@@ -49,7 +52,7 @@ struct WidgetPreferredCurrencyTests {
     ) -> TransactionItem {
         TransactionItem(
             date: date, amount: nativo, currencyCode: divisa, note: "",
-            category: category, subcategory: subcategory,
+            category: category, subcategory: subcategory, account: cuenta,
             amountInPreferredCurrency: guardado, preferredCurrencyCode: guardadaEn
         )
     }
@@ -244,6 +247,7 @@ struct WidgetPreferredCurrencyTests {
     func trend_rowWithoutAccount_countsInNoPoint() {
         let huerfana = tx(nativo: -3_000, divisa: "PEN", guardado: -3_000, guardadaEn: "PEN",
                           category: comida, date: haceDias(3))
+        huerfana.account = nil  // el helper pone cuenta a todas: esta es la que no la tiene
         let (trend, saldoVivo) = curva(mezcla(date: haceDias(1)), tasa: tasaUSD, sinCuenta: [huerfana])
         #expect(cerca(saldoVivo, 10_000 + 1_455), "el saldo vivo no la cuenta")
         #expect(cerca(punto(trend, haceDias: 1), saldoVivo), "ayer = hoy sin movimientos hoy: \(String(describing: punto(trend, haceDias: 1)))")

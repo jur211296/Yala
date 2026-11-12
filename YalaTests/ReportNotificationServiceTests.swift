@@ -145,6 +145,16 @@ struct ReportNotificationServiceTests {
         #expect(duration < 8 * 86400)
     }
 
+    /// El semanal cuenta los mismos días que «Últimos 7 días», que es lo que abre al tocarlo (UX 2.2 · L11-2): desde
+    /// la medianoche de hace seis días. Antes eran 168 h hacia atrás y tocaban ocho días de calendario.
+    @Test @MainActor func getIntervalForReportType_weekly_startsWhereLast7DaysStarts() {
+        let config = ReportConfig(dataType: .expenses, dayPreference: .sunday)
+        let interval = ReportNotificationService.getIntervalForReportType(config, type: .weeklyReport)
+        let calendar = Calendar.current
+        let expectedStart = calendar.date(byAdding: .day, value: -6, to: calendar.startOfDay(for: .now))
+        #expect(interval.start == expectedStart)
+    }
+
     @Test @MainActor func getIntervalForReportType_monthly_firstDay_previousMonth() {
         let config = ReportConfig(dataType: .expenses, dayPreference: .firstDay)
         let interval = ReportNotificationService.getIntervalForReportType(config, type: .monthlyReport)
@@ -248,7 +258,11 @@ struct ReportNotificationServiceTests {
         let data = ReportData(balance: 0, totalExpense: 0, totalIncome: 0, topCategory: nil, hasExpenseActivity: false, hasIncomeActivity: false)
 
         let dailyBody = ReportNotificationService.formatReportBody(config, reportType: .dailyReport, data: data)
-        let weeklyBody = ReportNotificationService.formatReportBody(config, reportType: .weeklyReport, data: data)
+        // El semanal del DOMINGO: el del lunes habla de la semana cerrada y tiene su texto (UX 2.2 · L11-12,
+        // `UXAudit22Lote11DecididasTests`).
+        let weeklyBody = ReportNotificationService.formatReportBody(
+            ReportConfig(dataType: .expenses, dayPreference: .sunday), reportType: .weeklyReport, data: data
+        )
         let monthlyBody = ReportNotificationService.formatReportBody(config, reportType: .monthlyReport, data: data)
 
         // Each report type should have its own empty state message
@@ -489,6 +503,66 @@ struct ReportNotificationServiceTests {
         await service.sendDueReports(context: context)
 
         #expect(capturedBody == L10n.Notifications.emptyIncome)
+    }
+
+    // MARK: - Auditoría UX 2.2 · lote 11
+
+    /// B12. El informe de «Saldo» decía lo que entró menos lo que salió en el período, no el saldo de las cuentas:
+    /// `calculateReportData` le pasaba a `LiveBalanceCalculator` solo los movimientos del intervalo. Con un saldo inicial
+    /// de 5.000 y un gasto de 85 hoy, el resumen del día tiene que decir 4.915, no −85.
+    @Test @MainActor func sendDueReports_balanceReport_sendsTheAccountBalance() async throws {
+        let context = try makeTestContext()
+        let currency = CurrencyDefaults.currentPreferred
+        let account = Account(name: "Principal", currencyCode: currency, colorHex: "#000000", iconName: "creditcard", type: "bank")
+        context.insert(account)
+        let old = Calendar.current.date(byAdding: .day, value: -60, to: Date.now) ?? Date.now
+        context.insert(TransactionItem(date: old, amount: 5000, currencyCode: currency, note: nil, category: nil,
+                                       account: account, amountInPreferredCurrency: 5000, preferredCurrencyCode: currency))
+        context.insert(TransactionItem(date: Date.now, amount: -85, currencyCode: currency, note: nil,
+                                       category: makeCategory(isIncome: false), account: account,
+                                       amountInPreferredCurrency: -85, preferredCurrencyCode: currency))
+        let report = makeReport(type: .dailyReport, hour: 0, minute: 0,
+                                config: ReportConfig(dataType: .balance, dayPreference: .monday))
+        report.lastNotifiedDate = nil
+        context.insert(report)
+        try context.save()
+
+        var capturedBody: String?
+        let service = ReportNotificationService.makeForTesting()
+        service.isAuthorizedOverride = { true }
+        service.isQuiescentOverride = { true }
+        service.expensesOnlyOverride = { false }
+        service.sendOverride = { _, body, _ in capturedBody = body; return true }
+
+        await service.sendDueReports(context: context)
+
+        let expected = L10n.Notifications.reportData(
+            .balance, period: NotificationType.dailyReport.periodKeySuffix,
+            value: YalaFormatterStatic.currency(value: 4915, currencyCode: currency, forceFullPrecision: true))
+        #expect(capturedBody == expected, "con el bug: el neto del día, −85 (\(String(describing: capturedBody)))")
+    }
+
+    /// B7. «Probar» del editor mandaba un importe de ejemplo en dólares («En la semana gastaste $350.00»). Ahora es el
+    /// texto que llegaría con los datos de verdad: el mismo que manda el envío para esa configuración.
+    @Test @MainActor func previewBody_usesTheRealData() throws {
+        let context = try makeTestContext()
+        let currency = CurrencyDefaults.currentPreferred
+        let account = Account(name: "Principal", currencyCode: currency, colorHex: "#000000", iconName: "creditcard", type: "bank")
+        context.insert(account)
+        context.insert(TransactionItem(date: Date.now, amount: -85, currencyCode: currency, note: nil,
+                                       category: makeCategory(isIncome: false), account: account,
+                                       amountInPreferredCurrency: -85, preferredCurrencyCode: currency))
+        try context.save()
+
+        let service = ReportNotificationService.makeForTesting()
+        service.expensesOnlyOverride = { false }
+        let body = service.previewBody(
+            config: ReportConfig(dataType: .expenses, dayPreference: .monday), type: .dailyReport, context: context)
+
+        let expected = L10n.Notifications.reportData(
+            .expenses, period: NotificationType.dailyReport.periodKeySuffix,
+            value: YalaFormatterStatic.currency(value: 85, currencyCode: currency, forceFullPrecision: true))
+        #expect(body == expected, "con el bug, «Probar» no miraba los datos (\(body))")
     }
 
     // MARK: - Helpers

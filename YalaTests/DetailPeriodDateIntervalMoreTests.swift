@@ -14,12 +14,11 @@
 //  .thisWeek SÍ importa, así que ahí replicamos userConfiguredCalendar() para no
 //  desfasar la igualdad exacta del start-of-week.
 //
-//  NOTA: los períodos activos (.thisWeek/.last7Days/.last30Days/.thisYear/.allTime)
-//  terminan en `endOfToday` = inicio de MAÑANA (start of tomorrow), NO con el ajuste
-//  de -1 segundo (ese ajuste solo lo aplican los períodos cerrados .lastMonth/.lastYear).
-//  Por eso el "boundary" que se verifica aquí es que el instante compartido con el día
-//  siguiente (endOfToday) queda INCLUIDO (DateInterval es cerrado en ambos extremos) y
-//  que la medianoche de HOY sí está dentro del intervalo.
+//  NOTA: desde el 2026-10-25 los períodos activos (.thisWeek/.last7Days/.last30Days/.thisYear/.allTime)
+//  terminan en `endOfToday` = 23:59:59 de hoy, un segundo antes del inicio de mañana, como los cerrados
+//  (.lastMonth/.lastYear). Antes acababan EN el inicio de mañana, y como `DateInterval` es cerrado lo fechado
+//  mañana a las 00:00 contaba en el período en curso (ticket `period-totals-count-a-row-dated-at-tomorrows-midnight`).
+//  El "boundary" que se verifica aquí es que la medianoche de mañana queda FUERA y la de HOY dentro.
 //
 
 import Foundation
@@ -47,14 +46,17 @@ struct DetailPeriodDateIntervalMoreTests {
     /// startOfDay(now) — inicio de hoy con el calendario local.
     private var startOfToday: Date { Calendar.current.startOfDay(for: now) }
 
-    /// endOfToday = inicio de mañana (top boundary de todos los períodos activos).
+    /// Inicio de mañana: el primer instante FUERA de todos los períodos activos.
     private var startOfTomorrow: Date {
         Calendar.current.date(byAdding: .day, value: 1, to: startOfToday)!
     }
 
+    /// endOfToday = 23:59:59 de hoy (top boundary inclusivo de todos los períodos activos).
+    private var endOfToday: Date { startOfTomorrow.addingTimeInterval(-1) }
+
     // MARK: - .thisWeek
 
-    @Test func dateInterval_thisWeek_startsAtStartOfWeek_endsAtStartOfTomorrow() {
+    @Test func dateInterval_thisWeek_startsAtStartOfWeek_endsAtEndOfToday() {
         // El start se deriva con el MISMO calendario configurado (firstWeekday).
         let cal = configuredCal
         let expectedStart = cal.date(
@@ -62,7 +64,7 @@ struct DetailPeriodDateIntervalMoreTests {
 
         let interval = DetailPeriod.thisWeek.dateInterval(now: now)
         #expect(interval.start == expectedStart)
-        #expect(interval.end == startOfTomorrow)
+        #expect(interval.end == endOfToday)
     }
 
     @Test func dateInterval_thisWeek_startIsAtMidnight() {
@@ -76,25 +78,27 @@ struct DetailPeriodDateIntervalMoreTests {
     }
 
     @Test func dateInterval_thisWeek_containsNowButNotStartOfNextWeekTop() {
-        // `now` cae dentro; el end (inicio de mañana) es el borde superior inclusivo.
+        // `now` cae dentro; la medianoche de mañana queda fuera (el end es 23:59:59 de hoy).
         let interval = DetailPeriod.thisWeek.dateInterval(now: now)
         #expect(interval.contains(now))
-        #expect(interval.contains(startOfTomorrow))            // cerrado: top incluido
+        #expect(!interval.contains(startOfTomorrow))           // mañana 00:00 fuera
+        #expect(interval.contains(endOfToday))                 // el último segundo de hoy, dentro
         #expect(interval.contains(startOfToday))               // medianoche de hoy incluida
     }
 
     // MARK: - .last7Days
 
-    @Test func dateInterval_last7Days_starts7DaysBeforeStartOfToday() {
-        let expectedStart = Calendar.current.date(byAdding: .day, value: -7, to: startOfToday)!
+    /// «Últimos 7 días» = hoy y los seis anteriores. Antes arrancaba en −7 y cubría ocho días de calendario.
+    @Test func dateInterval_last7Days_startsSixDaysBeforeStartOfToday() {
+        let expectedStart = Calendar.current.date(byAdding: .day, value: -6, to: startOfToday)!
 
         let interval = DetailPeriod.last7Days.dateInterval(now: now)
         #expect(interval.start == expectedStart)
-        #expect(interval.end == startOfTomorrow)
+        #expect(interval.end == endOfToday)
     }
 
     @Test func dateInterval_last7Days_startIsAtMidnight() {
-        // El start es startOfDay(-7) → medianoche exacta, sin arrastrar la hora de `now`.
+        // El start es startOfDay(-6) → medianoche exacta, sin arrastrar la hora de `now`.
         let cal = Calendar.current
         let interval = DetailPeriod.last7Days.dateInterval(now: now)
         let comps = cal.dateComponents([.hour, .minute, .second], from: interval.start)
@@ -105,12 +109,12 @@ struct DetailPeriodDateIntervalMoreTests {
 
     // MARK: - .last30Days
 
-    @Test func dateInterval_last30Days_starts30DaysBeforeStartOfToday() {
-        let expectedStart = Calendar.current.date(byAdding: .day, value: -30, to: startOfToday)!
+    @Test func dateInterval_last30Days_starts29DaysBeforeStartOfToday() {
+        let expectedStart = Calendar.current.date(byAdding: .day, value: -29, to: startOfToday)!
 
         let interval = DetailPeriod.last30Days.dateInterval(now: now)
         #expect(interval.start == expectedStart)
-        #expect(interval.end == startOfTomorrow)
+        #expect(interval.end == endOfToday)
     }
 
     @Test func dateInterval_last30Days_startIsAtMidnight() {
@@ -122,15 +126,28 @@ struct DetailPeriodDateIntervalMoreTests {
         #expect(comps.second == 0)
     }
 
+    /// Lo que ve la persona: cuántos días de calendario con movimientos posibles caben en el período. Un registro
+    /// a mediodía de cada día desde hace 40 días: entran 7 (o 30), hoy incluido, y no el de hace 7 (o 30).
+    @Test(arguments: [(DetailPeriod.last7Days, 7), (DetailPeriod.last30Days, 30)])
+    func rollingPeriod_coversExactlyItsDays(period: DetailPeriod, days: Int) {
+        let cal = Calendar.current
+        let interval = period.dateInterval(now: now)
+        let noonToday = cal.date(bySettingHour: 12, minute: 0, second: 0, of: startOfToday)!
+        let covered = (0..<40).filter { offset in
+            interval.contains(cal.date(byAdding: .day, value: -offset, to: noonToday)!)
+        }
+        #expect(covered == Array(0..<days))
+    }
+
     // MARK: - .thisYear
 
-    @Test func dateInterval_thisYear_startsAtStartOfYear_endsAtStartOfTomorrow() {
+    @Test func dateInterval_thisYear_startsAtStartOfYear_endsAtEndOfToday() {
         let cal = Calendar.current
         let expectedStart = cal.date(from: cal.dateComponents([.year], from: now))!
 
         let interval = DetailPeriod.thisYear.dateInterval(now: now)
         #expect(interval.start == expectedStart)
-        #expect(interval.end == startOfTomorrow)
+        #expect(interval.end == endOfToday)
     }
 
     @Test func dateInterval_thisYear_startIsJanuaryFirstAtMidnight() {
@@ -147,13 +164,13 @@ struct DetailPeriodDateIntervalMoreTests {
 
     // MARK: - .allTime
 
-    @Test func dateInterval_allTime_starts10YearsBeforeNow_endsAtStartOfTomorrow() {
+    @Test func dateInterval_allTime_starts10YearsBeforeNow_endsAtEndOfToday() {
         // El start es `now - 10 años` (NO startOfDay: la función usa `now` directo aquí).
         let expectedStart = Calendar.current.date(byAdding: .year, value: -10, to: now)!
 
         let interval = DetailPeriod.allTime.dateInterval(now: now)
         #expect(interval.start == expectedStart)
-        #expect(interval.end == startOfTomorrow)
+        #expect(interval.end == endOfToday)
     }
 
     @Test func dateInterval_allTime_spansAtLeastTenYears() {
@@ -166,15 +183,15 @@ struct DetailPeriodDateIntervalMoreTests {
 
     // MARK: - Boundary compartido con el día siguiente (medianoche)
 
-    @Test func dateInterval_activePeriods_shareStartOfTomorrowAsInclusiveEnd() {
-        // Todos los períodos activos terminan EXACTAMENTE en el inicio de mañana
-        // (medianoche del día siguiente), no en `now` ni con ajuste de -1s.
-        // Ese instante es el borde superior inclusivo (DateInterval cerrado).
+    @Test func dateInterval_activePeriods_shareEndOfTodayAsInclusiveEnd() {
+        // Todos los períodos activos terminan EXACTAMENTE a las 23:59:59 de hoy (un segundo antes de la medianoche
+        // de mañana), no en `now`. Ese instante es el borde superior inclusivo (DateInterval cerrado).
         let periods: [DetailPeriod] = [.thisWeek, .last7Days, .last30Days, .thisYear, .allTime]
         for p in periods {
             let interval = p.dateInterval(now: now)
-            #expect(interval.end == startOfTomorrow)
+            #expect(interval.end == endOfToday)
             #expect(interval.contains(now))
+            #expect(!interval.contains(startOfTomorrow))
         }
     }
 }

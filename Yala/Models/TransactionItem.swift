@@ -61,11 +61,14 @@ final class TransactionItem {
     var scheduledPaymentID: String?
 
     // MARK: - Balance Adjustment Type
-    /// Type of balance adjustment transaction: "initial_balance" | "adjustment" | "transfer" | nil (normal)
+    /// Type of balance adjustment transaction: "initial_balance" | "adjustment" | "transfer" | "receivable" | nil (normal)
     var balanceAdjustmentType: String?
 
     // MARK: - Balance Adjustment Type Constants
     static let adjustmentTypeTransfer = "transfer"
+    /// Lo que te deben por una venta en un grupo (Grupos B · card 8): suma al saldo de «Grupos» y ninguna superficie lo
+    /// cuenta como ingreso. Lo escribe solo el puente (`GroupSaleBridgeLogic`).
+    static let adjustmentTypeReceivable = GroupSaleBridgeLogic.receivableType
 
     // MARK: - Transfer Pair
     /// Shared UUID between both sides of a transfer (outflow + inflow)
@@ -89,6 +92,11 @@ final class TransactionItem {
     /// ID del SplitSettlement vinculado (nil = gasto personal o expense bridgeado)
     /// Permite distinguir TX de liquidaciones para `unbridgeSettlement` y bloqueo de edición.
     var splitSettlementID: String?
+    /// Tu parte de un gasto de grupo partida en líneas (gasto o recarga): la receta que el puente usa para derivar
+    /// las demás patas (`GroupSplitLinesRecipe`, Grupos B). `nil` = sin receta, tu parte en una línea. La lleva UNA
+    /// pata del gasto. Viaja por iCloud (`CD_splitLinesRaw`, en los cuatro `.ckdb`) y en Modo Nube desde la v6 del
+    /// manifest (`tx_items.split_lines_raw`, `SyncCapability.splitLinesSince`).
+    var splitLinesRaw: String?
 
     // MARK: - Metadata
     /// Timestamp de creación del registro (usado para ordenar registros del mismo día)

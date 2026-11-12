@@ -29,6 +29,14 @@ struct GroupsGlobalSettingsView: View {
     @State private var showDeactivationSheet: Bool = false
     @State private var pendingBridgeValue: Bool?
 
+    /// L19-12 (decisión de Jürgen, 2026-10-18): «Salir de todos mis grupos» vive aquí y no en «Vaciar datos», donde
+    /// parecía el botón principal y salía de todos sin preguntar. Se lee al abrir la hoja (READ-ONLY).
+    @State private var offersLeaveAllGroups = false
+    /// Los grupos que el lote va a tocar, leídos al tocar el botón: la confirmación los nombra.
+    @State private var leaveAllGroupNames: [String] = []
+    @State private var showLeaveAllConfirm = false
+    @State private var showBatchLeave = false
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -95,6 +103,19 @@ struct GroupsGlobalSettingsView: View {
                                 .padding(.horizontal, DS.Spacing.xxs)
                         }
                     }
+
+                    // MARK: - Salir de todos mis grupos (L19-12)
+                    if offersLeaveAllGroups {
+                        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+                            YalaSectionHeader(L10n.UXL20D.leaveAllSection)
+                            // Secundario a propósito: salir de todos es más grave que salir de uno.
+                            YalaSecondaryButton(L10n.UXL20D.leaveAllButton, destructive: true) {
+                                leaveAllGroupNames = Self.groupsTheBatchWouldTouch()
+                                showLeaveAllConfirm = true
+                            }
+                            .accessibilityIdentifier("groups_settings_leave_all")
+                        }
+                    }
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.top, DS.Spacing.lg)
@@ -117,6 +138,17 @@ struct GroupsGlobalSettingsView: View {
                     onCancel: cancelDeactivation
                 )
             }
+            // Antes de empezar, la lista: salir de UN grupo pregunta, y salir de todos preguntaba menos.
+            .alert(L10n.UXL20D.leaveAllConfirmTitle, isPresented: $showLeaveAllConfirm) {
+                Button(L10n.UXL20D.leaveAllConfirmAction, role: .destructive) { showBatchLeave = true }
+                Button(L10n.Common.cancel, role: .cancel) {}
+            } message: {
+                Text(Self.confirmMessage(for: leaveAllGroupNames))
+            }
+            // El flujo de siempre del lote (D10), headless: si se cierra a mitad, sigue y el resultado se ve en Grupos.
+            .sheet(isPresented: $showBatchLeave) {
+                GroupBatchLeaveView(onRequestCloseSettings: { dismiss() })
+            }
             .sheet(isPresented: $showActivationSheet) {
                 BridgeActivationSheet(
                     scope: .global,
@@ -127,6 +159,41 @@ struct GroupsGlobalSettingsView: View {
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
+        .onAppear {
+            offersLeaveAllGroups = Self.offersLeaveAllGroups(GroupService.shared.accountDeletionGroupsSummary())
+        }
+    }
+
+    // MARK: - Salir de todos mis grupos (L19-12)
+
+    /// Las mismas condiciones que tenía en «Vaciar datos» (D10): el canal de grupos encendido, algún grupo vivo y CERO
+    /// saldos pendientes (el lote no se ofrece con deudas: cada grupo con saldo se sale a mano, desde él).
+    static func offersLeaveAllGroups(_ summary: AccountDeletionGroupsSummary) -> Bool {
+        // QA/XCUITest: fuerza la oferta (los dos seams son inertes en release).
+        if UITestHooks.groupsBatchDemo || UITestHooks.groupsBatchRunning { return true }
+        return CloudSyncFlags.groupsBackendEnabled && summary.hasGroups && !summary.hasOutstandingDebt
+    }
+
+    /// Los nombres de los grupos que el lote va a tocar: la MISMA clasificación con la que arranca
+    /// (`GroupService.batchClassifyAllGroups`), así la lista no promete grupos que el lote salta.
+    private static func groupsTheBatchWouldTouch() -> [String] {
+        do {
+            return try GroupService.shared.batchClassifyAllGroups().map(\.groupName)
+        } catch {
+            #if DEBUG
+            print("GroupsGlobalSettingsView: Error: no se pudieron leer los grupos del lote: \(error)")
+            #endif
+            return []
+        }
+    }
+
+    /// «Vas a salir de Viaje a Cusco y Viaje a Lima.» Sin nombres (no se pudieron leer), la frase general.
+    static func confirmMessage(for names: [String], locale: Locale = AppLocale.current) -> String {
+        guard !names.isEmpty else { return L10n.UXL20D.leaveAllConfirmMessageGeneric }
+        let formatter = ListFormatter()
+        formatter.locale = locale
+        let list = formatter.string(from: names) ?? names.joined(separator: ", ")
+        return L10n.UXL20D.leaveAllConfirmMessage(list)
     }
 
     // MARK: - Bridge toggle binding con anti-loop guard

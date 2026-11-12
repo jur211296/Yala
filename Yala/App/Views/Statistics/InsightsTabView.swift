@@ -16,6 +16,7 @@ struct InsightsTabView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.openURL) private var openURL
     @Environment(AppPreferences.self) private var appPreferences
 
@@ -47,7 +48,10 @@ struct InsightsTabView: View {
 
     // Content split: bento Detalle (stats + commitments + need) vs Observaciones
     @State private var contentMode: InsightsContentMode = .detail
-    @State private var isCommitmentsExpanded: Bool = false
+    // «Lo que te falta pagar» y «Tus presupuestos» (UX 2.2 · L11-5) se abren solos si caben: el primero siempre (dos
+    // filas como mucho); el segundo con pocos presupuestos. Un toque de la persona manda sobre eso.
+    @State private var isToPayExpanded: Bool = true
+    @State private var budgetsExpandedChoice: Bool?
     @State private var isNeedSectionExpanded: Bool = false
 
     // Coach mark: Pro tour (Phase 3)
@@ -74,6 +78,8 @@ struct InsightsTabView: View {
             if let data = viewModel.insightData {
                 VStack(spacing: DS.Spacing.md) {
                     heroSummary(data.periodSummary)
+                    // La acción principal arriba, como en el Panel; el flotante solo al bajar (card kzhe).
+                    StatsQuickActionsSlot()
                     filterBarPanel
 
                     if data.periodSummary.transactionCount == 0 {
@@ -94,6 +100,7 @@ struct InsightsTabView: View {
 
                             if isProUser {
                                 proHeroSection(data)
+                                    .animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.isLoadingAI)
                             } else {
                                 aiInsightsTeaser
                             }
@@ -120,19 +127,38 @@ struct InsightsTabView: View {
                             }
                         }
                         .frame(maxWidth: .infinity)
+                        // 12 + 8 = 20 pt sobre la primera sección, el mismo aire que entre tarjetas: con 12 el título
+                        // «Tu salud financiera» colgaba de la fila de acciones en vez de encabezar su tarjeta.
+                        .padding(.top, DS.Spacing.sm)
+                        // Las secciones plegables se abren y se cierran con lo de debajo moviéndose (card C2). Implícitas,
+                        // en el contenedor común: el `withAnimation` del toque no anima dentro de una pestaña.
+                        .animation(reduceMotion ? nil : DS.Animation.appear, value: isToPayExpanded)
+                        .animation(reduceMotion ? nil : DS.Animation.appear, value: budgetsExpandedChoice)
+                        .animation(reduceMotion ? nil : DS.Animation.appear, value: isNeedSectionExpanded)
                         // Yala IA y «+» flotan encima en las cuatro pestañas de Estadísticas: al final del scroll, la última tarjeta sube
                         // por encima de los dos (mismo margen que `RecordsTabView`).
                         .padding(.bottom, DS.Button.fabStackClearance(buttons: 2))
                     }
                 }
                 .padding(.top, DS.Spacing.sm)
+                .transition(.opacity)
             } else {
                 ProgressView()
                     .frame(maxWidth: .infinity, minHeight: 200)
+                    .transition(.loadingPlaceholder)
             }
         }
+        // Card C7: la primera carga, del spinner al contenido fundiéndose. «Analizando…» se anima en sus dos tarjetas, no
+        // aquí: un recálculo con la IA en curso apaga `isLoadingAI` junto con los datos nuevos y animaría la página entera.
+        .animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.insightData == nil)
         .measuresShortContainer($isShortContainer)
         .scrollViewGlassEdges()
+        // Aquí y no en la tarjeta bloqueada de Observaciones: colgada de ella, «Actualizar a Pro» del resumen no abría
+        // nada en Detalle (el modo con que se abre la pestaña) y la hoja salía sola al pasar a Observaciones
+        // (auditoría UX 2.2 · lote 11 · B9).
+        .sheet(isPresented: $showUpgradeSheet) {
+            UpgradePromptSheet(feature: .smartInsightsAI, context: .proFeature)
+        }
         .sheet(isPresented: $showCustomPeriodPicker) {
             CustomPeriodPickerSheet(
                 minDate: transactionDateRange.start,
@@ -147,6 +173,9 @@ struct InsightsTabView: View {
             steps: ProTourSteps.insightsSteps,
             isPresented: $showProInsightsTour,
             currentIndex: $proInsightsTourIndex,
+            // «Omitir guía» salta el tour Pro ENTERO, no solo esta fase: antes avanzaba a la siguiente y el tour
+            // volvía a salir en el Panel o en Estadísticas (auditoría UX 2.2 · lote 5 · B7).
+            onSkip: { ProTourManager.shared.skipTour() },
             onComplete: {
                 ProTourManager.shared.advancePhase()
             }
@@ -200,38 +229,42 @@ struct InsightsTabView: View {
     @ViewBuilder
     private func heroSummary(_ summary: PeriodSummary) -> some View {
         let hasRecords = summary.transactionCount > 0
-        let period = trendsViewModel.detailPeriod
 
-        let showsFigure = !sessionState.isExpensesOnlyMode && hasRecords
+        // En «Solo gastos» la cifra es lo gastado, con su variación, como en el Panel (decisión A de Jürgen del
+        // 2026-10-26): el neto, sin ingresos, no diría nada. Antes el hero se quedaba sin cifra.
+        let expensesOnly = sessionState.isExpensesOnlyMode
+        let showsFigure = hasRecords
 
         // El hero del Panel (`HeroHeader`): rótulo y período arriba, cifra y detalle debajo, a la izquierda.
         // Con poco alto (iPhone girado) va en banda: cifra y rótulo | período, entradas y salidas y recuento.
         SummaryHeaderStack(isShort: isShortContainer, verticalPadding: summaryVerticalPadding) {
-            TrendsPeriodMenu(
-                selectedPeriod: period,
-                customDateRange: sessionState.customDateRange,
-                onSelect: { sessionState.selectedPeriod = $0 },
-                onCustomTapped: { showCustomPeriodPicker = true }
-            )
-            .equatable()
+            StatisticsPeriodControl(onCustomTapped: { showCustomPeriodPicker = true })
         } caption: {
-            // Qué es la cifra. Aquí siempre es el neto: el hero no se pinta en
-            // modo solo-gastos, así que no hay caso de un solo lado.
+            // Qué es la cifra: el neto, o el gasto en «Solo gastos».
             if showsFigure {
-                HeroHeaderLabel(text: StatsHeroCaptionLogic.insights.text)
+                HeroHeaderLabel(text: StatsHeroCaptionLogic.insights(expensesOnly: expensesOnly).text)
                     .accessibilityIdentifier("stats_hero_caption")
             }
         } figure: {
             if showsFigure {
                 AmountText(
-                    value: summary.netBalance,
+                    value: expensesOnly ? summary.totalExpense : summary.netBalance,
                     currencyCode: defaultCurrencyCode,
                     font: DS.Typography.panelHeroAmount, secondaryFont: DS.Typography.panelHeroAmountSecondary,
-                    isEstimate: summary.amountsAreApproximate
+                    isEstimate: expensesOnly ? summary.expenseAmountsAreApproximate : summary.amountsAreApproximate,
+                    animatesValue: true
                 )
             }
         } detail: {
-            incomeExpenseChips(summary)
+            // En «Solo gastos» la fila de entradas y salidas sería solo el gasto, que ya es la cifra grande: queda su
+            // variación, con la lectura del Panel.
+            if expensesOnly {
+                if hasRecords {
+                    ExpensesOnlyHeroVariation(variation: summary.expenseVariation)
+                }
+            } else {
+                incomeExpenseChips(summary)
+            }
 
             if let sub = RecordsMotivationalLogic.subtitle(forCount: summary.transactionCount) {
                 Text(localizedMotivational(sub))
@@ -307,6 +340,7 @@ struct InsightsTabView: View {
         if viewModel.aiActivated {
             if viewModel.isLoadingAI {
                 AIInsightCardComponents.loadingPlaceholder(accentColor: theme.accent)
+                    .transition(.loadingPlaceholder)
             } else if let aiHero = viewModel.aiInsights?.heroText {
                 InsightCard(insight: InsightResult(
                     id: "ai_hero",
@@ -315,9 +349,16 @@ struct InsightsTabView: View {
                     sentiment: .neutral,
                     isProOnly: true
                 ))
-            } else if let error = viewModel.aiError {
-                AIInsightCardComponents.errorCard(error)
+            } else if let error = viewModel.aiError, contentMode != .observations {
+                // En Observaciones el aviso va bajo su título (abajo), que es donde se está mirando.
+                AIInsightCardComponents.errorCard(error) {
+                    Task { await viewModel.triggerAIGeneration() }
+                }
             }
+        } else if viewModel.isAwaitingAutoDecision {
+            // Pro con la IA aceptada: el resumen sale solo al abrir Estadísticas (encargo `estadisticas-ia-automatica`).
+            AIInsightCardComponents.loadingPlaceholder(accentColor: theme.accent)
+                .transition(.loadingPlaceholder)
         } else {
             generateAIButton
         }
@@ -336,7 +377,7 @@ struct InsightsTabView: View {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: "sparkles")
                     .font(.system(size: 24))
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(L10n.Stats.Insights.aiCardTitle)
@@ -371,6 +412,7 @@ struct InsightsTabView: View {
             if viewModel.aiActivated {
                 if viewModel.isLoadingAI {
                     AIInsightCardComponents.loadingPlaceholder(accentColor: theme.accent)
+                        .transition(.loadingPlaceholder)
                         .spansAllColumns()
                 } else if let aiCards = viewModel.aiInsights?.cards, !aiCards.isEmpty {
                     ForEach(Array(aiCards.enumerated()), id: \.offset) { _, card in
@@ -399,25 +441,53 @@ struct InsightsTabView: View {
                             isProOnly: true
                         ))
                     }
-                } else if viewModel.aiError != nil {
-                    // Error already shown in hero section
-                    EmptyView()
+                } else if let error = viewModel.aiError {
+                    // Con el resumen que sale solo (UX 2.2 · L11-7), un fallo dejaba el título «Observaciones» sin nada
+                    // debajo y el aviso arriba. Ahora el aviso, con «Reintentar», va aquí.
+                    AIInsightCardComponents.errorCard(error) {
+                        Task { await viewModel.triggerAIGeneration() }
+                    }
+                    .spansAllColumns()
                 }
+            } else if viewModel.isAwaitingAutoDecision {
+                // Pro con el consentimiento dado: el resumen sale solo al abrir Estadísticas (UX 2.2 · L11-7, encargo
+                // `estadisticas-ia-automatica`). Hasta que llega, el mismo «cargando» que tras tocar el botón.
+                AIInsightCardComponents.loadingPlaceholder(accentColor: theme.accent)
+                    .transition(.loadingPlaceholder)
+                    .spansAllColumns()
             } else {
-                // Hint to use the button
-                HStack(spacing: DS.Spacing.sm) {
-                    Image(systemName: "sparkles")
-                        .foregroundStyle(.tertiary)
-                    Text(L10n.Insights.generateAIHint)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.tertiary)
+                // Sin consentimiento hace falta un toque: es el que autoriza enviar el resumen al servicio de IA. Con él
+                // (y el techo automático del día alcanzado, o una generación que falló), el toque la pide directamente.
+                Button {
+                    if appPreferences.aiInsightsConsentAccepted {
+                        Task { await viewModel.triggerAIGeneration() }
+                    } else {
+                        showInsightsConsentAlert = true
+                    }
+                } label: {
+                    HStack(spacing: DS.Spacing.sm) {
+                        Image(systemName: "sparkles")
+                            .foregroundStyle(theme.accentText)
+                            .accessibilityHidden(true)
+                        Text(L10n.Stats.Insights.aiCardSubtitle)
+                            .font(DS.Typography.subheadlineEmphasized)
+                            .foregroundStyle(.primary)
+                        Spacer(minLength: DS.Spacing.sm)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
                 }
-                .frame(maxWidth: .infinity)
+                .buttonStyle(.plain)
                 .panelCard()
+                .accessibilityIdentifier("insights_observations_generate_ai")
                 .spansAllColumns()
             }
         }
         .spansAllColumns()
+        // Lo automático ya no cuelga de aquí: lo decide el contenedor de Estadísticas al abrirla y tras cada recálculo
+        // (`DetailContainerView`, `InsightsViewModel.autoRefreshIfNeeded`), así sale también en el hero y en Distribución.
+        // Card C7: «Analizando…» → las observaciones de la IA, fundiéndose; solo esta sección.
+        .animation(reduceMotion ? nil : DS.Animation.appear, value: viewModel.isLoadingAI)
     }
 
     // MARK: - Free Observations Section
@@ -441,7 +511,8 @@ struct InsightsTabView: View {
                 score: score,
                 sessionState: sessionState,
                 subtitle: trendsViewModel.detailPeriod.displayName,
-                hideHeader: true
+                hideHeader: true,
+                hasBudgets: budgets.contains { $0.isActive }
             )
         }
     }
@@ -460,8 +531,12 @@ struct InsightsTabView: View {
             .spansAllColumns()
         }
 
-        if hasCommitmentsData(data.commitments) {
-            commitmentsSection(data.commitments)
+        if hasToPayData(data.commitments) {
+            toPaySection(data.commitments)
+        }
+
+        if hasBudgetsData(data.commitments) {
+            budgetsSection(data.commitments.budgets)
         }
 
         if data.periodSummary.transactionCount >= 5,
@@ -477,47 +552,46 @@ struct InsightsTabView: View {
         let showComparison = appPreferences.showVariations
             && PreviousPeriodHelper.isSelectorVisible(for: period)
 
-        HStack(alignment: .top, spacing: DS.Spacing.sm) {
+        // Con qué se compara, en una frase bajo el título (UX 2.2 · L11-4). Antes eran «P-1 / A-1» a la derecha y
+        // «vs Set 26» debajo.
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                // `headline`, como «Tu salud financiera» y «Tus presupuestos»: un solo estilo de título de sección.
                 Text(L10n.Stats.Insights.detailHeader)
-                    .font(DS.Typography.title)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
                 Text(period.displayName)
                     .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
             }
 
-            Spacer(minLength: DS.Spacing.sm)
-
             if showComparison {
-                VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
-                    ComparisonModeSelector()
-                    Text(summary.previousPeriodLabel)
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.tertiary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                }
+                ComparisonModeSelector(period: period, customRange: sessionState.customDateRange)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder
     private func detailModeBody(stats: QuickStats, summary: PeriodSummary) -> some View {
         dailyAverageCard(stats: stats, summary: summary)
 
-        let columns = [
-            GridItem(.flexible(), spacing: DS.Spacing.md),
-            GridItem(.flexible(), spacing: DS.Spacing.md)
-        ]
+        // Con el texto al máximo, una ficha por fila: en media pantalla «Subcategoría principal» se partía en sílabas y el
+        // importe salía cortado («S/ 67,3…», barrido final 2.2). A tamaño normal, las dos columnas de siempre.
+        let columns = dynamicTypeSize.isAccessibilitySize
+            ? [GridItem(.flexible(), spacing: DS.Spacing.md)]
+            : [
+                GridItem(.flexible(), spacing: DS.Spacing.md),
+                GridItem(.flexible(), spacing: DS.Spacing.md)
+            ]
 
         LazyVGrid(columns: columns, spacing: DS.Spacing.md) {
             if let top = stats.topCategory {
                 QuickStatCell(
                     icon: "folder.fill",
                     label: L10n.Insights.topCategory,
-                    value: top.category.name,
-                    secondary: "\(appPreferences.currency(top.amount, currencyCode: defaultCurrencyCode)) · \(Int(top.percentage))%"
+                    value: top.name,
+                    secondary: "\(appPreferences.currency(top.amount, currencyCode: defaultCurrencyCode)) · \(Int(top.percentage.rounded()))%"
                 )
             }
             if let topSub = stats.topSubcategory {
@@ -568,12 +642,9 @@ struct InsightsTabView: View {
     // MARK: - Daily Average Card (full-width hero del bento)
 
     private func dailyAverageCard(stats: QuickStats, summary: PeriodSummary) -> some View {
+        // Sin icono delante: repetía el de la pestaña y empujaba la etiqueta y la cifra fuera de la línea izquierda
+        // de las demás tarjetas.
         HStack(spacing: DS.Spacing.md) {
-            Image(systemName: "chart.bar.fill")
-                .font(.system(size: 32))
-                .foregroundStyle(theme.accent)
-                .accessibilityHidden(true)
-
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(L10n.Insights.dailyAverage)
                     .font(DS.Typography.subheadline)
@@ -582,7 +653,7 @@ struct InsightsTabView: View {
                 AmountText(
                     value: stats.dailyAverage,
                     currencyCode: defaultCurrencyCode,
-                    font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary,
+                    font: DS.Typography.cardHeroAmount, secondaryFont: DS.Typography.cardHeroAmountSecondary,
                     // `dailyAverage` es `cashFlow.totalExpense` dividido entre un entero exacto: el
                     // cociente aproximado/total que mide `ApproximateMarkThreshold` no cambia al
                     // dividir, así que la marca del gasto es exactamente la suya.
@@ -616,9 +687,10 @@ struct InsightsTabView: View {
 
     private func subscriptionsCard(_ stats: QuickStats) -> some View {
         HStack(spacing: DS.Spacing.md) {
+            // En gris, como los iconos de las celdas: el acento se queda para la acción y la pestaña elegida.
             Image(systemName: "repeat.circle.fill")
                 .font(.system(size: 24))
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(.secondary)
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
@@ -634,54 +706,108 @@ struct InsightsTabView: View {
         .panelCard()
     }
 
-    // MARK: - Section 4: Commitments
+    // MARK: - Section 4: Lo que te falta pagar · Tus presupuestos (UX 2.2 · L11-5)
+    //
+    // Hasta el 2026-10-18 era una sola sección plegada, «Compromisos · Periodo actual de cada presupuesto», que mezclaba
+    // los pagos pendientes, las suscripciones activas («S/ 223 mensual», sin pasar a mensual y contando otra vez la que
+    // estaba pendiente) y los presupuestos con solo su porcentaje. Decisión B de Jürgen: dos bloques con nombre de
+    // persona, cada número diciendo de dónde sale.
 
-    private func hasCommitmentsData(_ c: Commitments) -> Bool {
-        (appPreferences.insightsShowPendingPayments && c.pendingPaymentsCount > 0) ||
-        (appPreferences.insightsShowSubscriptions && c.activeSubscriptionsCount > 0) ||
-        (appPreferences.insightsShowBudgetsAtRisk && !c.budgetsAtRisk.isEmpty)
+    private func hasToPayData(_ c: Commitments) -> Bool {
+        (appPreferences.insightsShowPendingPayments && c.pendingOtherPaymentsCount > 0) ||
+        (appPreferences.insightsShowSubscriptions && c.pendingSubscriptionsCount > 0)
+    }
+
+    private func hasBudgetsData(_ c: Commitments) -> Bool {
+        appPreferences.insightsShowBudgetsAtRisk && !c.budgets.isEmpty
+    }
+
+    /// Los presupuestos se abren solos si caben sin alargar la pantalla.
+    static let budgetsOpenWhenAtMost = 4
+
+    private func isBudgetsExpanded(_ budgets: [BudgetAtRisk]) -> Bool {
+        budgetsExpandedChoice ?? (budgets.count <= Self.budgetsOpenWhenAtMost)
+    }
+
+    /// Lo que suma «Lo que te falta pagar»: solo las filas que se ven.
+    private func toPayTotal(_ c: Commitments) -> Double {
+        (appPreferences.insightsShowPendingPayments ? c.pendingOtherPaymentsAmount : 0)
+            + (appPreferences.insightsShowSubscriptions ? c.pendingSubscriptionsAmount : 0)
+    }
+
+    /// El cuerpo de una sección plegable: se desenrolla bajo su cabecera, recortado a su propio hueco (card C2). Sin el
+    /// recorte, el `.move(edge: .top)` lo hacía bajar desde encima de las tarjetas de arriba mientras se fundía (vídeo).
+    /// La separación con la cabecera va dentro del cuerpo: plegada, la sección mide lo mismo que antes.
+    private func collapsibleBody<Content: View>(_ isExpanded: Bool, @ViewBuilder _ content: () -> Content) -> some View {
+        VStack(spacing: DS.Spacing.none) {
+            if isExpanded {
+                content()
+                    .padding(.top, DS.Spacing.sm)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .clipped()
     }
 
     @ViewBuilder
-    private func commitmentsSection(_ c: Commitments) -> some View {
-        VStack(spacing: DS.Spacing.sm) {
+    private func toPaySection(_ c: Commitments) -> some View {
+        VStack(spacing: DS.Spacing.none) {
             CollapsibleSectionHeader(
-                title: L10n.Insights.commitments,
-                subtitle: L10n.Insights.commitmentsNote,
-                isExpanded: isCommitmentsExpanded
+                title: L10n.UXL11D.toPayTitle,
+                subtitle: L10n.UXL11D.toPayTotal(
+                    appPreferences.currency(toPayTotal(c), currencyCode: defaultCurrencyCode)
+                ),
+                isExpanded: isToPayExpanded
             ) {
-                dsWithAnimation(reduceMotion) {
-                    isCommitmentsExpanded.toggle()
-                }
+                isToPayExpanded.toggle()
             }
+            .accessibilityIdentifier("insights_to_pay_header")
 
-            if isCommitmentsExpanded {
+            collapsibleBody(isToPayExpanded) {
                 VStack(spacing: DS.Spacing.md) {
-                    if appPreferences.insightsShowPendingPayments, c.pendingPaymentsCount > 0 {
+                    if appPreferences.insightsShowPendingPayments, c.pendingOtherPaymentsCount > 0 {
                         commitmentRow(
                             icon: "clock",
-                            label: L10n.Insights.pendingPayments,
-                            value: "\(c.pendingPaymentsCount)",
-                            secondary: appPreferences.currency(c.pendingPaymentsAmount, currencyCode: defaultCurrencyCode)
+                            label: L10n.UXL11D.toPayPayments,
+                            value: appPreferences.currency(c.pendingOtherPaymentsAmount, currencyCode: defaultCurrencyCode),
+                            secondary: L10n.UXL11D.pendingCount(c.pendingOtherPaymentsCount)
                         )
+                        .accessibilityIdentifier("insights_to_pay_payments")
                     }
 
-                    if appPreferences.insightsShowSubscriptions, c.activeSubscriptionsCount > 0 {
+                    if appPreferences.insightsShowSubscriptions, c.pendingSubscriptionsCount > 0 {
                         commitmentRow(
                             icon: "repeat",
-                            label: L10n.Insights.activeSubscriptions,
-                            value: "\(c.activeSubscriptionsCount)",
-                            secondary: "\(appPreferences.currency(c.activeSubscriptionsMonthly, currencyCode: defaultCurrencyCode)) \(L10n.Insights.monthly)"
+                            label: L10n.UXL11D.toPaySubscriptions,
+                            value: appPreferences.currency(c.pendingSubscriptionsAmount, currencyCode: defaultCurrencyCode),
+                            secondary: L10n.UXL11D.pendingCount(c.pendingSubscriptionsCount)
                         )
-                    }
-
-                    if appPreferences.insightsShowBudgetsAtRisk {
-                        ForEach(c.budgetsAtRisk) { budget in
-                            budgetRow(budget)
-                        }
+                        .accessibilityIdentifier("insights_to_pay_subscriptions")
                     }
                 }
-                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func budgetsSection(_ budgets: [BudgetAtRisk]) -> some View {
+        let expanded = isBudgetsExpanded(budgets)
+        VStack(spacing: DS.Spacing.none) {
+            CollapsibleSectionHeader(
+                title: L10n.UXL11D.budgetsTitle,
+                subtitle: L10n.Insights.commitmentsNote,
+                isExpanded: expanded
+            ) {
+                budgetsExpandedChoice = !expanded
+            }
+            .accessibilityIdentifier("insights_budgets_header")
+
+            collapsibleBody(expanded) {
+                VStack(spacing: DS.Spacing.md) {
+                    ForEach(budgets) { budget in
+                        budgetRow(budget)
+                    }
+                }
             }
         }
     }
@@ -702,16 +828,25 @@ struct InsightsTabView: View {
                         .foregroundStyle(.white)
                 }
 
-                Text(budget.name)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.primary)
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(budget.name)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.primary)
 
-                Spacer()
+                    // «S/ 780 de S/ 1,000 · 78 %» (UX 2.2 · L11-5): el porcentaje solo no decía de cuánto. Bajo el
+                    // nombre y no a su derecha: con importes de cuatro cifras, a la derecha se partía en dos líneas.
+                    Text(L10n.UXL11D.budgetUsage(
+                        spent: appPreferences.currency(budget.spent, currencyCode: budget.currencyCode),
+                        limit: appPreferences.currency(budget.limit, currencyCode: budget.currencyCode),
+                        percent: L10n.UXL11D.percent(budget.usagePercent)
+                    ))
+                        .font(DS.Typography.caption)
+                        .fontWeight(.medium)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("insights_budget_usage")
+                }
 
-                Text("\(Int(budget.usagePercent))%")
-                    .font(DS.Typography.caption)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.secondary)
+                Spacer(minLength: 0)
             }
 
             BudgetProgressBar(
@@ -729,7 +864,7 @@ struct InsightsTabView: View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
                 .font(DS.Typography.body)
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
                 .frame(width: 32)
                 .accessibilityHidden(true)
 
@@ -755,23 +890,29 @@ struct InsightsTabView: View {
 
     @ViewBuilder
     private func needSection(_ distribution: NeedDistribution) -> some View {
-        VStack(spacing: DS.Spacing.sm) {
+        VStack(spacing: DS.Spacing.none) {
             CollapsibleSectionHeader(
                 title: L10n.Insights.needDistribution,
                 isExpanded: isNeedSectionExpanded
             ) {
-                dsWithAnimation(reduceMotion) {
-                    isNeedSectionExpanded.toggle()
-                }
+                isNeedSectionExpanded.toggle()
             }
 
-            if isNeedSectionExpanded {
+            collapsibleBody(isNeedSectionExpanded) {
                 VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                    // El para qué (UX 2.2 · L11-6, decisión B): las tres palabras no se explicaban solas.
+                    Text(L10n.UXL11D.needPurpose)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("insights_need_purpose")
+
                     NeedBar(distribution: distribution)
 
                     VStack(spacing: DS.Spacing.sm) {
                         needBucketRow(
                             label: L10n.Need.essential,
+                            example: SubcategoryNeed.essential.description,
                             amount: distribution.essential,
                             percent: distribution.essentialPercent,
                             color: Color.essentialNeed,
@@ -779,6 +920,7 @@ struct InsightsTabView: View {
                         )
                         needBucketRow(
                             label: L10n.Need.priority,
+                            example: SubcategoryNeed.priority.description,
                             amount: distribution.priority,
                             percent: distribution.priorityPercent,
                             color: Color.priorityNeedNew,
@@ -786,6 +928,7 @@ struct InsightsTabView: View {
                         )
                         needBucketRow(
                             label: L10n.Need.optional,
+                            example: SubcategoryNeed.optional.description,
                             amount: distribution.optional,
                             percent: distribution.optionalPercent,
                             color: Color.optionalNeed,
@@ -802,12 +945,13 @@ struct InsightsTabView: View {
                     }
                 }
                 .panelCard()
-                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
     }
 
-    private func needBucketRow(label: String, amount: Double, percent: Double, color: Color, icon: String) -> some View {
+    private func needBucketRow(
+        label: String, example: String, amount: Double, percent: Double, color: Color, icon: String
+    ) -> some View {
         HStack(spacing: DS.Spacing.md) {
             ZStack {
                 Circle()
@@ -823,6 +967,11 @@ struct InsightsTabView: View {
                 Text(label)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.primary)
+                // Un ejemplo por fila, el mismo texto que el selector de necesidad del formulario (L2-9 B).
+                Text(example)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
                 Text(L10n.Stats.Insights.needDailyFormat(appPreferences.currency(amount / Double(periodDays), currencyCode: defaultCurrencyCode)))
                     .font(DS.Typography.captionSmall)
                     .foregroundStyle(.secondary)
@@ -836,18 +985,19 @@ struct InsightsTabView: View {
                     currencyCode: defaultCurrencyCode,
                     font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall
                 )
-                Text("\(Int(percent))%")
+                // Redondeado, no truncado: 21,95 % salía «21 %» y las tres necesidades sumaban 98 %; Distribución
+                // redondea y daba otra cifra para lo mismo (auditoría UX 2.2 · lote 11 · B4).
+                Text("\(Int(percent.rounded()))%")
                     .font(DS.Typography.captionSmall)
                     .foregroundStyle(.secondary)
             }
         }
     }
 
-    /// Periodo activo en días (mínimo 1) — para promedio diario por bucket.
+    /// Periodo activo en días (mínimo 1) — para promedio diario por bucket. Los mismos días que el «Promedio diario»
+    /// de arriba: en «Todo el tiempo», desde el primer registro y no desde hace diez años (lote 11 · B3).
     private var periodDays: Int {
-        let interval = trendsViewModel.detailPeriod.dateInterval(customRange: trendsViewModel.customDateRange)
-        let days = Int((interval.duration / 86_400).rounded())
-        return max(1, days)
+        max(1, viewModel.insightData?.periodSummary.dayCount ?? 1)
     }
 
     /// Tip motivacional contextual: reusa la regla `ruleOptionalHigh` ya
@@ -878,7 +1028,8 @@ struct InsightsTabView: View {
     private var aiInsightsTeaser: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             HStack {
-                Label(L10n.Insights.aiTeaser, systemImage: "sparkles")
+                // El mismo nombre que ve quien es Pro («Resumen inteligente»), no «Insights con IA» (lote 11 · B8).
+                Label(L10n.Stats.Insights.aiCardTitle, systemImage: "sparkles")
                     .font(DS.Typography.headline)
                     .foregroundStyle(.thPrimaryText)
                 Spacer()
@@ -904,10 +1055,11 @@ struct InsightsTabView: View {
             } label: {
                 HStack(spacing: DS.Spacing.xs) {
                     YalaSpark(size: .small, animated: false)
-                    Text(L10n.FeatureGate.upgradeToPro)
+                    // «Probar Pro gratis» o «Pasarme a Pro» (UX 2.2 · L17-4).
+                    Text(ProPresentation.upgradeButtonTitle)
                         .font(DS.Typography.labelSmall)
                 }
-                .foregroundStyle(.white)
+                .foregroundStyle(.thOnAccent)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, DS.Spacing.sm)
                 .background(theme.accent)
@@ -947,9 +1099,6 @@ struct InsightsTabView: View {
             .opacity(0.7)
         }
         .buttonStyle(.plain)
-        .sheet(isPresented: $showUpgradeSheet) {
-            UpgradePromptSheet(feature: .smartInsightsAI, context: .proFeature)
-        }
     }
 
     // MARK: - Content Mode Pill (standalone, full-width iOS 26 Liquid Glass)

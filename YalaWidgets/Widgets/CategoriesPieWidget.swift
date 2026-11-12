@@ -2,14 +2,13 @@
 //  CategoriesPieWidget.swift
 //  YalaWidgets
 //
-//  Large widget showing category distribution as a donut chart.
-//  Displays up to 5 categories plus "Others".
+//  Grande: el gasto del período por categoría en un aro con el total en el centro y una leyenda de hasta cinco
+//  filas (las cuatro primeras y «Otros» cuando hay más).
 //
 
 import WidgetKit
 import SwiftUI
 import AppIntents
-import Charts
 
 // MARK: - Configuration Intent
 
@@ -35,6 +34,8 @@ struct CategoriesPieEntry: TimelineEntry {
     /// Marca «≈» del TOTAL. Las tajadas del pie no la llevan: son subconjuntos del gasto y su
     /// calculador no acumula calidad de conversión (`fx-category-totals-unmarked`).
     var expenseIsApproximate: Bool = false
+    /// Hora de la foto de la app, para el pie «Actualizado ayer» (`WidgetFreshnessNote`).
+    var lastUpdated: Date? = nil
 
     static var placeholder: CategoriesPieEntry {
         CategoriesPieEntry(
@@ -77,11 +78,8 @@ struct CategoriesPieWidgetProvider: AppIntentTimelineProvider {
 
     func timeline(for configuration: CategoriesPieWidgetIntent, in context: Context) async -> Timeline<CategoriesPieEntry> {
         let entry = createEntry(for: configuration)
-
-        // Refresh every 4 hours
-        let refreshDate = Calendar.current.date(byAdding: .hour, value: 4, to: Date()) ?? Date()
-
-        return Timeline(entries: [entry], policy: .after(refreshDate))
+        // La política común (medianoche o +4 h): a medianoche «Este mes» puede pasar a ser otro.
+        return Timeline(entries: [entry], policy: .after(WidgetRefresh.nextDate(after: entry.date)))
     }
 
     private func createEntry(for configuration: CategoriesPieWidgetIntent) -> CategoriesPieEntry {
@@ -97,8 +95,7 @@ struct CategoriesPieWidgetProvider: AppIntentTimelineProvider {
         if categories.count > 12 {
             let top12 = Array(categories.prefix(12))
             let othersAmount = categories.dropFirst(12).reduce(0) { $0 + $1.amount }
-            let totalExpense = summary?.totalExpense ?? 1
-            let othersPercentage = totalExpense > 0 ? (othersAmount / totalExpense) * 100 : 0
+            let othersPercentage = WidgetInsightsLogic.breakdownPercentage(othersAmount, of: summary?.breakdownTotal ?? 0)
 
             categories = top12 + [
                 WidgetCategory(
@@ -115,87 +112,62 @@ struct CategoriesPieWidgetProvider: AppIntentTimelineProvider {
         return CategoriesPieEntry(
             date: Date(),
             categories: categories,
-            totalExpense: summary?.totalExpense ?? 0,
+            // El total del desglose, no el gasto con signo: centro, «Otros» y porcentajes suman lo mismo que las filas
+            // (card znu5).
+            totalExpense: summary?.breakdownTotal ?? 0,
             currencyCode: currency,
             currencyDisplayFormat: displayFormat,
             isPlaceholder: false,
             period: configuration.period,
-            expenseIsApproximate: summary?.expenseIsApproximate ?? false
+            expenseIsApproximate: summary?.expenseIsApproximate ?? false,
+            lastUpdated: WidgetDataService.getLastUpdated()
         )
     }
 }
 
 // MARK: - Widget View
 
+/// El aro con el total en el centro y la leyenda con importe y porcentaje (tanda 3 del rediseño 2.2; las piezas, en
+/// `WidgetCategoryBreakdown.swift`). Pie de frescura si la foto no es de hoy, como los grandes de la tanda 1.
 struct CategoriesPieWidgetView: View {
     var entry: CategoriesPieEntry
 
+    private var items: [WidgetBreakdownItem] {
+        entry.categories.map {
+            WidgetBreakdownItem(id: $0.id, name: $0.name, iconName: $0.iconName, colorHex: $0.colorHex,
+                                amount: $0.amount, percentage: $0.percentage)
+        }
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: WDS.Spacing.md) {
-            // Header with total
-            HStack {
-                WidgetHeader(
-                    title: String(localized: "widget.ui.categories", bundle: .main),
-                    subtitle: entry.period.toWidgetPeriod.localizedDisplayName,
-                    icon: "chart.pie.fill"
-                )
-
-                Spacer()
-
-                VStack(alignment: .trailing, spacing: 0) {
-                    Text("widget.ui.total", bundle: .main)
-                        .font(WDS.Typography.tiny)
-                        .foregroundStyle(.secondary)
-                    WidgetAmountText(
-                        value: entry.totalExpense,
-                        currencyCode: entry.currencyCode,
-                        displayFormat: entry.currencyDisplayFormat,
-                        font: WDS.Typography.kpiSmall,
-                        secondaryFont: WDS.Typography.kpiSmallSecondary,
-                        tint: .color(WidgetColors.expense),
-                        isEstimate: entry.expenseIsApproximate
-                    )
-                }
+        VStack(alignment: .leading, spacing: WidgetDS.Spacing.md) {
+            WidgetCardHeader(
+                title: String(localized: "widget.ui.categories", bundle: .main),
+                systemImage: "chart.pie.fill",
+                tint: WidgetColors.electricIndigo
+            ) {
+                WidgetHeaderDetail(text: entry.period.toWidgetPeriod.localizedDisplayName)
             }
 
             if entry.categories.isEmpty {
-                Spacer()
-                HStack {
-                    Spacer()
-                    VStack(spacing: WDS.Spacing.xs) {
-                        Image(systemName: "chart.pie")
-                            .font(.largeTitle)
-                            .foregroundStyle(.tertiary)
-                        Text("widget.ui.noExpenses", bundle: .main)
-                            .font(WDS.Typography.body)
-                            .foregroundStyle(.tertiary)
-                    }
-                    Spacer()
-                }
-                Spacer()
+                // El aro vacío ocupa el sitio de la tarta (card dz6c): un texto suelto dejaba el widget en blanco.
+                WidgetEmptyRing(maxDiameter: WidgetDS.Chart.donutSizeLargeMax)
             } else {
-                // Pie chart with bubbles (full width, no legend)
-                WidgetSectorChart(
-                    segments: entry.categories.map { category in
-                        WidgetSectorSegment(
-                            id: category.id,
-                            name: category.name,
-                            iconName: category.iconName,
-                            amount: category.amount,
-                            percentage: category.percentage,
-                            colorHex: category.colorHex
-                        )
-                    },
-                    innerRadiusRatio: 0.50,
-                    showBubbles: true
+                WidgetPieBreakdown(
+                    items: items,
+                    total: entry.totalExpense,
+                    isEstimate: entry.expenseIsApproximate,
+                    currencyCode: entry.currencyCode,
+                    displayFormat: entry.currencyDisplayFormat
                 )
+                .layoutPriority(1)
+                Spacer(minLength: WidgetDS.Spacing.none)
+                WidgetFreshnessNote(lastUpdated: entry.lastUpdated, now: entry.date)
             }
         }
-        .padding(WDS.Spacing.xs)
-        .clipped()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .widgetURL(WidgetURLHelper.url(for: "statistics/categories"))
     }
-
 }
 
 // MARK: - Widget Definition
@@ -210,8 +182,9 @@ struct CategoriesPieWidget: Widget {
             provider: CategoriesPieWidgetProvider()
         ) { entry in
             CategoriesPieWidgetView(entry: entry)
+                .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder)
                 .invitesToActivateFullWhenGroupsOnly()
-                .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
+                .containerBackground(for: .widget) { WidgetCardBackground() }
         }
         .configurationDisplayName("widget.gallery.categoriesPie")
         .description("widget.gallery.categoriesPie.desc")

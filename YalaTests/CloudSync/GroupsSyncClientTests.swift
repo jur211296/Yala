@@ -1403,6 +1403,70 @@ struct GroupsSyncClientTests {
         #expect(decodedCursor(cursor, group: "SplitGroup-A") == 60)   // avanzó normal, sin reset
     }
 
+    // MARK: - L12-20 · «Te avisaremos cuando te aprueben»: la aprobación propia sale en el changeset
+
+    /// La MISMA transición que resetea el cursor (mi member, de `pendingApproval` a `active`) llega al servicio de
+    /// avisos como `selfApprovedGroups`, con el `SplitGroup.id` local (el del deep-link del aviso).
+    @Test func apply_member_pendingApprovalToActive_currentUser_emitsSelfApproved() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let group = makeBackendGroup(zoneID: "SplitGroup-A", context: context)
+        let member = SplitMember(groupZoneID: "SplitGroup-A", displayName: "Alice", status: .pendingApproval)
+        member.memberKey = "member-rec-1"
+        context.insert(member)
+        try context.save()
+
+        let collector = ChangeSetCollector()
+        let client = GroupsSyncClient(currentUserIDProvider: { "auth-uid-1" },
+                                      onRemoteChanges: { collector.sets.append($0) })
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [memberDelta()], cursors: [:], memberships: ["SplitGroup-A"]),
+            cursor: cursor, context: context)
+
+        let set = try #require(collector.sets.first, "la aprobación propia no llegó al servicio de avisos")
+        #expect(set.selfApprovedGroups == [group.id])
+    }
+
+    /// La aprobación de OTRO miembro no es la mía: no hay «Ya estás en».
+    @Test func apply_member_pendingApprovalToActive_otherUser_doesNotEmitSelfApproved() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        makeBackendGroup(zoneID: "SplitGroup-A", context: context)
+        let member = SplitMember(groupZoneID: "SplitGroup-A", displayName: "Alice", status: .pendingApproval)
+        member.memberKey = "member-rec-1"
+        context.insert(member)
+        try context.save()
+
+        let collector = ChangeSetCollector()
+        let client = GroupsSyncClient(currentUserIDProvider: { "someone-else" },
+                                      onRemoteChanges: { collector.sets.append($0) })
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [memberDelta()], cursors: [:], memberships: ["SplitGroup-A"]),
+            cursor: cursor, context: context)
+
+        #expect(collector.sets.allSatisfy { $0.selfApprovedGroups.isEmpty })
+    }
+
+    /// Mi member que baja ya activo (soy quien creó el grupo o entré sin aprobación) no esperaba a nadie: sin aviso.
+    @Test func apply_member_bornRemoteActive_doesNotEmitSelfApproved() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        makeBackendGroup(zoneID: "SplitGroup-A", context: context)
+        try context.save()
+
+        let collector = ChangeSetCollector()
+        let client = GroupsSyncClient(currentUserIDProvider: { "auth-uid-1" },
+                                      onRemoteChanges: { collector.sets.append($0) })
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [memberDelta()], cursors: [:], memberships: ["SplitGroup-A"]),
+            cursor: cursor, context: context)
+
+        #expect(collector.sets.allSatisfy { $0.selfApprovedGroups.isEmpty })
+    }
+
     /// No-loop: tras el reset, un segundo apply del MISMO member (ya `active` local) NO vuelve a resetear —
     /// el cursor avanzado se conserva (el gate `priorStatus != "active"` ya no matchea).
     @Test func apply_member_secondApply_doesNotResetAgain() throws {

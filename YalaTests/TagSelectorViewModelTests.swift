@@ -11,6 +11,7 @@ import Testing
 
 @testable import Yala
 
+@Suite(.serialized)
 struct TagSelectorViewModelTests {
 
     // MARK: - Initial State
@@ -30,91 +31,62 @@ struct TagSelectorViewModelTests {
         #expect(vm.isEmpty == true)
     }
 
-    @MainActor @Test func initialState_showNewTagSheetFalse() {
+    // MARK: - Etiqueta nueva solo con el nombre (UX 2.2 · L2-10)
+
+    @MainActor @Test func createTag_withOnlyAName_getsTheIconAndTheNextFreeColor() throws {
+        let context = try makeTestContext()
+        context.insert(Tag(name: "Viaje", colorHex: Tag.defaultColors[0]))
+        try context.save()
         let vm = TagSelectorViewModel()
-        #expect(vm.showNewTagSheet == false)
+        vm.setContext(context)
+
+        vm.newTagName = "  Cumpleaños  "
+        let created = try #require(vm.createOrPickTag())
+
+        #expect(created.name == "Cumpleaños")
+        #expect(created.iconName == "tag.fill")
+        #expect(created.colorHex == Tag.defaultColors[1], "El siguiente color libre: el primero ya lo usa «Viaje».")
+        #expect(vm.newTagName.isEmpty, "Creada, el campo se vacía.")
+        #expect(vm.tags.count == 2)
     }
 
-    @MainActor @Test func initialState_tagCountBeforeSheetZero() {
+    @MainActor @Test func createTag_withAnExistingName_picksTheExistingOne_andCreatesNothing() throws {
+        let context = try makeTestContext()
+        let existing = Tag(name: "Viaje")
+        context.insert(existing)
+        try context.save()
         let vm = TagSelectorViewModel()
-        #expect(vm.tagCountBeforeSheet == 0)
+        vm.setContext(context)
+
+        vm.newTagName = "viaje "
+        let picked = try #require(vm.createOrPickTag())
+
+        #expect(picked.id == existing.id)
+        #expect(vm.tags.count == 1, "Un nombre repetido elige la que ya existe.")
     }
 
-    // MARK: - prepareForNewTag
-
-    @MainActor @Test func prepareForNewTag_setsShowNewTagSheet() {
+    @MainActor @Test func createTag_withTheNameOfAnArchivedTag_reactivatesIt() throws {
+        let context = try makeTestContext()
+        let archived = Tag(name: "Viaje", isActive: false)
+        context.insert(archived)
+        try context.save()
         let vm = TagSelectorViewModel()
+        vm.setContext(context)
 
-        vm.prepareForNewTag()
+        vm.newTagName = "Viaje"
+        let picked = try #require(vm.createOrPickTag())
 
-        #expect(vm.showNewTagSheet == true)
+        #expect(picked.id == archived.id)
+        #expect(picked.isActive, "La que se elige por nombre vuelve a estar activa: si no, quedaría oculta en el registro.")
     }
 
-    @MainActor @Test func prepareForNewTag_capturesActiveTagCount() {
+    @MainActor @Test func createButton_needsBetweenOneAndTwentyCharacters() {
         let vm = TagSelectorViewModel()
-        // activeTags is empty since tags is private(set) and empty
-        vm.prepareForNewTag()
-
-        #expect(vm.tagCountBeforeSheet == 0)
-    }
-
-    // MARK: - closeNewTagSheet
-
-    @MainActor @Test func closeNewTagSheet_hidesSheet() {
-        let vm = TagSelectorViewModel()
-        vm.prepareForNewTag()
-        #expect(vm.showNewTagSheet == true)
-
-        vm.closeNewTagSheet()
-
-        #expect(vm.showNewTagSheet == false)
-    }
-
-    // MARK: - Full Lifecycle
-
-    @MainActor @Test func lifecycle_prepareAndClose() {
-        let vm = TagSelectorViewModel()
-
-        // Initial
-        #expect(vm.showNewTagSheet == false)
-        #expect(vm.tagCountBeforeSheet == 0)
-
-        // Prepare
-        vm.prepareForNewTag()
-        #expect(vm.showNewTagSheet == true)
-        #expect(vm.tagCountBeforeSheet == 0)
-
-        // Close
-        vm.closeNewTagSheet()
-        #expect(vm.showNewTagSheet == false)
-    }
-
-    @MainActor @Test func prepareForNewTag_calledTwice_stillWorks() {
-        let vm = TagSelectorViewModel()
-
-        vm.prepareForNewTag()
-        vm.prepareForNewTag()
-
-        #expect(vm.showNewTagSheet == true)
-        #expect(vm.tagCountBeforeSheet == 0)
+        vm.newTagName = "   "
+        #expect(!vm.canCreateTag)
+        vm.newTagName = String(repeating: "a", count: 20)
+        #expect(vm.canCreateTag)
+        vm.newTagName = String(repeating: "a", count: 21)
+        #expect(!vm.canCreateTag)
     }
 }
-
-/*
-Tests generated:
-1. initialState_tagsEmpty - Tags start empty
-2. initialState_activeTagsEmpty - Active tags start empty
-3. initialState_isEmptyTrue - isEmpty true initially
-4. initialState_showNewTagSheetFalse - Sheet not shown initially
-5. initialState_tagCountBeforeSheetZero - Count starts at zero
-6. prepareForNewTag_setsShowNewTagSheet - Opens new tag sheet
-7. prepareForNewTag_capturesActiveTagCount - Captures current count
-8. closeNewTagSheet_hidesSheet - Closes sheet
-9. lifecycle_prepareAndClose - Full prepare/close cycle
-10. prepareForNewTag_calledTwice_stillWorks - Idempotent open
-
-Cases NOT covered (require ModelContext):
-- activeTags filtering with actual Tag data (tags is private(set))
-- isEmpty with actual tags (tags is private(set))
-- loadTags (requires ModelContext)
-*/

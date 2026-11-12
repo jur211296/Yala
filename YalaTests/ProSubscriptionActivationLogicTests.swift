@@ -33,27 +33,35 @@ struct ProSubscriptionActivationLogicTests {
     static func yearly(
         revoked: Date? = nil,
         expires: Date? = later,
-        autoRenewable: Bool = true
+        autoRenewable: Bool = true,
+        original: UInt64? = nil
     ) -> Facts {
         Facts(
             productID: "com.yala.pro.yearly",
             productTypeIsAutoRenewable: autoRenewable,
             revocationDate: revoked,
-            expirationDate: expires
+            expirationDate: expires,
+            originalID: original
         )
     }
 
     static func monthly(
         revoked: Date? = nil,
-        expires: Date? = later
+        expires: Date? = later,
+        original: UInt64? = nil
     ) -> Facts {
         Facts(
             productID: "com.yala.pro.monthly",
             productTypeIsAutoRenewable: true,
             revocationDate: revoked,
-            expirationDate: expires
+            expirationDate: expires,
+            originalID: original
         )
     }
+
+    /// El `originalID` de la suscripción de este Apple ID, y el de otro Apple ID en el mismo teléfono.
+    static let suscripcion: UInt64 = 2_000_000_101
+    static let otroAppleID: UInt64 = 2_000_000_909
 
     // MARK: - Compra .success → Pro aunque currentEntitlements esté vacío
 
@@ -136,8 +144,9 @@ struct ProSubscriptionActivationLogicTests {
         #expect(L.localActive(entitlements: [], lastVerified: previous, now: Self.now) == false)
     }
 
-    @Test func entitlementCaducado_borraLastVerified() {
-        let previous = Cached(productID: "com.yala.pro.yearly", expirationDate: Self.later)
+    /// Apple lista la suscripción caducada y lo guardado también venció: es el fin de Pro de verdad.
+    @Test func entitlementCaducado_conLastVerifiedVencido_borraYNoDaPro() {
+        let previous = Cached(productID: "com.yala.pro.yearly", expirationDate: Self.earlier)
         let next = L.updatedLastVerified(
             entitlements: [Self.yearly(expires: Self.earlier)],
             previous: previous,
@@ -146,6 +155,107 @@ struct ProSubscriptionActivationLogicTests {
         #expect(next == nil)
         #expect(L.localActive(entitlements: [Self.yearly(expires: Self.earlier)],
                               lastVerified: previous, now: Self.now) == false)
+    }
+
+    // MARK: - Renovar una suscripción terminada (card 7c97, 2026-10-22)
+
+    /// EL caso de la card: tras renovar desde «Tu suscripción terminó», StoreKit sigue listando un rato la suscripción
+    /// VIEJA, caducada, y aún no la nueva. La compra verificada (guardada hasta dentro de 30 días) no puede caer por esa
+    /// lectura. Hasta ese día este mismo caso estaba fijado al revés (`entitlementCaducado_borraLastVerified`), y por eso
+    /// la hoja volvía a salir: la lectura de volver a primer plano dejaba Free y borraba la compra.
+    @Test func renovar_laSuscripcionViejaCaducadaListada_noApagaLaCompra() {
+        let compra = Cached(productID: "com.yala.pro.yearly", expirationDate: Self.later, originalID: Self.suscripcion)
+        let vieja = Self.yearly(expires: Self.earlier, original: Self.suscripcion)
+        #expect(L.isSupersededExpiredListing(vieja, lastVerified: compra, now: Self.now))
+        #expect(L.updatedLastVerified(entitlements: [vieja], previous: compra, now: Self.now) == compra)
+        #expect(L.localActive(entitlements: [vieja], lastVerified: compra, now: Self.now))
+    }
+
+    /// El recorrido entero: la compra (con la vieja listada al lado) guarda su derecho con su `originalID`, y la lectura
+    /// siguiente, que solo ve la vieja, lo conserva. Vale también si se pasa del mensual al anual: mismo grupo, mismo
+    /// `originalID`, otro producto.
+    @Test func renovar_lecturaDespuesDeLaCompra_siguePro() {
+        for vieja in [Self.yearly(expires: Self.earlier, original: Self.suscripcion),
+                      Self.monthly(expires: Self.earlier, original: Self.suscripcion)] {
+            let compra = Self.yearly(original: Self.suscripcion)
+            let guardado = L.updatedLastVerified(entitlements: [compra, vieja], previous: nil, now: Self.now)
+            #expect(guardado?.originalID == Self.suscripcion, "El derecho guardado tiene que llevar el originalID.")
+            #expect(L.localActive(entitlements: [compra, vieja], lastVerified: guardado, now: Self.now))
+            let siguiente = L.updatedLastVerified(entitlements: [vieja], previous: guardado, now: Self.now)
+            #expect(siguiente == guardado)
+            #expect(L.localActive(entitlements: [vieja], lastVerified: siguiente, now: Self.now))
+        }
+    }
+
+    /// Control: sin compra guardada, la suscripción caducada sigue siendo el fin de Pro. Sin él, una regla que diera Pro
+    /// con cualquier caducada pasaría los dos casos de arriba.
+    @Test func renovar_sinCompraGuardada_laCaducadaSigueSiendoFree() {
+        let vieja = Self.yearly(expires: Self.earlier, original: Self.suscripcion)
+        #expect(L.isSupersededExpiredListing(vieja, lastVerified: nil, now: Self.now) == false)
+        #expect(L.updatedLastVerified(entitlements: [vieja], previous: nil, now: Self.now) == nil)
+        #expect(L.localActive(entitlements: [vieja], lastVerified: nil, now: Self.now) == false)
+    }
+
+    /// Otro Apple ID en el mismo teléfono con su Pro caducado: es un veredicto, no la suscripción vieja. El derecho
+    /// guardado del Apple ID anterior no sobrevive a él (lo cazó la review del 2026-10-22).
+    @Test func renovar_laCaducadaDeOtroAppleID_sigueSiendoFree() {
+        let delAnterior = Cached(productID: "com.yala.pro.yearly", expirationDate: Self.later, originalID: Self.suscripcion)
+        let otro = Self.yearly(expires: Self.earlier, original: Self.otroAppleID)
+        #expect(L.isSupersededExpiredListing(otro, lastVerified: delAnterior, now: Self.now) == false)
+        #expect(L.updatedLastVerified(entitlements: [otro], previous: delAnterior, now: Self.now) == nil)
+        #expect(L.localActive(entitlements: [otro], lastVerified: delAnterior, now: Self.now) == false)
+    }
+
+    /// Sin `originalID` en cualquiera de los dos lados (un derecho que guardó un build anterior, una transacción sin él)
+    /// no se puede situar la caducada: manda Apple, como antes.
+    @Test func renovar_sinOriginalID_laCaducadaManda() {
+        let viejoBuild = Cached(productID: "com.yala.pro.yearly", expirationDate: Self.later)
+        let conId = Cached(productID: "com.yala.pro.yearly", expirationDate: Self.later, originalID: Self.suscripcion)
+        let casos: [(Facts, Cached)] = [
+            (Self.yearly(expires: Self.earlier, original: Self.suscripcion), viejoBuild),
+            (Self.yearly(expires: Self.earlier), conId),
+        ]
+        for (vieja, guardado) in casos {
+            #expect(L.isSupersededExpiredListing(vieja, lastVerified: guardado, now: Self.now) == false)
+            #expect(L.localActive(entitlements: [vieja], lastVerified: guardado, now: Self.now) == false)
+        }
+    }
+
+    /// Un reembolso sí manda aunque el derecho guardado no haya vencido, también si llega como la transacción vieja.
+    @Test func renovar_unaRevocada_noCuentaComoSuscripcionVieja() {
+        let compra = Cached(productID: "com.yala.pro.yearly", expirationDate: Self.later, originalID: Self.suscripcion)
+        for revocada in [Self.yearly(revoked: Self.now, original: Self.suscripcion),
+                         Self.yearly(revoked: Self.earlier, expires: Self.earlier, original: Self.suscripcion)] {
+            #expect(L.isSupersededExpiredListing(revocada, lastVerified: compra, now: Self.now) == false)
+            #expect(L.updatedLastVerified(entitlements: [revocada], previous: compra, now: Self.now) == nil)
+            #expect(L.localActive(entitlements: [revocada], lastVerified: compra, now: Self.now) == false)
+        }
+    }
+
+    /// Un derecho guardado sin fecha no se puede situar frente a la caducada: manda Apple, como antes.
+    @Test func renovar_derechoGuardadoSinFecha_laCaducadaManda() {
+        let sinFecha = Cached(productID: "com.yala.pro.yearly", expirationDate: nil, originalID: Self.suscripcion)
+        let vieja = Self.yearly(expires: Self.earlier, original: Self.suscripcion)
+        #expect(L.isSupersededExpiredListing(vieja, lastVerified: sinFecha, now: Self.now) == false)
+        #expect(L.localActive(entitlements: [vieja], lastVerified: sinFecha, now: Self.now) == false)
+    }
+
+    /// Solo una CADUCADA es la suscripción vieja: una nuestra que no es renovable (no vigente sin haber vencido) sigue
+    /// siendo veredicto aunque comparta `originalID`.
+    @Test func renovar_unaNoRenovableSinCaducar_noEsLaSuscripcionVieja() {
+        let compra = Cached(productID: "com.yala.pro.yearly", expirationDate: Self.later, originalID: Self.suscripcion)
+        let noRenovable = Self.yearly(autoRenewable: false, original: Self.suscripcion)
+        #expect(L.isSupersededExpiredListing(noRenovable, lastVerified: compra, now: Self.now) == false)
+        #expect(L.localActive(entitlements: [noRenovable], lastVerified: compra, now: Self.now) == false)
+    }
+
+    /// Un producto ajeno caducado no es nuestra suscripción vieja (y ya no era veredicto: no es de Yala).
+    @Test func renovar_productoAjenoCaducado_noEsLaSuscripcionVieja() {
+        let compra = Cached(productID: "com.yala.pro.yearly", expirationDate: Self.later, originalID: Self.suscripcion)
+        let ajeno = Facts(productID: "com.otro.pro", productTypeIsAutoRenewable: true,
+                          revocationDate: nil, expirationDate: Self.earlier, originalID: Self.suscripcion)
+        #expect(L.isSupersededExpiredListing(ajeno, lastVerified: compra, now: Self.now) == false)
+        #expect(L.localActive(entitlements: [ajeno], lastVerified: compra, now: Self.now))
     }
 
     /// Una revocación conocida gana: no conservamos un Pro que Apple quitó.
@@ -213,6 +323,22 @@ struct ProSubscriptionActivationWiringTests {
         #expect(!purchase.contains("didJustSubscribe = true"), """
             Un `didJustSubscribe = true` suelto reintroduce el sheet de éxito con la app en Free.
             """)
+    }
+
+    /// La regla de la suscripción vieja (card 7c97) solo actúa si el manager lleva el `originalID` de cada transacción
+    /// y lo guarda y lo lee con el derecho. Sin cualquiera de las tres, la tabla sigue verde y la regla no hace nada en
+    /// producción: lo guardado llega sin `originalID` y la caducada vuelve a dejar Free tras renovar.
+    @Test func elDerechoGuardadoViajaConSuOriginalID() throws {
+        let src = try Self.source("Yala/App/Services/StoreKitManager.swift")
+        let facts = try Self.body(of: "private func facts(from transaction: StoreKit.Transaction) -> ProSubscriptionActivationLogic.TransactionFacts {", in: src)
+        #expect(facts.contains("originalID: transaction.originalID"), "Los hechos de la transacción no llevan su originalID.")
+        let load = try Self.body(of: "private func loadLastVerified() -> ProSubscriptionActivationLogic.LastVerifiedLocal? {", in: src)
+        #expect(load.contains("forKey: lastVerifiedOriginalIDKey"), "El derecho guardado se lee sin su originalID.")
+        let persist = try Self.body(of: "private func persistLastVerified(_ last: ProSubscriptionActivationLogic.LastVerifiedLocal?) {", in: src)
+        #expect(persist.contains("String(originalID), forKey: lastVerifiedOriginalIDKey"),
+                "El derecho guardado se escribe sin su originalID.")
+        #expect(persist.components(separatedBy: "removeObject(forKey: lastVerifiedOriginalIDKey)").count == 3,
+                "Al borrar el derecho (o guardarlo sin id) tiene que irse también su originalID.")
     }
 
     @Test func restoreHablaSiNoHayDerecho() throws {

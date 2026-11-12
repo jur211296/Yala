@@ -18,44 +18,45 @@ struct GroupExpenseServiceTests {
     @Test func error_noContext_hasDescription() {
         let error = GroupExpenseServiceError.noContext
         #expect(error.errorDescription != nil)
-        #expect(error.errorDescription!.contains("No ModelContext"))
+        // Lote 13: lo que ve la persona es el genérico localizado, nunca el texto de desarrollo.
+        #expect(error.errorDescription == L10n.Groups.Errors.actionFailed)
     }
 
     @Test func error_invalidAmount_hasDescription() {
         let error = GroupExpenseServiceError.invalidAmount
         #expect(error.errorDescription != nil)
-        #expect(error.errorDescription!.contains("greater than zero"))
+        #expect(error.errorDescription == L10n.Groups.Errors.actionFailed)
     }
 
     @Test func error_noShares_hasDescription() {
         let error = GroupExpenseServiceError.noShares
         #expect(error.errorDescription != nil)
-        #expect(error.errorDescription!.contains("share"))
+        #expect(error.errorDescription == L10n.Groups.Errors.actionFailed)
     }
 
     @Test func error_noPayer_hasDescription() {
         let error = GroupExpenseServiceError.noPayer
         #expect(error.errorDescription != nil)
-        #expect(error.errorDescription!.contains("Payer"))
+        #expect(error.errorDescription == L10n.Groups.Errors.actionFailed)
     }
 
     @Test func error_selfSettlement_hasDescription() {
         let error = GroupExpenseServiceError.selfSettlement
         #expect(error.errorDescription != nil)
-        #expect(error.errorDescription!.contains("yourself"))
+        #expect(error.errorDescription == L10n.Groups.Errors.actionFailed)
     }
 
     @Test func error_inactiveMember_hasDescription() {
         let error = GroupExpenseServiceError.inactiveMember
         #expect(error.errorDescription != nil)
-        #expect(error.errorDescription!.contains("Inactive"))
+        #expect(error.errorDescription == L10n.Groups.Errors.actionFailed)
     }
 
-    @Test func error_saveFailed_includesUnderlyingError() {
+    @Test func error_saveFailed_showsTheGenericMessage() {
         let underlying = NSError(domain: "test", code: 42)
         let error = GroupExpenseServiceError.saveFailed(underlying)
         #expect(error.errorDescription != nil)
-        #expect(error.errorDescription!.contains("Save failed"))
+        #expect(error.errorDescription == L10n.Groups.Errors.actionFailed)
     }
 
     // MARK: - Singleton
@@ -74,7 +75,7 @@ struct GroupExpenseServiceTests {
     @Test func error_sharesSumMismatch_hasDescription() {
         let error = GroupExpenseServiceError.sharesSumMismatch
         #expect(error.errorDescription != nil)
-        #expect(error.errorDescription!.contains("shares"))
+        #expect(error.errorDescription == L10n.Groups.Errors.actionFailed)
     }
 
     // MARK: - Shares Sum Validation

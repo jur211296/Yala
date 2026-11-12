@@ -26,8 +26,9 @@ enum AppConstants {
 
     /// Returns locale prefix for web URLs (empty for es, "en/" for English, etc.)
     private static var localePath: String {
-        guard let lang = Bundle.main.preferredLocalizations.first else { return "" }
-        switch lang {
+        guard let localization = Bundle.main.preferredLocalizations.first else { return "" }
+        // El idioma BASE: «es-419» o «pt-BR» caían al `default` y abrían la página en inglés.
+        switch LanguageManager.baseLanguageCode(of: localization) {
         case "es": return ""
         case "en": return "en/"
         case "de": return "de/"
@@ -45,4 +46,9 @@ enum AppConstants {
     static let defaultSubcategoryColorHex = "#9CA3AF"
     /// Default "Others/Remaining" color hex (System Gray)
     static let othersColorHex = "#8E8E93"
+    /// El trozo «Sin categoría» de un desglose por categoría (tarta, rankings, Sankey, widget de inicio): gris neutro.
+    /// El Informe por categoría no pinta color en esa fila; donde hace falta uno, es este.
+    static let uncategorizedColorHex = "#9CA3AF"
+    /// Icono del trozo «Sin categoría» donde la fila o la tarta pintan un círculo con icono.
+    static let uncategorizedIconName = "questionmark.folder.fill"
 }

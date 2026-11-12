@@ -294,6 +294,11 @@ struct MigrationIdentityBlock: Identifiable, Equatable {
     let associatedEmail: String?
     /// Con qué método se firmó la cuenta rechazada, cuando la sesión la abrió este intento. `nil` si no se sabe.
     let rejectedProvider: CloudSignInProvider?
+    /// «Desasociarla y seguir» (card 9mc6): la cuenta de grupos que bloquea solo está en el iCloud-KV del Apple ID
+    /// (`GroupsAccountAssociation.isRemoteOnly`), así que la dejó otra instalación y puede no existir ya. La hoja ofrece
+    /// soltarla y volver a elegir cuenta en un paso, en vez de mandar a «Grupos». Solo con «Usar otra cuenta»: la elección
+    /// que sigue es la misma.
+    var offersDetachingStaleAssociation: Bool = false
 
     /// ¿La hoja avisa de que con Apple no se puede elegir otra cuenta? Solo junto a «Usar otra cuenta», y solo si la
     /// rechazada era de Apple: elegir Apple otra vez firma con el mismo Apple ID del dispositivo y repite el aviso.
@@ -497,6 +502,46 @@ final class CloudMigrationController {
     /// filas faltan y por qué no drena. `nil` = aún no observada; la pantalla dice entonces solo que está subiendo.
     private(set) var reverseUploadSample: ReverseUploadSample?
 
+    // MARK: Pasos con su cifra (opción B, ticket `cloud-progress-shows-real-steps-and-counts`)
+
+    /// Cuántas filas de la subida de la ida confirmó el servidor, de cuántas hay (`MigrationRunner.snapshotUploadProgress`).
+    private(set) var uploadProgress: CloudProgressStepsLogic.UploadProgress?
+
+    /// La entrada del runner en curso espera a que iCloud termine de importar (`MigrationRunner.isAwaitingImportQuiescence`).
+    private(set) var runnerAwaitingImport = false
+
+    /// «Volver a iCloud» se confirmó y el journal todavía no lo recoge: la entrada del runner espera a iCloud antes de su
+    /// primer guardado. Hasta este ticket la pantalla seguía en «nube activa» con el botón apagado y nada más (card 27z3).
+    private(set) var isStartingReverse = false
+
+    /// La primera muestra de pendientes de esta subida de la vuelta. Mientras la cifra no baje de aquí, iCloud aún no subió
+    /// nada: está revisando lo que ya tiene (lienzo B3). En memoria: tras relanzar empieza en la primera muestra nueva.
+    private(set) var reverseFirstPending: Int?
+
+    /// La app espera a que iCloud termine de traer datos, en la pre-espera del controller o en la del runner.
+    var isWaitingForICloudImport: Bool { resumeWaitingForImport || runnerAwaitingImport }
+
+    /// Los pasos de «Activar la nube» para la tarjeta.
+    var forwardProgressSteps: [CloudProgressStepsLogic.Step] {
+        CloudProgressStepsLogic.forwardSteps(
+            phase: journaledPhase, adoptEffectPending: isAdoptEffectPending,
+            waitingForICloud: isWaitingForICloudImport, upload: uploadProgress)
+    }
+
+    /// Los pasos de «Volver a iCloud» (y de «Borrar y volver a iCloud») para la tarjeta.
+    var reverseProgressSteps: [CloudProgressStepsLogic.Step] {
+        CloudProgressStepsLogic.reverseSteps(
+            phase: journaledPhase, waitingForICloud: isWaitingForICloudImport, wipingDeleted: priorICloudWipeDeleted,
+            startingReverse: isStartingReverse, pending: reverseUploadSample?.pending, firstPending: reverseFirstPending)
+    }
+
+    /// ¿La pantalla enseña ya los pasos de la vuelta aunque el journal siga en «nube activa»? Mientras se borra lo de antes
+    /// y mientras la vuelta recién confirmada espera su primer guardado.
+    var showsReverseStepsBeforeJournal: Bool { priorICloudWipeDeleted != nil || isStartingReverse }
+
+    /// Cada cuántos segundos re-empuja la pantalla la migración aparcada (`CloudProgressStepsLogic.screenRekickSeconds`).
+    var screenRekickSeconds: Int { CloudProgressStepsLogic.screenRekickSeconds(phase: journaledPhase) }
+
     /// La vuelta a iCloud se paró porque la sesión de la nube ya no vale, en una fase anterior al montaje del espejo
     /// (`MigrationRunner.lastReverseSessionExpiry`). `nil` = no se paró por eso.
     ///
@@ -605,7 +650,8 @@ final class CloudMigrationController {
         if let fingido = UITestHooks.pendingMigrationBlock {
             migrationIdentityBlock = MigrationIdentityBlock(
                 reason: fingido.reason, offersAnotherAccount: true, associatedEmail: nil,
-                rejectedProvider: fingido.rejectedProvider)
+                rejectedProvider: fingido.rejectedProvider,
+                offersDetachingStaleAssociation: fingido.staleAssociation)
         }
         #endif
     }
@@ -694,7 +740,17 @@ final class CloudMigrationController {
             context: context,
             executor: Self.makeExecutor(context: context, deviceID: deviceID),
             deviceID: deviceID,
-            quiescenceSignal: { iCloudSyncService.shared.isImportQuiescent })
+            quiescenceSignal: { iCloudSyncService.shared.isImportQuiescent },
+            onQuiescenceTimeout: {
+                MetricsService.canaryOnce(
+                    .cloudMigrationImportNotSettled, key: "runner",
+                    detail: MigrationImportWaitLogic.runnerStallDetail(
+                        stillImporting: iCloudSyncService.shared.status == .syncing(kind: .importing)))
+            },
+            onQuiescenceWaited: { seconds, settled in
+                MetricsService.cloudMigrationImportWaited(
+                    stage: "runner", outcome: settled ? "settled" : "cap", seconds: seconds.rounded())
+            })
         _runner = r
         return r
     }
@@ -866,8 +922,17 @@ final class CloudMigrationController {
         await r.submit(.signInSucceeded)         // authenticating → claimingMigration → drive
         await announceForwardClaimRefusal(since: refusalBefore)
         refresh()
-        guard migrationAttempt != nil,
-              [.notStarted, .consent, .authenticating].contains(journaledPhase) else { return }
+        // Un claim rechazado limpia `migrationAttempt` y cierra la sesión que abrió (`announceForwardClaimRefusal`).
+        guard migrationAttempt != nil else { return }
+        guard [.notStarted, .consent, .authenticating].contains(journaledPhase) else {
+            // m387 · «Migrar» pasó la puerta de identidad y el claim CONTESTÓ: esta cuenta es la de la persona. Con el claim
+            // aparcado (`claimingMigration`: red, 403, sesión caducada) todavía puede rechazarla al reintentar
+            // (`announceForwardClaimRefusal` cierra la sesión), así que ahí no se sella: lo hará la pestaña o el arranque.
+            if journaledPhase != .claimingMigration {
+                GroupsConsentRegistrar.shared.sealAfterSessionAccepted()
+            }
+            return
+        }
         migrationAttempt = nil
         _ = await closeSessionIfOpened(openedSession)
         lastError = L10n.Storage.Errors.generic
@@ -1064,13 +1129,24 @@ final class CloudMigrationController {
             offersAnotherAccount: offersAnotherAccount,
             associatedEmail: reason == .anotherGroupsAccountAssociated
                 ? GroupsAccountAssociation.shared.read()?.email : nil,
-            rejectedProvider: rejectedProvider)
+            rejectedProvider: rejectedProvider,
+            offersDetachingStaleAssociation: reason == .anotherGroupsAccountAssociated && offersAnotherAccount
+                && GroupsAccountAssociation.shared.isRemoteOnly)
         CloudSyncBreadcrumb.migrationIdentityBlocked(reason: reason.slug, stage: stage)
         MetricsService.cloudMigrationExistingAccountBlocked(reason: reason.slug, stage: stage)
         // Después del cierre de la sesión que abrió el intento: la que queda viva es la que se comprobó, y es la que la
         // tarjeta seguiría prometiendo. Un `signOut` que no cerró la deja viva, y entonces también se recuerda.
         readLiveSession()
         refusedSession = StorageMigrationIdentityGateLogic.refusalToRemember(reason: reason, session: liveSession)
+    }
+
+    /// «Desasociarla y seguir» de la hoja del bloqueo (card 9mc6): suelta la asociación de grupos que llegó del iCloud-KV de
+    /// otra instalación. Es el mismo `clear()` que «Desasociar» de la sección «Grupos» (con su tombstone, para que otro
+    /// dispositivo no la reponga en su arranque). La elección de cuenta que sigue la abre la pantalla al bajar la hoja.
+    func releaseStaleGroupsAssociation() {
+        guard GroupsAccountAssociation.shared.isRemoteOnly else { return }
+        GroupsAccountAssociation.shared.clear()
+        CloudSyncBreadcrumb.migrationIdentityBlocked(reason: "other_groups_account_released", stage: "sheet")
     }
 
     /// Adopt desde el Welcome (H4/pieza 2): conduce la máquina asumiendo una sesión SIWA YA viva —
@@ -1292,16 +1368,21 @@ final class CloudMigrationController {
 
     /// Volver a iCloud (reversa §h). El gate `ReverseEligibility` ya lo validó la vista (diálogos-primero);
     /// se emiten `reverseActivated` + `reverseConfirmed` JUNTOS (un kill entre ambos lo normaliza `resume`).
+    /// Tras su guard, `isStartingReverse` hace que la pantalla enseñe los pasos de la vuelta aunque el journal siga en «nube
+    /// activa»: la entrada del runner espera a iCloud antes de su primer guardado (ticket
+    /// `cloud-progress-shows-real-steps-and-counts`, card 27z3).
     func startReverse() async {
         isWorking = true
         defer { isWorking = false }
         lastError = nil
-        // Mismo guard que `startMigration`: su doble confirmación cuelga de la raíz de la pantalla.
+        // Mismo guard que `startMigration`: su confirmación (una sola desde UX 2.2 · L20-17) cuelga de la raíz de la pantalla.
         guard readJournalDecisionInputs() != nil else {
             lastError = L10n.Storage.journalUnreadableMessage
             refresh()
             return
         }
+        isStartingReverse = true
+        defer { isStartingReverse = false }
         cancelReverseRequested = false
         let r = runner
         let claimExitBefore = r.lastReverseClaimExit
@@ -1406,7 +1487,7 @@ final class CloudMigrationController {
     /// `-uitest-born-cloud-storage` lo lee `.cloud` (finge la entrada; ver `UITestHooks.fakeBornCloudStorage`).
     private static func readPersistedStorageMode() -> StorageMode {
         #if DEBUG
-        if UITestHooks.fakeBornCloudStorage { return .cloud }
+        if UITestHooks.fakeBornCloudStorage || UITestHooks.fakeAdoptedCloudStorage { return .cloud }
         #endif
         return StorageModePersistence.read()
     }
@@ -1763,6 +1844,7 @@ final class CloudMigrationController {
         while waited < hardCap {
             if preWaitCutRequested {
                 preWaitCutRequested = false
+                MetricsService.cloudMigrationImportWaited(stage: "preWait", outcome: "cut", seconds: waited)
                 return false
             }
             do {
@@ -1776,6 +1858,7 @@ final class CloudMigrationController {
             waited += pollInterval
             if iCloudSyncService.shared.isImportQuiescent {
                 resumeWaitingForImport = false
+                MetricsService.cloudMigrationImportWaited(stage: "preWait", outcome: "settled", seconds: waited)
                 return true
             }
             let seen = iCloudSyncService.shared.lastSuccessfulImportDate
@@ -1785,6 +1868,7 @@ final class CloudMigrationController {
             }
         }
         CloudSyncBreadcrumb.migrationResumeDeferredAwaitingImport()
+        MetricsService.cloudMigrationImportWaited(stage: "preWait", outcome: "cap", seconds: waited)
         MetricsService.canaryOnce(
             .cloudMigrationImportNotSettled, key: "preWait",
             detail: MigrationImportWaitLogic.stallDetail(
@@ -1867,6 +1951,20 @@ final class CloudMigrationController {
 
     // MARK: - Refresh (journal vivo → estado derivado)
 
+    #if DEBUG
+    /// `-uitest-cloud-progress`: la cifra y la espera que el simulador no puede producir (sin iCloud ni backend). La fase la
+    /// finge la lectura del journal (`UITestHooks.fakeCloudProgressJournalRow`).
+    private func applyFakeCloudProgress(_ fake: UITestHooks.FakeCloudProgress) {
+        uploadProgress = fake.upload
+        runnerAwaitingImport = fake.waitingForICloud
+        if let pending = fake.reversePending {
+            reverseUploadSample = ReverseUploadSample(pending: pending, blocker: .unknown)
+            reverseFirstPending = fake.reverseFirstPending
+        }
+        if fake.startingReverse { isStartingReverse = true }
+    }
+    #endif
+
     /// Re-lee el journal + testigos de mount (sin mutar) y recalcula `uiState`. Molde del panel DEBUG.
     func refresh() {
         isQuiescent = iCloudSyncService.shared.isImportQuiescent
@@ -1895,6 +1993,13 @@ final class CloudMigrationController {
         claimDefinitiveCause = _runner?.lastClaimDefinitiveCause
         reverseUploadSample = _runner?.lastReverseUploadSample
         reverseSessionExpiry = _runner?.lastReverseSessionExpiry
+        uploadProgress = _runner?.snapshotUploadProgress
+        runnerAwaitingImport = _runner?.isAwaitingImportQuiescence ?? false
+        #if DEBUG
+        if let fake = UITestHooks.fakeCloudProgress { applyFakeCloudProgress(fake) }
+        #endif
+        reverseFirstPending = CloudProgressStepsLogic.firstPending(
+            previous: reverseFirstPending, phase: journaledPhase, pending: reverseUploadSample?.pending)
         readLiveSession()
 
         refreshSyncBanner()
@@ -1907,6 +2012,13 @@ final class CloudMigrationController {
     /// `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`): con solo cambios de grupos no salía, y el cierre de
     /// sesión mandaba a volver a entrar sin ninguna puerta a la vista. La decisión vive en `SyncSignInBannerLogic.decide`.
     private func refreshSyncBanner() {
+        #if DEBUG
+        if UITestHooks.fakeSyncNeedsSignIn {
+            syncNeedsSignIn = true
+            pendingUploadCount = 5006
+            return
+        }
+        #endif
         let banner = Self.syncSignInBanner(context: context, isCloud: CloudSyncFlags.storageMode == .cloud,
                                            runtimeState: CloudSyncRuntime.shared?.state,
                                            hasSession: CloudAuthService.shared.hasSession)
@@ -2039,6 +2151,8 @@ final class CloudMigrationController {
                 ownerUserID: runtime?.ownerUserID, signedInUserID: signedIn,
                 signedInIsClaimed: signedIn.map { CloudClaimActionStore.shared.action(forUserID: $0) != nil } ?? false) {
             case .resume:
+                // m387 · volvió a entrar la cuenta dueña de este teléfono.
+                GroupsConsentRegistrar.shared.sealAfterSessionAccepted()
                 // Parado en este proceso, la cadencia se re-despierta; arrancado sin sesión tras relanzar
                 // (`.idleSignedOut`), `handleBecameActive` no hace nada y hay que arrancarlo, por la puerta de siempre
                 // (`startRuntimeIfStable` → `start`, con su gate de identidad).
@@ -2085,6 +2199,7 @@ final class CloudMigrationController {
             #if DEBUG
             if UITestHooks.migrationJournalUnreadable { throw MigrationJournalSeamError.fetchFailed }
             if let seeded = UITestHooks.failedMigrationJournalRow { return seeded }
+            if let seeded = UITestHooks.fakeCloudProgressJournalRow { return seeded }
             #endif
             var descriptor = FetchDescriptor<MigrationState>()
             descriptor.fetchLimit = 1
@@ -2126,7 +2241,7 @@ final class CloudMigrationController {
             #endif
             hasCKMap = nil
         }
-        return ReverseEligibility.decide(
+        let decision = ReverseEligibility.decide(
             // M1: modo PERSISTIDO del dueño — la reversa es SU travesía; una sesión secundaria
             // jamás debe volverse elegible por el `.cloud` efectivo derivado del descriptor.
             storageMode: Self.readPersistedStorageMode(),
@@ -2136,6 +2251,12 @@ final class CloudMigrationController {
             // un 2.º device adoptado y lo borra un botón DEBUG). Ver `StorageModePersistence.bornCloudKey`.
             isBornCloud: Self.readIsBornCloud(),
             journaledPhase: journaledPhase)
+        // Cuántos teléfonos quedan sin vuelta por no tener mapa (card `yf9t`). Una vez por proceso: esto corre en
+        // cada refresco de la pantalla.
+        if decision == .degradedNoMap {
+            MetricsService.canaryOnce(.cloudReverseDegradedNoMap, key: "process")
+        }
+        return decision
     }
 
     /// ¿El mirror local trae el marcador del líder? (P6: la card de `.icloud`+notStarted cambia a copy de
@@ -2146,6 +2267,13 @@ final class CloudMigrationController {
     /// —lo impiden las dos capas de `StorageMigrationIdentityGateLogic` y `ForwardClaimIntent.migrateOnly`—, así que con
     /// una cuenta que ya tiene datos acaba en el aviso de la puerta. El contrario ofrecería adoptar sin saber si hay algo.
     func markerDecision() -> MarkerDecision {
+        #if DEBUG
+        // Seam `-uitest-cloud-adopt-offer` (card vbf9): finge el marcador de otro dispositivo, que en el simulador no puede
+        // llegar (sin CloudKit). Finge la ENTRADA: la fase journaleada y el resto de condiciones siguen siendo las reales.
+        if UITestHooks.fakeCloudAdoptOffer {
+            return MigrationStateMachine.markerReconciliation(markerFound: true, journaledPhase: journaledPhase)
+        }
+        #endif
         let markerFound: Bool
         do {
             markerFound = try context.fetchCount(FetchDescriptor<CloudMigrationMarker>()) > 0

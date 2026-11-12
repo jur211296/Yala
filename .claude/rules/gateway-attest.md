@@ -415,6 +415,10 @@ encendido de Grupos solo le dio una superficie visible.
 > un build de Xcode del scheme `Yala` **debería** obtener sesión contra producción; está medido que la firma lo
 > lleva (`codesign`), **no** que el gateway lo acepte — falta la prueba en device. Lo de abajo sigue siendo
 > verdad para cualquier build que mande `development` a producción.
+>
+> **2026-10-25:** el archive de `Yala Dev` (Release-Dev) compila con `DEV_BUILD` y va a **staging**, igual que su
+> Debug-Dev: antes mandaba el bundle `.dev` con attest `development` a producción, que no lo acepta nunca (card `xel3`).
+> Ningún build del bundle `.dev` habla ya con producción. Lo fija `ReleaseDevTargetsStagingTests`.
 
 `verifyAttestation.ts:79` compara el AAGUID byte a byte: con `ATTEST_ENV = "production"` exige
 `"appattest"+7×0x00`, y un build con entorno `development` manda `"appattestdevelop"` ⇒ **401

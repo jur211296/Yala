@@ -10,6 +10,35 @@
 import SwiftData
 import SwiftUI
 
+// MARK: - Tocar un segmento (propuesta A, 2026-10-25)
+
+/// Tocar un segmento de una tarta o un top del Panel pregunta «Ver solo / Ocultar», igual que en Distribución. Sin
+/// host del diálogo (una vista previa), ve solo, como antes el toque.
+@MainActor
+private func askPanelSegment(
+    _ ask: ((SegmentFilterChoice) -> Void)?,
+    viewModel: PanelViewModel,
+    target: SegmentFilterTarget,
+    name: String,
+    amount: Double?,
+    currencyCode: String,
+    appPreferences: AppPreferences,
+    reduceMotion: Bool
+) {
+    let choice = viewModel.segmentChoice(
+        for: target,
+        name: name,
+        amountText: amount.map { appPreferences.currency($0, currencyCode: currencyCode) }
+    )
+    if let ask {
+        ask(choice)
+    } else {
+        DS.Haptic.selection()
+        // En seco: es un filtro y reemplaza la página (card oxyr).
+        choice.showOnly()
+    }
+}
+
 // MARK: - Widget Router
 
 /// Routes a WidgetConfig to the appropriate section wrapper.
@@ -107,6 +136,8 @@ private struct PanelTrendSection: View {
 // MARK: - Top Categories
 
 private struct PanelCategoriesSection: View {
+    @Environment(\.askSegmentFilter) private var askSegmentFilter
+    @Environment(AppPreferences.self) private var appPreferences
     @Environment(SceneNavigation.self) private var navigation
     let viewModel: PanelViewModel
     let currencyCode: String
@@ -119,12 +150,13 @@ private struct PanelCategoriesSection: View {
             categories: viewModel.topSpendingCategories,
             currencyCode: currencyCode,
             selectedCategoryID: viewModel.selectedCategoryID,
-            isExcludeMode: viewModel.isExcludeMode,
             onSelectCategory: { id in
-                DS.Haptic.selection()
-                dsWithAnimation(reduceMotion) {
-                    viewModel.toggleCategoryFilter(id)
-                }
+                let summary = viewModel.topSpendingCategories.first { $0.id == id }
+                askPanelSegment(
+                    askSegmentFilter, viewModel: viewModel, target: .category(id),
+                    name: summary?.name ?? "", amount: summary?.amount,
+                    currencyCode: currencyCode, appPreferences: appPreferences, reduceMotion: reduceMotion
+                )
             },
             onShowMore: { viewModel.navigateToStatistics(.categories, in: navigation) },
             size: mapWidgetSize(size),
@@ -145,7 +177,6 @@ private struct PanelCategoriesSection: View {
                     categories: viewModel.topSpendingCategories,
                     currencyCode: currencyCode,
                     selectedCategoryID: nil,
-                    isExcludeMode: false,
                     onSelectCategory: nil,
                     onShowMore: nil,
                     size: mapWidgetSize(previewSize),
@@ -161,6 +192,8 @@ private struct PanelCategoriesSection: View {
 // MARK: - Top Subcategories
 
 private struct PanelSubcategoriesSection: View {
+    @Environment(\.askSegmentFilter) private var askSegmentFilter
+    @Environment(AppPreferences.self) private var appPreferences
     @Environment(SceneNavigation.self) private var navigation
     @Bindable var viewModel: PanelViewModel
     let currencyCode: String
@@ -175,13 +208,14 @@ private struct PanelSubcategoriesSection: View {
             globalCategoryFilterID: viewModel.selectedCategoryID,
             localCategoryFilterID: $viewModel.subcategoriesWidgetFilter,
             onSelectSubcategory: { subcategoryID in
-                DS.Haptic.selection()
-                dsWithAnimation(reduceMotion) {
-                    viewModel.toggleSubcategoryFilterFromPanel(subcategoryID)
-                }
+                let summary = viewModel.topSubcategories.first { $0.persistentID == subcategoryID }
+                askPanelSegment(
+                    askSegmentFilter, viewModel: viewModel, target: .subcategory(subcategoryID),
+                    name: summary?.subcategoryName ?? "", amount: summary?.amount,
+                    currencyCode: currencyCode, appPreferences: appPreferences, reduceMotion: reduceMotion
+                )
             },
             selectedSubcategoryIDs: viewModel.selectedSubcategoryIDs,
-            isExcludeMode: viewModel.isExcludeMode,
             onShowMore: { viewModel.navigateToStatistics(.categories, in: navigation) },
             size: mapWidgetSize(size),
             headerInfoButton: topSubcategoriesInfoButton,
@@ -204,7 +238,6 @@ private struct PanelSubcategoriesSection: View {
                     localCategoryFilterID: .constant(viewModel.subcategoriesWidgetFilter),
                     onSelectSubcategory: nil,
                     selectedSubcategoryIDs: [],
-                    isExcludeMode: false,
                     onShowMore: nil,
                     size: mapWidgetSize(previewSize),
                     period: viewModel.selectedPeriod,
@@ -219,6 +252,8 @@ private struct PanelSubcategoriesSection: View {
 // MARK: - Categories Pie
 
 private struct PanelCategoriesPieSection: View {
+    @Environment(\.askSegmentFilter) private var askSegmentFilter
+    @Environment(AppPreferences.self) private var appPreferences
     @Environment(SceneNavigation.self) private var navigation
     let viewModel: PanelViewModel
     let currencyCode: String
@@ -232,13 +267,14 @@ private struct PanelCategoriesPieSection: View {
             currencyCode: currencyCode,
             selectedCategoryIDs: viewModel.selectedCategoryID.map { Set([$0]) } ?? [],
             onSelectCategory: { id in
-                DS.Haptic.selection()
-                dsWithAnimation(reduceMotion) {
-                    viewModel.toggleCategoryFilter(id)
-                }
+                let summary = viewModel.topSpendingCategories.first { $0.id == id }
+                askPanelSegment(
+                    askSegmentFilter, viewModel: viewModel, target: .category(id),
+                    name: summary?.name ?? "", amount: summary?.amount,
+                    currencyCode: currencyCode, appPreferences: appPreferences, reduceMotion: reduceMotion
+                )
             },
             onShowDetail: { viewModel.navigateToStatistics(.categories, in: navigation) },
-            isExcludeMode: viewModel.isExcludeMode,
             size: size,
             headerInfoButton: categoriesPieInfoButton,
             period: viewModel.selectedPeriod,
@@ -259,7 +295,6 @@ private struct PanelCategoriesPieSection: View {
                     selectedCategoryIDs: [],
                     onSelectCategory: nil,
                     onShowDetail: nil,
-                    isExcludeMode: false,
                     size: previewSize,
                     period: viewModel.selectedPeriod,
                     previousTotalAmount: nil,
@@ -273,6 +308,8 @@ private struct PanelCategoriesPieSection: View {
 // MARK: - Subcategories Pie
 
 private struct PanelSubcategoriesPieSection: View {
+    @Environment(\.askSegmentFilter) private var askSegmentFilter
+    @Environment(AppPreferences.self) private var appPreferences
     @Environment(SceneNavigation.self) private var navigation
     let viewModel: PanelViewModel
     let currencyCode: String
@@ -287,13 +324,14 @@ private struct PanelSubcategoriesPieSection: View {
             selectedCategoryID: viewModel.selectedCategoryID,
             selectedSubcategoryIDs: viewModel.selectedSubcategoryIDs,
             onSelectSubcategory: { subcategoryID in
-                DS.Haptic.selection()
-                dsWithAnimation(reduceMotion) {
-                    viewModel.toggleSubcategoryFilterFromPanel(subcategoryID)
-                }
+                let summary = viewModel.topSubcategories.first { $0.persistentID == subcategoryID }
+                askPanelSegment(
+                    askSegmentFilter, viewModel: viewModel, target: .subcategory(subcategoryID),
+                    name: summary?.subcategoryName ?? "", amount: summary?.amount,
+                    currencyCode: currencyCode, appPreferences: appPreferences, reduceMotion: reduceMotion
+                )
             },
             onShowDetail: { viewModel.navigateToStatistics(.categories, in: navigation) },
-            isExcludeMode: viewModel.isExcludeMode,
             size: size,
             headerInfoButton: subcategoriesPieInfoButton,
             period: viewModel.selectedPeriod,
@@ -315,7 +353,6 @@ private struct PanelSubcategoriesPieSection: View {
                     selectedSubcategoryIDs: [],
                     onSelectSubcategory: nil,
                     onShowDetail: nil,
-                    isExcludeMode: false,
                     size: previewSize,
                     period: viewModel.selectedPeriod,
                     previousTotalAmount: nil,
@@ -329,6 +366,8 @@ private struct PanelSubcategoriesPieSection: View {
 // MARK: - Tags Pie (P20-09)
 
 private struct PanelTagsPieSection: View {
+    @Environment(\.askSegmentFilter) private var askSegmentFilter
+    @Environment(AppPreferences.self) private var appPreferences
     @Environment(SceneNavigation.self) private var navigation
     let viewModel: PanelViewModel
     let sessionState: SessionState
@@ -343,13 +382,14 @@ private struct PanelTagsPieSection: View {
             currencyCode: currencyCode,
             selectedTagIDs: viewModel.selectedTags,
             onSelectTag: { id in
-                DS.Haptic.selection()
-                dsWithAnimation(reduceMotion) {
-                    viewModel.toggleTagFilter(id)
-                }
+                let summary = viewModel.topTags.first { $0.id == id }
+                askPanelSegment(
+                    askSegmentFilter, viewModel: viewModel, target: .tag(id),
+                    name: summary?.tag.name ?? "", amount: summary?.amount,
+                    currencyCode: currencyCode, appPreferences: appPreferences, reduceMotion: reduceMotion
+                )
             },
             onShowDetail: { viewModel.navigateToStatistics(.categories, in: navigation) },
-            isExcludeMode: viewModel.isExcludeMode,
             size: size,
             headerInfoButton: tagsPieInfoButton,
             period: viewModel.selectedPeriod,
@@ -371,7 +411,6 @@ private struct PanelTagsPieSection: View {
                     selectedTagIDs: [],
                     onSelectTag: nil,
                     onShowDetail: nil,
-                    isExcludeMode: false,
                     size: previewSize,
                     period: viewModel.selectedPeriod,
                     customRange: sessionState.customDateRange,
@@ -444,36 +483,45 @@ private struct PanelCashFlowSection: View {
 
 private struct PanelRecentRecordsSection: View {
     @Environment(SceneNavigation.self) private var navigation
+    @Environment(\.openPanelRecord) private var openPanelRecord
     let viewModel: PanelViewModel
     let currencyCode: String
 
     var body: some View {
+        // Sin cabecera propia: la sección ya se llama «Últimos registros» justo encima (UX 2.2 · L3-12) y su «?» va en
+        // esa fila, antes del chevron (`PanelRecentRecordsInfoButton`, card gisw).
         RecentRecordsWidget(
             records: viewModel.latestRecords,
             currencyCode: currencyCode,
             onShowMore: { viewModel.navigateToStatistics(.records, in: navigation) },
-            headerInfoButton: recentRecordsInfoButton
+            showsTitle: false,
+            onOpenRecord: openPanelRecord.map { action in { action($0) } }
         )
     }
+}
 
-    /// Botón info pedagógico inyectado en el header. Reusa el VM real
-    /// (TransactionItem @Model) — empty state visual si el VM no tiene datos.
-    private var recentRecordsInfoButton: AnyView? {
-        AnyView(
-            WidgetInfoButton(kind: .recentRecords, viewModel: viewModel) { _ in
-                RecentRecordsWidget(
-                    records: viewModel.latestRecords,
-                    currencyCode: currencyCode,
-                    onShowMore: nil
-                )
-            }
-        )
+/// Botón info pedagógico de «Últimos registros», en la fila del título de la sección. Reusa el VM real
+/// (TransactionItem @Model) — empty state visual si el VM no tiene datos.
+struct PanelRecentRecordsInfoButton: View {
+    let viewModel: PanelViewModel
+    let currencyCode: String
+
+    var body: some View {
+        WidgetInfoButton(kind: .recentRecords, viewModel: viewModel) { _ in
+            RecentRecordsWidget(
+                records: viewModel.latestRecords,
+                currencyCode: currencyCode,
+                onShowMore: nil
+            )
+        }
     }
 }
 
 // MARK: - Need Trend
 
 private struct PanelNeedTrendSection: View {
+    @Environment(\.askSegmentFilter) private var askSegmentFilter
+    @Environment(AppPreferences.self) private var appPreferences
     @Environment(SceneNavigation.self) private var navigation
     let viewModel: PanelViewModel
     let currencyCode: String
@@ -494,10 +542,12 @@ private struct PanelNeedTrendSection: View {
             grouping: viewModel.needGrouping,
             interval: viewModel.currentInterval,
             onSelectNeed: { need in
-                DS.Haptic.selection()
-                dsWithAnimation(reduceMotion) {
-                    viewModel.toggleNeedFilter(need)
-                }
+                let amount = viewModel.needTrendPoints.reduce(0) { $0 + $1.amount(for: need) }
+                askPanelSegment(
+                    askSegmentFilter, viewModel: viewModel, target: .need(need),
+                    name: need.displayName, amount: amount,
+                    currencyCode: currencyCode, appPreferences: appPreferences, reduceMotion: reduceMotion
+                )
             },
             onShowDetail: { viewModel.navigateToStatistics(.categories, in: navigation) },
             period: viewModel.selectedPeriod,
@@ -604,7 +654,6 @@ private struct PanelBudgetsSection: View {
             currencyCode: displayCurrency,
             hasBudgetsButNoFavorites: viewModel.hasBudgetsButNoFavorites,
             selectedBudgetID: sessionState.selectedBudgetID,
-            isExcludeMode: viewModel.isExcludeMode,
             onSelectBudget: { budget in
                 sessionState.applyBudgetFilters(budget, context: modelContext)
             },
@@ -625,7 +674,6 @@ private struct PanelBudgetsSection: View {
                     currencyCode: displayCurrency,
                     hasBudgetsButNoFavorites: viewModel.hasBudgetsButNoFavorites,
                     selectedBudgetID: nil,
-                    isExcludeMode: false,
                     onSelectBudget: nil,
                     onShowMore: nil,
                     onEditFavorites: nil,

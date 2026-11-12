@@ -23,6 +23,39 @@ enum ProxyErrorMapper {
         gatewayType(from: error) == "yala_trial_exhausted"
     }
 
+    /// ¿El gateway frenó la petición por RÁFAGA (429 `yala_quota_burst`)? Se cura sola en menos de un minuto. Hasta el
+    /// arreglo del gateway del 2026-10-21 esa ráfaga la llenaba también el tráfico de sincronización del teléfono, y la
+    /// primera foto tras instalar salía con el texto de «falló la lectura» (card vv0k del QA guiado del 19-oct).
+    static func isBurstLimited(_ error: Error) -> Bool {
+        gatewayType(from: error) == "yala_quota_burst"
+    }
+
+    /// ¿El gateway dice que se acabó el cupo de HOY (429 `yala_quota_daily`)? Se repone al cambiar de día (UTC).
+    static func isDailyLimitReached(_ error: Error) -> Bool {
+        gatewayType(from: error) == "yala_quota_daily"
+    }
+
+    /// El error EXACTO que decodifica el SDK cuando el gateway contesta 429 con `type` (`yala_quota_burst` o
+    /// `yala_quota_daily`). Para los tests unitarios y los seams de UI test.
+    static func quotaResponse(type: String) -> Error {
+        let json = #"{"error":{"message":"Límite de uso alcanzado. Intenta más tarde.","type":"\#(type)","param":null,"code":"\#(type)"}}"#
+        do {
+            return try JSONDecoder().decode(APIErrorResponse.self, from: Data(json.utf8))
+        } catch {
+            return error
+        }
+    }
+
+    /// Qué le pasó a una petición de IA, en el idioma del gateway y sin datos de la persona: el `error.type` del sobre si lo
+    /// hay, o la familia del error local. Va en el detalle del canario de los fallos de voz y foto.
+    static func failureKind(_ error: Error) -> String {
+        if let type = gatewayType(from: error) { return type }
+        if error is AppAttestError { return "attest" }
+        if let urlError = error as? URLError { return "url:\(urlError.code.rawValue)" }
+        if error is DecodingError { return "decoding" }
+        return "other"
+    }
+
     /// El error EXACTO que decodifica el SDK cuando el gateway contesta 403 `yala_trial_exhausted` (el sobre de
     /// `gateway/src/errors.ts`). `APIErrorResponse` no tiene init público, así que se construye decodificando.
     /// Lo usan los seams de UI test y los tests unitarios.

@@ -132,24 +132,6 @@ struct ScheduledPaymentSummary: Identifiable {
     }
 }
 
-// MARK: - Payment Status Filter
-
-enum PaymentStatusFilter: String, CaseIterable, Identifiable {
-    case all
-    case paid
-    case pending
-
-    var id: String { rawValue }
-
-    var localizedName: String {
-        switch self {
-        case .all: return L10n.Scheduled.Filter.all
-        case .paid: return L10n.Scheduled.Filter.paid
-        case .pending: return L10n.Scheduled.Filter.pending
-        }
-    }
-}
-
 // MARK: - Scheduled Payments Tab
 
 enum ScheduledPaymentsTab: Int, CaseIterable, Identifiable {

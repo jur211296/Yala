@@ -331,8 +331,10 @@ final class CloudSyncRuntime {
         // reversa a medias. No lo curamos aquí — el journal lo auto-cura por su efecto pendiente; aquí solo
         // NO arrancamos, y dejamos rastro para saber que ocurrió.
         let cloudWithMirrorOn = StorageModePersistence.isCloudWithMirrorOn()
-        // Solo con una fase LEÍDA y estable: sin journal no se sabe si el par a medias es el legítimo de un cutover.
-        if cloudWithMirrorOn, case .phase(let phase) = read, MigrationRuntimeGate.isDomainStablePhase(phase) {
+        // Solo con una fase LEÍDA y estable: sin journal no se sabe si el par a medias es el legítimo de un cutover. Y con
+        // el journal CONECTADO: antes del paso 11 del arranque la lectura es el relleno `.notStarted` (card jbjj).
+        if MigrationRuntimeGate.isStorageModePairViolation(read: read, cloudWithMirrorOn: cloudWithMirrorOn,
+                                                           journalConnected: MigrationPhaseStore.shared.isJournalConnected) {
             CloudSyncBreadcrumb.storageModePairViolation(phase: phaseLabel)
             if !pairViolationCanaryFired {
                 pairViolationCanaryFired = true

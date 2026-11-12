@@ -511,6 +511,54 @@ struct DevSeedTransactions {
         }
     }
 
+    // MARK: - Vivienda de principio de mes (perfil `realista`)
+
+    /// Vivienda no tiene gasto fijo antes del día 5 (el alquiler), y Comida puede salir a 0 un día 1 de fin de semana:
+    /// del 1 al 4, «Fijos casa» y «Comidas fuera» podían gastar los dos S/ 0 y
+    /// `AdaptiveNavigationUITests.test_switchingBudgets_showsTheNewBudgetsSpentAmount` no discriminaba (card 04ek).
+    enum EarlyMonthHousing {
+        /// Con céntimos a propósito: todo gasto de Comida del generador va en soles enteros (`.rounded()`), así que
+        /// «Fijos casa» no puede igualar a «Comidas fuera» esos días.
+        static let amount: Double = -184.50
+        /// El día que el alquiler ya cubre el caso.
+        static let rentDay = 5
+
+        /// «Ayer» a medianoche sin salir del mes (el tope de `DevSeedAccountLines.seedDate`), solo los días 1 a 4; nil
+        /// desde el día del alquiler, para no mover las cifras de los demás días.
+        static func date(now: Date = .now, calendar: Calendar = .current) -> Date? {
+            guard calendar.component(.day, from: now) < rentDay else { return nil }
+            return DevSeedAccountLines.seedDate(daysAgo: 1, now: now, calendar: calendar)
+        }
+    }
+
+    @MainActor
+    static func createEarlyMonthHousing(
+        now: Date,
+        account: Account,
+        subcategoryLookup: [String: Subcategory],
+        in context: ModelContext
+    ) {
+        guard let date = EarlyMonthHousing.date(now: now) else { return }
+        guard let sub = subcategoryLookup[L10n.Subcategory.maintenance] else {
+            print("DevSeedTransactions: Maintenance subcategory not found")
+            return
+        }
+        let tx = TransactionItem(
+            date: date,
+            amount: EarlyMonthHousing.amount,
+            currencyCode: "PEN",
+            note: L10n.DevSeed.noteCleaning,
+            category: sub.category,
+            subcategory: sub,
+            account: account,
+            exchangeRate: 1.0,
+            amountInPreferredCurrency: EarlyMonthHousing.amount,
+            preferredCurrencyCode: "PEN"
+        )
+        tx.createdAt = date
+        context.insert(tx)
+    }
+
     // MARK: - Initial Balances
 
     @MainActor

@@ -16,7 +16,7 @@ final class FavoritePayment {
     /// Display name for the favorite (required) - CloudKit: default required
     var name: String = ""
 
-    /// Transaction type: "income" or "expense" (no transfers) - CloudKit: default required
+    /// Transaction type: "income", "expense" or "transfer" - CloudKit: default required
     var transactionType: String = "expense"
 
     /// Optional pre-filled amount
@@ -28,6 +28,15 @@ final class FavoritePayment {
     /// Optional linked account
     @Relationship(deleteRule: .nullify, inverse: \Account.favoritePayments)
     var account: Account?
+
+    /// Cuenta destino de un favorito de transferencia (UX 2.2 · L2-14). `account` es el origen. Un favorito de
+    /// transferencia guardado antes de 2.2 no la tiene: se usa con el origen y el destino vacío, que la línea de lo que
+    /// falta sobre «Guardar» ya señala. Campo nuevo del esquema personal de CloudKit (`CD_destinationAccount`): se
+    /// despliega a Production antes de publicar el build que lo escribe. Por el Modo Nube viaja desde la v4 del manifest
+    /// (`favorite_payments.destination_account_ref`, card da5d): con un backend anterior no viaja y el favorito llega sin
+    /// destino, el mismo caso que uno viejo; al subir de versión se reemite lo que se quedó fuera.
+    @Relationship(deleteRule: .nullify, inverse: \Account.destinationFavoritePayments)
+    var destinationAccount: Account?
 
     /// Optional linked subcategory
     @Relationship(deleteRule: .nullify, inverse: \Subcategory.favoritePayments)
@@ -64,6 +73,7 @@ final class FavoritePayment {
         amount: Double? = nil,
         note: String? = nil,
         account: Account? = nil,
+        destinationAccount: Account? = nil,
         subcategory: Subcategory? = nil,
         tags: [Tag] = [],
         needOverride: String? = nil,
@@ -75,6 +85,7 @@ final class FavoritePayment {
         self.amount = amount
         self.note = note
         self.account = account
+        self.destinationAccount = destinationAccount
         self.subcategory = subcategory
         self.tags = tags
         self.tagIDs = CSVMirrorCodec.encode(tags.map(\.id))

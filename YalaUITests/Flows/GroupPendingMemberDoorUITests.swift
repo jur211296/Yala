@@ -102,4 +102,26 @@ final class GroupPendingMemberDoorUITests: XCTestCase {
             card.waitForHittable(timeout: 10),
             "Tras cerrar el aviso la lista quedó inerte: la tarjeta ya no es alcanzable.")
     }
+    /// **k26u · «Grupo» del botón + cuando el único grupo espera aprobación avisa, en vez de dejar a la persona a
+    /// ciegas.** Antes aterrizaba en Grupos sin decir nada y el gasto pedido se quedaba guardado hasta que llegara la
+    /// aprobación, horas después. Ahora sale el mismo aviso que al tocar la tarjeta, y el formulario de gasto no se
+    /// abre. El camino normal (grupo activo → se abre el gasto) lo sostiene `GroupsSmokeUITests.test_groupExpenseFromPanelFAB`.
+    func test_panelGroupWithOnlyPendingGroup_explainsInsteadOfWaiting() {
+        let app = XCUIApplication()
+        app.launchForUITest(pro: true, seed: "grupos-pendiente", icloudIdentity: true)
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        app.revealPanelFAB().tap()
+        let groupOption = app.buttons["panel_fab_group"]
+        XCTAssertTrue(groupOption.waitForExistence(timeout: 5), "No apareció la opción «Grupo» del botón +.")
+        groupOption.tap()
+
+        // Por estructura (`alerts`), no por texto: el copy es localizado.
+        XCTAssertTrue(
+            app.alerts.firstMatch.waitForExistence(timeout: 10),
+            "Con el único grupo pendiente de aprobación, «Grupo» del + no avisó de nada (k26u).")
+        XCTAssertFalse(
+            app.textFields["group_expense_amount"].exists,
+            "Se abrió el formulario de gasto en un grupo donde aún no se puede apuntar.")
+    }
 }

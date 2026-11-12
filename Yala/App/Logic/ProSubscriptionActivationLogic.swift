@@ -32,6 +32,9 @@ nonisolated enum ProSubscriptionActivationLogic {
         var productTypeIsAutoRenewable: Bool
         var revocationDate: Date?
         var expirationDate: Date?
+        /// El `originalID` de la suscripción: lo comparten sus renovaciones y la vuelta a suscribirse en el mismo
+        /// grupo, y no lo comparte la de otro Apple ID. `nil` = no se sabe.
+        var originalID: UInt64? = nil
     }
 
     /// Última compra/entitlement local que aplicamos. Sobrevive a un
@@ -39,6 +42,8 @@ nonisolated enum ProSubscriptionActivationLogic {
     nonisolated struct LastVerifiedLocal: Equatable, Sendable {
         var productID: String
         var expirationDate: Date?
+        /// El `originalID` de la transacción verificada. `nil` en lo que guardó un build anterior al 2026-10-22.
+        var originalID: UInt64? = nil
     }
 
     /// ¿Esta transacción es un derecho Pro LOCAL vigente?
@@ -64,11 +69,47 @@ nonisolated enum ProSubscriptionActivationLogic {
         return true
     }
 
+    /// ¿Esta transacción caducada es la suscripción VIEJA, ya sustituida por el derecho verificado? Tras renovar una
+    /// suscripción terminada, StoreKit sigue listando un rato la transacción caducada y aún no la nueva; leída como
+    /// veredicto, dejaba Free a quien acababa de pagar y borraba su compra verificada, y la hoja «Tu suscripción
+    /// terminó» volvía a salir (card `tablero-al-renovar-desde-tu-suscripcion-termino-7c97`, 2026-10-22).
+    ///
+    /// Una transacción caducada de la MISMA suscripción nunca desmiente un derecho verificado que aún no ha vencido: si
+    /// caducó, caducó antes que él, así que es un periodo anterior. Lo único que quita ese derecho antes de tiempo es una
+    /// revocación (reembolso, familia), y una revocada no entra aquí. «La misma» es el mismo `originalID`: la caducada
+    /// de OTRO Apple ID en este teléfono sí es un veredicto, o el derecho guardado del anterior sobreviviría a ella. Sin
+    /// `originalID` o sin fecha en cualquiera de los dos lados no se pueden situar, y manda Apple, como antes.
+    static func isSupersededExpiredListing(
+        _ facts: TransactionFacts,
+        lastVerified: LastVerifiedLocal?,
+        now: Date = .now
+    ) -> Bool {
+        guard knownProductIDs.contains(facts.productID), facts.revocationDate == nil,
+              let expired = facts.expirationDate, expired <= now,
+              let subscription = facts.originalID, subscription == lastVerified?.originalID else { return false }
+        return lastVerified?.expirationDate != nil && isLastVerifiedStillActive(lastVerified, now: now)
+    }
+
+    /// ¿Apple lista uno de NUESTROS productos sin derecho vigente y que no sea la suscripción vieja ya sustituida? Es
+    /// su veredicto: el derecho guardado no puede contradecirlo.
+    private static func listsAVerdictAgainst(
+        _ lastVerified: LastVerifiedLocal?,
+        in entitlements: [TransactionFacts],
+        now: Date
+    ) -> Bool {
+        entitlements.contains {
+            knownProductIDs.contains($0.productID)
+                && !isSupersededExpiredListing($0, lastVerified: lastVerified, now: now)
+        }
+    }
+
     /// Unión: entitlements actuales O la última verificación vigente.
     /// Vacío en `currentEntitlements` NO apaga Pro si `lastVerified` sigue vivo —
     /// eso es lo que convertía un `.success` (y un reopen) en Free.
     /// Si Apple lista uno de NUESTROS productos y no está vigente (revocado /
-    /// caducado), el cache no puede resucitarlo.
+    /// caducado), el cache no puede resucitarlo — salvo que sea la suscripción vieja
+    /// que el derecho guardado ya sustituyó (`isSupersededExpiredListing`): tras renovar,
+    /// esa lectura dejaba Free a quien acababa de pagar.
     static func localActive(
         entitlements: [TransactionFacts],
         lastVerified: LastVerifiedLocal?,
@@ -77,7 +118,7 @@ nonisolated enum ProSubscriptionActivationLogic {
         if entitlements.contains(where: { isActiveLocalEntitlement($0, now: now) }) {
             return true
         }
-        if entitlements.contains(where: { knownProductIDs.contains($0.productID) }) {
+        if listsAVerdictAgainst(lastVerified, in: entitlements, now: now) {
             return false
         }
         return isLastVerifiedStillActive(lastVerified, now: now)
@@ -87,7 +128,8 @@ nonisolated enum ProSubscriptionActivationLogic {
     /// que el caller mete en `entitlements`).
     ///
     /// - Hay una activa → esa.
-    /// - Apple lista uno de nuestros productos y no está vigente → nil.
+    /// - Apple lista uno de nuestros productos y no está vigente → nil, salvo la
+    ///   suscripción vieja que `previous` ya sustituyó (`isSupersededExpiredListing`).
     /// - Lista vacía → se conserva `previous` si sigue vigente (lag de StoreKit).
     /// - `previous` ya caducó → nil.
     static func updatedLastVerified(
@@ -96,10 +138,10 @@ nonisolated enum ProSubscriptionActivationLogic {
         now: Date = .now
     ) -> LastVerifiedLocal? {
         if let active = entitlements.first(where: { isActiveLocalEntitlement($0, now: now) }) {
-            return LastVerifiedLocal(productID: active.productID, expirationDate: active.expirationDate)
+            return LastVerifiedLocal(productID: active.productID, expirationDate: active.expirationDate,
+                                     originalID: active.originalID)
         }
-        let sawKnownProduct = entitlements.contains { knownProductIDs.contains($0.productID) }
-        if sawKnownProduct { return nil }
+        if listsAVerdictAgainst(previous, in: entitlements, now: now) { return nil }
         if let previous, !isLastVerifiedStillActive(previous, now: now) {
             return nil
         }

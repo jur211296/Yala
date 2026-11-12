@@ -1,6 +1,6 @@
 ---
 description: Cierra la sesión — verifica que nada quedó abierto, sincroniza el ticket, deja el parte donde se lee y libera el disco sin preguntar
-allowed-tools: Bash(git:*), Bash(gh:*), Bash(tablero:*), Bash(python3 scripts/indice_readme.py:*), Bash(python3 scripts/glosario.py:*), Bash(bash qa/scripts/disk-report.sh:*), Bash(bash qa/scripts/session-cleanup.sh:*), Bash(xcrun simctl:*), Bash(tmutil:*), Bash(pgrep:*), Read, Edit, Glob, Grep, Bash(bash ~/.claude/scripts/limpiar-cowork.sh:*)
+allowed-tools: Bash(git:*), Bash(gh:*), Bash(tablero:*), Bash(python3 scripts/indice_readme.py:*), Bash(python3 scripts/glosario.py:*), Bash(bash qa/scripts/disk-report.sh:*), Bash(bash qa/scripts/session-cleanup.sh:*), Bash(xcrun simctl:*), Bash(tmutil:*), Bash(pgrep:*), Bash(python3 scripts/memoria_al_pr.py:*), Read, Edit, Glob, Grep, Bash(bash ~/.claude/scripts/limpiar-cowork.sh:*)
 ---
 
 Cierre de sesión de Yala. Cinco bloques, en este orden. Un solo informe al final; no narres cada paso. No preguntes. Tras reportar, ejecuta y listo.
@@ -11,6 +11,25 @@ Cierre de sesión de Yala. Cinco bloques, en este orden. Un solo informe al fina
 en `~/Claude/worktrees/`, sobre una rama `encargo/<slug>`. **El árbol principal es de Jürgen.**
 
 - **El ticket va aquí** — es un fichero por ticket y no colisiona.
+- **La memoria del agente viaja en tu PR** (decisión de Jürgen del 9-nov-2026, opción (a) del
+  ADR-095 de casa). Antes del push:
+
+  ```bash
+  python3 scripts/memoria_al_pr.py llevar      # commitea en la rama SOLO las notas de esta sesión
+  ```
+
+  Lleva lo que esta sesión cambió en `.claude/agent-memory/<agente>/`, venga del worktree o del
+  checkout principal. Lo del principal lo atribuye por el transcript de la sesión; lo que escribió
+  otra sesión viva se queda donde está. Imprime la sección `## Memoria de <agente>`: va entera al
+  cuerpo del PR, con sus dudas si las hay. **Después del push**, y antes de retirar el worktree:
+
+  ```bash
+  python3 scripts/memoria_al_pr.py limpiar --pr <n>   # deja limpio el principal en esas rutas
+  ```
+
+  Solo toca una ruta del principal si `origin/<tu rama>` ya tiene esa versión, y antes deja respaldo
+  en `~/Claude/flota/memoria-apartada/Yala/`. Ante la duda no copia ni borra: lo anota y el cierre
+  sigue. **No muevas notas a mano al principal**: ese `cp` es lo que lo ensuciaba.
 - **Pushea tu rama y abre PR** con `gh pr create`, con el parte del bloque 5 en el cuerpo. Es lo
   que leerá el próximo `/abrir`: no hay otro sitio donde quede.
 - El hook `Stop` respeta el worktree desde el 1-sep (`CLAUDE_PROJECT_DIR`), pero comprueba que
@@ -21,7 +40,7 @@ en `~/Claude/worktrees/`, sobre una rama `encargo/<slug>`. **El árbol principal
 - Procesos de build vivos (`pgrep -f "xcodebuild"`), simuladores arrancados, tareas en background de esta sesión.
 - `git status --porcelain` y `git log @{u}..HEAD --oneline`.
 
-Si hay cambios sin commitear: decláralos WIP en el informe y sigue. Nunca preguntes. Nunca commitees en el cierre. El hook `Stop` ya pushea lo commiteado — no lo dupliques.
+Si hay cambios sin commitear: decláralos WIP en el informe y sigue. Nunca preguntes. Nunca commitees en el cierre, salvo el commit de memoria del bloque 0. El hook `Stop` ya pushea lo commiteado — no lo dupliques.
 
 ## 2 · Documentación mínima
 

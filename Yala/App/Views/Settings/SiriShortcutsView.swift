@@ -7,8 +7,12 @@
 
 import SwiftUI
 
+/// Ajustes › Siri y Atajos. Desde la auditoría UX 2.2 (lote 15, L15-4, opción B variante 1, decisión de Jürgen del
+/// 2026-10-18): cada acción se llama como en Atajos —el `shortTitle` de su `AppShortcut`, la misma clave, así que casan
+/// en los 16 idiomas por construcción— y al pie hay un botón relleno que abre la página de Yala en Atajos.
 struct SiriShortcutsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.settingsListIsAlongside) private var settingsListIsAlongside
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ScaledMetric(relativeTo: .largeTitle) private var siriIconSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
     @State private var expandedFAQ: SiriShortcutsFAQ?
@@ -57,9 +61,12 @@ struct SiriShortcutsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
-                    dismiss()
+            // Con la lista de Ajustes al lado, la lista es la vuelta (UX 2.2 · L16-20).
+            if !settingsListIsAlongside {
+                ToolbarItem(placement: .topBarLeading) {
+                    YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
+                        dismiss()
+                    }
                 }
             }
         }
@@ -74,7 +81,7 @@ struct SiriShortcutsView: View {
                     .font(DS.Typography.subheadline).fontWeight(.semibold)
                     .foregroundStyle(.thSecondaryText)
                     .accessibilityHidden(true)
-                Text(String(localized: "siriShortcuts.siri.title"))
+                Text(String(localized: "shortcut.siriNatural.shortTitle"))
                     .font(DS.Typography.headline)
                     .foregroundStyle(.thSecondaryText)
                     .textCase(.uppercase)
@@ -92,7 +99,7 @@ struct SiriShortcutsView: View {
 
                     VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                         HStack(spacing: DS.Spacing.sm) {
-                            Text("\"" + String(localized: "siriShortcuts.siri.phrase") + "\"")
+                            Text(Self.quoted(String(localized: "siriShortcuts.siri.phrase")))
                                 .font(DS.Typography.bodyBold)
                                 .foregroundStyle(.thPrimaryText)
 
@@ -129,17 +136,13 @@ struct SiriShortcutsView: View {
                 Divider()
                     .padding(.horizontal, DS.Spacing.lg)
 
-                // Alternative phrases
-                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    Text(String(localized: "siriShortcuts.siri.alt1"))
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(.thSecondaryText)
-                    Text(String(localized: "siriShortcuts.siri.alt2"))
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(.thSecondaryText)
-                }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.bottom, DS.Spacing.md)
+                // Las otras dos frases, en una línea: «También: «A» · «B»».
+                Text(Self.alsoSay)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.thSecondaryText)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.bottom, DS.Spacing.md)
             }
             .background(.thCard)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
@@ -170,7 +173,7 @@ struct SiriShortcutsView: View {
                 shortcutRow(
                     icon: "sparkles",
                     iconColor: .purple,
-                    name: String(localized: "siriShortcuts.shortcut.quick"),
+                    name: String(localized: "shortcut.quickExpense.shortTitle"),
                     description: String(localized: "siriShortcuts.desc.quick"),
                     phrase: String(localized: "siriShortcuts.phrase.quick")
                 )
@@ -180,7 +183,7 @@ struct SiriShortcutsView: View {
                 shortcutRow(
                     icon: "mic.badge.plus",
                     iconColor: .pink,
-                    name: String(localized: "siriShortcuts.shortcut.voice"),
+                    name: String(localized: "shortcut.voiceEntry.shortTitle"),
                     description: String(localized: "siriShortcuts.desc.voice"),
                     phrase: String(localized: "siriShortcuts.phrase.voice")
                 )
@@ -190,7 +193,7 @@ struct SiriShortcutsView: View {
                 shortcutRow(
                     icon: "photo.badge.plus",
                     iconColor: .teal,
-                    name: String(localized: "siriShortcuts.shortcut.image"),
+                    name: String(localized: "shortcut.imageEntry.shortTitle"),
                     description: String(localized: "siriShortcuts.desc.image"),
                     phrase: String(localized: "siriShortcuts.phrase.image")
                 )
@@ -199,22 +202,36 @@ struct SiriShortcutsView: View {
 
                 shortcutRow(
                     icon: "apple.logo",
-                    iconColor: .pink,
-                    name: String(localized: "siriShortcuts.shortcut.applePay"),
+                    iconColor: .gray,
+                    name: String(localized: "shortcut.applePay.shortTitle"),
                     description: String(localized: "siriShortcuts.desc.applePay"),
                     phrase: String(localized: "siriShortcuts.phrase.applePay")
+                )
+
+                // Las dos preguntas que Siri contesta sin abrir la app (#552), con el mismo molde (card bthx, opción A de
+                // Jürgen del 2026-10-21). Gratis, como los widgets: sin insignia Pro.
+                Divider().padding(.horizontal, DS.Spacing.lg)
+
+                shortcutRow(
+                    icon: "chart.bar.fill",
+                    iconColor: .orange,
+                    name: String(localized: "shortcut.spending.shortTitle"),
+                    description: String(localized: "siriShortcuts.desc.spending"),
+                    phrase: String(localized: "siriShortcuts.phrase.spending")
                 )
 
                 Divider().padding(.horizontal, DS.Spacing.lg)
 
                 shortcutRow(
-                    icon: "gearshape.fill",
-                    // A11Y-DM: gris neutro decorativo de la fila de automatización (sistema, adapta a Dark Mode)
-                    iconColor: .gray,
-                    name: String(localized: "siriShortcuts.shortcut.automation"),
-                    description: String(localized: "siriShortcuts.desc.automation"),
-                    phrase: String(localized: "siriShortcuts.phrase.automation")
+                    icon: "banknote.fill",
+                    iconColor: .green,
+                    name: String(localized: "shortcut.balance.shortTitle"),
+                    description: String(localized: "siriShortcuts.desc.balance"),
+                    phrase: String(localized: "siriShortcuts.phrase.balance")
                 )
+                // Hasta el lote 15 de la auditoría UX 2.2 había una fila «Automatización» con la frase «Registra desde
+                // automatización en Yala»: esa acción no existe en `AppShortcutsProvider`. La automatización real es la
+                // de Apple Pay, que ya tiene su fila.
             }
             .background(.thCard)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
@@ -222,7 +239,31 @@ struct SiriShortcutsView: View {
                 RoundedRectangle(cornerRadius: DS.Radius.lg)
                     .stroke(Color.primary.opacity(0.05), lineWidth: 1)
             )
+
+            // El botón del pie (L15-4): abre la página de Yala en Atajos, donde están estas acciones.
+            // Se ve el botón de Yala; el toque lo recibe el de Apple, encima y transparente (`ShortcutsPageOpener.swift`).
+            // Para VoiceOver es un solo botón sin acción propia: al activarlo toca en su centro, donde está el de Apple.
+            YalaPrimaryButton(String(localized: "siriShortcuts.openShortcuts"), icon: "square.on.square") {}
+                .allowsHitTesting(false)
+                .overlay { ShortcutsPageButtonOverlay() }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(String(localized: "siriShortcuts.openShortcuts"))
+                .accessibilityAddTraits(.isButton)
+                .accessibilityIdentifier("siri_shortcuts_open_shortcuts")
+                .padding(.top, DS.Spacing.md)
         }
+    }
+
+    /// Una frase entre las comillas del idioma («…», “…”, „…“, 「…」).
+    static func quoted(_ phrase: String) -> String {
+        String(format: String(localized: "siriShortcuts.quotedPhrase"), phrase)
+    }
+
+    /// «También: «Apunta un gasto en Yala» · «Registra con Siri en Yala»».
+    static var alsoSay: String {
+        String(format: String(localized: "siriShortcuts.siri.alsoSay"),
+               quoted(String(localized: "siriShortcuts.siri.alt1")),
+               quoted(String(localized: "siriShortcuts.siri.alt2")))
     }
 
     @ViewBuilder
@@ -247,7 +288,7 @@ struct SiriShortcutsView: View {
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.thSecondaryText)
 
-                Text("\"" + phrase + "\"")
+                Text(Self.quoted(phrase))
                     .font(DS.Typography.caption)
                     .foregroundStyle(.thSecondaryText.opacity(0.7))
                     .italic()

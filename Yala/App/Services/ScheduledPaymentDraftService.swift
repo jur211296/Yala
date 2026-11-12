@@ -19,6 +19,11 @@ struct ScheduledPaymentDraftService {
     /// Returns the number of drafts created
     @discardableResult
     static func processDuePayments(context: ModelContext) -> Int {
+        // Card p0iu (decisión 2 de Jürgen): los pagos programados se pausan mientras dura «Solo grupos» sobre Yala
+        // completo, también los de grupo (sus borradores caen en la bandeja, que no se ve). Al volver no salen de golpe
+        // (encargo S11e, 2026-10-27): `UsageModeService` salta antes lo que venció durante la pausa
+        // (`skipOccurrencesMissedDuringPause`) y luego llama aquí, que solo saca lo de hoy.
+        guard !PersonalRemindersPause.isPaused() else { return 0 }
         // Gate de quiescencia: crea InboxDrafts + `save()` del store personal; diferir durante el
         // import del restore de iCloud (idempotente: re-evalúa los vencimientos en el próximo arranque).
         guard iCloudSyncService.shared.isImportQuiescent else {
@@ -47,8 +52,10 @@ struct ScheduledPaymentDraftService {
         }
 
         var draftsCreated = 0
+        // Antes de nada, un vencimiento con varios borradores idénticos (uno por dispositivo) se queda con uno.
+        var hasChanges = mergeIdenticalPendingDrafts(context: context)
         // Antes de crear nada: los pendientes de una ocurrencia que la persona ya descartó se archivan.
-        var hasChanges = archiveDraftsOfDismissedOccurrences(context: context)
+        if archiveDraftsOfDismissedOccurrences(context: context) { hasChanges = true }
         // Y los «elige categoría» que dejó aprobar un gasto compartido planificado antes del arreglo.
         if classifyPointersOfApprovedGroupPlannedExpenses(context: context) { hasChanges = true }
 
@@ -118,6 +125,95 @@ struct ScheduledPaymentDraftService {
         return draftsCreated
     }
 
+    // MARK: - Vuelta de «Solo grupos»
+
+    /// Lleva cada pago recurrente a su primer vencimiento desde hoy, sin borrador, cuando lo que se salta venció durante
+    /// la pausa de «Solo grupos» (encargo S11e, decisión de Jürgen del 2026-10-27: al volver no aparecen de golpe; siguen
+    /// suspendidos hasta su ciclo normal). Qué pago entra lo decide `UsageModeLogic.skipsOccurrencesMissedDuringPause`.
+    ///
+    /// **Avanza `nextDueDate`, no marca fechas saltadas**: `skippedDates` viaja, y en otro dispositivo en Yala completo
+    /// `archiveDraftsOfDismissedOccurrences` archivaría los borradores que ese dispositivo sí sacó durante la pausa.
+    /// No mira `PersonalRemindersPause`: la vuelta lo llama ANTES de levantarla, para que un kill entre las dos no deje
+    /// que el siguiente arranque saque todo de golpe, y otra vez DESPUÉS de `processDuePayments`, que saca el borrador
+    /// del vencimiento de antes de la pausa: con él pendiente, lo de la pausa que venía detrás ya se puede saltar.
+    /// Devuelve cuántos pagos movió.
+    @discardableResult
+    static func skipOccurrencesMissedDuringPause(context: ModelContext, pausedSince: Date?, now: Date = .now) -> Int {
+        // Mismo gate que `processDuePayments`: no se guarda el store personal durante el import del restore de iCloud.
+        // Residual aceptado: volver justo en esa ventana deja que el siguiente arranque saque lo vencido como antes.
+        guard iCloudSyncService.shared.isImportQuiescent else {
+            SaveBreadcrumb.deferred("ScheduledPaymentDraftService.skipOccurrencesMissedDuringPause", "import not quiescent")
+            return 0
+        }
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: now)
+        let pauseStartDay = pausedSince.map { calendar.startOfDay(for: $0) }
+
+        let candidates: [ScheduledPayment]
+        let pendingPaymentIDs: Set<String>
+        do {
+            candidates = try context.fetch(FetchDescriptor<ScheduledPayment>(predicate: #Predicate<ScheduledPayment> {
+                $0.isActive && $0.isRecurring && $0.nextDueDate < today
+            }))
+            guard !candidates.isEmpty else { return 0 }
+            let pending = try context.fetch(FetchDescriptor<InboxDraft>(predicate: #Predicate<InboxDraft> {
+                $0.statusRaw == "pending" && $0.sourceScheduledPaymentID != nil
+            }))
+            pendingPaymentIDs = Set(pending.compactMap(\.sourceScheduledPaymentID))
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentDraftService: Error fetching payments missed during the pause: \(error)")
+            #endif
+            return 0
+        }
+
+        var moved = 0
+        for payment in candidates {
+            let hasPendingDraft = pendingPaymentIDs.contains(payment.id.uuidString)
+            guard UsageModeLogic.skipsOccurrencesMissedDuringPause(
+                isActive: payment.isActive, isRecurring: payment.isRecurring, hasPendingDraft: hasPendingDraft,
+                nextDueDay: calendar.startOfDay(for: payment.nextDueDate),
+                followingDueDay: hasPendingDraft ? followingDueDay(of: payment, calendar: calendar) : nil,
+                pauseStartDay: pauseStartDay, today: today
+            ) else { continue }
+            // Un pago con su serie terminada sale apagado (`advanceToNextDueDate` mira `endDate`). El tope y la fecha que
+            // no avanza cubren una recurrencia ilegible.
+            var steps = 0
+            while payment.isActive, calendar.startOfDay(for: payment.nextDueDate) < today, steps < 10_000 {
+                let before = payment.nextDueDate
+                advanceToNextDueDate(payment: payment)
+                guard payment.nextDueDate != before else { break }
+                steps += 1
+            }
+            moved += 1
+        }
+        guard moved > 0 else { return 0 }
+        do {
+            SaveBreadcrumb.willSave("ScheduledPaymentDraftService.skipOccurrencesMissedDuringPause")
+            try context.save()
+            SaveBreadcrumb.didSave("ScheduledPaymentDraftService.skipOccurrencesMissedDuringPause")
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentDraftService: Error saving payments missed during the pause: \(error)")
+            #endif
+            return 0
+        }
+        return moved
+    }
+
+    /// El vencimiento que sigue a la próxima fecha, sin tocar el pago (`nil` si la serie acaba ahí).
+    private static func followingDueDay(of payment: ScheduledPayment, calendar: Calendar) -> Date? {
+        let nextDueDate = payment.nextDueDate
+        let isActive = payment.isActive
+        defer {
+            payment.nextDueDate = nextDueDate
+            payment.isActive = isActive
+        }
+        advanceToNextDueDate(payment: payment)
+        guard payment.isActive, payment.nextDueDate != nextDueDate else { return nil }
+        return calendar.startOfDay(for: payment.nextDueDate)
+    }
+
     // MARK: - Dismissed Occurrences
 
     /// Archiva (rechaza, no borra) cada borrador PENDIENTE de un pago programado cuya ocurrencia está saltada.
@@ -158,6 +254,74 @@ struct ScheduledPaymentDraftService {
             changed = true
         }
         return changed
+    }
+
+    // MARK: - Borradores idénticos
+
+    /// Si alguna ventana enseña la Bandeja o tiene algo presentado (el borrador abierto en su hoja, «Pagar ahora» en
+    /// Planificación). Así el barrido de idénticos espera a la pasada siguiente: la persona podría tener abierto justo
+    /// el que sobra, y borrarlo debajo de una hoja la deja con un objeto muerto. Los tests lo sustituyen.
+    static var inboxIsOnScreen: @MainActor () -> Bool = {
+        SceneRegistry.shared.allNavigations.contains(where: \.isInboxSheetVisible) || ModalPresentationProbe.isAnythingPresented
+    }
+
+    /// Funde los borradores PENDIENTES idénticos de la misma ocurrencia de un pago (ticket
+    /// `scheduled-payment-identical-drafts-in-the-inbox`, reporte de Jürgen del 2026-10-26 en 2.1). Cada dispositivo
+    /// materializa el vencimiento con lo que ve (`hasExistingDraft`), y el borrador del otro llega después por el espejo
+    /// de iCloud o por el pull de la nube: con dos o tres dispositivos, la Bandeja enseñaba dos o tres borradores
+    /// iguales. Se queda el de menor `createdAt` y los demás se BORRAN (son copias, no decisiones de la persona: en
+    /// Archivados solo serían ruido). Todos los dispositivos eligen el mismo, así que los borrados que viajan no se
+    /// llevan el que se queda. Uno editado ya no es idéntico y no se toca. Idempotente: con uno por ocurrencia no hace
+    /// nada. Devuelve si cambió algo.
+    static func mergeIdenticalPendingDrafts(context: ModelContext) -> Bool {
+        guard !inboxIsOnScreen() else { return false }
+        let drafts: [InboxDraft]
+        do {
+            drafts = try context.fetch(FetchDescriptor<InboxDraft>(predicate: #Predicate<InboxDraft> {
+                $0.statusRaw == "pending" && $0.sourceScheduledPaymentID != nil
+            }))
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentDraftService: Error fetching drafts to merge: \(error)")
+            #endif
+            return false
+        }
+        guard drafts.count > 1 else { return false }
+        let payments: [ScheduledPayment]
+        do {
+            payments = try context.fetch(FetchDescriptor<ScheduledPayment>())
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentDraftService: Error fetching payments to merge drafts: \(error)")
+            #endif
+            return false
+        }
+        let paymentsByID = Dictionary(payments.map { ($0.id.uuidString, $0) }, uniquingKeysWith: { first, _ in first })
+        let calendar = Calendar.current
+
+        var candidates: [ScheduledDraftOccurrenceLogic.DuplicateCandidate] = []
+        for (index, draft) in drafts.enumerated() where ScheduledDraftOccurrenceLogic.holdsAnOccurrence(draft.sourceType) {
+            guard let paymentID = draft.sourceScheduledPaymentID, let payment = paymentsByID[paymentID] else { continue }
+            let draftDate = draft.date ?? draft.createdAt
+            let key = ScheduledDraftOccurrenceLogic.DuplicateKey(
+                paymentID: paymentID,
+                sourceTypeRaw: draft.sourceTypeRaw,
+                occurrence: ScheduledDraftOccurrenceLogic.heldOccurrence(
+                    draftDate: draftDate, schedule: payment.occurrenceSchedule, calendar: calendar),
+                day: calendar.startOfDay(for: draftDate),
+                amount: draft.amount,
+                note: draft.note,
+                accountID: draft.account?.shortcutID,
+                subcategoryID: draft.subcategory?.shortcutID,
+                tagIDs: draft.tagIDs ?? "",
+                evidence: draft.evidence,
+                groupZoneID: draft.splitGroupZoneID
+            )
+            candidates.append(.init(key: key, createdAt: draft.createdAt, index: index))
+        }
+        let losers = ScheduledDraftOccurrenceLogic.duplicatesToRemove(candidates)
+        for index in losers { context.delete(drafts[index]) }
+        return !losers.isEmpty
     }
 
     // MARK: - Approved Group Planned Expenses
@@ -334,6 +498,30 @@ struct ScheduledPaymentDraftService {
         )
     }
 
+    /// La cuenta del borrador (tarjeta con varias divisas, entrega 3, decisión D10): la de la tarjeta del pago en la divisa
+    /// del pago (`AccountCardLogic.route`). Hoy el editor estampa la divisa de la cuenta, así que es la misma cuenta; cuenta
+    /// cuando la cuenta del pago se vinculó después como principal o línea de una tarjeta. Un gasto de grupo recurrente
+    /// conserva la suya (su divisa es la del grupo). Sin divisa o si el fetch falla, la cuenta del pago.
+    static func draftAccount(for payment: ScheduledPayment, context: ModelContext) -> Account? {
+        let currency = payment.currencyCode
+        guard let account = payment.account, !payment.isGroupPayment, !currency.isEmpty else { return payment.account }
+        do {
+            let all = try context.fetch(FetchDescriptor<Account>())
+            // Sin cuenta de la tarjeta en esa divisa (p. ej. la línea del pago se archivó), la del pago: saltar a la principal
+            // cambiaría la divisa del borrador sin convertir (review del 2026-10-18).
+            guard let route = AccountCardLogic.route(
+                chosenID: account.shortcutID, currencyCode: currency, nodes: all.map { AccountLineNode($0) }),
+                  !route.isFallback
+            else { return account }
+            return all.first { $0.shortcutID == route.accountID } ?? account
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentDraftService: Error: fetch de cuentas para la tarjeta: \(error)")
+            #endif
+            return account
+        }
+    }
+
     /// Create an InboxDraft from a ScheduledPayment
     private static func createDraft(from payment: ScheduledPayment, context: ModelContext) -> InboxDraft {
         // Determine source type: gasto de grupo recurrente > suscripción > recurrente normal.
@@ -364,7 +552,7 @@ struct ScheduledPaymentDraftService {
             note: payment.name,
             amount: signedAmount,
             date: payment.nextDueDate,
-            account: payment.account,
+            account: draftAccount(for: payment, context: context),
             subcategory: payment.subcategory,
             tags: draftTags,
             sourceType: sourceType,
@@ -533,6 +721,16 @@ struct ScheduledPaymentDraftService {
         // processDuePayments. The advance happens exactly once when the draft is
         // approved (handleDraftApproved). Advancing here too would double-advance
         // and skip an occurrence for an early-paid payment.
+        return draft
+    }
+
+    /// Un borrador para UNA fecha concreta del pago, con esa fecha («Ya lo pagué → Apuntarlo ahora» y «Pagar ahora»,
+    /// UX 2.2 · L10-9/L10-11). Lo inserta sin guardar: lo guarda quien lo apruebe. Como `createAdvancedDraft`, no
+    /// avanza la próxima fecha: eso lo hace la aprobación (`handleDraftApproved`), una sola vez.
+    static func createDraftForOccurrence(from payment: ScheduledPayment, date: Date, context: ModelContext) -> InboxDraft {
+        let draft = createDraft(from: payment, context: context)
+        draft.date = Calendar.current.startOfDay(for: date)
+        context.insert(draft)
         return draft
     }
 

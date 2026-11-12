@@ -2,7 +2,7 @@
 //  CollapsibleSectionHeader.swift
 //  Yala
 //
-//  Header colapsable estilo Liquid Glass con accessory `+`/`-`. Drift
+//  Header colapsable estilo Liquid Glass con flecha ▾/▴. Drift
 //  tipográfico (Panel `.title` vs Stats `.subheadlineEmphasized`) gestionado
 //  vía params opcionales.
 //
@@ -49,7 +49,9 @@ struct CollapsibleSectionHeader: View {
                     }
                 }
                 Spacer()
-                Image(systemName: isExpanded ? "minus" : "plus")
+                // Flecha y no «+/−» (UX 2.2 · L3-9): el «+» se leía como «agregar» y en «Tus finanzas» solo
+                // desplegaba. Mismo componente en Estadísticas, así que cambia en los dos sitios a la vez.
+                Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                     .font(DS.Typography.label)
                     .fontWeight(.semibold)
                     .foregroundStyle(Color.primary)

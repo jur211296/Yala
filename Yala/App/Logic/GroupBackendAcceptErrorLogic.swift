@@ -63,8 +63,10 @@ nonisolated enum GroupBackendAcceptErrorLogic {
         case .notAuthorized:    return .notAuthorized
         case .transient:        return .transient
         case .channelDisabled:  return .channelDisabled
+        // Los tres de `set_member_role` (g22_01), por exhaustividad: unirse no los devuelve.
         case .badInput, .groupExists, .invalidGroupID, .memberNotFound,
-             .cannotRemoveOwner, .ownerCannotLeave, .permanentRejected, .decoding:
+             .cannotRemoveOwner, .ownerCannotLeave, .permanentRejected, .decoding,
+             .cannotChangeOwnerRole, .lastAdmin, .memberNotEligible:
             return .generic
         }
     }

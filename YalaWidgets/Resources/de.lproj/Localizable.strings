@@ -6,65 +6,65 @@
 */
 
 // MARK: - Gallery (widget gallery names and descriptions)
-"widget.gallery.scheduledPayments" = "Anstehende Zahlungen";
-"widget.gallery.scheduledPayments.desc" = "Ihre anstehenden Zahlungen und Abonnements";
+"widget.gallery.scheduledPayments" = "Geplante Zahlungen";
+"widget.gallery.scheduledPayments.desc" = "Deine nächsten Zahlungen und Abos. Tippe, um Geplante Zahlungen zu sehen.";
 "widget.gallery.quickManual" = "Neuer Eintrag";
-"widget.gallery.quickManual.desc" = "Erfassen Sie eine Ausgabe oder Einnahme manuell";
-"widget.gallery.quickVoice" = "Spracheintrag";
-"widget.gallery.quickVoice.desc" = "Diktieren Sie Ihre Ausgabe oder Einnahme";
-"widget.gallery.quickImage" = "Beleg scannen";
-"widget.gallery.quickImage.desc" = "Erfassen Sie aus einem Foto oder Beleg";
-"widget.gallery.cashFlow" = "Cashflow";
-"widget.gallery.cashFlow.desc" = "Ihr Netto-Cashflow";
-"widget.gallery.balance" = "Kontostand";
-"widget.gallery.balance.desc" = "Ihr Gesamtguthaben mit Trend";
+"widget.gallery.quickManual.desc" = "Erfasse eine Ausgabe oder Einnahme von Hand. Tippe, um Neuer Eintrag zu öffnen.";
+"widget.gallery.quickVoice" = "Per Sprache aufzeichnen";
+"widget.gallery.quickVoice.desc" = "Diktiere deine Ausgabe oder Einnahme. Tippe, um mit dem Diktieren zu beginnen.";
+"widget.gallery.quickImage" = "Foto oder Datei";
+"widget.gallery.quickImage.desc" = "Erfasse aus einem Foto oder einer Datei. Tippe, um sie auszuwählen.";
+"widget.gallery.cashFlow" = "Einnahmen und Ausgaben";
+"widget.gallery.cashFlow.desc" = "Was im Zeitraum hereinkam und hinausging. Tippe, um es in Trends zu sehen.";
+"widget.gallery.balance" = "Verfügbar";
+"widget.gallery.balance.desc" = "Dein verfügbares Geld und sein Verlauf. Tippe, um das Panel zu sehen.";
 "widget.gallery.budgets" = "Budgets";
-"widget.gallery.budgets.desc" = "Ihr Budgetfortschritt";
+"widget.gallery.budgets.desc" = "Wie es um deine Budgets steht. Tippe, um Budgets zu sehen.";
 "widget.gallery.latestRecords" = "Letzte Einträge";
-"widget.gallery.latestRecords.desc" = "Ihre neuesten Transaktionen";
+"widget.gallery.latestRecords.desc" = "Deine neuesten Einträge. Tippe, um Einträge zu sehen.";
 "widget.gallery.expense" = "Ausgaben";
-"widget.gallery.expense.desc" = "Ihre Gesamtausgaben für den Zeitraum";
-"widget.gallery.categoriesPie" = "Kategorien (Kreis)";
-"widget.gallery.categoriesPie.desc" = "Ausgabenverteilung nach Kategorie";
-"widget.gallery.subcategoriesPie" = "Unterkategorien (Kreis)";
-"widget.gallery.subcategoriesPie.desc" = "Ausgabenverteilung nach Unterkategorie";
-"widget.gallery.topCategories" = "Top-Kategorien";
-"widget.gallery.topCategories.desc" = "Ihre Kategorien mit den meisten Ausgaben";
-"widget.gallery.topSubcategories" = "Top-Unterkategorien";
-"widget.gallery.topSubcategories.desc" = "Ihre Unterkategorien mit den meisten Ausgaben";
+"widget.gallery.expense.desc" = "Deine Ausgaben im Zeitraum. Tippe, um den Überblick in Statistiken zu sehen.";
+"widget.gallery.categoriesPie" = "Kategorien im Kreis";
+"widget.gallery.categoriesPie.desc" = "Für welche Kategorien dein Geld draufgeht. Tippe, um Verteilung zu sehen.";
+"widget.gallery.subcategoriesPie" = "Unterkategorien im Kreis";
+"widget.gallery.subcategoriesPie.desc" = "Für welche Unterkategorien dein Geld draufgeht. Tippe, um Verteilung nach Unterkategorie zu sehen.";
+"widget.gallery.topCategories" = "Kategorien mit den meisten Ausgaben";
+"widget.gallery.topCategories.desc" = "Deine Kategorien mit den meisten Ausgaben. Tippe, um Verteilung zu sehen.";
+"widget.gallery.topSubcategories" = "Unterkategorien mit den meisten Ausgaben";
+"widget.gallery.topSubcategories.desc" = "Deine Unterkategorien mit den meisten Ausgaben. Tippe, um Verteilung nach Unterkategorie zu sehen.";
 
 // MARK: - Gallery (Lock Screen accessory widgets)
-"widget.gallery.accessoryBalance" = "Kontostand";
-"widget.gallery.accessoryBalance.desc" = "Ihr Kontostand auf dem Sperrbildschirm";
+"widget.gallery.accessoryBalance" = "Verfügbar";
+"widget.gallery.accessoryBalance.desc" = "Dein verfügbares Geld auf dem Sperrbildschirm. Tippe, um das Panel zu sehen.";
 "widget.gallery.accessoryExpense" = "Ausgaben";
-"widget.gallery.accessoryExpense.desc" = "Ihre Ausgaben auf dem Sperrbildschirm";
+"widget.gallery.accessoryExpense.desc" = "Deine Ausgaben auf dem Sperrbildschirm. Tippe, um den Überblick in Statistiken zu sehen.";
 "widget.gallery.accessoryBudget" = "Budget";
-"widget.gallery.accessoryBudget.desc" = "Ihr meistgenutztes Budget";
+"widget.gallery.accessoryBudget.desc" = "Dein am stärksten genutztes Budget. Tippe, um Budgets zu sehen.";
 "widget.gallery.accessoryPayment" = "Nächste Zahlung";
-"widget.gallery.accessoryPayment.desc" = "Ihre nächste geplante Zahlung";
+"widget.gallery.accessoryPayment.desc" = "Deine nächste geplante Zahlung. Tippe, um Geplante Zahlungen zu sehen.";
 
 // MARK: - Intent titles and descriptions
-"widget.intent.cashFlow.title" = "Cashflow";
-"widget.intent.cashFlow.desc" = "Zeigt Ihren Netto-Cashflow";
-"widget.intent.balance.title" = "Kontostand";
-"widget.intent.balance.desc" = "Zeigt Ihren Gesamtkontostand";
+"widget.intent.cashFlow.title" = "Einnahmen und Ausgaben";
+"widget.intent.cashFlow.desc" = "Zeigt, was im Zeitraum hereinkam und hinausging";
+"widget.intent.balance.title" = "Verfügbar";
+"widget.intent.balance.desc" = "Zeigt dein verfügbares Geld";
 "widget.intent.expense.title" = "Ausgaben";
 "widget.intent.expense.desc" = "Zeigt Ihre Gesamtausgaben";
-"widget.intent.categoriesPie.title" = "Kategorien (Kreis)";
+"widget.intent.categoriesPie.title" = "Kategorien im Kreis";
 "widget.intent.categoriesPie.desc" = "Ausgabenverteilung nach Kategorie";
-"widget.intent.subcategoriesPie.title" = "Unterkategorien (Kreis)";
+"widget.intent.subcategoriesPie.title" = "Unterkategorien im Kreis";
 "widget.intent.subcategoriesPie.desc" = "Ausgabenverteilung nach Unterkategorie";
-"widget.intent.topCategories.title" = "Top-Kategorien";
+"widget.intent.topCategories.title" = "Kategorien mit den meisten Ausgaben";
 "widget.intent.topCategories.desc" = "Zeigt Ihre Kategorien mit den meisten Ausgaben";
-"widget.intent.topSubcategories.title" = "Top-Unterkategorien";
+"widget.intent.topSubcategories.title" = "Unterkategorien mit den meisten Ausgaben";
 "widget.intent.topSubcategories.desc" = "Zeigt Ihre Unterkategorien mit den meisten Ausgaben";
 "widget.intent.budgets.title" = "Budgets";
 "widget.intent.budgets.desc" = "Zeigt Ihren Budgetfortschritt";
-"widget.intent.scheduledPayments.title" = "Anstehende Zahlungen";
+"widget.intent.scheduledPayments.title" = "Geplante Zahlungen";
 "widget.intent.scheduledPayments.desc" = "Zeigt Ihre anstehenden geplanten Zahlungen";
 "widget.intent.latestRecords.title" = "Letzte Einträge";
-"widget.intent.latestRecords.desc" = "Zeigt Ihre neuesten Transaktionen";
-"widget.intent.accessoryBalance.title" = "Kontostand";
+"widget.intent.latestRecords.desc" = "Zeigt deine neuesten Einträge";
+"widget.intent.accessoryBalance.title" = "Verfügbar";
 "widget.intent.accessoryBalance.desc" = "Kontostand des Zeitraums";
 "widget.intent.accessoryExpense.title" = "Ausgaben";
 "widget.intent.accessoryExpense.desc" = "Ausgaben des Zeitraums";
@@ -72,7 +72,7 @@
 "widget.intent.accessoryBudget.desc" = "Meistgenutztes Budget";
 "widget.intent.accessoryPayment.title" = "Nächste Zahlung";
 "widget.intent.accessoryPayment.desc" = "Nächste geplante Zahlung";
-"widget.intent.quickEntry.title" = "Schneller Eintrag";
+"widget.intent.quickEntry.title" = "Neuer Eintrag";
 "widget.intent.quickEntry.desc" = "Schnellzugriff-Widgets zum Hinzufügen von Einträgen konfigurieren";
 
 // MARK: - Selection Mode
@@ -99,20 +99,22 @@
 "widget.ui.expenses" = "Ausgaben";
 "widget.ui.balance" = "Kontostand";
 "widget.ui.netFlow" = "Netto-Fluss";
-"widget.ui.cashFlow" = "Cashflow";
+"widget.ui.spent" = "Ausgegeben";
+"widget.ui.cashFlow" = "Einnahmen und Ausgaben";
 "widget.ui.total" = "Gesamt";
 "widget.ui.ofLimit" = "von %@";
-"widget.ui.newRecord" = "Schnelleintrag";
-"widget.ui.voiceRecord" = "Spracheintrag";
+"widget.ui.newRecord" = "Neuer Eintrag";
+"widget.ui.voiceRecord" = "Per Sprache aufzeichnen";
 "widget.ui.scanReceipt" = "Foto oder Datei";
-"widget.ui.upcomingPayments" = "Anstehende Zahlungen";
+"widget.ui.upcomingPayments" = "Geplante Zahlungen";
 "widget.ui.budgets" = "Budgets";
 "widget.ui.latestRecords" = "Letzte Einträge";
 "widget.ui.categories" = "Kategorien";
 "widget.ui.subcategories" = "Unterkategorien";
-"widget.ui.topCategories" = "Top-Kategorien";
-"widget.ui.topSubcategories" = "Top-Unterkategorien";
+"widget.ui.topCategories" = "Kategorien mit den meisten Ausgaben";
+"widget.ui.topSubcategories" = "Unterkategorien mit den meisten Ausgaben";
 "widget.ui.noNote" = "Keine Notiz";
+"widget.ui.uncategorized" = "Ohne Kategorie";
 
 // MARK: - Date labels
 "widget.ui.overdue" = "Überfällig";
@@ -137,17 +139,19 @@
 "widget.paymentCategory.subscription" = "Abonnements";
 
 // MARK: - Control Widgets
-"widget.control.voiceExpense" = "Spracheintrag";
+"widget.control.voiceExpense" = "Per Sprache aufzeichnen";
 "widget.control.voiceExpense.desc" = "Diktieren Sie Ihren Eintrag an Yala";
 "widget.control.photoExpense" = "Foto oder Datei";
 "widget.control.photoExpense.desc" = "Mit Foto oder Datei in Yala erfassen";
+"widget.control.newRecord" = "Neuer Eintrag";
+"widget.control.newRecord.desc" = "Erfasse eine Ausgabe oder Einnahme von Hand";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "widget.ui.others" = "Sonstige";
 
 /* MARK: iPad — widget extragrande «Resumen del mes» */
 "widget.gallery.monthSummary" = "Monatsübersicht";
-"widget.gallery.monthSummary.desc" = "Kontostand, Ausgaben nach Kategorie und Budgets des Monats";
+"widget.gallery.monthSummary.desc" = "Dein Saldo, Ausgaben nach Kategorie und Budgets des Monats. Tippe, um das Panel zu sehen.";
 "widget.ui.monthSummary" = "Monatsübersicht";
 
 /* Widget en una sesión solo grupos: no hay finanzas personales que mostrar */
@@ -155,3 +159,66 @@
 
 /* Widget solo grupos: llamada a activar Yala completo (mismo texto que groups.activate.title) */
 "widget.groupsOnly.cta" = "Volles Yala aktivieren";
+
+/* UX 2.2 · lote decidido 08 — estados vacíos de los widgets (L15-2) */
+"widget.ui.available" = "Verfügbar";
+"widget.empty.openYalaBalance" = "Öffne Yala, um deinen Saldo zu sehen";
+"widget.empty.openYala" = "Öffne Yala, um deine Daten zu sehen";
+"widget.empty.openYalaShort" = "Öffne Yala";
+"widget.empty.noPaymentsYet" = "Du hast noch keine geplanten Zahlungen";
+"widget.empty.noBudgetsYet" = "Du hast noch keine Budgets";
+"widget.empty.createOne" = "Tippe, um eins zu erstellen";
+
+/* Widgets extragrandes verticales (iPhone, iOS 27) */
+"widget.ui.net" = "Netto";
+"widget.ui.byAccount" = "Nach Konto";
+"widget.ui.leftToPayThisMonth" = "Diesen Monat noch zu zahlen";
+
+/* Rediseño de los widgets 2.2 (S35f, docs/widgets/AUDITORIA-WIDGETS-2-2.md) */
+"widget.budgets.remaining" = "Noch übrig";
+"widget.budgets.over" = "Überschritten um";
+"widget.budgets.spentOfLimit" = "%1$@ von %2$@";
+"widget.freshness.yesterday" = "Gestern aktualisiert";
+"widget.freshness.onDate" = "Aktualisiert am %@";
+"widget.balance.change.a11y" = "Saldoänderung, %2$@: %1$@";
+"widget.expense.vsPrevious" = "ggü. %@";
+"widget.expense.previousToDate" = "Bis zu diesem Tag im %1$@: %2$@";
+"widget.expense.previousToDate.year" = "Im Jahr %1$@ bis zu diesem Tag: %2$@";
+"widget.expense.perDay" = "%@ pro Tag";
+"widget.expense.comparison.a11y" = "%1$@ gegenüber %2$@ bis zu diesem Tag";
+"widget.budgets.exceeded.one" = "1 überschritten";
+"widget.budgets.exceeded.other" = "%d überschritten";
+"widget.payments.inDays" = "In %d Tagen";
+"widget.payments.leftShort" = "Noch %@";
+"widget.payments.markPaid" = "Bezahlt";
+"widget.payments.markReceived" = "Erhalten";
+"widget.payments.paid" = "Bezahlt";
+"widget.payments.received" = "Erhalten";
+"widget.payments.markPaid.intentTitle" = "Zahlung als bezahlt markieren";
+"widget.payments.markPaid.intentDescription" = "Markiert die heutige Zahlung als bezahlt, ohne Yala zu öffnen.";
+"widget.payments.markPaid.paramPayment" = "Zahlung";
+"widget.payments.markPaid.paramDate" = "Datum";
+"widget.ui.yesterday" = "Gestern";
+"widget.records.emptyHint" = "Tippe auf +, um den ersten zu erfassen";
+"widget.quick.title" = "Erfassen";
+"widget.quick.manual" = "Manuell";
+"widget.quick.voice" = "Per Sprache";
+"widget.quick.photo" = "Per Foto";
+
+/* Rediseño de los widgets 2.2, tanda 2 (S35f1): comparación del neto en Entradas y salidas */
+"widget.flow.previousToDate" = "Netto bis zu diesem Tag im %1$@: %2$@";
+"widget.flow.previousToDate.year" = "Netto im Jahr %1$@ bis zu diesem Tag: %2$@";
+"widget.flow.comparison.a11y" = "Unterschied zu %2$@ bis zu diesem Tag: %1$@";
+
+/* Widget de Grupos 2.2 (S35f3): debes / te deben, como la lista de Grupos */
+"widget.gallery.groups" = "Gruppen";
+"widget.gallery.groups.desc" = "Was du schuldest und was dir geschuldet wird, in deinen Gruppen. Tippe auf eine Gruppe, um sie zu öffnen.";
+"widget.groups.iOwe" = "Du schuldest";
+"widget.groups.owedToMe" = "Dir geschuldet";
+"widget.groups.allSettled" = "Alles ausgeglichen!";
+"widget.groups.rowSettled" = "Ausgeglichen";
+"widget.empty.noGroupsYet" = "Noch keine Gruppen";
+"widget.empty.openYalaGroups" = "Öffne Yala, um deine Gruppen zu sehen";
+"widget.groups.archivedOwedLine" = "+ %@, die man dir in archivierten Gruppen schuldet";
+"widget.groups.archivedOweLine" = "+ %@, die du in archivierten Gruppen schuldest";
+"widget.ui.receivable" = "Ausstehend";

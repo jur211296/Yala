@@ -36,7 +36,8 @@ nonisolated enum GroupsOrganizerFlowLogic {
         /// Con sesión y sin consent → `GroupsConsentView`, reusada LITERAL (un solo parámetro, sin ramas:
         /// epoch y `textVersion` intactos, append-only).
         case presentConsent
-        /// Falta el alta: la pantalla mínima de nombre a mostrar, que es donde se escribe el trío.
+        /// Falta el alta: desde UX 2.2 · L12-12 el formulario del primer grupo con «Tu nombre en el grupo», que es donde
+        /// se escribe el trío (sustituyó a la pantalla mínima del nombre).
         case presentName
         /// Todo listo → el formulario de grupo, directo.
         case presentGroupForm

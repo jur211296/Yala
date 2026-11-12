@@ -19,8 +19,12 @@ struct BudgetEditorView: View {
     @State private var viewModel = BudgetEditorViewModel()
 
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.openURL) private var openURL
 
     let budget: Budget?
+    /// El tipo con el que se abre un presupuesto NUEVO: el de la pestaña que se estaba mirando (UX 2.2 · L9-3). Antes el +
+    /// abría siempre en Mensual, también desde Anual o Único.
+    var initialPeriodType: BudgetPeriodType? = nil
 
     // Error state
     @State private var showSaveError = false
@@ -48,10 +52,18 @@ struct BudgetEditorView: View {
     @State private var selectedTags: Set<PersistentIdentifier> = []
     @State private var selectedNeeds: Set<SubcategoryNeed> = []
     @State private var includeSharedExpenses: Bool = true
+    /// «Contar mi parte de los gastos de grupo» solo sale con algún grupo (UX 2.2 · L9-13).
+    @State private var hasGroups = false
+
+    // Widget (UX 2.2 · L9-12)
+    @State private var showInWidget = false
 
     // Sheet states
     @State private var showCategoriesSheet = false
     @State private var showDeleteConfirmation = false
+    /// El nombre del presupuesto, copiado al tocar «Eliminar». El título de la alerta se vuelve a evaluar al cerrarse,
+    /// con el presupuesto ya borrado y el editor aún presentado: leerlo ahí aborta en iOS 27.x (card 1w89).
+    @State private var deleteDialogBudgetName = ""
     @State private var showCustomThreshold = false
     @State private var customThresholdText: String = ""
 
@@ -67,13 +79,15 @@ struct BudgetEditorView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
-                    // Contextual guide for new users creating first budget
-                    if budget == nil {
-                        ContextualGuideBanner.budgetEditor()
-                    }
+                    // Sin banner «¿Qué es un presupuesto?» (UX 2.2 · L5-6, opción A): Planificación ya lo explica y el
+                    // editor trae sus propias ayudas por sección; con los dos, la misma idea salía dos veces y el
+                    // formulario bajaba.
 
                     // Basic Information Section
                     basicInfoSection
+
+                    // Qué gastos cuenta, bajo el límite (UX 2.2 · L9-2): es lo que más cambia el número, y estaba al final.
+                    whatCountsSection
 
                     // Period Section
                     periodSection
@@ -86,6 +100,11 @@ struct BudgetEditorView: View {
                     // Active Toggle
                     activeToggle
 
+                    // Mostrar en el widget (UX 2.2 · L9-12). Solo activos: el Panel no enseña los inactivos.
+                    if isActive {
+                        showInWidgetToggle
+                    }
+
                     // Alert Notifications Section
                     alertsSection
 
@@ -93,8 +112,11 @@ struct BudgetEditorView: View {
                     budgetFilterBanner
                     filtersSection
 
-                    // Shared expenses toggle
-                    sharedExpensesToggle
+                    // Shared expenses toggle (solo con grupos: UX 2.2 · L9-13). Apagado se enseña igual: sigue
+                    // excluyendo movimientos de grupo y tiene que poder verse.
+                    if hasGroups || !includeSharedExpenses {
+                        sharedExpensesToggle
+                    }
 
                     // Delete Button (only for existing budgets)
                     if budget != nil {
@@ -107,8 +129,9 @@ struct BudgetEditorView: View {
             .scrollViewGlassEdges()
             .scrollDismissesKeyboard(.interactively)
             .yalaScreenBackground(.subtle)
+            // Nombra el presupuesto y dice que los gastos se quedan (UX 2.2 · L9-14).
             .alert(
-                NSLocalizedString("budgets.delete.confirm.title", comment: ""),
+                L10n.UXL9.deleteTitle(deleteDialogBudgetName),
                 isPresented: $showDeleteConfirmation
             ) {
                 Button(NSLocalizedString("action.cancel", comment: ""), role: .cancel) {}
@@ -144,6 +167,7 @@ struct BudgetEditorView: View {
             .onAppear {
                 viewModel.setContext(modelContext, deletionService: deletionService)
                 loadBudgetData()
+                hasGroups = countVisibleGroups() > 0
                 // Enable the account→currency derivation only after the load-induced
                 // selectedAccounts change has been delivered, so it never runs during load.
                 Task { @MainActor in
@@ -163,6 +187,7 @@ struct BudgetEditorView: View {
                 guard didLoadInitialData else { return }
                 updateCurrencyFromAccounts(newAccounts)
             }
+            .modifier(BudgetAlertNotificationPrimer(alertEnabled: alertEnabled, isLoaded: didLoadInitialData))
             .onChange(of: viewModel.showSaveError) { _, new in if new { showSaveError = true } }
             .alert(
                 L10n.Common.error,
@@ -203,7 +228,8 @@ struct BudgetEditorView: View {
                 HStack {
                     Spacer()
                     VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
-                        Text(currencyCode)
+                        // El importe lleva rótulo (UX 2.2 · L9-2): sin él no se sabía que era el límite.
+                        Text("\(L10n.UXL9.limitLabel) · \(currencyCode)")
                             .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
                         TextField("0.00", text: $limitAmount)
@@ -245,7 +271,19 @@ struct BudgetEditorView: View {
                 Text(NSLocalizedString("budgets.period.unique", comment: "")).tag(BudgetPeriodType.unique)
             }
             .pickerStyle(.segmented)
-            .padding()
+            .accessibilityIdentifier("budget_editor_period_picker")
+            .padding(.horizontal)
+            .padding(.top)
+
+            // Qué hace cada tipo, sin tocarlo (UX 2.2 · L9-3): «Único» solo se descubría al elegirlo.
+            Text(L10n.UXL9.typeHint(selectedPeriodType))
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal)
+                .padding(.top, DS.Spacing.sm)
+                .padding(.bottom)
+                .accessibilityIdentifier("budget_period_type_hint")
         }
     }
 
@@ -306,10 +344,87 @@ struct BudgetEditorView: View {
 
     private var activeToggle: some View {
         Toggle(isOn: $isActive) {
-            Text(NSLocalizedString("common.active", comment: ""))
+            Text(L10n.Budgets.state(isActive: true))
                 .font(DS.Typography.body)
         }
 
+    }
+
+    // MARK: - Show in Widget (UX 2.2 · L9-12)
+
+    private var showInWidgetToggle: some View {
+        Toggle(isOn: $showInWidget) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(L10n.UXL9.showInWidget)
+                    .font(DS.Typography.body)
+                Text(L10n.UXL9.showInWidgetHint)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .accessibilityIdentifier("budget_show_in_widget_toggle")
+    }
+
+    // MARK: - What Counts (UX 2.2 · L9-2)
+
+    /// «Todos mis gastos» relleno por defecto, «Elegir categorías» al lado. Elegir abre el selector de siempre, que baja a
+    /// subcategorías. El resto de filtros (cuentas, etiquetas, naturaleza) sigue abajo.
+    private var whatCountsSection: some View {
+        SectionBox(title: L10n.UXL9.whatCountsTitle) {
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                FlowLayout(spacing: DS.Spacing.sm) {
+                    whatCountsChip(
+                        L10n.UXL9.allExpensesChip,
+                        icon: "tray.full",
+                        isSelected: selectedSubcategories.isEmpty,
+                        identifier: "budget_what_counts_all"
+                    ) {
+                        selectedSubcategories = []
+                    }
+                    whatCountsChip(
+                        selectedSubcategories.isEmpty ? L10n.UXL9.chooseCategories : selectedCategoriesText,
+                        icon: "tag",
+                        isSelected: !selectedSubcategories.isEmpty,
+                        identifier: "budget_what_counts_choose"
+                    ) {
+                        showCategoriesSheet = true
+                    }
+                }
+                Text(selectedSubcategories.isEmpty ? L10n.UXL9.whatCountsAllHint : L10n.UXL9.whatCountsSomeHint)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding()
+        }
+    }
+
+    /// Lo elegido va relleno de color, no solo con contorno (criterios UX/UI permanentes de Jürgen).
+    private func whatCountsChip(
+        _ title: String,
+        icon: String,
+        isSelected: Bool,
+        identifier: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: DS.Spacing.xs) {
+                Image(systemName: icon)
+                    .font(DS.Typography.caption)
+                    .accessibilityHidden(true)
+                Text(title)
+                    .font(DS.Typography.subheadline)
+                    .lineLimit(1)
+            }
+            .foregroundStyle(isSelected ? theme.onAccent : .primary)
+            .padding(.horizontal, DS.Spacing.md)
+            .padding(.vertical, DS.Spacing.sm)
+            .background(Capsule().fill(isSelected ? theme.accent : Color.clear))
+            .glassEffect(isSelected ? .clear : .regular.interactive(), in: .capsule)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(identifier)
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }
 
     // MARK: - Shared Expenses Toggle
@@ -343,16 +458,32 @@ struct BudgetEditorView: View {
                 .accessibilityIdentifier("budget_alert_toggle")
                 .padding()
 
-                // Hint when global notifications are disabled
+                // Con el general apagado no llega nada (UX 2.2 · L9-4): se dice y se arregla aquí mismo, sin ir a Perfil.
                 if !appPreferences.budgetAlertsEnabled {
-                    HStack(spacing: DS.Spacing.xs) {
-                        Image(systemName: "info.circle")
-                            .font(DS.Typography.caption)
-                            .accessibilityHidden(true)
-                        Text(L10n.Budgets.alertsGlobalDisabledHint)
-                            .font(DS.Typography.caption)
+                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                        HStack(alignment: .top, spacing: DS.Spacing.xs) {
+                            Image(systemName: "bell.slash")
+                                .font(DS.Typography.caption)
+                                .accessibilityHidden(true)
+                            Text(L10n.UXL9.alertsOffHint)
+                                .font(DS.Typography.caption)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .foregroundStyle(.secondary)
+
+                        Button {
+                            activateGlobalBudgetAlerts()
+                        } label: {
+                            Text(L10n.UXL9.activateAlerts)
+                                .font(DS.Typography.labelSmall)
+                                .foregroundStyle(.thOnAccent)
+                                .padding(.horizontal, DS.Spacing.md)
+                                .padding(.vertical, DS.Spacing.sm)
+                                .background(Capsule().fill(theme.accent))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("budget_alerts_activate_global")
                     }
-                    .foregroundStyle(.secondary)
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.bottom, DS.Spacing.md)
                 }
@@ -386,7 +517,7 @@ struct BudgetEditorView: View {
                                     Text(NSLocalizedString("budgets.alerts.custom", comment: ""))
                                         .font(DS.Typography.subheadline)
                                 }
-                                .foregroundStyle(showCustomThreshold ? .white : .primary)
+                                .foregroundStyle(showCustomThreshold ? theme.onAccent : .primary)
                                 .padding(.horizontal, DS.Spacing.md)
                                 .padding(.vertical, DS.Spacing.sm)
                                 .background(
@@ -421,7 +552,7 @@ struct BudgetEditorView: View {
                                 } label: {
                                     Text(NSLocalizedString("budgets.alerts.addThreshold", comment: ""))
                                         .font(DS.Typography.subheadline)
-                                        .foregroundStyle(.white)
+                                        .foregroundStyle(.thOnAccent)
                                         .padding(.horizontal, DS.Spacing.md)
                                         .padding(.vertical, DS.Spacing.sm)
                                         .background(
@@ -458,7 +589,7 @@ struct BudgetEditorView: View {
         } label: {
             Text("\(threshold)%")
                 .font(DS.Typography.subheadline)
-                .foregroundStyle(isSelected ? .white : .primary)
+                .foregroundStyle(isSelected ? theme.onAccent : .primary)
                 .padding(.horizontal, DS.Spacing.md)
                 .padding(.vertical, DS.Spacing.sm)
                 .background(
@@ -507,7 +638,7 @@ struct BudgetEditorView: View {
             icon: "creditcard",
             title: NSLocalizedString("settings.accounts", comment: ""),
             status: selectedAccountsText,
-            items: viewModel.activeAccounts,
+            items: viewModel.budgetAccounts(selected: selectedAccounts),
             showEmptyPlaceholder: false
         ) { account in
             accountChip(account)
@@ -543,10 +674,11 @@ struct BudgetEditorView: View {
         if selectedAccounts.isEmpty {
             return NSLocalizedString("filters.all", comment: "")
         }
-        if selectedAccounts.count == viewModel.activeAccounts.count {
+        let offered = viewModel.budgetAccounts(selected: selectedAccounts)
+        if selectedAccounts.count == offered.count {
             return NSLocalizedString("filters.all", comment: "")
         }
-        return "\(selectedAccounts.count)/\(viewModel.activeAccounts.count)"
+        return "\(selectedAccounts.count)/\(offered.count)"
     }
 
     // MARK: - Categories Content
@@ -610,7 +742,7 @@ struct BudgetEditorView: View {
 
                 Text(tag.name)
                     .font(DS.Typography.subheadline)
-                    .foregroundStyle(isSelected ? .white : .primary)
+                    .foregroundStyle(isSelected ? theme.onAccent : .primary)
                     .lineLimit(1)
             }
             .padding(.horizontal, DS.Spacing.md)
@@ -671,7 +803,7 @@ struct BudgetEditorView: View {
             HStack(spacing: DS.Spacing.xs) {
                 Text(need.displayName)
                     .font(DS.Typography.subheadline)
-                    .foregroundStyle(isSelected ? .white : .primary)
+                    .foregroundStyle(isSelected ? theme.onAccent : .primary)
                     .lineLimit(1)
             }
             .padding(.horizontal, DS.Spacing.md)
@@ -695,6 +827,7 @@ struct BudgetEditorView: View {
 
     private var deleteSection: some View {
         Button(role: .destructive) {
+            deleteDialogBudgetName = budget?.name ?? name
             showDeleteConfirmation = true
         } label: {
             HStack {
@@ -716,6 +849,7 @@ struct BudgetEditorView: View {
         .buttonStyle(.plain)
         .foregroundStyle(DS.Semantic.errorForeground)
         .padding(.top, DS.Spacing.lg)
+        .accessibilityIdentifier("budget_delete_button")
     }
 
     // MARK: - Categories Sheet
@@ -766,7 +900,12 @@ struct BudgetEditorView: View {
         // Initialize currency code
         currencyCode = appPreferences.defaultCurrencyCode.rawValue
 
-        guard let budget = budget else { return }
+        guard let budget = budget else {
+            selectedPeriodType = initialPeriodType ?? .monthly
+            return
+        }
+
+        showInWidget = budget.isFavorite
 
         name = budget.name
         currencyCode = budget.currencyCode
@@ -869,6 +1008,8 @@ struct BudgetEditorView: View {
         )
 
         if let savedID = saved {
+            DS.Haptic.success()
+            applyShowInWidget(savedID: savedID)
             sessionState.needsBudgetsWidgetRefresh = true
             if budget == nil, SetupChecklistManager.shared.stepCompleted[.firstBudget] != true {
                 // «¿Era de prueba?» solo si este es el ÚNICO presupuesto (ver `markFirstCreation`).
@@ -900,10 +1041,65 @@ struct BudgetEditorView: View {
         }
     }
 
+    /// «Mostrar en el widget» con el mismo orden que Perfil › Presupuestos: entra al final de los favoritos.
+    private func applyShowInWidget(savedID: PersistentIdentifier) {
+        guard let saved = modelContext.model(for: savedID) as? Budget, saved.isActive,
+              saved.isFavorite != showInWidget else { return }
+        do {
+            let active = try modelContext.fetch(FetchDescriptor<Budget>(predicate: #Predicate { $0.isActive }))
+            BudgetWidgetFavoriteLogic.setShownInWidget(showInWidget, for: saved, among: active)
+            try modelContext.save()
+            WidgetDataCache.updateCache(context: modelContext)
+        } catch {
+            #if DEBUG
+            print("BudgetEditorView: Error saving widget favorite: \(error)")
+            #endif
+        }
+    }
+
+    /// Grupos que la persona ve: un grupo borrado para todos no cuenta.
+    private func countVisibleGroups() -> Int {
+        do {
+            return try modelContext.fetchCount(FetchDescriptor<SplitGroup>(predicate: #Predicate { !$0.isHiddenForAll }))
+        } catch {
+            #if DEBUG
+            print("BudgetEditorView: Error counting groups: \(error)")
+            #endif
+            // Sin poder contar, se enseña: esconder un ajuste que existe es peor que enseñarlo de más.
+            return 1
+        }
+    }
+
+    /// Enciende el interruptor general de Perfil › Notificaciones › Alertas de presupuesto y, si iOS no lo ha preguntado,
+    /// pide el permiso. Con el permiso denegado, abre los Ajustes de iOS: es el único sitio donde se cambia.
+    /// Si iOS dice que no, el interruptor no se enciende: el aviso se quedaría escondido sin que llegara nada.
+    private func activateGlobalBudgetAlerts() {
+        guard !UITestHooks.isActive else {
+            appPreferences.budgetAlertsEnabled = true
+            return
+        }
+        Task { @MainActor in
+            let status = await NotificationService.shared.checkPermissionStatus()
+            switch status {
+            case .notDetermined:
+                if await NotificationService.shared.requestPermission() {
+                    appPreferences.budgetAlertsEnabled = true
+                }
+            case .denied:
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    openURL(url)
+                }
+            default:
+                appPreferences.budgetAlertsEnabled = true
+            }
+        }
+    }
+
     private func deleteBudget() {
         guard let budget = budget else { return }
 
         if viewModel.deleteBudget(budget) {
+            DS.Haptic.warning()
             // Trigger widget refresh
             sessionState.needsBudgetsWidgetRefresh = true
             dismiss()

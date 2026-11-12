@@ -161,11 +161,15 @@ struct PanelSectionsConfigView: View {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: kind.iconName)
                     .font(DS.Typography.body)
-                    .foregroundStyle(.tint)
+                    .foregroundStyle(.thAccentText)
                     .frame(width: 28)
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(kind.localizedTitle)
+                    Text(kind.configTitle)
                         .font(DS.Typography.body)
+                    Text(kind.configDescription)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                     if isEmpty {
                         Text(L10n.Panel.SectionsConfig.emptySection)
                             .font(DS.Typography.caption)
@@ -187,12 +191,13 @@ struct PanelSectionsConfigView: View {
                             .foregroundStyle(Color.primary)
                     }
                     .accessibilityLabel(
-                        L10n.Panel.SectionsConfig.restoreWidgets(kind.localizedTitle)
+                        L10n.Panel.SectionsConfig.restoreWidgets(kind.configTitle)
                     )
                 }
             }
         }
-        .accessibilityLabel(L10n.Accessibility.toggleSection(kind.localizedTitle))
+        .accessibilityLabel(L10n.Accessibility.toggleSection(kind.configTitle))
+        .accessibilityHint(kind.configDescription)
         .accessibilityIdentifier("panel_section_toggle_\(kind.rawValue)")
     }
 
@@ -208,13 +213,14 @@ struct PanelSectionsConfigView: View {
                     HStack(spacing: DS.Spacing.md) {
                         Image(systemName: kind.iconName)
                             .font(DS.Typography.body)
-                            .foregroundStyle(.tint)
+                            .foregroundStyle(.thAccentText)
                             .frame(width: 28)
                         Text(kind.localizedTitle)
                             .font(DS.Typography.body)
                     }
                 }
                 .onMove { source, destination in
+                    DS.Haptic.selection()
                     appPreferences.movePanelSection(from: source, to: destination)
                 }
                 .deleteDisabled(true)

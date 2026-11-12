@@ -26,6 +26,15 @@ struct PanelQuickActionsRow: View {
     /// Gate de "ya hay una cuenta creada". Con `false` el Panel no ofrece
     /// registrar nada, igual que `FABStackView` cae a su estado deshabilitado.
     let canCreateRecords: Bool
+    /// Sin ninguna cuenta activa, la fila apagada se sustituye por la salida (UX 2.2 · L3-10, variante 2): un botón
+    /// rosa relleno «Crea tu primera cuenta».
+    var hasAccounts: Bool = true
+    var onCreateFirstAccount: () -> Void = {}
+    /// Con cuentas pero sin ninguna subcategoría visible, la misma salida para lo que falta: «Crear categorías» y una
+    /// línea que dice por qué (card omw5). Antes la fila se quedaba apagada sin explicación tras un onboarding cuya
+    /// semilla no corrió. Lo decide `PanelQuickActionsGateLogic`; la cuenta va primero.
+    var needsCategories: Bool = false
+    var onCreateCategories: () -> Void = {}
     let isVoiceLocked: Bool
     let isImageLocked: Bool
     let isChatLocked: Bool
@@ -38,13 +47,101 @@ struct PanelQuickActionsRow: View {
     let onImageTap: () -> Void
     let onChatTap: () -> Void
 
+    /// Prefijo de los ids de XCUITest. La misma fila va bajo el hero de Estadísticas (`stats`, card kzhe): con las seis
+    /// páginas montadas a la vez, dos `panel_action_new` en el árbol harían ambiguo el toque.
+    var identifierPrefix: String = "panel"
+    /// El tour Pro señala la fila del Panel; en otra página sus anclas competirían con las del Panel.
+    var marksTourAnchors: Bool = true
+
     @Environment(\.yalaTheme) private var theme
 
     /// 44 pt es el mínimo táctil de las HIG. No bajar aunque la fila apriete:
     /// antes se recorta texto o se deja que el scroll horizontal haga su trabajo.
     private static let pillHeight: CGFloat = 44
 
+    /// Alto común del icono en las píldoras con palabra debajo (Voz y Foto). La onda y la foto tienen alturas de glifo
+    /// distintas y, sin un marco igual, «Voz» y «Foto» quedaban a alturas diferentes (Jürgen, 2026-10-17). Escala con el
+    /// texto, para que con letra grande el icono no se quede pequeño respecto a su palabra.
+    @ScaledMetric(relativeTo: .subheadline) private var captionIconHeight: CGFloat = 18
+
     var body: some View {
+        if !hasAccounts {
+            createFirstAccount
+        } else if needsCategories {
+            createCategories
+        } else {
+            actionsRow
+        }
+    }
+
+    // MARK: - Sin cuentas (UX 2.2 · L3-10)
+
+    /// Es el paso donde la persona se atasca: antes veía la fila en gris sin ninguna explicación y «Nueva cuenta»
+    /// solo aparecía al desplegar «Tus finanzas». Relleno rosa de marca (`emphasisPinkFill`, AA con blanco), sin
+    /// degradado ni brillo, y una línea de invitación debajo.
+    private var createFirstAccount: some View {
+        missingStepCTA(
+            title: L10n.Panel.createFirstAccount,
+            icon: "creditcard.fill",
+            hint: L10n.Panel.createFirstAccountHint,
+            identifier: "\(identifierPrefix)_create_first_account",
+            action: onCreateFirstAccount
+        )
+    }
+
+    // MARK: - Sin categorías (card omw5)
+
+    private var createCategories: some View {
+        missingStepCTA(
+            title: L10n.Empty.activateCategoriesAction,
+            icon: "tag.fill",
+            hint: L10n.Panel.createCategoriesHint,
+            identifier: "\(identifierPrefix)_create_categories",
+            action: onCreateCategories
+        )
+    }
+
+    /// El botón rosa relleno de lo que falta para registrar, con su línea debajo. Lo comparten la cuenta y las
+    /// categorías para que las dos salidas se vean y se lean igual.
+    private func missingStepCTA(
+        title: String,
+        icon: String,
+        hint: String,
+        identifier: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            Button(action: action) {
+                HStack(spacing: DS.Spacing.sm) {
+                    Image(systemName: icon)
+                        .font(DS.Typography.label)
+                        .accessibilityHidden(true)
+                    Text(title)
+                        .font(DS.Typography.label)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+                .foregroundStyle(Color.white)
+                .padding(.horizontal, DS.Spacing.lg)
+                .frame(minHeight: Self.pillHeight)
+                .background(Capsule().fill(Color.emphasisPinkFill))
+                .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(hint)
+            .accessibilityIdentifier(identifier)
+
+            Text(hint)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityHidden(true)
+        }
+    }
+
+    // MARK: - Fila de acciones
+
+    private var actionsRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: DS.Spacing.sm) {
                 pill(
@@ -52,45 +149,51 @@ struct PanelQuickActionsRow: View {
                     icon: "plus",
                     isPrimary: true,
                     isLocked: false,
-                    identifier: "panel_action_new",
+                    identifier: "\(identifierPrefix)_action_new",
                     action: onManualTap
                 )
-                // Sólo la acción principal lleva texto; las tres de entrada
-                // asistida van con icono. Medido en el simulador el 2026-09-02:
-                // con texto en todas, «Nuevo registro» + «Voz» + «Imagen» ya
-                // dejaban la cuarta píldora cortada contra el borde en un
-                // iPhone 17 Pro EN ESPAÑOL — y el alemán es más largo. Un texto
-                // recortado parece un fallo, no una invitación a deslizar.
-                pill(
-                    text: nil,
-                    icon: "waveform",
-                    isLocked: isVoiceLocked,
-                    accessibilityLabel: L10n.Panel.fabVoice,
-                    identifier: "panel_action_voice",
-                    action: onVoiceTap
-                )
-                pill(
-                    text: nil,
-                    icon: "photo",
-                    isLocked: isImageLocked,
-                    accessibilityLabel: L10n.Panel.fabImage,
-                    identifier: "panel_action_image",
-                    action: onImageTap
-                )
-                if isChatVisible {
-                    // Dorado como el FAB de IA (`DS.Gradients.proBadge`), y con
-                    // texto: es la única de las tres asistidas que se anuncia,
-                    // porque es la que no se adivina por el icono. El label
-                    // accesible sigue siendo el nombre largo del chat.
+                // Voz y foto llevan su palabra DEBAJO del icono, dentro del mismo
+                // botón (UX 2.2 · L4-1, variante elegida por Jürgen el 2026-10-14).
+                // No al lado: medido en el simulador el 2026-09-02, con texto al
+                // lado en todas, «Nuevo registro» + «Voz» + «Imagen» ya dejaban la
+                // cuarta píldora cortada contra el borde en un iPhone 17 Pro EN
+                // ESPAÑOL —y el alemán es más largo—. Debajo, la palabra no ensancha
+                // el botón más que el icono con su margen.
+                // Voz y Foto van juntas en un ancla: el tour Pro las señala a la vez (UX 2.2 · L5-12).
+                HStack(spacing: DS.Spacing.sm) {
                     pill(
-                        text: L10n.Panel.aiPill,
+                        text: nil,
+                        caption: L10n.Panel.voiceShort,
+                        icon: "waveform",
+                        isLocked: isVoiceLocked,
+                        identifier: "\(identifierPrefix)_action_voice",
+                        action: onVoiceTap
+                    )
+                    pill(
+                        text: nil,
+                        caption: L10n.Panel.photoShort,
+                        icon: "photo",
+                        isLocked: isImageLocked,
+                        identifier: "\(identifierPrefix)_action_image",
+                        action: onImageTap
+                    )
+                }
+                .tourAnchor(ProTourSteps.panelVoiceImageAnchor, isEnabled: marksTourAnchors)
+                if isChatVisible {
+                    // UX 2.2 · L14-5 (variante 3, Jürgen 2026-10-15): la píldora de cristal de siempre, ahora con el
+                    // nombre de la función, «Yala IA» (antes decía solo «IA»), y el dorado SÓLIDO en borde, icono y
+                    // texto (antes, el degradado amarillo-naranja `proBadge`). «Nuevo registro» sigue siendo lo único
+                    // relleno de la fila. VoiceOver lee lo que se ve.
+                    pill(
+                        text: L10n.Chat.assistantName,
                         icon: "sparkles",
                         isLocked: isChatLocked,
-                        accessibilityLabel: L10n.Chat.title,
                         isGold: true,
-                        identifier: "panel_action_ai",
+                        compactPadding: true,
+                        identifier: "\(identifierPrefix)_action_ai",
                         action: onChatTap
                     )
+                    .tourAnchor(ProTourSteps.panelAssistantAnchor, isEnabled: marksTourAnchors)
                 }
             }
         }
@@ -98,7 +201,7 @@ struct PanelQuickActionsRow: View {
         .opacity(canCreateRecords ? 1 : DS.Opacity.disabled)
         .disabled(!canCreateRecords)
         .accessibilityLabel(L10n.Accessibility.newRecord)
-        .accessibilityIdentifier("panel_quick_actions")
+        .accessibilityIdentifier("\(identifierPrefix)_quick_actions")
     }
 
     // MARK: - Píldora
@@ -106,11 +209,12 @@ struct PanelQuickActionsRow: View {
     @ViewBuilder
     private func pill(
         text: String?,
+        caption: String? = nil,
         icon: String,
         isPrimary: Bool = false,
         isLocked: Bool,
-        accessibilityLabel: String? = nil,
         isGold: Bool = false,
+        compactPadding: Bool = false,
         identifier: String,
         action: @escaping () -> Void
     ) -> some View {
@@ -121,28 +225,40 @@ struct PanelQuickActionsRow: View {
             DS.Haptic.selection()
             action()
         } label: {
-            HStack(spacing: DS.Spacing.xs) {
-                ZStack(alignment: .bottomTrailing) {
-                    Image(systemName: icon)
-                        .font(DS.Typography.label)
-                        .foregroundStyle(iconStyle(isPrimary: isPrimary, usaDorado: usaDorado))
-                    if isLocked {
-                        Image(systemName: "lock.fill")
-                            // A11Y-DT: candado decorativo sobre el icono, como en FABStackView
-                            .font(.system(size: 8))
-                            .foregroundStyle(DS.Semantic.disabledForeground)
-                            .offset(x: 6, y: 4)
+            Group {
+                if let caption {
+                    // Icono arriba y su palabra debajo. `minHeight` y no alto fijo: con
+                    // texto grande la palabra no cabe en 44 pt y el botón crece en vez
+                    // de cortarla.
+                    VStack(spacing: DS.Spacing.xxs) {
+                        // Mismo marco para los dos iconos: con la misma altura arriba, las dos palabras caen en la
+                        // misma línea base.
+                        pillIcon(icon, isPrimary: isPrimary, usaDorado: usaDorado, isLocked: isLocked)
+                            .frame(height: captionIconHeight)
+                        Text(caption)
+                            .font(DS.Typography.labelTiny)
+                            .foregroundStyle(iconStyle(isPrimary: isPrimary, usaDorado: usaDorado))
+                            .lineLimit(1)
+                            .fixedSize()
                     }
-                }
-                if let text {
-                    Text(text)
-                        .font(DS.Typography.label)
-                        .foregroundStyle(iconStyle(isPrimary: isPrimary, usaDorado: usaDorado))
-                        .lineLimit(1)
+                    .padding(.horizontal, DS.Spacing.md)
+                    .padding(.vertical, DS.Spacing.xxs)
+                } else {
+                    HStack(spacing: DS.Spacing.xs) {
+                        pillIcon(icon, isPrimary: isPrimary, usaDorado: usaDorado, isLocked: isLocked)
+                        if let text {
+                            Text(text)
+                                .font(DS.Typography.label)
+                                .foregroundStyle(iconStyle(isPrimary: isPrimary, usaDorado: usaDorado))
+                                .lineLimit(1)
+                        }
+                    }
+                    // «Yala IA» va con el margen corto: con el largo, la fila no cabía en un iPhone 17 Pro en español
+                    // y la píldora quedaba cortada contra el borde (medido en el lote 14).
+                    .padding(.horizontal, text == nil || compactPadding ? DS.Spacing.md : DS.Spacing.lg)
                 }
             }
-            .padding(.horizontal, text == nil ? DS.Spacing.md : DS.Spacing.lg)
-            .frame(height: Self.pillHeight)
+            .frame(minHeight: Self.pillHeight)
             .background {
                 if isPrimary {
                     Capsule().fill(theme.accent)
@@ -151,14 +267,7 @@ struct PanelQuickActionsRow: View {
                         .fill(theme.card)
                         .overlay {
                             if usaDorado {
-                                Capsule().strokeBorder(
-                                    LinearGradient(
-                                        colors: DS.Gradients.proBadge,
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    lineWidth: 1.5
-                                )
+                                Capsule().strokeBorder(Color.proGoldOnCard, lineWidth: 1.5)
                             }
                         }
                 }
@@ -174,24 +283,45 @@ struct PanelQuickActionsRow: View {
             x: DS.Shadow.small.x,
             y: DS.Shadow.small.y
         )
-        .accessibilityLabel(accessibilityLabel ?? text ?? "")
+        // VoiceOver lee lo mismo que se ve: «Voz», «Foto» (el nombre accesible contiene la etiqueta visible).
+        .accessibilityLabel(text ?? caption ?? "")
         .accessibilityIdentifier(identifier)
     }
 
-    /// Blanco sobre la píldora principal, degradado `proBadge` en la de IA —el
-    /// mismo del FAB, para que se lean como el mismo botón— y tinta en el resto.
-    private func iconStyle(isPrimary: Bool, usaDorado: Bool) -> AnyShapeStyle {
-        if isPrimary { return AnyShapeStyle(Color.white) }
-        if usaDorado {
-            return AnyShapeStyle(
-                LinearGradient(
-                    colors: DS.Gradients.proBadge,
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
+    /// El icono de la píldora, con el candado encima si la acción es Pro y no lo tienes.
+    private func pillIcon(_ icon: String, isPrimary: Bool, usaDorado: Bool, isLocked: Bool) -> some View {
+        ZStack(alignment: .bottomTrailing) {
+            Image(systemName: icon)
+                .font(DS.Typography.label)
+                .foregroundStyle(iconStyle(isPrimary: isPrimary, usaDorado: usaDorado))
+            if isLocked {
+                Image(systemName: "lock.fill")
+                    // A11Y-DT: candado decorativo sobre el icono, como en FABStackView
+                    .font(.system(size: 8))
+                    .foregroundStyle(DS.Semantic.disabledForeground)
+                    .offset(x: 6, y: 4)
+            }
         }
+    }
+
+    /// Blanco sobre la píldora principal, dorado sólido en la de Yala IA —el mismo del botón flotante, para que se lean
+    /// como el mismo botón— y tinta en el resto.
+    private func iconStyle(isPrimary: Bool, usaDorado: Bool) -> AnyShapeStyle {
+        if isPrimary { return AnyShapeStyle(theme.onAccent) }
+        if usaDorado { return AnyShapeStyle(Color.proGoldOnCard) }
         return AnyShapeStyle(Color.primary)
+    }
+}
+
+private extension View {
+    /// `coachMarkAnchor` solo donde la fila es la del Panel: fuera de él, un ancla con el mismo id sobraría.
+    @ViewBuilder
+    func tourAnchor(_ id: String, isEnabled: Bool) -> some View {
+        if isEnabled {
+            coachMarkAnchor(id)
+        } else {
+            self
+        }
     }
 }
 

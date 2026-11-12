@@ -15,6 +15,11 @@ export interface AccountRow {
   is_archived: boolean | null;
   exclude_from_statistics: boolean | null;
   is_system_account: boolean | null;
+  /**
+   * Tarjeta con varias divisas: el `sync_id` de la principal si esta cuenta es una LÍNEA (otra divisa de la misma
+   * tarjeta). Nulo en una cuenta normal o en la principal. Opcional porque los fixtures anteriores no lo traen.
+   */
+  parent_account_id?: string | null;
 }
 
 export interface CategoryRow {
@@ -61,6 +66,11 @@ export interface TxRow {
   balance_adjustment_type: string | null;
   transfer_pair_id: string | null;
   split_expense_id: string | null;
+  /**
+   * Grupos B: la receta de tu parte o una marca del puente. Solo se lee la de una pata COBRADA de una venta
+   * (`{"k":"c","of":…}`, card 10). Opcional: las filas de antes de la v6 y los fixtures no la traen.
+   */
+  split_lines_raw?: string | null;
 }
 
 export interface BudgetRow {

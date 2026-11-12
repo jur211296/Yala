@@ -45,8 +45,9 @@ nonisolated enum WhatsNewLaunchLogic {
     /// app (`completeOnboardingAsRestoreSkip` pone `needsPostOnboardingTrial` y no pasa por el `onChange(showOnboarding)`
     /// que la consumía): es el iPhone del QA guiado del 19-oct, cuyo onboarding privado traía datos de iCloud.
     ///
-    /// La oferta no se pierde: su marca solo se borra al PRESENTARSE (el drain), así que sale en el arranque siguiente. Y
-    /// Novedades no vuelve, porque su versión se da por vista al cerrar la hoja.
+    /// La oferta no se pierde: su marca solo se borra al PRESENTARSE (el drain), así que el arranque siguiente vuelve a
+    /// pedirla con `TrialOfferMoments.note(.launch)` — y desde la 2.2 solo sale si su momento ya llegó (UX 2.2 · L1-12);
+    /// sin momento, espera al primer registro. Y Novedades no vuelve, porque su versión se da por vista al cerrar la hoja.
     ///
     /// `hasPrivateSession` es la condición de siempre: quien entró solo por Grupos no ve ninguna de las dos.
     static func returningUserSheet(hasPrivateSession: Bool, whatsNewPending: Bool,
@@ -57,10 +58,27 @@ nonisolated enum WhatsNewLaunchLogic {
         return .none
     }
 
+    /// **¿El arranque deja la hoja de quien vuelve para la primera activación?** Solo si corre con la app en SEGUNDO
+    /// PLANO (card y2vg, QA guiado del TestFlight 19, 2026-10-20: actualizando con la 2.0.4 abierta en el selector,
+    /// Novedades no salía en el primer arranque; cerrada del todo, sí). INFERIDO, sin reproducir: iOS relanza en segundo
+    /// plano una app que seguía en el selector —tras actualizarla o para una tarea de fondo— y le reconecta la escena, así
+    /// que el arranque corre sin nadie delante y, al abrirla, el proceso ya hizo sus comprobaciones de arranque. Un
+    /// arranque normal corre en `.inactive` (la escena aún no está activa) y decide en el acto, como siempre.
+    static func defersReturningUserSheet(applicationInBackground: Bool) -> Bool {
+        applicationInBackground
+    }
+
     /// "2.1.1" → "2.1". Una versión sin punto se devuelve tal cual; la vacía sigue vacía.
     static func majorMinor(_ version: String) -> String {
         let parts = version.split(separator: ".")
         guard parts.count >= 2 else { return version }
         return "\(parts[0]).\(parts[1])"
     }
+}
+
+/// La hoja de quien vuelve, aplazada porque el arranque corrió en segundo plano (card y2vg). Del PROCESO, como
+/// `ColdStartICloudNotice`: el `ContentView` puede remontarse entre el arranque y la activación.
+@MainActor
+enum ReturningUserSheetDeferral {
+    static var pendingUntilActive = false
 }

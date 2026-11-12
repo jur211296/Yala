@@ -21,8 +21,8 @@ enum FinancialScoreDetailKind: String, Identifiable {
 
     var id: String { rawValue }
 
-    /// Color identity of each sub-score. `.total` has no fixed tint — it
-    /// renders a score-driven gradient via `DS.Gradients.heroFor(score:)`.
+    /// Color identity of each sub-score. `.total` has no fixed tint — it renders a score-driven solid tone
+    /// (`FinancialScoreTint`, sin degradado desde UX 2.2 · L3-14).
     var tint: Color? {
         switch self {
         case .total:    return nil
@@ -39,6 +39,10 @@ struct FinancialScoreDetailSheet: View {
     let score: Int?
     /// Called after the sheet dismisses. `nil` hides the CTA (used by `.total`).
     var onPrimaryCTA: (() -> Void)? = nil
+    /// Las tres partes, para enseñar de dónde sale la nota total (UX 2.2 · L3-14). Solo la usa `.total`.
+    var breakdown: FinancialScore? = nil
+    /// Hay presupuestos: sin nota de presupuestos, la hoja dice que empiezan a contar el mes que viene (UX 2.2 · L3-13).
+    var hasBudgets: Bool = false
 
     @Environment(\.dismiss) private var dismiss
     @Environment(SessionState.self) private var sessionState
@@ -89,6 +93,10 @@ struct FinancialScoreDetailSheet: View {
                     VStack(spacing: DS.Spacing.md) {
                         headlineBlock
                         explanationBlock
+                    }
+
+                    if kind == .total, let breakdown {
+                        breakdownBlock(breakdown)
                     }
                 }
                 .padding(.horizontal, DS.Spacing.xl)
@@ -167,11 +175,87 @@ struct FinancialScoreDetailSheet: View {
         if let tint = kind.tint {
             return AnyShapeStyle(tint)
         }
-        return AnyShapeStyle(LinearGradient(
-            colors: DS.Gradients.heroFor(score: score),
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        ))
+        return AnyShapeStyle(FinancialScoreTint.color(for: score ?? 100))
+    }
+
+    // MARK: - De dónde sale la nota (UX 2.2 · L3-14)
+
+    /// Las tres partes con su peso y su nota, y una frase de qué mejorar. Antes la hoja decía que «pesan distinto» sin
+    /// decir cuánto, y Ritmo y Compromisos no se explicaban.
+    private func breakdownBlock(_ breakdown: FinancialScore) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            VStack(spacing: DS.Spacing.sm) {
+                partRow(
+                    title: L10n.Panel.Health.subScoreBudget,
+                    detail: L10n.Panel.Health.partBudget,
+                    weight: FinancialScoreCalculator.weightBudget,
+                    value: breakdown.budget
+                )
+                Divider()
+                partRow(
+                    title: L10n.Panel.Health.subScoreActivity,
+                    detail: L10n.Panel.Health.partActivity,
+                    weight: FinancialScoreCalculator.weightRhythm,
+                    value: breakdown.activity
+                )
+                Divider()
+                partRow(
+                    title: L10n.Panel.Health.subScoreBills,
+                    detail: L10n.Panel.Health.partBills,
+                    weight: FinancialScoreCalculator.weightCommitments,
+                    value: breakdown.bills
+                )
+            }
+            .padding(DS.Spacing.md)
+            .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+
+            if let improvement = improvementLine(breakdown) {
+                Text(improvement)
+                    .font(DS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("health_improvement_tip")
+            }
+
+            Text(L10n.Panel.Health.floorNote(FinancialScoreCalculator.totalFloor))
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityIdentifier("health_breakdown")
+    }
+
+    private func partRow(title: String, detail: String, weight: Double, value: Int?) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(L10n.Panel.Health.partTitle(title, weight: Int((weight * 100).rounded())))
+                    .font(DS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(.primary)
+                Text(detail)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: DS.Spacing.sm)
+            Text(value.map { "\($0)" } ?? L10n.Panel.Health.partNotCounting)
+                .font(value == nil ? DS.Typography.caption : DS.Typography.headline)
+                .monospacedDigit()
+                .foregroundStyle(value == nil ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
+                .multilineTextAlignment(.trailing)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    /// Sin ninguna parte con nota no hay nada que decir: «lo que ya cuenta va bien» sería falso.
+    private func improvementLine(_ breakdown: FinancialScore) -> String? {
+        guard breakdown.budget != nil || breakdown.activity != nil || breakdown.bills != nil else { return nil }
+        switch FinancialScoreCalculator.weakestPart(of: breakdown) {
+        case .budget: return L10n.Panel.Health.improveBudget
+        case .activity: return L10n.Panel.Health.improveActivity
+        case .bills: return L10n.Panel.Health.improveBills
+        case .total, nil: return L10n.Panel.Health.improveNothing
+        }
     }
 
     // MARK: - Derived copy
@@ -207,7 +291,9 @@ struct FinancialScoreDetailSheet: View {
             if score >= 70 { return L10n.Panel.Health.totalHeadlineMid }
             return L10n.Panel.Health.totalHeadlineLow
         case .budget:
-            guard let score else { return L10n.Panel.Health.budgetHeadlineEmpty }
+            guard let score else {
+                return hasBudgets ? L10n.Panel.Health.budgetHeadlineStartsNextMonth : L10n.Panel.Health.budgetHeadlineEmpty
+            }
             if score >= 90 { return L10n.Panel.Health.budgetHeadlineHigh }
             if score >= 70 { return L10n.Panel.Health.budgetHeadlineMid }
             return L10n.Panel.Health.budgetHeadlineLow
@@ -228,7 +314,7 @@ struct FinancialScoreDetailSheet: View {
         switch kind {
         case .total: return nil
         case .budget:
-            return score == nil
+            return score == nil && !hasBudgets
                 ? L10n.Panel.Health.budgetCTACreate
                 : L10n.Panel.Health.budgetCTAView
         case .activity:

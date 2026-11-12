@@ -2,8 +2,20 @@
 //  ScheduledPaymentDetailView.swift
 //  Yala
 //
-//  Detail view for a scheduled payment showing history and upcoming occurrences.
-//  Accessed from ScheduledPaymentsListView in Planning tab.
+//  Detalle de un pago planificado. Auditoría UX 2.2, lote 10 (Jürgen, 2026-10-15):
+//
+//  - L10-8 B: arriba, el estado de la próxima fecha en una píldora («Vence mañana · 15 de octubre») y las dos acciones a
+//    las que se viene: «Ya lo pagué» (relleno) y «Saltar este mes» (cristal). Sin «PEN» sobre el importe. Si el mes en
+//    curso ya está pagado, lo dice. «Próximos» e «Historial», como la línea de tiempo de C: cada fecha con su estado y
+//    sus acciones al lado. Fuera la nota de «fechas estimadas», que contradecía el «Pagado» real.
+//  - L10-7 B: «Pausar este pago» / «Reanudar».
+//  - L10-9 B: «Ya lo pagué» abre la hoja de «Apuntarlo ahora» o «Ya lo apunté».
+//  - L10-10 B: «Saltar este mes» explica qué hace, y tras saltar un aviso deja deshacerlo; el inverso es «No saltar».
+//  - L10-11 B: «Pagar ahora» dice qué fecha paga y vuelve aquí al guardar.
+//  - L10-12 B: «Ver registro» abre el detalle del registro, con su «Editar».
+//  - Card 3zva (2026-11-03): con el mes en curso ya pagado, las acciones son de la próxima fecha y lo dicen: un
+//    encabezado «Próximo: diciembre de 2026» sobre los botones, que nombran el mes («Ya pagué diciembre», «Saltar
+//    diciembre») o, si ese mes tiene varias fechas, la fecha.
 //
 
 import SwiftData
@@ -14,87 +26,91 @@ struct ScheduledPaymentDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
-    @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     let payment: ScheduledPayment
     @Bindable var viewModel: ScheduledPaymentsViewModel
 
     @State private var showEditor = false
-    @State private var showAssociationSheet = false
-    @State private var showOccurrenceActions = false
-    @State private var selectedOccurrenceDate: Date?
-    @State private var associationReferenceDate: Date?
     @State private var linkedTransactions: [TransactionItem] = []
+    /// La fecha cuya hoja de «Ya lo pagué» está abierta.
+    @State private var paidSheetDate: OccurrenceTarget?
+    /// El registro abierto con «Ver registro» (L10-12).
+    @State private var viewedTransaction: TransactionItem?
+    /// El registro que «Editar» del detalle pidió abrir al cerrarse la hoja del detalle.
+    @State private var transactionAwaitingEditor: TransactionItem?
     @State private var editingTransaction: TransactionItem?
-    @State private var advancedDraft: InboxDraft?
+    /// El borrador de «Pagar ahora» o «Apuntarlo ahora» en el formulario de la Bandeja (L10-11).
+    @State private var payNowTarget: PayNowTarget?
 
-    // Calculate occurrences using getPaymentDatesInMonth (SSOT for date generation)
+    // Fechas del calendario del pago (SSOT: `getPaymentDatesInMonth`). El historial son las que ya llegaron y las
+    // próximas las que no, mire el mes que mire la lista (`ScheduledPaymentDetailLogic`).
     private var pastOccurrences: [Date] {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date.now)
-
-        // Selected month past dates
-        let selectedMonthDates = viewModel.getPaymentDatesInMonth(payment: payment, month: viewModel.selectedMonth)
-            .filter { calendar.startOfDay(for: $0) <= today }
-
-        // Previous months (up to 3)
-        var olderDates: [Date] = []
-        for offset in 1...3 {
-            guard let prevMonth = calendar.date(byAdding: .month, value: -offset, to: viewModel.selectedMonth) else { continue }
-            let dates = viewModel.getPaymentDatesInMonth(payment: payment, month: prevMonth)
-            olderDates.append(contentsOf: dates)
+        ScheduledPaymentDetailLogic.pastOccurrences(selectedMonth: viewModel.selectedMonth, today: Date.now) { month in
+            viewModel.getPaymentDatesInMonth(payment: payment, month: month)
         }
-
-        // Most recent first, limit 10
-        return Array((selectedMonthDates + olderDates).sorted(by: >).prefix(10))
     }
 
     private var upcomingOccurrences: [Date] {
         guard payment.isRecurring else { return [] }
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date.now)
-
-        // Selected month future dates
-        var futureDates = viewModel.getPaymentDatesInMonth(payment: payment, month: viewModel.selectedMonth)
-            .filter { calendar.startOfDay(for: $0) > today }
-
-        // Next months until we have 3
-        var nextMonth = viewModel.selectedMonth
-        while futureDates.count < 3 {
-            guard let nm = calendar.date(byAdding: .month, value: 1, to: nextMonth) else { break }
-            nextMonth = nm
-            let dates = viewModel.getPaymentDatesInMonth(payment: payment, month: nm)
-                .filter { $0 > today }
-            futureDates.append(contentsOf: dates)
-            // Safety: don't look more than 6 months ahead
-            if calendar.dateComponents([.month], from: viewModel.selectedMonth, to: nm).month ?? 0 > 6 { break }
+        return ScheduledPaymentDetailLogic.upcomingOccurrences(today: Date.now) { month in
+            viewModel.getPaymentDatesInMonth(payment: payment, month: month)
         }
+    }
 
-        return Array(futureDates.sorted().prefix(3))
+    /// Qué gasto vinculado cubre cada fecha enseñada, con la regla de la lista (por mes y por orden).
+    private var linkedByOccurrence: [Date: TransactionItem] {
+        let occurrences = pastOccurrences + upcomingOccurrences
+        let matches = ScheduledPaymentDetailLogic.linkedOccurrences(
+            occurrences: occurrences,
+            linkedDates: linkedTransactions.map(\.date),
+            isSkipped: { payment.isDateSkipped($0) }
+        )
+        var result: [Date: TransactionItem] = [:]
+        for (occurrenceIndex, txIndex) in matches {
+            result[occurrences[occurrenceIndex]] = linkedTransactions[txIndex]
+        }
+        return result
+    }
+
+    /// La próxima fecha que de verdad toca: desde `nextDueDate`, la primera que no se saltó ni se pagó.
+    private var nextDate: Date {
+        ScheduledPaymentDetailLogic.nextDate(
+            nextDueDate: payment.nextDueDate,
+            linkedDates: linkedTransactions.map(\.date),
+            isSkipped: { payment.isDateSkipped($0) }
+        ) { month in
+            viewModel.getPaymentDatesInMonth(payment: payment, month: month)
+        }
     }
 
     var body: some View {
         ScrollView {
             VStack(spacing: DS.Spacing.xxl) {
-                    // Summary Card
-                    summaryCard
+                statusCard
+                detailsCard
 
-                    // Upcoming Section
-                    if payment.isRecurring && !upcomingOccurrences.isEmpty {
-                        upcomingSection
-                    }
-
-                    // History Section
-                    if !pastOccurrences.isEmpty {
-                        historySection
-                    }
-
-                    // Info note
-                    infoNote
+                if payment.isRecurring && !upcomingOccurrences.isEmpty {
+                    occurrencesSection(
+                        title: L10n.Scheduled.Detail.upcoming,
+                        icon: "arrow.forward.circle.fill",
+                        dates: upcomingOccurrences,
+                        isPast: false
+                    )
                 }
-                .padding(.vertical, DS.Spacing.xxl)
+
+                if !pastOccurrences.isEmpty {
+                    occurrencesSection(
+                        title: L10n.Scheduled.Detail.history,
+                        icon: "clock.arrow.circlepath",
+                        dates: pastOccurrences,
+                        isPast: true
+                    )
+                }
             }
-            .scrollViewGlassEdges()
+            .padding(.vertical, DS.Spacing.xxl)
+        }
+        .scrollViewGlassEdges()
         .yalaScreenBackground(.panel)
         .navigationTitle(payment.name)
         .navigationBarTitleDisplayMode(.inline)
@@ -111,58 +127,118 @@ struct ScheduledPaymentDetailView: View {
                 }
             }
         }
-        .sheet(isPresented: $showEditor) {
-            ScheduledPaymentEditorView(payment: payment, onDelete: {
-                dismiss()
-            })
-            .onDisappear(perform: refreshPaymentData)
-        }
-        .sheet(isPresented: $showAssociationSheet) {
-            TransactionAssociationSheet(
-                payment: payment,
-                referenceDate: associationReferenceDate ?? viewModel.selectedMonth,
-                viewModel: viewModel
-            )
-            .onDisappear(perform: refreshPaymentData)
-        }
-        .sheet(item: $editingTransaction) { transaction in
-            NewTransactionView(transactionToEdit: transaction)
-                .presentationDetents([.large])
-                .onDisappear {
-                    editingTransaction = nil
-                    linkedTransactions = viewModel.fetchLinkedTransactions(for: payment)
-                }
-        }
-        .sheet(item: $advancedDraft) { draft in
-            InboxDraftEditSheet(draft: draft)
-                .presentationDetents([.large])
-                .onDisappear {
-                    advancedDraft = nil
-                    linkedTransactions = viewModel.fetchLinkedTransactions(for: payment)
-                }
-        }
+        .modifier(DetailSheets(
+            payment: payment,
+            viewModel: viewModel,
+            showEditor: $showEditor,
+            paidSheetDate: $paidSheetDate,
+            viewedTransaction: $viewedTransaction,
+            transactionAwaitingEditor: $transactionAwaitingEditor,
+            editingTransaction: $editingTransaction,
+            payNowTarget: $payNowTarget,
+            onRecordInForm: { openPayNow(for: $0, kind: .record) },
+            onDelete: { dismiss() },
+            onRefresh: refreshPaymentData
+        ))
         .task {
             linkedTransactions = viewModel.fetchLinkedTransactions(for: payment)
         }
     }
 
-    // MARK: - Summary Card
+    // MARK: - Estado y acciones (L10-8 B)
 
-    private var summaryCard: some View {
-        VStack(spacing: DS.Spacing.lg) {
-            // Amount
-            VStack(spacing: DS.Spacing.xs) {
-                Text(payment.currencyCode)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
+    /// Lo que enseña la píldora de arriba.
+    private enum TopStatus {
+        case date(ScheduledPaymentRowState, Date)
+        case finished
+    }
 
+    private var topStatus: TopStatus {
+        if payment.isPausedByUser { return .date(.paused, nextDate) }
+        if payment.isScheduleFinished {
+            return payment.isRecurring ? .finished : .date(.paid, payment.lastPaidDate ?? payment.nextDueDate)
+        }
+        let focus = payment.isRecurring ? nextDate : payment.nextDueDate
+        let isPaid = linkedByOccurrence[focus] != nil
+        return .date(rowState(for: focus, isPaid: isPaid, isSkipped: payment.isDateSkipped(focus)), focus)
+    }
+
+    private func rowState(for date: Date, isPaid: Bool, isSkipped: Bool) -> ScheduledPaymentRowState {
+        let calendar = Calendar.current
+        let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: .now), to: calendar.startOfDay(for: date)).day ?? 0
+        // Pausado: las fechas que no se pagaron ni se saltaron dicen «Pausado», no «En 3 días» (L10-7).
+        return ScheduledPaymentListLogic.rowState(
+            isPaid: isPaid, isSkipped: isSkipped, isPaused: payment.isPausedByUser, daysUntilDue: days
+        )
+    }
+
+    /// «Vence mañana · 15 de octubre», «Vencido · 14 de octubre», «Pagado · 1 de octubre», «Pausado».
+    private func topPillText(_ status: TopStatus) -> String {
+        switch status {
+        case .finished:
+            return L10n.UXL10.stateFinished
+        case .date(let state, let date):
+            let dateText = ScheduledPaymentDateText.dayMonthLong(date)
+            switch state {
+            case .overdue: return "\(L10n.UXL10.dueOverdue) · \(dateText)"
+            case .dueToday: return L10n.UXL10.dueToday
+            case .dueTomorrow: return "\(L10n.UXL10.dueTomorrow) · \(dateText)"
+            case .dueInDays(let days): return "\(L10n.UXL10.dueInDays(days)) · \(dateText)"
+            case .paid:
+                return "\(payment.isIncome ? L10n.UXL10.stateReceived : L10n.UXL10.statePaid) · \(dateText)"
+            case .skipped: return "\(L10n.UXL10.stateSkipped) · \(dateText)"
+            case .paused: return L10n.UXL10.statePaused
+            }
+        }
+    }
+
+    private func topPillState(_ status: TopStatus) -> ScheduledPaymentRowState {
+        switch status {
+        case .finished: return .paused
+        case .date(let state, _): return state
+        }
+    }
+
+    /// El mes en curso ya está hecho: todas sus fechas pagadas o saltadas, y la próxima cae más adelante.
+    private var currentMonthSettled: Bool {
+        let linked = linkedByOccurrence
+        return ScheduledPaymentDetailLogic.currentMonthSettled(
+            isRecurring: payment.isRecurring,
+            isActive: payment.isActive,
+            datesThisMonth: viewModel.getPaymentDatesInMonth(payment: payment, month: .now),
+            nextDate: nextDate,
+            now: .now
+        ) { linked[$0] != nil || payment.isDateSkipped($0) }
+    }
+
+    /// A qué fecha apuntan «Ya lo pagué» y «Saltar»: con el mes en curso hecho, a la próxima, y lo dicen (card 3zva).
+    private func actionTarget(for date: Date) -> ScheduledPaymentDetailLogic.ActionTarget {
+        ScheduledPaymentDetailLogic.actionTarget(
+            currentMonthSettled: currentMonthSettled,
+            nextDate: date,
+            datesInNextDateMonth: viewModel.getPaymentDatesInMonth(payment: payment, month: date).count
+        )
+    }
+
+    private var statusCard: some View {
+        let status = topStatus
+        return VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+            Text(topPillText(status))
+                .font(DS.Typography.badgeLabel)
+                .modifier(TopPillStyle(state: topPillState(status), accent: theme.accent))
+                .accessibilityIdentifier("scheduled_detail_status")
+
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 Text(formatAmount(payment.amount, isEstimate: payment.isVariableAmount))
                     .font(DS.Typography.largeTitle)
-                    // Crece con el texto del sistema y, si un importe largo no cabe en el ancho, se encoge en
-                    // vez de cortarse. Sustituye al tope en AX1, que lo dejaba pequeño a propósito.
+                    // Crece con el texto del sistema y, si un importe largo no cabe, se encoge en vez de cortarse.
                     .lineLimit(1)
                     .minimumScaleFactor(0.5)
-                    .foregroundStyle(payment.transactionType == "income" ? Color.electricIndigo : .primary)
+                    .foregroundStyle(payment.isIncome ? Color.incomeAmount : .primary)
+
+                Text(subtitle)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
 
                 if payment.isVariableAmount {
                     Text(L10n.Scheduled.VariableAmount.badge)
@@ -172,69 +248,204 @@ struct ScheduledPaymentDetailView: View {
                         .background(DS.Semantic.infoBackground)
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
                 }
+
+                if currentMonthSettled {
+                    Label(
+                        L10n.UXL10.monthAlreadyPaid(ScheduledPaymentDateText.monthYear(.now)),
+                        systemImage: "checkmark.circle.fill"
+                    )
+                    .font(DS.Typography.label)
+                    .foregroundStyle(theme.accentText)
+                    .accessibilityIdentifier("scheduled_detail_month_paid")
+                }
             }
 
-            Divider()
-                .padding(.horizontal, DS.Spacing.xl)
+            actionButtons(status)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(DS.Spacing.xl)
+        .solidCard(padding: 0, radius: DS.Panel.widgetRadius)
+    }
 
-            // Details grid
-            VStack(spacing: DS.Spacing.md) {
-                detailRow(
-                    icon: "repeat",
-                    label: L10n.Scheduled.Detail.frequency,
-                    value: frequencyDescription
-                )
-
+    @ViewBuilder
+    private func actionButtons(_ status: TopStatus) -> some View {
+        if payment.isPausedByUser {
+            filledButton(L10n.UXL10.actionResume, identifier: "scheduled_detail_resume_button") {
+                viewModel.setPaused(payment, paused: false)
+                refreshPaymentData()
+            }
+        } else if case .date(let state, let date) = status, state != .paid, state != .skipped {
+            let target = actionTarget(for: date)
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                if target != .current {
+                    nextTargetHeader(target)
+                }
+                // Si los dos botones no caben en una fila van uno debajo del otro: con el mes o la fecha en el texto, y
+                // también con el mes en curso y el texto al máximo, donde salían «Ya lo… / Salta…» (barrido final 2.2).
+                // A tamaño normal, la fila de siempre.
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: DS.Spacing.md) { actionButtonPair(date: date, target: target) }
+                    VStack(spacing: DS.Spacing.sm) { actionButtonPair(date: date, target: target) }
+                }
                 if payment.isRecurring {
-                    detailRow(
-                        icon: "calendar",
-                        label: L10n.Scheduled.Detail.nextDate,
-                        value: formatDate(payment.nextDueDate)
-                    )
-
-                    if let endDate = payment.endDate {
-                        detailRow(
-                            icon: "calendar.badge.minus",
-                            label: L10n.Scheduled.Detail.endDate,
-                            value: formatDate(endDate)
-                        )
-                    }
-                } else {
-                    detailRow(
-                        icon: "calendar",
-                        label: L10n.Scheduled.Editor.paymentDate,
-                        value: formatDate(payment.nextDueDate)
-                    )
-                }
-
-                if let account = payment.account {
-                    detailRow(
-                        icon: "creditcard",
-                        label: L10n.Scheduled.Editor.account,
-                        value: account.name
-                    )
-                }
-
-                if let subcategory = payment.subcategory {
-                    detailRow(
-                        icon: "tag",
-                        label: L10n.Scheduled.Editor.subcategory,
-                        value: subcategory.name
-                    )
+                    Text(skipHelp(target))
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
+        }
+    }
 
-            // Status
-            if !payment.isActive {
-                HStack {
-                    Image(systemName: "pause.circle.fill")
-                        .foregroundStyle(Color.hotPink)
-                        .accessibilityHidden(true)
-                    Text(L10n.Scheduled.Detail.statusInactive)
-                        .font(DS.Typography.label)
-                        .foregroundStyle(Color.hotPink)
+    @ViewBuilder
+    private func actionButtonPair(date: Date, target: ScheduledPaymentDetailLogic.ActionTarget) -> some View {
+        filledButton(paidTitle(target), identifier: "scheduled_detail_paid_button") {
+            paidSheetDate = OccurrenceTarget(date: date)
+        }
+        if payment.isRecurring {
+            glassButton(skipTitle(target), identifier: "scheduled_detail_skip_button") {
+                skip(date)
+            }
+        }
+    }
+
+    /// El encabezado de las acciones cuando no son del mes en curso: una línea que separa lo hecho de lo que toca y el
+    /// mes en titular, con más peso que la ayuda gris de debajo (Jürgen pidió que se viera, no solo que se leyera).
+    private func nextTargetHeader(_ target: ScheduledPaymentDetailLogic.ActionTarget) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            Divider()
+            Label {
+                Text(nextHeaderText(target))
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.primary)
+            } icon: {
+                Image(systemName: "calendar")
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(theme.accentText)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("scheduled_detail_next_target")
+        }
+        .padding(.bottom, DS.Spacing.xs)
+    }
+
+    private func nextHeaderText(_ target: ScheduledPaymentDetailLogic.ActionTarget) -> String {
+        switch target {
+        case .current: return ""
+        case .nextMonth(let date): return L10n.UXL10.nextHeader(ScheduledPaymentDateText.monthYearInline(date))
+        case .nextDate(let date): return L10n.UXL10.nextHeader(ScheduledPaymentDateText.dayMonthLong(date))
+        }
+    }
+
+    private func paidTitle(_ target: ScheduledPaymentDetailLogic.ActionTarget) -> String {
+        switch target {
+        case .current:
+            return payment.isIncome ? L10n.UXL10.actionReceived : L10n.UXL10.actionPaid
+        case .nextMonth(let date):
+            let month = ScheduledPaymentDateText.monthName(date)
+            return payment.isIncome ? L10n.UXL10.actionReceivedMonth(month) : L10n.UXL10.actionPaidMonth(month)
+        case .nextDate(let date):
+            let day = ScheduledPaymentDateText.dayMonth(date)
+            return payment.isIncome ? L10n.UXL10.actionReceivedDate(day) : L10n.UXL10.actionPaidDate(day)
+        }
+    }
+
+    private func skipTitle(_ target: ScheduledPaymentDetailLogic.ActionTarget) -> String {
+        switch target {
+        case .current: return L10n.UXL10.actionSkipMonth
+        case .nextMonth(let date): return L10n.UXL10.actionSkipNamedMonth(ScheduledPaymentDateText.monthName(date))
+        case .nextDate(let date): return L10n.UXL10.actionSkipDate(ScheduledPaymentDateText.dayMonth(date))
+        }
+    }
+
+    private func skipHelp(_ target: ScheduledPaymentDetailLogic.ActionTarget) -> String {
+        switch target {
+        case .current: return L10n.UXL10.actionSkipHelp
+        case .nextMonth(let date): return L10n.UXL10.actionSkipHelpMonth(ScheduledPaymentDateText.monthName(date))
+        case .nextDate(let date): return L10n.UXL10.actionSkipHelpDate(ScheduledPaymentDateText.dayMonthLong(date))
+        }
+    }
+
+    private func filledButton(_ title: String, identifier: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(DS.Typography.bodyBold)
+                .foregroundStyle(.thOnAccent)
+                // Con el texto al máximo, apilado, el título baja de línea entero en vez de cortarse.
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+                .multilineTextAlignment(dynamicTypeSize.isAccessibilitySize ? .center : .leading)
+                .minimumScaleFactor(0.8)
+                // Aire a los lados: con el mes en el texto, el botón no llega al borde de la cápsula y, si no cabe,
+                // la pareja se apila (card 3zva).
+                .padding(.horizontal, DS.Spacing.md)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, DS.Spacing.md)
+                .background(Capsule().fill(theme.accent))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(identifier)
+    }
+
+    private func glassButton(_ title: String, identifier: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(DS.Typography.bodyBold)
+                .foregroundStyle(.primary)
+                // Con el texto al máximo, apilado, el título baja de línea entero en vez de cortarse.
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+                .multilineTextAlignment(dynamicTypeSize.isAccessibilitySize ? .center : .leading)
+                .minimumScaleFactor(0.8)
+                // Aire a los lados: con el mes en el texto, el botón no llega al borde de la cápsula y, si no cabe,
+                // la pareja se apila (card 3zva).
+                .padding(.horizontal, DS.Spacing.md)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, DS.Spacing.md)
+                .glassEffect(.regular.interactive(), in: Capsule())
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(identifier)
+    }
+
+    /// «Mensual · Cuenta Principal · Telefonía».
+    private var subtitle: String {
+        var parts = [frequencyDescription]
+        if !payment.isGroupPayment, let account = payment.account?.name { parts.append(account) }
+        if let subcategory = payment.subcategory?.name { parts.append(subcategory) }
+        return parts.joined(separator: " · ")
+    }
+
+    // MARK: - Ficha y pausa (L10-7)
+
+    private var detailsCard: some View {
+        VStack(spacing: DS.Spacing.md) {
+            if payment.isRecurring {
+                detailRow(icon: "calendar", label: L10n.Scheduled.Detail.nextDate, value: formatDate(nextDate))
+                if let endDate = payment.endDate {
+                    detailRow(icon: "calendar.badge.minus", label: L10n.Scheduled.Detail.endDate, value: formatDate(endDate))
                 }
-                .padding(.top, DS.Spacing.sm)
+            } else {
+                detailRow(icon: "calendar", label: L10n.Scheduled.Editor.paymentDate, value: formatDate(payment.nextDueDate))
+            }
+
+            if !payment.isScheduleFinished {
+                Divider()
+                if payment.isPausedByUser {
+                    Text(L10n.UXL10.actionPauseHelp)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                        glassButton(L10n.UXL10.actionPause, identifier: "scheduled_detail_pause_button") {
+                            viewModel.setPaused(payment, paused: true)
+                            refreshPaymentData()
+                        }
+                        Text(L10n.UXL10.actionPauseHelp)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
         }
         .padding(DS.Spacing.xl)
@@ -261,25 +472,24 @@ struct ScheduledPaymentDetailView: View {
         }
     }
 
-    // MARK: - Upcoming Section
+    // MARK: - Fechas: estado y acciones por fecha (L10-8 C)
 
-    private var upcomingSection: some View {
+    private func occurrencesSection(title: String, icon: String, dates: [Date], isPast: Bool) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack(spacing: DS.Spacing.sm) {
-                Image(systemName: "arrow.forward.circle.fill")
-                    .foregroundStyle(.thAccent)
+                Image(systemName: icon)
+                    .foregroundStyle(isPast ? Color.secondary : theme.accentText)
                     .accessibilityHidden(true)
-                Text(L10n.Scheduled.Detail.upcoming)
+                Text(title)
                     .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(.primary)
             }
             .padding(.leading, DS.Spacing.xs)
 
             VStack(spacing: DS.Spacing.none) {
-                ForEach(Array(upcomingOccurrences.enumerated()), id: \.offset) { index, date in
-                    occurrenceRow(date: date, isPast: false, index: index + 1)
-
-                    if index < upcomingOccurrences.count - 1 {
+                ForEach(Array(dates.enumerated()), id: \.offset) { index, date in
+                    occurrenceRow(date: date, isPast: isPast)
+                    if index < dates.count - 1 {
                         SubsectionDivider()
                     }
                 }
@@ -288,175 +498,137 @@ struct ScheduledPaymentDetailView: View {
         }
     }
 
-    // MARK: - History Section
-
-    private var historySection: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            HStack(spacing: DS.Spacing.sm) {
-                Image(systemName: "clock.arrow.circlepath")
-                    .foregroundStyle(.secondary)
-                    .accessibilityHidden(true)
-                Text(L10n.Scheduled.Detail.history)
-                    .font(DS.Typography.subheadlineEmphasized)
-                    .foregroundStyle(.primary)
-            }
-            .padding(.leading, DS.Spacing.xs)
-
-            VStack(spacing: DS.Spacing.none) {
-                ForEach(Array(pastOccurrences.enumerated()), id: \.offset) { index, date in
-                    occurrenceRow(date: date, isPast: true, index: nil)
-
-                    if index < pastOccurrences.count - 1 {
-                        SubsectionDivider()
-                    }
-                }
-            }
-            .panelCard()
-        }
-    }
-
-    private func occurrenceRow(date: Date, isPast: Bool, index: Int?) -> some View {
+    private func occurrenceRow(date: Date, isPast: Bool) -> some View {
         let isSkipped = payment.isDateSkipped(date)
-        // Derive paid status from actual linked transaction (works across all months)
-        let rowLinkedTx = findLinkedTransaction(for: date)
-        let isPaidForDate = rowLinkedTx != nil
+        let linkedTx = linkedByOccurrence[date]
+        let state = rowState(for: date, isPaid: linkedTx != nil, isSkipped: isSkipped)
 
-        // Binding: true only when THIS row's date is the selected one
-        let isDialogPresented = Binding<Bool>(
-            get: { showOccurrenceActions && selectedOccurrenceDate.map { Calendar.current.isDate($0, inSameDayAs: date) } == true },
-            set: { newValue in
-                if !newValue {
-                    showOccurrenceActions = false
-                    selectedOccurrenceDate = nil
-                }
-            }
-        )
-
-        return Button {
-            selectedOccurrenceDate = date
-            showOccurrenceActions = true
+        return Menu {
+            occurrenceActions(date: date, state: state, linkedTx: linkedTx, isPast: isPast)
         } label: {
             HStack(spacing: DS.Spacing.md) {
-                // Date indicator
                 VStack(spacing: DS.Spacing.xxs) {
-                    Text(dayOfMonth(date))
+                    Text(ScheduledPaymentDateText.day(date))
                         .font(DS.Typography.title3.weight(.bold))
-                        .foregroundStyle(isSkipped || isPast ? .secondary : .primary)
-                    Text(monthAbbrev(date))
+                        .foregroundStyle(state == .paid || state == .skipped ? .secondary : .primary)
+                    Text(ScheduledPaymentDateText.monthAbbreviation(date))
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(.tertiary)
                 }
                 .frame(width: 40)
 
-                // Full date + status (show real date from linked transaction if paid)
-                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    let displayDate = rowLinkedTx?.date ?? date
-                    Text(formatFullDate(displayDate))
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                    Text(ScheduledPaymentDateText.full(linkedTx?.date ?? date))
                         .font(DS.Typography.subheadline)
-                        .foregroundStyle(isSkipped || isPast ? .secondary : .primary)
-
-                    if isSkipped {
-                        HStack(spacing: DS.Spacing.xxs) {
-                            Image(systemName: "arrow.uturn.forward.circle")
-                                .font(DS.Typography.captionSmall)
-                            Text(L10n.Scheduled.Detail.statusSkipped)
-                                .font(DS.Typography.captionSmall)
-                        }
-                        .foregroundStyle(.secondary)
-                    } else if isPaidForDate {
-                        HStack(spacing: DS.Spacing.xxs) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(DS.Typography.captionSmall)
-                            Text(L10n.Scheduled.Detail.statusPaid)
-                                .font(DS.Typography.captionSmall)
-                        }
-                        .foregroundStyle(theme.accent)
-                    } else if isPast {
-                        HStack(spacing: DS.Spacing.xxs) {
-                            Image(systemName: "exclamationmark.circle")
-                                .font(DS.Typography.captionSmall)
-                            Text(L10n.Scheduled.Detail.statusOverdue)
-                                .font(DS.Typography.captionSmall)
-                        }
-                        .foregroundStyle(Color.hotPink)
-                    } else if let idx = index {
-                        Text(ordinalText(idx))
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.tertiary)
-                    }
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.leading)
+                    ScheduledPaymentStatusPill(state: state, isIncome: payment.isIncome)
                 }
 
-                Spacer()
+                Spacer(minLength: DS.Spacing.sm)
 
-                // Amount + chevron (show real amount from linked transaction if available)
-                HStack(spacing: DS.Spacing.sm) {
-                    let displayAmount = rowLinkedTx.map { abs($0.amount) } ?? payment.amount
-                    let isEstimateRow = rowLinkedTx == nil && payment.isVariableAmount
-                    Text(formatAmount(displayAmount, isEstimate: isEstimateRow))
-                        .font(DS.Typography.label)
-                        .foregroundStyle(isSkipped ? .secondary : (isPast ? .secondary : (payment.transactionType == "income" ? Color.electricIndigo : .primary)))
+                let displayAmount = linkedTx.map { abs($0.amount) } ?? payment.amount
+                Text(formatAmount(displayAmount, isEstimate: linkedTx == nil && payment.isVariableAmount))
+                    .font(DS.Typography.label)
+                    .foregroundStyle(state == .overdue ? Color.hotPink : (state == .paid || state == .skipped ? .secondary : .primary))
 
-                    Image(systemName: "chevron.right")
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.tertiary)
-                }
+                Image(systemName: "ellipsis.circle")
+                    .font(DS.Typography.body)
+                    .foregroundStyle(theme.accentText)
+                    .accessibilityHidden(true)
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.md)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityHint(L10n.UXL10.dateActions)
         .accessibilityIdentifier("scheduled_occurrence")
-        .opacity(isSkipped ? 0.6 : 1.0)
-        .confirmationDialog(
-            formatFullDate(date),
-            isPresented: isDialogPresented,
-            titleVisibility: .visible
-        ) {
-            if isPaidForDate {
-                if let linkedTx = rowLinkedTx {
-                    Button {
-                        editingTransaction = linkedTx
-                    } label: {
-                        Label(L10n.Scheduled.Detail.viewRecord, systemImage: "doc.text.magnifyingglass")
-                    }
-                }
-                Button(role: .destructive) {
-                    unlinkTransactionsForDate(date)
-                } label: {
-                    Label(L10n.Scheduled.Detail.unlink, systemImage: "minus.circle")
-                }
-            } else if isSkipped {
-                Button(L10n.Scheduled.Detail.skipUndo) {
-                    viewModel.unskipOccurrence(payment: payment, date: date)
-                }
-                .accessibilityIdentifier("scheduled_unskip_button")
-            } else {
-                // "Adelantar gasto" for upcoming (not past) occurrences
-                if !isPast {
-                    let isFirstUpcoming = upcomingOccurrences.first.map { Calendar.current.isDate($0, inSameDayAs: date) } == true
-                    if isFirstUpcoming || !payment.isRecurring {
-                        Button {
-                            if let draft = viewModel.advanceOccurrence(payment: payment) {
-                                advancedDraft = draft
-                            }
-                        } label: {
-                            Label(L10n.Scheduled.Detail.advance, systemImage: "arrow.uturn.backward.circle")
-                        }
-                    }
-                }
+    }
+
+    @ViewBuilder
+    private func occurrenceActions(date: Date, state: ScheduledPaymentRowState, linkedTx: TransactionItem?, isPast: Bool) -> some View {
+        if state == .paid {
+            if let linkedTx {
                 Button {
-                    associationReferenceDate = date
-                    showAssociationSheet = true
+                    viewedTransaction = linkedTx
                 } label: {
-                    Label(L10n.Scheduled.Detail.associateTitle, systemImage: "link.badge.plus")
+                    Label(L10n.Scheduled.Detail.viewRecord, systemImage: "doc.text.magnifyingglass")
                 }
-                Button(L10n.Scheduled.Detail.skip, role: .destructive) {
-                    viewModel.skipOccurrence(payment: payment, date: date)
+                .accessibilityIdentifier("scheduled_view_record_button")
+            }
+            Button(role: .destructive) {
+                viewModel.unlinkTransactionsForDate(paymentID: payment.id, date: linkedTx?.date ?? date)
+                linkedTransactions = viewModel.fetchLinkedTransactions(for: payment)
+            } label: {
+                Label(L10n.Scheduled.Detail.unlink, systemImage: "minus.circle")
+            }
+        } else if state == .skipped {
+            Button {
+                viewModel.unskipOccurrence(payment: payment, date: date)
+            } label: {
+                Label(L10n.Scheduled.Detail.skipUndo, systemImage: "arrow.uturn.backward")
+            }
+            .accessibilityIdentifier("scheduled_unskip_button")
+        } else {
+            Button {
+                paidSheetDate = OccurrenceTarget(date: date)
+            } label: {
+                Label(payment.isIncome ? L10n.UXL10.actionReceived : L10n.UXL10.actionPaid, systemImage: "checkmark.circle")
+            }
+            .accessibilityIdentifier("scheduled_mark_paid_button")
+            // «Pagar ahora» solo en la próxima fecha que aún no llegó: pagar por adelantado (L10-11).
+            let isFirstUpcoming = upcomingOccurrences.first.map { Calendar.current.isDate($0, inSameDayAs: date) } == true
+            if !isPast, !payment.isGroupPayment, isFirstUpcoming || !payment.isRecurring {
+                Button {
+                    openPayNow(for: date, kind: .payNow)
+                } label: {
+                    Label(L10n.Scheduled.Detail.advance, systemImage: "arrow.uturn.backward.circle")
+                }
+                .accessibilityIdentifier("scheduled_pay_now_button")
+            }
+            if payment.isRecurring {
+                Button {
+                    skip(date)
+                } label: {
+                    Label {
+                        Text(L10n.UXL10.actionSkip)
+                        Text(L10n.UXL10.actionSkipHelp)
+                    } icon: {
+                        Image(systemName: "arrow.uturn.forward.circle")
+                    }
                 }
                 .accessibilityIdentifier("scheduled_skip_button")
             }
         }
+    }
+
+    // MARK: - Acciones
+
+    /// Salta la fecha y avisa con «Deshacer» (L10-10 B): explica sin añadir un paso a una acción que se puede deshacer.
+    private func skip(_ date: Date) {
+        viewModel.skipOccurrence(payment: payment, date: date)
+        DraftDiscardUndoNotice.show(
+            message: L10n.UXL10.skipped(ScheduledPaymentDateText.dayMonthLong(date)),
+            systemImage: "arrow.uturn.forward.circle",
+            undoTitle: L10n.Inbox.undoDiscard,
+            noticeIdentifier: "scheduled_skip_notice",
+            undoIdentifier: "scheduled_skip_undo"
+        ) {
+            // Deshacer, solo si la fecha volvió de verdad (card C3; mapa de `DS.Haptic`).
+            if viewModel.unskipOccurrence(payment: payment, date: date) { DS.Haptic.success() }
+        }
+    }
+
+    /// «Pagar ahora» (adelantar, L10-11) o «Apuntarlo ahora» sin cuenta o subcategoría (L10-9).
+    private enum PayNowKind { case payNow, record }
+
+    /// Abre el formulario de la Bandeja para pagar esa fecha, con un título que la nombra.
+    private func openPayNow(for date: Date, kind: PayNowKind) {
+        guard let (draft, isNew) = viewModel.draftForPaying(payment, occurrence: date) else { return }
+        let dateText = ScheduledPaymentDateText.dayMonthLong(date)
+        let title = kind == .payNow ? L10n.UXL10.payNowTitle(dateText) : L10n.UXL10.recordTitle(dateText)
+        payNowTarget = PayNowTarget(draft: draft, isNew: isNew, title: title)
     }
 
     /// Refresh linked transactions and recalculate payment data after sheet dismissal
@@ -465,128 +637,126 @@ struct ScheduledPaymentDetailView: View {
         viewModel.reloadAndRecalculate()
     }
 
-    /// Unlink transactions associated with this payment for a specific date
-    private func unlinkTransactionsForDate(_ date: Date) {
-        viewModel.unlinkTransactionsForDate(paymentID: payment.id, date: date)
-        linkedTransactions = viewModel.fetchLinkedTransactions(for: payment)
-    }
-
-    /// Find the linked transaction closest to a given occurrence date (±7 days)
-    private func findLinkedTransaction(for occurrenceDate: Date) -> TransactionItem? {
-        let calendar = Calendar.current
-        let occurrenceDay = calendar.startOfDay(for: occurrenceDate)
-        var bestMatch: TransactionItem?
-        var bestDistance = Int.max
-
-        for tx in linkedTransactions {
-            let txDay = calendar.startOfDay(for: tx.date)
-            let distance = abs(calendar.dateComponents([.day], from: occurrenceDay, to: txDay).day ?? Int.max)
-            if distance <= 7 && distance < bestDistance {
-                bestDistance = distance
-                bestMatch = tx
-            }
-        }
-        return bestMatch
-    }
-
-    // MARK: - Info Note
-
-    private var infoNote: some View {
-        HStack(spacing: DS.Spacing.md) {
-            Image(systemName: "info.circle")
-                .font(DS.Typography.body)
-                .foregroundStyle(.thAccent)
-                .accessibilityHidden(true)
-
-            Text(L10n.Scheduled.Detail.infoNote)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-        }
-        .padding(DS.Spacing.lg)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                .fill(theme.accent.opacity(0.1))
-        )
-    }
-
     // MARK: - Helpers
 
     private var frequencyDescription: String {
-        if !payment.isRecurring {
-            return L10n.Scheduled.Editor.onetime
-        }
-
-        let type = RecurrenceType(rawValue: payment.recurrenceType) ?? .monthly
-        let interval = payment.recurrenceInterval
-
-        if interval == 1 {
-            return type.localizedName
-        } else {
-            return "\(L10n.Scheduled.Editor.every) \(interval) \(type.localizedNamePlural)"
-        }
+        ScheduledPaymentDetailLogic.frequencyText(
+            isRecurring: payment.isRecurring,
+            recurrenceType: payment.recurrenceType,
+            interval: payment.recurrenceInterval
+        )
     }
 
     private func formatAmount(_ amount: Double, isEstimate: Bool = false) -> String {
         appPreferences.currency(amount, currencyCode: payment.currencyCode, forceFullPrecision: true, isEstimate: isEstimate)
     }
 
-    private static let mediumDateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateStyle = .medium
-        f.timeStyle = .none
-        return f
-    }()
-
-    private static let fullDateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        // Plantilla, no formato fijo: «Thursday, October 15, 2026» en EE. UU. y «quinta-feira, 15 de outubro de
-        // 2026» en Brasil. El formato fijo «EEEE, d MMMM yyyy» se comía el «de» y el orden de cada idioma.
-        f.setLocalizedDateFormatFromTemplate("EEEEdMMMMyyyy")
-        return f
-    }()
-
-    private static let dayFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "d"
-        return f
-    }()
-
-    private static let monthFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "MMM"
-        return f
-    }()
-
     private func formatDate(_ date: Date) -> String {
-        Self.mediumDateFormatter.string(from: date)
+        ScheduledPaymentDateText.medium(date)
+    }
+}
+
+// MARK: - Tipos de presentación
+
+/// Una fecha del pago, para `.sheet(item:)`.
+struct OccurrenceTarget: Identifiable {
+    let date: Date
+    var id: Date { date }
+}
+
+/// El borrador que se abre en el formulario de la Bandeja para pagar una fecha.
+struct PayNowTarget: Identifiable {
+    let draft: InboxDraft
+    /// Creado para esta vez: si se cierra sin guardar, se descarta.
+    let isNew: Bool
+    let title: String
+    var id: PersistentIdentifier { draft.persistentModelID }
+}
+
+/// La píldora de arriba del detalle: los mismos colores que la de la lista, algo más grande.
+private struct TopPillStyle: ViewModifier {
+    @Environment(\.yalaTheme) private var theme
+    let state: ScheduledPaymentRowState
+    let accent: Color
+
+    func body(content: Content) -> some View {
+        content
+            .foregroundStyle(foreground)
+            .padding(.horizontal, DS.Spacing.md)
+            .padding(.vertical, DS.Spacing.xs)
+            .background(Capsule().fill(fill))
     }
 
-    private func formatFullDate(_ date: Date) -> String {
-        Self.fullDateFormatter.string(from: date)
-    }
-
-    private func dayOfMonth(_ date: Date) -> String {
-        Self.dayFormatter.string(from: date)
-    }
-
-    private func monthAbbrev(_ date: Date) -> String {
-        Self.monthFormatter.string(from: date).uppercased()
-    }
-
-    private func ordinalText(_ n: Int) -> String {
-        switch n {
-        case 1: return L10n.Scheduled.Detail.nextFirst
-        case 2: return L10n.Scheduled.Detail.nextSecond
-        case 3: return L10n.Scheduled.Detail.nextThird
-        default: return ""
+    private var fill: Color {
+        switch state {
+        case .overdue: return Color.hotPink
+        case .dueToday: return Color.hotPink.opacity(0.18)
+        case .dueTomorrow, .dueInDays: return accent.opacity(0.18)
+        case .paid: return accent
+        case .skipped, .paused: return Color(.tertiarySystemFill)
         }
     }
 
+    private var foreground: Color {
+        switch state {
+        case .overdue: return .white
+        case .paid: return theme.onFill(accent)  // sobre el relleno del acento (card lbcr)
+        case .dueToday, .dueTomorrow, .dueInDays: return .primary
+        case .skipped, .paused: return .secondary
+        }
+    }
 }
 
-#Preview {
-    NavigationStack {
-        Text("Preview requires ScheduledPayment instance")
+/// Las hojas del detalle, fuera del `body` para que el compilador lo tipe por partes (regla del CI con Xcode 26.6).
+private struct DetailSheets: ViewModifier {
+    let payment: ScheduledPayment
+    @Bindable var viewModel: ScheduledPaymentsViewModel
+    @Binding var showEditor: Bool
+    @Binding var paidSheetDate: OccurrenceTarget?
+    @Binding var viewedTransaction: TransactionItem?
+    @Binding var transactionAwaitingEditor: TransactionItem?
+    @Binding var editingTransaction: TransactionItem?
+    @Binding var payNowTarget: PayNowTarget?
+    let onRecordInForm: (Date) -> Void
+    let onDelete: () -> Void
+    let onRefresh: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .sheet(isPresented: $showEditor, onDismiss: onRefresh) {
+                ScheduledPaymentEditorView(payment: payment, onDelete: onDelete)
+            }
+            .sheet(item: $paidSheetDate, onDismiss: onRefresh) { target in
+                ScheduledPaymentPaidSheet(
+                    payment: payment,
+                    occurrence: target.date,
+                    viewModel: viewModel,
+                    onRecordInForm: { onRecordInForm(target.date) }
+                )
+            }
+            // «Ver registro» abre el detalle del registro, el de Registros, con su «Editar» (L10-12).
+            .sheet(item: $viewedTransaction, onDismiss: openAwaitingEditor) { transaction in
+                TransactionDetailSheet(transaction: transaction) {
+                    transactionAwaitingEditor = transaction
+                    viewedTransaction = nil
+                }
+            }
+            .sheet(item: $editingTransaction, onDismiss: onRefresh) { transaction in
+                NewTransactionView(transactionToEdit: transaction)
+                    .presentationDetents([.large])
+            }
+            .sheet(item: $payNowTarget, onDismiss: onRefresh) { target in
+                InboxDraftEditSheet(draft: target.draft, payNowTitle: target.title)
+                    .presentationDetents([.large])
+                    .onDisappear {
+                        if target.isNew { viewModel.discardUnusedPayNowDraft(target.draft) }
+                    }
+            }
+    }
+
+    private func openAwaitingEditor() {
+        guard let transaction = transactionAwaitingEditor else { return }
+        transactionAwaitingEditor = nil
+        editingTransaction = transaction
     }
 }

@@ -42,7 +42,6 @@ struct TopSubcategoriesWidget: View {
 
     // Selected Subcategory IDs (for dimming others) - uses PersistentIdentifier for uniqueness
     var selectedSubcategoryIDs: Set<PersistentIdentifier> = []
-    var isExcludeMode: Bool = false
 
     // Navigation Action
     var onShowMore: (() -> Void)? = nil
@@ -258,6 +257,7 @@ struct TopSubcategoriesWidget: View {
                     }
                     .padding(.horizontal, 1)  // Tiny padding for shadow/clip safety
                 }
+                .fadesTowardVerticalBar()
             }
         }
     }
@@ -292,24 +292,14 @@ struct TopSubcategoriesWidget: View {
                 return subcategories
             }()
 
-            // In exclude mode, hide excluded items entirely
-            let visibleSubcategories: [SubcategorySpendingSummary] = {
-                if isExcludeMode && !selectedSubcategoryIDs.isEmpty {
-                    return filteredSubcategories.filter {
-                        guard let id = $0.persistentID else { return true }
-                        return !selectedSubcategoryIDs.contains(id)
-                    }
-                }
-                return filteredSubcategories
-            }()
+            let visibleSubcategories: [SubcategorySpendingSummary] = filteredSubcategories
 
             // Find max amount for bar scaling from visible list
             if let maxAmount = visibleSubcategories.first?.amount {
                 let displayed = Array(visibleSubcategories.prefix(limit))
                 ForEach(displayed) { summary in
                     let isSelected = summary.persistentID.map { selectedSubcategoryIDs.contains($0) } ?? false
-                    // In exclude mode, excluded items are hidden — no dimming needed
-                    let isDimmed = !isExcludeMode && !selectedSubcategoryIDs.isEmpty && !isSelected
+                    let isDimmed = !selectedSubcategoryIDs.isEmpty && !isSelected
 
                     Button {
                         if let persistentID = summary.persistentID {
@@ -358,7 +348,7 @@ struct TopSubcategoriesWidget: View {
     }
 
     /// PP2-06: aplica el filtro global de categoría (consistencia con medium/large)
-    /// y esconde los excluidos en exclude mode. No aplica `localCategoryFilterID`
+    /// (lo oculto ya llega fuera de los datos). No aplica `localCategoryFilterID`
     /// porque el picker no está disponible en `.small`.
     private var visibleSubcategoriesForSmall: [SubcategorySpendingSummary] {
         let globallyFiltered: [SubcategorySpendingSummary] = {
@@ -368,12 +358,6 @@ struct TopSubcategoriesWidget: View {
             return subcategories
         }()
 
-        if isExcludeMode, !selectedSubcategoryIDs.isEmpty {
-            return globallyFiltered.filter {
-                guard let id = $0.persistentID else { return true }
-                return !selectedSubcategoryIDs.contains(id)
-            }
-        }
         return globallyFiltered
     }
 
@@ -382,7 +366,7 @@ struct TopSubcategoriesWidget: View {
         let color = Color(hex: summary.colorHex ?? AppConstants.defaultSubcategoryColorHex)
         let clampedPercentage = max(0, min(100, summary.percentageOfTotal))
         let isSelected = summary.persistentID.map { selectedSubcategoryIDs.contains($0) } ?? false
-        let shouldDim = !isExcludeMode && !selectedSubcategoryIDs.isEmpty && !isSelected
+        let shouldDim = !selectedSubcategoryIDs.isEmpty && !isSelected
 
         Button {
             if let persistentID = summary.persistentID {
@@ -397,7 +381,7 @@ struct TopSubcategoriesWidget: View {
                             .fill(color)
                             .frame(width: 28, height: 28)
 
-                        Image(systemName: summary.subcategory?.iconName ?? summary.category?.iconName ?? "tag.fill")
+                        Image(systemName: summary.iconName ?? "tag.fill")
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(.white)
                             .accessibilityHidden(true)
@@ -504,10 +488,7 @@ private struct SubcategoryRow: View {
                             .fill(Color(hex: summary.colorHex ?? AppConstants.defaultSubcategoryColorHex))
                             .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
 
-                        Image(
-                            systemName: summary.subcategory?.iconName ?? summary.category?.iconName
-                                ?? "tag.fill"
-                        )
+                        Image(systemName: summary.iconName ?? "tag.fill")
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(.white)
                         .accessibilityHidden(true)
@@ -520,24 +501,28 @@ private struct SubcategoryRow: View {
                                 .font(DS.Typography.headline)
                                 .foregroundStyle(.primary)
                             Spacer()
-                            Text(
-                                appPreferences.currency(summary.amount, currencyCode: currencyCode)
+                            // Misma forma de importe que «Top categorías» (símbolo y decimales en pequeño).
+                            AmountText(
+                                value: summary.amount,
+                                currencyCode: currencyCode,
+                                font: DS.Typography.headline, secondaryFont: DS.Typography.caption
                             )
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(.primary)
                         }
 
                         // Percentages + Variation Chip (inline, chip aligned right)
                         HStack(spacing: DS.Spacing.sm) {
-                            Text(
-                                "\(formattedPercentage(summary.percentageOfCategory)) \(String(format: L10n.Widget.of, summary.category?.name ?? L10n.Widget.categoryAbbr))"
-                            )
-                            .font(DS.Typography.captionSmall)
-                            .foregroundStyle(.secondary)
-
-                            Text("•")
+                            // «Sin categoría» no tiene categoría padre: su «% de la categoría» sería siempre 100 %.
+                            if !summary.isUncategorized {
+                                Text(
+                                    "\(formattedPercentage(summary.percentageOfCategory)) \(String(format: L10n.Widget.of, summary.category?.name ?? L10n.Widget.categoryAbbr))"
+                                )
                                 .font(DS.Typography.captionSmall)
-                                .foregroundStyle(.secondary.opacity(0.5))
+                                .foregroundStyle(.secondary)
+
+                                Text("•")
+                                    .font(DS.Typography.captionSmall)
+                                    .foregroundStyle(.secondary.opacity(0.5))
+                            }
 
                             Text(
                                 "\(formattedPercentage(summary.percentageOfTotal)) \(L10n.Widget.ofTotal)"
@@ -552,22 +537,24 @@ private struct SubcategoryRow: View {
                         }
 
                         // Bar
-                        ZStack(alignment: .leading) {
-                            Capsule().fill(DS.Semantic.neutralBackground)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 6)
-                            let width = maxAmount > 0 ? (summary.amount / maxAmount) * barWidth : 0
-                            // Mismo 22 % que `TopCategoriesWidget`: las dos tarjetas
-                            // viven juntas dentro de la section «Distribución», así que
-                            // una calmada al lado de otra a color pleno canta más que
-                            // las dos saturadas.
-                            Capsule().fill(Color(hex: summary.colorHex ?? AppConstants.defaultSubcategoryColorHex).opacity(0.22))
-                                .frame(width: width, height: 6)
-                        }
-                        .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { newWidth in
-                            guard abs(newWidth - barWidth) > geometryChangeThreshold else { return }
-                            barWidth = newWidth
-                        }
+                        // El relleno, en `overlay` del carril, como en `TopCategoriesWidget`: en un `ZStack` el de la
+                        // primera fila fijaba el ancho medido y la barra no encogía al estrechar la ventana.
+                        let width = maxAmount > 0 ? (summary.amount / maxAmount) * barWidth : 0
+                        Capsule().fill(DS.Semantic.neutralBackground)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 6)
+                            .overlay(alignment: .leading) {
+                                // Mismo 22 % que `TopCategoriesWidget`: las dos tarjetas
+                                // viven juntas dentro de la section «Distribución», así que
+                                // una calmada al lado de otra a color pleno canta más que
+                                // las dos saturadas.
+                                Capsule().fill(Color(hex: summary.colorHex ?? AppConstants.defaultSubcategoryColorHex).opacity(0.22))
+                                    .frame(width: width, height: 6)
+                            }
+                            .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { newWidth in
+                                guard abs(newWidth - barWidth) > geometryChangeThreshold else { return }
+                                barWidth = newWidth
+                            }
                     }
                 }
             }

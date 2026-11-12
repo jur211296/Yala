@@ -66,21 +66,15 @@ struct ProBadge: View {
 
     var body: some View {
         HStack(spacing: size.iconSpacing) {
-            YalaSpark(size: size.sparkSize, animated: false)
             Text("PRO")
-                .font(size.font)
-                .foregroundStyle(.white)
+                .font(size.font.weight(.heavy))
+                .foregroundStyle(Color.proGoldInk)
         }
         .padding(.horizontal, size.horizontalPadding)
         .padding(.vertical, size.verticalPadding)
-        .background(
-            LinearGradient(
-                colors: DS.Gradients.proBadge,
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
-        .clipShape(Capsule())
+        // Dorado sólido con el texto oscuro (UX 2.2 · L16-12). Antes, «PRO» blanco sobre el degradado amarillo-naranja,
+        // con una chispa dorada que sobre el dorado no se veía.
+        .background(Capsule().fill(Color.proGold))
     }
 }
 

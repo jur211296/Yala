@@ -62,7 +62,7 @@ struct TabBarConfigView: View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "info.circle.fill")
                 .font(DS.Typography.body)
-                .foregroundStyle(.thAccent)
+                .foregroundStyle(.thAccentText)
 
             Text(L10n.Settings.tabBarConfigInfo)
                 .font(DS.Typography.subheadline)
@@ -100,7 +100,11 @@ struct TabBarConfigView: View {
                         .listRowBackground(Color.clear)
                         .listRowSeparator(index == localConfig.activeTabs.count - 1 ? .hidden : .visible)
                 }
-                .onMove(perform: moveTab)
+                // Una vibración de selección al soltar en su sitio (card C4; mapa de `DS.Haptic`).
+                .onMove { source, destination in
+                    DS.Haptic.selection()
+                    moveTab(from: source, to: destination)
+                }
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
@@ -108,6 +112,15 @@ struct TabBarConfigView: View {
             .frame(height: CGFloat(localConfig.activeTabs.count) * DS.FormRow.minHeight)
             .solidCard()
             .environment(\.editMode, .constant(.active))
+
+            // UX 2.2 · L16-13: las dos reglas de la barra, con las palabras de la pantalla. Antes solo se veía el candado de
+            // Panel y un «Máximo 3» en naranja al chocar con el tope.
+            Text(L10n.UXL15.tabBarRules)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, DS.Chip.paddingV)
+                .accessibilityIdentifier("tabconfig_rules_footer")
 
             // Validation message
             if !canDeactivate {
@@ -121,13 +134,13 @@ struct TabBarConfigView: View {
             // Position indicator
             Text("\(position)")
                 .font(DS.Typography.captionMonoBold)
-                .foregroundStyle(.thAccent)
+                .foregroundStyle(.thAccentText)
                 .frame(width: 20)
 
             // Tab icon
             Image(systemName: tab.iconName)
                 .font(DS.Typography.body)
-                .foregroundStyle(.thAccent)
+                .foregroundStyle(.thAccentText)
                 .frame(width: 28, height: 28)
 
             // Tab name
@@ -211,11 +224,12 @@ struct TabBarConfigView: View {
             } label: {
                 Image(systemName: "plus.circle.fill")
                     .font(DS.Typography.title)
-                    .foregroundStyle(canActivate ? theme.accent : Color.secondary.opacity(0.5))
+                    .foregroundStyle(canActivate ? theme.accentText : Color.secondary.opacity(0.5))
             }
             .buttonStyle(.plain)
             .disabled(!canActivate)
             .accessibilityHint(!canActivate ? L10n.Accessibility.tabLimitReached : "")
+            .accessibilityIdentifier("tabconfig_add_\(tab.id)")
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.md)
