@@ -752,7 +752,11 @@ extension XCUIApplication {
         let tops = covers.compactMap { cover -> CGFloat? in
             guard cover.exists else { return nil }
             let frame = cover.frame
-            return frame.minY < chipFrame.maxY && frame.maxY > chipFrame.minY ? frame.minY : nil
+            // Pisa si su borde de arriba queda por encima del de abajo del chip, también con el chip ENTERO por debajo:
+            // la barra y el teclado llegan hasta el borde de la pantalla. Con la fila de categorías a un toque (decisión 21
+            // de 2.3) y una cuenta en dólares, el chip de categoría quedaba bajo «Guardar», sin solaparse con el botón, y
+            // el toque caía en la barra (medido el 2026-11-11 en el vídeo del `.xcresult`).
+            return frame.minY < chipFrame.maxY ? frame.minY : nil
         }
         return tops.min()
     }

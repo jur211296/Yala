@@ -991,6 +991,21 @@ struct NewTransactionView: View {
                 .accessibilityIdentifier("new_transaction_split_chip")
             }
 
+            // Las categorías a un toque (decisión 21 de 2.3, C2): solo en un registro nuevo de gasto o ingreso.
+            if showsQuickCategoryRow {
+                CategoryQuickPickRow(
+                    subcategories: viewModel.quickPickSubcategories,
+                    selected: viewModel.selectedSubcategory,
+                    onSelect: { viewModel.selectedSubcategory = $0 },
+                    onMore: {
+                        dismissKeyboard()
+                        viewModel.showSubcategorySelector = true
+                    }
+                )
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.top, DS.Spacing.sm)
+            }
+
             // Category chip + Nature chip (visible when subcategory is selected, not for transfers)
             // La necesidad elegida, rellena (L2-19); el chip de la categoría, a su izquierda, no (C no elegida). El mismo
             // componente que la aprobación de la Bandeja (registro unificado).
@@ -1661,6 +1676,12 @@ struct NewTransactionView: View {
     }
 
     /// Color for the subcategory chip - uses the category's color when selected
+    /// La fila de categorías a un toque (decisión 21 de 2.3, C2): registro nuevo de gasto o ingreso, con algo que ofrecer.
+    private var showsQuickCategoryRow: Bool {
+        !viewModel.isTransfer && !isEditingSavedRecord && viewModel.editingTransaction == nil && !isBridgedReadOnly
+            && !viewModel.quickPickSubcategories.isEmpty
+    }
+
     private var subcategoryChipColor: Color? {
         guard let subcategory = viewModel.selectedSubcategory else {
             return nil

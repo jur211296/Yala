@@ -8913,3 +8913,30 @@
 /* Buscar en Registros (decisión 14 de 2.3) */
 "records.listSearch.placeholder" = "Zoeken in boekingen";
 "records.listSearch.clear" = "Zoekopdracht wissen";
+
+/* Nuevo registro: categorías a un toque y palabras del buscador de categorías (decisión 21 de 2.3) */
+"subcategory.quickPick.more" = "Meer…";
+"subcategory.words.restaurants" = "koffie, café, lunch, diner, ontbijt, restaurant, burger, pizza, eten, maaltijd";
+"subcategory.words.delivery" = "thuisbezorgd, uber eats, deliveroo, bestelling, bezorging";
+"subcategory.words.supermarkets" = "supermarkt, boodschappen, albert heijn, jumbo, lidl, aldi, plus, bakker, brood";
+"subcategory.words.rideshare" = "uber, bolt, taxi, rit";
+"subcategory.words.publicTransport" = "bus, tram, metro, trein, ov-chipkaart, ns, kaartje";
+"subcategory.words.fuel" = "benzine, tanken, tankstation, diesel, brandstof";
+"subcategory.words.parking" = "parkeren, parkeerplaats, parkeergarage";
+"subcategory.words.pharmacy" = "apotheek, drogist, medicijnen, pillen, recept";
+"subcategory.words.health" = "huisarts, dokter, kliniek, ziekenhuis, tandarts, onderzoek";
+"subcategory.words.clothing" = "kleding, schoenen, sneakers, shirt, broek, jeans, jurk, jas";
+"subcategory.words.tech" = "telefoon, mobiel, laptop, computer, koptelefoon, oplader, tablet";
+"subcategory.words.gifts" = "cadeau, verjaardag, kerst, sinterklaas";
+"subcategory.words.beauty" = "kapper, barbier, knippen, nagels, manicure, spa, schoonheidssalon";
+"subcategory.words.rent" = "huur, appartement, woning";
+"subcategory.words.utilities" = "stroom, energie, water, gas, rekening";
+"subcategory.words.phone" = "abonnement, opwaarderen, internet, wifi, kpn, vodafone, odido";
+"subcategory.words.streaming" = "netflix, spotify, disney, videoland, prime video, youtube";
+"subcategory.words.bars" = "bar, kroeg, bier, borrel, cocktail, wijn";
+"subcategory.words.shows" = "bioscoop, film, kaartjes, concert, theater";
+"subcategory.words.travel" = "reis, vlucht, hotel, airbnb, vakantie";
+"subcategory.words.fitness" = "sportschool, gym, training, crossfit, yoga, pilates";
+"subcategory.words.education" = "school, universiteit, cursus, collegegeld, boeken, les";
+"subcategory.words.petFood" = "hondenvoer, kattenvoer, dierenvoer, brokjes";
+"subcategory.words.salary" = "salaris, loon, loonstrook, betaling";

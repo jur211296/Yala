@@ -4360,6 +4360,15 @@ enum L10n {
         static var balanceAdjustment: String { ls("subcategory.balanceAdjustment", comment: "") }
         static var accountTransferOther: String { ls("subcategory.accountTransferOther", comment: "") }
 
+        /// Palabras del día a día que llevan a una categoría sembrada en el buscador de la hoja, separadas por comas
+        /// (decisión 21 de 2.3, C3). `seed` es el sufijo de `subcategory.<seed>`; la lista vive en `CategoryEverydayWords`.
+        static func everydayWords(_ seed: String) -> String {
+            ls("subcategory.words.\(seed)", comment: "Palabras de búsqueda de la categoría, separadas por comas")
+        }
+
+        /// «Más…» al final de la fila de categorías frecuentes de Nuevo registro: abre la hoja con todas (decisión 21, C2).
+        static var quickPickMore: String { ls("subcategory.quickPick.more", comment: "Abre la hoja con todas las categorías") }
+
         // MARK: - System Subcategories (A0-Bridge)
 
         enum System {

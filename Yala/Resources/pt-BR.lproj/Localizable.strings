@@ -8901,3 +8901,30 @@
 /* Buscar en Registros (decisión 14 de 2.3) */
 "records.listSearch.placeholder" = "Buscar em Registros";
 "records.listSearch.clear" = "Limpar busca";
+
+/* Nuevo registro: categorías a un toque y palabras del buscador de categorías (decisión 21 de 2.3) */
+"subcategory.quickPick.more" = "Mais…";
+"subcategory.words.restaurants" = "café, cafeteria, almoço, jantar, café da manhã, restaurante, lanche, hambúrguer, pizzaria, comida, prato feito";
+"subcategory.words.delivery" = "ifood, rappi, uber eats, pedido, entrega";
+"subcategory.words.supermarkets" = "mercado, supermercado, feira, hortifruti, padaria, pão, carrefour, assaí, atacadão, pão de açúcar";
+"subcategory.words.rideshare" = "uber, 99, cabify, táxi, corrida";
+"subcategory.words.publicTransport" = "ônibus, metrô, trem, passagem, bilhete único, brt";
+"subcategory.words.fuel" = "gasolina, combustível, posto, etanol, álcool, diesel";
+"subcategory.words.parking" = "estacionamento, zona azul, garagem";
+"subcategory.words.pharmacy" = "farmácia, drogaria, remédio, medicamento, droga raia, drogasil";
+"subcategory.words.health" = "médico, consulta, clínica, hospital, dentista, exame";
+"subcategory.words.clothing" = "roupa, tênis, sapato, camiseta, camisa, calça, vestido, jaqueta";
+"subcategory.words.tech" = "celular, notebook, computador, fone, carregador, tablet";
+"subcategory.words.gifts" = "presente, aniversário, lembrancinha, natal";
+"subcategory.words.beauty" = "cabeleireiro, barbearia, corte de cabelo, unha, manicure, spa, salão";
+"subcategory.words.rent" = "aluguel, apartamento, condomínio, imóvel";
+"subcategory.words.utilities" = "luz, energia, água, gás, conta, boleto";
+"subcategory.words.phone" = "plano, recarga, internet, wifi, celular, vivo, claro, tim, oi";
+"subcategory.words.streaming" = "netflix, spotify, disney, hbo, max, prime video, youtube, globoplay";
+"subcategory.words.bars" = "bar, cerveja, chopp, boteco, drinque, caipirinha, vinho";
+"subcategory.words.shows" = "cinema, ingresso, show, teatro, filme";
+"subcategory.words.travel" = "viagem, voo, passagem aérea, hotel, pousada, airbnb, férias";
+"subcategory.words.fitness" = "academia, musculação, crossfit, yoga, pilates, treino";
+"subcategory.words.education" = "escola, faculdade, curso, matrícula, mensalidade, livros, aulas";
+"subcategory.words.petFood" = "ração, comida de cachorro, comida de gato, petisco";
+"subcategory.words.salary" = "salário, holerite, pagamento, contracheque";

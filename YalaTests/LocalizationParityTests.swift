@@ -273,6 +273,10 @@ struct LocalizationParityTests {
         "devseed.notePhonePlan",
         "devseed.budgetMobility",
         "cashFlowPlan.chartRollingAvg",
+        // Palabras del buscador de categorías (decisión 21 de 2.3): «celular», «móvil» o «phone plan» son lo que se
+        // COMPRA o se paga, no el aparato donde corre Yala.
+        "subcategory.words.tech",
+        "subcategory.words.phone",
     ]
 
     /// La palabra «teléfono» de cada idioma. El aparato se nombra «dispositivo»

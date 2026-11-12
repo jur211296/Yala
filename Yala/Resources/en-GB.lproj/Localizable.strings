@@ -8145,3 +8145,30 @@
 /* Buscar en Registros (decisión 14 de 2.3) */
 "records.listSearch.placeholder" = "Search Records";
 "records.listSearch.clear" = "Clear search";
+
+/* Nuevo registro: categorías a un toque y palabras del buscador de categorías (decisión 21 de 2.3) */
+"subcategory.quickPick.more" = "More…";
+"subcategory.words.restaurants" = "coffee, café, lunch, dinner, breakfast, brunch, restaurant, burger, pizza, meal, sandwich";
+"subcategory.words.delivery" = "deliveroo, just eat, uber eats, takeaway, order";
+"subcategory.words.supermarkets" = "groceries, supermarket, food shop, tesco, sainsbury's, asda, aldi, lidl, waitrose, bread";
+"subcategory.words.rideshare" = "uber, bolt, taxi, cab, minicab, ride";
+"subcategory.words.publicTransport" = "bus, tube, underground, train, rail, oyster, fare, tram";
+"subcategory.words.fuel" = "petrol, diesel, fuel, petrol station";
+"subcategory.words.parking" = "parking, car park, pay and display";
+"subcategory.words.pharmacy" = "chemist, pharmacy, medicine, pills, prescription, boots";
+"subcategory.words.health" = "doctor, gp, clinic, hospital, dentist, check-up, appointment";
+"subcategory.words.clothing" = "clothes, shoes, trainers, shirt, trousers, jeans, dress, jacket";
+"subcategory.words.tech" = "mobile, phone, laptop, computer, headphones, charger, tablet";
+"subcategory.words.gifts" = "gift, present, birthday, christmas";
+"subcategory.words.beauty" = "hairdresser, barber, haircut, nails, manicure, spa, salon";
+"subcategory.words.rent" = "rent, flat, landlord, council tax";
+"subcategory.words.utilities" = "electricity, energy, water, gas bill, bill";
+"subcategory.words.phone" = "phone contract, top up, broadband, wifi, mobile, ee, o2, vodafone";
+"subcategory.words.streaming" = "netflix, spotify, disney, hbo, max, prime video, youtube, apple tv";
+"subcategory.words.bars" = "pub, pint, beer, drinks, cocktail, wine, bar";
+"subcategory.words.shows" = "cinema, film, tickets, gig, concert, theatre";
+"subcategory.words.travel" = "trip, flight, hotel, airbnb, holiday";
+"subcategory.words.fitness" = "gym, workout, crossfit, yoga, pilates, training";
+"subcategory.words.education" = "school, college, university, course, tuition fees, books, classes";
+"subcategory.words.petFood" = "dog food, cat food, kibble, pet food";
+"subcategory.words.salary" = "salary, wages, payslip, payroll, pay";
