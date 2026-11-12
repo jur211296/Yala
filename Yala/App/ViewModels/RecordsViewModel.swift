@@ -565,6 +565,32 @@ final class RecordsViewModel: Filterable {
         }
     }
 
+    /// Cuántos registros marca «Seleccionar todo»: todos los del período filtrado, no solo los que se ven en pantalla
+    /// (decisión 18 de 2.3, E2: el botón lo dice, «Seleccionar los 2.334»).
+    var selectableRecordCount: Int {
+        groupedRecords.reduce(0) { $0 + $1.records.count }
+    }
+
+    /// `true` si todo lo del período ya está elegido.
+    var allRecordsSelected: Bool {
+        let total = selectableRecordCount
+        return total > 0 && selectedRecordIDs.count >= total
+    }
+
+    /// «Seleccionar día» (E2): marca los registros de ese día; si ya estaban todos, los quita.
+    func toggleDaySelection(_ records: [TransactionItem]) {
+        let ids = records.map(\.persistentModelID)
+        if isDayFullySelected(records) {
+            selectedRecordIDs.subtract(ids)
+        } else {
+            selectedRecordIDs.formUnion(ids)
+        }
+    }
+
+    func isDayFullySelected(_ records: [TransactionItem]) -> Bool {
+        !records.isEmpty && records.allSatisfy { selectedRecordIDs.contains($0.persistentModelID) }
+    }
+
     /// Deselect all records
     func deselectAll() {
         selectedRecordIDs.removeAll()
@@ -652,10 +678,47 @@ final class RecordsViewModel: Filterable {
         duplicateRemovalCount += 1
     }
 
-    /// Delete selected records (including transfer pairs)
-    func deleteSelected(context: ModelContext) {
-        deleteRecords(ids: selectedRecordIDs, context: context)
+    /// Borra lo elegido con unos segundos para deshacerlo (decisión 18 de 2.3, E1): el mismo borrado diferido que el de un
+    /// registro (`RecordPendingDeletion`). Nada se borra de la base hasta que vence el aviso, así que «Deshacer» no
+    /// tiene que rehacer nada ni sube nada a iCloud. Al vencer, `deleteRecords` borra todo lo que sigue esperando con UN
+    /// guardado, y con él las parejas de las transferencias. Lo de un grupo no entra (lo dice la pregunta).
+    /// `nameFor`: cómo se llama cada registro en el aviso si es el único que se borra («Eliminaste «Uber · S/ 26»»).
+    func deleteSelected(context: ModelContext, nameFor: (TransactionItem) -> String = { $0.note ?? "" }) {
+        let entries = getSelectedTransactions(context: context)
+            .filter { !$0.isDeleted && RecordBulkActionLogic.allows(.delete, .init(record: $0)) }
+            .map { tx in
+                (id: tx.persistentModelID,
+                 transferPairID: tx.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer
+                    ? tx.transferPairID : nil,
+                 name: nameFor(tx))
+            }
         exitSelectionMode()
+        guard !entries.isEmpty else { return }
+        if let openRecordID, entries.contains(where: { $0.id == openRecordID }) { self.openRecordID = nil }
+        RecordPendingDeletion.shared.requestBatch(
+            entries,
+            refreshAfterUndo: { WidgetDataCache.updateCache(context: context) }
+        ) { stillPending in
+            // Fuerte a propósito, como el borrado de uno: si la persona sale de Registros en esos segundos, el borrado
+            // se tiene que hacer igual. Solo lo retiene el lote que espera, que termina.
+            self.deleteRecords(ids: Self.existing(stillPending, context: context), context: context)
+        }
+    }
+
+    /// Los que siguen en la base. Un fetch por lote y no `model(for:)`, que fabrica un objeto aunque el registro se haya
+    /// borrado por otro camino mientras esperaba (Buscar, su pareja, otro dispositivo).
+    private static func existing(_ ids: Set<PersistentIdentifier>, context: ModelContext) -> Set<PersistentIdentifier> {
+        guard !ids.isEmpty else { return [] }
+        let wanted = Array(ids)
+        let descriptor = FetchDescriptor<TransactionItem>(predicate: #Predicate { wanted.contains($0.persistentModelID) })
+        do {
+            return Set(try context.fetch(descriptor).map(\.persistentModelID))
+        } catch {
+            #if DEBUG
+            print("RecordsViewModel: Error checking records before bulk delete: \(error)")
+            #endif
+            return []
+        }
     }
 
     /// Borra estos registros y, de las transferencias, también su pareja. Es el borrado del modo selección; el menú
@@ -1312,6 +1375,8 @@ final class RecordsViewModel: Filterable {
         isBatchingBulkEdit = true
         bulkBatchFailed = false
         defer { isBatchingBulkEdit = false }
+        // La foto del «antes» para «Deshacer» (decisión 18 de 2.3, E1), antes de tocar nada.
+        var undo = RecordBulkEditUndo.capture(getSelectedTransactions(context: context), context: context)
         if let subcategory = changes.subcategory { bulkUpdateSubcategory(subcategory, context: context) }
         if let account = changes.account { bulkUpdateAccount(account, context: context) }
         if !changes.tagsToAdd.isEmpty { bulkAddTags(changes.tagsToAdd, context: context) }
@@ -1334,7 +1399,66 @@ final class RecordsViewModel: Filterable {
             bulkUpdateError = L10n.UXL8.bulkSaveFailed
             return false
         }
+        undo.sealAfter()
+        lastBulkEditUndo = undo
+        offerBulkEditUndo(undo, changes: changes, context: context)
+        releaseBulkEditUndoAfterNotice()
         return true
+    }
+
+    /// La foto retiene los registros del lote (miles con «Seleccionar todo»): se suelta cuando el aviso ya no se ve.
+    private func releaseBulkEditUndoAfterNotice() {
+        let token = UUID()
+        bulkEditUndoToken = token
+        Task { @MainActor [weak self] in
+            do {
+                try await Task.sleep(for: RecordPendingDeletion.commitDelay)
+            } catch {
+                return
+            }
+            guard let self, self.bulkEditUndoToken == token else { return }
+            self.lastBulkEditUndo = nil
+        }
+    }
+
+    private var bulkEditUndoToken: UUID?
+
+    /// El último lote aplicado, con su foto de antes, mientras su aviso puede deshacerlo. Lo leen los tests.
+    private(set) var lastBulkEditUndo: RecordBulkEditUndo?
+
+    /// El aviso tras aplicar el lote: «3 registros ahora son Transporte público · Deshacer», el mismo aviso que el
+    /// borrado de uno. Sin ⌘Z: el atajo es de los borrados (L15-13).
+    private func offerBulkEditUndo(_ undo: RecordBulkEditUndo, changes: BulkEditChanges, context: ModelContext) {
+        guard undo.changedRecordCount > 0 else { return }
+        let count = max(undo.changedCount, 1)
+        let onlySubcategory = changes.subcategory != nil && changes.account == nil && changes.tagsToAdd.isEmpty
+            && changes.tagsToRemove.isEmpty && changes.note == nil && changes.amount == nil
+        let message = onlySubcategory
+            ? L10n.RecordsBulkUndo.editedInto(count, changes.subcategory?.name ?? "")
+            : L10n.RecordsBulkUndo.edited(count)
+        DraftDiscardUndoNotice.show(
+            message: message,
+            systemImage: "pencil",
+            undoTitle: L10n.Inbox.undoDiscard,
+            noticeIdentifier: "records_bulk_edit_notice",
+            undoIdentifier: "records_bulk_edit_undo"
+        ) { [weak self] in
+            self?.undoLastBulkEdit(context: context)
+        }
+    }
+
+    /// «Deshacer» del aviso: vuelve lo de antes en los registros que nadie cambió después. Devuelve cuántos volvieron.
+    @discardableResult
+    func undoLastBulkEdit(context: ModelContext) -> Int {
+        guard let undo = lastBulkEditUndo else { return 0 }
+        lastBulkEditUndo = nil
+        let restored = undo.restore(context: context)
+        guard restored > 0 else { return 0 }
+        SessionState.shared.incrementDataVersion()
+        WidgetDataCache.updateCache(context: context)
+        // Háptico en quien deshace, y solo si deshizo algo (regla de fluidez).
+        DS.Haptic.success()
+        return restored
     }
 
     /// `applyBulkEdit` en curso: los pasos no guardan (lo hace él al final, una vez).
@@ -1360,8 +1484,29 @@ final class RecordsViewModel: Filterable {
     /// La confirmación del borrado en lote: cuántos de los elegidos se borran y cuántos se quedan por venir de un grupo.
     func selectionDeleteDialog(context: ModelContext) -> RecordBulkActionLogic.DeleteDialog {
         let selected = getSelectedTransactions(context: context)
-        let groupRecords = selected.filter { !RecordBulkActionLogic.allows(.delete, .init(record: $0)) }.count
-        return RecordBulkActionLogic.deleteDialog(deletable: selected.count - groupRecords, groupRecords: groupRecords)
+        let deletable = selected.filter { RecordBulkActionLogic.allows(.delete, .init(record: $0)) }
+        let groupRecords = selected.count - deletable.count
+        return RecordBulkActionLogic.deleteDialog(
+            deletable: deletable.count,
+            groupRecords: groupRecords,
+            summary: RecordBulkActionLogic.summary(
+                of: Self.oncePerTransfer(deletable).map {
+                    (date: $0.date, amount: $0.amount, currencyCode: $0.currencyCode,
+                     amountInPreferred: $0.amountInPreferredCurrency)
+                },
+                preferredCurrencyCode: CurrencyDefaults.currentPreferred))
+    }
+
+    /// Una transferencia es un movimiento con dos patas: en la cifra de la pregunta cuenta una vez (review del lote: con
+    /// las dos patas elegidas, S/ 100 salían como «S/ 200 en total»).
+    private static func oncePerTransfer(_ records: [TransactionItem]) -> [TransactionItem] {
+        var seenPairs: Set<String> = []
+        return records.filter { tx in
+            guard tx.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer, let pair = tx.transferPairID else {
+                return true
+            }
+            return seenPairs.insert(pair).inserted
+        }
     }
 
     /// Helper to fetch selected transactions from context

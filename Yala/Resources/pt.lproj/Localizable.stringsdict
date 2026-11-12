@@ -1404,5 +1404,53 @@
 			<string>%d registros</string>
 		</dict>
 	</dict>
+	<key>records.bulk23.selectAll</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Selecionar %d</string>
+			<key>other</key>
+			<string>Selecionar os %d</string>
+		</dict>
+	</dict>
+	<key>records.bulk23.editedInto</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d registro agora é %2$@</string>
+			<key>other</key>
+			<string>%d registros agora são %2$@</string>
+		</dict>
+	</dict>
+	<key>records.bulk23.edited</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Você alterou %d registro</string>
+			<key>other</key>
+			<string>Você alterou %d registros</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

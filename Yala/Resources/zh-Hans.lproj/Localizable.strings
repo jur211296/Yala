@@ -7127,7 +7127,7 @@
 "records.l8.changedTo" = "已改为%@";
 "records.l8.changedToWithNeed" = "已改为%1$@（%2$@ · %3$@）";
 "records.l8.undo" = "撤销";
-"records.l8.selectHint" = "轻点你想选的记录";
+"records.l8.selectHint" = "轻点记录，或点“选择当天”";
 "search.l8.recent" = "最近";
 "filters.l8.discardTitle" = "要放弃筛选吗？";
 "filters.l8.discardMessage" = "你的选择不会生效。";
@@ -8907,6 +8907,12 @@
 "cashflow.monthEnd.leftOut" = "待支出";
 "cashFlowPlan.estimateLeft" = "估算剩余";
 
+/* Registros · selección en lote con «Deshacer» (decisión 18 de 2.3) */
+"records.bulk23.deleteSpan" = "%1$@ 至 %2$@";
+"records.bulk23.deleteOnDay" = "%@";
+"records.bulk23.deleteTotal" = "共 %@";
+"records.bulk23.selectDay" = "选择当天";
+"records.bulk23.deselectDay" = "取消选择当天";
 /* Grupos (decisión 39 de 2.3): preguntar antes de tirar lo escrito y conservarlo al cambiar de grupo */
 "groups.discard.expenseTitle" = "要丢弃这笔支出吗？";
 "groups.discard.paymentTitle" = "要丢弃这笔付款吗？";

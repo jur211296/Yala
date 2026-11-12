@@ -7127,7 +7127,7 @@
 "records.l8.changedTo" = "Teraz: %@";
 "records.l8.changedToWithNeed" = "Teraz: %1$@ (%2$@ · %3$@)";
 "records.l8.undo" = "Cofnij";
-"records.l8.selectHint" = "Dotknij wpisów, które chcesz";
+"records.l8.selectHint" = "Dotknij wpisów lub „Zaznacz dzień”";
 "search.l8.recent" = "Ostatnie";
 "filters.l8.discardTitle" = "Odrzucić filtry?";
 "filters.l8.discardMessage" = "Twój wybór nie zostanie zastosowany.";
@@ -8907,6 +8907,12 @@
 "cashflow.monthEnd.leftOut" = "Jeszcze wypłynie";
 "cashFlowPlan.estimateLeft" = "Szacowane pozostałe";
 
+/* Registros · selección en lote con «Deshacer» (decisión 18 de 2.3) */
+"records.bulk23.deleteSpan" = "Od %1$@ do %2$@";
+"records.bulk23.deleteOnDay" = "Dnia %@";
+"records.bulk23.deleteTotal" = "łącznie %@";
+"records.bulk23.selectDay" = "Zaznacz dzień";
+"records.bulk23.deselectDay" = "Odznacz dzień";
 /* Grupos (decisión 39 de 2.3): preguntar antes de tirar lo escrito y conservarlo al cambiar de grupo */
 "groups.discard.expenseTitle" = "Odrzucić ten wydatek?";
 "groups.discard.paymentTitle" = "Odrzucić tę płatność?";

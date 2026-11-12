@@ -957,6 +957,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | record-row-voiceover-reads-a-foreign-amount-in-the-preferred-currency | done | tickets/done/record-row-voiceover-reads-a-foreign-amount-in-the-preferred-currency.md |
 | record-selectors-open-at-medium-detent | done | tickets/done/record-selectors-open-at-medium-detent.md |
 | record-selectors-uitest-taps-the-tags-chip-off-screen | done | tickets/done/record-selectors-uitest-taps-the-tags-chip-off-screen.md |
+| records-bulk-selection-undo-and-counts | done | tickets/done/records-bulk-selection-undo-and-counts.md |
 | records-delete-uitest-counts-only-visible-rows | done | tickets/done/records-delete-uitest-counts-only-visible-rows.md |
 | records-landscape-first-row-only-peeks | backlog | tickets/backlog/records-landscape-first-row-only-peeks.md |
 | records-list-search-by-amount | done | tickets/done/records-list-search-by-amount.md |

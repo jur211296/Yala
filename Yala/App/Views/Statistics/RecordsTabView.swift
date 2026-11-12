@@ -493,7 +493,12 @@ struct RecordsTabView: View {
                                 date: day.date,
                                 includesYear: RecordsMonthSectionsLogic.dayHeaderIncludesYear(day.date),
                                 spentText: RecordsMonthSectionsLogic.shownSpent(day.spent).map(spentText),
-                                showsWeekday: true
+                                showsWeekday: true,
+                                dayAction: viewModel.isSelectionMode
+                                    ? .init(isDaySelected: viewModel.isDayFullySelected(day.records)) {
+                                        viewModel.toggleDaySelection(day.records)
+                                    }
+                                    : nil
                             )
                             ForEach(day.records, id: \.persistentModelID) { record in
                                 recordRow(record)

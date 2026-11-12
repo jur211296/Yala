@@ -7127,7 +7127,7 @@
 "records.l8.changedTo" = "%@ に変更しました";
 "records.l8.changedToWithNeed" = "%1$@（%2$@・%3$@）に変更しました";
 "records.l8.undo" = "取り消す";
-"records.l8.selectHint" = "選ぶ記録をタップしてください";
+"records.l8.selectHint" = "記録をタップするか「この日を選択」";
 "search.l8.recent" = "最近";
 "filters.l8.discardTitle" = "フィルターを破棄しますか？";
 "filters.l8.discardMessage" = "選んだ内容は適用されません。";
@@ -8907,6 +8907,12 @@
 "cashflow.monthEnd.leftOut" = "これからの出金";
 "cashFlowPlan.estimateLeft" = "残り（予定）";
 
+/* Registros · selección en lote con «Deshacer» (decisión 18 de 2.3) */
+"records.bulk23.deleteSpan" = "%1$@〜%2$@";
+"records.bulk23.deleteOnDay" = "%@";
+"records.bulk23.deleteTotal" = "合計 %@";
+"records.bulk23.selectDay" = "この日を選択";
+"records.bulk23.deselectDay" = "この日を解除";
 /* Grupos (decisión 39 de 2.3): preguntar antes de tirar lo escrito y conservarlo al cambiar de grupo */
 "groups.discard.expenseTitle" = "この支出を破棄しますか？";
 "groups.discard.paymentTitle" = "この支払いを破棄しますか？";

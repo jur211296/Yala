@@ -84,17 +84,17 @@ extension L10n {
         enum BulkEdit {
             /// «Editar 3 registros».
             static func title(_ count: Int) -> String {
-                String(format: l8b("records.l8b.bulk.title"), count)
+                String(format: l8b("records.l8b.bulk.title"), locale: AppLocale.current, count)
             }
             /// «Hoy: Ahorros».
             static func today(_ value: String) -> String {
                 String(format: l8b("records.l8b.bulk.today"), value)
             }
             static func distinctAccounts(_ count: Int) -> String {
-                String(format: l8b("records.l8b.bulk.distinctAccounts"), count)
+                String(format: l8b("records.l8b.bulk.distinctAccounts"), locale: AppLocale.current, count)
             }
             static func distinctSubcategories(_ count: Int) -> String {
-                String(format: l8b("records.l8b.bulk.distinctSubcategories"), count)
+                String(format: l8b("records.l8b.bulk.distinctSubcategories"), locale: AppLocale.current, count)
             }
             static var distinctNotes: String { l8b("records.l8b.bulk.distinctNotes") }
             static var distinctAmounts: String { l8b("records.l8b.bulk.distinctAmounts") }
@@ -103,15 +103,15 @@ extension L10n {
             static var mixedCurrencies: String { l8b("records.l8b.bulk.mixedCurrencies") }
             /// «Vas a cambiar en 3 registros:».
             static func summaryTitle(_ count: Int) -> String {
-                String(format: l8b("records.l8b.bulk.summaryTitle"), count)
+                String(format: l8b("records.l8b.bulk.summaryTitle"), locale: AppLocale.current, count)
             }
             /// «Aplicar a 3 registros».
             static func apply(_ count: Int) -> String {
-                String(format: l8b("records.l8b.bulk.apply"), count)
+                String(format: l8b("records.l8b.bulk.apply"), locale: AppLocale.current, count)
             }
             /// «Los 3 quedarán en S/ 20».
             static func amountResult(count: Int, amount: String) -> String {
-                String(format: l8b("records.l8b.bulk.amountResult"), count, amount)
+                String(format: l8b("records.l8b.bulk.amountResult"), locale: AppLocale.current, count, amount)
             }
             static var blockedTitle: String { l8b("records.l8b.bulk.blockedTitle") }
             static var discardChange: String { l8b("records.l8b.bulk.discardChange") }

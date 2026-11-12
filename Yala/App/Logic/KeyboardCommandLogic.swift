@@ -133,28 +133,72 @@ enum RecordBulkActionLogic {
     }
 
     /// La confirmación del borrado en lote. `deletable` son los elegidos que se pueden borrar y `groupRecords` los que
-    /// vienen de un grupo, que se quedan.
+    /// vienen de un grupo, que se quedan. Desde la decisión 18 de 2.3 (E1 + E2) el borrado se puede deshacer unos
+    /// segundos, y con más de uno la pregunta dice qué se va: de qué fecha a qué fecha y por cuánto (`Summary`).
     struct DeleteDialog: Equatable {
         enum Title: Equatable { case deleteCount(Int), onlyGroupRecords }
-        enum Message: Equatable { case cannotUndo, cannotUndoKeepingGroupRecords(Int), deleteFromGroup }
+        enum Message: Equatable { case undoable, undoableKeepingGroupRecords(Int), deleteFromGroup }
         let title: Title
         let message: Message
         let offersDelete: Bool
+        /// Fechas e importe de lo que se borra. `nil` con uno solo (la pregunta ya lo nombra) o sin nada que borrar.
+        var summary: Summary? = nil
     }
 
-    static func deleteDialog(deletable: Int, groupRecords: Int) -> DeleteDialog {
+    /// «Del 8 nov 2024 al 7 nov 2026 · S/ 477,091 en total». Todo en una moneda: la suma exacta en esa moneda. Con
+    /// varias, en la moneda principal y con «≈», como el resto de la app cuando convierte (sumar soles con dólares tal
+    /// cual daría una cifra que no es de nadie).
+    struct Summary: Equatable {
+        let firstDate: Date
+        let lastDate: Date
+        /// Suma sin signo: es cuánto dinero se va de la lista, no un saldo (un ingreso borrado no resta del gasto borrado).
+        let total: Double?
+        let currencyCode: String?
+        var isApproximate: Bool = false
+    }
+
+    static func deleteDialog(deletable: Int, groupRecords: Int, summary: Summary? = nil) -> DeleteDialog {
         guard deletable > 0 else {
             // Nada elegido (la barra no sale sin selección, pero la lógica no lo da por hecho): nada que borrar y nada
             // que explicar de grupos.
             guard groupRecords > 0 else {
-                return DeleteDialog(title: .deleteCount(0), message: .cannotUndo, offersDelete: false)
+                return DeleteDialog(title: .deleteCount(0), message: .undoable, offersDelete: false)
             }
             return DeleteDialog(title: .onlyGroupRecords, message: .deleteFromGroup, offersDelete: false)
         }
         return DeleteDialog(
             title: .deleteCount(deletable),
-            message: groupRecords > 0 ? .cannotUndoKeepingGroupRecords(groupRecords) : .cannotUndo,
-            offersDelete: true)
+            message: groupRecords > 0 ? .undoableKeepingGroupRecords(groupRecords) : .undoable,
+            offersDelete: true,
+            summary: deletable > 1 ? summary : nil)
+    }
+
+    /// Fechas e importe de los registros que se van a borrar: cada uno con su fecha, su importe con signo y su moneda, y
+    /// el mismo importe en la moneda principal (`amountInPreferredCurrency`), que se usa si hay varias monedas.
+    static func summary(
+        of dated: [(date: Date, amount: Double, currencyCode: String, amountInPreferred: Double)],
+        preferredCurrencyCode: String
+    ) -> Summary? {
+        guard let first = dated.first else { return nil }
+        var firstDate = first.date
+        var lastDate = first.date
+        var total = 0.0
+        var totalInPreferred = 0.0
+        let currency = normalizeCurrencyCode(first.currencyCode)
+        var singleCurrency = true
+        for row in dated {
+            if row.date < firstDate { firstDate = row.date }
+            if row.date > lastDate { lastDate = row.date }
+            if singleCurrency, normalizeCurrencyCode(row.currencyCode) != currency { singleCurrency = false }
+            total += abs(row.amount)
+            totalInPreferred += abs(row.amountInPreferred)
+        }
+        guard !singleCurrency else {
+            return Summary(firstDate: firstDate, lastDate: lastDate, total: total, currencyCode: currency)
+        }
+        return Summary(
+            firstDate: firstDate, lastDate: lastDate, total: totalInPreferred,
+            currencyCode: normalizeCurrencyCode(preferredCurrencyCode), isApproximate: true)
     }
 }
 
