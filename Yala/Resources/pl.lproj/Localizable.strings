@@ -8913,3 +8913,30 @@
 /* Buscar en Registros (decisión 14 de 2.3) */
 "records.listSearch.placeholder" = "Szukaj we wpisach";
 "records.listSearch.clear" = "Wyczyść wyszukiwanie";
+
+/* Nuevo registro: categorías a un toque y palabras del buscador de categorías (decisión 21 de 2.3) */
+"subcategory.quickPick.more" = "Więcej…";
+"subcategory.words.restaurants" = "kawa, kawiarnia, lunch, obiad, kolacja, śniadanie, restauracja, burger, pizza, jedzenie";
+"subcategory.words.delivery" = "pyszne, glovo, wolt, uber eats, zamówienie, dostawa";
+"subcategory.words.supermarkets" = "supermarket, zakupy, spożywczy, biedronka, lidl, żabka, auchan, kaufland, piekarnia, chleb";
+"subcategory.words.rideshare" = "uber, bolt, free now, taksówka, kurs";
+"subcategory.words.publicTransport" = "autobus, tramwaj, metro, pociąg, bilet, ztm, komunikacja";
+"subcategory.words.fuel" = "benzyna, paliwo, stacja, diesel, tankowanie, orlen";
+"subcategory.words.parking" = "parking, parkowanie, strefa płatna";
+"subcategory.words.pharmacy" = "apteka, leki, lekarstwo, tabletki, recepta";
+"subcategory.words.health" = "lekarz, przychodnia, klinika, szpital, dentysta, badania";
+"subcategory.words.clothing" = "ubrania, buty, sneakersy, koszulka, koszula, spodnie, jeansy, sukienka, kurtka";
+"subcategory.words.tech" = "telefon, komórka, laptop, komputer, słuchawki, ładowarka, tablet";
+"subcategory.words.gifts" = "prezent, urodziny, święta";
+"subcategory.words.beauty" = "fryzjer, barber, strzyżenie, paznokcie, manicure, spa, kosmetyczka";
+"subcategory.words.rent" = "czynsz, najem, mieszkanie, wynajem";
+"subcategory.words.utilities" = "prąd, woda, gaz, rachunek, media";
+"subcategory.words.phone" = "abonament, doładowanie, internet, wifi, play, orange, plus, t-mobile";
+"subcategory.words.streaming" = "netflix, spotify, disney, hbo, max, prime video, youtube";
+"subcategory.words.bars" = "bar, piwo, pub, drinki, koktajl, wino";
+"subcategory.words.shows" = "kino, film, bilety, koncert, teatr";
+"subcategory.words.travel" = "podróż, lot, hotel, airbnb, wakacje, urlop";
+"subcategory.words.fitness" = "siłownia, gym, trening, crossfit, joga, pilates";
+"subcategory.words.education" = "szkoła, uczelnia, studia, kurs, czesne, książki, zajęcia";
+"subcategory.words.petFood" = "karma dla psa, karma dla kota, karma";
+"subcategory.words.salary" = "pensja, wypłata, wynagrodzenie, pasek";

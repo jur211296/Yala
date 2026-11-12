@@ -51,7 +51,8 @@ struct UXAudit22Decidido02BLogicTests {
     @Test func buscar_vacio_loTraeTodo_yUnaPalabraSinSinonimo_nada() {
         #expect(search("").count == 2)
         #expect(search("   ").count == 2)
-        // Sin sinónimos (decisión de Jürgen): «comida» no encuentra Alimentación.
+        // Sin palabras de la categoría, «comida» no encuentra Alimentación. Las palabras del día a día llegaron con la
+        // decisión 21 de 2.3 (C3) y las fija `CategoryQuickPick23Tests`.
         #expect(search("comida").isEmpty)
     }
 

@@ -8913,3 +8913,30 @@
 /* Buscar en Registros (decisión 14 de 2.3) */
 "records.listSearch.placeholder" = "搜索记录";
 "records.listSearch.clear" = "清除搜索";
+
+/* Nuevo registro: categorías a un toque y palabras del buscador de categorías (decisión 21 de 2.3) */
+"subcategory.quickPick.more" = "更多…";
+"subcategory.words.restaurants" = "咖啡, 午饭, 午餐, 晚饭, 晚餐, 早餐, 吃饭, 饭店, 火锅, 快餐";
+"subcategory.words.delivery" = "美团, 饿了么, 外卖, 送餐, 订餐";
+"subcategory.words.supermarkets" = "超市, 买菜, 菜市场, 便利店, 盒马, 沃尔玛, 食品, 面包";
+"subcategory.words.rideshare" = "滴滴, 打车, 出租车, 网约车, uber";
+"subcategory.words.publicTransport" = "地铁, 公交, 公交车, 火车, 高铁, 车票, 交通卡";
+"subcategory.words.fuel" = "加油, 汽油, 加油站, 柴油, 油费";
+"subcategory.words.parking" = "停车, 停车场, 停车费";
+"subcategory.words.pharmacy" = "药店, 药房, 买药, 药品, 处方";
+"subcategory.words.health" = "医院, 看病, 门诊, 诊所, 牙医, 体检";
+"subcategory.words.clothing" = "衣服, 鞋, 运动鞋, t恤, 衬衫, 裤子, 牛仔裤, 裙子, 外套";
+"subcategory.words.tech" = "手机, 电脑, 笔记本, 耳机, 充电器, 平板";
+"subcategory.words.gifts" = "礼物, 生日, 红包, 圣诞";
+"subcategory.words.beauty" = "理发, 剪头发, 美甲, 美容, 按摩, spa";
+"subcategory.words.rent" = "房租, 租房, 公寓, 物业费";
+"subcategory.words.utilities" = "电费, 水费, 燃气费, 水电费, 账单";
+"subcategory.words.phone" = "话费, 充值, 宽带, 网费, wifi, 移动, 联通, 电信";
+"subcategory.words.streaming" = "爱奇艺, 腾讯视频, 优酷, 网易云音乐, netflix, spotify, b站";
+"subcategory.words.bars" = "酒吧, 啤酒, 喝酒, 鸡尾酒, 红酒";
+"subcategory.words.shows" = "电影, 电影票, 门票, 演唱会, 话剧";
+"subcategory.words.travel" = "旅游, 旅行, 机票, 酒店, 民宿, 度假";
+"subcategory.words.fitness" = "健身, 健身房, 瑜伽, 普拉提, 训练";
+"subcategory.words.education" = "学校, 大学, 学费, 课程, 培训, 书, 补习";
+"subcategory.words.petFood" = "狗粮, 猫粮, 宠物食品, 零食";
+"subcategory.words.salary" = "工资, 薪水, 月薪, 工资条";

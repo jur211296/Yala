@@ -173,6 +173,23 @@ final class NewTransactionViewModel {
         transactionType == .transfer
     }
 
+    /// La fila de categorías a un toque bajo el importe (decisión 21 de 2.3, C2): las tres más usadas en los registros
+    /// que el formulario ya carga y, si no llegan a tres, las de arranque de un gasto (Restaurantes, Supermercados y
+    /// Taxis y apps). Solo categorías que se pueden elegir a mano para este tipo; vacía en una transferencia.
+    var quickPickSubcategories: [Subcategory] {
+        guard !isTransfer else { return [] }
+        let pickable = subcategories.filter { ManualSubcategoryPickerLogic.isPickable($0, for: transactionType) }
+        guard !pickable.isEmpty else { return [] }
+        let byID = Dictionary(pickable.map { ($0.persistentModelID, $0) }, uniquingKeysWith: { first, _ in first })
+        let used = transactions.compactMap { $0.subcategory?.persistentModelID }.filter { byID[$0] != nil }
+        let starters: [PersistentIdentifier] = transactionType == .expense
+            ? CategoryQuickPickLogic.expenseStarterSeeds.compactMap { seed in
+                pickable.first { CategoryEverydayWords.seed(forName: $0.name) == seed }?.persistentModelID
+            }
+            : []
+        return CategoryQuickPickLogic.pick(usedNewestFirst: used, starters: starters).compactMap { byID[$0] }
+    }
+
     /// Indica si las divisas son diferentes (requiere tipo de cambio)
     var needsExchangeRate: Bool {
         guard isTransfer,

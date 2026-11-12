@@ -8913,3 +8913,30 @@
 /* Buscar en Registros (decisión 14 de 2.3) */
 "records.listSearch.placeholder" = "記録を検索";
 "records.listSearch.clear" = "検索をクリア";
+
+/* Nuevo registro: categorías a un toque y palabras del buscador de categorías (decisión 21 de 2.3) */
+"subcategory.quickPick.more" = "その他…";
+"subcategory.words.restaurants" = "カフェ, コーヒー, ランチ, 昼食, 夕食, 朝食, 外食, ラーメン, 定食, 居酒屋";
+"subcategory.words.delivery" = "ウーバーイーツ, 出前館, 出前, 宅配, テイクアウト";
+"subcategory.words.supermarkets" = "スーパー, 買い物, 食料品, 食材, コンビニ, イオン, 業務スーパー, パン";
+"subcategory.words.rideshare" = "タクシー, ウーバー, go, 配車";
+"subcategory.words.publicTransport" = "電車, バス, 地下鉄, 定期, suica, pasmo, 交通費, 運賃";
+"subcategory.words.fuel" = "ガソリン, 給油, ガソリンスタンド, 軽油, 燃料";
+"subcategory.words.parking" = "駐車場, パーキング, 駐車";
+"subcategory.words.pharmacy" = "薬局, ドラッグストア, 薬, 処方箋";
+"subcategory.words.health" = "病院, 医者, 診察, クリニック, 歯医者, 検査";
+"subcategory.words.clothing" = "服, 洋服, 靴, スニーカー, シャツ, ズボン, ジーンズ, ワンピース, ジャケット, ユニクロ";
+"subcategory.words.tech" = "スマホ, 携帯, パソコン, ノートpc, イヤホン, 充電器, タブレット";
+"subcategory.words.gifts" = "プレゼント, 贈り物, 誕生日, お土産, クリスマス";
+"subcategory.words.beauty" = "美容院, 床屋, カット, ネイル, エステ, スパ";
+"subcategory.words.rent" = "家賃, 賃貸, アパート, マンション";
+"subcategory.words.utilities" = "電気代, 水道代, ガス代, 光熱費, 電気, 水道";
+"subcategory.words.phone" = "携帯代, スマホ代, インターネット, wifi, ドコモ, au, ソフトバンク, 楽天モバイル";
+"subcategory.words.streaming" = "netflix, spotify, disney, prime video, youtube, u-next, hulu";
+"subcategory.words.bars" = "バー, ビール, 飲み会, お酒, カクテル, ワイン";
+"subcategory.words.shows" = "映画, 映画館, チケット, コンサート, ライブ, 舞台";
+"subcategory.words.travel" = "旅行, 飛行機, 航空券, ホテル, 旅館, airbnb";
+"subcategory.words.fitness" = "ジム, トレーニング, ヨガ, ピラティス, 筋トレ";
+"subcategory.words.education" = "学校, 大学, 授業料, 講座, 塾, 本, 教材";
+"subcategory.words.petFood" = "ドッグフード, キャットフード, ペットフード, おやつ";
+"subcategory.words.salary" = "給料, 給与, 月給, 給与明細";
