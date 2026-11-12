@@ -17,7 +17,9 @@
 //  - Distribución: quitar con la «x» solo llega al recálculo por los `onChange` (`DetailContainerView` sobre
 //    `sessionState.selectedAccountIDs` y `CategoriesFilterRecalcObservers` sobre `viewModel.selectedAccounts`). Con los
 //    DOS ciegos a la retirada, cae en la ronda 1; con solo el del contenedor, pasa (el otro lo cubre).
-//  - Registros: la «x» recalcula directamente (`onFilterChange` de la barra), la hoja al cerrarse (`onDisappear`) y el
+//  - Registros (desde la revisión 2.3, decisiones 15 y 16): la cuenta elegida la dice el chip «Cuenta ▾», no una cápsula
+//    de la banda, y se quita con su «Todas las cuentas», que llama al mismo `onFilterChange` que la «x».
+//    Antes: la «x» recalcula directamente (`onFilterChange` de la barra), la hoja al cerrarse (`onDisappear`) y el
 //    cambio de pestaña también (`RecordsNavObserver`). Su `onChange` de `selectedAccountIDs` no lo ejercita ningún gesto
 //    de este conductor: con él ciego, pasa. Cae en la ronda 1 si además se quita el `onFilterChange`. Es la red de la
 //    cifra, no del observador.
@@ -122,13 +124,42 @@ final class StatisticsRecordsFilterObservationUITests: XCTestCase {
         XCTAssertTrue(apply.waitForExistence(timeout: 5), "No apareció «Aplicar».")
         apply.tap()
         XCTAssertTrue(apply.waitForNonExistence(timeout: 5), "«Aplicar» no cerró Filtros.")
+        if let quick = quickAccountChip(app) {
+            // Registros: la cuenta la dice el chip, no la banda.
+            XCTAssertTrue(
+                waitForValue(of: quick, filteredAccount),
+                "El chip «Cuenta» no dice «\(filteredAccount)» (dice «\(String(describing: quick.value))»).")
+            return
+        }
         XCTAssertTrue(
             app.buttons.matching(identifier: "applied_filter_chip").firstMatch.waitForExistence(timeout: 10),
             "No apareció la cápsula del filtro de cuenta.")
     }
 
+    /// El chip «Cuenta ▾» de Registros, si la pantalla lo tiene (Estadísticas no).
+    private func quickAccountChip(_ app: XCUIApplication) -> XCUIElement? {
+        let chip = app.descendants(matching: .any)["records_quick_account"].firstMatch
+        return chip.exists ? chip : nil
+    }
+
+    private func waitForValue(of element: XCUIElement, _ expected: String) -> Bool {
+        let predicate = NSPredicate { object, _ in
+            ((object as? XCUIElement)?.value as? String ?? "") == expected
+        }
+        return XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: predicate, object: element)], timeout: 8)
+            == .completed
+    }
+
     /// La «x» de la cápsula (`FilterChipView`, etiqueta «Quitar filtro»): el mismo gesto que en el Panel.
     private func removeAccountFilter(_ app: XCUIApplication, round: Int) {
+        if let quick = quickAccountChip(app) {
+            quick.tap()
+            let all = app.buttons["Todas las cuentas"].firstMatch
+            XCTAssertTrue(all.waitForExistence(timeout: 5), "Ronda \(round): el chip no ofrece «Todas las cuentas».")
+            all.tap()
+            XCTAssertTrue(waitForValue(of: quick, ""), "Ronda \(round): el chip sigue con la cuenta elegida.")
+            return
+        }
         let chips = app.buttons.matching(identifier: "applied_filter_chip")
         XCTAssertEqual(chips.count, 1, "Ronda \(round): se esperaba solo la cápsula de la cuenta: "
                        + "\(chips.allElementsBoundByIndex.map(\.label))")

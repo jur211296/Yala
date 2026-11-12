@@ -79,6 +79,7 @@ struct CategorySelectorSheet: View {
                     YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
                         dismiss()
                     }
+                    .accessibilityIdentifier("category_selector_back")
                 }
             }
         }
@@ -123,38 +124,40 @@ struct CategorySelectorSheet: View {
 
     // MARK: - Category Row
 
+    /// La fila entera elige o quita la categoría (con todas sus subcategorías), y el chevrón de al lado la despliega
+    /// (revisión 2.3, decisión 15, F3). Antes la fila desplegaba y elegir pedía atinar a un círculo de 17 pt que VoiceOver
+    /// llamaba «Seleccionar todo» en las once categorías.
     private func categoryRow(_ category: Category) -> some View {
-        Button {
-            toggleExpanded(category)
-        } label: {
-            HStack(spacing: DS.Spacing.md) {
-                Circle()
-                    .fill(colorForHex(category.colorHex))
-                    .frame(width: 36, height: 36)
-                    .overlay(
-                        Image(systemName: category.iconName ?? "tag")
-                            .font(DS.Typography.subheadline)
-                            .foregroundStyle(.white)
-                            .accessibilityHidden(true)
-                    )
-                    .overlay { otherListMark(hasSubcategoryInOtherList(category)) }
+        let isExpanded = expandedCategories.contains(category.persistentModelID)
+        let isFullySelected = selectionIcon(for: category) == "checkmark.circle.fill"
+        return HStack(spacing: DS.Spacing.none) {
+            Button {
+                toggleCategory(category)
+            } label: {
+                HStack(spacing: DS.Spacing.md) {
+                    Circle()
+                        .fill(colorForHex(category.colorHex))
+                        .frame(width: 36, height: 36)
+                        .overlay(
+                            Image(systemName: category.iconName ?? "tag")
+                                .font(DS.Typography.subheadline)
+                                .foregroundStyle(.white)
+                                .accessibilityHidden(true)
+                        )
+                        .overlay { otherListMark(hasSubcategoryInOtherList(category)) }
 
-                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(category.name)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.primary)
+                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                        Text(category.name)
+                            .font(DS.Typography.body)
+                            .foregroundStyle(.primary)
 
-                    Text(selectionSummary(for: category))
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-                }
+                        Text(selectionSummary(for: category))
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                    }
 
-                Spacer()
+                    Spacer(minLength: DS.Spacing.sm)
 
-                // Toggle all subcategories
-                Button {
-                    toggleCategory(category)
-                } label: {
                     Image(systemName: selectionIcon(for: category))
                         .foregroundStyle(
                             isNoneSelected(for: category)
@@ -163,26 +166,36 @@ struct CategorySelectorSheet: View {
                         )
                         .accessibilityHidden(true)
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(isNoneSelected(for: category) ? L10n.Filters.selectAll : L10n.Filters.deselectAll)
-
-                // Expand/collapse
-                Button {
-                    toggleExpanded(category)
-                } label: {
-                    Image(systemName: "chevron.down")
-                        .rotationEffect(.degrees(expandedCategories.contains(category.persistentModelID) ? 0 : -90))
-                        .foregroundStyle(.tertiary)
-                        .accessibilityHidden(true)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(expandedCategories.contains(category.persistentModelID) ? L10n.Accessibility.collapse : L10n.Accessibility.expand)
+                .padding(.leading, DS.Spacing.lg)
+                .padding(.vertical, DS.FormRow.paddingV)
+                .contentShape(Rectangle())
             }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.FormRow.paddingV)
-            .contentShape(Rectangle())
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(category.name)
+            .accessibilityValue(selectionSummary(for: category))
+            .accessibilityAddTraits(isFullySelected ? [.isButton, .isSelected] : .isButton)
+            .accessibilityIdentifier("category_selector_row")
+
+            Button {
+                toggleExpanded(category)
+            } label: {
+                Image(systemName: "chevron.down")
+                    .rotationEffect(.degrees(isExpanded ? 0 : -90))
+                    .foregroundStyle(.tertiary)
+                    .frame(width: FilterChipView.closeHitSize, height: FilterChipView.closeHitSize)
+                    .contentShape(Rectangle())
+                    .accessibilityHidden(true)
+            }
+            .buttonStyle(.plain)
+            .padding(.trailing, DS.Spacing.xs)
+            .accessibilityLabel(
+                isExpanded
+                    ? L10n.RecordsQuickFilters23.collapse(category.name)
+                    : L10n.RecordsQuickFilters23.expand(category.name)
+            )
+            .accessibilityIdentifier("category_selector_expand")
         }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Subcategory Row

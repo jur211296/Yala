@@ -8913,3 +8913,16 @@
 /* Buscar en Registros (decisión 14 de 2.3) */
 "records.listSearch.placeholder" = "記録を検索";
 "records.listSearch.clear" = "検索をクリア";
+
+/* Revisión 2.3 · decisiones 15 y 16: chips rápidos de Registros, buscador de categorías y banda de filtros */
+"records23.quick.account" = "口座";
+"records23.quick.category" = "カテゴリ";
+"records23.quick.date" = "日付";
+"records23.quick.more" = "その他のフィルタ";
+"records23.quick.accountsCount" = "%d件の口座";
+"records23.category.searchPrompt" = "カテゴリを検索";
+"records23.category.noResults" = "「%@」に一致するカテゴリはありません";
+"records23.category.wholeCategory" = "カテゴリ全体";
+"records23.category.expand" = "%@のサブカテゴリを表示";
+"records23.category.collapse" = "%@のサブカテゴリを隠す";
+"records23.band.removeAll" = "すべて解除";

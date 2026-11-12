@@ -8913,3 +8913,16 @@
 /* Buscar en Registros (decisión 14 de 2.3) */
 "records.listSearch.placeholder" = "搜索记录";
 "records.listSearch.clear" = "清除搜索";
+
+/* Revisión 2.3 · decisiones 15 y 16: chips rápidos de Registros, buscador de categorías y banda de filtros */
+"records23.quick.account" = "账户";
+"records23.quick.category" = "类别";
+"records23.quick.date" = "日期";
+"records23.quick.more" = "更多筛选";
+"records23.quick.accountsCount" = "%d 个账户";
+"records23.category.searchPrompt" = "搜索类别";
+"records23.category.noResults" = "没有与“%@”匹配的类别";
+"records23.category.wholeCategory" = "整个类别";
+"records23.category.expand" = "显示%@的子类别";
+"records23.category.collapse" = "隐藏%@的子类别";
+"records23.band.removeAll" = "全部移除";

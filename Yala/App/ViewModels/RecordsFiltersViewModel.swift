@@ -157,16 +157,22 @@ final class RecordsFiltersViewModel {
             return empty
         }
 
-        if let firstSub = selectedSubs.first {
-            let remainingCount = selectedSubs.count - 1
-            if remainingCount > 0 {
-                return "\(firstSub.name) +\(remainingCount)"
-            } else {
-                return firstSub.name
-            }
-        }
+        // Por grupo, como lo eligió la persona: «Alimentación» si están todas sus subcategorías, y no «Delivery +3»
+        // (revisión 2.3, decisión 15, F3). Una subcategoría oculta elegida sola no tiene grupo que la nombre: va por su
+        // nombre.
+        let names = CategoryFilterSummaryLogic.names(selected: selectedSubcategories, categories: categorySummaryEntries)
+        let named = names.isEmpty ? selectedSubs.map(\.name).sorted() : names
+        return CategoryFilterSummaryLogic.text(names: named) ?? empty
+    }
 
-        return empty
+    /// Las categorías con sus subcategorías visibles, en el orden en que se pintan: lo que lee el resumen.
+    var categorySummaryEntries: [CategoryFilterSummaryLogic.CategoryEntry<PersistentIdentifier>] {
+        allCategories.map { category in
+            CategoryFilterSummaryLogic.CategoryEntry(
+                name: category.name,
+                subcategories: subcategories(for: category).map { (id: $0.persistentModelID, name: $0.name) }
+            )
+        }
     }
 
     func selectedTagsText(selectedTags: Set<PersistentIdentifier>, isExcludeMode: Bool = false) -> String {
