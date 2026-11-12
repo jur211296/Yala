@@ -83,6 +83,15 @@ struct PanelSheetState {
     var showRecordTutorial = false
     /// Paso 2, al terminar: «¿Borramos los de prueba?» (`PracticeRecordsCleanupSheet`).
     var showPracticeRecordsCleanup = false
+    // Primeros pasos 2.3 (Y23-11 a Y23-13)
+    /// Paso 3: el primer presupuesto preguntando (`FirstBudgetFlowView`).
+    var showFirstBudgetFlow = false
+    /// Paso 4: el primer pago planificado preguntando (`FirstScheduledPaymentFlowView`).
+    var showFirstScheduledPaymentFlow = false
+    /// Paso 5: el onboarding de Grupos como página del tutorial (`GroupsTutorialFlowView`).
+    var showGroupsTutorial = false
+    /// Paso 5: se fue a crear un grupo o a unirse a uno; al volver al Panel sale la guía «Tus grupos, a un toque».
+    var pendingGroupsPlaceGuide = false
 
     // AI consent
     var showAIConsentAlert = false
@@ -155,6 +164,9 @@ struct PanelSheetState {
             || showFirstAccountFlow
             || showRecordTutorial
             || showPracticeRecordsCleanup
+            || showFirstBudgetFlow
+            || showFirstScheduledPaymentFlow
+            || showGroupsTutorial
     }
 
     /// `true` si la bandera `sheet` está puesta y es la ÚNICA de `hasActivePresentation`. Lo usa

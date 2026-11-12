@@ -178,6 +178,18 @@ struct PanelView: View {
         }
     }
 
+    /// Paso 5 (Y23-13): si ya vio el onboarding de Grupos, el paso se da por hecho y un aviso lo dice; si no, su
+    /// onboarding como página del tutorial.
+    private func startGroupsStep() {
+        switch GroupsTutorialLogic.entry(hasShownGroupsOnboarding: appPreferences.hasShownGroupsOnboarding) {
+        case .alreadySeen:
+            SetupChecklistManager.shared.markCompleted(.groups)
+            SavedRecordNotice.showInfo(message: L10n.PrimerosPasos23.Groups.alreadySeen)
+        case .showTutorial:
+            sheets.showGroupsTutorial = true
+        }
+    }
+
     /// Paso 6 (Y23-14): la guía «Tus gráficas viven en Más». Sin «Más» en la barra (iPad a pantalla completa), las
     /// gráficas están en su propia pestaña: se abren y el paso queda hecho.
     private func startChartsStepGuide() {
@@ -190,8 +202,8 @@ struct PanelView: View {
         PlaceGuideCenter.shared.start(.chartsStep, onFinish: markDone)
     }
 
-    /// Lo que abre cada paso del mazo (Y23-05). Los pasos 1 y 2 abren su flujo guiado (Y23-07 a Y23-10); los demás,
-    /// hasta que llegue el suyo (Y23-11 a Y23-16), lo que ya existe.
+    /// Lo que abre cada paso del mazo (Y23-05). Los pasos 1 a 5 abren su flujo guiado (Y23-07 a Y23-13); los demás,
+    /// hasta que llegue el suyo (Y23-14 a Y23-16), lo que ya existe.
     private func handleSetupStep(_ step: SetupStepID) {
         switch step {
         case .firstAccount:
@@ -199,13 +211,11 @@ struct PanelView: View {
         case .firstExpense:
             sheets.showRecordTutorial = true
         case .firstBudget:
-            RouterEntryGate.shared.submit(.navigate(.budgets))
-            RouterEntryGate.shared.submit(.autoOpenBudgetEditor)
+            sheets.showFirstBudgetFlow = true
         case .scheduledPayment:
-            RouterEntryGate.shared.submit(.navigate(.scheduledPayments))
-            RouterEntryGate.shared.submit(.autoOpenScheduledEditor)
+            sheets.showFirstScheduledPaymentFlow = true
         case .groups:
-            navigation.selectMainTab(.groups)
+            startGroupsStep()
         case .whereMoneyGoes:
             startChartsStepGuide()
         case .homeScreen:
@@ -449,6 +459,8 @@ struct PanelView: View {
         .appliesPendingRemoteChanges(sessionState)
         // Guías «dónde vive cada cosa» y «días después» (Y23-15).
         .placeGuidePanelHost(isPageShown: isRootPageShown)
+        // Paso 5 (Y23-13): «Tus grupos, a un toque» al volver de crear o unirse a un grupo.
+        .modifier(PrimerosPasosGroupsGuideObserver(sheets: $sheets, isPageShown: isRootPageShown))
         .onAppear {
             LoadTimeMarks.begin(.panel)
             // Inject AppPreferences BEFORE setContext so the first performCalculation

@@ -4044,6 +4044,27 @@
       "coverage": "xcuitest:YalaUITests/Flows/Bienvenida23PasosUITests#test_step1_card_withDaysAndReminder_thenDeckMovesToStep2 | xcuitest:YalaUITests/Flows/Bienvenida23PasosUITests#test_step2_manualWithGuide_thenCleanupAndInboxGuide | xcuitest:YalaUITests/Flows/Bienvenida23PasosUITests#test_largeText_step1AndStep2PagesStayReachable | unit:YalaTests/Bienvenida23PasosTests (FirstAccountFlowLogicTests, NewRecordTutorialGuideTests, PanelAfterLearningToRecordTests) | unit:YalaTests/Bienvenida23PasosCuentaTests | unit:YalaTests/Bienvenida23PasosRegistroTests | unit:YalaTests/Bienvenida23PasosLimpiezaTests | 2026-11-12: bienvenida 2.3, lote 03 (Y23-07 primera cuenta preguntando, Y23-08 guía de foco del formulario, Y23-09 prueba de cortesía de voz, foto y Yala IA, Y23-10 borrar los de prueba, Panel lleno y guía de la Bandeja). Voz, foto y Yala IA de verdad necesitan red y App Attest: guion de iPhone en su ticket.",
       "owner": "frank",
       "lastVerified": "2026-11-12"
+    },
+    {
+      "area": "bienvenida-2-3-pasos-3-4-5",
+      "codeGlobs": [
+        "Yala/App/Logic/PrimerosPasosPlanningLogic.swift",
+        "Yala/App/Logic/PrimerosPasosPlanningCreator.swift",
+        "Yala/App/Views/Onboarding/PrimerosPasos/FirstBudgetFlowView.swift",
+        "Yala/App/Views/Onboarding/PrimerosPasos/FirstScheduledPaymentFlowView.swift",
+        "Yala/App/Views/Onboarding/PrimerosPasos/GroupsTutorialFlowView.swift",
+        "Yala/App/Views/Onboarding/PrimerosPasos/PlanningIntroPages.swift",
+        "Yala/App/Views/Onboarding/PrimerosPasos/TutorialQuestionPieces.swift",
+        "Yala/App/Views/Panel/PrimerosPasosPlanningPresentations.swift",
+        "Yala/Utils/L10n+PrimerosPasos23Planning.swift"
+      ],
+      "scenarioIDs": [
+        "F-ONB-01"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/Flows/Bienvenida23PlanificacionUITests#test_step3_budgetByCategories_withAlerts_inPanel_thenDeckMovesToStep4 | xcuitest:YalaUITests/Flows/Bienvenida23PlanificacionUITests#test_step4_paymentUtilities_monthly_reminder_thenDeckMovesToStep5 | xcuitest:YalaUITests/Flows/Bienvenida23PlanificacionUITests#test_step5_groupsTutorial_acceptThenNotNow_thenDeckMovesToStep6 | unit:YalaTests/Bienvenida23PasosPlanificacionTests | unit:YalaTests/Bienvenida23PasosPlanificacionGuardadoTests | 2026-11-12: bienvenida 2.3, lote 04 (Y23-11 primer presupuesto preguntando, Y23-12 primer pago planificado preguntando, Y23-13 Grupos como página del tutorial). El aviso de iOS de notificaciones, la hoja «¿Te avisamos antes de cada pago?», crear un grupo con cuenta real y unirse por enlace se prueban en el iPhone: guion en el ticket.",
+      "owner": "frank",
+      "lastVerified": "2026-11-12"
     }
   ]
 }
