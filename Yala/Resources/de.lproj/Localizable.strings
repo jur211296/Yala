@@ -8897,3 +8897,7 @@
 "groups.discard.openingBalanceTitle" = "Diesen Anfangssaldo verwerfen?";
 "groups.expense.groupChangedNotice" = "Du hast die Gruppe gewechselt: Was du eingegeben hast, bleibt; wer bezahlt hat und die Aufteilung beginnen von vorn.";
 "statistics.categoryDetail.seeInRecords" = "In Einträgen ansehen";
+
+/* Buscar en Registros (decisión 14 de 2.3) */
+"records.listSearch.placeholder" = "In Einträgen suchen";
+"records.listSearch.clear" = "Suche löschen";

@@ -8907,3 +8907,7 @@
 "groups.discard.openingBalanceTitle" = "Scartare questo saldo iniziale?";
 "groups.expense.groupChangedNotice" = "Hai cambiato gruppo: quello che hai scritto resta; chi ha pagato e la divisione ripartono da capo.";
 "statistics.categoryDetail.seeInRecords" = "Vedi in Registri";
+
+/* Buscar en Registros (decisión 14 de 2.3) */
+"records.listSearch.placeholder" = "Cerca nelle registrazioni";
+"records.listSearch.clear" = "Cancella ricerca";

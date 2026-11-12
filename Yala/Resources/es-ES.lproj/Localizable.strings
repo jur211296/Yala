@@ -8157,3 +8157,7 @@
 "groups.discard.openingBalanceTitle" = "¿Descartar este saldo inicial?";
 "groups.expense.groupChangedNotice" = "Has cambiado de grupo: lo que escribiste se queda; quién pagó y el reparto vuelven a empezar.";
 "statistics.categoryDetail.seeInRecords" = "Ver en Registros";
+
+/* Buscar en Registros (decisión 14 de 2.3) */
+"records.listSearch.placeholder" = "Buscar en Registros";
+"records.listSearch.clear" = "Borrar búsqueda";

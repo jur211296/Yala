@@ -131,6 +131,16 @@ final class RecordsViewModel: Filterable {
     /// Whether search bar is expanded
     var isSearchExpanded: Bool = false
 
+    /// «Buscar en Registros» (decisión 14 de 2.3): lo escrito en el campo de la lista. Es de esta pantalla, no de la
+    /// sesión: se aplica encima del período y los filtros, y no filtra el Panel ni Estadísticas (`RecordsListSearchLogic`).
+    var listSearchText: String = ""
+
+    /// El campo asomó al tirar de la lista hacia abajo; se esconde al vaciarlo con su X.
+    var isListSearchRevealed: Bool = false
+
+    /// Hay una búsqueda de la lista en curso: el vacío dice «Sin resultados» y no «Sin registros».
+    var isSearchingList: Bool { !RecordsListSearchLogic.query(listSearchText).isEmpty }
+
     /// Whether selection mode is active
     var isSelectionMode: Bool = false
 
@@ -372,6 +382,8 @@ final class RecordsViewModel: Filterable {
             transactions: eligibleTransactions,
             criteria: criteria
         )
+        // «Buscar en Registros»: dentro de lo que ya dejan el período y los filtros (decisión 14 de 2.3).
+        groupedRecords = Self.applyingListSearch(listSearchText, to: groupedRecords, tags: tags)
 
         // DIAG (caso "registro de grupo desaparece al clasificar"): cuántas TX bridgeadas
         // quedan visibles en el feed tras este refresh. Sin PII. Quitar tras QA.
@@ -422,6 +434,32 @@ final class RecordsViewModel: Filterable {
         // Update cached summary (calculated once per filter change, not per render)
         calculateSummary(currencyCode: currencyCode, converter: converter)
         if !hasAppliedFilters { hasAppliedFilters = true }
+    }
+
+    /// Deja en cada día solo lo que casa con la búsqueda de la lista, y quita los días que se quedan vacíos.
+    static func applyingListSearch(
+        _ rawQuery: String,
+        to groups: [(date: Date, records: [TransactionItem])],
+        tags: [Tag]
+    ) -> [(date: Date, records: [TransactionItem])] {
+        let query = RecordsListSearchLogic.query(rawQuery)
+        guard !query.isEmpty else { return groups }
+        var tagNames: [UUID: String] = [:]
+        for tag in tags { tagNames[tag.id] = tag.name }
+        return groups.compactMap { group in
+            let kept = group.records.filter { record in
+                let fields = RecordsListSearchLogic.Fields(
+                    note: record.note,
+                    category: record.category?.name,
+                    subcategory: record.subcategory?.name,
+                    account: record.account?.name,
+                    tags: (record.resolvedTagIDs() ?? []).compactMap { tagNames[$0] },
+                    signedAmount: record.amount
+                )
+                return RecordsListSearchLogic.matches(fields, query: query)
+            }
+            return kept.isEmpty ? nil : (group.date, kept)
+        }
     }
 
     /// Calculate summary from grouped records (called once when data changes)

@@ -325,6 +325,11 @@ paths:
   Grupos la barra reservaba el alto del cajón vacío ~0,4 s y luego lo plegaba, y el contenido saltaba ~45 pt de golpe
   (vídeo de Jürgen). Lo fija `GroupsSearchDrawerWiringTests`, que prohíbe el `.automatic` en `Yala/App/Views`. Desde el
   2026-10-30 Grupos no tiene buscador (la búsqueda es la pestaña Buscar), y el mismo test fija que no vuelva.
+  **Un buscador que tenga que «asomar al tirar» en una página de pestaña va DENTRO del scroll** (decisión 14 de 2.3,
+  Registros, 2026-11-11): campo propio encima de la cabecera, oculto en reposo, que enciende un
+  `onScrollGeometryChange` al pasar 44 pt del borde de arriba, siempre a la vista con VoiceOver. Molde:
+  `RecordsListSearchField` (`RecordsListSearchSlot` + `revealsRecordsListSearchOnPull`); pin
+  `RecordsListSearchUITests`.
 
 - **`containerRelativeFrame(.horizontal)` en `ScrollView(.vertical)` con `.contentMargins`** → deadlock de layout, splash nunca dismissa, sin crash log. Usar `onGeometryChange`. Detalles en UI-PATTERNS.md.
 

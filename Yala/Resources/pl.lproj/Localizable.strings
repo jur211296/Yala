@@ -8909,3 +8909,7 @@
 "groups.discard.openingBalanceTitle" = "Odrzucić to saldo początkowe?";
 "groups.expense.groupChangedNotice" = "Zmieniono grupę: to, co wpisano, zostaje; kto zapłacił i podział zaczynają się od nowa.";
 "statistics.categoryDetail.seeInRecords" = "Zobacz we Wpisach";
+
+/* Buscar en Registros (decisión 14 de 2.3) */
+"records.listSearch.placeholder" = "Szukaj we wpisach";
+"records.listSearch.clear" = "Wyczyść wyszukiwanie";
