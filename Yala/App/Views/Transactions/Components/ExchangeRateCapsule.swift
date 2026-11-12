@@ -65,7 +65,7 @@ struct ExchangeRateCapsule: View {
                         Text("1 \(appPreferences.currencyIdentifier(for: leftCode)) = \(appPreferences.currencyIdentifier(for: rightCode))")
                             .foregroundStyle(.secondary)
                         TextField("", text: $text)
-                            .keyboardType(.decimalPad)
+                            .amountKeyboard()
                             .focused($isFocused)
                             .fixedSize()
                             .foregroundStyle(.primary)
