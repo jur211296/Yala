@@ -1326,6 +1326,8 @@ final class DataWipeService {
         // vaciado de la shell sin sesión privada) devuelven a Yala completo. «Vaciar datos» con vida personal conserva los
         // ajustes, y con ellos esta marca: la persona sigue en la vista que eligió (encargo S27i).
         GroupsOnlyViewMark.clear(defaults)
+        // El grupo en el que abre «Nuevo gasto» (decisión 39 de 2.3): de esta persona, no de la siguiente.
+        LastExpenseGroupMark.clear(defaults)
 
         // --- Visualización ---
         defaults.removeObject(forKey: "showVariations")         // Default: true

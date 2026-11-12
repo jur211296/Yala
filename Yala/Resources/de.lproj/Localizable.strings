@@ -3409,13 +3409,13 @@
 "groups.expense.eachPays" = "Jeder zahlt";
 
 // GC-05: Settlements
-"groups.settlement.title" = "Zahlung erfassen";
+"groups.settlement.title" = "Ausgleichen";
 "groups.settlement.payTo" = "zahlt an";
-"groups.settlement.registerPayment" = "Zahlung erfassen";
+"groups.settlement.registerPayment" = "Ausgleichen";
 "groups.settlement.confirm" = "Bestätigen";
 "groups.settlement.reject" = "Ablehnen";
 "groups.settlement.settle" = "Begleichen";
-"groups.settlement.settleHint" = "Öffnet das Formular zur Erfassung dieser Zahlung";
+"groups.settlement.settleHint" = "Öffnet das Formular, um diese Schuld auszugleichen";
 "groups.settlement.confirmQuestion" = "Diese Zahlung als bestätigt markieren?";
 "groups.settlement.rejectQuestion" = "Diese Zahlung ablehnen?";
 
@@ -4248,9 +4248,9 @@
 "groups.reconnect.deletedForAll.cta" = "Verstanden";
 
 // MARK: Bridge opt-out (F7 consolidation)
-"groups.bridge.optoutAlertTitle" = "Auch in dein persönliches Yala eintragen?";
+"groups.bridge.optoutAlertTitle" = "In deinen Konten zeigen?";
 "groups.bridge.optoutAlertBody" = "Du kannst einen persönlichen Eintrag in deinem Konto erstellen, um diese Ausgabe widerzuspiegeln, oder sie nur in der Gruppe behalten.";
-"groups.bridge.optoutAlertYes" = "Ja, eintragen";
+"groups.bridge.optoutAlertYes" = "Ja, zeigen";
 "groups.bridge.optoutAlertNo" = "Nur in der Gruppe";
 "groups.bridge.deactivationSheetTitle" = "Nicht mehr in deinen Konten zeigen";
 "groups.bridge.deactivationSheetBody" = "Es gibt bereits automatisch erstellte Einträge in deinen Konten. Entscheide, was damit geschehen soll.";
@@ -4258,13 +4258,13 @@
 "groups.bridge.deactivationOptionDelete" = "Aus meinen Konten löschen";
 "groups.globalSettings.title" = "Gruppeneinstellungen";
 "groups.globalSettings.bridgeSectionTitle" = "In deinen Konten zeigen";
-"groups.globalSettings.bridgeToggleLabel" = "Gruppenausgaben in meinen persönlichen Konten erfassen";
+"groups.globalSettings.bridgeToggleLabel" = "In deinen Konten zeigen";
 "groups.globalSettings.bridgeCaption" = "Wenn aktiviert, wird jede Ausgabe, die du bezahlst oder begleichst, auch im gewählten persönlichen Konto erfasst. Dein Saldo spiegelt die Realität wider.";
 "groups.globalSettings.visibilitySectionTitle" = "Sichtbarkeit";
 "groups.globalSettings.visibilityCaption" = "Lege fest, ob Gruppeneinträge in deinem Panel, in Statistiken und in Einträgen angezeigt werden.";
 "groups.globalSettings.includeGroupTransactionsInFeedLabel" = "Gruppeneinträge in Einträgen anzeigen";
 "groups.settings.personalIntegrationSectionTitle" = "In deinen Konten zeigen";
-"groups.settings.personalIntegrationToggleLabel" = "Ausgaben dieser Gruppe in meinen persönlichen Konten erfassen";
+"groups.settings.personalIntegrationToggleLabel" = "In deinen Konten zeigen";
 "groups.settings.personalIntegrationHintInheritOn" = "Übernimmt deine allgemeine Einstellung (Aktiviert).";
 "groups.settings.personalIntegrationHintLocalOff" = "Nur in dieser Gruppe: deaktiviert.";
 "groups.settings.personalIntegrationHintBlockedByGlobal" = "Um es hier zu aktivieren, aktiviere es zuerst in den Gruppeneinstellungen.";
@@ -5527,7 +5527,7 @@
 "groups.shareableSummary.owedLabel" = "Anteil";
 
 /* Shareable group summary: heading of the minimum list of transfers needed to settle. */
-"groups.shareableSummary.settleUp" = "Zum Ausgleich";
+"groups.shareableSummary.settleUp" = "Zum Ausgleichen";
 
 /* Shareable group summary: shown instead of the transfer list when nothing is owed in that currency. Celebratory, not neutral. */
 "groups.shareableSummary.allSettled" = "Alles ausgeglichen!";
@@ -8378,7 +8378,7 @@
 /* Sección de ajustes del grupo (antes «Integración personal») */
 "groups.l19.options.personalSection" = "In deinen Konten";
 /* Interruptor del puente con las cuentas personales */
-"groups.l19.options.personalToggle" = "Was ich hier zahle, in meinen Konten eintragen";
+"groups.l19.options.personalToggle" = "In deinen Konten zeigen";
 /* Pie del interruptor cuando sigue el ajuste general */
 "groups.l19.options.personalInherit" = "Wie in den Gruppeneinstellungen.";
 /* Miembros: rótulo sobre la cifra */
@@ -8890,3 +8890,9 @@
 "cashflow.monthEnd.leftIn" = "Kommt noch rein";
 "cashflow.monthEnd.leftOut" = "Geht noch raus";
 "cashFlowPlan.estimateLeft" = "Geschätzt offen";
+
+/* Grupos (decisión 39 de 2.3): preguntar antes de tirar lo escrito y conservarlo al cambiar de grupo */
+"groups.discard.expenseTitle" = "Diese Ausgabe verwerfen?";
+"groups.discard.paymentTitle" = "Diese Zahlung verwerfen?";
+"groups.discard.openingBalanceTitle" = "Diesen Anfangssaldo verwerfen?";
+"groups.expense.groupChangedNotice" = "Du hast die Gruppe gewechselt: Was du eingegeben hast, bleibt; wer bezahlt hat und die Aufteilung beginnen von vorn.";

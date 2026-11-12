@@ -4,9 +4,10 @@
 //
 //  Wrapper para crear un gasto desde el FAB del tab Grupos (sin entrar a un grupo).
 //  Sostiene el grupo seleccionado y muestra `GroupExpenseFormView` con `.id(grupo)`
-//  para remontarlo limpio al cambiar de grupo (el `GroupExpenseViewModel` deriva
+//  para remontarlo al cambiar de grupo (el `GroupExpenseViewModel` deriva
 //  moneda/miembros/split/paidBy en su `init` y no soporta cambio en caliente).
-//  El chip de grupo (editable si hay >1 elegible) abre `GroupPickerSheet`.
+//  El chip de grupo (editable si hay >1 elegible) abre `GroupPickerSheet`. Lo escrito
+//  viaja al grupo nuevo (decisión 39 de 2.3, F3): el chip lo entrega al tocarlo.
 //
 
 import SwiftUI
@@ -23,6 +24,10 @@ struct GroupExpenseComposerView: View {
 
     @State private var selectedGroup: SplitGroup
     @State private var showGroupPicker = false
+    /// Lo escrito al tocar el chip. Solo pasa al formulario si de verdad se cambia de grupo.
+    @State private var pendingCarryOver: GroupExpenseCarryOver?
+    /// Lo que recibe el formulario del grupo elegido (se monta de nuevo por el `.id`).
+    @State private var carriedOver: GroupExpenseCarryOver?
 
     init(
         groups: [SplitGroup],
@@ -52,7 +57,8 @@ struct GroupExpenseComposerView: View {
                 memberNameLookup: memberNameLookup(selectedGroup),
                 groupChip: chipMode,
                 notice: notice,
-                onSave: onSave
+                onSave: onSave,
+                carriedOver: carriedOver
             )
             .id(selectedGroup.id)
         }
@@ -63,6 +69,9 @@ struct GroupExpenseComposerView: View {
                 memberCount: memberCount,
                 opensAtMediumHeight: true
             ) { picked in
+                if picked.id != selectedGroup.id {
+                    carriedOver = pendingCarryOver
+                }
                 selectedGroup = picked
                 showGroupPicker = false
             }
@@ -71,6 +80,9 @@ struct GroupExpenseComposerView: View {
 
     /// Editable solo si hay más de un grupo elegible (si hay uno solo, no hay a dónde cambiar).
     private var chipMode: GroupContextChipMode {
-        groups.count > 1 ? .editable { showGroupPicker = true } : .readOnly
+        groups.count > 1 ? .editable { written in
+            pendingCarryOver = written
+            showGroupPicker = true
+        } : .readOnly
     }
 }

@@ -3061,7 +3061,7 @@
 "groups.balance.noDebts" = "¡Están al día!";
 "groups.balance.pendingDebts" = "Deudas pendientes";
 "groups.balance.settlements" = "Pagos";
-"groups.balance.confirmed" = "Confirmada";
+"groups.balance.confirmed" = "Confirmado";
 "groups.balance.pending" = "Pendiente";
 "groups.expense.noExpenses" = "Sin gastos";
 "groups.expense.youPaid" = "Pagaste %@";
@@ -3413,13 +3413,13 @@
 "groups.expense.eachPays" = "Cada uno paga";
 
 // GC-05: Settlements
-"groups.settlement.title" = "Apuntar pago";
+"groups.settlement.title" = "Saldar";
 "groups.settlement.payTo" = "paga a";
-"groups.settlement.registerPayment" = "Apuntar pago";
+"groups.settlement.registerPayment" = "Saldar";
 "groups.settlement.confirm" = "Confirmar";
 "groups.settlement.reject" = "Rechazar";
 "groups.settlement.settle" = "Liquidar";
-"groups.settlement.settleHint" = "Abre el formulario para apuntar este pago";
+"groups.settlement.settleHint" = "Abre el formulario para saldar esta deuda";
 "groups.settlement.confirmQuestion" = "¿Marcar este pago como confirmado?";
 "groups.settlement.rejectQuestion" = "¿Rechazar este pago?";
 
@@ -4261,11 +4261,11 @@
 "groups.bridge.deactivationSheetTitle" = "Dejar de reflejar en tus cuentas";
 "groups.bridge.optoutAlertBody" = "Puedes crear un registro personal en tu cuenta para reflejar este gasto, o dejarlo solo dentro del grupo.";
 "groups.bridge.optoutAlertNo" = "Solo en el grupo";
-"groups.bridge.optoutAlertTitle" = "¿Registrar también en tu Yala personal?";
-"groups.bridge.optoutAlertYes" = "Sí, registrar";
+"groups.bridge.optoutAlertTitle" = "¿Reflejar en tus cuentas?";
+"groups.bridge.optoutAlertYes" = "Sí, reflejar";
 "groups.globalSettings.bridgeCaption" = "Cuando está activo, cada gasto que pagas o saldas se registra también en la cuenta personal que elijas. Tu saldo refleja la realidad.";
 "groups.globalSettings.bridgeSectionTitle" = "Reflejar en tus cuentas";
-"groups.globalSettings.bridgeToggleLabel" = "Registrar gastos de grupos en mis cuentas personales";
+"groups.globalSettings.bridgeToggleLabel" = "Reflejar en tus cuentas";
 "groups.globalSettings.includeGroupTransactionsInFeedLabel" = "Incluir registros de grupos en Registros";
 "groups.globalSettings.title" = "Ajustes de Grupos";
 "groups.globalSettings.visibilityCaption" = "Elige si los registros de grupos aparecen en tu Panel, Estadísticas y Registros.";
@@ -4275,7 +4275,7 @@
 "groups.settings.personalIntegrationHintInheritOn" = "Heredas tu ajuste general (Activado).";
 "groups.settings.personalIntegrationHintLocalOff" = "Solo en este grupo: desactivado.";
 "groups.settings.personalIntegrationSectionTitle" = "Reflejar en tus cuentas";
-"groups.settings.personalIntegrationToggleLabel" = "Registrar gastos de este grupo en mis cuentas personales";
+"groups.settings.personalIntegrationToggleLabel" = "Reflejar en tus cuentas";
 
 /* MARK: SplitChipDetail-keys (split-chip-detail refactor) */
 "split.totalLabel" = "Total";
@@ -5548,7 +5548,7 @@
 "groups.shareableSummary.owedLabel" = "Le tocaba";
 
 /* Shareable group summary: heading of the minimum list of transfers needed to settle. */
-"groups.shareableSummary.settleUp" = "Para saldar";
+"groups.shareableSummary.settleUp" = "Para quedar a mano";
 
 /* Shareable group summary: shown instead of the transfer list when nothing is owed in that currency. Celebratory, not neutral. */
 "groups.shareableSummary.allSettled" = "¡Todo saldado!";
@@ -8399,7 +8399,7 @@
 /* Sección de ajustes del grupo (antes «Integración personal») */
 "groups.l19.options.personalSection" = "En tus cuentas";
 /* Interruptor del puente con las cuentas personales */
-"groups.l19.options.personalToggle" = "Apuntar en mis cuentas lo que pago aquí";
+"groups.l19.options.personalToggle" = "Reflejar en tus cuentas";
 /* Pie del interruptor cuando sigue el ajuste general */
 "groups.l19.options.personalInherit" = "Igual que en Ajustes de Grupos.";
 /* Miembros: rótulo sobre la cifra */
@@ -8911,3 +8911,9 @@
 "cashflow.monthEnd.leftIn" = "Falta entrar";
 "cashflow.monthEnd.leftOut" = "Falta salir";
 "cashFlowPlan.estimateLeft" = "Estimado que falta";
+
+/* Grupos (decisión 39 de 2.3): preguntar antes de tirar lo escrito y conservarlo al cambiar de grupo */
+"groups.discard.expenseTitle" = "¿Descartar este gasto?";
+"groups.discard.paymentTitle" = "¿Descartar este pago?";
+"groups.discard.openingBalanceTitle" = "¿Descartar este saldo inicial?";
+"groups.expense.groupChangedNotice" = "Cambiaste de grupo: lo que escribiste se queda; quién pagó y el reparto vuelven a empezar.";

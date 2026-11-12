@@ -360,8 +360,8 @@
 "groups.bridge.errorTransactionUpdate" = "We couldn't update this expense in your accounts. We'll try again on our own — you don't need to do anything.";
 "groups.bridge.optoutAlertBody" = "You can create a personal record in your account to reflect this expense, or keep it only inside the group.";
 "groups.bridge.optoutAlertNo" = "Group only";
-"groups.bridge.optoutAlertTitle" = "Also log in your personal Yala?";
-"groups.bridge.optoutAlertYes" = "Yes, log it";
+"groups.bridge.optoutAlertTitle" = "Show in your accounts?";
+"groups.bridge.optoutAlertYes" = "Yes, show it";
 "groups.card.leaveGroupAlertBody" = "Your request was rejected. Leaving will remove this group from your list. Your personal records stay.";
 "groups.card.leaveGroupAlertTitle" = "Leave group?";
 "groups.card.moreDebts" = "+%d more";
@@ -413,7 +413,7 @@
 "groups.form.simplifyDebtsHint" = "Reduces the number of payments needed between members";
 "groups.globalSettings.bridgeCaption" = "When on, every expense you pay or settle is also logged in the personal account you choose. Your balance reflects reality.";
 "groups.globalSettings.bridgeSectionTitle" = "Show in your accounts";
-"groups.globalSettings.bridgeToggleLabel" = "Log group expenses in my personal accounts";
+"groups.globalSettings.bridgeToggleLabel" = "Show in your accounts";
 "groups.globalSettings.includeGroupTransactionsInFeedLabel" = "Include group records in Records";
 "groups.globalSettings.title" = "Groups Settings";
 "groups.globalSettings.visibilityCaption" = "Choose whether group records appear in your Panel, Statistics and Records.";
@@ -518,7 +518,7 @@
 "groups.settings.personalIntegrationHintInheritOn" = "Inheriting your general setting (Enabled).";
 "groups.settings.personalIntegrationHintLocalOff" = "Only in this group: disabled.";
 "groups.settings.personalIntegrationSectionTitle" = "Show in your accounts";
-"groups.settings.personalIntegrationToggleLabel" = "Log this group's expenses in my personal accounts";
+"groups.settings.personalIntegrationToggleLabel" = "Show in your accounts";
 "groups.settings.showArchived" = "Show archived";
 "groups.settings.showArchivedCount" = "Show archived (%d)";
 "groups.settings.title" = "Group settings";
@@ -526,12 +526,12 @@
 "groups.settlement.confirm" = "Confirm";
 "groups.settlement.confirmQuestion" = "Mark this payment as confirmed?";
 "groups.settlement.payTo" = "pays to";
-"groups.settlement.registerPayment" = "Log payment";
+"groups.settlement.registerPayment" = "Settle";
 "groups.settlement.reject" = "Reject";
 "groups.settlement.rejectQuestion" = "Reject this payment?";
 "groups.settlement.settle" = "Settle";
-"groups.settlement.settleHint" = "Opens the form to log this payment";
-"groups.settlement.title" = "Log payment";
+"groups.settlement.settleHint" = "Opens the form to settle this debt";
+"groups.settlement.title" = "Settle";
 "groups.stats.allTime" = "All time";
 "groups.stats.assignCategoriesHint" = "Assign categories to your expenses to see the breakdown by type.";
 "groups.stats.categories" = "Categories";
@@ -7622,7 +7622,7 @@
 /* Sección de ajustes del grupo (antes «Integración personal») */
 "groups.l19.options.personalSection" = "In your accounts";
 /* Interruptor del puente con las cuentas personales */
-"groups.l19.options.personalToggle" = "Record what I pay here in my accounts";
+"groups.l19.options.personalToggle" = "Show in your accounts";
 /* Pie del interruptor cuando sigue el ajuste general */
 "groups.l19.options.personalInherit" = "Same as in Groups Settings.";
 /* Miembros: rótulo sobre la cifra */
@@ -8134,3 +8134,9 @@
 "cashflow.monthEnd.leftIn" = "Still to come in";
 "cashflow.monthEnd.leftOut" = "Still to go out";
 "cashFlowPlan.estimateLeft" = "Estimated to go";
+
+/* Grupos (decisión 39 de 2.3): preguntar antes de tirar lo escrito y conservarlo al cambiar de grupo */
+"groups.discard.expenseTitle" = "Discard this expense?";
+"groups.discard.paymentTitle" = "Discard this payment?";
+"groups.discard.openingBalanceTitle" = "Discard this opening balance?";
+"groups.expense.groupChangedNotice" = "You changed groups: what you typed stays; who paid and the split start over.";

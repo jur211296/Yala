@@ -152,8 +152,9 @@ final class UXAudit22Lote13DecididoUITests: XCTestCase {
         app.buttons["group_expense_save"].tap()
 
         // Pagaste tú con el puente apagado: la pregunta.
-        let yes = app.alerts.buttons["Sí, registrar"].firstMatch
-        XCTAssertTrue(yes.waitForExistence(timeout: 8), "No salió «¿Registrar también en tu Yala personal?».")
+        // Decisión 40 de 2.3: el puente tiene un solo nombre, también en esta pregunta.
+        let yes = app.alerts.buttons["Sí, reflejar"].firstMatch
+        XCTAssertTrue(yes.waitForExistence(timeout: 8), "No salió «¿Reflejar en tus cuentas?».")
         capture(app, "despues-L13-7-pregunta")
         yes.tap()
 

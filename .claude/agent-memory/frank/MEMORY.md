@@ -43,6 +43,7 @@
 - [Verificar prod del gateway: token acuñado](feedback_verificar_prod_del_gateway_con_token_acunado.md) — staging con Yala Dev de Jürgen; prod con token 15 min, preguntando.
 - [UI compleja: capturas antes de cerrar](feedback_ui_compleja_capturas_antes_de_cerrar.md) — aprueba sobre el simulador, no el lienzo; pide aire.
 - [El atasco se prueba con segundos y el mismo cambio](feedback_el_atasco_se_prueba_con_segundos_y_el_mismo_cambio.md) — backoff de segundos + mismo fallo antes de abrir una salida que pierde datos.
+- [Merge corto que falta: lo hace la sesión](feedback_merge_corto_que_falta_lo_hace_la_sesion.md) — BLOQUEANTE y ofrecerlo; el lote sobre la rama del merge, sin rebase.
 - [No esperes el CI ajeno](feedback_no_esperar_ci_ajeno.md) — ni antes del gate: sigue y rebasa una vez antes de tu PR.
 - [El rerun no recoge el arreglo de la base](feedback_rerun_no_recoge_el_arreglo_de_la_base.md) — reusa el merge original: hace falta update-branch.
 - [Simulador ajeno parado: se pregunta](feedback_simulador_ajeno_parado_se_pregunta.md) — si su sesión espera a Jürgen, aprobó usarlo sin apagarlo.
