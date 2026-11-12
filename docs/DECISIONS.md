@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (100 entradas)
+## Índice (101 entradas)
 
-> **No hace falta leer este fichero entero** — son 281 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 284 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-12` [Lote del 11 y 12-nov: cierre de la 2.2, nota de salud, «Activar sin borrar», bienvenida 2.3 y priori](#2026-11-12-lote-del-11-y-12-nov-cierre-de-la-22-nota-de-salud-activar-sin-borrar-bienvenida-23-y-prioridades-de-la-cola)
 - `2026-11-10` [El correo del banco llega a un dominio aparte, yalainbox.com, solo para recibir](#2026-11-10-el-correo-del-banco-llega-a-un-dominio-aparte-yalainboxcom-solo-para-recibir)
 - `2026-11-10` [Orden del 10-nov: 2.2 en verde y en TestFlight antes que los lotes de 2.3, que corren de a dos sin d](#2026-11-10-orden-del-10-nov-22-en-verde-y-en-testflight-antes-que-los-lotes-de-23-que-corren-de-a-dos-sin-declarar-el-catlogo-de-textos)
 - `2026-11-10` [Cierre de la 2.2: una sesión deja verde lo abierto y sube la build siguiente, en paralelo con los lo](#2026-11-10-cierre-de-la-22-una-sesin-deja-verde-lo-abierto-y-sube-la-build-siguiente-en-paralelo-con-los-lotes-23)
@@ -126,6 +127,13 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-12] Lote del 11 y 12-nov: cierre de la 2.2, nota de salud, «Activar sin borrar», bienvenida 2.3 y prioridades de la cola
+**Contexto:** Decisiones que Jürgen tomó en el chat entre el 11 y el 12-nov (capturadas por el bot dueño, ADR-082 de casa). Se registran aquí juntas porque ninguna tiene todavía su propia sesión cerrada.
+**Decisión:** (1) **Cierre de la 2.2 como la 2.1** (11-nov 18:41): tag `v2.2` y release sobre el commit de la build 9 distribuida, merge de 2.2 en 1.0, rama por defecto `2.3` y se borra `2.2`; los encargos nuevos van solo a `2.3`. (2) **Propuestas de mejora como artifact visual** de Claude, no como Markdown (11-nov 14:11). (3) **Nota de salud, lote 1** (11-nov 15:05): «Ritmo hasta hoy» con 3 días de gracia, bajada suave al pasarse de un presupuesto, sin suelo de 50 pero con curva amable (no desanimar), mensaje breve positivo o neutro, y tarjeta chata en Mis finanzas encendida por defecto. Lote 2: lo que te queda del mes. Las cuentas en rojo esperan datos. (4) **Nota de salud encendida una vez para los usuarios existentes** que nunca tocaron Configurar Panel (ocultas = fábrica); a quien la apagó a mano no se le toca (11-nov 16:35). (5) **Nube 2.3, «Activar sin borrar»: opción 1** (11-nov 15:06): la hoja dice la verdad en cada estado; el botón pasa a «Terminar de borrar y empezar de cero», con «Se borran tus datos de este iPhone y de tu iCloud. No queda copia», y abre la hoja existente de terminar el borrado; en el caso a medias dice que lo de iCloud ya se borró y que lo que quedó en el iPhone pasa a la cuenta de Yala al activar. (6) **Merge corto de 2.2 en 2.3** lo hace la sesión de Grupos (no tirar el gasto a medias) antes de su lote; el de la cola queda como verificación (11-nov 15:22). (7) **Verificación de Gmail**: Google pidió un video nuevo para `gmail.readonly`; se graba un demo nuevo en vez de quitar la conexión de Gmail, y se encola el arreglo del CI del PR de deshacer en lote (11-nov 16:34). (8) **La falla de memoria en producción** (Sentry YALA-IOS-B, usuario real con iPhone 16 Pro Max) va con prioridad en 2.3: primer encargo de Yala pendiente de la cola, para encontrar la causa (12-nov 06:18). (9) **Grupos: saldar como en Splitwise y la moneda del grupo que no cambia sola** se encola al final de la cola de 2.3 (12-nov 06:22). (10) **Bienvenida 2.3, acceso:** se implementa exactamente como el artifact v35 de Jürgen (un botón único de entrar con Google o Apple, sin volver al elector), aunque hoy el servidor no devuelva el proveedor de la cuenta: lo diseñó así a propósito (12-nov 11:15).
+**Razones:** Son decisiones de producto y de operación que Jürgen tomó en el chat. Escritas aquí, la sesión que implemente cada una no vuelve a preguntarlas.
+**Consecuencias:** (1) se cumplió el 12-nov: `v2.2` sobre el commit de la build 9 (no sobre el merge en 1.0, a diferencia de `v2.1`), y `docs/FLUJO-RAMAS-Y-HOTFIX.md` y `CLAUDE.md` pasan a `2.3`. (3), (4) y (5) definen el alcance de sus lotes de 2.3; (10) acepta a sabiendas que el botón único no sabe aún el proveedor.
+**Estado:** Activa
 
 ### [2026-11-10] El correo del banco llega a un dominio aparte, yalainbox.com, solo para recibir
 **Contexto:** Tres decisiones de Jürgen del 10-nov (20:05, 20:18 y 20:24, Lima), capturadas en el chat y pendientes de pasar al repo, sobre dónde recibe Yala los correos que el banco reenvía para crear borradores. La de las 20:05 (un subdominio de yala-app.pe, como `auto@correo.yala-app.pe`) la sustituyó la de las 20:18: no se puede sin tocar los MX de Google del dominio principal. Las incorpora la sesión del lote 09 de mejoras necesarias 2.3, que no las ejecuta.
