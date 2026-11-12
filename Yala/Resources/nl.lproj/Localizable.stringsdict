@@ -1452,5 +1452,69 @@
 			<string>%d boekingen gewijzigd</string>
 		</dict>
 	</dict>
+	<key>pasos23.record.between.many</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Al %d registratie!</string>
+			<key>other</key>
+			<string>Al %d registraties!</string>
+		</dict>
+	</dict>
+	<key>pasos23.record.cleanup.message</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Je hebt deze registratie gemaakt om te leren. Selecteer wat je wilt verwijderen; de rest blijft op je rekening.</string>
+			<key>other</key>
+			<string>Je hebt deze %d registraties gemaakt om te leren. Selecteer wat je wilt verwijderen; de rest blijft op je rekening.</string>
+		</dict>
+	</dict>
+	<key>pasos23.record.cleanup.delete</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d registratie verwijderen</string>
+			<key>other</key>
+			<string>%d registraties verwijderen</string>
+		</dict>
+	</dict>
+	<key>pasos23.record.cleanup.done</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d proefregistratie verwijderd</string>
+			<key>other</key>
+			<string>%d proefregistraties verwijderd</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

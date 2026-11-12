@@ -144,6 +144,15 @@ struct NewTransactionView: View {
     let startsAsDuplicate: Bool
     @State private var didStartAsDuplicate = false
 
+    // MARK: «Aprender a registrar» (Y23-08)
+
+    /// Se avisa de lo guardado (todas sus filas: una transferencia son dos) a quien abrió el formulario desde el tutorial
+    /// del paso 2.
+    let onTutorialSaved: (([PersistentIdentifier]) -> Void)?
+    /// La guía de foco del tutorial está en marcha (`NewRecordTutorialGuide`). «Omitir guía» la apaga.
+    @State private var tutorialGuideActive: Bool
+    @State private var tutorialGuideIndex = 0
+
     init(
         prefillAccountID: PersistentIdentifier? = nil,
         prefillCategoryID: PersistentIdentifier? = nil,
@@ -151,8 +160,12 @@ struct NewTransactionView: View {
         prefillFromChatDraft: ChatDraftPrefill? = nil,
         transactionToEdit: TransactionItem? = nil,
         startsAsDuplicate: Bool = false,
-        draft: NewRecordDraft? = nil
+        draft: NewRecordDraft? = nil,
+        showsTutorialGuide: Bool = false,
+        onTutorialSaved: (([PersistentIdentifier]) -> Void)? = nil
     ) {
+        _tutorialGuideActive = State(initialValue: showsTutorialGuide)
+        self.onTutorialSaved = onTutorialSaved
         // El borrador solo vale para un registro nuevo sin precarga de chat: editar carga siempre el guardado.
         let draft = (transactionToEdit == nil && prefillFromChatDraft == nil && !startsAsDuplicate) ? draft : nil
         self.draft = draft
@@ -567,6 +580,16 @@ struct NewTransactionView: View {
             .opacity(duplicateAnimationVisible ? 1.0 : 0.0)
             .dismissKeyboardOnTap()
             .yalaScreenBackground(.subtle)
+            .modifier(NewRecordTutorialGuideHost(
+                isActive: $tutorialGuideActive,
+                index: $tutorialGuideIndex,
+                isShowing: NewRecordTutorialGuide.isShowing(
+                    isActive: tutorialGuideActive, keyboardVisible: isKeyboardVisible, sheetOpen: isAnySelectorOpen),
+                hasAmount: viewModel.amount > 0,
+                hasCategory: viewModel.selectedSubcategory != nil,
+                hasSingleAccount: viewModel.accounts.count <= 1,
+                onWriteName: { isNoteFieldFocused = true }
+            ))
             .navigationTitle(formTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -795,7 +818,8 @@ struct NewTransactionView: View {
                 Task { await viewModel.loadForeignExchangeRate(context: modelContext, keepManual: true) }
             }
             // Auto-focus field based on user preference (only for new transactions)
-            if transactionToEdit == nil, appPreferences.autoFocusField != .none {
+            // Con la guía del tutorial, el teclado no sale solo: la guía empieza señalando el monto.
+            if transactionToEdit == nil, !tutorialGuideActive, appPreferences.autoFocusField != .none {
                 Task {
                     try? await Task.sleep(for: .milliseconds(50))
                     switch appPreferences.autoFocusField {
@@ -926,6 +950,7 @@ struct NewTransactionView: View {
                     .autocorrectionDisabled(false)
                     .focused($isNoteFieldFocused)
                     .accessibilityIdentifier("new_transaction_note")
+                    .coachMarkAnchor(NewRecordTutorialGuide.descriptionAnchor)
                     .onChange(of: viewModel.note) { _, newValue in
                         dsWithAnimation(reduceMotion) {
                             // Disable #!@ shortcuts for transfers
@@ -1051,6 +1076,11 @@ struct NewTransactionView: View {
     }
 
     private var amountDisplay: some View {
+        amountDisplayRow
+            .coachMarkAnchor(NewRecordTutorialGuide.amountAnchor)
+    }
+
+    private var amountDisplayRow: some View {
         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
             if let symbol = currencySymbol {
                 Text(symbol)
@@ -1549,6 +1579,7 @@ struct NewTransactionView: View {
                             viewModel.showAccountSelector = true
                         }
                         .accessibilityIdentifier("new_transaction_account_chip")
+                        .coachMarkAnchor(NewRecordTutorialGuide.accountAnchor)
 
                         ForEach(cardMembers, id: \.persistentModelID) { member in
                             let isChosen = member.persistentModelID == viewModel.selectedAccount?.persistentModelID
@@ -1591,6 +1622,7 @@ struct NewTransactionView: View {
                         }
                     }
                     .accessibilityIdentifier("new_transaction_subcategory_chip")
+                    .coachMarkAnchor(NewRecordTutorialGuide.categoryAnchor)
                     .disabled(!canEditBridgedSubcategoryAndTags)
                     .opacity(canEditBridgedSubcategoryAndTags ? 1.0 : 0.5)
                 }
@@ -1883,6 +1915,7 @@ struct NewTransactionView: View {
             saveTransaction()
         }
         .accessibilityIdentifier("new_transaction_save")
+        .coachMarkAnchor(NewRecordTutorialGuide.saveAnchor)
         .scaleEffect(saveButtonPulse ? 1.03 : 1)
         .dsAnimation(.easeInOut(duration: 0.2), value: viewModel.canSave, reduceMotion: reduceMotion)
     }
@@ -2086,8 +2119,21 @@ struct NewTransactionView: View {
                 )
             }
 
+            // «Aprender a registrar» (Y23-08): el registro de la manera «a mano» entra en la hoja del final.
+            if !wasEdit, let onTutorialSaved {
+                tutorialGuideActive = false
+                onTutorialSaved(saved.map(\.persistentModelID))
+            }
+
             finishSave(saved: saved, wasEdit: wasEdit)
         }
+    }
+
+    /// Alguna hoja de selector está abierta encima del formulario: la guía se esconde mientras tanto.
+    private var isAnySelectorOpen: Bool {
+        viewModel.showAccountSelector || viewModel.showSubcategorySelector || viewModel.showTagSelector
+            || viewModel.showDatePicker || viewModel.showNeedSelector || viewModel.showFavoritesSheet
+            || viewModel.showSourceAccountSelector || viewModel.showDestinationAccountSelector
     }
 
     // MARK: - Tras guardar (UX 2.2 · L2-5)

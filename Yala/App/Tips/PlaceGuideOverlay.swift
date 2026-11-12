@@ -28,6 +28,8 @@ final class PlaceGuideFrames {
     static let shared = PlaceGuideFrames()
     /// El botón «Configurar Panel» de la barra de arriba del Panel.
     var configureButton: CGRect?
+    /// El botón de la Bandeja de la barra de arriba del Panel (Y23-10).
+    var inboxButton: CGRect?
 }
 
 /// La ubicación, en la ventana, de una pestaña de la barra de abajo. La barra es de UIKit: se busca su botón por la
@@ -183,9 +185,10 @@ private struct PanelPlaceGuideLayer: View {
     private func card(_ stage: PlaceGuideStage, proxy: GeometryProxy) -> some View {
         let page = proxy.frame(in: .global)
         switch stage.target {
-        case .panelConfigure:
+        case .panelConfigure, .panelInbox:
             VStack(spacing: 0) {
-                PlaceGuideCard(stage: stage, pointer: .up(x: Self.configureX(in: page)))
+                PlaceGuideCard(stage: stage, pointer: .up(
+                    x: stage.target == .panelInbox ? Self.inboxX(in: page) : Self.configureX(in: page)))
                 Spacer(minLength: 0)
             }
             // El Panel pinta su contenido bajo la barra de arriba (el área segura solo descuenta la hora): la tarjeta
@@ -204,6 +207,15 @@ private struct PanelPlaceGuideLayer: View {
 
     /// Alto de la barra de arriba del Panel (botones de cristal de 44 pt y su margen).
     private static let topBarHeight: CGFloat = 60
+
+    /// La x de la Bandeja, en la ventana. Si el marco medido no cae en la mitad izquierda de la página, el sitio de
+    /// siempre: el primer botón de la izquierda.
+    private static func inboxX(in page: CGRect) -> CGFloat {
+        if let frame = PlaceGuideFrames.shared.inboxButton, page.minX..<page.midX ~= frame.midX {
+            return frame.midX
+        }
+        return page.minX + 38
+    }
 
     /// La x de «Configurar Panel», en la ventana. Si el marco medido no cae en la página, el sitio de siempre: el
     /// segundo botón del grupo de la derecha, junto al avatar.

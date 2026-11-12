@@ -111,6 +111,13 @@ su permiso.
   (`ProxyErrorMapper.isTrialExhausted`). El copy no lleva la cifra a propósito: si el cupo cambia, no caduca.
 - **Staging corre `observe` y no bloquea**: el 403 solo se ve en producción. Se verifica con un token de 15 min para un
   dispositivo ficticio y `gateway/scripts/verify-ai.ts --trial`, a ritmo de persona (la ráfaga free es 5/min).
+- **La prueba de cortesía de Yala IA de Primeros pasos (Y23-09, 2026-11-12) vive de este cupo, no del chat.** El plan
+  Free no tiene cubo `chat` ni `suggestions`; dentro del tutorial el chat envía con `forceIntent: .register`
+  (`ChatSheetView.courtesyTrial`), y «apuntar» solo llama a `text.parse` (cubo `voice`). ⇒ **un cambio que haga pasar
+  «apuntar» por una tarea de `chat` o `suggestions`** (clasificar antes, sugerencias en el saludo) **rompe la prueba en
+  producción con un 403**, y en staging no se ve (`observe`). Las sugerencias del saludo piden `chat.suggestions`, que en
+  Free da 403: sin medir qué enseña el saludo entonces (pendiente del guion de iPhone del ticket
+  `onboarding-2-3-learn-to-record-courtesy-trial`).
 
 ## La foto
 

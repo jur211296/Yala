@@ -27,6 +27,8 @@ enum PlaceGuide: String, CaseIterable, Equatable {
     case scheduledPayments
     /// Al terminar el paso 5: la pestaña Grupos.
     case groups
+    /// Al terminar el paso 2 (Y23-10): la Bandeja, arriba a la izquierda del Panel.
+    case inbox
 
     var stages: [PlaceGuideStage] {
         switch self {
@@ -93,6 +95,16 @@ enum PlaceGuide: String, CaseIterable, Equatable {
                     advance: .button(L10n.Common.understood),
                     showsSkip: false),
             ]
+        case .inbox:
+            return [
+                PlaceGuideStage(
+                    target: .panelInbox,
+                    eyebrow: L10n.Accessibility.inbox,
+                    title: L10n.PrimerosPasos23.Record.inboxGuideTitle,
+                    message: L10n.PrimerosPasos23.Record.inboxGuideMessage,
+                    advance: .button(L10n.Common.understood),
+                    showsSkip: false),
+            ]
         case .groups:
             return [
                 PlaceGuideStage(
@@ -123,6 +135,8 @@ struct PlaceGuideStage: Equatable {
     enum Target: Equatable {
         /// El botón «Configurar Panel» de la barra de arriba del Panel.
         case panelConfigure
+        /// El botón de la Bandeja, arriba a la izquierda del Panel.
+        case panelInbox
         /// La pestaña «Más» de la barra de abajo.
         case moreTab
         /// Unas tarjetas de la pantalla Más (`MoreView`, por su id: `insights`, `budgets`…).
@@ -133,7 +147,7 @@ struct PlaceGuideStage: Equatable {
         /// La pestaña en la que se pinta este momento.
         var tab: AppTab {
             switch self {
-            case .panelConfigure, .moreTab, .groupsTab: return .panel
+            case .panelConfigure, .panelInbox, .moreTab, .groupsTab: return .panel
             case .moreItems: return .more
             }
         }
@@ -257,7 +271,7 @@ enum PlaceGuideLogic {
             return tab == .more ? .advance : (tab == .panel ? .stay : .close)
         case .groupsTab:
             return tab == .groups ? .advance : (tab == .panel ? .stay : .close)
-        case .panelConfigure:
+        case .panelConfigure, .panelInbox:
             return tab == .panel ? .stay : .close
         case .moreItems:
             return tab == .more ? .stay : .close

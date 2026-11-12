@@ -1452,5 +1452,69 @@
 			<string>You changed %d records</string>
 		</dict>
 	</dict>
+	<key>pasos23.record.between.many</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d record so far!</string>
+			<key>other</key>
+			<string>%d records so far!</string>
+		</dict>
+	</dict>
+	<key>pasos23.record.cleanup.message</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>You made this record to learn. Tick the ones you want to delete; the rest stay in your account.</string>
+			<key>other</key>
+			<string>You made these %d records to learn. Tick the ones you want to delete; the rest stay in your account.</string>
+		</dict>
+	</dict>
+	<key>pasos23.record.cleanup.delete</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Delete %d record</string>
+			<key>other</key>
+			<string>Delete %d records</string>
+		</dict>
+	</dict>
+	<key>pasos23.record.cleanup.done</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>We deleted %d practice record</string>
+			<key>other</key>
+			<string>We deleted %d practice records</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

@@ -1452,5 +1452,69 @@
 			<string>Alteraste %d registos</string>
 		</dict>
 	</dict>
+	<key>pasos23.record.between.many</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Já vai %d registo!</string>
+			<key>other</key>
+			<string>Já vão %d registos!</string>
+		</dict>
+	</dict>
+	<key>pasos23.record.cleanup.message</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Fizeste este registo para aprender. Marca os que queres apagar; os outros ficam na tua conta.</string>
+			<key>other</key>
+			<string>Fizeste estes %d registos para aprender. Marca os que queres apagar; os outros ficam na tua conta.</string>
+		</dict>
+	</dict>
+	<key>pasos23.record.cleanup.delete</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Apagar %d registo</string>
+			<key>other</key>
+			<string>Apagar %d registos</string>
+		</dict>
+	</dict>
+	<key>pasos23.record.cleanup.done</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Apagámos %d registo de teste</string>
+			<key>other</key>
+			<string>Apagámos %d registos de teste</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

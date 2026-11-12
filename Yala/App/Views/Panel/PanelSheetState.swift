@@ -76,6 +76,14 @@ struct PanelSheetState {
     /// Patrón canónico iOS 26 — reemplaza el frágil `Task.sleep(350ms)`.
     var pendingOpenChatAfterOnboarding = false
 
+    // Primeros pasos 2.3 (Y23-07 a Y23-10)
+    /// Paso 1: crear la primera cuenta preguntando (`FirstAccountFlowView`).
+    var showFirstAccountFlow = false
+    /// Paso 2: aprender a registrar (`RecordTutorialView`).
+    var showRecordTutorial = false
+    /// Paso 2, al terminar: «¿Borramos los de prueba?» (`PracticeRecordsCleanupSheet`).
+    var showPracticeRecordsCleanup = false
+
     // AI consent
     var showAIConsentAlert = false
     var pendingAIInput: PendingAIInput = .voice
@@ -144,6 +152,9 @@ struct PanelSheetState {
             || showChatConsentAlert
             || showYalaAIOnboarding
             || showAIConsentAlert
+            || showFirstAccountFlow
+            || showRecordTutorial
+            || showPracticeRecordsCleanup
     }
 
     /// `true` si la bandera `sheet` está puesta y es la ÚNICA de `hasActivePresentation`. Lo usa

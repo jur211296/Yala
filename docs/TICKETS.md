@@ -836,6 +836,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | onboarding-2-3-default-tabs-and-where-things-live | done | tickets/done/onboarding-2-3-default-tabs-and-where-things-live.md |
 | onboarding-2-3-groups-entry | qa | tickets/qa/onboarding-2-3-groups-entry.md |
 | onboarding-2-3-permissions-inside-the-tutorial | done | tickets/done/onboarding-2-3-permissions-inside-the-tutorial.md |
+| onboarding-2-3-first-account-questions | done | tickets/done/onboarding-2-3-first-account-questions.md |
+| onboarding-2-3-learn-to-record-cleanup | done | tickets/done/onboarding-2-3-learn-to-record-cleanup.md |
+| onboarding-2-3-learn-to-record-courtesy-trial | qa | tickets/qa/onboarding-2-3-learn-to-record-courtesy-trial.md |
+| onboarding-2-3-learn-to-record-guide | done | tickets/done/onboarding-2-3-learn-to-record-guide.md |
 | onboarding-2-3-private-icloud-entry | done | tickets/done/onboarding-2-3-private-icloud-entry.md |
 | onboarding-2-3-showcase-and-access-buttons | done | tickets/done/onboarding-2-3-showcase-and-access-buttons.md |
 | onboarding-2-3-single-provider-access | qa | tickets/qa/onboarding-2-3-single-provider-access.md |

@@ -4678,6 +4678,8 @@ struct MainTabView: View {
                         MoreView()
                             .environment(\.isRootPageShown, displayedTab == .more)
                     }
+                    // El punto de «algo nuevo» tras aprender a registrar (Y23-10); se apaga al abrir Más.
+                    .badge(MoreTabNews.shared.isPending ? Text(verbatim: "") : nil)
                 }
 
                 // Search tab with .search role - pinned to trailing edge.

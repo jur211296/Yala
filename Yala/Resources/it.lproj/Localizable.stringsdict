@@ -1452,5 +1452,69 @@
 			<string>Hai modificato %d registrazioni</string>
 		</dict>
 	</dict>
+	<key>pasos23.record.between.many</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Già %d registrazione!</string>
+			<key>other</key>
+			<string>Già %d registrazioni!</string>
+		</dict>
+	</dict>
+	<key>pasos23.record.cleanup.message</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Hai fatto questa registrazione per imparare. Seleziona quelle che vuoi eliminare; le altre restano nel tuo conto.</string>
+			<key>other</key>
+			<string>Hai fatto queste %d registrazioni per imparare. Seleziona quelle che vuoi eliminare; le altre restano nel tuo conto.</string>
+		</dict>
+	</dict>
+	<key>pasos23.record.cleanup.delete</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Elimina %d registrazione</string>
+			<key>other</key>
+			<string>Elimina %d registrazioni</string>
+		</dict>
+	</dict>
+	<key>pasos23.record.cleanup.done</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Abbiamo eliminato %d registrazione di prova</string>
+			<key>other</key>
+			<string>Abbiamo eliminato %d registrazioni di prova</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

@@ -44,6 +44,8 @@ struct PanelSheetsModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
+            // Primeros pasos 2.3: el paso 1, el tutorial del paso 2 y su cierre (Y23-07 a Y23-10).
+            .modifier(PrimerosPasosPanelPresentations(sheets: $sheets, viewModel: viewModel))
             .sheet(item: $sheets.accountFormSheet) { sheet in
                 let names: [String] = {
                     guard let editing = sheet.account else {

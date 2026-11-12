@@ -190,14 +190,14 @@ struct PanelView: View {
         PlaceGuideCenter.shared.start(.chartsStep, onFinish: markDone)
     }
 
-    /// Lo que abre cada paso del mazo (Y23-05). Hasta que llegue el flujo guiado de cada uno (sus cards Y23-07 a
-    /// Y23-16), abre lo que ya existe.
+    /// Lo que abre cada paso del mazo (Y23-05). Los pasos 1 y 2 abren su flujo guiado (Y23-07 a Y23-10); los demás,
+    /// hasta que llegue el suyo (Y23-11 a Y23-16), lo que ya existe.
     private func handleSetupStep(_ step: SetupStepID) {
         switch step {
         case .firstAccount:
-            sheets.accountFormSheet = AccountFormSheet(account: nil)
+            sheets.showFirstAccountFlow = true
         case .firstExpense:
-            sheets.showNewTransaction = true
+            sheets.showRecordTutorial = true
         case .firstBudget:
             RouterEntryGate.shared.submit(.navigate(.budgets))
             RouterEntryGate.shared.submit(.autoOpenBudgetEditor)
@@ -369,6 +369,8 @@ struct PanelView: View {
         }
         .accessibilityLabel(L10n.Accessibility.inbox)
         .accessibilityIdentifier("panel_inbox_button")
+        // «Lo que Yala anota solo» (Y23-10) apunta aquí: la barra es de UIKit y no lleva anclas de la página.
+        .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { PlaceGuideFrames.shared.inboxButton = $0 }
     }
 
 

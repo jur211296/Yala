@@ -15,13 +15,30 @@ struct CoachMarkStep: Identifiable {
     let title: String
     let message: String
     let spotlightPadding: CGFloat
+    /// El paso avanza al HACER lo que señala (Y23-08, guía del formulario): el foco deja pasar el toque a lo de debajo y
+    /// la tarjeta no lleva «Siguiente» salvo que `primaryLabel` lo pida. Quien monta la guía avanza `currentIndex`
+    /// cuando la acción ocurre. Los tours de siempre lo dejan en `false`.
+    let advancesByAction: Bool
+    /// El texto del botón principal. `nil` = «Siguiente» / «Listo», como siempre (o ninguno si `advancesByAction`).
+    let primaryLabel: String?
+    /// Un segundo botón con nombre propio («Escribir»). Lo atiende el `onSecondary` de la guía.
+    let secondaryLabel: String?
 
-    init(id: String, title: String, message: String, spotlightPadding: CGFloat = DS.Spacing.sm) {
+    init(
+        id: String, title: String, message: String, spotlightPadding: CGFloat = DS.Spacing.sm,
+        advancesByAction: Bool = false, primaryLabel: String? = nil, secondaryLabel: String? = nil
+    ) {
         self.id = id
         self.title = title
         self.message = message
         self.spotlightPadding = spotlightPadding
+        self.advancesByAction = advancesByAction
+        self.primaryLabel = primaryLabel
+        self.secondaryLabel = secondaryLabel
     }
+
+    /// Si la tarjeta lleva botón principal.
+    var showsPrimaryButton: Bool { !advancesByAction || primaryLabel != nil }
 }
 
 // MARK: - Anchor Preference Key
@@ -145,6 +162,8 @@ struct CoachMarkOverlay: View {
     /// una sola pantalla. Una guía de varias fases (el tour Pro) pasa aquí cómo darla por vista ENTERA.
     let onSkip: (() -> Void)?
     let onComplete: () -> Void
+    /// El segundo botón de un paso (`CoachMarkStep.secondaryLabel`), con el id del paso.
+    var onSecondary: ((String) -> Void)? = nil
 
     @Environment(\.yalaTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -152,6 +171,8 @@ struct CoachMarkOverlay: View {
     @State private var showTooltip = false
     /// Prevents interaction during transitions and initial appearance
     @State private var isTransitioning = false
+    /// El alto de la tarjeta, para dejarla junto al foco sin taparlo en los pasos de acción (Y23-08).
+    @State private var tooltipHeight: CGFloat = 0
     /// Bumped after programmatic scroll to force re-evaluation of anchor frames
     @State private var scrollSettleToken = 0
     /// Incremented on each transition; stale asyncAfter closures bail out when their
@@ -196,16 +217,20 @@ struct CoachMarkOverlay: View {
                 let dimOpacity = isDarkTheme ? CoachMarkLayout.darkDimOpacity : CoachMarkLayout.dimOpacity
 
                 // Dimmed background with animated spotlight cutout
-                SpotlightCutoutShape(spotlight: AnimatableRect(rect), cornerRadius: cornerRadius)
+                let cutout = SpotlightCutoutShape(spotlight: AnimatableRect(rect), cornerRadius: cornerRadius)
+                cutout
                     .fill(.black.opacity(dimOpacity), style: FillStyle(eoFill: true))
                     .ignoresSafeArea()
                     .opacity(isVisible ? 1 : 0)
                     .allowsHitTesting(true)
-                    .contentShape(Rectangle())
+                    // Un paso que avanza al hacer la acción deja el foco libre: el toque llega a lo que señala
+                    // (Y23-08). Los demás tapan la pantalla entera, como siempre.
+                    .contentShape(step.advancesByAction ? AnyShape(cutout) : AnyShape(Rectangle()), eoFill: true)
                     // Tocar la zona oscura cierra la guía, como «Omitir guía» (UX 2.2 · L5-9): antes avanzaba al
-                    // paso siguiente, y en iOS tocar fuera cierra.
+                    // paso siguiente, y en iOS tocar fuera cierra. En un paso de acción no cierra: el dedo que
+                    // falla el foco por poco tiraría la guía entera.
                     .onTapGesture {
-                        guard !isTransitioning else { return }
+                        guard !isTransitioning, !step.advancesByAction else { return }
                         dismissAndComplete(skipped: true)
                     }
 
@@ -309,6 +334,9 @@ struct CoachMarkOverlay: View {
                 try? await Task.sleep(for: .seconds(DS.Animation.fast))
                 guard transitionGeneration == gen else { return }
                 isTransitioning = false
+                // El paso puede cambiar en el mismo instante en que la guía vuelve a montarse (Y23-08: se esconde con
+                // una hoja encima y, al cerrarse, avanza): la entrada que encendía el oscurecido ya no corre.
+                isVisible = true
                 showTooltip = true
             }
         }
@@ -367,34 +395,17 @@ struct CoachMarkOverlay: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            // Navigation buttons
-            HStack {
-                // Skip button
-                Button {
-                    dismissAndComplete(skipped: true)
-                } label: {
-                    Text(L10n.TipKit.skip)
-                        .font(DS.Typography.labelSmall)
-                        .foregroundStyle(.secondary)
+            // Navigation buttons. En un paso de acción con dos botones y texto grande no caben en una fila: debajo uno de
+            // otro (ficha de Primeros pasos: el texto grande no corta). Los tours de siempre, en su fila de siempre.
+            Group {
+                if step.advancesByAction {
+                    ViewThatFits(in: .horizontal) {
+                        HStack { skipButton; Spacer(); actionButtons(step) }
+                        VStack(alignment: .leading, spacing: DS.Spacing.sm) { actionButtons(step); skipButton }
+                    }
+                } else {
+                    HStack { skipButton; Spacer(); actionButtons(step) }
                 }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("coach_mark_skip")
-
-                Spacer()
-
-                // Next / Done button
-                Button {
-                    advance()
-                } label: {
-                    Text(currentIndex < steps.count - 1 ? L10n.TipKit.next : L10n.TipKit.done)
-                        .font(DS.Typography.bodyBold)
-                        .foregroundStyle(.thOnAccent)
-                        .padding(.horizontal, DS.Spacing.lg)
-                        .padding(.vertical, DS.Spacing.sm)
-                        .background(theme.accent)
-                        .clipShape(Capsule())
-                }
-                .buttonStyle(.plain)
             }
             .padding(.top, DS.Spacing.xs)
         }
@@ -414,12 +425,74 @@ struct CoachMarkOverlay: View {
             radius: 16, x: 0, y: 8
         )
         .padding(.horizontal, DS.Spacing.xl)
+        .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { tooltipHeight = $0 }
         .position(
             x: proxy.size.width / 2,
-            y: isAbove
-                ? targetFrame.minY - CoachMarkLayout.tooltipGap
-                : targetFrame.maxY + CoachMarkLayout.tooltipGap
+            y: tooltipCenterY(step: step, targetFrame: targetFrame, isAbove: isAbove)
         )
+    }
+
+    /// Los tours de siempre, a la distancia fija de siempre. Un paso de acción (la guía del formulario, Y23-08) deja la
+    /// tarjeta entera junto al foco, con su alto medido: con dos botones es más alta y a la distancia fija tapaba lo que
+    /// señala.
+    private func tooltipCenterY(step: CoachMarkStep, targetFrame: CGRect, isAbove: Bool) -> CGFloat {
+        guard step.advancesByAction, tooltipHeight > 0 else {
+            return isAbove ? targetFrame.minY - CoachMarkLayout.tooltipGap : targetFrame.maxY + CoachMarkLayout.tooltipGap
+        }
+        let gap = step.spotlightPadding + DS.Spacing.md
+        let wanted = isAbove ? targetFrame.minY - gap - tooltipHeight / 2 : targetFrame.maxY + gap + tooltipHeight / 2
+        // Dentro de la pantalla: con texto grande la tarjeta crece y no puede dejar «Omitir guía» fuera de alcance.
+        let half = tooltipHeight / 2 + DS.Spacing.xl
+        return min(max(wanted, half), max(half, proxy.size.height - half))
+    }
+
+    private var skipButton: some View {
+        Button {
+            dismissAndComplete(skipped: true)
+        } label: {
+            Text(L10n.TipKit.skip)
+                .font(DS.Typography.labelSmall)
+                .foregroundStyle(.secondary)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("coach_mark_skip")
+    }
+
+    @ViewBuilder
+    private func actionButtons(_ step: CoachMarkStep) -> some View {
+        HStack(spacing: DS.Spacing.sm) {
+            if let secondary = step.secondaryLabel {
+                Button {
+                    guard !isTransitioning else { return }
+                    onSecondary?(step.id)
+                } label: {
+                    Text(secondary)
+                        .font(DS.Typography.bodyBold)
+                        .foregroundStyle(.thAccentText)
+                        .padding(.horizontal, DS.Spacing.md)
+                        .padding(.vertical, DS.Spacing.sm)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("coach_mark_secondary")
+            }
+
+            // Next / Done button
+            if step.showsPrimaryButton {
+                Button {
+                    advance()
+                } label: {
+                    Text(step.primaryLabel ?? (currentIndex < steps.count - 1 ? L10n.TipKit.next : L10n.TipKit.done))
+                        .font(DS.Typography.bodyBold)
+                        .foregroundStyle(.thOnAccent)
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.vertical, DS.Spacing.sm)
+                        .background(theme.accent)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("coach_mark_primary")
+            }
+        }
     }
 
     // MARK: - Navigation
@@ -466,6 +539,7 @@ extension View {
         currentIndex: Binding<Int>,
         scrollProxy: ScrollViewProxy? = nil,
         onSkip: (() -> Void)? = nil,
+        onSecondary: ((String) -> Void)? = nil,
         onComplete: @escaping () -> Void
     ) -> some View {
         self.overlayPreferenceValue(CoachMarkAnchorKey.self) { anchors in
@@ -479,7 +553,8 @@ extension View {
                         currentIndex: currentIndex,
                         isPresented: isPresented,
                         onSkip: onSkip,
-                        onComplete: onComplete
+                        onComplete: onComplete,
+                        onSecondary: onSecondary
                     )
                 }
                 .ignoresSafeArea()

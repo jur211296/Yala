@@ -26,6 +26,7 @@ final class SetupChecklistManager {
         static let completedAllDate = "setup.completedAllDate"
         static let completedDismissed = "setup.completedDismissed"
         static let isNewInstall = "setup.isNewInstall"
+        static let recordTutorialRunning = "setup.recordTutorial.running"
         // Step keys: SetupStepID.storageKey ("setup.step.N.completed")
     }
 
@@ -175,9 +176,40 @@ final class SetupChecklistManager {
 
     // MARK: - Public Methods
 
+    /// El tutorial de «Aprender a registrar» (Y23-08 a Y23-10) está en marcha. Mientras dure, nada da por hecho el
+    /// paso 2: ni el formulario al guardar, ni `autoDetect` al ver registros, ni las prácticas. Lo cierra el tutorial al
+    /// terminar (`finishRecordTutorial`). Persistido: si iOS cierra Yala a mitad, el tutorial sigue donde iba.
+    private(set) var isRecordTutorialRunning: Bool = false
+
+    /// Empieza el tutorial del paso 2.
+    func beginRecordTutorial() {
+        isRecordTutorialRunning = true
+        UserDefaults.standard.set(true, forKey: Keys.recordTutorialRunning)
+    }
+
+    /// Se cerró el tutorial sin probar ninguna manera: el paso 2 deja de estar retenido y sigue sin resolver.
+    func cancelRecordTutorial() {
+        isRecordTutorialRunning = false
+        UserDefaults.standard.removeObject(forKey: Keys.recordTutorialRunning)
+    }
+
+    /// Termina el tutorial del paso 2: hecho si se guardó al menos un registro; si no, omitido.
+    func finishRecordTutorial(savedAnyRecord: Bool) {
+        isRecordTutorialRunning = false
+        UserDefaults.standard.removeObject(forKey: Keys.recordTutorialRunning)
+        if savedAnyRecord {
+            markCompleted(.firstExpense)
+        } else {
+            markSkipped(.firstExpense)
+        }
+    }
+
     /// Mark a step as completed, optionally with a practice item for cleanup.
     func markCompleted(_ step: SetupStepID, practiceItem: PracticeCleanupItem? = nil) {
         guard stepCompleted[step] != true else { return }
+        // Durante el tutorial del paso 2, sus registros (y las prácticas de voz y foto) no lo cierran ni piden «¿era de
+        // prueba?» uno a uno: la hoja del final pregunta por todos a la vez (Y23-10).
+        if isRecordTutorialRunning, Self.isHeldByRecordTutorial(step) { return }
 
         if let item = practiceItem {
             pendingPracticeCleanup = item
@@ -200,6 +232,7 @@ final class SetupChecklistManager {
     /// Antes «Ahora no» lo marcaba como hecho, con ✓.
     func markSkipped(_ step: SetupStepID) {
         guard stepCompleted[step] != true, stepSkipped[step] != true else { return }
+        if isRecordTutorialRunning, Self.isHeldByRecordTutorial(step) { return }
         stepSkipped[step] = true
         UserDefaults.standard.set(true, forKey: step.skippedStorageKey)
         checkAllComplete()
@@ -240,6 +273,11 @@ final class SetupChecklistManager {
     /// Hecho o saltado: ya no falta para cerrar la lista.
     func isResolved(_ step: SetupStepID) -> Bool {
         stepCompleted[step] == true || stepSkipped[step] == true
+    }
+
+    /// Los pasos que el tutorial del paso 2 retiene mientras dura: el propio paso y las prácticas de voz y foto.
+    nonisolated static func isHeldByRecordTutorial(_ step: SetupStepID) -> Bool {
+        step == .firstExpense || step == .tryVoiceInput || step == .tryImageInput
     }
 
     /// Lo recién guardado es lo único de su tipo: no había nada antes.
@@ -338,8 +376,12 @@ final class SetupChecklistManager {
         defaults.removeObject(forKey: Keys.completedAll)
         defaults.removeObject(forKey: Keys.completedAllDate)
         defaults.removeObject(forKey: Keys.completedDismissed)
+        defaults.removeObject(forKey: Keys.recordTutorialRunning)
         // Keep isNewInstall — a new install remains new after wipe
 
+        isRecordTutorialRunning = false
+        RecordTutorialSession.shared.reset()
+        MoreTabNews.shared.clear()
         stepCompleted = [:]
         stepSkipped = [:]
         isCollapsed = false
@@ -361,6 +403,7 @@ final class SetupChecklistManager {
         isCollapsed = defaults.bool(forKey: Keys.collapsed)
         isAllComplete = defaults.bool(forKey: Keys.completedAll)
         isCompletedDismissed = defaults.bool(forKey: Keys.completedDismissed)
+        isRecordTutorialRunning = defaults.bool(forKey: Keys.recordTutorialRunning)
 
         let timestamp = defaults.double(forKey: Keys.completedAllDate)
         if timestamp > 0 {
