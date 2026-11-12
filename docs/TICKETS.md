@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1255)
+## Index (1256)
 
 | id | status | path |
 |---|---|---|
@@ -752,6 +752,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | language-override-bypasses-the-cloud-prefs-channel | qa | tickets/qa/language-override-bypasses-the-cloud-prefs-channel.md |
 | large-text-leftovers-outside-the-main-iphone-screens | backlog | tickets/backlog/large-text-leftovers-outside-the-main-iphone-screens.md |
 | large-text-secondary-screens-lote-05-necessary-2-3 | done | tickets/done/large-text-secondary-screens-lote-05-necessary-2-3.md |
+| large-text-splits-favorite-amounts-and-the-type-selector | done | tickets/done/large-text-splits-favorite-amounts-and-the-type-selector.md |
 | late-icloud-notice-can-wipe-while-a-migration-is-uploading | backlog | tickets/backlog/late-icloud-notice-can-wipe-while-a-migration-is-uploading.md |
 | late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed | done | tickets/done/late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed.md |
 | late-icloud-notice-wipe-cancelled-after-it-committed-skips-its-exit | backlog | tickets/backlog/late-icloud-notice-wipe-cancelled-after-it-committed-skips-its-exit.md |

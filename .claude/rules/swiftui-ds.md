@@ -370,7 +370,7 @@ paths:
 - **Una fila concepto-importe a tamaños de accesibilidad baja el importe a su propia línea; nunca lo corta ni lo parte.**
   `AdaptiveRowStack`, o el mismo `if dynamicTypeSize.isAccessibilitySize` en línea cuando la fila lleva un
   `Spacer(minLength:)` distinto (el `HStack` de tamaño normal queda idéntico: `VoiceDraftReviewCard`,
-  `ScheduledPaymentRowView`). Dos botones en una fila van en `ViewThatFits` (fila; si no cabe, uno debajo del otro).
+  `ScheduledPaymentRowView`, `FavoriteRowView`). Dos botones en una fila van en `ViewThatFits` (fila; si no cabe, uno debajo del otro).
 - **Cambiar el `foregroundStyle` de un `TextField` mientras tiene el foco no se ve hasta que lo pierde (medido el
   2026-11-01, iOS 27.0).** Un monto que pasaba de gris a rosa al escribir el primer dígito se quedó gris con «240»
   escrito. ⇒ el gris de «sin monto» va en el `prompt` (`Text(verbatim: "0.00").foregroundStyle(.tertiary)`) y el texto
@@ -535,6 +535,10 @@ La tabla vista por vista y lo que queda en cards: `docs/fluidez/AUDITORIA-FLUIDE
   hasta su saldo cada vez que se abría (`CategoriesTabView.balanceKPI`).
 - **Un selector de cápsula desliza la cápsula** (`matchedGeometryEffect`, molde `GenericSegmentedPill` y
   `TransactionTypeSelectorView`), y su animación va en el propio selector, no en lo que cambia debajo.
+  **Si sus etiquetas pueden no caber en su parte (texto grande), se apila con `TypeSelectorLayout`** (decisión 64 de 2.3,
+  2026-11-12): mismos hijos en fila o en pila, así que la cápsula sigue deslizándose; cada etiqueta reserva el ancho de
+  su negrita para que elegir un tipo no cambie la forma. Se eligió frente a `ViewThatFits` porque este construye las dos
+  formas para medir, y la cápsula tendría dos fuentes (inferido, sin medir).
 - **Un fundido de pantalla entera puede duplicar el árbol de accesibilidad mientras dura**: dos copias de cada botón, y
   un XCUITest que toque en ese instante cae con «varios elementos». **Lo que se va al terminar una carga** (esqueleto,
   `ProgressView`, «Analizando…») sale con `.transition(.loadingPlaceholder)` (`ContentTransitions.swift`, card C1,
