@@ -190,7 +190,7 @@
 - [Sentry por API: tokens y dónde](reference_sentry_tokens_y_api.md) — Chrome sin sesión; lectura en ~/Secrets, completo en el Llavero `sentry-yala`.
 - [Entradas de fuera en el simulador](reference_entradas_de_fuera_en_el_simulador.md) — widget = URL; Siri se ejecuta en Atajos; push sin permiso no va.
 - [Botón de widget y App Group en el simulador](reference_widget_intent_y_app_group_en_simulador.md) — el ✓ no responde a toques sintéticos; la cola, por plistlib.
-- [Yala IA en el simulador](reference_yala_ia_en_el_simulador.md) — sin servidor: args -uitest-chat-* y -chatQuestionsToday N; privacy grant mata la app.
+- [Yala IA en el simulador](reference_yala_ia_en_el_simulador.md) — -uitest-chat-*, -uitest-network-offline; el modelo de Apple sale listo: fíngelo ausente.
 - [Precios en el simulador: SKTestSession](reference_precios_en_el_simulador_con_sktestsession.md) — conductor XCUITest; la config se queda: erase antes del gate.
 - [La tarjeta de grupo no se abre con toques sintéticos](reference_tarjeta_de_grupo_no_se_abre_con_toques_sinteticos.md) — tap se pierde, touch abre el menú; recorre Grupos con XCUITest.
 - [Molde de la ficha de la App Store](reference_molde_ficha_app_store.md) — ficha-app-store/: reloj falso al 13-oct; barra del iPad y Panel, lo descartado.

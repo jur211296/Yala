@@ -76,6 +76,11 @@ extension L10n {
         static var gateTitleIconGeneric: String { lpro("uxpro.gate.title.iconGeneric") }
         static var gateBodyManualStaysFree: String { lpro("uxpro.gate.body.manualStaysFree") }
         static var gateBodyDataStaysFree: String { lpro("uxpro.gate.body.dataStaysFree") }
+        /// El muro de Yala IA sin conexión ni precios (decisión 42 de 2.3, F3).
+        static var gateOfflinePrices: String { lpro("uxpro.gate.offlinePrices") }
+        static var gateOfflineMeanwhile: String { lpro("uxpro.gate.offlineMeanwhile") }
+        /// «Anotar con Siri», el mismo nombre que el atajo de Siri.
+        static var gateOfflineSiriTitle: String { lpro("shortcut.siriNatural.title") }
         static var gateBodyThemeStays: String { lpro("uxpro.gate.body.themeStays") }
         static var gateBodyIconStays: String { lpro("uxpro.gate.body.iconStays") }
         static var gateBodyCashFlowStays: String { lpro("uxpro.gate.body.cashFlowStays") }

@@ -1086,6 +1086,11 @@ final class UITestHooks {
     /// no dependen de la red.
     nonisolated static var chatSuggestions: Bool { hasArg("-uitest-chat-suggestions") }
 
+    /// `-uitest-network-offline`: `NetworkMonitor` dice «sin conexión» y no escucha a la red real (decisión 42 de 2.3,
+    /// Yala IA sin conexión). Finge la ENTRADA: qué dicen el chat y el muro de Pro lo deciden `ChatAvailabilityLogic`
+    /// y `ProGateOfflineLogic`. Solo DEBUG.
+    nonisolated static var networkOffline: Bool { hasArg("-uitest-network-offline") }
+
     /// `-uitest-chat-draft`: el chat abre con un mensaje del asistente que propone dos registros —uno completo y otro
     /// sin subcategoría— resueltos contra los datos sembrados. Sin red Yala IA no propone nada, y hace falta una card
     /// en pantalla para capturar y probar su diseño.

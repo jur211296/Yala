@@ -3330,6 +3330,7 @@
 "chat.emptySubtitle" = "Ontdek je financiën met vragen";
 "chat.errorTimeout" = "Het antwoord duurde te lang. Probeer opnieuw.";
 "chat.errorOffline" = "Je hebt een internetverbinding nodig om Yala AI te gebruiken.";
+"chat.offline.body" = "Yala AI is terug zodra je online bent. Tot die tijd kun je zelf invoeren.";
 "chat.errorGeneric" = "Er ging iets mis. Probeer opnieuw.";
 "chat.errorNoData" = "Geen gegevens gevonden voor die vraag. Kun je specifieker zijn?";
 "chat.dailyLimitReached" = "Je hebt je vragen voor vandaag opgebruikt. Kom morgen terug!";
@@ -7737,6 +7738,8 @@
 "uxpro.gate.title.iconGeneric" = "Dit icoon hoort bij Yala Pro";
 "uxpro.gate.body.manualStaysFree" = "Met de hand noteren blijft gratis, zoals altijd.";
 "uxpro.gate.body.dataStaysFree" = "Je registraties en statistieken blijven gratis, zoals altijd.";
+"uxpro.gate.offlinePrices" = "Offline: je ziet de prijs zodra je verbonden bent.";
+"uxpro.gate.offlineMeanwhile" = "Tot die tijd, gratis";
 "uxpro.gate.body.themeStays" = "Je huidige thema blijft zoals het is.";
 "uxpro.gate.body.iconStays" = "Je huidige icoon blijft zoals het is.";
 "uxpro.gate.body.cashFlowStays" = "De gewone kasstroom blijft gratis.";

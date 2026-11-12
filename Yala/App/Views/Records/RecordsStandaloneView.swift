@@ -583,7 +583,7 @@ private struct RecordsStandaloneSheets: ViewModifier {
                 openAIEntryAfterUnlock(.image)
             }
             // Yala IA: columna al lado en ventana ancha, la hoja de siempre en compacta.
-            .yalaAIChat(isPresented: $showChatSheet)
+            .yalaAIChat(isPresented: $showChatSheet, onManualEntry: { recordsViewModel.showNewTransaction = true })
             .yalaAIOnboardingSheet(
                 isPresented: $showYalaAIOnboarding,
                 pendingOpenChat: $pendingOpenChatAfterOnboarding,
@@ -591,9 +591,11 @@ private struct RecordsStandaloneSheets: ViewModifier {
                 launcher: .records,
                 onPersistFlag: { appPreferences.hasShownYalaAIOnboarding = true }
             )
-            .proUpgradeSheet(isPresented: $showUpgradeForChat, feature: .chatAssistant, context: .proFeature) {
-                openChatAfterUnlock()
-            }
+            .proUpgradeSheet(
+                isPresented: $showUpgradeForChat, feature: .chatAssistant, context: .proFeature,
+                onManualEntry: { recordsViewModel.showNewTransaction = true },
+                onUnlocked: { openChatAfterUnlock() }
+            )
             .chatConsentAlert(isPresented: $showChatConsentAlert) {
                 switch YalaAIOnboardingLogic.nextScreen(
                     consentAccepted: true,

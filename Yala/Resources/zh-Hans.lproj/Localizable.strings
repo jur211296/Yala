@@ -3330,6 +3330,7 @@
 "chat.emptySubtitle" = "用问题探索你的财务";
 "chat.errorTimeout" = "回复时间过长。请重试。";
 "chat.errorOffline" = "使用 Yala AI 需要网络连接。";
+"chat.offline.body" = "联网后 Yala AI 就会恢复。在此之前，你可以手动记录。";
 "chat.errorGeneric" = "出了点问题。请重试。";
 "chat.errorNoData" = "未找到该查询的数据。能更具体一点吗?";
 "chat.dailyLimitReached" = "你今天的提问次数已用完。明天再来!";
@@ -7737,6 +7738,8 @@
 "uxpro.gate.title.iconGeneric" = "这个图标是 Yala Pro 的功能";
 "uxpro.gate.body.manualStaysFree" = "手动记账依然免费,和以前一样。";
 "uxpro.gate.body.dataStaysFree" = "你的记录和统计依然免费,和以前一样。";
+"uxpro.gate.offlinePrices" = "离线：联网后即可看到价格。";
+"uxpro.gate.offlineMeanwhile" = "在此之前，免费使用";
 "uxpro.gate.body.themeStays" = "当前主题保持不变。";
 "uxpro.gate.body.iconStays" = "当前图标保持不变。";
 "uxpro.gate.body.cashFlowStays" = "常规现金流依然免费。";

@@ -3330,6 +3330,7 @@
 "chat.emptySubtitle" = "質問で資産状況を探検";
 "chat.errorTimeout" = "応答に時間がかかりすぎました。もう一度お試しください。";
 "chat.errorOffline" = "Yala AIを使うにはインターネット接続が必要です。";
+"chat.offline.body" = "インターネットにつながるとYala AIが戻ります。それまでは手入力できます。";
 "chat.errorGeneric" = "問題が発生しました。もう一度お試しください。";
 "chat.errorNoData" = "その質問に該当するデータが見つかりませんでした。もう少し具体的にお願いします。";
 "chat.dailyLimitReached" = "今日の質問回数を使い切りました。明日また来てください！";
@@ -7737,6 +7738,8 @@
 "uxpro.gate.title.iconGeneric" = "このアイコンはYala Proの機能です";
 "uxpro.gate.body.manualStaysFree" = "手入力での記録はこれまでどおり無料です。";
 "uxpro.gate.body.dataStaysFree" = "記録と統計はこれまでどおり無料です。";
+"uxpro.gate.offlinePrices" = "オフライン：接続すると価格が表示されます。";
+"uxpro.gate.offlineMeanwhile" = "それまでは無料で";
 "uxpro.gate.body.themeStays" = "今のテーマはそのままです。";
 "uxpro.gate.body.iconStays" = "今のアイコンはそのままです。";
 "uxpro.gate.body.cashFlowStays" = "いつものキャッシュフローは引き続き無料です。";

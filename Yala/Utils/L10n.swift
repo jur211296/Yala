@@ -3279,6 +3279,8 @@ enum L10n {
         static var emptySubtitle: String { ls("chat.emptySubtitle", comment: "") }
         static var errorTimeout: String { ls("chat.errorTimeout", comment: "") }
         static var errorOffline: String { ls("chat.errorOffline", comment: "") }
+        /// Sin conexión, debajo de `errorOffline` al abrir el chat (decisión 42 de 2.3).
+        static var offlineBody: String { ls("chat.offline.body", comment: "Yala IA sin conexión: vuelve con internet; mientras, apuntar a mano") }
         static var errorGeneric: String { ls("chat.errorGeneric", comment: "") }
         static var errorNoData: String { ls("chat.errorNoData", comment: "") }
         static var dailyLimitReached: String { ls("chat.dailyLimitReached", comment: "") }
