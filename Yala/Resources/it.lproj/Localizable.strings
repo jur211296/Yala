@@ -8924,3 +8924,25 @@
 "records23.category.expand" = "Mostra le sottocategorie di %@";
 "records23.category.collapse" = "Nascondi le sottocategorie di %@";
 "records23.band.removeAll" = "Rimuovi tutto";
+
+/* Decisión 26 de la revisión 2.3: VoiceOver lee las gráficas con conclusión y cifras */
+"accessibility.chart.single %@ %@" = "%1$@: %2$@.";
+"accessibility.chart.trendRose %@ %@ %@" = "%1$@: è salito da %2$@ a %3$@.";
+"accessibility.chart.trendFell %@ %@ %@" = "%1$@: è sceso da %2$@ a %3$@.";
+"accessibility.chart.trendFlat %@ %@" = "%1$@: è rimasto a %2$@.";
+"accessibility.chart.highest %@ %@" = "Punto più alto: %1$@, %2$@.";
+"accessibility.chart.lowest %@ %@" = "Punto più basso: %1$@, %2$@.";
+"accessibility.chart.comparisonMore %@ %@ %@" = "Ora %1$@: %2$@ in più rispetto al periodo precedente allo stesso punto, %3$@.";
+"accessibility.chart.comparisonLess %@ %@ %@" = "Ora %1$@: %2$@ in meno rispetto al periodo precedente allo stesso punto, %3$@.";
+"accessibility.chart.comparisonSame %@" = "Ora %@, come il periodo precedente allo stesso punto.";
+"accessibility.chart.comparisonNoPrevious %@" = "Ora %@. Il periodo precedente non ha dati da confrontare.";
+"accessibility.chart.rest %@" = "il resto %@";
+"accessibility.chart.parts %@ %@" = "Totale %1$@: %2$@.";
+"accessibility.chart.cashFlowNet %@ %@ %@" = "%1$@. %2$@ %3$@.";
+"accessibility.chart.weekdayTop %@ %@" = "Giorno con più spese: %1$@, in media %2$@.";
+"accessibility.chart.weekdayLow %@ %@" = "Giorno con meno spese: %1$@, %2$@.";
+"accessibility.chart.weekdayTitle" = "Spese per giorno della settimana";
+"accessibility.chart.axisDate" = "Data";
+"accessibility.chart.axisAmount" = "Importo";
+"accessibility.chart.axisCategory" = "Categoria";
+"accessibility.chart.axisWeekday" = "Giorno della settimana";

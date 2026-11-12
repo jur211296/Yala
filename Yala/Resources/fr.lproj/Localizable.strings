@@ -8915,3 +8915,25 @@
 "records23.category.expand" = "Afficher les sous-catégories de %@";
 "records23.category.collapse" = "Masquer les sous-catégories de %@";
 "records23.band.removeAll" = "Tout retirer";
+
+/* Decisión 26 de la revisión 2.3: VoiceOver lee las gráficas con conclusión y cifras */
+"accessibility.chart.single %@ %@" = "%1$@ : %2$@.";
+"accessibility.chart.trendRose %@ %@ %@" = "%1$@ : passé de %2$@ à %3$@, en hausse.";
+"accessibility.chart.trendFell %@ %@ %@" = "%1$@ : passé de %2$@ à %3$@, en baisse.";
+"accessibility.chart.trendFlat %@ %@" = "%1$@ : resté à %2$@.";
+"accessibility.chart.highest %@ %@" = "Point le plus haut : %1$@, %2$@.";
+"accessibility.chart.lowest %@ %@" = "Point le plus bas : %1$@, %2$@.";
+"accessibility.chart.comparisonMore %@ %@ %@" = "Maintenant %1$@ : %2$@ de plus que la période précédente au même moment, %3$@.";
+"accessibility.chart.comparisonLess %@ %@ %@" = "Maintenant %1$@ : %2$@ de moins que la période précédente au même moment, %3$@.";
+"accessibility.chart.comparisonSame %@" = "Maintenant %@, autant que la période précédente au même moment.";
+"accessibility.chart.comparisonNoPrevious %@" = "Maintenant %@. La période précédente n’a pas de données à comparer.";
+"accessibility.chart.rest %@" = "le reste %@";
+"accessibility.chart.parts %@ %@" = "Total %1$@ : %2$@.";
+"accessibility.chart.cashFlowNet %@ %@ %@" = "%1$@. %2$@ %3$@.";
+"accessibility.chart.weekdayTop %@ %@" = "Jour où vous dépensez le plus : %1$@, %2$@ en moyenne.";
+"accessibility.chart.weekdayLow %@ %@" = "Jour où vous dépensez le moins : %1$@, %2$@.";
+"accessibility.chart.weekdayTitle" = "Dépenses par jour de la semaine";
+"accessibility.chart.axisDate" = "Date";
+"accessibility.chart.axisAmount" = "Montant";
+"accessibility.chart.axisCategory" = "Catégorie";
+"accessibility.chart.axisWeekday" = "Jour de la semaine";

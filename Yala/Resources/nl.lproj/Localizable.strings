@@ -8926,3 +8926,25 @@
 "records23.category.expand" = "Subcategorieën van %@ tonen";
 "records23.category.collapse" = "Subcategorieën van %@ verbergen";
 "records23.band.removeAll" = "Alles verwijderen";
+
+/* Decisión 26 de la revisión 2.3: VoiceOver lee las gráficas con conclusión y cifras */
+"accessibility.chart.single %@ %@" = "%1$@: %2$@.";
+"accessibility.chart.trendRose %@ %@ %@" = "%1$@: gestegen van %2$@ naar %3$@.";
+"accessibility.chart.trendFell %@ %@ %@" = "%1$@: gedaald van %2$@ naar %3$@.";
+"accessibility.chart.trendFlat %@ %@" = "%1$@: bleef op %2$@.";
+"accessibility.chart.highest %@ %@" = "Hoogste punt: %1$@, %2$@.";
+"accessibility.chart.lowest %@ %@" = "Laagste punt: %1$@, %2$@.";
+"accessibility.chart.comparisonMore %@ %@ %@" = "Nu %1$@: %2$@ meer dan de vorige periode op hetzelfde moment, %3$@.";
+"accessibility.chart.comparisonLess %@ %@ %@" = "Nu %1$@: %2$@ minder dan de vorige periode op hetzelfde moment, %3$@.";
+"accessibility.chart.comparisonSame %@" = "Nu %@, evenveel als de vorige periode op hetzelfde moment.";
+"accessibility.chart.comparisonNoPrevious %@" = "Nu %@. De vorige periode heeft geen gegevens om te vergelijken.";
+"accessibility.chart.rest %@" = "de rest %@";
+"accessibility.chart.parts %@ %@" = "Totaal %1$@: %2$@.";
+"accessibility.chart.cashFlowNet %@ %@ %@" = "%1$@. %2$@ %3$@.";
+"accessibility.chart.weekdayTop %@ %@" = "Dag met de meeste uitgaven: %1$@, gemiddeld %2$@.";
+"accessibility.chart.weekdayLow %@ %@" = "Dag met de minste uitgaven: %1$@, %2$@.";
+"accessibility.chart.weekdayTitle" = "Uitgaven per dag van de week";
+"accessibility.chart.axisDate" = "Datum";
+"accessibility.chart.axisAmount" = "Bedrag";
+"accessibility.chart.axisCategory" = "Categorie";
+"accessibility.chart.axisWeekday" = "Dag van de week";

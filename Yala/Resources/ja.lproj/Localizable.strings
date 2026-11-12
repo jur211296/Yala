@@ -8926,3 +8926,25 @@
 "records23.category.expand" = "%@のサブカテゴリを表示";
 "records23.category.collapse" = "%@のサブカテゴリを隠す";
 "records23.band.removeAll" = "すべて解除";
+
+/* Decisión 26 de la revisión 2.3: VoiceOver lee las gráficas con conclusión y cifras */
+"accessibility.chart.single %@ %@" = "%1$@：%2$@。";
+"accessibility.chart.trendRose %@ %@ %@" = "%1$@：%2$@から%3$@に増加。";
+"accessibility.chart.trendFell %@ %@ %@" = "%1$@：%2$@から%3$@に減少。";
+"accessibility.chart.trendFlat %@ %@" = "%1$@：%2$@で横ばい。";
+"accessibility.chart.highest %@ %@" = "最高値：%1$@（%2$@）。";
+"accessibility.chart.lowest %@ %@" = "最低値：%1$@（%2$@）。";
+"accessibility.chart.comparisonMore %@ %@ %@" = "現在%1$@：前の期間の同時点（%3$@）より%2$@多い。";
+"accessibility.chart.comparisonLess %@ %@ %@" = "現在%1$@：前の期間の同時点（%3$@）より%2$@少ない。";
+"accessibility.chart.comparisonSame %@" = "現在%@：前の期間の同時点と同じ。";
+"accessibility.chart.comparisonNoPrevious %@" = "現在%@。前の期間には比較できるデータがありません。";
+"accessibility.chart.rest %@" = "その他%@";
+"accessibility.chart.parts %@ %@" = "合計%1$@：%2$@。";
+"accessibility.chart.cashFlowNet %@ %@ %@" = "%1$@。%2$@ %3$@。";
+"accessibility.chart.weekdayTop %@ %@" = "支出が最も多い曜日：%1$@、平均%2$@。";
+"accessibility.chart.weekdayLow %@ %@" = "支出が最も少ない曜日：%1$@、%2$@。";
+"accessibility.chart.weekdayTitle" = "曜日別の支出";
+"accessibility.chart.axisDate" = "日付";
+"accessibility.chart.axisAmount" = "金額";
+"accessibility.chart.axisCategory" = "カテゴリ";
+"accessibility.chart.axisWeekday" = "曜日";

@@ -476,6 +476,20 @@ struct TrendsTabView: View {
                 }
             }
 
+            // Decisión 29 de la revisión 2.3 (A): el mismo selector que Resumen y Distribución, que dice contra qué
+            // compara. Hasta ese día Tendencias no tenía ninguno y su comparación cambiaba sin avisar al elegir en otra
+            // pestaña. Sin `dataEnd`: compara hasta hoy, como las otras dos.
+            if canShowPreviousPeriod {
+                ComparisonModeSelector(
+                    period: trendsViewModel.detailPeriod,
+                    customRange: sessionState.customDateRange
+                )
+                // Medido en XCUITest (2 de 3 corridas, iOS 27.2): aquí el toque cambiaba la comparación —la tarjeta y
+                // la cifra de arriba pasaban al año anterior— y los chips y la frase se quedaban en «el mes anterior».
+                // Atado al modo, el selector se rehace con cada cambio. Causa sin aislar.
+                .id(sessionState.comparisonMode)
+            }
+
             chartCardBody
                 .panelCard()
         }
@@ -578,7 +592,8 @@ struct TrendsTabView: View {
                     trendType: mapMetricToTrendType(trendsViewModel.selectedMetric),
                     chartHeight: chartHeight,
                     period: trendsViewModel.detailPeriod,
-                    comparisonMode: sessionState.comparisonMode
+                    comparisonMode: sessionState.comparisonMode,
+                    untilToday: .now
                 )
                 }
                 .accessibilityIdentifier("trends_previous_period_chart")
@@ -1808,14 +1823,15 @@ struct TrendsTabView: View {
             accounts: accounts,
             criteria: previousCriteria
         )
-        // p20-15: recorte MTD/WTD/YTD. No-op en períodos cerrados.
-        let previousFiltered = DateAlignmentHelper.alignedPreviousItems(
+        // Hasta el día equivalente a hoy, como Resumen y Distribución (decisión 29 de la revisión 2.3); entero si el
+        // período ya cerró.
+        let previousFiltered = DateAlignmentHelper.previousItemsUntilToday(
             previousFilteredRaw,
-            currentDates: currentFiltered.map(\.date),
             currentInterval: currentInterval,
             previousInterval: previousInterval,
             period: trendsViewModel.detailPeriod,
-            comparisonMode: sessionState.comparisonMode
+            comparisonMode: sessionState.comparisonMode,
+            asOf: .now
         ) { $0.date }
 
         // 1. Calculate TOTAL previous period cash flow
@@ -1991,13 +2007,15 @@ struct TrendsTabView: View {
         // datos del actual (MTD-vs-MTD, p20-15): == último punto VISIBLE de la curva
         // anterior, no el fin del período anterior COMPLETO. Antes usaba
         // `previousResult.points.last` (fin de mes) → descuadre KPI-vs-curva.
+        // Decisión 29 de la revisión 2.3: hasta el día equivalente a HOY, no al último día con datos.
         let newPreviousTotal = DateAlignmentHelper.alignedPreviousTotal(
             previousPoints: previousResult.points,
             currentPoints: currentResult.points,
             currentInterval: currentInterval,
             previousInterval: previousInterval,
             period: trendsViewModel.detailPeriod,
-            comparisonMode: sessionState.comparisonMode
+            comparisonMode: sessionState.comparisonMode,
+            untilToday: .now
         )
         if newPreviousTotal != previousPeriodTotal { previousPeriodTotal = newPreviousTotal }
 

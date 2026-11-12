@@ -8158,3 +8158,25 @@
 "records23.category.expand" = "Show subcategories of %@";
 "records23.category.collapse" = "Hide subcategories of %@";
 "records23.band.removeAll" = "Remove all";
+
+/* Decisión 26 de la revisión 2.3: VoiceOver lee las gráficas con conclusión y cifras */
+"accessibility.chart.single %@ %@" = "%1$@: %2$@.";
+"accessibility.chart.trendRose %@ %@ %@" = "%1$@: rose from %2$@ to %3$@.";
+"accessibility.chart.trendFell %@ %@ %@" = "%1$@: fell from %2$@ to %3$@.";
+"accessibility.chart.trendFlat %@ %@" = "%1$@: stayed at %2$@.";
+"accessibility.chart.highest %@ %@" = "Highest point: %1$@, %2$@.";
+"accessibility.chart.lowest %@ %@" = "Lowest point: %1$@, %2$@.";
+"accessibility.chart.comparisonMore %@ %@ %@" = "Now %1$@: %2$@ more than the previous period at the same point, %3$@.";
+"accessibility.chart.comparisonLess %@ %@ %@" = "Now %1$@: %2$@ less than the previous period at the same point, %3$@.";
+"accessibility.chart.comparisonSame %@" = "Now %@, the same as the previous period at the same point.";
+"accessibility.chart.comparisonNoPrevious %@" = "Now %@. The previous period has no data to compare.";
+"accessibility.chart.rest %@" = "the rest %@";
+"accessibility.chart.parts %@ %@" = "Total %1$@: %2$@.";
+"accessibility.chart.cashFlowNet %@ %@ %@" = "%1$@. %2$@ %3$@.";
+"accessibility.chart.weekdayTop %@ %@" = "Highest-spending day: %1$@, %2$@ on average.";
+"accessibility.chart.weekdayLow %@ %@" = "Lowest-spending day: %1$@, %2$@.";
+"accessibility.chart.weekdayTitle" = "Spending by day of the week";
+"accessibility.chart.axisDate" = "Date";
+"accessibility.chart.axisAmount" = "Amount";
+"accessibility.chart.axisCategory" = "Category";
+"accessibility.chart.axisWeekday" = "Day of the week";

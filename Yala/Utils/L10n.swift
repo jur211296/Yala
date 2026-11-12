@@ -3409,6 +3409,31 @@ enum L10n {
         static func periodsCount(_ count: Int) -> String { String(format: ls("accessibility.periodsCount %d", comment: ""), count) }
         static func currenciesCount(_ count: Int) -> String { String(format: ls("accessibility.currenciesCount %d", comment: ""), count) }
         static func cashFlowSummary(income: String, expense: String) -> String { String(format: ls("accessibility.cashFlowSummary %@ %@", comment: ""), income, expense) }
+
+        /// Lo que VoiceOver dice de una gráfica: la conclusión con cifras (decisión 26 de la revisión 2.3, V1) y los
+        /// nombres de los ejes de la descripción de gráficas de iOS (V2). Las arma `ChartSpokenSummary`.
+        enum Chart {
+            static func single(_ date: String, _ amount: String) -> String { String(format: ls("accessibility.chart.single %@ %@", comment: ""), date, amount) }
+            static func trendRose(_ range: String, _ from: String, _ to: String) -> String { String(format: ls("accessibility.chart.trendRose %@ %@ %@", comment: ""), range, from, to) }
+            static func trendFell(_ range: String, _ from: String, _ to: String) -> String { String(format: ls("accessibility.chart.trendFell %@ %@ %@", comment: ""), range, from, to) }
+            static func trendFlat(_ range: String, _ amount: String) -> String { String(format: ls("accessibility.chart.trendFlat %@ %@", comment: ""), range, amount) }
+            static func highest(_ amount: String, _ date: String) -> String { String(format: ls("accessibility.chart.highest %@ %@", comment: ""), amount, date) }
+            static func lowest(_ amount: String, _ date: String) -> String { String(format: ls("accessibility.chart.lowest %@ %@", comment: ""), amount, date) }
+            static func comparisonMore(_ now: String, _ gap: String, _ before: String) -> String { String(format: ls("accessibility.chart.comparisonMore %@ %@ %@", comment: ""), now, gap, before) }
+            static func comparisonLess(_ now: String, _ gap: String, _ before: String) -> String { String(format: ls("accessibility.chart.comparisonLess %@ %@ %@", comment: ""), now, gap, before) }
+            static func comparisonSame(_ now: String) -> String { String(format: ls("accessibility.chart.comparisonSame %@", comment: ""), now) }
+            static func comparisonNoPrevious(_ now: String) -> String { String(format: ls("accessibility.chart.comparisonNoPrevious %@", comment: ""), now) }
+            static func rest(_ share: String) -> String { String(format: ls("accessibility.chart.rest %@", comment: ""), share) }
+            static func parts(_ total: String, _ list: String) -> String { String(format: ls("accessibility.chart.parts %@ %@", comment: ""), total, list) }
+            static func cashFlowNet(_ totals: String, _ label: String, _ amount: String) -> String { String(format: ls("accessibility.chart.cashFlowNet %@ %@ %@", comment: ""), totals, label, amount) }
+            static func weekdayTop(_ day: String, _ amount: String) -> String { String(format: ls("accessibility.chart.weekdayTop %@ %@", comment: ""), day, amount) }
+            static func weekdayLow(_ day: String, _ amount: String) -> String { String(format: ls("accessibility.chart.weekdayLow %@ %@", comment: ""), day, amount) }
+            static var weekdayTitle: String { ls("accessibility.chart.weekdayTitle", comment: "") }
+            static var axisDate: String { ls("accessibility.chart.axisDate", comment: "") }
+            static var axisAmount: String { ls("accessibility.chart.axisAmount", comment: "") }
+            static var axisCategory: String { ls("accessibility.chart.axisCategory", comment: "") }
+            static var axisWeekday: String { ls("accessibility.chart.axisWeekday", comment: "") }
+        }
         static var selectAtLeastOneDraft: String { ls("accessibility.selectAtLeastOneDraft", comment: "") }
         static var approveCompleteHint: String { ls("accessibility.approveCompleteHint", comment: "") }
         static var updatingExchangeRates: String { ls("accessibility.updatingExchangeRates", comment: "") }

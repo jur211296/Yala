@@ -208,12 +208,14 @@ struct ApproximateMarkSecondarySurfacesWiringTests {
     @Test("La etiqueta de accesibilidad del gráfico de flujo lleva la marca")
     func cashFlowChartAccessibilityCarriesTheMark() throws {
         let src = try Self.source("Yala/App/Views/Panel/CashFlowWidget.swift")
-        let label = try #require(src.range(of: "L10n.Accessibility.cashFlowSummary("))
-        // 700 y no 500: el bloque mide 454 caracteres hasta el segundo `isEstimate` y 501 hasta su
-        // final, así que con 500 el test se ponía rojo por el recorte y no por el cableado.
-        let scope = String(src[label.lowerBound...].prefix(700))
+        // Desde la decisión 26 de la revisión 2.3 la frase la arma `cashFlowSpokenSummary` (V1: entradas, salidas y lo
+        // que queda) y la pasa a `ChartSpokenSummary.cashFlow`, que lleva dentro `cashFlowSummary`.
+        let label = try #require(src.range(of: "private var cashFlowSpokenSummary: String {"))
+        let scope = String(src[label.lowerBound...].prefix(1_400))
         #expect(scope.contains("isEstimate: summary.incomeAmountsAreApproximate"))
         #expect(scope.contains("isEstimate: summary.expenseAmountsAreApproximate"))
+        #expect(scope.contains("ChartSpokenSummary.cashFlow("))
+        #expect(src.contains(".accessibilityValue(cashFlowSpokenSummary)"))
     }
 
     /// La peor omisión del ticket: la hoja existe PORQUE el saldo es multimoneda, y declaraba

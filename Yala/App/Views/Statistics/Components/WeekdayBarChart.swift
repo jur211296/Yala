@@ -119,7 +119,35 @@ struct WeekdayBarChart: View {
                     .font(DS.Typography.captionSmall)
             }
         }
+        // Decisión 26 de la revisión 2.3: un elemento con el día más caro y el más barato, con cifras (V1), y la
+        // descripción de gráficas de iOS para recorrer los siete días (V2). Antes cada barra decía «Ju, 2,314».
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(L10n.Accessibility.Chart.weekdayTitle)
+        .accessibilityValue(spokenSummary)
+        .accessibilityChartDescriptor(chartDescriptor)
+        .accessibilityIdentifier("weekday_bar_chart")
         .modifier(OptionalHeightModifier(height: chartHeight))
+    }
+
+    private var amountFormat: ChartAmountFormat {
+        appPreferences.chartAmountFormat(currencyCode: currencyCode, hidden: amountsHidden)
+    }
+
+    private var spokenSummary: String {
+        ChartSpokenSummary.weekday(orderedData.map { (name: $0.weekdayLongName, average: $0.average) }, format: amountFormat)
+    }
+
+    private var chartDescriptor: ChartAccessibilityDescriptor {
+        ChartAccessibilityDescriptor(
+            title: L10n.Accessibility.Chart.weekdayTitle,
+            summary: spokenSummary,
+            xTitle: L10n.Accessibility.Chart.axisWeekday,
+            xAxis: .categories(orderedData.map(\.weekdayLongName)),
+            yTitle: L10n.Accessibility.Chart.axisAmount,
+            series: [.init(name: L10n.Accessibility.Chart.weekdayTitle, isContinuous: false,
+                           points: orderedData.map { .named($0.weekdayLongName, $0.average) })],
+            format: amountFormat
+        )
     }
 }
 

@@ -90,8 +90,6 @@ struct CategoriesTabView: View {
     @State private var previousSubcategoryTotal: Double? = nil
     @State private var previousTagTotal: Double? = nil
     @State private var previousNeedTotal: Double? = nil
-    /// El último día con movimientos del período: lo usa la frase de comparación (UX 2.2 · L11-4).
-    @State private var comparisonDataEnd: Date?
     @State private var previousNeedAmounts: [SubcategoryNeed: Double] = [:]
 
     /// La categoría abierta en su detalle (decisión 25 de la revisión 2.3, B1). Tocar una categoría ya no filtra.
@@ -495,10 +493,10 @@ struct CategoriesTabView: View {
                 .minimumScaleFactor(0.8)
 
             if showComparisonSelector {
+                // Hasta hoy, como Resumen y Tendencias (decisión 29 de la revisión 2.3): sin `dataEnd`.
                 ComparisonModeSelector(
                     period: viewModel.detailPeriod,
-                    customRange: sessionState.customDateRange,
-                    dataEnd: comparisonDataEnd
+                    customRange: sessionState.customDateRange
                 )
             }
         }
@@ -1624,15 +1622,6 @@ struct CategoriesTabView: View {
         currentTagSource: [TransactionItem],
         currentNeedSource: [TransactionItem]
     ) {
-        // El último movimiento del actual: el tramo anterior se corta en su día equivalente, y la frase de comparación
-        // lo dice (UX 2.2 · L11-4).
-        let lastCurrentDate = DistributionPreviousPeriodCalculator.currentDates(
-            from: currentCategorySource,
-            in: viewModel.panelDateInterval,
-            natures: viewModel.selectedTransactionNatures.isEmpty ? nil : viewModel.selectedTransactionNatures
-        ).max()
-        if lastCurrentDate != comparisonDataEnd { comparisonDataEnd = lastCurrentDate }
-
         // Proyección "mi parte" (neto) desde el set AMPLIO (con AMBAS hermanas del bridge).
         let adjustment = GroupBridgeStatsAdjustment.build(from: allTransactions, context: modelContext)
 
@@ -1659,21 +1648,23 @@ struct CategoriesTabView: View {
             ? nil
             : viewModel.selectedTransactionNatures
 
+        // El anterior llega hasta el día equivalente a HOY (entero si el período ya cerró), con la regla de Resumen:
+        // decisión 29 de la revisión 2.3. Hasta ese día se cortaba en el último día con movimientos del actual, y
+        // Resumen y Distribución comparaban contra tramos distintos en la misma pantalla.
+        let today = Date.now
         func alignedPrevious(
             _ previous: [TransactionItem],
             currentSource: [TransactionItem],
             natures: Set<TransactionNature>?
         ) -> [TransactionItem] {
-            DistributionPreviousPeriodCalculator.alignedPrevious(
+            DateAlignmentHelper.previousItemsUntilToday(
                 previous,
-                currentDates: DistributionPreviousPeriodCalculator.currentDates(
-                    from: currentSource, in: currentInterval, natures: natures
-                ),
                 currentInterval: currentInterval,
                 previousInterval: previousInterval,
                 period: viewModel.detailPeriod,
-                comparisonMode: sessionState.comparisonMode
-            )
+                comparisonMode: sessionState.comparisonMode,
+                asOf: today
+            ) { $0.date }
         }
 
         // Build filter criteria for previous period
