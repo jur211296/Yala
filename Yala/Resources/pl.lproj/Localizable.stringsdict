@@ -1812,5 +1812,85 @@
 			<string>Zmieniono %d wpisu</string>
 		</dict>
 	</dict>
+	<key>pasos23.record.between.many</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Już %d zapis!</string>
+			<key>few</key>
+			<string>Już %d zapisy!</string>
+			<key>many</key>
+			<string>Już %d zapisów!</string>
+			<key>other</key>
+			<string>Już %d zapisu!</string>
+		</dict>
+	</dict>
+	<key>pasos23.record.cleanup.message</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Ten zapis powstał do nauki. Zaznacz te, które chcesz usunąć; pozostałe zostaną na koncie.</string>
+			<key>few</key>
+			<string>Te %d zapisy powstały do nauki. Zaznacz te, które chcesz usunąć; pozostałe zostaną na koncie.</string>
+			<key>many</key>
+			<string>Tych %d zapisów powstało do nauki. Zaznacz te, które chcesz usunąć; pozostałe zostaną na koncie.</string>
+			<key>other</key>
+			<string>Tych %d zapisów powstało do nauki. Zaznacz te, które chcesz usunąć; pozostałe zostaną na koncie.</string>
+		</dict>
+	</dict>
+	<key>pasos23.record.cleanup.delete</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Usuń %d zapis</string>
+			<key>few</key>
+			<string>Usuń %d zapisy</string>
+			<key>many</key>
+			<string>Usuń %d zapisów</string>
+			<key>other</key>
+			<string>Usuń %d zapisu</string>
+		</dict>
+	</dict>
+	<key>pasos23.record.cleanup.done</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Usunięto %d zapis próbny</string>
+			<key>few</key>
+			<string>Usunięto %d zapisy próbne</string>
+			<key>many</key>
+			<string>Usunięto %d zapisów próbnych</string>
+			<key>other</key>
+			<string>Usunięto %d zapisu próbnego</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

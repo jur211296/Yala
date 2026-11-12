@@ -51,6 +51,8 @@ struct MoreView: View {
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(SessionState.self) private var sessionState
     @Environment(SceneNavigation.self) private var navigation
+    /// La página que se ve: abrir Más apaga su punto de «algo nuevo» (Y23-10). Las páginas se montan al arrancar.
+    @Environment(\.isRootPageShown) private var isRootPageShown
     @State private var showProfile = false
     @State private var showEditor = false
 
@@ -123,6 +125,9 @@ struct MoreView: View {
         // animaciones de Ajustes solo cuando se abría desde aquí. Desde el Panel y Grupos nunca lo llevó.
         // La parte de las guías «dónde vive cada cosa» que vive aquí (Y23-15): foco en las tarjetas y «Entendido».
         .placeGuideMoreHost()
+        .onChange(of: isRootPageShown, initial: true) { _, shown in
+            if shown { MoreTabNews.shared.clear() }
+        }
         .sheet(isPresented: $showProfile) {
             ProfileView()
         }

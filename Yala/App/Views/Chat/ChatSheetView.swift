@@ -41,6 +41,13 @@ struct ChatSheetView: View {
     /// «Nuevo registro» del chat sin conexión (decisión 42 de 2.3): quien monta el chat lo cierra y abre el formulario.
     /// `nil` = sin botón (un botón que no lleva a nada es peor que ninguno).
     var onManualEntry: (() -> Void)?
+    /// La prueba de cortesía de Yala IA dentro de «Aprender a registrar» (Y23-09). `nil` fuera del tutorial.
+    var courtesyTrial: ChatCourtesyTrial?
+    /// La guía de foco sobre «Apunta un gasto» de la prueba: se apaga al tocarla u omitirla.
+    @State private var showsCourtesyGuide = true
+    @State private var courtesyGuideIndex = 0
+    /// Los registros guardados desde este chat que ya se avisaron a la prueba.
+    @State private var reportedSavedIDs: Set<PersistentIdentifier> = []
 
     var body: some View {
         Group {
@@ -62,7 +69,9 @@ struct ChatSheetView: View {
         .onAppear {
             // Antes que nada: el saldo total del chat sigue «Grupos en el total» del Panel.
             viewModel.setAppPreferences(appPreferences)
-            viewModel.setContext(modelContext)
+            // En la prueba de cortesía no se piden las sugerencias del saludo: son `chat.suggestions`, que el plan Free
+            // no tiene, y su 403 dejaba el chat en «no disponible» con la caja apagada (review del lote, Y23-09).
+            viewModel.setContext(modelContext, autoLoadSuggestions: courtesyTrial == nil)
             // setContext ya consume el signal persistido en UserDefaults; aquí
             // cubrimos el caso del signal in-memory llegado mientras el sheet
             // estaba abierto pero antes del primer .onChange.
@@ -76,8 +85,10 @@ struct ChatSheetView: View {
         .onChange(of: sessionState.chatDraftSavedSignal) { _, _ in
             consumeChatDraftSavedSignal()
         }
+        .onChange(of: savedTransactionIDs) { _, ids in reportCourtesySave(ids) }
         // Al volver la conexión, el chat se reactiva solo (decisión 42 de 2.3).
         .onChange(of: NetworkMonitor.shared.isConnected) { _, connected in
+            guard courtesyTrial == nil else { return }
             Task { await viewModel.connectivityChanged(isConnected: connected) }
         }
     }
@@ -105,6 +116,11 @@ struct ChatSheetView: View {
     /// La conversación, la barra de escribir y sus hojas: lo mismo en la hoja y en la columna.
     private var chatContent: some View {
         VStack(spacing: DS.Spacing.none) {
+            if let courtesyTrial {
+                CourtesyTrialStrip(text: L10n.PrimerosPasos23.Record.trialAI, onSkip: courtesyTrial.onSkip)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.top, DS.Spacing.sm)
+            }
             if viewModel.messages.isEmpty {
                 emptyState
             } else {
@@ -137,6 +153,7 @@ struct ChatSheetView: View {
         }
         .modifier(ChatFeedbackModifier(
             errorMessage: viewModel.errorMessage, isRecording: viewModel.isRecording, reduceMotion: reduceMotion))
+        .environment(\.chatDraftFullFormHidden, courtesyTrial != nil)
         .dismissKeyboardOnTap()
         .yalaScreenBackground(.subtle)
         .sheet(isPresented: $showAISettingsSheet) {
@@ -261,12 +278,46 @@ struct ChatSheetView: View {
                         suggestions: Array(viewModel.suggestions.prefix(3)),
                         isPreparing: viewModel.suggestions.isEmpty && viewModel.suggestionsLoading,
                         onSelect: sendSuggestion,
-                        onLogExpense: { isInputFocused = true }
+                        onLogExpense: {
+                            showsCourtesyGuide = false
+                            isInputFocused = true
+                        }
                     )
                 }
             }
             .padding(.horizontal, DS.Spacing.lg)
             .readableChatWidth()
+        }
+        // Prueba de Yala IA (Y23-09): la guía de foco señala «Apunta un gasto», y tocarla es seguir.
+        .coachMarkOverlay(
+            steps: ChatCourtesyTrial.guideSteps,
+            isPresented: courtesyGuideBinding,
+            currentIndex: $courtesyGuideIndex,
+            onComplete: {}
+        )
+    }
+
+    /// La guía solo con la prueba puesta y el chat disponible.
+    private var courtesyGuideBinding: Binding<Bool> {
+        courtesyTrial != nil && viewModel.availability == .available ? $showsCourtesyGuide : .constant(false)
+    }
+
+    /// Los registros guardados desde las tarjetas de borrador de este chat.
+    private var savedTransactionIDs: [PersistentIdentifier] {
+        viewModel.messages.flatMap { message -> [PersistentIdentifier] in
+            (message.attachments ?? []).flatMap { attachment -> [PersistentIdentifier] in
+                if case .drafts(let drafts) = attachment { return drafts.compactMap(\.savedTransactionID) }
+                return []
+            }
+        }
+    }
+
+    /// Avisa a la prueba de cortesía del primer registro que se guardó de verdad desde el chat.
+    private func reportCourtesySave(_ ids: [PersistentIdentifier]) {
+        guard let courtesyTrial else { return }
+        for id in ids where !reportedSavedIDs.contains(id) {
+            reportedSavedIDs.insert(id)
+            courtesyTrial.onSaved(id)
         }
     }
 
@@ -618,7 +669,10 @@ struct ChatSheetView: View {
     private var sendButton: some View {
         Button {
             DS.Haptic.light()
-            Task { await viewModel.sendQuestion(viewModel.inputText) }
+            // En la prueba de cortesía se apunta (Y23-09): «apuntar» solo lee la frase, que el plan Free tiene en su
+            // cupo de prueba; una pregunta pediría el chat, que es solo de Pro (`gateway/src/policy.ts`).
+            let forceIntent: ChatIntent? = courtesyTrial != nil ? .register : nil
+            Task { await viewModel.sendQuestion(viewModel.inputText, forceIntent: forceIntent) }
         } label: {
             Image(systemName: "arrow.up")
                 .font(.system(size: 16, weight: .bold)) // A11Y-DT: send icon
