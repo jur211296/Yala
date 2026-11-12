@@ -403,13 +403,13 @@
 "favorites.new" = "新建收藏";
 "favorites.edit" = "编辑收藏";
 "favorites.noFavorites" = "你还没有任何收藏";
-"favorites.createTemplate" = "保存经常重复的支出（咖啡、打车），一键记录。";
+"favorites.createTemplate" = "保存经常重复的支出（咖啡、打车），两步记录：选中它，再保存。";
 "favorites.newTitle" = "新建收藏";
 "favorites.editTitle" = "编辑收藏";
 "favorites.namePlaceholder" = "收藏名称";
 "favorites.notConfigured" = "未配置";
 "favorites.descriptionPlaceholder" = "描述(可选)";
-"favorites.saveDescription" = "常用支出，一键完成。";
+"favorites.saveDescription" = "常用支出，已经帮你填好。";
 
 // MARK: - Scheduled
 
@@ -2115,7 +2115,7 @@
 "tips.camera.title" = "扫描收据和截图";
 "tips.camera.detail" = "拍下收据或银行截图。Yala 会自动提取金额并创建草稿。";
 "tips.favorites.title" = "保存常用付款";
-"tips.favorites.detail" = "经常付同一笔?把支出保存为收藏,下次从 + 菜单一键记录。";
+"tips.favorites.detail" = "经常付同一笔？把支出保存为收藏：下次记账时选中它，再保存即可。";
 "tips.budgets.title" = "创建预算";
 "tips.budgets.detail" = "设定每月每个类别想花多少。Yala 会在你接近上限时提醒,避免超支。";
 "tips.tags.title" = "标记特殊支出";
@@ -2678,11 +2678,11 @@
 // 8. createFavorites (2 steps)
 "tutorials.createFavorites.title" = "收藏";
 "tutorials.createFavorites.intro.title" = "什么是收藏?";
-"tutorials.createFavorites.intro.desc" = "把常用支出存为快捷,一键记录。";
+"tutorials.createFavorites.intro.desc" = "把常用支出存为快捷：选中一个，表单就会自动填好。";
 "tutorials.createFavorites.step0.title" = "创建一个收藏";
 "tutorials.createFavorites.step1.title" = "快速使用";
 "tutorials.createFavorites.completion.title" = "现在你知道怎么使用收藏了";
-"tutorials.createFavorites.completion.desc" = "收藏能一键记下你经常重复的支出。想建多少个都可以。";
+"tutorials.createFavorites.completion.desc" = "收藏会帮你准备好经常重复的支出：选中它，需要时改一下金额，再保存。想建多少个都可以。";
 
 // 9. editPanel (3 steps)
 "tutorials.editPanel.title" = "自定义面板";
@@ -8443,7 +8443,7 @@
 "l2d.date.futureDaysNote" = "未来的日期显示为灰色。尚未发生的付款，请使用[计划付款](yala-form://scheduled)。";
 "l2d.favorites.seeAll" = "查看全部";
 "l2d.favorites.use" = "使用收藏“%@”";
-"l2d.favorites.transferHelp" = "常用转账，一键完成。";
+"l2d.favorites.transferHelp" = "常用转账，已经帮你填好。";
 "l2d.recurring.title" = "设为重复";
 "l2d.recurring.header" = "我们会保存今天这笔。之后的会在到期当天进入你的收件箱，等你确认。你可以在计划付款中查看。";
 "l2d.recurring.weekly" = "每周%@";

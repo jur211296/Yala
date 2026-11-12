@@ -401,13 +401,13 @@
 "favorites.new" = "Nuovo preferito";
 "favorites.edit" = "Modifica preferito";
 "favorites.noFavorites" = "Nessun preferito";
-"favorites.createTemplate" = "Salva una spesa che ripeti (il tuo caffè, il taxi) e registrala con un tocco.";
+"favorites.createTemplate" = "Salva una spesa che ripeti (il tuo caffè, il taxi) e registrala in due tocchi: sceglila e salva.";
 "favorites.newTitle" = "Nuovo preferito";
 "favorites.editTitle" = "Modifica preferito";
 "favorites.namePlaceholder" = "Nome del preferito";
 "favorites.notConfigured" = "Non configurato";
 "favorites.descriptionPlaceholder" = "Descrizione (opzionale)";
-"favorites.saveDescription" = "Le tue spese di sempre, a un tocco.";
+"favorites.saveDescription" = "Le tue spese di sempre, già compilate.";
 
 // MARK: - Scheduled
 
@@ -2113,7 +2113,7 @@
 "tips.camera.title" = "Scansiona ricevute e screenshot";
 "tips.camera.detail" = "Scatta una foto della ricevuta o screenshot bancario. Yala estrae gli importi e crea bozze automaticamente.";
 "tips.favorites.title" = "Salva i pagamenti frequenti";
-"tips.favorites.detail" = "Paghi spesso la stessa cosa? Salva una spesa come preferita e la prossima volta registrala con un tap dal menu +.";
+"tips.favorites.detail" = "Paghi spesso la stessa cosa? Salva una spesa come preferita: la prossima volta, sceglila quando registri e salva.";
 "tips.budgets.title" = "Crea dei budget";
 "tips.budgets.detail" = "Definisci quanto vuoi spendere per categoria al mese. Yala ti avvisa quando sei vicino al limite per non sforare.";
 "tips.tags.title" = "Etichetta le spese speciali";
@@ -2660,11 +2660,11 @@
 // 8. createFavorites (2 steps)
 "tutorials.createFavorites.title" = "Preferiti";
 "tutorials.createFavorites.intro.title" = "Cosa sono i preferiti?";
-"tutorials.createFavorites.intro.desc" = "Salva le spese frequenti come scorciatoie e registrale con un tocco.";
+"tutorials.createFavorites.intro.desc" = "Salva le spese frequenti come scorciatoie: scegline una e il modulo si compila da solo.";
 "tutorials.createFavorites.step0.title" = "Crea un preferito";
 "tutorials.createFavorites.step1.title" = "Usalo rapidamente";
 "tutorials.createFavorites.completion.title" = "Ora sai come usare i preferiti";
-"tutorials.createFavorites.completion.desc" = "Un preferito registra con un tocco le spese che ripeti. Puoi averne quanti ne vuoi.";
+"tutorials.createFavorites.completion.desc" = "Un preferito ti prepara la spesa che ripeti: sceglila, cambia l'importo se serve e salva. Puoi averne quanti ne vuoi.";
 
 // 9. editPanel (3 steps)
 "tutorials.editPanel.title" = "Personalizzare il Panel";
@@ -8441,7 +8441,7 @@
 "l2d.date.futureDaysNote" = "I giorni futuri sono in grigio. Per un pagamento che non è ancora arrivato, usa [Pagamenti pianificati](yala-form://scheduled).";
 "l2d.favorites.seeAll" = "Vedi tutti";
 "l2d.favorites.use" = "Usa il preferito %@";
-"l2d.favorites.transferHelp" = "I tuoi trasferimenti di sempre, a un tocco.";
+"l2d.favorites.transferHelp" = "I tuoi trasferimenti di sempre, già compilati.";
 "l2d.recurring.title" = "Rendi ricorrente";
 "l2d.recurring.header" = "Salviamo quello di oggi. I prossimi arriveranno nella tua Inbox il giorno previsto, perché tu li confermi. Li trovi in Pagamenti pianificati.";
 "l2d.recurring.weekly" = "Ogni settimana, di %@";

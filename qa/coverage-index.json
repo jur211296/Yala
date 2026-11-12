@@ -848,16 +848,18 @@
         "Yala/App/Views/Settings/BudgetsFavoritesSettingsView.swift",
         "Yala/App/Views/Panel/PanelSheetsModifier.swift",
         "Yala/App/Views/Planning/PlanningView.swift",
-        "Yala/App/Views/Profile/ProfileView.swift"
+        "Yala/App/Views/Profile/ProfileView.swift",
+        "Yala/App/ViewModels/FavoritesListViewModel.swift",
+        "Yala/App/Logic/FavoritesVisibility.swift"
       ],
       "scenarioIDs": [
         "F-FAV-01",
         "F-FAV-02"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/FavoritesCrudUITests · 2026-10-17 (UX 2.2 · L7-14): lista vacía con «Crear favorito» y «Eliminar favorito» en el editor. — 2026-10-22 (L2-14): `FavoritePayment.destinationAccount` (campo nuevo de CloudKit `CD_destinationAccount`); la fila de un favorito de transferencia dice «origen → destino». Migración: unit:YalaTests/FavoritePaymentDestinationMigrationTests. — 2026-10-25 (lote 12.2 · 93ta): un favorito de transferencia se edita como tal (origen, destino ≠ origen, sin categoría ni etiquetas): `FavoritesCrudUITests#test_transferFavorite_editsOriginAndDestination`; lógica en unit:YalaTests/FavoriteEditorViewModelTests.",
+      "coverage": "xcuitest:YalaUITests/FavoritesAlRegistrar23UITests + 2026-11-12 (revisión 2.3, decisiones 22, 69-72, favoritos al registrar): tocar un favorito deja el monto seleccionado con el teclado abierto y escribir lo sustituye (F1; también el monto de origen de una transferencia entre monedas); los textos dejan de prometer «un toque» (F4, 16 idiomas); la fila del formulario solo enseña los favoritos del tipo elegido; el editor ofrece Gasto, Ingreso y Transferencia; deslizar para borrar pregunta antes (y resuelve el índice sobre la lista que se ve: con «Solo gastos» borraba otro); una transferencia sin destino dice su cuenta, no «Cuenta Principal → …». unit:YalaTests/FavoritesAlRegistrar23Tests — xcuitest:YalaUITests/FavoritesCrudUITests · 2026-10-17 (UX 2.2 · L7-14): lista vacía con «Crear favorito» y «Eliminar favorito» en el editor. — 2026-10-22 (L2-14): `FavoritePayment.destinationAccount` (campo nuevo de CloudKit `CD_destinationAccount`); la fila de un favorito de transferencia dice «origen → destino». Migración: unit:YalaTests/FavoritePaymentDestinationMigrationTests. — 2026-10-25 (lote 12.2 · 93ta): un favorito de transferencia se edita como tal (origen, destino ≠ origen, sin categoría ni etiquetas): `FavoritesCrudUITests#test_transferFavorite_editsOriginAndDestination`; lógica en unit:YalaTests/FavoriteEditorViewModelTests.",
       "owner": "",
-      "lastVerified": "2026-11-09"
+      "lastVerified": "2026-11-12"
     },
     {
       "area": "filters",
@@ -2806,16 +2808,19 @@
         "Yala/App/Views/Records/RecordsStandaloneView.swift",
         "Yala/App/Views/Records/TransactionDetailSheet.swift",
         "Yala/App/Views/Search/GlobalSearchView.swift",
-        "Yala/App/Views/Statistics/DetailContainerView.swift"
+        "Yala/App/Views/Statistics/DetailContainerView.swift",
+        "Yala/App/Views/Transactions/Components/FavoriteChipsRow.swift",
+        "Yala/App/Views/Transactions/Components/FavoriteAmountSelection.swift",
+        "Yala/App/Views/Transactions/Components/TransferAmountInputView.swift"
       ],
       "scenarioIDs": [
         "F-TX-02",
         "F-TX-03"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/QuickActionsFavoritesUITests — 2026-08-04: el area vuelve a estar VERDE (2/2). El rojo de test_saveAsFavoriteFromTransactionAppearsInList no era del area: guardar una TX no cierra el sheet de NewTransactionView (su body conmuta a TransactionSuccessView, que solo se descarta con Aceptar), y con el sheet puesto el Panel de fondo sigue en el arbol de accesibilidad SIN punto de impacto, asi que el tap del avatar de Perfil se sintetizaba en {-1,-1} y se perdia. El test ahora cierra la pantalla de exito con el helper dismissTransactionSuccess() (id nuevo transaction_success_accept, espejo de inbox_success_accept y group_expense_success_accept). | 2026-10-07 (`advisory-ui-tests-fail-every-retry`): el rojo 3/3 del CI de test_saveAsFavoriteFromTransactionAppearsInList era la misma carrera de la guía de primeros pasos (ver setup-checklist-demos). 3/3 verde en local con el runner en inglés. | 2026-10-10 (`shared-scheduled-expense-shows-twice-in-inbox`): se tocó un fichero compartido (plantilla del formulario de grupo / construcción de la plantilla en la Bandeja); nada de esta área cambia de comportamiento. — 2026-10-22 (L2-13/L2-14): la ★ de la barra se quitó; los favoritos se usan desde la fila de chips del formulario y el de transferencia guarda origen y destino. xcuitest:YalaUITests/TransactionFormDecided02UITests (test_favoriteChip_*, test_transferFavorite_*, test_withoutFavorites_*).",
+      "coverage": "xcuitest:YalaUITests/QuickActionsFavoritesUITests + xcuitest:YalaUITests/FavoritesAlRegistrar23UITests + 2026-11-12 (revisión 2.3, decisiones 22, 69-72, favoritos al registrar): tocar un favorito deja el monto seleccionado con el teclado abierto y escribir lo sustituye (F1; también el monto de origen de una transferencia entre monedas); los textos dejan de prometer «un toque» (F4, 16 idiomas); la fila del formulario solo enseña los favoritos del tipo elegido; el editor ofrece Gasto, Ingreso y Transferencia; deslizar para borrar pregunta antes (y resuelve el índice sobre la lista que se ve: con «Solo gastos» borraba otro); una transferencia sin destino dice su cuenta, no «Cuenta Principal → …». unit:YalaTests/FavoritesAlRegistrar23Tests — 2026-08-04: el area vuelve a estar VERDE (2/2). El rojo de test_saveAsFavoriteFromTransactionAppearsInList no era del area: guardar una TX no cierra el sheet de NewTransactionView (su body conmuta a TransactionSuccessView, que solo se descarta con Aceptar), y con el sheet puesto el Panel de fondo sigue en el arbol de accesibilidad SIN punto de impacto, asi que el tap del avatar de Perfil se sintetizaba en {-1,-1} y se perdia. El test ahora cierra la pantalla de exito con el helper dismissTransactionSuccess() (id nuevo transaction_success_accept, espejo de inbox_success_accept y group_expense_success_accept). | 2026-10-07 (`advisory-ui-tests-fail-every-retry`): el rojo 3/3 del CI de test_saveAsFavoriteFromTransactionAppearsInList era la misma carrera de la guía de primeros pasos (ver setup-checklist-demos). 3/3 verde en local con el runner en inglés. | 2026-10-10 (`shared-scheduled-expense-shows-twice-in-inbox`): se tocó un fichero compartido (plantilla del formulario de grupo / construcción de la plantilla en la Bandeja); nada de esta área cambia de comportamiento. — 2026-10-22 (L2-13/L2-14): la ★ de la barra se quitó; los favoritos se usan desde la fila de chips del formulario y el de transferencia guarda origen y destino. xcuitest:YalaUITests/TransactionFormDecided02UITests (test_favoriteChip_*, test_transferFavorite_*, test_withoutFavorites_*).",
       "owner": "",
-      "lastVerified": "2026-11-11"
+      "lastVerified": "2026-11-12"
     },
     {
       "area": "trend-previous-period-alignment",

@@ -401,13 +401,13 @@
 "favorites.new" = "Neuer Favorit";
 "favorites.edit" = "Favorit bearbeiten";
 "favorites.noFavorites" = "Keine Favoriten";
-"favorites.createTemplate" = "Speichere eine Ausgabe, die du oft hast (dein Kaffee, das Taxi), und erfasse sie mit einem Tipp.";
+"favorites.createTemplate" = "Speichere eine Ausgabe, die du oft hast (dein Kaffee, das Taxi), und erfasse sie mit zwei Tipps: auswählen und sichern.";
 "favorites.newTitle" = "Neuer Favorit";
 "favorites.editTitle" = "Favorit bearbeiten";
 "favorites.namePlaceholder" = "Name des Favoriten";
 "favorites.notConfigured" = "Nicht konfiguriert";
 "favorites.descriptionPlaceholder" = "Beschreibung (optional)";
-"favorites.saveDescription" = "Deine üblichen Ausgaben, mit einem Tipp.";
+"favorites.saveDescription" = "Deine üblichen Ausgaben, schon ausgefüllt.";
 
 // MARK: - Scheduled
 
@@ -2111,7 +2111,7 @@
 "tips.camera.title" = "Scanne Belege und Screenshots";
 "tips.camera.detail" = "Mach ein Foto von deinem Beleg oder Bank-Screenshot. Yala erkennt die Beträge und erstellt automatisch Entwürfe.";
 "tips.favorites.title" = "Speichere häufige Zahlungen";
-"tips.favorites.detail" = "Zahlst du oft das Gleiche? Speichere eine Ausgabe als Favorit und erfasse sie beim nächsten Mal mit einem Tipp im + Menü.";
+"tips.favorites.detail" = "Zahlst du oft das Gleiche? Speichere eine Ausgabe als Favorit: Wähle sie beim nächsten Erfassen aus und sichere.";
 "tips.budgets.title" = "Erstelle Budgets";
 "tips.budgets.detail" = "Lege fest, wie viel du pro Kategorie im Monat ausgeben möchtest. Yala warnt dich, wenn du dich dem Limit näherst.";
 "tips.tags.title" = "Markiere besondere Ausgaben";
@@ -2660,11 +2660,11 @@
 // 8. createFavorites (2 steps)
 "tutorials.createFavorites.title" = "Favoriten";
 "tutorials.createFavorites.intro.title" = "Was sind Favoriten?";
-"tutorials.createFavorites.intro.desc" = "Speichere häufige Ausgaben als Shortcuts und erfasse sie mit einem Tipp.";
+"tutorials.createFavorites.intro.desc" = "Speichere häufige Ausgaben als Shortcuts: Wählst du einen aus, füllt sich das Formular von selbst.";
 "tutorials.createFavorites.step0.title" = "Erstelle einen Favoriten";
 "tutorials.createFavorites.step1.title" = "Nutze ihn schnell";
 "tutorials.createFavorites.completion.title" = "Jetzt weißt du, wie du Favoriten nutzt";
-"tutorials.createFavorites.completion.desc" = "Ein Favorit erfasst wiederkehrende Ausgaben mit einem Tippen. Du kannst so viele haben, wie du willst.";
+"tutorials.createFavorites.completion.desc" = "Ein Favorit bereitet die Ausgabe vor, die du oft hast: auswählen, bei Bedarf den Betrag ändern und sichern. Du kannst so viele haben, wie du willst.";
 
 // 9. editPanel (3 steps)
 "tutorials.editPanel.title" = "Panel anpassen";
@@ -8431,7 +8431,7 @@
 "l2d.date.futureDaysNote" = "Kommende Tage sind ausgegraut. Für eine Zahlung, die noch aussteht, nutze [Geplante Zahlungen](yala-form://scheduled).";
 "l2d.favorites.seeAll" = "Alle anzeigen";
 "l2d.favorites.use" = "Favorit %@ verwenden";
-"l2d.favorites.transferHelp" = "Deine üblichen Überweisungen, mit einem Tipp.";
+"l2d.favorites.transferHelp" = "Deine üblichen Überweisungen, schon ausgefüllt.";
 "l2d.recurring.title" = "Wiederkehrend machen";
 "l2d.recurring.header" = "Wir speichern den von heute. Die nächsten landen am fälligen Tag in deinem Posteingang, damit du sie bestätigst. Du findest sie unter Geplante Zahlungen.";
 "l2d.recurring.weekly" = "Jede Woche, am %@";

@@ -99,8 +99,7 @@ struct FavoriteRowView: View {
     private var secondaryLine: some View {
         let text: String
         if favorite.type == .transfer {
-            // «Cuenta Principal → Ahorros». Un favorito de antes de 2.2 no tiene destino: «Cuenta Principal → …».
-            text = "\(favorite.account?.name ?? "…") → \(favorite.destinationAccount?.name ?? "…")"
+            text = FavoriteRowLine.transfer(origin: favorite.account?.name, destination: favorite.destinationAccount?.name)
         } else {
             let parts: [String] = [
                 favorite.subcategory?.name,
@@ -165,5 +164,19 @@ struct FavoriteRowView: View {
 
     private var amountColor: Color {
         Color.amountTint(isIncome: favorite.type == .income)
+    }
+}
+
+/// La segunda línea de un favorito de transferencia (decisión 72 de la revisión 2.3). «Cuenta Principal → Ahorros» con
+/// las dos cuentas; con una sola (un favorito de antes de 2.2 no tiene destino), su nombre, sin «→ …»; sin ninguna,
+/// «Transferencia».
+enum FavoriteRowLine {
+    static func transfer(origin: String?, destination: String?) -> String {
+        switch (origin, destination) {
+        case let (origin?, destination?): return "\(origin) → \(destination)"
+        case let (origin?, nil): return origin
+        case let (nil, destination?): return destination
+        case (nil, nil): return TransactionType.transfer.displayName
+        }
     }
 }
