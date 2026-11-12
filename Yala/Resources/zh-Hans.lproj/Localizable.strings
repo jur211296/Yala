@@ -204,7 +204,7 @@
 "filters.noneSelected" = "未选择";
 "filters.allSubcategories" = "全部子类别";
 "filters.filterOptions" = "筛选选项";
-"filters.noteContains" = "备注包含...";
+"filters.noteContains" = "备注包含…";
 "filters.selectAccounts" = "选择账户";
 "filters.selectTags" = "选择标签";
 "filters.selectCurrencies" = "选择货币";
@@ -8926,3 +8926,6 @@
 "records23.category.expand" = "显示%@的子类别";
 "records23.category.collapse" = "隐藏%@的子类别";
 "records23.band.removeAll" = "全部移除";
+
+/* Registros 2.3, decisión 17: separador de mes, título del menú y pista de VoiceOver */
+"records23.month.goToAnotherMonth" = "前往其他月份";

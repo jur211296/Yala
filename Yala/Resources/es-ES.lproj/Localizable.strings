@@ -495,7 +495,7 @@
 
 /* MARK: More keys explicit for variant locales (iOS no hace fallback es-419->es) */
 "more.subtitle.panel" = "Tu resumen del día a día";
-"more.subtitle.insights" = "Lo más importante de tu periodo";
+"more.subtitle.insights" = "Lo más importante de tu período";
 "more.subtitle.trends" = "Mira cómo evoluciona tu dinero";
 "more.subtitle.distribution" = "Descubre en qué se va tu dinero";
 "more.subtitle.budgets" = "Pon límites y mira cómo vas";
@@ -579,9 +579,9 @@
 "accessibility.noTransactions" = "No hay registros";
 "accessibility.noTransactionsToExport" = "No hay registros para exportar";
 "accessibility.pageIndicator %d %d" = "Página %1$d de %2$d";
-"accessibility.periodComparison" = "Gráfica de comparación entre periodos";
-"accessibility.periodComparisonValue %d" = "Periodo actual vs anterior, %d puntos";
-"accessibility.periodsCount %d" = "%d periodos";
+"accessibility.periodComparison" = "Gráfica de comparación entre períodos";
+"accessibility.periodComparisonValue %d" = "Período actual vs anterior, %d puntos";
+"accessibility.periodsCount %d" = "%d períodos";
 "accessibility.previousPeriod" = "Período anterior";
 "accessibility.proFeature" = "Requiere suscripción Pro";
 "accessibility.processAudio" = "Procesar audio";
@@ -777,7 +777,7 @@
 "budgets.editor.end.date" = "Fecha final";
 "budgets.editor.filters" = "Filtros";
 "budgets.editor.name.placeholder" = "Nombre del presupuesto";
-"budgets.editor.period.type" = "Periodo";
+"budgets.editor.period.type" = "Período";
 "budgets.editor.start.date" = "Fecha inicial";
 "budgets.empty.message" = "Crea presupuestos para controlar mejor tus gastos.";
 "budgets.empty.title" = "Aún no tienes presupuestos";
@@ -877,7 +877,7 @@
 "cashFlowPlan.chartsSectionTitle" = "Tu flujo de caja";
 "cashFlowPlan.chartsTitle" = "Gráficas";
 "cashFlowPlan.commentDefault" = "Tu proyección cubre %d meses hacia adelante";
-"cashFlowPlan.commentHealthy" = "Tu plan se ve saludable — al final del periodo tendrías %@ acumulado";
+"cashFlowPlan.commentHealthy" = "Tu plan se ve saludable — al final del período tendrías %@ acumulado";
 "cashFlowPlan.commentHealthyWithSavings" = "Tu plan se ve bien — ahorras unos %@/mes y terminarías con %@";
 "cashFlowPlan.commentNegative" = "A partir de %@ tu acumulado entra en negativo — revisa si puedes ajustar algo";
 "cashFlowPlan.commentSavingsAbove" = "Vas %@ por encima de tu plan de ahorro — tu saldo llegaría a %@";
@@ -1483,7 +1483,7 @@
 "featureGate.proFeatureTitle" = "Función Pro";
 "featureGate.proThemes" = "Temas Pro";
 "featureGate.smartInsightsAI" = "Resumen con IA";
-"featureGate.trialExpiredMessage" = "Tu periodo de prueba ha terminado. Suscríbete para seguir disfrutando de todas las funciones.";
+"featureGate.trialExpiredMessage" = "Tu período de prueba ha terminado. Suscríbete para seguir disfrutando de todas las funciones.";
 "featureGate.trialExpiredTitle" = "Prueba terminada";
 "featureGate.upgrade" = "Actualizar";
 "featureGate.upgradeForMore" = "Actualiza a Pro para crear más";
@@ -1510,7 +1510,7 @@
 "filters.noTags" = "Sin etiquetas";
 "filters.none" = "Ninguno";
 "filters.noneSelected" = "Ninguna seleccionada";
-"filters.noteContains" = "Nota contiene...";
+"filters.noteContains" = "Nota contiene…";
 "filters.nothingExcluded" = "Nada";
 "filters.selectAccounts" = "Seleccionar cuentas";
 "filters.selectAll" = "Seleccionar todo";
@@ -1560,7 +1560,7 @@
 "guide.insights.title" = "Yala analiza por ti";
 "guide.panel.message" = "Aquí ves de un vistazo cuánto has gastado y cuánto te queda. Toca Nuevo registro para apuntar un gasto.";
 "guide.panel.title" = "Este es tu resumen";
-"guide.records.message" = "Aquí están tus ingresos y gastos del periodo, ordenados por fecha. Toca uno para ver los detalles.";
+"guide.records.message" = "Aquí están tus ingresos y gastos del período, ordenados por fecha. Toca uno para ver los detalles.";
 "guide.records.title" = "Todos tus registros";
 "guide.scheduled.message" = "¿Pagas Netflix todos los meses? ¿El alquiler? Agrégalos aquí y Yala te avisa antes de que se venzan.";
 "guide.scheduled.title" = "Gastos que se repiten";
@@ -1769,7 +1769,7 @@
 "insights.budgetsAtRisk" = "Presupuestos en riesgo";
 "insights.chartsSection" = "Gráficos";
 "insights.commitments" = "Compromisos";
-"insights.commitmentsNote" = "Periodo actual de cada presupuesto";
+"insights.commitmentsNote" = "Período actual de cada presupuesto";
 "insights.comparison" = "Comparativa";
 "insights.dailyAverage" = "Promedio diario";
 "insights.emptyBody" = "Registra gastos para ver tus observaciones";
@@ -1788,7 +1788,7 @@
 "insights.goToSettings" = "Ir a ajustes";
 "insights.highestAvgWeekday" = "Día de más gasto";
 "insights.highestExpense" = "Mayor gasto";
-"insights.inThisPeriod" = "en este periodo";
+"insights.inThisPeriod" = "en este período";
 "insights.intelligentInsights" = "Observaciones";
 "insights.metricsSection" = "Métricas";
 "insights.monthly" = "mensual";
@@ -1810,11 +1810,11 @@
 "insights.ruleDominantSharedCategory.normal" = "%@ domina tus gastos compartidos (%d%%)";
 "insights.ruleDominantSharedCategory.sarcastic" = "%@ es el %d%% de tu gasto compartido. ¿Solo comen juntos?";
 "insights.ruleExpenseDown.considerate" = "Los datos muestran una reducción de %@ en gastos — un resultado positivo.";
-"insights.ruleExpenseDown.normal" = "Buen ritmo: tus gastos bajaron %@ respecto al periodo anterior.";
+"insights.ruleExpenseDown.normal" = "Buen ritmo: tus gastos bajaron %@ respecto al período anterior.";
 "insights.ruleExpenseDown.sarcastic" = "Bien ahí, gastos abajo %@. Nada mal.";
-"insights.ruleExpenseUp.considerate" = "Tus gastos subieron %@ — vale considerar si hubo algún gasto atípico este periodo.";
-"insights.ruleExpenseUp.normal" = "Tus gastos subieron %@ respecto al periodo anterior.";
-"insights.ruleExpenseUp.sarcastic" = "Gastos arriba %@ vs el periodo pasado. Vale la pena revisar qué cambió.";
+"insights.ruleExpenseUp.considerate" = "Tus gastos subieron %@ — vale considerar si hubo algún gasto atípico este período.";
+"insights.ruleExpenseUp.normal" = "Tus gastos subieron %@ respecto al período anterior.";
+"insights.ruleExpenseUp.sarcastic" = "Gastos arriba %@ vs el período pasado. Vale la pena revisar qué cambió.";
 "insights.ruleMostExpensiveGroup.considerate" = "%@ lleva el %d%% del gasto compartido — es tu grupo principal";
 "insights.ruleMostExpensiveGroup.normal" = "%@ es tu grupo más costoso con el %d%% del gasto compartido";
 "insights.ruleMostExpensiveGroup.sarcastic" = "%@ se lleva el %d%% de tu gasto compartido. Dominante.";
@@ -1824,13 +1824,13 @@
 "insights.ruleSavingsNegative" = "Tus gastos superan tus ingresos en el período.";
 "insights.ruleSavingsPositive %d" = "Ahorras un %d%% de tus ingresos.";
 "insights.ruleSharedMoM.considerate" = "El gasto compartido subió %@ — revisa si hubo gastos extra";
-"insights.ruleSharedMoM.normal" = "Tu gasto compartido subió %@ vs el periodo anterior";
+"insights.ruleSharedMoM.normal" = "Tu gasto compartido subió %@ vs el período anterior";
 "insights.ruleSharedMoM.sarcastic" = "Gasto compartido +%@. ¿Qué celebraron?";
 "insights.ruleSharedRatio.considerate" = "El %d%% de tu gasto fue compartido — está bien repartir";
-"insights.ruleSharedRatio.normal" = "El %d%% de tus gastos este periodo son compartidos";
+"insights.ruleSharedRatio.normal" = "El %d%% de tus gastos este período son compartidos";
 "insights.ruleSharedRatio.sarcastic" = "El %d%% de tu gasto es compartido. ¿Quién paga la próxima?";
 "insights.ruleTopCategory.considerate" = "%@ representa el %d%% de tus gastos, aunque técnicamente podría ser esperable según tus prioridades.";
-"insights.ruleTopCategory.normal" = "%@ representa el %d%% de tus gastos este periodo.";
+"insights.ruleTopCategory.normal" = "%@ representa el %d%% de tus gastos este período.";
 "insights.ruleTopCategory.sarcastic" = "%@ se lleva el %d%% de tus gastos. Ojo con eso.";
 "insights.subscriptions" = "Suscripciones";
 "insights.tipBudgetRisk" = "Aún quedan días — intenta frenar gastos en %@ lo que resta";
@@ -2212,7 +2212,7 @@
 "panel.panorama.expand" = "Expandir tus finanzas";
 "panel.panorama.expandedValue" = "Expandido";
 "panel.panorama.title" = "Tus finanzas";
-"panel.periodComparison.requiresPeriod" = "Elige un mes o periodo para comparar";
+"panel.periodComparison.requiresPeriod" = "Elige un mes o período para comparar";
 "panel.periodComparison.vs %@" = "vs %@";
 "panel.periodComparison.vsWithYear %@ %@" = "vs %@ %@";
 "panel.preparingInsight" = "Preparando observación...";
@@ -2263,11 +2263,11 @@
 "panel.widgetInfo.cashFlow.chip4" = "Puedes tocarla";
 "panel.widgetInfo.cashFlow.largeHowA" = "Mantén el dedo sobre las barras para ver el detalle exacto de un punto concreto.";
 "panel.widgetInfo.cashFlow.largeHowQ" = "¿Cómo interactúo con la gráfica?";
-"panel.widgetInfo.cashFlow.largeWhatA" = "La evolución de tus ingresos y gastos a lo largo del periodo, agrupados por día, semana o mes según el intervalo seleccionado.";
+"panel.widgetInfo.cashFlow.largeWhatA" = "La evolución de tus ingresos y gastos a lo largo del período, agrupados por día, semana o mes según el intervalo seleccionado.";
 "panel.widgetInfo.cashFlow.largeWhatQ" = "¿Qué estás viendo?";
 "panel.widgetInfo.cashFlow.mediumWhatA" = "Lo mismo que el tamaño compacto (ingresos, gastos y lo que te queda), con más espacio para ver los importes a detalle.";
 "panel.widgetInfo.cashFlow.mediumWhatQ" = "¿Qué estás viendo?";
-"panel.widgetInfo.cashFlow.smallWhatA" = "Lo que te queda en el periodo: la diferencia entre lo que ingresaste y lo que gastaste, con dos barras que comparan ambos totales.";
+"panel.widgetInfo.cashFlow.smallWhatA" = "Lo que te queda en el período: la diferencia entre lo que ingresaste y lo que gastaste, con dos barras que comparan ambos totales.";
 "panel.widgetInfo.cashFlow.smallWhatQ" = "¿Qué estás viendo?";
 "panel.widgetInfo.cashFlow.title" = "Entradas y salidas";
 "panel.widgetInfo.categoriesPie.chip1" = "Categorías";
@@ -2382,9 +2382,9 @@
 "panel.widgetInfo.trend.fxMatchQ" = "¿Por qué el último punto puede no coincidir con mi saldo total?";
 "panel.widgetInfo.trend.largeHowA" = "Mantén el dedo sobre la gráfica para ver el valor en cada punto. Cambia entre saldo, ingresos y gastos con los botones de arriba.";
 "panel.widgetInfo.trend.largeHowQ" = "¿Cómo interactúo con la gráfica?";
-"panel.widgetInfo.trend.largeWhatA" = "La evolución día a día de tu saldo, tus ingresos o tus gastos del periodo.";
+"panel.widgetInfo.trend.largeWhatA" = "La evolución día a día de tu saldo, tus ingresos o tus gastos del período.";
 "panel.widgetInfo.trend.largeWhatQ" = "¿Qué estás viendo?";
-"panel.widgetInfo.trend.smallWhatA" = "Tu saldo, ingresos o gastos del periodo según el filtro activo, con una mini-gráfica de evolución.";
+"panel.widgetInfo.trend.smallWhatA" = "Tu saldo, ingresos o gastos del período según el filtro activo, con una mini-gráfica de evolución.";
 "panel.widgetInfo.trend.smallWhatQ" = "¿Qué estás viendo?";
 "panel.widgetInfo.trend.title" = "Tendencia de saldo";
 "panel.widgetInfo.weekdayBar.chip1" = "Días de la semana";
@@ -2454,7 +2454,7 @@
 "profile.title" = "Ajustes";
 "profile.yourName" = "Tu nombre";
 "records.latest" = "Últimos registros";
-"records.noRecords" = "Sin registros en este periodo";
+"records.noRecords" = "Sin registros en este período";
 "records.noRecordsThisDay" = "Sin registros este día";
 "records.title" = "Registros";
 "records.viewModeCalendarA11y" = "Vista de calendario";
@@ -2475,7 +2475,7 @@
 "report.netFlow" = "Flujo neto";
 "report.noAccount" = "Sin cuenta";
 "report.noData" = "Sin datos";
-"report.noDataDescription" = "No hay registros en este periodo";
+"report.noDataDescription" = "No hay registros en este período";
 "report.noSubcategory" = "Sin subcategoría";
 "report.noTag" = "Sin etiqueta";
 "report.tab.cashFlow" = "Flujo de caja";
@@ -2922,11 +2922,11 @@
 "stats.distribution.heroSubtitle3 %d %d %d" = "%d categorías · %d subcategorías · %d etiquetas";
 "stats.distribution.insight.balanced %d" = "Tu gasto se reparte: ninguna categoría supera el %d%%. Distribución equilibrada.";
 "stats.distribution.insight.concentrated %d %@" = "%d%% de tu gasto se concentra en %@. ¿Te alinea con tus prioridades?";
-"stats.distribution.empty.noTagMovementsTitle" = "Sin movimientos con etiqueta en este periodo";
-"stats.distribution.empty.noSubcategoryMovementsTitle" = "Sin movimientos con subcategoría en este periodo";
-"stats.distribution.empty.noMovementsTitle" = "Sin movimientos en este periodo";
-"stats.distribution.insight.newCategoryInPeriod %@" = "Probaste %@ en este periodo.";
-"stats.distribution.insight.onsetNoMovements" = "Aún no hay movimientos en este periodo. Cuando los registres, verás aquí cómo se reparten.";
+"stats.distribution.empty.noTagMovementsTitle" = "Sin movimientos con etiqueta en este período";
+"stats.distribution.empty.noSubcategoryMovementsTitle" = "Sin movimientos con subcategoría en este período";
+"stats.distribution.empty.noMovementsTitle" = "Sin movimientos en este período";
+"stats.distribution.insight.newCategoryInPeriod %@" = "Probaste %@ en este período.";
+"stats.distribution.insight.onsetNoMovements" = "Aún no hay movimientos en este período. Cuando los registres, verás aquí cómo se reparten.";
 "stats.distribution.insight.shiftedDown %d %@ %@" = "%2$@ bajó %1$d%% vs %3$@. Buen ajuste.";
 "stats.distribution.insight.shiftedUp %d %@ %@" = "%2$@ subió %1$d%% vs %3$@. Veamos qué cambió este período.";
 "stats.distribution.insight.topSub %d %@ %@" = "%2$@ representa el %1$d%% dentro de %3$@. Tu mayor partida específica.";
@@ -2950,7 +2950,7 @@
 "stats.trends.heroStable" = "Lo que te queda se mantiene estable";
 "stats.trends.heroVarDown %d %@" = "%d%% por debajo vs %@ · Ánimo, paso a paso";
 "stats.trends.heroVarUp %d %@" = "%d%% por encima vs %@ · Sigue así";
-"stats.trends.insight.onsetNoPrevious" = "Aún no hay un periodo anterior con el que comparar.";
+"stats.trends.insight.onsetNoPrevious" = "Aún no hay un período anterior con el que comparar.";
 "stats.trends.insight.stableBalance" = "Tu saldo se mantiene estable.";
 "stats.trends.insight.sustainedUpExpense %@" = "Tu gasto lleva subiendo desde hace %@.";
 "stats.trends.insight.sustainedDownExpense %@" = "Tu gasto lleva bajando desde hace %@.";
@@ -2963,7 +2963,7 @@
 "stats.trends.insight.durationYears %d" = "%d años";
 "stats.trends.insight.cashFlowSurplus %d" = "Tus ingresos han cubierto el %d%% de tus gastos: has cerrado en positivo.";
 "stats.trends.insight.cashFlowDeficit %d" = "Tus ingresos han cubierto el %d%% de tus gastos: has gastado más de lo que ha entrado.";
-"stats.trends.insight.cashFlowNoIncome" = "En este periodo has registrado gastos, pero ningún ingreso.";
+"stats.trends.insight.cashFlowNoIncome" = "En este período has registrado gastos, pero ningún ingreso.";
 "stats.trends.insight.weekdayPeak %@ %@" = "El %@ es tu día más caro: gastas %@ de media.";
 "stats.trends.insight.stableExpense" = "Tu gasto se mantiene estable.";
 "stats.trends.insight.stableIncome" = "Tus ingresos se mantienen estables.";
@@ -3080,7 +3080,7 @@
 "subscription.feature.unlimitedAccounts" = "Cuentas ilimitadas";
 "subscription.feature.unlimitedBudgets" = "Presupuestos ilimitados";
 "subscription.feature.voice" = "Registro por voz ilimitado";
-"subscription.legalFooter" = "El pago se carga a tu cuenta de Apple. La suscripción se renueva automáticamente a menos que la canceles al menos 24 horas antes del final del periodo actual.";
+"subscription.legalFooter" = "El pago se carga a tu cuenta de Apple. La suscripción se renueva automáticamente a menos que la canceles al menos 24 horas antes del final del período actual.";
 "subscription.manageInAppStore" = "Administrar en App Store";
 "subscription.paywallSubtitle" = "Lleva tus finanzas al siguiente nivel con herramientas avanzadas";
 "subscription.paywallTitle" = "Desbloquea todo el potencial de Yala";
@@ -3162,7 +3162,7 @@
 "tipkit.cfTable.available.title" = "Lo que te queda";
 "tipkit.cfTable.cell.message" = "Toca cualquier monto para ver de dónde viene y cómo se calculó.";
 "tipkit.cfTable.cell.title" = "Toca para ver más";
-"tipkit.comparison.message" = "Elige con qué comparar tus cifras: con el periodo anterior o con el mismo periodo del año pasado.";
+"tipkit.comparison.message" = "Elige con qué comparar tus cifras: con el período anterior o con el mismo período del año pasado.";
 "tipkit.comparison.title" = "Compara y aprende";
 "tipkit.done" = "Listo";
 "tipkit.next" = "Siguiente";
@@ -3193,8 +3193,8 @@
 "tips.export.title" = "Exporta tus datos";
 "tips.favorites.detail" = "¿Pagas lo mismo a menudo? Guarda un gasto como favorito: la próxima vez, elígelo al registrar y guarda.";
 "tips.favorites.title" = "Guarda pagos frecuentes";
-"tips.filters.detail" = "Usa filtros para ver solo lo que importa: por categoría, etiqueta, cuenta o periodo. Compara mes a mes para detectar cambios.";
-"tips.filters.title" = "Filtra y compara periodos";
+"tips.filters.detail" = "Usa filtros para ver solo lo que importa: por categoría, etiqueta, cuenta o período. Compara mes a mes para detectar cambios.";
+"tips.filters.title" = "Filtra y compara períodos";
 "tips.section.advanced" = "Trucos avanzados";
 "tips.section.organize" = "Organiza tu dinero";
 "tips.section.quickEntry" = "Registro rápido";
@@ -3287,7 +3287,7 @@
 "tutorials.createBudgets.intro.title" = "¿Qué es un presupuesto?";
 "tutorials.createBudgets.step0.desc" = "En el menú selecciona Planificación y asegúrate de estar en la pestaña de Presupuestos. Usa el botón + para crear uno nuevo.";
 "tutorials.createBudgets.step0.title" = "Abre Planificación";
-"tutorials.createBudgets.step1.desc" = "Ponle nombre, monto y define el periodo: semanal, mensual, anual o único (para un viaje, evento, etc). Elige qué cuentas, categorías, etiquetas y necesidades quieres seguir. Activa las notificaciones si quieres avisos en ciertos umbrales.";
+"tutorials.createBudgets.step1.desc" = "Ponle nombre, monto y define el período: semanal, mensual, anual o único (para un viaje, evento, etc). Elige qué cuentas, categorías, etiquetas y necesidades quieres seguir. Activa las notificaciones si quieres avisos en ciertos umbrales.";
 "tutorials.createBudgets.step1.title" = "Configura tu presupuesto";
 "tutorials.createBudgets.step2.desc" = "Activa «Mostrar en el widget» para verlo en el widget de Presupuestos del Panel.";
 "tutorials.createBudgets.step2.title" = "Muéstralo en el Panel";
@@ -3390,7 +3390,7 @@
 "tutorials.nextTutorial" = "Siguiente tutorial";
 "tutorials.panelFiltering.completion.desc" = "Combina filtros para ver justo lo que buscas. Se aplican en todas las pantallas a la vez.";
 "tutorials.panelFiltering.completion.title" = "Ya sabes cómo filtrar";
-"tutorials.panelFiltering.intro.desc" = "Filtra por cuenta, categoría, etiqueta o periodo para análisis detallado.";
+"tutorials.panelFiltering.intro.desc" = "Filtra por cuenta, categoría, etiqueta o período para análisis detallado.";
 "tutorials.panelFiltering.intro.title" = "Filtra para encontrar";
 "tutorials.panelFiltering.step0.desc" = "Saca el máximo provecho a los gráficos interactivos de Yala. Casi todos los paneles son filtrables por categoría, necesidad, entre otros. Juega con ellos y encuentra lo que más te sirva.";
 "tutorials.panelFiltering.step0.title" = "Toca los gráficos para filtrar";
@@ -3512,13 +3512,13 @@
 "widget.hint.trend" = "Muestra la evolución de tu saldo, ingresos o gastos en el período seleccionado.";
 "widget.list" = "Lista";
 "widget.main" = "Principal";
-"widget.noDataForPeriod" = "Aún no hay datos para este periodo";
+"widget.noDataForPeriod" = "Aún no hay datos para este período";
 "widget.noExpensesDescriptionCategories" = "Cuando tengas registros, verás aquí tus categorías principales.";
 "widget.noExpensesDescriptionSubcategories" = "Cuando tengas registros, verás aquí tus subcategorías principales.";
-"widget.noExpensesNeedPeriod" = "No hay gastos registrados por necesidad para este periodo.";
-"widget.noExpensesPeriod" = "Aún no tienes gastos en este periodo.";
-"widget.noExpensesSubcategoriesPeriod" = "Aún no hay gastos en subcategorías para este periodo.";
-"widget.noRecordsForFilters" = "No hay registros para este periodo y filtros";
+"widget.noExpensesNeedPeriod" = "No hay gastos registrados por necesidad para este período.";
+"widget.noExpensesPeriod" = "Aún no tienes gastos en este período.";
+"widget.noExpensesSubcategoriesPeriod" = "Aún no hay gastos en subcategorías para este período.";
+"widget.noRecordsForFilters" = "No hay registros para este período y filtros";
 "widget.of" = "de %@";
 "widget.ofExpense" = "del gasto";
 "widget.ofTotal" = "del total";
@@ -8174,3 +8174,6 @@
 "records23.category.expand" = "Ver subcategorías de %@";
 "records23.category.collapse" = "Ocultar subcategorías de %@";
 "records23.band.removeAll" = "Quitar todo";
+
+/* Registros 2.3, decisión 17: separador de mes, título del menú y pista de VoiceOver */
+"records23.month.goToAnotherMonth" = "Ir a otro mes";

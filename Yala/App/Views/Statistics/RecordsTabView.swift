@@ -475,28 +475,34 @@ struct RecordsTabView: View {
     }
 
     private func recordsList(_ groups: [(date: Date, records: [TransactionItem])]) -> some View {
-        // Sin cabeceras fijas: la fecha no tiene fondo y, fija arriba, se escribía encima de las filas al hacer scroll.
-        LazyVStack(spacing: DS.Spacing.sm) {
-            ForEach(groups, id: \.date) { group in
-                Section {
-                    ForEach(group.records, id: \.persistentModelID) { record in
-                        RecordRowView(
-                            record: record,
-                            currencyCode: defaultCurrencyCode,
-                            isSelectionMode: viewModel.isSelectionMode,
-                            isSelected: viewModel.selectedRecordIDs.contains(
-                                record.persistentModelID),
-                            onTap: {
-                                viewModel.showRecordDetail(record)
-                            },
-                            onToggleSelection: {
-                                viewModel.toggleSelection(record.persistentModelID)
+        // Revisión 2.3, decisión 17 (T1 + T2): la lista va por meses. Lo único fijo es el separador de mes, con banda
+        // opaca (decisión 79), y solo cuando la lista cruza meses; la cabecera de día va con el scroll (desde 2.2: sin
+        // fondo, fija arriba, se escribía encima de las filas) y dice lo gastado ese día, con el año si no es el actual.
+        let months = RecordsMonthSectionsLogic.months(groups) { records in
+            DailySpendingCalculator.dayTotals(
+                records: records, adjustment: viewModel.statsAdjustment, currencyCode: defaultCurrencyCode
+            ).expense
+        }
+        let showsSeparator = RecordsMonthSectionsLogic.showsMonthSeparator(monthCount: months.count)
+        let options = showsSeparator ? months.map(monthOption) : []
+        return ScrollViewReader { proxy in
+            LazyVStack(spacing: DS.Spacing.sm, pinnedViews: .sectionHeaders) {
+                ForEach(months, id: \.start) { month in
+                    Section {
+                        ForEach(month.days, id: \.date) { day in
+                            RecordDateSectionView(
+                                date: day.date,
+                                includesYear: RecordsMonthSectionsLogic.dayHeaderIncludesYear(day.date),
+                                spentText: RecordsMonthSectionsLogic.shownSpent(day.spent).map(spentText),
+                                showsWeekday: true
+                            )
+                            ForEach(day.records, id: \.persistentModelID) { record in
+                                recordRow(record)
                             }
-                        )
-                        .modifier(RecordRowContextMenu(record: record, viewModel: viewModel))
+                        }
+                    } header: {
+                        if showsSeparator { monthSeparator(month, options: options, proxy: proxy) }
                     }
-                } header: {
-                    RecordDateSectionView(date: group.date)
                 }
             }
         }
@@ -507,6 +513,83 @@ struct RecordsTabView: View {
         // «+»: al final del scroll, la última fila sube por encima de los dos. Dos aunque Yala IA esté oculto —
         // sobrar 68 pt al final no se ve; quedarse corto tapa el importe.
         .padding(.bottom, DS.Button.fabStackClearance(buttons: 2))
+    }
+
+    private func recordRow(_ record: TransactionItem) -> some View {
+        RecordRowView(
+            record: record,
+            currencyCode: defaultCurrencyCode,
+            isSelectionMode: viewModel.isSelectionMode,
+            isSelected: viewModel.selectedRecordIDs.contains(record.persistentModelID),
+            onTap: {
+                viewModel.showRecordDetail(record)
+            },
+            onToggleSelection: {
+                viewModel.toggleSelection(record.persistentModelID)
+            }
+        )
+        .modifier(RecordRowContextMenu(record: record, viewModel: viewModel))
+    }
+
+    // MARK: - Separador de mes (revisión 2.3, decisión 17, T2)
+
+    /// Lo gastado, con el formato de importes de la app y en negativo, como las filas: «S/ -231.40».
+    private func spentText(_ spent: Double) -> String {
+        appPreferences.currency(-spent, currencyCode: defaultCurrencyCode)
+    }
+
+    /// «Octubre 2026»: mayúscula solo en la primera letra, como el calendario.
+    private func monthTitle(_ start: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = AppLocale.current
+        formatter.setLocalizedDateFormatFromTemplate("MMMMyyyy")
+        return formatter.string(from: start).capitalizingFirstLetter(locale: AppLocale.current)
+    }
+
+    /// «182 registros · S/ -6,420.00»; sin gasto en el mes, solo el recuento.
+    private func monthSummary(_ month: RecordsMonthSectionsLogic.Month<TransactionItem>) -> String {
+        let count = L10n.UXL7.recordsCount(month.recordCount)
+        guard let spent = RecordsMonthSectionsLogic.shownSpent(month.spent) else { return count }
+        return "\(count) · \(spentText(spent))"
+    }
+
+    private func monthOption(_ month: RecordsMonthSectionsLogic.Month<TransactionItem>) -> RecordsMonthSeparator.Option {
+        RecordsMonthSeparator.Option(
+            id: month.start,
+            title: monthTitle(month.start),
+            summary: monthSummary(month)
+        )
+    }
+
+    private func monthSeparator(
+        _ month: RecordsMonthSectionsLogic.Month<TransactionItem>,
+        options: [RecordsMonthSeparator.Option],
+        proxy: ScrollViewProxy
+    ) -> some View {
+        RecordsMonthSeparator(
+            title: monthTitle(month.start),
+            summary: monthSummary(month),
+            monthKey: RecordsMonthSectionsLogic.monthKey(month.start),
+            options: options,
+            onSelect: { start in jumpToMonth(start, proxy: proxy) }
+        )
+    }
+
+    /// La lista es perezosa: el primer salto calcula con alturas estimadas de lo que aún no se pintó y se quedaba un
+    /// mes corto (medido: «diciembre de 2025» aterrizaba al final de enero de 2026). Se repite cuando las filas de
+    /// alrededor ya existen, y entonces cae en su sitio.
+    private func jumpToMonth(_ start: Date, proxy: ScrollViewProxy) {
+        proxy.scrollTo(start, anchor: .top)
+        Task { @MainActor in
+            for _ in 0..<2 {
+                do {
+                    try await Task.sleep(for: .milliseconds(80))
+                } catch {
+                    return
+                }
+                proxy.scrollTo(start, anchor: .top)
+            }
+        }
     }
 
     // MARK: - Modo duplicados: un grupo por sección (L8-11)
