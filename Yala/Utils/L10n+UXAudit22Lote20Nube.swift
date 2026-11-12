@@ -37,10 +37,9 @@ extension L10n {
         static var accessTitle: String { l20n("l20n.sheet.accessTitle") }
         static var accessDetail: String { l20n("l20n.sheet.accessDetail") }
         static var exportCopy: String { l20n("l20n.sheet.exportCopy") }
-        static var details: String { l20n("l20n.sheet.details") }
-        static var hideDetails: String { l20n("l20n.sheet.hideDetails") }
-        /// El punto de la entrada del contrato, sin la ruta «Ajustes → Exportar datos»: la hoja lleva el botón (L20-12).
-        static var detailsAccess: String { l20n("l20n.sheet.detailsAccess") }
+        /// Decisión 52 de 2.3 (H1): las fotos de los recibos, a la vista y sin cifra (Yala no las guarda).
+        static var photosTitle: String { l20n("l20n.sheet.photosTitle") }
+        static var photosDetail: String { l20n("l20n.sheet.photosDetail") }
         static var continueCurrent: String { l20n("l20n.sheet.continueCurrent") }
 
         /// «Pasarán 32 registros, 2 cuentas y 6 presupuestos.» Cada cifra con su plural (stringsdict).

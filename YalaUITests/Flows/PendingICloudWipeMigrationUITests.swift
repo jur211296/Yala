@@ -112,9 +112,9 @@ final class PendingICloudWipeMigrationUITests: XCTestCase {
             """)
     }
 
-    /// UX 2.2 · L20-11/12 (decisión de Jürgen, opción C): activar es UNA hoja con los dos botones de entrar, «Ver los
-    /// detalles», «Exportar una copia antes» y «Cancelar» a la vista. «Cancelar» la cierra sin abrir «¿Activar la nube?»,
-    /// «¿Seguro?» ni el selector de Apple o Google, y la tarjeta sigue ahí: no arrancó nada.
+    /// UX 2.2 · L20-11/12 (decisión de Jürgen, opción C): activar es UNA hoja con los dos botones de entrar, «Exportar una
+    /// copia antes» y «Cancelar» a la vista. «Cancelar» la cierra sin abrir «¿Activar la nube?», «¿Seguro?» ni el selector
+    /// de Apple o Google, y la tarjeta sigue ahí: no arrancó nada. Lo que la hoja dice lo fija el caso de abajo (H1).
     func test_activationSheet_isOneStep_andCancelStops() {
         let (app, migrate) = openMigrateCard(pendingICloudWipe: false)
         migrate.tap()
@@ -123,13 +123,6 @@ final class PendingICloudWipeMigrationUITests: XCTestCase {
         XCTAssertTrue(app.buttons["storage_activation_apple"].exists, "La hoja no ofrece «Continuar con Apple».")
         XCTAssertTrue(app.buttons["storage_activation_google"].exists, "La hoja no ofrece «Continuar con Google».")
         XCTAssertTrue(app.buttons["storage_activation_export"].exists, "La hoja no ofrece «Exportar una copia antes».")
-
-        // «Ver los detalles» despliega el texto legal entero, a un toque.
-        let details = app.buttons["storage_activation_details"]
-        XCTAssertTrue(details.exists, "La hoja no ofrece «Ver los detalles».")
-        details.tap()
-        XCTAssertTrue(app.descendants(matching: .any)["storage_activation_details_text"].waitForExistence(timeout: 3),
-                      "«Ver los detalles» no desplegó el texto legal.")
 
         let cancel = app.buttons["storage_activation_cancel"]
         XCTAssertTrue(cancel.exists, "La hoja no enseña «Cancelar».")
@@ -142,5 +135,39 @@ final class PendingICloudWipeMigrationUITests: XCTestCase {
                        "«Cancelar» arrancó la activación.")
         XCTAssertTrue(app.descendants(matching: .any)["storage_migrate_button"].waitForExistence(timeout: 3),
                       "La tarjeta de la nube desapareció tras cancelar.")
+    }
+
+    /// Revisión 2.3, zona 41, decisión 52 (H1, Jürgen, 2026-11-09): lo que no se deshace solo se lee DE ENTRADA. La hoja
+    /// enseña, sin tocar nada, que Yala puede ver los datos y no hay cifrado de extremo a extremo, que las fotos de los
+    /// recibos no viajan, y «Exportar una copia antes»; «Ver los detalles» ya no existe. «A la vista» es dentro de la
+    /// hoja tal como abre y por encima de los botones de entrar, no solo en el árbol: el texto plegado también estaba en
+    /// el árbol al desplegarlo.
+    func test_activationSheet_showsEncryptionPhotosAndExport_atFirstSight() {
+        let (app, migrate) = openMigrateCard(pendingICloudWipe: false)
+        migrate.tap()
+        XCTAssertTrue(consentAccept(app).waitForExistence(timeout: 10), "«Activar la nube» no abrió la hoja de activar.")
+
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "hoja-activar-la-nube"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+
+        XCTAssertFalse(app.buttons["storage_activation_details"].exists,
+                       "La hoja sigue plegando el cifrado y las fotos tras «Ver los detalles».")
+
+        let apple = app.buttons["storage_activation_apple"]
+        XCTAssertTrue(apple.waitForExistence(timeout: 3), "La hoja no ofrece «Continuar con Apple».")
+        let window = app.windows.firstMatch.frame
+        for (id, what) in [("storage_activation_row_sees", "Yala puede ver tus datos · sin cifrado de extremo a extremo"),
+                           ("storage_activation_row_photos", "Las fotos de tus recibos no viajan"),
+                           ("storage_activation_export", "Exportar una copia antes")] {
+            let element = app.descendants(matching: .any)[id].firstMatch
+            XCTAssertTrue(element.waitForExistence(timeout: 3), "La hoja no enseña «\(what)».")
+            let frame = element.frame
+            XCTAssertTrue(window.contains(frame) && frame.maxY <= apple.frame.minY, """
+                «\(what)» no se ve al abrir la hoja (marco \(frame), botón de Apple en \(apple.frame.minY)): hay que \
+                desplazar para leerlo.
+                """)
+        }
     }
 }

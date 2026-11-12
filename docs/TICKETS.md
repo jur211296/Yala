@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1256)
+## Index (1257)
 
 | id | status | path |
 |---|---|---|
@@ -260,6 +260,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | clock-ahead-retried-older-change-beats-the-newer-one | backlog | tickets/backlog/clock-ahead-retried-older-change-beats-the-newer-one.md |
 | clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits | discarded | tickets/discarded/clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits.md |
 | cloud-activation-master-toggle-mirror-never-reaches-the-apple-id-kv | backlog | tickets/backlog/cloud-activation-master-toggle-mirror-never-reaches-the-apple-id-kv.md |
+| cloud-activation-sheet-folds-encryption-and-photos | done | tickets/done/cloud-activation-sheet-folds-encryption-and-photos.md |
 | cloud-activation-stalls-without-uploading-until-relaunch | done | tickets/done/cloud-activation-stalls-without-uploading-until-relaunch.md |
 | cloud-activation-time-is-unmeasured-between-the-claim-and-the-cutover | qa | tickets/qa/cloud-activation-time-is-unmeasured-between-the-claim-and-the-cutover.md |
 | cloud-activation-uploads-thousands-of-items-for-a-few-records | qa | tickets/qa/cloud-activation-uploads-thousands-of-items-for-a-few-records.md |
