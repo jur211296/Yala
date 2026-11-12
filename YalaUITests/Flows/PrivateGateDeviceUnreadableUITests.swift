@@ -20,17 +20,10 @@ final class PrivateGateDeviceUnreadableUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    /// Hero → «Es mi primera vez». Sin seed el teléfono está vacío, así que no sale el alert de «Empezar desde cero» y la
-    /// rama privada llega a la puerta (con el bypass de una sola card, sin sub-chooser).
+    /// «Entrar con mi iCloud» de la vitrina (bienvenida 2.3). Sin seed el teléfono está vacío, así que no sale el alert de
+    /// «Empezar desde cero» y la rama privada llega a la puerta.
     private func openPrivateGate(_ app: XCUIApplication) {
-        let heroCTA = app.buttons["welcome_hero_cta"]
-        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
-        heroCTA.tap()
-        let newBranch = app.buttons["welcome_chooser_new"]
-        XCTAssertTrue(newBranch.waitForExistence(timeout: 10), "No apareció la card «Es mi primera vez».")
-        newBranch.tap()
-        let privateCard = app.buttons["welcome_new_private"]
-        if privateCard.waitForExistence(timeout: 3) { privateCard.tap() }
+        app.tapWelcomeICloud()
     }
 
     /// **EL PIN DEL TICKET.** La lectura falla: la puerta lo dice y ofrece reintentar, sin el aviso de borrar.
@@ -53,10 +46,9 @@ final class PrivateGateDeviceUnreadableUITests: XCTestCase {
         XCTAssertTrue(app.buttons["welcome_private_icloud_device_unreadable_cta"].waitForExistence(timeout: 15),
                       "«Reintentar» no volvió a medir.")
 
-        // «Volver» sale de la puerta al chooser.
+        // «Volver» sale de la puerta a la vitrina (bienvenida 2.3: el primer nivel).
         app.buttons["welcome_private_icloud_device_unreadable_secondary"].tap()
-        XCTAssertTrue(app.buttons["welcome_chooser_new"].waitForExistence(timeout: 10)
-                      || app.buttons["welcome_new_private"].waitForExistence(timeout: 2),
+        XCTAssertTrue(app.buttons["welcome_access_icloud"].waitForExistence(timeout: 10),
                       "«Volver» no sacó de la puerta.")
     }
 

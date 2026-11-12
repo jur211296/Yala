@@ -69,6 +69,12 @@ struct WelcomeCloudSignInView: View {
         /// Alta born-cloud desde la card «nube» de «Soy nuevo». El provider NO viene decidido: se
         /// elige aquí, con los dos botones de prominencia equivalente (guideline 4.8).
         case bornCloud
+        /// **Bienvenida 2.3 (Y23-02) · un único botón por proveedor que crea o entra según exista la cuenta.** Firma
+        /// primero (la hoja del sistema), verifica SIEMPRE (`GET /account/exists`) y enseña el caso: «¿Cargamos tus datos
+        /// y entramos?» con cuenta; «Vamos a crear tu cuenta», con el consentimiento de la nube dentro, sin ella. El
+        /// proveedor lo trae la vitrina. Los casos especiales (otro método en este iPhone, otro dispositivo preparando
+        /// la cuenta, datos de otra cuenta, sin conexión, cuenta no disponible) son las fases de siempre.
+        case unified(CloudSignInProvider)
     }
 
     let entry: Entry
@@ -203,11 +209,40 @@ struct WelcomeCloudSignInView: View {
     /// encontramos una cuenta». La recoge `runSignInFlow` antes de soltar esa sesión y la gasta el SIGUIENTE
     /// `ensureSignedIn`: si es el alta con Google, no vuelve a abrir la hoja. Vive lo que la pantalla.
     @State private var pendingGoogleCredential: GoogleSignInCredential?
+    /// Y23-02 · la persona dijo «Cargar mis datos y entrar»: la siguiente pasada conduce el adopt sin volver a preguntar.
+    @State private var loadConfirmed = false
+    /// Y23-02 · la pantalla a la que vuelve una cancelación de la hoja del sistema lanzada desde dentro del acceso único
+    /// («Entrar con …» del mismatch o de «Vamos a crear tu cuenta»). `nil` = la primera hoja, que vuelve a la vitrina.
+    @State private var cancelRestores: CloudWelcomeSignInPhase?
+    @State private var cancelRestoresEntry: Entry?
+    /// Y23-02 · el correo del acceso que se acaba de verificar, para la etiqueta de las hojas. Se lee ANTES de soltar la
+    /// sesión, que lo olvida.
+    @State private var verifiedEmail: String?
 
     var body: some View {
         screen
-        .welcomeBackButton(tint: .white, action: canGoBack ? onBack : nil)
+        .welcomeBackButton(tint: .white, action: backAction)
         .onAppear {
+            // Y23-02 · el acceso único arranca solo: el botón de la vitrina ya era el gesto. One-shot con el mismo latch
+            // que el consentimiento automático, porque `onAppear` corre más de una vez.
+            if case .unified(let requested) = entry, !didAutoOpenConsent {
+                didAutoOpenConsent = true
+                switch UITestHooks.unifiedAccessPhase {
+                case "create": phase = .createAccount; return
+                case "confirm": phase = .confirmLoad; return
+                default: break
+                }
+                launchFlow {
+                    // Una sesión que quedó viva de otro proveedor (app cerrada en «¿Cargamos…?») no se reusa para el
+                    // botón que la persona acaba de tocar: se suelta y se firma con el pedido.
+                    if CloudAuthService.shared.hasSession,
+                       CloudAuthService.shared.storedProvider() != requested.rawValue {
+                        await CloudAuthService.shared.signOut()
+                    }
+                    await runSignInFlow(origin: .reentry)
+                }
+                return
+            }
             // La sesión ya está firmada en otra puerta ⇒ el intro no tiene nada que pedir. Se abre el
             // consent directamente y su `onAccept` sigue por `runFlowAfterConsent`, igual que si el
             // usuario hubiera tapeado el botón.
@@ -294,6 +329,9 @@ struct WelcomeCloudSignInView: View {
         // ticket 8 separe los dos «solo grupos», le ofrecerá Yala completo a quien venía a estrenarlo.
         case .beaconRouted: return .welcomeFirstTimeCloud
         case .bornCloud: return .welcomeFirstTimeCloud
+        // La vitrina es la puerta de quien viene a usar Yala entero: una cuenta que resulte ser solo de grupos recibe la
+        // oferta de activarlo, como el alta desde «Es mi primera vez».
+        case .unified: return .welcomeFirstTimeCloud
         }
     }
 
@@ -306,6 +344,7 @@ struct WelcomeCloudSignInView: View {
         case .beaconRouted(let accountProvider):
             return WelcomeAccountChoiceLogic.signInProvider(forBeaconAccount: accountProvider)
         case .bornCloud:      return chosenProvider ?? .apple
+        case .unified(let p): return p
         }
     }
 
@@ -318,6 +357,8 @@ struct WelcomeCloudSignInView: View {
         // dashboard la cuenta con quien entra a una cuenta que ya tenía, no con las altas.
         case .beaconRouted: return .adopt
         case .bornCloud: return .bornCloud
+        // Su consentimiento no se enseña antes de firmar (va dentro de «Vamos a crear tu cuenta», que pasa al alta).
+        case .unified: return .adopt
         }
     }
 
@@ -332,6 +373,7 @@ struct WelcomeCloudSignInView: View {
         // La entrada que encamina el faro ES una re-entrada: su ruta también la decide el guard DESPUÉS del
         // sign-in, así que tampoco escribe al aceptar.
         case .beaconRouted: false
+        case .unified: false
         }
     }
 
@@ -361,8 +403,8 @@ struct WelcomeCloudSignInView: View {
     /// Qué corre al aceptar el consent. Es el ÚNICO punto donde el flujo se bifurca por entrada.
     private func runFlowAfterConsent() async {
         switch activeEntry {
-        case .reentry, .beaconRouted: await runSignInFlow(origin: .reentry)
-        case .bornCloud:              await runBornCloudFlow()
+        case .reentry, .beaconRouted, .unified: await runSignInFlow(origin: .reentry)
+        case .bornCloud:                        await runBornCloudFlow()
         }
     }
 
@@ -384,6 +426,9 @@ struct WelcomeCloudSignInView: View {
         // `.adoptExit`: el adopt ya salió —por su techo— y la máquina está en `failedRollback`: nada en vuelo, como `.error`.
         // `.lineageExit`: lo mismo; la flecha es la salida para elegir otra cuenta.
         case .intro, .notFound, .blockedForeignData, .error, .adoptExit, .lineageExit, .providerMismatch, .accountBlocked: true
+        // Y23-02: nada comprometido. En «Vamos a crear tu cuenta» la sesión ya se soltó; en «¿Cargamos tus datos y
+        // entramos?» sigue viva y la suelta `goBack()`.
+        case .createAccount, .confirmLoad: true
         // `.creating`: el claim está en vuelo y puede CREAR la cuenta server-side — salir a mitad
         // dejaría al usuario sin saber si se dio de alta. Mismo criterio que `.checking`.
         // `.bornCloudReady` es terminal como `.relaunch`: la cuenta está creada y el par escrito.
@@ -404,6 +449,15 @@ struct WelcomeCloudSignInView: View {
     private var screen: some View {
         if phase == .intro {
             introContent
+        } else if phase == .createAccount || phase == .confirmLoad {
+            // Y23-02 · hojas con decisión y consentimiento: sin el logo grande, para que el botón quede a la vista.
+            WelcomeFlowScreen { _ in
+                VStack(spacing: 0) {
+                    phaseContent
+                        .padding(.top, DS.Spacing.xxl)
+                    Spacer(minLength: DS.Spacing.xl)
+                }
+            }
         } else {
             WelcomeFlowScreen { logoTopSpacing in
                 VStack(spacing: 0) {
@@ -433,6 +487,10 @@ struct WelcomeCloudSignInView: View {
             // Inalcanzable: `screen` pinta el intro por su cuenta, con la forma de entrada. Se deja el
             // `case` explícito en vez de un `default` para que una fase nueva siga obligando a decidir.
             EmptyView()
+        case .createAccount:
+            createAccountContent
+        case .confirmLoad:
+            confirmLoadContent
         case .checking:
             progressContent(L10n.Welcome.Cloud.checking, hint: nil)
         case .creating:
@@ -566,6 +624,16 @@ struct WelcomeCloudSignInView: View {
         switch activeEntry {
         case .reentry, .beaconRouted: reentryIntro
         case .bornCloud:              bornCloudIntro
+        // Y23-02: el acceso único no tiene intro —el botón ya se tocó en la vitrina—; mientras abre la hoja del sistema
+        // se ve la verificación.
+        case .unified:
+            WelcomeFlowScreen { logoTopSpacing in
+                VStack(spacing: 0) {
+                    Spacer(minLength: logoTopSpacing)
+                    progressContent(L10n.Welcome.Cloud.checking, hint: nil)
+                    Spacer(minLength: DS.Spacing.xl)
+                }
+            }
         }
     }
 
@@ -795,6 +863,18 @@ struct WelcomeCloudSignInView: View {
     /// suelta aquí antes de firmar —si no, `ensureSignedIn` reusaría la de Google para «entrar con Apple»—; y
     /// si su consentimiento ya se escribió, fue para OTRA ruta, así que el del adopt se vuelve a pedir.
     private func signInWithAccountMethod(_ method: CloudSignInProvider, from exits: ProviderMismatchLogic.Exits) {
+        // Y23-02 · en el acceso único no hay consentimiento antes de firmar: el otro método sigue el mismo recorrido
+        // («¿Cargamos…?» lleva el suyo), y cancelar la hoja del sistema devuelve a esta pantalla, no a la vitrina.
+        if isUnifiedAccess {
+            entryOverride = .unified(method)
+            loadConfirmed = false
+            cancelRestores = .providerMismatch(exits)
+            launchFlow {
+                if CloudAuthService.shared.hasSession { await CloudAuthService.shared.signOut() }
+                await runSignInFlow(origin: .reentry)
+            }
+            return
+        }
         entryOverride = .reentry(method)
         let consentStillPending = consentPendingPersistence
         launchFlow {
@@ -981,8 +1061,8 @@ struct WelcomeCloudSignInView: View {
                 // `created`). Llamar a `pollLeader()` aquí conduciría una máquina que born-cloud no
                 // tiene y dejaría la pantalla clavada.
                 switch activeEntry {
-                case .reentry, .beaconRouted: launchFlow { await retryLeaderPoll() }
-                case .bornCloud:              launchFlow { await runBornCloudFlow() }
+                case .reentry, .beaconRouted, .unified: launchFlow { await retryLeaderPoll() }
+                case .bornCloud:                        launchFlow { await runBornCloudFlow() }
                 }
             }
             .padding(.horizontal, DS.Spacing.xl)
@@ -1100,6 +1180,254 @@ struct WelcomeCloudSignInView: View {
         }
     }
 
+    // MARK: - Y23-02 · acceso único
+
+    /// La pantalla la abrió el acceso único de la vitrina. Se lee de `entry` (no de `activeEntry`): cuando pasa al alta
+    /// o a entrar con el otro proveedor sigue siendo el mismo recorrido, y sus salidas siguen volviendo a la vitrina.
+    private var isUnifiedAccess: Bool {
+        if case .unified = entry { return true }
+        return false
+    }
+
+    /// La hoja del sistema se canceló en el acceso único: vuelve a la pantalla desde la que se lanzó, o a la vitrina si
+    /// era la primera. Con «Vamos a crear tu cuenta» se restaura también el proveedor (la hoja era la del otro).
+    private func cancelUnifiedSignIn() {
+        guard let restore = cancelRestores else { return onBack() }
+        // Con «Vamos a crear tu cuenta» vuelve también su proveedor. La sesión ya se soltó al cambiar de método, así que
+        // «Crear mi cuenta» abrirá la hoja una vez (`ensureSignedIn`).
+        if restore == .createAccount { entryOverride = cancelRestoresEntry }
+        phase = restore
+        cancelRestores = nil
+        cancelRestoresEntry = nil
+    }
+
+    /// El otro proveedor: el que el aviso de antes de crear propone.
+    private var otherProvider: CloudSignInProvider { provider == .apple ? .google : .apple }
+
+    /// La acción del «Volver» de la barra, o `nil` en las fases sin vuelta.
+    private var backAction: (() -> Void)? {
+        guard canGoBack else { return nil }
+        return { goBack() }
+    }
+
+    /// «Volver» de la barra. Desde «¿Cargamos tus datos y entramos?» suelta la sesión que abrió esta pantalla, como
+    /// «Usar otra cuenta»: la persona no entró a nada.
+    private func goBack() {
+        guard isUnifiedAccess else { return onBack() }
+        useAnotherAccount()
+    }
+
+    /// Salir del acceso único sin haber entrado a nada: se suelta la sesión, sea de esta pasada o una que quedó viva de
+    /// un intento anterior (review adversarial: con la sesión viva, el siguiente «Entrar con Google» reusaba la de
+    /// Apple sin enseñar la hoja). En el acceso único no hay sesión legítima que conservar al volver a la vitrina.
+    private func useAnotherAccount() {
+        launchFlow {
+            if CloudAuthService.shared.hasSession { await CloudAuthService.shared.signOut() }
+            onBack()
+        }
+    }
+
+    /// La etiqueta del acceso verificado: el correo si el proveedor lo dio, y si no, el proveedor.
+    private var verifiedAccessTag: some View {
+        HStack(spacing: DS.Spacing.xs) {
+            Image(systemName: provider == .apple ? "apple.logo" : "person.crop.circle")
+                .accessibilityHidden(true)
+            Text(verifiedEmail ?? (provider == .apple ? "Apple" : "Google"))
+                .lineLimit(1)
+                .truncationMode(.middle)
+        }
+        .font(DS.Typography.caption)
+        .foregroundStyle(.white.opacity(0.8))
+        .padding(.horizontal, DS.Spacing.md)
+        .padding(.vertical, DS.Spacing.xs)
+        .background(.white.opacity(0.1), in: Capsule())
+    }
+
+    /// **«Vamos a crear tu cuenta»** (SPEC Y23-02): el consentimiento de la nube va EN esta hoja —los tres puntos de
+    /// `CloudConsentView`, su pie y la política—, y «Crear mi cuenta» es la aceptación explícita: se registra igual que
+    /// la del consentimiento de siempre (pendiente hasta que el claim confirme la cuenta nueva). Antes del botón, el aviso
+    /// de que con el otro proveedor sería otra cuenta, con su salida («Entrar con …»): es lo más que permite el servidor
+    /// de hoy (decisión A de Jürgen, 12-nov).
+    private var createAccountContent: some View {
+        VStack(spacing: DS.Spacing.lg) {
+            verifiedAccessTag
+            messageContent(icon: "sparkles", title: L10n.UnifiedAccess.createTitle, body: L10n.UnifiedAccess.createBody)
+                .accessibilityIdentifier("welcome_cloud_create_account")
+            consentCard(id: "welcome_cloud_create_consent")
+
+            Text(L10n.UnifiedAccess.otherProviderNote(otherProvider == .apple ? "Apple" : "Google",
+                                                      provider == .apple ? "Apple" : "Google"))
+                .font(DS.Typography.caption)
+                .foregroundStyle(.white.opacity(0.75))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, DS.Spacing.xl)
+                .accessibilityIdentifier("welcome_cloud_create_other_provider_note")
+
+            VStack(spacing: DS.Spacing.sm) {
+                // La salida al alta va detrás de su puerta, como las otras tres (la fase solo existe con ella abierta,
+                // pero la regla es por posición: `WelcomeAccountChoiceLogicTests.everySignUpExit_isBehindTheSignUpGate`).
+                if WelcomeNewOptionsGate.offersCloudSignUp {
+                    YalaPrimaryButton(L10n.Welcome.Cloud.notFoundCta) {
+                        DS.Haptic.selection()
+                        let signUpProvider = provider
+                        acceptConsentInThisSheet()
+                        switchToSignUp(with: signUpProvider)
+                    }
+                    .accessibilityIdentifier("welcome_cloud_create_account_cta")
+                }
+                WelcomeFormButton(title: otherProvider == .apple ? L10n.Showcase.enterWithApple
+                                                                 : L10n.Showcase.enterWithGoogle,
+                                  weight: .outline) {
+                    DS.Haptic.selection()
+                    enterWithOtherProvider()
+                }
+                .accessibilityIdentifier("welcome_cloud_create_other_provider")
+                // La hoja conserva la sesión del acceso verificado: salir la suelta.
+                textExit(L10n.UnifiedAccess.useAnotherAccount, id: "welcome_cloud_create_use_another") {
+                    useAnotherAccount()
+                }
+            }
+            .padding(.horizontal, DS.Spacing.xl)
+        }
+    }
+
+    /// El consentimiento de la nube dentro de las hojas del acceso único: los tres puntos, el pie y la política de
+    /// `CloudConsentView`, con los mismos textos (el contrato es el de `CloudConsentText.version`). El botón principal de
+    /// cada hoja es su aceptación explícita.
+    private func consentCard(id: String) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            Text(L10n.UXLote6.consentLead)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.white.opacity(0.75))
+            ForEach(Self.consentPoints, id: \.title) { point in
+                HStack(alignment: .top, spacing: DS.Spacing.md) {
+                    Image(systemName: point.icon)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(Color.neonCyan)
+                        .frame(width: 24)
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                        Text(point.title).font(DS.Typography.subheadlineEmphasized).foregroundStyle(.white)
+                        Text(point.detail).font(DS.Typography.caption).foregroundStyle(.white.opacity(0.7))
+                    }
+                    .fixedSize(horizontal: false, vertical: true)
+                }
+                .accessibilityElement(children: .combine)
+            }
+            Text(L10n.Storage.Consent.footer)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.white.opacity(0.65))
+                .fixedSize(horizontal: false, vertical: true)
+            Button {
+                openURL(AppConstants.privacyURL)
+            } label: {
+                Text(L10n.Storage.Consent.privacyLink)
+                    .font(DS.Typography.caption.weight(.medium))
+                    .foregroundStyle(Color.neonCyan)
+                    .frame(minHeight: 44, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(DS.Spacing.lg)
+        .welcomeFlowCard(radius: DS.Radius.xl)
+        .padding(.horizontal, DS.Spacing.lg)
+        .accessibilityIdentifier(id)
+    }
+
+    /// **«¿Cargamos tus datos y entramos?»** (SPEC Y23-02): la cuenta existe; se confirma antes de traer nada.
+    private var confirmLoadContent: some View {
+        VStack(spacing: DS.Spacing.lg) {
+            verifiedAccessTag
+            messageContent(icon: "person.crop.circle.badge.checkmark",
+                           title: L10n.UnifiedAccess.existsTitle, body: L10n.UnifiedAccess.existsBody)
+                .accessibilityIdentifier("welcome_cloud_confirm_load")
+            // Traer los datos de la cuenta a este teléfono también es un consentimiento (review adversarial): el de
+            // siempre, el «único paso que no se recorta» del alta y la re-entrada.
+            consentCard(id: "welcome_cloud_confirm_load_consent")
+            VStack(spacing: DS.Spacing.sm) {
+                YalaPrimaryButton(L10n.UnifiedAccess.loadAndEnter) {
+                    DS.Haptic.selection()
+                    confirmLoadAndEnter()
+                }
+                .accessibilityIdentifier("welcome_cloud_confirm_load_cta")
+                textExit(L10n.UnifiedAccess.useAnotherAccount, id: "welcome_cloud_confirm_load_use_another") {
+                    useAnotherAccount()
+                }
+            }
+            .padding(.horizontal, DS.Spacing.xl)
+        }
+    }
+
+    private func textExit(_ title: String, id: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(DS.Typography.subheadlineEmphasized)
+                .foregroundStyle(.white.opacity(0.85))
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(id)
+    }
+
+    /// «Crear mi cuenta» acepta el consentimiento de esta hoja, con su hora, y el alta con el mismo proveedor.
+    /// El registro GDPR queda PENDIENTE y lo escribe el paso 5 de `BornCloudSignUpService` cuando el claim confirma la
+    /// cuenta nueva, como el del consentimiento de siempre (`CloudConsentRegistrationLogic.bornCloudWritesConsent`).
+    private func acceptConsentInThisSheet() {
+        consentAcceptedThisPass = true
+        consentAcceptedAt = .now
+        consentPendingPersistence = true
+    }
+
+    /// «Entrar con …» desde «Vamos a crear tu cuenta»: la misma verificación con el otro proveedor.
+    private func enterWithOtherProvider() {
+        let other = otherProvider
+        let previousOverride = entryOverride
+        entryOverride = .unified(other)
+        loadConfirmed = false
+        verifiedEmail = nil
+        // Cancelar la hoja del otro proveedor vuelve a «Vamos a crear tu cuenta» con el proveedor de antes.
+        cancelRestores = .createAccount
+        cancelRestoresEntry = previousOverride
+        launchFlow {
+            if CloudAuthService.shared.hasSession { await CloudAuthService.shared.signOut() }
+            await runSignInFlow(origin: .reentry)
+        }
+    }
+
+    /// «Cargar mis datos y entrar»: vuelve a pasar por la verificación con la sesión viva (no se pide otra vez la hoja
+    /// del sistema) y ahora sí conduce el guard cross-cuenta y el adopt.
+    private func confirmLoadAndEnter() {
+        // La hoja lleva el consentimiento de la nube (review adversarial): «Cargar mis datos y entrar» es su aceptación,
+        // con su hora, y la escribe el guard cross-cuenta antes del adopt (`persistConsentIfDue(at: .beforeAdopt)`).
+        // Sin esto el paso 5-bis del adopt subía `now()` como fecha de un consentimiento que nadie vio.
+        consentAcceptedThisPass = true
+        consentAcceptedAt = .now
+        consentPendingPersistence = true
+        MetricsService.cloudConsentAccepted(path: CloudMigrationController.ConsentPath.adopt.rawValue)
+        loadConfirmed = true
+        launchFlow { await runSignInFlow(origin: .reentry) }
+    }
+
+    private struct ConsentPoint {
+        let icon: String
+        let title: String
+        let detail: String
+    }
+
+    /// Los tres puntos de `CloudConsentView`, con los mismos textos: el contrato es el de `CloudConsentText.version`.
+    private static var consentPoints: [ConsentPoint] {
+        [
+            ConsentPoint(icon: "server.rack", title: L10n.UXLote6.consentServersTitle,
+                         detail: L10n.Storage.Consent.pointServers),
+            ConsentPoint(icon: "photo.on.rectangle", title: L10n.UXLote6.consentPhotosTitle,
+                         detail: L10n.Storage.Consent.pointPhotos),
+            ConsentPoint(icon: "key.fill", title: L10n.UXLote6.consentAccessTitle,
+                         detail: L10n.Storage.Consent.pointAccess),
+        ]
+    }
+
     private func messageContent(icon: String, title: String, body bodyText: String) -> some View {
         VStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
@@ -1137,7 +1465,9 @@ struct WelcomeCloudSignInView: View {
             sessionOpenedHere = true
             return true
         } catch CloudAuthError.cancelled {
-            // Cancel EXPLÍCITO (Google) → volver al intro en silencio (el user re-tapea).
+            // Cancel EXPLÍCITO (Google) → volver al intro en silencio (el user re-tapea). Y23-02: el acceso único no
+            // tiene intro, así que vuelve a la vitrina, que es donde se tocó.
+            if isUnifiedAccess { cancelUnifiedSignIn(); return false }
             phase = .intro
             return false
         } catch {
@@ -1147,7 +1477,8 @@ struct WelcomeCloudSignInView: View {
             switch provider {
             case .apple:
                 // BYTE-IDÉNTICO con hoy: ASAuthorization no distingue cancel de fallo →
-                // volver al intro sin alarma.
+                // volver al intro sin alarma. Y23-02: el acceso único vuelve a la vitrina.
+                if isUnifiedAccess { cancelUnifiedSignIn(); return false }
                 phase = .intro
             case .google:
                 // Google SÍ distingue (el cancel ya salió arriba): esto es fallo REAL
@@ -1253,16 +1584,35 @@ struct WelcomeCloudSignInView: View {
             // vb1f: las dos salidas de aquí llevan al alta con el método que se acaba de usar (`switchToSignUp`). La
             // credencial de Google se recoge ANTES de soltar la sesión —`signOut()` la olvida— para que el alta no
             // vuelva a pedirla. La SESIÓN no viaja, solo la credencial: lo que sigue de abajo no cambia.
-            pendingGoogleCredential = CloudAuthService.shared.takeGoogleCredentialForReuse()
-            // Sin claim no se creó NADA server-side; soltar la sesión SIEMPRE (no dejar el
-            // sign-in colgado) — también en mismatch (jamás dejar un sub huérfano vivo).
-            await CloudAuthService.shared.signOut()
+            verifiedEmail = CloudAuthService.shared.capturedEmail()
+            let nextPhase: CloudWelcomeSignInPhase
+            switch verdict {
+            case .mismatch(let exits): nextPhase = .providerMismatch(exits)
+            case .proceed:
+                nextPhase = UnifiedAccessLogic.phaseWithoutAccount(isUnifiedAccess: isUnifiedAccess,
+                                                                   offersSignUp: WelcomeNewOptionsGate.offersCloudSignUp)
+            }
+            // **Y23-02 · «Vamos a crear tu cuenta» conserva la sesión** (review adversarial): soltarla obligaba a Apple a
+            // enseñar su hoja otra vez al tocar «Crear mi cuenta», y la segunda autorización ya no trae nombre ni correo
+            // (Apple los da solo la primera vez, y `signOut()` borra los capturados). Sus salidas la sueltan
+            // (`goBack`, «Usar otra cuenta», «Entrar con …»), y el alta la reusa (`ensureSignedIn`).
+            if nextPhase != .createAccount {
+                // vb1f: las dos salidas de aquí llevan al alta con el método que se acaba de usar (`switchToSignUp`). La
+                // credencial de Google se recoge ANTES de soltar la sesión —`signOut()` la olvida— para que el alta no
+                // vuelva a pedirla. La SESIÓN no viaja, solo la credencial: lo que sigue de abajo no cambia.
+                pendingGoogleCredential = CloudAuthService.shared.takeGoogleCredentialForReuse()
+                // Sin claim no se creó NADA server-side; soltar la sesión SIEMPRE (no dejar el
+                // sign-in colgado) — también en mismatch (jamás dejar un sub huérfano vivo).
+                await CloudAuthService.shared.signOut()
+            }
             switch verdict {
             case .mismatch(let exits):
                 MetricsService.cloudSignInProviderMismatch()
                 phase = .providerMismatch(exits)
             case .proceed:
-                phase = .notFound
+                // Y23-02 · el acceso único no dice «No encontramos una cuenta»: ofrece crearla con el consentimiento en
+                // la misma hoja. Sin la puerta del alta, el «No encontramos» de siempre, con su «Volver».
+                phase = nextPhase
             }
         case .unavailable(let retryable):
             phase = .error(retryable: retryable)
@@ -1305,6 +1655,14 @@ struct WelcomeCloudSignInView: View {
                  .blockedAccountIsComplete, .blockedAnotherGroupsAccountAssociated,
                  .cutoverPrivateToCloud, .promoteAssociatedAccountThenCutover:
                 break
+            }
+            // Y23-02 · «¿Cargamos tus datos y entramos?» antes de conducir nada. Confirmar vuelve a pasar por aquí
+            // (`confirmLoadAndEnter`) con la sesión viva y la respuesta del servidor fresca.
+            if UnifiedAccessLogic.asksBeforeLoading(isUnifiedAccess: isUnifiedAccess, loadConfirmed: loadConfirmed,
+                                                    origin: origin) {
+                verifiedEmail = CloudAuthService.shared.capturedEmail()
+                phase = .confirmLoad
+                return
             }
             let decision = CrossAccountEntryGuardLogic.decide(
                 hasLocalData: hasLocalDataNow(),

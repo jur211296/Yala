@@ -18,15 +18,9 @@ final class PrivateGateProbeStalledUITests: XCTestCase {
         continueAfterFailure = false
     }
 
+    /// Bienvenida 2.3: la puerta privada se abre con «Entrar con mi iCloud» de la vitrina.
     private func openPrivateGate(_ app: XCUIApplication) {
-        let heroCTA = app.buttons["welcome_hero_cta"]
-        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
-        heroCTA.tap()
-        let newBranch = app.buttons["welcome_chooser_new"]
-        XCTAssertTrue(newBranch.waitForExistence(timeout: 10), "No apareció la card «Es mi primera vez».")
-        newBranch.tap()
-        let privateCard = app.buttons["welcome_new_private"]
-        if privateCard.waitForExistence(timeout: 3) { privateCard.tap() }
+        app.tapWelcomeICloud()
     }
 
     /// El plazo sin avance vencido: su pantalla propia, con «Reintentar» y la salida de siempre.

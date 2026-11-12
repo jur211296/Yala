@@ -2043,43 +2043,7 @@ struct OnboardingView: View {
     }
 
     private func createDefaultNotifications() {
-        let defaults = UserDefaults.standard
-        if defaults.bool(forKey: "notificationsSeeded") { return }
-        defaults.set(true, forKey: "notificationsSeeded")
-
-        let descriptor = FetchDescriptor<NotificationItem>()
-        let existing: [NotificationItem]
-        do {
-            existing = try modelContext.fetch(descriptor)
-        } catch {
-            #if DEBUG
-            print("OnboardingView: Error fetching existing notifications: \(error)")
-            #endif
-            existing = []
-        }
-        let existingTypes = Set(existing.map { $0.typeRaw })
-
-        let allDefaults = NotificationItem.createDefaults()
-        var inserted = 0
-
-        for notification in allDefaults {
-            guard !existingTypes.contains(notification.typeRaw) else { continue }
-            // Recordatorios/reportes nacen apagados (opt-in), pero el item de PAGOS conserva
-            // su default ACTIVO (toggle honesto D2 2026-07-22): forzarlo a false aquí dejaba
-            // al usuario nuevo sin ningún recordatorio de pagos hasta tocar Ajustes — y el
-            // flip one-shot no lo cubre (su sentinel protege el OFF post-flip).
-            if notification.notificationType != .scheduledPayments {
-                notification.isActive = false
-            }
-            modelContext.insert(notification)
-            inserted += 1
-        }
-
-        #if DEBUG
-        if inserted > 0 {
-            print("OnboardingView: Created \(inserted) notification types (all inactive)")
-        }
-        #endif
+        OnboardingDefaultNotifications.seedIfNeeded(in: modelContext)
     }
 }
 

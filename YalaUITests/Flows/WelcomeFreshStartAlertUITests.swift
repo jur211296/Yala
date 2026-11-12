@@ -23,6 +23,10 @@
 //  Es un camino de PRODUCCIÓN: lo pisa cualquiera que reinstale o vuelva teniendo datos locales. No
 //  depende de ningún flag — ni Grupos, ni nube, ni sesión secundaria.
 //
+//  **Bienvenida 2.3 (Y23-01):** el primer nivel ya no es el Chooser de tres cards sino la vitrina, y «Es mi primera vez →
+//  privado» es «Entrar con mi iCloud» (`welcome_access_icloud`). Las aserciones de «las tres vías del Chooser» pasan a
+//  ser «la vitrina viva»: su acceso de iCloud y la vitrina misma. Bajo `-uitest` la vitrina no pinta Google ni Apple.
+//
 
 import XCTest
 
@@ -32,11 +36,11 @@ final class WelcomeFreshStartAlertUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    /// Cancelar el alert devuelve al Chooser con sus tres vías intactas.
+    /// Cancelar el alert devuelve a la vitrina, entera.
     ///
-    /// La aserción NO es «no está en blanco»: es que las TRES cards están y son tapeables. Un test
-    /// que sólo comprobara la ausencia de la pantalla negra pasaría con un Chooser a medio montar,
-    /// que es un modo de fallo vecino y igual de inútil para la persona.
+    /// La aserción NO es «no está en blanco»: es que el acceso y la vitrina están. Un test que sólo comprobara la
+    /// ausencia de la pantalla negra pasaría con la bienvenida a medio montar, que es un modo de fallo vecino y igual de
+    /// inútil para la persona.
     func testCancelFreshStartWipe_returnsToChooser_notToABlankScreen() throws {
         let app = XCUIApplication()
         // El seed importa: el alert SÓLO aparece si hay datos previos (`hasExistingData`). Sin seed
@@ -45,14 +49,8 @@ final class WelcomeFreshStartAlertUITests: XCTestCase {
         app.launchForUITest(reset: true, skipOnboarding: false, seed: "grupos")
 
         // `uitest_ready` vive en el root de ContentView, que queda CUBIERTO por el cover del Welcome:
-        // se espera el Hero directamente, como hacen sus vecinos.
-        let heroCTA = app.buttons["welcome_hero_cta"]
-        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
-        heroCTA.tap()
-
-        let newBranch = app.buttons["welcome_chooser_new"]
-        XCTAssertTrue(newBranch.waitForExistence(timeout: 10), "No apareció la card «Es mi primera vez».")
-        newBranch.tap()
+        // se espera la vitrina directamente, como hacen sus vecinos.
+        app.tapWelcomeICloud()
 
         // Control positivo del montaje: si el alert no llegó a salir, cancelar no prueba nada.
         let cancelButton = app.alerts.buttons.element(boundBy: 1)
@@ -60,16 +58,14 @@ final class WelcomeFreshStartAlertUITests: XCTestCase {
                       "No apareció el alert de «Empezar desde cero» — ¿el seed dejó de producir datos previos?")
         cancelButton.tap()
 
-        // El corazón del pin: las tres vías del Chooser, vivas.
-        XCTAssertTrue(app.buttons["welcome_chooser_new"].waitForExistence(timeout: 10), """
-            Cancelar dejó al usuario sin Chooser. Éste es el bug: el alert se presenta desde el anchor \
+        // El corazón del pin: la vitrina, viva.
+        XCTAssertTrue(app.buttons["welcome_access_icloud"].waitForExistence(timeout: 10), """
+            Cancelar dejó al usuario sin bienvenida. Éste es el bug: el alert se presenta desde el anchor \
             de ContentView y desmonta el cover del Welcome, así que al cerrarlo no queda nada debajo \
             y la app se queda en negro, sin más salida que matarla.
             """)
-        XCTAssertTrue(app.buttons["welcome_chooser_restore"].exists,
-                      "El Chooser volvió a medias: falta «Ya tengo una cuenta».")
-        XCTAssertTrue(app.buttons["welcome_chooser_invite"].exists,
-                      "El Chooser volvió a medias: falta «Vengo por un grupo».")
+        XCTAssertTrue(app.descendants(matching: .any)["welcome_showcase_stage"].exists,
+                      "La bienvenida volvió a medias: falta la vitrina.")
     }
 
     /// Y que la vuelta sea utilizable, no sólo visible: se re-entra por otra vía.
@@ -81,25 +77,19 @@ final class WelcomeFreshStartAlertUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchForUITest(reset: true, skipOnboarding: false, seed: "grupos")
 
-        let heroCTA = app.buttons["welcome_hero_cta"]
-        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
-        heroCTA.tap()
-
-        let newBranch = app.buttons["welcome_chooser_new"]
-        XCTAssertTrue(newBranch.waitForExistence(timeout: 10), "No apareció la card «Es mi primera vez».")
-        newBranch.tap()
+        app.tapWelcomeICloud()
 
         let cancelButton = app.alerts.buttons.element(boundBy: 1)
         XCTAssertTrue(cancelButton.waitForExistence(timeout: 10), "No apareció el alert de «Empezar desde cero».")
         cancelButton.tap()
 
-        // Re-tocar la MISMA card tiene que volver a abrir el alert: la vuelta al Chooser no deja el
-        // estado a medias (el flag del alert bajado, la card viva y su acción cableada).
-        let newBranchAgain = app.buttons["welcome_chooser_new"]
-        XCTAssertTrue(newBranchAgain.waitForExistence(timeout: 10), "El Chooser no volvió.")
+        // Re-tocar el MISMO acceso tiene que volver a abrir el alert: la vuelta a la vitrina no deja el
+        // estado a medias (el flag del alert bajado, el acceso vivo y su acción cableada).
+        let newBranchAgain = app.buttons["welcome_access_icloud"]
+        XCTAssertTrue(newBranchAgain.waitForExistence(timeout: 10), "La vitrina no volvió.")
         newBranchAgain.tap()
         XCTAssertTrue(app.alerts.buttons.element(boundBy: 1).waitForExistence(timeout: 10), """
-            Tras cancelar, re-tocar «Es mi primera vez» ya no abre el alert. El Chooser volvió pero \
+            Tras cancelar, re-tocar «Entrar con mi iCloud» ya no abre el alert. La vitrina volvió pero \
             inerte: el flag del alert se quedó arriba y su `isPresented` no puede volver a subir.
             """)
     }
@@ -116,9 +106,9 @@ final class WelcomeFreshStartAlertUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchForUITest(reset: true, skipOnboarding: false, seed: "minimal", welcomeAfterAdoptExit: true)
 
-        // El seam abre el Welcome directamente en la elección, como el `onBack` de un adopt.
-        let newBranch = app.buttons["welcome_chooser_new"]
-        XCTAssertTrue(newBranch.waitForExistence(timeout: 60), "El Welcome de vuelta de un adopt no apareció en la elección.")
+        // El seam abre el Welcome directamente en el primer nivel (la vitrina), como el `onBack` de un adopt.
+        let newBranch = app.buttons["welcome_access_icloud"]
+        XCTAssertTrue(newBranch.waitForExistence(timeout: 60), "El Welcome de vuelta de un adopt no apareció en la vitrina.")
         newBranch.tap()
 
         let cancelButton = app.alerts.buttons.element(boundBy: 1)
@@ -126,11 +116,12 @@ final class WelcomeFreshStartAlertUITests: XCTestCase {
                       "No apareció «¿Borrar todo y continuar?» — ¿el seed dejó de producir datos personales?")
         cancelButton.tap()
 
-        XCTAssertTrue(app.buttons["welcome_chooser_new"].waitForExistence(timeout: 10), """
-            Tras salir de un adopt, «Cancelar» no volvió a la elección privado/nube: la persona aterrizó dentro de la app. \
+        XCTAssertTrue(app.buttons["welcome_access_icloud"].waitForExistence(timeout: 10), """
+            Tras salir de un adopt, «Cancelar» no volvió a la bienvenida: la persona aterrizó dentro de la app. \
             Con el onboarding ya completo, la guarda vieja (`if !hasCompletedOnboarding`) no reabría el Welcome.
             """)
-        XCTAssertTrue(app.buttons["welcome_chooser_restore"].exists, "La elección volvió a medias: falta «Ya tengo una cuenta».")
+        XCTAssertTrue(app.descendants(matching: .any)["welcome_showcase_stage"].exists,
+                      "La bienvenida volvió a medias: falta la vitrina.")
     }
 
     /// El «OK» del aviso de que el borrado falló, en el mismo estado. `-uitest-fail-wipe` hace lanzar el borrado antes
@@ -140,8 +131,8 @@ final class WelcomeFreshStartAlertUITests: XCTestCase {
         app.launchForUITest(reset: true, skipOnboarding: false, seed: "minimal", welcomeAfterAdoptExit: true,
                             extraArguments: ["-uitest-fail-wipe"])
 
-        let newBranch = app.buttons["welcome_chooser_new"]
-        XCTAssertTrue(newBranch.waitForExistence(timeout: 60), "El Welcome de vuelta de un adopt no apareció en la elección.")
+        let newBranch = app.buttons["welcome_access_icloud"]
+        XCTAssertTrue(newBranch.waitForExistence(timeout: 60), "El Welcome de vuelta de un adopt no apareció en la vitrina.")
         newBranch.tap()
 
         let confirm = app.alerts.buttons.element(boundBy: 0)
@@ -154,8 +145,8 @@ final class WelcomeFreshStartAlertUITests: XCTestCase {
         XCTAssertEqual(app.alerts.buttons.count, 1, "El aviso de fallo tiene un único botón; esto es otro alert.")
         ok.tap()
 
-        XCTAssertTrue(app.buttons["welcome_chooser_new"].waitForExistence(timeout: 10), """
-            Tras salir de un adopt, el «OK» del aviso de fallo no volvió a la elección: la persona aterrizó en la app \
+        XCTAssertTrue(app.buttons["welcome_access_icloud"].waitForExistence(timeout: 10), """
+            Tras salir de un adopt, el «OK» del aviso de fallo no volvió a la bienvenida: la persona aterrizó en la app \
             sobre unos datos que el borrado no llegó a tocar.
             """)
     }
@@ -171,8 +162,8 @@ final class WelcomeFreshStartAlertUITests: XCTestCase {
         app.launchForUITest(reset: true, skipOnboarding: false, seed: "minimal", groupsOutboxPending: true,
                             welcomeAfterAdoptExit: true)
 
-        let newBranch = app.buttons["welcome_chooser_new"]
-        XCTAssertTrue(newBranch.waitForExistence(timeout: 60), "El Welcome de vuelta de un adopt no apareció en la elección.")
+        let newBranch = app.buttons["welcome_access_icloud"]
+        XCTAssertTrue(newBranch.waitForExistence(timeout: 60), "El Welcome de vuelta de un adopt no apareció en la vitrina.")
         newBranch.tap()
 
         let confirm = app.alerts.buttons.element(boundBy: 0)
@@ -195,7 +186,8 @@ final class WelcomeFreshStartAlertUITests: XCTestCase {
         XCTAssertEqual(withCount.count, 1, "La confirmación no dice cuántos cambios se pierden (1).")
         confirmLose.tap()
 
-        XCTAssertTrue(app.textFields["onboarding_name_field"].waitForExistence(timeout: 30),
-                      "Perder los cambios de grupos no siguió al onboarding: el borrado no terminó.")
+        // Bienvenida 2.3 (Y23-04): el alta es la conversación; su primera pregunta es el nombre.
+        XCTAssertTrue(app.textFields["welcome_chat_name_field"].waitForExistence(timeout: 30),
+                      "Perder los cambios de grupos no siguió al alta: el borrado no terminó.")
     }
 }

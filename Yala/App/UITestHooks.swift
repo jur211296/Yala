@@ -413,6 +413,31 @@ final class UITestHooks {
         #endif
     }
 
+    /// `-uitest-private-gate-icloud-has-data`: la revisión de iCloud de la puerta privada contesta que hay datos (214
+    /// registros, 3 cuentas, 2 presupuestos) sin tocar CloudKit. Bienvenida 2.3 (Y23-03): con la vitrina, «Traer mis datos»
+    /// solo se alcanza por «Entrar con mi iCloud» con datos, y sin esto no hay XCUITest de ese camino. **Finge la entrada,
+    /// no la decisión**: lo que se pinta lo decide `WelcomePrivateICloudGateLogic.decide`. Solo DEBUG.
+    nonisolated static var privateGateICloudHasData: Bool {
+        #if DEBUG
+        return isActive && ProcessInfo.processInfo.arguments.contains("-uitest-private-gate-icloud-has-data")
+        #else
+        return false
+        #endif
+    }
+
+    /// `-uitest-unified-access-phase <create|confirm>`: el acceso único de la vitrina (bienvenida 2.3, Y23-02) aterriza en
+    /// «Vamos a crear tu cuenta» o en «¿Cargamos tus datos y entramos?» sin firmar ni preguntar al servidor, que el
+    /// simulador no puede. **Solo pinta la pantalla**: sus botones no tienen sesión detrás (el XCUITest prueba el
+    /// contenido; el recorrido con sesión es QA de iPhone). Solo DEBUG.
+    nonisolated static var unifiedAccessPhase: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-unified-access-phase", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
     /// `-uitest-invite-opening`: al presentar la bienvenida se enciende «Abriendo tu invitación…» como si acabara de llegar
     /// un enlace (card z81w), sin enlace ni red. Lo apagan el techo o la cadena del invitado, como en producción. Solo DEBUG.
     nonisolated static var inviteOpening: Bool {

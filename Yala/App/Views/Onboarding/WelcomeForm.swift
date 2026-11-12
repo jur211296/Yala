@@ -50,12 +50,9 @@ struct WelcomeFormScreen<Content: View>: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(
-                colors: DS.Gradients.heroIndigoBlack,
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+            // Bienvenida 2.3 (Y23-03): el fondo F2 de la vitrina, para que las pantallas de entrada encajen con ella.
+            WelcomeF2Background()
+                .ignoresSafeArea()
 
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxl) {

@@ -63,6 +63,9 @@ struct GroupsSignInView: View {
     /// presenta la hoja (con la zona pendiente vacía o `nil` no la hay: crear un grupo, la pestaña sin sesión). Sin
     /// valor por defecto, para que cada llamada se pronuncie.
     let isForInvitation: Bool
+    /// Bienvenida 2.3 (Y23-06) · el proveedor que la persona ya tocó en la puerta de Grupos de la vitrina: la hoja lo
+    /// lanza sola al aparecer, una vez. Si cancela la hoja del sistema, quedan los dos botones de siempre.
+    var preselectedProvider: CloudSignInProvider? = nil
     var onAuthenticated: (CloudIdentityRoutingLogic.Destination, SessionOrigin) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -72,6 +75,9 @@ struct GroupsSignInView: View {
     @Environment(AppPreferences.self) private var appPreferences
 
     @State private var isSigningIn = false
+    /// One-shot del proveedor elegido en la vitrina: `onAppear` corre más de una vez y cancelar la hoja del sistema no
+    /// tiene que relanzarla.
+    @State private var didStartPreselected = false
     @State private var signInFailed = false
     /// Task del SIWA en vuelo — se cancela al desmontar (nace de un callback, no de `.task`).
     @State private var signInTask: Task<Void, Never>?
@@ -193,6 +199,9 @@ struct GroupsSignInView: View {
                     isSigningIn = false
                     onAuthenticated(destino, .alreadyOpen)
                 }
+            } else if let preselectedProvider, !didStartPreselected {
+                didStartPreselected = true
+                startSignIn(provider: preselectedProvider)
             }
         }
         .onDisappear {

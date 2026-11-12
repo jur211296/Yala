@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1263)
+## Index (1269)
 
 | id | status | path |
 |---|---|---|
@@ -65,6 +65,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | account-deletion-leaves-attest-key-and-usage-counter-in-cloudflare | done | tickets/done/account-deletion-leaves-attest-key-and-usage-counter-in-cloudflare.md |
 | account-deletion-private-close-has-no-durable-intent | done | tickets/done/account-deletion-private-close-has-no-durable-intent.md |
 | account-edit-multi-currency-lines | done | tickets/done/account-edit-multi-currency-lines.md |
+| account-exists-should-return-the-creation-provider | backlog | tickets/backlog/account-exists-should-return-the-creation-provider.md |
 | account-form-as-medium-detent-sheet | done | tickets/done/account-form-as-medium-detent-sheet.md |
 | account-form-redesign | backlog | tickets/backlog/account-form-redesign.md |
 | account-goldens-freeze-read-test-times-out | done | tickets/done/account-goldens-freeze-read-test-times-out.md |
@@ -833,7 +834,12 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | old-receivers-of-a-keeping-wipe-delete-the-origin-reminders | qa | tickets/qa/old-receivers-of-a-keeping-wipe-delete-the-origin-reminders.md |
 | onboarding-2-3-arrival-and-getting-started-deck | done | tickets/done/onboarding-2-3-arrival-and-getting-started-deck.md |
 | onboarding-2-3-default-tabs-and-where-things-live | done | tickets/done/onboarding-2-3-default-tabs-and-where-things-live.md |
+| onboarding-2-3-groups-entry | qa | tickets/qa/onboarding-2-3-groups-entry.md |
 | onboarding-2-3-permissions-inside-the-tutorial | done | tickets/done/onboarding-2-3-permissions-inside-the-tutorial.md |
+| onboarding-2-3-private-icloud-entry | done | tickets/done/onboarding-2-3-private-icloud-entry.md |
+| onboarding-2-3-showcase-and-access-buttons | done | tickets/done/onboarding-2-3-showcase-and-access-buttons.md |
+| onboarding-2-3-single-provider-access | qa | tickets/qa/onboarding-2-3-single-provider-access.md |
+| onboarding-2-3-three-question-conversation | done | tickets/done/onboarding-2-3-three-question-conversation.md |
 | onboarding-login-should-match-the-sep15-reference | done | tickets/done/onboarding-login-should-match-the-sep15-reference.md |
 | onboarding-purpose-drops-groups-card | done | tickets/done/onboarding-purpose-drops-groups-card.md |
 | onboarding-sigue-los-estilos-del-resto-de-la-app | qa | tickets/qa/onboarding-sigue-los-estilos-del-resto-de-la-app.md |

@@ -55,6 +55,9 @@ struct GroupsBackendInviteModifier: ViewModifier {
     /// a la que unirse, hay un alta que terminar. Este flag es el discriminador, y va explícito en vez de
     /// derivarse de `pendingGroupsJoinZone == nil`: ese `nil` también es el estado de «nadie lo puso».
     @Binding var groupsOrganizerFlowActive: Bool
+    /// Bienvenida 2.3 (Y23-06) · el proveedor tocado en la puerta de Grupos de la vitrina. Solo en la rama del organizador:
+    /// la hoja de inicio de sesión lo lanza sola en vez de volver a preguntar con qué entrar.
+    var organizerProvider: CloudSignInProvider? = nil
     /// G3: el usuario canceló un sheet de la rama organizador (toolbar/swipe). El invitado puede quedarse
     /// donde está —su intent sobrevive en `PendingJoinStore` y el reconciler re-evalúa— pero el
     /// organizador acaba de SALIR del Welcome y debajo no hay shell que usar: sin esto, cancelar deja una
@@ -84,6 +87,13 @@ struct GroupsBackendInviteModifier: ViewModifier {
     /// diseño del educativo— haría que `GroupsGateLogic` devolviera `.presentEducational` otra vez, y otra:
     /// bucle sin salida en el primer escalón de la cadena.
     @State private var educationalCompleted = false
+
+    /// El proveedor de la vitrina solo para la rama del organizador y sin una invitación detrás (review adversarial:
+    /// un enlace que llegara con la rama encendida heredaba el proveedor que se tocó para crear).
+    private var preselectedOrganizerProvider: CloudSignInProvider? {
+        guard groupsOrganizerFlowActive, (pendingGroupsJoinZone ?? "").isEmpty else { return nil }
+        return organizerProvider
+    }
 
     func body(content: Content) -> some View {
         content
@@ -139,7 +149,8 @@ struct GroupsBackendInviteModifier: ViewModifier {
                     routeIdentityDestination(destino)
                 }
             }) {
-                GroupsSignInView(isForInvitation: !(pendingGroupsJoinZone ?? "").isEmpty) { destino, origen in
+                GroupsSignInView(isForInvitation: !(pendingGroupsJoinZone ?? "").isEmpty,
+                                 preselectedProvider: preselectedOrganizerProvider) { destino, origen in
                     signInAuthenticated = true
                     signInDestination = destino
                     showGroupsSignIn = false

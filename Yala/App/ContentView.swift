@@ -59,6 +59,9 @@ struct ContentView: View {
     /// el Welcome se vuelve a montar al regresar de «Pega tu enlace» o del inicio de sesión de «Crear mi primer grupo»
     /// (card mgaj). Lo apunta el contenedor cada vez que lo abre; aquí solo se guarda entre montajes.
     @State private var welcomeGroupsChooserOrigin: WelcomeFlowStep = .chooser
+    /// Y23-06 · la puerta de la vitrina y el proveedor de la de Grupos, para el re-montaje del cover (como el origen).
+    @State private var welcomeGroupsProvider: CloudSignInProvider?
+    @State private var welcomeShowcaseDoor: WelcomeShowcaseLogic.Door = .finances
     /// Positive confirmation toast for reactive events (remote onboarding / restore).
     /// Replaces the noisy "Syncing…" banner. Nil when hidden.
     @State private var positiveToast: String?
@@ -164,6 +167,12 @@ struct ContentView: View {
     /// en su lugar** aunque el alta lo escriba: ese `@AppStorage` se refresca por notificación y depender
     /// de su timing dentro del `onDismiss` es una carrera; el flag es la señal directa.
     @State private var organizerSetupCompleted: Bool = false
+    /// Bienvenida 2.3 (Y23-06) · la rama del organizador vino por «Solo crear mi cuenta»: el formulario abre en la
+    /// pregunta del nombre y termina en Grupos vacío. Lo escribe cada salida del Welcome hacia la rama, explícito.
+    @State private var groupsOrganizerAccountOnly: Bool = false
+    /// Y23-06 · el proveedor tocado en la puerta de Grupos de la vitrina: la hoja de inicio de sesión de Grupos lo lanza
+    /// sola. `nil` = la hoja enseña los dos botones, como siempre.
+    @State private var groupsOrganizerProvider: CloudSignInProvider?
     /// C2 · el educativo como PRIMER escalón de la rama del organizador (la puerta A; la B, la card «Solo
     /// grupos», se retiró el 2026-09-10). Blocker propio de la matriz de readiness, igual que su hermana de
     /// arriba y por la misma regla.
@@ -642,6 +651,8 @@ struct ContentView: View {
             welcomeFlowInitialStep: $welcomeFlowInitialStep,
             welcomeRestoreOrigin: $welcomeRestoreOrigin,
             welcomeGroupsChooserOrigin: $welcomeGroupsChooserOrigin,
+            welcomeGroupsProvider: $welcomeGroupsProvider,
+            welcomeShowcaseDoor: $welcomeShowcaseDoor,
             showOnboarding: $showOnboarding,
             showWelcomeRestore: $showWelcomeRestore,
             showInviteRecovery: $showInviteRecovery,
@@ -655,6 +666,8 @@ struct ContentView: View {
             showFreshStartWipeAlert: $showFreshStartWipeAlert,
             freshStartAlertPresentedOverWelcome: $freshStartAlertPresentedOverWelcome,
             groupsOrganizerFlowActive: $groupsOrganizerFlowActive,
+            groupsOrganizerAccountOnly: $groupsOrganizerAccountOnly,
+            groupsOrganizerProvider: $groupsOrganizerProvider,
             offersFullActivationAfterGroupsEntry: $offersFullActivationAfterGroupsEntry,
             hasExistingData: hasExistingData,
             hasLocalDataNow: { checkHasExistingData() },
@@ -728,6 +741,7 @@ struct ContentView: View {
             showGroupsEducational: $showGroupsEducational,
             pendingGroupsJoinZone: $pendingGroupsJoinZone,
             groupsOrganizerFlowActive: $groupsOrganizerFlowActive,
+            organizerProvider: groupsOrganizerProvider,
             onGroupsOrganizerCancelled: { returnToGroupsChooser() },
             onAdoptCompleteAccount: { adoptCompleteAccountFromGroups() }
         ))
@@ -763,7 +777,8 @@ struct ContentView: View {
                 // presenta cuando el cover ya no está (`isWelcomeGroupFormOpen`).
                 onCreated: { navigation.pendingCreatedGroupInviteID = $0.id.uuidString },
                 isFirstGroupSetup: true,
-                onSetupCompleted: { organizerSetupCompleted = true }
+                onSetupCompleted: { organizerSetupCompleted = true },
+                opensAtNamePrompt: groupsOrganizerAccountOnly
             )
             .environment(SessionState.shared)
         }
@@ -1138,12 +1153,17 @@ struct ContentView: View {
     /// callback de la card «Solo grupos», retirada el 2026-09-10— la compilación muere con «unable to
     /// type-check this expression in reasonable time». Es el mismo motivo por el que la mitad de las
     /// presentaciones de esta vista viven en `ViewModifier`s separados.
+    /// **Bienvenida 2.3 (Y23-04): el alta es la conversación de tres preguntas**, no el onboarding de ocho pasos (que
+    /// sigue vivo para la activación de Yala completo). Propone el nombre que trajo Google o Apple si hay sesión de
+    /// cuenta de Yala; con iCloud se escribe. Los efectos al terminar son los de siempre: es el mismo alta.
     @ViewBuilder
     private var onboardingCover: some View {
-        OnboardingView(
+        WelcomeConversationView(
+            providerName: CloudAuthService.shared.hasSession ? CloudAuthService.shared.capturedFullName() : nil,
+            livesInYalaAccount: CloudAuthService.shared.hasSession,
             prefilledData: prefilledOnboardingData,
-            onCancelFromStep1: {
-                // Resetea `hasShownWelcomeChooser` para que el Hero se vuelva
+            onCancel: {
+                // Resetea `hasShownWelcomeChooser` para que la bienvenida se vuelva
                 // a presentar (no salta al Chooser automáticamente).
                 showOnboarding = false
                 hasShownWelcomeChooser = false
@@ -1605,6 +1625,8 @@ struct ContentView: View {
             // El propósito se escribe EXPLÍCITO junto al step, en la misma vuelta: son un par, y
             // separarlos es lo que haría que esta invitación entrara por la rama que informa-y-borra.
             welcomeGroupsChooserOrigin = .chooser  // un Welcome que empieza de nuevo no hereda el origen del anterior (mgaj)
+            welcomeGroupsProvider = nil
+            welcomeShowcaseDoor = .finances
             welcomeFlowInitialStep = .groupsGate(purpose: .acceptInvite(groupID: zone))
             showWelcomeFlow = true
         case .presentGroupBackendInviteOnboarding(let zone):
@@ -2342,6 +2364,8 @@ struct ContentView: View {
         hasShownWelcomeChooser = false
         hasShownYalaAIOnboarding = false  // tras un vaciado vuelve a verse el onboarding del chat
         welcomeGroupsChooserOrigin = .chooser  // un Welcome que empieza de nuevo no hereda el origen del anterior (mgaj)
+        welcomeGroupsProvider = nil
+        welcomeShowcaseDoor = .finances
         welcomeFlowInitialStep = .hero
         showWelcomeFlow = true
         hasCompletedOnboarding = false
@@ -3346,6 +3370,8 @@ struct ContentView: View {
                 // —posible si el wipe no llegó a correr— coger la vieja retomaría la que nadie confirmó.
                 if let zone = PendingJoinStore.all().last(where: { $0.isBackendJoin })?.zoneName {
                     welcomeGroupsChooserOrigin = .chooser  // un Welcome que empieza de nuevo no hereda el origen del anterior (mgaj)
+                    welcomeGroupsProvider = nil
+                    welcomeShowcaseDoor = .finances
                     welcomeFlowInitialStep = .groupsGate(purpose: .acceptInvite(groupID: zone))
                 } else {
                     welcomeFlowInitialStep = .chooser
@@ -3377,6 +3403,8 @@ struct ContentView: View {
         }
         if !hasShownWelcomeChooser {
             welcomeGroupsChooserOrigin = .chooser  // un Welcome que empieza de nuevo no hereda el origen del anterior (mgaj)
+            welcomeGroupsProvider = nil
+            welcomeShowcaseDoor = .finances
             MetricsService.used(.altaBienvenida)  // embudo del alta (telemetría propia): primera pantalla
             welcomeFlowInitialStep = .hero
             showWelcomeFlow = true
@@ -3418,6 +3446,8 @@ private struct WelcomeFlowModifier: ViewModifier {
     @Binding var welcomeFlowInitialStep: WelcomeFlowStep
     @Binding var welcomeRestoreOrigin: WelcomeFlowStep?
     @Binding var welcomeGroupsChooserOrigin: WelcomeFlowStep
+    @Binding var welcomeGroupsProvider: CloudSignInProvider?
+    @Binding var welcomeShowcaseDoor: WelcomeShowcaseLogic.Door
     @Binding var showOnboarding: Bool
     @Binding var showWelcomeRestore: Bool
     @Binding var showInviteRecovery: Bool
@@ -3439,6 +3469,9 @@ private struct WelcomeFlowModifier: ViewModifier {
     /// G3: la rama organizador arranca aquí y la conduce `ContentView` desde su drain — este modifier solo
     /// la ENCIENDE, porque es quien tiene el callback del portal.
     @Binding var groupsOrganizerFlowActive: Bool
+    /// Y23-06 · camino y proveedor de la rama del organizador (ver `ContentView.groupsOrganizerAccountOnly`).
+    @Binding var groupsOrganizerAccountOnly: Bool
+    @Binding var groupsOrganizerProvider: CloudSignInProvider?
     /// Paso 8 · lo enciende `onEnterGroupsOnly` cuando [I] dijo «ofrécele Yala completo»; lo consume
     /// `ContentView` al quedar montada la sesión solo-grupos.
     @Binding var offersFullActivationAfterGroupsEntry: Bool
@@ -3516,9 +3549,10 @@ private struct WelcomeFlowModifier: ViewModifier {
 
     /// El degradado del Welcome DEBAJO de las dos pantallas: cada una pinta el suyo, y en el fundido de dos capas
     /// opacas el centro dejaría ver el fondo del cover. Con «Reducir movimiento» el fundido se queda: no desplaza nada.
+    /// Desde la bienvenida 2.3 es el fondo F2 de toda la bienvenida (SPEC, «Cómo usar esta especificación»).
     private var welcomeCover: some View {
         ZStack {
-            LinearGradient(colors: DS.Gradients.heroIndigoBlack, startPoint: .top, endPoint: .bottom)
+            WelcomeF2Background()
                 .ignoresSafeArea()
             switch displayedWelcomeCoverContent {
             case .flow:
@@ -3651,7 +3685,9 @@ private struct WelcomeFlowModifier: ViewModifier {
                 showWelcomeFlow = false
                 showWelcomeCloudSignIn = true
             },
-            onSelectGroupsOrganizer: {
+            onSelectGroupsOrganizer: { accountOnly, provider in
+                groupsOrganizerAccountOnly = accountOnly
+                groupsOrganizerProvider = provider
                 // G3 · la puerta ya dijo que sí (canal encendido y sin datos de otro humano): el
                 // step `.groupsGate` es el único que puede llegar hasta aquí.
                 //
@@ -3675,6 +3711,18 @@ private struct WelcomeFlowModifier: ViewModifier {
                 WelcomeUnfinishedAccountEntry.mark()
                 welcomeCloudEntry = .beaconRouted(accountProvider: provider)
                 cloudSignInFromExistingChooser = false
+                showWelcomeFlow = false
+                showWelcomeCloudSignIn = true
+            },
+            onSelectUnifiedAccess: { provider in
+                // Bienvenida 2.3 (Y23-02): un botón por proveedor. La entrada firma, verifica y decide; el `Entry` va
+                // EXPLÍCITO con el proveedor tocado (jamás heredar el del intento anterior), y sin consentimiento previo:
+                // va dentro de «Vamos a crear tu cuenta».
+                hasShownWelcomeChooser = true
+                WelcomeUnfinishedAccountEntry.mark()
+                welcomeCloudEntry = .unified(provider)
+                cloudSignInFromExistingChooser = false
+                adoptStartsAtConsent = false
                 showWelcomeFlow = false
                 showWelcomeCloudSignIn = true
             },
@@ -3825,7 +3873,11 @@ private struct WelcomeFlowModifier: ViewModifier {
             performDeviceCorpusWipe: { await performDeviceCorpusWipe() },
             onRestoreOrigin: { welcomeRestoreOrigin = $0 },
             groupsChooserOrigin: welcomeGroupsChooserOrigin,
-            onGroupsChooserOrigin: { welcomeGroupsChooserOrigin = $0 }
+            onGroupsChooserOrigin: { welcomeGroupsChooserOrigin = $0 },
+            groupsProvider: welcomeGroupsProvider,
+            onGroupsProvider: { welcomeGroupsProvider = $0 },
+            showcaseDoor: welcomeShowcaseDoor,
+            onShowcaseDoor: { welcomeShowcaseDoor = $0 }
         )
         .environment(SessionState.shared)
     }

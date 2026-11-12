@@ -69,12 +69,9 @@ struct WelcomeFlowScreen<Content: View>: View {
     var body: some View {
         GeometryReader { geo in
             ZStack {
-                LinearGradient(
-                    colors: DS.Gradients.heroIndigoBlack,
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
+                // Bienvenida 2.3 (Y23-03): el fondo F2 de la vitrina en las puertas, el progreso y el «reabre Yala».
+                WelcomeF2Background()
+                    .ignoresSafeArea()
 
                 // Con poco alto (iPhone Duo cerrado: 678 pt; iPhone SE) los `Spacer` ya no tenían de dónde sacar y el
                 // titular del Hero se partía en una línea cortada («Tus finanzas person…»). En un scroll con alto

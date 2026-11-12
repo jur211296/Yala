@@ -87,15 +87,13 @@ final class WelcomeFirstGroupCloseUITests: XCTestCase {
             seed: nil,
             cloudSession: true,
             groupsConsent: true,
-            groupsEducativo: true
+            groupsEducativo: true,
+            extraArguments: [XCUIApplication.welcomeProvidersArgument]
         )
 
-        let heroCTA = app.buttons["welcome_hero_cta"]
-        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
-        heroCTA.tap()
-        let inviteBranch = app.buttons["welcome_chooser_invite"]
-        XCTAssertTrue(inviteBranch.waitForExistence(timeout: 10), "No apareció la fila de grupos del elector.")
-        inviteBranch.tap()
+        // Bienvenida 2.3 (Y23-06): la puerta de Grupos de la vitrina. Con la sesión fingida, la hoja de Grupos reusa la
+        // sesión y no lanza el proveedor elegido.
+        app.openWelcomeGroupsPaths()
         let createCard = app.buttons["welcome_groups_create"]
         XCTAssertTrue(createCard.waitForExistence(timeout: 10), "No apareció «Crear mi primer grupo».")
         createCard.tap()
@@ -119,7 +117,7 @@ final class WelcomeFirstGroupCloseUITests: XCTestCase {
         capture(app, name)
         XCTAssertTrue(landed, "Cerrar el formulario del primer grupo no dejó dentro, en Grupos vacío.")
         XCTAssertFalse(app.buttons["welcome_groups_create"].exists, "Cerrar el formulario volvió al Welcome.")
-        XCTAssertFalse(app.buttons["welcome_hero_cta"].exists, "Cerrar el formulario volvió al Welcome.")
+        XCTAssertFalse(app.buttons["welcome_access_icloud"].exists, "Cerrar el formulario volvió al Welcome.")
     }
 
     private func capture(_ app: XCUIApplication, _ name: String) {

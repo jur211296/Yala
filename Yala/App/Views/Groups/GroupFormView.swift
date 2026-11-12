@@ -36,6 +36,10 @@ struct GroupFormView: View {
     /// L12-12 · el alta quedó escrita (aunque crear el grupo falle después): quien presentó el formulario ya no puede
     /// devolver a la persona al Welcome.
     var onSetupCompleted: (() -> Void)? = nil
+    /// Bienvenida 2.3 (Y23-06) · «Solo crear mi cuenta»: el primer grupo abre directamente en la pregunta del nombre de
+    /// la persona (la misma de cerrar sin crear), que termina en Grupos vacío. Cancelarla deja el formulario, por si
+    /// quiere crear el grupo después de todo.
+    var opensAtNamePrompt: Bool = false
 
     // MARK: - Form State
 
@@ -58,6 +62,8 @@ struct GroupFormView: View {
     /// Card ycke (C2) · la pregunta del nombre al cerrar el primer grupo sin haberlo escrito.
     @State private var showCloseNamePrompt = false
     @State private var closeNameDraft = ""
+    /// Y23-06 · la pregunta del nombre de «Solo crear mi cuenta» se abre una sola vez por presentación.
+    @State private var didOpenNamePrompt = false
 
     // MARK: - Sheet State
 
@@ -128,6 +134,22 @@ struct GroupFormView: View {
             }
             .onAppear {
                 populateFromGroup()
+                if opensAtNamePrompt, isFirstGroupSetup, !setupWritten, !didOpenNamePrompt {
+                    didOpenNamePrompt = true
+                    closeNameDraft = ""
+                    // Tras la presentación del formulario (review adversarial): pedida en el mismo `onAppear`, UIKit
+                    // podía descartar el aviso mientras la pantalla aún se presentaba.
+                    Task { @MainActor in
+                        do {
+                            try await Task.sleep(for: .milliseconds(450))
+                        } catch {
+                            #if DEBUG
+                            print("GroupFormView: Error: \(error)")
+                            #endif
+                        }
+                        showCloseNamePrompt = true
+                    }
+                }
             }
             .alert(L10n.Common.error, isPresented: $showSaveError) {
                 Button(L10n.Common.ok) {}

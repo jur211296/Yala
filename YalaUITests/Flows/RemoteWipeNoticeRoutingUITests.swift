@@ -164,7 +164,7 @@ final class RemoteWipeNoticeRoutingUITests: XCTestCase {
         keepWaiting(in: app).tap()
 
         XCTAssertFalse(alert.waitForExistence(timeout: 3), "El aviso no se cerró al pulsar «Seguir esperando».")
-        XCTAssertFalse(app.buttons["welcome_hero_cta"].exists, """
+        XCTAssertFalse(app.buttons["welcome_access_icloud"].exists, """
             Cancelar mandó a la persona al Welcome. Esta rama no navega a ninguna parte: sus datos
             siguen sin estar, pero la app estaba montada debajo y ahí se queda.
             """)
@@ -194,8 +194,8 @@ final class RemoteWipeNoticeRoutingUITests: XCTestCase {
         // Welcome, con sus tres ramas —entre ellas «Restaurar de iCloud», que es la que sirve a quien
         // crea que esto fue un error—. Antes de este ticket el destino dependía de lo que quedara en
         // las preferencias: con el chooser dado por visto, iba directo al formulario del onboarding.
-        XCTAssertTrue(app.buttons["welcome_hero_cta"].waitForExistence(timeout: 30), """
-            «Empezar de cero» no aterrizó en el Hero del Welcome.
+        XCTAssertTrue(app.buttons["welcome_access_icloud"].waitForExistence(timeout: 30), """
+            «Empezar de cero» no aterrizó en la vitrina del Welcome.
             """)
     }
 
@@ -225,7 +225,7 @@ final class RemoteWipeNoticeRoutingUITests: XCTestCase {
         alert.buttons.element(boundBy: 0).tap()   // «Entendido»
 
         XCTAssertFalse(alert.waitForExistence(timeout: 3), "El aviso no se cerró al pulsar «Entendido».")
-        XCTAssertFalse(app.buttons["welcome_hero_cta"].exists, "«Entendido» mandó a la persona al Welcome.")
+        XCTAssertFalse(app.buttons["welcome_access_icloud"].exists, "«Entendido» mandó a la persona al Welcome.")
         XCTAssertTrue(app.buttons["trial_offer_dismiss"].waitForExistence(timeout: 45), """
             El intent retenido no presentó al contestar el aviso: la condición viva (`remoteWipeNoticePending`) se \
             quedó puesta y el router sigue retenido.

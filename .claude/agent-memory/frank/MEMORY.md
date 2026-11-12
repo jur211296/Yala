@@ -85,6 +85,7 @@
 - [El tutorial parte de la pantalla anterior](feedback_tutorial_parte_de_la_pantalla_anterior.md) — enseña lo que existe, sin rediseñar; R1-R3 de registro descartadas.
 - [Cierre de diseño: spec por cards](feedback_cierre_de_diseno_spec_por_cards.md) — artifact limpio + SPEC.md de una fuente, ID estable por card.
 - [Propuestas: artifact visual, no Markdown](feedback_propuestas_como_artifact_visual.md) — tarjetas, antes/después y selector sí/no/después en la db.
+- [El prototipo manda sobre el contrato](feedback_el_prototipo_manda_sobre_el_contrato.md) — servidor corto: se construye lo dibujado + mitigación + card de servidor.
 ## Cómo mido y cómo entrego
 - [Runner AX timeout tras la suite larga](feedback_runner_ax_timeout_tras_suite_larga.md) — cero casos y «AX loaded»: reinicia el simulador, no repitas igual.
 - [UI tras YalaTests entero: reinicia el simulador](reference_ui_tras_yalatests_entero_reinicia_el_simulador.md) — «AX loaded» = infraestructura; UI antes que unit.

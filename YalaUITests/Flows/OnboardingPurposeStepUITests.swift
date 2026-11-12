@@ -17,8 +17,9 @@
 //  `accessibilityIdentifier`; la selección es un `stroke`, no un trait): vive en
 //  YalaTests/OnboardingPurposeSelectionLogicTests.
 //
-//  Usa el hook -uitest-onboarding (presenta OnboardingView directo sin marcarlo
-//  completado). Convenciones: ver CLAUDE.md (sin sleeps, scheme Yala Dev).
+//  **Desde la bienvenida 2.3 (Y23-04)** el alta es la conversación de tres preguntas (sin paso Propósito: «Gastos e
+//  ingresos» / «Solo gastos») y el OnboardingView vive en «Activar Yala completo»: este fichero entra por ahí
+//  (`launchIntoFullActivationOnboarding`). Convenciones: ver CLAUDE.md (sin sleeps, scheme Yala Dev).
 //
 
 import XCTest
@@ -32,7 +33,7 @@ final class OnboardingPurposeStepUITests: XCTestCase {
     /// Avanza del step de nombre al paso Propósito y devuelve la app ya en ese paso.
     private func launchAtPurposeStep() -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchForUITest(skipOnboarding: false, seed: nil, onboarding: true)
+        app.launchIntoFullActivationOnboarding()
 
         let nameField = app.textFields["onboarding_name_field"]
         XCTAssertTrue(nameField.waitForExistence(timeout: 30), "No apareció onboarding_name_field.")
@@ -49,9 +50,8 @@ final class OnboardingPurposeStepUITests: XCTestCase {
     ///
     /// La aserción negativa NO se sostiene sola —una card ausente porque el paso no llegó a montarse se
     /// leería igual—, así que va detrás de las dos POSITIVAS: estamos de verdad en el paso Propósito
-    /// porque sus dos cards están. Y corre sin ningún seam de sesión ni de iCloud, en el onboarding
-    /// inicial y en el modo `.icloud` por defecto del simulador: la celda exacta donde la card vieja SÍ se
-    /// pintaba, con este mismo recorrido.
+    /// porque sus dos cards están. Corre en la activación de una sesión solo-grupos, la única puerta que
+    /// queda a este paso desde la bienvenida 2.3: justo donde la card de grupos sería más tentadora.
     func test_purposeStep_offersTwoCards_andNoGroupsCard() {
         let app = launchAtPurposeStep()
 

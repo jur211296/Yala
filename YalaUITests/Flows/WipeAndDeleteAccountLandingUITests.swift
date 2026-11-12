@@ -64,7 +64,7 @@ final class WipeAndDeleteAccountLandingUITests: XCTestCase {
         XCTAssertTrue(toast.label.contains("empezaste de cero"), "El aviso no es el de vaciar: «\(toast.label)».")
         XCTAssertTrue(app.buttons["panel_create_first_account"].waitForExistence(timeout: 5),
                       "El Panel vacío no ofrece «Crea tu primera cuenta».")
-        XCTAssertFalse(app.buttons["welcome_hero_cta"].exists, "Vaciar llevó al Welcome.")
+        XCTAssertFalse(app.buttons["welcome_access_icloud"].exists, "Vaciar llevó al Welcome.")
 
         // La cuenta de Yala sigue: Ajustes la sigue enseñando.
         app.openProfile()
@@ -95,7 +95,7 @@ final class WipeAndDeleteAccountLandingUITests: XCTestCase {
         // En un iPhone con el montaje neutro de solo grupos el cierre cambia el almacén en caliente y aterriza en el Welcome;
         // el simulador monta con espejo y ese cambio se salta (`swiftui-ds.md`), así que pide reabrir. Se acepta cualquiera
         // de las dos y, si pide reabrir, se reabre como lo haría la persona: el arranque hace el borrado armado.
-        let welcome = app.buttons["welcome_hero_cta"]
+        let welcome = app.buttons["welcome_access_icloud"]
         let reopen = app.descendants(matching: .any)["signout_relaunch_screen"]
         let deadline = Date().addingTimeInterval(30)
         while !welcome.exists && !reopen.exists && Date() < deadline {
@@ -122,7 +122,7 @@ final class WipeAndDeleteAccountLandingUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchForUITest(seed: "minimal", accountDeletionPendingClose: true)
 
-        let welcome = app.buttons["welcome_hero_cta"]
+        let welcome = app.buttons["welcome_access_icloud"]
         let reopen = app.descendants(matching: .any)["signout_relaunch_screen"]
         let deadline = Date().addingTimeInterval(60)
         while !welcome.exists && !reopen.exists && Date() < deadline {
