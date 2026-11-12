@@ -49,9 +49,11 @@
 - **los dos vocabularios: dentro ≠ al usuario** — conviven a propósito, y ninguna sesión
   «corrige» uno hacia el otro (decisión de Jürgen, 2026-09-09). **Dentro** —ADR, tickets, código,
   estas reglas— se dice *sesión privada* y *sesión en la nube*. **Al usuario** se le habla de
-  **dónde viven sus datos**, y ese copy ya existe y funciona: «Dónde viven tus datos»
-  (`storage.title`), «Tu cuenta en tu iCloud privado» (`welcome.new.privateTitle`), «Tu cuenta en
-  la nube» (`welcome.new.cloudTitle`, `settings.dataLocationSubtitleCloud`). Medido el 2026-09-10
+  **dónde viven sus datos**: «Dónde viven tus datos» (`storage.title`) y, desde la decisión 51 de
+  2.3 (2026-11-09), **solo dos nombres de sitio**, «En tu iCloud» y «En tu cuenta de Yala»
+  (`welcome.new.*Title`, `storage.status.*Title`, `settings.dataLocationSubtitle*`), con «Pasar a
+  tu cuenta de Yala» / «Volver a tu iCloud». «La nube» solo como explicación; lo fija
+  `DosNombresDeSitioTests`. Medido el 2026-09-10
   sobre los 4.074 strings ES: **ninguno dice «sesión privada», «sesión en la nube», «solo grupos»
   ni «sesión secundaria»**, y así se queda. ⇒ el copy nuevo del rediseño se escribe en el
   vocabulario del usuario y se revisa contra `docs/planning/BRAND-VOICE.md` §7; **el término

@@ -56,7 +56,7 @@ final class YalaIACloudExploreConsentUITests: XCTestCase {
     }
 
     private func n1Alert(in app: XCUIApplication) -> XCUIElement {
-        app.alerts.matching(NSPredicate(format: "label == %@", "Yala IA con tu cuenta en la nube")).firstMatch
+        app.alerts.matching(NSPredicate(format: "label == %@", "Yala IA con tu cuenta de Yala")).firstMatch
     }
 
     func test_cloud_firstQuestionAsksN1Once_andNotNowStillSendsIt() {

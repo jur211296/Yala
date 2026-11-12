@@ -1124,7 +1124,7 @@
 "profile.aliasAvailable" = "このエイリアスは利用可能です";
 "profile.aliasHelper" = "3〜20文字。英数字とアンダースコアのみ。";
 "profile.privacyTitle" = "データの保存先";
-"profile.privacyDesc" = "プライベートなiCloudのアカウントでは、データはこの端末とあなたのiCloudに保存されます。クラウドのアカウントでは、Yalaのサーバーに保存されます。グループに記録した内容はニックネームとともにYalaのサーバーに保存され、グループのメンバーが見られるようになります。AI機能(音声、画像、インサイト)は任意です。送信した内容は当社のサーバーを経由してAIサービスに届き、そこで処理されます。どのサービスかはプライバシーポリシーに記載しています。クラウドのアカウントでは、正確で詳しく読み取るために必要なデータをすべてAIが読み取れます。";
+"profile.privacyDesc" = "あなたの iCloud では、データはこの端末とあなたの iCloud に保存されます。あなたの Yala アカウントでは、Yala のサーバーに保存されます。グループに記録した内容はニックネームとともにYalaのサーバーに保存され、グループのメンバーが見られるようになります。AI機能(音声、画像、インサイト)は任意です。送信した内容は当社のサーバーを経由してAIサービスに届き、そこで処理されます。どのサービスかはプライバシーポリシーに記載しています。データがあなたの Yala アカウントにある場合、正確で詳しく読み取るために必要なデータをすべてAIが読み取れます。";
 "profile.aliasFutureNote" = "備考: エイリアスの一意性チェックは、シェア支出機能の実装時に利用可能になります。";
 "profile.proMember" = "PROメンバー";
 "profile.choosePhoto" = "写真を選ぶ";
@@ -2833,17 +2833,17 @@
 "aiPrivacy.processingRow" = "音声や写真で記録";
 "aiPrivacy.chatRow" = "Yala AI";
 "aiPrivacy.insightsRow" = "AIサマリー";
-"aiPrivacy.cloudExploreRow" = "クラウドのアカウントを参照";
+"aiPrivacy.cloudExploreRow" = "あなたの Yala アカウントを参照";
 "aiPrivacy.revokeConfirmMessage" = "この機能のAIデータ処理を停止します。いつでも再有効化できます。";
 "aiPrivacy.revokeConfirmAction" = "無効化";
-"aiPrivacy.footerHint" = "データが送信されるのは、これらの機能を使うときだけで、当社のサーバーを経由してAIサービスに届きます。クラウドのアカウントでは、正確で詳しく読み取るために必要なデータをすべてAIが読み取れます。データの販売や広告への利用は行いません。";
+"aiPrivacy.footerHint" = "データが送信されるのは、これらの機能を使うときだけで、当社のサーバーを経由してAIサービスに届きます。データがあなたの Yala アカウントにある場合、正確で詳しく読み取るために必要なデータをすべてAIが読み取れます。データの販売や広告への利用は行いません。";
 "aiPrivacy.policyLink" = "プライバシーポリシー";
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Yalaが代わりに記録します";
-"aiConsent.processingMessage" = "話すかレシートの写真を選ぶと、Yalaが支出を記録します。そのために、音声や写真をその時だけAIサービスに送ります。クラウドのアカウントでは、正確で詳しく読み取るために必要なデータをすべてAIが読み取れます。AIの学習には使われません。";
+"aiConsent.processingMessage" = "話すかレシートの写真を選ぶと、Yalaが支出を記録します。そのために、音声や写真をその時だけAIサービスに送ります。データがあなたの Yala アカウントにある場合、正確で詳しく読み取るために必要なデータをすべてAIが読み取れます。AIの学習には使われません。";
 "aiConsent.insightsTitle" = "AIサマリー";
-"aiConsent.insightsMessage" = "Yalaが家計を分析して、今の状況をお伝えします。そのために、概要（カテゴリ別の合計と推移、予算、定期的な支払い、くり返している小さな買い物の名前と回数・合計）をAIサービスに送ります。記録の履歴全体は送りません。クラウドのアカウントでは、正確に読み取るために必要なもの（買い物ごとの日付や金額など）も読み取れます。AIの学習には使われません。";
+"aiConsent.insightsMessage" = "Yalaが家計を分析して、今の状況をお伝えします。そのために、概要（カテゴリ別の合計と推移、予算、定期的な支払い、くり返している小さな買い物の名前と回数・合計）をAIサービスに送ります。記録の履歴全体は送りません。データがあなたの Yala アカウントにある場合は、正確に読み取るために必要なもの（買い物ごとの日付や金額など）も読み取れます。AIの学習には使われません。";
 "aiConsent.accept" = "同意して有効化";
 "aiConsent.privacyPolicy" = "プライバシーポリシー";
 "aiConsent.inlineHintProcessing" = "音声と画像のデータはAIサービスで処理されます。永続的に保存されることはありません。";
@@ -3390,9 +3390,9 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Yala AI";
-"aiConsent.chatMessage" = "Yalaがあなた自身の数字をもとに、お金に関する質問にお答えします。そのために、直近13か月の概要（口座の残高と名前、カテゴリ別の合計、よく利用する店舗、予算、定期的な支払い、今月の大きな支出）をAIサービスに送ります。クラウドのアカウントでは、正確で詳しく読み取るために必要なデータをすべてAIが読み取れます。回答のためだけに使われ、AIの学習には使われません。";
-"aiConsent.cloudExploreTitle" = "Yala AIとクラウドのアカウント";
-"aiConsent.cloudExploreMessage" = "Yalaがあなた自身の数字をもとに、お金に関する質問にお答えします。そのために、直近13か月の概要をAIサービスに送ります。質問に必要な場合は、回答に必要なクラウドアカウントのデータ（任意の日付の記録とそのメモ、口座、予算、定期的な支払い）も送ります。回答のためだけに使われ、AIの学習には使われません。";
+"aiConsent.chatMessage" = "Yalaがあなた自身の数字をもとに、お金に関する質問にお答えします。そのために、直近13か月の概要（口座の残高と名前、カテゴリ別の合計、よく利用する店舗、予算、定期的な支払い、今月の大きな支出）をAIサービスに送ります。データがあなたの Yala アカウントにある場合、正確で詳しく読み取るために必要なデータをすべてAIが読み取れます。回答のためだけに使われ、AIの学習には使われません。";
+"aiConsent.cloudExploreTitle" = "Yala AIとあなたの Yala アカウント";
+"aiConsent.cloudExploreMessage" = "Yalaがあなた自身の数字をもとに、お金に関する質問にお答えします。そのために、直近13か月の概要をAIサービスに送ります。質問に必要な場合は、回答に必要なあなたの Yala アカウントのデータ（任意の日付の記録とそのメモ、口座、予算、定期的な支払い）も送ります。回答のためだけに使われ、AIの学習には使われません。";
 "aiConsent.inlineHintChat" = "あなたの財務概要は回答のためAIサービスで処理されます。永続的に保存されることはありません。";
 "aiConsent.inlineHintMultiple" = "複数の機能がAIサービスでデータを処理します。永続的に保存されることはありません。";
 
@@ -4073,7 +4073,7 @@
 "welcome.restore.foundTitle" = "%@さん、おかえりなさい！";
 "welcome.restore.foundTitleAnonymous" = "おかえりなさい！";
 "welcome.restore.foundBody" = "この端末に戻るデータ：";
-"welcome.restore.foundPreCloudNote" = "このiCloudのコピーはYalaのクラウドを使う前のものです。最近の変更が含まれていない可能性があります。";
+"welcome.restore.foundPreCloudNote" = "このiCloudのコピーは、データをあなたの Yala アカウントに移す前のものです。最近の変更が含まれていない可能性があります。";
 "welcome.restore.continue" = "続ける";
 "welcome.restore.notFoundTitle" = "データが見つかりませんでした";
 "welcome.restore.notFoundBody" = "iCloudアカウントに関連するデータが見つかりません。最初から始めますか？";
@@ -4120,7 +4120,7 @@
 "welcome.hero.cards.multiAndCurrencies.body" = "カード、現金、50以上の通貨。";
 "welcome.hero.cards.import.title" = "履歴をインポート";
 "welcome.hero.cards.import.body" = "PDF、CSV、Excel。完了。";
-"welcome.hero.cards.icloud.title" = "プライベートiCloud";
+"welcome.hero.cards.icloud.title" = "あなたの iCloud";
 "welcome.hero.cards.icloud.body" = "あなたのデータは、あなたのiCloudに。";
 "welcome.hero.cards.more.title" = "さらに多くの機能";
 "welcome.hero.cards.more.body" = "一緒に発見していきましょう。";
@@ -4383,7 +4383,7 @@
 "whatsNew.v21.logging.title" = "記録がこんなに簡単に";
 "whatsNew.v21.logging.description" = "話しかけても、写真を撮っても、友だちにメッセージするように書いても大丈夫。Yala が使った内容を理解して記録するので、家計の管理はほんの数秒です。";
 "whatsNew.v21.data.title" = "あなたのデータは、あなたのルールで";
-"whatsNew.v21.data.description" = "情報の保存先はあなたが選べます。プライベートな iCloud か、Yala のクラウドか。すべてのデバイスで使えます。さらに、新しくなったパネルと、iPad での Yala のフルスクリーン表示も。";
+"whatsNew.v21.data.description" = "情報の保存先はあなたが選べます。あなたの iCloud か、あなたの Yala アカウントか。すべてのデバイスで使えます。さらに、新しくなったパネルと、iPad での Yala のフルスクリーン表示も。";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "common.vs" = "vs";
@@ -4506,7 +4506,7 @@
 "groups.openingBalance.sectionTitle" = "開始残高";
 "groups.openingBalance.addButton" = "開始残高を追加";
 "groups.openingBalance.emptyState" = "まだ開始残高はありません。";
-"groups.openingBalance.frozenNote" = "このグループはYalaのクラウドに移動しました。開始残高は見られますが、ここでは変更できません。";
+"groups.openingBalance.frozenNote" = "このグループはあなたの Yala アカウントに移りました。開始残高は見られますが、ここでは変更できません。";
 "groups.openingBalance.rollupOwes" = "借りています";
 "groups.openingBalance.rollupOwed" = "受け取ります";
 "groups.openingBalance.approvalPromptTitle" = "%@さんには、グループとの未精算の貸し借りがありましたか？";
@@ -4612,56 +4612,56 @@
 
 /* MARK: Modo Nube (I14) — almacenamiento / migración / consentimiento */
 "storage.title" = "データの保存先";
-"storage.waitingForLeader" = "別のデバイスがこのアカウントのクラウドを有効化しています。完了までお待ちください。";
-"storage.status.icloudTitle" = "プライベート iCloud";
-"storage.status.icloudBody" = "データはデバイスに保存され、プライベートな iCloud で同期されます。私たちを含め、他の誰も読み取れません。";
-"storage.status.cloudTitle" = "クラウドアカウント";
+"storage.waitingForLeader" = "別のデバイスがデータをあなたの Yala アカウントに移しています。完了までお待ちください。";
+"storage.status.icloudTitle" = "あなたの iCloud";
+"storage.status.icloudBody" = "データはデバイスに保存され、あなたの iCloud で同期されます。私たちを含め、他の誰も読み取れません。";
+"storage.status.cloudTitle" = "あなたの Yala アカウント";
 "storage.status.cloudBody" = "データは Yala アカウントに保存され、すべてのデバイスで同期されます。";
-"storage.migrate.title" = "クラウドへ移行";
+"storage.migrate.title" = "Yala アカウントに移す";
 "storage.migrate.body" = "Apple または Google でアカウントを作成すれば、iCloud がなくてもどのデバイスからでもデータにアクセスできます。";
-"storage.migrate.button" = "クラウドを有効化";
-"storage.migrate.previewButton" = "移行される内容を見る";
+"storage.migrate.button" = "Yala アカウントに移す";
+"storage.migrate.previewButton" = "移される内容を見る";
 "storage.migrate.previewResult" = "記録 %1$d件 · カテゴリ %2$d件 · 口座 %3$d件 · 予算 %4$d件";
-"storage.adopt.title" = "この端末でクラウドを有効化";
-"storage.adopt.body" = "このアカウントのデータはすでにクラウドにあります。この端末で有効化しましょう。";
-"storage.adopt.button" = "この端末で有効化";
+"storage.adopt.title" = "この端末であなたの Yala アカウントを使う";
+"storage.adopt.body" = "データはすでにあなたの Yala アカウントにあります。この端末で使いましょう。";
+"storage.adopt.button" = "この端末で使う";
 "storage.revert.title" = "iCloud に戻す";
-"storage.revert.body" = "プライベートモードに戻します。データはデバイスと iCloud に保存され、何も失われません。";
+"storage.revert.body" = "データはデバイスとあなたの iCloud に保存され、何も失われません。";
 "storage.revert.button" = "iCloud に戻す";
-"storage.revert.ineligible" = "現在、この端末から iCloud に戻すことはできません。";
+"storage.revert.ineligible" = "現在、この端末からあなたの iCloud に戻すことはできません。";
 "storage.sync.title" = "同期";
 "storage.sync.upToDate" = "すべて同期済み";
 "storage.sync.signInButton" = "サインイン";
-"storage.progress.migrating" = "クラウドを有効化しています…";
+"storage.progress.migrating" = "Yala アカウントに移しています…";
 "storage.progress.reverting" = "iCloud に戻しています…";
 "storage.progress.resume" = "再開";
 "storage.progress.retry" = "再試行";
 "storage.relaunch.title" = "あと少し — Yala を再起動してください";
 "storage.relaunch.body" = "Yala を完全に終了し（アプリスイッチャーでスワイプして閉じる）、もう一度開いて完了してください。";
-"storage.failed.migration" = "クラウドを有効化できませんでした。データはデバイスに安全に残っています。もう一度お試しください。";
-"storage.failed.reverse" = "iCloud への復帰を完了できませんでした。データは安全です。もう一度お試しください。";
-"storage.confirm.migrateTitle" = "クラウドを有効化しますか？";
+"storage.failed.migration" = "データをあなたの Yala アカウントに移せませんでした。データはデバイスに安全に残っています。もう一度お試しください。";
+"storage.failed.reverse" = "あなたの iCloud への復帰を完了できませんでした。データは安全です。もう一度お試しください。";
+"storage.confirm.migrateTitle" = "Yala アカウントに移しますか？";
 "storage.confirm.migrateBody" = "データが Yala アカウントに移動します。元に戻せますが、大きな変更です。";
 "storage.confirm.migrateContinue" = "続ける";
 "storage.confirm.migrate2Title" = "よろしいですか？";
-"storage.confirm.migrate2Body" = "この端末でクラウドが有効になります。";
-"storage.confirm.migrate2Confirm" = "はい、クラウドを有効化";
+"storage.confirm.migrate2Body" = "この端末で、データがあなたの Yala アカウントに移ります。";
+"storage.confirm.migrate2Confirm" = "はい、Yala アカウントに移す";
 "storage.confirm.revertTitle" = "iCloud に戻しますか？";
 "storage.confirm.revertBody" = "データはこの端末とあなたの iCloud に戻ります。何も失いません。";
 "storage.confirm.revertContinue" = "続ける";
 "storage.confirm.revert2Title" = "よろしいですか？";
-"storage.confirm.revert2Body" = "この端末でクラウドが無効になります。";
+"storage.confirm.revert2Body" = "この端末で、データがあなたの iCloud に戻ります。";
 "storage.confirm.revert2Confirm" = "はい、iCloud に戻す";
 "storage.errors.title" = "問題が発生しました";
 "storage.errors.generic" = "うまくいきませんでした。もう一度お試しください。";
 "storage.errors.adoptOtherAccount" = "この端末で有効化しようとしていたアカウントではありません。同じアカウントでもう一度お試しください。";
-"storage.errors.adoptICloudNotSettled" = "クラウドの有効化を開始できませんでした。iCloudがまだこの端末にデータを取り込んでいます。数分後にもう一度お試しください。";
+"storage.errors.adoptICloudNotSettled" = "データをあなたの Yala アカウントに移し始められませんでした。iCloudがまだこの端末にデータを取り込んでいます。数分後にもう一度お試しください。";
 "storage.errors.signIn" = "サインインできませんでした。もう一度お試しください。";
-"storage.consent.title" = "Yala のクラウドにあるあなたのデータ";
+"storage.consent.title" = "あなたの Yala アカウントにあるデータ";
 "storage.consent.pointServers" = "サポートやスマート機能を提供するため、私たちのチームが見ることがあります。エンドツーエンドの暗号化は使用していません。";
-"storage.consent.pointPhotos" = "クラウドにバックアップされず、他の端末にも表示されません。残したい場合は、機種変更の前に保存してください。";
+"storage.consent.pointPhotos" = "あなたの Yala アカウントには保存されず、他の端末にも表示されません。残したい場合は、機種変更の前に保存してください。";
 "storage.consent.pointAccess" = "iCloudは不要です。Yalaのパスワードやメールによる復旧はないため、そのログインを失う前にデータを書き出してください（設定 → 記録をエクスポート）。";
-"storage.consent.footer" = "いつでもプライベートモードに戻せます。何も失われません。";
+"storage.consent.footer" = "いつでもあなたの iCloud に戻せます。何も失われません。";
 "storage.consent.privacyLink" = "プライバシーポリシーを見る";
 
 /* Invite onboarding: spinner title while zone/member sync */
@@ -4711,7 +4711,7 @@
 "settings.signOutBlockedTitle" = "サインアウトできませんでした";
 
 /* Alert message when pending uploads block sign out */
-"settings.signOutBlockedMessage" = "まだクラウドにアップロードされていない変更があります。大切なデータを失わないよう、接続を確認してからもう一度お試しください。";
+"settings.signOutBlockedMessage" = "まだあなたの Yala アカウントに届いていない変更があります。大切なデータを失わないよう、接続を確認してからもう一度お試しください。";
 
 /* Subtitle of the existing-account sub-chooser in Welcome */
 "welcome.existing.title" = "おかえりなさい！";
@@ -4730,13 +4730,13 @@
 "welcome.existing.cloudTitle" = "Appleでサインイン";
 
 /* Card body: sign in to cloud account */
-"welcome.existing.cloudBody" = "クラウド上のYalaアカウントに、どのデバイスからでも。";
+"welcome.existing.cloudBody" = "あなたの Yala アカウントに、どのデバイスからでも。";
 
 /* Cloud sign-in screen title */
 "welcome.cloud.title" = "アカウントにサインイン";
 
 /* Cloud sign-in screen subtitle */
-"welcome.cloud.subtitle" = "クラウドアカウントを作成したときと同じApple IDを使ってください。";
+"welcome.cloud.subtitle" = "Yala アカウントを作成したときと同じApple IDを使ってください。";
 
 /* Progress label while checking account exists */
 "welcome.cloud.checking" = "アカウントを確認しています…";
@@ -4751,7 +4751,7 @@
 "welcome.cloud.notFoundTitle" = "アカウントが見つかりませんでした";
 
 /* Body when Apple ID has no cloud account */
-"welcome.cloud.notFoundBody" = "使用したサインイン方法には、まだYalaのクラウドアカウントがありません。";
+"welcome.cloud.notFoundBody" = "使用したサインイン方法には、まだ Yala アカウントがありません。";
 "welcome.cloud.notFoundCta" = "アカウントを作る";
 
 /* Title when foreign local data blocks sign-in */
@@ -4784,7 +4784,7 @@
 
 /* Chip shown while the secondary (guest) session pulls its account data after relaunch */
 "welcome.cloud.hydrationBanner" = "データをダウンロード中…";
-"welcome.cloud.cancelAdoptBody" = "この端末はクラウドのデータを何も変更していません。最初の画面に戻ります。いつでも「すでにアカウントがあります」からアカウントに再度ログインできます。";
+"welcome.cloud.cancelAdoptBody" = "この端末はあなたの Yala アカウントのデータを何も変更していません。最初の画面に戻ります。いつでも「すでにアカウントがあります」からアカウントに再度ログインできます。";
 "welcome.cloud.cancelAdoptEffectBody" = "この端末のデータはこれまでどおり残っています。最初の画面に戻ります。いつでも「すでにアカウントがあります」からアカウントに再度ログインできます。";
 
 /* Title of the proactive gate shown in the Groups tab when the device has no iCloud account */
@@ -4800,10 +4800,10 @@
 "storage.relaunch.bodyAutoExit" = "ホーム画面に戻り、もう一度 Yala を開いてください。これで完了です。";
 
 /* G4 groups consent screen title */
-"groups.consent.title" = "クラウドのグループ";
+"groups.consent.title" = "あなたの Yala アカウントのグループ";
 
 /* G4 consent point 1 */
-"groups.consent.point1" = "グループはもともと共有のもの。全員が同じ支出を最新の状態で見られるよう、Yalaのクラウドに保存されます。";
+"groups.consent.point1" = "グループはもともと共有のもの。全員が同じ支出を最新の状態で見られるよう、クラウド上のあなたの Yala アカウントに保存されます。";
 
 /* G4 consent point 2 */
 "groups.consent.point2" = "グループと共有されるのは最小限だけ：あなたの名前とグループの支出。ほかのメンバーにメールアドレスは表示されません。";
@@ -4825,7 +4825,7 @@
 "groups.signin.bodyNoInvite" = "グループはYalaアカウントに保存され、全員が同じ支出を最新の状態で見られます。AppleまたはGoogleでサインインして続けましょう。";
 
 /* G4 sign-in R9 account note */
-"groups.signin.accountNote" = "これがあなたのYalaアカウントになります。いつか個人データをクラウドに移すときも、この同じアカウントを使います。";
+"groups.signin.accountNote" = "これがあなたの Yala アカウントになります。いつか個人データをあなたの Yala アカウントに移すときも、この同じアカウントを使います。";
 
 /* G4 sign-in error */
 "groups.signin.error" = "アカウントを連携できませんでした。もう一度お試しください。";
@@ -4875,13 +4875,13 @@
 "export.groupsExportFailedNote" = "個人ファイルは正常に書き出されましたが、今回はグループを含められませんでした。後でもう一度お試しください。";
 
 /* G6-3: freeze error surfaced when writing to a migrated group */
-"groups.errors.movedToBackend" = "このグループはYalaのクラウドに移動しました。引き続き使うには、もう一度サインインしてください。";
+"groups.errors.movedToBackend" = "このグループはあなたの Yala アカウントに移りました。引き続き使うには、もう一度サインインしてください。";
 
 /* G6-3: card chip for a migrated frozen group */
 "groups.card.movedChip" = "移動済み";
 
 /* G6-3: detail banner title for a migrated group */
-"groups.migrated.bannerTitle" = "このグループはYalaのクラウドに移動しました";
+"groups.migrated.bannerTitle" = "このグループはあなたの Yala アカウントに移りました";
 
 /* G6-3: detail banner body for a migrated group */
 "groups.migrated.bannerBody" = "支出の表示と編集を続けるには、もう一度サインインしてください。";
@@ -4897,7 +4897,7 @@
 
 
 /* G6-3: progress banner while the owner's groups migrate to backend */
-"groups.migrated.migratingBanner" = "グループをYalaのクラウドに移動しています…";
+"groups.migrated.migratingBanner" = "グループをあなたの Yala アカウントに移しています…";
 
 /* Google sign-in button label (brand guideline text next to the G logo) */
 "auth.googleButton" = "Googleで続ける";
@@ -4908,11 +4908,11 @@
 "welcome.existing.googleTitle" = "Googleでサインイン";
 
 /* Existing-account chooser: Google sign-in card body */
-"welcome.existing.googleBody" = "Googleアカウントで作成した場合の、クラウド上のYalaアカウントです。";
+"welcome.existing.googleBody" = "Googleアカウントで作成した場合の、あなたの Yala アカウントです。";
 "welcome.existing.usedOnThisDeviceNote" = "この端末で使った方法";
 
 /* Cloud sign-in intro subtitle when provider is Google */
-"welcome.cloud.subtitleGoogle" = "クラウドアカウントを作成したときと同じGoogleアカウントを使ってください。";
+"welcome.cloud.subtitleGoogle" = "Yala アカウントを作成したときと同じGoogleアカウントを使ってください。";
 
 
 
@@ -4934,7 +4934,7 @@
 "storage.signin.title" = "サインイン方法を選択";
 
 /* Body of the provider chooser in the cloud migration entry */
-"storage.signin.body" = "データをクラウドに保存するにはYalaアカウントが必要です。AppleまたはGoogleでサインインしてください。";
+"storage.signin.body" = "データをあなたの Yala アカウントに保存するには、AppleまたはGoogleでサインインしてください。";
 
 
 /* Empty state del tab Grupos tras cerrar sesión solo-grupos (H-2026-07-18-7): título */
@@ -5009,7 +5009,7 @@
 "settings.deleteAccountViewGroups" = "グループを表示";
 
 /* D5: aviso (.cloud) de que la copia iCloud congelada pre-migración sobrevive al borrado de cuenta */
-"settings.deleteAccountFrozenICloudNote" = "iCloudの古いデータ（クラウド以前のもの）はそのまま残ります。Yalaを再び開くと、再インストールと同じ状態で表示されます。";
+"settings.deleteAccountFrozenICloudNote" = "iCloudの古いデータ（Yala アカウントを使う前のもの）はそのまま残ります。Yalaを再び開くと、再インストールと同じ状態で表示されます。";
 
 /* D5: aviso de huella legacy — el nombre persiste en zonas CloudKit tras el borrado de cuenta */
 "settings.deleteAccountLegacyFootprintNote" = "以前の（iCloud）グループでは、あなたの名前がメンバーに引き続き表示される場合があります。";
@@ -5018,10 +5018,10 @@
 "settings.scopeDeviceLabel" = "このデバイス";
 
 /* D4 hoja de alcance: etiqueta fila iCloud (modo privado) */
-"settings.scopeICloudLabel" = "iCloud";
+"settings.scopeICloudLabel" = "あなたの iCloud";
 
 /* D4 hoja de alcance: etiqueta fila cuenta de Yala (modo nube) */
-"settings.scopeCloudAccountLabel" = "Yalaアカウント";
+"settings.scopeCloudAccountLabel" = "あなたの Yala アカウント";
 
 /* D4 hoja de alcance: etiqueta fila grupos */
 "settings.scopeGroupsLabel" = "あなたのグループ";
@@ -5115,7 +5115,7 @@
 "settings.wipeExportBeforeButton" = "先にエクスポート";
 
 /* Vaciar v2: caption bajo 'Exportar antes' cuando los datos viven en la cuenta de Yala (.cloud) */
-"settings.wipeExportBeforeCloudCaption" = "クラウドモードでは、これが唯一のコピーになることがあります";
+"settings.wipeExportBeforeCloudCaption" = "データがあなたの Yala アカウントにある場合、これが唯一のコピーになることがあります";
 
 /* Vaciar v2: fila de grupos de la hoja de alcance cuando el usuario tiene saldos pendientes */
 "settings.wipeScopeGroupsDebt" = "グループは残りますが、未精算の残高があります。グループタブから精算できます。";
@@ -5190,10 +5190,10 @@
 "settings.yalaAccountDataLocationTitle" = "データの保存先";
 
 /* Datos en modo nube */
-"settings.yalaAccountDataLocationCloud" = "クラウド上の Yala アカウントに保存されています。";
+"settings.yalaAccountDataLocationCloud" = "あなたの Yala アカウントに保存されています。";
 
 /* Datos en solo-grupos (5b) */
-"settings.yalaAccountDataLocationGroupsOnly" = "この端末とプライベート iCloud に保存されています。アカウントはグループでのみ使用します。";
+"settings.yalaAccountDataLocationGroupsOnly" = "あなたの iCloud とこの端末に保存されています。アカウントはグループでのみ使用します。";
 "settings.yalaAccountDataLocationGroupsOnlyNoPrivate" = "アカウントに保存されるのはグループだけです。このデバイスに個人データはありません。";
 
 /* Alcance del desenlace Cerrar sesión */
@@ -5203,22 +5203,22 @@
 "settings.yalaAccountReturnICloud" = "iCloud に戻す";
 
 /* Alcance del desenlace Volver a iCloud */
-"settings.yalaAccountReturnICloudScope" = "データはプライベート iCloud に戻り、アカウントは一時停止になります。";
+"settings.yalaAccountReturnICloudScope" = "データはあなたの iCloud に戻り、アカウントは一時停止になります。";
 
 /* Alcance del desenlace Eliminar mi cuenta */
 "settings.yalaAccountDeleteScope" = "すべてが永久に削除されます。";
 
 /* Frase de que la Reversa ES el desenlace funcional (§3.3.5) */
-"storage.revert.desenlaceNote" = "この端末からアカウントの連携を解除する方法です。戻ってきたときのために一時停止のまま残ります。";
+"storage.revert.desenlaceNote" = "こうすると、この端末であなたの Yala アカウントを使わなくなります。戻ってきたときのために一時停止のまま残ります。";
 
 /* Header de la subseccion Tu cuenta en Seguridad (§3.2) */
 "settings.accountSubsectionTitle" = "アカウント";
 
 /* Subtitulo de Donde viven tus datos, modo iCloud */
-"settings.dataLocationSubtitleICloud" = "プライベート iCloud";
+"settings.dataLocationSubtitleICloud" = "あなたの iCloud";
 
 /* Subtitulo de Donde viven tus datos, modo nube */
-"settings.dataLocationSubtitleCloud" = "クラウドアカウント";
+"settings.dataLocationSubtitleCloud" = "あなたの Yala アカウント";
 
 /* D10 batch: stop button (D3) */
 "settings.batchLeaveStop" = "中止";
@@ -5259,29 +5259,29 @@
 "storage.migrate.refusedPersonalData" = "現在の Yala アカウントにはすでに個人の家計データがあるため、このデバイスのデータを受け取れません。データを別のアカウントに移すには、先に「グループ」でこのアカウントのリンクを解除してください。";
 
 /* Storage migrate card, after the identity check refused the live account: the device's groups use another account */
-"storage.migrate.refusedOtherGroups" = "グループは別のアカウントを使っていて、このデバイスで使えるクラウドアカウントは1つだけです。データをクラウドに移すには、グループのアカウントでサインインするか、先に「グループ」でリンクを解除してください。";
+"storage.migrate.refusedOtherGroups" = "グループは別のアカウントを使っていて、このデバイスで使える Yala アカウントは1つだけです。データをあなたの Yala アカウントに移すには、グループのアカウントでサインインするか、先に「グループ」でリンクを解除してください。";
 
 /* Storage migrate card, after the identity check refused the live account: the account went back to iCloud */
-"storage.migrate.refusedReturned" = "現在の Yala アカウントはiCloudに戻っていて、このアカウントでクラウドに戻すことはまだできません。";
+"storage.migrate.refusedReturned" = "現在の Yala アカウントからあなたの iCloud に戻したため、このアカウントにもう一度移すことはまだできません。";
 
 /* Storage migrate card, after the identity check refused the live account: it was signed in before a fresh start */
-"storage.migrate.refusedFreshStart" = "現在の Yala アカウントは別の人のものかもしれません。このデバイスを最初から始め直したときに、すでにサインインしていたアカウントです。ご自身のアカウントを選ぶには、「グループ」でリンクを解除してから、もう一度「クラウドを有効化」をタップしてください。";
+"storage.migrate.refusedFreshStart" = "現在の Yala アカウントは別の人のものかもしれません。このデバイスを最初から始め直したときに、すでにサインインしていたアカウントです。ご自身のアカウントを選ぶには、「グループ」でリンクを解除してから、もう一度「Yala アカウントに移す」をタップしてください。";
 "storage.migrate.refusedOtherDevice" = "このアカウントで有効化が途中のままです。このデバイスで始めた場合は1時間後にもう一度お試しください。別のデバイスで始めた場合は、そのデバイスで完了してください。";
 
 /* Storage adopt card: the live session is a different Yala account than the one that migrated (%@ = Apple|Google) */
-"storage.adopt.otherAccountNote" = "このクラウドのコピーは別の Yala アカウント（%@）のものです。サインアウトして、そのアカウントでサインインしてください。";
+"storage.adopt.otherAccountNote" = "このデータは別の Yala アカウント（%@）のものです。サインアウトして、そのアカウントでサインインしてください。";
 
 /* Generic fallback of storage.adopt.otherAccountNote when the sign-in method is unknown */
-"storage.adopt.otherAccountNoteGeneric" = "このクラウドのコピーは別の Yala アカウントのものです。サインアウトして、そのアカウントでサインインしてください。";
+"storage.adopt.otherAccountNoteGeneric" = "このデータは別の Yala アカウントのものです。サインアウトして、そのアカウントでサインインしてください。";
 
 /* Cloud cutover failed because iCloud storage is full — data stays intact on this device */
-"storage.failed.migrationICloudFull" = "クラウドの有効化を完了できませんでした。iCloudの容量がいっぱいです。データはこのデバイスにすべて残っています。iCloudの空き容量を増やしてから、もう一度お試しください。";
+"storage.failed.migrationICloudFull" = "データをあなたの Yala アカウントに移し終えられませんでした。iCloudの容量がいっぱいです。データはこのデバイスにすべて残っています。iCloudの空き容量を増やしてから、もう一度お試しください。";
 
 /* Cloud cutover failed because iCloud is not enabled on this device */
-"storage.failed.migrationICloudOff" = "クラウドの有効化を完了できませんでした。このデバイスではiCloudがオンになっていません。データはこのデバイスにすべて残っています。設定でiCloudをオンにしてから、もう一度お試しください。";
+"storage.failed.migrationICloudOff" = "データをあなたの Yala アカウントに移し終えられませんでした。このデバイスではiCloudがオンになっていません。データはこのデバイスにすべて残っています。設定でiCloudをオンにしてから、もう一度お試しください。";
 
 /* Cloud cutover failed because iCloud never confirmed the last export step */
-"storage.failed.migrationICloudStalled" = "クラウドの有効化を完了できませんでした。iCloudから最後の処理の確認が返ってきていません。データはこのデバイスにすべて残っています。通信状態のよいところで、もう一度お試しください。";
+"storage.failed.migrationICloudStalled" = "データをあなたの Yala アカウントに移し終えられませんでした。iCloudから最後の処理の確認が返ってきていません。データはこのデバイスにすべて残っています。通信状態のよいところで、もう一度お試しください。";
 
 /* Caption on the storage progress card while the cutover waits for iCloud to confirm the export */
 "storage.progress.waitingICloudExport" = "iCloudの確認を待っています…";
@@ -5295,7 +5295,7 @@
 "groups.migrated.updateBody" = "もう一度参加するには、Yalaをアップデートしてください。それまでは支出を見ることはできますが、編集はできません。";
 
 /* C-10: detail banner body when the channel is paused */
-"groups.migrated.pausedBody" = "このグループをYalaのクラウドに移動しているところです。少し時間をおいて、もう一度お試しください。何も失われないので安心してください。";
+"groups.migrated.pausedBody" = "このグループをあなたの Yala アカウントに移しているところです。少し時間をおいて、もう一度お試しください。何も失われないので安心してください。";
 
 /* C-10: read-only staleness note under the migrated banner */
 "groups.migrated.readOnlyNote" = "表示しているのはグループが移動した時点のコピーなので、最新ではない場合があります。";
@@ -5321,9 +5321,9 @@
 /* Welcome > "I'm new" second level (A4 of D-A7, born-cloud): where the personal data lives —
    privacy-first (iCloud) highlighted on top, cloud account below with the trade-off spelled out. */
 "welcome.new.subtitle" = "データの保存場所を選んでください。";
-"welcome.new.privateTitle" = "プライベートなiCloudのアカウント";
-"welcome.new.privateBody" = "データはあなたのApple IDのApple製デバイスに保存され、あなただけのiCloudで同期します。ほかの誰も読めません。私たちも読めません。";
-"welcome.new.cloudTitle" = "クラウドのアカウント";
+"welcome.new.privateTitle" = "あなたの iCloud";
+"welcome.new.privateBody" = "データはあなたのApple IDのApple製デバイスに保存され、あなたの iCloud で同期します。ほかの誰も読めません。私たちも読めません。";
+"welcome.new.cloudTitle" = "あなたの Yala アカウント";
 "welcome.new.cloudBody" = "データはほかの多くのアプリと同じように、私たちのサーバーに保存されます。サポートや新しい機能のために、私たちのチームが見ることがあります。";
 "welcome.new.groupsQuestion" = "割り勘だけしたいですか？";
 "welcome.new.groupsAction" = "こちらから始める";
@@ -5402,7 +5402,7 @@
 
 /* C2 · empty state con sesión viva y sin consent */
 "groups.empty.needsConsent.title" = "グループの保存方法に同意する";
-"groups.empty.needsConsent.message" = "Yalaのクラウドに何が保存されるかをお伝えします。決めるのはあなたです。";
+"groups.empty.needsConsent.message" = "あなたの Yala アカウントに何が保存されるかをお伝えします。決めるのはあなたです。";
 "groups.empty.needsConsent.action" = "確認して同意";
 
 
@@ -5504,7 +5504,7 @@
 "welcome.restore.cloudPausedTitle" = "データはiCloudにはありません";
 
 /* Restore: cuerpo del estado de nube en pausa — tranquiliza sobre los datos sin prometer plazo */
-"welcome.restore.cloudPausedBody" = "このApple IDはYalaのクラウドアカウントで使われていました。そこに保存したデータはiCloudにはありません。クラウドへのサインインは現在一時停止中です。しばらくしてからもう一度お試しください。";
+"welcome.restore.cloudPausedBody" = "このApple IDは Yala アカウントで使われていました。そこに保存したデータはあなたの iCloud にはありません。あなたの Yala アカウントへのサインインは現在一時停止中です。しばらくしてからもう一度お試しください。";
 
 /* Push: gentle reminder to the DEBTOR that a group debt has been idle. Args: 1=formatted amount, 2=creditor name. Never dunning/collector tone. */
 "notifications.groups.settlementReminder" = "👋 お知らせです。%2$@さんに%1$@の精算が残っています。都合のよいときにどうぞ。";
@@ -5648,7 +5648,7 @@
 "groups.accountIsComplete.title" = "そのアカウントはすでにYala全体を使っています";
 
 /* Bloque [I]: por qué se bloquea */
-"groups.accountIsComplete.body" = "そのアカウントには、すでに誰かの家計データがクラウドに入っています。グループだけに使うと2つのアカウントが1つに混ざってしまうので、ここではできません。";
+"groups.accountIsComplete.body" = "その Yala アカウントには、すでに誰かの家計データが入っています。グループだけに使うと2つのアカウントが1つに混ざってしまうので、ここではできません。";
 
 /* Bloque [I]: CTA para firmar con otra cuenta */
 "groups.accountIsComplete.useAnotherAccount" = "別のアカウントを使う";
@@ -5795,7 +5795,7 @@
 "welcome.groups.neutralUnavailableBody" = "この端末には開いたままのセッションがあります。ここでグループを始める前に、設定から閉じてください。戻ってください。何も変更していません。";
 
 /* Vuelta al neutro parada: el paso de los datos entre iCloud y la nube no está en reposo */
-"welcome.groups.neutralMigrationBody" = "iCloud とクラウドの間のデータ移行が完了したことをまだ確認できません。今この端末を準備すると、まだアップロードされていないデータが削除されるおそれがあります。戻ってください。何も変更していません。";
+"welcome.groups.neutralMigrationBody" = "あなたの iCloud とあなたの Yala アカウントの間のデータ移行が完了したことをまだ確認できません。今この端末を準備すると、まだアップロードされていないデータが削除されるおそれがあります。戻ってください。何も変更していません。";
 
 /* Título de la sección Grupos dentro de «Dónde viven tus datos» */
 "storage.groups.title" = "グループ";
@@ -5977,11 +5977,11 @@
 
 /* Cerrar sesión en la nube sin App Attest con cambios personales sin subir (2026-09-15) */
 "settings.signOutAttestTitle" = "この端末ではデータを同期できません";
-"settings.signOutAttestMessage" = "この端末は1日前からクラウドのアカウントに変更を送信できません。届かなかった変更：%d件。決める前に、記録をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";
-"settings.signOutAttestMessageUnknown" = "この端末は1日前からクラウドのアカウントに変更を送信できず、届かなかった変更があります。決める前に、記録をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";
+"settings.signOutAttestMessage" = "この端末は1日前からあなたの Yala アカウントに変更を送信できません。届かなかった変更：%d件。決める前に、記録をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";
+"settings.signOutAttestMessageUnknown" = "この端末は1日前からあなたの Yala アカウントに変更を送信できず、届かなかった変更があります。決める前に、記録をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";
 "settings.signOutAttestExportButton" = "記録をエクスポート";
 "settings.signOutAttestLossButton" = "変更が失われてもサインアウト";
-"settings.signOutAttestBlocked" = "この端末は1日前からクラウドのアカウントに変更を送信できないため、変更をアップロードできません。";
+"settings.signOutAttestBlocked" = "この端末は1日前からあなたの Yala アカウントに変更を送信できないため、変更をアップロードできません。";
 "settings.signOutAttestExportEmpty" = "エクスポートできる記録がありません。";
 "settings.signOutAttestExportFailed" = "ファイルを作成できませんでした。もう一度お試しください。";
 
@@ -5989,46 +5989,46 @@
 "groups.attestTerminalBanner" = "この端末は1日前からグループに変更を送信できません。ここで記録した内容はグループの誰にも表示されないため、別の端末をお使いください。";
 
 /* Aviso fijo: este teléfono no consigue App Attest y los datos personales no suben a la nube */
-"settings.attestTerminalBanner" = "この端末は1日前からクラウドのアカウントに変更を送信できません。ここで記録した内容は端末内には残りますが、アカウントには届きません。当面は別の端末をお使いください。";
+"settings.attestTerminalBanner" = "この端末は1日前からあなたの Yala アカウントに変更を送信できません。ここで記録した内容は端末内には残りますが、アカウントには届きません。当面は別の端末をお使いください。";
 
 /* Vuelta a iCloud: espera de la subida, cancelación y salida sin llegar (ticket reverse-upload-has-no-ceiling-and-no-exit) */
 "storage.progress.reverseUploading" = "データを iCloud にアップロードしています。Yala はそのままお使いいただけます。";
 "storage.progress.reversePending" = "アップロード待ち：%d";
-"storage.progress.reverseICloudFull" = "iCloud にデータを保存する空き容量がありません。数分たってもアップロードが進まない場合は、クラウドのままになります。空き容量を増やしてから、もう一度お試しいただけます。";
-"storage.progress.reverseICloudUnavailable" = "このデバイスでは iCloud を利用できません。数分たってもアップロードが進まない場合は、クラウドのままになり、あとでもう一度お試しいただけます。";
-"storage.progress.cancelReverse" = "キャンセルしてクラウドのまま使う";
-"storage.confirm.cancelReverseTitle" = "iCloud に戻す処理をキャンセルしますか？";
-"storage.confirm.cancelReverseBody" = "データは Yala のクラウドとこのデバイスに残ります。このあと Yala から、一度終了してもう一度開くようご案内します。";
-"storage.confirm.cancelReverseConfirm" = "はい、クラウドのまま使う";
+"storage.progress.reverseICloudFull" = "iCloud にデータを保存する空き容量がありません。数分たってもアップロードが進まない場合は、あなたの Yala アカウントのままになります。空き容量を増やしてから、もう一度お試しいただけます。";
+"storage.progress.reverseICloudUnavailable" = "このデバイスでは iCloud を利用できません。数分たってもアップロードが進まない場合は、あなたの Yala アカウントのままになり、あとでもう一度お試しいただけます。";
+"storage.progress.cancelReverse" = "キャンセルして Yala アカウントのまま使う";
+"storage.confirm.cancelReverseTitle" = "あなたの iCloud に戻す処理をキャンセルしますか？";
+"storage.confirm.cancelReverseBody" = "データはあなたの Yala アカウントとこのデバイスに残ります。このあと Yala から、一度終了してもう一度開くようご案内します。";
+"storage.confirm.cancelReverseConfirm" = "はい、Yala アカウントのまま使う";
 "storage.confirm.cancelReverseKeep" = "このまま待つ";
-"storage.reverseAbort.relaunchTitle" = "データはクラウドに残っています";
-"storage.reverseAbort.relaunchBody" = "Yala を完全に終了し（アプリスイッチャーでスワイプして閉じる）、もう一度開いてクラウドを使い続けてください。";
-"storage.reverseAbort.icloudFull" = "iCloud に戻す処理を完了できませんでした。iCloud の空き容量が不足していました。空き容量を増やしてから、もう一度お試しください。";
-"storage.reverseAbort.icloudUnavailable" = "iCloud に戻す処理を完了できませんでした。このデバイスでは iCloud を利用できませんでした。設定で iCloud アカウントを確認してから、もう一度お試しください。";
-"storage.reverseAbort.stalled" = "iCloud に戻す処理を完了できませんでした。iCloud がすべてのデータを受け取れませんでした。このデバイスで iCloud がオンになっていることを確認し、通信状態のよいときに、アップロード中は Yala を開いたままにして、もう一度お試しください。";
-"storage.reverseAbort.claimRetryLater" = "iCloud に戻す処理を開始できませんでした。データのクラウドへの移行がまだ完了していませんでした。しばらくしてからもう一度お試しください。";
-"storage.reverseAbort.claimRefused" = "iCloud に戻す処理を開始できませんでした。このアカウントでは実行できませんでした。この操作では何も変更されていません。%@ までご連絡ください。一緒に確認します。";
-"storage.reverseAbort.otherDeviceReverting" = "iCloud に戻す処理を開始できませんでした。ほかのデバイスですでに iCloud に戻す処理が進んでいました。完了したら、このデバイスでも実行できます。";
-"storage.progress.reverseICloudMaybeOff" = "このデバイスで iCloud がオンになっていない場合、データは iCloud に届きません。設定でオンにするか、キャンセルしてクラウドのまま使い続けてください。";
+"storage.reverseAbort.relaunchTitle" = "データはあなたの Yala アカウントに残っています";
+"storage.reverseAbort.relaunchBody" = "Yala を完全に終了し（アプリスイッチャーでスワイプして閉じる）、もう一度開いてあなたの Yala アカウントを使い続けてください。";
+"storage.reverseAbort.icloudFull" = "あなたの iCloud に戻す処理を完了できませんでした。iCloud の空き容量が不足していました。空き容量を増やしてから、もう一度お試しください。";
+"storage.reverseAbort.icloudUnavailable" = "あなたの iCloud に戻す処理を完了できませんでした。このデバイスでは iCloud を利用できませんでした。設定で iCloud アカウントを確認してから、もう一度お試しください。";
+"storage.reverseAbort.stalled" = "あなたの iCloud に戻す処理を完了できませんでした。iCloud がすべてのデータを受け取れませんでした。このデバイスで iCloud がオンになっていることを確認し、通信状態のよいときに、アップロード中は Yala を開いたままにして、もう一度お試しください。";
+"storage.reverseAbort.claimRetryLater" = "あなたの iCloud に戻す処理を開始できませんでした。データがまだあなたの Yala アカウントに移りきっていませんでした。しばらくしてからもう一度お試しください。";
+"storage.reverseAbort.claimRefused" = "あなたの iCloud に戻す処理を開始できませんでした。このアカウントでは実行できませんでした。この操作では何も変更されていません。%@ までご連絡ください。一緒に確認します。";
+"storage.reverseAbort.otherDeviceReverting" = "あなたの iCloud に戻す処理を開始できませんでした。ほかのデバイスですでに iCloud に戻す処理が進んでいました。完了したら、このデバイスでも実行できます。";
+"storage.progress.reverseICloudMaybeOff" = "このデバイスで iCloud がオンになっていない場合、データはあなたの iCloud に届きません。設定でオンにするか、キャンセルしてあなたの Yala アカウントのまま使い続けてください。";
 /* Vuelta a iCloud: la muestra no se deja leer en este dispositivo (espera y salida) */
-"storage.progress.reverseLocalFailure" = "このデバイスで iCloud へのアップロード用のデータを準備できませんでした。数分たっても解決しない場合は、クラウドのままになり、あとでもう一度お試しいただけます。";
-"storage.reverseAbort.localFailure" = "iCloud への切り替えを完了できませんでした。このデバイスでアップロード用のデータを準備できませんでした。クラウドのままです。しばらくしてから、もう一度お試しください。";
-"storage.errors.reversePendingExit" = "まだ iCloud に戻せません。先にクラウドの再有効化を完了する必要があります。少し待ってからもう一度お試しください。";
+"storage.progress.reverseLocalFailure" = "このデバイスで iCloud へのアップロード用のデータを準備できませんでした。数分たっても解決しない場合は、あなたの Yala アカウントのままになり、あとでもう一度お試しいただけます。";
+"storage.reverseAbort.localFailure" = "あなたの iCloud に戻す処理を完了できませんでした。このデバイスでアップロード用のデータを準備できませんでした。データはあなたの Yala アカウントのままです。しばらくしてから、もう一度お試しください。";
+"storage.errors.reversePendingExit" = "まだあなたの iCloud に戻せません。先に、この端末であなたの Yala アカウントを再び使えるようにする処理を完了する必要があります。少し待ってからもう一度お試しください。";
 
 /* «Migrar a la nube» se paró sin escribir nada: la cuenta ya tiene datos (settings-migrate-to-cloud-adopts-silently-instead-of-migrating) */
 "storage.errors.identityCheck" = "アカウントを確認できませんでした。少し待ってからもう一度お試しください。何も変更していません。";
 "storage.migrateBlock.personalDataTitle" = "このアカウントにはすでに独自のデータがあります";
-"storage.migrateBlock.personalDataBody" = "何も変更していません。データをクラウドに移すには、別のアカウントを使ってください。そのアカウントのデータをここで使うには、サインアウトしてからそのアカウントでサインインしてください。";
+"storage.migrateBlock.personalDataBody" = "何も変更していません。データを Yala アカウントに移すには、別のアカウントを使ってください。そのアカウントのデータをここで使うには、サインアウトしてからそのアカウントでサインインしてください。";
 "storage.migrateBlock.personalDataBodyNoSwitch" = "何も変更していません。そのアカウントのデータをここで使うには、サインアウトしてからそのアカウントでサインインしてください。データを別のアカウントに移すには、先に「グループ」でこのアカウントのリンクを解除してください。";
 "storage.migrateBlock.otherGroupsTitle" = "グループにはすでに別のアカウントを使っています";
-"storage.migrateBlock.otherGroupsBody" = "何も変更していません。このデバイスで使えるクラウドアカウントは1つだけで、グループはすでに別のアカウントを使っています。データをクラウドに移すには、グループのアカウントでサインインするか、別のアカウントを使う場合は先に「グループ」でリンクを解除してください。";
-"storage.migrateBlock.otherGroupsBodyEmail" = "何も変更していません。このデバイスで使えるクラウドアカウントは1つだけで、グループはすでに%@を使っています。データをクラウドに移すには、そのアカウントでサインインするか、別のアカウントを使う場合は先に「グループ」でリンクを解除してください。";
-"storage.migrateBlock.returnedTitle" = "このアカウントはiCloudに戻っています";
-"storage.migrateBlock.returnedBody" = "このアカウントでクラウドに戻すことはまだできません。何も変更していません。";
+"storage.migrateBlock.otherGroupsBody" = "何も変更していません。このデバイスで使える Yala アカウントは1つだけで、グループはすでに別のアカウントを使っています。データをあなたの Yala アカウントに移すには、グループのアカウントでサインインするか、別のアカウントを使う場合は先に「グループ」でリンクを解除してください。";
+"storage.migrateBlock.otherGroupsBodyEmail" = "何も変更していません。このデバイスで使える Yala アカウントは1つだけで、グループはすでに%@を使っています。データをあなたの Yala アカウントに移すには、そのアカウントでサインインするか、別のアカウントを使う場合は先に「グループ」でリンクを解除してください。";
+"storage.migrateBlock.returnedTitle" = "このアカウントからあなたの iCloud に戻しました";
+"storage.migrateBlock.returnedBody" = "このアカウントにもう一度移すことはまだできません。何も変更していません。";
 "storage.migrateBlock.useAnotherAccount" = "別のアカウントを使う";
 "storage.migrateBlock.appleSameAccountNote" = "Appleでは、Yalaは常にこのデバイスのアカウントを使います。別のアカウントを使うには、Googleを選んでください。";
 "storage.migrateBlock.freshStartSessionTitle" = "このアカウントは別の人のものかもしれません";
-"storage.migrateBlock.freshStartSessionBody" = "何も変更していません。グループは、このデバイスですでにサインインしていたアカウントを使っています。このデバイスは最初から始め直したため、そのアカウントは別の人のものかもしれません。データをクラウドに移すには、「グループ」でリンクを解除してから、もう一度「クラウドを有効化」をタップしてください。ご自身のアカウントを選べます。";
+"storage.migrateBlock.freshStartSessionBody" = "何も変更していません。グループは、このデバイスですでにサインインしていたアカウントを使っています。このデバイスは最初から始め直したため、そのアカウントは別の人のものかもしれません。データをあなたの Yala アカウントに移すには、「グループ」でリンクを解除してから、もう一度「Yala アカウントに移す」をタップしてください。ご自身のアカウントを選べます。";
 "storage.migrateBlock.otherDeviceTitle" = "このアカウントで有効化が途中のままです";
 "storage.migrateBlock.otherDeviceBody" = "何も変更していません。このデバイスで始めた場合は、1時間後にもう一度お試しください。別のデバイスで始めた場合は、そのデバイスで完了してください。";
 
@@ -6039,12 +6039,12 @@
 "welcome.restore.cloudUnverifiedBody" = "保存されたデータがあるかを確認するために接続できませんでした。少し経ってから、もう一度お試しください。";
 
 /* Caption de la tarjeta de progreso de la vuelta a iCloud cuando la sesión de la nube ya no vale */
-"storage.progress.reverseNeedsSignIn" = "セッションの有効期限が切れました。iCloud に戻す作業を続けるには、もう一度サインインしてください。";
-"storage.progress.adoptSessionExpired" = "クラウドのセッションが無効になりました。有効化をキャンセルして、アカウントで再度サインインしてください。";
+"storage.progress.reverseNeedsSignIn" = "セッションの有効期限が切れました。あなたの iCloud に戻す作業を続けるには、もう一度サインインしてください。";
+"storage.progress.adoptSessionExpired" = "あなたの Yala アカウントのセッションが無効になりました。キャンセルして、アカウントで再度サインインしてください。";
 "storage.progress.adoptAccountUnavailable" = "今このアカウントにはアクセスできません。%@ までご連絡ください。一緒に確認します。";
 
 /* Aviso cuando el sign-in para retomar la vuelta a iCloud trae una cuenta distinta */
-"storage.errors.reverseSignInOtherAccount" = "別のアカウントでサインインしました。iCloud に戻す操作を始めたアカウントでサインインしてください。";
+"storage.errors.reverseSignInOtherAccount" = "別のアカウントでサインインしました。あなたの iCloud に戻す操作を始めたアカウントでサインインしてください。";
 "storage.errors.syncSignInOtherAccount" = "別のアカウントでサインインしたため、サインインしたままにしませんでした。この端末で Yala に使っているアカウントでサインインしてください。";
 
 /* Restore: el import de CloudKit no terminó dentro del tope pero SÍ está en marcha — los datos existen y siguen bajando. NO niega que existan (es lo contrario de welcome.restore.notFoundTitle). */
@@ -6054,64 +6054,64 @@
 "welcome.restore.importIncompleteBody" = "iCloud がまだ履歴を送信しています。記録が多い場合や通信が遅い場合は数分かかることがあります。少し待ってからもう一度検索してください。";
 
 /* Salida de la vuelta antes de montar el espejo: el servidor no dejó continuar */
-"storage.reverseAbort.preMountRefused" = "iCloud への切り替えを完了できませんでした。クラウドのアカウントが許可しませんでした。データは Yala のクラウドにそのまま残っています。%@ までご連絡ください。一緒に確認します。";
+"storage.reverseAbort.preMountRefused" = "あなたの iCloud に戻す処理を完了できませんでした。あなたの Yala アカウントが許可しませんでした。データはあなたの Yala アカウントにそのまま残っています。%@ までご連絡ください。一緒に確認します。";
 
 /* Salida de la vuelta antes de montar el espejo: venció el techo largo */
-"storage.reverseAbort.preMountStalled" = "iCloud への切り替えを完了できませんでした。処理が進まなくなりました。データは Yala のクラウドにそのまま残っています。いつでもやり直せます。";
+"storage.reverseAbort.preMountStalled" = "あなたの iCloud に戻す処理を完了できませんでした。処理が進まなくなりました。データはあなたの Yala アカウントにそのまま残っています。いつでもやり直せます。";
 
 /* Cuerpo del diálogo de cancelar antes de montar el espejo: no hay relanzamiento */
-"storage.confirm.cancelReverseBeforeMountBody" = "データは Yala のクラウドとこの端末にそのまま残ります。いつでもやり直せます。";
+"storage.confirm.cancelReverseBeforeMountBody" = "データはあなたの Yala アカウントとこの端末にそのまま残ります。いつでもやり直せます。";
 
 /* Diálogo de cancelar: seguir, antes de montar el espejo */
-"storage.confirm.cancelReverseKeepBeforeMount" = "iCloud への切り替えを続ける";
+"storage.confirm.cancelReverseKeepBeforeMount" = "iCloud に戻す処理を続ける";
 
 /* Salida de la vuelta antes de montar el espejo: otro dispositivo tomó el relevo */
-"storage.reverseAbort.preMountOtherDevice" = "iCloud への切り替えを完了できませんでした。別のお使いの端末が引き継ぎました。そちらが終わったら、この端末でも実行できます。";
+"storage.reverseAbort.preMountOtherDevice" = "あなたの iCloud に戻す処理を完了できませんでした。別のお使いの端末が引き継ぎました。そちらが終わったら、この端末でも実行できます。";
 
 /* Techo y cancelación de la subida al activar la nube (ticket snapshot-upload-has-no-ceiling-and-no-way-out) */
 /* Fallo de la activación: 72 h sin subir nada, con cualquier causa (techo largo): no acusa a nadie */
-"storage.failed.snapshotStalled" = "クラウドを有効化できませんでした。データのアップロードが数日間進んでいません。データはデバイスに安全に残っています。時間をおいて、もう一度お試しください。";
+"storage.failed.snapshotStalled" = "データをあなたの Yala アカウントに移せませんでした。アップロードが数日間進んでいません。データはデバイスに安全に残っています。時間をおいて、もう一度お試しください。";
 /* Fallo de la activación: el techo corto venció con motivos definitivos turnándose y ninguno llegó solo al plazo (ticket snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling): no nombra un motivo ni un plazo */
-"storage.failed.snapshotMixedCauses" = "クラウドを有効化できませんでした。待っても解決しない問題で、データのアップロードが止まりました。データはデバイスに安全に残っています。もう一度お試しください。";
+"storage.failed.snapshotMixedCauses" = "データをあなたの Yala アカウントに移せませんでした。待っても解決しない問題で、アップロードが止まりました。データはデバイスに安全に残っています。もう一度お試しください。";
 /* Fallo de la activación: la sesión caducó durante la subida */
-"storage.failed.snapshotSessionExpired" = "クラウドを有効化できませんでした。データのアップロード中にセッションの有効期限が切れました。データはデバイスに安全に残っています。もう一度お試しいただき、再度サインインしてください。";
+"storage.failed.snapshotSessionExpired" = "データをあなたの Yala アカウントに移せませんでした。データのアップロード中にセッションの有効期限が切れました。データはデバイスに安全に残っています。もう一度お試しいただき、再度サインインしてください。";
 /* Fallo de la activación: la cuenta en la nube no lo permitió (%@ = correo de soporte) */
-"storage.failed.snapshotAccountUnavailable" = "クラウドを有効化できませんでした。クラウドのアカウントが許可しませんでした。データはデバイスに安全に残っています。%@ までご連絡ください。一緒に確認します。";
+"storage.failed.snapshotAccountUnavailable" = "データをあなたの Yala アカウントに移せませんでした。アカウントが許可しませんでした。データはデバイスに安全に残っています。%@ までご連絡ください。一緒に確認します。";
 /* Fallo de la activación: el dispositivo no pudo preparar los datos */
-"storage.failed.snapshotLocalFailure" = "クラウドを有効化できませんでした。このデバイスでアップロード用のデータを準備できませんでした。データは変更されずにここに残っています。しばらくしてから、もう一度お試しください。";
+"storage.failed.snapshotLocalFailure" = "データをあなたの Yala アカウントに移せませんでした。このデバイスでアップロード用のデータを準備できませんでした。データは変更されずにここに残っています。しばらくしてから、もう一度お試しください。";
 /* Fallo de la activación en el claim, la identidad o el cutover: días sin avanzar, con cualquier causa (techo largo): no acusa a nadie */
-"storage.failed.stepStalled" = "クラウドを有効化できませんでした。有効化の処理が数日間進んでいません。データはデバイスに安全に残っています。時間をおいて、もう一度お試しください。";
+"storage.failed.stepStalled" = "データをあなたの Yala アカウントに移せませんでした。移す処理が数日間進んでいません。データはデバイスに安全に残っています。時間をおいて、もう一度お試しください。";
 /* Fallo de la activación en el claim o el cutover: la sesión caducó (sin hablar de la subida) */
-"storage.failed.stepSessionExpired" = "クラウドを有効化できませんでした。完了する前にセッションの有効期限が切れました。データはデバイスに安全に残っています。もう一度お試しいただき、再度サインインしてください。";
+"storage.failed.stepSessionExpired" = "データをあなたの Yala アカウントに移せませんでした。完了する前にセッションの有効期限が切れました。データはデバイスに安全に残っています。もう一度お試しいただき、再度サインインしてください。";
 /* Fallo de la activación en el cutover: otro dispositivo de la misma cuenta tomó el relevo de la migración */
-"storage.failed.stepOtherDevice" = "このデバイスではクラウドを有効化できませんでした。同じアカウントの別のデバイスが処理を引き継ぎました。データは変更されずにここに残っています。";
-"storage.failed.adoptStalled" = "クラウドのアカウントにサインインできませんでした。有効化が数日間進んでいません。この端末はクラウドのデータを何も変更していません。後でもう一度お試しください。";
-"storage.failed.adoptSessionExpired" = "クラウドのアカウントにサインインできませんでした。セッションの有効期限が切れました。この端末はクラウドのデータを何も変更していません。もう一度お試しいただき、アカウントで再度サインインしてください。";
-"storage.failed.adoptAccountUnavailable" = "クラウドのアカウントにサインインできませんでした。今このアカウントにはアクセスできません。%@ までご連絡ください。一緒に確認します。";
-"storage.failed.adoptEffectLocalFailure" = "クラウドのアカウントにサインインできませんでした。この端末でデータを読み込めず、アカウントのデータとまとめられませんでした。この端末のデータはこれまでどおり残っています。しばらくしてから、もう一度お試しください。";
-"storage.failed.adoptEffectStalled" = "クラウドのアカウントにサインインできませんでした。有効化が数日間完了していません。この端末のデータはこれまでどおり残っています。後でもう一度お試しください。";
-"storage.failed.adoptEffectLineageUnproven" = "クラウドのアカウントにサインインできませんでした。この端末には、そのアカウントにないデータがあり、そのアカウントのものか確認できなかったため、まとめませんでした。この端末のデータはこれまでどおり残っています。別の端末でこのiCloudのデータをクラウドに移した場合は、同じアカウントでサインインしているか確認し、iCloudがデータを取り込み終えるまで待ってから、もう一度お試しください。";
+"storage.failed.stepOtherDevice" = "このデバイスからデータをあなたの Yala アカウントに移せませんでした。同じアカウントの別のデバイスが処理を引き継ぎました。データは変更されずにここに残っています。";
+"storage.failed.adoptStalled" = "あなたの Yala アカウントにサインインできませんでした。処理が数日間進んでいません。この端末はあなたの Yala アカウントのデータを何も変更していません。後でもう一度お試しください。";
+"storage.failed.adoptSessionExpired" = "あなたの Yala アカウントにサインインできませんでした。セッションの有効期限が切れました。この端末はあなたの Yala アカウントのデータを何も変更していません。もう一度お試しいただき、アカウントで再度サインインしてください。";
+"storage.failed.adoptAccountUnavailable" = "あなたの Yala アカウントにサインインできませんでした。今このアカウントにはアクセスできません。%@ までご連絡ください。一緒に確認します。";
+"storage.failed.adoptEffectLocalFailure" = "あなたの Yala アカウントにサインインできませんでした。この端末でデータを読み込めず、アカウントのデータとまとめられませんでした。この端末のデータはこれまでどおり残っています。しばらくしてから、もう一度お試しください。";
+"storage.failed.adoptEffectStalled" = "あなたの Yala アカウントにサインインできませんでした。処理が数日間完了していません。この端末のデータはこれまでどおり残っています。後でもう一度お試しください。";
+"storage.failed.adoptEffectLineageUnproven" = "あなたの Yala アカウントにサインインできませんでした。この端末には、そのアカウントにないデータがあり、そのアカウントのものか確認できなかったため、まとめませんでした。この端末のデータはこれまでどおり残っています。別の端末でこのiCloudのデータをあなたの Yala アカウントに移した場合は、同じアカウントでサインインしているか確認し、iCloudがデータを取り込み終えるまで待ってから、もう一度お試しください。";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "有効化をキャンセル";
 /* Título de la confirmación de cancelar la activación */
-"storage.confirm.cancelMigrationTitle" = "クラウドの有効化をキャンセルしますか？";
+"storage.confirm.cancelMigrationTitle" = "Yala アカウントに移す処理をキャンセルしますか？";
 /* Cuerpo de la confirmación de cancelar la activación */
-"storage.confirm.cancelMigrationBody" = "データはこれまでどおりこのデバイスに残ります。すでにアップロードされたものは、クラウドのアカウントに残ります。いつでもやり直せます。";
-"storage.confirm.cancelAdoptBody" = "この端末はクラウドのデータを何も変更していません。いつでもここから、この端末でクラウドを再度有効化できます。";
-"storage.confirm.cancelAdoptEffectBody" = "この端末のデータはこれまでどおり残っています。いつでもここから、この端末でクラウドを再度有効化できます。";
+"storage.confirm.cancelMigrationBody" = "データはこれまでどおりこのデバイスに残ります。すでにアップロードされたものは、あなたの Yala アカウントに残ります。いつでもやり直せます。";
+"storage.confirm.cancelAdoptBody" = "この端末はあなたの Yala アカウントのデータを何も変更していません。いつでもここから、この端末であなたの Yala アカウントを再び使えます。";
+"storage.confirm.cancelAdoptEffectBody" = "この端末のデータはこれまでどおり残っています。いつでもここから、この端末であなたの Yala アカウントを再び使えます。";
 "storage.waiting.stopWaiting" = "待つのをやめる";
 "storage.confirm.stopWaitingTitle" = "待つのをやめますか？";
-"storage.confirm.stopWaitingBody" = "もう一方のデバイスはクラウドの有効化を続けます。この端末は待つのをやめ、クラウドのデータは何も変更しません。いつでもここから、この端末でクラウドを再度有効化できます。";
+"storage.confirm.stopWaitingBody" = "もう一方のデバイスは、データをあなたの Yala アカウントに移し続けます。この端末は待つのをやめ、あなたの Yala アカウントのデータは何も変更しません。いつでもここから、この端末であなたの Yala アカウントを使えます。";
 "storage.confirm.stopWaitingConfirm" = "やめる";
 "storage.confirm.stopWaitingKeep" = "このまま待つ";
-"storage.progress.followerSessionExpired" = "クラウドのセッションが無効になりました。待つのをやめて、アカウントで再度サインインしてください。";
+"storage.progress.followerSessionExpired" = "あなたの Yala アカウントのセッションが無効になりました。待つのをやめて、アカウントで再度サインインしてください。";
 /* Botón que confirma cancelar la activación */
 "storage.confirm.cancelMigrationConfirm" = "キャンセルする";
 /* Botón que sigue con la activación */
-"storage.confirm.cancelMigrationKeep" = "有効化を続ける";
+"storage.confirm.cancelMigrationKeep" = "Yala アカウントに移す処理を続ける";
 
 /* Tarjeta de Almacenamiento cuando el registro de la migración no se deja leer */
-"storage.journalUnreadable.message" = "データの状態を確認できませんでした。今はクラウドへの移行も iCloud への切り戻しもできません。引き続き確認します。解決しない場合は、Yala を終了してもう一度開いてください。";
+"storage.journalUnreadable.message" = "データの状態を確認できませんでした。今はデータをあなたの Yala アカウントに移すことも、あなたの iCloud に戻すこともできません。引き続き確認します。解決しない場合は、Yala を終了してもう一度開いてください。";
 
 /* Sincronización parada hasta iniciar sesión, cuando no se pudo contar cuántos cambios faltan */
 "storage.sync.needsSignInUncounted" = "サインインして変更をアップロード";
@@ -6125,25 +6125,25 @@
 "storage.migrate.previewUnreadable" = "データを数えられませんでした。少し待ってからもう一度お試しください。";
 
 /* Storage failure card: another device had already started uploading to this account and this device's data does not share lineage with it */
-"storage.failed.stepLineageUnproven" = "クラウドを有効にできませんでした。そのアカウントにはすでにクラウド上のデータがあり、この端末のデータとは一致しないため、まとめませんでした。この端末のデータはこれまでどおり残っています。正しいアカウントでサインインしているか確認してください。ご自身のアカウントで、この端末が同じiCloudを使っている場合は、iCloudがデータを取り込み終えるまで待ってから、もう一度お試しください。";
-"storage.failed.stepLeaderRowsNotArrived" = "クラウドを有効にできませんでした。別の端末がすでにデータの一部をアップロードしていますが、そのすべてがまだiCloud経由でこの端末に届いていないため、重複を避けるために何もアップロードしませんでした。この端末のデータはこれまでどおり残っています。インターネットに接続した状態でその別の端末でYalaを開き、iCloudがこの端末にデータを取り込み終えるまで待ってから、もう一度お試しください。";
+"storage.failed.stepLineageUnproven" = "データをあなたの Yala アカウントに移せませんでした。そのアカウントにはすでにデータがあり、この端末のデータとは一致しないため、まとめませんでした。この端末のデータはこれまでどおり残っています。正しいアカウントでサインインしているか確認してください。ご自身のアカウントで、この端末が同じiCloudを使っている場合は、iCloudがデータを取り込み終えるまで待ってから、もう一度お試しください。";
+"storage.failed.stepLeaderRowsNotArrived" = "データをあなたの Yala アカウントに移せませんでした。別の端末がすでにデータの一部をアップロードしていますが、そのすべてがまだiCloud経由でこの端末に届いていないため、重複を避けるために何もアップロードしませんでした。この端末のデータはこれまでどおり残っています。インターネットに接続した状態でその別の端末でYalaを開き、iCloudがこの端末にデータを取り込み終えるまで待ってから、もう一度お試しください。";
 
 /* Sign-out blocked: sync stopped because this build can't read the migration record */
-"settings.signOutSyncStoppedNeedsUpdate" = "まだクラウドにアップロードされていない変更があります。データのクラウドへの移行状況を確認できなかったため、今はアップロードできません。Yala を完全に終了してもう一度開いてください。変わらない場合は、App Store で Yala をアップデートしてから、もう一度お試しください。";
-"settings.signOutCaptureUnfinished" = "最近の変更の一部を、クラウドへのアップロード用に準備できませんでした。変更はこの端末に残っていて失われません。Yala を完全に終了してもう一度開いてください。変わらない場合は、App Store で Yala をアップデートしてから、もう一度お試しください。";
+"settings.signOutSyncStoppedNeedsUpdate" = "まだあなたの Yala アカウントに届いていない変更があります。データをあなたの Yala アカウントに移す処理の状況を確認できなかったため、今はアップロードできません。Yala を完全に終了してもう一度開いてください。変わらない場合は、App Store で Yala をアップデートしてから、もう一度お試しください。";
+"settings.signOutCaptureUnfinished" = "最近の変更の一部を、あなたの Yala アカウントへのアップロード用に準備できませんでした。変更はこの端末に残っていて失われません。Yala を完全に終了してもう一度開いてください。変わらない場合は、App Store で Yala をアップデートしてから、もう一度お試しください。";
 
 /* Sign-out blocked: sync paused because the cloud/iCloud switch didn't finish */
-"settings.signOutSyncStoppedMidMigration" = "まだクラウドにアップロードされていない変更があります。クラウドと iCloud の間のデータ移行が完了していないため、同期は一時停止しています。この設定画面の「データの保存先」を開き、そこで完了させてください（失敗している場合は「再試行」をタップ）。その後、もう一度お試しください。";
+"settings.signOutSyncStoppedMidMigration" = "まだあなたの Yala アカウントに届いていない変更があります。あなたの Yala アカウントとあなたの iCloud の間のデータ移行が完了していないため、同期は一時停止しています。この設定画面の「データの保存先」を開き、そこで完了させてください（失敗している場合は「再試行」をタップ）。その後、もう一度お試しください。";
 
 /* Sign-out blocked: sync paused until Yala is reopened */
-"settings.signOutSyncStoppedNeedsRelaunch" = "まだクラウドにアップロードされていない変更があります。Yala をもう一度開くまで、同期は一時停止しています。Yala を完全に終了し（アプリスイッチャーでスワイプして閉じる）、もう一度開いてからお試しください。";
+"settings.signOutSyncStoppedNeedsRelaunch" = "まだあなたの Yala アカウントに届いていない変更があります。Yala をもう一度開くまで、同期は一時停止しています。Yala を完全に終了し（アプリスイッチャーでスワイプして閉じる）、もう一度開いてからお試しください。";
 
 /* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
-"settings.signOutUploadRetryLater" = "最新の変更がクラウドに届きませんでした。変更はこの端末に残っていて失われません。しばらくしてからもう一度お試しください。";
-"settings.signOutCloudSessionExpired" = "セッションの有効期限が切れ、まだクラウドにアップロードされていない変更があります。変更は失われません。この設定画面の「データの保存先」を開いて「サインイン」をタップし、その後もう一度お試しください。";
+"settings.signOutUploadRetryLater" = "最新の変更があなたの Yala アカウントに届きませんでした。変更はこの端末に残っていて失われません。しばらくしてからもう一度お試しください。";
+"settings.signOutCloudSessionExpired" = "セッションの有効期限が切れ、まだあなたの Yala アカウントに届いていない変更があります。変更は失われません。この設定画面の「データの保存先」を開いて「サインイン」をタップし、その後もう一度お試しください。";
 "settings.signOutSessionSurvived" = "この端末ではまだサインインしたままのため、何も削除されていません。もう一度お試しください。";
-"settings.signOutMigrationInFlight" = "iCloud とクラウドの間のデータ移行がまだ完了していません。今サインアウトすると、まだアップロードされていないデータが削除されるおそれがあるため、何も削除していません。設定の「データの保存先」を開き、そこで完了させてください（失敗している場合は「再試行」をタップ）。その後、もう一度お試しください。";
-"settings.signOutMigrationUnreadable" = "iCloud とクラウドの間のデータ移行の状況を確認できませんでした。今サインアウトすると、まだアップロードされていないデータが削除されるおそれがあるため、何も削除していません。Yala を完全に終了してもう一度開いてください。変わらない場合は、App Store で Yala をアップデートしてから、もう一度お試しください。";
+"settings.signOutMigrationInFlight" = "あなたの iCloud とあなたの Yala アカウントの間のデータ移行がまだ完了していません。今サインアウトすると、まだアップロードされていないデータが削除されるおそれがあるため、何も削除していません。設定の「データの保存先」を開き、そこで完了させてください（失敗している場合は「再試行」をタップ）。その後、もう一度お試しください。";
+"settings.signOutMigrationUnreadable" = "あなたの iCloud とあなたの Yala アカウントの間のデータ移行の状況を確認できませんでした。今サインアウトすると、まだアップロードされていないデータが削除されるおそれがあるため、何も削除していません。Yala を完全に終了してもう一度開いてください。変わらない場合は、App Store で Yala をアップデートしてから、もう一度お試しください。";
 
 /* Title: a deletion of the old iCloud data succeeded in iCloud but failed on this phone */
 "welcome.privateICloud.leftHalfwayTitle" = "削除が途中で止まりました";
@@ -6199,10 +6199,10 @@
 "groups.freshStartPending.lossConfirmBodyNeutralUnknown" = "サーバーに届かなかったグループの変更はこの端末から消去されます。グループの誰にも表示されず、復元もできません。";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
-"settings.signOutCloudSessionExpiredPersonalLoss" = "セッションの有効期限が切れました。クラウドのアカウントに届かなかった変更：%d件。アップロードするには、この設定画面の「データの保存先」を開いて「サインイン」をタップしてください。サインインできない場合は、決める前に記録をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";
+"settings.signOutCloudSessionExpiredPersonalLoss" = "セッションの有効期限が切れました。あなたの Yala アカウントに届かなかった変更：%d件。アップロードするには、この設定画面の「データの保存先」を開いて「サインイン」をタップしてください。サインインできない場合は、決める前に記録をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";
 
 /* Cerrar sesión en la nube con la sesión caducada, sin cifra */
-"settings.signOutCloudSessionExpiredPersonalLossUnknown" = "セッションの有効期限が切れ、クラウドのアカウントに届かなかった変更があります。アップロードするには、この設定画面の「データの保存先」を開いて「サインイン」をタップしてください。サインインできない場合は、決める前に記録をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";
+"settings.signOutCloudSessionExpiredPersonalLossUnknown" = "セッションの有効期限が切れ、あなたの Yala アカウントに届かなかった変更があります。アップロードするには、この設定画面の「データの保存先」を開いて「サインイン」をタップしてください。サインインできない場合は、決める前に記録をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";
 
 /* iPad/ventana ancha: columna de detalle vacía en Registros */
 "records.detailPlaceholder" = "記録を選ぶとここに表示されます";
@@ -6221,13 +6221,13 @@
 "welcome.groups.inviteRelaunchTitle" = "参加するには Yala をもう一度開いてください";
 
 /* Puerta del invitado: la cuenta en la nube termina de prepararse al reabrir: cuerpo */
-"welcome.groups.inviteRelaunchBody" = "クラウドのアカウントは、Yala をもう一度開くと準備が完了します。アプリを完全に閉じて（App スイッチャーから上にスワイプ）もう一度開いてください。招待はそのまま保存されており、そこから続けられます。";
+"welcome.groups.inviteRelaunchBody" = "あなたの Yala アカウントは、Yala をもう一度開くと準備が完了します。アプリを完全に閉じて（App スイッチャーから上にスワイプ）もう一度開いてください。招待はそのまま保存されており、そこから続けられます。";
 
 /* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: título */
 "welcome.groups.inviteCloudSignInTitle" = "まず、この端末のアカウントでサインインしてください";
 
 /* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: cuerpo */
-"welcome.groups.inviteCloudSignInBody" = "この端末には、サインインしていないクラウドアカウントのデータがあり、グループの支出はそのアカウントに入ってしまいます。ご自身のアカウントなら「すでにアカウントがあります」からサインインすると、招待の続きから進められます。そうでない場合は、ご自身の端末から参加してください。";
+"welcome.groups.inviteCloudSignInBody" = "この端末には、サインインしていない Yala アカウントのデータがあり、グループの支出はそのアカウントに入ってしまいます。ご自身のアカウントなら「すでにアカウントがあります」からサインインすると、招待の続きから進められます。そうでない場合は、ご自身の端末から参加してください。";
 
 /* Puerta de Grupos: el borrado del arranque no pudo borrar los archivos y la puerta no lo reintenta sola: título */
 "welcome.groups.wipeFailedTitle" = "この端末を準備できませんでした";
@@ -6467,7 +6467,7 @@
 "storage.pendingICloudWipe.title" = "削除が完了していません";
 
 /* Dialog body: the cloud cannot finish that deletion; activating now cancels it */
-"storage.pendingICloudWipe.body" = "以前 iCloud のデータの削除を依頼しましたが、終わっていません。クラウドをオンにすると、その削除は取り消されます。";
+"storage.pendingICloudWipe.body" = "以前 iCloud のデータの削除を依頼しましたが、終わっていません。あなたの Yala アカウントに移すと、その削除は取り消されます。";
 
 /* Dialog button: activate the cloud and cancel the pending iCloud deletion */
 "storage.pendingICloudWipe.proceed" = "削除せずにオンにする";
@@ -6479,7 +6479,7 @@
 "welcome.privateICloud.cancelledInCloudTitle" = "削除が完了しませんでした";
 
 /* Sheet body: the deletion did not finish before the cloud was activated and will not happen */
-"welcome.privateICloud.cancelledInCloudBody" = "最初からやり直してiCloudのデータを削除するよう依頼しましたが、データがクラウドに移る前に削除が完了せず、今後も実行されません。削除するはずだったデータの一部が、iCloudに残っているか、Yalaアカウントに移っている可能性があります。";
+"welcome.privateICloud.cancelledInCloudBody" = "最初からやり直してiCloudのデータを削除するよう依頼しましたが、データがあなたの Yala アカウントに移る前に削除が完了せず、今後も実行されません。削除するはずだったデータの一部が、あなたの iCloud に残っているか、あなたの Yala アカウントに移っている可能性があります。";
 
 /* Inbox: title of the notice that a settlement already approved to a real account changed its amount */
 "inbox.groupSettlementAmountChange.title" = "金額が変更されました";
@@ -6596,7 +6596,7 @@
 "welcome.privateICloud.noAccountProceedTitle" = "この端末は iCloud がオフです";
 
 /* Welcome · relaunch terminal: why Yala has to reopen — to connect the private iCloud (UX 2.2 L1-4) */
-"welcome.mirrorRelaunch.privacyNote" = "これで Yala があなただけの iCloud につながり、データはずっと非公開のままです。ほかの誰も読めません。私たちも読めません。";
+"welcome.mirrorRelaunch.privacyNote" = "これで Yala があなたの iCloud につながり、データはずっと非公開のままです。ほかの誰も読めません。私たちも読めません。";
 
 /* Onboarding purpose step: the choice can be changed later in Personalization (UX 2.2 L1-5) */
 "onboarding.purpose.changeLaterHint" = "あとから「設定 > パーソナライズ」でいつでも変更できます。";
@@ -6740,14 +6740,14 @@
 "storage.revert.prior.merge" = "自分のデータに追加";
 "storage.revert.prior.discard" = "追加せずに始める";
 "storage.revert.prior.discardConfirmTitle" = "iCloud から削除しますか？";
-"storage.revert.prior.discardConfirmBody" = "iCloud と、この Apple ID で iCloud を使っているデバイスから削除されます。コピーは残らず、復元できません。その後、iCloud への切り替えが始まります。";
-"storage.revert.prior.discardConfirm" = "削除して iCloud に戻る";
+"storage.revert.prior.discardConfirmBody" = "あなたの iCloud と、この Apple ID で iCloud を使っているデバイスから削除されます。コピーは残らず、復元できません。その後、あなたの iCloud に戻す処理が始まります。";
+"storage.revert.prior.discardConfirm" = "削除して iCloud に戻す";
 "storage.revert.prior.checkFailedTitle" = "iCloud を確認できませんでした";
 "storage.revert.prior.checkFailedBody" = "戻る前に、iCloud にすでに Yala のデータがあるか確認しています。知らないうちに混ざらないようにするためです。接続の問題かもしれません。もう一度お試しください。";
 "storage.revert.prior.stalledTitle" = "iCloudの応答に時間がかかりすぎました";
 "storage.revert.prior.stalledBody" = "戻る前に、iCloud にすでに Yala のデータがあるか確認しています。知らないうちに混ざらないようにするためです。確認が進まなくなりました。もう一度お試しください。";
-"storage.revert.prior.wipeFailed" = "iCloud から以前のデータを削除しきれなかったため、iCloud に戻る処理を開始していません。クラウドのままです。接続を確認して、もう一度お試しください。";
-"storage.revert.prior.wipeStopped" = "iCloud から以前のデータを削除しきれなかったため、iCloud に戻る処理を開始していません。クラウドのままです。削除済みのデータは元に戻りません。もう一度お試しいただくと、残りの削除を続けます。";
+"storage.revert.prior.wipeFailed" = "あなたの iCloud から以前のデータを削除しきれなかったため、iCloud に戻す処理を開始していません。あなたの Yala アカウントのままです。接続を確認して、もう一度お試しください。";
+"storage.revert.prior.wipeStopped" = "あなたの iCloud から以前のデータを削除しきれなかったため、iCloud に戻す処理を開始していません。あなたの Yala アカウントのままです。削除済みのデータは元に戻りません。もう一度お試しいただくと、残りの削除を続けます。";
 "storage.revert.prior.wiping" = "以前のデータを削除しています…（%d 件完了）";
 "storage.revert.prior.noAccountTitle" = "この端末で iCloud にサインインしてください";
 "storage.revert.prior.noAccountBody" = "戻る前に iCloud の中身を確認しますが、この端末は iCloud にサインインしていません。設定からサインインして、もう一度お試しください。";
@@ -7005,7 +7005,7 @@
 "storage.consent.accessTitle" = "AppleまたはGoogleで、どの端末からでもサインイン";
 "storage.consent.acceptEnter" = "了解して、アカウントにサインイン";
 "storage.consent.acceptCreate" = "了解して、アカウントを作成";
-"storage.consent.acceptMove" = "了解して、データをクラウドに移す";
+"storage.consent.acceptMove" = "了解して、データを Yala アカウントに移す";
 "welcome.privateICloud.lateLead" = "以前、同じApple IDであなたのiCloudに保存したデータです：";
 "welcome.privateICloud.lateMerge" = "今のデータとまとめる";
 "welcome.privateICloud.lateWipe" = "iCloudから削除して最初から始める";
@@ -7664,7 +7664,7 @@
 "uxcs.migrated.rejoinSentence" = "このグループは移動しました。最新の状態を見るには、もう一度サインインしてください。";
 
 /* UX 2.2 · lote decidido 05 (L20-11…18): activar la nube, iCloud y reabrir Yala */
-"l20n.sheet.title" = "クラウドをオンにする前に";
+"l20n.sheet.title" = "Yala アカウントに移す前に";
 "l20n.sheet.anyPhoneTitle" = "どの端末からでもログインできます";
 "l20n.sheet.anyPhoneDetail" = "iCloud に頼らずに使えます。";
 "l20n.sheet.seesTitle" = "Yala はあなたのデータを見ることができます";
@@ -7681,10 +7681,10 @@
 "l20n.relaunch.doneSignedOut" = "サインアウトしました";
 "l20n.relaunch.afterSignOut" = "もう一度開くと、Yala がこの端末からデータを取り除き終えます。";
 "l20n.relaunch.afterGroupsOnly" = "個人のデータはこの端末に残ります。";
-"l20n.relaunch.doneInCloud" = "データはすでにクラウドのアカウントにあります";
+"l20n.relaunch.doneInCloud" = "データはすでにあなたの Yala アカウントにあります";
 "l20n.relaunch.doneOnPhone" = "データはすでにこの端末にあります";
 "l20n.relaunch.afterToICloud" = "もう一度開くと、iCloud へのアップロードが始まります。";
-"l20n.relaunch.doneReverseStopped" = "iCloud への切り替えは止まりました";
+"l20n.relaunch.doneReverseStopped" = "あなたの iCloud に戻す処理は止まりました";
 "l20n.relaunch.pending" = "Yala をもう一度開く";
 "l20n.relaunch.toFinish" = "仕上げに";
 "l20n.relaunch.step1" = "画面の下端から上にスワイプして止めます";
@@ -7822,7 +7822,7 @@
 "aiPrivacy.l14d.processingLine" = "話した内容や撮った写真を記録にします。";
 "aiPrivacy.l14d.chatLine" = "お金についての質問に答え、チャットから支出を記録します。";
 "aiPrivacy.l14d.insightsLine" = "統計で、あなたの数字についての気づきを書きます。";
-"aiPrivacy.l14d.cloudExploreLine" = "質問に必要なときは、Yala AIがクラウドのアカウントも確認します。";
+"aiPrivacy.l14d.cloudExploreLine" = "質問に必要なときは、Yala AIがあなたの Yala アカウントも確認します。";
 "aiPrivacy.l14d.revokeTitle" = "%@をオフにしますか？";
 "settings.l14d.summaryWhere" = "%@で表示されます。";
 "siriShortcuts.siri.alsoSay" = "ほかに：%1$@・%2$@";
@@ -8200,7 +8200,7 @@
 /* Confirmación al aceptar una solicitud. %@ = nombre. */
 "groups.d14.requests.acceptConfirm" = "%@さんをグループに承認しますか？";
 /* Volver a iCloud no disponible: la cuenta no nació ni migró en este dispositivo (ReverseEligibility.degradedNoMap) */
-"storage.revert.ineligibleOtherDevice" = "あなたのアカウントは別の端末からクラウドに移行したため、iCloud に戻す操作はその端末から行います（Yala がまだ入っている場合）。この端末ではクラウドをそのまま使えます。";
+"storage.revert.ineligibleOtherDevice" = "データは別の端末からあなたの Yala アカウントに移ったため、あなたの iCloud に戻す操作はその端末から行います（Yala がまだ入っている場合）。この端末ではあなたの Yala アカウントをそのまま使えます。";
 
 /* card vv0k */
 "image.entry.failure.busy.title" = "少々お待ちください";
@@ -8233,7 +8233,7 @@
 "image.entry.dailyLimitLeftOutMany" = "本日の上限に達しました。%d枚を読み取れませんでした。";
 
 /* UX 2.2 · lote decidido 15 (Ajustes, ayuda y preferencias) */
-"l15.personal.dataNote" = "選んだ方法に応じて、iCloudまたはクラウドのアカウントに保存されます。グループで記録した内容はグループのメンバーに表示されます。";
+"l15.personal.dataNote" = "選んだ方法に応じて、あなたの iCloud またはあなたの Yala アカウントに保存されます。グループで記録した内容はグループのメンバーに表示されます。";
 "l15.personal.moreAboutData" = "データについて詳しく";
 "l15.rates.search" = "通貨を検索";
 "l15.personalization.voiceLanguageFooter" = "音声で記録するときに、Yalaに話しかける言語です。";
@@ -8273,7 +8273,7 @@
 "l15.faq.yalaAI.q" = "Yala AIとは？";
 "l15.faq.yalaAI.a" = "Yala Proのアシスタントです。お金のことを質問したり（「今月コーヒーにいくら使った？」）、支出を伝えて記録してもらったりできます。回答のために必要な情報をAIサービスに送信します。これは「設定 > AIプライバシーとデータ」で決められます。";
 "l15.faq.whereData.q" = "データはどこに保存される？";
-"l15.faq.whereData.a" = "プライベートなiCloudを選んだ場合は、端末とiCloudに保存され、Yalaからは見えません。クラウドのアカウントを使う場合はYalaのサーバーに保存され、別の端末からもAppleまたはGoogleでサインインできます。グループで記録した内容は、グループで見られるようクラウドに保存されます。";
+"l15.faq.whereData.a" = "あなたの iCloud を選んだ場合は、端末とあなたの iCloud に保存され、Yalaからは見えません。あなたの Yala アカウントを選んだ場合はYalaのサーバーに保存され、別の端末からもAppleまたはGoogleでサインインできます。グループで記録した内容は、グループで見られるようクラウドに保存されます。";
 "l15.faq.faceID.q" = "Face IDでYalaを保護できる？";
 "l15.faq.faceID.a" = "はい、iOSのロック機能を使います。ホーム画面でYalaのアイコンを長押しし、「Face IDを要求」をタップします。Yalaがあなたの顔を見ることはなく、確認はiOSが行います。手順は「設定 > Face IDで保護」にあります。";
 "l15.faq.widgets.q" = "Yalaのウィジェットを追加するには？";
@@ -8483,7 +8483,7 @@
 "l2d.split.bar.others" = "ほかの人 %@";
 
 /* Pasos con su cifra de «Activar la nube» y «Volver a iCloud» (cloud-progress-shows-real-steps-and-counts) */
-"storage.steps.forwardTitle" = "クラウドを有効化しています";
+"storage.steps.forwardTitle" = "Yala アカウントに移しています";
 "storage.steps.reverseTitle" = "iCloud に戻しています";
 "storage.steps.connect" = "アカウントに接続";
 "storage.steps.prepare" = "データを準備";
@@ -8494,7 +8494,7 @@
 "storage.steps.keepOpen" = "完了するまで Yala を開いたままにしてください。";
 "storage.steps.wipePrior" = "以前のデータを削除";
 "storage.steps.wipedCount" = "%@ 件削除済み";
-"storage.steps.bring" = "クラウドからデータを取得";
+"storage.steps.bring" = "あなたの Yala アカウントからデータを取得";
 "storage.steps.review" = "iCloud が保存済みの内容を確認";
 "storage.steps.reviewDetail" = "アップロードの前に、iCloud がこのデバイスの保存内容を確認します。数分かかることがあります。";
 "storage.steps.uploadToICloud" = "iCloud にアップロード";
@@ -8512,7 +8512,7 @@
 "storage.migrateBlock.detachAndContinue" = "リンクを解除して続ける";
 
 /* Aviso del Panel en un segundo dispositivo: otro dispositivo del mismo iCloud activó la nube */
-"panel.cloudAdoptOffer.title" = "データはすでにクラウドのアカウントにあります";
+"panel.cloudAdoptOffer.title" = "データはすでにあなたの Yala アカウントにあります";
 
 /* Cuerpo del aviso: activar la cuenta en la nube aquí también */
 "panel.cloudAdoptOffer.body" = "このデバイスでも有効にしますか？";
