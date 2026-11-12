@@ -8929,3 +8929,9 @@
 
 /* Registros 2.3, decisión 17: separador de mes, título del menú y pista de VoiceOver */
 "records23.month.goToAnotherMonth" = "別の月へ移動";
+
+/* Registros 2.3 · VoiceOver, carga y error (decisiones 61 y 78) */
+"records.row.tagHint" = "タグ";
+"records.list.loading" = "記録を読み込み中…";
+"records.list.loadErrorTitle" = "記録を読み込めませんでした";
+"records.list.loadErrorMessage" = "読み込み中に問題が発生しました。少し待ってからもう一度お試しください。";

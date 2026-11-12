@@ -8929,3 +8929,9 @@
 
 /* Registros 2.3, decisión 17: separador de mes, título del menú y pista de VoiceOver */
 "records23.month.goToAnotherMonth" = "Naar een andere maand";
+
+/* Registros 2.3 · VoiceOver, carga y error (decisiones 61 y 78) */
+"records.row.tagHint" = "Label";
+"records.list.loading" = "Je boekingen worden geladen…";
+"records.list.loadErrorTitle" = "We konden je boekingen niet laden";
+"records.list.loadErrorMessage" = "Er ging iets mis bij het lezen. Probeer het zo opnieuw.";

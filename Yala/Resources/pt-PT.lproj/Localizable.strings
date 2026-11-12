@@ -8166,3 +8166,9 @@
 
 /* Registros 2.3, decisión 17: separador de mes, título del menú y pista de VoiceOver */
 "records23.month.goToAnotherMonth" = "Ir para outro mês";
+
+/* Registros 2.3 · VoiceOver, carga y error (decisiones 61 y 78) */
+"records.row.tagHint" = "Etiqueta";
+"records.list.loading" = "A carregar os teus registos…";
+"records.list.loadErrorTitle" = "Não conseguimos carregar os teus registos";
+"records.list.loadErrorMessage" = "Algo correu mal ao lê-los. Tenta de novo daqui a pouco.";

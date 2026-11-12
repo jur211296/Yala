@@ -264,7 +264,9 @@ struct RecordsStandaloneView: View {
                 transactionDateRange: dataViewModel.computeTransactionDateRange(),
                 defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
                 onFilterChange: { recalculateData() },
-                showsQuickFilters: true
+                showsQuickFilters: true,
+                loadFailed: dataViewModel.transactionsLoadFailed,
+                onRetryLoad: { reloadAndRecalculate() }
             )
             // La fila de acciones bajo la cabecera, la misma de Estadísticas › Registros (card 97gc). Al bajar y perderla
             // de vista, la fila enciende `showFloatingActions` y salen los flotantes, como en Estadísticas (card rtyu).

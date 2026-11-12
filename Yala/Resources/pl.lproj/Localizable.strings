@@ -8929,3 +8929,9 @@
 
 /* Registros 2.3, decisión 17: separador de mes, título del menú y pista de VoiceOver */
 "records23.month.goToAnotherMonth" = "Przejdź do innego miesiąca";
+
+/* Registros 2.3 · VoiceOver, carga y error (decisiones 61 y 78) */
+"records.row.tagHint" = "Etykieta";
+"records.list.loading" = "Wczytujemy Twoje wpisy…";
+"records.list.loadErrorTitle" = "Nie udało się wczytać Twoich wpisów";
+"records.list.loadErrorMessage" = "Coś poszło nie tak przy ich odczycie. Spróbuj ponownie za chwilę.";

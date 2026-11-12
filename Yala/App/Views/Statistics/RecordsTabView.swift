@@ -35,6 +35,11 @@ struct RecordsTabView: View {
     /// Registros (la pestaña) lleva los chips rápidos sobre la lista (revisión 2.3, decisión 15, F2); Estadísticas ›
     /// Registros, no.
     var showsQuickFilters: Bool = false
+    /// La última lectura de los movimientos falló (decisión 78 de 2.3): con la lista vacía se enseña el error, no
+    /// «Sin registros». Lo da `DetailContainerViewModel.transactionsLoadFailed`.
+    var loadFailed: Bool = false
+    /// «Reintentar» del estado de error: vuelve a leer el almacén y recalcula.
+    var onRetryLoad: () -> Void = {}
 
     @State private var showCustomPeriodPicker: Bool = false
     /// El `ScrollView` tiene poco alto (iPhone girado): la cabecera va en banda (`SummaryHeaderStack`).
@@ -88,30 +93,24 @@ struct RecordsTabView: View {
                 // espaciado que la de fuera: no cambia nada de sitio.
                 // Card 1jvv: borrar el último registro o apuntar el primero releva la lista y «Sin registros»
                 // fundiéndose, en el sitio (`ZStack`); un filtro que vacía la lista sigue en seco.
+                // Decisión 78 de 2.3: mientras carga, un indicador que asoma si tarda; si la lectura falló, el error
+                // con «Reintentar» (`RecordsListStateLogic`).
                 ZStack(alignment: .top) {
                     if !viewModel.hasAppliedFilters {
-                        EmptyView()
+                        RecordsLoadingIndicator()
                     } else if viewModel.groupedRecords.isEmpty {
-                        emptyStateContent
-                            .transition(.stateSwap)
+                        // Decisión 77 de 2.3: con la lista vacía el selector Lista/Calendario se queda (y el
+                        // calendario, si es el elegido). Con el error no: no hay nada que ver de ninguna forma.
+                        VStack(spacing: DS.Spacing.md) {
+                            if listState != .failed {
+                                viewModeArea
+                            }
+                            emptyStateContent
+                        }
+                        .transition(.stateSwap)
                     } else {
                         VStack(spacing: DS.Spacing.md) {
-                            viewModeHeader
-
-                            if recordsViewMode == .calendar {
-                                RecordsCalendarView(
-                                    groups: viewModel.groupedRecords,
-                                    period: viewModel.period,
-                                    customDateRange: sessionState.customDateRange,
-                                    currencyCode: defaultCurrencyCode,
-                                    adjustment: viewModel.statsAdjustment,
-                                    selectedDay: $selectedCalendarDay,
-                                    calendarMonth: $calendarMonth
-                                )
-                                .padding(.horizontal, DS.Spacing.lg)
-
-                                calendarDaySummary
-                            }
+                            viewModeArea
 
                             recordsListContent
                         }
@@ -705,6 +704,34 @@ struct RecordsTabView: View {
 
     /// Solo el selector Lista / Calendario, a la derecha. El rótulo «Registros» que iba a su izquierda repetía el
     /// título de la pantalla (o el chip de Estadísticas) y se quitó (auditoría UX 2.2, L8-1).
+    /// Qué enseña la lista según la carga (decisión 78 de 2.3).
+    private var listState: RecordsListState {
+        RecordsListStateLogic.state(
+            hasAppliedFilters: viewModel.hasAppliedFilters, loadFailed: loadFailed,
+            isEmpty: viewModel.groupedRecords.isEmpty)
+    }
+
+    /// El selector Lista/Calendario y, en modo calendario, el calendario con el resumen del día elegido.
+    @ViewBuilder
+    private var viewModeArea: some View {
+        viewModeHeader
+
+        if recordsViewMode == .calendar {
+            RecordsCalendarView(
+                groups: viewModel.groupedRecords,
+                period: viewModel.period,
+                customDateRange: sessionState.customDateRange,
+                currencyCode: defaultCurrencyCode,
+                adjustment: viewModel.statsAdjustment,
+                selectedDay: $selectedCalendarDay,
+                calendarMonth: $calendarMonth
+            )
+            .padding(.horizontal, DS.Spacing.lg)
+
+            calendarDaySummary
+        }
+    }
+
     private var viewModeHeader: some View {
         HStack {
             Spacer()
@@ -787,7 +814,10 @@ struct RecordsTabView: View {
 
     @ViewBuilder
     private var emptyStateContent: some View {
-        if viewModel.duplicateModeActive {
+        if listState == .failed {
+            // Leer los movimientos falló: no es «Sin registros» (decisión 78 de 2.3).
+            RecordsLoadErrorState(onRetry: onRetryLoad)
+        } else if viewModel.duplicateModeActive {
             // Modo duplicados sin resultados: el encabezado de arriba sigue visible para desactivar.
             duplicatesEmptyState
         } else if viewModel.isSearchingList {

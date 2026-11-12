@@ -1517,6 +1517,20 @@ final class UITestHooks {
         #endif
     }
 
+    /// `-uitest-records-load-fails`: la lectura de los movimientos de Registros y Estadísticas falla siempre
+    /// (`DetailContainerViewModel.loadData`). Finge el ENTORNO —un almacén que no se deja leer, que el simulador no
+    /// reproduce—; qué enseña la lista con eso lo decide `RecordsListStateLogic`, sin seam (decisión 78 de 2.3).
+    nonisolated static var recordsLoadFails: Bool {
+        #if DEBUG
+        return isActive && ProcessInfo.processInfo.arguments.contains("-uitest-records-load-fails")
+        #else
+        return false
+        #endif
+    }
+
+    /// El error que lanza la lectura fingida de `recordsLoadFails`.
+    struct SimulatedLoadFailure: Error {}
+
     /// `-uitest-skeleton-fade-seconds <N>`: alarga el fundido del esqueleto a los datos (card C1). A 0,25 s un XCUITest
     /// no llega a mirar el árbol de accesibilidad mientras dura; alargado, puede contar las copias de un botón a mitad del
     /// fundido. Solo cambia CUÁNTO dura, no qué decide nadie.
