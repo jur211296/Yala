@@ -5255,16 +5255,16 @@
 "storage.migrate.accountReuseNoteGeneric" = "Użyjesz swojego obecnego konta Yala — dzięki temu Twoje dane i grupy będą na tym samym koncie.";
 
 /* Storage migrate card, after the identity check refused the live account: it already has personal finances */
-"storage.migrate.refusedPersonalData" = "Twoje obecne konto Yala ma już finanse osobiste, więc nie może przyjąć danych z tego urządzenia. Aby przenieść swoje dane na inne konto, najpierw odłącz to w sekcji „Grupy”.";
+"storage.migrate.refusedPersonalData" = "Twoje obecne konto Yala ma już finanse osobiste, więc nie może przyjąć danych z tego urządzenia. Aby przenieść swoje dane na inne konto, najpierw stuknij „Zmień konto”.";
 
 /* Storage migrate card, after the identity check refused the live account: the device's groups use another account */
-"storage.migrate.refusedOtherGroups" = "Twoje grupy używają innego konta, a na tym urządzeniu może być tylko jedno konto w chmurze. Aby przenieść swoje dane do chmury, zaloguj się kontem swoich grup albo najpierw je odłącz w sekcji „Grupy”.";
+"storage.migrate.refusedOtherGroups" = "Twoje grupy używają innego konta, a na tym urządzeniu może być tylko jedno konto w chmurze. Aby przenieść swoje dane do chmury, zaloguj się kontem swoich grup albo najpierw stuknij „Zmień konto”.";
 
 /* Storage migrate card, after the identity check refused the live account: the account went back to iCloud */
 "storage.migrate.refusedReturned" = "Twoje obecne konto Yala wróciło do iCloud, a powrót do chmury z tym kontem nie jest jeszcze dostępny.";
 
 /* Storage migrate card, after the identity check refused the live account: it was signed in before a fresh start */
-"storage.migrate.refusedFreshStart" = "Twoje obecne konto Yala może należeć do kogoś innego: było już zalogowane, gdy zaczęto tu od zera. Aby wybrać swoje, odłącz je w sekcji „Grupy” i ponownie stuknij „Włącz chmurę”.";
+"storage.migrate.refusedFreshStart" = "Twoje obecne konto Yala może należeć do kogoś innego: było już zalogowane, gdy zaczęto tu od zera. Aby wybrać swoje, stuknij „Zmień konto”, a potem ponownie „Włącz chmurę”.";
 "storage.migrate.refusedOtherDevice" = "Włączanie chmury dla tego konta nie zostało dokończone. Jeśli zaczęło się tutaj, spróbuj ponownie za godzinę; jeśli na innym z Twoich urządzeń, dokończ je tam.";
 
 /* Storage adopt card: the live session is a different Yala account than the one that migrated (%@ = Apple|Google) */
@@ -6018,16 +6018,16 @@
 "storage.errors.identityCheck" = "Nie udało się zweryfikować Twojego konta. Spróbuj ponownie za chwilę. Nic się nie zmieniło.";
 "storage.migrateBlock.personalDataTitle" = "To konto ma już własne dane";
 "storage.migrateBlock.personalDataBody" = "Nic się nie zmieniło. Aby przenieść swoje dane do chmury, użyj innego konta. Aby korzystać tutaj z danych tego konta, wyloguj się i zaloguj tym kontem.";
-"storage.migrateBlock.personalDataBodyNoSwitch" = "Nic się nie zmieniło. Aby korzystać tutaj z danych tego konta, wyloguj się i zaloguj tym kontem. Aby przenieść swoje dane na inne konto, najpierw odłącz to w sekcji „Grupy”.";
+"storage.migrateBlock.personalDataBodyNoSwitch" = "Nic się nie zmieniło. Aby korzystać tutaj z danych tego konta, wyloguj się i zaloguj tym kontem. Aby przenieść swoje dane na inne konto, najpierw stuknij „Zmień konto”.";
 "storage.migrateBlock.otherGroupsTitle" = "Używasz już innego konta dla swoich grup";
-"storage.migrateBlock.otherGroupsBody" = "Nic się nie zmieniło. Na tym urządzeniu może być tylko jedno konto w chmurze, a Twoje grupy używają już innego. Aby przenieść swoje dane do chmury, zaloguj się kontem swoich grup albo, jeśli wolisz inne, najpierw je odłącz w sekcji „Grupy”.";
-"storage.migrateBlock.otherGroupsBodyEmail" = "Nic się nie zmieniło. Na tym urządzeniu może być tylko jedno konto w chmurze, a Twoje grupy używają już %@. Aby przenieść swoje dane do chmury, zaloguj się tym kontem albo, jeśli wolisz inne, najpierw je odłącz w sekcji „Grupy”.";
+"storage.migrateBlock.otherGroupsBody" = "Nic się nie zmieniło. Na tym urządzeniu może być tylko jedno konto w chmurze, a Twoje grupy używają już innego. Aby przenieść swoje dane do chmury, zaloguj się kontem swoich grup albo, jeśli wolisz inne, najpierw stuknij „Zmień konto”.";
+"storage.migrateBlock.otherGroupsBodyEmail" = "Nic się nie zmieniło. Na tym urządzeniu może być tylko jedno konto w chmurze, a Twoje grupy używają już %@. Aby przenieść swoje dane do chmury, zaloguj się tym kontem albo, jeśli wolisz inne, najpierw stuknij „Zmień konto”.";
 "storage.migrateBlock.returnedTitle" = "To konto wróciło do iCloud";
 "storage.migrateBlock.returnedBody" = "Powrót do chmury z tym kontem nie jest jeszcze dostępny. Nic się nie zmieniło.";
 "storage.migrateBlock.useAnotherAccount" = "Użyj innego konta";
 "storage.migrateBlock.appleSameAccountNote" = "Z Apple Yala zawsze używa konta z tego urządzenia. Aby użyć innego, wybierz Google.";
 "storage.migrateBlock.freshStartSessionTitle" = "To konto może należeć do kogoś innego";
-"storage.migrateBlock.freshStartSessionBody" = "Nic się nie zmieniło. Twoje grupy używają konta, które było już zalogowane na tym urządzeniu, a ponieważ zaczęto tu od zera, może należeć do kogoś innego. Aby przenieść swoje dane do chmury, odłącz je w sekcji „Grupy” i ponownie stuknij „Włącz chmurę”: wtedy wybierzesz swoje konto.";
+"storage.migrateBlock.freshStartSessionBody" = "Nic się nie zmieniło. Twoje grupy używają konta, które było już zalogowane na tym urządzeniu, a ponieważ zaczęto tu od zera, może należeć do kogoś innego. Aby przenieść swoje dane do chmury, stuknij „Zmień konto”, a potem ponownie „Włącz chmurę”: wtedy wybierzesz swoje konto.";
 "storage.migrateBlock.otherDeviceTitle" = "Włączanie chmury dla tego konta nie zostało dokończone";
 "storage.migrateBlock.otherDeviceBody" = "Nic się nie zmieniło. Jeśli włączanie zaczęło się na tym urządzeniu, spróbuj ponownie za godzinę. Jeśli na innym z Twoich urządzeń, dokończ je tam.";
 
@@ -8908,3 +8908,26 @@
 "groups.discard.paymentTitle" = "Odrzucić tę płatność?";
 "groups.discard.openingBalanceTitle" = "Odrzucić to saldo początkowe?";
 "groups.expense.groupChangedNotice" = "Zmieniono grupę: to, co wpisano, zostaje; kto zapłacił i podział zaczynają się od nowa.";
+
+// MARK: - Nube 2.3 · G1, cambiar de cuenta sin saltarse la hoja
+
+/* Fila de la cuenta en «Dónde viven tus datos»: quién usa la cuenta (G1) */
+"storage.groups.usedByGroups" = "Używają go Twoje grupy";
+
+/* Enlace y botón que abren la hoja para soltar la cuenta de grupos (G1) */
+"storage.groups.changeAccount" = "Zmień konto";
+
+/* Título de la hoja de soltar la cuenta de grupos */
+"storage.groups.changeAccountTitle" = "Odłączyć konto Twoich grup?";
+
+/* Hoja de soltar: lo que pasa igual con las dos salidas */
+"storage.groups.changeAccountCommon" = "W obu przypadkach Twoje grupy znikną z tego urządzenia i zostaną na Twoim koncie: wrócą, gdy połączysz je ponownie. Wpisy długów i należności znikną z Twoich kont.";
+
+/* Hoja de soltar: consecuencia de conservar, sin cifra */
+"storage.groups.changeAccountKeepEffect" = "Wydatki opłacone przez Ciebie zostaną na Twoich kontach jako zwykłe wpisy.";
+
+/* Hoja de soltar: consecuencia de conservar; %1$d = gastos, %2$@ = total */
+"storage.groups.changeAccountKeepEffectCount" = "Wydatki opłacone przez Ciebie zostaną na Twoich kontach jako zwykłe wpisy: %1$d (%2$@).";
+
+/* Hoja de soltar: consecuencia de quitar */
+"storage.groups.changeAccountRemoveEffect" = "Wydatki opłacone przez Ciebie również znikną z Twoich kont.";

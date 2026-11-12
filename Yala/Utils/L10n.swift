@@ -8453,6 +8453,16 @@ enum L10n {
             static var detachFinishButton: String { ls("storage.groups.detachFinishButton", comment: "") }
             static var detachPendingBody: String { ls("storage.groups.detachPendingBody", comment: "") }
             static var detachBusy: String { ls("storage.groups.detachBusy", comment: "") }
+            /// G1 de la revisión 2.3 (decisión 55): la fila de la cuenta y su enlace; y la hoja de soltar (decisión 59).
+            static var usedByGroups: String { ls("storage.groups.usedByGroups", comment: "") }
+            static var changeAccount: String { ls("storage.groups.changeAccount", comment: "") }
+            static var changeAccountTitle: String { ls("storage.groups.changeAccountTitle", comment: "") }
+            static var changeAccountCommon: String { ls("storage.groups.changeAccountCommon", comment: "") }
+            static var changeAccountKeepEffect: String { ls("storage.groups.changeAccountKeepEffect", comment: "") }
+            static func changeAccountKeepEffectCount(_ count: Int, _ amounts: String) -> String {
+                String(format: ls("storage.groups.changeAccountKeepEffectCount", comment: ""), count, amounts)
+            }
+            static var changeAccountRemoveEffect: String { ls("storage.groups.changeAccountRemoveEffect", comment: "") }
         }
 
         enum Status {

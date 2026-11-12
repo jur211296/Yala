@@ -5255,16 +5255,16 @@
 "storage.migrate.accountReuseNoteGeneric" = "Je gebruikt je huidige Yala-account — zo staan je gegevens en je groepen in hetzelfde account.";
 
 /* Storage migrate card, after the identity check refused the live account: it already has personal finances */
-"storage.migrate.refusedPersonalData" = "Je huidige Yala-account heeft al persoonlijke financiën en kan die van dit apparaat niet ontvangen. Wil je je gegevens naar een ander account brengen, ontkoppel dit account dan eerst in ‘Groepen’.";
+"storage.migrate.refusedPersonalData" = "Je huidige Yala-account heeft al persoonlijke financiën en kan die van dit apparaat niet ontvangen. Wil je je gegevens naar een ander account brengen, tik dan eerst op ‘Account wijzigen’.";
 
 /* Storage migrate card, after the identity check refused the live account: the device's groups use another account */
-"storage.migrate.refusedOtherGroups" = "Je groepen gebruiken een ander account, en op dit apparaat kan maar één cloudaccount staan. Log in met het account van je groepen om je gegevens naar de cloud te brengen, of ontkoppel het eerst in ‘Groepen’.";
+"storage.migrate.refusedOtherGroups" = "Je groepen gebruiken een ander account, en op dit apparaat kan maar één cloudaccount staan. Log in met het account van je groepen om je gegevens naar de cloud te brengen, of tik eerst op ‘Account wijzigen’.";
 
 /* Storage migrate card, after the identity check refused the live account: the account went back to iCloud */
 "storage.migrate.refusedReturned" = "Je huidige Yala-account is teruggegaan naar iCloud, en met dit account terug naar de cloud gaan kan nog niet.";
 
 /* Storage migrate card, after the identity check refused the live account: it was signed in before a fresh start */
-"storage.migrate.refusedFreshStart" = "Je huidige Yala-account is misschien van iemand anders: het was al ingelogd toen hier opnieuw werd begonnen. Ontkoppel het in ‘Groepen’ en tik opnieuw op ‘Cloud inschakelen’ om je eigen account te kiezen.";
+"storage.migrate.refusedFreshStart" = "Je huidige Yala-account is misschien van iemand anders: het was al ingelogd toen hier opnieuw werd begonnen. Tik op ‘Account wijzigen’ en daarna opnieuw op ‘Cloud inschakelen’ om je eigen account te kiezen.";
 "storage.migrate.refusedOtherDevice" = "Er staat een onafgemaakte activering voor dit account. Ben je die hier begonnen, probeer het dan over een uur opnieuw; was het op een ander apparaat van je, rond het daar af.";
 
 /* Storage adopt card: the live session is a different Yala account than the one that migrated (%@ = Apple|Google) */
@@ -6018,16 +6018,16 @@
 "storage.errors.identityCheck" = "We konden je account niet controleren. Probeer het zo meteen opnieuw. Er is niets veranderd.";
 "storage.migrateBlock.personalDataTitle" = "Dit account heeft al eigen gegevens";
 "storage.migrateBlock.personalDataBody" = "Er is niets veranderd. Gebruik een ander account om je gegevens naar de cloud te brengen. Wil je de gegevens van dit account hier gebruiken, log dan uit en log in met dit account.";
-"storage.migrateBlock.personalDataBodyNoSwitch" = "Er is niets veranderd. Wil je de gegevens van dit account hier gebruiken, log dan uit en log in met dit account. Wil je je gegevens naar een ander account brengen, ontkoppel dit account dan eerst in ‘Groepen’.";
+"storage.migrateBlock.personalDataBodyNoSwitch" = "Er is niets veranderd. Wil je de gegevens van dit account hier gebruiken, log dan uit en log in met dit account. Wil je je gegevens naar een ander account brengen, tik dan eerst op ‘Account wijzigen’.";
 "storage.migrateBlock.otherGroupsTitle" = "Je gebruikt al een ander account voor je groepen";
-"storage.migrateBlock.otherGroupsBody" = "Er is niets veranderd. Op dit apparaat kan maar één cloudaccount staan, en je groepen gebruiken al een ander. Log in met het account van je groepen om je gegevens naar de cloud te brengen, of ontkoppel het eerst in ‘Groepen’ als je liever een ander gebruikt.";
-"storage.migrateBlock.otherGroupsBodyEmail" = "Er is niets veranderd. Op dit apparaat kan maar één cloudaccount staan, en je groepen gebruiken al %@. Log in met dat account om je gegevens naar de cloud te brengen, of ontkoppel het eerst in ‘Groepen’ als je liever een ander gebruikt.";
+"storage.migrateBlock.otherGroupsBody" = "Er is niets veranderd. Op dit apparaat kan maar één cloudaccount staan, en je groepen gebruiken al een ander. Log in met het account van je groepen om je gegevens naar de cloud te brengen, of tik eerst op ‘Account wijzigen’ als je liever een ander gebruikt.";
+"storage.migrateBlock.otherGroupsBodyEmail" = "Er is niets veranderd. Op dit apparaat kan maar één cloudaccount staan, en je groepen gebruiken al %@. Log in met dat account om je gegevens naar de cloud te brengen, of tik eerst op ‘Account wijzigen’ als je liever een ander gebruikt.";
 "storage.migrateBlock.returnedTitle" = "Dit account is teruggegaan naar iCloud";
 "storage.migrateBlock.returnedBody" = "Met dit account terug naar de cloud gaan kan nog niet. Er is niets veranderd.";
 "storage.migrateBlock.useAnotherAccount" = "Ander account gebruiken";
 "storage.migrateBlock.appleSameAccountNote" = "Met Apple gebruikt Yala altijd het account van dit apparaat. Kies Google om een ander account te gebruiken.";
 "storage.migrateBlock.freshStartSessionTitle" = "Dit account is misschien van iemand anders";
-"storage.migrateBlock.freshStartSessionBody" = "Er is niets veranderd. Je groepen gebruiken een account dat al op dit apparaat was ingelogd, en omdat hier opnieuw is begonnen, is het misschien van iemand anders. Ontkoppel het in ‘Groepen’ en tik opnieuw op ‘Cloud inschakelen’ om je gegevens naar de cloud te brengen: dan kun je je eigen account kiezen.";
+"storage.migrateBlock.freshStartSessionBody" = "Er is niets veranderd. Je groepen gebruiken een account dat al op dit apparaat was ingelogd, en omdat hier opnieuw is begonnen, is het misschien van iemand anders. Tik op ‘Account wijzigen’ en daarna opnieuw op ‘Cloud inschakelen’ om je gegevens naar de cloud te brengen: dan kun je je eigen account kiezen.";
 "storage.migrateBlock.otherDeviceTitle" = "Er staat een onafgemaakte activering voor dit account";
 "storage.migrateBlock.otherDeviceBody" = "Er is niets veranderd. Ben je die op dit apparaat begonnen, probeer het dan over een uur opnieuw. Was het op een ander apparaat van je, rond het daar af.";
 
@@ -8908,3 +8908,26 @@
 "groups.discard.paymentTitle" = "Deze betaling weggooien?";
 "groups.discard.openingBalanceTitle" = "Dit beginsaldo weggooien?";
 "groups.expense.groupChangedNotice" = "Je hebt van groep gewisseld: wat je hebt ingevuld blijft staan; wie betaalde en de verdeling beginnen opnieuw.";
+
+// MARK: - Nube 2.3 · G1, cambiar de cuenta sin saltarse la hoja
+
+/* Fila de la cuenta en «Dónde viven tus datos»: quién usa la cuenta (G1) */
+"storage.groups.usedByGroups" = "Gebruikt door je groepen";
+
+/* Enlace y botón que abren la hoja para soltar la cuenta de grupos (G1) */
+"storage.groups.changeAccount" = "Account wijzigen";
+
+/* Título de la hoja de soltar la cuenta de grupos */
+"storage.groups.changeAccountTitle" = "Account van je groepen ontkoppelen?";
+
+/* Hoja de soltar: lo que pasa igual con las dos salidas */
+"storage.groups.changeAccountCommon" = "In beide gevallen verdwijnen je groepen van dit apparaat en blijven ze in je account: ze komen terug als je het opnieuw koppelt. De boekingen van wat je tegoed hebt of verschuldigd bent, verdwijnen uit je rekeningen.";
+
+/* Hoja de soltar: consecuencia de conservar, sin cifra */
+"storage.groups.changeAccountKeepEffect" = "De uitgaven die jij betaalde, blijven als gewone boekingen in je rekeningen.";
+
+/* Hoja de soltar: consecuencia de conservar; %1$d = gastos, %2$@ = total */
+"storage.groups.changeAccountKeepEffectCount" = "De uitgaven die jij betaalde, blijven als gewone boekingen in je rekeningen: %1$d (%2$@).";
+
+/* Hoja de soltar: consecuencia de quitar */
+"storage.groups.changeAccountRemoveEffect" = "De uitgaven die jij betaalde, verdwijnen ook uit je rekeningen.";

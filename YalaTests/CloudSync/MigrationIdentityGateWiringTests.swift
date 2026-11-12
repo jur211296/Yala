@@ -459,6 +459,17 @@ struct MigrationIdentityGateWiringTests {
             "migrationBlockUseAnotherAccount = true",
             "presentedMigrationBlock = nil",
             "},",
+            // G1 (decisión 55): «Cambiar de cuenta» no suelta nada aquí; quema su one-shot y baja el aviso.
+            "offersChangeAccount: MigrationBlockChangeAccountLogic.offersChangeAccount(",
+            "reason: block.reason,",
+            "offersAnotherAccount: block.offersAnotherAccount,",
+            "offersDetachingStaleAssociation: block.offersDetachingStaleAssociation,",
+            "groupsAccountCanBeReleased: GroupsAssociationSection.canReleaseGroupsAccount(",
+            "hasCompletedOnboarding: appPreferences.hasCompletedOnboarding)),",
+            "onChangeAccount: {",
+            "migrationBlockChangeAccount = true",
+            "presentedMigrationBlock = nil",
+            "},",
             "onClose: { presentedMigrationBlock = nil })",
             ".onAppear {",
             "if controller?.migrationIdentityBlock?.id == block.id { controller?.migrationIdentityBlock = nil }",
@@ -474,6 +485,12 @@ struct MigrationIdentityGateWiringTests {
 
         let dismissed = try Self.body(of: "private func onMigrationBlockDismissed() {", in: Self.viewPath)
         #expect(Self.lines(dismissed) == [
+            // G1: con el aviso ya abajo, pide la hoja de consecuencias a la sección. Nada más.
+            "if migrationBlockChangeAccount {",
+            "migrationBlockChangeAccount = false",
+            "groupsChangeAccountRequest += 1",
+            "return",
+            "}",
             "guard migrationBlockUseAnotherAccount else { return }",
             "migrationBlockUseAnotherAccount = false",
             "guard !abortIfCloudEntryClosed() else { return }",
@@ -487,6 +504,10 @@ struct MigrationIdentityGateWiringTests {
                 "«Usar otra cuenta» y «Desasociarla y seguir» (card 9mc6), y nadie más")
         #expect(Self.occurrences(of: "controller?.migrationIdentityBlock = nil", in: code) == 1,
                 "solo la hoja montada suelta el aviso")
+        #expect(Self.occurrences(of: "migrationBlockChangeAccount = true", in: code) == 1,
+                "solo el botón «Cambiar de cuenta» del aviso pide la hoja de consecuencias")
+        #expect(Self.occurrences(of: "groupsChangeAccountRequest += 1", in: code) == 1,
+                "la petición sale solo del `onDismiss` del aviso, con la hoja ya abajo")
     }
 
     /// Cada botón de la hoja con SU acción y SU id, y la nota de Apple fuera del `if` de los botones.
@@ -501,8 +522,25 @@ struct MigrationIdentityGateWiringTests {
             ".multilineTextAlignment(.center)",
             ".accessibilityIdentifier(\"storage_migrate_block_apple_note\")",
             "}",
+            // G1 (decisión 55): la salida que el texto nombra, como botón. Abre la hoja de consecuencias; no suelta nada.
+            "if offersChangeAccount {",
+            "YalaPrimaryButton(L10n.Storage.Groups.changeAccount,",
+            "icon: \"person.crop.circle.badge.questionmark\") {",
+            "onChangeAccount()",
+            "}",
+            ".accessibilityIdentifier(\"storage_migrate_block_change_account\")",
+            "if block.offersAnotherAccount {",
+            "YalaSecondaryButton(L10n.Storage.MigrateBlock.useAnotherAccount) {",
+            "onUseAnotherAccount()",
+            "}",
+            ".accessibilityIdentifier(\"storage_migrate_block_use_another\")",
+            "}",
+            "YalaSecondaryButton(L10n.Common.understood) {",
+            "onClose()",
+            "}",
+            ".accessibilityIdentifier(\"storage_migrate_block_close\")",
             // Card 9mc6: con la asociación de otra instalación, «Desasociarla y seguir» ocupa el sitio de «Usar otra cuenta».
-            "if block.offersDetachingStaleAssociation {",
+            "} else if block.offersDetachingStaleAssociation {",
             "YalaPrimaryButton(L10n.Storage.MigrateBlock.detachAndContinue,",
             "icon: \"person.crop.circle.badge.xmark\") {",
             "onDetachAndContinue()",

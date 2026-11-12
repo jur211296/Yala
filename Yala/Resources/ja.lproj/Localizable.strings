@@ -5255,16 +5255,16 @@
 "storage.migrate.accountReuseNoteGeneric" = "現在の Yala アカウントをそのまま使います。データもグループも同じアカウントにまとまります。";
 
 /* Storage migrate card, after the identity check refused the live account: it already has personal finances */
-"storage.migrate.refusedPersonalData" = "現在の Yala アカウントにはすでに個人の家計データがあるため、このデバイスのデータを受け取れません。データを別のアカウントに移すには、先に「グループ」でこのアカウントのリンクを解除してください。";
+"storage.migrate.refusedPersonalData" = "現在の Yala アカウントにはすでに個人の家計データがあるため、このデバイスのデータを受け取れません。データを別のアカウントに移すには、先に「アカウントを変更」をタップしてください。";
 
 /* Storage migrate card, after the identity check refused the live account: the device's groups use another account */
-"storage.migrate.refusedOtherGroups" = "グループは別のアカウントを使っていて、このデバイスで使えるクラウドアカウントは1つだけです。データをクラウドに移すには、グループのアカウントでサインインするか、先に「グループ」でリンクを解除してください。";
+"storage.migrate.refusedOtherGroups" = "グループは別のアカウントを使っていて、このデバイスで使えるクラウドアカウントは1つだけです。データをクラウドに移すには、グループのアカウントでサインインするか、先に「アカウントを変更」をタップしてください。";
 
 /* Storage migrate card, after the identity check refused the live account: the account went back to iCloud */
 "storage.migrate.refusedReturned" = "現在の Yala アカウントはiCloudに戻っていて、このアカウントでクラウドに戻すことはまだできません。";
 
 /* Storage migrate card, after the identity check refused the live account: it was signed in before a fresh start */
-"storage.migrate.refusedFreshStart" = "現在の Yala アカウントは別の人のものかもしれません。このデバイスを最初から始め直したときに、すでにサインインしていたアカウントです。ご自身のアカウントを選ぶには、「グループ」でリンクを解除してから、もう一度「クラウドを有効化」をタップしてください。";
+"storage.migrate.refusedFreshStart" = "現在の Yala アカウントは別の人のものかもしれません。このデバイスを最初から始め直したときに、すでにサインインしていたアカウントです。ご自身のアカウントを選ぶには、「アカウントを変更」をタップしてから、もう一度「クラウドを有効化」をタップしてください。";
 "storage.migrate.refusedOtherDevice" = "このアカウントで有効化が途中のままです。このデバイスで始めた場合は1時間後にもう一度お試しください。別のデバイスで始めた場合は、そのデバイスで完了してください。";
 
 /* Storage adopt card: the live session is a different Yala account than the one that migrated (%@ = Apple|Google) */
@@ -6018,16 +6018,16 @@
 "storage.errors.identityCheck" = "アカウントを確認できませんでした。少し待ってからもう一度お試しください。何も変更していません。";
 "storage.migrateBlock.personalDataTitle" = "このアカウントにはすでに独自のデータがあります";
 "storage.migrateBlock.personalDataBody" = "何も変更していません。データをクラウドに移すには、別のアカウントを使ってください。そのアカウントのデータをここで使うには、サインアウトしてからそのアカウントでサインインしてください。";
-"storage.migrateBlock.personalDataBodyNoSwitch" = "何も変更していません。そのアカウントのデータをここで使うには、サインアウトしてからそのアカウントでサインインしてください。データを別のアカウントに移すには、先に「グループ」でこのアカウントのリンクを解除してください。";
+"storage.migrateBlock.personalDataBodyNoSwitch" = "何も変更していません。そのアカウントのデータをここで使うには、サインアウトしてからそのアカウントでサインインしてください。データを別のアカウントに移すには、先に「アカウントを変更」をタップしてください。";
 "storage.migrateBlock.otherGroupsTitle" = "グループにはすでに別のアカウントを使っています";
-"storage.migrateBlock.otherGroupsBody" = "何も変更していません。このデバイスで使えるクラウドアカウントは1つだけで、グループはすでに別のアカウントを使っています。データをクラウドに移すには、グループのアカウントでサインインするか、別のアカウントを使う場合は先に「グループ」でリンクを解除してください。";
-"storage.migrateBlock.otherGroupsBodyEmail" = "何も変更していません。このデバイスで使えるクラウドアカウントは1つだけで、グループはすでに%@を使っています。データをクラウドに移すには、そのアカウントでサインインするか、別のアカウントを使う場合は先に「グループ」でリンクを解除してください。";
+"storage.migrateBlock.otherGroupsBody" = "何も変更していません。このデバイスで使えるクラウドアカウントは1つだけで、グループはすでに別のアカウントを使っています。データをクラウドに移すには、グループのアカウントでサインインするか、別のアカウントを使う場合は先に「アカウントを変更」をタップしてください。";
+"storage.migrateBlock.otherGroupsBodyEmail" = "何も変更していません。このデバイスで使えるクラウドアカウントは1つだけで、グループはすでに%@を使っています。データをクラウドに移すには、そのアカウントでサインインするか、別のアカウントを使う場合は先に「アカウントを変更」をタップしてください。";
 "storage.migrateBlock.returnedTitle" = "このアカウントはiCloudに戻っています";
 "storage.migrateBlock.returnedBody" = "このアカウントでクラウドに戻すことはまだできません。何も変更していません。";
 "storage.migrateBlock.useAnotherAccount" = "別のアカウントを使う";
 "storage.migrateBlock.appleSameAccountNote" = "Appleでは、Yalaは常にこのデバイスのアカウントを使います。別のアカウントを使うには、Googleを選んでください。";
 "storage.migrateBlock.freshStartSessionTitle" = "このアカウントは別の人のものかもしれません";
-"storage.migrateBlock.freshStartSessionBody" = "何も変更していません。グループは、このデバイスですでにサインインしていたアカウントを使っています。このデバイスは最初から始め直したため、そのアカウントは別の人のものかもしれません。データをクラウドに移すには、「グループ」でリンクを解除してから、もう一度「クラウドを有効化」をタップしてください。ご自身のアカウントを選べます。";
+"storage.migrateBlock.freshStartSessionBody" = "何も変更していません。グループは、このデバイスですでにサインインしていたアカウントを使っています。このデバイスは最初から始め直したため、そのアカウントは別の人のものかもしれません。データをクラウドに移すには、「アカウントを変更」をタップしてから、もう一度「クラウドを有効化」をタップしてください。ご自身のアカウントを選べます。";
 "storage.migrateBlock.otherDeviceTitle" = "このアカウントで有効化が途中のままです";
 "storage.migrateBlock.otherDeviceBody" = "何も変更していません。このデバイスで始めた場合は、1時間後にもう一度お試しください。別のデバイスで始めた場合は、そのデバイスで完了してください。";
 
@@ -8908,3 +8908,26 @@
 "groups.discard.paymentTitle" = "この支払いを破棄しますか？";
 "groups.discard.openingBalanceTitle" = "この開始残高を破棄しますか？";
 "groups.expense.groupChangedNotice" = "グループを変更しました。入力した内容はそのままです。支払った人と分け方は最初からになります。";
+
+// MARK: - Nube 2.3 · G1, cambiar de cuenta sin saltarse la hoja
+
+/* Fila de la cuenta en «Dónde viven tus datos»: quién usa la cuenta (G1) */
+"storage.groups.usedByGroups" = "グループで使用中";
+
+/* Enlace y botón que abren la hoja para soltar la cuenta de grupos (G1) */
+"storage.groups.changeAccount" = "アカウントを変更";
+
+/* Título de la hoja de soltar la cuenta de grupos */
+"storage.groups.changeAccountTitle" = "グループのアカウントのリンクを解除しますか？";
+
+/* Hoja de soltar: lo que pasa igual con las dos salidas */
+"storage.groups.changeAccountCommon" = "どちらを選んでも、グループはこのデバイスから外れ、アカウントには残ります。もう一度つなげば戻ってきます。貸し借りの記録は口座から消えます。";
+
+/* Hoja de soltar: consecuencia de conservar, sin cifra */
+"storage.groups.changeAccountKeepEffect" = "あなたが支払った支出は、通常の記録として口座に残ります。";
+
+/* Hoja de soltar: consecuencia de conservar; %1$d = gastos, %2$@ = total */
+"storage.groups.changeAccountKeepEffectCount" = "あなたが支払った支出は、通常の記録として口座に残ります：%1$d件（%2$@）。";
+
+/* Hoja de soltar: consecuencia de quitar */
+"storage.groups.changeAccountRemoveEffect" = "あなたが支払った支出も口座から消えます。";

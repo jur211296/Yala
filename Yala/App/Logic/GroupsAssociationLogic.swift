@@ -149,4 +149,19 @@ nonisolated enum GroupsAssociationLogic {
         let method = YalaAccountLogic.method(fromProvider: provider)
         return method == .unknown ? .unnamed : .provider(method)
     }
+
+    /// La línea de la cuenta en la fila de «¿Dónde viven tus datos?» (G1 de la revisión 2.3): con qué se entra y el correo,
+    /// «Apple · lucia@icloud.com». Lo que falte no se inventa: solo el proveedor, solo el correo, o `nil` si no hay ninguno
+    /// (la fila dice «Tu cuenta de Yala» sin nombrarla). Los nombres de las marcas no se traducen.
+    static func accountLine(email: String?, provider: String?) -> String? {
+        let correo = email?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let marca: String?
+        switch YalaAccountLogic.method(fromProvider: provider) {
+        case .apple: marca = "Apple"
+        case .google: marca = "Google"
+        case .unknown: marca = nil
+        }
+        let partes = [marca, correo].compactMap { $0 }.filter { !$0.isEmpty }
+        return partes.isEmpty ? nil : partes.joined(separator: " · ")
+    }
 }
