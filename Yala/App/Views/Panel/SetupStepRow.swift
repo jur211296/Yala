@@ -2,93 +2,64 @@
 //  SetupStepRow.swift
 //  Yala
 //
-//  Individual step row in the setup checklist card.
+//  Una fila de la lista «Primeros pasos» que abre «Ver los 7 pasos» (Y23-05): el número del paso (o ✓ si está hecho),
+//  su nombre y una línea de qué es. No se toca: la lista enseña dónde va la persona; el paso se empieza en el mazo.
 //
 
 import SwiftUI
 
 struct SetupStepRow: View {
 
-    // MARK: - Properties
-
     let step: SetupStep
+    let position: Int
     let isCurrent: Bool
-    /// Cualquier paso pendiente o saltado se puede tocar (UX 2.2 · L5-1): ya no hay candados.
-    var onTap: (() -> Void)?
 
-    // MARK: - Indicator
-
-    // A11Y-DT: SF Symbol icon sizing — fixed size for checklist indicator alignment
-    @ViewBuilder
-    private var indicatorImage: some View {
-        if step.isCompleted {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 18))
-                .foregroundStyle(DS.Semantic.successForeground)
-        } else if step.isSkipped {
-            // Saltado con «Ahora no»: sin ✓, en gris (UX 2.2 · L5-2).
-            Image(systemName: "minus.circle")
-                .font(.system(size: 18))
-                .foregroundStyle(.thSecondaryText)
-        } else if isCurrent {
-            Image(systemName: "arrow.right.circle.fill")
-                .font(.system(size: 18))
-                .foregroundStyle(.thAccentText)
-        } else {
-            Image(systemName: "circle")
-                .font(.system(size: 18))
-                .foregroundStyle(.thSecondaryText)
-        }
-    }
-
-    private var isDimmed: Bool { step.isCompleted || step.isSkipped }
-
-    // MARK: - Body
+    @Environment(\.yalaTheme) private var theme
+    @ScaledMetric(relativeTo: .body) private var badgeSize: CGFloat = 30
 
     var body: some View {
-        Button {
-            onTap?()
-        } label: {
-            HStack(spacing: DS.Spacing.sm) {
-                // Completion indicator
-                indicatorImage
+        HStack(alignment: .top, spacing: DS.Spacing.md) {
+            badge
 
-                // Step icon
-                Image(systemName: step.icon)
-                    .font(.system(size: 14)) // A11Y-DT: SF Symbol icon sizing for step icon
-                    .foregroundStyle(isDimmed ? ThemeColor.thSecondaryText : ThemeColor.thPrimaryText)
-                    .frame(width: 20)
-
-                // Step title
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(step.id.localizedTitle)
-                    .font(isCurrent ? DS.Typography.label : DS.Typography.caption)
-                    .foregroundStyle(isDimmed ? ThemeColor.thSecondaryText : ThemeColor.thPrimaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Spacer(minLength: DS.Spacing.xs)
-
-                if step.isSkipped {
-                    Text(L10n.SetupChecklist.tryAgain)
-                        .font(DS.Typography.labelSmall)
-                        .foregroundStyle(.thAccentText)
-                } else if !step.isCompleted {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .semibold)) // A11Y-DT: SF Symbol icon sizing for chevron
-                        .foregroundStyle(isCurrent ? AnyShapeStyle(.thAccentText) : AnyShapeStyle(.thSecondaryText))
-                }
+                    .font(DS.Typography.bodyBold)
+                    .foregroundStyle(step.isCompleted || step.isSkipped ? .thSecondaryText : .thPrimaryText)
+                Text(step.id.localizedSubtitle)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.thSecondaryText)
             }
-            .padding(.vertical, DS.Spacing.xs)
-            .contentShape(Rectangle())
+            .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 0)
         }
-        .buttonStyle(.plain)
-        .disabled(step.isCompleted || onTap == nil)
+        .padding(.vertical, DS.Spacing.xs)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(step.id.localizedTitle)
-        .accessibilityHint(
+        .accessibilityValue(
             step.isCompleted ? L10n.SetupChecklist.stepCompleted
-                : step.isSkipped ? L10n.SetupChecklist.stepSkipped
-                : L10n.SetupChecklist.stepTapToStart
+                : step.isSkipped ? L10n.SetupChecklist.Deck.skippedValue
+                : isCurrent ? L10n.SetupChecklist.Deck.currentValue
+                : ""
         )
+    }
+
+    @ViewBuilder
+    private var badge: some View {
+        ZStack {
+            Circle()
+                .fill(step.isCompleted || isCurrent ? AnyShapeStyle(theme.accent) : AnyShapeStyle(.thSecondaryText.opacity(DS.Opacity.subtle)))
+            if step.isCompleted {
+                Image(systemName: "checkmark")
+                    .font(DS.Typography.labelSmall.bold())
+                    .foregroundStyle(theme.onAccent)
+            } else {
+                Text(verbatim: "\(position)")
+                    .font(DS.Typography.labelSmall.bold())
+                    .foregroundStyle(isCurrent ? AnyShapeStyle(theme.onAccent) : AnyShapeStyle(.thSecondaryText))
+            }
+        }
+        .frame(width: badgeSize, height: badgeSize)
+        .accessibilityHidden(true)
     }
 }
 
@@ -97,34 +68,30 @@ struct SetupStepRow: View {
 extension SetupStepID {
     var localizedTitle: String {
         switch self {
-        case .exploreSettings: L10n.SetupChecklist.Step.exploreSettings
-        case .firstExpense: L10n.SetupChecklist.Step.firstExpense
-        case .firstBudget: L10n.SetupChecklist.Step.firstBudget
-        case .scheduledPayment: L10n.SetupChecklist.Step.scheduledPayment
+        case .firstAccount: L10n.SetupChecklist.Step.firstAccount
+        case .firstExpense: L10n.SetupChecklist.Step.learnToRecord
+        case .firstBudget: L10n.SetupChecklist.Step.firstBudgetDeck
+        case .scheduledPayment: L10n.SetupChecklist.Step.fixedPayments
+        case .groups: L10n.SetupChecklist.Step.groups
+        case .whereMoneyGoes: L10n.SetupChecklist.Step.whereMoneyGoes
+        case .homeScreen: L10n.SetupChecklist.Step.homeScreen
         case .tryVoiceInput: L10n.SetupChecklist.Step.tryVoiceInput
         case .tryImageInput: L10n.SetupChecklist.Step.tryImageInput
-        case .discoverFeatures:
-            L10n.SetupChecklist.Step.discoverFeatures(
-                Self.discoverTitle(
-                    isProUser: FeatureGateService.shared.isProUser,
-                    trialEligible: StoreKitManager.shared.isIntroOfferEligible
-                )
-            )
         }
     }
 
-    /// Cómo se llama el último paso (UX 2.2 · L5-3, opción A): por lo que abre. Antes decía «Descubre qué más puede
-    /// hacer Yala» y abría una oferta con precios. Quien ya usó la prueba no la vuelve a tener (lote 17 · B4), así que
-    /// a esa persona no se le promete «gratis».
-    enum DiscoverTitle: Equatable {
-        case freeTrial
-        case knowPro
-        case alreadyPro
-    }
-
-    static func discoverTitle(isProUser: Bool, trialEligible: Bool) -> DiscoverTitle {
-        if isProUser { return .alreadyPro }
-        return trialEligible ? .freeTrial : .knowPro
+    /// La línea de qué es cada paso en la lista de los 7 (prototipo oficial v35).
+    var localizedSubtitle: String {
+        switch self {
+        case .firstAccount: L10n.SetupChecklist.Step.firstAccountDetail
+        case .firstExpense: L10n.SetupChecklist.Step.learnToRecordDetail
+        case .firstBudget: L10n.SetupChecklist.Step.firstBudgetDetail
+        case .scheduledPayment: L10n.SetupChecklist.Step.fixedPaymentsDetail
+        case .groups: L10n.SetupChecklist.Step.groupsDetail
+        case .whereMoneyGoes: L10n.SetupChecklist.Step.whereMoneyGoesDetail
+        case .homeScreen: L10n.SetupChecklist.Step.homeScreenDetail
+        case .tryVoiceInput, .tryImageInput: ""
+        }
     }
 }
 
@@ -223,18 +190,49 @@ extension L10n {
         }
 
         // Step titles
+        // Step titles. Los siete del mazo (Y23-05) y las prácticas de voz y foto de dentro del paso 2.
         enum Step {
-            static var exploreSettings: String {
-                NSLocalizedString("setup.step1.title", comment: "Step 1 title")
+            static var firstAccount: String {
+                NSLocalizedString("setup.deck.step.account", comment: "Getting started step 1: create your first account")
             }
-            static var firstExpense: String {
-                NSLocalizedString("setup.step2.title", comment: "Step 2 title")
+            static var firstAccountDetail: String {
+                NSLocalizedString("setup.deck.step.account.detail", comment: "Getting started step 1, one-line description")
             }
-            static var firstBudget: String {
-                NSLocalizedString("setup.step3.title", comment: "Step 3 title")
+            static var learnToRecord: String {
+                NSLocalizedString("setup.deck.step.record", comment: "Getting started step 2: learn to record")
             }
-            static var scheduledPayment: String {
-                NSLocalizedString("setup.step4.title", comment: "Step 4 title")
+            static var learnToRecordDetail: String {
+                NSLocalizedString("setup.deck.step.record.detail", comment: "Getting started step 2, one-line description")
+            }
+            static var firstBudgetDeck: String {
+                NSLocalizedString("setup.deck.step.budget", comment: "Getting started step 3: create your first budget")
+            }
+            static var firstBudgetDetail: String {
+                NSLocalizedString("setup.deck.step.budget.detail", comment: "Getting started step 3, one-line description")
+            }
+            static var fixedPayments: String {
+                NSLocalizedString("setup.deck.step.payments", comment: "Getting started step 4: note your fixed payments")
+            }
+            static var fixedPaymentsDetail: String {
+                NSLocalizedString("setup.deck.step.payments.detail", comment: "Getting started step 4, one-line description")
+            }
+            static var groups: String {
+                NSLocalizedString("setup.deck.step.groups", comment: "Getting started step 5: split expenses with your group")
+            }
+            static var groupsDetail: String {
+                NSLocalizedString("setup.deck.step.groups.detail", comment: "Getting started step 5, one-line description")
+            }
+            static var whereMoneyGoes: String {
+                NSLocalizedString("setup.deck.step.money", comment: "Getting started step 6: see where your money goes")
+            }
+            static var whereMoneyGoesDetail: String {
+                NSLocalizedString("setup.deck.step.money.detail", comment: "Getting started step 6, one-line description")
+            }
+            static var homeScreen: String {
+                NSLocalizedString("setup.deck.step.home", comment: "Getting started step 7: Yala on your Home Screen")
+            }
+            static var homeScreenDetail: String {
+                NSLocalizedString("setup.deck.step.home.detail", comment: "Getting started step 7, one-line description")
             }
             static var tryVoiceInput: String {
                 NSLocalizedString("setup.step6.title", comment: "Step 6 title")
@@ -242,15 +240,41 @@ extension L10n {
             static var tryImageInput: String {
                 NSLocalizedString("setup.step7.title", comment: "Step 7 title")
             }
-            static func discoverFeatures(_ title: SetupStepID.DiscoverTitle) -> String {
-                switch title {
-                case .freeTrial:
-                    NSLocalizedString("setup.step5.title.trial", comment: "Last setup step: free Pro trial (30 days)")
-                case .knowPro:
-                    NSLocalizedString("setup.step5.title.knowPro", comment: "Last setup step: see Yala Pro (trial already used)")
-                case .alreadyPro:
-                    NSLocalizedString("setup.step5.title.alreadyPro", comment: "Last setup step for a Pro user")
-                }
+        }
+
+        /// El mazo de «Primeros pasos» (Y23-05).
+        enum Deck {
+            /// «Primeros pasos · 2 de 7».
+            static func counter(_ position: Int, _ total: Int) -> String {
+                String(format: NSLocalizedString("setup.deck.counter", comment: "Getting started deck: 'Getting started · 2 of 7'"), position, total)
+            }
+            /// «Después: …», el primero que asoma detrás.
+            static func after(_ title: String) -> String {
+                String(format: NSLocalizedString("setup.deck.after", comment: "Getting started deck: next step peeking behind, 'Next: …'"), title)
+            }
+            /// «Luego: …», el segundo que asoma detrás.
+            static func then(_ title: String) -> String {
+                String(format: NSLocalizedString("setup.deck.then", comment: "Getting started deck: step after next peeking behind, 'Then: …'"), title)
+            }
+            /// «Seguir donde iba»: cierra la lista de los 7.
+            static var resume: String {
+                NSLocalizedString("setup.deck.resume", comment: "Getting started list: close and go back to where I was")
+            }
+            /// «Solo gastos», en la llegada: la única acción.
+            static var firstExpense: String {
+                NSLocalizedString("setup.deck.firstExpense", comment: "Expenses-only arrival: note your first expense")
+            }
+            /// Debajo de «Anotar el primer gasto»: a qué cuenta van.
+            static func firstExpenseNote(_ accountName: String) -> String {
+                String(format: NSLocalizedString("setup.deck.firstExpense.note", comment: "Expenses-only arrival: your expenses go to «%@», which Yala creates on its own"), accountName)
+            }
+            /// VoiceOver: el paso que toca en la lista.
+            static var currentValue: String {
+                NSLocalizedString("setup.deck.currentValue", comment: "Accessibility: this is the current step")
+            }
+            /// VoiceOver: un paso omitido en la lista.
+            static var skippedValue: String {
+                NSLocalizedString("setup.deck.skippedValue", comment: "Accessibility: this step was skipped")
             }
         }
 

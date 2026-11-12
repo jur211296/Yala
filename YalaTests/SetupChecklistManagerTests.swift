@@ -51,17 +51,17 @@ struct SetupChecklistManagerTests {
         #expect(manager.progress == 0.0)
     }
 
-    /// UX 2.2 · L5-1: lo primero que toca es apuntar un gasto (antes era «Conoce todo lo que puedes personalizar»).
+    /// Y23-05: el mazo empieza por «Crea tu primera cuenta».
     @MainActor @Test func initialState_hasCurrentStep() {
         let manager = freshManager()
         #expect(manager.currentStep != nil)
-        #expect(manager.currentStep?.id == .firstExpense)
+        #expect(manager.currentStep?.id == .firstAccount)
     }
 
     @MainActor @Test func initialState_stepsInOrder() {
         let manager = freshManager()
         let ids = manager.steps.map { $0.id }
-        #expect(ids == SetupStepID.allCases)
+        #expect(ids == SetupStepID.deck)
     }
 
     // MARK: - Step Completion
@@ -82,8 +82,8 @@ struct SetupChecklistManagerTests {
 
     @MainActor @Test func markCompleted_advancesCurrentStep() {
         let manager = freshManager()
-        manager.markCompleted(.firstExpense)
-        #expect(manager.currentStep?.id == .tryVoiceInput)
+        manager.markCompleted(.firstAccount)
+        #expect(manager.currentStep?.id == .firstExpense)
     }
 
     @MainActor @Test func markCompleted_progressUpdates() {
@@ -97,12 +97,12 @@ struct SetupChecklistManagerTests {
 
     @MainActor @Test func allComplete_triggersCompletion() {
         let manager = freshManager()
-        for step in SetupStepID.allCases {
+        for step in SetupStepID.deck {
             manager.markCompleted(step)
         }
         #expect(manager.isAllComplete == true)
         #expect(manager.completedCount == 7)
-        #expect(manager.wouldCompleteAll(by: .discoverFeatures) == false, "ya completa, no completa otra vez")
+        #expect(manager.wouldCompleteAll(by: .homeScreen) == false, "ya completa, no completa otra vez")
         #expect(manager.completedAllDate != nil)
         #expect(manager.currentStep == nil)
         #expect(manager.progress == 1.0)
@@ -110,7 +110,7 @@ struct SetupChecklistManagerTests {
 
     @MainActor @Test func allComplete_shouldShowTrue_withinExpiration() {
         let manager = freshManager()
-        for step in SetupStepID.allCases {
+        for step in SetupStepID.deck {
             manager.markCompleted(step)
         }
         #expect(manager.shouldShow == true)
@@ -125,15 +125,16 @@ struct SetupChecklistManagerTests {
         var calls = 0
         manager.onAllStepsCompleted = { calls += 1 }
         defer { manager.onAllStepsCompleted = {} }
-        for step in SetupStepID.allCases where step != .discoverFeatures {
+        for step in SetupStepID.deck where step != .homeScreen {
             #expect(!manager.wouldCompleteAll(by: step))
             manager.markCompleted(step)
         }
         #expect(calls == 0)
-        #expect(manager.wouldCompleteAll(by: .discoverFeatures))
+        #expect(manager.wouldCompleteAll(by: .homeScreen))
         #expect(!manager.wouldCompleteAll(by: .firstExpense), "ese paso ya está hecho: no es el que falta")
-        manager.markCompleted(.discoverFeatures)
-        manager.markCompleted(.discoverFeatures)
+        #expect(!manager.wouldCompleteAll(by: .tryVoiceInput), "una práctica no es un paso del mazo")
+        manager.markCompleted(.homeScreen)
+        manager.markCompleted(.homeScreen)
         #expect(calls == 1)
     }
 
@@ -141,11 +142,11 @@ struct SetupChecklistManagerTests {
     /// que falta en el orden nuevo.
     @MainActor @Test func anyStepCanBeDoneOutOfOrder() {
         let manager = freshManager()
-        manager.markCompleted(.discoverFeatures)
+        manager.markCompleted(.homeScreen)
         manager.markCompleted(.firstBudget)
         #expect(manager.completedCount == 2)
-        #expect(manager.currentStep?.id == .firstExpense)
-        #expect(manager.steps.first { $0.id == .discoverFeatures }?.isCompleted == true)
+        #expect(manager.currentStep?.id == .firstAccount)
+        #expect(manager.steps.first { $0.id == .homeScreen }?.isCompleted == true)
     }
 
     // MARK: - Auto Detect
@@ -332,41 +333,30 @@ struct SetupChecklistManagerTests {
         #expect(SetupStepID.scheduledPayment.hasPracticeCleanup == true)
         #expect(SetupStepID.tryVoiceInput.hasPracticeCleanup == true)
         #expect(SetupStepID.tryImageInput.hasPracticeCleanup == true)
-        #expect(SetupStepID.exploreSettings.hasPracticeCleanup == false)
-        #expect(SetupStepID.discoverFeatures.hasPracticeCleanup == false)
+        #expect(SetupStepID.firstAccount.hasPracticeCleanup == false)
+        #expect(SetupStepID.homeScreen.hasPracticeCleanup == false)
     }
 
     // MARK: - Voice/Image Trial Steps
 
-    /// UX 2.2 · L5-1 (opción A): primer gasto, voz, foto, presupuesto, pago que se repite, Ajustes y Pro.
-    @Test func stepsOrder_firstExpenseFirst_settingsAndProLast() {
-        #expect(SetupStepID.allCases == [
-            .firstExpense, .tryVoiceInput, .tryImageInput, .firstBudget, .scheduledPayment,
-            .exploreSettings, .discoverFeatures,
+    /// Y23-05: el orden de la ficha. Voz y foto ya no son pasos: son prácticas dentro de «Aprender a registrar».
+    @Test func deckOrder_isTheSpecOrder() {
+        #expect(SetupStepID.deck == [
+            .firstAccount, .firstExpense, .firstBudget, .scheduledPayment, .groups, .whereMoneyGoes, .homeScreen,
         ])
+        #expect(!SetupStepID.tryVoiceInput.isDeckStep)
+        #expect(!SetupStepID.tryImageInput.isDeckStep)
     }
 
     /// El orden cambió, las claves guardadas no: quien ya tenía pasos hechos los conserva.
     @Test func storageKeys_keepTheirRawValues() {
-        #expect(SetupStepID.exploreSettings.storageKey == "setup.step.1.completed")
         #expect(SetupStepID.firstExpense.storageKey == "setup.step.2.completed")
-        #expect(SetupStepID.discoverFeatures.storageKey == "setup.step.5.completed")
+        #expect(SetupStepID.firstBudget.storageKey == "setup.step.3.completed")
+        #expect(SetupStepID.scheduledPayment.storageKey == "setup.step.4.completed")
+        #expect(SetupStepID.firstAccount.storageKey == "setup.step.8.completed")
+        #expect(SetupStepID.homeScreen.storageKey == "setup.step.11.completed")
         #expect(SetupStepID.tryImageInput.storageKey == "setup.step.7.completed")
         #expect(SetupStepID.tryVoiceInput.skippedStorageKey == "setup.step.6.skipped")
-    }
-
-    @MainActor @Test func stepsOrder_trialBeforeDiscover() {
-        let manager = freshManager()
-        let ids = manager.steps.map { $0.id }
-        guard let voiceIdx = ids.firstIndex(of: .tryVoiceInput),
-              let imageIdx = ids.firstIndex(of: .tryImageInput),
-              let discoverIdx = ids.firstIndex(of: .discoverFeatures) else {
-            Issue.record("Missing trial or discover steps")
-            return
-        }
-        #expect(voiceIdx < discoverIdx)
-        #expect(imageIdx < discoverIdx)
-        #expect(voiceIdx < imageIdx)
     }
 
     @Test func stepID_allHaveIcons() {
@@ -386,52 +376,52 @@ struct SetupChecklistManagerTests {
 
     @MainActor @Test func currentStep_autoDetect_skipsCompleted() {
         let manager = freshManager()
-        manager.autoDetect(transactionCount: 3, budgetCount: 1, scheduledCount: 2)
-        // 3 steps auto-completed: firstExpense, firstBudget, scheduledPayment
-        #expect(manager.completedCount == 3)
-        // First pending in the new order is the voice practice
-        #expect(manager.currentStep?.id == .tryVoiceInput)
+        manager.autoDetect(accountCount: 1, transactionCount: 3, budgetCount: 1, scheduledCount: 2)
+        // 4 steps auto-completed: firstAccount, firstExpense, firstBudget, scheduledPayment
+        #expect(manager.completedCount == 4)
+        #expect(manager.currentStep?.id == .groups)
 
         manager.markCompleted(.tryVoiceInput)
-        manager.markCompleted(.tryImageInput)
-        #expect(manager.currentStep?.id == .exploreSettings)
+        #expect(manager.currentStep?.id == .groups, "una práctica no mueve el mazo")
+        manager.autoDetect(transactionCount: 3, budgetCount: 1, scheduledCount: 2, groupCount: 1)
+        #expect(manager.currentStep?.id == .whereMoneyGoes)
     }
 
     // MARK: - «Ahora no» (UX 2.2 · L5-2)
 
-    /// Saltar la práctica no la da por hecha: no suma, no lleva ✓, y el destacado pasa al siguiente.
+    /// Omitir un paso no lo da por hecho: no suma, no lleva ✓, y el mazo pasa al siguiente (Y23-05).
     @MainActor @Test func skip_doesNotCountAsDone_andMovesTheCurrentStepOn() {
         let manager = freshManager()
-        manager.markCompleted(.firstExpense)
-        manager.markSkipped(.tryVoiceInput)
+        manager.markCompleted(.firstAccount)
+        manager.markSkipped(.firstExpense)
 
         #expect(manager.completedCount == 1)
-        let voice = manager.steps.first { $0.id == .tryVoiceInput }
-        #expect(voice?.isCompleted == false)
-        #expect(voice?.isSkipped == true)
-        #expect(manager.currentStep?.id == .tryImageInput)
+        let record = manager.steps.first { $0.id == .firstExpense }
+        #expect(record?.isCompleted == false)
+        #expect(record?.isSkipped == true)
+        #expect(manager.currentStep?.id == .firstBudget)
         #expect(manager.hasSkippedSteps)
     }
 
     /// Volver a probarlo y hacerlo lo cuenta como hecho y quita el «saltado».
     @MainActor @Test func doingASkippedStep_marksItDone() {
         let manager = freshManager()
-        manager.markSkipped(.tryImageInput)
-        manager.markCompleted(.tryImageInput)
+        manager.markSkipped(.firstBudget)
+        manager.markCompleted(.firstBudget)
 
-        let image = manager.steps.first { $0.id == .tryImageInput }
-        #expect(image?.isCompleted == true)
-        #expect(image?.isSkipped == false)
+        let budget = manager.steps.first { $0.id == .firstBudget }
+        #expect(budget?.isCompleted == true)
+        #expect(budget?.isSkipped == false)
         #expect(!manager.hasSkippedSteps)
-        #expect(UserDefaults.standard.object(forKey: SetupStepID.tryImageInput.skippedStorageKey) == nil)
+        #expect(UserDefaults.standard.object(forKey: SetupStepID.firstBudget.skippedStorageKey) == nil)
     }
 
     /// Un paso ya hecho no se puede «saltar» después.
     @MainActor @Test func skip_afterDone_isIgnored() {
         let manager = freshManager()
-        manager.markCompleted(.tryVoiceInput)
-        manager.markSkipped(.tryVoiceInput)
-        #expect(manager.steps.first { $0.id == .tryVoiceInput }?.isSkipped == false)
+        manager.markCompleted(.groups)
+        manager.markSkipped(.groups)
+        #expect(manager.steps.first { $0.id == .groups }?.isSkipped == false)
         #expect(!manager.hasSkippedSteps)
     }
 
@@ -442,14 +432,14 @@ struct SetupChecklistManagerTests {
         var calls = 0
         manager.onAllStepsCompleted = { calls += 1 }
         defer { manager.onAllStepsCompleted = {} }
-        for step in SetupStepID.allCases where step != .tryVoiceInput && step != .tryImageInput {
+        for step in SetupStepID.deck where step != .groups && step != .homeScreen {
             manager.markCompleted(step)
         }
         #expect(!manager.isAllComplete)
-        #expect(manager.wouldCompleteAll(by: .tryVoiceInput) == false, "falta también la foto")
-        manager.markSkipped(.tryImageInput)
-        #expect(manager.wouldCompleteAll(by: .tryVoiceInput))
-        manager.markSkipped(.tryVoiceInput)
+        #expect(manager.wouldCompleteAll(by: .groups) == false, "falta también el 7")
+        manager.markSkipped(.homeScreen)
+        #expect(manager.wouldCompleteAll(by: .groups))
+        manager.markSkipped(.groups)
 
         #expect(manager.isAllComplete)
         #expect(calls == 1)
@@ -502,9 +492,9 @@ struct SetupChecklistManagerTests {
         #expect(manager.completedCount == 3)
         #expect(manager.totalCount == 7)
         #expect(manager.isAllComplete == false)
-        // Y lo que de verdad ve el usuario que vuelve: la card, pidiéndole que pruebe la voz.
+        // Y lo que de verdad ve el usuario que vuelve: la card, pidiéndole su primera cuenta (sin cuentas contadas).
         #expect(manager.shouldShow == true)
-        #expect(manager.currentStep?.id == .tryVoiceInput)
+        #expect(manager.currentStep?.id == .firstAccount)
     }
 
     /// La consecuencia del fix: sin el marcador de instalación nueva —que la re-entrada ya no

@@ -68,6 +68,9 @@ enum NotificationPrimerMoments {
     /// cosas se toparían con la hoja. El respaldo se queda como estaba.
     static func claim(_ context: NotificationPrimerContext) async -> Bool {
         if context != .records, UITestHooks.isActive { return false }
+        // Y23-17: mientras aprende a registrar (paso 2 de Primeros pasos) se apuntan hasta cuatro de prueba, y el respaldo
+        // pediría sin que la persona haya elegido un aviso. Se calla sin gastar el one-shot: sale tras ese paso.
+        if context == .records, !TutorialPermissionMoments.recordsFallbackAllowed { return false }
         let defaults = UserDefaults.standard
         guard NotificationPrimerMomentLogic.isMoment(
             context,

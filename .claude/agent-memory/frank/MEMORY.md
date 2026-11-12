@@ -204,6 +204,8 @@
 - [AX timeout tras una tanda con axe](feedback_xcuitest_ax_timeout_tras_una_tanda_con_axe.md) — el runner no arranca; reinicia el simulador antes del gate.
 - [Portapapeles y PasteButton en el simulador](reference_portapapeles_y_pastebutton_en_simulador.md) — pbcopy no llega en iOS 27; el PasteButton ignora toques sintéticos: typeText + guion.
 - [Capturas de hojas con XCUITest](feedback_capturas_de_hojas_con_xcuitest.md) — dentro de Ajustes, XCTAttachment + export; los swipes de axe cierran la hoja.
+- [Prototipo bienvenida 2.3: fuente en la Max](reference_prototipo_bienvenida_2_3_en_la_max.md) — el artifact v35 no se lee desde la Mini; scp de fuente-actual/.
+- [axe no toca la bienvenida](feedback_axe_no_toca_la_bienvenida.md) — iOS 27.2: XcodeBuildMCP sí; para el «antes», plist y sin -uitest.
 - [Capturas: en `_capturas/<slug>`](reference_capturas_sobreviven_en_worktrees_capturas.md) — el worktree se retira; capturas/ dentro muere y ensucia el status.
 - [Reportes a AX3, por la pestaña](reference_reportes_a_ax3_por_la_pestana.md) — la tarjeta de «Más» no se alcanza; `-tabBarConfiguration` con reports.
 - [Regresión aparente: se mide contra la base](feedback_regresion_aparente_se_mide_contra_la_base.md) — worktree de origin y mismos toques antes de arreglar o culparte.

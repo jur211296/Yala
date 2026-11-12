@@ -125,6 +125,15 @@ paths:
   (ImageIO) y `image(reducing:maxEdge:)` hace lo mismo con la de la cámara. Para leer, `currentIntakeMaxEdge()`; para
   guardar, el tamaño con que se guarda. Una puerta nueva de fotos se añade a `PhotoIntakeTests.everyEntryGoesThroughIntake`.
 
+- **Una capa encima de una página de pestaña NO tapa las barras de UIKit, y el marco de un botón de la barra no está en
+  coordenadas de la ventana (medido el 2026-11-12, iOS 27.2, guías «dónde vive cada cosa», Y23-15).** La barra de
+  arriba y la de pestañas quedan por encima del contenido: un oscurecido de la página las deja encendidas y un recorte de
+  foco no puede rodear «Configurar Panel» ni la pestaña «Más». El `frame(in: .global)` medido con `onGeometryChange` en
+  un botón de la barra llegó con una y desplazada (la tarjeta se pintó encima de la barra). ⇒ la tarjeta se coloca con
+  el alto de la barra y el área segura de la página, y el marco medido solo da la x de la flecha (`PanelPlaceGuideLayer`);
+  la pestaña se localiza por su etiqueta en la `UITabBar` (`TabBarItemLocator`). Y el Panel pinta bajo la barra de
+  arriba: su área segura solo descuenta la hora.
+
 - **Un `Picker` segmentado NO pasa su título a accesibilidad; uno `.menu` con `.labelsHidden()` sí (medido el
   2026-11-10, iOS 27.2, lote 04 de mejoras necesarias 2.3).** Con `Picker("Tipo de pago", …).pickerStyle(.segmented)`
   el `TabGroup` salió con etiqueta vacía en `axe describe-ui`; con `.accessibilityLabel(…)` encima, «Tipo de pago». El

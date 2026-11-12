@@ -2,8 +2,10 @@
 //  SetupChecklistCard.swift
 //  Yala
 //
-//  "Configura tu Yala" — persistent card on Panel guiding new users through 8 setup steps.
-//  Three states: expanded (full list), collapsed (progress bar only), completed (celebration).
+//  «Primeros pasos» en el Panel. Mientras quedan pasos, es el MAZO (Y23-05, bienvenida 2.3): el paso actual adelante,
+//  en el color de la app, con «Primeros pasos · N de 7», y los dos siguientes asomando detrás («Después: …», «Luego:
+//  …»). «Ver los 7 pasos» abre la lista con los hechos marcados. Al resolver el séptimo, el mazo desaparece y queda la
+//  tarjeta de fin (la reharán en Y23-18).
 //
 
 import SwiftData
@@ -25,6 +27,14 @@ struct SetupChecklistCard: View {
     // MARK: - State
 
     @State private var showCelebration = false
+    @State private var showsAllSteps = false
+    @Environment(\.self) private var environment
+
+    /// Si el texto sobre el acento es claro (blanco en los temas índigo) u oscuro (negro en Teal, Rosa y Minimalista).
+    private var onAccentIsLight: Bool {
+        let c = theme.onAccent.resolve(in: environment)
+        return 0.2126 * Double(c.linearRed) + 0.7152 * Double(c.linearGreen) + 0.0722 * Double(c.linearBlue) > 0.5
+    }
 
     // MARK: - Body
 
@@ -33,10 +43,8 @@ struct SetupChecklistCard: View {
             ZStack {
                 if manager.isAllComplete {
                     completedView
-                } else if manager.isCollapsed {
-                    collapsedView
-                } else {
-                    expandedView
+                } else if let deck = manager.deck {
+                    deckView(deck)
                 }
 
                 if showCelebration {
@@ -44,9 +52,9 @@ struct SetupChecklistCard: View {
                         .allowsHitTesting(false)
                 }
             }
-            // Con Reducir movimiento, sin animación (card C6).
-            .animation(reduceMotion ? nil : DS.Animation.appear, value: manager.isCollapsed)
+            // Con Reducir movimiento, sin animación (card C6); el mazo cambia de paso con un fundido.
             .animation(reduceMotion ? nil : DS.Animation.appear, value: manager.isAllComplete)
+            .animation(reduceMotion ? nil : DS.Animation.appear, value: manager.deck)
             // Card ds09: quien volvió por «Ya tengo una cuenta» con datos no ve Primeros pasos. Pregunta al aparecer y
             // cada vez que cambia el progreso: los datos que llegan marcan solos el primer paso (el «1 de 7» que vio
             // Jürgen), que es justo cuando ya se puede decidir. Si se resuelve, la tarjeta se retira
@@ -58,172 +66,98 @@ struct SetupChecklistCard: View {
                     DS.Haptic.success()
                 }
             }
+            .sheet(isPresented: $showsAllSteps) {
+                SetupStepsListSheet(manager: manager)
+            }
         }
     }
 
-    // MARK: - Expanded View
+    // MARK: - Deck
 
-    /// UX 2.2 · L5-4 (variante 2, decisión de Jürgen): un solo paso grande —su icono en una ficha de color y un botón
-    /// «Empezar»— y la lista entera a un toque con «Ver los N pasos». Antes era una lista gris de siete filas con seis
-    /// candados, sin ningún botón.
-    @State private var showsAllSteps = false
-
-    private var expandedView: some View {
-        let currentStep = manager.currentStep
-
-        return VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            header
-
-            progressBar
-
-            if let currentStep {
-                currentStepFocus(currentStep)
-            }
-
-            if showsAllSteps {
-                VStack(spacing: DS.Spacing.xxs) {
-                    ForEach(manager.steps) { step in
-                        SetupStepRow(
-                            step: step,
-                            isCurrent: currentStep?.id == step.id,
-                            onTap: { onStepTapped(step.id) }
-                        )
-                    }
-                }
-                .transition(.opacity)
-            }
-
-            footer
-        }
-        .yalaCard(padding: DS.Spacing.md, radius: DS.Radius.md, shadow: false)
-        .animation(reduceMotion ? nil : DS.Animation.appear, value: showsAllSteps)
-    }
-
-    private var header: some View {
-        HStack {
-            Image(systemName: "target")
-                .font(DS.Typography.headline)
-                .foregroundStyle(.thAccentText)
-
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(L10n.SetupChecklist.title)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.thPrimaryText)
-
-                Text(L10n.SetupChecklist.progress(manager.completedCount, manager.totalCount))
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.thSecondaryText)
-            }
-
-            Spacer()
-        }
-    }
-
-    /// El paso que toca: ficha de color con su icono, «Siguiente paso» y el botón «Empezar».
-    private func currentStepFocus(_ step: SetupStep) -> some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            HStack(spacing: DS.Spacing.md) {
-                Image(systemName: step.icon)
-                    .font(.system(size: 20, weight: .semibold)) // A11Y-DT: icono de la ficha, tamaño fijo del molde Kargul
-                    .foregroundStyle(.thOnAccent)
-                    .frame(width: 48, height: 48)
-                    .background(RoundedRectangle(cornerRadius: DS.Radius.sm).fill(theme.accent))
-                    .accessibilityHidden(true)
-
+    private func deckView(_ deck: SetupDeckLogic.Deck) -> some View {
+        VStack(spacing: 0) {
+            Button {
+                onStepTapped(deck.current)
+            } label: {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(L10n.SetupChecklist.nextStepLabel)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.thSecondaryText)
-                    Text(step.id.localizedTitle)
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.thPrimaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Spacer(minLength: 0)
-            }
-            .accessibilityElement(children: .combine)
-
-            YalaPrimaryButton(L10n.SetupChecklist.start) {
-                onStepTapped(step.id)
-            }
-            .accessibilityHint(L10n.SetupChecklist.nextStep(step.id.localizedTitle))
-            .accessibilityIdentifier("setup_checklist_start")
-        }
-    }
-
-    private var footer: some View {
-        HStack {
-            Button {
-                showsAllSteps.toggle()
-            } label: {
-                HStack(spacing: DS.Spacing.xxs) {
-                    Text(showsAllSteps
-                         ? L10n.SetupChecklist.hideAllSteps
-                         : L10n.SetupChecklist.showAllSteps(manager.totalCount))
-                        .font(DS.Typography.caption)
-                    Image(systemName: showsAllSteps ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 10)) // A11Y-DT: chevron decorativo junto al texto
-                }
-                .foregroundStyle(.thAccentText)
-                .frame(minHeight: DS.Button.actionSize)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("setup_checklist_toggle_steps")
-
-            Spacer()
-
-            Button {
-                manager.toggleCollapsed()
-            } label: {
-                HStack(spacing: DS.Spacing.xxs) {
-                    Text(L10n.SetupChecklist.collapse)
-                        .font(DS.Typography.caption)
-                    Image(systemName: "chevron.up")
-                        .font(.system(size: 10)) // A11Y-DT: chevron decorativo junto al texto
-                }
-                .foregroundStyle(.thSecondaryText)
-                .frame(minHeight: DS.Button.actionSize)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
-    // MARK: - Collapsed View
-
-    private var collapsedView: some View {
-        Button {
-            manager.toggleCollapsed()
-        } label: {
-            VStack(spacing: DS.Spacing.sm) {
-                HStack(spacing: DS.Spacing.sm) {
-                    Image(systemName: "target")
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.thAccentText)
-
-                    Text(L10n.SetupChecklist.progress(manager.completedCount, manager.totalCount))
-                        .font(DS.Typography.label)
-                        .foregroundStyle(.thPrimaryText)
-
-                    Spacer()
-
-                    HStack(spacing: DS.Spacing.xxs) {
-                        Text(L10n.SetupChecklist.continueSetup)
-                            .font(DS.Typography.caption)
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 10))
+                    Text(L10n.SetupChecklist.Deck.counter(deck.position, deck.total).uppercased())
+                        .font(DS.Typography.badgeLabel)
+                        .tracking(0.6) // A11Y-DT: espaciado del rótulo en mayúsculas del prototipo; no cambia el tamaño
+                    HStack(spacing: DS.Spacing.sm) {
+                        Image(systemName: "plus")
+                            .font(DS.Typography.headline)
+                            .accessibilityHidden(true)
+                        Text(deck.current.localizedTitle)
+                            .font(DS.Typography.headline)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
-                    .foregroundStyle(.thAccentText)
                 }
-
-                progressBar
+                .foregroundStyle(theme.onAccent)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.md)
+                .background(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous).fill(theme.accent))
+                .shadow(color: DS.Shadow.large.color, radius: DS.Shadow.large.radius,
+                        x: DS.Shadow.large.x, y: DS.Shadow.large.y)
+                .contentShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
             }
-            .solidCard(padding: DS.Spacing.md, radius: DS.Radius.md)
-            .contentShape(Rectangle())
+            .buttonStyle(.plain)
+            .zIndex(3)
+            .accessibilityLabel(L10n.SetupChecklist.Deck.counter(deck.position, deck.total) + ", " + deck.current.localizedTitle)
+            .accessibilityHint(L10n.SetupChecklist.nextStep(deck.current.localizedTitle))
+            .accessibilityIdentifier("setup_deck_current")
+
+            ForEach(Array(deck.upcoming.enumerated()), id: \.element) { index, step in
+                peekingCard(step, index: index)
+            }
+
+            Button {
+                showsAllSteps = true
+            } label: {
+                Text(L10n.SetupChecklist.showAllSteps(deck.total))
+                    .font(DS.Typography.labelSmall)
+                    .foregroundStyle(theme.accentText)
+                    .frame(minHeight: DS.Button.actionSize)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .padding(.top, DS.Spacing.xxs)
+            .accessibilityIdentifier("setup_checklist_toggle_steps")
         }
-        .buttonStyle(.plain)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("setup_deck")
+    }
+
+    /// Una carta que asoma detrás: más estrecha y más oscura cuanto más atrás. Solo se ve; VoiceOver la salta, como en
+    /// el prototipo (el paso que sigue lo cuenta «Ver los 7 pasos»).
+    private func peekingCard(_ step: SetupStepID, index: Int) -> some View {
+        let text = index == 0
+            ? L10n.SetupChecklist.Deck.after(step.localizedTitle)
+            : L10n.SetupChecklist.Deck.then(step.localizedTitle)
+        let shape = UnevenRoundedRectangle(
+            bottomLeadingRadius: DS.Radius.xl - DS.Spacing.xs,
+            bottomTrailingRadius: DS.Radius.xl - DS.Spacing.xs,
+            style: .continuous)
+        // Cuanto más atrás, más lejos del color del texto: más oscura si el texto del acento es claro (Índigo) y más
+        // clara si es oscuro (Teal, Rosa, Minimalista). Así el contraste solo sube respecto al botón de adelante, cuyo
+        // par acento/texto ya mide `ThemeTokenContrastTests`. Oscurecer siempre dejaba Rosa en 1,7 (review del lote).
+        let away: Color = onAccentIsLight ? .black : .white
+        let fill = theme.accent.mix(with: away, by: index == 0 ? 0.3 : 0.5) // A11Y-DM: profundidad del mazo
+        return Text(text)
+            .font(DS.Typography.labelSmall)
+            .foregroundStyle(theme.onAccent)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity)
+            .padding(.top, DS.Spacing.lg + DS.Spacing.xxs)
+            .padding(.bottom, DS.Spacing.xs)
+            .padding(.horizontal, DS.Spacing.md)
+            .background(shape.fill(fill))
+            .padding(.horizontal, index == 0 ? DS.Spacing.md : DS.Spacing.xxl)
+            .padding(.top, -DS.Spacing.lg)
+            .zIndex(Double(2 - index))
+            .accessibilityHidden(true)
     }
 
     // MARK: - Completed View
@@ -259,24 +193,6 @@ struct SetupChecklistCard: View {
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
     }
 
-    // MARK: - Progress Bar
-
-    @State private var progressBarWidth: CGFloat = 0
-
-    private var progressBar: some View {
-        // El progreso va en `overlay` del carril: en un `ZStack` fijaba el ancho medido y la barra tardaba en encoger (o
-        // no encogía, al 100 %) al estrechar la ventana.
-        RoundedRectangle(cornerRadius: DS.Radius.xs)
-            .fill(.thSecondaryText.opacity(DS.Opacity.subtle))
-            .frame(height: 6)
-            .overlay(alignment: .leading) {
-                RoundedRectangle(cornerRadius: DS.Radius.xs)
-                    .fill(theme.accent)
-                    .frame(width: progressBarWidth * manager.progress, height: 6)
-                    .animation(reduceMotion ? nil : DS.Animation.number, value: manager.progress)
-            }
-            .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { progressBarWidth = $0 }
-    }
 }
 
 // MARK: - Preview

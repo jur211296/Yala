@@ -888,8 +888,13 @@ final class AppBootstrapper {
             }
             // Estado limpio entre tests: el wipe de SwiftData no toca UserDefaults, así que
             // un test que reordena/oculta tabs (TabBarConfigView) contaminaría a los demás.
-            // Restaurar el tab bar al default (`[.panel, .statistics, .planning]`).
-            UserDefaults.standard.removeObject(forKey: TabBarConfiguration.storageKey)
+            // La barra de antes (`[.panel, .statistics, .planning]`), o la de una instalación nueva de 2.3 con
+            // `-uitest-fresh-install` (Y23-15): las pruebas eligen Estadísticas y Planificación por la barra.
+            TabBarDefaultsMigration.applyForUITest(freshInstall: UITestHooks.freshInstall)
+            // La guía de «días después» sale una vez: su marca no viaja de una corrida a otra. Y el mazo de Primeros
+            // pasos solo se ve en una instalación marcada como nueva: su test la marca (Y23-05, Y23-15).
+            UserDefaults.standard.removeObject(forKey: LaterChartsGuideLogic.shownKey)
+            if UITestHooks.showsSetupDeck { SetupChecklistManager.shared.markAsNewInstall() }
             // El avance guardado de las guías por pasos (L15-10): un test que deja una a medias la abriría a medias en
             // el siguiente.
             StepGuideProgressStore.guideIDs.forEach { StepGuideProgressStore.clear($0) }

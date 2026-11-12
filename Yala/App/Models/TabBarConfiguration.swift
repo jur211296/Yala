@@ -63,8 +63,16 @@ struct TabBarConfiguration: Codable, Equatable {
         ConfigurableTab.allCases.filter { !activeTabs.contains($0) }
     }
 
-    /// Configuración por defecto: todos los tabs visibles
+    /// Configuración por defecto de una instalación nueva (Y23-15, bienvenida 2.3): Panel · Grupos · Registros, más
+    /// «Más» y Buscar, que pinta `MainTabView` por su cuenta. Presupuestos, Pagos planificados y Estadísticas viven en
+    /// «Más». Quien ya usaba Yala no la recibe: `TabBarDefaultsMigration` le deja escrita la de antes (`legacyDefault`).
     static let `default` = TabBarConfiguration(
+        activeTabs: [.panel, .groups, .records]
+    )
+
+    /// La configuración por defecto hasta 2.2. `TabBarDefaultsMigration` la escribe a quien ya terminó el alta y nunca
+    /// tocó sus pestañas, para que actualizar no le mueva la barra.
+    static let legacyDefault = TabBarConfiguration(
         activeTabs: [.panel, .statistics, .planning]
     )
 
@@ -147,7 +155,7 @@ extension TabBarConfiguration {
             #if DEBUG
             print("TabBarConfiguration: Error encoding to JSON: \(error)")
             #endif
-            return "{\"activeTabs\":[\"panel\",\"statistics\",\"planning\"]}"
+            return "{\"activeTabs\":[\"panel\",\"groups\",\"records\"]}"
         }
         guard let string = String(data: data, encoding: .utf8) else {
             return Self.default.toJSON()

@@ -112,6 +112,17 @@ final class UITestHooks {
     /// limpia.
     nonisolated static var showsProTourPanel: Bool { hasArg("-uitest-pro-tour-panel") }
 
+    /// `-uitest-show-setup-deck`: el mazo de Primeros pasos (Y23-05) se pinta también bajo `-uitest`, donde por defecto
+    /// se calla para no tapar lo que cada test busca. Solo para los tests del propio mazo.
+    nonisolated static var showsSetupDeck: Bool { hasArg("-uitest-show-setup-deck") }
+
+    /// `-uitest-later-charts-guide`: la guía de «días después» (Y23-15) puede salir bajo `-uitest`. Solo su XCUITest.
+    nonisolated static var showsLaterChartsGuide: Bool { hasArg("-uitest-later-charts-guide") }
+
+    /// `-uitest-fresh-install`: con `-uitest-reset`, la instalación arranca como una nueva de 2.3 (pestañas Panel ·
+    /// Grupos · Registros, llegada tranquila). Sin él, el reset deja la barra de antes (`TabBarDefaultsMigration`).
+    nonisolated static var freshInstall: Bool { hasArg("-uitest-fresh-install") }
+
     /// `-uitest-skip-onboarding`: marca onboarding/chooser completados.
     nonisolated static var skipOnboarding: Bool { hasArg("-uitest-skip-onboarding") }
 

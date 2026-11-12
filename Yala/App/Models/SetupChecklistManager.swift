@@ -2,9 +2,8 @@
 //  SetupChecklistManager.swift
 //  Yala
 //
-//  Manages the "Configura tu Yala" setup checklist for new users.
-//  Tracks progress through 8 guided steps, auto-detects already completed ones,
-//  and controls card visibility (expanded/collapsed/completed/expired).
+//  Manages «Primeros pasos» for new users: the deck of seven steps (Y23-05, bienvenida 2.3), what is done or skipped,
+//  the steps already done by the data, and when the card shows (in progress / completed / expired).
 //
 
 import Foundation
@@ -59,14 +58,14 @@ final class SetupChecklistManager {
 
     // MARK: - Computed
 
-    /// Number of completed steps.
+    /// Pasos del mazo hechos (las prácticas de voz y foto no cuentan).
     var completedCount: Int {
-        stepCompleted.values.count(where: { $0 })
+        SetupStepID.deck.count(where: { stepCompleted[$0] == true })
     }
 
-    /// Total number of steps.
+    /// Pasos del mazo.
     var totalCount: Int {
-        SetupStepID.allCases.count
+        SetupStepID.deck.count
     }
 
     /// Progress fraction (0.0 to 1.0).
@@ -75,9 +74,9 @@ final class SetupChecklistManager {
         return Double(completedCount) / Double(totalCount)
     }
 
-    /// All steps with their current state, in order. None is locked (UX 2.2 · L5-1): any step can be tapped.
+    /// Los pasos del mazo con su estado, en orden.
     var steps: [SetupStep] {
-        SetupStepID.allCases.map { id in
+        SetupStepID.deck.map { id in
             let completed = stepCompleted[id] ?? false
             return SetupStep(id: id, isCompleted: completed, isSkipped: !completed && stepSkipped[id] == true)
         }
@@ -90,7 +89,36 @@ final class SetupChecklistManager {
 
     /// Si se saltó algún paso con «Ahora no»: el final de la lista ya no dice «¡Ya eres experto!» (UX 2.2 · L5-2).
     var hasSkippedSteps: Bool {
-        SetupStepID.allCases.contains { stepCompleted[$0] != true && stepSkipped[$0] == true }
+        SetupStepID.deck.contains { stepCompleted[$0] != true && stepSkipped[$0] == true }
+    }
+
+    /// El mazo (Y23-05): el paso actual adelante, su lugar («N de 7») y los dos siguientes por hacer asomando detrás.
+    /// `nil` cuando ya no queda ninguno.
+    var deck: SetupDeckLogic.Deck? {
+        SetupDeckLogic.deck(order: SetupStepID.deck, isResolved: { isResolved($0) })
+    }
+
+    /// El mazo de Primeros pasos (Y23-05) es de las instalaciones que empezaron con la bienvenida de 2.3. A quien venía
+    /// de 2.2 con la lista a medias no se le cambia por un mazo de siete pasos que no pidió ni puede plegar.
+    var showsDeck: Bool {
+        shouldShow && TabBarDefaultsMigration.isFreshInstall()
+    }
+
+    /// Primeros pasos está a medias: el mazo se ve y no está terminado.
+    var isInProgress: Bool {
+        showsDeck && !isAllComplete
+    }
+
+    /// Se está aprendiendo a registrar (paso 2): ahí se apuntan hasta cuatro registros de prueba.
+    var isLearningToRecord: Bool {
+        isInProgress && !isResolved(.firstExpense)
+    }
+
+    /// La llegada tranquila (Y23-05): en una instalación nueva de 2.3, mientras «Aprender a registrar» no esté hecho
+    /// ni omitido, el mazo es la única acción del Panel. Después vuelven Nuevo registro, Voz, Foto y Yala IA, y el mazo
+    /// va debajo.
+    var isQuietArrival: Bool {
+        isLearningToRecord
     }
 
     /// Whether the checklist card should be visible.
@@ -206,11 +234,11 @@ final class SetupChecklistManager {
 
     /// Si marcar `step` completaría «Primeros pasos»: es el único paso que falta.
     func wouldCompleteAll(by step: SetupStepID) -> Bool {
-        !isAllComplete && SetupStepID.allCases.allSatisfy { $0 == step || isResolved($0) }
+        !isAllComplete && step.isDeckStep && SetupStepID.deck.allSatisfy { $0 == step || isResolved($0) }
     }
 
     /// Hecho o saltado: ya no falta para cerrar la lista.
-    private func isResolved(_ step: SetupStepID) -> Bool {
+    func isResolved(_ step: SetupStepID) -> Bool {
         stepCompleted[step] == true || stepSkipped[step] == true
     }
 
@@ -250,7 +278,19 @@ final class SetupChecklistManager {
     }
 
     /// Auto-detect steps already completed based on existing data.
-    func autoDetect(transactionCount: Int, budgetCount: Int, scheduledCount: Int) {
+    ///
+    /// - Parameters:
+    ///   - accountCount: cuentas de la persona (sin las de sistema de Grupos).
+    ///   - groupCount: grupos en los que está.
+    func autoDetect(
+        accountCount: Int = 0,
+        transactionCount: Int,
+        budgetCount: Int,
+        scheduledCount: Int,
+        groupCount: Int = 0
+    ) {
+        if accountCount > 0 { markCompleted(.firstAccount) }
+        if groupCount > 0 { markCompleted(.groups) }
         if transactionCount > 0 { markCompleted(.firstExpense) }
         if budgetCount > 0 { markCompleted(.firstBudget) }
         if scheduledCount > 0 { markCompleted(.scheduledPayment) }
@@ -331,7 +371,7 @@ final class SetupChecklistManager {
     private func checkAllComplete() {
         guard !isAllComplete else { return }
 
-        let allDone = SetupStepID.allCases.allSatisfy { isResolved($0) }
+        let allDone = SetupStepID.deck.allSatisfy { isResolved($0) }
         if allDone {
             isAllComplete = true
             completedAllDate = .now
