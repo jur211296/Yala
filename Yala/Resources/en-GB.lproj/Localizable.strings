@@ -2488,6 +2488,7 @@
 "records.noRecordsThisDay" = "No records on this day";
 "records.title" = "Records";
 "records.viewModeCalendarA11y" = "Calendar view";
+"records.calendarShowMonthHint" = "Shows the whole month";
 "records.viewModeListA11y" = "List view";
 "report.expense" = "Expenses";
 "report.grouping.account" = "Account";

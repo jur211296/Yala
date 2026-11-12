@@ -1875,6 +1875,8 @@ enum L10n {
         static var collected: String { ls("records.collected", comment: "Fila de Registros: lo cobrado de una venta en un grupo") }
         static var viewModeListA11y: String { ls("records.viewModeListA11y", comment: "A11y: botón vista lista") }
         static var viewModeCalendarA11y: String { ls("records.viewModeCalendarA11y", comment: "A11y: botón vista calendario") }
+        /// C2 (decisión 19 de 2.3): pista de VoiceOver de la cabecera de la semana plegada («13–19 oct 2026 ▾»).
+        static var calendarShowMonthHint: String { ls("records.calendarShowMonthHint", comment: "A11y: pista de la cabecera de la semana plegada del calendario; al tocarla se ve el mes entero") }
         static func deleteConfirmTitle(_ count: Int) -> String {
             String(format: ls("records.deleteConfirmTitle", comment: ""), count)
         }

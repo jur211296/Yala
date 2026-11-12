@@ -188,6 +188,7 @@
 "records.noRecords" = "Sin registros en este periodo";
 "records.viewModeListA11y" = "Vista de lista";
 "records.viewModeCalendarA11y" = "Vista de calendario";
+"records.calendarShowMonthHint" = "Muestra el mes entero";
 "records.noRecordsThisDay" = "Sin registros este día";
 
 // MARK: - Filters
