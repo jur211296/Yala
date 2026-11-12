@@ -8911,3 +8911,16 @@
 /* Buscar en Registros (decisión 14 de 2.3) */
 "records.listSearch.placeholder" = "Cerca nelle registrazioni";
 "records.listSearch.clear" = "Cancella ricerca";
+
+/* Revisión 2.3 · decisiones 15 y 16: chips rápidos de Registros, buscador de categorías y banda de filtros */
+"records23.quick.account" = "Conto";
+"records23.quick.category" = "Categoria";
+"records23.quick.date" = "Data";
+"records23.quick.more" = "Altri filtri";
+"records23.quick.accountsCount" = "%d conti";
+"records23.category.searchPrompt" = "Cerca una categoria";
+"records23.category.noResults" = "Nessuna categoria con «%@»";
+"records23.category.wholeCategory" = "Tutta la categoria";
+"records23.category.expand" = "Mostra le sottocategorie di %@";
+"records23.category.collapse" = "Nascondi le sottocategorie di %@";
+"records23.band.removeAll" = "Rimuovi tutto";

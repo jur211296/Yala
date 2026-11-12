@@ -179,3 +179,12 @@ aplica `BridgedTransactionFilter` una vez, a todo lo que suma movimientos menos 
 Si el saldo suma N cuentas, el carrusel marca esas N y el chip dice cuántas son. Un carrusel que
 marca una tarjeta sobre un saldo que suma dos es el mismo bug, en la capa de al lado: para el
 usuario, la pantalla se contradice.
+
+**Dónde se ven los filtros (revisión 2.3, decisiones 15 y 16, 9-nov).** Las barras de Panel, Estadísticas, Registros e
+Informes pintan sus cápsulas en `FilterBand`, que las parte en líneas (ninguna queda fuera de pantalla) y trae «Quitar
+todo» desde el primer filtro; la ✕ de cada cápsula tiene 44 pt de toque. En Registros, los chips rápidos
+(`RecordsQuickFilterBar`: Cuenta · Categoría · Fecha · Más filtros) dicen lo INCLUIDO de cuenta y categoría, y la banda
+no lo repite (`hidesQuickFilterDimensions`, `FilterBandLogic.bandFilterCount`); lo oculto de esas dimensiones sí va en la
+banda. Un chip rápido escribe la sesión como la hoja y REEMPLAZA su dimensión (un toque, un valor); lo múltiple sigue en
+«Más filtros». Una cápsula nueva va dentro de la banda, no en otro carrusel horizontal. Pin: `RecordsQuickFilters23Tests`,
+`RecordsQuickFilters23UITests`.

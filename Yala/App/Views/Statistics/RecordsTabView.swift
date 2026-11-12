@@ -32,6 +32,9 @@ struct RecordsTabView: View {
     let transactionDateRange: (start: Date, end: Date)
     let defaultCurrencyCode: String
     var onFilterChange: () -> Void
+    /// Registros (la pestaña) lleva los chips rápidos sobre la lista (revisión 2.3, decisión 15, F2); Estadísticas ›
+    /// Registros, no.
+    var showsQuickFilters: Bool = false
 
     @State private var showCustomPeriodPicker: Bool = false
     /// El `ScrollView` tiene poco alto (iPhone girado): la cabecera va en banda (`SummaryHeaderStack`).
@@ -65,6 +68,17 @@ struct RecordsTabView: View {
                     // La acción principal arriba, como en el Panel; el flotante solo al bajar (card kzhe). En modo
                     // duplicados no: ahí lo que se hace es revisar, no apuntar.
                     StatsQuickActionsSlot()
+                }
+
+                if showsQuickFilters && !viewModel.duplicateModeActive {
+                    RecordsQuickFilterBar(
+                        viewModel: viewModel,
+                        accounts: accounts,
+                        categories: categories,
+                        subcategories: subcategories,
+                        onCustomPeriod: { showCustomPeriodPicker = true },
+                        onFilterChange: onFilterChange
+                    )
                 }
 
                 filterBarPanel
@@ -259,7 +273,8 @@ struct RecordsTabView: View {
             onClearTransactionType: { viewModel.transactionTypeFilter = .all },
             onFilterChange: onFilterChange,
             panelStyle: true,
-            inlinePeriodSelector: false
+            inlinePeriodSelector: false,
+            hidesQuickFilterDimensions: showsQuickFilters && !viewModel.duplicateModeActive
         )
     }
 

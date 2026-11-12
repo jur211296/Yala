@@ -56,8 +56,13 @@ struct FilterChipView: View {
         }
     }
 
+    /// La zona de toque de la ✕ (y de «Quitar todo»): 44 × 44 pt, el mínimo de Apple. Antes era el glifo de 11 pt sin
+    /// zona ampliada, y atinarle costaba (revisión 2.3, decisión 16, L1).
+    static let closeHitSize: CGFloat = 44
+
     var body: some View {
-        HStack(spacing: DS.Chip.spacing) {
+        // Sin espacio entre el texto y la ✕: el aire lo pone la propia zona de toque de 44 pt.
+        HStack(spacing: DS.Spacing.none) {
             if let onOpen {
                 Button(action: onOpen) {
                     chipLabel
@@ -82,12 +87,15 @@ struct FilterChipView: View {
                 Image(systemName: "xmark.circle.fill")
                     .font(DS.Typography.chipClose)
                     .foregroundStyle(.secondary)
+                    .frame(width: Self.closeHitSize, height: Self.closeHitSize)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel(L10n.Accessibility.removeFilter)
+            .accessibilityIdentifier("applied_filter_chip_remove")
         }
-        .padding(.horizontal, DS.Chip.paddingH)
-        .padding(.vertical, DS.Chip.paddingV)
+        // La altura la da la ✕ (44 pt); a la derecha, su propia zona hace de margen.
+        .padding(.leading, DS.Chip.paddingH)
         // Lo oculto lleva contorno rojo y lo de «ver solo», relleno lila (propuesta A, 2026-10-25): el texto sigue en
         // `.primary`, que sí se lee sobre el cristal. Va ANTES del `glassEffect`, como contenido: colgado después, el
         // cristal lo tapaba y no se veía (medido en el simulador).
