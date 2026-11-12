@@ -119,6 +119,12 @@ paths:
 
 ## Gotchas de vistas
 
+- **Una foto que la persona elige entra por `PhotoIntake`, nunca por `UIImage(data:)` (medido el 2026-11-12, YALA-IOS-B).**
+  `Image(uiImage:)` decodifica la foto a tamaño completo al pintarla, también en una miniatura, y la copia vive mientras
+  se ve: diez fotos de 48 MP subieron la app de 65 MB a 1.929 MB. `PhotoIntake.image(from:maxEdge:)` la reduce al leerla
+  (ImageIO) y `image(reducing:maxEdge:)` hace lo mismo con la de la cámara. Para leer, `currentIntakeMaxEdge()`; para
+  guardar, el tamaño con que se guarda. Una puerta nueva de fotos se añade a `PhotoIntakeTests.everyEntryGoesThroughIntake`.
+
 - **Un `Picker` segmentado NO pasa su título a accesibilidad; uno `.menu` con `.labelsHidden()` sí (medido el
   2026-11-10, iOS 27.2, lote 04 de mejoras necesarias 2.3).** Con `Picker("Tipo de pago", …).pickerStyle(.segmented)`
   el `TabGroup` salió con etiqueta vacía en `axe describe-ui`; con `.accessibilityLabel(…)` encima, «Tipo de pago». El

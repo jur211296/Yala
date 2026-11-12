@@ -86,11 +86,19 @@ struct PersonalDetailsView: View {
             }
             .onChange(of: selectedPhotoItem) { _, newItem in
                 Task {
-                    if let data = try? await newItem?.loadTransferable(type: Data.self),
-                        let uiImage = UIImage(data: data)
-                    {
-                        profileUIImage = uiImage
-                        profileImage = Image(uiImage: uiImage)
+                    // Reducida al entrar al tamaño con que se guarda: a tamaño completo, una foto de 48 MP ocupaba
+                    // ~185 MB mientras se veía en esta pantalla (YALA-IOS-B, 2026-11-12).
+                    do {
+                        if let data = try await newItem?.loadTransferable(type: Data.self),
+                            let uiImage = PhotoIntake.image(from: data, maxEdge: ProfileImageStorage.maxPixelSize)
+                        {
+                            profileUIImage = uiImage
+                            profileImage = Image(uiImage: uiImage)
+                        }
+                    } catch {
+                        #if DEBUG
+                        print("PersonalDetailsView: Error loading picked photo: \(error)")
+                        #endif
                     }
                 }
             }
@@ -338,7 +346,8 @@ struct PersonalDetailsView: View {
 
         // Save profile image to file or clear it if icon is selected
         if let uiImage = profileUIImage {
-            if let imageData = uiImage.jpegData(compressionQuality: 0.7) {
+            // 0,85: la foto ya entra a 512 px y `ProfileImageStorage` la guarda tal cual; antes la recomprimía él a 0,85.
+            if let imageData = uiImage.jpegData(compressionQuality: 0.85) {
                 ProfileImageStorage.shared.save(imageData)
                 appPreferences.userProfileIcon = "" // Clear icon when photo is set
             }

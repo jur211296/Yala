@@ -40,6 +40,7 @@
 - `—` [`accessibilityIdentifier` NO se propaga dentro de un `.alert` de SwiftUI: el botón existe en pantall](#accessibilityidentifier-no-se-propaga-dentro-de-un-alert-de-swiftui-el-botn-existe-en-pantalla-y-el-id-llega-vaco-al-rbol)
 - `—` [`xcodebuild test` REINSTALA la app del simulador: el QA que corres después del gate no mira tu](#xcodebuild-test-reinstala-la-app-del-simulador-el-qa-que-corres-despus-del-gate-no-mira-tu)
 - `—` [El árbol de accesibilidad del simulador se degrada tras muchos ciclos launch/stop y solo lo cura](#el-rbol-de-accesibilidad-del-simulador-se-degrada-tras-muchos-ciclos-launchstop-y-solo-lo-cura)
+- `2026-11-12` [Un «WatchdogTermination» de Sentry no prueba que la RAM se agotara, ni que fuera un usuario (2026-11-12)](#un-watchdogtermination-de-sentry-no-prueba-que-la-ram-se-agotara-ni-que-fuera-un-usuario-2026-11-12)
 - `2026-11-05` [`context.rollback()` aborta la app con un campo cambiado antes de un borrado + inserción enlazados (](#contextrollback-aborta-la-app-con-un-campo-cambiado-antes-de-un-borrado--insercin-enlazados-2026-11-05)
 - `2026-11-09` [Un `shouldSave: false` del puente de Grupos no impide que se guarde a mitad (2026-11-09)](#un-shouldsave-false-del-puente-de-grupos-no-impide-que-se-guarde-a-mitad-2026-11-09)
 - `2026-10-26` [Sentry: el `userInfo` de un NSError y la IP de envío se saltan el `sendDefaultPii` (2026-10-26)](#sentry-el-userinfo-de-un-nserror-y-la-ip-de-envo-se-saltan-el-senddefaultpii-2026-10-26)
@@ -659,6 +660,30 @@ Sentry (Security & Privacy › Prevent Storing of IP Addresses), no en el códig
 
 **La lección.** Una limpieza por lista negra no se da por buena leyendo el código: se manda un evento con datos
 falsos reconocibles y se busca cada uno en el JSON entero del evento (API de Sentry, `/events/<id>/`).
+
+### Un «WatchdogTermination» de Sentry no prueba que la RAM se agotara, ni que fuera un usuario (2026-11-12)
+
+**Qué pasó.** YALA-IOS-B llegó como «regresión en producción de un usuario real» con 17 casos. Medido por la API de
+Sentry: 16 eran de Yala Dev en el iPhone 14 de QA (cierres de `devicectl … --terminate-existing`, ya apagados en
+desarrollo por el PR 875), y el único de producción empezó **5 minutos después de enviar la 2.2 a revisión de Apple**
+(App Store Connect, `asc review history`), en un iPhone con kernel `DEVELOPMENT_ARM64` (los de la calle dicen
+`RELEASE_ARM64`), en `en_US`, recién instalado, y la app volvió a abrirse 2 s después del último rastro. Ninguno de los
+17 traía un aviso de memoria baja.
+
+**Por qué engaña.** El SDK (`SentryWatchdogTerminationLogic`, 9.31) llama «memoria agotada» a cualquier cierre con la app
+activa que no sea crash, actualización, reinicio, depurador ni cuelgue: un `kill` de una herramienta o del entorno de
+revisión de Apple cuenta igual. Y la limpieza de Yala borraba el `data` de todo rastro que no fuera HTTP, así que el
+estado del ciclo de vida (`active`/`background`) y la acción `LOW_MEMORY` llegaban vacíos: el evento no decía nada.
+
+**Cómo se lee ahora.** Antes de tratar un WatchdogTermination como bug: (1) cruza `release` y hora con las fechas de
+envío a revisión; (2) mira `contexts.os.kernel_version`; (3) busca un rastro `memory` con `LOW_MEMORY` o el contexto
+`memory` (desde este día los trae: `MemoryDiagnostics`). Sin aviso de memoria baja y con el contexto en cifras normales,
+es un cierre externo.
+
+**Lo que sí era memoria.** Una foto decodificada con `UIImage(data:)` y pintada con SwiftUI ocupa su tamaño completo en
+memoria aunque se vea en una miniatura: diez de 48 MP subieron la app de 65 MB a 1.929 MB en el simulador. Dibujarla
+con CoreGraphics (`draw(in:)`) no la retiene: una prueba que mida con `UIGraphicsImageRenderer` da 1 MB y esconde el
+problema. Se mide pintando en una ventana con `UIHostingController` (molde: `PhotoIntakeTests`).
 
 ### `context.rollback()` aborta la app con un campo cambiado antes de un borrado + inserción enlazados (2026-11-05)
 

@@ -114,7 +114,7 @@ struct ImageFileBatch {
                 remaining.removeFirst()
                 // Como siempre: por encima del tope, una imagen suelta se deja fuera sin aviso.
                 guard images.count < limit else { continue }
-                if let image = UIImage(data: data) {
+                if let image = PhotoIntake.image(from: data, maxEdge: PhotoIntake.currentIntakeMaxEdge()) {
                     images.append(image)
                 } else {
                     unreadableFiles += 1
