@@ -444,12 +444,16 @@ struct CashFlowCellDetailSheet: View {
 
                 if let real = lr.realAmount, let diff = lr.difference {
                     let isGood = lr.isIncome ? diff >= 0 : diff <= 0
-                    let verb = lr.isIncome ? L10n.CashFlowPlan.cellDetailEarned : L10n.CashFlowPlan.cellDetailSpent
                     let diffAbs = abs(diff)
                     let percent = lr.differencePercent.map { abs($0) } ?? 0
+                    let realText = appPreferences.currency(real, currencyCode: currencyCode)
+                    let plannedText = appPreferences.currency(lr.plannedAmount, currencyCode: currencyCode)
 
                     VStack(spacing: DS.Spacing.sm) {
-                        Text("\(verb) \(appPreferences.currency(real, currencyCode: currencyCode)) vs \(L10n.CashFlowPlan.plan.lowercased()) \(appPreferences.currency(lr.plannedAmount, currencyCode: currencyCode))")
+                        // Una frase entera por idioma: el «vs» pegado a mano salía «vs» en los 16 (lote 08 de 2.3).
+                        Text(lr.isIncome
+                             ? L10n.CashFlowPlan.cellDetailEarnedVsPlan(realText, plannedText)
+                             : L10n.CashFlowPlan.cellDetailSpentVsPlan(realText, plannedText))
                             .font(DS.Typography.body)
                             .frame(maxWidth: .infinity, alignment: .leading)
 

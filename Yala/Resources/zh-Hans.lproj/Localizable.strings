@@ -672,6 +672,7 @@
 "report.netFlow" = "净流量";
 "report.noData" = "无数据";
 "report.noDataDescription" = "本时间段无记录";
+"report.cashFlowNoDataDescription" = "有了第一笔记录后，这里会显示你的现金流。";
 "report.uncategorized" = "未分类";
 "report.noSubcategory" = "无子类别";
 "report.noTag" = "无标签";
@@ -916,6 +917,8 @@
 "cashFlowPlan.cellDetailRecentTransactions" = "最近记录";
 "cashFlowPlan.cellDetailSpent" = "你支出了";
 "cashFlowPlan.cellDetailEarned" = "你赚到了";
+"cashFlowPlan.cellDetailSpentVsPlan" = "你支出了 %1$@，估算为 %2$@。";
+"cashFlowPlan.cellDetailEarnedVsPlan" = "你收到了 %1$@，估算为 %2$@。";
 "cashFlowPlan.cellDetailMore" = "多";
 "cashFlowPlan.cellDetailLess" = "少";
 "cashFlowPlan.cellDetailOverrideActive" = "金额已手动调整";
@@ -966,8 +969,10 @@
 "cashFlowPlan.commentHealthy" = "你的计划看起来很健康 — 这一段时间结束时累计余额会有 %@";
 "cashFlowPlan.commentDefault" = "你的预测覆盖未来 %d 个月";
 "cashFlowPlan.chartAllWithinPlan" = "你所有的支出行都在计划之内";
-"cashFlowPlan.deviationCommentSingle" = "在 %@ 你比计划多支出了 %@";
-"cashFlowPlan.deviationCommentMultiple" = "%@ 是你超出最多的地方,多支出 %@ — 总共比计划超出 %@";
+"cashFlowPlan.deviationAverageSingle" = "最近 %1$d 个月平均：%2$@ 每月超出计划 %3$@。";
+"cashFlowPlan.deviationAverageMultiple" = "最近 %1$d 个月平均：超出最多的是 %2$@，每月 %3$@；合计每月 %4$@。";
+"cashFlowPlan.deviationThisMonthSingle" = "本月：%1$@ 超出计划 %2$@。";
+"cashFlowPlan.deviationThisMonthMultiple" = "本月：超出最多的是 %1$@，%2$@；合计 %3$@。";
 "cashFlowPlan.chartSavingsSubtitle" = "你每月相比计划节省了多少";
 "cashFlowPlan.chartPlanned" = "已计划";
 "cashFlowPlan.commentSavingsBelow" = "你每月比计划少存 %@ — 是否可以削减一些支出?";
@@ -2447,7 +2452,6 @@
 "featureGate.premiumIcons" = "高级图标";
 "featureGate.proThemes" = "Pro 主题";
 "featureGate.smartInsightsAI" = "AI 总结";
-"featureGate.cashFlowAdvanced" = "高级现金流";
 
 // Titles
 "featureGate.limitReachedTitle" = "已达上限";
@@ -7731,7 +7735,6 @@
 "uxpro.gate.title.photo" = "拍照记账是 Yala Pro 的功能";
 "uxpro.gate.title.insights" = "AI 摘要是 Yala Pro 的功能";
 "uxpro.gate.title.chat" = "向 Yala AI 提问是 Yala Pro 的功能";
-"uxpro.gate.title.cashFlow" = "进阶现金流是 Yala Pro 的功能";
 "uxpro.gate.title.theme" = "“%@”主题是 Yala Pro 的功能";
 "uxpro.gate.title.themeGeneric" = "这个主题是 Yala Pro 的功能";
 "uxpro.gate.title.icon" = "“%@”图标是 Yala Pro 的功能";
@@ -7742,7 +7745,6 @@
 "uxpro.gate.offlineMeanwhile" = "在此之前，免费使用";
 "uxpro.gate.body.themeStays" = "当前主题保持不变。";
 "uxpro.gate.body.iconStays" = "当前图标保持不变。";
-"uxpro.gate.body.cashFlowStays" = "常规现金流依然免费。";
 "uxpro.gate.preview" = "Yala 会是这个样子";
 "uxpro.gate.trialBody" = "你记下的内容都还在。免费计划可使用 %1$lld 个账户和 %2$lld 个启用中的预算。";
 "uxpro.gate.ctaTrialDays" = "免费试用 Pro %lld 天";
@@ -7790,7 +7792,6 @@
 "uxpro.welcome.budgets" = "现在可以不限数量地创建预算了。";
 "uxpro.welcome.theme" = "现在可以使用这个主题了。";
 "uxpro.welcome.icon" = "现在可以使用这个图标了。";
-"uxpro.welcome.cashFlow" = "现在可以使用进阶现金流了。";
 
 /* UX 2.2 · lote decidido 08 — ventanas del iPad y teclado (L15-11, L15-13) */
 "window.busy.signingOutElsewhere" = "正在另一个窗口中退出登录…";

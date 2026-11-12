@@ -672,6 +672,7 @@
 "report.netFlow" = "純フロー";
 "report.noData" = "データなし";
 "report.noDataDescription" = "この期間に記録はありません";
+"report.cashFlowNoDataDescription" = "最初の記録を追加すると、ここにキャッシュフローが表示されます。";
 "report.uncategorized" = "未分類";
 "report.noSubcategory" = "サブカテゴリーなし";
 "report.noTag" = "タグなし";
@@ -916,6 +917,8 @@
 "cashFlowPlan.cellDetailRecentTransactions" = "最近の記録";
 "cashFlowPlan.cellDetailSpent" = "支出額";
 "cashFlowPlan.cellDetailEarned" = "受取額";
+"cashFlowPlan.cellDetailSpentVsPlan" = "%1$@ を使いました。予定は %2$@ でした。";
+"cashFlowPlan.cellDetailEarnedVsPlan" = "%1$@ を受け取りました。予定は %2$@ でした。";
 "cashFlowPlan.cellDetailMore" = "多い";
 "cashFlowPlan.cellDetailLess" = "少ない";
 "cashFlowPlan.cellDetailOverrideActive" = "金額を手動で調整しました";
@@ -966,8 +969,10 @@
 "cashFlowPlan.commentHealthy" = "計画は順調 — 期間終了時に累積%@になります";
 "cashFlowPlan.commentDefault" = "予測は%dヶ月先までカバーします";
 "cashFlowPlan.chartAllWithinPlan" = "支出項目はすべて計画内に収まっています";
-"cashFlowPlan.deviationCommentSingle" = "%@で計画より%@多く使いました";
-"cashFlowPlan.deviationCommentMultiple" = "%@が一番超過しており、追加で%@、合計%@の超過です";
+"cashFlowPlan.deviationAverageSingle" = "直近%1$dか月の平均：%2$@は月に%3$@予定をオーバーしています。";
+"cashFlowPlan.deviationAverageMultiple" = "直近%1$dか月の平均：一番オーバーしているのは%2$@で月に%3$@、全体では月に%4$@です。";
+"cashFlowPlan.deviationThisMonthSingle" = "今月：%1$@は%2$@予定をオーバーしています。";
+"cashFlowPlan.deviationThisMonthMultiple" = "今月：一番オーバーしているのは%1$@で%2$@、全体では%3$@です。";
 "cashFlowPlan.chartSavingsSubtitle" = "計画に対する月々の貯蓄額";
 "cashFlowPlan.chartPlanned" = "計画";
 "cashFlowPlan.commentSavingsBelow" = "計画より月々%@少なく貯めています — どこか支出を減らせますか？";
@@ -2447,7 +2452,6 @@
 "featureGate.premiumIcons" = "プレミアムアイコン";
 "featureGate.proThemes" = "Proテーマ";
 "featureGate.smartInsightsAI" = "AIサマリー";
-"featureGate.cashFlowAdvanced" = "高度なキャッシュフロー";
 
 // Titles
 "featureGate.limitReachedTitle" = "上限に達しました";
@@ -7731,7 +7735,6 @@
 "uxpro.gate.title.photo" = "写真で記録はYala Proの機能です";
 "uxpro.gate.title.insights" = "AIのまとめはYala Proの機能です";
 "uxpro.gate.title.chat" = "Yala AIへの質問はYala Proの機能です";
-"uxpro.gate.title.cashFlow" = "高度なキャッシュフローはYala Proの機能です";
 "uxpro.gate.title.theme" = "テーマ「%@」はYala Proの機能です";
 "uxpro.gate.title.themeGeneric" = "このテーマはYala Proの機能です";
 "uxpro.gate.title.icon" = "アイコン「%@」はYala Proの機能です";
@@ -7742,7 +7745,6 @@
 "uxpro.gate.offlineMeanwhile" = "それまでは無料で";
 "uxpro.gate.body.themeStays" = "今のテーマはそのままです。";
 "uxpro.gate.body.iconStays" = "今のアイコンはそのままです。";
-"uxpro.gate.body.cashFlowStays" = "いつものキャッシュフローは引き続き無料です。";
 "uxpro.gate.preview" = "Yalaはこう見えます";
 "uxpro.gate.trialBody" = "これまでの記録はそのまま残っています。無料プランでは口座%1$lld件、予算%2$lld件まで使えます。";
 "uxpro.gate.ctaTrialDays" = "Proを%lld日間無料で試す";
@@ -7790,7 +7792,6 @@
 "uxpro.welcome.budgets" = "予算を無制限に作れるようになりました。";
 "uxpro.welcome.theme" = "このテーマが使えるようになりました。";
 "uxpro.welcome.icon" = "このアイコンが使えるようになりました。";
-"uxpro.welcome.cashFlow" = "高度なキャッシュフローが使えるようになりました。";
 
 /* UX 2.2 · lote decidido 08 — ventanas del iPad y teclado (L15-11, L15-13) */
 "window.busy.signingOutElsewhere" = "もう一方のウインドウでサインアウトしています…";

@@ -672,6 +672,7 @@
 "report.netFlow" = "Nettostroom";
 "report.noData" = "Geen gegevens";
 "report.noDataDescription" = "Geen boekingen in deze periode";
+"report.cashFlowNoDataDescription" = "Hier zie je je kasstroom zodra je je eerste boekingen hebt.";
 "report.uncategorized" = "Zonder categorie";
 "report.noSubcategory" = "Geen subcategorie";
 "report.noTag" = "Geen label";
@@ -916,6 +917,8 @@
 "cashFlowPlan.cellDetailRecentTransactions" = "Recente boekingen";
 "cashFlowPlan.cellDetailSpent" = "Je hebt uitgegeven";
 "cashFlowPlan.cellDetailEarned" = "Je hebt verdiend";
+"cashFlowPlan.cellDetailSpentVsPlan" = "Je hebt %1$@ uitgegeven; geschat was %2$@.";
+"cashFlowPlan.cellDetailEarnedVsPlan" = "Je hebt %1$@ ontvangen; geschat was %2$@.";
 "cashFlowPlan.cellDetailMore" = "meer";
 "cashFlowPlan.cellDetailLess" = "minder";
 "cashFlowPlan.cellDetailOverrideActive" = "Bedrag handmatig aangepast";
@@ -966,8 +969,10 @@
 "cashFlowPlan.commentHealthy" = "Je plan ziet er gezond uit — je zou de periode eindigen met %@ cumulatief";
 "cashFlowPlan.commentDefault" = "Je projectie loopt %d maanden vooruit";
 "cashFlowPlan.chartAllWithinPlan" = "Al je uitgavenregels passen binnen het plan";
-"cashFlowPlan.deviationCommentSingle" = "In %@ heb je %@ meer uitgegeven dan gepland";
-"cashFlowPlan.deviationCommentMultiple" = "%@ is waar je het meest overheen ging, met %@ extra — in totaal %@ over plan";
+"cashFlowPlan.deviationAverageSingle" = "Gemiddeld, laatste %1$d maanden: bij %2$@ ging je %3$@ per maand over je plan.";
+"cashFlowPlan.deviationAverageMultiple" = "Gemiddeld, laatste %1$d maanden: het meest over bij %2$@, %3$@ per maand; in totaal %4$@ per maand.";
+"cashFlowPlan.deviationThisMonthSingle" = "Deze maand: bij %1$@ ging je %2$@ over je plan.";
+"cashFlowPlan.deviationThisMonthMultiple" = "Deze maand: het meest over bij %1$@, %2$@; in totaal %3$@.";
 "cashFlowPlan.chartSavingsSubtitle" = "Hoeveel je elke maand bespaart vs je plan";
 "cashFlowPlan.chartPlanned" = "Gepland";
 "cashFlowPlan.commentSavingsBelow" = "Je bespaart %@ minder per maand dan gepland — kun je een uitgave terugbrengen?";
@@ -2447,7 +2452,6 @@
 "featureGate.premiumIcons" = "Premium-iconen";
 "featureGate.proThemes" = "Pro-thema's";
 "featureGate.smartInsightsAI" = "AI-samenvatting";
-"featureGate.cashFlowAdvanced" = "Geavanceerde kasstroom";
 
 // Titles
 "featureGate.limitReachedTitle" = "Limiet bereikt";
@@ -7731,7 +7735,6 @@
 "uxpro.gate.title.photo" = "Noteren met een foto hoort bij Yala Pro";
 "uxpro.gate.title.insights" = "De AI-samenvatting hoort bij Yala Pro";
 "uxpro.gate.title.chat" = "Yala AI vragen stellen hoort bij Yala Pro";
-"uxpro.gate.title.cashFlow" = "De uitgebreide kasstroom hoort bij Yala Pro";
 "uxpro.gate.title.theme" = "Het thema %@ hoort bij Yala Pro";
 "uxpro.gate.title.themeGeneric" = "Dit thema hoort bij Yala Pro";
 "uxpro.gate.title.icon" = "Het icoon %@ hoort bij Yala Pro";
@@ -7742,7 +7745,6 @@
 "uxpro.gate.offlineMeanwhile" = "Tot die tijd, gratis";
 "uxpro.gate.body.themeStays" = "Je huidige thema blijft zoals het is.";
 "uxpro.gate.body.iconStays" = "Je huidige icoon blijft zoals het is.";
-"uxpro.gate.body.cashFlowStays" = "De gewone kasstroom blijft gratis.";
 "uxpro.gate.preview" = "Zo zou Yala eruitzien";
 "uxpro.gate.trialBody" = "Alles wat je noteerde staat er nog. Met het gratis abonnement heb je %1$lld rekeningen en %2$lld actieve budgetten.";
 "uxpro.gate.ctaTrialDays" = "Pro %lld dagen gratis proberen";
@@ -7790,7 +7792,6 @@
 "uxpro.welcome.budgets" = "Je kunt nu onbeperkt budgetten aanmaken.";
 "uxpro.welcome.theme" = "Je kunt dit thema nu gebruiken.";
 "uxpro.welcome.icon" = "Je kunt dit icoon nu gebruiken.";
-"uxpro.welcome.cashFlow" = "Je kunt nu de uitgebreide kasstroom gebruiken.";
 
 /* UX 2.2 · lote decidido 08 — ventanas del iPad y teclado (L15-11, L15-13) */
 "window.busy.signingOutElsewhere" = "Je wordt afgemeld in het andere venster…";

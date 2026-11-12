@@ -670,6 +670,7 @@
 "report.netFlow" = "Flux net";
 "report.noData" = "Aucune donnée";
 "report.noDataDescription" = "Aucun enregistrement pour cette période";
+"report.cashFlowNoDataDescription" = "Ton flux de trésorerie s’affichera ici dès que tu auras tes premiers enregistrements.";
 "report.uncategorized" = "Non catégorisé";
 "report.noSubcategory" = "Sans sous-catégorie";
 "report.noTag" = "Sans étiquette";
@@ -914,6 +915,8 @@
 "cashFlowPlan.cellDetailRecentTransactions" = "Enregistrements récents";
 "cashFlowPlan.cellDetailSpent" = "Tu as dépensé";
 "cashFlowPlan.cellDetailEarned" = "Tu as reçu";
+"cashFlowPlan.cellDetailSpentVsPlan" = "Tu as dépensé %1$@ ; l’estimation était de %2$@.";
+"cashFlowPlan.cellDetailEarnedVsPlan" = "Tu as reçu %1$@ ; l’estimation était de %2$@.";
 "cashFlowPlan.cellDetailMore" = "de plus";
 "cashFlowPlan.cellDetailLess" = "de moins";
 "cashFlowPlan.cellDetailOverrideActive" = "Montant ajusté manuellement";
@@ -964,8 +967,10 @@
 "cashFlowPlan.commentHealthy" = "Ton plan a l'air sain — tu terminerais la période avec %@ cumulé";
 "cashFlowPlan.commentDefault" = "Ta projection couvre %d mois à venir";
 "cashFlowPlan.chartAllWithinPlan" = "Toutes tes lignes de dépenses sont dans le plan";
-"cashFlowPlan.deviationCommentSingle" = "En %@, tu as dépensé %@ de plus que prévu";
-"cashFlowPlan.deviationCommentMultiple" = "%@ est là où tu as le plus dépassé le plan, avec %@ en plus — au total tu as dépensé %@ de trop";
+"cashFlowPlan.deviationAverageSingle" = "En moyenne, sur les %1$d derniers mois : %2$@ dépasse le plan de %3$@ par mois.";
+"cashFlowPlan.deviationAverageMultiple" = "En moyenne, sur les %1$d derniers mois : %2$@ dépasse le plus, de %3$@ par mois ; au total, %4$@ par mois.";
+"cashFlowPlan.deviationThisMonthSingle" = "Ce mois-ci : %1$@ dépasse le plan de %2$@.";
+"cashFlowPlan.deviationThisMonthMultiple" = "Ce mois-ci : %1$@ dépasse le plus, de %2$@ ; au total, %3$@.";
 "cashFlowPlan.chartSavingsSubtitle" = "Combien tu épargnes chaque mois vs ton plan";
 "cashFlowPlan.chartPlanned" = "Prévu";
 "cashFlowPlan.commentSavingsBelow" = "Tu épargnes %@ de moins par mois que prévu — tu peux réduire une dépense ?";
@@ -2445,7 +2450,6 @@
 "featureGate.premiumIcons" = "Icônes premium";
 "featureGate.proThemes" = "Thèmes Pro";
 "featureGate.smartInsightsAI" = "Résumé IA";
-"featureGate.cashFlowAdvanced" = "Flux de trésorerie avancé";
 
 // Titles
 "featureGate.limitReachedTitle" = "Limite atteinte";
@@ -7720,7 +7724,6 @@
 "uxpro.gate.title.photo" = "Noter avec une photo fait partie de Yala Pro";
 "uxpro.gate.title.insights" = "Le résumé par IA fait partie de Yala Pro";
 "uxpro.gate.title.chat" = "Interroger Yala IA fait partie de Yala Pro";
-"uxpro.gate.title.cashFlow" = "Le flux de trésorerie avancé fait partie de Yala Pro";
 "uxpro.gate.title.theme" = "Le thème %@ fait partie de Yala Pro";
 "uxpro.gate.title.themeGeneric" = "Ce thème fait partie de Yala Pro";
 "uxpro.gate.title.icon" = "L’icône %@ fait partie de Yala Pro";
@@ -7731,7 +7734,6 @@
 "uxpro.gate.offlineMeanwhile" = "En attendant, gratuitement";
 "uxpro.gate.body.themeStays" = "Ton thème actuel reste tel quel.";
 "uxpro.gate.body.iconStays" = "Ton icône actuelle reste telle quelle.";
-"uxpro.gate.body.cashFlowStays" = "Le flux de trésorerie habituel reste gratuit.";
 "uxpro.gate.preview" = "Voici à quoi ressemblerait Yala";
 "uxpro.gate.trialBody" = "Tout ce que tu as noté est toujours là. L’offre gratuite te donne %1$lld comptes et %2$lld budgets actifs.";
 "uxpro.gate.ctaTrialDays" = "Essayer Pro gratuitement %lld jours";
@@ -7779,7 +7781,6 @@
 "uxpro.welcome.budgets" = "Tu peux maintenant créer des budgets sans limite.";
 "uxpro.welcome.theme" = "Tu peux maintenant utiliser ce thème.";
 "uxpro.welcome.icon" = "Tu peux maintenant utiliser cette icône.";
-"uxpro.welcome.cashFlow" = "Tu peux maintenant utiliser le flux de trésorerie avancé.";
 
 /* UX 2.2 · lote decidido 08 — ventanas del iPad y teclado (L15-11, L15-13) */
 "window.busy.signingOutElsewhere" = "Déconnexion en cours dans l'autre fenêtre…";

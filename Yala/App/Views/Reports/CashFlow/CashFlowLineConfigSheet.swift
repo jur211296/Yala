@@ -83,10 +83,6 @@ struct CashFlowLineConfigSheet: View {
         readableLine.map { Shown(reading: $0) } ?? shownAtOpen
     }
 
-    private var isPro: Bool {
-        FeatureGateService.shared.canAccess(.cashFlowAdvanced)
-    }
-
     private var isLargeDetent: Bool { selectedDetent == .large }
 
     var body: some View {
@@ -258,9 +254,8 @@ struct CashFlowLineConfigSheet: View {
         }
     }
 
-    private func methodRow(_ method: EstimationMethod, label: String, proOnly: Bool = false, enabled: Bool = true) -> some View {
+    private func methodRow(_ method: EstimationMethod, label: String, enabled: Bool = true) -> some View {
         Button {
-            if proOnly && !isPro { return }
             if !enabled { return }
             selectedMethod = method
         } label: {
@@ -285,11 +280,6 @@ struct CashFlowLineConfigSheet: View {
                             .foregroundStyle(selectedMethod == method ? AnyShapeStyle(theme.accentText) : AnyShapeStyle(.secondary))
                             .monospacedDigit()
                     }
-                }
-                if proOnly && !isPro {
-                    Image(systemName: "lock.fill")
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
                 }
             }
             .padding(.horizontal, DS.Spacing.lg)

@@ -159,6 +159,7 @@ struct CashFlowChartsSheet: View {
         )
         cachedDeviationRuleComment = CashFlowPlanViewModel.generateDeviationRuleComment(
             cachedDeviations.map { (name: $0.name, amount: $0.deviation) },
+            monthCount: cachedPastMonths.count,
             currencyCode: currencyCode
         )
 

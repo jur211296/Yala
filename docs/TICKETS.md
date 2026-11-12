@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1260)
+## Index (1263)
 
 | id | status | path |
 |---|---|---|
@@ -189,6 +189,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | capability-upgrade-reemits-a-v1-link-edit-with-a-fresh-hlc | backlog | tickets/backlog/capability-upgrade-reemits-a-v1-link-edit-with-a-fresh-hlc.md |
 | cash-flow-advanced-gate-never-limits-free-users | backlog | tickets/backlog/cash-flow-advanced-gate-never-limits-free-users.md |
 | cash-flow-month-capsule-and-balance-widget-pill-sign-a-zero | done | tickets/done/cash-flow-month-capsule-and-balance-widget-pill-sign-a-zero.md |
+| cash-flow-month-vs-empty-and-contrast-necessary-08-2-3 | done | tickets/done/cash-flow-month-vs-empty-and-contrast-necessary-08-2-3.md |
 | cash-flow-plan-asks-the-starting-balance-the-account-already-has | done | tickets/done/cash-flow-plan-asks-the-starting-balance-the-account-already-has.md |
 | cashflow-ai-comment-does-not-check-pro | done | tickets/done/cashflow-ai-comment-does-not-check-pro.md |
 | cashflow-amount-changes-from-two-phones-overwrite-each-other | discarded | tickets/discarded/cashflow-amount-changes-from-two-phones-overwrite-each-other.md |
@@ -842,6 +843,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | orphaned-group-records-stay-out-of-the-notice | done | tickets/done/orphaned-group-records-stay-out-of-the-notice.md |
 | own-telemetry-panel-by-sections | qa | tickets/qa/own-telemetry-panel-by-sections.md |
 | owner-preferences-return-via-ikv-after-private-sign-out | qa | tickets/qa/owner-preferences-return-via-ikv-after-private-sign-out.md |
+| palette-pink-and-indigo-still-used-as-text-color | backlog | tickets/backlog/palette-pink-and-indigo-still-used-as-text-color.md |
 | panel-accounts-redesign | done | tickets/done/panel-accounts-redesign.md |
 | panel-balance-chart-contradicts-its-own-figure | done | tickets/done/panel-balance-chart-contradicts-its-own-figure.md |
 | panel-balance-curve-parity-test-depends-on-the-clock | done | tickets/done/panel-balance-curve-parity-test-depends-on-the-clock.md |
@@ -1229,6 +1231,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | voice-parser-sends-no-json-mode | done | tickets/done/voice-parser-sends-no-json-mode.md |
 | voice-transcription-model-choice | done | tickets/done/voice-transcription-model-choice.md |
 | volver-de-segundo-plano-en-un-dia-nuevo-no-trae-las-tasas | backlog | tickets/backlog/volver-de-segundo-plano-en-un-dia-nuevo-no-trae-las-tasas.md |
+| vs-hardcoded-in-statistics-and-panel-comparisons | backlog | tickets/backlog/vs-hardcoded-in-statistics-and-panel-comparisons.md |
 | waiting-card-disables-stop-waiting-without-saying-why | backlog | tickets/backlog/waiting-card-disables-stop-waiting-without-saying-why.md |
 | web-domain-has-no-spf-dkim-dmarc | done | tickets/done/web-domain-has-no-spf-dkim-dmarc.md |
 | weekday-bar-daily-average-unmarked | backlog | tickets/backlog/weekday-bar-daily-average-unmarked.md |

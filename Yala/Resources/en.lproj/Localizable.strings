@@ -672,6 +672,7 @@
 "report.netFlow" = "Net flow";
 "report.noData" = "No data";
 "report.noDataDescription" = "No records in this period";
+"report.cashFlowNoDataDescription" = "Your cash flow will show up here once you have your first records.";
 "report.uncategorized" = "Uncategorized";
 "report.noSubcategory" = "No subcategory";
 "report.noTag" = "No tag";
@@ -916,6 +917,8 @@
 "cashFlowPlan.cellDetailRecentTransactions" = "Recent records";
 "cashFlowPlan.cellDetailSpent" = "You spent";
 "cashFlowPlan.cellDetailEarned" = "You earned";
+"cashFlowPlan.cellDetailSpentVsPlan" = "You spent %1$@; the estimate was %2$@.";
+"cashFlowPlan.cellDetailEarnedVsPlan" = "You received %1$@; the estimate was %2$@.";
 "cashFlowPlan.cellDetailMore" = "more";
 "cashFlowPlan.cellDetailLess" = "less";
 "cashFlowPlan.cellDetailOverrideActive" = "Amount manually adjusted";
@@ -966,8 +969,10 @@
 "cashFlowPlan.commentHealthy" = "Your plan looks healthy — you'd end the period with %@ accumulated";
 "cashFlowPlan.commentDefault" = "Your projection covers %d months ahead";
 "cashFlowPlan.chartAllWithinPlan" = "All your expense lines are within the plan";
-"cashFlowPlan.deviationCommentSingle" = "In %@ you spent %@ more than planned";
-"cashFlowPlan.deviationCommentMultiple" = "%@ is where you went over the most, by %@ extra — you spent %@ over plan in total";
+"cashFlowPlan.deviationAverageSingle" = "On average, last %1$d months: you went over on %2$@ by %3$@ a month.";
+"cashFlowPlan.deviationAverageMultiple" = "On average, last %1$d months: you went over most on %2$@, by %3$@ a month; %4$@ a month across all of them.";
+"cashFlowPlan.deviationThisMonthSingle" = "This month: you went over on %1$@ by %2$@.";
+"cashFlowPlan.deviationThisMonthMultiple" = "This month: you went over most on %1$@, by %2$@; %3$@ across all of them.";
 "cashFlowPlan.chartSavingsSubtitle" = "How much you save each month vs your plan";
 "cashFlowPlan.chartPlanned" = "Planned";
 "cashFlowPlan.commentSavingsBelow" = "You're saving %@ less per month than planned — can you trim any expense?";
@@ -2447,7 +2452,6 @@
 "featureGate.premiumIcons" = "Premium icons";
 "featureGate.proThemes" = "Pro Themes";
 "featureGate.smartInsightsAI" = "AI summary";
-"featureGate.cashFlowAdvanced" = "Advanced Cash Flow";
 
 // Titles
 "featureGate.limitReachedTitle" = "Limit reached";
@@ -7725,7 +7729,6 @@
 "uxpro.gate.title.photo" = "Logging with a photo is part of Yala Pro";
 "uxpro.gate.title.insights" = "The AI summary is part of Yala Pro";
 "uxpro.gate.title.chat" = "Asking Yala AI is part of Yala Pro";
-"uxpro.gate.title.cashFlow" = "Advanced cash flow is part of Yala Pro";
 "uxpro.gate.title.theme" = "The %@ theme is part of Yala Pro";
 "uxpro.gate.title.themeGeneric" = "This theme is part of Yala Pro";
 "uxpro.gate.title.icon" = "The %@ icon is part of Yala Pro";
@@ -7736,7 +7739,6 @@
 "uxpro.gate.offlineMeanwhile" = "Meanwhile, for free";
 "uxpro.gate.body.themeStays" = "Your current theme stays as it is.";
 "uxpro.gate.body.iconStays" = "Your current icon stays as it is.";
-"uxpro.gate.body.cashFlowStays" = "The regular cash flow stays free.";
 "uxpro.gate.preview" = "This is how Yala would look";
 "uxpro.gate.trialBody" = "Everything you logged is still here. The free plan gives you %1$lld accounts and %2$lld active budgets.";
 "uxpro.gate.ctaTrialDays" = "Try Pro free for %lld days";
@@ -7784,7 +7786,6 @@
 "uxpro.welcome.budgets" = "You can now create unlimited budgets.";
 "uxpro.welcome.theme" = "You can now use this theme.";
 "uxpro.welcome.icon" = "You can now use this icon.";
-"uxpro.welcome.cashFlow" = "You can now use advanced cash flow.";
 
 /* UX 2.2 · lote decidido 08 — ventanas del iPad y teclado (L15-11, L15-13) */
 "window.busy.signingOutElsewhere" = "Signing you out in the other window…";
