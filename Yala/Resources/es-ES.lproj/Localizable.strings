@@ -1459,7 +1459,7 @@
 "faq.whatIsPro.q" = "¿Qué incluye Yala Pro?";
 "faq.whatIsYala.a" = "Yala es tu app de finanzas personales. Te ayuda a registrar gastos e ingresos, organizar tu dinero por categorías y etiquetas, crear presupuestos y ver reportes claros de cómo va tu economía.";
 "faq.whatIsYala.q" = "¿Qué es Yala?";
-"favorites.createTemplate" = "Guarda un gasto que repites (tu café, el taxi) y regístralo con un toque.";
+"favorites.createTemplate" = "Guarda un gasto que repites (tu café, el taxi) y apúntalo en dos toques: elígelo y guarda.";
 "favorites.descriptionPlaceholder" = "Descripción (opcional)";
 "favorites.edit" = "Editar favorito";
 "favorites.editTitle" = "Editar favorito";
@@ -1468,7 +1468,7 @@
 "favorites.newTitle" = "Nuevo favorito";
 "favorites.noFavorites" = "Aún no tienes favoritos";
 "favorites.notConfigured" = "Sin configurar";
-"favorites.saveDescription" = "Tus gastos de siempre, a un toque.";
+"favorites.saveDescription" = "Tus gastos de siempre, ya rellenos.";
 "favorites.title" = "Favoritos";
 "featureGate.accounts" = "Cuentas";
 "featureGate.budgets" = "Presupuestos";
@@ -3191,7 +3191,7 @@
 "tips.camera.title" = "Escanea recibos y capturas";
 "tips.export.detail" = "Descarga tus gastos en CSV o Excel desde Ajustes > Exportar. Ideal para análisis en hojas de cálculo o para tus archivos.";
 "tips.export.title" = "Exporta tus datos";
-"tips.favorites.detail" = "¿Pagas lo mismo seguido? Guarda un gasto como favorito y la próxima vez regístralo con un solo toque desde el menú +.";
+"tips.favorites.detail" = "¿Pagas lo mismo a menudo? Guarda un gasto como favorito: la próxima vez, elígelo al registrar y guarda.";
 "tips.favorites.title" = "Guarda pagos frecuentes";
 "tips.filters.detail" = "Usa filtros para ver solo lo que importa: por categoría, etiqueta, cuenta o periodo. Compara mes a mes para detectar cambios.";
 "tips.filters.title" = "Filtra y compara periodos";
@@ -3307,9 +3307,9 @@
 "tutorials.createCategories.step3.desc" = "Personaliza a tu gusto el icono y color de tu categoría cuando quieras.";
 "tutorials.createCategories.step3.title" = "Personaliza tu categoría";
 "tutorials.createCategories.title" = "Crear categorías";
-"tutorials.createFavorites.completion.desc" = "Un favorito apunta en un toque los gastos que repites. Puedes tener los que quieras.";
+"tutorials.createFavorites.completion.desc" = "Un favorito te deja listo el gasto que repites: lo eliges, cambias el monto si hace falta y guardas. Puedes tener los que quieras.";
 "tutorials.createFavorites.completion.title" = "Ya sabes cómo usar favoritos";
-"tutorials.createFavorites.intro.desc" = "Guarda gastos frecuentes como atajos y regístralos con un toque.";
+"tutorials.createFavorites.intro.desc" = "Guarda gastos frecuentes como atajos: al elegirlos, el formulario se rellena solo.";
 "tutorials.createFavorites.intro.title" = "¿Qué son los favoritos?";
 "tutorials.createFavorites.step0.desc" = "En Nuevo registro, toca «Favorito», debajo del monto, para guardar como favorito lo que llevas escrito.";
 "tutorials.createFavorites.step0.title" = "Crea un favorito";
@@ -7691,7 +7691,7 @@
 "l2d.date.futureDaysNote" = "Los días que vienen salen en gris. Para un pago que aún no ha llegado, usa [Pagos planificados](yala-form://scheduled).";
 "l2d.favorites.seeAll" = "Ver todos";
 "l2d.favorites.use" = "Usar el favorito %@";
-"l2d.favorites.transferHelp" = "Tus transferencias de siempre, a un toque.";
+"l2d.favorites.transferHelp" = "Tus transferencias de siempre, ya rellenas.";
 "l2d.recurring.title" = "Hacer recurrente";
 "l2d.recurring.header" = "Guardamos el de hoy. Los siguientes llegarán a tu Bandeja el día que toque, para que los confirmes. Los ves en Pagos planificados.";
 "l2d.recurring.weekly" = "Cada semana, el %@";

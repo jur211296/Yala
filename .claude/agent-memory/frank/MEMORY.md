@@ -82,6 +82,7 @@
 - [Cierre de diseño: spec por cards](feedback_cierre_de_diseno_spec_por_cards.md) — artifact limpio + SPEC.md de una fuente, ID estable por card.
 - [Propuestas: artifact visual, no Markdown](feedback_propuestas_como_artifact_visual.md) — tarjetas, antes/después y selector sí/no/después en la db.
 ## Cómo mido y cómo entrego
+- [UI tras YalaTests entero: reinicia el simulador](reference_ui_tras_yalatests_entero_reinicia_el_simulador.md) — «AX loaded» = infraestructura; UI antes que unit.
 - [decisiones.py no está en la Max](reference_decisiones_py_no_esta_en_la_max.md) — incorporar-lote no corre ahí: decisión al repo y avisar.
 - [Vista previa de Vercel protegida](reference_vista_previa_vercel_protegida.md) — 302 al login: `vercel curl --deployment` desde Web/ con el project.json del principal.
 - [Duo abierto en la Max](reference_duo_abierto_en_la_max.md) — XCTest da negro: enlace + simctl --display; Device Hub con la pantalla libre.

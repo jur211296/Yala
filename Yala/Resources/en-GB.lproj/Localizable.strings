@@ -36,7 +36,7 @@
 "favorites.newTitle" = "New Favourite";
 "favorites.editTitle" = "Edit Favourite";
 "favorites.namePlaceholder" = "Favourite name";
-"favorites.saveDescription" = "Your usual expenses, one tap away.";
+"favorites.saveDescription" = "Your usual expenses, already filled in.";
 "settings.favorites" = "Favourites";
 "settings.budgetsFavorites" = "Favourite Budgets";
 "settings.budgetsFavoritesInfo" = "Favourite budgets appear in the Budgets card on the Panel (3 in medium, 5 in large).";
@@ -69,7 +69,7 @@
 "onboarding.expensesOnlySubtitle" = "Choose how you want to organise your money. You can change this later in Settings.";
 "image.errorNoConnection" = "No internet connection. You need a connection to analyse images.";
 "tips.section.organize" = "Organise your money";
-"tips.favorites.detail" = "Pay the same thing often? Save an expense as a favourite and next time register it with a single tap from the + menu.";
+"tips.favorites.detail" = "Pay the same thing often? Save an expense as a favourite: next time, pick it when you log and save.";
 "tipkit.settings.accounts.message" = "Add your accounts and fix their balance if it doesn't match.";
 "tipkit.pro.premiumIcons.message" = "Choose from premium icons to personalise your app.";
 "tipkit.pro.proThemes.message" = "Discover exclusive colour themes that give Yala your personal touch.";
@@ -84,7 +84,7 @@
 "tutorials.createFavorites.intro.title" = "What are favourites?";
 "tutorials.createFavorites.step0.title" = "Create a favourite";
 "tutorials.createFavorites.completion.title" = "Now you know how to use favourites";
-"tutorials.createFavorites.completion.desc" = "A favourite logs the expenses you repeat in one tap. You can have as many as you like.";
+"tutorials.createFavorites.completion.desc" = "A favourite gets the expense you repeat ready: pick it, change the amount if needed and save. You can have as many as you like.";
 "tutorials.editPanel.title" = "Customise the Panel";
 "tutorials.editPanel.intro.desc" = "Customise which widgets appear on your Panel.";
 "tutorials.editPanel.step1.title" = "Customise the widgets";
@@ -1507,7 +1507,7 @@
 "faq.whatIsPro.a" = "Yala Pro lets you log by speaking or with a photo, ask Yala AI, have unlimited accounts and budgets, and use themes and icons. You'll see it all in Settings > Yala Pro.";
 "faq.whatIsPro.q" = "What does Yala Pro include?";
 "faq.whatIsYala.q" = "What is Yala?";
-"favorites.createTemplate" = "Save an expense you repeat (your coffee, a taxi) and record it with one tap.";
+"favorites.createTemplate" = "Save an expense you repeat (your coffee, a taxi) and log it in two taps: pick it and save.";
 "favorites.descriptionPlaceholder" = "Description (optional)";
 "favorites.notConfigured" = "Not configured";
 "featureGate.accounts" = "Accounts";
@@ -3316,7 +3316,7 @@
 "tutorials.createCategories.step2.desc" = "Creating subcategories is as easy as creating categories: give it a name, choose its need, and optionally change its icon.";
 "tutorials.createCategories.step2.title" = "Create subcategories";
 "tutorials.createCategories.title" = "Create categories";
-"tutorials.createFavorites.intro.desc" = "Save frequent expenses as shortcuts and record them with one tap.";
+"tutorials.createFavorites.intro.desc" = "Save frequent expenses as shortcuts: pick one and the form fills itself in.";
 "tutorials.createFavorites.step1.title" = "Use it quickly";
 "tutorials.createRecord.completion.desc" = "The sooner you log each expense, the more clearly you'll see where your money goes.";
 "tutorials.createRecord.completion.title" = "Now you know how to record an expense";
@@ -7675,7 +7675,7 @@
 "l2d.date.futureDaysNote" = "Upcoming days are greyed out. For a payment that hasn't happened yet, use [Scheduled payments](yala-form://scheduled).";
 "l2d.favorites.seeAll" = "See all";
 "l2d.favorites.use" = "Use favourite %@";
-"l2d.favorites.transferHelp" = "Your usual transfers, one tap away.";
+"l2d.favorites.transferHelp" = "Your usual transfers, already filled in.";
 "l2d.recurring.title" = "Make recurring";
 "l2d.recurring.header" = "We'll save today's. The next ones will land in your Inbox on the day they're due, for you to confirm. You'll find them in Scheduled payments.";
 "l2d.recurring.weekly" = "Every week, on %@";

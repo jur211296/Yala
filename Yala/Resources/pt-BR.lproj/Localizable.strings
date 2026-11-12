@@ -401,13 +401,13 @@
 "favorites.new" = "Novo favorito";
 "favorites.edit" = "Editar favorito";
 "favorites.noFavorites" = "Sem favoritos";
-"favorites.createTemplate" = "Salve uma despesa que você repete (seu café, o táxi) e registre com um toque.";
+"favorites.createTemplate" = "Salve uma despesa que você repete (seu café, o táxi) e registre em dois toques: escolha e salve.";
 "favorites.newTitle" = "Novo favorito";
 "favorites.editTitle" = "Editar favorito";
 "favorites.namePlaceholder" = "Nome do favorito";
 "favorites.notConfigured" = "Não configurado";
 "favorites.descriptionPlaceholder" = "Descrição (opcional)";
-"favorites.saveDescription" = "Seus gastos de sempre, a um toque.";
+"favorites.saveDescription" = "Seus gastos de sempre, já preenchidos.";
 
 // MARK: - Scheduled
 
@@ -2111,7 +2111,7 @@
 "tips.camera.title" = "Escaneie recibos e capturas";
 "tips.camera.detail" = "Tire uma foto do seu recibo ou captura de tela bancária. Yala extrai os valores e cria rascunhos automaticamente.";
 "tips.favorites.title" = "Salve pagamentos frequentes";
-"tips.favorites.detail" = "Paga a mesma coisa com frequência? Salve um gasto como favorito e na próxima vez registre com um toque no menu +.";
+"tips.favorites.detail" = "Paga a mesma coisa com frequência? Salve um gasto como favorito: na próxima vez, escolha-o ao registrar e salve.";
 "tips.budgets.title" = "Crie orçamentos";
 "tips.budgets.detail" = "Defina quanto quer gastar por categoria no mês. Yala avisa quando estiver perto do limite para não ultrapassar.";
 "tips.tags.title" = "Marque gastos especiais";
@@ -2660,11 +2660,11 @@
 // 8. createFavorites (2 steps)
 "tutorials.createFavorites.title" = "Favoritos";
 "tutorials.createFavorites.intro.title" = "O que são os favoritos?";
-"tutorials.createFavorites.intro.desc" = "Salve gastos frequentes como atalhos e registre-os com um toque.";
+"tutorials.createFavorites.intro.desc" = "Salve gastos frequentes como atalhos: ao escolher um, o formulário se preenche sozinho.";
 "tutorials.createFavorites.step0.title" = "Crie um favorito";
 "tutorials.createFavorites.step1.title" = "Use-o rapidamente";
 "tutorials.createFavorites.completion.title" = "Agora você sabe usar favoritos";
-"tutorials.createFavorites.completion.desc" = "Um favorito registra com um toque os gastos que você repete. Você pode ter quantos quiser.";
+"tutorials.createFavorites.completion.desc" = "Um favorito deixa pronto o gasto que você repete: escolha, mude o valor se precisar e salve. Você pode ter quantos quiser.";
 
 // 9. editPanel (3 steps)
 "tutorials.editPanel.title" = "Personalizar o Painel";
@@ -8431,7 +8431,7 @@
 "l2d.date.futureDaysNote" = "Os próximos dias aparecem em cinza. Para um pagamento que ainda não chegou, use [Pagamentos planejados](yala-form://scheduled).";
 "l2d.favorites.seeAll" = "Ver todos";
 "l2d.favorites.use" = "Usar o favorito %@";
-"l2d.favorites.transferHelp" = "Suas transferências de sempre, a um toque.";
+"l2d.favorites.transferHelp" = "Suas transferências de sempre, já preenchidas.";
 "l2d.recurring.title" = "Tornar recorrente";
 "l2d.recurring.header" = "Salvamos o de hoje. Os próximos chegam à sua Caixa de entrada no dia certo, para você confirmar. Você os vê em Pagamentos planejados.";
 "l2d.recurring.weekly" = "Toda semana: %@";

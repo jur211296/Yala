@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1244)
+## Index (1254)
 
 | id | status | path |
 |---|---|---|
@@ -421,6 +421,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | faq-says-long-press-starts-bulk-edit | done | tickets/done/faq-says-long-press-starts-bulk-edit.md |
 | favorite-editor-does-not-know-transfer-favorites | done | tickets/done/favorite-editor-does-not-know-transfer-favorites.md |
 | favorite-transfer-destination-does-not-travel-in-cloud-mode | blocked | tickets/blocked/favorite-transfer-destination-does-not-travel-in-cloud-mode.md |
+| favorites-at-record-time-amount-types-and-delete-2-3 | done | tickets/done/favorites-at-record-time-amount-types-and-delete-2-3.md |
+| favorites-reorder-uses-the-shown-index-on-the-full-list | backlog | tickets/backlog/favorites-reorder-uses-the-shown-index-on-the-full-list.md |
 | ficha-mx-vida-rates-jump-on-the-last-day | done | tickets/done/ficha-mx-vida-rates-jump-on-the-last-day.md |
 | figures-that-dont-add-up-lote-02-necessary-2-3 | done | tickets/done/figures-that-dont-add-up-lote-02-necessary-2-3.md |
 | filtro-de-cuentas-se-colapsa-al-navegar-a-registros | done | tickets/done/filtro-de-cuentas-se-colapsa-al-navegar-a-registros.md |
@@ -439,6 +441,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | force-fetch-and-wait-ignores-cancellation | done | tickets/done/force-fetch-and-wait-ignores-cancellation.md |
 | forcesync-returns-ok-without-touching-the-network | backlog | tickets/backlog/forcesync-returns-ok-without-touching-the-network.md |
 | form-clarity-23-large-text-uitests-red-on-2-3 | backlog | tickets/backlog/form-clarity-23-large-text-uitests-red-on-2-3.md |
+| formclarity23-large-text-uitests-tap-offscreen | backlog | tickets/backlog/formclarity23-large-text-uitests-tap-offscreen.md |
 | forms-read-their-deleted-model-while-closing | done | tickets/done/forms-read-their-deleted-model-while-closing.md |
 | forward-identity-capture-advances-when-it-could-not-read-any-row | backlog | tickets/backlog/forward-identity-capture-advances-when-it-could-not-read-any-row.md |
 | forward-migration-steps-have-no-ceiling-and-no-exit | done | tickets/done/forward-migration-steps-have-no-ceiling-and-no-exit.md |

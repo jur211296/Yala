@@ -403,13 +403,13 @@
 "favorites.new" = "Nieuwe favoriet";
 "favorites.edit" = "Favoriet bewerken";
 "favorites.noFavorites" = "Je hebt nog geen favorieten";
-"favorites.createTemplate" = "Bewaar een uitgave die je vaak doet (je koffie, de taxi) en boek hem met één tik.";
+"favorites.createTemplate" = "Bewaar een uitgave die je vaak doet (je koffie, de taxi) en boek hem in twee tikken: kies hem en bewaar.";
 "favorites.newTitle" = "Nieuwe favoriet";
 "favorites.editTitle" = "Favoriet bewerken";
 "favorites.namePlaceholder" = "Naam van favoriet";
 "favorites.notConfigured" = "Niet ingesteld";
 "favorites.descriptionPlaceholder" = "Beschrijving (optioneel)";
-"favorites.saveDescription" = "Je vaste uitgaven, met één tik.";
+"favorites.saveDescription" = "Je vaste uitgaven, al ingevuld.";
 
 // MARK: - Scheduled
 
@@ -2115,7 +2115,7 @@
 "tips.camera.title" = "Scan bonnetjes en schermafbeeldingen";
 "tips.camera.detail" = "Maak een foto van je bonnetje of bankschermafbeelding. Yala haalt de bedragen eruit en maakt automatisch concepten aan.";
 "tips.favorites.title" = "Bewaar veelvoorkomende betalingen";
-"tips.favorites.detail" = "Betaal je vaak hetzelfde? Bewaar een uitgave als favoriet en boek hem volgende keer met één tik via het +-menu.";
+"tips.favorites.detail" = "Betaal je vaak hetzelfde? Bewaar een uitgave als favoriet: kies hem de volgende keer bij het boeken en bewaar.";
 "tips.budgets.title" = "Maak budgetten";
 "tips.budgets.detail" = "Bepaal hoeveel je per maand per categorie wilt uitgeven. Yala waarschuwt je als je in de buurt van de grens komt.";
 "tips.tags.title" = "Label bijzondere uitgaven";
@@ -2678,11 +2678,11 @@
 // 8. createFavorites (2 steps)
 "tutorials.createFavorites.title" = "Favorieten";
 "tutorials.createFavorites.intro.title" = "Wat zijn favorieten?";
-"tutorials.createFavorites.intro.desc" = "Bewaar veelvoorkomende uitgaven als shortcuts en boek ze met één tik.";
+"tutorials.createFavorites.intro.desc" = "Bewaar veelvoorkomende uitgaven als shortcuts: kies er een en het formulier vult zichzelf in.";
 "tutorials.createFavorites.step0.title" = "Maak een favoriet";
 "tutorials.createFavorites.step1.title" = "Gebruik hem snel";
 "tutorials.createFavorites.completion.title" = "Nu weet je hoe je favorieten gebruikt";
-"tutorials.createFavorites.completion.desc" = "Met een favoriet boek je een uitgave die je vaak doet in één tik. Je kunt er zoveel hebben als je wilt.";
+"tutorials.createFavorites.completion.desc" = "Een favoriet zet de uitgave die je vaak doet klaar: kies hem, pas zo nodig het bedrag aan en bewaar. Je kunt er zoveel hebben als je wilt.";
 
 // 9. editPanel (3 steps)
 "tutorials.editPanel.title" = "Pas het Panel aan";
@@ -8443,7 +8443,7 @@
 "l2d.date.futureDaysNote" = "Komende dagen zijn grijs. Gebruik voor een betaling die nog moet komen [Geplande betalingen](yala-form://scheduled).";
 "l2d.favorites.seeAll" = "Alles bekijken";
 "l2d.favorites.use" = "Favoriet %@ gebruiken";
-"l2d.favorites.transferHelp" = "Je vaste overschrijvingen, met één tik.";
+"l2d.favorites.transferHelp" = "Je vaste overschrijvingen, al ingevuld.";
 "l2d.recurring.title" = "Terugkerend maken";
 "l2d.recurring.header" = "We slaan die van vandaag op. De volgende komen op de juiste dag in je Inbox, zodat je ze bevestigt. Je vindt ze bij Geplande betalingen.";
 "l2d.recurring.weekly" = "Elke week, op %@";
