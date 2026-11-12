@@ -11,6 +11,9 @@
 - [Entorno y herramientas](indice_entorno.md) — 20 entradas: máquina, hooks, accesos, disco.
 
 ## Cómo trabaja Jürgen
+- [Verificación Gmail: video v2 hecho](project_verificacion_gmail_video_v2.md) — 12-nov; espera que Jürgen suba y responda; tres clientes OAuth.
+- [Consola de Google: authuser=1](reference_consola_google_cloud_authuser.md) — jur211296 abre sin llave; admin@yala-app.pe pide passkey que no llega.
+- [Google Sign-In sigue el idioma del sistema](reference_idioma_de_google_en_el_simulador.md) — -AppleLanguages no basta: defaults -g + reboot.
 - [QA en Yala Dev antes que prod](feedback_qa_en_yala_dev_antes_que_prod.md) — TestFlight solo para lo que exige producción (App Store, attest enforce, StoreKit).
 - [Sesión de rediseño](feedback_sesion_de_rediseno.md) — si el QA se vuelve producto, se sigue: acta en docs/sessions.
 - [Diseña en lienzo antes de construir](feedback_disena_en_lienzo_antes_de_construir.md) — cita vaga de UI: 3-4 propuestas, elige él; el alcance crece.
