@@ -29,6 +29,8 @@ struct StorageSettingsView: View {
     private var controller: CloudMigrationController? { CloudMigrationController.shared }
     /// Texto de accesibilidad: la tarjeta de estado apila el icono encima del texto (revisión 2.3, zona 41, problema 8).
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    /// Si la sección de Grupos puede soltar su cuenta: lo pregunta el aviso de bloqueo antes de ofrecer «Cambiar de cuenta».
+    @Environment(AppPreferences.self) private var appPreferences
 
     /// La hoja única de activar la nube (UX 2.2 · L20-11/12): consentimiento, confirmación y método en un solo paso. Va
     /// por `.sheet(item:)` con lo que enseña DENTRO (la ruta y la cifra): con `isPresented` y la cifra en otro `@State`, la
@@ -91,6 +93,11 @@ struct StorageSettingsView: View {
     /// One-shot de «Usar otra cuenta»: lo quema el botón y lo consume el `onDismiss` de la hoja, que abre la elección de
     /// Apple/Google con la hoja ya abajo. «Entendido» y el swipe no lo queman.
     @State private var migrationBlockUseAnotherAccount = false
+    /// One-shot de «Cambiar de cuenta» del aviso (G1, decisión 55): lo quema el botón y lo consume el `onDismiss` de la
+    /// hoja, que pide a la sección de Grupos su hoja de consecuencias con el aviso ya abajo.
+    @State private var migrationBlockChangeAccount = false
+    /// Lo que la sección de Grupos escucha para abrir esa hoja. Sube, no se baja: la sección es la única dueña de la hoja.
+    @State private var groupsChangeAccountRequest = 0
     /// Tick de refresco del journal vivo (el runner no es `@Observable`).
     @State private var refreshTick = false
     /// **El veredicto de App Attest de ESTE teléfono** (ticket
@@ -188,6 +195,16 @@ struct StorageSettingsView: View {
                     migrationBlockUseAnotherAccount = true
                     presentedMigrationBlock = nil
                 },
+                offersChangeAccount: MigrationBlockChangeAccountLogic.offersChangeAccount(
+                    reason: block.reason,
+                    offersAnotherAccount: block.offersAnotherAccount,
+                    offersDetachingStaleAssociation: block.offersDetachingStaleAssociation,
+                    groupsAccountCanBeReleased: GroupsAssociationSection.canReleaseGroupsAccount(
+                        hasCompletedOnboarding: appPreferences.hasCompletedOnboarding)),
+                onChangeAccount: {
+                    migrationBlockChangeAccount = true
+                    presentedMigrationBlock = nil
+                },
                 onClose: { presentedMigrationBlock = nil })
             // El aviso se consume cuando la hoja MONTA, no al pedirla (regla 3 de presentaciones): si la pantalla se va
             // mientras llega, o el anchor está ocupado, sigue en el controller y sale la próxima vez.
@@ -251,7 +268,7 @@ struct StorageSettingsView: View {
             // Paso 10 · la asociación de grupos va DEBAJO del estado y ENCIMA de migrar: pertenece a
             // «dónde viven tus datos», pero lo que la persona viene a hacer aquí casi siempre es lo
             // personal. La propia sección se oculta cuando no aplica (`notApplicable`).
-            GroupsAssociationSection(onAssociate: onAssociateGroupsAccount)
+            GroupsAssociationSection(onAssociate: onAssociateGroupsAccount, changeAccountRequest: groupsChangeAccountRequest)
             // **El kill-switch de la nube cierra la ENTRADA, y desde 2026-09-11 tiene que decirlo aquí.**
             // Hasta hoy la card no necesitaba candado propio: la fila de Ajustes estaba oculta bajo el
             // kill y con ella toda la pantalla. Ahora la fila la abre también una cuenta de grupos que
@@ -268,7 +285,7 @@ struct StorageSettingsView: View {
             statusCard(controller)
             // En la nube completa la sección solo informa («tus grupos usan esta misma cuenta») y no
             // ofrece desasociar: ADR §4.
-            GroupsAssociationSection(onAssociate: onAssociateGroupsAccount)
+            GroupsAssociationSection(onAssociate: onAssociateGroupsAccount, changeAccountRequest: groupsChangeAccountRequest)
             syncStatusSection(controller)
             if controller.showsReverseStepsBeforeJournal {
                 reverseStartingCard(controller)
@@ -282,7 +299,7 @@ struct StorageSettingsView: View {
             // quien quiera soltar su cuenta de grupos se quedaría sin puerta todo ese tiempo. Los demás `.migrating` son
             // tránsitos y la siguen ocultando.
             if controller.isAdoptEffectPending {
-                GroupsAssociationSection(onAssociate: onAssociateGroupsAccount)
+                GroupsAssociationSection(onAssociate: onAssociateGroupsAccount, changeAccountRequest: groupsChangeAccountRequest)
             }
         case .reverting(let step):
             progressCard(controller, step: step, reverse: true)
@@ -301,15 +318,15 @@ struct StorageSettingsView: View {
             // solo los cierra un reintento con éxito. No son tránsitos como `.migrating`, así que ocultar
             // aquí la sección dejaría sin poder desasociar —indefinidamente— a quien deja una migración
             // fallida para más adelante.
-            GroupsAssociationSection(onAssociate: onAssociateGroupsAccount)
+            GroupsAssociationSection(onAssociate: onAssociateGroupsAccount, changeAccountRequest: groupsChangeAccountRequest)
         case .failed(let kind):
             failedCard(controller, kind: kind)
-            GroupsAssociationSection(onAssociate: onAssociateGroupsAccount)
+            GroupsAssociationSection(onAssociate: onAssociateGroupsAccount, changeAccountRequest: groupsChangeAccountRequest)
         case .journalUnreadable:
             journalUnreadableCard()
             // La sección de Grupos se queda, como en `.failed` y `.waitingForLeader`: un journal que no se deja leer puede
             // durar, y ocultarla quitaría la única puerta para soltar esa cuenta. Soltarla no mueve los datos personales.
-            GroupsAssociationSection(onAssociate: onAssociateGroupsAccount)
+            GroupsAssociationSection(onAssociate: onAssociateGroupsAccount, changeAccountRequest: groupsChangeAccountRequest)
         }
     }
 
@@ -1289,6 +1306,13 @@ struct StorageSettingsView: View {
     /// cierra sola y migraba con ella, sin enseñar «Usarás tu cuenta de Yala actual». La tarjeta ya la anuncia: que decida
     /// el siguiente toque.
     private func onMigrationBlockDismissed() {
+        // G1: «Cambiar de cuenta» no suelta nada aquí. Pide la hoja de consecuencias a la sección, con el aviso ya abajo
+        // (regla 4 de presentaciones: la cadena entre dos hojas pasa por el `onDismiss` de la primera).
+        if migrationBlockChangeAccount {
+            migrationBlockChangeAccount = false
+            groupsChangeAccountRequest += 1
+            return
+        }
         guard migrationBlockUseAnotherAccount else { return }
         migrationBlockUseAnotherAccount = false
         guard !abortIfCloudEntryClosed() else { return }

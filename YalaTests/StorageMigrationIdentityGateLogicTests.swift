@@ -527,25 +527,38 @@ struct StorageMigrationIdentityGateLogicTests {
         }
     }
 
-    /// **El cuerpo promete dos gestos, y en los 16 idiomas nombra los de verdad**: la sección «Grupos», que con esa sesión
-    /// viva ofrece desasociar en un teléfono con sesión privada, y el botón «Activar la nube», que sin sesión abre la elección
-    /// de cuenta. Se compara con el título de la sección y el del botón en el mismo idioma, y **entre comillas**: en alemán,
-    /// japonés y chino el nombre de la sección también sale suelto («Deine Gruppen», 「グループは」, 「你的群组」), así que un
-    /// `contains` a secas pasaba con una traducción que no mandara a ninguna sección (lo cazó la review).
-    @Test("en todos los idiomas, el cuerpo nombra entre comillas la sección «Grupos» y el botón «Activar la nube»")
+    /// **El cuerpo promete dos gestos, y en los 16 idiomas nombra los de verdad**: «Cambiar de cuenta» —el enlace de la fila
+    /// de la cuenta y el botón del aviso, desde G1 de la revisión 2.3 (decisión 55); hasta el 2026-11-11 era la sección
+    /// «Grupos», que dejó de existir con una cuenta que soltar— y el botón «Activar la nube», que sin sesión abre la elección
+    /// de cuenta. Se compara con el texto del enlace y el del botón en el mismo idioma, y **entre comillas**: en alemán,
+    /// japonés y chino el nombre también podría salir suelto, así que un `contains` a secas pasaba con una traducción que no
+    /// mandara a ningún sitio (lo cazó la review). Desde G1 vale para los siete textos que mandan a cambiar la cuenta.
+    @Test("en todos los idiomas, los textos que mandan a cambiar la cuenta nombran «Cambiar de cuenta» entre comillas")
     func cuerpoNombraLosGestosReales() throws {
         #expect(SupportedLocale.allCases.count == 16)
         func quoted(_ name: String, in text: String) -> Bool {
             let pattern = "[«“„‘「]\\s?" + NSRegularExpression.escapedPattern(for: name) + "\\s?[»”“’」]"
             return text.range(of: pattern, options: .regularExpression) != nil
         }
+        let mandanACambiar = ["storage.migrateBlock.personalDataBodyNoSwitch", "storage.migrateBlock.otherGroupsBody",
+                              "storage.migrateBlock.otherGroupsBodyEmail", "storage.migrateBlock.freshStartSessionBody",
+                              "storage.migrate.refusedPersonalData", "storage.migrate.refusedOtherGroups",
+                              "storage.migrate.refusedFreshStart"]
+        let nombranActivar = ["storage.migrateBlock.freshStartSessionBody", "storage.migrate.refusedFreshStart"]
         for locale in SupportedLocale.allCases {
             let strings = StringsFileParser.parseStrings(forLocale: locale.code)
-            let body = try #require(strings["storage.migrateBlock.freshStartSessionBody"], "\(locale.code): falta el cuerpo")
-            let section = try #require(strings["storage.groups.title"], "\(locale.code): falta el título de la sección")
+            let change = try #require(strings["storage.groups.changeAccount"], "\(locale.code): falta «Cambiar de cuenta»")
             let button = try #require(strings["storage.migrate.button"], "\(locale.code): falta el botón")
-            #expect(quoted(section, in: body), "\(locale.code): el cuerpo no nombra entre comillas «\(section)»")
-            #expect(quoted(button, in: body), "\(locale.code): el cuerpo no nombra entre comillas «\(button)»")
+            let section = try #require(strings["storage.groups.title"], "\(locale.code): falta el título de la sección")
+            for key in mandanACambiar {
+                let body = try #require(strings[key], "\(locale.code): falta \(key)")
+                #expect(quoted(change, in: body), "\(locale.code): \(key) no nombra entre comillas «\(change)»")
+                #expect(!quoted(section, in: body), "\(locale.code): \(key) sigue mandando a «\(section)»")
+            }
+            for key in nombranActivar {
+                let body = try #require(strings[key])
+                #expect(quoted(button, in: body), "\(locale.code): \(key) no nombra entre comillas «\(button)»")
+            }
             #expect(!(strings["storage.migrateBlock.freshStartSessionTitle"] ?? "").isEmpty, "\(locale.code): falta el título")
         }
     }

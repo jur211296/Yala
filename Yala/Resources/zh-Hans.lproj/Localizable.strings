@@ -5255,16 +5255,16 @@
 "storage.migrate.accountReuseNoteGeneric" = "将继续使用你当前的 Yala 账户，这样你的数据和群组都在同一个账户里。";
 
 /* Storage migrate card, after the identity check refused the live account: it already has personal finances */
-"storage.migrate.refusedPersonalData" = "你当前的 Yala 账户已有个人财务数据，无法接收此设备的数据。要把你的数据移到其他账户，请先在“群组”中取消关联此账户。";
+"storage.migrate.refusedPersonalData" = "你当前的 Yala 账户已有个人财务数据，无法接收此设备的数据。要把你的数据移到其他账户，请先点“更换账户”。";
 
 /* Storage migrate card, after the identity check refused the live account: the device's groups use another account */
-"storage.migrate.refusedOtherGroups" = "你的群组使用的是另一个账户，而此设备只能有一个云端账户。要把你的数据移到云端，请用群组的账户登录，或先在“群组”中取消关联。";
+"storage.migrate.refusedOtherGroups" = "你的群组使用的是另一个账户，而此设备只能有一个云端账户。要把你的数据移到云端，请用群组的账户登录，或先点“更换账户”。";
 
 /* Storage migrate card, after the identity check refused the live account: the account went back to iCloud */
 "storage.migrate.refusedReturned" = "你当前的 Yala 账户已回到 iCloud，目前还无法用此账户回到云端。";
 
 /* Storage migrate card, after the identity check refused the live account: it was signed in before a fresh start */
-"storage.migrate.refusedFreshStart" = "你当前的 Yala 账户可能属于其他人：此设备从零开始时它就已登录。要选择你自己的账户，请先在“群组”中取消关联，再点一次“启用云端”。";
+"storage.migrate.refusedFreshStart" = "你当前的 Yala 账户可能属于其他人：此设备从零开始时它就已登录。要选择你自己的账户，请先点“更换账户”，再点一次“启用云端”。";
 "storage.migrate.refusedOtherDevice" = "此账户有一次未完成的启用。如果是在这里开始的，请一小时后重试；如果是在你的另一台设备上，请在那台设备上完成。";
 
 /* Storage adopt card: the live session is a different Yala account than the one that migrated (%@ = Apple|Google) */
@@ -6018,16 +6018,16 @@
 "storage.errors.identityCheck" = "无法验证你的账户。请稍后重试。未做任何更改。";
 "storage.migrateBlock.personalDataTitle" = "此账户已有自己的数据";
 "storage.migrateBlock.personalDataBody" = "未做任何更改。要把你的数据移到云端，请使用其他账户。要在这里使用此账户的数据，请退出登录后用此账户登录。";
-"storage.migrateBlock.personalDataBodyNoSwitch" = "未做任何更改。要在这里使用该账户的数据，请退出登录后用该账户登录。要把你的数据移到其他账户，请先在“群组”中取消关联此账户。";
+"storage.migrateBlock.personalDataBodyNoSwitch" = "未做任何更改。要在这里使用该账户的数据，请退出登录后用该账户登录。要把你的数据移到其他账户，请先点“更换账户”。";
 "storage.migrateBlock.otherGroupsTitle" = "你的群组已在使用另一个账户";
-"storage.migrateBlock.otherGroupsBody" = "未做任何更改。此设备只能有一个云端账户，而你的群组已在使用另一个账户。要把你的数据移到云端，请用群组的账户登录；如果想用其他账户，请先在“群组”中取消关联。";
-"storage.migrateBlock.otherGroupsBodyEmail" = "未做任何更改。此设备只能有一个云端账户，而你的群组已在使用 %@。要把你的数据移到云端，请用该账户登录；如果想用其他账户，请先在“群组”中取消关联。";
+"storage.migrateBlock.otherGroupsBody" = "未做任何更改。此设备只能有一个云端账户，而你的群组已在使用另一个账户。要把你的数据移到云端，请用群组的账户登录；如果想用其他账户，请先点“更换账户”。";
+"storage.migrateBlock.otherGroupsBodyEmail" = "未做任何更改。此设备只能有一个云端账户，而你的群组已在使用 %@。要把你的数据移到云端，请用该账户登录；如果想用其他账户，请先点“更换账户”。";
 "storage.migrateBlock.returnedTitle" = "此账户已回到 iCloud";
 "storage.migrateBlock.returnedBody" = "目前还无法用此账户回到云端。未做任何更改。";
 "storage.migrateBlock.useAnotherAccount" = "使用其他账户";
 "storage.migrateBlock.appleSameAccountNote" = "使用 Apple 时，Yala 始终使用此设备上的账户。要使用其他账户，请选择 Google。";
 "storage.migrateBlock.freshStartSessionTitle" = "此账户可能属于其他人";
-"storage.migrateBlock.freshStartSessionBody" = "未做任何更改。你的群组使用的是此设备上原本已登录的账户，而此设备已从零开始，所以它可能属于其他人。要把你的数据移到云端，请先在“群组”中取消关联，再点一次“启用云端”，即可选择你自己的账户。";
+"storage.migrateBlock.freshStartSessionBody" = "未做任何更改。你的群组使用的是此设备上原本已登录的账户，而此设备已从零开始，所以它可能属于其他人。要把你的数据移到云端，请先点“更换账户”，再点一次“启用云端”，即可选择你自己的账户。";
 "storage.migrateBlock.otherDeviceTitle" = "此账户有一次未完成的启用";
 "storage.migrateBlock.otherDeviceBody" = "未做任何更改。如果是在这台设备上开始的，请一小时后重试。如果是在你的另一台设备上，请在那台设备上完成。";
 
@@ -8908,3 +8908,26 @@
 "groups.discard.paymentTitle" = "要丢弃这笔付款吗？";
 "groups.discard.openingBalanceTitle" = "要丢弃这个初始余额吗？";
 "groups.expense.groupChangedNotice" = "你换了群组：已填写的内容保留；谁付的款和分摊方式重新开始。";
+
+// MARK: - Nube 2.3 · G1, cambiar de cuenta sin saltarse la hoja
+
+/* Fila de la cuenta en «Dónde viven tus datos»: quién usa la cuenta (G1) */
+"storage.groups.usedByGroups" = "你的群组在使用";
+
+/* Enlace y botón que abren la hoja para soltar la cuenta de grupos (G1) */
+"storage.groups.changeAccount" = "更换账户";
+
+/* Título de la hoja de soltar la cuenta de grupos */
+"storage.groups.changeAccountTitle" = "要取消关联群组的账户吗？";
+
+/* Hoja de soltar: lo que pasa igual con las dos salidas */
+"storage.groups.changeAccountCommon" = "无论选哪种，你的群组都会从此设备移除，但仍保留在你的账户中：重新连接后就会回来。别人欠你和你欠别人的记录会从你的账户中消失。";
+
+/* Hoja de soltar: consecuencia de conservar, sin cifra */
+"storage.groups.changeAccountKeepEffect" = "你付过的支出会作为普通记录留在你的账户中。";
+
+/* Hoja de soltar: consecuencia de conservar; %1$d = gastos, %2$@ = total */
+"storage.groups.changeAccountKeepEffectCount" = "你付过的支出会作为普通记录留在你的账户中：%1$d 笔（%2$@）。";
+
+/* Hoja de soltar: consecuencia de quitar */
+"storage.groups.changeAccountRemoveEffect" = "你付过的支出也会从你的账户中移除。";
