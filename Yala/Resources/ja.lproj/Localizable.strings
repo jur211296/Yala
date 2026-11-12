@@ -204,7 +204,7 @@
 "filters.noneSelected" = "未選択";
 "filters.allSubcategories" = "すべてのサブカテゴリー";
 "filters.filterOptions" = "フィルターオプション";
-"filters.noteContains" = "メモに含む...";
+"filters.noteContains" = "メモに含む…";
 "filters.selectAccounts" = "口座を選択";
 "filters.selectTags" = "タグを選択";
 "filters.selectCurrencies" = "通貨を選択";
@@ -8926,3 +8926,6 @@
 "records23.category.expand" = "%@のサブカテゴリを表示";
 "records23.category.collapse" = "%@のサブカテゴリを隠す";
 "records23.band.removeAll" = "すべて解除";
+
+/* Registros 2.3, decisión 17: separador de mes, título del menú y pista de VoiceOver */
+"records23.month.goToAnotherMonth" = "別の月へ移動";

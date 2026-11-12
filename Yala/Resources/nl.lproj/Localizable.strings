@@ -204,7 +204,7 @@
 "filters.noneSelected" = "Niets geselecteerd";
 "filters.allSubcategories" = "Alle subcategorieën";
 "filters.filterOptions" = "Filteropties";
-"filters.noteContains" = "Notitie bevat...";
+"filters.noteContains" = "Notitie bevat…";
 "filters.selectAccounts" = "Selecteer rekeningen";
 "filters.selectTags" = "Selecteer labels";
 "filters.selectCurrencies" = "Selecteer valuta's";
@@ -8926,3 +8926,6 @@
 "records23.category.expand" = "Subcategorieën van %@ tonen";
 "records23.category.collapse" = "Subcategorieën van %@ verbergen";
 "records23.band.removeAll" = "Alles verwijderen";
+
+/* Registros 2.3, decisión 17: separador de mes, título del menú y pista de VoiceOver */
+"records23.month.goToAnotherMonth" = "Naar een andere maand";

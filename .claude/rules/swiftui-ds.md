@@ -331,6 +331,11 @@ paths:
   `RecordsListSearchField` (`RecordsListSearchSlot` + `revealsRecordsListSearchOnPull`); pin
   `RecordsListSearchUITests`.
 
+- **`ScrollViewProxy.scrollTo` hacia algo lejano de un `LazyVStack` se queda corto (medido el 2026-11-12, iOS 27.2,
+  separador de mes de Registros).** Calcula con alturas estimadas de lo que aún no se pintó: «diciembre de 2025»
+  aterrizaba al final de enero de 2026. ⇒ repite el `scrollTo` una o dos vueltas después (~80 ms), cuando las filas de
+  alrededor ya existen (`RecordsTabView.jumpToMonth`). Pin: `RecordsMonthJump23UITests`.
+
 - **`containerRelativeFrame(.horizontal)` en `ScrollView(.vertical)` con `.contentMargins`** → deadlock de layout, splash nunca dismissa, sin crash log. Usar `onGeometryChange`. Detalles en UI-PATTERNS.md.
 
 - **`YalaFormatter` no auto-refresca prefs** — lee `UserDefaults` directo. Vista que lo use con `decimalPlaces` o `currencyDisplayFormat` debe inyectar `@Environment(AppPreferences.self)` y leer `let _ = appPreferences.X` en body para registrar dependencia.

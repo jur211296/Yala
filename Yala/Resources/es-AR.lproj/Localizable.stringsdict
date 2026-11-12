@@ -333,9 +333,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Tenés %d gasto compartido este periodo</string>
+			<string>Tenés %d gasto compartido este período</string>
 			<key>other</key>
-			<string>Tenés %d gastos compartidos este periodo</string>
+			<string>Tenés %d gastos compartidos este período</string>
 		</dict>
 	</dict>
 	<key>insights.ruleSharedFrequency.considerate</key>

@@ -202,7 +202,7 @@
 "filters.noneSelected" = "Nenhuma selecionada";
 "filters.allSubcategories" = "Todas as subcategorias";
 "filters.filterOptions" = "Opções de filtro";
-"filters.noteContains" = "Nota contém...";
+"filters.noteContains" = "Nota contém…";
 "filters.selectAccounts" = "Selecionar contas";
 "filters.selectTags" = "Selecionar etiquetas";
 "filters.selectCurrencies" = "Selecionar moedas";
@@ -8914,3 +8914,6 @@
 "records23.category.expand" = "Ver subcategorias de %@";
 "records23.category.collapse" = "Ocultar subcategorias de %@";
 "records23.band.removeAll" = "Remover tudo";
+
+/* Registros 2.3, decisión 17: separador de mes, título del menú y pista de VoiceOver */
+"records23.month.goToAnotherMonth" = "Ir para outro mês";

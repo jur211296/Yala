@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1254)
+## Index (1255)
 
 | id | status | path |
 |---|---|---|
@@ -953,6 +953,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | records-landscape-first-row-only-peeks | backlog | tickets/backlog/records-landscape-first-row-only-peeks.md |
 | records-list-search-by-amount | done | tickets/done/records-list-search-by-amount.md |
 | records-lote8-uitest-expects-the-old-change-category-title | done | tickets/done/records-lote8-uitest-expects-the-old-change-category-title.md |
+| records-month-jump-year-header-periodo | done | tickets/done/records-month-jump-year-header-periodo.md |
 | records-orphaned-by-earlier-account-deletions-stay-invisible | done | tickets/done/records-orphaned-by-earlier-account-deletions-stay-invisible.md |
 | records-page-keeps-the-fixed-floating-button | done | tickets/done/records-page-keeps-the-fixed-floating-button.md |
 | records-standalone-amount-discrepancy | done | tickets/done/records-standalone-amount-discrepancy.md |
