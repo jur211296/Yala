@@ -8917,3 +8917,9 @@
 
 /* Registros 2.3, decisión 17: separador de mes, título del menú y pista de VoiceOver */
 "records23.month.goToAnotherMonth" = "Zu einem anderen Monat";
+
+/* Registros 2.3 · VoiceOver, carga y error (decisiones 61 y 78) */
+"records.row.tagHint" = "Tag";
+"records.list.loading" = "Deine Einträge werden geladen…";
+"records.list.loadErrorTitle" = "Deine Einträge konnten nicht geladen werden";
+"records.list.loadErrorMessage" = "Beim Lesen ist etwas schiefgelaufen. Versuch es gleich noch einmal.";

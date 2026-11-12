@@ -8929,3 +8929,9 @@
 
 /* Registros 2.3, decisión 17: separador de mes, título del menú y pista de VoiceOver */
 "records23.month.goToAnotherMonth" = "前往其他月份";
+
+/* Registros 2.3 · VoiceOver, carga y error (decisiones 61 y 78) */
+"records.row.tagHint" = "标签";
+"records.list.loading" = "正在加载你的记录…";
+"records.list.loadErrorTitle" = "无法加载你的记录";
+"records.list.loadErrorMessage" = "读取时出了点问题。请稍后再试。";

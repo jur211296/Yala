@@ -8923,3 +8923,9 @@
 
 /* Registros 2.3, decisión 17: separador de mes, título del menú y pista de VoiceOver */
 "records23.month.goToAnotherMonth" = "Go to another month";
+
+/* Registros 2.3 · VoiceOver, carga y error (decisiones 61 y 78) */
+"records.row.tagHint" = "Tag";
+"records.list.loading" = "Loading your records…";
+"records.list.loadErrorTitle" = "We couldn't load your records";
+"records.list.loadErrorMessage" = "Something went wrong reading them. Try again in a moment.";

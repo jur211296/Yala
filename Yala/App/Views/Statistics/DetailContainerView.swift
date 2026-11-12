@@ -597,7 +597,9 @@ struct DetailContainerView: View {
                 subcategories: dataViewModel.allSubcategories,
                 transactionDateRange: dataViewModel.computeTransactionDateRange(),
                 defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
-                onFilterChange: { recalculateData() }
+                onFilterChange: { recalculateData() },
+                loadFailed: dataViewModel.transactionsLoadFailed,
+                onRetryLoad: { reloadAndRecalculate() }
             )
             .frame(width: sideBySide ? recordsListWidths.ideal : nil)
             .overlay(alignment: .trailing) {
