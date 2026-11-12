@@ -22,6 +22,10 @@ Jürgen del 11-nov.
 4. La rama de trabajo siguiente nace de la que se acaba de publicar. Pasan a ella la rama por defecto,
    `ramas-base.conf`, los filtros de `qa.yml`, `nocturna-vigilante.yml` y `avisar-grok-push-principal.yml`, y el
    ruleset de las ramas de trabajo.
+5. **Antes de borrar la rama vieja, los árboles principales (`~/Yala` en la Mini y en la Max) pasan a la nueva**
+   (`git switch 2.N`). `lanzar-sesion` hace `git pull --ff-only` en ese árbol antes de cada sesión: si sigue en una
+   rama cuyo remoto ya no existe, el pull falla y rechaza toda sesión de Yala en esa máquina (medido al cerrar la 2.2).
+   `ramas-base.conf` se cambia en las dos máquinas: no se sincroniza solo.
 
 ## Hotfix sobre lo publicado
 
