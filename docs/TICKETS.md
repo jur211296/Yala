@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1260)
+## Index (1263)
 
 | id | status | path |
 |---|---|---|
@@ -830,6 +830,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | notification-tap-opens-inbox-then-inbox-notice-pops-after | done | tickets/done/notification-tap-opens-inbox-then-inbox-notice-pops-after.md |
 | notifications-not-delivered-testflight | done | tickets/done/notifications-not-delivered-testflight.md |
 | old-receivers-of-a-keeping-wipe-delete-the-origin-reminders | qa | tickets/qa/old-receivers-of-a-keeping-wipe-delete-the-origin-reminders.md |
+| onboarding-2-3-arrival-and-getting-started-deck | done | tickets/done/onboarding-2-3-arrival-and-getting-started-deck.md |
+| onboarding-2-3-default-tabs-and-where-things-live | done | tickets/done/onboarding-2-3-default-tabs-and-where-things-live.md |
+| onboarding-2-3-permissions-inside-the-tutorial | done | tickets/done/onboarding-2-3-permissions-inside-the-tutorial.md |
 | onboarding-login-should-match-the-sep15-reference | done | tickets/done/onboarding-login-should-match-the-sep15-reference.md |
 | onboarding-purpose-drops-groups-card | done | tickets/done/onboarding-purpose-drops-groups-card.md |
 | onboarding-sigue-los-estilos-del-resto-de-la-app | qa | tickets/qa/onboarding-sigue-los-estilos-del-resto-de-la-app.md |

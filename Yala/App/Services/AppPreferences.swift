@@ -1046,6 +1046,10 @@ final class AppPreferences {
         // cuyo iKV aún no bajó. El seed-fresco se difiere a AppBootstrapper post-sync (ver runIfNeeded).
         PanelPreferencesMigration.runIfNeeded(appPreferences: self, defaults: defaults, deferFreshSeed: true)
 
+        // Y23-15: la barra nueva solo para instalaciones nuevas; a quien ya usaba Yala se le deja la de antes. Antes de
+        // que ninguna vista lea `tabBarConfiguration`, y solo en el almacén real (los tests pasan el suyo).
+        if publishesToSync { TabBarDefaultsMigration.runIfNeeded(defaults: defaults) }
+
         registerObservers()
     }
 

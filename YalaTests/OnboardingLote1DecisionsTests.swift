@@ -150,9 +150,11 @@ struct TrialOfferMomentLogicTests {
         let checklist = try SourceScan.code("Yala/App/Models/SetupChecklistManager.swift")
         #expect(checklist.contains("var onAllStepsCompleted: () -> Void = { TrialOfferMoments.note(.setupChecklistCompleted) }"))
         #expect(checklist.contains("onAllStepsCompleted()"))
-        #expect(try SourceScan.code("Yala/App/Views/Panel/PanelView.swift")
-            .contains("checklist.wouldCompleteAll(by: .discoverFeatures)"),
-                "el último paso de «Primeros pasos» volvería a abrir el paywall general encima de la oferta")
+        // Desde Y23-05 ningún paso del mazo abre el paywall general («Conoce Yala Pro» salió del mazo): al completar
+        // la lista solo sale la oferta de prueba.
+        #expect(!(try SourceScan.code("Yala/App/Views/Panel/PanelView.swift")
+            .contains("subscriptionBannerSource = \"setupChecklist\"")),
+                "un paso de «Primeros pasos» volvería a abrir el paywall general encima de la oferta")
     }
 }
 

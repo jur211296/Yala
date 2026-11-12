@@ -4655,6 +4655,8 @@ struct MainTabView: View {
             .tint(theme.accentText)
             // Encoge al bajar, y llega desplegada a cada pestaña (L8-2): ver `TabBarArrivesExpandedModifier`.
             .tabBarArrivesExpanded(selection: navigation.selectedMainTab)
+            // Las guías «dónde vive cada cosa» avanzan al tocar la pestaña que señalan (Y23-15).
+            .placeGuideFollowsTab(navigation.selectedMainTab)
             .transaction { $0.animation = nil }
             // Fase real de la hidratación: la invitada (M1) y, desde 2026-08-12, también el dueño que
             // vuelve — tras el relanzamiento del adopt su store nace igual de vacío. `hasExistingData`
