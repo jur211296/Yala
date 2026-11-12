@@ -24,6 +24,7 @@ struct CashFlowHorizonSheet: View {
                         Spacer()
                         Stepper("\(monthsAhead)", value: $monthsAhead, in: 1...24)
                             .labelsHidden()
+                            .accessibilityIdentifier("cashflow_horizon_ahead")
                         Text("\(monthsAhead)")
                             .font(DS.Typography.amount)
                             .monospacedDigit()
@@ -60,7 +61,7 @@ struct CashFlowHorizonSheet: View {
             }
             .padding(DS.Spacing.xl)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .yalaScreenBackground(.transparent)
+            .yalaScreenBackground(.partialSheet)
             .navigationTitle(L10n.CashFlowPlan.configureHorizon)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -71,7 +72,7 @@ struct CashFlowHorizonSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .yalaSheetDetents([.medium])
         .onAppear {
             monthsAhead = viewModel.plan?.defaultMonthsAhead ?? 6
             monthsBack = viewModel.plan?.defaultMonthsBack ?? 3

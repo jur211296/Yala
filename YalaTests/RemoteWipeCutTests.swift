@@ -322,10 +322,12 @@ struct RemoteWipeCutBehaviourTests {
             let newScheduledDraft = InboxDraft(note: "Gimnasio", sourceType: .scheduledPayment)
             newScheduledDraft.createdAt = after
             newScheduledDraft.sourceScheduledPaymentID = newScheduled.id.uuidString
-            let taken: [any PersistentModel] = [oldBudget, oldFavorite, oldScheduled, oldPlan, oldNotification, oldMemory,
+            // Con la marca de que el parque sigue, los recordatorios se quedan TODOS, también el de antes (encargo S27i): el
+            // origen los conserva, y borrarlos aquí viajaría por el espejo hasta él.
+            let taken: [any PersistentModel] = [oldBudget, oldFavorite, oldScheduled, oldPlan, oldMemory,
                                                 oldDraft, derivedDraft]
-            let kept: [any PersistentModel] = [newBudget, newFavorite, newScheduled, newPlan, newNotification, newMemory,
-                                               newDraft, newScheduledDraft]
+            let kept: [any PersistentModel] = [newBudget, newFavorite, newScheduled, newPlan, oldNotification, newNotification,
+                                               newMemory, newDraft, newScheduledDraft]
             for model in taken + kept { context.insert(model) }
             try context.save()
             let mark = Date.now
@@ -533,11 +535,59 @@ struct RemoteWipeCutBehaviourTests {
             let recent = tx(context, -10, createdAt: after, account: cash, category: nil, subcategory: nil)
             try context.save()
 
-            let reschedules = try receiverWipe(context, signaledAt: Date(timeIntervalSince1970: 0), fleetStartedOver: true)
+            let reschedules = try receiverWipe(context, signaledAt: Date(timeIntervalSince1970: 0), fleetStartedOver: false)
 
             #expect(try !exists(recent, in: context) && !exists(cash, in: context),
                     "sin hora de señal el receptor conservó filas: el vaciado queda a medias")
-            #expect(reschedules == 0, "sin corte no queda nada que reprogramar")
+            #expect(reschedules == 0, "sin corte ni parque en marcha no queda nada que reprogramar")
+        }
+    }
+
+    /// **Encargo S27i (2026-10-29): con el parque en marcha, el receptor conserva lo de la persona.** El origen de «Vaciar
+    /// datos» ya no repite la bienvenida: conserva nombre, divisa y recordatorios, y apunta la marca. El receptor hace lo
+    /// mismo, y reprograma los recordatorios que se quedan (el borrado canceló todo lo del sistema).
+    @Test("con la marca de que el parque sigue, el receptor conserva sus ajustes y sus recordatorios")
+    func fleetMark_keepsPersonSettingsAndReminders() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try withStandardRestored {
+            let reminder = NotificationItem(name: "Fin del día", text: "", hour: 21, minute: 0, type: .endOfDay)
+            reminder.createdAt = before
+            context.insert(reminder)
+            try context.save()
+            UserDefaults.standard.set("Jürgen", forKey: "userName")
+            UserDefaults.standard.set(true, forKey: AppPreferences.Keys.hasCompletedOnboarding)
+
+            let reschedules = try receiverWipe(context, signaledAt: signaledAt, fleetStartedOver: true)
+
+            #expect(try exists(reminder, in: context),
+                    "el receptor borró un recordatorio que el origen conserva: el borrado viaja por el espejo hasta él")
+            #expect(UserDefaults.standard.string(forKey: "userName") == "Jürgen", "el receptor reseteó los ajustes")
+            #expect(UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding),
+                    "el receptor bajó la bienvenida: lo mandaría al onboarding")
+            #expect(reschedules == 1, "los recordatorios que se quedan no se reprogramaron: el borrado canceló todo")
+        }
+    }
+
+    /// Control del caso de arriba: sin la marca (el origen va a empezar de cero), el receptor resetea y se lleva los
+    /// recordatorios de antes, como siempre. Sin este caso, el de arriba pasaría también si el parámetro no hiciera nada.
+    @Test("sin la marca, el receptor resetea sus ajustes y se lleva los recordatorios de antes")
+    func noFleetMark_resetsPersonSettingsAndOldReminders() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try withStandardRestored {
+            let reminder = NotificationItem(name: "Fin del día", text: "", hour: 21, minute: 0, type: .endOfDay)
+            reminder.createdAt = before
+            context.insert(reminder)
+            try context.save()
+            UserDefaults.standard.set("Jürgen", forKey: "userName")
+
+            try receiverWipe(context, signaledAt: signaledAt, fleetStartedOver: false)
+
+            #expect(try !exists(reminder, in: context))
+            #expect(UserDefaults.standard.string(forKey: "userName") == nil)
         }
     }
 

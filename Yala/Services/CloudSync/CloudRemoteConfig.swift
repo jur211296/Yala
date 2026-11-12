@@ -48,6 +48,9 @@ nonisolated struct RemoteFlagsSnapshot: Codable, Equatable {
     /// `photo.read` del gateway. Optional con default: snapshots viejos decodifican a nil (`PhotoUploadSizing` cae a
     /// su valor por defecto).
     var photoMaxEdge: Int? = nil
+    /// Yala IA en modo nube con herramientas (`chat.explore`). Optional con default: snapshots viejos decodifican a
+    /// nil, y nil es APAGADO en todos los builds (`CloudRemoteFlags.aiCloudExploreEnabled`).
+    var aiCloudExploreRolloutPercent: Int? = nil
     var fetchedAt: Date
 }
 
@@ -57,6 +60,7 @@ nonisolated struct RemoteConfigWireResponse: Codable {
         var cloudModeRolloutPercent: Int?
         var cloudOnboardingChoiceRolloutPercent: Int?
         var groupsBackendRolloutPercent: Int?
+        var aiCloudExploreRolloutPercent: Int?
     }
 
     struct ForceUpdate: Codable {
@@ -137,6 +141,9 @@ nonisolated enum CloudRemoteFlags {
     #if DEV_BUILD
     /// Panel DEBUG: simular el kill-switch (remote OFF) sin tocar staging. Solo DEV_BUILD.
     static let debugForceOffKey = "cloudSync.debug.remoteFlagsForceOff"
+    /// Panel DEBUG: encender Yala IA ampliada en este teléfono para el QA de N1 sin tocar el flag de ningún entorno.
+    /// Solo DEV_BUILD; con el gateway a 0 la pregunta se contesta como `chat.answer`.
+    static let debugAICloudExploreForceOnKey = "cloudSync.debug.aiCloudExploreForceOn"
     #endif
 
     /// Disponibilidad del Modo Nube (§j.1) — gatea SOLO entradas, jamás el runtime (decisión owner).
@@ -157,6 +164,24 @@ nonisolated enum CloudRemoteFlags {
     static var groupsBackendEnabled: Bool {
         if let override = groupsBackendEnabledTestOverride { return override }
         return decide(\.groupsBackendRolloutPercent)
+    }
+
+    /// Yala IA en modo nube con el camino ampliado (`docs/ai-cloud-vs-private-2026-10.md`). **Falla cerrado en TODOS los
+    /// builds**, a diferencia de los tres de arriba: no hereda el «ausente = encendido» de DEV, porque encenderlo
+    /// cambia qué datos llegan al servicio de IA y eso solo lo enciende el servidor a propósito. Bajo test, el override
+    /// o apagado.
+    static var aiCloudExploreEnabled: Bool {
+        if let override = aiCloudExploreEnabledTestOverride { return override }
+        if isRunningTests || isUITestHost { return false }
+        #if DEV_BUILD
+        if UserDefaults.standard.bool(forKey: debugAICloudExploreForceOnKey) { return true }
+        #endif
+        guard let snapshot = CloudRemoteConfigStore.readSnapshot() else { return false }
+        return RemoteFlagDecisionLogic.isEnabled(
+            percent: snapshot.aiCloudExploreRolloutPercent,
+            bucket: RemoteFlagDecisionLogic.stableBucket(seed: CloudRemoteConfigStore.bucketSeed()),
+            absentDefault: false
+        )
     }
 
     /// **¿Hemos llegado a hablar con el servidor en esta instalación?** No es un flag más: es el término
@@ -214,21 +239,25 @@ nonisolated enum CloudRemoteFlags {
     nonisolated(unsafe) private static var cloudModeEnabledTestOverride: Bool?
     nonisolated(unsafe) private static var cloudOnboardingChoiceEnabledTestOverride: Bool?
     nonisolated(unsafe) private static var groupsBackendEnabledTestOverride: Bool?
+    nonisolated(unsafe) private static var aiCloudExploreEnabledTestOverride: Bool?
 
     static func _testSetOverrides(
         cloudMode: Bool? = nil,
         onboardingChoice: Bool? = nil,
-        groupsBackend: Bool? = nil
+        groupsBackend: Bool? = nil,
+        aiCloudExplore: Bool? = nil
     ) {
         cloudModeEnabledTestOverride = cloudMode
         cloudOnboardingChoiceEnabledTestOverride = onboardingChoice
         groupsBackendEnabledTestOverride = groupsBackend
+        aiCloudExploreEnabledTestOverride = aiCloudExplore
     }
 
     static func _testResetOverrides() {
         cloudModeEnabledTestOverride = nil
         cloudOnboardingChoiceEnabledTestOverride = nil
         groupsBackendEnabledTestOverride = nil
+        aiCloudExploreEnabledTestOverride = nil
     }
 }
 
@@ -349,6 +378,7 @@ final class RemoteConfigClient {
                 groupsBackendRolloutPercent: wire.flags?.groupsBackendRolloutPercent,
                 minSupportedBuild: wire.forceUpdate?.minSupportedBuild,
                 photoMaxEdge: wire.ai?.photoMaxEdge,
+                aiCloudExploreRolloutPercent: wire.flags?.aiCloudExploreRolloutPercent,
                 fetchedAt: now
             )
             CloudRemoteConfigStore.writeSnapshot(snapshot, defaults: defaults)

@@ -130,7 +130,8 @@ enum AppleIDCloseNoticeLogic {
               let plan = CloudSignOutFlowLogic.exitPlan(
                 path: cell, confirmedWithoutICloudCopy: true, mountAttachesMirror: false) else { return false }
         return CloudSignOutFlowLogic.wipeForgetsGroups(
-            kind: plan.kind, hasBackendGroupRows: hasBackendGroupRows, groupsBackendCompiled: groupsBackendCompiled)
+            kind: plan.kind, hasBackendGroupRows: hasBackendGroupRows, groupsBackendCompiled: groupsBackendCompiled,
+            groupsGateWithGroupRows: false)
     }
 
     /// El texto de la pregunta. **La frase de los grupos va en párrafo propio**: unirla con un espacio no vale en

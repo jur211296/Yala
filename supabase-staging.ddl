@@ -34,6 +34,9 @@ CREATE TABLE accounts (
   server_seq BIGINT NOT NULL,
   schema_version INTEGER NOT NULL DEFAULT 1,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  parent_account_id UUID,  -- g18_01 (2026-10-18): tarjeta con varias divisas; sin FK a propósito
+  credit_card_statement_day INTEGER,  -- g26_01 (2026-10-27): día de corte de la tarjeta (card nmtk); aplicada con el Worker v5 según la card nmtk
+  credit_card_reminder_days_before INTEGER,  -- g26_01 (2026-10-27): días antes del pago para el aviso; aplicada con el Worker v5 según la card nmtk
   PRIMARY KEY (user_id, sync_id)
 );
 
@@ -78,6 +81,7 @@ CREATE TABLE cashflow_lines (
   estimation_method TEXT,
   manual_amount NUMERIC(18,4),
   custom_months_raw TEXT[],
+  amount_changes_raw TEXT,  -- g21_01 (2026-10-21): cambios de monto «desde este mes» (UX 2.2 · L18-8); aplicada con el Worker v5 según la card nmtk
   category_ref UUID,
   subcategory_ref UUID,
   scheduled_payment_ref UUID,
@@ -177,6 +181,7 @@ CREATE TABLE favorite_payments (
   amount NUMERIC(18,4),
   note TEXT,
   account_ref UUID,
+  destination_account_ref UUID,  -- g24_01 (2026-10-25): destino de un favorito de transferencia (card da5d); aplicada con el Worker v5 según la card nmtk
   subcategory_ref UUID,
   tag_refs UUID[],
   need_override TEXT,
@@ -413,6 +418,7 @@ CREATE TABLE tx_items (
   split_my_value NUMERIC(18,4),
   split_divisor NUMERIC(18,4),
   created_at TIMESTAMPTZ,
+  split_lines_raw TEXT,  -- g28_01 (2026-11-01): tu parte de un gasto de grupo en líneas (receta del puente, Grupos B · card 1); aplicada con el Worker v6 el 2026-11-01
   field_hlcs JSONB,
   hlc TEXT NOT NULL,
   deleted BOOLEAN NOT NULL DEFAULT false,

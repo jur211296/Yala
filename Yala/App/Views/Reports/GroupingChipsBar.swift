@@ -10,6 +10,7 @@ import SwiftUI
 struct GroupingChipsBar: View {
 
     @Binding var state: ReportGroupingState
+    @Environment(SessionState.self) private var sessionState
 
     @State private var showReorderSheet = false
 
@@ -29,6 +30,7 @@ struct GroupingChipsBar: View {
                     }
                 }
             }
+            .fadesTowardVerticalBar()
 
             // Drill down button
             drillDownButton
@@ -44,16 +46,15 @@ struct GroupingChipsBar: View {
     private func breadcrumbItem(_ dimension: ReportGroupingDimension) -> some View {
         Button {
             if !dimension.isMandatory {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    state.toggle(dimension)
-                }
+                // En seco: re-agrupa el informe entero (card oxyr).
+                state.toggle(dimension)
             }
         } label: {
             HStack(spacing: DS.Spacing.xs) {
                 Image(systemName: dimension.iconName)
                     .font(.caption)
 
-                Text(dimension.displayName)
+                Text(dimension.displayName(expensesOnly: sessionState.isExpensesOnlyMode))
                     .font(DS.Typography.caption)
             }
             .foregroundStyle(.primary)
@@ -62,7 +63,7 @@ struct GroupingChipsBar: View {
             .glassEffect(.regular.interactive(), in: .capsule)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(dimension.displayName)
+        .accessibilityLabel(dimension.displayName(expensesOnly: sessionState.isExpensesOnlyMode))
         .accessibilityAddTraits(.isSelected)
     }
 
@@ -86,5 +87,6 @@ struct GroupingChipsBar: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(L10n.Report.Grouping.drillDown)
+        .accessibilityIdentifier("report_grouping_drill_down")
     }
 }

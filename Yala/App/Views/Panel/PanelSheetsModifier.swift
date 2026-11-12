@@ -24,6 +24,9 @@ struct PanelSheetsModifier: ViewModifier {
 
     @Environment(AppPreferences.self) private var appPreferences
 
+    /// Lo escrito en «Nuevo registro» mientras su hoja siga abierta: si SwiftUI rehace el contenido de la hoja (entrada
+    /// desde fuera con el formulario a medias), el formulario lo retoma. Se descarta al cerrarse la hoja.
+    @State private var newRecordDraft = NewRecordDraft()
     @State private var showPracticeAlert = false
 
     /// La hoja de filtros escribe en `SessionState` a través de este puente; el Panel recalcula solo al cambiar.
@@ -75,9 +78,15 @@ struct PanelSheetsModifier: ViewModifier {
                 RecordsFiltersView(recordsViewModel: panelFilters)
             }
             .sheet(isPresented: $sheets.isPresentingSettings, onDismiss: {
+                sheets.settingsInitialDestination = nil
+                // Card vbf9: una petición del aviso que no llegó a la tarjeta (la pantalla cambió entretanto) no se queda
+                // armada para la próxima vez que la persona abra «Dónde viven tus datos» por su cuenta.
+                CloudAdoptOfferRequest.pending = false
+                // Card pz4v: lo mismo para el «Iniciar sesión» del aviso de sincronización.
+                SyncSignInRequest.pending = false
                 viewModel.reloadAndRecalculate()
             }) {
-                ProfileView()
+                ProfileView(initialDestination: sheets.settingsInitialDestination)
             }
             .sheet(isPresented: $sheets.showSectionsConfig) {
                 PanelSectionsConfigView()
@@ -89,16 +98,20 @@ struct PanelSheetsModifier: ViewModifier {
                 PanelSectionPreferencesSheet(kind: kind, viewModel: viewModel)
             }
             .sheet(isPresented: $sheets.showNewTransaction, onDismiss: {
+                newRecordDraft.discard()
                 viewModel.reloadAndRecalculate()
             }) {
                 let subcategoryName = viewModel.selectedSubcategoryIDs.first.flatMap { id in
                     viewModel.allSubcategories.first { $0.persistentModelID == id }?.name
                 }
+                // La cuenta la pone la regla del formulario con el filtro entero (UX 2.2 · L2-1): `selectedAccountID` era
+                // una cuenta al azar con dos filtradas y la excluida en modo excluir.
                 NewTransactionView(
-                    prefillAccountID: viewModel.selectedAccountID,
                     prefillCategoryID: viewModel.selectedCategoryID,
-                    prefillSubcategoryName: subcategoryName
+                    prefillSubcategoryName: subcategoryName,
+                    draft: newRecordDraft
                 )
+                .newRecordSheetIdentity()
                 .presentationDetents([.large])
             }
             .sheet(
@@ -129,7 +142,7 @@ struct PanelSheetsModifier: ViewModifier {
                         )
                     } : nil,
                     onSetupTrialSkipped: sheets.isVoiceSetupTrial ? {
-                        SetupChecklistManager.shared.markCompleted(.tryVoiceInput)
+                        SetupChecklistManager.shared.markSkipped(.tryVoiceInput)
                     } : nil
                 )
             }
@@ -144,7 +157,7 @@ struct PanelSheetsModifier: ViewModifier {
                         )
                     } : nil,
                     onSetupTrialSkipped: sheets.isImageSetupTrial ? {
-                        SetupChecklistManager.shared.markCompleted(.tryImageInput)
+                        SetupChecklistManager.shared.markSkipped(.tryImageInput)
                     } : nil
                 )
             }
@@ -169,19 +182,32 @@ struct PanelSheetsModifier: ViewModifier {
                 InboxView(onNavigateToRecords: {
                     viewModel.navigateToStatistics(.records, in: navigation)
                 })
-                .onAppear { navigation.isInboxSheetVisible = true }
+                .onAppear {
+                    navigation.isInboxSheetVisible = true
+                    RouterEntryGate.shared.inboxSheetDidAppear()
+                }
                 // Si quien la presenta se desmonta (una ventana que pasa a esperar o asciende a líder), `onDismiss` no
                 // está garantizado: el flag no debe quedarse puesto (tiraría los avisos de bandeja de TODAS las ventanas).
                 .onDisappear { navigation.isInboxSheetVisible = false }
             }
-            .sheet(isPresented: $sheets.showUpgradeForVoice) {
-                UpgradePromptSheet(feature: .voiceInput, context: .proFeature)
+            // Si se compra Pro en la hoja, al cerrarse se abre lo que se quería (UX 2.2 · L17-9).
+            .proUpgradeSheet(isPresented: $sheets.showUpgradeForVoice, feature: .voiceInput, context: .proFeature) {
+                openAIEntryAfterUnlock(.voice)
             }
-            .sheet(isPresented: $sheets.showUpgradeForImage) {
-                UpgradePromptSheet(feature: .imageInput, context: .proFeature)
-            }
-            .sheet(isPresented: $sheets.showUpgradeForAccounts) {
-                UpgradePromptSheet(feature: .accounts, context: .limitReached)
+            // Si la hoja salió por una foto compartida (card fazw), comprar abre el registro por imagen con esa foto y
+            // cerrar sin comprar la descarta.
+            .proUpgradeSheet(
+                isPresented: $sheets.showUpgradeForImage, feature: .imageInput, context: .proFeature,
+                onClosedWithoutUnlock: { SharedImageProGateHold.discard() },
+                onUnlocked: {
+                    if let shared = SharedImageProGateHold.takeForUnlock() {
+                        navigation.pendingSharedImageURL = shared
+                    }
+                    openAIEntryAfterUnlock(.image)
+                }
+            )
+            .proUpgradeSheet(isPresented: $sheets.showUpgradeForAccounts, feature: .accounts, context: .limitReached) {
+                sheets.accountFormSheet = AccountFormSheet(account: nil)
             }
             // Yala IA: columna al lado en ventana ancha, la hoja de siempre en compacta.
             .yalaAIChat(isPresented: $sheets.showChatSheet)
@@ -192,8 +218,8 @@ struct PanelSheetsModifier: ViewModifier {
                 launcher: .panel,
                 onPersistFlag: { appPreferences.hasShownYalaAIOnboarding = true }
             )
-            .sheet(isPresented: $sheets.showUpgradeForChat) {
-                UpgradePromptSheet(feature: .chatAssistant, context: .proFeature)
+            .proUpgradeSheet(isPresented: $sheets.showUpgradeForChat, feature: .chatAssistant, context: .proFeature) {
+                openChatAfterUnlock()
             }
             .chatConsentAlert(isPresented: $sheets.showChatConsentAlert) {
                 // Consent recién aceptado por el alert. Decidimos siguiente paso vía pure-logic.
@@ -214,9 +240,13 @@ struct PanelSheetsModifier: ViewModifier {
             }
             .onChange(of: sheets.showAIConsentAlert) { _, showing in
                 // Sin aceptar (Cancelar o la política de privacidad), el fallo de un soltar no espera a la próxima vez
-                // que se abra el registro por imagen: ahí ya no explicaría nada.
+                // que se abra el registro por imagen: ahí ya no explicaría nada. Y la práctica de «Primeros pasos» que
+                // esperaba a este aviso se apaga: su hoja no se va a abrir (`endSetupTrialsThatNeverOpened`).
                 if !showing, !UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) {
                     navigation.pendingImageEntryFailure = nil
+                    for feature in sheets.endSetupTrialsThatNeverOpened() {
+                        FeatureGateService.shared.disableSetupTrial(for: feature)
+                    }
                 }
             }
             .onChange(of: sheets.practiceCleanupItem?.id) { _, newValue in
@@ -227,18 +257,46 @@ struct PanelSheetsModifier: ViewModifier {
                 isPresented: $showPracticeAlert
             ) {
                 Button(L10n.SetupChecklist.practiceKeep, role: .cancel) {
+                    TrialOfferMoments.notePracticeAnswered(sheets.practiceCleanupItem)
                     sheets.practiceCleanupItem = nil
                 }
                 Button(L10n.SetupChecklist.practiceDelete, role: .destructive) {
                     if let item = sheets.practiceCleanupItem {
                         viewModel.deletePracticeItem(item)
                     }
+                    TrialOfferMoments.notePracticeAnswered(sheets.practiceCleanupItem)
                     sheets.practiceCleanupItem = nil
                     viewModel.reloadAndRecalculate()
                 }
             } message: {
                 Text(L10n.SetupChecklist.practiceMessage)
             }
+    }
+
+    /// Tras comprar Pro desde «Función Pro» (UX 2.2 · L17-9): el mismo camino que tocar Voz o Foto siendo Pro, con su
+    /// consentimiento de datos si aún no se dio.
+    private func openAIEntryAfterUnlock(_ input: PendingAIInput) {
+        guard appPreferences.aiDataConsentAccepted else {
+            sheets.pendingAIInput = input
+            sheets.showAIConsentAlert = true
+            return
+        }
+        switch input {
+        case .voice: sheets.showVoiceRecording = true
+        case .image: sheets.showImageSelection = true
+        }
+    }
+
+    /// Tras comprar Pro desde «Función Pro»: el mismo camino que tocar Yala IA siendo Pro.
+    private func openChatAfterUnlock() {
+        switch YalaAIOnboardingLogic.nextScreen(
+            consentAccepted: appPreferences.aiChatConsentAccepted,
+            onboardingShown: appPreferences.hasShownYalaAIOnboarding
+        ) {
+        case .onboarding: sheets.showYalaAIOnboarding = true
+        case .chat: sheets.showChatSheet = true
+        case .consent: sheets.showChatConsentAlert = true
+        }
     }
 
     private func handleVoiceRecordingDismiss() {

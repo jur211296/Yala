@@ -15,7 +15,12 @@ final class DetailContainerViewModel {
 
     // MARK: - Dependencies
 
-    private var modelContext: ModelContext?
+    /// Card 7e60: atado al almacén con el que se dio (`BoundStoreContext`); con otro almacén montado se lee `nil`.
+    private var boundStore = BoundStoreContext()
+    private var modelContext: ModelContext? { boundStore.liveContext }
+
+    /// El almacén de este ViewModel ya no es el montado: quien recalcule con sus arrays (filas de ese almacén) para.
+    var isDetachedFromMountedStore: Bool { boundStore.isDetached }
 
     // MARK: - Data
 
@@ -40,6 +45,8 @@ final class DetailContainerViewModel {
     /// guardar o al volver de segundo plano. Avanzar en cada una recalcularía Distribución más veces por gesto que el
     /// `.count` al que sustituye (medido: el Sankey pasaba de 1 a 2 por alta).
     private(set) var dataGeneration = 0
+    /// Ya hubo una carga del store. Antes de ella no hay cuentas en memoria y «lo que falta» no se puede afirmar.
+    private(set) var hasLoadedOnce = false
 
     /// `dataVersion` de la última recarga: lo que permite saber si la siguiente trae una mutación nueva.
     private var lastLoadedDataVersion: Int?
@@ -48,7 +55,7 @@ final class DetailContainerViewModel {
 
     func setContext(_ context: ModelContext) {
         let isNewContext = self.modelContext !== context
-        self.modelContext = context
+        boundStore.bind(context)
         if isNewContext { loadData() }
     }
 
@@ -67,7 +74,8 @@ final class DetailContainerViewModel {
             ]
         )
         do {
-            let fetched = try context.fetch(transactionsDescriptor)
+            // Lo que espera su borrado con «Deshacer» no cuenta en ninguna cifra (`RecordPendingDeletion`).
+            let fetched = RecordPendingDeletion.shared.visible(try context.fetch(transactionsDescriptor))
             if fetched != allTransactions { allTransactions = fetched; changed = true }
         } catch {
             #if DEBUG
@@ -145,7 +153,8 @@ final class DetailContainerViewModel {
             sortBy: [SortDescriptor(\.nextDueDate)]
         )
         do {
-            let fetched = try context.fetch(paymentsDescriptor)
+            // Un pago que espera su borrado con «Deshacer» no cuenta (`ScheduledPaymentPendingDeletion`).
+            let fetched = ScheduledPaymentPendingDeletion.shared.visible(try context.fetch(paymentsDescriptor))
             if fetched != scheduledPayments { scheduledPayments = fetched; changed = true }
         } catch {
             #if DEBUG
@@ -158,22 +167,55 @@ final class DetailContainerViewModel {
             changed = true
         }
         if changed { dataGeneration &+= 1 }
+        if !hasLoadedOnce { hasLoadedOnce = true }
     }
 
     // MARK: - Computed Properties
 
-    /// Check if voice input can be used (requires accounts and subcategories)
+    /// Se puede registrar: hay cuenta y alguna subcategoría que elegir. La misma regla que el Panel.
     var canUseVoiceInput: Bool {
-        let hasActiveAccounts = accounts.contains { !$0.isArchived }
-        let hasVisibleSubcategories = allSubcategories.contains { $0.isVisible }
-        return hasActiveAccounts && hasVisibleSubcategories
+        quickActionsState == .ready
+    }
+
+    /// Qué falta para registrar (card 7jfp): la regla del Panel, `PanelQuickActionsGateLogic`. Antes contaba también las
+    /// subcategorías de sistema de Grupos, que el selector no ofrece, y el «+» salía activo sin nada que elegir.
+    var quickActionsState: PanelQuickActionsGateLogic.State {
+        PanelQuickActionsGateLogic.state(
+            hasActiveAccount: accounts.contains { !$0.isArchived },
+            hasVisibleSubcategory: PanelQuickActionsGateLogic.hasPickableSubcategory(allSubcategories)
+        )
+    }
+
+    /// Lo que la fila y el flotante enseñan como «falta»: nada hasta la primera carga, para no hacer destellar «Crea tu
+    /// primera cuenta» antes de leer las cuentas (mientras, salen apagados, como antes).
+    var visibleMissingStep: PanelQuickActionsGateLogic.State {
+        hasLoadedOnce ? quickActionsState : .ready
+    }
+
+    /// «Crear categorías» fuera del Panel: crea las de siempre si no hay ninguna propia, o pide abrir Ajustes ›
+    /// Categorías. Igual que `PanelViewModel.createCategoriesAction()`.
+    func createCategoriesAction() -> PanelQuickActionsGateLogic.CreateCategoriesAction {
+        let action = PanelQuickActionsGateLogic.createCategoriesAction(
+            userCategoryCount: categories.filter { !$0.isSystem }.count)
+        guard action == .seedDefaults, let context = modelContext else { return action }
+        if seedDefaultCategoriesOnUserRequest(in: context) {
+            SessionState.shared.incrementDataVersion()
+        }
+        return action
     }
 
     /// Compute date range of all transactions (for custom period picker limits)
+    ///
+    /// Una pasada (mínimo y máximo), no un `sorted()`: Registros y Estadísticas lo leen en su `body`, así que corre en
+    /// cada repintado sobre todo el histórico (2026-10-30, encargo `eficiencia-carga-por-vista`). Mismo resultado.
     func computeTransactionDateRange() -> (start: Date, end: Date) {
-        let sortedDates = allTransactions.map(\.date).sorted()
-        let start = sortedDates.first ?? Date.now
-        let end = sortedDates.last ?? Date.now
+        guard var start = allTransactions.first?.date else { return (Date.now, Date.now) }
+        var end = start
+        for tx in allTransactions.dropFirst() {
+            let date = tx.date
+            if date < start { start = date }
+            if date > end { end = date }
+        }
         return (start, end)
     }
 }

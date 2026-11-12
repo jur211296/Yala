@@ -149,6 +149,10 @@ final class GroupsSyncClient {
     /// el mismo outbox en paralelo.
     private var isCycling = false
     private var pendingCycle = false
+    /// Card th4n: quien pidió un ciclo con otro en vuelo y necesita saber cuándo ACABA esa vuelta (con la que se le
+    /// encoló) para leer lo que bajó. Lo despierta `finishRun`; un esperador cancelado se despierta solo.
+    /// Cada uno recibe el resultado de LA vuelta que esperó (no un estado compartido que otra vuelta pueda pisar).
+    private var runWaiters: [UUID: CheckedContinuation<SyncCadencePolicy.CadenceOutcome, Never>] = [:]
 
     /// B2 (MEDIA del review adversarial — guardia de GENERACIÓN, molde `sessionEpoch` del runtime
     /// personal): la cancelación del loop es COOPERATIVA (solo se chequea al tope y post-sleep) — un
@@ -309,6 +313,11 @@ final class GroupsSyncClient {
     // MARK: Guard del token de History (molde HALLAZGO 2)
 
     private(set) var historyTokenValidated = false
+    /// Las entidades cuyo índice cargó la última vuelta del drain. Testigo de YALA-IOS-2: una vuelta sin nada que
+    /// traducir no lee ningún modelo. Expuesto para tests.
+    private(set) var lastDrainIndexedEntities: Set<String> = []
+    /// Si la última vuelta leyó la cola entera para deduplicar (solo cuando hay algo que traducir). Expuesto para tests.
+    private(set) var lastDrainReadOutboxKeys = false
     private static let historyTokenSlack: TimeInterval = 60
     private(set) var historyTokenIncomparableCount = 0
     private(set) var historyTokenRecoveredCount = 0
@@ -327,6 +336,10 @@ final class GroupsSyncClient {
     /// es la única forma de ejercitar el `catch` —y por tanto su `rollback()`— sin un fallo real de
     /// SwiftData. Molde de `CloudSyncEngine._testThrowOnApplySave`, el mirror declarado de esa función.
     var _testThrowOnApplySave = false
+
+    /// Lo mismo para el save de `settleRejectedOpeningBalances` (card e6fd): fija que su `rollback()` no deja el borrado del
+    /// saldo sucio en el contexto compartido. SOLO tests.
+    var _testThrowOnSettleSave = false
 
     /// Hace que el `save` de las filas nuevas del drain lance, como un store que no puede escribir. Para fijar que
     /// `drainOnce` lo devuelve como captura sin terminar (ticket `groups-drain-failure-reads-as-nothing-pending`). SOLO tests.
@@ -378,8 +391,8 @@ final class GroupsSyncClient {
         self.onRemoteChangesApplied = onRemoteChangesApplied
         self.onRemoteChanges = onRemoteChanges
         self.clock = HLCClock(nodeID: nodeID)
-        // Default: mismo baseURL + los providers de sesión del canal (el Merkle de Grupos NO manda
-        // capability-set). Los tests inyectan uno con `StubHTTPSession`.
+        // Default: mismo baseURL + los providers de sesión del canal (la cabecera del capability-set la pone
+        // `GroupsMerkleClient` con `GroupsSyncCapability`). Los tests inyectan uno con `StubHTTPSession`.
         self.merkleClient = merkleClient ?? GroupsMerkleClient(
             baseURL: baseURL, tokenProvider: tokenProvider, attestProvider: attestProvider,
             urlSession: urlSession)
@@ -616,16 +629,85 @@ final class GroupsSyncClient {
             return .coalesced
         }
         isCycling = true
-        defer { isCycling = false }
-        let generation = teardownGeneration
         var last: SyncCadencePolicy.CadenceOutcome = .coalesced
+        defer { finishRun(last) }
+        let generation = teardownGeneration
         repeat {
             pendingCycle = false
-            guard generation == teardownGeneration else { return .coalesced }  // teardown → ni la encolada
+            // teardown → ni la encolada; y quien esperaba no recibe el resultado de la vuelta de antes de su petición.
+            guard generation == teardownGeneration else { last = .coalesced; return .coalesced }
             last = await syncCycleOnce(context: context)
         } while pendingCycle
         return last
     }
+
+    /// Card th4n: hay una vuelta del canal en vuelo (el grupo que se abre desde su aviso espera a ella).
+    var hasRunInFlight: Bool { isCycling }
+
+    /// Cierra la vuelta en vuelo y despierta a quien la esperaba (card th4n).
+    private func finishRun(_ outcome: SyncCadencePolicy.CadenceOutcome) {
+        isCycling = false
+        let waiters = runWaiters
+        runWaiters.removeAll()
+        for waiter in waiters.values { waiter.resume(returning: outcome) }
+    }
+
+    /// Card th4n: espera a que acabe la vuelta EN VUELO —con el ciclo que se le encoló— y devuelve su resultado; sin
+    /// ninguna en vuelo, `nil` en el acto. Antes, pedir un ciclo con otro en vuelo devolvía `.coalesced` en el acto y quien
+    /// lo pedía (abrir un grupo desde su aviso, tirar para refrescar) recargaba ANTES de que bajara el cambio: el grupo se
+    /// abría con lo viejo y lo nuevo dependía de que el `dataVersion` del final del ciclo llegara a una pantalla activa.
+    /// Cancelable: la tarea que espera se cancela (el tope de `syncNowFromPush`) y sale sin esperar, con `.coalesced`.
+    func awaitRunInFlight() async -> SyncCadencePolicy.CadenceOutcome? {
+        guard isCycling else { return nil }
+        let id = UUID()
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { (continuation: CheckedContinuation<SyncCadencePolicy.CadenceOutcome, Never>) in
+                if Task.isCancelled {
+                    continuation.resume(returning: .coalesced)
+                } else {
+                    runWaiters[id] = continuation
+                }
+            }
+        } onCancel: {
+            Task { @MainActor [weak self] in self?.runWaiters.removeValue(forKey: id)?.resume(returning: .coalesced) }
+        }
+    }
+
+    #if DEBUG
+    /// Seam de `-uitest-group-push-change` (card th4n): una vuelta FINGIDA en vuelo que dura `duration` y al final aplica
+    /// el cambio como lo haría un pull (`apply`) y avisa como él (`onRemoteChangesApplied`). En XCUITest el canal no corre
+    /// —no hay sesión—, así que sin esto no habría vuelta en vuelo que esperar. No decide nada: quien la espera es el
+    /// código de producción (`awaitRunInFlight`).
+    ///
+    /// Con `landsAfterFirstWaiter`, la vuelta acaba ese rato después de que alguien empiece a esperarla (como un pull que
+    /// aterriza poco después de abrir el grupo), y `duration` es el tope si nadie la espera: así el caso no depende de
+    /// cuánto tarde el arranque en abrir el grupo.
+    func uitestRunFakeRemoteCycle(
+        lasting duration: Duration, landsAfterFirstWaiter: Duration? = nil, apply: @escaping @MainActor () -> Void
+    ) {
+        guard !isCycling else { return }
+        isCycling = true
+        Task { @MainActor in
+            do {
+                if let landsAfterFirstWaiter {
+                    let deadline = ContinuousClock.now + duration
+                    while runWaiters.isEmpty, ContinuousClock.now < deadline {
+                        try await Task.sleep(for: .milliseconds(100))
+                    }
+                    if !runWaiters.isEmpty { try await Task.sleep(for: landsAfterFirstWaiter) }
+                } else {
+                    try await Task.sleep(for: duration)
+                }
+            } catch {
+                print("GroupsSyncClient: Error: vuelta fingida cancelada: \(error)")
+            }
+            apply()
+            onRemoteChangesApplied()
+            pendingCycle = false
+            finishRun(.completed)
+        }
+    }
+    #endif
 
     /// G8-2: dispara UN ciclo del canal desde un silent push (`didReceiveRemoteNotification`, rama `yala`),
     /// carreado contra `timeout` (iOS da ~30s de background; el caller pasa 20s de margen). SIN `ModelContext`
@@ -640,7 +722,11 @@ final class GroupsSyncClient {
     /// esto devuelve false (.noData); el pull real ocurre al próximo foreground (consistencia eventual v1).
     @discardableResult
     func syncNowFromPush(timeout: Duration) async -> Bool {
-        guard CloudSyncFlags.groupsBackendEnabled, sessionCheck(), context != nil else { return false }
+        guard CloudSyncFlags.groupsBackendEnabled, sessionCheck(), context != nil else {
+            // Una vuelta en vuelo ya pasó estas puertas al empezar: lo que baje sigue valiendo para quien espera.
+            guard isCycling else { return false }
+            return await raceAgainst(timeout) { await self.awaitRunInFlight() == .completed }
+        }
         // Lanza AMBOS hijos ANTES del primer `next()` (AJUSTE review #7). El hijo del ciclo puede sobrevivir
         // al timeout tras `cancelAll` — benigno: el push es chunked con dedupe por `client_mutation_id` y el
         // próximo ciclo re-emite. `self` (clase @MainActor) es Sendable; el hijo lee `self.context` en el
@@ -648,10 +734,29 @@ final class GroupsSyncClient {
         return await withTaskGroup(of: Bool.self) { group in
             group.addTask { @MainActor [weak self] in
                 guard let self, let ctx = self.context else { return false }
-                return await self.syncCycleOnceCoalesced(context: ctx) == .completed
+                let outcome = await self.syncCycleOnceCoalesced(context: ctx)
+                // Card th4n: con otra vuelta en vuelo, el ciclo pedido se le encola; se espera a que ACABE (y con ella lo
+                // encolado) para que quien pidió lea lo que bajó, no lo de antes.
+                if outcome == .coalesced, let run = await self.awaitRunInFlight() { return run == .completed }
+                return outcome == .completed
             }
             group.addTask {
                 try? await Task.sleep(for: timeout)
+                return false
+            }
+            let first = await group.next() ?? false
+            group.cancelAll()
+            return first
+        }
+    }
+
+    /// `work` contra un tope: lo que llegue antes. El hijo que pierde se cancela (`awaitRunInFlight` sale al cancelarse).
+    private func raceAgainst(_ timeout: Duration, _ work: @escaping @MainActor () async -> Bool) async -> Bool {
+        await withTaskGroup(of: Bool.self) { group in
+            group.addTask { @MainActor in await work() }
+            group.addTask {
+                // Cancelado o vencido, el tope da `false`: lo mismo por las dos vías.
+                do { try await Task.sleep(for: timeout) } catch { return false }
                 return false
             }
             let first = await group.next() ?? false
@@ -699,10 +804,26 @@ final class GroupsSyncClient {
         // veredicto del ciclo sale del PULL siempre que el push no pare (línea de abajo), así que sin bajarlo un
         // push fallido de hace tres ciclos convertiría el `save()` local de éste en «no llegaron al servidor».
         lastCycleFailedUpload = false
-        drainOnce(context: context)
+        let drained = drainOnce(context: context)
+        // Card u8cl (pieza 2): la subida de versión del manifest de Grupos, ANTES del push (lo re-encolado sube en este
+        // mismo ciclo, por delante del re-pull que lo pisaría en pantalla). Si no se pudo cumplir, la petición se queda y
+        // el ciclo se corta: re-bajar sin haber encolado pisaría lo que este teléfono no subió. Y solo con el drain
+        // COMPLETO: el apply de Grupos decide por LWW, y una edición que sigue en el History sin traducir no tiene HLC
+        // nuevo, así que el re-pull desde 0 la pisaría (review adversarial del 2026-10-28). La petición espera al ciclo
+        // siguiente.
+        do {
+            if drained { try applyCapabilityUpgradeIfPending(context: context) }
+        } catch {
+            GroupsSyncBreadcrumb.groupsCapabilityUpgradeFailed(errorType: String(describing: type(of: error)))
+            return GroupsSyncCadence.outcome(pull: .transient)
+        }
         let push = await pushPending(context: context)
         guard generation == teardownGeneration else { return .coalesced }  // teardown durante el push
         if let stop = GroupsSyncCadence.stopOutcome(push: push) { return stop }
+        // Card e6fd: un saldo inicial que el servidor rechazó para siempre se descarta aquí y su grupo vuelve a bajar en el
+        // pull de abajo. Entre los dos, síncrono: ninguna página en vuelo pisa el cursor que pone a 0. Vuelve a drenar dentro
+        // (lo editado mientras el push volaba), así que no depende del `drained` de arriba.
+        settleRejectedOpeningBalances(context: context)
         let pull = await pullUntilExhausted(context: context)
         guard generation == teardownGeneration else { return .coalesced }  // teardown durante el pull
 
@@ -712,6 +833,9 @@ final class GroupsSyncClient {
         // `SyncApplyEngine`: divergencia esperada, no incidente).
         if case .completed = pull {
             lastPullCycleCompleted = true
+            // Card m76a: con el pull agotado, el re-pull de un grupo cuyo saldo se descartó ya bajó lo que el servidor
+            // tiene; los repartos de un saldo que no volvió son huérfanos y se retiran.
+            sweepRejectedOpeningBalanceShares(context: context)
             completedPullsSinceMerkle += 1
             if SyncCadencePolicy.shouldRunMerkle(
                 completedPullsSinceMerkle: completedPullsSinceMerkle, lastMerkleAt: lastMerkleAt, now: now()) {
@@ -1057,6 +1181,8 @@ final class GroupsSyncClient {
 
     private func performDrain(context: ModelContext) -> Bool {
         defer { drainSignInLog = nil }
+        lastDrainIndexedEntities = []
+        lastDrainReadOutboxKeys = false
         do {
             let cursor = try loadOrCreateCursor(context)
             loadClock(from: cursor)
@@ -1067,7 +1193,6 @@ final class GroupsSyncClient {
             drainSignInLog = signInLog
             adoptOwnersForUnownedRows(context: context, log: signInLog)
 
-            let lookups = try buildLookups(context)
             // C2-bis (CRÍTICO #1): partición POR-GRUPO simétrica del push. Solo los grupos del canal BACKEND
             // (`isBackendGroup`) drenan al outbox — sin este muro, editar un grupo CloudKit bajo flag ON
             // drenaría sus filas al backend (`group_id` inexistente server-side → dead-letters permanentes +
@@ -1080,8 +1205,17 @@ final class GroupsSyncClient {
                 cursor: cursor, tokenTxns: tokenTxns, context: context)
             if tokenGuard.validatedByCompare { historyTokenValidated = true }
             let txns = tokenGuard.txns
+            // Índices persistentID→modelo SOLO de las entidades que esta ventana va a traducir (YALA-IOS-2): cargar
+            // las cuatro tablas de Grupos en cada vuelta, en el hilo principal, costaba segundos con muchos gastos aunque
+            // no hubiera nada nuevo. Mismo filtro que el bucle de abajo (autor y muro), y cada índice solo lo lee su
+            // propia entidad. El índice no escribe nada, así que leerlo después del History no cambia lo que ve.
+            let indexed = Self.entitiesToTranslate(authorsAndEntities: txns.map { tx in
+                (author: tx.author, entities: tx.changes.map { $0.changedPersistentIdentifier.entityName })
+            })
+            let lookups = try buildLookups(context, only: indexed)
 
-            var seen = try existingOutboxKeys(context)
+            // `seen` solo lo lee la traducción: con la ventana sin nada que traducir no se carga la cola entera (YALA-IOS-2).
+            var seen = indexed.isEmpty ? Set<String>() : try existingOutboxKeys(context)
 
             var rows: [PendingGroupRow] = []
             var advancedToken: DefaultHistoryToken?
@@ -1390,8 +1524,27 @@ final class GroupsSyncClient {
     ) throws {
         try appendRow(op: .upsert, syncID: syncID, groupID: groupID, entityType: entityType,
                       tx: tx, rows: &rows, seen: &seen) { hlc in
-            let result = DeltaEmitter.emit(model: model, emission: emission,
-                                           changedColumns: changedColumns, hlc: hlc)
+            // Card u8cl (piezas 1 y 4): la emisión de la versión que habla el canal de GRUPOS, por grupo de coherencia
+            // entero, y con su nivel explícito: el default de `emit` es el del canal PERSONAL.
+            let level = GroupsSyncCapability.declaredLevel
+            let restricted = GroupsSyncCapability.emission(emission, upTo: level)
+            // Pieza 2: lo que se queda fuera y tiene valor se apunta, para re-encolarlo al subir de versión.
+            let calendar = Calendar(identifier: .gregorian)
+            let suppressed = Set(emission.emitters.filter { emitter in
+                changedColumns.contains(emitter.column) && !restricted.columns.contains(emitter.column)
+                    && emitter.build(model, calendar) != .null
+            }.map(\.column))
+            if !suppressed.isEmpty {
+                GroupsSyncCapability.noteSuppressed(
+                    entityType: entityType, syncID: syncID, groupID: groupID,
+                    ownerUserID: GroupsOutboxOwnershipLogic.owner(transactionAt: tx.timestamp, log: drainSignInLog),
+                    columns: suppressed)
+            }
+            let result = DeltaEmitter.emit(model: model, emission: restricted,
+                                           changedColumns: changedColumns, hlc: hlc, capabilityLevel: level)
+            // Un cambio que SOLO tocó columnas que esta versión no conoce no deja nada que subir: sin fila (un upsert
+            // vacío no diría nada al servidor). Queda apuntado arriba para la subida.
+            if !suppressed.isEmpty, result.fields.isEmpty { return nil }
             let fieldsJSON: String
             do {
                 fieldsJSON = try Canonc1Codec.encode(result.fields,
@@ -1439,14 +1592,139 @@ final class GroupsSyncClient {
         ))
     }
 
+    // MARK: - Card u8cl · subida de versión del manifest de Grupos (pieza 2)
+
+    /// Cumple la subida de versión si está pedida y el teléfono ya habla esa versión (`GroupsSyncCapability.upgradeDue`).
+    /// Molde `CloudSyncEngine.applyCapabilityUpgradeIfPending` del canal personal, en este orden:
+    ///  1. **re-encola lo que el drain no pudo subir** (`GroupsSyncCapability.suppressedRows`): una fila por fila apuntada,
+    ///     con SOLO las columnas apuntadas y el valor de ahora, con el dueño que el drain le dio. Reemitir a ciegas «toda
+    ///     fila con valor» subiría con HLC fresco copias viejas y pisaría cambios de otros teléfonos;
+    ///  2. **vuelve a bajar desde 0 los grupos que hay aquí**: lo que bajó con la versión vieja llegó sin la columna, y el
+    ///     cursor ya pasó de largo. No es el reset externo que prohíbe la regla del cursor de Grupos: corre antes del push
+    ///     y del pull, así que ninguna página en vuelo lo pisa, y solo toca grupos con fila local, así que tras «Empezar de
+    ///     cero» el cursor sigue siendo la barrera (un grupo borrado aquí no vuelve a bajar por esto);
+    ///  3. retira la petición y lo apuntado.
+    /// Devuelve `true` si la cumplió. LANZA si no pudo leer, encolar o mover los cursores: la petición sigue puesta.
+    ///
+    /// Residual aceptado, el del personal: lo re-encolado sale con el HLC de AHORA. Solo existe si la app habló la versión
+    /// vieja con valores en la columna nueva, es decir, si la app salió antes que el Worker.
+    @discardableResult
+    func applyCapabilityUpgradeIfPending(context: ModelContext) throws -> Bool {
+        guard GroupsSyncCapability.upgradeDue, let target = GroupsSyncCapability.upgradePendingLevel else { return false }
+        let level = GroupsSyncCapability.declaredLevel
+        let cursor = try loadOrCreateCursor(context)
+        loadClock(from: cursor)
+        let backendZoneIDs = try backendGroupZoneIDs(context)
+        let pending = GroupsSyncCapability.suppressedRows.values.sorted { $0.key < $1.key }
+        var seen = try existingOutboxKeys(context)
+        var rows: [PendingGroupRow] = []
+        for entry in pending where backendZoneIDs.contains(entry.groupID) {
+            let id = entry.syncID
+            let row: PendingGroupRow?
+            switch entry.entityType {
+            case GroupSyncEntityType.splitExpense:
+                row = try reemissionRow(
+                    entry, model: context.fetch(FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.id == id })).first,
+                    emission: GroupEntityEmissionMap.splitExpense, level: level, seen: &seen)
+            case GroupSyncEntityType.splitShare:
+                row = try reemissionRow(
+                    entry, model: context.fetch(FetchDescriptor<SplitShare>(predicate: #Predicate { $0.id == id })).first,
+                    emission: GroupEntityEmissionMap.splitShare, level: level, seen: &seen)
+            case GroupSyncEntityType.splitSettlement:
+                row = try reemissionRow(
+                    entry,
+                    model: context.fetch(FetchDescriptor<SplitSettlement>(predicate: #Predicate { $0.id == id })).first,
+                    emission: GroupEntityEmissionMap.splitSettlement, level: level, seen: &seen)
+            case GroupSyncEntityType.splitGroup:
+                row = try reemissionRow(
+                    entry, model: context.fetch(FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.id == id })).first,
+                    emission: GroupEntityEmissionMap.splitGroup, level: level, seen: &seen)
+            default:
+                row = nil
+            }
+            if let row { rows.append(row) }
+        }
+        if !rows.isEmpty {
+            // Regla Q3: el espejo del App Group antes del insert+save, en la misma vuelta síncrona, como el drain.
+            writeMirror(rows: rows)
+            try saveWithAuthor(context) {
+                for row in rows { context.insert(row.makeModel()) }
+                cursor.clockLatestHLC = clock.latest?.description
+            }
+        }
+        // Ya en el outbox: se retira aquí y no al final, para que un fallo al mover los cursores no lo re-encole otra vez.
+        GroupsSyncCapability.clearSuppressed(pending)
+
+        let localZones = Set(try context.fetch(FetchDescriptor<SplitGroup>()).map(\.cloudKitZoneID))
+        var maxSeqByGroup = decodeCursors(cursor.groupCursorsJSON)
+        let resetGroupIDs = maxSeqByGroup.keys.filter { localZones.contains($0) && maxSeqByGroup[$0] != 0 }
+        if !resetGroupIDs.isEmpty {
+            for gid in resetGroupIDs { maxSeqByGroup[gid] = 0 }
+            // El re-pull vuelve a bajar todos los gastos de esos grupos. Lo que ya estaba no avisa de «gasto modificado»:
+            // `writeGroupCursors` guarda en el mismo save el `server_seq` visto antes del reset (card vj61).
+            try saveWithAuthor(context) { writeGroupCursors(maxSeqByGroup, to: cursor) }
+        }
+
+        GroupsSyncCapability.clearUpgrade(level: target)
+        GroupsSyncBreadcrumb.groupsCapabilityUpgradeApplied(
+            level: level, reemitted: rows.count, groupsReset: resetGroupIDs.count)
+        return true
+    }
+
+    /// La fila que re-encola una entrada apuntada, o `nil` si ya no hay nada que subir (la fila se borró, o ninguna de sus
+    /// columnas existe aún en `level`). Un rechazo del codec también es `nil`, como en el drain: no subiría nunca.
+    private func reemissionRow<T: AnyObject>(
+        _ entry: GroupsSyncCapability.SuppressedRow, model: T?, emission: EntityEmission<T>, level: Int,
+        seen: inout Set<String>
+    ) throws -> PendingGroupRow? {
+        guard let model else { return nil }
+        let restricted = GroupsSyncCapability.emission(emission, upTo: level)
+        let columns = Set(entry.columns).intersection(restricted.columns)
+        guard !columns.isEmpty else { return nil }
+        let hlc = try clock.sendLocal(eventTime: now()).description
+        guard seen.insert(dedupKey(syncID: entry.syncID, hlc: hlc, op: .upsert)).inserted else { return nil }
+        let result = DeltaEmitter.emit(model: model, emission: restricted, changedColumns: columns, hlc: hlc,
+                                       capabilityLevel: level)
+        let fieldsJSON: String
+        do {
+            fieldsJSON = try Canonc1Codec.encode(result.fields, groupedColumns: Set(restricted.groupByColumn.keys))
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: codec c1 rechazó la re-emisión de \(entry.entityType, privacy: .public): \(error)")
+            #endif
+            return nil
+        }
+        return PendingGroupRow(
+            syncID: entry.syncID, groupID: entry.groupID, entityType: entry.entityType, op: .upsert, hlc: hlc,
+            clientMutationID: UUID(), fieldsJSON: fieldsJSON, fieldHlcsJSON: encodeFieldHlcs(result.fieldHlcs),
+            author: "", createdAt: now(), ownerUserID: entry.ownerUserID)
+    }
+
     // MARK: - Lookups
 
-    private func buildLookups(_ context: ModelContext) throws -> Lookups {
+    /// Las entidades que la traducción del drain va a consultar: cambios de transacciones que NO escribió el canal, de
+    /// entidades del store de Grupos. El MISMO filtro que el bucle del drain: una entidad sin índice se leería como
+    /// «borrada» y su cambio no saldría. Sin efectos, para tests.
+    static func entitiesToTranslate(authorsAndEntities: [(author: String?, entities: [String])]) -> Set<String> {
+        var names = Set<String>()
+        for tx in authorsAndEntities where tx.author != outboxSaveAuthor {
+            names.formUnion(tx.entities.filter { groupEntityNames.contains($0) })
+        }
+        return names
+    }
+
+    private func buildLookups(_ context: ModelContext, only entities: Set<String>) throws -> Lookups {
+        // El testigo apunta lo que de verdad se carga (YALA-IOS-2), no el conjunto pedido.
+        func wants(_ entityName: String) -> Bool {
+            guard entities.contains(entityName) else { return false }
+            lastDrainIndexedEntities.insert(entityName)
+            return true
+        }
         var lookups = Lookups()
-        lookups.splitGroup = try index(SplitGroup.self, context: context)
-        lookups.splitExpense = try index(SplitExpense.self, context: context)
-        lookups.splitShare = try index(SplitShare.self, context: context)
-        lookups.splitSettlement = try index(SplitSettlement.self, context: context)
+        if wants(GroupSyncEntityType.splitGroup) { lookups.splitGroup = try index(SplitGroup.self, context: context) }
+        if wants(GroupSyncEntityType.splitExpense) { lookups.splitExpense = try index(SplitExpense.self, context: context) }
+        if wants(GroupSyncEntityType.splitShare) { lookups.splitShare = try index(SplitShare.self, context: context) }
+        if wants(GroupSyncEntityType.splitSettlement) { lookups.splitSettlement = try index(SplitSettlement.self, context: context) }
         return lookups
     }
 
@@ -1588,7 +1866,8 @@ final class GroupsSyncClient {
     }
 
     private func existingOutboxKeys(_ context: ModelContext) throws -> Set<String> {
-        try Self.outboxKeys(context)
+        lastDrainReadOutboxKeys = true  // testigo de YALA-IOS-2: lo que de verdad se leyó, no la condición
+        return try Self.outboxKeys(context)
     }
 
     private static func outboxKeys(_ context: ModelContext) throws -> Set<String> {
@@ -2048,7 +2327,16 @@ final class GroupsSyncClient {
             return .transient
         }
 
-        let body = wireBody(deltas)
+        // Card sztn: los textos en claro del aviso a los demás miembros (quién, qué grupo, concepto, importe). El
+        // Worker los combina con lo que aplicó y no los guarda. Mejor esfuerzo: sin ellos, el aviso genérico.
+        let notice = GroupPushNoticeBuilder.noticeJSON(GroupPushNoticeBuilder.notice(
+            for: chunk.map {
+                GroupPushNoticeBuilder.Row(
+                    entityType: $0.entityType, groupID: $0.groupID, syncID: $0.syncID,
+                    isTombstone: SyncOutboxOp(rawValue: $0.opRaw) == .tombstone)
+            },
+            context: context))
+        let body = Self.wireBody(deltas, notice: notice)
 
         // Cierre interno con la request YA construida (body/attest/deviceToken idénticos): solo cambia el
         // bearer, para poder RE-EMITIR el chunk con un token fresco tras un 401. Mapeo de status EXACTO.
@@ -2266,6 +2554,8 @@ final class GroupsSyncClient {
                             let stored = slug.map { "upstream_400:\($0)" } ?? "upstream_400"
                             markDeadLetter(row, reason: stored, telemetryReason: slug ?? "upstream_400")
                             mirrorRemovals.append((row.syncID, row.hlc))
+                            // Card 6n1o/e6fd: un rechazo de saldo inicial se avisa cuando `settleRejectedOpeningBalances`
+                            // lo descarta del teléfono, no aquí: el aviso dice que el saldo volvió a como está en el grupo.
                         } else if reason.hasPrefix("upstream_") {
                             // 5xx / 429: transitorio (reintento en el próximo push). El espejo se conserva.
                             continue
@@ -2311,6 +2601,186 @@ final class GroupsSyncClient {
         MetricsService.canary(.groupPushRejected, detail: telemetryReason)
     }
 
+    /// Card e6fd (2026-11-01) · descarta en el teléfono los saldos iniciales que el servidor rechazó para siempre
+    /// (`OpeningBalanceServerRejectionLogic.settlesDeadLetter`) y devuelve ese grupo a lo que tiene el servidor.
+    ///
+    /// Hasta este día la fila se quedaba en dead-letter para siempre: el teléfono enseñaba su versión (el servidor no vuelve
+    /// a mandar una fila que no cambió) y el Merkle del grupo se saltaba mientras existiera (guard 2 de
+    /// `verifyGroupIntegrity`). Ahora, en UN save con el autor del canal —el drain no lo captura, así que nada vuelve a
+    /// subir—: se borra la fila del outbox, se borra la copia local del gasto o reparto (si el servidor lo tiene, vuelve con
+    /// el re-pull; si era nuevo, no vuelve) y el cursor de ese grupo vuelve a 0.
+    ///
+    /// Corre entre el push y el pull del MISMO ciclo, síncrono, como la subida de versión de u8cl: no hay página en vuelo
+    /// que pise el reset, y solo toca grupos donde ESTA sesión escribió (la regla del cursor de `swiftdata-cloudkit.md`).
+    /// Lee dead-letters, no resultados del push, así que cura también las que dejó una versión anterior.
+    /// Devuelve cuántas filas descartó.
+    @discardableResult
+    func settleRejectedOpeningBalances(context: ModelContext) -> Int {
+        let sessionOwner = currentUserIDProvider()
+        let candidates: [GroupSyncOutbox]
+        do {
+            candidates = try context.fetch(FetchDescriptor<GroupSyncOutbox>(predicate: #Predicate { $0.rejectedReason != nil }))
+                .filter {
+                    OpeningBalanceServerRejectionLogic.settlesDeadLetter(
+                        rejectedReason: $0.rejectedReason, rowOwner: $0.ownerUserID, sessionOwner: sessionOwner)
+                }
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: settleRejectedOpeningBalances fetch falló: \(error)")
+            #endif
+            return 0
+        }
+        guard !candidates.isEmpty else { return 0 }
+
+        // El re-pull desde 0 pisa la fila entera de CADA gasto del grupo, y una edición que siga en el History sin traducir
+        // no tiene HLC nuevo: se perdería (review adversarial del 2026-11-01, el mismo daño que u8cl evita con `drained`).
+        // Y el push del ciclo suelta el hilo: lo editado mientras volaba solo vive en el History. ⇒ se vuelve a drenar aquí,
+        // pegado al reset, y un grupo con algo VIVO en el outbox espera al ciclo siguiente, cuando su push lo haya subido.
+        guard drainOnce(context: context) else {
+            GroupsSyncBreadcrumb.groupsOpeningBalanceRejectionDeferred(reason: "drain-unfinished")
+            return 0
+        }
+        var rows: [GroupSyncOutbox] = []
+        var deferredGroups: Set<String> = []
+        for groupID in Set(candidates.map(\.groupID)) {
+            let live: Int
+            do { live = try liveOutboxCount(groupID: groupID, context: context) }
+            catch { deferredGroups.insert(groupID); continue }
+            if live > 0 { deferredGroups.insert(groupID) } else { rows += candidates.filter { $0.groupID == groupID } }
+        }
+        if !deferredGroups.isEmpty {
+            GroupsSyncBreadcrumb.groupsOpeningBalanceRejectionDeferred(reason: "live-outbox:\(deferredGroups.count)")
+        }
+        guard !rows.isEmpty else { return 0 }
+        // Se leen ANTES del save: después, las filas están borradas y leerlas es leer un modelo sin respaldo.
+        let notices: [(groupID: String, reason: OpeningBalanceServerRejectionLogic.Reason)] = rows.compactMap { row in
+            guard let stored = row.rejectedReason,
+                  let reason = OpeningBalanceServerRejectionLogic.reason(
+                      forSlug: String(stored.dropFirst(OpeningBalanceServerRejectionLogic.storedPrefix.count)))
+            else { return nil }
+            return (row.groupID, reason)
+        }
+        let settledCount = rows.count
+        // Card m76a: los gastos descartados, para mirar tras el re-pull si sus repartos se quedaron huérfanos. Se leen
+        // ANTES del save, como los avisos.
+        let ledgerEntries: [GroupsRejectedOpeningBalanceLedger.Entry] = rows.compactMap { row in
+            guard row.entityType == GroupSyncEntityType.splitExpense else { return nil }
+            let reason = row.rejectedReason.flatMap {
+                OpeningBalanceServerRejectionLogic.reason(
+                    forSlug: String($0.dropFirst(OpeningBalanceServerRejectionLogic.storedPrefix.count)))
+            }
+            return .init(groupID: row.groupID, expenseID: row.syncID, ownerUserID: sessionOwner,
+                         localOnly: reason == .groupClosed)
+        }
+
+        var unbridgeExpenseIDs: Set<UUID> = []
+        var resetGroupIDs: Set<String> = []
+        do {
+            let cursor = try loadOrCreateCursor(context)
+            try saveWithAuthor(context) {
+                var map = decodeCursors(cursor.groupCursorsJSON)
+                for row in rows {
+                    let id = row.syncID
+                    let groupID = row.groupID
+                    switch row.entityType {
+                    case GroupSyncEntityType.splitExpense:
+                        if let expense = try fetchSplitExpense(id: id, context: context) { context.delete(expense) }
+                        // El puente se deshace como en un tombstone remoto; el re-pull lo rehace si el gasto existe.
+                        unbridgeExpenseIDs.insert(id)
+                    case GroupSyncEntityType.splitShare:
+                        if let share = try fetchSplitShare(id: id, context: context) { context.delete(share) }
+                    default:
+                        break  // los tres códigos solo salen de gastos y repartos (g27_01)
+                    }
+                    context.delete(row)
+                    if let seq = map[groupID], seq != 0 {
+                        map[groupID] = 0
+                        resetGroupIDs.insert(groupID)
+                    }
+                }
+                if !resetGroupIDs.isEmpty { writeGroupCursors(map, to: cursor) }
+                if _testThrowOnSettleSave { throw GroupsApplyTestCrash.suppressed }
+            }
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: settleRejectedOpeningBalances save falló: \(error)")
+            #endif
+            // Obligatorio, como en el apply: un borrado que se quede sucio en el contexto compartido lo guardaría otro save
+            // con el autor por defecto, el drain lo capturaría y subiría un tombstone del saldo.
+            context.rollback()
+            return 0
+        }
+        drainUnbridge(expenseIDs: unbridgeExpenseIDs, settlementIDs: [])
+        GroupsRejectedOpeningBalanceLedger.add(ledgerEntries)
+        // El re-pull vuelve a bajar todos los gastos de esos grupos; lo que ya estaba no avisa (card vj61, en el save).
+        // El aviso (card 6n1o) sale aquí y no en `applyResults`: dice que el saldo volvió a como está en el grupo, y eso solo
+        // es verdad tras este save. También avisa de lo que descarta de una versión anterior: el saldo cambia en pantalla y
+        // la persona tiene que saber por qué.
+        for notice in notices {
+            OpeningBalanceServerRejectionNotices.shared.record(groupID: notice.groupID, reason: notice.reason)
+        }
+        GroupsSyncBreadcrumb.groupsOpeningBalanceRejectionSettled(rows: settledCount, groupsReset: resetGroupIDs.count)
+        return settledCount
+    }
+
+    /// Card m76a (2026-11-02) · tras un pull COMPLETO, retira los repartos huérfanos de los saldos iniciales que
+    /// `settleRejectedOpeningBalances` descartó (`GroupsRejectedOpeningBalanceLedger`, donde está el porqué entero).
+    /// Si el gasto volvió con el re-pull, el servidor lo tiene y no se toca nada. Si no volvió, sus repartos locales se
+    /// borran: con el autor normal, para que el drain los suba como tombstones; con el grupo cerrado, con el del canal
+    /// (solo aquí). Lo de otra cuenta se queda apuntado. Devuelve cuántos repartos retiró.
+    @discardableResult
+    func sweepRejectedOpeningBalanceShares(context: ModelContext) -> Int {
+        let sessionOwner = currentUserIDProvider()
+        let pending = GroupsRejectedOpeningBalanceLedger.entries.filter { $0.ownerUserID == sessionOwner }
+        guard !pending.isEmpty else { return 0 }
+        var settled: Set<UUID> = []
+        var uploadDeletes: [SplitShare] = []
+        var localDeletes: [SplitShare] = []
+        do {
+            for entry in pending {
+                let expenseID = entry.expenseID
+                if try fetchSplitExpense(id: expenseID, context: context) != nil {
+                    settled.insert(expenseID)  // volvió: era una edición, sus repartos son los del servidor
+                    continue
+                }
+                let shares = try context.fetch(FetchDescriptor<SplitShare>(predicate: #Predicate { $0.expenseID == expenseID }))
+                if entry.localOnly { localDeletes += shares } else { uploadDeletes += shares }
+                settled.insert(expenseID)
+            }
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: sweepRejectedOpeningBalanceShares fetch falló: \(error)")
+            #endif
+            return 0  // «no pude leer» no es «no hay nada»: se reintenta tras el siguiente pull completo
+        }
+        do {
+            if !localDeletes.isEmpty {
+                try saveWithAuthor(context) { for share in localDeletes { context.delete(share) } }
+            }
+            if !uploadDeletes.isEmpty {
+                for share in uploadDeletes { context.delete(share) }
+                try context.save()  // autor por defecto: el drain del ciclo siguiente sube los tombstones
+            }
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: sweepRejectedOpeningBalanceShares save falló: \(error)")
+            #endif
+            context.rollback()
+            return 0
+        }
+        GroupsRejectedOpeningBalanceLedger.remove(expenseIDs: settled)
+        // Los tombstones al outbox YA (review del 2026-11-02): el Merkle de este mismo ciclo corre detrás, y con el outbox a 0
+        // vería menos repartos que el servidor y daría una divergencia falsa —canario y la remediación de la sesión—. Con
+        // filas vivas, el guard 1 de `verifyGroupIntegrity` salta el grupo hasta que suban.
+        if !uploadDeletes.isEmpty { drainOnce(context: context) }
+        let removed = localDeletes.count + uploadDeletes.count
+        if removed > 0 {
+            GroupsSyncBreadcrumb.groupsOpeningBalanceOrphanSharesRemoved(count: removed)
+            onRemoteChangesApplied()
+        }
+        return removed
+    }
+
     /// Decodifica el `outcome` de cada resultado del push APARTE (el `SyncDeltaResult` local lo descarta),
     /// indexado por `client_mutation_id` lowercased. Tolerante a bodies sin `outcome`.
     static func decodeOutcomeInfo(_ data: Data) -> [String: OutcomeInfo] {
@@ -2325,9 +2795,10 @@ final class GroupsSyncClient {
 
     // MARK: - Wire body (RawJSON crudo, molde SyncPushClient)
 
-    private func wireBody(_ deltas: [GroupSyncDelta]) -> Data {
+    static func wireBody(_ deltas: [GroupSyncDelta], notice: String? = nil) -> Data {
         let joined = deltas.map(Self.encodeDelta).joined(separator: ",")
-        return Data("{\"deltas\":[\(joined)]}".utf8)
+        guard let notice else { return Data("{\"deltas\":[\(joined)]}".utf8) }
+        return Data("{\"deltas\":[\(joined)],\"notice\":\(notice)}".utf8)
     }
 
     static func encodeDelta(_ d: GroupSyncDelta) -> String {
@@ -2361,11 +2832,15 @@ final class GroupsSyncClient {
     func pullUntilExhausted(context: ModelContext, limit: Int = 500) async -> GroupsPullOutcome {
         var pages = 0
         var totalDeltas = 0
+        // Card dvg6: un pull que se corta a medias YA guardó las páginas de antes. Sin el bump, la lista, el detalle y el
+        // widget seguían con lo viejo hasta el ciclo siguiente (`swiftui-ds.md`, «Mover un cálculo del body…»). Solo con
+        // algo aplicado: un corte en la primera página no cambió nada.
+        func notifyPartialPull() { if totalDeltas > 0 { onRemoteChangesApplied() } }
         for _ in 0..<Self.pullMaxIterations {
             let page = await pullAndApplyOnce(context: context, limit: limit)
             switch page {
             case .applied(let deltas, let saved):
-                guard saved else { return .transient }             // A1: cursor no avanzó → cortar
+                guard saved else { notifyPartialPull(); return .transient }   // A1: cursor no avanzó → cortar
                 if deltas == 0 {
                     // H-2026-07-18-5: bump VIVO de refresh POR-CICLO (no por-página) — solo si el ciclo
                     // aplicó deltas que cambian contenido. `markRemoteChangePending` (por-página, en
@@ -2381,12 +2856,13 @@ final class GroupsSyncClient {
                 }
                 pages += 1
                 totalDeltas += deltas
-            case .sessionExpired: return .sessionExpired
-            case .accountUnavailable: return .accountUnavailable
-            case .transient: return .transient
+            case .sessionExpired: notifyPartialPull(); return .sessionExpired
+            case .accountUnavailable: notifyPartialPull(); return .accountUnavailable
+            case .transient: notifyPartialPull(); return .transient
             }
         }
         GroupsSyncBreadcrumb.groupsPullExhaustedCap(pages: pages)
+        notifyPartialPull()
         return .transient
     }
 
@@ -2405,6 +2881,9 @@ final class GroupsSyncClient {
             return .transient
         }
         let attest = await attestProvider()
+        // Versión del manifest de Grupos que habla el teléfono (`GroupsSyncCapability`): el Worker poda las columnas
+        // posteriores. Se fija una vez para la página y su re-emisión tras un 401.
+        let capabilityHeader = GroupsSyncCapability.declaredHeader
 
         // Cierre interno con la URL/attest ya resueltos: solo cambia el bearer, para RE-EMITIR la página
         // con un token fresco tras un 401. Mapeo de status EXACTO al previo.
@@ -2412,6 +2891,7 @@ final class GroupsSyncClient {
             var request = URLRequest(url: url)
             request.httpMethod = "GET"
             request.setValue("Bearer \(bearer)", forHTTPHeaderField: "Authorization")
+            request.setValue(capabilityHeader, forHTTPHeaderField: "X-Yala-Capability-Set")
             if let attest, !attest.isEmpty {
                 request.setValue("Bearer \(attest)", forHTTPHeaderField: "X-Yala-Attest-Session")
             }
@@ -2435,6 +2915,8 @@ final class GroupsSyncClient {
                 guard generation == teardownGeneration else { return .transient }
                 do {
                     let page = try Self.decodePage(data)
+                    // Lo que el Worker dice saber, para el ciclo siguiente: esta página ya bajó con la versión pedida.
+                    GroupsSyncCapability.recordBackendManifestVersion(page.manifestVersion)
                     let saved = applyPulledPage(page, cursor: cursor, context: context)
                     return .applied(deltas: page.deltas.count, saved: saved)
                 } catch {
@@ -2505,6 +2987,11 @@ final class GroupsSyncClient {
         var notify = PendingNotificationChanges()
         var freezeZones: Set<String> = []
         var maxSeqByGroup = decodeCursors(cursor.groupCursorsJSON)
+        // Card vj61: lo que este teléfono ya había aplicado de cada grupo antes de esta página. Un gasto que vuelve a bajar
+        // con un `server_seq` ≤ eso no cambió desde que se vio (re-bajada tras un reset del cursor): no avisa.
+        let seenAtStart = GroupRepullSilenceLogic.seenAtPageStart(
+            stored: decodeCursors(cursor.groupSeenSeqJSON), cursors: maxSeqByGroup)
+        var redeliveredExpenseIDs: Set<UUID> = []
         // H-2026-07-18-3: grupos cuyo cursor hay que RESETEAR a 0 tras esta página (re-join del propio user:
         // pendingApproval→active). Lo llena `applyMember`; se aplica DESPUÉS del merge de `page.cursors`.
         var cursorResetGroupIDs: Set<String> = []
@@ -2520,6 +3007,7 @@ final class GroupsSyncClient {
             // zona en cuanto el status pasa a `removed`), así que su página típica es EXACTAMENTE la del
             // ciclo idle: salir aquí sin mirarla es lo que hacía que la señal no llegara nunca a aplicarse.
             reconcileLostMemberships(page, cursor: cursor, context: context)
+            reconcileOwnership(page, context: context)
             return true
         }
 
@@ -2545,6 +3033,11 @@ final class GroupsSyncClient {
                                    unbridgeSettlementIDs: &unbridgeSettlementIDs,
                                    cursorResetGroupIDs: &cursorResetGroupIDs,
                                    notify: &notify, freezeZones: &freezeZones)
+                    if delta.entityType == GroupEntityEmissionMap.splitExpense.table, let id = delta.syncID,
+                       GroupRepullSilenceLogic.isRedelivery(
+                        serverSeq: delta.serverSeq, groupID: delta.groupID, seen: seenAtStart) {
+                        redeliveredExpenseIDs.insert(id)
+                    }
                     // Avanzar el cursor del grupo al server_seq máximo aplicado.
                     let prev = maxSeqByGroup[delta.groupID] ?? 0
                     if delta.serverSeq > prev { maxSeqByGroup[delta.groupID] = delta.serverSeq }
@@ -2558,7 +3051,7 @@ final class GroupsSyncClient {
                 // cualquier avance de ESTA página; el próximo pull re-pide ese grupo desde 0 y re-visita el
                 // contenido que RLS ocultaba mientras el member estaba pendingApproval.
                 for gid in cursorResetGroupIDs { maxSeqByGroup[gid] = 0 }
-                cursor.groupCursorsJSON = encodeCursors(maxSeqByGroup)
+                writeGroupCursors(maxSeqByGroup, to: cursor)
                 cursor.clockLatestHLC = clock.latest?.description
                 // Seam de test: crash ANTES del commit → se ejercita el `catch` de abajo con el grafo
                 // remoto a medias, que es el único estado donde el `rollback()` significa algo.
@@ -2610,6 +3103,8 @@ final class GroupsSyncClient {
                                                             reason: clockRejections.firstReason ?? "")
         }
 
+        // Card y1cd: quién es dueño, después del save de la página (un grupo recién bajado ya tiene su fila).
+        reconcileOwnership(page, context: context)
         // H-2026-07-18-3: canario del reset por re-join (solo tras un save exitoso — el catch retornó arriba).
         if !cursorResetGroupIDs.isEmpty {
             GroupsSyncBreadcrumb.groupsRejoinCursorReset(groups: cursorResetGroupIDs.count)
@@ -2625,6 +3120,10 @@ final class GroupsSyncClient {
         // 2.1: notificaciones locales de grupo. Post-save (como el canal CloudKit, que las procesaba en
         // `processPendingRemoteChanges` tras persistir): un save fallido retornó arriba y no notifica nada
         // que el usuario no tenga en el store.
+        // Card vj61 (antes u8cl, en memoria): un gasto que vuelve a bajar tras un reset del cursor —subida de versión,
+        // saldo rechazado, remedio del Merkle, re-entrada— y no cambió desde que se vio no avisa de «modificado». Lo decide
+        // su `server_seq` contra lo ya aplicado, que vive en disco: un kill a mitad de la re-bajada no lo pierde.
+        notify.modifiedExpenses.removeAll { redeliveredExpenseIDs.contains($0.id) }
         let changes = resolveNotificationChanges(notify, context: context)
         if !changes.isEmpty { onRemoteChanges(changes) }
         // ORDEN: el CONGELADO va PRIMERO, el des-puenteo después. Una misma página puede traer el tombstone
@@ -2643,6 +3142,10 @@ final class GroupsSyncClient {
         // zonas que ESTA página trajo y esto sobre las que NO trajo. Segundo call-site — el otro está en la
         // salida idle, que es la que cubre el caso dominante.
         reconcileLostMemberships(page, cursor: cursor, context: context)
+        // Card 5d22: el grupo que esta persona creó y cuya respuesta se perdió llega aquí sin `isOwner`. POST-SAVE, como
+        // lo de arriba: adopta filas que ya están en disco.
+        GroupBackendMembershipService.adoptPendingCreations(
+            context: context, currentUserID: CloudAuthService.shared.currentUserID)
         return true
     }
 
@@ -2694,6 +3197,52 @@ final class GroupsSyncClient {
     /// POST-SAVE y jamás dentro del `saveWithAuthor`, molde de `publishTrackedJoinPhaseIfNeeded`: el
     /// `rollback()` del `catch` revertiría el grafo de la página y esto habría borrado un grupo sobre un
     /// estado que no está en disco.
+    /// Card y1cd · **quién es dueño de cada grupo, según el servidor** (`owned_groups` del pull). `isOwner` (grupo) e
+    /// `isGroupOwner` (el miembro propio) son LOCALES y el pull no los escribe, así que la propiedad que llega por el
+    /// servidor —el dueño borró su cuenta y `groups_forget_user` se la pasó a otro, o se la transfirieron— no llegaba
+    /// nunca: la heredera seguía sin «Invitar» (invitar exige `group.isOwner`), y quien la cedió seguía viéndose dueño.
+    ///
+    /// Solo con el campo presente (un Worker anterior no lo manda: nada se toca) y solo sobre los grupos de `memberships`
+    /// (de los demás el servidor no dice nada en esta página). Escribe solo lo que cambia, bajo el autor del canal: son
+    /// datos locales que el drain no emite. `internal` para los tests.
+    func reconcileOwnership(_ page: GroupPulledPage, context: ModelContext) {
+        guard let owned = page.ownedGroups.map(Set.init), let memberships = page.memberships else { return }
+        let zones = Set(memberships)
+        // El miembro propio: con sesión, SOLO el de su `sub` (`isCurrentUser` puede seguir puesto en la fila de otra cuenta
+        // que estuvo antes en el teléfono hasta que `GroupService.refreshCurrentUserFlags` la apague: review adversarial).
+        // Sin `sub`, el marcado como propio.
+        let sessionSub = currentUserIDProvider().flatMap { $0.isEmpty ? nil : $0 }
+        do {
+            var changed = 0
+            for group in try context.fetch(FetchDescriptor<SplitGroup>()) where zones.contains(group.cloudKitZoneID) {
+                let isOwner = owned.contains(group.cloudKitZoneID)
+                if group.isOwner != isOwner {
+                    group.isOwner = isOwner
+                    changed += 1
+                }
+            }
+            for member in try context.fetch(FetchDescriptor<SplitMember>())
+            where zones.contains(member.groupZoneID)
+                && (sessionSub.map { member.userID == $0 } ?? member.isCurrentUser) {
+                let isOwner = owned.contains(member.groupZoneID)
+                if member.isGroupOwner != isOwner {
+                    member.isGroupOwner = isOwner
+                    changed += 1
+                }
+            }
+            // Solo con algo que cambiar: esto corre en CADA página, y un save sin nada es una transacción para nada.
+            guard changed > 0 else { return }
+            try saveWithAuthor(context) { }
+            GroupsSyncBreadcrumb.groupsOwnershipReconciled(rows: changed)
+        } catch {
+            // Sin `rollback()`: el contexto es el compartido. Lo que no se pudo guardar se reintenta en la página
+            // siguiente, que vuelve a traer `owned_groups`.
+            #if DEBUG
+            logger.error("GroupsSync: reconciliar la propiedad de los grupos falló: \(error)")
+            #endif
+        }
+    }
+
     private func reconcileLostMemberships(
         _ page: GroupPulledPage, cursor: GroupSyncCursor, context: ModelContext
     ) {
@@ -2848,6 +3397,9 @@ final class GroupsSyncClient {
         var newSettlements: [(id: UUID, zone: String)] = []
         var newMembers: [(id: UUID, zone: String)] = []
         var newPendingMembers: [(id: UUID, zone: String)] = []
+        /// L12-20 · zonas donde el miembro PROPIO pasó de `pendingApproval` a `active` en esta página: el admin acaba de
+        /// aprobar a esta persona. Las rellena `applyMember`, en la misma rama que resetea el cursor del grupo.
+        var selfApprovedZones: [String] = []
         /// Caches por-página de la clasificación de membership (2.2) — evitan re-fetchear por cada miembro
         /// del mismo grupo. Seguros por página: el baseline solo puede moverse HACIA `initialImport` (un
         /// `GroupMeta` insertado a media página), nunca al revés.
@@ -2995,6 +3547,7 @@ final class GroupsSyncClient {
         set.newSettlements = mapped(pending.newSettlements)
         set.newMembers = mapped(pending.newMembers)
         set.newPendingMembers = mapped(pending.newPendingMembers)
+        set.selfApprovedGroups = pending.selfApprovedZones.compactMap { groupID($0) }
         return set
     }
 
@@ -3085,6 +3638,10 @@ final class GroupsSyncClient {
         if let v = wireBool(f["is_settled"]) { model.isSettled = v }
         if let v = wireBool(f["is_opening_balance"]) { model.isOpeningBalance = v }
         if let v = f["subcategory_name"] { model.subcategoryName = wireString(v) }
+        // g29_01 (v3, card xi74): quién hizo el cambio. Con la key presente manda el servidor, también su NULL (una fila
+        // anterior a la columna): conservar el autor local divergiría del Merkle en cada fila vieja. Sin la key —un Worker o
+        // un nivel declarado que no la conocen— el autor local se queda como estaba.
+        if let v = f["last_edited_by_member_key"] { model.lastEditedByMemberID = wireString(v) }
         if existing == nil { context.insert(model) }
         bridgeExpenseIDs.append(id)
     }
@@ -3137,6 +3694,8 @@ final class GroupsSyncClient {
         if let v = f["note"] { model.note = wireString(v) }
         if let v = wireDate(f["date"]) { model.date = v }
         if let v = wireBool(f["is_confirmed"]) { model.isConfirmed = v }
+        // g29_01 (v3, card xi74): quién la registró. Mismo criterio que el autor del gasto (`applyExpense`).
+        if let v = f["recorded_by_member_key"] { model.recordedByMemberID = wireString(v) }
         if existing == nil { context.insert(model) }
         bridgeSettlementIDs.append(id)
     }
@@ -3376,6 +3935,10 @@ final class GroupsSyncClient {
             // contenido de una vez (priorStatus nil NO matchea) y NO debe resetear.
             if priorStatus == SplitMemberStatus.pendingApproval.rawValue {
                 cursorResetGroupIDs.insert(delta.groupID)
+                // L12-20 · «Te avisaremos cuando te aprueben»: la misma transición que el reset es la que se avisa. Solo
+                // la de `pendingApproval` (un born-remote `nil`→active es el creador o quien entra sin aprobación, y
+                // no espera nada).
+                notify.selfApprovedZones.append(delta.groupID)
             }
         }
     }
@@ -3590,7 +4153,9 @@ final class GroupsSyncClient {
             cursors: decoded.cursors ?? [:],
             // SIN `?? []`: la ausencia del campo se propaga como `nil` y `reconcileLostMemberships` no
             // toca nada. Ver el docblock de `GroupPulledPage`.
-            memberships: decoded.memberships
+            memberships: decoded.memberships,
+            manifestVersion: decoded.manifestVersion,
+            ownedGroups: decoded.ownedGroups
         )
     }
 
@@ -3600,6 +4165,21 @@ final class GroupsSyncClient {
         guard let data = json.data(using: .utf8),
               let map = try? JSONDecoder().decode([String: Int64].self, from: data) else { return [:] }
         return map
+    }
+
+    /// Card vj61: el ÚNICO escritor de `groupCursorsJSON`. Sube en la misma escritura el máximo visto
+    /// (`groupSeenSeqJSON`) con el valor de antes y el de después, así que un reset guarda lo que ya se había aplicado.
+    /// Va siempre dentro del `saveWithAuthor` que guarda el cursor.
+    private func writeGroupCursors(_ map: [String: Int64], to cursor: GroupSyncCursor) {
+        let seen = GroupRepullSilenceLogic.raisedSeen(
+            decodeCursors(cursor.groupSeenSeqJSON), previous: decodeCursors(cursor.groupCursorsJSON), next: map)
+        cursor.groupSeenSeqJSON = encodeCursors(seen)
+        cursor.groupCursorsJSON = encodeCursors(map)
+    }
+
+    /// Lo visto por grupo (`groupSeenSeqJSON`), decodificado. Para los tests de la re-bajada.
+    func groupSeenSeq(_ context: ModelContext) throws -> [String: Int64] {
+        decodeCursors(try loadOrCreateCursor(context).groupSeenSeqJSON)
     }
 
     private func encodeCursors(_ map: [String: Int64]) -> String {
@@ -3742,8 +4322,9 @@ extension GroupsSyncClient {
 
     /// Verifica la integridad Merkle de UN grupo. Guards EN ORDEN (molde `CloudSyncEngine.verifyIntegrity`,
     /// adaptado por-grupo): (1) outbox VIVO del grupo == 0; (2) dead-letters del grupo == 0 ([R7]: un
-    /// dead-letter PERMANENTE deshabilita el Merkle de ESE grupo para siempre — aceptado; solo
-    /// `yala_not_authorized` revive vía re-drive al aprobar al member); (3) último pull del canal completado;
+    /// dead-letter PERMANENTE deshabilita el Merkle de ESE grupo para siempre — aceptado; `yala_not_authorized`
+    /// revive vía re-drive al aprobar al member, y desde la card e6fd los tres rechazos de saldo inicial se descartan en
+    /// `settleRejectedOpeningBalances`, así que tampoco lo apagan); (3) último pull del canal completado;
     /// (4) canon `c2`; (5) árbol LOCAL legible — una tabla que no se deja leer es skip, nunca tabla vacía;
     /// ([R4]) corpus-vacío-remoto + local no-vacío → remoción de membership (skip, sin canario). Divergencia real →
     /// `.diverged` (el canario/remediación los agrega el caller). Los `reason` salen de `GroupMerkleSkipReason`.
@@ -3783,8 +4364,11 @@ extension GroupsSyncClient {
         // porque el canon emite `null`— y un cliente de la versión anterior compararía 11 columnas
         // contra 12. Sin este bump eso sería una divergencia FALSA en el 100 % de los grupos, con su
         // reset de cursores y su re-pull por sesión; con él, esos clientes caen aquí y SALTAN la
-        // verificación, que es justo para lo que existe este guard. El canal personal no necesita el
-        // truco porque manda `X-Yala-Capability-Set` y el server le poda las columnas que no conoce.
+        // verificación, que es justo para lo que existe este guard.
+        // Desde el 2026-10-24 (ticket `groups-canal-sin-capability-set`) Grupos ya no necesita ese truco para la
+        // PRÓXIMA columna: manda `X-Yala-Capability-Set` (`GroupsSyncCapability`), el server le poda las columnas
+        // que no conoce y la columna nueva lleva `since` en el manifest en vez de otro bump de canon. El server se
+        // queda en `c2` y este guard también; los builds que esperan `c1` siguen saltando el Merkle por el suyo.
         guard remote.canonVersion == "c2" else {
             GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: "canon:\(remote.canonVersion)")
             return .skipped(reason: GroupMerkleSkipReason.canonVersionMismatch)
@@ -3797,7 +4381,9 @@ extension GroupsSyncClient {
         // porque exige `!localEmpty`. El rastro por tabla lo deja `collectLeaves`; aquí, el del veredicto.
         let local: GroupMerkleProjection.LocalGroupMerkle
         do {
-            local = try GroupMerkleProjection.computeLocalMerkle(groupID: gid, context: context)
+            // Con la versión con la que se PIDIÓ el snapshot: el server hasheó esas columnas y no otras.
+            local = try GroupMerkleProjection.computeLocalMerkle(
+                groupID: gid, context: context, capabilityLevel: remote.capabilityLevel)
         } catch {
             #if DEBUG
             print("GroupsSyncClient.verifyGroupIntegrity: cómputo del árbol local falló: \(error)")
@@ -3853,7 +4439,7 @@ extension GroupsSyncClient {
             let cursor = try loadOrCreateCursor(context)
             var map = decodeCursors(cursor.groupCursorsJSON)
             for gid in gids { map[gid] = 0 }
-            try saveWithAuthor(context) { cursor.groupCursorsJSON = encodeCursors(map) }
+            try saveWithAuthor(context) { writeGroupCursors(map, to: cursor) }
         } catch {
             #if DEBUG
             logger.error("GroupsSync: resetGroupCursors falló: \(error)")
@@ -4028,12 +4614,28 @@ struct GroupPulledPage: Equatable {
     let deltas: [GroupPulledDelta]
     let cursors: [String: Int64]
     let memberships: [String]?
+    /// Versión del `group_capability_manifest.json` que anunció el Worker (`GroupsSyncCapability`). `nil` = un Worker
+    /// anterior a esto. `var` con default para no romper el init memberwise de los tests.
+    var manifestVersion: Int? = nil
+    /// Card y1cd: los grupos de `memberships` de los que esta cuenta es DUEÑA (`owned_groups`). `nil` = un Worker anterior
+    /// a esto: no se toca `isOwner`. `var` con default para no romper el init memberwise de los tests.
+    var ownedGroups: [String]? = nil
 }
 
 private struct RawGroupPullResponse: Decodable {
     let deltas: [RawGroupPulledDelta]
     let cursors: [String: Int64]?
     let memberships: [String]?
+    let manifestVersion: Int?
+    let ownedGroups: [String]?
+
+    enum CodingKeys: String, CodingKey {
+        case deltas
+        case cursors
+        case memberships
+        case manifestVersion = "manifest_version"
+        case ownedGroups = "owned_groups"
+    }
 }
 
 private struct RawGroupPulledDelta: Decodable {

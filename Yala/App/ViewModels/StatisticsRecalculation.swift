@@ -131,7 +131,10 @@ final class StatisticsRecalculation {
             criteria: criteria,
             accounts: inputs.accounts,
             categories: inputs.categories,
-            tags: inputs.tags
+            tags: inputs.tags,
+            customRange: inputs.customRange
         )
+        // Mismos datos que la última vez: el «Resumen con IA» guardado vuelve sin llamar a nadie (UX 2.2 · L11-7).
+        insights.restoreSavedAIIfAvailable()
     }
 }

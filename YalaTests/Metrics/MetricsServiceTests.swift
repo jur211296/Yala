@@ -218,6 +218,27 @@ struct MetricsServiceTests {
         #expect(MetricsSpool.pending(.standard).isEmpty, "jamás contamina .standard sin start")
     }
 
+    /// Desde un App Intent con el servicio en marcha: el canario normal, con su detalle y su valor.
+    @Test func canaryFromIntent_conElServicio_encolaElCanario() async {
+        await withStartedService(status: 500) { defaults, _ in
+            MetricsService.canaryFromIntent(.siriEntryRoute, detail: "route=onDevice model=available")
+            MetricsService.canaryFromIntent(.siriOnDeviceParse, detail: "ok", value: 840)
+            let canaries = MetricsSpool.pending(defaults).filter { $0.e == "canary" }
+            #expect(canaries == [
+                .canary(name: "siriEntryRoute", detail: "route=onDevice model=available", value: 1),
+                .canary(name: "siriOnDeviceParse", detail: "ok", value: 840),
+            ])
+        }
+    }
+
+    /// Sin el servicio, en tests: nada, ni en `.standard` (el spool directo es solo para el proceso real del intent).
+    @Test func canaryFromIntent_sinElServicio_enTests_noEscribeNada() {
+        MetricsService._testReset()
+        let before = MetricsSpool.pending(.standard)
+        MetricsService.canaryFromIntent(.siriEntryRoute, detail: "route=upgrade model=deviceNotEligible")
+        #expect(MetricsSpool.pending(.standard) == before)
+    }
+
     @Test func pingDiario_soloUnaVezPorDia() async throws {
         try await withStartedService { defaults, _ in
             let day1 = Date(timeIntervalSince1970: 1_760_000_000)

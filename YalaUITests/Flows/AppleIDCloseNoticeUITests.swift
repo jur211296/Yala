@@ -48,7 +48,7 @@ final class AppleIDCloseNoticeUITests: XCTestCase {
     /// La frase de los grupos (`icloud.appleIDChanged.groupsLine`, en es). Va dentro del mensaje de la pregunta, así que
     /// se busca por su texto y no por identificador: el de la cabecera pisa el de sus hijos.
     private func groupsLine(_ app: XCUIApplication) -> XCUIElement {
-        app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "También se quitan los grupos que hay en este teléfono"))
+        app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "También se quitan los grupos que hay en este dispositivo"))
             .firstMatch
     }
 
@@ -98,6 +98,25 @@ final class AppleIDCloseNoticeUITests: XCTestCase {
         XCTAssertTrue(app.buttons["trial_offer_dismiss"].waitForExistence(timeout: 45), """
             Lo retenido no presentó al contestar la hoja: la condición viva (`appleIDCloseNotice`) se quedó \
             puesta, o la matriz no se recalculó al soltarla, y el router sigue retenido.
+            """)
+    }
+
+    /// UX 2.2 · L20-16: la pregunta ofrece «Exportar mis registros» ANTES de «Cerrar sesión y quitarlos», y por debajo de
+    /// «Ahora no»: la salida que no pierde nada va antes de la que quita los datos.
+    func test_notice_offersExportBeforeTheDestructiveExit() {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: "minimal", appleIDChanged: true)
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap no completó.")
+
+        let asking = stage(app, "apple_id_close_asking")
+        XCTAssertTrue(asking.waitForExistence(timeout: 30), "La hoja del cambio de Apple ID no se presentó.")
+        let later = app.buttons["apple_id_close_later"]
+        let export = app.buttons["apple_id_close_export"]
+        let confirm = app.buttons["apple_id_close_confirm"]
+        XCTAssertTrue(export.exists, "La pregunta no ofrece «Exportar mis registros».")
+        XCTAssertTrue(later.frame.minY < export.frame.minY && export.frame.minY < confirm.frame.minY, """
+            «Exportar mis registros» no va entre «Ahora no» y «Cerrar sesión y quitarlos»: \
+            later=\(later.frame.minY) export=\(export.frame.minY) confirm=\(confirm.frame.minY).
             """)
     }
 

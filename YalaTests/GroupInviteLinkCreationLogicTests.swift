@@ -77,7 +77,8 @@ struct GroupInviteLinkCreationWiringTests {
     /// Las DOS superficies. Que fueran dos y no una fue la corrección de la primera pasada del ticket:
     /// arreglar solo `GroupMembersView` dejaba a `GroupDetailView` culpando a la conexión.
     private static let surfaces = [
-        "Yala/App/Views/Groups/GroupMembersView.swift",
+        // La de Miembros acuña por aquí desde la auditoría UX 2.2 (L12-10).
+        "Yala/Services/Groups/GroupInviteLinkMaker.swift",
         "Yala/App/ViewModels/GroupDetailViewModel.swift",
     ]
 

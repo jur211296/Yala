@@ -41,6 +41,18 @@ enum SyncSignInBannerLogic {
         return Banner(needsSignIn: total > 0, pendingCount: total)
     }
 
+    /// ¿Sale el aviso FIJO del Panel? (card pz4v, 2026-10-28). Sin él, la única puerta era la tarjeta de «Dónde viven tus
+    /// datos»: con 5 006 cambios sin subir, el Panel se veía tranquilo y vacío.
+    ///
+    /// Los mismos términos que la tarjeta de Ajustes, para que las dos superficies digan lo mismo:
+    ///  · `needsSignIn` es `CloudMigrationController.syncNeedsSignIn`, la salida de `decide`.
+    ///  · `channelIsStable` (`uiState == .cloudActive`): la tarjeta solo existe en esa rama de `StorageSettingsView`, y el
+    ///    botón del aviso lleva ahí. Es el mismo término que el aviso del attest (`CloudAttestNoticeLogic`).
+    ///  · nunca con el aviso del attest puesto: re-firmar no arregla un attest roto (`SyncStatusSectionLogic`, attest antes).
+    static func showsPanelNotice(needsSignIn: Bool, channelIsStable: Bool, attestNoticeShowing: Bool) -> Bool {
+        needsSignIn && channelIsStable && !attestNoticeShowing
+    }
+
     /// ¿El motor espera a que se vuelva a firmar? Dos estados, y el segundo es el caso PRINCIPAL del ticket:
     ///  · `.stoppedUntilSignIn`: la cadencia chocó con la sesión caducada en ESTE proceso, o el cierre de sesión la paró al
     ///    bloquear por ella (`CloudSyncRuntime.stopUntilSignIn`).
@@ -107,4 +119,13 @@ enum SyncSignInBannerLogic {
         guard let ownerUserID else { return signedInIsClaimed ? .resume : .rejectOtherAccount }
         return signedInUserID == ownerUserID ? .resume : .rejectOtherAccount
     }
+}
+
+/// «Iniciar sesión» del aviso del Panel (card pz4v), en vuelo hacia «Dónde viven tus datos». Del PROCESO, molde exacto de
+/// `CloudAdoptOfferRequest`: lo pone el Panel y lo consume la tarjeta «Sincronización» al aparecer
+/// (`StorageSettingsView.beginSyncSignInFromPanelIfRequested`). La firma corre en esa pantalla y no en el Panel porque es
+/// ella quien presenta lo que pueda salir mal (otra cuenta, un fallo al firmar: `CloudMigrationController.lastError`).
+@MainActor
+enum SyncSignInRequest {
+    static var pending = false
 }

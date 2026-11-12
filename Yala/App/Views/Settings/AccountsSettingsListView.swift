@@ -13,6 +13,7 @@ import SwiftUI
 struct AccountsSettingsListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.settingsListIsAlongside) private var settingsListIsAlongside
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
@@ -20,6 +21,12 @@ struct AccountsSettingsListView: View {
 
     @State private var viewModel = AccountsSettingsListViewModel()
     @State private var showUpgradeSheet = false
+    /// Alto de cada fila de la lista (el `List` no se desplaza: su alto lo calcula la pantalla). Escala con el tamaño del
+    /// texto: fijo, la línea anidada de una tarjeta quedaba fuera con texto grande. A tamaño normal, los 80 y 48 de
+    /// siempre.
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @ScaledMetric(relativeTo: .headline) private var rowHeight: CGFloat = 80 // A11Y-DT: @ScaledMetric
+    @ScaledMetric(relativeTo: .subheadline) private var lineRowHeight: CGFloat = 48 // A11Y-DT: @ScaledMetric
 
     private var activeAccountsCount: Int {
         viewModel.orderedActiveAccounts.count
@@ -73,9 +80,12 @@ struct AccountsSettingsListView: View {
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
-                    dismiss()
+            // Con la lista de Ajustes al lado, la lista es la vuelta (UX 2.2 · L16-20).
+            if !settingsListIsAlongside {
+                ToolbarItem(placement: .topBarLeading) {
+                    YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
+                        dismiss()
+                    }
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
@@ -111,12 +121,15 @@ struct AccountsSettingsListView: View {
                 accountToEdit: account
             )
         }
-        .sheet(isPresented: $showUpgradeSheet) {
-            UpgradePromptSheet(feature: .accounts, context: .limitReached)
+        // Si compra Pro ahí, al cerrarse se abre la cuenta nueva que se quería crear (UX 2.2 · L17-9).
+        .proUpgradeSheet(isPresented: $showUpgradeSheet, feature: .accounts, context: .limitReached) {
+            viewModel.isPresentingCreateAccount = true
         }
         .onAppear {
+            LoadTimeMarks.begin(.settingsAccounts)
             viewModel.setContext(modelContext)
             viewModel.accountsSortOrderNames = appPreferences.accountsSortOrderNames
+            LoadTimeMarks.ready(.settingsAccounts)
         }
         .onChange(of: appPreferences.accountsSortOrderNames) { _, newValue in
             viewModel.accountsSortOrderNames = newValue
@@ -183,33 +196,91 @@ struct AccountsSettingsListView: View {
                 .foregroundStyle(Color.primary.opacity(0.6))
                 .padding(.leading, DS.Chip.paddingV)
 
+            // Una fila por tarjeta: sus líneas en otra divisa van anidadas DENTRO de la fila, así que reordenar mueve la
+            // tarjeta entera (tarjeta con varias divisas, entrega 2).
+            let cards = viewModel.orderedCards
             List {
-                ForEach(Array(viewModel.orderedActiveAccounts.enumerated()), id: \.element.id) {
-                    index, account in
-                    Button {
-                        if !viewModel.isEditMode {
-                            viewModel.accountToEdit = account
+                ForEach(Array(cards.enumerated()), id: \.element.head.id) {
+                    index, card in
+                    VStack(spacing: DS.Spacing.none) {
+                        Button {
+                            if !viewModel.isEditMode {
+                                viewModel.accountToEdit = card.head
+                            }
+                        } label: {
+                            listAccountRow(card.head)
                         }
-                    } label: {
-                        listAccountRow(account)
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("accounts_row_\(card.head.name)")
+
+                        ForEach(card.lines, id: \.id) { line in
+                            Button {
+                                if !viewModel.isEditMode {
+                                    viewModel.accountToEdit = line
+                                }
+                            } label: {
+                                listLineRow(line)
+                                    .frame(height: lineRowHeight)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("accounts_line_row_\(line.name)")
+                        }
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("accounts_row_\(account.name)")
                     .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                     .listRowBackground(Color.clear)
                     .listRowSeparator(
-                        index == 0 || index == viewModel.orderedActiveAccounts.count - 1 ? .hidden : .visible,
+                        index == 0 || index == cards.count - 1 ? .hidden : .visible,
                         edges: index == 0 ? .top : .bottom)
                 }
-                .onMove(perform: moveAccountList)
+                // Una vibración de selección al soltar en su sitio (card C4; mapa de `DS.Haptic`).
+                .onMove { source, destination in
+                    DS.Haptic.selection()
+                    moveAccountList(from: source, to: destination)
+                }
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
             .scrollDisabled(true)
-            .frame(height: CGFloat(viewModel.orderedActiveAccounts.count) * 80)
+            .frame(height: cards.reduce(0) { $0 + rowHeight + CGFloat($1.lines.count) * lineRowHeight })
             .solidCard()
             .environment(\.editMode, .constant(viewModel.isEditMode ? .active : .inactive))
         }
+    }
+
+    /// Una línea en otra divisa, debajo de su tarjeta: su divisa y su saldo. El nombre de la tarjeta ya está encima.
+    private func listLineRow(_ line: Account) -> some View {
+        let code = normalizeCurrencyCode(line.currencyCode)
+        return HStack(spacing: DS.Spacing.md) {
+            Image(systemName: "arrow.turn.down.right")
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
+                .frame(width: DS.Icon.badgeMedium)
+                .accessibilityHidden(true)
+
+            Text(L10n.Account.Lines.lineLabel(code))
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+
+            Spacer()
+
+            HStack(spacing: DS.Spacing.xs) {
+                if !sessionState.isExpensesOnlyMode {
+                    Text(viewModel.formattedBalance(for: line))
+                        .font(DS.Typography.subheadlineEmphasized)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+                        .foregroundStyle(.primary)
+                }
+
+                if !viewModel.isEditMode {
+                    Image(systemName: "chevron.right")
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.tertiary)
+                }
+            }
+        }
+        .contentShape(Rectangle())
     }
 
     private func listAccountRow(_ account: Account) -> some View {
@@ -221,7 +292,11 @@ struct AccountsSettingsListView: View {
             return account.name
         }()
 
-        return HStack(spacing: DS.Spacing.md) {
+        // Con el texto en los tamaños de accesibilidad, el importe (de ancho fijo) se comía la fila entera: el nombre
+        // desaparecía y la cifra se cortaba contra el borde (barrido final 2.2, 2026-11-05). Apilada, como las demás
+        // filas de concepto e importe; a tamaño normal es el mismo `HStack` de siempre.
+        let isAccessibilityText = dynamicTypeSize.isAccessibilitySize
+        return AdaptiveRowStack(spacing: DS.Spacing.md) {
             Circle()
                 .fill(colorForHex(account.colorHex))
                 .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
@@ -237,9 +312,13 @@ struct AccountsSettingsListView: View {
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
+                // Una línea, como el nombre y la moneda: la lista tiene alto fijo por fila (80) y, al
+                // reordenar, el asa estrecha la fila y «Cuenta corriente» partía en dos, empujando la
+                // moneda fuera de la celda (auditoría UX 2.2, lote 7, B8).
                 Text(accountTypeText(for: account))
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
 
                 Text(currencyInfoData.name.capitalized)
                     .font(DS.Typography.subheadline)
@@ -247,15 +326,14 @@ struct AccountsSettingsListView: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
             }
-
-            Spacer()
-
+        } trailing: {
             HStack(spacing: DS.Spacing.xs) {
                 if !sessionState.isExpensesOnlyMode {
                     Text(viewModel.formattedBalance(for: account))
                         .font(DS.Typography.headline)
                         .lineLimit(1)
-                        .fixedSize(horizontal: true, vertical: false)
+                        .fixedSize(horizontal: !isAccessibilityText, vertical: false)
+                        .minimumScaleFactor(isAccessibilityText ? 0.6 : 1)
                         .foregroundStyle(.primary)
                 }
 

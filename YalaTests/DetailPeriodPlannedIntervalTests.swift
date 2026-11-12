@@ -57,7 +57,7 @@ struct DetailPeriodPlannedIntervalTests {
         )
         #expect(interval != nil)
         #expect(interval?.start == date(2026, 5, 10))
-        #expect(interval?.end == date(2026, 5, 17))
+        #expect(interval?.end == date(2026, 5, 17).addingTimeInterval(-1))  // 23:59:59 del domingo (lote 12.5)
     }
 
     @Test func plannedInterval_thisMonth_endsAtEndOfMonth() {
@@ -68,7 +68,7 @@ struct DetailPeriodPlannedIntervalTests {
         )
         #expect(interval != nil)
         #expect(interval?.start == date(2026, 5, 1))
-        #expect(interval?.end == endOfCurrentMonth)
+        #expect(interval?.end == endOfCurrentMonth.addingTimeInterval(-1))  // 23:59:59 del último día (lote 12.5)
     }
 
     @Test func plannedInterval_thisYear_endsAtEndOfCurrentMonth() {
@@ -80,7 +80,7 @@ struct DetailPeriodPlannedIntervalTests {
         #expect(interval != nil)
         #expect(interval?.start == date(2026, 1, 1))
         // Truncated to end-of-current-month, not end-of-year.
-        #expect(interval?.end == endOfCurrentMonth)
+        #expect(interval?.end == endOfCurrentMonth.addingTimeInterval(-1))  // 23:59:59 del último día (lote 12.5)
     }
 
     @Test func plannedInterval_lastMonth_returnsNil() {
@@ -138,7 +138,7 @@ struct DetailPeriodPlannedIntervalTests {
         )
         #expect(interval != nil)
         #expect(interval?.start == date(2026, 4, 1))
-        #expect(interval?.end == endOfCurrentMonth)
+        #expect(interval?.end == endOfCurrentMonth.addingTimeInterval(-1))  // 23:59:59 del último día (lote 12.5)
     }
 
     @Test func plannedInterval_customAllPast_returnsNil() {

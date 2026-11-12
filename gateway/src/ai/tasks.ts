@@ -54,6 +54,10 @@ export const TASKS = {
 
   // --- Las de gpt-4.1-mini y whisper-1: el gateway decide desde la sesión 2 ---
   "chat.answer": { category: "chat", endpoint: "chat", legacyModel: "gpt-4.1-mini", source: "ChatAssistantService.runAskFlow", maxBodyBytes: 512 * KB },
+  // Yala IA en modo nube con el camino ampliado (`docs/ai-cloud-vs-private-2026-10.md`): la misma pregunta que
+  // `chat.answer`, y el gateway le da al modelo herramientas que leen las tablas del usuario (`ai/explore/`). Solo la
+  // pide una app con el flag encendido; nunca se deduce. Mismo cubo que `chat.answer`: una pregunta es un uso.
+  "chat.explore": { category: "chat", endpoint: "chat", legacyModel: "gpt-4.1-mini", source: "ChatAssistantService.runAskFlow (modo nube, camino ampliado)", maxBodyBytes: 512 * KB },
   "chat.rewrite": { category: "suggestions", endpoint: "chat", legacyModel: "gpt-4.1-mini", source: "SuggestionsRewriterService", maxBodyBytes: 64 * KB },
   "text.parse": { category: "voice", endpoint: "chat", legacyModel: "gpt-4.1-mini", source: "TranscriptionParserService.parseMultiple", maxBodyBytes: 128 * KB, notePairing: "consume" },
   "voice.transcribe": { category: "voice", endpoint: "transcription", legacyModel: "whisper-1", source: "VoiceTranscriptionService", maxBodyBytes: 26 * MB, notePairing: "grant" },

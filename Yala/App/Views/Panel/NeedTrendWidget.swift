@@ -591,7 +591,7 @@ struct NeedTrendChartView: View {
                     .foregroundStyle(.thSecondaryText.opacity(0.1))
                 if let amount = value.as(Double.self) {
                     AxisValueLabel {
-                        Text(formatAxisAmount(amount))
+                        Text(YalaFormatter.axisK(amount, domain: yDomain))
                             .font(DS.Typography.captionSmall)
                             .foregroundStyle(.thSecondaryText)
                     }
@@ -782,14 +782,14 @@ struct NeedTrendChartView: View {
     private static let fullDayFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = "d MMM yy"
+        f.setLocalizedDateFormatFromTemplate("dMMMyy")
         return f
     }()
 
     private static let fullMonthFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = "MMM yy"
+        f.setLocalizedDateFormatFromTemplate("MMMyy")
         return f
     }()
 
@@ -908,6 +908,7 @@ struct NeedLegendView: View {
                 }
             }
         }
+        .fadesTowardVerticalBar()
     }
 }
 
@@ -1096,19 +1097,19 @@ struct NeedCompactBar: View {
                 }
 
                 // Progress Bar
-                ZStack(alignment: .leading) {
-                    // Track
-                    Capsule()
-                        .fill(Color.primary.opacity(0.05))
-                        .frame(height: 8)
-
-                    // Fill
-                    let ratio = maxAmount > 0 ? (amount / maxAmount) : 0
-                    Capsule()
-                        .fill(need.color)
-                        .frame(width: max(barWidth * ratio, 6), height: 8)
-                }
-                .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { barWidth = $0 }
+                // Track; el relleno va en su `overlay`. En un `ZStack`, la necesidad mayor (al 100 %) fijaba el ancho
+                // medido y la barra no encogía al estrechar la ventana (iPhone Duo al plegar o girar, iPad).
+                let ratio = maxAmount > 0 ? (amount / maxAmount) : 0
+                Capsule()
+                    .fill(Color.primary.opacity(0.05))
+                    .frame(height: 8)
+                    .overlay(alignment: .leading) {
+                        // Fill
+                        Capsule()
+                            .fill(need.color)
+                            .frame(width: max(barWidth * ratio, 6), height: 8)
+                    }
+                    .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { barWidth = $0 }
             }
             .opacity(isSelected ? 1.0 : 0.4)
         }

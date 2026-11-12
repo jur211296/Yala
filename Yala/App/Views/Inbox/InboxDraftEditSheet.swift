@@ -95,6 +95,10 @@ struct InboxDraftEditSheet: View {
     /// aprobarlo como `TransactionItem`. `groups` = grupos elegibles ya resueltos (≥1). `InboxView`
     /// es dueño del ruteo (1 grupo → form directo; >1 → picker). Ver Approach A del feature.
     var onConvertToGroupExpense: ((InboxDraft, [SplitGroup]) -> Void)?
+    /// Abierto desde un pago planificado para pagar una fecha concreta (UX 2.2 · L10-9, L10-11): el título dice qué fecha
+    /// se paga («Pagar ahora el del 18 de octubre»), y al guardar vuelve al detalle del pago, sin la pantalla de éxito ni
+    /// «Aprobar siguiente», que llevaban a otros borradores de la Bandeja.
+    var payNowTitle: String?
 
     // MARK: - Computed
 
@@ -134,9 +138,11 @@ struct InboxDraftEditSheet: View {
         return baseAmountSize * ratio
     }
 
+    /// El color del monto de los tres formularios de registro (registro unificado): rosa el gasto, turquesa el ingreso.
+    /// Antes, el gasto salía en blanco aquí y en rosa en Nuevo registro. Sin monto, el «0.00» es el ejemplo gris del campo
+    /// (`prompt`): el color de un campo con foco no cambia hasta salir de él (`swiftui-ds.md`).
     private var amountColor: Color {
-        guard amount != nil else { return .secondary }
-        return isExpense ? Color.hotPink : Color.electricIndigo
+        Color.recordFormAmount(isIncome: !isExpense)
     }
 
     /// Next pending draft (excluding current one)
@@ -221,7 +227,7 @@ struct InboxDraftEditSheet: View {
     private var mainNavigationStack: some View {
         NavigationStack {
             mainContent
-                .navigationTitle(L10n.Inbox.editDraft)
+                .navigationTitle(payNowTitle ?? L10n.Inbox.editDraft)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar { toolbarContent }
                 .sheet(isPresented: $showAccountSelector) { accountSheet }
@@ -278,6 +284,7 @@ struct InboxDraftEditSheet: View {
                     Button(L10n.Inbox.delete, role: .destructive) {
                         deleteDraftPermanently()
                     }
+                    .accessibilityIdentifier("draft_editor_delete_confirm")
                 } message: {
                     Text(L10n.Inbox.deleteMessage)
                 }
@@ -285,23 +292,29 @@ struct InboxDraftEditSheet: View {
     }
 
     private var mainContent: some View {
-        ZStack {
-            VStack(spacing: DS.Spacing.none) {
-                // Transaction type selector (full width, at top)
-                if !sessionState.isExpensesOnlyMode {
-                    transactionTypeSelector
-                        .padding(.top, DS.Spacing.sm)
-                }
+        // Con los selectores en dos filas (registro unificado) la pantalla crece: va en el molde del scroll con alto mínimo
+        // de Nuevo registro (`swiftui-ds.md`), que cuando cabe reparte igual con los `Spacer`s y no desplaza.
+        GeometryReader { proxy in
+            ScrollView {
+                VStack(spacing: DS.Spacing.none) {
+                    // Transaction type selector (full width, at top)
+                    if !sessionState.isExpensesOnlyMode {
+                        transactionTypeSelector
+                            .padding(.top, DS.Spacing.sm)
+                    }
 
-                Spacer()
-                centralContent
-                Spacer()
-                bottomChips
-                    .padding(.bottom, DS.Spacing.lg)
-                actionButtons
-                    .padding(.horizontal, DS.Spacing.xl)
-                    .padding(.bottom, DS.Spacing.xxl)
+                    Spacer()
+                    centralContent
+                    Spacer()
+                    bottomChips
+                        .padding(.bottom, DS.Spacing.lg)
+                    actionButtons
+                        .padding(.horizontal, DS.Spacing.xl)
+                        .padding(.bottom, DS.Spacing.xxl)
+                }
+                .frame(minHeight: proxy.size.height)
             }
+            .scrollBounceBehavior(.basedOnSize)
             .dismissKeyboardOnTap()
         }
         // Sheet full-height (presentado sin detents desde InboxView) → .subtle.
@@ -376,23 +389,52 @@ struct InboxDraftEditSheet: View {
                         .foregroundStyle(DS.Semantic.errorForeground)
                 }
                 .accessibilityLabel(L10n.Action.delete)
-            } else {
-                // Pending drafts: reject button only
-                Button {
-                    rejectDraft()
+            } else if payNowTitle == nil, canDiscard || canDeleteForever {
+                // Pendiente: lo que destruye va en un menú «⋯» con texto, y arriba queda una sola X, la que cierra
+                // (UX 2.2 · L4-5, variante 2). Antes era una ⓧ roja sin texto que se leía como «cerrar» o «borrar».
+                Menu {
+                    if canDiscard {
+                        Button {
+                            rejectDraft()
+                        } label: {
+                            Label(L10n.Inbox.discardToArchived, systemImage: "archivebox")
+                        }
+                        .accessibilityIdentifier("draft_editor_discard")
+                    }
+                    if canDeleteForever {
+                        Button(role: .destructive) {
+                            showDeleteConfirmation = true
+                        } label: {
+                            Label(L10n.Inbox.deleteForever, systemImage: "trash")
+                        }
+                        .accessibilityIdentifier("draft_editor_delete_forever")
+                    }
                 } label: {
-                    Image(systemName: "xmark.circle")
-                        .foregroundStyle(DS.Semantic.errorForeground)
+                    Image(systemName: "ellipsis")
                 }
-                .accessibilityLabel(L10n.Inbox.reject)
+                .accessibilityLabel(L10n.Common.moreOptions)
+                .accessibilityIdentifier("draft_editor_more")
             }
         }
+    }
+
+    /// Lo que el servicio deja hacer con este borrador: el menú no ofrece lo que `DraftService` rechazaría sin decir
+    /// nada (un gasto de grupo solo se quita desde su grupo; la marca viva de una liquidación y el aviso de importe
+    /// cambiado no se borran). Mismas condiciones que `rejectDraft` y `deleteDraft`.
+    private var canDiscard: Bool { !draft.sourceType.blocksInboxDismissal }
+
+    private var canDeleteForever: Bool {
+        !draft.sourceType.blocksInboxDismissal && !draft.isLiveSettlementApprovalMark
+            && !draft.isSettlementAmountChangeNotice
     }
 
     private var accountSheet: some View {
         AccountSelectorSheet(
             selectedAccount: $selectedAccount,
-            title: L10n.Transaction.account
+            title: L10n.Transaction.account,
+            // Elegir otra tarjeta conserva la divisa que ya tenía el borrador (entrega 3); la tarjeta de la propia línea
+            // vuelve a su principal (card y1z6, `AccountSelectorViewModel.selection`).
+            routingCurrency: selectedAccount?.currencyCode
         )
     }
 
@@ -407,8 +449,9 @@ struct InboxDraftEditSheet: View {
         TagSelectorSheet(selectedTags: $selectedTags)
     }
 
+    /// La misma hoja de fecha que Nuevo registro, con los atajos Hoy / Ayer / Anteayer (registro unificado).
     private var dateSheet: some View {
-        DatePickerSheet(selectedDate: $transactionDate)
+        DatePickerSheet(selectedDate: $transactionDate, quickPick: true)
     }
 
     private var needSheet: some View {
@@ -427,68 +470,30 @@ struct InboxDraftEditSheet: View {
 
     private var centralContent: some View {
         VStack(spacing: DS.Spacing.xxl) {
-            // Date chip
-            Button {
+            // Fecha y descripción, con las piezas y el tamaño de Nuevo registro (registro unificado). La descripción iba
+            // en `headline`, más pequeña.
+            RecordPillButton(icon: "calendar", text: dateChipText) {
                 showDatePicker = true
-            } label: {
-                HStack(spacing: DS.Spacing.sm) {
-                    Image(systemName: "calendar")
-                        .font(DS.Typography.label)
-                    Text(dateChipText)
-                        .font(DS.Typography.label)
-                }
-                .foregroundStyle(.primary)
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.Spacing.md)
-                .background(
-                    Capsule()
-                        .fill(Color.primary.opacity(0.08))
-                )
             }
-            .buttonStyle(.plain)
+            .accessibilityIdentifier("draft_editor_date_chip")
 
-            // Note field
             TextField(L10n.Transaction.description, text: $note)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.primary)
-                .multilineTextAlignment(.center)
-                .textContentType(.none)
+                .recordDescriptionStyle()
                 .autocorrectionDisabled(false)
                 .focused($isNoteFieldFocused)
-                .frame(maxWidth: 280)
-                .tint(Color.primary)
+                .accessibilityIdentifier("draft_editor_note")
 
             // Amount display
             amountDisplay
 
-            // Category chip + Nature chip (visible when subcategory is selected)
+            // Categoría y necesidad: el mismo componente y tamaño que Nuevo registro, con la necesidad rellena
+            // (registro unificado). Antes iba solo teñida y se leía más pequeña.
             if let subcategory = selectedSubcategory {
-                HStack(spacing: DS.Spacing.sm) {
-                    // Category chip (read-only)
-                    let category = subcategory.safeCategory
-                    let categoryColor = Color(hex: category.colorHex)
-                    HStack(spacing: DS.Spacing.xs) {
-                        Image(systemName: category.iconName ?? "folder")
-                            .font(DS.Typography.labelTiny)
-                        Text(category.name)
-                            .font(DS.Typography.labelTiny)
-                    }
-                    .foregroundStyle(categoryColor)
-                    .padding(.horizontal, DS.Chip.paddingH)
-                    .padding(.vertical, DS.Chip.paddingV)
-                    .background(
-                        Capsule().fill(categoryColor.opacity(0.12))
-                    )
-
-                    if isExpense {
-                        NeedEditChip(
-                            need: selectedNeed ?? subcategory.need
-                        ) {
-                            showNeedSelector = true
-                        }
-                    }
-                }
-                .padding(.top, DS.Spacing.sm)
+                RecordCategoryChips(
+                    category: subcategory.safeCategory,
+                    need: isExpense ? (selectedNeed ?? subcategory.need) : nil,
+                    onNeedTap: { showNeedSelector = true }
+                )
             }
 
             // Source indicator
@@ -505,7 +510,7 @@ struct InboxDraftEditSheet: View {
                     .contentTransition(.numericText())
             }
 
-            TextField("0.00", text: $amountString)
+            TextField("", text: $amountString, prompt: Text(verbatim: "0.00").foregroundStyle(.tertiary))
                 .font(.system(size: amountFontSize, weight: .bold, design: .rounded))
                 .foregroundStyle(amountColor)
                 .multilineTextAlignment(.center)
@@ -517,8 +522,8 @@ struct InboxDraftEditSheet: View {
                         amountString = ""
                     }
                     if !isFocused {
-                        if amountString.isEmpty {
-                            amountString = "0.00"
+                        if amountString.isEmpty || AmountInputHelper.parseDecimal(amountString) == 0 {
+                            amountString = ""
                         } else {
                             let amt = AmountInputHelper.parseDecimal(amountString)
                             amountString = AmountInputHelper.formatWithGrouping(abs(amt))
@@ -582,121 +587,70 @@ struct InboxDraftEditSheet: View {
         }
     }
 
-    private var sourceTypeName: String {
-        switch draft.sourceType {
-        case .voice: return L10n.Inbox.sourceVoice
-        case .receiptPhoto: return L10n.Inbox.sourceReceipt
-        case .screenshotList: return L10n.Inbox.sourceScreenshotList
-        case .screenshotSingle: return L10n.Inbox.sourceScreenshot
-        case .emailAlert: return L10n.Inbox.sourceEmail
-        case .scheduledPayment: return L10n.Inbox.sourceScheduledPayment
-        case .subscription: return L10n.Inbox.sourceSubscription
-        case .applePay: return L10n.Inbox.sourceApplePay
-        case .automation: return L10n.Inbox.sourceAutomation
-        case .siri: return L10n.Inbox.sourceSiri
-        case .groupExpense: return L10n.Inbox.sourceGroupExpense
-        case .groupSettlement: return L10n.Inbox.sourceGroupSettlement
-        case .manual: return L10n.Inbox.sourceManual
-        case .groupScheduledExpense: return L10n.Inbox.sourceGroupScheduledExpense
-        }
-    }
+    private var sourceTypeName: String { draft.sourceDisplayName }
 
     // MARK: - Bottom Chips
 
+    /// Los selectores como en Nuevo registro (registro unificado, opción A): en filas que bajan cuando no caben, en vez
+    /// de una sola fila con desplazamiento lateral donde la etiqueta se salía por la derecha. Con una tarjeta con varias
+    /// divisas, la tarjeta y sus divisas van en una fila (entrega 3, decisión D6: elegir la divisa elige la línea en la que
+    /// se aprueba) y la categoría y las etiquetas en otra. Lo elegido, relleno; lo que falta para aprobar, marcado.
     private var bottomChips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: DS.Spacing.sm) {
-                // Account chip
-                SelectionChip(
-                    icon: "creditcard",
-                    text: selectedAccount?.name ?? L10n.Transaction.account,
-                    isSelected: selectedAccount != nil,
-                    color: selectedAccount.map { Color(hex: $0.colorHex) }
-                ) {
-                    dismissKeyboard()
-                    showAccountSelector = true
-                }
-
-                // Subcategory chip
-                SelectionChip(
-                    icon: "tag",
-                    text: selectedSubcategory?.name ?? L10n.Transaction.subcategory,
-                    isSelected: selectedSubcategory != nil,
-                    color: subcategoryChipColor
-                ) {
-                    dismissKeyboard()
-                    showSubcategorySelector = true
-                }
-
-                // Tags
-                if selectedTags.isEmpty {
-                    SelectionChip(
-                        icon: "number",
-                        text: L10n.Transaction.tags,
-                        isSelected: false,
-                        color: nil
-                    ) {
-                        dismissKeyboard()
-                        showTagSelector = true
-                    }
-                } else {
-                    ForEach(selectedTags, id: \.persistentModelID) { tag in
-                        tagChip(for: tag)
-                    }
-                }
-            }
-            .padding(.horizontal, DS.Spacing.lg)
-        }
-    }
-
-    private func tagChip(for tag: Tag) -> some View {
-        let isNewlyCreated = draft.newlyCreatedTagNames.contains(tag.name)
-
-        return HStack(spacing: DS.Spacing.sm) {
-            Button {
+        RecordSelectorChips(spacing: DS.Spacing.sm) {
+            AccountCardChips(
+                selectedAccount: $selectedAccount,
+                isMissing: amount != nil && selectedAccount == nil,
+                accountIdentifier: "draft_editor_account_chip"
+            ) {
                 dismissKeyboard()
-                showTagSelector = true
-            } label: {
-                HStack(spacing: DS.Spacing.sm) {
-                    Image(systemName: tag.iconName)
-                        .font(DS.Typography.labelSmall)
-                    Text(tag.name)
-                        .font(DS.Typography.label)
-                        .lineLimit(1)
+                showAccountSelector = true
+            }
 
-                    // Show "New" badge for newly created tags
-                    if isNewlyCreated {
-                        Text(L10n.Inbox.newTag)
-                            .font(DS.Typography.badgeLabel)
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, DS.Spacing.xs)
-                            .padding(.vertical, DS.Spacing.xxs)
-                            .background(Capsule().fill(theme.accent))
-                    }
+            SelectionChip(
+                icon: "tag",
+                text: selectedSubcategory?.name ?? L10n.Transaction.subcategory,
+                isSelected: selectedSubcategory != nil,
+                color: subcategoryChipColor,
+                isMissing: amount != nil && selectedSubcategory == nil
+            ) {
+                dismissKeyboard()
+                showSubcategorySelector = true
+            }
+            .accessibilityIdentifier("draft_editor_subcategory_chip")
+
+            if selectedTags.isEmpty {
+                SelectionChip(
+                    icon: "number",
+                    text: L10n.Transaction.tags,
+                    isSelected: false,
+                    color: nil
+                ) {
+                    dismissKeyboard()
+                    showTagSelector = true
+                }
+                .accessibilityIdentifier("draft_editor_tags_chip")
+            } else {
+                ForEach(selectedTags, id: \.persistentModelID) { tag in
+                    SelectedTagChip(
+                        tag: tag,
+                        // La etiqueta que acaba de crear Yala IA lleva su marca «Nueva».
+                        badge: draft.newlyCreatedTagNames.contains(tag.name) ? L10n.Inbox.newTag : nil,
+                        onOpen: {
+                            dismissKeyboard()
+                            showTagSelector = true
+                        },
+                        onRemove: {
+                            dsWithAnimation(reduceMotion) {
+                                selectedTags.removeAll { $0.persistentModelID == tag.persistentModelID }
+                            }
+                        }
+                    )
                 }
             }
-            .buttonStyle(.plain)
-
-            Button {
-                dsWithAnimation(reduceMotion) {
-                    selectedTags.removeAll { $0.persistentModelID == tag.persistentModelID }
-                }
-            } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .font(DS.Typography.label)
-            }
-            .buttonStyle(.plain)
         }
-        .foregroundStyle(.thTagChip)
-        .padding(.horizontal, DS.FormRow.paddingV)
-        .padding(.vertical, DS.Spacing.sm)
-        .background(
-            Capsule().fill(.thTagChip.opacity(0.12))
-        )
-        .overlay(
-            Capsule()
-                .stroke(.thTagChip.opacity(0.3), lineWidth: 1)
-        )
+        .padding(.horizontal, DS.Spacing.xl)
+        .animation(reduceMotion ? .easeInOut(duration: DS.Animation.fast) : .spring(response: 0.3, dampingFraction: 0.75),
+                   value: selectedTags.map(\.persistentModelID))
     }
 
     private var subcategoryChipColor: Color? {
@@ -708,6 +662,16 @@ struct InboxDraftEditSheet: View {
 
     private var actionButtons: some View {
         VStack(spacing: DS.Spacing.sm) {
+            // Un borrador descartado dice que lo está y desde cuándo (UX 2.2 · L4-9): antes se abría con un solo
+            // «Aprobar» y nada decía que estaba en Archivados.
+            if initialStatus == .rejected {
+                Label(L10n.Inbox.discardedOn(Self.discardedDateFormatter.string(from: draft.updatedAt)), systemImage: "archivebox")
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier("inbox_discarded_on")
+            }
+
             // Validation message when not ready
             if let missingText = missingFieldsText {
                 Text(missingText)
@@ -716,15 +680,16 @@ struct InboxDraftEditSheet: View {
             }
 
             HStack(spacing: DS.Spacing.md) {
-                // Save button (secondary) - "Aprobar luego" - only for pending drafts
-                if initialStatus == .pending {
+                // Save button (secondary) - "Aprobar luego" - only for pending drafts. Desde un pago planificado no: dejaría
+                // en la Bandeja un borrador de una fecha que la persona venía a pagar ahora (L10-11).
+                if initialStatus == .pending && payNowTitle == nil {
                     Button {
                         saveDraft()
                         dismiss()
                     } label: {
                         Text(L10n.Inbox.saveLater)
                             .font(DS.Typography.headline)
-                            .foregroundStyle(theme.accent)
+                            .foregroundStyle(theme.accentText)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, DS.Spacing.lg)
                             .background(
@@ -733,6 +698,26 @@ struct InboxDraftEditSheet: View {
                             )
                     }
                     .buttonStyle(.plain)
+                }
+
+                // Descartado: «Volver a pendientes» junto a «Guardar» (UX 2.2 · L4-9). Guarda lo editado y lo devuelve
+                // a la lista de pendientes.
+                if initialStatus == .rejected {
+                    Button {
+                        returnToPending()
+                    } label: {
+                        Text(L10n.Inbox.returnToPending)
+                            .font(DS.Typography.headline)
+                            .foregroundStyle(theme.accentText)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, DS.Spacing.lg)
+                            .background(
+                                Capsule()
+                                    .fill(theme.accent.opacity(0.12))
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("inbox_return_to_pending_button")
                 }
 
                 // Approve button (primary)
@@ -751,7 +736,7 @@ struct InboxDraftEditSheet: View {
             // subcategoría ni cuenta personal (se definen en el form de grupo), así que un draft
             // de Apple Pay sin clasificar también puede convertirse. saveDraft() primero para que
             // el template refleje los edits vivos; si el usuario cancela el form, el draft queda igual.
-            if DraftConversionEligibilityLogic.canOffer(
+            if payNowTitle == nil, DraftConversionEligibilityLogic.canOffer(
                 sourceType: draft.sourceType,
                 isExpense: isExpense,
                 hasAmount: amount != nil,
@@ -765,7 +750,7 @@ struct InboxDraftEditSheet: View {
                 } label: {
                     Text(L10n.Inbox.convertToShared)
                         .font(DS.Typography.subheadline)
-                        .foregroundStyle(theme.accent)
+                        .foregroundStyle(theme.accentText)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, DS.Spacing.sm)
                 }
@@ -823,7 +808,7 @@ struct InboxDraftEditSheet: View {
             amountString = AmountInputHelper.formatWithGrouping(abs(amt))
             isExpense = amt < 0
         } else {
-            amountString = "0.00"
+            amountString = ""
             isExpense = true // Default to expense
         }
 
@@ -836,7 +821,7 @@ struct InboxDraftEditSheet: View {
         merchantSuggestedSubcategory = nil
         if selectedSubcategory == nil && !note.trimmingCharacters(in: .whitespaces).isEmpty {
             let merchantService = MerchantMemoryService(modelContext: modelContext)
-            let suggestion = merchantService.suggest(for: note)
+            let suggestion = merchantService.suggest(for: note, isExpense: isExpense)
             switch suggestion {
             case .suggest(let subcategory), .autoAssign(let subcategory):
                 selectedSubcategory = subcategory
@@ -898,24 +883,28 @@ struct InboxDraftEditSheet: View {
 
         guard let account = selectedAccount else {
             approveErrorMessage = L10n.Inbox.errorNoAccount
+            DS.Haptic.error()
             showApproveError = true
             return
         }
 
         if account.isArchived {
             approveErrorMessage = L10n.Inbox.errorArchivedAccount
+            DS.Haptic.error()
             showApproveError = true
             return
         }
 
         guard let amt = amount else {
             approveErrorMessage = L10n.Inbox.errorNoAmount
+            DS.Haptic.error()
             showApproveError = true
             return
         }
 
         guard selectedSubcategory != nil else {
             approveErrorMessage = L10n.Inbox.errorNoSubcategory
+            DS.Haptic.error()
             showApproveError = true
             return
         }
@@ -1030,7 +1019,14 @@ struct InboxDraftEditSheet: View {
                 categoryColorHex: subcategory.safeCategory.colorHex,
                 isExpense: isExpense
             )
+            DS.Haptic.success()
 
+            // Desde un pago planificado se vuelve a su detalle: ni pantalla de éxito ni «Aprobar siguiente» (L10-11).
+            if payNowTitle != nil {
+                onApproved?()
+                dismiss()
+                return
+            }
             // Show success view with animation
             dsWithAnimation(reduceMotion) {
                 showSuccessView = true
@@ -1085,10 +1081,59 @@ struct InboxDraftEditSheet: View {
         draftService.setContext(modelContext)
         do {
             try draftService.rejectDraft(draft)
+            // Descartar desde el editor, una vez hecho (card C4; mapa de `DS.Haptic`).
+            DS.Haptic.warning()
             dismiss()
+            showDiscardedNotice()
         } catch {
             #if DEBUG
             print("InboxDraftEditSheet: Error rejecting draft: \(error)")
+            #endif
+        }
+    }
+
+    /// «Lo moviste a Archivados · Deshacer» (UX 2.2 · L4-5). Sobrevive al cierre del editor: desde la voz, la persona
+    /// vuelve al Panel y el aviso le dice dónde quedó el gasto. «Deshacer» lo devuelve a pendientes.
+    private func showDiscardedNotice() {
+        let draft = draft
+        let draftService = draftService
+        let context = modelContext
+        DraftDiscardUndoNotice.show {
+            // Si en esos segundos se borró o cambió de estado por otro camino, no hay nada que deshacer.
+            guard !draft.isDeleted, draft.status == .rejected else { return }
+            draftService.setContext(context)
+            do {
+                // La Bandeja abierta lo vuelve a enseñar sola: su lista lee el estado de cada borrador.
+                try draftService.returnToPending(draft)
+                // Deshacer, solo si de verdad se deshizo (card C3; mapa de `DS.Haptic`).
+                DS.Haptic.success()
+            } catch {
+                #if DEBUG
+                print("InboxDraftEditSheet: Error undoing discard: \(error)")
+                #endif
+            }
+        }
+    }
+
+    /// Mes entero («17 de octubre»): la abreviatura termina en punto en español y con el punto de la frase salía
+    /// «17 oct.. Está» (medido en el simulador).
+    private static let discardedDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = AppLocale.current
+        formatter.setLocalizedDateFormatFromTemplate("dMMMM")
+        return formatter
+    }()
+
+    /// Devuelve el descartado a pendientes con lo editado (UX 2.2 · L4-9).
+    private func returnToPending() {
+        saveDraft()
+        draftService.setContext(modelContext)
+        do {
+            try draftService.returnToPending(draft)
+            dismiss()
+        } catch {
+            #if DEBUG
+            print("InboxDraftEditSheet: Error returning draft to pending: \(error)")
             #endif
         }
     }
@@ -1097,6 +1142,7 @@ struct InboxDraftEditSheet: View {
         draftService.setContext(modelContext)
         do {
             try draftService.deleteDraft(draft)
+            DS.Haptic.warning()
             dismiss()
         } catch {
             #if DEBUG

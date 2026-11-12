@@ -95,6 +95,14 @@ struct BudgetNavigationID: Hashable {
     let id: PersistentIdentifier
 }
 
+/// Las gráficas de un presupuesto, empujadas desde su detalle por VALOR. El destino lo registra el propio detalle, que
+/// vive en la pila que lleva la columna de detalle de Planificación (`PlanningView`). Sin esa pila, el
+/// `navigationDestination(isPresented:)` de antes no empujaba nada: el botón de gráficas no hacía nada (auditoría
+/// UX 2.2, lote 9).
+struct BudgetChartsNavigationID: Hashable {
+    let id: PersistentIdentifier
+}
+
 // MARK: - Period Option
 
 struct PeriodOption: Identifiable {

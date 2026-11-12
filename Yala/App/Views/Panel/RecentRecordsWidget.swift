@@ -23,26 +23,34 @@ struct RecentRecordsWidget: View {
 
     /// Slot pedagógico opcional inyectado en el header (Panel Polish #2).
     var headerInfoButton: AnyView? = nil
+    /// En el Panel la sección de encima ya se llama «Últimos registros»: el widget no lleva cabecera y empieza en su
+    /// primera fila; el «?» va en la fila del título de la sección (UX 2.2 · L3-12, card gisw). En la vista previa
+    /// del «?» sí la lleva.
+    var showsTitle: Bool = true
+    /// Tocar una fila abre el registro (UX 2.2 · L3-12). `nil` = filas que no se tocan (vista previa).
+    var onOpenRecord: ((TransactionItem) -> Void)? = nil
 
     // MARK: - Static Formatters (avoid recreation on each render)
 
     private static let shortDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = AppLocale.current
-        formatter.dateFormat = "d MMM"
+        formatter.setLocalizedDateFormatFromTemplate("dMMM")
         return formatter
     }()
 
     private static let secondaryDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = AppLocale.current
-        formatter.dateFormat = "d MMM"
+        formatter.setLocalizedDateFormatFromTemplate("dMMM")
         return formatter
     }()
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            headerSection
+            if showsTitle {
+                headerSection
+            }
 
             if records.isEmpty {
                 emptyState
@@ -82,12 +90,29 @@ struct RecentRecordsWidget: View {
         PairedCardsStack(rowSpacing: DS.Spacing.md, columnSpacing: DS.Spacing.xxl) {
             ForEach(Array(records.prefix(5).enumerated()), id: \.element.persistentModelID) {
                 _, record in
-                recordRow(record)
+                tappableRow(record)
             }
         }
     }
 
     // MARK: - Record Rows
+
+    @ViewBuilder
+    private func tappableRow(_ record: TransactionItem) -> some View {
+        if let onOpenRecord {
+            Button {
+                onOpenRecord(record)
+            } label: {
+                recordRow(record)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("panel_latest_record_row")
+            .pointerHighlight(cornerRadius: DS.Radius.md)
+        } else {
+            recordRow(record)
+        }
+    }
 
     private func recordRow(_ record: TransactionItem) -> some View {
         // A tamaños de accesibilidad el importe baja bajo el concepto, como en `RecordRowView`: en fila se
@@ -214,7 +239,7 @@ struct RecentRecordsWidget: View {
 
     private func amountColor(for record: TransactionItem) -> Color {
         if record.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer { return Color(.label) }
-        let isIncome = record.category?.isIncome ?? (record.amount >= 0)
+        let isIncome = TransactionClassificationLogic.isIncome(record)
         // Sólo el ingreso lleva color. El gasto es el caso mayoritario en esta
         // lista: teñirlo pinta la pantalla entera y el color deja de avisar de
         // nada. Además ninguno de los dos tonos anteriores llegaba al mínimo AA

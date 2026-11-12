@@ -94,7 +94,7 @@ struct GroupSplitEditorCard: View {
             } label: {
                 Label(L10n.Groups.Expense.TwoPerson.quickOptions, systemImage: "bolt.fill")
                     .font(DS.Typography.subheadline)
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("group_expense_quick_options")
@@ -166,6 +166,8 @@ struct GroupSplitMemberList: View {
     private func memberRow(member: SplitMember, id: String, amount: Double) -> some View {
         if viewModel.splitType == .equal {
             Button {
+                // Marcar o quitar a un participante: selección (card C4; mapa de `DS.Haptic`).
+                DS.Haptic.selection()
                 viewModel.toggleMember(id)
             } label: {
                 HStack(spacing: DS.Spacing.md) {
@@ -174,7 +176,7 @@ struct GroupSplitMemberList: View {
                     let isSelected = viewModel.selectedMemberIDs.contains(id)
                     Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                         .font(DS.Typography.headline)
-                        .foregroundStyle(isSelected ? theme.accent : Color.secondary)
+                        .foregroundStyle(isSelected ? theme.accentText : Color.secondary)
                 }
                 .padding(.horizontal, rowInset)
                 .padding(.vertical, DS.Spacing.md)
@@ -214,6 +216,7 @@ struct GroupSplitMemberList: View {
         let total = viewModel.activeSheetMembers.count
         let allSelected = total > 0 && viewModel.selectedMembers.count == total
         return Button {
+            DS.Haptic.selection()
             if allSelected { viewModel.deselectAllMembers() } else { viewModel.selectAllMembers() }
         } label: {
             HStack(spacing: DS.Spacing.md) {
@@ -223,7 +226,7 @@ struct GroupSplitMemberList: View {
                 Spacer()
                 Image(systemName: allSelected ? "checkmark.circle.fill" : "circle")
                     .font(DS.Typography.headline)
-                    .foregroundStyle(allSelected ? theme.accent : Color.secondary)
+                    .foregroundStyle(allSelected ? theme.accentText : Color.secondary)
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.md)
@@ -240,7 +243,10 @@ struct GroupSplitMemberList: View {
                 .font(DS.Typography.body)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
-            if member.isCurrentUser {
+            // «Tú» una sola vez (UX 2.2 · L10-16): si el nombre ya es «Tú», no se le añade «(Tú)».
+            if member.isCurrentUser,
+               (viewModel.memberNameLookup[id] ?? member.resolvedDisplayName)
+                .localizedCaseInsensitiveCompare(L10n.Groups.Member.youName) != .orderedSame {
                 Text(L10n.Groups.Member.you)
                     .font(DS.Typography.captionSmall)
                     .foregroundStyle(.secondary)
@@ -285,13 +291,27 @@ struct GroupSplitMemberList: View {
             HStack(spacing: DS.Spacing.xs) {
                 splitField(id: id, keyPath: \.sharesCounts, keyboard: .numberPad,
                            filter: { AmountInputHelper.filterIntegerInput($0) })
-                Text(L10n.Split.sharesParts)
+                Text(L10n.Split.sharesUnit(sharesShown(for: id)))
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
             }
         case .equal:
             EmptyView()
         }
+    }
+
+    /// Las partes que se VEN junto a la etiqueta: lo escrito o, si el campo está vacío, el placeholder.
+    /// Sin esto la etiqueta decía «1 partes» en el caso por defecto.
+    private func sharesShown(for id: String) -> Int {
+        if let typed = Int(viewModel.sharesCounts[id] ?? "") { return typed }
+        let placeholder = GroupSplitPlaceholderLogic.placeholder(
+            forMemberID: id,
+            orderedMemberIDs: viewModel.activeSheetMembers.map { $0.id.uuidString },
+            currentInputs: viewModel.sharesCounts,
+            splitType: viewModel.splitType,
+            total: viewModel.amount
+        )
+        return Int(placeholder) ?? 0
     }
 
     // MARK: - Split Field (ZStack + dynamic placeholder + filtering + participation sync)

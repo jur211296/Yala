@@ -11,13 +11,13 @@ import OpenAI
 
 // MARK: - LLM Insight Result
 
-struct LLMInsightResponse {
+struct LLMInsightResponse: Codable, Equatable {
     let heroText: String
     let cards: [LLMInsightCard]
     let funFact: String?
 }
 
-struct LLMInsightCard {
+struct LLMInsightCard: Codable, Equatable {
     let icon: String
     let text: String
     let sentiment: String  // "positive", "neutral", "attention"
@@ -37,7 +37,7 @@ enum InsightsLLMError: Error, LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .noAPIKey: return "OpenAI API key not configured"
+        case .noAPIKey: return "AI service not configured"
         case .notProUser: return "Pro subscription required"
         case .noAIConsent: return "AI data consent not given"
         case .offline: return "No internet connection"
@@ -105,7 +105,8 @@ final class InsightsLLMService {
         aggregatedData: [String: Any],
         cacheKey key: String,
         tone: InsightTone = .normal,
-        focus: InsightFocus = .balanced
+        focus: InsightFocus = .balanced,
+        bypassCache: Bool = false
     ) async throws -> LLMInsightResponse {
         let client: OpenAI
         do {
@@ -124,8 +125,8 @@ final class InsightsLLMService {
         let now = Date.now
         cache = cache.filter { now.timeIntervalSince($0.value.timestamp) < 300 }
 
-        // Check cache
-        if let cached = getCached(key: key) {
+        // Check cache («Actualizar» la salta: pide uno nuevo).
+        if !bypassCache, let cached = getCached(key: key) {
             return cached
         }
 
@@ -150,7 +151,13 @@ final class InsightsLLMService {
            let summary = filters["summary"] as? String,
            !summary.isEmpty {
             let mode = filters["mode"] as? String ?? "include"
-            if mode == "exclude" {
+            if mode == "mixed" {
+                filterContext = """
+
+                FILTROS ACTIVOS (INCLUSIÓN Y EXCLUSIÓN): \(summary)
+                IMPORTANTE: Los datos que recibes solo incluyen los elementos marcados con "Solo" y EXCLUYEN los marcados con "Excluyendo". Todos los porcentajes, promedios y distribuciones son relativos a ese subconjunto, no al total de todas las finanzas. Menciona esta perspectiva filtrada en tus insights cuando sea relevante para evitar confusión.
+                """
+            } else if mode == "exclude" {
                 filterContext = """
 
                 FILTROS ACTIVOS (EXCLUSIÓN): \(summary)

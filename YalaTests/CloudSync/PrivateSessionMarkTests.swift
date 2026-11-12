@@ -254,8 +254,8 @@ struct PrivateSessionMarkWiringTests {
         // un consumidor que pasara su propio `UserDefaults` —que es lo que hace el servicio de
         // preferencias— no lo contaba nadie: se colaba un lector de la estricta sin pasar por esta
         // decisión. El prefijo `PrivateSessionMark.` deja fuera la declaración del propio tipo.
-        #expect(Self.countInProduction("PrivateSessionMark.confirmedPrivateSession(") == 9, """
-            `confirmedPrivateSession` tiene NUEVE lecturas en toda la app, y todas comparten el SIGNO
+        #expect(Self.countInProduction("PrivateSessionMark.confirmedPrivateSession(") == 10, """
+            `confirmedPrivateSession` tiene DIEZ lecturas en toda la app, y todas comparten el SIGNO
             de su error: hacia `true` se DAÑA —se borra, o se afirma un hecho falso sobre datos
             ajenos—, hacia `false` solo se conserva de más o se calla. Si aparece una más, decide a
             conciencia de qué lado cae — si equivocarse hacia `true` no destruye nada ni miente, la
@@ -311,6 +311,11 @@ struct PrivateSessionMarkWiringTests {
             ARRANQUE en frío que pide «iCloud no está disponible» cuando el store ya nace vacío
             (`requestColdStartICloudNoticeIfNeeded`, card `tablero-con-icloud-drive-apagado-antes-de-abrir-n5zw`).
             Mismo signo que la gracia: hacia `true` le diría a quien no guarda ahí sus datos que su iCloud no está.
+
+            La DÉCIMA entró el 2026-10-29 (encargo S27i) y es la gemela de la primera: «Eliminar mi cuenta» con sesión
+            privada borra también lo personal y EMITE la señal de vaciado a los demás dispositivos del Apple ID
+            (`CloudSessionSignOut.closeLocalAfterAccountDeletionPrivate`). Mismo signo que `UserDataResetView`: hacia
+            `true` vaciaría el iPad privado del dueño de un móvil prestado.
             """)
     }
 
@@ -341,10 +346,10 @@ struct PrivateSessionMarkWiringTests {
         // Con los espacios colapsados: lo que se fija es QUÉ lee la descripción, no la sangría.
         let vista = try Self.code("Yala/App/Views/Settings/UserDataResetView.swift")
             .split(whereSeparator: \.isWhitespace).joined(separator: " ")
-        #expect(vista.contains("Text(Self.resetDescriptionText(for: scopeOperation))"), """
+        #expect(vista.contains("Text(Self.sentence(for: scopeOperation,"), """
             el párrafo de la pantalla dejó de salir de `scopeOperation`, que es lo que recibe la hoja.
             """)
-        #expect(!vista.contains("PrivateSessionMark.hasPrivateSession() ? L10n.Settings.resetDataDescription"), """
+        #expect(!vista.contains("PrivateSessionMark.hasPrivateSession() ? L10n.UXL20D"), """
             el párrafo volvió a leer solo la marca: discrepa de la hoja en la celda sin sesión privada
             + espejo, donde prometía menos de lo que se borra.
             """)
@@ -513,8 +518,8 @@ struct PrivateSessionMarkWiringTests {
     /// y la aserción de arriba pasaría verde sin medir nada — la familia de «Executed 0 tests».
     @Test("control: el escáner de producción encuentra algo")
     func theProductionScannerActuallyFindsThings() {
-        #expect(Self.countInProduction("PrivateSessionMark.hasPrivateSession(") == 19, """
-            el eje 1 tiene DIECINUEVE consumidores de la lectura conservadora. Si este número cambia, hay un
+        #expect(Self.countInProduction("PrivateSessionMark.hasPrivateSession(") == 20, """
+            el eje 1 tiene VEINTE consumidores de la lectura conservadora. Si este número cambia, hay un
             constructor nuevo y hay que decidir con qué lectura contesta — y si el consumidor nuevo
             alcanza datos de FUERA de este teléfono, la lectura que le toca es la otra.
 
@@ -553,6 +558,11 @@ struct PrivateSessionMarkWiringTests {
             lectura que el registrador del arranque —es el mismo constructor— y sus tres llamadores la acaban de
             escribir en `true` en el mismo gesto: ahí las dos lecturas coinciden, porque solo difieren con la marca
             AUSENTE.
+
+            El vigésimo (2026-10-27, encargo S11e) es `GroupsOnlyIntentGate.current`: Apple Pay y Siri no
+            funcionan con la shell de solo grupos. Con la MISMA lectura que la shell (`ShellModeLogic`): su `true`
+            de más deja a Siri y Apple Pay como estaban, que es el lado que conserva; no alcanza datos fuera del
+            teléfono.
             """)
     }
 

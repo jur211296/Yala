@@ -3,7 +3,10 @@
 //  Yala
 //
 //  Standalone Records view accessible from "More" tab.
-//  Provides full Records functionality with FAB, selection mode, and filter sync.
+//  Provides full Records functionality with selection mode and filter sync. Desde la card 97gc (decisión de Jürgen del
+//  2-nov) es idéntica a Estadísticas › Registros: la acción principal va en la fila bajo la cabecera
+//  (`StatsQuickActionsSlot`) y el flotante solo sale cuando el scroll se lleva esa fila (card rtyu, 4-nov: quitarlo
+//  también al bajar fue leer de más el «sin FAB»; el patrón de toda la app es el de kzhe, del 24-oct).
 //
 
 import SwiftData
@@ -26,6 +29,11 @@ struct RecordsStandaloneView: View {
 
     // MARK: - ViewModels
 
+    /// La fila de acciones salió de la vista al bajar: entran Yala IA y «+» flotantes (card rtyu).
+    @State private var showFloatingActions = false
+    /// La pantalla tiene poco alto: Yala IA y «+» en fila (UX 2.2 · L15-14).
+    @State private var fabShortContainer = false
+
     @State private var dataViewModel = DetailContainerViewModel()
     @State private var recordsViewModel = RecordsViewModel()
 
@@ -34,6 +42,8 @@ struct RecordsStandaloneView: View {
     @State private var showDeleteConfirmation = false
     @State private var showBulkEditSheet = false
     @State private var isPresentingSettings = false
+    /// La salida de lo que falta para registrar, pedida por el flotante (card 7jfp).
+    @State private var missingStepExit: MissingStepExit?
     @State private var recalculateTask: Task<Void, Never>?
     @State private var pendingReload = false
     @Environment(\.scenePhase) private var scenePhase
@@ -78,6 +88,12 @@ struct RecordsStandaloneView: View {
 
     var body: some View {
         mainContent
+            // De la pantalla, no de la columna de lista: en el iPad la lista puede apartarse (`swiftui-ds.md`).
+            .missingStepExitSheet(
+                $missingStepExit,
+                existingAccountNames: { dataViewModel.accounts.map(\.name) },
+                onDismiss: { reloadAndRecalculate() }
+            )
             .modifier(RecordsStandaloneSheets(
                 recordsViewModel: recordsViewModel,
                 showDeleteConfirmation: $showDeleteConfirmation,
@@ -91,11 +107,15 @@ struct RecordsStandaloneView: View {
                 showChatConsentAlert: $showChatConsentAlert,
                 showYalaAIOnboarding: $showYalaAIOnboarding,
                 pendingOpenChatAfterOnboarding: $pendingOpenChatAfterOnboarding,
+                showAIConsentAlert: $showAIConsentAlert,
+                pendingAIInput: $pendingAIInput,
                 isPresentingSettings: $isPresentingSettings,
                 modelContext: modelContext,
                 recalculateData: recalculateData,
                 reloadAndRecalculate: reloadAndRecalculate
             ))
+            // «Editar» del aviso tras guardar abre el registro con la hoja de editar de Registros (UX 2.2 · L2-5).
+            .environment(\.savedRecordEditorOpener, recordsViewModel.savedRecordEditorOpener)
             .modifier(RecordsStandaloneObservers(
                 sessionState: sessionState,
                 dataViewModel: dataViewModel,
@@ -162,7 +182,10 @@ struct RecordsStandaloneView: View {
     /// objeto aunque ya no exista).
     private var openRecord: TransactionItem? {
         guard let id = recordsViewModel.openRecordID else { return nil }
-        return dataViewModel.allTransactions.first { $0.persistentModelID == id }
+        // Lo que espera su borrado con «Deshacer» ya no se enseña (UX 2.2 · L15-13).
+        return dataViewModel.allTransactions.first {
+            $0.persistentModelID == id && !RecordPendingDeletion.shared.hides(id, transferPairID: $0.transferPairID)
+        }
     }
 
     /// ⌘E, ⌫ y ↑↓ (iPad con teclado): solo con Registros delante, la ventana ancha y fuera del modo selección. Ahí el
@@ -178,6 +201,7 @@ struct RecordsStandaloneView: View {
         return RecordCommandActions(
             hasOpenRecord: record != nil,
             canDeleteOpenRecord: record.map { RecordContextActionLogic.actions(.init(record: $0)).canDelete } ?? false,
+            openRecordIsFromGroup: record.map { RecordContextActionLogic.Shape(record: $0).isGroupRecord } ?? false,
             editOpenRecord: {
                 guard let record, RootCommandPerformer.keyboardMayAct(navigation) else { return }
                 viewModel.editOpenRecord(record)
@@ -208,9 +232,16 @@ struct RecordsStandaloneView: View {
     @ViewBuilder
     private var detailColumn: some View {
         if let record = openRecord {
-            TransactionDetailSheet(transaction: record, presentation: .column) {
-                recordsViewModel.editOpenRecord(record)
-            }
+            TransactionDetailSheet(
+                transaction: record,
+                presentation: .column,
+                onEdit: { recordsViewModel.editOpenRecord(record) },
+                onDuplicate: { recordsViewModel.duplicateRecord(record) },
+                onDelete: { recordsViewModel.deleteOpenRecord(
+                    record, context: modelContext,
+                    undoName: RecordDeleteConfirmationText.undoName(for: record, preferences: appPreferences)) },
+                deleteIsUndoable: true
+            )
             .announcesShownInDetailColumn()
             .id(record.persistentModelID)
         } else {
@@ -232,53 +263,65 @@ struct RecordsStandaloneView: View {
                 defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
                 onFilterChange: { recalculateData() }
             )
+            // La fila de acciones bajo la cabecera, la misma de Estadísticas › Registros (card 97gc). Al bajar y perderla
+            // de vista, la fila enciende `showFloatingActions` y salen los flotantes, como en Estadísticas (card rtyu).
+            .environment(\.statsQuickActions, recordsQuickActions)
             .overlay(alignment: .bottom) {
                 ZStack(alignment: .bottom) {
-                    // FAB (only when not in selection mode)
-                    if !recordsViewModel.isSelectionMode {
-                        VStack {
-                            Spacer()
-                            HStack {
+                    // Un contenedor propio para los flotantes: su animación no alcanza a la barra de selección.
+                    ZStack {
+                        if showFloatingActions && !recordsViewModel.isSelectionMode {
+                            VStack {
                                 Spacer()
-                                FABStackView(
-                                    canUseVoiceInput: canUseVoiceInput,
-                                    isVoiceLocked: isVoiceLocked,
-                                    isImageLocked: isImageLocked,
-                                    isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
-                                    chatConsentAccepted: appPreferences.aiChatConsentAccepted,
-                                    chatFABVisible: appPreferences.chatFABVisible,
-                                    onVoiceTap: { showVoiceRecording = true },
-                                    onImageTap: { showImageSelection = true },
-                                    onManualTap: { recordsViewModel.showNewTransaction = true },
-                                    onUpgradeVoice: { showUpgradeForVoice = true },
-                                    onUpgradeImage: { showUpgradeForImage = true },
-                                    onChatTap: {
-                                        switch YalaAIOnboardingLogic.nextScreen(
-                                            consentAccepted: appPreferences.aiChatConsentAccepted,
-                                            onboardingShown: appPreferences.hasShownYalaAIOnboarding
-                                        ) {
-                                        case .onboarding: showYalaAIOnboarding = true
-                                        case .chat:       showChatSheet = true
-                                        case .consent:    showChatConsentAlert = true
-                                        }
-                                    },
-                                    onUpgradeChat: { showUpgradeForChat = true },
-                                    onChatConsentNeeded: { showChatConsentAlert = true }
-                                )
+                                HStack {
+                                    Spacer()
+                                    FABStackView(
+                                        canUseVoiceInput: canUseVoiceInput,
+                                        isVoiceLocked: isVoiceLocked,
+                                        isImageLocked: isImageLocked,
+                                        isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
+                                        chatFABVisible: appPreferences.chatFABVisible,
+                                        isShortContainer: fabShortContainer,
+                                        missingStep: dataViewModel.visibleMissingStep,
+                                        onResolveMissingStep: { resolveMissingStep() },
+                                        onVoiceTap: { showVoiceRecording = true },
+                                        onImageTap: { showImageSelection = true },
+                                        onManualTap: { recordsViewModel.showNewTransaction = true },
+                                        onUpgradeVoice: { showUpgradeForVoice = true },
+                                        onUpgradeImage: { showUpgradeForImage = true },
+                                        onChatTap: { startChat() },
+                                        onUpgradeChat: { showUpgradeForChat = true }
+                                    )
+                                }
                             }
+                            // Con poco alto, los dos botones van en fila (UX 2.2 · L15-14).
+                            .measuresShortContainer($fabShortContainer)
+                            .transition(.opacity)
                         }
                     }
+                    // Entran y salen fundiéndose al desplazar, como en Estadísticas. Implícita: quien enciende
+                    // `showFloatingActions` lo hace desde el scroll, donde un `withAnimation` no anima.
+                    .animation(reduceMotion ? nil : DS.Animation.appear, value: showFloatingActions)
 
-                    // Selection action bar (with animation)
-                    if recordsViewModel.isSelectionMode && !recordsViewModel.selectedRecordIDs.isEmpty {
-                        selectionActionBar
+                    // Modo selección: qué hacer y, con algo elegido, Eliminar y Editar (L8-12).
+                    if recordsViewModel.isSelectionMode {
+                        RecordsSelectionBar(
+                            selectedCount: recordsViewModel.selectedRecordIDs.count,
+                            onDelete: {
+                                recordsViewModel.prepareBulkDelete(context: modelContext)
+                                showDeleteConfirmation = true
+                            },
+                            onEdit: handleEditAction
+                        )
                     }
                 }
             }
             .yalaScreenBackground(.panel)
-            .animation(.spring(response: DS.Animation.springResponse, dampingFraction: DS.Animation.springDamping), value: recordsViewModel.isSelectionMode)
-            .animation(.spring(response: DS.Animation.springResponse, dampingFraction: DS.Animation.springDamping), value: recordsViewModel.selectedRecordIDs.isEmpty)
+            // La barra de selección entra y sale; con Reducir movimiento, en seco (card C6).
+            .animation(reduceMotion ? nil : DS.Animation.appear, value: recordsViewModel.isSelectionMode)
+            .animation(reduceMotion ? nil : DS.Animation.appear, value: recordsViewModel.selectedRecordIDs.isEmpty)
             .navigationTitle(L10n.Records.title)
+            .prefersToolbarItemsInVerticalBar()
             .toolbar {
                 if recordsViewModel.isSelectionMode {
                     selectionModeToolbar
@@ -289,10 +332,91 @@ struct RecordsStandaloneView: View {
             .navigationBarBackButtonHidden(recordsViewModel.isSelectionMode)
     }
 
+    /// Lo que la fila de acciones necesita: las mismas puertas que Estadísticas (`DetailContainerView.statsQuickActions`).
+    /// La fila escribe en `showsFloating` cuando el scroll se la lleva (`revealsFloatingActionWhenScrolledAway`).
+    private var recordsQuickActions: StatsQuickActions {
+        StatsQuickActions(
+            canCreateRecords: canUseVoiceInput,
+            missingStep: dataViewModel.visibleMissingStep,
+            onCreateFirstAccount: { resolveMissingStep() },
+            onCreateCategories: { resolveMissingStep() },
+            isVoiceLocked: isVoiceLocked,
+            isImageLocked: isImageLocked,
+            isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
+            isChatVisible: appPreferences.chatFABVisible,
+            onManualTap: { recordsViewModel.showNewTransaction = true },
+            onVoiceTap: { startAIEntry(.voice) },
+            onImageTap: { startAIEntry(.image) },
+            onChatTap: { startChat() },
+            showsFloating: $showFloatingActions
+        )
+    }
+
+    /// Voz y foto desde la fila: Pro → permiso de IA → la entrada (el orden de `DetailContainerView.startAIEntry`).
+    private func startAIEntry(_ input: PendingAIInput) {
+        switch input {
+        case .voice where isVoiceLocked:
+            showUpgradeForVoice = true
+            return
+        case .image where isImageLocked:
+            showUpgradeForImage = true
+            return
+        default:
+            break
+        }
+        guard appPreferences.aiDataConsentAccepted else {
+            pendingAIInput = input
+            showAIConsentAlert = true
+            return
+        }
+        switch input {
+        case .voice: showVoiceRecording = true
+        case .image: showImageSelection = true
+        }
+    }
+
+    /// Yala IA: Pro → presentación, permiso o chat (`YalaAIOnboardingLogic`).
+    private func startChat() {
+        guard FeatureGateService.shared.canAccess(.chatAssistant) else {
+            showUpgradeForChat = true
+            return
+        }
+        switch YalaAIOnboardingLogic.nextScreen(
+            consentAccepted: appPreferences.aiChatConsentAccepted,
+            onboardingShown: appPreferences.hasShownYalaAIOnboarding
+        ) {
+        case .onboarding: showYalaAIOnboarding = true
+        case .chat: showChatSheet = true
+        case .consent: showChatConsentAlert = true
+        }
+    }
+
+    /// Sin cuenta o sin categorías, la fila lleva a la salida, como la del Panel (card 7jfp).
+    private func resolveMissingStep() {
+        switch dataViewModel.quickActionsState {
+        case .needsAccount:
+            missingStepExit = .createAccount
+        case .needsCategories:
+            switch dataViewModel.createCategoriesAction() {
+            case .seedDefaults: DS.Haptic.success()
+            case .openCategoriesSettings: missingStepExit = .categoriesSettings
+            }
+        case .ready:
+            break
+        }
+    }
+
     // MARK: - Normal Mode Toolbar
 
     @ToolbarContentBuilder
     private var normalModeToolbar: some ToolbarContent {
+        // «Seleccionar» a la vista, no solo dentro de «···» (L8-12).
+        ToolbarItem(placement: .topBarTrailing) {
+            RecordsSelectToolbarButton(viewModel: recordsViewModel)
+        }
+
+        ToolbarSpacer(.fixed, placement: .topBarTrailing)
+
         ToolbarItem(placement: .topBarTrailing) {
             RecordsOverflowMenu(viewModel: recordsViewModel)
         }
@@ -328,61 +452,6 @@ struct RecordsStandaloneView: View {
         }
     }
 
-    // MARK: - New Record FAB
-
-    @ViewBuilder
-
-    // MARK: - Selection Action Bar
-
-    private var selectionActionBar: some View {
-        VStack {
-            Spacer()
-
-            HStack(spacing: DS.Spacing.xl) {
-                // Delete button
-                Button(role: .destructive) {
-                    DS.Haptic.warning()
-                    showDeleteConfirmation = true
-                } label: {
-                    Image(systemName: "trash")
-                        .font(DS.Typography.title)
-                        .foregroundStyle(DS.Semantic.errorForeground)
-                        .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
-                }
-                .accessibilityLabel(L10n.Action.delete)
-                .buttonStyle(.plain)
-
-                Spacer()
-
-                // Selection count
-                Text("\(recordsViewModel.selectedRecordIDs.count) \(L10n.Common.selected)")
-                    .font(DS.Typography.headline)
-                    .contentTransition(.numericText())
-
-                Spacer()
-
-                // Edit button
-                Button {
-                    DS.Haptic.selection()
-                    handleEditAction()
-                } label: {
-                    Image(systemName: "pencil")
-                        .font(DS.Typography.title)
-                        .foregroundStyle(theme.accent)
-                        .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
-                }
-                .accessibilityLabel(L10n.Action.edit)
-                .buttonStyle(.plain)
-            }
-            .padding(.vertical, DS.Spacing.sm)
-            .padding(.horizontal, DS.Spacing.lg)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.bottom, DS.Spacing.md)
-        }
-        .transition(.move(edge: .bottom).combined(with: .opacity))
-    }
-
     // MARK: - Actions
 
     /// Filter changes — recalculate from cache, NO DB fetch
@@ -401,7 +470,8 @@ struct RecordsStandaloneView: View {
         recalculateTask?.cancel()
         recalculateTask = Task { @MainActor in
             do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
-            guard !Task.isCancelled else { return }
+            // Card 7e60: con el almacén de esta pantalla ya soltado (cerrar sesión en la nube), ni recarga ni recalcula.
+            guard !Task.isCancelled, !dataViewModel.isDetachedFromMountedStore else { return }
             if pendingReload {
                 dataViewModel.loadData()
                 pendingReload = false
@@ -426,6 +496,7 @@ struct RecordsStandaloneView: View {
             context: modelContext,
             currencyCode: appPreferences.defaultCurrencyCode.rawValue
         )
+        LoadTimeMarks.ready(.records)
     }
 
     private func handleEditAction() {
@@ -461,10 +532,16 @@ private struct RecordsStandaloneSheets: ViewModifier {
     @Binding var showChatConsentAlert: Bool
     @Binding var showYalaAIOnboarding: Bool
     @Binding var pendingOpenChatAfterOnboarding: Bool
+    /// Para pedir el consentimiento de datos al abrir voz o foto tras comprar Pro (UX 2.2 · L17-9).
+    @Binding var showAIConsentAlert: Bool
+    @Binding var pendingAIInput: PendingAIInput
     @Binding var isPresentingSettings: Bool
     let modelContext: ModelContext
     let recalculateData: () -> Void
     let reloadAndRecalculate: () -> Void
+    /// Lo escrito en «Nuevo registro» mientras su hoja siga abierta: si SwiftUI rehace el contenido de la hoja (entrada
+    /// desde fuera con el formulario a medias), el formulario lo retoma. Se descarta al cerrarse la hoja.
+    @State private var newRecordDraft = NewRecordDraft()
 
     func body(content: Content) -> some View {
         content
@@ -472,8 +549,9 @@ private struct RecordsStandaloneSheets: ViewModifier {
                 RecordsFiltersView(recordsViewModel: recordsViewModel)
                     .onDisappear { recalculateData() }
             }
-            .sheet(isPresented: $recordsViewModel.showNewTransaction) {
-                NewTransactionView()
+            .sheet(isPresented: $recordsViewModel.showNewTransaction, onDismiss: { newRecordDraft.discard() }) {
+                NewTransactionView(draft: newRecordDraft)
+                    .newRecordSheetIdentity()
                     .presentationDetents([.large])
                     .onDisappear { reloadAndRecalculate() }
             }
@@ -483,11 +561,12 @@ private struct RecordsStandaloneSheets: ViewModifier {
             .sheet(isPresented: $showImageSelection) {
                 ImageSelectionView()
             }
-            .sheet(isPresented: $showUpgradeForVoice) {
-                UpgradePromptSheet(feature: .voiceInput, context: .proFeature)
+            // Si se compra Pro en la hoja, al cerrarse se abre lo que se quería (UX 2.2 · L17-9).
+            .proUpgradeSheet(isPresented: $showUpgradeForVoice, feature: .voiceInput, context: .proFeature) {
+                openAIEntryAfterUnlock(.voice)
             }
-            .sheet(isPresented: $showUpgradeForImage) {
-                UpgradePromptSheet(feature: .imageInput, context: .proFeature)
+            .proUpgradeSheet(isPresented: $showUpgradeForImage, feature: .imageInput, context: .proFeature) {
+                openAIEntryAfterUnlock(.image)
             }
             // Yala IA: columna al lado en ventana ancha, la hoja de siempre en compacta.
             .yalaAIChat(isPresented: $showChatSheet)
@@ -498,8 +577,8 @@ private struct RecordsStandaloneSheets: ViewModifier {
                 launcher: .records,
                 onPersistFlag: { appPreferences.hasShownYalaAIOnboarding = true }
             )
-            .sheet(isPresented: $showUpgradeForChat) {
-                UpgradePromptSheet(feature: .chatAssistant, context: .proFeature)
+            .proUpgradeSheet(isPresented: $showUpgradeForChat, feature: .chatAssistant, context: .proFeature) {
+                openChatAfterUnlock()
             }
             .chatConsentAlert(isPresented: $showChatConsentAlert) {
                 switch YalaAIOnboardingLogic.nextScreen(
@@ -532,30 +611,33 @@ private struct RecordsStandaloneSheets: ViewModifier {
                     if recordsViewModel.consumePendingEditAfterDetail() {
                         recordsViewModel.showEditTransaction = true
                     } else {
+                        // Eliminar desde el detalle: con la hoja ya cerrada (L8-4).
+                        _ = recordsViewModel.consumePendingDeleteAfterDetail(context: modelContext)
                         recordsViewModel.editingTransaction = nil
                         reloadAndRecalculate()
                     }
                 }
             ) {
                 if let transaction = recordsViewModel.editingTransaction {
-                    TransactionDetailSheet(transaction: transaction) {
-                        recordsViewModel.requestEditFromDetail()
-                    }
+                    TransactionDetailSheet(
+                        transaction: transaction,
+                        onEdit: { recordsViewModel.requestEditFromDetail() },
+                        onDuplicate: { recordsViewModel.requestDuplicateFromDetail() },
+                        onDelete: { recordsViewModel.requestDeleteFromDetail(
+                            transaction,
+                            undoName: RecordDeleteConfirmationText.undoName(for: transaction, preferences: appPreferences)) },
+                        deleteIsUndoable: true
+                    )
                 }
             }
-            .confirmationDialog(
-                L10n.Records.deleteConfirmTitle(recordsViewModel.selectedRecordIDs.count),
+            // Alerta centrada y con el registro nombrado, como el resto de borrados (L8-7).
+            .modifier(RecordsBulkDeleteAlert(
                 isPresented: $showDeleteConfirmation,
-                titleVisibility: .visible
+                viewModel: recordsViewModel
             ) {
-                Button(L10n.Action.delete, role: .destructive) {
-                    recordsViewModel.deleteSelected(context: modelContext)
-                    reloadAndRecalculate()
-                }
-                Button(L10n.Action.cancel, role: .cancel) {}
-            } message: {
-                Text(L10n.Common.cannotUndo)
-            }
+                recordsViewModel.deleteSelected(context: modelContext)
+                reloadAndRecalculate()
+            })
             .sheet(isPresented: $showBulkEditSheet) {
                 BulkEditSheet(
                     viewModel: recordsViewModel,
@@ -721,9 +803,12 @@ private struct RecordsSessionObservers2b: ViewModifier {
         content
             .onChange(of: sessionState.amountCondition) { _, _ in recalculateData() }
             .onChange(of: sessionState.searchText) { _, _ in recalculateData() }
-            .onChange(of: sessionState.isExcludeMode) { _, _ in recalculateData() }
+            .onChange(of: sessionState.excludedFilterSets) { _, _ in recalculateData() }
             .onChange(of: sessionState.customDateRange) { _, _ in recalculateData() }
-            .onChange(of: dataViewModel.allTransactions) { recalculateData() }
+            // Sin `onChange(of: dataViewModel.allTransactions)` (retirado el 2026-10-30, encargo
+            // `eficiencia-carga-por-vista`): el array solo cambia en `setContext` (el `onAppear`, que calcula justo
+            // después) y en `scheduleRecalculation` (que también), así que pedía un segundo cálculo entero 150 ms más
+            // tarde sobre los mismos datos, y comparaba el histórico entero en cada repintado para saberlo.
     }
 }
 
@@ -795,4 +880,33 @@ private struct RecordsStandaloneObservers: ViewModifier {
     RecordsStandaloneView()
         .environment(SceneNavigation())
         .environment(SessionState.shared)
+}
+
+// MARK: - Tras comprar Pro (UX 2.2 · L17-9)
+
+extension RecordsStandaloneSheets {
+    /// El mismo camino que tocar Voz o Foto siendo Pro, con su consentimiento de datos si aún no se dio.
+    fileprivate func openAIEntryAfterUnlock(_ input: PendingAIInput) {
+        guard appPreferences.aiDataConsentAccepted else {
+            pendingAIInput = input
+            showAIConsentAlert = true
+            return
+        }
+        switch input {
+        case .voice: showVoiceRecording = true
+        case .image: showImageSelection = true
+        }
+    }
+
+    /// El mismo camino que tocar Yala IA siendo Pro.
+    fileprivate func openChatAfterUnlock() {
+        switch YalaAIOnboardingLogic.nextScreen(
+            consentAccepted: appPreferences.aiChatConsentAccepted,
+            onboardingShown: appPreferences.hasShownYalaAIOnboarding
+        ) {
+        case .onboarding: showYalaAIOnboarding = true
+        case .chat: showChatSheet = true
+        case .consent: showChatConsentAlert = true
+        }
+    }
 }

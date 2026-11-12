@@ -46,7 +46,8 @@ final class AccountRemovalUITests: XCTestCase {
             "Eliminar una cuenta con movimientos no preguntó: la cuenta se habría eliminado sin más.")
         let count = app.descendants(matching: .any)["account_removal_count_records"]
         XCTAssertTrue(count.waitForExistence(timeout: 5), "La hoja no dice cuántos movimientos hay.")
-        XCTAssertTrue(count.label.hasSuffix(" 2"), "La hoja debía contar 2 movimientos y dice «\(count.label)».")
+        // Propuesta A (card rd7z): la cabecera dice «2 registros · saldo».
+        XCTAssertTrue(count.label.hasPrefix("2 "), "La hoja debía contar 2 movimientos y dice «\(count.label)».")
     }
 
     /// Mover (la opción por defecto) a «Banco QA»: la cuenta desaparece y su saldo pasa al destino (1.000 − 58).
@@ -57,6 +58,9 @@ final class AccountRemovalUITests: XCTestCase {
         let destination = app.buttons["account_removal_destination_\(bank)"]
         XCTAssertTrue(destination.waitForExistence(timeout: 5), "No aparece «\(bank)» como destino.")
         XCTAssertTrue(destination.isSelected, "El destino por defecto debía ser la cuenta en la misma moneda.")
+        let balance = app.descendants(matching: .any)["account_removal_balance_change"]
+        XCTAssertTrue(balance.waitForExistence(timeout: 5), "La tarjeta de mover no dice cómo queda el saldo.")
+        XCTAssertTrue(balance.label.contains("942"), "El saldo de «\(bank)» debía quedar en 942: «\(balance.label)».")
 
         let proceed = app.buttons["account_removal_proceed"]
         XCTAssertTrue(proceed.waitForHittable(timeout: 5))
@@ -101,5 +105,33 @@ final class AccountRemovalUITests: XCTestCase {
         XCTAssertTrue(bankRow.label.contains("1,000") || bankRow.label.contains("1.000"),
                       "Borrar no debía tocar «\(bank)»: «\(bankRow.label)».")
         XCTAssertFalse(bankRow.label.contains("942"), "Borrar movió los movimientos en vez de borrarlos.")
+    }
+
+    /// «Cambiar» abre la lista de cuentas en una hoja pequeña; elegir otra la pone en la tarjeta. Se sale por
+    /// «Cancelar»: la mudanza a otra divisa pediría tasas a la red.
+    func test_changeDestination_picksAnotherAccountInsideTheMoveCard() {
+        let app = XCUIApplication()
+        openRemoval(app)
+
+        let current = app.buttons["account_removal_destination_\(bank)"]
+        XCTAssertTrue(current.waitForHittable(timeout: 5))
+        current.tap()
+
+        let dollars = "Dólares QA"
+        let option = app.buttons["account_removal_destination_option_\(dollars)"]
+        XCTAssertTrue(option.waitForHittable(timeout: 5), "«Cambiar» no abrió la lista de cuentas.")
+        option.tap()
+
+        let chosen = app.buttons["account_removal_destination_\(dollars)"]
+        XCTAssertTrue(chosen.waitForExistence(timeout: 5), "La tarjeta no pasó a «\(dollars)».")
+        XCTAssertFalse(app.buttons["account_removal_destination_\(bank)"].exists)
+        XCTAssertTrue(app.buttons["account_removal_proceed"].label.contains(source),
+                      "El botón debía nombrar la cuenta que se elimina.")
+
+        let cancel = app.buttons["account_removal_cancel"]
+        XCTAssertTrue(cancel.waitForHittable(timeout: 5))
+        cancel.tap()
+        XCTAssertTrue(app.buttons["accounts_row_\(source)"].waitForExistence(timeout: 5),
+                      "Cancelar no debía eliminar la cuenta.")
     }
 }

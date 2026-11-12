@@ -379,7 +379,11 @@ struct GroupsGateWiringTests {
             let n = Self.count("GroupsOrganizerOnboarding.completeSetup(", in: stripped)
             if n > 0 { sitios.append("\(url.lastPathComponent)×\(n)") }
         }
-        #expect(Set(sitios) == Set(["GroupsOrganizerNameView.swift×1"]), """
+        // Desde UX 2.2 · L12-12 (2026-10-21) es el formulario del primer grupo, que sustituyó a la pantalla del nombre.
+        // Desde el 2026-10-22, también el paso `.presentName` del router (`ContentView`), y solo para quien vuelve con la
+        // misma cuenta y ya está en sus grupos con nombre (`ReturningGroupsMemberLogic`): está detrás de la misma cadena
+        // (educativo → login → consent), así que no adelanta el trío.
+        #expect(Set(sitios) == Set(["GroupFormView.swift×1", "ContentView.swift×1"]), """
             cambiaron los call-sites del alta. El ÚNICO legítimo está detrás de la cadena completa \
             (educativo → login → consent): la pantalla del nombre de la puerta del Welcome. Hubo un segundo \
             —la card «Solo grupos» del onboarding— hasta el 2026-09-10 (ADR 2026-09-09 §7). Otro es, con \

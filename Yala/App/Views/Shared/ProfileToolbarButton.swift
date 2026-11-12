@@ -40,7 +40,10 @@ struct ProfileToolbarButton: View {
     // MARK: - Body
 
     var body: some View {
-        Button(action: action) {
+        Button {
+            LoadTimeMarks.begin(.settings)
+            action()
+        } label: {
             avatar
         }
         .buttonStyle(.plain)
@@ -51,7 +54,8 @@ struct ProfileToolbarButton: View {
                     .offset(x: 4, y: 4)
             }
         }
-        .accessibilityLabel(L10n.Accessibility.profile)
+        // UX 2.2 · L16-1: el avatar abre Ajustes, y así se llama la hoja que abre.
+        .accessibilityLabel(L10n.Profile.title)
         .accessibilityIdentifier("profile_avatar")
     }
 
@@ -59,8 +63,8 @@ struct ProfileToolbarButton: View {
 
     private var avatar: some View {
         Group {
-            if let imageData = profileStorage.imageData,
-               let uiImage = UIImage(data: imageData) {
+            // Ya decodificada y reducida (YALA-IOS-9/A): decodificarla aquí, en cada pestaña y cada dibujado, era 1 GB.
+            if let uiImage = profileStorage.image {
                 // User photo
                 Image(uiImage: uiImage)
                     .resizable()
@@ -75,31 +79,22 @@ struct ProfileToolbarButton: View {
                     .overlay {
                         Image(systemName: displayIcon)
                             .font(DS.Typography.bodyBold)
-                            .foregroundStyle(theme.accent)
+                            .foregroundStyle(theme.accentText)
                     }
             }
         }
         .clipShape(Circle())
         .overlay {
             Circle()
-                .strokeBorder(ringGradient, lineWidth: ringWidth)
+                .strokeBorder(ringColor, lineWidth: ringWidth)
         }
     }
 
-    // MARK: - Ring Gradient
+    // MARK: - Ring
 
-    private var ringGradient: LinearGradient {
-        isProUser
-            ? LinearGradient(
-                colors: DS.Gradients.proBadge,
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-              )
-            : LinearGradient(
-                colors: [theme.accent, theme.accent.opacity(0.6)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-              )
+    /// Aro sólido, el mismo que la cabecera de Ajustes (UX 2.2 · L16-12): dorado con Pro, color de acento sin él.
+    private var ringColor: Color {
+        isProUser ? Color.proGold : theme.accent
     }
 
     // MARK: - Spark Badge
@@ -121,6 +116,12 @@ struct ProfileToolbarButton: View {
 
 /// ToolbarContent wrapper that applies .sharedBackgroundVisibility(.hidden)
 /// to remove toolbar's default glass (button has its own glass effect).
+///
+/// iPhone Duo: es una vista propia, y sin pedirlo se quedaba en una barra horizontal arriba, aparte de la vertical, y
+/// ocupaba una franja que le quitaba alto a la página. Va en la barra vertical en las siete páginas que lo llevan (opción
+/// 2 de Jürgen, 2026-10-24) donde la haya: el Duo cerrado y, desde el 2026-10-30, también el abierto en horizontal
+/// (card a5kf). De lo último en irse a «···», donde una vista propia no se pinta: para que quepa, las pestañas ceden
+/// (`prefersToolbarItemsInVerticalBar`). Sin barra vertical (iPhone, iPad, Duo abierto en vertical) no cambia nada.
 struct ProfileToolbarItem: ToolbarContent {
     let action: () -> Void
 
@@ -129,6 +130,8 @@ struct ProfileToolbarItem: ToolbarContent {
             ProfileToolbarButton(action: action)
         }
         .sharedBackgroundVisibility(.hidden)
+        .joinsVerticalBar()
+        .overflowsLast()
     }
 }
 

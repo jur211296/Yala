@@ -25,22 +25,57 @@ struct HeroMonthView: View {
     /// siempre son del mes calendario para anclar la frase motivacional).
     var periodSummary: PanelHeroPeriodData = .init()
 
+    /// Saldo de las cuentas que suma el Panel, para la línea «Tienes X en tus cuentas» de un período sin
+    /// movimientos (UX 2.2 · L3-1). `nil` sin cuentas: no hay nada que decir.
+    var totalBalance: Double? = nil
+    var totalBalanceIsApproximate: Bool = false
+
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    /// La cifra crece con el texto de accesibilidad, con techo (pase de estrés 2.2, card eb9i): con los 36 pt fijos de
+    /// `panelHeroAmount`, a AX5 los chips de entradas y salidas medían casi el doble y la jerarquía se invertía. El molde
+    /// es el de Grupos (`GroupSummaryHeader.netFont`). Hasta xxxLarge sigue siendo el token de siempre.
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledFigureSize: CGFloat = 36
+    /// Símbolo y decimales de la cifra, en la misma proporción que el token (17 de 36).
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledFigureSecondarySize: CGFloat = 17
+    /// Techo de la cifra: el `largeTitle` de AX5. Con el `minimumScaleFactor(0.7)` de `AmountText` no baja de 42 pt.
+    private static let figureMaxSize: CGFloat = 60
+    /// Rótulo y chips dejan de crecer en AX2: son detalle de la cifra, no compiten con ella (como en Grupos).
+    private static let sidesMaxTypeSize = DynamicTypeSize.accessibility2
+
+    private var figureFont: Font {
+        guard dynamicTypeSize.isAccessibilitySize else { return DS.Typography.panelHeroAmount }
+        // A11Y-DT: tamaño escalado a mano con techo; el token es fijo a propósito y aquí tiene que crecer.
+        return .system(size: min(scaledFigureSize, Self.figureMaxSize), weight: .semibold)
+    }
+
+    private var figureSecondaryFont: Font {
+        guard dynamicTypeSize.isAccessibilitySize else { return DS.Typography.panelHeroAmountSecondary }
+        // A11Y-DT: el mismo techo, en la proporción del token.
+        return .system(size: min(scaledFigureSecondarySize, Self.figureMaxSize * 17 / 36), weight: .regular)
+    }
 
     // La maqueta (rótulo y período arriba, cifra y detalle debajo, todo a la izquierda) es `HeroHeader`, la misma
     // que usan las pestañas de Estadísticas: así las dos cabeceras no pueden volver a divergir.
     var body: some View {
         HeroHeader {
-            HeroHeaderLabel(text: summaryLabel)
+            labelWithDetailHint
+                .dynamicTypeSize(...Self.sidesMaxTypeSize)
         } period: {
+            // El título de la píldora se releva fundido y la cápsula cambia de ancho animada (card C2), como en
+            // Estadísticas. Con Reducir movimiento, en seco.
             TrendsPeriodMenu(
                 selectedPeriod: selectedPeriod,
                 customDateRange: customDateRange,
                 onSelect: onSelectPeriod,
-                onCustomTapped: onCustomPeriodTapped
+                onCustomTapped: onCustomPeriodTapped,
+                titleMotion: reduceMotion ? nil : .fade
             )
+            .animation(reduceMotion ? nil : DS.Animation.selection, value: selectedPeriod)
+            .animation(reduceMotion ? nil : DS.Animation.selection, value: customDateRange)
         } content: {
             summaryRow
         }
@@ -64,7 +99,44 @@ struct HeroMonthView: View {
     /// y ya lo dice. Compuesto con el período seguiría en el label accesible,
     /// donde no hay «al lado» que valga.
     private var summaryLabel: String {
-        sessionState.isExpensesOnlyMode ? L10n.Panel.spent : L10n.Panel.Hero.availableLabel
+        if sessionState.isExpensesOnlyMode { return L10n.Panel.spent }
+        return PanelHeroFigureLogic.label(figure: figure, period: selectedPeriod)
+    }
+
+    /// Qué cuenta la cifra grande: el balance, o lo mismo que filtra la píldora puesta (UX 2.2 · L3-3).
+    private var figure: PanelHeroFigure {
+        PanelHeroFigureLogic.figure(natures: sessionState.selectedTransactionNatures)
+    }
+
+    /// Todo el hero lleva a Estadísticas; «Ver detalle ›» junto al rótulo lo dice (UX 2.2 · L3-2). Si el rótulo
+    /// largo no deja sitio, queda solo la flecha.
+    private var labelWithDetailHint: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: DS.Spacing.xs) {
+                HeroHeaderLabel(text: summaryLabel)
+                detailHint(showsText: true)
+            }
+            HStack(spacing: DS.Spacing.xs) {
+                HeroHeaderLabel(text: summaryLabel)
+                detailHint(showsText: false)
+            }
+        }
+    }
+
+    private func detailHint(showsText: Bool) -> some View {
+        HStack(spacing: DS.Spacing.xxs) {
+            if showsText {
+                Text(L10n.Panel.Hero.seeDetail)
+                    .lineLimit(1)
+            }
+            Image(systemName: "chevron.right")
+                .font(DS.Typography.captionSmall)
+                .fontWeight(.semibold)
+        }
+        .font(DS.Typography.caption)
+        .foregroundStyle(.tertiary)
+        .fixedSize()
+        .accessibilityHidden(true)
     }
 
     // MARK: - Summary row ("Disponible · Período" + monto + chips)
@@ -89,10 +161,11 @@ struct HeroMonthView: View {
                 AmountText(
                     value: periodSummary.expense,
                     currencyCode: currencyCode,
-                    font: DS.Typography.panelHeroAmount,
-                    secondaryFont: DS.Typography.panelHeroAmountSecondary,
+                    font: figureFont,
+                    secondaryFont: figureSecondaryFont,
                     // Solo el lado del gasto: este número no incluye los ingresos.
-                    isEstimate: periodSummary.expenseApproximate
+                    isEstimate: periodSummary.expenseApproximate,
+                    animatesValue: true
                 )
 
                 // Gateado también por `showVariations`: `VariationChip` se
@@ -108,78 +181,167 @@ struct HeroMonthView: View {
                 }
             } else {
                 AmountText(
-                    value: periodSummary.available,
+                    value: figure.value(income: periodSummary.income, expense: periodSummary.expense),
                     currencyCode: currencyCode,
-                    font: DS.Typography.panelHeroAmount,
-                    secondaryFont: DS.Typography.panelHeroAmountSecondary,
-                    isEstimate: periodSummary.amountsAreApproximate
+                    font: figureFont,
+                    secondaryFont: figureSecondaryFont,
+                    isEstimate: figureIsApproximate,
+                    animatesValue: true
                 )
+                .accessibilityIdentifier("panel_hero_figure")
 
                 // A tamaños de accesibilidad los dos importes van uno bajo otro (`AdaptiveRowStack`): en fila no
-                // cabían y se cortaban por el medio («S/1,7…10»).
-                AdaptiveRowStack(spacing: DS.Spacing.md, stackedSpacing: DS.Spacing.xs) {
-                    // Income — pill de filtro por naturaleza (income está oculto en
-                    // expenses-only, rama que ya no entra aquí).
-                    Button {
-                        DS.Haptic.selection()
-                        dsWithAnimation(reduceMotion) {
-                            if isIncomeFiltered {
-                                sessionState.selectedTransactionNatures.removeAll()
-                            } else {
-                                sessionState.selectedTransactionNatures = [.income]
-                            }
-                        }
-                    } label: {
-                        HStack(spacing: DS.Spacing.xs) {
-                            Image(systemName: "arrow.up.right")
-                                .font(DS.Typography.labelSmall)
-                                .foregroundStyle(Color.incomeGraph)
-                                .accessibilityHidden(true)
-                            AmountText(
-                                value: periodSummary.income,
-                                currencyCode: currencyCode,
-                                font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
-                                tint: .secondary,
-                                isEstimate: periodSummary.incomeApproximate
-                            )
-                        }
-                        .opacity(hasNatureFilter && !isIncomeFiltered ? 0.3 : 1.0)
-                    }
-                    .buttonStyle(.plain)
-
-                    // Expense pill.
-                    Button {
-                        DS.Haptic.selection()
-                        dsWithAnimation(reduceMotion) {
-                            if isExpenseFiltered {
-                                sessionState.selectedTransactionNatures.removeAll()
-                            } else {
-                                sessionState.selectedTransactionNatures = [.expense]
-                            }
-                        }
-                    } label: {
-                        HStack(spacing: DS.Spacing.xs) {
-                            Image(systemName: "arrow.down.right")
-                                .font(DS.Typography.labelSmall)
-                                .foregroundStyle(Color.expenseGraph)
-                                .accessibilityHidden(true)
-                            AmountText(
-                                value: periodSummary.expense,
-                                currencyCode: currencyCode,
-                                font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
-                                tint: .secondary,
-                                // El MISMO número que el hero pinta con «≈» en Solo Gastos: sin esto
-                                // el usuario ve el gasto marcado en un modo y exacto en el otro.
-                                isEstimate: periodSummary.expenseApproximate
-                            )
-                        }
-                        .opacity(hasNatureFilter && !isExpenseFiltered ? 0.3 : 1.0)
-                    }
-                    .buttonStyle(.plain)
+                // cabían y se cortaban por el medio («S/1,7…10»). Son botones de filtro: van en cápsula, y la elegida
+                // rellena de su color (UX 2.2 · L3-3; criterio de foco: lo elegido va relleno, no solo atenuando lo otro).
+                AdaptiveRowStack(spacing: DS.Spacing.sm, stackedSpacing: DS.Spacing.xs) {
+                    naturePill(
+                        nature: .income,
+                        isSelected: isIncomeFiltered,
+                        isDimmed: hasNatureFilter && !isIncomeFiltered,
+                        value: periodSummary.income,
+                        isEstimate: periodSummary.incomeApproximate
+                    )
+                    naturePill(
+                        nature: .expense,
+                        isSelected: isExpenseFiltered,
+                        isDimmed: hasNatureFilter && !isExpenseFiltered,
+                        value: periodSummary.expense,
+                        // El MISMO número que el hero pinta con «≈» en Solo Gastos: sin esto
+                        // el usuario ve el gasto marcado en un modo y exacto en el otro.
+                        isEstimate: periodSummary.expenseApproximate
+                    )
                 }
+                // Topados en AX2 para que la cifra siga siendo lo mayor del hero (card eb9i, molde de Grupos).
+                .dynamicTypeSize(...Self.sidesMaxTypeSize)
+
+                heroCaption(isIncomeFiltered: isIncomeFiltered, isExpenseFiltered: isExpenseFiltered)
             }
         }
+        // La píldora elegida se rellena, la otra se atenúa y el chip «solo gastos» entra fundido (card C2). Implícita: el
+        // `withAnimation` del toque no anima dentro de una pestaña.
+        .animation(reduceMotion ? nil : DS.Animation.selection, value: sessionState.selectedTransactionNatures)
         .contentShape(Rectangle())
+    }
+
+    /// El «≈» de la cifra grande: el de su lado cuando la píldora filtra, el del balance si no.
+    private var figureIsApproximate: Bool {
+        switch figure {
+        case .balance: return periodSummary.amountsAreApproximate
+        case .expense: return periodSummary.expenseApproximate
+        case .income: return periodSummary.incomeApproximate
+        }
+    }
+
+    // MARK: - Píldoras de naturaleza (UX 2.2 · L3-3)
+
+    private func naturePill(
+        nature: TransactionNature,
+        isSelected: Bool,
+        isDimmed: Bool,
+        value: Double,
+        isEstimate: Bool
+    ) -> some View {
+        let isIncome = nature == .income
+        // Relleno sólido con texto blanco: los tonos oscurecidos de la paleta pasan AA con blanco (#0F7A80 y
+        // #D6006B); `incomeGraph`/`expenseGraph` no.
+        let fill = isIncome ? Color.incomeFill : Color.emphasisPinkFill
+        return Button {
+            DS.Haptic.selection()
+            toggleNature(nature)
+        } label: {
+            HStack(spacing: DS.Spacing.xs) {
+                Image(systemName: isIncome ? "arrow.up.right" : "arrow.down.right")
+                    .font(DS.Typography.labelSmall)
+                    .foregroundStyle(isSelected ? Color.white : (isIncome ? Color.incomeGraph : Color.expenseGraph))
+                    .accessibilityHidden(true)
+                AmountText(
+                    value: value,
+                    currencyCode: currencyCode,
+                    font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
+                    tint: isSelected ? .color(.white) : .secondary,
+                    isEstimate: isEstimate
+                )
+            }
+            .padding(.horizontal, DS.Spacing.md)
+            .padding(.vertical, DS.Spacing.xs)
+            .background {
+                if isSelected {
+                    Capsule().fill(fill)
+                }
+            }
+            .glassEffect(isSelected ? .identity : .regular.interactive(), in: Capsule())
+            .contentShape(Capsule())
+            .opacity(isDimmed ? 0.45 : 1.0)
+        }
+        .buttonStyle(.plain)
+        // VoiceOver lee qué es y cuánto («Entró S/ 3.101»): sin la línea de debajo, el importe suelto no decía de qué era.
+        .accessibilityLabel(isIncome
+            ? L10n.Panel.Hero.incomePill(appPreferences.currency(value, currencyCode: currencyCode, isEstimate: isEstimate))
+            : L10n.Panel.Hero.expensePill(appPreferences.currency(value, currencyCode: currencyCode, isEstimate: isEstimate)))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityIdentifier(isIncome ? "panel_hero_income_pill" : "panel_hero_expense_pill")
+    }
+
+    private func toggleNature(_ nature: TransactionNature) {
+        if sessionState.selectedTransactionNatures == [nature] {
+            sessionState.selectedTransactionNatures.removeAll()
+        } else {
+            sessionState.selectedTransactionNatures = [nature]
+        }
+    }
+
+    // MARK: - Línea bajo la cifra (UX 2.2 · L3-1 y L3-3)
+
+    /// Con un filtro puesto, un chip que lo dice y lo quita. Sin filtro, solo si el período aún no tiene movimientos: lo dice
+    /// y enseña lo que hay en las cuentas (el primer día salía «S/ 0» a secas).
+    @ViewBuilder
+    private func heroCaption(isIncomeFiltered: Bool, isExpenseFiltered: Bool) -> some View {
+        if isIncomeFiltered || isExpenseFiltered {
+            Button {
+                DS.Haptic.selection()
+                sessionState.selectedTransactionNatures.removeAll()
+            } label: {
+                HStack(spacing: DS.Spacing.xs) {
+                    Text(isExpenseFiltered ? L10n.Panel.Hero.onlyExpensesChip : L10n.Panel.Hero.onlyIncomeChip)
+                    Image(systemName: "xmark")
+                        .font(DS.Typography.captionSmall)
+                        .fontWeight(.bold)
+                        .accessibilityHidden(true)
+                }
+                .font(DS.Typography.subheadlineEmphasized)
+                .foregroundStyle(Color.white)
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.xs)
+                .background(Capsule().fill(Color.selectedIndigoFill))
+                .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            // Entra fundido y se va en el acto: lo de debajo del hero (la fila de acciones) sube sin animar, y un chip
+            // que se fundiera al irse quedaría encima de ella (medido en vídeo, card C2).
+            // Un chip por filtro: de «solo ingresos» a «solo gastos» es uno que se va y otro que entra, no un texto que
+            // se funde con el anterior.
+            .id(isExpenseFiltered)
+            .transition(.asymmetric(insertion: .opacity, removal: .identity))
+            .accessibilityHint(L10n.Panel.Hero.clearNatureFilter)
+            .accessibilityIdentifier("panel_hero_nature_chip")
+        } else if periodSummary.hasNoMovements {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(L10n.Panel.Hero.noMovements)
+                    .font(DS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(.primary)
+                if let totalBalance {
+                    Text(L10n.Panel.Hero.totalInAccounts(
+                        appPreferences.currency(totalBalance, currencyCode: currencyCode, isEstimate: totalBalanceIsApproximate)
+                    ))
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                }
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("panel_hero_caption")
+        }
+        // Con movimientos no hay línea: «Entró … − salió …» repetía los importes de las pastillas de encima (decisión de
+        // Jürgen del 18-oct). Las pastillas ya los dicen, también en VoiceOver (`naturePill`).
     }
 
     // MARK: - Copy
@@ -190,13 +352,13 @@ struct HeroMonthView: View {
     private var heroAccessibilityLabel: String {
         let valor = sessionState.isExpensesOnlyMode
             ? periodSummary.expense
-            : periodSummary.available
+            : figure.value(income: periodSummary.income, expense: periodSummary.expense)
         // El `isEstimate` va aquí también, o VoiceOver leería como exacto el mismo número que en
         // pantalla lleva el «≈»: la marca es información, y dejarla solo en el glifo la esconde de
         // quien no lo ve.
         let esAproximado = sessionState.isExpensesOnlyMode
             ? periodSummary.expenseApproximate
-            : periodSummary.amountsAreApproximate
+            : figureIsApproximate
         let monto = appPreferences.currency(
             valor, currencyCode: currencyCode, isEstimate: esAproximado
         )

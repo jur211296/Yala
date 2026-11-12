@@ -31,6 +31,9 @@ struct TrendsTabView: View {
     let allSubcategories: [Subcategory]
     let tags: [Tag]
     let allTransactions: [TransactionItem]
+    /// Recargas del store hechas por el contenedor (`DetailContainerViewModel.dataGeneration`). Las tres tarjetas que
+    /// esta pestaña precalcula cuelgan de él para enterarse de un alta, un borrado o una edición en sitio.
+    let dataGeneration: Int
 
     /// Sort accounts by user-defined order (from AccountsSettingsListView)
     private func sortedAccountIDs(_ ids: [PersistentIdentifier]) -> [PersistentIdentifier] {
@@ -69,8 +72,14 @@ struct TrendsTabView: View {
     @State private var cashFlowByAccount: [PersistentIdentifier: CashFlowSummary] = [:]
     @State private var cashFlowByCurrency: [String: CashFlowSummary] = [:]
     @State private var cashFlowViewType: CashFlowViewType = .total
+    /// «Ver el mes anterior» encendido: la tarjeta de saldo superpone la curva punteada del período anterior (UX 2.2 ·
+    /// L11-10). Apagado por defecto: la tarjeta enseña lo de siempre.
+    @State private var showsPreviousPeriod = false
     @State private var accountCarouselPosition: PersistentIdentifier?
     @State private var currencyCarouselPosition: String?
+    /// La vista por cuenta con una tarjeta con varias divisas: entera o línea a línea (entrega 4, Paso 0 D1-D2).
+    @State private var cashFlowAccountGrouping: AccountCardGrouping = .byCard
+    @State private var hasAccountCards = false
 
     // Period Comparison State
     @State private var currentPeriodPoints: [BarPoint] = []
@@ -99,6 +108,9 @@ struct TrendsTabView: View {
     @State private var showUpgradeSheet = false
     @State private var showInsightsConsentAlert = false
     @State private var trendsAI = TrendsAIViewModel()
+    /// Sube cuando lo que se ve está recalculado: la decisión automática de la IA cuelga de él
+    /// (`TrendsAIAutoTrigger`, encargo `estadisticas-ia-automatica`).
+    @State private var trendsAIContextVersion = 0
 
     @ScaledMetric(relativeTo: .largeTitle) private var summaryVerticalPadding: CGFloat = 12
 
@@ -131,9 +143,13 @@ struct TrendsTabView: View {
     // MARK: - Body
 
     var body: some View {
+        // El lector del scroll deja «Entradas y salidas» a la vista cuando lo pide el widget (UX 2.2 · L15-3).
+        ScrollViewReader { scrollProxy in
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: DS.Spacing.md) {
                 heroSummary
+                // La acción principal arriba, como en el Panel; el flotante solo al bajar (card kzhe).
+                StatsQuickActionsSlot()
                 filterBarPanel
 
                 // Hero siempre montado: period menu accesible incluso con 0 tx.
@@ -150,6 +166,7 @@ struct TrendsTabView: View {
                     PairedCardsStack(rowSpacing: DS.Spacing.xl) {
                         chartsLayout
                         cashFlowWidget
+                            .id(StatisticsDeepLink.Focus.inAndOut)
                         weekdayChartSection
                         trendInsightCard            // mueve al final: cierre narrativo
                     }
@@ -161,6 +178,8 @@ struct TrendsTabView: View {
             }
             .padding(.top, DS.Spacing.sm)
         }
+        .modifier(StatisticsFocusScroll(focus: .inAndOut, proxy: scrollProxy))
+        }
         .scrollViewGlassEdges()
         .onAppear {
             // Initial computation must be synchronous so the first render shows real data
@@ -168,8 +187,10 @@ struct TrendsTabView: View {
             calculateCashFlowData()
             calculatePeriodComparisonData()
             calculateWeekdayData()
+            trendsAIContextVersion &+= 1
         }
         .onDisappear { recalcTask?.cancel() }
+        .modifier(TrendsAIAutoTrigger(trendsAI: trendsAI, version: trendsAIContextVersion, request: makeTrendsAIAutoRequest))
         .onChange(of: trendsViewModel.detailPeriod)            { scheduleTrendsRecalc() }
         .onChange(of: trendsViewModel.selectedAccounts)        { scheduleTrendsRecalc() }
         .onChange(of: trendsViewModel.selectedCategories)      { scheduleTrendsRecalc() }
@@ -179,13 +200,16 @@ struct TrendsTabView: View {
         .onChange(of: trendsViewModel.selectedCurrencies)      { scheduleTrendsRecalc() }
         .onChange(of: trendsViewModel.amountCondition)         { scheduleTrendsRecalc() }
         .onChange(of: trendsViewModel.searchText)              { scheduleTrendsRecalc() }
-        .onChange(of: trendsViewModel.isExcludeMode)           { scheduleTrendsRecalc() }
+        .onChange(of: sessionState.excludedFilterSets)         { scheduleTrendsRecalc() }
         .onChange(of: trendsViewModel.selectedMetric)          { scheduleTrendsRecalc() }
         .onChange(of: sessionState.comparisonMode)             { scheduleTrendsRecalc() }
         .onChange(of: sessionState.selectedTransactionNatures) { scheduleTrendsRecalc() }
-        // Use count instead of full array to avoid crashes during data wipe.
-        // Longer debounce (300ms) tolerates bulk inserts (import, draft dedup).
-        .onChange(of: allTransactions.count)                   { scheduleTrendsRecalc(debounceMs: 300) }
+        // Datos nuevos: cualquier mutador (alta, borrado, edición del importe, sync) acaba en una recarga del
+        // contenedor, y esa recarga avanza `dataGeneration`. Antes se miraba `allTransactions.count`, que no ve una
+        // edición en sitio: con la pestaña montada, las tarjetas seguían con el importe viejo (ticket
+        // `trends-cards-ignore-an-in-place-amount-edit`). Lo sustituye, no se suma: el array solo cambia dentro de esa
+        // recarga. El debounce largo (300 ms) sigue tolerando las altas en bloque (importar, deduplicar borradores).
+        .onChange(of: dataGeneration)                          { scheduleTrendsRecalc(debounceMs: 300) }
         .sheet(isPresented: $showCustomPeriodPicker) {
             CustomPeriodPickerSheet(
                 minDate: transactionDateRange.start,
@@ -197,7 +221,7 @@ struct TrendsTabView: View {
             UpgradePromptSheet(feature: .smartInsightsAI, context: .proFeature)
         }
         .insightsConsentAlert(isPresented: $showInsightsConsentAlert) {
-            Task { await trendsAI.generate(input: trendsAIInput, regenerate: false) }
+            Task { await trendsAI.generate(input: trendsAIInput, regenerate: false, autoRequest: makeTrendsAIAutoRequest()) }
         }
     }
 
@@ -225,13 +249,7 @@ struct TrendsTabView: View {
                     .accessibilityIdentifier("stats_hero_caption")
             }
         } period: {
-            TrendsPeriodMenu(
-                selectedPeriod: trendsViewModel.detailPeriod,
-                customDateRange: sessionState.customDateRange,
-                onSelect: { sessionState.selectedPeriod = $0 },
-                onCustomTapped: { showCustomPeriodPicker = true }
-            )
-            .equatable()
+            StatisticsPeriodControl(onCustomTapped: { showCustomPeriodPicker = true })
         } content: {
             if hasRecords, let summary {
                 // KPI period-specific (matches Insights hero). Card interno + chart
@@ -240,14 +258,22 @@ struct TrendsTabView: View {
                     value: heroKPIValue(for: summary),
                     currencyCode: defaultCurrencyCode,
                     font: DS.Typography.panelHeroAmount, secondaryFont: DS.Typography.panelHeroAmountSecondary,
-                    isEstimate: heroKPIIsApproximate(for: summary)
+                    isEstimate: heroKPIIsApproximate(for: summary),
+                    animatesValue: true
                 )
-                .contentTransition(.numericText())
 
-                incomeExpenseChips(summary)
+                // En «Solo gastos» la fila de entradas y salidas repetía la cifra grande: queda su variación, con la
+                // lectura del Panel (decisión A de Jürgen del 2026-10-26).
+                if sessionState.isExpensesOnlyMode {
+                    ExpensesOnlyHeroVariation(variation: summary.expenseVariation)
+                } else {
+                    incomeExpenseChips(summary)
+                }
             }
 
-            if let summary, let text = heroVariationSubtitle(for: summary) {
+            // La frase compara el BALANCE. En «Solo gastos» es el gasto en negativo y gastar más se leía «por debajo ·
+            // Ánimo»: fuera (decisión A de Jürgen del 2026-10-26); la variación ya la dice el chip.
+            if !sessionState.isExpensesOnlyMode, let summary, let text = heroVariationSubtitle(for: summary) {
                 Text(text)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
@@ -270,7 +296,16 @@ struct TrendsTabView: View {
         let prev = strippedComparisonLabel(summary.previousPeriodLabel)
 
         guard let variation = summary.balanceVariation else {
-            // Sin período previo comparable (`.allTime`, primer mes, etc.).
+            // «Todo el tiempo» no tiene con qué compararse y tampoco es «tu primer período»: lleva la línea del Resumen,
+            // el recuento de movimientos (auditoría UX 2.2 · lote 11 · B1).
+            if trendsViewModel.detailPeriod == .allTime {
+                switch RecordsMotivationalLogic.subtitle(forCount: summary.transactionCount) {
+                case .one: return L10n.Stats.Insights.motivationalOne
+                case .many(let n): return L10n.Stats.Insights.motivationalMany(n)
+                case nil: return nil
+                }
+            }
+            // Sin período previo comparable (primer mes, etc.).
             return L10n.Stats.Trends.heroOnset
         }
 
@@ -360,17 +395,23 @@ struct TrendsTabView: View {
 
     // MARK: - Charts Layout
 
-    /// Tendencia y, si hay período anterior, comparación. Dos hijos sueltos: el lado a lado en ancha lo pone la
-    /// rejilla en pares de la que cuelgan, igual que al resto de tarjetas.
+    /// La tarjeta de tendencia. Hasta el 2026-10-18 había debajo una segunda, «Comparativa · vs Período anterior», con
+    /// la misma cifra y el mismo porcentaje; ahora la comparación es «Ver el mes anterior» dentro de esta (UX 2.2 ·
+    /// L11-10, decisión B de Jürgen).
     @ViewBuilder
     private var chartsLayout: some View {
-        let hasComparison = appPreferences.showVariations
-            && PreviousPeriodHelper.isSelectorVisible(for: trendsViewModel.detailPeriod)
-
         trendChartSection
-        if hasComparison {
-            comparisonChartSection
-        }
+    }
+
+    /// Hay un período anterior con el que comparar: el mismo criterio con el que salía la tarjeta Comparativa.
+    private var canShowPreviousPeriod: Bool {
+        appPreferences.showVariations
+            && PreviousPeriodHelper.isSelectorVisible(for: trendsViewModel.detailPeriod)
+    }
+
+    /// La curva anterior se dibuja: encendida, con período anterior y con datos.
+    private var isShowingPreviousPeriod: Bool {
+        showsPreviousPeriod && canShowPreviousPeriod && hasComparisonData
     }
 
     /// Check if there's trend data to display
@@ -406,7 +447,7 @@ struct TrendsTabView: View {
     @ViewBuilder
     private var chartCardBody: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-            // Header interno simétrico a comparisonChartBody:
+            // Header interno:
             //   left: trendType.displayName + KPI(.headline) + "vs S/ X" inline
             //   right: VariationChip(.medium) + "vs Abr 26" caption
             HStack(alignment: .top) {
@@ -428,7 +469,8 @@ struct TrendsTabView: View {
                             )
 
                             if appPreferences.showVariations
-                                && trendsViewModel.detailPeriod != .allTime,
+                                && trendsViewModel.detailPeriod != .allTime
+                                && !kpiIsLiveBalance,
                                let prevTotal = previousPeriodTotal {
                                 HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
                                     Text(L10n.Common.vs)
@@ -470,7 +512,34 @@ struct TrendsTabView: View {
                 }
             }
 
-            if hasTrendData {
+            if hasTrendData, canShowPreviousPeriod {
+                showPreviousPeriodToggle
+            }
+
+            if hasTrendData, isShowingPreviousPeriod {
+                // La misma gráfica que tenía la tarjeta Comparativa: la curva de ahora y, punteada, la del período
+                // anterior, alineadas día a día (`DateAlignmentHelper`), con su leyenda.
+                AdaptiveChartHeight(base: 170) { chartHeight in
+                PeriodComparisonChartView(
+                    currentPeriodPoints: currentPeriodPoints,
+                    previousPeriodPoints: previousPeriodPoints,
+                    yDomain: comparisonYDomain,
+                    grouping: .day,
+                    currentInterval: trendsViewModel.currentInterval,
+                    previousInterval: PreviousPeriodHelper.previousInterval(
+                        for: trendsViewModel.detailPeriod,
+                        mode: sessionState.comparisonMode,
+                        customRange: sessionState.customDateRange
+                    ),
+                    currencyCode: defaultCurrencyCode,
+                    trendType: mapMetricToTrendType(trendsViewModel.selectedMetric),
+                    chartHeight: chartHeight,
+                    period: trendsViewModel.detailPeriod,
+                    comparisonMode: sessionState.comparisonMode
+                )
+                }
+                .accessibilityIdentifier("trends_previous_period_chart")
+            } else if hasTrendData {
                 // Más alta en los iPhone grandes, con la misma proporción que en el pequeño (`AdaptiveChartHeight`).
                 AdaptiveChartHeight(base: 170) { chartHeight in
                 TrendChartView(
@@ -493,6 +562,9 @@ struct TrendsTabView: View {
                 chartEmptyState
             }
         }
+        // «Ver el mes anterior» funde una gráfica con la otra y la píldora se rellena (card C2). Implícita: en una
+        // pestaña un `withAnimation` no anima.
+        .animation(reduceMotion ? nil : DS.Animation.appear, value: showsPreviousPeriod)
     }
 
     private var chartEmptyState: some View {
@@ -503,118 +575,33 @@ struct TrendsTabView: View {
         .frame(height: 220)
     }
 
-    /// Dynamic title for period comparison card based on comparison mode
-    private var periodComparisonTitle: String {
-        switch sessionState.comparisonMode {
-        case .month:
-            return L10n.Statistics.vsPreviousPeriod
-        case .year:
-            return L10n.Statistics.vsPreviousYear
-        }
-    }
-
-    // MARK: - Comparison Chart Section (title afuera + M/A derecha + .panelCard)
-
-    @ViewBuilder
-    private var comparisonChartSection: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            // Title FUERA del card + M/A selector a la derecha
-            HStack {
-                Text(L10n.Stats.Trends.comparisonTitle)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.primary)
-                Spacer()
-                ComparisonModeSelector()
+    /// «Ver el mes anterior»: enciende y apaga la curva punteada del período anterior dentro de la tarjeta. El rótulo
+    /// sigue al período y al modo de comparación («Ver la semana anterior», «Ver el año anterior»).
+    private var showPreviousPeriodToggle: some View {
+        Button {
+            showsPreviousPeriod.toggle()
+        } label: {
+            HStack(spacing: DS.Spacing.xs) {
+                Image(systemName: showsPreviousPeriod ? "checkmark" : "chart.line.flattrend.xyaxis")
+                    .font(DS.Typography.caption)
+                    .accessibilityHidden(true)
+                Text(L10n.UXL11D.showPrevious(
+                    period: trendsViewModel.detailPeriod, mode: sessionState.comparisonMode
+                ))
+                    .font(DS.Typography.caption)
+                    .fontWeight(.medium)
             }
-
-            comparisonChartBody
-                .panelCard()
+            .padding(.horizontal, DS.Spacing.md)
+            .padding(.vertical, DS.Spacing.xs)
+            .foregroundStyle(showsPreviousPeriod ? theme.onAccent : theme.accentText)
+            .background(
+                Capsule().fill(showsPreviousPeriod ? theme.accent : theme.accent.opacity(0.12))
+            )
+            .contentShape(Capsule())
         }
-    }
-
-    @ViewBuilder
-    private var comparisonChartBody: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-            if hasComparisonData {
-                // Header interno: KPI value left + variation chip top-right
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                        // Subtítulo principal (simetría con trendChartBody "Saldo/Ingresos/Gastos")
-                        HStack(spacing: DS.Spacing.xs) {
-                            Text(periodComparisonTitle)
-                                .font(DS.Typography.subheadlineEmphasized)
-                                .foregroundStyle(.thPrimaryText)
-
-                            WidgetInfoButton(kind: .periodComparison)
-                        }
-
-                        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-                            AmountText(
-                                value: currentKPIValue,
-                                currencyCode: defaultCurrencyCode,
-                                font: DS.Typography.headline
-                            )
-
-                            if let prevTotal = previousPeriodTotal {
-                                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
-                                    Text(L10n.Common.vs)
-                                        .font(DS.Typography.caption)
-                                        .foregroundStyle(.thSecondaryText)
-                                    AmountText(
-                                        value: prevTotal,
-                                        currencyCode: defaultCurrencyCode,
-                                        font: DS.Typography.caption,
-                                        tint: .secondary
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer()
-
-                    VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
-                        VariationChip(
-                            currentAmount: currentPeriodTotal,
-                            previousAmount: previousPeriodTotal,
-                            size: .medium,
-                            showNAWhenNil: true,
-                            isExpenseContext: trendsViewModel.selectedMetric == .expense
-                        )
-
-                        Text(comparisonPeriodText)
-                            .font(DS.Typography.captionSmall)
-                            .foregroundStyle(.thSecondaryText)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                    }
-                    .accessibilityElement(children: .combine)
-                }
-
-                AdaptiveChartHeight(base: 170) { chartHeight in
-                PeriodComparisonChartView(
-                    currentPeriodPoints: currentPeriodPoints,
-                    previousPeriodPoints: previousPeriodPoints,
-                    yDomain: comparisonYDomain,
-                    grouping: .day,
-                    currentInterval: trendsViewModel.currentInterval,
-                    previousInterval: PreviousPeriodHelper.previousInterval(
-                        for: trendsViewModel.detailPeriod,
-                        mode: sessionState.comparisonMode,
-                        customRange: sessionState.customDateRange
-                    ),
-                    currencyCode: defaultCurrencyCode,
-                    trendType: mapMetricToTrendType(trendsViewModel.selectedMetric),
-                    chartHeight: chartHeight,
-                    period: trendsViewModel.detailPeriod,
-                    comparisonMode: sessionState.comparisonMode
-                )
-                }
-                .padding(.top, DS.Spacing.sm)
-            } else {
-                chartEmptyState
-            }
-        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(showsPreviousPeriod ? .isSelected : [])
+        .accessibilityIdentifier("trends_show_previous_toggle")
     }
 
     /// Short comparison period text (e.g., "vs Nov 25") for display below chips
@@ -635,10 +622,9 @@ struct TrendsTabView: View {
     }
 
     /// Check if any category/subcategory/need filters are active
-    /// In exclude mode, these filters remove items rather than restricting to them,
-    /// so they don't imply a specific nature context
+    /// Solo lo INCLUIDO cuenta: ocultar una categoría quita cosas en vez de acotar a ellas,
+    /// así que no implica un contexto de gasto o ingreso.
     private var hasCategoryFilters: Bool {
-        guard !sessionState.isExcludeMode else { return false }
         return !sessionState.selectedCategoryIDs.isEmpty
             || !sessionState.selectedSubcategoryIDs.isEmpty
             || !sessionState.selectedNeeds.isEmpty
@@ -736,6 +722,8 @@ struct TrendsTabView: View {
             if trendsViewModel.periodTransactionCount >= 5, !bullets.isEmpty {
                 if isProUser {
                     proTrendInsightCard(ruleBullets: bullets)
+                        // Card C7: «Analizando…» → la tarjeta de la IA, fundiéndose. Es la última del scroll.
+                        .animation(reduceMotion ? nil : DS.Animation.appear, value: trendsAI.phase == .loading)
                 } else {
                     freeTrendInsightCard(bullets: bullets)
                 }
@@ -744,8 +732,8 @@ struct TrendsTabView: View {
         // Dos cambios que no pasan por `scheduleTrendsRecalc`: otro rango personalizado
         // (el período sigue siendo `.custom`) y una edición que no cambia el número de
         // movimientos. Van aquí y no en la cadena del `body`, que ya va justa de tipado.
-        .onChange(of: sessionState.customDateRange) { trendsAI.reset() }
-        .onChange(of: sessionState.dataVersion) { trendsAI.reset() }
+        .onChange(of: sessionState.customDateRange) { resetTrendsAI() }
+        .onChange(of: sessionState.dataVersion) { resetTrendsAI() }
     }
 
     @ViewBuilder
@@ -754,9 +742,9 @@ struct TrendsTabView: View {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: "chart.line.uptrend.xyaxis")
                     .font(DS.Typography.body)
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
                     .accessibilityHidden(true)
-                Text(L10n.Stats.Trends.insightTitleFree(periodDisplayName))
+                Text(L10n.UXL11D.inAFewWords(trendsViewModel.detailPeriod))
                     .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(.primary)
                     .accessibilityAddTraits(.isHeader)
@@ -777,7 +765,7 @@ struct TrendsTabView: View {
                 .padding(.horizontal, DS.Spacing.md)
                 .padding(.vertical, DS.Spacing.xs)
                 .background(theme.accent.opacity(0.12))
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
                 .clipShape(Capsule())
             }
             .buttonStyle(.plain)
@@ -791,6 +779,7 @@ struct TrendsTabView: View {
         switch trendsAI.phase {
         case .loading:
             AIInsightCardComponents.loadingPlaceholder(accentColor: theme.accent)
+                .transition(.loadingPlaceholder)
         case .loaded(let aiBullets) where !aiBullets.isEmpty:
             proAIInsightCard(aiBullets: aiBullets)
         case .loaded, .idle:
@@ -801,15 +790,17 @@ struct TrendsTabView: View {
         }
     }
 
-    /// Header consistente entre pre-AI y post-AI (sparkles + "Análisis del período").
+    /// Header consistente entre pre-AI y post-AI (sparkles + «Tu mes en pocas palabras»).
     @ViewBuilder
     private var proInsightHeader: some View {
         HStack(spacing: DS.Spacing.sm) {
             Image(systemName: "sparkles")
                 .font(DS.Typography.body)
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
                 .accessibilityHidden(true)
-            Text(L10n.Stats.Trends.insightTitlePro)
+            // El mismo título que en gratis, con el sustantivo del período (UX 2.2 · L11-8): «Análisis del período» era el
+            // sexto nombre de la misma función.
+            Text(L10n.UXL11D.inAFewWords(trendsViewModel.detailPeriod))
                 .font(DS.Typography.subheadlineEmphasized)
                 .foregroundStyle(.primary)
                 .accessibilityAddTraits(.isHeader)
@@ -827,7 +818,7 @@ struct TrendsTabView: View {
                     HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
                         Image(systemName: bulletIcon(for: bullet.source))
                             .font(DS.Typography.caption)
-                            .foregroundStyle(theme.accent)
+                            .foregroundStyle(theme.accentText)
                             .frame(minWidth: 16)
                             .accessibilityHidden(true)
                         Text(AIInsightCardComponents.markdownAttributed(bullet.text))
@@ -854,7 +845,7 @@ struct TrendsTabView: View {
                 Spacer()
 
                 Button {
-                    Task { await trendsAI.generate(input: trendsAIInput, regenerate: true) }
+                    Task { await trendsAI.generate(input: trendsAIInput, regenerate: true, autoRequest: makeTrendsAIAutoRequest()) }
                 } label: {
                     HStack(spacing: DS.Spacing.xs) {
                         Image(systemName: "arrow.clockwise")
@@ -865,7 +856,7 @@ struct TrendsTabView: View {
                     .padding(.horizontal, DS.Spacing.md)
                     .padding(.vertical, DS.Spacing.xs)
                     .background(theme.accent.opacity(0.12))
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
                     .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
@@ -890,7 +881,7 @@ struct TrendsTabView: View {
 
             Button {
                 if appPreferences.aiInsightsConsentAccepted {
-                    Task { await trendsAI.generate(input: trendsAIInput, regenerate: false) }
+                    Task { await trendsAI.generate(input: trendsAIInput, regenerate: false, autoRequest: makeTrendsAIAutoRequest()) }
                 } else {
                     showInsightsConsentAlert = true
                 }
@@ -904,7 +895,7 @@ struct TrendsTabView: View {
                 .padding(.horizontal, DS.Spacing.md)
                 .padding(.vertical, DS.Spacing.xs)
                 .background(theme.accent.opacity(0.12))
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
                 .clipShape(Capsule())
             }
             .buttonStyle(.plain)
@@ -968,6 +959,30 @@ struct TrendsTabView: View {
             locale: AppLocale.identifier,
             country: Locale.current.region?.identifier ?? "",
             filtersActive: trendsViewModel.hasActiveFilters
+        )
+    }
+
+    /// Otro rango o datos nuevos: el análisis vuelve al CTA y la decisión automática se vuelve a tomar.
+    private func resetTrendsAI() {
+        trendsAI.reset()
+        trendsAIContextVersion &+= 1
+    }
+
+    /// Lo que la decisión automática de la IA necesita de lo que se ve, o `nil` si la tarjeta no sale (pocos
+    /// movimientos o nada que decir): ahí no se gasta una llamada.
+    private func makeTrendsAIAutoRequest() -> TrendsAIViewModel.AutoRequest? {
+        let count = trendsViewModel.periodTransactionCount
+        guard !hasNoData, count >= StatsAIAutoRefreshLogic.minimumTransactions, !insightBullets.isEmpty else { return nil }
+        var slotParts: [String: Any] = [
+            "period": trendsViewModel.detailPeriod.rawValue,
+            "comparison": sessionState.comparisonMode.rawValue,
+            "filters": insightsViewModel.aiFilterIdentity(),
+        ]
+        if trendsViewModel.detailPeriod == .custom, let range = sessionState.customDateRange {
+            slotParts["range"] = [range.start.timeIntervalSince1970, range.end.timeIntervalSince1970]
+        }
+        return TrendsAIViewModel.AutoRequest.make(
+            input: trendsAIInput, transactionCount: count, slotParts: slotParts, tone: .current, focus: .current
         )
     }
 
@@ -1060,15 +1075,15 @@ struct TrendsTabView: View {
     @ViewBuilder
     private var cashFlowWidget: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            HStack {
-                Text(L10n.CashFlow.title)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.primary)
+            // «Entradas y salidas» y no «Flujo de Efectivo», que se confundía con el «Flujo de caja» de Reportes; y el
+            // selector en texto, que los tres iconos no decían qué cambiaban (UX 2.2 · L11-10). El widget del Panel y
+            // el de la pantalla de inicio se llaman igual desde L15-1.
+            Text(L10n.UXL11D.inAndOut)
+                .font(DS.Typography.headline)
+                .foregroundStyle(.primary)
+                .accessibilityAddTraits(.isHeader)
 
-                Spacer()
-
-                cashFlowViewSelector
-            }
+            cashFlowViewSelector
 
             // Contenido NO envuelto — CashFlowWidget interno ya tiene su .solidCard(radius: DS.Panel.widgetRadius)
             switch cashFlowViewType {
@@ -1085,6 +1100,7 @@ struct TrendsTabView: View {
                 }
 
             case .byAccount:
+                cashFlowAccountGroupingPicker
                 if cashFlowByAccount.isEmpty {
                     cashFlowEmptyState
                 } else {
@@ -1099,6 +1115,21 @@ struct TrendsTabView: View {
                 }
             }
         }
+    }
+
+    /// «Por tarjeta · Por línea»: solo con alguna tarjeta con líneas. El `onChange` cuelga de aquí y no del `body`.
+    @ViewBuilder
+    private var cashFlowAccountGroupingPicker: some View {
+        if hasAccountCards {
+            AccountCardGroupingPicker(selection: $cashFlowAccountGrouping)
+                .onChange(of: cashFlowAccountGrouping) { _, _ in regroupCashFlowByAccount() }
+        }
+    }
+
+    /// Recalcula con la otra agrupación y vuelve a la primera página: la que estaba puede no existir en la otra.
+    private func regroupCashFlowByAccount() {
+        calculateCashFlowData()
+        accountCarouselPosition = sortedAccountIDs(Array(cashFlowByAccount.keys)).first
     }
 
     private var cashFlowEmptyState: some View {
@@ -1116,55 +1147,59 @@ struct TrendsTabView: View {
                 cashFlowViewButton(for: viewType)
             }
         }
+        // El segmento elegido se desliza (card C2); lo de debajo cambia en seco.
+        .dsAnimation(DS.Animation.selection, value: cashFlowViewType, reduceMotion: reduceMotion)
     }
 
     private func cashFlowViewButton(for viewType: CashFlowViewType) -> some View {
         let isSelected = cashFlowViewType == viewType
 
         return Button {
-            dsWithAnimation(reduceMotion) {
-                cashFlowViewType = viewType
-                if viewType == .byAccount,
-                    let firstAccount = sortedAccountIDs(Array(cashFlowByAccount.keys)).first
-                {
-                    accountCarouselPosition = firstAccount
-                }
-                if viewType == .byCurrency,
-                    let firstCurrency = cashFlowByCurrency.keys.sorted(by: { code1, code2 in
-                        if code1 == defaultCurrencyCode { return true }
-                        if code2 == defaultCurrencyCode { return false }
-                        let total1 =
-                            (cashFlowByCurrency[code1]?.totalIncome ?? 0)
-                            + (cashFlowByCurrency[code1]?.totalExpense ?? 0)
-                        let total2 =
-                            (cashFlowByCurrency[code2]?.totalIncome ?? 0)
-                            + (cashFlowByCurrency[code2]?.totalExpense ?? 0)
-                        return total1 > total2
-                    }).first
-                {
-                    currencyCarouselPosition = firstCurrency
-                }
+            cashFlowViewType = viewType
+            if viewType == .byAccount,
+                let firstAccount = sortedAccountIDs(Array(cashFlowByAccount.keys)).first
+            {
+                accountCarouselPosition = firstAccount
+            }
+            if viewType == .byCurrency,
+                let firstCurrency = cashFlowByCurrency.keys.sorted(by: { code1, code2 in
+                    if code1 == defaultCurrencyCode { return true }
+                    if code2 == defaultCurrencyCode { return false }
+                    let total1 =
+                        (cashFlowByCurrency[code1]?.totalIncome ?? 0)
+                        + (cashFlowByCurrency[code1]?.totalExpense ?? 0)
+                    let total2 =
+                        (cashFlowByCurrency[code2]?.totalIncome ?? 0)
+                        + (cashFlowByCurrency[code2]?.totalExpense ?? 0)
+                    return total1 > total2
+                }).first
+            {
+                currencyCarouselPosition = firstCurrency
             }
         } label: {
-            Image(systemName: viewType.iconName)
-                .font(DS.Typography.labelSmall)
+            Text(viewType.title)
+                .font(DS.Typography.caption)
                 .fontWeight(.semibold)
-                .foregroundStyle(isSelected ? Color.white : theme.secondaryText)
-                .frame(width: 32, height: 32)
+                .lineLimit(1)
+                .foregroundStyle(isSelected ? theme.onAccent : theme.secondaryText)
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.xs)
                 .background {
                     if isSelected {
-                        Circle()
+                        Capsule()
                             .fill(theme.accent)
                             .matchedGeometryEffect(id: "cashFlowSelector", in: cashFlowSelectorNamespace)
                     } else {
-                        Circle()
+                        Capsule()
                             .fill(.thSecondaryText.opacity(0.08))
                     }
                 }
+                .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(viewType.title)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityIdentifier("cashflow_view_\(viewType.rawValue)")
     }
 
     @ViewBuilder
@@ -1186,7 +1221,7 @@ struct TrendsTabView: View {
                                     summary: summary,
                                     previousSummary: previousCashFlowByAccount[accountID],
                                     title: account.name,
-                                    currencyCode: account.currencyCode
+                                    currencyCode: summary.currencyCode
                                 )
                                 .containerRelativeFrame(.horizontal)
                             }
@@ -1196,6 +1231,8 @@ struct TrendsTabView: View {
                 }
                 .scrollTargetBehavior(.viewAligned)
                 .scrollPosition(id: $accountCarouselPosition)
+                // iPhone Duo cerrado: lo que asoma de la página siguiente se funde contra la barra vertical, solo en el margen.
+                .fadesTowardVerticalBar(fadeWidth: DS.Spacing.lg)
 
                 // Page indicator
                 if accountIDs.count > 1 {
@@ -1261,6 +1298,8 @@ struct TrendsTabView: View {
                 }
                 .scrollTargetBehavior(.viewAligned)
                 .scrollPosition(id: $currencyCarouselPosition)
+                // iPhone Duo cerrado: lo que asoma de la página siguiente se funde contra la barra vertical, solo en el margen.
+                .fadesTowardVerticalBar(fadeWidth: DS.Spacing.lg)
 
                 // Page indicator
                 if currencyCodes.count > 1 {
@@ -1367,6 +1406,16 @@ struct TrendsTabView: View {
         }
     }
 
+    /// La cifra es el saldo de hoy a la tasa de hoy (`liveAnchor`), no un punto de la curva. Entonces no lleva al lado el
+    /// «vs S/ …» del período anterior, que es un punto de la curva valorado a las tasas de su día: puestos juntos,
+    /// «S/ 75,945.25 vs S/ 75,774.00 · +6.1 %» no cuadraba. Igual que el Panel, que enseña la cifra y la variación de la
+    /// curva sin el importe anterior (lote 11 · B5).
+    private var kpiIsLiveBalance: Bool {
+        trendsViewModel.selectedMetric == .balance
+            && trendsViewModel.focusedDate == nil
+            && trendsViewModel.trendLiveAnchor != nil
+    }
+
     private var currentKPIValue: Double {
         // When scrubbing the chart, show the hovered point value (use RAW points)
         if let focusedDate = trendsViewModel.focusedDate,
@@ -1380,8 +1429,11 @@ struct TrendsTabView: View {
         // Otherwise, show metric-specific KPI
         switch trendsViewModel.selectedMetric {
         case .balance:
-            // Balance: show the last RAW chart point value (actual end balance, not smoothed)
-            return trendsViewModel.rawTrendPoints.last?.value ?? 0
+            // El saldo de hoy a la tasa de hoy (`liveAnchor`) cuando el período llega a hoy, como el Panel
+            // (`TrendDataProcessor.Result.finalBalance`); si no, el último punto de la curva. Con solo el último punto,
+            // Tendencias decía S/ 80,429.50 mientras el Panel, Distribución y «Tus finanzas» decían S/ 75,945.25: la
+            // cuenta en dólares salía a la tasa de cada día y no a la de hoy (auditoría UX 2.2 · lote 11 · B5).
+            return trendsViewModel.trendLiveAnchor?.value ?? trendsViewModel.rawTrendPoints.last?.value ?? 0
         case .income:
             // Income: show TOTAL income for the period
             return trendsViewModel.totalIncome
@@ -1403,7 +1455,7 @@ struct TrendsTabView: View {
 
     /// Debounces `calculateCashFlowData` + `calculatePeriodComparisonData` so rapid onChange
     /// bursts (filter changes, bulk transaction inserts) collapse into a single pass.
-    /// Default 200ms for filter changes; use 300ms for `allTransactions.count` to tolerate imports.
+    /// Default 200ms for filter changes; use 300ms for `dataGeneration` (datos nuevos) to tolerate imports.
     private func scheduleTrendsRecalc(debounceMs: Int = 200) {
         recalcTask?.cancel()
         // El análisis con IA describe lo que había: con otro período, filtro,
@@ -1418,6 +1470,7 @@ struct TrendsTabView: View {
             // Y otra vez al terminar: un «Generar» tocado durante el debounce se
             // llevó los totales viejos con la etiqueta del período nuevo.
             trendsAI.reset()
+            trendsAIContextVersion &+= 1
         }
     }
 
@@ -1449,15 +1502,18 @@ struct TrendsTabView: View {
             selectedTags: trendsViewModel.selectedTags,
             selectedNeeds: trendsViewModel.selectedNeeds,
             selectedCurrencies: trendsViewModel.selectedCurrencies,
-            isExcludeMode: trendsViewModel.isExcludeMode,
+            excludedAccounts: trendsViewModel.excludedAccounts,
+            excludedCategories: trendsViewModel.excludedCategories,
+            excludedSubcategories: trendsViewModel.excludedSubcategories,
+            excludedTags: trendsViewModel.excludedTags,
+            excludedNeeds: trendsViewModel.excludedNeeds,
+            excludedCurrencies: trendsViewModel.excludedCurrencies,
             transactionTypeFilter: .all,
             amountCondition: trendsViewModel.amountCondition,
             searchText: trendsViewModel.searchText,
             dateInterval: effectiveInterval
         )
-        criteria.populateTagUUIDs(
-            from: tags.filter { criteria.selectedTags.contains($0.persistentModelID) }
-        )
+        criteria.populateTagUUIDs(fromCatalog: tags)
 
         let filtered = FilterService.filterForTrends(
             transactions: allTransactions,
@@ -1483,9 +1539,10 @@ struct TrendsTabView: View {
     private var weekdayChartSection: some View {
         if weekdaySpending.contains(where: { $0.average > 0 }) {
             VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                // Title de sección FUERA del card (consistencia con Tendencias/Comparativa)
+                // Title de sección FUERA del card (consistencia con Tendencias/Comparativa). «Gasto por día de la
+                // semana»: lo que se ve (UX 2.2 · L11-11). Antes «Gasto promedio por día», sobre una cifra semanal.
                 HStack(spacing: DS.Spacing.xs) {
-                    Text(L10n.Insights.weekdayAverage)
+                    Text(L10n.UXL11.weekdayTitle)
                         .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                     Spacer()
@@ -1499,67 +1556,53 @@ struct TrendsTabView: View {
 
     @ViewBuilder
     private var weekdayCardBody: some View {
-        // Promedio semanal = suma de averages por día (mismo cálculo que Panel small).
+        // Gasto de una semana tipo = suma del promedio de cada día (mismo cálculo que el widget del Panel).
         let weeklyAverage = weekdaySpending.reduce(0) { $0 + $1.average }
         let topDay = weekdaySpending.filter { $0.average > 0 }.max(by: { $0.average < $1.average })
 
-        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-            // Header interno simétrico a Trend + Comparativa
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    HStack(spacing: DS.Spacing.xs) {
-                        Text(L10n.Panel.WeekdayBar.smallTitle)
-                            .font(DS.Typography.subheadlineEmphasized)
-                            .foregroundStyle(.thPrimaryText)
+        // UX 2.2 · L11-11 (variante 1, decisión de Jürgen del 2026-10-15): «En una semana gastas S/ 2,425» en vez de
+        // «Promedio diario S/ 2,425 /semana»; barras con su importe en moneda y sin decimales, el día más caro en rosa,
+        // y la frase que lo dice. Antes, a la derecha, «Lunes S/ 1,184.50» sin decir qué era.
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                HStack(spacing: DS.Spacing.xs) {
+                    Text(L10n.UXL11.weekdayWeeklyCaption)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.thSecondaryText)
 
-                        WidgetInfoButton(kind: .weekdayBar)
-                    }
-
-                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-                        AmountText(
-                            value: weeklyAverage,
-                            currencyCode: defaultCurrencyCode,
-                            font: DS.Typography.headline, secondaryFont: DS.Typography.caption
-                        )
-                        Text(L10n.Panel.WeekdayBar.perWeekSuffix)
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.thSecondaryText)
-                    }
+                    WidgetInfoButton(kind: .weekdayBar)
                 }
 
-                Spacer()
-
-                // Día pico top-right como info secundaria (paralelo a VariationChip+caption)
-                if let top = topDay {
-                    VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
-                        Text(top.weekdayLongName.capitalized)
-                            .font(DS.Typography.subheadline)
-                            .foregroundStyle(.thPrimaryText)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                        AmountText(
-                            value: top.average,
-                            currencyCode: defaultCurrencyCode,
-                            font: DS.Typography.caption, secondaryFont: DS.Typography.captionSmall,
-                            tint: .secondary
-                        )
-                    }
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel("\(L10n.Panel.WeekdayBar.smallTitle): \(top.weekdayLongName.capitalized)")
-                }
+                AmountText(
+                    value: weeklyAverage,
+                    currencyCode: defaultCurrencyCode,
+                    font: DS.Typography.title, secondaryFont: DS.Typography.headline
+                )
             }
+            .accessibilityElement(children: .combine)
 
             WeekdayBarChart(
                 data: weekdaySpending,
                 currencyCode: defaultCurrencyCode,
-                chartHeight: 140
+                showYAxis: false,
+                chartHeight: 140,
+                annotationStyle: .wholeCurrency
             )
+
+            if let top = topDay {
+                Label(L10n.UXL11.priciestWeekday(top.weekday), systemImage: "flame.fill")
+                    .font(DS.Typography.caption.weight(.semibold))
+                    .foregroundStyle(Color.emphasisPinkText)
+                    .accessibilityIdentifier("weekday_priciest_line")
+            }
         }
     }
 
     // MARK: - Cash Flow Data Calculation
 
     private func calculateCashFlowData() {
+        let cards = AccountCardIndex(accounts: accounts)
+        if cards.hasCards != hasAccountCards { hasAccountCards = cards.hasCards }
         // Skip if no transactions (likely during data wipe)
         guard !allTransactions.isEmpty else {
             cashFlowSummary = nil
@@ -1598,15 +1641,18 @@ struct TrendsTabView: View {
             selectedTags: trendsViewModel.selectedTags,
             selectedNeeds: trendsViewModel.selectedNeeds,
             selectedCurrencies: trendsViewModel.selectedCurrencies,
-            isExcludeMode: trendsViewModel.isExcludeMode,
+            excludedAccounts: trendsViewModel.excludedAccounts,
+            excludedCategories: trendsViewModel.excludedCategories,
+            excludedSubcategories: trendsViewModel.excludedSubcategories,
+            excludedTags: trendsViewModel.excludedTags,
+            excludedNeeds: trendsViewModel.excludedNeeds,
+            excludedCurrencies: trendsViewModel.excludedCurrencies,
             transactionTypeFilter: .all,
             amountCondition: trendsViewModel.amountCondition,
             searchText: trendsViewModel.searchText,
             dateInterval: interval
         )
-        criteria.populateTagUUIDs(
-            from: tags.filter { criteria.selectedTags.contains($0.persistentModelID) }
-        )
+        criteria.populateTagUUIDs(fromCatalog: tags)
 
         // Filter transactions (reuse fetchedTransactions from above)
         let filtered = FilterService.filterForTrends(
@@ -1626,19 +1672,7 @@ struct TrendsTabView: View {
         if newCashFlow != cashFlowSummary { cashFlowSummary = newCashFlow }
 
         // 2. Calculate cash flow BY ACCOUNT (single-pass grouping: O(n) instead of O(a×n))
-        let groupedByAccount = Dictionary(grouping: filtered) { $0.account?.persistentModelID }
-        var byAccount: [PersistentIdentifier: CashFlowSummary] = [:]
-        for account in accounts {
-            let accountTransactions = groupedByAccount[account.persistentModelID] ?? []
-            let summary = CashFlowCalculator.calculateCashFlow(
-                transactions: accountTransactions,
-                interval: interval,
-                grouping: cashFlowGrouping,
-                currencyCode: account.currencyCode,
-                adjustment: adjustment
-            )
-            byAccount[account.persistentModelID] = summary
-        }
+        let byAccount = cashFlowByAccountSummaries(filtered, interval: interval, adjustment: adjustment, cards: cards)
         if byAccount != cashFlowByAccount { cashFlowByAccount = byAccount }
 
         // 3. Calculate cash flow BY CURRENCY (single-pass grouping: O(n) instead of O(c×n))
@@ -1662,6 +1696,32 @@ struct TrendsTabView: View {
             currentFiltered: filtered,
             currentInterval: interval
         )
+    }
+
+    /// El flujo de caja de cada cuenta (`AccountCardReportLogic.cashFlowByAccount`): con «Por tarjeta», cada tarjeta con
+    /// varias divisas una vez, convertida a la divisa preferida.
+    private func cashFlowByAccountSummaries(
+        _ transactions: [TransactionItem],
+        interval: DateInterval,
+        adjustment: GroupBridgeStatsAdjustment,
+        cards: AccountCardIndex
+    ) -> [PersistentIdentifier: CashFlowSummary] {
+        AccountCardReportLogic.cashFlowByAccount(
+            transactions: transactions,
+            accounts: accounts,
+            cards: cards,
+            grouping: cashFlowAccountGrouping,
+            preferredCurrency: defaultCurrencyCode,
+            id: \.persistentModelID
+        ) { accountTransactions, currencyCode in
+            CashFlowCalculator.calculateCashFlow(
+                transactions: accountTransactions,
+                interval: interval,
+                grouping: cashFlowGrouping,
+                currencyCode: currencyCode,
+                adjustment: adjustment
+            )
+        }
     }
 
     /// Calculate previous period cash flow summary for VariationChip.
@@ -1697,15 +1757,18 @@ struct TrendsTabView: View {
             selectedTags: trendsViewModel.selectedTags,
             selectedNeeds: trendsViewModel.selectedNeeds,
             selectedCurrencies: trendsViewModel.selectedCurrencies,
-            isExcludeMode: trendsViewModel.isExcludeMode,
+            excludedAccounts: trendsViewModel.excludedAccounts,
+            excludedCategories: trendsViewModel.excludedCategories,
+            excludedSubcategories: trendsViewModel.excludedSubcategories,
+            excludedTags: trendsViewModel.excludedTags,
+            excludedNeeds: trendsViewModel.excludedNeeds,
+            excludedCurrencies: trendsViewModel.excludedCurrencies,
             transactionTypeFilter: .all,
             amountCondition: trendsViewModel.amountCondition,
             searchText: trendsViewModel.searchText,
             dateInterval: previousInterval
         )
-        previousCriteria.populateTagUUIDs(
-            from: tags.filter { previousCriteria.selectedTags.contains($0.persistentModelID) }
-        )
+        previousCriteria.populateTagUUIDs(fromCatalog: tags)
 
         // Filter transactions for previous period
         let previousFilteredRaw = FilterService.filterForTrends(
@@ -1733,20 +1796,8 @@ struct TrendsTabView: View {
         )
 
         // 2. Calculate previous period cash flow BY ACCOUNT (single-pass grouping)
-        let prevGroupedByAccount = Dictionary(grouping: previousFiltered) { $0.account?.persistentModelID }
-        var byAccount: [PersistentIdentifier: CashFlowSummary] = [:]
-        for account in accounts {
-            let accountTransactions = prevGroupedByAccount[account.persistentModelID] ?? []
-            let summary = CashFlowCalculator.calculateCashFlow(
-                transactions: accountTransactions,
-                interval: previousInterval,
-                grouping: cashFlowGrouping,
-                currencyCode: account.currencyCode,
-                adjustment: adjustment
-            )
-            byAccount[account.persistentModelID] = summary
-        }
-        previousCashFlowByAccount = byAccount
+        previousCashFlowByAccount = cashFlowByAccountSummaries(
+            previousFiltered, interval: previousInterval, adjustment: adjustment, cards: AccountCardIndex(accounts: accounts))
 
         // 3. Calculate previous period cash flow BY CURRENCY (single-pass grouping)
         let prevGroupedByCurrency = Dictionary(grouping: previousFiltered) { $0.currencyCode }
@@ -1784,11 +1835,12 @@ struct TrendsTabView: View {
             customRange: sessionState.customDateRange
         )
 
-        // Get eligible accounts (archived accounts still count; same as StatisticsViewModel)
+        // Get eligible accounts (archived accounts still count; same as StatisticsViewModel): incluidas y ocultas.
+        let accountFilter = EntityFilter(
+            included: trendsViewModel.selectedAccounts, excluded: trendsViewModel.excludedAccounts
+        )
         let eligibleAccounts = accounts.filter { account in
-            !account.excludeFromStatistics
-                && (trendsViewModel.selectedAccounts.isEmpty
-                    || trendsViewModel.selectedAccounts.contains(account.persistentModelID))
+            !account.excludeFromStatistics && accountFilter.matches(account.persistentModelID)
         }
 
         // For balance: we need ALL transactions (no date filter) to calculate running balance
@@ -1803,15 +1855,18 @@ struct TrendsTabView: View {
             selectedTags: trendsViewModel.selectedTags,
             selectedNeeds: trendsViewModel.selectedNeeds,
             selectedCurrencies: trendsViewModel.selectedCurrencies,
-            isExcludeMode: trendsViewModel.isExcludeMode,
+            excludedAccounts: trendsViewModel.excludedAccounts,
+            excludedCategories: trendsViewModel.excludedCategories,
+            excludedSubcategories: trendsViewModel.excludedSubcategories,
+            excludedTags: trendsViewModel.excludedTags,
+            excludedNeeds: trendsViewModel.excludedNeeds,
+            excludedCurrencies: trendsViewModel.excludedCurrencies,
             transactionTypeFilter: .all,
             amountCondition: trendsViewModel.amountCondition,
             searchText: trendsViewModel.searchText,
             dateInterval: isBalanceMetric ? nil : currentInterval
         )
-        baseCriteria.populateTagUUIDs(
-            from: tags.filter { baseCriteria.selectedTags.contains($0.persistentModelID) }
-        )
+        baseCriteria.populateTagUUIDs(fromCatalog: tags)
 
         // For balance: filter by account/category but NOT by date, pass ALL transactions
         // For income/expense: filter by date too
@@ -1862,15 +1917,18 @@ struct TrendsTabView: View {
                 selectedTags: trendsViewModel.selectedTags,
                 selectedNeeds: trendsViewModel.selectedNeeds,
                 selectedCurrencies: trendsViewModel.selectedCurrencies,
-                isExcludeMode: trendsViewModel.isExcludeMode,
+                excludedAccounts: trendsViewModel.excludedAccounts,
+                excludedCategories: trendsViewModel.excludedCategories,
+                excludedSubcategories: trendsViewModel.excludedSubcategories,
+                excludedTags: trendsViewModel.excludedTags,
+                excludedNeeds: trendsViewModel.excludedNeeds,
+                excludedCurrencies: trendsViewModel.excludedCurrencies,
                 transactionTypeFilter: .all,
                 amountCondition: trendsViewModel.amountCondition,
                 searchText: trendsViewModel.searchText,
                 dateInterval: previousInterval
             )
-            previousCriteria.populateTagUUIDs(
-                from: tags.filter { previousCriteria.selectedTags.contains($0.persistentModelID) }
-            )
+            previousCriteria.populateTagUUIDs(fromCatalog: tags)
             previousFiltered = FilterService.filterForTrends(
                 transactions: allTransactions,
                 accounts: accounts,
@@ -1922,4 +1980,27 @@ struct TrendsTabView: View {
         }
     }
 
+}
+
+/// El análisis con IA de Tendencias sale solo para Pro con la IA aceptada (encargo `estadisticas-ia-automatica`): al
+/// abrir la página y tras cada recálculo. Lo guardado para lo que se ve sale en el acto; la decisión espera un momento
+/// de calma, para que una ráfaga de cambios deje una sola. La petición va en una tarea propia: la del `.task` se cancela
+/// con el siguiente recálculo, y cancelarla cortaría una llamada ya pagada.
+private struct TrendsAIAutoTrigger: ViewModifier {
+    let trendsAI: TrendsAIViewModel
+    let version: Int
+    let request: @MainActor () -> TrendsAIViewModel.AutoRequest?
+
+    static let settleDelay: Duration = .milliseconds(1200)
+
+    func body(content: Content) -> some View {
+        content.task(id: version) { await decide() }
+    }
+
+    private func decide() async {
+        if let initial = request() { trendsAI.restoreSaved(initial) }
+        do { try await Task.sleep(for: Self.settleDelay) } catch { return }
+        guard let current = request() else { return }
+        Task { @MainActor in await trendsAI.autoRefresh(current) }
+    }
 }

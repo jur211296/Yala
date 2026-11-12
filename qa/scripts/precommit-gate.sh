@@ -21,8 +21,9 @@ cd "$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
 
 SELLO=".claude/sessions/tests-passed"
 
-# Sin archivos Swift en staging, este gate no aplica.
-git diff --cached --name-only | grep -qE '\.swift$' || exit 0
+# Sin archivos Swift en staging, este gate no aplica. `--no-renames`: sin él, renombrar
+# `X.swift` a otra extensión esconde la ruta vieja y el gate no se enteraba de que se iba un .swift.
+git diff --cached --name-only --no-renames | grep -qE '\.swift$' || exit 0
 
 if [ ! -f "$SELLO" ]; then
     echo "BLOCKED: hay archivos Swift en staging y no consta que haya pasado el gate."

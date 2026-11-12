@@ -264,3 +264,33 @@ struct GroupsOnboardingSignInCTAWiringTests {
         )
     }
 }
+
+/// UX 2.2 · L12-4 (decisión B de Jürgen, 2026-10-18): el paso 3 del educativo ES el consentimiento cuando falta.
+@Suite("GroupsOnboardingLogic · el paso 3 acepta el consentimiento (L12-4)")
+struct GroupsOnboardingConsentStepTests {
+
+    /// Las ocho celdas: solo el último paso, con el canal encendido y sin consentimiento válido, acepta.
+    @Test(arguments: [
+        (true, true, false, true),
+        (true, true, true, false),    // ya aceptado: el paso informa y no vuelve a pedir
+        (true, false, false, false),  // canal apagado: no hay nada que guardar en la nube de Yala
+        (true, false, true, false),
+        (false, true, false, false),  // pasos 1 y 2: «Continuar»
+        (false, true, true, false),
+        (false, false, false, false),
+        (false, false, true, false),
+    ])
+    func soloElCierreConCanalYSinConsentimientoAcepta(
+        isLastStep: Bool, flagOn: Bool, isConsented: Bool, expected: Bool
+    ) {
+        #expect(GroupsOnboardingLogic.lastStepAcceptsConsent(
+            isLastStep: isLastStep, flagOn: flagOn, isConsented: isConsented) == expected)
+    }
+
+    /// Tras aceptar: sin sesión sigue a la cuenta; con sesión, a Grupos. Sin esto, aceptar sin sesión dejaba a la
+    /// persona en la pestaña con «Crea tu cuenta» y el consentimiento ya dado.
+    @Test func trasAceptar_sinSesionVaALaCuenta_conSesionAGrupos() {
+        #expect(GroupsOnboardingLogic.resultAfterAcceptingConsent(hasSession: false) == .completeAndSignIn)
+        #expect(GroupsOnboardingLogic.resultAfterAcceptingConsent(hasSession: true) == .complete)
+    }
+}

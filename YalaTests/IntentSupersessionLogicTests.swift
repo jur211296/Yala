@@ -120,4 +120,44 @@ struct IntentSupersessionLogicTests {
         #expect(drops.isEmpty)
         #expect(accept == true)
     }
+
+    // MARK: - El aviso de la Bandeja que llega DESPUÉS de la orden de abrirla (2026-10-30)
+
+    // Ticket `notification-tap-opens-inbox-then-inbox-notice-pops-after`: tocar la notificación de Apple Pay encola
+    // `.navigate(.inbox)` y el mismo primer plano pide el aviso. Si el aviso llegaba después, esperaba detrás de la hoja
+    // y salía al cerrarla.
+
+    private static let inboxAlert: RouterIntent = .showInboxAlert(.init(scheduledPayments: 0, subscriptions: 0, automations: 1))
+
+    @Test func incomingInboxAlert_withNavigateInboxQueued_isDropped() {
+        let (drops, accept) = IntentSupersessionLogic.decisions(queued: [.navigate(.inbox)], incoming: Self.inboxAlert)
+        #expect(drops.isEmpty, "la orden de abrir la Bandeja se queda")
+        #expect(accept == false)
+    }
+
+    @Test func incomingInboxAlert_withPresentInboxSheetQueued_isDropped() {
+        let (drops, accept) = IntentSupersessionLogic.decisions(queued: [.presentInboxSheet], incoming: Self.inboxAlert)
+        #expect(drops.isEmpty)
+        #expect(accept == false)
+    }
+
+    /// Control: lo que no abre la Bandeja no tapa el aviso.
+    @Test func incomingInboxAlert_withOtherIntentsQueued_isAccepted() {
+        let (drops, accept) = IntentSupersessionLogic.decisions(
+            queued: [.navigate(.statistics), .navigate(.panel), .presentTrialOffer], incoming: Self.inboxAlert)
+        #expect(drops.isEmpty)
+        #expect(accept == true)
+    }
+
+    @Test func incomingInboxAlert_withEmptyQueue_isAccepted() {
+        let (_, accept) = IntentSupersessionLogic.decisions(queued: [], incoming: Self.inboxAlert)
+        #expect(accept == true)
+    }
+
+    /// La condición sobre la cola solo afecta al entrante que dispara la regla: abrir la Bandeja con otra orden igual en
+    /// cola sigue entrando.
+    @Test func navigateInbox_withPresentInboxSheetQueued_isAccepted() {
+        let (_, accept) = IntentSupersessionLogic.decisions(queued: [.presentInboxSheet], incoming: .navigate(.inbox))
+        #expect(accept == true)
+    }
 }

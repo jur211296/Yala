@@ -17,6 +17,14 @@ struct YalaTheme: Equatable, Sendable {
     let primaryText: Color
     let secondaryText: Color
     let accent: Color
+    /// El color del tema como TEXTO o icono sobre el fondo y las tarjetas del tema (enlaces, «Ver todo», chips
+    /// seleccionados, cifras en el color de la app). En los temas oscuros es más claro que `accent`: un mismo color no
+    /// puede dar AA al blanco encima del botón y al texto encima del fondo oscuro (card 1c9w). ≥ 4,5:1 en todas las
+    /// superficies del tema salvo el Claro, que hereda el índigo de marca (4,61 sobre blanco). Lo fija `ThemeTokenContrastTests`.
+    let accentText: Color
+    /// El TEXTO (o icono) encima de un relleno de `accent`: blanco en los temas índigo, negro donde el acento es claro
+    /// (Rosa, Teal, Minimalista), para llegar a AA en los ocho temas (card lbcr). Lo fija `ThemeTokenContrastTests`.
+    let onAccent: Color
     let accentSecondary: Color
     let income: Color
     let expense: Color
@@ -40,6 +48,8 @@ struct YalaTheme: Equatable, Sendable {
         primaryText: Color,
         secondaryText: Color,
         accent: Color,
+        accentText: Color,
+        onAccent: Color,
         accentSecondary: Color,
         income: Color,
         expense: Color,
@@ -62,6 +72,8 @@ struct YalaTheme: Equatable, Sendable {
         self.primaryText = primaryText
         self.secondaryText = secondaryText
         self.accent = accent
+        self.accentText = accentText
+        self.onAccent = onAccent
         self.accentSecondary = accentSecondary
         self.income = income
         self.expense = expense
@@ -91,6 +103,8 @@ extension YalaTheme {
         primaryText: Color.primary,
         secondaryText: Color.secondary,
         accent: .electricIndigo,
+        accentText: .electricIndigo,
+        onAccent: .white,
         accentSecondary: .hotPink,
         income: .priorityNeed,
         expense: .hotPink,
@@ -113,6 +127,8 @@ extension YalaTheme {
         primaryText: Color.primary,
         secondaryText: Color.secondary,
         accent: .electricIndigo,
+        accentText: .indigoTextOnDark,
+        onAccent: .white,
         accentSecondary: .hotPink,
         income: .priorityNeed,
         expense: .hotPink,
@@ -140,6 +156,8 @@ extension YalaTheme {
         primaryText: .white,
         secondaryText: Color(hex: "94A3B8"),  // slate 60%
         accent: .electricIndigo,
+        accentText: .indigoTextOnDark,
+        onAccent: .white,
         accentSecondary: .hotPink,
         income: .priorityNeed,
         expense: .hotPink,
@@ -162,6 +180,8 @@ extension YalaTheme {
         primaryText: .white,
         secondaryText: Color(hex: "C9849E"),  // rose 60%
         accent: .hotPink,
+        accentText: .pinkTextOnDark,
+        onAccent: .black,
         accentSecondary: .electricIndigo,
         income: .priorityNeed,
         expense: .hotPink,
@@ -184,6 +204,8 @@ extension YalaTheme {
         primaryText: .white,
         secondaryText: Color(hex: "7BBFBF"),  // teal 60%
         accent: Color.priorityNeed,  // #00C2CB — legible over white icons
+        accentText: .priorityNeed,
+        onAccent: .black,
         accentSecondary: .hotPink,
         income: .priorityNeed,
         expense: .hotPink,
@@ -199,6 +221,13 @@ extension YalaTheme {
         baseColorScheme: .dark
     )
 
+    /// Texto o icono encima de un relleno: si el relleno es el acento del tema, `onAccent` (decidido por tema y medido);
+    /// si es otro color, `Color.contrastingText(for:)`. Los «+» flotantes elegían por esa fórmula también sobre el
+    /// acento, y sobre el turquesa de Teal salía blanco (2,19:1).
+    func onFill(_ fill: Color) -> Color {
+        fill == accent ? onAccent : Color.contrastingText(for: fill)
+    }
+
     /// Whether this theme forces monochrome profile icons
     var forcesMonochromeIcons: Bool {
         mapsColorsToGrayscale
@@ -211,6 +240,8 @@ extension YalaTheme {
         primaryText: .white,
         secondaryText: Color(white: 0.6),
         accent: Color(white: 0.75),  // Gray — visible toggle track vs white thumb
+        accentText: Color(white: 0.75),
+        onAccent: .black,
         accentSecondary: Color(white: 0.7),
         income: Color(white: 0.85),
         expense: Color(white: 0.45),
@@ -232,6 +263,8 @@ extension YalaTheme {
     private static func makeTranslucent(
         background: Color,
         accent: Color,
+        accentText: Color,
+        onAccent: Color,
         accentSecondary: Color,
         toolbarIcon: Color,
         tagChip: Color = .neonCyan
@@ -243,6 +276,8 @@ extension YalaTheme {
             primaryText: .white,
             secondaryText: Color.white.opacity(0.6),
             accent: accent,
+            accentText: accentText,
+            onAccent: onAccent,
             accentSecondary: accentSecondary,
             income: .priorityNeed,
             expense: .hotPink,
@@ -262,15 +297,18 @@ extension YalaTheme {
 
     static let translucent = makeTranslucent(
         background: Color(hex: "0A0A1A"),
-        accent: .electricIndigo, accentSecondary: .hotPink, toolbarIcon: .electricIndigo
+        accent: .electricIndigo, accentText: .indigoTextOnDark, onAccent: .white,
+        accentSecondary: .hotPink, toolbarIcon: .electricIndigo
     )
     static let translucentRosa = makeTranslucent(
         background: Color(hex: "1A0A12"),
-        accent: .hotPink, accentSecondary: .electricIndigo, toolbarIcon: .hotPink
+        accent: .hotPink, accentText: .pinkTextOnDark, onAccent: .black,
+        accentSecondary: .electricIndigo, toolbarIcon: .hotPink
     )
     static let translucentTeal = makeTranslucent(
         background: Color(hex: "0A1A18"),
-        accent: .priorityNeed, accentSecondary: .hotPink, toolbarIcon: .priorityNeed,
+        accent: .priorityNeed, accentText: .priorityNeed, onAccent: .black,
+        accentSecondary: .hotPink, toolbarIcon: .priorityNeed,
         tagChip: .priorityNeed
     )
 
@@ -278,7 +316,8 @@ extension YalaTheme {
 
     static let liquidGlass = makeTranslucent(
         background: Color(hex: "060612"),
-        accent: .electricIndigo, accentSecondary: .hotPink, toolbarIcon: .electricIndigo
+        accent: .electricIndigo, accentText: .indigoTextOnDark, onAccent: .white,
+        accentSecondary: .hotPink, toolbarIcon: .electricIndigo
     )
 }
 

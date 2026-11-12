@@ -17,6 +17,8 @@ interface ColumnSpec {
   scale?: number;
   safe?: boolean;
   group_key?: string;
+  /** manifest_version que estrenó la columna (ausente = 1). Ver `resolveCapabilitySet`. */
+  since?: number;
 }
 interface EntitySpec {
   table: string;
@@ -33,6 +35,13 @@ interface Manifest {
 }
 
 export const manifest = manifestJson as unknown as Manifest;
+
+/**
+ * Versión del manifest de ESTE Worker. Se anuncia en `/sync/pull` y `/sync/merkle` (`manifest_version`): el
+ * cliente iOS declara la menor entre la suya y esta (`SyncCapability.swift`), así que nunca escribe ni hashea una
+ * columna que el Worker no conoce, publique quien publique primero.
+ */
+export const MANIFEST_VERSION: number = manifest.manifest_version;
 
 /** Las 16 tablas de dominio syncables (keys del manifest). Debe casar con la whitelist del RPC. */
 export const SYNCABLE_ENTITIES: readonly string[] = Object.keys(manifest.entities);
@@ -188,9 +197,21 @@ export interface CapabilitySet {
   columns?: Record<string, Set<string>>;
 }
 
-/** Resuelve el capability-set desde el header/query del cliente. v1 / "full" / ausente → completo. */
+/**
+ * Resuelve el capability-set desde el header/query del cliente. "full" / ausente → completo. `vN` → las columnas
+ * con `since <= N` (las de antes de `since` cuentan como 1): un cliente que declara una versión anterior no recibe,
+ * no escribe y no hashea las columnas posteriores. Medido el 2026-10-18: todo iOS hasta 2.1 manda `v1` y hasta
+ * entonces `v1` era el set COMPLETO, así que añadir una columna sin esto le divergía el Merkle de esa tabla entera
+ * (el canon serializa el NULL como `key:null` y su hoja no la lleva). `vN` mayor o igual que este Worker → completo.
+ */
 export function resolveCapabilitySet(raw: string | null): CapabilitySet {
-  if (!raw || raw === "v1" || raw === "full") return {}; // set completo
+  if (!raw || raw === "full") return {}; // set completo
+  const version = /^v(\d+)$/.exec(raw);
+  if (version) {
+    const level = Math.max(1, Number(version[1]));
+    if (level >= MANIFEST_VERSION) return {};
+    return { columns: columnsUpTo(level) };
+  }
   // Formato explícito (futuro multi-cliente): JSON {entity: [col,...]}. Best-effort; inválido → completo.
   try {
     const parsed = JSON.parse(raw) as Record<string, string[]>;
@@ -200,6 +221,19 @@ export function resolveCapabilitySet(raw: string | null): CapabilitySet {
   } catch {
     return {};
   }
+}
+
+/** Columnas de cada entidad que existen en la versión `level` del manifest (`since` ausente = 1). */
+export function columnsUpTo(level: number): Record<string, Set<string>> {
+  const columns: Record<string, Set<string>> = {};
+  for (const [entity, spec] of Object.entries(manifest.entities)) {
+    columns[entity] = new Set(
+      Object.entries(spec.columns)
+        .filter(([, c]) => (c.since ?? 1) <= level)
+        .map(([col]) => col),
+    );
+  }
+  return columns;
 }
 
 /**

@@ -106,11 +106,7 @@ struct VariationChip: View {
                     Capsule()
                         .fill(variationColor.opacity(0.1))
                 )
-                .accessibilityLabel(
-                    variation >= 0
-                        ? L10n.Accessibility.variationIncrease(PreviousPeriodHelper.formatVariationValue(variation))
-                        : L10n.Accessibility.variationDecrease(PreviousPeriodHelper.formatVariationValue(variation))
-                )
+                .accessibilityLabel(Self.accessibilityText(for: variation))
         } else if showNAWhenNil {
             // Show "N/A" for items without previous data (when comparison is active)
             Text("N/A")
@@ -124,6 +120,19 @@ struct VariationChip: View {
                 )
         }
         // When variation is nil and showNAWhenNil is false, show nothing (for headers)
+    }
+}
+
+// MARK: - Accesibilidad
+
+extension VariationChip {
+    /// Lo que lee VoiceOver. Sin cambio (la misma franja en la que el chip pinta «=») dice «Sin cambio», no
+    /// «Aumento +0 %» (UX 2.2 · L18-4).
+    static func accessibilityText(for variation: Double) -> String {
+        if abs(variation) < 0.05 { return L10n.Accessibility.variationNoChange }
+        return variation >= 0
+            ? L10n.Accessibility.variationIncrease(PreviousPeriodHelper.formatVariationValue(variation))
+            : L10n.Accessibility.variationDecrease(PreviousPeriodHelper.formatVariationValue(variation))
     }
 }
 

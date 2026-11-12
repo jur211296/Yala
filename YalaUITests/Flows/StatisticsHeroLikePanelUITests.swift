@@ -3,7 +3,7 @@
 //  YalaUITests
 //
 //  El hero de Estadísticas es el del Panel en las cuatro pestañas y en todas las subvistas de Distribución, y lleva
-//  los mismos flotantes (Yala IA y «+»). Ticket `distribution-subviews-miss-the-new-panel-hero`, decisión de Jürgen
+//  la misma fila de acciones debajo (card kzhe; antes, los flotantes fijos). Ticket `distribution-subviews-miss-the-new-panel-hero`, decisión de Jürgen
 //  del 2026-10-03.
 //
 //  Qué distingue el hero del Panel del de antes, en una medida: el rótulo de la cifra («Neto del período», «Saldo de
@@ -32,12 +32,13 @@ final class StatisticsHeroLikePanelUITests: XCTestCase {
             "\(place): el rótulo del hero (\(caption.frame)) no está a la izquierda como en el Panel: volvió la "
                 + "cabecera centrada.",
             file: file, line: line)
+        // Desde la card kzhe, como en el Panel: la fila de acciones bajo el hero, y los flotantes solo al bajar.
         XCTAssertTrue(
-            app.buttons["fab_new_transaction"].waitForExistence(timeout: 5),
-            "\(place): falta «+» (fab_new_transaction), que en el Panel está siempre a mano.", file: file, line: line)
+            app.buttons["stats_action_new"].waitForExistence(timeout: 5),
+            "\(place): falta «Nuevo registro» (stats_action_new) bajo el hero, como en el Panel.", file: file, line: line)
         XCTAssertTrue(
-            app.buttons["fab_chat"].exists,
-            "\(place): falta Yala IA (fab_chat) junto a «+».", file: file, line: line)
+            app.buttons["stats_action_ai"].exists,
+            "\(place): falta Yala IA (stats_action_ai) en la fila de acciones.", file: file, line: line)
     }
 
     /// El hero queda a la misma distancia de los chips que el contenido de Planificación o del detalle de grupo, el aire
@@ -131,12 +132,23 @@ final class StatisticsHeroLikePanelUITests: XCTestCase {
 
         app.tabBars.buttons.element(boundBy: 1).tap()
         openChip(app, "detail_chip_categorías")
-        assertPanelHero(app, in: "Distribución › categoría")
 
+        // Distribución arranca en Detalle (izquierda) y Gráficas va a su derecha: los dos segmentos heredan el id del
+        // contenedor, en ese orden.
+        let modes = app.buttons.matching(identifier: "distribution_content_mode")
+        XCTAssertTrue(modes.firstMatch.waitForExistence(timeout: 10), "No está el selector Detalle/Gráficas.")
+        XCTAssertEqual(modes.count, 2, "El selector Detalle/Gráficas no tiene dos segmentos.")
+        XCTAssertTrue(modes.element(boundBy: 0).isSelected, "Distribución no arrancó en Detalle.")
         let page: (String) -> XCUIElement = { id in
             app.descendants(matching: .any).matching(identifier: "distribution_page_\(id)").firstMatch
         }
+        XCTAssertFalse(page("category").exists, "Al llegar ya se ven las gráficas: Distribución no arrancó en Detalle.")
+        assertPanelHero(app, in: "Distribución › Detalle")
+
+        modes.element(boundBy: 1).tap()
         XCTAssertTrue(page("category").waitForExistence(timeout: 10), "No está la página de categorías del carrusel.")
+        assertPanelHero(app, in: "Distribución › Gráficas › categoría")
+
         page("category").swipeLeft()
         XCTAssertTrue(waitUntilOnScreen(page("subcategory")), "El carrusel no pasó a subcategorías.")
         assertPanelHero(app, in: "Distribución › subcategoría")
@@ -145,14 +157,8 @@ final class StatisticsHeroLikePanelUITests: XCTestCase {
         XCTAssertTrue(waitUntilOnScreen(page("tags")), "El carrusel no pasó a etiquetas.")
         assertPanelHero(app, in: "Distribución › etiquetas")
 
-        // Los dos segmentos heredan el id del contenedor, en el orden Gráficas, Detalle.
-        let modes = app.buttons.matching(identifier: "distribution_content_mode")
-        XCTAssertEqual(modes.count, 2, "El selector Gráficas/Detalle no tiene dos segmentos.")
-        modes.element(boundBy: 1).tap()
-        assertPanelHero(app, in: "Distribución › Detalle")
-
         modes.element(boundBy: 0).tap()
-        assertPanelHero(app, in: "Distribución › Gráficas")
+        assertPanelHero(app, in: "Distribución › vuelta a Detalle")
     }
 
     /// Registrar un movimiento desde Distribución cambia la cifra del hero sin salir de la pestaña. Hasta el 2026-10-09 el
@@ -171,13 +177,10 @@ final class StatisticsHeroLikePanelUITests: XCTestCase {
         XCTAssertTrue(heroAmount.waitForExistence(timeout: 15), "No se ve la cifra del hero de Distribución.")
         let before = heroAmount.label
 
-        let fab = app.buttons["fab_new_transaction"]
-        XCTAssertTrue(fab.waitForExistence(timeout: 5), "Falta «+» en Distribución.")
-        XCTAssertTrue(fab.waitForHittable(timeout: 5), "«+» no es alcanzable en Distribución.")
-        fab.tap()
-        let manual = app.buttons["fab_manual"]
-        XCTAssertTrue(manual.waitForExistence(timeout: 5), "No se expandió el menú del «+» (fab_manual).")
-        manual.tap()
+        let newRecord = app.buttons["stats_action_new"]
+        XCTAssertTrue(newRecord.waitForExistence(timeout: 5), "Falta «Nuevo registro» en Distribución.")
+        XCTAssertTrue(newRecord.waitForHittable(timeout: 5), "«Nuevo registro» no es alcanzable en Distribución.")
+        newRecord.tap()
 
         let amountField = app.textFields["new_transaction_amount"]
         XCTAssertTrue(amountField.waitForExistence(timeout: 5), "No apareció new_transaction_amount.")

@@ -11,12 +11,13 @@ import SwiftUI
 struct NotificationsSettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.settingsListIsAlongside) private var settingsListIsAlongside
     @Environment(\.openURL) private var openURL
     @Environment(AppPreferences.self) private var appPreferences
 
     @State private var viewModel = NotificationsSettingsViewModel()
 
-    private var isGroupsOnlyShell: Bool { !SessionState.shared.hasPrivateSession }
+    private var isGroupsOnlyShell: Bool { SessionState.shared.isGroupsFocusedShell }
 
     /// En solo-grupos solo la notificación de grupos (event-driven); el resto son
     /// recordatorios/reportes/pagos personales. Regla en `GroupsOnlyVisibilityPolicy`.
@@ -64,9 +65,12 @@ struct NotificationsSettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
-                    dismiss()
+            // Con la lista de Ajustes al lado, la lista es la vuelta (UX 2.2 · L16-20).
+            if !settingsListIsAlongside {
+                ToolbarItem(placement: .topBarLeading) {
+                    YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
+                        dismiss()
+                    }
                 }
             }
             if !isGroupsOnlyShell {
@@ -80,7 +84,7 @@ struct NotificationsSettingsView: View {
         }
         .sheet(isPresented: $viewModel.isCreatingNew, onDismiss: { viewModel.closeEditor() }) {
             NotificationEditorSheet(notification: nil) { newNotification in
-                viewModel.insertNotification(newNotification)
+                if viewModel.insertNotification(newNotification) { DS.Haptic.success() }
                 Task {
                     await NotificationService.shared.scheduleNotification(for: newNotification)
                     replanPaymentSummariesIfNeeded(for: newNotification)
@@ -89,7 +93,7 @@ struct NotificationsSettingsView: View {
         }
         .sheet(item: $viewModel.selectedNotification, onDismiss: { viewModel.closeEditor() }) { notification in
             NotificationEditorSheet(notification: notification) { _ in
-                viewModel.saveContext()
+                if viewModel.saveContext() { DS.Haptic.success() }
                 Task {
                     await NotificationService.shared.scheduleNotification(for: notification)
                     // Cambiar la HORA del item mueve el disparo de las summaries agendadas —

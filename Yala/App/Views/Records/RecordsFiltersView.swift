@@ -39,8 +39,38 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
     @State private var localSelectedCurrencies: Set<CurrencyCode> = []
     @State private var localAmountCondition: AmountFilterCondition = .any
     @State private var localSearchText: String = ""
-    @State private var localIsExcludeMode: Bool = false
+    // Lo de «Ocultar». Convive con lo de «Mostrar solo» de arriba (opción B, 2026-10-25): las dos listas se aplican a la
+    // vez y un mismo valor no puede estar en las dos.
+    @State private var localExcludedAccounts: Set<PersistentIdentifier> = []
+    @State private var localExcludedCategories: Set<PersistentIdentifier> = []
+    @State private var localExcludedSubcategories: Set<PersistentIdentifier> = []
+    @State private var localExcludedTags: Set<PersistentIdentifier> = []
+    @State private var localExcludedNeeds: Set<SubcategoryNeed> = []
+    @State private var localExcludedCurrencies: Set<CurrencyCode> = []
+    /// La pestaña a la vista: qué lista escribe un toque. Cambiarla ya no vacía nada (antes «Mostrar solo» y «Ocultar»
+    /// eran un modo global y los mismos valores significaban una cosa u otra).
+    @State private var isEditingHidden: Bool = false
     @State private var hasSnapshotted = false
+    /// Lo que había en categorías al abrir, antes de expandirlo a subcategorías para la hoja. Si al aplicar la lista de
+    /// subcategorías sigue siendo la expansión de entonces, se devuelve la forma original: «Sin Comida» sigue siendo
+    /// «Sin Comida» (con sus movimientos sin subcategoría) y no N cápsulas «Sin <subcategoría>».
+    @State private var categoryExpansion: CategoryExpansion?
+
+    private struct CategoryExpansion {
+        let includedCategories: Set<PersistentIdentifier>
+        let includedSubcategories: Set<PersistentIdentifier>
+        let expandedIncluded: Set<PersistentIdentifier>
+        let excludedCategories: Set<PersistentIdentifier>
+        let excludedSubcategories: Set<PersistentIdentifier>
+        let expandedExcluded: Set<PersistentIdentifier>
+    }
+
+    // MARK: - Preguntas antes de perder lo elegido (UX 2.2 · L8-16)
+
+    /// Lo que había al abrir la hoja (tras expandir categorías a subcategorías). La X y el gesto de cerrar preguntan
+    /// solo si lo elegido difiere de esto.
+    @State private var originalDraft: RecordsFiltersDraft?
+    @State private var showDiscardAlert = false
 
     // MARK: - Body
 
@@ -58,6 +88,12 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
             .sheet(isPresented: $showCurrencySheet) {
                 currencySheetView
             }
+            .alert(L10n.UXL8C.Filters.discardTitle, isPresented: $showDiscardAlert) {
+                Button(L10n.UXL8C.Filters.keepChoosing, role: .cancel) {}
+                Button(L10n.UXL8C.Filters.discard, role: .destructive) { dismiss() }
+            } message: {
+                Text(L10n.UXL8C.Filters.discardMessage)
+            }
     }
 
     // MARK: - Main Content
@@ -66,32 +102,65 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
         NavigationStack {
             ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
-                        // Include/Exclude mode selector
-                        Picker("", selection: $localIsExcludeMode) {
-                            Text(L10n.Filters.includeMode).tag(false)
-                            Text(L10n.Filters.excludeMode).tag(true)
+                        // Mostrar solo / Ocultar (UX 2.2 · L3-5): el selector invertía todo sin decir cómo. Los
+                        // segmentos van cortos para que quepan en un iPhone pequeño y en alemán; la frase de debajo
+                        // dice qué hace el que está puesto.
+                        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                            Picker("", selection: $isEditingHidden) {
+                                Text(L10n.Filters.includeMode).tag(false)
+                                Text(L10n.Filters.excludeMode).tag(true)
+                            }
+                            .pickerStyle(.segmented)
+                            .accessibilityIdentifier("filters_include_exclude_picker")
+
+                            Text(isEditingHidden ? L10n.Filters.excludeModeExplanation : L10n.Filters.includeModeExplanation)
+                                .font(DS.Typography.subheadline)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .accessibilityIdentifier("filters_mode_explanation")
+
+                            Text(L10n.SegmentFilter.combineHint)
+                                .font(DS.Typography.subheadline)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .accessibilityIdentifier("filters_combine_hint")
+
+                            // En «Ocultar» no está la fila Tipo, a propósito: ocultar los gastos es lo mismo que ver
+                            // solo los ingresos, y eso se elige en «Mostrar solo» (L8-16).
+                            if isEditingHidden && !sessionState.isExpensesOnlyMode {
+                                Text(L10n.UXL8C.Filters.typeLivesInShowOnly)
+                                    .font(DS.Typography.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .accessibilityIdentifier("filters_type_hint")
+                            }
                         }
-                        .pickerStyle(.segmented)
-                        .accessibilityIdentifier("filters_include_exclude_picker")
 
                         SectionBox(title: L10n.Filters.filterOptions) {
                             VStack(spacing: DS.Spacing.none) {
                                 accountsContent
                                 // Transaction natures (Income/Expense) - hidden in expenses-only mode and exclude mode
-                                if !sessionState.isExpensesOnlyMode && !localIsExcludeMode {
+                                if !sessionState.isExpensesOnlyMode && !isEditingHidden {
                                     Divider().padding(.leading, DS.Spacing.lg)
                                     transactionNaturesContent
                                 }
                                 Divider().padding(.leading, DS.Spacing.lg)
                                 categoriesContent
-                                Divider().padding(.leading, DS.Spacing.lg)
-                                tagsContent
+                                // Sin etiquetas la fila no lleva a nada (UX 2.2 · L3-5): no se pinta.
+                                if !filtersViewModel.activeTags.isEmpty {
+                                    Divider().padding(.leading, DS.Spacing.lg)
+                                    tagsContent
+                                }
                                 Divider().padding(.leading, DS.Spacing.lg)
                                 needsContent
                                 Divider().padding(.leading, DS.Spacing.lg)
                                 currencyContent
-                                Divider().padding(.leading, DS.Spacing.lg)
-                                amountContent
+                                // El monto necesita UNA moneda. Lleva su título, y sin moneda única dice qué hacer: la
+                                // sección de moneda está justo encima (L8-16; antes no salía, L3-5).
+                                if !filtersViewModel.currenciesWithTransactions.isEmpty {
+                                    Divider().padding(.leading, DS.Spacing.lg)
+                                    amountSection
+                                }
                                 Divider().padding(.leading, DS.Spacing.lg)
                                 noteContent
                             }
@@ -126,39 +195,28 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                 if !hasSnapshotted {
                     snapshotFromViewModel()
                     expandCategoryFiltersToSubcategories()
+                    originalDraft = currentDraft
                     hasSnapshotted = true
                 }
             }
-            .onChange(of: localIsExcludeMode) { oldValue, newValue in
-                guard oldValue != newValue else { return }
-                localSelectedAccounts.removeAll()
-                localSelectedCategories.removeAll()
-                localSelectedSubcategories.removeAll()
-                localSelectedNeeds.removeAll()
-                localSelectedTags.removeAll()
-                localSelectedCurrencies.removeAll()
-                if sessionState.isExpensesOnlyMode {
-                    localSelectedTransactionNatures = [.expense]
-                } else {
-                    localSelectedTransactionNatures.removeAll()
-                }
-                localAmountCondition = .any
-                localSearchText = ""
-            }
+            // Arrastrar la hoja hacia abajo con cambios pregunta lo mismo que la X.
+            .onSheetDismissAttempt(isActive: hasChanges) { showDiscardAlert = true }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
-                        dismiss()
+                        requestClose()
                     }
                     .accessibilityIdentifier("filters_close_button")
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(L10n.Action.apply) {
-                        commitToViewModel()
+                        // Sin cambios no se escribe nada: abrir y aplicar no puede alterar el filtro.
+                        if hasChanges { commitToViewModel() }
                         dismiss()
                     }
                     .buttonStyle(.borderedProminent)
+                    .foregroundStyle(.thOnAccent)
                     .accessibilityIdentifier("filters_apply_button")
                 }
             }
@@ -173,21 +231,22 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
             icon: "creditcard",
             title: L10n.Settings.accounts,
             status: selectedAccountsText,
-            items: filtersViewModel.activeAccounts,
-            showEmptyPlaceholder: false
+            items: filtersViewModel.filterAccounts(selected: localSelectedAccounts.union(localExcludedAccounts)),
+            showEmptyPlaceholder: false,
+            parenthesizesStatus: false
         ) { account in
             accountChip(account)
         }
     }
 
     private func accountChip(_ account: Account) -> some View {
-        let isSelected = localSelectedAccounts.contains(account.persistentModelID)
+        let isSelected = editAccounts.contains(account.persistentModelID)
 
         return Button {
             if isSelected {
-                localSelectedAccounts.remove(account.persistentModelID)
+                editAccounts.remove(account.persistentModelID)
             } else {
-                localSelectedAccounts.insert(account.persistentModelID)
+                editAccounts.insert(account.persistentModelID)
             }
         } label: {
             Text(account.name)
@@ -201,12 +260,13 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                         .fill(
                             isSelected ? Color(hex: account.colorHex) : Color(.tertiarySystemFill))
                 )
+                .overlay { otherListMark(otherAccounts.contains(account.persistentModelID)) }
         }
         .buttonStyle(.plain)
     }
 
     private var selectedAccountsText: String {
-        filtersViewModel.selectedAccountsText(selectedAccounts: localSelectedAccounts, isExcludeMode: localIsExcludeMode)
+        filtersViewModel.selectedAccountsText(selectedAccounts: editAccounts, isExcludeMode: isEditingHidden)
     }
 
     private var categoriesContent: some View {
@@ -217,7 +277,8 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                 FilterSectionHeader(
                     icon: "tag",
                     title: L10n.Filters.categories,
-                    status: selectedCategoriesText
+                    status: selectedCategoriesText,
+                    parenthesizesStatus: false
                 )
 
                 Spacer()
@@ -237,12 +298,31 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
     /// so the filters sheet correctly reflects the active filter state.
     /// If specific subcategories are already selected for a category, keeps those instead of expanding.
     private func expandCategoryFiltersToSubcategories() {
-        let selectedCats = localSelectedCategories
-        guard !selectedCats.isEmpty else { return }
+        let original = (
+            localSelectedCategories, localSelectedSubcategories, localExcludedCategories, localExcludedSubcategories
+        )
+        // Lo oculto, primero: «Ocultar Comida» desde la tarta se ve en la hoja como sus subcategorías ocultas.
+        localExcludedSubcategories = expanded(categories: localExcludedCategories, into: localExcludedSubcategories)
+        localExcludedCategories.removeAll()
+        // Y lo visto solo, sin lo oculto: «Solo Comida» + «Sin Restaurantes» no puede meter Restaurantes en las dos
+        // listas.
+        localSelectedSubcategories = expanded(categories: localSelectedCategories, into: localSelectedSubcategories)
+            .subtracting(localExcludedSubcategories)
+        localSelectedCategories.removeAll()
+        categoryExpansion = CategoryExpansion(
+            includedCategories: original.0, includedSubcategories: original.1,
+            expandedIncluded: localSelectedSubcategories,
+            excludedCategories: original.2, excludedSubcategories: original.3,
+            expandedExcluded: localExcludedSubcategories
+        )
+    }
 
-        let existingSubcategoryIDs = localSelectedSubcategories
-
-        for categoryID in selectedCats {
+    private func expanded(
+        categories: Set<PersistentIdentifier>,
+        into subcategories: Set<PersistentIdentifier>
+    ) -> Set<PersistentIdentifier> {
+        var result = subcategories
+        for categoryID in categories {
             let subcategoriesOfCategory = filtersViewModel.allSubcategories
                 .filter { sub in
                     guard let category = sub.category else { return false }
@@ -250,18 +330,17 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                 }
                 .map { $0.persistentModelID }
 
-            let alreadyHasSpecificSelection = subcategoriesOfCategory.contains { existingSubcategoryIDs.contains($0) }
+            let alreadyHasSpecificSelection = subcategoriesOfCategory.contains { subcategories.contains($0) }
 
             if !alreadyHasSpecificSelection {
-                localSelectedSubcategories.formUnion(subcategoriesOfCategory)
+                result.formUnion(subcategoriesOfCategory)
             }
         }
-
-        localSelectedCategories.removeAll()
+        return result
     }
 
     private var selectedCategoriesText: String {
-        filtersViewModel.selectedCategoriesText(selectedSubcategories: localSelectedSubcategories, isExcludeMode: localIsExcludeMode)
+        filtersViewModel.selectedCategoriesText(selectedSubcategories: editSubcategories, isExcludeMode: isEditingHidden)
     }
 
     private var tagsContent: some View {
@@ -270,20 +349,21 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
             title: L10n.Settings.tags,
             status: selectedTagsText,
             items: filtersViewModel.activeTags,
-            showEmptyPlaceholder: true
+            showEmptyPlaceholder: true,
+            parenthesizesStatus: false
         ) { tag in
             tagChip(tag)
         }
     }
 
     private func tagChip(_ tag: Tag) -> some View {
-        let isSelected = localSelectedTags.contains(tag.persistentModelID)
+        let isSelected = editTags.contains(tag.persistentModelID)
 
         return Button {
             if isSelected {
-                localSelectedTags.remove(tag.persistentModelID)
+                editTags.remove(tag.persistentModelID)
             } else {
-                localSelectedTags.insert(tag.persistentModelID)
+                editTags.insert(tag.persistentModelID)
             }
         } label: {
             HStack(spacing: DS.Spacing.sm) {
@@ -293,7 +373,7 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
 
                 Text(tag.name)
                     .font(DS.Typography.subheadline)
-                    .foregroundStyle(isSelected ? .white : .primary)
+                    .foregroundStyle(isSelected ? theme.onAccent : .primary)
                     .lineLimit(1)
             }
             .padding(.horizontal, DS.Spacing.md)
@@ -302,12 +382,13 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                 Capsule()
                     .fill(isSelected ? theme.accent : Color(.tertiarySystemFill))
             )
+            .overlay { otherListMark(otherTags.contains(tag.persistentModelID)) }
         }
         .buttonStyle(.plain)
     }
 
     private var selectedTagsText: String {
-        filtersViewModel.selectedTagsText(selectedTags: localSelectedTags, isExcludeMode: localIsExcludeMode)
+        filtersViewModel.selectedTagsText(selectedTags: editTags, isExcludeMode: isEditingHidden)
     }
 
     // MARK: - Transaction Natures Content (Income/Expense)
@@ -318,7 +399,8 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
             FilterSectionHeader(
                 icon: "arrow.up.arrow.down",
                 title: L10n.Filters.type,
-                status: selectedTransactionNaturesText
+                status: selectedTransactionNaturesText,
+                parenthesizesStatus: false
             )
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.top, DS.Spacing.md)
@@ -360,13 +442,14 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
     }
 
     private var selectedTransactionNaturesText: String {
+        let all = RecordsFiltersSection.types.emptyStatus(isExcludeMode: false)
         if localSelectedTransactionNatures.isEmpty {
-            return L10n.Filters.all
+            return all
         }
         if localSelectedTransactionNatures.count == TransactionNature.allCases.count {
-            return L10n.Filters.all
+            return all
         }
-        return localSelectedTransactionNatures.first?.displayName ?? L10n.Filters.all
+        return localSelectedTransactionNatures.first?.displayName ?? all
     }
 
     // MARK: - Needs Content
@@ -377,7 +460,8 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
             FilterSectionHeader(
                 icon: "chart.bar.fill",
                 title: L10n.Filters.need,
-                status: selectedNeedsText
+                status: selectedNeedsText,
+                parenthesizesStatus: false
             )
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.top, DS.Spacing.md)
@@ -395,19 +479,19 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
     }
 
     private func needChip(_ need: SubcategoryNeed) -> some View {
-        let isSelected = localSelectedNeeds.contains(need)
+        let isSelected = editNeeds.contains(need)
 
         return Button {
             if isSelected {
-                localSelectedNeeds.remove(need)
+                editNeeds.remove(need)
             } else {
-                localSelectedNeeds.insert(need)
+                editNeeds.insert(need)
             }
         } label: {
             HStack(spacing: DS.Spacing.sm) {
                 Text(need.displayName)
                     .font(DS.Typography.subheadline)
-                    .foregroundStyle(isSelected ? .white : .primary)
+                    .foregroundStyle(isSelected ? theme.onAccent : .primary)
                     .lineLimit(1)
             }
             .padding(.horizontal, DS.Spacing.md)
@@ -416,15 +500,16 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                 Capsule()
                     .fill(isSelected ? theme.accent : Color(.tertiarySystemFill))
             )
+            .overlay { otherListMark(otherNeeds.contains(need)) }
         }
         .buttonStyle(.plain)
     }
 
     private var selectedNeedsText: String {
-        if localSelectedNeeds.isEmpty {
-            return localIsExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.allNeeds
+        if editNeeds.isEmpty {
+            return RecordsFiltersSection.needs.emptyStatus(isExcludeMode: isEditingHidden)
         }
-        return "\(localSelectedNeeds.count)"
+        return "\(editNeeds.count)"
     }
 
     @ViewBuilder
@@ -436,7 +521,8 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                 FilterSectionHeader(
                     icon: "arrow.triangle.2.circlepath",
                     title: L10n.Filters.currency,
-                    status: selectedCurrenciesText
+                    status: selectedCurrenciesText,
+                    parenthesizesStatus: false
                 )
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.top, DS.Spacing.md)
@@ -455,18 +541,18 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
     }
 
     private func currencyChip(_ currency: CurrencyCode) -> some View {
-        let isSelected = localSelectedCurrencies.contains(currency)
+        let isSelected = editCurrencies.contains(currency)
 
         return Button {
             if isSelected {
-                localSelectedCurrencies.remove(currency)
+                editCurrencies.remove(currency)
             } else {
-                localSelectedCurrencies.insert(currency)
+                editCurrencies.insert(currency)
             }
         } label: {
             Text(currency.rawValue)
                 .font(DS.Typography.subheadline)
-                .foregroundStyle(isSelected ? .white : .primary)
+                .foregroundStyle(isSelected ? theme.onAccent : .primary)
                 .lineLimit(1)
                 .padding(.horizontal, DS.Spacing.md)
                 .padding(.vertical, DS.Spacing.sm)
@@ -474,6 +560,7 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                     Capsule()
                         .fill(isSelected ? theme.accent : Color(.tertiarySystemFill))
                 )
+                .overlay { otherListMark(otherCurrencies.contains(currency)) }
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("filters_currency_chip_\(currency.rawValue)")
@@ -483,21 +570,64 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
     private var selectedCurrenciesText: String {
         guard !filtersViewModel.currenciesWithTransactions.isEmpty else { return "" }
 
-        if localSelectedCurrencies.isEmpty {
-            return localIsExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.all
+        if editCurrencies.isEmpty {
+            return RecordsFiltersSection.currencies.emptyStatus(isExcludeMode: isEditingHidden)
         }
-        if !localIsExcludeMode &&
-           localSelectedCurrencies.count == filtersViewModel.currenciesWithTransactions.count {
-            return L10n.Filters.all
+        if !isEditingHidden &&
+           editCurrencies.count == filtersViewModel.currenciesWithTransactions.count {
+            return RecordsFiltersSection.currencies.emptyStatus(isExcludeMode: false)
         }
-        return "\(localSelectedCurrencies.count)/\(filtersViewModel.currenciesWithTransactions.count)"
+        return "\(editCurrencies.count)/\(filtersViewModel.currenciesWithTransactions.count)"
     }
 
-    private var amountContent: some View {
-        AmountFilterView(
-            condition: $localAmountCondition,
-            currencyCode: localSelectedCurrencies.count == 1
-                ? localSelectedCurrencies.first : nil
+    /// Monto, con su título. Con una sola moneda, el selector; con varias y ninguna elegida, qué hacer.
+    private var amountSection: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.none) {
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: "banknote")
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.primary)
+                    .frame(width: DS.FormRow.iconWidth)
+                    .accessibilityHidden(true)
+
+                Text(L10n.UXL8C.Filters.amountTitle)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.primary)
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.top, DS.Spacing.md)
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isHeader)
+            .accessibilityIdentifier("filters_amount_title")
+
+            if amountCurrencyCode != nil {
+                AmountFilterView(
+                    condition: $localAmountCondition,
+                    currencyCode: amountCurrencyCode
+                )
+            } else {
+                // En «Ocultar» lo que se marca es lo que desaparece: pedir «elige una sola» diría lo contrario.
+                Text(isEditingHidden
+                     ? L10n.UXL8C.Filters.amountNeedsOneVisibleCurrency
+                     : L10n.UXL8C.Filters.amountNeedsOneCurrency)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.leading, DS.Spacing.formIndent)
+                    .padding(.trailing, DS.Spacing.lg)
+                    .padding(.top, DS.Spacing.sm)
+                    .padding(.bottom, DS.Spacing.md)
+                    .accessibilityIdentifier("filters_amount_needs_one_currency")
+            }
+        }
+    }
+
+    /// La moneda del filtro de monto: la única que queda a la vista. Nunca una oculta.
+    private var amountCurrencyCode: CurrencyCode? {
+        RecordsAmountFilterCurrencyLogic.currency(
+            included: localSelectedCurrencies,
+            excluded: localExcludedCurrencies,
+            available: filtersViewModel.currenciesWithTransactions
         )
     }
 
@@ -523,16 +653,16 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                 VStack(spacing: DS.Spacing.xxl) {
                     SectionBox(title: "") {
                         VStack(spacing: DS.Spacing.none) {
-                            ForEach(Array(filtersViewModel.activeAccounts.enumerated()), id: \.element.id) { index, account in
+                            ForEach(Array(filtersViewModel.filterAccounts(selected: localSelectedAccounts.union(localExcludedAccounts)).enumerated()), id: \.element.id) { index, account in
                                 if index > 0 {
                                     SubsectionDivider()
                                 }
 
                                 Button {
-                                    if localSelectedAccounts.contains(account.persistentModelID) {
-                                        localSelectedAccounts.remove(account.persistentModelID)
+                                    if editAccounts.contains(account.persistentModelID) {
+                                        editAccounts.remove(account.persistentModelID)
                                     } else {
-                                        localSelectedAccounts.insert(account.persistentModelID)
+                                        editAccounts.insert(account.persistentModelID)
                                     }
                                 } label: {
                                     HStack {
@@ -540,9 +670,9 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                                             .font(DS.Typography.body)
                                             .foregroundStyle(.primary)
                                         Spacer()
-                                        if localSelectedAccounts.contains(account.persistentModelID) {
+                                        if editAccounts.contains(account.persistentModelID) {
                                             Image(systemName: "checkmark")
-                                                .foregroundStyle(theme.accent)
+                                                .foregroundStyle(theme.accentText)
                                                 .font(DS.Typography.headline)
                                                 .accessibilityHidden(true)
                                         }
@@ -578,7 +708,9 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
         CategorySelectorSheet(
             categories: filtersViewModel.allCategories,
             subcategories: filtersViewModel.allSubcategories,
-            selectedSubcategories: $localSelectedSubcategories
+            selectedSubcategories: Binding(get: { editSubcategories }, set: { editSubcategories = $0 }),
+            otherListSubcategories: isEditingHidden ? localSelectedSubcategories : localExcludedSubcategories,
+            otherListMarkColor: isEditingHidden ? theme.accent : DS.Semantic.errorForeground
         )
     }
 
@@ -587,7 +719,7 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
     }
 
     private func subcategorySelectionSummary(for category: Category) -> String {
-        filtersViewModel.subcategorySelectionSummary(for: category, selectedSubcategories: localSelectedSubcategories)
+        filtersViewModel.subcategorySelectionSummary(for: category, selectedSubcategories: editSubcategories)
     }
 
     // MARK: - Tags Sheet
@@ -604,10 +736,10 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                                 }
 
                                 Button {
-                                    if localSelectedTags.contains(tag.persistentModelID) {
-                                        localSelectedTags.remove(tag.persistentModelID)
+                                    if editTags.contains(tag.persistentModelID) {
+                                        editTags.remove(tag.persistentModelID)
                                     } else {
-                                        localSelectedTags.insert(tag.persistentModelID)
+                                        editTags.insert(tag.persistentModelID)
                                     }
                                 } label: {
                                     HStack(spacing: DS.Spacing.md) {
@@ -621,9 +753,9 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
 
                                         Spacer()
 
-                                        if localSelectedTags.contains(tag.persistentModelID) {
+                                        if editTags.contains(tag.persistentModelID) {
                                             Image(systemName: "checkmark")
-                                                .foregroundStyle(theme.accent)
+                                                .foregroundStyle(theme.accentText)
                                                 .font(DS.Typography.headline)
                                                 .accessibilityHidden(true)
                                         }
@@ -653,10 +785,105 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
         }
     }
 
+    // MARK: - La lista de la pestaña a la vista
+
+    // Un toque escribe en la lista de la pestaña («Mostrar solo» o «Ocultar») y quita el valor de la otra: un mismo
+    // valor no puede estar en las dos. Lo mismo que hace `SessionState` al aplicar (`overlaps`).
+
+    private var editAccounts: Set<PersistentIdentifier> {
+        get { isEditingHidden ? localExcludedAccounts : localSelectedAccounts }
+        nonmutating set {
+            if isEditingHidden {
+                localExcludedAccounts = newValue
+                localSelectedAccounts.subtract(newValue)
+            } else {
+                localSelectedAccounts = newValue
+                localExcludedAccounts.subtract(newValue)
+            }
+        }
+    }
+    private var otherAccounts: Set<PersistentIdentifier> {
+        isEditingHidden ? localSelectedAccounts : localExcludedAccounts
+    }
+
+    private var editSubcategories: Set<PersistentIdentifier> {
+        get { isEditingHidden ? localExcludedSubcategories : localSelectedSubcategories }
+        nonmutating set {
+            if isEditingHidden {
+                localExcludedSubcategories = newValue
+                localSelectedSubcategories.subtract(newValue)
+            } else {
+                localSelectedSubcategories = newValue
+                localExcludedSubcategories.subtract(newValue)
+            }
+        }
+    }
+
+    private var editTags: Set<PersistentIdentifier> {
+        get { isEditingHidden ? localExcludedTags : localSelectedTags }
+        nonmutating set {
+            if isEditingHidden {
+                localExcludedTags = newValue
+                localSelectedTags.subtract(newValue)
+            } else {
+                localSelectedTags = newValue
+                localExcludedTags.subtract(newValue)
+            }
+        }
+    }
+    private var otherTags: Set<PersistentIdentifier> {
+        isEditingHidden ? localSelectedTags : localExcludedTags
+    }
+
+    private var editNeeds: Set<SubcategoryNeed> {
+        get { isEditingHidden ? localExcludedNeeds : localSelectedNeeds }
+        nonmutating set {
+            if isEditingHidden {
+                localExcludedNeeds = newValue
+                localSelectedNeeds.subtract(newValue)
+            } else {
+                localSelectedNeeds = newValue
+                localExcludedNeeds.subtract(newValue)
+            }
+        }
+    }
+    private var otherNeeds: Set<SubcategoryNeed> {
+        isEditingHidden ? localSelectedNeeds : localExcludedNeeds
+    }
+
+    private var editCurrencies: Set<CurrencyCode> {
+        get { isEditingHidden ? localExcludedCurrencies : localSelectedCurrencies }
+        nonmutating set {
+            if isEditingHidden {
+                localExcludedCurrencies = newValue
+                localSelectedCurrencies.subtract(newValue)
+            } else {
+                localSelectedCurrencies = newValue
+                localExcludedCurrencies.subtract(newValue)
+            }
+        }
+    }
+    private var otherCurrencies: Set<CurrencyCode> {
+        isEditingHidden ? localSelectedCurrencies : localExcludedCurrencies
+    }
+
+    /// Un valor que está en la OTRA lista se ve igual con su contorno: rojo si está oculto (mirando «Mostrar solo»),
+    /// lila si se ve solo (mirando «Ocultar»). Tocarlo lo pasa a la lista de la pestaña.
+    @ViewBuilder
+    private func otherListMark(_ isInOtherList: Bool) -> some View {
+        if isInOtherList {
+            Capsule()
+                .strokeBorder(isEditingHidden ? theme.accent : DS.Semantic.errorForeground, lineWidth: 1.5)
+                .accessibilityHidden(true)
+        }
+    }
+
     // MARK: - Snapshot / Commit
 
     private func snapshotFromViewModel() {
-        localSelectedAccounts = recordsViewModel.selectedAccounts
+        // Las líneas de una tarjeta elegida no se ofrecen: entran solas al elegirla. El borrador local guarda solo la tarjeta,
+        // y así quitarla al confirmar quita también sus líneas (entrega 3).
+        localSelectedAccounts = SessionState.shared.shownAccountSelection(recordsViewModel.selectedAccounts)
         localSelectedCategories = recordsViewModel.selectedCategories
         localSelectedSubcategories = recordsViewModel.selectedSubcategories
         localSelectedTags = recordsViewModel.selectedTags
@@ -665,24 +892,100 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
         localSelectedCurrencies = recordsViewModel.selectedCurrencies
         localAmountCondition = recordsViewModel.amountCondition
         localSearchText = recordsViewModel.searchText
-        localIsExcludeMode = recordsViewModel.isExcludeMode
+        localExcludedAccounts = SessionState.shared.shownAccountSelection(recordsViewModel.excludedAccounts)
+        localExcludedCategories = recordsViewModel.excludedCategories
+        localExcludedSubcategories = recordsViewModel.excludedSubcategories
+        localExcludedTags = recordsViewModel.excludedTags
+        localExcludedNeeds = recordsViewModel.excludedNeeds
+        localExcludedCurrencies = recordsViewModel.excludedCurrencies
+        // Se abre en «Ocultar» solo si no hay nada en «Mostrar solo» y sí algo oculto: así se ve lo que hay.
+        isEditingHidden = !hasIncludedEntities && hasExcludedEntities
+    }
+
+    private var hasIncludedEntities: Bool {
+        !localSelectedAccounts.isEmpty || !localSelectedCategories.isEmpty || !localSelectedSubcategories.isEmpty
+            || !localSelectedTags.isEmpty || !localSelectedNeeds.isEmpty || !localSelectedCurrencies.isEmpty
+    }
+
+    private var hasExcludedEntities: Bool {
+        !localExcludedAccounts.isEmpty || !localExcludedCategories.isEmpty || !localExcludedSubcategories.isEmpty
+            || !localExcludedTags.isEmpty || !localExcludedNeeds.isEmpty || !localExcludedCurrencies.isEmpty
     }
 
     private func commitToViewModel() {
-        // Set isExcludeMode FIRST — its didSet in SessionState clears selections,
-        // then set filter values inside a batch to prevent resetExcludeModeIfNeeded
-        // from resetting exclude mode during intermediate empty states.
-        recordsViewModel.isExcludeMode = localIsExcludeMode
+        // Las subcategorías que no se tocaron vuelven a su forma de categoría (ver `categoryExpansion`).
+        var includedCategories = localSelectedCategories
+        var includedSubcategories = localSelectedSubcategories
+        var excludedCategories = localExcludedCategories
+        var excludedSubcategories = localExcludedSubcategories
+        if let expansion = categoryExpansion {
+            if includedSubcategories == expansion.expandedIncluded {
+                includedCategories = expansion.includedCategories
+                includedSubcategories = expansion.includedSubcategories
+            }
+            if excludedSubcategories == expansion.expandedExcluded {
+                excludedCategories = expansion.excludedCategories
+                excludedSubcategories = expansion.excludedSubcategories
+            }
+        }
+        // En bloque: la hoja entrega las dos listas ya disjuntas, y así `SessionState` no recorta una con el valor
+        // intermedio de la otra.
         SessionState.shared.performBatchFilterUpdate {
             recordsViewModel.selectedAccounts = localSelectedAccounts
-            recordsViewModel.selectedCategories = localSelectedCategories
-            recordsViewModel.selectedSubcategories = localSelectedSubcategories
+            recordsViewModel.selectedCategories = includedCategories
+            recordsViewModel.selectedSubcategories = includedSubcategories
             recordsViewModel.selectedTags = localSelectedTags
             recordsViewModel.selectedNeeds = localSelectedNeeds
             recordsViewModel.selectedTransactionNatures = localSelectedTransactionNatures
             recordsViewModel.selectedCurrencies = localSelectedCurrencies
-            recordsViewModel.amountCondition = localAmountCondition
+            recordsViewModel.excludedAccounts = localExcludedAccounts
+            recordsViewModel.excludedCategories = excludedCategories
+            recordsViewModel.excludedSubcategories = excludedSubcategories
+            recordsViewModel.excludedTags = localExcludedTags
+            recordsViewModel.excludedNeeds = localExcludedNeeds
+            recordsViewModel.excludedCurrencies = localExcludedCurrencies
+            // Sin una moneda a la vista la hoja dice que el monto no se puede usar: tampoco se aplica (review del lote
+            // 12.5: seguía filtrando cada registro en su propia moneda). Con ella, el monto se guarda con su moneda, y
+            // `SessionState` lo vacía si deja de ser la única a la vista por otro camino.
+            SessionState.shared.applyAmountFilter(
+                amountCurrencyCode == nil ? .any : localAmountCondition, in: amountCurrencyCode
+            )
             recordsViewModel.searchText = localSearchText
+        }
+    }
+
+    // MARK: - Draft (UX 2.2 · L8-16)
+
+    private var currentDraft: RecordsFiltersDraft {
+        RecordsFiltersDraft(
+            accounts: localSelectedAccounts,
+            categories: localSelectedCategories,
+            subcategories: localSelectedSubcategories,
+            tags: localSelectedTags,
+            needs: localSelectedNeeds,
+            transactionNatures: localSelectedTransactionNatures,
+            currencies: localSelectedCurrencies,
+            amountCondition: localAmountCondition,
+            noteText: localSearchText,
+            excludedAccounts: localExcludedAccounts,
+            excludedCategories: localExcludedCategories,
+            excludedSubcategories: localExcludedSubcategories,
+            excludedTags: localExcludedTags,
+            excludedNeeds: localExcludedNeeds,
+            excludedCurrencies: localExcludedCurrencies
+        )
+    }
+
+    private var hasChanges: Bool {
+        RecordsFiltersDraftLogic.hasChanges(current: currentDraft, original: originalDraft)
+    }
+
+    /// La X: con cambios pregunta «¿Descartar los filtros?»; sin ellos, cierra.
+    private func requestClose() {
+        if hasChanges {
+            showDiscardAlert = true
+        } else {
+            dismiss()
         }
     }
 
@@ -697,7 +1000,13 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
             localSelectedTransactionNatures.removeAll()
         }
         localSelectedTags.removeAll()
-        localIsExcludeMode = false
+        localExcludedAccounts.removeAll()
+        localExcludedCategories.removeAll()
+        localExcludedSubcategories.removeAll()
+        localExcludedTags.removeAll()
+        localExcludedNeeds.removeAll()
+        localExcludedCurrencies.removeAll()
+        isEditingHidden = false
         localAmountCondition = .any
         localSelectedCurrencies = []
         localSearchText = ""
@@ -710,7 +1019,7 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
             MultiSelectionList(
                 title: L10n.Filters.selectCurrencies,
                 items: filtersViewModel.currenciesWithTransactions,
-                selection: $localSelectedCurrencies,
+                selection: Binding(get: { editCurrencies }, set: { editCurrencies = $0 }),
                 label: { $0.rawValue }
             )
             .toolbar {

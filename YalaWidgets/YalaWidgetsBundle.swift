@@ -22,7 +22,8 @@ struct YalaWidgetsBundle: WidgetBundle {
         LatestRecordsWidget()
         ScheduledPaymentsWidget()
         BudgetsWidget()
-        MonthSummaryWidget()  // solo .systemExtraLarge (iPad)
+        GroupsWidget()
+        MonthSummaryWidget()  // extragrande: iPad (.systemExtraLarge) e iPhone con iOS 27 (.systemExtraLargePortrait)
 
         // Lock Screen widgets (accessory)
         AccessoryBalanceWidget()
@@ -37,6 +38,7 @@ struct YalaWidgetsBundle: WidgetBundle {
 
         // Control Center widgets (iOS 18+)
         if #available(iOS 18.0, *) {
+            NewRecordControl()
             VoiceEntryControl()
             ImageEntryControl()
         }

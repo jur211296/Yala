@@ -46,6 +46,14 @@ import SwiftUI
 enum CurrencyDisplayFormat: String, CaseIterable, Sendable {
     case code
     case symbol
+
+    /// La etiqueta de una moneda con esta preferencia: «S/» con `.symbol`, «PEN» con `.code`.
+    func label(for code: String) -> String {
+        switch self {
+        case .symbol: return CurrencyCode.symbol(for: code)
+        case .code: return code
+        }
+    }
 }
 
 // MARK: - AppPreferences
@@ -57,6 +65,13 @@ final class AppPreferences {
     // MARK: - Dependencies
 
     private let defaults: UserDefaults
+    /// Si este almacén es el que refleja `PreferenceSyncService` (`local`, que es `.standard`). Solo entonces se
+    /// publica una preferencia sincronizada: publicar escribe ADEMÁS en `.standard` y en iCloud KV, y desde un
+    /// `AppPreferences` con otro almacén eso planta en el teléfono un valor que nadie eligió. En la app el almacén es
+    /// siempre `.standard` y nada cambia; lo pagaban los tests con almacén aislado, que dejaban «solo gastos»,
+    /// «incluir gastos de grupo» o la divisa en el `UserDefaults` real del simulador para las suites de después
+    /// (ticket `records-summary-approximate-mark-fails-only-alongside-group-suites`).
+    private let publishesToSync: Bool
 
     /// Verdadero SOLO mientras corre `loadFromDefaults()`. Es lo que hace que cargar no escriba;
     /// el porqué —y por qué un `guard oldValue != nuevo` no basta— está en su docblock.
@@ -78,7 +93,9 @@ final class AppPreferences {
 
     // MARK: - Currency & Format
 
-    var defaultCurrencyCode: CurrencyCode = .pen {
+    /// Sin divisa guardada, la de la región del dispositivo: la misma que los widgets y el conversor
+    /// (`CurrencyDefaults.preferred`, card 2jj6). Antes, soles.
+    var defaultCurrencyCode: CurrencyCode = CurrencyDefaults.preferred(storedRaw: nil) {
         didSet {
             guard oldValue != defaultCurrencyCode else { return }
             persistString(defaultCurrencyCode.rawValue, forKey: Keys.defaultCurrencyCode, synced: true)
@@ -191,6 +208,11 @@ final class AppPreferences {
         didSet {
             guard oldValue != showVariations else { return }
             persistBool(showVariations, forKey: Keys.showVariations, synced: true)
+            // Los widgets la leen del App Group. Solo con el almacén real (`publishesToSync`): un test con su almacén
+            // aislado no escribe en el App Group del simulador. Va también durante `loadFromDefaults` (a propósito: así
+            // llega a los widgets un cambio de otro dispositivo), así que un seam que la registre como efímera la
+            // dejaría escrita en el App Group: hoy no la registra ninguno (`UITestEphemeralDefaults`).
+            if publishesToSync { WidgetDataCache.mirrorShowVariations(showVariations) }
         }
     }
 
@@ -267,6 +289,15 @@ final class AppPreferences {
         didSet {
             guard oldValue != aiChatConsentAccepted else { return }
             persistBool(aiChatConsentAccepted, forKey: Keys.aiChatConsentAccepted, synced: false)
+        }
+    }
+
+    /// La respuesta al texto N1 de Yala IA en la nube (`YalaIACloudExploreConsent`); `nil` = aún no se preguntó. Del
+    /// teléfono, sin sincronizar. La lee `YalaIAChatRouting` por `YalaIACloudExploreConsentStore`, sobre la misma key.
+    var aiCloudExploreConsent: YalaIACloudExploreConsent? = nil {
+        didSet {
+            guard oldValue != aiCloudExploreConsent, !isLoadingFromDefaults else { return }
+            YalaIACloudExploreConsentStore.write(aiCloudExploreConsent, defaults)
         }
     }
 
@@ -899,6 +930,7 @@ final class AppPreferences {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        self.publishesToSync = defaults === UserDefaults.standard
 
         // Carga inicial ANTES de registrar observers (mitiga race con notificaciones
         // tempranas durante bootstrap). No persiste nada: `loadFromDefaults` levanta
@@ -1023,9 +1055,10 @@ final class AppPreferences {
         defer { isLoadingFromDefaults = false }
 
         // Currency & Format
-        if let raw = defaults.string(forKey: Keys.defaultCurrencyCode), let code = CurrencyCode(rawValue: raw) {
-            defaultCurrencyCode = code
-        }
+        // Esta key se relee TAMBIÉN cuando falta (a diferencia del resto, que se relee por presencia): «Empezar de
+        // cero» la borra con la app abierta, y quedarse con la de antes pintaba otra divisa que los widgets, que caen
+        // a la de la región (card 2jj6). Cargar no escribe (`isLoadingFromDefaults`), así que no planta nada.
+        defaultCurrencyCode = CurrencyDefaults.preferred(storedRaw: defaults.string(forKey: Keys.defaultCurrencyCode))
         if let raw = defaults.string(forKey: Keys.secondaryCurrencies) {
             secondaryCurrencies = raw.isEmpty ? [] : raw.split(separator: ",").map { String($0) }
         }
@@ -1095,6 +1128,7 @@ final class AppPreferences {
         aiInsightsConsentAccepted = defaults.bool(forKey: Keys.aiInsightsConsentAccepted)
         aiInsightsEnabled = defaults.bool(forKey: Keys.aiInsightsEnabled)
         aiChatConsentAccepted = defaults.bool(forKey: Keys.aiChatConsentAccepted)
+        aiCloudExploreConsent = YalaIACloudExploreConsentStore.read(defaults)
         chatAssistantEnabled = defaults.bool(forKey: Keys.chatAssistantEnabled)
         if defaults.object(forKey: Keys.chatFABVisible) != nil {
             chatFABVisible = defaults.bool(forKey: Keys.chatFABVisible)
@@ -1222,7 +1256,9 @@ final class AppPreferences {
     // MARK: - Reset del espejo (alta solo-grupos)
 
     /// Devuelve a su valor de fábrica las propiedades de las preferencias SINCRONIZADAS, y el centinela del Panel que
-    /// va con ellas. **No escribe**: corre bajo el mismo `isLoadingFromDefaults` que la carga.
+    /// va con ellas. **No escribe en sus almacenes**: corre bajo el mismo `isLoadingFromDefaults` que la carga. La única
+    /// excepción es el espejo de `showVariations` en el App Group (S35f1), que se copia también al cargar para que un
+    /// cambio de otro dispositivo llegue a los widgets; aquí escribe `true`, que el widget lee igual que la key ausente.
     ///
     /// Existe porque `loadFromDefaults` relee por PRESENCIA: cuando una key desaparece, la propiedad se queda con el
     /// valor que tenía. Lo usa `GroupsOnlySignUpPreferenceReset`, que retira en local las 36 del Apple ID al empezar
@@ -1237,7 +1273,7 @@ final class AppPreferences {
         defer { isLoadingFromDefaults = false }
 
         // Currency & Format
-        defaultCurrencyCode = .pen
+        defaultCurrencyCode = CurrencyDefaults.preferred(storedRaw: nil)
         secondaryCurrencies = []
         currencyDisplayFormat = .symbol
         decimalPlaces = 2
@@ -1316,7 +1352,7 @@ final class AppPreferences {
     private func persistString(_ value: String, forKey key: String, synced: Bool) {
         guard !isLoadingFromDefaults else { return }
         defaults.set(value, forKey: key)
-        if synced {
+        if synced && publishesToSync {
             PreferenceSyncService.shared.set(string: value, forKey: key)
         }
     }
@@ -1324,7 +1360,7 @@ final class AppPreferences {
     private func persistBool(_ value: Bool, forKey key: String, synced: Bool) {
         guard !isLoadingFromDefaults else { return }
         defaults.set(value, forKey: key)
-        if synced {
+        if synced && publishesToSync {
             PreferenceSyncService.shared.set(bool: value, forKey: key)
         }
     }
@@ -1332,7 +1368,7 @@ final class AppPreferences {
     private func persistInt(_ value: Int, forKey key: String, synced: Bool) {
         guard !isLoadingFromDefaults else { return }
         defaults.set(value, forKey: key)
-        if synced {
+        if synced && publishesToSync {
             PreferenceSyncService.shared.set(int: value, forKey: key)
         }
     }
@@ -1376,6 +1412,7 @@ final class AppPreferences {
         static let aiInsightsMigratedV1 = "aiInsightsMigratedV1"
         static let aiTogglesRemovedV2 = "aiTogglesRemovedV2"
         static let aiChatConsentAccepted = "aiChatConsentAccepted"
+        static let aiCloudExploreConsent = "aiCloudExploreConsent"
         static let chatAssistantEnabled = "chatAssistantEnabled"
         static let chatFABVisible = "chatFABVisible"
         static let cashFlowAIEnabled = "cashFlowAIEnabled"

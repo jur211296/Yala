@@ -353,6 +353,135 @@ ajuste debería aparecer. Lo confirma el paso 5 del QA de dos iPhone. Ticket:
 Si los dos teléfonos apuntaron el mismo mes, los dos acaban con el mismo ajuste: el de menor `id`. Ticket:
 `cashflow-two-devices-with-the-same-month-adjustment-end-up-with-two`.
 
+## El campo nuevo de la tarjeta con varias divisas (PENDIENTE de desplegar, 2026-10-18)
+
+Fecha: 2026-10-18 · Ticket: `multi-currency-accounts-1-model-and-sync` · **Lo despliega Lola** (card «Desplegar
+CD_parentAccountID a Production en CloudKit»). Ninguna sesión despliega esquema a Production. **Requisito antes de
+publicar 2.2, no antes de mergear.**
+
+### Qué cambia
+
+| Contenedor | Record type | Campo nuevo | Tipo | Qué se hace |
+|---|---|---|---|---|
+| `iCloud.com.jurgenschmidt.yala` (scheme `Yala`, App Store y TestFlight) | `CD_Account` | `CD_parentAccountID` | STRING | **Añadir** en Development y desplegar a Production |
+| `iCloud.com.jurgenschmidt.yala.dev` (scheme `Yala Dev`) | `CD_Account` | `CD_parentAccountID` | STRING | Lo mismo |
+
+**Solo una alta.** No se borra ni se cambia ningún campo. Es el enlace de una «línea en otra divisa» con la cuenta
+principal de su tarjeta (`Account.parentAccountID`, un `UUID?`; SwiftData guarda un UUID como STRING). Los cuatro `.ckdb`
+del repo ya lo llevan y `PersonalCloudKitSchemaParityTests` pasa con él.
+
+**Por qué no hay prisa hasta publicar 2.2, y por qué entonces sí.** La build de esta entrega nunca escribe un valor: el
+campo vale `nil` en todas las cuentas y nadie puede crear una línea todavía (eso llega con la entrega 2). Un opcional a
+`nil` no viaja a iCloud, así que esta build no choca con Production. La primera build que deje vincular una línea sí lo
+escribe, y si Production no conoce el campo rechaza el registro de esa cuenta sin avisar: la línea no llega al iPad.
+
+### El orden
+
+1. Pasos A a D, **en los dos contenedores**.
+2. Paso C: verificar con un export que Production tiene el campo.
+3. Solo entonces se puede publicar 2.2 (TestFlight externo o App Store).
+
+### A · Añadir el campo en Development
+
+Antes, el token de `cktool` (paso 0 de la guía de arriba) y una copia de lo que hay:
+
+```
+xcrun cktool export-schema --team-id 3WKFFVD66J --container-id iCloud.com.jurgenschmidt.yala \
+  --environment development --output-file /tmp/yala-development-antes.ckdb
+```
+
+Si el export ya trae `CD_parentAccountID`, salta al paso B.
+
+**Por la consola (recomendado, solo añade):** CloudKit Console → `iCloud.com.jurgenschmidt.yala` → **Development** →
+**Schema** → **Record Types** → `CD_Account` → **+** (añadir campo) → nombre `CD_parentAccountID`, tipo **String** →
+**Save**. Sin índices: el espejo no los necesita.
+
+**O con `cktool`:** abre `/tmp/yala-development-antes.ckdb`, añade dentro de `RECORD TYPE CD_Account` la línea
+`CD_parentAccountID STRING,` (debajo de `CD_name`) y:
+
+```
+xcrun cktool validate-schema --team-id 3WKFFVD66J --container-id iCloud.com.jurgenschmidt.yala \
+  --environment development --file /tmp/yala-development-antes.ckdb
+xcrun cktool import-schema --team-id 3WKFFVD66J --container-id iCloud.com.jurgenschmidt.yala \
+  --environment development --file /tmp/yala-development-antes.ckdb
+```
+
+Importa el export recién sacado con la línea añadida, **no** `Cloudkit Schemas/yala-development.ckdb`: `import-schema`
+sustituye Development entero.
+
+### B · Desplegar a Production
+
+CloudKit Console → `iCloud.com.jurgenschmidt.yala` → **Schema** → **Deploy Schema Changes…** con Development
+seleccionado. La lista tiene que ser **solo de altas**, y entre ellas «Add field `CD_parentAccountID` to `CD_Account`».
+Si aparece cualquier «Remove» o «Change», **cancela**. **Deploy**.
+
+### C · Verificar con un export
+
+```
+xcrun cktool export-schema --team-id 3WKFFVD66J --container-id iCloud.com.jurgenschmidt.yala \
+  --environment production --output-file /tmp/yala-production-despues.ckdb
+awk '/RECORD TYPE CD_Account \(/,/\);/' /tmp/yala-production-despues.ckdb | grep CD_parentAccountID
+```
+
+Tiene que salir `CD_parentAccountID STRING`. Si no sale, el despliegue no entró: no se publica 2.2.
+
+### D · Lo mismo en `.dev`
+
+Pasos A, B y C con `--container-id iCloud.com.jurgenschmidt.yala.dev`.
+
+### E · Dejar el repo fiel
+
+Exporta los cuatro entornos sobre `Cloudkit Schemas/yala-production.ckdb`, `yala-development.ckdb`,
+`yala_dev-production.ckdb` y `yala_dev-development.ckdb` (paso 1 y paso 5 de la guía de arriba), corre
+`PersonalCloudKitSchemaParityTests` y commitea. Si el export real trae la línea con otros índices que los del repo, manda
+el export.
+
+### Lo que no se puede probar todavía
+
+Que una línea viaje entre dos iPhone por iCloud: ninguna pantalla la crea hasta la entrega 2. Ese QA va en el ticket de
+la entrega 2.
+
+## El campo de los cambios «desde este mes» del flujo de caja (PENDIENTE de desplegar, 2026-10-21)
+
+**Lo despliega Lola, con Jürgen en copia** (card «Desplegar CD_amountChangesRaw a Production en CloudKit»). Ninguna
+sesión despliega esquema a Production. **Requisito antes de subir a TestFlight cualquier build de 2.2 que lo lleve**,
+no solo antes de publicar: TestFlight también usa el entorno Production de CloudKit.
+
+### Qué cambia
+
+| Contenedor | Record type | Campo nuevo | Tipo | Qué se hace |
+|---|---|---|---|---|
+| `iCloud.com.jurgenschmidt.yala` (scheme `Yala`, App Store y TestFlight) | `CD_CashFlowLine` | `CD_amountChangesRaw` | STRING | **Añadir** en Development y desplegar a Production |
+| `iCloud.com.jurgenschmidt.yala.dev` (scheme `Yala Dev`) | `CD_CashFlowLine` | `CD_amountChangesRaw` | STRING | Lo mismo |
+
+**Solo una alta.** Es `CashFlowLine.amountChangesRaw` (`String?`): los cambios de monto «este mes y los siguientes» de
+una línea del flujo de caja, como `yyyy-MM=monto,…` (UX 2.2 · L18-8). Los cuatro `.ckdb` del repo ya lo llevan y
+`PersonalCloudKitSchemaParityTests` pasa con él.
+
+**Aquí sí hay prisa, a diferencia del enlace de la tarjeta.** Esta build ESCRIBE el campo en cuanto alguien elige «Ese
+mes y los siguientes» al ajustar un monto del plan. Si Production no lo conoce, iCloud rechaza el registro de esa línea
+sin avisar: el cambio no llega a sus otros dispositivos, y tampoco nada más de esa línea mientras lleve el campo.
+
+### Los pasos
+
+Los mismos A a E de la sección anterior, con estas tres sustituciones:
+
+- record type `CD_CashFlowLine` en vez de `CD_Account`;
+- campo `CD_amountChangesRaw`, tipo **String**, sin índices (por `cktool`, la línea `CD_amountChangesRaw STRING,`
+  arriba del todo dentro de `RECORD TYPE CD_CashFlowLine`);
+- en el paso C, `awk '/RECORD TYPE CD_CashFlowLine \(/,/\);/' … | grep CD_amountChangesRaw` tiene que sacar
+  `CD_amountChangesRaw STRING`.
+
+Si los dos campos (`CD_parentAccountID` y este) siguen pendientes, se hacen en la misma pasada: la lista de «Deploy
+Schema Changes…» tiene que traer las dos altas y nada más.
+
+### Comprobar la sync en dos iPhone (tras el despliegue y con la build nueva en los dos)
+
+1. En el iPhone A: Reportes → Flujo de caja → toca una línea del mes en curso → «Ajustar monto» → otra cifra → Guardar
+   → «Ese mes y los siguientes».
+2. En el iPhone B, al rato: la misma línea en el mes siguiente dice «Desde <mes>» y la cifra nueva; la del mes pasado
+   no cambió.
+
 ## Para el siguiente campo nuevo
 
 Un campo nuevo en un `@Model` del store personal pone rojo `PersonalCloudKitSchemaParityTests` hasta que se

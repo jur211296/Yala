@@ -41,7 +41,7 @@ on:
     - cron: '47 20 * * *'
     - cron: '47 23 * * *'
   push:
-    branches: ["2.1"]
+    branches: ["2.2"]
   workflow_dispatch:
     inputs:
       ahora:

@@ -329,11 +329,13 @@ enum OrphanedBridgedTxSweeper {
         for (tx, action) in actions {
             switch action {
             case .releasePointers:
+                GroupTransactionBridge.releaseSplitLines(of: tx, context: context)
                 tx.splitExpenseID = nil
                 tx.splitSettlementID = nil
                 tx.splitGroupZoneID = nil
                 outcome.released += 1
             case .deleteVirtual:
+                GroupTransactionBridge.deleteSplitLineEntries(of: tx, context: context)
                 context.delete(tx)
                 outcome.deleted += 1
             }

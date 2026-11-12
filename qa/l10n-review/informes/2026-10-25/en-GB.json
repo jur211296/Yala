@@ -1,0 +1,67 @@
+[
+ {
+  "k": "tutorials.editPanel.title",
+  "categoria": "terminologia",
+  "gravedad": "media",
+  "propuesta": "Customise Home",
+  "motivo": "La app llama «Home» a la pestaña Panel; «the panel» nombra otro concepto.",
+  "fuente": "llm",
+  "actual": "Customise the panel",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": false,
+  "no_aplicada_por": "categoría terminologia"
+ },
+ {
+  "k": "tutorials.editPanel.intro.desc",
+  "categoria": "terminologia",
+  "gravedad": "media",
+  "propuesta": "Customise which widgets appear on Home.",
+  "motivo": "«your panel» no coincide con «Home», el nombre de la pestaña Panel en el resto de la app.",
+  "fuente": "llm",
+  "actual": "Customise which widgets appear on your panel.",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": false,
+  "no_aplicada_por": "categoría terminologia"
+ },
+ {
+  "k": "account.removal.convertNote",
+  "categoria": "terminologia",
+  "gravedad": "media",
+  "propuesta": "Anything in another currency moves to %@: records at the exchange rate of their date; scheduled and favourite payments at today's rate.",
+  "motivo": "La app llama «Scheduled Payments» a los pagos planificados, no «planned payments».",
+  "fuente": "llm",
+  "actual": "Anything in another currency moves to %@: records at the exchange rate of their date; planned and favourite payments at today's rate.",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": false,
+  "no_aplicada_por": "categoría terminologia"
+ },
+ {
+  "k": "account.removal.plansNote",
+  "categoria": "terminologia",
+  "gravedad": "media",
+  "propuesta": "Scheduled payments, favourites and items pending in the inbox are left without an account: you'll choose one when you use them.",
+  "motivo": "La app llama «Scheduled Payments» a los pagos planificados, no «planned payments».",
+  "fuente": "llm",
+  "actual": "Planned payments, favourites and items pending in the inbox are left without an account: you'll choose one when you use them.",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": false,
+  "no_aplicada_por": "categoría terminologia"
+ },
+ {
+  "k": "category.move.confirmMessage",
+  "categoria": "terminologia",
+  "gravedad": "media",
+  "propuesta": "Everything in “%1$@” moves to %2$@: %3$@, plus its scheduled payments and favourites, and budgets that counted it will count %2$@ instead. Then the category is deleted. This can't be undone.",
+  "motivo": "La app llama «Scheduled Payments» a los pagos planificados, no «planned payments».",
+  "fuente": "llm",
+  "actual": "Everything in “%1$@” moves to %2$@: %3$@, plus its planned payments and favourites, and budgets that counted it will count %2$@ instead. Then the category is deleted. This can't be undone.",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": false,
+  "no_aplicada_por": "categoría terminologia"
+ }
+]

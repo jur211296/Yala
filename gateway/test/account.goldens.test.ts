@@ -913,12 +913,21 @@ describeStaging("Freeze enforcement · /sync/push + /prefs/push con reverse_froz
     expect((await pushPrefs(jwtB, [{ key: KEY0, value: "leak", hlc: HLC0 }])).status).toBe(409);
   });
 
-  it("20. la cuenta congelada NO bloquea pull/merkle ni prefs/pull (la reversa §h DEPENDE de leer)", async () => {
+  // Plazo propio (card si8z): tres lecturas contra staging. Medido el 2026-10-25: pull 2,2 s, merkle 1,1 s, prefs
+  // 0,2 s (3,4 s en total); el 2026-09-10, 9,3 s, con el corpus de B creciendo antes del relevo al custodio. Con los
+  // 5 s por defecto el timeout cortaba el test antes de comprobar nada, y el invariante no lo vigilaba nadie.
+  it("20. la cuenta congelada NO bloquea pull/merkle ni prefs/pull (la reversa §h DEPENDE de leer)", { timeout: 20_000 }, async () => {
     // Sigue congelada (estado del test 19). El enforcement es PUSH-only: el re-drain de la reversa
     // (backend→local) y el sweep de zombies leen vía pull/merkle con el freeze YA estampado.
-    expect(await getSync(jwtB, "/sync/pull?since=0&limit=1")).toBe(200);
-    expect(await getSync(jwtB, "/sync/merkle")).toBe(200);
-    expect(await getSync(jwtB, "/prefs/pull?since=0")).toBe(200);
+    // El cuerpo va en el mensaje: un 502 del Merkle con «upstream 400 (<tabla>)» es una migración de staging por
+    // aplicar (columna que este Worker ya pide), no el freeze; un 409 `yala_account_reverting` sí sería el freeze.
+    for (const path of ["/sync/pull?since=0&limit=1", "/sync/merkle", "/prefs/pull?since=0"]) {
+      const res = await app.fetch(
+        new Request(`https://gw.local${path}`, { method: "GET", headers: { Authorization: `Bearer ${jwtB}` } }),
+        env,
+      );
+      expect(res.status, `${path}: ${(await res.text()).slice(0, 200)}`).toBe(200);
+    }
   });
 
   it("21. DES-congelada → los MISMOS batches entran 200 (noop el leak, applied el bloqueado — sin falso positivo residual)", async () => {

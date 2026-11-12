@@ -387,14 +387,18 @@ struct DrainUnitClockUnreadableTests {
     @Test func performDrain_rollbackOnlyCoversTheStepsAfterTheSweep() throws {
         let file = try source("Yala/Services/CloudSync/CloudSyncEngine.swift")
         let drain = try body(of: "private func performDrain(context: ModelContext) -> Bool {", in: file)
-        let sweep = try body(of: "private func sweepAndBuildLookups(_ context: ModelContext) throws -> Lookups {", in: file)
-        #expect(!sweep.contains("rollback"))
+        let sweep = try body(of: "private func assignMissingSyncIDs(_ context: ModelContext) throws {", in: file)
+        let lookupsBody = try body(of: "private func buildLookups(_ context: ModelContext, only entities: Set<String>) throws -> Lookups {", in: file)
+        #expect(!sweep.contains("rollback") && !lookupsBody.contains("rollback"))
+        #expect(!lookupsBody.contains("save()"))  // los índices no escriben: el único guardado del barrido es el del paso 2
         #expect(drain.components(separatedBy: "context.rollback()").count == 2)  // exactamente uno
 
         func at(_ needle: String) throws -> String.Index {
             try #require(drain.range(of: needle), "falta en performDrain: \(needle)").lowerBound
         }
-        let sweepCall = try at("let lookups = try sweepAndBuildLookups(context)")
+        let sweepCall = try at("try assignMissingSyncIDs(context)")
+        let fetchCall = try at("let fetchOutcome = try fetchHistoryResolvingToken(")
+        let lookupsCall = try at("let lookups = try buildLookups(context, only: indexed)")
         let prepare = try at("let unitClocks = try prepareUnitClocks(for: rows, context: context)")
         let mirror = try at("writeMirror(rows: rows)")
         let insert = try at("for row in rows { context.insert(row.makeModel()) }")
@@ -402,6 +406,9 @@ struct DrainUnitClockUnreadableTests {
         let cursorStep = try at("if !_testSuppressTokenAdvance {")
         let advance = try at("cursor.historyTokenData = try encodeToken(advancedToken)")
         let rollback = try at("context.rollback()")
+        // YALA-IOS-2: el barrido (que guarda) va ANTES de leer el History —su cambio de syncID se consume en esta vuelta— y
+        // los índices, que no escriben, después.
+        #expect(sweepCall < fetchCall && fetchCall < lookupsCall && lookupsCall < prepare)
         #expect(sweepCall < prepare && prepare < mirror && mirror < insert && insert < unwrite)
         #expect(unwrite < cursorStep)            // la retirada del espejo, en el save del OUTBOX (antes del paso 7)
 

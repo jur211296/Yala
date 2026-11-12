@@ -80,14 +80,18 @@ struct CloudConsentCopyTests {
     /// La MISMA pantalla sirve al alta born-cloud, a la migración desde iCloud y a la re-entrada. El
     /// `path` existe solo para separar las tres series en el dashboard: en cuanto decida COPY, el texto
     /// podado deja de estar verificado en los tres contextos por construcción y hay que probarlos uno a uno.
-    @Test("el contexto no ramifica el texto: `path` solo alimenta la telemetría")
+    ///
+    /// **UX 2.2 · L6-4 (decisión de Jürgen, 2026-10-14): el BOTÓN sí cambia con el contexto** —«entrar a mi cuenta»,
+    /// «crear mi cuenta», «llevar mis datos»—, y solo el botón: el título, los tres puntos y el pie son el contrato
+    /// aceptado y siguen siendo los mismos en los tres. El verbo lo elige `CloudConsentCopyLogic`, así que el `path`
+    /// aparece en TRES líneas: su declaración, la telemetría y esa llamada. Una cuarta es una ramificación del contrato.
+    @Test("el contexto no ramifica el contrato: `path` alimenta la telemetría y el verbo del botón")
     func consentPath_doesNotBranchTheCopy() throws {
         let src = try Self.code(Self.viewPath)
         #expect(src.contains("MetricsService.cloudConsentAccepted(path: path.rawValue)"))
-        // Su declaración y la llamada de telemetría. Una tercera línea que lo mencione es una
-        // ramificación, y con ella el copy deja de estar verificado en los tres contextos.
+        #expect(src.contains("CloudConsentCopyLogic.acceptTitle(for: path)"))
         let lines = src.split(separator: "\n").filter { $0.contains("path") }
-        #expect(lines.count == 2, "el `path` aparece en \(lines.count) líneas: ¿está decidiendo copy?")
+        #expect(lines.count == 3, "el `path` aparece en \(lines.count) líneas: ¿está decidiendo copy del contrato?")
     }
 
     // MARK: - Lo que se movió (punto 4 → consent de IA)

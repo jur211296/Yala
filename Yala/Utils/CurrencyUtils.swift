@@ -824,9 +824,27 @@ enum CurrencyDefaults {
     /// UserDefaults key for storing the user's preferred currency
     static let preferredCurrencyKey = "defaultCurrencyCode"
 
-    /// Returns the user's current preferred currency code, or the detected default if not set
+    /// La divisa principal guardada, o la de la región del dispositivo si falta o no se reconoce.
+    ///
+    /// **Es el único sitio que decide qué vale la divisa principal cuando no hay una guardada** (card 2jj6,
+    /// 2026-10-30; criterio de Jürgen del 2026-10-08 en la card 2h3c: la de la región). La key falta entre «Empezar de
+    /// cero» (`DataWipeService` la borra) y el onboarding. Hasta el 2026-10-30 cada lector se respondía otra cosa: la
+    /// app soles, este enum la región y la caché de los widgets dólares —y reconvertía con ellos todo el histórico—.
+    /// Hoy la leen por aquí `AppPreferences`, `WidgetDataCache` y `ExchangeRateService`; un lector nuevo, también
+    /// (`PreferredCurrencyFallbackParityTests` busca en `Yala/` quien lea la key con un `??` propio).
+    static func preferred(storedRaw: String?, regionCode: String = Locale.current.region?.identifier ?? "") -> CurrencyCode {
+        if let storedRaw, let stored = CurrencyCode(rawValue: storedRaw) { return stored }
+        return detectCurrencyFromRegion(regionCode: regionCode)
+    }
+
+    /// La divisa principal de ese almacén, con la regla de `preferred(storedRaw:regionCode:)`.
+    static func preferred(in defaults: UserDefaults) -> CurrencyCode {
+        preferred(storedRaw: defaults.string(forKey: preferredCurrencyKey))
+    }
+
+    /// El código de la divisa principal del almacén estándar (ver `preferred(storedRaw:regionCode:)`).
     static var currentPreferred: String {
-        UserDefaults.standard.string(forKey: preferredCurrencyKey) ?? defaultCode
+        preferred(in: .standard).rawValue
     }
 
     /// Detects the recommended currency based on the user's device region.

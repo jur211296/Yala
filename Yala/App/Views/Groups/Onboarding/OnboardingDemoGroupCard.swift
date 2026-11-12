@@ -66,7 +66,7 @@ struct OnboardingDemoGroupCard: View {
                 Text(L10n.Groups.Onboarding.step1DemoGroupName)
                     .font(DS.Typography.headline)
                     .foregroundStyle(.thPrimaryText)
-                Text(L10n.Groups.Member.activeCount(3))
+                Text(L10n.Groups.Member.activeCount(GroupsOnboardingDemo.memberCount))
                     .font(DS.Typography.caption)
                     .foregroundStyle(.thSecondaryText)
                     .accessibilityHidden(true)

@@ -66,7 +66,7 @@ enum AnomalyDetectionCalculator {
         let baselineEnd = calendar.date(byAdding: .second, value: -1, to: interval.start) ?? interval.start
         let baselineInterval = DateInterval(start: baselineStart, end: baselineEnd)
         let baselineTx = allTransactions.filter {
-            baselineInterval.contains($0.date) && $0.category?.isIncome == false
+            baselineInterval.contains($0.date) && !TransactionClassificationLogic.isIncome($0)
         }
 
         var catTotals: [String: (total: Double, count: Int)] = [:]

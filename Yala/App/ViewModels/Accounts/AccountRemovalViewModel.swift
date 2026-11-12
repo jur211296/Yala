@@ -48,6 +48,14 @@ final class AccountRemovalViewModel {
     private(set) var shape: AccountRemovalLogic.Inventory<PersistentIdentifier>?
     private(set) var destinations: [DestinationOption] = []
     private var destinationAccounts: [PersistentIdentifier: Account] = [:]
+    /// Icono y color de la cuenta para la cabecera. Se leen en `load` (la cuenta sigue viva), no en el `init`, que
+    /// SwiftUI puede volver a evaluar con la cuenta ya eliminada.
+    private(set) var accountIconName = "creditcard"
+    private(set) var accountColorHex = "#6366F1"
+    /// Saldo de la cuenta que se va (cabecera de la hoja).
+    private(set) var sourceBalance: Decimal?
+    /// Cómo quedaría el saldo de cada destino permitido (`AccountRemovalService.balancePreviews`).
+    private(set) var balancePreviews: [PersistentIdentifier: AccountRemovalService.BalancePreview] = [:]
     var choice: Choice = .move
     var destinationID: PersistentIdentifier?
 
@@ -67,7 +75,13 @@ final class AccountRemovalViewModel {
             let inventory = try AccountRemovalService.inventory(of: account, context: context)
             let accounts = try AccountRemovalService.destinations(excluding: account, context: context)
             let shape = inventory.shape
+            let balances = try AccountRemovalService.balancePreviews(
+                of: inventory, destinations: accounts, context: context)
             self.shape = shape
+            accountIconName = displayIconName(for: account)
+            accountColorHex = account.colorHex
+            sourceBalance = balances.source
+            balancePreviews = balances.byDestination
             confirmedTransactionIDs = Set(inventory.transactions.map(\.persistentModelID))
             destinationAccounts = Dictionary(uniqueKeysWithValues: accounts.map { ($0.persistentModelID, $0) })
             let source = sourceCurrencyCode
@@ -96,6 +110,8 @@ final class AccountRemovalViewModel {
             phase = .choose
         } catch {
             shape = nil
+            sourceBalance = nil
+            balancePreviews = [:]
             phase = .failed(.unreadable)
         }
     }
@@ -120,6 +136,11 @@ final class AccountRemovalViewModel {
 
     var selectedDestination: DestinationOption? {
         destinations.first { $0.id == destinationID }
+    }
+
+    /// El saldo antes y después del destino elegido, si se puede mover a él.
+    var selectedPreview: AccountRemovalService.BalancePreview? {
+        destinationID.flatMap { balancePreviews[$0] }
     }
 
     /// El botón principal se puede tocar.

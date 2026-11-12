@@ -8,8 +8,9 @@
 //
 //  Tres decisiones que no son obvias:
 //  - **El saldo es la suma de los importes de la cuenta**, igual que `AccountBalanceCalculator` (la tarjeta), y la
-//    curva acumula día a día hasta HOY. Su último punto es el número de la tarjeta salvo que haya movimientos fechados
-//    en el futuro: la tarjeta los suma ya y la curva no, porque todavía no han pasado (lo fija un test).
+//    curva acumula día a día hasta HOY. Su último punto es el número de la tarjeta también con movimientos fechados en
+//    el futuro: desde el 2026-10-18 ni la tarjeta ni la curva los cuentan hasta que llega su fecha
+//    (`LiveBalanceCalculator.TodayCutoff`, decisión A de Jürgen). Antes la tarjeta ya los sumaba y la curva no.
 //  - **«Entró» y «Salió» son movimiento de dinero de la cuenta**: cuentan transferencias y ajustes por registro,
 //    porque mueven su saldo. Lo único que no cuenta es el saldo inicial, que no es dinero que entre sino el punto de
 //    partida. Así «saldo al empezar + entró − salió» cuadra con la curva salvo por ese saldo inicial.
@@ -56,6 +57,48 @@ nonisolated enum AccountDetailCalculator {
         let latest: [Entry]
 
         var hasActivity: Bool { !latest.isEmpty }
+    }
+
+    /// La cuenta del saldo en el período (UX 2.2 · L3-11): «saldo al empezar + entró − salió = saldo al terminar».
+    /// Antes la ficha ponía lo que entró y salió en el período junto a un saldo de siempre, sin decir cómo se
+    /// relacionaban.
+    struct Reconciliation: Equatable {
+        /// Lo que había antes del período, más el saldo inicial si se puso dentro (es el punto de partida, no dinero
+        /// que entró).
+        let opening: Double
+        let moneyIn: Double
+        let moneyOut: Double
+        var closing: Double { opening + moneyIn - moneyOut }
+    }
+
+    /// Cuadra por construcción con `summary`: `moneyIn` y `moneyOut` son los mismos, y `closing` es la suma de todo
+    /// lo fechado hasta el final del período.
+    ///
+    /// Un intervalo que cierra en medianoche (un rango propio) incluye ese instante (`DateInterval` es cerrado): sin
+    /// quitarlo, un movimiento fechado ese día a las 00:00 entraba en «Saldo hoy». Los períodos de `DetailPeriod` ya
+    /// acaban en 23:59:59 (los en curso desde el 2026-10-25) y no se tocan (CLAUDE.md, «Cálculos con fechas»).
+    static func reconciliation(
+        entries: [Entry],
+        interval: DateInterval,
+        now: Date = .now,
+        calendar: Calendar = .current
+    ) -> Reconciliation {
+        let periodEnd = calendar.startOfDay(for: interval.end) == interval.end && interval.end > interval.start
+            ? interval.end.addingTimeInterval(-1)
+            : interval.end
+        // Y nunca más allá de hoy: «Saldo hoy» deja fuera lo fechado en el futuro, también con un rango propio que
+        // acabe después (`LiveBalanceCalculator.TodayCutoff`), igual que la tarjeta y la curva de la cuenta.
+        let end = min(periodEnd, LiveBalanceCalculator.TodayCutoff(asOf: now, calendar: calendar).startOfTomorrow
+            .addingTimeInterval(-1))
+        let before = entries.filter { $0.date < interval.start }.reduce(0) { $0 + $1.amount }
+        let inPeriod = entries.filter { $0.date >= interval.start && $0.date <= end }
+        let initial = inPeriod.filter { $0.adjustmentType == initialBalanceType }.reduce(0) { $0 + $1.amount }
+        let flows = inPeriod.filter { $0.adjustmentType != initialBalanceType }
+        return Reconciliation(
+            opening: before + initial,
+            moneyIn: flows.filter { $0.amount > 0 }.reduce(0) { $0 + $1.amount },
+            moneyOut: flows.filter { $0.amount < 0 }.reduce(0) { $0 + abs($1.amount) }
+        )
     }
 
     static let initialBalanceType = "initial_balance"
@@ -145,7 +188,9 @@ nonisolated enum AccountDetailCalculator {
     }
 
     static func isExpense(_ entry: Entry) -> Bool {
-        AccountSpendingLogic.countsAsSpending(adjustmentType: entry.adjustmentType, categoryIsIncome: entry.categoryIsIncome)
+        AccountSpendingLogic.countsAsSpending(
+            adjustmentType: entry.adjustmentType, categoryIsIncome: entry.categoryIsIncome, amount: entry.amount
+        )
     }
 
     /// Lo que el movimiento aporta a lo gastado (`nil` si no es gasto): una devolución resta.

@@ -28,10 +28,15 @@ extension XCUIApplication {
         seed: String? = "minimal",
         deeplink: String? = nil,
         deeplinkURL: String? = nil,
+        budgetAlertTap: String? = nil,
+        scheduledAlertTap: String? = nil,
+        accountAlertTap: String? = nil,
         seedDesync: Bool = false,
         onboarding: Bool = false,
         inboxAlert: Bool = false,
+        inboxAlertSiri: Bool = false,
         trialOffer: Bool = false,
+        trialOfferArmed: Bool = false,
         forceUpdate: Bool = false,
         aiConsent: Bool = false,
         aiChatReady: Bool = false,
@@ -39,9 +44,21 @@ extension XCUIApplication {
         groupInvite: Bool = false,
         fakeICloud: Bool = false,
         cloudSession: Bool = false,
+        // S27i: «Eliminar mi cuenta» completa su parte de servidor sin red (`-uitest-fake-account-deletion`).
+        fakeAccountDeletion: Bool = false,
+        // «Eliminar cuenta» (D) con el servidor ya borrado y la app cerrada antes del cierre local
+        // (`-uitest-account-deletion-pending-close`).
+        accountDeletionPendingClose: Bool = false,
+        // nve0: la sesión fingida aparece N segundos después de que la pestaña pinte «Crea tu cuenta».
+        cloudSessionAfterSeconds: Int? = nil,
+        // apsn: el arranque tarda N segundos más en asentar, como en un iPhone recién instalado.
+        slowBootstrapSeconds: Int? = nil,
         groupsConsent: Bool = false,
         groupsEducativo: Bool = false,
         inviteOnboarding: Bool = false,
+        inviteBranded: Bool = false,
+        // L19-2: la pregunta de cuentas pendientes sale al abrir Miembros (aceptar de verdad pide el servidor).
+        openingBalancePrompt: Bool = false,
         icloudIdentity: Bool = false,
         joinPhase: String? = nil,
         joinSoftTimeout: String? = nil,
@@ -58,8 +75,12 @@ extension XCUIApplication {
         // `reverse-to-icloud-merges-prior-icloud-data-without-asking`). NOMBRADOS por lo mismo que sus vecinos: un typo en
         // el primero dejaría la tarjeta de la vuelta sin salir y el rojo culparía a la pantalla.
         bornCloudStorage: Bool = false,
+        // `-uitest-adopted-cloud-storage`: la nube, pero la cuenta llegó desde otro dispositivo (card i9qh).
+        adoptedCloudStorage: Bool = false,
+        syncNeedsSignIn: Bool = false,
         reversePriorICloud: String? = nil,
         reversePriorICloudWipe: String? = nil,
+        cloudProgress: String? = nil,
         fakeMigrationIdentity: String? = nil,
         pendingMigrationBlock: String? = nil,
         migrationJournalUnreadable: Bool = false,
@@ -68,6 +89,12 @@ extension XCUIApplication {
         groupsGateMirrorLive: Bool = false,
         groupsGateWipeFailed: Bool = false,
         settlementAmountChange: Bool = false,
+        // UX 2.2 · L12-10 y L13-2: la hoja «está listo» del primer grupo, y un pago de Ana por confirmar en el perfil
+        // `grupos`. NOMBRADOS por lo mismo que sus vecinos.
+        groupCreatedSheet: Bool = false,
+        pendingSettlement: Bool = false,
+        // Grupos B · card 10: una venta tuya a Ana, la más antigua de «Viaje a Cusco» (`-uitest-seed-group-sale`).
+        groupSale: Bool = false,
         lateNoticeKeptGroups: Bool = false,
         welcomeAfterAdoptExit: Bool = false,
         // `-uitest-private-gate-device-reading <present|unreadable>`: la puerta de «Es mi primera vez → privado» mide con
@@ -95,8 +122,24 @@ extension XCUIApplication {
         // necesita otro a propósito, como la demo de marketing en es-MX (`DemoIAPizzaUITests`). Va aquí y no por
         // `extraArguments:` porque esos args van ANTES de los fijos: la clave saldría dos veces y cuál gana no es algo
         // que este harness quiera depender de medir.
+        // UX 2.2 · L11-7 y L11-12: el consentimiento del «Resumen con IA» ya dado, y el permiso de notificaciones
+        // negado para «Probar». Nombrados por lo mismo que sus vecinos.
+        insightsAIConsent: Bool = false,
+        // Encargo `estadisticas-ia-automatica`: los textos con IA de Estadísticas contestan sin red.
+        statsAIReply: Bool = false,
+        notificationsDenied: Bool = false,
         appleLanguages: String = "(es)",
         appleLocale: String = XCUIApplication.uiTestLocaleIdentifier,
+        // UX 2.2 · lote decidido 06 (Yala Pro). En `xcodebuild test` la tienda de pruebas no da precios: `fakePrices`
+        // pinta los de `Configuration.storekit` (con la prueba disponible, o ya usada con `fakePricesTrialUsed`).
+        // La oferta de prueba solo se enseña si se MIDIÓ que la cuenta aún tiene la prueba (L17-5), así que
+        // `trialOffer`/`trialOfferArmed` la encienden solos. `fakePurchase`: comprar sale bien y enciende Pro.
+        // `proTrialDays`/`proPlan` (con `pro`): Pro en prueba con N días, o pagado (`yearly|monthly|yearly-off`).
+        fakePrices: Bool = false,
+        fakePricesTrialUsed: Bool = false,
+        fakePurchase: Bool = false,
+        proTrialDays: Int? = nil,
+        proPlan: String? = nil,
         extraArguments: [String] = []
     ) -> XCUIApplication {
         var args = ["-uitest"]
@@ -111,6 +154,9 @@ extension XCUIApplication {
         // Liquidación aprobada cuyo importe cambia después (`DevSeedSettlementAmountChange`). NOMBRADO por lo mismo que
         // sus vecinos: un typo dejaría el Inbox sin aviso y el rojo culparía a la pantalla.
         if settlementAmountChange { args.append("-uitest-seed-settlement-amount-change") }
+        if groupCreatedSheet { args.append("-uitest-group-created-sheet") }
+        if pendingSettlement { args.append("-uitest-seed-pending-settlement") }
+        if groupSale { args.append("-uitest-seed-group-sale") }
         // La marca de los grupos que conservó el aviso tardío (`LateNoticeKeptGroupsMark`). NOMBRADO por lo mismo que sus
         // vecinos, y con su agravante: el caso del handover real se lanza SIN él, así que un typo que lo dejara fuera
         // pondría verde el control y rojo el caso, culpando al Welcome.
@@ -125,11 +171,39 @@ extension XCUIApplication {
             args.append("-uitest-deeplink-url")
             args.append(deeplinkURL)
         }
+        // Toque fingido en la alerta de ese presupuesto (UX 2.2 · L9-5). NOMBRADO como sus vecinos: un typo dejaría la
+        // lista sin abrir nada y el rojo culparía al enrutado.
+        if let budgetAlertTap {
+            args.append("-uitest-budget-alert-tap")
+            args.append(budgetAlertTap)
+        }
+        // Toque fingido en el recordatorio de un pago y en el aviso de una tarjeta (UX 2.2 · L10-13, L10-14).
+        if let scheduledAlertTap {
+            args.append("-uitest-scheduled-alert-tap")
+            args.append(scheduledAlertTap)
+        }
+        if let accountAlertTap {
+            args.append("-uitest-account-alert-tap")
+            args.append(accountAlertTap)
+        }
         if onboarding { args.append("-uitest-onboarding") }
         if inboxAlert { args.append("-uitest-inbox-alert") }
+        if inboxAlertSiri { args.append("-uitest-inbox-alert-siri") }
         if trialOffer { args.append("-uitest-trial-offer") }
+        if fakePricesTrialUsed {
+            args.append(contentsOf: ["-uitest-fake-prices", "trial-used"])
+        } else if fakePrices || trialOffer || trialOfferArmed {
+            args.append("-uitest-fake-prices")
+        }
+        if fakePurchase { args.append("-uitest-fake-purchase") }
+        if let proTrialDays { args.append(contentsOf: ["-uitest-pro-trial-days", String(proTrialDays)]) }
+        if let proPlan { args.append(contentsOf: ["-uitest-pro-plan", proPlan]) }
+        if trialOfferArmed { args.append("-uitest-trial-offer-armed") }
         if forceUpdate { args.append("-uitest-force-update") }
         if aiConsent { args.append("-uitest-ai-consent") }
+        if insightsAIConsent { args.append("-uitest-insights-ai-consent") }
+        if statsAIReply { args.append("-uitest-stats-ai-reply") }
+        if notificationsDenied { args.append("-uitest-notifications-denied") }
         if aiChatReady { args.append("-uitest-ai-chat-ready") }
         if chatConversation { args.append("-uitest-chat-conversation") }
         if groupInvite { args.append("-uitest-group-invite") }
@@ -139,6 +213,14 @@ extension XCUIApplication {
         // `-uitest-fake-backend-session` (otro hook, otro significado) y un typo en un string suelto
         // daría un rojo MUDO — el arg desconocido se ignora en silencio.
         if cloudSession { args.append("-uitest-fake-cloud-session") }
+        if fakeAccountDeletion { args.append("-uitest-fake-account-deletion") }
+        if accountDeletionPendingClose { args.append("-uitest-account-deletion-pending-close") }
+        if let cloudSessionAfterSeconds {
+            args += ["-uitest-fake-cloud-session-after", String(cloudSessionAfterSeconds)]
+        }
+        if let slowBootstrapSeconds {
+            args += ["-uitest-slow-bootstrap", String(slowBootstrapSeconds)]
+        }
         if groupsConsent { args.append("-uitest-groups-consent") }
         // C2 · invierte el early-return que desmonta el educativo bajo `-uitest`. Va aquí, con nombre, y
         // NO por `extraArguments:` por la misma razón que sus dos vecinos: un typo en un string suelto se
@@ -147,6 +229,9 @@ extension XCUIApplication {
         // de Grupos, que es justo por lo que ese early-return existe.
         if groupsEducativo { args.append("-uitest-groups-educativo") }
         if inviteOnboarding { args.append("-uitest-invite-onboarding") }
+        // La marca de un enlace real en esa hoja (L12-17/18). NOMBRADO por lo mismo que sus vecinos.
+        if inviteBranded { args.append("-uitest-invite-branded") }
+        if openingBalancePrompt { args.append("-uitest-opening-balance-prompt") }
         // Siembra la identidad iCloud de Grupos. Va NOMBRADO, no por `extraArguments:`, por la
         // misma razón que sus vecinos y con una de propina: este seam decide QUIÉN ERES, así que un
         // typo que lo dejara fuera no da rojo — da un VERDE que prueba el camino del flag creyendo
@@ -210,6 +295,8 @@ extension XCUIApplication {
         // (`PendingICloudWipeMigrationWiringTests`).
         if pendingICloudWipe { args.append("-uitest-pending-icloud-wipe") }
         if bornCloudStorage { args.append("-uitest-born-cloud-storage") }
+        if adoptedCloudStorage { args.append("-uitest-adopted-cloud-storage") }
+        if syncNeedsSignIn { args.append("-uitest-sync-needs-sign-in") }
         if let reversePriorICloud {
             args.append("-uitest-reverse-prior-icloud")
             args.append(reversePriorICloud)
@@ -218,6 +305,13 @@ extension XCUIApplication {
         if let reversePriorICloudWipe {
             args.append("-uitest-reverse-prior-icloud-wipe")
             args.append(reversePriorICloudWipe)
+        }
+        // La activación o la vuelta a iCloud a medias, con su paso y su cifra (`UITestHooks.fakeCloudProgress`): `upload`,
+        // `waitingICloud`, `reverseReview`, `reverseUpload` o `reverseStarting`. NOMBRADO por lo mismo que sus vecinos: un
+        // typo dejaría la pantalla en «Migrar a la nube» y el rojo culparía a la tarjeta de pasos.
+        if let cloudProgress {
+            args.append("-uitest-cloud-progress")
+            args.append(cloudProgress)
         }
         // La respuesta fingida de la puerta de identidad de «Migrar a la nube» (`personalData`, `proceed` u
         // `otherDeviceMigrating`). NOMBRADO por lo mismo que sus vecinos: un typo en el arg dejaría la puerta preguntando de
@@ -274,6 +368,13 @@ extension XCUIApplication {
         // Los CUATRO elementos son necesarios y el valor de `-AppleLanguages` va entre paréntesis
         // porque es un array serializado; sin ellos el argumento se ignora EN SILENCIO.
         args += ["-AppleLanguages", appleLanguages, "-AppleLocale", appleLocale]
+        // La zona horaria de la app, la MISMA del test (2026-11-05, dispatch 41931406144). `TEST_RUNNER_TZ`
+        // de qa.yml solo llega al proceso del runner; la app del simulador hereda la del host, que en el CI
+        // es UTC. Entre las 19:00 y las 24:00 de Lima los dos «hoy» son días distintos y cayeron dos casos
+        // que construyen fechas en el runner: el chip de fecha de `InboxConvertToGroupUITests` («2 nov.»
+        // frente a «1 nov.») y el contador de `ChatMessagingLayoutUITests` (la app daba por vieja la fecha
+        // del contador y lo reiniciaba). En la Mac del owner las dos zonas ya coinciden: aquí no cambia nada.
+        launchEnvironment["TZ"] = TimeZone.current.identifier
         launchArguments = args
         launch()
         return self
@@ -356,6 +457,18 @@ extension XCUIApplication {
         row.tap()
     }
 
+    /// Planificación › Pagos planificados por la barra de pestañas (desde UX 2.2 · L10-15 es la única lista de pagos).
+    func openScheduledPaymentsList(timeout: TimeInterval = 10) {
+        tabBars.buttons.element(boundBy: 2).tap()
+        let chip = buttons["planning_chip_scheduledPayments"]
+        XCTAssertTrue(chip.waitForExistence(timeout: timeout), "No apareció el chip de Pagos planificados.")
+        chip.tap()
+        XCTAssertTrue(
+            descendants(matching: .any)["scheduled_hero_pending"].waitForExistence(timeout: timeout),
+            "No se montó la lista de Pagos planificados."
+        )
+    }
+
     // MARK: - Transacciones
 
     /// Cierra la pantalla de éxito que queda tras guardar una transacción y espera
@@ -383,6 +496,19 @@ extension XCUIApplication {
             "La pantalla de éxito no se cerró tras tocar «Aceptar» — el sheet sigue tapando el Panel."
         )
         return self
+    }
+
+    // MARK: - Cerrar el formulario de registro
+
+    /// Cierra «Nuevo registro» con su X. Con algo escrito, la X pregunta «¿Descartar este registro?» (UX 2.2 · L2-4): se
+    /// confirma. Vacío, cierra sin preguntar y no hay nada que confirmar.
+    func closeNewTransactionDiscarding(timeout: TimeInterval = 5, file: StaticString = #filePath, line: UInt = #line) {
+        let close = buttons["new_transaction_close"]
+        XCTAssertTrue(close.waitForExistence(timeout: timeout),
+                      "Falta la X de Nuevo registro (new_transaction_close).", file: file, line: line)
+        close.tap()
+        let discard = alerts.buttons["new_transaction_discard_confirm"].firstMatch
+        if discard.waitForExistence(timeout: 2) { discard.tap() }
     }
 
     // MARK: - Selectores (cuenta, subcategoría, etiquetas)
@@ -436,6 +562,19 @@ extension XCUIApplication {
                 .press(forDuration: 0.05, thenDragTo: origin.withOffset(CGVector(dx: width * 0.25, dy: chip.frame.midY)))
             _ = waitForSettledLayout(of: chip, timeout: timeout)
             swipes += 1
+        }
+        // Con «Guardar» en una barra (`safeAreaBar`, barrido final 2.2) el formulario se desplaza por DEBAJO del botón, y
+        // cuando la fila de chips baja a una segunda línea, el de etiquetas puede nacer tapado por la barra (en
+        // {20, 767} de 874 pt, medido el 2026-11-06). Una persona sube el formulario con el dedo: aquí, arrastres cortos
+        // desde la mitad de la ventana hasta que el chip quede por encima de la barra.
+        var lifts = 0
+        // El marco antes que `isHittable`: con el chip entero fuera de la ventana, `isHittable` lanza.
+        while lifts < 4 && (!windowFrame.contains(chip.frame) || !chip.isHittable) {
+            let window = windows.firstMatch
+            window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.55))
+                .press(forDuration: 0.05, thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4)))
+            _ = waitForSettledLayout(of: chip, timeout: timeout)
+            lifts += 1
         }
         XCTAssertTrue(chip.waitForHittable(timeout: timeout), "\(chipID) existe pero no es alcanzable.", file: file, line: line)
         chip.tap()
@@ -513,17 +652,6 @@ extension XCUIApplication {
         let filters = buttons["filters_toolbar_button"]
         XCTAssertTrue(filters.waitForExistence(timeout: timeout), "El menú (···) no ofreció 'Filtrar'.")
         filters.tap()
-    }
-
-    /// Abre el menú (···) de Registros y toca "Seleccionar" → entra en modo selección.
-    /// El botón `records_select_button` vive ahora DENTRO del menú.
-    func openRecordsSelectMode(timeout: TimeInterval = 10) {
-        let menu = recordsOverflowMenu
-        XCTAssertTrue(menu.waitForExistence(timeout: timeout), "No apareció el menú (···) de Registros.")
-        menu.tap()
-        let select = buttons["records_select_button"]
-        XCTAssertTrue(select.waitForExistence(timeout: timeout), "El menú (···) no ofreció 'Seleccionar'.")
-        select.tap()
     }
 }
 

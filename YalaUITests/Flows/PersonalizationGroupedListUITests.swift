@@ -18,11 +18,12 @@ final class PersonalizationGroupedListUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    /// Los ajustes de Personalización, de arriba abajo. Free: la fila «Pregúntale a Yala» solo existe sin
-    /// Pro. «Idioma de la app» no está: solo aparece con un idioma forzado.
+    /// Los ajustes de Personalización, de arriba abajo. El interruptor de Yala IA sale con Pro y sin Pro desde UX 2.2
+    /// · L14-12, y «Tono de Yala IA» desde L14-10. «Idioma de la app» no está: solo aparece con un idioma forzado.
     private let expectedRows = [
         "personalization_row_expenses_only",
         "voice_language_menu",
+        "personalization_row_ai_tone",
         "personalization_row_ai_summary",
         "settings_colorful_icons_toggle",
         "personalization_row_chat_fab",

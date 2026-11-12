@@ -18,7 +18,11 @@ func buildAccountChips(
     allAccounts: [Account]
 ) -> [AccountChip] {
     guard !selectedAccounts.isEmpty else { return [] }
-    let selectedList = allAccounts.filter { selectedAccounts.contains($0.persistentModelID) }
+    // Tarjeta con varias divisas (entrega 3): la tarjeta elegida lleva sus líneas en el conjunto, y la píldora la cuenta una vez.
+    let shown = AccountCardLogic.shownSelection(
+        selectedAccounts,
+        linesByHead: AccountCardLogic.linesByHead(allAccounts, node: { AccountLineNode($0) }, id: { $0.persistentModelID }))
+    let selectedList = allAccounts.filter { shown.contains($0.persistentModelID) }
     guard let firstName = selectedList.first?.name else { return [] }
     return [AccountChip(name: firstName, count: selectedList.count)]
 }

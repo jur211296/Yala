@@ -21,11 +21,9 @@ struct AccountCardView: View {
     /// Saldo actual de la cuenta en su moneda nativa, ya calculado externamente.
     let currentBalance: Double
 
-    /// La cuenta está en el filtro de cuentas del Panel (incluida o excluida según `isExcludeMode`).
-    var isSelected: Bool
-
-    /// En modo excluir, la cuenta seleccionada se atenúa con el signo menos.
-    var isExcludeMode: Bool = false
+    /// Cómo está la cuenta en el filtro de cuentas del Panel: incluida (rellena), oculta (atenuada con el signo menos)
+    /// o fuera del filtro.
+    var filterMembership: EntityFilterMembership
 
     /// En modo «solo gastos» el importe es lo gastado en el período, no el saldo, y la etiqueta lo dice.
     var isExpensesOnlyMode: Bool = false
@@ -33,23 +31,59 @@ struct AccountCardView: View {
     /// Nombre del período del Panel («Este mes»), para la etiqueta de lo gastado.
     var periodName: String = ""
 
+    /// Tarjeta con varias divisas: lo de cada línea en su divisa, la principal primero. Con dos o más, la tarjeta pinta
+    /// una fila por línea y el total en la divisa preferida; con una o ninguna, la tarjeta de siempre.
+    var lines: [AccountCardLogic.LineAmount] = []
+
+    /// Card extra (2026-11-03): la tarjeta «Grupos» junta las cuentas de sistema y enseña una fila por grupo con lo que
+    /// aporta, en vez de una por moneda. El total sale de `lines` (los saldos de las cuentas), así que no cambia.
+    struct GroupRow: Equatable {
+        let name: String
+        /// `nil` en la fila de «y N más», que no suma importes de monedas distintas.
+        let amount: AccountCardLogic.LineAmount?
+    }
+    var groupRows: [GroupRow] = []
+
+    /// El nombre que se pinta, si no es el de la cuenta («Grupos» en vez de «Grupos PEN»).
+    var title: String?
+
     /// Alto mínimo de la tarjeta. Crece con el texto grande: la tarjeta no recorta.
     static let minHeight: CGFloat = 168
 
     init(
         account: Account,
         currentBalance: Double,
-        isSelected: Bool = false,
-        isExcludeMode: Bool = false,
+        filterMembership: EntityFilterMembership = .none,
         isExpensesOnlyMode: Bool = false,
-        periodName: String = ""
+        periodName: String = "",
+        lines: [AccountCardLogic.LineAmount] = [],
+        groupRows: [GroupRow] = [],
+        title: String? = nil
     ) {
         self.account = account
         self.currentBalance = currentBalance
-        self.isSelected = isSelected
-        self.isExcludeMode = isExcludeMode
+        self.filterMembership = filterMembership
         self.isExpensesOnlyMode = isExpensesOnlyMode
         self.periodName = periodName
+        self.lines = lines
+        self.groupRows = groupRows
+        self.title = title
+    }
+
+    private var hasLines: Bool { lines.count > 1 }
+    private var hasGroupRows: Bool { !groupRows.isEmpty && !lines.isEmpty }
+    private var displayName: String { title ?? account.name }
+
+    private var isCreditCard: Bool { AccountType(rawValue: account.type) == .creditCard }
+
+    private func lineKind(_ line: AccountCardLogic.LineAmount) -> PanelAccountCardLogic.AmountKind? {
+        PanelAccountCardLogic.lineKind(
+            isExpensesOnlyMode: isExpensesOnlyMode, isCreditCard: isCreditCard, value: line.value)
+    }
+
+    /// El rótulo de la tarjeta: el de cada línea si coinciden; si no, «Saldo» (`PanelAccountCardLogic.cardAmountKind`).
+    private var cardKind: PanelAccountCardLogic.AmountKind {
+        PanelAccountCardLogic.cardAmountKind(lineKinds: lines.map(lineKind))
     }
 
     private var currencyCode: String { normalizeCurrencyCode(account.currencyCode) }
@@ -63,7 +97,11 @@ struct AccountCardView: View {
     }
 
     private var amountLabel: String {
-        switch amountKind {
+        label(for: hasLines || hasGroupRows ? cardKind : amountKind)
+    }
+
+    private func label(for kind: PanelAccountCardLogic.AmountKind) -> String {
+        switch kind {
         case .balance: return L10n.PanelAccountCard.balance
         case .toPay: return L10n.PanelAccountCard.toPay
         case .spent: return L10n.PanelAccountCard.spentInPeriod(periodName)
@@ -77,8 +115,13 @@ struct AccountCardView: View {
     }
 
     var body: some View {
-        let style = PanelAccountCardLogic.style(isSelected: isSelected, isExcludeMode: isExcludeMode)
+        let style = PanelAccountCardLogic.style(membership: filterMembership)
         let color = accountColor
+        // La cuenta que filtra el Panel va RELLENA de su color y dice «Filtrando» (UX 2.2 · L3-16, variante 2): el
+        // tinte al 16 % no se distinguía sobre el glass oscuro. El texto pasa al color que contrasta con el relleno.
+        let isFilled = style == .tinted
+        let primaryText = isFilled ? Color.contrastingText(for: color) : theme.primaryText
+        let secondaryText = isFilled ? Color.contrastingText(for: color).opacity(0.8) : theme.secondaryText
 
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             HStack(alignment: .center, spacing: DS.Spacing.md) {
@@ -88,24 +131,37 @@ struct AccountCardView: View {
                     .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
                     .background(
                         RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-                            .fill(color)
+                            .fill(isFilled ? Color.black.opacity(0.18) : color)
                     )
                     .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(account.name)
+                    Text(displayName)
                         .font(DS.Typography.headline)
-                        .foregroundStyle(theme.primaryText)
+                        .foregroundStyle(primaryText)
                         .lineLimit(1)
                         .truncationMode(.tail)
 
                     Text(subtitle)
                         .font(DS.Typography.caption)
-                        .foregroundStyle(theme.secondaryText)
+                        .foregroundStyle(secondaryText)
                         .lineLimit(1)
                 }
 
                 Spacer(minLength: 0)
+
+                if isFilled {
+                    Text(L10n.PanelAccountCard.filtering)
+                        .font(DS.Typography.captionSmall)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(primaryText)
+                        .padding(.horizontal, DS.Spacing.sm)
+                        .padding(.vertical, DS.Spacing.xxs)
+                        .background(Capsule().fill(Color.black.opacity(0.18)))
+                        .lineLimit(1)
+                        .fixedSize()
+                        .accessibilityIdentifier("panel_account_card_filtering")
+                }
 
                 if style == .excluded {
                     Image(systemName: "minus.circle.fill")
@@ -117,52 +173,32 @@ struct AccountCardView: View {
 
             Spacer(minLength: 0)
 
-            let kind = amountKind
-            let shownValue = PanelAccountCardLogic.displayedValue(currentBalance, kind: kind)
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(amountLabel)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(theme.secondaryText)
-                    .lineLimit(1)
-
-                AmountText(
-                    value: shownValue,
-                    currencyCode: currencyCode,
-                    font: DS.Typography.largeTitle.bold(),
-                    secondaryFont: DS.Typography.title3,
-                    tint: .color(theme.primaryText)
-                )
-
-                if let converted = convertedToDefault(shownValue, kind: kind) {
-                    AmountText(
-                        value: converted,
-                        currencyCode: appPreferences.defaultCurrencyCode.rawValue,
-                        font: DS.Typography.subheadline,
-                        secondaryFont: DS.Typography.caption,
-                        tint: .color(theme.secondaryText),
-                        isEstimate: true
-                    )
-                }
+            if hasGroupRows {
+                groupAmounts(primaryText: primaryText, secondaryText: secondaryText)
+            } else if hasLines {
+                linesAmounts(primaryText: primaryText, secondaryText: secondaryText)
+            } else {
+                singleAmount(primaryText: primaryText, secondaryText: secondaryText)
             }
         }
         .padding(DS.Spacing.lg)
-        .frame(maxWidth: .infinity, minHeight: Self.minHeight, alignment: .leading)
+        // `maxHeight: .infinity`: en el carrusel iguala el alto de la tarjeta más alta (`AccountsCarouselView`).
+        .frame(maxWidth: .infinity, minHeight: Self.minHeight, maxHeight: .infinity, alignment: .leading)
         .background {
-            // El tinte va encima del fondo de la tarjeta: sobre `theme.card` sale claro en modo claro y oscuro en
-            // oscuro, y el texto sigue en sus colores de siempre, así que el contraste no depende del color que el
-            // usuario eligió para la cuenta.
+            // La cuenta que filtra va rellena de su color sobre el fondo de la tarjeta; el texto de encima pasa a
+            // `contrastingText(for:)`, así que el contraste sale del color que el usuario eligió para la cuenta.
             ZStack {
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .fill(theme.card)
-                if style == .tinted {
+                if isFilled {
                     RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                        .fill(color.opacity(0.16))
+                        .fill(color)
                 }
             }
         }
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(style == .tinted ? color.opacity(0.45) : DS.Colors.borderDark, lineWidth: style == .tinted ? 1.5 : 1)
+                .stroke(isFilled ? color : DS.Colors.borderDark, lineWidth: 1)
         )
         .opacity(style == .excluded ? 0.5 : 1.0)
         .accessibilityElement(children: .combine)
@@ -170,10 +206,157 @@ struct AccountCardView: View {
         .accessibilityAddTraits(style == .tinted ? .isSelected : [])
     }
 
+    // MARK: - Importes
+
+    /// La cuenta de una divisa: el importe grande y, si es otra moneda, su equivalente en la principal.
+    private func singleAmount(primaryText: Color, secondaryText: Color) -> some View {
+        let kind = amountKind
+        let shownValue = PanelAccountCardLogic.displayedValue(currentBalance, kind: kind)
+        return VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+            Text(amountLabel)
+                .font(DS.Typography.caption)
+                .foregroundStyle(secondaryText)
+                .lineLimit(1)
+
+            AmountText(
+                value: shownValue,
+                currencyCode: currencyCode,
+                font: DS.Typography.largeTitle.bold(),
+                secondaryFont: DS.Typography.title3,
+                tint: .color(primaryText)
+            )
+
+            if let converted = convertedToDefault(shownValue, kind: kind) {
+                AmountText(
+                    value: converted,
+                    currencyCode: appPreferences.defaultCurrencyCode.rawValue,
+                    font: DS.Typography.subheadline,
+                    secondaryFont: DS.Typography.caption,
+                    tint: .color(secondaryText),
+                    isEstimate: true
+                )
+            }
+        }
+    }
+
+    /// La tarjeta con varias divisas: una fila por línea, cada una en su divisa, y el total en la preferida con «≈»
+    /// cuando hubo que convertir (decisión A de Jürgen, `multi-currency-accounts-2-card-view`).
+    private func linesAmounts(primaryText: Color, secondaryText: Color) -> some View {
+        let card = cardKind
+        let total = cardTotal
+        return VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+            Text(amountLabel)
+                .font(DS.Typography.caption)
+                .foregroundStyle(secondaryText)
+                .lineLimit(1)
+
+            ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
+                let kind = lineKind(line)
+                let code = normalizeCurrencyCode(line.currencyCode)
+                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                    AmountText(
+                        value: PanelAccountCardLogic.displayedValue(line.value, kind: kind ?? card),
+                        currencyCode: code,
+                        font: DS.Typography.title2.bold(),
+                        secondaryFont: DS.Typography.subheadline,
+                        tint: .color(primaryText)
+                    )
+                    if let kind, PanelAccountCardLogic.showsLineLabel(lineKind: kind, cardKind: card) {
+                        Text(label(for: kind))
+                            .font(DS.Typography.captionSmall)
+                            .foregroundStyle(secondaryText)
+                            .lineLimit(1)
+                    }
+                }
+            }
+
+            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                Text(L10n.PanelAccountCard.total)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(secondaryText)
+                    .lineLimit(1)
+                AmountText(
+                    value: PanelAccountCardLogic.displayedValue(total.value, kind: card),
+                    currencyCode: appPreferences.defaultCurrencyCode.rawValue,
+                    font: DS.Typography.subheadlineEmphasized,
+                    secondaryFont: DS.Typography.caption,
+                    tint: .color(secondaryText),
+                    isEstimate: total.isConverted
+                )
+            }
+        }
+    }
+
+    /// La tarjeta «Grupos»: una fila por grupo (nombre y lo que aporta, en su moneda) y el total de las cuentas en la
+    /// preferida, el mismo de la tarjeta con varias divisas.
+    private func groupAmounts(primaryText: Color, secondaryText: Color) -> some View {
+        let card = cardKind
+        let total = cardTotal
+        return VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+            Text(amountLabel)
+                .font(DS.Typography.caption)
+                .foregroundStyle(secondaryText)
+                .lineLimit(1)
+
+            ForEach(Array(groupRows.enumerated()), id: \.offset) { index, row in
+                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                    Text(row.name)
+                        .font(row.amount == nil ? DS.Typography.caption : DS.Typography.subheadline)
+                        .foregroundStyle(row.amount == nil ? secondaryText : primaryText)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                    Spacer(minLength: DS.Spacing.sm)
+                    if let amount = row.amount {
+                        AmountText(
+                            value: amount.value,
+                            currencyCode: normalizeCurrencyCode(amount.currencyCode),
+                            font: DS.Typography.subheadlineEmphasized,
+                            secondaryFont: DS.Typography.caption,
+                            tint: .color(primaryText)
+                        )
+                    }
+                }
+                .accessibilityIdentifier("panel_groups_card_row_\(index)")
+            }
+
+            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                Text(L10n.PanelAccountCard.total)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(secondaryText)
+                    .lineLimit(1)
+                AmountText(
+                    value: PanelAccountCardLogic.displayedValue(total.value, kind: card),
+                    currencyCode: appPreferences.defaultCurrencyCode.rawValue,
+                    font: DS.Typography.title2.bold(),
+                    secondaryFont: DS.Typography.subheadline,
+                    tint: .color(primaryText),
+                    isEstimate: total.isConverted
+                )
+            }
+        }
+    }
+
+    /// Total de las líneas en la divisa preferida, con la tasa más reciente: el mismo camino que el saldo total del
+    /// Panel (`LiveBalanceCalculator`) y que el equivalente de una cuenta de una divisa.
+    private var cardTotal: (value: Double, isConverted: Bool) {
+        let target = appPreferences.defaultCurrencyCode.rawValue
+        let normalized = lines.map {
+            AccountCardLogic.LineAmount(value: $0.value, currencyCode: normalizeCurrencyCode($0.currencyCode))
+        }
+        return AccountCardLogic.total(normalized, in: target) { value, code in
+            let outcome = currencyConverter.convertCheckedWithLatestRate(Decimal(value), from: code, to: target)
+            return (outcome.amount as NSDecimalNumber).doubleValue
+        }
+    }
+
     private var subtitle: String {
         let typeName: String? = account.isSystemAccount
             ? L10n.Account.System.badge
             : AccountType(rawValue: account.type)?.localizedName
+        if hasLines || hasGroupRows {
+            return PanelAccountCardLogic.subtitle(
+                typeName: typeName, currencyCodes: lines.map { normalizeCurrencyCode($0.currencyCode) })
+        }
         return PanelAccountCardLogic.subtitle(
             typeName: typeName,
             currencyCode: normalizeCurrencyCode(account.currencyCode)
@@ -193,13 +376,51 @@ struct AccountCardView: View {
     /// «Sueldo. Saldo: S/ 4,820.50» — nombre, qué es el número y el número. Solo puntuación entre piezas ya
     /// traducidas.
     private var accessibilitySummary: String {
+        if hasGroupRows { return groupsAccessibilitySummary }
+        if hasLines { return linesAccessibilitySummary }
         let kind = amountKind
         let shown = PanelAccountCardLogic.displayedValue(currentBalance, kind: kind)
-        var parts = "\(account.name). \(amountLabel): \(appPreferences.currency(shown, currencyCode: currencyCode))"
+        var parts = "\(displayName). \(amountLabel): \(appPreferences.currency(shown, currencyCode: currencyCode))"
         if let converted = convertedToDefault(shown, kind: kind) {
             parts += " (≈ \(appPreferences.currency(converted, currencyCode: appPreferences.defaultCurrencyCode.rawValue)))"
         }
         return parts
+    }
+
+    /// «Grupos. Saldo: Viaje a Cusco, S/ 120.00; Japón, US$ 80.00. Total: ≈ S/ 371.00». Solo puntuación entre piezas.
+    private var groupsAccessibilitySummary: String {
+        let card = cardKind
+        let rows = groupRows.map { row -> String in
+            guard let amount = row.amount else { return row.name }
+            return "\(row.name), \(appPreferences.currency(amount.value, currencyCode: normalizeCurrencyCode(amount.currencyCode)))"
+        }
+        let total = cardTotal
+        let totalText = appPreferences.currency(
+            PanelAccountCardLogic.displayedValue(total.value, kind: card),
+            currencyCode: appPreferences.defaultCurrencyCode.rawValue)
+        return "\(displayName). \(amountLabel): \(rows.joined(separator: "; ")). "
+            + "\(L10n.PanelAccountCard.total): \(total.isConverted ? "≈ " : "")\(totalText)"
+    }
+
+    /// «Visa BCP. Por pagar: S/ 1,250.00; US$ 80.00. Total: ≈ S/ 1,546.00». Solo puntuación entre piezas traducidas.
+    private var linesAccessibilitySummary: String {
+        let card = cardKind
+        let amounts = lines.map { line -> String in
+            let kind = lineKind(line)
+            let code = normalizeCurrencyCode(line.currencyCode)
+            var text = appPreferences.currency(
+                PanelAccountCardLogic.displayedValue(line.value, kind: kind ?? card), currencyCode: code)
+            if let kind, PanelAccountCardLogic.showsLineLabel(lineKind: kind, cardKind: card) {
+                text += " (\(label(for: kind)))"
+            }
+            return text
+        }
+        let total = cardTotal
+        let totalText = appPreferences.currency(
+            PanelAccountCardLogic.displayedValue(total.value, kind: card),
+            currencyCode: appPreferences.defaultCurrencyCode.rawValue)
+        return "\(displayName). \(amountLabel): \(amounts.joined(separator: "; ")). "
+            + "\(L10n.PanelAccountCard.total): \(total.isConverted ? "≈ " : "")\(totalText)"
     }
 
 }
@@ -225,7 +446,7 @@ struct AddAccountCardView: View {
                     .multilineTextAlignment(.center)
             }
             .padding(DS.Spacing.lg)
-            .frame(maxWidth: .infinity, minHeight: AccountCardView.minHeight)
+            .frame(maxWidth: .infinity, minHeight: AccountCardView.minHeight, maxHeight: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .fill(.thCard.opacity(0.95))

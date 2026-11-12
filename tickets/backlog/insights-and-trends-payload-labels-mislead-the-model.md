@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: insights, trends, ai
 created: 2026-10-07
-updated: 2026-10-08
+updated: 2026-10-18
 source: banco de Insights y Tendencias (sesión 2 del gateway de IA, gateway/bench/results/2026-10-07/REPORT-insights-y-tendencias.md)
 ---
 
@@ -28,3 +28,9 @@ source: banco de Insights y Tendencias (sesión 2 del gateway de IA, gateway/ben
 - `TrendsAIService` sigue llamando a `InsightsLLMService.focusInstruction(for:)`, cuyo texto habla del hero y de cards.
 
 Triage 2026-10-08: abierto · low → low · Las tres siguen vivas: `monthsPositive/monthsNegative` sobre saldo acumulado (InsightsLLMService.buildCashFlowPayload), «MMM yy» en `PreviousPeriodHelper` → `comparison_label`, y `TrendsAIService` reusa `focusInstruction` con hero y cards.
+
+## 2026-10-18 · el punto 2, hecho
+
+UX 2.2 · L11-4 cambió `PreviousPeriodHelper.formatComparisonText` de «MMM yy» a «MMM yyyy» en las ramas
+`.thisMonth/.lastMonth`: la etiqueta que viaja como `comparison_label` dice «Sept 2026». Siguen vivos el 1 y el 3, y el
+banco no se ha vuelto a correr.

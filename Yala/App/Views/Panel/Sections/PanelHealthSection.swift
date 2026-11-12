@@ -17,7 +17,8 @@ struct PanelHealthSection: View {
             FinancialScoreView(
                 score: score,
                 sessionState: sessionState,
-                subtitle: viewModel.selectedPeriod.displayName
+                subtitle: viewModel.selectedPeriod.displayName,
+                hasBudgets: viewModel.budgets.contains { $0.isActive }
             )
         }
     }

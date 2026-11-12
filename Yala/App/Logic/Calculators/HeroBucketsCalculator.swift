@@ -43,6 +43,10 @@ enum HeroBucketsCalculator {
         /// pasa `periodPrevInterval == nil` (p.ej. `.allTime`, sin previo
         /// acotado).
         let periodPrevExpense: Double
+        /// Si algún movimiento contó en el bucket de PERÍODO. No es derivable de las cifras desde que se suman con signo
+        /// (2026-10-23): un gasto y su devolución dejan ingresos 0 y gastos 0 con movimientos, y el hero diría «Sin
+        /// movimientos» (lo cazó la review del 2026-10-23).
+        var periodHasAnyTx: Bool = false
 
         /// Si algún importe del bucket de PERÍODO —el que se pinta en el hero— trae su monto
         /// convertido con una tasa que no era la de su día. **Separado por lado**: en modo Solo
@@ -88,11 +92,15 @@ enum HeroBucketsCalculator {
         var periodIncome: Double = 0
         var periodExpense: Double = 0
         var periodPrevExpense: Double = 0
-        // Numerador del umbral, por lado. Aquí `amount` ya es `abs(...)` (línea de abajo), así que
-        // `periodIncome`/`periodExpense` son sumas de magnitudes y sirven de denominador tal cual —
-        // a diferencia de `CashFlowCalculator`, que acumula con signo y necesita los suyos aparte.
+        // Numerador y denominador del umbral, por lado, los dos en MAGNITUDES sumadas, como `CashFlowCalculator` y el
+        // resumen de Registros: desde el 2026-10-23 `periodIncome`/`periodExpense` se acumulan con signo, y una
+        // devolución que los encoge dispararía el cociente (la marca del hero se separaba de la del Flujo de caja con
+        // las mismas filas; lo cazó la review). El neto sigue dividiendo entre el número que se pinta.
         var periodIncomeApproximateAmount: Double = 0
         var periodExpenseApproximateAmount: Double = 0
+        var periodIncomeMagnitude: Double = 0
+        var periodExpenseMagnitude: Double = 0
+        var periodHasAnyTx = false
 
         for tx in transactions where tx.balanceAdjustmentType == nil {
             guard let account = tx.account,
@@ -106,8 +114,13 @@ enum HeroBucketsCalculator {
             let resolved = CashFlowCalculator.resolvedAmount(
                 tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
             )
-            let amount = abs(resolved.value)
-            let isIncome = tx.category?.isIncome == true
+            // Ingreso o gasto con la regla de toda la app (la categoría manda; sin categoría, el signo), y lo que la
+            // fila aporta a su lado CON SIGNO: una devolución en una categoría de gasto resta del gasto, como en
+            // Registros, Flujo de caja y Tendencias. Hasta el 2026-10-23 el hero sumaba magnitudes y daba por gasto
+            // todo lo que no tuviera categoría de ingreso: el mismo mes salía con otras cifras que en esas pantallas
+            // (ticket `records-standalone-amount-discrepancy`).
+            let isIncome = TransactionClassificationLogic.isIncome(tx)
+            let amount = isIncome ? resolved.value : -resolved.value
 
             if monthInterval.contains(tx.date) {
                 if isIncome { monthIncome += amount } else { monthExpense += amount }
@@ -123,12 +136,15 @@ enum HeroBucketsCalculator {
                 // La magnitud dudosa NO la da la fila: en un gasto de grupo `amount` es el NETO de
                 // varias patas y el flag de la fila describe solo una (ver `resolvedAmount`).
                 let approximate = resolved.approximateMagnitude
+                periodHasAnyTx = true
                 if isIncome {
                     periodIncome += amount
                     periodIncomeApproximateAmount += approximate
+                    periodIncomeMagnitude += abs(amount)
                 } else {
                     periodExpense += amount
                     periodExpenseApproximateAmount += approximate
+                    periodExpenseMagnitude += abs(amount)
                 }
             }
 
@@ -157,11 +173,12 @@ enum HeroBucketsCalculator {
             periodIncome: periodIncome,
             periodExpense: periodExpense,
             periodPrevExpense: periodPrevExpense,
+            periodHasAnyTx: periodHasAnyTx,
             periodIncomeApproximate: ApproximateMarkThreshold.marks(
-                approximate: periodIncomeApproximateAmount, total: periodIncome
+                approximate: periodIncomeApproximateAmount, total: periodIncomeMagnitude
             ),
             periodExpenseApproximate: ApproximateMarkThreshold.marks(
-                approximate: periodExpenseApproximateAmount, total: periodExpense
+                approximate: periodExpenseApproximateAmount, total: periodExpenseMagnitude
             ),
             periodNetApproximate: ApproximateMarkThreshold.marks(
                 approximate: periodIncomeApproximateAmount + periodExpenseApproximateAmount,

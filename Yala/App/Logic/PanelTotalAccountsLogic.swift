@@ -32,6 +32,17 @@ enum PanelTotalAccountsLogic {
         accounts.filter { !$0.excludeFromStatistics && !($0.isSystemAccount && $0.isArchived) }
     }
 
+    /// Cuántas cuentas suma el saldo del panorama: las contables que el cálculo del saldo eligió
+    /// (`LiveBalanceCalculator.Breakdown.eligibleAccountIDs`), con su filtro de cuentas, su modo
+    /// excluir y el toggle de grupos ya aplicados. Contarlas aparte con
+    /// `accountsForTotal` ignoraba el filtro y decía «en 3 cuentas» junto al saldo de una.
+    static func summedAccountsCount(
+        _ accounts: [Account],
+        summedAccountIDs: Set<PersistentIdentifier>
+    ) -> Int {
+        countableAccounts(accounts).filter { summedAccountIDs.contains($0.persistentModelID) }.count
+    }
+
     static func accountsForTotal(
         _ accounts: [Account],
         includeGroups: Bool,
@@ -44,19 +55,18 @@ enum PanelTotalAccountsLogic {
     /// ¿El saldo mostrado es el TOTAL AGREGADO, y por tanto le aplica el toggle
     /// `includeGroupsInPanelTotal`?
     ///
-    /// Lo es cuando no hay filtro de cuentas **y también en modo excluir**: "todas
+    /// Lo es cuando no hay cuentas INCLUIDAS («Solo X»), aunque haya ocultas: "todas
     /// menos éstas" sigue siendo un agregado, y el usuario que apagó las cuentas de
-    /// grupos espera que sigan apagadas. Sin la segunda condición, excluir una
+    /// grupos espera que sigan apagadas. Si contaran las ocultas, ocultar una
     /// cuenta devolvía al agregado las cuentas sistema que el toggle había
-    /// quitado — y el saldo del Panel SUBÍA al excluir una cuenta con saldo
-    /// positivo.
+    /// quitado — y el saldo del Panel SUBÍA al ocultar una cuenta con saldo
+    /// positivo. Por eso esta función solo recibe las incluidas.
     ///
     /// Vive aquí, y no en el ViewModel, porque tiene dos consumidores —el saldo y
     /// el conteo "en N cuentas" del panorama— y tienen que decir lo mismo.
     static func hasAccountFilter(
-        selectedAccountIDs: Set<PersistentIdentifier>,
-        isExcludeMode: Bool
+        selectedAccountIDs: Set<PersistentIdentifier>
     ) -> Bool {
-        !selectedAccountIDs.isEmpty && !isExcludeMode
+        !selectedAccountIDs.isEmpty
     }
 }

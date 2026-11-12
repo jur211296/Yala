@@ -6,7 +6,10 @@
 //  terminar, enseña lo entendido como la fila del registro para guardarlo ahí mismo.
 //
 //  Cuatro fases en la misma hoja, sin presentaciones encadenadas:
-//  1. **Escuchando** — el orbe del dictado de Yala IA (`VoiceListeningOrb`), el tiempo y Cancelar / Listo.
+//  1. **Escuchando** — la onda de barras que sigue el micrófono, el tiempo y la frase que va entendiendo el iPhone
+//     (propuesta A de la card tjws, 2026-10-25; `VoiceLiveListeningViews`), y Cancelar / Listo. La frase sale del
+//     reconocimiento de voz del propio iPhone (`LiveSpeechPreviewService`): no se guarda ni va a la IA, que sigue
+//     recibiendo el audio de `AudioRecorderService` como siempre.
 //  2. **Procesando** — el orbe gira y dice el paso; Cancelar cierra.
 //  3. **Lo entendido** — una `VoiceDraftReviewCard` por borrador. «Guardar» los aprueba por el camino de la Bandeja
 //     (`DraftService.approveDraft`); cerrar sin guardar los deja en la Bandeja, como siempre.
@@ -21,6 +24,7 @@ import SwiftUI
 struct VoiceRecordingView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(SceneNavigation.self) private var navigation
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.usesLargeSheets) private var usesLargeSheets
@@ -32,6 +36,14 @@ struct VoiceRecordingView: View {
 
     @State private var recorder = AudioRecorderService.shared
     @State private var networkMonitor = NetworkMonitor.shared
+    /// La frase en vivo (card tjws). Solo se pinta: lo que se transcribe y se lee sigue siendo el audio grabado.
+    @State private var livePreview = LiveSpeechPreviewService()
+    /// Niveles de la onda, del más viejo al más nuevo: uno por cada tick del tiempo de grabación (0,1 s).
+    @State private var waveLevels: [Double] = []
+    /// Seam `-uitest-voice-live`: el tiempo, el nivel y la frase de mentira mientras escucha.
+    @State private var demoDuration: TimeInterval = 0
+    @State private var demoText = ""
+    @State private var demoTask: Task<Void, Never>?
 
     @State private var phase: Phase = .starting
     @State private var processingStep = 0
@@ -41,10 +53,17 @@ struct VoiceRecordingView: View {
     @State private var drafts: [InboxDraft] = []
     @State private var transcription = ""
     @State private var detailDraft: InboxDraft?
+    /// Qué registros están marcados en la hoja de varios (`MultiDraftReviewList`). Todo sale marcado.
+    @State private var selection = MultiDraftReviewLogic.Selection<PersistentIdentifier>()
+    /// La hoja del borrador pidió convertirlo en un gasto de grupo (`DraftGroupConversionFlow`).
+    @State private var conversionRequest: DraftGroupConversionRequest?
     @State private var saveFailed = false
     @State private var trialReported = false
     @State private var selectedDetent: PresentationDetent = .medium
     @State private var showUpgrade = false
+    /// «Apuntarlo a mano» (UX 2.2 · L4-3): cuando la voz no puede, Nuevo registro sube encima y, al cerrarse, se cierra
+    /// también esta hoja.
+    @State private var showManualEntry = false
 
     /// Para cambiar a la entrada por imagen cuando no hay conexión.
     var onSwitchToImage: (() -> Void)?
@@ -88,10 +107,18 @@ struct VoiceRecordingView: View {
         .task { await startListening() }
         .onDisappear(perform: tearDown)
         .sheet(item: $detailDraft, onDismiss: afterDetails) { draft in
-            InboxDraftEditSheet(draft: draft)
+            InboxDraftEditSheet(draft: draft, onConvertToGroupExpense: { converting, groups in
+                conversionRequest = DraftGroupConversionRequest(draft: converting, groups: groups)
+            })
         }
-        .sheet(isPresented: $showUpgrade) {
-            UpgradePromptSheet(feature: .voiceInput, context: .proFeature)
+        // «Convertir a gasto compartido» desde la hoja del borrador, como en la Bandeja (bug del 2026-11-03).
+        .draftGroupConversionFlow($conversionRequest, onFinished: afterGroupConversion)
+        .sheet(isPresented: $showManualEntry, onDismiss: { dismiss() }) {
+            NewTransactionView()
+        }
+        // Si compra Pro ahí, al volver el micrófono ya escucha (UX 2.2 · L17-9).
+        .proUpgradeSheet(isPresented: $showUpgrade, feature: .voiceInput, context: .proFeature) {
+            recordAgain()
         }
     }
 
@@ -108,6 +135,7 @@ struct VoiceRecordingView: View {
         HStack {
             if let skip = onSetupTrialSkipped, phase != .review, phase != .processing {
                 Button(L10n.SetupChecklist.skipStep) {
+                    stopLivePreview()
                     recorder.cancelRecording()
                     skip()
                     dismiss()
@@ -162,14 +190,13 @@ struct VoiceRecordingView: View {
             }
             .accessibilityElement(children: .combine)
 
-            VoiceListeningOrb(
-                isTranscribing: false,
-                duration: recorder.recordingDuration,
-                level: recorder.audioLevel,
-                accent: theme.accent,
-                reduceMotion: reduceMotion
-            )
+            VStack(spacing: DS.Spacing.sm) {
+                VoiceWaveform(levels: waveLevels, accent: theme.accent, reduceMotion: reduceMotion)
+                VoiceRecordingTimeLabel(duration: listeningDuration, reduceMotion: reduceMotion)
+            }
             .padding(.top, DS.Spacing.sm)
+
+            VoiceLiveTranscriptText(text: liveText)
 
             Spacer(minLength: DS.Spacing.lg)
 
@@ -183,7 +210,55 @@ struct VoiceRecordingView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("voice_listening_panel")
+        .onChange(of: recorder.recordingDuration) { _, _ in recordWaveLevel() }
     }
+
+    private var listeningDuration: TimeInterval {
+        demoTask != nil ? demoDuration : recorder.recordingDuration
+    }
+
+    private var liveText: String {
+        demoTask != nil ? demoText : livePreview.text
+    }
+
+    /// Un nivel por tick del tiempo de grabación: así la onda corre también en silencio, que no cambia `audioLevel`.
+    private func recordWaveLevel() {
+        guard phase == .listening, recorder.state == .recording else { return }
+        waveLevels = VoiceLiveListeningLogic.appending(recorder.audioLevel, to: waveLevels)
+    }
+
+    /// La frase en vivo y la onda se apagan ANTES de parar la grabación: el motor del reconocedor suelta la entrada
+    /// antes de que el grabador desactive la sesión de audio.
+    private func stopLivePreview() {
+        livePreview.stop()
+        demoTask?.cancel()
+        demoTask = nil
+    }
+
+    #if DEBUG
+    /// Seam `-uitest-voice-live`: nivel y frase de mentira, palabra a palabra, para ver y probar la hoja sin micro.
+    private func startDemoLivePreview() {
+        demoTask?.cancel()
+        demoDuration = 0
+        demoText = ""
+        let words = L10n.UITestDemo.Voice.lunchTranscript.split(whereSeparator: \.isWhitespace).map(String.init)
+        demoTask = Task { @MainActor in
+            let start = Date.now
+            while !Task.isCancelled {
+                let elapsed = Date.now.timeIntervalSince(start)
+                demoDuration = elapsed
+                waveLevels = VoiceLiveListeningLogic.appending(VoiceLiveListeningLogic.demoLevel(elapsed: elapsed), to: waveLevels)
+                let shown = VoiceLiveListeningLogic.demoWordCount(elapsed: elapsed, totalWords: words.count)
+                demoText = words.prefix(shown).joined(separator: " ")
+                do {
+                    try await Task.sleep(for: .milliseconds(100))
+                } catch {
+                    return
+                }
+            }
+        }
+    }
+    #endif
 
     // MARK: - Procesando
 
@@ -234,8 +309,28 @@ struct VoiceRecordingView: View {
         !drafts.isEmpty && pendingDrafts.isEmpty
     }
 
+    /// Con varios, la hoja elige: se guarda lo marcado y lo demás se queda en la Bandeja.
+    private var isMulti: Bool { drafts.count > 1 }
+
+    private var reviewItems: [MultiDraftReviewLogic.Item<PersistentIdentifier>] {
+        MultiDraftReviewLogic.items(for: drafts, defaultCurrency: appPreferences.defaultCurrencyCode.rawValue)
+    }
+
+    /// Lo que «Guardar» aprueba: con varios, solo los marcados; con uno, el pendiente.
+    private var draftsToSave: [InboxDraft] {
+        guard isMulti else { return pendingDrafts }
+        return pendingDrafts.filter { selection.contains($0.persistentModelID) }
+    }
+
     private var canSave: Bool {
-        VoiceEntryFlowLogic.canSave(pendingDrafts.map(readiness))
+        isMulti
+            ? MultiDraftReviewLogic.canSave(reviewItems, selection)
+            : VoiceEntryFlowLogic.canSave(pendingDrafts.map(readiness))
+    }
+
+    /// Sin nada más que hacer en la hoja: todo guardado o, con varios, lo marcado ya guardado.
+    private var isFinished: Bool {
+        isMulti ? MultiDraftReviewLogic.isFinished(reviewItems, selection) : allSaved
     }
 
     private var reviewContent: some View {
@@ -256,21 +351,34 @@ struct VoiceRecordingView: View {
                         }
                     }
 
-                    ForEach(drafts, id: \.persistentModelID) { draft in
-                        VoiceDraftReviewCard(draft: draft) {
-                            detailDraft = draft
+                    if dynamicTypeSize.isAccessibilitySize {
+                        missingHint
+                    }
+
+                    if isMulti {
+                        MultiDraftReviewList(drafts: drafts, selection: $selection) { detailDraft = $0 }
+                    } else {
+                        ForEach(drafts, id: \.persistentModelID) { draft in
+                            VoiceDraftReviewCard(draft: draft) {
+                                detailDraft = draft
+                            }
                         }
                     }
 
-                    if !allSaved {
-                        Text(L10n.Voice.reviewInboxNote)
+                    if let note = inboxNote {
+                        Text(note)
                             .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
+                            .accessibilityIdentifier("review_inbox_note")
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .scrollBounceBehavior(.basedOnSize)
+
+            if !dynamicTypeSize.isAccessibilitySize {
+                missingHint
+            }
 
             if saveFailed {
                 Text(L10n.Chat.Draft.saveFailedGeneric)
@@ -279,8 +387,8 @@ struct VoiceRecordingView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            HStack(spacing: DS.Spacing.md) {
-                if allSaved {
+            actionsLayout {
+                if isFinished {
                     primaryButton(L10n.Action.done, isEnabled: true, identifier: "voice_finish") {
                         dismiss()
                     }
@@ -291,6 +399,37 @@ struct VoiceRecordingView: View {
             }
         }
         .padding(.top, DS.Spacing.xs)
+        .onChange(of: drafts.map(\.persistentModelID), initial: true) { _, ids in selection.sync(with: ids) }
+    }
+
+    /// «Completa los marcados en ámbar…». A tamaño normal va fijo encima de los botones; con texto de accesibilidad
+    /// ocupa cuatro líneas y, fijo abajo, dejaba la lista en una franja (pase de estrés 2.2, card 48ri): ahí entra en el
+    /// scroll, bajo el título.
+    @ViewBuilder
+    private var missingHint: some View {
+        if isMulti, !isFinished, MultiDraftReviewLogic.incompleteMarked(reviewItems, selection) > 0 {
+            Text(L10n.Voice.reviewMissingHint)
+                .font(DS.Typography.caption)
+                .foregroundStyle(DS.Semantic.warningForeground)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityIdentifier("multi_review_missing_hint")
+        }
+    }
+
+    /// Los botones de abajo, uno al lado del otro; con texto de accesibilidad, uno encima del otro a todo lo ancho, o
+    /// «Guardar 7 · S/ …» se partía por sílabas. `AnyLayout`: cambiar el tamaño de texto no cambia su identidad.
+    private var actionsLayout: AnyLayout {
+        dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(spacing: DS.Spacing.sm))
+            : AnyLayout(HStackLayout(spacing: DS.Spacing.md))
+    }
+
+    /// Con varios y alguno sin marcar, la hoja dice que esos siguen en la Bandeja; si no, el aviso de siempre.
+    private var inboxNote: String? {
+        if isMulti, MultiDraftReviewLogic.leavesUnmarkedInInbox(reviewItems, selection) {
+            return L10n.Voice.reviewLeftInInbox
+        }
+        return allSaved ? nil : L10n.Voice.reviewInboxNote
     }
 
     private var reviewTitle: String {
@@ -298,8 +437,17 @@ struct VoiceRecordingView: View {
         return drafts.count > 1 ? L10n.Voice.reviewTitleMany(drafts.count) : L10n.Voice.reviewTitle
     }
 
+    /// Con varios, cuántos marcados y cuánto suman («Guardar 5 · S/ 224.81»); sin cifra si mezclan divisas.
     private var saveTitle: String {
-        pendingDrafts.count > 1 ? L10n.Voice.saveMany(pendingDrafts.count) : L10n.Chat.Draft.saveButton
+        guard isMulti else {
+            return pendingDrafts.count > 1 ? L10n.Voice.saveMany(pendingDrafts.count) : L10n.Chat.Draft.saveButton
+        }
+        let toSave = MultiDraftReviewLogic.toSave(reviewItems, selection)
+        guard !toSave.isEmpty else { return L10n.Chat.Draft.saveButton }
+        guard let code = MultiDraftReviewLogic.sharedCurrency(toSave) else { return L10n.Voice.saveMany(toSave.count) }
+        let amount = appPreferences.currency(
+            MultiDraftReviewLogic.saveTotal(reviewItems, selection), currencyCode: code, forceFullPrecision: true)
+        return L10n.Voice.reviewSaveSelected(toSave.count, amount: amount)
     }
 
     private func readiness(_ draft: InboxDraft) -> VoiceDraftReadiness {
@@ -351,12 +499,14 @@ struct VoiceRecordingView: View {
     private func failureActions(_ failure: VoiceEntryFailure) -> some View {
         switch failure {
         case .micPermission:
+            secondaryButton(L10n.Voice.enterManually, identifier: "voice_enter_manually") { showManualEntry = true }
             primaryButton(L10n.Voice.openSettings, isEnabled: true, identifier: "voice_open_settings", action: openSystemSettings)
         case .trialUsedUp:
             secondaryButton(L10n.Action.close, identifier: "voice_failure_close") { dismiss() }
             primaryButton(L10n.Voice.trialSeePro, isEnabled: true, identifier: "voice_trial_see_pro") { showUpgrade = true }
-        case .serviceUnavailable:
-            primaryButton(L10n.Action.close, isEnabled: true, identifier: "voice_failure_close") { dismiss() }
+        case .serviceUnavailable, .dailyLimit:
+            secondaryButton(L10n.Action.close, identifier: "voice_failure_close") { dismiss() }
+            primaryButton(L10n.Voice.enterManually, isEnabled: true, identifier: "voice_enter_manually") { showManualEntry = true }
         case .noConnection:
             if let switchToImage = onSwitchToImage {
                 secondaryButton(L10n.Voice.tryImage, identifier: "voice_try_image") {
@@ -366,8 +516,9 @@ struct VoiceRecordingView: View {
             }
             primaryButton(L10n.Voice.recordAgain, isEnabled: true, identifier: "voice_record_again", action: recordAgain)
         case .noVoice, .noAmount:
+            secondaryButton(L10n.Voice.enterManually, identifier: "voice_enter_manually") { showManualEntry = true }
             primaryButton(L10n.Voice.recordAgain, isEnabled: true, identifier: "voice_record_again", action: recordAgain)
-        case .generic, .saveFailed:
+        case .generic, .saveFailed, .busy:
             if failure.retriesSameAudio, pendingAudioData != nil {
                 secondaryButton(L10n.Voice.recordAgain, identifier: "voice_record_again", action: recordAgain)
                 primaryButton(L10n.Action.retry, isEnabled: true, identifier: "voice_retry", action: retryProcessing)
@@ -384,6 +535,8 @@ struct VoiceRecordingView: View {
         case .noVoice: "waveform.slash"
         case .noAmount: "questionmark"
         case .trialUsedUp: "sparkles"
+        case .busy: "hourglass"
+        case .dailyLimit: "calendar"
         case .serviceUnavailable, .saveFailed, .generic: "exclamationmark"
         }
     }
@@ -395,6 +548,8 @@ struct VoiceRecordingView: View {
         case .noVoice: L10n.Voice.failureNoVoiceTitle
         case .noAmount: L10n.Voice.failureNoAmountTitle
         case .trialUsedUp: L10n.Voice.failureTrialUsedUpTitle
+        case .busy: L10n.Voice.failureBusyTitle
+        case .dailyLimit: L10n.Voice.failureDailyLimitTitle
         case .serviceUnavailable, .saveFailed, .generic: L10n.Voice.failureGenericTitle
         }
     }
@@ -409,6 +564,8 @@ struct VoiceRecordingView: View {
         case .saveFailed: L10n.Voice.errorSaveFailed
         case .generic: L10n.Voice.failureGenericMessage
         case .trialUsedUp: L10n.Voice.failureTrialUsedUpMessage
+        case .busy: L10n.Voice.failureBusyMessage
+        case .dailyLimit: L10n.Voice.failureDailyLimitMessage
         }
     }
 
@@ -431,7 +588,7 @@ struct VoiceRecordingView: View {
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
                 // Apagado se VE apagado: con fondo explícito, `.disabled` no atenúa nada (#348).
-                .foregroundStyle(isEnabled ? Color.contrastingText(for: theme.accent) : Color.secondary)
+                .foregroundStyle(isEnabled ? theme.onAccent : Color.secondary)
                 .frame(maxWidth: .infinity, minHeight: buttonHeight)
                 .padding(.horizontal, DS.Spacing.sm)
                 .background(
@@ -469,16 +626,19 @@ struct VoiceRecordingView: View {
             return
         }
         phase = .starting
+        waveLevels = []
         #if DEBUG
         if UITestHooks.voiceResult != nil {
             phase = .listening
+            if UITestHooks.voiceLivePreview { startDemoLivePreview() }
             return
         }
         #endif
         do {
             try await recorder.startRecording()
             phase = .listening
-            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            livePreview.start(languageCode: appPreferences.voiceLanguage.isoCode)
+            DS.Haptic.medium()
         } catch let error as RecordingError {
             phase = .failure(VoiceEntryFlowLogic.failure(for: error))
         } catch {
@@ -490,7 +650,8 @@ struct VoiceRecordingView: View {
     }
 
     private func finishListening() async {
-        recordedDuration = recorder.recordingDuration
+        recordedDuration = listeningDuration
+        stopLivePreview()
         #if DEBUG
         if UITestHooks.voiceResult != nil {
             startProcessing(Data())
@@ -499,7 +660,7 @@ struct VoiceRecordingView: View {
         #endif
         do {
             let audioData = try await recorder.stopRecording()
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            DS.Haptic.light()
             pendingAudioData = audioData
             startProcessing(audioData)
         } catch let error as RecordingError {
@@ -514,6 +675,7 @@ struct VoiceRecordingView: View {
 
     /// Cancelar mientras escucha descarta sin transcribir y cierra: no hay otra cosa que hacer en esta hoja.
     private func cancelListening() {
+        stopLivePreview()
         recorder.cancelRecording()
         dismiss()
     }
@@ -604,10 +766,16 @@ struct VoiceRecordingView: View {
             drafts = isSetupTrial ? Array(created.prefix(1)) : created
             transcription = text
             phase = .review
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            DS.Haptic.success()
         } catch let error as TranscriptionError {
+            if let detail = VoiceEntryFlowLogic.canaryDetail(for: error) {
+                MetricsService.canaryOnce(.aiEntryReadFailed, key: detail, detail: detail)
+            }
             phase = .failure(VoiceEntryFlowLogic.failure(for: error, isConnected: networkMonitor.isConnected))
         } catch let error as ParserError {
+            if let detail = VoiceEntryFlowLogic.canaryDetail(for: error) {
+                MetricsService.canaryOnce(.aiEntryReadFailed, key: detail, detail: detail)
+            }
             phase = .failure(VoiceEntryFlowLogic.failure(for: error, isConnected: networkMonitor.isConnected))
         } catch {
             #if DEBUG
@@ -718,7 +886,7 @@ struct VoiceRecordingView: View {
     private func saveAll() {
         saveFailed = false
         DraftService.shared.setContext(modelContext)
-        for draft in pendingDrafts {
+        for draft in draftsToSave {
             do {
                 let transaction = try DraftService.shared.approveDraft(draft, currencyConverter: currencyConverter)
                 reportTrial(id: transaction.persistentModelID, name: draft.note, kind: .transaction)
@@ -731,7 +899,15 @@ struct VoiceRecordingView: View {
             }
         }
         if !saveFailed {
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            DS.Haptic.success()
+        }
+    }
+
+    /// Tras el formulario de grupo: el borrador convertido ya no está, y el aviso dice adónde fue.
+    private func afterGroupConversion(_ group: SplitGroup?) {
+        afterDetails()
+        if let group {
+            DraftGroupConversion.announce(group, navigation: navigation) { dismiss() }
         }
     }
 
@@ -758,6 +934,7 @@ struct VoiceRecordingView: View {
     /// Al cerrar: suelta el micro si seguía abierto, corta lo que se estuviera procesando y, en la práctica guiada, da
     /// el paso por cumplido con el borrador que quedó en la Bandeja.
     private func tearDown() {
+        stopLivePreview()
         if recorder.state == .recording {
             recorder.cancelRecording()
         }
@@ -782,7 +959,9 @@ struct VoiceRecordingView: View {
         var needsUserInputFields = ["account", "subcategory"]
 
         if let currencyHint = parsed.currencyHint, !currencyHint.isEmpty {
-            matchedAccount = findAccount(byCurrency: currencyHint)
+            // La regla común de las capturas (`DraftBuilder.findAccount`): la voz tenía su copia y no quitaba las cuentas de
+            // sistema de Grupos (entrega 3 de la tarjeta con varias divisas).
+            matchedAccount = DraftBuilder.findAccount(byCurrency: currencyHint, context: modelContext)
             if matchedAccount != nil {
                 needsUserInputFields.removeAll { $0 == "account" }
             }
@@ -799,7 +978,7 @@ struct VoiceRecordingView: View {
         // Memoria del comercio: sugiere la subcategoría si el modelo no la encontró.
         if matchedSubcategory == nil && !parsed.note.trimmingCharacters(in: .whitespaces).isEmpty {
             let merchantService = MerchantMemoryService(modelContext: modelContext)
-            switch merchantService.suggest(for: parsed.note) {
+            switch merchantService.suggest(for: parsed.note, isExpense: parsed.isExpense) {
             case .suggest(let sub), .autoAssign(let sub):
                 matchedSubcategory = sub
                 needsUserInputFields.removeAll { $0 == "subcategory" }
@@ -982,27 +1161,6 @@ struct VoiceRecordingView: View {
         }
 
         return (matched, newlyCreatedNames)
-    }
-
-    /// La cuenta de esa divisa, solo si hay exactamente una.
-    private func findAccount(byCurrency currencyCode: String) -> Account? {
-        let normalizedCode = currencyCode.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
-        let descriptor = FetchDescriptor<Account>(
-            predicate: #Predicate<Account> { account in
-                account.isArchived == false
-            }
-        )
-        let accounts: [Account]
-        do {
-            accounts = try modelContext.fetch(descriptor)
-        } catch {
-            #if DEBUG
-            print("VoiceRecordingView: Error fetching accounts: \(error)")
-            #endif
-            return nil
-        }
-        let matches = accounts.filter { $0.currencyCode.uppercased() == normalizedCode }
-        return matches.count == 1 ? matches.first : nil
     }
 }
 

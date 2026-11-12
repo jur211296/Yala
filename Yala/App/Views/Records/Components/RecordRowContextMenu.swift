@@ -17,7 +17,100 @@ extension RecordContextActionLogic.Shape {
             hasSplitSettlementID: record.splitSettlementID != nil,
             accountIsNil: record.account == nil,
             accountIsSystem: record.account?.isSystemAccount ?? false,
-            subcategoryIsSystem: record.subcategory?.isAnySystem ?? false)
+            subcategoryIsSystem: record.subcategory?.isAnySystem ?? false,
+            // Las patas de una venta —por cobrar (card 8) y cobradas (card 10)— también las escribe entera el puente.
+            isSplitLineLeg: GroupSplitLinesBridgeLogic.isDerivedMarker(record.splitLinesRaw)
+                || GroupCollectedLegLogic.isBridgeWrittenSaleLeg(
+                    adjustmentType: record.balanceAdjustmentType, splitLinesRaw: record.splitLinesRaw),
+            holdsSplitRecipe: record.splitExpenseID != nil && GroupSplitLinesEntryLogic.holdsRecipe(record.splitLinesRaw))
+    }
+}
+
+extension RecordBulkActionLogic.DeleteDialog {
+    var titleText: String {
+        switch title {
+        case .deleteCount(let count): L10n.Records.deleteConfirmTitle(count)
+        case .onlyGroupRecords: L10n.Records.groupRecordsOnlyTitle
+        }
+    }
+
+    var messageText: String {
+        switch message {
+        case .cannotUndo: L10n.Common.cannotUndo
+        case .cannotUndoKeepingGroupRecords(let count): "\(L10n.Records.groupRecordsKept(count)) \(L10n.Common.cannotUndo)"
+        case .deleteFromGroup: L10n.Records.groupRecordsDeleteFromGroup
+        }
+    }
+}
+
+/// La pregunta de borrado de un registro, igual en el menú, ⌫, el detalle, el modo selección y el editor (auditoría UX
+/// 2.2, L8-7, opción B): dice qué se borra y sale centrada, con Cancelar a la vista.
+enum RecordDeleteConfirmationText {
+    /// «¿Eliminar «Uber · S/ 26»?». Sin nota ni categoría, solo el importe.
+    static func title(for record: TransactionItem, preferences: AppPreferences) -> String {
+        let amount = preferences.currency(abs(record.amount), currencyCode: record.currencyCode)
+        let summary = RecordDeleteConfirmationLogic.displayName(
+            note: record.note,
+            subcategoryName: record.subcategory?.name,
+            categoryName: record.category?.name
+        ).map { RecordDeleteConfirmationLogic.summary(name: $0, amount: amount) } ?? amount
+        return L10n.UXL8.deleteNamedTitle(summary)
+    }
+
+    /// Una transferencia se borra con su otra mitad: se dice. `undoable`: el borrado espera unos segundos con «Deshacer»
+    /// (UX 2.2 · L15-13: menú, ⌫ y el detalle), y la pregunta no puede decir que no se puede deshacer.
+    static func message(for record: TransactionItem, undoable: Bool = false) -> String {
+        let tail = undoable ? L10n.UXL08D.undoSeconds : L10n.Common.cannotUndo
+        guard record.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer else { return tail }
+        return "\(L10n.UXL8.deleteTransferAlsoPair) \(tail)"
+    }
+
+    /// Cómo se llama el registro en el aviso «Eliminaste «Uber · S/ 26»»: como en la pregunta, sin los signos.
+    static func undoName(for record: TransactionItem, preferences: AppPreferences) -> String {
+        let amount = preferences.currency(abs(record.amount), currencyCode: record.currencyCode)
+        return RecordDeleteConfirmationLogic.displayName(
+            note: record.note,
+            subcategoryName: record.subcategory?.name,
+            categoryName: record.category?.name
+        ).map { RecordDeleteConfirmationLogic.summary(name: $0, amount: amount) } ?? amount
+    }
+}
+
+/// La confirmación del borrado en lote (modo selección), en una alerta centrada como la de un registro (L8-7). Con un
+/// solo registro elegido que se puede borrar, lo nombra; con varios, los cuenta. Va en los dos sitios con modo
+/// selección: Registros y Estadísticas › Registros.
+struct RecordsBulkDeleteAlert: ViewModifier {
+    @Environment(AppPreferences.self) private var appPreferences
+    @Binding var isPresented: Bool
+    let viewModel: RecordsViewModel
+    let onDelete: () -> Void
+
+    func body(content: Content) -> some View {
+        content.alert(title, isPresented: $isPresented) {
+            // Solo con algo que borrar: si todo lo elegido viene de un grupo, el aviso explica dónde se borra.
+            if viewModel.bulkDeleteDialog.offersDelete {
+                Button(L10n.Action.cancel, role: .cancel) {}
+                Button(L10n.Action.delete, role: .destructive) {
+                    // Al confirmar, no al tocar la papelera de la barra: ahí solo se pregunta (card C4).
+                    DS.Haptic.warning()
+                    onDelete()
+                }
+            } else {
+                Button(L10n.Common.understood, role: .cancel) {}
+            }
+        } message: {
+            Text(viewModel.bulkDeleteDialog.messageText)
+        }
+    }
+
+    private var title: String {
+        if case .deleteCount(1) = viewModel.bulkDeleteDialog.title,
+           viewModel.selectedRecordIDs.count == 1,
+           let id = viewModel.selectedRecordIDs.first,
+           let record = viewModel.groupedRecords.lazy.flatMap(\.records).first(where: { $0.persistentModelID == id }) {
+            return RecordDeleteConfirmationText.title(for: record, preferences: appPreferences)
+        }
+        return viewModel.bulkDeleteDialog.titleText
     }
 }
 
@@ -56,6 +149,15 @@ struct RecordRowContextMenu: ViewModifier {
             Button(L10n.Action.delete, systemImage: "trash", role: .destructive) {
                 viewModel.requestDelete(record)
             }
+        } else if RecordContextActionLogic.Shape(record: record).isGroupRecord {
+            // Lo de un grupo se borra desde el grupo: «Eliminar» sale, apagado y con el porqué, en vez de no salir
+            // (UX 2.2 · L15-13).
+            Divider()
+            Button(role: .destructive) {} label: {
+                Label(L10n.Action.delete, systemImage: "trash")
+                Text(L10n.UXL08D.deleteFromGroup)
+            }
+            .disabled(true)
         }
     }
 }
@@ -65,45 +167,45 @@ struct RecordRowContextMenu: ViewModifier {
 /// de siempre (`showEditTransaction`).
 struct RecordRowActionsPresenter: ViewModifier {
     @Environment(\.modelContext) private var modelContext
+    @Environment(AppPreferences.self) private var appPreferences
     @Bindable var viewModel: RecordsViewModel
 
     func body(content: Content) -> some View {
         content
-            .confirmationDialog(
-                L10n.Records.deleteConfirmTitle(1),
-                isPresented: $viewModel.isConfirmingSingleDelete,
-                titleVisibility: .visible
-            ) {
-                Button(L10n.Action.delete, role: .destructive) {
-                    viewModel.confirmPendingDelete(context: modelContext)
-                }
+            // Una alerta centrada que nombra el registro (L8-7). Antes, un diálogo anclado arriba, lejos de la fila,
+            // sin Cancelar a la vista y titulado «¿Eliminar 1 registro?».
+            .alert(pendingDeleteTitle, isPresented: $viewModel.isConfirmingSingleDelete) {
                 Button(L10n.Action.cancel, role: .cancel) {}
+                Button(L10n.Action.delete, role: .destructive) {
+                    // Borrado al confirmarlo (card C4; mapa de `DS.Haptic`). «Deshacer» vibra éxito en quien deshace.
+                    DS.Haptic.warning()
+                    viewModel.confirmPendingDelete(
+                        context: modelContext,
+                        undoName: pendingDeleteRecord.map {
+                            RecordDeleteConfirmationText.undoName(for: $0, preferences: appPreferences)
+                        })
+                }
             } message: {
-                Text(L10n.Common.cannotUndo)
+                Text(pendingDeleteMessage)
             }
             .sheet(item: $viewModel.categoryChangeRecord) { record in
-                RecordCategoryChangeSheet(record: record, viewModel: viewModel)
+                // «Cambiar subcategoría» (L8-9): aplica al elegir y avisa con Deshacer.
+                RecordSubcategoryChangeSheet(record: record, viewModel: viewModel)
             }
     }
-}
 
-/// El selector de subcategorías de siempre, para un registro. Aplica al cerrarse, como la edición masiva.
-private struct RecordCategoryChangeSheet: View {
-    @Environment(\.modelContext) private var modelContext
-    let record: TransactionItem
-    let viewModel: RecordsViewModel
-    @State private var selected: Subcategory?
-
-    var body: some View {
-        SubcategorySelectorSheet(
-            selectedSubcategory: $selected,
-            transactionType: TransactionClassificationLogic.isIncome(record) ? .income : .expense
-        )
-        .onDisappear(perform: apply)
+    /// El registro que espera la confirmación, entre los que se ven (el menú y ⌫ solo actúan sobre filas visibles).
+    private var pendingDeleteRecord: TransactionItem? {
+        guard let id = viewModel.pendingDeleteRecordID else { return nil }
+        return viewModel.groupedRecords.lazy.flatMap(\.records).first { $0.persistentModelID == id }
     }
 
-    private func apply() {
-        guard let selected else { return }
-        viewModel.updateSubcategory(selected, ids: [record.persistentModelID], context: modelContext)
+    private var pendingDeleteTitle: String {
+        guard let record = pendingDeleteRecord else { return L10n.Records.deleteConfirmTitle(1) }
+        return RecordDeleteConfirmationText.title(for: record, preferences: appPreferences)
+    }
+
+    private var pendingDeleteMessage: String {
+        pendingDeleteRecord.map { RecordDeleteConfirmationText.message(for: $0, undoable: true) } ?? L10n.UXL08D.undoSeconds
     }
 }

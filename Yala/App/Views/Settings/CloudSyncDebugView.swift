@@ -581,6 +581,7 @@ struct CloudSyncDebugView: View {
     @State private var s7Quiescent = false
     // DIFERIDOS #34: espejo del toggle de simulación del kill-switch (se hidrata en .task).
     @State private var simulateRemoteOff = false
+    @State private var forceAICloudExplore = false
     #if DEBUG
     // SPIKE R3 — quitar al cerrar R4 (deuda explícita anotada en el chip R3 y en el header del harness).
     // Solo se instancia en DEBUG (el harness entero vive ahí).
@@ -622,6 +623,7 @@ struct CloudSyncDebugView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task {
             simulateRemoteOff = UserDefaults.standard.bool(forKey: CloudRemoteFlags.debugForceOffKey)
+            forceAICloudExplore = UserDefaults.standard.bool(forKey: CloudRemoteFlags.debugAICloudExploreForceOnKey)
             await model.refreshAttest()
             await model.refreshCredential()
         }
@@ -899,6 +901,14 @@ struct CloudSyncDebugView: View {
                 .onChange(of: simulateRemoteOff) { _, newValue in
                     UserDefaults.standard.set(newValue, forKey: CloudRemoteFlags.debugForceOffKey)
                 }
+            // QA de N1 (Yala IA ampliada en la nube) sin tocar el flag de ningún entorno: con el gateway a 0, la
+            // pregunta se contesta como hoy. Solo cambia lo que ve este teléfono.
+            Toggle("Forzar Yala IA ampliada (N1)", isOn: $forceAICloudExplore)
+                .font(DS.Typography.caption)
+                .accessibilityIdentifier("cloud_debug_force_ai_cloud_explore")
+                .onChange(of: forceAICloudExplore) { _, newValue in
+                    UserDefaults.standard.set(newValue, forKey: CloudRemoteFlags.debugAICloudExploreForceOnKey)
+                }
             actionButton("Fetch /config ahora", disabled: !model.isConfigured) {
                 await RemoteConfigClient.shared.refreshIfDue(force: true)
                 model.lastMessage = "Remote config: \(CloudRemoteConfigStore.readSnapshot().map { "cloud=\($0.cloudModeRolloutPercent ?? -1)" } ?? "fetch falló (ver Console)")"
@@ -966,6 +976,12 @@ struct CloudSyncDebugView: View {
             }
             actionButton("Enviar push de prueba (staging)", disabled: model.deviceTokenHex == nil) {
                 await model.sendTestPush()
+            }
+            // Sentry: un error de prueba con un correo y un importe falsos, que en `yala-ios` deben verse tapados.
+            actionButton("Enviar error de prueba a Sentry", disabled: false) {
+                model.lastMessage = ErrorReportingService.sendTestError()
+                    ? "Sentry: error de prueba enviado (yala-ios)."
+                    : "Sentry: el SDK no arrancó (sin SENTRY_DSN en Secrets.xcconfig)."
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

@@ -76,9 +76,20 @@ struct WelcomeFlowScreen<Content: View>: View {
                 )
                 .ignoresSafeArea()
 
-                content(WelcomeFlowLayout.logoTopSpacing(in: geo))
-                    .frame(width: geo.size.width, height: geo.size.height)
+                // Con poco alto (iPhone Duo cerrado: 678 pt; iPhone SE) los `Spacer` ya no tenían de dónde sacar y el
+                // titular del Hero se partía en una línea cortada («Tus finanzas person…»). En un scroll con alto
+                // mínimo el de la pantalla, cuando cabe se reparte igual que antes y sin scroll; cuando no, se desplaza
+                // (molde de `swiftui-ds.md`, pantallas que reparten su alto con `Spacer`).
+                ScrollView {
+                    content(WelcomeFlowLayout.logoTopSpacing(in: geo))
+                        .frame(width: geo.size.width)
+                        .frame(minHeight: geo.size.height)
+                }
+                .scrollBounceBehavior(.basedOnSize)
             }
         }
+        // iPhone Duo cerrado: el Welcome ocupa también la columna de la barra (solo la hora y el wifi) y se centra en la
+        // pantalla entera, sin el corte del carrusel. Excepción a la regla A, decidida por Jürgen el 2026-10-25.
+        .extendsUnderVerticalBar()
     }
 }

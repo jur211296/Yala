@@ -59,6 +59,13 @@ final class CashFlowLine {
     var manualAmount: Double?
     var customMonthsRaw: String?
 
+    /// Los cambios de monto «desde este mes» (UX 2.2 · L18-8): `yyyy-MM=monto` separados por coma. Un mes usa su ajuste
+    /// de un solo mes, si no el último cambio igual o anterior, y si no el método de la línea
+    /// (`CashFlowAmountChangeLogic`). Campo nuevo de iCloud (`CD_amountChangesRaw`, STRING) y columna del Modo Nube
+    /// `cashflow_lines.amount_changes_raw` con `since: 3`. Una versión anterior de la app no lo conoce: en los meses
+    /// siguientes ve el método de la línea, sin tocar nada.
+    var amountChangesRaw: String?
+
     // MARK: - Relationships
 
     @Relationship(deleteRule: .nullify, inverse: \Category.cashFlowLines)
@@ -107,6 +114,11 @@ final class CashFlowLine {
 
     var method: EstimationMethod {
         EstimationMethod(rawValue: estimationMethod) ?? .average6m
+    }
+
+    /// Los cambios «desde este mes», ordenados por mes.
+    var amountChanges: [CashFlowAmountChangeLogic.Change] {
+        CashFlowAmountChangeLogic.parse(amountChangesRaw)
     }
 
     var customMonths: [String] {

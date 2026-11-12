@@ -19,7 +19,6 @@ struct TagsPieWidget: View {
     var selectedTagIDs: Set<PersistentIdentifier> = []
     var onSelectTag: ((PersistentIdentifier) -> Void)?
     var onShowDetail: (() -> Void)? = nil
-    var isExcludeMode: Bool = false
 
     var size: WidgetSize = .medium
 
@@ -42,11 +41,6 @@ struct TagsPieWidget: View {
 
     private var filteredTotalExpense: Double {
         guard !selectedTagIDs.isEmpty else { return totalExpense }
-        if isExcludeMode {
-            return tags
-                .filter { !selectedTagIDs.contains($0.tag.persistentModelID) }
-                .reduce(0) { $0 + $1.amount }
-        }
         return tags
             .filter { selectedTagIDs.contains($0.tag.persistentModelID) }
             .reduce(0) { $0 + $1.amount }
@@ -220,6 +214,8 @@ struct TagsPieWidget: View {
                                 .position(center)
                         }
                     }
+                    // Implícita: en una pestaña un `withAnimation` no anima (card oxyr).
+                    .animation(reduceMotion ? nil : DS.Animation.appear, value: hoveredItem?.identity)
                 }
                 .frame(maxWidth: .infinity)
 
@@ -329,9 +325,8 @@ struct TagsPieWidget: View {
             .onLongPressGesture(
                 minimumDuration: 0.3,
                 pressing: { isPressing in
-                    dsWithAnimation(reduceMotion, .easeInOut(duration: 0.15)) {
-                        hoveredItem = isPressing ? item : nil
-                    }
+                    // La anima la implícita del `ZStack` del gráfico (card oxyr).
+                    hoveredItem = isPressing ? item : nil
                 }, perform: {})
         }
     }
@@ -353,10 +348,6 @@ struct TagsPieWidget: View {
     }
 
     private func shouldShowLabel(for item: PieChartData) -> Bool {
-        if isExcludeMode {
-            // Excluded items already removed; show labels by percentage threshold
-            return item.percentage > 4.0
-        }
         if !selectedTagIDs.isEmpty {
             guard let id = item.id else { return false }
             return selectedTagIDs.contains(id)
@@ -578,8 +569,6 @@ struct TagsPieWidget: View {
     }
 
     private func isDimmed(_ item: PieChartData) -> Bool {
-        // In exclude mode, excluded items are already removed — no dimming needed
-        if isExcludeMode { return false }
         guard !selectedTagIDs.isEmpty else { return false }
         guard let id = item.id else { return true }
         return !selectedTagIDs.contains(id)
@@ -609,14 +598,7 @@ struct TagsPieWidget: View {
     private func processChartData() -> [PieChartData] {
         let threshold = size == .large ? 12 : 20
 
-        // In exclude mode, remove excluded items entirely
-        let visibleTags: [TagSpendingSummary]
-        if isExcludeMode && !selectedTagIDs.isEmpty {
-            visibleTags = tags.filter { !selectedTagIDs.contains($0.tag.persistentModelID) }
-        } else {
-            visibleTags = tags
-        }
-
+        let visibleTags: [TagSpendingSummary] = tags
         // Recalculate total from visible items
         let visibleTotal = visibleTags.reduce(0) { $0 + $1.amount }
 
@@ -691,20 +673,27 @@ struct TagsPieWidget: View {
         let totalSpacing = segmentSpacing * CGFloat(max(0, chartData.count - 1))
         let availableWidth = max(0, segmentedBarWidth - totalSpacing)
 
-        HStack(spacing: segmentSpacing) {
-            ForEach(chartData) { item in
-                RoundedRectangle(cornerRadius: DS.Radius.xs)
-                    .fill(Color(hex: item.colorHex))
-                    .frame(width: availableWidth * CGFloat(item.percentage / 100))
-                    .opacity(isDimmed(item) ? 0.3 : 1.0)
-                    .onTapGesture {
-                        handleTap(item)
+        // Los segmentos van en `overlay` de un carril flexible, que es lo que se mide: medido el propio `HStack`, su
+        // ancho era la suma de los segmentos —la medida anterior— y la barra no se adaptaba al cambiar el ancho de la
+        // ventana (iPhone Duo al plegar o girar, iPad).
+        Color.clear
+            .frame(maxWidth: .infinity)
+            .frame(height: 28)
+            .overlay(alignment: .leading) {
+                HStack(spacing: segmentSpacing) {
+                    ForEach(chartData) { item in
+                        RoundedRectangle(cornerRadius: DS.Radius.xs)
+                            .fill(Color(hex: item.colorHex))
+                            .frame(width: availableWidth * CGFloat(item.percentage / 100))
+                            .opacity(isDimmed(item) ? 0.3 : 1.0)
+                            .onTapGesture {
+                                handleTap(item)
+                            }
                     }
+                }
             }
-        }
-        .frame(height: 28)
-        .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { newWidth in
-            segmentedBarWidth = newWidth
-        }
+            .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { newWidth in
+                segmentedBarWidth = newWidth
+            }
     }
 }

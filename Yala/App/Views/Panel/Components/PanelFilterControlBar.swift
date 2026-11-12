@@ -18,10 +18,21 @@ struct PanelFilterControlBar: View {
     let viewModel: PanelViewModel
     let sessionState: SessionState
     @Binding var showCustomPeriodPicker: Bool
+    /// Tocar una cápsula abre la hoja de Filtros del Panel (UX 2.2 · L8-17). La de la fecha no: esa la pone tocar la
+    /// gráfica y no se elige en Filtros.
+    var onOpenFilters: (() -> Void)? = nil
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Namespace para morphing de los filter chips (iOS 26 GlassEffectContainer + glassEffectID).
     @Namespace private var chipNamespace
+
+    /// Las categorías de esas subcategorías, una vez cada una. Por `persistentModelID` y no con un `Set` de modelos:
+    /// dentro de este `body`, Xcode 27.1 deja de ver la conformidad `Hashable` de `@Model` y el build cae, también en
+    /// limpio (2026-10-26).
+    private static func distinctParents(of subcategories: [Subcategory]) -> [Category] {
+        var seen = Set<PersistentIdentifier>()
+        return subcategories.compactMap(\.category).filter { seen.insert($0.persistentModelID).inserted }
+    }
 
     var body: some View {
         // Filter chips (Scrollable to the right) — period selector moved to
@@ -35,37 +46,32 @@ struct PanelFilterControlBar: View {
         let hasCurrencyFilter = !viewModel.selectedCurrencies.isEmpty
         let hasAmountFilter = viewModel.amountCondition.isActive
         let hasNoteFilter = !viewModel.searchText.isEmpty
+        // En «Solo gastos» la naturaleza la fija la app, no el usuario: ni cuenta ni sale píldora (L3, 2026-10-26).
         let hasTransactionNatureFilter = sessionState.selectedTransactionNatures.count == 1
+            && !sessionState.isExpensesOnlyMode
+        // Lo oculto («Sin X») también es un filtro activo, uno por cápsula: con solo eso la barra tiene que salir, y con
+        // dos cápsulas, la ✕ de «borrar todo».
+        let excludedChipCount = (sessionState.excludedAccountIDs.isEmpty ? 0 : 1)
+            + sessionState.excludedCategoryIDs.count + sessionState.excludedSubcategoryIDs.count
+            + sessionState.excludedNeeds.count + sessionState.excludedTags.count + sessionState.excludedCurrencies.count
 
         let activeFilterCount = [
             hasAccountFilter, hasDateFilter, hasCategoryFilter,
             hasNeedFilter, hasSubcategoryFilter, hasTagFilter,
             hasCurrencyFilter, hasAmountFilter, hasNoteFilter,
             hasTransactionNatureFilter,
-        ].count(where: { $0 })
+        ].count(where: { $0 }) + excludedChipCount
+        // Lo que cambia cuántos chips hay: la cuenta de filtros no lo ve todo (dos etiquetas cuentan como una dimensión).
+        let chipLayout = [
+            activeFilterCount, viewModel.selectedTags.count, viewModel.selectedCurrencies.count,
+            viewModel.selectedSubcategoryIDs.count, excludedChipCount,
+        ]
 
         if activeFilterCount > 0 {
             PanelSection(title: L10n.Panel.FilterBar.sectionTitle) {
                 ScrollView(.horizontal, showsIndicators: false) {
                     GlassEffectContainer(spacing: DS.Spacing.sm) {
                     HStack(spacing: DS.Spacing.sm) {
-                        // Exclude mode badge
-                        if viewModel.isExcludeMode {
-                            HStack(spacing: DS.Spacing.xs) {
-                                Image(systemName: "minus.circle.fill")
-                                    .font(DS.Typography.chipIconOnly)
-                                    .foregroundStyle(DS.Semantic.errorForeground)
-                                    .accessibilityHidden(true)
-                                Text(L10n.Filters.excludeMode)
-                                    .font(DS.Typography.caption)
-                                    .foregroundStyle(DS.Semantic.errorForeground)
-                            }
-                            .padding(.horizontal, DS.Spacing.sm)
-                            .padding(.vertical, DS.Spacing.xs)
-                            .background(DS.Semantic.errorBackgroundSubtle, in: Capsule())
-                            .glassEffectID("chip.excludeMode", in: chipNamespace)
-                        }
-
                         // Account Chip — «BCP +1» cuando hay varias. Vía
                         // `buildAccountChips`, el mismo helper que Registros y que
                         // los chips de categoría y tag de más abajo: nombrar solo
@@ -84,7 +90,8 @@ struct PanelFilterControlBar: View {
                                 count: chip.count,
                                 onClear: { viewModel.selectedAccountID = nil }
                             )
-                            .excludeMode(viewModel.isExcludeMode)
+                            .filterMembership(.included)
+                            .opensFilters(onOpenFilters)
                             .glassEffectID("chip.account", in: chipNamespace)
                         }
 
@@ -93,9 +100,7 @@ struct PanelFilterControlBar: View {
                             FilterChipView(
                                 text: L10n.Filters.datePrefix(formattedDate(focusedDate)),
                                 onClear: {
-                                    dsWithAnimation(reduceMotion) {
-                                        viewModel.focusedDate = nil
-                                    }
+                                    viewModel.focusedDate = nil
                                 }
                             )
                             .glassEffectID("chip.date", in: chipNamespace)
@@ -110,7 +115,7 @@ struct PanelFilterControlBar: View {
                             && selectedSubsByID.count == viewModel.allSubcategories.count
 
                         if let categoryID = viewModel.selectedCategoryID,
-                           let category = viewModel.topSpendingCategories.first(where: { $0.category.persistentModelID == categoryID })?.category {
+                           let category = viewModel.topSpendingCategories.first(where: { $0.id == categoryID })?.category {
                             FilterChipView(
                                 categoryName: category.name,
                                 iconName: category.iconName,
@@ -123,11 +128,11 @@ struct PanelFilterControlBar: View {
                                     sessionState.selectedSubcategoryIDs.removeAll()
                                 }
                             )
-                            .excludeMode(viewModel.isExcludeMode)
+                            .filterMembership(.included)
+                            .opensFilters(onOpenFilters)
                             .glassEffectID("chip.category", in: chipNamespace)
                         } else if !isAllSubsSelected && !selectedSubsByID.isEmpty {
-                            let parentCategories = Set(
-                                selectedSubsByID.compactMap { $0.category })
+                            let parentCategories = Self.distinctParents(of: selectedSubsByID)
                             if let firstCategory = parentCategories.first {
                                 FilterChipView(
                                     categoryName: firstCategory.name,
@@ -141,7 +146,8 @@ struct PanelFilterControlBar: View {
                                         sessionState.selectedSubcategoryIDs.removeAll()
                                     }
                                 )
-                                .excludeMode(viewModel.isExcludeMode)
+                                .filterMembership(.included)
+                                .opensFilters(onOpenFilters)
                                 .glassEffectID("chip.category", in: chipNamespace)
                             }
                         }
@@ -163,7 +169,8 @@ struct PanelFilterControlBar: View {
                                         sessionState.selectedSubcategoryIDs.removeAll()
                                     }
                                 )
-                                .excludeMode(viewModel.isExcludeMode)
+                                .filterMembership(.included)
+                                .opensFilters(onOpenFilters)
                                 .glassEffectID("chip.subcategory", in: chipNamespace)
                             }
                         }
@@ -173,24 +180,35 @@ struct PanelFilterControlBar: View {
                             FilterChipView(
                                 need: need,
                                 onClear: {
-                                    dsWithAnimation(reduceMotion) { viewModel.selectedNeed = nil }
+                                    viewModel.selectedNeed = nil
                                 }
                             )
-                            .excludeMode(viewModel.isExcludeMode)
+                            .filterMembership(.included)
+                            .opensFilters(onOpenFilters)
                             .glassEffectID("chip.need", in: chipNamespace)
                         }
 
+                        // Lo oculto («Sin X»), una cápsula por valor, junto a lo de «Solo X».
+                        ExcludedFilterChips(
+                            sessionState: sessionState,
+                            accounts: viewModel.accounts,
+                            categories: viewModel.categories,
+                            subcategories: viewModel.allSubcategories,
+                            tags: viewModel.tags,
+                            onOpenFilters: onOpenFilters,
+                            namespace: chipNamespace
+                        )
+
                         // Transaction Nature Chip
-                        if sessionState.selectedTransactionNatures.count == 1,
+                        if hasTransactionNatureFilter,
                            let transactionNature = sessionState.selectedTransactionNatures.first {
                             FilterChipView(
                                 transactionNature: transactionNature,
                                 onClear: {
-                                    dsWithAnimation(reduceMotion) {
-                                        sessionState.selectedTransactionNatures.removeAll()
-                                    }
+                                    sessionState.selectedTransactionNatures.removeAll()
                                 }
                             )
+                            .opensFilters(onOpenFilters)
                             .glassEffectID("chip.nature", in: chipNamespace)
                         }
 
@@ -202,13 +220,12 @@ struct PanelFilterControlBar: View {
                                     iconName: tag.iconName,
                                     colorHex: tag.colorHex,
                                     onClear: {
-                                        dsWithAnimation(reduceMotion) {
-                                            viewModel.selectedTags.remove(tagID)
-                                            viewModel.syncToSessionState(sessionState)
-                                        }
+                                        viewModel.selectedTags.remove(tagID)
+                                        viewModel.syncToSessionState(sessionState)
                                     }
                                 )
-                                .excludeMode(viewModel.isExcludeMode)
+                                .filterMembership(.included)
+                                .opensFilters(onOpenFilters)
                                 .glassEffectID("chip.tag.\(tagID.hashValue)", in: chipNamespace)
                             }
                         }
@@ -218,13 +235,12 @@ struct PanelFilterControlBar: View {
                             FilterChipView(
                                 currencyCode: currency.rawValue,
                                 onClear: {
-                                    dsWithAnimation(reduceMotion) {
-                                        viewModel.selectedCurrencies.remove(currency)
-                                        viewModel.syncToSessionState(sessionState)
-                                    }
+                                    viewModel.selectedCurrencies.remove(currency)
+                                    viewModel.syncToSessionState(sessionState)
                                 }
                             )
-                            .excludeMode(viewModel.isExcludeMode)
+                            .filterMembership(.included)
+                            .opensFilters(onOpenFilters)
                             .glassEffectID("chip.currency.\(currency.rawValue)", in: chipNamespace)
                         }
 
@@ -233,12 +249,11 @@ struct PanelFilterControlBar: View {
                             FilterChipView(
                                 amountText: viewModel.amountCondition.displayText,
                                 onClear: {
-                                    dsWithAnimation(reduceMotion) {
-                                        viewModel.amountCondition = .any
-                                        viewModel.syncToSessionState(sessionState)
-                                    }
+                                    viewModel.amountCondition = .any
+                                    viewModel.syncToSessionState(sessionState)
                                 }
                             )
+                            .opensFilters(onOpenFilters)
                             .glassEffectID("chip.amount", in: chipNamespace)
                         }
 
@@ -247,21 +262,18 @@ struct PanelFilterControlBar: View {
                             FilterChipView(
                                 noteText: viewModel.searchText,
                                 onClear: {
-                                    dsWithAnimation(reduceMotion) {
-                                        viewModel.searchText = ""
-                                        viewModel.syncToSessionState(sessionState)
-                                    }
+                                    viewModel.searchText = ""
+                                    viewModel.syncToSessionState(sessionState)
                                 }
                             )
+                            .opensFilters(onOpenFilters)
                             .glassEffectID("chip.note", in: chipNamespace)
                         }
 
                         // Clear All Button
                         if activeFilterCount > 1 {
                             Button {
-                                dsWithAnimation(reduceMotion) {
-                                    clearAllPanelFilters()
-                                }
+                                clearAllPanelFilters()
                             } label: {
                                 Image(systemName: "xmark.circle.fill")
                                     .foregroundStyle(.secondary)
@@ -272,9 +284,13 @@ struct PanelFilterControlBar: View {
                         }
                     }
                     } // GlassEffectContainer
+                    // Al quitar un chip, los demás se recolocan animados (card C2). Implícita: el `withAnimation` del
+                    // toque no anima dentro de una pestaña. Solo la fila: los widgets de debajo se recalculan en seco.
+                    .animation(reduceMotion ? nil : DS.Animation.selection, value: chipLayout)
                 }
                 .contentMargins(.horizontal, DS.Spacing.md, for: .scrollContent)
                 .scrollClipDisabled()
+                .fadesTowardVerticalBar()
             } // PanelSection
         }
     }
@@ -284,7 +300,7 @@ struct PanelFilterControlBar: View {
     private static let chipDateFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = "d MMM"
+        f.setLocalizedDateFormatFromTemplate("dMMM")
         return f
     }()
 
@@ -304,6 +320,12 @@ struct PanelFilterControlBar: View {
         viewModel.amountCondition = .any
         viewModel.searchText = ""
         sessionState.selectedTransactionNatures.removeAll()
+        sessionState.excludedAccountIDs.removeAll()
+        sessionState.excludedCategoryIDs.removeAll()
+        sessionState.excludedSubcategoryIDs.removeAll()
+        sessionState.excludedNeeds.removeAll()
+        sessionState.excludedTags.removeAll()
+        sessionState.excludedCurrencies.removeAll()
         viewModel.syncToSessionState(sessionState)
     }
 }

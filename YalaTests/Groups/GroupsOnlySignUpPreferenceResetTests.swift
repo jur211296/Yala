@@ -179,6 +179,7 @@ struct GroupsOnlySignUpPreferenceRemovalTests {
         s.appGroup?.set(true, forKey: AppPreferences.Keys.expensesOnlyMode)
         s.appGroup?.set(1, forKey: "firstWeekday")
         s.appGroup?.set("lastMonth", forKey: "defaultPeriod")
+        s.appGroup?.set(false, forKey: WidgetDataCache.showVariationsKey)
 
         GroupsOnlySignUpPreferenceReset.removeLocal(from: s)
 
@@ -186,6 +187,8 @@ struct GroupsOnlySignUpPreferenceRemovalTests {
         #expect(s.appGroup?.object(forKey: AppPreferences.Keys.expensesOnlyMode) == nil)
         #expect(s.appGroup?.object(forKey: "firstWeekday") == nil)
         #expect(s.appGroup?.object(forKey: "defaultPeriod") == nil, "el widget sigue con el periodo del dueño")
+        #expect(s.appGroup?.object(forKey: WidgetDataCache.showVariationsKey) == nil,
+                "el widget sigue sin variaciones porque el dueño las apagó")
     }
 
     /// Lo que el alta acaba de escribir —o el dispositivo decide— no es del dueño: el neutro que arma la primera

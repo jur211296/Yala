@@ -58,4 +58,12 @@ enum AIPromptLanguage {
         default: return "informal you"
         }
     }
+
+    /// El trato que pide el chat: el de su idioma BASE (una variante con región, «es-419» o «pt-BR», caía al «informal
+    /// you») y voseo en es-AR, la única variante gramatical de Yala (`docs/planning/BRAND-VOICE.md` §9.4).
+    static func chatRegister(for language: String) -> String {
+        let normalized = language.replacingOccurrences(of: "_", with: "-")
+        if normalized == "es-AR" || normalized.hasPrefix("es-AR-") { return "voseo (vos)" }
+        return informalRegister(forBaseLanguage: baseCode(of: normalized))
+    }
 }

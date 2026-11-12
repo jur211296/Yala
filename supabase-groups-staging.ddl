@@ -38,6 +38,15 @@
 --   Then — 2026-10-07, staging AND production — hlc01_cap_future_hlc (§10): the future-HLC cap, a BEFORE INSERT OR
 --   UPDATE trigger `cap_future_hlc` on the 5 groups tables (+ 17 personal ones in supabase-staging.ddl). New section,
 --   nothing woven in-place: no RPC body changes.
+--   Then — 2026-10-31, staging AND production — g27_01_opening_balance_managers (§11): BEFORE INSERT OR UPDATE trigger
+--   `opening_balance_guard` on split_expenses and split_shares (only the owner or an active admin writes opening
+--   balances; closed group and confirmed-payment lock). New section; no policy and no RPC body changes.
+--   Then — 2026-11-02, staging AND production — g29_01_group_change_author: `split_expenses.last_edited_by_member_key`
+--   and `split_settlements.recorded_by_member_key` (plain text, manifest v3 `since: 3`). Woven IN-PLACE into §1 (tables
+--   + column grants) and into the two pull readers (returned LAST). apply_group_delta unchanged (plain columns).
+--   Then — 2026-11-03, staging AND production — g30_01_expense_author_from_v2_clients (§12): BEFORE UPDATE trigger
+--   `expense_author_from_v2_clients` on split_expenses (an edit from a client that does not send the author sets
+--   `last_edited_by_member_key` to NULL). New section; no policy and no RPC body changes.
 --   ⚠️ STAGING IS THREE MIGRATIONS BEHIND: g13_04, g13_05 and g14_01 are applied in PRODUCTION only —
 --   there is no staging DDL credential (re-measured 2026-09-07). This mold therefore describes PRODUCTION;
 --   staging matches it only after those three are applied, in order.
@@ -190,6 +199,7 @@ create table public.split_expenses (
   server_seq bigint not null,
   schema_version integer not null default 1,
   updated_at timestamptz not null default now(),
+  last_edited_by_member_key text,  -- g29_01 (2026-11-02): quién creó o editó el gasto; NULL = no se sabe
   primary key (group_id, sync_id)
 );
 create index split_expenses_seq on public.split_expenses (group_id, server_seq);
@@ -240,6 +250,7 @@ create table public.split_settlements (
   note bytea,  -- † G7: bytea at-rest (was text)
   date timestamptz,
   is_confirmed boolean,
+  recorded_by_member_key text,  -- g29_01 (2026-11-02): quién registró la liquidación; NULL = no se sabe
   field_hlcs jsonb,
   hlc text not null,
   deleted boolean not null default false,
@@ -927,7 +938,7 @@ grant update (name, icon_name, color_hex, currency_code, simplify_debts, show_de
 -- el canal G2 nunca necesita mover una fila de grupo/identidad, y el PK-move es patológico.
 revoke update on public.split_expenses from authenticated;
 grant update (amount, currency_code, expense_description, note, date, created_at, paid_by_member_key,
-              split_type, is_settled, is_opening_balance, subcategory_name,
+              split_type, is_settled, is_opening_balance, subcategory_name, last_edited_by_member_key,
               field_hlcs, hlc, deleted, deleted_hlc, schema_version, updated_at)
   on public.split_expenses to authenticated;
 
@@ -937,7 +948,7 @@ grant update (expense_id, member_key, amount, is_paid,
   on public.split_shares to authenticated;
 
 revoke update on public.split_settlements from authenticated;
-grant update (from_member_key, to_member_key, amount, currency_code, note, date, is_confirmed,
+grant update (from_member_key, to_member_key, amount, currency_code, note, date, is_confirmed, recorded_by_member_key,
               field_hlcs, hlc, deleted, deleted_hlc, schema_version, updated_at)
   on public.split_settlements to authenticated;
 
@@ -1538,7 +1549,8 @@ create or replace function public.groups_pull_rows_split_expenses(
   group_id text, sync_id uuid, amount text, currency_code text, expense_description text,
   note text, date timestamptz, created_at timestamptz, paid_by_member_key text, split_type text,
   is_settled boolean, is_opening_balance boolean, subcategory_name text, field_hlcs jsonb,
-  hlc text, deleted boolean, deleted_hlc text, server_seq bigint, schema_version integer, updated_at timestamptz
+  hlc text, deleted boolean, deleted_hlc text, server_seq bigint, schema_version integer, updated_at timestamptz,
+  last_edited_by_member_key text  -- g29_01, AL FINAL
 ) language sql security invoker stable set search_path = public, extensions as $$
   select
     t.group_id, t.sync_id,
@@ -1547,7 +1559,8 @@ create or replace function public.groups_pull_rows_split_expenses(
     public.yala_try_decrypt(t.note, p_key),
     t.date, t.created_at, t.paid_by_member_key, t.split_type,
     t.is_settled, t.is_opening_balance, t.subcategory_name, t.field_hlcs,
-    t.hlc, t.deleted, t.deleted_hlc, t.server_seq, t.schema_version, t.updated_at
+    t.hlc, t.deleted, t.deleted_hlc, t.server_seq, t.schema_version, t.updated_at,
+    t.last_edited_by_member_key
   from public.split_expenses t
   where t.group_id = p_group_id and t.server_seq > p_after_seq
   order by t.server_seq asc
@@ -1577,13 +1590,15 @@ create or replace function public.groups_pull_rows_split_settlements(
 ) returns table(
   group_id text, sync_id uuid, from_member_key text, to_member_key text, amount text, currency_code text,
   note text, date timestamptz, is_confirmed boolean, field_hlcs jsonb, hlc text, deleted boolean,
-  deleted_hlc text, server_seq bigint, schema_version integer, updated_at timestamptz
+  deleted_hlc text, server_seq bigint, schema_version integer, updated_at timestamptz,
+  recorded_by_member_key text  -- g29_01, AL FINAL
 ) language sql security invoker stable set search_path = public, extensions as $$
   select
     t.group_id, t.sync_id, t.from_member_key, t.to_member_key,
     public.yala_try_decrypt(t.amount, p_key), t.currency_code,
     public.yala_try_decrypt(t.note, p_key), t.date, t.is_confirmed, t.field_hlcs,
-    t.hlc, t.deleted, t.deleted_hlc, t.server_seq, t.schema_version, t.updated_at
+    t.hlc, t.deleted, t.deleted_hlc, t.server_seq, t.schema_version, t.updated_at,
+    t.recorded_by_member_key
   from public.split_settlements t
   where t.group_id = p_group_id and t.server_seq > p_after_seq
   order by t.server_seq asc
@@ -2033,3 +2048,182 @@ create trigger cap_future_hlc before insert or update on public.split_shares
   for each row execute function public.cap_future_hlc();
 create trigger cap_future_hlc before insert or update on public.split_settlements
   for each row execute function public.cap_future_hlc();
+
+
+-- ============================================================================
+-- §11 — g27_01_opening_balance_managers (saldos iniciales: solo el dueño o un admin activo, card 6n1o)
+-- ============================================================================
+-- APLICADA EN LOS DOS ENTORNOS el 2026-10-31 (staging y producción), md5(prosrc) fd098cc2e37a7b69746e973b04017d79.
+-- Verbatim de `qa/cloud/g27_01_opening_balance_managers.sql` (la cabecera con la regla y el porqué vive allí).
+-- Batería: `qa/cloud/g27_01-battery.sql` (banco local, staging y prod). Marcha atrás: `qa/cloud/g27_01_rollback.sql`.
+
+create or replace function public.opening_balance_guard() returns trigger
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare
+  v_uid         uuid;              -- se lee solo para filas de saldo inicial (abajo, paso 4)
+  v_gid         text := new.group_id;
+  v_is_ob       boolean := false;  -- la fila es de un saldo inicial
+  v_lock_exps   uuid[] := array[]::uuid[];  -- saldos vivos que esta escritura edita o borra (sujetos al bloqueo)
+  v_extra       text[] := array[]::text[];  -- gente de la fila que se escribe (el `member_key` de antes de un reparto)
+  v_exp         uuid;
+  v_members     text[];
+  v_owner       uuid;
+  v_gdeleted    boolean;
+  -- El gasto de destino (NEW.expense_id) y el de origen (OLD.expense_id, si cambia) de un reparto.
+  v_new_ob      boolean;
+  v_new_del     boolean;
+  v_old_ob      boolean;
+  v_old_del     boolean;
+begin
+  -- 0. Borrar lo ya borrado: reenvío de un tombstone, sin juicio.
+  if tg_op = 'UPDATE' and old.deleted and new.deleted then
+    return new;
+  end if;
+
+  -- 1. ¿Es una fila de saldo inicial?
+  if tg_table_name = 'split_expenses' then
+    v_is_ob := coalesce(new.is_opening_balance, false)
+               or (tg_op = 'UPDATE' and coalesce(old.is_opening_balance, false));
+    if not v_is_ob then
+      return new;
+    end if;
+    if tg_op = 'UPDATE' and coalesce(old.is_opening_balance, false) and not old.deleted then
+      v_lock_exps := array[new.sync_id];
+    end if;
+  elsif tg_table_name = 'split_shares' then
+    if new.expense_id is not null then
+      select e.is_opening_balance, e.deleted into v_new_ob, v_new_del
+        from split_expenses e where e.group_id = new.group_id and e.sync_id = new.expense_id;
+    end if;
+    if tg_op = 'UPDATE' and old.expense_id is not null and old.expense_id is distinct from new.expense_id then
+      select e.is_opening_balance, e.deleted into v_old_ob, v_old_del
+        from split_expenses e where e.group_id = old.group_id and e.sync_id = old.expense_id;
+    end if;
+    v_is_ob := coalesce(v_new_ob, false) or coalesce(v_old_ob, false);
+    if not v_is_ob then
+      return new;
+    end if;
+    -- Editar: cambiar un reparto que ya existe, o añadir uno a un gasto que ya tuvo alguno (crear su primer reparto
+    -- no es editar). Un reparto que cambia de gasto edita los dos.
+    if coalesce(v_new_ob, false) and not coalesce(v_new_del, true)
+       and (tg_op = 'UPDATE'
+            or exists (select 1 from split_shares s
+                        where s.group_id = new.group_id and s.expense_id = new.expense_id
+                          and s.sync_id <> new.sync_id)) then
+      v_lock_exps := v_lock_exps || new.expense_id;
+    end if;
+    if coalesce(v_old_ob, false) and not coalesce(v_old_del, true) then
+      v_lock_exps := v_lock_exps || old.expense_id;
+    end if;
+    if tg_op = 'UPDATE' then
+      v_extra := array[old.member_key];
+    end if;
+  else
+    return new;
+  end if;
+
+  -- 2. Quien no es miembro activo (ni nadie sin sesión): lo rechaza la RLS de siempre, sin contarle nada.
+  if not is_group_writer(v_gid) then
+    return new;
+  end if;
+
+  -- 3. Grupo cerrado en el servidor.
+  select g.owner_user_id, g.deleted into v_owner, v_gdeleted from split_groups g where g.group_id = v_gid;
+  if not found or v_gdeleted then
+    raise exception 'yala_opening_balance_group_closed' using errcode = 'P0001';
+  end if;
+
+  -- 4. Dueño o admin activo. `auth.uid()` se lee aquí y no al declarar: el trigger corre en TODA escritura de las dos
+  -- tablas (también las de mantenimiento, como la normalización de hlc01) y lo de fuera de un saldo no lo necesita.
+  v_uid := (select auth.uid());
+  if not (v_owner is not distinct from v_uid or is_group_admin(v_gid)) then
+    raise exception 'yala_opening_balance_not_admin' using errcode = 'P0001';
+  end if;
+
+  -- 5. Bloqueo por pago confirmado, con la arista que cada saldo YA TIENE en el servidor.
+  foreach v_exp in array v_lock_exps loop
+    v_members := v_extra
+      || coalesce((select array[e.paid_by_member_key] from split_expenses e
+                    where e.group_id = v_gid and e.sync_id = v_exp), array[]::text[])
+      || coalesce((select array_agg(s.member_key) from split_shares s
+                    where s.group_id = v_gid and s.expense_id = v_exp and s.deleted = false), array[]::text[]);
+    if exists (select 1 from split_settlements st
+                where st.group_id = v_gid and st.deleted = false and st.is_confirmed is true
+                  and (st.from_member_key = any (v_members) or st.to_member_key = any (v_members))) then
+      raise exception 'yala_opening_balance_locked' using errcode = 'P0001';
+    end if;
+  end loop;
+
+  return new;
+end;
+$$;
+
+revoke all on function public.opening_balance_guard() from public, anon, authenticated;
+
+drop trigger if exists opening_balance_guard on public.split_expenses;
+create trigger opening_balance_guard before insert or update on public.split_expenses
+  for each row execute function public.opening_balance_guard();
+
+drop trigger if exists opening_balance_guard on public.split_shares;
+create trigger opening_balance_guard before insert or update on public.split_shares
+  for each row execute function public.opening_balance_guard();
+
+
+-- ============================================================================
+-- §12 — g30_01_expense_author_from_v2_clients (el autor de un gasto editado desde un teléfono que no lo conoce, card vx6f)
+-- ============================================================================
+-- APLICADA EN STAGING el 2026-11-03, md5(prosrc) 52ff05a7e07092ca9422143d3ce863ae; producción: ver PR.
+-- Verbatim de `qa/cloud/g30_01_expense_author_from_v2_clients.sql` (la cabecera con la regla y el porqué vive allí).
+-- Banco: `qa/cloud/g30_01-local-test.sh`. Sonda: `qa/cloud/g30_01-staging-probe.sh`. Marcha atrás: `qa/cloud/g30_01_rollback.sql`.
+
+create or replace function public.expense_author_from_v2_clients() returns trigger
+language plpgsql security invoker set search_path = public, pg_temp as $$
+declare
+  -- Las unidades del formulario de edición (gmoney = amount + currency_code).
+  c_form_units constant text[] := array['gmoney', 'expense_description', 'note', 'date', 'paid_by_member_key',
+                                        'split_type', 'subcategory_name'];
+  v_old_fh jsonb := coalesce(old.field_hlcs, '{}'::jsonb);
+  v_new_fh jsonb := coalesce(new.field_hlcs, '{}'::jsonb);
+  v_author text;  -- HLC guardado de la unidad del autor ('' si no la tiene: fila anterior a g29_01)
+begin
+  -- 0. Un borrado no se juzga.
+  if new.deleted then
+    return new;
+  end if;
+
+  -- 1. Nada que anular, o nada que haya avanzado.
+  if new.last_edited_by_member_key is null or v_new_fh = v_old_fh then
+    return new;
+  end if;
+
+  -- 2. Un cambio del formulario que avanza y es posterior al autor guardado → el autor ya no es de esta edición.
+  v_author := coalesce(v_new_fh ->> 'last_edited_by_member_key', '');
+  if exists (select 1 from unnest(c_form_units) u
+              where coalesce(v_new_fh ->> u, '') collate "C" > coalesce(v_old_fh ->> u, '') collate "C"
+                and coalesce(v_new_fh ->> u, '') collate "C" > v_author collate "C") then
+    new.last_edited_by_member_key := null;
+  end if;
+
+  return new;
+end;
+$$;
+
+revoke all on function public.expense_author_from_v2_clients() from public, anon, authenticated;
+
+drop trigger if exists expense_author_from_v2_clients on public.split_expenses;
+create trigger expense_author_from_v2_clients before update on public.split_expenses
+  for each row execute function public.expense_author_from_v2_clients();
+
+-- Comprobaciones: aborta la transacción entera si algo no es lo esperado.
+do $$
+begin
+  if (select count(*) from pg_trigger where tgname = 'expense_author_from_v2_clients'
+        and tgrelid = 'public.split_expenses'::regclass and not tgisinternal) <> 1 then
+    raise exception 'g30_01: el trigger expense_author_from_v2_clients no quedó puesto (o hay más de uno)';
+  end if;
+  if has_function_privilege('authenticated', 'public.expense_author_from_v2_clients()', 'EXECUTE') then
+    raise exception 'g30_01: authenticated puede ejecutar la función del trigger';
+  end if;
+  raise notice 'g30_01 OK';
+end;
+$$;

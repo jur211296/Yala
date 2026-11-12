@@ -133,7 +133,10 @@ struct ExchangeRateWidget: View {
     private static let dateDayTimeFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = "d MMM, HH:mm"
+        // Día y mes por plantilla (orden de cada idioma); la hora, como estaba. La plantilla con hora mete «at» en
+        // inglés y no cabe.
+        f.setLocalizedDateFormatFromTemplate("dMMM")
+        f.dateFormat = (f.dateFormat ?? "d MMM") + ", HH:mm"
         return f
     }()
 
@@ -187,14 +190,8 @@ struct ExchangeRateWidget: View {
                             )
                             .foregroundStyle(lineColor)
                             .symbolSize(20)
-                            .annotation(position: originalIndex % 2 == 0 ? .top : .bottom, spacing: DS.Spacing.xxs) {
-                                // Only show labels on first, last, and middle points to avoid clutter
-                                if shouldShowLabel(for: point, in: data.chartPoints) {
-                                    Text(formatRateCompact(rate))
-                                        .font(DS.Typography.captionSmall).fontWeight(.medium)
-                                        .foregroundStyle(lineColor)
-                                }
-                            }
+                            // Sin cifras sobre la línea: se pisaban entre sí y con el eje, y la última ya sale
+                            // en las píldoras de abajo. Cualquier valor sigue en el tooltip al arrastrar.
                         }
                     }
                 }
@@ -302,14 +299,12 @@ struct ExchangeRateWidget: View {
                         let isSelected = filteredCurrency == nil || filteredCurrency == currency
 
                         Button {
-                            dsWithAnimation(reduceMotion, .easeInOut(duration: 0.2)) {
-                                if filteredCurrency == currency {
-                                    // Deselect: show all
-                                    filteredCurrency = nil
-                                } else {
-                                    // Select: show only this one
-                                    filteredCurrency = currency
-                                }
+                            if filteredCurrency == currency {
+                                // Deselect: show all
+                                filteredCurrency = nil
+                            } else {
+                                // Select: show only this one
+                                filteredCurrency = currency
                             }
                         } label: {
                             HStack(spacing: DS.Spacing.xs) {
@@ -331,7 +326,11 @@ struct ExchangeRateWidget: View {
                     }
                 }
             }
+            // La divisa elegida se enciende y las demás se atenúan animadas (card C2). Implícita: en el Panel un
+            // `withAnimation` no anima.
+            .dsAnimation(DS.Animation.selection, value: filteredCurrency, reduceMotion: reduceMotion)
         }
+        .fadesTowardVerticalBar()
     }
 
     // MARK: - Y Domain Calculation
@@ -359,35 +358,6 @@ struct ExchangeRateWidget: View {
         let padding = max(range * 0.15, 0.01)  // At minimum 0.01 padding
 
         return (minVal - padding)...(maxVal + padding)
-    }
-
-    /// Determines if a label should be shown for this point (first, last, and optionally middle)
-    private func shouldShowLabel(
-        for point: ExchangeRateChartPoint, in points: [ExchangeRateChartPoint]
-    ) -> Bool {
-        guard points.count > 1 else { return true }
-
-        let sortedPoints = points.sorted { $0.date < $1.date }
-
-        // Show on first and last points
-        if point.date == sortedPoints.first?.date || point.date == sortedPoints.last?.date {
-            return true
-        }
-
-        // Show on middle point if we have 5 or more points
-        if points.count >= 5 {
-            let midIndex = points.count / 2
-            if point.date == sortedPoints[midIndex].date {
-                return true
-            }
-        }
-
-        return false
-    }
-
-    /// Format rate in a more compact way for inline labels
-    private func formatRateCompact(_ value: Double) -> String {
-        ExchangeRateDisplayFormatter.string(value)
     }
 
     // MARK: - Tooltip
@@ -465,7 +435,7 @@ struct ExchangeRateWidget: View {
                 .multilineTextAlignment(.center)
             Text(L10n.ExchangeRate.noSecondaryCurrenciesPath)
                 .font(DS.Typography.labelSmall)
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
         }
         .frame(height: 120)
         .frame(maxWidth: .infinity)
@@ -499,21 +469,21 @@ struct ExchangeRateWidget: View {
     private static let tooltipDayFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = "EEE d MMM"
+        f.setLocalizedDateFormatFromTemplate("EEEdMMM")
         return f
     }()
 
     private static let tooltipWeekFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = "d MMM yyyy"
+        f.setLocalizedDateFormatFromTemplate("dMMMy")
         return f
     }()
 
     private static let tooltipMonthFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = "MMM yyyy"
+        f.setLocalizedDateFormatFromTemplate("MMMy")
         return f
     }()
 

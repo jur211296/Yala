@@ -132,7 +132,15 @@ struct FavoritesListView: View {
     private var emptyState: some View {
         VStack {
             Spacer()
-            YalaEmptyState.noFavorites()
+            // Con botón para crear el primero (L7-14): antes solo estaba el «+» de arriba.
+            YalaEmptyState(
+                icon: "star",
+                title: L10n.Empty.noFavorites,
+                message: L10n.Favorites.createTemplate,
+                actionTitle: L10n.UXL7.Favorites.createAction,
+                action: { viewModel.openEditor(for: nil) },
+                actionAccessibilityIdentifier: "favorites_empty_create"
+            )
             Spacer()
         }
     }
@@ -151,7 +159,11 @@ struct FavoritesListView: View {
                 .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
             }
             .onDelete(perform: viewModel.deleteFavorites)
-            .onMove(perform: viewModel.moveFavorites)
+            // Una vibración de selección al soltar en su sitio (card C4; mapa de `DS.Haptic`).
+            .onMove { source, destination in
+                DS.Haptic.selection()
+                viewModel.moveFavorites(from: source, to: destination)
+            }
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)

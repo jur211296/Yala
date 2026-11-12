@@ -6,6 +6,7 @@
 //  Used by PanelView, DetailContainerView, and RecordsStandaloneView.
 //
 
+import SwiftData
 import SwiftUI
 
 struct FABStackView: View {
@@ -16,8 +17,15 @@ struct FABStackView: View {
     let isVoiceLocked: Bool
     let isImageLocked: Bool
     let isChatLocked: Bool
-    let chatConsentAccepted: Bool
     let chatFABVisible: Bool
+    /// El contenedor tiene poco alto (iPhone girado, ventana baja): Yala IA y «+» van en fila abajo a la derecha en vez
+    /// de uno encima del otro (UX 2.2 · L15-14, opción B). Lo mide quien monta los botones (`measuresShortContainer`).
+    var isShortContainer: Bool = false
+    /// Qué falta para registrar cuando `canUseVoiceInput` es `false` (card 7jfp). Sin cuenta o sin categorías, el botón
+    /// dice qué falta y lleva a la salida —el mismo botón rosa de la fila del Panel— en vez del «+» gris y mudo.
+    var missingStep: PanelQuickActionsGateLogic.State = .ready
+    /// «Crea tu primera cuenta» o «Crear categorías» del botón; lo resuelve quien lo monta, como en su fila.
+    var onResolveMissingStep: () -> Void = {}
 
     // MARK: - Callbacks
 
@@ -28,19 +36,26 @@ struct FABStackView: View {
     let onUpgradeImage: () -> Void
     let onChatTap: () -> Void
     let onUpgradeChat: () -> Void
-    let onChatConsentNeeded: () -> Void
 
     // MARK: - Internal State
 
     @State private var showFABMenu = false
     @State private var showAIConsentAlert = false
     @State private var pendingAIInput: PendingAIInput = .voice
+    /// L13-8 · «Grupo» sin ningún grupo: la hoja que explica el paso que falta.
+    @State private var showGroupNeeded = false
+    /// L13-8 · «Crear grupo» de esa hoja; se lleva a cabo en su `onDismiss`, con la hoja ya fuera.
+    @State private var createGroupAfterSheet = false
+    @Environment(\.modelContext) private var modelContext
 
     // MARK: - Environment
 
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.yalaTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    /// El hueco del icono de cada opción crece con el texto: fijo en 24, a tamaños grandes el icono se montaba encima.
+    @ScaledMetric(relativeTo: .headline) private var fabMenuIconWidth: CGFloat = DS.Button.fabMenuIconSize
     @Environment(SessionState.self) private var sessionState
     @Environment(SceneNavigation.self) private var navigation
 
@@ -54,11 +69,17 @@ struct FABStackView: View {
     private static let fabScaleTransition: AnyTransition = .scale(scale: 0.8, anchor: .bottomTrailing).combined(with: .opacity)
 
     private func toggleMenu() {
-        dsWithAnimation(reduceMotion, Self.fabSpring) { showFABMenu.toggle() }
+        // El menú crece hacia arriba y cae bajo la franja del aviso tras guardar: abrirlo es empezar el siguiente
+        // registro, así que el aviso se va, como al abrir otro formulario (`SavedRecordNotice`).
+        if !showFABMenu {
+            DraftDiscardUndoNotice.hide(noticeIdentifier: SavedRecordNotice.noticeIdentifier)
+        }
+        // Sin envoltorio: lo anima la implícita del `VStack` del `body` (card oxyr).
+        showFABMenu.toggle()
     }
 
     private func dismissMenu() {
-        dsWithAnimation(reduceMotion, Self.fabSpring) { showFABMenu = false }
+        showFABMenu = false
     }
 
     // MARK: - Body
@@ -72,17 +93,34 @@ struct FABStackView: View {
                     menuButtons
                 }
 
-                if chatFABVisible && !showFABMenu {
-                    aiFAB.transition(Self.fabScaleTransition)
-                }
+                // Con poco alto, en fila: uno encima del otro subían hasta la cabecera y tapaban el selector de
+                // Registros y el importe de la primera fila (UX 2.2 · L15-14). Mismos hijos en las dos formas.
+                fabLayout {
+                    if chatFABVisible && !showFABMenu {
+                        aiFAB.transition(Self.fabScaleTransition)
+                    }
 
-                transactionFAB(background: fabBackground)
+                    transactionFAB(background: fabBackground)
+                }
             }
+            // Implícita: en una pestaña un `withAnimation` no anima (card oxyr).
+            .animation(reduceMotion ? nil : Self.fabSpring, value: showFABMenu)
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
             .onChange(of: navigation.selectedMainTab) { _, _ in
                 guard showFABMenu else { return }
                 dismissMenu()
+            }
+            .sheet(isPresented: $showGroupNeeded, onDismiss: {
+                guard createGroupAfterSheet else { return }
+                createGroupAfterSheet = false
+                navigation.navigateToGroupsAndCreateGroupForExpense()
+            }) {
+                GroupNeededForExpenseSheet {
+                    createGroupAfterSheet = true
+                    showGroupNeeded = false
+                }
+                .yalaSheetDetents([.medium])
             }
             .aiConsentAlert(isPresented: $showAIConsentAlert, pendingInput: $pendingAIInput) { input in
                 switch input {
@@ -90,9 +128,17 @@ struct FABStackView: View {
                 case .image: onImageTap()
                 }
             }
+        } else if missingStep != .ready {
+            missingStepFAB
         } else {
             disabledFAB(background: fabBackground)
         }
+    }
+
+    private var fabLayout: AnyLayout {
+        isShortContainer
+            ? AnyLayout(HStackLayout(alignment: .bottom, spacing: DS.Spacing.md))
+            : AnyLayout(VStackLayout(alignment: .trailing, spacing: DS.Spacing.md))
     }
 
     // MARK: - AI FAB
@@ -100,10 +146,11 @@ struct FABStackView: View {
     private var aiFAB: some View {
         Button {
             DS.Haptic.selection()
+            // Sin Pro, el paywall. Con Pro, quien monta el botón decide entre la presentación (que pide el permiso en
+            // su último paso, UX 2.2 · L14-2), el aviso de permiso y el chat (`YalaAIOnboardingLogic`). Antes este botón
+            // sacaba el aviso él mismo, ANTES de la presentación.
             if isChatLocked {
                 onUpgradeChat()
-            } else if !chatConsentAccepted {
-                onChatConsentNeeded()
             } else {
                 onChatTap()
             }
@@ -111,7 +158,7 @@ struct FABStackView: View {
             ZStack {
                 Image(systemName: "sparkles")
                     .font(DS.Typography.body.weight(.semibold))
-                    .foregroundStyle(sparklesForeground)
+                    .foregroundStyle(isChatLocked ? AnyShapeStyle(DS.Semantic.disabledForeground) : AnyShapeStyle(Color.proGoldOnCard))
 
                 if isChatLocked {
                     Image(systemName: "lock.fill")
@@ -121,34 +168,31 @@ struct FABStackView: View {
                 }
             }
             .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
+            // UX 2.2 · L14-5: el mismo acabado que la píldora «Yala IA» del Panel —cristal o tarjeta, con el borde y el
+            // icono en dorado SÓLIDO—, para que se lea como el mismo botón. Antes era un círculo teñido de naranja con
+            // el degradado `proBadge` y una sombra naranja. Sigue redondo, como el «+» de debajo: con texto taparía más
+            // la tarjeta «Resumen inteligente» de Estadísticas. El borde va ANTES del cristal, que tapa lo que se le
+            // cuelga después (`.claude/rules/swiftui-ds.md`).
+            .overlay {
+                if !isChatLocked {
+                    Circle().strokeBorder(Color.proGoldOnCard, lineWidth: 1.5)
+                }
+            }
             .modifier(FABSurfaceModifier(
-                base: isChatLocked ? DS.Semantic.disabledForeground : .orange,
-                glassTintOpacity: isChatLocked ? 0.4 : 0.5,
+                base: isChatLocked ? DS.Semantic.disabledForeground : theme.card,
+                glassTintOpacity: isChatLocked ? 0.4 : 0,
                 solidGradient: isChatLocked
                     ? [DS.Semantic.neutralBackground, DS.Semantic.neutralBackground]
-                    : DS.Gradients.proBadge
+                    : [theme.card, theme.card]
             ))
         }
         .fabButtonStyle(usesMaterial: theme.usesMaterial)
-        .shadow(color: (isChatLocked ? Color.gray : Color.orange).opacity(0.2), radius: DS.Shadow.medium.radius, x: 0, y: DS.Shadow.medium.y)
+        .dsFloatingShadow()
         .coachMarkAnchor("proChatFab")
-        .accessibilityLabel(L10n.Chat.title)
+        // UX 2.2 · L14-1: VoiceOver dice el mismo nombre que la píldora del Panel y la cabecera del chat (antes leía
+        // «Pregúntale a Yala»).
+        .accessibilityLabel(L10n.Chat.assistantName)
         .accessibilityIdentifier("fab_chat")
-    }
-
-    /// Foreground del icono sparkles del FAB de IA: gris si está bloqueado; sobre
-    /// cristal usa el gradiente proBadge; sobre fondo sólido (que ya es proBadge)
-    /// vuelve a blanco para legibilidad.
-    private var sparklesForeground: AnyShapeStyle {
-        if isChatLocked {
-            return AnyShapeStyle(DS.Semantic.disabledForeground)
-        }
-        if theme.usesMaterial {
-            return AnyShapeStyle(
-                LinearGradient(colors: DS.Gradients.proBadge, startPoint: .topLeading, endPoint: .bottomTrailing)
-            )
-        }
-        return AnyShapeStyle(Color.white)
     }
 
     // MARK: - Transaction FAB
@@ -160,7 +204,7 @@ struct FABStackView: View {
         } label: {
             Image(systemName: showFABMenu ? "xmark" : "plus")
                 .font(DS.Typography.title)
-                .foregroundStyle(theme.usesMaterial || showFABMenu ? .white : Color.contrastingText(for: background))
+                .foregroundStyle(theme.usesMaterial || showFABMenu ? .white : theme.onFill(background))
                 .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
                 .rotationEffect(.degrees(showFABMenu ? 90 : 0))
                 .modifier(FABSurfaceModifier(base: showFABMenu ? DS.Semantic.disabledForeground : background))
@@ -182,7 +226,14 @@ struct FABStackView: View {
             // siempre.
             fabMenuButton(icon: "person.2.fill", text: L10n.Panel.fabGroup, color: .priorityNeedNew) {
                 dismissMenu()
-                navigation.navigateToGroupsAndComposeExpense()
+                // UX 2.2 · L13-8 (decisión B de Jürgen): sin ningún grupo, una hoja dice que primero hay que crear uno.
+                // Antes llevaba al estado vacío de Grupos sin explicarlo y dejaba el gasto pedido para cuando hubiera
+                // grupo, aunque fuera horas después.
+                if hasNoActiveGroups() {
+                    showGroupNeeded = true
+                } else {
+                    navigation.navigateToGroupsAndComposeExpense()
+                }
             }
             .accessibilityIdentifier("panel_fab_group")
 
@@ -218,7 +269,62 @@ struct FABStackView: View {
             }
             .accessibilityIdentifier("fab_manual")
         }
+        // Con el texto de accesibilidad las opciones llegan casi al ancho de la pantalla: el mismo margen que a la derecha.
+        .padding(.leading, dynamicTypeSize.isAccessibilitySize ? DS.Spacing.xl : 0)
         .transition(Self.fabScaleTransition)
+    }
+
+    /// ¿No hay ningún grupo vivo (ni archivado ni borrado para todos)? Un fetch que falla cuenta como «hay»: así el toque
+    /// hace lo de siempre en vez de afirmar algo que no se pudo leer.
+    private func hasNoActiveGroups() -> Bool {
+        var descriptor = FetchDescriptor<SplitGroup>(
+            predicate: #Predicate<SplitGroup> { !$0.isArchived && !$0.isHiddenForAll })
+        descriptor.fetchLimit = 1
+        do {
+            return try modelContext.fetchCount(descriptor) == 0
+        } catch {
+            #if DEBUG
+            print("FABStackView: Error contando grupos: \(error)")
+            #endif
+            return false
+        }
+    }
+
+    // MARK: - Lo que falta (card 7jfp)
+
+    /// Sin cuenta o sin categorías: la salida, flotando, con el acabado de la fila del Panel (relleno rosa de marca,
+    /// `emphasisPinkFill`, AA con blanco; sin degradado ni brillo). La línea de explicación de la fila va como pista de
+    /// VoiceOver: flotando taparía el contenido.
+    private var missingStepFAB: some View {
+        let needsAccount = missingStep == .needsAccount
+        let title = needsAccount ? L10n.Panel.createFirstAccount : L10n.Empty.activateCategoriesAction
+        let hint = needsAccount ? L10n.Panel.createFirstAccountHint : L10n.Panel.createCategoriesHint
+        return Button {
+            DS.Haptic.selection()
+            onResolveMissingStep()
+        } label: {
+            HStack(spacing: DS.Spacing.sm) {
+                Image(systemName: needsAccount ? "creditcard.fill" : "tag.fill")
+                    .font(DS.Typography.label)
+                    .accessibilityHidden(true)
+                Text(title)
+                    .font(DS.Typography.label)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .foregroundStyle(Color.white)
+            .padding(.horizontal, DS.Spacing.lg)
+            .frame(minHeight: DS.Button.fabSize)
+            .background(Capsule().fill(Color.emphasisPinkFill))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .dsFloatingShadow()
+        .coachMarkAnchor("fab")
+        .padding(.trailing, DS.Spacing.xl)
+        .padding(.bottom, DS.Spacing.xxl)
+        .accessibilityHint(hint)
+        .accessibilityIdentifier(needsAccount ? "fab_create_first_account" : "fab_create_categories")
     }
 
     // MARK: - Disabled FAB
@@ -227,7 +333,7 @@ struct FABStackView: View {
         Button {} label: {
             Image(systemName: "plus")
                 .font(DS.Typography.title)
-                .foregroundStyle(Color.contrastingText(for: theme.accent))
+                .foregroundStyle(theme.onAccent)
                 .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
                 .background(background)
                 .clipShape(Circle())
@@ -259,11 +365,15 @@ struct FABStackView: View {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: icon)
                     .font(DS.Typography.headline)
-                    .frame(width: DS.Button.fabMenuIconSize)
+                    .frame(width: fabMenuIconWidth)
                     .accessibilityHidden(true)
 
                 Text(text)
                     .font(DS.Typography.headline)
+                    // Con el texto al máximo, una sola línea que se reduce si no cabe: partida salía «Gru-po» e
+                    // «Ima-gen», y cortada «Ma…» (QA físico 2.2, iPhone 14).
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 1 : nil)
+                    .minimumScaleFactor(dynamicTypeSize.isAccessibilitySize ? 0.6 : 1)
 
                 Spacer(minLength: 0)
 
@@ -272,7 +382,11 @@ struct FABStackView: View {
                 }
             }
             .foregroundStyle(.white)
-            .frame(width: DS.Button.fabMenuWidth)
+            // Ancho fijo a tamaño normal; con el texto de accesibilidad, el que haga falta hasta el de un iPhone.
+            .frame(
+                minWidth: DS.Button.fabMenuWidth,
+                maxWidth: dynamicTypeSize.isAccessibilitySize ? DS.Adaptive.listColumnMinWidth : DS.Button.fabMenuWidth
+            )
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.md)
             .background(isLocked ? DS.Semantic.disabledForeground : color)

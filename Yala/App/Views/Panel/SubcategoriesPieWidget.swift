@@ -20,7 +20,6 @@ struct SubcategoriesPieWidget: View {
     var selectedSubcategoryIDs: Set<PersistentIdentifier> = []
     var onSelectSubcategory: ((PersistentIdentifier) -> Void)?
     var onShowDetail: (() -> Void)? = nil
-    var isExcludeMode: Bool = false
 
     var size: WidgetSize = .medium
 
@@ -45,12 +44,6 @@ struct SubcategoriesPieWidget: View {
     // Filtered total based on selected subcategories
     private var filteredTotalExpense: Double {
         guard !selectedSubcategoryIDs.isEmpty else { return totalExpense }
-        if isExcludeMode {
-            return subcategories
-                .filter { guard let id = $0.persistentID else { return true }
-                    return !selectedSubcategoryIDs.contains(id) }
-                .reduce(0) { $0 + $1.amount }
-        }
         return subcategories
             .filter { guard let id = $0.persistentID else { return false }
                 return selectedSubcategoryIDs.contains(id) }
@@ -238,6 +231,8 @@ struct SubcategoriesPieWidget: View {
                                 .position(center)
                         }
                     }
+                    // Implícita: en una pestaña un `withAnimation` no anima (card oxyr).
+                    .animation(reduceMotion ? nil : DS.Animation.appear, value: hoveredItem?.identity)
                 }
                 .frame(maxWidth: .infinity)
 
@@ -359,9 +354,8 @@ struct SubcategoriesPieWidget: View {
             .onLongPressGesture(
                 minimumDuration: 0.3,
                 pressing: { isPressing in
-                    dsWithAnimation(reduceMotion, .easeInOut(duration: 0.15)) {
-                        hoveredItem = isPressing ? item : nil
-                    }
+                    // La anima la implícita del `ZStack` del gráfico (card oxyr).
+                    hoveredItem = isPressing ? item : nil
                 }, perform: {})
         }
     }
@@ -382,12 +376,7 @@ struct SubcategoriesPieWidget: View {
             .transition(.opacity.combined(with: .scale(scale: 0.9)))
     }
 
-    // In exclude mode, excluded items are removed — show labels normally by percentage.
-    // In include mode, show only selected items' labels.
     private func shouldShowLabel(for item: PieChartData) -> Bool {
-        if isExcludeMode {
-            return item.percentage > 4.0
-        }
         if !selectedSubcategoryIDs.isEmpty {
             guard let id = item.persistentID else { return false }
             return selectedSubcategoryIDs.contains(id)
@@ -625,18 +614,12 @@ struct SubcategoriesPieWidget: View {
     }
 
     private func isDimmed(_ item: PieChartData) -> Bool {
-        // In exclude mode, excluded items are already removed — no dimming needed
-        if isExcludeMode { return false }
         guard !selectedSubcategoryIDs.isEmpty else { return false }
         guard let itemPersistentID = item.persistentID else { return true }  // Dim "Restante" when something is selected
         return !selectedSubcategoryIDs.contains(itemPersistentID)
     }
 
     private func currentCenterItem(_ chartData: [PieChartData]) -> PieChartData? {
-        if isExcludeMode {
-            // Excluded items already removed; show first visible item
-            return chartData.first
-        }
         if !selectedSubcategoryIDs.isEmpty {
             return chartData.first { $0.persistentID == selectedSubcategoryIDs.first }
         }
@@ -670,15 +653,8 @@ struct SubcategoriesPieWidget: View {
         let maxVisible = 9
 
         // Filter out items with non-finite or zero amounts
-        var validSubcategories = subcategories.filter { $0.amount.isFinite && $0.amount > 0 }
+        let validSubcategories = subcategories.filter { $0.amount.isFinite && $0.amount > 0 }
 
-        // In exclude mode, remove excluded items entirely
-        if isExcludeMode && !selectedSubcategoryIDs.isEmpty {
-            validSubcategories = validSubcategories.filter {
-                guard let id = $0.persistentID else { return true }
-                return !selectedSubcategoryIDs.contains(id)
-            }
-        }
 
         // Recalculate total from visible items
         let visibleTotal = validSubcategories.reduce(0) { $0 + $1.amount }
@@ -691,7 +667,7 @@ struct SubcategoriesPieWidget: View {
                 return PieChartData(
                     id: $0.id,
                     name: $0.subcategoryName,
-                    iconName: $0.subcategory?.iconName ?? $0.category?.iconName ?? "tag.fill",
+                    iconName: $0.iconName ?? "tag.fill",
                     amount: $0.amount,
                     percentage: pct,
                     colorHex: $0.colorHex ?? AppConstants.othersColorHex,
@@ -707,7 +683,7 @@ struct SubcategoriesPieWidget: View {
                 return PieChartData(
                     id: $0.id,
                     name: $0.subcategoryName,
-                    iconName: $0.subcategory?.iconName ?? $0.category?.iconName ?? "tag.fill",
+                    iconName: $0.iconName ?? "tag.fill",
                     amount: $0.amount,
                     percentage: pct,
                     colorHex: $0.colorHex ?? AppConstants.othersColorHex,
@@ -759,22 +735,29 @@ struct SubcategoriesPieWidget: View {
         let totalSpacing = segmentSpacing * CGFloat(max(0, chartData.count - 1))
         let availableWidth = max(0, segmentedBarWidth - totalSpacing)
 
-        HStack(spacing: segmentSpacing) {
-            ForEach(chartData) { item in
-                RoundedRectangle(cornerRadius: DS.Radius.xs)
-                    .fill(Color(hex: item.colorHex))
-                    .frame(width: availableWidth * CGFloat(item.percentage / 100))
-                    .opacity(isDimmed(item) ? 0.3 : 1.0)
-                    .dsAnimation(.easeInOut(duration: 0.2), value: selectedCategoryID, reduceMotion: reduceMotion)
-                    .dsAnimation(.easeInOut(duration: 0.2), value: selectedSubcategoryIDs, reduceMotion: reduceMotion)
-                    .onTapGesture {
-                        handleTap(item)
+        // Los segmentos van en `overlay` de un carril flexible, que es lo que se mide: medido el propio `HStack`, su
+        // ancho era la suma de los segmentos —la medida anterior— y la barra no se adaptaba al cambiar el ancho de la
+        // ventana (iPhone Duo al plegar o girar, iPad).
+        Color.clear
+            .frame(maxWidth: .infinity)
+            .frame(height: 28)
+            .overlay(alignment: .leading) {
+                HStack(spacing: segmentSpacing) {
+                    ForEach(chartData) { item in
+                        RoundedRectangle(cornerRadius: DS.Radius.xs)
+                            .fill(Color(hex: item.colorHex))
+                            .frame(width: availableWidth * CGFloat(item.percentage / 100))
+                            .opacity(isDimmed(item) ? 0.3 : 1.0)
+                            .dsAnimation(.easeInOut(duration: 0.2), value: selectedCategoryID, reduceMotion: reduceMotion)
+                            .dsAnimation(.easeInOut(duration: 0.2), value: selectedSubcategoryIDs, reduceMotion: reduceMotion)
+                            .onTapGesture {
+                                handleTap(item)
+                            }
                     }
+                }
             }
-        }
-        .frame(height: 28)
-        .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { newWidth in
-            segmentedBarWidth = newWidth
-        }
+            .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { newWidth in
+                segmentedBarWidth = newWidth
+            }
     }
 }

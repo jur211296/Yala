@@ -45,6 +45,11 @@ final class ScheduledPaymentNotificationService {
         _ todayAlreadyMarked: Bool
     ) async -> NotificationService.SummaryReplaceOutcome)?
 
+    /// Guarda de reentrada: una pasada del chequeo a la vez (ver `checkAllPaymentNotifications`).
+    private var isCheckingPayments = false
+    /// Una pasada pedida mientras corría otra: se repite al terminar (ver `checkAllPaymentNotifications`).
+    private var paymentsRecheckPending = false
+
     /// Maximum overdue notifications per session to avoid spam
     private let maxOverdueNotifications = 5
 
@@ -80,6 +85,31 @@ final class ScheduledPaymentNotificationService {
     /// Single entry point: checks all scheduled payment notifications (overdue, due today, upcoming).
     /// Fetches payments, paid status, and notification config once to avoid redundant queries.
     func checkAllPaymentNotifications() async {
+        // **Una pasada a la vez** (ticket `notices-come-out-one-after-another-by-priority`). El patrón es leer el tracker,
+        // `await` el envío y marcar después, así que dos pasadas solapadas —el arranque en frío (paso 6.6) y el primer
+        // `.active`, que corre antes de que el arranque escriba `lastNotificationCheckDate`— mandaban el mismo pago dos
+        // veces. Presupuestos, informes y liquidaciones ya tenían su guarda; esta era la que faltaba. La que llega durante
+        // otra no se tira: se apunta y se repite al terminar, porque puede venir de algo que cambió los datos (el borrado
+        // parcial de `DataWipeService` la pide) y la pasada en vuelo ya los leyó.
+        // Card p0iu: la pausa va PRIMERO, antes que la guarda de reentrada (`UsageModeWiringTests`). En pausa no se
+        // apunta repetición, igual que antes de la guarda: la próxima vuelta a primer plano lanza otra pasada.
+        guard !PersonalRemindersPause.isPaused() else { return }
+        guard !isCheckingPayments else {
+            paymentsRecheckPending = true
+            return
+        }
+        isCheckingPayments = true
+        defer { isCheckingPayments = false }
+        repeat {
+            paymentsRecheckPending = false
+            await performPaymentNotificationChecks()
+        } while paymentsRecheckPending
+    }
+
+    private func performPaymentNotificationChecks() async {
+        // Card p0iu: con «Solo grupos» elegido sobre Yala completo, los avisos personales esperan (`PersonalRemindersPause`).
+        // Se vuelve a mirar en cada pasada: una repetición del `repeat` puede llegar después de activarse la pausa.
+        guard !PersonalRemindersPause.isPaused() else { return }
         guard let context = modelContext else { return }
         guard await isAuthorized() else { return }
 
@@ -277,6 +307,12 @@ final class ScheduledPaymentNotificationService {
     }
 
     private func fetchItemState(context: ModelContext) -> ScheduledPaymentNotificationGateLogic.ItemState {
+        Self.fetchSummaryItemState(context: context)
+    }
+
+    /// El estado del ajuste «Pagos planificados» de Notificaciones: activo con su hora, apagado, sin crear o ilegible. Lo
+    /// lee también el aviso de la tarjeta, que usa su hora (`CreditCardReminderScheduler`).
+    static func fetchSummaryItemState(context: ModelContext) -> ScheduledPaymentNotificationGateLogic.ItemState {
         let typeRaw = "scheduledPayments"
         let descriptor = FetchDescriptor<NotificationItem>(
             predicate: #Predicate { $0.typeRaw == typeRaw }
@@ -463,9 +499,11 @@ final class ScheduledPaymentNotificationService {
     }
 
     private func sendPaymentNotification(payment: ScheduledPayment, type: PaymentNotificationType) async -> Bool {
-        let currencySymbol = CurrencyUtils.symbol(for: payment.currencyCode)
-        let estimatePrefix = payment.isVariableAmount ? "≈ " : ""
-        let formattedAmount = "\(estimatePrefix)\(currencySymbol)\(payment.amount.formatted(.number.precision(.fractionLength(0...2))))"
+        // El formato de montos de la app (símbolo o código según la preferencia, espacio y decimales), no el símbolo
+        // pegado a mano: con «PEN» elegido el aviso decía «S/2,200» (UX 2.2 · L10-13).
+        let formattedAmount = YalaFormatterStatic.currency(
+            value: payment.amount, currencyCode: payment.currencyCode, isEstimate: payment.isVariableAmount
+        )
         let isIncome = payment.transactionType == "income"
 
         let message: String
@@ -474,6 +512,11 @@ final class ScheduledPaymentNotificationService {
             message = isIncome
                 ? L10n.Notifications.ScheduledPayment.dueTodayIncome(formattedAmount, payment.name)
                 : L10n.Notifications.ScheduledPayment.dueToday(payment.name, formattedAmount)
+        case .dueSoon(let days) where days == 1:
+            // «Notificar 1 día antes» decía «En 1 días toca pagar…».
+            message = isIncome
+                ? L10n.Notifications.ScheduledPayment.dueTomorrowIncome(formattedAmount, payment.name)
+                : L10n.Notifications.ScheduledPayment.dueTomorrow(payment.name, formattedAmount)
         case .dueSoon(let days):
             message = isIncome
                 ? L10n.Notifications.ScheduledPayment.dueSoonIncome(days, formattedAmount, payment.name)
@@ -484,63 +527,14 @@ final class ScheduledPaymentNotificationService {
                 : L10n.Notifications.ScheduledPayment.overdue(payment.name, formattedAmount)
         }
 
-        return await send(title: payment.name, body: message, deepLink: "scheduledPayments")
+        // Lleva el id: tocarlo abre el detalle de ESTE pago, donde se marca pagado o se salta (L10-13).
+        return await send(title: payment.name, body: message, deepLink: AlertDeepLink.scheduledPayment.deepLink(for: payment.id))
     }
 
     // MARK: - Credit Card Payment Notifications
 
-    /// Check accounts with credit card payment reminders and notify if today is payment day.
-    ///
-    /// Asimetría DELIBERADA con el toggle maestro: el opt-in de la tarjeta es per-account
-    /// (editor de cuentas), independiente del item `scheduledPayments` — con el item
-    /// `inactive`/`absent` la tarjeta SIGUE notificando (silenciarla rompería un opt-in que
-    /// el usuario configuró en otra superficie). Lo que SÍ comparte es la VENTANA HORARIA
-    /// cuando el item está activo (era la notif "de las 8am" del ticket) y el fail-closed
-    /// ante fetch-error.
-    func checkAndNotifyCreditCardPayments() async {
-        guard let context = modelContext else { return }
-        guard await isAuthorized() else { return }
-
-        switch gateDecision(context: context) {
-        case .waitForHour, .deferFetchError:
-            return
-        case .send, .silenced:
-            break
-        }
-
-        let accounts = fetchCreditCardAccounts(context: context)
-        let today = Date.now
-        let dayOfMonth = Calendar.current.component(.day, from: today)
-
-        for account in accounts {
-            guard account.creditCardPaymentDay == dayOfMonth else { continue }
-
-            guard !tracker.hasNotifiedCreditCard(accountID: account.shortcutID, date: today) else { continue }
-
-            let message = L10n.Account.CreditCard.paymentNotification(account.name)
-            guard await send(title: account.name, body: message, deepLink: "accounts") else { continue }
-
-            tracker.markNotifiedCreditCard(accountID: account.shortcutID, date: today)
-        }
-    }
-
-    private func fetchCreditCardAccounts(context: ModelContext) -> [Account] {
-        let creditCardType = AccountType.creditCard.rawValue
-        let descriptor = FetchDescriptor<Account>(
-            predicate: #Predicate {
-                $0.type == creditCardType && $0.creditCardPaymentReminder == true
-            }
-        )
-
-        do {
-            return try context.fetch(descriptor)
-        } catch {
-            #if DEBUG
-            print("ScheduledPaymentNotificationService: Error fetching credit card accounts: \(error)")
-            #endif
-            return []
-        }
-    }
+    // Desde 2.2 (card nmtk) el aviso de la tarjeta es PROGRAMADO y vive en `CreditCardReminderScheduler`: comparte la hora
+    // del resumen de pagos (`fetchSummaryItemState`) y el tracker de dedup, nada más.
 
     private func fetchActivePayments(context: ModelContext) -> [ScheduledPayment] {
         let descriptor = FetchDescriptor<ScheduledPayment>(

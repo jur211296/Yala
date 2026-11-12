@@ -297,7 +297,7 @@ struct SignOutChecksTheSessionBeforeArmingTests {
     /// la sesión, ANTES del arm de su borrado.
     @Test("Cierre tras borrar la cuenta", arguments: [
         ("func closeLocalAfterAccountDeletionCloud()", "StorageModePersistence.armSignOutWipe()"),
-        ("func closeLocalAfterAccountDeletionGroupsOnly(", "StorageModePersistence.armGroupsOnlyWipe()"),
+        ("func closeLocalAfterAccountDeletionPrivate(", "StorageModePersistence.armSignOutWipe()"),
     ])
     func accountDeletionExit_retiresASurvivingSession(signature: String, arm: String) throws {
         let body = try Self.body(of: signature, in: Self.signOutPath)

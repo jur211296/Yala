@@ -12,7 +12,8 @@ struct CashFlowMonthStrip: View {
     let months: [CashFlowMonth]
     @Binding var selectedMonthKey: String
     let currencyCode: String
-    let showAccumulatedBalance: Bool
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -20,28 +21,32 @@ struct CashFlowMonthStrip: View {
                 HStack(spacing: DS.Spacing.sm) {
                     ForEach(months, id: \.monthKey) { month in
                         Button {
-                            withAnimation(.easeInOut(duration: DS.Animation.fast)) {
-                                selectedMonthKey = month.monthKey
-                            }
+                            // Lo anima la implícita de `selectedMonthKey` (card oxyr).
+                            selectedMonthKey = month.monthKey
                         } label: {
                             CashFlowMonthCapsule(
                                 month: month,
                                 isSelected: month.monthKey == selectedMonthKey,
-                                currencyCode: currencyCode,
-                                showAccumulatedBalance: showAccumulatedBalance
+                                currencyCode: currencyCode
                             )
                         }
                         .buttonStyle(.plain)
                         .contentShape(Rectangle())
+                        .accessibilityIdentifier("cashflow_month_capsule_\(month.monthKey)")
                         .id(month.monthKey)
                     }
                 }
                 .padding(.horizontal, DS.Spacing.lg)
+                // La cápsula elegida cambia con el mes (tocarla o deslizar la lista). Implícita: el `withAnimation`
+                // del toque no anima dentro de una pestaña (card 8atf).
+                .animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.fast), value: selectedMonthKey)
                 .scrollTargetLayout()
             }
+            .fadesTowardVerticalBar()
             .scrollTargetBehavior(.viewAligned)
             .onChange(of: selectedMonthKey) { _, newKey in
-                withAnimation(.easeInOut(duration: DS.Animation.fast)) {
+                // Con Reducir movimiento, sin desplazamiento animado (card oxyr).
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.fast)) {
                     proxy.scrollTo(newKey, anchor: .center)
                 }
             }

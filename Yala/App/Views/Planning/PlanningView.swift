@@ -56,10 +56,14 @@ struct PlanningView: View {
         ListDetailSplit {
             listColumn
         } detail: {
-            ContentUnavailableView(L10n.Planning.detailPlaceholder, systemImage: ConfigurableTab.planning.iconName)
-                .yalaScreenBackground(.panel)
-                .accessibilityIdentifier("planning_detail_placeholder")
-                .marksEmptyDetailColumn()
+            // Pila propia: lo que el detalle empuja por su cuenta (las gráficas de un presupuesto) necesita una pila en
+            // ESTA columna; sin ella su botón no hacía nada (auditoría UX 2.2, lote 9).
+            NavigationStack {
+                ContentUnavailableView(L10n.Planning.detailPlaceholder, systemImage: ConfigurableTab.planning.iconName)
+                    .yalaScreenBackground(.panel)
+                    .accessibilityIdentifier("planning_detail_placeholder")
+                    .marksEmptyDetailColumn()
+            }
         }
     }
 
@@ -78,6 +82,7 @@ struct PlanningView: View {
             .yalaScreenBackground(.panel)
             .navigationTitle(L10n.Planning.title)
             .navigationBarTitleDisplayMode(.large)
+            .prefersToolbarItemsInVerticalBar()
             .toolbar {
                 // Favorites button (only for budgets tab)
                 if selectedTab == .budgets {
@@ -89,7 +94,9 @@ struct PlanningView: View {
                                 .font(DS.Typography.body).fontWeight(.medium)
                                 .foregroundStyle(DS.Semantic.favoriteIcon)
                         }
-                        .accessibilityLabel(L10n.Accessibility.favoriteTemplates)
+                        // Abre los presupuestos favoritos del widget, no plantillas (VoiceOver decía «Plantillas
+                        // favoritas»; auditoría UX 2.2, lote 9).
+                        .accessibilityLabel(L10n.Settings.budgetsFavorites)
                     }
 
                     // iOS 26 spacer creates separate glass groups
@@ -117,6 +124,11 @@ struct PlanningView: View {
                 // Keep SessionState in sync
                 navigation.selectedPlanningTab = newValue
             }
+            // Un destino que llega con Planificación ya a la vista (la alerta de un presupuesto con «Pagos» elegido) cambia
+            // el chip; antes solo se leía al aparecer y la alerta no abría nada (UX 2.2 · L9-5).
+            .onChange(of: navigation.selectedPlanningTab) { _, newValue in
+                if selectedTab != newValue { selectedTab = newValue }
+            }
     }
 
     // MARK: - Tab Content
@@ -142,36 +154,18 @@ struct PlanningView: View {
             }
             .padding(.horizontal, DS.Spacing.lg)
         }
+        .fadesTowardVerticalBar()
+        // Al pulsar, el cristal del chip se hincha por encima de su cápsula y el scroll lo recortaba en recto arriba y
+        // abajo (card nawy). Cabe en el aire de `navigationChipsInset`, como en Estadísticas.
+        .scrollClipDisabled()
     }
 
-    @ViewBuilder
     private func navigationChipButton(for tab: PlanningTab) -> some View {
-        let isSelected = selectedTab == tab
-
-        Button {
-            // Disable animations to prevent navigation title flickering
-            var transaction = Transaction()
-            transaction.disablesAnimations = true
-            withTransaction(transaction) {
-                selectedTab = tab
-            }
-        } label: {
-            HStack(spacing: DS.Spacing.sm) {
-                Image(systemName: tab.icon)
-                    .font(DS.Typography.subheadline)
-                Text(tab.displayName)
-                    .font(DS.Typography.label)
-            }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.Spacing.sm)
-            .foregroundStyle(isSelected ? .white : .primary)
-            .background(
-                Capsule()
-                    .fill(isSelected ? theme.accent : Color.clear)
-            )
-            .glassEffect(isSelected ? .clear : .regular.interactive(), in: .capsule)
+        NavigationChipButton(
+            title: tab.displayName, icon: tab.icon, isSelected: selectedTab == tab, showsTitleWhenUnselected: true
+        ) {
+            selectedTab = tab
         }
-        .buttonStyle(.plain)
         .accessibilityIdentifier("planning_chip_\(tab.rawValue)")
     }
 

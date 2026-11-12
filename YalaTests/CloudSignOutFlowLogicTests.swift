@@ -126,17 +126,23 @@ struct CloudSignOutFlowLogicTests {
     }
 
     /// La regla que decide si el borrado se lleva el store de grupos, y que cuentan el arm y la hoja del cambio de
-    /// Apple ID (ticket `apple-id-close-notice-does-not-say-what-else-the-close-does`). Tabla ENTERA: 3 × 2 × 2.
-    @Test("MUTACIÓN: el borrado se lleva los grupos si el cierre los sube o quedan filas del canal nuevo, y solo con el canal compilado")
+    /// Apple ID (ticket `apple-id-close-notice-does-not-say-what-else-the-close-does`). Desde el 2026-10-29 también la
+    /// vuelta al neutro de la puerta de Grupos con grupos en el store (`welcome-groups-gate-loops-on-legacy-cloudkit-groups`, decisión A).
+    /// Tabla ENTERA: 3 × 2 × 2 × 2.
+    @Test("MUTACIÓN: el borrado se lleva los grupos si el cierre los sube, quedan filas del canal nuevo o lo pide la puerta con grupos, y solo con el canal compilado")
     func wipeForgetsGroupsTable() {
         typealias Kind = CloudSignOutFlowLogic.ExitKind
         for kind in [Kind.privateOnly, .privateWithGroups, .groupsOnly] {
             for rows in [false, true] {
-                #expect(!CloudSignOutFlowLogic.wipeForgetsGroups(kind: kind, hasBackendGroupRows: rows, groupsBackendCompiled: false),
-                        "Sin el canal compilado no hay marca de grupos: \(kind), filas \(rows).")
-                let expected = kind != .privateOnly || rows
-                #expect(CloudSignOutFlowLogic.wipeForgetsGroups(kind: kind, hasBackendGroupRows: rows, groupsBackendCompiled: true)
-                        == expected, "\(kind), filas \(rows)")
+                for gate in [false, true] {
+                    #expect(!CloudSignOutFlowLogic.wipeForgetsGroups(
+                        kind: kind, hasBackendGroupRows: rows, groupsBackendCompiled: false, groupsGateWithGroupRows: gate),
+                            "Sin el canal compilado no hay marca de grupos: \(kind), filas \(rows), puerta \(gate).")
+                    let expected = kind != .privateOnly || rows || gate
+                    #expect(CloudSignOutFlowLogic.wipeForgetsGroups(
+                        kind: kind, hasBackendGroupRows: rows, groupsBackendCompiled: true, groupsGateWithGroupRows: gate)
+                            == expected, "\(kind), filas \(rows), puerta \(gate)")
+                }
             }
         }
     }
@@ -657,10 +663,19 @@ struct PrivateSignOutWiringTests {
     }
 
     /// Con el espejo montado, borrar FILAS exporta los deletes a iCloud: destruiría la copia que el cierre
-    /// promete conservar. Ningún cierre del coordinador puede llamar al wipe por filas.
+    /// promete conservar. Ningún cierre de SESIÓN del coordinador puede llamar al wipe por filas.
+    ///
+    /// La única excepción es el cierre tras BORRAR la cuenta con sesión privada (encargo S27i, 2026-10-29), que quiere
+    /// justo lo contrario —vaciar también iCloud— y borra las filas DESPUÉS de la zona, para que lo que el espejo exporte
+    /// sean borrados. Lo fija `WipeDataKeepsAccountWiringTests`; aquí, que no haya otro.
     @Test("ningún cierre de sesión borra filas")
     func noRowWipeAnywhere() throws {
-        #expect(!(try Self.source(Self.signOutPath)).contains("wipeAllUserData"))
+        let src = try Self.source(Self.signOutPath)
+        #expect(src.components(separatedBy: "wipeAllUserData").count - 1 == 1)
+        let owner = try #require(src.range(of: "func closeLocalAfterAccountDeletionPrivate("))
+        let next = try #require(src.range(of: "private func pushAllPendingGroupsForSignOut(", range: owner.upperBound..<src.endIndex))
+        #expect(src[owner.upperBound..<next.lowerBound].contains("wipeAllUserData"),
+                "el borrado de filas salió del cierre de la cuenta con sesión privada")
     }
 
     /// Lo que se escribe mientras se cierra la sesión (las suspensiones de `signOut()` y del push token)
@@ -715,9 +730,10 @@ struct PrivateSignOutWiringTests {
     }
 
     /// Sin sesión privada que conservar, el store de grupos se olvida con la sesión; en la privada sin
-    /// sesión (C) solo si guarda filas del canal backend. Y ninguno de estos cierres intenta el swap.
-    @Test("el store de grupos entra en el borrado por su regla, y el swap sigue siendo solo de la nube")
-    func groupsMarkerRule_andNoSwap() throws {
+    /// sesión (C) solo si guarda filas del canal backend. Y de estos cierres solo la celda solo-grupos intenta el swap
+    /// (card ypit, regla de Jürgen del 22-oct): las privadas montan el espejo y se quedan con el relanzamiento.
+    @Test("el store de grupos entra en el borrado por su regla, y el swap es solo de la nube y de la celda solo-grupos")
+    func groupsMarkerRule_andSwapOnlyForTheGroupsOnlyCell() throws {
         let source = try Self.source(Self.signOutPath)
         let finalize = try Self.body(of: Self.finalizeMarker, in: source)
         let arm = try Self.body(of: Self.armMarker, in: source)
@@ -733,10 +749,17 @@ struct PrivateSignOutWiringTests {
         #expect(arm.contains(
             "if CloudSignOutFlowLogic.wipeForgetsGroups(\n"
             + "            kind: kind, hasBackendGroupRows: Self.hasBackendGroupRows(context: context),\n"
-            + "            groupsBackendCompiled: CloudSyncFlags.groupsBackendCompiledCapability) {\n"
+            + "            groupsBackendCompiled: CloudSyncFlags.groupsBackendCompiledCapability,\n"
+            + "            groupsGateWithGroupRows: neutralReturnFromGroupsGate && Self.hasAnyGroupRows(context: context)) {\n"
             + "            StorageModePersistence.markSignOutWipeIncludesGroups()"), "El arm dejó de preguntar con sus entradas, o la marca de grupos ya no depende de la respuesta.")
         let tail = finalize + arm
-        #expect(!tail.contains("attemptSignOutSwap"))
+        #expect(!finalize.contains("attemptSignOutSwap"))
+        // En el arm, el swap va detrás de la celda solo-grupos y en un solo sitio.
+        let soloGrupos = try #require(arm.range(of: "guard kind == .groupsOnly else { return }"),
+                                      "El swap del arm dejó de estar acotado a la celda solo-grupos")
+        let swap = try #require(arm.range(of: "attemptSignOutSwap"))
+        #expect(soloGrupos.upperBound <= swap.lowerBound)
+        #expect(arm.components(separatedBy: "attemptSignOutSwap").count == 2)
         #expect(!tail.contains("armGroupsOnlyWipe()"))
         #expect(!tail.contains("purgeGroupsSyncState("), """
             Volvió la purga en sesión: es un `save()` sobre el contexto compartido y el boot-wipe ya borra \
@@ -1602,6 +1625,8 @@ struct AttestUnavailableSignOutWiringTests {
                 acceptedGroupsLoss = nil
                 personalLossExit = nil
                 acceptedPersonalLoss = nil
+                destinationOnArm = nil
+                neutralReturnFromGroupsGate = false
             }
             """)), "`acknowledgeBlocked()` retira lo aceptado fuera del bloqueo")
         // Y el aviso del desasociar NO reconoce la fase (2026-10-02, ticket
@@ -1670,7 +1695,7 @@ struct AttestUnavailableSignOutWiringTests {
     func welcomeGateNeverOffersTheLossToTheInvitee() throws {
         let gate = Self.squashed(try Self.source("Yala/App/Views/Onboarding/WelcomeGroupsGateView.swift"))
         #expect(gate.contains(Self.squashed(
-            "let offersLoss = purpose.invitedGroupID == nil && CloudSessionSignOut.shared.offersGroupsLossExit")), """
+            "let offersLoss = purpose.mayDiscardUnsavedChanges && CloudSessionSignOut.shared.offersGroupsLossExit")), """
             La puerta del Welcome dejó de negarle la salida al invitado: la persona del teléfono prestado perdería \
             cambios de grupos que no son suyos.
             """)
@@ -1682,7 +1707,7 @@ struct AttestUnavailableSignOutWiringTests {
         // botón, el invitado vería «Continuar y perderlos» con la decisión intacta dos líneas más arriba (lente de la
         // review, 2026-09-15). Aquí se fija que el cuerpo y el botón leen la misma decisión y que el botón retoma el cierre.
         #expect(gate.contains(Self.squashed("""
-            let offersLoss = purpose.invitedGroupID == nil && CloudSessionSignOut.shared.offersGroupsLossExit
+            let offersLoss = purpose.mayDiscardUnsavedChanges && CloudSessionSignOut.shared.offersGroupsLossExit
             noticeShell(icon: "exclamationmark.triangle",
                         title: L10n.Groups.Errors.attestUnavailableTitle,
                         body: offersLoss
@@ -1702,7 +1727,7 @@ struct AttestUnavailableSignOutWiringTests {
         // La sesión caducada y los cambios de otra cuenta (2026-09-28): la misma rama, el mismo guard del invitado.
         #expect(gate.contains(Self.squashed("""
             let cause = CloudSignOutFlowLogic.lossCause(reason)
-            let offersLoss = purpose.invitedGroupID == nil && (cause == .noSession || cause == .otherAccount)
+            let offersLoss = purpose.mayDiscardUnsavedChanges && (cause == .noSession || cause == .otherAccount)
                 && CloudSessionSignOut.shared.offersGroupsLossExit
             let namesBothCauses = cause == .otherAccount && CloudSessionSignOut.shared.groupsLossReadsUncaptured
             noticeShell(icon: "arrow.trianglehead.2.clockwise.rotate.90",
@@ -1710,7 +1735,9 @@ struct AttestUnavailableSignOutWiringTests {
                         body: offersLoss
                             ? SignOutBlockedCopy.welcomeNoSessionLossMessage(
                                 pending: pending, anotherAccountAndCaptureUnfinished: namesBothCauses)
-                            : SignOutBlockedCopy.welcomeBlockedMessage(anotherAccountAndCaptureUnfinished: namesBothCauses),
+                            : (purpose.isCloudAccountEntry && !namesBothCauses
+                                ? L10n.Welcome.Groups.cloudAsideBlockedBody
+                                : SignOutBlockedCopy.welcomeBlockedMessage(anotherAccountAndCaptureUnfinished: namesBothCauses)),
                         identifier: "welcome_groups_gate_neutral_blocked") {
                 VStack(spacing: DS.Spacing.sm) {
                     YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { leaveAfterBlock() }

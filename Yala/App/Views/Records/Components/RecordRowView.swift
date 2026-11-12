@@ -18,17 +18,33 @@ struct RecordRowView: View {
     let isSelected: Bool
     let onTap: () -> Void
     let onToggleSelection: () -> Void
+    /// «14 oct 2026» bajo el concepto. Solo el modo duplicados lo pasa, cuando «Fecha» no está entre los criterios
+    /// (`RecordsDuplicateLogic.rowDateCaption`): en la lista normal la fecha ya va en la cabecera del día.
+    var dateCaption: String? = nil
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.tagCatalog) private var tagCatalog
+    @Environment(\.groupNameCatalog) private var groupNameCatalog
+    @Environment(\.groupZoneByTransferPair) private var groupZoneByTransferPair
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
+        // Borrar desde el editor deja esta fila montada bajo la hoja hasta que la lista recarga (por `dataVersion`), y
+        // puede volver a pintarse con el registro ya borrado: leerlo aborta la app. Mismo caso que la Bandeja (card f8rj).
+        if record.isDeleted || record.modelContext == nil {
+            EmptyView()
+        } else {
+            row
+        }
+    }
+
+    private var row: some View {
         Button {
             if isSelectionMode {
-                DS.Haptic.selection()
+                // Sin háptico aquí: ya vibra el `sensoryFeedback(.selection, trigger: isSelected)` de la marca.
+                // Con los dos, cada toque vibraba dos veces (card pjum).
                 onToggleSelection()
             } else {
                 onTap()
@@ -55,9 +71,10 @@ struct RecordRowView: View {
                             .lineLimit(conceptLineLimit)
 
                         // Line 2: Category • Account (Compact)
-                        let categoryName =
-                            record.subcategory?.name ?? record.category?.name ?? L10n.Common.uncategorized
-                        let accountName = record.account?.name ?? ""
+                        let categoryName = RecordRowPresentationLogic.categoryCaption(
+                            record.subcategory?.name ?? record.category?.name ?? L10n.Common.uncategorized,
+                            adjustmentType: record.balanceAdjustmentType, splitLinesRaw: record.splitLinesRaw)
+                        let accountName = displayedAccountName ?? ""
 
                         Text("\(categoryName) • \(accountName)")
                             .font(DS.Typography.caption)
@@ -65,22 +82,32 @@ struct RecordRowView: View {
                             .lineLimit(1)
                     } else {
                         // Fallback: Line 1 = Category
-                        Text(record.subcategory?.name ?? record.category?.name ?? L10n.Common.uncategorized)
+                        Text(RecordRowPresentationLogic.categoryCaption(
+                            record.subcategory?.name ?? record.category?.name ?? L10n.Common.uncategorized,
+                            adjustmentType: record.balanceAdjustmentType, splitLinesRaw: record.splitLinesRaw))
                             .font(DS.Typography.label)
                             .foregroundStyle(.primary)
                             .lineLimit(conceptLineLimit)
 
                         // Line 2: Account name
-                        if let account = record.account {
-                            Text(account.name)
+                        if let accountName = displayedAccountName {
+                            // Secundario como la línea con nota: en terciario medía 1,7:1 en claro.
+                            Text(accountName)
                                 .font(DS.Typography.caption)
-                                .foregroundStyle(.tertiary)
+                                .foregroundStyle(.secondary)
                                 .lineLimit(1)
                         }
                     }
 
+                    if let dateCaption {
+                        Text(dateCaption)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+
                     // Line 4: Tags (if any) — resolved via CSV-mirror SSOT + catalog.
-                    let resolvedTags = TagDisplayResolver.tags(for: record, catalog: tagCatalog)
+                    let resolvedTags = TagDisplayResolver.tags(for: record, catalog: tagCatalog, order: appPreferences.tagsSortOrderNames)
                     if !resolvedTags.isEmpty {
                         tagsRow(resolvedTags)
                     }
@@ -99,15 +126,17 @@ struct RecordRowView: View {
 
                     // Nature indicator + split badge
                     HStack(spacing: DS.Spacing.xs) {
-                        if record.splitType != nil {
+                        if let groupName = groupNameForRealLeg {
+                            groupBadge(groupName)
+                        } else if record.splitType != nil {
                             Image(systemName: "percent")
                                 .font(DS.Typography.chipIcon)
                                 .padding(.horizontal, DS.Chip.paddingV)
                                 .padding(.vertical, DS.Spacing.xxs)
                                 .background(Capsule().fill(Color.secondary.opacity(0.1)))
                         }
-                        if let subcategory = record.subcategory {
-                            needIndicator(for: subcategory.need)
+                        if record.subcategory != nil, showsNeedPill {
+                            needIndicator(for: record.effectiveNeed)
                         }
                     }
                 }
@@ -116,7 +145,8 @@ struct RecordRowView: View {
         }
         .buttonStyle(.plain)
         .pointerHighlight(cornerRadius: DS.Radius.card)
-        .accessibilityLabel(accessibilityDescription)
+        // La fecha del modo duplicados también se lee: la etiqueta de la fila sustituye a la de sus textos.
+        .accessibilityLabel(dateCaption.map { "\(accessibilityDescription), \($0)" } ?? accessibilityDescription)
         .accessibilityIdentifier("record_row")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
@@ -124,11 +154,41 @@ struct RecordRowView: View {
     // MARK: - Accessibility
 
     private var accessibilityDescription: String {
-        let note = record.note ?? ""
-        let amount = appPreferences.currency(abs(record.amount), currencyCode: currencyCode)
-        let category = record.subcategory?.name ?? record.category?.name ?? ""
-        let account = record.account?.name ?? ""
-        return "\(note), \(amount), \(category), \(account)"
+        Self.accessibilityDescription(for: record, appPreferences: appPreferences, groupName: groupNameForRealLeg)
+    }
+
+    /// La etiqueta de VoiceOver de la fila. El importe va SIEMPRE en la divisa del registro, como el texto visible: con la
+    /// preferida, un gasto de 9.064.482 ₫ se leía «S/ 9.064.482,03» (card cvlu). Estática para fijarla con un registro de
+    /// verdad en `RecordRowAccessibilityCurrencyTests`.
+    /// `groupName`: la cápsula del grupo que la fila pinta junto al importe (pata de tu cuenta, entrada de una recarga).
+    static func accessibilityDescription(
+        for record: TransactionItem, appPreferences: AppPreferences, groupName: String? = nil
+    ) -> String {
+        let isTransfer = record.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer
+        // Un ajuste de saldo no es gasto ni ingreso: sin tipo y con el signo en el importe.
+        let isBalanceAdjustment = record.balanceAdjustmentType != nil && !isTransfer
+        let kind: TransactionType = switch TransactionDetailSheetLogic.kind(
+            isTransfer: isTransfer,
+            categoryIsIncome: record.category?.isIncome,
+            amount: record.amount
+        ) {
+        case .expense: .expense
+        case .income: .income
+        case .transfer: .transfer
+        }
+        return TransactionDetailSheetLogic.rowAccessibilityLabel(
+            note: record.note,
+            kind: isBalanceAdjustment ? nil : kind.displayName,
+            amount: isBalanceAdjustment
+                ? appPreferences.currency(record.amount, currencyCode: record.currencyCode)
+                : appPreferences.currency(abs(record.amount), currencyCode: record.currencyCode),
+            category: (record.subcategory?.name ?? record.category?.name).map {
+                RecordRowPresentationLogic.categoryCaption(
+                    $0, adjustmentType: record.balanceAdjustmentType, splitLinesRaw: record.splitLinesRaw)
+            },
+            // La cápsula del grupo en la pata de tu cuenta (y en la entrada de una recarga, card oibr) también se lee.
+            account: [record.account?.name, groupName].compactMap { $0 }.joined(separator: " · ")
+        )
     }
 
     // MARK: - Selection Circle
@@ -149,7 +209,7 @@ struct RecordRowView: View {
 
                 Image(systemName: "checkmark")
                     .font(DS.Typography.badgeLabel)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.thOnAccent)
                     .transition(.scale)
                     .accessibilityHidden(true)
             }
@@ -197,17 +257,26 @@ struct RecordRowView: View {
 
     private func tagsRow(_ tags: [Tag]) -> some View {
         HStack(spacing: DS.Spacing.xs) {
+            // Píldora tranquila, como la de necesidad: punto del color de la etiqueta y texto en tinta sobre su tinte.
+            // Rellena de color saturado pesaba más que el propio movimiento, y el blanco sobre azul daba 3,6:1.
             ForEach(Array(tags.prefix(3)), id: \.persistentModelID) { tag in
-                Text(tag.name)
-                    .font(DS.Typography.labelTiny)
-                    .foregroundStyle(Color.contrastingText(for: Color(hex: tag.colorHex)))
-                    .padding(.horizontal, DS.Chip.paddingV)
-                    .padding(.vertical, DS.Spacing.xxs)
-                    .background(
-                        Capsule()
-                            .fill(Color(hex: tag.colorHex))
-                    )
-                    .accessibilityHint(String(localized: "Tag"))
+                HStack(spacing: DS.Spacing.xs) {
+                    Circle()
+                        .fill(Color(hex: tag.colorHex))
+                        .frame(width: DS.Chip.dotSize - 2, height: DS.Chip.dotSize - 2)
+                        .accessibilityHidden(true)
+                    Text(tag.name)
+                        .font(DS.Typography.labelTiny)
+                        .foregroundStyle(.primary)
+                }
+                .padding(.horizontal, DS.Chip.paddingV)
+                .padding(.vertical, DS.Spacing.xxs)
+                .background(
+                    Capsule()
+                        .fill(Color(hex: tag.colorHex).opacity(0.15))
+                )
+                .accessibilityElement(children: .combine)
+                .accessibilityHint(String(localized: "Tag"))
             }
 
             if tags.count > 3 {
@@ -216,6 +285,48 @@ struct RecordRowView: View {
                     .foregroundStyle(.secondary)
             }
         }
+    }
+
+    // MARK: - Grupo (L8-5)
+
+    /// Nombre del grupo del que viene el registro, si se conoce (`GroupNameCatalogProvider`).
+    private var groupName: String? {
+        let hasPointer = record.splitExpenseID != nil || record.splitSettlementID != nil
+        if hasPointer, let zone = record.splitGroupZoneID { return groupNameCatalog[zone] }
+        // La entrada de una recarga de tu parte (card oibr): su grupo es el de su salida.
+        return GroupSplitLineEntryGroupLogic.entryZone(
+            hasGroupPointer: hasPointer, transferPairID: record.transferPairID,
+            zoneByTransferPair: groupZoneByTransferPair
+        ).flatMap { groupNameCatalog[$0] }
+    }
+
+    /// La cuenta que se nombra en la fila. La pata que vive en la cuenta de sistema de Grupos («Grupos PEN») nombra
+    /// su grupo: esa cuenta virtual no le dice nada a quien mira la lista.
+    private var displayedAccountName: String? {
+        if record.account?.isSystemAccount == true, let groupName { return groupName }
+        return record.account?.name
+    }
+
+    /// En la pata de tu cuenta real el grupo va en la cápsula de la derecha, donde iba una «%» que no lo nombraba: así
+    /// las dos filas del mismo gasto dicen el mismo nombre.
+    private var groupNameForRealLeg: String? {
+        guard record.account?.isSystemAccount == false else { return nil }
+        return groupName
+    }
+
+    private func groupBadge(_ name: String) -> some View {
+        HStack(spacing: DS.Spacing.xxs) {
+            Image(systemName: "person.2.fill")
+                .font(DS.Typography.chipIcon)
+                .accessibilityHidden(true)
+            Text(name)
+                .font(DS.Typography.labelTiny)
+                .lineLimit(1)
+        }
+        .foregroundStyle(.secondary)
+        .padding(.horizontal, DS.Chip.paddingV)
+        .padding(.vertical, DS.Spacing.xxs)
+        .background(Capsule().fill(Color.secondary.opacity(0.1)))
     }
 
     // MARK: - Nature Indicator
@@ -249,9 +360,28 @@ struct RecordRowView: View {
         appPreferences.currency(record.amount, currencyCode: record.currencyCode, forceFullPrecision: true)
     }
 
+    private var isIncome: Bool {
+        TransactionClassificationLogic.isIncome(record)
+    }
+
+    /// Ingreso en su color, gasto en el del texto, y transferencias y ajustes de saldo en gris (L8-3).
     private var amountColor: Color {
-        let isIncome = record.category?.isIncome ?? (record.amount >= 0)
-        return isIncome ? Color.electricIndigo : Color.hotPink
+        switch RecordRowPresentationLogic.amountStyle(
+            isBalanceAdjustment: record.balanceAdjustmentType != nil, isIncome: isIncome
+        ) {
+        case .income: return Color.amountTint(isIncome: true)
+        case .expense: return Color.amountTint(isIncome: false)
+        case .neutral: return Color.secondary
+        }
+    }
+
+    /// La necesidad solo en los gastos (L8-3).
+    private var showsNeedPill: Bool {
+        RecordRowPresentationLogic.showsNeedPill(
+            isBalanceAdjustment: record.balanceAdjustmentType != nil,
+            isIncome: isIncome,
+            subcategoryIsSystem: record.subcategory?.isAnySystem ?? false
+        )
     }
 }
 

@@ -35,6 +35,10 @@ struct OnboardingView: View {
     @State private var currentStep: Step = .name
     @State private var navigatingForward: Bool = true
 
+    // Resumen (UX 2.2 · L1UI-7): entrada por partes y confeti de marca.
+    @State private var confirmationShown: Bool = false
+    @State private var showConfirmationConfetti: Bool = false
+
     // Purpose & accounts (binary decisions)
     @State private var selectedUsageMode: UsageMode = .fullControl
     @State private var selectedMindset: String = "patrimonial"
@@ -136,8 +140,7 @@ struct OnboardingView: View {
             prefilledCurrencyCode: prefilledData?.primaryCurrencyCode,
             prefilledCategoriesCount: prefilledData?.categoriesCount ?? 0,
             hasPrefill: prefilledData != nil,
-            expensesOnly: false,
-            dayToDay: false
+            expensesOnly: false
         )
         _currentStep = State(initialValue: OnboardingStepPlan.firstStep(skipping: initialSkip))
     }
@@ -149,8 +152,10 @@ struct OnboardingView: View {
     /// con `effectiveSteps` desde el `init`. `Step` queda como alias local.
     typealias Step = OnboardingStep
 
-    /// Account types for fullControl picker (no .general — separate accounts have real types)
-    private let fullControlAccountTypes: [AccountType] = [.checking, .savings, .creditCard, .cash]
+    /// La opción marcada en «¿Dónde está tu dinero?». SSOT de la marca y del «Siguiente» de ese paso.
+    private var selectedAccountChoice: OnboardingAccountChoice? {
+        OnboardingAccountChoiceLogic.selectedChoice(mode: selectedUsageMode, accountType: selectedAccountType)
+    }
 
     /// Color de tint del icono por tipo de cuenta. Diferenciado para que el user
     /// asocie visualmente cada tipo con un color distinto, restringido a la
@@ -177,8 +182,7 @@ struct OnboardingView: View {
             prefilledCurrencyCode: prefilledData?.primaryCurrencyCode,
             prefilledCategoriesCount: prefilledData?.categoriesCount ?? 0,
             hasPrefill: prefilledData != nil,
-            expensesOnly: expensesOnlyMode,
-            dayToDay: selectedUsageMode == .dayToDay,
+            expensesOnly: expensesOnlyMode
         )
     }
 
@@ -220,6 +224,13 @@ struct OnboardingView: View {
         backgroundStyle == .heroFlow ? .white.opacity(0.4) : .secondary.opacity(0.6)
     }
 
+    /// Texto de ejemplo de un campo. El del sistema sigue el modo claro/oscuro, y con el tema Claro persistido salía
+    /// gris oscuro sobre el degradado fijo de `.heroFlow`, casi invisible (barrido final 2.2, 2026-11-05). En
+    /// `.themedPanel` se queda el del sistema.
+    private func fieldPrompt(_ text: String) -> Text {
+        backgroundStyle == .heroFlow ? Text(text).foregroundStyle(mutedTextStyle) : Text(text)
+    }
+
     private var cardStroke: Color {
         switch backgroundStyle {
         case .heroFlow:    return WelcomeFlowStyle.cardStroke
@@ -258,7 +269,6 @@ struct OnboardingView: View {
                         switch currentStep {
                         case .name: nameStep(logoTopSpacing: logoTopSpacing)
                         case .purpose: purposeStep
-                        case .accounts: accountsStep
                         case .accountType: accountTypeStep
                         case .currencyName: currencyNameStep
                         case .balance: balanceStep
@@ -272,7 +282,9 @@ struct OnboardingView: View {
                     ))
                 }
             }
-            .safeAreaInset(edge: .bottom) {
+            // Barra y no inset (barrido final 2.2): con el texto al máximo, o en el Duo cerrado, el paso se desplaza por
+            // debajo de «Siguiente», y la barra difumina ese borde del scroll.
+            .safeAreaBar(edge: .bottom, spacing: DS.Spacing.sm) {
                 floatingNavigationButtons
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -326,13 +338,42 @@ struct OnboardingView: View {
     // MARK: - Progress Indicator
 
     private var progressIndicator: some View {
-        HStack(spacing: DS.Spacing.sm) {
-            ForEach(0..<effectiveTotalSteps, id: \.self) { step in
-                Capsule()
-                    .fill(progressCapsuleColor(active: step <= effectiveStepIndex))
-                    .frame(width: step == effectiveStepIndex ? 24 : 8, height: 8)
-                    .dsAnimation(.spring(response: 0.3), value: effectiveStepIndex, reduceMotion: reduceMotion)
+        VStack(spacing: DS.Spacing.xs) {
+            HStack(spacing: DS.Spacing.sm) {
+                ForEach(0..<effectiveTotalSteps, id: \.self) { step in
+                    Capsule()
+                        .fill(progressCapsuleColor(active: step <= effectiveStepIndex))
+                        .frame(width: step == effectiveStepIndex ? 24 : 8, height: 8)
+                        .dsAnimation(.spring(response: 0.3), value: effectiveStepIndex, reduceMotion: reduceMotion)
+                }
             }
+
+            // «Paso N de M» en una pastilla de cristal (UX 2.2 · L1UI-6): los puntos solos no decían cuánto falta.
+            // Cifras de ancho fijo y transición numérica, para que la línea no baile al avanzar.
+            Text(progressStepText)
+                .font(DS.Typography.caption)
+                .fontWeight(.medium)
+                .monospacedDigit()
+                .foregroundStyle(primaryTextStyle.opacity(0.9))
+                .contentTransition(.numericText(value: Double(effectiveStepIndex)))
+                .dsAnimation(.snappy, value: effectiveStepIndex, reduceMotion: reduceMotion)
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.xs)
+                .glassEffect(.regular, in: Capsule())
+                .accessibilityIdentifier("onboarding_progress_step")
+        }
+    }
+
+    /// «Paso **N** de M» con el total REAL de pasos: con «solo gastos» o con datos de iCloud son menos de siete.
+    private var progressStepText: AttributedString {
+        let markdown = String(format: L10n.Onboarding.progressStepFormat, effectiveStepIndex + 1, effectiveTotalSteps)
+        do {
+            return try AttributedString(markdown: markdown)
+        } catch {
+            #if DEBUG
+            print("OnboardingView: Error: \(error)")
+            #endif
+            return AttributedString(markdown.replacing("**", with: ""))
         }
     }
 
@@ -431,7 +472,7 @@ struct OnboardingView: View {
                         .font(DS.Typography.label)
                         .foregroundStyle(secondaryTextStyle)
 
-                    TextField(L10n.Onboarding.namePlaceholder, text: $userName)
+                    TextField(L10n.Onboarding.namePlaceholder, text: $userName, prompt: fieldPrompt(L10n.Onboarding.namePlaceholder))
                         .textContentType(.nickname)
                         .font(DS.Typography.body)
                         .foregroundStyle(primaryTextStyle)
@@ -476,10 +517,19 @@ struct OnboardingView: View {
                             .foregroundStyle(primaryTextStyle)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, DS.Spacing.xl)
+
+                        // Que se cambia luego (UX 2.2 · L1-5): quien no sabe cuál le conviene dudaba o elegía
+                        // al azar. Es verdad: el interruptor «Solo gastos» de Perfil > Personalización.
+                        Text(L10n.Onboarding.purposeChangeLaterHint)
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(secondaryTextStyle)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, DS.Spacing.xl)
+                            .accessibilityIdentifier("onboarding_purpose_change_later_hint")
                     }
                     .padding(.top, DS.Spacing.xl)
 
-                    VStack(spacing: DS.Spacing.sm) {
+                    optionCard {
                         // La marca y el efecto del tap salen de la MISMA decisión pura
                         // (`OnboardingPurposeSelectionLogic`): el bug de C5 no era que los dos
                         // predicados estuvieran mal, era que eran DISTINTOS —`!expensesOnlyMode`
@@ -492,12 +542,15 @@ struct OnboardingView: View {
                             iconColor: .priorityNeed,
                             title: L10n.Onboarding.purposeControl,
                             description: L10n.Onboarding.purposeControlDesc,
-                            accessibilityId: "onboarding_purpose_control"
+                            accessibilityId: "onboarding_purpose_control",
+                            grouped: true
                         ) {
                             if OnboardingPurposeSelectionLogic.shouldSelectFullControl(from: selectedUsageMode) {
                                 selectedUsageMode = .fullControl
                             }
                         }
+
+                        optionDivider
 
                         binaryCard(
                             isSelected: OnboardingPurposeSelectionLogic.isSelected(.expenses, mode: selectedUsageMode),
@@ -505,7 +558,8 @@ struct OnboardingView: View {
                             iconColor: .essentialNeed,
                             title: L10n.Onboarding.purposeExpenses,
                             description: L10n.Onboarding.purposeExpensesDesc,
-                            accessibilityId: "onboarding_purpose_expenses"
+                            accessibilityId: "onboarding_purpose_expenses",
+                            grouped: true
                         ) {
                             selectedUsageMode = .expensesOnly
                             selectedMindset = "cashFlow"
@@ -525,78 +579,13 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Step 3: Accounts (binary)
-
-    private var accountsStep: some View {
-        GeometryReader { geometry in
-            ScrollView {
-                VStack(spacing: DS.Spacing.xl) {
-                    VStack(spacing: DS.Spacing.md) {
-                        Image(systemName: "building.columns.fill")
-                            .font(.system(size: heroIconSize))
-                            .foregroundStyle(primaryTextStyle)
-                            .accessibilityHidden(true)
-
-                        Text(L10n.Onboarding.accountsTitle)
-                            .font(DS.Typography.title)
-                            .fontWeight(.bold)
-                            .foregroundStyle(primaryTextStyle)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, DS.Spacing.xl)
-                    }
-                    .padding(.top, DS.Spacing.xl)
-
-                    VStack(spacing: DS.Spacing.sm) {
-                        binaryCard(
-                            isSelected: wantsSeparateAccounts,
-                            icon: "rectangle.stack",
-                            iconColor: .priorityNeedNew,
-                            title: L10n.Onboarding.accountsMultiple,
-                            description: L10n.Onboarding.accountsMultipleDesc,
-                            accessibilityId: "onboarding_accounts_multiple"
-                        ) {
-                            selectedUsageMode = .fullControl
-                            selectedMindset = "cashFlow"
-                            selectedAccountType = .checking
-                        }
-
-                        binaryCard(
-                            isSelected: !wantsSeparateAccounts,
-                            icon: "creditcard",
-                            iconColor: .hotPink,
-                            title: L10n.Onboarding.accountsSingle,
-                            description: L10n.Onboarding.accountsSingleDesc,
-                            accessibilityId: "onboarding_accounts_single"
-                        ) {
-                            selectedUsageMode = .dayToDay
-                            selectedMindset = "patrimonial"
-                            selectedAccountType = .general
-                        }
-                    }
-                    .padding(.horizontal, DS.Spacing.xl)
-
-                    Spacer()
-                }
-                .frame(minHeight: geometry.size.height)
-            }
-            .scrollBounceBehavior(.basedOnSize)
-        }
-        .onAppear {
-            if !wantsSeparateAccounts {
-                selectedMindset = "patrimonial"
-                selectedAccountType = .general
-            } else {
-                selectedMindset = "cashFlow"
-            }
-        }
-    }
-
     // MARK: - Reusable Binary Card
 
-    /// Card de selección estilo capabilityCard del AI Onboarding: icono con halo
-    /// gradient, sin checkmark/circle, selección visualizada con stroke 2pt
-    /// `styleAccentColor`. Background `cardFill` bifurcado — fijo en `.heroFlow`
-    /// (el token del tema rompía con tema Claro), token en `.themedPanel`.
+    /// Card de selección del onboarding. Sin elegir, el cristal de siempre (`cardFill`, fijo en `.heroFlow` porque el
+    /// token del tema rompía con tema Claro; token en `.themedPanel`). Elegida, se RELLENA de índigo profundo con texto
+    /// blanco, el icono en una pastilla blanca y un check blanco que entra con un escalado (UX 2.2 · L1UI-1, variante 2
+    /// de Jürgen): un contorno de 2 pt no se veía con cinco opciones. `emphasis` es la tarjeta que tiene que verse antes
+    /// de elegir nada —«¿No sabes tu saldo?»—, rellena de rosa profundo (L1UI-2). Sin degradados ni brillos.
     /// No usa `.selectableCard` porque ese modifier pone `.thCard` sin bifurcar.
     private func binaryCard(
         isSelected: Bool,
@@ -605,49 +594,128 @@ struct OnboardingView: View {
         title: String,
         description: String,
         accessibilityId: String,
+        emphasis: Bool = false,
+        grouped: Bool = false,
         action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
+        let style = binaryCardStyle(isSelected: isSelected, emphasis: emphasis, iconColor: iconColor)
+        // En una `optionCard` la fila no lleva forma ni borde propios: la tarjeta los pone. Sin elegir, transparente
+        // sobre el relleno de la tarjeta; elegida, el mismo índigo que la tarjeta suelta, recortado por la de fuera.
+        let rowShape = RoundedRectangle(cornerRadius: grouped ? 0 : DS.Radius.xl, style: .continuous)
+        // Elegir una opción: selección (card C4; mapa de `DS.Haptic`).
+        return Button(action: { DS.Haptic.selection(); action() }) {
             HStack(spacing: DS.Spacing.md) {
                 ZStack {
                     RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-                        .fill(iconColor.opacity(0.18))
-                        .frame(width: 44, height: 44)
+                        .fill(style.iconChip)
+                        .frame(width: Self.optionIconSize, height: Self.optionIconSize)
                     Image(systemName: icon)
                         .font(.system(size: 20, weight: .semibold)) // A11Y-DT: card icon
-                        .foregroundStyle(iconColor)
+                        .foregroundStyle(style.iconTint)
                 }
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     Text(title)
                         .font(DS.Typography.bodyBold)
-                        .foregroundStyle(primaryTextStyle)
+                        .foregroundStyle(style.title)
 
                     Text(description)
                         .font(DS.Typography.subheadline)
-                        .foregroundStyle(secondaryTextStyle)
+                        .fontWeight(emphasis ? .semibold : .regular)
+                        .foregroundStyle(style.description)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
                 Spacer(minLength: 0)
+
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 13, weight: .bold)) // A11Y-DT: check de selección
+                        .foregroundStyle(style.checkGlyph)
+                        .frame(width: 26, height: 26)
+                        .background(Circle().fill(Color.white))
+                        .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
+                        .accessibilityHidden(true)
+                } else if emphasis {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 15, weight: .bold)) // A11Y-DT: chevron de la tarjeta destacada
+                        .foregroundStyle(Color.white)
+                        .accessibilityHidden(true)
+                }
             }
             .padding(DS.Spacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(cardFill)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(
-                        isSelected ? styleAccentColor : cardStroke,
-                        lineWidth: isSelected ? 2 : 1
-                    )
+            .contentShape(Rectangle())
+            .background(grouped && !isSelected ? Color.clear : style.fill)
+            .clipShape(rowShape)
+            .overlay(rowShape.stroke(grouped ? Color.clear : style.stroke, lineWidth: 1))
+            .animation(
+                reduceMotion ? .easeInOut(duration: 0.2) : .spring(response: 0.3, dampingFraction: 0.7),
+                value: isSelected
             )
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityIdentifier(accessibilityId)
     }
 
-    // MARK: - Step 4: Account Type (fullControl only)
+    /// Colores de la tarjeta según su estado. Un relleno sólido sustituye al cristal; sin elegir, la de siempre.
+    private struct BinaryCardStyle {
+        let fill: Color
+        let stroke: Color
+        let iconChip: Color
+        let iconTint: Color
+        let title: Color
+        let description: Color
+        let checkGlyph: Color
+    }
+
+    private func binaryCardStyle(isSelected: Bool, emphasis: Bool, iconColor: Color) -> BinaryCardStyle {
+        if emphasis {
+            return BinaryCardStyle(
+                fill: .emphasisPinkFill, stroke: .clear, iconChip: .white, iconTint: .emphasisPinkFill,
+                title: .white, description: .white, checkGlyph: .emphasisPinkFill
+            )
+        }
+        if isSelected {
+            return BinaryCardStyle(
+                fill: .selectedIndigoFill, stroke: .clear, iconChip: .white, iconTint: iconColor,
+                title: .white, description: .white.opacity(0.85), checkGlyph: .selectedIndigoFill
+            )
+        }
+        return BinaryCardStyle(
+            fill: cardFill, stroke: cardStroke, iconChip: iconColor.opacity(0.18), iconTint: iconColor,
+            title: primaryTextStyle, description: secondaryTextStyle, checkGlyph: .selectedIndigoFill
+        )
+    }
+
+    /// El cuadro del icono de cada opción. El separador de `optionCard` arranca detrás de él.
+    private static let optionIconSize: CGFloat = 44
+
+    /// Las opciones de un paso que elige entre varias, en UNA tarjeta con separadores, como los selectores del Welcome
+    /// y las listas de Ajustes (D3 A de Jürgen, 2026-10-26). Antes cada opción era su propia tarjeta.
+    private func optionCard<Rows: View>(@ViewBuilder _ rows: () -> Rows) -> some View {
+        let shape = RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+        return VStack(spacing: 0) { rows() }
+            .background(cardFill)
+            .clipShape(shape)
+            .overlay(shape.stroke(cardStroke, lineWidth: 1))
+    }
+
+    /// Línea entre dos filas de una `optionCard`: arranca donde arranca el texto, con el icono como columna propia.
+    private var optionDivider: some View {
+        Rectangle()
+            .fill(cardStroke)
+            .frame(height: 1)
+            .padding(.leading, DS.Spacing.md + Self.optionIconSize + DS.Spacing.md)
+            .accessibilityHidden(true)
+    }
+
+    // MARK: - Step 3: ¿Dónde está tu dinero? (una sola cuenta o un tipo)
+
+    /// «¿Cómo organizas?» y «Tipo de cuenta» en una sola pantalla (UX 2.2 · L1-9, decisión de Jürgen del
+    /// 2026-10-13). Qué guarda cada opción y por qué no hay nada preseleccionado:
+    /// `OnboardingAccountChoiceLogic`. El saldo sigue en su propio paso, a propósito.
 
     private var accountTypeStep: some View {
         GeometryReader { geometry in
@@ -674,20 +742,31 @@ struct OnboardingView: View {
                     }
                     .padding(.top, DS.Spacing.xl)
 
-                    VStack(spacing: DS.Spacing.sm) {
-                        ForEach(fullControlAccountTypes) { type in
+                    optionCard {
+                        binaryCard(
+                            isSelected: selectedAccountChoice == .single,
+                            icon: "creditcard",
+                            iconColor: .hotPink,
+                            title: L10n.Onboarding.accountsSingle,
+                            description: L10n.Onboarding.accountsSingleDesc,
+                            accessibilityId: "onboarding_accounts_single",
+                            grouped: true
+                        ) {
+                            selectAccountChoice(.single)
+                        }
+
+                        ForEach(OnboardingAccountChoiceLogic.accountTypes) { type in
+                            optionDivider
                             binaryCard(
-                                isSelected: selectedAccountType == type,
+                                isSelected: selectedAccountChoice == .type(type),
                                 icon: iconName(for: type),
                                 iconColor: iconTint(for: type),
                                 title: type.localizedName,
                                 description: type.typeDescription,
-                                accessibilityId: "onboarding_account_type_\(type.rawValue)"
+                                accessibilityId: "onboarding_account_type_\(type.rawValue)",
+                                grouped: true
                             ) {
-                                if selectedAccountType != type {
-                                    selectedAccountType = type
-                                    calcFieldState.reset()
-                                }
+                                selectAccountChoice(.type(type))
                             }
                         }
                     }
@@ -701,7 +780,18 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Step 5: Account Name + Currency
+    /// Guarda la opción elegida. Cambiar de opción vacía la calculadora del saldo: sus campos dependen del
+    /// tipo de cuenta (igual que hacía el paso de tipo de cuenta de antes).
+    private func selectAccountChoice(_ choice: OnboardingAccountChoice) {
+        guard selectedAccountChoice != choice else { return }
+        let applied = OnboardingAccountChoiceLogic.apply(choice)
+        selectedUsageMode = applied.mode
+        selectedAccountType = applied.accountType
+        selectedMindset = applied.mindset
+        calcFieldState.reset()
+    }
+
+    // MARK: - Step 4: Account Name + Currency
 
     private var recommendedCurrency: CurrencyCode {
         CurrencyDefaults.detectCurrencyFromRegion()
@@ -717,14 +807,28 @@ struct OnboardingView: View {
 
     /// Suggested account name based on type and currency
     private var suggestedAccountName: String {
-        let currency = accountCurrency.shortPluralName.capitalized
-        if wantsSeparateAccounts {
-            // "Cuenta Corriente Soles", "Ahorros Dólares", etc.
-            return "\(selectedAccountType.localizedName) \(currency)"
-        } else {
-            // "Gastos Soles", "Gastos Dólares", etc.
-            return "\(L10n.CashFlow.expense) \(currency)"
-        }
+        // «Ahorros Soles» por separado, «Mi dinero Soles» todo junto, «Gastos Soles» solo gastos (UX 2.2 · L1UI-8).
+        OnboardingAccountNameLogic.suggestedName(
+            mode: selectedUsageMode,
+            accountTypeName: selectedAccountType.localizedName,
+            currencyName: accountCurrency.shortPluralName.capitalized,
+            allTogetherFormat: L10n.Onboarding.accountNameAllTogetherFormat,
+            expensesWord: L10n.CashFlow.expense
+        )
+    }
+
+    /// «Solo gastos» tiene su propio copy (UX 2.2 · L1-11): el de una sola cuenta dice «donde llevas el
+    /// control de tu dinero», justo lo que esa persona acaba de decir que no quiere.
+    private var currencyNameTitle: String {
+        if wantsSeparateAccounts { return L10n.Onboarding.currencyNameTitleSeparate }
+        return expensesOnlyMode ? L10n.Onboarding.currencyNameTitleExpenses : L10n.Onboarding.currencyNameTitleSingle
+    }
+
+    private var currencyNameSubtitle: String {
+        if wantsSeparateAccounts { return L10n.Onboarding.currencyNameSubtitleSeparate }
+        return expensesOnlyMode
+            ? L10n.Onboarding.currencyNameSubtitleExpenses
+            : L10n.Onboarding.currencyNameSubtitleSingle
     }
 
     private var currencyNameStep: some View {
@@ -736,18 +840,14 @@ struct OnboardingView: View {
                         .foregroundStyle(primaryTextStyle)
                         .accessibilityHidden(true)
 
-                    Text(wantsSeparateAccounts
-                         ? L10n.Onboarding.currencyNameTitleSeparate
-                         : L10n.Onboarding.currencyNameTitleSingle)
+                    Text(currencyNameTitle)
                         .font(DS.Typography.title)
                         .fontWeight(.bold)
                         .foregroundStyle(primaryTextStyle)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, DS.Spacing.xl)
 
-                    Text(wantsSeparateAccounts
-                         ? L10n.Onboarding.currencyNameSubtitleSeparate
-                         : L10n.Onboarding.currencyNameSubtitleSingle)
+                    Text(currencyNameSubtitle)
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(secondaryTextStyle)
                         .multilineTextAlignment(.center)
@@ -765,7 +865,7 @@ struct OnboardingView: View {
                     HStack(spacing: DS.Spacing.md) {
                         Image(systemName: "pencil")
                             .foregroundStyle(secondaryTextStyle)
-                        TextField(L10n.Onboarding.accountNamePlaceholder, text: $accountName)
+                        TextField(L10n.Onboarding.accountNamePlaceholder, text: $accountName, prompt: fieldPrompt(L10n.Onboarding.accountNamePlaceholder))
                             .focused($accountNameFocused)
                             .accessibilityIdentifier("onboarding_account_name")
                             .foregroundStyle(primaryTextStyle)
@@ -788,7 +888,7 @@ struct OnboardingView: View {
                         HStack(spacing: DS.Spacing.md) {
                             Text(accountCurrency.flag)
                                 .font(DS.Typography.title)
-                            Text(accountCurrency.localizedName)
+                            Text(accountCurrency.localizedName.capitalized)
                                 .font(DS.Typography.body)
                                 .foregroundStyle(primaryTextStyle)
                             Spacer()
@@ -822,7 +922,7 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Step 6: Balance (auto-launch calculator)
+    // MARK: - Step 5: Balance (auto-launch calculator)
 
     private var balanceStep: some View {
         GeometryReader { geometry in
@@ -868,11 +968,15 @@ struct OnboardingView: View {
 
                         binaryCard(
                             isSelected: balanceMode == .guided,
-                            icon: "arrow.triangle.2.circlepath",
+                            // Icono de cálculo (UX 2.2 · L1-7): el de «recargar» no decía que aquí se calcula.
+                            icon: "plus.forwardslash.minus",
                             iconColor: .hotPink,
-                            title: L10n.Onboarding.accountBalanceLearnMore,
-                            description: L10n.Onboarding.balanceGuideHint,
-                            accessibilityId: "onboarding_balance_guided"
+                            // UX 2.2 · L1UI-2: copy de invitación en rosa sólido. Los usuarios se atascaban en el saldo
+                            // y no veían la ayuda.
+                            title: L10n.Onboarding.balanceGuidedTitle,
+                            description: L10n.Onboarding.balanceGuidedSubtitle,
+                            accessibilityId: "onboarding_balance_guided",
+                            emphasis: true
                         ) {
                             balanceMode = .guided
                             // Si ya tenemos monto, mostramos el preview con
@@ -940,7 +1044,9 @@ struct OnboardingView: View {
     private func prefillCalculatorFromInitialBalance() {
         let amount = AmountInputHelper.parseDecimal(initialBalanceText)
         guard amount > 0 else { return }
-        let formatted = AmountInputHelper.formatWithGrouping(amount)
+        // El formato de la calculadora, no el del campo manual: con separador de miles («1,800.00») la calculadora
+        // leía 0 (`BalanceCalculatorInputLogic`).
+        let formatted = BalanceCalculatorInputLogic.prefillText(for: amount)
 
         switch selectedAccountType {
         case .creditCard:
@@ -1061,7 +1167,8 @@ struct OnboardingView: View {
                         Text(accountCurrency.symbol)
                             .font(DS.Typography.body)
                             .foregroundStyle(secondaryTextStyle)
-                        TextField("0", text: $initialBalanceText)
+                        // «Ej. 1500» y no un «0», que parecía un valor ya puesto (UX 2.2 · L1UI-5).
+                        TextField(L10n.Onboarding.balancePlaceholder, text: $initialBalanceText, prompt: fieldPrompt(L10n.Onboarding.balancePlaceholder))
                             .font(DS.Typography.largeTitle)
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
@@ -1070,6 +1177,26 @@ struct OnboardingView: View {
                     }
                 }
                 .padding()
+
+                // Qué falta para seguir, dentro del campo y no bajo «Siguiente» (UX 2.2 · L1UI-5). Se va al escribir.
+                if initialBalanceText.isEmpty {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Image(systemName: "info.circle")
+                            .accessibilityHidden(true)
+                        Text(L10n.Onboarding.balanceRequiredHint)
+                    }
+                    .font(DS.Typography.caption)
+                    .fontWeight(.medium)
+                    .foregroundStyle(primaryTextStyle)
+                    .padding(.horizontal, DS.Spacing.md)
+                    .padding(.vertical, DS.Spacing.xs)
+                    .background(Capsule().fill(primaryTextStyle.opacity(0.14)))
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .padding(.horizontal)
+                    .padding(.bottom, DS.Spacing.md)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("onboarding_balance_required_hint")
+                }
             }
         }
     }
@@ -1093,7 +1220,7 @@ struct OnboardingView: View {
         .padding(.top, DS.Spacing.xxs)
     }
 
-    // MARK: - Step 7: Confirmation
+    // MARK: - Step 7: Confirmation (último)
 
     private var confirmationMotivation: String {
         switch selectedUsageMode {
@@ -1121,20 +1248,50 @@ struct OnboardingView: View {
                         .multilineTextAlignment(.center)
                 }
                 .padding(.top, DS.Spacing.xl)
+                .modifier(confirmationEntrance(0))
 
                 // Lista compacta con dividers internos (UNA card grande con
                 // rows separadas por Rectangle bifurcado por background).
                 confirmItemsCard
                     .padding(.horizontal, DS.Spacing.xl)
+                    .modifier(confirmationEntrance(1))
 
                 // Privacy → grid 2x2 cards individuales con copys cortos.
                 privacyGrid
                     .padding(.horizontal, DS.Spacing.xl)
+                    .modifier(confirmationEntrance(2))
 
                 Spacer(minLength: DS.Spacing.lg)
             }
         }
         .scrollBounceBehavior(.basedOnSize)
+        .overlay {
+            // Cierra con confeti rosa e índigo (UX 2.2 · L1UI-7). `ConfettiView` no pinta nada con «Reducir movimiento».
+            if showConfirmationConfetti {
+                ConfettiView(colors: [.hotPink, .emphasisPinkFill, .electricIndigo, .pinkOnIndigo])
+                    .ignoresSafeArea()
+            }
+        }
+        .task {
+            confirmationShown = true
+            guard !reduceMotion else { return }
+            do {
+                try await Task.sleep(for: .milliseconds(500))
+                showConfirmationConfetti = true
+            } catch {
+                // Cancelada: el resumen se desmontó antes del confeti.
+            }
+        }
+        .onDisappear {
+            confirmationShown = false
+            showConfirmationConfetti = false
+        }
+    }
+
+    /// El resumen entra por partes —título, lista, privacidad— con 80 ms entre ellas y una subida de 16 pt con muelle
+    /// (UX 2.2 · L1UI-7). Con «Reducir movimiento», solo el fundido.
+    private func confirmationEntrance(_ index: Int) -> ConfirmationEntrance {
+        ConfirmationEntrance(shown: confirmationShown, index: index, reduceMotion: reduceMotion)
     }
 
     /// Items resumen en lista compacta tipo Apple Settings: rows separadas
@@ -1254,7 +1411,7 @@ struct OnboardingView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: - Step 8: Categories
+    // MARK: - Step 6: Categories
 
     private var filteredSeedCategories: [SeedCategoryPreview.CategoryInfo] {
         if expensesOnlyMode {
@@ -1318,17 +1475,20 @@ struct OnboardingView: View {
                     .padding(.horizontal, DS.Spacing.xl)
 
                     // Selection buttons
-                    VStack(spacing: DS.Spacing.sm) {
+                    optionCard {
                         binaryCard(
                             isSelected: loadSeedCategories,
                             icon: "checkmark.circle",
                             iconColor: .priorityNeed,
                             title: L10n.Onboarding.categoriesYes,
                             description: L10n.Onboarding.categoriesRecommended,
-                            accessibilityId: "onboarding_categories_yes"
+                            accessibilityId: "onboarding_categories_yes",
+                            grouped: true
                         ) {
                             loadSeedCategories = true
                         }
+
+                        optionDivider
 
                         binaryCard(
                             isSelected: !loadSeedCategories,
@@ -1336,7 +1496,8 @@ struct OnboardingView: View {
                             iconColor: .secondary,
                             title: L10n.Onboarding.categoriesNo,
                             description: "",
-                            accessibilityId: "onboarding_categories_no"
+                            accessibilityId: "onboarding_categories_no",
+                            grouped: true
                         ) {
                             loadSeedCategories = false
                         }
@@ -1358,11 +1519,12 @@ struct OnboardingView: View {
 
     /// Grid of category icons with staggered animation
     private var categoryIconsGrid: some View {
+        // `.top`: con nombres de dos líneas, los iconos de una fila siguen alineados entre sí.
         let columns = [
-            GridItem(.flexible()),
-            GridItem(.flexible()),
-            GridItem(.flexible()),
-            GridItem(.flexible())
+            GridItem(.flexible(), alignment: .top),
+            GridItem(.flexible(), alignment: .top),
+            GridItem(.flexible(), alignment: .top),
+            GridItem(.flexible(), alignment: .top)
         ]
 
         let circleOpacity: Double = (backgroundStyle == .heroFlow ? 0.25 : 0.2)
@@ -1381,10 +1543,12 @@ struct OnboardingView: View {
                             .accessibilityHidden(true)
                     }
 
+                    // Dos líneas: con una, «Mascotas y animales» salía «Mascotas y animal…».
                     Text(category.name)
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(secondaryTextStyle)
-                        .lineLimit(1)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
                         .minimumScaleFactor(0.8)
                 }
                 .opacity(showCategoryIcons ? 1 : 0)
@@ -1502,7 +1666,7 @@ struct OnboardingView: View {
         showCheckmark: Bool = false,
         action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
+        Button(action: { DS.Haptic.selection(); action() }) {
             HStack(spacing: DS.Spacing.md) {
                 Text(currency.flag)
                     .font(DS.Typography.title)
@@ -1511,7 +1675,7 @@ struct OnboardingView: View {
                     Text(currency.rawValue)
                         .font(DS.Typography.bodyBold)
                         .foregroundStyle(.primary)
-                    Text(currency.localizedName)
+                    Text(currency.localizedName.capitalized)
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -1611,7 +1775,7 @@ struct OnboardingView: View {
             step: currentStep,
             userName: userName,
             accountName: accountName,
-            isAccountTypeValid: fullControlAccountTypes.contains(selectedAccountType),
+            isAccountTypeValid: selectedAccountChoice != nil,
             initialBalanceText: initialBalanceText
         )
     }
@@ -1662,7 +1826,8 @@ struct OnboardingView: View {
 
             YalaPrimaryButton(
                 currentStep == .confirmation ? L10n.Onboarding.startUsingYala : L10n.Action.next,
-                isDisabled: isNextDisabled
+                isDisabled: isNextDisabled,
+                keepsDisabledToneInBar: true
             ) {
                 advance()
             }
@@ -1698,6 +1863,8 @@ struct OnboardingView: View {
 
         guard let next = nextStep(after: currentStep) else { return }
 
+        // Avanzar es una acción sin resultado: golpe ligero. El éxito queda para terminar (card C4).
+        DS.Haptic.light()
         navigatingForward = true
         dsWithAnimation(reduceMotion, .easeInOut(duration: 0.3)) {
             currentStep = next
@@ -1730,8 +1897,10 @@ struct OnboardingView: View {
         // Los tres términos son `willSeedCategories` y no `loadSeedCategories`: en visita el paso no se
         // muestra, así que la respuesta del usuario no existe y su default (`true`) mentiría. Ver el
         // docblock de la propiedad — de ahí sale también el saldo inicial que en secundaria se perdía.
+        // La persona acaba de decir «Sí»: es una petición, y el centinela de la semilla no la puede anular
+        // (card omw5 — con él puesto de una vida anterior, terminaba sin categorías y con «Nuevo registro» apagado).
         if willSeedCategories {
-            seedCategoriesIfNeeded(in: modelContext)
+            seedDefaultCategoriesOnUserRequest(in: modelContext)
         }
 
         if !willSeedCategories && !expensesOnlyMode {
@@ -1748,6 +1917,8 @@ struct OnboardingView: View {
 
         do {
             try modelContext.save()
+            // Terminar el onboarding, con lo elegido ya guardado (card C4; mapa de `DS.Haptic`).
+            DS.Haptic.success()
         } catch {
             #if DEBUG
             print("OnboardingView: Error saving onboarding data: \(error)")
@@ -1994,4 +2165,23 @@ enum SeedCategoryPreview {
 
 #Preview {
     OnboardingView {}
+}
+
+/// Entrada por partes del resumen del onboarding (UX 2.2 · L1UI-7).
+private struct ConfirmationEntrance: ViewModifier {
+    let shown: Bool
+    let index: Int
+    let reduceMotion: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(shown ? 1 : 0)
+            .offset(y: shown || reduceMotion ? 0 : 16)
+            .animation(animation, value: shown)
+    }
+
+    private var animation: Animation {
+        if reduceMotion { return .easeOut(duration: 0.25) }
+        return .spring(response: 0.45, dampingFraction: 0.85).delay(0.08 * Double(index))
+    }
 }

@@ -25,7 +25,6 @@ enum YalaAIOnboardingDemoAmounts {
         let coffeeAboveAverage: Double
         let deliverySavingPerMonth: Double
         let saverSavingPerMonth: Double
-        let tipCoffee: Double
 
         /// El ahorro anual es el mensual × 12 calculado, no otra cifra redonda: el copy dice
         /// «son X al año» y tiene que ser verdad para cualquier divisa.
@@ -38,8 +37,7 @@ enum YalaAIOnboardingDemoAmounts {
         coffeeThisMonth: 45,
         coffeeAboveAverage: 8,
         deliverySavingPerMonth: 80,
-        saverSavingPerMonth: 40,
-        tipCoffee: 5
+        saverSavingPerMonth: 40
     )
 
     static func amounts(for currency: CurrencyCode) -> Amounts {
@@ -50,8 +48,7 @@ enum YalaAIOnboardingDemoAmounts {
             coffeeThisMonth: scale(baseUSD.coffeeThisMonth),
             coffeeAboveAverage: scale(baseUSD.coffeeAboveAverage),
             deliverySavingPerMonth: scale(baseUSD.deliverySavingPerMonth),
-            saverSavingPerMonth: scale(baseUSD.saverSavingPerMonth),
-            tipCoffee: scale(baseUSD.tipCoffee)
+            saverSavingPerMonth: scale(baseUSD.saverSavingPerMonth)
         )
     }
 

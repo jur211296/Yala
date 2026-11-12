@@ -526,7 +526,9 @@ struct SignOutBlockedOwnershipWiringTests {
         let cambio = try Self.body(of: "private func signOutPhaseChanged()", in: vista)
         #expect(cambio == "updateContentViewReadiness() "
             + "if ContentViewReadinessLogic.blocker(state: currentShellReadinessState()) != nil { "
-            + "drainContentViewIntents() }")
+            + "drainContentViewIntents() } "
+            // Card 7e60: tras un cierre en caliente, lo que el arranque calló esperando el relanzamiento se retoma aquí.
+            + "resumeOnboardingRoutingDeferredForRelaunch()")
     }
 
     @Test func teardown_asksTheGuardWithTheLiveSnapshot() throws {

@@ -111,7 +111,11 @@ jobs:
           if [ -z "$UDID" ]; then
             RT="$(xcrun simctl list runtimes -j | python3 -c '
           import json, sys
-          rts = [r for r in json.load(sys.stdin)["runtimes"] if r["platform"] == "iOS" and r["isAvailable"]]
+          # Solo runtimes que admiten el modelo: un runtime solo-Duo como el 27.1 de GitHub
+          # (2026-10-23) contesta `create` con 403 «Incompatible device».
+          tipo = "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro"
+          rts = [r for r in json.load(sys.stdin)["runtimes"] if r["platform"] == "iOS" and r["isAvailable"]
+                 and any(t["identifier"] == tipo for t in r.get("supportedDeviceTypes", [{"identifier": tipo}]))]
           print(sorted(rts, key=lambda r: [int(x) for x in r["version"].split(".")])[-1]["identifier"])
           ')"
             UDID="$(xcrun simctl create "$SIM_NAME" com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro "$RT")"

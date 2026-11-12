@@ -31,6 +31,11 @@ final class GroupTransactionBridge {
     /// bridge borre el draft activo. NO setear directamente — usar el closure helper.
     private(set) var skipDraftCleanup: Bool = false
 
+    /// Grupos B · card 10: dentro de un lote (`batchingReceivables`), las zonas cuyo repaso de lo cobrado espera al final
+    /// del lote. `nil` fuera de un lote: el repaso es inmediato. Solo lo tocan `batchingReceivables` y
+    /// `reconcileReceivablesOrDefer`.
+    @ObservationIgnored var receivableBatchZones: Set<String>?
+
     /// Ejecuta `body` con `skipDraftCleanup=true` y resetea garantizado vía `defer`,
     /// incluso si `body` lanza. Único path autorizado para mutar el flag.
     /// `@discardableResult` porque el `T` puede venir de una función que ya lo es (`bridgeExpense` devuelve
@@ -61,6 +66,9 @@ final class GroupTransactionBridge {
         self.modelContext = nil
     }
     #endif
+
+    /// El contexto del puente para el repaso de lo cobrado al volver a primer plano (`reconcileAllReceivables`).
+    var contextForReceivables: ModelContext? { modelContext }
 
     private func requireContext() throws -> ModelContext {
         guard let context = modelContext else {
@@ -246,7 +254,7 @@ final class GroupTransactionBridge {
         // reflejar su +Z en la cuenta virtual.
         if expense.isOpeningBalance {
             try bridgeOpeningBalance(expense, in: group, currentMemberID: currentMemberID, context: context)
-            try saveIfNeeded(shouldSave: shouldSave, context: context)
+            try finishExpensePass(expense, shouldSave: shouldSave, context: context)
             return true
         }
 
@@ -271,6 +279,12 @@ final class GroupTransactionBridge {
         guard isCaseA || myShareRecord != nil else {
             let anySharesArrived = try context.fetchCount(FetchDescriptor<SplitShare>(
                 predicate: #Predicate { $0.expenseID == expenseID })) > 0
+            // Grupos B · card 10: ya no estás en este gasto (te quitaron, o cambió el pagador de tu venta): tu saldo cambió y
+            // lo cobrado de tus ventas se repasa, también las patas de una venta que dejó de ser tuya.
+            if anySharesArrived {
+                try reconcileReceivablesOrDefer(zoneID: expense.groupZoneID, context: context)
+                try saveIfNeeded(shouldSave: shouldSave && context.hasChanges, context: context)
+            }
             return anySharesArrived
         }
 
@@ -291,8 +305,20 @@ final class GroupTransactionBridge {
         let allExistingTxs = try context.fetch(FetchDescriptor<TransactionItem>(
             predicate: #Predicate { $0.splitExpenseID == expenseIDStr }
         ))
-        let existingVirtualTxs = allExistingTxs.filter { $0.account?.isSystemAccount == true }
-        var existingRealTx = allExistingTxs.first { $0.account?.isSystemAccount == false }
+        // Grupos B · card 10: las patas cobradas de una venta las escribe `reconcileReceivables` y no compiten en la partición.
+        let collectedLegs = allExistingTxs.filter { GroupCollectedLegLogic.isCollected($0.splitLinesRaw) }
+        let existingVirtualTxs = allExistingTxs.filter {
+            $0.account?.isSystemAccount == true && !GroupCollectedLegLogic.isCollected($0.splitLinesRaw)
+        }
+        // Una pata derivada de una línea (Grupos B) nunca es «la real», aunque la lleve una cuenta real.
+        var existingRealTx = allExistingTxs.first {
+            $0.account?.isSystemAccount == false && !GroupSplitLinesBridgeLogic.isDerivedMarker($0.splitLinesRaw)
+        }
+        // Las derivadas que no están en «Grupos»: fuera de sitio, o con la cuenta aún sin hidratar (ventana CloudKit-lazy):
+        // se reutilizan en vez de crear otra al lado.
+        let derivedRealLegs = allExistingTxs.filter {
+            $0.account?.isSystemAccount != true && GroupSplitLinesBridgeLogic.isDerivedMarker($0.splitLinesRaw)
+        }
 
         let existingPendingDrafts = try context.fetch(FetchDescriptor<InboxDraft>(
             predicate: #Predicate { $0.splitExpenseID == expenseIDStr }
@@ -322,11 +348,20 @@ final class GroupTransactionBridge {
                 subcategoryIsSystem: sub?.isAnySystem == true,
                 hasUserMetadata: hasUserSubcat || hasTags || tx.needOverride != nil,
                 date: tx.date,
-                createdAt: tx.createdAt
+                createdAt: tx.createdAt,
+                isDerivedLine: GroupSplitLinesBridgeLogic.isDerivedMarker(tx.splitLinesRaw),
+                carriesRecipe: GroupSplitLinesBridgeLogic.mayCarryRecipe(tx.splitLinesRaw)
             )
         })
         let preservedClassifiable: TransactionItem? = partition.preservedIndex.map { existingVirtualTxs[$0] }
-        for idx in partition.deletedIndices { context.delete(existingVirtualTxs[idx]) }
+        // Una copia duplicada de la pata con la receta sale sin llevarse las recargas que la superviviente reutiliza.
+        let holdersRecipeTransfers = Self.transferLineIDs(in: existingRealTx?.splitLinesRaw)
+            .union(Self.transferLineIDs(in: preservedClassifiable?.splitLinesRaw))
+        for idx in partition.deletedIndices {
+            try deleteLegWithEntries(existingVirtualTxs[idx], keep: holdersRecipeTransfers, context: context)
+        }
+        // Grupos B: las patas derivadas de una línea las decide `reconcileDerivedLegs` al final de cada camino.
+        let derivedLegs = partition.derivedLineIndices.map { existingVirtualTxs[$0] } + derivedRealLegs
         // Drafts pendientes: cleanup salvo si DraftService los está procesando (race).
         // Opt-in drafts (`optInPersonalOnly==true`) NUNCA se borran aquí — representan
         // intent del user pendiente de aprobación que sobrevive cualquier re-bridge.
@@ -343,7 +378,73 @@ final class GroupTransactionBridge {
             context: context
         )
         let matchedSubcat = GroupTransactionBridge.matchSubcategory(name: expense.subcategoryName, context: context)
-        let realSubcat: Subcategory? = (matchedSubcat?.isAnySystem == true) ? nil : matchedSubcat
+        // Grupos B · card 8: pagaste tú y la categoría es de ingreso ⇒ una venta, que queda «por cobrar» en «Grupos».
+        // Fuera de una venta (pagó otro), una categoría de ingreso no clasifica tu parte: contaría como ingreso.
+        let matchedIsIncome = matchedSubcat.map { $0.safeCategory.isIncome }
+        let isSale = GroupSaleBridgeLogic.isSale(
+            isCaseA: isCaseA, subcategoryIsIncome: matchedIsIncome,
+            subcategoryIsSystem: matchedSubcat?.isAnySystem == true)
+        // Un gasto que no es una venta no tiene nada cobrado (dejó de ser venta, o cambió el pagador).
+        if !isSale { for leg in collectedLegs where !leg.isDeleted { context.delete(leg) } }
+        let realSubcat: Subcategory? = (matchedSubcat?.isAnySystem == true)
+            || !GroupSaleBridgeLogic.classifiesShare(isSale: isSale, subcategoryIsIncome: matchedIsIncome)
+            ? nil : matchedSubcat
+
+        // Grupos B: la receta de líneas vive en la pata que el puente conserva (la real en el Caso A, la virtual
+        // clasificable en el Caso B) y solo se aplica con el puente activo y vida personal (D5). Si no se aplica, tu
+        // parte va en una línea y la receta se queda donde está.
+        let recipeHolder: TransactionItem? = isCaseA ? existingRealTx : preservedClassifiable
+        // Card sbvw: si el gasto cambió de pagador, la receta está en la pata del OTRO caso, que esta pasada se va. Se
+        // trasplanta a la pata nueva cuando nace aquí mismo: la de «Grupos» al pasar a pagar otro (con el puente
+        // activo), la real al pasar a pagar tú con una cuenta (la edición local). Si no nace —el pagador pasa a ti desde
+        // otro aparato, o la pata real cambia de divisa—, el borrador de la Bandeja que ya sale ofrece «Partir».
+        let transplant = GroupSplitLinesTransplantLogic.inheritedRecipe(
+            holderRaw: recipeHolder?.splitLinesRaw,
+            donorRaw: (isCaseA ? preservedClassifiable : existingRealTx)?.splitLinesRaw,
+            donorLeaves: isCaseA ? effectiveBridgeEnabled && !isGroupsOnlySession && !isSale : effectiveBridgeEnabled,
+            newHolderAppears: isCaseA
+                ? existingRealTx.map { $0.currencyCode == expense.currencyCode }
+                    ?? (accountForCurrentUser?.currencyCode == expense.currencyCode)
+                : mySharedAmount > 0)
+        // Con la receta viajan también tus etiquetas y la necesidad de tu parte (las derivadas las heredan de la pata que la
+        // lleva): sin ellas, un presupuesto por etiqueta dejaba de contar las líneas (review de sbvw). Leídas ANTES de que
+        // la pata que se va se borre.
+        let transplantDonor: TransactionItem? = transplant == nil ? nil : (isCaseA ? preservedClassifiable : existingRealTx)
+        let transplantedTagIDs = transplantDonor?.resolvedTagIDs() ?? []
+        let transplantedNeed = transplantDonor?.needOverride
+        let recipeStored = GroupSplitLinesRecipe.parse(transplant ?? recipeHolder?.splitLinesRaw)
+        let recipeDestinations = try Self.splitLineDestinations(for: recipeStored, context: context)
+        let splitLines = GroupSplitLinesBridgeLogic.decide(
+            stored: recipeStored,
+            // En el Caso B la pata que se conserva puede rehacerse en la divisa nueva en esta misma pasada (con la receta
+            // dentro), así que la divisa no cierra la puerta: si no cuadra, la Bandeja avisa ya. En el Caso A una pata
+            // real en otra divisa se borra y deja su borrador; la que hereda la receta nace en la divisa del gasto
+            // (`newHolderAppears`), así que con trasplante tampoco la cierra.
+            gateOpen: effectiveBridgeEnabled && !isGroupsOnlySession && !isSale
+                && (!isCaseA || transplant != nil || recipeHolder?.currencyCode == expense.currencyCode),
+            isCaseA: isCaseA,
+            share: mySharedAmount,
+            currencyCode: expense.currencyCode,
+            destinations: recipeDestinations.mapValues {
+                .init(currencyCode: $0.currencyCode, isSystemAccount: $0.isSystemAccount)
+            }
+        )
+        let splitPlan: GroupSplitLinesBridgeLogic.Plan?
+        if case let .apply(plan) = splitLines { splitPlan = plan } else { splitPlan = nil }
+        var splitLinesMismatch = false
+        if case .mismatch = splitLines { splitLinesMismatch = true }
+        // El aviso de «no cuadra» ya pide la clasificación de tu parte: ningún otro puntero `[.subcategory]` encima.
+        let splitLinesCoverSubcategory = splitPlan != nil || splitLinesMismatch
+
+        // Una pata conservada del Caso B que quedó como recarga (la ancla era una recarga) vuelve a ser tu parte en una
+        // línea si esta pasada no la necesita así. Y la de una venta, si dejó de serlo. No compares con `!= nil`: una
+        // pata por cobrar también lleva tipo (`GroupSaleBridgeLogic.revertsKeptLeg`).
+        let planTransfers = Self.transferLineIDs(in: splitPlan)
+        if let holder = preservedClassifiable, GroupSaleBridgeLogic.revertsKeptLeg(
+            currentType: holder.balanceAdjustmentType, isSale: isSale, isCaseA: isCaseA,
+            anchorIsTransfer: splitPlan?.anchor?.kind == .transfer) {
+            try revertTransferShape(of: holder, keep: planTransfers, context: context)
+        }
 
         // Path Caso B (otro pagó): virtual-only. Con bridge ON la TX real residual se borra
         // (solo tiene sentido en Caso A). Con bridge OFF se preserva — pudo ser opt-in
@@ -354,27 +455,68 @@ final class GroupTransactionBridge {
             // DIAG (caso "registro de grupo desaparece al clasificar"): timeline del
             // delete+recreate de la TX virtual. Sin PII (solo id + counts). Quitar tras QA.
             Self.logger.info("caseB start expense=\(expenseIDStr, privacy: .public) existingVirtual=\(existingVirtualTxs.count, privacy: .public) existingDrafts=\(existingPendingDrafts.count, privacy: .public) matchedSubcat=\(realSubcat != nil, privacy: .public) remote=\(isRemoteSync, privacy: .public)")
-            try bridgeVirtualOnly(
+            let keptLeg = try bridgeVirtualOnly(
                 expense: expense,
                 existingRealTx: existingRealTx,
                 preservedVirtual: preservedClassifiable,
                 deleteStaleReal: effectiveBridgeEnabled,
-                myShareAmount: mySharedAmount,
+                // Las recargas de la receta que se trasplanta se conservan con la pata real que se va (card sbvw).
+                keepTransfers: planTransfers,
+                inheritedSplitLines: transplant,
+                // Con receta, la pata conservada lleva la línea ancla; las demás líneas, sus patas derivadas.
+                myShareAmount: splitPlan?.anchor.map { GroupSplitLinesBridgeLogic.double($0.amount) } ?? mySharedAmount,
                 lentAmount: lentAmount,
                 totalAmount: totalAmount,
                 realSubcat: realSubcat,
-                optInCoversSubcategory: optInCoversSubcategory,
+                optInCoversSubcategory: optInCoversSubcategory || splitLinesCoverSubcategory,
                 virtualAccount: virtualAccount,
                 context: context
             )
-            try saveIfNeeded(shouldSave: shouldSave, context: context)
+            // La pata que el Caso B deja: la conservada, la rehecha en otra divisa o la nueva (con la receta trasplantada).
+            if transplant != nil, let holder = keptLeg, !holder.isDeleted {
+                Self.carryTransplantedMetadata(
+                    to: holder, tagIDs: transplantedTagIDs, needOverride: transplantedNeed, context: context)
+            }
+            if let plan = splitPlan, let holder = keptLeg, !holder.isDeleted {
+                try applyAnchor(plan.anchor, toCaseBHolder: holder, keep: planTransfers, expense: expense,
+                                destinations: recipeDestinations, context: context)
+            }
+            try reconcileDerivedLegs(
+                expense: expense, plan: splitPlan, existing: derivedLegs, holder: keptLeg,
+                virtualAccount: virtualAccount, destinations: recipeDestinations, context: context)
+            if splitLinesMismatch {
+                createSplitLinesMismatchDraft(
+                    expense: expense, holder: keptLeg, myShareAmount: mySharedAmount,
+                    groupName: group.name, existingPendingDrafts: existingPendingDrafts, context: context)
+            }
+            try finishExpensePass(expense, shouldSave: shouldSave, context: context)
             Self.logger.info("caseB saved expense=\(expenseIDStr, privacy: .public) shouldSave=\(shouldSave, privacy: .public)")
+            return true
+        }
+
+        // Path Caso A con categoría de ingreso: una venta. No salió dinero de ninguna cuenta; lo que te deben queda «por
+        // cobrar» en «Grupos» (Grupos B · card 8). Vale con el puente activo, apagado y en solo-grupos.
+        if isSale {
+            try bridgeSale(
+                expense: expense,
+                existingRealTx: existingRealTx,
+                // También la del «Sí, registrar» con el puente apagado, y su borrador si sigue pendiente: decir que es
+                // una venta es decir que no salió dinero. Conservarla dejaba un `-total` contado como gasto (review).
+                optInDrafts: existingPendingDrafts.filter(\.optInPersonalOnly),
+                keptLeg: preservedClassifiable,
+                derivedLegs: derivedLegs,
+                saleSubcategory: realSubcat,
+                myShareAmount: mySharedAmount,
+                virtualAccount: virtualAccount,
+                context: context
+            )
+            try finishExpensePass(expense, shouldSave: shouldSave, context: context)
             return true
         }
 
         // Path Caso A sin cuentas personales: par virtual puro (TX1 -myShare + TX2 +totalAmount).
         if isGroupsOnlySession {
-            if let stale = existingRealTx { context.delete(stale) }
+            if let stale = existingRealTx { try deleteLegWithEntries(stale, context: context) }
             createGroupsOnlyCaseAVirtualPair(
                 expense: expense,
                 preservedVirtual: preservedClassifiable,
@@ -386,7 +528,11 @@ final class GroupTransactionBridge {
                 virtualAccount: virtualAccount,
                 context: context
             )
-            try saveIfNeeded(shouldSave: shouldSave, context: context)
+            // Sin cuentas personales la receta no se aplica (D5): fuera las patas derivadas.
+            try reconcileDerivedLegs(
+                expense: expense, plan: nil, existing: derivedLegs, holder: nil,
+                virtualAccount: virtualAccount, destinations: [:], context: context)
+            try finishExpensePass(expense, shouldSave: shouldSave, context: context)
             return true
         }
 
@@ -410,14 +556,43 @@ final class GroupTransactionBridge {
                 virtualAccount: virtualAccount,
                 context: context
             )
-            try saveIfNeeded(shouldSave: shouldSave, context: context)
+            // Puente apagado: la receta no se aplica (D5).
+            try reconcileDerivedLegs(
+                expense: expense, plan: nil, existing: derivedLegs, holder: nil,
+                virtualAccount: virtualAccount, destinations: [:], context: context)
+            try finishExpensePass(expense, shouldSave: shouldSave, context: context)
             return true
         }
 
         // Path Caso A modo .full/.completed: la virtual clasificable superviviente (p.ej. de
         // cuando yo era NO-pagador, Caso B) ya no aplica — aquí mi costo lo lleva la TX real
         // `-total` + la virtual lent derivada. Borrarla evita una virtual `-myShare` huérfana.
-        if let stale = preservedClassifiable { context.delete(stale) }
+        if let stale = preservedClassifiable { try deleteLegWithEntries(stale, keep: planTransfers, context: context) }
+
+        // Card 8933: la cuenta que eligió la persona AL EDITAR mueve el registro (`GroupBridgeEditedAccountLogic`). Con otra
+        // moneda y una cuenta elegida de esa moneda, el registro se rehace en ella: se retira aquí y lo crea la rama de
+        // «primera vez» de abajo con la cuenta elegida, en vez de dejar un borrador en la Bandeja.
+        let editedAccount = existingRealTx.map { realTx in
+            GroupBridgeEditedAccountLogic.decide(
+                isRemoteSync: isRemoteSync,
+                recordAccountID: realTx.account?.shortcutID,
+                recordCurrency: realTx.currencyCode,
+                chosenAccountID: accountForCurrentUser?.shortcutID,
+                chosenAccountCurrency: accountForCurrentUser?.currencyCode,
+                expenseCurrency: expense.currencyCode)
+        }
+        // Lo que la persona le puso al registro viejo viaja al nuevo (nota, etiquetas, necesidad): rehacerlo es cambiar de
+        // cuenta, no empezar de cero (review adversarial del 2026-11-02).
+        var recreatedNote: String?
+        var recreatedTagIDs: Set<UUID> = []
+        var recreatedNeed: String?
+        if editedAccount == .recreateInChosenAccount, let stale = existingRealTx {
+            recreatedNote = stale.note
+            recreatedTagIDs = stale.resolvedTagIDs() ?? []
+            recreatedNeed = stale.needOverride
+            try deleteLegWithEntries(stale, context: context)
+            existingRealTx = nil
+        }
 
         // Path Caso A modo .full/.completed: gestionar TX cuenta real con preserve+update.
         if let realTx = existingRealTx {
@@ -427,7 +602,9 @@ final class GroupTransactionBridge {
                 realTx.date = expense.date
                 realTx.splitTotalAmount = totalAmount
                 realTx.splitType = expense.splitType
-                // NUNCA pisar account/note/tags/currencyCode ni una subcat ya puesta.
+                // Card 8933: la única excepción a «nunca pisar la cuenta» es la cuenta que la persona eligió al editar.
+                if editedAccount == .move, let chosen = accountForCurrentUser { realTx.account = chosen }
+                // NUNCA pisar account (salvo esa)/note/tags/currencyCode ni una subcat ya puesta.
                 // Excepción: rellenar subcat+category SOLO si la TX nunca tuvo (creada sin
                 // clasificar) y el gasto ahora resuelve una — refleja el chip elegido al
                 // editar el gasto, sin sobrescribir una clasificación manual del usuario.
@@ -442,7 +619,7 @@ final class GroupTransactionBridge {
                 realTx.recalculatePreferredCurrency(context: context)
             } else {
                 // INCOMPATIBLE currency: delete TX real + draft hint impersonal.
-                context.delete(realTx)
+                try deleteLegWithEntries(realTx, context: context)
                 existingRealTx = nil
                 createDraftCaseA(
                     expense: expense,
@@ -470,6 +647,11 @@ final class GroupTransactionBridge {
             realTx.splitTotalAmount = totalAmount
             realTx.splitType = expense.splitType
             context.insert(realTx)
+            if editedAccount == .recreateInChosenAccount {
+                if let recreatedNote { realTx.note = recreatedNote }
+                Self.carryTransplantedMetadata(
+                    to: realTx, tagIDs: recreatedTagIDs, needOverride: recreatedNeed, context: context)
+            }
             realTx.recalculatePreferredCurrency(context: context)
             // Enfoque B: exponer la TX real recién creada al bloque fallback de abajo
             // (si su subcat quedó nil, ofrecerá clasificarla vía draft [.subcategory]).
@@ -505,15 +687,41 @@ final class GroupTransactionBridge {
             )
         }
 
+        // Grupos B: con receta, la pata real lleva la categoría de la línea ancla (la primera de gasto). También la que
+        // nace en esta pasada con la receta trasplantada del Caso B (card sbvw).
+        if let realTx = existingRealTx, !realTx.isDeleted {
+            if let transplant {
+                realTx.splitLinesRaw = transplant
+                Self.carryTransplantedMetadata(
+                    to: realTx, tagIDs: transplantedTagIDs, needOverride: transplantedNeed, context: context)
+            }
+            if let anchor = splitPlan?.anchor, anchor.kind == .expense,
+               let subcategoryID = anchor.subcategoryID,
+               let anchorSubcat = try Self.subcategory(shortcutID: subcategoryID, context: context) {
+                realTx.subcategory = anchorSubcat
+                realTx.category = anchorSubcat.safeCategory
+            }
+        }
+
         // TX virtual lent (+lentAmount) — siempre regenerada en Caso A `.full/.completed`.
         // `createVirtualLent` es no-op si lent <= 0 (yo solo en el split).
+        // Con receta, el préstamo engorda en lo que las líneas derivadas apuntan en «Grupos» (D3): así la pata real
+        // netea a la línea ancla en Estadísticas sin tocar el ajuste.
         try createVirtualLent(
             expense: expense,
-            lentAmount: lentAmount,
+            lentAmount: lentAmount + (splitPlan.map { GroupSplitLinesBridgeLogic.double($0.extraLoan) } ?? 0),
             totalAmount: totalAmount,
             virtualAccount: virtualAccount,
             context: context
         )
+        try reconcileDerivedLegs(
+            expense: expense, plan: splitPlan, existing: derivedLegs, holder: existingRealTx,
+            virtualAccount: virtualAccount, destinations: recipeDestinations, context: context)
+        if splitLinesMismatch {
+            createSplitLinesMismatchDraft(
+                expense: expense, holder: existingRealTx, myShareAmount: mySharedAmount,
+                groupName: group.name, existingPendingDrafts: existingPendingDrafts, context: context)
+        }
 
         // Enfoque B: si la TX real quedó sin subcategoría y el auto-match falla, (re)crear draft
         // [.subcategory] (TX-puntero, mismo mecanismo que Caso B) para clasificar desde el Inbox.
@@ -523,7 +731,7 @@ final class GroupTransactionBridge {
         // DraftService.approve (skipDraftCleanup): ahí el user ya asignó subcat. El cleanup de
         // drafts pendientes (arriba) ya corrió → no duplica; el re-bridge lo recrea (igual que
         // Caso B recrea su draft cada pasada).
-        if GroupDraftFinalizationLogic.shouldOfferCaseASubcategoryFallback(
+        if !splitLinesCoverSubcategory, GroupDraftFinalizationLogic.shouldOfferCaseASubcategoryFallback(
             skipDraftCleanup: skipDraftCleanup,
             hasRealTx: existingRealTx != nil,
             realTxSubcategoryIsNil: existingRealTx?.subcategory == nil,
@@ -532,8 +740,68 @@ final class GroupTransactionBridge {
             createCaseASubcategoryDraft(expense: expense, account: existingRealTx?.account, context: context)
         }
 
-        try saveIfNeeded(shouldSave: shouldSave, context: context)
+        try finishExpensePass(expense, shouldSave: shouldSave, context: context)
         return true
+    }
+
+    // MARK: - Venta por cobrar (Grupos B · card 8)
+
+    /// Una venta: sin pata real (tampoco la de un «Sí, registrar» con el puente apagado, ni su borrador pendiente), sin
+    /// préstamo y sin líneas de tu parte. Una sola pata en «Grupos» por lo que te deben,
+    /// con la categoría de ingreso y `balanceAdjustmentType = "receivable"`, que Estadísticas no cuenta. Reutiliza la
+    /// pata clasificable que el puente conserva (así guarda sus etiquetas y su identidad entre pasadas). Si nadie te debe
+    /// nada, no hay pata.
+    private func bridgeSale(
+        expense: SplitExpense,
+        existingRealTx: TransactionItem?,
+        optInDrafts: [InboxDraft],
+        keptLeg: TransactionItem?,
+        derivedLegs: [TransactionItem],
+        saleSubcategory: Subcategory?,
+        myShareAmount: Double,
+        virtualAccount: Account,
+        context: ModelContext
+    ) throws {
+        if let real = existingRealTx { try deleteLegWithEntries(real, context: context) }
+        for draft in optInDrafts where !draft.isDeleted { context.delete(draft) }
+        try reconcileDerivedLegs(
+            expense: expense, plan: nil, existing: derivedLegs, holder: nil,
+            virtualAccount: virtualAccount, destinations: [:], context: context)
+
+        var leg = keptLeg
+        if let current = leg, current.currencyCode != expense.currencyCode {
+            try deleteLegWithEntries(current, context: context)
+            leg = nil
+        }
+        guard let amount = GroupSaleBridgeLogic.receivableAmount(total: expense.amount, myShare: myShareAmount)
+        else {
+            if let leg { try deleteLegWithEntries(leg, context: context) }
+            return
+        }
+        let note = expense.expenseDescription.isEmpty ? nil : expense.expenseDescription
+        let receivable: TransactionItem
+        if let leg {
+            receivable = leg
+        } else {
+            receivable = TransactionItem(
+                date: expense.date, amount: amount, currencyCode: expense.currencyCode, note: note,
+                category: saleSubcategory?.safeCategory, subcategory: saleSubcategory, account: virtualAccount)
+            context.insert(receivable)
+        }
+        receivable.amount = amount
+        receivable.date = expense.date
+        receivable.note = note
+        receivable.account = virtualAccount
+        receivable.subcategory = saleSubcategory
+        receivable.category = saleSubcategory?.safeCategory
+        receivable.balanceAdjustmentType = TransactionItem.adjustmentTypeReceivable
+        receivable.transferPairID = nil
+        receivable.splitLinesRaw = nil
+        receivable.splitExpenseID = expense.id.uuidString
+        receivable.splitGroupZoneID = expense.groupZoneID
+        receivable.splitTotalAmount = expense.amount
+        receivable.splitType = expense.splitType
+        receivable.recalculatePreferredCurrency(context: context)
     }
 
     // MARK: - Helpers (M6)
@@ -551,11 +819,30 @@ final class GroupTransactionBridge {
     ///   cleanup (con subcat manual / tags del usuario). En la rama `.myShareCost` se hace
     ///   upsert (preserva su identidad y metadatos); en `.lendingToCompensateReal`/`.noVirtual`
     ///   se BORRA (el usuario tiene TX real → la virtual `-myShare` sobra).
+    /// Card sbvw: la pata que hereda la receta hereda también las etiquetas y la necesidad de la que se va, si no tiene
+    /// propias. Tags CSV-first (regla del CSV mirror), como el trasplante por cambio de divisa.
+    static func carryTransplantedMetadata(
+        to leg: TransactionItem, tagIDs: Set<UUID>, needOverride: String?, context: ModelContext
+    ) {
+        if !tagIDs.isEmpty, leg.resolvedTagIDs()?.isEmpty ?? true {
+            leg.setTags(from: TagResolver.fetchOrEmpty(
+                ids: tagIDs, in: context, errorContext: "GroupTransactionBridge/splitLinesTransplant"))
+        }
+        if leg.needOverride == nil, let needOverride { leg.needOverride = needOverride }
+    }
+
+    /// Devuelve la pata `-myShare` que queda en «Grupos» (la que lleva la receta en el Caso B), o `nil` si no queda ninguna.
+    /// - Parameters:
+    ///   - keepTransfers: recargas de una receta que sigue viva: su entrada no se va con la pata real que se borra.
+    ///   - inheritedSplitLines: la receta que la pata NUEVA hereda de la pata real que se va (card sbvw).
+    @discardableResult
     private func bridgeVirtualOnly(
         expense: SplitExpense,
         existingRealTx: TransactionItem?,
         preservedVirtual: TransactionItem?,
         deleteStaleReal: Bool,
+        keepTransfers: Set<UUID> = [],
+        inheritedSplitLines: String? = nil,
         myShareAmount: Double,
         lentAmount: Double,
         totalAmount: Double,
@@ -563,10 +850,10 @@ final class GroupTransactionBridge {
         optInCoversSubcategory: Bool,
         virtualAccount: Account,
         context: ModelContext
-    ) throws {
+    ) throws -> TransactionItem? {
         var realTx = existingRealTx
         if deleteStaleReal, let stale = realTx {
-            context.delete(stale)
+            try deleteLegWithEntries(stale, keep: keepTransfers, context: context)
             realTx = nil
         }
 
@@ -595,7 +882,7 @@ final class GroupTransactionBridge {
             lentAmount: lentAmount
         ) {
         case .myShareCost:
-            createCaseBVirtualMyShare(
+            let kept = createCaseBVirtualMyShare(
                 expense: expense,
                 existing: preservedVirtual,
                 myShareAmount: myShareAmount,
@@ -604,9 +891,13 @@ final class GroupTransactionBridge {
                 virtualAccount: virtualAccount,
                 context: context
             )
+            if let kept, let inheritedSplitLines, !GroupSplitLinesBridgeLogic.mayCarryRecipe(kept.splitLinesRaw) {
+                kept.splitLinesRaw = inheritedSplitLines
+            }
+            return kept
         case .lendingToCompensateReal:
             // El usuario tiene TX real -total → la virtual `-myShare` clasificable sobra.
-            if let preservedVirtual { context.delete(preservedVirtual) }
+            if let preservedVirtual { try deleteLegWithEntries(preservedVirtual, context: context) }
             try createVirtualLent(
                 expense: expense,
                 lentAmount: lentAmount,
@@ -616,8 +907,9 @@ final class GroupTransactionBridge {
             )
         case .noVirtual:
             // real -total ya es mi costo total (yo solo en el split) → sin virtual.
-            if let preservedVirtual { context.delete(preservedVirtual) }
+            if let preservedVirtual { try deleteLegWithEntries(preservedVirtual, context: context) }
         }
+        return nil
     }
 
     /// Crea la TX virtual `+lent` (sistema "Préstamo a grupos") que compensa una TX real
@@ -716,6 +1008,8 @@ final class GroupTransactionBridge {
     /// No-op de CREACIÓN si `myShareAmount <= 0` (no participo en la división → sin costo
     /// personal); en ese caso, si había una `existing`, se BORRA (evita una TX huérfana con
     /// monto stale). Simétrico con `createVirtualLent` (`lent > 0`).
+    /// Devuelve la pata que queda (actualizada, rehecha o nueva), o `nil` si tu parte es 0.
+    @discardableResult
     private func createCaseBVirtualMyShare(
         expense: SplitExpense,
         existing: TransactionItem?,
@@ -724,14 +1018,14 @@ final class GroupTransactionBridge {
         optInCoversSubcategory: Bool,
         virtualAccount: Account,
         context: ModelContext
-    ) {
+    ) -> TransactionItem? {
         let expenseIDStr = expense.id.uuidString
         let derivedNote = expense.expenseDescription.isEmpty ? nil : expense.expenseDescription
 
         guard myShareAmount > 0 else {
             // Con preserve, dejar la TX existente la volvería huérfana (monto stale) → borrar.
             if let existing { context.delete(existing) }
-            return
+            return nil
         }
 
         let tx: TransactionItem
@@ -770,6 +1064,8 @@ final class GroupTransactionBridge {
                 errorContext: "GroupTransactionBridge/currencyTransplant"
             )
             let carriedNeedOverride = existing.needOverride
+            // La receta de líneas (Grupos B) viaja con la pata: la nueva divisa la deja sin cuadrar y la pasada lo avisa.
+            let carriedSplitLines = existing.splitLinesRaw
             context.delete(existing)
             let newTx = insertVirtualMyShareTx(
                 expense: expense, myShareAmount: myShareAmount, note: derivedNote,
@@ -777,6 +1073,7 @@ final class GroupTransactionBridge {
                 context: context
             )
             newTx.needOverride = carriedNeedOverride
+            newTx.splitLinesRaw = carriedSplitLines
             newTx.setTags(from: carriedTags)
             tx = newTx
         } else {
@@ -815,6 +1112,7 @@ final class GroupTransactionBridge {
             )
             context.insert(draft)
         }
+        return tx
     }
 
     /// Construye e inserta la TX virtual `-myShare` con los campos derivados del gasto.
@@ -980,6 +1278,13 @@ final class GroupTransactionBridge {
         }
     }
 
+    /// El cierre de cada camino de `bridgeExpense`: lo por cobrar y lo cobrado de las ventas del grupo dependen de este gasto
+    /// (Grupos B · card 10), y van en el mismo `save()`.
+    private func finishExpensePass(_ expense: SplitExpense, shouldSave: Bool, context: ModelContext) throws {
+        try reconcileReceivablesOrDefer(zoneID: expense.groupZoneID, context: context)
+        try saveIfNeeded(shouldSave: shouldSave, context: context)
+    }
+
     private func saveIfNeeded(shouldSave: Bool, context: ModelContext) throws {
         guard shouldSave else { return }
         try context.save()
@@ -1009,6 +1314,8 @@ final class GroupTransactionBridge {
         Self.logger.info("bridgeRemoteExpenses count=\(expenses.count, privacy: .public)")
 
         var bridged: Set<UUID> = []
+        // Grupos B · card 10: lo cobrado se repasa una vez por grupo al final del lote, no en cada gasto.
+        try batchingReceivables(context: context) {
         for expense in expenses {
             // Find the group for this expense
             let zoneID = expense.groupZoneID
@@ -1028,6 +1335,7 @@ final class GroupTransactionBridge {
                 print("GroupTransactionBridge: Failed to bridge expense \(expense.id): \(error)")
                 #endif
             }
+        }
         }
 
         // El `save()` va ANTES del return a propósito: si lanza, el llamador no recibe ningún ID y la
@@ -1106,7 +1414,12 @@ final class GroupTransactionBridge {
         // Determinar caso C/D. Skip si user no es from ni to (settlement entre otros).
         let isCaseC = settlement.fromMemberID == currentMemberID
         let isCaseD = settlement.toMemberID == currentMemberID
-        guard isCaseC || isCaseD else { return true }
+        guard isCaseC || isCaseD else {
+            // Grupos B · card 10: una liquidación que dejó de incluirte (la editaron) ya no cubre tus ventas.
+            try reconcileReceivablesOrDefer(zoneID: zoneID, context: context)
+            try saveIfNeeded(shouldSave: shouldSave && context.hasChanges, context: context)
+            return true
+        }
 
         // Idempotency: delete previous TX/Drafts.
         let settlementIDStr = settlement.id.uuidString
@@ -1282,6 +1595,9 @@ final class GroupTransactionBridge {
                 groupName: group.name,
                 context: context)
         }
+
+        // Grupos B · card 10: un pago que te hacen (o que haces) mueve tu saldo, y con él lo cobrado de tus ventas.
+        try reconcileReceivablesOrDefer(zoneID: zoneID, context: context)
 
         if shouldSave {
             try context.save()
@@ -1481,6 +1797,7 @@ final class GroupTransactionBridge {
         let settlements = try context.fetch(FetchDescriptor<SplitSettlement>()).filter { idSet.contains($0.id) }
 
         var bridged: Set<UUID> = []
+        try batchingReceivables(context: context) {
         for settlement in settlements {
             let zoneID = settlement.groupZoneID
             let groupDescriptor = FetchDescriptor<SplitGroup>(
@@ -1498,6 +1815,7 @@ final class GroupTransactionBridge {
                 #endif
             }
         }
+        }
 
         try context.save()
         return bridged
@@ -1510,12 +1828,17 @@ final class GroupTransactionBridge {
         let txs = try context.fetch(FetchDescriptor<TransactionItem>(
             predicate: #Predicate { $0.splitSettlementID == settlementID }
         ))
+        let zones = Self.zones(of: txs)
         for tx in txs { context.delete(tx) }
 
         let drafts = try context.fetch(FetchDescriptor<InboxDraft>(
             predicate: #Predicate { $0.splitSettlementID == settlementID }
         ))
         for draft in drafts { context.delete(draft) }
+
+        // Grupos B · card 10: sin ese pago, lo que cubría de tus ventas vuelve a estar por cobrar.
+        let excluded = UUID(uuidString: settlementID).map { Set([$0]) } ?? []
+        for zone in zones { try reconcileReceivables(zoneID: zone, excludingSettlements: excluded, context: context) }
 
         try context.save()
         SessionState.shared.incrementDataVersion()
@@ -1531,12 +1854,18 @@ final class GroupTransactionBridge {
         let txs = try context.fetch(FetchDescriptor<TransactionItem>(
             predicate: #Predicate { $0.splitExpenseID == expenseID }
         ))
-        for tx in txs { context.delete(tx) }
+        let zones = Self.zones(of: txs)
+        // Grupos B: la entrada de una recarga no lleva `splitExpenseID` (D4); se borra con su pata.
+        for tx in txs { try deleteLegWithEntries(tx, context: context) }
 
         let drafts = try context.fetch(FetchDescriptor<InboxDraft>(
             predicate: #Predicate { $0.splitExpenseID == expenseID }
         ))
         for draft in drafts { context.delete(draft) }
+
+        // Grupos B · card 10: sin ese gasto, tu saldo en el grupo cambia, y con él lo cobrado de tus ventas.
+        let excluded = UUID(uuidString: expenseID).map { Set([$0]) } ?? []
+        for zone in zones { try reconcileReceivables(zoneID: zone, excludingExpenses: excluded, context: context) }
 
         try context.save()
         SessionState.shared.incrementDataVersion()
@@ -1622,6 +1951,7 @@ final class GroupTransactionBridge {
 
         var deletedTxs = 0
         var deletedDrafts = 0
+        var touchedZones: Set<String> = []
 
         // Un fetch por ID con igualdad EXACTA sobre el opcional (el mismo `#Predicate` concreto que ya
         // usan `unbridgeExpense`/`unbridgeSettlement`, y el único patrón probado en device sobre estos
@@ -1632,6 +1962,11 @@ final class GroupTransactionBridge {
             for tx in try context.fetch(FetchDescriptor<TransactionItem>(
                 predicate: #Predicate { $0.splitExpenseID == key }
             )) {
+                // Grupos B: con la pata se va la entrada de su recarga, que no lleva `splitExpenseID` (D4).
+                for entry in try Self.derivedEntries(of: tx, context: context) where !entry.isDeleted {
+                    context.delete(entry); deletedTxs += 1
+                }
+                touchedZones.formUnion(Self.zones(of: [tx]))
                 context.delete(tx); deletedTxs += 1
             }
             for draft in try context.fetch(FetchDescriptor<InboxDraft>(
@@ -1646,6 +1981,7 @@ final class GroupTransactionBridge {
             for tx in try context.fetch(FetchDescriptor<TransactionItem>(
                 predicate: #Predicate { $0.splitSettlementID == key }
             )) {
+                touchedZones.formUnion(Self.zones(of: [tx]))
                 context.delete(tx); deletedTxs += 1
             }
             for draft in try context.fetch(FetchDescriptor<InboxDraft>(
@@ -1656,6 +1992,12 @@ final class GroupTransactionBridge {
         }
 
         guard deletedTxs > 0 || deletedDrafts > 0 else { return (0, 0) }
+
+        // Grupos B · card 10: lo borrado movía tu saldo en esos grupos; lo cobrado de tus ventas se rehace sin ello.
+        for zone in touchedZones {
+            try reconcileReceivables(
+                zoneID: zone, excludingExpenses: expenseIDs, excludingSettlements: settlementIDs, context: context)
+        }
 
         SaveBreadcrumb.willSave("GroupTransactionBridge.unbridgeDeletedRemotely")
         try context.save()
@@ -1766,11 +2108,23 @@ final class GroupTransactionBridge {
 
         let plan = Self.computeFreezePlan(transactions: transactions, drafts: drafts)
 
+        // Grupos B: la entrada de una recarga (sin punteros, D4) se queda como una transferencia normal: pierde la marca
+        // de línea, que la ataba al puente. Su salida en «Grupos» se conserva como el resto de patas virtuales.
+        var releasedEntries = 0
+        for tx in transactions {
+            for entry in try Self.derivedEntries(of: tx, context: context) where entry.splitLinesRaw != nil {
+                entry.splitLinesRaw = nil
+                releasedEntries += 1
+            }
+        }
+
         // TX cuenta real: libera 3 IDs. Preserva monto/fecha/cuenta/subcat/note/tags.
+        // Y la receta de líneas: suelta del gasto, ya no describe nada.
         for tx in plan.txsToRelease {
             tx.splitExpenseID = nil
             tx.splitSettlementID = nil
             tx.splitGroupZoneID = nil
+            tx.splitLinesRaw = nil
         }
 
         // Drafts groupExpense/groupSettlement: convert a manual. Preserva cached fields.
@@ -1789,7 +2143,8 @@ final class GroupTransactionBridge {
             context.delete(draft)
         }
 
-        guard !plan.txsToRelease.isEmpty || !plan.draftsToConvert.isEmpty || !plan.draftsToDelete.isEmpty else { return }
+        guard !plan.txsToRelease.isEmpty || !plan.draftsToConvert.isEmpty || !plan.draftsToDelete.isEmpty
+            || releasedEntries > 0 else { return }
 
         try context.save()
         SessionState.shared.incrementDataVersion()
@@ -1802,8 +2157,9 @@ final class GroupTransactionBridge {
 
     // MARK: - Category Matching
 
-    /// Match a subcategory name to a user's personal Subcategory.
-    /// Priority: exact (case-insensitive) → contains → nil.
+    /// La subcategoría personal que casa con el nombre que viaja en el gasto de grupo. La regla es UNA para el puente, el
+    /// formulario y «Partir» (`GroupSubcategoryMatchLogic`, card 10u2): exacto antes que «contiene»; entre homónimas, la de
+    /// usuario, la visible, la de gasto y el menor `shortcutID`. Así formulario y puente deciden venta con la misma.
     static func matchSubcategory(name: String?, context: ModelContext) -> Subcategory? {
         guard let name, !name.isEmpty else { return nil }
 
@@ -1815,18 +2171,12 @@ final class GroupTransactionBridge {
             logger.error("matchSubcategory: Subcategory fetch failed: \(error.localizedDescription, privacy: .public)")
             return nil
         }
-
-        // Exact match (case-insensitive)
-        if let exact = all.first(where: { $0.name.lowercased() == name.lowercased() }) {
-            return exact
+        let candidates = all.map {
+            GroupSubcategoryMatchLogic.Candidate(
+                name: $0.name, isSystem: $0.isAnySystem, isHidden: !$0.isVisible || !$0.safeCategory.isVisible,
+                isIncome: $0.safeCategory.isIncome, key: $0.shortcutID.uuidString)
         }
-
-        // Contains match
-        if let partial = all.first(where: { $0.name.localizedCaseInsensitiveContains(name) }) {
-            return partial
-        }
-
-        return nil
+        return GroupSubcategoryMatchLogic.bestIndex(for: name, in: candidates).map { all[$0] }
     }
 
 }

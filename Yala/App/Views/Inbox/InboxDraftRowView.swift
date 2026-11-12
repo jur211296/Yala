@@ -21,8 +21,19 @@ struct InboxDraftRowView: View {
     @Environment(\.tagCatalog) private var tagCatalog
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.modelContext) private var modelContext
+    /// UX 2.2 · L13-12: el borrador de un pago de grupo sin descripción se nombra («Pago a Ana · Viaje a Cusco»).
+    @State private var settlementName: String?
 
     var body: some View {
+        // La fila observa su `InboxDraft` y puede volver a pintarse con él ya borrado (bajo una hoja, en la animación de
+        // salida, o borrado por otro camino): entonces no se lee nada de él, ni la etiqueta ni el identificador. Leerlo
+        // aborta la app (crash de TestFlight 2.2 (2), card f8rj).
+        if draft.isReadableInInbox {
+            row
+        }
+    }
+
+    private var row: some View {
         Button(action: onTap) {
             // A tamaños de accesibilidad el importe baja bajo el concepto (`AdaptiveRowStack`), como en
             // `RecordRowView`: en fila se cortaba («S/-…50»). Apilada, icono y texto quedan juntos en su propia fila.
@@ -64,11 +75,22 @@ struct InboxDraftRowView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityText)
         .accessibilityIdentifier("inbox_draft_row_\(draft.note)")
+        .task(id: draft.persistentModelID) {
+            guard draft.sourceType == .groupSettlement, draft.note.isEmpty,
+                  !draft.isSettlementAmountChangeNotice else { return }
+            settlementName = GroupSettlementDraftNameResolver.name(for: draft, context: modelContext)
+        }
+    }
+
+    /// La descripción que se enseña: la del borrador, el nombre del pago de grupo (L13-12) o «Sin descripción».
+    private var shownNote: String {
+        if !draft.note.isEmpty { return draft.note }
+        return settlementName ?? L10n.Inbox.noDescription
     }
 
     /// La etiqueta de siempre y, en el aviso de importe cambiado, su segunda línea: sin ella VoiceOver no dice qué cambió.
     private var accessibilityText: String {
-        let base = L10n.Accessibility.draftRow(draft.note.isEmpty ? L10n.Inbox.noDescription : draft.note, draft.amount.map { appPreferences.currency($0, currencyCode: currencyCode) } ?? L10n.Inbox.noAmount, draft.status.rawValue)
+        let base = L10n.Accessibility.draftRow(shownNote, draft.amount.map { appPreferences.currency($0, currencyCode: currencyCode) } ?? L10n.Inbox.noAmount, L10n.Inbox.status(draft.status)) + ", " + draft.sourceDisplayName
         guard let detail = settlementAmountChangeDetail(accountName: draft.displayAccountName ?? "") else { return base }
         return "\(base), \(detail)"
     }
@@ -111,11 +133,31 @@ struct InboxDraftRowView: View {
 
         // Line 3: Tags (if any) - only for pending drafts (archived may have invalid tag references)
         if draft.status == .pending {
-            let resolvedTags = TagDisplayResolver.tags(for: draft, catalog: tagCatalog)
+            let resolvedTags = TagDisplayResolver.tags(for: draft, catalog: tagCatalog, order: appPreferences.tagsSortOrderNames)
             if !resolvedTags.isEmpty {
                 tagsRow(resolvedTags)
             }
         }
+
+        originLabel
+    }
+
+    /// De dónde llegó el borrador (UX 2.2 · L4-8): «¿de dónde salió esto?» es lo primero que se pregunta ante un gasto
+    /// que no se apuntó a mano. Antes solo la fila incompleta enseñaba su origen, y solo con un icono.
+    private var originLabel: some View {
+        HStack(spacing: DS.Spacing.xxs) {
+            Image(systemName: draft.sourceIcon)
+                .font(DS.Typography.captionSmall)
+                .accessibilityHidden(true)
+            Text(draft.sourceDisplayName)
+                .font(DS.Typography.captionSmall)
+                .lineLimit(1)
+        }
+        .foregroundStyle(.secondary)
+        .padding(.horizontal, DS.Spacing.sm)
+        .padding(.vertical, DS.Spacing.xxs)
+        .background(Capsule().fill(Color.secondary.opacity(0.12)))
+        .accessibilityIdentifier("inbox_draft_origin")
     }
 
     /// Segunda línea del aviso de importe cambiado pendiente: la cuenta de la transacción y lo que tiene ahora, leídos por
@@ -147,15 +189,17 @@ struct InboxDraftRowView: View {
     @ViewBuilder
     private var incompleteContentView: some View {
         // Line 1: Note or placeholder
-        Text(draft.note.isEmpty ? L10n.Inbox.noDescription : draft.note)
+        Text(shownNote)
             .font(DS.Typography.label)
-            .foregroundStyle(draft.note.isEmpty ? .secondary : .primary)
+            .foregroundStyle(draft.note.isEmpty && settlementName == nil ? .secondary : .primary)
             .lineLimit(conceptLineLimit)
 
         // Line 2: Missing fields indicators
         if !draft.needsUserInput.isEmpty {
             missingFieldsRow
         }
+
+        originLabel
 
         // Line 3: Date
         Text(formattedDate)
@@ -172,7 +216,7 @@ struct InboxDraftRowView: View {
                     value: amount,
                     currencyCode: currencyCode,
                     font: DS.Typography.headline, secondaryFont: DS.Typography.caption,
-                    tint: .color(amount >= 0 ? Color.electricIndigo : Color.hotPink),
+                    tint: .color(Color.amountTint(isIncome: amount >= 0)),
                     forceFullPrecision: true
                 )
             } else {
@@ -249,7 +293,7 @@ struct InboxDraftRowView: View {
 
                 Image(systemName: "checkmark")
                     .font(DS.Typography.badgeLabel)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.thOnAccent)
             }
         }
     }
@@ -383,16 +427,7 @@ struct InboxDraftRowView: View {
     }
 
     private func localizedFieldName(_ field: String) -> String {
-        switch field {
-        case "account":
-            return L10n.Inbox.needsAccount
-        case "subcategory":
-            return L10n.Inbox.needsSubcategory
-        case "amount":
-            return L10n.Inbox.noAmount
-        default:
-            return field
-        }
+        InboxDraft.localizedMissingField(field)
     }
 
     // MARK: - Helpers

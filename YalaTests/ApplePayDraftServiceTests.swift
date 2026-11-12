@@ -272,6 +272,28 @@ struct ApplePayDraftServiceTests {
         #expect(draft?.confidenceSubcategory == 0.8)
     }
 
+    /// Apple Pay siempre es gasto: una subcategoría de INGRESO que la memoria aprendió del comercio no se pone (ticket
+    /// `merchant-memory-suggests-across-natures-in-three-more-places`). El borrador nace sin subcategoría y la pide.
+    /// Los dos casos de arriba (subcategorías de gasto) son su control positivo.
+    @Test func merchantMemory_incomeSubcategory_isNotAssignedToAnApplePayExpense() throws {
+        let context = try makeTestContext()
+        let category = makeTestCategory(context: context, name: "Ingresos varios", isIncome: true)
+        let sub = makeTestSubcategory(context: context, name: "Reembolso empresa", category: category)
+        makeMerchantMemory(context: context, merchant: "Wong", subcategory: sub,
+                           countApproved: 6, countCorrected: 0)
+        try context.save()
+        enqueue(rawAmount: "$25", merchant: "Wong")
+
+        let created = ApplePayDraftService.processPending(context: context, pendingStoreDefaults: pendingDefaults, importQuiescent: true)
+
+        #expect(created == 1)
+        let draft = try #require(try fetchDrafts(context).first)
+        #expect(draft.subcategory == nil)
+        #expect(draft.confidenceSubcategory == nil)
+        #expect(draft.needsUserInput.contains(DraftInputRequirement.subcategory))
+        #expect((draft.amount ?? 0) < 0)
+    }
+
     @Test func merchantMemory_belowThreshold_noSubcategory() throws {
         let context = try makeTestContext()
         let category = makeTestCategory(context: context, name: "Ocio")
@@ -360,5 +382,68 @@ struct ApplePayDraftServiceTests {
         #expect(drafts.first?.amount == -9)
         // El válido se consume tras save; el cero se descarta → cola vacía.
         #expect(pendingCount() == 0)
+    }
+
+    // MARK: - Tarjeta con varias divisas (entrega 3, decisión D7)
+
+    /// Una tarjeta PEN con su línea USD, y además una suelta en PEN y otra en USD: por divisa sola, `$` no casa con
+    /// ninguna (dos cuentas en USD). Con la tarjeta como última cuenta usada, el pago va a su línea en dólares.
+    @Test func multiCurrencyCard_ambiguousDollar_lastUsedCardInSoles_goesToItsUSDLine() throws {
+        let context = try makeTestContext()
+        let card = makeTestAccount(context: context, name: "Visa", currencyCode: "PEN")
+        let line = makeTestAccount(context: context, name: "Visa · USD", currencyCode: "USD")
+        line.parentAccountID = card.shortcutID
+        _ = makeTestAccount(context: context, name: "Ahorros", currencyCode: "PEN")
+        _ = makeTestAccount(context: context, name: "Dolares", currencyCode: "USD")
+        try context.save()
+        LastUsedAccountStore.write(card.shortcutID.uuidString)
+
+        enqueue(rawAmount: "$12.50", merchant: "Hotel")
+        let created = ApplePayDraftService.processPending(
+            context: context, pendingStoreDefaults: pendingDefaults, importQuiescent: true)
+
+        #expect(created == 1)
+        let draft = try fetchDrafts(context).first
+        #expect(draft?.account?.shortcutID == line.shortcutID)
+        #expect(draft?.needsUserInput.contains(DraftInputRequirement.account) == false)
+    }
+
+    /// Control: la tarjeta no tiene línea en dólares. Manda la regla de siempre: `$` toma la divisa de la última cuenta
+    /// usada (PEN) y la única cuenta en PEN es la principal. Ni se crea una línea ni se inventa una cuenta.
+    @Test func multiCurrencyCard_withoutTheSymbolCurrency_keepsTheOldRule() throws {
+        let context = try makeTestContext()
+        let card = makeTestAccount(context: context, name: "Visa", currencyCode: "PEN")
+        let euros = makeTestAccount(context: context, name: "Visa · EUR", currencyCode: "EUR")
+        euros.parentAccountID = card.shortcutID
+        try context.save()
+        LastUsedAccountStore.write(card.shortcutID.uuidString)
+
+        enqueue(rawAmount: "$12.50", merchant: "Hotel")
+        _ = ApplePayDraftService.processPending(
+            context: context, pendingStoreDefaults: pendingDefaults, importQuiescent: true)
+
+        let draft = try fetchDrafts(context).first
+        #expect(draft?.account?.shortcutID == card.shortcutID)
+        #expect(try context.fetch(FetchDescriptor<Account>()).count == 2)
+    }
+
+    /// Una tarjeta en pesos mexicanos con línea en dólares: «$350» son pesos (su divisa se escribe con `$`), así que manda la
+    /// regla de siempre y el pago queda en la principal en MXN. Lo cazó la review del 2026-10-18: la primera versión mandaba
+    /// 350 MXN a la línea en dólares.
+    @Test func multiCurrencyCard_inAPesoCurrency_dollarSignStaysInPesos() throws {
+        let context = try makeTestContext()
+        let card = makeTestAccount(context: context, name: "Visa", currencyCode: "MXN")
+        let line = makeTestAccount(context: context, name: "Visa · USD", currencyCode: "USD")
+        line.parentAccountID = card.shortcutID
+        try context.save()
+        LastUsedAccountStore.write(card.shortcutID.uuidString)
+
+        enqueue(rawAmount: "$350.00", merchant: "Oxxo")
+        _ = ApplePayDraftService.processPending(
+            context: context, pendingStoreDefaults: pendingDefaults, importQuiescent: true)
+
+        let draft = try fetchDrafts(context).first
+        #expect(draft?.account?.shortcutID == card.shortcutID)
+        #expect(draft?.account?.currencyCode == "MXN")
     }
 }

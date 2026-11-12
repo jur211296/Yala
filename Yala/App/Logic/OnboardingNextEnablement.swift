@@ -24,16 +24,16 @@ enum OnboardingNextEnablement {
 
     /// Decide si el botón "Siguiente"/"Continuar" debe estar DESHABILITADO en
     /// `step`. Solo los pasos con entrada obligatoria pueden deshabilitarlo; el
-    /// resto (incl. `.purpose`, `.accounts`, `.categories`, `.confirmation`)
+    /// resto (incl. `.purpose`, `.categories`, `.confirmation`)
     /// siempre habilita (`false`).
     ///
     /// - Parameters:
     ///   - step: paso actual del flujo.
     ///   - userName: nombre del usuario (paso `.name`).
     ///   - accountName: nombre de la cuenta (paso `.currencyName`).
-    ///   - isAccountTypeValid: si el tipo de cuenta seleccionado es uno válido de
-    ///     control total (paso `.accountType`); en el callsite es
-    ///     `fullControlAccountTypes.contains(selectedAccountType)`.
+    ///   - isAccountTypeValid: si hay una opción marcada en «¿Dónde está tu dinero?»
+    ///     (paso `.accountType`: «Todo junto» o un tipo); en el callsite es
+    ///     `OnboardingAccountChoiceLogic.selectedChoice(...) != nil`.
     ///   - initialBalanceText: texto del saldo inicial (paso `.balance`).
     static func isNextDisabled(
         step: OnboardingStep,

@@ -6,6 +6,7 @@
 //  adaptativo).
 //
 
+import CoreSpotlight
 import SwiftData
 import SwiftUI
 import UIKit
@@ -39,6 +40,9 @@ struct SceneRoot<Content: View>: View {
     var body: some View {
         content()
             .environment(navigation)
+            .overlay(alignment: .topLeading) {
+                if UITestHooks.isActive { UITestLifecycleMarker() }
+            }
             .background {
                 WindowSceneProbe(
                     onResolve: { scene in SceneRegistry.shared.attach(scene, to: navigation.id) },
@@ -75,6 +79,20 @@ struct SceneRoot<Content: View>: View {
     }
 }
 
+/// El ciclo de vida del proceso como valor de accesibilidad (`uitest_lifecycle`), solo con `-uitest`. Un punto
+/// transparente que no recibe toques; vive en la raíz de la ventana, fuera de la barra de pestañas, para seguir ahí si
+/// la barra se desmonta. Ver `UITestHooks.lifecycleSummary`.
+private struct UITestLifecycleMarker: View {
+    var body: some View {
+        Color.clear
+            .frame(width: 1, height: 1)
+            .allowsHitTesting(false)
+            .accessibilityElement()
+            .accessibilityIdentifier("uitest_lifecycle")
+            .accessibilityValue(UITestHooks.shared.lifecycleSummary)
+    }
+}
+
 extension SceneNavigation {
     /// Vuelve a la navegación de una ventana recién abierta. Lo usa el swap de contenedor: lo pendiente apuntaba al
     /// store anterior.
@@ -88,7 +106,13 @@ extension SceneNavigation {
         pendingRecordID = nil
         pendingNewGroupExpense = false
         pendingNewGroupForm = false
+        pendingCreateGroupAfterIdentity = false
+        pendingExpenseAfterNewGroup = false
+        pendingCreatedGroupInviteID = nil
+        isWelcomeGroupFormOpen = false
         pendingKeyboardPanelRequest = nil
+        pendingSettingsReturn = nil
+        pendingStatisticsFocus = nil
         pendingSharedImageURL = nil
         pendingImageEntryFailure = nil
         pendingChatDraftPrefill = nil
@@ -182,9 +206,19 @@ struct WindowURLEntry: ViewModifier {
     @Environment(SceneNavigation.self) private var navigation
 
     func body(content: Content) -> some View {
-        content.onOpenURL { url in
-            SceneRegistry.shared.noteFocused(navigation.id)
-            handle(url)
-        }
+        content
+            .onOpenURL { url in
+                SceneRegistry.shared.noteFocused(navigation.id)
+                handle(url)
+            }
+            // Tocar un resultado de Spotlight (card ste6) entra por el mismo camino que su enlace: la ficha de la
+            // cuenta (`accounts/<id>`) o el registro (`records/<syncID>`).
+            .onContinueUserActivity(CSSearchableItemActionType) { activity in
+                guard let identifier = activity.userInfo?[CSSearchableItemActivityIdentifier] as? String,
+                      let link = SpotlightIndexLogic.deepLink(forIdentifier: identifier),
+                      let url = WidgetURLHelper.url(for: link) else { return }
+                SceneRegistry.shared.noteFocused(navigation.id)
+                handle(url)
+            }
     }
 }

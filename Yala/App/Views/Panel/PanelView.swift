@@ -26,11 +26,17 @@ struct PanelView: View {
     let viewModel: PanelViewModel
     @Binding var sheets: PanelSheetState
 
+    /// La pantalla tiene poco alto: Yala IA y «+» en fila (UX 2.2 · L15-14).
+    @State private var fabShortContainer = false
+
     /// **El veredicto de App Attest de ESTE teléfono.** Es lo único del aviso que no se puede leer reactivamente:
     /// sale de `UserDefaults` y depende del reloj. Lo mantiene al día `cloudAttestVerdictWatcher`; las otras dos
     /// condiciones las lee `CloudAttestNotice.isShowing` vivas, en el body (ticket
     /// `cloud-tab-does-not-say-this-phone-cannot-sync-personal-data`).
     @State private var attestVerdictIsTerminal = false
+    /// Card pz4v: el aviso de «inicia sesión», copiado del controller por `cloudSignInNoticeWatcher` (ver
+    /// `CloudSignInNotice.current`). `nil` = no sale.
+    @State private var syncSignInNotice: CloudSignInNotice.PanelValue?
     /// Solo para el punto del botón de filtros: lee los filtros de `SessionState`, no guarda nada.
     @State private var panelFilters = PanelSessionFilters()
 
@@ -39,6 +45,17 @@ struct PanelView: View {
 
     /// Nudge banner visibility (dormant/sporadic users)
     @State private var showNudgeBanner = false
+    /// El aviso que se está enseñando de la cola (UX 2.2 · L3-8). `nil` = el primero.
+    @State private var selectedNotice: PanelNotice?
+    /// Card vbf9: el marcador de migración de otro dispositivo llegó por iCloud (`CloudMigrationController.markerDecision`).
+    /// En un `@State` y no en el body: es un `fetchCount`, y el body del Panel se re-evalúa durante el scroll. Lo refrescan
+    /// la aparición, cada cambio de datos (el marcador llega por el espejo) y cada vuelta a primer plano.
+    @State private var cloudAdoptMarkerPresent = false
+    /// La persona cerró el aviso en este arranque.
+    @State private var cloudAdoptOfferDismissed = false
+    /// La misma clave que lee `ContextualGuideBanner.panel()`: el Panel necesita saber si la guía sigue puesta para
+    /// contarla en «1 de N».
+    @AppStorage("guide.panel.dismissed") private var panelGuideDismissed = false
 
     @Environment(AppPreferences.self) private var appPreferences
 
@@ -114,13 +131,15 @@ struct PanelView: View {
             sheets.isPresentingSettings = true
             SetupChecklistManager.shared.markCompleted(.exploreSettings)
         case .discoverFeatures:
-            if FeatureGateService.shared.isProUser {
-                SetupChecklistManager.shared.markCompleted(.discoverFeatures)
-            } else {
+            let checklist = SetupChecklistManager.shared
+            // Si este paso termina «Primeros pasos», lo que sale es la oferta de prueba que pide el cierre de la
+            // lista (UX 2.2 · L1-12, `TrialOfferMomentLogic`): abrir además el paywall general serían dos muros
+            // seguidos.
+            if !FeatureGateService.shared.isProUser && !checklist.wouldCompleteAll(by: .discoverFeatures) {
                 sheets.subscriptionBannerSource = "setupChecklist"
                 sheets.showSubscriptionFromBanner = true
-                SetupChecklistManager.shared.markCompleted(.discoverFeatures)
             }
+            checklist.markCompleted(.discoverFeatures)
         case .tryVoiceInput:
             FeatureGateService.shared.enableSetupTrial(for: .voiceInput)
             sheets.isVoiceSetupTrial = true
@@ -145,7 +164,7 @@ struct PanelView: View {
 
     private func loadExampleImages() -> [UIImage]? {
         let supportedLangs: Set<String> = ["de", "en", "es", "fr", "it", "pt"]
-        let lang = Bundle.main.preferredLocalizations.first ?? "en"
+        let lang = LanguageManager.baseLanguageCode(of: Bundle.main.preferredLocalizations.first ?? "en")
         let suffix = supportedLangs.contains(lang) ? lang : "en"
         let images = [
             "ExampleImages/example-receipt-\(suffix)",
@@ -223,7 +242,9 @@ struct PanelView: View {
         Button {
             sheets.showFilters = true
         } label: {
-            Image(systemName: "line.3.horizontal.decrease")
+            // Con título además del icono: si no cabe en la barra vertical del iPhone Duo se va al menú «···», que enseña
+            // el título; con solo el icono desaparecía. En una barra se ve el icono, como antes.
+            Label(L10n.Accessibility.filters, systemImage: "line.3.horizontal.decrease")
                 .font(DS.Typography.body).fontWeight(.medium)
                 .foregroundStyle(.thToolbarIcon)
         }
@@ -237,7 +258,8 @@ struct PanelView: View {
             DS.Haptic.light()
             sheets.showSectionsConfig = true
         } label: {
-            Image(systemName: "square.grid.2x2")
+            // Con título además del icono, como Filtros: si no cabe en la barra vertical del iPhone Duo, va al menú «···».
+            Label(L10n.Accessibility.sectionsConfig, systemImage: "square.grid.2x2")
                 .font(DS.Typography.body).fontWeight(.medium)
                 .foregroundStyle(.thToolbarIcon)
         }
@@ -247,6 +269,7 @@ struct PanelView: View {
 
     private var inboxToolbarButton: some View {
         Button {
+            LoadTimeMarks.begin(.inbox)
             sheets.showInbox = true
         } label: {
             ZStack(alignment: .topTrailing) {
@@ -280,40 +303,56 @@ struct PanelView: View {
                 // Mantiene al día el veredicto del attest (los tres momentos, en el propio modifier). El
                 // decisivo es el aviso del store: el 401 llega con el Panel delante.
                 .cloudAttestVerdictWatcher($attestVerdictIsTerminal)
+                // Card pz4v: mantiene al día el aviso de «inicia sesión» (los momentos, en el propio modifier).
+                .cloudSignInNoticeWatcher($syncSignInNotice)
                 .yalaSkeleton(!viewModel.isReady)
                 // Title aparece solo tras scrollear (ver `showInlineTitle`),
                 // evitando duplicación con el saludo del hero al inicio.
                 .navigationTitle(showInlineTitle ? L10n.Panel.title(appPreferences.userName) : "")
                 .navigationBarTitleDisplayMode(.inline)
+                .prefersToolbarItemsInVerticalBar()
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
                         inboxToolbarButton
                     }
+                    // Vista propia (icono + contador): en el iPhone Duo cerrado no pasaba sola a la barra vertical y,
+                    // en el primer arranque, se pintaba flotando abajo encima de la gráfica. Con contador, de lo último
+                    // en irse a «···».
+                    .joinsVerticalBar()
+                    .overflowsLast()
                     ToolbarItem(placement: .topBarTrailing) {
                         filtersToolbarButton
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         sectionsConfigButton
                     }
+                    // Si la barra vertical del Duo no da para todo, ordenar las secciones es lo que menos se toca: lo
+                    // primero en irse a «···».
+                    .overflowsFirst()
                     ProfileToolbarItem {
                         sheets.isPresentingSettings = true
                     }
                 }
         }
         .coachMarkOverlay(
-            steps: ProTourSteps.panelSteps,
+            steps: ProTourSteps.panelSteps(includesAssistant: appPreferences.chatFABVisible),
             isPresented: $showProFabTour,
             currentIndex: $proFabTourIndex,
+            // «Omitir guía» salta el tour Pro ENTERO, no solo esta fase: antes avanzaba a la siguiente y el tour
+            // volvía a salir en el Panel o en Estadísticas (auditoría UX 2.2 · lote 5 · B7).
+            onSkip: { ProTourManager.shared.skipTour() },
             onComplete: {
                 ProTourManager.shared.advancePhase()
             }
         )
         .task(id: ProTourManager.shared.currentPhase) {
-            guard !UITestHooks.isActive else { return }
+            // `-uitest-pro-tour-panel` saca esta fase en el simulador para grabarla (card v84b).
+            let forcedForUITest = UITestHooks.showsProTourPanel
+            guard !UITestHooks.isActive || forcedForUITest else { return }
             guard !ProTourManager.shared.hasCompleted,
-                  ProTourManager.shared.currentPhase == .panel else { return }
+                  ProTourManager.shared.currentPhase == .panel || forcedForUITest else { return }
             do { try await Task.sleep(for: .seconds(0.8)) } catch { return }
-            guard ProTourManager.shared.currentPhase == .panel,
+            guard ProTourManager.shared.currentPhase == .panel || forcedForUITest,
                   !showProFabTour else { return }
             showProFabTour = true
         }
@@ -327,10 +366,12 @@ struct PanelView: View {
             guard shouldShowTodayFXCoachMark, !showTodayFXCoachMark else { return }
             do { try await Task.sleep(for: .seconds(1.5)) } catch { return }
             guard !Task.isCancelled, shouldShowTodayFXCoachMark else { return }
-            withAnimation { showTodayFXCoachMark = true }
+            // En seco: el overlay no tiene transición y su entrada la hace `CoachMarkOverlay` (card oxyr).
+            showTodayFXCoachMark = true
         }
         .appliesPendingRemoteChanges(sessionState)
         .onAppear {
+            LoadTimeMarks.begin(.panel)
             // Inject AppPreferences BEFORE setContext so the first performCalculation
             // sees per-widget visibility state (P20-03 guards).
             viewModel.setAppPreferences(appPreferences)
@@ -348,7 +389,9 @@ struct PanelView: View {
             viewModel.syncFromSessionState(sessionState)
             reconcileAccountsSortOrder()
             viewModel.reloadAndRecalculate()
+            refreshCloudAdoptMarker()
         }
+        .onChange(of: sessionState.dataVersion) { _, _ in refreshCloudAdoptMarker() }
         .onDisappear {
             viewModel.cancelRecalculation()
         }
@@ -360,6 +403,7 @@ struct PanelView: View {
                 guard UIApplication.shared.applicationState == .active else { return }
                 viewModel.setBackground(false)
                 viewModel.reloadAndRecalculate()
+                refreshCloudAdoptMarker()
             @unknown default:
                 break
             }
@@ -398,10 +442,23 @@ struct PanelView: View {
                 viewModel.recalculateData()
             }
         }
-        .onChange(of: viewModel.accounts.count) { _, _ in
+        // También al pasar `isReady` a `true`: con cero cuentas el conteo no cambia, y la reconciliación de la primera
+        // carga tiene que correr igual. Un solo `onChange` (el CI tipa peor las cadenas largas: `swiftui-ds.md`).
+        .onChange(of: [viewModel.isReady ? 1 : 0, viewModel.accounts.count]) { _, _ in
             reconcileAccountsSortOrder()
         }
         .modifier(PanelKeyboardRequestObserver(sessionState: sessionState, open: openFromKeyboard))
+        .modifier(PanelSettingsReturnOpening(
+            isPresentingSettings: sheets.isPresentingSettings,
+            open: { destination in
+                sheets.settingsInitialDestination = destination
+                sheets.isPresentingSettings = true
+            },
+            release: {
+                sheets.isPresentingSettings = false
+                sheets.settingsInitialDestination = nil
+            }))
+        .modifier(PanelAccountAlertOpening { sheets.accountDetail = AccountDetailPresentation(account: $0) })
     }
 
     /// ⌘K y ⌘, (iPad con teclado): Yala IA por su camino de siempre (Pro → presentación → consentimiento) y Ajustes
@@ -423,6 +480,11 @@ struct PanelView: View {
     /// agrega nombres nuevos al final y remueve los de cuentas eliminadas/archivadas.
     /// El guard evita writes no-op (que dispararían didSet + observer async redundante).
     private func reconcileAccountsSortOrder() {
+        // Antes de la primera carga `viewModel.accounts` está vacío porque aún no se ha leído, no porque no haya
+        // cuentas: reconciliar ahí guardaba un orden VACÍO en una preferencia sincronizada y, tras cargar, lo volvía a
+        // escribir entero (dos escrituras y un repintado en cada arranque en frío; medido el 2026-10-30). Se reconcilia
+        // cuando `isReady` pasa a `true` (ver el `onChange` de abajo), con las cuentas de verdad.
+        guard viewModel.isReady else { return }
         let currentOrder = appPreferences.accountsSortOrderNames
         let newOrder = viewModel.ensureAccountsSortOrderConsistency(
             accounts: viewModel.accounts,
@@ -442,19 +504,159 @@ struct PanelView: View {
         return (visible(.accounts), visible(.health))
     }
 
+    /// Card vbf9: relee si el marcador de migración de otro dispositivo está en el iCloud de este.
+    private func refreshCloudAdoptMarker() {
+        let present = CloudMigrationController.shared?.markerDecision() == .secondaryDeviceCloudLogin
+        if present != cloudAdoptMarkerPresent { cloudAdoptMarkerPresent = present }
+    }
+
+    // MARK: - Avisos (UX 2.2 · L3-8)
+
+    /// Cada aviso con la MISMA condición con la que se pintaba suelto.
+    private var noticeFlags: PanelNoticeQueueLogic.Flags {
+        var flags = PanelNoticeQueueLogic.Flags()
+        flags.cloudAdoptOffer = CloudAdoptOfferLogic.shows(
+            markerFromAnotherDevice: cloudAdoptMarkerPresent,
+            migrationIdle: (CloudMigrationController.shared?.uiState ?? .idle) == .idle,
+            persistedMode: StorageModePersistence.read(),
+            offersCloudEntry: StorageRowGateLogic.offersCloudMigrationEntry(
+                remoteEnabled: CloudRemoteFlags.cloudModeEnabled,
+                isEngaged: StorageRowGateLogic.isEngaged(
+                    persistedMode: StorageModePersistence.read(),
+                    uiState: CloudMigrationController.shared?.uiState ?? .idle),
+                isAttestSupported: UITestHooks.fakeAttestSupport || AppAttestClient.canObtainSessionToken),
+            hasPrivateSession: SessionState.shared.hasPrivateSession,
+            dismissedThisSession: cloudAdoptOfferDismissed)
+        flags.panelGuide = !UITestHooks.isActive && !panelGuideDismissed
+        flags.setupChecklist = !UITestHooks.isActive && SetupChecklistManager.shared.shouldShow
+        flags.updateAvailable = AppUpdateService.shared.shouldShowBanner && AppUpdateService.shared.latestVersion != nil
+        // La prueba, solo sus últimos 5 días (UX 2.2 · L17-7); antes, los 30.
+        flags.proOffer = ProPlanStatusLogic.showsTrialBanner(
+            isInTrial: StoreKitManager.shared.isInTrial,
+            daysRemaining: StoreKitManager.shared.trialDaysRemaining)
+            || (!FeatureGateService.shared.isProUser && showPeriodicBanner)
+        flags.nudge = !UITestHooks.isActive && NudgeService.shared.currentNudge != nil && showNudgeBanner
+        flags.siriTip = !UITestHooks.isActive && appPreferences.showSiriTip && viewModel.transactions.count >= 5
+        return flags
+    }
+
+    /// El flotante sin cuenta o sin categorías lleva a la misma salida que la fila del hero (card 7jfp).
+    private func resolveMissingStepFromFAB() {
+        switch viewModel.quickActionsState {
+        case .needsAccount: sheets.accountFormSheet = AccountFormSheet(account: nil)
+        case .needsCategories: createCategoriesFromPanel()
+        case .ready: break
+        }
+    }
+
+    /// «Crear categorías» de la fila (card omw5): sin categorías propias las crea aquí mismo y la fila vuelve; con
+    /// categorías pero ninguna subcategoría visible, abre Ajustes › Categorías.
+    private func createCategoriesFromPanel() {
+        switch viewModel.createCategoriesAction() {
+        case .seedDefaults:
+            DS.Haptic.success()
+        case .openCategoriesSettings:
+            sheets.settingsInitialDestination = .categories
+            sheets.isPresentingSettings = true
+        }
+    }
+
+    @ViewBuilder
+    private func noticeView(_ notice: PanelNotice) -> some View {
+        switch notice {
+        case .cloudAdoptOffer:
+            CloudAdoptOfferBanner(
+                onActivate: {
+                    // La pantalla de almacenamiento arranca la activación al aparecer (un paso desde aquí).
+                    CloudAdoptOfferRequest.pending = true
+                    sheets.settingsInitialDestination = .storageMode
+                    sheets.isPresentingSettings = true
+                },
+                onDismiss: {
+                    // Lo anima la implícita de `notices` (card oxyr).
+                    cloudAdoptOfferDismissed = true
+                })
+        case .panelGuide:
+            ContextualGuideBanner.panel()
+        case .setupChecklist:
+            SetupChecklistCard(
+                manager: SetupChecklistManager.shared,
+                onStepTapped: { step in handleSetupStep(step) }
+            )
+        case .updateAvailable:
+            if let updateVersion = AppUpdateService.shared.latestVersion {
+                UpdateAvailableBanner(
+                    version: updateVersion,
+                    appStoreURL: AppUpdateService.shared.appStoreURL,
+                    onDismiss: { AppUpdateService.shared.dismissBanner() }
+                )
+            }
+        case .proOffer:
+            if StoreKitManager.shared.isInTrial {
+                TrialBanner(daysRemaining: StoreKitManager.shared.trialDaysRemaining)
+            } else {
+                ProUpgradeBanner(
+                    onUpgrade: {
+                        sheets.subscriptionBannerSource = "periodicBanner"
+                        sheets.showSubscriptionFromBanner = true
+                    },
+                    onDismiss: {
+                        ProUpsellService.shared.recordDismissed()
+                        showPeriodicBanner = false
+                    }
+                )
+                .onAppear {
+                    ProUpsellService.shared.recordShown(source: "periodicBanner")
+                }
+            }
+        case .nudge:
+            if let nudge = NudgeService.shared.currentNudge {
+                GroupNudgeBanner(
+                    nudge: nudge,
+                    message: NudgeService.shared.currentNudgeMessage ?? "",
+                    onAction: {
+                        NudgeService.shared.recordInteracted(nudge)
+                        // Lo anima la implícita de `notices` (card oxyr).
+                        showNudgeBanner = false
+                        handleNudgeAction(nudge)
+                    },
+                    onDismiss: {
+                        NudgeService.shared.recordDismissed(nudge)
+                        // Lo anima la implícita de `notices` (card oxyr).
+                        showNudgeBanner = false
+                    },
+                    onAutoDismiss: {
+                        NudgeService.shared.recordDismissed(nudge, autoDismissed: true)
+                        // Lo anima la implícita de `notices` (card oxyr).
+                        showNudgeBanner = false
+                    }
+                )
+            }
+        case .siriTip:
+            SiriTipCard(isVisible: Binding(
+                get: { appPreferences.showSiriTip },
+                set: { appPreferences.showSiriTip = $0 }
+            ))
+        }
+    }
+
     /// La cabecera del Panel. En compacta, la pila de siempre. En ancha, una banda de dos columnas —saldo y acciones
     /// a la izquierda, «Tus finanzas» a la derecha— con los avisos debajo: en horizontal la cabecera se comía un tercio
     /// de la pantalla (ticket `ipad-and-duo-panel-and-statistics-use-the-width`). Los mismos hijos en los dos casos,
     /// así redimensionar no cambia su identidad.
+    /// El pliegue del iPhone Duo abierto en horizontal, medido sobre la cabecera: la banda pone una columna a cada lado.
+    @State private var headerFold: ClosedRange<CGFloat>?
+
     private var headerLayout: AnyLayout {
         DS.Adaptive.isWideScreen(sizeClass)
-            ? AnyLayout(HeaderBandLayout(spacing: DS.Spacing.lg))
+            ? AnyLayout(HeaderBandLayout(spacing: DS.Spacing.lg, fold: headerFold))
             : AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Spacing.lg))
     }
 
     private var mainContent: some View {
         let panorama = panoramaVisibility
         let panoramaVisible = panorama.accounts || panorama.health
+        let notices = PanelNoticeQueueLogic.visible(noticeFlags)
         return ZStack {
             PanelBackgroundView()
 
@@ -472,6 +674,17 @@ struct PanelView: View {
                             CloudAttestNoticeBanner(accessibilityID: "panel_attest_terminal_banner")
                                 .padding(DS.Spacing.md)
                                 .glassEffect(.regular)
+                        } else if let syncSignInNotice {
+                            // Card pz4v: la sesión de la nube caducó y hay cambios esperando. Mismo sitio que el del
+                            // attest, y nunca a la vez: re-firmar no arregla un attest roto.
+                            CloudSignInNoticeBanner(pendingCount: syncSignInNotice.pendingCount) {
+                                SyncSignInRequest.pending = true
+                                sheets.settingsInitialDestination = .storageMode
+                                sheets.isPresentingSettings = true
+                            }
+                            .padding(DS.Spacing.md)
+                            // Rectángulo y no la cápsula por defecto: con un botón dentro, la cápsula le come las esquinas.
+                            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
                         }
 
                         // Gated on `heroWidget.data != nil` inside the section
@@ -486,6 +699,10 @@ struct PanelView: View {
 
                         PanelQuickActionsRow(
                             canCreateRecords: viewModel.canUseVoiceInput,
+                            hasAccounts: viewModel.accounts.contains { !$0.isArchived },
+                            onCreateFirstAccount: { sheets.accountFormSheet = AccountFormSheet(account: nil) },
+                            needsCategories: viewModel.quickActionsState == .needsCategories,
+                            onCreateCategories: { createCategoriesFromPanel() },
                             isVoiceLocked: isVoiceLocked,
                             isImageLocked: isImageLocked,
                             isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
@@ -496,6 +713,10 @@ struct PanelView: View {
                             onChatTap: { startChat() }
                         )
                         .headerBandColumn(.leading)
+                        // El tour Pro señala esta fila (UX 2.2 · L5-12): si el Panel no está arriba, sube hasta ella.
+                        .onChange(of: showProFabTour) { _, showing in
+                            if showing { scrollToProTourRow(scrollProxy) }
+                        }
 
                         // Movimientos sin cuenta: el primero de los avisos tras la cabecera. No ofrece nada: dice que hay
                         // dinero fuera del saldo y de los gastos, y lleva a la única salida (darles una cuenta).
@@ -503,78 +724,14 @@ struct PanelView: View {
                             sheets.showOrphanedRecords = true
                         }
 
-                        if !UITestHooks.isActive, appPreferences.showSiriTip, viewModel.transactions.count >= 5 {
-                            SiriTipCard(isVisible: Binding(
-                                get: { appPreferences.showSiriTip },
-                                set: { appPreferences.showSiriTip = $0 }
-                            ))
+                        // Los avisos, de uno en uno con «1 de N» (UX 2.2 · L3-8): apilados empujaban las cuentas a dos
+                        // pantallas. El orden lo decide `PanelNoticeQueueLogic`; cada aviso conserva su condición.
+                        PanelNoticeCarousel(
+                            notices: notices,
+                            selected: $selectedNotice
+                        ) { notice in
+                            noticeView(notice)
                         }
-
-                        // Update available banner (all users)
-                        if AppUpdateService.shared.shouldShowBanner,
-                           let updateVersion = AppUpdateService.shared.latestVersion {
-                            UpdateAvailableBanner(
-                                version: updateVersion,
-                                appStoreURL: AppUpdateService.shared.appStoreURL,
-                                onDismiss: { AppUpdateService.shared.dismissBanner() }
-                            )
-                        }
-
-                        // Trial / periodic upgrade banner
-                        if StoreKitManager.shared.isInTrial {
-                            TrialBanner(
-                                daysRemaining: StoreKitManager.shared.trialDaysRemaining
-                            ) {
-                                sheets.subscriptionBannerSource = "trialBanner"
-                                sheets.showSubscriptionFromBanner = true
-                            }
-                        } else if !FeatureGateService.shared.isProUser && showPeriodicBanner {
-                            ProUpgradeBanner(
-                                onUpgrade: {
-                                    sheets.subscriptionBannerSource = "periodicBanner"
-                                    sheets.showSubscriptionFromBanner = true
-                                },
-                                onDismiss: {
-                                    ProUpsellService.shared.recordDismissed()
-                                    showPeriodicBanner = false
-                                }
-                            )
-                            .onAppear {
-                                ProUpsellService.shared.recordShown(source: "periodicBanner")
-                            }
-                        }
-
-                        // Nudge banner (dormant/sporadic users — only if no Pro upsell showing)
-                        if !UITestHooks.isActive, let nudge = NudgeService.shared.currentNudge, showNudgeBanner {
-                            GroupNudgeBanner(
-                                nudge: nudge,
-                                message: NudgeService.shared.currentNudgeMessage ?? "",
-                                onAction: {
-                                    NudgeService.shared.recordInteracted(nudge)
-                                    withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
-                                    handleNudgeAction(nudge)
-                                },
-                                onDismiss: {
-                                    NudgeService.shared.recordDismissed(nudge)
-                                    withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
-                                },
-                                onAutoDismiss: {
-                                    NudgeService.shared.recordDismissed(nudge, autoDismissed: true)
-                                    withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
-                                }
-                            )
-                        }
-
-                        // Setup Checklist (persistent for new users)
-                        if !UITestHooks.isActive {
-                            SetupChecklistCard(
-                                manager: SetupChecklistManager.shared,
-                                onStepTapped: { step in handleSetupStep(step) }
-                            )
-                        }
-
-                        // Contextual guide for panel (first visit)
-                        ContextualGuideBanner.panel()
 
                         // Ganancia/pérdida cambiaria del saldo que el Panel suma. La condición vive
                         // DENTRO de la card, no aquí: con el `if` fuera, cruzar el umbral mientras
@@ -608,11 +765,28 @@ struct PanelView: View {
                             showVariations: appPreferences.showVariations,
                             sectionPrefsPresentation: $sheets.sectionPrefsPresentation,
                             showBudgetFavoritesSettings: $sheets.showBudgetFavoritesSettings,
-                            showCustomPeriodPicker: $sheets.showCustomPeriodPicker
+                            showCustomPeriodPicker: $sheets.showCustomPeriodPicker,
+                            onOpenFilters: { sheets.showFilters = true }
                         )
+                        // Tocar un segmento de una tarta o un top pregunta «Ver solo / Ocultar» (propuesta A, 2026-10-25),
+                        // como en Distribución: el mismo gesto no escribe distinto según la pantalla.
+                        .segmentFilterChoiceHost()
                         .padding(.top, panoramaVisible ? DS.Spacing.xxl - DS.Spacing.lg : 0)
                     }
+                    .readsVerticalFold($headerFold)
+                    // Cerrar un aviso (la oferta de la nube, el de grupos, la guía, la actualización…) lo funde y sube
+                    // lo de debajo. Implícita y no `withAnimation`: `ContentView` apaga la animación de toda
+                    // transacción que cruza las pestañas (card 8atf; regla de `swiftui-ds.md`).
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: notices)
+                    // Plegar o desplegar «Tu panorama» abre o cierra su sitio y lo de debajo lo acompaña, en el mismo
+                    // contenedor (card pjum). Antes las transiciones de la sección no tenían animación y la columna
+                    // entera saltaba.
+                    .animation(reduceMotion ? nil : DS.Animation.appear, value: appPreferences.panelAccountsCollapsed)
                     .padding(.top, DS.Spacing.lg)
+                    // Tocar un registro de «Últimos registros» abre su detalle (UX 2.2 · L3-12).
+                    .environment(\.openPanelRecord, OpenPanelRecordAction { record in
+                        sheets.recordDetail = PanelRecordPresentation(record: record)
+                    })
                     // Al final del scroll están a la vista Yala IA y «+» (`showFloatingActions`): el último widget
                     // sube por encima de los dos.
                     .padding(.bottom, DS.Button.fabStackClearance(buttons: 2))
@@ -625,9 +799,8 @@ struct PanelView: View {
                         ? offsetY > Self.inlineTitleHideAt
                         : offsetY >= Self.inlineTitleShowAt
                     if showInlineTitle != shouldShowTitle {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            showInlineTitle = shouldShowTitle
-                        }
+                        // En seco: el título de la barra es de UIKit y ninguna implícita lo funde (card oxyr).
+                        showInlineTitle = shouldShowTitle
                     }
 
                     // Los flotantes entran cuando la fila de acciones sale por
@@ -636,9 +809,8 @@ struct PanelView: View {
                         ? offsetY > Self.floatingActionsHideAt
                         : offsetY >= Self.floatingActionsShowAt
                     if showFloatingActions != shouldShowFABs {
-                        dsWithAnimation(reduceMotion) {
-                            showFloatingActions = shouldShowFABs
-                        }
+                        // Lo anima la implícita de `showFloatingActions` (card oxyr).
+                        showFloatingActions = shouldShowFABs
                     }
                 }
                 .refreshable {
@@ -656,7 +828,10 @@ struct PanelView: View {
                     // Setup checklist: auto-detect completed steps & manage collapse state
                     let mgr = SetupChecklistManager.shared
                     mgr.autoDetect(
-                        transactionCount: viewModel.transactions.count,
+                        // Sin el «Saldo inicial» ni los ajustes: no los apuntó la persona (`countsAsUserRecord`).
+                        transactionCount: viewModel.transactions.count(where: {
+                            SetupChecklistManager.countsAsUserRecord(balanceAdjustmentType: $0.balanceAdjustmentType)
+                        }),
                         budgetCount: viewModel.budgets.count,
                         scheduledCount: viewModel.scheduledPayments.count
                     )
@@ -668,14 +843,9 @@ struct PanelView: View {
             // Botón flotante de nuevo registro + Chat FAB. Sólo mientras la
             // fila de acciones del hero NO esté a la vista (ver
             // `showFloatingActions`): con las dos a la vez, la acción principal
-            // saldría dos veces en la misma pantalla.
-            // `|| showProFabTour`: los dos pasos del tour de Pro (`ProTourSteps
-            // .panelSteps`, ids "fab" y "proChatFab") señalan estos botones, y el
-            // tour arranca con el Panel ARRIBA DEL TODO —donde ahora están
-            // ocultos—, así que sin esto el coach mark apuntaría a una vista que
-            // no existe. Mientras el tour corre, se muestran aunque el scroll
-            // diga que no.
-            if showFloatingActions || showProFabTour {
+            // saldría dos veces en la misma pantalla. El tour Pro ya no los
+            // fuerza: señala la fila de acciones de arriba (UX 2.2 · L5-12).
+            if showFloatingActions {
                 VStack {
                     Spacer()
                     HStack {
@@ -685,8 +855,10 @@ struct PanelView: View {
                             isVoiceLocked: isVoiceLocked,
                             isImageLocked: isImageLocked,
                             isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
-                            chatConsentAccepted: appPreferences.aiChatConsentAccepted,
                             chatFABVisible: appPreferences.chatFABVisible,
+                            isShortContainer: fabShortContainer,
+                            missingStep: viewModel.quickActionsState,
+                            onResolveMissingStep: { resolveMissingStepFromFAB() },
                             onVoiceTap: { sheets.showVoiceRecording = true },
                             onImageTap: { sheets.showImageSelection = true },
                             onManualTap: { sheets.showNewTransaction = true },
@@ -697,13 +869,24 @@ struct PanelView: View {
                             // de llamar aquí y `startChat()` lo vuelve a comprobar
                             // sin efecto, para que la fila pueda usar el helper.
                             onChatTap: { startChat() },
-                            onUpgradeChat: { sheets.showUpgradeForChat = true },
-                            onChatConsentNeeded: { sheets.showChatConsentAlert = true }
+                            onUpgradeChat: { sheets.showUpgradeForChat = true }
                         )
                     }
                 }
+                // Con poco alto, los dos botones van en fila (UX 2.2 · L15-14).
+                .measuresShortContainer($fabShortContainer)
                 .transition(.opacity)
             }
+        }
+        // Los flotantes entran y salen fundiéndose al desplazar, y el título pequeño también. Implícita: el
+        // `withAnimation` del scroll no anima dentro de una pestaña (card 8atf).
+        .animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.normal), value: showFloatingActions)
+    }
+
+    private func scrollToProTourRow(_ proxy: ScrollViewProxy) {
+        // Con Reducir movimiento, sin desplazamiento animado (card oxyr).
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.normal)) {
+            proxy.scrollTo(ProTourSteps.panelVoiceImageAnchor, anchor: .center)
         }
     }
 
@@ -734,5 +917,81 @@ private struct PanelKeyboardRequestObserver: ViewModifier {
         guard navigation.selectedMainTab == .panel, let request = navigation.pendingKeyboardPanelRequest else { return }
         navigation.pendingKeyboardPanelRequest = nil
         open(request)
+    }
+}
+
+/// UX 2.2 · L16-5: tras cambiar el idioma con el selector de Yala, la app se reconstruye y la hoja de Ajustes se cierra;
+/// este Panel, recién montado, la reabre en el ajuste de donde se salió (`SceneNavigation.pendingSettingsReturn`). Solo
+/// al APARECER o al quedar delante: el Panel de antes del cambio ya está delante y con la hoja encima, así que no abre
+/// una segunda. **Y solo con la ventana libre** (`SettingsReturnOpening`): al aparecer, Ajustes y el selector de antes
+/// siguen cerrándose, y pedirla ahí hacía que UIKit la rechazara («already presenting») con el flag ya en `true`: el
+/// botón de Ajustes quedaba muerto hasta cerrar la app (card 6d71, medido el 2026-10-24).
+private struct PanelSettingsReturnOpening: ViewModifier {
+    @Environment(SceneNavigation.self) private var navigation
+    let isPresentingSettings: Bool
+    let open: (ProfileDestination) -> Void
+    let release: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear { openIfFront() }
+            .onChange(of: navigation.selectedMainTab) { _, _ in openIfFront() }
+    }
+
+    private func openIfFront() {
+        guard navigation.selectedMainTab == .panel, !isPresentingSettings,
+              let destination = navigation.pendingSettingsReturn else { return }
+        navigation.pendingSettingsReturn = nil
+        let windowID = navigation.id
+        Task { @MainActor in
+            let outcome = await SettingsReturnOpening.run(
+                isWindowPresenting: {
+                    ModalPresentationProbe.isAnythingPresented(in: SceneRegistry.shared.windowScene(for: windowID))
+                },
+                open: { open(destination) },
+                release: release,
+                pause: {
+                    do {
+                        try await Task.sleep(for: SettingsReturnOpening.pollInterval)
+                    } catch {
+                        #if DEBUG
+                        print("PanelSettingsReturnOpening: Error: \(error)")
+                        #endif
+                    }
+                })
+            #if DEBUG
+            if outcome != .presented { print("PanelSettingsReturnOpening: Ajustes no se reabrió (\(outcome))") }
+            #endif
+        }
+    }
+}
+
+/// Abre la ficha de la tarjeta cuyo aviso de pago se tocó (`SceneNavigation.pendingAccountID`, UX 2.2 · L10-14), con
+/// el Panel delante. Busca la cuenta él mismo, al aparecer y cuando llega el id: no cuenta con el orden de los `onAppear`.
+private struct PanelAccountAlertOpening: ViewModifier {
+    @Environment(SceneNavigation.self) private var navigation
+    @Environment(\.modelContext) private var modelContext
+    let open: (Account) -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear { openIfFront() }
+            .onChange(of: navigation.pendingAccountID) { _, _ in openIfFront() }
+            .onChange(of: navigation.selectedMainTab) { _, _ in openIfFront() }
+    }
+
+    private func openIfFront() {
+        guard navigation.selectedMainTab == .panel, let accountID = navigation.pendingAccountID else { return }
+        navigation.pendingAccountID = nil
+        do {
+            let descriptor = FetchDescriptor<Account>(predicate: #Predicate { $0.shortcutID == accountID })
+            if let account = try modelContext.fetch(descriptor).first {
+                open(account)
+            }
+        } catch {
+            #if DEBUG
+            print("PanelAccountAlertOpening: Error: \(error)")
+            #endif
+        }
     }
 }

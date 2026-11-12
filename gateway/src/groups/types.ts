@@ -19,6 +19,8 @@ export interface GroupSyncDelta extends Omit<SyncDelta, "sync_id"> {
 /** POST /groups/push — request. */
 export interface GroupPushRequest {
   deltas: GroupSyncDelta[];
+  /** Card sztn: textos en claro para el aviso a los demás miembros (`groups/notice.ts`). Opcional; no se guarda. */
+  notice?: unknown;
 }
 /** POST /groups/push — response (mismo shape por-delta que el personal). */
 export interface GroupPushResponse {
@@ -36,11 +38,21 @@ export interface GroupPullResponse {
   cursors: Record<string, number>;
   /** group_ids de los que el caller es member (active/pendingApproval) — descubre grupos nuevos Y perdidos. */
   memberships: string[];
+  /** Versión del group_capability_manifest de este Worker (el cliente declara la menor entre la suya y ésta). */
+  manifest_version: number;
+  /**
+   * Card y1cd: los group_ids de `memberships` cuyo `owner_user_id` es quien llama. Es lo único que dice a un teléfono que
+   * ES el dueño cuando la propiedad le llega por el servidor (`groups_forget_user` o `transfer_group_ownership` de otro):
+   * `isOwner` es local y `owner_user_id` no está en el manifest. Ausente en un Worker anterior: el cliente no toca nada.
+   */
+  owned_groups: string[];
 }
 
 /** GET /groups/merkle?group_id=<gid> — response (dos canales, acotado a UN grupo). */
 export interface GroupMerkleResponse {
   canon_version: string;
+  /** Versión del group_capability_manifest de este Worker (el cliente declara la menor entre la suya y ésta). */
+  manifest_version: number;
   group_id: string;
   root: string;
   entities: Record<string, { count: number; hash: string }>;

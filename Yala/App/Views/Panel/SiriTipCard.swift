@@ -15,7 +15,7 @@ struct SiriTipCard: View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "mic.badge.plus")
                 .font(DS.Typography.title)
-                .foregroundStyle(.tint)
+                .foregroundStyle(.thAccentText)
                 .frame(width: 36, height: 36)
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
@@ -30,9 +30,8 @@ struct SiriTipCard: View {
             Spacer(minLength: 0)
 
             Button {
-                dsWithAnimation(reduceMotion) {
-                    isVisible = false
-                }
+                // Lo anima la implícita de `notices` de PanelView (card oxyr).
+                isVisible = false
             } label: {
                 Image(systemName: "xmark")
                     .font(DS.Typography.caption)

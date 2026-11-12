@@ -9,6 +9,7 @@
  * de token/PII.
  */
 import type { Context } from "hono";
+import { serverCanary } from "../serverCanary";
 import type { Env } from "../env";
 import { jsonError } from "../errors";
 import { postgrestHeaders } from "../sync/userauth";
@@ -54,6 +55,7 @@ export async function handlePushRegister(c: Ctx): Promise<Response> {
   });
   if (!res.ok) {
     console.log(`[push-register] upsert upstream ${res.status}`);
+    serverCanary(c.env, "pushTokenRegisterFailed", String(res.status));
     return jsonError("yala_unavailable", "registro falló", res.status >= 500 ? 502 : 400);
   }
   return c.json({ registered: true });

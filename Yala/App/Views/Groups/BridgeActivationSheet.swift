@@ -101,7 +101,7 @@ struct BridgeActivationSheet: View {
         } label: {
             HStack(alignment: .top, spacing: DS.Spacing.md) {
                 Image(systemName: selectedOption == option ? "largecircle.fill.circle" : "circle")
-                    .foregroundStyle(selectedOption == option ? .thAccent : .thSecondaryText)
+                    .foregroundStyle(selectedOption == option ? .thAccentText : .thSecondaryText)
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     Text(label)
                         .font(DS.Typography.body)
@@ -136,7 +136,7 @@ struct BridgeActivationSheet: View {
                 onConfirm()
                 dismiss()
             } catch {
-                errorMessage = error.localizedDescription
+                errorMessage = GroupsUserFacingErrorLogic.message(for: error)
             }
         }
     }
@@ -148,15 +148,18 @@ struct BridgeActivationSheet: View {
     @discardableResult
     private func importHistory() throws -> Int {
         let allExpenses = try fetchScopedExpenses()
-        for expense in allExpenses {
-            guard let group = try fetchGroup(for: expense.groupZoneID) else { continue }
-            try GroupTransactionBridge.shared.bridgeExpense(
-                expense, in: group,
-                accountForCurrentUser: nil,
-                isRemoteSync: false,
-                isBulkImport: true,
-                shouldSave: false
-            )
+        // Grupos B · card 10: lo cobrado de las ventas se repasa una vez por grupo al final, no en cada gasto del historial.
+        try GroupTransactionBridge.shared.batchingReceivables(context: modelContext) {
+            for expense in allExpenses {
+                guard let group = try fetchGroup(for: expense.groupZoneID) else { continue }
+                try GroupTransactionBridge.shared.bridgeExpense(
+                    expense, in: group,
+                    accountForCurrentUser: nil,
+                    isRemoteSync: false,
+                    isBulkImport: true,
+                    shouldSave: false
+                )
+            }
         }
         try modelContext.save()
         return allExpenses.count

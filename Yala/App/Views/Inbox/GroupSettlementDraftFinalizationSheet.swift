@@ -20,6 +20,8 @@ struct GroupSettlementDraftFinalizationSheet: View {
 
     let draft: InboxDraft
     let onApproved: () -> Void
+    /// UX 2.2 · L13-7: tras «Sí, registrar» de un pago, quien abre la hoja recibe la cuenta elegida.
+    var onRegistered: ((String) -> Void)? = nil
 
     // MARK: - Environment
 
@@ -35,6 +37,12 @@ struct GroupSettlementDraftFinalizationSheet: View {
     @State private var resolvedCurrency: String = ""
     @State private var saveErrorMessage: String? = nil
     @State private var showSaveError: Bool = false
+    /// UX 2.2 · L13-12: «Pago a Ana · Viaje a Cusco» cuando el borrador no trae descripción.
+    @State private var paymentName: String?
+    /// Grupos B · card 10: lo que este pago cobra de tus ventas, que cuenta como ingreso el día del pago.
+    @State private var collectedLine: String?
+
+    @Environment(AppPreferences.self) private var appPreferences
 
     // MARK: - Body
 
@@ -42,17 +50,18 @@ struct GroupSettlementDraftFinalizationSheet: View {
         NavigationStack {
             GroupDraftFinalizationScaffold(
                 bannerMessage: String(format: L10n.Inbox.GroupSettlementDraft.banner, groupName),
-                note: draft.note,
+                note: draft.note.isEmpty ? (paymentName ?? draft.note) : draft.note,
                 amount: draft.amount,
                 currencyCode: resolvedCurrency,
                 date: draft.effectiveDate,
                 categoryReadOnly: categoryReadOnly,
                 finalizeDisabled: selectedAccount == nil,
-                onFinalize: { handleFinalize() }
+                onFinalize: { handleFinalize() },
+                footnote: collectedLine
             ) {
                 SelectionChip(
                     icon: "creditcard",
-                    text: selectedAccount?.name ?? L10n.Inbox.GroupSettlementDraft.assignAccount,
+                    text: selectedAccount?.name ?? accountLabel,
                     isSelected: selectedAccount != nil,
                     color: selectedAccount.map { Color(hex: $0.colorHex) }
                 ) {
@@ -71,7 +80,7 @@ struct GroupSettlementDraftFinalizationSheet: View {
             .sheet(isPresented: $showAccountSelector) {
                 AccountSelectorSheet(
                     selectedAccount: $selectedAccount,
-                    title: L10n.Inbox.GroupSettlementDraft.assignAccount,
+                    title: accountLabel,
                     currencyFilter: resolvedCurrency.isEmpty ? nil : resolvedCurrency
                 )
             }
@@ -86,6 +95,14 @@ struct GroupSettlementDraftFinalizationSheet: View {
     }
 
     // MARK: - Derived
+
+    /// El borrador de quien PAGA lleva el importe en negativo (`bridgeSettlement`, Caso C): ahí el dinero
+    /// sale de la cuenta, y «Cuenta de destino» le decía lo contrario.
+    private var accountLabel: String {
+        GroupSettlementDraftAccountLabelLogic.isOutgoing(amount: draft.amount)
+            ? L10n.Inbox.GroupExpenseAccountDraft.assignAccount
+            : L10n.Inbox.GroupSettlementDraft.assignAccount
+    }
 
     /// Chip de categoría read-only: subcat sistema "Liquidación enviada/recibida" (siempre
     /// poblada por el bridge). Defensivo a `nil` durante hidratación lazy de CloudKit.
@@ -112,6 +129,44 @@ struct GroupSettlementDraftFinalizationSheet: View {
             )
             resolvedCurrency = (try? modelContext.fetch(settDesc).first?.currencyCode) ?? ""
         }
+        paymentName = GroupSettlementDraftNameResolver.name(for: draft, context: modelContext)
+        collectedLine = loadCollectedLine()
+    }
+
+    /// La frase de lo que este pago cobra: las patas cobradas que el puente escribió con esta liquidación
+    /// (`GroupTransactionBridge.reconcileReceivables`). Solo en un pago que recibes.
+    private func loadCollectedLine() -> String? {
+        guard (draft.amount ?? 0) > 0, let settlementID = draft.splitSettlementID,
+              let settlementUUID = UUID(uuidString: settlementID) else { return nil }
+        let marker = GroupSplitLinesRecipe.encodeCollectedMarker(eventID: settlementUUID)
+        do {
+            let legs = try modelContext.fetch(FetchDescriptor<TransactionItem>(
+                predicate: #Predicate { $0.splitLinesRaw == marker }))
+            let bySale = Dictionary(grouping: legs.filter { !$0.isDeleted }) { $0.splitExpenseID ?? "" }
+            var parts: [(date: Date, part: GroupSettlementCollectedLineLogic.Part)] = []
+            for (saleID, saleLegs) in bySale {
+                guard let saleUUID = UUID(uuidString: saleID) else { continue }
+                let sale = try modelContext.fetch(FetchDescriptor<SplitExpense>(
+                    predicate: #Predicate { $0.id == saleUUID })).first
+                let name = sale?.expenseDescription.isEmpty == false
+                    ? (sale?.expenseDescription ?? "") : (saleLegs.first?.note ?? "")
+                parts.append((sale?.date ?? .distantPast, .init(
+                    saleName: name,
+                    categoryName: sale?.subcategoryName ?? saleLegs.first?.subcategory?.name,
+                    amount: saleLegs.reduce(0) { $0 + $1.amount })))
+            }
+            let currency = resolvedCurrency.isEmpty ? (legs.first?.currencyCode ?? "") : resolvedCurrency
+            return GroupSettlementCollectedLineLogic.line(
+                parts: parts.sorted { $0.date < $1.date }.map(\.part),
+                date: draft.effectiveDate,
+                formatAmount: { appPreferences.currency($0, currencyCode: currency, forceFullPrecision: true) },
+                formatDate: { GroupSettlementCollectedLineLogic.dateText($0) })
+        } catch {
+            #if DEBUG
+            print("GroupSettlementDraftFinalizationSheet: Error: \(error)")
+            #endif
+            return nil
+        }
     }
 
     private func handleFinalize() {
@@ -121,13 +176,15 @@ struct GroupSettlementDraftFinalizationSheet: View {
             _ = try DraftService.shared.approveDraft(draft, currencyConverter: currencyConverter)
             // M6: NO defaults — eliminada persistencia setDefaultSettlementAccount.
             DS.Haptic.success()
+            onRegistered?(account.name)
             onApproved()
             dismiss()
         } catch {
             #if DEBUG
             print("GroupSettlementDraftFinalizationSheet: approve failed: \(error)")
             #endif
-            saveErrorMessage = error.localizedDescription
+            saveErrorMessage = GroupsUserFacingErrorLogic.message(for: error)
+            DS.Haptic.error()
             showSaveError = true
         }
     }

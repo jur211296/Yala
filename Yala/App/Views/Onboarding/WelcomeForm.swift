@@ -3,7 +3,7 @@
 //  Yala
 //
 //  La forma de las pantallas de ENTRADA del Welcome, sacada de la referencia del 15-sep
-//  (`docs/design/referencias/2026-09-15-onboarding-login-referencia.jpg`): titular en serif y una
+//  (`docs/design/referencias/2026-09-15-onboarding-login-referencia.jpg`): titular grande (sans desde el 26-oct) y una
 //  línea que dice las formas de entrar, sin logo; todo lo que se elige vive en UNA tarjeta de borde
 //  fino y sin sombra; fuera de ella solo queda la pregunta de pie.
 //
@@ -22,13 +22,11 @@ import SwiftUI
 // MARK: - Layout
 
 enum WelcomeFormLayout {
-    /// Hueco sobre el titular: el de la píldora «Volver» (`welcomeBackButton`) más aire, para que el
-    /// titular no quede debajo de ella aunque la pantalla no tenga botón de volver — así todas las
-    /// pantallas del recorrido arrancan el titular a la misma altura.
-    ///
-    /// Fijo porque la píldora no crece más allá de `xxxLarge` (`welcomeBackButton`): con texto de
-    /// accesibilidad montaba encima del titular (medido en el iPhone 17 Pro a AX5, ~80 pt).
-    static let topInset: CGFloat = DS.Spacing.sm + DS.Button.actionSize + DS.Spacing.lg
+    /// Aire sobre el titular. El hueco del botón de volver ya lo pone la barra de navegación
+    /// (`welcomeBackButton`), que todas las pantallas del recorrido llevan aunque no tengan vuelta atrás: así
+    /// arrancan el titular a la misma altura. En el iPhone Duo cerrado el botón pasa a la barra vertical y la
+    /// de arriba no ocupa nada, así que el titular sube.
+    static let topInset: CGFloat = DS.Spacing.lg
     /// Ancho máximo de la columna en ventanas anchas (iPad, Stage Manager): una tarjeta de formulario
     /// estirada a 1 000 pt deja los botones como barras.
     static let maxWidth: CGFloat = 560
@@ -39,7 +37,7 @@ enum WelcomeFormLayout {
 
 // MARK: - Pantalla
 
-/// Fondo del Welcome + columna con scroll: titular serif, subtítulo y el contenido (la tarjeta y,
+/// Fondo del Welcome + columna con scroll: titular, subtítulo y el contenido (la tarjeta y,
 /// si la hay, la pregunta de pie). El scroll no es decoración: con Dynamic Type grande el titular y
 /// la tarjeta no caben en un iPhone SE, y las pantallas de antes, con `Spacer`s, recortaban.
 struct WelcomeFormScreen<Content: View>: View {
@@ -74,11 +72,14 @@ struct WelcomeFormScreen<Content: View>: View {
         }
     }
 
+    /// Centrado, como la cabecera de los pasos del onboarding (Jürgen, 2026-10-30: «mejor centrado todo como el
+    /// onboarding»). Las filas de opción de la tarjeta siguen alineadas a la izquierda, como las del onboarding.
     private var header: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+        VStack(alignment: .center, spacing: DS.Spacing.sm) {
             Text(title)
                 .font(DS.Typography.welcomeHeadline)
                 .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
 
@@ -90,13 +91,14 @@ struct WelcomeFormScreen<Content: View>: View {
                 }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 
     private func subtitleText(_ text: String) -> some View {
         Text(text)
             .font(DS.Typography.body)
             .foregroundStyle(.white.opacity(0.7))
+            .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
     }
 }
@@ -124,8 +126,9 @@ struct WelcomeFormLabel: View {
         Text(text)
             .font(DS.Typography.subheadline)
             .foregroundStyle(.white.opacity(0.7))
+            .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .center)
     }
 }
 
@@ -174,6 +177,9 @@ enum WelcomeOptionRowMetrics {
 
 /// Botón de la tarjeta, con el PESO como parámetro y no el color (rasgo 4 de la referencia).
 ///
+/// Cápsula y letra de `YalaPrimaryButton` (`DS.Typography.label`, 15 pt medium) desde el 2026-10-26 (D1 A de
+/// Jürgen): antes era un rectángulo redondeado en 17 pt semibold y convivía en el Welcome con la cápsula de la app.
+///
 /// Dos pesos y no tres: el tercero de la captura —gris pasivo hasta que hay datos— es el «Entrar» de
 /// un formulario con campos, y el Welcome de Yala no tiene campos que rellenar. Se añadirá cuando
 /// exista una pantalla que lo use; uno sin caller es una promesa que nadie prueba.
@@ -205,7 +211,7 @@ struct WelcomeFormButton: View {
             HStack(spacing: DS.Spacing.sm) {
                 iconView
                 Text(title)
-                    .font(DS.Typography.headline)
+                    .font(DS.Typography.label)
                     .multilineTextAlignment(.center)
             }
             .foregroundStyle(foreground)
@@ -214,7 +220,7 @@ struct WelcomeFormButton: View {
             .frame(maxWidth: .infinity, minHeight: WelcomeFormLayout.buttonHeight)
             .background(background)
             .overlay(border)
-            .contentShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
     }
@@ -224,7 +230,7 @@ struct WelcomeFormButton: View {
         switch icon {
         case .system(let name):
             Image(systemName: name)
-                .font(DS.Typography.headline)
+                .font(DS.Typography.label)
                 .accessibilityHidden(true)
         case .asset(let name):
             Image(name)
@@ -250,7 +256,7 @@ struct WelcomeFormButton: View {
     private var background: some View {
         switch weight {
         case .filled:
-            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).fill(.white)
+            Capsule().fill(.white)
         case .outline:
             Color.clear
         }
@@ -262,7 +268,7 @@ struct WelcomeFormButton: View {
         case .filled:
             EmptyView()
         case .outline:
-            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+            Capsule()
                 .stroke(.white.opacity(0.35), lineWidth: 1)
         }
     }

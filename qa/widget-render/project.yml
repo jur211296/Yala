@@ -1,0 +1,41 @@
+# Banco de capturas de los widgets (ver README). Lo genera `xcodegen` en cada corrida; no es un target de la app.
+name: WidgetRender
+options:
+  bundleIdPrefix: com.jurgenschmidt
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    SWIFT_APPROACHABLE_CONCURRENCY: YES
+    SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY: YES
+    CODE_SIGNING_ALLOWED: NO
+    CODE_SIGN_IDENTITY: ""
+    TARGETED_DEVICE_FAMILY: "1"
+    GENERATE_INFOPLIST_FILE: YES
+    INFOPLIST_KEY_UILaunchScreen_Generation: YES
+    INFOPLIST_KEY_CFBundleDisplayName: WidgetRender
+    ENABLE_APP_INTENTS_METADATA_GENERATION: NO
+targets:
+  WidgetRender:
+    type: application
+    platform: iOS
+    sources:
+      - path: Harness
+      - path: Generated
+      - path: ../../YalaWidgets/Resources
+        buildPhase: resources
+      - path: ../../YalaWidgets/Assets.xcassets
+        buildPhase: resources
+    info:
+      path: Generated/Info.plist
+      properties:
+        APP_GROUP_IDENTIFIER: widgetrender.shared
+        URL_SCHEME: yaladev
+        UILaunchScreen: {}
+        CFBundleDevelopmentRegion: es-419
+        CFBundleLocalizations: [es-419, es, en, de, fr, it, ja, nl, pl, pt, pt-BR, pt-PT, zh-Hans, en-GB, es-AR, es-ES]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jurgenschmidt.widgetrender

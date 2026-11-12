@@ -31,6 +31,20 @@ final class RecordsFiltersViewModel {
         allAccounts.filter { !$0.isArchived }
     }
 
+    /// Las cuentas que ofrece el filtro (tarjeta con varias divisas, entrega 3): cada tarjeta una vez, sin sus líneas, que
+    /// entran solas al elegirla (`SessionState.selectedAccountIDs`). Una línea elegida SOLA —un presupuesto anterior al
+    /// enlace— se sigue enseñando, detrás de su tarjeta, para que se pueda quitar.
+    func filterAccounts(selected: Set<PersistentIdentifier>) -> [Account] {
+        let roles = AccountLineLogic.resolve(allAccounts.map { AccountLineNode($0) })
+        let active = activeAccounts
+        let heads = active.filter { !(roles[$0.shortcutID]?.isLine ?? false) }
+        let loneLines = active.filter { (roles[$0.shortcutID]?.isLine ?? false) && selected.contains($0.persistentModelID) }
+        guard !loneLines.isEmpty else { return heads }
+        return AccountCardLogic.cards(
+            heads + loneLines, roles: roles, id: \.shortcutID, currencyCode: \.currencyCode
+        ).flatMap(\.members)
+    }
+
     var activeTags: [Tag] {
         allTags.filter { $0.isActive }
     }
@@ -97,59 +111,50 @@ final class RecordsFiltersViewModel {
 
     private func loadCurrenciesWithTransactions() {
         guard let context = modelContext else { return }
-
-        // Check each unique account currency with fetchCount (~1-3 queries, no objects materialized)
-        var codes = Set<String>()
-        for currencyCode in Set(allAccounts.map { $0.currencyCode }) {
-            let code = currencyCode
-            let descriptor = FetchDescriptor<TransactionItem>(
-                predicate: #Predicate<TransactionItem> { $0.currencyCode == code }
-            )
-            do {
-                if try context.fetchCount(descriptor) > 0 {
-                    codes.insert(code)
-                }
-            } catch {
-                #if DEBUG
-                print("RecordsFiltersViewModel: Error counting transactions for currency: \(error)")
-                #endif
-            }
-        }
-        // Maintain consistent order with CurrencyCode.allCases
-        currenciesWithTransactions = CurrencyCode.allCases.filter {
-            codes.contains($0.rawValue)
-        }
+        // La misma cuenta que la guarda del monto de `SessionState` (`CurrenciesWithRecords`).
+        currenciesWithTransactions = CurrenciesWithRecords.load(
+            accountCurrencyCodes: Set(allAccounts.map { $0.currencyCode }), in: context
+        ).currencies
     }
 
     // MARK: - Helper Methods
 
+    // Sin nada marcado cada sección dice lo suyo («Todas las cuentas», «Ninguna oculta»): antes era «(Todos)» y
+    // «(Nada)» en todas (UX 2.2 · L8-16). El texto lo decide `RecordsFiltersSection.emptyStatus`.
+
     func selectedAccountsText(selectedAccounts: Set<PersistentIdentifier>, isExcludeMode: Bool = false) -> String {
+        let empty = RecordsFiltersSection.accounts.emptyStatus(isExcludeMode: isExcludeMode)
         if selectedAccounts.isEmpty {
-            return isExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.all
+            return empty
         }
-        if !isExcludeMode && selectedAccounts.count == activeAccounts.count {
-            return L10n.Filters.all
+        // Se cuentan tarjetas: con la tarjeta elegida, sus líneas van en el conjunto pero no son otra cuenta (entrega 3).
+        // Cuenta las filas que se ven marcadas: así cuadra con la lista también con una línea elegida sola y su tarjeta.
+        let offered = filterAccounts(selected: selectedAccounts)
+        let marked = offered.filter { selectedAccounts.contains($0.persistentModelID) }.count
+        if !isExcludeMode && marked == offered.count {
+            return empty
         }
-        return "\(selectedAccounts.count)/\(activeAccounts.count)"
+        return "\(marked)/\(offered.count)"
     }
 
     func selectedCategoriesText(selectedSubcategories: Set<PersistentIdentifier>, isExcludeMode: Bool = false) -> String {
         let subCount = selectedSubcategories.count
+        let empty = RecordsFiltersSection.categories.emptyStatus(isExcludeMode: isExcludeMode)
 
         if subCount == 0 {
-            return isExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.all
+            return empty
         }
 
         let allIDs = Set(allSubcategories.map { $0.persistentModelID })
         if !isExcludeMode && selectedSubcategories == allIDs {
-            return L10n.Filters.all
+            return empty
         }
 
         let selectedSubs = allSubcategories.filter {
             selectedSubcategories.contains($0.persistentModelID)
         }
         if selectedSubs.isEmpty {
-            return isExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.all
+            return empty
         }
 
         if let firstSub = selectedSubs.first {
@@ -161,15 +166,16 @@ final class RecordsFiltersViewModel {
             }
         }
 
-        return isExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.all
+        return empty
     }
 
     func selectedTagsText(selectedTags: Set<PersistentIdentifier>, isExcludeMode: Bool = false) -> String {
+        let empty = RecordsFiltersSection.tags.emptyStatus(isExcludeMode: isExcludeMode)
         if selectedTags.isEmpty {
-            return isExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.all
+            return empty
         }
         if !isExcludeMode && selectedTags.count == activeTags.count {
-            return L10n.Filters.all
+            return empty
         }
         return "\(selectedTags.count)/\(activeTags.count)"
     }

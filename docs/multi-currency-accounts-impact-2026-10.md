@@ -1,6 +1,6 @@
 # Una cuenta con más de una divisa: análisis de impacto (2026-10-08)
 
-Ticket: [`multi-currency-accounts`](../tickets/backlog/multi-currency-accounts.md). Medido sobre el
+Ticket: [`multi-currency-accounts`](../tickets/qa/multi-currency-accounts.md). Medido sobre el
 árbol `e755b0d64` (`2.1` tras el PR #400). **No se ha tocado código ni se ha compilado nada.**
 
 > **Decidido (2026-10-10).** Jürgen eligió **A1** el 2026-10-09 a las 16:19 (Lima) y contestó las
@@ -753,7 +753,7 @@ la 3 y la 4 dependen de la 1.
    - Exclusión de las líneas del límite Free.
    - Entrada en la reconstrucción de UUID colapsados.
    - Review adversarial, porque es sync.
-2. **[`multi-currency-accounts-2-card-view`](../tickets/backlog/multi-currency-accounts-2-card-view.md):
+2. **[`multi-currency-accounts-2-card-view`](../tickets/qa/multi-currency-accounts-2-card-view.md):
    la tarjeta en pantalla.** Prioridad `medium`.
    - Carrusel y ficha agregados, con saldo por línea y total convertido con «≈».
    - Ajustes con líneas anidadas.
@@ -761,13 +761,13 @@ la 3 y la 4 dependen de la 1.
      resto, y «Vincular cuenta existente», también con cuentas que ya tienen movimientos.
    - Recordatorio solo en la principal.
    - Capturas de antes y después.
-3. **[`multi-currency-accounts-3-pickers-and-capture`](../tickets/backlog/multi-currency-accounts-3-pickers-and-capture.md):
+3. **[`multi-currency-accounts-3-pickers-and-capture`](../tickets/qa/multi-currency-accounts-3-pickers-and-capture.md):
    que en ningún sitio se vean dos cuentas.** Prioridad `medium`.
    - Selector anidado: la tarjeta, con sus líneas debajo.
    - Filtros y presupuestos que incluyen las líneas al elegir la tarjeta.
    - Formulario, chat, voz, imagen, Siri y Apple Pay: se elige la tarjeta y la divisa del importe
      decide la línea.
-4. **[`multi-currency-accounts-4-reports-and-export`](../tickets/backlog/multi-currency-accounts-4-reports-and-export.md):
+4. **[`multi-currency-accounts-4-reports-and-export`](../tickets/qa/multi-currency-accounts-4-reports-and-export.md):
    informes.** Prioridad `medium`.
    - Tabla de informes y flujo de caja por tarjeta o por línea.
    - Columna de tarjeta en el export.

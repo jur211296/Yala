@@ -14,6 +14,7 @@ import SwiftUI
 struct CategoriesSettingsListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.settingsListIsAlongside) private var settingsListIsAlongside
     @Environment(SessionState.self) private var sessionState
     @Environment(EntityDeletionService.self) private var deletionService
     @State private var viewModel = CategoriesSettingsListViewModel()
@@ -46,9 +47,12 @@ struct CategoriesSettingsListView: View {
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
-                    dismiss()
+            // Con la lista de Ajustes al lado, la lista es la vuelta (UX 2.2 · L16-20).
+            if !settingsListIsAlongside {
+                ToolbarItem(placement: .topBarLeading) {
+                    YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
+                        dismiss()
+                    }
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
@@ -66,12 +70,30 @@ struct CategoriesSettingsListView: View {
             }
         }
         .alert(
-            L10n.Category.cannotDeleteTitle,
-            isPresented: $viewModel.showCannotDeleteAlert
+            L10n.Category.deleteConfirmTitle,
+            isPresented: $viewModel.showDeleteConfirmation
         ) {
-            Button(L10n.Common.understood, role: .cancel) {}
+            Button(L10n.Category.delete, role: .destructive) {
+                viewModel.confirmCategoryDeletion()
+            }
+            Button(L10n.Action.cancel, role: .cancel) {
+                viewModel.categoryPendingDeletion = nil
+            }
         } message: {
-            Text(L10n.Category.cannotDeleteMessage(viewModel.transactionCountForAlert))
+            Text(L10n.Category.deleteConfirmMessage)
+        }
+        .modifier(CategoryCannotDeleteAlert(
+            isPresented: $viewModel.showCannotDeleteAlert,
+            recordCount: viewModel.transactionCountForAlert,
+            onHide: { viewModel.hideCategoryWithRecords() },
+            onMove: { viewModel.startMovingRecords() }
+        ))
+        .sheet(item: $viewModel.categoryToMove, onDismiss: { viewModel.loadCategories() }) { category in
+            CategoryMoveRecordsSheet(category: category) {
+                viewModel.loadCategories()
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
         }
         .onAppear {
             viewModel.setContext(modelContext, deletionService: deletionService)
@@ -116,6 +138,7 @@ struct CategoriesSettingsListView: View {
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(.primary)
                 }
+                .accessibilityIdentifier("categories_edit_button")
             }
             .padding(.horizontal, DS.Chip.paddingV)
 
@@ -131,8 +154,14 @@ struct CategoriesSettingsListView: View {
                                     .foregroundStyle(DS.Semantic.errorForeground)
                             }
                             .accessibilityLabel(L10n.Accessibility.deleteCategory)
+                            .accessibilityIdentifier("categories_delete_\(category.name)")
                             .padding(.leading, DS.Spacing.lg)
                             .padding(.trailing, DS.Spacing.sm)
+                            // «Otros» e «Ingresos» guardan los ajustes de saldo y las transferencias: sin «−», pero
+                            // con su hueco, para que las filas sigan alineadas.
+                            .opacity(viewModel.canDelete(category) ? 1 : 0)
+                            .disabled(!viewModel.canDelete(category))
+                            .accessibilityHidden(!viewModel.canDelete(category))
                         }
 
                         NavigationLink {
@@ -183,8 +212,14 @@ struct CategoriesSettingsListView: View {
                                     .foregroundStyle(DS.Semantic.errorForeground)
                             }
                             .accessibilityLabel(L10n.Accessibility.deleteCategory)
+                            .accessibilityIdentifier("categories_delete_\(category.name)")
                             .padding(.leading, DS.Spacing.lg)
                             .padding(.trailing, DS.Spacing.sm)
+                            // «Otros» e «Ingresos» guardan los ajustes de saldo y las transferencias: sin «−», pero
+                            // con su hueco, para que las filas sigan alineadas.
+                            .opacity(viewModel.canDelete(category) ? 1 : 0)
+                            .disabled(!viewModel.canDelete(category))
+                            .accessibilityHidden(!viewModel.canDelete(category))
                         }
 
                         NavigationLink {

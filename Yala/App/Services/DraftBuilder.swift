@@ -25,12 +25,17 @@ struct DraftBuilder {
 
     /// Pure-logic match contra una lista ya fetcheada. Filtra archivadas internamente
     /// por si el caller no lo hizo. 1 match exacto → devuelve la cuenta; 0 ó 2+ → nil.
+    ///
+    /// La usan TODAS las capturas que eligen cuenta por la divisa dictada (chat, voz, imagen, Siri, Apple Pay). Una línea de
+    /// una tarjeta con varias divisas es una cuenta más de su divisa: con la tarjeta en soles y su línea en dólares como única
+    /// cuenta en USD, un importe en USD va a la línea (entrega 3). Las cuentas de sistema de Grupos no son elegibles: solo
+    /// las asigna el bridge (A0-Bridge), como en Siri y Apple Pay, que ya las quitaban antes de llamar.
     static func findAccount(byCurrency currencyCode: String, in accounts: [Account]) -> Account? {
         let normalizedCode = currencyCode.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
         guard !normalizedCode.isEmpty else { return nil }
 
         let matches = accounts
-            .filter { !$0.isArchived }
+            .filter { !$0.isArchived && !$0.isSystemAccount }
             .filter { $0.currencyCode.uppercased() == normalizedCode }
         return matches.count == 1 ? matches.first : nil
     }
@@ -213,11 +218,15 @@ struct DraftBuilder {
     /// Date: prioriza `parsed.date`; si no hay, usa `Date.now`.
     /// Tags: matchea `parsed.tagHints` por nombre (case-insensitive) contra los Tags
     /// existentes del user. Tags no encontrados se ignoran (v1).
+    /// `expensesOnlyMode`: con el modo «solo gastos», el borrador nace como gasto aunque el modelo lea un ingreso, como en
+    /// Siri, el Atajo y Apple Pay (`SiriDraftService`). Ticket `chat-ignores-expenses-only-mode`.
     static func build(
         parsed: ParsedTransaction,
         defaultCurrency: String,
-        context: ModelContext
+        context: ModelContext,
+        expensesOnlyMode: Bool = false
     ) -> ChatTransactionDraft {
+        let isExpense = expensesOnlyMode ? true : parsed.isExpense
         let currency = parsed.currencyHint?.uppercased() ?? defaultCurrency.uppercased()
         let account = findAccount(byCurrency: currency, context: context)
 
@@ -226,12 +235,12 @@ struct DraftBuilder {
         // 2) Fallback a MerchantMemory (aprendizaje histórico de "Wong" → Supermercados).
         var subcategory: Subcategory?
         if let hint = parsed.subcategoryHint, !hint.isEmpty {
-            subcategory = matchSubcategoryByHint(hint: hint, isExpense: parsed.isExpense, context: context)
+            subcategory = matchSubcategoryByHint(hint: hint, isExpense: isExpense, context: context)
         }
         if subcategory == nil {
             subcategory = suggestSubcategory(
                 merchant: parsed.note,
-                isExpense: parsed.isExpense,
+                isExpense: isExpense,
                 context: context
             )
         }
@@ -246,7 +255,7 @@ struct DraftBuilder {
         return ChatTransactionDraft(
             amount: parsed.amount,
             currencyCode: currency,
-            isExpense: parsed.isExpense,
+            isExpense: isExpense,
             note: parsed.note,
             date: parsed.date ?? Date.now,
             accountID: account?.persistentModelID,

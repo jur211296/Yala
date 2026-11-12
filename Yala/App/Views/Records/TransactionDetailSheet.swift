@@ -23,8 +23,8 @@ import SwiftUI
 struct TransactionDetailSheet: View {
     private static let dateFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.dateFormat = "d MMM yyyy"
         f.locale = AppLocale.current
+        f.setLocalizedDateFormatFromTemplate("dMMMy")
         return f
     }()
 
@@ -50,14 +50,34 @@ struct TransactionDetailSheet: View {
     /// Cerrar el panel (`pane`): el padre vacía lo abierto. En hoja cierra `dismiss()` y en columna no hay X.
     var onClose: (() -> Void)? = nil
 
+    /// «Duplicar» al pie (L8-4). `nil`: la pantalla que lo abre no lo ofrece. Solo sale si el registro se puede
+    /// duplicar (`RecordContextActionLogic`, lo mismo que el menú de la fila).
+    var onDuplicate: (() -> Void)? = nil
+
+    /// «Eliminar» al pie (L8-4), ya confirmado: el detalle pregunta antes con la misma alerta que el menú y el editor
+    /// (L8-7). `nil`: no se ofrece.
+    var onDelete: (() -> Void)? = nil
+
+    /// El host borra con unos segundos para deshacer (`RecordPendingDeletion`, UX 2.2 · L15-13): Registros y Estadísticas
+    /// › Registros. Los demás (Buscar, el Panel) borran en el acto, y la pregunta no puede prometer lo contrario.
+    var deleteIsUndoable = false
+
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.tagCatalog) private var tagCatalog
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(CurrencyConverter.self) private var currencyConverter
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.usesLargeSheets) private var usesLargeSheets
 
     @State private var transferPartnerAccount: Account?
+    @State private var isConfirmingDelete = false
+    /// Gasto de grupo (L8-5): su nombre y de dónde sale cada número. Se leen una vez al abrir.
+    @State private var groupName: String?
+    @State private var groupBreakdown: GroupExpenseBreakdownLogic.Breakdown?
+    /// Grupos B (card 6): «Partir tu parte» de un registro puenteado, con la misma puerta que el puente.
+    @State private var offersSplitLines = false
+    @State private var showsSplitLines = false
 
     /// Detent fijo: medium en ventana compacta / large en ventana ancha. Sin `selection` — ya no hay
     /// drag-to-edit que dispare cambios de modo.
@@ -86,6 +106,7 @@ struct TransactionDetailSheet: View {
             VStack(spacing: DS.Spacing.lg) {
                 compactHero
                 detailsCard
+                groupDeleteHint
             }
             .padding(.horizontal, DS.Spacing.xl)
             .padding(.top, DS.Spacing.md)
@@ -94,6 +115,152 @@ struct TransactionDetailSheet: View {
             .frame(maxWidth: .infinity)
         }
         .scrollBounceBehavior(.basedOnSize)
+        // Duplicar y Eliminar a la vista, al pie y fuera del scroll: se ven sin descubrir la pulsación larga ni entrar
+        // al editor, y Eliminar queda lejos de Editar (auditoría UX 2.2, L8-4, variante 1).
+        .safeAreaInset(edge: .bottom, spacing: DS.Spacing.none) {
+            footerActions
+        }
+        .alert(deleteTitle, isPresented: $isConfirmingDelete) {
+            Button(L10n.Action.cancel, role: .cancel) {}
+            Button(L10n.Action.delete, role: .destructive) {
+                // Al confirmar el borrado, no al abrir la pregunta (card C4; mapa de `DS.Haptic`).
+                DS.Haptic.warning()
+                onDelete?()
+            }
+        } message: {
+            Text(deleteMessage)
+        }
+        .task(id: transaction.persistentModelID) { resolveGroup() }
+        .sheet(isPresented: $showsSplitLines) {
+            if let expenseID = transaction.splitExpenseID {
+                GroupSplitLinesSheet(splitExpenseID: expenseID) { resolveGroup() }
+            }
+        }
+    }
+
+    // MARK: - Pie: Duplicar y Eliminar (L8-4)
+
+    private var rowActions: RecordContextActionLogic.Actions {
+        RecordContextActionLogic.actions(.init(record: transaction))
+    }
+
+    private var isGroupRecord: Bool {
+        // Grupos B: también la entrada de una recarga de tu parte, que no lleva puntero (D4).
+        RecordContextActionLogic.Shape(record: transaction).isGroupRecord
+    }
+
+    @ViewBuilder
+    private var footerActions: some View {
+        let offersDuplicate = onDuplicate != nil && rowActions.canDuplicate
+        let offersDelete = onDelete != nil && rowActions.canDelete
+        if offersDuplicate || offersDelete {
+            HStack(spacing: DS.Spacing.md) {
+                if offersDuplicate {
+                    Button {
+                        onDuplicate?()
+                    } label: {
+                        Label(L10n.Action.duplicate, systemImage: "doc.on.doc")
+                            .font(DS.Typography.label)
+                            .foregroundStyle(.primary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, DS.Spacing.md)
+                            .background(Color.secondary.opacity(0.18), in: Capsule())
+                            .contentShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("transaction_detail_duplicate")
+                }
+                if offersDelete {
+                    Button {
+                        isConfirmingDelete = true
+                    } label: {
+                        Label(L10n.Action.delete, systemImage: "trash")
+                            .font(DS.Typography.label)
+                            .foregroundStyle(DS.Semantic.errorForeground)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, DS.Spacing.md)
+                            .background(DS.Semantic.errorBackgroundSubtle, in: Capsule())
+                            .contentShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("transaction_detail_delete")
+                }
+            }
+            .padding(.horizontal, DS.Spacing.xl)
+            .padding(.vertical, DS.Spacing.sm)
+            .frame(maxWidth: DS.Adaptive.readableWidth)
+            .frame(maxWidth: .infinity)
+            // Fijo al pie y con su cristal: sin él, las filas que suben por detrás se leían entre los dos botones.
+            .background(.ultraThinMaterial)
+        }
+    }
+
+    /// Lo que viene de un grupo se borra desde el grupo: se dice dónde en vez de no ofrecer nada (L8-6). Va en el
+    /// contenido, bajo la tarjeta: fijo al pie se montaba sobre la última fila (medido en el simulador el 17-oct).
+    @ViewBuilder
+    private var groupDeleteHint: some View {
+        if isGroupRecord, onDelete != nil, !rowActions.canDelete {
+            Text(L10n.UXL8.deleteFromGroupHint)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+                .accessibilityIdentifier("transaction_detail_group_delete_hint")
+        }
+    }
+
+    /// «¿Eliminar «Uber · S/ 26»?»: dice qué se borra (L8-7).
+    private var deleteTitle: String {
+        RecordDeleteConfirmationText.title(for: transaction, preferences: appPreferences)
+    }
+
+    private var deleteMessage: String {
+        // Desde Registros se puede deshacer unos segundos (UX 2.2 · L15-13); desde Buscar o el Panel, no.
+        RecordDeleteConfirmationText.message(for: transaction, undoable: deleteIsUndoable)
+    }
+
+    // MARK: - Gasto de grupo (L8-5)
+
+    /// El nombre del grupo y las patas del mismo gasto. Una vez por registro abierto; si algo no hidrató todavía (una
+    /// pata sin cuenta), no se inventa nada y queda la fila «Grupos» de siempre.
+    private func resolveGroup() {
+        guard isGroupRecord else { return }
+        if let zone = transaction.splitGroupZoneID {
+            do {
+                groupName = try modelContext.fetch(
+                    FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.cloudKitZoneID == zone })
+                ).first.map(\.name).flatMap { $0.isEmpty ? nil : $0 }
+            } catch {
+                #if DEBUG
+                print("TransactionDetailSheet: Error fetching group name: \(error)")
+                #endif
+            }
+        }
+        guard let expenseID = transaction.splitExpenseID else { return }
+        do {
+            // Un saldo inicial de grupo (deuda de apertura importada) no es la parte de ningún gasto: sin desglose, como
+            // en Estadísticas, que tampoco lo cuenta como gasto (revisión adversarial del lote 8).
+            if let expenseUUID = UUID(uuidString: expenseID),
+               try modelContext.fetch(
+                   FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.id == expenseUUID && $0.isOpeningBalance })
+               ).first != nil {
+                return
+            }
+            let legs = try modelContext.fetch(
+                FetchDescriptor<TransactionItem>(predicate: #Predicate { $0.splitExpenseID == expenseID })
+            )
+            offersSplitLines = try GroupSplitLinesService.target(splitExpenseID: expenseID, context: modelContext)?
+                .offersSplit ?? false
+            guard !legs.contains(where: { $0.account == nil }) else { return }
+            groupBreakdown = GroupExpenseBreakdownLogic.breakdown(legs: legs.map {
+                .init(amount: $0.amount, isSystemAccount: $0.account?.isSystemAccount ?? false,
+                      isSplitLineLeg: GroupSplitLinesBridgeLogic.isDerivedMarker($0.splitLinesRaw))
+            })
+        } catch {
+            #if DEBUG
+            print("TransactionDetailSheet: Error fetching group legs: \(error)")
+            #endif
+        }
     }
 
     private var editButton: some View {
@@ -192,7 +359,7 @@ struct TransactionDetailSheet: View {
     }
 
     private var resolvedTags: [Tag] {
-        TagDisplayResolver.tags(for: transaction, catalog: tagCatalog)
+        TagDisplayResolver.tags(for: transaction, catalog: tagCatalog, order: appPreferences.tagsSortOrderNames)
     }
 
     private func resolveTransferPartner() {
@@ -241,8 +408,9 @@ struct TransactionDetailSheet: View {
             }
         }
         .font(DS.Typography.subheadline)
-        .lineLimit(1)
-        .truncationMode(.tail)
+        // La nota entera: cortada a una línea no se leía lo que la persona escribió (L8-4).
+        .multilineTextAlignment(.center)
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private var heroBadge: some View {
@@ -286,6 +454,15 @@ struct TransactionDetailSheet: View {
                 categoryRow
             }
 
+            // La necesidad, en los gastos (en la fila va en la píldora; aquí faltaba). L8-4.
+            if transaction.subcategory != nil, showsNeed {
+                detailRow(
+                    icon: "circle.lefthalf.filled",
+                    label: L10n.Category.need,
+                    value: transaction.effectiveNeed.displayName
+                )
+            }
+
             if !resolvedTags.isEmpty {
                 tagsRow
             }
@@ -294,7 +471,9 @@ struct TransactionDetailSheet: View {
                 conversionRow
             }
 
-            if let splitTotal = transaction.splitTotalAmount {
+            if let breakdown = groupBreakdown {
+                groupBreakdownRows(breakdown)
+            } else if let splitTotal = transaction.splitTotalAmount {
                 detailRow(
                     icon: "percent",
                     label: L10n.Split.totalAmount,
@@ -313,8 +492,18 @@ struct TransactionDetailSheet: View {
                 )
             }
 
-            if transaction.splitExpenseID != nil || transaction.splitSettlementID != nil {
-                infoRow(icon: "person.2.fill", text: L10n.Groups.title)
+            if isGroupRecord {
+                // El grupo por su nombre; sin él (aún no llegó), la fila «Grupos» de siempre.
+                if let groupName {
+                    detailRow(icon: "person.2.fill", label: L10n.UXL8.group, value: groupName)
+                        .accessibilityIdentifier("transaction_detail_group")
+                } else {
+                    infoRow(icon: "person.2.fill", text: L10n.Groups.title)
+                }
+            }
+
+            if offersSplitLines {
+                splitLinesRow
             }
         }
         .padding(.vertical, DS.Spacing.sm)
@@ -322,6 +511,61 @@ struct TransactionDetailSheet: View {
             RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
                 .fill(.thCard)
         )
+    }
+
+    /// Grupos B (card 6): abre la hoja «Tu parte» de este gasto de grupo.
+    private var splitLinesRow: some View {
+        Button {
+            showsSplitLines = true
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: "scissors")
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.thAccentText)
+                    .frame(width: Self.rowIconWidth)
+                    .accessibilityHidden(true)
+                Text(L10n.Groups.SplitLines.splitYourShare)
+                    .font(DS.Typography.label)
+                    .foregroundStyle(.thAccentText)
+                Spacer(minLength: DS.Spacing.sm)
+                Image(systemName: "chevron.right")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.FormRow.paddingV)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("transaction_detail_split")
+    }
+
+    private var showsNeed: Bool {
+        RecordRowPresentationLogic.showsNeedPill(
+            isBalanceAdjustment: transaction.balanceAdjustmentType != nil,
+            isIncome: TransactionClassificationLogic.isIncome(transaction),
+            subcategoryIsSystem: transaction.subcategory?.isAnySystem ?? false
+        )
+    }
+
+    /// «Pagaste», «Tu parte» y «Te deben»: de dónde sale el importe de un gasto de grupo (L8-5).
+    @ViewBuilder
+    private func groupBreakdownRows(_ breakdown: GroupExpenseBreakdownLogic.Breakdown) -> some View {
+        if let paid = breakdown.youPaid {
+            detailRow(icon: "creditcard", label: L10n.UXL8.youPaid, value: money(paid))
+                .accessibilityIdentifier("transaction_detail_you_paid")
+        }
+        detailRow(icon: "person.fill", label: L10n.UXL8.yourShare, value: money(breakdown.yourShare))
+            .accessibilityIdentifier("transaction_detail_your_share")
+        if let owed = breakdown.owedToYou {
+            detailRow(icon: "arrow.down.left", label: L10n.UXL8.owedToYou, value: money(owed))
+                .accessibilityIdentifier("transaction_detail_owed_to_you")
+        }
+    }
+
+    private func money(_ value: Double) -> String {
+        appPreferences.currency(value, currencyCode: transaction.currencyCode, forceFullPrecision: true)
     }
 
     // MARK: - Rows (neutras: íconos/labels secondary, values primary)
@@ -338,12 +582,17 @@ struct TransactionDetailSheet: View {
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
         } trailing: {
-            Text(transactionType.displayName)
+            // La pata de una venta de grupo dice «Ingreso • Por cobrar» (o «Cobrado»), como su fila (card 00xj).
+            Text(RecordRowPresentationLogic.categoryCaption(
+                transactionType.displayName, adjustmentType: transaction.balanceAdjustmentType,
+                splitLinesRaw: transaction.splitLinesRaw))
                 .font(DS.Typography.label)
                 .foregroundStyle(.primary)
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.FormRow.paddingV)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("transaction_detail_type")
     }
 
     private func detailRow(icon: String, label: String, value: String) -> some View {
@@ -509,7 +758,9 @@ struct TransactionDetailSheet: View {
     }
 
     /// Monto convertido a la moneda preferida con la tasa snapshot persistida
-    /// (sin recalcular — formato del exchangeRateChip del form).
+    /// (sin recalcular — formato del exchangeRateChip del form). Si la conversión no se escribió
+    /// (0 con nativo ≠ 0), se reconvierte con la tasa de ese día o, sin ella, la fila lo dice con
+    /// texto: nunca pinta 0 como importe (`TransactionDetailSheetLogic.conversionDisplay`).
     private var conversionRow: some View {
         AdaptiveRowStack(spacing: DS.Spacing.md) {
             Image(systemName: "arrow.triangle.2.circlepath")
@@ -523,15 +774,24 @@ struct TransactionDetailSheet: View {
                 .foregroundStyle(.secondary)
         } trailing: {
             VStack(alignment: .trailingUnlessStacked(dynamicTypeSize), spacing: DS.Spacing.xxs) {
-                Text(
-                    "≈ \(appPreferences.currency(transaction.amountInPreferredCurrency, currencyCode: transaction.preferredCurrencyCode, forceFullPrecision: true))"
-                )
-                .font(DS.Typography.label)
-                .foregroundStyle(.primary)
+                switch TransactionDetailSheetLogic.conversionDisplay(for: transaction, converter: currencyConverter) {
+                case .amount(let value, let rate):
+                    Text(
+                        "≈ \(appPreferences.currency(value, currencyCode: transaction.preferredCurrencyCode, forceFullPrecision: true))"
+                    )
+                    .font(DS.Typography.label)
+                    .foregroundStyle(.primary)
 
-                Text(L10n.Transaction.exchangeRateShort(ExchangeRateDisplayFormatter.string(transaction.exchangeRate)))
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
+                    Text(L10n.Transaction.exchangeRateShort(ExchangeRateDisplayFormatter.string(rate)))
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                case .missingRateForDay:
+                    Text(L10n.Transaction.exchangeRateMissingForDay)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.trailing)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
         }
         .padding(.horizontal, DS.Spacing.lg)

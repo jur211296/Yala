@@ -16,10 +16,9 @@ import Testing
 struct PanelAccountCardLogicTests {
 
     @Test func style_followsTheFilter() {
-        #expect(PanelAccountCardLogic.style(isSelected: false, isExcludeMode: false) == .plain)
-        #expect(PanelAccountCardLogic.style(isSelected: false, isExcludeMode: true) == .plain)
-        #expect(PanelAccountCardLogic.style(isSelected: true, isExcludeMode: false) == .tinted)
-        #expect(PanelAccountCardLogic.style(isSelected: true, isExcludeMode: true) == .excluded)
+        #expect(PanelAccountCardLogic.style(membership: .none) == .plain)
+        #expect(PanelAccountCardLogic.style(membership: .included) == .tinted)
+        #expect(PanelAccountCardLogic.style(membership: .excluded) == .excluded)
     }
 
     @Test func subtitle_isTypeAndCurrency_orCurrencyAlone() {
@@ -60,11 +59,10 @@ struct PanelAccountCardLogicTests {
         #expect(!PanelAccountCardLogic.showsConversion(kind: .spent, accountCurrency: "USD", defaultCurrency: "PEN"))
     }
 
-    @Test func filterAction_onlyWhenNotFilteredAndIncluding() {
-        #expect(PanelAccountCardLogic.showsFilterAction(isSelected: false, isExcludeMode: false))
-        #expect(!PanelAccountCardLogic.showsFilterAction(isSelected: true, isExcludeMode: false))
-        #expect(!PanelAccountCardLogic.showsFilterAction(isSelected: false, isExcludeMode: true))
-        #expect(!PanelAccountCardLogic.showsFilterAction(isSelected: true, isExcludeMode: true))
+    @Test func filterAction_onlyWhenTheAccountIsNotInTheFilter() {
+        #expect(PanelAccountCardLogic.showsFilterAction(membership: .none))
+        #expect(!PanelAccountCardLogic.showsFilterAction(membership: .included))
+        #expect(!PanelAccountCardLogic.showsFilterAction(membership: .excluded))
     }
 
     @Test func systemAccounts_areNotEditable() {
@@ -163,7 +161,8 @@ struct AccountDetailCalculatorTests {
         #expect(s.series.last?.balance == entries.reduce(0) { $0 + $1.amount })
     }
 
-    /// Un movimiento fechado en el futuro ya suma en la tarjeta, pero la curva se queda en hoy: todavía no ha pasado.
+    /// Un movimiento fechado en el futuro no entra en la curva, que se queda en hoy: todavía no ha pasado. La tarjeta
+    /// tampoco lo suma desde el 2026-10-18 (`BalanceFutureDatedCutoffTests`).
     @Test func series_stopsToday_evenWithFutureDatedEntries() {
         let entries = [Self.entry("hoy", Self.day(10), 1000), Self.entry("futuro", Self.day(15), 500)]
         let series = AccountDetailCalculator.dailyBalances(
@@ -244,6 +243,73 @@ struct AccountDetailCalculatorTests {
             entries: entries, interval: Self.october, now: Self.day(3), calendar: Self.calendar
         )
         #expect(series.map(\.balance) == [40, 40, 50])
+    }
+
+    // MARK: - La cuenta del saldo (UX 2.2 · L3-11)
+
+    /// «Saldo al empezar + entró − salió = saldo al terminar»: lo de antes del período es el punto de partida, el saldo
+    /// inicial puesto dentro también, y entró/salió son los de las tarjetas de la ficha.
+    @Test func reconciliation_startsWithWhatCameBefore_andAddsUpToTheClosingBalance() {
+        let entries = [
+            Self.entry("septiembre", Self.day(30, month: 9), 500, category: "Sueldo", isIncome: true),
+            Self.entry("inicial", Self.day(1, 9), 1000, type: AccountDetailCalculator.initialBalanceType),
+            Self.entry("sueldo", Self.day(2), 3500, category: "Sueldo", isIncome: true),
+            Self.entry("super", Self.day(3), -480, category: "Super", isIncome: false),
+            Self.entry("noviembre", Self.day(2, month: 11), -70, category: "Super", isIncome: false),
+        ]
+        let r = AccountDetailCalculator.reconciliation(
+            entries: entries, interval: Self.october, now: Self.day(20), calendar: Self.calendar
+        )
+        let s = AccountDetailCalculator.summary(
+            entries: entries, interval: Self.october, now: Self.day(20), calendar: Self.calendar
+        )
+        #expect(r.opening == 1500)
+        #expect(r.moneyIn == s.moneyIn)
+        #expect(r.moneyOut == s.moneyOut)
+        #expect(r.closing == 4520)
+    }
+
+    /// Un registro a medianoche exacta del día 1 es del período, no del saldo de partida (`DateInterval` cerrado).
+    @Test func reconciliation_midnightOfTheFirstDayIsInThePeriod() {
+        let entries = [Self.entry("medianoche", Self.day(1, 0), -100, category: "Super", isIncome: false)]
+        let r = AccountDetailCalculator.reconciliation(
+            entries: entries, interval: Self.october, now: Self.day(20), calendar: Self.calendar
+        )
+        #expect(r.opening == 0)
+        #expect(r.moneyOut == 100)
+        #expect(r.closing == -100)
+    }
+
+    /// Un período en curso cierra en la medianoche de mañana. Lo fechado mañana a las 00:00 no es «Saldo hoy»; lo de
+    /// hoy a última hora, sí (revisión adversarial del 2026-10-17: entraba en la ecuación y no en la curva).
+    @Test func reconciliation_periodInProgress_leavesOutTomorrowsMidnight() {
+        let start = Self.day(1, 0)
+        let tomorrow = Self.day(18, 0)
+        let thisMonthSoFar = DateInterval(start: start, end: tomorrow)
+        let entries = [
+            Self.entry("hoy", Self.calendar.date(byAdding: .second, value: -1, to: tomorrow) ?? tomorrow, -10,
+                       category: "Super", isIncome: false),
+            Self.entry("mañana", tomorrow, -40, category: "Super", isIncome: false),
+        ]
+        let r = AccountDetailCalculator.reconciliation(
+            entries: entries, interval: thisMonthSoFar, now: Self.day(17), calendar: Self.calendar
+        )
+        #expect(r.moneyOut == 10)
+        #expect(r.closing == -10)
+    }
+
+    /// Un rango propio que acaba después de hoy: «Saldo hoy» sigue siendo el de hoy, como la tarjeta y la curva de la
+    /// cuenta (el saldo deja fuera lo fechado en el futuro, decisión A de Jürgen del 2026-10-18).
+    @Test func reconciliation_rangeEndingInTheFuture_stopsToday() {
+        let entries = [
+            Self.entry("inicial", Self.day(1, 9), 1000, type: AccountDetailCalculator.initialBalanceType),
+            Self.entry("futuro", Self.day(25), -200, category: "Super", isIncome: false),
+        ]
+        let r = AccountDetailCalculator.reconciliation(
+            entries: entries, interval: Self.october, now: Self.day(18), calendar: Self.calendar
+        )
+        #expect(r.moneyOut == 0)
+        #expect(r.closing == 1000)
     }
 }
 

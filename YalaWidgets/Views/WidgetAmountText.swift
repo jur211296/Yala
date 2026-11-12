@@ -21,8 +21,8 @@ struct WidgetAmountText: View {
     let value: Double
     let currencyCode: String
     var displayFormat: String = "symbol"
-    var font: Font = WDS.Typography.value
-    var secondaryFont: Font = WDS.Typography.valueSecondary
+    var font: Font = WidgetDS.Typography.labelSmall
+    var secondaryFont: Font = WidgetDS.Typography.captionSmall
     var tint: Tint = .primary
     var forceSign: Bool = false
     var isEstimate: Bool = false
@@ -104,8 +104,8 @@ struct WidgetAmountText: View {
         WidgetAmountText(
             value: 99999,
             currencyCode: "PEN",
-            font: WDS.Typography.kpiLarge,
-            secondaryFont: WDS.Typography.kpiLargeSecondary
+            font: WidgetDS.Typography.panelHeroAmount,
+            secondaryFont: WidgetDS.Typography.panelHeroAmountSecondary
         )
         WidgetAmountText(
             value: 45.50,

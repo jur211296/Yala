@@ -32,10 +32,7 @@ final class FavoritesListViewModel {
 
     /// Favorites filtered for expenses-only mode (hides income favorites)
     var displayedFavorites: [FavoritePayment] {
-        if SessionState.shared.isExpensesOnlyMode {
-            return favorites.filter { $0.transactionType != "income" }
-        }
-        return favorites
+        FavoritesVisibility.shown(favorites, isExpensesOnlyMode: SessionState.shared.isExpensesOnlyMode)
     }
 
     var isEmpty: Bool {
@@ -81,6 +78,7 @@ final class FavoritesListViewModel {
             #if DEBUG
             print("FavoritesListViewModel: Error deleting favorites: \(error)")
             #endif
+            DS.Haptic.error()
             showSaveError = true
         }
     }
@@ -103,6 +101,7 @@ final class FavoritesListViewModel {
             #if DEBUG
             print("FavoritesListViewModel: Error moving favorites: \(error)")
             #endif
+            DS.Haptic.error()
             showSaveError = true
         }
     }

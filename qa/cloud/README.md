@@ -2,9 +2,9 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (37 entradas)
+## Índice (40 entradas)
 
-> **No hace falta leer este fichero entero** — son 147 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 156 KB. Localiza la entrada
 > aquí y salta a ella.
 
 - `—` [Running the RLS gate](#running-the-rls-gate)
@@ -28,6 +28,14 @@
 - `—` [I14 — UI real de migración + consent + claimAction + relaunch asistido + encendido de flags](#i14--ui-real-de-migracin--consent--claimaction--relaunch-asistido--encendido-de-flags)
 - `—` [transfer_group_ownership (G10 / D10) — batch "salir de todos mis grupos" — APLICADA EN AMBOS ENVS ✅](#transfergroupownership-g10--d10--batch-salir-de-todos-mis-grupos--aplicada-en-ambos-envs)
 - `—` [G7 — cifrado pgcrypto de columnas † de grupos (data-at-rest)](#g7--cifrado-pgcrypto-de-columnas--de-grupos-data-at-rest)
+- `2026-11-03` [g30_01 — el autor de un gasto editado desde un teléfono que no lo conoce (2026-11-03)](#g3001--el-autor-de-un-gasto-editado-desde-un-teléfono-que-no-lo-conoce-2026-11-03)
+- `2026-11-02` [g29_01 — quién creó o editó un gasto y quién registró una liquidación viajan por el canal (2026-11-02)](#g2901--quién-creó-o-editó-un-gasto-y-quién-registró-una-liquidación-viajan-por-el-canal-2026-11-02)
+- `2026-11-01` [g28_01 — `tx_items.split_lines_raw`: las líneas de tu parte de un gasto de grupo (2026-11-01)](#g2801--txitemssplitlinesraw-las-lneas-de-tu-parte-de-un-gasto-de-grupo-2026-11-01)
+- `2026-10-27` [g26_01 — `accounts.credit_card_statement_day` y `credit_card_reminder_days_before`: el corte de la tarjeta (2026-10-27)](#g2601--accountscreditcardstatementday-y-creditcardreminderdaysbefore-el-corte-de-la-tarjeta-2026-10-27)
+- `2026-10-25` [g24_01 — `favorite_payments.destination_account_ref`: el destino de un favorito de transferencia (2026-10-25)](#g2401--favoritepaymentsdestinationaccountref-el-destino-de-un-favorito-de-transferencia-2026-10-25)
+- `2026-10-21` [g21_01 — `cashflow_lines.amount_changes_raw`: los cambios «desde este mes» del flujo de caja (2026-1](#g2101--cashflowlinesamountchangesraw-los-cambios-desde-este-mes-del-flujo-de-caja-2026-10-21)
+- `2026-10-21` [g22_01 — `set_member_role`: hacer o quitar administrador en un grupo de la nube (2026-10-21)](#g2201--setmemberrole-hacer-o-quitar-administrador-en-un-grupo-de-la-nube-2026-10-21)
+- `2026-10-18` [g18_01 — `accounts.parent_account_id`: la tarjeta con varias divisas (2026-10-18)](#g1801--accountsparentaccountid-la-tarjeta-con-varias-divisas-2026-10-18)
 - `2026-10-12` [Corpus de Grupos de staging: relevo al custodio (2026-10-12)](#corpus-de-grupos-de-staging-relevo-al-custodio-2026-10-12)
 - `2026-10-09` [g17_01 — el claim de la vuelta conserva `reverted_at` en una cuenta que ya volvió (2026-10-09)](#g1701--el-claim-de-la-vuelta-conserva-revertedat-en-una-cuenta-que-ya-volvi-2026-10-09)
 - `2026-10-07` [hlc01 — tope a un HLC del futuro, canal personal + Grupos (2026-10-07)](#hlc01--tope-a-un-hlc-del-futuro-canal-personal--grupos-2026-10-07)
@@ -1602,6 +1610,41 @@ positiva decide.** Y el sesgo es adverso: para emitir, un device necesita al men
 las paradas, así que el perfil más afectado —solo grupos CloudKit legacy con el canal quieto— es justo el que
 no reporta.
 
+### Canarios del propio gateway (2026-10-25, card `9f9u`)
+
+Hasta ese día los canarios del gateway eran `console.log` y solo existían con `wrangler tail` abierto: si los avisos de
+Grupos dejaban de llegar, nadie se enteraba. Ahora `gateway/src/serverCanary.ts` los escribe en el **mismo dataset**, con
+la forma de arriba y **`blob4 = 'gateway'`** (la app pone ahí su versión, así que no se mezclan). El detalle nunca
+lleva tokens ni nada del usuario. La lista es cerrada (`SERVER_CANARIES`) y `gateway/test/serverCanary.unit.test.ts`
+exige que cada nombre salga aquí:
+
+| Canario | Cuándo | `blob3` / `double1` |
+|---|---|---|
+| `groupFanoutDelivered` | una fila por fan-out con tokens | `double1` = avisos entregados |
+| `groupApnsSendFailed` | APNs no entregó por algo que no es un token muerto | `status/reason` |
+| `groupPushTokenPruned` | token muerto (`BadDeviceToken`/`Unregistered`), podado | motivo |
+| `groupPushTokenPruneFailed` | el podado falló | estado HTTP |
+| `groupFanoutTokensRpcFailed` | la RPC de tokens respondió no-2xx | `rpc/status` |
+| `groupFanoutApnsNotConfigured` | fan-out sin `APNS_KEY_ID`/`APNS_AUTH_KEY` | — |
+| `groupFanoutPushRoleMissing` | fan-out sin `PUSH_ROLE_JWT` | — |
+| `pushTokenRegisterFailed` | `POST /push/register` falló contra PostgREST | estado HTTP |
+| `groupSyncCoherenceGroupPartial` | delta de Grupos con una unidad de coherencia a medias | entidad |
+| `cloudSyncCoherenceGroupPartial` | delta personal con una unidad de coherencia a medias | entidad |
+
+```sql
+-- ¿Están llegando los avisos de Grupos? Entregados frente a fallos, por día.
+SELECT toStartOfInterval(timestamp, INTERVAL '1' DAY) AS day, blob2 AS canary,
+       sum(_sample_interval * double1) AS n
+FROM yala_metrics
+WHERE blob1 = 'canary' AND blob4 = 'gateway'
+GROUP BY day, canary ORDER BY day DESC, n DESC;
+```
+
+**Lo que esto NO ve:** con el permiso de notificaciones apagado APNs responde 200 y el aviso cuenta como entregado.
+Eso solo se distingue guardando `authorization_status` al registrar el token (ticket
+`push-token-does-not-record-the-notification-permission`). **Hasta que se despliegue el Worker con este cambio, la
+serie está vacía**: el silencio no dice nada antes de esa fecha.
+
 Residuales documentados: evento retenido en el spool offline del cliente se estampa el día del ENVÍO
 (distorsión solo offline multi-día); sin rate-limit por IP (D2 — validación estricta + AE barato);
 alerting = consulta manual del dashboard (D5, paridad con lo que había). Tests:
@@ -1758,6 +1801,201 @@ querying schema»**. El golden 28 hace `ctx.skip()` si `profiles[subC]` ya exist
 ```sql
 delete from public.profiles where id = (select id from auth.users where email='i5-user-c@test.yala');
 ```
+
+## g22_01 — `set_member_role`: hacer o quitar administrador en un grupo de la nube (2026-10-21)
+
+**PREPARADA, NO APLICADA en ningún entorno** (los pasos, en `docs/RUNBOOK-staging-ddl.md`; ticket
+`groups-set-member-role-deploy`, de Jürgen). Fichero: `qa/cloud/g22_01_set_member_role.sql`; marcha atrás
+`qa/cloud/g22_01_rollback.sql`; banco local `bash qa/cloud/g22_01-local-test.sh`. Lote decidido UX 2.2 · L19-3, decisión
+B de Jürgen. Pasó por una review adversarial de servidor, cuyos hallazgos ya están dentro.
+
+**§1 · `set_member_role(p_group_id, p_member_key, p_role) returns jsonb`, nuevo.** SECURITY DEFINER con
+`search_path = public`, molde de `remove_member`. Lo llama un admin ACTIVO (`is_group_admin`) sobre un miembro ACTIVO del
+grupo; `p_role ∈ {admin, member}`. Rechaza con constantes P0001: `yala_not_authorized`, `yala_bad_input`,
+`yala_member_not_found`, `yala_cannot_change_owner_role` (al creador, comparado por `user_id` como `remove_member`, no se
+le quita el admin), `yala_member_not_eligible` (un hueco sin reclamar, `user_id` nulo, no puede ser admin) y
+`yala_last_admin` (tiene que quedar otro admin activo CON CUENTA: los huecos admin de un grupo migrado no cuentan). Pedir
+el rol que ya tiene es un no-op con `changed: false`. Escribe `role`, `hlc = server_hlc()`, `updated_at` y
+`field_hlcs.membership` (la unidad en la que ya escribe el rol `transfer_group_ownership`). Sin columnas † (fuera de
+`RPC_NEEDS_ENC_KEY`) y sin push.
+
+**§2 · `remove_member` y `leave_group`, redefinidas.** Sobre su cuerpo del DDL (§2 de `supabase-groups-staging.ddl`;
+ninguna migración de esta carpeta las había tocado), con el cambio mínimo: las dos escriben además `role = 'member'`.
+Hasta aquí un admin expulsado o que se iba conservaba `role = 'admin'`, y como la re-entrada (`join_group`, también el
+rebind legacy) deja `pendingApproval` sin tocar el rol, al aprobarlo volvía a ser admin sin que nadie lo decidiera. La
+fila del creador nunca llega a esa escritura (`yala_cannot_remove_owner`, `yala_owner_cannot_leave`). `remove_member`
+toma además el mismo candado que `set_member_role` y vuelve a mirar que quien llama sigue siendo admin.
+
+**La guarda**: antes de redefinir, el `md5(prosrc)` de cada una tiene que ser el del cuerpo del DDL (`remove_member`
+`e716f203c405437c95c82e47deae61b5`, `leave_group` `a4bbcff1bca1ac1cec09f372d577d1cc`) o el de g22_01 (`efce7084…` y
+`f4820b99…`, re-aplicar). Si no, aborta sin tocar nada; el rollback lleva la gemela. **Los md5 de partida salen del DDL
+cargado en el banco, no de una lectura de staging o producción**: si el cuerpo vivo difiere del molde aunque sea en un
+espacio (lo que le pasó a g17_01), la guarda aborta, y por eso el runbook los mide antes.
+
+**El candado**: una sola sentencia bloquea (`for update`, ordenada por `member_key`) las filas de los admins activos
+del grupo Y la del objetivo, y la regla del admin se mira otra vez después. Dos admins que se quitan el admin el uno al
+otro a la vez: el segundo espera y sale con `yala_not_authorized`. Que no haya ciclo depende de que cada llamada pida
+todas sus filas de `group_members` en esa única sentencia; es un razonamiento sobre el código, no una medición.
+
+**El banco** levanta un Postgres 17 desechable con el DDL real de Grupos entero (g22_01 no se teje en
+`supabase-groups-staging.ddl` hasta que esté aplicada: ese molde describe solo lo aplicado) y llama a los RPC como
+PostgREST, con `role authenticated` y el `sub` en los claims. 80 comprobaciones: cada regla con su control, la guarda en
+los dos sentidos, idempotencia sin escritura, la forma exacta de la respuesta, grants, las dos carreras, salir/expulsar/
+re-entrar (`join_group` y `approve_member` reales) y la marcha atrás. Y ocho mutantes, cada uno cazado por SU caso: sin
+la regla del creador, sin la del hueco, sin la del último admin, la del último admin contando huecos, sin cada uno de
+los dos candados y sin cada uno de los dos resets de rol. Una trampa que el banco ya se sabe: un `select … where false`
+alrededor del `set_config` de los claims no lo evalúa y la llamada sale sin sesión; con eso los mutantes «morían» por el
+mismo rojo de todo.
+
+**Residuales** (también en el ticket): la carrera con `transfer_group_ownership` / `groups_forget_user` (eligen al
+heredero sin candado; si a la vez se le quita el admin, el grupo puede quedar con un creador que no es admin); las filas
+que salieron siendo admin ANTES de g22_01 conservan el rol (sin backfill); `leave_group` no mira si quedan admins; y en el
+teléfono de otro admin la app ofrece quitarle el admin al creador (el servidor lo rechaza).
+
+**El orden: g22_01 → Worker con `set_member_role` en la allowlist → app.** Al revés no se escribe nada: sin DDL, el
+gateway devuelve 502 `yala_unavailable`; sin Worker, 404 `unknown rpc`; la app enseña en los dos el error genérico. El
+§2 no depende del orden: no cambia la forma de ninguna respuesta.
+
+## g30_01 — el autor de un gasto editado desde un teléfono que no lo conoce (2026-11-03)
+
+**Estado:** **APLICADA en staging y en producción el 2026-11-03** (`g30_01-remote.sh … state`: trigger
+`expense_author_from_v2_clients` en `split_expenses`, función md5 `52ff05a7e07092ca9422143d3ce863ae`, sin EXECUTE para
+`authenticated`; `apply_group_delta` sin cambios, md5 `ae78bce6…` en los dos). Card vx6f. Sin orden de despliegue: ni el
+Worker ni la app cambian.
+
+Qué cambia: un teléfono hasta 2.1 no manda `last_edited_by_member_key`, y el servidor conservaba el autor ANTERIOR por LWW
+de columna (Ana edita desde 2.1 y los demás recibían «Jürgen actualizó»). El trigger `BEFORE UPDATE` lo pone a NULL cuando
+el UPDATE avanza una unidad del formulario (`gmoney`, `expense_description`, `note`, `date`, `paid_by_member_key`,
+`split_type`, `subcategory_name`) con un HLC posterior al del autor guardado; con NULL la app cae al pagador, como antes de
+g29_01. Compara `field_hlcs`, no valores. «Posterior al autor» y no «sin la unidad del autor»: la app pone el mismo HLC a
+todas las unidades de un delta, y dos ediciones 2.2 desordenadas no deben borrar el autor bueno.
+
+Fichero: `qa/cloud/g30_01_expense_author_from_v2_clients.sql`; marcha atrás `qa/cloud/g30_01_rollback.sql`. Banco local
+`bash qa/cloud/g30_01-local-test.sh` (24 casos, control sin trigger y 12 mutantes). Se aplica y se mide con
+`bash qa/cloud/g30_01-remote.sh <staging|production> <state|apply|rollback>`. Sonda por el Worker real:
+`GROUPS_ENC_KEY="$(cat ~/Secrets/yala-groups-enc/staging.key)" bash qa/cloud/g30_01-staging-probe.sh` (5 casos; con el
+rollback cae el caso de la edición 2.1). Residual: un gasto que un 2.1 editó entre g29_01 y hoy conserva el autor viejo
+hasta su siguiente edición del formulario.
+
+## g29_01 — quién creó o editó un gasto y quién registró una liquidación viajan por el canal (2026-11-02)
+
+**Estado:** **APLICADA en staging y en producción el 2026-11-02**, con el Worker del manifest de Grupos v3 en los dos.
+Card xi74. Detalle de despliegue y marcha atrás: `docs/RUNBOOK-staging-ddl.md`, entrada g29_01.
+
+Fichero: `qa/cloud/g29_01_group_change_author.sql`; marcha atrás `qa/cloud/g29_01_rollback.sql`. Se aplica y se mide con
+`bash qa/cloud/g29_01-remote.sh <staging|production> <state|apply|rollback>`. Sonda por el Worker real:
+`GROUPS_ENC_KEY="$(cat ~/Secrets/yala-groups-enc/staging.key)" bash qa/cloud/g29_01-staging-probe.sh` (12 casos). Además
+del autor (casos 0-5), la sonda mide dos cosas del servidor que pidieron las cards m76a y hfhs: el reparto de un saldo
+inicial nuevo rechazado se aplica y su tombstone también, pero no el de un saldo vivo (6-8); y en un grupo con la fila
+heredada admin sin reclamar, `is_group_admin` no ve admin a quien entró por enlace (9), y sí a quien la reclamó (10). La
+fila heredada se siembra por la Management API: `migrate_group` ya no se ofrece a `authenticated`.
+
+## g28_01 — `tx_items.split_lines_raw`: las líneas de tu parte de un gasto de grupo (2026-11-01)
+
+**Estado:** **APLICADA en staging y en producción el 2026-11-01**, con el Worker v6 en los dos (medido con `g28_01-remote.sh … state`: `text`, nullable, grant heredado; `/config` de los dos da `"sync":{"manifestVersion":6,"groupsManifestVersion":2}`). Worker de staging `0d84adaf…` → `925a42da-8047-4150-8293-691e78a4aa03`; producción `36fc05ae…` → `d0737d7a-2964-4463-b70d-e7a10f37cb6f`. La sonda de staging, 15/15.
+
+Fichero: `qa/cloud/g28_01_tx_items_split_lines.sql`; marcha atrás `qa/cloud/g28_01_rollback.sql` (idempotente, solo
+sin recetas, bajo lock). Se aplica y se mide con `bash qa/cloud/g28_01-remote.sh <staging|production> <state|apply|rollback>`
+(Management API, `~/Secrets/yala-supabase-mgmt/pat`). Card `tablero-grupos-b-1-guardar-las-lineas-de-tu-part-vqhe`.
+
+Qué cambia: una columna `text` nullable en `tx_items` con la receta de tu parte en líneas (`GroupSplitLinesRecipe`;
+diseño en `docs/disenos/grupos-tu-parte-en-lineas/README.md`). NULL = sin receta. Sin CHECK: la receta de una versión
+posterior se lee sin romper y no se reescribe. Grants heredados (la migración lo comprueba). No toca ningún RPC.
+
+**Quinto `since` del manifest**: `"since": 6` y `manifest_version: 6`, columna `safe` (el puente re-deriva las patas en
+cada pasada; una receta que no cuadra es un estado previsto, no una corrupción). Apunte por fila
+(`SyncCapability.noteSuppressedSplitLines`, también al vaciarla) y reemisión al subir a v6. Lo fijan `SplitLinesSyncTests`,
+`AccountLineSyncTests` (paridad del manifest) y `gateway/test/manifest.capability.test.ts`.
+
+**La ida y vuelta entre dos teléfonos**, contra el Worker desplegado: `bash qa/cloud/g28_01-staging-probe.sh` (usuario
+de test A, dos nodos de HLC; 15 casos: v6 sube y baja, v5 no la ve, Merkle v5/v6 en 200, la vuelta del nodo 2, vaciarla
+viaja como `null`). Deja en staging un `tx_items` borrado y sin receta.
+
+**El orden: g28_01 → Worker v6 → app.** La app puede salir antes: con un Worker v5 declara v5 y no emite ni hashea la
+columna. En iCloud el campo es `CD_TransactionItem.CD_splitLinesRaw` (String), y su deploy a Production es de Jürgen
+(`docs/despliegue-cloudkit-2-2.md`).
+
+## g26_01 — `accounts.credit_card_statement_day` y `credit_card_reminder_days_before`: el corte de la tarjeta (2026-10-27)
+
+**Nombre:** se escribió como `g25_01` y se renombró a `g26_01` al rebasar sobre 2.2 (2026-10-30): `g25_01` ya era `groups_forget_user` (`g25_01_forget_user_keeps_an_admin.sql`) y los dos traían un `g25_01_rollback.sql`. **Estado:** la card nmtk dice que se aplicó con el Worker v5 el 2026-10-27; medido el 2026-10-30, `/config` de staging y de producción da `"sync":{"manifestVersion":5,"groupsManifestVersion":2}`. Re-aplicarla es un no-op (salvo el comentario de las columnas, que pasaría a decir g26_01).
+
+Los pasos, en `docs/RUNBOOK-staging-ddl.md`, como g24_01. Fichero:
+`qa/cloud/g26_01_credit_card_cycle.sql`; marcha atrás `qa/cloud/g26_01_rollback.sql` (idempotente, solo sin valores,
+bajo lock). Card nmtk.
+
+Qué cambia: dos columnas `integer` nullable en `accounts`: el día de corte (1…28, NULL = sin corte) y los días de
+antelación del aviso (0, 1, 3, 5). Grants heredados (la migración lo comprueba). No toca ningún RPC.
+
+**Cuarto `since` del manifest**: las dos llevan `"since": 5` y el manifest `manifest_version: 5`, con el mecanismo de
+g24_01 (proyección por versión, anuncio y subida con reemisión de lo apuntado,
+`SyncCapability.noteSuppressedCreditCardCycle`, las dos columnas juntas). Lo fijan `CreditCardCycleSyncTests` y
+`gateway/test/manifest.capability.test.ts`.
+
+**El orden: g26_01 → Worker v5 → app.** El Worker v5 sirve las columnas de la v2 a la v5. La app puede salir antes: con un
+Worker v4 declara v4 y no emite ni hashea las columnas. g24_01 va antes (el Worker v5 también pide su columna).
+
+## g24_01 — `favorite_payments.destination_account_ref`: el destino de un favorito de transferencia (2026-10-25)
+
+**PREPARADA, NO APLICADA en ningún entorno** (los pasos, en `docs/RUNBOOK-staging-ddl.md`, como g21_01). Fichero:
+`qa/cloud/g24_01_favorite_destination.sql`; marcha atrás `qa/cloud/g24_01_rollback.sql` (idempotente, solo sin destinos,
+bajo lock). Card da5d del lote 12.2.
+
+Qué cambia: una columna `uuid` nullable, sin FK, con el `shortcutID` de la cuenta destino de un favorito de transferencia,
+como `account_ref`. Grants heredados (la migración lo comprueba). No toca ningún RPC.
+
+**Tercer `since` del manifest**: la columna lleva `"since": 4` y el manifest `manifest_version: 4`, con el mismo mecanismo
+de g18_01 y g21_01 (proyección por versión, anuncio y subida con reemisión de lo apuntado,
+`SyncCapability.noteSuppressedFavoriteDestination`). Lo fijan `FavoriteDestinationSyncTests` y
+`gateway/test/manifest.capability.test.ts`.
+
+**El orden: g24_01 → Worker v4 → app.** El Worker v4 sirve las columnas de la v2, la v3 y la v4. La app puede salir antes:
+con un Worker v3 declara v3 y no emite ni hashea la columna.
+
+## g21_01 — `cashflow_lines.amount_changes_raw`: los cambios «desde este mes» del flujo de caja (2026-10-21)
+
+**PREPARADA, NO APLICADA en ningún entorno** (los pasos, en `docs/RUNBOOK-staging-ddl.md`). Fichero:
+`qa/cloud/g21_01_cashflow_line_amount_changes.sql`; marcha atrás `qa/cloud/g21_01_rollback.sql` (idempotente, solo sin
+cambios, bajo lock). Lote decidido 2.2 · L18-8.
+
+Qué cambia: una columna `text` nullable con los cambios de monto de una línea del plan, `yyyy-MM=monto,…` (lógica en
+`Yala/App/Logic/CashFlowAmountChangeLogic.swift`). Hasta aquí «este mes y los siguientes» pasaba la línea a monto fijo y
+reescribía también los meses ya cerrados; ahora el monto cambia desde ese mes y los anteriores quedan como estaban.
+
+**Segundo `since` del manifest**: la columna lleva `"since": 3` y el manifest `manifest_version: 3`, con el mismo
+mecanismo de g18_01 (proyección por versión, anuncio y subida con reemisión de lo apuntado,
+`SyncCapability.noteSuppressedCashFlowAmountChange`). **Lo que cambió en la subida**: desde la v3 la subida se pide al
+cruzar CUALQUIER versión (antes solo la de los enlaces) y el «antes» es lo que el teléfono declaró la última vez
+(`cloudSync.lastDeclaredLevel`), porque la versión también sube al actualizar la app sin que el Worker cambie (lo cazó la
+review). Lo fijan `CashFlowAmountChangeSyncTests` y `gateway/test/manifest.capability.test.ts`.
+
+**El orden: g18_01 → g21_01 → Worker v3 → app.** El Worker v3 sirve las columnas de la v2 y de la v3. Una sola columna
+para toda la cadena: dos teléfonos que cambian meses distintos de la misma línea a la vez se pisan por LWW (el mismo trato
+que `custom_months_raw`).
+
+## g18_01 — `accounts.parent_account_id`: la tarjeta con varias divisas (2026-10-18)
+
+**Aplicada en STAGING el 2026-10-18; PRODUCCIÓN PENDIENTE (la aplica Jürgen, card «Aplicar en producción el DDL de
+parentAccountID de Modo Nube»).** Fichero: `qa/cloud/g18_01_account_parent_account_id.sql`; marcha atrás
+`qa/cloud/g18_01_rollback.sql` (solo sin enlaces, bajo lock); sonda `bash qa/cloud/g18_01-staging-probe.sh` (10/10 el
+2026-10-18, contra el Worker de staging `af424141`). Ticket `multi-currency-accounts-1-model-and-sync`.
+
+Qué cambia: una columna `uuid` nullable, sin FK, con el `shortcutID` de la cuenta principal cuando la cuenta es una línea
+en otra divisa. Grants heredados (los de las tablas personales son de tabla; la migración lo comprueba). No toca ningún
+RPC: `apply_delta` escribe con `jsonb_populate_record`.
+
+**Va con el primer `since` del manifest.** La columna es la primera personal añadida después del lanzamiento, y hasta hoy
+`v1` —lo que manda todo iOS hasta 2.1— era el set completo. Con la columna en el manifest a secas, el Merkle de `accounts`
+de cada teléfono 2.1 habría divergido para siempre (el canon serializa el NULL como `key:null` y la hoja del teléfono no la
+lleva). Ahora la columna lleva `"since": 2`, el manifest `manifest_version: 2`, `v1` proyecta sin ella y el Worker anuncia
+su versión en `/sync/pull` y `/sync/merkle`. El cliente declara la menor entre la suya y la anunciada
+(`Yala/Services/CloudSync/SyncCapability.swift`). Al subir de versión, el teléfono encola los enlaces que cambió
+hablando `v1` (y nunca subieron) y re-baja todo desde 0 con la versión nueva (`applyCapabilityUpgradeIfPending`). Lo
+fijan `gateway/test/manifest.capability.test.ts` (offline) y la sonda. `/config` publica `sync.manifestVersion` para el
+guard de despliegue (`gateway/scripts/check-manifest-not-older.mjs`), que no deja bajar el manifest de un entorno.
+
+**El orden: DDL → Worker → app.** El Worker con `manifest_version: 2` pide la columna en el select del Merkle cuando el
+teléfono pide `v2`: desplegado sin la columna, cada verificación de cada teléfono 2.2 da 502 (los 2.1 no lo notan). La app puede salir antes que los dos (sin anuncio
+habla `v1` y no emite la columna), pero no el Worker antes que el DDL.
 
 ## g17_01 — el claim de la vuelta conserva `reverted_at` en una cuenta que ya volvió (2026-10-09)
 

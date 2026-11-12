@@ -269,4 +269,97 @@ struct RoutingIntegrationTests {
         #expect(second == .presentNewTransaction)
         #expect(router.queueSnapshot.isEmpty)
     }
+
+    // MARK: - Tocar la notificación de Apple Pay: el aviso de la Bandeja no sale después (2026-10-30)
+
+    private static func isInboxAlert(_ intent: RouterIntent) -> Bool {
+        if case .showInboxAlert = intent { return true }
+        return false
+    }
+
+    /// La puerta de verdad (`RouterEntryGate.submit`) tira el aviso que llega con la Bandeja ya pedida.
+    @MainActor @Test
+    func gate_dropsInboxAlertArrivingAfterNavigateInbox() {
+        let router = freshRouter()
+        router.enqueue(.navigate(.inbox))
+        RouterEntryGate.shared.submit(.showInboxAlert(PendingInboxNotification(automations: 1)))
+        #expect(!router.contains(where: Self.isInboxAlert))
+        #expect(router.contains { if case .navigate(.inbox) = $0 { return true }; return false })
+        router._testReset()
+    }
+
+    @MainActor @Test
+    func gate_dropsInboxAlertArrivingAfterPresentInboxSheet() {
+        let router = freshRouter()
+        router.enqueue(.presentInboxSheet)
+        RouterEntryGate.shared.submit(.showInboxAlert(PendingInboxNotification(automations: 1)))
+        #expect(!router.contains(where: Self.isInboxAlert))
+        router._testReset()
+    }
+
+    /// Control positivo: sin la Bandeja pedida, el aviso entra.
+    @MainActor @Test
+    func gate_keepsInboxAlertWithoutAnInboxOpening() {
+        let router = freshRouter()
+        router.enqueue(.navigate(.statistics))
+        RouterEntryGate.shared.submit(.showInboxAlert(PendingInboxNotification(automations: 1)))
+        #expect(router.contains(where: Self.isInboxAlert))
+        router._testReset()
+    }
+
+    /// La Bandeja aparece (por la notificación, el botón o el aviso): el aviso que esperaba detrás se retira, y nada más.
+    @MainActor @Test
+    func inboxSheetDidAppear_dropsOnlyTheQueuedInboxAlert() {
+        let router = freshRouter()
+        router.enqueue(.showInboxAlert(PendingInboxNotification(automations: 1)))
+        router.enqueue(.presentTrialOffer)
+        router.enqueue(.navigate(.statistics))
+        RouterEntryGate.shared.inboxSheetDidAppear()
+        #expect(!router.contains(where: Self.isInboxAlert))
+        #expect(router.contains { if case .presentTrialOffer = $0 { return true }; return false })
+        #expect(router.contains { if case .navigate(.statistics) = $0 { return true }; return false })
+        router._testReset()
+    }
+
+    /// Cableado: el `onAppear` de la hoja de la Bandeja avisa a la puerta, y el productor no pide el aviso con la
+    /// Bandeja abierta sino que da los borradores por avisados.
+    @Test
+    func wiring_inboxAppearDropsTheNoticeAndTheProducerBurnsWhileOpen() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        let sheets = try String(contentsOf: root.appendingPathComponent("Yala/App/Views/Panel/PanelSheetsModifier.swift"), encoding: .utf8)
+        let inboxSheet = try #require(sheets.range(of: "InboxView(onNavigateToRecords:"))
+        let afterSheet = String(sheets[inboxSheet.upperBound...].prefix(600))
+        #expect(afterSheet.contains("RouterEntryGate.shared.inboxSheetDidAppear()"))
+
+        let boot = try String(contentsOf: root.appendingPathComponent("Yala/App/AppBootstrapper.swift"), encoding: .utf8)
+        let start = try #require(boot.range(of: "private func checkForPendingInboxDrafts("))
+        let end = try #require(boot.range(of: "RouterEntryGate.shared.submit(.showInboxAlert(notification))", range: start.upperBound..<boot.endIndex))
+        let body = String(boot[start.upperBound..<end.lowerBound])
+        let visible = try #require(body.range(of: "routingNavigation?.isInboxSheetVisible == true"))
+        let burn = try #require(body.range(of: "commitPendingInboxAlertSignatures()", range: visible.upperBound..<body.endIndex))
+        #expect(body[burn.upperBound...].contains("return"))
+    }
+
+    /// El aviso ya en pantalla cuando llega la orden de abrir la Bandeja se cierra antes de drenar.
+    @Test
+    func wiring_presentedInboxAlertClosesWhenTheInboxIsOrdered() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        let content = try String(contentsOf: root.appendingPathComponent("Yala/App/ContentView.swift"), encoding: .utf8)
+        let onChange = try #require(content.range(of: ".onChange(of: AppRouter.shared.revision) { _, _ in"))
+        #expect(content[onChange.upperBound...].prefix(80).contains("routerRevisionChanged()"))
+        let start = try #require(content.range(of: "private func routerRevisionChanged() {"))
+        let body = String(content[start.upperBound...].prefix(500))
+        let close = try #require(body.range(of: "AppRouter.shared.contains(where: IntentSupersessionLogic.opensInbox)"))
+        let reset = try #require(body.range(of: "activeInboxNotification = .init()"))
+        let drain = try #require(body.range(of: "drainContentViewIntents()"))
+        #expect(close.lowerBound < reset.lowerBound && reset.lowerBound < drain.lowerBound)
+    }
+
+    @Test
+    func opensInbox_coversExactlyTheTwoInboxOpenings() {
+        #expect(IntentSupersessionLogic.opensInbox(.navigate(.inbox)))
+        #expect(IntentSupersessionLogic.opensInbox(.presentInboxSheet))
+        #expect(!IntentSupersessionLogic.opensInbox(.navigate(.panel)))
+        #expect(!IntentSupersessionLogic.opensInbox(.showInboxAlert(PendingInboxNotification(automations: 1))))
+    }
 }

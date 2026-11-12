@@ -29,3 +29,21 @@ enum WidgetURLHelper {
         URL(string: "\(urlScheme)://\(path)")
     }
 }
+
+/// Los destinos de los widgets que no son una pestaña a secas. Viven aquí, en el fichero que comparten la app y los
+/// widgets, para que un test de la app compruebe que cada uno se entiende (`WidgetDeepLinkTests`).
+///
+/// UX 2.2 · L15-3 (opción B, Jürgen 2026-10-18): cada widget abre la pantalla que amplía lo que enseña. Antes «Gastos»
+/// de inicio y «Entradas y salidas» abrían el Panel, y los de subcategorías la vista de categorías.
+nonisolated enum WidgetDeepLink {
+    /// «Gastos» (inicio y pantalla bloqueada): Estadísticas › Resumen.
+    static let expenses = "statistics/insights"
+    /// «Entradas y salidas»: Estadísticas › Tendencias, en esa tarjeta.
+    static let inAndOut = "statistics/trends/in-and-out"
+    /// Los dos de subcategorías: Estadísticas › Distribución, con las subcategorías a la vista.
+    static let subcategories = "statistics/categories/subcategories"
+    /// «Aún no tienes pagos planificados · Toca para crear uno» (L15-2): el editor de un pago nuevo.
+    static let newScheduledPayment = "planning/scheduled-payments/new"
+    /// «Aún no tienes presupuestos · Toca para crear uno» (L15-2): el editor de un presupuesto nuevo.
+    static let newBudget = "budgets/new"
+}

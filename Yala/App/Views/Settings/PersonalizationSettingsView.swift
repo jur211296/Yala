@@ -10,9 +10,12 @@ import WidgetKit
 
 struct PersonalizationSettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.settingsListIsAlongside) private var settingsListIsAlongside
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(SceneNavigation.self) private var navigation
+    @Environment(\.openURL) private var openURL
 
     @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48 // A11Y-DT: @ScaledMetric
 
@@ -25,8 +28,12 @@ struct PersonalizationSettingsView: View {
     @State private var showingAverageLinePicker = false
     @State private var showingWeekdayPicker = false
     @State private var showingLanguagePicker = false
-    @State private var showingExpensesOnlyConfirmation = false
+    /// UX 2.2 · L16-6: dos avisos, uno por sentido, con el texto de sus botones LITERAL: el `actions` de un `.alert` no
+    /// admite un botón cuyo texto dependa del estado (`swiftui-ds.md`), y un solo aviso para los dos lo necesitaba.
+    @State private var showingExpensesOnlyActivate = false
+    @State private var showingExpensesOnlyDeactivate = false
     @State private var showingSmartInsightsSettings = false
+    @State private var showingAIPersonalization = false
 
     private var isProUser: Bool {
         FeatureGateService.shared.canAccess(.chatAssistant)
@@ -56,9 +63,35 @@ struct PersonalizationSettingsView: View {
         appPreferences.currencyDisplayFormat == .symbol ? L10n.Settings.currencySymbol : L10n.Settings.currencyCode
     }
 
+    /// UX 2.2 · L16-5 (B): el idioma en que se ve Yala ahora, elegido en Yala o heredado del iPhone.
+    private var currentLanguageCode: String {
+        AppLanguageRowLogic.currentCode(
+            overrideLanguage: LanguageManager.overrideLanguage,
+            preferredLanguages: Locale.preferredLanguages,
+            region: Locale.current.region?.identifier)
+    }
+
     private var currentLanguageDisplayName: String {
-        guard let code = LanguageManager.overrideLanguage else { return "" }
+        let code = currentLanguageCode
         return LanguageManager.supportedLanguages.first { $0.code == code }?.nativeName ?? code
+    }
+
+    private var languageRoute: AppLanguageRowLogic.Route {
+        AppLanguageRowLogic.route(
+            overrideLanguage: LanguageManager.overrideLanguage,
+            preferredLanguages: Locale.preferredLanguages)
+    }
+
+    /// Con varios idiomas en el iPhone, a la página de Yala en los Ajustes de iOS (donde está «Idioma»); con uno solo o
+    /// con un idioma elegido en Yala, el selector de Yala.
+    private func openAppLanguage() {
+        switch languageRoute {
+        case .iOSSettings:
+            guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+            openURL(url)
+        case .yalaPicker:
+            showingLanguagePicker = true
+        }
     }
 
 
@@ -70,7 +103,7 @@ struct PersonalizationSettingsView: View {
                 VStack(spacing: DS.Spacing.sm) {
                     Image(systemName: "slider.horizontal.3")
                         .font(.system(size: heroIconSize))
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                         .padding(.bottom, DS.Spacing.sm)
 
                     Text(L10n.Settings.personalization)
@@ -96,7 +129,13 @@ struct PersonalizationSettingsView: View {
             YalaSettingsSection(L10n.Settings.sectionUsageMode) {
                 YalaSettingsToggleRow(L10n.Settings.expensesOnlyMode, isOn: Binding(
                     get: { sessionState.isExpensesOnlyMode },
-                    set: { _ in showingExpensesOnlyConfirmation = true }
+                    set: { _ in
+                        if sessionState.isExpensesOnlyMode {
+                            showingExpensesOnlyDeactivate = true
+                        } else {
+                            showingExpensesOnlyActivate = true
+                        }
+                    }
                 ))
                 .accessibilityIdentifier("personalization_row_expenses_only")
             } footer: {
@@ -104,23 +143,23 @@ struct PersonalizationSettingsView: View {
             }
 
             // MARK: - Interfaz
-            // El idioma de la app (solo con override activo) lleva su propia ayuda: va en su bloque, con la
-            // cabecera; si no está, la cabecera pasa al bloque siguiente.
-            if LanguageManager.overrideLanguage != nil {
-                YalaSettingsSection(L10n.Settings.sectionInterface) {
-                    YalaSettingsValueRow(L10n.Settings.appLanguage, value: currentLanguageDisplayName) {
-                        showingLanguagePicker = true
-                    }
-                    .accessibilityIdentifier("personalization_row_app_language")
-                } footer: {
-                    Text(L10n.Settings.appLanguageRestart)
+            // UX 2.2 · L16-5 (opción B de Jürgen, 2026-10-23): la fila sale SIEMPRE. Antes solo existía si en la bienvenida
+            // se había elegido idioma, y no había otra forma de cambiarlo. Lleva su propia ayuda: va en su bloque, con la
+            // cabecera.
+            YalaSettingsSection(L10n.Settings.sectionInterface) {
+                YalaSettingsValueRow(L10n.Settings.appLanguage, value: currentLanguageDisplayName) {
+                    openAppLanguage()
                 }
+                .accessibilityIdentifier("personalization_row_app_language")
+            } footer: {
+                Text(languageRoute == .iOSSettings ? L10n.PJ22.appLanguageInIOSFooter : L10n.Settings.appLanguageAppliesNow)
             }
 
-            YalaSettingsSection(LanguageManager.overrideLanguage == nil ? L10n.Settings.sectionInterface : nil) {
+            YalaSettingsSection {
                 Menu {
                     ForEach(VoiceLanguage.allCases) { language in
                         Button {
+                            DS.Haptic.selection()
                             appPreferences.voiceLanguage = language
                         } label: {
                             HStack {
@@ -141,13 +180,28 @@ struct PersonalizationSettingsView: View {
                     )
                 }
                 .accessibilityIdentifier("voice_language_menu")
+            } footer: {
+                // UX 2.2 · L16-7: cada pie dice dónde se ve (o se usa) su ajuste.
+                Text(L10n.UXL15.voiceLanguageFooter)
+            }
 
+            YalaSettingsSection {
+                // UX 2.2 · L14-10 (opción C): el tono se busca en Ajustes, y aquí solo estaba el resumen, que es otra
+                // cosa. La fila abre la misma hoja que el botón de ajustes del chat.
+                YalaSettingsValueRow(L10n.AISettings.title) {
+                    showingAIPersonalization = true
+                }
+                .accessibilityIdentifier("personalization_row_ai_tone")
+
+                // UX 2.2 · L16-8: «Qué sale en el resumen» (antes «Personalizar resumen de IA»): controla Estadísticas ›
+                // Resumen, y de lo que enciende solo las Observaciones son de IA.
                 YalaSettingsValueRow(L10n.Settings.customizeAISummary) {
                     showingSmartInsightsSettings = true
                 }
                 .accessibilityIdentifier("personalization_row_ai_summary")
+            }
 
-                // Último del bloque: su ayuda (solo cuando el tema lo apaga) cae justo debajo.
+            YalaSettingsSection {
                 YalaSettingsToggleRow(
                     L10n.Settings.colorfulIcons,
                     isOn: $prefs.colorfulIcons,
@@ -156,21 +210,20 @@ struct PersonalizationSettingsView: View {
                 .accessibilityHint(forcesMonochromeIcons ? L10n.Accessibility.systemMonochromeIcons : "")
                 .accessibilityIdentifier("settings_colorful_icons_toggle")
             } footer: {
-                if forcesMonochromeIcons {
-                    Text(L10n.Settings.colorfulIconsDisabledByTheme)
-                }
+                Text(forcesMonochromeIcons ? L10n.Settings.colorfulIconsDisabledByTheme : L10n.UXL15.colorfulIconsFooter)
             }
 
-            // Chat FAB visibility (Free users only — Pro users manage it via per-section Panel preferences)
-            if !isProUser {
-                YalaSettingsSection {
-                    YalaSettingsToggleRow(L10n.Widget.chatFabToggle, isOn: $prefs.chatFABVisible) {
+            // El botón de Yala IA, para todos (UX 2.2 · L14-12, opción B): un Pro que no quiere IA no tenía cómo
+            // quitarlo, y el comentario de aquí lo mandaba a unas «preferencias del Panel» que no existían.
+            YalaSettingsSection {
+                YalaSettingsToggleRow(L10n.Widget.chatFabToggle, isOn: $prefs.chatFABVisible) {
+                    if !isProUser {
                         ProBadge(size: .small)
                     }
-                    .accessibilityIdentifier("personalization_row_chat_fab")
-                } footer: {
-                    Text(L10n.Widget.chatFabHint)
                 }
+                .accessibilityIdentifier("personalization_row_chat_fab")
+            } footer: {
+                Text(L10n.Widget.chatFabHint)
             }
 
             // MARK: - Calendario
@@ -202,7 +255,11 @@ struct PersonalizationSettingsView: View {
                     showingAverageLinePicker = true
                 }
                 .accessibilityIdentifier("personalization_row_average_line")
+            } footer: {
+                Text(L10n.UXL15.averageLineFooter)
+            }
 
+            YalaSettingsSection {
                 YalaSettingsToggleRow(L10n.Settings.showVariations, isOn: $prefs.showVariations)
                     .accessibilityIdentifier("personalization_row_variations")
             } footer: {
@@ -215,7 +272,11 @@ struct PersonalizationSettingsView: View {
                     showingCurrencyFormatPicker = true
                 }
                 .accessibilityIdentifier("personalization_row_currency_format")
+            } footer: {
+                Text(L10n.UXL15.currencyFormatFooter)
+            }
 
+            YalaSettingsSection {
                 YalaSettingsValueRow(L10n.Settings.decimalPlaces, value: decimalPlacesDisplayName) {
                     showingDecimalsPicker = true
                 }
@@ -238,9 +299,12 @@ struct PersonalizationSettingsView: View {
         .yalaScreenBackground(.subtle)
         .swipeBack()
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
-                    dismiss()
+            // Con la lista de Ajustes al lado, la lista es la vuelta (UX 2.2 · L16-20).
+            if !settingsListIsAlongside {
+                ToolbarItem(placement: .topBarLeading) {
+                    YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
+                        dismiss()
+                    }
                 }
             }
         }
@@ -249,7 +313,9 @@ struct PersonalizationSettingsView: View {
                 selectedPeriod: appPreferences.defaultPeriod,
                 onSelect: { period in
                     appPreferences.defaultPeriod = period
-                    sessionState.selectedPeriod = period
+                    // `choosePeriod`: es una elección de la persona, y si había abierto Estadísticas desde un informe, el
+                    // período que acaba de elegir no se le cambia por el de antes del aviso al salir (UX 2.2 · L11-2).
+                    sessionState.choosePeriod(period)
                     showingPeriodPicker = false
                 }
             )
@@ -319,8 +385,17 @@ struct PersonalizationSettingsView: View {
         }
         .sheet(isPresented: $showingLanguagePicker) {
             LanguagePickerSheet(
-                selectedLanguage: LanguageManager.overrideLanguage ?? "en",
+                selectedLanguage: currentLanguageCode,
                 onSelect: { code in
+                    // L16-5 (B): cambiar el idioma reconstruye la app y cierra Ajustes; el Panel la reabre aquí, en
+                    // Personalización (`PanelSettingsReturnOpening`). Se apunta ANTES de cambiarlo: la reconstrucción
+                    // ocurre en la misma vuelta. Si es el que ya se ve, no hay nada que reconstruir ni que reabrir.
+                    guard code != currentLanguageCode else {
+                        showingLanguagePicker = false
+                        return
+                    }
+                    navigation.pendingSettingsReturn = .personalization
+                    navigation.selectMainTab(.panel)
                     LanguageManager.overrideLanguage = code
                     // Las summaries diarias de pagos se agendan con el body YA localizado
                     // (contenido congelado): sin re-plan quedarían en el idioma viejo.
@@ -333,41 +408,42 @@ struct PersonalizationSettingsView: View {
         .sheet(isPresented: $showingSmartInsightsSettings) {
             SmartInsightsSettingsView()
         }
-        .confirmationDialog(
-            sessionState.isExpensesOnlyMode
-                ? L10n.Settings.expensesOnlyDeactivateTitle
-                : L10n.Settings.expensesOnlyActivateTitle,
-            isPresented: $showingExpensesOnlyConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button(
-                sessionState.isExpensesOnlyMode
-                    ? L10n.Settings.expensesOnlyDeactivateConfirm
-                    : L10n.Settings.expensesOnlyActivateConfirm,
-                role: sessionState.isExpensesOnlyMode ? nil : .destructive
-            ) {
-                // Este toggle es el punto de INTENCIÓN del usuario y la key es `synced: true`, así
-                // que publica ÉL — mismo orden que `OnboardingView`, que ya lo hacía a mano.
-                // El espejo (`SessionState.isExpensesOnlyMode.didSet`) escribe local + App Group +
-                // recarga widgets, pero NO encola y no debe: a ese mismo `didSet` llegan también el
-                // merge remoto (`PreferenceSyncService.applyMergeOutcome`) y el reset de
-                // `-uitest-reset`, y publicar ahí devolvería el eco (en `.cloud`, con HLC fresco
-                // sobre un valor recién bajado) y haría que un XCUITest encolara preferencias.
-                // Hasta ahora llegaba a iCloud de rebote, porque `AppPreferences.loadFromDefaults`
-                // re-persistía lo que releía; ese puente accidental se cerró.
-                let newValue = !sessionState.isExpensesOnlyMode
-                PreferenceSyncService.shared.set(
-                    bool: newValue, forKey: AppPreferences.Keys.expensesOnlyMode)
-                sessionState.isExpensesOnlyMode = newValue
-            }
+        .sheet(isPresented: $showingAIPersonalization) {
+            AIPersonalizationSheet()
+        }
+        // UX 2.2 · L16-6: un aviso del sistema y no un diálogo anclado al interruptor, que no pintaba «Cancelar»
+        // (`swiftui-ds.md`); y «Activar» sin rojo: activar no borra nada, solo oculta.
+        .alert(L10n.Settings.expensesOnlyActivateTitle, isPresented: $showingExpensesOnlyActivate) {
+            Button(L10n.Settings.expensesOnlyActivateConfirm) { setExpensesOnlyMode(true) }
+                .accessibilityIdentifier("expenses_only_activate_confirm")
+            Button(L10n.Settings.cancel, role: .cancel) {}
+                .accessibilityIdentifier("expenses_only_cancel")
+        } message: {
+            Text(L10n.Settings.expensesOnlyActivateMessage)
+        }
+        .alert(L10n.Settings.expensesOnlyDeactivateTitle, isPresented: $showingExpensesOnlyDeactivate) {
+            Button(L10n.Settings.expensesOnlyDeactivateConfirm) { setExpensesOnlyMode(false) }
+                .accessibilityIdentifier("expenses_only_deactivate_confirm")
             Button(L10n.Settings.cancel, role: .cancel) {}
         } message: {
-            Text(
-                sessionState.isExpensesOnlyMode
-                    ? L10n.Settings.expensesOnlyDeactivateMessage
-                    : L10n.Settings.expensesOnlyActivateMessage
-            )
+            Text(L10n.Settings.expensesOnlyDeactivateMessage)
         }
+    }
+
+    private func setExpensesOnlyMode(_ newValue: Bool) {
+        // Este toggle es el punto de INTENCIÓN del usuario y la key es `synced: true`, así
+        // que publica ÉL — mismo orden que `OnboardingView`, que ya lo hacía a mano.
+        // El espejo (`SessionState.isExpensesOnlyMode.didSet`) escribe local + App Group +
+        // recarga widgets, pero NO encola y no debe: a ese mismo `didSet` llegan también el
+        // merge remoto (`PreferenceSyncService.applyMergeOutcome`) y el reset de
+        // `-uitest-reset`, y publicar ahí devolvería el eco (en `.cloud`, con HLC fresco
+        // sobre un valor recién bajado) y haría que un XCUITest encolara preferencias.
+        // Hasta ahora llegaba a iCloud de rebote, porque `AppPreferences.loadFromDefaults`
+        // re-persistía lo que releía; ese puente accidental se cerró.
+        guard newValue != sessionState.isExpensesOnlyMode else { return }
+        PreferenceSyncService.shared.set(
+            bool: newValue, forKey: AppPreferences.Keys.expensesOnlyMode)
+        sessionState.isExpensesOnlyMode = newValue
     }
 
 }
@@ -419,26 +495,32 @@ private struct PeriodPickerSheet: View {
         let isSelected = selectedPeriod == period
 
         Button {
+            DS.Haptic.selection()
             onSelect(period)
         } label: {
             HStack {
                 Text(period.displayName)
-                    .font(DS.Typography.body)
+                    .font(DS.Typography.body.weight(isSelected ? .semibold : .regular))
                     .foregroundStyle(.thPrimaryText)
 
                 Spacer()
 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                         .font(DS.Typography.headline)
                 }
             }
             .padding(.horizontal, DS.FormRow.paddingH)
             .padding(.vertical, DS.FormRow.paddingV)
+            // Lo elegido, relleno (UX 2.2 · L16-9): antes solo un ✓ a la derecha.
+            .selectedOptionFill(isSelected)
+            .padding(.horizontal, DS.Spacing.xs)
+            .padding(.vertical, DS.Spacing.xxs)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
 
         if period != availablePeriods.last {
             Divider()
@@ -489,26 +571,32 @@ private struct WeekdayPickerSheet: View {
         let isSelected = selectedWeekday == weekday
 
         Button {
+            DS.Haptic.selection()
             onSelect(weekday)
         } label: {
             HStack {
                 Text(weekday.displayName)
-                    .font(DS.Typography.body)
+                    .font(DS.Typography.body.weight(isSelected ? .semibold : .regular))
                     .foregroundStyle(.thPrimaryText)
 
                 Spacer()
 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                         .font(DS.Typography.headline)
                 }
             }
             .padding(.horizontal, DS.FormRow.paddingH)
             .padding(.vertical, DS.FormRow.paddingV)
+            // Lo elegido, relleno (UX 2.2 · L16-9): antes solo un ✓ a la derecha.
+            .selectedOptionFill(isSelected)
+            .padding(.horizontal, DS.Spacing.xs)
+            .padding(.vertical, DS.Spacing.xxs)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
 
         if weekday != FirstWeekday.allCases.last {
             Divider()
@@ -565,12 +653,13 @@ private struct DecimalsPickerSheet: View {
         let isSelected = selectedDecimals == option.value
 
         Button {
+            DS.Haptic.selection()
             onSelect(option.value)
         } label: {
             HStack {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(option.label)
-                        .font(DS.Typography.body)
+                        .font(DS.Typography.body.weight(isSelected ? .semibold : .regular))
                         .foregroundStyle(.thPrimaryText)
 
                     Text(option.example)
@@ -582,15 +671,20 @@ private struct DecimalsPickerSheet: View {
 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                         .font(DS.Typography.headline)
                 }
             }
             .padding(.horizontal, DS.FormRow.paddingH)
             .padding(.vertical, DS.FormRow.paddingV)
+            // Lo elegido, relleno (UX 2.2 · L16-9): antes solo un ✓ a la derecha.
+            .selectedOptionFill(isSelected)
+            .padding(.horizontal, DS.Spacing.xs)
+            .padding(.vertical, DS.Spacing.xxs)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
 
         if option.value != 2 {
             Divider()
@@ -646,12 +740,13 @@ private struct CurrencyFormatPickerSheet: View {
         let isSelected = selectedFormat == option.value
 
         Button {
+            DS.Haptic.selection()
             onSelect(option.value)
         } label: {
             HStack {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(option.label)
-                        .font(DS.Typography.body)
+                        .font(DS.Typography.body.weight(isSelected ? .semibold : .regular))
                         .foregroundStyle(.thPrimaryText)
 
                     Text(option.example)
@@ -663,15 +758,20 @@ private struct CurrencyFormatPickerSheet: View {
 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                         .font(DS.Typography.headline)
                 }
             }
             .padding(.horizontal, DS.FormRow.paddingH)
             .padding(.vertical, DS.FormRow.paddingV)
+            // Lo elegido, relleno (UX 2.2 · L16-9): antes solo un ✓ a la derecha.
+            .selectedOptionFill(isSelected)
+            .padding(.horizontal, DS.Spacing.xs)
+            .padding(.vertical, DS.Spacing.xxs)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
 
         if option.value != "symbol" {
             Divider()
@@ -720,6 +820,7 @@ private struct LanguagePickerSheet: View {
 
         return VStack(spacing: DS.Spacing.none) {
             Button {
+                DS.Haptic.selection()
                 onSelect(lang.code)
             } label: {
                 HStack(spacing: DS.Spacing.md) {
@@ -727,22 +828,28 @@ private struct LanguagePickerSheet: View {
                         .font(DS.Typography.title)
 
                     Text(lang.nativeName)
-                        .font(DS.Typography.body)
+                        .font(DS.Typography.body.weight(isSelected ? .semibold : .regular))
                         .foregroundStyle(.thPrimaryText)
 
                     Spacer()
 
                     if isSelected {
                         Image(systemName: "checkmark")
-                            .foregroundStyle(.thAccent)
+                            .foregroundStyle(.thAccentText)
                             .font(DS.Typography.headline)
                     }
                 }
                 .padding(.horizontal, DS.FormRow.paddingH)
                 .padding(.vertical, DS.FormRow.paddingV)
+                // Lo elegido, relleno (UX 2.2 · L16-9): antes solo un ✓ a la derecha.
+                .selectedOptionFill(isSelected)
+                .padding(.horizontal, DS.Spacing.xs)
+                .padding(.vertical, DS.Spacing.xxs)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityAddTraits(isSelected ? .isSelected : [])
+            .accessibilityIdentifier("app_language_option_\(lang.code)")
 
             if lang.code != LanguageManager.supportedLanguages.last?.code {
                 Divider()
@@ -800,12 +907,13 @@ private struct AverageLinePickerSheet: View {
         let isSelected = selectedMode == option.value
 
         Button {
+            DS.Haptic.selection()
             onSelect(option.value)
         } label: {
             HStack {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(option.label)
-                        .font(DS.Typography.body)
+                        .font(DS.Typography.body.weight(isSelected ? .semibold : .regular))
                         .foregroundStyle(.thPrimaryText)
 
                     Text(option.description)
@@ -817,15 +925,20 @@ private struct AverageLinePickerSheet: View {
 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                         .font(DS.Typography.headline)
                 }
             }
             .padding(.horizontal, DS.FormRow.paddingH)
             .padding(.vertical, DS.FormRow.paddingV)
+            // Lo elegido, relleno (UX 2.2 · L16-9): antes solo un ✓ a la derecha.
+            .selectedOptionFill(isSelected)
+            .padding(.horizontal, DS.Spacing.xs)
+            .padding(.vertical, DS.Spacing.xxs)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
 
         if option.value != 2 {
             Divider()
@@ -878,26 +991,32 @@ private struct AutoFocusPickerSheet: View {
         let isSelected = selectedField == option
 
         Button {
+            DS.Haptic.selection()
             onSelect(option)
         } label: {
             HStack {
                 Text(option.displayName)
-                    .font(DS.Typography.body)
+                    .font(DS.Typography.body.weight(isSelected ? .semibold : .regular))
                     .foregroundStyle(.thPrimaryText)
 
                 Spacer()
 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                         .font(DS.Typography.headline)
                 }
             }
             .padding(.horizontal, DS.FormRow.paddingH)
             .padding(.vertical, DS.FormRow.paddingV)
+            // Lo elegido, relleno (UX 2.2 · L16-9): antes solo un ✓ a la derecha.
+            .selectedOptionFill(isSelected)
+            .padding(.horizontal, DS.Spacing.xs)
+            .padding(.vertical, DS.Spacing.xxs)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
 
         if option != .description {
             Divider()
@@ -910,6 +1029,7 @@ private struct AutoFocusPickerSheet: View {
     NavigationStack {
         PersonalizationSettingsView()
             .environment(SessionState())
+            .environment(SceneNavigation())
             .previewAppPreferences()
     }
 }

@@ -20,7 +20,6 @@ struct BudgetsWidget: View {
 
     /// Currently selected budget ID for highlighting
     var selectedBudgetID: PersistentIdentifier?
-    var isExcludeMode: Bool = false
 
     // Interaction callbacks
     var onSelectBudget: ((Budget) -> Void)?
@@ -85,17 +84,37 @@ struct BudgetsWidget: View {
             Spacer()
 
             if !budgets.isEmpty, let onEditFavorites {
-                Button {
-                    onEditFavorites()
-                } label: {
-                    Image(systemName: "star")
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(.secondary)
+                if hasBudgetsButNoFavorites {
+                    // Sin favoritos salen los dos más cerca de su límite; el enlace dice que se pueden elegir (UX 2.2 · L9-10).
+                    chooseWhichButton(onEditFavorites)
+                } else {
+                    Button {
+                        onEditFavorites()
+                    } label: {
+                        Image(systemName: "star")
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(L10n.Settings.budgetsFavorites)
                 }
-                .buttonStyle(.plain)
             }
 
         }
+    }
+
+    /// «Elegir cuáles»: abre la pantalla de favoritos.
+    private func chooseWhichButton(_ action: @escaping () -> Void) -> some View {
+        Button {
+            DS.Haptic.light()
+            action()
+        } label: {
+            Text(L10n.UXL9.chooseWhich)
+                .font(DS.Typography.labelSmall)
+                .foregroundStyle(.thAccentText)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("panel_budgets_choose_which")
     }
 
     // MARK: - Budgets List
@@ -107,13 +126,11 @@ struct BudgetsWidget: View {
             ForEach(displayedBudgets) { summary in
                 let isSelected = selectedBudgetID == summary.budget.persistentModelID
                 let isAnySelected = selectedBudgetID != nil
-                let shouldDim = isAnySelected && (isExcludeMode ? isSelected : !isSelected)
+                let shouldDim = isAnySelected && !isSelected
 
                 Button {
                     DS.Haptic.selection()
-                    dsWithAnimation(reduceMotion, .easeInOut(duration: 0.2)) {
-                        onSelectBudget?(summary.budget)
-                    }
+                    onSelectBudget?(summary.budget)
                 } label: {
                     BudgetWidgetRow(
                         summary: summary,
@@ -125,6 +142,9 @@ struct BudgetsWidget: View {
                 .buttonStyle(.plain)
             }
         }
+        // El presupuesto elegido queda y los demás se atenúan animados (card C2). Implícita: en el Panel un
+        // `withAnimation` no anima.
+        .dsAnimation(DS.Animation.selection, value: selectedBudgetID, reduceMotion: reduceMotion)
     }
 
     // MARK: - Empty State
@@ -156,13 +176,7 @@ struct BudgetsWidget: View {
             if budgets.isEmpty {
                 smallEmptyState
             } else {
-                // A8: exclude mode oculta el budget excluido (espejo del patrón de TopCategoriesWidget).
-                let visibleBudgets: [BudgetSummary] = {
-                    if isExcludeMode, let excludedID = selectedBudgetID {
-                        return budgets.filter { $0.budget.persistentModelID != excludedID }
-                    }
-                    return budgets
-                }()
+                let visibleBudgets: [BudgetSummary] = budgets
 
                 VStack(alignment: .leading, spacing: DS.Spacing.lg) {
                     PanelSmallWidgetHeader(
@@ -176,8 +190,14 @@ struct BudgetsWidget: View {
                             smallBudgetRow(for: summary)
                         }
                     }
+
+                    // Sin favoritos, los dos más cerca de su límite y el enlace para elegirlos (UX 2.2 · L9-10).
+                    if hasBudgetsButNoFavorites, let onEditFavorites {
+                        Spacer(minLength: 0)
+                        chooseWhichButton(onEditFavorites)
+                    }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
         }
     }
@@ -188,7 +208,7 @@ struct BudgetsWidget: View {
         let clampedPercentage = max(0, min(100, summary.percentage))
         let isSelected = selectedBudgetID == summary.budget.persistentModelID
         let isAnySelected = selectedBudgetID != nil
-        let shouldDim = isAnySelected && (isExcludeMode ? isSelected : !isSelected)
+        let shouldDim = isAnySelected && !isSelected
 
         Button {
             DS.Haptic.selection()
@@ -229,12 +249,14 @@ struct BudgetsWidget: View {
                     }
                     .frame(width: 28, height: 6)
 
-                    AmountText(
-                        value: summary.spent,
-                        currencyCode: currencyCode,
-                        font: DS.Typography.caption, secondaryFont: DS.Typography.captionSmall,
-                        tint: .secondary
-                    )
+                    // Lo que queda, con su rótulo (UX 2.2 · L9-10): antes era lo gastado, sin decir que lo era.
+                    let remaining = BudgetRemainingLogic.remaining(limit: summary.budget.limitAmount, spent: summary.spent)
+                    let isOver = BudgetRemainingLogic.isOver(limit: summary.budget.limitAmount, spent: summary.spent)
+                    Text("\(isOver ? L10n.UXL9.overLabel : L10n.UXL9.remainingLabel) \(appPreferences.currency(abs(remaining), currencyCode: summary.budget.currencyCode))")
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(isOver ? Color.overBudgetText : Color.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
 
                     Spacer(minLength: 0)
                 }

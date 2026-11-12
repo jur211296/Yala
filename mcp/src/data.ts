@@ -7,7 +7,7 @@
  * escribir, a propósito: la herramienta que escriba (fase 3) irá en otro módulo y en otra herramienta, como pide la
  * revisión de Anthropic.
  */
-import type { Env } from "./env";
+import type { SupabaseEnv } from "./supabaseEnv";
 import { defaultFetch, guardSupabase, type Fetcher } from "./egress";
 
 export type { Fetcher } from "./egress";
@@ -33,10 +33,15 @@ export interface ReadResult<T> {
 export class YalaReader {
   private readonly fetcher: Fetcher;
 
+  /**
+   * `maxRows` es el tope por consulta de `all()` cuando el llamador no pasa otro. El conector usa `MAX_ROWS`; el
+   * gateway, uno menor, porque responde dentro del tiempo de una pregunta del chat.
+   */
   constructor(
-    private readonly env: Env,
+    private readonly env: SupabaseEnv,
     private readonly token: string,
     fetcher: Fetcher = defaultFetch,
+    private readonly maxRows: number = MAX_ROWS,
   ) {
     this.fetcher = guardSupabase(env, fetcher);
   }
@@ -67,7 +72,7 @@ export class YalaReader {
    * Lee todas las filas que casan, por páginas, hasta `max`. Para solo cuando una página llega VACÍA: si el
    * proyecto tuviera un `max_rows` por debajo de `PAGE`, una página corta no significa «ya no hay más».
    */
-  async all<T>(table: string, params: [string, string][], max = MAX_ROWS): Promise<ReadResult<T>> {
+  async all<T>(table: string, params: [string, string][], max = this.maxRows): Promise<ReadResult<T>> {
     const rows: T[] = [];
     while (rows.length < max) {
       const batch = await this.page<T>(table, params, rows.length, Math.min(PAGE, max - rows.length));
@@ -84,14 +89,14 @@ export class YalaReader {
 }
 
 export const COLUMNS = {
-  accounts: "sync_id,name,currency_code,type,is_archived,exclude_from_statistics,is_system_account",
+  accounts: "sync_id,name,currency_code,type,is_archived,exclude_from_statistics,is_system_account,parent_account_id",
   categories: "sync_id,name,is_income,is_visible,sort_order",
   subcategories: "sync_id,name,category_ref,nature_raw_value,is_visible,sort_order,is_system,is_default_seed",
   tags: "sync_id,name",
   tx:
     "sync_id,date,local_day,amount,currency_code,note,category_ref,subcategory_ref,account_ref,tag_refs," +
     "amount_in_preferred_currency,preferred_currency_code,is_exchange_rate_provisional,need_override," +
-    "scheduled_payment_ref,balance_adjustment_type,transfer_pair_id,split_expense_id",
+    "scheduled_payment_ref,balance_adjustment_type,transfer_pair_id,split_expense_id,split_lines_raw",
   txBalance: "account_ref,amount,currency_code",
   budgets:
     "sync_id,name,currency_code,limit_amount,period_type,start_date,end_date,natures,subcategory_ids,account_ids,tag_refs," +

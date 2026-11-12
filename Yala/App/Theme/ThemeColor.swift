@@ -28,6 +28,10 @@ extension ShapeStyle where Self == ThemeColor {
     static var thPrimaryText: ThemeColor { ThemeColor(keyPath: \.primaryText) }
     static var thSecondaryText: ThemeColor { ThemeColor(keyPath: \.secondaryText) }
     static var thAccent: ThemeColor { ThemeColor(keyPath: \.accent) }
+    /// El color del tema como texto o icono (card 1c9w). Para RELLENOS, `thAccent`.
+    static var thAccentText: ThemeColor { ThemeColor(keyPath: \.accentText) }
+    /// Texto o icono ENCIMA de un relleno `thAccent` (card lbcr). Nunca `.white` a mano sobre el acento.
+    static var thOnAccent: ThemeColor { ThemeColor(keyPath: \.onAccent) }
     static var thAccentSecondary: ThemeColor { ThemeColor(keyPath: \.accentSecondary) }
     static var thIncome: ThemeColor { ThemeColor(keyPath: \.income) }
     static var thExpense: ThemeColor { ThemeColor(keyPath: \.expense) }

@@ -83,4 +83,35 @@ final class DeleteAccountDialogUITests: XCTestCase {
         XCTAssertFalse(app.buttons["delete_account_view_groups"].exists,
                        "'delete_account_view_groups' NO debe aparecer sin saldos pendientes.")
     }
+
+    /// B5 (auditoría UX 2.2, lote 20): «Continuar» lleva a la confirmación final «Esto es definitivo». Hasta ese día la
+    /// alerta colgaba de la raíz de Ajustes, tapada por «Tu cuenta de Yala», y no salía: la hoja se cerraba y no pasaba
+    /// nada, así que no había forma de eliminar la cuenta. El test NO toca «Eliminar mi cuenta» (con la sesión fingida no
+    /// completaría): sale por «Cancelar» y comprueba que la pantalla sigue ahí.
+    func test_deleteAccount_continue_showsTheFinalConfirmation() {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: "minimal", extraArguments: ["-uitest-fake-backend-session"])
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        app.openProfile()
+        let row = openDeleteAccountExit(app)
+        XCTAssertTrue(row.waitForExistence(timeout: 5),
+                      "«Tu cuenta de Yala» no ofreció 'yala_account_delete' con la sesión backend faked.")
+        row.tap()
+
+        let continueBtn = app.buttons["delete_account_continue"]
+        XCTAssertTrue(continueBtn.waitForExistence(timeout: 5), "No apareció la hoja de eliminar cuenta.")
+        continueBtn.tap()
+
+        // El texto de la alerta, no `app.alerts.firstMatch` (`testing.md`: esa consulta casa con cualquier cosa).
+        let finalTitle = app.alerts.staticTexts["Esto es definitivo"].firstMatch
+        XCTAssertTrue(finalTitle.waitForExistence(timeout: 5), """
+            Tras «Continuar» no salió «Esto es definitivo»: la alerta está colgada de una vista que la pantalla de \
+            «Tu cuenta de Yala» tapa, y la cuenta no se puede eliminar.
+            """)
+
+        app.alerts.buttons["Cancelar"].firstMatch.tap()
+        XCTAssertTrue(app.buttons["yala_account_delete"].waitForExistence(timeout: 5),
+                      "«Cancelar» no devolvió a «Tu cuenta de Yala».")
+    }
 }

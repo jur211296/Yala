@@ -11,16 +11,16 @@ import SwiftUI
 
 struct ThemeSettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.settingsListIsAlongside) private var settingsListIsAlongside
     @Environment(ThemeManager.self) private var themeManager
 
     private let featureGate = FeatureGateService.shared
 
-    private var isGroupsOnlyShell: Bool { !SessionState.shared.hasPrivateSession }
-
-    /// Called after theme changes to dismiss the entire profile sheet
-    var onThemeChanged: (() -> Void)?
+    private var isGroupsOnlyShell: Bool { SessionState.shared.isGroupsFocusedShell }
 
     @State private var showUpgradeSheet = false
+    /// El tema Pro que se tocó: el muro lo enseña (UX 2.2 · L16-11) y, si se compra ahí, se aplica (L17-9).
+    @State private var lockedTheme: AppTheme?
     @State private var showTranslucentVariantPicker = false
 
     @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48 // A11Y-DT: @ScaledMetric
@@ -37,7 +37,7 @@ struct ThemeSettingsView: View {
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "paintpalette.fill")
                             .font(.system(size: heroIconSize))
-                            .foregroundStyle(.thAccent)
+                            .foregroundStyle(.thAccentText)
                             .padding(.bottom, DS.Spacing.sm)
 
                         Text(L10n.Profile.appearance)
@@ -64,12 +64,11 @@ struct ThemeSettingsView: View {
                     ) {
                         ForEach(TranslucentVariant.allCases) { variant in
                             Button {
+                                // El tema se aplica AQUÍ, al elegir variante. Antes se aplicaba al tocar la tarjeta y
+                                // cerrar el diálogo sin elegir lo dejaba puesto (auditoría UX 2.2, lote 16). Y la pantalla
+                                // se queda (L16-10): se ve el cambio aquí mismo y se puede probar otro.
+                                themeManager.userChoice = .translucent
                                 themeManager.translucentVariant = variant
-                                Task {
-                                    try? await Task.sleep(for: .milliseconds(300))
-                                    dismiss()
-                                    onThemeChanged?()
-                                }
                             } label: {
                                 Label(variant.label, systemImage: "circle.fill")
                             }
@@ -86,14 +85,36 @@ struct ThemeSettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
-                    dismiss()
+            // Con la lista de Ajustes al lado, la lista es la vuelta (UX 2.2 · L16-20).
+            if !settingsListIsAlongside {
+                ToolbarItem(placement: .topBarLeading) {
+                    YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
+                        dismiss()
+                    }
                 }
             }
         }
-        .sheet(isPresented: $showUpgradeSheet) {
-            UpgradePromptSheet(feature: .proThemes, context: .proFeature)
+        .proUpgradeSheet(
+            isPresented: $showUpgradeSheet,
+            feature: .proThemes,
+            context: .proFeature,
+            preview: lockedTheme.map { .theme($0, variant: themeManager.translucentVariant) },
+            onUnlocked: {
+                if let lockedTheme { choose(lockedTheme) }
+            }
+        )
+    }
+
+    /// Aplicar un tema que se puede usar: el mismo camino al tocarlo que al comprarlo desde su muro.
+    private func choose(_ appTheme: AppTheme) {
+        if appTheme == .translucent {
+            // Solo abre el selector de variante: el tema no cambia hasta que se elige una.
+            showTranslucentVariantPicker = true
+        } else {
+            // UX 2.2 · L16-10: el tema se aplica en vivo y Temas se queda abierta. Antes, a los 300 ms se cerraba Ajustes
+            // entero y no se podían comparar dos temas.
+            if themeManager.userChoice != appTheme { DS.Haptic.selection() }
+            themeManager.userChoice = appTheme
         }
     }
 
@@ -106,34 +127,18 @@ struct ThemeSettingsView: View {
 
         Button {
             if isLocked {
+                lockedTheme = appTheme
                 showUpgradeSheet = true
-            } else if appTheme == .translucent {
-                // Show variant picker for translucent theme
-                themeManager.userChoice = appTheme
-                showTranslucentVariantPicker = true
             } else {
-                themeManager.userChoice = appTheme
-                // Dismiss theme view + parent profile sheet
-                Task {
-                    try? await Task.sleep(for: .milliseconds(300))
-                    dismiss()
-                    onThemeChanged?()
-                }
+                choose(appTheme)
             }
         } label: {
             VStack(spacing: DS.Spacing.md) {
                 // Preview area
                 ZStack(alignment: .topTrailing) {
-                    themePreview(for: appTheme)
+                    ThemePreviewTile(appTheme: appTheme, translucentVariant: themeManager.translucentVariant)
                         .frame(height: 100)
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: DS.Radius.md)
-                                .stroke(
-                                    isSelected ? Color.brandPrimary : Color.clear,
-                                    lineWidth: 3
-                                )
-                        )
                         .opacity(isLocked ? 0.5 : 1.0)
 
                     // Lock badge
@@ -151,7 +156,7 @@ struct ThemeSettingsView: View {
                 VStack(spacing: DS.Spacing.xxs) {
                     HStack(spacing: DS.Spacing.xs) {
                         Text(appTheme.label)
-                            .font(DS.Typography.label)
+                            .font(DS.Typography.label.weight(isSelected ? .bold : .regular))
                             .foregroundStyle(isLocked ? .thSecondaryText : .thPrimaryText)
 
                         if appTheme.isPro && !isSelected {
@@ -159,9 +164,7 @@ struct ThemeSettingsView: View {
                         }
 
                         if isSelected {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(DS.Typography.subheadline)
-                                .foregroundStyle(.thAccent)
+                            InUseBadge()
                         }
                     }
 
@@ -185,19 +188,27 @@ struct ThemeSettingsView: View {
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.lg)
-                    .stroke(
-                        isSelected ? Color.brandPrimary.opacity(0.3) : Color.primary.opacity(0.05),
-                        lineWidth: 1
-                    )
+                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
             )
+            // La elegida, rellena del color de acento con su borde y «En uso» (UX 2.2 · L16-9). Antes, un borde índigo
+            // en la miniatura y un ✓ pequeño junto al nombre.
+            .selectedOptionFill(isSelected, radius: DS.Radius.lg, lineWidth: 2)
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("theme_card_\(appTheme.rawValue)")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
+}
 
-    // MARK: - Theme Preview
+// MARK: - Theme Preview Tile
 
-    @ViewBuilder
-    private func themePreview(for appTheme: AppTheme) -> some View {
+/// La miniatura de un tema: la de Temas y la de la vista previa del muro de Pro (UX 2.2 · L16-11), que es la misma.
+struct ThemePreviewTile: View {
+    let appTheme: AppTheme
+    /// La variante con la que se pinta el tema Translúcido (la elegida en Temas).
+    let translucentVariant: TranslucentVariant
+
+    var body: some View {
         if appTheme == .system {
             // Split preview: left light, right dark
             GeometryReader { geo in
@@ -227,7 +238,7 @@ struct ThemeSettingsView: View {
         variant: TranslucentVariant? = nil,
         isLiquidGlass: Bool = false
     ) -> some View {
-        let effectiveVariant = variant ?? themeManager.translucentVariant
+        let effectiveVariant = variant ?? translucentVariant
         let gradientColors: [Color] = if isLiquidGlass {
             [Color(hex: "0E0A24"), Color(hex: "14102E"), Color(hex: "050510")]
         } else {

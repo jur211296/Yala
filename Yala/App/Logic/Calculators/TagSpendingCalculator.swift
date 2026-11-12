@@ -33,13 +33,13 @@ struct TagSpendingCalculator {
 
         let tagsByID = Tag.byIDLookup(allTags)
 
-        // 1. Filter Transactions (within interval, has category, matching natures, has tags).
+        // 1. Filter Transactions (within interval, matching natures, has tags).
         //    Patas de préstamo derivadas del bridge se excluyen (no son gasto ni ingreso propio).
         let filteredTransactions = transactions.filter { transaction in
             guard !adjustment.isSuppressed(transaction) else { return false }
-            guard let category = transaction.category else { return false }
             guard transaction.balanceAdjustmentType == nil else { return false }
-            let nature: TransactionNature = category.isIncome ? .income : .expense
+            // La regla de toda la app: un movimiento sin categoría cuenta por su signo.
+            let nature: TransactionNature = TransactionClassificationLogic.isIncome(transaction) ? .income : .expense
             guard naturesToInclude.contains(nature) else { return false }
             let txTagUUIDs = transaction.resolvedTagIDs(scheduleBackfill: true) ?? []
             guard !txTagUUIDs.isEmpty else { return false }

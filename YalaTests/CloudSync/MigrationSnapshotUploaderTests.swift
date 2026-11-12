@@ -24,6 +24,8 @@ private struct FakeLocalError: Error {}
 /// `client_mutation_id`. Graba los `sync_id` y los bodies crudos para asertar orden/keyset/contenido.
 private final class ApplyingStubSession: SyncHTTPSession, @unchecked Sendable {
     var failWithStatus: Int?
+    /// Se llama al recibir cada petición, antes de contestar (la cifra de la pantalla en ese instante).
+    var onRequest: (@Sendable () async -> Void)?
     private let lock = NSLock()
     private(set) var pushedSyncIDs: [String] = []
     private(set) var pushedBodies: [String] = []
@@ -34,6 +36,7 @@ private final class ApplyingStubSession: SyncHTTPSession, @unchecked Sendable {
 
     func data(for request: URLRequest) async throws -> (Data, URLResponse) {
         let body = request.httpBody ?? Data()
+        await onRequest?()
         if let status = failWithStatus {
             let resp = HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!
             return (Data(), resp)
@@ -92,8 +95,10 @@ struct MigrationSnapshotUploaderTests {
     private func makeUploader(_ context: ModelContext, _ engine: CloudSyncEngine,
                               _ stub: ApplyingStubSession, pageSize: Int,
                               canRenewSession: Bool = false,
+                              pushChunkSize: Int = 50,
                               leaseStillConfirmed: @escaping @MainActor () -> Bool = { true }) -> MigrationSnapshotUploader {
-        let push = SyncPushClient(baseURL: workerURL, tokenProvider: { "jwt" }, urlSession: stub)
+        let push = SyncPushClient(baseURL: workerURL, tokenProvider: { "jwt" }, urlSession: stub,
+                                  pushChunkSize: pushChunkSize)
         return MigrationSnapshotUploader(engine: engine, pushClient: push, context: context,
                                          calendar: Calendar(identifier: .gregorian),
                                          now: { self.fixedNow }, pageSize: pageSize,
@@ -168,6 +173,88 @@ struct MigrationSnapshotUploaderTests {
             #expect(!Canonc1Codec.utf8BytesLess(tables[i], tables[i - 1]),
                     "tablas fuera de orden: \(tables)")
         }
+    }
+
+    // MARK: - La cifra de la pantalla (ticket `cloud-progress-shows-real-steps-and-counts`, card igt9)
+
+    private func seedCategories(_ context: ModelContext, _ count: Int) throws {
+        for i in 0..<count {
+            let cat = Category(name: "cat-\(i)", colorHex: "#111111", isIncome: false, isDefaultSeed: false)
+            cat.syncID = UUID()
+            context.insert(cat)
+        }
+        try context.save()
+    }
+
+    @Test("la cifra cuenta las filas de todas las tablas y llega al total al terminar")
+    func progress_countsEveryTable_andEndsAtTheTotal() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = ApplyingStubSession()
+        try seedCategories(context, 3)
+        context.insert(Tag(name: "t0"))
+        context.insert(Tag(name: "t1"))
+        context.insert(Account(name: "acc", currencyCode: "USD", colorHex: "#222222", iconName: "creditcard",
+                               type: "checking"))
+        try context.save()
+        let uploader = makeUploader(context, CloudSyncEngine(), stub, pageSize: 2)
+        #expect(uploader.progress == nil, "antes de la primera página no se inventa una cifra")
+
+        var cursor: String?
+        var seen: [Int] = []
+        steps: for _ in 0..<20 {
+            let outcome = await uploader.uploadPage(cursor: cursor)
+            #expect(uploader.progress?.total == 6)
+            seen.append(uploader.progress?.done ?? -1)
+            switch outcome {
+            case .pageConfirmed(let next): cursor = next
+            case .completed: break steps
+            default: Issue.record("desenlace inesperado: \(outcome)"); break steps
+            }
+        }
+        // accounts (1) · categories (2 + 1) · tags (2) · cierre.
+        #expect(seen == [1, 3, 4, 6, 6])
+    }
+
+    @Test("la cifra se mueve por cada trozo que el servidor confirma, no por página")
+    func progress_movesPerConfirmedChunk() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = ApplyingStubSession()
+        try seedCategories(context, 5)
+        let uploader = makeUploader(context, CloudSyncEngine(), stub, pageSize: 10, pushChunkSize: 2)
+        final class Seen: @unchecked Sendable { var values: [Int?] = [] }
+        let seen = Seen()
+        stub.onRequest = { await MainActor.run { seen.values.append(uploader.progress?.done) } }
+
+        _ = await uploader.uploadPage(cursor: nil)
+
+        #expect(seen.values == [0, 2, 4], "tres trozos de una página: la cifra sube con cada uno")
+        #expect(uploader.progress?.done == 5)
+        #expect(uploader.progress?.total == 5)
+    }
+
+    @Test("retomando desde un cursor, la cifra empieza por lo que ya subió")
+    func progress_resumingFromACursor_countsWhatAlreadyWentUp() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = ApplyingStubSession()
+        try seedCategories(context, 5)
+        let first = makeUploader(context, CloudSyncEngine(), stub, pageSize: 2)
+        guard case .pageConfirmed(let cursor) = await first.uploadPage(cursor: nil) else {
+            Issue.record("la primera página no se confirmó"); return
+        }
+
+        // Otro uploader (un relanzamiento): no hay nada en memoria, y la cifra sale del cursor.
+        let resumed = makeUploader(context, CloudSyncEngine(), stub, pageSize: 2)
+        final class Seen: @unchecked Sendable { var values: [Int?] = [] }
+        let seen = Seen()
+        stub.onRequest = { await MainActor.run { seen.values.append(resumed.progress?.done) } }
+        _ = await resumed.uploadPage(cursor: cursor)
+
+        #expect(seen.values.first == 2, "antes de subir la segunda página ya cuenta las dos de la primera")
+        #expect(resumed.progress?.done == 4)
+        #expect(resumed.progress?.total == 5)
     }
 
     @Test("full-row: el delta de una Category lleva TODAS las columnas del manifest")

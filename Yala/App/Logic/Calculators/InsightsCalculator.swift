@@ -47,6 +47,9 @@ struct PeriodSummary {
     let dailyAverageExpense: Double
     let dailyAverageVariation: Double?
     let previousPeriodLabel: String
+    /// Días sobre los que se reparte el gasto del período (el denominador de `dailyAverageExpense`). En «Todo el
+    /// tiempo» cuentan desde el primer registro, no desde hace diez años.
+    var dayCount: Int = 1
 
     /// Si algún importe agregado aquí salió de una tasa que no era la de su día — **por lado**,
     /// porque el hero de Tendencias pinta uno de los tres números según la métrica elegida y una
@@ -71,13 +74,20 @@ struct QuickStats {
     let highestAvgWeekday: HighestAvgWeekdayInfo?
     let subscriptionsTotal: Double
 
-    var topCategory: CategorySpendingSummary? { topCategories.first }
-    var topSubcategory: SubcategorySpendingSummary? { topSubcategories.first }
+    /// La mayor categoría REAL: el trozo «Sin categoría» suma en el ranking, pero no es una categoría que nombrar.
+    var topCategory: CategorySpendingSummary? { topCategories.first { !$0.isUncategorized } }
+    /// Ídem: la fila «Sin categoría» del ranking de subcategorías es la única sin categoría padre.
+    var topSubcategory: SubcategorySpendingSummary? { topSubcategories.first { !$0.isUncategorized } }
 }
 
 struct HighestExpenseInfo {
     let amount: Double
+    /// Lo que se enseña en pantalla: la nota del gasto, o su subcategoría/categoría si no tiene.
     let note: String
+    /// Lo que viaja a la IA: subcategoría, categoría o «sin categoría». **Nunca la nota**, que es texto libre de la
+    /// persona y el permiso de Observaciones promete agregados (card `ve42`, ticket
+    /// `insights-cards-send-the-note-of-the-largest-expense`).
+    let categoryLabel: String
 }
 
 struct HighestAvgWeekdayInfo {
@@ -93,6 +103,17 @@ struct Commitments {
     let activeRecurringCount: Int            // PaymentCategory.recurring only
     let activeRecurringMonthly: Double
     let budgetsAtRisk: [BudgetAtRisk]
+
+    // «Lo que te falta pagar» (UX 2.2 · L11-5, decisión B): los pagos pendientes del período partidos en suscripciones y
+    // el resto. Suman `pendingPaymentsCount`/`pendingPaymentsAmount`; la suscripción pendiente se cuenta una sola vez.
+    var pendingSubscriptionsCount: Int = 0
+    var pendingSubscriptionsAmount: Double = 0
+    var pendingOtherPaymentsCount: Int = 0
+    var pendingOtherPaymentsAmount: Double = 0
+
+    /// «Tus presupuestos»: TODOS los activos, de más a menos usado. `budgetsAtRisk` sigue siendo los de ≥ 50 % (lo leen
+    /// Yala IA y las observaciones).
+    var budgets: [BudgetAtRisk] = []
 }
 
 struct BudgetAtRisk: Identifiable {
@@ -103,6 +124,8 @@ struct BudgetAtRisk: Identifiable {
     let spent: Double
     let limit: Double
     let colorHex: String?
+    /// Moneda de `spent` y `limit`: la del presupuesto.
+    var currencyCode: String = ""
 }
 
 struct NeedDistribution {
@@ -235,7 +258,10 @@ struct InsightsCalculator {
         // contra completo. Quién entra lo decide
         // `DateAlignmentHelper.aggregatePreviousNeedsAlignment`, no esta lista.
         // `prevInterval` COMPLETO se conserva SOLO para el label.
-        let prevInterval = PreviousPeriodHelper.previousInterval(for: period, mode: comparisonMode, customRange: customRange)
+        // Con el `now` inyectado, como el intervalo actual: sin él, un test con otra fecha comparaba con el mes anterior
+        // al de HOY y no al de su `now`.
+        let prevInterval = PreviousPeriodHelper.previousInterval(
+            for: period, mode: comparisonMode, customRange: customRange, now: now)
         let alignedPrevInterval = DateAlignmentHelper.alignedPreviousInterval(
             currentInterval: interval,
             previousInterval: prevInterval,
@@ -263,26 +289,35 @@ struct InsightsCalculator {
             converter: converter
         )
 
-        let expenseVariation = PreviousPeriodHelper.calculateVariation(
+        // «Todo el tiempo» no tiene período anterior: `previousInterval` le devuelve su propio intervalo, y las cuatro
+        // variaciones salían 0 % — «= +0 %» en el hero y en el promedio diario, y «Tu balance se mantiene estable» en
+        // Tendencias (auditoría UX 2.2 · lote 11 · B1). Sin anterior, no hay variación.
+        let hasPreviousPeriod = period != .allTime
+        let expenseVariation = hasPreviousPeriod ? PreviousPeriodHelper.calculateVariation(
             currentAmount: cashFlow.totalExpense,
             previousAmount: prevCashFlow.totalExpense
-        )
-        let incomeVariation = PreviousPeriodHelper.calculateVariation(
+        ) : nil
+        let incomeVariation = hasPreviousPeriod ? PreviousPeriodHelper.calculateVariation(
             currentAmount: cashFlow.totalIncome,
             previousAmount: prevCashFlow.totalIncome
-        )
-        let balanceVariation = PreviousPeriodHelper.calculateVariation(
+        ) : nil
+        let balanceVariation = hasPreviousPeriod ? PreviousPeriodHelper.calculateVariation(
             currentAmount: cashFlow.netFlow,
             previousAmount: prevCashFlow.netFlow
-        )
+        ) : nil
 
         let calendar = Calendar.current
+        // Los días sobre los que se reparte el gasto. «Todo el tiempo» es un intervalo de diez años hacia atrás; dividir
+        // por él daba un «Promedio diario» de S/ 55 a quien gasta S/ 277 al día desde hace dos años, y lo mismo el día
+        // de más gasto y el gasto diario por necesidad (auditoría UX 2.2 · lote 11 · B3). Empieza en el primer registro,
+        // como el gasto por día de la semana de Tendencias.
+        let countingInterval = Self.countingInterval(for: period, interval: interval, transactions: transactions, calendar: calendar)
         // El gemelo de `prevDaysInPeriod` (unas líneas abajo), que ya se corrigió el 2026-09-02
         // mientras éste se quedó crudo: los dos dividen sobre el mismo tipo de intervalo. Con el período
         // ACTUAL cerrado —`.lastMonth`, `.lastYear`, un rango personalizado— el denominador salía un día
         // corto e inflaba «Promedio diario» ~3,3 % en un mes de 31. Y como el lado «anterior» ya estaba
         // bien, los dos lados de la comparación usaban reglas distintas.
-        let daysInPeriod = max(1, DateIntervalDayCount.days(in: interval, calendar: calendar))
+        let daysInPeriod = max(1, DateIntervalDayCount.days(in: countingInterval, calendar: calendar))
         let dailyAverageCount = Double(periodTxns.count) / Double(daysInPeriod)
         let dailyAverageExpense = cashFlow.totalExpense / Double(daysInPeriod)
 
@@ -297,10 +332,10 @@ struct InsightsCalculator {
         let prevDaysInPeriod = max(1, DateIntervalDayCount.days(
             in: alignedPrevInterval, calendar: calendar))
         let prevDailyAvg = prevCashFlow.totalExpense / Double(prevDaysInPeriod)
-        let dailyAverageVariation = PreviousPeriodHelper.calculateVariation(
+        let dailyAverageVariation = hasPreviousPeriod ? PreviousPeriodHelper.calculateVariation(
             currentAmount: dailyAverageExpense,
             previousAmount: prevDailyAvg
-        )
+        ) : nil
 
         // Label for previous period (e.g. "vs Feb 25")
         let previousPeriodLabel = PreviousPeriodHelper.formatComparisonText(
@@ -321,6 +356,7 @@ struct InsightsCalculator {
             dailyAverageExpense: dailyAverageExpense,
             dailyAverageVariation: dailyAverageVariation,
             previousPeriodLabel: previousPeriodLabel,
+            dayCount: daysInPeriod,
             incomeAmountsAreApproximate: cashFlow.incomeAmountsAreApproximate,
             expenseAmountsAreApproximate: cashFlow.expenseAmountsAreApproximate,
             amountsAreApproximate: cashFlow.amountsAreApproximate
@@ -329,7 +365,7 @@ struct InsightsCalculator {
         // Weekday Spending (computed before Quick Stats for highestAvgWeekday)
         let weekdaySpending = WeekdaySpendingCalculator.calculate(
             transactions: periodTxns,
-            interval: interval,
+            interval: countingInterval,
             currencyCode: currencyCode,
             adjustment: adjustment,
             converter: converter
@@ -371,13 +407,17 @@ struct InsightsCalculator {
             subscriptionsTotal: subscriptionsTotal
         )
 
-        // Commitments
+        // Commitments. «Lo que te falta pagar» de un período EN CURSO cuenta hasta su final, no hasta hoy (decisión A de
+        // Jürgen, 2026-10-27; ticket `insights-to-pay-this-month-leaves-out-the-rest-of-the-month`): el alquiler del 28,
+        // visto el 27, no salía. Solo los pendientes; el resto de la pantalla sigue cerrando hoy.
+        let pendingPaymentsInterval = FinancialScoreCalculator.commitmentsInterval(
+            period: period, fallback: interval, now: now, calendar: userConfiguredCalendar())
         let commitments = calculateCommitments(
             budgets: budgets,
             scheduledPayments: scheduledPayments,
             periodTxns: periodTxns,
             allTransactions: transactions,
-            interval: interval,
+            pendingPaymentsInterval: pendingPaymentsInterval,
             currencyCode: currencyCode,
             adjustment: adjustment,
             converter: converter
@@ -416,14 +456,21 @@ struct InsightsCalculator {
         // Excluir las patas de préstamo derivadas (préstamo a grupos) — sin esto `totalShared`
         // doble-contaba AMBAS hermanas del Caso A (real -total + lent +lent) y `totalPersonal`
         // colapsaba a 0. Con el filtro + monto ajustado, `totalShared` = Σ mi parte.
-        let sharedTxns = periodTxns.filter { $0.splitExpenseID != nil && !adjustment.isSuppressed($0) }
+        // Grupos B: una recarga de tu parte es una transferencia con `splitExpenseID` (su salida en «Grupos»): no es gasto
+        // compartido, como no lo es para `cashFlow.totalExpense`, que la resta después. Lo COBRADO de una venta (card 10)
+        // tampoco: es un ingreso con el puntero de la venta, y sumado aquí con `abs` restaba del gasto personal.
+        let isSharedExpense: (TransactionItem) -> Bool = {
+            $0.splitExpenseID != nil && $0.balanceAdjustmentType == nil && !adjustment.isSuppressed($0)
+                && !GroupCollectedLegLogic.isCollected($0.splitLinesRaw)
+        }
+        let sharedTxns = periodTxns.filter(isSharedExpense)
         if !sharedTxns.isEmpty {
             // Precompute converted amounts once per transaction (avoid repeated currency conversion)
             let sharedAmounts = sharedTxns.map { abs(txAmount($0, currencyCode: currencyCode, adjustment: adjustment, converter: converter)) }
             let totalShared = sharedAmounts.reduce(0.0, +)
             let totalPersonal = cashFlow.totalExpense - totalShared
 
-            let prevSharedTxns = prevTxns.filter { $0.splitExpenseID != nil && !adjustment.isSuppressed($0) }
+            let prevSharedTxns = prevTxns.filter(isSharedExpense)
             let prevShared: Double? = prevSharedTxns.isEmpty ? nil : prevSharedTxns.reduce(0.0) { $0 + abs(txAmount($1, currencyCode: currencyCode, adjustment: adjustment, converter: converter)) }
 
             let groupNameLookup = Dictionary(splitGroups.map { ($0.cloudKitZoneID, $0.name) }, uniquingKeysWith: { a, _ in a })
@@ -528,23 +575,40 @@ struct InsightsCalculator {
         adjustment: GroupBridgeStatsAdjustment,
         converter: CurrencyConverting
     ) -> HighestExpenseInfo? {
-        var highest: (amount: Double, note: String)? = nil
+        var highest: (amount: Double, note: String, categoryLabel: String)? = nil
 
         for tx in transactions {
             guard !adjustment.isSuppressed(tx) else { continue }
-            guard let category = tx.category, !category.isIncome else { continue }
+            // La regla de toda la app: un gasto sin categoría también puede ser el mayor.
+            guard !TransactionClassificationLogic.isIncome(tx) else { continue }
             guard tx.balanceAdjustmentType == nil else { continue }
 
             let amount = txAmount(tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter)
 
             if highest.map({ amount > $0.amount }) ?? true {
-                let note = tx.note ?? tx.subcategory?.name ?? category.name
-                highest = (amount, note)
+                let categoryLabel = tx.subcategory?.name ?? tx.category?.name ?? L10n.Report.uncategorized
+                let note = tx.note ?? categoryLabel
+                highest = (amount, note, categoryLabel)
             }
         }
 
         guard let h = highest else { return nil }
-        return HighestExpenseInfo(amount: h.amount, note: h.note)
+        return HighestExpenseInfo(amount: h.amount, note: h.note, categoryLabel: h.categoryLabel)
+    }
+
+    /// El tramo sobre el que se cuentan los días de un promedio. Es el intervalo del período, salvo en «Todo el tiempo»,
+    /// que es de diez años hacia atrás: ahí empieza el día del primer registro (y nunca antes del intervalo).
+    static func countingInterval(
+        for period: DetailPeriod,
+        interval: DateInterval,
+        transactions: [TransactionItem],
+        calendar: Calendar = .current
+    ) -> DateInterval {
+        guard period == .allTime,
+              let first = transactions.lazy.map(\.date).min() else { return interval }
+        let start = max(interval.start, calendar.startOfDay(for: first))
+        guard start < interval.end else { return interval }
+        return DateInterval(start: start, end: interval.end)
     }
 
     private static func calculateSubscriptionsTotal(
@@ -558,6 +622,10 @@ struct InsightsCalculator {
         for payment in payments {
             guard payment.isActive else { continue }
             guard payment.isRecurring else { continue }
+            // Solo las suscripciones, con la misma regla que «Suscripciones activas» de Compromisos. Sumaba todos los
+            // pagos planificados que se repiten —el alquiler incluido—, y la tarjeta «Suscripciones» decía S/ 2,753 al
+            // mes a dos pantallazos de «Suscripciones activas: 4 · S/ 223» (auditoría UX 2.2 · lote 11 · B2).
+            guard payment.paymentCategory == PaymentCategory.subscription.rawValue else { continue }
 
             let amount = convertedAmount(payment.amount, from: payment.currencyCode, to: currencyCode, on: now, converter: converter)
             total += amount
@@ -578,20 +646,24 @@ struct InsightsCalculator {
         scheduledPayments: [ScheduledPayment],
         periodTxns: [TransactionItem],
         allTransactions: [TransactionItem],
-        interval: DateInterval,
+        pendingPaymentsInterval: DateInterval,
         currencyCode: String,
         adjustment: GroupBridgeStatsAdjustment,
         converter: CurrencyConverting
     ) -> Commitments {
         let now = Date.now
 
-        // Pending scheduled payments (due within period, not yet executed)
+        // Pending scheduled payments (due within period, not yet executed). En un período en curso, hasta su final.
         var pendingCount = 0
         var pendingAmount: Double = 0
         var subscriptionCount = 0
         var subscriptionMonthly: Double = 0
         var recurringCount = 0
         var recurringMonthly: Double = 0
+        var pendingSubscriptionsCount = 0
+        var pendingSubscriptionsAmount: Double = 0
+        var pendingOtherCount = 0
+        var pendingOtherAmount: Double = 0
 
         for payment in scheduledPayments {
             guard payment.isActive else { continue }
@@ -609,54 +681,58 @@ struct InsightsCalculator {
             }
 
             // Check if next due date is within period
-            if interval.contains(payment.nextDueDate) {
+            if pendingPaymentsInterval.contains(payment.nextDueDate) {
                 pendingCount += 1
                 pendingAmount += amount
+                if payment.paymentCategory == PaymentCategory.subscription.rawValue {
+                    pendingSubscriptionsCount += 1
+                    pendingSubscriptionsAmount += amount
+                } else {
+                    pendingOtherCount += 1
+                    pendingOtherAmount += amount
+                }
             }
         }
 
-        // Budgets at risk (>75% spent) — pregroup expense transactions by category for efficiency
-        let expenseTxns = allTransactions.filter { $0.category?.isIncome == false && $0.balanceAdjustmentType == nil }
-        let txnsByCategory = Dictionary(grouping: expenseTxns, by: { $0.category?.persistentModelID })
-
+        // Budgets at risk. Lo gastado sale de la MISMA función que Planificación, el Panel y las alertas
+        // (`BudgetsViewModel.calculateSpending`), sobre los movimientos SIN el filtro de sesión de Estadísticas y en el
+        // periodo EN CURSO de cada presupuesto. Hasta el 2026-10-29 Observaciones filtraba por su cuenta: solo veía los
+        // presupuestos con categoría legada (los de subcategorías, etiquetas o cuentas no salían), ignoraba «Contar mi
+        // parte de los gastos de grupo» y dejaba fuera los gastos sin categoría (ticket
+        // `insights-budgets-at-risk-compute-spent-on-their-own`).
         var budgetsAtRisk: [BudgetAtRisk] = []
+        var allBudgets: [BudgetAtRisk] = []
         for budget in budgets {
             guard budget.isActive else { continue }
             guard budget.limitAmount > 0 else { continue }
 
-            // Filter transactions within the budget's OWN current period (not the global Insights period)
-            let budgetTxns: [TransactionItem]
-            if let category = budget.category {
-                let budgetInterval = currentBudgetInterval(for: budget, now: now)
-                let categoryTxns = txnsByCategory[category.persistentModelID] ?? []
-                budgetTxns = categoryTxns.filter { budgetInterval.contains($0.date) }
-            } else {
-                continue
-            }
-
-            // Sum expenses in budget currency (proyectadas a "mi parte" en gastos de grupo).
-            let spent = budgetTxns.reduce(0.0) { sum, tx in
-                adjustment.isSuppressed(tx)
-                    ? sum
-                    : sum + txAmount(tx, currencyCode: budget.currencyCode, adjustment: adjustment, converter: converter)
-            }
+            let spent = BudgetsViewModel.calculateSpending(
+                budget: budget,
+                transactions: allTransactions,
+                interval: currentBudgetInterval(for: budget, now: now),
+                adjustment: adjustment,
+                converter: converter
+            )
 
             let usage = (spent / budget.limitAmount) * 100
-            if usage >= 50 {
-                // Icon genérico en cold launch si M2M lazy nil — se auto-cura via hot
-                // path upstream. Refactor con iconLookup precomputado: ver Backlog.
-                budgetsAtRisk.append(BudgetAtRisk(
-                    id: budget.persistentModelID,
-                    name: budget.name,
-                    icon: budget.displayProperties.icon,
-                    usagePercent: usage,
-                    spent: spent,
-                    limit: budget.limitAmount,
-                    colorHex: budget.category?.colorHex
-                ))
-            }
+            // Icon genérico en cold launch si M2M lazy nil — se auto-cura via hot
+            // path upstream. Refactor con iconLookup precomputado: ver Backlog.
+            let display = budget.displayProperties
+            let row = BudgetAtRisk(
+                id: budget.persistentModelID,
+                name: budget.name,
+                icon: display.icon,
+                usagePercent: usage,
+                spent: spent,
+                limit: budget.limitAmount,
+                colorHex: budget.category?.colorHex ?? display.color,
+                currencyCode: budget.currencyCode
+            )
+            allBudgets.append(row)
+            if usage >= 50 { budgetsAtRisk.append(row) }
         }
         budgetsAtRisk.sort { $0.usagePercent > $1.usagePercent }
+        allBudgets.sort { $0.usagePercent > $1.usagePercent }
 
         return Commitments(
             pendingPaymentsCount: pendingCount,
@@ -665,11 +741,17 @@ struct InsightsCalculator {
             activeSubscriptionsMonthly: subscriptionMonthly,
             activeRecurringCount: recurringCount,
             activeRecurringMonthly: recurringMonthly,
-            budgetsAtRisk: budgetsAtRisk
+            budgetsAtRisk: budgetsAtRisk,
+            pendingSubscriptionsCount: pendingSubscriptionsCount,
+            pendingSubscriptionsAmount: pendingSubscriptionsAmount,
+            pendingOtherPaymentsCount: pendingOtherCount,
+            pendingOtherPaymentsAmount: pendingOtherAmount,
+            budgets: allBudgets
         )
     }
 
-    private static func calculateNeedDistribution(
+    /// `internal` para los tests (`CategoryBreakdownUncategorizedTests`).
+    static func calculateNeedDistribution(
         _ transactions: [TransactionItem],
         currencyCode: String,
         adjustment: GroupBridgeStatsAdjustment,
@@ -681,12 +763,14 @@ struct InsightsCalculator {
 
         for tx in transactions {
             guard !adjustment.isSuppressed(tx) else { continue }
-            guard let category = tx.category, !category.isIncome else { continue }
+            // Solo gastos, con la regla de toda la app. Un gasto sin categoría no tiene necesidad: va con lo sin
+            // clasificar, que este reparto suma a Opcional (decisión A de Jürgen, 2026-10-23; antes quedaba fuera).
+            guard !TransactionClassificationLogic.isIncome(tx) else { continue }
             guard tx.balanceAdjustmentType == nil else { continue }
 
             let amount = txAmount(tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter)
 
-            let need = tx.subcategory?.need
+            let need = tx.category == nil ? nil : tx.subcategory?.need
             switch need {
             case .essential:
                 essential += amount
@@ -765,9 +849,10 @@ struct InsightsCalculator {
         let budgetRiskThreshold: Double = focus == .cautious ? 75 : 90
 
         // Rule 1: Top category dominance
-        if let top = topCategories.first, top.percentage > topCategoryThreshold {
-            let text = AttributedString(L10n.Insights.ruleTopCategory(top.category.name, Int(top.percentage), tone: tone))
-            let tip = AttributedString(L10n.Insights.tipTopCategory(top.category.name))
+        // «Sin categoría» suma en el ranking pero no se nombra como categoría.
+        if let top = topCategories.first(where: { !$0.isUncategorized }), top.percentage > topCategoryThreshold {
+            let text = AttributedString(L10n.Insights.ruleTopCategory(top.name, Int(top.percentage), tone: tone))
+            let tip = AttributedString(L10n.Insights.tipTopCategory(top.name))
             insights.append(InsightResult(
                 id: "top_category_dominant",
                 icon: "chart.pie",

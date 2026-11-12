@@ -21,7 +21,7 @@ struct PanelSessionObservers: ViewModifier {
                 viewModel.recalculateData()
             }
             .onChange(of: sessionState.selectedCategoryIDs) {
-                if !sessionState.isExcludeMode && !sessionState.selectedCategoryIDs.isEmpty {
+                if !sessionState.selectedCategoryIDs.isEmpty {
                     let selectedCats = viewModel.categories.filter {
                         sessionState.selectedCategoryIDs.contains($0.persistentModelID)
                     }
@@ -36,13 +36,13 @@ struct PanelSessionObservers: ViewModifier {
                 viewModel.recalculateData()
             }
             .onChange(of: sessionState.selectedNeeds) {
-                if !sessionState.isExcludeMode && !sessionState.selectedNeeds.isEmpty {
+                if !sessionState.selectedNeeds.isEmpty {
                     sessionState.selectedTransactionNatures = [.expense]
                 }
                 viewModel.recalculateData()
             }
             .onChange(of: sessionState.selectedSubcategoryIDs) {
-                if !sessionState.isExcludeMode && !sessionState.selectedSubcategoryIDs.isEmpty {
+                if !sessionState.selectedSubcategoryIDs.isEmpty {
                     let selectedSubs = viewModel.allSubcategories.filter {
                         sessionState.selectedSubcategoryIDs.contains($0.persistentModelID)
                     }
@@ -71,7 +71,7 @@ struct PanelSessionObservers: ViewModifier {
             .onChange(of: sessionState.searchText) {
                 viewModel.recalculateData()
             }
-            .onChange(of: sessionState.isExcludeMode) {
+            .onChange(of: sessionState.excludedFilterSets) {
                 viewModel.recalculateData()
             }
             .onChange(of: sessionState.selectedTrendMetric) {

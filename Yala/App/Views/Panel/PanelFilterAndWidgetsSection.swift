@@ -17,6 +17,8 @@ struct PanelFilterAndWidgetsSection: View {
     @Binding var sectionPrefsPresentation: PanelSectionKind?
     @Binding var showBudgetFavoritesSettings: Bool
     @Binding var showCustomPeriodPicker: Bool
+    /// Abre la hoja de Filtros del Panel al tocar una cápsula de «Filtros aplicados» (UX 2.2 · L8-17).
+    var onOpenFilters: (() -> Void)? = nil
 
     var body: some View {
         // `xxl` (32) y no `md` (12): entre dos sections tiene que haber MÁS
@@ -37,7 +39,8 @@ struct PanelFilterAndWidgetsSection: View {
             PanelFilterControlBar(
                 viewModel: viewModel,
                 sessionState: sessionState,
-                showCustomPeriodPicker: $showCustomPeriodPicker
+                showCustomPeriodPicker: $showCustomPeriodPicker,
+                onOpenFilters: onOpenFilters
             )
 
             let thematicSections = orderedVisibleSections.filter {

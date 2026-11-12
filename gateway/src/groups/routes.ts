@@ -19,11 +19,13 @@ import { gateRequest } from "../ratelimit";
 import { bearerToken, callRpc, getRows, verifyUserToken } from "../sync/userauth";
 import {
   GROUP_ENTITIES,
+  GROUP_MANIFEST_VERSION,
   groupManifest,
   isGroupEntity,
   isPullOnlyEntity,
   nestFieldsByUnit,
   projectGroupRowToDelta,
+  resolveGroupCapabilitySet,
   rowIdentity,
   validateUpsertShape,
 } from "./manifest";
@@ -42,6 +44,8 @@ import type {
 } from "./types";
 import type { SyncDeltaResult } from "../sync/types";
 import { sendPush } from "../push/apns";
+import { composeGroupNotice, parseGroupPushNotice, type GroupNoticeAlert } from "./notice";
+import { serverCanary } from "../serverCanary";
 
 type Ctx = Context<{ Bindings: Env }>;
 
@@ -142,7 +146,17 @@ export async function handleGroupsPush(c: Ctx): Promise<Response> {
         console.log(`[groups-fanout] X-Yala-Device-Token inválido (no hex-64) — ignorado token=${rawDeviceToken.slice(0, 8)}`);
       }
     }
-    c.executionCtx.waitUntil(fanOutGroupPush(c.env, auth, Array.from(groupIds), excludeDeviceToken));
+    // Card sztn: el texto concreto de cada grupo, con lo que el cliente adjuntó (`notice`) y lo que el servidor
+    // sabe de cada delta aplicado. Sin `notice` o sin quién/grupo, `null` → el genérico de siempre.
+    const notice = parseGroupPushNotice(body.notice);
+    const alerts: Record<string, GroupNoticeAlert> = {};
+    for (const gid of groupIds) {
+      const alert = composeGroupNotice(gid, body.deltas, results, notice);
+      if (alert) alerts[gid] = alert;
+    }
+    c.executionCtx.waitUntil(
+      fanOutGroupPush(c.env, auth, Array.from(groupIds), excludeDeviceToken, { kind: "coMembers" }, undefined, alerts),
+    );
   }
 
   const resp: GroupPushResponse = { results };
@@ -183,6 +197,52 @@ export type FanOutAudience =
   /** Una persona concreta por su `member_key`, SIN filtro de status. Para «te respondieron». */
   | { kind: "member"; memberKey: string };
 
+/**
+ * Los `kind` que el gateway pone en `yala.kind`. **Contrato con la app**: `GroupsPushKind` (Swift) declara los
+ * mismos y `GroupsPushKindContractTests` lee este bloque. Uno nuevo se añade aquí y allí el mismo día; la app no
+ * sincroniza por un kind que no conoce (card `x6p9`).
+ * - `groups-sync`: actividad en un grupo (gastos, liquidaciones, cambios del grupo). La app baja los cambios.
+ * - `groups-membership`: alguien pide entrar, o te responden. También baja: el pendiente o el alta llegan por el pull.
+ */
+export const GROUP_PUSH_KINDS = ["groups-sync", "groups-membership"] as const;
+export type GroupPushKind = (typeof GROUP_PUSH_KINDS)[number];
+
+/** El `kind` de cada audiencia: los co-members ven actividad; admins y la persona afectada, membresía. */
+export function pushKindFor(audience: FanOutAudience): GroupPushKind {
+  return audience.kind === "coMembers" ? "groups-sync" : "groups-membership";
+}
+
+/**
+ * El `deepLink` que abre el grupo al tocar el aviso: `groups/<group_id>`, con el `group_id` del servidor TAL CUAL
+ * (`SplitGroup-<uuid>`). No se pela a uuid: en un grupo que llegó por el canal backend el `id` local NO es ese uuid
+ * (`SplitGroupZone.zoneName`), y la app lo resuelve por su `cloudKitZoneID`. Con varios grupos para el mismo
+ * dispositivo en una tanda, la lista de Grupos: no hay un grupo que sea «el» del aviso.
+ */
+export function groupDeepLink(groupIds: ReadonlySet<string>): string {
+  if (groupIds.size === 1) {
+    const [only] = groupIds;
+    return `groups/${only}`;
+  }
+  return "groups";
+}
+
+/**
+ * El `aps.alert` de un dispositivo: el concreto si todo lo que recibe en esta tanda es de UN grupo con aviso
+ * compuesto; si no, el genérico con su `loc-key` (`notifications.groups.name` de título).
+ */
+export function alertFor(
+  groupIds: ReadonlySet<string>,
+  alerts: Record<string, GroupNoticeAlert>,
+  locKey: string,
+): Record<string, unknown> {
+  if (groupIds.size === 1) {
+    const [only] = groupIds;
+    const a = alerts[only];
+    if (a) return { title: a.title, "loc-key": a.locKey, "loc-args": a.locArgs };
+  }
+  return { "title-loc-key": "notifications.groups.name", "loc-key": locKey };
+}
+
 export async function fanOutGroupPush(
   env: Env,
   auth: { userJWT: string; sub: string },
@@ -194,23 +254,33 @@ export async function fanOutGroupPush(
    */
   audience: FanOutAudience = { kind: "coMembers" },
   locKey: string = "notifications.groups.remoteActivity",
+  /**
+   * Card sztn: el aviso concreto de cada grupo (`notice.ts`). Un dispositivo que solo recibe de UN grupo con
+   * aviso lo lleva; uno que recibe de varios en la misma tanda, el genérico (no hay «un» grupo que contar).
+   */
+  alerts: Record<string, GroupNoticeAlert> = {},
 ): Promise<void> {
   // Short-circuit si APNs no está configurado (espejo del 503 de /v1/debug/push; aquí silencioso, 1 log).
   // Prod arranca así hasta que el owner cargue APNS_KEY_ID/APNS_AUTH_KEY (pendiente-owner en wrangler.toml).
   if (!env.APNS_AUTH_KEY || !env.APNS_KEY_ID) {
     console.log("[groups-fanout] APNs no configurado (sin APNS_KEY_ID/APNS_AUTH_KEY) — fan-out no-op");
+    serverCanary(env, "groupFanoutApnsNotConfigured");
     return;
   }
   // Short-circuit si falta la credencial de máquina (G8-3): sin PUSH_ROLE_JWT los RPCs responden 403 (los
   // revocamos de authenticated) → el fan-out no puede resolver tokens. Mismo trato que el de APNs (1 log).
   if (!env.PUSH_ROLE_JWT) {
     console.log("[groups-fanout] PUSH_ROLE_JWT ausente — fan-out no-op (credencial de máquina no configurada)");
+    serverCanary(env, "groupFanoutPushRoleMissing");
     return;
   }
   const machineJWT = env.PUSH_ROLE_JWT;
 
   // Recolectar tokens de todos los grupos del batch; dedup por device_token (un member en 2 grupos → 1 push).
-  const targets = new Map<string, { userId: string; deviceToken: string; platform: string }>();
+  const targets = new Map<
+    string,
+    { userId: string; deviceToken: string; platform: string; groupIds: Set<string>; silent: boolean }
+  >();
   for (const gid of groupIds) {
     // La RPC y sus args los elige la AUDIENCIA. Estuvieron hardcodeados mientras hubo un solo caso;
     // el nombre viaja en el log de error para que un 403 diga cuál de las tres falló (los grants son
@@ -222,11 +292,14 @@ export async function fanOutGroupPush(
           ? { rpc: "get_group_member_push_tokens", args: { p_group_id: gid, p_member_key: audience.memberKey } }
           : {
               rpc: "get_group_push_tokens",
+              // Con el device emisor la RPC excluye SOLO ese par y devuelve los otros dispositivos del autor
+              // (G8-3): esos reciben abajo un push SILENCIOSO, sin banner (card sztn).
               args: { p_group_id: gid, p_exclude_user_id: auth.sub, p_exclude_device_token: excludeDeviceToken },
             };
     const { ok, status, body } = await callRpc(env, machineJWT, rpc, args);
     if (!ok) {
       console.log(`[groups-fanout] ${rpc} upstream ${status} group=${gid}`);
+      serverCanary(env, "groupFanoutTokensRpcFailed", `${rpc}/${status}`);
       continue;
     }
     for (const row of Array.isArray(body) ? (body as Record<string, unknown>[]) : []) {
@@ -234,7 +307,17 @@ export async function fanOutGroupPush(
       const userId = typeof row.user_id === "string" ? row.user_id : "";
       const platform = typeof row.platform === "string" ? row.platform : "ios-prod";
       if (!deviceToken || !userId) continue;
-      if (!targets.has(deviceToken)) targets.set(deviceToken, { userId, deviceToken, platform });
+      // Card sztn: quien hace la acción no recibe su aviso EN NINGÚN dispositivo suyo. El emisor no recibe nada,
+      // tampoco si su token sigue registrado a nombre de otra cuenta (un cambio de cuenta en el mismo teléfono). Sus
+      // OTROS dispositivos reciben solo el eco silencioso, para que bajen el cambio como antes: sin banner.
+      if (audience.kind === "coMembers" && deviceToken === excludeDeviceToken) continue;
+      const silent = audience.kind === "coMembers" && userId === auth.sub;
+      const known = targets.get(deviceToken);
+      if (known) {
+        known.groupIds.add(gid);
+        // El mismo dispositivo a nombre del autor y de otra cuenta: es del autor, así que sin banner.
+        if (silent) known.silent = true;
+      } else targets.set(deviceToken, { userId, deviceToken, platform, groupIds: new Set([gid]), silent });
     }
   }
 
@@ -244,6 +327,7 @@ export async function fanOutGroupPush(
     list = list.slice(0, FANOUT_TOKEN_CAP);
   }
 
+  let delivered = 0;
   for (const t of list) {
     const result = await sendPush(env, {
       deviceToken: t.deviceToken,
@@ -258,9 +342,14 @@ export async function fanOutGroupPush(
       // Ahora el banner lo pinta el SISTEMA, y el `content-available` sigue viajando en el mismo
       // push: si iOS despierta a la app, ella reemplaza este texto por el rico —con quién, qué y
       // cuánto— que ya sabe componer. Si no la despierta, al menos ha sonado algo.
-      pushType: "alert",
-      payload: {
+      pushType: t.silent ? "background" : "alert",
+      // Otro dispositivo del autor (card sztn): solo el eco, para sincronizar. Sin `alert` no hay banner ni sonido.
+      payload: t.silent ? { aps: { "content-available": 1 }, yala: { kind: pushKindFor(audience) } } : {
         aps: {
+          // Desde la card sztn el texto es CONCRETO cuando quien sube adjunta su `notice` (`notice.ts`, `alertFor`):
+          // los textos en claro los pone el autor, no los descifra el Worker. Lo de abajo sigue siendo verdad para el
+          // genérico, que queda para un cliente anterior y para varios grupos en una tanda.
+          //
           // **El texto es GENÉRICO y no es una elección de estilo: es lo único que el servidor puede
           // afirmar.** En el DDL están cifrados at-rest (bytea †) el nombre del grupo
           // (`split_groups.name:101`), la descripción y el importe del gasto
@@ -279,31 +368,40 @@ export async function fanOutGroupPush(
           // (`L10n.swift` → `LanguageManager`), así que quien tenga el iPhone en un idioma y la app
           // en otro verá este banner en el del iPhone hasta que la app lo reemplace. Aceptado
           // conscientemente por el owner.
-          alert: {
-            "title-loc-key": "notifications.groups.name",
-            "loc-key": locKey,
-          },
+          alert: alertFor(t.groupIds, alerts, locKey),
           sound: "default",
           "content-available": 1,
         },
-        yala: { kind: "groups-sync" },
+        yala: { kind: pushKindFor(audience) },
+        // Tocar el aviso abre el grupo (`NotificationService.didReceive` lee esta clave). Card `x6p9`.
+        deepLink: groupDeepLink(t.groupIds),
       },
     });
-    if (result.delivered) continue;
+    if (result.delivered) {
+      delivered++;
+      continue;
+    }
 
     const reason = apnsReason(result.body);
     if (reason === "BadDeviceToken" || reason === "Unregistered") {
+      serverCanary(env, "groupPushTokenPruned", reason);
       // Token muerto → prune best-effort con la credencial de máquina (G8-3: prune_push_token solo callable
       // por yala_push tras g8_02; el guard de radio de G8-1 se retiró — solo el Worker confiable la llama).
       const pruned = await callRpc(env, machineJWT, "prune_push_token", { p_user_id: t.userId, p_device_token: t.deviceToken });
-      if (!pruned.ok) console.log(`[groups-fanout] prune upstream ${pruned.status} token=${t.deviceToken.slice(0, 8)}`);
+      if (!pruned.ok) {
+        console.log(`[groups-fanout] prune upstream ${pruned.status} token=${t.deviceToken.slice(0, 8)}`);
+        serverCanary(env, "groupPushTokenPruneFailed", String(pruned.status));
+      }
     } else {
       // Canario §12 (server-side): observable en wrangler tail. SIN el token completo (prefijo ≤8 chars).
       console.log(
         `[canary] groupApnsSendFailed status=${result.status ?? "-"} reason=${reason ?? result.transportError?.slice(0, 40) ?? "?"} token=${t.deviceToken.slice(0, 8)}`,
       );
+      serverCanary(env, "groupApnsSendFailed", `${result.status ?? "-"}/${reason ?? (result.transportError ? "transport" : "?")}`);
     }
   }
+  // Una fila por fan-out (no por aviso) con cuántos salieron: la serie que contesta «¿están llegando?».
+  if (list.length > 0) serverCanary(env, "groupFanoutDelivered", "", delivered);
 }
 
 /** Extrae el `reason` del body JSON de APNs ({"reason":"BadDeviceToken"} etc.). undefined si no parsea. */
@@ -369,6 +467,7 @@ async function applyOneGroupDelta(
   if (shape) {
     if (shape.type === "coherence_group_partial") {
       console.log(`[canary] groupSyncCoherenceGroupPartial entity=${delta.entity_type} group=${shape.group ?? "?"} (${shape.detail})`);
+      serverCanary(c.env, "groupSyncCoherenceGroupPartial", delta.entity_type);
       return { ...base, reason: `coherence_group_partial:${shape.group ?? shape.detail}`, outcome: { http: 422 } };
     }
     return { ...base, reason: `${shape.type}:${shape.detail}` };
@@ -441,6 +540,8 @@ export async function handleGroupsPull(c: Ctx): Promise<Response> {
   if (encKey instanceof Response) return encKey;
 
   const limit = clamp(parseIntOr(c.req.query("limit"), 500), 1, 1000);
+  // Capability-set del cliente (espejo de `/sync/pull`): poda las columnas que no conoce. Sin cabecera = v2.
+  const cap = resolveGroupCapabilitySet(c.req.header("X-Yala-Capability-Set") ?? c.req.query("capability_set") ?? null);
   let cursors: Record<string, number> = {};
   const rawCursors = c.req.query("cursors");
   if (rawCursors) {
@@ -472,6 +573,18 @@ export async function handleGroupsPull(c: Ctx): Promise<Response> {
     return jsonError("yala_unavailable", `pull memberships upstream ${mem.status}`, 502);
   }
   const memberGroupIds = Array.from(new Set(mem.rows.map((r) => String(r.group_id))));
+
+  // 1-bis. Card y1cd: de qué grupos es DUEÑO quien llama. Sin esto, quien hereda un grupo por el servidor (el dueño
+  // borró su cuenta y `groups_forget_user` le pasó la propiedad, o se la transfirieron) seguía sin poder invitar: el
+  // cliente decide «dueño» con un dato local que nadie le corregía. Una lectura más por pull; `owner_user_id` es texto
+  // plano y la RLS de `split_groups` ya acota a los grupos de los que es miembro.
+  const ownQ = `select=group_id&owner_user_id=eq.${auth.sub}&deleted=eq.false`;
+  const own = await getRows(c.env, auth.userJWT, "split_groups", ownQ);
+  if (!own.ok) {
+    return jsonError("yala_unavailable", `pull owners upstream ${own.status}`, 502);
+  }
+  const memberSet = new Set(memberGroupIds);
+  const ownedGroupIds = Array.from(new Set(own.rows.map((r) => String(r.group_id)))).filter((g) => memberSet.has(g));
 
   const outCursors: Record<string, number> = {};
   const deltas: PulledGroupDelta[] = [];
@@ -543,7 +656,7 @@ export async function handleGroupsPull(c: Ctx): Promise<Response> {
     for (const { entity, row, server_seq } of page) {
       const storedFh = (row.field_hlcs ?? {}) as Record<string, string>;
       const isDeleted = row.deleted === true;
-      const { fields, field_hlcs } = projectGroupRowToDelta(entity, row, storedFh);
+      const { fields, field_hlcs } = projectGroupRowToDelta(entity, row, storedFh, cap);
       deltas.push({
         entity_type: entity,
         group_id: gid,
@@ -559,7 +672,13 @@ export async function handleGroupsPull(c: Ctx): Promise<Response> {
     outCursors[gid] = page[page.length - 1].server_seq;
   }
 
-  const resp: GroupPullResponse = { deltas, cursors: outCursors, memberships: memberGroupIds };
+  const resp: GroupPullResponse = {
+    deltas,
+    cursors: outCursors,
+    memberships: memberGroupIds,
+    manifest_version: GROUP_MANIFEST_VERSION,
+    owned_groups: ownedGroupIds,
+  };
   return c.json(resp);
 }
 
@@ -587,13 +706,17 @@ export async function handleGroupsMerkle(c: Ctx): Promise<Response> {
     return jsonError("yala_bad_request", "falta group_id (8..120)", 400);
   }
 
+  // Capability-set del cliente (espejo de `/sync/merkle`): la hoja hashea solo las columnas que conoce, o una
+  // columna nueva le cambiaría la hoja de cada fila (el canon serializa el NULL como `key:null`). Sin cabecera = v2.
+  const cap = resolveGroupCapabilitySet(c.req.header("X-Yala-Capability-Set") ?? c.req.query("capability_set") ?? null);
+
   const channel1 = new Map<string, Uint8Array>();
   const channel2 = new Map<string, Uint8Array>();
   const entities: Record<string, { count: number; hash: string }> = {};
 
   try {
     for (const entity of GROUP_ENTITIES) {
-      const columns = merkleColumnsGroup(entity);
+      const columns = merkleColumnsGroup(entity, cap);
       const leaves1: Array<{ syncId: string; leaf: Uint8Array }> = [];
       const leaves2: Array<{ syncId: string; leaf: Uint8Array }> = [];
       const pageSize = 1000;
@@ -639,6 +762,7 @@ export async function handleGroupsMerkle(c: Ctx): Promise<Response> {
 
   const resp: GroupMerkleResponse = {
     canon_version: groupManifest.canon_version,
+    manifest_version: GROUP_MANIFEST_VERSION,
     group_id: gid,
     root: hex(await merkleRoot(channel1)),
     entities,

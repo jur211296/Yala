@@ -147,6 +147,21 @@ enum CloudSyncBreadcrumb {
         logger.error("CloudSyncIdentityRemap aborted reason=\(reason, privacy: .public) — rollback de la regeneración; se difiere al próximo run del dedup")
     }
 
+    /// El teléfono pasó a hablar una versión mayor del manifest porque el backend la anunció (`SyncCapability`).
+    nonisolated static func capabilityUpgraded(from: Int, to: Int) {
+        logger.notice("CloudSyncCapability upgraded v\(from, privacy: .public) → v\(to, privacy: .public)")
+    }
+
+    /// Subida de versión cumplida: enlaces de tarjeta reemitidos y cursor del pull a 0 (`applyCapabilityUpgradeIfPending`).
+    static func capabilityUpgradeApplied(reemittedLinks: Int) {
+        logger.notice("CloudSyncCapability upgradeApplied reemittedLinks=\(reemittedLinks, privacy: .public) cursor=0")
+    }
+
+    /// La subida de versión no se pudo cumplir (leer, encolar o mover el cursor): el pull se corta y la reintenta.
+    static func capabilityUpgradeFailed(errorType: String) {
+        logger.error("CloudSyncCapability upgradeFailed error=\(errorType, privacy: .public) — pull cortado, se reintenta")
+    }
+
     /// RED (I8c): el emisor produjo un grupo de coherencia incompleto tras la expansión. No debe ocurrir.
     static func coherenceGroupPartial(entity: String, group: String) {
         logger.notice("CloudSyncCoherenceGroupPartial \(entity, privacy: .public) group=\(group, privacy: .public)")
@@ -411,7 +426,7 @@ enum CloudSyncBreadcrumb {
 
     /// El usuario inició el cierre de sesión. `path` = "private" | "private-with-groups" | "cloud-secure" |
     /// "secondary" | "icloud-groups-session" | "account-delete-cloud" |
-    /// "account-delete-groups-only" (valores reales de los call-sites en `CloudSessionSignOut`).
+    /// "account-delete-private" (valores reales de los call-sites en `CloudSessionSignOut`).
     static func signOutStarted(path: String) {
         logger.notice("CloudSignOut started path=\(path, privacy: .public)")
     }
@@ -1421,6 +1436,12 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncAdopt orphanReconciled count=\(count, privacy: .public) identityAssigned=\(identityAssigned, privacy: .public) — el adoptador rescató writes de la ventana de cutover")
     }
 
+    /// El adopt casó `count` de sus `candidates` tipos de cambio sin identidad con los de la cuenta, en vez de subirlos
+    /// (card hov2). Sin PII: solo los conteos.
+    static func adoptExchangeRatesRebound(count: Int, candidates: Int) {
+        logger.notice("CloudSyncAdopt exchangeRatesRebound count=\(count, privacy: .public) candidates=\(candidates, privacy: .public) — tipos de cambio casados con la cuenta, no suben")
+    }
+
     /// El adopt tenía filas que subir y el store local no tiene ni el marcador de esa cuenta ni filas suyas: no sube nada (ticket
     /// `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). Sin PII: solo el conteo.
     static func adoptReconcileLineageUnproven(pending: Int) {
@@ -1707,6 +1728,12 @@ final class CloudSyncEngine {
     /// `historyTokenBrokenReanchored`). Expuesto para tests.
     private(set) var historyTokenBrokenReanchoredCount = 0
 
+    /// Las entidades cuyo índice cargó la última vuelta del drain. Testigo de YALA-IOS-2: una vuelta sin nada que
+    /// traducir no carga ningún modelo. Expuesto para tests.
+    private(set) var lastDrainIndexedEntities: Set<String> = []
+    /// Si la última vuelta leyó la cola entera para deduplicar (solo cuando hay algo que traducir). Expuesto para tests.
+    private(set) var lastDrainReadOutboxKeys = false
+
     // MARK: Espejo del outbox (A1, §d.5)
 
     /// Espejo App Group del `SyncOutbox` (durabilidad ante lightweight migration). `nil` = mirroring
@@ -1874,6 +1901,8 @@ final class CloudSyncEngine {
 
     private func performDrain(context: ModelContext) -> Bool {
         drainSeq += 1
+        lastDrainIndexedEntities = []
+        lastDrainReadOutboxKeys = false
         lastDrainCutTranslation = false
         drainContext = context
         drainRelayLedger = nil
@@ -1901,10 +1930,13 @@ final class CloudSyncEngine {
             let tokenState = decodeToken(cursor.historyTokenData)
             drainAdoptWindowFloor = cursor.lastDrainedTxAt
 
-            // 2) Barrido defensivo: asigna syncID a las filas vivas de los 6 tipos que aún no lo tengan
-            //    (SIN autor especial → la próxima vuelta captura ese cambio), y construye los índices
-            //    persistentID→modelo que usa la traducción. Save con autor por DEFECTO (no es outbox).
-            let lookups = try sweepAndBuildLookups(context)
+            // 2) Barrido defensivo, ANTES de leer el History: asigna syncID a las filas de los 6 tipos que aún no lo
+            //    tengan y guarda lo pendiente (autor por DEFECTO: no es outbox). Así ese cambio entra en la ventana de esta
+            //    misma vuelta —que lo salta por ser syncID-only y avanza el token—, ninguna fila sale de un drain sin syncID
+            //    (lo dan por hecho el snapshot de la migración y el Merkle) y, desde aquí, lo único sucio en el contexto es
+            //    del drain (lo que presupone el rollback de los pasos 6-7). **Desde YALA-IOS-2 solo LEE las filas sin
+            //    syncID** (`#Predicate` por tipo), no las tablas enteras: los índices van en el paso 3-ter.
+            try assignMissingSyncIDs(context)
 
             // 3) History posterior al token — o, con token ROTO (in-decodificable / fetch que lanza),
             //    el fallback ACOTADO por `lastDrainedTxAt` de DIFERIDOS #33 (rama decidida por
@@ -1932,9 +1964,21 @@ final class CloudSyncEngine {
             if tokenGuard.validatedByCompare { historyTokenValidated = true }
             let txns = tokenGuard.txns
 
+            // 3-ter) Índices persistentID→modelo que usa la traducción, **solo de las entidades que la ventana va a
+            //    traducir** (YALA-IOS-2): cargar e indexar los 16 tipos en cada vuelta —cada 60 s, tras cada pull y en
+            //    cada página de la subida de la migración— congelaba el hilo principal segundos con miles de registros,
+            //    aunque no hubiera nada que traducir. Cada índice solo lo consulta su propia entidad, y el conjunto sale
+            //    del mismo filtro que el bucle del paso 5 (autor y `personalEntityNames`): una entidad sin índice se
+            //    leería como «borrada» y su cambio no saldría. No escribe nada.
+            let indexed = Self.entitiesToTranslate(in: txns)
+            let lookups = try buildLookups(context, only: indexed)
+
             // 4) Pre-siembra del dedup con las filas de outbox YA existentes (kill-replay: absorbe las
             //    filas persistidas en un drain previo cuyo token no llegó a avanzar).
-            var seen = try existingOutboxKeys(context)
+            //    Solo si la ventana trae algo que traducir (YALA-IOS-2): `seen` solo lo lee la traducción, y leer la cola
+            //    entera en cada vuelta ociosa era el grueso de lo que quedaba del cuelgue con muchas filas pendientes
+            //    (sin red, o durante la subida de la migración).
+            var seen = indexed.isEmpty ? Set<String>() : try existingOutboxKeys(context)
 
             // 5) Traducción, transacción a transacción y en orden. `advancedToken` = high-water del STORE
             //    PERSONAL consumido (nil = no se consumió nada de ese store esta vuelta). Dos criterios
@@ -3048,6 +3092,36 @@ final class CloudSyncEngine {
                     changedColumns.formUnion(columns)
                 }
             }
+            // Una columna que el backend aún no conoce (`SyncCapability`) no viaja: si era lo único que cambió, no
+            // sale ninguna fila (un upsert sin campos movería el HLC de la fila sin traer nada). El enlace de tarjeta
+            // que se queda fuera se APUNTA, con cualquier valor (un desvínculo también): al subir de versión se emite.
+            let level = SyncCapability.declaredLevel
+            if level < SyncCapability.accountLinksSince, changedColumns.contains("parent_account_id"),
+               let account = model as? Account {
+                SyncCapability.noteSuppressedAccountLink(account.shortcutID)
+            }
+            // Igual con los cambios de monto «desde este mes» del flujo de caja (v3), también cuando se vacían.
+            if level < SyncCapability.cashFlowAmountChangesSince, changedColumns.contains("amount_changes_raw"),
+               let line = model as? CashFlowLine {
+                SyncCapability.noteSuppressedCashFlowAmountChange(line.id)
+            }
+            // Y con el destino de un favorito de transferencia (v4, card da5d), también cuando se quita.
+            if level < SyncCapability.favoriteDestinationSince, changedColumns.contains("destination_account_ref"),
+               let favorite = model as? FavoritePayment, let favoriteSyncID = favorite.syncID {
+                SyncCapability.noteSuppressedFavoriteDestination(favoriteSyncID)
+            }
+            // Y con el día de corte o los días de aviso de una tarjeta (v5, card nmtk), también cuando se quitan.
+            if level < SyncCapability.creditCardCycleSince,
+               !changedColumns.isDisjoint(with: SyncCapability.creditCardCycleColumns),
+               let account = model as? Account {
+                SyncCapability.noteSuppressedCreditCardCycle(account.shortcutID, columns: changedColumns)
+            }
+            // Y con la receta de líneas de tu parte (v6, Grupos B · card 1), también cuando se vacía.
+            if level < SyncCapability.splitLinesSince, changedColumns.contains("split_lines_raw"),
+               let item = model as? TransactionItem, let itemSyncID = item.syncID {
+                SyncCapability.noteSuppressedSplitLines(itemSyncID)
+            }
+            changedColumns.formIntersection(emission.columns(upTo: level))
             guard !changedColumns.isEmpty else { return }
             try appendUpsert(model: model, emission: emission, syncID: syncID, entityType: entityType,
                              changedColumns: changedColumns, tx: tx, rows: &rows, seen: &seen)
@@ -3177,54 +3251,89 @@ final class CloudSyncEngine {
 
     // MARK: - Barrido defensivo + índices
 
-    private func sweepAndBuildLookups(_ context: ModelContext) throws -> Lookups {
-        var lookups = Lookups()
-        lookups.transactionItem = try sweepType(TransactionItem.self, context: context)
-        lookups.inboxDraft = try sweepType(InboxDraft.self, context: context)
-        lookups.category = try sweepType(Category.self, context: context)
-        lookups.favoritePayment = try sweepType(FavoritePayment.self, context: context)
-        lookups.merchantMemory = try sweepType(MerchantMemory.self, context: context)
-        lookups.exchangeRate = try sweepType(ExchangeRate.self, context: context)
-        // I12: identidad = UUID persistido (nunca nil) → solo indexar, NUNCA acuñar (regenerarla sería
-        // un incidente D4, no una asignación defensiva). Fetch CONCRETO por tipo.
-        lookups.budget = try indexType(Budget.self, context: context)
-        lookups.scheduledPayment = try indexType(ScheduledPayment.self, context: context)
-        // I12 commit B: las 8 restantes — identidad = UUID persistido (`shortcutID`/`id`) → solo indexar.
-        lookups.account = try indexType(Account.self, context: context)
-        lookups.subcategory = try indexType(Subcategory.self, context: context)
-        lookups.tag = try indexType(Tag.self, context: context)
-        lookups.notificationItem = try indexType(NotificationItem.self, context: context)
-        lookups.cashFlowPlan = try indexType(CashFlowPlan.self, context: context)
-        lookups.cashFlowLine = try indexType(CashFlowLine.self, context: context)
-        lookups.cashFlowOverride = try indexType(CashFlowOverride.self, context: context)
-        lookups.groupBridgePreference = try indexType(GroupBridgePreference.self, context: context)
+    /// Las entidades que la traducción del paso 5 va a consultar en esta ventana: cambios de transacciones que NO
+    /// escribió el motor, de entidades sincronizables del store personal. Es el MISMO filtro que el bucle del paso 5
+    /// (autor y `personalEntityNames`), así que nunca deja fuera un índice que la traducción vaya a leer: una entidad
+    /// sin índice se leería como «borrada» y su cambio no saldría. Sin efectos, para tests.
+    static func entitiesToTranslate(
+        authorsAndEntities: [(author: String?, entities: [String])]
+    ) -> Set<String> {
+        var names = Set<String>()
+        for tx in authorsAndEntities where tx.author != outboxSaveAuthor {
+            names.formUnion(tx.entities.filter { personalEntityNames.contains($0) })
+        }
+        return names
+    }
+
+    private static func entitiesToTranslate(in txns: [DefaultHistoryTransaction]) -> Set<String> {
+        entitiesToTranslate(authorsAndEntities: txns.map { tx in
+            (author: tx.author, entities: tx.changes.map { $0.changedPersistentIdentifier.entityName })
+        })
+    }
+
+    /// Paso 2 del drain: `syncID` a las filas de los 6 tipos de identidad acuñada que no lo tengan, y guardado de todo lo
+    /// pendiente. Lee solo las filas sin `syncID` (fetch CONCRETO por tipo): en una vuelta normal no materializa ninguna.
+    private func assignMissingSyncIDs(_ context: ModelContext) throws {
+        try assignMissingSyncID(
+            FetchDescriptor<TransactionItem>(predicate: #Predicate<TransactionItem> { $0.syncID == nil }), context: context)
+        try assignMissingSyncID(
+            FetchDescriptor<InboxDraft>(predicate: #Predicate<InboxDraft> { $0.syncID == nil }), context: context)
+        try assignMissingSyncID(
+            FetchDescriptor<Category>(predicate: #Predicate<Category> { $0.syncID == nil }), context: context)
+        try assignMissingSyncID(
+            FetchDescriptor<FavoritePayment>(predicate: #Predicate<FavoritePayment> { $0.syncID == nil }), context: context)
+        try assignMissingSyncID(
+            FetchDescriptor<MerchantMemory>(predicate: #Predicate<MerchantMemory> { $0.syncID == nil }), context: context)
+        try assignMissingSyncID(
+            FetchDescriptor<ExchangeRate>(predicate: #Predicate<ExchangeRate> { $0.syncID == nil }), context: context)
         if context.hasChanges {
             // Autor por DEFECTO (no `outboxSaveAuthor`): el cambio de syncID DEBE quedar en el History
-            // para que la próxima vuelta lo procese (y lo salte por ser syncID-only), no ocultarse.
+            // para que la vuelta lo procese (y lo salte por ser syncID-only), no ocultarse.
             try context.save()
         }
+    }
+
+    /// Ejecuta un descriptor ya construido CONCRETO por tipo (regla de `#Predicate` genérico-protocolo: el genérico solo
+    /// ejecuta, nunca construye el predicado).
+    private func assignMissingSyncID<T: PersistentModel & SyncIdentifiable>(
+        _ descriptor: FetchDescriptor<T>, context: ModelContext
+    ) throws {
+        for model in try context.fetch(descriptor) where model.syncID == nil {
+            model.syncID = UUID()
+        }
+    }
+
+    /// Paso 3-ter del drain: los índices de las entidades que la ventana traduce. No escribe.
+    private func buildLookups(_ context: ModelContext, only entities: Set<String>) throws -> Lookups {
+        // El testigo apunta lo que de verdad se carga (YALA-IOS-2), no el conjunto pedido.
+        func wants(_ entityName: String) -> Bool {
+            guard entities.contains(entityName) else { return false }
+            lastDrainIndexedEntities.insert(entityName)
+            return true
+        }
+        var lookups = Lookups()
+        if wants(SyncEntityType.transactionItem) { lookups.transactionItem = try indexType(TransactionItem.self, context: context) }
+        if wants(SyncEntityType.inboxDraft) { lookups.inboxDraft = try indexType(InboxDraft.self, context: context) }
+        if wants(SyncEntityType.category) { lookups.category = try indexType(Category.self, context: context) }
+        if wants(SyncEntityType.favoritePayment) { lookups.favoritePayment = try indexType(FavoritePayment.self, context: context) }
+        if wants(SyncEntityType.merchantMemory) { lookups.merchantMemory = try indexType(MerchantMemory.self, context: context) }
+        if wants(SyncEntityType.exchangeRate) { lookups.exchangeRate = try indexType(ExchangeRate.self, context: context) }
+        if wants(SyncEntityType.budget) { lookups.budget = try indexType(Budget.self, context: context) }
+        if wants(SyncEntityType.scheduledPayment) { lookups.scheduledPayment = try indexType(ScheduledPayment.self, context: context) }
+        if wants(SyncEntityType.account) { lookups.account = try indexType(Account.self, context: context) }
+        if wants(SyncEntityType.subcategory) { lookups.subcategory = try indexType(Subcategory.self, context: context) }
+        if wants(SyncEntityType.tag) { lookups.tag = try indexType(Tag.self, context: context) }
+        if wants(SyncEntityType.notificationItem) { lookups.notificationItem = try indexType(NotificationItem.self, context: context) }
+        if wants(SyncEntityType.cashFlowPlan) { lookups.cashFlowPlan = try indexType(CashFlowPlan.self, context: context) }
+        if wants(SyncEntityType.cashFlowLine) { lookups.cashFlowLine = try indexType(CashFlowLine.self, context: context) }
+        if wants(SyncEntityType.cashFlowOverride) { lookups.cashFlowOverride = try indexType(CashFlowOverride.self, context: context) }
+        if wants(SyncEntityType.groupBridgePreference) { lookups.groupBridgePreference = try indexType(GroupBridgePreference.self, context: context) }
         return lookups
     }
 
-    /// Fetch CONCRETO por tipo (nunca genérico sobre keypath de protocolo — regla inviolable de
-    /// `#Predicate`; patrón `SyncIdentityService`). Asigna syncID a los nil y devuelve el índice.
-    private func sweepType<T: PersistentModel & SyncIdentifiable>(
-        _ type: T.Type, context: ModelContext
-    ) throws -> [PersistentIdentifier: T] {
-        let models = try context.fetch(FetchDescriptor<T>())
-        var map: [PersistentIdentifier: T] = [:]
-        for model in models {
-            if model.syncID == nil {
-                model.syncID = UUID()
-            }
-            map[model.persistentModelID] = model
-        }
-        return map
-    }
-
-    /// I12: barrido SIN acuñar para las entidades cuya identidad de sync es su UUID persistido (nunca
-    /// nil). Solo construye el índice persistentID→modelo (fetch CONCRETO por tipo). Regenerar ese UUID
-    /// es un incidente (canario D4), no una asignación defensiva → aquí jamás se toca.
+    /// Índice persistentID→modelo de un tipo (fetch CONCRETO por tipo). No acuña nada: el `syncID` de los 6 tipos
+    /// acuñados lo pone el paso 2, y el UUID de los otros 10 es su identidad persistida (regenerarlo sería un
+    /// incidente, canario D4).
     private func indexType<T: PersistentModel>(
         _ type: T.Type, context: ModelContext
     ) throws -> [PersistentIdentifier: T] {
@@ -3520,6 +3629,7 @@ final class CloudSyncEngine {
     // MARK: - Dedup / encoding
 
     private func existingOutboxKeys(_ context: ModelContext) throws -> Set<String> {
+        lastDrainReadOutboxKeys = true  // testigo de YALA-IOS-2: lo que de verdad se leyó, no la condición
         let existing = try context.fetch(FetchDescriptor<SyncOutbox>())
         var keys: Set<String> = []
         for row in existing {
@@ -3535,7 +3645,7 @@ final class CloudSyncEngine {
 
     /// Serializa el `field_hlcs` (mapa unidad-de-coherencia → HLC) como JSON plano `{unit:hlc}` con
     /// claves ordenadas (determinista). Vacío → `"{}"` (no ocurre en upserts: siempre hay ≥1 unidad).
-    private func encodeFieldHlcs(_ fieldHlcs: [String: String]) -> String {
+    func encodeFieldHlcs(_ fieldHlcs: [String: String]) -> String {
         guard !fieldHlcs.isEmpty else { return "{}" }
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys]
@@ -4162,6 +4272,8 @@ extension CloudSyncEngine {
                 try appendReferencing(account.scheduledPayments, SyncEntityType.scheduledPayment, EntityEmissionMap.scheduledPayment, { $0.id }, now, &emittedUpsertSyncIDs, &seen, &rows)
                 try appendReferencing(account.inboxDrafts, SyncEntityType.inboxDraft, EntityEmissionMap.inboxDraft, { $0.syncID }, now, &emittedUpsertSyncIDs, &seen, &rows)
                 try appendReferencing(account.favoritePayments, SyncEntityType.favoritePayment, EntityEmissionMap.favoritePayment, { $0.syncID }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                // Card da5d: el favorito que la tiene como DESTINO también la referencia (`destination_account_ref`).
+                try appendReferencing(account.destinationFavoritePayments, SyncEntityType.favoritePayment, EntityEmissionMap.favoritePayment, { $0.syncID }, now, &emittedUpsertSyncIDs, &seen, &rows)
                 perEntityCount[SyncEntityType.account, default: 0] += 1
 
             case SyncEntityType.subcategory:

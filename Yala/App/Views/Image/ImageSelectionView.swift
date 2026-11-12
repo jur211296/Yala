@@ -25,6 +25,8 @@ import UniformTypeIdentifiers
 
 struct ImageSelectionView: View {
     @Environment(\.dismiss) private var dismiss
+    /// Soltar archivos sobre la ventana solo existe donde hay varias ventanas (iPad, iPhone Duo abierto).
+    @Environment(\.supportsMultipleWindows) private var supportsMultipleWindows
     @Environment(\.modelContext) private var modelContext
     @Environment(SceneNavigation.self) private var navigation
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -54,11 +56,18 @@ struct ImageSelectionView: View {
     @State private var sharedPhotosLeftOut = 0
     /// Los ficheros de Archivo (o el PDF soltado) mientras se abren; se detiene en un PDF con contraseña.
     @State private var fileBatch: ImageFileBatch?
+    /// Archivos soltados que no entraron por el tope de la tanda, cuando la tanda trae un PDF y va por `openFiles`
+    /// (UX 2.2 · L15-12): el aviso de los que no entraron sale igual que en una tanda de fotos.
+    @State private var sharedFilesLeftOut = 0
     /// La contraseña que se está escribiendo. Solo vive aquí: se borra al usarla y al cerrar la hoja.
     @State private var pdfPassword = ""
     @State private var readTask: Task<Void, Never>?
     @State private var drafts: [InboxDraft] = []
     @State private var detailDraft: InboxDraft?
+    /// Qué registros están marcados en la hoja de varios (`MultiDraftReviewList`). Todo sale marcado.
+    @State private var selection = MultiDraftReviewLogic.Selection<PersistentIdentifier>()
+    /// La hoja del borrador pidió convertirlo en un gasto de grupo (`DraftGroupConversionFlow`).
+    @State private var conversionRequest: DraftGroupConversionRequest?
     @State private var saveFailed = false
     @State private var trialReported = false
     @State private var selectedDetent: PresentationDetent = .medium
@@ -68,6 +77,9 @@ struct ImageSelectionView: View {
     @State private var showFileImporter = false
     @State private var showCamera = false
     @State private var showUpgrade = false
+    /// «Apuntarlo a mano» (UX 2.2 · L4-3): cuando la foto o el archivo no se pueden leer, Nuevo registro sube encima y,
+    /// al cerrarse, se cierra también esta hoja.
+    @State private var showManualEntry = false
 
     /// Práctica guiada: recibos de ejemplo que se pueden leer sin tener uno a mano.
     var exampleImages: [UIImage]?
@@ -125,12 +137,20 @@ struct ImageSelectionView: View {
             ImageCameraPicker(onFinish: cameraFinished)
                 .ignoresSafeArea()
         }
-        .sheet(isPresented: $showUpgrade) {
-            UpgradePromptSheet(feature: .imageInput, context: .proFeature)
+        // Si compra Pro ahí, al volver se lee lo que faltaba (UX 2.2 · L17-9).
+        .proUpgradeSheet(isPresented: $showUpgrade, feature: .imageInput, context: .proFeature) {
+            continueAfterProUnlock()
+        }
+        .sheet(isPresented: $showManualEntry, onDismiss: { dismiss() }) {
+            NewTransactionView()
         }
         .sheet(item: $detailDraft, onDismiss: afterDetails) { draft in
-            InboxDraftEditSheet(draft: draft)
+            InboxDraftEditSheet(draft: draft, onConvertToGroupExpense: { converting, groups in
+                conversionRequest = DraftGroupConversionRequest(draft: converting, groups: groups)
+            })
         }
+        // «Convertir a gasto compartido» desde la hoja del borrador, como en la Bandeja (bug del 2026-11-03).
+        .draftGroupConversionFlow($conversionRequest, onFinished: afterGroupConversion)
         .onChange(of: selectedPhotos) { _, newValue in
             loadPickedPhotos(newValue)
         }
@@ -211,6 +231,14 @@ struct ImageSelectionView: View {
                     .foregroundStyle(.secondary)
             }
 
+            // Donde se puede soltar un archivo sobre Yala (iPad, iPhone Duo abierto), se dice (UX 2.2 · L4-11).
+            if supportsMultipleWindows && !isSetupTrial {
+                Label(L10n.Image.Entry.dropHint, systemImage: "square.and.arrow.down")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("image_drop_hint")
+            }
+
             Spacer(minLength: DS.Spacing.none)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -251,14 +279,14 @@ struct ImageSelectionView: View {
             VStack(spacing: DS.Spacing.sm) {
                 Image(systemName: icon)
                     .font(DS.Typography.title3)
-                    .foregroundStyle(isPrimary ? Color.contrastingText(for: theme.accent) : theme.accent)
+                    .foregroundStyle(isPrimary ? theme.onAccent : theme.accentText)
                     .frame(width: 48, height: 48) // A11Y-DT: disco del icono de la fuente
                     .background(
-                        Circle().fill(isPrimary ? Color.contrastingText(for: theme.accent).opacity(0.18) : theme.accent.opacity(0.15))
+                        Circle().fill(isPrimary ? theme.onAccent.opacity(0.18) : theme.accent.opacity(0.15))
                     )
                 Text(title)
                     .font(DS.Typography.label)
-                    .foregroundStyle(isPrimary ? Color.contrastingText(for: theme.accent) : Color.primary)
+                    .foregroundStyle(isPrimary ? theme.onAccent : Color.primary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             }
@@ -324,6 +352,12 @@ struct ImageSelectionView: View {
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                // Qué contraseña es (UX 2.2 · L4-15): no la eligió la persona, la puso el banco.
+                Label(L10n.Image.Entry.passwordHint, systemImage: "lightbulb")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("image_password_hint")
             }
 
             VStack(alignment: .leading, spacing: DS.Spacing.sm) {
@@ -339,6 +373,8 @@ struct ImageSelectionView: View {
                             .fill(.thCard)
                     )
                     .accessibilityIdentifier("image_password_field")
+                    // El aviso de contraseña incorrecta se va al empezar a escribir otra (UX 2.2 · L4-15).
+                    .onChange(of: pdfPassword) { _, newValue in clearWrongPasswordIfTyping(newValue) }
                 if wrongPassword {
                     Text(L10n.Image.Entry.passwordWrong)
                         .font(DS.Typography.caption)
@@ -365,6 +401,11 @@ struct ImageSelectionView: View {
         .dismissKeyboardOnTap()
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("image_password")
+    }
+
+    private func clearWrongPasswordIfTyping(_ newValue: String) {
+        guard case .password(wrongPassword: true) = phase, !newValue.isEmpty else { return }
+        phase = .password(wrongPassword: false)
     }
 
     // MARK: - Leyendo
@@ -429,8 +470,28 @@ struct ImageSelectionView: View {
         !drafts.isEmpty && pendingDrafts.isEmpty
     }
 
+    /// Con varios, la hoja elige: se guarda lo marcado y lo demás se queda en la Bandeja.
+    private var isMulti: Bool { drafts.count > 1 }
+
+    private var reviewItems: [MultiDraftReviewLogic.Item<PersistentIdentifier>] {
+        MultiDraftReviewLogic.items(for: drafts, defaultCurrency: appPreferences.defaultCurrencyCode.rawValue)
+    }
+
+    /// Lo que «Guardar» aprueba: con varios, solo los marcados; con uno, el pendiente.
+    private var draftsToSave: [InboxDraft] {
+        guard isMulti else { return pendingDrafts }
+        return pendingDrafts.filter { selection.contains($0.persistentModelID) }
+    }
+
     private var canSave: Bool {
-        VoiceEntryFlowLogic.canSave(pendingDrafts.map(readiness))
+        isMulti
+            ? MultiDraftReviewLogic.canSave(reviewItems, selection)
+            : VoiceEntryFlowLogic.canSave(pendingDrafts.map(readiness))
+    }
+
+    /// Sin nada más que hacer en la hoja: todo guardado o, con varios, lo marcado ya guardado.
+    private var isFinished: Bool {
+        isMulti ? MultiDraftReviewLogic.isFinished(reviewItems, selection) : allSaved
     }
 
     private var reviewContent: some View {
@@ -447,9 +508,17 @@ struct ImageSelectionView: View {
                         thumbnails
                     }
 
-                    ForEach(drafts, id: \.persistentModelID) { draft in
-                        VoiceDraftReviewCard(draft: draft) {
-                            detailDraft = draft
+                    if dynamicTypeSize.isAccessibilitySize {
+                        missingHint
+                    }
+
+                    if isMulti {
+                        MultiDraftReviewList(drafts: drafts, selection: $selection) { detailDraft = $0 }
+                    } else {
+                        ForEach(drafts, id: \.persistentModelID) { draft in
+                            VoiceDraftReviewCard(draft: draft) {
+                                detailDraft = draft
+                            }
                         }
                     }
 
@@ -465,15 +534,20 @@ struct ImageSelectionView: View {
                         sharedPhotosLeftOutNote
                     }
 
-                    if !allSaved {
-                        Text(L10n.Voice.reviewInboxNote)
+                    if let note = inboxNote {
+                        Text(note)
                             .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
+                            .accessibilityIdentifier("review_inbox_note")
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .scrollBounceBehavior(.basedOnSize)
+
+            if !dynamicTypeSize.isAccessibilitySize {
+                missingHint
+            }
 
             if saveFailed {
                 Text(L10n.Chat.Draft.saveFailedGeneric)
@@ -482,8 +556,8 @@ struct ImageSelectionView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            HStack(spacing: DS.Spacing.md) {
-                if allSaved {
+            actionsLayout {
+                if isFinished {
                     primaryButton(L10n.Action.done, isEnabled: true, identifier: "image_finish") {
                         dismiss()
                     }
@@ -494,6 +568,37 @@ struct ImageSelectionView: View {
             }
         }
         .padding(.top, DS.Spacing.xs)
+        .onChange(of: drafts.map(\.persistentModelID), initial: true) { _, ids in selection.sync(with: ids) }
+    }
+
+    /// «Completa los marcados en ámbar…». A tamaño normal va fijo encima de los botones; con texto de accesibilidad
+    /// ocupa cuatro líneas y, fijo abajo, dejaba la lista en una franja (pase de estrés 2.2, card 48ri): ahí entra en el
+    /// scroll, bajo el título.
+    @ViewBuilder
+    private var missingHint: some View {
+        if isMulti, !isFinished, MultiDraftReviewLogic.incompleteMarked(reviewItems, selection) > 0 {
+            Text(L10n.Voice.reviewMissingHint)
+                .font(DS.Typography.caption)
+                .foregroundStyle(DS.Semantic.warningForeground)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityIdentifier("multi_review_missing_hint")
+        }
+    }
+
+    /// Los botones de abajo, uno al lado del otro; con texto de accesibilidad, uno encima del otro a todo lo ancho, o
+    /// «Guardar 7 · S/ …» se partía por sílabas. `AnyLayout`: cambiar el tamaño de texto no cambia su identidad.
+    private var actionsLayout: AnyLayout {
+        dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(spacing: DS.Spacing.sm))
+            : AnyLayout(HStackLayout(spacing: DS.Spacing.md))
+    }
+
+    /// Con varios y alguno sin marcar, la hoja dice que esos siguen en la Bandeja; si no, el aviso de siempre.
+    private var inboxNote: String? {
+        if isMulti, MultiDraftReviewLogic.leavesUnmarkedInInbox(reviewItems, selection) {
+            return L10n.Voice.reviewLeftInInbox
+        }
+        return allSaved ? nil : L10n.Voice.reviewInboxNote
     }
 
     /// Las fotos de esta vez, en pequeño; las que no se leyeron, atenuadas y con aviso.
@@ -533,6 +638,8 @@ struct ImageSelectionView: View {
                     .foregroundStyle(DS.Semantic.warningForeground)
                     .frame(minHeight: 44)
                     .accessibilityIdentifier("image_retry_failed")
+            case .dailyLimit(let count):
+                failedPhotosText(L10n.Image.Entry.dailyLimitLeftOut(count))
             case .trialUsedUp(let count):
                 failedPhotosText(L10n.Image.Entry.trialLeftOut(count))
                 Spacer(minLength: DS.Spacing.sm)
@@ -594,8 +701,17 @@ struct ImageSelectionView: View {
         return drafts.count > 1 ? L10n.Image.Entry.reviewTitleMany(drafts.count) : L10n.Image.Entry.reviewTitle
     }
 
+    /// Con varios, cuántos marcados y cuánto suman («Guardar 5 · S/ 224.81»); sin cifra si mezclan divisas.
     private var saveTitle: String {
-        pendingDrafts.count > 1 ? L10n.Voice.saveMany(pendingDrafts.count) : L10n.Chat.Draft.saveButton
+        guard isMulti else {
+            return pendingDrafts.count > 1 ? L10n.Voice.saveMany(pendingDrafts.count) : L10n.Chat.Draft.saveButton
+        }
+        let toSave = MultiDraftReviewLogic.toSave(reviewItems, selection)
+        guard !toSave.isEmpty else { return L10n.Chat.Draft.saveButton }
+        guard let code = MultiDraftReviewLogic.sharedCurrency(toSave) else { return L10n.Voice.saveMany(toSave.count) }
+        let amount = appPreferences.currency(
+            MultiDraftReviewLogic.saveTotal(reviewItems, selection), currencyCode: code, forceFullPrecision: true)
+        return L10n.Voice.reviewSaveSelected(toSave.count, amount: amount)
     }
 
     private func readiness(_ draft: InboxDraft) -> VoiceDraftReadiness {
@@ -649,14 +765,16 @@ struct ImageSelectionView: View {
         case .cameraPermission:
             secondaryButton(L10n.Image.Entry.otherPhoto, identifier: "image_other_photo", action: chooseAnother)
             primaryButton(L10n.Image.openSettings, isEnabled: true, identifier: "image_open_settings", action: openSystemSettings)
-        case .serviceUnavailable:
-            primaryButton(L10n.Action.close, isEnabled: true, identifier: "image_failure_close") { dismiss() }
+        case .serviceUnavailable, .dailyLimit:
+            secondaryButton(L10n.Action.close, identifier: "image_failure_close") { dismiss() }
+            primaryButton(L10n.Voice.enterManually, isEnabled: true, identifier: "image_enter_manually") { showManualEntry = true }
         case .trialUsedUp:
             secondaryButton(L10n.Action.close, identifier: "image_failure_close") { dismiss() }
             primaryButton(L10n.Voice.trialSeePro, isEnabled: true, identifier: "image_trial_see_pro") { showUpgrade = true }
         case .noAmount, .unreadable, .unreadableFile:
+            secondaryButton(L10n.Voice.enterManually, identifier: "image_enter_manually") { showManualEntry = true }
             primaryButton(L10n.Image.Entry.otherPhoto, isEnabled: true, identifier: "image_other_photo", action: chooseAnother)
-        case .noConnection, .generic, .saveFailed:
+        case .noConnection, .generic, .saveFailed, .busy:
             if failure.retriesSamePhotos, !readingImages.isEmpty {
                 secondaryButton(L10n.Image.Entry.otherPhoto, identifier: "image_other_photo", action: chooseAnother)
                 primaryButton(L10n.Action.retry, isEnabled: true, identifier: "image_retry") {
@@ -676,6 +794,8 @@ struct ImageSelectionView: View {
         case .unreadable: "photo"
         case .unreadableFile: "doc"
         case .trialUsedUp: "sparkles"
+        case .busy: "hourglass"
+        case .dailyLimit: "calendar"
         case .serviceUnavailable, .saveFailed, .generic: "exclamationmark"
         }
     }
@@ -688,6 +808,8 @@ struct ImageSelectionView: View {
         case .unreadable: L10n.Image.Entry.failureUnreadableTitle
         case .unreadableFile: L10n.Image.Entry.failureUnreadableFileTitle
         case .trialUsedUp: L10n.Image.Entry.failureTrialUsedUpTitle
+        case .busy: L10n.Image.Entry.failureBusyTitle
+        case .dailyLimit: L10n.Image.Entry.failureDailyLimitTitle
         case .serviceUnavailable, .saveFailed, .generic: L10n.Image.Entry.failureGenericTitle
         }
     }
@@ -703,6 +825,8 @@ struct ImageSelectionView: View {
         case .saveFailed: L10n.Image.errorSaveFailed
         case .generic: L10n.Image.Entry.failureGenericMessage
         case .trialUsedUp: L10n.Image.Entry.failureTrialUsedUpMessage
+        case .busy: L10n.Image.Entry.failureBusyMessage
+        case .dailyLimit: L10n.Image.Entry.failureDailyLimitMessage
         }
     }
 
@@ -725,7 +849,7 @@ struct ImageSelectionView: View {
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
                 // Apagado se VE apagado: con fondo explícito, `.disabled` no atenúa nada (#348).
-                .foregroundStyle(isEnabled ? Color.contrastingText(for: theme.accent) : Color.secondary)
+                .foregroundStyle(isEnabled ? theme.onAccent : Color.secondary)
                 .frame(maxWidth: .infinity, minHeight: buttonHeight)
                 .padding(.horizontal, DS.Spacing.sm)
                 .background(
@@ -835,7 +959,7 @@ struct ImageSelectionView: View {
         }
     }
 
-    private static func isPDF(_ url: URL) -> Bool {
+    nonisolated private static func isPDF(_ url: URL) -> Bool {
         UTType(filenameExtension: url.pathExtension)?.conforms(to: .pdf) == true
     }
 
@@ -879,6 +1003,8 @@ struct ImageSelectionView: View {
     private func finishFileBatch(_ batch: ImageFileBatch) {
         fileBatch = nil
         pdfPassword = ""
+        let sharedLeftOut = sharedFilesLeftOut
+        sharedFilesLeftOut = 0
         guard !batch.images.isEmpty else {
             // Solo se saltó la contraseña: no falló nada, se vuelve a elegir.
             if batch.unreadableFiles == 0, batch.skippedLockedFiles > 0 {
@@ -888,7 +1014,9 @@ struct ImageSelectionView: View {
             }
             return
         }
-        startReading(batch.images, documentPages: batch.documentPages, pagesLeftOut: batch.pagesLeftOut)
+        startReading(
+            batch.images, documentPages: batch.documentPages, pagesLeftOut: batch.pagesLeftOut,
+            sharedPhotosLeftOut: sharedLeftOut)
     }
 
     /// Una foto compartida desde otra app (o soltada en el iPad) llega ya elegida: se lee directamente. Varias compartidas
@@ -906,6 +1034,12 @@ struct ImageSelectionView: View {
         let batch = SharedContainerService.pendingImageBatch(containing: url)
         guard batch.count > 1 else {
             readSharedFile(url)
+            return
+        }
+        // Varios archivos soltados en el iPad pueden traer PDFs (UX 2.2 · L15-12): esos se leen como los de Archivo, cada
+        // página una foto, hasta el tope de la tanda. Las fotos compartidas desde otra app siguen el camino de abajo.
+        if batch.contains(where: { Self.isPDF($0) }) {
+            readSharedFiles(batch)
             return
         }
         var loaded: [UIImage] = []
@@ -927,6 +1061,24 @@ struct ImageSelectionView: View {
             return
         }
         startReading(loaded, sharedPhotosLeftOut: SharedImageBatch.leftOutCount(for: url))
+    }
+
+    /// Una tanda soltada con algún PDF: fotos y PDF juntos, por el mismo camino que varios archivos elegidos en Archivo.
+    private func readSharedFiles(_ urls: [URL]) {
+        var files: [ImageFileBatch.File] = []
+        for member in urls {
+            do {
+                let data = try Data(contentsOf: member)
+                files.append(Self.isPDF(member) ? .pdf(data) : .image(data))
+            } catch {
+                #if DEBUG
+                print("ImageSelectionView: Error loading dropped file \(member.lastPathComponent): \(error)")
+                #endif
+            }
+            SharedContainerService.removePendingImage(at: member)
+        }
+        sharedFilesLeftOut = urls.first.map(SharedImageBatch.leftOutCount(for:)) ?? 0
+        openFiles(files)
     }
 
     /// Un solo fichero compartido o soltado: una foto, o un PDF que se trocea aquí.
@@ -978,6 +1130,16 @@ struct ImageSelectionView: View {
         beginReading(batch, appending: false)
     }
 
+    /// Tras comprar Pro desde «Ver Yala Pro» con el cupo de prueba agotado: si la lectura entera se paró, se elige otra
+    /// foto; si quedaron fotos fuera, se leen esas (UX 2.2 · L17-9).
+    private func continueAfterProUnlock() {
+        if case .failure = phase {
+            chooseAnother()
+        } else {
+            retryFailedPhotos()
+        }
+    }
+
     /// Reintenta solo las que fallaron, sin perder lo ya leído.
     private func retryFailedPhotos() {
         guard !failedImages.isEmpty else { return }
@@ -1014,20 +1176,20 @@ struct ImageSelectionView: View {
         var readDrafts: [InboxDraft] = []
         var failed: [UIImage] = []
         var reasons: [ImageEntryFailure] = []
-        var skipsTheRest = false
+        var skipReason: ImageEntryFailure?
 
         func fail(_ image: UIImage, _ failure: ImageEntryFailure) {
             outcomes.append(.failed(failure))
             failed.append(image)
             reasons.append(failure)
-            skipsTheRest = skipsTheRest || ImageEntryFlowLogic.skipsRemainingReads(after: failure)
+            if skipReason == nil, ImageEntryFlowLogic.skipsRemainingReads(after: failure) { skipReason = failure }
         }
 
         for (index, image) in batch.enumerated() {
             readingIndex = index
-            // Sin cupo de prueba, las siguientes fallarían igual: no se piden.
-            guard !skipsTheRest else {
-                fail(image, .trialUsedUp)
+            // Sin cupo (de prueba o del día), las siguientes fallarían igual: no se piden.
+            if let skipReason {
+                fail(image, skipReason)
                 continue
             }
             do {
@@ -1049,6 +1211,9 @@ struct ImageSelectionView: View {
                 #if DEBUG
                 print("ImageSelectionView: Error reading photo \(index + 1): \(error)")
                 #endif
+                if let detail = ImageEntryFlowLogic.canaryDetail(for: error) {
+                    MetricsService.canaryOnce(.aiEntryReadFailed, key: detail, detail: detail)
+                }
                 fail(image, ImageEntryFlowLogic.failure(for: error, isConnected: networkMonitor.isConnected))
             } catch {
                 guard !Task.isCancelled else { return }
@@ -1081,7 +1246,7 @@ struct ImageSelectionView: View {
             failedImages = failed
             failedReasons = reasons
             phase = .review
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            DS.Haptic.success()
         }
     }
 
@@ -1113,6 +1278,9 @@ struct ImageSelectionView: View {
         if let profile = UITestHooks.imageResult {
             // `trial-used-up`: el gateway contesta que el cupo de prueba de fotos se agotó (403 yala_trial_exhausted).
             if profile == "trial-used-up" { throw VisionError.networkError(ProxyErrorMapper.trialExhaustedResponse()) }
+            // `busy` / `daily-limit`: el gateway contesta 429 por ráfaga o por cupo del día (card vv0k).
+            if profile == "busy" { throw VisionError.networkError(ProxyErrorMapper.quotaResponse(type: "yala_quota_burst")) }
+            if profile == "daily-limit" { throw VisionError.networkError(ProxyErrorMapper.quotaResponse(type: "yala_quota_daily")) }
             return try await uiTestDrafts(profile, index: index)
         }
         #endif
@@ -1176,7 +1344,7 @@ struct ImageSelectionView: View {
     private func saveAll() {
         saveFailed = false
         DraftService.shared.setContext(modelContext)
-        for draft in pendingDrafts {
+        for draft in draftsToSave {
             do {
                 let transaction = try DraftService.shared.approveDraft(draft, currencyConverter: currencyConverter)
                 reportTrial(id: transaction.persistentModelID, name: draft.note, kind: .transaction)
@@ -1189,7 +1357,15 @@ struct ImageSelectionView: View {
             }
         }
         if !saveFailed {
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            DS.Haptic.success()
+        }
+    }
+
+    /// Tras el formulario de grupo: el borrador convertido ya no está, y el aviso dice adónde fue.
+    private func afterGroupConversion(_ group: SplitGroup?) {
+        afterDetails()
+        if let group {
+            DraftGroupConversion.announce(group, navigation: navigation) { dismiss() }
         }
     }
 
@@ -1281,6 +1457,9 @@ struct ImageSelectionView: View {
         formatter.dateFormat = "yyyy-MM-dd"
         formatter.locale = Locale(identifier: "en_US_POSIX")
         let today = formatter.string(from: Date.now)
+        if profile == "many" {
+            return uiTestManyDrafts(formatter: formatter)
+        }
         let isFirst = index == 0
         // `pages`: un movimiento distinto por página, para que la deduplicación no junte dos páginas en uno.
         let perPage = profile.hasPrefix("pages")
@@ -1316,6 +1495,55 @@ struct ImageSelectionView: View {
             }
         }
         return made
+    }
+
+    /// `many`: un estado de cuenta con siete movimientos en cuatro días y cuatro categorías, dos sin categoría, para la
+    /// hoja de varios registros (resumen, selección y agrupado por día).
+    private func uiTestManyDrafts(formatter: DateFormatter) -> [InboxDraft] {
+        let calendar = Calendar.current
+        func day(_ offset: Int) -> String {
+            formatter.string(from: calendar.date(byAdding: .day, value: -offset, to: Date.now) ?? Date.now)
+        }
+        let currency = uiTestAccountCurrency()
+        let rows: [(String, Double, Int, [String])] = [
+            ("Wong", 83.47, 0, ["Supermercado"]), ("Starbucks", 6.25, 0, ["Café", "Restaurante"]), ("Uber", 18.90, 1, []),
+            ("Netflix", 15.49, 1, ["Streaming", "Suscrip"]), ("Primax", 52.10, 2, ["Gasolina", "Combustible"]),
+            ("Ladislao Bal", 5.00, 3, []), ("Warda", 67.50, 3, ["Supermercado"]),
+        ]
+        let response = VisionResponse(
+            imageType: "list",
+            transactions: rows.map {
+                VisionTransaction(amount: -$0.1, date: day($0.2), merchant: $0.0, note: nil, currency: currency)
+            },
+            confidence: VisionConfidence(overall: 1, imageType: 1)
+        )
+        let made = VisionDraftFactory.makeDrafts(from: response, rawText: nil, context: modelContext)
+        let account = currency.flatMap {
+            UITestDemoAccountLogic.account(for: .photo, among: uiTestActiveAccounts(), currencyCode: $0)
+        }
+        let pool = uiTestSubcategoriesByCategory()
+        for (draft, row) in zip(made, rows) {
+            if draft.account == nil, let account {
+                draft.account = account
+                draft.needsUserInput.removeAll { $0 == DraftInputRequirement.account }
+            }
+            draft.subcategory = row.3.lazy.compactMap { prefix in pool.first { $0.name.hasPrefix(prefix) } }.first
+            if draft.subcategory != nil {
+                draft.needsUserInput.removeAll { $0 == DraftInputRequirement.subcategory }
+            }
+        }
+        return made
+    }
+
+    /// Las subcategorías de gasto visibles, en orden de nombre.
+    private func uiTestSubcategoriesByCategory() -> [Subcategory] {
+        let descriptor = FetchDescriptor<Subcategory>(sortBy: [SortDescriptor(\.name)])
+        do {
+            return try modelContext.fetch(descriptor).filter { $0.isVisible && !$0.safeCategory.isIncome }
+        } catch {
+            print("ImageSelectionView: Error fetching subcategories for the UI-test seam: \(error)")
+            return []
+        }
     }
 
     private func uiTestActiveAccounts() -> [Account] {

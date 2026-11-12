@@ -41,11 +41,14 @@ enum MetricsCanary: String {
     case cloudkitDuplicateDetected
     case cloudkitTransferOrphanRepaired
     case cloudkitTransferCollisionDetected
-    case cloudkitBudgetCSVMirrorRebuilt
     case budgetFiltersAppearEmpty
     case appEntityShortcutIDsRegenerated
     case tagCatalogRebuilt
     case bridgeVirtualLentTxFailed
+    /// La limpieza automática tras una sincronización quitó un borrador «Elige cuenta» o un «Préstamo a grupos» repetido
+    /// de un gasto de grupo cuyo registro real ya estaba (bug del 2026-11-09). `detail` = cuántos gastos. Distinto de cero
+    /// mide en la flota la pasada del puente que no vio el registro: es el disparador que la sesión no pudo aislar.
+    case groupBridgeLeftoversRemoved
     /// El barrido del arranque encontró transacciones puenteadas cuyo gasto/liquidación de grupo ya no
     /// existe y las reparó. Un pico tras un release = la cola de fantasmas que dejó el borrado remoto sin
     /// des-puentear (bug device 2026-08-02), esperada y de una sola vez por usuario. **Sostenido en >0
@@ -93,14 +96,11 @@ enum MetricsCanary: String {
     /// pierde el aviso, que vuelve en el arranque siguiente, y no la sesión. Sin `detail`.
     case appleIDCloseNoticeNotPresented
     case iCloudRestoreOutcome
-    case cloudkitGroupSyncGateHardCap
-    case cloudkitGroupSyncPromotedToAuto
-    case cloudkitGroupSyncNoImportPromote
-    case cloudkitGroupZoneRecovered
-    case cloudkitGroupRecordsRecovered
-    case cloudkitGroupRecordSaveRejected
-    case cloudkitGroupEnqueueDroppedNoEngine
-    case groupsIdentityBootMismatch
+    /// La vuelta a iCloud se le niega a un teléfono en la nube SIN mapa de CloudKit y sin marca born-cloud
+    /// (`ReverseEligibility.degradedNoMap`): un migrado que perdió el mapa, la población a la que volver le
+    /// resucitaría borrados. Una vez por proceso (la pantalla decide cada segundo). Lo prometía el diseño desde
+    /// septiembre y nadie lo emitía (card `yf9t`). Sin `detail`.
+    case cloudReverseDegradedNoMap
     /// El gate de boot-saves del store personal (`awaitPersonalImportForBootSave`) difirió ≥3 veces
     /// CONSECUTIVAS sin que ningún save resolviera entremedio — señal SUAVE: los ~8 boot-tasks
     /// concurrentes comparten el contador (resets intercalados), así que el umbral puede alcanzarse
@@ -141,6 +141,13 @@ enum MetricsCanary: String {
     /// canario es lo que la confirma o la refuta en la flota. Distinto de cero = había teléfonos que se quedaban esperando
     /// para siempre a un token.
     case attestRefreshAbandoned
+    /// Una lectura de foto o de nota de voz que falló EN EL CAMINO al gateway (card vv0k del QA guiado del 2026-10-19: la
+    /// primera foto tras instalar falló al instante y no llegó ningún canario, porque ese camino no emitía nada). `detail` =
+    /// `<photo|voice-transcribe|voice-parse>|<tipo>`: el `error.type` del gateway (`yala_quota_burst`, `yala_attest_invalid`…)
+    /// o la familia local (`attest`, `url:<código>`, `decoding`, `invalidResponse`, `other`), sin datos de la persona
+    /// (`ProxyErrorMapper.failureKind`). Una vez por proceso y tipo (`canaryOnce`): una tanda de diez fotos con el mismo
+    /// fallo no llena el spool. El cupo de prueba agotado no sale: es el desenlace esperado del plan free, no una avería.
+    case aiEntryReadFailed
     /// «Activar la nube» venció los 300 s de pre-espera a que iCloud termine de importar
     /// (`CloudMigrationController.awaitImportQuiescenceForResume`). Una vez por proceso. `detail` =
     /// `<importing|recentImport>|<0|1-10|11-50|gt50>`: si al vencer seguía un import en curso o habían terminado imports
@@ -148,6 +155,14 @@ enum MetricsCanary: String {
     /// (ticket `cloud-activation-waits-for-icloud-with-no-way-out`): con 6 movimientos la espera pasó de 5 min y la causa
     /// quedó inferida.
     case cloudMigrationImportNotSettled
+    /// «Activar la nube» o «Volver a iCloud» cambió de paso (ticket `cloud-progress-shows-real-steps-and-counts`, card
+    /// ppxk). `detail` = `<de>><a>` con las fases de `CloudMigrationTimelineLogic.label`; `x` = segundos que duró el paso
+    /// que se deja, o -1 si empezó en otro proceso. Con la hora del servidor, la serie de un teléfono dice dónde se va el
+    /// tiempo: hasta este canario el TF19 pasó 9 min sin un solo evento entre el claim y el corte.
+    case cloudMigrationStep
+    /// Terminó una espera a que iCloud termine de traer datos. `detail` = `<preWait|runner>|<settled|cut|cap>`; `x` =
+    /// segundos esperados. Solo si hubo espera (con iCloud quieto no sale).
+    case cloudMigrationImportWaited
     case cloudSyncOutboxMirrorRehydrated
     case cloudSyncOutboxMirrorDivergence
     case cloudSyncMutationRejected
@@ -321,8 +336,6 @@ enum MetricsCanary: String {
     /// relevara a la bienvenida, y volvió la bienvenida normal. `detail` = cómo se abrió (`cold`/`warm`). >0 sostenido =
     /// algo vuelve a retrasar el encaminamiento de la invitación en el arranque.
     case inviteOpeningCeilingReached
-    case inviteReEmittedFromStore
-    case invitePendingExpired
 
     // Reparador de tasas provisionales (arranque)
     /// El barrido de arranque recorrió la cola de transacciones con tasa provisional y **no curó
@@ -363,7 +376,7 @@ enum MetricsCanary: String {
     case groupsDetachSessionSurvived
     /// **Un cierre de sesión soltó la sesión en la nube y la sesión SIGUE guardada** (ticket
     /// `sign-out-exits-do-not-verify-the-cloud-session-closed`). `detail` = `path=<private|private-with-groups|
-    /// icloud-groups-session|cloud-secure|account-delete-cloud|account-delete-groups-only>`, sin PII. En los cuatro cierres
+    /// icloud-groups-session|cloud-secure|account-delete-cloud|account-delete-private>`, sin PII. En los cuatro cierres
     /// voluntarios el gesto se para sin armar el borrado; en los dos tras borrar la cuenta sigue y arma el retiro de la
     /// sesión para el arranque siguiente. Hermano del de arriba y, como él, **es la medición**: nadie sabe si pasa.
     case signOutSessionSurvived
@@ -429,6 +442,16 @@ enum MetricsCanary: String {
     /// El cierre siguió sin subir esos cambios personales, con la persona conforme: se pierden con el borrado del arranque.
     /// `detail` = `cause=noSession pending=N`. Frente al primero, cuántos eligieron salir sin volver a entrar.
     case cloudSignOutPersonalLossDiscarded
+
+    // «Anotar con Siri» (auditoría UX 2.2, L15-6: el modelo del iPhone para quien no tiene Pro, encendido el 2026-10-21)
+    /// Cada invocación del atajo: qué camino eligió el gate. `detail` = `route=<server|onDevice|upgrade> model=<estado>`
+    /// (`SiriOnDeviceModelState`), sin PII. Cuenta INVOCACIONES, no personas. `upgrade` es la hoja de Pro; sostenido con
+    /// `model=available` = el gate no enciende el camino del teléfono (antes de esto, el gate Pro de Siri no dejaba
+    /// señal: así pasó desapercibido el bug de abril que decía «necesitas Pro» a usuarios Pro).
+    case siriEntryRoute
+    /// Una lectura del dictado con el modelo del iPhone. `detail` = `ok` | `noAmount` (leyó, pero sin importe) |
+    /// `failed:<tipo>#<código>`; `value` = milisegundos que tardó. Sin el texto, nunca.
+    case siriOnDeviceParse
 }
 
 // MARK: - Servicio
@@ -529,6 +552,18 @@ enum MetricsService {
         kickDrain()
     }
 
+    /// Canario desde un App Intent. El sistema puede lanzar Yala solo para el intent, sin el arranque que pone en marcha
+    /// el servicio: entonces el evento va directo al spool (`.standard`, el mismo que lee `start()`) y sale en el
+    /// siguiente arranque o primer plano. Bajo `-uitest` y en tests, nada.
+    static func canaryFromIntent(_ name: MetricsCanary, detail: String?, value: Double = 1) {
+        if isStarted {
+            canary(name, detail: detail, value: value)
+            return
+        }
+        guard !UITestHooks.isActive, !SwiftDataConfiguration.isRunningTests else { return }
+        MetricsSpool.enqueue(.canary(name: name.rawValue, detail: detail, value: value), defaults: .standard)
+    }
+
     /// Canario dedupeado por sesión de proceso (clave compuesta) — paridad `trackOnce`.
     static func canaryOnce(_ name: MetricsCanary, key: String, detail: String? = nil, value: Double = 1) {
         let compositeKey = "\(name.rawValue):\(key)"
@@ -627,6 +662,16 @@ extension MetricsService {
     /// El marcador del cutover sigue sin exportar. Se emite en CADA observación: un valor sostenido y alto
     /// aquí es la señal de un atasco SISTÉMICO (p.ej. el record type sin desplegar a CloudKit Production),
     /// visible mucho antes de que ningún device agote su presupuesto.
+    /// Un cambio de paso de la ida o la vuelta (`cloudMigrationStep`).
+    static func cloudMigrationStep(from: String, to: String, previousStepSeconds: Double?) {
+        canary(.cloudMigrationStep, detail: "\(from)>\(to)", value: previousStepSeconds ?? -1)
+    }
+
+    /// Una espera a iCloud que terminó (`cloudMigrationImportWaited`).
+    static func cloudMigrationImportWaited(stage: String, outcome: String, seconds: Double) {
+        canary(.cloudMigrationImportWaited, detail: "\(stage)|\(outcome)", value: seconds)
+    }
+
     static func cloudCutoverMarkerStalled(verdict: String) {
         canary(.cloudCutoverMarkerStalled, detail: verdict)
     }
@@ -905,14 +950,6 @@ extension MetricsService {
 
     static func routingWelcomeChainSuperseded(intentID: String) {
         canary(.routingWelcomeChainSuperseded, detail: intentID)
-    }
-
-    static func inviteReEmittedFromStore() {
-        canary(.inviteReEmittedFromStore)
-    }
-
-    static func invitePendingExpired() {
-        canary(.invitePendingExpired)
     }
 
     static func cloudkitTransferOrphanRepaired(orphansCleared: Int, pairedCount: Int) {

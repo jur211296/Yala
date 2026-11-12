@@ -243,18 +243,16 @@ extension DestructiveScopeSheet.Config {
         cloudLabel: DestructiveScopeLogic.CloudLabel,
         hasOutstandingDebt: Bool = false,
         hasLegacyCloudKitFootprint: Bool = false,
-        canLeaveAllGroups: Bool = false,
         onConfirm: @escaping () -> Void,
         onSecondary: (() -> Void)? = nil,
         onExport: (() -> Void)? = nil,
-        onLeaveGroups: (() -> Void)? = nil
+        removesDeviceData: Bool = false
     ) -> Self {
         let model = DestructiveScopeLogic.model(
             operation: operation,
             cloudLabel: cloudLabel,
             hasOutstandingDebt: hasOutstandingDebt,
-            hasLegacyCloudKitFootprint: hasLegacyCloudKitFootprint,
-            canLeaveAllGroups: canLeaveAllGroups)
+            hasLegacyCloudKitFootprint: hasLegacyCloudKitFootprint)
 
         let rows = model.rows.map { spec in
             Row(icon: Self.icon(for: spec.location),
@@ -279,27 +277,25 @@ extension DestructiveScopeSheet.Config {
                 guard let onExport else { return nil }
                 return SecondaryAction(
                     label: L10n.Settings.wipeExportBeforeButton,
-                    identifier: "wipe_export_before",
-                    // En `.cloud` esta puede ser la única copia (§3.3.1).
-                    caption: cloudLabel == .cloudAccount ? L10n.Settings.wipeExportBeforeCloudCaption : nil,
+                    identifier: Self.exportBeforeIdentifier(for: operation),
+                    // En `.cloud` esta puede ser la única copia (§3.3.1). La hoja de eliminar la cuenta lleva siempre la
+                    // etiqueta de la cuenta de Yala, también con iCloud privado (D), donde «En modo nube» no es verdad:
+                    // ahí no lleva pie (encargo S27i, que le dio «Exportar antes» a esa celda).
+                    caption: cloudLabel == .cloudAccount && operation != .deleteAccountGroupsOnly
+                        ? L10n.Settings.wipeExportBeforeCloudCaption : nil,
                     handler: onExport)
-            case .leaveAllGroups:
-                guard let onLeaveGroups else { return nil }
-                return SecondaryAction(
-                    label: L10n.Settings.wipeLeaveGroupsButton,
-                    identifier: "wipe_leave_groups",
-                    caption: nil,
-                    handler: onLeaveGroups)
             }
         }
 
+        // L20-6: la fila «Quitar mis datos de este iPhone» abre su hoja con el mismo verbo
+        // (`DestructiveScopeLogic.signOutRemovesDeviceData`). Las filas de la hoja no cambian: ya decían lo que pasa.
         return Self(
-            title: Self.title(for: operation),
+            title: removesDeviceData ? L10n.UXCS.removeDeviceDataSheetTitle : Self.title(for: operation),
             rows: rows,
             conservationNote: model.hasConservationNote ? Self.conservation(for: operation) : nil,
             extraLines: model.extraLines.map { Self.extraLine(for: $0) },
             secondaries: secondaries,
-            confirmLabel: Self.confirmLabel(for: operation),
+            confirmLabel: removesDeviceData ? L10n.UXCS.removeDeviceDataConfirm : Self.confirmLabel(for: operation),
             confirmIdentifier: Self.confirmIdentifier(for: operation),
             scenarioIdentifier: Self.scenarioIdentifier(for: operation),
             cancelLabel: L10n.Common.cancel,
@@ -313,6 +309,20 @@ extension DestructiveScopeSheet.Config {
         case .deleteAccountCloud, .deleteAccountGroupsOnly, .deleteAccountGroupsOnlyNoPrivate:
             return "delete_account_view_groups"
         default: return "wipe_view_groups"
+        }
+    }
+
+    /// `wipe_export_before` en Vaciar (lo asertan los XCUITest de siempre); en los cierres sin copia y en eliminar la
+    /// cuenta (L20-8), el suyo: la misma etiqueta abre cosas distintas (el asistente / el archivo de todo).
+    private static func exportBeforeIdentifier(for operation: DestructiveScopeLogic.Operation) -> String {
+        switch operation {
+        case .deleteAccountCloud, .deleteAccountGroupsOnly, .deleteAccountGroupsOnlyNoPrivate:
+            return "delete_account_export_before"
+        case .signOutPrivate, .signOutPrivateNoCopy, .signOutPrivateWithGroups, .signOutPrivateWithGroupsNoCopy,
+             .signOutCloud, .signOutGroupsOnly:
+            return "signout_export_before"
+        case .wipeDataFull, .wipeDataGroupsOnly:
+            return "wipe_export_before"
         }
     }
 

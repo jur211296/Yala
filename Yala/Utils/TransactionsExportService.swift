@@ -47,14 +47,16 @@ enum TransactionsExportError: Error, LocalizedError {
     /// Error al escribir el archivo en disco.
     case fileWriteFailed(underlying: Error)
 
+    /// Lo que enseña el aviso del asistente (`ExportSummaryStepView`), en el idioma de la app. Hasta el lote 20 eran tres
+    /// literales en español en los 16 idiomas (ticket `export-errors-are-hardcoded-in-spanish`).
     var errorDescription: String? {
         switch self {
         case .invalidCustomDateRange:
-            return "El rango de fechas seleccionado no es válido."
+            return L10n.Export.errorInvalidDateRange
         case .noTransactionsToExport:
-            return "No se encontraron transacciones que cumplan los filtros seleccionados."
+            return L10n.Export.errorNoTransactions
         case .fileWriteFailed:
-            return "Ocurrió un problema al generar el archivo."
+            return L10n.Export.errorFileWriteFailed
         }
     }
 }
@@ -208,6 +210,9 @@ struct TransactionsExportService {
         }
         let tagCatalog = Tag.byIDLookup(allTags)
 
+        // La tarjeta de cada cuenta, solo si se pidió su columna. Un fetch fallido la deja vacía (no aborta el export).
+        let cardNames = columns.activeColumns.contains(.card) ? cardNamesByAccount(in: modelContext) : [:]
+
         // 2) Aplicamos el resto de filtros en memoria.
         let filteredTransactions = applyInMemoryFilters(
             fetchedTransactions,
@@ -226,12 +231,12 @@ struct TransactionsExportService {
             switch format {
             case .csv:
                 let csvData = makeCSVData(transactions: filteredTransactions, columns: columns, tagCatalog: tagCatalog,
-                                          scheduleTagBackfill: scheduleTagBackfill)
+                                          scheduleTagBackfill: scheduleTagBackfill, cardNames: cardNames)
                 fileURL = try writeToTemporaryFile(data: csvData, extension: "csv")
 
             case .xlsx:
                 let (headers, rows) = makeExportData(transactions: filteredTransactions, columns: columns, tagCatalog: tagCatalog,
-                                                     scheduleTagBackfill: scheduleTagBackfill)
+                                                     scheduleTagBackfill: scheduleTagBackfill, cardNames: cardNames)
                 fileURL = try writeXLSXToTemporaryFile(headers: headers, rows: rows)
             }
         } catch {
@@ -244,6 +249,23 @@ struct TransactionsExportService {
         )
 
         return result
+    }
+
+    // MARK: - Tarjetas con varias divisas
+
+    /// El nombre de la tarjeta de cada cuenta que es parte de una (la principal y sus líneas), por `shortcutID`: el valor
+    /// de la columna `card`. Una cuenta sin líneas no está y su celda sale vacía.
+    @MainActor
+    static func cardNamesByAccount(in modelContext: ModelContext) -> [UUID: String] {
+        do {
+            let accounts = try modelContext.fetch(FetchDescriptor<Account>())
+            return AccountCardIndex(accounts: accounts).cardNamesByMember
+        } catch {
+            #if DEBUG
+            print("TransactionsExportService: Error: fetch de cuentas para la columna de tarjeta: \(error)")
+            #endif
+            return [:]
+        }
     }
 
     // MARK: - Construcción de FetchDescriptor (filtro por fecha)
@@ -298,6 +320,7 @@ struct TransactionsExportService {
         )
 
         let isExclude = filters.isExcludeMode
+        let needFilterSet = Set(filters.selectedNeeds)
 
         return transactions.filter { transaction in
             // 1) Filtro por cuenta (si se seleccionaron cuentas).
@@ -358,10 +381,8 @@ struct TransactionsExportService {
                 }
             }
 
-            // 5) Filtro por monto utilizando `AmountFilterCondition`.
-            // amount es Double en tu modelo, lo convertimos a Decimal para el filtro.
-            let amountDecimal = Decimal(transaction.amount)
-            if !filters.amountCondition.matches(amountDecimal) {
+            // 5) Filtro por monto: sin signo, la regla de `FilterService`. Con signo, «Mayor a 100» dejaba fuera los gastos.
+            if !filters.amountCondition.matches(signedAmount: transaction.amount) {
                 return false
             }
 
@@ -371,6 +392,12 @@ struct TransactionsExportService {
                 if !noteText.contains(noteFilter) {
                     return false
                 }
+            }
+
+            // 6b) Filtro por necesidad del gasto (la del registro, con su ajuste si lo tiene).
+            if !needFilterSet.isEmpty {
+                let matches = needFilterSet.contains(transaction.effectiveNeed)
+                if isExclude ? matches : !matches { return false }
             }
 
             // 7) Filtro por etiquetas (nombres). CSV-mirror SSOT via resolver + catalog.
@@ -400,7 +427,8 @@ struct TransactionsExportService {
         transactions: [TransactionItem],
         columns: ExportColumns,
         tagCatalog: [UUID: Tag] = [:],
-        scheduleTagBackfill: Bool = true
+        scheduleTagBackfill: Bool = true,
+        cardNames: [UUID: String] = [:]
     ) -> Data {
 
         // 1) Encabezado.
@@ -447,6 +475,9 @@ struct TransactionsExportService {
 
                 case .account:
                     value = transaction.account?.name ?? ""
+
+                case .card:
+                    value = transaction.account.flatMap { cardNames[$0.shortcutID] } ?? ""
 
                 case .category:
                     value = transaction.category?.name ?? ""
@@ -516,6 +547,34 @@ struct TransactionsExportService {
 
     // MARK: - Escritura de archivo
 
+    /// `Yala_Registros_17-oct-2026.xlsx` (L20-4): la palabra y la fecha en el idioma de la app, para que la persona lo
+    /// encuentre en Archivos con sus palabras. Hasta el 2026-10-19, `Yala_Transacciones_20261017_093512`.
+    private static func exportFileName(fileExtension: String) -> String {
+        ExportRecordsLogic.fileName(stem: L10n.UXL20D.fileStem, date: .now, locale: AppLocale.current,
+                                    fileExtension: fileExtension)
+    }
+
+    /// Cuántos registros saldrían con estos filtros (L20-2: «Saldrán N registros» antes de tocar «Exportar»). Mismo
+    /// fetch y mismos filtros que `export`, sin escribir nada.
+    @MainActor
+    static func matchingCount(using filters: ExportFilters, in modelContext: ModelContext) throws -> Int {
+        let fetched = try modelContext.fetch(makeFetchDescriptor(effectiveInterval: filters.effectiveDateInterval()))
+        let tagCatalog: [UUID: Tag]
+        if filters.selectedTagNames.isEmpty {
+            tagCatalog = [:]
+        } else {
+            do {
+                tagCatalog = Tag.byIDLookup(try modelContext.fetch(FetchDescriptor<Tag>()))
+            } catch {
+                #if DEBUG
+                print("TransactionsExportService: fetch de tags para contar falló: \(error)")
+                #endif
+                tagCatalog = [:]
+            }
+        }
+        return applyInMemoryFilters(fetched, filters: filters, tagCatalog: tagCatalog).count
+    }
+
     /// Escribe los datos CSV en un archivo temporal y devuelve su URL.
     private static func writeCSVToTemporaryFile(data: Data) throws -> URL {
         return try writeToTemporaryFile(data: data, extension: "csv")
@@ -526,11 +585,7 @@ struct TransactionsExportService {
     private static func writeToTemporaryFile(data: Data, extension ext: String) throws -> URL {
         let tempDirectory = FileManager.default.temporaryDirectory
 
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyyMMdd_HHmmss"
-        let timestamp = dateFormatter.string(from: Date.now)
-
-        let fileName = "Yala_Transacciones_\(timestamp).\(ext)"
+        let fileName = exportFileName(fileExtension: ext)
         let fileURL = tempDirectory.appendingPathComponent(fileName)
 
         try data.write(to: fileURL, options: [.atomic, .completeFileProtection])
@@ -544,7 +599,8 @@ struct TransactionsExportService {
         transactions: [TransactionItem],
         columns: ExportColumns,
         tagCatalog: [UUID: Tag] = [:],
-        scheduleTagBackfill: Bool = true
+        scheduleTagBackfill: Bool = true,
+        cardNames: [UUID: String] = [:]
     ) -> (headers: [String], rows: [[String]]) {
 
         let orderedColumns = columns.orderedActiveColumns
@@ -581,6 +637,8 @@ struct TransactionsExportService {
                     value = normalizeCurrencyCode(transaction.currencyCode)
                 case .account:
                     value = transaction.account?.name ?? ""
+                case .card:
+                    value = transaction.account.flatMap { cardNames[$0.shortcutID] } ?? ""
                 case .category:
                     value = transaction.category?.name ?? ""
                 case .subcategory:
@@ -619,11 +677,7 @@ struct TransactionsExportService {
     private static func writeXLSXToTemporaryFile(headers: [String], rows: [[String]]) throws -> URL {
         let tempDirectory = FileManager.default.temporaryDirectory
 
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyyMMdd_HHmmss"
-        let timestamp = dateFormatter.string(from: Date.now)
-
-        let fileName = "Yala_Transacciones_\(timestamp).xlsx"
+        let fileName = exportFileName(fileExtension: "xlsx")
         let fileURL = tempDirectory.appendingPathComponent(fileName)
 
         try XLSXWriter.write(to: fileURL, headers: headers, rows: rows)

@@ -4,7 +4,8 @@
 //
 //  Elección del método de sign-in (Apple | Google) en la entrada de migración/adopt de Almacenamiento
 //  (Bloque C 2026-07-17: la entrada forzaba SIWA; decisión owner: "el usuario debería poder elegir
-//  Google también aquí"). Es el ÚLTIMO paso antes de la auth: migración = consent → doble confirmación
+//  Google también aquí"). Desde UX 2.2 · L20-11 solo lo abre «Usar otra cuenta» del aviso de bloqueo (la entrada normal elige método en
+//  `CloudActivationSheet`). Antes era el ÚLTIMO paso antes de la auth: migración = consent → doble confirmación
 //  → chooser; adopt = consent → chooser.
 //
 //  Sheet de SELECCIÓN PURA: no corre auth ni muta nada — `onSelect` solo comunica el provider elegido
@@ -81,8 +82,11 @@ struct StorageSignInChooserView: View {
                     }
                     .padding(.horizontal, DS.Spacing.xl)
 
-                    // Nota §13 (invariante R9): la cuenta queda ligada al método elegido.
-                    Text(L10n.Storage.SignIn.note)
+                    // UX 2.2 · L20-9: la MISMA frase que «Tu cuenta de Yala», y la misma key, para que no vuelvan a
+                    // decir cosas distintas. La nota de antes («queda ligada al método») contradecía al backend: con
+                    // Apple y Google activos y el vínculo manual apagado, GoTrue une las dos entradas por el correo
+                    // verificado (H4; medido en producción el 2026-10-19, `security_manual_linking_enabled = false`).
+                    Text(L10n.Settings.yalaAccountLinkingNote)
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -122,13 +126,16 @@ struct StorageSignInChooserView: View {
 /// `ASAuthorizationAppleIDButton` (obligado por HIG/App Review 4.8). El flujo real (nonce, exchange,
 /// captura de perfil) vive en `CloudAuthService.signInWithApple()`; este botón es solo el afford
 /// visual + target-action. Estilo según el scheme del sheet `.subtle` (patrón GroupsAppleSignInButton).
-private struct StorageAppleSignInButton: UIViewRepresentable {
+/// `type` es el verbo: `.signIn` aquí (fuera del punto 15) y `.continue` en la hoja única de Ajustes (L20-11), que dice
+/// «Continuar con Apple» como su pareja de Google.
+struct StorageAppleSignInButton: UIViewRepresentable {
     let colorScheme: ColorScheme
+    var type: ASAuthorizationAppleIDButton.ButtonType = .signIn
     let action: () -> Void
 
     func makeUIView(context: Context) -> ASAuthorizationAppleIDButton {
         let button = ASAuthorizationAppleIDButton(
-            type: .signIn,
+            type: type,
             style: colorScheme == .dark ? .white : .black
         )
         button.cornerRadius = DS.Radius.lg
@@ -136,12 +143,16 @@ private struct StorageAppleSignInButton: UIViewRepresentable {
         return button
     }
 
-    func updateUIView(_ uiView: ASAuthorizationAppleIDButton, context: Context) {}
+    /// La acción se renueva en cada render: el `Coordinator` se crea una vez, y con la del primero el botón seguiría con
+    /// el plan y la ruta de entonces (review del 2026-10-19).
+    func updateUIView(_ uiView: ASAuthorizationAppleIDButton, context: Context) {
+        context.coordinator.action = action
+    }
 
     func makeCoordinator() -> Coordinator { Coordinator(action: action) }
 
     final class Coordinator: NSObject {
-        let action: () -> Void
+        var action: () -> Void
         init(action: @escaping () -> Void) { self.action = action }
         @objc func tapped() { action() }
     }

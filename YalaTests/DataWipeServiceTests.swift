@@ -33,7 +33,7 @@ struct DataWipeServiceTests {
         // Features de entrada / AI
         "voiceInputEnabled", "voiceLanguage", "imageInputEnabled", "aiDataConsentAccepted",
         "aiInsightsConsentAccepted", "aiInsightsEnabled", "aiInsightsMigratedV1",
-        "aiTogglesRemovedV2", "aiChatConsentAccepted", "chatAssistantEnabled", "chatFABVisible",
+        "aiTogglesRemovedV2", "aiChatConsentAccepted", "aiCloudExploreConsent", "chatAssistantEnabled", "chatFABVisible",
         "cashFlowAIEnabled", "insightsTone", "insightsFocus", "autoFocusField",
         "financialMindset", "expensesOnlyMode",
         // Chat
@@ -69,7 +69,7 @@ struct DataWipeServiceTests {
         // de esa key en un teléfono del parque lo retira `SecondarySessionRetirement`, que corre UNA vez
         // en el arranque — antes de que nadie pueda llegar a «Vaciar datos». La limpieza de lo legacy va
         // en la retirada, no en un barrido que corre cada vez que alguien vacía sus datos.
-        "sessionTimestamps", "secondaryCurrencies", "needsPostOnboardingTrial",
+        "sessionTimestamps", "secondaryCurrencies", "needsPostOnboardingTrial", "trialOfferMomentReached",
         "lastKnownOnboardingTimestamp",
         // What's New / App Update
         "lastSeenAppVersion", "appUpdate.latestVersion", "appUpdate.lastChecked", "appUpdate.trackId",

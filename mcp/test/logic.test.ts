@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { computeBalances } from "../src/logic/balances";
+import { linesByHead, lineNode, resolveLines, spendingAccountIds } from "../src/logic/accountLines";
 import { budgetStatuses } from "../src/logic/budgets";
 import { buildRateBook, convertOn, resolveRates } from "../src/logic/fx";
-import { buildGroupAdjustment } from "../src/logic/groups";
+import { buildGroupAdjustment, isCollectedLeg } from "../src/logic/groups";
 import { buildLookup } from "../src/logic/lookup";
 import { canonicalMerchant } from "../src/logic/merchant";
 import { listRecurring, monthlyMultiplier } from "../src/logic/recurring";
-import { summarize } from "../src/logic/summary";
+import { summarize, txKindOf } from "../src/logic/summary";
 import { resolvePeriod } from "../src/logic/dates";
 import { account, budget, category, scheduled, subcategory, tag, tx, uuid } from "./fixtures";
 
@@ -167,12 +168,14 @@ describe("resumen de periodo (port de CashFlowCalculator)", () => {
     tx({ ...base, category_ref: food, amount: -50, amount_in_preferred_currency: -50, note: "Tambo" }),
     // Reembolso: gasto positivo, RESTA del gasto (acumulación con signo, no abs).
     tx({ ...base, category_ref: food, amount: 20, amount_in_preferred_currency: 20, note: "Devolución" }),
-    // Fuera: ajuste de saldo, cuenta excluida, futuro, sin categoría, transferencia, fila a medias.
+    // Fuera: ajuste de saldo, cuenta excluida, futuro, transferencia, fila a medias. El sin categoría (−30) CUENTA como
+    // gasto por su signo desde el 2026-10-23, como en la app (`TransactionClassificationLogic`).
     tx({ ...base, category_ref: food, amount: -999, amount_in_preferred_currency: -999, balance_adjustment_type: "initial_balance" }),
     tx({ ...base, account_ref: excludedAcc, category_ref: food, amount: -999, amount_in_preferred_currency: -999 }),
     tx({ ...base, category_ref: food, date: "2026-09-28T15:00:00Z", amount: -999, amount_in_preferred_currency: -999 }),
     tx({ ...base, amount: -30 }),
-    tx({ ...base, amount: -500, transfer_pair_id: "t1" }),
+    // Una pata de transferencia, como la escribe la app: con `balance_adjustment_type`.
+    tx({ ...base, amount: -500, transfer_pair_id: "t1", balance_adjustment_type: "transfer" }),
     tx({ ...base, category_ref: food, amount: null }),
     // Del mes anterior, aunque `date` UTC caiga en septiembre: local_day manda.
     tx({ ...base, category_ref: food, date: "2026-09-01T02:00:00Z", local_day: "2026-08-31", amount: -999, amount_in_preferred_currency: -999 }),
@@ -183,14 +186,14 @@ describe("resumen de periodo (port de CashFlowCalculator)", () => {
   it("clasifica por categoría, acumula con signo y aplica el filtro de elegibilidad del chat", () => {
     const r = summarize(txs, lookup, period, ctx);
     expect(r.ingresos).toBe(3000);
-    expect(r.gastos).toBeCloseTo(100 + 50 - 20 + 34);
-    expect(r.neto).toBeCloseTo(3000 - 164);
-    expect(r.movimientos).toBe(5);
+    expect(r.gastos).toBeCloseTo(100 + 50 - 20 + 34 + 30);
+    expect(r.neto).toBeCloseTo(3000 - 194);
+    expect(r.movimientos).toBe(6);
     expect(r.sin_categoria).toEqual({ movimientos: 1, importe_absoluto: 30 });
     expect(r.aproximado).toBe(true);
     expect(r.aproximado_detalle).toEqual({ ingresos: false, gastos: true, neto: false });
     // Periodo en curso: el día de hoy no cuenta en el denominador, como `DateIntervalDayCount` hasta `now`.
-    expect(r.gasto_medio_diario).toBeCloseTo(164 / 25, 2);
+    expect(r.gasto_medio_diario).toBeCloseTo(194 / 25, 2);
     // Periodo cerrado: cuentan todos sus días.
     const agosto = summarize(
       [tx({ ...base, category_ref: food, date: "2026-08-10T15:00:00Z", amount: -310, amount_in_preferred_currency: -310 })],
@@ -238,6 +241,137 @@ describe("resumen de periodo (port de CashFlowCalculator)", () => {
     expect(r.gastos).toBe(100);
     expect(r.ingresos).toBe(0);
     expect(r.avisos.join(" ")).not.toMatch(/grupo|tasa/);
+  });
+
+  describe("Grupos B: tu parte en líneas", () => {
+    const groupsAcc = uuid(2201);
+    const sip = uuid(2202);
+    const loanCat = uuid(2211);
+    const comisiones = uuid(2212);
+    const super_ = uuid(2213);
+    const hogar = uuid(2214);
+    const transferOut = uuid(2215);
+    const transferIn = uuid(2216);
+    const lk = buildLookup({
+      accounts: [
+        account({ sync_id: acc }),
+        account({ sync_id: sip, name: "Sip" }),
+        account({ sync_id: groupsAcc, name: "Grupos", is_system_account: true }),
+      ],
+      categories: [
+        category({ sync_id: loanCat, name: "Cobros de grupos", is_income: true }),
+        category({ sync_id: comisiones, name: "Comisiones" }),
+        category({ sync_id: super_, name: "Supermercado" }),
+        category({ sync_id: hogar, name: "Hogar" }),
+        category({ sync_id: transferOut, name: "Otros" }),
+        category({ sync_id: transferIn, name: "Ingresos", is_income: true }),
+      ],
+    });
+    const t = "transfer";
+
+    it("caso Pía (pagó otro: 500 de recarga a Sip + 10 de comisión): 10 de Comisiones y nada de la recarga", () => {
+      const legs = [
+        // La pata conservada es la línea de gasto (la ancla); la recarga sale de «Grupos» y entra en Sip sin puntero.
+        tx({ ...base, account_ref: groupsAcc, category_ref: comisiones, amount: -10, amount_in_preferred_currency: -10, split_expense_id: "p1" }),
+        tx({ ...base, account_ref: groupsAcc, category_ref: transferOut, amount: -500, amount_in_preferred_currency: -500, split_expense_id: "p1", balance_adjustment_type: t, transfer_pair_id: "L1" }),
+        tx({ ...base, account_ref: sip, category_ref: transferIn, amount: 500, amount_in_preferred_currency: 500, balance_adjustment_type: t, transfer_pair_id: "L1" }),
+      ];
+      const groups = buildGroupAdjustment(legs, lk.accounts, lk.subcategories);
+      const r = summarize(legs, lk, period, { ...ctx, groups });
+      expect(r.gastos).toBe(10);
+      expect(r.ingresos).toBe(0);
+      expect(r.top_categorias_gasto).toEqual([expect.objectContaining({ categoria: "Comisiones", importe: 10 })]);
+    });
+
+    it("caso súper (pagaste 200 con BCP, tu parte 100 = Supermercado 80 + Hogar 20): 80 + 20", () => {
+      const legs = [
+        tx({ ...base, category_ref: super_, amount: -200, amount_in_preferred_currency: -200, split_expense_id: "s9" }),
+        // Préstamo = lo que te deben (100) + las líneas derivadas apuntadas en «Grupos» (20).
+        tx({ ...base, account_ref: groupsAcc, category_ref: loanCat, amount: 120, amount_in_preferred_currency: 120, split_expense_id: "s9" }),
+        tx({ ...base, account_ref: groupsAcc, category_ref: hogar, amount: -20, amount_in_preferred_currency: -20, split_expense_id: "s9" }),
+      ];
+      const groups = buildGroupAdjustment(legs, lk.accounts, lk.subcategories);
+      const r = summarize(legs, lk, period, { ...ctx, groups });
+      expect(r.gastos).toBe(100);
+      expect(r.ingresos).toBe(0);
+      const porCategoria = Object.fromEntries(r.top_categorias_gasto.map((c) => [c.categoria, c.importe]));
+      expect(porCategoria).toEqual({ Supermercado: 80, Hogar: 20 });
+    });
+
+    it("una pata de transferencia con puntero no se toma por la real: el préstamo se netea contra el gasto", () => {
+      // Si la entrada de una recarga llegara con `split_expense_id` (un aparato que no siguiera D4), «la real» por orden
+      // sería ella y el préstamo se netearía contra la recarga: el gasto saldría entero.
+      const legs = [
+        tx({ ...base, account_ref: sip, category_ref: transferIn, amount: 20, amount_in_preferred_currency: 20, split_expense_id: "s8", balance_adjustment_type: t, transfer_pair_id: "L2" }),
+        tx({ ...base, category_ref: super_, amount: -200, amount_in_preferred_currency: -200, split_expense_id: "s8" }),
+        tx({ ...base, account_ref: groupsAcc, category_ref: loanCat, amount: 120, amount_in_preferred_currency: 120, split_expense_id: "s8" }),
+        tx({ ...base, account_ref: groupsAcc, category_ref: transferOut, amount: -20, amount_in_preferred_currency: -20, split_expense_id: "s8", balance_adjustment_type: t, transfer_pair_id: "L2" }),
+      ];
+      const groups = buildGroupAdjustment(legs, lk.accounts, lk.subcategories);
+      const r = summarize(legs, lk, period, { ...ctx, groups });
+      expect(r.gastos).toBe(80);
+      expect(r.ingresos).toBe(0);
+    });
+  });
+
+  describe("Grupos B: ventas por cobrar (cards 8-11)", () => {
+    const groupsAcc = uuid(2301);
+    const ventas = uuid(2311);
+    const ropa = uuid(2312);
+    const lk = buildLookup({
+      accounts: [account({ sync_id: acc }), account({ sync_id: groupsAcc, name: "Grupos", is_system_account: true })],
+      categories: [category({ sync_id: ventas, name: "Ventas", is_income: true }), category({ sync_id: ropa, name: "Ropa" })],
+    });
+    const g = { ...base, account_ref: groupsAcc };
+    /** La marca de una pata cobrada, como la escribe la app (`encodeCollectedMarker`, claves ordenadas). */
+    const cobrada = (eventId: string) => JSON.stringify({ k: "c", of: eventId, v: 1 });
+    const pago = "8B5B7E0B-0D35-4C8E-9C1E-7C3A52B0A001";
+    const agosto = resolvePeriod("mes_pasado", "2026-09-26");
+
+    it("lo por cobrar no es ingreso; lo cobrado sí, en el mes del pago", () => {
+      // Venta de 120 del 25-ago; Ana pagó 50 el 8-sep. Quedan 70 por cobrar (fechados en la venta) y 50 cobrados.
+      const legs = [
+        tx({ ...g, category_ref: ventas, date: "2026-08-25T15:00:00Z", amount: 70, amount_in_preferred_currency: 70, split_expense_id: "v1", balance_adjustment_type: "receivable" }),
+        tx({ ...g, category_ref: ventas, date: "2026-09-08T15:00:00Z", amount: 50, amount_in_preferred_currency: 50, split_expense_id: "v1", split_lines_raw: cobrada(pago) }),
+      ];
+      const groups = buildGroupAdjustment(legs, lk.accounts, lk.subcategories);
+      expect(summarize(legs, lk, period, { ...ctx, groups }).ingresos).toBe(50);
+      expect(summarize(legs, lk, agosto, { ...ctx, groups }).ingresos).toBe(0);
+    });
+
+    it("antes del pago, la venta entera por cobrar no suma ingreso (control: sin su tipo, sí)", () => {
+      const porCobrar = tx({ ...g, category_ref: ventas, amount: 120, amount_in_preferred_currency: 120, split_expense_id: "v2", balance_adjustment_type: "receivable" });
+      expect(summarize([porCobrar], lk, period, ctx).ingresos).toBe(0);
+      const sinTipo = { ...porCobrar, balance_adjustment_type: null };
+      expect(summarize([sinTipo], lk, period, ctx).ingresos).toBe(120);
+    });
+
+    it("lo cobrado no se netea contra una pata real del mismo gasto", () => {
+      // Un aparato que aún no repasó una venta que pasó a ser gasto: la pata real (−120) y lo cobrado (+50) conviven.
+      // Tomado por préstamo, lo cobrado se suprimiría y la real saldría por 70.
+      const legs = [
+        tx({ ...base, category_ref: ropa, amount: -120, amount_in_preferred_currency: -120, split_expense_id: "v3" }),
+        tx({ ...g, category_ref: ventas, amount: 50, amount_in_preferred_currency: 50, split_expense_id: "v3", split_lines_raw: cobrada(pago) }),
+      ];
+      const groups = buildGroupAdjustment(legs, lk.accounts, lk.subcategories);
+      const r = summarize(legs, lk, period, { ...ctx, groups });
+      expect(r.gastos).toBe(120);
+      expect(r.ingresos).toBe(50);
+      expect(groups.isSuppressed(legs[1]!)).toBe(false);
+    });
+
+    it("solo la marca de una pata cobrada cuenta como tal", () => {
+      expect(isCollectedLeg(cobrada(pago))).toBe(true);
+      // La marca de una línea de tu parte (sin `k`), una receta, una versión posterior o texto roto: no.
+      expect(isCollectedLeg(JSON.stringify({ of: pago, v: 1 }))).toBe(false);
+      expect(isCollectedLeg(JSON.stringify({ l: [], v: 1 }))).toBe(false);
+      expect(isCollectedLeg(JSON.stringify({ k: "c", of: pago, v: 2 }))).toBe(false);
+      expect(isCollectedLeg("{roto")).toBe(false);
+      // Un `of` que no es un UUID no es una marca (la app lo lee ilegible); un `l` nulo es como ausente.
+      expect(isCollectedLeg(JSON.stringify({ k: "c", of: "no-es-un-uuid", v: 1 }))).toBe(false);
+      expect(isCollectedLeg(JSON.stringify({ k: "c", l: null, of: pago, v: 1 }))).toBe(true);
+      expect(isCollectedLeg(null)).toBe(false);
+    });
   });
 
   it("sin categoría también cuenta tu parte, y una pata de préstamo suprimida no entra aunque su categoría no resuelva", () => {
@@ -294,6 +428,33 @@ describe("resumen de periodo (port de CashFlowCalculator)", () => {
     });
     expect(r.gastos).toBeCloseTo(34);
     expect(r.aproximado_detalle.gastos).toBe(true);
+  });
+});
+
+describe("tipo de buscar_movimientos (TransactionClassificationLogic)", () => {
+  const row = (amount: number, bat: string | null = null, pair: string | null = null) => ({
+    amount,
+    balance_adjustment_type: bat,
+    transfer_pair_id: pair,
+  });
+  const gasto = { is_income: false };
+  const ingreso = { is_income: true };
+
+  it("sin categoría decide el signo, y el cero es ingreso", () => {
+    expect(txKindOf(row(-40), null)).toBe("gasto");
+    expect(txKindOf(row(70), null)).toBe("ingreso");
+    expect(txKindOf(row(0), null)).toBe("ingreso");
+  });
+
+  it("con categoría manda la categoría, también con el signo contrario", () => {
+    expect(txKindOf(row(20), gasto)).toBe("gasto");
+    expect(txKindOf(row(-20), ingreso)).toBe("ingreso");
+  });
+
+  it("una pata de transferencia es transferencia; otro ajuste de saldo, ajuste", () => {
+    expect(txKindOf(row(-100, "transfer", "T"), null)).toBe("transferencia");
+    expect(txKindOf(row(-100, null, "T"), null)).toBe("transferencia");
+    expect(txKindOf(row(500, "initial_balance"), null)).toBe("ajuste_de_saldo");
   });
 });
 
@@ -477,5 +638,91 @@ describe("recurrentes (port de monthlyMultiplier y monthlyTotal)", () => {
     expect(flags.Sueldo).toEqual([]);
     expect(r.a_revisar).toBe(2);
     expect(JSON.stringify(r)).not.toMatch(/sin usar/i);
+  });
+});
+
+describe("tarjeta con varias divisas (port de AccountLineLogic.resolve y Budget.spendingAccountIDs)", () => {
+  const card = uuid(3501);
+  const usdLine = uuid(3502);
+  const loose = uuid(3503);
+  const food = uuid(3511);
+  const ctx = { today: "2026-09-26", todayUtc: TODAY_UTC, tz: "America/Lima", rates: RATES, firstWeekday: 2 as const, soloActivos: true };
+  const e = (p: Parameters<typeof tx>[0]) => tx({ category_ref: food, ...p });
+
+  it("resuelve la principal y su línea; una línea en la divisa de la principal o huérfana se lee suelta", () => {
+    const roles = resolveLines([
+      lineNode(account({ sync_id: card, currency_code: "PEN" })),
+      lineNode(account({ sync_id: usdLine, currency_code: "USD", parent_account_id: card })),
+      lineNode(account({ sync_id: loose, currency_code: "PEN", parent_account_id: card })),
+      lineNode(account({ sync_id: uuid(3504), currency_code: "EUR", parent_account_id: uuid(3599) })),
+    ]);
+    expect(roles.get(card)).toEqual({ kind: "principal", lineIds: [usdLine] });
+    expect(roles.get(usdLine)).toEqual({ kind: "line", principalId: card });
+    expect(roles.get(loose)).toEqual({ kind: "broken", reason: "sameCurrencyAsPrincipal" });
+    expect(roles.get(uuid(3504))).toEqual({ kind: "broken", reason: "orphan" });
+  });
+
+  it("dos líneas vivas en la misma divisa: gana el menor id, como en la app", () => {
+    const a = "00000000-0000-4000-8000-00000000000a";
+    const b = "00000000-0000-4000-8000-000000000009";
+    const roles = resolveLines([
+      lineNode(account({ sync_id: card, currency_code: "PEN" })),
+      lineNode(account({ sync_id: a, currency_code: "USD", parent_account_id: card })),
+      lineNode(account({ sync_id: b, currency_code: "USD", parent_account_id: card })),
+    ]);
+    expect(roles.get(b)).toEqual({ kind: "line", principalId: card });
+    expect(roles.get(a)).toEqual({ kind: "broken", reason: "duplicateCurrency" });
+  });
+
+  it("el presupuesto de la tarjeta cuenta su línea convertida; el de la línea, solo la línea", () => {
+    const lookup = buildLookup({
+      accounts: [
+        account({ sync_id: card, currency_code: "PEN" }),
+        account({ sync_id: usdLine, currency_code: "USD", parent_account_id: card }),
+        account({ sync_id: loose, currency_code: "PEN" }),
+      ],
+      categories: [category({ sync_id: food, name: "Comida" })],
+    });
+    const txs = [
+      e({ account_ref: card, amount: -100 }),
+      e({ account_ref: usdLine, amount: -10, currency_code: "USD" }), // 34 PEN con la tasa de hoy
+      e({ account_ref: loose, amount: -7 }),
+    ];
+    const r = budgetStatuses(
+      [
+        budget({ sync_id: uuid(3521), account_ids: [card], limit_amount: 1000 }),
+        budget({ sync_id: uuid(3522), account_ids: [usdLine], limit_amount: 1000 }),
+      ],
+      txs,
+      lookup,
+      ctx,
+    );
+    const byId = new Map(r.presupuestos.map((b) => [b.id, b]));
+    expect(byId.get(uuid(3521))?.gastado).toBeCloseTo(134);
+    expect(byId.get(uuid(3521))?.movimientos).toBe(2);
+    // Lo guardado no cambia: el filtro sigue diciendo una cuenta.
+    expect(byId.get(uuid(3521))?.filtros.cuentas).toBe(1);
+    expect(byId.get(uuid(3522))?.gastado).toBeCloseTo(34);
+  });
+
+  it("sin `parent_account_id` (filas de antes) nada cambia", () => {
+    const lookup = buildLookup({
+      accounts: [account({ sync_id: card }), account({ sync_id: usdLine, currency_code: "USD" })],
+      categories: [category({ sync_id: food })],
+    });
+    const r = budgetStatuses(
+      [budget({ sync_id: uuid(3531), account_ids: [card], limit_amount: 1000 })],
+      [e({ account_ref: card, amount: -100 }), e({ account_ref: usdLine, amount: -10, currency_code: "USD" })],
+      lookup,
+      ctx,
+    );
+    expect(r.presupuestos[0]?.gastado).toBeCloseTo(100);
+  });
+
+  it("los ids se comparan sin mayúsculas", () => {
+    expect(spendingAccountIds([card.toUpperCase()], linesByHead([
+      account({ sync_id: card, currency_code: "PEN" }),
+      account({ sync_id: usdLine.toUpperCase(), currency_code: "USD", parent_account_id: card.toUpperCase() }),
+    ]))).toEqual(new Set([card, usdLine]));
   });
 });

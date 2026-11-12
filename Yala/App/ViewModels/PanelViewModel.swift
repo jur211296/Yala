@@ -154,7 +154,6 @@ struct PanelHeroData: Equatable {
 struct PanelHeroPeriodData: Equatable {
     var income: Double = 0
     var expense: Double = 0
-    var available: Double { max(0, income - expense) }
     /// Gasto del período anterior COMPARABLE (MTD-alineado), mismo scope que
     /// `expense`. Alimenta el chip "vs período anterior" del hero en modo Solo
     /// Gastos. `nil` cuando no hay previo acotado (`.allTime`) — el chip se
@@ -172,17 +171,23 @@ struct PanelHeroPeriodData: Equatable {
     /// `HeroBucketsCalculator`, o sea del flag `isExchangeRateProvisional` de las transacciones
     /// sumadas: el importe se muestra igual, pero deja de presentarse como exacto.
     ///
-    /// Separadas por lado porque el hero pinta `expense` en modo Solo Gastos y `available` —que sí
+    /// Separadas por lado porque el hero pinta `expense` en modo Solo Gastos y el balance —que sí
     /// agrega los dos— en el normal.
     var incomeApproximate: Bool = false
     var expenseApproximate: Bool = false
-    /// Para `available`, que resta un lado del otro.
+    /// Para el balance, que resta un lado del otro.
     ///
     /// **Ya no es `income || expense`** (2026-09-08): con umbrales por lado ese OR se apagaba
     /// justo en el caso peligroso — dos lados grandes, cada uno por debajo del 5 %, y un
     /// «Disponible» pequeño con una incertidumbre mayor que él mismo. Lo calcula
     /// `HeroBucketsCalculator` contra el número que se pinta.
     var amountsAreApproximate: Bool = false
+    /// Si el período tuvo algún movimiento (`HeroBucketsCalculator.Buckets.periodHasAnyTx`). `nil` lo deduce de las
+    /// cifras, para quien construye el dato a mano (previews).
+    var periodHadMovements: Bool? = nil
+    /// «Sin movimientos» del hero. Por actividad y no por cifras: con la suma con signo, un gasto y su devolución dejan
+    /// las dos cifras en 0 con movimientos.
+    var hasNoMovements: Bool { !(periodHadMovements ?? (income != 0 || expense != 0)) }
 }
 
 @MainActor
@@ -202,19 +207,22 @@ final class PanelViewModel {
 
     private static let monthYearFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.dateFormat = "MMMM yyyy"
+        f.setLocalizedDateFormatFromTemplate("MMMMy")
         return f
     }()
 
     private static let shortDateFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.dateFormat = "d MMM"
+        f.setLocalizedDateFormatFromTemplate("dMMM")
         return f
     }()
 
     // MARK: - Dependencies
 
-    private var modelContext: ModelContext?
+    /// Card 7e60: el contexto va atado al almacén con el que se dio (`BoundStoreContext`). Tras cerrar sesión en la
+    /// nube, el `onDismiss` de Ajustes del Panel viejo recargaba con el almacén soltado y cerraba Yala.
+    private var boundStore = BoundStoreContext()
+    private var modelContext: ModelContext? { boundStore.liveContext }
 
     /// Exchange rate service - injected or falls back to shared singleton
     private var exchangeRateService: ExchangeRateService = .shared
@@ -250,6 +258,13 @@ final class PanelViewModel {
     @ObservationIgnored
     var isApplicationActive: @MainActor () -> Bool = { UIApplication.shared.applicationState == .active }
 
+    /// Se pidió un recálculo con la app todavía sin activar. En el arranque en frío del iPad el `onAppear` del Panel y
+    /// su cambio de fase a `.active` llegan antes de que UIKit marque la app activa: el freno los descartaba y nada
+    /// volvía a pedir la carga, así que el Panel se quedaba en el esqueleto hasta mandar Yala a segundo plano y volver
+    /// (barrido final 2.2, 2026-11-05, medido en el iPad Pro 13). Lo repite `applicationDidBecomeActive()`.
+    @ObservationIgnored
+    private(set) var missedWhileInactive = false
+
     #if DEBUG
     /// Cuántas veces ha corrido `performCalculation`. Solo para medir: los tests cuentan con él que un
     /// evento produce UN recálculo y no más, y la traza de DEBUG lo imprime con su motivo.
@@ -259,7 +274,11 @@ final class PanelViewModel {
 
     // MARK: - Loaded Data
 
-    private(set) var accounts: [Account] = []
+    /// Sin las cuentas ya borradas: Editar cuenta elimina una línea y sigue abierto (S30), así que la lista de debajo puede
+    /// repintarse con la línea borrada antes de recargar, y leer un modelo borrado aborta en el iPhone 27.x
+    /// (`swiftui-ds.md`, filas con un `@Model` borrado).
+    var accounts: [Account] { loadedAccounts.filter { !$0.isDeleted && $0.modelContext != nil } }
+    private var loadedAccounts: [Account] = []
     private(set) var tags: [Tag] = []
     private(set) var categories: [Category] = []
     private(set) var allSubcategories: [Subcategory] = []
@@ -338,12 +357,11 @@ final class PanelViewModel {
     /// exactamente el bug por el que el Panel y Distribución mostraban saldos
     /// distintos. Para filtrar, `selectedAccountIDs`.
     ///
-    /// Queda una lectura viva en `PanelSheetsModifier` (prefill del formulario
-    /// de transacción), y **no es legítima**: precarga una cuenta arbitraria, y
-    /// en modo excluir precarga justo la que el usuario acaba de excluir. Ticket:
-    /// `panel-lee-el-filtro-de-cuentas-en-singular-fuera-del-saldo`.
+    /// El formulario de transacción ya no la lee: su cuenta precargada sale de
+    /// `TransactionAccountPrefillLogic` con el conjunto y el modo (UX 2.2 · L2-1).
     var selectedAccountID: PersistentIdentifier? {
-        get { SessionState.shared.selectedAccountIDs.first }
+        // La tarjeta y sus líneas van juntas en el conjunto (entrega 3): el representante es la tarjeta, no una línea.
+        get { SessionState.shared.representativeAccountID(in: SessionState.shared.selectedAccountIDs) }
         set {
             SessionState.shared.selectedAccountIDs.removeAll()
             if let id = newValue { SessionState.shared.selectedAccountIDs.insert(id) }
@@ -389,7 +407,7 @@ final class PanelViewModel {
         defaultCurrencyCode: String,
         sessionState: SessionState
     ) {
-        self.modelContext = context
+        boundStore.bind(context)
         if let service = exchangeRateService {
             self.exchangeRateService = service
         }
@@ -410,7 +428,7 @@ final class PanelViewModel {
         accountsDesc.fetchLimit = 100
         do {
             let fetched = try context.fetch(accountsDesc)
-            if fetched != accounts { accounts = fetched }
+            if fetched != loadedAccounts { loadedAccounts = fetched }
         } catch {
             #if DEBUG
             print("PanelViewModel: Error loading accounts: \(error)")
@@ -460,7 +478,8 @@ final class PanelViewModel {
             ]
         )
         do {
-            let fetched = try context.fetch(transactionsDesc)
+            // Lo que espera su borrado con «Deshacer» no cuenta en ninguna cifra (`RecordPendingDeletion`).
+            let fetched = RecordPendingDeletion.shared.visible(try context.fetch(transactionsDesc))
             if fetched != transactions { transactions = fetched }
         } catch {
             #if DEBUG
@@ -499,7 +518,8 @@ final class PanelViewModel {
         )
         paymentsDesc.fetchLimit = 200
         do {
-            let fetched = try context.fetch(paymentsDesc)
+            // Un pago que espera su borrado con «Deshacer» no cuenta en ninguna cifra (`ScheduledPaymentPendingDeletion`).
+            let fetched = ScheduledPaymentPendingDeletion.shared.visible(try context.fetch(paymentsDesc))
             if fetched != scheduledPayments { scheduledPayments = fetched }
         } catch {
             #if DEBUG
@@ -547,6 +567,11 @@ final class PanelViewModel {
     /// converter.
     var panelTotalBalanceIsApproximate: Bool = false
 
+    /// Las cuentas que ha sumado `panelTotalBalance`. Salen del MISMO `Breakdown`, así que el «en N
+    /// cuentas» del panorama cuenta lo que se suma: con el Panel filtrado a una cuenta decía «en 3
+    /// cuentas» junto al saldo de una (auditoría UX 2.2, lote 3, B2).
+    var panelTotalAccountIDs: Set<PersistentIdentifier> = []
+
     /// Ganancia/pérdida cambiaria del saldo que el Panel está enseñando, o `nil` si el usuario no
     /// tiene dinero en divisa extranjera. Sale del MISMO `Breakdown` que `panelTotalBalance`, así
     /// que la card explica exactamente el número de arriba y no otro parecido.
@@ -569,6 +594,9 @@ final class PanelViewModel {
 
     // Pre-computed account data — eliminates passing [TransactionItem] to AccountsCarouselView
     private(set) var accountBalances: [PersistentIdentifier: Double] = [:]
+    /// Card extra (2026-11-03): lo que cada grupo aporta a las cuentas de sistema activas, para las líneas de la tarjeta
+    /// «Grupos». Se calcula con los saldos (`calculateAccountBalances`): mismos movimientos, mismo corte de hoy.
+    private(set) var groupAccountLines: [GroupsAccountCardLogic.GroupLine] = []
     private(set) var accountPeriodExpenses: [PersistentIdentifier: Double] = [:]
 
     // Pre-computed transaction date range — eliminates iterating all transactions in body eval
@@ -656,9 +684,15 @@ final class PanelViewModel {
         set { SessionState.shared.selectedTransactionNatures = newValue }
     }
 
-    var isExcludeMode: Bool {
-        get { SessionState.shared.isExcludeMode }
-        set { SessionState.shared.isExcludeMode = newValue }
+    /// Cómo está una cuenta en el filtro: incluida, oculta o ninguna. Para pintar la tarjeta y decidir su menú.
+    func accountMembership(_ id: PersistentIdentifier) -> EntityFilterMembership {
+        EntityFilter(included: selectedAccountIDs, excluded: excludedAccountIDs).membership(of: id)
+    }
+
+    /// Las cuentas OCULTAS («Sin X»). Conviven con `selectedAccountIDs`, que son las incluidas (opción B, 2026-10-25).
+    var excludedAccountIDs: Set<PersistentIdentifier> {
+        get { SessionState.shared.excludedAccountIDs }
+        set { SessionState.shared.excludedAccountIDs = newValue }
     }
 
     // Need, CashFlow, LatestRecords, Budgets — now struct-backed (see computed accessors above)
@@ -1107,6 +1141,39 @@ final class PanelViewModel {
         }
     }
 
+    /// Las cuentas activas agrupadas en tarjetas (tarjeta con varias divisas): una por principal o cuenta suelta, con
+    /// sus líneas dentro. Los roles se resuelven sobre TODAS las cuentas, archivadas incluidas.
+    func orderedActiveAccountCards(from accounts: [Account], sortOrderNames: [String]) -> [AccountCard<Account>] {
+        let cards = orderedActiveAccounts(from: accounts, sortOrderNames: sortOrderNames)
+            .accountCards(roles: accounts.lineRoles)
+        // Card extra (2026-11-03): las cuentas de sistema de Grupos, en una sola tarjeta. Salvo con alguna de ellas en el
+        // filtro de cuentas: la tarjeta junta varias cuentas que el filtro trata por separado, y marcada o atenuada por
+        // una sola contradiría al saldo («La UI tiene que decir lo mismo que el número», `session-filters.md`). Con el
+        // filtro puesto, cada una vuelve a su tarjeta.
+        let filter = EntityFilter(included: selectedAccountIDs, excluded: excludedAccountIDs)
+        let systemFiltered = accounts.contains {
+            $0.isSystemAccount && filter.membership(of: $0.persistentModelID) != .none
+        }
+        return systemFiltered ? cards : GroupsAccountCardLogic.mergingSystemCards(cards, isSystem: \.isSystemAccount)
+    }
+
+    /// ¿La tarjeta es «Grupos»: TODAS las cuentas de sistema activas juntas (una sola, o las fusionadas)? Solo esa se
+    /// llama «Grupos» y enseña las filas por grupo.
+    func isGroupsCard(_ card: AccountCard<Account>) -> Bool {
+        guard card.head.isSystemAccount else { return false }
+        let active = Set(accounts.filter { $0.isSystemAccount && !$0.isArchived }.map(\.persistentModelID))
+        return Set(card.members.map(\.persistentModelID)) == active
+    }
+
+    /// Lo de cada cuenta de la tarjeta en su divisa: saldo, o lo gastado en el período en modo «solo gastos».
+    func lineAmounts(for card: AccountCard<Account>, isExpensesOnlyMode: Bool) -> [AccountCardLogic.LineAmount] {
+        card.members.map { account in
+            let id = account.persistentModelID
+            let value = isExpensesOnlyMode ? accountPeriodExpenses[id] ?? 0 : accountBalances[id] ?? 0
+            return AccountCardLogic.LineAmount(value: value, currencyCode: account.currencyCode)
+        }
+    }
+
     /// Calcula el balance mostrado: total de todas las cuentas o de **las
     /// cuentas filtradas** (vivo, TC actual sobre saldo nativo). En el total
     /// respeta `includeGroupsInPanelTotal`: con el toggle OFF excluye las cuentas
@@ -1124,17 +1191,14 @@ final class PanelViewModel {
         let effectiveAccounts = PanelTotalAccountsLogic.accountsForTotal(
             accounts,
             includeGroups: includeGroups,
-            hasSelectedAccount: PanelTotalAccountsLogic.hasAccountFilter(
-                selectedAccountIDs: self.selectedAccountIDs,
-                isExcludeMode: self.isExcludeMode
-            )
+            hasSelectedAccount: PanelTotalAccountsLogic.hasAccountFilter(selectedAccountIDs: self.selectedAccountIDs)
         )
         return LiveBalanceCalculator.liveBalanceBreakdown(
             accounts: effectiveAccounts,
             transactions: transactions,
             preferredCurrencyCode: defaultCurrencyCode,
             selectedAccountIDs: self.selectedAccountIDs,
-            isExcludeMode: self.isExcludeMode
+            excludedAccountIDs: self.excludedAccountIDs
         )
     }
 
@@ -1197,7 +1261,26 @@ final class PanelViewModel {
 
     /// Whether voice input can be used (requires active accounts and visible subcategories).
     var canUseVoiceInput: Bool {
-        accounts.contains { !$0.isArchived } && allSubcategories.contains { $0.isVisible }
+        quickActionsState == .ready
+    }
+
+    /// Qué enseña la fila de acciones bajo el hero: la fila, «Crea tu primera cuenta» o «Crear categorías» (card omw5).
+    var quickActionsState: PanelQuickActionsGateLogic.State {
+        PanelQuickActionsGateLogic.state(
+            hasActiveAccount: accounts.contains { !$0.isArchived },
+            hasVisibleSubcategory: PanelQuickActionsGateLogic.hasPickableSubcategory(allSubcategories)
+        )
+    }
+
+    /// «Crear categorías» del Panel: crea las de siempre si no hay ninguna propia, o pide abrir Ajustes › Categorías.
+    func createCategoriesAction() -> PanelQuickActionsGateLogic.CreateCategoriesAction {
+        let action = PanelQuickActionsGateLogic.createCategoriesAction(
+            userCategoryCount: categories.filter { !$0.isSystem }.count)
+        guard action == .seedDefaults, let context = modelContext else { return action }
+        if seedDefaultCategoriesOnUserRequest(in: context) {
+            SessionState.shared.incrementDataVersion()
+        }
+        return action
     }
 
     // MARK: - Layout Logic
@@ -1235,6 +1318,24 @@ final class PanelViewModel {
     }
 
     // MARK: - Trend & Balance Status Logic
+
+    /// Las categorías y subcategorías OCULTAS: salen de las tartas y de los totales (las incluidas solo atenúan).
+    var excludedCategoryIDs: Set<PersistentIdentifier> { SessionState.shared.excludedCategoryIDs }
+    var excludedSubcategoryIDs: Set<PersistentIdentifier> { SessionState.shared.excludedSubcategoryIDs }
+
+    /// Filtros por dimensión (incluidos + ocultos), para los recortes escritos a mano de las tartas del Panel.
+    private var needFilter: EntityFilter<SubcategoryNeed> {
+        EntityFilter(included: SessionState.shared.selectedNeeds, excluded: SessionState.shared.excludedNeeds)
+    }
+    private var currencyFilter: EntityFilter<CurrencyCode> {
+        EntityFilter(included: selectedCurrencies, excluded: SessionState.shared.excludedCurrencies)
+    }
+    private var tagUUIDFilter: EntityFilter<UUID> {
+        EntityFilter(
+            included: Set(tags.filter { selectedTags.contains($0.persistentModelID) }.map(\.id)),
+            excluded: Set(tags.filter { SessionState.shared.excludedTags.contains($0.persistentModelID) }.map(\.id))
+        )
+    }
 
     var selectedCategoryID: PersistentIdentifier? {
         get { SessionState.shared.selectedCategoryIDs.first }
@@ -1294,7 +1395,7 @@ final class PanelViewModel {
             let liveBalanceOverride = LiveBalanceCalculator.liveBalanceOverride(
                 for: trendType,
                 interval: calcContext.effectiveInterval,
-                accounts: calcContext.eligibleAccounts,
+                accounts: calcContext.balanceAccounts,
                 transactions: calcContext.balanceTransactions,
                 preferredCurrencyCode: calcContext.defaultCurrencyCode,
                 // El mismo converter que la curva: la cifra y su último punto salen de la misma regla
@@ -1393,6 +1494,9 @@ final class PanelViewModel {
         if self.panelTotalBalanceIsApproximate != newBreakdown.amountsAreApproximate {
             self.panelTotalBalanceIsApproximate = newBreakdown.amountsAreApproximate
         }
+        if self.panelTotalAccountIDs != newBreakdown.eligibleAccountIDs {
+            self.panelTotalAccountIDs = newBreakdown.eligibleAccountIDs
+        }
         // Recorre las MISMAS cuentas que acaba de sumar el saldo (`eligibleAccountIDs` viaja en
         // el breakdown), así que la card explica el número de arriba y no otro parecido.
         let newFXPnL = FXPnLLogic.summary(transactions: transactions, breakdown: newBreakdown)
@@ -1482,20 +1586,17 @@ final class PanelViewModel {
         // Espeja `StatisticsViewModel.computeEligibleAccounts`: el filtro es un
         // conjunto y las dos pantallas tienen que resolverlo igual, o sus
         // números vuelven a divergir.
+        let accountFilter = EntityFilter(included: selectedAccountIDs, excluded: excludedAccountIDs)
         let eligible = accounts.filter { account in
             guard !account.excludeFromStatistics else { return false }
-            if selectedAccountIDs.isEmpty { return true }
-            if isExcludeMode {
-                return !selectedAccountIDs.contains(account.persistentModelID)
-            } else {
-                return selectedAccountIDs.contains(account.persistentModelID)
-            }
+            return accountFilter.matches(account.persistentModelID)
         }
         return (eligible, Set(eligible.map { $0.persistentModelID }))
     }
 
     /// Build pie chart transactions: filtered WITHOUT category/subcategory for dimming behavior
-    private func buildPieContextTransactions(
+    /// Interno y no privado para `PanelPiesFilterParityTests`, que lo compara con Registros.
+    func buildPieContextTransactions(
         from transactions: [TransactionItem],
         eligibleAccountIDs: Set<PersistentIdentifier>,
         effectiveInterval: DateInterval
@@ -1504,6 +1605,12 @@ final class PanelViewModel {
         // categoría/subcategoría excluyen las TX bridgeadas de grupo (pata real + virtual).
         let includeGroupTxs = (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
         let calendar = Calendar.current
+        // Una vez, fuera del bucle: cada lectura de estos filtros recorre el catálogo de etiquetas.
+        let needFilter = self.needFilter
+        let tagUUIDFilter = self.tagUUIDFilter
+        let currencyFilter = self.currencyFilter
+        let excludedCategoryIDs = self.excludedCategoryIDs
+        let excludedSubcategoryIDs = self.excludedSubcategoryIDs
         return transactions.filter { transaction in
             guard let account = transaction.account else { return false }
             if !eligibleAccountIDs.contains(account.persistentModelID) { return false }
@@ -1521,55 +1628,38 @@ final class PanelViewModel {
                 if !calendar.isDate(transaction.date, inSameDayAs: focus) { return false }
             }
 
-            // Category/Subcategory filters excluded for pie dimming behavior,
-            // EXCEPT when filtering comes from a budget selection or exclude mode
+            // Lo INCLUIDO de categoría/subcategoría no recorta las tartas: las atenúa (salvo un presupuesto, que sí
+            // recorta). Lo OCULTO sí sale, como en Distribución: «Ocultar Comida» la quita de la tarta.
             if selectedBudgetID != nil && !selectedSubcategoryIDs.isEmpty {
                 guard let subID = transaction.subcategory?.persistentModelID,
                     selectedSubcategoryIDs.contains(subID)
                 else { return false }
-            } else if isExcludeMode {
-                if let selectedCatID = selectedCategoryID,
-                   transaction.category?.persistentModelID == selectedCatID {
-                    return false
-                }
-                if !selectedSubcategoryIDs.isEmpty,
-                   let subID = transaction.subcategory?.persistentModelID,
-                   selectedSubcategoryIDs.contains(subID) {
-                    return false
-                }
+            }
+            if let catID = transaction.category?.persistentModelID, excludedCategoryIDs.contains(catID) {
+                return false
+            }
+            if let subID = transaction.subcategory?.persistentModelID, excludedSubcategoryIDs.contains(subID) {
+                return false
             }
 
-            // Need Filter (still applies to pie charts)
-            if let need = selectedNeed {
-                if let sub = transaction.subcategory {
-                    if sub.need != need { return false }
-                } else {
-                    if need != .unclassified { return false }
-                }
-            }
+            // Need Filter (still applies to pie charts): incluidas y ocultas.
+            if !needFilter.matches(transaction.subcategory?.need ?? .unclassified) { return false }
 
             // Tag Filter — CSV-mirror SSOT (sobrevive CloudKit lazy hydration).
-            if !selectedTags.isEmpty {
-                let selectedUUIDs = Set(
-                    tags.filter { selectedTags.contains($0.persistentModelID) }.map(\.id)
-                )
+            if tagUUIDFilter.isActive {
                 let txTagUUIDs = transaction.resolvedTagIDs(scheduleBackfill: true) ?? []
-                if txTagUUIDs.isDisjoint(with: selectedUUIDs) { return false }
+                if !tagUUIDFilter.matchesAny(txTagUUIDs) { return false }
             }
 
-            // Currency Filter
-            if !selectedCurrencies.isEmpty {
-                guard let txCurrency = CurrencyCode(rawValue: transaction.currencyCode) else {
-                    return false
-                }
-                if !selectedCurrencies.contains(txCurrency) { return false }
+            // Currency Filter: incluidas y ocultas.
+            if currencyFilter.isActive,
+               !currencyFilter.matches(CurrencyCode(rawValue: transaction.currencyCode)) {
+                return false
             }
 
-            // Amount Filter
-            if amountCondition.isActive {
-                let amountDecimal = Decimal(transaction.amount)
-                if !amountCondition.matches(amountDecimal) { return false }
-            }
+            // Monto: la regla de `FilterService`, sin signo. Con signo, «Mayor a 100» vaciaba las tartas de gasto
+            // (ticket `panel-pies-amount-filter-uses-signed-amount`).
+            if amountCondition.isActive, !amountCondition.matches(signedAmount: transaction.amount) { return false }
 
             // Search/Note Filter
             if !searchText.isEmpty {
@@ -1583,14 +1673,9 @@ final class PanelViewModel {
 
     /// Pre-compute need-filtered transactions for pie widgets
     private func buildNeedFilteredTransactions(from pieContextTransactions: [TransactionItem]) -> [TransactionItem] {
-        guard let need = selectedNeed else { return pieContextTransactions }
-        return pieContextTransactions.filter { txn in
-            if let sub = txn.subcategory {
-                return sub.need == need
-            } else {
-                return need == .unclassified
-            }
-        }
+        let filter = needFilter
+        guard filter.isActive else { return pieContextTransactions }
+        return pieContextTransactions.filter { filter.matches($0.subcategory?.need ?? .unclassified) }
     }
 
     /// Pre-compute fully-filtered transactions (need + subcategory)
@@ -1633,14 +1718,20 @@ final class PanelViewModel {
         criteria.selectedTags = selectedTags
         // CSV-mirror SSOT: poblar tagUUIDs desde el catálogo local. Sobrevive
         // CloudKit lazy hydration de la M2M `transaction.tags`.
-        let selectedTagObjects = tags.filter { selectedTags.contains($0.persistentModelID) }
-        criteria.populateTagUUIDs(from: selectedTagObjects)
+        criteria.excludedTags = SessionState.shared.excludedTags
+        criteria.populateTagUUIDs(fromCatalog: tags)
         criteria.selectedCurrencies = selectedCurrencies
-        criteria.isExcludeMode = isExcludeMode
+        criteria.excludedCurrencies = SessionState.shared.excludedCurrencies
         criteria.amountCondition = amountCondition
         criteria.searchText = searchText
         criteria.dateInterval = dateInterval
 
+        // Lo OCULTO sale siempre, también del período anterior (`includeCategories: false`): si no, la tarta de este
+        // período no tiene «Comida» y la del anterior sí, y la variación sale bajando sin que nada bajara. Lo que
+        // `includeCategories` deja fuera es lo INCLUIDO, que en las tartas atenúa en vez de recortar.
+        criteria.excludedCategories = excludedCategoryIDs
+        criteria.excludedSubcategories = excludedSubcategoryIDs
+        criteria.excludedNeeds = SessionState.shared.excludedNeeds
         if includeCategories {
             criteria.selectedCategories = SessionState.shared.selectedCategoryIDs
             criteria.selectedSubcategories = selectedSubcategoryIDs
@@ -1704,14 +1795,19 @@ final class PanelViewModel {
             return FilterService.matchesCriteria(transaction, criteria: comparisonCriteria)
         }
 
-        // Balance transactions: same filters as filtered BUT without date filter
-        // INCLUDES adjustments (needed for running balance calculation)
-        let balanceCriteria = buildFilterCriteria()  // dateInterval = nil → no date filter
-        let balanceTransactions = transactions.filter { transaction in
-            guard let account = transaction.account else { return false }
-            if !eligibleAccountIDs.contains(account.persistentModelID) { return false }
-            return FilterService.matchesCriteria(transaction, criteria: balanceCriteria)
-        }
+        // Un saldo es lo que hay en las cuentas (decisión de Jürgen, 2026-10-22): las mismas cuentas que el número de
+        // arriba —el interruptor de Grupos incluido— y todos sus movimientos, sin los chips de filtro. Hasta ese día la
+        // curva de saldo y la hoja «¿Cuánto tienes hoy?» filtraban por los chips y no por el interruptor, al revés que
+        // el número de arriba (`hoja-del-saldo-vivo-ignora-los-filtros-de-sesion`). INCLUYE ajustes y saldos iniciales.
+        let balanceAccounts = PanelBalanceScopeLogic.accounts(
+            eligible: eligibleAccounts,
+            includeGroups: appPreferences?.includeGroupsInPanelTotal ?? true,
+            selectedAccountIDs: selectedAccountIDs
+        )
+        let balanceTransactions = PanelBalanceScopeLogic.transactions(
+            transactions,
+            accountIDs: Set(balanceAccounts.map { $0.persistentModelID })
+        )
 
         // Expense-filtered transactions (excludes adjustments and initial balances)
         let expenseFiltered = filtered.filter { $0.balanceAdjustmentType == nil }
@@ -1721,7 +1817,10 @@ final class PanelViewModel {
         // currentInterval from changing on every recalculation, which causes unnecessary re-renders.
         let effectiveInterval: DateInterval
         if selectedPeriod == .allTime {
-            let endOfToday = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: .now)) ?? .now
+            // 23:59:59 de hoy, como `DetailPeriod.dateInterval()`: la medianoche de mañana contaba lo fechado mañana a
+            // las 00:00 (`DateInterval` es cerrado).
+            let startOfTomorrow = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: .now)) ?? .now
+            let endOfToday = calendar.date(byAdding: .second, value: -1, to: startOfTomorrow) ?? startOfTomorrow
             if let firstTxDate = filtered.map(\.date).min() {
                 let start =
                     calendar.date(
@@ -1779,6 +1878,7 @@ final class PanelViewModel {
             fullyFilteredTransactions: fullyFiltered,
             needWidgetTransactions: needWidgetTxns,
             transactionsWithoutDateFilter: transactionsWithoutDateFilter,
+            balanceAccounts: balanceAccounts,
             balanceTransactions: balanceTransactions,
             period: selectedPeriod,
             effectiveInterval: effectiveInterval,
@@ -1807,19 +1907,14 @@ final class PanelViewModel {
     /// (nil → gasto). Residual conocido: para Tags no se filtra "tiene tag", así que
     /// un gasto SIN etiqueta más tardío que el último gasto etiquetado puede correr
     /// el corte 1+ días (borde estrecho, conservador).
+    /// La regla vive en `DistributionPreviousPeriodCalculator.currentDates`, que comparte con Distribución: el
+    /// movimiento sin categoría cuenta, porque todos los widgets que la usan lo cuentan.
     private func currentPeriodDates(
         _ txs: [TransactionItem],
         in interval: DateInterval,
         natures: Set<TransactionNature>?
     ) -> [Date] {
-        let include = natures ?? [.expense]
-        return txs.filter { tx in
-            guard tx.balanceAdjustmentType == nil, let category = tx.category,
-                  interval.contains(tx.date) else { return false }
-            let nature: TransactionNature = category.isIncome ? .income : .expense
-            return include.contains(nature)
-        }
-        .map(\.date)
+        DistributionPreviousPeriodCalculator.currentDates(from: txs, in: interval, natures: natures)
     }
 
     /// Transacciones del período ANTERIOR (dentro de `previousInterval`) truncadas al
@@ -1841,7 +1936,9 @@ final class PanelViewModel {
         }
         return DateAlignmentHelper.alignedPreviousItems(
             previous,
-            currentDates: currentPeriodDates(currentSource, in: context.effectiveInterval, natures: natures),
+            currentDates: currentPeriodDates(
+                currentSource, in: context.effectiveInterval, natures: natures
+            ),
             currentInterval: context.effectiveInterval,
             previousInterval: previousInterval,
             period: context.period,
@@ -1908,12 +2005,12 @@ final class PanelViewModel {
 
         // Create lookup dictionary for previous amounts by category ID
         let previousAmounts = Dictionary(
-            uniqueKeysWithValues: previousData.map { ($0.category.persistentModelID, $0.amount) }
+            uniqueKeysWithValues: previousData.map { ($0.id, $0.amount) }
         )
 
         // Assign previousAmount to current data
         for index in currentData.indices {
-            let categoryID = currentData[index].category.persistentModelID
+            let categoryID = currentData[index].id
             currentData[index].previousAmount = previousAmounts[categoryID]
         }
 
@@ -2054,7 +2151,7 @@ final class PanelViewModel {
 
         // In expenses-only mode, exclude income transactions
         if SessionState.shared.isExpensesOnlyMode {
-            filtered = filtered.filter { $0.category?.isIncome != true }
+            filtered = filtered.filter { !TransactionClassificationLogic.isIncome($0) }
         }
 
         return Array(
@@ -2131,6 +2228,105 @@ final class PanelViewModel {
 
     // State for Filter Logic
     var isCategorySelectionImplicit: Bool = false
+
+    // MARK: - Tocar un segmento: «Ver solo» / «Ocultar» (propuesta A, 2026-10-25)
+
+    /// Lo que pregunta el Panel al tocar un segmento de una tarta o un top. «Ver solo» y «Quitar el filtro» reusan las
+    /// ramas de los toggles de siempre (la categoría que se elige sola al ver solo una subcategoría, y que se va con ella);
+    /// «Ocultar» va a `SessionState`.
+    func segmentChoice(
+        for target: SegmentFilterTarget,
+        name: String,
+        amountText: String?
+    ) -> SegmentFilterChoice {
+        let session = SessionState.shared
+        let membership = session.membership(of: target)
+        switch target {
+        case .category(let id):
+            return SegmentFilterChoice(
+                target: target, name: name, amountText: amountText, membership: membership,
+                showOnly: { [weak self] in
+                    guard let self else { return }
+                    // Las subcategorías vistas solas de OTRA categoría dejarían la pantalla en 0 (Transporte ∧
+                    // Restaurantes): se van, como en Distribución. Las de esta se quedan.
+                    self.dropIncludedSubcategories(outside: id)
+                    self.selectedCategoryID = id
+                    self.isCategorySelectionImplicit = false
+                },
+                hide: { [weak self] in
+                    // Ocultar la categoría de una subcategoría vista sola dejaba «Solo Restaurantes» + «Sin Comida»: 0.
+                    self?.dropIncludedSubcategories(inside: id)
+                    if self?.selectedCategoryID == id { self?.isCategorySelectionImplicit = false }
+                    session.hide(target)
+                },
+                clear: { [weak self] in
+                    if self?.selectedCategoryID == id {
+                        self?.selectedCategoryID = nil
+                        self?.isCategorySelectionImplicit = false
+                    }
+                    session.clearFilter(target)
+                }
+            )
+        case .subcategory(let id):
+            return SegmentFilterChoice(
+                target: target, name: name, amountText: amountText, membership: membership,
+                showOnly: { [weak self] in
+                    guard let self else { return }
+                    // Desde «oculta» o sin filtro: la rama de elegir del toggle (fija la categoría implícita).
+                    if !self.selectedSubcategoryIDs.contains(id) { self.toggleSubcategoryFilterFromPanel(id) }
+                },
+                hide: { [weak self] in
+                    self?.dropImplicitCategory(ifOnlySubcategory: id)
+                    session.hide(target)
+                },
+                clear: { [weak self] in
+                    self?.dropImplicitCategory(ifOnlySubcategory: id)
+                    session.clearFilter(target)
+                }
+            )
+        case .tag(let id):
+            return SegmentFilterChoice(
+                target: target, name: name, amountText: amountText, membership: membership,
+                showOnly: { [weak self] in self?.selectedTags = [id] }
+            )
+        case .need(let need):
+            return SegmentFilterChoice(
+                target: target, name: name, amountText: amountText, membership: membership,
+                showOnly: { [weak self] in self?.selectedNeed = need }
+            )
+        case .account(let id):
+            return SegmentFilterChoice(
+                target: target, name: name, amountText: amountText, membership: membership,
+                showOnly: { [weak self] in self?.selectedAccountID = id }
+            )
+        case .currency(let code):
+            return SegmentFilterChoice(
+                target: target, name: name, amountText: amountText, membership: membership,
+                showOnly: { [weak self] in self?.selectedCurrencies = [code] }
+            )
+        }
+    }
+
+    /// Quita de lo visto solo las subcategorías de esa categoría (`inside`) o de las demás (`outside`).
+    private func dropIncludedSubcategories(inside categoryID: PersistentIdentifier) {
+        let parents = Dictionary(allSubcategories.map { ($0.persistentModelID, $0.category?.persistentModelID) }) { a, _ in a }
+        let keep = selectedSubcategoryIDs.filter { parents[$0] ?? nil != categoryID }
+        if keep != selectedSubcategoryIDs { selectedSubcategoryIDs = keep }
+    }
+
+    private func dropIncludedSubcategories(outside categoryID: PersistentIdentifier) {
+        let parents = Dictionary(allSubcategories.map { ($0.persistentModelID, $0.category?.persistentModelID) }) { a, _ in a }
+        let keep = selectedSubcategoryIDs.filter { parents[$0] ?? nil == categoryID }
+        if keep != selectedSubcategoryIDs { selectedSubcategoryIDs = keep }
+    }
+
+    /// Si la subcategoría que se quita u oculta era la única vista sola y su categoría se había elegido sola por ella,
+    /// la categoría se va también: sin esto quedaba «Solo Transporte» sin que nadie lo pidiera.
+    private func dropImplicitCategory(ifOnlySubcategory id: PersistentIdentifier) {
+        guard isCategorySelectionImplicit, selectedSubcategoryIDs == [id] else { return }
+        selectedCategoryID = nil
+        isCategorySelectionImplicit = false
+    }
 
     // Helper to toggle Category explicitly (from Widget)
     func toggleCategoryFilter(_ id: PersistentIdentifier) {
@@ -2341,9 +2537,7 @@ final class PanelViewModel {
     func calculateBudgetsWidget(
         budgets: [Budget],
         transactions: [TransactionItem],
-        defaultCurrencyCode: String,
-        excludedCategoryIDs: Set<PersistentIdentifier> = [],
-        excludedSubcategoryIDs: Set<PersistentIdentifier> = []
+        defaultCurrencyCode: String
     ) {
         // Check if there are budgets but none are favorites
         let hasBudgets = !budgets.isEmpty
@@ -2353,16 +2547,19 @@ final class PanelViewModel {
         // Get budgets to display: favorites first (sorted by order), then fill with active non-favorites
         let sortedFavorites = favoriteBudgets.sorted { $0.favoriteOrder < $1.favoriteOrder }
 
-        // Calculate summaries for favorite budgets
-        let summaries = sortedFavorites.compactMap { budget -> BudgetSummary? in
+        // Sin favoritos, los dos presupuestos más usados (UX 2.2 · L3-13): antes el widget decía «Sin presupuestos
+        // favoritos» a quien tenía presupuestos, y parecía que no se habían guardado. La estrella sigue eligiendo.
+        let shown = newHasBudgetsButNoFavorites ? budgets.filter { $0.isActive } : sortedFavorites
+        let computed = shown.compactMap { budget -> BudgetSummary? in
             calculateBudgetSummary(
                 budget: budget,
                 transactions: transactions,
-                defaultCurrencyCode: defaultCurrencyCode,
-                excludedCategoryIDs: excludedCategoryIDs,
-                excludedSubcategoryIDs: excludedSubcategoryIDs
+                defaultCurrencyCode: defaultCurrencyCode
             )
         }
+        let summaries = newHasBudgetsButNoFavorites
+            ? PanelBudgetsFallbackLogic.mostUsed(computed, percentage: \.percentage)
+            : computed
 
         let newBudgets = PanelBudgetsData(
             topBudgetSummaries: summaries,
@@ -2375,78 +2572,20 @@ final class PanelViewModel {
     private func calculateBudgetSummary(
         budget: Budget,
         transactions: [TransactionItem],
-        defaultCurrencyCode: String,
-        excludedCategoryIDs: Set<PersistentIdentifier> = [],
-        excludedSubcategoryIDs: Set<PersistentIdentifier> = []
+        defaultCurrencyCode: String
     ) -> BudgetSummary? {
         // Get budget period date interval
         let interval = getBudgetDateInterval(budget: budget)
 
-        // Filter transactions by date
-        var filtered = transactions.filter { interval.contains($0.date) }
-
-        // Apply session exclude filters (user-excluded categories/subcategories)
-        if !excludedCategoryIDs.isEmpty || !excludedSubcategoryIDs.isEmpty {
-            filtered = filtered.filter { transaction in
-                if !excludedCategoryIDs.isEmpty,
-                   let catID = transaction.category?.persistentModelID,
-                   excludedCategoryIDs.contains(catID) { return false }
-                if !excludedSubcategoryIDs.isEmpty,
-                   let subID = transaction.subcategory?.persistentModelID,
-                   excludedSubcategoryIDs.contains(subID) { return false }
-                return true
-            }
-        }
-
-        // Apply budget filters
-
-        // Account filter (CSV mirror SSOT con M2M fallback + auto-cura)
-        if let accountUUIDs = budget.resolvedAccountIDs(scheduleBackfill: true), !accountUUIDs.isEmpty {
-            filtered = filtered.filter { transaction in
-                if let account = transaction.account {
-                    return accountUUIDs.contains(account.shortcutID)
-                }
-                return false
-            }
-        }
-
-        // Subcategory filter (CSV mirror SSOT con M2M fallback + auto-cura)
-        if let subcategoryUUIDs = budget.resolvedSubcategoryIDs(scheduleBackfill: true), !subcategoryUUIDs.isEmpty {
-            filtered = filtered.filter { transaction in
-                if let subcategory = transaction.subcategory {
-                    return subcategoryUUIDs.contains(subcategory.shortcutID)
-                }
-                return false
-            }
-        }
-
-        // Tag filter — ambos lados (budget + tx) usan CSV mirror SSOT.
-        if let budgetTagUUIDs = budget.resolvedTagIDs(scheduleBackfill: true), !budgetTagUUIDs.isEmpty {
-            filtered = filtered.filter { transaction in
-                let txTagUUIDs = transaction.resolvedTagIDs(scheduleBackfill: true) ?? []
-                return !txTagUUIDs.isDisjoint(with: budgetTagUUIDs)
-            }
-        }
-
-        // Need filter
-        if let naturesString = budget.natures, !naturesString.isEmpty {
-            let natures = naturesString.split(separator: ",")
-                .compactMap { SubcategoryNeed(rawValue: String($0).trimmingCharacters(in: .whitespaces)) }
-
-            filtered = filtered.filter { transaction in
-                natures.contains(transaction.effectiveNeed)
-            }
-        }
-
-        // Only count expenses (not income)
-        filtered = filtered.filter { $0.category?.isIncome == false }
-
-        // Sum amounts in budget's currency. Delega al helper único de
-        // BudgetsViewModel para consistencia: TC actual cuando difiere la
-        // moneda, sin la heurística de "ramas mezcladas" anterior.
-        let spent = filtered.reduce(0.0) { sum, transaction in
-            sum + abs(BudgetsViewModel.budgetAmount(of: transaction, in: budget.currencyCode))
-        }
+        // Lo gastado sale de la MISMA función que Planificación (`BudgetsViewModel.calculateSpending`, que también usan
+        // las alertas de presupuesto), con el neteo de gastos de grupo del Panel. Hasta el 2026-10-23 el Panel filtraba
+        // por su cuenta: contaba los ajustes de saldo como gasto, ignoraba «Contar mi parte de los gastos de grupo» y
+        // sumaba el gasto de grupo entero, y además restaba las categorías excluidas con el filtro de sesión, que
+        // Planificación no mira. «Te quedan» podía salir distinto en las dos pantallas (ticket
+        // `panel-budget-spent-diverges-from-planning`).
+        let spent = BudgetsViewModel.calculateSpending(
+            budget: budget, transactions: transactions, interval: interval, adjustment: statsAdjustment
+        )
 
         let percentage = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100.0 : 0.0
         let daysRemaining = getBudgetDaysRemaining(budget: budget, interval: interval)
@@ -2502,7 +2641,17 @@ final class PanelViewModel {
             recalculateTask?.cancel()
             recalculateTask = nil
             pendingReload = false
+            missedWhileInactive = false
         }
+    }
+
+    /// La app pasó a activa (`UIApplication.didBecomeActiveNotification`, `PanelActivationObserver`): repite el
+    /// recálculo que el freno descartó mientras no lo estaba, con la recarga si alguno la pedía. Sin nada pendiente,
+    /// no hace nada: la vuelta a primer plano normal ya recarga por su cuenta.
+    func applicationDidBecomeActive() {
+        guard missedWhileInactive, !isInBackground else { return }
+        missedWhileInactive = false
+        scheduleRecalculation(reload: pendingReload)
     }
 
     /// Cancel any pending recalculation
@@ -2520,32 +2669,7 @@ final class PanelViewModel {
 
     func deletePracticeItem(_ item: PracticeCleanupItem) {
         guard let ctx = modelContext else { return }
-        do {
-            for pid in item.allPersistentIDs {
-                switch item.kind {
-                case .transaction: try deletePracticeModel(TransactionItem.self, id: pid, context: ctx)
-                case .draft: try deletePracticeModel(InboxDraft.self, id: pid, context: ctx)
-                case .budget: try deletePracticeModel(Budget.self, id: pid, context: ctx)
-                case .scheduledPayment: try deletePracticeModel(ScheduledPayment.self, id: pid, context: ctx)
-                }
-            }
-            try ctx.save()
-        } catch {
-            #if DEBUG
-            print("SetupChecklist: Error deleting practice item: \(error)")
-            #endif
-        }
-    }
-
-    private func deletePracticeModel<T: PersistentModel>(_ type: T.Type, id: PersistentIdentifier, context: ModelContext) throws {
-        let all = try context.fetch(FetchDescriptor<T>())
-        guard let match = all.first(where: { $0.persistentModelID == id }) else {
-            #if DEBUG
-            print("SetupChecklist: Practice \(T.self) not found — ID mismatch")
-            #endif
-            return
-        }
-        context.delete(match)
+        PracticeCleanupDeleter.delete(item, in: ctx)
     }
 
     /// Debounced reload + recalculation — used when actual data may have changed
@@ -2570,18 +2694,28 @@ final class PanelViewModel {
     /// Guarded by isInBackground to prevent 0x8BADF00D during snapshot capture.
     private func scheduleRecalculation(reload: Bool) {
         guard !isInBackground else { return }
-        guard isApplicationActive() else { return }
+        // Card 7e60: un Panel de un almacén ya soltado no recalcula — sus filas en memoria son de ese almacén.
+        guard !boundStore.isDetached else { return }
+        guard isApplicationActive() else {
+            if reload { pendingReload = true }
+            missedWhileInactive = true
+            return
+        }
         if reload { pendingReload = true }
         recalculateTask?.cancel()
         recalculateTask = Task { @MainActor in
             do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, !boundStore.isDetached else { return }
             let shouldReload = pendingReload
             pendingReload = false
             if shouldReload {
                 loadData()
             }
             performCalculation()
+            if isReady {
+                LoadTimeMarks.ready(.coldLaunch)
+                LoadTimeMarks.ready(.panel)
+            }
         }
     }
 
@@ -2603,9 +2737,7 @@ final class PanelViewModel {
             calculateBudgetsWidget(
                 budgets: budgets,
                 transactions: transactions,
-                defaultCurrencyCode: defaultCurrencyCode,
-                excludedCategoryIDs: sessionState.isExcludeMode ? sessionState.selectedCategoryIDs : [],
-                excludedSubcategoryIDs: sessionState.isExcludeMode ? sessionState.selectedSubcategoryIDs : []
+                defaultCurrencyCode: defaultCurrencyCode
             )
         }
         // Shared paidAmounts fetch between the scheduled-payments widget and the
@@ -2646,9 +2778,11 @@ final class PanelViewModel {
             // (caso común — evita un fetch redundante).
             let scoreInterval = selectedPeriod.dateInterval(customRange: customDateRange)
             let paidForHealth: [String: [PaidOccurrenceInfo]]
+            // «Este mes» cierra a las 23:59:59 del último día y el mes natural en la medianoche siguiente: el mismo mes.
             if let shared = sharedPaidAmounts,
                let monthInterval = currentMonthInterval,
-               scoreInterval == monthInterval {
+               scoreInterval.start == monthInterval.start,
+               scoreInterval.end == monthInterval.end || scoreInterval.end == monthInterval.end.addingTimeInterval(-1) {
                 paidForHealth = shared
             } else {
                 paidForHealth = ScheduledPaymentPaidStatusHelper.loadPaidAmounts(
@@ -2785,7 +2919,7 @@ final class PanelViewModel {
         let liveBalanceOverride = LiveBalanceCalculator.liveBalanceOverride(
             for: trendType,
             interval: context.effectiveInterval,
-            accounts: context.eligibleAccounts,
+            accounts: context.balanceAccounts,
             transactions: context.balanceTransactions,
             preferredCurrencyCode: context.defaultCurrencyCode,
             converter: context.converter
@@ -2891,10 +3025,15 @@ final class PanelViewModel {
     /// is a future refinement tracked in the epic.
     private func calculateHeroWidget(
         eligibleAccountIDs: Set<PersistentIdentifier>,
-        monthInterval: DateInterval?,
+        monthInterval calendarMonth: DateInterval?,
         periodInterval: DateInterval
     ) {
-        guard let monthInterval else { return }
+        guard let calendarMonth else { return }
+        // El mes natural de `Calendar.dateInterval(of: .month)` acaba en el día 1 del siguiente a las 00:00, y
+        // `DateInterval` es cerrado: las pastillas del mes contaban lo fechado ese día a medianoche. Acaba en 23:59:59.
+        let monthInterval = DateInterval(
+            start: calendarMonth.start,
+            end: max(calendarMonth.start, calendarMonth.end.addingTimeInterval(-1)))
 
         // Mes anterior natural — independiente del selectedPeriod del Panel,
         // el Hero siempre compara contra el mes calendario anterior.
@@ -2952,6 +3091,7 @@ final class PanelViewModel {
         newPeriod.incomeApproximate = buckets.periodIncomeApproximate
         newPeriod.expenseApproximate = buckets.periodExpenseApproximate
         newPeriod.amountsAreApproximate = buckets.periodNetApproximate
+        newPeriod.periodHadMovements = buckets.periodHasAnyTx
         if newPeriod != heroPeriodWidget { heroPeriodWidget = newPeriod }
 
         let totalMonthlyBudget = budgets
@@ -2976,6 +3116,19 @@ final class PanelViewModel {
         )
         let newBalances = batchBalances.mapValues { ($0 as NSDecimalNumber).doubleValue }
         if newBalances != accountBalances { accountBalances = newBalances }
+
+        // Las líneas de la tarjeta «Grupos»: los mismos movimientos que suman esos saldos, por el grupo al que apuntan.
+        let cutoff = LiveBalanceCalculator.TodayCutoff(asOf: .now)
+        let systemIDs = Set(accounts.filter { $0.isSystemAccount && !$0.isArchived }.map(\.persistentModelID))
+        let movements: [GroupsAccountCardLogic.Movement] = systemIDs.isEmpty ? [] : transactions.compactMap { tx in
+            guard cutoff.counts(tx.date), let account = tx.account,
+                  systemIDs.contains(account.persistentModelID) else { return nil }
+            let pointsToGroup = tx.splitExpenseID != nil || tx.splitSettlementID != nil
+            return .init(zoneID: pointsToGroup ? tx.splitGroupZoneID : nil,
+                         currencyCode: account.currencyCode, amount: tx.amount)
+        }
+        let newGroupLines = GroupsAccountCardLogic.groupLines(movements)
+        if newGroupLines != groupAccountLines { groupAccountLines = newGroupLines }
     }
 
     /// Pre-computes period-specific expenses per account (expenses-only mode). La regla es `AccountSpendingLogic`, la

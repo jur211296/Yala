@@ -31,6 +31,43 @@ final class FavoritesCrudUITests: XCTestCase {
         )
     }
 
+    /// Card 93ta: un favorito de transferencia se edita como transferencia. Con el seed `formulario`, «Ahorro del mes» va
+    /// de «Cuenta Principal» a «Ahorros USD». El editor enseña origen y destino, sin categoría ni etiquetas, y el selector
+    /// de destino no ofrece el origen. Antes abría el editor de gasto/ingreso sin ningún tipo marcado y sin el destino.
+    func test_transferFavorite_editsOriginAndDestination() {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: "formulario")
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        app.openProfile()
+        app.openSettingsSection("profile_favorites")
+
+        let row = app.buttons["favorites_row_Ahorro del mes"]
+        XCTAssertTrue(row.waitForExistence(timeout: 5), "No apareció el favorito de transferencia del seed.")
+        row.tap()
+
+        XCTAssertTrue(app.textFields["favorite_name_field"].waitForExistence(timeout: 5), "No se abrió el editor.")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "editor-favorito-transferencia"
+        shot.lifetime = .keepAlways
+        add(shot)
+
+        let source = app.buttons["favorite_editor_source_chip"]
+        let destination = app.buttons["favorite_editor_destination_chip"]
+        XCTAssertTrue(source.waitForExistence(timeout: 5), "El editor de un favorito de transferencia no enseña el origen.")
+        XCTAssertTrue(destination.exists, "El editor de un favorito de transferencia no enseña el destino.")
+        XCTAssertTrue(destination.label.contains("Ahorros"), "El destino no es el del favorito: \(destination.label)")
+        XCTAssertFalse(app.buttons["favorite_editor_subcategory_chip"].exists,
+                       "Una transferencia no lleva categoría, y el editor la ofrece.")
+
+        // El selector de destino no ofrece la cuenta de origen: origen igual a destino no se puede elegir.
+        destination.tap()
+        let ahorros = app.descendants(matching: .any)["account_selector_row_Ahorros USD"].firstMatch
+        XCTAssertTrue(ahorros.waitForExistence(timeout: 5), "No se abrió el selector de destino.")
+        XCTAssertFalse(app.descendants(matching: .any)["account_selector_row_Cuenta Principal"].exists,
+                       "El selector de destino ofrece la cuenta de origen.")
+    }
+
     /// CRUD — crear un favorito y verificar que aparece en la lista.
     func test_createFavoriteAppearsInList() {
         let app = XCUIApplication()

@@ -20,27 +20,158 @@ paths:
 - NUNCA `@AppStorage` dentro de `@Observable` (no triggerea updates).
 - Preferir `@Observable` + `@State`/`@Bindable` sobre `ObservableObject`/`@Published`/`@StateObject`.
 - **Preferencias persistentes → `AppPreferences` inyectado via `@Environment`.** NUNCA `@AppStorage` directo en views nuevas.
+- **El contenido de una hoja puede rehacerse SIN cerrarla, y su `@State` nace de cero (medido el 2026-11-04).** Pasaba al
+  entrar a Yala desde fuera con «Nuevo registro» a medias en otra pestaña. Fue en el runner del CI y una vez en local:
+  mismo proceso, misma escena y la barra intacta. El formulario volvía con «0.00» y sin animación de cierre.
+  ⇒ **Lo que la persona escribió no vive solo en un `@State` del contenido de la hoja**: lo guarda quien la presenta y se
+  descarta en el `onDismiss`, no en un `onDisappear` del contenido, que también corre al rehacerse. Molde:
+  `NewRecordDraft`. El rehecho se fuerza en XCUITest con `-uitest-rebuild-form-on-return`
+  (`View.newRecordSheetIdentity()`). Una hoja nueva con formulario largo y el mismo riesgo copia el molde.
+  **Que iOS cierre Yala lo cubre otra pieza, en disco** (card 77j1, decisión A de Jürgen, 2026-11-04):
+  `NewRecordDraftStore` guarda un registro nuevo al dejar de estar activa la app (`.inactive`, no solo `.background`:
+  matada justo al pasar a segundo plano, la escritura de `.background` no llegaba a disco, medido en XCUITest), lo
+  recupera al abrir un registro nuevo a secas con «Empezar de cero» y caduca a las 24 h. Quién lo posee vive en
+  `NewRecordDraft.ownsSavedDraft` (sobrevive al rehecho) y se borra en su `discard()`. Pin:
+  `NewRecordDraftSurvivesCloseUITests` (el cierre se imita esperando a `.runningBackgroundSuspended` antes de
+  `terminate()`).
 - **Un singleton que NO es `@Observable` (`CloudAuthService.shared`) leído desde el body no repinta nada al cambiar, y un
   `@State` que se cambia pero el body no lee, tampoco.** `StorageSettingsView` cambia `refreshTick` cada segundo y ningún
   body lo lee: lo que repinta es que `controller.refresh()` cambie propiedades del controller `@Observable`. Medido por
   la review del 2026-10-06 (`migrate-card-keeps-promising-an-account-the-check-refused`): un botón apagado por algo leído
   de `CloudAuthService` se quedaba apagado tras cerrar la sesión hasta salir y volver a entrar. ⇒ **si un control depende
   de estado no observable, copia ese estado a una propiedad `Equatable` del `@Observable` y renuévala donde ya corre el
-  refresco** (`CloudMigrationController.liveSession`, en `refresh()`): solo repinta cuando cambia de verdad.
+  refresco** (`CloudMigrationController.liveSession`, en `refresh()`): solo repinta cuando cambia de verdad. **Para la
+  sesión hay aviso desde el 2026-10-23** (card nve0): `CloudAuthService.sessionDidChangeNotification`, al entrar un inicio
+  de sesión y dos veces en `signOut()` (antes y después de soltarla). La pestaña de Grupos se quedaba en «Crea tu cuenta»
+  más de 10 s tras conectar la cuenta; la escucha con un contador que el body lee (`sessionRevision`). **Solo para
+  repintar**: con las seis páginas montadas oye también los inicios de sesión que una puerta rechaza después (bloqueo [I]),
+  así que lo que se escribe al aceptar una sesión va en cada puerta. No cubre la sesión que el SDK borra solo (ticket
+  `cloud-session-removed-by-the-sdk-does-not-announce-itself`). **Desde la card n533 (2026-10-28) el resto de lectores no
+  escucha el aviso: llama a `CloudSessionRevision.shared.track()` justo antes de leer `hasSession`** —el contador
+  `@Observable` que sube el único emisor del aviso—, y así se repinta el `body` que lo evalúe aunque no tenga estado
+  propio (una pantalla empujada, una función compartida por dos pantallas). Medido en Ajustes: sin él, «Tu cuenta de
+  Yala» no salía con la sesión ya conectada hasta cerrar y volver a abrir. **Una lectura nueva de la sesión que pinte,
+  con su `track()` y su fila en `CloudSessionRevisionWiringTests`**; la que solo decide al tocar o al aparecer no lo
+  necesita (`WelcomeGroupsGateView.exitCell`).
 
 - **Mover un cálculo del body a una propiedad del VM CORTA el live-binding a los `@Model` que ese cálculo leía.** Un body que recorre objetos SwiftData queda observando sus propiedades una a una, así que una mutación **en sitio** (mismo objeto, otro importe) repinta sola sin que nadie recargue. Al precalcular en el ViewModel eso se acaba: la vista pasa a observar únicamente la propiedad del cache, y el refresco depende **entero** de que todo mutador llegue al recálculo. Medido el 2026-09-06 al mover las deudas de la tarjeta de grupo a `GroupsViewModel.debtsByGroup` (`recalculate()`): la lista de Grupos ya no repinta por una mutación in-place suelta, y `GroupsSyncClient.pullUntilExhausted` tiene salidas tempranas (`.transient`, sesión caducada, cap de iteraciones) que dejan páginas **aplicadas y guardadas sin bumpear `dataVersion`** — ahí la cifra se sostiene vieja hasta el próximo `onAppear`, pull-to-refresh o bump. ⇒ **Al precalcular en un VM, comprueba primero que TODO camino de mutación desemboca en el recálculo**, y prefiere la mutación que bumpea a confiar en la observación accidental. Contrapartida medida: en esa lista el cálculo en el body costaba **~25 ms por tecla del buscador** con 30 grupos, más que un frame entero.
 
-- **Corolario en Estadísticas (medido el 2026-10-09): la señal de «datos nuevos» es `DetailContainerViewModel.dataGeneration`, no `allTransactions.count` ni `dataVersion`.** `.count` no ve una edición en sitio (mismas filas) y `dataVersion` salta 150 ms antes de la recarga del contenedor, así que quien lo observe lee los arrays viejos. Y la señal no puede avanzar en cada recarga: el contenedor recarga **dos veces por alta** (al guardar, por `dataVersion`, y al cerrar la pantalla de éxito, por el `onDisappear` del sheet), y un contador por recarga duplicaba el recálculo de Distribución. Por eso solo avanza si la recarga trae algo (otro `dataVersion` o arrays distintos). Una pestaña que precalcule cuelga de ella (`CategoriesTabView`); Tendencias aún no (`trends-cards-ignore-an-in-place-amount-edit`).
+- **Corolario en Estadísticas (medido el 2026-10-09): la señal de «datos nuevos» es `DetailContainerViewModel.dataGeneration`, no `allTransactions.count` ni `dataVersion`.** `.count` no ve una edición en sitio (mismas filas) y `dataVersion` salta 150 ms antes de la recarga del contenedor, así que quien lo observe lee los arrays viejos. Y la señal no puede avanzar en cada recarga: el contenedor recarga **dos veces por alta** (al guardar, por `dataVersion`, y al cerrar la pantalla de éxito, por el `onDisappear` del sheet), y un contador por recarga duplicaba el recálculo de Distribución. Por eso solo avanza si la recarga trae algo (otro `dataVersion` o arrays distintos). Una pestaña que precalcule cuelga de ella (`CategoriesTabView` y, desde el 2026-10-25, `TrendsTabView`).
 
+
+- **«Solo grupos» tiene dos orígenes desde el 2026-10-26 (card p0iu), y la shell los lee juntos.** Sin sesión privada
+  (`!hasPrivateSession`, el eje) o con sesión privada y «Solo grupos» elegido en «Cómo usas Yala» (`GroupsOnlyViewMark`,
+  espejo `SessionState.prefersGroupsOnlyView`). ⇒ **un gate de SHELL o de visibilidad lee
+  `sessionState.isGroupsFocusedShell`**, nunca `!hasPrivateSession`: con la lectura vieja, quien eligió solo grupos vería
+  filas, pestañas o temas de la app completa. **Un gate de DATOS sigue leyendo el eje** (bridge, borrados, cierre de
+  sesión, la cuenta de los formularios de grupo): la vista no apaga la sesión, y por eso los gastos de grupo siguen
+  llegando a los registros. La puerta destacada de Ajustes y Más distingue los dos orígenes con
+  `UsageModeLogic.returnEntry`, y el intent `.presentFullModeActivation` es la VUELTA cuando hay sesión privada
+  (`SessionState.isGroupsOnlyByChoice`). Un productor nuevo de avisos personales mira `PersonalRemindersPause` primero.
+  **Y un intent nuevo de Apple Pay o Siri que deje un borrador o conteste con finanzas mira `GroupsOnlyIntentGate`
+  primero** (encargo S11e, 2026-10-27): en esa shell la Bandeja no se ve, así que dice «Activa / Vuelve a Yala
+  completo» y su enlace es `activate-full`. Al volver, los pagos programados que vencieron en la pausa no salen
+  (`ScheduledPaymentDraftService.skipOccurrencesMissedDuringPause`, antes de levantar la marca y tras `processDuePayments`).
 
 ## Gotchas de vistas
 
+- **Un freno «solo con la app activa» que DESCARTA la petición deja la pantalla sin cargar en el arranque del iPad
+  (medido el 2026-11-05, iPad Pro 13, iOS 27.2, barrido final 2.2).** El Panel pedía su carga en el `onAppear` y en el
+  cambio de fase a `.active`, y los dos llegaban antes de que `UIApplication.applicationState` fuera `.active`: el freno
+  (`guard isApplicationActive() else { return }`) los tiraba y nadie volvía a pedirla (inferido: repetirla al activarse
+  lo cura, medido). El Panel se quedaba en el
+  esqueleto hasta mandar Yala a segundo plano y volver; en el iPhone no pasaba y la 2.1 tampoco lo tenía. ⇒ **un freno
+  así apunta lo que descartó y lo repite al activarse** (`PanelViewModel.missedWhileInactive` +
+  `UIApplication.didBecomeActiveNotification` en `PanelActivationObserver`). `RecalculationDebouncer` (Grupos) tiene el
+  mismo freno sin repetición; en las capturas del barrido Grupos sí cargó al relanzar en el iPad (no se buscó la carrera
+  a propósito). Pin: `PanelColdLaunchActivationTests`.
+- **Un `PasteButton` con un `.onTapGesture` en un PADRE no recibe el dedo (medido el 2026-11-05, iPhone 14, iOS 27.2,
+  QA de Grupos L12-16).** `.dismissKeyboardOnTap()` colgado del `ScrollView` de «Pega tu enlace de invitación» se quedaba
+  con el toque y «Pegar» no hacía nada; quitado, pegaba. ⇒ en una pantalla con `PasteButton`, el gesto que oculta el
+  teclado va en una capa de fondo hermana del contenido (`.background { Color.clear.dismissKeyboardOnTap() }`), que sigue
+  ocultándolo al tocar fuera (medido en el mismo iPhone). El simulador no lo reproduce: allí el `PasteButton` ignora
+  todo toque sintético. Pin: `PasteButtonTapWiringTests`.
+
+- **`.sheet(isPresented:)` con el contenido sacado de OTRO `@State` sale VACÍA si el `body` no lee ese estado fuera del
+  cierre (medido el 2026-10-17, iOS 27.0, lote 8).** Buscar ponía `detailTransaction = record` y `showsDetail = true` en
+  el mismo toque, y la hoja se presentaba con `if let transaction = detailTransaction` en nil: el cierre se quedó con el
+  valor de antes. Con un `@Observable` (Registros, `RecordsViewModel`) el mismo molde funciona. ⇒ **para presentar UN
+  objeto, `.sheet(item:)`**; si hace falta encadenar otra presentación al cerrar, guarda el objeto en un estado aparte
+  (`recordAwaitingEditor`) antes de vaciar el `item`. Pin: `UXAudit22Lote8CWiringTests`.
+- **Una hoja que reescribe el registro que tiene abierto un editor deja al editor con datos viejos, y su «Guardar» los
+  vuelve a escribir (review del 2026-11-02, card 6u5f).** «Tu parte» abierta desde el editor de la pata con receta pasa el
+  puente, que le cambia el importe (al de la línea ancla) y, con una recarga de ancla, la convierte en transferencia; el
+  editor seguía con el importe y la categoría que cargó al abrir, y guardar pisaba lo primero y borraba el par de lo
+  segundo. Refrescar un campo no basta: el editor escribe todos. ⇒ **si la hoja guardó, el editor se cierra al volver**
+  (`NewTransactionView.closeEditorIfSplitWasSaved`, con el aviso del `onSaved` de la hoja); si se canceló, sigue.
+- **Un `.task` (o un `onAppear`) colgado de un `Group` cuyo contenido es un `if` falso no corre nunca (medido el
+  2026-10-21, iOS 27.0, lote decidido 14).** Los modificadores de un `Group` se reparten entre sus hijos; sin hijos no
+  hay vista que aparezca. La tarjeta de avisos de grupo medía su estado en ese `.task` y no salía jamás. ⇒ **lo que mide
+  antes de decidir si se pinta cuelga de un marcador propio que solo existe hasta tener respuesta**
+  (`Color.clear.frame(width: 1, height: 1).task { … }`, molde de `GroupNotificationsOptInCard`).
+- **El `onAppear` de un `ViewModifier` puede correr ANTES que el de la vista que lo lleva (medido el 2026-10-17, iOS 27.0,
+  lote 9).** `BudgetAlertOpening` (abrir el presupuesto de una alerta) buscaba en `viewModel.allBudgets` desde su
+  `onAppear`, y el `onAppear` de `BudgetsListView` —el que hace `setContext`— aún no había corrido: lista vacía, el
+  aviso consumido y nada abierto. Lo cazó un XCUITest en rojo. ⇒ **lo que un modificador lea al aparecer lo prepara él**
+  (aquí, `viewModel.setContext(modelContext)` idempotente antes de leer), no cuenta con el orden de los `onAppear`.
+- **Una hoja pedida por una vista recién montada tras una reconstrucción (`.id(...)` de `ContentView`) puede llegar con las
+  hojas del árbol VIEJO aún cerrándose, y UIKit la rechaza (medido el 2026-10-24, iOS 27.0, card 6d71).** Al cambiar el
+  idioma, el Panel nuevo pedía Ajustes en su `onAppear` (+ una vuelta del main actor) con Ajustes y el selector de antes
+  todavía presentados: `Attempt to present … which is already presenting`, la ventana quedaba vacía medio segundo después
+  y el flag `isPresentingSettings` en `true` sin hoja — el botón de Ajustes, muerto hasta cerrar la app. Iba por la
+  carrera: a mano, con toques lentos, salía bien; el XCUITest caía 2 de 3. ⇒ **espera a que la ventana no tenga nada
+  presentado (`ModalPresentationProbe`) y verifica que la hoja llegó; si no, baja el flag** (`SettingsReturnOpening`).
+  Una vuelta del main actor no basta: el cierre de UIKit dura ~0,3-0,5 s.
+- **Un empuje con `navigationDestination(item:)` pedido en el PRIMER `onAppear` de una vista que se está montando por un
+  cambio de chip se pierde sin aviso (medido el 2026-10-17, iOS 27.0, lote 10).** El recordatorio de un pago cambia
+  Planificación al chip de Pagos y, en el mismo instante, `ScheduledPaymentAlertOpening` ponía el `item`: encontraba el
+  pago y no empujaba nada. Puesto una vuelta del main actor después (`Task { @MainActor in item = … }`), empuja. Con la
+  vista ya montada (el caso de presupuestos, L9-5) no hace falta. Lo cazó
+  `ScheduledPaymentsLote10UITests#test_reminderTap_opensThatPaymentsDetail` en rojo.
+- **Pasar de un `fullScreenCover` a otro del mismo anchor deja ~0,6 s de negro, y la cura —un solo cover que cambia
+  de contenido— se lleva por delante el `onDismiss` del que desaparece (medido el 2026-10-25, card 4gfj).** UIKit baja
+  uno entero y sube el otro; entre medias se ve lo de debajo. Con un cover y `.transition(.opacity)` sobre el fondo
+  común (pintado DEBAJO de las dos pantallas, o el centro del fundido deja ver el del cover) el salto se funde, pero
+  volver de una pantalla a la otra ya no cierra nada: lo que limpiaba su `onDismiss` tiene que correr también al cambiar
+  el contenido, y el respaldo del `onDismiss` solo si lo último pintado era esa pantalla. Mientras baja, el cover sigue
+  pintando lo último, no lo que dicen los flags apagados. Molde: `WelcomeFlowModifier` + `WelcomeCoverContentLogic`.
+  **Y las dos pantallas llevan `.zIndex(1)` (medido el 2026-10-28, iOS 27.0, card feer)**: sin él, la que SALE se pinta
+  por debajo del degradado opaco del `ZStack` y desaparece en un fotograma; solo se veía fundirse la que entraba. Vale
+  para cualquier `ZStack` con un fondo opaco y un `switch` con `.transition` encima.
+- **Un `.overlay` colgado DESPUÉS de `.glassEffect` no se ve: el cristal lo tapa (medido el 2026-10-17, iOS 27.0).** El
+  contorno rojo de la cápsula de un filtro oculto estaba en el código y no salía en pantalla. Antes del `.glassEffect`,
+  como contenido, sí (`FilterChipView`).
+
 - **Un `.confirmationDialog` colgado de un BOTÓN no pinta el `Button(role: .cancel)` en iOS 26 (medido el 2026-10-04,
   iPhone 17 Pro, iOS 27.0).** Sale anclado al botón y la salida de cancelar no aparece: `app.sheets.buttons[id]`
-  no la encuentra y la persona solo puede tocar fuera. Los diálogos colgados de la raíz de la pantalla
-  (`StorageConfirmations`) no tienen ese problema. ⇒ si la opción de «no hacer nada» tiene que verse —porque es
-  una decisión sobre datos—, dale un `Button` normal sin rol, o cuelga el diálogo de la raíz. Molde:
-  `StorageSettingsView`, diálogo del borrado de iCloud pendiente (`PendingICloudWipeMigrationUITests`).
+  no la encuentra y la persona solo puede tocar fuera. ⇒ si la opción de «no hacer nada» tiene que verse —porque es
+  una decisión sobre datos—, dale un `Button` normal sin rol. Molde: `StorageSettingsView`, diálogo del borrado de
+  iCloud pendiente (`PendingICloudWipeMigrationUITests`). **Colgarlo de la raíz de la pantalla tampoco lo arregla
+  (medido el 2026-10-17, lote 20):** esta regla decía que los de `StorageConfirmations` no tenían el problema, y
+  «¿Activar la nube?» salía con solo «Continuar»; los siete de esa pantalla pasaron a botón sin rol
+  (`PendingICloudWipeMigrationUITests#test_activateCloudConfirmation_showsCancel_andCancelStops`).
+  **Colgarlo de la raíz no siempre basta (medido el 2026-10-16, lote 18):** en el flujo de caja, el de borrar una
+  línea (en el detalle del mes, dentro del scroll) y el de «Reiniciar plan» (en el contenido de Reportes) salían como
+  globo anclado a media pantalla, sin «Cancelar». Se pasaron a `.alert`, que siempre pinta las dos salidas
+  (`CashFlowPlanUITests#test_resetPlan_asksWithAVisibleCancel`). En XCUITest los botones de esa alerta salen
+  duplicados en el árbol: `.firstMatch`.
+
+- **Una `.alert` colgada de la RAÍZ de una `NavigationStack` no sale si hay una pantalla empujada encima, aunque una
+  `.sheet` colgada del mismo sitio sí (medido el 2026-10-17, iPhone 17 Pro, iOS 27.0, lote 20).** En Ajustes, las
+  presentaciones del cierre de sesión y del borrado de cuenta colgaban de `listColumn`; desde «Tu cuenta de Yala»
+  (empujada) la hoja de alcance salía y la alerta que la sigue («Esto es definitivo») no, sin ningún aviso en el log:
+  la cuenta no se podía eliminar. ⇒ **una presentación cuya entrada vive en una pantalla empujada cuelga del
+  CONTENEDOR de la pila** (fuera del `NavigationStack`), no de su raíz. Molde: `ProfileView.signOutPresentations` /
+  `deleteAccountPresentations`, aplicados en `body`. Test: `DeleteAccountDialogUITests#test_deleteAccount_continue_showsTheFinalConfirmation`
+  (con la alerta devuelta a la raíz, cae en la espera del título).
+
+- **Un `DragGesture` en el contenido de un `ScrollView` vertical le quita el arrastre al scroll, también con
+  `.simultaneousGesture` (medido el 2026-10-16, iOS 27.0, lote 18).** La lista del mes del flujo de caja solo se movía
+  arrastrando desde la tira de meses; sin el gesto, se movía. ⇒ **para deslizar a los lados dentro de un scroll,
+  `HorizontalSwipeGesture`** (`Views/Shared/`, UIKit con `UIGestureRecognizerRepresentable`): solo arranca si la
+  velocidad horizontal manda y reconoce a la vez **solo** con el pan del `UIScrollView` — con `true` a todo, el
+  `Button` de la fila también disparaba y abría su hoja. `PeriodNavigationHeader` y `RecordsCalendarView` siguen con el
+  patrón viejo (sin medir). Test: `CashFlowPlanUITests#test_monthDetail_scrollsWithAFingerOnTheList_andASideSwipeChangesMonth`.
 
 - **Cancelar una tarea que crea un `onChange` ANTES de cambiar su valor no la cancela (medido 2026-09-30).** El
   `onChange` corre en el render SIGUIENTE a la escritura, cuando el `cancel()` ya pasó, y la tarea nace después.
@@ -53,6 +184,41 @@ paths:
   siguiente bump: `wipeAllUserData` no bumpea `dataVersion`, así que quien borra re-mide
   (`settleSignalsAfterDeliberateWipe`).
 
+- **Un `guard` que CALLA el arranque en una fase transitoria necesita quien lo retome cuando la fase pasa (card 7e60,
+  2026-10-28).** `presentNextOnboardingScreen` se calla con el cierre de sesión en `.awaitingRelaunch` (para no consumir
+  el destino del relanzamiento). Tras un cierre que cambia el almacén EN CALIENTE, el `ContentView` nuevo se monta y
+  decide su pantalla en esa fase —`checkInitialSyncState` no espera a nada—, y la fase vuelve a `.idle` después: sin
+  quien lo retomara, ni Welcome ni app ni pantalla de reabrir, y la persona lo vivió como un crash sin informe en
+  Sentry. ⇒ un `guard` así apunta lo que calló y el `onChange` de la fase lo retoma
+  (`onboardingRoutingDeferredForRelaunch` + `SignOutDeferredRoutingLogic`). El simulador no lo reproduce: monta con
+  espejo y el cambio en caliente se salta.
+
+- **El cambio de almacén en caliente deja vivo lo que no cuelga de la jerarquía, y cerraba Yala por dos sitios (card
+  7e60, medido en el iPhone 14 el 2026-11-05: el primero tapaba al segundo).** (1) **Una hoja del árbol viejo sigue
+  presentada hasta que UIKit termina de cerrarla**, y en ese rato su contenido vuelve a aparecer con el `modelContext`
+  del almacén soltado: Ajustes hacía `fetchCount` en su `onAppear` y SwiftData abortaba (`swift_weakLoadStrong`,
+  EXC_BREAKPOINT). ⇒ el contenido de una presentación desde la que se cierra sesión o se borra la cuenta en la nube
+  lleva `.detachesFromSwappedStore()`, que deja de pintarlo en cuanto la generación del host cambia o se queda sin
+  almacén (`SwappedStoreContentLogic`); hoy, la hoja de Ajustes. **La generación con la que se montó viaja por el entorno** (`\.mountedStoreGeneration`, lo pone `YalaApp.windowContent`), no en un `@State` del contenido: si iOS rehace el contenido de la hoja tras el cambio, un `@State` nuevo guardaría la generación nueva con el contexto viejo. (2) **El re-arranque vuelve a correr
+  `AppBootstrapper.bootstrap` en el MISMO proceso**, y lo que el sistema solo admite una vez por proceso revienta:
+  `BGTaskScheduler.register` de un identificador ya registrado lanza una excepción ObjC que nada atrapa. ⇒ un paso nuevo
+  del arranque que registre algo en el sistema lleva su latch de proceso (`BackgroundTaskManager.didRegisterTasks`).
+  (3) **El `onDismiss` de una hoja corre aunque la vista que la presentó ya no esté montada** (2026-11-06, el tercer
+  cierre: el de Ajustes del Panel viejo llamaba a `reloadAndRecalculate()` y su recarga hacía `fetch` con el almacén
+  soltado). ⇒ el corte va en el ViewModel que guarda el contexto, no en cada llamada: `BoundStoreContext` lo ata a la
+  generación con la que se dio y lo devuelve `nil` con otro almacén montado; quien recalcule con sus arrays (filas de
+  ese almacén) mira `isDetachedFromMountedStore` antes. Hoy, `PanelViewModel` y `DetailContainerViewModel`. Un
+  ViewModel nuevo que recargue desde el `onDismiss` de una hoja que pueda cerrar sesión hace lo mismo.
+  Pin: `SwappedStoreContentTests`, `BoundStoreContextWiringTests`, `BackgroundTaskRegistrationOnceTests`.
+
+- **Un destino del Welcome sobrevive al borrado del cierre de sesión, a propósito, así que cada cierre decide el suyo
+  (card 7e60, medido el 2026-11-05).** Un «Restaurar desde iCloud» de antes del cierre que nadie consumió dejaba a la
+  persona siguiente en «Un último paso: reabre Yala» en cada apertura: Restaurar se abría sin pasar por el Welcome,
+  pedía reabrir para conectar iCloud y, con `hasShownWelcomeChooser` borrado, el neutro armado volvía a montar sin
+  espejo. ⇒ el arm del borrado escribe el destino del cierre o retira el que hubiera (`persistDestinationOnArm`), y
+  todo callback que pida reabrir para el espejo marca `hasShownWelcomeChooser`, como el del contenedor del Welcome. Pin:
+  `SignOutWelcomeDestinationTests`.
+
 - **Una decisión del arranque que lea el eje de sesión NO puede tomarse en el splash (medido el 2026-10-19).**
   `checkInitialSyncState` corre en paralelo a `AppBootstrapper.bootstrap`, y el eje (`PrivateSessionMark`) lo escribe
   el backfill del bootstrap: decidido en el splash, el aviso en frío de «iCloud no está disponible» no salía en ningún
@@ -61,6 +227,44 @@ paths:
   (`requestColdStartICloudNoticeAfterBootstrap`). Y su estado va en un tipo del PROCESO, no en `@State`: con varias
   ventanas la líder se remonta (ver «Varias ventanas»).
 
+- **Una fila que recibe un `@Model` no lo lee si ya está borrado (card f8rj, crash de TestFlight 2.2 (2), iOS 27.2).**
+  La fila observa su modelo y puede volver a pintarse con él borrado: bajo una hoja que lo borró («Eliminar para
+  siempre» del editor de la Bandeja), con la lista esperando a recargar por `dataVersion`, o porque una recarga devolvió
+  una fila que esperaba su borrado diferido. En el iPhone 27.x leer cualquier propiedad aborta (`_assertionFailure`
+  desde el getter); **en el simulador 27.0 no**, así que ningún XCUITest lo caza. ⇒ el `body` de la fila mira primero
+  `isDeleted || modelContext == nil` y no pinta nada (`InboxDraftRowView`, `RecordRowView`); quien borra con la fila
+  montada la poda antes (`DraftService.deleteInboxDraftPruningRow`); y una retirada optimista con borrado diferido
+  esconde lo que espera en cada recarga (`InboxViewModel.beginRemoval`, `RecordPendingDeletion`). Pin:
+  `DeletedModelRowGuardWiringTests`, `InboxPendingRemovalTests`. Un `.ips` de TestFlight sin dSYM no se simboliza
+  recompilando el commit: sale otro UUID y las direcciones caen en código sin relación (medido).
+  **Un formulario que borra SU modelo y llama a `dismiss()` tiene el mismo problema** (card 1w89, 2026-10-31): sigue
+  presentado durante el cierre y su `body` se vuelve a evaluar al cerrarse la confirmación. El título de una alerta o
+  de un `confirmationDialog` que nombra lo borrado se copia al abrirla; lo demás que el `body` lea pasa por un accesor
+  que mire `isDeleted || modelContext == nil` (`NewTransactionView.readableTransactionToEdit`); y **su ViewModel cuenta**:
+  `NewTransactionViewModel.amountCurrencyCode` leía el registro para pintar el importe, así que tras guardar el borrado
+  lo suelta (`releaseDeletedRecord`). Mira también al PADRE que presenta la hoja: puede repintar con el modelo borrado
+  antes de recargar. Pin: `DeletedModelFormGuardWiringTests`. **Los otros diez casos (card gxa9, 2026-10-31)** dejaron
+  dos cosas medidas: (1) **`modelContext == nil` también es verdad en un modelo que nunca se insertó**, y los tests de
+  ViewModel construyen así sus modelos: con la guarda dentro del `init` o de un cálculo del ViewModel cayeron 22 tests
+  (`AccountFormViewModelTests`, `CategoryDetailViewModelTests`…). ⇒ la guarda «mira antes de leer» va en la VISTA, que
+  siempre recibe modelos de un contexto (`AccountFormView.init`, `TagFormView.init`, `CategoryDetailView.init` con
+  `readsCategory:`), y el ViewModel suelta con una marca o vaciando lo cargado (`releaseDeletedAccount`,
+  `releaseDeletedCategory`, `releaseDeletedTag`); (2) **la lista que presenta el formulario filtra lo borrado en el
+  array que pinta**, como `AccountsSettingsListViewModel.accounts` (presupuestos, categorías, etiquetas). Ajustes del
+  grupo, cuyo `body` lee el grupo en decenas de filas, no pinta filas con él borrado (molde de
+  `BudgetDetailView.isBudgetValid`). Pin: `DeletedModelMoreFormsGuardWiringTests` + `DeletedModelMoreFormsReleaseTests`.
+  **El detalle del grupo tras salir de él (2026-11-01, ticket `group-detail-reads-the-group-after-leaving-it`)** dejó una
+  tercera: (3) **una lógica pura que recibe propiedades del modelo YA LEÍDAS las lee antes de decidir**:
+  `GroupDetailDismissDecision.shouldDismiss` recibía `isHiddenForAll` e `isArchived`, y el `onChange` que cerraba el detalle
+  los leía del grupo borrado. ⇒ lo que solo vale con el modelo vivo va `@autoclosure` y detrás de `isDeleted`. El detalle
+  guarda su `body` con `isGroupReadable` (título de `viewModel.groupName`) y el ViewModel suelta con `releaseDeletedGroup`.
+
+- **En una página de pestaña, el buscador va en `.navigationBarDrawer(displayMode: .always)`, nunca `.automatic` (medido
+  el 2026-10-30, iOS 27.0, PR #703).** Las páginas siguen montadas al cambiar de pestaña. Con `.automatic`, al volver a
+  Grupos la barra reservaba el alto del cajón vacío ~0,4 s y luego lo plegaba, y el contenido saltaba ~45 pt de golpe
+  (vídeo de Jürgen). Lo fija `GroupsSearchDrawerWiringTests`, que prohíbe el `.automatic` en `Yala/App/Views`. Desde el
+  2026-10-30 Grupos no tiene buscador (la búsqueda es la pestaña Buscar), y el mismo test fija que no vuelva.
+
 - **`containerRelativeFrame(.horizontal)` en `ScrollView(.vertical)` con `.contentMargins`** → deadlock de layout, splash nunca dismissa, sin crash log. Usar `onGeometryChange`. Detalles en UI-PATTERNS.md.
 
 - **`YalaFormatter` no auto-refresca prefs** — lee `UserDefaults` directo. Vista que lo use con `decimalPlaces` o `currencyDisplayFormat` debe inyectar `@Environment(AppPreferences.self)` y leer `let _ = appPreferences.X` en body para registrar dependencia.
@@ -68,6 +272,29 @@ paths:
 - **Anidar dos hijos de un `HStack` en otro `HStack` NO es neutro cuando la fila va justa (medido 2026-09-28).** `HStack { icono; texto; Spacer(); importe }` y `HStack { HStack { icono; texto }; Spacer(); importe }` pintan igual con holgura, pero con compresión reparten el ancho distinto: en un iPhone SE la tarjeta de grupo pasó a truncar el nombre («Viaje a Cu…») para no encoger el importe, que antes cedía con su `minimumScaleFactor`. Lo cazó un diff píxel a píxel antes/después a tamaño por defecto; a simple vista en el ProMax no se veía. ⇒ **para reorganizar una fila con el tamaño de texto, `AdaptiveRowStack(leading:trailing:)`**, que a tamaño normal pinta la fila plana de siempre y solo anida al apilar. `AnyLayout` obliga a una sola jerarquía para las dos formas, y por eso aquí no sirve.
 
 - **Una pantalla que reparte su alto con `Spacer`s y no tiene scroll no cabe en un iPhone SE (medido 2026-09-28).** Nuevo registro y las pantallas de éxito tras guardar y tras aprobar un borrador se salían por arriba y por abajo **a tamaño normal**: con el teclado abierto en el formulario, y sin él en las de éxito. A AX5, «Guardar» quedaba fuera de alcance, también en el ProMax. ⇒ **envuélvela en `GeometryReader { proxy in ScrollView { VStack { … }.frame(minHeight: proxy.size.height) }.scrollBounceBehavior(.basedOnSize) }`**: cuando cabe, los `Spacer`s reparten igual y no hay scroll (medido píxel a píxel en el ProMax); cuando no, se desplaza. Si la pantalla tiene botones de salida, esos quedan fuera del scroll (molde de `GroupExpenseSuccessView`).
+  **Con un `.safeAreaInset(edge: .bottom)` por fuera y el teclado puesto, el `minHeight` del molde tapa lo de abajo
+  (medido el 2026-11-01, Nuevo gasto de Grupos, iOS 27.0):** el alto que mide el `GeometryReader` deja de descontar la
+  barra del inset, el contenido «cabe» y lo último queda debajo de «Guardar». ⇒ mientras haya un campo con foco, sin
+  alto mínimo (`.frame(minHeight: focusedField == nil ? proxy.size.height : nil)`), o el molde de Nuevo registro
+  (`SaveAreaPlacement`, que mete «Guardar» en el contenido con el teclado).
+- **Los botones fijos debajo de un scroll van en `.safeAreaBar(edge: .bottom)`, no en `.safeAreaInset` (barrido final
+  2.2, 2026-11-05).** Con el inset y sin fondo, el contenido que se desplaza pasa por debajo de «Guardar» y los dos textos
+  se leen uno encima del otro: a AX5 en Nuevo registro y el onboarding, y en el Duo cerrado también a tamaño normal. La
+  barra reserva el mismo sitio y difumina el borde del scroll bajo ella. Así van Nuevo registro (`SaveAreaPlacement`),
+  Nuevo gasto de Grupos, el onboarding y `YalaStepGuide`; los otros `safeAreaInset(edge: .bottom)` de `Yala/App` no se
+  han medido a AX5. **Dos efectos medidos a tamaño normal:** sin `spacing:` la barra deja otro hueco que el inset (el
+  formulario de Grupos bajaba 4 pt: va con `spacing: DS.Spacing.sm`), y **iOS atenúa el texto de un botón desactivado
+  dentro de la barra** (gris 164 → 129), sin que lo eviten el entorno `isEnabled` ni la opacidad de la etiqueta. Jürgen
+  pidió el tono de siempre a tamaño normal: `YalaPrimaryButton(keepsDisabledToneInBar: true)` pinta ese texto encima del
+  botón, al 50 % de `.plain`; con texto de accesibilidad se deja el del sistema.
+- **Una fila concepto-importe a tamaños de accesibilidad baja el importe a su propia línea; nunca lo corta ni lo parte.**
+  `AdaptiveRowStack`, o el mismo `if dynamicTypeSize.isAccessibilitySize` en línea cuando la fila lleva un
+  `Spacer(minLength:)` distinto (el `HStack` de tamaño normal queda idéntico: `VoiceDraftReviewCard`,
+  `ScheduledPaymentRowView`). Dos botones en una fila van en `ViewThatFits` (fila; si no cabe, uno debajo del otro).
+- **Cambiar el `foregroundStyle` de un `TextField` mientras tiene el foco no se ve hasta que lo pierde (medido el
+  2026-11-01, iOS 27.0).** Un monto que pasaba de gris a rosa al escribir el primer dígito se quedó gris con «240»
+  escrito. ⇒ el gris de «sin monto» va en el `prompt` (`Text(verbatim: "0.00").foregroundStyle(.tertiary)`) y el texto
+  lleva su color fijo, como Nuevo registro.
 
 - **`.fixedSize()` en un control ensancha la columna ENTERA cuando el control no cabe (medido 2026-09-28).** La píldora del período (`PeriodSelectorLabel`) con ancho fijo mide más que un iPhone SE a AX5, y su `VStack` padre crece con ella: el Panel y Registros perdían los márgenes y todo el contenido se cortaba contra los dos bordes, no solo la píldora. ⇒ **a tamaños de accesibilidad, `.fixedSize(horizontal: false, vertical: true)`**, para que el texto pase a dos líneas. El síntoma engaña: parece un problema de cada fila, y es de una sola pieza de arriba.
 
@@ -89,6 +316,15 @@ paths:
   contenido quepa o se desplace dentro, y el usuario la estira. Si un fondo se deriva del detent elegido, fíjalo a la
   altura real, no a la pedida.
 
+- **`.presentationBackground(<material>)` como ESTILO impide presentar la hoja cuando la pide otra hoja que ya está
+  sobre una hoja (medido el 2026-10-27, iOS 27.0).** En «Detalles» de un registro de Yala IA (hoja sobre la hoja del
+  chat), Categoría, Cuenta y Etiquetas —los tres selectores con `SelectorSheetSizing.mediumFirst`— no abrían: SwiftUI
+  construía el selector y UIKit no lo mostraba. Fecha, sin ese modificador, sí. Sin error ni aviso en el log. Desde
+  Nuevo registro (un nivel menos) abrían bien, y por eso #602 lo metió sin que nadie lo viera. Como VISTA
+  (`.presentationBackground { Rectangle().fill(.thickMaterial) }`) sí presentaba. **Desde el 2026-10-31 los selectores
+  no pintan fondo de presentación** (regla «Ninguna hoja con fondo gris», en «Backgrounds de vista»), y presentan en los
+  tres niveles igual que Fecha. Lo fijan los cuatro casos `test_draftDetails_*` de `ChatMessagingLayoutUITests`.
+
 - **Forms con `TextField`/`TextEditor`/`SecureField`** (sin `Form`): obligatorio `dismissKeyboardOnTap()` desde el primer commit. Detalles en SWIFT-STYLE.md.
 
 - **Swift Charts `.annotation { }` NO propaga environment objects `@Observable`** → el contenido de una annotation de un mark (`BarMark`/`LineMark`/etc.) se hostea fuera del árbol de la vista; una sub-View que lea `@Environment(AppPreferences.self)` (ej. `AmountText`) NO lo resuelve y dispara `SIGTRAP` (`_assertionFailure` en `EnvironmentValues.subscript.getter`) al renderizar — sin crash log claro. Dentro de annotations usar `Text(...)` con el valor YA resuelto del callsite (`appPreferences.currency(...)` desde `self`) o un formatter estático (`YalaFormatter`), NUNCA una sub-View con `@Environment`. **`.chartOverlay { }` SÍ propaga** (ahí `AmountText` funciona, ej. `CashFlowWidget`). Causa del crash del chip Estadísticas en grupos (`8bb5ace8`).
@@ -105,7 +341,168 @@ paths:
 
 - **Y al revés: lo que el manejador de un drenaje ENCIENDE tiene que bloquear en esa misma vuelta, no en la del observador (medido el 2026-10-13, CI en iOS 26.5).** `drainNext` sube la `revision`; si el bloqueo que el manejador acaba de encender solo llega a la matriz por un `onChange` de `ReadinessGateObservers`, en 26.5 el `onChange(of: revision)` corre ANTES y drena el siguiente con el consumidor aún listo: la oferta salía encima del aviso de vaciado o del de bandeja en 8 de ~60 arranques, y una de las dos presentaciones se perdía. ⇒ **`drainContentViewIntents` termina con `defer { updateContentViewReadiness() }`**; un consumidor nuevo cuyo manejador encienda un bloqueo publicado por otro hace lo mismo. En iOS 27.0 el orden era el otro y no se reproducía ni con la máquina cargada: un rojo de cola que solo sale en el CI se mide ALLÍ, con `NSLog` y la consola de la app que trae el `.xcresult` (`xcresulttool export diagnostics`). Ticket: `drained-notice-lets-the-next-intent-drain-before-the-matrix-blocks`.
 
+- **El orden ENTRE consumidores lo da la cola, no quién drena antes (2026-10-30, ticket
+  `notices-come-out-one-after-another-by-priority`).** La matriz y el candado evitan que dos avisos salgan a la vez, pero no
+  eligen cuál sale primero: con uno de `.contentView` y otro de `.mainTab` en cola, ganaba el consumidor cuyo `onChange`
+  corriera antes, y Novedades (`low`) podía salir antes que «Tu prueba terminó» (`high`). ⇒ **los dos drenajes del shell
+  preguntan `AppRouter.shellNoticeAhead(of:in:)`** antes de presentar, y la regla de quién cede es `NoticeOrderLogic`
+  (una hoja de MainTab cede ante lo de `.contentView` que vaya delante; un diferible de `.contentView`, ante una hoja de
+  MainTab; los críticos no ceden). Solo se cede ante un consumidor LISTO en esa ventana: ceder ante uno sin montar
+  colgaría el aviso. **Un consumidor nuevo que presente avisos propios entra en esa regla** (y en sus tests,
+  `NoticeOrderTests`), o vuelve a decidir el orden quien mire antes. Y **el `id` de un aviso que el productor recalcula
+  sobre lo que aún no se vio es FIJO**: la clave por cifras del de la Bandeja dejaba «2 nuevos» y «3 nuevos» en cola, y
+  salían los dos seguidos.
+
+- **El botón destacado de un `.alert` (`.keyboardShortcut(.defaultAction)`) toma el RELLENO del `AccentColor` del catálogo y el TEXTO del tinte de SwiftUI de quien presenta la alerta; si los dos coinciden, el texto sale NEGRO (medido en píxeles el 2026-10-17, iOS 27.0, claro y oscuro).** No elige por contraste: sobre `#3D36B3` también salía negro. Ignora `.tint` y `foregroundStyle` en el propio botón (y `role: .confirm` no cambia nada), y el mismo tinte colorea el texto de los demás botones de la alerta. ⇒ para cambiar ese texto, presenta la alerta desde un ancla con su propio tinte (`content.background { Color.clear.alert(…).tint(…) }`, sin teñir la pantalla de debajo) y recuerda que ese tinte pinta también «Cancelar». Molde: `AIConsentAlertModifier` + `Color.alertActionTint` (blanco en oscuro; en claro, el relleno, así que sale negro: blanco dejaría los otros botones ilegibles sobre el cristal claro). El catálogo y el token están atados por `AlertActionIndigoParityTests`. Ticket: pulido del 2026-10-17 («Activar» con texto oscuro).
+
+- **El molde del ancla propia (`content.background { Color.clear.alert(…).tint(…) }`) NO vale para los avisos de
+  `ShellDataAlertsModifier` (medido el 2026-10-22, iOS 27.0, lote decidido 2.2 · 15).** Para que «Seguir esperando» de
+  «Datos no disponibles» saliera relleno y legible se colgó el aviso de un ancla propia con `alertActionTint`, en
+  `.background`, en `.overlay` y como hermano 1×1 en un `ZStack`: con las tres el aviso **dejó de presentarse** y
+  `RemoteWipeNoticeRoutingUITests` cayó 4 de 5 (también el de «sin iCloud», que no se había tocado); con el ancla de
+  siempre, 5 de 5 verde. Solo con `.keyboardShortcut(.defaultAction)` el relleno sale, pero con el texto del mismo índigo
+  que el fondo. ⇒ en esos avisos el relleno legible no cabe en un `.alert`; si hace falta, es otra presentación.
+  **Y esa otra presentación tampoco cabe DENTRO de `ShellDataAlertsModifier` (medido el 2026-10-23, L20-15).** Con
+  «Datos no disponibles» pasado a `.sheet` en ese mismo modificador, ni la hoja ni el aviso de «iCloud no disponible»
+  (que no se había tocado) llegaron a presentarse: `RemoteWipeNoticeRoutingUITests` 1 de 5, y 5 de 5 con el código de
+  antes como control. Con la hoja en su PROPIO modificador colgado de la cadena de `ContentView`
+  (`RemoteWipeNoticeSheetModifier`, junto a `AppleIDCloseNoticeModifier`), 5 de 5. Causa sin aislar. ⇒ una
+  presentación nueva del ancla de `ContentView` va en su propio modificador, y se mide con su XCUITest antes de darla
+  por buena: el síntoma es «no sale», sin nada en el log.
+
+- **Un `.alert` con tres botones no admite cualquier orden (medido el 2026-10-19, iOS 27.0, lote decidido 2.2 · 04).** El
+  botón con `role: .cancel` va SIEMPRE al final, lo declares donde lo declares; y si ninguno lleva `.cancel`, SwiftUI añade
+  un «Cancelar» propio al final, que cierra la alerta sin ejecutar nada. Con «Exportar · Esperar · Cerrar sesión
+  igualmente» (L20-7) solo caben dos formas: «Esperar» como `.cancel` (y queda último) o los tres sin rol y un «Cancelar»
+  de más. Antes de prometer un orden en una alerta, mídelo; si el orden es la decisión, puede que no sea una alerta.
+
+- **En un `.alert`, el botón con `role: .cancel` va SIEMPRE al final, y sin ninguno SwiftUI añade un «Cancelar» propio
+  (medido el 2026-10-19, iPhone 17 Pro, iOS 27.0, aviso «Datos no disponibles»).** Para poner «Seguir esperando» primero
+  se le quitó el rol: salió arriba, pero el aviso pasó a tener tres botones —«Seguir esperando», «Empezar de cero» y un
+  «Cancelar» que repite al primero—, y los `accessibilityIdentifier` de esos botones no llegaron al árbol (`""`).
+  `.keyboardShortcut(.defaultAction)` en el de cancelar lo rellena pero no lo sube, y con el tinte de la app su texto
+  sale ilegible (la regla del botón destacado, arriba). ⇒ **el orden de una alerta no se elige**: si la salida segura
+  tiene que ir primero, hace falta otra presentación (una hoja con fases, molde `AppleIDCloseNoticeView`).
+
 - **El `actions` builder de un `.alert` NO admite un label dependiente del `@State`, y lo que rompe no es la alerta: es la app.** Medido el 2026-09-06. Al dar título y botón dinámicos a la alerta de invitación de `ContentView` —para que el mismo anchor sirviera a dos avisos distintos— **dejó de completarse el guardado de una transacción**: `TransactionSuccessView` no llegaba a montarse y `dismissTransactionSuccess()` agotaba sus 10 s. El síntoma cae a pantallas que no tienen ninguna relación con la alerta, así que **el diagnóstico por lectura no llega**: hay que bisecar. Aislado con control en las DOS direcciones — `Button(String(localized: "common.ok"))` pasa (×2) · `Button(activeInviteError?.cta ?? …)` falla (×4) — y con el contraste que delimita el alcance: **el TÍTULO dinámico pasa sin problema**, así que la frontera está en el ViewBuilder de `actions`, no en la alerta entera. ⇒ **el texto de los botones de un `.alert` va literal**; si dos avisos comparten anchor, lo que puede variar es el título y el mensaje. Y el corolario de método, que es el caro: un cambio de presentación aparentemente inerte —la alerta estaba OCULTA— puede romper un flujo cualquiera de la app, así que **no basta con correr los XCUITest del área tocada**. Este rojo salió en `QuickActionsFavoritesUITests`, un área que ningún cruce de `codeGlobs` habría señalado como afectada por un cambio en invitaciones de grupo.
+
+## Animar dentro de una pestaña (medido el 2026-10-27, iOS 27.0, card `estadisticas-chips-animacion-6l5n`)
+
+- **`ContentView` anula la animación de toda transacción que cruza el `TabView`** (`.transaction { $0.animation = nil }`,
+  desde el 2026-01-15). Dentro de una pestaña, un `withAnimation` o un `withTransaction` animado **no animan nada**: la
+  píldora del período de Estadísticas saltaba de ancho en un fotograma con los dos, y animó en cuanto se quitó ese
+  apagado (prueba hecha y revertida: no se toca, es de toda la app). Lo que sí funciona es una animación **implícita**
+  dentro de la vista, `.animation(_:value:)`, que actúa por debajo del apagado. Las transiciones con su propia
+  `.animation` (`AnyTransition.opacity.animation(…)`) también pasan. La barra de chips de Estadísticas, que va en un
+  `safeAreaInset`, sí animó con `withTransaction`: la diferencia con el contenido del scroll no está aislada. ⇒ **en una
+  pestaña, anima con `.animation(_:value:)` y compruébalo en vídeo**, no con «compila».
+- **El apagado se queda y se anima caso por caso (decisión 1yhi, opción B, 2026-10-30).** La animación va en el
+  CONTENEDOR común de lo que aparece y de lo que se mueve por ello, no en la vista que se va: con el `.animation` en el
+  aviso, el aviso se funde pero lo de debajo sube de golpe. Los sitios animados así (avisos del Panel y de Grupos,
+  flotantes de Panel, Grupos, Presupuestos y Pagos, plegado y cápsulas del flujo de caja) los fija
+  `TabImplicitAnimationsWiringTests`, junto con el apagado de `ContentView`; uno nuevo se añade a su lista.
+  **El apagado no llega a las hojas**: dentro de una hoja presentada desde una pestaña, `withAnimation` sí anima
+  (medido en vídeo el 2026-10-30: «Más opciones» de Exportar se abre en ~10 fotogramas). Los «Más opciones» de los
+  formularios, que van en hoja, no necesitan nada.
+- **`disablesAnimations` no lo deshace una transacción anidada.** El botón de `NavigationChipButton` llama a su acción con
+  `disablesAnimations = true` (contra un parpadeo del título grande), y un `withTransaction(Transaction(animation:))`
+  dentro no animaba. Por eso existe `animatesSwitch`.
+- **El label de un `Menu` no se anima**: su tamaño llega en una pasada aparte, sin animación, y arrastra a lo de al lado.
+  Si lo que enseña tiene que animarse, se pinta fuera y el `Menu` va encima, transparente (`TrendsPeriodMenu` con
+  `titleMotion`).
+- **`GlassEffectContainer` alrededor de chips que cambian de ancho rompe la animación**: la cápsula nueva no crecía hasta
+  el final y la pulsación fundía chips vecinos. Fuera del contenedor, anima.
+- **Un cambio que recalcula la pantalla se come la animación que va a la vez**: las animaciones avanzan en el hilo
+  principal, y montar una pestaña de Estadísticas lo bloquea 0,12–0,27 s en el iPhone (vídeo de Jürgen, 60 fps). Lo caro
+  se hace con la pantalla quieta y lo pequeño se anima después (`StatisticsPeriodControl.choose`).
+  **Toda fila de chips cuyo chip elegido cambia de ancho (solo el elegido enseña el nombre) monta sus páginas con
+  `StagedTabPages`** (Estadísticas y el detalle de grupo, card pjum, 2026-10-31). La página nueva se monta invisible
+  debajo de la que se ve y, cuando ya apareció, la página cambia y la fila se anima en el mismo fotograma. Sustituye a
+  `switchTab` (card yc6k), que animaba el chip primero y montaba la página al terminar: Jürgen lo vio en el iPhone como
+  «primero cambia el chip y un segundo después la página cambia de golpe». Lo que la pestaña cambie desde fuera de la fila
+  (el saldo, «Ver los saldos») pasa por el mismo `StagedTabSelection.select`. Planificación y Reportes enseñan el nombre
+  en todos y no lo necesitan. **La página no se funde**: el título grande vive dentro del scroll de la página (iOS 26), y
+  un fundido de la página funde también el título; con la vieja aún montada, la nueva no lo recibe y «Viaje a Cusco»
+  desaparecía ~0,3 s (medido en vídeo). Por eso `StagedTabPages` desmonta la vieja en el mismo instante en que enseña la
+  nueva. Pin: `StagedTabSelectionTests`, `FluidezWiringTests`.
+- **Un `Text` que cambia de valor con animación se funde con el anterior**: los dos quedan uno encima del otro («Este mes»
+  sobre «Mes pasado»). Un valor, una vista (`.id(valor)`) con salida `.identity`. Una salida con sentido no sirve: SwiftUI
+  la saca con la transición de su último fotograma, que es la del cambio anterior.
+- **Cómo se mide**: `simctl io recordVideo` escribe un fotograma solo cuando la pantalla cambia, así que los tiempos de
+  fotograma (`ffprobe -show_entries frame=pts_time`) dicen dónde hay bloqueo (hueco sin fotogramas) y una hoja de
+  contactos con `select='between(t,…)'` + `-fps_mode passthrough` enseña si hay interpolación o salto.
+
+## Fluidez: el sistema común (card pjum, 2026-10-31)
+
+La tabla vista por vista y lo que queda en cards: `docs/fluidez/AUDITORIA-FLUIDEZ-2-2.md`.
+
+- **Curvas con nombre en `DS.Animation`**, una por intención: `.selection` (chip, segmento, píldora, pestaña interna),
+  `.appear` (aviso, sección plegable, flotante, lo que entra o sale) y `.number` (una cifra que cambia). Una animación
+  nueva usa una de las tres; si ninguna sirve, se añade aquí, no se escribe un `.spring(...)` suelto.
+- **Siempre por `dsAnimation(_:value:reduceMotion:)` o `reduceMotion ? nil : …`.** Con Reducir movimiento no hay
+  animación. Dentro de una pestaña, implícita; en una hoja vale `dsWithAnimation(reduceMotion, …)`. Nunca
+  `dsWithAnimation(false)` fijo (ignora el ajuste: lo tenía el editor de pagos).
+- **Hápticos, `DS.Haptic`, uno por gesto**: selección → `selection()`; éxito (guardar, aprobar, confirmar) →
+  `success()`; aviso (validación que no deja seguir, error al guardar) → `error()`; borrado (al confirmarlo) →
+  `warning()`. Si el ViewModel ya vibra al confirmar, la vista no repite: confirmar una liquidación y marcar una fila de
+  Registros vibraban dos veces. El éxito va donde el guardado ya ha salido bien, no en el botón: el botón vibra
+  aunque falle. `.sensoryFeedback(_:trigger:)` vale para lo declarativo (la marca de una fila), sin sumarle un
+  `DS.Haptic` en el mismo toque. Ningún `UIImpactFeedbackGenerator`/`UINotificationFeedbackGenerator` suelto fuera de `DS.Haptic` (card C4, 2026-11-02: lo fija `FluidezHapticosWiringTests`, igual que «toda lista con `.onMove` vibra al soltar»). Borrar con pregunta vibra en el botón que CONFIRMA, no en el que abre la pregunta. En una hoja de selección, vibra la opción elegida, no el chip que abre la hoja.
+- **Una cifra que cambia a la vista: `AmountText(…, animatesValue: true)`**: `numericText` con su animación implícita.
+  Un `.contentTransition(.numericText())` sin `.animation(_:value:)` detrás no hace nada dentro de una pestaña, y así
+  estaban los heros de Categorías, Tendencias y Pagos. **Solo rueda lo que cambia con la cifra ya en pantalla** (600 ms
+  tras aparecer): el primer cálculo de una página recién montada sale quieto, porque si no Distribución rodaba de 0
+  hasta su saldo cada vez que se abría (`CategoriesTabView.balanceKPI`).
+- **Un selector de cápsula desliza la cápsula** (`matchedGeometryEffect`, molde `GenericSegmentedPill` y
+  `TransactionTypeSelectorView`), y su animación va en el propio selector, no en lo que cambia debajo.
+- **Un fundido de pantalla entera puede duplicar el árbol de accesibilidad mientras dura**: dos copias de cada botón, y
+  un XCUITest que toque en ese instante cae con «varios elementos». **Lo que se va al terminar una carga** (esqueleto,
+  `ProgressView`, «Analizando…») sale con `.transition(.loadingPlaceholder)` (`ContentTransitions.swift`, card C1,
+  2026-11-01): se funde y, desde el primer fotograma de su salida, ni se lee ni se toca. `yalaSkeleton` funde así el
+  esqueleto ENCIMA de los datos (`zIndex(1)`), que entran debajo ya opacos (`.identity`). Medido ese día: con el
+  esqueleto redactado ningún mutante llegó a duplicar el árbol (inferido: la copia `.redacted(.placeholder)` no se
+  expone), así que la salida oculta es el cinturón y `SkeletonFadeAccessibilityUITests` fija el criterio, no la pieza.
+  **Si lo que llega lleva el título grande en su scroll** (la lista de Grupos), entra con `.identity`: fundirla funde
+  el título con ella.
+- **Filas que entran o se van: `.animatesRowEdits(ids:)`** en el contenedor de las filas, con los ids en el orden en
+  que se pintan. Solo anima una edición de 1-3 filas con el resto en su orden (`RowListEditLogic`); un filtro o un
+  período que cambian la lista entera siguen en seco. La animación cubre el contenedor: lo de dentro que cambie en la
+  misma transacción y no deba fundirse (la frase con la cifra del grupo) lleva `.transaction { $0.animation = nil }`.
+  **Y el relevo con el vacío va en el contenedor de las DOS ramas, no en la de filas** (card 1jvv, 2026-11-03): ahí
+  dentro, borrar la última fila desmontaba la lista antes de que nadie animara y el vacío entraba en seco.
+  `.animatesEmptyStateSwap(ids:settled:)` en un `ZStack` (`.top` dentro de un scroll; centrado si el vacío ocupa la
+  página) con `.transition(.stateSwap)` en cada rama; la rama que lleva el título grande en su scroll, `.identity`. La
+  primera carga no cuenta (`settled`), o con 1-3 filas el vacío se fundía cada vez que se abría la pantalla. Pin:
+  `ContentTransitionsWiringTests.eachListWithAnEmptyState_swapsFromTheCommonContainer`.
+- **Lo que se va dentro de un contenedor animado no puede fundirse si lo de FUERA se mueve por ello (medido en vídeo el
+  2026-11-02, card C2).** El chip «solo gastos» del hero se fundía al irse y la fila de acciones, que vive fuera del
+  hero, subía de golpe y quedaba encima de él. ⇒ entra fundido y sale en el acto
+  (`.asymmetric(insertion: .opacity, removal: .identity)`), o la animación sube al contenedor común. Un `Text` que
+  cambia dentro de algo que se anima por otra cosa (el título del mes mientras entra el mes nuevo) lleva
+  `.transaction { $0.animation = nil }`: fundido, los dos títulos se solapan.
+- **Una `.transaction { $0.animation = nil }` en la raíz de una hoja no llega a lo que su `NavigationStack` empuja**
+  (medido el 2026-11-02, Ajustes desde Más, card C5): Presupuestos animaba igual con ella que sin ella. Solo apagaba la
+  lista raíz.
+- **Una pieza que cambia de estado en su sitio** (el borrador del chat: pendiente → guardado o descartado, card C8):
+  `.transition(.stateSwap)` en la pieza y la animación implícita en el contenedor común (el hilo), con el estado como
+  valor. Como `loadingPlaceholder`, el estado que se va deja de leerse y de tocarse desde su primer fotograma: sin eso
+  hay dos «Guardar» en el árbol mientras dura el fundido.
+- **El háptico de «Deshacer» va en quien deshace, no en el botón del aviso**: el aviso también lleva «Ver» y «Editar»,
+  que no deshacen nada, y un deshacer puede no tener nada que deshacer (`returnToPending` que lanza, `unskipOccurrence`
+  que no guarda). `success()` tras deshacer de verdad.
+
+- **`onScrollVisibilityChange` avisa de cosas que no son el scroll, y un aviso animado mueve la página entera (medido en
+  vídeo el 2026-11-02, iOS 27.2, cards hsqm y 2m2r).** Con la página de pestaña oculta dice «no visible». Y al montarse
+  la página, su primer aviso es «no visible» con el elemento en pantalla, antes de que el scroll tenga su sitio: si ese
+  aviso cambia un estado con animación, la transacción anima también el reajuste del scroll, y Grupos y Planificación
+  pintaban su contenido 44 pt abajo en la primera entrada y lo subían en ~0,2 s (con el «+» asomando). Se aisló con
+  variantes por argumento de lanzamiento: sin avisos, sin barra vertical, sin toolbar, sin márgenes ni `.large`, seguían
+  los 44 pt; sin el modificador, 0. ⇒ **quien reaccione a la visibilidad ignora la página oculta (`\.isRootPageShown`, lo
+  pone `MainTabView` con la página que SE VE, `RootTabLayoutLogic.displayedTab`: en la shell de solo grupos la selección
+  se queda en Panel) y no se cree el primer «no visible» hasta que pasa un rato sin desmentirse**
+  (`TopPrimaryActionRevealLogic.floatingAfterVisibilityChange` + `awaitsConfirmation`). Y si lo que hay que apagar es la
+  animación de una carga, apaga esa `.animation(_:value:)`: una transacción con `disablesAnimations` viaja a los
+  `onChange` que la carga dispara (hojas, empujes). Pin: `TopPrimaryActionRevealLogicTests`.
 
 ## iOS 26 Liquid Glass (OBLIGATORIO)
 - `ToolbarSpacer(.fixed, placement: .topBarTrailing)` — placement es OBLIGATORIO.
@@ -116,7 +513,20 @@ paths:
 - SIEMPRE `DS.Spacing`, `DS.Radius`, `DS.Typography`, `DS.Semantic.*`, `DS.Gradients.*` — NUNCA hardcoded.
 - SIEMPRE filas clicables con `Button` + `contentShape(Rectangle())`. **Y el DÓNDE importa: si el label tiene `Spacer()` (u otro hueco no dibujado) y NO lleva fondo relleno, el `contentShape` va DENTRO del label, tras el padding — nunca colgado del `Button`.** Ahí fuera no extiende el área interactiva sobre el hueco: solo responden los glifos de los extremos y **el centro de la fila queda muerto**, para un dedo humano igual que para un tap sintético. Medido el 2026-08-07 en la fila de divisa de `GroupFormView` (mismo elemento, misma `y`, solo cambia la `x`: sobre el glifo abre el selector, al centro no corre ni la acción — el `.sheet` es inocente). Un label con fondo relleno es inmune y no necesita el matiz: `GroupCardView` (`.listRowCard()`) y `MoreView.heroPanelCard` (`.panelCard(small:)`) fueron MEDIDOS con el mismo instrumento y responden al tap central. Pin: `YalaUITests/Flows/GroupsSmokeUITests.swift#test_groupFormCurrencyRowOpensSelector` — el tap de XCUITest cae en el centro del frame, que es justo el punto muerto, así que devolver el `contentShape` al `Button` lo pone en rojo (verificado, exit 65).
 - Componentes estándar: `YalaPrimaryButton`, `YalaEmptyState`, etc.
-- **Un color de la paleta sobre tarjeta blanca NO vale para TEXTO.** Ninguno de los cinco llega al mínimo AA de 4,5 (`hotPink` 3,77 · `electricIndigo` 4,47 · `priorityNeed` 2,19 · `essentialNeed` 2,15 · `optionalNeed` 2,69), y `AmountText` pinta símbolo y decimales al 60 % de opacidad encima, lo que los baja a ~2,5. Para un monto coloreado usar un tono oscurecido del mismo matiz (`Color.incomeAmount`, #0F7A80, contraste 5,1). En superficies RELLENAS —chips, barras, anillos, iconos— la paleta sigue siendo la correcta: el requisito es del texto. Medido el 2026-09-02.
+- **Un color de la paleta sobre tarjeta blanca NO vale para TEXTO.** Cuatro de los cinco no llegan al mínimo AA de 4,5, y el quinto lo pasa justo (`hotPink` 3,77 · `electricIndigo` 4,61 desde el 2026-10-17, 4,46 sobre el fondo `#FAFBFF` · `priorityNeed` 2,19 · `essentialNeed` 2,15 · `optionalNeed` 2,69), y `AmountText` pinta símbolo y decimales al 60 % de opacidad encima, lo que los baja a ~2,5. Para un monto coloreado usar un tono oscurecido del mismo matiz (`Color.incomeAmount`, #0F7A80, contraste 5,1). En superficies RELLENAS —chips, barras, anillos, iconos— la paleta sigue siendo la correcta: el requisito es del texto. Medido el 2026-09-02.
+- **El color del tema tiene TRES tokens, y cada uno para una cosa (lote 12.3, 2026-10-25).** `theme.accent` /
+  `.thAccent` es el RELLENO (botones, chips elegidos, barras). `theme.accentText` / `.thAccentText` es el acento como
+  TEXTO o icono sobre el fondo y las tarjetas: en los temas oscuros es más claro (#818CF8 índigo, #FF4DA6 rosa), porque
+  `electricIndigo` da 3,2–4,5 sobre las superficies oscuras y no puede aclararse sin romper el blanco de los botones.
+  `theme.onAccent` / `.thOnAccent` es lo que va ENCIMA del relleno: blanco en los índigo, **negro** en Teal, Rosa y
+  Minimalista. ⇒ **nunca `.white` a mano sobre el acento**, ni `Color.contrastingText(for: theme.accent)` (su fórmula no
+  es la de WCAG y daba blanco sobre el turquesa, 2,19:1): sobre un relleno cualquiera, `theme.onFill(color)`. Y el
+  acento como texto nunca con `.foregroundStyle(.tint)`: el tinte global sigue siendo el relleno. Lo fija
+  `ThemeTokenContrastTests` en los diez temas.
+- **`Color.incomeAmount` es adaptativo desde el 2026-10-25**: #0F7A80 en claro y el turquesa de marca (#00C2CB) en
+  oscuro, donde el fijo daba 3,3:1. Como RELLENO con texto blanco encima, `Color.incomeFill` (fijo, 5,1:1): el
+  adaptativo se aclara en oscuro y el blanco encima dejaría de leerse.
+- **En la LISTA de Grupos, lo que debes va en `Color.groupOweAmount` (el rosa de marca desde el 2026-11-03: «el rojo no me encanta con nuestro design system») y lo que te deben en `Color.groupOwedAmount` (verde), sin naranja (Jürgen, 2026-10-30, sustituye al «en Grupos los montos no llevan color»).** Vale para el resumen de arriba (cifra grande del neto y barra; los montos de cada lado van en `.primary`) y las filas por persona de cada tarjeta; los dos tokens pasan AA en los diez temas (`ThemeTokenContrastTests`). Dentro de un grupo (su cifra, gasto, miembro y saldo) los montos siguen en `Color.primary`: la decisión fue de la lista. El degradado del tema se queda (`.panel`). La regla de abajo sigue para Registros y el Panel.
 - **Y colorea la excepción, no la norma.** En una lista de movimientos casi todo son gastos: teñirlos pinta la pantalla entera y el color deja de avisar de nada. Solo el ingreso lleva color (`RecentRecordsWidget`, `ScheduledPaymentsWidget`). Decisión del 2026-09-02 en `docs/DECISIONS.md`.
 - **Jerarquía del Panel: sección `title3` (20) › widget `subheadlineEmphasized` (15) › fila.** Hasta el 2026-09-02 la sección y el widget usaban el MISMO token y la fila (`headline`, 17) era el rótulo mayor de la pantalla. Y el aire va al revés que el tamaño: MÁS entre secciones (`xxl`) que del título a su contenido (`sm`), o por proximidad el título se lee como pie del bloque anterior.
 - Tablas DS.Semantic / DS.Gradients en SWIFT-STYLE.md.
@@ -139,10 +549,12 @@ paths:
   en `value`): uno en la raíz pisaría los de dentro.
 
 - **Una pantalla de ENTRADA del Welcome es un `WelcomeFormScreen`** (`Views/Onboarding/WelcomeForm.swift`,
-  2026-10-02, referencia del 15-sep): titular serif (`DS.Typography.welcomeHeadline`) sin logo, lo que se elige en
+  2026-10-02, referencia del 15-sep): titular grande sans (`DS.Typography.welcomeHeadline`, el `largeTitle` de la app:
+  Jürgen retiró el serif el 2026-10-26) sin logo, lo que se elige en
   UNA tarjeta (`welcomeFormCard()` o filas con `WelcomeOptionDivider`), y fuera solo la pregunta de pie. Fondo, el
-  degradado fijo de siempre. Pesos de botón con `WelcomeFormButton`: `.filled` (blanco) para lo que se propone,
-  `.outline` para la salida sin cuenta de Yala. Donde Jürgen decidió que nada se recomienda («Es mi primera vez»),
+  degradado fijo de siempre. Pesos de botón con `WelcomeFormButton`, cápsula con la letra de `YalaPrimaryButton`:
+  `.filled` (blanco) para lo que se propone, `.outline` para la salida sin cuenta de Yala. Los pasos del onboarding que
+  eligen entre opciones van también en UNA tarjeta con separadores (`OnboardingView.optionCard`), no una por opción. Donde Jürgen decidió que nada se recomienda («Es mi primera vez»),
   mismo peso para todas. El Hero y las fases de progreso/error siguen con logo. **El «Volver» del Welcome no crece
   más allá de `xxxLarge`** (Large Content Viewer, como una barra de navegación): a AX5 medía ~80 pt y tapaba el
   titular y el logo de las puertas.
@@ -151,7 +563,7 @@ paths:
 - TODA View root, sheet, fullScreenCover NUEVA → `.yalaScreenBackground(_:ignoredEdges:)`.
 - NUNCA aplicar `.background(theme.background)`, `.background(.thBackground)` ni default iOS sin background.
 - Forms/Lists dentro de sheet → `.scrollContentBackground(.hidden)` MANUAL antes del modifier (el modifier no lo hace automático para preservar predictibilidad).
-- **Regla SSOT (reestructura 2026-06-08)**: el fondo lo determina el **contenedor de presentación RAÍZ** del stack. Una vista navegada (push) HEREDA el fondo de su stack — dentro de un tab → `.panel`; dentro de un sheet → el del sheet. **Un `.sheet` NUNCA es `.panel`.**
+- **Regla SSOT (reestructura 2026-06-08)**: el fondo lo determina el **contenedor de presentación RAÍZ** del stack. Una vista navegada (push) HEREDA el fondo de su stack — dentro de un tab → `.panel`; dentro de un sheet → el del sheet. **Un `.sheet` NUNCA es `.panel`.** Excepción única: la hoja «Gráficas» del flujo de caja (`CashFlowChartsSheet`, 2026-10-30) va en `.panel`, porque sus tarjetas de gráficas son las de Tendencias (`panelCard`, translúcidas en oscuro) y sobre el fondo plano salían grises.
 - Variantes (`YalaBackgroundVariant`) — 4 (`.compact` eliminada):
   - `.panel` (default) — PanelBackgroundView gradient temático. SOLO vistas COMPLETAS: tab roots, vistas navegadas (push), fullScreenCover normal.
   - `.subtle` — `theme.background` plano. CUALQUIER sheet desde el bottom (sin detents o `[.large]`); TODO el stack del sheet de Profile (los ~20 Settings + sub-navegación); y success/celebración.
@@ -161,7 +573,20 @@ paths:
 - **El tamaño de una hoja lo decide la VENTANA, no el aparato (2026-09-28).** Una hoja con detent parcial que en ventana ancha deba ser grande usa `.yalaSheetDetents(_:)` (o `(_:selection:)`) en vez de `.presentationDetents`: en ventana de ancho regular (iPad a pantalla completa, iPhone Duo abierto) o en Mac fuerza `.large`; en compacta (iPhone, iPad en ventana estrecha o Split View) deja los detents. Hoy **19 hojas con detent parcial siguen con `.presentationDetents` a secas** y salen iguales en todas partes (Panel, Flujo de caja, puente de grupos…; ticket `partial-sheets-that-never-adapted-to-the-window`); una hoja nueva que las copie hereda eso. Una vista que necesite el booleano lee `@Environment(\.usesLargeSheets)`. **Nunca** `UIDevice.current.userInterfaceIdiom` para layout, y **nunca** el `horizontalSizeClass` leído dentro de la hoja: ahí lo fija la presentación y no tiene por qué ser el de la ventana que la presenta. Por eso `\.usesLargeSheets` se calcula UNA vez, en la raíz (`YalaApp.rootView` → `.sizesSheetsByWindow()`), y los valores propios del entorno sí llegan intactos a las hojas. Una escena nueva sin ese modificador deja todas sus hojas con los detents de iPhone. Test: `YalaTests/AdaptiveSheetSizingTests.swift`.
 - Param `ignoredEdges: Edge.Set?`: si `nil`, default `.all`. Para vistas con `safeAreaInset` pasar edges específicos (`[.top]`, `[.bottom]`).
 - OUT: WelcomeFlow/onboarding (`DS.Gradients.heroIndigoBlack` especializado), InboxAlertModal (custom modal Color.black backdrop), popovers (iOS nativo).
-- `GlassSheetModifier.glassSheet()` se mantiene como helper de sheets que SÍ quieren material (`.presentationBackground(.ultraThinMaterial)` + drag indicator). `.transparent` NO usa material (es desnudo).
+- **Ninguna hoja con fondo gris: el patrón es el de «Configurar panel» (Jürgen, 2026-10-30, card g1uw).** A media
+  altura la hoja enseña el Liquid Glass del sistema; al estirarla a grande, `.subtle`. Se consigue **no pintando**:
+  ningún `.presentationBackground` (ni material ni color: el `.thickMaterial` de L2-22 salía gris sólido en los
+  selectores de Cuenta y Categoría) y la raíz con `isLargeDetent ? .subtle : .transparent` (con `selection`) o
+  `.partialSheet` (sin ella). Nada opaco a pantalla completa en la raíz (`.background(.thCard)` sobre la `List` tapaba
+  el glass en los selectores de período); las tarjetas de dentro sí llevan su `theme.card`. **`.partialSheet` sin
+  `selection` NO pasa a `.subtle` al estirarla** (solo lo resuelve la ventana): para que el detent elegido cambie el
+  fondo, la hoja lleva su `@State selectedDetent` y los detents con `selection:`. Una vista que se presenta grande en un
+  sitio y a media altura en otro pone ella misma los detents parciales cuando se le pide
+  (`GroupPickerSheet(opensAtMediumHeight:)`). Molde: `PanelSectionsConfigView`; lo fija
+  `SheetGlassBackgroundWiringTests`, que prohíbe `.presentationBackground` en `Yala/App` (salvo el `.clear` del aviso
+  de Bandeja y la definición de `glassSheet()`) y cualquier llamada a `.glassSheet()`.
+- `GlassSheetModifier.glassSheet()` (`.presentationBackground(.ultraThinMaterial)`) no tiene usos y **no se usa en
+  hojas**: tapa el glass del sistema, lo contrario de la regla de arriba. `.transparent` NO usa material (es desnudo).
 
 #### Patrones aceptados temporalmente (deuda incremental, migrar al tocar el archivo)
 
@@ -190,6 +615,14 @@ paths:
     `shownTabs` incluye siempre la seleccionada, y **la shell de solo grupos sigue QUITANDO** en vez de ocultar: ahí
     la selección puede quedarse en Panel (lo cazó `GroupInviteOnboardingUITests`). Buscar (los 50 ms de una pestaña
     temporal) y Más (al ensanchar con Más elegida) también se quitan, no se ocultan.
+  - **Cambiar la configuración guardada con la barra viva también la tumba** (card fozu, 2026-10-27, iOS 27.0):
+    guardar otra barra reordena las seis montadas y cambia cuáles van ocultas, y cambiar solo Estadísticas por
+    Registros cerraba la app al guardar (`-[UITab viewController]` desde `setTabs:animated:`, 2 de 2); Jürgen vio
+    Grupos y Registros en negro hasta matar la app. ⇒ **la `TabView` lleva `.id(tabConfig.activeTabs)`**: con otra
+    configuración nace de nuevo, como en un arranque. Y mientras el editor de Más está abierto
+    (`SceneNavigation.isEditingTabBarLayout`) la barra se queda con la que tenía (`TabBarLayoutFreeze`): remontarla al
+    guardar cerraba el editor de golpe. Un escritor nuevo de la configuración con la app abierta pasa por ahí, no la
+    cambia en sitio. Test: `CustomTabBarUITests`.
   El orden es el mismo en los dos tamaños y en el iPhone la barra no cambia (medido al píxel). **Barra lateral plana,
   sin `TabSection`**: una sección que solo exista en regular cambia el árbol en cada redimensionado, y una permanente
   reordena la barra del iPhone, que el usuario ordena a mano (`TabBarConfigView`).
@@ -212,11 +645,21 @@ paths:
     sin ningún aviso: la columna seguía en 320 con un ancho fijo de 420. Delante sí funciona. Aquí no se quita el
     botón, por lo siguiente.
   - **La visibilidad es un `@State`, nunca `.constant(.all)`, y el botón de plegar se queda.** Cuando lista y detalle
-    no caben a la vez (iPad mini en vertical: 744 pt), el split SUPERPONE la lista sobre el detalle; con la
-    visibilidad fija la superposición no se retira nunca y tapa el detalle, y sin el botón no hay forma de volver a
-    la lista después de retirarla.
+    no caben a la vez (iPad mini en vertical: 744 pt, antes de plegar la página; hoy, Yala IA abierto al lado), el
+    split SUPERPONE la lista sobre el detalle; con la visibilidad fija la superposición no se retira nunca y tapa el
+    detalle, y sin el botón no hay forma de volver a la lista después de retirarla.
 - **Un `navigationDestination` de la columna de lista presenta en la de detalle** (medido con presupuestos): sus filas
   no se tocaron. En compacta, empuja como siempre.
+- **Y lo que eso presenta no puede empujar nada por su cuenta si la columna de detalle no lleva su `NavigationStack`**
+  (medido el 2026-10-14, iPhone e iPad, lote 9): el botón de gráficas del detalle de un presupuesto
+  (`navigationDestination(isPresented:)`) no hacía nada, ni con `NavigationLink(value:)` y el destino registrado en
+  la lista (desde la columna de detalle no se ve). Lo que funciona: `NavigationStack { vacío }` en `detail:` y el
+  destino registrado en la propia vista abierta (`PlanningView`, `BudgetDetailView`). Es la misma familia que el «+»
+  de Categorías en Ajustes. **Dos cosas que siguen igual y no se arreglan así**: cambiar de chip con algo abierto deja
+  la columna con el triángulo amarillo (el destino vivía en la lista que se desmonta; `.id` de la pila no lo cambia,
+  ticket `ipad-planning-chip-switch-leaves-a-detail-without-destination`), y en ancho
+  `app.navigationBars.buttons.element(boundBy: 0)` es el botón de la barra lateral, no el «Atrás»: en XCUITest,
+  `buttons["BackButton"]`.
 - **Lo que se abre en la columna de detalle lleva `.id(<identidad de lo abierto>)`** (medido el 2026-10-12 en el iPad
   Pro 13). Al abrir otro elemento, SwiftUI REUTILIZA la vista del detalle —con `navigationDestination(item:)` y también
   con `NavigationLink(value:)`—, así que su `@State` iniciado en el `init`, en `onAppear` o en una `.task` se queda con
@@ -248,15 +691,19 @@ paths:
   detalle y el split por debajo de dos anchos de iPhone (750), `ListDetailSplit` pasa a `.detailOnly`
   (`ListDetailOverlayLogic.listYieldsToDetail`, con test); con «Elige un…» la lista se queda. Lo dispara abrir Yala IA
   al lado o estrechar la ventana. La lista sigue a un toque en el botón del sistema.
-- **Con texto de accesibilidad la columna se ensancha y, donde no caben dos, la página se pliega (2026-10-01).**
+- **Con texto de accesibilidad la columna se ensancha y, donde no caben dos, la página se pliega (2026-10-01; con
+  cualquier texto desde el 2026-10-24).**
   `DS.Adaptive.listColumnWidths(isAccessibilityText:)` da 440/460/520 con AX1–AX5 (los 408 pt de contenido del Pro
   Max vertical, donde AX5 cabe, más márgenes); con texto de siempre, los 375/400/480 de antes. Dos cosas medidas en el
   Pro Max girado que no son obvias: **el split SUMA la isla encima del ancho pedido** (pedida a 520, la columna midió
   582), y **no pone AL LADO del detalle una columna que lea AX5** — a 522 y a 582 la superpuso sobre «Elige un…», que
   quedaba medio tapado; la de 446 de siempre sí va al lado, pero ahí AX5 parte «Este mes». Por eso cada página con
-  `ListDetailSplit` lleva `.foldsListDetailForAccessibilityText()` puesto por QUIEN LA MONTA (`ContentView.viewForTab`):
-  con AX y sin ancho para dos columnas AX (`ListDetailOverlayLogic.foldsForAccessibilityText`), la página entera ve
-  ancho compacto y es la pila de vertical: el Pro Max girado (832) y el iPad mini (744 / 853); el iPad Pro 13 sigue en
+  `ListDetailSplit` lleva `.foldsListDetailWhenColumnsDontFit()` puesto por QUIEN LA MONTA (`ContentView.viewForTab`):
+  sin ancho para dos columnas del tamaño de texto (`ListDetailOverlayLogic.foldsToSingleColumn`), la página entera ve
+  ancho compacto y es la pila de vertical. Con AX: el Pro Max girado (832) y el iPad mini (744 / 853); el iPad Pro 13
+  sigue en split. **Con texto de siempre también desde el 2026-10-24** (umbral 2 × 375): el iPhone Duo abierto en
+  vertical (669 pt) superponía la lista, que tapaba el grupo abierto y cortaba «Elige un…» por la mitad; ahí y en el
+  iPad mini en vertical (744) la página es la pila. El Pro Max girado (832) y el Duo abierto en horizontal siguen en
   split. **El ancho es el que mide la vista, sin restarle nada**: ya viene sin la isla ni la barra lateral, aunque el
   proxy siga reportando esos márgenes (iPad Pro 13 girado: 1096 de ancho y 280 de margen). Restarlos los contaba dos
   veces y apartaba la lista en el Pro 13 con AX. Va fuera porque Registros y Grupos leen el size class por su cuenta para
@@ -346,6 +793,92 @@ paths:
   abierto, la hoja de siempre. El panel es `TransactionDetailSheet(presentation: .pane)`: cabecera propia con X y
   Editar, porque un `.toolbar` o el título inline ahí dentro cambiarían la barra de Estadísticas.
 
+## iPhone Duo (SDK 27.1, medido el 2026-10-24 en el simulador)
+
+- **Un ancho medido con `onGeometryChange` no puede fijar el ancho de un HERMANO dentro de lo que se mide.** En
+  `ZStack(alignment: .leading) { carril; relleno.frame(width: medido × ratio) }` el relleno al 100 % hace que el
+  `ZStack` no baje de la medida anterior: la barra crece y no encoge nunca. Al plegar o girar el Duo, «Entradas y
+  salidas» quedaba más ancha que la pantalla y descentraba a sus vecinas (el iPhone girado y el iPad lo tenían
+  igual). ⇒ **el relleno va en `.overlay(alignment: .leading)` del carril**, y lo que se mide es el carril. Igual con un
+  `HStack` de segmentos a porcentaje: se mide un `Color.clear` flexible y los segmentos van en su overlay (las barras
+  segmentadas de las tortas). `GeometryReader` no tiene el problema: toma el tamaño propuesto.
+- **Barras verticales.** Pasan solos a la barra vertical los botones con icono (`YalaToolbarButton`, `YalaSaveButton`
+  y un `Button` con `Image`). No pasan: los de solo texto y los de vista propia, que se quedan en una barra horizontal
+  arriba. Uno de vista propia sin título arriba (la bandeja del Panel) se pintó **flotando abajo, encima del
+  contenido**, en el primer arranque: va con `.joinsVerticalBar()` (`ToolbarVerticalBar.swift`).
+- **Opción 2 de Jürgen (2026-10-24), en el Duo cerrado: los botones de la página van en la barra vertical y, si no
+  caben, ceden las pestañas.** El avatar (`ProfileToolbarItem`) lleva `.joinsVerticalBar` desde el propio componente,
+  así ninguna página se queda con el avatar arriba. Y cada página de pestaña lleva `.prefersToolbarItemsInVerticalBar()`
+  **dentro de su pila, junto a su `.toolbar`**: puesto en la `TabView` o en el contenido de cada `Tab` no hace nada
+  (medido). **Desde el 2026-10-30 (card a5kf) también en el Duo abierto en horizontal y a medio plegar**, sin condición
+  de ancho: las dos cosas solo actúan donde hay barra vertical. Abierto, con siete pestañas, el avatar se quedaba
+  arriba en una franja propia que le quitaba alto a la página; ahora las pestañas del Panel se pliegan a un botón y
+  bandeja, Filtros, Configurar y avatar caben. En las páginas con lista y detalle (Grupos, Registros, Planificación) el
+  avatar va en la barra de la columna de lista, que el sistema deja horizontal: ahí no cambia. **No lo ates al ancho**:
+  la condición de ancho compacto era lo que dejaba la franja. El iPad no tiene barra vertical (27.0 ni con el SDK 27.1:
+  es del Duo), y su barra lateral es la de pestañas. Una página de pestaña nueva lleva el modificador; un botón de
+  barra de vista propia nuevo, `.joinsVerticalBar`.
+- **Un botón de barra de solo texto que ya está en el menú de la página se retira con `.hiddenInVerticalBar()`**
+  («Seleccionar» de Registros). Darle icono cambiaría el iPhone (su barra horizontal prefiere el icono: «Cancelar»
+  sería una ✕), y `.axisBehavior(.horizontalOnly)` no basta: la barra del título grande es horizontal y lo deja ahí.
+  `\.toolbarVerticalEdge` (iOS 27.1) es el borde de la barra: medido, `.trailing` en el Duo cerrado y `nil` en el
+  iPhone, en el Duo abierto en vertical y en la columna de la lista del Duo abierto en horizontal, que van en
+  horizontal. Los «Cancelar / Hecho» de las hojas se quedan arriba, decidido.
+- **Ancho (regla A, 2026-10-24): nada de lo que se desplaza pasa por detrás de la barra vertical; bajo ella, solo el
+  fondo.** Es la regla de Apple (`app-resizability`). Un `ScrollView` horizontal pinta hasta el borde físico aunque su
+  página acabe antes: las cuentas y los chips del Panel y las tarjetas del Welcome llegaban por detrás de la barra y los
+  widgets no. `scrollViewGlassEdges` lleva `.staysOutOfVerticalBar()`, que recorta el scroll de la página en su propio
+  borde por el lado de la barra. **No leas el
+  inset de un `GeometryProxy` para esto**: es el del espacio ofrecido y el recorte quedaba 84 pt más adentro (el marco
+  del scroll ya acaba en el borde seguro). La alternativa B (la página por debajo del cristal) está en capturas en
+  `qa/evidencia-duo-cerrado-20261024/`: tapa «Todo el tiempo», importes y botones.
+- **Un carrusel horizontal no se corta en seco contra la barra: se funde (Jürgen, 2026-10-25).** El tajo recto hacía
+  que la barra pareciera una pieza aparte. Todo `ScrollView(.horizontal)` lleva `.fadesTowardVerticalBar()`: se
+  desvanece en sus últimos 32 pt y acaba justo en el borde de la barra, y solo mientras queda contenido por ver hacia
+  ella. Va **en el carrusel, no en la página**, porque un fundido de página borraría también el borde de lo que no se
+  mueve (la tarjeta de Saldo). Un carrusel de páginas a todo el ancho (`containerRelativeFrame`) lleva
+  `fadeWidth: DS.Spacing.lg`: se funde solo en el margen y la página visible conserva su borde. Lee el borde de la
+  página que publica `staysOutOfVerticalBar`; fuera de una de esas páginas, y sin barra, no hace nada. Un carrusel
+  nuevo lo lleva.
+- **Dos excepciones a la regla A, decididas por Jürgen el 2026-10-25 sobre capturas: `.extendsUnderVerticalBar()`.**
+  La vista ocupa también la columna de la barra y se centra en la pantalla entera. (1) Las pantallas con logo del
+  Welcome (`WelcomeFlowScreen`: Hero y puertas). (2) La lista de Ajustes (`ProfileView`): al desplazar, las filas
+  pasan bajo la hora y la X, y lo eligió viéndolo. Los selectores del Welcome (`WelcomeFormScreen`) **no**: vio las
+  dos y prefirió el ancho seguro, con el «‹» en la barra. Fuera de estas, la regla A sin excepciones: una pantalla
+  nueva que la quiera saltar se pregunta.
+- **El «‹» del Welcome es un botón de barra del sistema** (`welcomeBackButton`): en el iPhone es el círculo de cristal
+  de toda la app y en el Duo cerrado pasa a la barra vertical. Las pantallas de formulario reservan el alto con la barra
+  de navegación, no con un hueco fijo (`WelcomeFormLayout.topInset`). **Dentro del cover del Welcome la pila es UNA,
+  montada por encima de los pasos (`welcomeNavigationHost()`), y un paso nunca abre la suya** (card feer, 2026-10-28):
+  con una pila por pantalla, cambiar de paso quitaba una pila de UIKit y ponía otra, y la que salía desaparecía en un
+  fotograma —sin fundirse— mientras la nueva, en el iPhone, crecía desde la esquina con negro alrededor. Fuera del host
+  (`FullModeActivationView`, que intercala pantallas con pila propia) `welcomeBackButton` sigue montando la suya. Lo fija
+  `WelcomeCoverContentLogicTests` (`noStepOfTheCoverOwnsAStack`).
+- **`.navigationBarBackButtonHidden(_:)` por fuera manda sobre el `swipeBack()` de la pantalla de dentro.** Ajustes
+  lo ponía en `false` para todas sus pantallas y las trece que pintan su propio «‹» enseñaban dos (en la barra vertical
+  del Duo se veían uno encima del otro). `ProfileView.paintsOwnBackButton(_:)` dice cuáles; una pantalla de Ajustes
+  nueva se añade ahí (el `switch` no tiene `default`).
+- **En la barra vertical cabe poco, y lo que no cabe va al menú «···» solo si tiene título**: un botón de solo icono
+  que desborda **desaparece**. Medido en el Panel abierto en horizontal (siete pestañas: cabe un botón y «···»):
+  Filtros, que era un `Image`, se esfumó. ⇒ un botón que pueda desbordar lleva `Label(título, systemImage:)` (en una
+  barra se ve solo el icono, como antes) y su prioridad: `.overflowsLast()` para lo que lleva contador o no puede ir al
+  menú (una vista propia no tiene cómo pintarse ahí), `.overflowsFirst()` para el ajuste que menos se toca.
+- **El pliegue es una región reservada `division` (iOS 27.1), y el sistema la da por INACTIVA en una vista que no la
+  cruza de arriba abajo**: el contenido de un scroll la recibía inactiva casi siempre. ⇒ se mide en la raíz de la
+  escena (`publishesVerticalFold()`, en `YalaApp.rootView`) y cada contenedor la traduce a su espacio con
+  `.readsVerticalFold($fold)`. **Solo está activa a medio plegar**; abierto en plano, inactiva, y las columnas vuelven
+  a mitades. Con el pliegue activo, `PairedColumnsLayout`, `HeaderBandLayout` y los pares del Panel
+  (`foldAwarePairLayout`) ponen una columna a cada lado si las dos siguen midiendo 320, y `ListDetailSplit` separa
+  lista y detalle sobre él (`DS.Adaptive.listColumnIdealWidth`). Un pliegue horizontal (abierto en vertical) no separa
+  columnas: lo cruza el scroll.
+- **El Duo abierto en vertical mide 669 pt: ancho regular, pero no caben dos columnas de iPhone.** Por eso la página con
+  lista y detalle se pliega a la pila (`foldsListDetailWhenColumnsDontFit()`, arriba).
+- **En el Duo cerrado (678 pt de alto, como un SE) una pantalla que reparte el alto con `Spacer` sin scroll se corta**:
+  el titular del Welcome salía «Tus finanzas person…». `WelcomeFlowScreen` lleva el molde del scroll con alto mínimo.
+- **Conducir el simulador del Duo**: `axe` lee el árbol pero sus toques no llegan (ni cerrado ni girado); XcodeBuildMCP
+  igual. Lo que funciona es hacer clic en la pantalla del Duo dentro de Device Hub. Las posturas (cerrado, medio
+  plegado, abierto, girar) son botones de Device Hub, sin `simctl`.
+
 ## Teclado, puntero, menús contextuales y soltar (2026-09-30)
 
 - **Un atajo de teclado nuevo va en `YalaCommands` y su acción la publica la VENTANA** con `focusedSceneValue`
@@ -366,6 +899,13 @@ paths:
 - **Lo que un menú o un atajo presenta cuelga del host, no de la lista** (`RecordRowActionsPresenter` en
   `RecordsStandaloneView` y `DetailContainerView`): en el iPad la lista puede estar apartada (`.detailOnly`) y una
   confirmación anclada ahí no tendría dónde salir. Un solo anchor por observable.
+- **Un atajo con la tecla de uno del SISTEMA (⌘Z, ⌘C, ⌘V…) no se suma a su grupo: lo sustituye, y solo mientras haga
+  falta (medido el 2026-10-20, iOS 27.0, lote decidido 2.2 · 08).** `CommandGroup(after: .undoRedo) { Button(…)
+  .keyboardShortcut("z") }` deja dos ⌘Z en el menú principal y, al reconstruirlo, UIKit **cierra la app** con
+  `NSInvalidArgumentException: Replacement elements contain duplicates` — también en el iPhone, donde no hay menú a la
+  vista: reventaba en cuanto salía el aviso de «Deshacer». Lo cazó un XCUITest, no el build. La salida:
+  `if condición { CommandGroup(replacing: .undoRedo) { … } }` (el `if` vale en `Commands`), y fuera de la condición el
+  grupo del sistema queda intacto con el deshacer de los campos de texto. Molde: `YalaCommands`, ⌘Z del borrado.
 - **Resaltado del puntero = `.pointerHighlight(cornerRadius:)`** con el radio de la pieza (`nil` = cápsula): da la
   forma al resaltado y a la vista previa del menú contextual. En iPhone no hace nada.
 

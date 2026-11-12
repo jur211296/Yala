@@ -42,8 +42,11 @@ final class TestProcessGuard: NSObject {
     /// **Y una cuarta desde el 2026-10-08**: `widget_groupsOnlySession`, que `WidgetDataCache.updateCache` publica
     /// junto al snapshot (lo que el widget enseña en una sesión solo grupos) y que también escribe el `didSet` de
     /// `SessionState.hasPrivateSession`. Mismos escritores de producción, mismo problema.
+    ///
+    /// **Y una quinta desde el 2026-10-31** (S35f1): `showVariations`, que la foto copia para los widgets y que también
+    /// escribe el `didSet` de `AppPreferences.showVariations` (solo con el almacén real).
     nonisolated static let protectedKeys = [
-        "widget_data_cache", "firstWeekday", "defaultPeriod", "widget_groupsOnlySession",
+        "widget_data_cache", "firstWeekday", "defaultPeriod", "widget_groupsOnlySession", "showVariations",
     ]
 
     /// El estado capturado al cargar el bundle. `nonisolated(unsafe)` porque lo escribe una vez el

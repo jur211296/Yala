@@ -24,20 +24,33 @@ final class ChatMessagingLayoutUITests: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
     }
 
-    private func openChat(conversation: Bool = false, drafts: Bool = false) -> XCUIApplication {
+    private func openChat(conversation: Bool = false, drafts: Bool = false, questionsToday: Int? = nil) -> XCUIApplication {
         let app = XCUIApplication()
+        // El contador de preguntas del día vive en UserDefaults (`chatQuestionsToday` + `chatLastQuestionDate`); como
+        // argumento de lanzamiento entra por el dominio de argumentos, que manda sobre lo guardado.
+        var counter: [String] = []
+        if let questionsToday {
+            let day = DateFormatter()
+            day.locale = Locale(identifier: "en_US_POSIX")
+            day.dateFormat = "yyyy-MM-dd"
+            counter = ["-chatQuestionsToday", "\(questionsToday)", "-chatLastQuestionDate", day.string(from: Date())]
+        }
         app.launchForUITest(
             pro: true,
             deeplink: "records",
             aiChatReady: true,
             chatConversation: conversation,
-            extraArguments: ["-uitest-chat-suggestions"] + (drafts ? ["-uitest-chat-draft"] : [])
+            extraArguments: ["-uitest-chat-suggestions"] + (drafts ? ["-uitest-chat-draft"] : []) + counter
         )
         XCTAssertTrue(app.waitForUITestReady(timeout: 90), "uitest_ready ausente — bootstrap/seed no completó.")
-        let chatEntry = app.buttons["fab_chat"]
+        let chatEntry = app.buttons["stats_action_ai"]  // Registros sin flotante (card 97gc): la fila de arriba
         XCTAssertTrue(chatEntry.waitForExistence(timeout: 15), "No aparece la entrada de Yala IA en Registros.")
         chatEntry.tap()
-        XCTAssertTrue(app.textFields["chat_input"].waitForExistence(timeout: 10), "No se abrió Yala IA.")
+        // Con el tope del día la caja de escribir no existe: en su sitio va el aviso de cuándo vuelve (L14-8).
+        let opened = (questionsToday ?? 0) >= 75
+            ? app.descendants(matching: .any)["chat_limit_box"]
+            : app.textFields["chat_input"]
+        XCTAssertTrue(opened.waitForExistence(timeout: 10), "No se abrió Yala IA.")
         return app
     }
 
@@ -144,5 +157,112 @@ final class ChatMessagingLayoutUITests: XCTestCase {
         app.chooseFirstSelectorRow(chip: "chat_draft_detail_account", rowPrefix: "account_selector_row_", timeout: 10)
 
         XCTAssertTrue(accountRow.waitForExistence(timeout: 10), "Tras elegir cuenta se vuelve a la hoja de detalles.")
+    }
+
+    // Los otros tres datos de «Detalles» abren también su selector de Nuevo registro (ticket
+    // `chat-draft-details-rows-dont-open-their-selector`): con la hoja de detalles encima, SwiftUI construía el
+    // selector y UIKit no lo presentaba. Un caso por campo, para que el rojo diga cuál.
+
+    /// Abre «Detalles» del primer registro propuesto.
+    private func openDraftDetails() -> XCUIApplication {
+        let app = openChat(drafts: true)
+        let details = app.buttons.matching(identifier: "chat_draft_details").firstMatch
+        XCTAssertTrue(details.waitForExistence(timeout: 10), "Falta «Detalles» en la card.")
+        details.tap()
+        XCTAssertTrue(app.buttons["chat_draft_detail_account"].waitForExistence(timeout: 10), "No se abrió la hoja de detalles.")
+        return app
+    }
+
+    /// «Categoría» abre la rejilla de subcategorías de Nuevo registro; elegir una vuelve a «Detalles».
+    func test_draftDetails_categoryRow_opensTheSubcategorySelector() {
+        let app = openDraftDetails()
+        app.chooseFirstSelectorRow(chip: "chat_draft_detail_subcategory", rowPrefix: "subcategory_selector_row_", timeout: 10)
+        XCTAssertTrue(
+            app.buttons["chat_draft_detail_subcategory"].waitForExistence(timeout: 10),
+            "Tras elegir categoría se vuelve a la hoja de detalles."
+        )
+    }
+
+    /// «Fecha» abre el calendario de Nuevo registro; guardar vuelve a «Detalles».
+    func test_draftDetails_dateRow_opensTheDatePicker() {
+        let app = openDraftDetails()
+        let row = app.buttons["chat_draft_detail_date"]
+        XCTAssertTrue(app.waitForSettledLayout(of: row, timeout: 10), "La fila de fecha no dejó de moverse.")
+        row.tap()
+        let calendar = app.descendants(matching: .any)["date_picker_calendar"]
+        XCTAssertTrue(calendar.waitForExistence(timeout: 10), "«Fecha» no abrió el calendario de Nuevo registro.")
+        app.buttons.matching(identifier: "toolbar_save_button").firstMatch.tap()
+        XCTAssertTrue(calendar.waitForNonExistence(timeout: 10), "Guardar no cerró el calendario.")
+        XCTAssertTrue(row.waitForExistence(timeout: 10), "Tras guardar la fecha se vuelve a la hoja de detalles.")
+    }
+
+    /// «Etiquetas» abre el selector de etiquetas de Nuevo registro; guardar vuelve a «Detalles».
+    func test_draftDetails_tagsRow_opensTheTagSelector() {
+        let app = openDraftDetails()
+        let row = app.buttons["chat_draft_detail_tags"]
+        XCTAssertTrue(app.waitForSettledLayout(of: row, timeout: 10), "La fila de etiquetas no dejó de moverse.")
+        row.tap()
+        // «Crear» está siempre, haya etiquetas o no: es lo que dice que el selector se montó.
+        let create = app.buttons["tag_selector_create"]
+        XCTAssertTrue(create.waitForExistence(timeout: 10), "«Etiquetas» no abrió el selector de etiquetas de Nuevo registro.")
+        app.buttons.matching(identifier: "toolbar_save_button").firstMatch.tap()
+        XCTAssertTrue(create.waitForNonExistence(timeout: 10), "Guardar no cerró el selector de etiquetas.")
+        XCTAssertTrue(row.waitForExistence(timeout: 10), "Tras guardar las etiquetas se vuelve a la hoja de detalles.")
+    }
+
+    /// La hoja de detalles escribe la divisa como la tarjeta del chat: con el formato «Símbolo» (el de fábrica),
+    /// «S/» y no «PEN». Antes pintaba siempre el código (lote 14 de la auditoría UX 2.2).
+    func test_draftDetails_currencyFollowsTheSymbolPreference() {
+        let app = openChat(drafts: true)
+
+        let details = app.buttons.matching(identifier: "chat_draft_details").firstMatch
+        XCTAssertTrue(details.waitForExistence(timeout: 10), "Falta «Detalles» en la card.")
+        details.tap()
+
+        let currency = app.staticTexts["chat_draft_detail_currency"]
+        XCTAssertTrue(currency.waitForExistence(timeout: 10), "No se abrió la hoja de detalles.")
+        XCTAssertEqual(currency.label, "S/", "Con el formato «Símbolo», la hoja debe decir «S/», como la tarjeta.")
+    }
+
+    /// Con una pregunta por delante, el contador no rompe el plural (lote 14). Con el tope alcanzado, la caja se apaga
+    /// y dice cuándo vuelven las preguntas, sin dejar escribir (UX 2.2 · L14-8); la línea del contador se va para no
+    /// repetir «vuelve mañana».
+    func test_questionCounter_readsWellWithOneLeft_andExplainsTheLimit() {
+        let oneLeft = openChat(conversation: true, questionsToday: 74)
+        let counter = oneLeft.staticTexts["chat_question_counter"]
+        XCTAssertTrue(counter.waitForExistence(timeout: 10), "Con 74 de 75 preguntas debe verse el contador.")
+        XCTAssertEqual(counter.label, "Preguntas que te quedan hoy: 1")
+        oneLeft.terminate()
+
+        let none = openChat(conversation: true, questionsToday: 75)
+        let box = none.descendants(matching: .any)["chat_limit_box"]
+        XCTAssertTrue(box.waitForExistence(timeout: 10), "Con el tope alcanzado la caja debe decir cuándo vuelve.")
+        XCTAssertEqual(box.label, "Vuelve mañana: tus preguntas se renuevan a medianoche")
+        XCTAssertFalse(none.textFields["chat_input"].exists, "Con el tope no se debe poder escribir.")
+        XCTAssertFalse(none.staticTexts["chat_question_counter"].exists, "La línea del contador repetiría el aviso.")
+        XCTAssertFalse(none.buttons["chat_topics"].isEnabled, "Con el tope, Temas tampoco puede enviar nada.")
+    }
+
+    /// Ticket `chat-microphone-sends-audio-with-the-chat-consent`, decisión A: con el permiso del chat pero sin el de voz
+    /// y foto, el micrófono pide ese permiso (el mismo aviso que Voz y Foto del Panel) y no empieza a grabar. «Cancelar»
+    /// lo deja todo como estaba. El seam del chat concede solo el permiso del chat.
+    func test_mic_withoutVoiceAndPhotoConsent_asksForItFirst() {
+        let app = openChat()
+        let mic = app.buttons["chat_mic"]
+        XCTAssertTrue(mic.waitForExistence(timeout: 10), "Sin texto, la píldora lleva el micro.")
+        mic.tap()
+
+        let alert = app.alerts.matching(NSPredicate(format: "label IN %@", ["Yala lo apunta por ti", "Yala records it for you"])).firstMatch
+        let asked = alert.waitForExistence(timeout: 5)
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "chat-microfono-permiso"
+        shot.lifetime = .keepAlways
+        add(shot)
+        XCTAssertTrue(asked, "El micrófono del chat empezó sin pedir el permiso de voz y foto.")
+
+        alert.buttons.matching(NSPredicate(format: "label IN %@", ["Cancelar", "Cancel"])).firstMatch.tap()
+        XCTAssertTrue(alert.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["chat_mic"].waitForExistence(timeout: 5),
+                      "Tras cancelar, el chat sigue con el micro: no empezó a grabar.")
     }
 }

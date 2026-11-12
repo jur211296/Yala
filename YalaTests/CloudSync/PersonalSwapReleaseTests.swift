@@ -354,7 +354,8 @@ struct PersonalSwapWiringTests {
     @Test("R4(b): el guard del release va ANTES del wipe y del remonte")
     func releaseGuardPrecedesWipeAndRemount() throws {
         let src = try Self.source("Yala/Services/CloudSync/PersonalContainerSwap.swift")
-        let flow = try Self.body(of: "static func attemptSignOutSwap() async -> Outcome {", in: src)
+        // Desde la card ypit el cuerpo vive en `performSignOutSwap`; la entrada solo lo desacopla de quien lo pide.
+        let flow = try Self.body(of: "private static func performSignOutSwap() async -> Outcome {", in: src)
         let guardRange = try #require(flow.range(of: "PersonalSwapReleaseLogic.authorizesWipe(verdict)"))
         let wipe = try #require(flow.range(of: "SwiftDataConfiguration.performSignOutWipeIfArmed()"))
         let build = try #require(flow.range(of: "PersonalContainerHost.makeContainer()"))
@@ -371,7 +372,8 @@ struct PersonalSwapWiringTests {
     @Test("R4(c): el aborto REPONE el container superviviente")
     func abortRestoresTheSurvivor() throws {
         let src = try Self.source("Yala/Services/CloudSync/PersonalContainerSwap.swift")
-        let flow = try Self.body(of: "static func attemptSignOutSwap() async -> Outcome {", in: src)
+        // Desde la card ypit el cuerpo vive en `performSignOutSwap`; la entrada solo lo desacopla de quien lo pide.
+        let flow = try Self.body(of: "private static func performSignOutSwap() async -> Outcome {", in: src)
         let guardRange = try #require(flow.range(of: "guard PersonalSwapReleaseLogic.authorizesWipe(verdict)"))
         let tail = String(flow[guardRange.upperBound...])
         let restore = try #require(tail.range(of: "restoreAfterFailedSwap("))
@@ -397,7 +399,8 @@ struct PersonalSwapWiringTests {
     @Test("R4(b): el testigo del mount se RECAPTURA antes de construir el container nuevo")
     func mountWitnessIsRecapturedBeforeRemount() throws {
         let src = try Self.source("Yala/Services/CloudSync/PersonalContainerSwap.swift")
-        let flow = try Self.body(of: "static func attemptSignOutSwap() async -> Outcome {", in: src)
+        // Desde la card ypit el cuerpo vive en `performSignOutSwap`; la entrada solo lo desacopla de quien lo pide.
+        let flow = try Self.body(of: "private static func performSignOutSwap() async -> Outcome {", in: src)
         let reopen = try #require(
             flow.range(of: "reopenPersonalStoreMountedDecisionCaptureForSwap()"))
         let build = try #require(flow.range(of: "PersonalContainerHost.makeContainer()"))
@@ -410,7 +413,8 @@ struct PersonalSwapWiringTests {
     @Test("R4(b): la jerarquía se colapsa antes de soltar los servicios y antes de medir")
     func hierarchyIsCollapsedFirst() throws {
         let src = try Self.source("Yala/Services/CloudSync/PersonalContainerSwap.swift")
-        let flow = try Self.body(of: "static func attemptSignOutSwap() async -> Outcome {", in: src)
+        // Desde la card ypit el cuerpo vive en `performSignOutSwap`; la entrada solo lo desacopla de quien lo pide.
+        let flow = try Self.body(of: "private static func performSignOutSwap() async -> Outcome {", in: src)
         let release = try #require(flow.range(of: "PersonalContainerHost.shared.releaseForSwap()"))
         let quiesce = try #require(flow.range(of: "releaseModelContextsForSwap()"))
         let await_ = try #require(flow.range(of: "awaitVerifiedRelease(sentinel:"))

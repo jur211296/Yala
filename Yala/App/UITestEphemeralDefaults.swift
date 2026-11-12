@@ -53,7 +53,9 @@
 //
 //  El arreglo YA NO son dos guards en esas dos propiedades: desde el lavado general (2026-08-05)
 //  `loadFromDefaults` no escribe NADA mientras carga (`isLoadingFromDefaults`), así que cualquier
-//  key que gane un mirror en `AppPreferences` está cubierta de nacimiento. Lo que sigue habiendo que
+//  key que gane un mirror en `AppPreferences` está cubierta de nacimiento, con una excepción: `showVariations` copia
+//  su valor al App Group de los widgets también al cargar (S35f1), así que registrarla aquí la dejaría escrita
+//  ahí. Lo que sigue habiendo que
 //  comprobar es que el lector nuevo no sea OTRO mirror con `didSet` fuera de `AppPreferences`
 //  —`SessionState`, `ThemeManager` y `ProTourManager` re-escriben lo que se les asigna— porque a
 //  ésos el mecanismo no los cubre.

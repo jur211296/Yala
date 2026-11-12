@@ -53,98 +53,132 @@ struct GroupRecordsView: View {
     @State private var expenseToDelete: SplitExpense?
 
     var body: some View {
-        if feedItems.isEmpty {
-            YalaEmptyState(
-                icon: "receipt",
-                title: L10n.Groups.Expense.noExpenses,
-                actionTitle: onInvite != nil ? L10n.Groups.Settings.invite : nil,
-                action: onInvite
-            )
-        } else {
-            ScrollView {
-                LazyVStack(spacing: DS.Spacing.lg, pinnedViews: .sectionHeaders) {
-                    // Banda de balance: primer elemento del scroll → se va con los registros (no fija).
-                    if let headerBalance, let onTapBalance {
-                        GroupHeaderBalanceBar(
-                            balance: headerBalance,
-                            debtsWereConverted: debtsWereConverted,
-                            onTap: onTapBalance
-                        )
-                    }
-                    // Presupuesto del grupo (G14). Deliberadamente COMPACTA: la primera fila de gastos
-                    // tiene que seguir siendo alcanzable sin scroll (`GroupsSmokeUITests` la tapea así).
-                    if let budgetProgress {
-                        budgetCard(budgetProgress)
-                    }
-                    ForEach(groupedByDate, id: \.key) { dateString, dayItems in
-                        Section {
-                            ForEach(dayItems, id: \.id) { item in
-                                switch item {
-                                case .expense(let expense):
-                                    if onTapExpense == nil {
-                                        expenseRow(expense)
-                                    } else if expense.isOpeningBalance {
-                                        // Saldo inicial: tap → detalle (owner edita desde ahí).
-                                        // Sin context menu (edit/delete owner-only vive en el detalle).
-                                        Button {
-                                            onTapExpense?(expense)
-                                        } label: {
-                                            expenseRow(expense)
-                                        }
-                                        .buttonStyle(.plain)
-                                        .contentShape(Rectangle())
-                                        .accessibilityIdentifier("group_opening_balance_row_\(expense.id)")
-                                    } else {
-                                        Button {
-                                            onTapExpense?(expense)
-                                        } label: {
-                                            expenseRow(expense)
-                                        }
-                                        .buttonStyle(.plain)
-                                        .contentShape(Rectangle())
-                                        .accessibilityIdentifier("group_expense_row_\(expense.expenseDescription)")
-                                        .contextMenu {
-                                            Button {
-                                                onEditExpense?(expense)
-                                            } label: {
-                                                Label(L10n.Action.edit, systemImage: "pencil")
-                                            }
+        let items = feedItems
+        // Card 1jvv: borrar el último gasto o llegar el primero releva la lista y el vacío, en el sitio: el vacío se funde
+        // y el scroll entra y sale en el acto, porque lleva el título grande del grupo y fundido se fundiría con él.
+        ZStack {
+            if items.isEmpty {
+                YalaEmptyState(
+                    icon: "receipt",
+                    title: L10n.Groups.Expense.noExpenses,
+                    actionTitle: onInvite != nil ? L10n.Groups.Settings.invite : nil,
+                    action: onInvite
+                )
+                .transition(.stateSwap)
+            } else {
+                recordsScroll
+                    .transition(.identity)
+            }
+        }
+        .animatesEmptyStateSwap(ids: items.prefix(4).map(\.id))
+    }
 
-                                            Button(role: .destructive) {
-                                                expenseToDelete = expense
-                                            } label: {
-                                                Label(L10n.Action.delete, systemImage: "trash")
-                                            }
+    @ViewBuilder
+    private var recordsScroll: some View {
+        let days = groupedByDate
+        ScrollView {
+            // Separación de filas y cabecera de día de Registros (lienzo «Una sola Yala»): antes, el doble de aire.
+            LazyVStack(spacing: DS.Spacing.sm, pinnedViews: .sectionHeaders) {
+                // La cifra grande del grupo (3A), la misma que en Saldos: primer elemento del scroll, se va con
+                // los registros (no fija). Tocarla lleva a Saldos.
+                if let headerBalance, let onTapBalance {
+                    GroupBalanceHero(
+                        balance: headerBalance,
+                        scope: .group,
+                        isEstimate: debtsWereConverted,
+                        onTap: onTapBalance
+                    )
+                    .padding(.bottom, DS.Spacing.sm)
+                    // Va arriba y no se mueve cuando una fila se va: sin animación, su frase no se funde con la
+                    // anterior (dos cifras una encima de otra; regla de `swiftui-ds.md`).
+                    .transaction { $0.animation = nil }
+                }
+                // Presupuesto del grupo (G14). Deliberadamente COMPACTA: la primera fila de gastos
+                // tiene que seguir siendo alcanzable sin scroll (`GroupsSmokeUITests` la tapea así).
+                if let budgetProgress {
+                    budgetCard(budgetProgress)
+                        .padding(.bottom, DS.Spacing.sm)
+                        .transaction { $0.animation = nil }
+                }
+                ForEach(days, id: \.key) { day, dayItems in
+                    Section {
+                        ForEach(dayItems, id: \.id) { item in
+                            switch item {
+                            case .expense(let expense):
+                                if onTapExpense == nil {
+                                    expenseRow(expense)
+                                } else if expense.isOpeningBalance {
+                                    // Saldo inicial: tap → detalle (owner edita desde ahí).
+                                    // Sin context menu (edit/delete owner-only vive en el detalle).
+                                    Button {
+                                        onTapExpense?(expense)
+                                    } label: {
+                                        expenseRow(expense)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .contentShape(Rectangle())
+                                    .accessibilityIdentifier("group_opening_balance_row_\(expense.id)")
+                                } else {
+                                    Button {
+                                        onTapExpense?(expense)
+                                    } label: {
+                                        expenseRow(expense)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .contentShape(Rectangle())
+                                    .accessibilityIdentifier("group_expense_row_\(expense.expenseDescription)")
+                                    .contextMenu {
+                                        Button {
+                                            onEditExpense?(expense)
+                                        } label: {
+                                            Label(L10n.Action.edit, systemImage: "pencil")
+                                        }
+
+                                        Button(role: .destructive) {
+                                            expenseToDelete = expense
+                                        } label: {
+                                            Label(L10n.Action.delete, systemImage: "trash")
                                         }
                                     }
-                                case .settlement(let settlement):
-                                    settlementRow(settlement)
                                 }
+                            case .settlement(let settlement):
+                                settlementRow(settlement)
                             }
-                        } header: {
-                            sectionHeader(dateString)
                         }
-                    }
-                }
-                .padding(.bottom, DS.Spacing.safeBottom)
-            }
-            .scrollViewGlassEdges()
-            .refreshable { await onRefresh?() }
-            .confirmationDialog(
-                L10n.Action.delete,
-                isPresented: Binding(
-                    get: { expenseToDelete != nil },
-                    set: { if !$0 { expenseToDelete = nil } }
-                ),
-                titleVisibility: .visible
-            ) {
-                Button(L10n.Action.delete, role: .destructive) {
-                    if let expense = expenseToDelete {
-                        onDeleteExpense?(expense)
-                        expenseToDelete = nil
+                    } header: {
+                        RecordDateSectionView(
+                            date: day,
+                            includesYear: !Calendar.current.isDate(day, equalTo: .now, toGranularity: .year)
+                        )
                     }
                 }
             }
+            .padding(.bottom, DS.Spacing.safeBottom)
+            // Card C3: borrar un gasto, quitar un saldo inicial o llegar uno nuevo se anima; la primera carga no.
+            .animatesRowEdits(ids: days.flatMap { $0.value.map(\.id) })
+        }
+        .scrollViewGlassEdges()
+        .refreshable { await onRefresh?() }
+        .confirmationDialog(
+            L10n.Groups.Expense.deleteTitle(expenseToDelete?.expenseDescription ?? ""),
+            isPresented: Binding(
+                get: { expenseToDelete != nil },
+                set: { if !$0 { expenseToDelete = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button(L10n.Action.delete, role: .destructive) {
+                if let expense = expenseToDelete {
+                    onDeleteExpense?(expense)
+                    expenseToDelete = nil
+                }
+            }
+            // Lote 13: sin esta salida el diálogo solo se cerraba tocando fuera. Sin `role: .cancel`: con él,
+            // el diálogo (sale como popover en iOS 26) no la pinta (.claude/rules/swiftui-ds.md).
+            Button(L10n.Common.cancel) { expenseToDelete = nil }
+        } message: {
+            // UX 2.2 · L13-4: el mismo aviso que desde el formulario.
+            Text(L10n.Groups.Expense.deleteMessage)
         }
     }
 
@@ -339,16 +373,25 @@ struct GroupRecordsView: View {
         // Preguntar por `isGeneric` como los demás call-sites (review H-9 M1): hoy `colorHex != nil`
         // ⟺ `!isGeneric` por construcción, pero la señal contractual del resolver es `isGeneric` —
         // no depender del invariante estructural del tuple.
+        // Círculo LLENO de 40 con el icono en blanco, como `RecordRowView` (lienzo «Una sola Yala»): antes, el
+        // dibujo de color sobre un círculo al 12 %.
         if !resolved.isGeneric, let colorHex = resolved.colorHex {
-            let color = Color(hex: colorHex)
-            Image(systemName: resolved.iconName)
-                .font(DS.Typography.label)
-                .foregroundStyle(color)
-                .frame(width: DS.ListRow.iconSize, height: DS.ListRow.iconSize)
-                .background(Circle().fill(color.opacity(0.12)))
+            filledIcon(resolved.iconName, fill: Color(hex: colorHex))
         } else {
             splitTypeBadge(expense.splitType)
         }
+    }
+
+    private func filledIcon(_ name: String, fill: Color, foreground: Color = .white) -> some View {
+        ZStack {
+            Circle()
+                .fill(fill)
+                .frame(width: DS.ListRow.iconSize, height: DS.ListRow.iconSize)
+            Image(systemName: name)
+                .font(DS.Typography.label)
+                .foregroundStyle(foreground)
+        }
+        .accessibilityHidden(true)
     }
 
     /// Icono+color del bridge personal (TX1 con subcat manual no-sistema), o `nil` si no hay bridge.
@@ -371,43 +414,20 @@ struct GroupRecordsView: View {
         default: "equal.circle.fill"
         }
 
-        return Image(systemName: icon)
-            .font(DS.Typography.label)
-            .foregroundStyle(.thAccent)
-            .frame(width: DS.ListRow.iconSize, height: DS.ListRow.iconSize)
-            .background(Circle().fill(.thAccent.opacity(0.12)))
-    }
-
-    // MARK: - Section Header
-
-    private func sectionHeader(_ dateString: String) -> some View {
-        HStack {
-            Text(dateString)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-            Spacer()
-        }
-        .padding(.vertical, DS.Spacing.xs)
-        .padding(.horizontal, DS.Spacing.xs)
+        return filledIcon(icon, fill: theme.accent, foreground: theme.onAccent)
     }
 
     // MARK: - Grouping
-
-    private static let dateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateStyle = .medium
-        f.timeStyle = .none
-        return f
-    }()
 
     /// Feed mixto: gastos + liquidaciones confirmadas (filtro en `GroupFeedItem.feedItems`).
     private var feedItems: [GroupFeedItem] {
         GroupFeedItem.feedItems(expenses: expenses, settlements: settlements)
     }
 
-    private var groupedByDate: [(key: String, value: [GroupFeedItem])] {
+    private var groupedByDate: [(key: Date, value: [GroupFeedItem])] {
+        let calendar = Calendar.current
         let grouped = Dictionary(grouping: feedItems) { item in
-            Self.dateFormatter.string(from: item.date)
+            calendar.startOfDay(for: item.date)
         }
 
         // Días en orden descendente; dentro de cada día el más reciente arriba y
@@ -415,9 +435,6 @@ struct GroupRecordsView: View {
         // (FilterService.groupByDate).
         return grouped
             .map { (key: $0.key, value: $0.value.sorted { $0.sortTimestamp > $1.sortTimestamp }) }
-            .sorted { lhs, rhs in
-                guard let lDate = lhs.value.first?.date, let rDate = rhs.value.first?.date else { return false }
-                return lDate > rDate
-            }
+            .sorted { $0.key > $1.key }
     }
 }

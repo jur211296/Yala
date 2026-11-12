@@ -94,6 +94,35 @@ struct PlannedOccurrenceBuilderTests {
 
     // MARK: - Tests
 
+    /// Lo oculto del filtro de sesión (2026-10-25): un pago de una cuenta, categoría o subcategoría oculta no entra en
+    /// Planificados, o «Sin Comida» volvía a pintar Comida en el Sankey.
+    @Test func build_skipsPaymentsOfHiddenAccountCategoryOrSubcategory() {
+        let account = Account(name: "A", currencyCode: "USD", colorHex: "#000", iconName: "creditcard", type: "bank")
+        let category = YalaCategory(name: "Comida", colorHex: "#000", isIncome: false)
+        let sub = Subcategory(name: "Mercado", colorHex: nil, iconName: "cart", category: category)
+        func sp() -> ScheduledPayment {
+            let payment = makeSP(amount: 100, nextDueDate: date(2026, 4, 10))
+            payment.account = account
+            payment.subcategory = sub
+            return payment
+        }
+        func run(
+            accounts: Set<PersistentIdentifier> = [], categories: Set<PersistentIdentifier> = [],
+            subcategories: Set<PersistentIdentifier> = []
+        ) -> Int {
+            PlannedOccurrenceBuilder.build(
+                scheduledPayments: [sp()], filteredTransactions: [],
+                interval: interval(from: date(2026, 4, 1), to: date(2026, 4, 30)), selectedAccounts: [],
+                excludedAccounts: accounts, excludedCategories: categories, excludedSubcategories: subcategories,
+                defaultCurrencyCode: "USD", converter: IdentityConverter(), calendar: calendar
+            ).count
+        }
+        #expect(run() == 1)
+        #expect(run(accounts: [account.persistentModelID]) == 0)
+        #expect(run(categories: [category.persistentModelID]) == 0)
+        #expect(run(subcategories: [sub.persistentModelID]) == 0)
+    }
+
     @Test func build_excludesPaidOccurrence_byScheduledPaymentID() {
         let sp = makeSP(amount: 100, nextDueDate: date(2026, 4, 10))
         let paidTx = makeTx(amount: -100, date: date(2026, 4, 10), scheduledPaymentID: sp.id.uuidString)

@@ -66,7 +66,7 @@ struct ImportResultOverlay: View {
                 } label: {
                     Text(L10n.Import.continueBtn)
                         .font(Typography.bodyLarge)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(theme.onFill(result.isSuccess ? Color.financeGreen : theme.accent))
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
                         .background(result.isSuccess ? Color.financeGreen : theme.accent)
@@ -118,6 +118,13 @@ struct ImportIntroSheet: View {
     @State private var isShowingCurrencyMapping: Bool = false
     @State private var filteredCurrencyForAccountPicker: String?
 
+    /// La importación esperando a que la persona la revise (L7-15): el archivo, a dónde va y qué entraría.
+    @State private var pendingImport: PendingImport?
+    /// La vista previa que espera a que se cierre la hoja de elegir cuenta o monedas. Lanzada antes, con un archivo
+    /// pequeño la vista previa llega mientras la primera hoja aún se desmonta del mismo ancla, y UIKit no presenta
+    /// la segunda: no salía nada y no se importaba (review de UX 2.2 · L7-15).
+    @State private var previewAfterDismiss: PendingPreviewRequest?
+
     /// Callback to notify parent with import result. Parent handles display.
     let onImportCompleted: ((ImportResult) -> Void)?
 
@@ -131,10 +138,9 @@ struct ImportIntroSheet: View {
         self.onImportCompleted = onImportCompleted
     }
 
+    /// Las cuentas a las que se puede importar (`ImportAccountChoiceLogic`): sin archivadas ni cuentas de sistema.
     private var activeAccounts: [Account] {
-        accounts
-            .filter { !$0.isArchived }
-            .sorted(by: { $0.name < $1.name })
+        ImportAccountChoiceLogic.importableAccounts(accounts)
     }
 
     /// Accounts filtered by a specific currency (for single-currency import)
@@ -148,6 +154,7 @@ struct ImportIntroSheet: View {
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
                         introSection
+                        columnsSection
                         templateSection
                         toggleSection
                     }
@@ -187,29 +194,30 @@ struct ImportIntroSheet: View {
         }
         .disabled(isImporting)
         // Sheets & Alerts
-        .sheet(isPresented: $isShowingAccountPicker) {
+        .sheet(isPresented: $isShowingAccountPicker, onDismiss: runPreviewAfterDismiss) {
             ImportAccountPickerSheet(
                 accounts: filteredCurrencyForAccountPicker.map { accountsForCurrency($0) }
                     ?? activeAccounts,
+                allAccounts: accounts,
                 selectedAccount: $selectedAccount
             ) { account in
                 selectedAccount = account
-                isShowingAccountPicker = false
-                // Import directly since file was already selected
+                // La vista previa sale cuando la hoja termine de cerrarse (`runPreviewAfterDismiss`).
                 if let url = selectedFileURL {
-                    performImport(from: url, into: account)
+                    previewAfterDismiss = .single(url, account)
                 }
+                isShowingAccountPicker = false
             }
         }
-        .sheet(isPresented: $isShowingCurrencyMapping) {
+        .sheet(isPresented: $isShowingCurrencyMapping, onDismiss: runPreviewAfterDismiss) {
             ImportCurrencyMappingSheet(
                 detectedCurrencies: detectedCurrencies,
                 accounts: activeAccounts
             ) { currencyAccountMap in
-                isShowingCurrencyMapping = false
                 if let url = selectedFileURL {
-                    performMultiCurrencyImport(from: url, with: currencyAccountMap)
+                    previewAfterDismiss = .multiCurrency(url, currencyAccountMap)
                 }
+                isShowingCurrencyMapping = false
             }
         }
         .fileImporter(
@@ -231,6 +239,11 @@ struct ImportIntroSheet: View {
                 }
             }
         }
+        .sheet(item: $pendingImport) { pending in
+            ImportPreviewSheet(preview: pending.preview) { chosenAccounts in
+                runImport(pending, chosenAccounts: chosenAccounts)
+            }
+        }
         .alert(L10n.Import.templateGenerated, isPresented: $showTemplateAlert) {
             Button(L10n.Import.continueBtn, role: .cancel) {}
         } message: {
@@ -244,7 +257,7 @@ struct ImportIntroSheet: View {
         VStack(spacing: DS.Spacing.sm) {
             Image(systemName: "square.and.arrow.down")
                 .font(.system(size: heroIconSize))
-                .foregroundStyle(.thAccent)
+                .foregroundStyle(.thAccentText)
                 .padding(.bottom, DS.Spacing.sm)
 
             Text(L10n.Import.title)
@@ -283,7 +296,7 @@ struct ImportIntroSheet: View {
 
                     Image(systemName: "arrow.down.circle")
                         .font(DS.Typography.body)
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.FormRow.paddingV)
@@ -316,32 +329,80 @@ struct ImportIntroSheet: View {
             .padding(.vertical, DS.FormRow.paddingV)
             .solidCard(radius: DS.Radius.lg)
 
-            Text(L10n.Import.categoriesDescription)
+            // El pie dice lo que hace el interruptor TAL COMO ESTÁ: antes describía el encendido siempre (L7-16).
+            Text(allowCreatingNewCategories
+                ? L10n.UXL7.ImportScreen.createCategoriesOn
+                : L10n.UXL7.ImportScreen.createCategoriesOff)
             .font(Typography.label)
             .foregroundStyle(.thSecondaryText)
             .padding(.horizontal, DS.Spacing.xs)
+            .accessibilityIdentifier("import_create_categories_footer")
         }
+    }
+
+    /// «Tu archivo necesita estas columnas», con una fila de ejemplo (L7-16): quien trae su propio Excel solo
+    /// necesita ver la forma de una fila para no depender de la plantilla.
+    private var columnsSection: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            Text(L10n.UXL7.ImportScreen.columnsTitle)
+                .font(DS.Typography.bodyBold)
+                .foregroundStyle(.thPrimaryText)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                Grid(alignment: .leading, horizontalSpacing: DS.Spacing.md, verticalSpacing: DS.Spacing.xs) {
+                    GridRow {
+                        ForEach(Self.requiredColumns, id: \.self) { column in
+                            Text(column)
+                                .font(DS.Typography.caption)
+                                .fontWeight(.bold)
+                                .foregroundStyle(Color.white)
+                                .padding(.horizontal, DS.Spacing.sm)
+                                .padding(.vertical, DS.Spacing.xxs)
+                                .background(Capsule().fill(Color.selectedIndigoFill))
+                        }
+                    }
+                    GridRow {
+                        ForEach(Array(Self.exampleRow.enumerated()), id: \.offset) { _, value in
+                            Text(value)
+                                .font(DS.Typography.caption)
+                                .monospacedDigit()
+                                .foregroundStyle(.thPrimaryText)
+                                .padding(.horizontal, DS.Spacing.sm)
+                        }
+                    }
+                }
+            }
+            .fadesTowardVerticalBar()
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(L10n.UXL7.ImportScreen.columnsAccessibility(
+                Self.requiredColumns.joined(separator: ", ")))
+
+            Text(L10n.UXL7.ImportScreen.columnsHint)
+                .font(Typography.label)
+                .foregroundStyle(.thSecondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(DS.Spacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .solidCard(radius: DS.Radius.lg)
+        .accessibilityIdentifier("import_columns_card")
+    }
+
+    /// Las columnas que el lector exige, con su nombre literal: el encabezado se compara tal cual.
+    private static let requiredColumns = ["date", "amount", "currency", "category", "subcategory"]
+
+    /// Una fila de ejemplo con la forma que entiende el lector (fecha ISO, gasto en negativo).
+    private static var exampleRow: [String] {
+        ["2026-10-14", "-50.00", CurrencyDefaults.currentPreferred, L10n.UXL7.ImportScreen.exampleCategory,
+         L10n.UXL7.ImportScreen.exampleSubcategory]
     }
 
     // MARK: - Actions
 
+    /// Abre el selector de archivos. Sin cuentas ya no se para aquí: un archivo con columna `account` crea las suyas
+    /// (H7), así que la falta de cuentas se mira después de leer el archivo.
     private func startImportFlow() {
-        if activeAccounts.isEmpty {
-            // No hay cuentas activas - dismiss and notify parent
-            let result = ImportResult(
-                isSuccess: false,
-                message: L10n.Import.createAccountFirst,
-                count: 0
-            )
-            dismiss()
-            Task {
-                try? await Task.sleep(for: .milliseconds(300))
-                self.onImportCompleted?(result)
-            }
-        } else {
-            // Open file picker first - currencies will be detected after file selection
-            isShowingFileImporter = true
-        }
+        isShowingFileImporter = true
     }
 
     private enum TemplateFormat {
@@ -452,13 +513,19 @@ struct ImportIntroSheet: View {
                 return
             }
 
-            // Scan currencies from file (CSV or XLSX)
+            // Las monedas del archivo y si trae la cuenta de cada fila (CSV o XLSX).
             do {
-                let currencies = try TransactionCSVImportService.scanCurrenciesFromFile(from: url)
+                let scan = try ImportFileReader.scan(url)
+                let currencies = scan.currencies
                 selectedFileURL = url
                 detectedCurrencies = currencies
 
-                if currencies.count == 1, let singleCurrency = currencies.first {
+                if scan.usesAccountColumn {
+                    // Cada fila va a la cuenta que nombra (H7): sin elegir cuenta ni monedas.
+                    requestPreview(of: url, target: .accountColumn(allowedNewAccountKeys: nil))
+                } else if activeAccounts.isEmpty {
+                    finish(with: ImportResult(isSuccess: false, message: L10n.Import.createAccountFirst, count: 0))
+                } else if currencies.count == 1, let singleCurrency = currencies.first {
                     // Single currency - route to account picker or direct import
                     let matchingAccounts = accountsForCurrency(singleCurrency)
 
@@ -513,7 +580,84 @@ struct ImportIntroSheet: View {
             }
         }
     }
+    /// Antes de importar, la vista previa (L7-15): la importación de verdad en un contexto que no se guarda.
+    enum PendingPreviewRequest {
+        case single(URL, Account)
+        case multiCurrency(URL, [String: Account])
+    }
+
+    private func runPreviewAfterDismiss() {
+        guard let request = previewAfterDismiss else { return }
+        previewAfterDismiss = nil
+        switch request {
+        case .single(let url, let account): performImport(from: url, into: account)
+        case .multiCurrency(let url, let map): performMultiCurrencyImport(from: url, with: map)
+        }
+    }
+
     private func performImport(from url: URL, into account: Account) {
+        requestPreview(of: url, target: .single(account))
+    }
+
+    private func performMultiCurrencyImport(from url: URL, with currencyAccountMap: [String: Account]) {
+        requestPreview(of: url, target: .multi(currencyAccountMap))
+    }
+
+    private func requestPreview(of url: URL, target: ImportPreviewService.Target) {
+        isImporting = true
+        let allowCreating = allowCreatingNewCategories
+        Task {
+            do {
+                let preview = try await ImportPreviewService.preview(
+                    of: url,
+                    target: target,
+                    allowCreatingNewCategories: allowCreating,
+                    container: modelContext.container
+                )
+                isImporting = false
+                pendingImport = PendingImport(url: url, target: target, preview: preview)
+            } catch {
+                #if DEBUG
+                print("ImportIntroSheet: Error preparing the preview: \(error)")
+                #endif
+                isImporting = false
+                finish(with: ImportResult(isSuccess: false, message: error.localizedDescription, count: 0))
+            }
+        }
+    }
+
+    /// La persona dijo «Importar» en la vista previa: se importa de verdad, saltando las filas malas.
+    private func runImport(_ pending: PendingImport, chosenAccounts: Set<String>) {
+        switch pending.target {
+        case .single(let account):
+            runSingleImport(from: pending.url, into: account)
+        case .multi(let map):
+            runMultiImport(from: pending.url, with: map)
+        case .accountColumn:
+            runAccountColumnImport(from: pending.url, chosenAccounts: chosenAccounts)
+        }
+    }
+
+    /// Cierra la hoja y avisa a quien la abrió con el resultado.
+    private func finish(with result: ImportResult) {
+        dismiss()
+        Task {
+            try? await Task.sleep(for: .milliseconds(300))
+            self.onImportCompleted?(result)
+        }
+    }
+
+    /// «Importamos 69 registros.» y, si alguna fila no entró, cuántas y cuáles (L7-17).
+    private func outcomeMessage(importedLine: String, failures: [ImportError]) -> String {
+        ImportPreviewLogic.outcomeMessage(
+            importedLine: importedLine,
+            failures: failures.compactMap(\.errorDescription),
+            notImportedLine: { L10n.UXL7.ImportReview.notImported($0) },
+            moreLine: { L10n.UXL7.ImportReview.more($0) }
+        )
+    }
+
+    private func runSingleImport(from url: URL, into account: Account) {
         #if DEBUG
         print("🔵 [IMPORT] Starting import, setting isImporting = true")
         #endif
@@ -531,20 +675,23 @@ struct ImportIntroSheet: View {
                 print("🔵 [IMPORT] Calling import for \(isXLSX ? "XLSX" : "CSV")")
                 #endif
 
-                let result: TransactionImportResult
-                if isXLSX {
-                    result = try await TransactionCSVImportService.importXLSX(
+                // Importa y guarda; si algo falla, deshace lo insertado (H6 de la auditoría del import).
+                let result = try await TransactionCSVImportService.importAndSave(in: modelContext) {
+                    if isXLSX {
+                        return try await TransactionCSVImportService.importXLSX(
+                            from: url,
+                            into: account,
+                            in: modelContext,
+                            allowCreatingNewCategories: allowCreatingNewCategories,
+                            skippingInvalidRows: true
+                        )
+                    }
+                    return try await TransactionCSVImportService.importCSV(
                         from: url,
                         into: account,
                         in: modelContext,
-                        allowCreatingNewCategories: allowCreatingNewCategories
-                    )
-                } else {
-                    result = try await TransactionCSVImportService.importCSV(
-                        from: url,
-                        into: account,
-                        in: modelContext,
-                        allowCreatingNewCategories: allowCreatingNewCategories
+                        allowCreatingNewCategories: allowCreatingNewCategories,
+                        skippingInvalidRows: true
                     )
                 }
 
@@ -553,8 +700,6 @@ struct ImportIntroSheet: View {
                 print("🔵 [IMPORT] Import complete, count = \(createdCount)")
                 #endif
 
-                // Save to persist transactions
-                try modelContext.save()
                 WidgetDataCache.updateCache(context: modelContext)
                 SessionState.shared.incrementDataVersion()
                 #if DEBUG
@@ -590,7 +735,8 @@ struct ImportIntroSheet: View {
                 // Create result and dismiss (keep button in "Importando" state until sheet closes)
                 let importResult = ImportResult(
                     isSuccess: true,
-                    message: L10n.Import.recordsImported(createdCount),
+                    message: outcomeMessage(
+                        importedLine: L10n.Import.recordsImported(createdCount), failures: result.failures),
                     count: createdCount
                 )
                 #if DEBUG
@@ -625,9 +771,64 @@ struct ImportIntroSheet: View {
         }
     }
 
+    // MARK: - Import por columna de cuenta (H7)
+
+    /// Cada fila a la cuenta que nombra; se crean solo las cuentas nuevas elegidas en la vista previa.
+    private func runAccountColumnImport(from url: URL, chosenAccounts: Set<String>) {
+        isImporting = true
+        Task {
+            // Una vuelta para que el botón pinte «Importando» antes del trabajo pesado.
+            do {
+                try await Task.sleep(for: .milliseconds(100))
+            } catch {
+                isImporting = false
+                return
+            }
+            do {
+                // Importa y guarda; si algo falla, deshace lo insertado, cuentas nuevas incluidas.
+                let result = try await TransactionCSVImportService.importAndSave(in: modelContext) {
+                    try await TransactionCSVImportService.importFile(
+                        from: url,
+                        destination: .accountColumn(allowedNewAccountKeys: chosenAccounts),
+                        in: modelContext,
+                        allowCreatingNewCategories: allowCreatingNewCategories,
+                        skippingInvalidRows: true
+                    )
+                }
+
+                WidgetDataCache.updateCache(context: modelContext)
+                SessionState.shared.incrementDataVersion()
+
+                // Las tasas del rango importado, en segundo plano, como en las otras dos rutas.
+                let importedDates = result.drafts.map(\.date)
+                if let minDate = importedDates.min(), let maxDate = importedDates.max() {
+                    let dateRange = DateInterval(start: minDate, end: maxDate)
+                    Task {
+                        await exchangeRateService.ensureRates(for: dateRange, context: modelContext)
+                        await TransactionUpdateService.updateProvisionalTransactions(context: modelContext)
+                        sessionState.needsExchangeRateWidgetRefresh = true
+                    }
+                }
+
+                finish(with: ImportResult(
+                    isSuccess: true,
+                    message: outcomeMessage(
+                        importedLine: L10n.Import.recordsImported(result.createdCount), failures: result.failures),
+                    count: result.createdCount
+                ))
+            } catch {
+                #if DEBUG
+                print("ImportIntroSheet: Error: import por columna de cuenta: \(error)")
+                #endif
+                isImporting = false
+                finish(with: ImportResult(isSuccess: false, message: error.localizedDescription, count: 0))
+            }
+        }
+    }
+
     // MARK: - Multi-Currency Import
 
-    private func performMultiCurrencyImport(from url: URL, with currencyAccountMap: [String: Account]) {
+    private func runMultiImport(from url: URL, with currencyAccountMap: [String: Account]) {
         #if DEBUG
         print("🔵 [IMPORT-MULTI] Starting multi-currency import, setting isImporting = true")
         #endif
@@ -641,20 +842,23 @@ struct ImportIntroSheet: View {
                 print("🔵 [IMPORT-MULTI] Calling import for \(isXLSX ? "XLSX" : "CSV") multi-currency")
                 #endif
 
-                let result: TransactionImportResult
-                if isXLSX {
-                    result = try await TransactionCSVImportService.importXLSXMultiCurrency(
+                // Importa y guarda; si algo falla, deshace lo insertado (H6 de la auditoría del import).
+                let result = try await TransactionCSVImportService.importAndSave(in: modelContext) {
+                    if isXLSX {
+                        return try await TransactionCSVImportService.importXLSXMultiCurrency(
+                            from: url,
+                            currencyAccountMap: currencyAccountMap,
+                            in: modelContext,
+                            allowCreatingNewCategories: allowCreatingNewCategories,
+                            skippingInvalidRows: true
+                        )
+                    }
+                    return try await TransactionCSVImportService.importCSVMultiCurrency(
                         from: url,
                         currencyAccountMap: currencyAccountMap,
                         in: modelContext,
-                        allowCreatingNewCategories: allowCreatingNewCategories
-                    )
-                } else {
-                    result = try await TransactionCSVImportService.importCSVMultiCurrency(
-                        from: url,
-                        currencyAccountMap: currencyAccountMap,
-                        in: modelContext,
-                        allowCreatingNewCategories: allowCreatingNewCategories
+                        allowCreatingNewCategories: allowCreatingNewCategories,
+                        skippingInvalidRows: true
                     )
                 }
 
@@ -664,8 +868,6 @@ struct ImportIntroSheet: View {
                 print("🔵 [IMPORT-MULTI] Import complete, count = \(createdCount) in \(currencyCount) currencies")
                 #endif
 
-                // Save to persist transactions
-                try modelContext.save()
                 WidgetDataCache.updateCache(context: modelContext)
                 SessionState.shared.incrementDataVersion()
                 #if DEBUG
@@ -698,7 +900,9 @@ struct ImportIntroSheet: View {
                 // Create result with multi-currency message
                 let importResult = ImportResult(
                     isSuccess: true,
-                    message: L10n.Import.recordsImportedMultiCurrency(createdCount, currencyCount),
+                    message: outcomeMessage(
+                        importedLine: L10n.Import.recordsImportedMultiCurrency(createdCount, currencyCount),
+                        failures: result.failures),
                     count: createdCount
                 )
                 #if DEBUG
@@ -730,6 +934,14 @@ struct ImportIntroSheet: View {
             }
         }
     }
+}
+
+/// Una importación revisada y a la espera de «Importar» (L7-15).
+struct PendingImport: Identifiable {
+    let id = UUID()
+    let url: URL
+    let target: ImportPreviewService.Target
+    let preview: ImportPreview
 }
 
 struct TemplateFile: Identifiable {

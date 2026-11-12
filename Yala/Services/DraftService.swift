@@ -247,9 +247,13 @@ final class DraftService {
 
     // MARK: - Approve Operations
 
+    /// - Parameter splitLines: Grupos B (card 5): tu parte de un gasto de grupo partida en líneas desde la hoja de la
+    ///   Bandeja. Solo con más de una línea o una recarga: una sola línea de gasto es lo de siempre y la hoja la aprueba
+    ///   como tal, con esa categoría en `draft.subcategory`.
     func approveDraft(
         _ draft: InboxDraft,
-        currencyConverter: CurrencyConverter
+        currencyConverter: CurrencyConverter,
+        splitLines: [GroupSplitLinesRecipe.Line]? = nil
     ) throws -> TransactionItem {
         let context = try requireContext()
 
@@ -268,6 +272,16 @@ final class DraftService {
             return try applySettlementAmountChange(draft, context: context)
         }
 
+        // Grupos B: el aviso de que las líneas de tu parte ya no cuadran. Va antes del camino de los punteros
+        // `[.subcategory]`, que clasificaría una pata cualquiera sin categoría: aprobarlo es clasificar la pata que lleva
+        // la receta y retirar la receta (tu parte queda en una línea).
+        if draft.isSplitLinesMismatchNotice {
+            if let splitLines {
+                return try approveGroupExpenseWithSplitLines(draft, lines: splitLines, context: context)
+            }
+            return try approveSplitLinesMismatch(draft, context: context)
+        }
+
         // Draft opt-in de settlement (bridge OFF): crea TX manual independiente SIN bridge —
         // el virtual del settlement ya es de signo opuesto al real, compensa sin doble conteo.
         // (Los opt-in de groupExpense NO se bifurcan aquí: caen al path de cuenta de abajo —
@@ -283,7 +297,13 @@ final class DraftService {
         if draft.sourceType == .groupExpense,
            draft.targetTransactionID == nil,
            draft.needsUserInput.contains(DraftInputRequirement.account) {
-            return try approveGroupExpenseAccountDraft(draft, currencyConverter: currencyConverter, context: context)
+            return try approveGroupExpenseAccountDraft(
+                draft, currencyConverter: currencyConverter, splitLines: splitLines, context: context)
+        }
+
+        // Grupos B (card 5): pagó otro y partiste tu parte en la Bandeja. La pata que el puente conserva toma la receta.
+        if draft.sourceType == .groupExpense, let splitLines {
+            return try approveGroupExpenseWithSplitLines(draft, lines: splitLines, context: context)
         }
 
         // Drafts groupExpense apuntan a una TX virtual con subcategory=nil creada por
@@ -316,24 +336,26 @@ final class DraftService {
             // retorno idempotente; .first como fallback determinista si solo hubiera virtuales.
             let candidateTxs = try context.fetch(anyTxDescriptor)
             let existingTx = candidateTxs.first { $0.account?.isSystemAccount == false } ?? candidateTxs.first
-            cacheDisplayValues(draft)
-            deleteInboxDraftPruningRow(draft, in: context)
-            try context.save()
-            SessionState.shared.incrementDataVersion()
 
             if case .discardRedundant = GroupDraftFinalizationLogic.resolveMissingPointerTarget(
                 existsAnyTxForSplitID: existingTx != nil
             ), let existingTx {
-                // Idempotente: el draft era redundante (la TX ya existía, clasificada en otro device).
+                // Idempotente: el draft era redundante (la TX ya existía, clasificada en otro device). Es un éxito: la
+                // hoja se cierra en el acto, como con cualquier aprobación.
+                cacheDisplayValues(draft)
+                deleteInboxDraftPruningRow(draft, in: context)
+                try context.save()
+                SessionState.shared.incrementDataVersion()
                 logger.error(
                     "groupExpense draft for splitExpenseID=\(splitID, privacy: .public) already classified elsewhere; discarded redundant draft."
                 )
                 return existingTx
             }
-            // No existe ninguna TX → el expense desapareció. El draft stale ya se limpió arriba;
-            // propagar error claro (la sheet de finalización lo muestra en su catch).
+            // No existe ninguna TX → el expense desapareció. **El borrador NO se borra aquí** (card ouka): la hoja que
+            // lo muestra sigue montada y pinta su alerta leyendo el `@Model` —el SIGTRAP de `InboxRowPruneCoordinator`—.
+            // Lo retira la hoja al cerrarse (`retireGroupExpenseDraftIfTargetGone`), que vuelve a medir.
             logger.error(
-                "groupExpense draft target TX missing and no TX exists for splitExpenseID=\(splitID, privacy: .public); deleted stale draft."
+                "groupExpense draft target TX missing and no TX exists for splitExpenseID=\(splitID, privacy: .public); the sheet retires it on close."
             )
             throw DraftServiceError.groupExpenseTargetMissing
         }
@@ -531,6 +553,11 @@ final class DraftService {
                     #if DEBUG
                     print("DraftService.bulkApprove: group draft delegation failed: \(error)")
                     #endif
+                    // Card ouka: el gasto ya no está. Aquí no hay hoja montada, así que se retira en el acto (antes lo
+                    // hacía `approveDraft`, que ahora deja esa retirada a quien tiene la hoja).
+                    if case DraftServiceError.groupExpenseTargetMissing = error {
+                        retireStaleGroupExpenseDraftWithoutSheet(draft)
+                    }
                     // Resiliente: el draft queda pendiente para finalizar individual; sigue el resto.
                 }
                 continue
@@ -696,7 +723,9 @@ final class DraftService {
         }
         let context = try requireContext()
         let skipped = dismissScheduledOccurrence(of: draft, in: context)
-        context.delete(draft)
+        // Poda la fila ANTES de borrar: desde el editor («Eliminar para siempre», lote 4) la fila sigue montada bajo la
+        // hoja, y leía el `InboxDraft` borrado al volver a pintarse (crash de TestFlight 2.2 (2), card f8rj).
+        deleteInboxDraftPruningRow(draft, in: context)
         try context.save()
         if skipped { ScheduledPaymentNotificationService.shared.requestSummaryReplan() }
     }
@@ -710,7 +739,8 @@ final class DraftService {
             if draft.sourceType.blocksInboxDismissal || draft.isLiveSettlementApprovalMark
                 || draft.isSettlementAmountChangeNotice { continue }
             if dismissScheduledOccurrence(of: draft, in: context) { skipped = true }
-            context.delete(draft)
+            // La hoja de acciones en lote también deja las filas montadas debajo.
+            deleteInboxDraftPruningRow(draft, in: context)
         }
         try context.save()
         if skipped { ScheduledPaymentNotificationService.shared.requestSummaryReplan() }
@@ -722,9 +752,10 @@ final class DraftService {
     /// Planificación. Un borrador ya archivado no retiene nada (borrarlo desde Archivados no salta otra
     /// ocurrencia), y el duplicado de una ocurrencia ya pagada tampoco.
     ///
-    /// Los demás pendientes de ESA ocurrencia —los que creó otro dispositivo antes de saber del descarte— se
-    /// archivan con él (rechazados, recuperables), como hace Planificación al saltar. No hace save (lo hace el
-    /// caller). Devuelve si saltó algo, para re-planear los avisos.
+    /// Si otro pendiente retiene ESA misma ocurrencia, no se salta nada y ese pendiente se queda en la Bandeja: descartar
+    /// quita solo el borrador descartado (desde el 2026-10-29; antes los archivaba todos). El que llega de otro
+    /// dispositivo DESPUÉS del salto lo archiva `processDuePayments`. No hace save (lo hace el caller). Devuelve si saltó
+    /// algo, para re-planear los avisos.
     ///
     /// Si la ocurrencia saltada es la próxima fecha y ya venció, la próxima fecha avanza en el acto, igual que hace
     /// `processDuePayments` con una fecha saltada: si esperara al arranque siguiente, «Adelantar» en Planificación
@@ -743,28 +774,34 @@ final class DraftService {
         guard let occurrence = ScheduledDraftOccurrenceLogic.occurrenceToSkipOnDismiss(
             draftDate: draftDate, schedule: schedule
         ) else { return false }
-        payment.skipDate(occurrence)
 
+        // Otro pendiente que retiene la misma ocurrencia la sigue cubriendo: descartar este no la salta ni toca a ese
+        // (ticket `scheduled-payment-identical-drafts-in-the-inbox`). Hasta el 2026-10-29 se archivaban todos, y con
+        // los borradores idénticos que deja cada dispositivo, descartar uno se llevaba los demás. La ocurrencia se salta
+        // al descartar el último; si la lectura falla, no se salta (el pendiente sigue y nada se recrea encima).
         let paymentID = payment.id.uuidString
         let draftID = draft.persistentModelID
         do {
-            let siblings = try context.fetch(FetchDescriptor<InboxDraft>(predicate: #Predicate<InboxDraft> {
+            let others = try context.fetch(FetchDescriptor<InboxDraft>(predicate: #Predicate<InboxDraft> {
                 $0.sourceScheduledPaymentID == paymentID && $0.statusRaw == "pending"
             }))
-            for sibling in siblings where sibling.persistentModelID != draftID
-                && ScheduledDraftOccurrenceLogic.holdsAnOccurrence(sibling.sourceType)
-                && ScheduledDraftOccurrenceLogic.heldOccurrence(
-                    draftDate: sibling.date ?? sibling.createdAt, schedule: schedule
-                ) == occurrence {
-                cacheDisplayValues(sibling)
-                sibling.status = .rejected
-                sibling.updatedAt = Date.now
+            let stillHeld = others.contains { other in
+                // `status` en memoria además del predicado: en un lote, el anterior ya está rechazado sin guardar. En iOS 27.0
+                // el fetch ya lo excluye (medido con el mutante, 2026-10-29); se queda por los runtimes donde no.
+                other.persistentModelID != draftID && !other.isDeleted && other.status == .pending
+                    && ScheduledDraftOccurrenceLogic.holdsAnOccurrence(other.sourceType)
+                    && ScheduledDraftOccurrenceLogic.heldOccurrence(
+                        draftDate: other.date ?? other.createdAt, schedule: schedule
+                    ) == occurrence
             }
+            if stillHeld { return false }
         } catch {
             #if DEBUG
-            print("DraftService: error fetching sibling drafts of a dismissed occurrence: \(error)")
+            print("DraftService: error fetching the other drafts of a dismissed occurrence: \(error)")
             #endif
+            return false
         }
+        payment.skipDate(occurrence)
 
         let today = Calendar.current.startOfDay(for: Date.now)
         if keepsTheOccurrenceDate, occurrence <= today,
@@ -878,6 +915,79 @@ final class DraftService {
         try context.save()
     }
 
+    // MARK: - Grupos B: aviso de líneas que no cuadran
+
+    /// Deja tu parte en una línea con la categoría elegida: la pata que lleva la receta toma la categoría y pierde la
+    /// receta, y el aviso se va. No crea ningún registro: el puente ya dejó tu parte en esa pata al detectar que no cuadraba.
+    /// Si la receta ya no está (otro aparato la retiró o la reescribió), el aviso sobra y se retira igual.
+    private func approveSplitLinesMismatch(_ draft: InboxDraft, context: ModelContext) throws -> TransactionItem {
+        guard let splitID = draft.splitExpenseID else { throw DraftServiceError.groupExpenseTargetMissing }
+        let legs = try context.fetch(FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { $0.splitExpenseID == splitID }))
+        let holder = legs.first { tx in
+            if case .recipe = GroupSplitLinesRecipe.parse(tx.splitLinesRaw) { return true }
+            return false
+        }
+        guard let target = holder ?? legs.first(where: { $0.account?.isSystemAccount == false }) ?? legs.first else {
+            throw DraftServiceError.groupExpenseTargetMissing
+        }
+        // Solo si la receta sigue sin cuadrar con la parte del aviso: si otro aparato ya la reescribió y cuadra, el aviso
+        // sobra y la receta se queda. Y la categoría solo va a una pata que ya es tu parte en una línea: si aquí aún tiene
+        // la forma de una recarga (el puente de este aparato no ha pasado), la pasada siguiente la pondría ella.
+        if let holder, case let .recipe(lines) = GroupSplitLinesRecipe.parse(holder.splitLinesRaw),
+           let noticeAmount = draft.amount,
+           GroupSplitLinesRecipe.balance(
+               of: lines, share: GroupSplitLinesBridgeLogic.decimal(abs(noticeAmount)),
+               currencyCode: holder.currencyCode) != .balanced {
+            if let subcategory = draft.subcategory, holder.balanceAdjustmentType == nil {
+                holder.subcategory = subcategory
+                holder.category = subcategory.safeCategory
+            }
+            holder.splitLinesRaw = nil
+        }
+        cacheDisplayValues(draft)
+        deleteInboxDraftPruningRow(draft, in: context)
+        try context.save()
+        SessionState.shared.incrementDataVersion()
+        return target
+    }
+
+    // MARK: - Grupos B: aprobar con «Partir» (card 5)
+
+    /// Pagó otro (o es el aviso de «no cuadra») y partiste tu parte en la hoja: la pata que el puente conserva toma la
+    /// receta nueva y el puente, al pasar, crea las demás patas y clasifica la ancla. El borrador se va, y con él los
+    /// punteros hermanos que pedían clasificar una parte que ya está clasificada.
+    private func approveGroupExpenseWithSplitLines(
+        _ draft: InboxDraft, lines: [GroupSplitLinesRecipe.Line], context: ModelContext
+    ) throws -> TransactionItem {
+        guard let splitID = draft.splitExpenseID,
+              let target = try GroupSplitLinesService.target(splitExpenseID: splitID, context: context),
+              let holder = target.holder, !holder.isDeleted
+        else {
+            // Como en el puntero de siempre: la hoja retira el borrador al cerrarse, no aquí (card ouka).
+            throw DraftServiceError.groupExpenseTargetMissing
+        }
+        holder.splitLinesRaw = GroupSplitLinesRecipe.encode(lines)
+        try GroupTransactionBridge.shared.withSkippedDraftCleanup {
+            try GroupTransactionBridge.shared.bridgeExpense(target.expense, in: target.group, shouldSave: false)
+        }
+        let siblings = try context.fetch(FetchDescriptor<InboxDraft>(
+            predicate: #Predicate { $0.splitExpenseID == splitID }))
+        for sibling in siblings where sibling.persistentModelID != draft.persistentModelID
+            && !sibling.optInPersonalOnly
+            && sibling.targetTransactionID == nil
+            && sibling.needsUserInput.contains(DraftInputRequirement.subcategory)
+            && !sibling.needsUserInput.contains(DraftInputRequirement.account) {
+            deleteInboxDraftPruningRow(sibling, in: context)
+        }
+        cacheDisplayValues(draft)
+        deleteInboxDraftPruningRow(draft, in: context)
+        try context.save()
+        SessionState.shared.incrementDataVersion()
+        WidgetDataCache.updateCache(context: context)
+        return holder
+    }
+
     // MARK: - M6: Approve groupExpense Caso A pendiente cuenta
 
     /// Crea TX cuenta real con `splitExpenseID` setteado e invoca el bridge para regenerar/
@@ -897,6 +1007,7 @@ final class DraftService {
     private func approveGroupExpenseAccountDraft(
         _ draft: InboxDraft,
         currencyConverter: CurrencyConverter,
+        splitLines: [GroupSplitLinesRecipe.Line]?,
         context: ModelContext
     ) throws -> TransactionItem {
         // 1. Guards.
@@ -922,16 +1033,31 @@ final class DraftService {
             predicate: #Predicate { $0.id == splitUUID }
         )
         guard let expense = try context.fetch(expenseDescriptor).first else {
-            // Expense origen ya no existe (sync race con remote delete) — limpia draft y aborta.
-            deleteInboxDraftPruningRow(draft, in: context)
-            try context.save()
-            throw DraftServiceError.missingAccount
+            // Expense origen ya no existe (sync race con remote delete). **El borrador NO se borra aquí** (card ouka,
+            // molde de 9o4n): la hoja sigue montada y pinta su alerta leyendo el `@Model`. Lanza su propio error y la
+            // hoja lo retira al cerrarse (`retireGroupExpenseDraftIfTargetGone`).
+            throw DraftServiceError.groupExpenseTargetMissing
         }
         let groupDescriptor = FetchDescriptor<SplitGroup>(
             predicate: #Predicate { $0.cloudKitZoneID == zoneID }
         )
         guard let group = try context.fetch(groupDescriptor).first else {
             throw DraftServiceError.missingAccount
+        }
+
+        // 2-bis. Card 9o4n: el gasto YA tiene su pata real. Pasa cuando conviven dos borradores de cuenta del mismo gasto
+        // —el opt-in («Sí, registrar» con el puente apagado) sobrevive a los re-puentes, y encender el puente con
+        // «Importar todo el historial» crea otro—: aprobar el segundo dejaba dos movimientos `-total` y el gasto contado
+        // dos veces. Mismo criterio que «¿Ya lo apuntaste?» (`linkAllowed`): pata en una cuenta que no es del sistema.
+        //
+        // **El borrador NO se borra aquí**: la hoja que lo muestra sigue montada y pinta su alerta leyendo el `@Model`
+        // (un borrado ahí es el SIGTRAP de `InboxRowPruneCoordinator`), el mismo motivo que en
+        // `ensureSettlementNotAlreadyApproved`. Lo retira la hoja al cerrarse (`retireGroupExpenseDraftIfAlreadyRegistered`).
+        if try hasRealLeg(splitID: splitID, in: context) {
+            Logger(subsystem: "com.yala", category: "GroupBridge").notice(
+                "groupExpense account draft for an expense that already has a real leg; no second transaction"
+            )
+            throw DraftServiceError.groupExpenseAlreadyRegistered
         }
 
         // 3. Crear TX cuenta real. Currency desde el expense (fuente de verdad del grupo).
@@ -974,6 +1100,9 @@ final class DraftService {
         realTx.amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue
         realTx.preferredCurrencyCode = preferredCode
         realTx.isExchangeRateProvisional = !outcome.quality.isExact
+        // Grupos B (card 5): tu parte partida en la Bandeja. La pata real lleva la receta (D2) y el puente, al pasar, crea
+        // las demás patas y le pone la categoría de la primera línea de gasto.
+        if let splitLines { realTx.splitLinesRaw = GroupSplitLinesRecipe.encode(splitLines) }
         context.insert(realTx)
 
         // 4 + 5. Invocar bridge con flag para no borrar este draft activo.
@@ -1025,6 +1154,250 @@ final class DraftService {
         return realTx
     }
 
+    /// Card 9o4n · retira el borrador de cuenta de un gasto de grupo que ya tiene su pata real. Lo llama la hoja de la
+    /// Bandeja AL CERRARSE tras `groupExpenseAlreadyRegistered` (con la hoja montada, borrarlo la tumbaría). Vuelve a
+    /// medir: si entretanto la pata desapareció, el borrador se queda y la persona puede aprobarlo.
+    func retireGroupExpenseDraftIfAlreadyRegistered(_ draft: InboxDraft) throws {
+        let context = try requireContext()
+        guard draft.sourceType == .groupExpense,
+              draft.targetTransactionID == nil,
+              let splitID = draft.splitExpenseID,
+              try hasRealLeg(splitID: splitID, in: context) else { return }
+        deleteInboxDraftPruningRow(draft, in: context)
+        try context.save()
+        SessionState.shared.incrementDataVersion()
+        WidgetDataCache.updateCache(context: context)
+    }
+
+    /// Lo que la hoja de la Bandeja llama al cerrarse, con el motivo que vio al fallar la aprobación (cards 9o4n y ouka).
+    func retireGroupExpenseDraft(_ draft: InboxDraft, after retirement: GroupExpenseDraftRetirement) throws {
+        switch retirement {
+        case .alreadyRegistered: try retireGroupExpenseDraftIfAlreadyRegistered(draft)
+        case .targetGone: try retireGroupExpenseDraftIfTargetGone(draft)
+        }
+    }
+
+    /// Card ouka · retira el borrador de un gasto de grupo cuyo gasto ya no está (borrado en remoto con la hoja abierta).
+    /// Lo llama la hoja de la Bandeja AL CERRARSE tras `groupExpenseTargetMissing`: con la hoja montada, borrarlo la
+    /// tumbaría. Vuelve a medir con el mismo criterio con el que lanzó la aprobación: si entretanto el gasto volvió (un
+    /// pull que lo trae de nuevo), el borrador se queda.
+    func retireGroupExpenseDraftIfTargetGone(_ draft: InboxDraft) throws {
+        let context = try requireContext()
+        guard draft.sourceType == .groupExpense,
+              draft.targetTransactionID == nil,
+              let splitID = draft.splitExpenseID,
+              try isGroupExpenseDraftTargetGone(draft, splitID: splitID, in: context) else { return }
+        cacheDisplayValues(draft)
+        deleteInboxDraftPruningRow(draft, in: context)
+        try context.save()
+        SessionState.shared.incrementDataVersion()
+        WidgetDataCache.updateCache(context: context)
+    }
+
+    /// Card ouka · la retirada para los caminos SIN hoja (deslizar para aprobar, aprobar en bloque): el borrador sin gasto
+    /// se retira en el acto, como hacía `approveDraft` antes. Un fallo deja el borrador, que la hoja retirará al abrirse.
+    func retireStaleGroupExpenseDraftWithoutSheet(_ draft: InboxDraft) {
+        do {
+            try retireGroupExpenseDraftIfTargetGone(draft)
+        } catch {
+            #if DEBUG
+            print("DraftService.retireStaleGroupExpenseDraftWithoutSheet: \(error)")
+            #endif
+        }
+    }
+
+    /// El criterio de «el gasto ya no está» de cada camino de `approveDraft`: el borrador de cuenta lo mide por el
+    /// `SplitExpense`; el borrador-puntero de subcategoría, por que no quede NINGUNA transacción del gasto (con una, la
+    /// aprobación lo da por redundante y no lanza).
+    private func isGroupExpenseDraftTargetGone(
+        _ draft: InboxDraft, splitID: String, in context: ModelContext
+    ) throws -> Bool {
+        if draft.needsUserInput.contains(DraftInputRequirement.account) {
+            guard UUID(uuidString: splitID) != nil else { return false }
+            return try fetchSplitExpense(splitID, in: context) == nil
+        }
+        let anyTx = try context.fetch(FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { $0.splitExpenseID == splitID }
+        ))
+        return anyTx.isEmpty
+    }
+
+    // MARK: - «¿Ya lo apuntaste?» (UX 2.2 · L13-15)
+
+    /// Movimientos que la persona ya apuntó y que pueden ser este gasto de grupo: mismo día, misma divisa y mismo importe
+    /// (`GroupExpenseLinkCandidateLogic`). Solo para el borrador de un gasto que pagaste tú y que pide la cuenta (el que
+    /// crearía la pata real), y solo si ese gasto aún no tiene pata real. Lo más reciente primero, como mucho tres.
+    func groupExpenseLinkCandidates(for draft: InboxDraft) throws -> [TransactionItem] {
+        let context = try requireContext()
+        guard draft.sourceType == .groupExpense,
+              draft.targetTransactionID == nil,
+              draft.needsUserInput.contains(DraftInputRequirement.account),
+              let splitID = draft.splitExpenseID,
+              let expense = try fetchSplitExpense(splitID, in: context) else { return [] }
+        let zoneID = expense.groupZoneID
+        var groupDescriptor = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.cloudKitZoneID == zoneID })
+        groupDescriptor.fetchLimit = 1
+        guard let group = try context.fetch(groupDescriptor).first,
+              try linkAllowed(for: expense, in: group, splitID: splitID, context: context) else { return [] }
+
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: expense.date)
+        guard let end = calendar.date(byAdding: .day, value: 1, to: start) else { return [] }
+        let sameDay = try context.fetch(FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { $0.date >= start && $0.date < end },
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        ))
+        let matches = sameDay.filter { isLinkCandidate($0, for: expense, calendar: calendar) }
+        return Array(matches.prefix(GroupExpenseLinkCandidateLogic.maxShown))
+    }
+
+    /// Enlaza un movimiento ya apuntado con el gasto de grupo de este borrador: el movimiento pasa a ser la pata real del
+    /// gasto (como si se hubiera creado al aprobar), el puente rehace la virtual y el borrador se va.
+    ///
+    /// **Enlazar no cambia el importe, la cuenta, la nota ni la subcategoría del movimiento**: solo se elige uno con el
+    /// importe exacto, y el puente (preserve+update) reescribe el importe a `-total`, que es el mismo. Lo que sí toma es
+    /// la fecha del gasto, del mismo día, como cualquier pata real.
+    ///
+    /// **Desde ese momento es el gasto del grupo en tus cuentas**, y lo sigue como cualquier movimiento que el puente
+    /// creó: si alguien corrige el importe del gasto, cambia; si se borra el gasto, se va de tus cuentas (el diálogo de
+    /// borrar ya lo dice, L13-4). Es lo que significa enlazar: no queda un movimiento suelto que cuente el gasto aparte.
+    @discardableResult
+    func linkGroupExpenseDraft(_ draft: InboxDraft, to transaction: TransactionItem) throws -> TransactionItem {
+        let context = try requireContext()
+        guard draft.sourceType == .groupExpense,
+              draft.targetTransactionID == nil,
+              let splitID = draft.splitExpenseID,
+              let zoneID = draft.splitGroupZoneID,
+              let expense = try fetchSplitExpense(splitID, in: context) else {
+            throw DraftServiceError.groupExpenseTargetMissing
+        }
+        let groupDescriptor = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.cloudKitZoneID == zoneID })
+        guard let group = try context.fetch(groupDescriptor).first else {
+            throw DraftServiceError.groupExpenseTargetMissing
+        }
+        // Se vuelve a comprobar aquí y no solo al listar: entre las dos cosas el movimiento pudo editarse, o el gasto pudo
+        // ganar su pata real por otro camino (otro dispositivo, el puente). Enlazar entonces duplicaría o cambiaría importes.
+        guard isLinkCandidate(transaction, for: expense, calendar: .current),
+              try linkAllowed(for: expense, in: group, splitID: splitID, context: context) else {
+            throw DraftServiceError.groupExpenseLinkNoLongerMatches
+        }
+
+        transaction.splitExpenseID = splitID
+        transaction.splitGroupZoneID = expense.groupZoneID
+        transaction.splitTotalAmount = expense.amount
+        transaction.splitType = expense.splitType
+
+        func undoLink() {
+            transaction.splitExpenseID = nil
+            transaction.splitGroupZoneID = nil
+            transaction.splitTotalAmount = nil
+            transaction.splitType = nil
+        }
+        do {
+            // `false` = el puente no pudo decidir (dominio cerrado, miembro propio sin resolver): no concilió la virtual,
+            // y dejar el movimiento enlazado sin ella contaría el gasto dos veces con el puente apagado.
+            let attended = try GroupTransactionBridge.shared.withSkippedDraftCleanup {
+                try GroupTransactionBridge.shared.bridgeExpense(
+                    expense,
+                    in: group,
+                    accountForCurrentUser: transaction.account,
+                    isRemoteSync: false,
+                    shouldSave: false
+                )
+            }
+            guard attended else {
+                undoLink()
+                throw DraftServiceError.groupExpenseLinkNoLongerMatches
+            }
+        } catch DraftServiceError.groupExpenseLinkNoLongerMatches {
+            throw DraftServiceError.groupExpenseLinkNoLongerMatches
+        } catch {
+            #if DEBUG
+            print("DraftService.linkGroupExpenseDraft: bridge failed: \(error)")
+            #endif
+            // Se deshace solo lo propio (el contexto es compartido: un `rollback()` se llevaría ediciones ajenas sin
+            // guardar). El borrador se queda para reintentar, como al aprobar con cuenta.
+            undoLink()
+            throw error
+        }
+
+        // Mismos punteros residuales que al aprobar con cuenta: con el movimiento clasificado, un puntero
+        // [.subcategory] hermano apuntaría a nada.
+        if transaction.subcategory != nil {
+            let siblings = try context.fetch(FetchDescriptor<InboxDraft>(
+                predicate: #Predicate { $0.splitExpenseID == splitID }
+            ))
+            for pointer in siblings where pointer.persistentModelID != draft.persistentModelID
+                && !pointer.optInPersonalOnly
+                && pointer.targetTransactionID == nil
+                && pointer.needsUserInput.contains(DraftInputRequirement.subcategory)
+                && !pointer.needsUserInput.contains(DraftInputRequirement.account) {
+                deleteInboxDraftPruningRow(pointer, in: context)
+            }
+        }
+
+        cacheDisplayValues(draft)
+        deleteInboxDraftPruningRow(draft, in: context)
+        try context.save()
+
+        SessionState.shared.incrementDataVersion()
+        WidgetDataCache.updateCache(context: context)
+        return transaction
+    }
+
+    private func fetchSplitExpense(_ splitID: String, in context: ModelContext) throws -> SplitExpense? {
+        guard let uuid = UUID(uuidString: splitID) else { return nil }
+        var descriptor = FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.id == uuid })
+        descriptor.fetchLimit = 1
+        return try context.fetch(descriptor).first
+    }
+
+    /// Enlazar solo tiene sentido donde el puente CONSERVA la pata real: el gasto lo pagaste tú (Caso A) y hay finanzas
+    /// personales. Con otro pagador el puente borra una pata real (con el puente encendido), y en una sesión solo-grupos
+    /// la borra siempre: enlazar ahí se llevaría el movimiento de la persona. Y si el gasto ya tiene pata real, sobra.
+    ///
+    /// Tampoco donde el puente no haría nada: grupo oculto, gasto conservado como movimiento al desasociar, o miembro
+    /// propio inactivo (`bridgeExpense` sale antes de conciliar en los tres).
+    private func linkAllowed(
+        for expense: SplitExpense, in group: SplitGroup, splitID: String, context: ModelContext
+    ) throws -> Bool {
+        guard SessionState.shared.hasPrivateSession, !group.isHiddenForAll else { return false }
+        guard let me = try GroupExpenseService.resolveCurrentUserMember(inZone: expense.groupZoneID, context: context),
+              me.isActive,
+              expense.paidByMemberID == me.id.uuidString else { return false }
+        guard !GroupsDetachedBridgeLedger.isConserved(
+            expenseID: splitID, associatedSub: GroupsAccountAssociation.shared.associatedSub) else { return false }
+        return try !hasRealLeg(splitID: splitID, in: context)
+    }
+
+    /// ¿El gasto ya tiene su pata real (un movimiento con su puntero en una cuenta que no es del sistema)?
+    private func hasRealLeg(splitID: String, in context: ModelContext) throws -> Bool {
+        let legs = try context.fetch(FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { $0.splitExpenseID == splitID }
+        ))
+        return legs.contains { $0.account.map { !$0.isSystemAccount } ?? false }
+    }
+
+    private func isLinkCandidate(_ tx: TransactionItem, for expense: SplitExpense, calendar: Calendar) -> Bool {
+        GroupExpenseLinkCandidateLogic.isCandidate(
+            GroupExpenseLinkCandidateLogic.Movement(
+                date: tx.date,
+                amount: tx.amount,
+                currencyCode: tx.currencyCode,
+                hasGroupPointer: tx.splitExpenseID != nil || tx.splitSettlementID != nil || tx.splitGroupZoneID != nil,
+                isTransfer: tx.transferPairID != nil,
+                isBalanceAdjustment: tx.balanceAdjustmentType != nil,
+                isOnRealAccount: tx.account.map { !$0.isSystemAccount } ?? false,
+                isGroupPaymentRecord: tx.approvedDraft?.sourceType == .groupSettlement,
+                isConservedFromDetach: GroupsDetachedBridgeLedger.claimsMovement(tx)
+            ),
+            expenseTotal: expense.amount,
+            expenseCurrency: expense.currencyCode,
+            expenseDate: expense.date,
+            calendar: calendar
+        )
+    }
+
     // MARK: - Opt-In Personal Draft (bridge effective OFF flow)
 
     /// Crea un draft `groupExpense` con `optInPersonalOnly=true` para que el user pueda
@@ -1035,10 +1408,11 @@ final class DraftService {
     /// **y** subcategoría juntas (sheet combinado) en vez de solo cuenta — alineado con el draft
     /// del path auto-bridge (`createDraftCaseA`). Así el Inbox no muestra dos drafts (cuenta +
     /// subcategoría) ni deja un puntero `[.subcategory]` huérfano cuando el virtual se reconcilia.
+    @discardableResult
     func createGroupExpenseOptInDraft(
         splitExpenseID: String,
         groupZoneID: String
-    ) throws {
+    ) throws -> InboxDraft {
         let context = try requireContext()
         guard let splitUUID = UUID(uuidString: splitExpenseID) else {
             throw DraftServiceError.missingAccount
@@ -1091,13 +1465,15 @@ final class DraftService {
         )
         context.insert(draft)
         try context.save()
+        return draft
     }
 
     /// Crea un draft `groupSettlement` con `optInPersonalOnly=true` para opt-in Caso C.
+    @discardableResult
     func createGroupSettlementOptInDraft(
         splitSettlementID: String,
         groupZoneID: String
-    ) throws {
+    ) throws -> InboxDraft {
         let context = try requireContext()
         guard let settlementUUID = UUID(uuidString: splitSettlementID) else {
             throw DraftServiceError.missingAccount
@@ -1126,6 +1502,7 @@ final class DraftService {
         )
         context.insert(draft)
         try context.save()
+        return draft
     }
 
     /// Aprueba un draft `groupSettlement` opt-in: crea TX manual ligada al settlement
@@ -1179,6 +1556,23 @@ final class DraftService {
 
 // MARK: - Errors
 
+/// Por qué la hoja de un borrador de gasto de grupo lo retira al cerrarse, y nunca con ella montada (cards 9o4n y ouka).
+enum GroupExpenseDraftRetirement: Equatable {
+    /// El gasto ya tiene su pata real: aprobarlo lo contaría dos veces.
+    case alreadyRegistered
+    /// El gasto se borró en remoto con la hoja abierta.
+    case targetGone
+
+    /// `nil` para cualquier otro fallo: el borrador se queda y la persona puede reintentar.
+    init?(after error: Error) {
+        switch error {
+        case DraftServiceError.groupExpenseAlreadyRegistered: self = .alreadyRegistered
+        case DraftServiceError.groupExpenseTargetMissing: self = .targetGone
+        default: return nil
+        }
+    }
+}
+
 enum DraftServiceError: LocalizedError {
     case noContext
     case missingAccount
@@ -1190,8 +1584,8 @@ enum DraftServiceError: LocalizedError {
     /// Solo se borran al eliminar el expense origen en el grupo.
     case cannotDeleteGroupDraft
     case cannotRejectGroupDraft
-    /// Draft-puntero `.groupExpense` cuyo expense origen se borró remotamente (no existe TX).
-    /// El draft stale ya se limpió; este error informa al usuario en la sheet de finalización.
+    /// Borrador `.groupExpense` cuyo gasto origen se borró remotamente. El borrador NO se borra al lanzar (la hoja sigue
+    /// montada): la hoja lo retira al cerrarse con `retireGroupExpenseDraftIfTargetGone` (card ouka).
     case groupExpenseTargetMissing
     /// `.groupScheduledExpense` solo se aprueba vía GroupExpenseFormView (crea el SplitExpense),
     /// nunca por el path genérico de approveDraft. Defensa interna — no debería alcanzar al usuario.
@@ -1200,11 +1594,16 @@ enum DraftServiceError: LocalizedError {
     case groupSettlementAlreadyRegistered
     /// El aviso de importe cambiado ya no se puede aplicar: su transacción ya no está, hay dos, o cambió de divisa.
     case settlementAmountChangeTransactionGone
+    /// UX 2.2 · L13-15: el movimiento elegido ya no coincide con el gasto (se editó, o el gasto ganó su pata real).
+    case groupExpenseLinkNoLongerMatches
+    /// Card 9o4n: el borrador de cuenta de un gasto de grupo que ya tiene su pata real. Aprobarlo lo contaría dos veces;
+    /// la hoja lo retira al cerrarse.
+    case groupExpenseAlreadyRegistered
 
     var errorDescription: String? {
         switch self {
         case .noContext:
-            return "DraftService: No ModelContext available"
+            return L10n.Common.saveError
         case .missingAccount:
             return L10n.Inbox.errorNoAccount
         case .missingAmount:
@@ -1213,18 +1612,22 @@ enum DraftServiceError: LocalizedError {
             return L10n.Inbox.errorNoSubcategory
         case .futureDateNotAllowed:
             return L10n.Inbox.errorFutureDate
-        case .saveFailed(let error):
-            return "DraftService: Save failed - \(error.localizedDescription)"
+        case .saveFailed:
+            return L10n.Common.saveError
         case .cannotDeleteGroupDraft, .cannotRejectGroupDraft:
             return L10n.Inbox.groupDraftCannotDelete
         case .groupExpenseTargetMissing:
             return L10n.Inbox.errorGroupExpenseGone
         case .groupScheduledExpenseRequiresForm:
-            return "DraftService: group scheduled expense must be approved via the group form"
+            return L10n.Common.saveError
         case .groupSettlementAlreadyRegistered:
             return L10n.Inbox.GroupSettlementDraft.alreadyRegistered
         case .settlementAmountChangeTransactionGone:
             return L10n.Inbox.GroupSettlementAmountChange.transactionGone
+        case .groupExpenseLinkNoLongerMatches:
+            return L10n.Groups.Errors.actionFailed
+        case .groupExpenseAlreadyRegistered:
+            return L10n.Inbox.GroupExpenseDraft.alreadyRegistered
         }
     }
 }

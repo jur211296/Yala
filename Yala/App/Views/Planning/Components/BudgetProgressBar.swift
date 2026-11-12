@@ -12,30 +12,35 @@ struct BudgetProgressBar: View {
     let color: String
     let isExceeded: Bool
     var simplified: Bool = false
+    var height: CGFloat = DS.Sizing.budgetProgressBarHeight
 
     @State private var barWidth: CGFloat = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var barColor: Color {
         if isExceeded { return Color.hotPink }
         if simplified { return Color.electricIndigo }
-        if percentage >= 75 { return DS.Semantic.warningForeground }
+        // El mismo umbral que «en el límite» (card bj9n): una sola fuente, `BudgetStatusCounter`.
+        if BudgetStatusCounter.isAtOrPastLimit(percent: percentage) { return DS.Semantic.warningForeground }
         return Color(hex: color)
     }
 
     var body: some View {
-        ZStack(alignment: .leading) {
-            // Background capsule
-            Capsule()
-                .fill(DS.Semantic.neutralBackground)
-                .frame(height: 6)
-
-            // Foreground capsule (progress)
-            Capsule()
-                .fill(barColor)
-                .frame(width: max(0, barWidth * (min(percentage, 100.0) / 100.0)), height: 6)
-        }
-        .frame(height: 6)
-        .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { barWidth = $0 }
+        // Background capsule; el progreso va en su `overlay`. En un `ZStack`, un presupuesto pasado (al 100 %) fijaba el
+        // ancho medido y la barra no encogía al estrechar la ventana (iPhone Duo al plegar o girar, iPad).
+        Capsule()
+            .fill(DS.Semantic.neutralBackground)
+            .frame(height: height)
+            .overlay(alignment: .leading) {
+                // Foreground capsule (progress)
+                Capsule()
+                    .fill(barColor)
+                    .frame(width: max(0, barWidth * (min(percentage, 100.0) / 100.0)), height: height)
+                    // El relleno crece o encoge con la cifra (card C2). Solo con el porcentaje: el ancho medido al
+                    // aparecer o al girar sale quieto.
+                    .animation(reduceMotion ? nil : DS.Animation.number, value: percentage)
+            }
+            .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { barWidth = $0 }
         .accessibilityValue(isExceeded ? L10n.Accessibility.exceeded : "\(Int(percentage))%")
     }
 }

@@ -1,0 +1,5 @@
+# Lo genera prepare-sources.sh / xcodegen en cada corrida.
+Generated/
+WidgetRender.xcodeproj/
+build/
+out/

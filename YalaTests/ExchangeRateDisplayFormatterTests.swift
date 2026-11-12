@@ -107,16 +107,27 @@ struct ExchangeRateDisplayFormatterWiringTests {
         return try String(contentsOf: root.appendingPathComponent(path), encoding: .utf8)
     }
 
-    /// Las pantallas que enseñan una tasa. `TransferAmountInputView` queda fuera a propósito: allí la
-    /// tasa es un campo editable que se vuelve a parsear, y ya se invierte cuando es menor que 1.
+    /// Las pantallas que enseñan una tasa. El formulario de registro la pinta, en un gasto en otra divisa y en una
+    /// transferencia, con `ExchangeRateCapsule` (UX 2.2 · L2-11 y L2-18): desde entonces la transferencia tampoco escribe
+    /// «3.5500» (antes quedaba fuera de esta lista porque su tasa era un campo con `%.4f`).
     static let screens = [
         "Yala/App/Views/Records/TransactionDetailSheet.swift",
         "Yala/App/Views/Panel/ExchangeRateWidget.swift",
         "Yala/App/Views/Panel/Sheets/FXPnLDetailSheet.swift",
         "Yala/App/Views/Settings/CurrencySettingsView.swift",
         "Yala/App/Views/Settings/ExchangeRatesSheet.swift",
-        "Yala/App/Views/Transactions/NewTransactionView.swift",
+        "Yala/App/Views/Transactions/Components/ExchangeRateCapsule.swift",
     ]
+
+    @Test("El formulario usa la cápsula de la tasa en los dos sitios y ya no escribe la tasa a mano")
+    func transactionFormUsesTheCapsule() throws {
+        for path in ["Yala/App/Views/Transactions/NewTransactionView.swift",
+                     "Yala/App/Views/Transactions/Components/TransferAmountInputView.swift"] {
+            let src = try Self.source(path)
+            #expect(src.contains("ExchangeRateCapsule("), "\(path) no usa la cápsula de la tasa")
+            #expect(!src.contains("\"%.4f"), "\(path) vuelve a los cuatro decimales fijos")
+        }
+    }
 
     @Test("Ninguna pantalla vuelve a los cuatro decimales fijos", arguments: screens)
     func noFixedFourDecimals(_ path: String) throws {

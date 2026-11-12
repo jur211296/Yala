@@ -57,8 +57,11 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         let targetSessionID = response.targetScene?.session.persistentIdentifier
 
         if let destination = userInfo["deepLink"] as? String {
+            // El push del servidor (`yala`) avisa de un cambio que puede no haber bajado aún; los avisos locales de Grupos
+            // (recordatorio de saldar, alerta de presupuesto, «te aprobaron») no traen nada que bajar (card th4n).
+            let awaitsRemoteChange = userInfo["yala"] != nil
             Task { @MainActor in
-                Self.routeTap(deepLink: destination, targetSessionID: targetSessionID)
+                Self.routeTap(deepLink: destination, targetSessionID: targetSessionID, awaitsRemoteChange: awaitsRemoteChange)
             }
         }
 
@@ -71,8 +74,39 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     /// Separado de `didReceive` porque `UNNotificationResponse` no tiene inicializador público: es lo que permite
     /// probar el camino entero del toque en frío (`NotificationColdLaunchTapTests`).
     @MainActor
-    static func routeTap(deepLink destination: String, targetSessionID: String?) {
+    static func routeTap(deepLink destination: String, targetSessionID: String?, awaitsRemoteChange: Bool = false) {
+        // El aviso de Apple Pay con Yala solo en grupos (encargo S11e): abre la vuelta a Yala completo o su activación.
+        // Si la persona ya volvió, `ContentView` no hace nada con él.
+        if destination == GroupsOnlyIntentGate.activationDeepLink {
+            if let targetSessionID {
+                SceneRegistry.shared.noteFocused(sessionID: targetSessionID)
+            }
+            RouterEntryGate.shared.submit(.presentFullModeActivation)
+            return
+        }
         guard let dest = parseDestination(destination) else { return }
+        // Una alerta de presupuesto lleva su id (`budgets/<uuid>`): se apunta antes de navegar y Presupuestos abre ese
+        // detalle al llegar (UX 2.2 · L9-5).
+        if let budgetID = BudgetAlertRouting.budgetID(fromDeepLink: destination) {
+            BudgetAlertRouting.shared.request(budgetID)
+        }
+        // Recordatorio de un pago (`scheduledPayments/<uuid>`) y aviso de la tarjeta (`accounts/<uuid>`): abren ese
+        // pago y esa ficha al llegar (UX 2.2 · L10-13, L10-14).
+        if let paymentID = AlertDeepLink.scheduledPayment.id(fromDeepLink: destination) {
+            AlertDeepLinkTarget.scheduledPayment.request(paymentID)
+        }
+        if let accountID = AlertDeepLink.account.id(fromDeepLink: destination) {
+            AlertDeepLinkTarget.account.request(accountID)
+        }
+        // Informe (`statistics/insights/last7Days`): abre esa pestaña con ese período (UX 2.2 · L11-2).
+        if let statisticsRequest = StatisticsDeepLink.request(fromDeepLink: destination) {
+            StatisticsDeepLinkTarget.shared.request(statisticsRequest)
+        }
+        // El aviso de un grupo (`groups/<id>`) del servidor: el grupo se abre con el cambio que avisa, no con lo de antes
+        // (card th4n).
+        if awaitsRemoteChange, case .groupDetail(let groupID) = dest {
+            GroupNotificationOpening.shared.request(groupID)
+        }
         if let targetSessionID {
             SceneRegistry.shared.noteFocused(sessionID: targetSessionID)
         }
@@ -85,6 +119,25 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         if destination.hasPrefix("groups/") {
             let groupID = String(destination.dropFirst("groups/".count))
             return .groupDetail(groupID: groupID)
+        }
+
+        // Alerta de un presupuesto: "budgets/{UUID}". El destino es Presupuestos; el id lo apunta `routeTap`.
+        if BudgetAlertRouting.budgetID(fromDeepLink: destination) != nil {
+            return .budgets
+        }
+
+        // Recordatorio de un pago planificado: "scheduledPayments/{UUID}" (L10-13).
+        if AlertDeepLink.scheduledPayment.id(fromDeepLink: destination) != nil {
+            return .scheduledPayments
+        }
+        // Aviso de pago de la tarjeta: "accounts/{UUID}" abre su ficha en el Panel; "accounts" a secas (avisos que ya
+        // estaban programados con la versión anterior) abre el Panel, donde están las cuentas (L10-14).
+        if destination == "accounts" || AlertDeepLink.account.id(fromDeepLink: destination) != nil {
+            return .panel
+        }
+        // Informe con pestaña y período: "statistics/<pestaña>[/<período>]" (L11-2). La petición la apunta `routeTap`.
+        if StatisticsDeepLink.request(fromDeepLink: destination) != nil {
+            return .statistics
         }
 
         switch destination {
@@ -154,6 +207,14 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
             return
         }
 
+        // Card p0iu: con «Solo grupos» elegido sobre Yala completo, los recordatorios personales esperan
+        // (`PersonalRemindersPause`). Solo llegan aquí los repetitivos (fin del día, almuerzo, personalizados): los de
+        // grupos son dinámicos y salen arriba. Al volver, `UsageModeService` los reprograma.
+        if PersonalRemindersPause.isPaused() {
+            await cancelNotification(for: item)
+            return
+        }
+
         // Check permission first
         guard await isAuthorized() else { return }
         // §5.2.1 — choke point: con un wipe personal armado, este `item` pertenece a la cuenta saliente
@@ -195,6 +256,9 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
                     trigger: trigger
                 )
 
+                // La pausa, también en el instante del `add` (como `isPersonalWipeArmed`): una pasada que ya iba en
+                // marcha al entrar en «Solo grupos» no puede agendar detrás de la cancelación (review p0iu).
+                guard !PersonalRemindersPause.isPaused() else { return }
                 do {
                     try await notificationCenter.add(request)
                 } catch {
@@ -213,6 +277,7 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
                 trigger: trigger
             )
 
+            guard !PersonalRemindersPause.isPaused() else { return }
             do {
                 try await notificationCenter.add(request)
             } catch {
@@ -333,6 +398,8 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
 
         // Anti doble-banner: marca de hoy + ningún pending de hoy vivo ⇒ ya disparó.
         var effectivePlans = plans
+        // Card p0iu: en «Solo grupos» sobre Yala completo se retiran las pendientes (arriba) y no se agenda ninguna.
+        if PersonalRemindersPause.isPaused() { effectivePlans = [] }
         if todayAlreadyMarked && !removedDayKeys.contains(todayKey) {
             effectivePlans.removeAll { $0.dayKey == todayKey }
         }
@@ -354,7 +421,7 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
             // §5.2.1 — mismo choke point que sendNotification, evaluado POR ITERACIÓN (el
             // invariante de `isPersonalWipeArmed`: "en el instante del add"): un arm que
             // aterrice a mitad del loop corta las iteraciones restantes.
-            guard !isPersonalWipeArmed else { break }
+            guard !isPersonalWipeArmed, !PersonalRemindersPause.isPaused() else { break }
             // El `now` del planner envejece durante los round-trips al center: un trigger
             // con fecha ya pasada es aceptado por add() pero JAMÁS dispara — no agendarlo
             // (la oportunista dueToday cubre el día como fallback, que es el diseño).
@@ -396,6 +463,78 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         print("NotifService: payment summaries replaced — removed=\(stale.count) scheduled=\(scheduledKeys.count)/\(effectivePlans.count)")
         #endif
         return SummaryReplaceOutcome(scheduledDayKeys: scheduledKeys, attemptedDayKeys: attempted, removedPendingDayKeys: removedDayKeys)
+    }
+
+    // MARK: - Aviso antes de pagar la tarjeta (card nmtk)
+
+    /// Un aviso de tarjeta listo para programar (`CreditCardReminderScheduler`).
+    struct CreditCardReminderRequest: Equatable {
+        let identifier: String
+        let accountID: UUID
+        /// Inicio del día del aviso: la marca del tracker va por día.
+        let day: Date
+        let title: String
+        let body: String
+        let deepLink: String
+        let fireDate: Date
+        let calendar: Calendar
+    }
+
+    struct CreditCardReplaceOutcome: Equatable {
+        /// Los que el centro conserva tras programar (el límite de 64 pendientes es silencioso).
+        let scheduled: Set<String>
+        /// Los que estaban PENDIENTES (sin disparar) y se retiraron: su marca de dedup ya no dice la verdad.
+        let removedPending: Set<String>
+    }
+
+    /// Retira TODOS los avisos de tarjeta programados y programa `requests`. Con plan vacío solo limpia: tarjeta borrada,
+    /// aviso apagado o ya pagado.
+    func replaceCreditCardReminders(_ requests: [CreditCardReminderRequest]) async -> CreditCardReplaceOutcome {
+        let prefix = CreditCardReminderScheduler.identifierPrefix
+        let stale = await notificationCenter.pendingNotificationRequests()
+            .map(\.identifier)
+            .filter { $0.hasPrefix(prefix) }
+        if !stale.isEmpty {
+            notificationCenter.removePendingNotificationRequests(withIdentifiers: stale)
+        }
+        guard !requests.isEmpty, await isAuthorized() else {
+            return CreditCardReplaceOutcome(scheduled: [], removedPending: Set(stale))
+        }
+
+        for request in requests {
+            // §5.2.1 — el mismo choke point que `sendNotification`, en el instante de cada `add`; y la pausa de «Solo
+            // grupos» (card p0iu), como en los resúmenes.
+            guard !isPersonalWipeArmed, !PersonalRemindersPause.isPaused() else { break }
+            // Un trigger con fecha pasada se acepta y no dispara nunca: el aviso de hoy ya pasado lo manda el
+            // programador al momento.
+            guard request.fireDate > Date.now else { continue }
+
+            let content = UNMutableNotificationContent()
+            content.title = request.title
+            content.body = request.body
+            content.sound = .default
+            content.userInfo = ["deepLink": request.deepLink]
+
+            // Con año: un trigger que no se repite no puede volver a casar el mismo día de otro año.
+            let components = request.calendar.dateComponents(
+                [.year, .month, .day, .hour, .minute], from: request.fireDate)
+            let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+            do {
+                try await notificationCenter.add(
+                    UNNotificationRequest(identifier: request.identifier, content: content, trigger: trigger))
+            } catch {
+                #if DEBUG
+                print("NotifService: Error scheduling credit card reminder \(request.identifier): \(error)")
+                #endif
+            }
+        }
+
+        let retained = Set(await notificationCenter.pendingNotificationRequests().map(\.identifier))
+        #if DEBUG
+        print("NotifService: credit card reminders replaced — removed=\(stale.count) scheduled=\(retained.filter { $0.hasPrefix(prefix) }.count)/\(requests.count)")
+        #endif
+        return CreditCardReplaceOutcome(scheduled: Set(requests.map(\.identifier)).intersection(retained),
+                                        removedPending: Set(stale))
     }
 
     /// dayKeys de las summaries actualmente pendientes en el center (identifier = prefijo
@@ -459,6 +598,26 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         notificationCenter.removeDeliveredNotifications(withIdentifiers: groupIDs)
     }
 
+    /// Retira lo PENDIENTE que no es de Grupos (card p0iu): al pasar a «Solo grupos» sobre Yala completo, los
+    /// recordatorios repetitivos ya agendados dejarían de esperar a la pausa. Los avisos de grupos llevan el enlace
+    /// `groups/<uuid>` y se quedan. Lo entregado no se toca: es historial de la persona.
+    ///
+    /// **Los resúmenes de pagos (`spDailySummary_*`) no se retiran aquí**: los retira un replan con la pausa puesta
+    /// (`replaceScheduledPaymentSummaries`), que es quien reconcilia sus marcas del tracker. Retirarlos a mano dejaba la
+    /// marca de hoy viva, y al volver el replan creía que el resumen de hoy ya había salido: ese día no llegaba ningún
+    /// aviso de los pagos que vencen (review adversarial de p0iu).
+    func cancelPendingPersonalNotifications() async {
+        let pending = await notificationCenter.pendingNotificationRequests()
+        let personal = pending
+            .filter { ($0.content.userInfo["deepLink"] as? String)?.hasPrefix("groups/") != true }
+            .map(\.identifier)
+            // Los resúmenes y el aviso de la tarjeta los retira su replan con la pausa puesta (`UsageModeService`): así
+            // sus marcas del tracker quedan al día.
+            .filter { !$0.hasPrefix(Self.summaryIdentifierPrefix) && !$0.hasPrefix(CreditCardReminderScheduler.identifierPrefix) }
+        guard !personal.isEmpty else { return }
+        notificationCenter.removePendingNotificationRequests(withIdentifiers: personal)
+    }
+
     /// Cancel any previously scheduled dynamic notifications (reports)
     /// Called during bootstrap to clean up old scheduled notifications that would have static content
     @MainActor
@@ -500,7 +659,11 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     /// FRONTERAS DE CUENTA, que sí deben barrer todo.
     func rescheduleAllNotifications(items: [NotificationItem]) async {
         let pending = await notificationCenter.pendingNotificationRequests()
-        let nonSummaryIDs = pending.map(\.identifier).filter { !$0.hasPrefix(Self.summaryIdentifierPrefix) }
+        // Tampoco el aviso de la tarjeta (`creditCardReminder_*`, card nmtk): este método no lo vuelve a programar, y
+        // su marca de dedup se puso al programarlo, así que borrarlo aquí perdía el aviso del día.
+        let nonSummaryIDs = pending.map(\.identifier).filter {
+            !$0.hasPrefix(Self.summaryIdentifierPrefix) && !$0.hasPrefix(CreditCardReminderScheduler.identifierPrefix)
+        }
         if !nonSummaryIDs.isEmpty {
             notificationCenter.removePendingNotificationRequests(withIdentifiers: nonSummaryIDs)
         }

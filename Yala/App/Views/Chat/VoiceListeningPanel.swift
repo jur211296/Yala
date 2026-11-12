@@ -13,6 +13,7 @@
 import SwiftUI
 
 struct VoiceListeningPanel: View {
+    @Environment(\.yalaTheme) private var theme
     let isTranscribing: Bool
     let duration: TimeInterval
     /// Nivel de la voz, de 0 a 1.
@@ -61,7 +62,7 @@ struct VoiceListeningPanel: View {
                     Button(action: onDone) {
                         Text(L10n.Action.done)
                             .font(DS.Typography.body.weight(.semibold))
-                            .foregroundStyle(Color.contrastingText(for: accent))
+                            .foregroundStyle(theme.onFill(accent))
                             .frame(maxWidth: .infinity, minHeight: buttonHeight)
                             .background(Capsule().fill(accent))
                     }
@@ -89,6 +90,7 @@ struct VoiceListeningPanel: View {
 /// tiempo; transcribiendo, un anillo gira y el tiempo pasa a «0:07 grabados». Con «Reducir movimiento», el halo se
 /// queda quieto y el anillo es el spinner del sistema.
 struct VoiceListeningOrb: View {
+    @Environment(\.yalaTheme) private var theme
     let isTranscribing: Bool
     let duration: TimeInterval
     /// Nivel de la voz, de 0 a 1.
@@ -152,7 +154,7 @@ struct VoiceListeningOrb: View {
                 .overlay {
                     Image(systemName: "mic.fill")
                         .font(.system(size: 24, weight: .semibold)) // A11Y-DT: glifo del orbe
-                        .foregroundStyle(isTranscribing ? Color.secondary : Color.contrastingText(for: accent))
+                        .foregroundStyle(isTranscribing ? Color.secondary : theme.onFill(accent))
                 }
         }
         .frame(width: haloSize, height: haloSize)

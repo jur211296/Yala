@@ -16,6 +16,15 @@
  *
  * Los saldos NUNCA se ajustan: reflejan el dinero que de verdad salió de tu cuenta.
  *
+ * Líneas de tu parte (Grupos B): una pata de TRANSFERENCIA (`balance_adjustment_type` puesto, la recarga de una línea)
+ * no es pata real, de préstamo ni de costo: no se netea. Las demás líneas viven en «Grupos» con su categoría y el
+ * préstamo ya las incluye, así que la regla no cambia para ellas.
+ *
+ * Ventas por cobrar (Grupos B · cards 8-11): lo POR COBRAR lleva `balance_adjustment_type = "receivable"` y no cuenta
+ * (cae con los ajustes de saldo, `eligibleForStats`). Lo COBRADO es un ingreso suelto en «Grupos», con la categoría de la
+ * venta y la fecha del pago, marcado en `split_lines_raw` (`{"k":"c","of":…}`): cuenta como ingreso y no entra en el
+ * neteo, aunque por su forma (sistema, `+x`) parezca un préstamo — igual que `isCollected` en la app.
+ *
  * Una pata cuyo importe guardado no se puede creer —0 con un nativo distinto de 0 (la conversión no se escribió), o
  * guardado con otra divisa preferida que la pata real— se reconvierte desde su nativo con la tasa de su día, como
  * `preferredContribution(of:in:converter:)` de la app; si no, «tu parte» salía con el importe del grupo entero y sin
@@ -52,6 +61,8 @@ type LegTx = Pick<
   | "account_ref"
   | "subcategory_ref"
   | "split_expense_id"
+  | "split_lines_raw"
+  | "balance_adjustment_type"
   | "amount_in_preferred_currency"
   | "is_exchange_rate_provisional"
   | "currency_code"
@@ -78,6 +89,25 @@ export interface GroupAdjustment {
   approximateMagnitude(tx: LegTx, magnitude: number): number;
   /** Cuántos gastos de grupo se proyectaron a «tu parte». */
   readonly adjustedCount: number;
+}
+
+/**
+ * `true` si `split_lines_raw` marca una pata COBRADA de una venta: `{"k":"c","of":"<id>","v":1}`. Port de
+ * `GroupCollectedLegLogic.isCollected` (una versión posterior a la 1 no se entiende y no se toma por cobrada).
+ */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function isCollectedLeg(raw: string | null | undefined): boolean {
+  if (!raw) return false;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== "object" || parsed === null) return false;
+    const o = parsed as Record<string, unknown>;
+    // Como `GroupSplitLinesRecipe.parse`: `of` es un UUID, y un `l` nulo cuenta como ausente.
+    return o.v === 1 && o.k === "c" && typeof o.of === "string" && UUID_RE.test(o.of) && o.l == null;
+  } catch {
+    return false;
+  }
 }
 
 /** Un `null` del wire vale el default del modelo: `amount` y `amountInPreferredCurrency` nacen a 0. */
@@ -146,9 +176,11 @@ export function buildGroupAdjustment(
     const accountOf = (tx: LegTx) => (tx.account_ref ? accounts.get(tx.account_ref) : undefined);
     if (legs.some((l) => !accountOf(l))) continue;
 
+    // Una pata de transferencia (recarga de una línea de tu parte) no entra en el neteo: ver la cabecera.
+    const nonTransfer = legs.filter((l) => !l.balance_adjustment_type && !isCollectedLeg(l.split_lines_raw));
     // `isSystemAccount` nace a false: un null del wire es una cuenta real.
-    const real = legs.filter((l) => accountOf(l)?.is_system_account !== true);
-    const systemLegs = legs.filter((l) => accountOf(l)?.is_system_account === true);
+    const real = nonTransfer.filter((l) => accountOf(l)?.is_system_account !== true);
+    const systemLegs = nonTransfer.filter((l) => accountOf(l)?.is_system_account === true);
     const loanBySign = systemLegs.filter((l) => amountOf(l) > 0);
     const hasCostLeg = real.length > 0 || systemLegs.some((l) => amountOf(l) <= 0);
 

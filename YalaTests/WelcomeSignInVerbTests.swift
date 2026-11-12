@@ -54,6 +54,8 @@ struct WelcomeSignInVerbTests {
 
     private static let welcomePath = "Yala/App/Views/Onboarding/WelcomeCloudSignInView.swift"
     private static let storagePath = "Yala/App/Views/Settings/StorageSignInChooserView.swift"
+    /// La hoja única de activar la nube de Ajustes (UX 2.2 · L20-11): el mismo contexto que el chooser, el mismo verbo.
+    private static let activationPath = "Yala/App/Views/Settings/CloudActivationSheet.swift"
     private static let groupsPath = "Yala/App/Views/Groups/GroupsSignInView.swift"
 
     // MARK: - Punto 15 · el verbo por contexto
@@ -79,33 +81,41 @@ struct WelcomeSignInVerbTests {
     /// es el mismo de siempre: ahí entra tanto quien ya tiene cuenta como quien la estrena al migrar.
     @Test("Ajustes/migración conserva el verbo neutro")
     func settings_keepsTheNeutralVerb() throws {
-        let src = try Self.code(Self.storagePath)
-        #expect(src.contains("purpose: .continue"), "\(Self.storagePath) dejó de declarar el verbo neutro")
-        #expect(!src.contains("purpose: .signUp"))
-        #expect(!src.contains("purpose: .signIn"))
+        for path in [Self.storagePath, Self.activationPath] {
+            let src = try Self.code(path)
+            #expect(src.contains("purpose: .continue"), "\(path) dejó de declarar el verbo neutro")
+            #expect(!src.contains("purpose: .signUp"))
+            #expect(!src.contains("purpose: .signIn"))
+        }
+        // Y su botón de Apple dice lo mismo que el de Google («Continuar con…»), no «Iniciar sesión».
+        #expect(try Self.code(Self.activationPath).contains("StorageAppleSignInButton(colorScheme: colorScheme, type: .continue)"))
     }
 
-    /// **G3 (2026-08-11) sacó a Grupos del neutro.** W4 lo dejó en `.continue` cuando su única entrada era
-    /// el invitado por link; con la rama ORGANIZADOR del Welcome, quien llega aquí está CREANDO su cuenta
-    /// para estrenar Grupos. Y las dos entradas coinciden en eso: nadie alcanza este sheet con una sesión
-    /// viva —el `onAppear` la cierra si la hay, y el productor lo garantiza—, así que el verbo del alta es
-    /// el correcto para ambas.
-    @Test("Grupos pide CREAR cuenta: sus dos entradas son altas")
-    func groups_usesTheSignUpVerb() throws {
+    /// **UX 2.2 · L19-17 (2026-10-19) devolvió a Grupos al neutro, y ahora con los DOS botones.** G3 (2026-08-11) le
+    /// había puesto el verbo del alta porque sus dos entradas eran altas; a la hoja vuelve también quien cerró su
+    /// sesión de grupos, y «Crear cuenta con Google» le hacía dudar de si perdería sus grupos. Decisión de Jürgen:
+    /// «Continuar con Apple» y «Continuar con Google», el verbo de L12-7. Se fija también el botón de Apple, que no
+    /// pasa por `purpose`: con `.signIn` diría «Iniciar sesión con Apple» al lado de «Continuar con Google».
+    @Test("Grupos dice CONTINUAR en los dos botones: a la hoja se llega para entrar y para crear")
+    func groups_usesTheContinueVerb() throws {
         let src = try Self.code(Self.groupsPath)
-        #expect(src.contains("purpose: .signUp"), "\(Self.groupsPath) dejó de declarar el verbo del alta")
-        #expect(!src.contains("purpose: .continue"))
+        #expect(src.contains("purpose: .continue"), "\(Self.groupsPath) dejó de declarar el verbo neutro")
+        #expect(!src.contains("purpose: .signUp"))
         #expect(!src.contains("purpose: .signIn"))
+        #expect(src.contains("type: .continue"), "el botón de Apple de Grupos dejó de decir «Continuar»")
+        #expect(!src.contains("type: .signIn"))
+        #expect(!src.contains("type: .signUp"))
     }
 
     /// El conteo es lo que convierte esto en una red: una superficie NUEVA que se cuele sin decidir su
     /// verbo cae aquí, y el compilador no la caza porque `purpose` es obligatorio pero cualquiera de los
     /// tres valores compila. **Eran cuatro hasta el paso 6**, que añadió las DOS de la pantalla de
-    /// mismatch —una por salida, cada una con su verbo: lo fija el test de abajo—.
-    @Test("las seis construcciones de producción declaran su verbo, y son seis")
-    func productionCallSites_declareTheirVerb_andAreSix() throws {
+    /// mismatch —una por salida, cada una con su verbo: lo fija el test de abajo—, y siete desde la hoja única de activar la
+    /// nube de Ajustes (UX 2.2 · L20-11).
+    @Test("las siete construcciones de producción declaran su verbo, y son siete")
+    func productionCallSites_declareTheirVerb_andAreSeven() throws {
         var total = 0
-        for path in [Self.welcomePath, Self.storagePath, Self.groupsPath] {
+        for path in [Self.welcomePath, Self.storagePath, Self.activationPath, Self.groupsPath] {
             let src = try Self.code(path)
             let constructions = src.components(separatedBy: "GoogleSignInButton(").count - 1
             let declared = src.components(separatedBy: "purpose: .").count - 1
@@ -113,7 +123,7 @@ struct WelcomeSignInVerbTests {
                     "\(path): \(constructions) botones de Google y \(declared) verbos declarados")
             total += constructions
         }
-        #expect(total == 6, "se esperaban 6 construcciones de producción, hay \(total)")
+        #expect(total == 7, "se esperaban 7 construcciones de producción, hay \(total)")
     }
 
     /// **Paso 6 · el mismatch dice DOS verbos, uno por salida, y emparejados.** Con un `contains` suelto un
@@ -167,17 +177,23 @@ struct WelcomeSignInVerbTests {
         }
     }
 
-    // MARK: - Punto 16 · la nota por contexto
+    // MARK: - Punto 16, superado: una sola nota (decisión A de Jürgen, 2026-10-19)
 
-    @Test("cada intro lleva SU nota, y la del alta no es la de la re-entrada")
-    func eachIntro_carriesItsOwnProviderNote() throws {
+    /// Las dos notas del Welcome decían que la cuenta queda «ligada a un método», y no es así: con el mismo correo, Apple y
+    /// Google abren la misma cuenta (medido en el backend, L20-9). Desde el lote decidido 2.2 · 15 las dos intros y el
+    /// selector de «Ya tengo una cuenta» dicen la frase de Ajustes, con su misma key.
+    @Test("las intros del Welcome y el selector dicen la nota de Ajustes, no las del método ligado")
+    func welcomeNotes_useTheSettingsLinkingNote() throws {
         let src = try Self.code(Self.welcomePath)
         let born = try Self.member("private var bornCloudIntro: some View {", in: src)
         let reentry = try Self.member("private var reentryIntro: some View {", in: src)
-        #expect(born.contains("L10n.Welcome.BornCloud.providerNote"))
-        #expect(!born.contains("L10n.Welcome.Cloud.providerNote"),
-                "el alta volvió a la nota de la re-entrada: «entra con el mismo método que usaste» no dice nada a quien no ha usado ninguno")
-        #expect(reentry.contains("L10n.Welcome.Cloud.providerNote"))
+        for (nombre, cuerpo) in [("alta", born), ("re-entrada", reentry)] {
+            #expect(cuerpo.contains("L10n.Settings.yalaAccountLinkingNote"), "la intro de \(nombre) no dice la nota de Ajustes")
+            #expect(!cuerpo.contains("providerNote"), "la intro de \(nombre) volvió a la nota del método ligado")
+        }
+        let chooser = try Self.code("Yala/App/Views/Onboarding/WelcomeExistingChooserView.swift")
+        #expect(chooser.contains("L10n.Settings.yalaAccountLinkingNote"))
+        #expect(!chooser.contains("providerNote"))
     }
 
     // MARK: - Las traducciones
@@ -200,18 +216,16 @@ struct WelcomeSignInVerbTests {
         #expect(scanned == 16, "se esperaban 16 locales con strings, se leyeron \(scanned)")
     }
 
-    @Test("las dos notas de método son distintas en los 16 locales")
-    func providerNotes_differPerLocale() {
+    @Test("las keys de la nota del método ligado ya no existen en ningún locale")
+    func providerNoteKeys_areGone() {
         var scanned = 0
         for locale in SupportedLocale.allCases {
             let strings = StringsFileParser.parseStrings(forLocale: locale.code)
             guard !strings.isEmpty else { continue }
             scanned += 1
-            let reentry = strings["welcome.cloud.providerNote"] ?? ""
-            let born = strings["welcome.bornCloud.providerNote"] ?? ""
-            #expect(!born.isEmpty, "falta la nota del alta en \(locale.code)")
-            #expect(born != reentry,
-                    "las dos notas volvieron a ser la misma en \(locale.code): el punto 16 se deshizo en la traducción")
+            #expect(strings["welcome.cloud.providerNote"] == nil, "sigue la nota vieja de la re-entrada en \(locale.code)")
+            #expect(strings["welcome.bornCloud.providerNote"] == nil, "sigue la nota vieja del alta en \(locale.code)")
+            #expect(!(strings["settings.yalaAccountLinkingNote"] ?? "").isEmpty, "falta la nota de Ajustes en \(locale.code)")
         }
         #expect(scanned == 16, "se esperaban 16 locales con strings, se leyeron \(scanned)")
     }

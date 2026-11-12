@@ -57,6 +57,13 @@ final class TagFormViewModel {
         self.existingTags = initialExistingTags
     }
 
+    /// Suelta las etiquetas cargadas tras eliminar la que se edita: el formulario sigue presentado mientras se cierra, su
+    /// barra lee `canSave` y la unicidad del nombre recorría la lista leyendo la borrada. En iOS 27.x leer un modelo
+    /// borrado aborta (card 1w89).
+    func releaseDeletedTag() {
+        existingTags = []
+    }
+
     // MARK: - Context Injection
 
     func setContext(_ context: ModelContext) {

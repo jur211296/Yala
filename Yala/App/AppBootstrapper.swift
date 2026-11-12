@@ -112,6 +112,11 @@ final class AppBootstrapper {
         defer { SessionState.shared.isBootstrapSettled = true }
 
         let context = container.mainContext
+        // Tarjeta con varias divisas (entrega 3): el filtro de cuentas de sesión incluye las líneas de la tarjeta elegida, y
+        // para eso necesita leer las cuentas del contenedor montado. Antes de nada que pueda escribir un filtro.
+        SessionState.shared.installAccountLinesSource(context)
+        // Y las monedas con registros, para la guarda del monto (`revalidateAmountCurrency`).
+        SessionState.shared.installCurrenciesWithRecordsSource(context)
 
         let uiTestActive = UITestHooks.isActive
         // Nota: applyUITestHooksEarly (reset/pro/skip-onboarding) se aplica en
@@ -210,12 +215,30 @@ final class AppBootstrapper {
 
         // 2. Load exchange rates (required for currency display)
         await loadExchangeRates(context: context)
+        #if DEBUG
+        // Seam de la card apsn: un arranque tan lento como el de un iPhone recién instalado.
+        if let seconds = UITestHooks.slowBootstrapSeconds {
+            do {
+                try await Task.sleep(for: .seconds(seconds))
+            } catch {
+                print("AppBootstrapper: la espera del seam -uitest-slow-bootstrap se cortó: \(error)")
+            }
+        }
+        #endif
 
         // 2.5. Migración Live Balance multi-divisa diferida — bulk recalc
         //      puede ser O(N) sobre miles de tx. Lanzamos en background tras
         //      bootstrap para no bloquear UI en cold launch.
         Task { @MainActor in
             await migrateToLiveBalanceIfNeeded(context: context)
+        }
+
+        // 2.55. Nombres de línea que se quedaron con el nombre viejo de su tarjeta (S30): renombrar la tarjeta no
+        //       arrastraba sus líneas («BCP Débito Soles · USD» bajo «BCP Débito»). Idempotente y en cada arranque, así
+        //       que arregla también la línea que llega tarde por sincronización. Guarda `Account` del store personal:
+        //       detrás de la quiescencia del import, como el resto de escrituras del arranque.
+        Task { @MainActor in
+            await repairStaleLineNamesIfNeeded(context: context)
         }
 
         // 2.6. Barrido one-shot del signo del chat. Devuelve a negativo los gastos que
@@ -261,6 +284,8 @@ final class AppBootstrapper {
             // hay cuentas). Read-only (no save) → seguro aunque el import de CloudKit siga en curso;
             // converge en cada foreground.
             SiriIntentContextCache.refresh(context: context, defaultCurrency: appPreferences.defaultCurrencyCode.rawValue)
+            // La moneda que pondrá el borrador de un pago de Apple Pay, para que su notificación diga la misma (L15-8).
+            ApplePayDraftService.refreshCurrencyHint(context: context)
         }
 
         // 5. Check for pending inbox drafts and notify user
@@ -363,6 +388,8 @@ final class AppBootstrapper {
             lifecycleObserversInstalled = true
             // 12.5. Observe exchange rate updates to invalidate the latest-rates cache
             observeExchangeRateUpdates()
+            // 12.6. Al cambiar de día con la app abierta, la foto de los widgets se rehace (UX 2.2 · saldo de hoy)
+            observeDayChangeForWidgets()
             // 13. Observe CloudKit remote changes to auto-refresh UI
             observeRemoteStoreChanges()
             // 14. Observe iCloud account changes — detect mismatch if container was created without CloudKit
@@ -457,6 +484,7 @@ final class AppBootstrapper {
         GroupService.shared.setContext(context)
         GroupExpenseService.shared.setContext(context)
         GroupTransactionBridge.shared.setContext(context)
+        WidgetGroupsRefresh.shared.setContext(context)
         BridgeModeResolver.shared.setAppPreferences(appPreferences)
 
         // 16.4. Cleanup duplicate SplitGroups from CloudKit sync race.
@@ -739,6 +767,38 @@ final class AppBootstrapper {
 
         #if DEBUG
         if uiTestActive { await applyUITestSeed(context: context) }
+        // Toque fingido en la notificación de Apple Pay: el pago que la notificación anuncia (los borradores de la semilla
+        // son manuales y el aviso no los cuenta), materializado como en el paso 4, y el paso 5 repetido ahora que hay
+        // cuentas, delante del paso 20 como en producción.
+        if uiTestActive, UITestHooks.inboxNotificationTapMode != nil {
+            if UITestHooks.notificationTapLink == "inbox" {
+                UITestHooks.materializeApplePayPayment(merchant: "Wong", context: context)
+            }
+            checkForPendingInboxDrafts(context: context)
+        }
+        if uiTestActive, UITestHooks.inboxNotificationTapMode == "foreground" {
+            Task { @MainActor in
+                do { try await Task.sleep(for: .seconds(4)) } catch { return }
+                NotificationService.routeTap(
+                deepLink: UITestHooks.notificationTapLink, targetSessionID: nil,
+                awaitsRemoteChange: UITestHooks.groupPushChangeKind != nil)
+            }
+        }
+        // Card th4n: el cambio que trae el aviso de grupo. En frío, el pull del arranque sigue en vuelo cuando el toque abre
+        // el grupo; delante, el del propio push empieza al llegar el aviso, medio segundo antes del toque.
+        if uiTestActive, UITestHooks.groupPushChangeKind != nil {
+            switch UITestHooks.inboxNotificationTapMode {
+            case "cold":
+                uitestStartGroupPushChange(context: context, lasting: .seconds(8), landsAfterFirstWaiter: .milliseconds(1500))
+            case "foreground":
+                Task { @MainActor in
+                    do { try await Task.sleep(for: .milliseconds(3500)) } catch { return }
+                    self.uitestStartGroupPushChange(context: context, lasting: .seconds(3))
+                }
+            default:
+                break
+            }
+        }
         #endif
 
         // 20. Drain DeferredIntentBuffer: re-submit any RouterIntent that
@@ -811,6 +871,9 @@ final class AppBootstrapper {
             // un test que reordena/oculta tabs (TabBarConfigView) contaminaría a los demás.
             // Restaurar el tab bar al default (`[.panel, .statistics, .planning]`).
             UserDefaults.standard.removeObject(forKey: TabBarConfiguration.storageKey)
+            // El avance guardado de las guías por pasos (L15-10): un test que deja una a medias la abriría a medias en
+            // el siguiente.
+            StepGuideProgressStore.guideIDs.forEach { StepGuideProgressStore.clear($0) }
             // Mismo motivo (UserDefaults sobrevive al wipe): limpiar flags de uitest que
             // contaminarían corridas posteriores con fallos engañosos:
             //  · `expensesOnlyMode` oculta el chip de Ingresos (InsightsTabView) → rompería el
@@ -820,7 +883,28 @@ final class AppBootstrapper {
             //    token `seeded-first` del deep link rutearía a un grupo fantasma.
             UserDefaults.standard.removeObject(forKey: AppPreferences.Keys.expensesOnlyMode)
             SessionState.shared.isExpensesOnlyMode = false
+            //  · `-uitest-expenses-only` lo vuelve a encender ya limpio: arranca en «Solo gastos» sin pasar por
+            //    Ajustes (auditoría «Solo gastos», 2026-10-26). Por el espejo, como el merge remoto: no publica.
+            if UITestHooks.expensesOnly {
+                SessionState.shared.isExpensesOnlyMode = true
+            }
+            //  · las dos marcas de la oferta de prueba (UX 2.2 · L1-12). El wipe las borra del disco, pero la
+            //    copia de `SessionState` ya se leyó en su init. `-uitest-trial-offer-armed` la deja ARMADA sin
+            //    momento, que es como queda un alta recién terminada.
+            SessionState.shared.needsPostOnboardingTrial = UITestHooks.armTrialOffer
+            SessionState.shared.trialOfferMomentReached = false
+            //  · «Prueba terminada» ya enseñada (UX 2.2 · L17-6). Su drenaje la re-mide ahora, y la marca sigue a la
+            //    suscripción (el wipe no la toca): sin esto, el primer test que la enseñara apagaba la de los demás.
+            UserDefaults.standard.removeObject(forKey: "pro.trial.expiredSheetShown")
+            //  · el «era Pro» que deja el escenario de fin de Pro (`kind=pro-ended`) si el test no llega a confirmar.
+            UserDefaults.standard.removeObject(forKey: "yala.wasProUser")
             UserDefaults.standard.removeObject(forKey: UITestHooks.seededGroupIDKey)
+            //  · el idioma elegido DENTRO de la app (`appLanguageOverride`, App Group + KV). Vive fuera de
+            //    SwiftData y gana al `-AppleLanguages (es)` que fija `launchForUITest`: uno que quedara
+            //    puesto —un arranque manual en un simulador en otro idioma basta— cambiaría el idioma de toda
+            //    la suite y escondería el selector de idioma que vigila `LanguageSelectionUITests`. El setter
+            //    es no-op si ya es `nil`, así que en el caso normal no toca el KV.
+            LanguageManager.overrideLanguage = nil
             //  · el EJE 1 (`-uitest-group-invite` escribe la marca en `false` más abajo):
             //    misma clase que su vecina de arriba y PEOR, porque `cloudSync.*` está excluido del
             //    barrido de preferencias a propósito —para que la marca sobreviva a «Vaciar datos»—,
@@ -829,6 +913,9 @@ final class AppBootstrapper {
             //    cerrar sesión y de vaciar cambian de celda, y el arranque MANUAL de Yala Dev en ese
             //    simulador queda igual de envenenado — la víctima que nadie mira.
             PrivateSessionMark.clear()
+            //  · la marca de una «Eliminar cuenta» a medias (`cloudSync.*`, fuera del barrido): pegada, la corrida siguiente
+            //    retomaría un cierre que borra el store sin que nadie lo pidiera.
+            StorageModePersistence.clearAccountDeletedAwaitingLocalClose()
             //  · y su PAREJA, la marca del mount neutro solo-grupos. Limpiar el eje sin limpiar esto es
             //    peor que no limpiar ninguno de los dos, porque el backfill del arranque DERIVA el eje de
             //    esta marca: una corrida que arme el mount neutro —«Activar Yala completo» y las dos altas
@@ -881,6 +968,7 @@ final class AppBootstrapper {
             //    uitest — esto es limpieza de cinturón para corridas manuales posteriores).
             #if DEV_BUILD
             UserDefaults.standard.removeObject(forKey: CloudRemoteFlags.debugForceOffKey)
+            UserDefaults.standard.removeObject(forKey: CloudRemoteFlags.debugAICloudExploreForceOnKey)
             #endif
             UserDefaults.standard.removeObject(forKey: CloudRemoteConfigStore.snapshotKey)
             //  · Telemetría propia: spool/guard-del-día/one-shots de registro son keys `metrics.*`
@@ -1000,10 +1088,13 @@ final class AppBootstrapper {
         // construirse, ANTES de que el reset borrara la clave, así que una oferta que un test anterior dejó sin presentar
         // (el seam, o un onboarding que la arma y termina antes de drenarla) tapaba el siguiente test entero (medido en el
         // gate del 2026-10-19: once XCUITest con la oferta encima del avatar de Perfil).
+        // Desde la 2.2 la oferta armada solo vuelve a salir al arrancar si su momento ya llegó (UX 2.2 · L1-12), así que
+        // el seam deja las DOS marcas: es el caso en que Novedades y la oferta compiten por el mismo arranque. Sin el
+        // seam, la bajada en memoria con `-uitest-reset` ya la hace el bloque de reset de arriba, que respeta
+        // `-uitest-trial-offer-armed`: bajarla aquí otra vez desarmaría ese seam.
         if UITestHooks.pendingTrialOffer {
             SessionState.shared.needsPostOnboardingTrial = true
-        } else if UITestHooks.shouldReset {
-            SessionState.shared.needsPostOnboardingTrial = false
+            SessionState.shared.trialOfferMomentReached = true
         }
 
         // Adopción del dominio Grupos dada por hecha en uitest: los XCUITests prueban la
@@ -1095,7 +1186,17 @@ final class AppBootstrapper {
 
     /// Seed de datos UI-test al final del bootstrap + señal `uitest_ready`.
     private func applyUITestSeed(context: ModelContext) async {
-        defer { UITestHooks.shared.markReady() }
+        defer {
+            // El paso 9 del arranque escribió la caché de los widgets (y la foto de Siri) ANTES de sembrar: sin esto,
+            // con `-uitest-seed` las dos se quedaban vacías hasta el primer cambio, cosa que en un arranque real con
+            // datos no pasa. Medido el 2026-10-18 con `SiriIntentsUITests` (Siri no veía ninguna cuenta).
+            WidgetDataCache.updateCache(context: context)
+            // Lo mismo con la caché que lee «Anotar con Siri» (cuentas y subcategorías): el arranque bajo `-uitest` no la
+            // escribe, y la del arranque anterior decía «sin cuentas» y el intent salía sin encolar. Medido el
+            // 2026-10-21 con `SiriOnDeviceEntryUITests` (verde a solas, rojo detrás de otro caso).
+            SiriIntentContextCache.refresh(context: context, defaultCurrency: appPreferences.defaultCurrencyCode.rawValue)
+            UITestHooks.shared.markReady()
+        }
         // Excluyente con `-uitest-seed-desync`: el seed aleatorio del perfil contaminaría los
         // totales del XCUI de clasificación → si ambos flags están, gana el desync (aislado).
         if let raw = UITestHooks.seedProfile, !UITestHooks.seedDesync {
@@ -1107,6 +1208,20 @@ final class AppBootstrapper {
             // Ticket: Bugs/qa_cloud-fx-rates-blob-dos-caras.md (F1 Mini QA).
             Self.restoreUITestSecondaryCurrencies(into: UserDefaults.standard)
             SessionState.shared.needsExchangeRateWidgetRefresh = true
+        }
+        // Registros que la persona ya lleva (UX 2.2 · L2-5): con 3 o más, guardar cierra con el aviso breve en vez de la
+        // pantalla completa. Tras el reset, que borra el contador.
+        if let saved = UITestHooks.transactionsSavedCount {
+            UserDefaults.standard.set(saved, forKey: NotificationPrimerMoments.savedRecordsKey)
+            // Quien ya lleva esos registros ya pasó por el respaldo del permiso de notificaciones (sale en el tercero):
+            // sin esto, la hoja del permiso saldría al guardar, antes del aviso.
+            if saved >= NotificationPrimerMomentLogic.recordsThreshold {
+                UserDefaults.standard.set(true, forKey: NotificationPrimerMoments.seenKey)
+            }
+            // Y por el primer gasto: sin esto, «¿Era de prueba?» saldría sobre el aviso del cuarto registro.
+            if saved > 0 {
+                SetupChecklistManager.shared.markCompleted(.firstExpense)
+            }
         }
         // Seed desync AISLADO (excluyente con `-uitest-seed`): 4 TX con signo↔categoría
         // desincronizada para el XCUI de clasificación income/expense por categoría.
@@ -1133,22 +1248,90 @@ final class AppBootstrapper {
         if let iso = UITestHooks.groupBridgeFXCurrency {
             DevSeedService().seedGroupBridgeFXLegs(currencyCode: iso, in: context)
         }
+        // Un gasto fechado mañana: el saldo de hoy lo deja fuera hasta su fecha (UX 2.2 · saldo de hoy).
+        #if DEBUG
+        if UITestHooks.seedFutureMovement {
+            DevSeedFutureMovement.create(in: context)
+        }
+        // Un «Bus» de hace un minuto: un registro conocido en «Este mes» sea el día que sea (card 30pv).
+        if UITestHooks.seedTodayRecord {
+            DevSeedTodayRecord.create(in: context)
+        }
+        // Un gasto sin categoría: el trozo «Sin categoría» de la tarta y los rankings (decisión A, 2026-10-23).
+        if UITestHooks.seedUncategorizedExpense {
+            DevSeedUncategorizedExpense.create(in: context)
+        }
+        // Un borrador en la tarjeta con su línea y una etiqueta: el registro unificado (opción A, 2026-10-31).
+        if UITestHooks.seedRecordForms {
+            DevSeedRecordForms.create(in: context)
+        }
+        #endif
         // Liquidación aprobada cuyo importe cambia después: el aviso de importe cambiado en el Inbox.
         if UITestHooks.seedSettlementAmountChange {
             DevSeedSettlementAmountChange.create(in: context)
         }
+        // Grupos B: el caso Pía, con su borrador en la Bandeja (cards 5 y 6).
+        #if DEBUG
+        if UITestHooks.seedGroupSplitLines {
+            DevSeedGroupSplitLines.create(in: context)
+        }
+        #endif
         // Deeplink simulado en uitest: encola la navegación al tab destino (el gate la
         // drena cuando el routing esté listo). Ejercita el wiring de tabs ocultos.
         if let dest = uitestDeeplinkDestination() {
             RouterEntryGate.shared.submit(.navigate(dest))
         }
+        // Toque fingido en la alerta de un presupuesto (UX 2.2 · L9-5): mismo camino que el toque real.
+        if let name = UITestHooks.budgetAlertTapName {
+            do {
+                let budgets = try context.fetch(FetchDescriptor<Budget>(predicate: #Predicate { $0.name == name }))
+                if let budget = budgets.first {
+                    NotificationService.routeTap(deepLink: BudgetAlertRouting.deepLink(for: budget.id), targetSessionID: nil)
+                }
+            } catch {
+                #if DEBUG
+                print("AppBootstrapper: Error: \(error)")
+                #endif
+            }
+        }
+        // Toque fingido en el recordatorio de un pago y en el aviso de una tarjeta (UX 2.2 · L10-13, L10-14).
+        if let name = UITestHooks.scheduledAlertTapName {
+            do {
+                let payments = try context.fetch(FetchDescriptor<ScheduledPayment>(predicate: #Predicate { $0.name == name }))
+                if let payment = payments.first {
+                    NotificationService.routeTap(deepLink: AlertDeepLink.scheduledPayment.deepLink(for: payment.id), targetSessionID: nil)
+                }
+            } catch {
+                #if DEBUG
+                print("AppBootstrapper: Error: \(error)")
+                #endif
+            }
+        }
+        if let name = UITestHooks.accountAlertTapName {
+            do {
+                // «*» = la primera cuenta del usuario: el nombre de la del seed está localizado.
+                let accounts = name == "*"
+                    ? try context.fetch(FetchDescriptor<Account>(sortBy: [SortDescriptor(\.name)])).filter { !$0.isSystemAccount }
+                    : try context.fetch(FetchDescriptor<Account>(predicate: #Predicate { $0.name == name }))
+                if let account = accounts.first {
+                    NotificationService.routeTap(deepLink: AlertDeepLink.account.deepLink(for: account.shortcutID), targetSessionID: nil)
+                }
+            } catch {
+                #if DEBUG
+                print("AppBootstrapper: Error: \(error)")
+                #endif
+            }
+        }
         // InboxAlertModal simulado en uitest: encola `.showInboxAlert` con un payload de
         // muestra (mismo path que el sync real, ver checkInboxDraftsAndNotify) para poder
         // testear el modal sin depender de un evento de CloudKit.
-        if UITestHooks.showInboxAlert {
-            RouterEntryGate.shared.submit(.showInboxAlert(
-                PendingInboxNotification(scheduledPayments: 2, subscriptions: 1, automations: 1)
-            ))
+        // El hito va PRIMERO: con la oferta (misma prioridad) la cola los ordena por llegada, y es lo que mide
+        // `NoticeOrderUITests`.
+        if let milestone = UITestHooks.milestoneUpgrade {
+            RouterEntryGate.shared.submit(.presentMilestoneUpgrade(milestone))
+        }
+        if let notification = UITestHooks.inboxAlertPayload {
+            RouterEntryGate.shared.submit(.showInboxAlert(notification))
         }
         // ProTrialOfferSheet simulado en uitest (escenario paywall + alert en cola).
         if UITestHooks.showTrialOffer {
@@ -1168,6 +1351,10 @@ final class AppBootstrapper {
         // El resultado de un borrado de arranque que abortó tras armarlo la puerta de Grupos. Ver el seam.
         if UITestHooks.groupsGateWipeFailed {
             GroupsGateWipeFailureMarker.mark()
+        }
+        // La «Eliminar cuenta» de la celda D que se cerró entre el servidor y el arm. Ver el seam.
+        if UITestHooks.accountDeletionPendingClose {
+            StorageModePersistence.markAccountDeletedAwaitingLocalClose()
         }
         // Hoja del cambio de Apple ID simulada en uitest: la detección real sale a CloudKit y está apagada
         // bajo test, así que se encola el intent. De ahí en adelante —la cola, la hoja y el cierre del
@@ -1210,13 +1397,16 @@ final class AppBootstrapper {
         if UITestHooks.aiConsent {
             appPreferences.aiDataConsentAccepted = true
         }
+        if UITestHooks.insightsAIConsent {
+            appPreferences.aiInsightsConsentAccepted = true
+        }
         if UITestHooks.aiChatReady {
             appPreferences.aiChatConsentAccepted = true
             appPreferences.hasShownYalaAIOnboarding = true
         }
         #if DEBUG
         if UITestHooks.chatConversation {
-            ChatAssistantViewModel.seedTodayConversationForUITest()
+            ChatAssistantViewModel.seedTodayConversationForUITest(withLinks: UITestHooks.chatLinks)
         }
         #endif
     }
@@ -1273,11 +1463,14 @@ final class AppBootstrapper {
         entityDeletionService.setContext(nil)
         transactionService.setContext(nil)
         ScheduledPaymentNotificationService.shared.setContext(nil)
+        // Card nmtk: sin soltarlo, un `incrementDataVersion` del swap programaría avisos con la cuenta que se va.
+        CreditCardReminderScheduler.shared.setContext(nil)
         NudgeService.shared.setContext(nil)
         UserSegmentService.shared.setContext(nil)
         GroupService.shared.setContext(nil)
         GroupExpenseService.shared.setContext(nil)
         GroupTransactionBridge.shared.setContext(nil)
+        WidgetGroupsRefresh.shared.setContext(nil)
         GroupNotificationService.shared.setContext(nil)
         // Los dos contextos que alimentan a los observers de proceso (los observers NO se retiran: son
         // por-proceso y leen estas propiedades, que el re-bootstrap repone).
@@ -1286,6 +1479,8 @@ final class AppBootstrapper {
         // Tareas de boot que podrían tocar el contexto viejo tras el remonte.
         remoteChangeTask?.cancel()
         remoteChangeTask = nil
+        historicalRatesTask?.cancel()
+        historicalRatesTask = nil
         subscriptionCheckTask?.cancel()
         subscriptionCheckTask = nil
         accountEntitlementTask?.cancel()
@@ -1321,6 +1516,24 @@ final class AppBootstrapper {
             queue: .main
         ) { _ in
             CurrencyConverter.shared.invalidateLatestRatesCache()
+        }
+    }
+
+    // MARK: - Cambio de día: el saldo de los widgets
+
+    /// El saldo de hoy deja fuera lo fechado en el futuro (`LiveBalanceCalculator.TodayCutoff`), y la extensión solo relee
+    /// la foto del App Group. Con la app abierta al pasar la medianoche no hay vuelta a primer plano que la rehaga
+    /// (`handleBecameActive`), así que lo que llegaba a su fecha no entraba en el widget hasta la siguiente edición.
+    private func observeDayChangeForWidgets() {
+        NotificationCenter.default.addObserver(
+            forName: .NSCalendarDayChanged,
+            object: nil,
+            queue: .main
+        ) { _ in
+            MainActor.assumeIsolated {
+                guard let context = AppBootstrapper.shared.remoteChangeModelContext else { return }
+                WidgetDataCache.refreshIfBuiltOnAnotherDay(context: context)
+            }
         }
     }
 
@@ -1471,7 +1684,14 @@ final class AppBootstrapper {
     /// Subscribe a `.transactionsImportedFromSync` (cada import successful de CKSync personal).
     /// Dispara `GroupBridgeRaceCleaner` para borrar drafts pendientes Caso A obsoletos —
     /// su TX cuenta real ya llegó vía sync personal, el draft ya no aplica.
+    ///
+    /// **Y la nube también** (bug del 2026-11-09): la limpieza solo escuchaba el import de iCloud, así que con la cuenta en
+    /// la nube el borrador «Elige cuenta» y el «Préstamo a grupos» repetido que deja una pasada del puente que no vio tu
+    /// registro se quedaban para siempre. Tras cada sincronización de cualquiera de los dos almacenes,
+    /// `convergeAfterSync` quita lo que sobra, solo lo nacido desde que se instaló el arreglo (lo de antes, el aviso de la
+    /// Bandeja). El sello de «desde cuándo» se pone aquí, en el arranque, y no en la primera sincronización.
     private func observeTransactionsImportedFromSync() {
+        _ = GroupBridgeRaceCleaner.leftoverAutoSince()
         NotificationCenter.default.addObserver(
             forName: .transactionsImportedFromSync,
             object: nil,
@@ -1480,6 +1700,17 @@ final class AppBootstrapper {
             MainActor.assumeIsolated {
                 guard let context = AppBootstrapper.shared.raceCleanerModelContext else { return }
                 _ = GroupBridgeRaceCleaner.cleanupPendingDraftsWithMatchingTX(in: context)
+                GroupBridgeRaceCleaner.convergeAfterSync(in: context)
+            }
+        }
+        NotificationCenter.default.addObserver(
+            forName: .cloudSyncAppliedRemoteChanges,
+            object: nil,
+            queue: .main
+        ) { _ in
+            MainActor.assumeIsolated {
+                guard let context = AppBootstrapper.shared.raceCleanerModelContext else { return }
+                GroupBridgeRaceCleaner.convergeAfterSync(in: context)
             }
         }
     }
@@ -1678,7 +1909,8 @@ final class AppBootstrapper {
     /// El ≥3 es señal SUAVE: los ~8 call-sites concurrentes comparten el contador y puede alcanzarse
     /// dentro de UN solo boot (ver doc de `bootSaveDeferCountKey`) — el canario dice "varios boot-saves
     /// difirieron sin que nada resolviera entremedio", no "N boots consecutivos rotos".
-    /// Espeja el `cloudkitGroupSyncNoImportPromote` de grupos para la rama empty-store.
+    /// Espejaba el `cloudkitGroupSyncNoImportPromote` de grupos (retirado con el transporte CloudKit de Grupos) para la
+    /// rama empty-store.
     private func recordBootSaveGateOutcome(_ decision: BootSaveGateLogic.Decision) {
         let defaults = UserDefaults.standard
         let key = Self.bootSaveDeferCountKey
@@ -1704,7 +1936,7 @@ final class AppBootstrapper {
         // Resolvió → red sana: resetea el contador consecutivo.
         if defaults.integer(forKey: key) != 0 { defaults.set(0, forKey: key) }
         if decision == .runEmptyStore {
-            // Espejo del `cloudkitGroupSyncNoImportPromote` de grupos: el gate abrió porque NINGÚN import
+            // Espejo del antiguo `cloudkitGroupSyncNoImportPromote` de grupos: el gate abrió porque NINGÚN import
             // apareció dentro de la gracia (store vacío / fresh-start wipe), no porque el import se asentara.
             logger.notice("boot-save gate resolved via empty-store escape (no personal import appeared within grace)")
         }
@@ -2088,6 +2320,20 @@ final class AppBootstrapper {
         // Apply any pending remote CloudKit changes on foreground resume
         sessionState.applyPendingChangesIfNeeded()
 
+        // El saldo de los widgets corta en el día (movimientos con fecha futura fuera): si la foto es de otro día, se
+        // rehace para que lo que llegó a su fecha entre.
+        WidgetDataCache.refreshIfBuiltOnAnotherDay(context: context)
+
+        // Lo que llegó sincronizado mientras la app no estaba delante entra (o sale) del índice de Spotlight (card ste6).
+        SpotlightIndexService.scheduleReconcile(context: context)
+
+        // Grupos B · card 10: lo cobrado de las ventas de grupo, una pasada por grupo con ventas. Funde las patas cobradas
+        // que dos aparatos escribieron a la vez antes de verse. Sin ventas, dos consultas y nada más.
+        GroupTransactionBridge.shared.reconcileAllReceivables()
+
+        // Quien volvió por «Ya tengo una cuenta»: si sus datos ya llegaron, los tips de principiante se dan por vistos.
+        ReturningUserBeginnerTips.settleIfPending(context: context)
+
         // Modo Nube runtime (I9, DARK): dispara un ciclo inmediato / re-evalúa stop-states. Inerte con
         // el flag apagado (y sin `shared` asignado, que solo lo pone el wiring del paso 14.7).
         if CloudSyncFlags.syncRuntimeEnabled {
@@ -2132,6 +2378,17 @@ final class AppBootstrapper {
             await refreshSubscriptionStatus()
         }
 
+        #if DEBUG
+        // Toque fingido (warm): el pago de Apple Pay que la automatización encoló con la app fuera, y el toque si llega
+        // antes que el aviso. Solo en la primera vuelta a primer plano.
+        let uitestWarmTap = uitestInboxNotificationWarmTapIfDue()
+        if uitestWarmTap == "warm-tap-first" {
+            NotificationService.routeTap(
+                deepLink: UITestHooks.notificationTapLink, targetSessionID: nil,
+                awaitsRemoteChange: UITestHooks.groupPushChangeKind != nil)
+        }
+        #endif
+
         // Process due scheduled payments (creates inbox drafts for warm resume)
         // Throttle: skip if bootstrap just ran (< 30 seconds ago) to prevent duplicate drafts
         let shouldProcessPayments = Date.now.timeIntervalSince(lastProcessDuePaymentsDate) > 30.0
@@ -2145,16 +2402,18 @@ final class AppBootstrapper {
         }
         // Refrescar la caché de contexto del intent de Siri (subcategorías/divisa/cuentas).
         SiriIntentContextCache.refresh(context: context, defaultCurrency: appPreferences.defaultCurrencyCode.rawValue)
+        ApplePayDraftService.refreshCurrencyHint(context: context)
         // Espeja el gate de bootstrap (paso del check inicial): en UITest el
         // alert de inbox solo se dispara vía el hook explícito -uitest-inbox-alert.
         // La re-emisión del hook aquí es load-bearing: el intent es transient y
         // la emisión temprana del bootstrap puede caer en un blip de scenePhase
         // (resetTransients) antes del primer drain — dedup por id cubre duplicados.
-        if UITestHooks.isActive {
-            if UITestHooks.showInboxAlert {
-                RouterEntryGate.shared.submit(.showInboxAlert(
-                    PendingInboxNotification(scheduledPayments: 2, subscriptions: 1, automations: 1)
-                ))
+        if UITestHooks.isActive, let milestone = UITestHooks.milestoneUpgrade {
+            RouterEntryGate.shared.submit(.presentMilestoneUpgrade(milestone))
+        }
+        if UITestHooks.isActive, UITestHooks.inboxNotificationTapMode == nil {
+            if let notification = UITestHooks.inboxAlertPayload {
+                RouterEntryGate.shared.submit(.showInboxAlert(notification))
             }
             if UITestHooks.showTrialOffer {
                 RouterEntryGate.shared.submit(.presentTrialOffer)
@@ -2162,6 +2421,14 @@ final class AppBootstrapper {
         } else {
             checkForPendingInboxDrafts(context: context)
         }
+        #if DEBUG
+        // El toque que llega después del aviso: `didReceive` lo entrega en otra vuelta del main actor.
+        if uitestWarmTap == "warm-check-first" {
+            Task { @MainActor in NotificationService.routeTap(
+                deepLink: UITestHooks.notificationTapLink, targetSessionID: nil,
+                awaitsRemoteChange: UITestHooks.groupPushChangeKind != nil) }
+        }
+        #endif
 
         checkForPendingControlAction()
 
@@ -2229,6 +2496,10 @@ final class AppBootstrapper {
         switch action {
         case "panel":
             setOrDeferDeepLink(.panel)
+        case "new-transaction":
+            // El control «Nuevo registro» del Centro de Control (S35f2). Hasta entonces la clave solo podía traer voz,
+            // foto o el Panel, y una acción desconocida se borraba sin hacer nada.
+            executeAction(.newTransaction)
         case "voice-entry":
             executeAction(.voiceEntry)
         case "image-entry":
@@ -2250,6 +2521,14 @@ final class AppBootstrapper {
     /// consentimiento también salen en el Panel. Con una hoja abierta en otra pestaña, la pestaña cambia por debajo sin
     /// cerrarla y el Panel espera a que se cierre para presentar.
     private func executeAction(_ action: PanelAction) {
+        // En una sesión solo grupos no hay Panel: el `.navigate(.panel)` se descarta y la hoja esperaba a un Panel que
+        // nunca se monta, así que el toque del widget, del Centro de Control o del atajo de Siri abría Yala en Grupos
+        // sin hacer nada (auditoría UX 2.2, lote 15). Se ofrece activar Yala completo, como el toque de cualquier
+        // widget de datos en esa sesión (decisión de Jürgen del 2026-09-09).
+        if sessionState.isGroupsFocusedShell {
+            RouterEntryGate.shared.submit(.presentFullModeActivation)
+            return
+        }
         RouterEntryGate.shared.submit(.navigate(.panel))
         switch action {
         case .newTransaction:
@@ -2369,7 +2648,20 @@ final class AppBootstrapper {
                     CloudSyncBreadcrumb.identityRemapRegenSkippedInCloud(tags: tags.count)
                 }
             } else {
+                // Tarjeta con varias divisas: lo de antes de regenerar, para reenlazar las líneas cuya principal
+                // cambia de `shortcutID` (mismo reenlace que `repairCollapsedIdentityUUIDs`).
+                let oldAccountIDs = accounts.map(\.shortcutID)
+                let collidedAccountIDs = Set(collidedUUIDItems(accounts, keyPath: \.shortcutID).map(\.shortcutID))
+                let linesToRelink = accounts.filter { account in
+                    guard let parentID = account.parentAccountID else { return false }
+                    return collidedAccountIDs.contains(parentID)
+                }
                 accountsRegen = regenerateDuplicateUUIDs(accounts, keyPath: \.shortcutID)
+                let regeneratedAccounts = zip(accounts, oldAccountIDs)
+                    .filter { $0.0.shortcutID != $0.1 }
+                    .map { (account: $0.0, oldID: $0.1) }
+                AccountLineService.relinkAfterIdentityRegeneration(linesBefore: linesToRelink,
+                                                                   regenerated: regeneratedAccounts)
                 subsRegen = regenerateDuplicateUUIDs(subcategories, keyPath: \.shortcutID)
                 tagsRegen = regenerateAllUUIDs(tags, keyPath: \.id)
             }
@@ -2542,22 +2834,50 @@ final class AppBootstrapper {
             }
 
         case "statistics":
-            if url.pathComponents.contains("records") {
-                setOrDeferDeepLink(.records)
-            } else if url.pathComponents.contains("categories") {
-                setOrDeferDeepLink(.categories)
-            } else {
-                setOrDeferDeepLink(.statistics)
+            // `statistics/<pestaña>[/<período>]` con las cuatro pestañas (UX 2.2 · L11-2): antes solo se entendían
+            // `records` y `categories`, y `statistics/trends` se quedaba en la última pestaña usada.
+            if let request = StatisticsDeepLink.request(fromComponents: url.pathComponents) {
+                StatisticsDeepLinkTarget.shared.request(request)
             }
+            setOrDeferDeepLink(.statistics)
 
         case "planning":
-            setOrDeferDeepLink(.planning)
+            // `planning/scheduled-payments` lo usan los widgets de pagos («Próximos pagos» y «Próximo pago»): sin la
+            // sub-pestaña, Planificación abría la última vista, de fábrica Presupuestos (auditoría UX 2.2, lote 15).
+            if url.pathComponents.contains("scheduled-payments") {
+                setOrDeferDeepLink(.scheduledPayments)
+                // «Aún no tienes pagos planificados · Toca para crear uno» del widget (UX 2.2 · L15-2): el editor de un pago
+                // nuevo, por el mismo camino que el paso de «Primeros pasos».
+                if url.pathComponents.contains("new"), widgetMayOpenAnEditor() {
+                    RouterEntryGate.shared.submit(.autoOpenScheduledEditor)
+                }
+            } else {
+                setOrDeferDeepLink(.planning)
+            }
 
         case "budgets":
             setOrDeferDeepLink(.budgets)
+            // «Aún no tienes presupuestos · Toca para crear uno» del widget (UX 2.2 · L15-2).
+            if url.pathComponents.contains("new"), widgetMayOpenAnEditor() {
+                RouterEntryGate.shared.submit(.autoOpenBudgetEditor)
+            }
 
         case "records":
+            // `records/<token>`: un resultado de Spotlight abre ese registro (card ste6). El id espera hasta que la
+            // ventana que drena Registros lo recoge, como el de la ficha de una cuenta.
+            if let token = SpotlightRecordLink.token(fromDeepLink: "records" + url.path),
+               let recordID = SpotlightRecordLink.identifier(fromToken: token) {
+                SpotlightRecordTarget.shared.request(recordID)
+            }
             setOrDeferDeepLink(.recordsStandalone)
+
+        case "accounts":
+            // «Abrir cuenta» de Siri (`OpenAccountIntent`, iOS 27): `accounts/<shortcutID>` abre la ficha de esa cuenta en
+            // el Panel por el mismo camino que el aviso de la tarjeta (UX 2.2 · L10-14). Sin id válido, el Panel.
+            if let accountID = AlertDeepLink.account.id(fromDeepLink: "accounts" + url.path) {
+                AlertDeepLinkTarget.account.request(accountID)
+            }
+            setOrDeferDeepLink(.panel)
 
         case "groups":
             if let groupID = url.pathComponents.last, groupID != "/" {
@@ -2576,6 +2896,17 @@ final class AppBootstrapper {
             print("AppBootstrapper: Unknown deep link host: \(url.host ?? "nil")")
             #endif
         }
+    }
+
+    /// «Toca para crear uno» de un widget abre el editor solo si la ventana no tiene nada delante: el consumidor de
+    /// Planificación no espera a que se cierre una hoja, y encender el editor con el anchor ocupado lo deja pegado (o
+    /// cambia una edición abierta por un pago en blanco). Con algo delante, el toque lleva a la pantalla y nada más
+    /// (review adversarial del 2026-10-20).
+    private func widgetMayOpenAnEditor() -> Bool {
+        let navigation = SceneRegistry.shared.routingNavigation
+        guard navigation?.shellModalBlocker == nil else { return false }
+        let scene = SceneRegistry.shared.routingTargetID.flatMap { SceneRegistry.shared.windowScene(for: $0) }
+        return !ModalPresentationProbe.isAnythingPresented(in: scene)
     }
 
     // MARK: - Invite Link Handling
@@ -2766,17 +3097,44 @@ final class AppBootstrapper {
         // Get today's rate
         await ExchangeRateService.shared.updateTodayIfNeeded(context: context)
 
-        // Preload historical data if needed (first launch or after data wipe)
-        await ExchangeRateService.shared.preloadHistoricalIfNeeded(context: context)
+        // Card apsn · **el histórico va FUERA del camino que el arranque espera.** En el primer arranque (y cada 30 días)
+        // `preloadHistoricalIfNeeded` pide 12 meses en 12 peticiones seguidas con 0,5 s de pausa entre cada una: en un
+        // iPhone que atesta son más de 6 s solo de pausas, y mientras tanto el bloqueo `bootstrapPending` retiene la cadena
+        // de Grupos de la bienvenida —el QA del 21-oct midió ~10 s de pantalla negra tras «Vengo por un grupo»—. En el
+        // simulador no se ve: sin App Attest las 12 fallan al instante y el arranque acaba en 1,2 s.
+        //
+        // Lo que va detrás conserva su orden, dentro de la misma tarea: el barrido del 1:1 justo después de refrescar las
+        // tasas y antes del reparador, para que lo que reabra se arregle en este mismo arranque. Para mostrar importes basta
+        // la tasa de hoy, que sí se espera arriba.
+        guard historicalRatesTask == nil else { return }
+        let token = UUID()
+        historicalRatesTaskToken = token
+        historicalRatesTask = Task { @MainActor in
+            // Al terminar se suelta, para que otra carga de tasas en este proceso pueda volver a lanzarla; solo si sigue
+            // siendo esta (una cancelada por el swap no suelta la del remonte).
+            defer {
+                if self.historicalRatesTaskToken == token { self.historicalRatesTask = nil }
+            }
+            // Preload historical data if needed (first launch or after data wipe)
+            await ExchangeRateService.shared.preloadHistoricalIfNeeded(context: context)
+            // El swap la cancela al soltar los contextos: lo que sigue escribiría en el contenedor que se va.
+            guard !Task.isCancelled else { return }
 
-        // Barrido one-shot: devuelve a la cola las transacciones que el código viejo selló con un 1:1
-        // envenenado. Va JUSTO ANTES del reparador y después de refrescar las tasas, para que lo que
-        // reabra se arregle en este mismo arranque en vez de esperar al siguiente.
-        TransactionUpdateService.repairLegacyOneToOneRatesIfNeeded(context: context)
+            // Barrido one-shot: devuelve a la cola las transacciones que el código viejo selló con un 1:1
+            // envenenado. Va JUSTO ANTES del reparador y después de refrescar las tasas, para que lo que
+            // reabra se arregle en este mismo arranque en vez de esperar al siguiente.
+            TransactionUpdateService.repairLegacyOneToOneRatesIfNeeded(context: context)
 
-        // Update transactions with provisional exchange rates
-        await TransactionUpdateService.updateProvisionalTransactions(context: context)
+            // Update transactions with provisional exchange rates
+            await TransactionUpdateService.updateProvisionalTransactions(context: context)
+        }
     }
+
+    /// Card apsn · la tarea del histórico de tasas (ver `loadExchangeRates`). Una por proceso: el arranque solo se repite en
+    /// el remonte del swap, y `releaseModelContextsForSwap` la cancela y la suelta antes, porque retiene el contexto del
+    /// contenedor que se va (con ella viva, el release no verificaría y el cierre caería al relanzamiento).
+    private var historicalRatesTask: Task<Void, Never>?
+    private var historicalRatesTaskToken: UUID?
 
     /// Clave UserDefaults del flag idempotente de la migración Live Balance.
     // MARK: - Biometric keychain cleanup (removed in-app lock)
@@ -2796,6 +3154,30 @@ final class AppBootstrapper {
         #if DEBUG
         print("[AppBootstrapper] Cleaned up orphaned biometric keychain items")
         #endif
+    }
+
+    /// S30: las líneas con el nombre automático de una tarjeta que ya se llama de otra forma pasan al nombre de hoy
+    /// (`AccountLineService.repairStaleLineNames`). Sin flag: sin nada que arreglar no escribe, y así alcanza a las líneas
+    /// que llegan después por sincronización. Si el import no se asienta, espera al próximo arranque.
+    private func repairStaleLineNamesIfNeeded(context: ModelContext) async {
+        guard await awaitPersonalStoreReady() else {
+            SaveBreadcrumb.deferred("AppBootstrapper.repairStaleLineNames", "import not quiescent")
+            return
+        }
+        do {
+            let repaired = try AccountLineService.repairStaleLineNames(in: context)
+            if repaired > 0 {
+                WidgetDataCache.updateCache(context: context)
+                SessionState.shared.incrementDataVersion()
+            }
+            #if DEBUG
+            print("AppBootstrapper: repairStaleLineNames renamed \(repaired) line(s)")
+            #endif
+        } catch {
+            #if DEBUG
+            print("AppBootstrapper: repairStaleLineNames failed: \(error) — will retry next launch")
+            #endif
+        }
     }
 
     private static let liveBalanceMigrationKey = "hasMigratedToLiveBalance"
@@ -2935,48 +3317,15 @@ final class AppBootstrapper {
         print("AppBootstrapper: Detected downgrade from Pro to Free")
         #endif
 
-        // Reset premium app icon and theme if needed
-        resetPremiumIconIfNeeded()
-        resetProThemeIfNeeded()
+        // El tema y el icono de Pro ya NO vuelven aquí: los avisa y los devuelve la hoja de fin de Pro al confirmar
+        // (UX 2.2 · L16-11 para el icono; el tema, decisión B de Jürgen del 2026-10-21). Antes el tema volvía en silencio
+        // al arrancar y la app cambiaba de aspecto sin explicación.
 
         // Mark that we need to show downgrade resolution
         // The actual resolution sheet is shown from ContentView which has access to data
         // (suprimido en UITest — ver nota en refreshSubscriptionStatus).
         if !UITestHooks.isActive {
             RouterEntryGate.shared.submit(.presentDowngradeResolution)
-        }
-    }
-
-    /// Reset Pro theme to System if user downgraded from Pro
-    private func resetProThemeIfNeeded() {
-        guard !FeatureGateService.shared.isProUser else { return }
-
-        let currentTheme = AppTheme(rawValue: UserDefaults.standard.integer(forKey: "userTheme")) ?? .liquidGlass
-        if currentTheme.isPro {
-            UserDefaults.standard.set(AppTheme.liquidGlass.rawValue, forKey: "userTheme")
-            #if DEBUG
-            print("AppBootstrapper: Reset Pro theme '\(currentTheme.label)' to Liquid Glass")
-            #endif
-        }
-    }
-
-    /// Reset app icon to Original if user is Free and has premium icon
-    private func resetPremiumIconIfNeeded() {
-        guard !FeatureGateService.shared.isProUser else { return }
-
-        let currentIconName = UIApplication.shared.alternateIconName
-
-        // If user has an alternate icon set (premium), reset to default
-        if currentIconName != nil {
-            UIApplication.shared.setAlternateIconName(nil) { error in
-                #if DEBUG
-                if let error = error {
-                    print("AppBootstrapper: Failed to reset app icon: \(error)")
-                } else {
-                    print("AppBootstrapper: Reset premium icon to Original")
-                }
-                #endif
-            }
         }
     }
 
@@ -3012,6 +3361,9 @@ final class AppBootstrapper {
     }
 
     private func checkForPendingInboxDrafts(context: ModelContext) {
+        // Card p0iu: en «Solo grupos» la Bandeja no se ve; el aviso esperaría a quien no puede abrirla. Sin firmar nada,
+        // así que al volver a Yala completo el primer plano siguiente avisa de lo pendiente.
+        guard !PersonalRemindersPause.isPaused() else { return }
         // Idempotency via per-draft signatures (createdAt + sourceType).
         // Legacy Date-based watermark is dropped on migration — the first
         // post-upgrade check emits an alert for all real pending drafts
@@ -3034,16 +3386,7 @@ final class AppBootstrapper {
                 guard !processed.contains(sig) else { continue }
                 processed.insert(sig)
                 newSignatures.append(sig)
-                switch draft.sourceTypeRaw {
-                case "scheduledPayment":
-                    notification.scheduledPayments += 1
-                case "subscription":
-                    notification.subscriptions += 1
-                case "applePay", "automation":
-                    notification.automations += 1
-                default:
-                    break
-                }
+                notification.count(sourceTypeRaw: draft.sourceTypeRaw)
             }
         } catch {
             #if DEBUG
@@ -3057,17 +3400,71 @@ final class AppBootstrapper {
         // una re-corrida del productor antes del drain recomputa el mismo set.
         pendingInboxSignaturesToBurn = newSignatures
 
+        // Con la Bandeja abierta en la ventana que está delante, lo nuevo ya se ve en ella: se da por avisado sin pedir
+        // el aviso (la puerta lo tiraría igual y, sin quemar, volvía en el primer plano siguiente con los mismos
+        // borradores). Abierta solo en una ventana de detrás (iPad), no se quema: la puerta lo tira y el aviso vuelve
+        // cuando esa hoja se cierre, como antes.
+        if SceneRegistry.shared.routingNavigation?.isInboxSheetVisible == true {
+            commitPendingInboxAlertSignatures()
+            return
+        }
+
         if !notification.isEmpty {
             // Enqueue — readiness gating handles splash timing.
             RouterEntryGate.shared.submit(.showInboxAlert(notification))
         }
     }
 
+    #if DEBUG
+    private var uitestWarmTapDone = false
+    private var uitestGroupPushChangeStarted = false
+
+    /// Card th4n: con la app en segundo plano, el aviso de grupo la despierta y sincroniza fuera (la vuelta dura 1 s y
+    /// acaba antes de volver). Lo llama `YalaApp.handleScenePhase` al pasar a segundo plano; solo la primera vez.
+    func uitestGroupPushChangeInBackground(context: ModelContext) {
+        guard UITestHooks.groupPushChangeKind != nil,
+              UITestHooks.inboxNotificationTapMode?.hasPrefix("warm-") == true else { return }
+        Task { @MainActor in
+            do { try await Task.sleep(for: .milliseconds(500)) } catch { return }
+            self.uitestStartGroupPushChange(context: context, lasting: .seconds(1))
+        }
+    }
+
+    /// La vuelta fingida del canal de Grupos con el cambio de `-uitest-group-push-change`, una vez por proceso.
+    private func uitestStartGroupPushChange(
+        context: ModelContext, lasting duration: Duration, landsAfterFirstWaiter: Duration? = nil
+    ) {
+        guard !uitestGroupPushChangeStarted, let kind = UITestHooks.groupPushChangeKind else { return }
+        uitestGroupPushChangeStarted = true
+        GroupsSyncClient.shared.uitestRunFakeRemoteCycle(lasting: duration, landsAfterFirstWaiter: landsAfterFirstWaiter) {
+            UITestHooks.applyGroupPushChange(kind: kind, context: context)
+        }
+    }
+    /// Lo enciende `YalaApp.handleScenePhase` al pasar a segundo plano: el `.active` del arranque no es una vuelta.
+    var uitestWentToBackground = false
+
+    /// Devuelve el modo `warm-…` de `-uitest-inbox-notification-tap` la PRIMERA vez que la app vuelve a primer plano (no
+    /// en el `.active` del arranque) y encola antes un pago de Apple Pay en el App Group, como la automatización de
+    /// Wallet con la app fuera. Las vueltas siguientes no hacen nada: sirven para comprobar que el aviso no vuelve.
+    private func uitestInboxNotificationWarmTapIfDue() -> String? {
+        guard let mode = UITestHooks.inboxNotificationTapMode, mode.hasPrefix("warm-"),
+              uitestWentToBackground, isInitialized, !uitestWarmTapDone else { return nil }
+        uitestWarmTapDone = true
+        if UITestHooks.notificationTapLink == "inbox" {
+            ApplePayPendingStore.append(ApplePayPendingExpense(
+                rawAmount: "S/ 25,90", merchant: "Tambo", savedAt: Date.now.timeIntervalSince1970
+            ))
+        }
+        return mode
+    }
+    #endif
+
     /// Quema las firmas del último `checkForPendingInboxDrafts` — llamado por el
-    /// drain de `.showInboxAlert` en ContentView cuando el alert SÍ se presenta.
-    /// Residual aceptado: si el gate dropea el alert (inbox sheet visible /
-    /// supersession por navigate(.inbox)), las firmas no se queman y drafts aún
-    /// `pending` pueden re-alertar en el próximo foreground (molestia > pérdida).
+    /// drain de `.showInboxAlert` en ContentView cuando el alert SÍ se presenta, y
+    /// también cuando la Bandeja aparece (`RouterEntryGate.inboxSheetDidAppear`) o
+    /// el chequeo corre con ella abierta: lo que el aviso contaría ya se vio.
+    /// Si el aviso se tira y la Bandeja no llega a abrirse, las firmas no se queman
+    /// y los borradores aún `pending` re-avisan en el próximo primer plano.
     func commitPendingInboxAlertSignatures() {
         guard !pendingInboxSignaturesToBurn.isEmpty else { return }
         var all = loadProcessedInboxSignatures()
@@ -3099,7 +3496,8 @@ final class AppBootstrapper {
             // evalúa, y los
             // dos tienen que responder por la misma persona o la imagen se re-emite contra un gate
             // que la va a diferir.
-            hasCompletedOnboarding: UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
+            hasCompletedOnboarding: UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding),
+            isHeldForProGate: SharedImageProGateHold.isHolding
         )
         SharedImageBreadcrumb.checked(site: site, found: pending != nil, willReEmit: willReEmit)
         guard willReEmit, let firstImageURL = pending else { return }
@@ -3150,8 +3548,20 @@ final class AppBootstrapper {
         // una foto registraba sin ser Pro. La foto se descarta: si se quedara en `PendingImages/`, la recuperación del
         // arranque volvería a enseñar el aviso en cada vuelta a la app. Con varias compartidas a la vez se va la tanda
         // entera: el aviso sale una vez, no una por foto.
+        //
+        // Desde el 2026-10-25 (card fazw) la tanda no se descarta aquí: se retiene mientras «Función Pro» está abierta.
+        // Si se compra, el Panel abre el registro por imagen con ella; si se cierra sin comprar, la descarta
+        // (`SharedImageProGateHold`). Mientras se retiene, la recuperación no la re-emite.
         guard FeatureGateService.shared.canAccess(.imageInput) else {
-            SharedContainerService.removePendingImageBatch(containing: url)
+            guard !SharedImageProGateHold.isHolding else {
+                // La puerta ya está abierta (o en cola) por otra tanda: una segunda no saca otra hoja encima.
+                if let held = SharedImageProGateHold.heldURL,
+                   !SharedContainerService.pendingImageBatch(containing: held).contains(url) {
+                    SharedContainerService.removePendingImageBatch(containing: url)
+                }
+                return
+            }
+            SharedImageProGateHold.hold(url)
             RouterEntryGate.shared.submit(.navigate(.panel))
             RouterEntryGate.shared.submit(.presentUpgradeSheet(.image))
             return
@@ -3182,7 +3592,9 @@ final class AppBootstrapper {
         let activeItems = fetchActiveNotifications(context: context)
 
         // If there are active items but fewer pending (reinstall/update case), reschedule
-        if !activeItems.isEmpty && pending.count < activeItems.count {
+        // En «Solo grupos» sobre Yala completo (card p0iu) los recordatorios están en pausa: siempre faltarían, y
+        // reprogramar barrería en cada primer plano los avisos de grupos que esperan su segundo de vida.
+        if !activeItems.isEmpty && pending.count < activeItems.count && !PersonalRemindersPause.isPaused() {
             await NotificationService.shared.rescheduleAllNotifications(items: activeItems)
         }
 
@@ -3190,8 +3602,11 @@ final class AppBootstrapper {
         ScheduledPaymentNotificationService.shared.setContext(context)
         await ScheduledPaymentNotificationService.shared.checkAllPaymentNotifications()
 
-        // Check credit card payment reminders
-        await ScheduledPaymentNotificationService.shared.checkAndNotifyCreditCardPayments()
+        // El aviso antes de pagar la tarjeta, PROGRAMADO (card nmtk). Sustituye al canal «al abrir el día de pago»: deja
+        // en el centro de iOS el aviso con lo facturado, y si el de hoy debía haber salido ya y nunca se programó, lo
+        // manda una vez.
+        CreditCardReminderScheduler.shared.setContext(context)
+        await CreditCardReminderScheduler.shared.replan()
 
         // Re-plan de las summaries diarias AGENDADAS (canal híbrido D1): convergencia
         // idempotente en cada boot/foreground — también absorbe cambios remotos de CloudSync.

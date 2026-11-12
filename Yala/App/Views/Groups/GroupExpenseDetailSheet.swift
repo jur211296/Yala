@@ -21,8 +21,8 @@ import SwiftUI
 struct GroupExpenseDetailSheet: View {
     private static let dateFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.dateFormat = "d MMM yyyy"
         f.locale = AppLocale.current
+        f.setLocalizedDateFormatFromTemplate("dMMMy")
         return f
     }()
 
@@ -54,7 +54,8 @@ struct GroupExpenseDetailSheet: View {
 
     var body: some View {
         detailContent
-            .yalaSheetDetents([.large])
+            // A media pantalla, como el detalle de un registro (lienzo «Una sola Yala»); se estira para ver el resto.
+            .yalaSheetDetents([.medium, .large])
             .presentationDragIndicator(.visible)
     }
 
@@ -91,7 +92,7 @@ struct GroupExpenseDetailSheet: View {
                     .accessibilityIdentifier("group_expense_detail_edit")
                 }
             }
-            .yalaScreenBackground(.subtle)
+            .yalaScreenBackground(.partialSheet)
         }
         .accessibilityIdentifier("group_expense_detail_sheet")
     }
@@ -272,13 +273,14 @@ struct GroupExpenseDetailSheet: View {
             yourPartContent(
                 sentence: L10n.Groups.Card.youOwe(payerName),
                 amount: amount,
-                tint: Color.hotPink
+                // En el color del texto, te deban o debas, como la fila de la lista (Jürgen, 2026-10-30).
+                tint: Color.primary
             )
         case .youAreOwed(let amount):
             yourPartContent(
                 sentence: owedToYouSentence,
                 amount: amount,
-                tint: DS.Semantic.successForeground
+                tint: Color.primary
             )
         case .notIncluded:
             yourPartContent(sentence: L10n.Groups.Expense.notIncluded, amount: nil, tint: .primary)

@@ -40,6 +40,10 @@ struct WidgetTransaction: Codable {
     /// y se elige a conciencia; sin él, «limpiar» este `?` deja la suite entera en verde y apaga los
     /// widgets del parque que aún no ha reescrito su snapshot.
     let isExchangeRateProvisional: Bool?
+    /// Grupos B · card 00xj: la pata de una venta de grupo que aún no te pagan (`balanceAdjustmentType = "receivable"`). El
+    /// widget la pinta en gris y dice «Por cobrar», como la fila de Registros: en el color de un ingreso se leía como dinero
+    /// que ya entró. Opcional por lo mismo que `isExchangeRateProvisional`: los snapshots de hoy no traen la clave.
+    var isReceivable: Bool? = nil
 }
 
 /// Lightweight budget data for widgets
@@ -68,6 +72,8 @@ struct WidgetScheduledPayment: Codable {
     let iconName: String?   // Optional for backwards compatibility - fallback based on paymentCategory
     let colorHex: String?   // Optional for backwards compatibility - fallback: "#6366F1"
     var isVariableAmount: Bool?  // Optional for backwards compatibility - fallback: false
+    /// Se puede marcar como pagado desde el widget (`ScheduledPaymentWidgetPayLogic.canMarkPaid`). Ausente = no.
+    var canMarkPaid: Bool? = nil
 }
 
 /// Balance trend data point for widgets
@@ -124,6 +130,60 @@ struct WidgetCashFlowPoint: Codable {
     let net: Double
 }
 
+/// Lo que entró y salió por UNA cuenta en un período: el reparto por cuenta del extragrande vertical de «Entradas y
+/// salidas» (iOS 27). Sale de la MISMA suma que los totales del resumen (`WidgetDataCache.buildPeriodSummary`), así que
+/// los netos de todas las cuentas suman `netCashFlow`. Ingresos y gastos van con signo, como los totales.
+struct WidgetAccountFlow: Codable {
+    let id: String
+    let name: String
+    let income: Double
+    let expense: Double
+    let net: Double
+}
+
+/// El mes de los pagos planificados para el calendario del extragrande vertical (iOS 27): qué días tienen un pago de
+/// gasto pendiente o ya pagado y cuánto falta pagar, en la divisa principal. Lo calcula la app
+/// (`WidgetDataCache.buildPaymentsMonth`) porque el widget no tiene las recurrencias ni los tipos de cambio.
+struct WidgetPaymentsMonth: Codable {
+    /// Inicio del mes al que se refiere: el widget no lo pinta si la foto es de otro mes.
+    let monthStart: Date
+    let pendingDays: [Int]
+    let paidDays: [Int]
+    let remainingToPay: Double
+}
+
+/// Una divisa y lo pendiente en ella, siempre en positivo: el lado (debes o te deben) lo dice quien lo lleva.
+struct WidgetGroupAmount: Codable {
+    let currencyCode: String
+    let amount: Double
+}
+
+/// Un grupo de la lista de Grupos que enseña saldos, con lo que debes o te deben en él por divisa: lo mismo que la
+/// cabecera de su detalle, que es lo que abre la fila. Sin saldo, los dos lados van vacíos. `id` es el `SplitGroup.id`
+/// que entiende `groups/<id>`.
+struct WidgetGroupBalance: Codable {
+    let id: String
+    let name: String
+    let iconName: String
+    let colorHex: String
+    let iOwe: [WidgetGroupAmount]
+    let owedToMe: [WidgetGroupAmount]
+}
+
+/// Lo que enseña el widget «Grupos» (2.2): el resumen de arriba de la lista (debes / te deben por divisa, sin netear, como
+/// `GroupSummaryHeader`), cuántos grupos activos hay y sus filas. Lo calcula la app (`WidgetGroupsSnapshotBuilder`) con
+/// las mismas funciones que la lista: el widget no tiene los gastos ni los repartos.
+struct WidgetGroupsSummary: Codable {
+    let iOwe: [WidgetGroupAmount]
+    let owedToMe: [WidgetGroupAmount]
+    let activeGroupCount: Int
+    let groups: [WidgetGroupBalance]
+    /// Lo pendiente en los grupos ARCHIVADOS (la línea de debajo del total en la lista, L19-9). Opcionales por si una
+    /// versión de la foto no los trae.
+    var archivedIOwe: [WidgetGroupAmount]? = nil
+    var archivedOwedToMe: [WidgetGroupAmount]? = nil
+}
+
 /// Precalculated summary for a period
 struct WidgetPeriodSummary: Codable {
     let totalIncome: Double
@@ -145,6 +205,27 @@ struct WidgetPeriodSummary: Codable {
     let expenseIsApproximate: Bool?
     let netCashFlowIsApproximate: Bool?
     let periodBalanceIsApproximate: Bool?
+
+    /// El reparto por cuenta (extragrande vertical de «Entradas y salidas»). **Opcional y con default**: las fotos
+    /// escritas antes de 2.2 no lo traen y decodifican igual; el widget solo esconde ese bloque.
+    var accountFlows: [WidgetAccountFlow]? = nil
+
+    /// El total del desglose de gasto por categorías, tal como lo escribió `WidgetDataCache` (card znu5). **Opcional y
+    /// con default**: una foto vieja no lo trae. Se lee con `breakdownTotal`.
+    var expenseBreakdownTotal: Double? = nil
+
+    /// El total del desglose por subcategorías, tal como lo escribió `WidgetDataCache`. **Opcional y con default**. Se
+    /// lee con `subcategoryBreakdownTotal`.
+    var expenseSubcategoryBreakdownTotal: Double? = nil
+}
+
+extension WidgetPeriodSummary {
+    /// Contra lo que mide la tarta de subcategorías: su propio total y, en una foto sin él, el de categorías.
+    var subcategoryBreakdownTotal: Double { expenseSubcategoryBreakdownTotal ?? breakdownTotal }
+
+    /// Contra lo que miden las tartas su centro, su «Otros» y los porcentajes: el total del desglose y, en una foto
+    /// vieja, el gasto del período (lo de antes). Fuera de la struct: no es una clave de la foto.
+    var breakdownTotal: Double { expenseBreakdownTotal ?? totalExpense }
 }
 
 /// Complete widget data snapshot
@@ -178,6 +259,14 @@ struct WidgetDataSnapshot: Codable {
     // Precalculated summaries for all periods (keyed by WidgetPeriod.rawValue)
     // Optional for backwards compatibility
     let periodSummaries: [String: WidgetPeriodSummary]?
+
+    /// El mes de los pagos planificados (extragrande vertical de «Pagos planificados»). **Opcional y con default**,
+    /// por la misma razón que `accountFlows`: una clave obligatoria nueva apagaría todos los widgets.
+    var paymentsMonth: WidgetPaymentsMonth? = nil
+
+    /// Los grupos (widget «Grupos», 2.2). **Opcional y con default**, como `paymentsMonth`: una foto anterior no lo trae
+    /// y el widget dice «Abre Yala para ver tus grupos».
+    var groups: WidgetGroupsSummary? = nil
 }
 
 // MARK: - WidgetDataService
@@ -229,6 +318,15 @@ enum WidgetDataService {
         return period
     }
 
+    // MARK: - Comparar con el período anterior
+
+    /// «Comparar con el período anterior» de la app (`AppPreferences.showVariations`, copiada por
+    /// `WidgetDataCache.publishShowVariations`). Apagada, los widgets no enseñan variaciones. Ausente = activada, su
+    /// default: una foto de antes de 2.2 no la trae.
+    static var showsVariations: Bool {
+        sharedDefaults?.object(forKey: "showVariations") as? Bool ?? true
+    }
+
     // MARK: - Expenses Only Mode
 
     /// Whether the app is in expenses-only mode (synced via App Group UserDefaults)
@@ -237,6 +335,13 @@ enum WidgetDataService {
     }
 
     // MARK: - Public API
+
+    /// ¿La app ya escribió sus datos en el App Group? Sin ellos todo widget de datos pintaría ceros (en dólares si no
+    /// hay preferencia guardada), así que invita a abrir Yala (UX 2.2 · L15-2, `WidgetNoDataInviteModifier`). No
+    /// decodifica: basta con que la clave exista.
+    static var hasSnapshot: Bool {
+        sharedDefaults?.data(forKey: cacheKey) != nil
+    }
 
     /// Loads the cached widget data snapshot
     /// Returns nil if no data is available or data is corrupted
@@ -262,8 +367,15 @@ enum WidgetDataService {
             return nil
         }
 
+        // Un proveedor pregunta a la foto varias veces por entrada (saldo, curva, divisa, formato, fecha…) y cada
+        // pregunta la decodificaba entera. Se decodifica una vez por contenido: si los bytes no cambiaron, la de antes.
+        if let cached = SnapshotMemo.value(for: data) {
+            return cached
+        }
         do {
-            return try JSONDecoder().decode(WidgetDataSnapshot.self, from: data)
+            let snapshot = try JSONDecoder().decode(WidgetDataSnapshot.self, from: data)
+            SnapshotMemo.store(snapshot, for: data)
+            return snapshot
         } catch {
             #if DEBUG
             print("WidgetDataService: Error decoding snapshot: \(error)")
@@ -372,6 +484,17 @@ enum WidgetDataService {
         return Array(payments.prefix(limit))
     }
 
+    /// El mes de pagos planificados que calculó la app (extragrande vertical de «Pagos planificados»). `nil` sin foto o
+    /// con una foto anterior a 2.2.
+    static func getPaymentsMonth() -> WidgetPaymentsMonth? {
+        loadSnapshot()?.paymentsMonth
+    }
+
+    /// Los grupos que calculó la app (widget «Grupos»). `nil` sin foto o con una foto anterior a 2.2.
+    static func getGroups() -> WidgetGroupsSummary? {
+        loadSnapshot()?.groups
+    }
+
     /// Returns trend data for chart (full structure with all granularities)
     static func getTrendData() -> WidgetTrendData? {
         loadSnapshot()?.trendData
@@ -380,17 +503,19 @@ enum WidgetDataService {
     /// Returns trend data appropriate for the given period
     /// - Parameter period: The period to get trend data for
     /// - Returns: Array of trend points at appropriate granularity
-    static func getTrendData(for period: WidgetPeriod) -> [WidgetTrendPoint] {
+    /// - Parameter asOf: el «ahora» del período; `nil` = el reloj. Los widgets de 2.2 pasan la hora de la foto, que es
+    ///   cuando se calcularon los puntos.
+    static func getTrendData(for period: WidgetPeriod, asOf: Date? = nil) -> [WidgetTrendPoint] {
         guard let trendData = getTrendData() else { return [] }
 
         switch period {
         case .thisWeek, .last7Days, .last30Days, .thisMonth, .lastMonth:
             // Short/medium periods: use daily points
-            return filterPoints(trendData.dailyPoints, for: period)
+            return filterPoints(trendData.dailyPoints, for: period, asOf: asOf)
 
         case .thisYear, .lastYear:
             // Long periods: use weekly points
-            return filterPoints(trendData.weeklyPoints, for: period)
+            return filterPoints(trendData.weeklyPoints, for: period, asOf: asOf)
 
         case .allTime:
             // All time: use monthly points
@@ -399,8 +524,8 @@ enum WidgetDataService {
     }
 
     /// Filter points to match the requested period
-    private static func filterPoints(_ points: [WidgetTrendPoint], for period: WidgetPeriod) -> [WidgetTrendPoint] {
-        let interval = period.dateInterval()
+    private static func filterPoints(_ points: [WidgetTrendPoint], for period: WidgetPeriod, asOf: Date?) -> [WidgetTrendPoint] {
+        let interval = asOf.map { period.dateInterval(now: $0) } ?? period.dateInterval()
         return points.filter { interval.contains($0.date) }
     }
 
@@ -490,25 +615,36 @@ enum WidgetDataService {
         // `amountInPreferredCurrency` llega YA resuelto en la divisa principal vigente: la app lo
         // escribe así (`WidgetDataCache.widgetTransaction`), porque la fila no viaja con la divisa
         // en que se guardó y este camino no podría reconvertirla.
+        // Con signo, como los totales que precalcula la app (`WidgetDataCache.buildPeriodSummary`): una devolución en una
+        // categoría de gasto resta del gasto. `isIncome` ya llega con la regla de la app.
+        // Denominadores del umbral «≈»: magnitudes por lado, como la app. Los porcentajes de las categorías se miden contra
+        // el total del desglose (`expenseBreakdownTotal`, card znu5).
+        var incomeTotalMagnitude: Double = 0
+        var expenseTotalMagnitude: Double = 0
         for tx in transactions {
-            let amount = abs(tx.amountInPreferredCurrency)
+            let amount = tx.amountInPreferredCurrency
             let isApproximate = tx.isExchangeRateProvisional ?? false
             if tx.isIncome {
                 totalIncome += amount
-                if isApproximate { incomeApproximateMagnitude += amount }
+                incomeTotalMagnitude += abs(amount)
+                if isApproximate { incomeApproximateMagnitude += abs(amount) }
             } else {
-                totalExpense += amount
-                if isApproximate { expenseApproximateMagnitude += amount }
+                totalExpense -= amount
+                expenseTotalMagnitude += abs(amount)
+                if isApproximate { expenseApproximateMagnitude += abs(amount) }
             }
         }
 
         let netCashFlow = totalIncome - totalExpense
 
-        // Build top categories
-        let topCategories = buildTopCategories(from: transactions, totalExpense: totalExpense)
+        // Las categorías en neto y su total, con la misma regla que la foto (`WidgetDataCache.categoryExpenseSlices`).
+        let categorySlices = categoryExpenseSlices(from: transactions)
+        let expenseBreakdownTotal = WidgetInsightsLogic.breakdownTotal(categorySlices.map(\.amount))
+        let topCategories = Self.topCategories(from: categorySlices, breakdownTotal: expenseBreakdownTotal)
 
-        // Build top subcategories
-        let topSubcategories = buildTopSubcategories(from: transactions, totalExpense: totalExpense)
+        // Las subcategorías con el total de su propio desglose, como la foto (`WidgetDataCache.subcategoryExpenseBreakdown`).
+        let subcategoryBreakdown = subcategoryExpenseBreakdown(from: transactions)
+        let topSubcategories = subcategoryBreakdown.rows
 
         // Build cash flow by day
         let cashFlowPoints = buildCashFlowByDay(from: transactions)
@@ -525,105 +661,120 @@ enum WidgetDataService {
             // el umbral se replica aquí. Es el mismo 5 % y el mismo suelo, y hay un test que los
             // compara: si la app cambia el suyo y este no, se pone rojo.
             incomeIsApproximate: marksApproximate(
-                approximate: incomeApproximateMagnitude, total: totalIncome
+                approximate: incomeApproximateMagnitude, total: incomeTotalMagnitude
             ),
             expenseIsApproximate: marksApproximate(
-                approximate: expenseApproximateMagnitude, total: totalExpense
+                approximate: expenseApproximateMagnitude, total: expenseTotalMagnitude
             ),
             netCashFlowIsApproximate: marksApproximate(
                 approximate: incomeApproximateMagnitude + expenseApproximateMagnitude,
                 total: netCashFlow
             ),
-            periodBalanceIsApproximate: nil  // sin `periodBalance` no hay número que marcar
+            periodBalanceIsApproximate: nil,  // sin `periodBalance` no hay número que marcar
+            expenseBreakdownTotal: expenseBreakdownTotal,
+            expenseSubcategoryBreakdownTotal: subcategoryBreakdown.total
         )
     }
 
-    private static func buildTopCategories(
-        from transactions: [WidgetTransaction],
-        totalExpense: Double,
-        limit: Int = 20
-    ) -> [WidgetCategory] {
-        // Group expenses by category
-        var categoryTotals: [String: (name: String, icon: String, color: String, amount: Double)] = [:]
+    /// Espejo de `WidgetDataCache.uncategorizedWidgetKey` y de `AppConstants.uncategorizedIconName/ColorHex` (la
+    /// extensión no compila esos ficheros). `WidgetExtensionUncategorizedParityTests` los compara.
+    static let uncategorizedKey = "\u{1}uncategorized"
+    static let uncategorizedIconName = "questionmark.folder.fill"
+    static let uncategorizedColorHex = "#9CA3AF"
+
+    /// Las categorías del lado gasto en neto, todas y de mayor a menor (`WidgetInsightsLogic.netExpenseSlices`), como
+    /// `WidgetDataCache.categoryExpenseSlices`: una devolución resta de su categoría. Sin categoría, el trozo «Sin
+    /// categoría» en gris, para que el desglose sume el gasto del período.
+    private static func categoryExpenseSlices(
+        from transactions: [WidgetTransaction]
+    ) -> [(name: String, icon: String, color: String, amount: Double)] {
+        var categories: [String: (name: String, icon: String, color: String)] = [:]
+        var contributions: [(key: String, expense: Double)] = []
 
         for tx in transactions where !tx.isIncome {
-            guard let categoryName = tx.categoryName else { continue }
-            let amount = abs(tx.amountInPreferredCurrency)
-
-            if var existing = categoryTotals[categoryName] {
-                existing.amount += amount
-                categoryTotals[categoryName] = existing
-            } else {
-                categoryTotals[categoryName] = (
-                    name: categoryName,
-                    icon: tx.categoryIcon ?? "folder",
-                    color: tx.categoryColor ?? "#808080",
-                    amount: amount
-                )
+            let key = tx.categoryName ?? uncategorizedKey
+            if categories[key] == nil {
+                if let categoryName = tx.categoryName {
+                    categories[key] = (categoryName, tx.categoryIcon ?? "folder", tx.categoryColor ?? "#808080")
+                } else {
+                    categories[key] = (
+                        String(localized: "widget.ui.uncategorized", bundle: .main),
+                        uncategorizedIconName,
+                        uncategorizedColorHex
+                    )
+                }
             }
+            // Con signo, como el total: el gasto aporta en positivo y la devolución resta.
+            contributions.append((key: key, expense: -tx.amountInPreferredCurrency))
         }
 
-        // Sort by amount and take top N
-        let sorted = categoryTotals.values.sorted { $0.amount > $1.amount }
-        let topN = Array(sorted.prefix(limit))
+        return WidgetInsightsLogic.netExpenseSlices(contributions).compactMap { slice in
+            guard let item = categories[slice.key] else { return nil }
+            return (name: item.name, icon: item.icon, color: item.color, amount: slice.amount)
+        }
+    }
 
-        return topN.enumerated().map { index, item in
-            let percentage = totalExpense > 0 ? (item.amount / totalExpense) * 100 : 0
-            return WidgetCategory(
+    private static func topCategories(
+        from slices: [(name: String, icon: String, color: String, amount: Double)],
+        breakdownTotal: Double,
+        limit: Int = 20
+    ) -> [WidgetCategory] {
+        slices.prefix(limit).enumerated().map { index, item in
+            WidgetCategory(
                 id: "\(index)",
                 name: item.name,
                 iconName: item.icon,
                 colorHex: item.color,
                 amount: item.amount,
-                percentage: percentage
+                percentage: WidgetInsightsLogic.breakdownPercentage(item.amount, of: breakdownTotal)
             )
         }
     }
 
-    private static func buildTopSubcategories(
+    /// En neto como las categorías, con el total de su propio desglose: lo que no tiene subcategoría entra en el total
+    /// (por categoría, y el gasto sin categoría) y la tarta lo lleva a «Otros». Como
+    /// `WidgetDataCache.subcategoryExpenseBreakdown`.
+    private static func subcategoryExpenseBreakdown(
         from transactions: [WidgetTransaction],
-        totalExpense: Double,
         limit: Int = 20
-    ) -> [WidgetSubcategory] {
-        // Group expenses by subcategory
-        var subcategoryTotals: [String: (name: String, categoryName: String, icon: String?, color: String, amount: Double)] = [:]
+    ) -> (rows: [WidgetSubcategory], total: Double) {
+        var subcategories: [String: (name: String, categoryName: String, icon: String?, color: String)] = [:]
+        var contributions: [(key: String, expense: Double)] = []
 
         for tx in transactions where !tx.isIncome {
-            guard let subcategoryName = tx.subcategoryName,
-                  let categoryName = tx.categoryName else { continue }
-            let amount = abs(tx.amountInPreferredCurrency)
-            let key = "\(categoryName)_\(subcategoryName)"
-
-            if var existing = subcategoryTotals[key] {
-                existing.amount += amount
-                subcategoryTotals[key] = existing
+            let key: String
+            if let subcategoryName = tx.subcategoryName, let categoryName = tx.categoryName {
+                key = "\(categoryName)_\(subcategoryName)"
+                if subcategories[key] == nil {
+                    // El icono de la categoría como respaldo.
+                    subcategories[key] = (subcategoryName, categoryName, tx.categoryIcon, tx.categoryColor ?? "#808080")
+                }
+            } else if let categoryName = tx.categoryName {
+                key = "\u{1}rest_\(categoryName)"
             } else {
-                subcategoryTotals[key] = (
-                    name: subcategoryName,
-                    categoryName: categoryName,
-                    icon: tx.categoryIcon,  // Use category icon as fallback
-                    color: tx.categoryColor ?? "#808080",
-                    amount: amount
-                )
+                key = uncategorizedKey
             }
+            contributions.append((key: key, expense: -tx.amountInPreferredCurrency))
         }
 
-        // Sort by amount and take top N
-        let sorted = subcategoryTotals.values.sorted { $0.amount > $1.amount }
-        let topN = Array(sorted.prefix(limit))
-
-        return topN.enumerated().map { index, item in
-            let percentage = totalExpense > 0 ? (item.amount / totalExpense) * 100 : 0
-            return WidgetSubcategory(
+        let slices = WidgetInsightsLogic.netExpenseSlices(contributions)
+        let total = WidgetInsightsLogic.breakdownTotal(slices.map(\.amount))
+        let named = slices.compactMap { slice -> (item: (name: String, categoryName: String, icon: String?, color: String), amount: Double)? in
+            guard let item = subcategories[slice.key] else { return nil }
+            return (item, slice.amount)
+        }
+        let rows = named.prefix(limit).enumerated().map { index, entry in
+            WidgetSubcategory(
                 id: "\(index)",
-                name: item.name,
-                categoryName: item.categoryName,
-                iconName: item.icon,
-                colorHex: item.color,
-                amount: item.amount,
-                percentage: percentage
+                name: entry.item.name,
+                categoryName: entry.item.categoryName,
+                iconName: entry.item.icon,
+                colorHex: entry.item.color,
+                amount: entry.amount,
+                percentage: WidgetInsightsLogic.breakdownPercentage(entry.amount, of: total)
             )
         }
+        return (rows, total)
     }
 
     private static func buildCashFlowByDay(from transactions: [WidgetTransaction]) -> [WidgetCashFlowPoint] {
@@ -634,13 +785,13 @@ enum WidgetDataService {
 
         for tx in transactions {
             let day = calendar.startOfDay(for: tx.date)
-            let amount = abs(tx.amountInPreferredCurrency)
+            let amount = tx.amountInPreferredCurrency
 
             var existing = dailyData[day] ?? (income: 0, expense: 0)
             if tx.isIncome {
                 existing.income += amount
             } else {
-                existing.expense += amount
+                existing.expense -= amount
             }
             dailyData[day] = existing
         }
@@ -656,6 +807,30 @@ enum WidgetDataService {
                 )
             }
             .sorted { $0.date < $1.date }
+    }
+}
+
+// MARK: - Memo de la foto
+
+/// La última foto decodificada y los bytes de los que salió. Compara los bytes enteros (unos cientos de KB, mucho más
+/// barato que decodificarlos): con otra foto en el App Group, se vuelve a decodificar. Los proveedores pueden correr a la
+/// vez, de ahí el candado.
+private enum SnapshotMemo {
+    private static let lock = NSLock()
+    nonisolated(unsafe) private static var data: Data?
+    nonisolated(unsafe) private static var snapshot: WidgetDataSnapshot?
+
+    static func value(for bytes: Data) -> WidgetDataSnapshot? {
+        lock.lock()
+        defer { lock.unlock() }
+        return data == bytes ? snapshot : nil
+    }
+
+    static func store(_ value: WidgetDataSnapshot, for bytes: Data) {
+        lock.lock()
+        defer { lock.unlock() }
+        data = bytes
+        snapshot = value
     }
 }
 
@@ -708,11 +883,17 @@ enum WidgetPeriod: String, CaseIterable, Codable {
 
     /// Returns the date interval for this period
     /// Matches DetailPeriod.dateInterval() exactly for consistency with main app
-    func dateInterval() -> DateInterval {
+    ///
+    /// `now`: por defecto, el reloj. Los widgets rediseñados en 2.2 pasan la hora de la FOTO (`lastUpdated`): las cifras
+    /// que leen se calcularon entonces, y medir el período con el reloj de ahora las descuadraba en cuanto la foto era de
+    /// ayer (a medianoche del día 1, «Este mes» era el mes nuevo y la cifra la del anterior).
+    func dateInterval(now: Date = Date()) -> DateInterval {
         let calendar = WidgetDataService.widgetConfiguredCalendar()
-        let now = Date()
         let startOfToday = calendar.startOfDay(for: now)
-        let endOfToday = calendar.date(byAdding: .day, value: 1, to: startOfToday) ?? now
+        // 23:59:59 de hoy, como `DetailPeriod.dateInterval()`: con la medianoche de mañana, lo fechado mañana a las 00:00
+        // contaba en el período en curso (`DateInterval` es cerrado).
+        let startOfTomorrow = calendar.date(byAdding: .day, value: 1, to: startOfToday) ?? now
+        let endOfToday = calendar.date(byAdding: .second, value: -1, to: startOfTomorrow) ?? startOfTomorrow
 
         switch self {
         case .thisWeek:
@@ -720,12 +901,13 @@ enum WidgetPeriod: String, CaseIterable, Codable {
                 from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now)) ?? startOfToday
             return DateInterval(start: startOfWeek, end: endOfToday)
 
+        // Hoy y los 6 (o 29) anteriores, como `DetailPeriod.dateInterval()`.
         case .last7Days:
-            let start = calendar.date(byAdding: .day, value: -7, to: startOfToday) ?? startOfToday
+            let start = calendar.date(byAdding: .day, value: -6, to: startOfToday) ?? startOfToday
             return DateInterval(start: start, end: endOfToday)
 
         case .last30Days:
-            let start = calendar.date(byAdding: .day, value: -30, to: startOfToday) ?? startOfToday
+            let start = calendar.date(byAdding: .day, value: -29, to: startOfToday) ?? startOfToday
             return DateInterval(start: start, end: endOfToday)
 
         case .thisMonth:

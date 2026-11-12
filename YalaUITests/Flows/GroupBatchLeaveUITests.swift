@@ -2,12 +2,13 @@
 //  GroupBatchLeaveUITests.swift
 //  YalaUITests
 //
-//  Batch "salir de todos mis grupos" (D10, §2.1). El flujo es DARK (groupsBackendEnabled OFF) y su ejecución
-//  real (leave/transfer) exige backend/iCloud, imposibles en el simulador — es device/TestFlight. El seam
-//  `-uitest-groups-batch-demo` (#if DEBUG, inerte en release) fuerza que la hoja de Vaciar OFREZCA
-//  «También salir de mis grupos» y hace que la vista del batch muestre un RESULTADO determinista fabricado.
-//  Estos tests cubren el CABLEADO/UI (hoja → secundaria → vista dedicada → resultado); la lógica del
-//  orquestador va por unit tests (GroupBatchLeaveOrchestratorTests, kill-sim).
+//  Batch "salir de todos mis grupos" (D10, §2.1). Desde L19-12 (decisión de Jürgen, 2026-10-18) vive en Ajustes de
+//  Grupos —el engranaje de la pestaña Grupos— y no en «Vaciar datos», con botón secundario y una confirmación que
+//  nombra los grupos. Su ejecución real (leave/transfer) exige backend, imposible en el simulador — es device/TestFlight.
+//  El seam `-uitest-groups-batch-demo` (#if DEBUG, inerte en release) fuerza la oferta y hace que la vista del batch
+//  muestre un RESULTADO determinista fabricado; `-uitest-groups-batch-running` la deja EN CURSO.
+//  Los casos SIN seam fijan la CONDICIÓN real de la oferta (grupos vivos y cero deuda), que un seam dejaría ciega
+//  (`testing.md`).
 //  Convenciones: sin sleeps, scheme Yala Dev, targeting por accessibilityIdentifier (ver CLAUDE.md).
 //
 
@@ -28,95 +29,93 @@ final class GroupBatchLeaveUITests: XCTestCase {
         add(attachment)
     }
 
-    /// Baja por el ScrollView de Ajustes hasta que una fila sea hittable (sin sleeps, tope de intentos).
-    private func scrollTo(_ id: String, in app: XCUIApplication) -> XCUIElement {
-        let el = app.buttons[id]
-        var tries = 0
-        while !el.isHittable && tries < 12 {
-            app.swipeUp()
-            tries += 1
-        }
-        return el
+    /// Aterriza en la pestaña Grupos (deeplink) y abre sus Ajustes.
+    private func openGroupsSettings(seed: String, extraArguments: [String] = []) -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchForUITest(pro: true, seed: seed, deeplink: "groups", extraArguments: extraArguments)
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+        let gear = app.buttons["groups_global_settings_button"]
+        XCTAssertTrue(gear.waitForExistence(timeout: 10), "No apareció el engranaje de Ajustes de Grupos.")
+        gear.tap()
+        XCTAssertTrue(app.switches["groups_bridge_toggle"].waitForExistence(timeout: 5), "Ajustes de Grupos no montó.")
+        return app
     }
 
-    /// Con el demo hook: la hoja de Vaciar ofrece «También salir de mis grupos» → abre la vista del batch con
-    /// el resultado (salidos/transferidos/necesitan-tu-decisión) → «Listo» la cierra.
-    func test_batchLeave_offerAndResultFlow() {
-        let app = XCUIApplication()
-        app.launchForUITest(seed: "minimal", extraArguments: ["-uitest-groups-batch-demo"])
-        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+    /// El botón de salir de todos, bajando hasta él si hace falta. `nil` si no está.
+    private func leaveAllButton(_ app: XCUIApplication) -> XCUIElement {
+        let button = app.buttons["groups_settings_leave_all"]
+        var swipes = 0
+        while button.exists && !button.isHittable && swipes < 6 {
+            app.swipeUp()
+            swipes += 1
+        }
+        return button
+    }
 
-        app.openProfile()
-        let resetRow = scrollTo("profile_security_reset_data", in: app)
-        XCTAssertTrue(resetRow.waitForExistence(timeout: 5), "No apareció la fila 'Vaciar mis datos'.")
-        resetRow.tap()
+    /// Toca «Salir de todos mis grupos» y devuelve la alerta de confirmación ya en pantalla.
+    private func confirmationAfterTapping(_ app: XCUIApplication) -> XCUIElement {
+        let button = leaveAllButton(app)
+        XCTAssertTrue(button.waitForExistence(timeout: 5), "Ajustes de Grupos no ofrece «Salir de todos mis grupos».")
+        button.tap()
+        let alert = app.alerts["¿Salir de todos tus grupos?"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 5), "Salir de todos empezó sin preguntar (L19-12).")
+        return alert
+    }
 
-        let startBtn = app.buttons["wipe_data_start"]
-        XCTAssertTrue(startBtn.waitForExistence(timeout: 5), "No apareció el botón 'Vaciar mis datos'.")
-        startBtn.tap()
+    /// Con el demo hook: Ajustes de Grupos ofrece salir de todos → la confirmación nombra los grupos → la vista del
+    /// batch con el resultado (salidos/transferidos/necesitan-tu-decisión) → «Listo» la cierra.
+    /// `grupos-saldado`: el lote salta los grupos con saldo, así que solo sin deudas tiene grupos que nombrar.
+    func test_batchLeave_offerConfirmationAndResultFlow() {
+        let app = openGroupsSettings(seed: "grupos-saldado", extraArguments: ["-uitest-groups-batch-demo"])
 
-        // La hoja de alcance ofrece la secundaria del batch (forzada por el demo hook).
-        let offer = app.buttons["wipe_leave_groups"]
-        XCTAssertTrue(offer.waitForExistence(timeout: 5),
-                      "No apareció 'wipe_leave_groups' — la oferta del batch D10 no se presentó.")
-        offer.tap()
+        let alert = confirmationAfterTapping(app)
+        XCTAssertTrue(alert.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Viaje a")).firstMatch.exists,
+                      "La confirmación no nombra los grupos que el lote va a tocar.")
+        attachScreenshot(app, name: "batch_leave_confirmation")
+        alert.buttons["Salir de todos"].firstMatch.tap()
 
-        // La vista dedicada del batch muestra el resultado determinista (demo) + botón «Listo».
         let done = app.buttons["batch_leave_done"]
         XCTAssertTrue(done.waitForExistence(timeout: 5),
                       "No apareció 'batch_leave_done' — la vista de resultado del batch no se presentó.")
-        // El demo incluye un grupo «necesita tu decisión» → el desvío «Ver mis grupos» está presente.
         XCTAssertTrue(app.buttons["batch_leave_view_groups"].exists,
                       "No apareció 'batch_leave_view_groups' — la lista 'necesitan tu decisión' del demo.")
         done.tap()
         XCTAssertTrue(done.waitForNonExistence(timeout: 5), "La vista del batch no se cerró tras 'Listo'.")
     }
 
-    /// Sin el hook (flag OFF, DARK): la hoja de Vaciar NO ofrece la secundaria del batch — byte-idéntico al
-    /// comportamiento pre-D10. Ancla la garantía de que la superficie es DARK en prod/sim.
-    func test_batchLeave_notOffered_whenFlagOff() {
-        let app = XCUIApplication()
-        app.launchForUITest(seed: "minimal")
-        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+    /// «Cancelar» en la confirmación no empieza nada: ni la vista del batch, ni ninguna salida.
+    func test_batchLeave_cancelInTheConfirmation_startsNothing() {
+        let app = openGroupsSettings(seed: "grupos", extraArguments: ["-uitest-groups-batch-demo"])
 
-        app.openProfile()
-        let resetRow = scrollTo("profile_security_reset_data", in: app)
-        XCTAssertTrue(resetRow.waitForExistence(timeout: 5), "No apareció la fila 'Vaciar mis datos'.")
-        resetRow.tap()
+        let alert = confirmationAfterTapping(app)
+        alert.buttons["Cancelar"].firstMatch.tap()
+        XCTAssertTrue(alert.waitForNonExistence(timeout: 5), "La confirmación no se cerró con «Cancelar».")
+        XCTAssertFalse(app.buttons["batch_leave_done"].exists, "«Cancelar» empezó el lote igual.")
+        XCTAssertFalse(app.buttons["batch_leave_stop"].exists, "«Cancelar» empezó el lote igual.")
+    }
 
-        let startBtn = app.buttons["wipe_data_start"]
-        XCTAssertTrue(startBtn.waitForExistence(timeout: 5), "No apareció el botón 'Vaciar mis datos'.")
-        startBtn.tap()
+    /// La CONDICIÓN, sin seam: con grupos y cero deuda (`grupos-saldado`) se ofrece.
+    func test_leaveAll_offered_withGroupsAndNoDebt() {
+        let app = openGroupsSettings(seed: "grupos-saldado")
+        XCTAssertTrue(leaveAllButton(app).waitForExistence(timeout: 5),
+                      "Con grupos y sin saldos, Ajustes de Grupos no ofrece «Salir de todos mis grupos».")
+    }
 
-        // La hoja aparece (botón de confirmación) pero SIN la secundaria del batch.
-        let confirm = app.buttons["destructive_scope_confirm"]
-        XCTAssertTrue(confirm.waitForExistence(timeout: 5), "No apareció la hoja de alcance de Vaciar.")
-        XCTAssertFalse(app.buttons["wipe_leave_groups"].exists,
-                       "'wipe_leave_groups' NO debe aparecer con el flag OFF (DARK).")
+    /// Y su control: con saldos pendientes (`grupos`) no se ofrece — cada grupo con saldo se sale a mano.
+    func test_leaveAll_notOffered_withOutstandingBalances() {
+        let app = openGroupsSettings(seed: "grupos")
+        XCTAssertFalse(leaveAllButton(app).exists,
+                       "Con saldos pendientes no debe ofrecerse salir de todos (el lote no los salda).")
     }
 
     /// D3 — botón «Detener»: con el batch EN CURSO la vista lo ofrece; el tap recorre la mecánica REAL
-    /// (`requestStop` → `stopPending` → marcador de parada) y aterriza en el resultado honesto, que ya NO
-    /// muestra el spinner y sí la fila «Sin procesar».
+    /// (`requestStop` → `stopPending` → marcador de parada) y aterriza en el resultado honesto.
     func test_batchLeave_stopButton_endsInHonestResult() {
-        let app = XCUIApplication()
-        app.launchForUITest(seed: "minimal", extraArguments: ["-uitest-groups-batch-running"])
-        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+        let app = openGroupsSettings(seed: "grupos", extraArguments: ["-uitest-groups-batch-running"])
 
-        app.openProfile()
-        let resetRow = scrollTo("profile_security_reset_data", in: app)
-        XCTAssertTrue(resetRow.waitForExistence(timeout: 5), "No apareció la fila 'Vaciar mis datos'.")
-        resetRow.tap()
+        let alert = confirmationAfterTapping(app)
+        alert.buttons["Salir de todos"].firstMatch.tap()
 
-        let startBtn = app.buttons["wipe_data_start"]
-        XCTAssertTrue(startBtn.waitForExistence(timeout: 5), "No apareció el botón 'Vaciar mis datos'.")
-        startBtn.tap()
-
-        let offer = app.buttons["wipe_leave_groups"]
-        XCTAssertTrue(offer.waitForExistence(timeout: 5), "No apareció la oferta del batch D10.")
-        offer.tap()
-
-        // Batch EN CURSO → la vista ofrece «Detener» (y aún no hay resultado).
         let stop = app.buttons["batch_leave_stop"]
         XCTAssertTrue(stop.waitForExistence(timeout: 5),
                       "No apareció 'batch_leave_stop' — el botón Detener no se presentó con el batch en curso.")
@@ -125,7 +124,6 @@ final class GroupBatchLeaveUITests: XCTestCase {
         attachScreenshot(app, name: "batch_leave_running_with_stop")
         stop.tap()
 
-        // Tras detener: resultado honesto — el botón de parada desaparece y aparece el cierre.
         let done = app.buttons["batch_leave_done"]
         XCTAssertTrue(done.waitForExistence(timeout: 5),
                       "No apareció 'batch_leave_done' — detener no llevó al resultado (¿spinner clavado?).")

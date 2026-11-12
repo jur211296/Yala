@@ -331,15 +331,60 @@ struct InboxDismissScheduledDraftTests {
         payment.lastPaidDate = yesterday
         ScheduledPaymentDraftService.advanceToNextDueDate(payment: payment)
         try context.save()
-        let next = payment.nextDueDate
 
         let advanced = try #require(ScheduledPaymentDraftService.createAdvancedDraft(from: payment, context: context))
         #expect(calendar.isDate(try #require(advanced.date), inSameDayAs: today))
         advanced.status = .approved
         ScheduledPaymentDraftService.handleDraftApproved(draft: advanced, context: context)
+        // Dos meses desde la ocurrencia de HOY, no un mes desde la siguiente: el pago se ancla al día del mes
+        // (`dayOfMonth`) y encadenar sumas arrastra el recorte de fin de mes. Un 31-oct, la siguiente es el 30-nov
+        // y la de después el 31-dic; «30-nov + 1 mes» da 30-dic y el test salía rojo cada día 29-31 seguido de un
+        // mes más corto (CI del 2026-10-31). El contrato con fechas fijas: `singleVsDoubleAdvance_monthEndClamping`.
         #expect(calendar.isDate(payment.nextDueDate,
-                                inSameDayAs: try #require(calendar.date(byAdding: .month, value: 1, to: next))),
+                                inSameDayAs: try #require(calendar.date(byAdding: .month, value: 2, to: today))),
                 "el adelanto no avanzó y la siguiente se pagaría dos veces")
+    }
+
+    /// El mismo adelanto con fechas FIJAS, en los días en que el oráculo encadenado fallaba (card 8hs2): pagos de fin de
+    /// mes cuya ocurrencia ya cubrió una transacción del día anterior. Aprobar el adelanto salta a la ocurrencia que va
+    /// después de la siguiente, anclada al día del pago (`dayOfMonth`), no «siguiente + 1 mes»: el 31-oct pasa del
+    /// 30-nov al 31-dic, y el 31-ene del 28-feb al 31-mar. El caso de arriba lo prueba con la fecha de hoy; este, en los
+    /// días 28, 29, 30 y 31 aunque se corra a mitad de mes. Con el avance encadenado (sin `dayOfMonth`) sale el 30-dic.
+    @Test(arguments: [
+        (occurrence: [2026, 10, 31], next: [2026, 11, 30], afterNext: [2026, 12, 31]),
+        (occurrence: [2027, 1, 31], next: [2027, 2, 28], afterNext: [2027, 3, 31]),
+        (occurrence: [2028, 1, 31], next: [2028, 2, 29], afterNext: [2028, 3, 31]),
+        (occurrence: [2027, 1, 30], next: [2027, 2, 28], afterNext: [2027, 3, 30]),
+        (occurrence: [2027, 2, 28], next: [2027, 3, 28], afterNext: [2027, 4, 28])
+    ])
+    func payingEarlyAMonthEndOccurrence_landsOnThePaymentsDay(
+        occurrence: [Int], next: [Int], afterNext: [Int]
+    ) throws {
+        func day(_ ymd: [Int]) throws -> Date {
+            try #require(calendar.date(from: DateComponents(year: ymd[0], month: ymd[1], day: ymd[2])))
+        }
+        let context = try makeTestContext()
+        let occurrenceDay = try day(occurrence)
+        let payment = ScheduledPayment(name: "Alquiler", amount: 1200, currencyCode: "PEN", nextDueDate: occurrenceDay,
+                                       dayOfMonth: occurrence[2], paymentCategory: Category.recurring.rawValue,
+                                       isActive: true)
+        context.insert(payment)
+        let dayBefore = try #require(calendar.date(byAdding: .day, value: -1, to: occurrenceDay))
+        let tx = TransactionItem(date: dayBefore, amount: -1200, currencyCode: "PEN")
+        tx.scheduledPaymentID = payment.id.uuidString
+        context.insert(tx)
+        payment.lastPaidDate = dayBefore
+        ScheduledPaymentDraftService.advanceToNextDueDate(payment: payment)
+        try context.save()
+        #expect(calendar.isDate(payment.nextDueDate, inSameDayAs: try day(next)))
+
+        let advanced = ScheduledPaymentDraftService.createDraftForOccurrence(
+            from: payment, date: occurrenceDay, context: context
+        )
+        advanced.status = .approved
+        ScheduledPaymentDraftService.handleDraftApproved(draft: advanced, context: context)
+        #expect(calendar.isDate(payment.nextDueDate, inSameDayAs: try day(afterNext)),
+                "el adelanto de la ocurrencia del \(occurrence) tenía que dejar la próxima en el \(afterNext)")
     }
 
     @Test func deletingAnArchivedDraft_doesNotSkipAnotherOccurrence() throws {
@@ -410,7 +455,11 @@ struct InboxDismissScheduledDraftTests {
         #expect(theirs.isShownInArchive, "se archiva, no se borra: tiene que verse en Archivados")
     }
 
-    @Test func otherDevicesDraftAlreadyHere_isArchivedTogetherWithMine_withoutWaitingForARelaunch() throws {
+    /// Desde el 2026-10-29 (ticket `scheduled-payment-identical-drafts-in-the-inbox`): con el borrador del otro
+    /// dispositivo ya en la Bandeja, descartar el mío quita SOLO el mío. El otro sigue reteniendo la ocurrencia, así que
+    /// no se salta; se salta al descartar el último. Hasta ese día se archivaban los dos (este test fijaba eso), y con los
+    /// borradores idénticos que deja cada dispositivo, descartar uno se llevaba todos.
+    @Test func otherDevicesDraftAlreadyHere_staysWhenIDismissMine_andTheLastOneSkips() throws {
         let context = try makeTestContext()
         let account = insertAccount(context)
         let payment = insertDuePayment(context, account: account)
@@ -433,8 +482,15 @@ struct InboxDismissScheduledDraftTests {
         try context.save()
 
         try withDraftService(context) { try DraftService.shared.rejectDraft(mine) }
-        #expect(theirs.status == .rejected, "el gemelo de la misma ocurrencia seguía en la Bandeja tras descartar")
-        #expect(theirs.isShownInArchive)
+        #expect(mine.status == .rejected)
+        #expect(theirs.status == .pending, "descartar uno se llevó el otro borrador de la Bandeja")
+        #expect(!payment.isDateSkipped(occurrence), "con otro pendiente reteniéndola, la ocurrencia no se salta")
+        #expect(otherDraft.status == .pending)
+
+        try withDraftService(context) { try DraftService.shared.rejectDraft(theirs) }
+        #expect(payment.isDateSkipped(occurrence), "descartado el último, la ocurrencia se salta")
+        relaunch(context)
+        #expect(try pending(of: payment, context).isEmpty, "el vencimiento descartado volvió a la Bandeja")
         #expect(otherDraft.status == .pending)
     }
 

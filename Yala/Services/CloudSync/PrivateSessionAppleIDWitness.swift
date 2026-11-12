@@ -64,14 +64,25 @@ nonisolated enum PrivateSessionAppleIDWitness {
     // MARK: - Seam
 
     /// Fetch de la identidad del usuario en el contenedor PERSONAL. Inyectable porque el camino que
-    /// importa —«no se pudo preguntar»— hay que poder recorrerlo sin red.
+    /// importa —«no se pudo preguntar»— hay que poder recorrerlo sin red. **`nil` es el de
+    /// PRODUCCIÓN** (`fetchFromCloudKit`).
     ///
-    /// **El default es el de PRODUCCIÓN, y lo que impide que un host de test salga a CloudKit no es
-    /// este seam: es que el cableado del arranque no lo llama bajo test** (`AppBootstrapper`, gateado
-    /// por `isRunningTests`/`isUITesting`). Se dice aquí porque un lector que asumiera lo contrario
-    /// añadiría un call-site nuevo creyéndolo inerte. Los tests del predicado son puros y no lo tocan;
-    /// los que ejercitan el testigo inyectan el suyo y llaman a `_testReset()` después.
-    nonisolated(unsafe) static var identityFetcher: @Sendable () async throws -> String = {
+    /// **Lo que impide que un host de test salga a CloudKit no es este seam: es que el cableado del
+    /// arranque no lo llama bajo test** (`AppBootstrapper`, gateado por `isRunningTests`/`isUITesting`).
+    /// Se dice aquí porque un lector que asumiera lo contrario añadiría un call-site nuevo creyéndolo
+    /// inerte. Los tests del predicado son puros y no lo tocan; los que ejercitan el testigo inyectan
+    /// el suyo y llaman a `_testReset()` después.
+    ///
+    /// POR QUÉ OPCIONAL Y NO EL CLOSURE DE PRODUCCIÓN COMO DEFAULT (2026-10-26). Con el closure como
+    /// valor, la única forma de comprobar que `_testReset()` lo reponía era LLAMARLO: un unit salía a
+    /// `cloudd` y esperaba su «no hay cuenta», de 47 s a 6,5 min según el runner, y esa espera fue el
+    /// grueso de la corrida de CI que el tope de 60 min canceló (run 40422732167). Un closure no se
+    /// puede comparar; un opcional sí: «volvió a producción» es `identityFetcher == nil`. Y la copia
+    /// del closure que vivía en `_testReset()` desaparece: dos copias de producción pueden divergir.
+    nonisolated(unsafe) static var identityFetcher: (@Sendable () async throws -> String)?
+
+    /// El fetch de producción: el `recordName` del usuario en el contenedor PERSONAL.
+    private static func fetchFromCloudKit() async throws -> String {
         try await CKContainer(identifier: SwiftDataConfiguration.cloudKitContainerIdentifier)
             .userRecordID().recordName
     }
@@ -92,7 +103,7 @@ nonisolated enum PrivateSessionAppleIDWitness {
     /// el código para distinguir una red caída de una cuenta ausente.
     static func currentIdentity() async -> String? {
         do {
-            let recordName = try await identityFetcher()
+            let recordName = try await (identityFetcher ?? fetchFromCloudKit)()
             return recordName.isEmpty ? nil : recordName
         } catch {
             let code = (error as? CKError)?.code.rawValue
@@ -122,10 +133,7 @@ nonisolated enum PrivateSessionAppleIDWitness {
     #if DEBUG
     /// Test-only: devuelve el seam a producción. Lo llaman los tests entre casos.
     static func _testReset() {
-        identityFetcher = {
-            try await CKContainer(identifier: SwiftDataConfiguration.cloudKitContainerIdentifier)
-                .userRecordID().recordName
-        }
+        identityFetcher = nil
     }
     #endif
 }

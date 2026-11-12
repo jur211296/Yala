@@ -3,7 +3,8 @@
   "reloj": "2026-10-13 09:41:00",
   "simuladores": {
     "iphone": "iPhone 17 Pro",
-    "ipad": "Yala Ficha iPad Pro 13"
+    "ipad": "Yala Ficha iPad Pro 13",
+    "duo": "YalaLane-Adapt-iPhone-Duo"
   },
   "idiomas": {
     "es": {
@@ -19,6 +20,20 @@
       "moneda": "USD",
       "lproj": "en",
       "monedaExtranjera": "EUR"
+    },
+    "en-GB": {
+      "appleLanguages": "(en-GB)",
+      "appleLocale": "en_GB",
+      "moneda": "GBP",
+      "lproj": "en-GB",
+      "monedaExtranjera": "EUR"
+    },
+    "pt-PT": {
+      "appleLanguages": "(pt-PT)",
+      "appleLocale": "pt_PT",
+      "moneda": "EUR",
+      "lproj": "pt-PT",
+      "monedaExtranjera": "USD"
     },
     "pt-BR": {
       "appleLanguages": "(pt-BR)",

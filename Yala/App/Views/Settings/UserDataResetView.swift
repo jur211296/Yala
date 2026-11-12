@@ -33,11 +33,12 @@ struct UserDataResetView: View {
     @State private var wipeScope: WipeScope?
     @State private var pendingSecondConfirm = false
     // v2 (§3.3.1): salidas SEGURAS de la hoja, ejecutadas en su `onDismiss` (hoja YA fuera, anti-carrera).
-    @State private var pendingExport = false          // "Exportar antes" → wizard de export
+    @State private var pendingExport = false          // "Exportar antes" → pantalla de exportar
     @State private var pendingViewGroups = false      // "Ver mis grupos" (con deuda) → tab Grupos + cierra Ajustes
-    @State private var pendingLeaveGroups = false     // D10: "También salir de mis grupos" (sin deuda) → flujo batch
     @State private var isShowingExportWizard = false
-    @State private var isShowingBatchLeave = false     // D10: flujo dedicado del batch (headless; sobrevive al cierre)
+    /// L20-3: «Seguir con el vaciado» desde el aviso tras compartir. Se arma antes de cerrar la hoja de exportar y su
+    /// `onDismiss` reabre la de alcance, ya con la de exportar fuera (anti-carrera, como las demás salidas).
+    @State private var pendingContinueWipe = false
     // Fase 1 (C3): segunda confirmación (alert corto). Contenedor DISTINTO del paso 1 ⇒ sin carrera same-anchor.
     @State private var isShowingSecondConfirmationAlert = false
     @State private var isProcessing = false
@@ -62,63 +63,55 @@ struct UserDataResetView: View {
             personalMountAttachesMirror: CloudSessionSignOut.personalMountAttachesMirror)
     }
 
-    /// Texto del párrafo bajo el título para la operación que la hoja va a ejecutar. Sin párrafo propio
-    /// (una operación que no es de Vaciar, inalcanzable desde aquí) cae al texto completo: prometer de más
-    /// es el lado barato en una pantalla que borra.
-    static func resetDescriptionText(for operation: DestructiveScopeLogic.Operation) -> String {
-        switch DestructiveScopeLogic.wipeDescription(for: operation) {
-        case .profileAndPreferences:
-            return L10n.Settings.resetDataDescriptionGroupsOnly
-        case .wholePersonalData, nil:
-            return L10n.Settings.resetDataDescription
+    /// L20-5 (decisión de Jürgen, 2026-10-18): una frase que dice qué se borra y dónde, sin jerga. Sale de la misma
+    /// operación que la hoja y el borrado (`ExportRecordsLogic.wipeSentence` → `DestructiveScopeLogic.wipeDescription`).
+    static func sentence(for operation: DestructiveScopeLogic.Operation,
+                         cloudLabel: DestructiveScopeLogic.CloudLabel) -> String {
+        switch ExportRecordsLogic.wipeSentence(for: operation, cloudLabel: cloudLabel) {
+        case .deviceAndICloud: return L10n.UXL20D.wipeSentenceICloud
+        case .deviceAndCloudAccount: return L10n.UXL20D.wipeSentenceCloud
+        case .profileOnly: return L10n.UXL20D.wipeSentenceGroupsOnly
         }
     }
 
-    /// D10: ofrecer el batch "También salir de mis grupos" solo con el canal backend ON (DARK), grupos vivos y
-    /// CERO deudas globales (el batch no se ofrece con deuda — la fila 👥 muestra "Ver mis grupos"). Solo en
-    /// `wipeDataFull` (el modelo lo restringe a esa operación).
-    private func canLeaveAllGroups(_ summary: AccountDeletionGroupsSummary) -> Bool {
-        // QA/XCUITest: fuerza la oferta (ambos seams inertes en release).
-        if UITestHooks.groupsBatchDemo || UITestHooks.groupsBatchRunning { return true }
-        return CloudSyncFlags.groupsBackendEnabled && summary.hasGroups && !summary.hasOutstandingDebt
+    /// La hoja de alcance, con el resumen de grupos leído al tocar (molde D5: READ-ONLY, cero saves).
+    private func openWipeScope() {
+        wipeScope = WipeScope(summary: GroupService.shared.accountDeletionGroupsSummary())
     }
 
+    /// L20-5: antes eran cuatro veces el título («Vaciar datos» ×2, «Vaciar todos tus datos», «Vaciar mis datos») y un
+    /// párrafo con «tipos de cambio» y «perfil de Yala». Ahora, una frase y dos botones: «Exportar una copia antes»
+    /// relleno (solo donde hay registros que copiar) y «Vaciar mis datos» en rojo.
     var body: some View {
         YalaSettingsList {
-            YalaSettingsSection(L10n.Settings.resetData) {
-                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                    Text(L10n.Settings.resetAllData)
-                        .font(DS.Typography.title)
+            YalaSettingsSection {
+                Text(Self.sentence(for: scopeOperation,
+                                   cloudLabel: DestructiveScopeLogic.cloudLabel(storageMode: CloudSyncFlags.storageMode)))
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.vertical, DS.Spacing.sm)
+                    .accessibilityIdentifier("wipe_data_sentence")
+            }
 
-                    // Sale de `scopeOperation`, lo mismo que la hoja y el borrado: no pueden
-                    // prometer alcances distintos (`DestructiveScopeLogic.wipeDescription`).
-                    Text(Self.resetDescriptionText(for: scopeOperation))
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
-                }
-                .padding(.vertical, DS.Spacing.sm)
-
-                Button(role: .destructive) {
-                    // v2: detección READ-ONLY al TAP (molde D5) — alimenta la fila 👥 y el desvío
-                    // "Ver mis grupos". Cero saves (invariante de quiescencia (b) intacto).
-                    let summary = GroupService.shared.accountDeletionGroupsSummary()
-                    wipeScope = WipeScope(summary: summary)
-                } label: {
-                    HStack {
-                        if isProcessing {
-                            ProgressView()
-                                .progressViewStyle(.circular)
+            Section {
+                VStack(spacing: DS.Spacing.md) {
+                    if ExportRecordsLogic.offersExportCopy(for: scopeOperation) {
+                        YalaPrimaryButton(L10n.UXL20D.wipeExportCopy, icon: "square.and.arrow.up",
+                                          isDisabled: isProcessing) {
+                            isShowingExportWizard = true
                         }
-
-                        Text(L10n.Settings.deleteAllData)
-                            .font(DS.Typography.body)
-
-                        Spacer()
+                        .accessibilityIdentifier("wipe_export_copy")
                     }
+
+                    YalaSecondaryButton(L10n.Settings.deleteAllData, isDisabled: isProcessing, destructive: true) {
+                        openWipeScope()
+                    }
+                    .accessibilityIdentifier("wipe_data_start")
+                    .accessibilityHint(isProcessing ? L10n.Accessibility.processing : "")
                 }
-                .disabled(isProcessing)
-                .accessibilityIdentifier("wipe_data_start")
-                .accessibilityHint(isProcessing ? L10n.Accessibility.processing : "")
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
             }
         }
         .yalaScreenBackground(.subtle)
@@ -133,11 +126,9 @@ struct UserDataResetView: View {
             let goSecondConfirm = pendingSecondConfirm
             let goExport = pendingExport
             let goViewGroups = pendingViewGroups
-            let goLeaveGroups = pendingLeaveGroups
             pendingSecondConfirm = false
             pendingExport = false
             pendingViewGroups = false
-            pendingLeaveGroups = false
             if goSecondConfirm {
                 isShowingSecondConfirmationAlert = true
             } else if goExport {
@@ -148,33 +139,29 @@ struct UserDataResetView: View {
                 // solo haría *pop* a Profile dejando Ajustes tapando el tab — B1).
                 navigation.selectMainTab(.groups)
                 onRequestCloseSettings?()
-            } else if goLeaveGroups {
-                // D10: flujo dedicado del batch (paso separado, NO dispara el vaciado — decisión B1).
-                isShowingBatchLeave = true
             }
         }) { scope in
             DestructiveScopeSheet(config: .make(
                 operation: scopeOperation,
                 cloudLabel: DestructiveScopeLogic.cloudLabel(storageMode: CloudSyncFlags.storageMode),
                 hasOutstandingDebt: scope.summary.hasOutstandingDebt,
-                canLeaveAllGroups: canLeaveAllGroups(scope.summary),
                 onConfirm: { pendingSecondConfirm = true },
                 // "Ver mis grupos" solo aparece con deuda (lo decide `DestructiveScopeLogic.secondaryActions`).
                 onSecondary: { pendingViewGroups = true },
-                onExport: { pendingExport = true },
-                onLeaveGroups: { pendingLeaveGroups = true }))
+                onExport: { pendingExport = true }))
         }
-        // D10: flujo dedicado del batch "salir de todos mis grupos". Headless — si se descarta o se cierra
-        // Ajustes a mitad, el orquestador sigue y el resultado se refleja en el tab Grupos (residual declarado).
-        .sheet(isPresented: $isShowingBatchLeave) {
-            GroupBatchLeaveView(onRequestCloseSettings: onRequestCloseSettings)
-        }
-        // v2 (§3.3.1): "Exportar antes" → wizard de export existente (autocontenido: NavigationStack/dismiss
-        // propios; hereda `\.modelContext`/`\.yalaTheme`). Al cerrarlo, regresa a esta vista. Solo aplica a
-        // `wipeDataFull` (el wizard personal exige transacciones; el 5a exporta grupos desde la fila de Ajustes).
-        // SEAM D10: aquí encajará el batch "También salir de mis grupos" (caso sin deuda) — OTRO chip.
-        .sheet(isPresented: $isShowingExportWizard) {
-            ExportFiltersStepView()
+        // «Exportar una copia antes» (la pantalla) y «Exportar antes» (la hoja) abren la misma exportación, con
+        // «Todo» elegido. Tras compartir, «Seguir con el vaciado» la cierra y reabre la hoja de alcance (L20-3).
+        // «Salir de todos mis grupos» ya no vive aquí: L19-12 lo llevó a Ajustes de Grupos.
+        .sheet(isPresented: $isShowingExportWizard, onDismiss: {
+            guard pendingContinueWipe else { return }
+            pendingContinueWipe = false
+            openWipeScope()
+        }) {
+            ExportRecordsView(origin: .wipe, onContinueWipe: {
+                pendingContinueWipe = true
+                isShowingExportWizard = false
+            })
         }
 
         // Paso 2 — confirmación final corta (C3). Contenedor DISTINTO al paso 1 (alert vs sheet).
@@ -211,10 +198,9 @@ struct UserDataResetView: View {
 
     // MARK: - Lógica de borrado
 
-    /// Paso 9 del rediseño de sesiones (ticket §7 y fila H de la matriz de escenarios): tras «Vaciar datos»
-    /// la app NO vuelve al Welcome — la sesión en la nube y los grupos, si los hay, siguen puestos, y el
-    /// Welcome le ofrecería «Ya tengo cuenta» a quien sigue dentro. Con esto se retiró la pantalla de
-    /// retención «Seguir con mis grupos»: con «Vaciar datos» sin tocar grupos, no queda nada que retener.
+    /// A dónde aterriza la app tras «Vaciar datos». Desde el encargo S27i (decisión de Jürgen, 2026-10-29) la persona se
+    /// queda dentro: «Vaciar» borra el contenido y conserva la sesión, la cuenta, los grupos y sus ajustes, así que no hay
+    /// bienvenida que repetir —tampoco el onboarding del Paso 9, que esto supera—. Salir es otra fila: «Cerrar sesión».
     ///
     /// Deroga SOLO para este camino el «tras wipe vuelve a mostrarse el chooser» (A4) de
     /// `DataWipeService.removeUserPreferenceKeys`; el vaciado remoto (otro dispositivo) no pasa por aquí.
@@ -222,9 +208,14 @@ struct UserDataResetView: View {
         // El mismo dominio que acaba de barrer el wipe (el de quien pulsa, M1 incluida).
         let defaults = UserDefaults.standard
         switch landing {
-        case .personalOnboarding:
-            // `presentNextOnboardingScreen` salta al onboarding personal cuando el chooser ya se vio.
-            defaults.set(true, forKey: "hasShownWelcomeChooser")
+        case .panel:
+            // Los ajustes se conservaron (`keepsPersonSettings`), `hasCompletedOnboarding` incluido: la app sigue montada.
+            // Todas las ventanas al Panel —la capa de borrado las desmontó—. El aviso de crear la primera cuenta se arma al
+            // bajar la capa (`handleWipeAllData`). Con «Solo grupos» elegido la shell sigue reducida: la marca de esa
+            // vista es un ajuste y se conserva, y ahí no hay Panel (el cambio de pestaña lo descarta la propia shell).
+            for window in SceneRegistry.shared.allNavigations {
+                window.selectMainTab(.panel)
+            }
         case .groupsShell:
             // Solo grupos: la app sigue enseñando los grupos. Se repone el onboarding que el barrido
             // quitó; el perfil y las preferencias, que es lo que se vaciaba, quedan restablecidos.
@@ -243,10 +234,11 @@ struct UserDataResetView: View {
     private func handleWipeAllData() async {
         isProcessing = true
 
-        // Paso 9 · a dónde aterriza la app se decide ANTES del wipe, con el eje 1 leído sobre el
-        // teléfono todavía intacto.
+        // A dónde aterriza la app se decide ANTES del wipe, con el eje 1 leído sobre el teléfono todavía intacto. Y con el
+        // aterrizaje, qué se conserva: quien se queda en el Panel conserva sus ajustes y recordatorios (S27i).
         let landing = DestructiveScopeLogic.wipeLanding(
             hasPrivateSession: PrivateSessionMark.hasPrivateSession())
+        let keepsPersonSettings = DestructiveScopeLogic.wipeKeepsPersonSettings(landing)
         // Y si avisa a los demás dispositivos del Apple ID: solo una sesión privada (ver la decisión pura).
         // `confirmedPrivateSession` y NO `hasPrivateSession`: esta es la única de las tres cuyo `true`
         // sale de este teléfono (ver el docblock de `wipeSignalsAppleIDDevices`).
@@ -277,7 +269,8 @@ struct UserDataResetView: View {
         do {
             try DataWipeService.wipePersonalDataKeepingGroups(
                 in: modelContext,
-                broadcastSignal: signalsOtherDevices
+                broadcastSignal: signalsOtherDevices,
+                keepsPersonSettings: keepsPersonSettings
             )
 
             // 5b. Paso 9 · el aterrizaje, en la MISMA vuelta del main actor que el wipe y antes de cualquier
@@ -290,13 +283,24 @@ struct UserDataResetView: View {
             // (ticket `wipe-data-does-not-cancel-the-remote-wipe-grace`).
             sessionState.requestDeliberateWipeSettle()
 
-            // 6. Ensure @Observable tracks the theme reset
-            themeManager.resetToDefaults()
+            // 6. El tema se restablece solo si se restablecieron las preferencias (shell de grupos); en el Panel se queda.
+            //    Y los recordatorios conservados se vuelven a programar: el borrado canceló todo lo del sistema, también
+            //    los avisos de pagos y presupuestos que se fueron.
+            if keepsPersonSettings {
+                DataWipeService.rescheduleSurvivingReminders(in: modelContext)
+            } else {
+                themeManager.resetToDefaults()
+            }
 
             // 7. Small delay to let SwiftData settle before removing overlay
             try? await Task.sleep(for: .milliseconds(200))
 
             isProcessing = false
+            // El aviso de empezar de cero, solo en el Panel (no en la shell de «Solo grupos», donde no hay cuentas que
+            // crear) y armado pegado a la bajada que lo enseña: si otro flujo hubiera bajado ya la capa, un `false → false`
+            // no dispara el `onChange` y el aviso quedaría colgado para una bajada que no tiene nada que ver.
+            sessionState.wipeLandingToastPending = keepsPersonSettings && !sessionState.isGroupsFocusedShell
+                && sessionState.isWipingData
             sessionState.isWipingData = false
 
             // 7. Load exchange rates directly after wipe (more reliable than flag mechanism)
@@ -309,6 +313,11 @@ struct UserDataResetView: View {
             // También tras un fallo: el borrado guarda por lotes, y uno que lanza a media lista baja la señal igual.
             sessionState.requestDeliberateWipeSettle()
             isProcessing = false
+            // El aviso de empezar de cero, solo en el Panel (no en la shell de «Solo grupos», donde no hay cuentas que
+            // crear) y armado pegado a la bajada que lo enseña: si otro flujo hubiera bajado ya la capa, un `false → false`
+            // no dispara el `onChange` y el aviso quedaría colgado para una bajada que no tiene nada que ver.
+            sessionState.wipeLandingToastPending = keepsPersonSettings && !sessionState.isGroupsFocusedShell
+                && sessionState.isWipingData
             sessionState.isWipingData = false
             errorMessage = error.localizedDescription
         }

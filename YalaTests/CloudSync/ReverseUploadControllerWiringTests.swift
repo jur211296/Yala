@@ -216,6 +216,9 @@ struct ReverseUploadControllerWiringTests {
             "refresh()",
             "return",
             "}",
+            // Ticket `cloud-progress-shows-real-steps-and-counts` (card 27z3): los pasos salen desde el «Sí».
+            "isStartingReverse = true",
+            "defer { isStartingReverse = false }",
             "cancelReverseRequested = false",
             "let r = runner",
             "let claimExitBefore = r.lastReverseClaimExit",

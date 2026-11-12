@@ -22,6 +22,12 @@ En el barrido de QA del 2026-10-15 recorrí ~40 pantallas con `axe` (CLI en `/op
   perdía. Si un toque «no hace nada», prueba los tres antes de culpar a la app.
 - **Escribir:** `axe type` no escribe tildes ni «ñ» («No keycode found for character: 'é'»): escribe sin ellas.
 - **Ver:** `simctl io <U> screenshot` + `sips -Z 700` a JPEG; las coordenadas de la imagen × (402/ancho) dan puntos.
+- **El importe del formulario de gasto de grupo no se deja escribir a mano (medido el 2026-10-21, iOS 27.0):** tras
+  teclear la descripción con `axe type`, ni `axe type`, ni `axe tap --id`, ni `type_text` de XcodeBuildMCP metieron «90»
+  en `group_expense_amount` (`decimalPad`, `fixedSize`): seguía «0.00» y sin teclado en pantalla. Tres intentos y un
+  snapshot de 4 k tokens. ⇒ **un flujo que necesita importe se conduce con un XCUITest** (`typeText` sí escribe) y las
+  capturas salen del propio test (`TEST_RUNNER_<VAR>` + `app.screenshot().pngRepresentation.write`), que además queda
+  como red. Y erase antes de volver a XCUITest (regla del teclado físico de `testing.md`).
 - Las marcas de selección de Fotos se pintan con retraso: el contador «Mostrar selección (N)» es la verdad, no la captura.
 
 **How to apply:** en cualquier `/qa` o `/barrido-qa` largo. Para un toque suelto con elementRef, el MCP sigue valiendo.

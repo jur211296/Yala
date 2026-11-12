@@ -16,9 +16,22 @@
 import XCTest
 
 final class ExternalEntryForeignSheetUITests: XCTestCase {
+    /// El ciclo de vida de la app recién arrancada (`uitest_lifecycle`), antes de abrir el formulario: leerlo entre el
+    /// tecleo e Inicio metería 1-3 s del runner justo en la ventana que se diagnostica. Si el formulario no sobrevive, el
+    /// mensaje de fallo lo compara con el de la vuelta (card 5xj4): en verde, la vuelta da `formularios=1`. «Sin
+    /// marcador» a la vuelta quiere decir que el proceso murió: SpringBoard relanza Yala sin `-uitest`.
+    private var lifecycleBeforeLeaving = ""
+
     override func setUp() {
         super.setUp()
         continueAfterFailure = false
+    }
+
+    /// `pid=… escenas=+…/-… shell=… formularios=…` (`UITestHooks.lifecycleSummary`).
+    private func lifecycle(_ app: XCUIApplication) -> String {
+        let marker = app.descendants(matching: .any)["uitest_lifecycle"]
+        guard marker.exists else { return "sin marcador" }
+        return (marker.value as? String) ?? "sin valor"
     }
 
     /// Abre `url` por el sistema. Si SpringBoard pregunta «¿Abrir en …?», se acepta (molde de `SharedImageEntryUITests`).
@@ -36,25 +49,35 @@ final class ExternalEntryForeignSheetUITests: XCTestCase {
     ) -> (XCUIApplication, XCUIElement) {
         let app = XCUIApplication()
         // Pro y consentimiento: la foto compartida va directa a la lectura, sin la hoja de Pro ni la del consentimiento.
-        app.launchForUITest(pro: true, aiConsent: true, extraArguments: extraArguments)
+        // Con precios: la oferta de prueba solo sale si se sabe que la cuenta aún la tiene (UX 2.2 · L17-5).
+        app.launchForUITest(pro: true, aiConsent: true, fakePrices: true, extraArguments: extraArguments)
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+        lifecycleBeforeLeaving = lifecycle(app)
 
         // Estadísticas es el 2.º tab del config default [panel, statistics, planning].
         let statsTab = app.tabBars.buttons.element(boundBy: 1)
         XCTAssertTrue(statsTab.waitForExistence(timeout: 10), "No apareció el tab Estadísticas.")
         statsTab.tap()
 
-        let fabMenu = app.buttons["fab_new_transaction"]
-        XCTAssertTrue(fabMenu.waitForExistence(timeout: 10), "Falta el «+» de Estadísticas (fab_new_transaction).")
-        fabMenu.tap()
-        let manual = app.buttons["fab_manual"]
-        XCTAssertTrue(manual.waitForExistence(timeout: 5), "No se expandió el menú del «+» (fab_manual).")
-        manual.tap()
+        // Desde la card kzhe «Nuevo registro» está arriba, bajo el hero, como en el Panel.
+        let newRecord = app.buttons["stats_action_new"]
+        XCTAssertTrue(newRecord.waitForExistence(timeout: 10), "Falta «Nuevo registro» arriba en Estadísticas (stats_action_new).")
+        newRecord.tap()
 
         let amountField = app.textFields["new_transaction_amount"]
         XCTAssertTrue(amountField.waitForExistence(timeout: 10), "No se abrió Nuevo registro (new_transaction_amount).")
         amountField.tap()
         amountField.typeText("1234")
+        // Antes de mandar Yala al fondo, el importe tiene que haber llegado al campo. En un runner frío del CI el teclado
+        // seguía entrando al pulsar Inicio y el formulario volvía con «0.00» (nocturnas del 28 y 29-oct): el test leía
+        // como pérdida de datos un tecleo que no había terminado. Regla de `testing.md`: tocar algo justo después de
+        // `typeText` en iOS 27.
+        let typedIn = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "value CONTAINS '1234' OR value CONTAINS '1.234' OR value CONTAINS '1,234'"),
+            object: amountField
+        )
+        XCTAssertEqual(XCTWaiter().wait(for: [typedIn], timeout: 10), .completed,
+                       "El importe no llegó al campo antes de salir de Yala (valor: «\((amountField.value as? String) ?? "")»).")
 
         XCUIDevice.shared.press(.home)
         XCTAssertTrue(app.wait(for: .runningBackground, timeout: 15), "Yala no pasó a segundo plano.")
@@ -73,18 +96,20 @@ final class ExternalEntryForeignSheetUITests: XCTestCase {
         shot.name = capture
         shot.lifetime = .keepAlways
         add(shot)
+        let typed = waited == .timedOut ? ((amountField.value as? String) ?? "") : ""
+        let survived = waited == .timedOut && (typed.contains("1234") || typed.contains("1.234") || typed.contains("1,234"))
+        // El marcador de la vuelta solo se lee si algo falló: en verde no añade otra consulta (1-3 s en el runner).
+        let lifecycleNote = survived ? "" : " Ciclo de vida — al arrancar: \(lifecycleBeforeLeaving); al volver: \(lifecycle(app))."
         XCTAssertEqual(waited, .timedOut,
-                       "La entrada desde fuera cerró el Nuevo registro que estaba a medias en Estadísticas.",
+                       "La entrada desde fuera cerró el Nuevo registro que estaba a medias en Estadísticas.\(lifecycleNote)",
                        file: file, line: line)
-        let typed = (amountField.value as? String) ?? ""
-        XCTAssertTrue(typed.contains("1234") || typed.contains("1.234") || typed.contains("1,234"),
-                      "El importe escrito se perdió (valor: «\(typed)»).", file: file, line: line)
+        XCTAssertTrue(survived,
+                      "El importe escrito se perdió (valor: «\(typed)»).\(lifecycleNote)", file: file, line: line)
     }
 
     private func closeForm(_ app: XCUIApplication) {
-        let close = app.buttons["new_transaction_close"]
-        XCTAssertTrue(close.waitForExistence(timeout: 5), "Falta la X de Nuevo registro (new_transaction_close).")
-        close.tap()
+        // Con el importe escrito, la X pregunta antes de descartar (UX 2.2 · L2-4).
+        app.closeNewTransactionDiscarding()
     }
 
     /// El caso que perdía datos: la foto compartida lleva al Panel y el Panel presentaba la lectura encima, lo que
@@ -187,5 +212,46 @@ final class ExternalEntryForeignSheetUITests: XCTestCase {
         let selected = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isSelected == true"), object: panelTab)
         XCTAssertEqual(XCTWaiter().wait(for: [selected], timeout: 10), .completed,
                        "Tras cerrar la hoja, el enlace tenía que haber dejado el Panel delante.")
+    }
+
+    // MARK: - El formulario rehecho retoma lo escrito (card «Nuevo registro a medias vuelve vacío», 2026-11-04)
+
+    /// En el runner del CI, de una a tres veces por noche, SwiftUI rehacía el contenido de la hoja al volver (mismo
+    /// proceso, misma escena: `formularios=3`) y el formulario nacía con «0.00». `-uitest-rebuild-form-on-return` fuerza
+    /// ese rehecho siempre, en los tres caminos que cambian de pestaña. Con el borrador (`NewRecordDraft`) el formulario
+    /// rehecho conserva el importe y, al cerrarlo, sigue preguntando antes de descartar (retoma también la foto de partida).
+    /// Los casos de arriba siguen sin el seam: prueban el camino real, sin rehecho forzado.
+    private func assertRebuiltFormKeepsTheAmount(url: String, extraArguments: [String], capture: String) {
+        let (app, amountField) = launchWithHalfFilledFormInStatistics(
+            extraArguments: extraArguments + ["-uitest-rebuild-form-on-return"])
+        openFromOutside(url)
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 15), "El enlace no trajo Yala delante.")
+        assertFormSurvives(app, amountField, seconds: 6, capture: capture)
+        XCTAssertTrue(lifecycle(app).contains("formulario retomado"),
+                      "El seam no rehízo el formulario: el caso no probó nada. Ciclo de vida: \(lifecycle(app)).")
+        let close = app.buttons["new_transaction_close"]
+        XCTAssertTrue(close.waitForExistence(timeout: 5), "Falta la X de Nuevo registro (new_transaction_close).")
+        close.tap()
+        let discard = app.alerts.buttons["new_transaction_discard_confirm"].firstMatch
+        XCTAssertTrue(discard.waitForExistence(timeout: 5),
+                      "Con el importe retomado, la X tenía que preguntar antes de descartar.")
+        discard.tap()
+    }
+
+    func test_rebuiltForm_sharedPhoto_keepsWhatWasTyped() {
+        assertRebuiltFormKeepsTheAmount(url: "yaladev://shared-image?uitest-stage=readable",
+                                        extraArguments: ["-uitest-image-result", "one"],
+                                        capture: "formulario-rehecho-tras-compartir-foto")
+    }
+
+    func test_rebuiltForm_voiceEntry_keepsWhatWasTyped() {
+        assertRebuiltFormKeepsTheAmount(url: "yaladev://voice-entry",
+                                        extraArguments: ["-uitest-voice-result", "one"],
+                                        capture: "formulario-rehecho-tras-voz")
+    }
+
+    func test_rebuiltForm_panelLink_keepsWhatWasTyped() {
+        assertRebuiltFormKeepsTheAmount(url: "yaladev://panel", extraArguments: [],
+                                        capture: "formulario-rehecho-tras-enlace-al-panel")
     }
 }

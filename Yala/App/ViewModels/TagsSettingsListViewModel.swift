@@ -20,7 +20,10 @@ final class TagsSettingsListViewModel {
 
     // MARK: - Data
 
-    private(set) var tags: [Tag] = []
+    /// Sin las etiquetas ya borradas: Eliminar una etiqueta desde su formulario deja la lista debajo, que puede repintarse con ella antes de
+    /// recargar, y en iOS 27.x leer un modelo borrado aborta (card 1w89). Molde de `AccountsSettingsListViewModel.accounts`.
+    var tags: [Tag] { loadedTags.filter { !$0.isDeleted && $0.modelContext != nil } }
+    private var loadedTags: [Tag] = []
 
     // MARK: - UI State
 
@@ -92,12 +95,12 @@ final class TagsSettingsListViewModel {
         guard let context = modelContext else { return }
         let descriptor = FetchDescriptor<Tag>(sortBy: [SortDescriptor(\Tag.name)])
         do {
-            tags = try context.fetch(descriptor)
+            loadedTags = try context.fetch(descriptor)
         } catch {
             #if DEBUG
             print("TagsSettingsListViewModel: Error loading tags: \(error)")
             #endif
-            tags = []
+            loadedTags = []
         }
     }
 

@@ -13,14 +13,18 @@ struct QuickStatCell: View {
     let value: String
     var secondary: String? = nil
 
-    @Environment(\.yalaTheme) private var theme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    /// Con el texto al máximo la ficha ocupa la fila entera y lo que no quepa baja de línea entero: una cifra no se corta.
+    private var lineLimit: Int? { dynamicTypeSize.isAccessibilitySize ? nil : 1 }
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
             HStack(spacing: DS.Spacing.xs) {
                 Image(systemName: icon)
                     .font(DS.Typography.captionSmall)
-                    .foregroundStyle(theme.accent)
+                    // Gris, como su etiqueta: en acento competía con la pestaña elegida y las acciones.
+                    .foregroundStyle(.secondary)
                     .accessibilityHidden(true)
 
                 Text(label)
@@ -31,14 +35,14 @@ struct QuickStatCell: View {
             Text(value)
                 .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
-                .lineLimit(1)
+                .lineLimit(lineLimit)
                 .minimumScaleFactor(0.7)
 
             Text(secondary ?? " ")
                 .font(DS.Typography.captionSmall)
                 .foregroundStyle(.secondary)
                 .opacity(secondary != nil ? 1 : 0)
-                .lineLimit(1)
+                .lineLimit(lineLimit)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .panelCard(small: true)

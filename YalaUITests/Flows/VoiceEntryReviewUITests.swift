@@ -41,6 +41,43 @@ final class VoiceEntryReviewUITests: XCTestCase {
         return app
     }
 
+    /// Card tjws (propuesta A): mientras escucha, la onda sigue la voz y debajo aparece la frase que va entendiendo el
+    /// iPhone. Con `-uitest-voice-live` el nivel y la frase son de mentira (el simulador no trae los modelos de voz); lo
+    /// que se prueba es la hoja: la onda se mueve, la frase llega entera y «Esto entendí» sigue saliendo de la IA.
+    func test_listening_showsTheWaveformAndTheLivePhrase() {
+        let app = XCUIApplication()
+        app.launchForUITest(pro: true, aiConsent: true, extraArguments: ["-uitest-voice-result", "one", "-uitest-voice-live"])
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+        app.revealPanelFAB().tap()
+        let voice = app.buttons["fab_voice"]
+        XCTAssertTrue(voice.waitForExistence(timeout: 5), "El menú del FAB no ofreció voz (fab_voice).")
+        voice.tap()
+
+        let waveform = app.descendants(matching: .any)["voice_waveform"]
+        XCTAssertTrue(waveform.waitForExistence(timeout: 15), "Escuchando no pinta la onda (voice_waveform).")
+        let moving = NSPredicate { _, _ in (Int(waveform.value as? String ?? "") ?? 0) > 0 }
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: moving, object: nil)], timeout: 10),
+            .completed,
+            "La onda no se movió con la voz (ninguna barra por encima del silencio)."
+        )
+
+        let phrase = app.descendants(matching: .any)["voice_live_transcript"]
+        let full = NSPredicate(format: "value == %@", "Almuerzo 25 con la tarjeta")
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: full, object: phrase)], timeout: 15),
+            .completed,
+            "La frase en vivo no llegó entera (voice_live_transcript = \(phrase.value ?? "nil"))."
+        )
+
+        app.buttons["voice_done"].tap()
+        XCTAssertTrue(
+            app.staticTexts["voice_review_title"].waitForExistence(timeout: 15),
+            "Tras Listo, «Esto entendí» tiene que seguir saliendo como antes."
+        )
+        XCTAssertFalse(phrase.exists, "La frase en vivo se va al dejar de escuchar.")
+    }
+
     /// Lo entendido completo se guarda en la misma hoja: la fila pasa a «Registrado» y queda un solo botón para cerrar.
     func test_completeDraft_savesInTheSameSheet() {
         let app = openReview("one")

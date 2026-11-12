@@ -27,43 +27,40 @@ struct BudgetWidgetRow: View {
                     .accessibilityHidden(true)
             }
 
+            // Lo que queda arriba a la derecha y lo gastado de su límite con el porcentaje debajo (UX 2.2 · L9-10, alineado
+            // con la fila de Planificación, L9-1). Antes la cifra era lo gastado, sin «gastado» ni «de S/ 1,800».
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                // Name and Amount row
-                HStack {
+                HStack(alignment: .firstTextBaseline) {
                     Text(summary.budget.name)
                         .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
-                    Spacer()
+                    Spacer(minLength: DS.Spacing.sm)
 
-                    AmountText(
-                        value: summary.spent,
-                        currencyCode: currencyCode,
-                        font: DS.Typography.headline, secondaryFont: DS.Typography.caption,
-                        tint: summary.status == .exceeded ? .color(Color.hotPink) : .primary
-                    )
+                    // En la divisa del presupuesto, que es en la que está lo gastado (antes, la del Panel).
+                    Text(appPreferences.currency(abs(remaining), currencyCode: summary.budget.currencyCode))
+                        .font(DS.Typography.headline)
+                        .foregroundStyle(isOver ? Color.overBudgetText : Color.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
                 }
 
-                // Status info
-                HStack(spacing: DS.Spacing.xs) {
-                    Text(percentText)
-                        .font(DS.Typography.labelTiny)
-                        .foregroundStyle(summary.status == .exceeded ? Color.hotPink : .secondary)
+                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                    BudgetSpentLine(
+                        spent: summary.spent,
+                        limit: summary.budget.limitAmount,
+                        currencyCode: summary.budget.currencyCode,
+                        suffix: percentText
+                    )
 
-                    Text("•")
+                    Spacer(minLength: DS.Spacing.xs)
+
+                    Text(isOver ? L10n.UXL9.overLabel : L10n.UXL9.remainingLabel)
                         .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary.opacity(0.5))
-
-                    Text(daysText)
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
-
-                    Spacer()
-
-                    Text(formattedLimit)
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(isOver ? Color.overBudgetText : Color.secondary)
+                        .lineLimit(1)
+                        .fixedSize()
                 }
 
                 // Progress bar
@@ -75,29 +72,20 @@ struct BudgetWidgetRow: View {
                 )
             }
         }
+        .accessibilityElement(children: .combine)
+    }
+
+    private var remaining: Double {
+        BudgetRemainingLogic.remaining(limit: summary.budget.limitAmount, spent: summary.spent)
+    }
+
+    private var isOver: Bool {
+        BudgetRemainingLogic.isOver(limit: summary.budget.limitAmount, spent: summary.spent)
     }
 
     // MARK: - Formatters
 
-    private var formattedSpent: String {
-        appPreferences.currency(summary.spent, currencyCode: currencyCode)
-    }
-
-    private var formattedLimit: String {
-        String(format: NSLocalizedString("budgets.amount.of", comment: ""),
-               appPreferences.currency(summary.budget.limitAmount, currencyCode: currencyCode))
-    }
-
     private var percentText: String {
-        let key = NSLocalizedString("budgets.spent.percent", comment: "")
-        return String(format: key, String(format: "%.0f%%", summary.percentage))
-    }
-
-    private var daysText: String {
-        if summary.daysRemaining == -1 {
-            return NSLocalizedString("budgets.period.past", comment: "")
-        } else {
-            return L10n.Budgets.daysRemaining(summary.daysRemaining)
-        }
+        String(format: "%.0f%%", summary.percentage)
     }
 }

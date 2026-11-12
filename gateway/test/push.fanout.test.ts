@@ -250,13 +250,13 @@ describeStaging("G8 goldens · fan-out machine-role + revoke (post-aplicación g
 
   /** push con ctx COLECTOR: junta las promesas de waitUntil (el fan-out) para poder awaitarlas.
    *  `deviceToken` (opcional) viaja como `X-Yala-Device-Token` (G8-3: excluir SOLO el device emisor del autor). */
-  async function pushCollect(jwt: string, deltas: unknown[], deviceToken?: string): Promise<GroupPushResponse> {
+  async function pushCollect(jwt: string, deltas: unknown[], deviceToken?: string, notice?: unknown): Promise<GroupPushResponse> {
     const promises: Promise<unknown>[] = [];
     const ctx = { waitUntil(p: Promise<unknown>) { promises.push(p); }, passThroughOnException() {} } as unknown as ExecutionContext;
     const headers: Record<string, string> = { Authorization: `Bearer ${jwt}`, "Content-Type": "application/json" };
     if (deviceToken) headers["X-Yala-Device-Token"] = deviceToken;
     const res = await app.fetch(
-      new Request("https://gw.local/groups/push", { method: "POST", headers, body: JSON.stringify({ deltas }) }),
+      new Request("https://gw.local/groups/push", { method: "POST", headers, body: JSON.stringify(notice ? { deltas, notice } : { deltas }) }),
       apnsEnv,
       ctx,
     );
@@ -381,10 +381,10 @@ describeStaging("G8 goldens · fan-out machine-role + revoke (post-aplicación g
     expect(p.code).toBe("42501");
   }, 60_000);
 
-  // Multi-device del AUTOR (G8-3, cierra el residual de G8-1): A tiene device1 + device2; con header
-  // X-Yala-Device-Token=device1 el fan-out excluye SOLO device1 → despierta device2 (el otro device de A) Y B;
-  // sin header → fallback G8-1 (excluye TODOS los devices de A → solo B).
-  it("multi-device: header device1 → APNs recibe device2 (otro device de A) + B; sin header → solo B", async () => {
+  // Multi-device del AUTOR. Hasta la card sztn (2026-10-30) el header device1 excluía SOLO device1 y el otro
+  // device de A recibía la ALERTA de su propio cambio (G8-3). Ahora recibe solo el eco silencioso (background, sin
+  // banner) y B la alerta concreta de la `notice`. Sin header, ningún device de A recibe nada.
+  it("multi-device (sztn): header device1 → B alerta concreta + device2 silencioso; sin header → solo B", async () => {
     const gid = await setupSharedGroup();
     const dev1 = dummyToken("mdA1");
     const dev2 = dummyToken("mdA2");
@@ -398,15 +398,43 @@ describeStaging("G8 goldens · fan-out machine-role + revoke (post-aplicación g
     // (1) CON header device1 → excluye solo dev1: APNs golpea dev2 (A) + tokB (B), nunca dev1.
     installApnsInterceptor();
     const h1 = `${new Date(Date.UTC(2026, 6, 15, 13, 0, 0)).toISOString()}-0001-000000000000000a`;
+    const sid1 = crypto.randomUUID();
     const r1 = await pushCollect(jwtA, [
-      { entity_type: "split_expenses", group_id: gid, sync_id: crypto.randomUUID(), op: "upsert", fields: { amount: 30, currency_code: "PEN", note: "md1" }, field_hlcs: { gmoney: h1, note: h1 }, hlc: h1, client_mutation_id: crypto.randomUUID() },
-    ], dev1);
+      { entity_type: "split_expenses", group_id: gid, sync_id: sid1, op: "upsert", fields: { amount: 30, currency_code: "PEN", note: "md1" }, field_hlcs: { gmoney: h1, note: h1 }, hlc: h1, client_mutation_id: crypto.randomUUID() },
+    ], dev1, {
+      actors: { [gid]: "María P." },
+      groups: { [gid]: "Jurpi ❤️" },
+      rows: { [sid1]: { concept: "Foppy Pet Store", amount: "S/ 30.00" } },
+    });
     expect(r1.results[0].status).toBe("applied");
     const urls1 = appleHits.map((x) => x.url).join(" | ");
     expect(appleHits.length).toBe(2);
-    expect(urls1).toContain(dev2);
-    expect(urls1).toContain(tokB);
     expect(urls1).not.toContain(dev1);
+    const hitB = appleHits.find((x) => x.url.includes(tokB))!;
+    const hitDev2 = appleHits.find((x) => x.url.includes(dev2))!;
+    expect((hitDev2.init?.headers as Record<string, string>)["apns-push-type"]).toBe("background");
+    expect(JSON.parse(hitDev2.init?.body as string).aps.alert).toBeUndefined();
+    // El alta real de staging da `inserted` → «agregó», con quién, concepto, importe y el grupo de título.
+    const alert1 = JSON.parse(hitB.init?.body as string).aps.alert;
+    expect(alert1).toEqual({
+      title: "Jurpi ❤️",
+      "loc-key": "notifications.groups.push.expenseAdded",
+      "loc-args": ["María P.", "Foppy Pet Store", "S/ 30.00"],
+    });
+
+    // (1b) la edición del MISMO gasto en staging → «editó».
+    installApnsInterceptor();
+    const h1b = `${new Date(Date.UTC(2026, 6, 15, 13, 10, 0)).toISOString()}-0001-000000000000000a`;
+    await pushCollect(jwtA, [
+      { entity_type: "split_expenses", group_id: gid, sync_id: sid1, op: "upsert", fields: { note: "md1b" }, field_hlcs: { note: h1b }, hlc: h1b, client_mutation_id: crypto.randomUUID() },
+    ], dev1, {
+      actors: { [gid]: "María P." },
+      groups: { [gid]: "Jurpi ❤️" },
+      rows: { [sid1]: { concept: "Foppy Pet Store", amount: "S/ 30.00" } },
+    });
+    expect(appleHits.length).toBe(2);
+    const hitB1b = appleHits.find((x) => x.url.includes(tokB))!;
+    expect(JSON.parse(hitB1b.init?.body as string).aps.alert["loc-key"]).toBe("notifications.groups.push.expenseEdited");
 
     // (2) SIN header → fallback G8-1: excluye TODOS los devices de A → solo B (ni dev1 ni dev2).
     installApnsInterceptor();

@@ -72,7 +72,8 @@ final class AccountDeletionService {
     enum Step: String, Equatable {
         case groups         // groups_forget_user falló
         case delete         // POST /account/delete falló
-        case localClose     // la quiescencia del cierre solo-grupos no llegó
+        case personalWipe   // D: el borrado de la zona de iCloud no llegó; el servidor no se tocó
+        case localClose     // la quiescencia del cierre local no llegó
     }
 
     enum Phase: Equatable {
@@ -87,6 +88,12 @@ final class AccountDeletionService {
 
     private(set) var phase: Phase = .idle
 
+    /// Encargo S27i (review adversarial): el servidor ya borró la cuenta en ESTE intento y lo que falló fue el cierre local.
+    /// El reintento salta los pasos de servidor: repetirlos con la cuenta ya borrada dura lo que el JWT —el borrado se lleva
+    /// `auth.users` y con él el refresh— y, caducado, deja el teléfono con todo lo local y sin forma de cerrarlo. Vive en
+    /// memoria; en la celda D lo acompaña una marca DURABLE (`pendingPrivateClose`), que sobrevive a cerrar la app.
+    private var serverSideDeleted = false
+
     // MARK: - Dependencias inyectables
 
     struct Dependencies {
@@ -94,20 +101,36 @@ final class AccountDeletionService {
         var groupsBackendEnabled: () -> Bool
         var storageModeIsCloud: () -> Bool
         /// Paso 9: ¿hay sesión PRIVADA (el eje 1, `PrivateSessionMark`)? Decide el cierre local de la cuenta de grupos:
-        /// con sesión privada (D) lo personal sobrevive; sin ella (F) no hay nada privado que conservar y el
-        /// dispositivo vuelve a recién instalado, como tras borrar una cuenta de la nube.
+        /// con sesión privada (D) se borra además lo personal de este dispositivo y de su iCloud (encargo S27i); sin ella
+        /// (F) no hay nada privado y el dispositivo vuelve a recién instalado, como tras borrar una cuenta de la nube.
         var hasPrivateSession: @MainActor () -> Bool
         var forgetGroupsUser: @MainActor () async throws -> Void
         var teardown: @MainActor () -> Void
         var deletePersonalAccount: @MainActor () async -> DeleteOutcome
         var revokeSIWA: @MainActor () async -> Void
         var revokeGoogle: @MainActor () async -> Void
-        var closeLocalCloud: @MainActor () async -> Void
-        var closeLocalGroupsOnly: @MainActor (ModelContext) async -> Bool
+        /// `true` = cerró en caliente, sin relanzar (card ypit).
+        var closeLocalCloud: @MainActor () async -> Bool
+        /// Encargo S27i · D: borra la zona de iCloud ANTES de tocar el servidor. Es el único paso del borrado de D que
+        /// depende de iCloud y puede fallar por algo que la persona no controla; hecho primero, un fallo deja la cuenta viva
+        /// y el reintento entero sigue siendo posible. Las filas de este dispositivo van en el cierre, sin red.
+        var wipePrivateICloud: @MainActor () async -> Bool
+        var closeLocalPrivate: @MainActor (ModelContext) async -> Bool
         /// D7 (§3.3.4.2): higiene post-delete BEST-EFFORT. `clearCloudBeacon` no lanza (KV removeObject);
         /// `deleteCloudKitMarker` sí (fetch/save) y el flujo lo TRAGA — jamás condición del cierre.
         var clearCloudBeacon: @MainActor () -> Void
         var deleteCloudKitMarker: @MainActor (ModelContext) throws -> Void
+        /// Ticket `account-deletion-private-close-has-no-durable-intent`: la marca durable «el servidor ya borró la cuenta y
+        /// falta el cierre local de la D» (`StorageModePersistence.accountDeletedAwaitingLocalCloseKey`).
+        var pendingPrivateClose: @MainActor () -> Bool
+        /// Marca con el `sub` de la sesión que se está borrando.
+        var markPendingPrivateClose: @MainActor () -> Void
+        var clearPendingPrivateClose: @MainActor () -> Void
+        /// La marca es de otra cuenta que la sesión viva (la persona entró con otra cuenta tras perder la borrada).
+        var pendingCloseIsForAnotherLiveSession: @MainActor () -> Bool
+        /// Otro cierre del coordinador está en marcha (cerrar sesión, el cambio de Apple ID, «Empezar de cero»). El cierre
+        /// retomado no puede ponerse encima: compartiría el coordinador y su `.idle` retiraría la pantalla de reabrir.
+        var anotherCloseInFlight: @MainActor () -> Bool
 
         nonisolated static let live = Dependencies(
             canDelete: { CloudAuthService.shared.hasSession },
@@ -117,6 +140,7 @@ final class AccountDeletionService {
             storageModeIsCloud: { CloudSyncFlags.storageMode == .cloud },
             hasPrivateSession: { PrivateSessionMark.hasPrivateSession() },
             forgetGroupsUser: {
+                if UITestHooks.fakeAccountDeletion { return }  // XCUITest: el servidor «contesta» sin red
                 let client = GroupsMembershipClient(attestProvider: AttestSessionProvider.live)
                 _ = try await GroupBackendMembershipService(client: client).forgetUser()
             },
@@ -125,16 +149,18 @@ final class AccountDeletionService {
                 GroupsSyncClient.shared.teardownForSignOut()
             },
             deletePersonalAccount: {
+                if UITestHooks.fakeAccountDeletion { return .success }  // XCUITest: el servidor «contesta» sin red
                 guard let jwt = await CloudAuthService.shared.accessToken(), !jwt.isEmpty else {
                     return .sessionExpired(detail: "no jwt")
                 }
                 let client = CloudAccountClient(attestProvider: AttestSessionProvider.live)
                 return await client.deleteAccount(jwt: jwt)
             },
-            revokeSIWA: { await SIWATokenRevocation.revokeIfNeeded() },
-            revokeGoogle: { await GoogleTokenRevocation.revokeIfNeeded() },
+            revokeSIWA: { if !UITestHooks.fakeAccountDeletion { await SIWATokenRevocation.revokeIfNeeded() } },
+            revokeGoogle: { if !UITestHooks.fakeAccountDeletion { await GoogleTokenRevocation.revokeIfNeeded() } },
             closeLocalCloud: { await CloudSessionSignOut.shared.closeLocalAfterAccountDeletionCloud() },
-            closeLocalGroupsOnly: { await CloudSessionSignOut.shared.closeLocalAfterAccountDeletionGroupsOnly(context: $0) },
+            wipePrivateICloud: { await CloudSessionSignOut.shared.wipeICloudBeforeAccountDeletion() },
+            closeLocalPrivate: { await CloudSessionSignOut.shared.closeLocalAfterAccountDeletionPrivate(context: $0) },
             clearCloudBeacon: {
                 CloudBeacon().clearCloudAccountLinked()
                 CloudSyncBreadcrumb.accountDeletionBeaconCleared()
@@ -152,6 +178,19 @@ final class AccountDeletionService {
                 for marker in markers { context.delete(marker) }
                 try context.save()
                 CloudSyncBreadcrumb.accountDeletionMarkerDeleted(count: markers.count)
+            },
+            pendingPrivateClose: { StorageModePersistence.isAccountDeletedAwaitingLocalClose() },
+            markPendingPrivateClose: {
+                StorageModePersistence.markAccountDeletedAwaitingLocalClose(owner: CloudAuthService.shared.currentUserID)
+            },
+            clearPendingPrivateClose: { StorageModePersistence.clearAccountDeletedAwaitingLocalClose() },
+            pendingCloseIsForAnotherLiveSession: {
+                guard let owner = StorageModePersistence.accountDeletedAwaitingLocalCloseOwner(),
+                      let current = CloudAuthService.shared.currentUserID else { return false }
+                return owner != current
+            },
+            anotherCloseInFlight: {
+                CloudSessionSignOut.shared.phase != .idle || CloudSessionSignOut.shared.freshStartDrainInFlight
             }
         )
     }
@@ -169,6 +208,30 @@ final class AccountDeletionService {
 
     // MARK: - Flujo
 
+    /// **Retoma el cierre local de una «Eliminar cuenta» de la celda D que la app no llegó a terminar** (ticket
+    /// `account-deletion-private-close-has-no-durable-intent`). Lo llaman el arranque y cada vuelta a primer plano. Sin la
+    /// marca no hace nada; con ella va directo al cierre local, sin servidor ni diálogo: la persona ya confirmó y la cuenta ya
+    /// no existe. No reentra si hay un borrado en curso o terminado (`deleteAccount` lo guarda).
+    ///
+    /// Tres frenos (review adversarial): (1) con otro cierre del coordinador en marcha no entra —el siguiente arranque o
+    /// vuelta a primer plano lo retoma—; (2) con la sesión de OTRA cuenta viva no entra: se llevaría esa sesión y sus cambios
+    /// de grupos sin subir; (3) entre dos intentos automáticos pasan al menos `resumeRetryInterval`: cada intento tapa la app
+    /// con la capa de borrado hasta que la quiescencia vence, y la vuelta a primer plano no puede repetirlo cada vez. El
+    /// primer intento del proceso (el arranque) no espera. «Reintentar» en Ajustes va por `deleteAccount` y no pasa por aquí.
+    func resumePendingPrivateClose(context: ModelContext, now: Date = .now) async {
+        guard deps.pendingPrivateClose(),
+              !deps.anotherCloseInFlight(),
+              !deps.pendingCloseIsForAnotherLiveSession() else { return }
+        if let last = lastAutomaticResume, now >= last, now.timeIntervalSince(last) < Self.resumeRetryInterval { return }
+        lastAutomaticResume = now
+        CloudSyncBreadcrumb.signOutStarted(path: "account-delete-private-resume")
+        await deleteAccount(context: context)
+    }
+
+    /// Lo que espera un intento automático tras otro (ver `resumePendingPrivateClose`).
+    static let resumeRetryInterval: TimeInterval = 5 * 60
+    private var lastAutomaticResume: Date?
+
     /// `context`: el cierre local solo-grupos purga el outbox/cursor de grupos (viven en el store sync-meta,
     /// alcanzable por el mainContext compartido). Reentrante desde `.failed` (retry); no-op si ya en curso o
     /// terminal.
@@ -177,11 +240,38 @@ final class AccountDeletionService {
         case .working, .awaitingRelaunch: return
         case .idle, .failed: break
         }
-        guard deps.canDelete() else { return }  // defensivo: sin sesión backend no hay nada que borrar
+        // Defensivo: sin sesión backend no hay nada que borrar. Salvo que el servidor ya se borrara —en este proceso o, en la
+        // celda D, en uno anterior que se cerró a medias (la marca durable)—: el SDK puede haber soltado la sesión al fallar
+        // el refresh, y lo que queda es solo el cierre local.
+        // La marca de OTRA cuenta no cuenta: borrar la cuenta viva va entero, servidor incluido.
+        let pendingPrivateClose = deps.pendingPrivateClose() && !deps.pendingCloseIsForAnotherLiveSession()
+        let serverAlreadyDeleted = serverSideDeleted || pendingPrivateClose
+        guard serverAlreadyDeleted || deps.canDelete() else { return }
 
         // El cierre local llega tras varias llamadas de red: la ventana que lo pidió se anota ya (varias ventanas).
         SceneRegistry.shared.noteSignOutRequested()
         phase = .working
+
+        // La celda del cierre se decide con la cuenta viva. Con la marca durable es la D aunque, tras relanzar, el eje leído
+        // en vivo dijera otra cosa: mandar a la D por el cierre de la nube dejaría sin borrar lo personal.
+        let privateCell = pendingPrivateClose || (!deps.storageModeIsCloud() && deps.hasPrivateSession())
+
+        if serverAlreadyDeleted {
+            await closeLocally(context: context, privateCell: privateCell)
+            return
+        }
+
+        // 0) Encargo S27i · con sesión privada (D) se borra también lo personal, y su zona de iCloud va PRIMERO: puede fallar
+        // (red, iCloud ocupado), y con el servidor ya borrado el reintento dura lo que el JWT —el borrado se lleva
+        // `auth.users` y con él el refresh—. Aquí un fallo no ha tocado la cuenta: «Reintentar» repite el gesto entero.
+        // Si lo que falla después es el servidor, el espejo vuelve a subir lo local: nada se perdió.
+        if privateCell {
+            guard await deps.wipePrivateICloud() else {
+                MetricsService.accountDeletionFailed(step: Step.personalWipe.rawValue)
+                phase = .failed(step: .personalWipe)
+                return
+            }
+        }
 
         // 1) Anonimizar/transferir grupos server-side — con el binario CAPAZ, aunque el canal esté
         // apagado en remoto (ver la DECISIÓN del header).
@@ -201,7 +291,10 @@ final class AccountDeletionService {
         // 3) HARD DELETE del corpus personal server-side.
         switch await deps.deletePersonalAccount() {
         case .success:
-            break
+            serverSideDeleted = true
+            // Durable ANTES de cualquier otro paso: desde aquí la cuenta ya no existe y un cierre de la app tiene que poder
+            // retomarse al relanzar (el reintento en memoria muere con el proceso).
+            if privateCell { deps.markPendingPrivateClose() }
         case .sessionExpired, .transient:
             MetricsService.accountDeletionFailed(step: Step.delete.rawValue)
             phase = .failed(step: .delete)
@@ -239,20 +332,39 @@ final class AccountDeletionService {
         // revoke tiene skip natural: a lo sumo uno tiene par cuyo sub matchea la sesión que se borra.
         await deps.revokeGoogle()
 
+        await closeLocally(context: context, privateCell: privateCell)
+    }
+
+    /// 4c) El cierre local por celda. Lo llama también el reintento cuando el servidor ya se borró (`serverSideDeleted` o la
+    /// marca durable de la D).
+    private func closeLocally(context: ModelContext, privateCell: Bool) async {
         // 4c) Cierre LOCAL por celda, reusando la red terminal de CloudSessionSignOut. El solo-grupos sin sesión
         // privada (F) cierra como la nube: su dispositivo no guarda nada privado que conservar, y el cierre de
         // solo-grupos lo dejaría en una shell de grupos sin sesión ni cuenta (paso 9 del rediseño).
-        if deps.storageModeIsCloud() || !deps.hasPrivateSession() {
-            await deps.closeLocalCloud()
-            MetricsService.accountDeletionCompleted(step: deps.storageModeIsCloud() ? "cloud" : "groupsOnlyNoPrivate")
-            phase = .awaitingRelaunch
+        if !privateCell {
+            // El paso se lee ANTES del cierre: el cambio en caliente consuma el borrado y deja el modo en `.icloud`.
+            let step = deps.storageModeIsCloud() ? "cloud" : "groupsOnlyNoPrivate"
+            let closedInPlace = await deps.closeLocalCloud()
+            MetricsService.accountDeletionCompleted(step: step)
+            // Card ypit · en caliente la app ya está en el Welcome y no hay nada que reabrir: la fase vuelve a reposo. Con
+            // `.awaitingRelaunch` el `onAppear` de Perfil la cerraría al abrirla y un borrado nuevo no arrancaría.
+            serverSideDeleted = false
+            phase = closedInPlace ? .idle : .awaitingRelaunch
         } else {
-            if await deps.closeLocalGroupsOnly(context) {
+            // Con sesión privada (D) la zona de iCloud ya se borró en el paso 0 (encargo S27i); aquí se borran las filas, se
+            // cierran grupos y sesión y se arma el relanzamiento al Welcome. Lo único que puede pararlo es la quiescencia.
+            // El paso conserva su nombre en la serie de métricas.
+            if await deps.closeLocalPrivate(context) {
                 MetricsService.accountDeletionCompleted(step: "groupsOnly")
+                serverSideDeleted = false
+                // El borrado ya está armado: lo que falte lo hace el arranque. Un kill entre el arm y esta línea lo cubre el
+                // boot-wipe, que retira también la marca (`performSignOutWipeIfArmed`).
+                deps.clearPendingPrivateClose()
                 phase = .awaitingRelaunch
             } else {
-                // El borrado server-side YA ocurrió; la quiescencia local no llegó. Reintentable
-                // (forgetUser/delete/teardowns idempotentes); el cierre local se completa en el retry.
+                // El borrado server-side YA ocurrió; la quiescencia local no llegó. El reintento va directo a este cierre
+                // (`serverSideDeleted`), sin volver a llamar al servidor; y la marca durable sigue puesta, así que también lo
+                // retoman el arranque y la vuelta a primer plano.
                 MetricsService.accountDeletionFailed(step: Step.localClose.rawValue)
                 phase = .failed(step: .localClose)
             }

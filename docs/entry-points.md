@@ -40,6 +40,18 @@ tiene cuatro reglas, y ninguna entrada se las salta:
 La cola ordena por prioridad y, dentro de la misma, por llegada (`RouterIntent.priority`). Cada consumidor presenta en
 su anchor, y el de `ContentView` tapa a los demás.
 
+**Entre los dos consumidores del shell manda la cola, no quién mira antes** (desde el 2026-10-30, ticket
+`notices-come-out-one-after-another-by-priority`). Hasta ese día cada consumidor drenaba lo suyo: con Novedades (`low`,
+`contentView`) y «Tu prueba terminó» (`high`, `mainTab`) en cola, salía el del consumidor que mirase primero. Ahora, en una
+misma ventana, una hoja de `MainTabView` cede ante lo de `ContentView` que vaya delante, y un aviso **diferible** de
+`ContentView` (la columna «Espera» de la tabla de abajo) cede ante una hoja de `MainTabView` que vaya delante. Los
+críticos y las respuestas a un toque no ceden nunca, y solo se cede ante un consumidor listo en esa ventana: nadie espera
+a quien no va a drenar. El Panel y Planificación quedan fuera: lo suyo es lo que la persona acaba de pedir y ya espera a
+que el shell esté libre. La regla vive en `NoticeOrderLogic`; quién va delante, en `AppRouter.shellNoticeAhead(of:in:)`.
+
+**Un aviso repetido sustituye al que esperaba, no se suma.** Lo decide el `id` del intent: el aviso de la Bandeja lleva
+clave fija desde el mismo día (antes, por cifras, y «2 nuevos» y «3 nuevos» salían seguidos).
+
 | Prioridad | Qué | Por qué ahí |
 |---|---|---|
 | `critical` | Avisos de sistema que no pueden esperar (`remoteWipe`, `iCloudMismatch`, `appleIDChangedClosePrivate`) y la respuesta a un enlace de invitación que la persona acaba de tocar (`showInviteError`, `showGroupArchivedNotice`) | O protegen datos, o contestan a un toque que está esperando respuesta |
@@ -99,18 +111,47 @@ mirar cada 300 ms mientras haya algo retenido solo por eso.
 | **Hoja de compartir** (`YalaShare`): aparece con 1 a 100 fotos, guarda las 10 primeras en `PendingImages/` como una tanda (`batch_<tanda>_<nn>_<compartidas>.jpg`, `SharedImageBatch`) y abre `yala://shared-image` | `onOpenURL` (`WindowURLEntry`) → `handleIncomingURL` → `enqueueSharedImage`. El intent lleva UNA foto; la hoja de lectura la expande a su tanda y lee todas | Puerta Pro (se lleva la tanda entera) → `.presentUpgradeSheet(.image)` · o `.navigate(.panel)` + `.presentSharedImage(url)` (panel · high) · o `.requestAIConsent(.image)` si falta el consentimiento | Espera (`EntryReadinessLogic`) y se trata en el paso 20b | Sí: los ficheros son durables, el intent aplazado guarda su ruta |
 | Foto compartida que la app no llegó a abrir (la extensión no pudo abrir Yala, o la app murió) | Paso 21 del arranque y cada `.active` → `checkForPendingSharedImage` (`SharedImageRecoveryGate`) | Igual que la fila anterior | Solo corre tras el arranque | Sí, `PendingImages/` (se purga a las 24 h) |
 | Recibo soltado en el iPad | `onDrop` → `ReceiptDropHandler` → `presentDroppedReceipt` → `enqueueSharedImage` | Igual que la hoja de compartir; el fallo abre la hoja en su error | Solo en caliente | El fichero, sí |
-| Widget o Siri: `yala://voice-entry`, `image-entry`, `new-transaction` | `onOpenURL` → `executeAction` | `.navigate(.panel)` + `.presentVoiceEntry` / `.presentImageEntry` / `.presentNewTransaction` (panel · normal), o la hoja de Pro / el consentimiento, también en el Panel. Lleva al Panel desde el 2026-10-12, como la foto compartida; con una hoja abierta en otra pestaña, la pestaña cambia por debajo y la hoja sale al cerrarse | Espera (`EntryReadinessLogic`) | Sí, si la app sale antes de presentarla: se aparca en `DeferredIntentBuffer` y vuelve al volver (≤ 15 min fuera). La hoja de Pro, no |
-| Widget: `yala://panel`, `statistics[/records\|/categories]`, `planning`, `budgets`, `records`, `groups[/<id>]` | `onOpenURL` → `setOrDeferDeepLink` | `.navigate(destino)` (mainTab · normal) | Se aplaza (`DeferredIntentBuffer`) | Sí, serializable |
+| Widget o Siri: `yala://voice-entry`, `image-entry`, `new-transaction` | `onOpenURL` → `executeAction` | En una sesión solo grupos, `.presentFullModeActivation` (no hay Panel; desde el lote 15 de la auditoría UX 2.2, antes no pasaba nada). Si no, `.navigate(.panel)` + `.presentVoiceEntry` / `.presentImageEntry` / `.presentNewTransaction` (panel · normal), o la hoja de Pro / el consentimiento, también en el Panel. Lleva al Panel desde el 2026-10-12, como la foto compartida; con una hoja abierta en otra pestaña, la pestaña cambia por debajo y la hoja sale al cerrarse | Espera (`EntryReadinessLogic`) | Sí, si la app sale antes de presentarla: se aparca en `DeferredIntentBuffer` y vuelve al volver (≤ 15 min fuera). La hoja de Pro, no |
+| Widget: `yala://panel`, `statistics[/records\|/categories]`, `planning[/scheduled-payments]`, `budgets`, `records`, `groups[/<id>]` | `onOpenURL` → `setOrDeferDeepLink` | `.navigate(destino)` (mainTab · normal) | Se aplaza (`DeferredIntentBuffer`) | Sí, serializable |
 | Widget solo-grupos: `yala://activate-full` | `onOpenURL` | `.presentFullModeActivation` (contentView · normal) o `.navigate(.panel)` | Espera (`EntryReadinessLogic`) | No |
 | Centro de Control: voz e imagen (`ControlCenterIntents`, escriben `pendingControlAction` en el App Group) | `.active` → `checkForPendingControlAction` | Como `voice-entry` / `image-entry`: lleva al Panel | No se consume; la lee el paso 21b | Sí, la clave del App Group; ya leída, se aparca como `voice-entry` |
 | Enlace de invitación `https://yala-app.pe/invite` | `onOpenURL` → `handleInviteLink` (y `YalaAppDelegate.application(_:continue:)`) | `.showInviteError` (critical), pantallas de unirse (contentView · normal), `.showGroupSyncError` (high) | El camino backend persiste en `PendingJoinStore` y lo retoma el reconciliador | Sí, `PendingJoinStore` |
 | Vuelta de Google Sign-In | `onOpenURL` → `GIDSignIn.handle` | Nada | — | — |
-| Toque en una notificación local (sin categorías ni acciones) | `NotificationService.userNotificationCenter(didReceive:)` → `routeTap` con el `deepLink` del `userInfo`. El delegado lo asigna `YalaAppDelegate.didFinishLaunching` (`installAsCenterDelegate`), antes de que termine el lanzamiento: así llega también el toque que abre la app cerrada | `.navigate(destino)`; `inbox` acaba en la hoja de la Bandeja | Se aplaza | Sí, serializable |
+| Toque en una notificación local (sin categorías ni acciones) | `NotificationService.userNotificationCenter(didReceive:)` → `routeTap` con el `deepLink` del `userInfo`. El delegado lo asigna `YalaAppDelegate.didFinishLaunching` (`installAsCenterDelegate`), antes de que termine el lanzamiento: así llega también el toque que abre la app cerrada | `.navigate(destino)` (tabla «Tocar una notificación», abajo); `inbox` acaba en la hoja de la Bandeja y el aviso de borradores nuevos no sale detrás | Se aplaza | Sí, serializable |
 | Apple Pay y Siri en lenguaje natural (no abren la app) | Cola del App Group → `InboundCaptureDrain` en el arranque y en cada `.active` | Borradores en la Bandeja → `.showInboxAlert` (contentView · high) | Se encola sin aplazar | Sí, los borradores |
 | Atajos de teclado | `.commands` → `RootCommandPerformer` | ⌘N → `.navigate(.panel)` + `.presentNewTransaction`; el resto, flags de la ventana | Solo en caliente | ⌘N, sí (se aparca como `new-transaction`); el resto, no |
 | Ventana nueva o restaurada (iPad) | `SceneRoot.land()` | Flags de la ventana (`pendingGroupID`, `pendingRecordID`) | — | — |
 | Push remoto | `YalaAppDelegate` | Nada: sync silencioso | — | — |
 | Spotlight, Handoff, accesos rápidos del icono | **No existen** en el código ni en el `Info.plist` | — | — | — |
+
+## Tocar una notificación: a dónde lleva cada una
+
+Medido en el código el 2026-10-30 (ticket `notification-tap-opens-inbox-then-inbox-notice-pops-after`). El destino lo
+decide el `deepLink` del `userInfo` (`NotificationService.parseDestination`); lo que lleva id lo apunta `routeTap` antes de
+navegar y lo abre la vista al llegar. En los tres estados (cerrada, en segundo plano, delante) entra por el mismo
+`routeTap`: cerrada, el `.navigate` se aplaza y lo drena el paso 20 del arranque.
+
+| Notificación | `deepLink` | Abre |
+|---|---|---|
+| Recordatorio diario (fin del día, almuerzo, personalizado) | `recordsStandalone` | Registros |
+| Resumen diario de pagos planificados | `scheduledPayments` | Planificación › Pagos |
+| Pago vence hoy · en N días · vencido | `scheduledPayments/<uuid>` | El detalle de ese pago |
+| Pago de la tarjeta de crédito | `accounts/<shortcutID>` | Panel con la ficha de esa cuenta |
+| Alerta de presupuesto | `budgets/<uuid>` | Ese presupuesto, en su período |
+| Informe diario, semanal o mensual | `statistics/<pestaña>/<período>` | Estadísticas en esa pestaña y período |
+| Actividad, «Ya estás en X», presupuesto y liquidación de un grupo; push de un grupo | `groups/<uuid>` | El detalle de ese grupo |
+| Push de varios grupos | `groups` | La lista de Grupos |
+| Pago de Apple Pay · dictado de Siri | `inbox` | Panel con la Bandeja abierta, **sin el aviso de borradores nuevos detrás** |
+| Apple Pay o Siri con Yala solo en grupos | `activate-full` | La vuelta a Yala completo o su activación |
+| Fallo de Apple Pay · «Probar» del editor de recordatorios | — | La app donde estaba |
+
+**La Bandeja y su aviso no salen los dos.** El mismo primer plano que trae el toque convierte lo encolado por Apple Pay o
+Siri en borradores y pide `.showInboxAlert`. Cuatro piezas, una por orden de llegada: el aviso que esperaba en cola lo tira
+la orden de abrir (`navigateInbox_supersedes_showInboxAlert`); el que llega con la orden ya en cola se tira al entrar
+(`queuedInboxOpening_supersedes_incomingShowInboxAlert`); el que ya estaba en pantalla lo cierra `ContentView` antes de
+drenar (`routerRevisionChanged`), y el que esperaba detrás de la hoja lo retira la hoja al aparecer
+(`RouterEntryGate.inboxSheetDidAppear`). Al aparecer, la Bandeja da además por avisados esos borradores: el aviso no vuelve
+en el primer plano siguiente.
 
 ## Avisos que la app saca sola al entrar
 
@@ -129,5 +170,8 @@ mirar cada 300 ms mientras haya algo retenido solo por eso.
 
 Con ticket en `tickets/backlog/`:
 
-- `notification-deeplink-accounts-not-parsed`: `ScheduledPaymentNotificationService` manda `deepLink: "accounts"`, que
-  `NotificationService.parseDestination` no reconoce; el toque no lleva a ningún sitio.
+- `practice-cleanup-prompt-outside-the-presentation-locks`: «¿Era de prueba?» se presenta fuera de los candados (en
+  Planificación, sin ninguno).
+- `positive-toast-and-top-banners-are-not-coordinated`: el toast verde caduca debajo de una hoja.
+
+(`notification-deeplink-accounts-not-parsed` figuraba aquí y está cerrado: `accounts/<uuid>` abre la ficha de la cuenta.)

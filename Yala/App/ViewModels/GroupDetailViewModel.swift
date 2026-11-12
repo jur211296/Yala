@@ -42,6 +42,14 @@ final class GroupDetailViewModel {
     /// skeleton en vez de contenido a medio poblar (espejo de `GroupsViewModel.hasLoadedOnce`).
     private(set) var isReady: Bool = false
 
+    /// Card th4n: el grupo se abrió desde su aviso y el esqueleto se queda hasta que baje el cambio que avisa (o venza
+    /// `notificationEntryHoldCeiling`). Mientras, un `fetchData()` carga pero no marca `isReady`.
+    private var holdsForNotificationSync = false
+
+    /// Lo que como mucho espera el grupo abierto desde su aviso antes de enseñar lo que ya hay. Lo que baje después entra
+    /// igual en cuanto llega (la recarga del final de `refreshForNotificationEntry`).
+    static let notificationEntryHoldCeiling: Duration = .seconds(4)
+
     /// Sube una vez por cada recálculo CON FRENO que llega a publicar (sync remoto, vuelta a primer
     /// plano); no sube con el `loadData()` directo de los gestos locales. Los Ajustes del grupo cuelgan
     /// de aquí y no de `dataVersion`: una ráfaga de N cambios remotos les cuesta un recálculo, no N, y
@@ -54,6 +62,17 @@ final class GroupDetailViewModel {
     private(set) var debtsWereConverted: Bool = false
 
     // MARK: - Computed
+
+    /// El nombre del grupo en la última carga. El detalle lo pinta como título mientras se cierra con el grupo ya borrado
+    /// (salir de él, o un borrado por sync): leer `group.name` ahí abortaría en iOS 27.x.
+    private(set) var groupName: String = ""
+
+    /// El grupo se borró y el detalle lo soltó (`releaseDeletedGroup`): nada vuelve a leerlo.
+    private(set) var isGroupReleased: Bool = false
+
+    /// El grupo ya no se puede leer. `isDeleted` se lee sin riesgo en un modelo borrado. La otra mitad
+    /// (`modelContext == nil`) la mira la VISTA: también es verdad en un grupo que nunca se insertó, como los de los tests.
+    private var isGroupGone: Bool { isGroupReleased || group.isDeleted }
 
     /// memberID.uuidString → displayName (rebuilt in loadData)
     private(set) var memberNameLookup: [String: String] = [:]
@@ -101,13 +120,34 @@ final class GroupDetailViewModel {
     var canCurrentUserParticipate: Bool {
         // G6-3 (C4): grupo migrado y CONGELADO → sin escrituras (oculta FAB/editar/borrar/liquidar/confirmar
         // de un golpe — la UX primaria del freeze; el guard service-level es la RED).
+        if isGroupGone { return false }
         if group.isMigratedFrozen { return false }
         return currentUserMember?.isActive == true
     }
 
+    /// Card 0vbn: en un grupo del backend, como `is_group_admin` (cualquier fila mía activa y admin), no la fila canónica.
+    /// La misma decisión que `GroupService.requireCurrentUserAdmin` aplica al guardar.
     var isCurrentUserAdmin: Bool {
-        guard let me = currentUserMember, me.isActive else { return false }
-        return me.isAdmin
+        guard !isGroupGone else { return false }
+        return GroupAdminPermissionLogic.isAdmin(group: group, members: members)
+    }
+
+    /// Card yd2w: gestiona los saldos iniciales el dueño o cualquier admin activo. La misma decisión que
+    /// `GroupExpenseService` aplica al guardar (`OpeningBalancePermissionLogic`).
+    var isOpeningBalanceManager: Bool {
+        guard !isGroupGone else { return false }
+        // Card hfhs: en un grupo del backend, como `is_group_admin` (cualquier fila mía admin), no la fila canónica.
+        return OpeningBalancePermissionLogic.canManage(group: group, members: members)
+    }
+
+    /// Card jqgy: cómo se pinta la sección «Saldos iniciales» de Miembros. En un grupo congelado se ve sin dejar cambiar.
+    var openingBalanceSectionMode: OpeningBalanceSectionLogic.Mode {
+        OpeningBalanceSectionLogic.mode(isManager: isOpeningBalanceManager, isFrozen: group.isMigratedFrozen)
+    }
+
+    /// Lo que se puede tocar ahora mismo: además de gestionarlos, poder escribir en el grupo (no congelado, activo).
+    var canManageOpeningBalances: Bool {
+        canCurrentUserParticipate && isOpeningBalanceManager
     }
 
     /// members awaiting admin approval — visible solo en sección "Solicitudes pendientes" para admins.
@@ -123,7 +163,11 @@ final class GroupDetailViewModel {
 
     // MARK: - UI State
 
-    var activeSheet: GroupSheet?
+    var activeSheet: GroupSheet? {
+        // Una hoja nueva retira lo que pidió la anterior al cerrarse: si ese cierre no llegó a pasar, la petición no
+        // puede quedarse pegada y dispararse al cerrar otra hoja (review adversarial del 21-oct, L19-4/L19-11).
+        didSet { if activeSheet != nil { pendingAfterSheetDismiss = nil } }
+    }
 
     /// Gasto pendiente de editar tras cerrar el detalle (reemplazo de sheet: el
     /// detalle baja en medium, el editor sube en large). Espejo de RecordsViewModel.
@@ -143,6 +187,21 @@ final class GroupDetailViewModel {
         loadData()
     }
 
+    /// Suelta el grupo borrado (salir de él, «Transferir y salir», o un borrado que llega por sync): cancela la recarga
+    /// con freno pendiente y vacía lo cargado, cuyos miembros, gastos y repartos se borraron con él. Así lo que se lea del
+    /// ViewModel mientras el detalle y sus Ajustes se cierran no toca nada borrado (ticket
+    /// `group-detail-reads-the-group-after-leaving-it`). Molde de `releaseDeletedAccount`.
+    func releaseDeletedGroup() {
+        isGroupReleased = true
+        debouncer.cancel()
+        members = []
+        expenses = []
+        shares = []
+        settlements = []
+        txBridgeMap = [:]
+        mySharesByExpense = [:]
+    }
+
     /// Fuerza un fetch remoto y recarga (refresh acotado, no bump global de dataVersion).
     /// Usado por pull-to-refresh (`force: true`) y entrada al detalle (`force: false`) — así los
     /// gastos de otros miembros aún no sincronizados aparecen al abrir el grupo.
@@ -152,6 +211,50 @@ final class GroupDetailViewModel {
     func refreshFromCloud(force: Bool) async {
         _ = force
         await GroupsSyncClient.shared.syncNowFromUI()
+        loadData()
+    }
+
+    // MARK: - Abrir el grupo desde su aviso (card th4n)
+
+    /// Antes del primer `setContext`: el grupo que se abre desde su aviso no enseña lo de antes mientras baja el cambio.
+    /// Solo con una vuelta del canal en vuelo: sin ella, lo que avisa ya bajó (el push despertó a la app) o bajará con el
+    /// ciclo que pide `refreshForNotificationEntry`, y esperar a la red cada vez escondería un grupo que ya está al día.
+    /// Con el detalle ya en pantalla no hace nada: no se esconde lo que la persona está viendo.
+    func beginNotificationEntry() {
+        guard !isReady, GroupsSyncClient.shared.hasRunInFlight else { return }
+        holdsForNotificationSync = true
+    }
+
+    /// La tarea de la apertura desde el aviso: se cancela al salir del detalle (`cancelRecalculation`), para que una
+    /// recarga tardía no lea un grupo que el ciclo borró mientras tanto.
+    private var notificationEntryTask: Task<Void, Never>?
+
+    func startNotificationEntry() {
+        notificationEntryTask?.cancel()
+        notificationEntryTask = Task { [weak self] in await self?.refreshForNotificationEntry() }
+    }
+
+    /// Abrir (o volver a) un grupo desde su aviso. Recarga primero lo que ya está en el teléfono —si el aviso despertó a
+    /// la app, el cambio bajó con ella fuera y nadie recargó: con la app en segundo plano las recargas con freno se
+    /// descartan—, luego espera al ciclo del canal (el que ya está en vuelo, con el que se le encola, o uno nuevo) y
+    /// recarga otra vez. Las dos recargas son directas, sin el freno de 150 ms: no dependen de que la app esté activa
+    /// cuando el ciclo acaba ni de que su `dataVersion` llegue a esta pantalla. Antes, abrir el grupo con un ciclo en
+    /// vuelo recargaba lo viejo en el acto y el cambio solo entraba tirando para refrescar.
+    func refreshForNotificationEntry() async {
+        let release = Task { @MainActor [weak self] in
+            do { try await Task.sleep(for: Self.notificationEntryHoldCeiling) } catch { return }
+            self?.releaseNotificationHold()
+        }
+        loadData()
+        await GroupsSyncClient.shared.syncNowFromUI()
+        release.cancel()
+        guard !Task.isCancelled else { return }
+        releaseNotificationHold()
+    }
+
+    /// Suelta el esqueleto y recarga: al vencer el tope (lo que haya) y al acabar el ciclo (lo que bajó).
+    private func releaseNotificationHold() {
+        holdsForNotificationSync = false
         loadData()
     }
 
@@ -167,6 +270,7 @@ final class GroupDetailViewModel {
     /// Cancela cualquier recálculo pendiente (llamado desde `.onDisappear`).
     func cancelRecalculation() {
         debouncer.cancel()
+        notificationEntryTask?.cancel()
     }
 
     /// Estado de background — suprime el recálculo mientras la app no está activa.
@@ -204,10 +308,12 @@ final class GroupDetailViewModel {
     /// NO calcula balances/debts.
     private func fetchData() {
         guard let context = modelContext else { return }
+        // Una recarga que llega con el grupo ya borrado (la del freno, la de cerrar una hoja) lo leería.
+        guard !isGroupGone else { return }
         // Con contexto presente, tras el INTENTO marcamos listo (mostrar contenido/estado, no un
         // skeleton eterno si un fetch falla) — espeja el diseño temprano de `hasLoadedOnce` en
         // GroupsViewModel. Sin contexto (carrera de bootstrap) NO se marca → sigue el skeleton.
-        defer { isReady = true }
+        defer { if !holdsForNotificationSync { isReady = true } }
 
         do {
             // Fetch atómico: a locales primero, asignar solo si TODOS tuvieron éxito. Un fallo a
@@ -219,6 +325,7 @@ final class GroupDetailViewModel {
             let fetchedSettlements = try GroupExpenseService.shared.fetchSettlements(for: group)
 
             members = fetchedMembers
+            groupName = group.name
             memberNameLookup = Dictionary(
                 fetchedMembers.map { ($0.id.uuidString, $0.resolvedDisplayName) },
                 uniquingKeysWith: { first, _ in first }
@@ -239,6 +346,7 @@ final class GroupDetailViewModel {
     /// cacheados por `fetchData()` (sin fetch nuevo). Equality guards para no churnear `@Observable`.
     private func recalculate() {
         guard modelContext != nil else { return }
+        guard !isGroupGone else { return }
 
         let rawBalances = GroupBalanceService.calculateBalances(
             expenses: expenses,
@@ -338,6 +446,28 @@ final class GroupDetailViewModel {
         activeSheet = nil
     }
 
+    /// Qué hace el detalle al cerrarse la hoja de Ajustes o de Miembros (auditoría UX 2.2 · L19-4, L19-10 y L19-11):
+    /// «Saldar primero» abre «Saldar» con esa deuda y «Ver los saldos» lleva a la pestaña Saldos. Mismo molde que
+    /// `requestEditFromDetail`: cambiar `activeSheet` de una hoja a otra mientras la primera se va puede perder la
+    /// segunda, así que la hoja se cierra y el padre decide en su `onDismiss`.
+    enum AfterSheetDismiss: Equatable {
+        case settle(Debt)
+        case showBalances
+    }
+
+    private var pendingAfterSheetDismiss: AfterSheetDismiss?
+
+    func requestAfterSheetDismiss(_ next: AfterSheetDismiss) {
+        pendingAfterSheetDismiss = next
+        activeSheet = nil
+    }
+
+    /// One-shot, como `consumePendingEditFromDetail`.
+    func consumeAfterSheetDismiss() -> AfterSheetDismiss? {
+        defer { pendingAfterSheetDismiss = nil }
+        return pendingAfterSheetDismiss
+    }
+
     /// Consume (one-shot) el gasto pendiente de edición. Lo invoca el padre en el
     /// `onDismiss` del sheet para decidir entre presentar el editor o recargar.
     func consumePendingEditFromDetail() -> SplitExpense? {
@@ -348,6 +478,8 @@ final class GroupDetailViewModel {
     func deleteExpense(_ expense: SplitExpense) {
         do {
             try GroupExpenseService.shared.deleteExpense(expense, in: group)
+            // El borrado, al confirmarlo y solo si salió bien (mapa de `DS.Haptic`, card C3).
+            DS.Haptic.warning()
             loadData()
         } catch {
             #if DEBUG
@@ -372,6 +504,7 @@ final class GroupDetailViewModel {
     func removeOpeningBalance(_ expense: SplitExpense) {
         do {
             try GroupExpenseService.shared.removeOpeningBalance(expense, in: group)
+            DS.Haptic.warning()
             loadData()
         } catch {
             #if DEBUG
@@ -454,16 +587,42 @@ final class GroupDetailViewModel {
     /// muestra en un alert — antes estos fallos solo se logueaban en DEBUG y en Release el botón
     /// "no hacía nada".
     var actionErrorMessage: String?
+    /// Título del aviso; `nil` = «Error» de siempre. Solo lo pone el rechazo del servidor (card 6n1o).
+    var actionErrorTitle: String?
     var showActionError = false
 
-    private func surfaceActionError(_ message: String) {
+    /// `internal` para el test del título (card 6n1o): un error de después no puede heredar el del rechazo.
+    func surfaceActionError(_ message: String) {
+        actionErrorTitle = nil
         actionErrorMessage = message
+        showActionError = true
+        DS.Haptic.warning()
+    }
+
+    /// Card 6n1o: si el servidor rechazó un saldo inicial de ESTE grupo, lo cuenta con el aviso de errores. Solo con la
+    /// ventana libre: una hoja del ViewModel, otro aviso o cualquier presentación de UIKit en esta ventana
+    /// (`windowIsPresenting`, la sonda `ModalPresentationProbe`: cubre la hoja de compartir y, en el iPad, las de la columna
+    /// de la lista). Un `.alert` pedido con algo delante no sale y `showActionError` se queda en `true`, que bloquea los
+    /// avisos siguientes; por eso con algo delante el motivo NO se consume y espera al siguiente disparo
+    /// (`OpeningBalanceServerRejectionObserver`).
+    func presentOpeningBalanceServerRejectionIfAny(
+        notices: OpeningBalanceServerRejectionNotices? = nil,
+        windowIsPresenting: Bool,
+        now: Date = .now
+    ) {
+        let notices = notices ?? .shared
+        guard activeSheet == nil, !showActionError, !windowIsPresenting else { return }
+        guard !isGroupGone else { return }
+        guard let reason = notices.consume(groupID: group.cloudKitZoneID, now: now) else { return }
+        actionErrorTitle = OpeningBalanceServerRejectionNotices.title()
+        actionErrorMessage = OpeningBalanceServerRejectionNotices.message(for: reason)
         showActionError = true
         DS.Haptic.warning()
     }
 
     func createShareLink() async {
         guard !isCreatingShare else { return }
+        guard !isGroupGone else { return }
         guard group.isOwner, isCurrentUserAdmin else { return }
         if shareURL != nil { return }
         isCreatingShare = true
@@ -504,7 +663,7 @@ final class GroupDetailViewModel {
             #if DEBUG
             print("GroupDetailViewModel: Error creating share: \(error)")
             #endif
-            surfaceActionError(L10n.Groups.Errors.inviteFailed)
+            surfaceActionError(GroupActionErrorLogic.inviteMessage(for: error))
         }
         isCreatingShare = false
     }
@@ -527,18 +686,30 @@ enum GroupSheet: Identifiable {
     case editExpense(SplitExpense)
     case openingBalanceDetail(SplitExpense)
     case editOpeningBalance(SplitExpense)
+    /// UX 2.2 · L13-10: «Añadir saldo inicial» desde Saldos.
+    case newOpeningBalance
     case settlement(Debt)
 
-    var id: String {
+    /// La identidad de la hoja. La de un gasto va por su `persistentModelID`, no por `id`: SwiftUI la vuelve a leer
+    /// mientras la hoja se cierra, con el gasto ya borrado, y en iOS 27.x leer una propiedad de un modelo borrado aborta
+    /// (card 1w89). Que `id` lleve `.preserveValueOnDeletion` no está medido que haga seguro su getter.
+    struct ID: Hashable {
+        let kind: String
+        var expense: PersistentIdentifier?
+        var debt: String?
+    }
+
+    var id: ID {
         switch self {
-        case .settings: "settings"
-        case .members: "members"
-        case .addExpense: "addExpense"
-        case .expenseDetail(let e): "expenseDetail-\(e.id)"
-        case .editExpense(let e): "editExpense-\(e.id)"
-        case .openingBalanceDetail(let e): "openingBalanceDetail-\(e.id)"
-        case .editOpeningBalance(let e): "editOpeningBalance-\(e.id)"
-        case .settlement(let d): "settlement-\(d.id)"
+        case .settings: ID(kind: "settings")
+        case .members: ID(kind: "members")
+        case .addExpense: ID(kind: "addExpense")
+        case .expenseDetail(let e): ID(kind: "expenseDetail", expense: e.persistentModelID)
+        case .editExpense(let e): ID(kind: "editExpense", expense: e.persistentModelID)
+        case .openingBalanceDetail(let e): ID(kind: "openingBalanceDetail", expense: e.persistentModelID)
+        case .editOpeningBalance(let e): ID(kind: "editOpeningBalance", expense: e.persistentModelID)
+        case .newOpeningBalance: ID(kind: "newOpeningBalance")
+        case .settlement(let d): ID(kind: "settlement", debt: d.id)
         }
     }
 }

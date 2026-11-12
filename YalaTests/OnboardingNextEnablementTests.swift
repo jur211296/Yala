@@ -93,7 +93,7 @@ struct OnboardingNextEnablementTests {
     // MARK: - Pasos sin entrada obligatoria → siempre habilitados
 
     @Test func nonInputSteps_alwaysEnabled() {
-        for step in [OnboardingStep.purpose, .accounts, .categories, .confirmation] {
+        for step in [OnboardingStep.purpose, .categories, .confirmation] {
             #expect(disabled(step: step) == false, "El paso \(step.trackingName) no debe deshabilitar el botón")
         }
     }

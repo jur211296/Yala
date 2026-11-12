@@ -154,12 +154,12 @@ struct GroupDraftFinalizationLogicTests {
     }
 
     @Test
-    func missingPointer_noTxAtAll_deleteStaleAndThrow() {
+    func missingPointer_noTxAtAll_throwAndRetireOnClose() {
         // No existe NINGUNA TX → el expense se borró remotamente. NO materializar TX nueva
-        // (fantasma): limpiar el draft stale y lanzar error.
+        // (fantasma): lanzar error; el draft lo retira la hoja al cerrarse (card ouka).
         #expect(GroupDraftFinalizationLogic.resolveMissingPointerTarget(
             existsAnyTxForSplitID: false
-        ) == .deleteStaleAndThrow)
+        ) == .throwAndRetireOnClose)
     }
 
     // MARK: - shouldFillPreservedSubcategory

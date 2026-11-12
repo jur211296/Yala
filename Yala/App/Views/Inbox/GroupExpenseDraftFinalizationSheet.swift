@@ -34,6 +34,13 @@ struct GroupExpenseDraftFinalizationSheet: View {
     @State private var resolvedCurrency: String = ""
     @State private var saveErrorMessage: String? = nil
     @State private var showSaveError: Bool = false
+    /// Card ouka: el gasto ya no existe (borrado en remoto con la hoja abierta). El «OK» del aviso cierra la hoja, y el
+    /// borrador se retira al desaparecer: con la hoja montada, borrarlo la tumbaría.
+    @State private var retirementOnClose: GroupExpenseDraftRetirement? = nil
+    /// Grupos B (card 5): «Partir» tu parte en líneas.
+    @State private var split = GroupDraftSplitState()
+
+    @Query private var accounts: [Account]
 
     // MARK: - Body
 
@@ -45,16 +52,27 @@ struct GroupExpenseDraftFinalizationSheet: View {
                 amount: draft.amount,
                 currencyCode: resolvedCurrency,
                 date: draft.effectiveDate,
-                finalizeDisabled: selectedSubcategory == nil,
-                onFinalize: { handleFinalize() }
+                // Grupos B: el aviso de que tus líneas ya no cuadran dice por qué volvió a la Bandeja.
+                hint: draft.isSplitLinesMismatchNotice
+                    ? String(format: L10n.Groups.Bridge.draftReasonSplitLinesMismatch, draft.originGroupName ?? groupName)
+                    : nil,
+                finalizeDisabled: split.isSplitting ? !split.canApprove(accounts: accounts) : selectedSubcategory == nil,
+                onFinalize: { handleFinalize() },
+                accessory: split.isSplitting ? AnyView(GroupDraftSplitCard(state: split)) : nil
             ) {
-                SelectionChip(
-                    icon: "tag",
-                    text: selectedSubcategory?.name ?? L10n.Inbox.GroupExpenseDraft.assignSubcategory,
-                    isSelected: selectedSubcategory != nil,
-                    color: selectedSubcategory.map { Color(hex: $0.safeCategory.colorHex) }
-                ) {
-                    showSubcategorySelector = true
+                if !split.isSplitting {
+                    SelectionChip(
+                        icon: "tag",
+                        text: selectedSubcategory?.name ?? L10n.Inbox.GroupExpenseDraft.assignSubcategory,
+                        isSelected: selectedSubcategory != nil,
+                        color: selectedSubcategory.map { Color(hex: $0.safeCategory.colorHex) }
+                    ) {
+                        showSubcategorySelector = true
+                    }
+                    .accessibilityIdentifier("group_draft_subcategory_chip")
+                    if split.offersSplit {
+                        GroupDraftSplitChip { split.start(selectedSubcategoryID: selectedSubcategory?.shortcutID) }
+                    }
                 }
             }
             .navigationTitle(L10n.Inbox.GroupExpenseDraft.title)
@@ -74,11 +92,15 @@ struct GroupExpenseDraftFinalizationSheet: View {
                 )
             }
             .alert(L10n.Common.error, isPresented: $showSaveError) {
-                Button(L10n.Common.ok) {}
+                Button(L10n.Common.ok) { closeIfDraftRetires() }
             } message: {
                 Text(saveErrorMessage ?? L10n.Common.unknownError)
             }
-            .onAppear { loadMetadata() }
+            .onAppear {
+                loadMetadata()
+                split.load(draft: draft, context: modelContext)
+            }
+            .onDisappear { retireDraftOnClose() }
         }
     }
 
@@ -103,10 +125,16 @@ struct GroupExpenseDraftFinalizationSheet: View {
     }
 
     private func handleFinalize() {
-        guard let subcategory = selectedSubcategory else { return }
-        draft.subcategory = subcategory
+        // Con «Partir»: varias líneas van como receta; una sola línea de gasto se aprueba como siempre, con su categoría.
+        let splitLines = split.isSplitting ? split.approvalLines : nil
+        let subcategory = split.isSplitting && splitLines == nil
+            ? split.draftSubcategory(context: modelContext) : selectedSubcategory
+        if splitLines == nil {
+            guard let subcategory else { return }
+            draft.subcategory = subcategory
+        }
         do {
-            _ = try DraftService.shared.approveDraft(draft, currencyConverter: currencyConverter)
+            _ = try DraftService.shared.approveDraft(draft, currencyConverter: currencyConverter, splitLines: splitLines)
             DS.Haptic.success()
             onApproved()
             dismiss()
@@ -114,8 +142,28 @@ struct GroupExpenseDraftFinalizationSheet: View {
             #if DEBUG
             print("GroupExpenseDraftFinalizationSheet: approve failed: \(error)")
             #endif
-            saveErrorMessage = error.localizedDescription
+            retirementOnClose = GroupExpenseDraftRetirement(after: error)
+            saveErrorMessage = GroupsUserFacingErrorLogic.message(for: error)
+            DS.Haptic.error()
             showSaveError = true
+        }
+    }
+
+    private func closeIfDraftRetires() {
+        guard retirementOnClose != nil else { return }
+        dismiss()
+    }
+
+    /// Al desaparecer la hoja, y solo tras `groupExpenseTargetMissing`: el servicio vuelve a medir antes de borrar.
+    private func retireDraftOnClose() {
+        guard let retirement = retirementOnClose else { return }
+        retirementOnClose = nil
+        do {
+            try DraftService.shared.retireGroupExpenseDraft(draft, after: retirement)
+        } catch {
+            #if DEBUG
+            print("GroupExpenseDraftFinalizationSheet: retire failed: \(error)")
+            #endif
         }
     }
 }

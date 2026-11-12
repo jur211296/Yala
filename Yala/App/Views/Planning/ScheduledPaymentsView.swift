@@ -14,11 +14,18 @@ struct ScheduledPaymentsView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @Environment(AppPreferences.self) private var appPreferences
 
     // ViewModel
     @State private var viewModel = ScheduledPaymentsViewModel()
+    /// Sube al cerrarse el editor: es cuando se pregunta «¿era de prueba?» (UX 2.2 · L5-5).
+    @State private var paymentEditorClosedToken = 0
+    /// El pago recién creado, para avisar al cerrar el editor cuándo es su primer pago (UX 2.2 · L10-5).
+    @State private var newlySavedPaymentID: UUID?
+    /// El «+» flotante, solo cuando el scroll se lleva «Nuevo pago planificado» de arriba (card kzhe).
+    @State private var showFloatingNew = false
 
     var body: some View {
         ZStack {
@@ -36,16 +43,26 @@ struct ScheduledPaymentsView: View {
                         payments: filteredPaymentsForCurrentTab,
                         tab: viewModel.selectedTab,
                         currencyCode: appPreferences.defaultCurrencyCode.rawValue,
-                        onRefresh: { refreshData() }
+                        onRefresh: { refreshData() },
+                        showsFloatingNew: $showFloatingNew
                     )
                 }
             }
 
-            // FAB button for new payment
-            newPaymentFAB
+            // FAB button for new payment: solo cuando el scroll se lleva el botón de arriba (card kzhe).
+            if showFloatingNew {
+                newPaymentFAB
+                    .transition(.opacity)
+            }
         }
+        // El flotante entra y sale fundiéndose al desplazar. Implícita: el `withAnimation` de quien lo enciende no
+        // anima dentro de una pestaña (card 8atf).
+        .animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.normal), value: showFloatingNew)
         .yalaScreenBackground(.panel)
-        .sheet(isPresented: $viewModel.showPaymentEditor) {
+        .sheet(isPresented: $viewModel.showPaymentEditor, onDismiss: {
+            paymentEditorClosedToken += 1
+            announceFirstPaymentIfNew()
+        }) {
             if let payment = viewModel.editingPayment {
                 ScheduledPaymentEditorView(payment: payment)
                     .onDisappear {
@@ -55,13 +72,16 @@ struct ScheduledPaymentsView: View {
             } else {
                 ScheduledPaymentEditorView(
                     payment: nil,
-                    defaultCategory: viewModel.selectedTab.categoryFilter
+                    defaultCategory: viewModel.selectedTab.categoryFilter,
+                    onSaved: { newlySavedPaymentID = $0 }
                 )
                     .onDisappear {
                         refreshData()
                     }
             }
         }
+        // «¿Era de prueba?» del primer pago, al cerrar el editor y aquí mismo (UX 2.2 · L5-5).
+        .practiceCleanupPrompt(for: [.scheduledPayment], editorClosedToken: paymentEditorClosedToken) { refreshData() }
         .appliesPendingRemoteChanges(sessionState)
         .onAppear {
             viewModel.setContext(modelContext)
@@ -84,6 +104,7 @@ struct ScheduledPaymentsView: View {
         .onChange(of: sessionState.dataVersion) { _, _ in
             refreshData()
         }
+        .modifier(ScheduledPaymentAlertOpening(viewModel: viewModel))
         .navigationDestination(for: PersistentIdentifier.self) { paymentID in
             ScheduledPaymentDetailDestination(paymentID: paymentID, viewModel: viewModel)
                 .announcesShownInDetailColumn()
@@ -152,6 +173,77 @@ struct ScheduledPaymentsView: View {
     private func refreshData() {
         viewModel.reloadAndRecalculate()
     }
+
+    /// «Listo. Primer pago: 1 de noviembre · Ver» (UX 2.2 · L10-5, opción B). Si el primer pago cae otro mes, la lista de
+    /// este no cambia y la persona creía que no se había guardado; «Ver» la lleva a ese mes.
+    private func announceFirstPaymentIfNew() {
+        guard let id = newlySavedPaymentID else { return }
+        newlySavedPaymentID = nil
+        let descriptor = FetchDescriptor<ScheduledPayment>(predicate: #Predicate { $0.id == id })
+        let payment: ScheduledPayment
+        do {
+            guard let found = try modelContext.fetch(descriptor).first else { return }
+            payment = found
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentsView: Error: \(error)")
+            #endif
+            return
+        }
+        let firstDate = payment.nextDueDate
+        DraftDiscardUndoNotice.show(
+            message: L10n.UXL10.savedFirstPayment(ScheduledPaymentDateText.dayMonthLong(firstDate)),
+            systemImage: "checkmark.circle",
+            undoTitle: L10n.UXL10.savedView,
+            noticeIdentifier: "scheduled_saved_notice",
+            undoIdentifier: "scheduled_saved_view"
+        ) {
+            viewModel.selectedMonth = firstDate
+            viewModel.recalculateData()
+        }
+    }
+}
+
+/// Abre el pago de un recordatorio tocado (`SceneNavigation.pendingScheduledPaymentID`, UX 2.2 · L10-13): vuelve al mes
+/// en curso y empuja su detalle. Prepara él mismo el contexto del ViewModel: su `onAppear` puede correr antes que el de
+/// la lista (la trampa que midió el lote 9 con las alertas de presupuesto).
+private struct ScheduledPaymentAlertOpening: ViewModifier {
+    @Bindable var viewModel: ScheduledPaymentsViewModel
+
+    @Environment(\.modelContext) private var modelContext
+    @Environment(SceneNavigation.self) private var navigation
+    @State private var openedPayment: ScheduledPaymentNavigationID?
+
+    func body(content: Content) -> some View {
+        content
+            .navigationDestination(item: $openedPayment) { navID in
+                ScheduledPaymentDetailDestination(paymentID: navID.id, viewModel: viewModel)
+                    .announcesShownInDetailColumn()
+            }
+            .onAppear { openPendingIfAny() }
+            .onChange(of: navigation.pendingScheduledPaymentID) { _, _ in openPendingIfAny() }
+    }
+
+    private func openPendingIfAny() {
+        guard let paymentID = navigation.pendingScheduledPaymentID else { return }
+        navigation.pendingScheduledPaymentID = nil
+        viewModel.setContext(modelContext)
+        viewModel.loadPayments()
+        guard let payment = viewModel.allPayments.first(where: { $0.id == paymentID }) else { return }
+        viewModel.selectedMonth = Date.now
+        // Una vuelta del main actor después: el recordatorio llega con la pestaña de Pagos montándose en ese mismo
+        // instante (cambia el chip de Planificación), y un empuje pedido en su primer `onAppear` se perdía sin aviso
+        // (medido con `-uitest-scheduled-alert-tap`).
+        let navID = ScheduledPaymentNavigationID(id: payment.persistentModelID)
+        Task { @MainActor in
+            openedPayment = navID
+        }
+    }
+}
+
+/// Identidad del pago abierto desde un recordatorio, para `navigationDestination(item:)`.
+struct ScheduledPaymentNavigationID: Hashable, Identifiable {
+    let id: PersistentIdentifier
 }
 
 // MARK: - Detail Destination Helper

@@ -31,6 +31,14 @@ struct AmountText: View {
     var forceSign: Bool = false
     var isEstimate: Bool = false
     var forceFullPrecision: Bool = false
+    /// `true` en las cifras que cambian a la vista (heros, saldos): al cambiar, los dígitos ruedan
+    /// (`numericText`) en vez de sustituirse de golpe. La animación es implícita, así que funciona también dentro de
+    /// una pestaña; con Reducir movimiento, cambio directo (card pjum, 2026-10-31).
+    ///
+    /// Solo rueda lo que cambia con la cifra ya en pantalla: el primer cálculo de una página recién montada (de 0 al
+    /// valor, o del valor de antes de recargar) llega sin animación. Sin esa espera, Distribución rodaba de «0» hasta
+    /// su saldo cada vez que se abría (`CategoriesTabView.balanceKPI`).
+    var animatesValue: Bool = false
 
     @Environment(AppPreferences.self) private var prefs
 
@@ -83,8 +91,43 @@ struct AmountText: View {
         }
         .lineLimit(1)
         .minimumScaleFactor(0.7)
+        .modifier(AmountRollModifier(isEnabled: animatesValue, value: value))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(formatted)
+    }
+
+    // MARK: - Rodar la cifra
+
+    /// Hace rodar los dígitos de una cifra que cambia ya en pantalla (`animatesValue`). Fuera de los heros no pone
+    /// nada: las filas de una lista no cargan ni estado ni tarea.
+    private struct AmountRollModifier: ViewModifier {
+        let isEnabled: Bool
+        let value: Double
+
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
+        /// La cifra lleva un rato a la vista: a partir de aquí sus cambios ruedan.
+        @State private var settled = false
+
+        /// Lo que tarda una página en hacer su primer cálculo (el debounce de las recargas es de 150 ms).
+        private static let settleDelay: Duration = .milliseconds(600)
+
+        func body(content: Content) -> some View {
+            if isEnabled {
+                content
+                    .contentTransition(settled ? .numericText(value: value) : .identity)
+                    .dsAnimation(settled ? DS.Animation.number : nil, value: value, reduceMotion: reduceMotion)
+                    .task {
+                        do {
+                            try await Task.sleep(for: Self.settleDelay)
+                        } catch {
+                            return
+                        }
+                        settled = true
+                    }
+            } else {
+                content
+            }
+        }
     }
 
     // MARK: - Tint mapping

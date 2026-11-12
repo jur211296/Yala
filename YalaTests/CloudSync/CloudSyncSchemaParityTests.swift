@@ -474,6 +474,8 @@ struct CloudSyncSchemaParityTests {
             "lastDrainedTxAt",
             "clockLatestHLC",
             "groupCursorsJSON",
+            // Card vj61: el `server_seq` más alto aplicado por grupo; silencia los avisos de lo que vuelve a bajar.
+            "groupSeenSeqJSON",
             "schemaVersion",
         ]
         #expect(propertyNames(GroupSyncCursor.self) == expected)

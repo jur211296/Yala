@@ -44,9 +44,19 @@ struct ApproximateMarkWiringTests {
             El hero en modo Solo Gastos pinta `periodSummary.expense`: su marca tiene que ser la del
             gasto, no la del período entero.
             """)
-        #expect(src.contains("isEstimate: periodSummary.amountsAreApproximate"), """
-            El hero normal pinta `available`, que agrega los dos lados.
+        // Desde el lote 3 de la auditoría UX 2.2 (L3-1/L3-3) la cifra del hero normal es el balance, o el lado que
+        // filtra la píldora puesta: cada caso con SU marca. Se fija el emparejamiento entero, no la presencia: con los
+        // casos intercambiados, un `contains` suelto seguiría verde.
+        #expect(src.contains("case .balance: return periodSummary.amountsAreApproximate"), """
+            El balance agrega los dos lados: su marca es la del período entero.
             """)
+        #expect(src.contains("case .expense: return periodSummary.expenseApproximate"), """
+            Con «solo gastos» la cifra es el gasto: su marca es la del gasto.
+            """)
+        #expect(src.contains("case .income: return periodSummary.incomeApproximate"), """
+            Con «solo ingresos» la cifra es el ingreso: su marca es la del ingreso.
+            """)
+        #expect(src.contains("isEstimate: figureIsApproximate"), "La cifra grande no lee la marca de su caso.")
     }
 
     /// VoiceOver tiene que oír lo mismo que se ve. La marca es información, y dejarla solo en el
@@ -63,19 +73,24 @@ struct ApproximateMarkWiringTests {
             """)
     }
 
-    /// El saldo del panorama es el caso más puro: se convierte al TC de HOY, sin ningún monto
-    /// guardado en el que apoyarse. Sus tres composiciones del importe —resumen, resumen atribuido
-    /// y el monto con jerarquía— tienen que llevar la marca, o dos de ellas contradicen a la tercera
-    /// en la misma pantalla.
-    @Test("El saldo del panorama pasa la marca en sus tres composiciones")
+    /// El saldo total del Panel es el caso más puro: se convierte al TC de HOY, sin ningún monto
+    /// guardado en el que apoyarse. Desde el lote 3 de la auditoría UX 2.2 (L3-1) ya no lo pinta
+    /// «Tus finanzas» («Tienes X en N cuentas» se fue): lo dice el hero cuando el período no tiene
+    /// movimientos, y la línea «Con tus datos» de la ayuda de la gráfica de saldo. Los dos con marca.
+    @Test("El saldo total pasa la marca donde se pinta")
     func panoramaBalancePassesTheMark() throws {
-        let src = try Self.source("Yala/App/Views/Panel/Sections/PanelPanoramaSection.swift")
-        let ocurrencias = src.components(separatedBy: "isEstimate: viewModel.panelTotalBalanceIsApproximate").count - 1
-
-        #expect(ocurrencias == 3, """
-            Se esperaban 3 y hay \(ocurrencias). Los tres sitios pintan el MISMO saldo: si uno se
-            queda sin marca, la pantalla se contradice a sí misma.
-            """)
+        let section = try Self.source("Yala/App/Views/Panel/Sections/PanelHeroSection.swift")
+        #expect(section.contains("totalBalanceIsApproximate: viewModel.panelTotalBalanceIsApproximate"),
+                "El hero no recibe la marca del saldo total.")
+        let hero = try Self.source("Yala/App/Views/Panel/HeroMonthView.swift")
+        #expect(hero.contains("appPreferences.currency(totalBalance, currencyCode: currencyCode, isEstimate: totalBalanceIsApproximate)"),
+                "«Tienes X en tus cuentas» pinta el saldo total sin su marca.")
+        let help = try Self.source("Yala/App/Views/Panel/InfoSheets/WidgetInfoSheet.swift")
+        #expect(help.contains("money(viewModel.panelTotalBalance, isEstimate: viewModel.panelTotalBalanceIsApproximate)"),
+                "La ayuda de la gráfica de saldo pinta el saldo total sin su marca.")
+        let panorama = try Self.source("Yala/App/Views/Panel/Sections/PanelPanoramaSection.swift")
+        #expect(!panorama.contains("viewModel.panelTotalBalance"),
+                "«Tus finanzas» vuelve a pintar el saldo total: si lo hace, que lleve la marca y este test se actualice.")
     }
 
     /// El hero de Tendencias muestra uno de tres números según la métrica, así que su marca no puede
@@ -97,8 +112,11 @@ struct ApproximateMarkWiringTests {
     @Test("El hero de Estadísticas pasa la marca")
     func insightsHeroPassesTheMark() throws {
         let src = try Self.source("Yala/App/Views/Statistics/InsightsTabView.swift")
-        #expect(src.contains("isEstimate: summary.amountsAreApproximate"), """
-            Pinta `summary.netBalance`, que agrega los dos lados.
+        // Desde el 2026-10-26 la cifra es el gasto en «Solo gastos» (auditoría, decisión A): la marca sigue al número
+        // en los dos modos, emparejada con él.
+        #expect(src.contains("value: expensesOnly ? summary.totalExpense : summary.netBalance"))
+        #expect(src.contains("isEstimate: expensesOnly ? summary.expenseAmountsAreApproximate : summary.amountsAreApproximate"), """
+            Pinta `summary.netBalance`, que agrega los dos lados (o el gasto en «Solo gastos»).
             """)
     }
 
@@ -263,7 +281,9 @@ struct ApproximateMarkSecondarySurfacesWiringTests {
     @Test("Registros pasa la marca en sus tres importes")
     func recordsPassesTheMark() throws {
         let src = try Self.code("Yala/App/Views/Statistics/RecordsTabView.swift")
-        #expect(src.contains("isEstimate: recordsSummary.balanceIsApproximate"))
+        // La cifra grande es el gasto en «Solo gastos» (2026-10-26): la marca sigue al número, emparejada con él.
+        #expect(src.contains("value: expensesOnly ? recordsSummary.expense : recordsSummary.balance"))
+        #expect(src.contains("isEstimate: expensesOnly ? recordsSummary.expenseIsApproximate : recordsSummary.balanceIsApproximate"))
         #expect(src.contains("isEstimate: recordsSummary.incomeIsApproximate"))
         #expect(src.contains("isEstimate: recordsSummary.expenseIsApproximate"))
 
@@ -293,11 +313,16 @@ struct ApproximateMarkSecondarySurfacesWiringTests {
 
         let hero = try Self.code("Yala/App/Views/Panel/HeroMonthView.swift")
         #expect(hero.contains("isEstimate: periodSummary.incomeApproximate"))
-        // `expenseApproximate` sale 3 veces: hero de Solo Gastos, pill de gasto y la etiqueta de
-        // accesibilidad. Es el MISMO número en las tres, y ese es el punto: hasta hoy la pill lo
-        // pintaba exacto mientras el hero de al lado lo pintaba con «≈».
+        // `expenseApproximate` sale 4 veces: hero de Solo Gastos, pill de gasto, la etiqueta de
+        // accesibilidad y la cifra con «solo gastos» puesto (UX 2.2 · L3-1/L3-3). La línea «Entró − salió» se
+        // quitó el 18-oct (decisión de Jürgen). Es el MISMO número en todas, y ese es el punto: hasta hoy la
+        // pill lo pintaba exacto mientras el hero de al lado lo pintaba con «≈».
         let expense = hero.components(separatedBy: "periodSummary.expenseApproximate").count - 1
-        #expect(expense == 3, "se esperaban 3 y hay \(expense)")
+        #expect(expense == 4, "se esperaban 4 y hay \(expense)")
+        // La etiqueta de VoiceOver de cada pastilla lleva la marca de su importe: sin ella, VoiceOver leería exacto
+        // lo que en pantalla sale con «≈».
+        #expect(hero.contains("L10n.Panel.Hero.incomePill(appPreferences.currency(value, currencyCode: currencyCode, isEstimate: isEstimate))"))
+        #expect(hero.contains("L10n.Panel.Hero.expensePill(appPreferences.currency(value, currencyCode: currencyCode, isEstimate: isEstimate))"))
     }
 
     /// El widget de inicio es el único donde la señal no existía: había que producirla.
@@ -362,12 +387,40 @@ struct ApproximateMarkSecondarySurfacesWiringTests {
     /// Lo señaló la review adversarial del 2026-09-09.
     @Test("Los componentes intermedios reenvían la marca a quien la pinta")
     func passthroughComponentsForwardTheMark() throws {
-        let kpi = try Self.source("YalaWidgets/Views/WidgetKPI.swift")
-        #expect(kpi.contains("isEstimate: isEstimate"), """
-            `WidgetKPI` es el ÚNICO camino de la marca hacia `BalanceWidget`, `ExpenseWidget` y el
-            neto de Flujo de caja: si deja de reenviarla, tres widgets pierden el «≈» y sus callsites
-            siguen pasándola tan campantes.
+        // `WidgetKPI` era el cuello de botella de los widgets viejos; se retiró con el `WDS` en la tanda 3 (S35f2). El
+        // total de las tartas de Categorías y Subcategorías va ahora por `WidgetPieBreakdown`.
+        let breakdown = try Self.source("YalaWidgets/Views/WidgetCategoryBreakdown.swift")
+        let pieBody = try #require(breakdown.range(of: "struct WidgetPieBreakdown: View {"))
+        // Hasta el struct siguiente: la marca tiene que ir en ESTE cuerpo, no en otra pieza del fichero.
+        let pieEnd = breakdown.range(of: "\nstruct ", range: pieBody.upperBound..<breakdown.endIndex)?.lowerBound
+            ?? breakdown.endIndex
+        let pieScope = String(breakdown[pieBody.upperBound..<pieEnd])
+        #expect(pieScope.contains("isEstimate: isEstimate"), """
+            `WidgetPieBreakdown` es el camino de la marca hacia el total del centro de las dos tartas: si deja de
+            reenviarla, pierden el «≈» con `isEstimate: entry.expenseIsApproximate` en verde en sus callsites.
             """)
+
+        // Desde el rediseño 2.2 la cifra de Saldo y Gastos va por `WidgetHeroAmount`.
+        let hero = try Self.source("YalaWidgets/Views/WidgetCardComponents.swift")
+        let heroBody = try #require(hero.range(of: "struct WidgetHeroAmount: View {"))
+        #expect(String(hero[heroBody.upperBound...].prefix(900)).contains("isEstimate: isEstimate"), """
+            `WidgetHeroAmount` es el camino de la marca hacia `BalanceWidget`, `ExpenseWidget` y
+            `CashFlowWidget`: si deja de reenviarla, los tres pierden el «≈» con sus callsites en verde.
+            """)
+
+        // Y la cifra del Resumen del mes (S35f1), que pinta sus cuatro cifras con `MonthSummaryFigure`.
+        let summary = try Self.source("YalaWidgets/Widgets/MonthSummaryWidget.swift")
+        let figureBody = try #require(summary.range(of: "struct MonthSummaryFigure: View {"))
+        #expect(String(summary[figureBody.upperBound...].prefix(1_200)).contains("isEstimate: isEstimate"), """
+            `MonthSummaryFigure` es el camino de la marca hacia las cifras del Resumen del mes.
+            """)
+        for campo in ["entry.balanceIsApproximate", "entry.expenseIsApproximate"] {
+            #expect(summary.contains("isEstimate: \(campo)"), "El Resumen del mes no pasa \(campo).")
+        }
+        let portrait = try Self.source("YalaWidgets/Widgets/MonthSummaryPortraitView.swift")
+        for campo in ["entry.incomeIsApproximate", "entry.netCashFlowIsApproximate"] {
+            #expect(portrait.contains("isEstimate: \(campo)"), "El Resumen del mes vertical no pasa \(campo).")
+        }
 
         let row = try Self.source("Yala/App/Views/Panel/Components/PanelSmallBarRow.swift")
         #expect(row.contains("isEstimate: isEstimate"), """
@@ -494,7 +547,7 @@ struct ApproximateMarkSecondarySurfacesWiringTests {
 
         let saldo = try Self.scope(
             cache, from: "if let allTx = allTransactionsForBalance {",
-            to: "let topCategories = buildTopCategories("
+            to: "let categorySlices = categoryExpenseSlices("
         )
         #expect(saldo.contains("LiveBalanceCalculator.addNative(tx, to: &native)"), """
             El saldo del período suma la fila ENTERA —los saldos reflejan montos reales, no «mi

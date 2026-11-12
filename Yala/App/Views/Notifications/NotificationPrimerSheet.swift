@@ -8,7 +8,46 @@
 import SwiftUI
 import SwiftData
 
+extension View {
+    /// La hoja del permiso de notificaciones en un momento dado (UX 2.2 · L5-14). Un solo modificador para no alargar
+    /// la cadena del `body` de los editores (límite del type-checker del CI, `.claude/rules/swiftui-ds.md`).
+    func notificationPrimerSheet(
+        isPresented: Binding<Bool>,
+        context: NotificationPrimerContext,
+        onDismiss: (() -> Void)? = nil
+    ) -> some View {
+        sheet(isPresented: isPresented, onDismiss: onDismiss) {
+            NotificationPrimerSheet(context: context)
+        }
+    }
+}
+
+/// Encender la alerta de un presupuesto es el momento de pedir las notificaciones (UX 2.2 · L5-14): sin permiso, la
+/// alerta no llega nunca. Solo al encenderla con el editor ya cargado (no al abrir uno que ya la tenía).
+struct BudgetAlertNotificationPrimer: ViewModifier {
+    let alertEnabled: Bool
+    let isLoaded: Bool
+
+    @State private var showPrimer = false
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: alertEnabled) { _, enabled in offerIfNeeded(enabled) }
+            .notificationPrimerSheet(isPresented: $showPrimer, context: .budgetAlert)
+    }
+
+    private func offerIfNeeded(_ enabled: Bool) {
+        guard enabled, isLoaded else { return }
+        Task { @MainActor in
+            if await NotificationPrimerMoments.claim(.budgetAlert) { showPrimer = true }
+        }
+    }
+}
+
 struct NotificationPrimerSheet: View {
+
+    /// Desde dónde se pide (UX 2.2 · L5-14): en contexto, la hoja dice solo el beneficio de ese momento.
+    var context: NotificationPrimerContext = .records
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -16,30 +55,46 @@ struct NotificationPrimerSheet: View {
     @ScaledMetric(relativeTo: .largeTitle) private var iconSize: CGFloat = 48 // A11Y-DT: primer icon
     @State private var isRequesting = false
 
+    /// El texto va en un scroll que solo se mueve si hace falta, y los botones fuera de él: la hoja es de media
+    /// altura y, sin esto, el tercer beneficio salía cortado («…al límite de un…») en un iPhone 17 Pro en español
+    /// a tamaño normal (medido el 2026-10-14). Molde: `.claude/rules/swiftui-ds.md`, pantallas con `Spacer`s.
     var body: some View {
-        VStack(spacing: DS.Spacing.xxl) {
-            Spacer()
+        VStack(spacing: DS.Spacing.md) {
+            GeometryReader { proxy in
+                ScrollView {
+                    VStack(spacing: DS.Spacing.xxl) {
+                        // Icon
+                        Image(systemName: "bell.badge.fill")
+                            .font(.system(size: iconSize))
+                            .foregroundStyle(.thAccentText)
+                            .accessibilityHidden(true)
 
-            // Icon
-            Image(systemName: "bell.badge.fill")
-                .font(.system(size: iconSize))
-                .foregroundStyle(.tint)
-                .accessibilityHidden(true)
+                        // Title
+                        Text(title)
+                            .font(DS.Typography.title)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
 
-            // Title
-            Text(L10n.NotificationPrimer.title)
-                .font(DS.Typography.title)
-                .multilineTextAlignment(.center)
-
-            // Benefits
-            VStack(alignment: .leading, spacing: DS.Spacing.md) {
-                benefitRow(icon: "chart.bar.fill", text: L10n.NotificationPrimer.benefit1)
-                benefitRow(icon: "calendar.badge.clock", text: L10n.NotificationPrimer.benefit2)
-                benefitRow(icon: "bell.fill", text: L10n.NotificationPrimer.benefit3)
+                        // Benefits: en contexto, solo el de ese momento (no promete avisos de lo que no tienes).
+                        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                            switch context {
+                            case .records:
+                                benefitRow(icon: "chart.bar.fill", text: L10n.NotificationPrimer.benefit1)
+                                benefitRow(icon: "calendar.badge.clock", text: L10n.NotificationPrimer.benefit2)
+                                benefitRow(icon: "bell.fill", text: L10n.NotificationPrimer.benefit3)
+                            case .scheduledPayment:
+                                benefitRow(icon: "calendar.badge.clock", text: L10n.NotificationPrimer.scheduledBenefit)
+                            case .budgetAlert:
+                                benefitRow(icon: "bell.fill", text: L10n.NotificationPrimer.budgetBenefit)
+                            }
+                        }
+                        .padding(.horizontal, DS.Spacing.lg)
+                    }
+                    .padding(.top, DS.Spacing.xl)
+                    .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+                }
+                .scrollBounceBehavior(.basedOnSize)
             }
-            .padding(.horizontal, DS.Spacing.lg)
-
-            Spacer()
 
             // CTA
             VStack(spacing: DS.Spacing.md) {
@@ -73,16 +128,25 @@ struct NotificationPrimerSheet: View {
 
     // MARK: - Components
 
+    private var title: String {
+        switch context {
+        case .records: L10n.NotificationPrimer.title
+        case .scheduledPayment: L10n.NotificationPrimer.scheduledTitle
+        case .budgetAlert: L10n.NotificationPrimer.budgetTitle
+        }
+    }
+
     private func benefitRow(icon: String, text: String) -> some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
                 .font(DS.Typography.body)
-                .foregroundStyle(.tint)
+                .foregroundStyle(.thAccentText)
                 .frame(width: DS.Spacing.xxl)
                 .accessibilityHidden(true)
             Text(text)
                 .font(DS.Typography.body)
                 .foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 

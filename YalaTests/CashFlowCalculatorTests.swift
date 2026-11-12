@@ -245,21 +245,25 @@ struct CashFlowCalculatorTests {
         #expect(result.totalExpense == 0)
     }
 
-    // MARK: - 7. Transactions without category excluded
+    // MARK: - 7. Transactions without category count by their sign
 
-    @Test func noCategory_isExcluded() {
+    /// Desde el 2026-10-23 un movimiento sin categoría cuenta por su signo (decisión de Jürgen del 2026-09-06, ticket
+    /// `records-standalone-amount-discrepancy`): antes este widget lo descartaba y daba otro mes que Registros.
+    @Test func noCategory_countsBySign() {
         let today = Calendar.current.startOfDay(for: Self.testNow)
-        let tx = makeTransaction(amount: -100, date: today)
+        let expense = makeTransaction(amount: -100, date: today)
+        let income = makeTransaction(amount: 40, date: today)
 
         let result = CashFlowCalculator.calculateCashFlow(
-            transactions: [tx],
+            transactions: [expense, income],
             interval: weekInterval,
             grouping: .day,
             currencyCode: "USD"
         )
 
-        #expect(result.totalExpense == 0)
-        #expect(result.netFlow == 0)
+        #expect(result.totalExpense == 100)
+        #expect(result.totalIncome == 40)
+        #expect(result.netFlow == -60)
     }
 
     // MARK: - 8. Chart data fills date gaps with zeros
@@ -513,7 +517,7 @@ struct CashFlowCalculatorTests {
 
         let validExpense = makeTransaction(amount: -100, date: today, category: cat)
         let validIncome = makeTransaction(amount: 500, date: today, category: incomeCat)
-        let noCategory = makeTransaction(amount: -200, date: today)  // excluded: no category
+        let noCategory = makeTransaction(amount: -200, date: today)  // sin categoría: gasto por su signo
         let balanceAdj = makeTransaction(
             amount: 300,
             date: today,
@@ -529,8 +533,8 @@ struct CashFlowCalculatorTests {
         )
 
         #expect(result.totalIncome == 500)
-        #expect(result.totalExpense == 100)
-        #expect(result.netFlow == 400)
+        #expect(result.totalExpense == 300)
+        #expect(result.netFlow == 200)
     }
 
     // MARK: - Refund characterization (categoría manda sobre signo — p20-14 D3)

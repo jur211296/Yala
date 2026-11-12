@@ -32,15 +32,38 @@ struct FinancialScore: Equatable {
 
 enum FinancialScoreCalculator {
 
+    /// La parte que más sube el total si llega a 100 (UX 2.2 · L3-14): lo que le falta, por su peso. No siempre es la
+    /// de nota más baja: con Presupuestos 80 y Ritmo 75, Presupuestos suma 8 puntos y Ritmo 6,25. A igualdad, la de nota
+    /// más baja. `nil` si no hay ninguna con nota o si todas van bien (90 o más).
+    static func weakestPart(of score: FinancialScore) -> FinancialScoreDetailKind? {
+        let parts: [(FinancialScoreDetailKind, Int?, Double)] = [
+            (.budget, score.budget, weightBudget),
+            (.activity, score.activity, weightRhythm),
+            (.bills, score.bills, weightCommitments)
+        ]
+        let candidates = parts.compactMap { kind, value, weight -> (FinancialScoreDetailKind, Int, Double)? in
+            guard let value, value < 90 else { return nil }
+            return (kind, value, Double(100 - value) * weight)
+        }
+        let best = candidates.max { lhs, rhs in
+            lhs.2 == rhs.2 ? lhs.1 > rhs.1 : lhs.2 < rhs.2
+        }
+        return best?.0
+    }
+
     // MARK: - Tuning
 
     /// Soft floor del total para no mostrar números desalentadores en escenarios extremos.
     private static let totalSoftFloor = 50
 
-    /// Pesos del composite (re-normalizados cuando algún sub-score es `nil`).
-    private static let weightBudget       = 0.40
-    private static let weightRhythm       = 0.25
-    private static let weightCommitments  = 0.35
+    /// Pesos del composite (re-normalizados cuando algún sub-score es `nil`). Visibles: la hoja de la nota los enseña
+    /// (UX 2.2 · L3-14), y así no pueden divergir de lo que se calcula.
+    static let weightBudget       = 0.40
+    static let weightRhythm       = 0.25
+    static let weightCommitments  = 0.35
+
+    /// La nota total no baja de este suelo; la hoja lo dice.
+    static var totalFloor: Int { totalSoftFloor }
 
     // Budget penalties por bucket (réplica de la lógica monthly anterior aplicada localmente).
     private static let budgetPenaltyExceeded     = 8
@@ -386,10 +409,15 @@ enum FinancialScoreCalculator {
             converter: converter,
             calendar: calendar
         )
+        // La cobertura cuenta TODO lo apuntado, también lo fechado en el futuro, y no el saldo de hoy de la pantalla
+        // (`LiveBalanceCalculator.TodayCutoff`). Lo pendiente descuenta lo ya pagado con un movimiento enlazado aunque
+        // su fecha sea futura: el alquiler apuntado hoy para el día 25 no está ni en el saldo de hoy ni en lo pendiente,
+        // y con el saldo de hoy la cobertura salía mejor de lo real en su importe (review del 2026-10-18).
         let liveBalance = LiveBalanceCalculator.liveBalance(
             accounts: accounts,
             transactions: transactions,
             preferredCurrencyCode: preferredCurrencyCode,
+            asOf: .distantFuture,
             converter: converter
         )
         let coverageScore = computeCoverageScore(
@@ -412,21 +440,31 @@ enum FinancialScoreCalculator {
         return clamp(Int(composite.rounded()))
     }
 
-    /// Intervalo natural del período para Compromisos. `.thisMonth` → mes
-    /// calendario completo (no truncado a hoy); `.thisYear` → año completo.
-    /// Otros períodos retornan el `fallback` recibido (ya cerrado o no aplica).
-    /// Expuesto como `static` para que los callers (PanelViewModel,
-    /// DetailContainerView) carguen `paidAmounts` para el mismo rango.
+    /// Intervalo natural del período para Compromisos. `.thisWeek` → semana
+    /// completa; `.thisMonth` → mes calendario completo (no truncado a hoy);
+    /// `.thisYear` → año completo. Otros períodos retornan el `fallback` recibido
+    /// (ya cerrado, móvil hasta hoy o sin fin).
+    /// Lo usa también «Lo que te falta pagar» de Estadísticas › Resumen
+    /// (`InsightsCalculator`, decisión A de Jürgen del 2026-10-27: hasta el fin del período).
+    /// Aquí `.thisWeek` no llega: la puntuación descarta los períodos cortos antes.
     static func commitmentsInterval(
         period: DetailPeriod, fallback: DateInterval, now: Date = .now, calendar: Calendar = .current
     ) -> DateInterval {
+        // El mes y el año naturales de `Calendar` acaban en la medianoche del siguiente, y `DateInterval` es cerrado: un
+        // pago que vence el día 1 del mes siguiente contaba como compromiso de este. Acaban en 23:59:59.
+        func closed(_ interval: DateInterval) -> DateInterval {
+            DateInterval(start: interval.start, end: max(interval.start, interval.end.addingTimeInterval(-1)))
+        }
         switch period {
+        case .thisWeek:
+            guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: now) else { return fallback }
+            return closed(weekInterval)
         case .thisMonth:
             guard let monthInterval = calendar.dateInterval(of: .month, for: now) else { return fallback }
-            return monthInterval
+            return closed(monthInterval)
         case .thisYear:
             guard let yearInterval = calendar.dateInterval(of: .year, for: now) else { return fallback }
-            return yearInterval
+            return closed(yearInterval)
         default:
             return fallback
         }
@@ -519,7 +557,7 @@ enum FinancialScoreCalculator {
             .filter {
                 interval.contains($0.date)
                     && $0.balanceAdjustmentType == nil
-                    && ($0.category?.isIncome ?? false)
+                    && TransactionClassificationLogic.isIncome($0)
                     && !adjustment.isSuppressed($0)
             }
             .reduce(0) {

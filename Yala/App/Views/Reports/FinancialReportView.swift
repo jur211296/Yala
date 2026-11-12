@@ -31,14 +31,23 @@ struct FinancialReportView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(\.scenePhase) private var scenePhase
 
+    /// Anchos de las columnas de la tabla (UX 2.2 · L18-3), escalados con el tamaño de texto.
+    @ScaledMetric(relativeTo: .caption) private var currentColumnWidth: CGFloat = 96
+    @ScaledMetric(relativeTo: .caption) private var changeColumnWidth: CGFloat = 56
+
     // MARK: - Queries
 
-    @Query(sort: \TransactionItem.date, order: .reverse) private var transactions: [TransactionItem]
+    @Query(sort: \TransactionItem.date, order: .reverse) private var storedTransactions: [TransactionItem]
+    /// Sin lo que espera su borrado con «Deshacer» (`RecordPendingDeletion`): el Informe cuenta lo mismo que el Panel.
+    private var transactions: [TransactionItem] { RecordPendingDeletion.shared.visible(storedTransactions) }
     @Query private var accounts: [Account]
     @Query(sort: \Category.sortOrder) private var categories: [Category]
     @Query private var allSubcategories: [Subcategory]
     @Query private var tags: [Tag]
-    @Query private var scheduledPayments: [ScheduledPayment]
+    @Query private var storedScheduledPayments: [ScheduledPayment]
+    /// Sin el pago que espera su borrado con «Deshacer» (`ScheduledPaymentPendingDeletion`): ni en el Informe ni en el
+    /// flujo de caja.
+    private var scheduledPayments: [ScheduledPayment] { ScheduledPaymentPendingDeletion.shared.visible(storedScheduledPayments) }
 
     // MARK: - Preferences
 
@@ -77,6 +86,7 @@ struct FinancialReportView: View {
             }
             .navigationTitle(L10n.Report.title)
             .navigationBarTitleDisplayMode(.large)
+            .prefersToolbarItemsInVerticalBar()
             .toolbar {
                 reportToolbar
             }
@@ -139,6 +149,8 @@ struct FinancialReportView: View {
         .onChange(of: sessionState.selectedNeeds) { _, _ in scheduleRecalculate() }
         .onChange(of: sessionState.selectedTransactionNatures) { _, _ in scheduleRecalculate() }
         .onChange(of: sessionState.selectedCurrencies) { _, _ in scheduleRecalculate() }
+        // Lo oculto («Sin X») también cambia el informe; antes vivía en los mismos conjuntos que lo incluido.
+        .onChange(of: sessionState.excludedFilterSets) { _, _ in scheduleRecalculate() }
         .onChange(of: sessionState.dataVersion) { _, _ in scheduleRecalculate() }
         .onChange(of: viewModel.groupingState.activeDimensions) { _, _ in scheduleRecalculate() }
         .onChange(of: transactions.count) { _, _ in scheduleRecalculate() }
@@ -164,39 +176,22 @@ struct FinancialReportView: View {
                     .padding(.horizontal, DS.Spacing.lg)
                     .scrollTargetLayout()
                 }
+                .fadesTowardVerticalBar()
                 .scrollTargetBehavior(.viewAligned)
+                // El cristal del chip pulsado se hinchaba fuera del scroll y salía cortado en recto (card nawy). Cabe en
+                // el `DS.Spacing.sm` de arriba y abajo, el mismo aire que `navigationChipsInset` da en Estadísticas.
+                .scrollClipDisabled()
             }
             .padding(.vertical, DS.Spacing.sm)
         }
     }
 
-    @ViewBuilder
     private func navigationChipButton(for tab: ReportTab) -> some View {
-        let isSelected = effectiveReportTab == tab
-
-        Button {
-            var transaction = Transaction()
-            transaction.disablesAnimations = true
-            withTransaction(transaction) {
-                navigation.selectedReportTab = tab
-            }
-        } label: {
-            HStack(spacing: DS.Spacing.sm) {
-                Image(systemName: tab.icon)
-                    .font(DS.Typography.subheadline)
-                Text(tab.title)
-                    .font(DS.Typography.label)
-            }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.Spacing.sm)
-            .foregroundStyle(isSelected ? .white : .primary)
-            .background(
-                Capsule()
-                    .fill(isSelected ? theme.accent : Color.clear)
-            )
-            .glassEffect(isSelected ? .clear : .regular.interactive(), in: .capsule)
+        NavigationChipButton(
+            title: tab.title, icon: tab.icon, isSelected: effectiveReportTab == tab, showsTitleWhenUnselected: true
+        ) {
+            navigation.selectedReportTab = tab
         }
-        .buttonStyle(.plain)
         .accessibilityIdentifier("report_chip_\(tab.rawValue)")
     }
 
@@ -208,7 +203,9 @@ struct FinancialReportView: View {
         case .comparativa:
             ContextualGuideBanner.comparative()
         case .flujoDeCaja:
-            ContextualGuideBanner.cashflow()
+            // Sin banner (UX 2.2 · L5-6, opción A): el flujo de caja ya trae su propia explicación («¿Qué es el flujo
+            // de caja?») y su guía sombreada, y con el banner eran tres a la vez.
+            EmptyView()
         }
     }
 
@@ -230,19 +227,24 @@ struct FinancialReportView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: DS.Spacing.xl) {
                 filterBar
+                comparisonHeader
                 GroupingChipsBar(state: $viewModel.groupingState)
+                accountCardGroupingPicker
 
                 if viewModel.hasData {
+                    allTimeCard
                     pivotTable
 
-                    // "Flujo neto" (= neto con signo) no aplica en Solo Gastos (sin ingresos);
+                    // «Te quedó» (= neto con signo) no aplica en Solo Gastos (sin ingresos);
                     // el comparativo de gasto ya está en la fila raíz "Gastos" del pivot.
                     if !sessionState.isExpensesOnlyMode {
                         NetFlowSummaryView(
                             currentAmount: viewModel.netFlowCurrent,
                             previousAmount: viewModel.netFlowPrevious,
                             variation: viewModel.netFlowVariation,
-                            currencyCode: preferredCurrencyCode
+                            currencyCode: preferredCurrencyCode,
+                            showsComparison: viewModel.supportsComparison,
+                            previousPeriodName: comparedPeriodName?.inSentence ?? ""
                         )
                     }
                 } else {
@@ -256,13 +258,55 @@ struct FinancialReportView: View {
         .scrollViewGlassEdges()
     }
 
+    /// «Por tarjeta · Por línea» (entrega 4): solo con la agrupación por cuenta puesta y alguna tarjeta con líneas. El
+    /// `onChange` cuelga de aquí y no del `body`, que está al límite del type-checker.
+    @ViewBuilder
+    private var accountCardGroupingPicker: some View {
+        if viewModel.hasAccountCards && viewModel.groupingState.isActive(.cuenta) {
+            AccountCardGroupingPicker(selection: $viewModel.accountCardGrouping)
+                .onChange(of: viewModel.accountCardGrouping) { _, _ in recalculate() }
+        }
+    }
+
+    private var pivotColumnWidths: PivotColumnWidths {
+        PivotColumnWidths(current: currentColumnWidth, change: changeColumnWidth)
+    }
+
+    /// El nombre del período que se mira («Octubre»).
+    private var currentPeriodName: ComparativeLabelsLogic.Name {
+        ComparativeLabelsLogic.currentName(period: viewModel.detailPeriod, customRange: viewModel.customDateRange)
+    }
+
+    /// El nombre del tramo con el que se compara («setiembre», «1–21 sept»); `nil` en «Todo el tiempo».
+    private var comparedPeriodName: ComparativeLabelsLogic.Name? {
+        guard viewModel.supportsComparison else { return nil }
+        return ComparativeLabelsLogic.comparedName(
+            period: viewModel.detailPeriod,
+            mode: sessionState.comparisonMode,
+            customRange: viewModel.customDateRange,
+            dataEnd: viewModel.currentDataEnd
+        )
+    }
+
     private var pivotTable: some View {
         LazyVStack(spacing: DS.Spacing.none) {
+            if comparedPeriodName != nil {
+                PivotHeaderRow(
+                    currentName: currentPeriodName.column,
+                    widths: pivotColumnWidths
+                )
+                Divider()
+            }
             ForEach(viewModel.flattenedRows) { row in
                 PivotRowView(
                     node: row.node,
                     level: row.level,
-                    preferredCurrency: preferredCurrencyCode
+                    preferredCurrency: preferredCurrencyCode,
+                    showsComparison: viewModel.supportsComparison,
+                    widths: pivotColumnWidths,
+                    currentPeriodName: currentPeriodName.inSentence,
+                    previousPeriodName: comparedPeriodName?.inSentence ?? "",
+                    previousPeriodColumnName: comparedPeriodName?.column ?? ""
                 )
 
                 if row.id != viewModel.flattenedRows.last?.id {
@@ -289,6 +333,7 @@ struct FinancialReportView: View {
                 transactions: transactions,
                 categories: categories,
                 scheduledPayments: scheduledPayments,
+                accounts: accounts,
                 currencyCode: preferredCurrencyCode
             )
         } else {
@@ -297,6 +342,7 @@ struct FinancialReportView: View {
                 transactions: transactions,
                 scheduledPayments: scheduledPayments,
                 categories: categories,
+                accounts: accounts,
                 currencyCode: preferredCurrencyCode
             )
         }
@@ -306,48 +352,54 @@ struct FinancialReportView: View {
 
     @ToolbarContentBuilder
     private var reportToolbar: some ToolbarContent {
-        ToolbarItem(placement: .topBarTrailing) {
-            Group {
-                if effectiveReportTab == .flujoDeCaja && cashFlowViewModel.hasPlan {
-                    HStack(spacing: DS.Spacing.md) {
-                        Button {
-                            cashFlowViewModel.showChartsSheet = true
-                        } label: {
-                            Image(systemName: "chart.bar.xaxis")
-                                .font(DS.Typography.bodyBold)
-                                .foregroundStyle(.thToolbarIcon)
-                        }
-                        .accessibilityLabel(L10n.Accessibility.cashFlowChart)
-
-                        Menu {
-                            Button {
-                                showHorizonConfig = true
-                            } label: {
-                                Label(L10n.CashFlowPlan.configureHorizon, systemImage: "calendar.badge.clock")
-                            }
-                            Divider()
-                            Button(role: .destructive) {
-                                showResetConfirmation = true
-                            } label: {
-                                Label(L10n.CashFlowPlan.resetPlan, systemImage: "arrow.counterclockwise")
-                            }
-                        } label: {
-                            Image(systemName: "ellipsis.circle")
-                                .font(DS.Typography.bodyBold)
-                                .foregroundStyle(.thToolbarIcon)
-                        }
-                    }
-                } else if effectiveReportTab == .comparativa {
-                    Button {
-                        viewModel.showFiltersSheet = true
-                    } label: {
-                        Image(systemName: "line.3.horizontal.decrease")
-                            .font(DS.Typography.bodyBold)
-                            .foregroundStyle(.thToolbarIcon)
-                    }
-                    .accessibilityLabel(L10n.Filters.title)
-                    .filterBadge(isActive: viewModel.activeFilterCount > 0)
+        // Lienzo «Una sola Yala» (Flujo de caja): las gráficas y «⋯» van cada uno en su botón, como en Registros, y no
+        // juntos en una sola cápsula.
+        if effectiveReportTab == .flujoDeCaja && cashFlowViewModel.hasPlan {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    cashFlowViewModel.showChartsSheet = true
+                } label: {
+                    Image(systemName: "chart.bar.xaxis")
+                        .font(DS.Typography.bodyBold)
+                        .foregroundStyle(.thToolbarIcon)
                 }
+                .accessibilityLabel(L10n.Accessibility.cashFlowChart)
+                .accessibilityIdentifier("cashflow_charts_button")
+            }
+            ToolbarSpacer(.fixed, placement: .topBarTrailing)
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button {
+                        showHorizonConfig = true
+                    } label: {
+                        Label(L10n.CashFlowPlan.configureHorizon, systemImage: "calendar.badge.clock")
+                    }
+                    .accessibilityIdentifier("cashflow_configure_horizon")
+                    Divider()
+                    Button(role: .destructive) {
+                        showResetConfirmation = true
+                    } label: {
+                        Label(L10n.CashFlowPlan.resetPlan, systemImage: "arrow.counterclockwise")
+                    }
+                    .accessibilityIdentifier("cashflow_reset_plan")
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(DS.Typography.bodyBold)
+                        .foregroundStyle(.thToolbarIcon)
+                }
+                .accessibilityIdentifier("cashflow_more_menu")
+            }
+        } else if effectiveReportTab == .comparativa {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    viewModel.showFiltersSheet = true
+                } label: {
+                    Image(systemName: "line.3.horizontal.decrease")
+                        .font(DS.Typography.bodyBold)
+                        .foregroundStyle(.thToolbarIcon)
+                }
+                .accessibilityLabel(L10n.Filters.title)
+                .filterBadge(isActive: viewModel.userFilterCount(isExpensesOnlyMode: sessionState.isExpensesOnlyMode) > 0)
             }
         }
 
@@ -380,8 +432,34 @@ struct FinancialReportView: View {
             animationValue: viewModel.detailPeriod,
             onFilterChange: { scheduleRecalculate() }
         ) {
-            if showVariations && PreviousPeriodHelper.isSelectorVisible(for: viewModel.detailPeriod) {
-                ComparisonModeSelector()
+            EmptyView()
+        }
+    }
+
+    // MARK: - Con qué se compara (L18-3) y «Todo el tiempo» (L18-2)
+
+    /// «Octubre comparado con setiembre» y los dos chips en palabras. En la Comparativa sustituye a la frase-menú de
+    /// Estadísticas (decisión de la variante 3: frase arriba y chips).
+    @ViewBuilder
+    private var comparisonHeader: some View {
+        if let compared = comparedPeriodName {
+            ReportComparisonHeader(
+                heading: ComparativeLabelsLogic.heading(current: currentPeriodName, compared: compared),
+                showsChips: showVariations && PreviousPeriodHelper.isSelectorVisible(for: viewModel.detailPeriod),
+                previousTitle: ComparativeLabelsLogic.previousChipTitle(for: viewModel.detailPeriod),
+                yearAgoTitle: L10n.UXL18.chipYearAgo(
+                    ComparativeLabelsLogic.yearAgoChipName(period: viewModel.detailPeriod, customRange: viewModel.customDateRange)
+                )
+            )
+        }
+    }
+
+    /// En «Todo el tiempo» no hay nada con qué comparar: una tarjeta lleva en un toque a un mes que sí lo tiene.
+    @ViewBuilder
+    private var allTimeCard: some View {
+        if viewModel.detailPeriod == .allTime {
+            ReportAllTimeCompareCard { period in
+                viewModel.detailPeriod = period
             }
         }
     }
@@ -432,16 +510,20 @@ private struct CashFlowResetDialogModifier: ViewModifier {
     @Binding var isPresented: Bool
     let onReset: () -> Void
 
+    // Alerta y no `confirmationDialog`: en iOS 26 el diálogo salía como un globo anclado a media pantalla, sin
+    // «Cancelar» a la vista (medido en el simulador, lote 18), y reiniciar borra todas las líneas y ajustes.
     func body(content: Content) -> some View {
         content
-            .confirmationDialog(
+            .alert(
                 L10n.CashFlowPlan.resetPlan,
-                isPresented: $isPresented,
-                titleVisibility: .visible
+                isPresented: $isPresented
             ) {
                 Button(L10n.CashFlowPlan.resetPlan, role: .destructive) {
                     onReset()
                 }
+                .accessibilityIdentifier("cashflow_reset_confirm")
+                Button(L10n.Action.cancel, role: .cancel) {}
+                    .accessibilityIdentifier("cashflow_reset_cancel")
             } message: {
                 Text(L10n.CashFlowPlan.resetConfirmation)
             }

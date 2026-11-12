@@ -26,9 +26,14 @@ struct GroupsGateWipeFailureTests {
 
     typealias Destination = WelcomeMirrorRelaunchLogic.Destination
 
+    /// Los destinos que escribe la puerta: sus dos ramas de grupos y, desde la opción B (2026-11-10), la entrada con
+    /// Google o Apple que deja el iCloud privado aparte, que arma la MISMA vuelta al neutro desde la misma pantalla.
+    static let fromTheGate: [Destination] = [.groupsOrganizer, .groupsInvite,
+                                             .cloudSignInAppleKeepingICloudAside, .cloudSignInGoogleKeepingICloudAside]
+
     /// Los destinos que NO escribe la puerta, más «ninguno».
     static let notFromTheGate: [Destination?] =
-        Destination.allCases.filter { $0 != .groupsOrganizer && $0 != .groupsInvite }.map { Optional($0) } + [nil]
+        Destination.allCases.filter { !fromTheGate.contains($0) }.map { Optional($0) } + [nil]
 
     /// Un teléfono al que la puerta de Grupos acaba de devolver al neutro: modo `.icloud` (celdas privada y solo-grupos),
     /// borrado armado y el destino que la puerta persiste justo después del arm.
@@ -56,7 +61,7 @@ struct GroupsGateWipeFailureTests {
     // MARK: - El hook deja el testigo
 
     @Test("El borrado que armó la puerta y no pudo borrar deja el testigo, y desarma como siempre",
-          arguments: [Destination.groupsOrganizer, .groupsInvite])
+          arguments: fromTheGate)
     func abortArmedByTheGate_leavesTheWitness(destination: Destination) {
         let defaults = armedByGate(prefix: "ggwf.abort.\(destination.rawValue)", destination: destination)
         let run = runWipe(defaults, deletes: false)
@@ -110,6 +115,7 @@ struct GroupsGateWipeFailureTests {
     /// mismo borrado. Si lo armó la puerta, se apunta igual; si no, no.
     @Test("Si el archivo de grupos se queda, el borrado que armó la puerta deja el testigo",
           arguments: [(Destination?.some(.groupsOrganizer), true), (.some(.groupsInvite), true),
+                      (.some(.cloudSignInGoogleKeepingICloudAside), true),
                       (.some(.restoreICloud), false), (nil, false)])
     func groupsFileSurvives_marksOnlyWhenTheGateArmedIt(destination: Destination?, expected: Bool) {
         let defaults = armedByGate(prefix: "ggwf.groups.\(destination?.rawValue ?? "none")", destination: destination)
@@ -153,8 +159,8 @@ struct GroupsGateWipeFailureTests {
     }
 
     @Test("Qué destinos cuentan como «lo armó la puerta»", arguments: Destination.allCases)
-    func armedByTheGroupsGate_isExactlyTheTwoGateDestinations(destination: Destination) {
-        let expected = destination == .groupsOrganizer || destination == .groupsInvite
+    func armedByTheGroupsGate_isExactlyTheGateDestinations(destination: Destination) {
+        let expected = Self.fromTheGate.contains(destination)
         #expect(GroupsGateWipeFailureMarker.armedByTheGroupsGate(pendingDestination: destination) == expected)
         #expect(!GroupsGateWipeFailureMarker.armedByTheGroupsGate(pendingDestination: nil))
     }

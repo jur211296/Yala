@@ -36,6 +36,7 @@ struct YalaToolbarButton: View {
 /// Botón circular de confirmación (Check)
 /// Diseño: SF Symbol `checkmark.circle.fill` con rendering palette (Blanco + Electric Indigo).
 struct YalaSaveButton: View {
+    @Environment(\.yalaTheme) private var theme
     let action: () -> Void
     var isDisabled: Bool = false
     var disabledHint: String?
@@ -47,7 +48,8 @@ struct YalaSaveButton: View {
         Button(action: action) {
             Image(systemName: "checkmark")
                 .font(DS.Typography.label.weight(.bold))
-                .foregroundStyle(.white)
+                // Sobre el relleno del tinte de la app (el acento): negro en Teal, Rosa y Minimalista (card lbcr).
+                .foregroundStyle(theme.onAccent)
                 .frame(width: 20, height: 20)
         }
         .disabled(isDisabled)
@@ -66,6 +68,8 @@ struct YalaSaveButton: View {
 /// Uso: Confirmar acciones, submit forms, CTAs
 struct YalaPrimaryButton: View {
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.isEnabled) private var isEnabledInContext
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let title: String
     let icon: String?
     let action: () -> Void
@@ -73,40 +77,86 @@ struct YalaPrimaryButton: View {
     var isLoading: Bool = false
 
     var disabledHint: String?
+    /// El relleno activo, si no es el acento tal cual (el formulario de registro lo oscurece para que el blanco dé AA,
+    /// UX 2.2 · L2-20). `nil` = `theme.accent`.
+    var enabledFill: Color?
+    /// En una `safeAreaBar`, iOS atenúa más el texto de un botón desactivado (gris 165 → 131 medido en Nuevo registro y el
+    /// onboarding, barrido final 2.2). Con `true`, a tamaño normal el texto conserva el tono de fuera de la barra
+    /// (decisión de Jürgen, 2026-11-05); con texto de accesibilidad se deja el del sistema.
+    var keepsDisabledToneInBar: Bool
 
-    init(_ title: String, icon: String? = nil, isDisabled: Bool = false, isLoading: Bool = false, disabledHint: String? = nil, action: @escaping () -> Void) {
+    init(
+        _ title: String,
+        icon: String? = nil,
+        isDisabled: Bool = false,
+        isLoading: Bool = false,
+        disabledHint: String? = nil,
+        enabledFill: Color? = nil,
+        keepsDisabledToneInBar: Bool = false,
+        action: @escaping () -> Void
+    ) {
         self.title = title
         self.icon = icon
         self.isDisabled = isDisabled
         self.isLoading = isLoading
         self.disabledHint = disabledHint
+        self.enabledFill = enabledFill
+        self.keepsDisabledToneInBar = keepsDisabledToneInBar
         self.action = action
+    }
+
+    /// Dentro de una `safeAreaBar` iOS atenúa más el texto de un botón desactivado, y ni el entorno ni la opacidad de la
+    /// etiqueta lo evitan (medido el 2026-11-05: 164 fuera de la barra, 129 dentro, 101 marcando la etiqueta como
+    /// habilitada). Lo que se pinta ENCIMA del botón no pasa por ese atenuado: con el tono forzado, el texto va ahí, al 50 %
+    /// que le daba `.plain` fuera de la barra (164 = 72 + 183 × 0,50), y el botón sigue desactivado debajo.
+    private var drawsDisabledToneOutside: Bool {
+        keepsDisabledToneInBar && !dynamicTypeSize.isAccessibilitySize && (isDisabled || isLoading || !isEnabledInContext)
+    }
+
+    private var labelRow: some View {
+        HStack(spacing: DS.Spacing.sm) {
+            if isLoading {
+                ProgressView()
+                    .tint(primaryForeground)
+            } else if let icon {
+                Image(systemName: icon)
+                    .font(DS.Typography.label)
+                    .accessibilityHidden(true)
+            }
+            Text(title)
+                .font(DS.Typography.label)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 50)
+        .foregroundStyle(primaryForeground)
     }
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: DS.Spacing.sm) {
-                if isLoading {
-                    ProgressView()
-                        .tint(.white)
-                } else if let icon {
-                    Image(systemName: icon)
-                        .font(DS.Typography.label)
-                        .accessibilityHidden(true)
-                }
-                Text(title)
-                    .font(DS.Typography.label)
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 50)
-            .foregroundStyle(.white)
-            .background(isDisabled ? DS.Semantic.disabledForeground : theme.accent)
-            .clipShape(Capsule())
+            labelRow
+                .opacity(drawsDisabledToneOutside ? 0 : 1)
+                .background(isDisabled ? DS.Semantic.disabledForeground : (enabledFill ?? theme.accent))
+                .clipShape(Capsule())
         }
         .disabled(isDisabled || isLoading)
         .buttonStyle(.plain)
+        .overlay {
+            if drawsDisabledToneOutside {
+                labelRow
+                    .opacity(0.5)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+        }
+        .accessibilityLabel(Text(title))
         .accessibilityIdentifier("primary_button")
         .accessibilityHint(isDisabled ? (disabledHint ?? "") : "")
+    }
+
+    /// El texto sobre el relleno: `onAccent` sobre el acento (negro en Teal, Rosa y Minimalista, card lbcr); sobre un
+    /// relleno propio, el que contraste; apagado, blanco como siempre.
+    private var primaryForeground: Color {
+        isDisabled ? .white : theme.onFill(enabledFill ?? theme.accent)
     }
 }
 
@@ -225,8 +275,8 @@ extension Color {
     /// Color del símbolo "+" del FAB. En material siempre blanco (sobre el tint
     /// translúcido). En sólido, contraste calculado sobre el `base` — necesario
     /// porque accents claros (teal, minimalist) lavarían un blanco fijo.
-    static func fabPlusForeground(base: Color, usesMaterial: Bool) -> Color {
-        usesMaterial ? .white : Color.contrastingText(for: base)
+    static func fabPlusForeground(base: Color, usesMaterial: Bool, theme: YalaTheme) -> Color {
+        usesMaterial ? .white : theme.onFill(base)
     }
 }
 
@@ -246,7 +296,7 @@ struct CircularPlusFAB: View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(DS.Typography.title)
-                .foregroundStyle(Color.fabPlusForeground(base: tint, usesMaterial: theme.usesMaterial))
+                .foregroundStyle(Color.fabPlusForeground(base: tint, usesMaterial: theme.usesMaterial, theme: theme))
                 .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
                 .modifier(FABSurfaceModifier(base: tint))
         }

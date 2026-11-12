@@ -42,6 +42,17 @@ struct CurrencySettingsView: View {
     @State private var tempPreferredCurrency: CurrencyCode = .pen
     @State private var tempSecondaryCurrencies: Set<CurrencyCode> = []
 
+    /// La moneda elegida en la hoja, esperando a que la persona confirme el cambio (UX 2.2 · L16-3).
+    @State private var pendingCurrencyChange: PendingCurrencyChange?
+    /// El cambio de moneda falló: la pantalla lo dice (ticket `currency-change-failure-is-silent-and-half-applied`).
+    @State private var showCurrencyChangeFailed = false
+    @State private var failedCurrency: CurrencyCode = .pen
+
+    struct PendingCurrencyChange: Identifiable {
+        let currency: CurrencyCode
+        var id: String { currency.rawValue }
+    }
+
     var body: some View {
         ZStack {
             // Main Content
@@ -51,7 +62,7 @@ struct CurrencySettingsView: View {
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "arrow.triangle.2.circlepath")
                             .font(.system(size: heroIconSize))
-                            .foregroundStyle(.thAccent)
+                            .foregroundStyle(.thAccentText)
                             .padding(.bottom, DS.Spacing.sm)
 
                         Text(L10n.Settings.currencyAndExchange)
@@ -108,9 +119,27 @@ struct CurrencySettingsView: View {
         .navigationTitle(L10n.Settings.currencyAndExchange)
         .navigationBarTitleDisplayMode(.inline)
         .interactiveDismissDisabled(isUpdating)
-        .sheet(isPresented: $showPreferredCurrencySheet) {
+        // Sin «Atrás» mientras migra: si la persona salía, el aviso de fallo se escribía sobre una pantalla que ya no
+        // estaba y el fallo volvía a ser silencioso (review adversarial del 2026-10-18).
+        .navigationBarBackButtonHidden(isUpdating)
+        // Elegir una moneda ya no la aplica: al cerrar la hoja sale la confirmación con el antes y el después
+        // (UX 2.2 · L16-3). Una presentación tras otra, encadenadas por el `onDismiss` de la primera.
+        .sheet(isPresented: $showPreferredCurrencySheet, onDismiss: preferredPickerDismissed) {
             CurrencyPickerSheet(selectedCurrency: $tempPreferredCurrency)
                 .presentationDetents([.large])
+        }
+        .sheet(item: $pendingCurrencyChange, onDismiss: { tempPreferredCurrency = preferredCurrency }) { change in
+            CurrencyChangeConfirmSheet(from: preferredCurrency, to: change.currency) {
+                pendingCurrencyChange = nil
+                updatePreferredCurrency(to: change.currency)
+            }
+            .yalaSheetDetents([.medium])
+            .presentationDragIndicator(.visible)
+        }
+        .alert(L10n.UXL16.currencyChangeFailedTitle(failedCurrency.rawValue), isPresented: $showCurrencyChangeFailed) {
+            Button(L10n.Common.understood, role: .cancel) {}
+        } message: {
+            Text(L10n.UXL16.currencyChangeFailedMessage(preferredCurrency.rawValue))
         }
         .sheet(isPresented: $showSecondaryCurrenciesSheet) {
             SecondaryCurrencyPickerSheet(
@@ -122,11 +151,6 @@ struct CurrencySettingsView: View {
         .sheet(isPresented: $showExchangeRatesSheet) {
             ExchangeRatesSheet(preferredCurrency: preferredCurrency)
                 .presentationDetents([.large])
-        }
-        .onChange(of: tempPreferredCurrency) { _, newValue in
-            if newValue != preferredCurrency {
-                updatePreferredCurrency(to: newValue)
-            }
         }
         .onChange(of: tempSecondaryCurrencies) { oldValue, newValue in
             handleSecondaryChange(from: oldValue, to: newValue)
@@ -164,6 +188,7 @@ struct CurrencySettingsView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("currency_preferred_button")
         }
     }
 
@@ -264,15 +289,19 @@ struct CurrencySettingsView: View {
     @ViewBuilder
     private func exchangeRateRow(currency: CurrencyCode) -> some View {
         let info = currencyInfo(for: currency)
-        let rate = getDisplayRate(from: currency, to: preferredCurrency)
+        let display = ExchangeRateRowLogic.display(rate: getDisplayRate(from: currency, to: preferredCurrency))
         let preferredInfo = currencyInfo(for: preferredCurrency)
+        let isInverted: Bool = {
+            if case .inverted = display { return true }
+            return false
+        }()
 
         HStack(spacing: DS.Spacing.md) {
             Text(info.flag)
                 .font(DS.Typography.title)
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text("1 \(info.code)")
+                Text(isInverted ? info.code : "1 \(info.code)")
                     .font(DS.Typography.bodyBold)
                     .foregroundStyle(.primary)
                 Text(info.name.capitalized)
@@ -282,11 +311,18 @@ struct CurrencySettingsView: View {
 
             Spacer()
 
-            if let rate = rate {
+            // UX 2.2 · L16-4: la misma lectura que «Ver todas» (`ExchangeRatesSheet`): bajo 0,01, al revés.
+            switch display {
+            case .direct(let rate):
                 Text("\(ExchangeRateDisplayFormatter.string(rate)) \(preferredInfo.code)")
                     .font(DS.Typography.body.monospacedDigit())
                     .foregroundStyle(.primary)
-            } else {
+            case .inverted(let units):
+                Text("1 \(preferredInfo.code) = \(ExchangeRateRowLogic.invertedString(units)) \(info.code)")
+                    .font(DS.Typography.body.monospacedDigit())
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.trailing)
+            case nil:
                 Text("--")
                     .font(DS.Typography.body)
                     .foregroundStyle(.secondary)
@@ -372,15 +408,13 @@ struct CurrencySettingsView: View {
         }
     }
 
-    private func updatePreferredCurrency(to newCurrency: CurrencyCode) {
-        guard newCurrency != preferredCurrency else { return }
+    private func preferredPickerDismissed() {
+        guard tempPreferredCurrency != preferredCurrency else { return }
+        pendingCurrencyChange = PendingCurrencyChange(currency: tempPreferredCurrency)
+    }
 
-        // Auto-remove from secondary currencies if it was selected there
-        if secondaryCurrencies.contains(newCurrency) {
-            var updated = secondaryCurrencies
-            updated.remove(newCurrency)
-            appPreferences.secondaryCurrencies = updated.map { $0.rawValue }
-        }
+    private func updatePreferredCurrency(to newCurrency: CurrencyCode) {
+        guard newCurrency != preferredCurrency, !isUpdating else { return }
 
         isUpdating = true
         updateProgress = 0.0
@@ -412,12 +446,21 @@ struct CurrencySettingsView: View {
                     to: newCurrency.rawValue,
                     context: modelContext,
                     onProgress: { progress in
-                        updateProgress = progress * 0.5  // First half of progress
+                        // Toda la barra: antes se quedaba en la mitad y la pantalla se cerraba ahí.
+                        updateProgress = progress
                     }
                 )
 
                 // Only update AppPreferences AFTER successful migration
                 appPreferences.defaultCurrencyCode = newCurrency
+
+                // La nueva principal deja de ser secundaria, y solo ahora: antes se quitaba ANTES de migrar y, si la
+                // migración fallaba, la moneda desaparecía de las secundarias sin que nada lo dijera.
+                if secondaryCurrencies.contains(newCurrency) {
+                    var updated = secondaryCurrencies
+                    updated.remove(newCurrency)
+                    appPreferences.secondaryCurrencies = updated.map { $0.rawValue }
+                }
 
                 // Signal widget to refresh with new preferred currency
                 SessionState.shared.needsExchangeRateWidgetRefresh = true
@@ -428,9 +471,13 @@ struct CurrencySettingsView: View {
                 }
 
             } catch {
+                // `CurrencyChangeService` ya devolvió los registros a como estaban; la moneda principal y las
+                // secundarias no se tocaron. Se dice en pantalla en vez de volver como si nada.
                 #if DEBUG
                 print("CurrencySettingsView: Error updating transactions: \(error)")
                 #endif
+                failedCurrency = newCurrency
+                showCurrencyChangeFailed = true
             }
 
             isUpdating = false

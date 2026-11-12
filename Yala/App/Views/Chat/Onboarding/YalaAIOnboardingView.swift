@@ -2,9 +2,14 @@
 //  YalaAIOnboardingView.swift
 //  Yala
 //
+//  Cuatro pasos (UX 2.2 · lote 14, decisiones de Jürgen del 2026-10-15): qué es, qué hace, «Hazla a tu manera» (tono y
+//  estilo juntos, L14-3) y «Antes de empezar» (el permiso de datos, L14-2). Antes eran cinco: tono y estilo iban en
+//  pasos separados, el permiso salía en una alerta ANTES de la presentación y el último paso era «¡Todo listo!».
+//
 //  Cierre:
-//  - onResult(.complete): CTA Step 5 → launcher persiste flag + abre chat
-//  - onResult(.close):    "X" topLeft → NO persiste flag (vuelve a aparecer)
+//  - onResult(.complete): «Aceptar y empezar» → la vista guarda el permiso; el launcher persiste la presentación y
+//    abre el chat
+//  - onResult(.close):    "X" topLeft → NO persiste nada (vuelve a aparecer, permiso incluido)
 //
 
 import SwiftUI
@@ -17,15 +22,15 @@ struct YalaAIOnboardingView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.openURL) private var openURL
 
     @State private var currentStep: Step = .hero
 
     private enum Step: Int, CaseIterable {
         case hero = 1
         case capabilities = 2
-        case tone = 3
-        case focus = 4
-        case ready = 5
+        case personalize = 3
+        case consent = 4
     }
 
     var body: some View {
@@ -89,9 +94,8 @@ struct YalaAIOnboardingView: View {
         switch currentStep {
         case .hero:         heroStep
         case .capabilities: capabilitiesStep
-        case .tone:         toneStep
-        case .focus:        focusStep
-        case .ready:        readyStep
+        case .personalize:  personalizeStep
+        case .consent:      consentStep
         }
     }
 
@@ -183,6 +187,8 @@ struct YalaAIOnboardingView: View {
                     Text(title)
                         .font(DS.Typography.headline)
                         .foregroundStyle(.thPrimaryText)
+                        // La misma tarjeta que la intro de Grupos, donde el título salía cortado a una línea.
+                        .fixedSize(horizontal: false, vertical: true)
                     if let badge {
                         Text(badge)
                             .font(DS.Typography.captionSmall.weight(.semibold))
@@ -207,124 +213,96 @@ struct YalaAIOnboardingView: View {
         .accessibilityLabel("\(title). \(body)")
     }
 
-    // MARK: - Step 3: Tone
+    // MARK: - Step 3: Hazla a tu manera (UX 2.2 · L14-3, variante 3)
 
-    private var toneStep: some View {
-        @Bindable var prefs = appPreferences
-
-        return ScrollView {
-            VStack(spacing: DS.Spacing.lg) {
+    /// Tono y estilo en un solo paso, con lo elegido RELLENO y un único ejemplo que junta las dos elecciones. Es la
+    /// misma vista que la hoja «Tono de Yala IA» del chat y de Ajustes (L14-10): lo que se elige aquí se cambia después
+    /// viendo lo mismo.
+    private var personalizeStep: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: DS.Spacing.lg) {
                 stepHeader(
-                    title: L10n.YalaAI.Onboarding.step3Title,
-                    subtitle: L10n.YalaAI.Onboarding.step3Subtitle
+                    title: L10n.UXL14.personalizeTitle,
+                    subtitle: L10n.UXL14.personalizeSubtitle
                 )
+                .frame(maxWidth: .infinity)
 
-                VStack(spacing: DS.Spacing.md) {
-                    ForEach(InsightTone.allCases) { tone in
-                        toneCard(tone: tone, prefs: prefs)
-                    }
-                }
-
-                previewBubble(text: toneQuote(for: prefs.insightsTone), animationKey: prefs.insightsTone)
-                    .padding(.top, DS.Spacing.md)
+                YalaAIPersonalizeForm()
             }
+            .padding(.bottom, DS.Spacing.lg)
         }
         .scrollIndicators(.hidden)
     }
 
-    private func toneCard(tone: InsightTone, prefs: AppPreferences) -> some View {
-        let isSelected = prefs.insightsTone == tone
-        return optionCard(
-            isSelected: isSelected,
-            title: tone.displayName,
-            description: toneDescription(for: tone),
-            a11yPrefix: L10n.YalaAI.Onboarding.step3Title
-        ) {
-            prefs.insightsTone = tone
-        }
-    }
+    // MARK: - Step 4: Antes de empezar (UX 2.2 · L14-2, variante 2)
 
-    // MARK: - Step 4: Focus
-
-    private var focusStep: some View {
-        @Bindable var prefs = appPreferences
-
-        return ScrollView {
-            VStack(spacing: DS.Spacing.lg) {
+    /// El permiso de datos, después de saber qué es Yala IA. Reparte en tres filas el mismo texto legal que decía el
+    /// aviso (qué se envía, a quién y para qué), sin añadirle nada, y nombra el sitio real donde se apaga.
+    private var consentStep: some View {
+        ScrollView {
+            VStack(spacing: DS.Spacing.xl) {
                 stepHeader(
-                    title: L10n.YalaAI.Onboarding.step4Title,
-                    subtitle: L10n.YalaAI.Onboarding.step4Subtitle
+                    title: L10n.UXL14.consentTitle,
+                    subtitle: L10n.UXL14.consentSubtitle
                 )
 
-                VStack(spacing: DS.Spacing.md) {
-                    ForEach(InsightFocus.allCases) { focus in
-                        focusCard(focus: focus, prefs: prefs)
-                    }
+                VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+                    consentRow(
+                        icon: "doc.text.magnifyingglass",
+                        fill: .selectedIndigoFill,
+                        title: L10n.UXL14.consentReadsTitle,
+                        body: L10n.UXL14.consentReadsBody
+                    )
+                    consentRow(
+                        icon: "checkmark.shield.fill",
+                        fill: .incomeFill,
+                        title: L10n.UXL14.consentUseTitle,
+                        body: L10n.UXL14.consentUseBody
+                    )
+                    consentRow(
+                        icon: "hand.raised.fill",
+                        fill: .emphasisPinkFill,
+                        title: L10n.UXL14.consentDecideTitle,
+                        body: L10n.UXL14.consentDecideBody("\(L10n.Profile.title) › \(L10n.Settings.aiPrivacy)")
+                    )
                 }
+                .padding(DS.Spacing.lg)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .solidCard(padding: 0, radius: DS.Radius.lg)
+                .accessibilityIdentifier("yala_ai_onboarding_consent")
 
-                previewBubble(text: focusQuote(for: prefs.insightsFocus), animationKey: prefs.insightsFocus)
-                    .padding(.top, DS.Spacing.md)
+                Button {
+                    openURL(AppConstants.privacyURL)
+                } label: {
+                    Text(L10n.AIConsent.privacyPolicy)
+                        .font(DS.Typography.label)
+                        .foregroundStyle(theme.accentText)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("yala_ai_onboarding_privacy")
             }
+            .padding(.bottom, DS.Spacing.lg)
         }
         .scrollIndicators(.hidden)
     }
 
-    private func focusCard(focus: InsightFocus, prefs: AppPreferences) -> some View {
-        let isSelected = prefs.insightsFocus == focus
-        return optionCard(
-            isSelected: isSelected,
-            title: focus.displayName,
-            description: focusDescription(for: focus),
-            a11yPrefix: L10n.YalaAI.Onboarding.step4Title
-        ) {
-            prefs.insightsFocus = focus
-        }
-    }
-
-    // MARK: - Step 5: Ready
-
-    private var readyStep: some View {
-        VStack(spacing: DS.Spacing.lg) {
-            Spacer(minLength: DS.Spacing.xl)
-
-            ZStack {
-                Circle()
-                    .fill(LinearGradient(
-                        colors: [Color.hotPink.opacity(0.25), theme.accent.opacity(0.18)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ))
-                    .frame(width: 96, height: 96)
-                Image(systemName: "sparkles")
-                    .font(.system(size: 44, weight: .semibold)) // A11Y-DT: hero icon
-                    .foregroundStyle(LinearGradient(
-                        colors: [.hotPink, theme.accent],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ))
-            }
-            .accessibilityHidden(true)
-
-            VStack(spacing: DS.Spacing.sm) {
-                Text(L10n.YalaAI.Onboarding.step5Title)
-                    .font(DS.Typography.largeTitle)
+    private func consentRow(icon: String, fill: Color, title: String, body: String) -> some View {
+        HStack(alignment: .top, spacing: DS.Spacing.md) {
+            SolidIconTile(systemName: icon, fill: fill)
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(title)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.thPrimaryText)
-                    .multilineTextAlignment(.center)
-
-                Text(L10n.YalaAI.Onboarding.step5Subtitle)
-                    .font(DS.Typography.body)
+                Text(body)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.thSecondaryText)
-                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-
-            Text(L10n.YalaAI.Onboarding.step5Tip(demoAmountText(demoAmounts.tipCoffee)))
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.thSecondaryText)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, DS.Spacing.md)
-
             Spacer(minLength: 0)
         }
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: - Shared subviews
@@ -344,116 +322,17 @@ struct YalaAIOnboardingView: View {
         .padding(.top, DS.Spacing.md)
     }
 
-    private func optionCard(
-        isSelected: Bool,
-        title: String,
-        description: String,
-        a11yPrefix: String,
-        onTap: @escaping () -> Void
-    ) -> some View {
-        Button(action: onTap) {
-            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                Text(title)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.thPrimaryText)
-                Text(description)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.thSecondaryText)
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(DS.Spacing.md)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .selectableCard(isSelected: isSelected, radius: DS.Radius.lg)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("\(a11yPrefix): \(title). \(description)")
-        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
-    }
-
-    private func previewBubble<Key: Equatable>(text: String, animationKey: Key) -> some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-            Text(L10n.YalaAI.Onboarding.previewLabel)
-                .font(DS.Typography.captionSmall)
-                .foregroundStyle(.thSecondaryText)
-
-            HStack(alignment: .top, spacing: DS.Spacing.sm) {
-                Image(systemName: "sparkles")
-                    .font(.system(size: 16, weight: .semibold)) // A11Y-DT: bot avatar
-                    .foregroundStyle(theme.accent)
-                    .frame(width: 28, height: 28)
-                    .background(Circle().fill(.thCard))
-
-                Text(text)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.thPrimaryText)
-                    .padding(.horizontal, DS.Spacing.md)
-                    .padding(.vertical, DS.Spacing.sm)
-                    .background(.thCard)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                    .animation(.easeInOut(duration: 0.3), value: animationKey)
-                Spacer(minLength: 0)
-            }
-        }
-    }
-
-    // MARK: - Quotes / descriptions
-
-    private func toneQuote(for tone: InsightTone) -> String {
-        switch tone {
-        case .normal:      return L10n.YalaAI.Onboarding.step3ToneNormalQuote
-        case .considerate: return L10n.YalaAI.Onboarding.step3ToneConsiderateQuote
-        case .sarcastic:   return L10n.YalaAI.Onboarding.step3ToneSarcasticQuote
-        }
-    }
-
-    private func toneDescription(for tone: InsightTone) -> String {
-        switch tone {
-        case .normal:      return L10n.YalaAI.Onboarding.step3ToneNormalDescription
-        case .considerate: return L10n.YalaAI.Onboarding.step3ToneConsiderateDescription
-        case .sarcastic:   return L10n.YalaAI.Onboarding.step3ToneSarcasticDescription
-        }
-    }
-
-    /// Importes de ejemplo en la divisa principal (ticket `ai-onboarding-demo-speaks-english-and-dollars`).
-    private var demoAmounts: YalaAIOnboardingDemoAmounts.Amounts {
-        YalaAIOnboardingDemoAmounts.amounts(for: appPreferences.defaultCurrencyCode)
-    }
-
-    private func demoAmountText(_ value: Double) -> String {
-        YalaAIOnboardingDemoAmounts.formatted(
-            value,
-            identifier: appPreferences.currencyIdentifier(for: appPreferences.defaultCurrencyCode.rawValue)
-        )
-    }
-
-    private func focusQuote(for focus: InsightFocus) -> String {
-        switch focus {
-        case .balanced: return L10n.YalaAI.Onboarding.step4FocusBalancedQuote
-        case .saver:    return L10n.YalaAI.Onboarding.step4FocusSaverQuote(demoAmountText(demoAmounts.saverSavingPerMonth))
-        case .cautious: return L10n.YalaAI.Onboarding.step4FocusCautiousQuote
-        }
-    }
-
-    private func focusDescription(for focus: InsightFocus) -> String {
-        switch focus {
-        case .balanced: return L10n.YalaAI.Onboarding.step4FocusBalancedDescription
-        case .saver:    return L10n.YalaAI.Onboarding.step4FocusSaverDescription
-        case .cautious: return L10n.YalaAI.Onboarding.step4FocusCautiousDescription
-        }
-    }
-
     // MARK: - CTA
 
     private var ctaSection: some View {
-        let label = currentStep == .ready
-            ? L10n.YalaAI.Onboarding.step5CTA
+        let label = currentStep == .consent
+            ? L10n.UXL14.consentCTA
             : L10n.YalaAI.Onboarding.continueAction
 
         return YalaPrimaryButton(label) {
             advance()
         }
+        .accessibilityIdentifier(currentStep == .consent ? "yala_ai_onboarding_accept" : "yala_ai_onboarding_continue")
     }
 
     private func goBack() {
@@ -469,6 +348,9 @@ struct YalaAIOnboardingView: View {
                 currentStep = next
             }
         } else {
+            // «Aceptar y empezar»: el permiso se guarda aquí, con el mismo valor que guardaba el aviso. La presentación
+            // vista la persiste el launcher al recibir `.complete`.
+            appPreferences.aiChatConsentAccepted = true
             onResult(.complete)
         }
     }

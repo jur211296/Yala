@@ -19,7 +19,6 @@ struct CategoriesPieWidget: View {
     var selectedCategoryIDs: Set<PersistentIdentifier> = []
     var onSelectCategory: ((PersistentIdentifier) -> Void)?
     var onShowDetail: (() -> Void)? = nil
-    var isExcludeMode: Bool = false
 
     var size: WidgetSize = .medium
 
@@ -44,14 +43,8 @@ struct CategoriesPieWidget: View {
     // Filtered total based on selected categories
     private var filteredTotalExpense: Double {
         guard !selectedCategoryIDs.isEmpty else { return totalExpense }
-        if isExcludeMode {
-            // Excluded items removed — total is sum of remaining visible items
-            return categories
-                .filter { !selectedCategoryIDs.contains($0.category.persistentModelID) }
-                .reduce(0) { $0 + $1.amount }
-        }
         return categories
-            .filter { selectedCategoryIDs.contains($0.category.persistentModelID) }
+            .filter { $0.isSelected(in: selectedCategoryIDs) }
             .reduce(0) { $0 + $1.amount }
     }
 
@@ -238,6 +231,8 @@ struct CategoriesPieWidget: View {
                                 .position(center)
                         }
                     }
+                    // Implícita: en una pestaña un `withAnimation` no anima (card oxyr).
+                    .animation(reduceMotion ? nil : DS.Animation.appear, value: hoveredItem?.identity)
                 }
                 .frame(maxWidth: .infinity)
 
@@ -253,7 +248,8 @@ struct CategoriesPieWidget: View {
 
     private func simpleLegendList(_ chartData: [PieChartData]) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            ForEach(chartData) { item in
+            // Por `identity`, no por `id`: «Otros» y «Sin categoría» tienen los dos `id == nil`.
+            ForEach(chartData, id: \.identity) { item in
                 simpleLegendRow(for: item)
             }
         }
@@ -362,9 +358,8 @@ struct CategoriesPieWidget: View {
             .onLongPressGesture(
                 minimumDuration: 0.3,
                 pressing: { isPressing in
-                    dsWithAnimation(reduceMotion, .easeInOut(duration: 0.15)) {
-                        hoveredItem = isPressing ? item : nil
-                    }
+                    // La anima la implícita del `ZStack` del gráfico (card oxyr).
+                    hoveredItem = isPressing ? item : nil
                 }, perform: {})
         }
     }
@@ -385,13 +380,7 @@ struct CategoriesPieWidget: View {
             .transition(.opacity.combined(with: .scale(scale: 0.9)))
     }
 
-    // Logic: In exclude mode, excluded items are removed — show labels normally by percentage.
-    // In include mode, show only selected items' labels.
     private func shouldShowLabel(for item: PieChartData) -> Bool {
-        if isExcludeMode {
-            // Excluded items already removed from data; show labels by percentage threshold
-            return item.percentage > 4.0
-        }
         if !selectedCategoryIDs.isEmpty {
             guard let id = item.id else { return false }
             return selectedCategoryIDs.contains(id)
@@ -629,24 +618,19 @@ struct CategoriesPieWidget: View {
 
     private func handleTap(_ item: PieChartData) {
         if let id = item.id {
+            // Sin háptico aquí: vibra quien recibe el toque (`askSegmentFilter` / `askPanelSegment`), una vez.
             // ViewModel handles toggle logic (select if new, deselect if same)
             onSelectCategory?(id)
         }
     }
 
     private func isDimmed(_ item: PieChartData) -> Bool {
-        // In exclude mode, excluded items are already removed from chart data — no dimming needed
-        if isExcludeMode { return false }
         guard !selectedCategoryIDs.isEmpty else { return false }
         guard let id = item.id else { return true }
         return !selectedCategoryIDs.contains(id)
     }
 
     private func currentCenterItem(_ chartData: [PieChartData]) -> PieChartData? {
-        if isExcludeMode {
-            // Excluded items already removed; show first visible item
-            return chartData.first
-        }
         if !selectedCategoryIDs.isEmpty {
             return chartData.first { $0.id == selectedCategoryIDs.first }
         }
@@ -678,14 +662,7 @@ struct CategoriesPieWidget: View {
         // For Medium, show all categories (no grouping). For Large, allow more slices.
         let threshold = size == .large ? 12 : 20
 
-        // In exclude mode, remove excluded items entirely (they disappear from the chart)
-        let visibleCategories: [CategorySpendingSummary]
-        if isExcludeMode && !selectedCategoryIDs.isEmpty {
-            visibleCategories = categories.filter { !selectedCategoryIDs.contains($0.category.persistentModelID) }
-        } else {
-            visibleCategories = categories
-        }
-
+        let visibleCategories: [CategorySpendingSummary] = categories
         // Recalculate total from visible items only
         let visibleTotal = visibleCategories.reduce(0) { $0 + $1.amount }
 
@@ -695,12 +672,12 @@ struct CategoriesPieWidget: View {
             finalItems = visibleCategories.map {
                 let pct = visibleTotal > 0 ? ($0.amount / visibleTotal) * 100 : 0
                 return PieChartData(
-                    id: $0.category.persistentModelID,
-                    name: $0.category.name,
-                    iconName: $0.category.iconName ?? "tag.fill",
+                    id: $0.id,
+                    name: $0.name,
+                    iconName: $0.iconName ?? "tag.fill",
                     amount: $0.amount,
                     percentage: pct,
-                    colorHex: $0.category.colorHex
+                    colorHex: $0.colorHex
                 )
             }
         } else {
@@ -710,12 +687,12 @@ struct CategoriesPieWidget: View {
             finalItems = top.map {
                 let pct = visibleTotal > 0 ? ($0.amount / visibleTotal) * 100 : 0
                 return PieChartData(
-                    id: $0.category.persistentModelID,
-                    name: $0.category.name,
-                    iconName: $0.category.iconName ?? "tag.fill",
+                    id: $0.id,
+                    name: $0.name,
+                    iconName: $0.iconName ?? "tag.fill",
                     amount: $0.amount,
                     percentage: pct,
-                    colorHex: $0.category.colorHex
+                    colorHex: $0.colorHex
                 )
             }
 
@@ -762,24 +739,32 @@ struct CategoriesPieWidget: View {
         let totalSpacing = segmentSpacing * CGFloat(max(0, chartData.count - 1))
         let availableWidth = max(0, segmentedBarWidth - totalSpacing)
 
-        HStack(spacing: segmentSpacing) {
-            ForEach(chartData) { item in
-                RoundedRectangle(cornerRadius: DS.Radius.xs)
-                    .fill(Color(hex: item.colorHex))
-                    .frame(width: availableWidth * CGFloat(item.percentage / 100))
-                    .opacity(isDimmed(item) ? 0.3 : 1.0)
-                    .dsAnimation(.easeInOut(duration: 0.2), value: selectedCategoryIDs, reduceMotion: reduceMotion)
-                    .onTapGesture {
-                        handleTap(item)
+        // Los segmentos van en `overlay` de un carril flexible, que es lo que se mide: medido el propio `HStack`, su
+        // ancho era la suma de los segmentos —la medida anterior— y la barra no se adaptaba al cambiar el ancho de la
+        // ventana (iPhone Duo al plegar o girar, iPad).
+        Color.clear
+            .frame(maxWidth: .infinity)
+            .frame(height: 28)
+            .overlay(alignment: .leading) {
+                HStack(spacing: segmentSpacing) {
+                    // Por `identity`, no por `id`: «Otros» y «Sin categoría» tienen los dos `id == nil`.
+                    ForEach(chartData, id: \.identity) { item in
+                        RoundedRectangle(cornerRadius: DS.Radius.xs)
+                            .fill(Color(hex: item.colorHex))
+                            .frame(width: availableWidth * CGFloat(item.percentage / 100))
+                            .opacity(isDimmed(item) ? 0.3 : 1.0)
+                            .dsAnimation(.easeInOut(duration: 0.2), value: selectedCategoryIDs, reduceMotion: reduceMotion)
+                            .onTapGesture {
+                                handleTap(item)
+                            }
+                            .accessibilityElement()
+                            .accessibilityLabel(item.name)
+                            .accessibilityAddTraits(.isButton)
                     }
-                    .accessibilityElement()
-                    .accessibilityLabel(item.name)
-                    .accessibilityAddTraits(.isButton)
+                }
             }
-        }
-        .frame(height: 28)
-        .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { newWidth in
-            segmentedBarWidth = newWidth
-        }
+            .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { newWidth in
+                segmentedBarWidth = newWidth
+            }
     }
 }

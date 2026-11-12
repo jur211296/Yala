@@ -53,6 +53,43 @@ struct CloudRemoteConfigTests {
         #expect(wire.forceUpdate?.minSupportedBuild == nil)
     }
 
+    @Test func wireDecode_aiCloudExplore_andSnapshotWithoutIt() throws {
+        let json = Data(#"{"v":1,"flags":{"aiCloudExploreRolloutPercent":10}}"#.utf8)
+        let wire = try JSONDecoder().decode(RemoteConfigWireResponse.self, from: json)
+        #expect(wire.flags?.aiCloudExploreRolloutPercent == 10)
+        // Un snapshot guardado por una versión anterior (sin el campo) decodifica con nil: apagado.
+        let old = Data(#"{"cloudModeRolloutPercent":100,"fetchedAt":800000000}"#.utf8)
+        let snapshot = try JSONDecoder().decode(RemoteFlagsSnapshot.self, from: old)
+        #expect(snapshot.aiCloudExploreRolloutPercent == nil)
+    }
+
+    /// Yala IA con herramientas falla cerrado en TODOS los builds: no hereda el «ausente = encendido» de DEV que tienen
+    /// los tres flags de la nube. El camino que lee el snapshot no corre bajo test, así que se fija su cuerpo.
+    @Test func aiCloudExplore_failsClosedInEveryBuild() throws {
+        CloudRemoteFlags._testResetOverrides()
+        defer { CloudRemoteFlags._testResetOverrides() }
+        #expect(CloudRemoteFlags.aiCloudExploreEnabled == false)
+        CloudRemoteFlags._testSetOverrides(aiCloudExplore: true)
+        #expect(CloudRemoteFlags.aiCloudExploreEnabled == true)
+        // El reset lo vuelve a apagar (no queda pegado entre tests).
+        CloudRemoteFlags._testResetOverrides()
+        #expect(CloudRemoteFlags.aiCloudExploreEnabled == false)
+
+        let source = try String(
+            contentsOf: URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+                .deletingLastPathComponent().appendingPathComponent("Yala/Services/CloudSync/CloudRemoteConfig.swift"),
+            encoding: .utf8
+        )
+        let start = try #require(source.range(of: "static var aiCloudExploreEnabled: Bool {"))
+        let end = try #require(source[start.upperBound...].range(of: "\n    }\n"))
+        let body = source[start.upperBound..<end.lowerBound]
+        #expect(body.contains("if isRunningTests || isUITestHost { return false }"))
+        #expect(body.contains("guard let snapshot = CloudRemoteConfigStore.readSnapshot() else { return false }"))
+        #expect(body.contains("absentDefault: false"))
+        #expect(!body.contains("absentDefault: absentDefault"))
+        #expect(!body.contains("decide("))
+    }
+
     @Test func wireDecode_forceUpdate() throws {
         let json = Data(#"{"v":1,"flags":{},"forceUpdate":{"minSupportedBuild":137}}"#.utf8)
         let wire = try JSONDecoder().decode(RemoteConfigWireResponse.self, from: json)
