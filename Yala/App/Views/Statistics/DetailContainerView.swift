@@ -524,14 +524,26 @@ struct DetailContainerView: View {
                 dataGeneration: dataViewModel.dataGeneration,
                 viewModel: trendsViewModel,
                 insightsViewModel: insightsViewModel,
-                defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
+                defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
+                // Detalle de una categoría (decisión 25 de 2.3): un registro abre su hoja, la del chip Registros, y
+                // «Ver en Registros» pasa a ese chip como un toque en la fila.
+                onOpenRecord: { record in openRecordInSheet(record) },
+                onShowRecordsTab: { StagedTabSelection.select(.records, in: $pages, reduceMotion: reduceMotion) }
             )
-            // Tocar un segmento pregunta «Ver solo / Ocultar» (propuesta A, 2026-10-25).
+            // Tocar un segmento pregunta «Ver solo / Ocultar» (propuesta A, 2026-10-25). Las categorías ya no: abren
+            // su detalle; subcategorías, etiquetas y necesidades siguen preguntando.
             .segmentFilterChoiceHost()
             .accessibilityIdentifier("stats_tab_categories")
         case .records:
             recordsContent
         }
+    }
+
+    /// Un registro tocado fuera del chip Registros (el detalle de una categoría): siempre en hoja, también en ancha,
+    /// porque el panel lateral solo existe en ese chip.
+    private func openRecordInSheet(_ record: TransactionItem) {
+        recordsViewModel.editingTransaction = record
+        recordsViewModel.showTransactionDetail = true
     }
 
     // MARK: - Registros: lista y registro abierto

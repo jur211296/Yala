@@ -8156,3 +8156,4 @@
 "groups.discard.paymentTitle" = "¿Descartar este pago?";
 "groups.discard.openingBalanceTitle" = "¿Descartar este saldo inicial?";
 "groups.expense.groupChangedNotice" = "Has cambiado de grupo: lo que escribiste se queda; quién pagó y el reparto vuelven a empezar.";
+"statistics.categoryDetail.seeInRecords" = "Ver en Registros";

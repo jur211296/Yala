@@ -8906,3 +8906,4 @@
 "groups.discard.paymentTitle" = "Scartare questo pagamento?";
 "groups.discard.openingBalanceTitle" = "Scartare questo saldo iniziale?";
 "groups.expense.groupChangedNotice" = "Hai cambiato gruppo: quello che hai scritto resta; chi ha pagato e la divisione ripartono da capo.";
+"statistics.categoryDetail.seeInRecords" = "Vedi in Registri";

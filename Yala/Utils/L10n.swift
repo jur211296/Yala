@@ -1767,6 +1767,10 @@ enum L10n {
         static var ofExpense: String {
             ls("statistics.ofExpense", comment: "")
         }
+        /// Detalle de una categoría en Distribución (decisión 25 de la revisión 2.3): lleva a sus registros.
+        static var categoryDetailSeeInRecords: String {
+            ls("statistics.categoryDetail.seeInRecords", comment: "Category detail in Statistics: link that opens Records showing only this category")
+        }
         static var spendingAnalysis: String {
             ls("statistics.spendingAnalysis", comment: "")
         }

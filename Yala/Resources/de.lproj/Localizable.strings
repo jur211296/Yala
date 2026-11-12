@@ -8896,3 +8896,4 @@
 "groups.discard.paymentTitle" = "Diese Zahlung verwerfen?";
 "groups.discard.openingBalanceTitle" = "Diesen Anfangssaldo verwerfen?";
 "groups.expense.groupChangedNotice" = "Du hast die Gruppe gewechselt: Was du eingegeben hast, bleibt; wer bezahlt hat und die Aufteilung beginnen von vorn.";
+"statistics.categoryDetail.seeInRecords" = "In Einträgen ansehen";

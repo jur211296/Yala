@@ -8908,3 +8908,4 @@
 "groups.discard.paymentTitle" = "要丢弃这笔付款吗？";
 "groups.discard.openingBalanceTitle" = "要丢弃这个初始余额吗？";
 "groups.expense.groupChangedNotice" = "你换了群组：已填写的内容保留；谁付的款和分摊方式重新开始。";
+"statistics.categoryDetail.seeInRecords" = "在记录中查看";
