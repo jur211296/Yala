@@ -87,7 +87,9 @@ struct NetFlowSummaryView: View {
             value: abs(currentAmount),
             currencyCode: currencyCode,
             font: DS.Typography.label.weight(.semibold),
-            tint: .color(currentAmount >= 0 ? Color.electricIndigo : Color.hotPink)
+            // Tokens de TEXTO que pasan AA en claro y oscuro; índigo y rosa de la paleta no llegan como texto sobre la
+            // tarjeta (lote 08 de 2.3, regla de color en `swiftui-ds.md`).
+            tint: .color(currentAmount >= 0 ? Color.incomeAmount : Color.groupOweAmount)
         )
         .lineLimit(1)
         .minimumScaleFactor(0.7)
@@ -100,7 +102,8 @@ struct NetFlowSummaryView: View {
                 variation: variation,
                 size: .small,
                 showNAWhenNil: previousAmount == nil,
-                isExpenseContext: false
+                isExpenseContext: false,
+                usesAccessibleTextTone: true
             )
         }
     }

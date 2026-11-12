@@ -20,12 +20,21 @@ struct CashFlowOthersSheet: View {
     private var isLargeDetent: Bool { selectedDetent == .large }
 
     private var otherResult: CashFlowOtherResult? {
-        if isIncome {
-            return viewModel.projection?.months.first(where: \.isCurrent)?.otherIncome
-                ?? viewModel.projection?.months.first?.otherIncome
-        }
-        return viewModel.projection?.months.first(where: \.isCurrent)?.otherExpenses
-            ?? viewModel.projection?.months.first?.otherExpenses
+        Self.otherResult(
+            in: viewModel.projection?.months ?? [],
+            selectedMonthKey: viewModel.selectedMonthKey,
+            isIncome: isIncome
+        )
+    }
+
+    /// Lo no considerado del mes elegido en la tira, que es desde donde se abre la hoja. Antes leía siempre el mes en
+    /// curso y, abierta desde otro mes, enseñaba lo de este (lote 08 de las necesarias 2.3). Un mes elegido sin nada
+    /// no cae al mes en curso; solo si la clave ya no está en la proyección (cambió el horizonte) se enseña el actual.
+    static func otherResult(in months: [CashFlowMonth], selectedMonthKey: String, isIncome: Bool) -> CashFlowOtherResult? {
+        let month = months.first { $0.monthKey == selectedMonthKey }
+            ?? months.first(where: \.isCurrent)
+            ?? months.first
+        return isIncome ? month?.otherIncome : month?.otherExpenses
     }
 
     var body: some View {
@@ -86,6 +95,7 @@ struct CashFlowOthersSheet: View {
                         currencyCode: currencyCode,
                         font: DS.Typography.amountSmall.monospacedDigit()
                     )
+                    .accessibilityIdentifier("cashflow_others_item_amount")
 
                     Button {
                         promoteCategory(named: item.categoryName)

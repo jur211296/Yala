@@ -37,6 +37,11 @@ struct VariationChip: View {
     /// la app sigue con el signo y las siglas.
     var usesWords: Bool = false
 
+    /// El texto en los tokens que pasan AA sobre la tarjeta (`incomeAmount` lo bueno, `groupOweAmount` lo malo) en vez de
+    /// índigo y rosa de la paleta, que como texto no llegan. Hoy solo lo pide «Te quedó» de la Comparativa (lote 08 de
+    /// 2.3); el resto de la app sigue con la paleta.
+    var usesAccessibleTextTone: Bool = false
+
     // MARK: - Size Configuration
 
     enum ChipSize {
@@ -76,6 +81,11 @@ struct VariationChip: View {
 
         if abs(variation) < 0.05 {
             return DS.Semantic.disabledForeground
+        }
+
+        if usesAccessibleTextTone {
+            let isGood = isExpenseContext ? variation < 0 : variation >= 0
+            return isGood ? .incomeAmount : .groupOweAmount
         }
 
         if isExpenseContext {

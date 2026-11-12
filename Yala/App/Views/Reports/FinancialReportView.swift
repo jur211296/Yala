@@ -334,7 +334,8 @@ struct FinancialReportView: View {
     private var cashFlowContent: some View {
         if transactions.isEmpty {
             ScrollView {
-                emptyState
+                // El flujo de caja no tiene período: su vacío no dice «en este período» (lote 08 de 2.3).
+                emptyState(message: L10n.Report.cashFlowNoDataDescription)
                     .padding(.top, DS.Spacing.xxl)
             }
         } else if cashFlowViewModel.hasPlan {
@@ -477,10 +478,14 @@ struct FinancialReportView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
+        emptyState(message: L10n.Report.noDataDescription)
+    }
+
+    private func emptyState(message: String) -> some View {
         YalaEmptyState(
             icon: "tablecells",
             title: L10n.Report.noData,
-            message: L10n.Report.noDataDescription
+            message: message
         )
     }
 

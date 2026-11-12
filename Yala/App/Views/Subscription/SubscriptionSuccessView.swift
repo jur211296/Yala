@@ -97,7 +97,6 @@ struct SubscriptionSuccessView: View {
         case .budgets: return L10n.UXPro.welcomeBudgets
         case .proThemes: return L10n.UXPro.welcomeTheme
         case .premiumIcons: return L10n.UXPro.welcomeIcon
-        case .cashFlowAdvanced: return L10n.UXPro.welcomeCashFlow
         case nil: return L10n.Subscription.Success.subtitle
         }
     }

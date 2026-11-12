@@ -1416,6 +1416,13 @@ enum L10n {
         static var cellDetailRecentTransactions: String { ls("cashFlowPlan.cellDetailRecentTransactions", comment: "") }
         static var cellDetailSpent: String { ls("cashFlowPlan.cellDetailSpent", comment: "") }
         static var cellDetailEarned: String { ls("cashFlowPlan.cellDetailEarned", comment: "") }
+        /// «Gastaste S/ 120; el estimado era S/ 100.» Una frase entera: pegar «vs» a mano salía «vs» en los 16 idiomas.
+        static func cellDetailSpentVsPlan(_ real: String, _ planned: String) -> String {
+            String(format: ls("cashFlowPlan.cellDetailSpentVsPlan", comment: "Cash flow line detail, past month. %1$@ = amount spent, %2$@ = amount estimated in the plan"), real, planned)
+        }
+        static func cellDetailEarnedVsPlan(_ real: String, _ planned: String) -> String {
+            String(format: ls("cashFlowPlan.cellDetailEarnedVsPlan", comment: "Cash flow line detail, past month. %1$@ = amount received, %2$@ = amount estimated in the plan"), real, planned)
+        }
         static var cellDetailMore: String { ls("cashFlowPlan.cellDetailMore", comment: "") }
         static var cellDetailLess: String { ls("cashFlowPlan.cellDetailLess", comment: "") }
         static var cellDetailOverrideActive: String { ls("cashFlowPlan.cellDetailOverrideActive", comment: "") }
@@ -1476,11 +1483,19 @@ enum L10n {
             String(format: ls("cashFlowPlan.commentDefault", comment: ""), count)
         }
         static var chartAllWithinPlan: String { ls("cashFlowPlan.chartAllWithinPlan", comment: "") }
-        static func deviationCommentSingle(_ name: String, _ amount: String) -> String {
-            String(format: ls("cashFlowPlan.deviationCommentSingle", comment: ""), name, amount)
+        // La frase de «Gastos por revisar» dice que la cifra es un promedio y de cuántos meses (decisión 35 de la
+        // revisión 2.3): «En Bares gastaste S/ 47 más» no casaba con los S/ 17.75 del mes.
+        static func deviationAverageSingle(_ months: Int, _ name: String, _ amount: String) -> String {
+            String(format: ls("cashFlowPlan.deviationAverageSingle", comment: "Cash flow charts: %1$d = months averaged, %2$@ = plan line, %3$@ = average monthly excess"), months, name, amount)
         }
-        static func deviationCommentMultiple(_ name: String, _ amount: String, _ total: String) -> String {
-            String(format: ls("cashFlowPlan.deviationCommentMultiple", comment: ""), name, amount, total)
+        static func deviationAverageMultiple(_ months: Int, _ name: String, _ amount: String, _ total: String) -> String {
+            String(format: ls("cashFlowPlan.deviationAverageMultiple", comment: "Cash flow charts: %1$d = months averaged, %2$@ = line with the largest excess, %3$@ = its average monthly excess, %4$@ = average monthly excess of all lines"), months, name, amount, total)
+        }
+        static func deviationThisMonthSingle(_ name: String, _ amount: String) -> String {
+            String(format: ls("cashFlowPlan.deviationThisMonthSingle", comment: "Cash flow charts, only the current month: %1$@ = plan line, %2$@ = excess"), name, amount)
+        }
+        static func deviationThisMonthMultiple(_ name: String, _ amount: String, _ total: String) -> String {
+            String(format: ls("cashFlowPlan.deviationThisMonthMultiple", comment: "Cash flow charts, only the current month: %1$@ = line with the largest excess, %2$@ = its excess, %3$@ = excess of all lines"), name, amount, total)
         }
         static var chartSavingsSubtitle: String { ls("cashFlowPlan.chartSavingsSubtitle", comment: "") }
         static var chartPlanned: String { ls("cashFlowPlan.chartPlanned", comment: "") }
@@ -1807,6 +1822,8 @@ enum L10n {
         static var netFlow: String { ls("report.netFlow", comment: "") }
         static var noData: String { ls("report.noData", comment: "") }
         static var noDataDescription: String { ls("report.noDataDescription", comment: "") }
+        /// El vacío de Flujo de caja: el flujo de caja no tiene período, así que no dice «en este período».
+        static var cashFlowNoDataDescription: String { ls("report.cashFlowNoDataDescription", comment: "Cash flow empty state: no records yet") }
         static var uncategorized: String { ls("report.uncategorized", comment: "") }
         static var noSubcategory: String { ls("report.noSubcategory", comment: "") }
         static var noTag: String { ls("report.noTag", comment: "") }
