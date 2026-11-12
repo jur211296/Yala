@@ -971,16 +971,18 @@ struct ImageSelectionView: View {
     private func cameraFinished(_ image: UIImage?) {
         showCamera = false
         guard let image else { return }
-        startReading([image])
+        startReading([PhotoIntake.image(reducing: image, maxEdge: PhotoIntake.currentIntakeMaxEdge())])
     }
 
     private func loadPickedPhotos(_ items: [PhotosPickerItem]) {
         guard !items.isEmpty else { return }
         Task {
             var loaded: [UIImage] = []
+            let maxEdge = PhotoIntake.currentIntakeMaxEdge()
             for item in items {
                 do {
-                    if let data = try await item.loadTransferable(type: Data.self), let image = UIImage(data: data) {
+                    if let data = try await item.loadTransferable(type: Data.self),
+                       let image = await PhotoIntake.imageOffMainActor(from: data, maxEdge: maxEdge) {
                         loaded.append(image)
                     }
                 } catch {
@@ -1111,25 +1113,29 @@ struct ImageSelectionView: View {
             readSharedFiles(batch)
             return
         }
-        var loaded: [UIImage] = []
-        for member in batch {
-            do {
-                let data = try Data(contentsOf: member)
-                if let image = UIImage(data: data) {
-                    loaded.append(image)
+        // Las fotos se reducen fuera del hilo principal: una tanda de diez grandes congelaba la pantalla (YALA-IOS-B).
+        Task {
+            var loaded: [UIImage] = []
+            let maxEdge = PhotoIntake.currentIntakeMaxEdge()
+            for member in batch {
+                do {
+                    let data = try Data(contentsOf: member)
+                    if let image = await PhotoIntake.imageOffMainActor(from: data, maxEdge: maxEdge) {
+                        loaded.append(image)
+                    }
+                } catch {
+                    #if DEBUG
+                    print("ImageSelectionView: Error loading shared image \(member.lastPathComponent): \(error)")
+                    #endif
                 }
-            } catch {
-                #if DEBUG
-                print("ImageSelectionView: Error loading shared image \(member.lastPathComponent): \(error)")
-                #endif
+                SharedContainerService.removePendingImage(at: member)
             }
-            SharedContainerService.removePendingImage(at: member)
+            guard !loaded.isEmpty else {
+                phase = .failure(.unreadable)
+                return
+            }
+            startReading(loaded, sharedPhotosLeftOut: SharedImageBatch.leftOutCount(for: url))
         }
-        guard !loaded.isEmpty else {
-            phase = .failure(.unreadable)
-            return
-        }
-        startReading(loaded, sharedPhotosLeftOut: SharedImageBatch.leftOutCount(for: url))
     }
 
     /// Una tanda soltada con algún PDF: fotos y PDF juntos, por el mismo camino que varios archivos elegidos en Archivo.
@@ -1160,7 +1166,7 @@ struct ImageSelectionView: View {
                 openFiles([.pdf(data)])
                 return
             }
-            guard let image = UIImage(data: data) else {
+            guard let image = PhotoIntake.image(from: data, maxEdge: PhotoIntake.currentIntakeMaxEdge()) else {
                 phase = .failure(.unreadable)
                 return
             }

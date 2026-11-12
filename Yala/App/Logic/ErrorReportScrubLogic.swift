@@ -58,12 +58,37 @@ nonisolated enum ErrorReportScrubLogic {
 
     /// Lo que queda del `data` de un breadcrumb. De uno HTTP, el método, la URL sin query y el status; de cualquier
     /// otro, nada: sus datos pueden ser el texto de una pantalla.
+    ///
+    /// Desde el 2026-11-12 (YALA-IOS-B) se conservan además cuatro datos fijos que no pueden llevar nada del usuario y
+    /// sin los cuales un cierre por memoria llegaba mudo: el estado de los rastros de ciclo de vida, la acción de los
+    /// de sistema (`LOW_MEMORY`, teclado), las cifras de los de memoria y el nombre fijo de la pestaña.
     static func breadcrumbData(category: String, type: String?, data: [String: Any]?) -> [String: Any]? {
-        guard let data, category == "http" || type == "http" else { return nil }
+        guard let data else { return nil }
         var kept: [String: Any] = [:]
-        if let method = data["method"] { kept["method"] = method }
-        if let url = data["url"] as? String { kept["url"] = stripQuery(url) }
-        if let status = data["status_code"] { kept["status_code"] = status }
+        if category == "http" || type == "http" {
+            if let method = data["method"] { kept["method"] = method }
+            if let url = data["url"] as? String { kept["url"] = stripQuery(url) }
+            if let status = data["status_code"] { kept["status_code"] = status }
+        } else if category == "app.lifecycle" {
+            if let state = data["state"] as? String, lifecycleStates.contains(state) { kept["state"] = state }
+        } else if category == "device.event" {
+            // Las acciones son constantes del SDK («LOW_MEMORY», «UIKeyboardDidShowNotification»); los demás datos
+            // (zona horaria, batería) se van.
+            if let action = data["action"] as? String, isConstantIdentifier(action) { kept["action"] = action }
+        } else if category == MemoryDiagnosticsLogic.memoryCategory {
+            for key in MemoryDiagnosticsLogic.memoryBreadcrumbKeys {
+                if let value = data[key] as? Int { kept[key] = value }
+            }
+        } else if category == MemoryDiagnosticsLogic.tabCategory {
+            if let tab = data["tab"] as? String, MemoryDiagnosticsLogic.tabNames.contains(tab) { kept["tab"] = tab }
+        }
         return kept.isEmpty ? nil : kept
+    }
+
+    private static let lifecycleStates: Set<String> = ["active", "inactive", "background", "foreground"]
+
+    /// Un identificador de código (letras, cifras y guion bajo, hasta 64): no cabe un nombre, un importe ni un correo.
+    private static func isConstantIdentifier(_ text: String) -> Bool {
+        !text.isEmpty && text.count <= 64 && text.allSatisfy { ($0.isASCII && ($0.isLetter || $0.isNumber)) || $0 == "_" }
     }
 }

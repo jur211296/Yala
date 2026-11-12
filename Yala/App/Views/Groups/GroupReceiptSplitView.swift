@@ -562,14 +562,17 @@ struct GroupReceiptSplitView: View {
 
     private func cameraFinished(_ image: UIImage?) {
         showCamera = false
-        if let image { photo = image }
+        if let image {
+            photo = PhotoIntake.image(reducing: image, maxEdge: PhotoIntake.currentIntakeMaxEdge())
+        }
     }
 
     private func loadPicked(_ item: PhotosPickerItem?) {
         guard let item else { return }
         Task {
             do {
-                if let data = try await item.loadTransferable(type: Data.self), let image = UIImage(data: data) {
+                if let data = try await item.loadTransferable(type: Data.self),
+                   let image = PhotoIntake.image(from: data, maxEdge: PhotoIntake.currentIntakeMaxEdge()) {
                     photo = image
                 }
             } catch {
