@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1256)
+## Index (1260)
 
 | id | status | path |
 |---|---|---|
@@ -121,6 +121,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | an-undecodable-migration-phase-reads-as-never-started | done | tickets/done/an-undecodable-migration-phase-reads-as-never-started.md |
 | an-unreadable-migration-journal-reads-as-never-started | done | tickets/done/an-unreadable-migration-journal-reads-as-never-started.md |
 | another-account-group-copy-assumes-a-single-other-account | backlog | tickets/backlog/another-account-group-copy-assumes-a-single-other-account.md |
+| app-closed-by-ios-for-memory-yala-ios-b | qa | tickets/qa/app-closed-by-ios-for-memory-yala-ios-b.md |
 | app-uploads-its-timezone-to-the-cloud | qa | tickets/qa/app-uploads-its-timezone-to-the-cloud.md |
 | apple-id-change-boot-check-is-lost-when-the-journal-is-unreadable-at-launch | backlog | tickets/backlog/apple-id-change-boot-check-is-lost-when-the-journal-is-unreadable-at-launch.md |
 | apple-id-change-boot-check-runs-before-the-migration-guard-can-see | done | tickets/done/apple-id-change-boot-check-runs-before-the-migration-guard-can-see.md |
@@ -152,9 +153,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | backend-account-kind-complete-or-groups-only | done | tickets/done/backend-account-kind-complete-or-groups-only.md |
 | balance-chart-last-axis-label-overlaps-and-today-pill-covers-the-top-label | done | tickets/done/balance-chart-last-axis-label-overlaps-and-today-pill-covers-the-top-label.md |
 | balance-chart-voiceover-reads-base-to-monto | backlog | tickets/backlog/balance-chart-voiceover-reads-base-to-monto.md |
+| balance-chip-compares-against-the-day-after-in-the-previous-month | backlog | tickets/backlog/balance-chip-compares-against-the-day-after-in-the-previous-month.md |
 | balance-figure-counts-future-dated-rows-the-curve-never-draws | done | tickets/done/balance-figure-counts-future-dated-rows-the-curve-never-draws.md |
 | bank-email-forwarding-to-the-inbox | done | tickets/done/bank-email-forwarding-to-the-inbox.md |
-| balance-chip-compares-against-the-day-after-in-the-previous-month | backlog | tickets/backlog/balance-chip-compares-against-the-day-after-in-the-previous-month.md |
 | bank-email-measure-a-week-of-real-peruvian-alerts | backlog | tickets/backlog/bank-email-measure-a-week-of-real-peruvian-alerts.md |
 | bank-email-read-reconcile-with-the-ai-cost-control | done | tickets/done/bank-email-read-reconcile-with-the-ai-cost-control.md |
 | barrido-ios27-animaciones-y-vistas-mal-optimizadas | done | tickets/done/barrido-ios27-animaciones-y-vistas-mal-optimizadas.md |
@@ -422,7 +423,6 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | favorite-editor-does-not-know-transfer-favorites | done | tickets/done/favorite-editor-does-not-know-transfer-favorites.md |
 | favorite-transfer-destination-does-not-travel-in-cloud-mode | blocked | tickets/blocked/favorite-transfer-destination-does-not-travel-in-cloud-mode.md |
 | favorites-at-record-time-amount-types-and-delete-2-3 | done | tickets/done/favorites-at-record-time-amount-types-and-delete-2-3.md |
-| voice-and-photo-announce-ask-before-discarding-and-success-rows-2-3 | done | tickets/done/voice-and-photo-announce-ask-before-discarding-and-success-rows-2-3.md |
 | favorites-reorder-uses-the-shown-index-on-the-full-list | backlog | tickets/backlog/favorites-reorder-uses-the-shown-index-on-the-full-list.md |
 | ficha-mx-vida-rates-jump-on-the-last-day | done | tickets/done/ficha-mx-vida-rates-jump-on-the-last-day.md |
 | figures-that-dont-add-up-lote-02-necessary-2-3 | done | tickets/done/figures-that-dont-add-up-lote-02-necessary-2-3.md |
@@ -866,6 +866,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | pay-now-uitest-stops-on-the-possible-duplicate-notice-in-2-3 | backlog | tickets/backlog/pay-now-uitest-stops-on-the-possible-duplicate-notice-in-2-3.md |
 | paywall-inbox-routing-uitest-misses-the-held-paywall-in-a-batch | done | tickets/done/paywall-inbox-routing-uitest-misses-the-held-paywall-in-a-batch.md |
 | paywall-storekit-alert-is-never-cleared | done | tickets/done/paywall-storekit-alert-is-never-cleared.md |
+| pdf-pages-render-without-a-pixel-ceiling | backlog | tickets/backlog/pdf-pages-render-without-a-pixel-ceiling.md |
 | pdf-statement-pages-without-currency-pick-no-account | backlog | tickets/backlog/pdf-statement-pages-without-currency-pick-no-account.md |
 | pdf-statement-reads-only-the-first-page | done | tickets/done/pdf-statement-reads-only-the-first-page.md |
 | pending-reverse-complete-runs-with-whatever-session-is-live | backlog | tickets/backlog/pending-reverse-complete-runs-with-whatever-session-is-live.md |
@@ -1080,6 +1081,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | secondary-visit-data-lost-on-signout-unannounced | discarded | tickets/discarded/secondary-visit-data-lost-on-signout-unannounced.md |
 | secondary-visitor-writes-owner-domain | discarded | tickets/discarded/secondary-visitor-writes-owner-domain.md |
 | seeds-de-grupos-no-escriben-userid-ni-memberkey | done | tickets/done/seeds-de-grupos-no-escriben-userid-ni-memberkey.md |
+| sentry-scrub-turns-hang-durations-into-amounts | backlog | tickets/backlog/sentry-scrub-turns-hang-durations-into-amounts.md |
 | session-exits-one-verb-per-session | done | tickets/done/session-exits-one-verb-per-session.md |
 | session-redesign-implementation-order | done | tickets/done/session-redesign-implementation-order.md |
 | session-redesign-web-and-store-copy | done | tickets/done/session-redesign-web-and-store-copy.md |
@@ -1218,6 +1220,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | vigilante-margen-menor-que-el-retraso-real-del-cron | done | tickets/done/vigilante-margen-menor-que-el-retraso-real-del-cron.md |
 | vision-amount-sign-contract-is-only-a-prompt-example | discarded | tickets/discarded/vision-amount-sign-contract-is-only-a-prompt-example.md |
 | vision-reads-every-dollar-sign-as-usd | done | tickets/done/vision-reads-every-dollar-sign-as-usd.md |
+| voice-and-photo-announce-ask-before-discarding-and-success-rows-2-3 | done | tickets/done/voice-and-photo-announce-ask-before-discarding-and-success-rows-2-3.md |
 | voice-cancel-does-not-resume-other-apps-audio | done | tickets/done/voice-cancel-does-not-resume-other-apps-audio.md |
 | voice-entry-end-to-end | done | tickets/done/voice-entry-end-to-end.md |
 | voice-language-and-silence-handling-differ-between-chat-and-sheet | backlog | tickets/backlog/voice-language-and-silence-handling-differ-between-chat-and-sheet.md |
