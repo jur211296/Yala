@@ -438,6 +438,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | follower-waits-forever-on-a-lease-with-a-null-heartbeat | backlog | tickets/backlog/follower-waits-forever-on-a-lease-with-a-null-heartbeat.md |
 | force-fetch-and-wait-ignores-cancellation | done | tickets/done/force-fetch-and-wait-ignores-cancellation.md |
 | forcesync-returns-ok-without-touching-the-network | backlog | tickets/backlog/forcesync-returns-ok-without-touching-the-network.md |
+| form-clarity-23-large-text-uitests-red-on-2-3 | backlog | tickets/backlog/form-clarity-23-large-text-uitests-red-on-2-3.md |
 | forms-read-their-deleted-model-while-closing | done | tickets/done/forms-read-their-deleted-model-while-closing.md |
 | forward-identity-capture-advances-when-it-could-not-read-any-row | backlog | tickets/backlog/forward-identity-capture-advances-when-it-could-not-read-any-row.md |
 | forward-migration-steps-have-no-ceiling-and-no-exit | done | tickets/done/forward-migration-steps-have-no-ceiling-and-no-exit.md |
@@ -711,6 +712,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | invite-sign-in-with-a-complete-account-blocks-on-its-own-groups | done | tickets/done/invite-sign-in-with-a-complete-account-blocks-on-its-own-groups.md |
 | ipad-account-form-uitest-times-out-inside-a-long-run | backlog | tickets/backlog/ipad-account-form-uitest-times-out-inside-a-long-run.md |
 | ipad-and-duo-panel-and-statistics-use-the-width | done | tickets/done/ipad-and-duo-panel-and-statistics-use-the-width.md |
+| ipad-decimal-pad-floats-over-other-amount-fields | backlog | tickets/backlog/ipad-decimal-pad-floats-over-other-amount-fields.md |
 | ipad-drop-unreadable-file-fails-silently | done | tickets/done/ipad-drop-unreadable-file-fails-silently.md |
 | ipad-group-detail-keeps-the-first-group-after-switching | done | tickets/done/ipad-group-detail-keeps-the-first-group-after-switching.md |
 | ipad-keyboard-shortcuts-pointer-context-menus-and-drop | done | tickets/done/ipad-keyboard-shortcuts-pointer-context-menus-and-drop.md |
