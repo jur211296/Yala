@@ -66,6 +66,10 @@ extension L10n {
 
         /// «En el límite»: la palabra que acompaña a la barra naranja (decisión de Jürgen, 2026-11-05).
         static var atLimit: String { l9("budgets.l9.atLimit") }
+        /// «Llegaste al límite»: gastado justo el límite, sin pasarse (decisión 23 de 2.3).
+        static var reachedLimit: String { l9("budgets.l9.reachedLimit") }
+        /// «Te pasaste»: la palabra bajo la barra rosa (decisión 23 de 2.3). La cifra sigue con «Te pasaste por».
+        static var overLimitWord: String { l9("budgets.l9.overLimitWord") }
 
         // MARK: - Editor (L9-2, L9-3, L9-4, L9-12, L9-13)
 

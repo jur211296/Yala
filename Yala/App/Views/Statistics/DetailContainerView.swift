@@ -524,14 +524,26 @@ struct DetailContainerView: View {
                 dataGeneration: dataViewModel.dataGeneration,
                 viewModel: trendsViewModel,
                 insightsViewModel: insightsViewModel,
-                defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
+                defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
+                // Detalle de una categoría (decisión 25 de 2.3): un registro abre su hoja, la del chip Registros, y
+                // «Ver en Registros» pasa a ese chip como un toque en la fila.
+                onOpenRecord: { record in openRecordInSheet(record) },
+                onShowRecordsTab: { StagedTabSelection.select(.records, in: $pages, reduceMotion: reduceMotion) }
             )
-            // Tocar un segmento pregunta «Ver solo / Ocultar» (propuesta A, 2026-10-25).
+            // Tocar un segmento pregunta «Ver solo / Ocultar» (propuesta A, 2026-10-25). Las categorías ya no: abren
+            // su detalle; subcategorías, etiquetas y necesidades siguen preguntando.
             .segmentFilterChoiceHost()
             .accessibilityIdentifier("stats_tab_categories")
         case .records:
             recordsContent
         }
+    }
+
+    /// Un registro tocado fuera del chip Registros (el detalle de una categoría): siempre en hoja, también en ancha,
+    /// porque el panel lateral solo existe en ese chip.
+    private func openRecordInSheet(_ record: TransactionItem) {
+        recordsViewModel.editingTransaction = record
+        recordsViewModel.showTransactionDetail = true
     }
 
     // MARK: - Registros: lista y registro abierto
@@ -585,7 +597,9 @@ struct DetailContainerView: View {
                 subcategories: dataViewModel.allSubcategories,
                 transactionDateRange: dataViewModel.computeTransactionDateRange(),
                 defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
-                onFilterChange: { recalculateData() }
+                onFilterChange: { recalculateData() },
+                loadFailed: dataViewModel.transactionsLoadFailed,
+                onRetryLoad: { reloadAndRecalculate() }
             )
             .frame(width: sideBySide ? recordsListWidths.ideal : nil)
             .overlay(alignment: .trailing) {
@@ -967,7 +981,9 @@ private struct DetailContainerSheets: ViewModifier {
                 openAIEntryAfterUnlock(.image)
             }
             // Yala IA: columna al lado en ventana ancha, la hoja de siempre en compacta.
-            .yalaAIChat(isPresented: $showChatSheet, insideNavigationStack: true)
+            .yalaAIChat(
+                isPresented: $showChatSheet, insideNavigationStack: true,
+                onManualEntry: { recordsViewModel.showNewTransaction = true })
             .yalaAIOnboardingSheet(
                 isPresented: $showYalaAIOnboarding,
                 pendingOpenChat: $pendingOpenChatAfterOnboarding,
@@ -975,9 +991,11 @@ private struct DetailContainerSheets: ViewModifier {
                 launcher: .stats,
                 onPersistFlag: { appPreferences.hasShownYalaAIOnboarding = true }
             )
-            .proUpgradeSheet(isPresented: $showUpgradeForChat, feature: .chatAssistant, context: .proFeature) {
-                openChatAfterUnlock()
-            }
+            .proUpgradeSheet(
+                isPresented: $showUpgradeForChat, feature: .chatAssistant, context: .proFeature,
+                onManualEntry: { recordsViewModel.showNewTransaction = true },
+                onUnlocked: { openChatAfterUnlock() }
+            )
             .chatConsentAlert(isPresented: $showChatConsentAlert) {
                 switch YalaAIOnboardingLogic.nextScreen(
                     consentAccepted: true,

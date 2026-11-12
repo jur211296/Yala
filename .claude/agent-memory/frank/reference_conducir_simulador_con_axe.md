@@ -31,6 +31,10 @@ En el barrido de QA del 2026-10-15 recorrí ~40 pantallas con `axe` (CLI en `/op
   capturas salen del propio test (`TEST_RUNNER_<VAR>` + `app.screenshot().pngRepresentation.write`), que además queda
   como red. Y erase antes de volver a XCUITest (regla del teclado físico de `testing.md`).
 - Las marcas de selección de Fotos se pintan con retraso: el contador «Mostrar selección (N)» es la verdad, no la captura.
+- (2026-11-12) En Registros, «Más filtros», los chips de moneda y el segmentado del monto ignoran `axe tap` (por id y por
+  punto) y responden a `axe touch -x X -y Y --down --up --delay 0.1`. Dentro de la hoja de Filtros, un `axe swipe` hacia
+  ARRIBA desplaza sin cerrarla. Llegar al año pasado en «Todo el tiempo» a golpe de swipe se pasa de largo: para eso,
+  XCUITest con el separador de mes.
 
 **How to apply:** en cualquier `/qa` o `/barrido-qa` largo. Para un toque suelto con elementRef, el MCP sigue valiendo.
 Relacionado: [[capturar-el-menu-de-compartir]], [[el-tap-de-xcodebuildmcp-se-pierde-en-pantallas-vivas]].

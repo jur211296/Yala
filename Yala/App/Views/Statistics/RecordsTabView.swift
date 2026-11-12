@@ -32,6 +32,14 @@ struct RecordsTabView: View {
     let transactionDateRange: (start: Date, end: Date)
     let defaultCurrencyCode: String
     var onFilterChange: () -> Void
+    /// Registros (la pestaña) lleva los chips rápidos sobre la lista (revisión 2.3, decisión 15, F2); Estadísticas ›
+    /// Registros, no.
+    var showsQuickFilters: Bool = false
+    /// La última lectura de los movimientos falló (decisión 78 de 2.3): con la lista vacía se enseña el error, no
+    /// «Sin registros». Lo da `DetailContainerViewModel.transactionsLoadFailed`.
+    var loadFailed: Bool = false
+    /// «Reintentar» del estado de error: vuelve a leer el almacén y recalcula.
+    var onRetryLoad: () -> Void = {}
 
     @State private var showCustomPeriodPicker: Bool = false
     /// El `ScrollView` tiene poco alto (iPhone girado): la cabecera va en banda (`SummaryHeaderStack`).
@@ -44,6 +52,8 @@ struct RecordsTabView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: DS.Spacing.md) {
+                // «Buscar en Registros» (decisión 14 de 2.3): asoma al tirar; solo en Registros, no en Estadísticas.
+                RecordsListSearchSlot(viewModel: viewModel, onQueryChange: onFilterChange)
                 StatsGuideSlot()
                 // L8-11: en modo duplicados el resumen del período («Neto del período · Sigue así») no dice nada de
                 // lo que se busca; lo sustituye el encabezado del modo, con el período para poder ampliar la búsqueda.
@@ -65,6 +75,17 @@ struct RecordsTabView: View {
                     StatsQuickActionsSlot()
                 }
 
+                if showsQuickFilters && !viewModel.duplicateModeActive {
+                    RecordsQuickFilterBar(
+                        viewModel: viewModel,
+                        accounts: accounts,
+                        categories: categories,
+                        subcategories: subcategories,
+                        onCustomPeriod: { showCustomPeriodPicker = true },
+                        onFilterChange: onFilterChange
+                    )
+                }
+
                 filterBarPanel
 
                 // Card C7: hasta el primer filtrado la lista vacía no es «Sin registros», es que aún no se ha cargado;
@@ -72,30 +93,24 @@ struct RecordsTabView: View {
                 // espaciado que la de fuera: no cambia nada de sitio.
                 // Card 1jvv: borrar el último registro o apuntar el primero releva la lista y «Sin registros»
                 // fundiéndose, en el sitio (`ZStack`); un filtro que vacía la lista sigue en seco.
+                // Decisión 78 de 2.3: mientras carga, un indicador que asoma si tarda; si la lectura falló, el error
+                // con «Reintentar» (`RecordsListStateLogic`).
                 ZStack(alignment: .top) {
                     if !viewModel.hasAppliedFilters {
-                        EmptyView()
+                        RecordsLoadingIndicator()
                     } else if viewModel.groupedRecords.isEmpty {
-                        emptyStateContent
-                            .transition(.stateSwap)
+                        // Decisión 77 de 2.3: con la lista vacía el selector Lista/Calendario se queda (y el
+                        // calendario, si es el elegido). Con el error no: no hay nada que ver de ninguna forma.
+                        VStack(spacing: DS.Spacing.md) {
+                            if listState != .failed {
+                                viewModeArea
+                            }
+                            emptyStateContent
+                        }
+                        .transition(.stateSwap)
                     } else {
                         VStack(spacing: DS.Spacing.md) {
-                            viewModeHeader
-
-                            if recordsViewMode == .calendar {
-                                RecordsCalendarView(
-                                    groups: viewModel.groupedRecords,
-                                    period: viewModel.period,
-                                    customDateRange: sessionState.customDateRange,
-                                    currencyCode: defaultCurrencyCode,
-                                    adjustment: viewModel.statsAdjustment,
-                                    selectedDay: $selectedCalendarDay,
-                                    calendarMonth: $calendarMonth
-                                )
-                                .padding(.horizontal, DS.Spacing.lg)
-
-                                calendarDaySummary
-                            }
+                            viewModeArea
 
                             recordsListContent
                         }
@@ -112,6 +127,7 @@ struct RecordsTabView: View {
         }
         .measuresShortContainer($isShortContainer)
         .scrollViewGlassEdges()
+        .revealsRecordsListSearchOnPull(viewModel)
         // El nombre del grupo en las filas que vienen de un gasto de grupo (L8-5).
         .providesGroupNames()
         .sheet(isPresented: $showCustomPeriodPicker) {
@@ -256,7 +272,8 @@ struct RecordsTabView: View {
             onClearTransactionType: { viewModel.transactionTypeFilter = .all },
             onFilterChange: onFilterChange,
             panelStyle: true,
-            inlinePeriodSelector: false
+            inlinePeriodSelector: false,
+            hidesQuickFilterDimensions: showsQuickFilters && !viewModel.duplicateModeActive
         )
     }
 
@@ -457,35 +474,39 @@ struct RecordsTabView: View {
     }
 
     private func recordsList(_ groups: [(date: Date, records: [TransactionItem])]) -> some View {
-        // Sin cabeceras fijas: la fecha no tiene fondo y, fija arriba, se escribía encima de las filas al hacer scroll.
-        LazyVStack(spacing: DS.Spacing.sm) {
-            ForEach(groups, id: \.date) { group in
-                Section {
-                    ForEach(group.records, id: \.persistentModelID) { record in
-                        RecordRowView(
-                            record: record,
-                            currencyCode: defaultCurrencyCode,
-                            isSelectionMode: viewModel.isSelectionMode,
-                            isSelected: viewModel.selectedRecordIDs.contains(
-                                record.persistentModelID),
-                            onTap: {
-                                viewModel.showRecordDetail(record)
-                            },
-                            onToggleSelection: {
-                                viewModel.toggleSelection(record.persistentModelID)
+        // Revisión 2.3, decisión 17 (T1 + T2): la lista va por meses. Lo único fijo es el separador de mes, con banda
+        // opaca (decisión 79), y solo cuando la lista cruza meses; la cabecera de día va con el scroll (desde 2.2: sin
+        // fondo, fija arriba, se escribía encima de las filas) y dice lo gastado ese día, con el año si no es el actual.
+        let months = RecordsMonthSectionsLogic.months(groups) { records in
+            DailySpendingCalculator.dayTotals(
+                records: records, adjustment: viewModel.statsAdjustment, currencyCode: defaultCurrencyCode
+            ).expense
+        }
+        let showsSeparator = RecordsMonthSectionsLogic.showsMonthSeparator(monthCount: months.count)
+        let options = showsSeparator ? months.map(monthOption) : []
+        return ScrollViewReader { proxy in
+            LazyVStack(spacing: DS.Spacing.sm, pinnedViews: .sectionHeaders) {
+                ForEach(months, id: \.start) { month in
+                    Section {
+                        ForEach(month.days, id: \.date) { day in
+                            RecordDateSectionView(
+                                date: day.date,
+                                includesYear: RecordsMonthSectionsLogic.dayHeaderIncludesYear(day.date),
+                                spentText: RecordsMonthSectionsLogic.shownSpent(day.spent).map(spentText),
+                                showsWeekday: true,
+                                dayAction: viewModel.isSelectionMode
+                                    ? .init(isDaySelected: viewModel.isDayFullySelected(day.records)) {
+                                        viewModel.toggleDaySelection(day.records)
+                                    }
+                                    : nil
+                            )
+                            ForEach(day.records, id: \.persistentModelID) { record in
+                                recordRow(record)
                             }
-                        )
-                        .modifier(RecordRowContextMenu(record: record, viewModel: viewModel))
+                        }
+                    } header: {
+                        if showsSeparator { monthSeparator(month, options: options, proxy: proxy) }
                     }
-                } header: {
-                    RecordDateSectionView(
-                        date: group.date,
-                        dayAction: viewModel.isSelectionMode
-                            ? .init(isDaySelected: viewModel.isDayFullySelected(group.records)) {
-                                viewModel.toggleDaySelection(group.records)
-                            }
-                            : nil
-                    )
                 }
             }
         }
@@ -496,6 +517,83 @@ struct RecordsTabView: View {
         // «+»: al final del scroll, la última fila sube por encima de los dos. Dos aunque Yala IA esté oculto —
         // sobrar 68 pt al final no se ve; quedarse corto tapa el importe.
         .padding(.bottom, DS.Button.fabStackClearance(buttons: 2))
+    }
+
+    private func recordRow(_ record: TransactionItem) -> some View {
+        RecordRowView(
+            record: record,
+            currencyCode: defaultCurrencyCode,
+            isSelectionMode: viewModel.isSelectionMode,
+            isSelected: viewModel.selectedRecordIDs.contains(record.persistentModelID),
+            onTap: {
+                viewModel.showRecordDetail(record)
+            },
+            onToggleSelection: {
+                viewModel.toggleSelection(record.persistentModelID)
+            }
+        )
+        .modifier(RecordRowContextMenu(record: record, viewModel: viewModel))
+    }
+
+    // MARK: - Separador de mes (revisión 2.3, decisión 17, T2)
+
+    /// Lo gastado, con el formato de importes de la app y en negativo, como las filas: «S/ -231.40».
+    private func spentText(_ spent: Double) -> String {
+        appPreferences.currency(-spent, currencyCode: defaultCurrencyCode)
+    }
+
+    /// «Octubre 2026»: mayúscula solo en la primera letra, como el calendario.
+    private func monthTitle(_ start: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = AppLocale.current
+        formatter.setLocalizedDateFormatFromTemplate("MMMMyyyy")
+        return formatter.string(from: start).capitalizingFirstLetter(locale: AppLocale.current)
+    }
+
+    /// «182 registros · S/ -6,420.00»; sin gasto en el mes, solo el recuento.
+    private func monthSummary(_ month: RecordsMonthSectionsLogic.Month<TransactionItem>) -> String {
+        let count = L10n.UXL7.recordsCount(month.recordCount)
+        guard let spent = RecordsMonthSectionsLogic.shownSpent(month.spent) else { return count }
+        return "\(count) · \(spentText(spent))"
+    }
+
+    private func monthOption(_ month: RecordsMonthSectionsLogic.Month<TransactionItem>) -> RecordsMonthSeparator.Option {
+        RecordsMonthSeparator.Option(
+            id: month.start,
+            title: monthTitle(month.start),
+            summary: monthSummary(month)
+        )
+    }
+
+    private func monthSeparator(
+        _ month: RecordsMonthSectionsLogic.Month<TransactionItem>,
+        options: [RecordsMonthSeparator.Option],
+        proxy: ScrollViewProxy
+    ) -> some View {
+        RecordsMonthSeparator(
+            title: monthTitle(month.start),
+            summary: monthSummary(month),
+            monthKey: RecordsMonthSectionsLogic.monthKey(month.start),
+            options: options,
+            onSelect: { start in jumpToMonth(start, proxy: proxy) }
+        )
+    }
+
+    /// La lista es perezosa: el primer salto calcula con alturas estimadas de lo que aún no se pintó y se quedaba un
+    /// mes corto (medido: «diciembre de 2025» aterrizaba al final de enero de 2026). Se repite cuando las filas de
+    /// alrededor ya existen, y entonces cae en su sitio.
+    private func jumpToMonth(_ start: Date, proxy: ScrollViewProxy) {
+        proxy.scrollTo(start, anchor: .top)
+        Task { @MainActor in
+            for _ in 0..<2 {
+                do {
+                    try await Task.sleep(for: .milliseconds(80))
+                } catch {
+                    return
+                }
+                proxy.scrollTo(start, anchor: .top)
+            }
+        }
     }
 
     // MARK: - Modo duplicados: un grupo por sección (L8-11)
@@ -611,6 +709,34 @@ struct RecordsTabView: View {
 
     /// Solo el selector Lista / Calendario, a la derecha. El rótulo «Registros» que iba a su izquierda repetía el
     /// título de la pantalla (o el chip de Estadísticas) y se quitó (auditoría UX 2.2, L8-1).
+    /// Qué enseña la lista según la carga (decisión 78 de 2.3).
+    private var listState: RecordsListState {
+        RecordsListStateLogic.state(
+            hasAppliedFilters: viewModel.hasAppliedFilters, loadFailed: loadFailed,
+            isEmpty: viewModel.groupedRecords.isEmpty)
+    }
+
+    /// El selector Lista/Calendario y, en modo calendario, el calendario con el resumen del día elegido.
+    @ViewBuilder
+    private var viewModeArea: some View {
+        viewModeHeader
+
+        if recordsViewMode == .calendar {
+            RecordsCalendarView(
+                groups: viewModel.groupedRecords,
+                period: viewModel.period,
+                customDateRange: sessionState.customDateRange,
+                currencyCode: defaultCurrencyCode,
+                adjustment: viewModel.statsAdjustment,
+                selectedDay: $selectedCalendarDay,
+                calendarMonth: $calendarMonth
+            )
+            .padding(.horizontal, DS.Spacing.lg)
+
+            calendarDaySummary
+        }
+    }
+
     private var viewModeHeader: some View {
         HStack {
             Spacer()
@@ -693,9 +819,16 @@ struct RecordsTabView: View {
 
     @ViewBuilder
     private var emptyStateContent: some View {
-        if viewModel.duplicateModeActive {
+        if listState == .failed {
+            // Leer los movimientos falló: no es «Sin registros» (decisión 78 de 2.3).
+            RecordsLoadErrorState(onRetry: onRetryLoad)
+        } else if viewModel.duplicateModeActive {
             // Modo duplicados sin resultados: el encabezado de arriba sigue visible para desactivar.
             duplicatesEmptyState
+        } else if viewModel.isSearchingList {
+            // Lo escrito en «Buscar en Registros» no casa con nada de lo que se ve: el vacío de Buscar.
+            YalaEmptyState.noResults()
+                .accessibilityIdentifier("records_list_search_empty")
         } else {
             YalaEmptyState(
                 icon: "list.bullet.rectangle",

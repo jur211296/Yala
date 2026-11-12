@@ -195,7 +195,8 @@ struct GroupCreateRoutingWiringTests {
             "DevSeedSettlementAmountChange.swift",   // #if DEBUG entero, y nace con isBackendGroup = true
             "DevSeedGroupRowsWithoutGroup.swift",    // #if DEBUG entero, y nace con isBackendGroup = true
             "DevSeedGroupSplitLines.swift",          // #if DEBUG entero, y nace con isBackendGroup = true
-            "DevSeedGroupsAccountCard.swift"         // #if DEBUG entero, y nace con isBackendGroup = true
+            "DevSeedGroupsAccountCard.swift",        // #if DEBUG entero, y nace con isBackendGroup = true
+            "DevSeedGroupBridgeLeftovers.swift"      // #if DEBUG entero, y nace con isBackendGroup = true
         ]
         // `DevSeedTransactions.swift` entra por el MISMO criterio que `DevSeedGroups.swift`: el
         // fichero está entero bajo `#if DEBUG` (`:8` … `:676`, que es su última línea), así que no

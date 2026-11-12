@@ -215,7 +215,7 @@ struct PanelSheetsModifier: ViewModifier {
                 sheets.accountFormSheet = AccountFormSheet(account: nil)
             }
             // Yala IA: columna al lado en ventana ancha, la hoja de siempre en compacta.
-            .yalaAIChat(isPresented: $sheets.showChatSheet)
+            .yalaAIChat(isPresented: $sheets.showChatSheet, onManualEntry: { sheets.showNewTransaction = true })
             .yalaAIOnboardingSheet(
                 isPresented: $sheets.showYalaAIOnboarding,
                 pendingOpenChat: $sheets.pendingOpenChatAfterOnboarding,
@@ -223,9 +223,11 @@ struct PanelSheetsModifier: ViewModifier {
                 launcher: .panel,
                 onPersistFlag: { appPreferences.hasShownYalaAIOnboarding = true }
             )
-            .proUpgradeSheet(isPresented: $sheets.showUpgradeForChat, feature: .chatAssistant, context: .proFeature) {
-                openChatAfterUnlock()
-            }
+            .proUpgradeSheet(
+                isPresented: $sheets.showUpgradeForChat, feature: .chatAssistant, context: .proFeature,
+                onManualEntry: { sheets.showNewTransaction = true },
+                onUnlocked: { openChatAfterUnlock() }
+            )
             .chatConsentAlert(isPresented: $sheets.showChatConsentAlert) {
                 // Consent recién aceptado por el alert. Decidimos siguiente paso vía pure-logic.
                 switch YalaAIOnboardingLogic.nextScreen(

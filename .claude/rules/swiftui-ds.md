@@ -119,6 +119,12 @@ paths:
 
 ## Gotchas de vistas
 
+- **Una foto que la persona elige entra por `PhotoIntake`, nunca por `UIImage(data:)` (medido el 2026-11-12, YALA-IOS-B).**
+  `Image(uiImage:)` decodifica la foto a tamaño completo al pintarla, también en una miniatura, y la copia vive mientras
+  se ve: diez fotos de 48 MP subieron la app de 65 MB a 1.929 MB. `PhotoIntake.image(from:maxEdge:)` la reduce al leerla
+  (ImageIO) y `image(reducing:maxEdge:)` hace lo mismo con la de la cámara. Para leer, `currentIntakeMaxEdge()`; para
+  guardar, el tamaño con que se guarda. Una puerta nueva de fotos se añade a `PhotoIntakeTests.everyEntryGoesThroughIntake`.
+
 - **Un `Picker` segmentado NO pasa su título a accesibilidad; uno `.menu` con `.labelsHidden()` sí (medido el
   2026-11-10, iOS 27.2, lote 04 de mejoras necesarias 2.3).** Con `Picker("Tipo de pago", …).pickerStyle(.segmented)`
   el `TabGroup` salió con etiqueta vacía en `axe describe-ui`; con `.accessibilityLabel(…)` encima, «Tipo de pago». El
@@ -325,6 +331,16 @@ paths:
   Grupos la barra reservaba el alto del cajón vacío ~0,4 s y luego lo plegaba, y el contenido saltaba ~45 pt de golpe
   (vídeo de Jürgen). Lo fija `GroupsSearchDrawerWiringTests`, que prohíbe el `.automatic` en `Yala/App/Views`. Desde el
   2026-10-30 Grupos no tiene buscador (la búsqueda es la pestaña Buscar), y el mismo test fija que no vuelva.
+  **Un buscador que tenga que «asomar al tirar» en una página de pestaña va DENTRO del scroll** (decisión 14 de 2.3,
+  Registros, 2026-11-11): campo propio encima de la cabecera, oculto en reposo, que enciende un
+  `onScrollGeometryChange` al pasar 44 pt del borde de arriba, siempre a la vista con VoiceOver. Molde:
+  `RecordsListSearchField` (`RecordsListSearchSlot` + `revealsRecordsListSearchOnPull`); pin
+  `RecordsListSearchUITests`.
+
+- **`ScrollViewProxy.scrollTo` hacia algo lejano de un `LazyVStack` se queda corto (medido el 2026-11-12, iOS 27.2,
+  separador de mes de Registros).** Calcula con alturas estimadas de lo que aún no se pintó: «diciembre de 2025»
+  aterrizaba al final de enero de 2026. ⇒ repite el `scrollTo` una o dos vueltas después (~80 ms), cuando las filas de
+  alrededor ya existen (`RecordsTabView.jumpToMonth`). Pin: `RecordsMonthJump23UITests`.
 
 - **`containerRelativeFrame(.horizontal)` en `ScrollView(.vertical)` con `.contentMargins`** → deadlock de layout, splash nunca dismissa, sin crash log. Usar `onGeometryChange`. Detalles en UI-PATTERNS.md.
 
@@ -337,7 +353,16 @@ paths:
   (medido el 2026-11-01, Nuevo gasto de Grupos, iOS 27.0):** el alto que mide el `GeometryReader` deja de descontar la
   barra del inset, el contenido «cabe» y lo último queda debajo de «Guardar». ⇒ mientras haya un campo con foco, sin
   alto mínimo (`.frame(minHeight: focusedField == nil ? proxy.size.height : nil)`), o el molde de Nuevo registro
-  (`SaveAreaPlacement`, que mete «Guardar» en el contenido con el teclado).
+  (`SaveAreaPlacement`: en la `.safeAreaBar` pinta «Guardar» sin teclado y, con teclado, la barra fina de lo que falta y
+  «Guardar», que el área segura del teclado deja encima de él; G1, revisión 2.3).
+- **En el iPad, `.keyboardType(.decimalPad)` abre un teclado numérico FLOTANTE en un globo encima del contenido, además
+  del acoplado (medido el 2026-11-11, iPad Air 11, iOS 27.2; en el Pro 13 no salía).** Tapaba la descripción y la
+  pregunta del importe de Nuevo registro, y pasar la hoja a tamaño de página no lo quitaba. ⇒ un campo de importe usa
+  `.amountKeyboard()` (`Transactions/Components/AmountKeyboard.swift`: `.numbersAndPunctuation` en iPad, que sale solo
+  acoplado; el campo tiene que filtrar lo que se escribe). Hoy solo lo llevan los cuatro campos de Nuevo registro; el
+  resto de `.decimalPad` de la app no está medido. En XCUITest, el flotante se ve como teclas «1» por encima del
+  acoplado, y **un simulador con `HardwareKeyboardLastSeen = 1` no pinta ningún teclado**: un caso que mida teclados
+  exige uno en pantalla (`KeyboardSaveBar23UITests`).
 - **Los botones fijos debajo de un scroll van en `.safeAreaBar(edge: .bottom)`, no en `.safeAreaInset` (barrido final
   2.2, 2026-11-05).** Con el inset y sin fondo, el contenido que se desplaza pasa por debajo de «Guardar» y los dos textos
   se leen uno encima del otro: a AX5 en Nuevo registro y el onboarding, y en el Duo cerrado también a tamaño normal. La
@@ -351,7 +376,7 @@ paths:
 - **Una fila concepto-importe a tamaños de accesibilidad baja el importe a su propia línea; nunca lo corta ni lo parte.**
   `AdaptiveRowStack`, o el mismo `if dynamicTypeSize.isAccessibilitySize` en línea cuando la fila lleva un
   `Spacer(minLength:)` distinto (el `HStack` de tamaño normal queda idéntico: `VoiceDraftReviewCard`,
-  `ScheduledPaymentRowView`). Dos botones en una fila van en `ViewThatFits` (fila; si no cabe, uno debajo del otro).
+  `ScheduledPaymentRowView`, `FavoriteRowView`). Dos botones en una fila van en `ViewThatFits` (fila; si no cabe, uno debajo del otro).
 - **Cambiar el `foregroundStyle` de un `TextField` mientras tiene el foco no se ve hasta que lo pierde (medido el
   2026-11-01, iOS 27.0).** Un monto que pasaba de gris a rosa al escribir el primer dígito se quedó gris con «240»
   escrito. ⇒ el gris de «sin monto» va en el `prompt` (`Text(verbatim: "0.00").foregroundStyle(.tertiary)`) y el texto
@@ -375,7 +400,12 @@ paths:
   la hoja siguió a media altura, en la misma pasada que el cambio de fase y también aplazado una vuelta del main actor
   con `withAnimation`. Causa sin aislar. ⇒ **no diseñes un flujo que dependa de agrandar la hoja por código**: que el
   contenido quepa o se desplace dentro, y el usuario la estira. Si un fondo se deriva del detent elegido, fíjalo a la
-  altura real, no a la pedida.
+  altura real, no a la pedida. **Quitar `.medium` del juego tampoco la mueve (medido el 2026-11-12, iOS 27.2, hoja de
+  la foto):** con solo `.large` ofrecido se quedó a media altura. **Lo que sí la mueve es la hoja de UIKit**:
+  `UISheetPresentationController.animateChanges { selectedDetentIdentifier = .large }`, una vuelta del main actor
+  después del cambio, llegando a ella como `SheetDismissAttemptModifier` (molde: `growsSheetToLarge(when:)` en
+  `ImageEntrySheetHeight.swift`, decisión 80 de 2.3; pin `VozFotoAvisos23UITests`). Úsalo solo cuando una decisión pida
+  que la hoja crezca; deja la selección de SwiftUI de acuerdo con la de UIKit.
 
 - **`.presentationBackground(<material>)` como ESTILO impide presentar la hoja cuando la pide otra hoja que ya está
   sobre una hoja (medido el 2026-10-27, iOS 27.0).** En «Detalles» de un registro de Yala IA (hoja sobre la hoja del
@@ -516,6 +546,10 @@ La tabla vista por vista y lo que queda en cards: `docs/fluidez/AUDITORIA-FLUIDE
   hasta su saldo cada vez que se abría (`CategoriesTabView.balanceKPI`).
 - **Un selector de cápsula desliza la cápsula** (`matchedGeometryEffect`, molde `GenericSegmentedPill` y
   `TransactionTypeSelectorView`), y su animación va en el propio selector, no en lo que cambia debajo.
+  **Si sus etiquetas pueden no caber en su parte (texto grande), se apila con `TypeSelectorLayout`** (decisión 64 de 2.3,
+  2026-11-12): mismos hijos en fila o en pila, así que la cápsula sigue deslizándose; cada etiqueta reserva el ancho de
+  su negrita para que elegir un tipo no cambie la forma. Se eligió frente a `ViewThatFits` porque este construye las dos
+  formas para medir, y la cápsula tendría dos fuentes (inferido, sin medir).
 - **Un fundido de pantalla entera puede duplicar el árbol de accesibilidad mientras dura**: dos copias de cada botón, y
   un XCUITest que toque en ese instante cae con «varios elementos». **Lo que se va al terminar una carga** (esqueleto,
   `ProgressView`, «Analizando…») sale con `.transition(.loadingPlaceholder)` (`ContentTransitions.swift`, card C1,

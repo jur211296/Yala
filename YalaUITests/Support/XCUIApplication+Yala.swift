@@ -98,6 +98,8 @@ extension XCUIApplication {
         pendingSettlement: Bool = false,
         // Grupos B · card 10: una venta tuya a Ana, la más antigua de «Viaje a Cusco» (`-uitest-seed-group-sale`).
         groupSale: Bool = false,
+        // Cuatro presupuestos con lo gastado exacto: 30, 90, 100 y 118 % (`DevSeedBudgetStates`, decisión 23 de 2.3).
+        budgetStates: Bool = false,
         lateNoticeKeptGroups: Bool = false,
         welcomeAfterAdoptExit: Bool = false,
         // `-uitest-private-gate-device-reading <present|unreadable>`: la puerta de «Es mi primera vez → privado» mide con
@@ -165,6 +167,7 @@ extension XCUIApplication {
         if groupCreatedSheet { args.append("-uitest-group-created-sheet") }
         if pendingSettlement { args.append("-uitest-seed-pending-settlement") }
         if groupSale { args.append("-uitest-seed-group-sale") }
+        if budgetStates { args.append("-uitest-seed-budget-states") }
         // La marca de los grupos que conservó el aviso tardío (`LateNoticeKeptGroupsMark`). NOMBRADO por lo mismo que sus
         // vecinos, y con su agravante: el caso del handover real se lanza SIN él, así que un typo que lo dejara fuera
         // pondría verde el control y rojo el caso, culpando al Welcome.
@@ -737,8 +740,8 @@ extension XCUIApplication {
     }
 
     /// El borde de arriba de lo que tapa a `chip` desde abajo: el teclado, o la barra fija de «Guardar» de «Nuevo
-    /// registro» (su línea de lo que falta y el botón). `nil` si nada lo pisa. Con el teclado puesto, «Guardar» va dentro
-    /// del scroll por debajo de los chips y no lo pisa, así que no cuenta.
+    /// registro» (sin teclado, su línea de lo que falta y el botón; con teclado, la barra de encima del teclado, con
+    /// «Guardar» en la misma fila que sus pastillas). `nil` si nada lo pisa.
     private func selectorChipCoverTop(over chip: XCUIElement) -> CGFloat? {
         let chipFrame = chip.frame
         let covers = [

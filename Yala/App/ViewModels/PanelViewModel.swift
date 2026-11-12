@@ -2791,7 +2791,8 @@ final class PanelViewModel {
     /// Determine budget status
     private func getBudgetStatus(budget: Budget, spending: Double) -> BudgetStatus {
         guard budget.isActive else { return .inactive }
-        return spending >= budget.limitAmount ? .exceeded : .active
+        // La misma regla que Planificación: pasado solo por encima del límite (decisión 23 de 2.3).
+        return BudgetRemainingLogic.isOver(limit: budget.limitAmount, spent: spending) ? .exceeded : .active
     }
 
     /// Get display properties for budget

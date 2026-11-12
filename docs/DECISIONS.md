@@ -2,13 +2,14 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (99 entradas)
+## Índice (100 entradas)
 
-> **No hace falta leer este fichero entero** — son 279 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 281 KB. Localiza la entrada
 > aquí y salta a ella.
 
 - `2026-11-10` [El correo del banco llega a un dominio aparte, yalainbox.com, solo para recibir](#2026-11-10-el-correo-del-banco-llega-a-un-dominio-aparte-yalainboxcom-solo-para-recibir)
 - `2026-11-10` [Orden del 10-nov: 2.2 en verde y en TestFlight antes que los lotes de 2.3, que corren de a dos sin d](#2026-11-10-orden-del-10-nov-22-en-verde-y-en-testflight-antes-que-los-lotes-de-23-que-corren-de-a-dos-sin-declarar-el-catlogo-de-textos)
+- `2026-11-10` [Cierre de la 2.2: una sesión deja verde lo abierto y sube la build siguiente, en paralelo con los lo](#2026-11-10-cierre-de-la-22-una-sesin-deja-verde-lo-abierto-y-sube-la-build-siguiente-en-paralelo-con-los-lotes-23)
 - `2026-11-10` [Entrar con Google o Apple con tu iCloud privado en el teléfono: se deja iCloud aparte (opción B), y ](#2026-11-10-entrar-con-google-o-apple-con-tu-icloud-privado-en-el-telfono-se-deja-icloud-aparte-opcin-b-y-el-lote-del-9-y-10-nov)
 - `2026-11-09` [Verificación de Google de «Conectar Gmail»: se pide con la lectura en el teléfono](#2026-11-09-verificacin-de-google-de-conectar-gmail-se-pide-con-la-lectura-en-el-telfono)
 - `2026-11-09` [Entrar con Google o Apple con tu propio iCloud privado: Yala te pregunta (opción C), y Grupos usa un](#2026-11-09-entrar-con-google-o-apple-con-tu-propio-icloud-privado-yala-te-pregunta-opcin-c-y-grupos-usa-una-sola-cuenta-grupos)
@@ -138,6 +139,13 @@ Cada decisión sigue esta estructura:
 **Decisión:** (1) Una sesión deja mergeados en 2.2 todos los PR abiertos contra 2.2 (esperando el CI o arreglándolo) y luego sube la build a TestFlight, con prioridad sobre los lotes de 2.3. (2) Esa sesión corre en paralelo con los lotes de 2.3, con un `toca:` acotado (tests, proyecto, scripts, docs, qa), y puede tocar código de la app dentro de los PR de 2.2 si el CI lo exige. (3) Los lotes de 2.3 no declaran `Yala/Resources` (el catálogo de textos) en su `toca:`, para que corran dos sesiones a la vez; cada una resuelve el cruce del catálogo al ponerse al día antes de su PR.
 **Razones:** la 2.2 es la versión que sale; los lotes de 2.3 no deben frenarla ni frenarse entre sí por un fichero que casi todos tocan y que se fusiona bien.
 **Consecuencias:** un encargo de 2.3 que cambie textos los añade al catálogo y resuelve el conflicto en su `git fetch` y rebase de antes del gate. Las tres se ejecutan en el reparto de la cola, fuera del repo: no dejan regla en `CLAUDE.md` ni en `.claude/rules/`.
+**Estado:** Activa
+
+### [2026-11-10] Cierre de la 2.2: una sesión deja verde lo abierto y sube la build siguiente, en paralelo con los lotes 2.3
+**Contexto:** El 10-nov quedaban PR abiertos contra 2.2 (el arreglo de Grupos repetidos en rojo, dos de documentación) y la 2.2 (8) ya estaba en TestFlight sin ellos. A la vez arrancaban los lotes de la 2.3.
+**Decisión:** (1) Una sola sesión deja mergeados en 2.2 todos los PR abiertos contra 2.2, esperando su CI o arreglándolo, y después sube la build siguiente a TestFlight; tiene prioridad sobre los lotes 2.3 (10:47 Lima). (2) Esa sesión corre en paralelo con los lotes 2.3 con un `toca:` acotado (tests, proyecto, scripts, docs, qa), y puede tocar código de la app dentro de un PR de 2.2 si el CI lo exige (12:50). (3) Los lotes 2.3 no declaran `Yala/Resources` (catálogo de textos) en `toca:`, para que corran dos sesiones a la vez; cada una resuelve el cruce del catálogo al ponerse al día antes de su PR (12:55).
+**Razones:** Son decisiones de operación que Jürgen tomó en el chat: la 2.2 tenía que salir completa antes de seguir con la 2.3, sin frenar la 2.3.
+**Consecuencias:** (1) y (2) se cumplieron con la 2.2 (9). (3) cambia cómo se escriben los encargos de la 2.3, no deja regla en el código: un choque en `Localizable.strings` al ponerse al día se resuelve quedándose con las claves de los dos lados.
 **Estado:** Activa
 
 ### [2026-11-10] Entrar con Google o Apple con tu iCloud privado en el teléfono: se deja iCloud aparte (opción B), y el lote del 9 y 10-nov

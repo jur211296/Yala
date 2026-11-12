@@ -1349,6 +1349,14 @@ final class AppBootstrapper {
         if UITestHooks.seedTodayRecord {
             DevSeedTodayRecord.create(in: context)
         }
+        // Un «Almuerzo de trabajo» de 45,90: «Buscar en Registros» lo encuentra por su importe (decisión 14 de 2.3).
+        if UITestHooks.seedRecordsSearch {
+            DevSeedRecordsSearch.create(in: context)
+        }
+        // Cuatro presupuestos con lo gastado exacto: al día, en el límite, justo al límite y pasado (decisión 23 de 2.3).
+        if UITestHooks.seedBudgetStates {
+            DevSeedBudgetStates.create(in: context)
+        }
         // Un gasto sin categoría: el trozo «Sin categoría» de la tarta y los rankings (decisión A, 2026-10-23).
         if UITestHooks.seedUncategorizedExpense {
             DevSeedUncategorizedExpense.create(in: context)
@@ -1779,7 +1787,14 @@ final class AppBootstrapper {
     /// Subscribe a `.transactionsImportedFromSync` (cada import successful de CKSync personal).
     /// Dispara `GroupBridgeRaceCleaner` para borrar drafts pendientes Caso A obsoletos —
     /// su TX cuenta real ya llegó vía sync personal, el draft ya no aplica.
+    ///
+    /// **Y la nube también** (bug del 2026-11-09): la limpieza solo escuchaba el import de iCloud, así que con la cuenta en
+    /// la nube el borrador «Elige cuenta» y el «Préstamo a grupos» repetido que deja una pasada del puente que no vio tu
+    /// registro se quedaban para siempre. Tras cada sincronización de cualquiera de los dos almacenes,
+    /// `convergeAfterSync` quita lo que sobra, solo lo nacido desde que se instaló el arreglo (lo de antes, el aviso de la
+    /// Bandeja). El sello de «desde cuándo» se pone aquí, en el arranque, y no en la primera sincronización.
     private func observeTransactionsImportedFromSync() {
+        _ = GroupBridgeRaceCleaner.leftoverAutoSince()
         NotificationCenter.default.addObserver(
             forName: .transactionsImportedFromSync,
             object: nil,
@@ -1788,6 +1803,17 @@ final class AppBootstrapper {
             MainActor.assumeIsolated {
                 guard let context = AppBootstrapper.shared.raceCleanerModelContext else { return }
                 _ = GroupBridgeRaceCleaner.cleanupPendingDraftsWithMatchingTX(in: context)
+                GroupBridgeRaceCleaner.convergeAfterSync(in: context)
+            }
+        }
+        NotificationCenter.default.addObserver(
+            forName: .cloudSyncAppliedRemoteChanges,
+            object: nil,
+            queue: .main
+        ) { _ in
+            MainActor.assumeIsolated {
+                guard let context = AppBootstrapper.shared.raceCleanerModelContext else { return }
+                GroupBridgeRaceCleaner.convergeAfterSync(in: context)
             }
         }
     }

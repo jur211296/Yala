@@ -1767,6 +1767,10 @@ enum L10n {
         static var ofExpense: String {
             ls("statistics.ofExpense", comment: "")
         }
+        /// Detalle de una categoría en Distribución (decisión 25 de la revisión 2.3): lleva a sus registros.
+        static var categoryDetailSeeInRecords: String {
+            ls("statistics.categoryDetail.seeInRecords", comment: "Category detail in Statistics: link that opens Records showing only this category")
+        }
         static var spendingAnalysis: String {
             ls("statistics.spendingAnalysis", comment: "")
         }
@@ -3275,6 +3279,8 @@ enum L10n {
         static var emptySubtitle: String { ls("chat.emptySubtitle", comment: "") }
         static var errorTimeout: String { ls("chat.errorTimeout", comment: "") }
         static var errorOffline: String { ls("chat.errorOffline", comment: "") }
+        /// Sin conexión, debajo de `errorOffline` al abrir el chat (decisión 42 de 2.3).
+        static var offlineBody: String { ls("chat.offline.body", comment: "Yala IA sin conexión: vuelve con internet; mientras, apuntar a mano") }
         static var errorGeneric: String { ls("chat.errorGeneric", comment: "") }
         static var errorNoData: String { ls("chat.errorNoData", comment: "") }
         static var dailyLimitReached: String { ls("chat.dailyLimitReached", comment: "") }
@@ -6951,6 +6957,27 @@ enum L10n {
         }
         // A0-Bridge V2.0 (P1-3): CTA desde TX bridgeada read-only con draft pendiente
         static var openInbox: String { ls("inbox.openInbox", comment: "") }
+
+        /// Aviso y hoja de los gastos de grupo repetidos (bug del 2026-11-09): borrador «Elige cuenta» o «Préstamo a
+        /// grupos» de más en un gasto que ya está en tus registros. Las cifras van fuera de la frase («Borradores de más:
+        /// 1»), para no depender de plurales en los 16 idiomas.
+        enum GroupLeftovers {
+            static var bannerTitle: String { ls("inbox.groupLeftovers.bannerTitle", comment: "") }
+            static var bannerMessage: String { ls("inbox.groupLeftovers.bannerMessage", comment: "") }
+            static var bannerAction: String { ls("inbox.groupLeftovers.bannerAction", comment: "") }
+            static var intro: String { ls("inbox.groupLeftovers.intro", comment: "") }
+            static func extraDrafts(_ count: Int) -> String {
+                String(format: ls("inbox.groupLeftovers.extraDrafts", comment: ""), count)
+            }
+            static func extraLoans(_ count: Int) -> String {
+                String(format: ls("inbox.groupLeftovers.extraLoans", comment: ""), count)
+            }
+            static var remove: String { ls("inbox.groupLeftovers.remove", comment: "") }
+            static var confirmTitle: String { ls("inbox.groupLeftovers.confirmTitle", comment: "") }
+            static var confirmMessage: String { ls("inbox.groupLeftovers.confirmMessage", comment: "") }
+            static var confirmAction: String { ls("inbox.groupLeftovers.confirmAction", comment: "") }
+            static var failed: String { ls("inbox.groupLeftovers.failed", comment: "") }
+        }
 
         // A0-Bridge V2.0 (P1-4): sheets finalización drafts especializados
         enum GroupExpenseDraft {

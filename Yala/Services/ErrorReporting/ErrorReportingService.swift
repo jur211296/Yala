@@ -11,6 +11,7 @@
 
 import Foundation
 import Sentry
+import UIKit
 
 nonisolated enum ErrorReportingService {
 
@@ -51,10 +52,24 @@ nonisolated enum ErrorReportingService {
             options.beforeSend = { event in scrub(event) }
             options.beforeBreadcrumb = { crumb in scrub(crumb) }
         }
+        // Memoria, avisos de memoria baja y pestaña: lo que un cierre por memoria necesita traer (YALA-IOS-B).
+        Task { @MainActor in MemoryDiagnostics.shared.start() }
 
         #if DEV_BUILD
         // `-sentry-test-error`: manda el error de prueba al arrancar, para comprobarlo sin navegar hasta el botón.
         if ProcessInfo.processInfo.arguments.contains("-sentry-test-error") { _ = sendTestError() }
+        // `-sentry-test-memory-warning`: un aviso de memoria baja a los 3 s, para ver en Sentry el evento, el contexto
+        // `memory` y los rastros sin esperar a que iOS lo mande (el simulador no tiene cómo pedirlo por línea de comandos).
+        if ProcessInfo.processInfo.arguments.contains("-sentry-test-memory-warning") {
+            Task { @MainActor in
+                do {
+                    try await Task.sleep(for: .seconds(3))
+                } catch {
+                    return
+                }
+                NotificationCenter.default.post(name: UIApplication.didReceiveMemoryWarningNotification, object: nil)
+            }
+        }
         #endif
     }
 

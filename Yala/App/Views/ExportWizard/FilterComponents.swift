@@ -73,6 +73,8 @@ struct FilterSelectionRow: View {
 // MARK: - Amount Filter View
 
 struct AmountFilterView: View {
+    /// El marcador sigue los decimales de la persona (revisión 2.3, decisión 74): leerlo en el `body` lo repinta al cambiarlos.
+    @Environment(AppPreferences.self) private var appPreferences
     @Binding var condition: AmountFilterCondition
     var currencyCode: CurrencyCode?
     /// Lo que dice sin moneda. `nil`: «Selecciona una única moneda…».
@@ -110,18 +112,19 @@ struct AmountFilterView: View {
             value1 = ""
             value2 = ""
         case .greaterThan(let val), .lessThan(let val):
-            value1 = NSDecimalNumber(decimal: val).stringValue
+            value1 = AmountFilterTextLogic.text(for: val)
             value2 = ""
         case .between(let min, let max):
-            value1 = NSDecimalNumber(decimal: min).stringValue
-            value2 = NSDecimalNumber(decimal: max).stringValue
+            value1 = AmountFilterTextLogic.text(for: min)
+            value2 = AmountFilterTextLogic.text(for: max)
         }
     }
 
     // Actualizar el binding cuando cambian los valores locales o la selección
     private func updateCondition(newType: AmountConditionType) {
-        let v1 = Decimal(string: value1) ?? 0
-        let v2 = Decimal(string: value2) ?? 0
+        // Con el separador de la región, el mismo que enseña el marcador: «12,50» es 12,50, no 12.
+        let v1 = AmountFilterTextLogic.amount(from: value1) ?? 0
+        let v2 = AmountFilterTextLogic.amount(from: value2) ?? 0
 
         switch newType {
         case .any:
@@ -146,7 +149,9 @@ struct AmountFilterView: View {
                     .accessibilityIdentifier("filters_amount_currency")
             }
 
-            TextField("0.00", text: text)
+            // El cero con el formato de la persona («0.00», «0,00» o «0»), no un «0.00» fijo (decisión 74).
+            TextField("", text: text, prompt: Text(verbatim: AmountFilterTextLogic.placeholder(
+                decimals: appPreferences.decimalPlaces)))
                 .keyboardType(.decimalPad)
                 .font(DS.Typography.amountLarge)
                 .multilineTextAlignment(.trailing)

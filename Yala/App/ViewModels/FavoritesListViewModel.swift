@@ -63,16 +63,37 @@ final class FavoritesListViewModel {
 
     // MARK: - Favorite Operations
 
-    func deleteFavorites(at offsets: IndexSet) {
-        guard let context = modelContext else { return }
+    /// Lo que se deslizó para borrar, esperando la respuesta a «¿Eliminar este favorito?».
+    private(set) var pendingDeletion: [FavoritePayment] = []
+    var showDeleteConfirmation = false
 
-        for index in offsets {
-            let favorite = favorites[index]
+    /// Deslizar (o el «−» de Editar) pregunta antes de borrar, como el editor (decisión 71 de la revisión 2.3, regla de
+    /// la 39). Los índices son los de la lista que se pinta (`displayedFavorites`): con «Solo gastos», resolverlos sobre
+    /// `favorites` borraba otro favorito.
+    func requestDeletion(at offsets: IndexSet) {
+        let shown = displayedFavorites
+        pendingDeletion = offsets.filter { shown.indices.contains($0) }.map { shown[$0] }
+        showDeleteConfirmation = !pendingDeletion.isEmpty
+    }
+
+    func cancelPendingDeletion() {
+        pendingDeletion = []
+        showDeleteConfirmation = false
+    }
+
+    func confirmPendingDeletion() {
+        let toDelete = pendingDeletion
+        pendingDeletion = []
+        showDeleteConfirmation = false
+        guard let context = modelContext, !toDelete.isEmpty else { return }
+
+        for favorite in toDelete {
             context.delete(favorite)
         }
 
         do {
             try context.save()
+            DS.Haptic.warning()
             loadFavorites()
         } catch {
             #if DEBUG

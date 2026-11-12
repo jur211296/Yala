@@ -115,13 +115,14 @@ struct FavoritesListViewModelTests {
         #expect(vm.displayedFavorites.isEmpty == vm.isEmpty)
     }
 
-    // MARK: - deleteFavorites without context
+    // MARK: - Borrar sin contexto
 
-    @MainActor @Test("deleteFavorites without context does not crash")
+    @MainActor @Test("Borrar sin contexto no se cae")
     func deleteFavorites_withoutContext_noCrash() {
         let vm = FavoritesListViewModel()
         // Should not crash even with empty data and no context
-        vm.deleteFavorites(at: IndexSet())
+        vm.requestDeletion(at: IndexSet())
+        vm.confirmPendingDeletion()
         #expect(vm.favorites.isEmpty)
     }
 

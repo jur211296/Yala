@@ -17,6 +17,11 @@ hoy lo baja en lo que cuesta; si te pasas, dice «Hoy te pasaste por S/ 25.33» 
 de verdad quedó. Sale en la tarjeta de Presupuestos del Panel (tamaños mediano y grande) y en el detalle de cada
 presupuesto, donde sustituye al «Puedes gastar S/ X al día» fijo.
 
+> **Cambia el tono, 2026-11-11 (decisión 23 de la revisión 2.3).** La línea ya no dice «Hoy puedes gastar» ni «Hoy te
+> pasaste por» en rosa: es una guía neutra en gris, «Quedan 5 días y S/ 400.00: unos S/ 80.00 al día», y con gasto hoy
+> «Empezaste el día con S/ 400.00 para 5 días: unos S/ 80.00 al día. Hoy llevas S/ 120.00, S/ 40.00 más que eso». La
+> cuenta no cambia. Lo de abajo sobre el texto y el rosa describe la versión anterior.
+
 ## La cuenta
 
 Cupo de hoy = (límite − lo gastado en el período fuera de hoy) ÷ días que faltan con hoy − lo gastado hoy. «Fuera de

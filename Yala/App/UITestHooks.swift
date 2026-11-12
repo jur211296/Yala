@@ -129,6 +129,15 @@ final class UITestHooks {
     /// mes» también el día 1 (card 30pv). Aditivo al perfil de `-uitest-seed`.
     nonisolated static var seedTodayRecord: Bool { hasArg("-uitest-seed-today-record") }
 
+    /// `-uitest-seed-records-search`: añade un «Almuerzo de trabajo» de 45,90 de hoy en la cuenta principal
+    /// (`DevSeedRecordsSearch`), para buscarlo por importe en Registros (decisión 14 de 2.3). Aditivo a `-uitest-seed`.
+    nonisolated static var seedRecordsSearch: Bool { hasArg("-uitest-seed-records-search") }
+
+    /// `-uitest-seed-budget-states`: añade cuatro presupuestos de 1.000 con lo gastado exacto —al día, en el límite (90 %,
+    /// con el cupo de hoy superado), justo al límite (100 %) y pasado (118 %)— (`DevSeedBudgetStates`). Aditivo al perfil
+    /// de `-uitest-seed`.
+    nonisolated static var seedBudgetStates: Bool { hasArg("-uitest-seed-budget-states") }
+
     /// `-uitest-seed-uncategorized-expense`: añade un gasto de 40 SIN categoría en la cuenta principal
     /// (`DevSeedUncategorizedExpense`), para ver el trozo «Sin categoría» de la tarta. Aditivo al perfil de `-uitest-seed`.
     nonisolated static var seedUncategorizedExpense: Bool { hasArg("-uitest-seed-uncategorized-expense") }
@@ -1077,6 +1086,11 @@ final class UITestHooks {
     /// no dependen de la red.
     nonisolated static var chatSuggestions: Bool { hasArg("-uitest-chat-suggestions") }
 
+    /// `-uitest-network-offline`: `NetworkMonitor` dice «sin conexión» y no escucha a la red real (decisión 42 de 2.3,
+    /// Yala IA sin conexión). Finge la ENTRADA: qué dicen el chat y el muro de Pro lo deciden `ChatAvailabilityLogic`
+    /// y `ProGateOfflineLogic`. Solo DEBUG.
+    nonisolated static var networkOffline: Bool { hasArg("-uitest-network-offline") }
+
     /// `-uitest-chat-draft`: el chat abre con un mensaje del asistente que propone dos registros —uno completo y otro
     /// sin subcategoría— resueltos contra los datos sembrados. Sin red Yala IA no propone nada, y hace falta una card
     /// en pantalla para capturar y probar su diseño.
@@ -1507,6 +1521,20 @@ final class UITestHooks {
         return nil
         #endif
     }
+
+    /// `-uitest-records-load-fails`: la lectura de los movimientos de Registros y Estadísticas falla siempre
+    /// (`DetailContainerViewModel.loadData`). Finge el ENTORNO —un almacén que no se deja leer, que el simulador no
+    /// reproduce—; qué enseña la lista con eso lo decide `RecordsListStateLogic`, sin seam (decisión 78 de 2.3).
+    nonisolated static var recordsLoadFails: Bool {
+        #if DEBUG
+        return isActive && ProcessInfo.processInfo.arguments.contains("-uitest-records-load-fails")
+        #else
+        return false
+        #endif
+    }
+
+    /// El error que lanza la lectura fingida de `recordsLoadFails`.
+    struct SimulatedLoadFailure: Error {}
 
     /// `-uitest-skeleton-fade-seconds <N>`: alarga el fundido del esqueleto a los datos (card C1). A 0,25 s un XCUITest
     /// no llega a mirar el árbol de accesibilidad mientras dura; alargado, puede contar las copias de un botón a mitad del

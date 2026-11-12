@@ -30,6 +30,12 @@ struct NewTransactionView: View {
     private let draft: NewRecordDraft?
     @FocusState private var isNoteFieldFocused: Bool
     @FocusState private var isAmountFieldFocused: Bool
+    /// Lo seleccionado en el importe: tras tocar un favorito, todo (F1, decisión 22 de 2.3).
+    @State private var amountSelection: TextSelection?
+    /// Un favorito pide el importe seleccionado con el teclado abierto; lo consume el campo de importe a la vista.
+    @State private var favoriteAmountSelectionRequest = false
+    /// El favorito se eligió en «Ver todos»: la petición espera a que se cierre la hoja.
+    @State private var favoriteAmountAwaitsSheetDismiss = false
 
     // Autocomplete mention state
     @State private var currentMentionState: MentionState?
@@ -107,6 +113,8 @@ struct NewTransactionView: View {
     @State private var saveButtonPulse = false
     /// Con el teclado puesto, «Guardar» vuelve dentro del scroll (ver `saveArea`).
     @State private var isKeyboardVisible = false
+    /// El campo al que vuelve el teclado al cerrarse una hoja abierta desde la barra de encima del teclado (G1).
+    @State private var keyboardBarReturnField: KeyboardBarReturnField?
     /// Poco alto (un iPhone SE): menos aire entre bloques. Se mide sin contar el teclado, para que el formulario no se
     /// apriete al escribir en un iPhone grande.
     @State private var isCompactHeight = false
@@ -312,6 +320,16 @@ struct NewTransactionView: View {
         dismiss()
     }
 
+    /// «Tu parte» abierta desde la barra del teclado: si guardó, el editor se cierra como siempre; si no, el teclado vuelve.
+    private func closeEditorIfSplitWasSavedOrReturn() {
+        if splitLinesSavedFromEditor {
+            keyboardBarReturnField = nil
+            closeEditorIfSplitWasSaved()
+        } else {
+            returnToKeyboardBarField()
+        }
+    }
+
     /// Hidrata `cachedPendingGroupDraft` una vez al aparecer (evita fetch en hot path del body).
     private func loadPendingGroupDraftIfNeeded() {
         guard isBridgedReadOnly,
@@ -485,9 +503,10 @@ struct NewTransactionView: View {
                                 .padding(.top, DS.Spacing.sm)
                         }
 
-                        // Favoritos a un toque (UX 2.2 · L2-13). En edición no salen.
+                        // Favoritos del tipo elegido (UX 2.2 · L2-13; decisión 69 de 2.3). En edición no salen.
                         if !isEditingSavedRecord && !isBridgedReadOnly && viewModel.editingTransaction == nil {
                             FavoriteChipsRow(
+                                transactionType: viewModel.transactionType,
                                 onSelect: { prefillFromFavorite($0) },
                                 onSeeAll: { viewModel.showFavoritesSheet = true }
                             )
@@ -525,11 +544,8 @@ struct NewTransactionView: View {
                             bottomChips
                                 .padding(.bottom, DS.Spacing.lg)
 
-                            // Con el teclado puesto, «Guardar» va con el contenido, como siempre: fijo encima del teclado
-                            // tapaba los chips de cuenta y categoría justo después de escribir el monto.
-                            if isKeyboardVisible {
-                                saveArea
-                            }
+                            // Con el teclado puesto, «Guardar» ya no va al final del contenido, debajo del teclado: lo lleva
+                            // la barra fina de encima del teclado, con lo que falta (G1, decisión 20 de la revisión 2.3).
                         }
                     }
                     .frame(minHeight: proxy.size.height)
@@ -544,7 +560,8 @@ struct NewTransactionView: View {
             .modifier(SaveAreaPlacement(
                 isKeyboardVisible: $isKeyboardVisible,
                 isCompactHeight: $isCompactHeight,
-                saveArea: saveArea
+                saveArea: saveArea,
+                keyboardBar: keyboardSaveBar
             ))
             .scaleEffect(duplicateAnimationVisible ? 1.0 : 0.92)
             .opacity(duplicateAnimationVisible ? 1.0 : 0.0)
@@ -562,7 +579,7 @@ struct NewTransactionView: View {
                     .accessibilityIdentifier("new_transaction_close")
                 }
             }
-            .sheet(isPresented: $viewModel.showAccountSelector) {
+            .sheet(isPresented: $viewModel.showAccountSelector, onDismiss: returnToKeyboardBarField) {
                 // M6: en edit Caso A bridgeado, limitar a cuentas de la misma moneda del expense
                 // (la moneda viene del grupo y no es editable desde aquí — read-only).
                 AccountSelectorSheet(
@@ -575,7 +592,7 @@ struct NewTransactionView: View {
                     sizing: .mediumFirst
                 )
             }
-            .sheet(isPresented: $viewModel.showSourceAccountSelector) {
+            .sheet(isPresented: $viewModel.showSourceAccountSelector, onDismiss: returnToKeyboardBarField) {
                 AccountSelectorSheet(
                     selectedAccount: $viewModel.sourceAccount,
                     title: L10n.Transaction.sourceAccount,
@@ -583,7 +600,7 @@ struct NewTransactionView: View {
                     sizing: .mediumFirst
                 )
             }
-            .sheet(isPresented: $viewModel.showDestinationAccountSelector) {
+            .sheet(isPresented: $viewModel.showDestinationAccountSelector, onDismiss: returnToKeyboardBarField) {
                 AccountSelectorSheet(
                     selectedAccount: $viewModel.destinationAccount,
                     title: L10n.Transaction.destinationAccount,
@@ -592,7 +609,7 @@ struct NewTransactionView: View {
                     offersCreatingAccount: true
                 )
             }
-            .sheet(isPresented: $viewModel.showSubcategorySelector) {
+            .sheet(isPresented: $viewModel.showSubcategorySelector, onDismiss: returnToKeyboardBarField) {
                 SubcategorySelectorSheet(
                     selectedSubcategory: $viewModel.selectedSubcategory,
                     transactionType: viewModel.transactionType,
@@ -602,12 +619,12 @@ struct NewTransactionView: View {
             .sheet(isPresented: $viewModel.showTagSelector) {
                 TagSelectorSheet(selectedTags: $viewModel.selectedTags, sizing: .mediumFirst)
             }
-            .sheet(isPresented: $showsSplitLinesFromEditor, onDismiss: closeEditorIfSplitWasSaved) {
+            .sheet(isPresented: $showsSplitLinesFromEditor, onDismiss: closeEditorIfSplitWasSavedOrReturn) {
                 if let expenseID = readableTransactionToEdit?.splitExpenseID {
                     GroupSplitLinesSheet(splitExpenseID: expenseID) { splitLinesSavedFromEditor = true }
                 }
             }
-            .sheet(isPresented: $viewModel.showFavoritesSheet) {
+            .sheet(isPresented: $viewModel.showFavoritesSheet, onDismiss: requestFavoriteAmountAfterSheet) {
                 FavoritesListView(mode: .select) { favorite in
                     prefillFromFavorite(favorite)
                 }
@@ -744,7 +761,6 @@ struct NewTransactionView: View {
                 )
             }
         }
-
         .onAppear {
             // La hoja se rehízo con el formulario a medias: se retoma lo escrito, sin volver a precargar (pisaría la
             // cuenta o la categoría que la persona ya eligió).
@@ -1044,14 +1060,20 @@ struct NewTransactionView: View {
             }
 
             // «0.00» gris de ejemplo, no un monto escrito; al escribir toma el color del tipo (L2-16).
-            TextField("", text: $viewModel.amountString, prompt: Text(verbatim: "0.00").foregroundStyle(.tertiary))
+            TextField(
+                "", text: $viewModel.amountString, selection: $amountSelection,
+                prompt: Text(verbatim: "0.00").foregroundStyle(.tertiary)
+            )
                 .font(.system(size: amountFontSize, weight: .bold, design: .rounded))
                 .foregroundStyle(viewModel.amountColor)
                 .multilineTextAlignment(.center)
-                .keyboardType(.decimalPad)
+                .amountKeyboard()
                 .focused($isAmountFieldFocused)
                 .accessibilityIdentifier("new_transaction_amount")
                 .fixedSize(horizontal: true, vertical: false)  // Dynamic width based on content
+                .selectsAmountOnRequest(
+                    $favoriteAmountSelectionRequest, isActive: !viewModel.needsExchangeRate,
+                    select: focusAndSelectAmount)
                 .onChange(of: isAmountFieldFocused) { _, isFocused in
                     // When field gets focus and value is just "0" or "0.00", clear it
                     if isFocused
@@ -1061,6 +1083,7 @@ struct NewTransactionView: View {
                     }
                     // When field loses focus
                     if !isFocused {
+                        amountSelection = nil
                         if viewModel.amountString.isEmpty || viewModel.amount == 0 {
                             viewModel.amountString = ""
                         } else {
@@ -1664,7 +1687,7 @@ struct NewTransactionView: View {
     // MARK: - Transfer Amount Display
 
     private var transferAmountDisplay: some View {
-        TransferAmountInputView(viewModel: viewModel)
+        TransferAmountInputView(viewModel: viewModel, favoriteAmountSelectionRequest: $favoriteAmountSelectionRequest)
     }
 
     // MARK: - Autocomplete
@@ -1862,6 +1885,153 @@ struct NewTransactionView: View {
         .accessibilityIdentifier("new_transaction_save")
         .scaleEffect(saveButtonPulse ? 1.03 : 1)
         .dsAnimation(.easeInOut(duration: 0.2), value: viewModel.canSave, reduceMotion: reduceMotion)
+    }
+
+    // MARK: - Barra sobre el teclado (G1, decisión 20 de la revisión 2.3)
+
+    /// Una pastilla obligatoria de la barra: cuenta y categoría, o origen y destino en una transferencia.
+    private enum KeyboardBarField: Hashable {
+        case account, category, source, destination
+
+        var missingField: NewTransactionViewModel.MissingField {
+            switch self {
+            case .account: return .account
+            case .category: return .category
+            case .source: return .sourceAccount
+            case .destination: return .destinationAccount
+            }
+        }
+    }
+
+    /// El campo que tenía el teclado cuando se tocó una pastilla de la barra: al cerrarse su hoja, el teclado vuelve ahí.
+    private enum KeyboardBarReturnField {
+        case amount, note
+    }
+
+    private var keyboardBarFields: [KeyboardBarField] {
+        viewModel.isTransfer ? [.source, .destination] : [.account, .category]
+    }
+
+    /// Con el teclado abierto, encima de él: las pastillas obligatorias y «Guardar». Sustituye a la línea de lo que falta
+    /// y al «Guardar» de abajo, que el teclado tapaba. Si no caben todas (nombres largos, texto grande), van solo las que
+    /// faltan; luego solo la primera que falta; y si tampoco, solo «Guardar» (lo que falta sigue marcado en las pastillas
+    /// del formulario).
+    @ViewBuilder
+    private var keyboardSaveBar: some View {
+        if isBridgedReadOnly {
+            saveArea
+        } else {
+            let missing = keyboardBarFields.filter { viewModel.missingFieldsForSave.contains($0.missingField) }
+            ViewThatFits(in: .horizontal) {
+                keyboardBarRow(keyboardBarFields)
+                keyboardBarRow(missing)
+                keyboardBarRow(Array(missing.prefix(1)))
+                keyboardBarRow([])
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.sm)
+        }
+    }
+
+    private func keyboardBarRow(_ fields: [KeyboardBarField]) -> some View {
+        HStack(spacing: DS.Spacing.sm) {
+            ForEach(fields, id: \.self) { field in
+                keyboardBarChip(field)
+                    .fixedSize()
+            }
+            YalaPrimaryButton(
+                L10n.Action.save,
+                icon: "checkmark.circle.fill",
+                isDisabled: !viewModel.canSave || viewModel.isSaving,
+                isLoading: viewModel.isSaving,
+                disabledHint: !viewModel.canSave ? L10n.Accessibility.completeFormHint : nil,
+                enabledFill: Color.selectedFill(theme.accent),
+                keepsDisabledToneInBar: true
+            ) {
+                saveTransaction()
+            }
+            .accessibilityIdentifier("new_transaction_save")
+            .disabled(!canSaveBridged)
+            .opacity(canSaveBridged ? 1.0 : 0.5)
+            .overlay(alignment: .top) { savedToast }
+        }
+    }
+
+    @ViewBuilder
+    private func keyboardBarChip(_ field: KeyboardBarField) -> some View {
+        switch field {
+        case .account:
+            SelectionChip(
+                icon: "creditcard",
+                text: viewModel.selectedAccount?.name ?? L10n.Transaction.account,
+                isSelected: viewModel.selectedAccount != nil,
+                color: viewModel.selectedAccount.map { Color(hex: $0.colorHex) },
+                isMissing: viewModel.marksMissing(.account)
+            ) { openFromKeyboardBar { viewModel.showAccountSelector = true } }
+            .accessibilityIdentifier("new_transaction_keyboard_account_chip")
+            .disabled(!canEditBridgedAccount)
+        case .category:
+            SelectionChip(
+                icon: "tag",
+                text: viewModel.selectedSubcategory?.name ?? L10n.Transaction.subcategory,
+                isSelected: viewModel.selectedSubcategory != nil,
+                color: subcategoryChipColor,
+                isMissing: viewModel.marksMissing(.category)
+            ) {
+                openFromKeyboardBar {
+                    if categoryOpensSplit {
+                        showsSplitLinesFromEditor = true
+                    } else {
+                        viewModel.showSubcategorySelector = true
+                    }
+                }
+            }
+            .accessibilityIdentifier("new_transaction_keyboard_category_chip")
+            .disabled(!canEditBridgedSubcategoryAndTags)
+        case .source:
+            SelectionChip(
+                icon: "arrow.up.circle",
+                text: viewModel.sourceAccount?.name ?? L10n.Transaction.origin,
+                isSelected: viewModel.sourceAccount != nil,
+                color: viewModel.sourceAccount != nil ? Color.hotPink : nil,
+                isMissing: viewModel.marksMissing(.sourceAccount)
+            ) { openFromKeyboardBar { viewModel.showSourceAccountSelector = true } }
+            .accessibilityIdentifier("new_transaction_keyboard_source_chip")
+        case .destination:
+            SelectionChip(
+                icon: "arrow.down.circle",
+                text: viewModel.destinationAccount?.name ?? L10n.Transaction.destination,
+                isSelected: viewModel.destinationAccount != nil,
+                color: viewModel.destinationAccount != nil ? Color.electricIndigo : nil,
+                isMissing: viewModel.marksMissing(.destinationAccount)
+            ) { openFromKeyboardBar { viewModel.showDestinationAccountSelector = true } }
+            .accessibilityIdentifier("new_transaction_keyboard_destination_chip")
+        }
+    }
+
+    /// Apunta qué campo tenía el teclado y abre la hoja: al cerrarla se vuelve a escribir donde se estaba (maqueta G1,
+    /// pantalla 3: «vuelve con el teclado y Guardar encendido»).
+    private func openFromKeyboardBar(_ open: () -> Void) {
+        if isAmountFieldFocused {
+            keyboardBarReturnField = .amount
+        } else if isNoteFieldFocused {
+            keyboardBarReturnField = .note
+        } else {
+            keyboardBarReturnField = nil
+        }
+        dismissKeyboard()
+        open()
+    }
+
+    /// `onDismiss` de las hojas que abre la barra. Solo si la hoja se abrió desde ella: desde las pastillas del formulario
+    /// el teclado estaba cerrado y así se queda.
+    private func returnToKeyboardBarField() {
+        guard let field = keyboardBarReturnField else { return }
+        keyboardBarReturnField = nil
+        switch field {
+        case .amount: isAmountFieldFocused = true
+        case .note: isNoteFieldFocused = true
+        }
     }
 
     // MARK: - Actions
@@ -2608,7 +2778,7 @@ struct NewTransactionView: View {
     }
 
     /// Un toque en un favorito rellena el formulario: tipo, cuenta, categoría, monto, descripción y etiquetas (UX 2.2 ·
-    /// L2-13). La persona toca «Guardar».
+    /// L2-13), y deja el monto seleccionado con el teclado abierto (F1, 2.3). La persona escribe encima o toca «Guardar».
     private func prefillFromFavorite(_ favorite: FavoritePayment) {
         if favorite.type == .transfer {
             prefillTransferFromFavorite(favorite)
@@ -2656,6 +2826,7 @@ struct NewTransactionView: View {
         if let note = favorite.note, !note.isEmpty {
             viewModel.note = note
         }
+        requestFavoriteAmountSelection()
     }
 
     /// Un favorito de transferencia pone el tipo con su origen y su destino (L2-14), por el mismo camino que elegir
@@ -2680,6 +2851,38 @@ struct NewTransactionView: View {
         Task {
             await viewModel.loadExchangeRate(context: modelContext)
         }
+        requestFavoriteAmountSelection()
+    }
+
+    /// F1 (decisión 22 de la revisión 2.3): tras rellenar con un favorito, el importe queda seleccionado con el teclado
+    /// abierto. Desde «Ver todos», cuando la hoja termina de cerrarse: con ella delante el campo no toma el foco.
+    private func requestFavoriteAmountSelection() {
+        amountSelection = nil
+        if viewModel.showFavoritesSheet {
+            favoriteAmountAwaitsSheetDismiss = true
+        } else {
+            favoriteAmountSelectionRequest = true
+        }
+    }
+
+    private func requestFavoriteAmountAfterSheet() {
+        guard favoriteAmountAwaitsSheetDismiss else { return }
+        favoriteAmountAwaitsSheetDismiss = false
+        favoriteAmountSelectionRequest = true
+    }
+
+    /// Foco en el importe y todo su texto seleccionado: escribir lo sustituye.
+    private func focusAndSelectAmount() {
+        Task { @MainActor in
+            do {
+                try await Task.sleep(for: FavoriteAmountSelection.focusDelay)
+            } catch {
+                return
+            }
+            isAmountFieldFocused = true
+            await Task.yield()
+            amountSelection = FavoriteAmountSelection.all(of: viewModel.amountString)
+        }
     }
 }
 
@@ -2694,13 +2897,16 @@ enum NewTransactionFormLayout {
     }
 }
 
-/// «Guardar» abajo, fuera del scroll, mientras no hay teclado; el teclado visto por sus notificaciones; y el alto del
-/// formulario sin contar el teclado (`NewTransactionFormLayout`). En su propio modificador: en la cadena del `body` el
-/// compilador tardaba 1,4 s en tipar la expresión (medido con `-warn-long-expression-type-checking`).
-private struct SaveAreaPlacement<SaveArea: View>: ViewModifier {
+/// «Guardar» abajo, fuera del scroll: sin teclado, la línea de lo que falta y el botón de siempre; con teclado, la barra
+/// fina con lo que falta y «Guardar», que el área segura del teclado deja justo encima de él (G1, decisión 20 de la
+/// revisión 2.3). El teclado se ve por sus notificaciones, y el alto del formulario se mide sin contar el teclado
+/// (`NewTransactionFormLayout`). En su propio modificador: en la cadena del `body` el compilador tardaba 1,4 s en tipar
+/// la expresión (medido con `-warn-long-expression-type-checking`).
+private struct SaveAreaPlacement<SaveArea: View, KeyboardBar: View>: ViewModifier {
     @Binding var isKeyboardVisible: Bool
     @Binding var isCompactHeight: Bool
     let saveArea: SaveArea
+    let keyboardBar: KeyboardBar
 
     func body(content: Content) -> some View {
         content
@@ -2714,7 +2920,9 @@ private struct SaveAreaPlacement<SaveArea: View>: ViewModifier {
 
     @ViewBuilder
     private var inset: some View {
-        if !isKeyboardVisible {
+        if isKeyboardVisible {
+            keyboardBar
+        } else {
             saveArea
         }
     }

@@ -52,6 +52,10 @@ struct FilterControlBar<VM: Filterable & Observable, PeriodView: View, TrailingC
     /// en el hero). Mantenido como property explícita para claridad de callsites.
     var inlinePeriodSelector: Bool = true
 
+    /// Registros con chips rápidos (revisión 2.3, decisión 16): lo INCLUIDO de cuenta y de categoría lo dicen los chips
+    /// de arriba, y la banda solo enseña lo de «Más filtros» (también lo oculto de esas dimensiones).
+    var hidesQuickFilterDimensions: Bool = false
+
     // Trailing slot (legacy only)
     @ViewBuilder let trailingContent: () -> TrailingContent
 
@@ -68,40 +72,59 @@ struct FilterControlBar<VM: Filterable & Observable, PeriodView: View, TrailingC
     var body: some View {
         Group {
             if panelStyle {
-                if FilterControlBarLogic.shouldRenderPanelSection(
-                    panelStyle: true,
-                    activeFilterCount: viewModel.userFilterCount(isExpensesOnlyMode: sessionState.isExpensesOnlyMode)
-                ) {
+                if FilterControlBarLogic.shouldRenderPanelSection(panelStyle: true, activeFilterCount: bandFilterCount) {
                     PanelSection(title: L10n.Panel.FilterBar.sectionTitle, compact: true) {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            GlassEffectContainer(spacing: DS.Spacing.sm) {
-                                chipsContent
-                            }
-                        }
-                        .fadesTowardVerticalBar()
-                        .scrollClipDisabled()
+                        band
                     }
                 }
             } else {
-                HStack(spacing: DS.Spacing.md) {
-                    if FilterControlBarLogic.shouldShowInlinePeriodSelector(panelStyle: panelStyle) {
-                        periodSelector
-                    }
-
-                    if viewModel.hasActiveFilters {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            chipsContent
+                // Informes: el período en su fila y, debajo, la banda (antes los chips iban en la misma fila, en un
+                // carrusel que escondía los de la derecha).
+                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                    HStack(spacing: DS.Spacing.md) {
+                        if FilterControlBarLogic.shouldShowInlinePeriodSelector(panelStyle: panelStyle) {
+                            periodSelector
                         }
-                        .fadesTowardVerticalBar()
+
+                        Spacer()
+
+                        trailingContent()
                     }
 
-                    Spacer()
-
-                    trailingContent()
+                    if bandFilterCount > 0 {
+                        band
+                    }
                 }
             }
         }
         .animation(nil, value: animationValue)
+    }
+
+    // MARK: - Banda (revisión 2.3 · L1)
+
+    /// Cuántos filtros pinta la banda: todos, o sin lo que ya dicen los chips rápidos de Registros.
+    private var bandFilterCount: Int {
+        FilterBandLogic.bandFilterCount(
+            userFilterCount: viewModel.userFilterCount(isExpensesOnlyMode: sessionState.isExpensesOnlyMode),
+            hidesQuickDimensions: hidesQuickFilterDimensions,
+            hasIncludedAccounts: !viewModel.selectedAccounts.isEmpty,
+            hasIncludedCategoriesOrSubcategories: !viewModel.selectedCategories.isEmpty
+                || !viewModel.selectedSubcategories.isEmpty
+        )
+    }
+
+    /// Las cápsulas partidas en líneas, sin carrusel: ninguna queda fuera de la pantalla, y «Quitar todo» siempre a la
+    /// vista. Sin `GlassEffectContainer`: con cápsulas que cambian de ancho rompe la animación (swiftui-ds.md).
+    private var band: some View {
+        FilterBand(
+            showsRemoveAll: FilterBandLogic.showsRemoveAll(bandFilterCount: bandFilterCount),
+            onRemoveAll: {
+                viewModel.clearFilters()
+                onFilterChange?()
+            }
+        ) {
+            chipsContent
+        }
     }
 
     // MARK: - Abrir Filtros (UX 2.2 · L8-17)
@@ -118,7 +141,15 @@ struct FilterControlBar<VM: Filterable & Observable, PeriodView: View, TrailingC
 
     @ViewBuilder
     private var chipsContent: some View {
-        HStack(spacing: DS.Spacing.sm) {
+        // Sin pila propia: cada cápsula es un hijo de la banda, que las reparte en líneas.
+        if !hidesQuickFilterDimensions {
+            includedAccountAndCategoryChips
+        }
+        otherChipsContent
+    }
+
+    @ViewBuilder
+    private var includedAccountAndCategoryChips: some View {
             // Account chips
             ForEach(buildAccountChips(selectedAccounts: viewModel.selectedAccounts, allAccounts: accounts), id: \.id) { chip in
                 FilterChipView(
@@ -191,7 +222,10 @@ struct FilterControlBar<VM: Filterable & Observable, PeriodView: View, TrailingC
                 .opensFilters(openFilters)
                 .glassEffectID("chip.subcategory", in: chipNamespace)
             }
+    }
 
+    @ViewBuilder
+    private var otherChipsContent: some View {
             // Tag chips
             ForEach(buildTagChips(selectedTags: viewModel.selectedTags, allTags: tags), id: \.id) { chip in
                 FilterChipView(
@@ -301,21 +335,7 @@ struct FilterControlBar<VM: Filterable & Observable, PeriodView: View, TrailingC
                 .opensFilters(openFilters)
                 .glassEffectID("chip.note", in: chipNamespace)
             }
-
-            // Clear all button
-            if viewModel.userFilterCount(isExpensesOnlyMode: sessionState.isExpensesOnlyMode) > 1 {
-                Button {
-                    // En seco: quitar los filtros reemplaza la página (card oxyr).
-                    viewModel.clearFilters()
-                    onFilterChange?()
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.secondary)
-                }
-                .accessibilityLabel(L10n.Action.clearAll)
-                .glassEffectID("chip.clearAll", in: chipNamespace)
-            }
-        }
+            // «Quitar todo» lo pone la banda (antes, una ✕ que VoiceOver llamaba «Borrar filtros»).
     }
 }
 
@@ -334,7 +354,8 @@ extension FilterControlBar where TrailingContent == EmptyView {
         onClearTransactionType: (() -> Void)? = nil,
         onFilterChange: (() -> Void)? = nil,
         panelStyle: Bool = false,
-        inlinePeriodSelector: Bool = true
+        inlinePeriodSelector: Bool = true,
+        hidesQuickFilterDimensions: Bool = false
     ) {
         self.periodSelector = periodSelector
         self._viewModel = Bindable(wrappedValue: viewModel)
@@ -348,6 +369,7 @@ extension FilterControlBar where TrailingContent == EmptyView {
         self.onFilterChange = onFilterChange
         self.panelStyle = panelStyle
         self.inlinePeriodSelector = inlinePeriodSelector
+        self.hidesQuickFilterDimensions = hidesQuickFilterDimensions
         self.trailingContent = { EmptyView() }
     }
 }

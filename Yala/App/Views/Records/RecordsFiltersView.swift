@@ -72,6 +72,9 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
     @State private var originalDraft: RecordsFiltersDraft?
     @State private var showDiscardAlert = false
 
+    /// Lo escrito en el buscador de categorías de la propia hoja (revisión 2.3, decisión 15, F3).
+    @State private var categoryQuery = ""
+
     // MARK: - Body
 
     var body: some View {
@@ -166,21 +169,7 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                             }
                         }
 
-                        // Reset filters button
-                        Button {
-                            dsWithAnimation(reduceMotion) {
-                                clearLocalFilters()
-                            }
-                        } label: {
-                            Text(L10n.Filters.clearFilters)
-                                .font(DS.Typography.headline)
-                                .foregroundStyle(.primary)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, DS.FormRow.paddingV)
-                                .background(.thCard)
-                                .clipShape(Capsule())
-                        }
-                        .buttonStyle(.plain)
+                        // «Limpiar filtros» vive en la cabecera y aplica al tocarlo (revisión 2.3, decisión 16, L3).
                     }
                     .padding(.vertical, DS.Spacing.xxl)
                     .padding(.horizontal, DS.Spacing.lg)
@@ -207,6 +196,16 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                         requestClose()
                     }
                     .accessibilityIdentifier("filters_close_button")
+                }
+
+                // Quita todo, aplica y cierra en un toque (L3). Antes estaba al fondo de la hoja, solo vaciaba lo elegido y
+                // había que tocar «Aplicar» después.
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(L10n.Filters.clearFilters) {
+                        clearApplyAndClose()
+                    }
+                    .disabled(!canClearFilters)
+                    .accessibilityIdentifier("filters_clear_button")
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
@@ -270,6 +269,13 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
     }
 
     private var categoriesContent: some View {
+        VStack(spacing: DS.Spacing.none) {
+            categoriesRow
+            categorySearch
+        }
+    }
+
+    private var categoriesRow: some View {
         Button {
             showCategoriesSheet = true
         } label: {
@@ -292,6 +298,128 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        // VoiceOver lee la fila y lo elegido, con el nombre del grupo (F3).
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(L10n.Filters.categories)
+        .accessibilityValue(selectedCategoriesText)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityIdentifier("filters_categories_row")
+    }
+
+    // MARK: - Buscador de categorías (revisión 2.3, decisión 15, F3)
+
+    /// Escribir «rest» y tocar la fila entera, sin abrir otra pantalla ni recorrer once grupos. Elegir una categoría es
+    /// elegir todas sus subcategorías visibles, como en el selector completo.
+    private var categorySearch: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+            HStack(spacing: DS.Spacing.sm) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+                TextField(L10n.RecordsQuickFilters23.searchPrompt, text: $categoryQuery)
+                    .font(DS.Typography.body)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                    .accessibilityIdentifier("filters_category_search")
+                if !categoryQuery.isEmpty {
+                    Button {
+                        categoryQuery = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.tertiary)
+                            .frame(width: FilterChipView.closeHitSize, height: FilterChipView.closeHitSize)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(L10n.RecordsListSearch.clear)
+                }
+            }
+            .padding(.horizontal, DS.Spacing.md)
+            .frame(minHeight: FilterChipView.closeHitSize)
+            .background(.thBackground, in: RoundedRectangle(cornerRadius: DS.Radius.md))
+
+            if !CategorySearchLogic.normalized(categoryQuery).isEmpty {
+                let results = categorySearchResults
+                if results.isEmpty {
+                    Text(L10n.RecordsQuickFilters23.noResults(categoryQuery))
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.secondary)
+                        .padding(.vertical, DS.Spacing.sm)
+                } else {
+                    ForEach(results) { result in
+                        categorySearchRow(result)
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.bottom, DS.Spacing.md)
+    }
+
+    private struct CategorySearchResult: Identifiable {
+        let id: PersistentIdentifier
+        let name: String
+        let caption: String
+        let subcategoryIDs: [PersistentIdentifier]
+    }
+
+    /// Primero las categorías que casan (con todas sus subcategorías) y luego las subcategorías, con su categoría debajo.
+    private var categorySearchResults: [CategorySearchResult] {
+        var results: [CategorySearchResult] = []
+        for category in filtersViewModel.allCategories {
+            let subs = filtersViewModel.subcategories(for: category)
+            guard !subs.isEmpty, CategorySearchLogic.matches(category.name, query: categoryQuery) else { continue }
+            results.append(CategorySearchResult(
+                id: category.persistentModelID, name: category.name,
+                caption: L10n.RecordsQuickFilters23.wholeCategory, subcategoryIDs: subs.map(\.persistentModelID)
+            ))
+        }
+        for category in filtersViewModel.allCategories {
+            for sub in filtersViewModel.subcategories(for: category)
+            where CategorySearchLogic.matches(sub.name, query: categoryQuery) {
+                results.append(CategorySearchResult(
+                    id: sub.persistentModelID, name: sub.name, caption: category.name, subcategoryIDs: [sub.persistentModelID]
+                ))
+            }
+        }
+        return results
+    }
+
+    private func categorySearchRow(_ result: CategorySearchResult) -> some View {
+        let isSelected = !result.subcategoryIDs.isEmpty && result.subcategoryIDs.allSatisfy { editSubcategories.contains($0) }
+        return Button {
+            var updated = editSubcategories
+            if isSelected {
+                updated.subtract(result.subcategoryIDs)
+            } else {
+                updated.formUnion(result.subcategoryIDs)
+            }
+            editSubcategories = updated
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(result.name)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.primary)
+                    Text(result.caption)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(isSelected ? theme.accentText : theme.secondaryText.opacity(0.4))
+                    .accessibilityHidden(true)
+            }
+            .padding(.vertical, DS.Spacing.sm)
+            .frame(minHeight: FilterChipView.closeHitSize)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(result.name)
+        .accessibilityValue(result.caption)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+        .accessibilityIdentifier("filters_category_result")
     }
 
     /// Expands category-level filters (from pie chart taps) into their visible subcategories
@@ -987,6 +1115,32 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
         } else {
             dismiss()
         }
+    }
+
+    /// Hay algo que limpiar: lo aplicado ahora o lo que se ha elegido en la hoja.
+    private var canClearFilters: Bool {
+        recordsViewModel.userFilterCount(isExpensesOnlyMode: sessionState.isExpensesOnlyMode) > 0
+            || RecordsFiltersDraftLogic.hasChanges(current: currentDraft, original: emptyDraft)
+    }
+
+    /// Lo que deja «Limpiar filtros»: nada elegido (en «Solo gastos», el gasto que fija la app).
+    private var emptyDraft: RecordsFiltersDraft {
+        RecordsFiltersDraft(
+            accounts: [], categories: [], subcategories: [], tags: [], needs: [],
+            transactionNatures: sessionState.isExpensesOnlyMode ? [.expense] : [],
+            currencies: [], amountCondition: .any, noteText: "",
+            excludedAccounts: [], excludedCategories: [], excludedSubcategories: [], excludedTags: [],
+            excludedNeeds: [], excludedCurrencies: []
+        )
+    }
+
+    /// «Limpiar filtros» de la cabecera: quita todo, lo aplica y cierra (L3). La expansión de categorías se olvida: si no,
+    /// `commitToViewModel` devolvería la categoría de antes al ver la lista de subcategorías «sin tocar».
+    private func clearApplyAndClose() {
+        clearLocalFilters()
+        categoryExpansion = nil
+        commitToViewModel()
+        dismiss()
     }
 
     private func clearLocalFilters() {

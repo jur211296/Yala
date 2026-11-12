@@ -202,7 +202,7 @@
 "filters.noneSelected" = "Keine ausgewählt";
 "filters.allSubcategories" = "Alle Unterkategorien";
 "filters.filterOptions" = "Filteroptionen";
-"filters.noteContains" = "Notiz enthält...";
+"filters.noteContains" = "Notiz enthält…";
 "filters.selectAccounts" = "Konten auswählen";
 "filters.selectTags" = "Tags auswählen";
 "filters.selectCurrencies" = "Währungen auswählen";
@@ -401,13 +401,13 @@
 "favorites.new" = "Neuer Favorit";
 "favorites.edit" = "Favorit bearbeiten";
 "favorites.noFavorites" = "Keine Favoriten";
-"favorites.createTemplate" = "Speichere eine Ausgabe, die du oft hast (dein Kaffee, das Taxi), und erfasse sie mit einem Tipp.";
+"favorites.createTemplate" = "Speichere eine Ausgabe, die du oft hast (dein Kaffee, das Taxi), und erfasse sie mit zwei Tipps: auswählen und sichern.";
 "favorites.newTitle" = "Neuer Favorit";
 "favorites.editTitle" = "Favorit bearbeiten";
 "favorites.namePlaceholder" = "Name des Favoriten";
 "favorites.notConfigured" = "Nicht konfiguriert";
 "favorites.descriptionPlaceholder" = "Beschreibung (optional)";
-"favorites.saveDescription" = "Deine üblichen Ausgaben, mit einem Tipp.";
+"favorites.saveDescription" = "Deine üblichen Ausgaben, schon ausgefüllt.";
 
 // MARK: - Scheduled
 
@@ -1126,7 +1126,7 @@
 "profile.aliasAvailable" = "Alias verfügbar";
 "profile.aliasHelper" = "3-20 Zeichen. Nur Buchstaben, Zahlen und Unterstriche.";
 "profile.privacyTitle" = "Wo deine Daten liegen";
-"profile.privacyDesc" = "Mit deinem Konto in deiner privaten iCloud werden deine Daten auf deinem Gerät und in deiner iCloud gespeichert. Mit deinem Konto in der Cloud werden sie auf den Servern von Yala gespeichert. Was du in einer Gruppe einträgst, wird mit deinem Alias auf den Servern von Yala gespeichert, damit die Gruppe es sieht. KI-Funktionen (Sprache, Bild und Insights) sind optional: Was du ihnen sendest, geht über unseren Server an einen KI-Dienst, der es verarbeitet. Welcher es ist, steht in der Datenschutzrichtlinie. Mit deinem Cloud-Konto kann die KI zusätzlich alle deine Daten lesen, die sie für genaue und detaillierte Antworten braucht.";
+"profile.privacyDesc" = "In deiner iCloud werden deine Daten auf deinem Gerät und in deiner iCloud gespeichert. In deinem Yala-Konto werden sie auf den Servern von Yala gespeichert. Was du in einer Gruppe einträgst, wird mit deinem Alias auf den Servern von Yala gespeichert, damit die Gruppe es sieht. KI-Funktionen (Sprache, Bild und Insights) sind optional: Was du ihnen sendest, geht über unseren Server an einen KI-Dienst, der es verarbeitet. Welcher es ist, steht in der Datenschutzrichtlinie. Wenn deine Daten in deinem Yala-Konto liegen, kann die KI zusätzlich alle deine Daten lesen, die sie für genaue und detaillierte Antworten braucht.";
 "profile.aliasFutureNote" = "Hinweis: Die Alias-Eindeutigkeitsprüfung wird verfügbar sein, wenn die Funktion für geteilte Ausgaben implementiert wird.";
 "profile.proMember" = "PRO-Mitglied";
 "profile.choosePhoto" = "Foto wählen";
@@ -2111,7 +2111,7 @@
 "tips.camera.title" = "Scanne Belege und Screenshots";
 "tips.camera.detail" = "Mach ein Foto von deinem Beleg oder Bank-Screenshot. Yala erkennt die Beträge und erstellt automatisch Entwürfe.";
 "tips.favorites.title" = "Speichere häufige Zahlungen";
-"tips.favorites.detail" = "Zahlst du oft das Gleiche? Speichere eine Ausgabe als Favorit und erfasse sie beim nächsten Mal mit einem Tipp im + Menü.";
+"tips.favorites.detail" = "Zahlst du oft das Gleiche? Speichere eine Ausgabe als Favorit: Wähle sie beim nächsten Erfassen aus und sichere.";
 "tips.budgets.title" = "Erstelle Budgets";
 "tips.budgets.detail" = "Lege fest, wie viel du pro Kategorie im Monat ausgeben möchtest. Yala warnt dich, wenn du dich dem Limit näherst.";
 "tips.tags.title" = "Markiere besondere Ausgaben";
@@ -2660,11 +2660,11 @@
 // 8. createFavorites (2 steps)
 "tutorials.createFavorites.title" = "Favoriten";
 "tutorials.createFavorites.intro.title" = "Was sind Favoriten?";
-"tutorials.createFavorites.intro.desc" = "Speichere häufige Ausgaben als Shortcuts und erfasse sie mit einem Tipp.";
+"tutorials.createFavorites.intro.desc" = "Speichere häufige Ausgaben als Shortcuts: Wählst du einen aus, füllt sich das Formular von selbst.";
 "tutorials.createFavorites.step0.title" = "Erstelle einen Favoriten";
 "tutorials.createFavorites.step1.title" = "Nutze ihn schnell";
 "tutorials.createFavorites.completion.title" = "Jetzt weißt du, wie du Favoriten nutzt";
-"tutorials.createFavorites.completion.desc" = "Ein Favorit erfasst wiederkehrende Ausgaben mit einem Tippen. Du kannst so viele haben, wie du willst.";
+"tutorials.createFavorites.completion.desc" = "Ein Favorit bereitet die Ausgabe vor, die du oft hast: auswählen, bei Bedarf den Betrag ändern und sichern. Du kannst so viele haben, wie du willst.";
 
 // 9. editPanel (3 steps)
 "tutorials.editPanel.title" = "Panel anpassen";
@@ -2829,17 +2829,17 @@
 "aiPrivacy.processingRow" = "Mit Sprache oder Foto erfassen";
 "aiPrivacy.chatRow" = "Yala KI";
 "aiPrivacy.insightsRow" = "KI-Zusammenfassung";
-"aiPrivacy.cloudExploreRow" = "Dein Cloud-Konto abfragen";
+"aiPrivacy.cloudExploreRow" = "Dein Yala-Konto abfragen";
 "aiPrivacy.revokeConfirmMessage" = "Wir verarbeiten deine KI-Daten für diese Funktion nicht mehr. Du kannst sie jederzeit wieder aktivieren.";
 "aiPrivacy.revokeConfirmAction" = "Deaktivieren";
-"aiPrivacy.footerHint" = "Deine Daten werden nur gesendet, wenn du eine dieser Funktionen nutzt, und gelangen über unseren Server zu einem KI-Dienst. Mit deinem Cloud-Konto kann die KI zusätzlich alle deine Daten lesen, die sie für genaue und detaillierte Antworten braucht. Wir verkaufen sie nicht und nutzen sie nicht für Werbung.";
+"aiPrivacy.footerHint" = "Deine Daten werden nur gesendet, wenn du eine dieser Funktionen nutzt, und gelangen über unseren Server zu einem KI-Dienst. Wenn deine Daten in deinem Yala-Konto liegen, kann die KI zusätzlich alle deine Daten lesen, die sie für genaue und detaillierte Antworten braucht. Wir verkaufen sie nicht und nutzen sie nicht für Werbung.";
 "aiPrivacy.policyLink" = "Datenschutzrichtlinie";
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Yala erfasst es für dich";
-"aiConsent.processingMessage" = "Sprich es ein oder wähle ein Foto vom Beleg, und Yala erfasst die Ausgabe. Dafür wird die Aufnahme oder das Foto nur in diesem Moment an einen KI-Dienst gesendet. Mit deinem Cloud-Konto kann die KI zusätzlich alle deine Daten lesen, die sie für genaue und detaillierte Antworten braucht. Es wird nicht zum Trainieren der KI verwendet.";
+"aiConsent.processingMessage" = "Sprich es ein oder wähle ein Foto vom Beleg, und Yala erfasst die Ausgabe. Dafür wird die Aufnahme oder das Foto nur in diesem Moment an einen KI-Dienst gesendet. Wenn deine Daten in deinem Yala-Konto liegen, kann die KI zusätzlich alle deine Daten lesen, die sie für genaue und detaillierte Antworten braucht. Es wird nicht zum Trainieren der KI verwendet.";
 "aiConsent.insightsTitle" = "KI-Zusammenfassung";
-"aiConsent.insightsMessage" = "Yala analysiert deine Finanzen und zeigt dir, wie du dastehst. Dafür wird eine Zusammenfassung an einen KI-Dienst gesendet – Summen und Trends nach Kategorie, Budgets, wiederkehrende Zahlungen und die Namen der kleinen Käufe, die du wiederholst, mit Anzahl und Summe –, nicht dein vollständiger Verlauf an Einträgen. Mit deinem Cloud-Konto kann sie zusätzlich alles lesen, was für Genauigkeit nötig ist, etwa jeden Kauf mit Datum und Betrag. Sie wird nicht zum Trainieren der KI verwendet.";
+"aiConsent.insightsMessage" = "Yala analysiert deine Finanzen und zeigt dir, wie du dastehst. Dafür wird eine Zusammenfassung an einen KI-Dienst gesendet – Summen und Trends nach Kategorie, Budgets, wiederkehrende Zahlungen und die Namen der kleinen Käufe, die du wiederholst, mit Anzahl und Summe –, nicht dein vollständiger Verlauf an Einträgen. Wenn deine Daten in deinem Yala-Konto liegen, kann sie zusätzlich alles lesen, was für Genauigkeit nötig ist, etwa jeden Kauf mit Datum und Betrag. Sie wird nicht zum Trainieren der KI verwendet.";
 "aiConsent.accept" = "Akzeptieren und aktivieren";
 "aiConsent.privacyPolicy" = "Datenschutzrichtlinie";
 "aiConsent.inlineHintProcessing" = "Deine Sprach- und Bilddaten werden von einem KI-Dienst verarbeitet. Sie werden nicht dauerhaft gespeichert.";
@@ -3319,6 +3319,7 @@
 "chat.emptySubtitle" = "Erkunde deine Finanzen mit Fragen";
 "chat.errorTimeout" = "Die Antwort hat zu lange gedauert. Versuch es nochmal.";
 "chat.errorOffline" = "Du brauchst eine Internetverbindung, um Yala KI zu nutzen.";
+"chat.offline.body" = "Yala KI ist wieder da, sobald du online bist. Bis dahin kannst du selbst eintragen.";
 "chat.errorGeneric" = "Etwas ist schiefgelaufen. Versuch es nochmal.";
 "chat.errorNoData" = "Keine Daten für diese Abfrage gefunden. Kannst du genauer sein?";
 "chat.dailyLimitReached" = "Du hast deine Fragen für heute aufgebraucht. Komm morgen wieder!";
@@ -3378,9 +3379,9 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Yala KI";
-"aiConsent.chatMessage" = "Yala beantwortet deine Fragen zu deinen Finanzen mit deinen eigenen Zahlen. Dafür wird eine Zusammenfassung der letzten 13 Monate an einen KI-Dienst gesendet: Salden und Namen deiner Konten, Summen nach Kategorie, häufige Händler, Budgets, wiederkehrende Zahlungen und deine größten Ausgaben in diesem Monat. Mit deinem Cloud-Konto kann die KI zusätzlich alle deine Daten lesen, die sie für genaue und detaillierte Antworten braucht. Sie wird nur für die Antwort verwendet, nicht zum Trainieren der KI.";
-"aiConsent.cloudExploreTitle" = "Yala KI mit deinem Cloud-Konto";
-"aiConsent.cloudExploreMessage" = "Yala beantwortet deine Fragen zu deinen Finanzen mit deinen eigenen Zahlen. Dafür wird eine Zusammenfassung der letzten 13 Monate an einen KI-Dienst gesendet und, wenn eine Frage es erfordert, die Daten aus deinem Cloud-Konto, die für die Antwort nötig sind: Einträge aus jedem Zeitraum mit ihrer Notiz, Konten, Budgets und wiederkehrende Zahlungen. Sie werden nur für die Antwort verwendet, nicht zum Trainieren der KI.";
+"aiConsent.chatMessage" = "Yala beantwortet deine Fragen zu deinen Finanzen mit deinen eigenen Zahlen. Dafür wird eine Zusammenfassung der letzten 13 Monate an einen KI-Dienst gesendet: Salden und Namen deiner Konten, Summen nach Kategorie, häufige Händler, Budgets, wiederkehrende Zahlungen und deine größten Ausgaben in diesem Monat. Wenn deine Daten in deinem Yala-Konto liegen, kann die KI zusätzlich alle deine Daten lesen, die sie für genaue und detaillierte Antworten braucht. Sie wird nur für die Antwort verwendet, nicht zum Trainieren der KI.";
+"aiConsent.cloudExploreTitle" = "Yala KI mit deinem Yala-Konto";
+"aiConsent.cloudExploreMessage" = "Yala beantwortet deine Fragen zu deinen Finanzen mit deinen eigenen Zahlen. Dafür wird eine Zusammenfassung der letzten 13 Monate an einen KI-Dienst gesendet und, wenn eine Frage es erfordert, die Daten aus deinem Yala-Konto, die für die Antwort nötig sind: Einträge aus jedem Zeitraum mit ihrer Notiz, Konten, Budgets und wiederkehrende Zahlungen. Sie werden nur für die Antwort verwendet, nicht zum Trainieren der KI.";
 "aiConsent.inlineHintChat" = "Deine Finanzzusammenfassung wird von einem KI-Dienst verarbeitet, um zu antworten. Sie wird nicht dauerhaft gespeichert.";
 "aiConsent.inlineHintMultiple" = "Mehrere Funktionen nutzen einen KI-Dienst zur Datenverarbeitung. Daten werden nicht dauerhaft gespeichert.";
 
@@ -3409,13 +3410,13 @@
 "groups.expense.eachPays" = "Jeder zahlt";
 
 // GC-05: Settlements
-"groups.settlement.title" = "Zahlung erfassen";
+"groups.settlement.title" = "Ausgleichen";
 "groups.settlement.payTo" = "zahlt an";
-"groups.settlement.registerPayment" = "Zahlung erfassen";
+"groups.settlement.registerPayment" = "Ausgleichen";
 "groups.settlement.confirm" = "Bestätigen";
 "groups.settlement.reject" = "Ablehnen";
 "groups.settlement.settle" = "Begleichen";
-"groups.settlement.settleHint" = "Öffnet das Formular zur Erfassung dieser Zahlung";
+"groups.settlement.settleHint" = "Öffnet das Formular, um diese Schuld auszugleichen";
 "groups.settlement.confirmQuestion" = "Diese Zahlung als bestätigt markieren?";
 "groups.settlement.rejectQuestion" = "Diese Zahlung ablehnen?";
 
@@ -4040,7 +4041,7 @@
 "welcome.restore.foundTitle" = "Hallo %@! Schön, dich wiederzusehen.";
 "welcome.restore.foundTitleAnonymous" = "Schön, dich wiederzusehen!";
 "welcome.restore.foundBody" = "Das kommt zurück auf dieses Gerät:";
-"welcome.restore.foundPreCloudNote" = "Diese iCloud-Kopie stammt aus der Zeit, bevor du die Yala-Cloud genutzt hast. Deine letzten Änderungen fehlen darin vielleicht.";
+"welcome.restore.foundPreCloudNote" = "Diese iCloud-Kopie stammt aus der Zeit, bevor du mit deinen Daten zu deinem Yala-Konto gewechselt bist. Deine letzten Änderungen fehlen darin vielleicht.";
 "welcome.restore.continue" = "Fortfahren";
 "welcome.restore.notFoundTitle" = "Keine Daten gefunden";
 "welcome.restore.notFoundBody" = "Es sind keine Daten mit deinem iCloud-Konto verknüpft. Möchtest du neu starten?";
@@ -4087,7 +4088,7 @@
 "welcome.hero.cards.multiAndCurrencies.body" = "Karten, Bargeld, 50+ Währungen.";
 "welcome.hero.cards.import.title" = "Historie importieren";
 "welcome.hero.cards.import.body" = "PDF, CSV, Excel. Fertig.";
-"welcome.hero.cards.icloud.title" = "Private iCloud";
+"welcome.hero.cards.icloud.title" = "In deiner iCloud";
 "welcome.hero.cards.icloud.body" = "Deine Daten, in deiner iCloud.";
 "welcome.hero.cards.more.title" = "Und vieles mehr";
 "welcome.hero.cards.more.body" = "Lass es uns gemeinsam entdecken.";
@@ -4248,9 +4249,9 @@
 "groups.reconnect.deletedForAll.cta" = "Verstanden";
 
 // MARK: Bridge opt-out (F7 consolidation)
-"groups.bridge.optoutAlertTitle" = "Auch in dein persönliches Yala eintragen?";
+"groups.bridge.optoutAlertTitle" = "In deinen Konten zeigen?";
 "groups.bridge.optoutAlertBody" = "Du kannst einen persönlichen Eintrag in deinem Konto erstellen, um diese Ausgabe widerzuspiegeln, oder sie nur in der Gruppe behalten.";
-"groups.bridge.optoutAlertYes" = "Ja, eintragen";
+"groups.bridge.optoutAlertYes" = "Ja, zeigen";
 "groups.bridge.optoutAlertNo" = "Nur in der Gruppe";
 "groups.bridge.deactivationSheetTitle" = "Nicht mehr in deinen Konten zeigen";
 "groups.bridge.deactivationSheetBody" = "Es gibt bereits automatisch erstellte Einträge in deinen Konten. Entscheide, was damit geschehen soll.";
@@ -4258,13 +4259,13 @@
 "groups.bridge.deactivationOptionDelete" = "Aus meinen Konten löschen";
 "groups.globalSettings.title" = "Gruppeneinstellungen";
 "groups.globalSettings.bridgeSectionTitle" = "In deinen Konten zeigen";
-"groups.globalSettings.bridgeToggleLabel" = "Gruppenausgaben in meinen persönlichen Konten erfassen";
+"groups.globalSettings.bridgeToggleLabel" = "In deinen Konten zeigen";
 "groups.globalSettings.bridgeCaption" = "Wenn aktiviert, wird jede Ausgabe, die du bezahlst oder begleichst, auch im gewählten persönlichen Konto erfasst. Dein Saldo spiegelt die Realität wider.";
 "groups.globalSettings.visibilitySectionTitle" = "Sichtbarkeit";
 "groups.globalSettings.visibilityCaption" = "Lege fest, ob Gruppeneinträge in deinem Panel, in Statistiken und in Einträgen angezeigt werden.";
 "groups.globalSettings.includeGroupTransactionsInFeedLabel" = "Gruppeneinträge in Einträgen anzeigen";
 "groups.settings.personalIntegrationSectionTitle" = "In deinen Konten zeigen";
-"groups.settings.personalIntegrationToggleLabel" = "Ausgaben dieser Gruppe in meinen persönlichen Konten erfassen";
+"groups.settings.personalIntegrationToggleLabel" = "In deinen Konten zeigen";
 "groups.settings.personalIntegrationHintInheritOn" = "Übernimmt deine allgemeine Einstellung (Aktiviert).";
 "groups.settings.personalIntegrationHintLocalOff" = "Nur in dieser Gruppe: deaktiviert.";
 "groups.settings.personalIntegrationHintBlockedByGlobal" = "Um es hier zu aktivieren, aktiviere es zuerst in den Gruppeneinstellungen.";
@@ -4370,7 +4371,7 @@
 "whatsNew.v21.logging.title" = "Erfassen war noch nie so einfach";
 "whatsNew.v21.logging.description" = "Sprich mit Yala, mach ein Foto oder schreib wie mit einem Freund. Yala versteht, was du ausgegeben hast, und trägt es für dich ein – so behältst du deine Finanzen in Sekunden im Blick.";
 "whatsNew.v21.data.title" = "Deine Daten, deine Regeln";
-"whatsNew.v21.data.description" = "Du entscheidest, wo deine Daten liegen: in deiner privaten iCloud oder in der Yala-Cloud, damit du sie auf all deinen Geräten hast. Dazu ein neu gestaltetes Panel und Yala im Vollbild auf deinem iPad.";
+"whatsNew.v21.data.description" = "Du entscheidest, wo deine Daten liegen: in deiner iCloud oder in deinem Yala-Konto, damit du sie auf all deinen Geräten hast. Dazu ein neu gestaltetes Panel und Yala im Vollbild auf deinem iPad.";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "common.vs" = "vs.";
@@ -4493,7 +4494,7 @@
 "groups.openingBalance.sectionTitle" = "Anfangssalden";
 "groups.openingBalance.addButton" = "Anfangssaldo hinzufügen";
 "groups.openingBalance.emptyState" = "Noch keine Anfangssalden.";
-"groups.openingBalance.frozenNote" = "Diese Gruppe ist in die Yala-Cloud umgezogen. Du kannst die Anfangssalden sehen, aber hier nicht ändern.";
+"groups.openingBalance.frozenNote" = "Diese Gruppe ist zu deinem Yala-Konto gewechselt. Du kannst die Anfangssalden sehen, aber hier nicht ändern.";
 "groups.openingBalance.rollupOwes" = "schuldet";
 "groups.openingBalance.rollupOwed" = "hat Guthaben";
 "groups.openingBalance.approvalPromptTitle" = "Hatte %@ schon offene Beträge mit der Gruppe?";
@@ -4599,56 +4600,56 @@
 
 /* MARK: Modo Nube (I14) — almacenamiento / migración / consentimiento */
 "storage.title" = "Wo deine Daten liegen";
-"storage.waitingForLeader" = "Ein anderes deiner Geräte aktiviert gerade die Cloud für dieses Konto. Warte, bis es fertig ist.";
-"storage.status.icloudTitle" = "Privates iCloud";
-"storage.status.icloudBody" = "Deine Daten bleiben auf deinem Gerät und werden über dein privates iCloud synchronisiert. Niemand sonst kann sie lesen – auch wir nicht.";
-"storage.status.cloudTitle" = "Dein Cloud-Konto";
+"storage.waitingForLeader" = "Ein anderes deiner Geräte bringt gerade deine Daten in dein Yala-Konto. Warte, bis es fertig ist.";
+"storage.status.icloudTitle" = "In deiner iCloud";
+"storage.status.icloudBody" = "Deine Daten bleiben auf deinem Gerät und werden über deine iCloud synchronisiert. Niemand sonst kann sie lesen – auch wir nicht.";
+"storage.status.cloudTitle" = "In deinem Yala-Konto";
 "storage.status.cloudBody" = "Deine Daten werden in deinem Yala-Konto gespeichert und über all deine Geräte synchronisiert.";
-"storage.migrate.title" = "In die Cloud wechseln";
+"storage.migrate.title" = "Zu deinem Yala-Konto wechseln";
 "storage.migrate.body" = "Erstelle ein Konto mit Apple oder Google und greife von jedem Gerät auf deine Daten zu – auch ohne iCloud.";
-"storage.migrate.button" = "Cloud aktivieren";
-"storage.migrate.previewButton" = "Anzeigen, was übertragen würde";
+"storage.migrate.button" = "Zu deinem Yala-Konto wechseln";
+"storage.migrate.previewButton" = "Anzeigen, was wechseln würde";
 "storage.migrate.previewResult" = "%1$d Einträge · %2$d Kategorien · %3$d Konten · %4$d Budgets";
-"storage.adopt.title" = "Cloud auf diesem Gerät aktivieren";
-"storage.adopt.body" = "Dieses Konto hat deine Daten bereits in der Cloud. Aktivieren wir sie für dieses Gerät.";
-"storage.adopt.button" = "Auf diesem Gerät aktivieren";
-"storage.revert.title" = "Zurück zu iCloud";
-"storage.revert.body" = "Zurück in den privaten Modus. Deine Daten liegen dann auf deinem Gerät und in deinem iCloud – ohne etwas zu verlieren.";
-"storage.revert.button" = "Zurück zu iCloud";
-"storage.revert.ineligible" = "Du kannst gerade nicht von diesem Gerät zu iCloud zurückkehren.";
+"storage.adopt.title" = "Dein Yala-Konto auf diesem Gerät nutzen";
+"storage.adopt.body" = "Deine Daten sind schon in deinem Yala-Konto. Nutzen wir es auf diesem Gerät.";
+"storage.adopt.button" = "Auf diesem Gerät nutzen";
+"storage.revert.title" = "Zurück zu deiner iCloud";
+"storage.revert.body" = "Deine Daten liegen dann auf deinem Gerät und in deiner iCloud – ohne etwas zu verlieren.";
+"storage.revert.button" = "Zurück zu deiner iCloud";
+"storage.revert.ineligible" = "Du kannst gerade nicht von diesem Gerät zu deiner iCloud zurückkehren.";
 "storage.sync.title" = "Synchronisierung";
 "storage.sync.upToDate" = "Alles synchronisiert";
 "storage.sync.signInButton" = "Anmelden";
-"storage.progress.migrating" = "Cloud wird aktiviert …";
-"storage.progress.reverting" = "Zurück zu iCloud …";
+"storage.progress.migrating" = "Wechsel zu deinem Yala-Konto …";
+"storage.progress.reverting" = "Zurück zu deiner iCloud …";
 "storage.progress.resume" = "Fortsetzen";
 "storage.progress.retry" = "Erneut versuchen";
 "storage.relaunch.title" = "Fast fertig – starte Yala neu";
 "storage.relaunch.body" = "Schließe Yala vollständig (im App-Umschalter wegwischen) und öffne es erneut, um abzuschließen.";
-"storage.failed.migration" = "Wir konnten die Cloud nicht aktivieren. Deine Daten sind sicher auf deinem Gerät – du kannst es erneut versuchen.";
-"storage.failed.reverse" = "Wir konnten die Rückkehr zu iCloud nicht abschließen. Deine Daten sind sicher – du kannst es erneut versuchen.";
-"storage.confirm.migrateTitle" = "Cloud aktivieren?";
+"storage.failed.migration" = "Wir konnten deine Daten nicht in dein Yala-Konto bringen. Deine Daten sind sicher auf deinem Gerät – du kannst es erneut versuchen.";
+"storage.failed.reverse" = "Wir konnten die Rückkehr zu deiner iCloud nicht abschließen. Deine Daten sind sicher – du kannst es erneut versuchen.";
+"storage.confirm.migrateTitle" = "Zu deinem Yala-Konto wechseln?";
 "storage.confirm.migrateBody" = "Deine Daten werden in dein Yala-Konto verschoben. Es ist umkehrbar, aber eine große Änderung.";
 "storage.confirm.migrateContinue" = "Weiter";
 "storage.confirm.migrate2Title" = "Bist du sicher?";
-"storage.confirm.migrate2Body" = "Die Cloud wird für dieses Gerät aktiviert.";
-"storage.confirm.migrate2Confirm" = "Ja, Cloud aktivieren";
-"storage.confirm.revertTitle" = "Zurück zu iCloud?";
+"storage.confirm.migrate2Body" = "Deine Daten wechseln auf diesem Gerät zu deinem Yala-Konto.";
+"storage.confirm.migrate2Confirm" = "Ja, zu meinem Yala-Konto wechseln";
+"storage.confirm.revertTitle" = "Zurück zu deiner iCloud?";
 "storage.confirm.revertBody" = "Deine Daten liegen wieder auf diesem Gerät und in deiner iCloud. Du verlierst nichts.";
 "storage.confirm.revertContinue" = "Weiter";
 "storage.confirm.revert2Title" = "Bist du sicher?";
-"storage.confirm.revert2Body" = "Die Cloud wird für dieses Gerät deaktiviert.";
-"storage.confirm.revert2Confirm" = "Ja, zurück zu iCloud";
+"storage.confirm.revert2Body" = "Deine Daten kehren auf diesem Gerät zu deiner iCloud zurück.";
+"storage.confirm.revert2Confirm" = "Ja, zurück zu meiner iCloud";
 "storage.errors.title" = "Etwas ist schiefgelaufen";
 "storage.errors.generic" = "Etwas hat nicht geklappt. Bitte versuche es erneut.";
 "storage.errors.adoptOtherAccount" = "Das ist nicht das Konto, das du auf diesem Gerät aktivieren wolltest. Versuche es mit demselben Konto erneut.";
-"storage.errors.adoptICloudNotSettled" = "Wir konnten die Cloud nicht aktivieren: iCloud lädt noch Daten auf dieses Gerät. Versuche es in ein paar Minuten erneut.";
+"storage.errors.adoptICloudNotSettled" = "Wir konnten den Wechsel zu deinem Yala-Konto nicht starten: iCloud lädt noch Daten auf dieses Gerät. Versuche es in ein paar Minuten erneut.";
 "storage.errors.signIn" = "Wir konnten dich nicht anmelden. Bitte versuche es erneut.";
-"storage.consent.title" = "Deine Daten in der Yala-Cloud";
+"storage.consent.title" = "Deine Daten in deinem Yala-Konto";
 "storage.consent.pointServers" = "Unser Team kann sie einsehen, um dir Support und intelligente Funktionen zu bieten. Wir verwenden keine Ende-zu-Ende-Verschlüsselung.";
-"storage.consent.pointPhotos" = "Sie werden nicht in der Cloud gesichert und nicht auf anderen Geräten angezeigt. Wenn du sie behalten willst, sichere sie, bevor du das Gerät wechselst.";
+"storage.consent.pointPhotos" = "Sie werden nicht in deinem Yala-Konto gespeichert und nicht auf anderen Geräten angezeigt. Wenn du sie behalten willst, sichere sie, bevor du das Gerät wechselst.";
 "storage.consent.pointAccess" = "Ohne iCloud. Es gibt kein Yala-Passwort und keine Wiederherstellung per E-Mail: Wenn du diesen Zugang verlierst, exportiere vorher deine Daten (Einstellungen → Einträge exportieren).";
-"storage.consent.footer" = "Du kannst jederzeit in den privaten Modus zurückwechseln, ohne etwas zu verlieren.";
+"storage.consent.footer" = "Du kannst jederzeit zu deiner iCloud zurückkehren, ohne etwas zu verlieren.";
 "storage.consent.privacyLink" = "Datenschutzrichtlinie ansehen";
 
 /* Invite onboarding: spinner title while zone/member sync */
@@ -4698,7 +4699,7 @@
 "settings.signOutBlockedTitle" = "Abmelden nicht möglich";
 
 /* Alert message when pending uploads block sign out */
-"settings.signOutBlockedMessage" = "Einige Änderungen wurden noch nicht in die Cloud hochgeladen und wir möchten nicht, dass etwas verloren geht. Prüfe deine Verbindung und versuche es erneut.";
+"settings.signOutBlockedMessage" = "Einige Änderungen sind noch nicht in deinem Yala-Konto angekommen, und wir möchten nicht, dass etwas verloren geht. Prüfe deine Verbindung und versuche es erneut.";
 
 /* Subtitle of the existing-account sub-chooser in Welcome */
 "welcome.existing.title" = "Schön, dass du wieder da bist!";
@@ -4717,13 +4718,13 @@
 "welcome.existing.cloudTitle" = "Mit Apple anmelden";
 
 /* Card body: sign in to cloud account */
-"welcome.existing.cloudBody" = "Dein Yala-Konto in der Cloud, von jedem Gerät aus.";
+"welcome.existing.cloudBody" = "Dein Yala-Konto, von jedem Gerät aus.";
 
 /* Cloud sign-in screen title */
 "welcome.cloud.title" = "Melde dich bei deinem Konto an";
 
 /* Cloud sign-in screen subtitle */
-"welcome.cloud.subtitle" = "Verwende dieselbe Apple-ID, mit der du dein Cloud-Konto erstellt hast.";
+"welcome.cloud.subtitle" = "Verwende dieselbe Apple-ID, mit der du dein Yala-Konto erstellt hast.";
 
 /* Progress label while checking account exists */
 "welcome.cloud.checking" = "Konto wird überprüft…";
@@ -4738,7 +4739,7 @@
 "welcome.cloud.notFoundTitle" = "Kein Konto gefunden";
 
 /* Body when Apple ID has no cloud account */
-"welcome.cloud.notFoundBody" = "Für die Anmeldung, die du verwendet hast, gibt es noch kein Yala-Cloud-Konto.";
+"welcome.cloud.notFoundBody" = "Für die Anmeldung, die du verwendet hast, gibt es noch kein Yala-Konto.";
 "welcome.cloud.notFoundCta" = "Konto erstellen";
 
 /* Title when foreign local data blocks sign-in */
@@ -4771,7 +4772,7 @@
 
 /* Chip shown while the secondary (guest) session pulls its account data after relaunch */
 "welcome.cloud.hydrationBanner" = "Deine Daten werden geladen…";
-"welcome.cloud.cancelAdoptBody" = "Dieses Gerät hat nichts an deinen Daten in der Cloud geändert. Du kehrst zum Start zurück. Du kannst dich jederzeit über „Ich habe bereits ein Konto“ wieder bei deinem Konto anmelden.";
+"welcome.cloud.cancelAdoptBody" = "Dieses Gerät hat nichts an deinen Daten in deinem Yala-Konto geändert. Du kehrst zum Start zurück. Du kannst dich jederzeit über „Ich habe bereits ein Konto“ wieder bei deinem Konto anmelden.";
 "welcome.cloud.cancelAdoptEffectBody" = "Was du auf diesem Gerät hast, ist weiterhin hier, wie bisher. Du kehrst zum Start zurück. Du kannst dich jederzeit über „Ich habe bereits ein Konto“ wieder bei deinem Konto anmelden.";
 
 /* Title of the proactive gate shown in the Groups tab when the device has no iCloud account */
@@ -4787,10 +4788,10 @@
 "storage.relaunch.bodyAutoExit" = "Wechsle zum Home-Bildschirm und öffne Yala erneut — dann ist alles bereit.";
 
 /* G4 groups consent screen title */
-"groups.consent.title" = "Gruppen in der Cloud";
+"groups.consent.title" = "Gruppen in deinem Yala-Konto";
 
 /* G4 consent point 1 */
-"groups.consent.point1" = "Gruppen sind von Natur aus geteilt: Sie leben in der Yala-Cloud, damit alle dieselben Ausgaben aktuell sehen.";
+"groups.consent.point1" = "Gruppen sind von Natur aus geteilt: Sie leben in deinem Yala-Konto, in der Cloud, damit alle dieselben Ausgaben aktuell sehen.";
 
 /* G4 consent point 2 */
 "groups.consent.point2" = "Mit der Gruppe wird nur das Nötigste geteilt: dein Name und die Ausgaben der Gruppe. Die anderen Mitglieder sehen deine E-Mail nicht.";
@@ -4812,7 +4813,7 @@
 "groups.signin.bodyNoInvite" = "Deine Gruppen werden in deinem Yala-Konto gespeichert, damit alle dieselben Ausgaben sehen, immer aktuell. Melde dich mit Apple oder Google an, um weiterzumachen.";
 
 /* G4 sign-in R9 account note */
-"groups.signin.accountNote" = "Das wird dein Yala-Konto sein: Wenn du eines Tages deine persönlichen Daten in die Cloud bringst, nutzt du genau dieses.";
+"groups.signin.accountNote" = "Das wird dein Yala-Konto sein: Wenn du eines Tages mit deinen persönlichen Daten zu deinem Yala-Konto wechselst, nutzt du genau dieses.";
 
 /* G4 sign-in error */
 "groups.signin.error" = "Hmm, wir konnten dein Konto nicht verbinden. Versuch es noch einmal.";
@@ -4862,13 +4863,13 @@
 "export.groupsExportFailedNote" = "Deine persönliche Datei wurde exportiert, aber deine Gruppen konnten diesmal nicht aufgenommen werden. Versuche es später erneut.";
 
 /* G6-3: freeze error surfaced when writing to a migrated group */
-"groups.errors.movedToBackend" = "Diese Gruppe ist in die Yala-Cloud umgezogen. Melde dich erneut an, um sie weiter zu nutzen.";
+"groups.errors.movedToBackend" = "Diese Gruppe ist zu deinem Yala-Konto gewechselt. Melde dich erneut an, um sie weiter zu nutzen.";
 
 /* G6-3: card chip for a migrated frozen group */
 "groups.card.movedChip" = "Verschoben";
 
 /* G6-3: detail banner title for a migrated group */
-"groups.migrated.bannerTitle" = "Diese Gruppe ist in die Yala-Cloud umgezogen";
+"groups.migrated.bannerTitle" = "Diese Gruppe ist zu deinem Yala-Konto gewechselt";
 
 /* G6-3: detail banner body for a migrated group */
 "groups.migrated.bannerBody" = "Melde dich erneut an, um Ausgaben weiter zu sehen und zu bearbeiten.";
@@ -4884,7 +4885,7 @@
 
 
 /* G6-3: progress banner while the owner's groups migrate to backend */
-"groups.migrated.migratingBanner" = "Deine Gruppen ziehen in die Yala-Cloud um…";
+"groups.migrated.migratingBanner" = "Deine Gruppen wechseln zu deinem Yala-Konto …";
 
 /* Google sign-in button label (brand guideline text next to the G logo) */
 "auth.googleButton" = "Weiter mit Google";
@@ -4895,11 +4896,11 @@
 "welcome.existing.googleTitle" = "Mit Google anmelden";
 
 /* Existing-account chooser: Google sign-in card body */
-"welcome.existing.googleBody" = "Dein Yala-Konto in der Cloud, wenn du es mit deinem Google-Konto erstellt hast.";
+"welcome.existing.googleBody" = "Dein Yala-Konto, wenn du es mit deinem Google-Konto erstellt hast.";
 "welcome.existing.usedOnThisDeviceNote" = "Die du auf diesem Gerät verwendet hast";
 
 /* Cloud sign-in intro subtitle when provider is Google */
-"welcome.cloud.subtitleGoogle" = "Verwende dasselbe Google-Konto, mit dem du dein Cloud-Konto erstellt hast.";
+"welcome.cloud.subtitleGoogle" = "Verwende dasselbe Google-Konto, mit dem du dein Yala-Konto erstellt hast.";
 
 
 
@@ -4921,7 +4922,7 @@
 "storage.signin.title" = "Wähle, wie du dich anmeldest";
 
 /* Body of the provider chooser in the cloud migration entry */
-"storage.signin.body" = "Um deine Daten in der Cloud zu speichern, brauchst du ein Yala-Konto. Melde dich mit Apple oder Google an.";
+"storage.signin.body" = "Um deine Daten in deinem Yala-Konto zu speichern, melde dich mit Apple oder Google an.";
 
 
 /* Empty state del tab Grupos tras cerrar sesión solo-grupos (H-2026-07-18-7): título */
@@ -4996,7 +4997,7 @@
 "settings.deleteAccountViewGroups" = "Meine Gruppen anzeigen";
 
 /* D5: aviso (.cloud) de que la copia iCloud congelada pre-migración sobrevive al borrado de cuenta */
-"settings.deleteAccountFrozenICloudNote" = "Deine alte iCloud-Kopie (von vor der Yala-Cloud) bleibt unberührt: Wenn du Yala wieder öffnest, siehst du sie wie bei einer Neuinstallation.";
+"settings.deleteAccountFrozenICloudNote" = "Deine alte iCloud-Kopie (von vor deinem Yala-Konto) bleibt unberührt: Wenn du Yala wieder öffnest, siehst du sie wie bei einer Neuinstallation.";
 
 /* D5: aviso de huella legacy — el nombre persiste en zonas CloudKit tras el borrado de cuenta */
 "settings.deleteAccountLegacyFootprintNote" = "In alten Gruppen (iCloud) kann dein Name für deren Mitglieder weiterhin sichtbar sein.";
@@ -5005,7 +5006,7 @@
 "settings.scopeDeviceLabel" = "Auf diesem Gerät";
 
 /* D4 hoja de alcance: etiqueta fila iCloud (modo privado) */
-"settings.scopeICloudLabel" = "In iCloud";
+"settings.scopeICloudLabel" = "In deiner iCloud";
 
 /* D4 hoja de alcance: etiqueta fila cuenta de Yala (modo nube) */
 "settings.scopeCloudAccountLabel" = "In deinem Yala-Konto";
@@ -5102,7 +5103,7 @@
 "settings.wipeExportBeforeButton" = "Vorher exportieren";
 
 /* Vaciar v2: caption bajo 'Exportar antes' cuando los datos viven en la cuenta de Yala (.cloud) */
-"settings.wipeExportBeforeCloudCaption" = "Im Cloud-Modus ist das vielleicht deine einzige Kopie";
+"settings.wipeExportBeforeCloudCaption" = "Wenn deine Daten in deinem Yala-Konto liegen, ist das vielleicht deine einzige Kopie";
 
 /* Vaciar v2: fila de grupos de la hoja de alcance cuando el usuario tiene saldos pendientes */
 "settings.wipeScopeGroupsDebt" = "Deine Gruppen bleiben erhalten, aber du hast offene Salden. Du kannst sie im Tab Gruppen ausgleichen.";
@@ -5177,35 +5178,35 @@
 "settings.yalaAccountDataLocationTitle" = "Wo deine Daten liegen";
 
 /* Datos en modo nube */
-"settings.yalaAccountDataLocationCloud" = "In deinem Yala-Konto, in der Cloud.";
+"settings.yalaAccountDataLocationCloud" = "In deinem Yala-Konto.";
 
 /* Datos en solo-grupos (5b) */
-"settings.yalaAccountDataLocationGroupsOnly" = "Auf diesem Gerät und in deinem privaten iCloud. Dein Konto nutzt du nur für Gruppen.";
+"settings.yalaAccountDataLocationGroupsOnly" = "In deiner iCloud und auf diesem Gerät. Dein Konto nutzt du nur für Gruppen.";
 "settings.yalaAccountDataLocationGroupsOnlyNoPrivate" = "Dein Konto speichert nur deine Gruppen; auf diesem Gerät gibt es keine persönlichen Daten.";
 
 /* Alcance del desenlace Cerrar sesión */
 "settings.yalaAccountSignOutScope" = "Dein Konto bleibt; du kommst zurück, wann du willst.";
 
 /* Desenlace Volver a iCloud (la Reversa) */
-"settings.yalaAccountReturnICloud" = "Zurück zu iCloud";
+"settings.yalaAccountReturnICloud" = "Zurück zu deiner iCloud";
 
 /* Alcance del desenlace Volver a iCloud */
-"settings.yalaAccountReturnICloudScope" = "Deine Daten kehren in dein privates iCloud zurück; dein Konto wird pausiert.";
+"settings.yalaAccountReturnICloudScope" = "Deine Daten kehren in deine iCloud zurück; dein Konto wird pausiert.";
 
 /* Alcance del desenlace Eliminar mi cuenta */
 "settings.yalaAccountDeleteScope" = "Alles wird gelöscht, für immer.";
 
 /* Frase de que la Reversa ES el desenlace funcional (§3.3.5) */
-"storage.revert.desenlaceNote" = "So trennst du dein Konto von diesem Gerät: Es bleibt pausiert, falls du zurückkommst.";
+"storage.revert.desenlaceNote" = "So nutzt du dein Yala-Konto auf diesem Gerät nicht mehr: Es bleibt pausiert, falls du zurückkommst.";
 
 /* Header de la subseccion Tu cuenta en Seguridad (§3.2) */
 "settings.accountSubsectionTitle" = "Dein Konto";
 
 /* Subtitulo de Donde viven tus datos, modo iCloud */
-"settings.dataLocationSubtitleICloud" = "Privates iCloud";
+"settings.dataLocationSubtitleICloud" = "In deiner iCloud";
 
 /* Subtitulo de Donde viven tus datos, modo nube */
-"settings.dataLocationSubtitleCloud" = "Dein Cloud-Konto";
+"settings.dataLocationSubtitleCloud" = "In deinem Yala-Konto";
 
 /* D10 batch: stop button (D3) */
 "settings.batchLeaveStop" = "Stoppen";
@@ -5246,29 +5247,29 @@
 "storage.migrate.refusedPersonalData" = "Dein aktuelles Yala-Konto hat bereits persönliche Finanzen und kann die dieses Geräts nicht aufnehmen. Um deine Daten in ein anderes Konto zu bringen, trenne dieses zuerst unter „Gruppen“.";
 
 /* Storage migrate card, after the identity check refused the live account: the device's groups use another account */
-"storage.migrate.refusedOtherGroups" = "Deine Gruppen nutzen ein anderes Konto, und auf diesem Gerät kann es nur ein Cloud-Konto geben. Um deine Daten in die Cloud zu bringen, melde dich mit dem Konto deiner Gruppen an oder trenne es zuerst unter „Gruppen“.";
+"storage.migrate.refusedOtherGroups" = "Deine Gruppen nutzen ein anderes Konto, und auf diesem Gerät kann es nur ein Yala-Konto geben. Um mit deinen Daten zu deinem Yala-Konto zu wechseln, melde dich mit dem Konto deiner Gruppen an oder trenne es zuerst unter „Gruppen“.";
 
 /* Storage migrate card, after the identity check refused the live account: the account went back to iCloud */
-"storage.migrate.refusedReturned" = "Dein aktuelles Yala-Konto ist zu iCloud zurückgekehrt, und mit ihm in die Cloud zurückzukehren, ist noch nicht möglich.";
+"storage.migrate.refusedReturned" = "Mit deinem aktuellen Yala-Konto bist du zu deiner iCloud zurückgekehrt, und wieder zu ihm zu wechseln, ist noch nicht möglich.";
 
 /* Storage migrate card, after the identity check refused the live account: it was signed in before a fresh start */
-"storage.migrate.refusedFreshStart" = "Dein aktuelles Yala-Konto gehört vielleicht jemand anderem: Es war schon angemeldet, als hier neu begonnen wurde. Um dein eigenes auszuwählen, trenne es unter „Gruppen“ und tippe erneut auf „Cloud aktivieren“.";
+"storage.migrate.refusedFreshStart" = "Dein aktuelles Yala-Konto gehört vielleicht jemand anderem: Es war schon angemeldet, als hier neu begonnen wurde. Um dein eigenes auszuwählen, trenne es unter „Gruppen“ und tippe erneut auf „Zu deinem Yala-Konto wechseln“.";
 "storage.migrate.refusedOtherDevice" = "Für dieses Konto ist eine Aktivierung nicht abgeschlossen. Wenn du sie hier begonnen hast, versuche es in einer Stunde erneut; wenn es auf einem anderen deiner Geräte war, schließ sie dort ab.";
 
 /* Storage adopt card: the live session is a different Yala account than the one that migrated (%@ = Apple|Google) */
-"storage.adopt.otherAccountNote" = "Diese Cloud-Kopie gehört zu einem anderen Yala-Konto (%@). Melde dich ab und mit diesem Konto wieder an, um fortzufahren.";
+"storage.adopt.otherAccountNote" = "Diese Daten gehören zu einem anderen Yala-Konto (%@). Melde dich ab und mit diesem Konto wieder an, um fortzufahren.";
 
 /* Generic fallback of storage.adopt.otherAccountNote when the sign-in method is unknown */
-"storage.adopt.otherAccountNoteGeneric" = "Diese Cloud-Kopie gehört zu einem anderen Yala-Konto. Melde dich ab und mit diesem Konto wieder an, um fortzufahren.";
+"storage.adopt.otherAccountNoteGeneric" = "Diese Daten gehören zu einem anderen Yala-Konto. Melde dich ab und mit diesem Konto wieder an, um fortzufahren.";
 
 /* Cloud cutover failed because iCloud storage is full — data stays intact on this device */
-"storage.failed.migrationICloudFull" = "Wir konnten die Aktivierung der Cloud nicht abschließen: In iCloud ist kein Speicherplatz mehr frei. Deine Daten liegen vollständig auf diesem Gerät. Gib in iCloud Speicherplatz frei und versuche es erneut.";
+"storage.failed.migrationICloudFull" = "Wir konnten den Wechsel zu deinem Yala-Konto nicht abschließen: In iCloud ist kein Speicherplatz mehr frei. Deine Daten liegen vollständig auf diesem Gerät. Gib in iCloud Speicherplatz frei und versuche es erneut.";
 
 /* Cloud cutover failed because iCloud is not enabled on this device */
-"storage.failed.migrationICloudOff" = "Wir konnten die Aktivierung der Cloud nicht abschließen: Auf diesem Gerät ist iCloud nicht aktiv. Deine Daten liegen vollständig hier auf dem Gerät. Aktiviere iCloud in den Einstellungen und versuche es erneut.";
+"storage.failed.migrationICloudOff" = "Wir konnten den Wechsel zu deinem Yala-Konto nicht abschließen: Auf diesem Gerät ist iCloud nicht aktiv. Deine Daten liegen vollständig hier auf dem Gerät. Aktiviere iCloud in den Einstellungen und versuche es erneut.";
 
 /* Cloud cutover failed because iCloud never confirmed the last export step */
-"storage.failed.migrationICloudStalled" = "Wir konnten die Aktivierung der Cloud nicht abschließen: iCloud hat den letzten Schritt nicht bestätigt. Deine Daten liegen vollständig auf diesem Gerät – versuche es erneut, wenn du eine gute Verbindung hast.";
+"storage.failed.migrationICloudStalled" = "Wir konnten den Wechsel zu deinem Yala-Konto nicht abschließen: iCloud hat den letzten Schritt nicht bestätigt. Deine Daten liegen vollständig auf diesem Gerät – versuche es erneut, wenn du eine gute Verbindung hast.";
 
 /* Caption on the storage progress card while the cutover waits for iCloud to confirm the export */
 "storage.progress.waitingICloudExport" = "Warten auf die Bestätigung von iCloud …";
@@ -5282,7 +5283,7 @@
 "groups.migrated.updateBody" = "Aktualisiere Yala, um dich erneut anzumelden. In der Zwischenzeit kannst du die Ausgaben sehen, aber nicht bearbeiten.";
 
 /* C-10: detail banner body when the channel is paused */
-"groups.migrated.pausedBody" = "Wir schließen den Umzug dieser Gruppe in die Yala-Cloud gerade ab. Versuch es gleich noch einmal – es geht nichts verloren.";
+"groups.migrated.pausedBody" = "Wir schließen den Wechsel dieser Gruppe zu deinem Yala-Konto gerade ab. Versuch es gleich noch einmal – es geht nichts verloren.";
 
 /* C-10: read-only staleness note under the migrated banner */
 "groups.migrated.readOnlyNote" = "Du siehst die Kopie von dem Moment, in dem die Gruppe umgezogen ist – sie ist also vielleicht nicht ganz aktuell.";
@@ -5308,9 +5309,9 @@
 /* Welcome > "I'm new" second level (A4 of D-A7, born-cloud): where the personal data lives —
    privacy-first (iCloud) highlighted on top, cloud account below with the trade-off spelled out. */
 "welcome.new.subtitle" = "Wähle, wo deine Daten gespeichert werden sollen.";
-"welcome.new.privateTitle" = "Dein Konto in deiner privaten iCloud";
-"welcome.new.privateBody" = "Deine Daten bleiben auf den Apple-Geräten deiner Apple-ID und werden über deine private iCloud synchronisiert. Niemand sonst kann sie lesen, auch wir nicht.";
-"welcome.new.cloudTitle" = "Dein Konto in der Cloud";
+"welcome.new.privateTitle" = "In deiner iCloud";
+"welcome.new.privateBody" = "Deine Daten bleiben auf den Apple-Geräten deiner Apple-ID und werden über deine iCloud synchronisiert. Niemand sonst kann sie lesen, auch wir nicht.";
+"welcome.new.cloudTitle" = "In deinem Yala-Konto";
 "welcome.new.cloudBody" = "Deine Daten liegen auf unseren Servern, wie bei den meisten deiner Apps. Unser Team kann sie einsehen, um dir zu helfen und neue Funktionen zu bauen.";
 "welcome.new.groupsQuestion" = "Nur zum Ausgabenteilen hier?";
 "welcome.new.groupsAction" = "Hier entlang";
@@ -5389,7 +5390,7 @@
 
 /* C2 · empty state con sesión viva y sin consent */
 "groups.empty.needsConsent.title" = "Akzeptiere, wie deine Gruppen gespeichert werden";
-"groups.empty.needsConsent.message" = "Wir sagen dir, was in der Yala-Cloud gespeichert wird – du entscheidest.";
+"groups.empty.needsConsent.message" = "Wir sagen dir, was in deinem Yala-Konto gespeichert wird – du entscheidest.";
 "groups.empty.needsConsent.action" = "Ansehen und akzeptieren";
 
 
@@ -5491,7 +5492,7 @@
 "welcome.restore.cloudPausedTitle" = "Deine Daten sind nicht in iCloud";
 
 /* Restore: cuerpo del estado de nube en pausa — tranquiliza sobre los datos sin prometer plazo */
-"welcome.restore.cloudPausedBody" = "Diese Apple-ID wurde mit einem Yala-Konto in der Cloud verwendet, und was du dort gespeichert hast, ist nicht in deiner iCloud. Die Anmeldung in der Cloud ist gerade pausiert. Versuch es später noch einmal.";
+"welcome.restore.cloudPausedBody" = "Diese Apple-ID wurde mit einem Yala-Konto verwendet, und was du dort gespeichert hast, ist nicht in deiner iCloud. Die Anmeldung bei deinem Yala-Konto ist gerade pausiert. Versuch es später noch einmal.";
 
 /* Push: gentle reminder to the DEBTOR that a group debt has been idle. Args: 1=formatted amount, 2=creditor name. Never dunning/collector tone. */
 "notifications.groups.settlementReminder" = "👋 Kleine Erinnerung: Du schuldest %2$@ noch %1$@. Wenn du kannst, gleich es in Ruhe aus.";
@@ -5527,7 +5528,7 @@
 "groups.shareableSummary.owedLabel" = "Anteil";
 
 /* Shareable group summary: heading of the minimum list of transfers needed to settle. */
-"groups.shareableSummary.settleUp" = "Zum Ausgleich";
+"groups.shareableSummary.settleUp" = "Zum Ausgleichen";
 
 /* Shareable group summary: shown instead of the transfer list when nothing is owed in that currency. Celebratory, not neutral. */
 "groups.shareableSummary.allSettled" = "Alles ausgeglichen!";
@@ -5635,7 +5636,7 @@
 "groups.accountIsComplete.title" = "Dieses Konto hat schon das komplette Yala";
 
 /* Bloque [I]: por qué se bloquea */
-"groups.accountIsComplete.body" = "In diesem Konto liegen bereits die Finanzen von jemandem in der Cloud. Es nur für deine Gruppen zu nutzen würde zwei Konten vermischen — das geht hier nicht.";
+"groups.accountIsComplete.body" = "In diesem Yala-Konto liegen bereits die Finanzen von jemandem. Es nur für deine Gruppen zu nutzen würde zwei Konten vermischen — das geht hier nicht.";
 
 /* Bloque [I]: CTA para firmar con otra cuenta */
 "groups.accountIsComplete.useAnotherAccount" = "Anderes Konto verwenden";
@@ -5782,7 +5783,7 @@
 "welcome.groups.neutralUnavailableBody" = "Auf diesem Gerät ist eine Sitzung offen, die in den Einstellungen geschlossen werden muss, bevor du hier eine Gruppe startest. Geh zurück: es wurde nichts angerührt.";
 
 /* Vuelta al neutro parada: el paso de los datos entre iCloud y la nube no está en reposo */
-"welcome.groups.neutralMigrationBody" = "Wir können noch nicht bestätigen, dass der Umzug deiner Daten zwischen iCloud und der Cloud abgeschlossen ist, und wenn wir dieses Gerät jetzt vorbereiten, könnte gelöscht werden, was noch hochgeladen werden muss. Geh zurück: es wurde nichts angerührt.";
+"welcome.groups.neutralMigrationBody" = "Wir können noch nicht bestätigen, dass der Wechsel deiner Daten zwischen deiner iCloud und deinem Yala-Konto abgeschlossen ist, und wenn wir dieses Gerät jetzt vorbereiten, könnte gelöscht werden, was noch hochgeladen werden muss. Geh zurück: es wurde nichts angerührt.";
 
 /* Título de la sección Grupos dentro de «Dónde viven tus datos» */
 "storage.groups.title" = "Gruppen";
@@ -5964,11 +5965,11 @@
 
 /* Cerrar sesión en la nube sin App Attest con cambios personales sin subir (2026-09-15) */
 "settings.signOutAttestTitle" = "Dieses Gerät kann deine Daten nicht synchronisieren";
-"settings.signOutAttestMessage" = "Dieses Gerät kann seit einem Tag keine Änderungen an dein Konto in der Cloud senden. Änderungen, die nicht angekommen sind: %d. Bevor du dich entscheidest, kannst du deine Einträge in eine Datei exportieren. Wenn du dich jetzt abmeldest, gehen diese Änderungen verloren.";
-"settings.signOutAttestMessageUnknown" = "Dieses Gerät kann seit einem Tag keine Änderungen an dein Konto in der Cloud senden, und einige Änderungen sind nicht angekommen. Bevor du dich entscheidest, kannst du deine Einträge in eine Datei exportieren. Wenn du dich jetzt abmeldest, gehen diese Änderungen verloren.";
+"settings.signOutAttestMessage" = "Dieses Gerät kann seit einem Tag keine Änderungen an dein Yala-Konto senden. Änderungen, die nicht angekommen sind: %d. Bevor du dich entscheidest, kannst du deine Einträge in eine Datei exportieren. Wenn du dich jetzt abmeldest, gehen diese Änderungen verloren.";
+"settings.signOutAttestMessageUnknown" = "Dieses Gerät kann seit einem Tag keine Änderungen an dein Yala-Konto senden, und einige Änderungen sind nicht angekommen. Bevor du dich entscheidest, kannst du deine Einträge in eine Datei exportieren. Wenn du dich jetzt abmeldest, gehen diese Änderungen verloren.";
 "settings.signOutAttestExportButton" = "Meine Einträge exportieren";
 "settings.signOutAttestLossButton" = "Abmelden und Änderungen verlieren";
-"settings.signOutAttestBlocked" = "Dieses Gerät kann seit einem Tag keine Änderungen an dein Konto in der Cloud senden, deshalb können deine Änderungen nicht hochgeladen werden.";
+"settings.signOutAttestBlocked" = "Dieses Gerät kann seit einem Tag keine Änderungen an dein Yala-Konto senden, deshalb können deine Änderungen nicht hochgeladen werden.";
 "settings.signOutAttestExportEmpty" = "Du hast keine Einträge zum Exportieren.";
 "settings.signOutAttestExportFailed" = "Wir konnten die Datei nicht erstellen. Versuch es noch einmal.";
 
@@ -5976,46 +5977,46 @@
 "groups.attestTerminalBanner" = "Dieses Gerät kann seit einem Tag keine Änderungen an deine Gruppen senden. Was du hier einträgst, sieht niemand in der Gruppe – nutze ein anderes Gerät.";
 
 /* Aviso fijo: este teléfono no consigue App Attest y los datos personales no suben a la nube */
-"settings.attestTerminalBanner" = "Dieses Gerät kann seit einem Tag keine Änderungen an dein Konto in der Cloud senden. Was du hier erfasst, wird auf dem Gerät gespeichert, erreicht aber dein Konto nicht – nutze so lange ein anderes Gerät.";
+"settings.attestTerminalBanner" = "Dieses Gerät kann seit einem Tag keine Änderungen an dein Yala-Konto senden. Was du hier erfasst, wird auf dem Gerät gespeichert, erreicht aber dein Konto nicht – nutze so lange ein anderes Gerät.";
 
 /* Vuelta a iCloud: espera de la subida, cancelación y salida sin llegar (ticket reverse-upload-has-no-ceiling-and-no-exit) */
 "storage.progress.reverseUploading" = "Deine Daten werden zu iCloud hochgeladen. Du kannst Yala weiter nutzen.";
 "storage.progress.reversePending" = "Noch hochzuladen: %d";
-"storage.progress.reverseICloudFull" = "In iCloud ist kein Platz für deine Daten. Wenn der Upload in wenigen Minuten nicht vorankommt, bleibst du in der Cloud und kannst es erneut versuchen, sobald du Platz geschaffen hast.";
-"storage.progress.reverseICloudUnavailable" = "iCloud ist auf diesem Gerät nicht verfügbar. Wenn der Upload in wenigen Minuten nicht vorankommt, bleibst du in der Cloud und kannst es erneut versuchen.";
-"storage.progress.cancelReverse" = "Abbrechen und in der Cloud bleiben";
-"storage.confirm.cancelReverseTitle" = "Rückkehr zu iCloud abbrechen?";
-"storage.confirm.cancelReverseBody" = "Deine Daten bleiben in der Yala-Cloud und auf diesem Gerät. Yala bittet dich danach, die App zu schließen und erneut zu öffnen.";
-"storage.confirm.cancelReverseConfirm" = "Ja, in der Cloud bleiben";
+"storage.progress.reverseICloudFull" = "In iCloud ist kein Platz für deine Daten. Wenn der Upload in wenigen Minuten nicht vorankommt, bleibst du in deinem Yala-Konto und kannst es erneut versuchen, sobald du Platz geschaffen hast.";
+"storage.progress.reverseICloudUnavailable" = "iCloud ist auf diesem Gerät nicht verfügbar. Wenn der Upload in wenigen Minuten nicht vorankommt, bleibst du in deinem Yala-Konto und kannst es erneut versuchen.";
+"storage.progress.cancelReverse" = "Abbrechen und in deinem Yala-Konto bleiben";
+"storage.confirm.cancelReverseTitle" = "Rückkehr zu deiner iCloud abbrechen?";
+"storage.confirm.cancelReverseBody" = "Deine Daten bleiben in deinem Yala-Konto und auf diesem Gerät. Yala bittet dich danach, die App zu schließen und erneut zu öffnen.";
+"storage.confirm.cancelReverseConfirm" = "Ja, in meinem Yala-Konto bleiben";
 "storage.confirm.cancelReverseKeep" = "Weiter warten";
-"storage.reverseAbort.relaunchTitle" = "Deine Daten sind weiter in der Cloud";
-"storage.reverseAbort.relaunchBody" = "Schließe Yala vollständig (im App-Umschalter wegwischen) und öffne es erneut, um die Cloud weiter zu nutzen.";
-"storage.reverseAbort.icloudFull" = "Die Rückkehr zu iCloud konnte nicht abgeschlossen werden: Dein iCloud-Speicher war voll. Schaffe Platz und versuche es erneut.";
-"storage.reverseAbort.icloudUnavailable" = "Die Rückkehr zu iCloud konnte nicht abgeschlossen werden: iCloud war auf diesem Gerät nicht verfügbar. Prüfe dein iCloud-Konto in den Einstellungen und versuche es erneut.";
-"storage.reverseAbort.stalled" = "Die Rückkehr zu iCloud konnte nicht abgeschlossen werden: iCloud hat nicht alle deine Daten erhalten. Prüfe, ob iCloud auf diesem Gerät aktiv ist, und versuche es erneut mit einer guten Verbindung. Lass Yala währenddessen geöffnet.";
-"storage.reverseAbort.claimRetryLater" = "Die Rückkehr zu iCloud konnte nicht starten: Deine Daten wurden zu dem Zeitpunkt noch in die Cloud übertragen. Versuche es in einer Weile erneut.";
-"storage.reverseAbort.claimRefused" = "Die Rückkehr zu iCloud konnte nicht starten: Dein Konto hat das nicht zugelassen. Dieser Versuch hat nichts verändert. Schreib uns an %@, und wir schauen es uns gemeinsam an.";
-"storage.reverseAbort.otherDeviceReverting" = "Die Rückkehr zu iCloud konnte nicht starten: Eines deiner anderen Geräte war bereits dabei, zu iCloud zurückzukehren. Sobald es fertig ist, kannst du es auf diesem Gerät tun.";
-"storage.progress.reverseICloudMaybeOff" = "Wenn iCloud auf diesem Gerät nicht aktiv ist, können deine Daten iCloud nicht erreichen. Aktiviere es in den Einstellungen oder brich ab, um in der Cloud zu bleiben.";
+"storage.reverseAbort.relaunchTitle" = "Deine Daten sind weiter in deinem Yala-Konto";
+"storage.reverseAbort.relaunchBody" = "Schließe Yala vollständig (im App-Umschalter wegwischen) und öffne es erneut, um dein Yala-Konto weiter zu nutzen.";
+"storage.reverseAbort.icloudFull" = "Die Rückkehr zu deiner iCloud konnte nicht abgeschlossen werden: Dein iCloud-Speicher war voll. Schaffe Platz und versuche es erneut.";
+"storage.reverseAbort.icloudUnavailable" = "Die Rückkehr zu deiner iCloud konnte nicht abgeschlossen werden: iCloud war auf diesem Gerät nicht verfügbar. Prüfe dein iCloud-Konto in den Einstellungen und versuche es erneut.";
+"storage.reverseAbort.stalled" = "Die Rückkehr zu deiner iCloud konnte nicht abgeschlossen werden: iCloud hat nicht alle deine Daten erhalten. Prüfe, ob iCloud auf diesem Gerät aktiv ist, und versuche es erneut mit einer guten Verbindung. Lass Yala währenddessen geöffnet.";
+"storage.reverseAbort.claimRetryLater" = "Die Rückkehr zu deiner iCloud konnte nicht starten: Deine Daten wechselten zu dem Zeitpunkt noch zu deinem Yala-Konto. Versuche es in einer Weile erneut.";
+"storage.reverseAbort.claimRefused" = "Die Rückkehr zu deiner iCloud konnte nicht starten: Dein Konto hat das nicht zugelassen. Dieser Versuch hat nichts verändert. Schreib uns an %@, und wir schauen es uns gemeinsam an.";
+"storage.reverseAbort.otherDeviceReverting" = "Die Rückkehr zu deiner iCloud konnte nicht starten: Eines deiner anderen Geräte war bereits dabei, zurückzukehren. Sobald es fertig ist, kannst du es auf diesem Gerät tun.";
+"storage.progress.reverseICloudMaybeOff" = "Wenn iCloud auf diesem Gerät nicht aktiv ist, können deine Daten deine iCloud nicht erreichen. Aktiviere es in den Einstellungen oder brich ab, um in deinem Yala-Konto zu bleiben.";
 /* Vuelta a iCloud: la muestra no se deja leer en este dispositivo (espera y salida) */
-"storage.progress.reverseLocalFailure" = "Dieses Gerät konnte deine Daten nicht für den Upload zu iCloud vorbereiten. Wenn sich das nicht in wenigen Minuten löst, bleibst du in der Cloud und kannst es erneut versuchen.";
-"storage.reverseAbort.localFailure" = "Die Rückkehr zu iCloud konnte nicht abgeschlossen werden: Dieses Gerät konnte deine Daten nicht für den Upload vorbereiten. Du bleibst in der Cloud – versuche es in einer Weile erneut.";
-"storage.errors.reversePendingExit" = "Die Rückkehr zu iCloud ist noch nicht möglich: Deine Cloud muss erst wieder vollständig aktiviert werden. Versuche es gleich noch einmal.";
+"storage.progress.reverseLocalFailure" = "Dieses Gerät konnte deine Daten nicht für den Upload zu iCloud vorbereiten. Wenn sich das nicht in wenigen Minuten löst, bleibst du in deinem Yala-Konto und kannst es erneut versuchen.";
+"storage.reverseAbort.localFailure" = "Die Rückkehr zu deiner iCloud konnte nicht abgeschlossen werden: Dieses Gerät konnte deine Daten nicht für den Upload vorbereiten. Du bleibst in deinem Yala-Konto – versuche es in einer Weile erneut.";
+"storage.errors.reversePendingExit" = "Die Rückkehr zu deiner iCloud ist noch nicht möglich: Dein Yala-Konto muss auf diesem Gerät erst wieder vollständig aktiviert werden. Versuche es gleich noch einmal.";
 
 /* «Migrar a la nube» se paró sin escribir nada: la cuenta ya tiene datos (settings-migrate-to-cloud-adopts-silently-instead-of-migrating) */
 "storage.errors.identityCheck" = "Wir konnten dein Konto nicht überprüfen. Versuche es gleich noch einmal. Es wurde nichts geändert.";
 "storage.migrateBlock.personalDataTitle" = "Dieses Konto hat schon eigene Daten";
-"storage.migrateBlock.personalDataBody" = "Es wurde nichts geändert. Um deine Daten in die Cloud zu bringen, verwende ein anderes Konto. Um die Daten dieses Kontos hier zu nutzen, melde dich ab und mit diesem Konto an.";
+"storage.migrateBlock.personalDataBody" = "Es wurde nichts geändert. Um mit deinen Daten zu einem Yala-Konto zu wechseln, verwende ein anderes Konto. Um die Daten dieses Kontos hier zu nutzen, melde dich ab und mit diesem Konto an.";
 "storage.migrateBlock.personalDataBodyNoSwitch" = "Es wurde nichts geändert. Um die Daten dieses Kontos hier zu nutzen, melde dich ab und mit diesem Konto an. Um deine Daten in ein anderes Konto zu bringen, trenne dieses zuerst unter „Gruppen“.";
 "storage.migrateBlock.otherGroupsTitle" = "Du nutzt bereits ein anderes Konto für deine Gruppen";
-"storage.migrateBlock.otherGroupsBody" = "Es wurde nichts geändert. Auf diesem Gerät kann es nur ein Cloud-Konto geben, und deine Gruppen nutzen bereits ein anderes. Um deine Daten in die Cloud zu bringen, melde dich mit dem Konto deiner Gruppen an oder trenne es zuerst unter „Gruppen“, wenn du ein anderes möchtest.";
-"storage.migrateBlock.otherGroupsBodyEmail" = "Es wurde nichts geändert. Auf diesem Gerät kann es nur ein Cloud-Konto geben, und deine Gruppen nutzen bereits %@. Um deine Daten in die Cloud zu bringen, melde dich mit diesem Konto an oder trenne es zuerst unter „Gruppen“, wenn du ein anderes möchtest.";
-"storage.migrateBlock.returnedTitle" = "Dieses Konto ist zu iCloud zurückgekehrt";
-"storage.migrateBlock.returnedBody" = "Mit diesem Konto in die Cloud zurückzukehren, ist noch nicht möglich. Es wurde nichts geändert.";
+"storage.migrateBlock.otherGroupsBody" = "Es wurde nichts geändert. Auf diesem Gerät kann es nur ein Yala-Konto geben, und deine Gruppen nutzen bereits ein anderes. Um mit deinen Daten zu deinem Yala-Konto zu wechseln, melde dich mit dem Konto deiner Gruppen an oder trenne es zuerst unter „Gruppen“, wenn du ein anderes möchtest.";
+"storage.migrateBlock.otherGroupsBodyEmail" = "Es wurde nichts geändert. Auf diesem Gerät kann es nur ein Yala-Konto geben, und deine Gruppen nutzen bereits %@. Um mit deinen Daten zu deinem Yala-Konto zu wechseln, melde dich mit diesem Konto an oder trenne es zuerst unter „Gruppen“, wenn du ein anderes möchtest.";
+"storage.migrateBlock.returnedTitle" = "Mit diesem Konto bist du zu deiner iCloud zurückgekehrt";
+"storage.migrateBlock.returnedBody" = "Wieder zu ihm zu wechseln, ist noch nicht möglich. Es wurde nichts geändert.";
 "storage.migrateBlock.useAnotherAccount" = "Anderes Konto verwenden";
 "storage.migrateBlock.appleSameAccountNote" = "Mit Apple verwendet Yala immer das Konto dieses Geräts. Um ein anderes zu verwenden, wähle Google.";
 "storage.migrateBlock.freshStartSessionTitle" = "Dieses Konto gehört vielleicht jemand anderem";
-"storage.migrateBlock.freshStartSessionBody" = "Es wurde nichts geändert. Deine Gruppen nutzen ein Konto, das auf diesem Gerät schon angemeldet war, und da hier neu begonnen wurde, gehört es vielleicht jemand anderem. Um deine Daten in die Cloud zu bringen, trenne es unter „Gruppen“ und tippe erneut auf „Cloud aktivieren“: Dann kannst du dein Konto auswählen.";
+"storage.migrateBlock.freshStartSessionBody" = "Es wurde nichts geändert. Deine Gruppen nutzen ein Konto, das auf diesem Gerät schon angemeldet war, und da hier neu begonnen wurde, gehört es vielleicht jemand anderem. Um mit deinen Daten zu deinem Yala-Konto zu wechseln, trenne es unter „Gruppen“ und tippe erneut auf „Zu deinem Yala-Konto wechseln“: Dann kannst du dein Konto auswählen.";
 "storage.migrateBlock.otherDeviceTitle" = "Für dieses Konto ist eine Aktivierung nicht abgeschlossen";
 "storage.migrateBlock.otherDeviceBody" = "Es wurde nichts geändert. Wenn du sie auf diesem Gerät begonnen hast, versuche es in einer Stunde erneut. Wenn es auf einem anderen deiner Geräte war, schließ sie dort ab.";
 
@@ -6026,12 +6027,12 @@
 "welcome.restore.cloudUnverifiedBody" = "Wir konnten keine Verbindung herstellen, um zu prüfen, ob du gespeicherte Daten hast. Versuch es gleich noch einmal.";
 
 /* Caption de la tarjeta de progreso de la vuelta a iCloud cuando la sesión de la nube ya no vale */
-"storage.progress.reverseNeedsSignIn" = "Deine Sitzung ist abgelaufen. Melde dich erneut an, um zurück zu iCloud zu wechseln.";
-"storage.progress.adoptSessionExpired" = "Deine Cloud-Sitzung ist nicht mehr gültig. Brich die Aktivierung ab und melde dich erneut mit deinem Konto an.";
+"storage.progress.reverseNeedsSignIn" = "Deine Sitzung ist abgelaufen. Melde dich erneut an, um die Rückkehr zu deiner iCloud abzuschließen.";
+"storage.progress.adoptSessionExpired" = "Deine Sitzung in deinem Yala-Konto ist nicht mehr gültig. Brich ab und melde dich erneut mit deinem Konto an.";
 "storage.progress.adoptAccountUnavailable" = "Wir können dir gerade keinen Zugriff auf dieses Konto geben. Schreib uns an %@, dann sehen wir es uns gemeinsam an.";
 
 /* Aviso cuando el sign-in para retomar la vuelta a iCloud trae una cuenta distinta */
-"storage.errors.reverseSignInOtherAccount" = "Du hast dich mit einem anderen Konto angemeldet. Melde dich mit dem Konto an, mit dem du den Wechsel zurück zu iCloud gestartet hast.";
+"storage.errors.reverseSignInOtherAccount" = "Du hast dich mit einem anderen Konto angemeldet. Melde dich mit dem Konto an, mit dem du die Rückkehr zu deiner iCloud gestartet hast.";
 "storage.errors.syncSignInOtherAccount" = "Du hast dich mit einem anderen Konto angemeldet, deshalb bleibt es nicht angemeldet. Melde dich mit dem Konto an, mit dem du Yala auf diesem Gerät nutzt.";
 
 /* Restore: el import de CloudKit no terminó dentro del tope pero SÍ está en marcha — los datos existen y siguen bajando. NO niega que existan (es lo contrario de welcome.restore.notFoundTitle). */
@@ -6041,64 +6042,64 @@
 "welcome.restore.importIncompleteBody" = "iCloud sendet deinen Verlauf noch. Bei vielen Einträgen oder einer langsamen Verbindung kann das ein paar Minuten dauern. Suche gleich noch einmal.";
 
 /* Salida de la vuelta antes de montar el espejo: el servidor no dejó continuar */
-"storage.reverseAbort.preMountRefused" = "Die Rückkehr zu iCloud konnte nicht abgeschlossen werden: Dein Cloud-Konto hat es nicht zugelassen. Deine Daten sind weiterhin in der Yala-Cloud. Schreib uns an %@, dann sehen wir es uns gemeinsam an.";
+"storage.reverseAbort.preMountRefused" = "Die Rückkehr zu deiner iCloud konnte nicht abgeschlossen werden: Dein Yala-Konto hat es nicht zugelassen. Deine Daten sind weiterhin in deinem Yala-Konto. Schreib uns an %@, dann sehen wir es uns gemeinsam an.";
 
 /* Salida de la vuelta antes de montar el espejo: venció el techo largo */
-"storage.reverseAbort.preMountStalled" = "Die Rückkehr zu iCloud konnte nicht abgeschlossen werden: Sie kam nicht voran. Deine Daten sind weiterhin in der Yala-Cloud, und du kannst es jederzeit erneut versuchen.";
+"storage.reverseAbort.preMountStalled" = "Die Rückkehr zu deiner iCloud konnte nicht abgeschlossen werden: Sie kam nicht voran. Deine Daten sind weiterhin in deinem Yala-Konto, und du kannst es jederzeit erneut versuchen.";
 
 /* Cuerpo del diálogo de cancelar antes de montar el espejo: no hay relanzamiento */
-"storage.confirm.cancelReverseBeforeMountBody" = "Deine Daten bleiben in der Yala-Cloud und auf diesem Gerät. Du kannst es jederzeit erneut versuchen.";
+"storage.confirm.cancelReverseBeforeMountBody" = "Deine Daten bleiben in deinem Yala-Konto und auf diesem Gerät. Du kannst es jederzeit erneut versuchen.";
 
 /* Diálogo de cancelar: seguir, antes de montar el espejo */
-"storage.confirm.cancelReverseKeepBeforeMount" = "Weiter zu iCloud zurückkehren";
+"storage.confirm.cancelReverseKeepBeforeMount" = "Weiter zu deiner iCloud zurückkehren";
 
 /* Salida de la vuelta antes de montar el espejo: otro dispositivo tomó el relevo */
-"storage.reverseAbort.preMountOtherDevice" = "Die Rückkehr zu iCloud konnte nicht abgeschlossen werden: Ein anderes deiner Geräte hat übernommen. Wenn es fertig ist, kannst du es auf diesem Gerät machen.";
+"storage.reverseAbort.preMountOtherDevice" = "Die Rückkehr zu deiner iCloud konnte nicht abgeschlossen werden: Ein anderes deiner Geräte hat übernommen. Wenn es fertig ist, kannst du es auf diesem Gerät machen.";
 
 /* Techo y cancelación de la subida al activar la nube (ticket snapshot-upload-has-no-ceiling-and-no-way-out) */
 /* Fallo de la activación: 72 h sin subir nada, con cualquier causa (techo largo): no acusa a nadie */
-"storage.failed.snapshotStalled" = "Wir konnten die Cloud nicht aktivieren: Das Hochladen deiner Daten kommt seit Tagen nicht voran. Deine Daten sind sicher auf deinem Gerät – versuche es später erneut.";
+"storage.failed.snapshotStalled" = "Wir konnten deine Daten nicht in dein Yala-Konto bringen: Der Upload kommt seit Tagen nicht voran. Deine Daten sind sicher auf deinem Gerät – versuche es später erneut.";
 /* Fallo de la activación: el techo corto venció con motivos definitivos turnándose y ninguno llegó solo al plazo (ticket snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling): no nombra un motivo ni un plazo */
-"storage.failed.snapshotMixedCauses" = "Wir konnten die Cloud nicht aktivieren: Das Hochladen deiner Daten ist an etwas hängen geblieben, das sich durch Warten nicht lösen ließ. Deine Daten sind sicher auf deinem Gerät – versuche es erneut.";
+"storage.failed.snapshotMixedCauses" = "Wir konnten deine Daten nicht in dein Yala-Konto bringen: Der Upload ist an etwas hängen geblieben, das sich durch Warten nicht lösen ließ. Deine Daten sind sicher auf deinem Gerät – versuche es erneut.";
 /* Fallo de la activación: la sesión caducó durante la subida */
-"storage.failed.snapshotSessionExpired" = "Wir konnten die Cloud nicht aktivieren: Deine Sitzung ist abgelaufen, während wir deine Daten hochgeladen haben. Deine Daten sind sicher auf deinem Gerät – versuche es erneut und melde dich noch einmal an.";
+"storage.failed.snapshotSessionExpired" = "Wir konnten deine Daten nicht in dein Yala-Konto bringen: Deine Sitzung ist abgelaufen, während wir deine Daten hochgeladen haben. Deine Daten sind sicher auf deinem Gerät – versuche es erneut und melde dich noch einmal an.";
 /* Fallo de la activación: la cuenta en la nube no lo permitió (%@ = correo de soporte) */
-"storage.failed.snapshotAccountUnavailable" = "Wir konnten die Cloud nicht aktivieren: Dein Cloud-Konto hat es nicht zugelassen. Deine Daten sind sicher auf deinem Gerät. Schreib uns an %@, dann sehen wir es uns gemeinsam an.";
+"storage.failed.snapshotAccountUnavailable" = "Wir konnten deine Daten nicht in dein Yala-Konto bringen: Dein Konto hat es nicht zugelassen. Deine Daten sind sicher auf deinem Gerät. Schreib uns an %@, dann sehen wir es uns gemeinsam an.";
 /* Fallo de la activación: el dispositivo no pudo preparar los datos */
-"storage.failed.snapshotLocalFailure" = "Wir konnten die Cloud nicht aktivieren: Dieses Gerät konnte deine Daten nicht für den Upload vorbereiten. Deine Daten sind unverändert hier – versuche es in einer Weile erneut.";
+"storage.failed.snapshotLocalFailure" = "Wir konnten deine Daten nicht in dein Yala-Konto bringen: Dieses Gerät konnte deine Daten nicht für den Upload vorbereiten. Deine Daten sind unverändert hier – versuche es in einer Weile erneut.";
 /* Fallo de la activación en el claim, la identidad o el cutover: días sin avanzar, con cualquier causa (techo largo): no acusa a nadie */
-"storage.failed.stepStalled" = "Wir konnten die Cloud nicht aktivieren: Die Aktivierung kommt seit Tagen nicht voran. Deine Daten sind sicher auf deinem Gerät – versuche es später erneut.";
+"storage.failed.stepStalled" = "Wir konnten deine Daten nicht in dein Yala-Konto bringen: Der Wechsel kommt seit Tagen nicht voran. Deine Daten sind sicher auf deinem Gerät – versuche es später erneut.";
 /* Fallo de la activación en el claim o el cutover: la sesión caducó (sin hablar de la subida) */
-"storage.failed.stepSessionExpired" = "Wir konnten die Cloud nicht aktivieren: Deine Sitzung ist abgelaufen, bevor wir fertig waren. Deine Daten sind sicher auf deinem Gerät – versuche es erneut und melde dich noch einmal an.";
+"storage.failed.stepSessionExpired" = "Wir konnten deine Daten nicht in dein Yala-Konto bringen: Deine Sitzung ist abgelaufen, bevor wir fertig waren. Deine Daten sind sicher auf deinem Gerät – versuche es erneut und melde dich noch einmal an.";
 /* Fallo de la activación en el cutover: otro dispositivo de la misma cuenta tomó el relevo de la migración */
-"storage.failed.stepOtherDevice" = "Wir konnten die Cloud auf diesem Gerät nicht aktivieren: Ein anderes Gerät mit deinem Konto hat übernommen. Deine Daten sind unverändert hier.";
-"storage.failed.adoptStalled" = "Wir konnten dich nicht bei deinem Cloud-Konto anmelden: Die Aktivierung kommt seit Tagen nicht voran. Dieses Gerät hat nichts an deinen Daten in der Cloud geändert – versuche es später erneut.";
-"storage.failed.adoptSessionExpired" = "Wir konnten dich nicht bei deinem Cloud-Konto anmelden: Deine Sitzung ist abgelaufen. Dieses Gerät hat nichts an deinen Daten in der Cloud geändert – versuche es erneut und melde dich noch einmal mit deinem Konto an.";
-"storage.failed.adoptAccountUnavailable" = "Wir konnten dich nicht bei deinem Cloud-Konto anmelden: Wir können dir gerade keinen Zugriff auf dieses Konto geben. Schreib uns an %@, dann sehen wir es uns gemeinsam an.";
-"storage.failed.adoptEffectLocalFailure" = "Wir konnten dich nicht bei deinem Cloud-Konto anmelden: Dieses Gerät konnte deine Daten nicht lesen, um sie mit denen deines Kontos zusammenzuführen. Was du auf diesem Gerät hast, ist weiterhin hier – versuche es in einer Weile erneut.";
-"storage.failed.adoptEffectStalled" = "Wir konnten dich nicht bei deinem Cloud-Konto anmelden: Die Aktivierung kann seit Tagen nicht abgeschlossen werden. Was du auf diesem Gerät hast, ist weiterhin hier – versuche es später erneut.";
-"storage.failed.adoptEffectLineageUnproven" = "Wir konnten dich nicht bei deinem Cloud-Konto anmelden: Dieses Gerät hat Daten, die dieses Konto nicht hat, und wir konnten nicht bestätigen, dass sie von ihm stammen – deshalb haben wir sie nicht zusammengeführt. Was du auf diesem Gerät hast, ist weiterhin hier. Wenn du die Daten dieses iCloud-Kontos auf einem anderen Gerät in die Cloud übertragen hast, prüfe, ob du dich mit demselben Konto anmeldest, und warte, bis iCloud sie vollständig übertragen hat, bevor du es erneut versuchst.";
+"storage.failed.stepOtherDevice" = "Wir konnten deine Daten von diesem Gerät aus nicht in dein Yala-Konto bringen: Ein anderes Gerät mit deinem Konto hat übernommen. Deine Daten sind unverändert hier.";
+"storage.failed.adoptStalled" = "Wir konnten dich nicht bei deinem Yala-Konto anmelden: Der Vorgang kommt seit Tagen nicht voran. Dieses Gerät hat nichts an deinen Daten in deinem Yala-Konto geändert – versuche es später erneut.";
+"storage.failed.adoptSessionExpired" = "Wir konnten dich nicht bei deinem Yala-Konto anmelden: Deine Sitzung ist abgelaufen. Dieses Gerät hat nichts an deinen Daten in deinem Yala-Konto geändert – versuche es erneut und melde dich noch einmal mit deinem Konto an.";
+"storage.failed.adoptAccountUnavailable" = "Wir konnten dich nicht bei deinem Yala-Konto anmelden: Wir können dir gerade keinen Zugriff auf dieses Konto geben. Schreib uns an %@, dann sehen wir es uns gemeinsam an.";
+"storage.failed.adoptEffectLocalFailure" = "Wir konnten dich nicht bei deinem Yala-Konto anmelden: Dieses Gerät konnte deine Daten nicht lesen, um sie mit denen deines Kontos zusammenzuführen. Was du auf diesem Gerät hast, ist weiterhin hier – versuche es in einer Weile erneut.";
+"storage.failed.adoptEffectStalled" = "Wir konnten dich nicht bei deinem Yala-Konto anmelden: Der Vorgang kann seit Tagen nicht abgeschlossen werden. Was du auf diesem Gerät hast, ist weiterhin hier – versuche es später erneut.";
+"storage.failed.adoptEffectLineageUnproven" = "Wir konnten dich nicht bei deinem Yala-Konto anmelden: Dieses Gerät hat Daten, die dieses Konto nicht hat, und wir konnten nicht bestätigen, dass sie von ihm stammen – deshalb haben wir sie nicht zusammengeführt. Was du auf diesem Gerät hast, ist weiterhin hier. Wenn du die Daten dieses iCloud-Kontos auf einem anderen Gerät in dein Yala-Konto gebracht hast, prüfe, ob du dich mit demselben Konto anmeldest, und warte, bis iCloud sie vollständig übertragen hat, bevor du es erneut versuchst.";
 /* Botón de la tarjeta de progreso: cancelar la activación de la nube */
 "storage.progress.cancelMigration" = "Aktivierung abbrechen";
 /* Título de la confirmación de cancelar la activación */
-"storage.confirm.cancelMigrationTitle" = "Aktivierung der Cloud abbrechen?";
+"storage.confirm.cancelMigrationTitle" = "Wechsel zu deinem Yala-Konto abbrechen?";
 /* Cuerpo de la confirmación de cancelar la activación */
-"storage.confirm.cancelMigrationBody" = "Deine Daten bleiben wie bisher auf diesem Gerät. Was schon hochgeladen wurde, bleibt in deinem Cloud-Konto. Du kannst es jederzeit erneut versuchen.";
-"storage.confirm.cancelAdoptBody" = "Dieses Gerät hat nichts an deinen Daten in der Cloud geändert. Du kannst die Cloud jederzeit von hier aus wieder auf diesem Gerät aktivieren.";
-"storage.confirm.cancelAdoptEffectBody" = "Was du auf diesem Gerät hast, ist weiterhin hier, wie bisher. Du kannst die Cloud jederzeit von hier aus wieder auf diesem Gerät aktivieren.";
+"storage.confirm.cancelMigrationBody" = "Deine Daten bleiben wie bisher auf diesem Gerät. Was schon hochgeladen wurde, bleibt in deinem Yala-Konto. Du kannst es jederzeit erneut versuchen.";
+"storage.confirm.cancelAdoptBody" = "Dieses Gerät hat nichts an deinen Daten in deinem Yala-Konto geändert. Du kannst es jederzeit von hier aus wieder auf diesem Gerät nutzen.";
+"storage.confirm.cancelAdoptEffectBody" = "Was du auf diesem Gerät hast, ist weiterhin hier, wie bisher. Du kannst dein Yala-Konto jederzeit von hier aus wieder auf diesem Gerät nutzen.";
 "storage.waiting.stopWaiting" = "Nicht mehr warten";
 "storage.confirm.stopWaitingTitle" = "Nicht mehr warten?";
-"storage.confirm.stopWaitingBody" = "Dein anderes Gerät aktiviert die Cloud weiter. Dieses Gerät wartet nicht mehr und ändert nichts an deinen Daten in der Cloud. Du kannst die Cloud jederzeit von hier aus wieder auf diesem Gerät aktivieren.";
+"storage.confirm.stopWaitingBody" = "Dein anderes Gerät bringt deine Daten weiter in dein Yala-Konto. Dieses Gerät wartet nicht mehr und ändert nichts an deinen Daten in deinem Yala-Konto. Du kannst es jederzeit von hier aus wieder auf diesem Gerät nutzen.";
 "storage.confirm.stopWaitingConfirm" = "Ja, nicht mehr warten";
 "storage.confirm.stopWaitingKeep" = "Weiter warten";
-"storage.progress.followerSessionExpired" = "Deine Cloud-Sitzung ist nicht mehr gültig. Hör auf zu warten und melde dich erneut mit deinem Konto an.";
+"storage.progress.followerSessionExpired" = "Deine Sitzung in deinem Yala-Konto ist nicht mehr gültig. Hör auf zu warten und melde dich erneut mit deinem Konto an.";
 /* Botón que confirma cancelar la activación */
 "storage.confirm.cancelMigrationConfirm" = "Ja, abbrechen";
 /* Botón que sigue con la activación */
-"storage.confirm.cancelMigrationKeep" = "Cloud weiter aktivieren";
+"storage.confirm.cancelMigrationKeep" = "Weiter zu meinem Yala-Konto wechseln";
 
 /* Tarjeta de Almacenamiento cuando el registro de la migración no se deja leer */
-"storage.journalUnreadable.message" = "Wir konnten nicht prüfen, wo deine Daten gerade stehen. Vorerst kannst du sie weder in die Cloud verschieben noch zu iCloud zurückholen. Wir versuchen es weiter; wenn es so bleibt, schließe Yala und öffne es erneut.";
+"storage.journalUnreadable.message" = "Wir konnten nicht prüfen, wo deine Daten gerade stehen. Vorerst kannst du mit ihnen weder zu deinem Yala-Konto wechseln noch zu deiner iCloud zurückkehren. Wir versuchen es weiter; wenn es so bleibt, schließe Yala und öffne es erneut.";
 
 /* Sincronización parada hasta iniciar sesión, cuando no se pudo contar cuántos cambios faltan */
 "storage.sync.needsSignInUncounted" = "Melde dich an, um deine Änderungen hochzuladen";
@@ -6112,25 +6113,25 @@
 "storage.migrate.previewUnreadable" = "Wir konnten deine Daten nicht zählen. Versuche es gleich noch einmal.";
 
 /* Storage failure card: another device had already started uploading to this account and this device's data does not share lineage with it */
-"storage.failed.stepLineageUnproven" = "Wir konnten die Cloud nicht aktivieren: Dieses Konto hat bereits Daten in der Cloud, und die Daten auf diesem Gerät stimmen nicht damit überein – deshalb haben wir sie nicht zusammengeführt. Was du auf diesem Gerät hast, ist weiterhin hier. Prüfe, ob du dich mit dem richtigen Konto anmeldest. Wenn es deins ist und dieses Gerät dasselbe iCloud verwendet, warte, bis iCloud deine Daten vollständig übertragen hat, und versuche es erneut.";
-"storage.failed.stepLeaderRowsNotArrived" = "Wir konnten die Cloud nicht aktivieren: Ein anderes deiner Geräte hat bereits einen Teil deiner Daten hochgeladen, und iCloud hat noch nicht alle davon auf dieses Gerät gebracht – deshalb haben wir nichts hochgeladen, damit nichts doppelt ist. Was du auf diesem Gerät hast, ist weiterhin hier. Öffne Yala auf dem anderen Gerät mit Internetverbindung, warte, bis iCloud deine Daten auf dieses Gerät gebracht hat, und versuche es erneut.";
+"storage.failed.stepLineageUnproven" = "Wir konnten deine Daten nicht in dein Yala-Konto bringen: Dieses Konto hat bereits Daten, und die Daten auf diesem Gerät stimmen nicht damit überein – deshalb haben wir sie nicht zusammengeführt. Was du auf diesem Gerät hast, ist weiterhin hier. Prüfe, ob du dich mit dem richtigen Konto anmeldest. Wenn es deins ist und dieses Gerät dasselbe iCloud verwendet, warte, bis iCloud deine Daten vollständig übertragen hat, und versuche es erneut.";
+"storage.failed.stepLeaderRowsNotArrived" = "Wir konnten deine Daten nicht in dein Yala-Konto bringen: Ein anderes deiner Geräte hat bereits einen Teil deiner Daten hochgeladen, und iCloud hat noch nicht alle davon auf dieses Gerät gebracht – deshalb haben wir nichts hochgeladen, damit nichts doppelt ist. Was du auf diesem Gerät hast, ist weiterhin hier. Öffne Yala auf dem anderen Gerät mit Internetverbindung, warte, bis iCloud deine Daten auf dieses Gerät gebracht hat, und versuche es erneut.";
 
 /* Sign-out blocked: sync stopped because this build can't read the migration record */
-"settings.signOutSyncStoppedNeedsUpdate" = "Einige Änderungen wurden noch nicht in die Cloud hochgeladen und wir möchten nicht, dass etwas verloren geht. Wir konnten nicht prüfen, wie weit der Umzug deiner Daten in die Cloud ist, und können sie deshalb gerade nicht hochladen. Schließe Yala vollständig und öffne es erneut; wenn es so bleibt, aktualisiere es im App Store und versuche es noch einmal.";
-"settings.signOutCaptureUnfinished" = "Einige deiner letzten Änderungen konnten nicht für den Upload in die Cloud vorbereitet werden. Sie bleiben auf diesem Gerät gespeichert und gehen nicht verloren. Schließe Yala vollständig und öffne es erneut; wenn es so bleibt, aktualisiere es im App Store und versuche es noch einmal.";
+"settings.signOutSyncStoppedNeedsUpdate" = "Einige Änderungen sind noch nicht in deinem Yala-Konto angekommen, und wir möchten nicht, dass etwas verloren geht. Wir konnten nicht prüfen, wie weit der Wechsel deiner Daten zu deinem Yala-Konto ist, und können sie deshalb gerade nicht hochladen. Schließe Yala vollständig und öffne es erneut; wenn es so bleibt, aktualisiere es im App Store und versuche es noch einmal.";
+"settings.signOutCaptureUnfinished" = "Einige deiner letzten Änderungen konnten nicht für den Upload in dein Yala-Konto vorbereitet werden. Sie bleiben auf diesem Gerät gespeichert und gehen nicht verloren. Schließe Yala vollständig und öffne es erneut; wenn es so bleibt, aktualisiere es im App Store und versuche es noch einmal.";
 
 /* Sign-out blocked: sync paused because the cloud/iCloud switch didn't finish */
-"settings.signOutSyncStoppedMidMigration" = "Einige Änderungen wurden noch nicht in die Cloud hochgeladen und wir möchten nicht, dass etwas verloren geht. Die Synchronisierung ist pausiert, weil der Umzug deiner Daten zwischen Cloud und iCloud nicht abgeschlossen wurde. Öffne „Wo deine Daten liegen“ hier in den Einstellungen und schließe ihn dort ab (wenn er fehlgeschlagen ist, tippe auf „Erneut versuchen“); versuche es danach noch einmal.";
+"settings.signOutSyncStoppedMidMigration" = "Einige Änderungen sind noch nicht in deinem Yala-Konto angekommen, und wir möchten nicht, dass etwas verloren geht. Die Synchronisierung ist pausiert, weil der Wechsel deiner Daten zwischen deinem Yala-Konto und deiner iCloud nicht abgeschlossen wurde. Öffne „Wo deine Daten liegen“ hier in den Einstellungen und schließe ihn dort ab (wenn er fehlgeschlagen ist, tippe auf „Erneut versuchen“); versuche es danach noch einmal.";
 
 /* Sign-out blocked: sync paused until Yala is reopened */
-"settings.signOutSyncStoppedNeedsRelaunch" = "Einige Änderungen wurden noch nicht in die Cloud hochgeladen und wir möchten nicht, dass etwas verloren geht. Die Synchronisierung ist pausiert, bis du Yala erneut öffnest. Schließe es vollständig (im App-Umschalter wegwischen), öffne es erneut und versuche es noch einmal.";
+"settings.signOutSyncStoppedNeedsRelaunch" = "Einige Änderungen sind noch nicht in deinem Yala-Konto angekommen, und wir möchten nicht, dass etwas verloren geht. Die Synchronisierung ist pausiert, bis du Yala erneut öffnest. Schließe es vollständig (im App-Umschalter wegwischen), öffne es erneut und versuche es noch einmal.";
 
 /* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
-"settings.signOutUploadRetryLater" = "Deine letzten Änderungen haben die Cloud nicht erreicht. Sie bleiben auf diesem Gerät gespeichert und gehen nicht verloren – versuch es später noch einmal.";
-"settings.signOutCloudSessionExpired" = "Deine Sitzung ist abgelaufen und einige Änderungen wurden noch nicht in die Cloud hochgeladen. Es geht nichts verloren: Öffne „Wo deine Daten liegen“ hier in den Einstellungen, tippe auf „Anmelden“ und versuche es danach noch einmal.";
+"settings.signOutUploadRetryLater" = "Deine letzten Änderungen haben dein Yala-Konto nicht erreicht. Sie bleiben auf diesem Gerät gespeichert und gehen nicht verloren – versuch es später noch einmal.";
+"settings.signOutCloudSessionExpired" = "Deine Sitzung ist abgelaufen, und einige Änderungen sind noch nicht in deinem Yala-Konto angekommen. Es geht nichts verloren: Öffne „Wo deine Daten liegen“ hier in den Einstellungen, tippe auf „Anmelden“ und versuche es danach noch einmal.";
 "settings.signOutSessionSurvived" = "Du bist auf diesem Gerät noch angemeldet, deshalb wurde nichts gelöscht. Versuch es noch einmal.";
-"settings.signOutMigrationInFlight" = "Der Umzug deiner Daten zwischen iCloud und der Cloud ist noch nicht abgeschlossen, und wenn du dich jetzt abmeldest, könnte gelöscht werden, was noch hochgeladen werden muss – deshalb wurde nichts gelöscht. Öffne „Wo deine Daten liegen“ in den Einstellungen und schließe ihn dort ab (wenn er fehlgeschlagen ist, tippe auf „Erneut versuchen“); versuche es danach noch einmal.";
-"settings.signOutMigrationUnreadable" = "Wir konnten nicht prüfen, wie weit der Umzug deiner Daten zwischen iCloud und der Cloud ist, und wenn du dich jetzt abmeldest, könnte gelöscht werden, was noch hochgeladen werden muss – deshalb wurde nichts gelöscht. Schließe Yala vollständig und öffne es erneut; wenn es so bleibt, aktualisiere es im App Store und versuche es noch einmal.";
+"settings.signOutMigrationInFlight" = "Der Wechsel deiner Daten zwischen deiner iCloud und deinem Yala-Konto ist noch nicht abgeschlossen, und wenn du dich jetzt abmeldest, könnte gelöscht werden, was noch hochgeladen werden muss – deshalb wurde nichts gelöscht. Öffne „Wo deine Daten liegen“ in den Einstellungen und schließe ihn dort ab (wenn er fehlgeschlagen ist, tippe auf „Erneut versuchen“); versuche es danach noch einmal.";
+"settings.signOutMigrationUnreadable" = "Wir konnten nicht prüfen, wie weit der Wechsel deiner Daten zwischen deiner iCloud und deinem Yala-Konto ist, und wenn du dich jetzt abmeldest, könnte gelöscht werden, was noch hochgeladen werden muss – deshalb wurde nichts gelöscht. Schließe Yala vollständig und öffne es erneut; wenn es so bleibt, aktualisiere es im App Store und versuche es noch einmal.";
 
 /* Title: a deletion of the old iCloud data succeeded in iCloud but failed on this phone */
 "welcome.privateICloud.leftHalfwayTitle" = "Das Löschen ist nur halb fertig";
@@ -6186,10 +6187,10 @@
 "groups.freshStartPending.lossConfirmBodyNeutralUnknown" = "Die Gruppenänderungen, die den Server nicht erreicht haben, werden von diesem Gerät gelöscht. Niemand in der Gruppe wird sie sehen, und sie lassen sich nicht wiederherstellen.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
-"settings.signOutCloudSessionExpiredPersonalLoss" = "Deine Sitzung ist abgelaufen. Änderungen, die nicht in deinem Konto in der Cloud angekommen sind: %d. Um sie hochzuladen, öffne „Wo deine Daten liegen“ hier in den Einstellungen und tippe auf „Anmelden“. Wenn du dich nicht anmelden kannst, kannst du deine Einträge vorher in eine Datei exportieren. Wenn du dich jetzt abmeldest, gehen diese Änderungen verloren.";
+"settings.signOutCloudSessionExpiredPersonalLoss" = "Deine Sitzung ist abgelaufen. Änderungen, die nicht in deinem Yala-Konto angekommen sind: %d. Um sie hochzuladen, öffne „Wo deine Daten liegen“ hier in den Einstellungen und tippe auf „Anmelden“. Wenn du dich nicht anmelden kannst, kannst du deine Einträge vorher in eine Datei exportieren. Wenn du dich jetzt abmeldest, gehen diese Änderungen verloren.";
 
 /* Cerrar sesión en la nube con la sesión caducada, sin cifra */
-"settings.signOutCloudSessionExpiredPersonalLossUnknown" = "Deine Sitzung ist abgelaufen, und einige Änderungen sind nicht in deinem Konto in der Cloud angekommen. Um sie hochzuladen, öffne „Wo deine Daten liegen“ hier in den Einstellungen und tippe auf „Anmelden“. Wenn du dich nicht anmelden kannst, kannst du deine Einträge vorher in eine Datei exportieren. Wenn du dich jetzt abmeldest, gehen diese Änderungen verloren.";
+"settings.signOutCloudSessionExpiredPersonalLossUnknown" = "Deine Sitzung ist abgelaufen, und einige Änderungen sind nicht in deinem Yala-Konto angekommen. Um sie hochzuladen, öffne „Wo deine Daten liegen“ hier in den Einstellungen und tippe auf „Anmelden“. Wenn du dich nicht anmelden kannst, kannst du deine Einträge vorher in eine Datei exportieren. Wenn du dich jetzt abmeldest, gehen diese Änderungen verloren.";
 
 /* iPad/ventana ancha: columna de detalle vacía en Registros */
 "records.detailPlaceholder" = "Wähle einen Eintrag, um ihn hier zu sehen";
@@ -6208,13 +6209,13 @@
 "welcome.groups.inviteRelaunchTitle" = "Öffne Yala erneut, um beizutreten";
 
 /* Puerta del invitado: la cuenta en la nube termina de prepararse al reabrir: cuerpo */
-"welcome.groups.inviteRelaunchBody" = "Dein Cloud-Konto wird fertig eingerichtet, wenn du Yala erneut öffnest. Schließe die App vollständig (wische sie aus dem App-Umschalter) und öffne sie wieder: Deine Einladung bleibt gespeichert und du machst dort weiter.";
+"welcome.groups.inviteRelaunchBody" = "Dein Yala-Konto wird fertig eingerichtet, wenn du Yala erneut öffnest. Schließe die App vollständig (wische sie aus dem App-Umschalter) und öffne sie wieder: Deine Einladung bleibt gespeichert und du machst dort weiter.";
 
 /* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: título */
 "welcome.groups.inviteCloudSignInTitle" = "Melde dich zuerst mit dem Konto dieses Geräts an";
 
 /* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: cuerpo */
-"welcome.groups.inviteCloudSignInBody" = "Auf diesem Gerät liegen die Daten eines Cloud-Kontos, das nicht angemeldet ist, und deine Gruppenausgaben würden dort landen. Wenn es deins ist, melde dich über „Ich habe bereits ein Konto“ damit an und mach mit deiner Einladung weiter. Wenn nicht, tritt über dein eigenes Gerät bei.";
+"welcome.groups.inviteCloudSignInBody" = "Auf diesem Gerät liegen die Daten eines Yala-Kontos, das nicht angemeldet ist, und deine Gruppenausgaben würden dort landen. Wenn es deins ist, melde dich über „Ich habe bereits ein Konto“ damit an und mach mit deiner Einladung weiter. Wenn nicht, tritt über dein eigenes Gerät bei.";
 
 /* Puerta de Grupos: el borrado del arranque no pudo borrar los archivos y la puerta no lo reintenta sola: título */
 "welcome.groups.wipeFailedTitle" = "Wir konnten dieses Gerät nicht vorbereiten";
@@ -6454,7 +6455,7 @@
 "storage.pendingICloudWipe.title" = "Ein Löschen ist nicht fertig";
 
 /* Dialog body: the cloud cannot finish that deletion; activating now cancels it */
-"storage.pendingICloudWipe.body" = "Du wolltest vorher deine iCloud-Daten löschen, und das ist nicht fertig geworden. Wenn du die Cloud einschaltest, wird diese Löschung abgebrochen.";
+"storage.pendingICloudWipe.body" = "Du wolltest vorher deine iCloud-Daten löschen, und das ist nicht fertig geworden. Wenn du zu deinem Yala-Konto wechselst, wird diese Löschung abgebrochen.";
 
 /* Dialog button: activate the cloud and cancel the pending iCloud deletion */
 "storage.pendingICloudWipe.proceed" = "Ohne Löschen einschalten";
@@ -6466,7 +6467,7 @@
 "welcome.privateICloud.cancelledInCloudTitle" = "Ein Löschen wurde nicht abgeschlossen";
 
 /* Sheet body: the deletion did not finish before the cloud was activated and will not happen */
-"welcome.privateICloud.cancelledInCloudBody" = "Du wolltest neu anfangen und deine iCloud-Daten löschen, aber das Löschen war nicht fertig, bevor deine Daten in die Cloud gewechselt sind, und wird jetzt nicht mehr ausgeführt. Ein Teil dessen, was du löschen wolltest, kann noch in iCloud sein oder in dein Yala-Konto gewechselt sein.";
+"welcome.privateICloud.cancelledInCloudBody" = "Du wolltest neu anfangen und deine iCloud-Daten löschen, aber das Löschen war nicht fertig, bevor deine Daten zu deinem Yala-Konto gewechselt sind, und wird jetzt nicht mehr ausgeführt. Ein Teil dessen, was du löschen wolltest, kann noch in deiner iCloud sein oder in dein Yala-Konto gewechselt sein.";
 
 /* Inbox: title of the notice that a settlement already approved to a real account changed its amount */
 "inbox.groupSettlementAmountChange.title" = "Betrag geändert";
@@ -6583,7 +6584,7 @@
 "welcome.privateICloud.noAccountProceedTitle" = "Auf diesem Gerät ist iCloud aus";
 
 /* Welcome · relaunch terminal: why Yala has to reopen — to connect the private iCloud (UX 2.2 L1-4) */
-"welcome.mirrorRelaunch.privacyNote" = "So verbindet sich Yala mit deiner privaten iCloud, und deine Daten bleiben immer privat: Niemand sonst kann sie lesen, auch wir nicht.";
+"welcome.mirrorRelaunch.privacyNote" = "So verbindet sich Yala mit deiner iCloud, und deine Daten bleiben immer privat: Niemand sonst kann sie lesen, auch wir nicht.";
 
 /* Onboarding purpose step: the choice can be changed later in Personalization (UX 2.2 L1-5) */
 "onboarding.purpose.changeLaterHint" = "Du kannst das jederzeit unter Einstellungen > Personalisierung ändern.";
@@ -6727,14 +6728,14 @@
 "storage.revert.prior.merge" = "Zu meinen Daten hinzufügen";
 "storage.revert.prior.discard" = "Ohne sie starten";
 "storage.revert.prior.discardConfirmTitle" = "Aus deiner iCloud löschen?";
-"storage.revert.prior.discardConfirmBody" = "Sie werden aus deiner iCloud und von den Geräten gelöscht, die sie mit dieser Apple-ID nutzen. Es bleibt keine Kopie, und wir können sie nicht wiederherstellen. Danach beginnt die Rückkehr zu iCloud.";
-"storage.revert.prior.discardConfirm" = "Löschen und zu iCloud zurück";
+"storage.revert.prior.discardConfirmBody" = "Sie werden aus deiner iCloud und von den Geräten gelöscht, die sie mit dieser Apple-ID nutzen. Es bleibt keine Kopie, und wir können sie nicht wiederherstellen. Danach beginnt die Rückkehr zu deiner iCloud.";
+"storage.revert.prior.discardConfirm" = "Löschen und zurück zu deiner iCloud";
 "storage.revert.prior.checkFailedTitle" = "Wir konnten deine iCloud nicht prüfen";
 "storage.revert.prior.checkFailedBody" = "Vor der Rückkehr prüfen wir, ob deine iCloud schon Yala-Daten hat, damit wir sie nicht ungefragt mischen. Vielleicht liegt’s an der Verbindung: Versuch es noch einmal.";
 "storage.revert.prior.stalledTitle" = "iCloud hat zu lange gebraucht";
 "storage.revert.prior.stalledBody" = "Vor der Rückkehr prüfen wir, ob deine iCloud schon Yala-Daten hat, damit wir sie nicht ungefragt mischen. Die Prüfung kam nicht weiter: Versuch es noch einmal.";
-"storage.revert.prior.wipeFailed" = "Wir konnten die alten Daten nicht vollständig aus deiner iCloud löschen und haben die Rückkehr nicht gestartet: Du bist weiter in der Cloud. Prüf deine Verbindung und versuch es noch einmal.";
-"storage.revert.prior.wipeStopped" = "Wir konnten die alten Daten nicht vollständig aus deiner iCloud löschen und haben die Rückkehr nicht gestartet: Du bist weiter in der Cloud. Was schon gelöscht ist, bleibt gelöscht: Versuch es noch einmal, dann machen wir mit dem Rest weiter.";
+"storage.revert.prior.wipeFailed" = "Wir konnten die alten Daten nicht vollständig aus deiner iCloud löschen und haben die Rückkehr nicht gestartet: Du bist weiter in deinem Yala-Konto. Prüf deine Verbindung und versuch es noch einmal.";
+"storage.revert.prior.wipeStopped" = "Wir konnten die alten Daten nicht vollständig aus deiner iCloud löschen und haben die Rückkehr nicht gestartet: Du bist weiter in deinem Yala-Konto. Was schon gelöscht ist, bleibt gelöscht: Versuch es noch einmal, dann machen wir mit dem Rest weiter.";
 "storage.revert.prior.wiping" = "Alte Daten werden gelöscht… bisher %d";
 "storage.revert.prior.noAccountTitle" = "Melde dich auf diesem Gerät bei iCloud an";
 "storage.revert.prior.noAccountBody" = "Vor der Rückkehr prüfen wir, was in deiner iCloud liegt, und dieses Gerät ist nicht bei iCloud angemeldet. Melde dich in den Einstellungen an und versuch es noch einmal.";
@@ -6992,7 +6993,7 @@
 "storage.consent.accessTitle" = "Du meldest dich mit Apple oder Google an, auf jedem Gerät";
 "storage.consent.acceptEnter" = "Verstanden, bei meinem Konto anmelden";
 "storage.consent.acceptCreate" = "Verstanden, mein Konto erstellen";
-"storage.consent.acceptMove" = "Verstanden, meine Daten in die Cloud bringen";
+"storage.consent.acceptMove" = "Verstanden, meine Daten in mein Yala-Konto bringen";
 "welcome.privateICloud.lateLead" = "Du hast sie früher in deiner iCloud gespeichert, mit derselben Apple-ID:";
 "welcome.privateICloud.lateMerge" = "Mit dem jetzigen zusammenführen";
 "welcome.privateICloud.lateWipe" = "Aus iCloud löschen und neu anfangen";
@@ -7172,6 +7173,8 @@
 "budgets.l9.perDay" = "Du kannst %@ pro Tag ausgeben";
 "budgets.l9.countsAllExpenses" = "Zählt alle deine Ausgaben";
 "budgets.l9.atLimit" = "Fast am Limit";
+"budgets.l9.reachedLimit" = "Limit erreicht";
+"budgets.l9.overLimitWord" = "Überschritten";
 "budgets.l9.limitLabel" = "Limit";
 "budgets.l9.whatCountsTitle" = "Welche Ausgaben zählen?";
 "budgets.l9.allExpensesChip" = "Alle meine Ausgaben";
@@ -7649,7 +7652,7 @@
 "uxcs.migrated.rejoinSentence" = "Diese Gruppe ist umgezogen. Melde dich erneut an, um sie aktuell zu sehen.";
 
 /* UX 2.2 · lote decidido 05 (L20-11…18): activar la nube, iCloud y reabrir Yala */
-"l20n.sheet.title" = "Bevor du die Cloud einschaltest";
+"l20n.sheet.title" = "Bevor du zu deinem Yala-Konto wechselst";
 "l20n.sheet.anyPhoneTitle" = "Du meldest dich von jedem Gerät an";
 "l20n.sheet.anyPhoneDetail" = "Ohne von iCloud abzuhängen.";
 "l20n.sheet.seesTitle" = "Yala kann deine Daten sehen";
@@ -7666,10 +7669,10 @@
 "l20n.relaunch.doneSignedOut" = "Abgemeldet";
 "l20n.relaunch.afterSignOut" = "Wenn du sie wieder öffnest, entfernt Yala deine Daten vollständig von diesem Gerät.";
 "l20n.relaunch.afterGroupsOnly" = "Deine persönlichen Daten bleiben auf diesem Gerät.";
-"l20n.relaunch.doneInCloud" = "Deine Daten sind schon in deinem Cloud-Konto";
+"l20n.relaunch.doneInCloud" = "Deine Daten sind schon in deinem Yala-Konto";
 "l20n.relaunch.doneOnPhone" = "Deine Daten sind schon auf diesem Gerät";
 "l20n.relaunch.afterToICloud" = "Wenn du sie wieder öffnest, werden sie in deine iCloud hochgeladen.";
-"l20n.relaunch.doneReverseStopped" = "Die Rückkehr zu iCloud wurde gestoppt";
+"l20n.relaunch.doneReverseStopped" = "Die Rückkehr zu deiner iCloud wurde gestoppt";
 "l20n.relaunch.pending" = "Öffne Yala erneut";
 "l20n.relaunch.toFinish" = "Zum Abschluss";
 "l20n.relaunch.step1" = "Wische vom unteren Rand nach oben und halte kurz an";
@@ -7723,6 +7726,8 @@
 "uxpro.gate.title.iconGeneric" = "Dieses Symbol gehört zu Yala Pro";
 "uxpro.gate.body.manualStaysFree" = "Von Hand erfassen bleibt wie immer kostenlos.";
 "uxpro.gate.body.dataStaysFree" = "Deine Einträge und Statistiken bleiben wie immer kostenlos.";
+"uxpro.gate.offlinePrices" = "Offline: Den Preis siehst du, sobald du verbunden bist.";
+"uxpro.gate.offlineMeanwhile" = "Bis dahin, kostenlos";
 "uxpro.gate.body.themeStays" = "Dein jetziges Design bleibt, wie es ist.";
 "uxpro.gate.body.iconStays" = "Dein jetziges Symbol bleibt, wie es ist.";
 "uxpro.gate.body.cashFlowStays" = "Der normale Cashflow bleibt kostenlos.";
@@ -7805,7 +7810,7 @@
 "aiPrivacy.l14d.processingLine" = "Macht aus dem, was du sagst oder fotografierst, einen Eintrag.";
 "aiPrivacy.l14d.chatLine" = "Beantwortet deine Fragen zu deinem Geld und erfasst Ausgaben im Chat.";
 "aiPrivacy.l14d.insightsLine" = "Schreibt Beobachtungen zu deinen Zahlen in Statistiken.";
-"aiPrivacy.l14d.cloudExploreLine" = "Yala KI sieht auch in deinem Cloud-Konto nach, wenn eine Frage es braucht.";
+"aiPrivacy.l14d.cloudExploreLine" = "Yala KI sieht auch in deinem Yala-Konto nach, wenn eine Frage es braucht.";
 "aiPrivacy.l14d.revokeTitle" = "%@ ausschalten?";
 "settings.l14d.summaryWhere" = "Du siehst es unter %@.";
 "siriShortcuts.siri.alsoSay" = "Auch: %1$@ · %2$@";
@@ -8183,7 +8188,7 @@
 /* Confirmación al aceptar una solicitud. %@ = nombre. */
 "groups.d14.requests.acceptConfirm" = "%@ in die Gruppe aufnehmen?";
 /* Volver a iCloud no disponible: la cuenta no nació ni migró en este dispositivo (ReverseEligibility.degradedNoMap) */
-"storage.revert.ineligibleOtherDevice" = "Dein Konto kam von einem anderen Gerät in die Cloud, daher geht die Rückkehr zu iCloud von diesem aus, falls Yala dort noch installiert ist. Hier kannst du die Cloud weiter nutzen.";
+"storage.revert.ineligibleOtherDevice" = "Deine Daten sind von einem anderen Gerät aus zu deinem Yala-Konto gewechselt, daher geht die Rückkehr zu deiner iCloud von diesem aus, falls Yala dort noch installiert ist. Hier kannst du dein Yala-Konto weiter nutzen.";
 
 /* card vv0k */
 "image.entry.failure.busy.title" = "Einen Moment";
@@ -8216,7 +8221,7 @@
 "image.entry.dailyLimitLeftOutMany" = "Tageslimit erreicht: %d wurden nicht gelesen.";
 
 /* UX 2.2 · lote decidido 15 (Ajustes, ayuda y preferencias) */
-"l15.personal.dataNote" = "Sie werden in deiner iCloud oder in deinem Konto in der Cloud gespeichert, je nachdem, was du gewählt hast. Was du in einer Gruppe erfasst, sieht die Gruppe.";
+"l15.personal.dataNote" = "Sie werden in deiner iCloud oder in deinem Yala-Konto gespeichert, je nachdem, was du gewählt hast. Was du in einer Gruppe erfasst, sieht die Gruppe.";
 "l15.personal.moreAboutData" = "Mehr über deine Daten";
 "l15.rates.search" = "Währung suchen";
 "l15.personalization.voiceLanguageFooter" = "Die Sprache, in der du mit Yala sprichst, wenn du per Sprache erfasst.";
@@ -8256,7 +8261,7 @@
 "l15.faq.yalaAI.q" = "Was ist Yala KI?";
 "l15.faq.yalaAI.a" = "Das ist der Assistent von Yala Pro. Du fragst ihn nach deinen Finanzen („Wie viel habe ich diesen Monat für Kaffee ausgegeben?“) oder erzählst ihm von einer Ausgabe, und er erfasst sie für dich. Um zu antworten, sendet er das Nötige an einen KI-Dienst; das entscheidest du unter Einstellungen > KI-Datenschutz und Daten.";
 "l15.faq.whereData.q" = "Wo werden meine Daten gespeichert?";
-"l15.faq.whereData.a" = "Wenn du deine private iCloud gewählt hast, auf deinem Gerät und in deiner iCloud: Yala sieht sie nicht. Wenn du ein Konto in der Cloud hast, auf den Servern von Yala, und du meldest dich auf einem anderen Gerät mit Apple oder Google an. Was du in einer Gruppe erfasst, wird in der Cloud gespeichert, damit die Gruppe es sieht.";
+"l15.faq.whereData.a" = "Wenn du deine iCloud gewählt hast, auf deinem Gerät und in deiner iCloud: Yala sieht sie nicht. Wenn du dein Yala-Konto gewählt hast, auf den Servern von Yala, und du meldest dich auf einem anderen Gerät mit Apple oder Google an. Was du in einer Gruppe erfasst, wird in der Cloud gespeichert, damit die Gruppe es sieht.";
 "l15.faq.faceID.q" = "Kann ich Yala mit Face ID schützen?";
 "l15.faq.faceID.a" = "Ja, mit der Sperre von iOS: Halte das Yala-Symbol auf deinem Home-Bildschirm gedrückt und tippe auf „Face ID anfordern“. Yala sieht dein Gesicht nie: iOS prüft es. Die Anleitung findest du unter Einstellungen > Mit Face ID schützen.";
 "l15.faq.widgets.q" = "Wie füge ich ein Yala-Widget hinzu?";
@@ -8376,7 +8381,7 @@
 /* Sección de ajustes del grupo (antes «Integración personal») */
 "groups.l19.options.personalSection" = "In deinen Konten";
 /* Interruptor del puente con las cuentas personales */
-"groups.l19.options.personalToggle" = "Was ich hier zahle, in meinen Konten eintragen";
+"groups.l19.options.personalToggle" = "In deinen Konten zeigen";
 /* Pie del interruptor cuando sigue el ajuste general */
 "groups.l19.options.personalInherit" = "Wie in den Gruppeneinstellungen.";
 /* Miembros: rótulo sobre la cifra */
@@ -8429,7 +8434,7 @@
 "l2d.date.futureDaysNote" = "Kommende Tage sind ausgegraut. Für eine Zahlung, die noch aussteht, nutze [Geplante Zahlungen](yala-form://scheduled).";
 "l2d.favorites.seeAll" = "Alle anzeigen";
 "l2d.favorites.use" = "Favorit %@ verwenden";
-"l2d.favorites.transferHelp" = "Deine üblichen Überweisungen, mit einem Tipp.";
+"l2d.favorites.transferHelp" = "Deine üblichen Überweisungen, schon ausgefüllt.";
 "l2d.recurring.title" = "Wiederkehrend machen";
 "l2d.recurring.header" = "Wir speichern den von heute. Die nächsten landen am fälligen Tag in deinem Posteingang, damit du sie bestätigst. Du findest sie unter Geplante Zahlungen.";
 "l2d.recurring.weekly" = "Jede Woche, am %@";
@@ -8466,8 +8471,8 @@
 "l2d.split.bar.others" = "Die anderen %@";
 
 /* Pasos con su cifra de «Activar la nube» y «Volver a iCloud» (cloud-progress-shows-real-steps-and-counts) */
-"storage.steps.forwardTitle" = "Cloud wird aktiviert";
-"storage.steps.reverseTitle" = "Zurück zu iCloud";
+"storage.steps.forwardTitle" = "Wechsel zu deinem Yala-Konto";
+"storage.steps.reverseTitle" = "Zurück zu deiner iCloud";
 "storage.steps.connect" = "Mit deinem Konto verbinden";
 "storage.steps.prepare" = "Deine Daten vorbereiten";
 "storage.steps.upload" = "Deine Daten hochladen";
@@ -8477,7 +8482,7 @@
 "storage.steps.keepOpen" = "Lass Yala geöffnet, bis es fertig ist.";
 "storage.steps.wipePrior" = "Alte Daten löschen";
 "storage.steps.wipedCount" = "Bisher %@ gelöscht";
-"storage.steps.bring" = "Deine Daten aus der Cloud holen";
+"storage.steps.bring" = "Deine Daten aus deinem Yala-Konto holen";
 "storage.steps.review" = "iCloud prüft, was schon da ist";
 "storage.steps.reviewDetail" = "Vor dem Hochladen sieht iCloud nach, was es von diesem Gerät gespeichert hat. Das kann ein paar Minuten dauern.";
 "storage.steps.uploadToICloud" = "Zu iCloud hochladen";
@@ -8495,7 +8500,7 @@
 "storage.migrateBlock.detachAndContinue" = "Trennen und fortfahren";
 
 /* Aviso del Panel en un segundo dispositivo: otro dispositivo del mismo iCloud activó la nube */
-"panel.cloudAdoptOffer.title" = "Deine Daten sind schon in deinem Cloud-Konto";
+"panel.cloudAdoptOffer.title" = "Deine Daten sind schon in deinem Yala-Konto";
 
 /* Cuerpo del aviso: activar la cuenta en la nube aquí también */
 "panel.cloudAdoptOffer.body" = "Auch auf diesem Gerät aktivieren?";
@@ -8630,8 +8635,12 @@
 "bulkEdit.cannotEditSplitRecipeCategory" = "Bei einem der ausgewählten Einträge ist dein Anteil in Zeilen aufgeteilt, und seine Kategorie kommt aus ihnen. Ändere sie in seinen Details über „Deinen Anteil aufteilen“.";
 
 /* «Cuánto puedo gastar hoy» (2.3): el cupo del día de un presupuesto */
-"budgets.daily.canSpend" = "Heute kannst du %@ ausgeben";
-"budgets.daily.overToday" = "Heute %@ über dem Tagesbudget";
+"budgets.daily.plan" = "Noch %1$@ und %2$@: etwa %3$@ pro Tag.";
+"budgets.daily.planFromStartOfDay" = "Du bist mit %2$@ für %1$@ in den Tag gestartet: etwa %3$@ pro Tag.";
+"budgets.daily.lastDay" = "Letzter Tag: noch %@.";
+"budgets.daily.lastDayFromStartOfDay" = "Du bist mit %@ in den letzten Tag gestartet.";
+"budgets.daily.spentToday" = "Heute bisher: %@.";
+"budgets.daily.spentTodayAbove" = "Heute bisher: %1$@, %2$@ mehr als das.";
 
 /* «Correo del banco» (2.3): reenvío de los avisos del banco a Yala */
 "bankEmail.title" = "Bank-E-Mails";
@@ -8802,6 +8811,19 @@
 "groups.convert.personalSplitHint" = "Um sie in eine geteilte Ausgabe umzuwandeln, entferne „Mein Anteil“: Dieser Eintrag speichert nur deinen Anteil.";
 "groups.convert.saveFirstHint" = "Speichere deine Änderungen, um sie in eine geteilte Ausgabe umzuwandeln.";
 
+
+/* Bandeja · gastos de grupo repetidos (bug 2026-11-09) */
+"inbox.groupLeftovers.bannerTitle" = "Doppelte Gruppenausgaben";
+"inbox.groupLeftovers.bannerMessage" = "Sie sind schon mit ihrem Konto in deinen Einträgen, aber ein Entwurf oder ein «Darlehen an Gruppen» ist zu viel.";
+"inbox.groupLeftovers.bannerAction" = "Prüfen und Doppeltes entfernen";
+"inbox.groupLeftovers.intro" = "Diese Gruppenausgaben sind schon mit ihrem Konto in deinen Einträgen. In der Liste steht, was zu viel ist. Deine Einträge mit Konto und die Ausgaben der Gruppe ändern sich nicht.";
+"inbox.groupLeftovers.extraDrafts" = "Überzählige Entwürfe: %d";
+"inbox.groupLeftovers.extraLoans" = "Doppelte «Darlehen an Gruppen»: %d";
+"inbox.groupLeftovers.remove" = "Doppeltes entfernen";
+"inbox.groupLeftovers.confirmTitle" = "Doppeltes entfernen?";
+"inbox.groupLeftovers.confirmMessage" = "Die Entwürfe und Darlehen aus der Liste werden entfernt. Deine Einträge mit Konto und die Ausgaben der Gruppe bleiben, wie sie sind.";
+"inbox.groupLeftovers.confirmAction" = "Entfernen";
+"inbox.groupLeftovers.failed" = "Entfernen hat nicht geklappt. Versuch es noch einmal.";
 /* Progreso de dejar iCloud aparte al entrar con Google o Apple desde el Welcome */
 "welcome.groups.cloudAsideWorking" = "Die iCloud-Daten dieses Geräts bleiben unverändert in iCloud. Wir laden die letzten Änderungen hoch und machen das Gerät bereit für die Anmeldung bei deinem Konto…";
 /* Puerta del Welcome: no se pudo empezar a dejar iCloud aparte */
@@ -8878,3 +8900,42 @@
 "records.bulk23.deleteTotal" = "%@ insgesamt";
 "records.bulk23.selectDay" = "Tag auswählen";
 "records.bulk23.deselectDay" = "Tag abwählen";
+/* Grupos (decisión 39 de 2.3): preguntar antes de tirar lo escrito y conservarlo al cambiar de grupo */
+"groups.discard.expenseTitle" = "Diese Ausgabe verwerfen?";
+"groups.discard.paymentTitle" = "Diese Zahlung verwerfen?";
+"groups.discard.openingBalanceTitle" = "Diesen Anfangssaldo verwerfen?";
+"groups.expense.groupChangedNotice" = "Du hast die Gruppe gewechselt: Was du eingegeben hast, bleibt; wer bezahlt hat und die Aufteilung beginnen von vorn.";
+"statistics.categoryDetail.seeInRecords" = "In Einträgen ansehen";
+
+/* Buscar en Registros (decisión 14 de 2.3) */
+"records.listSearch.placeholder" = "In Einträgen suchen";
+"records.listSearch.clear" = "Suche löschen";
+
+/* Revisión 2.3 · decisiones 15 y 16: chips rápidos de Registros, buscador de categorías y banda de filtros */
+"records23.quick.account" = "Konto";
+"records23.quick.category" = "Kategorie";
+"records23.quick.date" = "Datum";
+"records23.quick.more" = "Weitere Filter";
+"records23.quick.accountsCount" = "%d Konten";
+"records23.category.searchPrompt" = "Kategorie suchen";
+"records23.category.noResults" = "Keine Kategorie mit „%@“";
+"records23.category.wholeCategory" = "Ganze Kategorie";
+"records23.category.expand" = "Unterkategorien von %@ anzeigen";
+"records23.category.collapse" = "Unterkategorien von %@ ausblenden";
+"records23.band.removeAll" = "Alle entfernen";
+
+/* Registros 2.3, decisión 17: separador de mes, título del menú y pista de VoiceOver */
+"records23.month.goToAnotherMonth" = "Zu einem anderen Monat";
+
+/* Registros 2.3 · VoiceOver, carga y error (decisiones 61 y 78) */
+"records.row.tagHint" = "Tag";
+"records.list.loading" = "Deine Einträge werden geladen…";
+"records.list.loadErrorTitle" = "Deine Einträge konnten nicht geladen werden";
+"records.list.loadErrorMessage" = "Beim Lesen ist etwas schiefgelaufen. Versuch es gleich noch einmal.";
+
+/* Nuevo registro 2.3, decisión 81: «Volver a grabar» y «Otra foto» preguntan antes de descartar lo entendido */
+"entryDiscard.voice.title" = "Verwerfen, was ich verstanden habe?";
+"entryDiscard.voice.message" = "Wenn du erneut aufnimmst, wird alles Nichtgespeicherte gelöscht und bleibt nicht im Posteingang.";
+"entryDiscard.photo.title" = "Verwerfen, was ich gelesen habe?";
+"entryDiscard.photo.message" = "Wenn du ein anderes Foto wählst, wird alles Nichtgespeicherte gelöscht und bleibt nicht im Posteingang.";
+"entryDiscard.keepReviewing" = "Weiter prüfen";

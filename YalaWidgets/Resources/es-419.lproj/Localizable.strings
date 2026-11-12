@@ -65,9 +65,9 @@
 "widget.intent.latestRecords.title" = "Últimos registros";
 "widget.intent.latestRecords.desc" = "Muestra tus registros más recientes";
 "widget.intent.accessoryBalance.title" = "Saldo";
-"widget.intent.accessoryBalance.desc" = "Saldo del periodo";
+"widget.intent.accessoryBalance.desc" = "Saldo del período";
 "widget.intent.accessoryExpense.title" = "Gastos";
-"widget.intent.accessoryExpense.desc" = "Gastos del periodo";
+"widget.intent.accessoryExpense.desc" = "Gastos del período";
 "widget.intent.accessoryBudget.title" = "Presupuesto";
 "widget.intent.accessoryBudget.desc" = "Presupuesto más usado";
 "widget.intent.accessoryPayment.title" = "Próximo pago";
