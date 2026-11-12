@@ -12,6 +12,7 @@
 
 import Foundation
 import SwiftData
+import Synchronization
 import Testing
 @testable import Yala
 
@@ -306,6 +307,13 @@ struct RecordsBulkUndo23Tests {
     /// La decisión pedía medir cuánto cuesta guardar el «antes» de miles de registros. 3.000 registros (más que los
     /// 2.334 de la semilla realista): foto + lote + deshacer, y el borrado en lote (pedirlo y vencer). Imprime las cifras
     /// y pone un techo holgado para que un cambio que lo dispare (un fetch por registro, un guardado por registro) se vea.
+    ///
+    /// El deshacer no lleva techo en segundos sino RELATIVO al lote que deshace, medido en la misma corrida: los dos
+    /// gastan casi todo en lo mismo (SwiftData manteniendo la inversa al asignar `subcategory`: 4,6 de 4,9 s medidos en
+    /// local, el guardado 0,25 s), y la máquina del CI es ~3,4× más lenta (lote 5,7 s en local, 16-19 s en el CI), así
+    /// que un techo fijo de 10 s se rompía sin regresión. Deshacer cuesta lo mismo que el lote (0,86-1,06× medido en los
+    /// dos sitios); a más de 1,5× es que hace trabajo de más. Y el guardado por registro se cuenta, que no depende de la
+    /// máquina: un deshacer guarda una vez.
     @Test func thousandsOfRecords_captureAndUndoStayCheap() async throws {
         let context = try makeTestContext()
         let account = makeTestAccount(context: context, name: "Diaria")
@@ -335,7 +343,12 @@ struct RecordsBulkUndo23Tests {
             _ = RecordBulkEditUndo.capture(records, context: context)
         }
         var restored = 0
+        let undoSaves = Mutex(0)
+        let saveObserver = NotificationCenter.default.addObserver(
+            forName: ModelContext.didSave, object: context, queue: nil) { _ in undoSaves.withLock { $0 += 1 } }
         let undoTime = clock.measure { restored = vm.undoLastBulkEdit(context: context) }
+        NotificationCenter.default.removeObserver(saveObserver)
+        #expect(undoSaves.withLock { $0 } == 1, "deshacer guarda una vez, no una por registro")
         #expect(restored == 3_000)
         #expect(records.allSatisfy { $0.subcategory?.name == "Taxis y apps" })
 
@@ -359,7 +372,7 @@ struct RecordsBulkUndo23Tests {
 
         print("RecordsBulkUndo23 · 3.000 registros: foto del antes \(captureOnly), lote con foto \(applyTime), deshacer \(undoTime), pedir el borrado \(requestTime), deshacer el borrado \(undoDeleteTime), borrar al vencer \(commitTime)")
         #expect(captureOnly < .seconds(3))
-        #expect(undoTime < .seconds(10))
+        #expect(undoTime < applyTime * 1.5, "deshacer \(undoTime) frente al lote \(applyTime)")
         #expect(requestTime < .seconds(5))
         #expect(undoDeleteTime < .seconds(1))
     }
