@@ -27,6 +27,13 @@ struct RecordsStandaloneView: View {
     /// Decide si tocar un registro lo abre en la columna de detalle o en la hoja de siempre.
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
+    /// El size class con el que se monta la página. En una ventana ancha con la vista calendario, compacto (decisión 66
+    /// de 2.3): el calendario no se aprieta en la columna de la lista; la página va en una columna, como en el iPhone, y el
+    /// calendario a ancho legible. Lo abierto, en la hoja de siempre.
+    private var pageSizeClass: UserInterfaceSizeClass? {
+        RecordsCalendarPageLogic.pageSizeClass(window: horizontalSizeClass, viewMode: recordsViewModel.recordsViewMode)
+    }
+
     // MARK: - ViewModels
 
     /// La fila de acciones salió de la vista al bajar: entran Yala IA y «+» flotantes (card rtyu).
@@ -128,13 +135,13 @@ struct RecordsStandaloneView: View {
             .modifier(RecordsDetailColumnObservers(
                 recordsViewModel: recordsViewModel,
                 compactColumn: $compactColumn,
-                horizontalSizeClass: horizontalSizeClass,
+                horizontalSizeClass: pageSizeClass,
                 allTransactions: dataViewModel.allTransactions
             ))
             // Una ventana abierta con «Abrir en una ventana nueva» desde un registro aterriza con él abierto.
             .modifier(RecordsPendingRecordObserver(
                 recordsViewModel: recordsViewModel,
-                horizontalSizeClass: horizontalSizeClass,
+                horizontalSizeClass: pageSizeClass,
                 allTransactions: dataViewModel.allTransactions
             ))
             .onAppear {
@@ -194,7 +201,7 @@ struct RecordsStandaloneView: View {
     /// registro se abre en la columna de detalle; en compacta es una hoja y no hay «registro abierto» al que apuntar.
     private var recordCommands: RecordCommandActions? {
         guard navigation.selectedMainTab == .records,
-              horizontalSizeClass == .regular,
+              pageSizeClass == .regular,
               !recordsViewModel.isSelectionMode
         else { return nil }
         let record = openRecord
@@ -229,6 +236,16 @@ struct RecordsStandaloneView: View {
         } detail: {
             detailColumn
         }
+        .environment(\.horizontalSizeClass, pageSizeClass)
+        // Al pasar a la vista calendario en una ventana ancha, lo abierto en la columna de detalle se cierra: la página
+        // pasa a una columna y no tiene dónde enseñarlo al lado.
+        .onChange(of: recordsViewModel.recordsViewMode) { _, mode in closeOpenRecordForCalendarPage(mode) }
+    }
+
+    private func closeOpenRecordForCalendarPage(_ mode: RecordsViewMode) {
+        guard RecordsCalendarPageLogic.pageSizeClass(window: horizontalSizeClass, viewMode: mode) != horizontalSizeClass
+        else { return }
+        recordsViewModel.openRecordID = nil
     }
 
     @ViewBuilder
@@ -264,7 +281,8 @@ struct RecordsStandaloneView: View {
                 transactionDateRange: dataViewModel.computeTransactionDateRange(),
                 defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
                 onFilterChange: { recalculateData() },
-                showsQuickFilters: true
+                showsQuickFilters: true,
+                keepsCalendarAtReadableWidth: horizontalSizeClass == .regular
             )
             // La fila de acciones bajo la cabecera, la misma de Estadísticas › Registros (card 97gc). Al bajar y perderla
             // de vista, la fila enciende `showFloatingActions` y salen los flotantes, como en Estadísticas (card rtyu).
@@ -417,7 +435,9 @@ struct RecordsStandaloneView: View {
     private var normalModeToolbar: some ToolbarContent {
         // «Seleccionar» a la vista, no solo dentro de «···» (L8-12).
         ToolbarItem(placement: .topBarTrailing) {
-            RecordsSelectToolbarButton(viewModel: recordsViewModel)
+            // En la columna de la lista del iPad, con icono: con el texto, el título no cabía (decisión 67 de 2.3). La
+            // columna de lista no tiene título grande (medido: `.large` no cambia nada ahí).
+            RecordsSelectToolbarButton(viewModel: recordsViewModel, iconOnly: pageSizeClass == .regular)
         }
 
         ToolbarSpacer(.fixed, placement: .topBarTrailing)

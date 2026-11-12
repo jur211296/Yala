@@ -188,6 +188,7 @@
 "records.noRecords" = "この期間に記録はありません";
 "records.viewModeListA11y" = "リスト表示";
 "records.viewModeCalendarA11y" = "カレンダー表示";
+"records.calendarShowMonthHint" = "月全体を表示します";
 "records.noRecordsThisDay" = "この日に記録はありません";
 
 // MARK: - Filters

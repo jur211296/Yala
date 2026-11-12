@@ -132,17 +132,69 @@ struct RecordsCalendarView: View {
     private func continuousCalendar(
         weeks: [[Date]], range: DateInterval, spending: DailySpendingCalculator.Result
     ) -> some View {
-        let showMonthLabels = monthsSpanned(weeks: weeks, range: range) > 1
+        let shown = foldedWeeks(weeks)
+        let showMonthLabels = shown.count > 1 && monthsSpanned(weeks: weeks, range: range) > 1
         return VStack(spacing: DS.Spacing.xs) {
+            if let week = foldedWeek(weeks) {
+                foldedWeekHeader(week)
+            }
             weekdayHeaders
-            ForEach(Array(weeks.enumerated()), id: \.offset) { idx, week in
+            // Cada semana por sus fechas, no por su posición: al plegar, la del día se queda y las demás se van.
+            ForEach(Array(shown.enumerated()), id: \.element) { idx, week in
                 if showMonthLabels,
-                    let label = monthLabel(week: week, previous: idx > 0 ? weeks[idx - 1] : nil, range: range) {
+                    let label = monthLabel(week: week, previous: idx > 0 ? shown[idx - 1] : nil, range: range) {
                     monthSeparator(label)
                 }
                 weekRow(week, spending: spending, inRange: { range.contains($0) })
             }
         }
+    }
+
+    // MARK: - Semana plegada (C2, decisión 19 de 2.3)
+
+    /// Con un día elegido, la semana que lo contiene; sin él, todas.
+    private func foldedWeeks(_ weeks: [[Date]]) -> [[Date]] {
+        RecordsCalendarLayout.foldedWeeks(weeks, selectedDay: selectedDay, calendar: calendar)
+    }
+
+    /// La semana a la que se plegó el mes, o `nil` si se ve entero (sin día elegido, o un rango de una sola semana).
+    private func foldedWeek(_ weeks: [[Date]]) -> [Date]? {
+        let shown = foldedWeeks(weeks)
+        guard weeks.count > 1, shown.count == 1 else { return nil }
+        return shown.first
+    }
+
+    /// «13 – 19 oct 2026 ▾» en el sitio del mes: tocarlo suelta el día y vuelve a desplegar el mes.
+    private func foldedWeekHeader(_ week: [Date]) -> some View {
+        Button {
+            selectedDay = nil
+        } label: {
+            HStack(spacing: DS.Spacing.xs) {
+                Text(weekRangeText(week))
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.primary)
+                    .transaction { $0.animation = nil }
+                Image(systemName: "chevron.down")
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, minHeight: DS.Button.actionSize)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.vertical, DS.Spacing.xs)
+        .accessibilityHint(L10n.Records.calendarShowMonthHint)
+        .accessibilityIdentifier("records_calendar_week_header")
+    }
+
+    /// Del primer al último día de la fila, en el idioma de Yala («13–19 oct 2026», «27 oct – 2 nov 2026»).
+    private func weekRangeText(_ week: [Date]) -> String {
+        guard let first = week.first, let last = week.last else { return "" }
+        let formatter = DateIntervalFormatter()
+        formatter.locale = AppLocale.current
+        formatter.calendar = calendar
+        formatter.dateTemplate = "dMMMyyyy"
+        return formatter.string(from: first, to: last)
     }
 
     private func monthsSpanned(weeks: [[Date]], range: DateInterval) -> Int {
@@ -186,13 +238,18 @@ struct RecordsCalendarView: View {
         let monthInterval = calendar.dateInterval(of: .month, for: calendarMonth)
             ?? DateInterval(start: calendarMonth, duration: 86_400)
         let weeks = RecordsCalendarLayout.weekRows(in: monthInterval, calendar: calendar)
+        let folded = foldedWeek(weeks)
 
         return VStack(spacing: DS.Spacing.sm) {
-            monthNavigationHeader(months: months)
+            if let folded {
+                foldedWeekHeader(folded)
+            } else {
+                monthNavigationHeader(months: months)
+            }
             VStack(spacing: DS.Spacing.xs) {
                 weekdayHeaders
                 VStack(spacing: DS.Spacing.xs) {
-                    ForEach(Array(weeks.enumerated()), id: \.offset) { _, week in
+                    ForEach(foldedWeeks(weeks), id: \.self) { week in
                         weekRow(week, spending: spending, inRange: {
                             calendar.isDate($0, equalTo: calendarMonth, toGranularity: .month)
                         })
@@ -203,7 +260,8 @@ struct RecordsCalendarView: View {
                 .transition(monthMotion.transition)
             }
             .contentShape(Rectangle())
-            .simultaneousGesture(monthSwipeGesture(months: months))
+            // Plegado a una semana no se cambia de mes deslizando: el mes vuelve con la cabecera.
+            .simultaneousGesture(monthSwipeGesture(months: months), isEnabled: folded == nil)
         }
     }
 

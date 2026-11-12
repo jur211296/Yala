@@ -2458,6 +2458,7 @@
 "records.noRecordsThisDay" = "Sin registros este día";
 "records.title" = "Registros";
 "records.viewModeCalendarA11y" = "Vista de calendario";
+"records.calendarShowMonthHint" = "Muestra el mes entero";
 "records.viewModeListA11y" = "Vista de lista";
 "report.expense" = "Gastos";
 "report.grouping.account" = "Cuenta";

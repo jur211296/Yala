@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 /// Resuelve cómo renderizar el calendario según el span del rango:
 ///
@@ -89,5 +90,25 @@ enum RecordsCalendarLayout: Equatable {
             monthStart = next
         }
         return months
+    }
+
+    /// C2 (decisión 19 de 2.3): con un día elegido, el mes se pliega a la semana que lo contiene, para que la lista del
+    /// día quede a la vista justo debajo. Sin día elegido, o si el día no está en ninguna fila, todas las semanas.
+    static func foldedWeeks(_ weeks: [[Date]], selectedDay: Date?, calendar: Calendar) -> [[Date]] {
+        guard let selectedDay,
+              let week = weeks.first(where: { $0.contains { calendar.isDate($0, inSameDayAs: selectedDay) } })
+        else { return weeks }
+        return [week]
+    }
+}
+
+/// Decisión 66 de 2.3: en el iPad el calendario de Registros se apretaba en la columna de la lista (375-480 pt) con la
+/// columna de detalle vacía al lado. Con la vista calendario, la página de una ventana ancha se monta como en una
+/// estrecha —una columna— y el calendario va a ancho legible (`RecordsTabView.keepsCalendarAtReadableWidth`).
+enum RecordsCalendarPageLogic {
+    static func pageSizeClass(
+        window: UserInterfaceSizeClass?, viewMode: RecordsViewMode
+    ) -> UserInterfaceSizeClass? {
+        window == .regular && viewMode == .calendar ? .compact : window
     }
 }
