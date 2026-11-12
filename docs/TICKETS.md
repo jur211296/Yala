@@ -422,6 +422,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | favorite-editor-does-not-know-transfer-favorites | done | tickets/done/favorite-editor-does-not-know-transfer-favorites.md |
 | favorite-transfer-destination-does-not-travel-in-cloud-mode | blocked | tickets/blocked/favorite-transfer-destination-does-not-travel-in-cloud-mode.md |
 | favorites-at-record-time-amount-types-and-delete-2-3 | done | tickets/done/favorites-at-record-time-amount-types-and-delete-2-3.md |
+| voice-and-photo-announce-ask-before-discarding-and-success-rows-2-3 | done | tickets/done/voice-and-photo-announce-ask-before-discarding-and-success-rows-2-3.md |
 | favorites-reorder-uses-the-shown-index-on-the-full-list | backlog | tickets/backlog/favorites-reorder-uses-the-shown-index-on-the-full-list.md |
 | ficha-mx-vida-rates-jump-on-the-last-day | done | tickets/done/ficha-mx-vida-rates-jump-on-the-last-day.md |
 | figures-that-dont-add-up-lote-02-necessary-2-3 | done | tickets/done/figures-that-dont-add-up-lote-02-necessary-2-3.md |

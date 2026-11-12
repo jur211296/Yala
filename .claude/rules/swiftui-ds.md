@@ -394,7 +394,12 @@ paths:
   la hoja siguió a media altura, en la misma pasada que el cambio de fase y también aplazado una vuelta del main actor
   con `withAnimation`. Causa sin aislar. ⇒ **no diseñes un flujo que dependa de agrandar la hoja por código**: que el
   contenido quepa o se desplace dentro, y el usuario la estira. Si un fondo se deriva del detent elegido, fíjalo a la
-  altura real, no a la pedida.
+  altura real, no a la pedida. **Quitar `.medium` del juego tampoco la mueve (medido el 2026-11-12, iOS 27.2, hoja de
+  la foto):** con solo `.large` ofrecido se quedó a media altura. **Lo que sí la mueve es la hoja de UIKit**:
+  `UISheetPresentationController.animateChanges { selectedDetentIdentifier = .large }`, una vuelta del main actor
+  después del cambio, llegando a ella como `SheetDismissAttemptModifier` (molde: `growsSheetToLarge(when:)` en
+  `ImageEntrySheetHeight.swift`, decisión 80 de 2.3; pin `VozFotoAvisos23UITests`). Úsalo solo cuando una decisión pida
+  que la hoja crezca; deja la selección de SwiftUI de acuerdo con la de UIKit.
 
 - **`.presentationBackground(<material>)` como ESTILO impide presentar la hoja cuando la pide otra hoja que ya está
   sobre una hoja (medido el 2026-10-27, iOS 27.0).** En «Detalles» de un registro de Yala IA (hoja sobre la hoja del

@@ -8935,3 +8935,10 @@
 "records.list.loading" = "記録を読み込み中…";
 "records.list.loadErrorTitle" = "記録を読み込めませんでした";
 "records.list.loadErrorMessage" = "読み込み中に問題が発生しました。少し待ってからもう一度お試しください。";
+
+/* Nuevo registro 2.3, decisión 81: «Volver a grabar» y «Otra foto» preguntan antes de descartar lo entendido */
+"entryDiscard.voice.title" = "聞き取った内容を破棄しますか？";
+"entryDiscard.voice.message" = "もう一度録音すると、保存していないものは削除され、受信箱にも残りません。";
+"entryDiscard.photo.title" = "読み取った内容を破棄しますか？";
+"entryDiscard.photo.message" = "別の写真を選ぶと、保存していないものは削除され、受信箱にも残りません。";
+"entryDiscard.keepReviewing" = "確認を続ける";

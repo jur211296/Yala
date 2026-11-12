@@ -213,8 +213,9 @@ struct TransactionSuccessView: View {
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.bordered)
-
                     .controlSize(.large)
+                    // Para que los tests lo toquen sin depender del texto (decisión 83 de la revisión 2.3).
+                    .accessibilityIdentifier("transaction_success_create_another")
                 }
                 .padding(.horizontal, DS.Spacing.xl)
                 .padding(.bottom, DS.Spacing.xxxl)
@@ -277,7 +278,8 @@ struct TransactionSuccessView: View {
             detailRow(
                 icon: "calendar",
                 label: L10n.Transaction.date,
-                value: formattedDate
+                value: formattedDate,
+                valueIdentifier: "transaction_success_date"
             )
 
             // Account(s)
@@ -304,7 +306,8 @@ struct TransactionSuccessView: View {
                 detailRow(
                     icon: "text.alignleft",
                     label: L10n.Transaction.description,
-                    value: data.note
+                    value: data.note,
+                    valueIdentifier: "transaction_success_description"
                 )
             }
 
@@ -348,7 +351,7 @@ struct TransactionSuccessView: View {
         Self.dateFormatter.string(from: data.date)
     }
 
-    private func detailRow(icon: String, label: String, value: String) -> some View {
+    private func detailRow(icon: String, label: String, value: String, valueIdentifier: String) -> some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
                 .font(DS.Typography.subheadline)
@@ -362,10 +365,13 @@ struct TransactionSuccessView: View {
 
             Spacer()
 
+            // Una descripción larga ocupa hasta dos líneas y después corta (decisión 65 de la revisión 2.3).
             Text(value)
                 .font(DS.Typography.label)
                 .foregroundStyle(.primary)
-                .lineLimit(1)
+                .lineLimit(2)
+                .multilineTextAlignment(.trailing)
+                .accessibilityIdentifier(valueIdentifier)
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.FormRow.paddingV)

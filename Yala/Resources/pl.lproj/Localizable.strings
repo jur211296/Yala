@@ -8935,3 +8935,10 @@
 "records.list.loading" = "Wczytujemy Twoje wpisy…";
 "records.list.loadErrorTitle" = "Nie udało się wczytać Twoich wpisów";
 "records.list.loadErrorMessage" = "Coś poszło nie tak przy ich odczycie. Spróbuj ponownie za chwilę.";
+
+/* Nuevo registro 2.3, decisión 81: «Volver a grabar» y «Otra foto» preguntan antes de descartar lo entendido */
+"entryDiscard.voice.title" = "Odrzucić to, co zrozumiałem?";
+"entryDiscard.voice.message" = "Jeśli nagrasz ponownie, to, czego nie zapisano, zostanie usunięte i nie zostanie w Skrzynce.";
+"entryDiscard.photo.title" = "Odrzucić to, co odczytałem?";
+"entryDiscard.photo.message" = "Jeśli wybierzesz inne zdjęcie, to, czego nie zapisano, zostanie usunięte i nie zostanie w Skrzynce.";
+"entryDiscard.keepReviewing" = "Sprawdzaj dalej";

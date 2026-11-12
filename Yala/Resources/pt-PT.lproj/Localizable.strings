@@ -8172,3 +8172,10 @@
 "records.list.loading" = "A carregar os teus registos…";
 "records.list.loadErrorTitle" = "Não conseguimos carregar os teus registos";
 "records.list.loadErrorMessage" = "Algo correu mal ao lê-los. Tenta de novo daqui a pouco.";
+
+/* Nuevo registro 2.3, decisión 81: «Volver a grabar» y «Otra foto» preguntan antes de descartar lo entendido */
+"entryDiscard.voice.title" = "Descartar o que percebi?";
+"entryDiscard.voice.message" = "Para gravar de novo, o que não guardaste é apagado e não fica na Caixa de Entrada.";
+"entryDiscard.photo.title" = "Descartar o que li?";
+"entryDiscard.photo.message" = "Para escolheres outra fotografia, o que não guardaste é apagado e não fica na Caixa de Entrada.";
+"entryDiscard.keepReviewing" = "Continuar a rever";

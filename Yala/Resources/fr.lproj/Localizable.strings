@@ -8924,3 +8924,10 @@
 "records.list.loading" = "Chargement de tes enregistrements…";
 "records.list.loadErrorTitle" = "Impossible de charger tes enregistrements";
 "records.list.loadErrorMessage" = "Un problème est survenu en les lisant. Réessaie dans un instant.";
+
+/* Nuevo registro 2.3, decisión 81: «Volver a grabar» y «Otra foto» preguntan antes de descartar lo entendido */
+"entryDiscard.voice.title" = "Effacer ce que j’ai compris ?";
+"entryDiscard.voice.message" = "Pour réenregistrer, ce que tu n’as pas enregistré est supprimé et ne reste pas dans ta boîte de réception.";
+"entryDiscard.photo.title" = "Effacer ce que j’ai lu ?";
+"entryDiscard.photo.message" = "Pour choisir une autre photo, ce que tu n’as pas enregistré est supprimé et ne reste pas dans ta boîte de réception.";
+"entryDiscard.keepReviewing" = "Continuer à vérifier";
