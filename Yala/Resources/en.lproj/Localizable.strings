@@ -3370,6 +3370,7 @@
 "chat.emptySubtitle" = "Explore your finances with questions";
 "chat.errorTimeout" = "Response took too long. Try again.";
 "chat.errorOffline" = "You need an internet connection to use Yala AI.";
+"chat.offline.body" = "Yala AI comes back once you're online. Meanwhile, you can add records manually.";
 "chat.errorGeneric" = "Something went wrong. Try again.";
 "chat.errorNoData" = "No data found for that query. Can you be more specific?";
 "chat.dailyLimitReached" = "You've used your questions for today. Come back tomorrow!";
@@ -7731,6 +7732,8 @@
 "uxpro.gate.title.iconGeneric" = "This icon is part of Yala Pro";
 "uxpro.gate.body.manualStaysFree" = "Logging by hand stays free, as always.";
 "uxpro.gate.body.dataStaysFree" = "Your records and your statistics stay free, as always.";
+"uxpro.gate.offlinePrices" = "You're offline: you'll see the price once you're connected.";
+"uxpro.gate.offlineMeanwhile" = "Meanwhile, for free";
 "uxpro.gate.body.themeStays" = "Your current theme stays as it is.";
 "uxpro.gate.body.iconStays" = "Your current icon stays as it is.";
 "uxpro.gate.body.cashFlowStays" = "The regular cash flow stays free.";

@@ -117,10 +117,13 @@ struct UpgradePromptSheet: View {
                     Spacer(minLength: DS.Spacing.md)
 
                     VStack(spacing: DS.Spacing.md) {
-                        YalaPrimaryButton(ctaTitle, isDisabled: store.isPurchasing || store.planOffers.isEmpty) {
-                            Task { await purchaseSelected() }
+                        // Sin conexión y sin precios no hay compra posible: nada apagado (decisión 42 de 2.3, F3).
+                        if !showsOfflineAlternatives {
+                            YalaPrimaryButton(ctaTitle, isDisabled: store.isPurchasing || store.planOffers.isEmpty) {
+                                Task { await purchaseSelected() }
+                            }
+                            .accessibilityIdentifier("upgrade_prompt_cta")
                         }
-                        .accessibilityIdentifier("upgrade_prompt_cta")
 
                         if ProGateManualEntryLogic.offersManualEntry(
                             feature: feature, context: context, hasExit: onManualEntry != nil) {
@@ -168,6 +171,10 @@ struct UpgradePromptSheet: View {
         }
         .onChange(of: store.errorMessage) { _, newValue in
             if newValue != nil { showError = true }
+        }
+        // Al volver la conexión, los precios se cargan solos.
+        .onChange(of: NetworkMonitor.shared.isConnected) { _, connected in
+            reloadPricesOnReconnect(connected)
         }
         // «Comenzar» cierra la bienvenida y esta hoja; quien la abrió abre la función (UX 2.2 · L17-9).
         .fullScreenCover(isPresented: $showSuccess, onDismiss: { dismiss() }) {
@@ -239,7 +246,9 @@ struct UpgradePromptSheet: View {
 
     @ViewBuilder
     private var plans: some View {
-        if !store.planOffers.isEmpty {
+        if showsOfflineAlternatives {
+            offlineAlternatives
+        } else if !store.planOffers.isEmpty {
             ProPlanPicker(offers: store.planOffers, selectedID: $selectedPlan, showsMonthlyEquivalent: false)
         } else if pricesFailed {
             ProPricesUnavailable {
@@ -249,6 +258,83 @@ struct UpgradePromptSheet: View {
         } else {
             ProgressView().frame(maxWidth: .infinity)
         }
+    }
+
+    // MARK: - Sin conexión (decisión 42 de 2.3, F3)
+
+    /// El muro de Yala IA sin red y sin precios. Lee `NetworkMonitor` (`@Observable`): al volver la red se repinta.
+    private var showsOfflineAlternatives: Bool {
+        ProGateOfflineLogic.showsOfflineAlternatives(
+            feature: feature, context: context,
+            isConnected: NetworkMonitor.shared.isConnected, hasOffers: !store.planOffers.isEmpty)
+    }
+
+    /// Cuándo se verá el precio y lo que es gratis hoy: apuntar a mano (si quien abrió la hoja sabe abrir el formulario)
+    /// y, con el modelo del propio iPhone listo, Siri.
+    private var offlineAlternatives: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            Text(L10n.UXPro.gateOfflinePrices)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.thSecondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("upgrade_prompt_offline_prices")
+
+            Text(L10n.UXPro.gateOfflineMeanwhile)
+                .font(DS.Typography.headline)
+                .foregroundStyle(.thPrimaryText)
+                .accessibilityAddTraits(.isHeader)
+                .padding(.top, DS.Spacing.xs)
+
+            if let onManualEntry {
+                Button {
+                    onManualEntry()
+                    dismiss()
+                } label: {
+                    offlineRow(systemName: "square.and.pencil",
+                               title: L10n.Voice.enterManually, detail: L10n.UXPro.gateBodyManualStaysFree)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("upgrade_prompt_offline_manual")
+            }
+
+            if ProGateOfflineLogic.offersSiri(
+                model: SiriOnDeviceEntry.modelState, onDeviceEnabled: SiriOnDeviceEntry.isEnabled) {
+                // Informativa: Siri no se abre desde la app. Dice la frase.
+                offlineRow(systemName: "mic", title: L10n.UXPro.gateOfflineSiriTitle, detail: L10n.Tips.Siri.detail)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("upgrade_prompt_offline_siri")
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func offlineRow(systemName: String, title: String, detail: String) -> some View {
+        HStack(alignment: .top, spacing: DS.Spacing.md) {
+            Image(systemName: systemName)
+                .font(DS.Typography.headline)
+                .foregroundStyle(theme.accentText)
+                .frame(width: 28)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(title)
+                    .font(DS.Typography.bodyBold)
+                    .foregroundStyle(.thPrimaryText)
+                Text(detail)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.thSecondaryText)
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: DS.Spacing.none)
+        }
+        .padding(DS.Spacing.lg)
+        .background(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).fill(.thCard))
+        .contentShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+    }
+
+    private func reloadPricesOnReconnect(_ connected: Bool) {
+        guard connected, store.planOffers.isEmpty else { return }
+        pricesFailed = false
+        Task { await loadPrices() }
     }
 
     // MARK: - Texts

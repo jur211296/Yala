@@ -38,6 +38,9 @@ struct ChatSheetView: View {
         case column(onClose: () -> Void, insideNavigationStack: Bool)
     }
     var presentation: Presentation = .sheet
+    /// «Nuevo registro» del chat sin conexión (decisión 42 de 2.3): quien monta el chat lo cierra y abre el formulario.
+    /// `nil` = sin botón (un botón que no lleva a nada es peor que ninguno).
+    var onManualEntry: (() -> Void)?
 
     var body: some View {
         Group {
@@ -73,6 +76,10 @@ struct ChatSheetView: View {
         .onChange(of: sessionState.chatDraftSavedSignal) { _, _ in
             consumeChatDraftSavedSignal()
         }
+        // Al volver la conexión, el chat se reactiva solo (decisión 42 de 2.3).
+        .onChange(of: NetworkMonitor.shared.isConnected) { _, connected in
+            Task { await viewModel.connectivityChanged(isConnected: connected) }
+        }
     }
 
     /// El chat con su propia barra: la X, el nombre y los ajustes de IA. En la hoja la X va a la izquierda, como
@@ -102,6 +109,13 @@ struct ChatSheetView: View {
                 emptyState
             } else {
                 messagesView
+            }
+
+            // Sin conexión a mitad de conversación: la caja se apaga, así que se dice por qué y qué hacer.
+            if viewModel.availability == .offline && !viewModel.messages.isEmpty {
+                offlineState
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .readableChatWidth()
             }
 
             if let error = viewModel.errorMessage {
@@ -233,10 +247,15 @@ struct ChatSheetView: View {
                 threadHeader
                     .padding(.top, DS.Spacing.md)
 
-                if viewModel.suggestionsFailed {
+                // Decisión 42 de 2.3: sin conexión se dice al abrir; con red y sin servidor, el mensaje de siempre.
+                switch viewModel.availability {
+                case .offline:
+                    ChatGreetingBubble(suggestions: [], isPreparing: false, onSelect: sendSuggestion)
+                    offlineState
+                case .serverDown:
                     ChatGreetingBubble(suggestions: [], isPreparing: false, onSelect: sendSuggestion)
                     unavailableState
-                } else {
+                case .available:
                     // UX 2.2 · L14-4: el saludo dice las dos cosas que hace, apuntar y preguntar.
                     ChatTwoUsesGreeting(
                         suggestions: Array(viewModel.suggestions.prefix(3)),
@@ -303,6 +322,46 @@ struct ChatSheetView: View {
         .frame(maxWidth: .infinity)
         .padding(.top, DS.Spacing.sm)
         .accessibilityIdentifier("chat_new_conversation")
+    }
+
+    /// Sin conexión (decisión 42 de 2.3, F1): el motivo real y una salida útil, apuntar a mano. Al volver la red el
+    /// chat se reactiva solo (`connectivityChanged`).
+    private var offlineState: some View {
+        VStack(spacing: DS.Spacing.md) {
+            Image(systemName: "wifi.slash")
+                .font(.system(size: 32)) // A11Y-DT: icono de estado, como el de «no disponible»
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+
+            VStack(spacing: DS.Spacing.xs) {
+                Text(L10n.Chat.errorOffline)
+                    .font(DS.Typography.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .accessibilityIdentifier("chat_offline_title")
+                Text(L10n.Chat.offlineBody)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("chat_offline_body")
+            }
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+
+            if let onManualEntry {
+                Button(action: onManualEntry) {
+                    Text(L10n.Transaction.new)
+                        .font(DS.Typography.body.weight(.semibold))
+                        .foregroundStyle(theme.onAccent)
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.vertical, DS.Spacing.sm)
+                        .background(Capsule().fill(theme.accent))
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("chat_offline_new_record")
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, DS.Spacing.lg)
+        .padding(.horizontal, DS.Spacing.lg)
     }
 
     private var unavailableState: some View {

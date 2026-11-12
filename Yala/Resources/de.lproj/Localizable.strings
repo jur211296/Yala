@@ -3319,6 +3319,7 @@
 "chat.emptySubtitle" = "Erkunde deine Finanzen mit Fragen";
 "chat.errorTimeout" = "Die Antwort hat zu lange gedauert. Versuch es nochmal.";
 "chat.errorOffline" = "Du brauchst eine Internetverbindung, um Yala KI zu nutzen.";
+"chat.offline.body" = "Yala KI ist wieder da, sobald du online bist. Bis dahin kannst du selbst eintragen.";
 "chat.errorGeneric" = "Etwas ist schiefgelaufen. Versuch es nochmal.";
 "chat.errorNoData" = "Keine Daten für diese Abfrage gefunden. Kannst du genauer sein?";
 "chat.dailyLimitReached" = "Du hast deine Fragen für heute aufgebraucht. Komm morgen wieder!";
@@ -7725,6 +7726,8 @@
 "uxpro.gate.title.iconGeneric" = "Dieses Symbol gehört zu Yala Pro";
 "uxpro.gate.body.manualStaysFree" = "Von Hand erfassen bleibt wie immer kostenlos.";
 "uxpro.gate.body.dataStaysFree" = "Deine Einträge und Statistiken bleiben wie immer kostenlos.";
+"uxpro.gate.offlinePrices" = "Offline: Den Preis siehst du, sobald du verbunden bist.";
+"uxpro.gate.offlineMeanwhile" = "Bis dahin, kostenlos";
 "uxpro.gate.body.themeStays" = "Dein jetziges Design bleibt, wie es ist.";
 "uxpro.gate.body.iconStays" = "Dein jetziges Symbol bleibt, wie es ist.";
 "uxpro.gate.body.cashFlowStays" = "Der normale Cashflow bleibt kostenlos.";

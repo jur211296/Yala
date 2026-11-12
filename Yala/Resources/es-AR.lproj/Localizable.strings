@@ -1181,6 +1181,7 @@
 "chat.errorGeneric" = "Algo salió mal. Intenta de nuevo.";
 "chat.errorMicPermission" = "Necesito permiso para usar el micrófono.";
 "chat.errorOffline" = "Necesitas conexión para usar Yala IA.";
+"chat.offline.body" = "Yala IA vuelve cuando tengas internet. Mientras, podés anotar a mano.";
 "chat.errorTimeout" = "La respuesta tardó demasiado. Intenta de nuevo.";
 "chat.errorTranscription" = "No pude transcribir el audio. Inténtalo de nuevo.";
 "chat.inputPlaceholder" = "Escribe tu pregunta...";
@@ -6978,6 +6979,8 @@
 "uxpro.gate.title.iconGeneric" = "Este icono es de Yala Pro";
 "uxpro.gate.body.manualStaysFree" = "Anotar a mano sigue gratis, como siempre.";
 "uxpro.gate.body.dataStaysFree" = "Tus registros y tus estadísticas siguen gratis, como siempre.";
+"uxpro.gate.offlinePrices" = "Sin conexión: vas a ver el precio cuando te conectes.";
+"uxpro.gate.offlineMeanwhile" = "Mientras tanto, gratis";
 "uxpro.gate.body.themeStays" = "Tu tema de ahora se queda como está.";
 "uxpro.gate.body.iconStays" = "Tu icono de ahora se queda como está.";
 "uxpro.gate.body.cashFlowStays" = "El flujo de caja de siempre sigue gratis.";

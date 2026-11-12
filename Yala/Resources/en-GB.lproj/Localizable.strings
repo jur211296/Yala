@@ -1107,6 +1107,7 @@
 "chat.errorMicPermission" = "I need permission to use the microphone.";
 "chat.errorNoData" = "No data found for that query. Can you be more specific?";
 "chat.errorOffline" = "You need an internet connection to use Yala AI.";
+"chat.offline.body" = "Yala AI comes back once you're online. Meanwhile, you can add records manually.";
 "chat.errorTimeout" = "Response took too long. Try again.";
 "chat.errorTranscription" = "I couldn't transcribe the audio. Try again.";
 "chat.greeting" = "Hi, I'm Yala AI. Tell me, what do you want to know about your finances?";
@@ -6969,6 +6970,8 @@
 "uxpro.gate.title.iconGeneric" = "This icon is part of Yala Pro";
 "uxpro.gate.body.manualStaysFree" = "Logging by hand stays free, as always.";
 "uxpro.gate.body.dataStaysFree" = "Your records and your statistics stay free, as always.";
+"uxpro.gate.offlinePrices" = "You're offline: you'll see the price once you're connected.";
+"uxpro.gate.offlineMeanwhile" = "Meanwhile, for free";
 "uxpro.gate.body.themeStays" = "Your current theme stays as it is.";
 "uxpro.gate.body.iconStays" = "Your current icon stays as it is.";
 "uxpro.gate.body.cashFlowStays" = "The regular cash flow stays free.";

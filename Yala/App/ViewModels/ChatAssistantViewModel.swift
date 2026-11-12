@@ -20,10 +20,16 @@ final class ChatAssistantViewModel {
     private(set) var suggestionsLoading: Bool = false
     private(set) var suggestionsFailed: Bool = false
 
-    /// El chat está disponible cuando el LLM responde correctamente. Si la primera carga
-    /// del día falla, el input bar y temas se deshabilitan globalmente hasta que el user
-    /// pulse "Reintentar".
-    var isAIAvailable: Bool { !suggestionsFailed }
+    /// Qué puede hacer Yala IA ahora (decisión 42 de 2.3): sin conexión lo dice al abrir; con red y sin servidor, el
+    /// mensaje de siempre. Lee `isConnected`, que en producción es `NetworkMonitor` (`@Observable`): el body que lo lea
+    /// se repinta al cambiar la red.
+    var availability: ChatAvailability {
+        ChatAvailabilityLogic.state(isConnected: isConnected(), suggestionsFailed: suggestionsFailed)
+    }
+
+    /// El chat está disponible con red y con el LLM respondiendo. Si la primera carga del día falla, o no hay
+    /// conexión, el input bar y temas se deshabilitan hasta que el user pulse "Reintentar" o vuelva la red.
+    var isAIAvailable: Bool { availability == .available }
     private(set) var isRecording = false
     private(set) var isTranscribing = false
     /// Lo que duró la última grabación; el panel de dictado lo enseña mientras transcribe.
@@ -56,12 +62,17 @@ final class ChatAssistantViewModel {
     /// ¿Existe ahora el camino ampliado de la nube? Inyectable para tests; producción lee el modo y el flag.
     private let cloudExploreAvailable: @MainActor () -> Bool
 
+    /// ¿Hay conexión? Inyectable para tests; producción lee `NetworkMonitor`.
+    private let isConnected: @MainActor () -> Bool
+
     init(
         defaults: UserDefaults = .standard,
-        cloudExploreAvailable: @escaping @MainActor () -> Bool = { @MainActor in YalaIAChatRouting.cloudExploreAvailableNow() }
+        cloudExploreAvailable: @escaping @MainActor () -> Bool = { @MainActor in YalaIAChatRouting.cloudExploreAvailableNow() },
+        isConnected: @escaping @MainActor () -> Bool = { @MainActor in NetworkMonitor.shared.isConnected }
     ) {
         self.defaults = defaults
         self.cloudExploreAvailable = cloudExploreAvailable
+        self.isConnected = isConnected
         self.contextHintDismissed = defaults.bool(forKey: "hasSeenChatContextHint")
     }
 
@@ -327,6 +338,16 @@ final class ChatAssistantViewModel {
         } else {
             suggestions = llmResults
         }
+    }
+
+    /// La red cambió con el chat abierto. Al volver, se reactiva solo: pide las sugerencias que falten y retira el
+    /// aviso de «sin conexión» de un envío anterior.
+    func connectivityChanged(isConnected: Bool) async {
+        guard isConnected else { return }
+        if errorMessage == L10n.Chat.errorOffline { errorMessage = nil }
+        guard ChatAvailabilityLogic.reloadsSuggestionsOnReconnect(
+            isConnected: isConnected, hasSuggestions: !suggestions.isEmpty) else { return }
+        await loadSuggestions()
     }
 
     // MARK: - Send Question
