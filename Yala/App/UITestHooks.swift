@@ -129,6 +129,10 @@ final class UITestHooks {
     /// mes» también el día 1 (card 30pv). Aditivo al perfil de `-uitest-seed`.
     nonisolated static var seedTodayRecord: Bool { hasArg("-uitest-seed-today-record") }
 
+    /// `-uitest-seed-records-search`: añade un «Almuerzo de trabajo» de 45,90 de hoy en la cuenta principal
+    /// (`DevSeedRecordsSearch`), para buscarlo por importe en Registros (decisión 14 de 2.3). Aditivo a `-uitest-seed`.
+    nonisolated static var seedRecordsSearch: Bool { hasArg("-uitest-seed-records-search") }
+
     /// `-uitest-seed-budget-states`: añade cuatro presupuestos de 1.000 con lo gastado exacto —al día, en el límite (90 %,
     /// con el cupo de hoy superado), justo al límite (100 %) y pasado (118 %)— (`DevSeedBudgetStates`). Aditivo al perfil
     /// de `-uitest-seed`.

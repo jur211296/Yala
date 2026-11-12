@@ -1349,6 +1349,10 @@ final class AppBootstrapper {
         if UITestHooks.seedTodayRecord {
             DevSeedTodayRecord.create(in: context)
         }
+        // Un «Almuerzo de trabajo» de 45,90: «Buscar en Registros» lo encuentra por su importe (decisión 14 de 2.3).
+        if UITestHooks.seedRecordsSearch {
+            DevSeedRecordsSearch.create(in: context)
+        }
         // Cuatro presupuestos con lo gastado exacto: al día, en el límite, justo al límite y pasado (decisión 23 de 2.3).
         if UITestHooks.seedBudgetStates {
             DevSeedBudgetStates.create(in: context)

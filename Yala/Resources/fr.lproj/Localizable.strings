@@ -8898,3 +8898,7 @@
 "groups.discard.openingBalanceTitle" = "Abandonner ce solde initial ?";
 "groups.expense.groupChangedNotice" = "Tu as changé de groupe : ce que tu as saisi reste ; qui a payé et la répartition repartent de zéro.";
 "statistics.categoryDetail.seeInRecords" = "Voir dans Enregistrements";
+
+/* Buscar en Registros (decisión 14 de 2.3) */
+"records.listSearch.placeholder" = "Rechercher dans les enregistrements";
+"records.listSearch.clear" = "Effacer la recherche";

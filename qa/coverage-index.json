@@ -3937,6 +3937,19 @@
       "coverage": "xcuitest:YalaUITests/CuentasCategoriasNecesariasLote09UITests + unit:YalaTests/CuentasCategoriasNecesariasLote09Tests | 2026-11-10 (lote 09 de mejoras necesarias 2.3, zona 39): sin monedas secundarias «Tipo de cambio» no enseña divisas que nadie eligió (solo «Ver todas»); la lista de cuentas escribe el saldo con la preferencia código/símbolo, como el Panel; la categoría nueva que quedó a medias al cerrarse la app (insertada sin nombre y guardada con su primera subcategoría) se borra al abrir Categorías o al arrancar (`NewCategoryDraftMark`, solo con la marca de este teléfono y sin registros); el formulario de etiqueta avisa del límite de 20 («20 de 20: el resto no cabe»), nombra el color («Seleccionado: Amarillo», también para VoiceOver) y su X pregunta con cambios. Cada XCUITest, rojo en la base y verde con el arreglo.",
       "owner": "",
       "lastVerified": "2026-11-10"
+    },
+    {
+      "area": "records-list-search",
+      "codeGlobs": [
+        "Yala/App/Logic/RecordsListSearchLogic.swift",
+        "Yala/App/Views/Records/Components/RecordsListSearchField.swift",
+        "Yala/Seed/DevSeedRecordsSearch.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/RecordsListSearchUITests#test_pullingDown_revealsTheField_andAnAmountFindsItsRecord | 2026-11-11 (decisión 14 de 2.3, B1): «Buscar en Registros» asoma al tirar de la lista hacia abajo, busca en nota, categoría, subcategoría, cuenta, etiquetas e importe (al céntimo con decimales; parte entera sin ellos) dentro del período y los filtros, y la cabecera suma lo encontrado. Es de Registros, no de la sesión: no filtra Panel ni Estadísticas. unit:YalaTests/RecordsListSearchTests (RecordsListSearchLogicTests, RecordsListSearchScreenTests).",
+      "owner": "",
+      "lastVerified": "2026-11-11"
     }
   ]
 }

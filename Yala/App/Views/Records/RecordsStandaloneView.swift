@@ -268,6 +268,8 @@ struct RecordsStandaloneView: View {
             // La fila de acciones bajo la cabecera, la misma de Estadísticas › Registros (card 97gc). Al bajar y perderla
             // de vista, la fila enciende `showFloatingActions` y salen los flotantes, como en Estadísticas (card rtyu).
             .environment(\.statsQuickActions, recordsQuickActions)
+            // «Buscar en Registros» (decisión 14 de 2.3): el campo que asoma al tirar de la lista es de esta pantalla.
+            .environment(\.offersRecordsListSearch, true)
             .overlay(alignment: .bottom) {
                 ZStack(alignment: .bottom) {
                     // Un contenedor propio para los flotantes: su animación no alcanza a la barra de selección.

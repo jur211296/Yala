@@ -8909,3 +8909,7 @@
 "groups.discard.openingBalanceTitle" = "この開始残高を破棄しますか？";
 "groups.expense.groupChangedNotice" = "グループを変更しました。入力した内容はそのままです。支払った人と分け方は最初からになります。";
 "statistics.categoryDetail.seeInRecords" = "記録で見る";
+
+/* Buscar en Registros (decisión 14 de 2.3) */
+"records.listSearch.placeholder" = "記録を検索";
+"records.listSearch.clear" = "検索をクリア";

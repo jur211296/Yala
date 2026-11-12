@@ -44,6 +44,8 @@ struct RecordsTabView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: DS.Spacing.md) {
+                // «Buscar en Registros» (decisión 14 de 2.3): asoma al tirar; solo en Registros, no en Estadísticas.
+                RecordsListSearchSlot(viewModel: viewModel, onQueryChange: onFilterChange)
                 StatsGuideSlot()
                 // L8-11: en modo duplicados el resumen del período («Neto del período · Sigue así») no dice nada de
                 // lo que se busca; lo sustituye el encabezado del modo, con el período para poder ampliar la búsqueda.
@@ -112,6 +114,7 @@ struct RecordsTabView: View {
         }
         .measuresShortContainer($isShortContainer)
         .scrollViewGlassEdges()
+        .revealsRecordsListSearchOnPull(viewModel)
         // El nombre del grupo en las filas que vienen de un gasto de grupo (L8-5).
         .providesGroupNames()
         .sheet(isPresented: $showCustomPeriodPicker) {
@@ -689,6 +692,10 @@ struct RecordsTabView: View {
         if viewModel.duplicateModeActive {
             // Modo duplicados sin resultados: el encabezado de arriba sigue visible para desactivar.
             duplicatesEmptyState
+        } else if viewModel.isSearchingList {
+            // Lo escrito en «Buscar en Registros» no casa con nada de lo que se ve: el vacío de Buscar.
+            YalaEmptyState.noResults()
+                .accessibilityIdentifier("records_list_search_empty")
         } else {
             YalaEmptyState(
                 icon: "list.bullet.rectangle",
