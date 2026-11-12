@@ -584,17 +584,27 @@ struct CategoriesPieWidget: View {
             }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(L10n.Accessibility.categoryPieChart)
-            // El recuento es el de la cabecera de Distribución (`DistributionCountLogic`), no los trozos: «Sin
-            // categoría» y «Otros» no son categorías (lote 07 de mejoras necesarias 2.3).
-            .accessibilityValue(safeData.isEmpty ? L10n.Accessibility.noData :
-                L10n.Accessibility.categoriesCount(DistributionCountLogic.categoryCount(categories), formattedCurrency(safeData.reduce(0) { $0 + $1.amount })))
+            // V1 de la decisión 26 de 2.3: el total y las partes con su porcentaje («Hogar 63 %…»), no «7 categorías».
+            // Las partes son los trozos que se ven, «Sin categoría» y «Otros» incluidos: suman el total.
+            .accessibilityValue(pieSpokenSummary(safeData))
+            .accessibilityChartDescriptor(pieChartDescriptor(safeData))
         }
     }
 
     // MARK: - Helpers
 
-    private func formattedCurrency(_ value: Double) -> String {
-        AmountPrivacy.text(appPreferences.currency(value, currencyCode: currencyCode), hidden: amountsHidden)
+    private var pieAmountFormat: ChartAmountFormat {
+        appPreferences.chartAmountFormat(currencyCode: currencyCode, hidden: amountsHidden)
+    }
+
+    private func pieSpokenSummary(_ data: [PieChartData]) -> String {
+        ChartSpokenSummary.parts(data.map { (name: $0.name, amount: $0.amount) }, format: pieAmountFormat)
+    }
+
+    /// V2 de la decisión 26: un trozo por categoría, para el rotor «Describir gráfica».
+    private func pieChartDescriptor(_ data: [PieChartData]) -> ChartAccessibilityDescriptor {
+        .parts(title: L10n.Accessibility.categoryPieChart, xTitle: L10n.Accessibility.Chart.axisCategory,
+               items: data.map { (name: $0.name, amount: $0.amount) }, format: pieAmountFormat)
     }
 
     private static let percentFormatter: NumberFormatter = {

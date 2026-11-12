@@ -8926,3 +8926,25 @@
 "records23.category.expand" = "Pokaż podkategorie: %@";
 "records23.category.collapse" = "Ukryj podkategorie: %@";
 "records23.band.removeAll" = "Usuń wszystko";
+
+/* Decisión 26 de la revisión 2.3: VoiceOver lee las gráficas con conclusión y cifras */
+"accessibility.chart.single %@ %@" = "%1$@: %2$@.";
+"accessibility.chart.trendRose %@ %@ %@" = "%1$@: wzrost z %2$@ do %3$@.";
+"accessibility.chart.trendFell %@ %@ %@" = "%1$@: spadek z %2$@ do %3$@.";
+"accessibility.chart.trendFlat %@ %@" = "%1$@: bez zmian, %2$@.";
+"accessibility.chart.highest %@ %@" = "Najwyższy punkt: %1$@, %2$@.";
+"accessibility.chart.lowest %@ %@" = "Najniższy punkt: %1$@, %2$@.";
+"accessibility.chart.comparisonMore %@ %@ %@" = "Teraz %1$@: o %2$@ więcej niż w poprzednim okresie w tym samym momencie, %3$@.";
+"accessibility.chart.comparisonLess %@ %@ %@" = "Teraz %1$@: o %2$@ mniej niż w poprzednim okresie w tym samym momencie, %3$@.";
+"accessibility.chart.comparisonSame %@" = "Teraz %@, tyle samo co w poprzednim okresie w tym samym momencie.";
+"accessibility.chart.comparisonNoPrevious %@" = "Teraz %@. Poprzedni okres nie ma danych do porównania.";
+"accessibility.chart.rest %@" = "reszta %@";
+"accessibility.chart.parts %@ %@" = "Razem %1$@: %2$@.";
+"accessibility.chart.cashFlowNet %@ %@ %@" = "%1$@. %2$@ %3$@.";
+"accessibility.chart.weekdayTop %@ %@" = "Dzień największych wydatków: %1$@, średnio %2$@.";
+"accessibility.chart.weekdayLow %@ %@" = "Dzień najmniejszych wydatków: %1$@, %2$@.";
+"accessibility.chart.weekdayTitle" = "Wydatki według dnia tygodnia";
+"accessibility.chart.axisDate" = "Data";
+"accessibility.chart.axisAmount" = "Kwota";
+"accessibility.chart.axisCategory" = "Kategoria";
+"accessibility.chart.axisWeekday" = "Dzień tygodnia";

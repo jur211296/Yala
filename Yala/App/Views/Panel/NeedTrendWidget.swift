@@ -418,6 +418,37 @@ struct NeedTrendChartView: View {
     let onSelectNeed: ((SubcategoryNeed) -> Void)?
     @State private var selectedDate: Date?
 
+    /// Las necesidades que la gráfica pinta, en el orden de la leyenda.
+    private var spokenNeeds: [SubcategoryNeed] {
+        [.essential, .priority, .optional, .unclassified].filter { NeedSelectionLogic.includes($0, in: selectedNeeds) }
+    }
+
+    private var amountFormat: ChartAmountFormat {
+        appPreferences.chartAmountFormat(currencyCode: currencyCode, hidden: amountsHidden)
+    }
+
+    private var spokenSummary: String {
+        ChartSpokenSummary.parts(
+            spokenNeeds.map { need in (name: need.displayName, amount: points.reduce(0) { $0 + $1.amount(for: need) }) },
+            format: amountFormat, shown: 4
+        )
+    }
+
+    private var chartDescriptor: ChartAccessibilityDescriptor {
+        ChartAccessibilityDescriptor(
+            title: L10n.Accessibility.needTrend,
+            summary: spokenSummary,
+            xTitle: L10n.Accessibility.Chart.axisDate,
+            xAxis: .dates(grouping: grouping),
+            yTitle: L10n.Accessibility.Chart.axisAmount,
+            series: spokenNeeds.map { need in
+                .init(name: need.displayName, isContinuous: false,
+                      points: points.map { .at($0.date, $0.amount(for: need)) })
+            },
+            format: amountFormat
+        )
+    }
+
     // Flattened data struct for the chart
     struct ChartItem: Identifiable {
         var id: String { "\(need.rawValue)-\(Int(date.timeIntervalSince1970))" }
@@ -537,8 +568,10 @@ struct NeedTrendChartView: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(L10n.Accessibility.needTrend)
-        .accessibilityValue(points.isEmpty ? L10n.Accessibility.noData :
-            L10n.Accessibility.periodsCount(points.count))
+        // Decisión 26 de la revisión 2.3: el total y cuánto es cada necesidad (V1), no «7 periodos», y una serie por
+        // necesidad en la descripción de gráficas de iOS (V2).
+        .accessibilityValue(spokenSummary)
+        .accessibilityChartDescriptor(chartDescriptor)
         .chartXScale(domain: dataXDomain)
         .chartYScale(domain: yDomain)
         .chartForegroundStyleScale([

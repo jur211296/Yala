@@ -22,9 +22,14 @@ struct PeriodComparisonChartView: View {
     let period: DetailPeriod
     let comparisonMode: ComparisonMode
     var showPreviousPeriod: Bool = true
+    /// Hasta dónde llega el período anterior: el día equivalente a hoy (decisión 29 de la revisión 2.3), igual que la
+    /// cifra de la tarjeta (`DateAlignmentHelper.alignedPreviousTotal(untilToday:)`). `nil`, hasta el último día con datos.
+    var untilToday: Date? = nil
 
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.amountsHidden) private var amountsHidden
     @State private var draggingDate: Date?  // For transient drag state
 
     // Filter points to only include those with actual data (non-zero values)
@@ -37,7 +42,8 @@ struct PeriodComparisonChartView: View {
     private var dataXDomain: ClosedRange<Date> {
         DateAlignmentHelper.currentDataDomain(
             currentPoints: currentPeriodPoints,
-            currentInterval: currentInterval
+            currentInterval: currentInterval,
+            untilToday: untilToday
         )
     }
 
@@ -51,7 +57,35 @@ struct PeriodComparisonChartView: View {
             currentInterval: currentInterval,
             previousInterval: previousInterval,
             period: period,
-            comparisonMode: comparisonMode
+            comparisonMode: comparisonMode,
+            untilToday: untilToday
+        )
+    }
+
+    /// V1 de la decisión 26: lo de ahora contra lo del anterior en el mismo punto, con cifras.
+    private var spokenSummary: String {
+        ChartSpokenSummary.comparison(
+            current: currentPeriodPoints.last?.value,
+            previous: clippedPreviousPoints.last?.value,
+            format: appPreferences.chartAmountFormat(currencyCode: currencyCode, hidden: amountsHidden)
+        )
+    }
+
+    /// V2 de la decisión 26: las dos curvas para el rotor «Describir gráfica» y el sonido.
+    private var chartDescriptor: ChartAccessibilityDescriptor {
+        ChartAccessibilityDescriptor(
+            title: L10n.Accessibility.periodComparison,
+            summary: spokenSummary,
+            xTitle: L10n.Accessibility.Chart.axisDate,
+            xAxis: .dates(grouping: grouping),
+            yTitle: trendType.displayName,
+            series: [
+                .init(name: L10n.Statistics.currentPeriod, isContinuous: true,
+                      points: currentPeriodPoints.map { .at($0.date, $0.value) }),
+                .init(name: L10n.Statistics.previousPeriod, isContinuous: true,
+                      points: clippedPreviousPoints.map { .at($0.date, $0.value) }),
+            ],
+            format: appPreferences.chartAmountFormat(currencyCode: currencyCode, hidden: amountsHidden)
         )
     }
 
@@ -235,8 +269,8 @@ struct PeriodComparisonChartView: View {
         .chartXSelection(value: $draggingDate)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(L10n.Accessibility.periodComparison)
-        .accessibilityValue(currentPeriodPoints.isEmpty ? L10n.Accessibility.noData :
-            L10n.Accessibility.periodComparisonValue(currentPeriodPoints.count))
+        .accessibilityValue(spokenSummary)
+        .accessibilityChartDescriptor(chartDescriptor)
         .frame(height: chartHeight)  // Respect prop (callsite controls height)
         .chartLegend(position: .top, alignment: .leading) {
             HStack(spacing: DS.Spacing.lg) {

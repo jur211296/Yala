@@ -8926,3 +8926,25 @@
 "records23.category.expand" = "显示%@的子类别";
 "records23.category.collapse" = "隐藏%@的子类别";
 "records23.band.removeAll" = "全部移除";
+
+/* Decisión 26 de la revisión 2.3: VoiceOver lee las gráficas con conclusión y cifras */
+"accessibility.chart.single %@ %@" = "%1$@：%2$@。";
+"accessibility.chart.trendRose %@ %@ %@" = "%1$@：从%2$@升至%3$@。";
+"accessibility.chart.trendFell %@ %@ %@" = "%1$@：从%2$@降至%3$@。";
+"accessibility.chart.trendFlat %@ %@" = "%1$@：保持在%2$@。";
+"accessibility.chart.highest %@ %@" = "最高点：%1$@（%2$@）。";
+"accessibility.chart.lowest %@ %@" = "最低点：%1$@（%2$@）。";
+"accessibility.chart.comparisonMore %@ %@ %@" = "目前%1$@：比上一期同一时点（%3$@）多%2$@。";
+"accessibility.chart.comparisonLess %@ %@ %@" = "目前%1$@：比上一期同一时点（%3$@）少%2$@。";
+"accessibility.chart.comparisonSame %@" = "目前%@，与上一期同一时点相同。";
+"accessibility.chart.comparisonNoPrevious %@" = "目前%@。上一期没有可比较的数据。";
+"accessibility.chart.rest %@" = "其余%@";
+"accessibility.chart.parts %@ %@" = "合计%1$@：%2$@。";
+"accessibility.chart.cashFlowNet %@ %@ %@" = "%1$@。%2$@ %3$@。";
+"accessibility.chart.weekdayTop %@ %@" = "支出最多的一天：%1$@，平均%2$@。";
+"accessibility.chart.weekdayLow %@ %@" = "支出最少的一天：%1$@，%2$@。";
+"accessibility.chart.weekdayTitle" = "按星期的支出";
+"accessibility.chart.axisDate" = "日期";
+"accessibility.chart.axisAmount" = "金额";
+"accessibility.chart.axisCategory" = "类别";
+"accessibility.chart.axisWeekday" = "星期";

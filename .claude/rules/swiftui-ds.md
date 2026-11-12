@@ -81,6 +81,25 @@ paths:
   plano. Una pasada nueva que cargue datos mira lo mismo. Pin: `StatisticsEntryFreshnessTests`,
   `StatisticsRespondsWithSkeletonUITests` (seam `-uitest-stats-calculation-delay-seconds`, solo alarga la espera).
 
+- **Las tres pestañas de Estadísticas comparan con el período anterior HASTA HOY (decisión 29 de la revisión 2.3,
+  2026-11-12).** La regla es la de Resumen, `DateAlignmentHelper.alignedPreviousInterval(asOf:)`: en un período en curso
+  el anterior llega al día equivalente a hoy; en uno cerrado, entero. Distribución y Tendencias cortaban en el último día
+  con movimientos, y la misma pantalla comparaba contra dos tramos. Una suma nueva del anterior en Estadísticas pasa por
+  `previousItemsUntilToday`, y una curva por `untilToday:`; el Panel sigue en el último día con datos (los parámetros son
+  opcionales a propósito). Las tres llevan `ComparisonModeSelector` sin `dataEnd`. En Tendencias va con
+  `.id(sessionState.comparisonMode)`: sin él, 2 de 3 corridas el toque cambiaba la tarjeta y los chips seguían en «el mes
+  anterior» (medido en el vídeo del XCUITest; causa sin aislar, Resumen y Distribución no se midieron igual). Pin:
+  `Estadisticas23ComparacionHastaHoyTests`, `Estadisticas23ComparacionVoiceOverUITests`.
+
+- **Una gráfica nueva dice su conclusión con cifras y publica su descripción de iOS (decisión 26 de la revisión 2.3,
+  2026-11-12).** `.accessibilityElement(children: .ignore)`, la etiqueta con el nombre, el valor con la frase de
+  `ChartSpokenSummary` (de dónde a dónde, el punto alto o bajo, las partes; nunca «7 puntos») y
+  `.accessibilityChartDescriptor(ChartAccessibilityDescriptor(...))`, que da a VoiceOver «Describir gráfica» y el sonido.
+  El descriptor tiene que importar **SwiftUI**: el protocolo que pide el modificador es el de SwiftUI, no el de
+  `Accessibility`, y con solo `Accessibility` el compilador dice que no conforma. Los montos van por
+  `appPreferences.chartAmountFormat` («Ocultar montos» incluido). Pin: `Estadisticas23GraficasVoiceOverTests` (las ocho
+  gráficas de Estadísticas y el Panel) y el árbol en `Estadisticas23ComparacionVoiceOverUITests`.
+
 - **Un `onChange(of:)` sobre un `@Observable` puede DORMIRSE tras volver a primer plano, y el que recalcula una pantalla
   no puede depender de él (medido el 2026-11-05, iOS 27.2, lote P3, ticket
   `panel-stayed-filtered-after-removing-the-account-chip`).** En `PanelShell`, tras ir a inicio y volver, SwiftUI dejó de
