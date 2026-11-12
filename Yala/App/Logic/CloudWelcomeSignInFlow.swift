@@ -15,6 +15,14 @@ import Foundation
 nonisolated enum CloudWelcomeSignInPhase: Equatable {
     /// Pantalla inicial con el botón SIWA.
     case intro
+    /// **Bienvenida 2.3 (Y23-02) · «Vamos a crear tu cuenta».** El acceso único de la vitrina verificó y ese acceso no
+    /// tiene cuenta: la hoja lleva el consentimiento de la nube DENTRO (los tres puntos de `CloudConsentView`), y
+    /// «Crear mi cuenta» es la aceptación explícita. Antes de crear, recuerda que con el otro proveedor sería otra cuenta
+    /// (el servidor de hoy no puede decir con cuál se creó: decisión A de Jürgen, 12-nov).
+    case createAccount
+    /// **Y23-02 · «¿Cargamos tus datos y entramos?»** El acceso único verificó que la cuenta existe: se confirma antes
+    /// de conducir el adopt. La sesión sigue viva; «Usar otra cuenta» la suelta.
+    case confirmLoad
     /// `exists` en vuelo tras SIWA exitoso.
     case checking
     /// A5 (alta born-cloud): el claim está en vuelo — la cuenta se está CREANDO, no verificando.

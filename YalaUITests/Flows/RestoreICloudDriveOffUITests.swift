@@ -20,22 +20,15 @@ final class RestoreICloudDriveOffUITests: XCTestCase {
 
     private func launch(driveOffWithAccount: Bool) -> XCUIApplication {
         let app = XCUIApplication()
-        var extra = ["-uitest-cloud-chooser"]
+        // Bienvenida 2.3 (Y23-03): Restaurar se alcanza por «Entrar con mi iCloud» con iCloud con datos.
+        var extra = [XCUIApplication.welcomeICloudHasDataArgument]
         if driveOffWithAccount { extra.append("-uitest-fake-icloud-drive-off") }
         app.launchForUITest(reset: true, skipOnboarding: false, seed: nil, extraArguments: extra)
         return app
     }
 
     private func openRestore(_ app: XCUIApplication) {
-        let heroCTA = app.buttons["welcome_hero_cta"]
-        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
-        heroCTA.tap()
-        let existingBranch = app.buttons["welcome_chooser_restore"]
-        XCTAssertTrue(existingBranch.waitForExistence(timeout: 10), "No apareció «Ya tengo una cuenta».")
-        existingBranch.tap()
-        let restoreCard = app.buttons["welcome_existing_restore"]
-        XCTAssertTrue(restoreCard.waitForExistence(timeout: 10), "No apareció «Restaurar desde iCloud».")
-        restoreCard.tap()
+        app.openWelcomeRestore()
     }
 
     /// Drive apagado con la sesión abierta: Restaurar busca (y aquí, sin datos, dice que no los encontró), no pide

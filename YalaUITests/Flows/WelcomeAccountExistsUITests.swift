@@ -8,7 +8,8 @@
 //  qué contesta `GET /account/exists`. El seam `-uitest-fake-account-exists <new|complete|groupsOnly|offline>` finge el
 //  inicio de sesión (sin SIWA, sin token, sin red) y la respuesta; qué pantalla sale lo decide la tabla de siempre.
 //
-//  Ruta: Hero → «Ya tengo una cuenta» → Apple → consentimiento → «Aceptar».
+//  Ruta: Hero → «Ya tengo una cuenta» → Apple → consentimiento → «Aceptar». Desde la bienvenida 2.3 (Y23-01) el primer
+//  nivel es la vitrina y «¡Hola de nuevo!» se alcanza por la puerta de Grupos → «¿Ya tienes una cuenta? Entra aquí».
 //
 
 import XCTest
@@ -33,12 +34,10 @@ final class WelcomeAccountExistsUITests: XCTestCase {
 
     /// Hasta el «Aceptar» del consentimiento, que es lo que arranca el inicio de sesión.
     private func signInFromExistingAccount(_ app: XCUIApplication) {
-        let heroCTA = app.buttons["welcome_hero_cta"]
-        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
-        heroCTA.tap()
-        let restoreBranch = app.buttons["welcome_chooser_restore"]
-        XCTAssertTrue(restoreBranch.waitForExistence(timeout: 10), "No apareció «Ya tengo una cuenta».")
-        restoreBranch.tap()
+        app.openWelcomeGroupsPaths()
+        let signIn = app.buttons["welcome_groups_sign_in"]
+        XCTAssertTrue(signIn.waitForExistence(timeout: 10), "No apareció «¿Ya tienes una cuenta? Entra aquí».")
+        signIn.tap()
         let appleCard = app.buttons["welcome_existing_cloud"]
         XCTAssertTrue(appleCard.waitForExistence(timeout: 10), "No apareció la card de Apple.")
         appleCard.tap()

@@ -36,6 +36,9 @@ struct WelcomeGroupsChooserView: View {
         case create
         /// Ya tiene el enlace: sale por el MISMO `Destination .inviteRecovery` de siempre.
         case join
+        /// Bienvenida 2.3 (Y23-06) · «Solo crear mi cuenta»: la misma rama que crear —puerta, consentimiento, inicio de
+        /// sesión— pero termina en Grupos vacío, preguntando solo el nombre (la salida de cerrar el primer grupo).
+        case accountOnly
     }
 
     /// **G3 lo cableó** (2026-08-11) y con él la card dejó de ser opcional: el handler NO sale del cover,
@@ -46,6 +49,8 @@ struct WelcomeGroupsChooserView: View {
     /// «próximamente»— era justo el camino muerto que el spec prohíbe.
     var onCreate: () -> Void
     var onJoin: () -> Void
+    /// Y23-06 · «Solo crear mi cuenta». `nil` = el camino no se pinta (lo pinta solo la bienvenida 2.3).
+    var onAccountOnly: (() -> Void)? = nil
     var onBack: () -> Void
     /// **La salida de quien ya tiene una cuenta de Grupos** (card 2osn, QA guiado de 2.1 del 19-oct). Los dos caminos
     /// de la tarjeta son empezar —crear o unirse con un enlace—, y quien ya usa Grupos no tenía por dónde entrar. Esta
@@ -61,10 +66,11 @@ struct WelcomeGroupsChooserView: View {
 
     /// Los dos caminos, en este orden. Fue un filtro sobre `onCreate != nil` mientras la rama organizador
     /// no existía (G2); con G3 cableado, `Path.allCases` ES la pantalla y no hay nada que ocultar.
-    private var visiblePaths: [Path] { Path.allCases }
+    private var visiblePaths: [Path] { Path.allCases.filter { $0 != .accountOnly || onAccountOnly != nil } }
 
     var body: some View {
-        WelcomeFormScreen(title: L10n.Welcome.Groups.title, subtitle: L10n.Welcome.Groups.subtitle) {
+        WelcomeFormScreen(title: L10n.Welcome.Groups.title,
+                          subtitle: visiblePaths.count == 3 ? L10n.Showcase.groupsSubtitleThree : L10n.Welcome.Groups.subtitle) {
             VStack(spacing: 0) {
                 ForEach(visiblePaths, id: \.self) { path in
                     if path != visiblePaths.first {
@@ -126,6 +132,7 @@ struct WelcomeGroupsChooserView: View {
         switch path {
         case .create: L10n.Welcome.Groups.createTitle
         case .join: L10n.Welcome.Groups.joinTitle
+        case .accountOnly: L10n.Showcase.groupsAccountOnlyTitle
         }
     }
 
@@ -133,6 +140,7 @@ struct WelcomeGroupsChooserView: View {
         switch path {
         case .create: L10n.Welcome.Groups.createBody
         case .join: L10n.Welcome.Groups.joinBody
+        case .accountOnly: L10n.Showcase.groupsAccountOnlyBody
         }
     }
 
@@ -140,6 +148,7 @@ struct WelcomeGroupsChooserView: View {
         switch path {
         case .create: "person.2.badge.plus"
         case .join: "link.circle.fill"
+        case .accountOnly: "person.crop.circle.badge.checkmark"
         }
     }
 
@@ -147,6 +156,7 @@ struct WelcomeGroupsChooserView: View {
         switch path {
         case .create: .essentialNeed
         case .join: .neonCyan
+        case .accountOnly: .electricIndigo
         }
     }
 
@@ -154,6 +164,7 @@ struct WelcomeGroupsChooserView: View {
         switch path {
         case .create: onCreate
         case .join: onJoin
+        case .accountOnly: onAccountOnly ?? {}
         }
     }
 

@@ -6,6 +6,9 @@
 //  la calculadora con un saldo de 1.000 o más enseñaba 0 y «Usar este saldo» dejaba la cuenta en 0. Este caso recorre
 //  el camino entero: saldo a mano de 1.800, «Calcúlalo conmigo», «Editar», y la calculadora tiene que decir 1.800.
 //  Con el prefijado de antes («1,800.00») el resultado sale en 0.
+//  **Desde la bienvenida 2.3 (Y23-04)** el alta ya no pregunta el saldo (la primera cuenta es el paso 1 de «Primeros
+//  pasos»); este paso vive en el onboarding de «Activar Yala completo», y por ahí entra
+//  (`launchIntoFullActivationOnboarding`).
 //  Convenciones: ver CLAUDE.md (sin sleeps, scheme Yala Dev).
 //
 
@@ -31,7 +34,7 @@ final class BalanceCalculatorReopenUITests: XCTestCase {
 
     func test_reopeningTheCalculator_keepsAThousandsBalance() {
         let app = XCUIApplication()
-        app.launchForUITest(skipOnboarding: false, seed: nil, onboarding: true)
+        app.launchIntoFullActivationOnboarding()
 
         // Paso 1: nombre.
         let nameField = app.textFields["onboarding_name_field"]
@@ -52,10 +55,12 @@ final class BalanceCalculatorReopenUITests: XCTestCase {
         single.tap()
         tapNext(app, "tipo de cuenta")
 
-        // Paso 4: divisa y nombre (vienen puestos).
-        XCTAssertTrue(app.descendants(matching: .any)["onboarding_currency_selector"].waitForExistence(timeout: 10),
-                      "No salió el paso de divisa y nombre.")
-        tapNext(app, "divisa")
+        // Paso 4: divisa y nombre (vienen puestos). En la activación el plan lo SALTA si el grupo o la preferencia ya
+        // dan una divisa (`OnboardingStepPlan`), así que se cruza solo si sale; el paso del saldo, abajo, es el que
+        // afirma que se llegó.
+        if app.descendants(matching: .any)["onboarding_currency_selector"].waitForExistence(timeout: 10) {
+            tapNext(app, "divisa")
+        }
 
         // Paso 5: saldo a mano, 1.800.
         let manual = app.buttons["onboarding_balance_manual"]
@@ -72,7 +77,9 @@ final class BalanceCalculatorReopenUITests: XCTestCase {
         let title = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH '¿Cuánto' OR label BEGINSWITH 'How much'"))
             .firstMatch
         XCTAssertTrue(title.waitForExistence(timeout: 5), "No salió el titular del paso del saldo.")
-        title.swipeDown()
+        // En la activación el onboarding va en una HOJA: arrastrar hacia abajo intenta cerrarla (regla de
+        // `testing.md`). Tocar el titular baja el teclado (`dismissKeyboardOnTap` del paso) sin tocar nada más.
+        title.tap()
         let keyboardGone = expectation(for: NSPredicate(format: "count == 0"), evaluatedWith: app.keyboards)
         wait(for: [keyboardGone], timeout: 5)
 

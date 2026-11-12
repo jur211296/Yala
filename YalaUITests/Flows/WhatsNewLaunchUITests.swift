@@ -73,8 +73,9 @@ final class WhatsNewLaunchUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchForUITest(skipOnboarding: false, seed: nil, onboarding: true, lastSeenAppVersion: "none")
         XCTAssertTrue(
-            app.textFields["onboarding_name_field"].waitForExistence(timeout: 60),
-            "No montó el onboarding."
+            // Bienvenida 2.3 (Y23-04): `-uitest-onboarding` monta la conversación de tres preguntas; su primera es el nombre.
+            app.textFields["welcome_chat_name_field"].waitForExistence(timeout: 60),
+            "No montó el alta."
         )
         app.terminate()
 

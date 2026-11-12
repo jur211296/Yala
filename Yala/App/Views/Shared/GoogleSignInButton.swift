@@ -36,6 +36,9 @@ struct GoogleSignInButton: View {
         case signIn
         /// Neutro: la misma pantalla sirve a las dos cosas (Ajustes/migración, Grupos).
         case `continue`
+        /// Bienvenida 2.3 (Y23-01): un único botón por proveedor que crea o entra según exista la cuenta, con el
+        /// texto exacto de la ficha, «Entrar con Google».
+        case enter
     }
 
     let variant: Variant
@@ -47,6 +50,7 @@ struct GoogleSignInButton: View {
         case .signUp:    L10n.Auth.googleButtonSignUp
         case .signIn:    L10n.Auth.googleButtonSignIn
         case .continue:  L10n.Auth.googleButton
+        case .enter:     L10n.Showcase.enterWithGoogle
         }
     }
 

@@ -20,13 +20,9 @@ final class InviteRecoveryPasteVisibleUITests: XCTestCase {
         let link = "https://yala-app.pe/invite?g=11111111-2222-3333-4444-555555555555&t=uitest-token-largo-para-ocupar-"
             + "varias-lineas-del-campo-de-texto-como-un-enlace-real&n=DepaMirafloresYAmigos"
         let app = XCUIApplication()
-        app.launchForUITest(skipOnboarding: false, seed: nil)
-        let hero = app.buttons["welcome_hero_cta"]
-        XCTAssertTrue(hero.waitForExistence(timeout: 30))
-        hero.tap()
-        let inviteBranch = app.buttons["welcome_chooser_invite"]
-        XCTAssertTrue(inviteBranch.waitForExistence(timeout: 10))
-        inviteBranch.tap()
+        // Bienvenida 2.3 (Y23-06): «Vengo por un grupo» es la puerta de Grupos de la vitrina, con un proveedor.
+        app.launchForUITest(skipOnboarding: false, seed: nil, extraArguments: [XCUIApplication.welcomeProvidersArgument])
+        app.openWelcomeGroupsPaths()
         let joinCard = app.buttons["welcome_groups_join"]
         XCTAssertTrue(joinCard.waitForExistence(timeout: 10))
         joinCard.tap()

@@ -401,9 +401,10 @@ struct NeutralMountWiringTests {
         // `leaveWelcome`, nunca invocado a pelo. `onSelectGroupsOrganizer()` (G3) es el más reciente y el
         // único que además pasa por una PUERTA antes del portal — que la puerta exista no lo exime: sin
         // esta fila, cablear la card de crear directo al callback saldría del cover sin declarar destino.
+        // Bienvenida 2.3: el organizador lleva su camino y su proveedor, y el acceso único de la vitrina es la séptima.
         for exit in ["onSelectPrivateAccount()", "onSelectCloudAccount()", "onSelectExistingOption(option)",
                      "onBeaconRoutesToCloudSignIn(provider)", "onSelectBranch(",
-                     "onSelectGroupsOrganizer()"] {
+                     "onSelectGroupsOrganizer(", "onSelectUnifiedAccess(provider)"] {
             let occurrences = code.components(separatedBy: exit).count - 1
             #expect(occurrences >= 1, "salida no encontrada: \(exit) (¿renombrada?)")
             for range in code.ranges(of: exit) {

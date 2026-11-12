@@ -124,7 +124,7 @@ struct WelcomeCoverContentLogicTests {
     @Test("el contenido se funde sobre el degradado quieto, con la duración de la lógica")
     func crossfadeOverAStillGradient() throws {
         let cover = Self.flat(try Self.body(of: "private var welcomeCover: some View {", in: try Self.modifier))
-        #expect(cover.hasPrefix("ZStack { LinearGradient(colors: DS.Gradients.heroIndigoBlack, startPoint: .top, endPoint: .bottom) .ignoresSafeArea() switch displayedWelcomeCoverContent {"),
+        #expect(cover.hasPrefix("ZStack { WelcomeF2Background() .ignoresSafeArea() switch displayedWelcomeCoverContent {"),
                 "el degradado tiene que ir DEBAJO de las dos pantallas: \(cover)")
         // El `zIndex` es lo que deja ver fundirse a la pantalla que SALE (card feer): sin él, en el `ZStack` se pinta por
         // debajo del degradado opaco y desaparece en un fotograma.
