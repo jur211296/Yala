@@ -8908,3 +8908,4 @@
 "groups.discard.paymentTitle" = "Deze betaling weggooien?";
 "groups.discard.openingBalanceTitle" = "Dit beginsaldo weggooien?";
 "groups.expense.groupChangedNotice" = "Je hebt van groep gewisseld: wat je hebt ingevuld blijft staan; wie betaalde en de verdeling beginnen opnieuw.";
+"statistics.categoryDetail.seeInRecords" = "Bekijken in Boekingen";

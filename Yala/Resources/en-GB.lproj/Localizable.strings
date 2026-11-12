@@ -8140,3 +8140,4 @@
 "groups.discard.paymentTitle" = "Discard this payment?";
 "groups.discard.openingBalanceTitle" = "Discard this opening balance?";
 "groups.expense.groupChangedNotice" = "You changed groups: what you typed stays; who paid and the split start over.";
+"statistics.categoryDetail.seeInRecords" = "View in Records";

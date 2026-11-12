@@ -79,6 +79,12 @@ las dos listas, ya disjuntas).
   2026-10-26). Sin nada oculto el toque no pregunta: ve solo lo tocado, o quita el filtro si ya se veía solo
   (`SegmentFilterChoiceLogic.directAction`). Un gesto nuevo que escriba el filtro pasa por ese host, no por un toggle
   propio: así hereda las dos ramas.
+- **En Distribución, tocar una CATEGORÍA no filtra: abre su detalle** (decisión 25 de la revisión 2.3, B1, 9-nov;
+  reabre a propósito lo del 25-26 oct). Fila, tarta y Sankey empujan `StatisticsCategoryDetailView`, que lee los
+  movimientos del último cálculo de la pestaña (`CategoryDetailSource`) y no escribe nada: «atrás» deja la sesión como
+  estaba. Su único gesto que filtra es «Ver en Registros» («Solo <categoría>» + chip Registros). Subcategorías,
+  etiquetas y necesidades siguen preguntando; en el Panel la tarta de categorías también. Un toque nuevo de categoría
+  en Estadísticas abre el detalle, no el host. Pin: `StatisticsCategoryDetailUITests`.
 - **Los filtros de sesión no se guardan en disco** (medido el 2026-10-25): no hay migración de estado. El asistente de
   Exportar conserva su propio «Mostrar solo / Ocultar» local, a propósito.
 - **Borrar un valor lo quita del filtro** (2026-10-28): categorías, subcategorías y etiquetas pasan por

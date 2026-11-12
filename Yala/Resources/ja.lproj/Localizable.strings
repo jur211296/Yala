@@ -8908,3 +8908,4 @@
 "groups.discard.paymentTitle" = "この支払いを破棄しますか？";
 "groups.discard.openingBalanceTitle" = "この開始残高を破棄しますか？";
 "groups.expense.groupChangedNotice" = "グループを変更しました。入力した内容はそのままです。支払った人と分け方は最初からになります。";
+"statistics.categoryDetail.seeInRecords" = "記録で見る";

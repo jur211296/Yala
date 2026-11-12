@@ -8897,3 +8897,4 @@
 "groups.discard.paymentTitle" = "Abandonner ce paiement ?";
 "groups.discard.openingBalanceTitle" = "Abandonner ce solde initial ?";
 "groups.expense.groupChangedNotice" = "Tu as changé de groupe : ce que tu as saisi reste ; qui a payé et la répartition repartent de zéro.";
+"statistics.categoryDetail.seeInRecords" = "Voir dans Enregistrements";

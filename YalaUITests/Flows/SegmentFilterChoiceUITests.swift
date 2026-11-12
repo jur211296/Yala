@@ -7,7 +7,9 @@
 //  conviven en la barra. Hasta ese día el toque escribía en el modo activo sin preguntar.
 //  Desde el 2026-10-26 (decisión de Jürgen, card kjzs) solo pregunta si hay algo oculto: sin nada oculto, tocar es «Ver
 //  solo X» directo. Para tener algo oculto sin el diálogo, Filtros → «Ocultar» → una cuenta.
-//  Entra por deeplink a Distribución (modo Detalle, la lista de categorías). Seed `realista`.
+//  Desde el 2026-11-11 (decisión 25 de la revisión 2.3) tocar una CATEGORÍA abre su detalle y no pregunta: la pregunta
+//  se prueba con las subcategorías, que siguen filtrando (el detalle lo fija `StatisticsCategoryDetailUITests`).
+//  Entra por deeplink a Distribución (modo Detalle) y pasa la lista a subcategorías. Seed `realista`.
 //
 
 import XCTest
@@ -25,17 +27,32 @@ final class SegmentFilterChoiceUITests: XCTestCase {
         return app
     }
 
-    /// Toca la primera fila que pregunta. «Sin categoría» no se puede filtrar y no pregunta: si está arriba, se salta.
+    /// Pasa la lista de Distribución a subcategorías (el selector junto a su título).
+    private func showSubcategoryList(_ app: XCUIApplication) {
+        XCTAssertTrue(app.buttons.matching(identifier: "distribution_category_row").firstMatch.waitForExistence(timeout: 20),
+                      "No apareció la lista de categorías de Distribución.")
+        let selector = app.buttons["Subcategorías"].firstMatch
+        XCTAssertTrue(selector.waitForHittable(timeout: 5), "No está el selector de la lista de subcategorías.")
+        selector.tap()
+        XCTAssertTrue(subcategoryRows(app).firstMatch.waitForExistence(timeout: 10),
+                      "La lista no pasó a subcategorías.")
+    }
+
+    private func subcategoryRows(_ app: XCUIApplication) -> XCUIElementQuery {
+        app.buttons.matching(identifier: "distribution_subcategory_row")
+    }
+
+    /// Toca la primera fila que pregunta. «Sin subcategoría» no se puede filtrar y no pregunta: si está arriba, se salta.
     private func tapFirstFilterableCategory(_ app: XCUIApplication) {
-        let rows = app.buttons.matching(identifier: "distribution_category_row")
-        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 20), "No apareció la lista de categorías de Distribución.")
+        let rows = subcategoryRows(app)
+        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 20), "No apareció la lista de subcategorías de Distribución.")
         for index in 0..<min(rows.count, 4) {
             let row = rows.element(boundBy: index)
             XCTAssertTrue(row.waitForHittable(timeout: 5), "La fila \(index) no es alcanzable.")
             row.tap()
             if app.buttons["segment_filter_cancel"].waitForExistence(timeout: 3) { return }
         }
-        XCTFail("Ninguna de las primeras categorías preguntó «Ver solo / Ocultar».")
+        XCTFail("Ninguna de las primeras subcategorías preguntó «Ver solo / Ocultar».")
     }
 
     private func appliedChips(_ app: XCUIApplication) -> XCUIElementQuery {
@@ -63,19 +80,18 @@ final class SegmentFilterChoiceUITests: XCTestCase {
         return appliedChips(app).allElementsBoundByIndex.map(\.label)
     }
 
-    /// Sin nada oculto, tocar una categoría la ve sola sin preguntar. Tocar otra vez lo que se ve solo lo quita: eso lo
-    /// fijan `SegmentFilterChoiceLogicTests` y el source-scan del host, porque aquí, al ver solo una categoría, la lista
-    /// pasa a sus subcategorías y la fila ya no está.
+    /// Sin nada oculto, tocar una subcategoría la ve sola sin preguntar. Tocar otra vez lo que se ve solo lo quita: eso
+    /// lo fijan `SegmentFilterChoiceLogicTests` y el source-scan del host.
     func test_withNothingHidden_tapShowsOnlyWithoutAsking() {
         let app = launchOnDistribution()
-        let rows = app.buttons.matching(identifier: "distribution_category_row")
-        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 20), "No apareció la lista de categorías de Distribución.")
+        showSubcategoryList(app)
+        let rows = subcategoryRows(app)
 
         func onlyChip(for name: String) -> Bool {
             appliedChips(app).allElementsBoundByIndex.contains { $0.label.contains(name) && $0.label != name }
         }
 
-        // «Sin categoría» no se puede filtrar: la primera fila que deja su cápsula «Solo …» es la que vale.
+        // «Sin subcategoría» no se puede filtrar: la primera fila que deja su cápsula «Solo …» es la que vale.
         for index in 0..<min(rows.count, 4) {
             let row = rows.element(boundBy: index)
             XCTAssertTrue(row.waitForHittable(timeout: 5), "La fila \(index) no es alcanzable.")
@@ -89,20 +105,21 @@ final class SegmentFilterChoiceUITests: XCTestCase {
             }
             if !name.isEmpty, onlyChip(for: name) { return }
         }
-        XCTFail("Ninguna de las primeras categorías dejó su cápsula «Solo …»: "
+        XCTFail("Ninguna de las primeras subcategorías dejó su cápsula «Solo …»: "
                 + "\(appliedChips(app).allElementsBoundByIndex.map(\.label))")
     }
 
-    /// Con algo oculto, tocar una categoría pregunta; «Cancelar» se ve y deja el filtro como estaba.
+    /// Con algo oculto, tocar una subcategoría pregunta; «Cancelar» se ve y deja el filtro como estaba.
     func test_withSomethingHidden_tapAsks_andCancelLeavesTheFilterAsIs() {
         let app = launchOnDistribution()
         let before = hideSavingsAccountFromFilters(app)
+        showSubcategoryList(app)
         tapFirstFilterableCategory(app)
 
         let showOnly = app.buttons["segment_filter_show_only"]
         let hide = app.buttons["segment_filter_hide"]
         let cancel = app.buttons["segment_filter_cancel"]
-        XCTAssertTrue(showOnly.waitForExistence(timeout: 5), "Tocar la categoría no preguntó «Ver solo».")
+        XCTAssertTrue(showOnly.waitForExistence(timeout: 5), "Tocar la subcategoría no preguntó «Ver solo».")
         XCTAssertTrue(hide.exists, "La pregunta no ofrece «Ocultar».")
         XCTAssertTrue(cancel.exists, "La pregunta no tiene «Cancelar» a la vista.")
         XCTAssertTrue(app.staticTexts["segment_filter_title"].exists, "La pregunta no dice qué segmento es.")
@@ -113,10 +130,11 @@ final class SegmentFilterChoiceUITests: XCTestCase {
         XCTAssertEqual(after, before, "«Cancelar» cambió los filtros: \(before) → \(after)")
     }
 
-    /// Con algo oculto, «Ocultar» una categoría y «Ver solo» otra: la barra enseña «Sin …» y «Solo …» a la vez.
+    /// Con algo oculto, «Ocultar» una subcategoría y «Ver solo» otra: la barra enseña «Sin …» y «Solo …» a la vez.
     func test_hideOne_thenShowOnlyAnother_bothInTheBar() {
         let app = launchOnDistribution()
         let hiddenAccount = hideSavingsAccountFromFilters(app)
+        showSubcategoryList(app)
 
         tapFirstFilterableCategory(app)
         let hide = app.buttons["segment_filter_hide"]
@@ -136,9 +154,9 @@ final class SegmentFilterChoiceUITests: XCTestCase {
         // La oculta ya no está en la lista: la primera fila es otra categoría.
         tapFirstFilterableCategory(app)
         let showOnly = app.buttons["segment_filter_show_only"]
-        XCTAssertTrue(showOnly.waitForExistence(timeout: 5), "La segunda categoría no preguntó.")
+        XCTAssertTrue(showOnly.waitForExistence(timeout: 5), "La segunda subcategoría no preguntó.")
         let shownName = app.staticTexts["segment_filter_title"].label.components(separatedBy: " · ").first ?? ""
-        XCTAssertNotEqual(shownName, hiddenName, "La categoría oculta seguía en la lista.")
+        XCTAssertNotEqual(shownName, hiddenName, "La subcategoría oculta seguía en la lista.")
         showOnly.tap()
         XCTAssertTrue(showOnly.waitForNonExistence(timeout: 5), "«Ver solo» no cerró la pregunta.")
 
