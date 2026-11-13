@@ -92,7 +92,9 @@ export function guardEgress(env: Env, base: Fetcher): Fetcher {
   return async (input, init) => {
     const { method, url } = describe(input, init);
     if (!isAllowedEgress(env, method, url)) throw new EgressDenied(method, `${url.origin}${url.pathname}`);
-    return base(input, init);
+    // Sin seguir redirecciones: un 307/308 reenviaría el cuerpo (refresh, código, secreto) a otro sitio sin pasar por
+    // la lista. Quien llama trata un 3xx como fallo, salvo `GET /oauth/authorize`, que espera justo ese 302.
+    return base(input, { ...init, redirect: "manual" });
   };
 }
 

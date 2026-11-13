@@ -12,7 +12,8 @@ import type { Env, RateLimiter } from "../src/worker/env";
 import { makeReaderVerifier } from "../src/worker/verify";
 import { TURNSTILE_VERIFY_URL } from "../src/worker/egress";
 
-export const SB_URL = "https://abcdefghijklmnopqrst.supabase.co";
+// El proyecto de staging: un Worker con ENVIRONMENT=staging solo atiende contra él (config.ts).
+export const SB_URL = "https://fostjbbwstyuunmmefuk.supabase.co";
 export const BASE = "https://web.yala.test";
 export const WEB_CLIENT = "0f0e0d0c-0b0a-4908-8706-050403020100";
 export const WEB_SECRET = "secreto-de-la-web";
@@ -91,6 +92,8 @@ export class FakeSupabase {
   alreadyConsented = false;
   failRefresh: { status: number; code: string } | null = null;
   userDown = false;
+  /** `GET /user` responde este 4xx sin código de GoTrue (un proxy o un WAF delante). */
+  userOpaque4xx: number | null = null;
   turnstileOk = true;
   accessTtl = 3600;
   now = () => Math.floor(Date.now() / 1000);
@@ -258,6 +261,7 @@ export class FakeSupabase {
 
     if (method === "GET" && path === "/auth/v1/user") {
       if (this.userDown) return new Response("caído", { status: 502 });
+      if (this.userOpaque4xx) return new Response("<html>bloqueado</html>", { status: this.userOpaque4xx });
       const raw = headers.get("Authorization")?.replace(/^Bearer /, "") ?? "";
       const claims = JSON.parse(atob((raw.split(".")[1] ?? "").replace(/-/g, "+").replace(/_/g, "/")) || "{}") as { exp?: number; session_id?: string };
       if ((claims.exp ?? 0) <= this.now()) return Response.json({ error_code: "bad_jwt" }, { status: 401 });
@@ -293,7 +297,11 @@ export function makeEnv(overrides: Partial<Env> = {}): Env {
   };
 }
 
-/** Un navegador mínimo: guarda las cookies que el Worker pone y las devuelve, respetando `Path` y `Max-Age=0`. */
+/**
+ * Un navegador mínimo: guarda las cookies que el Worker pone y las devuelve, respetando `Path` y `Max-Age=0`, y aplica
+ * la regla del prefijo `__Host-` como Chrome, Firefox y Safari: sin `Secure`, con `Domain` o con otra ruta que `/`,
+ * la cookie se descarta en silencio (así se perdía la del login, con `Path=/auth`).
+ */
 export class Browser {
   readonly jar = new Map<string, { value: string; path: string; maxAge: number | null }>();
   constructor(
@@ -318,6 +326,8 @@ export class Browser {
       body = new URLSearchParams(init.form).toString();
       headers.set("Content-Type", "application/x-www-form-urlencoded");
       if (!headers.has("Origin")) headers.set("Origin", this.origin);
+      // Un navegador manda siempre la longitud de un formulario; el Worker rechaza los que no la traen.
+      headers.set("Content-Length", String(new TextEncoder().encode(body as string).length));
     }
     const res = await this.call(new Request(url, { method: init.method ?? (init.form ? "POST" : "GET"), headers, body, redirect: "manual" }));
     for (const c of res.headers.getSetCookie()) {
@@ -328,6 +338,7 @@ export class Browser {
       const path = attrs.find((a) => a.startsWith("Path="))?.slice(5) ?? "/";
       const maxAgeAttr = attrs.find((a) => a.startsWith("Max-Age="));
       const maxAge = maxAgeAttr ? Number(maxAgeAttr.slice(8)) : null;
+      if (name.startsWith("__Host-") && (path !== "/" || !attrs.includes("Secure") || attrs.some((a) => a.startsWith("Domain=")))) continue;
       if (maxAge === 0) this.jar.delete(name);
       else this.jar.set(name, { value, path, maxAge });
     }

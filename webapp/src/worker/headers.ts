@@ -4,14 +4,21 @@
  * - CSP cerrada: scripts solo de aquí y de Turnstile; ningún `fetch` fuera de este origen; no se puede incrustar en
  *   otra página (`frame-ancestors 'none'`: incrustar en Claude es del lote 5). `form-action` deja que el formulario de
  *   entrar siga la redirección a Supabase y de ahí a Apple o Google.
- * - `Referrer-Policy: no-referrer`: la vuelta del login lleva un código en la URL, y no debe viajar a ningún sitio.
+ * - `Referrer-Policy: same-origin`: la vuelta del login lleva un código en la URL, y no viaja a ningún otro sitio.
+ *   NO `no-referrer`: con ella el navegador manda `Origin: null` en los POST de formulario (estándar Fetch) y el control
+ *   de `Origin` de `app.ts` rechazaría entrar y salir.
  * - `Cache-Control: no-store` en todo menos los ficheros con huella de `/assets/`: ninguna página ni respuesta con datos
  *   se guarda en la caché del navegador.
  */
 import type { Env } from "./env";
 
 export function securityHeaders(env: Env, pathname: string): Record<string, string> {
-  const supabase = new URL(env.SUPABASE_URL).origin;
+  let supabase = "";
+  try {
+    supabase = new URL(env.SUPABASE_URL).origin;
+  } catch {
+    // Configuración rota: el Worker ya responde 503; las cabeceras salen igual, sin Supabase en form-action.
+  }
   const csp = [
     "default-src 'none'",
     "script-src 'self' https://challenges.cloudflare.com",
@@ -27,7 +34,7 @@ export function securityHeaders(env: Env, pathname: string): Record<string, stri
   ].join("; ");
   return {
     "Content-Security-Policy": csp,
-    "Referrer-Policy": "no-referrer",
+    "Referrer-Policy": "same-origin",
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
     "Cross-Origin-Opener-Policy": "same-origin",

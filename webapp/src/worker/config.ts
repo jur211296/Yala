@@ -68,6 +68,12 @@ export function configProblems(env: Partial<Env>): string[] {
   if (!env.WEB_KV) problems.push("falta el KV WEB_KV");
   if (!env.ASSETS) problems.push("falta el binding ASSETS");
 
+  // Staging tiene el login con contraseña y acepta las claves de prueba de Turnstile: solo vale contra el Supabase de
+  // staging. Un Worker de producción copiado a mano con ENVIRONMENT=staging no atiende.
+  if (environment === "staging" && supabaseUrl && SUPABASE_HOST_RE.exec(supabaseUrl.hostname)?.[1] !== STAGING_SUPABASE_REF) {
+    problems.push("ENVIRONMENT es staging pero SUPABASE_URL no es el proyecto de staging");
+  }
+
   if (environment === "production") {
     const ref = supabaseUrl ? SUPABASE_HOST_RE.exec(supabaseUrl.hostname)?.[1] : undefined;
     if (supabaseUrl && !ref) problems.push("SUPABASE_URL no es un proyecto <ref>.supabase.co");

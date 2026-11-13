@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { BASE, FakeLimiter, SB_URL, WEB_CLIENT, makeEnv, world } from "./fakes";
 import { configProblems } from "../src/worker/config";
-import { isAllowedEgress, TURNSTILE_VERIFY_URL } from "../src/worker/egress";
+import { guardEgress, isAllowedEgress, TURNSTILE_VERIFY_URL } from "../src/worker/egress";
 import type { Env } from "../src/worker/env";
 
 function unsignedJwt(payload: Record<string, unknown>): string {
@@ -13,7 +13,8 @@ function productionEnv(overrides: Partial<Env> = {}): Env {
   return makeEnv({
     ENVIRONMENT: "production",
     PUBLIC_URL: "https://app.yala.test",
-    SUPABASE_ANON_KEY: unsignedJwt({ ref: new URL(SB_URL).hostname.split(".")[0], role: "anon" }),
+    SUPABASE_URL: "https://abcdefghijklmnopqrst.supabase.co",
+    SUPABASE_ANON_KEY: unsignedJwt({ ref: "abcdefghijklmnopqrst", role: "anon" }),
     TURNSTILE_SITE_KEY: "0x4AAAAAAA-real",
     TURNSTILE_SECRET_KEY: "0x4AAAAAAA-secreto-real",
     RL_AUTH: new FakeLimiter(),
@@ -41,6 +42,12 @@ describe("configuración: mal configurado = 503 a todo", () => {
     expect(p).toContain("faltan los límites de peticiones (RL_AUTH, RL_API)");
   });
 
+  it("un Worker con ENVIRONMENT=staging contra otro Supabase no atiende (no abre la contraseña contra producción)", () => {
+    expect(configProblems(makeEnv({ SUPABASE_URL: "https://abcdefghijklmnopqrst.supabase.co" }))).toContain(
+      "ENVIRONMENT es staging pero SUPABASE_URL no es el proyecto de staging",
+    );
+  });
+
   it("un id de cliente PENDIENTE o sin secreto deja el Worker en 503", async () => {
     const w = await world({ SUPABASE_OAUTH_CLIENT_ID: "PENDIENTE", SUPABASE_OAUTH_CLIENT_SECRET: "" });
     const res = await w.call(new Request(`${BASE}/`));
@@ -64,7 +71,7 @@ describe("la ruta de contraseña existe solo en staging", () => {
     w.supabase.addUser({ email: "a@yala.test", password: "secreta" });
     const res = await w.browser.request("/auth/password", { form: { email: "a@yala.test", password: "secreta" }, headers: { Origin: env.PUBLIC_URL } });
     expect(res.status).toBe(404);
-    expect(isAllowedEgress(env, "POST", new URL(`${SB_URL}/auth/v1/token?grant_type=password`))).toBe(false);
+    expect(isAllowedEgress(env, "POST", new URL(`${env.SUPABASE_URL}/auth/v1/token?grant_type=password`))).toBe(false);
     expect(isAllowedEgress(makeEnv(), "POST", new URL(`${SB_URL}/auth/v1/token?grant_type=password`))).toBe(true);
   });
 });
@@ -94,6 +101,17 @@ describe("lista cerrada de salidas", () => {
     expect(ok("GET", authorize(WEB_CLIENT, "https://malo.test/cb"))).toBe(false);
   });
 
+  it("no sigue redirecciones: un 307 no puede llevarse el cuerpo fuera de la lista", async () => {
+    const seen: (RequestRedirect | undefined)[] = [];
+    const guarded = guardEgress(env, async (_i, init) => {
+      seen.push(init?.redirect);
+      return new Response(null, { status: 307, headers: { Location: "https://malo.test/robar" } });
+    });
+    const res = await guarded(`${SB_URL}/auth/v1/oauth/token`, { method: "POST", body: "refresh_token=x" });
+    expect(seen).toEqual(["manual"]);
+    expect(res.status).toBe(307);
+  });
+
   it("solo Supabase de su configuración y la verificación de Turnstile", () => {
     expect(ok("POST", TURNSTILE_VERIFY_URL)).toBe(true);
     expect(ok("GET", TURNSTILE_VERIFY_URL)).toBe(false);
@@ -114,7 +132,9 @@ describe("cabeceras de seguridad en todo, página incluida", () => {
     expect(csp).toContain("connect-src 'self'");
     expect(csp).toContain("frame-ancestors 'none'");
     expect(res.headers.get("Cache-Control")).toBe("no-store");
-    expect(res.headers.get("Referrer-Policy")).toBe("no-referrer");
+    // `same-origin` y NO `no-referrer`: con `no-referrer` el navegador manda `Origin: null` en los POST de formulario
+    // (estándar Fetch) y el control de Origin rechazaría entrar y salir. Lo cazó la revisión del 13-nov.
+    expect(res.headers.get("Referrer-Policy")).toBe("same-origin");
     expect(res.headers.get("X-Frame-Options")).toBe("DENY");
   });
 
@@ -131,6 +151,30 @@ describe("cabeceras de seguridad en todo, página incluida", () => {
   it("/api/config da la clave pública de Turnstile y nada más", async () => {
     const w = await world();
     expect(await (await w.call(new Request(`${BASE}/api/config`))).json()).toEqual({ turnstileSiteKey: "1x00000000000000000000AA", entorno: "staging" });
+  });
+
+  it("un POST sin Content-Length (chunked) no se lee", async () => {
+    const w = await world();
+    const body = new ReadableStream({
+      start(c) {
+        c.enqueue(new TextEncoder().encode("provider=apple&cf-turnstile-response=token-humano"));
+        c.close();
+      },
+    });
+    const res = await w.call(
+      new Request(`${BASE}/auth/start`, {
+        method: "POST",
+        body,
+        headers: { Origin: BASE, "Content-Type": "application/x-www-form-urlencoded" },
+        duplex: "half",
+      } as RequestInit),
+    );
+    expect(res.headers.get("Location")).toBe("/?aviso=error");
+  });
+
+  it("un POST con Origin null (página con no-referrer, o sandbox) se rechaza", async () => {
+    const w = await world();
+    expect((await w.browser.request("/auth/logout", { form: {}, headers: { Origin: "null" } })).status).toBe(403);
   });
 
   it("la API solo atiende GET", async () => {

@@ -181,7 +181,14 @@ export async function loadSession(kv: KVNamespace, token: string | null, nowSec:
 export async function saveSession(kv: KVNamespace, token: string, session: Session, nowSec: number, tokensChanged: boolean): Promise<boolean> {
   if (!tokensChanged && nowSec - session.lastSeen < TOUCH_EVERY_SECONDS) return false;
   const { createdAt, shared, sub, sid, access, accessExp, refresh } = session;
-  await write(kv, token, { createdAt, lastSeen: nowSec, shared }, { sub, sid, access, accessExp, refresh }, nowSec);
+  try {
+    await write(kv, token, { createdAt, lastSeen: nowSec, shared }, { sub, sid, access, accessExp, refresh }, nowSec);
+  } catch (err) {
+    // Con tokens rotados no guardar es perder la sesión: que se note. Solo mover «último uso» (p. ej. dos pestañas en
+    // el mismo segundo, el KV admite una escritura por segundo por clave) puede fallar sin consecuencias.
+    if (tokensChanged) throw err;
+    return false;
+  }
   session.lastSeen = nowSec;
   return true;
 }
@@ -204,7 +211,8 @@ export interface PendingLogin {
 
 export function loginCookie(nonce: string, maxAge: number): string {
   // Lax: la vuelta desde Supabase es una navegación GET de primer nivel, así que viaja; un POST de otro sitio, no.
-  return `${LOGIN_COOKIE}=${nonce}; Path=/auth; Secure; HttpOnly; SameSite=Lax; Max-Age=${maxAge}`;
+  // `Path=/` es obligatorio: el navegador descarta una cookie `__Host-` con cualquier otra ruta.
+  return `${LOGIN_COOKIE}=${nonce}; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=${maxAge}`;
 }
 
 export async function savePendingLogin(kv: KVNamespace, pending: PendingLogin): Promise<string> {

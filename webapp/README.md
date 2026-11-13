@@ -32,7 +32,7 @@ Navegador ──cookie HttpOnly──▶ Worker «yala-web-staging» ──▶ S
 4. **Salir** (`/auth/logout`). Cierra la sesión de Supabase que llevaba dentro, borra la del KV y la cookie.
 
 Defensas: Turnstile al entrar; límites por IP (`/auth/*`) y por sesión (`/api/*`); `Origin` obligatorio en los POST; CSP
-cerrada, `no-store` y `no-referrer` en todo (la página incluida: `run_worker_first`); y una lista cerrada de lo que el
+cerrada, `no-store` y `Referrer-Policy: same-origin` en todo (la página incluida: `run_worker_first`); y una lista cerrada de lo que el
 Worker puede pedir fuera (`src/worker/egress.ts`). Si la configuración está mal, 503 a todo (`src/worker/config.ts`).
 
 ## Núcleo compartido

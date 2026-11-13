@@ -86,8 +86,11 @@ function sameOrigin(request: Request, env: Env): boolean {
 }
 
 async function readForm(request: Request): Promise<FormData | null> {
-  const len = Number(request.headers.get("Content-Length") ?? "0");
-  if (len > MAX_FORM_BYTES) return null;
+  // Sin `Content-Length` (chunked) no se sabe el tamaño antes de leer: se rechaza. Los formularios de los navegadores
+  // siempre lo mandan.
+  const raw = request.headers.get("Content-Length");
+  const len = raw === null ? NaN : Number(raw);
+  if (!Number.isFinite(len) || len > MAX_FORM_BYTES) return null;
   const type = request.headers.get("Content-Type") ?? "";
   if (!type.startsWith("application/x-www-form-urlencoded") && !type.startsWith("multipart/form-data")) return null;
   try {
@@ -190,7 +193,7 @@ async function callback(request: Request, url: URL, ctx: Ctx): Promise<Response>
   if (!code || code.length > 512) return aviso("error", [clear]);
   const normal = await pkceLogin(env, fetcher, code, pending.verifier);
   if (!normal) return aviso("caducada", [clear]);
-  return finishLogin(ctx, normal, pending.shared, [clear]);
+  return finishLogin(ctx, request, normal, pending.shared, [clear]);
 }
 
 async function passwordEntry(request: Request, ctx: Ctx): Promise<Response> {
@@ -200,14 +203,14 @@ async function passwordEntry(request: Request, ctx: Ctx): Promise<Response> {
   if (typeof email !== "string" || typeof password !== "string" || email.length > 200 || password.length > 200) return aviso("error");
   const normal = await passwordLogin(ctx.env, ctx.fetcher, email, password);
   if (!normal) return aviso("error");
-  return finishLogin(ctx, normal, form?.get("compartido") === "1");
+  return finishLogin(ctx, request, normal, form?.get("compartido") === "1");
 }
 
 /**
  * Con la sesión NORMAL recién abierta: comprueba la nube, consigue la de solo lectura y cierra la normal. Pase lo que
  * pase, la normal no sale de esta función abierta.
  */
-async function finishLogin(ctx: Ctx, normal: NormalSession, shared: boolean, cookies: string[] = []): Promise<Response> {
+async function finishLogin(ctx: Ctx, request: Request, normal: NormalSession, shared: boolean, cookies: string[] = []): Promise<Response> {
   const { env, fetcher, verify, now } = ctx;
   try {
     const kind = await cloudKind(env, fetcher, normal.access);
@@ -228,12 +231,22 @@ async function finishLogin(ctx: Ctx, normal: NormalSession, shared: boolean, coo
       log("web_permiso_rechazado", { motivo: check.reason });
       return aviso("error", cookies);
     }
-    const token = await createSession(
-      env.WEB_KV,
-      { sub: check.claims.sub, sid: check.claims.sessionId, access: grant.tokens.access, accessExp: check.claims.exp, refresh: grant.tokens.refresh },
-      shared,
-      now,
-    );
+    let token: string;
+    try {
+      token = await createSession(
+        env.WEB_KV,
+        { sub: check.claims.sub, sid: check.claims.sessionId, access: grant.tokens.access, accessExp: check.claims.exp, refresh: grant.tokens.refresh },
+        shared,
+        now,
+      );
+    } catch (err) {
+      // Sin dónde guardarla, la sesión de lectura no la usaría nadie: se cierra en vez de dejarla viva.
+      await logout(env, fetcher, grant.tokens.access);
+      throw err;
+    }
+    // Si el navegador ya traía una sesión (volvió a entrar sin salir), la anterior se cierra: una cookie vieja no debe
+    // seguir valiendo 30 días.
+    await closeSession(ctx, readCookie(request, SESSION_COOKIE));
     log("web_entrada", { compartido: shared });
     return goTo("/", [...cookies, sessionCookie(token, shared, remainingSeconds({ createdAt: now, lastSeen: now, shared }, now))]);
   } finally {
@@ -298,7 +311,8 @@ async function me(request: Request, ctx: Ctx): Promise<Response> {
     changed = true;
     user = await currentUser(env, fetcher, session.access);
   }
-  if (user.status === "unknown") return json({ error: "no_disponible" }, 503, { "Retry-After": "30" });
+  // Solo `gone` borra: un 4xx sin código de GoTrue (un proxy, un WAF) dice que no se sabe, no que la sesión murió.
+  if (user.status === "unknown" || user.status === "stale") return json({ error: "no_disponible" }, 503, { "Retry-After": "30" });
   if (user.status !== "alive") {
     log("web_sesion_retirada", { motivo: `user_${user.status}` });
     await deleteSession(env.WEB_KV, token);
@@ -311,18 +325,26 @@ async function me(request: Request, ctx: Ctx): Promise<Response> {
   return json({ nombre: user.account.nombre, correo: user.account.correo, equipoCompartido: session.shared }, 200, headers);
 }
 
-async function signOut(request: Request, ctx: Ctx): Promise<Response> {
+/**
+ * Cierra la sesión web de esta cookie y la de Supabase que lleva dentro. Con el acceso caducado `logout` no la
+ * encuentra: se refresca antes; si el refresh no responde, se intenta igual con el acceso guardado.
+ */
+async function closeSession(ctx: Ctx, token: string | null): Promise<boolean> {
   const { env, fetcher, now } = ctx;
-  const token = readCookie(request, SESSION_COOKIE);
+  if (!token) return false;
   const session = await loadSession(env.WEB_KV, token, now);
-  if (token && session) {
-    // Cerrar también la sesión de Supabase. Con el acceso caducado `logout` no la encuentra: se refresca antes.
+  let closed = false;
+  if (session) {
     const fresh = await ensureFresh(ctx, session).catch(() => ({ ok: false as const, gone: false }));
-    if (fresh.ok) await logout(env, fetcher, session.access);
-    await deleteSession(env.WEB_KV, token);
-    log("web_salida", { supabase_cerrada: fresh.ok });
-  } else if (token) {
-    await deleteSession(env.WEB_KV, token);
+    await logout(env, fetcher, session.access);
+    closed = fresh.ok;
   }
+  await deleteSession(env.WEB_KV, token);
+  return closed;
+}
+
+async function signOut(request: Request, ctx: Ctx): Promise<Response> {
+  const token = readCookie(request, SESSION_COOKIE);
+  if (token) log("web_salida", { supabase_cerrada: await closeSession(ctx, token) });
   return aviso("salida", [clearSessionCookie()]);
 }

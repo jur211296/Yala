@@ -14,6 +14,8 @@ describe("entrar con Apple o Google", () => {
     expect(to.searchParams.get("code_challenge_method")).toBe("s256");
     expect(to.searchParams.get("code_challenge")).toMatch(/^[A-Za-z0-9_-]{43}$/);
     const login = res.headers.getSetCookie().find((c) => c.startsWith("__Host-yala-web-login="))!;
+    expect(login).toContain("Path=/;"); // `__Host-` exige Path=/ o el navegador la descarta
+    expect(w.browser.jar.has("__Host-yala-web-login")).toBe(true);
     expect(login).toContain("HttpOnly");
     expect(login).toContain("Secure");
     expect(login).toContain("SameSite=Lax");
@@ -168,6 +170,20 @@ describe("quién no entra", () => {
     await w.browser.request("/auth/start", { form });
     expect((await w.browser.request("/auth/start", { form })).status).toBe(429);
     expect((await w.browser.request("/auth/callback?code=x")).headers.get("Location")).toBe("/?aviso=limite");
+  });
+});
+
+describe("volver a entrar sin salir", () => {
+  it("cierra la sesión anterior de ese navegador: la cookie vieja deja de valer", async () => {
+    const w = await world();
+    const ana = w.supabase.addUser({ email: "ana@yala.test" });
+    await w.socialLogin(ana);
+    const old = w.browser.jar.get(SESSION_COOKIE)!.value;
+    await w.socialLogin(ana);
+    expect(w.browser.jar.get(SESSION_COOKIE)!.value).not.toBe(old);
+    expect(w.kv.data.size).toBe(1);
+    expect(w.supabase.openSessions(ana.id)).toEqual({ normal: 0, web: 1 });
+    expect((await w.call(new Request(`${BASE}/api/me`, { headers: { Cookie: `${SESSION_COOKIE}=${old}` } }))).status).toBe(401);
   });
 });
 

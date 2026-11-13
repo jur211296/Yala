@@ -106,6 +106,17 @@ describe("la sesión de Supabase que lleva dentro", () => {
     expect(w.supabase.openSessions(ana.id).web).toBe(0);
   });
 
+  it("un 4xx de /user sin código de GoTrue (proxy, WAF) no borra la sesión: 503", async () => {
+    const w = await world();
+    const ana = w.supabase.addUser({ email: "ana@yala.test" });
+    await w.socialLogin(ana);
+    w.supabase.userOpaque4xx = 403;
+    expect((await w.browser.request("/api/me")).status).toBe(503);
+    expect(w.kv.data.size).toBe(1);
+    w.supabase.userOpaque4xx = null;
+    expect((await w.browser.request("/api/me")).status).toBe(200);
+  });
+
   it("si Supabase no contesta, 503 sin borrar nada", async () => {
     const w = await world();
     const ana = w.supabase.addUser({ email: "ana@yala.test" });

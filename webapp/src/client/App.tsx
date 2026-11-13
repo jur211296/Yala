@@ -76,7 +76,7 @@ export function App() {
           <SinNube titulo={t.soloGruposTitulo} cuerpo={t.soloGrupos} />
         ) : (
           <>
-            {aviso && t.avisos[aviso] ? (
+            {aviso && Object.hasOwn(t.avisos, aviso) ? (
               <p className={`aviso ${aviso === "salida" ? "ok" : ""}`} role="status">
                 {t.avisos[aviso]}
               </p>

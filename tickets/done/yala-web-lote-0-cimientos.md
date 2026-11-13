@@ -71,7 +71,11 @@ su id al hook (`webapp/supabase/web0_01_hook_web_client.sql`, con guarda md5 y m
   página (React + Vite), login con Apple y Google vía Supabase, sesión cifrada, Turnstile y límites.
 - Supabase staging: cliente OAuth de la web, hook `web0_01` y la vuelta en `uri_allow_list` (detalle y marcha atrás en
   `webapp/README.md`). Producción sin tocar.
-- Pruebas: 40 unitarias de la web; e2e contra staging 9/9 (página, puerta de Apple y de Google, A y B entran y salen,
+- Revisión de seguridad independiente: cazó dos fallos que habrían impedido entrar y salir desde un navegador real
+  (la cookie del login con prefijo `__Host-` y `Path=/auth`, que el navegador descarta; y `no-referrer`, que hace que
+  los formularios lleguen con `Origin: null`) y seis menores. Arreglados, con pruebas que los cazan; comprobado en
+  Chrome que «Continuar con Apple» llega a la pantalla de Apple.
+- Pruebas: 46 unitarias de la web; e2e contra staging 9/9 (página, puerta de Apple y de Google, A y B entran y salen,
   contraseña mala, «solo Grupos» no entra, y la sonda: con el rol de la web PostgREST rechaza insertar, cambiar y
   borrar).
 
