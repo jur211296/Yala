@@ -271,6 +271,7 @@ struct PanelSheetsModifier: ViewModifier {
             ) {
                 Button(L10n.SetupChecklist.practiceKeep, role: .cancel) {
                     TrialOfferMoments.notePracticeAnswered(sheets.practiceCleanupItem)
+                    NewUserMetrics.practiceAnswered(step: sheets.practiceCleanupItem?.stepID, kept: true)
                     sheets.practiceCleanupItem = nil
                 }
                 Button(L10n.SetupChecklist.practiceDelete, role: .destructive) {
@@ -278,6 +279,7 @@ struct PanelSheetsModifier: ViewModifier {
                         viewModel.deletePracticeItem(item)
                     }
                     TrialOfferMoments.notePracticeAnswered(sheets.practiceCleanupItem)
+                    NewUserMetrics.practiceAnswered(step: sheets.practiceCleanupItem?.stepID, kept: false)
                     sheets.practiceCleanupItem = nil
                     viewModel.reloadAndRecalculate()
                 }

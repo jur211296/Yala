@@ -3334,6 +3334,11 @@ struct ContentView: View {
         // (onboarding). Se CONSUME al leerlo — un destino que no se retira secuestra la pantalla inicial de
         // todos los arranques siguientes.
         if let pending = WelcomePendingDestinationStore.consume() {
+            // Telemetría (card 4b7h): volvió a abrir Yala tras «Reabre Yala» en pleno alta y el alta sigue. Va en las ramas
+            // que siguen, no aquí: con el montaje sin espejo se vuelve a pedir reabrir, y eso no es haber vuelto.
+            let noteReturned = {
+                if let returned = MetricsUseFeature.relaunchReturned(destination: pending) { MetricsService.used(returned) }
+            }
             switch pending {
             case .privateOnboarding:
                 // **Con el montaje sin espejo, el onboarding privado no corre: se pide reabrir** (ticket
@@ -3347,9 +3352,11 @@ struct ContentView: View {
                     welcomeFlowInitialStep = .mirrorRelaunch
                     showWelcomeFlow = true
                 } else {
+                    noteReturned()
                     showOnboarding = true
                 }
             case .restoreICloud:
+                noteReturned()
                 showWelcomeRestore = true
             case .inviteRecovery:
                 showInviteRecovery = true
@@ -4379,6 +4386,8 @@ fileprivate func applyEntryOnboardingEffects(_ kind: AppEntryKind) {
     if EntryOnboardingEffects.marksNewInstall(kind) {
         SetupChecklistManager.shared.markAsNewInstall()
     }
+    // Telemetría del usuario nuevo (card 4b7h): quien vuelve con sus datos no manda «primeros».
+    if kind == .reentry { NewUserMetrics.reentered() }
 }
 
 /// Side-effect de `WelcomeRestoreView.onCompleteSkipAll` (rama fullyPrefilled) y del arranque del

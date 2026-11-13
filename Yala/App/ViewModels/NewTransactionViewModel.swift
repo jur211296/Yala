@@ -922,6 +922,8 @@ final class NewTransactionViewModel {
             if isNewTransaction {
                 // Telemetría propia: «usó esta función», como mucho una vez al día (solo altas, no ediciones).
                 MetricsService.used(isTransfer ? .transferencia : .registrarMovimiento)
+                // Telemetría del usuario nuevo (card 4b7h): el primer gasto o ingreso propio, si no era de prueba.
+                if !isTransfer { NewUserMetrics.created(.firstExpense) }
                 let count = UserDefaults.standard.integer(forKey: "transactionsSavedCount") + 1
                 UserDefaults.standard.set(count, forKey: "transactionsSavedCount")
 

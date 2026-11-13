@@ -458,6 +458,14 @@ struct WelcomeFlowContainer: View {
             case .mirrorRelaunch:
                 WelcomeMirrorRelaunchView()
                     .transition(.opacity)
+                    // Telemetría (card 4b7h): se le pidió reabrir en pleno alta. El destino ya está guardado: quien lleva a
+                    // este paso lo escribe antes.
+                    .onAppear {
+                        if let asked = MetricsUseFeature.relaunchAsked(
+                            destination: WelcomePendingDestinationStore.peek()) {
+                            MetricsService.used(asked)
+                        }
+                    }
             }
             }
         }

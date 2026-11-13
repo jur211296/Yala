@@ -340,6 +340,8 @@ final class BudgetEditorViewModel {
 
             WidgetDataCache.updateCache(context: context)
             SessionState.shared.incrementDataVersion()
+            // Telemetría del usuario nuevo (card 4b7h): el primer presupuesto, si se queda.
+            if newBudgetUUID != nil { NewUserMetrics.created(.firstBudget) }
 
             return savedBudgetID ?? existing?.persistentModelID
         } catch {

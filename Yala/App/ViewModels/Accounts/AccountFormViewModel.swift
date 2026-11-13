@@ -893,6 +893,8 @@ final class AccountFormViewModel {
             return false
         }
         createdAccount = created
+        // Telemetría del usuario nuevo (card 4b7h): la segunda cuenta propia.
+        if created?.isBillableUserAccount == true { NewUserMetrics.accountCreated(in: context) }
 
         // Suggest adding currency as secondary if applicable
         suggestSecondaryCurrencyIfNeeded()

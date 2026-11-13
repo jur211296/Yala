@@ -59,6 +59,30 @@ export const SIGNUP_PATHS: Record<string, string> = {
   "alta.camino.grupoUnirse": "Unirse a un grupo",
 };
 
+/**
+ * Después del alta (card 4b7h, 2026-11-13): el reinicio del camino privado y los primeros días. Son `use` de la app, pero
+ * de UNA VEZ POR INSTALACIÓN, no uno al día; los `primeros.*` solo llegan de instalaciones que cerraron el alta con la
+ * versión que los manda. No son funciones: el panel los saca de «Lo que más se usa». Qué mide cada uno:
+ * `docs/telemetria/eventos-usuario-nuevo.md`.
+ */
+export const NEW_USER_EVENTS: Record<string, string> = {
+  "alta.reabrir.pide": "Se le pide reabrir Yala",
+  "alta.reabrir.vuelve": "Vuelve a abrir Yala",
+  "primeros.registro": "Primer registro propio",
+  "primeros.presupuesto": "Primer presupuesto",
+  "primeros.pago": "Primer pago planificado",
+  "primeros.cuenta2": "Segunda cuenta",
+  "primeros.pasos.ve": "Ve Primeros pasos",
+  "primeros.pasos.cuenta": "Primeros pasos: crea su cuenta",
+  "primeros.pasos.registrar": "Primeros pasos: aprende a registrar",
+  "primeros.pasos.presupuesto": "Primeros pasos: crea un presupuesto",
+  "primeros.pasos.pagos": "Primeros pasos: anota sus pagos fijos",
+  "primeros.pasos.grupo": "Primeros pasos: grupos",
+  "primeros.pasos.dinero": "Primeros pasos: a dónde va su dinero",
+  "primeros.pasos.inicio": "Primeros pasos: Yala en la pantalla de inicio",
+  "primeros.pasos.completa": "Completa Primeros pasos",
+};
+
 export const TASK_LABELS: Record<string, string> = {
   "chat.answer": "Responder en el chat",
   "chat.explore": "Chat con tus datos en la nube",

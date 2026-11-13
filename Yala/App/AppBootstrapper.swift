@@ -194,6 +194,9 @@ final class AppBootstrapper {
         //      Bajo `-uitest` start() es no-op (guard interno) — cero red en XCUITests.
         MetricsService.start()
         MetricsService.dailyActivePingIfNeeded()
+        // Lo que esperaba un «¿Era de prueba?» que no llegó a contestarse (iOS cerró Yala): se quedó (card 4b7h).
+        NewUserMetrics.releaseWaitingAtLaunch(
+            recordTutorialRunning: SetupChecklistManager.shared.isRecordTutorialRunning)
 
         // 0.55. Track session for upsell frequency capping
         ProUpsellService.shared.incrementSessionCount()

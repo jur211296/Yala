@@ -999,11 +999,15 @@ struct InboxDraftEditSheet: View {
 
         // Update scheduled payment if this draft came from one
         ScheduledPaymentDraftService.handleDraftApproved(draft: draft, context: modelContext)
+        let createsAnOwnRecord = DraftService.approvalCreatesAnOwnRecord(draft)
 
         do {
             try modelContext.save()
             WidgetDataCache.updateCache(context: modelContext)
             SessionState.shared.incrementDataVersion()
+            // Telemetría del usuario nuevo (card 4b7h): el primer gasto o ingreso propio, si no era de prueba. Este
+            // «Aprobar» crea el registro aquí mismo, sin pasar por `DraftService.approveDraft`.
+            if createsAnOwnRecord { NewUserMetrics.created(.firstExpense) }
 
             // Prepare success view data
             approvedTransaction = transaction

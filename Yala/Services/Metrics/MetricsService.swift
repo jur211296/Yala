@@ -482,6 +482,12 @@ enum MetricsService {
     /// `[slug: día UTC]` del último `use` de cada función (guard «uno al día por función», MetricsUse.swift).
     static let useDaysKey = "metrics.useDays"
     static let cloudRegisteredKeyPrefix = "metrics.cloudRegistered."
+    /// Slugs de lo que sale una vez por instalación y ya salió (`MetricsUseFeature.isOncePerInstall`, card 4b7h).
+    static let onceEmittedKey = "metrics.onceEmitted"
+    /// Esta instalación cerró el alta con una versión que manda `primeros.*` (`MetricsUseFeature.requiresNewUser`).
+    static let newUserKey = "metrics.newUserAfterSignUp"
+    /// Primeros registro, presupuesto o pago que esperan a saber si eran de prueba (`NewUserMetrics`).
+    static let waitingMilestonesKey = "metrics.milestonesWaiting"
 
     // MARK: Arranque
 
@@ -504,6 +510,9 @@ enum MetricsService {
         MetricsSpool.clear(defaults)
         defaults.removeObject(forKey: lastPingDayKey)
         defaults.removeObject(forKey: useDaysKey)
+        defaults.removeObject(forKey: onceEmittedKey)
+        defaults.removeObject(forKey: newUserKey)
+        defaults.removeObject(forKey: waitingMilestonesKey)
         for key in defaults.dictionaryRepresentation().keys where key.hasPrefix(cloudRegisteredKeyPrefix) {
             defaults.removeObject(forKey: key)
         }
@@ -541,7 +550,11 @@ enum MetricsService {
     static func localRegistrationCompleted(mode: String) {
         guard isStarted else { return }
         MetricsSpool.enqueue(.register(kind: "local", detail: mode), defaults: defaults)
-        if MetricsUseFeature.closesSignUp(mode: mode) { used(.altaTermina) }
+        if MetricsUseFeature.closesSignUp(mode: mode) {
+            used(.altaTermina)
+            // Desde aquí, lo que haga en sus primeros días cuenta como `primeros.*` (card 4b7h).
+            defaults.set(true, forKey: newUserKey)
+        }
         kickDrain()
     }
 
@@ -553,6 +566,10 @@ enum MetricsService {
     /// bootstrap— va directo a la cola de `.standard`, la misma que lee `start()`, y sale en el siguiente vaciado
     /// (molde `canaryFromIntent`). Bajo `-uitest` y en tests, nada.
     static func used(_ feature: MetricsUseFeature, now: Date = .now) {
+        if feature.isOncePerInstall {
+            usedOncePerInstall(feature)
+            return
+        }
         if isStarted {
             guard recordUseDay(feature, now: now, defaults: defaults) else { return }
             MetricsSpool.enqueue(.use(feature), defaults: defaults)
@@ -570,6 +587,28 @@ enum MetricsService {
         guard !FeatureGateService.shared.isProUser else { return }
         used(.proOfertaVista)
         if let limitHit, let limit = MetricsUseFeature.freeLimit(limitHit) { used(limit) }
+    }
+
+    /// Lo que sale una vez por instalación (card 4b7h): el reinicio del alta y los primeros días. Mismo destino que `used`:
+    /// con el servicio, su cola; antes de `start()`, la de `.standard`; bajo `-uitest` y en tests, nada.
+    private static func usedOncePerInstall(_ feature: MetricsUseFeature) {
+        guard let target = eventDefaults() else { return }
+        var emitted = Set(target.stringArray(forKey: onceEmittedKey) ?? [])
+        guard MetricsOnceLogic.shouldEmit(feature, emitted: emitted, isNewUser: target.bool(forKey: newUserKey)) else {
+            return
+        }
+        emitted.insert(feature.rawValue)
+        target.set(emitted.sorted(), forKey: onceEmittedKey)
+        MetricsSpool.enqueue(.use(feature), defaults: target)
+        kickDrain()
+    }
+
+    /// Dónde apunta la telemetría de uso: el `UserDefaults` del servicio arrancado, `.standard` antes de `start()` (la cola
+    /// que `start()` lee), o `nil` bajo `-uitest` y en tests.
+    static func eventDefaults() -> UserDefaults? {
+        if isStarted { return defaults }
+        guard !UITestHooks.isActive, !SwiftDataConfiguration.isRunningTests else { return nil }
+        return .standard
     }
 
     /// `true` (y apunta el día) si toca emitir hoy.
