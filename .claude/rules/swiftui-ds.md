@@ -209,6 +209,13 @@ paths:
   **Y las dos pantallas llevan `.zIndex(1)` (medido el 2026-10-28, iOS 27.0, card feer)**: sin él, la que SALE se pinta
   por debajo del degradado opaco del `ZStack` y desaparece en un fotograma; solo se veía fundirse la que entraba. Vale
   para cualquier `ZStack` con un fondo opaco y un `switch` con `.transition` encima.
+  **Y el `onDismiss` del cover lee los valores de cuando se PRESENTÓ, no los de ahora (medido el 2026-11-13 en el
+  iPhone 14, iOS 27.2, card zrya).** Tras «¡Tu cuenta está lista!» → «Empezar», `onFinishedToApp` leía
+  `hasCompletedOnboarding = true` y, una línea después en el log, `welcomeCoverDidDismiss` leía `false` (el
+  `@AppStorage` de antes del adopt): el respaldo reabría la bienvenida con la cuenta ya dentro. Los `@State` del mismo
+  cierre sí llegaron al día. ⇒ **un `onDismiss` que decida con una preferencia la lee de su almacén en el momento**
+  (`WelcomeCoverContentLogic.onboardingCompletedNow()`), nunca de la propiedad de la vista. Pin:
+  `WelcomeCoverFallbackAfterAdoptTests`.
 - **Un `.overlay` colgado DESPUÉS de `.glassEffect` no se ve: el cristal lo tapa (medido el 2026-10-17, iOS 27.0).** El
   contorno rojo de la cápsula de un filtro oculto estaba en el código y no salía en pantalla. Antes del `.glassEffect`,
   como contenido, sí (`FilterChipView`).

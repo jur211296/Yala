@@ -177,7 +177,8 @@ struct WelcomeCoverContentLogicTests {
         #expect(reset == "adoptStartsAtConsent = false cloudSignInFromExistingChooser = false")
         let dismiss = Self.flat(try Self.body(of: "private func welcomeCoverDidDismiss() {", in: modifier))
         #expect(dismiss.hasPrefix("guard WelcomeCoverContentLogic.runsCloudSignInDismissFallback(last: lastWelcomeCoverContent) else { return } resetCloudSignInEntry()"))
-        #expect(dismiss.hasSuffix("if !hasCompletedOnboarding && !showGroupInviteOnboarding && !showOnboarding && !showWelcomeFlow { welcomeFlowInitialStep = .chooser showWelcomeFlow = true }"))
+        // Card zrya: el onboarding se lee del almacén en el momento, no del `@AppStorage` que el cierre guardó al presentar.
+        #expect(dismiss.hasSuffix("if WelcomeCoverContentLogic.dismissFallbackReopensChooser( onboardingCompleted: WelcomeCoverContentLogic.onboardingCompletedNow(), showsGroupInvite: showGroupInviteOnboarding, showsOnboarding: showOnboarding, showsFlow: showWelcomeFlow) { welcomeFlowInitialStep = .chooser showWelcomeFlow = true }"))
     }
 
     @Test("si UIKit cierra el cover, se apaga el flag de lo que enseñaba, no los dos")

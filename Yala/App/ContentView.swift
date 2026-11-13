@@ -3616,8 +3616,11 @@ private struct WelcomeFlowModifier: ViewModifier {
         // `!showWelcomeFlow` es el término del bloque [I], hermano del `!showOnboarding` de
         // arriba: desde el cover único `onEnterGroupsOnly` ya no lo cierra (vuelve al Welcome en el step de Grupos
         // fundiendo), pero el término sigue siendo el que impide pisar un Welcome ya pedido con `.chooser`.
-        if !hasCompletedOnboarding && !showGroupInviteOnboarding && !showOnboarding
-            && !showWelcomeFlow {
+        // Card zrya: el onboarding se lee de su almacén AHORA. Este cierre es el de cuando se presentó el cover, y su
+        // `hasCompletedOnboarding` era el de antes del adopt: tras «¡Tu cuenta está lista!» reabría la bienvenida.
+        if WelcomeCoverContentLogic.dismissFallbackReopensChooser(
+            onboardingCompleted: WelcomeCoverContentLogic.onboardingCompletedNow(),
+            showsGroupInvite: showGroupInviteOnboarding, showsOnboarding: showOnboarding, showsFlow: showWelcomeFlow) {
             welcomeFlowInitialStep = .chooser
             showWelcomeFlow = true
         }
