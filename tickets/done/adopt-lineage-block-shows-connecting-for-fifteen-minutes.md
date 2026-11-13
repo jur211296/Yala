@@ -1,10 +1,11 @@
 ---
 id: adopt-lineage-block-shows-connecting-for-fifteen-minutes
-status: backlog
+status: done
 priority: very-high
 area: "cloud sync, welcome"
 created: 2026-11-13
 updated: 2026-11-13
+resolved: 2026-11-13
 source: "QA de Jürgen en el iPhone 14 (Yala Dev, staging), sesión del minitutorial del correo, 2026-11-13"
 ---
 
@@ -64,3 +65,26 @@ Es lógica de sync: va con review adversarial.
 
 Desinstalar Yala Dev **no** vacía su App Group (`group.com.jurgenschmidt.yala.dev`): el store volvió intacto tras
 `devicectl device uninstall`. Para dejar el teléfono limpio hubo que vaciar los stores a mano.
+
+## Resolución (2026-11-13)
+
+**Se arregló la causa (punto 0) por el orden, no por el linaje.** Mientras dura una entrada a una cuenta desde el Welcome,
+el canal de Grupos no arranca hasta que el adopt aterriza (`AccountEntryGroupsHold`): sin canal no hay pull, y sin pull el
+puente no fabrica nada que el adopt tenga que probar. Al aterrizar, Grupos corre detrás del pull personal en el mismo
+ciclo (paso 5.6 de `CloudSyncRuntime`) y el puente encuentra la cuenta de sistema, las categorías y la pata que la cuenta
+ya tenía. Se descartó reconocer las filas del puente como propias: subirían y la cuenta quedaría con dos «Grupos PEN» y el
+mismo gasto dos veces.
+
+- Se arma en `WelcomeCloudSignInView.ensureSignedIn`, antes de abrir la sesión (comodín sin sesión): no está medido qué
+  disparador arrancó el canal en el iPhone, y todos pasan por `GroupsSyncClient.startIfEligible`, que lo consulta antes de
+  fijar su `context`.
+- Frena con plazo de 1 h o mientras el journal tenga una migración en vuelo; se retira al aterrizar, cuando la cuenta es
+  solo de grupos y al cerrarse la pantalla sin un adopt que proteger.
+- Tests: `YalaTests/CloudSync/AccountEntry/AccountEntryGroupsHoldTests` (decisión, journal, ciclo durable, el canal no
+  arranca con el candado y sí sin él, cableado del Welcome). Regla durable en `.claude/rules/swiftdata-cloudkit.md`.
+
+**El App Group que sobrevive a desinstalar** no fue causa (la 2.ª y la 3.ª prueba vaciaron los stores y se reprodujo). Queda
+anotado como trampa de QA en `docs/aprendizajes-tecnicos.md`: una reinstalación no es un teléfono nuevo.
+
+**Fuera de este ticket** (puntos 1-3 de «Lo que hay que decidir»: que un bloqueo legítimo tarde 15 min en decirse, la
+enumeración repetida y «Reintentar»): ticket `adopt-lineage-block-for-foreign-data-takes-fifteen-minutes-to-say-so`.

@@ -61,3 +61,17 @@ Guion, cuando el teléfono entre en una cuenta (o con una sin grupos, que no dis
 3. Volver a primer plano en Yala: el movimiento aparece en la Bandeja como borrador, con importe, divisa, comercio y fecha
    del aviso. Captura.
 4. Primeros pasos, paso 7: con esa cuenta salen cinco maneras y el correo enseña la misma dirección. «Copiar» la copia.
+
+## Device-QA del 2026-11-13, 09:45 (iPhone 14, Yala Dev, cuenta de staging de Jürgen)
+
+Con el arreglo del bloqueo de 15 min el teléfono ya entra en la cuenta con grupos, y el guion corrió así:
+
+1. Ajustes › Correo del banco: `auto-staging+vscjpcbjxn@yalainbox.com`, «Correos de prueba usados: 0 de 5». PASS.
+2. Aviso de Interbank reenviado por SMTP directo a `route2.mx.cloudflare.net:25` desde `qa-prueba@yalainbox.com`
+   (S/ 31.90, «PLAZA VEA AV ARENALES», 13/11/2026 09:45, ****4821): el MX lo aceptó a las 09:45:07. `wrangler tail` no se
+   pudo abrir esa vez (sin `timeout` en macOS), así que el veredicto se lee en el teléfono.
+3. Volver a primer plano: la Bandeja pasó de 1 a 2 pendientes y el borrador salió con «PLAZA VEA AV ARENALES», S/ −31.90,
+   origen «Correo», «Hoy», pidiendo cuenta y categoría. PASS. Captura en
+   `~/Claude/entregas/2026-11-13-bloqueo-15-min-conectando-grupos/evidencia/despues-2.png`.
+4. Paso 7 de Primeros pasos con cinco maneras: **sin correr** (fuera del encargo de la sesión del bloqueo). Queda para la
+   próxima tanda.

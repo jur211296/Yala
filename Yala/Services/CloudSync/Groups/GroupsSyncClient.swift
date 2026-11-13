@@ -451,6 +451,16 @@ final class GroupsSyncClient {
             GroupsSyncBreadcrumb.groupsLoopStopped(reason: "complete-account-adopt-pending")
             return
         }
+        // Una entrada a una cuenta desde el Welcome: el canal espera a que el adopt decida, o el puente crearía con
+        // identidades de este teléfono filas que la cuenta ya tiene y el adopt las leería sin linaje (ticket
+        // `adopt-lineage-block-shows-connecting-for-fifteen-minutes`).
+        guard !accountEntryHold(currentUserIDProvider()) else {
+            GroupsSyncBreadcrumb.groupsLoopStopped(reason: "account-entry-adopt-pending")
+            // Sin journal el candado no puede decidir (la fase es el relleno): se vuelve a preguntar cuando conecte, o el
+            // primer `.active` del arranque se comería el único intento hasta el siguiente primer plano.
+            if !journalConnected() { decideLoopModeWhenJournalConnects(context: context, trigger: trigger) }
+            return
+        }
         // G8-2 (AJUSTE review #3): retener el context AQUÍ — DESPUÉS del guard flag+sesión, ANTES del
         // return del piggyback. Sin esto, en modo piggyback (personal cadencia) el context quedaría
         // sin fijar y `syncNowFromPush` devolvería siempre false.
@@ -510,6 +520,13 @@ final class GroupsSyncClient {
     var journalConnected: () -> Bool = { MigrationPhaseStore.shared.isJournalConnected }
     /// Seam del candado del alta de cuenta completa por enlace (`CompleteAccountAdoptPending`).
     var completeAccountAdoptPending: (String?) -> Bool = { CompleteAccountAdoptPending.blocksChannel(sub: $0) }
+    /// Seam del candado de la entrada a una cuenta desde el Welcome (`AccountEntryGroupsHold`). No aplica bajo el runner de
+    /// unit tests: el host es la app y su `UserDefaults.standard` es el del simulador, así que un candado que dejó una prueba
+    /// manual pararía el canal en las suites que lo necesitan arrancado (molde de `isDomainOpenForBridge`). Los tests del
+    /// candado sustituyen el seam o llaman a `AccountEntryGroupsHold` con un almacén aislado.
+    var accountEntryHold: (String?) -> Bool = {
+        !SwiftDataConfiguration.isRunningTests && AccountEntryGroupsHold.blocksChannel(sub: $0)
+    }
     var personalDomainCanRun: () -> Bool = { CloudSyncRuntime.canRunDomain() }
 
     /// `.decideAfterJournal`: ni loop ni piggyback hasta que el journal se conecte; entonces se vuelve a pasar por

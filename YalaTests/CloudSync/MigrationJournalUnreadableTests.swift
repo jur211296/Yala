@@ -809,7 +809,11 @@ struct MigrationJournalUnreadableWiringTests {
             let reads = Self.occurrences(of: "currentJournalRead", in: code)
             if reads > 0, url.lastPathComponent != "MigrationPhaseStore.swift" { journalReadUses[url.lastPathComponent] = reads }
         }
-        #expect(journalReadUses == ["MigrationRestReading.swift": 1])
+        // `AccountEntryGroupsHold.swift` entra el 2026-11-13 (ticket `adopt-lineage-block-shows-connecting-for-fifteen-minutes`):
+        // el candado de Grupos de una entrada del Welcome pregunta si hay una migración en vuelo y si el journal se deja leer.
+        // Ilegible NO alarga el candado (decide su plazo de 1 h): concederlo sería dejar a la persona sin Grupos para siempre,
+        // y lo que protege —que el puente no escriba antes del adopt— ya lo cubre ese plazo. Sin journal conectado frena.
+        #expect(journalReadUses == ["MigrationRestReading.swift": 1, "AccountEntryGroupsHold.swift": 2])
         #expect(phaseDecideUses == ["BGTaskMigrationGate.swift": 1, "CloudSyncDebugView.swift": 1])
     }
 
