@@ -492,3 +492,65 @@ nonisolated enum WelcomeAdoptBackOut {
         return !hasLocalData
     }
 }
+
+// MARK: - «Usar otra cuenta» en el acceso único
+
+/// **«Usar otra cuenta» abre otra cuenta, no la vitrina** (ticket `other-account-sign-in-bounces-to-welcome`, fallos de
+/// Jürgen del 13-nov en el iPhone 14). Hasta ese día el botón soltaba la sesión y volvía a la bienvenida: con Google había
+/// que tocar «Entrar con Google» otra vez para ver el selector de cuentas, y con Apple el segundo toque firmaba con el
+/// MISMO Apple ID, así que la persona volvía a la misma hoja en bucle.
+///
+/// Qué hace cada proveedor, y por qué no es simétrico:
+/// · **Google**: se suelta la sesión y se abre la hoja de Google en el acto. `signOut()` cierra también la sesión del SDK
+///   (`GIDSignIn.signOut()`), así que la hoja ya no elige sola: enseña el selector con «Usar otra cuenta».
+/// · **Apple**: «Iniciar sesión con Apple» firma siempre con el Apple ID del teléfono, y abrirlo otra vez es el bucle.
+///   Con el inicio de sesión web de Apple encendido (`CloudRemoteFlags.appleWebSignInEnabled`, decisión A de Jürgen del
+///   6-nov) la salida es «Otra cuenta de Apple», que deja escribir el Apple ID que se quiera. Sin él (hoy, producción),
+///   no hay otro Apple ID posible: la hoja lo dice con la nota de siempre y ofrece «Entrar con Google».
+nonisolated enum WelcomeUseAnotherAccount {
+
+    enum Exit: Equatable {
+        /// Soltar la sesión y abrir la hoja del mismo proveedor (Google: el selector de cuentas).
+        case signInAgain
+        /// Soltar la sesión y abrir Apple por la web, con otro Apple ID.
+        case appleOnTheWeb
+        /// Apple sin la web: no hay otra cuenta de Apple que elegir. Nota + «Entrar con Google», sin la salida de texto.
+        case onlyTheOtherProvider
+    }
+
+    static func exit(provider: CloudSignInProvider, appleWebSignInEnabled: Bool) -> Exit {
+        switch provider {
+        case .google: return .signInAgain
+        case .apple: return appleWebSignInEnabled ? .appleOnTheWeb : .onlyTheOtherProvider
+        }
+    }
+}
+
+// MARK: - Dejar iCloud aparte ANTES de firmar
+
+/// **Fallo 2 del 13-nov: entrar con Google o Apple pedía reabrir Yala y, al volver, otra vez el inicio de sesión**
+/// (ticket `other-account-sign-in-bounces-to-welcome`, decisión de Jürgen del 13-nov: la reapertura va ANTES de firmar).
+///
+/// Con el corpus del iCloud privado en el teléfono, toda entrada a la nube acaba en la vuelta al neutro de la opción B
+/// del 10-nov (`ICloudAsideEntryLogic`): el guard cross-cuenta no deja adoptar encima, una cuenta solo de grupos pasa por
+/// la puerta del organizador, que vacía igual, y el alta no siembra sobre un corpus vivo. Esa vuelta cierra la sesión de
+/// la nube y purga el llavero antes de vaciar (regla del 26-sep: un teléfono vaciado no guarda ninguna sesión), y con el
+/// espejo montado vaciar exige reabrir (`PersonalContainerSwap` no cambia en caliente un montaje con espejo). Firmar
+/// primero costaba, por tanto, dos inicios de sesión. Vaciando primero, la persona firma una sola vez, ya en un teléfono
+/// neutro, y la regla de la sesión no se toca.
+///
+/// Mismas condiciones que hacen que hoy el guard bloquee y la entrada deje iCloud aparte; con cualquier otra, el camino
+/// de siempre (firmar y decidir después):
+/// · hay corpus local y no es el que el dueño está restaurando (`restoreInProgress`: ahí el guard deja pasar);
+/// · ningún sello de claim en el teléfono: con uno, el guard podría dejar adoptar a ESA cuenta, y eso solo se sabe tras
+///   firmar;
+/// · la entrada lo dejaría aparte (`ICloudAsideEntryLogic.exit == .leaveICloudAside`): con copia en iCloud, sin grupos de
+///   la era CloudKit y fuera de la nube. Sin copia, el bloqueo de siempre tras firmar: lo que se borraría no está en otro
+///   sitio.
+nonisolated enum WelcomeLeaveICloudBeforeSignIn {
+
+    static func leavesICloudAsideFirst(hasLocalData: Bool, restoreInProgress: Bool, hasClaimSeal: Bool,
+                                       asideExit: ICloudAsideEntryLogic.Exit) -> Bool {
+        hasLocalData && !restoreInProgress && !hasClaimSeal && asideExit == .leaveICloudAside
+    }
+}

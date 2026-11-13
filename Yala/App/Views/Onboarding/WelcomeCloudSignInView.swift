@@ -218,6 +218,9 @@ struct WelcomeCloudSignInView: View {
     /// Y23-02 · el correo del acceso que se acaba de verificar, para la etiqueta de las hojas. Se lee ANTES de soltar la
     /// sesión, que lo olvida.
     @State private var verifiedEmail: String?
+    /// «Otra cuenta de Apple»: el siguiente inicio de sesión de Apple va por la web, con otro Apple ID
+    /// (`WelcomeUseAnotherAccount`). Lo gasta `ensureSignedIn`, una sola vez.
+    @State private var signsInWithAppleOnTheWeb = false
 
     var body: some View {
         screen
@@ -232,6 +235,8 @@ struct WelcomeCloudSignInView: View {
                 case "confirm": phase = .confirmLoad; return
                 default: break
                 }
+                // Fallo 2 del 13-nov: con el corpus del iCloud privado, `runSignInFlow` deja iCloud aparte antes de abrir
+                // ninguna hoja (`leavesICloudAsideInsteadOfSigningIn`).
                 launchFlow {
                     // Una sesión que quedó viva de otro proveedor (app cerrada en «¿Cargamos…?») no se reusa para el
                     // botón que la persona acaba de tocar: se suelta y se firma con el pedido.
@@ -253,6 +258,14 @@ struct WelcomeCloudSignInView: View {
             // de llegar al intro. Con el latch, cancelar deja el intro del alta, que es la salida.
             guard startsAtConsent, !didAutoOpenConsent else { return }
             didAutoOpenConsent = true
+            // Fallo 2 del 13-nov: la entrada desde «¡Hola de nuevo!» también deja iCloud aparte antes de nada, y aquí antes
+            // del consentimiento, que si no se pediría dos veces (antes y después de reabrir). Una vuelta del main actor
+            // después: cambiar el contenido del cover dentro de su propio `onAppear`.
+            if leavesICloudAsideInsteadOfSigningIn() {
+                let aside = provider
+                launchFlow { onLeaveICloudAside(aside) }
+                return
+            }
             showConsent = true
         }
         // EL CONSENT VA SIEMPRE ANTES DEL SIGN-IN, en las dos entradas: el login envía identidad, así
@@ -304,6 +317,25 @@ struct WelcomeCloudSignInView: View {
             if !offers { confirmCancelAdopt = false }
         }
         .interactiveDismissDisabled()
+    }
+
+    /// ¿Se deja iCloud aparte en vez de firmar? Solo si todavía no hay sesión —con una viva (la que trae la puerta de Grupos,
+    /// o la de «¿Cargamos…?») ya no hay hoja que ahorrar, y decide el guard de siempre—, nunca en el alta (no adopta) y con
+    /// las condiciones vivas de `WelcomeLeaveICloudBeforeSignIn`, leídas como las lee el guard cross-cuenta tras firmar
+    /// (`runSignInFlow`) y la puerta que va a vaciar (`WelcomeGroupsGateView.cloudAccountEntryPhase`).
+    private func leavesICloudAsideInsteadOfSigningIn() -> Bool {
+        guard !CloudAuthService.shared.hasSession else { return false }
+        if case .bornCloud = activeEntry { return false }
+        let hasLocalData = hasLocalDataNow()
+        guard hasLocalData else { return false }
+        return WelcomeLeaveICloudBeforeSignIn.leavesICloudAsideFirst(
+            hasLocalData: hasLocalData,
+            restoreInProgress: ICloudRestoreSessionSignal.isRestoringNow,
+            hasClaimSeal: CloudClaimActionStore.shared.hasAnyClaim(),
+            asideExit: ICloudAsideEntryLogic.exit(
+                exitCell: WelcomeGroupsGateView.exitCell(),
+                copyChannel: WelcomeGroupsGateView.copyChannelNow,
+                hasLegacyCloudKitGroups: CloudSessionSignOut.hasLegacyCloudKitGroupRows(context: modelContext)))
     }
 
     private func launchFlow(_ operation: @escaping @MainActor () async -> Void) {
@@ -1214,20 +1246,71 @@ struct WelcomeCloudSignInView: View {
         return { goBack() }
     }
 
-    /// «Volver» de la barra. Desde «¿Cargamos tus datos y entramos?» suelta la sesión que abrió esta pantalla, como
-    /// «Usar otra cuenta»: la persona no entró a nada.
+    /// «Volver» de la barra. Desde «¿Cargamos tus datos y entramos?» suelta la sesión que abrió esta pantalla: la persona
+    /// no entró a nada.
     private func goBack() {
         guard isUnifiedAccess else { return onBack() }
-        useAnotherAccount()
+        leaveUnifiedAccess()
     }
 
     /// Salir del acceso único sin haber entrado a nada: se suelta la sesión, sea de esta pasada o una que quedó viva de
     /// un intento anterior (review adversarial: con la sesión viva, el siguiente «Entrar con Google» reusaba la de
     /// Apple sin enseñar la hoja). En el acceso único no hay sesión legítima que conservar al volver a la vitrina.
-    private func useAnotherAccount() {
+    private func leaveUnifiedAccess() {
         launchFlow {
             if CloudAuthService.shared.hasSession { await CloudAuthService.shared.signOut() }
             onBack()
+        }
+    }
+
+    /// La salida de «Usar otra cuenta» de las dos hojas del acceso único (`WelcomeUseAnotherAccount`).
+    private var useAnotherAccountExit: WelcomeUseAnotherAccount.Exit {
+        WelcomeUseAnotherAccount.exit(provider: provider,
+                                      appleWebSignInEnabled: CloudRemoteFlags.appleWebSignInEnabled)
+    }
+
+    /// **«Usar otra cuenta» abre otra cuenta en el acto** (ticket `other-account-sign-in-bounces-to-welcome`): suelta la
+    /// sesión verificada y vuelve a firmar con el mismo proveedor —Google enseña su selector de cuentas; Apple, por la web,
+    /// deja escribir otro Apple ID—, sin pasar por la vitrina. Cancelar esa hoja vuelve a la vitrina: la sesión de antes
+    /// ya se soltó, así que no queda una hoja a la que volver.
+    private func useAnotherAccount() {
+        let exit = useAnotherAccountExit
+        guard exit != .onlyTheOtherProvider else { return enterWithOtherProvider() }
+        loadConfirmed = false
+        verifiedEmail = nil
+        cancelRestores = nil
+        cancelRestoresEntry = nil
+        signsInWithAppleOnTheWeb = exit == .appleOnTheWeb
+        launchFlow {
+            if CloudAuthService.shared.hasSession { await CloudAuthService.shared.signOut() }
+            await runSignInFlow(origin: .reentry)
+        }
+    }
+
+    /// La salida de texto de las dos hojas: «Usar otra cuenta», u «Otra cuenta de Apple» cuando lo que se abre es Apple
+    /// por la web. Apple sin la web no la lleva: en su sitio va la nota de que Apple usa el Apple ID de este teléfono, y la
+    /// salida es «Entrar con Google» (`useAnotherAccountExit`).
+    @ViewBuilder
+    private func useAnotherAccountControls(id: String, offersOtherProviderButton: Bool) -> some View {
+        switch useAnotherAccountExit {
+        case .signInAgain:
+            textExit(L10n.UnifiedAccess.useAnotherAccount, id: id) { useAnotherAccount() }
+        case .appleOnTheWeb:
+            textExit(L10n.Storage.SignIn.anotherAppleID, id: id) { useAnotherAccount() }
+        case .onlyTheOtherProvider:
+            Text(L10n.Storage.MigrateBlock.appleSameAccountNote)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.white.opacity(0.75))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("\(id)_apple_note")
+            if offersOtherProviderButton {
+                WelcomeFormButton(title: L10n.Showcase.enterWithGoogle, weight: .outline) {
+                    DS.Haptic.selection()
+                    enterWithOtherProvider()
+                }
+                .accessibilityIdentifier("\(id)_google")
+            }
         }
     }
 
@@ -1287,10 +1370,9 @@ struct WelcomeCloudSignInView: View {
                     enterWithOtherProvider()
                 }
                 .accessibilityIdentifier("welcome_cloud_create_other_provider")
-                // La hoja conserva la sesión del acceso verificado: salir la suelta.
-                textExit(L10n.UnifiedAccess.useAnotherAccount, id: "welcome_cloud_create_use_another") {
-                    useAnotherAccount()
-                }
+                // La hoja conserva la sesión del acceso verificado: «Usar otra cuenta» la suelta y abre otra en el acto.
+                // «Entrar con …» ya está encima, así que Apple sin la web solo añade la nota.
+                useAnotherAccountControls(id: "welcome_cloud_create_use_another", offersOtherProviderButton: false)
             }
             .padding(.horizontal, DS.Spacing.xl)
         }
@@ -1355,9 +1437,7 @@ struct WelcomeCloudSignInView: View {
                     confirmLoadAndEnter()
                 }
                 .accessibilityIdentifier("welcome_cloud_confirm_load_cta")
-                textExit(L10n.UnifiedAccess.useAnotherAccount, id: "welcome_cloud_confirm_load_use_another") {
-                    useAnotherAccount()
-                }
+                useAnotherAccountControls(id: "welcome_cloud_confirm_load_use_another", offersOtherProviderButton: true)
             }
             .padding(.horizontal, DS.Spacing.xl)
         }
@@ -1468,8 +1548,11 @@ struct WelcomeCloudSignInView: View {
         let reusable = GoogleCredentialReuseLogic.credentialForNextSignIn(
             pendingGoogleCredential, provider: provider, now: Date())
         pendingGoogleCredential = nil
+        let appleOnTheWeb = signsInWithAppleOnTheWeb && provider == .apple
+        signsInWithAppleOnTheWeb = false
         do {
-            try await CloudAuthService.shared.signIn(with: provider, reusingGoogleCredential: reusable)
+            try await CloudAuthService.shared.signIn(with: provider, reusingGoogleCredential: reusable,
+                                                     appleOnTheWeb: appleOnTheWeb)
             sessionOpenedHere = true
             return true
         } catch CloudAuthError.cancelled {
@@ -1551,6 +1634,14 @@ struct WelcomeCloudSignInView: View {
     /// encontró la cuenta ya creada pasa `.signUpFoundExistingAccount`.
     private func runSignInFlow(origin: WelcomeAdoptOrigin) async {
         adoptOrigin = origin
+        // Fallo 2 del 13-nov: con el corpus del iCloud privado en el teléfono, se deja aparte ANTES de firmar
+        // (`WelcomeLeaveICloudBeforeSignIn`). Firmando primero, la vuelta al neutro purgaba la sesión y tras reabrir había
+        // que volver a firmar. Aquí lo cubre para todas las entradas que firman: la vitrina, «Usar otra cuenta», «Entrar
+        // con …» y los botones del intro.
+        if leavesICloudAsideInsteadOfSigningIn() {
+            onLeaveICloudAside(provider)
+            return
+        }
         phase = .checking
         guard await ensureSignedIn() else { return }
 
