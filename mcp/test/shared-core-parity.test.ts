@@ -12,8 +12,10 @@
  */
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import goldenJson from "./golden/app-parity.json";
-import { TOOL_CORES, type ToolContext } from "../src/toolCore";
-import { YalaReader, type Fetcher } from "../src/data";
+import { readdirSync, readFileSync } from "node:fs";
+import { TOOL_CORES, type ToolContext } from "../../shared-core/src/toolCore";
+import { YalaReader, type Fetcher } from "../../shared-core/src/data";
+import * as viaConnector from "../src/toolCore";
 
 interface Scenario {
   id: string;
@@ -87,5 +89,27 @@ describe("paridad del núcleo compartido", () => {
     const now = await runAll(TOOL_CORES);
     expect(Object.keys(now).length).toBe(scenarios.length * Object.values(CALLS).flat().length);
     await expect(JSON.stringify(now, null, 1) + "\n").toMatchFileSnapshot("./golden/shared-core-parity.json");
+  });
+
+  it("el conector usa ese mismo núcleo, no una copia", () => {
+    expect(viaConnector.TOOL_CORES).toBe(TOOL_CORES);
+  });
+});
+
+describe("el núcleo compartido no depende de ningún paquete", () => {
+  /** Imports y reexports que no son relativos. `import type` también cuenta: tsc los resuelve. */
+  function packageImports(src: string): string[] {
+    return [...src.matchAll(/from\s+"([^"]+)"/g)].map((m) => m[1]!).filter((s) => !s.startsWith("."));
+  }
+
+  it("ningún fichero de shared-core/src importa un paquete", () => {
+    const root = new URL("../../shared-core/src/", import.meta.url);
+    const files = readdirSync(root, { recursive: true, encoding: "utf8" }).filter((f) => f.endsWith(".ts"));
+    expect(files.length).toBeGreaterThan(15); // control: el escáner encontró la carpeta
+    for (const f of files) expect(packageImports(readFileSync(new URL(f, root), "utf8")), f).toEqual([]);
+  });
+
+  it("control positivo: el escáner sí ve un paquete donde lo hay", () => {
+    expect(packageImports(readFileSync(new URL("../src/tools.ts", import.meta.url), "utf8"))).toContain("zod");
   });
 });
