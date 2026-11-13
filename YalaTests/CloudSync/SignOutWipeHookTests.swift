@@ -556,7 +556,8 @@ struct SignOutNotificationWiringTests {
         // **Eran 6 hasta el 2026-09-13**: los dos que faltan son los caminos de salida de la sesión de
         // visita. El conteo incluye la declaración de la propia función (4 call-sites + 1 `func`): el cuarto es el
         // borrado de la cuenta con sesión privada, que desde el encargo S27i (2026-10-29) se lleva también lo personal.
-        #expect(code.components(separatedBy: "clearLocalSurfacesForArmedWipe()").count - 1 == 5)
+        // Y uno más desde el 2026-11-13: «Empezar de cero» en un teléfono en la nube (opción A), que arma el mismo borrado.
+        #expect(code.components(separatedBy: "clearLocalSurfacesForArmedWipe()").count - 1 == 6)
         // El widget vive en el mismo helper A PROPÓSITO: es la otra superficie del SISTEMA que sigue
         // mostrando la cuenta cerrada hasta el relanzamiento, y comparte sus call-sites exactos.
         #expect(code.components(separatedBy: "WidgetDataCache.clearCache()").count - 1 == 1)

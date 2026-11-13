@@ -3799,6 +3799,9 @@ private struct WelcomeFlowModifier: ViewModifier {
                     // declaran lo mismo.
                     CloudSessionRetirement.arm(defaults: .standard)
                 }
+                // **Con el teléfono todavía en la nube, el onboarding privado no se encola: se deja recién instalado**
+                // (opción A). Tras el relanzamiento montaría el store de la nube y correría encima, sin sesión.
+                if destination == .privateOnboarding, returnCloudPhoneToFreshInstallIfNeeded() { return }
                 WelcomePendingDestinationStore.set(destination)
             },
             onGroupsGateNeutralReturnArmed: { purpose in
@@ -4177,9 +4180,32 @@ private struct WelcomeFlowModifier: ViewModifier {
             // `.proceed` llega aquí sin retirarla; sin esta línea, tras el onboarding nuevo el arranque ofrecería
             // «Terminar de borrar» sobre el corpus recién creado.
             StorageModePersistence.clearICloudCorpusWipeLeftHalfway()
+            // **Con el teléfono todavía en la nube, no se abre el onboarding: se deja recién instalado** (opción A).
+            guard !returnCloudPhoneToFreshInstallIfNeeded() else { return }
             showWelcomeFlow = false
             showOnboarding = true
         }
+    }
+
+    /// **«Empezar de cero» en un teléfono que sigue en modo nube lo deja como recién instalado** (ticket
+    /// `adopt-over-a-device-already-in-cloud-mode-has-no-exit`, opción A de Jürgen del 13-nov). Lo llaman las salidas del
+    /// Welcome que, tras el borrado de «Empezar de cero», iban a abrir el onboarding privado: este cuerpo, el destino
+    /// `.privateOnboarding` del relanzamiento del espejo y el alert de datos existentes (`ShellDataAlertsModifier`, con la
+    /// misma regla). Con el modo en `.cloud`, ese onboarding corría sobre el store de la nube sin sesión y dejaba armado el
+    /// adopt sin salida (`AdoptOverCloudGuardLogic`).
+    ///
+    /// Cierra el cover del Welcome para que se presente el del cierre si hace falta reabrir: los dos cuelgan del mismo body
+    /// y UIKit presenta uno solo. Con el cambio en caliente, la jerarquía se remonta y aterriza en el Welcome.
+    ///
+    /// - Returns: `true` si tomó el relevo; el llamador no abre nada más.
+    private func returnCloudPhoneToFreshInstallIfNeeded() -> Bool {
+        guard AdoptOverCloudGuardLogic.freshStartReturnsToFreshInstall(
+            persistedMode: StorageModePersistence.read()) else { return false }
+        // Armado AQUÍ, síncrono, antes de cerrar nada: con el coordinador ocupado no se toca el Welcome.
+        guard CloudSessionSignOut.shared.armReturnToFreshInstallAfterWelcomeFreshStart() else { return false }
+        showWelcomeFlow = false
+        Task { await CloudSessionSignOut.shared.finishReturnToFreshInstallAfterWelcomeFreshStart() }
+        return true
     }
 }
 

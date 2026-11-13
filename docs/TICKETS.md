@@ -91,7 +91,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | adopt-imports-between-the-reconcile-and-the-baseline-are-never-drained | backlog | tickets/backlog/adopt-imports-between-the-reconcile-and-the-baseline-are-never-drained.md |
 | adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch | done | tickets/done/adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch.md |
 | adopt-orphan-with-a-fresh-hlc-beats-the-absent-leaders-edit | backlog | tickets/backlog/adopt-orphan-with-a-fresh-hlc-beats-the-absent-leaders-edit.md |
-| adopt-over-a-device-already-in-cloud-mode-has-no-exit | backlog | tickets/backlog/adopt-over-a-device-already-in-cloud-mode-has-no-exit.md |
+| adopt-over-a-device-already-in-cloud-mode-has-no-exit | done | tickets/done/adopt-over-a-device-already-in-cloud-mode-has-no-exit.md |
+| adopt-over-cloud-block-uses-the-foreign-data-copy | backlog | tickets/backlog/adopt-over-cloud-block-uses-the-foreign-data-copy.md |
 | adopt-rekeyed-rows-without-a-unique-lineage-key-still-duplicate | discarded | tickets/discarded/adopt-rekeyed-rows-without-a-unique-lineage-key-still-duplicate.md |
 | adopt-session-close-drops-the-mark-before-the-sign-out-lands | backlog | tickets/backlog/adopt-session-close-drops-the-mark-before-the-sign-out-lands.md |
 | adopt-terminal-claims-ready-without-checking-engine | backlog | tickets/backlog/adopt-terminal-claims-ready-without-checking-engine.md |
@@ -687,7 +688,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | inbox-list-capped-at-500-may-hide-old-pending-drafts | done | tickets/done/inbox-list-capped-at-500-may-hide-old-pending-drafts.md |
 | inbox-strings-show-a-python-dict-in-four-languages | done | tickets/done/inbox-strings-show-a-python-dict-in-four-languages.md |
 | inbox-success-says-transaction-created | done | tickets/done/inbox-success-says-transaction-created.md |
-| inbox-swipe-save-success-sheet-shows-blank | backlog | tickets/backlog/inbox-swipe-save-success-sheet-shows-blank.md |
+| inbox-swipe-save-success-sheet-shows-blank | done | tickets/done/inbox-swipe-save-success-sheet-shows-blank.md |
 | income-amount-color-is-dim-in-dark-mode | done | tickets/done/income-amount-color-is-dim-in-dark-mode.md |
 | indice-readme-barre-worktrees-anidados | discarded | tickets/discarded/indice-readme-barre-worktrees-anidados.md |
 | indice-readme-cuenta-los-ficheros-de-los-worktrees-anidados | discarded | tickets/discarded/indice-readme-cuenta-los-ficheros-de-los-worktrees-anidados.md |
@@ -993,7 +994,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reentry-killswitch-closes-both-doors | done | tickets/done/reentry-killswitch-closes-both-doors.md |
 | regional-variants-show-the-plural-form-for-one | done | tickets/done/regional-variants-show-the-plural-form-for-one.md |
 | registros-calendario-cuenta-gastos-por-signo | done | tickets/done/registros-calendario-cuenta-gastos-por-signo.md |
-| reimported-group-legs-become-transfers | backlog | tickets/backlog/reimported-group-legs-become-transfers.md |
+| reimported-group-legs-become-transfers | done | tickets/done/reimported-group-legs-become-transfers.md |
 | reinstall-mid-migration-has-no-exit-from-the-identity-gate | qa | tickets/qa/reinstall-mid-migration-has-no-exit-from-the-identity-gate.md |
 | reinstall-without-network-has-no-cloud-door | done | tickets/done/reinstall-without-network-has-no-cloud-door.md |
 | rejected-member-cold-tap-does-nothing | done | tickets/done/rejected-member-cold-tap-does-nothing.md |
@@ -1277,6 +1278,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | welcome-fresh-install-neutral-mount-lasts-one-launch | done | tickets/done/welcome-fresh-install-neutral-mount-lasts-one-launch.md |
 | welcome-fresh-start-alert-leaves-blank-screen | done | tickets/done/welcome-fresh-start-alert-leaves-blank-screen.md |
 | welcome-fresh-start-failed-copy-says-data-is-still-here-after-partial-wipe | backlog | tickets/backlog/welcome-fresh-start-failed-copy-says-data-is-still-here-after-partial-wipe.md |
+| welcome-fresh-start-on-a-cloud-phone-wipes-rows-with-the-engine-alive | backlog | tickets/backlog/welcome-fresh-start-on-a-cloud-phone-wipes-rows-with-the-engine-alive.md |
 | welcome-groups-back-forgets-first-time-after-invite-screen | done | tickets/done/welcome-groups-back-forgets-first-time-after-invite-screen.md |
 | welcome-groups-gate-button-identifiers-are-shadowed-by-their-screen | done | tickets/done/welcome-groups-gate-button-identifiers-are-shadowed-by-their-screen.md |
 | welcome-groups-gate-loops-on-legacy-cloudkit-groups | done | tickets/done/welcome-groups-gate-loops-on-legacy-cloudkit-groups.md |
@@ -1292,6 +1294,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | welcome-wipes-on-a-mirrored-store-never-start-with-drive-off | done | tickets/done/welcome-wipes-on-a-mirrored-store-never-start-with-drive-off.md |
 | whats-new-2-0-still-calls-groups-beta | discarded | tickets/discarded/whats-new-2-0-still-calls-groups-beta.md |
 | whats-new-2-2-review-before-release | done | tickets/done/whats-new-2-2-review-before-release.md |
+| whats-new-sheet-may-show-blank-like-the-inbox-swipe-sheet | backlog | tickets/backlog/whats-new-sheet-may-show-blank-like-the-inbox-swipe-sheet.md |
 | whats-new-yields-to-a-pending-trial-offer-after-updating | done | tickets/done/whats-new-yields-to-a-pending-trial-offer-after-updating.md |
 | white-text-on-the-brand-indigo-is-just-below-aa | done | tickets/done/white-text-on-the-brand-indigo-is-just-below-aa.md |
 | white-text-on-the-rosa-teal-and-minimal-accents-is-below-aa | done | tickets/done/white-text-on-the-rosa-teal-and-minimal-accents-is-below-aa.md |

@@ -1664,9 +1664,19 @@ struct WelcomeCloudSignInView: View {
                 phase = .confirmLoad
                 return
             }
-            let decision = CrossAccountEntryGuardLogic.decide(
+            let sameAccountClaimExists = CloudClaimActionStore.shared.action(forUserID: userID) != nil
+            // **Sobre un teléfono que ya está en la nube no se adopta sin el sello de esta cuenta** (ticket
+            // `adopt-over-a-device-already-in-cloud-mode-has-no-exit`, opción A de Jürgen). Ese adopt quedaba pendiente para
+            // siempre, sin «Cancelar» ni techo. Se para con el bloqueo de siempre, que vuelve al elector, y desde ahí
+            // «Empezar de cero» deja el teléfono recién instalado. Con el sello de esta cuenta sigue como hoy.
+            let refusesAdoptOverCloud = AdoptOverCloudGuardLogic.refusesAdopt(
+                persistedMode: StorageModePersistence.read(), sameAccountClaimExists: sameAccountClaimExists)
+            if refusesAdoptOverCloud {
+                MetricsService.canary(.adoptOverCloudRefused)
+            }
+            let decision: CrossAccountEntryGuardLogic.Decision = refusesAdoptOverCloud ? .blockedForeignData : CrossAccountEntryGuardLogic.decide(
                 hasLocalData: hasLocalDataNow(),
-                sameAccountClaimExists: CloudClaimActionStore.shared.action(forUserID: userID) != nil,
+                sameAccountClaimExists: sameAccountClaimExists,
                 // Se lee AQUÍ y no se cachea: el mirror puede asentar entre que se monta la pantalla y
                 // que el usuario firma, y con el import ya asentado sus filas dejan de ser «las que
                 // estoy bajando». Mismo criterio que `hasLocalDataNow`, que es un closure por eso mismo.
