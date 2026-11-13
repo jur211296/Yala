@@ -89,9 +89,8 @@ final class InboxDuplicateCheckUITests: XCTestCase {
         )
     }
 
-    /// «Guardar de todas formas» lo guarda: la salida de quien sabe que son dos pagos distintos sigue ahí. Se mide por el
-    /// borrador que sale de pendientes y no por la pantalla de éxito: la de deslizar sale vacía también sin duplicado
-    /// (fallo previo, ticket `inbox-swipe-save-success-sheet-shows-blank`).
+    /// «Guardar de todas formas» lo guarda: la salida de quien sabe que son dos pagos distintos sigue ahí. Y la pantalla
+    /// de éxito sale con su «Aceptar», como al deslizar uno sin gemelo.
     func test_swipeToSave_onAPossibleDuplicate_saveAnywaySavesIt() {
         let app = launchWithTheTwin()
         let row = app.buttons["inbox_draft_row_\(twinDraft)"]
@@ -102,6 +101,32 @@ final class InboxDuplicateCheckUITests: XCTestCase {
         saveAnyway.tap()
 
         XCTAssertTrue(row.waitForNonExistence(timeout: 10), "«Guardar de todas formas» no guardó el borrador.")
+        let accept = app.buttons["inbox_success_accept"]
+        XCTAssertTrue(accept.waitForExistence(timeout: 5), "La pantalla de éxito salió vacía, sin «Aceptar».")
+        accept.tap()
+        XCTAssertTrue(accept.waitForNonExistence(timeout: 5), "«Aceptar» no cerró la pantalla de éxito.")
+    }
+
+    /// Deslizar a la derecha un borrador completo lo guarda y la hoja que sube trae el resumen del registro y «Aceptar».
+    /// Antes salía vacía —fondo oscuro, sin check ni botones— y solo se cerraba arrastrándola (ticket
+    /// `inbox-swipe-save-success-sheet-shows-blank`): sus datos venían de otro `@State` que el `body` no leía.
+    func test_swipeToSave_aCompleteDraft_showsTheSuccessScreenWithItsSummary() {
+        let app = launchWithTheTwin()
+        let row = app.buttons["inbox_draft_row_\(otherDraft)"]
+        swipeToSave(row)
+
+        let accept = app.buttons["inbox_success_accept"]
+        let appeared = accept.waitForExistence(timeout: 5)
+        attachScreenshot("deslizar-pantalla-de-exito", of: app)
+        XCTAssertTrue(appeared, "La pantalla de éxito salió vacía, sin «Aceptar».")
+        XCTAssertTrue(row.waitForNonExistence(timeout: 5), "Deslizar no guardó el borrador.")
+        // El resumen de la hoja: la nota del registro guardado (la fila ya salió de pendientes).
+        XCTAssertTrue(
+            app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", otherDraft)).firstMatch.exists,
+            "La pantalla de éxito no enseña el resumen del registro."
+        )
+        accept.tap()
+        XCTAssertTrue(accept.waitForNonExistence(timeout: 5), "«Aceptar» no cerró la pantalla de éxito.")
     }
 
     /// El deslizamiento completo hacia la derecha guarda (molde de `InboxCrudUITests` para el de la izquierda).
