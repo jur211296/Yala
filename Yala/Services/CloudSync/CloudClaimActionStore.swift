@@ -64,6 +64,13 @@ final class CloudClaimActionStore {
         return Self.decode(raw)
     }
 
+    /// ¿Hay algún sello de claim en este teléfono, de cualquier cuenta? Lo lee la bienvenida antes de firmar
+    /// (`WelcomeLeaveICloudBeforeSignIn`): con uno, el guard cross-cuenta podría dejar adoptar a esa cuenta, y eso solo se
+    /// sabe tras firmar.
+    func hasAnyClaim() -> Bool {
+        defaults.dictionaryRepresentation().keys.contains { $0.hasPrefix(Self.prefix) }
+    }
+
     /// Borra el registro de `userID`. NO se llama en `signOut`. En producción solo lo usa
     /// `MigrationWorkExecutor.discardLastClaimStamp`, para deshacer el sello de un claim que «Migrar a la nube» devolvió
     /// al inicio cuando antes no había ninguno.

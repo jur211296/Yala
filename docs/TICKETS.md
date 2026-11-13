@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1288)
+## Index (1292)
 
 | id | status | path |
 |---|---|---|
@@ -865,6 +865,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | opening-balance-ticks-the-first-expense-step | done | tickets/done/opening-balance-ticks-the-first-expense-step.md |
 | orphan-alerts-behind-fullscreen-covers | done | tickets/done/orphan-alerts-behind-fullscreen-covers.md |
 | orphaned-group-records-stay-out-of-the-notice | done | tickets/done/orphaned-group-records-stay-out-of-the-notice.md |
+| other-account-sign-in-bounces-to-welcome | done | tickets/done/other-account-sign-in-bounces-to-welcome.md |
 | own-telemetry-panel-by-sections | qa | tickets/qa/own-telemetry-panel-by-sections.md |
 | owner-preferences-return-via-ikv-after-private-sign-out | qa | tickets/qa/owner-preferences-return-via-ikv-after-private-sign-out.md |
 | palette-pink-and-indigo-still-used-as-text-color | backlog | tickets/backlog/palette-pink-and-indigo-still-used-as-text-color.md |

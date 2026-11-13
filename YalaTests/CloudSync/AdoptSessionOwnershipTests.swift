@@ -374,10 +374,12 @@ struct AdoptSessionOwnershipWiringTests {
     @Test func welcome_marksTheSessionItSignedIn() throws {
         let ensure = Self.lines(try Self.body(of: "private func ensureSignedIn() async -> Bool {", in: Self.welcomePath))
         // vb1f: el inicio de sesión lleva además la credencial de Google reusable; lo que se fija aquí no cambia.
+        // Desde `other-account-sign-in-bounces-to-welcome` la llamada ocupa dos líneas (lleva «Otra cuenta de Apple»).
         let signIn = try #require(ensure.firstIndex(
-            of: "try await CloudAuthService.shared.signIn(with: provider, reusingGoogleCredential: reusable)"))
-        #expect(ensure[signIn + 1] == "sessionOpenedHere = true")
-        #expect(ensure[signIn + 2] == "return true")
+            of: "try await CloudAuthService.shared.signIn(with: provider, reusingGoogleCredential: reusable,"))
+        #expect(ensure[signIn + 1] == "appleOnTheWeb: appleOnTheWeb)")
+        #expect(ensure[signIn + 2] == "sessionOpenedHere = true")
+        #expect(ensure[signIn + 3] == "return true")
         let code = try Self.source(Self.welcomePath)
         #expect(Self.occurrences(of: "sessionOpenedHere = true", in: code) == 1)
         #expect(code.contains("@State private var sessionOpenedHere = false"))

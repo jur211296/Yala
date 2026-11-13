@@ -141,9 +141,44 @@ final class Bienvenida23AltaUITests: XCTestCase {
                       "Falta el aviso de que con el otro proveedor sería otra cuenta.")
         XCTAssertTrue(app.buttons["welcome_cloud_create_account_cta"].exists, "Falta «Crear mi cuenta».")
         XCTAssertTrue(app.buttons["welcome_cloud_create_other_provider"].exists, "Falta «Entrar con Apple».")
-        app.buttons["welcome_cloud_create_use_another"].tap()
-        XCTAssertTrue(app.buttons["welcome_access_google"].waitForExistence(timeout: 10),
-                      "«Usar otra cuenta» no volvió a la vitrina.")
+    }
+
+    /// Ticket `other-account-sign-in-bounces-to-welcome` (fallo 1 del 13-nov): «Usar otra cuenta» con Google vuelve a
+    /// firmar EN EL ACTO, sin pasar por la vitrina. El inicio de sesión y `exists` se fingen (`-uitest-fake-account-exists`):
+    /// la cuenta «elegida» existe, así que la hoja siguiente es «¿Cargamos tus datos y entramos?». Antes volvía a la vitrina.
+    func test_unifiedAccess_useAnotherAccount_signsInAgainWithoutTheShowcase() throws {
+        let app = XCUIApplication()
+        app.launchForUITest(reset: true, skipOnboarding: false, seed: nil, fakeAttestSupport: true,
+                            extraArguments: ["-uitest-cloud-chooser", "-uitest-unified-access-phase", "create",
+                                             "-uitest-fake-account-exists", "complete"])
+        let google = app.buttons["welcome_access_google"]
+        XCTAssertTrue(google.waitForExistence(timeout: 60), "No apareció «Entrar con Google».")
+        google.tap()
+        let useAnother = app.buttons["welcome_cloud_create_use_another"]
+        XCTAssertTrue(useAnother.waitForExistence(timeout: 15), "Falta «Usar otra cuenta».")
+        useAnother.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["welcome_cloud_confirm_load"].waitForExistence(timeout: 15),
+                      "«Usar otra cuenta» no volvió a firmar: tras el nuevo inicio de sesión tenía que salir la cuenta.")
+        XCTAssertFalse(app.buttons["welcome_access_google"].exists, "«Usar otra cuenta» rebotó a la vitrina.")
+    }
+
+    /// Fallo 3 del 13-nov: con Apple y sin el inicio de sesión web de Apple no hay otro Apple ID que elegir. En vez de
+    /// «Usar otra cuenta» (que firmaba otra vez con el mismo Apple ID: un bucle), la nota y «Entrar con Google».
+    func test_unifiedAccess_appleWithoutTheWeb_offersGoogleInsteadOfALoop() throws {
+        let app = XCUIApplication()
+        app.launchForUITest(reset: true, skipOnboarding: false, seed: nil,
+                            extraArguments: ["-uitest-cloud-chooser", "-uitest-unified-access-phase", "confirm",
+                                             "-uitest-apple-web-sign-in-off"])
+        let apple = app.buttons["welcome_access_apple"]
+        XCTAssertTrue(apple.waitForExistence(timeout: 60), "No apareció «Entrar con Apple».")
+        apple.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["welcome_cloud_confirm_load"].waitForExistence(timeout: 15),
+                      "No salió «¿Cargamos tus datos y entramos?».")
+        XCTAssertTrue(app.descendants(matching: .any)["welcome_cloud_confirm_load_use_another_apple_note"].exists,
+                      "Falta la nota de que Apple usa el Apple ID de este teléfono.")
+        XCTAssertTrue(app.buttons["welcome_cloud_confirm_load_use_another_google"].exists, "Falta «Entrar con Google».")
+        XCTAssertFalse(app.buttons["welcome_cloud_confirm_load_use_another"].exists,
+                       "Con Apple sin la web, «Usar otra cuenta» vuelve a firmar con el mismo Apple ID.")
     }
 
     /// Y23-02 · con cuenta, «¿Cargamos tus datos y entramos?» antes de traer nada.
@@ -157,6 +192,7 @@ final class Bienvenida23AltaUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["welcome_cloud_confirm_load"].waitForExistence(timeout: 15),
                       "No salió «¿Cargamos tus datos y entramos?».")
         XCTAssertTrue(app.buttons["welcome_cloud_confirm_load_cta"].exists, "Falta «Cargar mis datos y entrar».")
-        XCTAssertTrue(app.buttons["welcome_cloud_confirm_load_use_another"].exists, "Falta «Usar otra cuenta».")
+        // Con el inicio de sesión web de Apple (encendido en DEV), la salida es «Otra cuenta de Apple».
+        XCTAssertTrue(app.buttons["welcome_cloud_confirm_load_use_another"].exists, "Falta «Otra cuenta de Apple».")
     }
 }
