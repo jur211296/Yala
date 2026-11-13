@@ -13,6 +13,8 @@ import SwiftUI
 struct PrimerosPasosHomeScreenPresentation: ViewModifier {
     @Binding var sheets: PanelSheetState
 
+    @Environment(SessionState.self) private var sessionState
+
     /// El progreso vive aquí y no dentro de la pantalla: si iOS rehace su contenido, sigue donde iba.
     @State private var progress = HomeScreenTutorialProgress()
     /// Cómo terminó, copiado antes de cerrar: lo aplica el `onDismiss`.
@@ -21,11 +23,21 @@ struct PrimerosPasosHomeScreenPresentation: ViewModifier {
     func body(content: Content) -> some View {
         content
             .fullScreenCover(isPresented: $sheets.showHomeScreenTutorial, onDismiss: afterTutorial) {
-                HomeScreenTutorialFlowView(progress: progress) { result in
+                HomeScreenTutorialFlowView(progress: progress, showsMail: showsMail) { result in
                     exit = result
                     sheets.showHomeScreenTutorial = false
                 }
             }
+    }
+
+    /// La quinta manera, el correo del banco, con la misma regla que su fila de Ajustes: datos en la nube, sesión y fuera
+    /// de solo grupos (Y23-19). La lista se fija al aparecer el paso (`HomeScreenTutorialProgress.methods`).
+    private var showsMail: Bool {
+        CloudSessionRevision.shared.track()
+        return UITestHooks.bankEmailFake || BankEmailEntryLogic.showsRow(
+            storageIsCloud: CloudSyncFlags.storageMode == .cloud,
+            hasSession: CloudAuthService.shared.hasSession,
+            isGroupsFocusedShell: sessionState.isGroupsFocusedShell)
     }
 
     private func afterTutorial() {

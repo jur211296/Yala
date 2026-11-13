@@ -96,6 +96,25 @@ extension L10n.PrimerosPasos23 {
         static var applePayNextAction: String { pp23f("pasos23.home.applePay.nextAction") }
         static var shareNextAction: String { pp23f("pasos23.home.share.nextAction") }
         static var siriNextAction: String { pp23f("pasos23.home.siri.nextAction") }
+
+        // Mini tutorial del correo del banco (Y23-19): «Tu dirección de Yala».
+        static var mailName: String { pp23f("pasos23.home.mail.name") }
+        static var mailPartTitle: String { pp23f("pasos23.home.mail.part.title") }
+        static var mailPartMessage: String { pp23f("pasos23.home.mail.part.message") }
+        static func mailPartMail(_ amount: String) -> String { pp23f("pasos23.home.mail.part.mail", amount) }
+        static var mailPartFrom: String { pp23f("pasos23.home.mail.part.from") }
+        static func mailPartPush(_ amount: String) -> String { pp23f("pasos23.home.mail.part.push", amount) }
+        static var mailTitle: String { pp23f("pasos23.home.mail.title") }
+        static var mailSubtitle: String { pp23f("pasos23.home.mail.subtitle") }
+        static var mailAddressCaption: String { pp23f("pasos23.home.mail.addressCaption") }
+        static var mailCopy: String { pp23f("pasos23.home.mail.copy") }
+        static var mailStep1: String { pp23f("pasos23.home.mail.step1") }
+        static var mailStep2: String { pp23f("pasos23.home.mail.step2") }
+        static var mailStep3: String { pp23f("pasos23.home.mail.step3") }
+        static var mailStep3Detail: String { pp23f("pasos23.home.mail.step3.detail") }
+        static var mailSoon: String { pp23f("pasos23.home.mail.soon") }
+        static var mailNextDetail: String { pp23f("pasos23.home.mail.next") }
+        static var mailNextAction: String { pp23f("pasos23.home.mail.nextAction") }
     }
 
     /// Un texto que ya existe en la app (frases de «Siri y Atajos», «Omitido»), leído con la misma búsqueda que los de

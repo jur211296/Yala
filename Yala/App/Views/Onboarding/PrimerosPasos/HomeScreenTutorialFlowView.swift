@@ -6,7 +6,8 @@
 //  pestaña 8 · Pasos 6 y 7). Como el paso 2: una página corta con una parte por manera (avanza sola cada 3,4 s, quieta
 //  con Reducir movimiento o VoiceOver) y luego un mini tutorial de cada una —widget, Apple Pay, compartir una foto y
 //  Siri—, todos omitibles, con una pantalla entre uno y otro. La app no puede poner el widget ni saber si se configuró
-//  algo fuera de ella: cada mini tutorial se da por hecho al tocar su botón. Las reglas viven en
+//  algo fuera de ella: cada mini tutorial se da por hecho al tocar su botón. Con los datos en la cuenta de Yala entra
+//  una quinta, el correo del banco (Y23-19), entre compartir y Siri. Las reglas viven en
 //  `HomeScreenTutorialLogic`; el progreso, en `HomeScreenTutorialProgress`, que guarda quien presenta la pantalla.
 //
 
@@ -26,11 +27,14 @@ final class HomeScreenTutorialProgress {
     var phase: Phase = .intro
     var part = 0
     var outcomes: [HomeScreenTutorialLogic.Method: HomeScreenTutorialLogic.Outcome] = [:]
+    /// Las maneras de esta vez, fijadas al aparecer: si la sesión cambia a medias, la cuenta («3 de 5») no salta.
+    var methods: [HomeScreenTutorialLogic.Method]?
 
     func reset() {
         phase = .intro
         part = 0
         outcomes = [:]
+        methods = nil
     }
 }
 
@@ -39,9 +43,15 @@ struct HomeScreenTutorialFlowView: View {
     private typealias Logic = HomeScreenTutorialLogic
 
     @Bindable var progress: HomeScreenTutorialProgress
+    /// `BankEmailEntryLogic.showsRow` en el momento de presentar: con él, cinco maneras.
+    let showsMail: Bool
     let onClose: (HomeScreenTutorialLogic.Exit) -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var methods: [HomeScreenTutorialLogic.Method] {
+        progress.methods ?? Logic.methods(showsMail: showsMail)
+    }
 
     var body: some View {
         ZStack {
@@ -51,6 +61,7 @@ struct HomeScreenTutorialFlowView: View {
             case .method(let method):
                 HomeScreenMethodPage(
                     method: method,
+                    methods: methods,
                     onDone: { resolve(method, .done) },
                     onSkip: { resolve(method, .skipped) }
                 )
@@ -63,6 +74,9 @@ struct HomeScreenTutorialFlowView: View {
         }
         .animation(reduceMotion ? nil : DS.Animation.appear, value: progress.phase)
         .yalaScreenBackground(.panel)
+        .onAppear {
+            if progress.methods == nil { progress.methods = Logic.methods(showsMail: showsMail) }
+        }
     }
 
     // MARK: - La página corta
@@ -70,15 +84,15 @@ struct HomeScreenTutorialFlowView: View {
     private var intro: some View {
         TutorialStoryPage(
             eyebrow: T.eyebrow,
-            count: Logic.methods.count,
+            count: methods.count,
             part: $progress.part,
             onBack: goBackFromIntro,
-            content: { index in HomeScreenIntroPart(method: Logic.methods[index]) },
+            content: { index in HomeScreenIntroPart(method: methods[index]) },
             footer: {
                 VStack(spacing: DS.Spacing.xs) {
                     YalaPrimaryButton(T.start) {
                         DS.Haptic.selection()
-                        progress.phase = .method(Logic.methods[0])
+                        progress.phase = .method(methods[0])
                     }
                     .accessibilityIdentifier("home_tutorial_start")
                     .primerosPasosButtonText()
@@ -108,7 +122,7 @@ struct HomeScreenTutorialFlowView: View {
         guard progress.outcomes[method] == nil else { return }
         progress.outcomes[method] = outcome
         if outcome == .done { DS.Haptic.success() }
-        if let exit = Logic.exitAfterResolving(progress.outcomes) {
+        if let exit = Logic.exitAfterResolving(progress.outcomes, in: methods) {
             onClose(exit)
         } else {
             progress.phase = .between
@@ -118,8 +132,8 @@ struct HomeScreenTutorialFlowView: View {
     // MARK: - Entre una manera y la siguiente
 
     private var betweenPage: some View {
-        let next = Logic.next(after: progress.outcomes)
-        let done = Logic.doneCount(progress.outcomes)
+        let next = Logic.next(after: progress.outcomes, in: methods)
+        let done = Logic.doneCount(progress.outcomes, in: methods)
         return VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             Text(L10n.PlaceGuide.stepOf(7, 7))
                 .font(DS.Typography.subheadline.weight(.semibold))
@@ -127,8 +141,8 @@ struct HomeScreenTutorialFlowView: View {
                 .frame(maxWidth: .infinity, minHeight: 44)
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Spacing.xl) {
-                    HomeScreenMethodsRow(outcomes: progress.outcomes, next: next)
-                    Text(done > 0 ? T.progress(done, Logic.methods.count) : T.keepGoing)
+                    HomeScreenMethodsRow(methods: methods, outcomes: progress.outcomes, next: next)
+                    Text(done > 0 ? T.progress(done, methods.count) : T.keepGoing)
                         .font(DS.Typography.welcomeHeadline)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityAddTraits(.isHeader)
@@ -158,7 +172,7 @@ struct HomeScreenTutorialFlowView: View {
                         .accessibilityIdentifier("home_tutorial_next_skip")
                 } else {
                     YalaPrimaryButton(T.finish) {
-                        onClose(.finished(anyDone: Logic.doneCount(progress.outcomes) > 0))
+                        onClose(.finished(anyDone: Logic.doneCount(progress.outcomes, in: methods) > 0))
                     }
                     .accessibilityIdentifier("home_tutorial_finish")
                     .primerosPasosButtonText()
@@ -182,6 +196,7 @@ enum HomeScreenMethodText {
         case .widget: T.widgetName
         case .applePay: T.applePayName
         case .share: T.shareName
+        case .mail: T.mailName
         case .siri: T.siriName
         }
     }
@@ -191,6 +206,7 @@ enum HomeScreenMethodText {
         case .widget: "square.grid.2x2.fill"
         case .applePay: "creditcard.fill"
         case .share: "square.and.arrow.up"
+        case .mail: "envelope.fill"
         case .siri: "waveform"
         }
     }
@@ -201,6 +217,7 @@ enum HomeScreenMethodText {
         case .widget: .electricIndigo
         case .applePay: .gray
         case .share: .teal
+        case .mail: .blue
         case .siri: .purple
         }
     }
@@ -210,6 +227,7 @@ enum HomeScreenMethodText {
         case .widget: T.widgetPartMessage
         case .applePay: T.applePayNextDetail
         case .share: T.shareNextDetail
+        case .mail: T.mailNextDetail
         case .siri: T.siriNextDetail
         }
     }
@@ -219,6 +237,7 @@ enum HomeScreenMethodText {
         case .widget: T.start
         case .applePay: T.applePayNextAction
         case .share: T.shareNextAction
+        case .mail: T.mailNextAction
         case .siri: T.siriNextAction
         }
     }
@@ -245,10 +264,11 @@ struct HomeScreenMethodTile: View {
     }
 }
 
-// MARK: - Las cuatro maneras, de un vistazo
+// MARK: - Las maneras, de un vistazo
 
 /// La fila de las maneras con su estado: hecha (✓), omitida (gris), la que sigue (resaltada).
 private struct HomeScreenMethodsRow: View {
+    let methods: [HomeScreenTutorialLogic.Method]
     let outcomes: [HomeScreenTutorialLogic.Method: HomeScreenTutorialLogic.Outcome]
     let next: HomeScreenTutorialLogic.Method?
 
@@ -256,7 +276,7 @@ private struct HomeScreenMethodsRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: DS.Spacing.sm) {
-            ForEach(HomeScreenTutorialLogic.methods, id: \.self) { method in
+            ForEach(methods, id: \.self) { method in
                 VStack(spacing: DS.Spacing.xs) {
                     ZStack {
                         Circle()

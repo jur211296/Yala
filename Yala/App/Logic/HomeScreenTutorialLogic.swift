@@ -7,8 +7,9 @@
 //  una pantalla entre uno y otro. Aquí viven las reglas sin efectos: qué maneras se enseñan, cuál sigue, cómo se cuenta
 //  lo visto y qué le pasa al paso al salir.
 //
-//  El correo (Y23-19, «Tu correo, en automático») no está: su servidor aún no está desplegado y la ficha pide que, hasta
-//  que lo esté, el paso enseñe cuatro maneras. Entra como un caso más de `Method` el día que lo esté.
+//  El correo (Y23-19, «Tu correo, en automático») entra desde el 2026-11-13, con el buzón de yalainbox.com activo, entre
+//  compartir y Siri. Solo se enseña a quien puede usarlo: con los datos en la cuenta de Yala (`BankEmailEntryLogic`, la
+//  misma regla que la fila de Ajustes). Sin ella, el paso sigue con cuatro maneras.
 //
 
 import Foundation
@@ -20,6 +21,7 @@ nonisolated enum HomeScreenTutorialLogic {
         case widget
         case applePay
         case share
+        case mail
         case siri
 
         /// Compartir una foto es de Pro (la ficha y el prototipo llevan la insignia). El resto, gratis.
@@ -50,23 +52,25 @@ nonisolated enum HomeScreenTutorialLogic {
         case skipped
     }
 
-    /// Las maneras que se enseñan.
-    static let methods: [Method] = Method.allCases
+    /// Las maneras que se enseñan: cinco con el correo, cuatro sin él. `showsMail` es `BankEmailEntryLogic.showsRow`.
+    static func methods(showsMail: Bool) -> [Method] {
+        Method.allCases.filter { $0 != .mail || showsMail }
+    }
 
     /// La siguiente que falta, o `nil` si ya se resolvieron todas.
-    static func next(after outcomes: [Method: Outcome]) -> Method? {
+    static func next(after outcomes: [Method: Outcome], in methods: [Method]) -> Method? {
         methods.first { outcomes[$0] == nil }
     }
 
-    /// Cuántas se dieron por hechas: «¡Van N de 4!».
-    static func doneCount(_ outcomes: [Method: Outcome]) -> Int {
+    /// Cuántas se dieron por hechas: «¡Van N de 5!».
+    static func doneCount(_ outcomes: [Method: Outcome], in methods: [Method]) -> Int {
         methods.count { outcomes[$0] == .done }
     }
 
     /// Lo que pasa tras resolver un mini tutorial: la pantalla de entre medias, o el final si era el último.
-    static func exitAfterResolving(_ outcomes: [Method: Outcome]) -> Exit? {
-        guard next(after: outcomes) == nil else { return nil }
-        return .finished(anyDone: doneCount(outcomes) > 0)
+    static func exitAfterResolving(_ outcomes: [Method: Outcome], in methods: [Method]) -> Exit? {
+        guard next(after: outcomes, in: methods) == nil else { return nil }
+        return .finished(anyDone: doneCount(outcomes, in: methods) > 0)
     }
 
     /// Hecho si vio al menos una manera; omitido si las omitió todas o se saltó el paso; nada si solo cerró.
@@ -78,8 +82,8 @@ nonisolated enum HomeScreenTutorialLogic {
         }
     }
 
-    /// Su lugar en la lista, desde 1: «2 de 4 · Apple Pay».
-    static func position(of method: Method) -> Int {
+    /// Su lugar en la lista, desde 1: «2 de 5 · Apple Pay».
+    static func position(of method: Method, in methods: [Method]) -> Int {
         (methods.firstIndex(of: method) ?? 0) + 1
     }
 }

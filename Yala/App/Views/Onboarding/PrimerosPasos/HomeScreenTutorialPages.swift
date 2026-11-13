@@ -41,6 +41,7 @@ struct HomeScreenIntroPart: View {
         case .widget: T.widgetPartTitle
         case .applePay: T.applePayPartTitle
         case .share: T.sharePartTitle
+        case .mail: T.mailPartTitle
         case .siri: T.siriPartTitle
         }
     }
@@ -50,6 +51,7 @@ struct HomeScreenIntroPart: View {
         case .widget: T.widgetPartMessage
         case .applePay: T.applePayPartMessage
         case .share: T.sharePartMessage
+        case .mail: T.mailPartMessage
         case .siri: T.siriPartMessage
         }
     }
@@ -60,6 +62,7 @@ struct HomeScreenIntroPart: View {
         case .widget: HomeScreenWidgetIllustration()
         case .applePay: HomeScreenApplePayIllustration()
         case .share: HomeScreenShareIllustration()
+        case .mail: HomeScreenMailIllustration()
         case .siri: HomeScreenSiriIllustration()
         }
     }
@@ -138,6 +141,41 @@ private struct HomeScreenApplePayIllustration: View {
             .padding(DS.Spacing.md)
             .background(RoundedRectangle(cornerRadius: DS.Radius.lg).fill(theme.card))
             HomeScreenExamplePush(text: L10n.PrimerosPasos23.Home.applePayPartPush(amount))
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+/// Un aviso del banco de ejemplo y lo que deja en la Bandeja (Y23-19).
+private struct HomeScreenMailIllustration: View {
+    @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.yalaTheme) private var theme
+
+    private var amount: String {
+        appPreferences.currency(23.5, currencyCode: appPreferences.defaultCurrencyCode.rawValue)
+    }
+
+    var body: some View {
+        VStack(spacing: DS.Spacing.md) {
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: "envelope.fill")
+                    .font(DS.Typography.title3)
+                    .foregroundStyle(Color.blue)
+                    .frame(width: 44, height: 36)
+                    .background(RoundedRectangle(cornerRadius: DS.Radius.sm).fill(Color.blue.opacity(0.18)))
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(L10n.PrimerosPasos23.Home.mailPartMail(amount))
+                        .font(DS.Typography.subheadline.weight(.semibold))
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(L10n.PrimerosPasos23.Home.mailPartFrom)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(DS.Spacing.md)
+            .background(RoundedRectangle(cornerRadius: DS.Radius.lg).fill(theme.card))
+            HomeScreenExamplePush(text: L10n.PrimerosPasos23.Home.mailPartPush(amount))
         }
         .accessibilityHidden(true)
     }
@@ -254,6 +292,7 @@ private struct HomeScreenSiriIllustration: View {
 
 struct HomeScreenMethodPage: View {
     let method: HomeScreenTutorialLogic.Method
+    let methods: [HomeScreenTutorialLogic.Method]
     let onDone: () -> Void
     let onSkip: () -> Void
 
@@ -303,7 +342,7 @@ struct HomeScreenMethodPage: View {
                 .accessibilityIdentifier("home_tutorial_method_close")
                 .accessibilityHidden(!dynamicTypeSize.isAccessibilitySize)
             Spacer()
-            Text(T.methodEyebrow(HomeScreenTutorialLogic.position(of: method), HomeScreenTutorialLogic.methods.count,
+            Text(T.methodEyebrow(HomeScreenTutorialLogic.position(of: method, in: methods), methods.count,
                                  HomeScreenMethodText.name(method)))
                 .font(DS.Typography.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
@@ -327,6 +366,7 @@ struct HomeScreenMethodPage: View {
         case .widget: T.widgetTitle
         case .applePay: L10n.Tutorials.applePayTitle
         case .share: T.shareTitle
+        case .mail: T.mailTitle
         case .siri: T.siriTitle
         }
     }
@@ -336,6 +376,7 @@ struct HomeScreenMethodPage: View {
         case .widget: T.widgetSubtitle
         case .applePay: L10n.Tutorials.applePayIntroDesc
         case .share: T.shareSubtitle
+        case .mail: T.mailSubtitle
         case .siri: T.siriSubtitle
         }
     }
@@ -353,6 +394,24 @@ struct HomeScreenMethodPage: View {
         case .share:
             HomeScreenShareIllustration()
             HomeScreenNumberedSteps(steps: [T.shareStep1, T.shareStep2, T.shareStep3])
+        case .mail:
+            HomeScreenMailAddressCard()
+            HomeScreenNumberedSteps(steps: [T.mailStep1, T.mailStep2, T.mailStep3])
+            Label {
+                Text(T.mailStep3Detail).fixedSize(horizontal: false, vertical: true)
+            } icon: {
+                Image(systemName: "info.circle").foregroundStyle(.secondary)
+            }
+            .font(DS.Typography.subheadline)
+            .foregroundStyle(.secondary)
+            Label {
+                Text(T.mailSoon).fixedSize(horizontal: false, vertical: true)
+            } icon: {
+                Image(systemName: "sparkles").foregroundStyle(.thAccentText)
+            }
+            .font(DS.Typography.subheadline)
+            .foregroundStyle(.secondary)
+            .accessibilityIdentifier("home_tutorial_mail_soon")
         case .siri:
             HomeScreenSiriPhrases()
         }
@@ -383,6 +442,8 @@ struct HomeScreenMethodPage: View {
                 doneButton(T.applePayDone)
             case .share:
                 doneButton(L10n.Common.understood)
+            case .mail:
+                doneButton(L10n.Action.done)
             case .siri:
                 // El botón de Yala se ve; el toque lo recibe el de Apple, encima y transparente (como en «Siri y Atajos»).
                 YalaSecondaryButton(L10n.PrimerosPasos23.appText("siriShortcuts.openShortcuts"), icon: "square.on.square") {}
@@ -401,6 +462,63 @@ struct HomeScreenMethodPage: View {
         YalaPrimaryButton(title, action: onDone)
             .accessibilityIdentifier("home_tutorial_method_done")
             .primerosPasosButtonText()
+    }
+}
+
+/// «Tu dirección de Yala» con «Copiar»: la misma dirección que Ajustes › Correo del banco (`BankEmailModel`, que la pide al
+/// gateway). Mientras llega, «Cargando…»; si falla, «Reintentar». El modelo vive en la tarjeta: si iOS rehace la pantalla,
+/// la vuelve a pedir, y la dirección de una cuenta no cambia.
+private struct HomeScreenMailAddressCard: View {
+    @State private var model = BankEmailModel()
+    @State private var copied = false
+
+    @Environment(\.yalaTheme) private var theme
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            Text(L10n.PrimerosPasos23.Home.mailAddressCaption)
+                .font(DS.Typography.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+            switch model.phase {
+            case .loading:
+                HStack(spacing: DS.Spacing.sm) {
+                    ProgressView()
+                    Text(L10n.BankEmail.addressLoading)
+                        .foregroundStyle(.secondary)
+                }
+                .transition(.loadingPlaceholder)
+            case .failed:
+                Text(L10n.BankEmail.addressError)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button(L10n.BankEmail.retry) {
+                    Task { await model.refresh() }
+                }
+                .font(DS.Typography.body.weight(.semibold))
+                .foregroundStyle(.thAccentText)
+                .frame(minHeight: 44)
+                .accessibilityIdentifier("home_tutorial_mail_retry")
+            case .ready(let info):
+                Text(verbatim: info.address)
+                    .font(DS.Typography.bodyBold)
+                    .textSelection(.enabled)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.7)
+                    .accessibilityIdentifier("home_tutorial_mail_address")
+                YalaSecondaryButton(copied ? L10n.BankEmail.copied : L10n.PrimerosPasos23.Home.mailCopy,
+                                    icon: copied ? "checkmark" : "doc.on.doc") {
+                    UIPasteboard.general.string = info.address
+                    copied = true
+                    DS.Haptic.success()
+                }
+                .primerosPasosButtonText()
+                .accessibilityIdentifier("home_tutorial_mail_copy")
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(DS.Spacing.md)
+        .background(RoundedRectangle(cornerRadius: DS.Radius.lg).fill(theme.card))
+        .task { await model.refresh() }
     }
 }
 

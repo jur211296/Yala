@@ -83,30 +83,75 @@ struct Bienvenida23FinalTests {
 
     // MARK: - Y23-16 · Paso 7
 
-    /// Cuatro maneras, en el orden de la ficha; sin el correo mientras su servidor no esté desplegado (Y23-19).
-    @Test func homeScreen_teachesFourWays_withoutTheEmail() {
-        #expect(HomeScreenTutorialLogic.methods == [.widget, .applePay, .share, .siri])
-        #expect(HomeScreenTutorialLogic.methods.filter(\.isPro) == [.share])
-        #expect(HomeScreenTutorialLogic.position(of: .applePay) == 2)
+    /// Sin datos en la cuenta de Yala, cuatro maneras en el orden de la ficha; con ellos, el correo (Y23-19) entre compartir
+    /// y Siri. Solo compartir es de Pro.
+    @Test func homeScreen_teachesFourWays_withoutTheAccount_andFiveWithIt() {
+        typealias L = HomeScreenTutorialLogic
+        #expect(L.methods(showsMail: false) == [.widget, .applePay, .share, .siri])
+        #expect(L.methods(showsMail: true) == [.widget, .applePay, .share, .mail, .siri])
+        #expect(L.methods(showsMail: true).filter(\.isPro) == [.share])
+        #expect(L.position(of: .applePay, in: L.methods(showsMail: false)) == 2)
+        #expect(L.position(of: .mail, in: L.methods(showsMail: true)) == 4)
+        #expect(L.position(of: .siri, in: L.methods(showsMail: true)) == 5)
+        #expect(L.position(of: .siri, in: L.methods(showsMail: false)) == 4)
+    }
+
+    /// La regla de cuándo entra el correo es la de la fila de Ajustes: datos en la nube, con sesión y fuera de solo grupos.
+    @Test func homeScreen_mailFollowsTheBankEmailRowRule() {
+        typealias L = HomeScreenTutorialLogic
+        func ways(cloud: Bool, session: Bool, groupsOnly: Bool) -> [L.Method] {
+            L.methods(showsMail: BankEmailEntryLogic.showsRow(
+                storageIsCloud: cloud, hasSession: session, isGroupsFocusedShell: groupsOnly))
+        }
+        #expect(ways(cloud: true, session: true, groupsOnly: false).contains(.mail))
+        #expect(!ways(cloud: false, session: true, groupsOnly: false).contains(.mail))
+        #expect(!ways(cloud: true, session: false, groupsOnly: false).contains(.mail))
+        #expect(!ways(cloud: true, session: true, groupsOnly: true).contains(.mail))
     }
 
     @Test func homeScreen_next_isTheFirstUnresolved_inOrder() {
         typealias L = HomeScreenTutorialLogic
-        #expect(L.next(after: [:]) == .widget)
-        #expect(L.next(after: [.widget: .done]) == .applePay)
-        #expect(L.next(after: [.widget: .done, .applePay: .skipped]) == .share)
-        #expect(L.next(after: [.widget: .done, .applePay: .skipped, .share: .done, .siri: .skipped]) == nil)
+        let four = L.methods(showsMail: false)
+        #expect(L.next(after: [:], in: four) == .widget)
+        #expect(L.next(after: [.widget: .done], in: four) == .applePay)
+        #expect(L.next(after: [.widget: .done, .applePay: .skipped], in: four) == .share)
+        #expect(L.next(after: [.widget: .done, .applePay: .skipped, .share: .done], in: four) == .siri)
+        #expect(L.next(after: [.widget: .done, .applePay: .skipped, .share: .done, .siri: .skipped], in: four) == nil)
+    }
+
+    /// Con el correo, después de compartir viene el correo, y Siri no cierra el paso si el correo sigue pendiente.
+    @Test func homeScreen_withMail_nextGoesThroughTheMailBeforeSiri() {
+        typealias L = HomeScreenTutorialLogic
+        let five = L.methods(showsMail: true)
+        #expect(L.next(after: [.widget: .done, .applePay: .skipped, .share: .done], in: five) == .mail)
+        #expect(L.next(after: [.widget: .done, .applePay: .skipped, .share: .done, .mail: .done], in: five) == .siri)
+        #expect(L.exitAfterResolving([.widget: .done, .applePay: .skipped, .share: .done, .siri: .skipped], in: five) == nil)
+        #expect(L.exitAfterResolving([.widget: .skipped, .applePay: .skipped, .share: .skipped, .mail: .done, .siri: .skipped],
+                                     in: five) == .finished(anyDone: true))
     }
 
     /// Resolver la última termina el paso; antes, la pantalla de entre medias. «¡Van N de 4!» cuenta solo las vistas.
     @Test func homeScreen_lastResolution_finishes_andCountsOnlyTheDoneOnes() {
         typealias L = HomeScreenTutorialLogic
-        #expect(L.exitAfterResolving([.widget: .done]) == nil)
-        #expect(L.doneCount([.widget: .done, .applePay: .skipped, .share: .done]) == 2)
-        #expect(L.exitAfterResolving([.widget: .done, .applePay: .skipped, .share: .skipped, .siri: .skipped])
+        let four = L.methods(showsMail: false)
+        #expect(L.exitAfterResolving([.widget: .done], in: four) == nil)
+        #expect(L.doneCount([.widget: .done, .applePay: .skipped, .share: .done], in: four) == 2)
+        #expect(L.exitAfterResolving([.widget: .done, .applePay: .skipped, .share: .skipped, .siri: .skipped], in: four)
             == .finished(anyDone: true))
-        #expect(L.exitAfterResolving([.widget: .skipped, .applePay: .skipped, .share: .skipped, .siri: .skipped])
+        #expect(L.exitAfterResolving([.widget: .skipped, .applePay: .skipped, .share: .skipped, .siri: .skipped], in: four)
             == .finished(anyDone: false))
+        // Un correo visto en otra sesión no cuenta si esta vez no se enseña.
+        #expect(L.doneCount([.mail: .done, .widget: .done], in: four) == 1)
+    }
+
+    /// La lista se fija al aparecer el paso y `reset()` la suelta para la próxima vez.
+    @MainActor @Test func homeScreen_progressReset_releasesTheFixedList() {
+        let progress = HomeScreenTutorialProgress()
+        progress.methods = HomeScreenTutorialLogic.methods(showsMail: true)
+        progress.outcomes = [.widget: .done]
+        progress.reset()
+        #expect(progress.methods == nil)
+        #expect(progress.outcomes.isEmpty)
     }
 
     /// Hecho con al menos una manera vista; omitido si las omitió todas o se saltó el paso; «Atrás» no toca el mazo.

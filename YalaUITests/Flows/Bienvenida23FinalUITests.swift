@@ -88,6 +88,49 @@ final class Bienvenida23FinalUITests: XCTestCase {
         attach(app, "final-tarjeta")
     }
 
+    /// Y23-19: con los datos en la cuenta de Yala (aquí, la dirección fingida de `-uitest-bank-email`) el paso enseña cinco
+    /// maneras y la cuarta es el correo: «Tu dirección de Yala» con la dirección real, «Copiar», los tres pasos del filtro y
+    /// «Pronto: …». Después del correo viene Siri, y al terminar el mazo se completa igual.
+    func test_step7_withTheYalaAccount_teachesTheMailAsTheFourthOfFive() {
+        let app = launch(atStep: 7, extra: ["-uitest-bank-email"])
+        tapWhenSettled(app, "setup_deck_current")
+        XCTAssertTrue(element(app, "home_tutorial_skip_step").waitForExistence(timeout: 10))
+        tapWhenSettled(app, "home_tutorial_start")
+
+        // 1 de 5 · Widget: hecho. Entre medias: «¡Van 1 de 5!».
+        tapWhenSettled(app, "home_tutorial_method_done")
+        let between = element(app, "home_tutorial_between_title")
+        XCTAssertTrue(between.waitForExistence(timeout: 10))
+        XCTAssertTrue(between.label.contains("1") && between.label.contains("5"), "Cinco maneras: «\(between.label)».")
+        // 2 de 5 · Apple Pay y 3 de 5 · Compartir: omitidas desde la pantalla de entre medias.
+        tapWhenSettled(app, "home_tutorial_next_skip")
+        tapWhenSettled(app, "home_tutorial_next_skip")
+
+        // 4 de 5 · Correo: la dirección real de la cuenta, con «Copiar».
+        tapWhenSettled(app, "home_tutorial_next")
+        let address = element(app, "home_tutorial_mail_address")
+        XCTAssertTrue(address.waitForExistence(timeout: 10), "El mini tutorial del correo enseña la dirección.")
+        XCTAssertEqual(address.label, "auto+k7m2xq9wpb@yalainbox.com")
+        XCTAssertTrue(element(app, "home_tutorial_step_3").exists, "Los tres pasos del filtro.")
+        XCTAssertFalse(element(app, "home_tutorial_step_4").exists, "Son tres, no cuatro.")
+        XCTAssertTrue(element(app, "home_tutorial_mail_soon").exists, "«Pronto: conectar Gmail y Outlook…».")
+        attach(app, "paso7-correo")
+        let copy = element(app, "home_tutorial_mail_copy")
+        let before = copy.label
+        tapWhenSettled(app, "home_tutorial_mail_copy")
+        expectation(for: NSPredicate(format: "label != %@", before), evaluatedWith: copy)
+        waitForExpectations(timeout: 5)
+        tapWhenSettled(app, "home_tutorial_method_done")
+
+        // 5 de 5 · Siri: el que cierra el paso.
+        XCTAssertTrue(between.waitForExistence(timeout: 10))
+        XCTAssertTrue(between.label.contains("2") && between.label.contains("5"), "«\(between.label)»")
+        tapWhenSettled(app, "home_tutorial_next")
+        tapWhenSettled(app, "home_tutorial_method_done")
+        XCTAssertTrue(element(app, "setup_deck_done_title").waitForExistence(timeout: 10),
+                      "Con el correo y Siri resueltos, el mazo se completa.")
+    }
+
     /// Y23-18: la oferta sube sola tras el final con el anual preseleccionado y la línea de tiempo; «Seguir con la versión
     /// gratis» la cierra sin dar Pro.
     func test_final_offer_keepFree_closesWithoutPro() {
