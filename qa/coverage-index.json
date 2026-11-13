@@ -4065,6 +4065,25 @@
       "coverage": "xcuitest:YalaUITests/Flows/Bienvenida23PlanificacionUITests#test_step3_budgetByCategories_withAlerts_inPanel_thenDeckMovesToStep4 | xcuitest:YalaUITests/Flows/Bienvenida23PlanificacionUITests#test_step4_paymentUtilities_monthly_reminder_thenDeckMovesToStep5 | xcuitest:YalaUITests/Flows/Bienvenida23PlanificacionUITests#test_step5_groupsTutorial_acceptThenNotNow_thenDeckMovesToStep6 | unit:YalaTests/Bienvenida23PasosPlanificacionTests | unit:YalaTests/Bienvenida23PasosPlanificacionGuardadoTests | 2026-11-12: bienvenida 2.3, lote 04 (Y23-11 primer presupuesto preguntando, Y23-12 primer pago planificado preguntando, Y23-13 Grupos como página del tutorial). El aviso de iOS de notificaciones, la hoja «¿Te avisamos antes de cada pago?», crear un grupo con cuenta real y unirse por enlace se prueban en el iPhone: guion en el ticket.",
       "owner": "frank",
       "lastVerified": "2026-11-12"
+    },
+    {
+      "area": "bienvenida-2-3-pasos-6-7-final",
+      "codeGlobs": [
+        "Yala/App/Logic/HomeScreenTutorialLogic.swift",
+        "Yala/App/Logic/SetupCompleteTrialOfferLogic.swift",
+        "Yala/App/Views/Onboarding/PrimerosPasos/HomeScreenTutorialFlowView.swift",
+        "Yala/App/Views/Onboarding/PrimerosPasos/HomeScreenTutorialPages.swift",
+        "Yala/App/Views/Panel/PrimerosPasosHomeScreenPresentation.swift",
+        "Yala/App/Views/Subscription/SetupCompleteTrialOfferSheet.swift",
+        "Yala/Utils/L10n+PrimerosPasos23Final.swift"
+      ],
+      "scenarioIDs": [
+        "F-ONB-01"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/Flows/Bienvenida23FinalUITests#test_step6_skippingTheGuide_movesTheDeckToStep7 | xcuitest:YalaUITests/Flows/Bienvenida23FinalUITests#test_step7_fourWays_doneAndSkipped_thenTheDeckCompletes | xcuitest:YalaUITests/Flows/Bienvenida23FinalUITests#test_final_offer_keepFree_closesWithoutPro | xcuitest:YalaUITests/Flows/Bienvenida23FinalUITests#test_final_offer_confirmedPurchase_showsProIsOn | unit:YalaTests/Bienvenida23FinalTests | 2026-11-12: bienvenida 2.3, lote 05 (Y23-14 «Omitir» del paso 6 pasa al 7, Y23-16 cuatro maneras de anotar sin abrir Yala, Y23-18 final y oferta de la prueba de Pro con «1 mes» y aviso antes del cobro). La hoja de pago real de la App Store va en TestFlight con Sandbox: guion en su ticket. Y23-19 (correo) bloqueado por infraestructura.",
+      "owner": "frank",
+      "lastVerified": "2026-11-12"
     }
   ]
 }

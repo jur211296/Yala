@@ -122,6 +122,8 @@ struct ContentView: View {
     @State private var lateICloudNotice: LateICloudNotice?
     @State private var showSyncSettingsSheet: Bool = false
     @State private var showProTrialOffer: Bool = false
+    /// Y23-18: la oferta presentada es la del final de Primeros pasos (la apunta quien la pidió, no el estado del mazo).
+    @State private var trialOfferIsSetupCompletion = false
     @State private var showWhatsNew: Bool = false
     @State private var whatsNewData: (features: [WhatsNewFeature], version: String)?
     @AppStorage("lastSeenAppVersion") private var lastSeenAppVersion: String = ""
@@ -796,8 +798,13 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showProTrialOffer, onDismiss: {
         }) {
-            ProTrialOfferSheet {
-                showProTrialOffer = false
+            // Y23-18: la oferta que pidió el final de Primeros pasos, la suya; la de tras guardar un registro, la de siempre.
+            if trialOfferIsSetupCompletion {
+                SetupCompleteTrialOfferSheet { showProTrialOffer = false }
+            } else {
+                ProTrialOfferSheet {
+                    showProTrialOffer = false
+                }
             }
         }
         .sheet(isPresented: $showWhatsNew, onDismiss: {
@@ -1545,6 +1552,8 @@ struct ContentView: View {
             // en los productores — permite re-emitir tras un drop transient.
             SessionState.shared.needsPostOnboardingTrial = false
             SessionState.shared.trialOfferMomentReached = false
+            // Y23-18: qué oferta se pidió se consume aquí, con la presentación o con la que ya no saldrá.
+            trialOfferIsSetupCompletion = SetupCompleteTrialOfferLogic.takePendingOffer()
         case .presentWhatsNew(let features, let version):
             whatsNewData = (features: features, version: version)
             showWhatsNew = true
