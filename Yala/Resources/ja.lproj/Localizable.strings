@@ -9422,3 +9422,9 @@
 "pasos23.groups.what.link" = "招待リンクがある";
 "pasos23.groups.what.linkHint" = "誰かがもうグループを作っています";
 "pasos23.groups.alreadySeen" = "グループはもう見ましたね。ステップ6に進みます。";
+
+/* VoiceOver: name of the Show only / Hide segmented control in Records filters */
+"a11y.selectores.filterMode" = "フィルターモード";
+
+/* VoiceOver: name of the custom color picker in the icon/color sheet */
+"a11y.selectores.customColor" = "カスタムカラー";

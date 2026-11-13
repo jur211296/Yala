@@ -88,7 +88,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/AdvancedFiltersUITests | 2026-10-25 (lote 12.5, hidden-single-currency-still-filters-the-amount-in-it): en «Ocultar» el monto compara en la moneda que queda a la vista (RecordsAmountFilterCurrencyLogic), nunca en la oculta, y la ayuda dice «deja a la vista una sola moneda». XCUI: UXAudit22Lote8CUITests.test_filters_hidingOneCurrency_amountUsesTheOneLeft; unit: RecordsAmountFilterCurrencyLogicTests. || 2026-10-25 (opción B + propuesta A, ticket stats-filter-segment-tap-should-ask-include-or-exclude): cada dimensión guarda incluidos («Solo X») y excluidos («Sin X») a la vez (EntityFilter; isExcludeMode borrado); tocar un segmento pregunta «Ver solo / Ocultar» (SegmentFilterChoiceSheet); la barra pinta los dos tipos. unit:YalaTests/CombinedEntityFilterTests,CombinedFiltersScreenParityTests; xcuitest:YalaUITests/SegmentFilterChoiceUITests,AdvancedFiltersUITests,UXAudit22Lote8CUITests#test_filters_showOnlyAndHide_combine | 2026-10-28 (panel-filtros-moneda): el monto aplicado lleva su moneda y `SessionState.revalidateAmountCurrency` lo vacía si deja de ser la única a la vista (✕ de una moneda, segmento, moneda nueva); bordes 1-2 de los filtros combinados (contorno de la otra lista en el selector de categorías, oculto borrado sale del filtro); borde 3 descartado (inalcanzable). Unit: YalaTests/PanelFiltrosMonedaLogicTests (AppliedAmountCurrencyGuardTests, CombinedFiltersEdgeWiringTests) + PanelPiesFilterParityTests.",
       "owner": "",
-      "lastVerified": "2026-11-11"
+      "lastVerified": "2026-11-12"
     },
     {
       "area": "ai-data-consent",
@@ -886,7 +886,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/FiltersUITests || 2026-10-27 (card estadisticas-chips-animacion-6l5n): TrendsPeriodMenu/PeriodSelectorLabel ganan titleMotion; sin él (Panel, Informes, Grupos) se comportan igual que antes. || 2026-10-25 (opción B + propuesta A, ticket stats-filter-segment-tap-should-ask-include-or-exclude): cada dimensión guarda incluidos («Solo X») y excluidos («Sin X») a la vez (EntityFilter; isExcludeMode borrado); tocar un segmento pregunta «Ver solo / Ocultar» (SegmentFilterChoiceSheet); la barra pinta los dos tipos. unit:YalaTests/CombinedEntityFilterTests,CombinedFiltersScreenParityTests; xcuitest:YalaUITests/SegmentFilterChoiceUITests,AdvancedFiltersUITests,UXAudit22Lote8CUITests#test_filters_showOnlyAndHide_combine | 2026-10-26 (card kjzs, decisión de Jürgen): tocar un segmento solo pregunta «Ver solo / Ocultar» si hay algo oculto en alguna dimensión; sin nada oculto el toque ve solo lo tocado, o quita el filtro si ya se veía solo, sin hoja (SegmentFilterChoiceLogic.directAction en el host común de Panel y Distribución). unit:YalaTests/CombinedEntityFilterTests (SegmentFilterChoiceLogicTests, SegmentFilterChoiceHostWiringTests); xcuitest:YalaUITests/SegmentFilterChoiceUITests. | 2026-10-26 (auditoría «Solo gastos»): ver expenses-only-mode. | 2026-10-28 (combined-filters-edge-cases-after-option-b, borde 1): el selector de categorías marca lo que está en la otra lista; la hoja aplica el monto con su moneda (`applyAmountFilter`). | 2026-11-11 (revisión 2.3, decisiones 15 y 16): chips rápidos Cuenta · Categoría · Fecha · Más filtros sobre Registros (RecordsQuickFilterBar), buscador de categorías en la hoja, filas enteras en el selector y resumen por grupo; banda que se parte en líneas con «Quitar todo» y ✕ de 44 pt (FilterBand) en Panel, Estadísticas, Registros e Informes; «Limpiar filtros» en la cabecera de la hoja, aplica y cierra. unit:YalaTests/RecordsQuickFilters23Tests; xcuitest:YalaUITests/RecordsQuickFilters23UITests.",
       "owner": "",
-      "lastVerified": "2026-11-11"
+      "lastVerified": "2026-11-12"
     },
     {
       "area": "form-help-banners",
@@ -1863,7 +1863,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/NotificationsSettingsUITests + 2026-07-22: el toggle del item scheduledPayments pasa a ser HONESTO (OFF = silencio real de notifs de pagos; ON agenda las summaries diarias — el efecto real del toggle es replanSummaries, scheduleNotification sigue no-op para dinamicos); el default de fabrica del item pasa a ON con flip one-shot para usuarios existentes. + ReportNotificationService: dedup solo con entrega confirmada (2026-07-23, ticket pagos-planificados-notifs-incoherentes-y-dedup-sin-entrega D3, superficie hermana): sendDueReports marcaba report.lastNotifiedDate = Date.now INCONDICIONAL tras el send => un fallo silencioso suprimia el reporte hasta el proximo periodo. Ahora el envio pasa por NotificationService.sendNotification -> Bool (seams sendOverride/isAuthorizedOverride/isQuiescentOverride + makeForTesting() DEBUG, espejo de ScheduledPaymentNotificationService) y solo marca con guard delivered. Severidad menor que pagos (el periodo se reevalua) pero misma clase. unit:YalaTests/ReportNotificationServiceTests.sendDueReports_send{Fails=>no marca, Succeeds=>marca} (MUTANTE VERIFICADO: quitar el guard pone el test de fallo en rojo). + 2026-07-23 Solo Gastos (ticket ux_panel-hero-modo-solo-gastos, diferido Q2): un NotificationItem income/balance guardado antes de activar Solo Gastos conserva su dataType (el editor lo oculta/coacciona en NotificationEditorSheet.availableDataTypes pero un item nunca re-guardado queda stale) → el send path lo coacciona income/balance→expenses en runtime (effectiveDataType puro + effectiveConfig en sendDueReports, sin mutar el config persistido → sin save() extra). Modo leído por seam expensesOnlyOverride (default UserDefaults directo, no SessionState.shared, mejor capa Service). unit:YalaTests/ReportNotificationServiceTests.effectiveDataType_* (puros) + sendDueReports_{expensesOnly_coercesIncomeReportToExpenses => emptyExpensesDaily / normalMode_keepsIncomeReport => emptyIncome} (MUTANTE VERIFICADO: revertir la coacción pone el primero en rojo). + 2026-10-08 (notification-dedup-deletes-all-custom-reminders-but-one): la limpieza de duplicados del arranque (NotificationService.deduplicateNotifications) juntaba TODO por typeRaw y borraba en cada arranque todos los recordatorios propios menos uno. Ahora junta solo lo que no es custom (NotificationDeduplicationLogic.groupKey, el mismo criterio que LineageTwinKey.notificationFusion) y desprograma tras guardar los avisos de lo que borra (NotificationService.scheduledRequestIdentifiers). xcuitest:YalaUITests/NotificationsSettingsUITests#test_threeCustomReminders_surviveARelaunch (rojo con el codigo viejo: quedaba solo QA Uno) + unit:YalaTests/NotificationDeduplicationStoreTests y NotificationDeduplicationLogicTests (tabla, control del agrupado viejo, paridad con la clave de fusion del linaje). | 2026-10-19 (L11-12): el editor del informe dice qué llegará y qué días entran; el semanal del lunes cuenta la semana cerrada y el mensual del día 1 nombra el mes cerrado; «Probar» pide el permiso. Unit: ReportUpcomingTests; XCUI: test_reportEditor_* (seam -uitest-notifications-denied). | 2026-11-02 (fluidez C4, card 86b1): guardar un aviso vibra success() solo si se guardó; borrarlo warning(). unit:YalaTests/FluidezHapticosWiringTests.",
       "owner": "",
-      "lastVerified": "2026-11-09"
+      "lastVerified": "2026-11-12"
     },
     {
       "area": "onboarding-flow",
@@ -4064,6 +4064,24 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/Flows/Bienvenida23PlanificacionUITests#test_step3_budgetByCategories_withAlerts_inPanel_thenDeckMovesToStep4 | xcuitest:YalaUITests/Flows/Bienvenida23PlanificacionUITests#test_step4_paymentUtilities_monthly_reminder_thenDeckMovesToStep5 | xcuitest:YalaUITests/Flows/Bienvenida23PlanificacionUITests#test_step5_groupsTutorial_acceptThenNotNow_thenDeckMovesToStep6 | unit:YalaTests/Bienvenida23PasosPlanificacionTests | unit:YalaTests/Bienvenida23PasosPlanificacionGuardadoTests | 2026-11-12: bienvenida 2.3, lote 04 (Y23-11 primer presupuesto preguntando, Y23-12 primer pago planificado preguntando, Y23-13 Grupos como página del tutorial). El aviso de iOS de notificaciones, la hoja «¿Te avisamos antes de cada pago?», crear un grupo con cuenta real y unirse por enlace se prueban en el iPhone: guion en el ticket.",
       "owner": "frank",
+      "lastVerified": "2026-11-12"
+    },
+    {
+      "area": "voiceover-selectores-con-nombre-2-3",
+      "codeGlobs": [
+        "Yala/Utils/L10n+VoiceOverSelectores.swift",
+        "Yala/App/Views/Records/RecordsFiltersView.swift",
+        "Yala/App/Views/Groups/GroupFormView.swift",
+        "Yala/App/Views/Groups/SettlementFormView.swift",
+        "Yala/App/Views/Reports/CashFlow/CashFlowStartingBalanceSheet.swift",
+        "Yala/App/Views/Shared/IconColorPickerSheet.swift",
+        "Yala/App/Views/Panel/PanelSectionPreferencesSheet.swift",
+        "Yala/App/Views/Settings/NotificationEditorSheet.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/VoiceOverSelectoresConNombreUITests + unit:YalaTests/VoiceOverSelectoresConNombreTests | 2026-11-12 (card «VoiceOver: cinco selectores sin nombre», 2.3): los filtros de Registros («Modo del filtro»), el tipo de reparto del grupo, la moneda del pago al saldar, la fecha del saldo inicial del flujo de caja y el color personalizado se leen con su nombre; también la hora de una notificación, el interruptor de cada sección del Panel y «Simular Pro» (solo depuración). Un barrido de Yala/App prohíbe Picker/DatePicker/ColorPicker/Toggle con título vacío, con control negativo del patrón; cazó el de la hora, que el grep de una línea no veía. El XCUITest lee la etiqueta del selector de filtros en el árbol real: vacía en la base (rojo), «Modo del filtro» con el arreglo.",
+      "owner": "",
       "lastVerified": "2026-11-12"
     }
   ]

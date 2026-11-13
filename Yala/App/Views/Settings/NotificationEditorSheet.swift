@@ -301,11 +301,13 @@ struct NotificationEditorSheet: View {
                 Spacer()
 
                 DatePicker(
-                    "",
+                    L10n.Notifications.time,
                     selection: $scheduledTime,
                     displayedComponents: .hourAndMinute
                 )
                 .labelsHidden()
+                // El rótulo «Hora» es un `Text` aparte: sin esto VoiceOver lee solo la hora.
+                .accessibilityLabel(L10n.Notifications.time)
 
             }
             .padding(.horizontal, DS.Spacing.lg)

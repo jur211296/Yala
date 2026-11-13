@@ -9422,3 +9422,9 @@
 "pasos23.groups.what.link" = "Mam link z zaproszeniem";
 "pasos23.groups.what.linkHint" = "Ktoś już utworzył grupę";
 "pasos23.groups.alreadySeen" = "Grupy już znasz: widziałeś je na początku. Przechodzimy do kroku 6.";
+
+/* VoiceOver: name of the Show only / Hide segmented control in Records filters */
+"a11y.selectores.filterMode" = "Tryb filtra";
+
+/* VoiceOver: name of the custom color picker in the icon/color sheet */
+"a11y.selectores.customColor" = "Własny kolor";

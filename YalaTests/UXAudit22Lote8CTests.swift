@@ -224,7 +224,7 @@ struct UXAudit22Lote8CWiringTests {
     /// antes de cerrar.
     @Test func filters_tabDoesNotClear_andCloseGoesThroughTheQuestion() throws {
         let code = Self.codeOnly(try Self.source("Yala/App/Views/Records/RecordsFiltersView.swift"))
-        #expect(code.contains("Picker(\"\", selection: $isEditingHidden)"))
+        #expect(code.contains("Picker(L10n.VoiceOverSelectores.filterMode, selection: $isEditingHidden)"))
         #expect(!code.contains(".onChange(of: isEditingHidden)"), "un onChange de la pestaña vaciaría lo elegido")
         #expect(!code.contains("switchMessage"), "volvió la pregunta de «se quitará lo que marcaste»")
         #expect(code.contains(".onSheetDismissAttempt(isActive: hasChanges)"))
