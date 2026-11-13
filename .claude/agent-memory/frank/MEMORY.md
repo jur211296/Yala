@@ -11,7 +11,7 @@
 - [Entorno y herramientas](indice_entorno.md) — 20 entradas: máquina, hooks, accesos, disco.
 
 ## Cómo trabaja Jürgen
-- [Verificación Gmail: video v3 hecho](project_verificacion_gmail_video_v2.md) — 12-nov; espera aprobación de Jürgen; receta de toma sin contraseña.
+- [Verificación Gmail: video v3 enviado](project_verificacion_gmail_video_v2.md) — 12-nov aprobado y enviado a Google; no se vuelve a pedir; receta de toma.
 - [Taps en la hoja de Google](reference_taps_en_la_hoja_de_google.md) — axe hace pulsación larga en la web; Device MCP con `device=` sí toca.
 - [Consola de Google: authuser=1](reference_consola_google_cloud_authuser.md) — jur211296 abre sin llave; admin@yala-app.pe pide passkey que no llega.
 - [Google Sign-In sigue el idioma del sistema](reference_idioma_de_google_en_el_simulador.md) — -AppleLanguages no basta: defaults -g + reboot.
