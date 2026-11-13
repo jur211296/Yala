@@ -89,3 +89,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [Un `return` suelto no es mutante](feedback_un_return_suelto_no_es_mutante.md) — delante de un switch, Swift lo ejecuta; muta con `if … { return }`.
 - [Plantar estado del host de unit tests](reference_plantar_estado_del_host_de_unit_tests.md) — plist con el sim apagado; Swift Testing no baraja el orden.
 - [Lote que depende de otro en cola](feedback_lote_que_depende_de_otro_en_cola.md) — apilar sobre su rama; `reset --keep origin/2.3` cuando entre.
+- [Leer telemetría de staging](reference_leer_telemetria_de_staging.md) — Yala Dev sin -uitest + AE SQL con el token de wrangler (renueva el del panel); alta 2.3 con Device MCP fill.
