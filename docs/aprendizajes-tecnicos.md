@@ -721,3 +721,19 @@ empezar. **No fue la causa** del bloqueo de 15 minutos al entrar en una cuenta c
 reprodujo igual, porque las filas las creaba el puente de Grupos en el mismo intento. Lo que sí hace es convertir una
 prueba de «teléfono nuevo» en una de «teléfono con datos de antes» sin avisar, y entonces un bloqueo de linaje puede ser
 legítimo. Sin medir si una persona real que desinstala y reinstala de la App Store conserva el App Group igual.
+
+### Web: una cookie `__Host-` con `Path` distinto de `/` se descarta, y `no-referrer` manda `Origin: null` en los formularios (2026-11-13)
+
+Dos trampas del navegador que las pruebas con un navegador falso no ven, cazadas por la revisión de seguridad del lote 0
+de Yala web (`webapp/`) antes de que nadie entrara:
+
+- **`__Host-` exige `Path=/`, `Secure` y ningún `Domain`.** Con `Path=/auth`, Chrome, Firefox y Safari la tiran en
+  silencio: el `Set-Cookie` sale bien en la respuesta y la cookie no vuelve nunca. El login social volvía siempre a
+  «caducada», fallando cerrado y sin ningún error.
+- **`Referrer-Policy: no-referrer` cambia el `Origin` de los POST de formulario a `null`** (estándar Fetch, «append a
+  request Origin header»). Un control «`Origin` tiene que ser el mío» rechaza entonces los formularios PROPIOS. Para no
+  filtrar la URL a otros sitios sin romper eso, `same-origin`.
+
+Lo que cuesta poco y lo evita: el navegador falso de las pruebas aplica las reglas de `__Host-` (`webapp/test/fakes.ts`),
+y una prueba fija el `Referrer-Policy` con el porqué al lado. Y un clic real en el navegador antes de dar por bueno un
+flujo de entrada: las pruebas ponían `Origin` a mano.
