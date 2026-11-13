@@ -1,0 +1,594 @@
+<title>Atajo del banco y suscripciones</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Maqueta de decisión: cabecera fija con índice, dos funciones en bandas, teléfonos en tiras horizontales, decisiones al final con selector */
+:root{
+  --bg:#f3f3f7; --card:#ffffff; --ink:#16161d; --ink2:#55556a; --ink3:#8b8ba0; --line:#e2e2ea;
+  --acc:#6063f1; --accb:#ebebfd; --ok:#13804f; --okb:#e2f4ea; --warn:#9a5b00; --warnb:#fdf0dc; --bad:#b0263f; --badb:#fbe6ea;
+  --display:"Bricolage Grotesque","SF Pro Display",-apple-system,system-ui,sans-serif;
+  --body:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --ios:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Inter,sans-serif;
+  /* teléfono: aspecto fijo de Yala en claro, igual en los dos temas */
+  --ph-bg:#f2f2f7; --ph-card:#ffffff; --ph-ink:#111114; --ph-ink2:#6c6c78; --ph-line:#e5e5ea; --ph-frame:#1c1c22;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111117; --card:#1b1b24; --ink:#ececf3; --ink2:#a9a9bd; --ink3:#77778c; --line:#2c2c3a;
+  --acc:#8d90ff; --accb:#25264a; --ok:#4fd393; --okb:#143325; --warn:#f2b45c; --warnb:#3a2a12; --bad:#ff7d93; --badb:#3c1620;
+  --ph-frame:#000; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111117; --card:#1b1b24; --ink:#ececf3; --ink2:#a9a9bd; --ink3:#77778c; --line:#2c2c3a;
+  --acc:#8d90ff; --accb:#25264a; --ok:#4fd393; --okb:#143325; --warn:#f2b45c; --warnb:#3a2a12; --bad:#ff7d93; --badb:#3c1620;
+  --ph-frame:#000; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--body);margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+a{color:var(--acc)}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;letter-spacing:-.015em}
+nav.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+nav.top .wrap{display:flex;gap:6px;overflow-x:auto;padding-block:8px;scrollbar-width:none}
+nav.top a{flex:0 0 auto;text-decoration:none;font-size:13px;font-weight:600;color:var(--ink2);padding:6px 11px;border-radius:99px;border:1px solid var(--line);background:var(--card)}
+nav.top a:focus-visible,button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+header.hero{padding-block:36px 8px}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3)}
+h1{font-size:clamp(30px,5.4vw,52px);line-height:1.04;margin:8px 0 12px;font-weight:800}
+.lead{font-size:18px;color:var(--ink2);max-width:62ch;margin:0}
+.duo{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:22px}
+.fn{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.fn h3{margin:0;font-size:20px}
+.fn p{margin:0;color:var(--ink2)}
+.fn .rec{margin-top:4px;font-size:14px;background:var(--accb);color:var(--ink);border-radius:12px;padding:9px 12px}
+.fn .rec b{color:var(--acc)}
+section.band{padding-block:34px 8px}
+h2{font-size:clamp(24px,3.6vw,34px);margin:0 0 6px;font-weight:800}
+h2 .k{font-family:var(--body);font-size:13px;font-weight:700;color:var(--acc);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:4px}
+h3.s{font-size:21px;margin:30px 0 4px}
+.sub{color:var(--ink2);max-width:70ch;margin:0 0 12px}
+.tag{display:inline-flex;align-items:center;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:99px;vertical-align:middle;background:var(--bg);color:var(--ink2)}
+.tag.ok{background:var(--okb);color:var(--ok)}.tag.warn{background:var(--warnb);color:var(--warn)}.tag.bad{background:var(--badb);color:var(--bad)}.tag.acc{background:var(--accb);color:var(--acc)}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.fact{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;min-width:0}
+.fact h4{margin:0 0 6px;font-size:15px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.fact ul{margin:0;padding-left:18px;color:var(--ink2);font-size:14px}
+.fact li{margin:3px 0}
+.shots{display:flex;gap:12px;overflow-x:auto;padding:6px 0 10px}
+.shot{flex:0 0 auto;width:190px;margin:0}
+.shot img{width:190px;border-radius:22px;border:1px solid var(--line);display:block}
+.shot figcaption{font-size:12.5px;color:var(--ink2);margin-top:6px}
+.flow{display:flex;gap:14px;overflow-x:auto;padding:10px 2px 18px;scroll-snap-type:x proximity}
+.step{flex:0 0 auto;width:250px;scroll-snap-align:start;display:flex;flex-direction:column;gap:8px}
+.step .cap{font-size:13.5px;color:var(--ink2)}
+.step .cap b{color:var(--ink)}
+.arrow{flex:0 0 auto;align-self:center;color:var(--ink3);font-size:22px}
+.ph{width:250px;height:520px;border-radius:40px;background:var(--ph-frame);padding:7px;box-shadow:0 10px 30px rgba(20,20,40,.14)}
+.sc{width:100%;height:100%;border-radius:33px;background:var(--ph-bg);overflow:hidden;font-family:var(--ios);color:var(--ph-ink);font-size:12px;line-height:1.35;position:relative;display:flex;flex-direction:column}
+.sb{display:flex;justify-content:space-between;padding:12px 22px 4px;font-weight:600;font-size:12px}
+.sb .isl{width:72px;height:20px;background:#000;border-radius:12px;margin-top:-3px}
+.nb{padding:6px 14px 8px}
+.nb .bk{color:#6063f1;font-size:12px}
+.nb h5{font:700 21px/1.15 var(--ios);margin:4px 0 0;letter-spacing:-.01em}
+.grp{margin:6px 12px;background:var(--ph-card);border-radius:14px;overflow:hidden}
+.grp .gh{font-size:10px;text-transform:uppercase;color:var(--ph-ink2);padding:8px 12px 2px;letter-spacing:.04em}
+.row{display:flex;align-items:center;gap:9px;padding:9px 12px;border-top:.5px solid var(--ph-line)}
+.row:first-child,.gh+.row{border-top:0}
+.ic{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:12px;flex:0 0 auto}
+.row .t{flex:1;min-width:0}
+.row .t b{display:block;font-weight:600;font-size:12.5px}
+.row .t span{color:var(--ph-ink2);font-size:10.5px;display:block}
+.amt{font-family:ui-rounded,"SF Pro Rounded",var(--ios);font-weight:700;font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill{font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:99px;background:#ebebfd;color:#4b4fd6;white-space:nowrap}
+.pill.g{background:#e2f4ea;color:#13804f}.pill.o{background:#fdf0dc;color:#9a5b00}
+.btn{display:block;margin:8px 12px;text-align:center;border-radius:14px;padding:11px;font-weight:600;font-size:13px;background:#6063f1;color:#fff}
+.btn.ghost{background:transparent;color:#6063f1}
+.btn.sec{background:#e8e8f0;color:#111114}
+.sw{width:34px;height:20px;border-radius:99px;background:#34c759;position:relative;flex:0 0 auto}
+.sw::after{content:"";position:absolute;right:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff}
+.sw.off{background:#d1d1d6}.sw.off::after{right:auto;left:2px}
+.note{margin:6px 14px;color:var(--ph-ink2);font-size:10.5px}
+.hl{outline:2px dashed #ff4fa8;outline-offset:2px;border-radius:14px}
+.sheet{position:absolute;inset:auto 0 0;background:var(--ph-card);border-radius:22px 22px 0 0;box-shadow:0 -6px 24px rgba(0,0,0,.15);padding-bottom:10px}
+.grab{width:34px;height:4px;border-radius:9px;background:#d1d1d6;margin:7px auto 4px}
+.dim{position:absolute;inset:0;background:rgba(0,0,0,.25)}
+.lock{background:linear-gradient(160deg,#2b2d6e,#6a3a8e 55%,#c0567f);color:#fff}
+.lock .time{text-align:center;font:600 54px/1 var(--ios);margin-top:18px;letter-spacing:-.02em}
+.lock .date{text-align:center;font-size:12px;opacity:.85}
+.notif{margin:10px 10px 0;background:rgba(255,255,255,.8);color:#111;border-radius:16px;padding:9px 11px}
+.notif .nh{display:flex;gap:6px;align-items:center;font-size:10px;color:#555;margin-bottom:2px}
+.notif .nh i{width:16px;height:16px;border-radius:4px;display:inline-block}
+.notif b{font-size:11.5px}
+.notif p{margin:1px 0 0;font-size:11px}
+.toast{margin:8px 12px;background:#1c1c22;color:#fff;border-radius:14px;padding:10px 12px;font-size:11.5px}
+.field{display:flex;justify-content:space-between;gap:8px;padding:9px 12px;border-top:.5px solid var(--ph-line);font-size:12px}
+.field:first-child{border-top:0}
+.field span:last-child{color:var(--ph-ink2);text-align:right}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px;margin-top:8px}
+.opt{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.opt.best{border:2px solid var(--acc)}
+.opt h4{margin:0;font-size:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.opt .code{font:700 12px/1 ui-monospace,Menlo,monospace;background:var(--ink);color:var(--bg);padding:4px 6px;border-radius:6px}
+.opt p{margin:0;color:var(--ink2);font-size:14px}
+.pc{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px}
+.pc ul{margin:0;padding-left:16px}
+.pc .p{background:var(--okb);border-radius:10px;padding:7px 9px}.pc .c{background:var(--badb);border-radius:10px;padding:7px 9px}
+.pc h5{margin:0 0 2px;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+.pc .p h5{color:var(--ok)}.pc .c h5{color:var(--bad)}
+.why{background:var(--accb);border-radius:14px;padding:12px 14px;margin-top:12px;max-width:80ch}
+.why b{color:var(--acc)}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:640px}
+th,td{text-align:left;padding:9px 12px;border-top:1px solid var(--line);vertical-align:top}
+thead th{border-top:0;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3)}
+td.num{font-variant-numeric:tabular-nums}
+.lim{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.lim div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 13px;font-size:14px;min-width:0;color:var(--ink2)}
+.lim b{display:block;margin-bottom:2px;color:var(--ink)}
+.lim .no{border-left:4px solid var(--bad)}.lim .si{border-left:4px solid var(--ok)}.lim .dud{border-left:4px solid var(--warn)}
+.dec{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0;display:flex;flex-direction:column;gap:8px}
+.dec .dh{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.dec .id{font:700 13px/1 ui-monospace,Menlo,monospace;color:var(--acc)}
+.dec h4{margin:0;font-size:17px;flex:1;min-width:200px}
+.dec p{margin:0;color:var(--ink2);font-size:14px}
+.choices{display:flex;flex-wrap:wrap;gap:8px}
+.choice{font:600 13.5px/1.3 var(--body);text-align:left;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;padding:8px 11px;cursor:pointer;max-width:100%}
+.choice small{display:block;font-weight:500;color:var(--ink2);font-size:12px}
+.choice.rec{border-color:var(--acc)}
+.choice.rec::after{content:"Recomendada";display:block;margin-top:4px;font-size:10.5px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.05em}
+.choice[aria-pressed="true"]{background:var(--acc);border-color:var(--acc);color:#fff}
+.choice[aria-pressed="true"] small,.choice[aria-pressed="true"].rec::after{color:#fff}
+.choice:disabled{cursor:default}
+.dstate{font-size:12.5px;color:var(--ink3)}
+.savebar{font-size:13px;color:var(--ink2);background:var(--card);border:1px dashed var(--line);border-radius:12px;padding:10px 12px}
+.lotes{display:grid;gap:10px}
+.lote{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:grid;grid-template-columns:60px 1fr;gap:4px 14px}
+.lote .n{font:800 26px/1 var(--display);color:var(--acc)}
+.lote h4{margin:0 0 2px;font-size:16px}
+.lote p,.lote ul{margin:0;color:var(--ink2);font-size:14px}
+.lote ul{padding-left:18px}
+.lote .meta{grid-column:2;display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+ol.guion{padding-left:22px;max-width:78ch}
+ol.guion li{margin:6px 0}
+footer{padding-block:30px 40px;color:var(--ink3);font-size:13px}
+@media (max-width:520px){.lote{grid-template-columns:1fr}.lote .meta{grid-column:1}.pc{grid-template-columns:1fr}}
+</style>
+
+<nav class="top" aria-label="Secciones"><div class="wrap">
+  <a href="#resumen">Resumen</a><a href="#atajo">Atajo del banco</a><a href="#atajo-recorridos">Recorridos</a><a href="#atajo-opciones">Opciones</a><a href="#suscripciones">Suscripciones</a><a href="#subs-recorridos">Recorridos</a><a href="#subs-opciones">Opciones</a><a href="#decisiones">Decisiones</a><a href="#lotes">Lotes</a><a href="#prueba">Prueba en tu iPhone</a>
+</div></nav>
+
+<main class="wrap">
+<header class="hero" id="resumen">
+  <div class="eyebrow">Yala 2.3 · «Yala apunta sola» · definición, sin código</div>
+  <h1>Atajo del banco y suscripciones detectadas</h1>
+  <p class="lead">Dos funciones gratis de 2.3 que leen en el iPhone, sin nube. Aquí están los recorridos completos, las maquetas, lo que iOS deja y no deja, las opciones con su recomendación, las decisiones que te tocan y el plan de lotes.</p>
+  <div class="duo">
+    <div class="fn">
+      <span class="tag acc" style="align-self:flex-start">Hito 2 del roadmap</span>
+      <h3>Atajo del banco</h3>
+      <p>Llega el aviso del BCP («Consumo de S/ 45.90 en TAMBO+»), Atajos se lo pasa a Yala por detrás y el gasto queda en la Bandeja por confirmar. Vale con iCloud y en el plan gratis.</p>
+      <div class="rec"><b>Recomendación:</b> una acción de Yala «Registrar aviso del banco» con reglas por banco y el modelo del iPhone de respaldo, instalada con un atajo listo por enlace. La notificación primero; el correo de Mail, si tu prueba lo confirma.</div>
+    </div>
+    <div class="fn">
+      <span class="tag acc" style="align-self:flex-start">Hito 4 del roadmap</span>
+      <h3>Suscripciones detectadas</h3>
+      <p>Yala busca en tu historial lo que pagas cada mes (Netflix, la luz, el gimnasio) y te propone convertirlo en pago planificado con su logo y su recordatorio.</p>
+      <div class="rec"><b>Recomendación:</b> proponerlo en Planificación, con tres cobros mensuales como mínimo. Sin tocar el esquema ni los registros pasados.</div>
+    </div>
+  </div>
+</header>
+
+<section class="band" id="atajo">
+  <h2><span class="k">Función 1</span>Atajo del banco</h2>
+  <p class="sub">Yala no puede leer las notificaciones de otra app por su cuenta. La única vía en iOS es una automatización de Atajos que la persona crea y que le pasa el texto a una acción de Yala. Eso marca todo el diseño: Yala guía, recibe y lee, pero no ve ni controla la automatización.</p>
+
+  <h3 class="s">Lo que medí hoy en el simulador (iOS 27.2)</h3>
+  <p class="sub">En Atajos de iOS 27 las automatizaciones viven dentro del atajo («Automatizaciones unificadas»). Abrí un atajo nuevo y revisé los disparadores.</p>
+  <div class="shots">
+    <figure class="shot"><img src="{{IMG:atajos-04-disparadores}}" alt="Lista de disparadores de Atajos: Wallet, Entrenamiento, Captura de pantalla, Notificación"><figcaption>Existe el disparador <b>Notificación</b> («Al recibir una notificación de News»), junto a Wallet.</figcaption></figure>
+    <figure class="shot"><img src="{{IMG:atajos-06-filtros}}" alt="Disparador Al recibir una notificación de App, con filtro Título contiene"><figcaption>Se elige la <b>app</b> y se filtra por texto: «Título contiene…».</figcaption></figure>
+    <figure class="shot"><img src="{{IMG:atajos-07-campos-filtro}}" alt="Menú de campos del filtro: Título, Subtítulo, Mensaje"><figcaption>El filtro mira <b>Título, Subtítulo o Mensaje</b>.</figcaption></figure>
+    <figure class="shot"><img src="{{IMG:atajos-10-correo-info}}" alt="Ficha del disparador Correo electrónico"><figcaption>Existe <b>Correo electrónico</b>: corre «cuando recibas un correo que cumpla los criterios».</figcaption></figure>
+  </div>
+  <div class="facts">
+    <div class="fact"><h4><span class="tag ok">Medido</span>Lo que ya sabemos</h4><ul>
+      <li>Hay disparador de notificación por app, con filtro por título, subtítulo y mensaje.</li>
+      <li>Hay disparador de correo para las cuentas de la app Mail.</li>
+      <li>Yala ya tiene la pieza que lo recibe: el atajo de Apple Pay corre por detrás, deja el pago en una cola compartida y el borrador aparece al abrir Yala.</li>
+      <li>Yala ya usa el modelo del iPhone para entender texto (Siri en el plan gratis).</li>
+    </ul></div>
+    <div class="fact"><h4><span class="tag warn">Falta tu iPhone</span>Lo que el simulador no responde</h4><ul>
+      <li>¿El texto de la notificación llega al atajo como entrada? El filtro lo lee, pero eso no prueba que lo entregue.</li>
+      <li>¿Corre con el iPhone bloqueado y sin pedir confirmación?</li>
+      <li>¿El correo de Mail entrega el cuerpo o solo el asunto?</li>
+      <li>¿Un atajo compartido por enlace trae su disparador? La nota de iOS 27 dice que las automatizaciones compartidas viajan dentro del atajo. Si es así, se instala en un toque.</li>
+    </ul><p style="margin:8px 0 0;font-size:13px"><a href="#prueba">Guion de la prueba, 15 minutos →</a></p></div>
+  </div>
+
+  <h3 class="s">Lo que iOS deja y no deja</h3>
+  <div class="lim">
+    <div class="no"><b>Yala no lee notificaciones ajenas</b>Solo recibe lo que la automatización le pasa. Sin automatización, no hay nada.</div>
+    <div class="no"><b>Yala no crea ni ve la automatización</b>No sabe si existe ni si está activa. Solo sabe cuándo llegó el último aviso, y con eso pinta el estado.</div>
+    <div class="no"><b>Ningún enlace abre una automatización concreta</b>Desde Yala solo se abre Atajos. Lo medimos al hacer la guía de Apple Pay.</div>
+    <div class="dud"><b>«Ejecutar inmediatamente» lo marca la persona</b>Si no lo marca, iOS pide un toque cada vez. La guía tiene que insistir en ese paso.</div>
+    <div class="dud"><b>El modelo del iPhone no está en todos</b>Solo en iPhone con Apple Intelligence (15 Pro y posteriores). En los demás leen las reglas por banco.</div>
+    <div class="dud"><b>Si el banco oculta el contenido</b>Con la vista previa en «Nunca», el aviso llega sin monto. Hay que decirlo en la guía.</div>
+    <div class="si"><b>Corre por detrás y no gasta nube</b>Como Apple Pay: la acción encola el texto y Yala lo convierte en borrador. Gratis y con iCloud.</div>
+    <div class="si"><b>Privacidad</b>El texto del aviso no sale del iPhone. Solo se guarda el borrador, igual que hoy con Apple Pay.</div>
+  </div>
+</section>
+
+<section class="band" id="atajo-recorridos">
+  <h3 class="s" style="margin-top:0">Recorrido 1 · Activar</h3>
+  <p class="sub">Se entra desde «Lo que Yala apunta solo» (la pantalla que propuso la revisión de la Bandeja; si no se aprueba, desde Ajustes › Bandeja). Línea discontinua rosa: lo nuevo. Desliza para ver los pasos.</p>
+  <div class="flow">
+    <div class="step"><div class="ph"><div class="sc">
+      <div class="sb"><span>9:41</span><span class="isl"></span><span>•••</span></div>
+      <div class="nb"><span class="bk">‹ Ajustes</span><h5>Lo que Yala apunta solo</h5></div>
+      <div class="grp"><div class="gh">Funcionando</div>
+        <div class="row"><div class="ic" style="background:#111;font-size:9px">Pay</div><div class="t"><b>Apple Pay</b><span>Último: hoy 12:40</span></div><span class="pill g">Activo</span></div>
+      </div>
+      <div class="grp hl"><div class="gh">Disponible</div>
+        <div class="row"><div class="ic" style="background:#6063f1">🔔</div><div class="t"><b>Avisos del banco</b><span>Gratis · también con iCloud</span></div><span class="pill">Activar</span></div>
+      </div>
+      <div class="grp"><div class="row"><div class="ic" style="background:#0a84ff">@</div><div class="t"><b>Correo del banco</b><span>Pro · necesita la nube</span></div><span class="pill o">Pro</span></div></div>
+    </div></div><div class="cap"><b>1.</b> La fila nueva dice lo que cuesta y con qué funciona.</div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="ph"><div class="sc">
+      <div class="sb"><span>9:41</span><span class="isl"></span><span>•••</span></div>
+      <div class="nb"><span class="bk">‹ Atrás</span><h5>¿De qué banco?</h5></div>
+      <p class="note">Elige la app que te avisa de tus compras. Puedes sumar más después.</p>
+      <div class="grp hl">
+        <div class="row"><div class="ic" style="background:#0033a0">B</div><div class="t"><b>BCP</b></div><span class="pill g">Listo</span></div>
+        <div class="row"><div class="ic" style="background:#00a94f">I</div><div class="t"><b>Interbank</b></div><span class="pill g">Listo</span></div>
+        <div class="row"><div class="ic" style="background:#004481">B</div><div class="t"><b>BBVA</b></div><span class="pill g">Listo</span></div>
+        <div class="row"><div class="ic" style="background:#ec111a">S</div><div class="t"><b>Scotiabank</b></div><span class="pill g">Listo</span></div>
+        <div class="row"><div class="ic" style="background:#742384">Y</div><div class="t"><b>Yape</b></div><span class="pill g">Listo</span></div>
+        <div class="row"><div class="ic" style="background:#8e8e93">?</div><div class="t"><b>Otro banco</b><span>Lo lee el modelo del iPhone</span></div><span class="pill o">Beta</span></div>
+      </div>
+    </div></div><div class="cap"><b>2.</b> «Listo» = hay reglas probadas con avisos reales. «Otro banco» funciona con el modelo del iPhone.</div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="ph"><div class="sc">
+      <div class="sb"><span>9:41</span><span class="isl"></span><span>•••</span></div>
+      <div class="nb"><span class="bk">‹ Atrás</span><h5>Avisos del BCP</h5></div>
+      <div class="grp hl"><div class="gh">Paso 1 de 2</div>
+        <div class="row"><div class="ic" style="background:#6063f1">1</div><div class="t"><b>Añade el atajo de Yala</b><span>Se abre Atajos con todo listo. Toca «Añadir atajo».</span></div></div>
+      </div>
+      <div class="btn">Añadir a Atajos</div>
+      <div class="grp"><div class="gh">Paso 2 de 2</div>
+        <div class="row"><div class="ic" style="background:#c7c7cc">2</div><div class="t"><b>Elige «Ejecutar inmediatamente»</b><span>Si no, iOS te pedirá un toque en cada aviso.</span></div></div>
+      </div>
+      <p class="note">Las notificaciones del BCP tienen que mostrar el contenido (Ajustes › Notificaciones › BCP › Mostrar vista previa: Siempre).</p>
+    </div></div><div class="cap"><b>3.</b> Opción I2: un atajo listo por enlace. Si tu prueba confirma que trae el disparador, el paso 2 desaparece.</div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="ph"><div class="sc">
+      <div class="sb"><span>9:41</span><span class="isl"></span><span>•••</span></div>
+      <div class="nb"><span class="bk">‹ Atrás</span><h5>Avisos del BCP</h5></div>
+      <div class="grp hl"><div class="row"><div class="ic" style="background:#ff9f0a">⏳</div><div class="t"><b>Esperando el primer aviso</b><span>Haz una compra o un Yapeo pequeño. Lo verás aquí y en tu Bandeja.</span></div></div></div>
+      <div class="grp"><div class="gh">Mientras tanto</div>
+        <div class="row"><div class="t"><b>Probar con un aviso de ejemplo</b><span>Corre la lectura sobre un texto del BCP para que veas el resultado.</span></div><span class="pill">Probar</span></div>
+      </div>
+      <div class="btn sec">Volver a la guía</div>
+    </div></div><div class="cap"><b>4.</b> Yala no puede ver la automatización: el estado se enciende con el primer aviso que llega.</div></div>
+  </div>
+
+  <h3 class="s">Recorrido 2 · El día a día</h3>
+  <div class="flow">
+    <div class="step"><div class="ph"><div class="sc lock">
+      <div class="sb"><span></span><span class="isl"></span><span></span></div>
+      <div class="time">9:41</div><div class="date">jueves, 12 de noviembre</div>
+      <div class="notif"><div class="nh"><i style="background:#0033a0"></i>BCP · ahora</div><b>Consumo con tu tarjeta</b><p>Realizaste un consumo de S/ 45.90 con tu Tarjeta de Débito BCP ****4821 en TAMBO+ MIRAFLORES.</p></div>
+    </div></div><div class="cap"><b>1.</b> Llega el aviso del banco. La persona no toca nada.</div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="ph"><div class="sc lock">
+      <div class="sb"><span></span><span class="isl"></span><span></span></div>
+      <div class="time">9:41</div><div class="date">jueves, 12 de noviembre</div>
+      <div class="notif"><div class="nh"><i style="background:#6063f1"></i>Atajos · ahora</div><b>Avisos del BCP</b><p>Ejecutando «Registrar aviso del banco»…</p></div>
+      <div class="notif"><div class="nh"><i style="background:#0033a0"></i>BCP · ahora</div><b>Consumo con tu tarjeta</b><p>Realizaste un consumo de S/ 45.90…</p></div>
+    </div></div><div class="cap"><b>2.</b> iOS muestra su propio aviso de Atajos. Yala no añade otro (decisión A5).</div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="ph"><div class="sc">
+      <div class="sb"><span>9:43</span><span class="isl"></span><span>•••</span></div>
+      <div class="nb"><h5>Bandeja de Entrada</h5></div>
+      <div class="grp"><div class="gh">Por confirmar · 2</div>
+        <div class="row hl"><div class="ic" style="background:#ff9f0a">🛒</div><div class="t"><b>Tambo+ Miraflores</b><span>Supermercado · Débito BCP · Aviso del BCP</span></div><span class="amt">−S/ 45,90</span></div>
+        <div class="row"><div class="ic" style="background:#111;font-size:9px">Pay</div><div class="t"><b>Starbucks</b><span>Café · Visa · Apple Pay</span></div><span class="amt">−S/ 14,50</span></div>
+      </div>
+      <div class="btn">Guardar los 2</div>
+    </div></div><div class="cap"><b>3.</b> Al abrir Yala, el gasto está en la Bandeja con su origen, la cuenta por los últimos cuatro dígitos y la categoría del comercio.</div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="ph"><div class="sc">
+      <div class="sb"><span>9:43</span><span class="isl"></span><span>•••</span></div>
+      <div class="nb"><span class="bk">‹ Ajustes</span><h5>Avisos del BCP</h5></div>
+      <div class="grp hl"><div class="row"><div class="ic" style="background:#34c759">✓</div><div class="t"><b>Funcionando</b><span>Último aviso hoy 9:41 · S/ 45,90 en Tambo+</span></div></div></div>
+      <div class="grp"><div class="gh">Este mes</div>
+        <div class="field"><span>Avisos leídos</span><span>23</span></div>
+        <div class="field"><span>Sin entender</span><span>1</span></div>
+        <div class="field"><span>No eran compras</span><span>4</span></div>
+      </div>
+      <div class="grp"><div class="field"><span>Cuenta por defecto</span><span>Débito BCP ›</span></div><div class="field"><span>Pausar avisos</span><span class="sw off"></span></div></div>
+    </div></div><div class="cap"><b>4.</b> El estado dice si funciona y cuánto leyó. «No eran compras» son claves, promociones y avisos de saldo.</div></div>
+  </div>
+
+  <h3 class="s">Recorrido 3 · Cuando algo sale mal, y cómo se apaga</h3>
+  <div class="flow">
+    <div class="step"><div class="ph"><div class="sc">
+      <div class="sb"><span>9:43</span><span class="isl"></span><span>•••</span></div>
+      <div class="nb"><h5>Bandeja de Entrada</h5></div>
+      <div class="grp"><div class="gh">Por confirmar</div>
+        <div class="row hl"><div class="ic" style="background:#8e8e93">?</div><div class="t"><b>No entendimos este aviso</b><span>«Operación por USD 12.00 en AMZN Mktp…» · Aviso del BCP</span></div><span class="pill o">Completar</span></div>
+      </div>
+      <p class="note">Se guarda el texto para que la persona complete el monto y la categoría. Ningún aviso se pierde.</p>
+    </div></div><div class="cap"><b>No se entiende:</b> borrador con el texto y «Completar». Cuenta para mejorar las reglas.</div></div>
+    <div class="step"><div class="ph"><div class="sc">
+      <div class="sb"><span>9:43</span><span class="isl"></span><span>•••</span></div>
+      <div class="nb"><h5>Bandeja de Entrada</h5></div>
+      <div class="grp"><div class="gh">Por confirmar</div>
+        <div class="row hl"><div class="ic" style="background:#ff9f0a">🛒</div><div class="t"><b>Tambo+ Miraflores</b><span>Aviso del BCP · <span style="color:#9a5b00;display:inline">Parece el mismo que llegó por Apple Pay</span></span></div><span class="amt">−S/ 45,90</span></div>
+      </div>
+      <div class="btn sec">Es otro gasto</div><div class="btn ghost">Descartar el repetido</div>
+    </div></div><div class="cap"><b>Repetido:</b> el mismo pago por Apple Pay, por correo y por aviso. Se usa la revisión de duplicados que ya tiene la Bandeja.</div></div>
+    <div class="step"><div class="ph"><div class="sc">
+      <div class="sb"><span>9:43</span><span class="isl"></span><span>•••</span></div>
+      <div class="nb"><span class="bk">‹ Ajustes</span><h5>Avisos del BCP</h5></div>
+      <div class="grp hl"><div class="row"><div class="ic" style="background:#ff9f0a">!</div><div class="t"><b>Hace 9 días que no llega nada</b><span style="white-space:normal">Si sigues usando tu tarjeta, revisa que la automatización esté en «Ejecutar inmediatamente».</span></div></div></div>
+      <div class="btn sec">Abrir Atajos</div>
+      <p class="note">Aparece solo si antes llegaban avisos con frecuencia. No es una notificación: se ve al entrar.</p>
+    </div></div><div class="cap"><b>Dejó de llegar:</b> Yala no ve la automatización. Avisa solo con lo que sí sabe: el silencio.</div></div>
+    <div class="step"><div class="ph"><div class="sc">
+      <div class="sb"><span>9:43</span><span class="isl"></span><span>•••</span></div>
+      <div class="nb"><span class="bk">‹ Ajustes</span><h5>Avisos del BCP</h5></div>
+      <div class="grp"><div class="field"><span>Pausar avisos</span><span class="sw"></span></div></div>
+      <p class="note">Pausado: los avisos que lleguen se ignoran y no quedan guardados.</p>
+      <div class="grp hl"><div class="gh">Quitarlo del todo</div>
+        <div class="row"><div class="t"><b>1. Abre Atajos</b><span>Busca el atajo «Avisos del BCP».</span></div></div>
+        <div class="row"><div class="t"><b>2. Mantén pulsado › Eliminar</b><span>Se borra con su automatización.</span></div></div>
+      </div>
+      <div class="btn sec">Abrir Atajos</div>
+    </div></div><div class="cap"><b>Apagar:</b> pausar es de Yala y es inmediato. Borrar se hace en Atajos; Yala lo explica en dos pasos.</div></div>
+  </div>
+</section>
+
+<section class="band" id="atajo-opciones">
+  <h3 class="s" style="margin-top:0">Opciones · cómo se instala</h3>
+  <div class="opts">
+    <div class="opt"><h4><span class="code">I1</span>Guía para armarlo a mano</h4><p>Como la guía de Apple Pay: la persona crea la automatización, elige la app del banco y añade la acción de Yala.</p>
+      <div class="pc"><div class="p"><h5>A favor</h5><ul><li>No depende de nada nuevo de iOS.</li><li>Lo más barato de construir.</li></ul></div><div class="c"><h5>En contra</h5><ul><li>6 a 8 toques en Atajos por banco.</li><li>Es donde la gente abandona.</li></ul></div></div></div>
+    <div class="opt best"><h4><span class="code">I2</span>Atajo listo por enlace + guía corta <span class="tag acc">Recomendada</span></h4><p>Yala tiene un atajo publicado por banco. «Añadir a Atajos» lo instala con la acción ya puesta. Si iOS 27 trae el disparador dentro, queda en un toque.</p>
+      <div class="pc"><div class="p"><h5>A favor</h5><ul><li>De 1 a 3 toques.</li><li>El mismo patrón sirve para el atajo de Apple Pay instalable.</li></ul></div><div class="c"><h5>En contra</h5><ul><li>Un enlace de iCloud por banco que hay que mantener.</li><li>El «un toque» depende de tu prueba.</li></ul></div></div></div>
+    <div class="opt"><h4><span class="code">I3</span>Solo la acción de Yala, sin guía</h4><p>Se publica la acción en Atajos y se deja que quien sepa la use.</p>
+      <div class="pc"><div class="p"><h5>A favor</h5><ul><li>Casi gratis.</li></ul></div><div class="c"><h5>En contra</h5><ul><li>Solo lo usan los que ya saben Atajos.</li><li>No compite con Clever.</li></ul></div></div></div>
+  </div>
+  <div class="why"><b>Por qué I2:</b> el atajo de Apple Pay instalable en un toque (otra card de 2.3) necesita lo mismo. Hacer el patrón una vez sirve para los dos, y la guía de I1 queda como respaldo dentro de I2.</div>
+
+  <h3 class="s">Opciones · cómo lee el aviso</h3>
+  <div class="opts">
+    <div class="opt"><h4><span class="code">L1</span>Solo reglas por banco</h4><p>Un patrón por banco y tipo de aviso: monto, moneda, comercio y últimos cuatro dígitos.</p>
+      <div class="pc"><div class="p"><h5>A favor</h5><ul><li>Exacto y rápido.</li><li>Funciona en cualquier iPhone.</li></ul></div><div class="c"><h5>En contra</h5><ul><li>Si el banco cambia el texto, deja de leer.</li><li>Solo los bancos con reglas.</li></ul></div></div></div>
+    <div class="opt best"><h4><span class="code">L2</span>Reglas primero, el modelo del iPhone de respaldo <span class="tag acc">Recomendada</span></h4><p>Si una regla reconoce el aviso, manda la regla. Si no, lo intenta el modelo del iPhone. Si tampoco, queda «No entendimos este aviso».</p>
+      <div class="pc"><div class="p"><h5>A favor</h5><ul><li>Exacto donde hay reglas y flexible donde no.</li><li>Cubre «Otro banco».</li></ul></div><div class="c"><h5>En contra</h5><ul><li>Dos caminos que probar.</li><li>El respaldo solo en iPhone con Apple Intelligence.</li></ul></div></div></div>
+    <div class="opt"><h4><span class="code">L3</span>Solo el modelo del iPhone</h4><p>Todo lo lee el modelo, como Siri hoy.</p>
+      <div class="pc"><div class="p"><h5>A favor</h5><ul><li>Sin mantener reglas.</li></ul></div><div class="c"><h5>En contra</h5><ul><li>No funciona en iPhone sin Apple Intelligence.</li><li>Puede equivocar montos: mal en finanzas.</li></ul></div></div></div>
+  </div>
+  <div class="why"><b>Por qué L2:</b> un monto mal leído es peor que no leerlo. Las reglas dan cifras exactas en los bancos más usados y el modelo cubre el resto sin dejar a nadie fuera.</div>
+</section>
+
+<section class="band" id="suscripciones">
+  <h2><span class="k">Función 2</span>Suscripciones detectadas</h2>
+  <p class="sub">Hoy los pagos planificados se crean a mano (o con «Guardar como recurrente» al registrar) y ya tienen logo de 40 marcas y recordatorio. Lo que falta es que Yala los encuentre sola: no hay ninguna detección de patrones en el código.</p>
+
+  <h3 class="s">Cómo decide Yala que algo se repite</h3>
+  <p class="sub">Una regla exacta, sin IA, que corre en el iPhone al abrir la app. Ejemplos con un historial de 5 meses (datos ficticios):</p>
+  <div class="tw"><table>
+    <thead><tr><th>Lo que hay en el historial</th><th>Cobros</th><th>Cada cuánto</th><th>Monto</th><th>¿Se propone?</th></tr></thead>
+    <tbody>
+      <tr><td><b>Netflix</b> · Visa</td><td class="num">14 jul, 14 ago, 14 sep, 14 oct, 14 nov</td><td>cada mes, día 14</td><td class="num">S/ 44,90 fijo</td><td><span class="tag ok">Sí · con su logo</span></td></tr>
+      <tr><td><b>Luz del Sur</b> · Débito BCP</td><td class="num">3 sep, 2 oct, 4 nov</td><td>cada mes (±2 días)</td><td class="num">S/ 112 a 131</td><td><span class="tag ok">Sí · monto variable, se usa el último</span></td></tr>
+      <tr><td><b>Smart Fit</b> · Visa</td><td class="num">1 oct, 1 nov</td><td>cada mes</td><td class="num">S/ 99,90</td><td><span class="tag warn">Aún no · faltan cobros</span></td></tr>
+      <tr><td><b>Uber</b> · Visa</td><td class="num">31 cobros</td><td>irregular</td><td class="num">S/ 9 a 38</td><td><span class="tag bad">No · sin intervalo fijo</span></td></tr>
+      <tr><td><b>Spotify</b> · ya es pago planificado</td><td class="num">5 cobros</td><td>cada mes</td><td class="num">S/ 18,90</td><td><span class="tag bad">No · ya existe</span></td></tr>
+    </tbody>
+  </table></div>
+  <p class="sub" style="margin-top:10px">La regla: mismo comercio (por el nombre normalizado o por la marca del catálogo), <b>3 cobros o más</b>, intervalo mensual con ±4 días o semanal con ±1 día, monto dentro de un 15 % (o exacto para marcas de suscripción), último cobro hace menos de 45 días y sin un pago planificado parecido. Se excluyen transferencias, gastos de grupo e ingresos. Cada divisa se trata por separado.</p>
+</section>
+
+<section class="band" id="subs-recorridos">
+  <h3 class="s" style="margin-top:0">Recorrido · de la propuesta al pago planificado</h3>
+  <div class="flow">
+    <div class="step"><div class="ph"><div class="sc">
+      <div class="sb"><span>9:41</span><span class="isl"></span><span>•••</span></div>
+      <div class="nb"><h5>Planificación</h5></div>
+      <div class="grp hl"><div class="gh">Encontramos 3 pagos que se repiten</div>
+        <div class="row"><div class="ic" style="background:#e50914">N</div><div class="t"><b>Netflix</b><span>Cada mes, el 14 · Visa</span></div><span class="amt">S/ 44,90</span></div>
+        <div class="row"><div class="ic" style="background:#f5a623">⚡</div><div class="t"><b>Luz del Sur</b><span>Cada mes, hacia el 3 · BCP</span></div><span class="amt">~S/ 131</span></div>
+        <div class="row"><div class="ic" style="background:#1d1d1f">☁</div><div class="t"><b>iCloud+</b><span>Cada mes, el 22 · Visa</span></div><span class="amt">US$ 2,99</span></div>
+      </div>
+      <div class="grp"><div class="gh">Próximos pagos</div>
+        <div class="row"><div class="ic" style="background:#1db954">S</div><div class="t"><b>Spotify</b><span>5 dic</span></div><span class="amt">S/ 18,90</span></div>
+      </div>
+    </div></div><div class="cap"><b>1.</b> Arriba de Planificación, una tarjeta con lo detectado. Desaparece cuando se responde a todo.</div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="ph"><div class="sc">
+      <div class="dim"></div>
+      <div class="sheet"><div class="grab"></div>
+        <div style="text-align:center;padding:4px 12px 2px"><div class="ic" style="background:#e50914;margin:0 auto;width:40px;height:40px;border-radius:11px;font-size:18px">N</div><b style="display:block;font-size:15px;margin-top:6px">Netflix</b><span style="color:var(--ph-ink2);font-size:11px">Lo pagaste 5 veces, el 14 de cada mes</span></div>
+        <div class="grp" style="background:var(--ph-bg)">
+          <div class="field"><span>Monto</span><span>S/ 44,90</span></div>
+          <div class="field"><span>Frecuencia</span><span>Cada mes ›</span></div>
+          <div class="field"><span>Próximo cobro</span><span>14 dic ›</span></div>
+          <div class="field"><span>Cuenta</span><span>Visa BCP ›</span></div>
+          <div class="field"><span>Avisarme</span><span>1 día antes ›</span></div>
+        </div>
+        <div class="btn">Crear pago planificado</div>
+        <div style="display:flex"><div class="btn ghost" style="flex:1">No es fijo</div><div class="btn ghost" style="flex:1">Ahora no</div></div>
+      </div>
+    </div></div><div class="cap"><b>2.</b> Todo viene lleno desde el historial y se puede cambiar. Es el editor de pagos planificados de hoy, abierto con datos.</div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="ph"><div class="sc">
+      <div class="sb"><span>9:42</span><span class="isl"></span><span>•••</span></div>
+      <div class="nb"><h5>Planificación</h5></div>
+      <div class="toast"><b>Netflix ya es un pago planificado.</b> Te avisamos el 13 de diciembre.</div>
+      <div class="grp"><div class="gh">Encontramos 2 pagos que se repiten</div>
+        <div class="row"><div class="ic" style="background:#f5a623">⚡</div><div class="t"><b>Luz del Sur</b><span>Cada mes, hacia el 3 · BCP</span></div><span class="amt">~S/ 131</span></div>
+        <div class="row"><div class="ic" style="background:#1d1d1f">☁</div><div class="t"><b>iCloud+</b><span>Cada mes, el 22 · Visa</span></div><span class="amt">US$ 2,99</span></div>
+      </div>
+      <div class="grp"><div class="gh">Próximos pagos</div>
+        <div class="row"><div class="ic" style="background:#1db954">S</div><div class="t"><b>Spotify</b><span>5 dic</span></div><span class="amt">S/ 18,90</span></div>
+        <div class="row hl"><div class="ic" style="background:#e50914">N</div><div class="t"><b>Netflix</b><span>14 dic</span></div><span class="amt">S/ 44,90</span></div>
+      </div>
+    </div></div><div class="cap"><b>3.</b> Queda creado con logo y recordatorio. Los registros pasados no se tocan.</div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="ph"><div class="sc">
+      <div class="sb"><span>9:42</span><span class="isl"></span><span>•••</span></div>
+      <div class="nb"><span class="bk">‹ Ajustes</span><h5>Planificación</h5></div>
+      <div class="grp hl"><div class="field"><span>Proponer pagos que se repiten</span><span class="sw"></span></div></div>
+      <p class="note">Yala revisa tu historial en este iPhone. Nada sale del teléfono.</p>
+      <div class="grp"><div class="gh">Descartados</div>
+        <div class="row"><div class="t"><b>Uber Eats</b><span>Marcado como «No es fijo» el 2 nov</span></div><span class="pill">Volver a proponer</span></div>
+      </div>
+    </div></div><div class="cap"><b>Apagar y deshacer:</b> un interruptor, y la lista de lo descartado para arrepentirse.</div></div>
+  </div>
+
+  <h3 class="s">Casos diseñados desde ya, aunque vayan en un lote posterior</h3>
+  <div class="flow">
+    <div class="step"><div class="ph"><div class="sc">
+      <div class="sb"><span>9:41</span><span class="isl"></span><span>•••</span></div>
+      <div class="nb"><h5>Planificación</h5></div>
+      <div class="grp hl"><div class="row"><div class="ic" style="background:#e50914">N</div><div class="t"><b>Netflix subió a S/ 49,90</b><span style="white-space:normal">Los dos últimos cobros fueron de S/ 49,90; tu pago dice S/ 44,90.</span></div></div>
+      <div style="display:flex"><div class="btn" style="flex:1">Actualizar</div><div class="btn ghost" style="flex:1">Dejar así</div></div></div>
+    </div></div><div class="cap"><b>Cambio de precio</b> (lote S2): se compara el pago planificado con los cobros reales.</div></div>
+    <div class="step"><div class="ph"><div class="sc">
+      <div class="sb"><span>9:41</span><span class="isl"></span><span>•••</span></div>
+      <div class="nb"><h5>Planificación</h5></div>
+      <div class="grp hl"><div class="row"><div class="ic" style="background:#1db954">S</div><div class="t"><b>¿Dejaste de pagar Spotify?</b><span>No hay cobro desde el 5 de septiembre.</span></div></div>
+      <div style="display:flex"><div class="btn sec" style="flex:1">Pausar el pago</div><div class="btn ghost" style="flex:1">Sigue activo</div></div></div>
+    </div></div><div class="cap"><b>Dejó de cobrarse</b> (lote S2): libera el dinero que se reservaba para ese pago.</div></div>
+    <div class="step"><div class="ph"><div class="sc">
+      <div class="sb"><span>9:41</span><span class="isl"></span><span>•••</span></div>
+      <div class="nb"><span class="bk">Cancelar</span><h5>Nuevo gasto</h5></div>
+      <div class="grp"><div class="field"><span>Monto</span><span>S/ 99,90</span></div><div class="field"><span>Descripción</span><span>Smart Fit</span></div></div>
+      <div class="toast hl"><b>Es el tercer mes que pagas Smart Fit.</b> ¿Lo convertimos en pago planificado? <span style="color:#a6a8ff">Sí · No</span></div>
+    </div></div><div class="cap"><b>Al registrar</b> (opción P3): aviso al guardar el tercer cobro. Más visible, más interrupción.</div></div>
+  </div>
+</section>
+
+<section class="band" id="subs-opciones">
+  <h3 class="s" style="margin-top:0">Opciones · dónde se propone</h3>
+  <div class="opts">
+    <div class="opt best"><h4><span class="code">P1</span>Tarjeta en Planificación <span class="tag acc">Recomendada</span></h4><p>Arriba de la lista de pagos planificados, mientras haya algo por responder.</p>
+      <div class="pc"><div class="p"><h5>A favor</h5><ul><li>Está donde viven los pagos planificados.</li><li>No interrumpe.</li></ul></div><div class="c"><h5>En contra</h5><ul><li>Quien no entra a Planificación no lo ve.</li></ul></div></div></div>
+    <div class="opt"><h4><span class="code">P2</span>En la Bandeja</h4><p>Cada detección como un elemento más por confirmar.</p>
+      <div class="pc"><div class="p"><h5>A favor</h5><ul><li>La Bandeja ya es «lo que Yala te propone».</li></ul></div><div class="c"><h5>En contra</h5><ul><li>Mezcla borradores de gasto con sugerencias de plan.</li><li>«Guardar todos» no debería crear pagos.</li></ul></div></div></div>
+    <div class="opt"><h4><span class="code">P3</span>Al registrar el tercer cobro</h4><p>Aviso en el formulario al guardar.</p>
+      <div class="pc"><div class="p"><h5>A favor</h5><ul><li>Llega en el momento justo.</li></ul></div><div class="c"><h5>En contra</h5><ul><li>Interrumpe el registro, que es lo más usado.</li><li>No ve el historial que ya existe.</li></ul></div></div></div>
+    <div class="opt"><h4><span class="code">P4</span>En Estadísticas</h4><p>Un bloque «Tus suscripciones», como el roadmap pide para Estadísticas.</p>
+      <div class="pc"><div class="p"><h5>A favor</h5><ul><li>Da la foto del gasto fijo del mes.</li></ul></div><div class="c"><h5>En contra</h5><ul><li>Es para mirar, no para actuar.</li></ul></div></div></div>
+  </div>
+  <div class="why"><b>Por qué P1:</b> la propuesta termina en un pago planificado, y Planificación es su sitio. P4 puede llegar después reusando la misma detección; P3 se descarta porque frena el registro.</div>
+</section>
+
+<section class="band" id="decisiones">
+  <h2><span class="k">Lo que te toca</span>Decisiones</h2>
+  <p class="sub">Cada una trae su recomendación marcada. Toca una opción y queda guardada aquí; la leo desde la sesión. Si no tocas nada, se toma la recomendada.</p>
+  <div class="savebar" id="savebar">Cargando el registro de decisiones…</div>
+  <div id="decs"></div>
+</section>
+
+<section class="band" id="lotes">
+  <h2><span class="k">Cómo se construye</span>Plan de lotes</h2>
+  <p class="sub">Las dos funciones son independientes: se pueden lanzar en paralelo, una en cada máquina. Ninguna cambia el esquema de datos con las opciones recomendadas.</p>
+  <div class="lotes">
+    <div class="lote"><div class="n">B0</div><div><h4>Tu prueba en el iPhone (15 min)</h4><p>Responde las cuatro preguntas que el simulador no contesta. Su resultado decide A1 y si la guía tiene uno o dos pasos.</p></div><div class="meta"><span class="tag warn">Te toca a ti</span><span class="tag acc">Antes de B1</span></div></div>
+    <div class="lote"><div class="n">B1</div><div><h4>Atajo del banco · la lectura</h4><ul><li>Acción «Registrar aviso del banco» que corre por detrás y encola el texto, como Apple Pay.</li><li>Reglas de 5 bancos con avisos reales y tests por cada formato.</li><li>Borrador en la Bandeja con origen «Aviso del BCP», cuenta por los cuatro dígitos y revisión de repetidos.</li><li>«No entendimos este aviso» y «No eran compras».</li></ul></div><div class="meta"><span class="tag warn">Riesgo medio: textos reales de cada banco</span><span class="tag">Necesita avisos de ejemplo</span></div></div>
+    <div class="lote"><div class="n">B2</div><div><h4>Atajo del banco · instalar y estado</h4><ul><li>Fila en «Lo que Yala apunta solo», elegir banco, guía de 1 o 2 pasos.</li><li>Atajos listos por enlace, uno por banco (sirve también al atajo de Apple Pay).</li><li>Estado «Funcionando», contadores, aviso de silencio, pausa.</li><li>Respaldo con el modelo del iPhone para «Otro banco».</li></ul></div><div class="meta"><span class="tag ok">Riesgo bajo-medio</span><span class="tag">QA en el iPhone 14</span></div></div>
+    <div class="lote"><div class="n">B3</div><div><h4>Correo de Mail (solo si B0 lo permite)</h4><p>El mismo atajo con el disparador de correo, para quien recibe las alertas en la app Mail. Reusa toda la lectura de B1.</p></div><div class="meta"><span class="tag ok">Riesgo bajo</span><span class="tag">Depende de B0</span></div></div>
+    <div class="lote"><div class="n">S1</div><div><h4>Suscripciones · detectar y proponer</h4><ul><li>Detector con la regla de arriba y tests con historiales sintéticos (fijo, variable, irregular, ya planificado, en dólares, cambio de hora).</li><li>Tarjeta en Planificación, hoja con el editor lleno, «No es fijo», «Ahora no».</li><li>Descartados guardados en el iPhone; interruptor en Ajustes.</li></ul></div><div class="meta"><span class="tag ok">Riesgo bajo: no toca esquema ni registros</span><span class="tag">Se puede lanzar ya</span></div></div>
+    <div class="lote"><div class="n">S2</div><div><h4>Suscripciones · cambios de precio y bajas</h4><p>«Netflix subió», «¿Dejaste de pagar Spotify?» y, si lo quieres, el bloque de Estadísticas.</p></div><div class="meta"><span class="tag ok">Riesgo bajo</span><span class="tag">Puede ir a 2.4</span></div></div>
+  </div>
+</section>
+
+<section class="band" id="prueba">
+  <h2><span class="k">Lote B0 · te toca a ti</span>La prueba en tu iPhone</h2>
+  <p class="sub">En tu iPhone personal, el que recibe los avisos del banco. Unos 15 minutos y no instala nada de Yala.</p>
+  <ol class="guion">
+    <li>Abre <b>Ajustes › Notificaciones › BCP</b> y comprueba que <b>Mostrar vista previa</b> está en «Siempre».</li>
+    <li>Abre <b>Atajos</b>, toca <b>+</b> (Nuevo atajo) y luego <b>Editor</b>, arriba a la derecha.</li>
+    <li>En el buscador de abajo toca la categoría <b>Automatización</b>, baja hasta <b>Notificación</b> y tócala.</li>
+    <li>Toca <b>App</b> y elige <b>BCP</b>. No pongas filtro.</li>
+    <li>En el buscador escribe <b>Mostrar resultado</b> y añádela. Toca su campo y elige la variable <b>Entrada del atajo</b> (si no aparece, la que diga <b>Notificación</b>).</li>
+    <li>Si te pregunta cómo ejecutarlo, elige <b>Ejecutar inmediatamente</b>. Ponle de nombre «Prueba Yala» y sal.</li>
+    <li>Paga algo pequeño con la tarjeta, o haz un Yapeo de S/ 1. Cuando llegue el aviso, apunta: <b>¿apareció el texto del aviso con el monto?</b></li>
+    <li>Repite el paso 7 con el iPhone <b>bloqueado</b>. Apunta si corrió y si te pidió algo.</li>
+    <li>En «Prueba Yala» toca <b>Compartir › Copiar enlace de iCloud</b> y mándamelo: con eso compruebo si el disparador viaja dentro del atajo.</li>
+    <li>Opcional, correo: repite los pasos 2 a 6 con el disparador <b>Correo electrónico</b> y el remitente de las alertas de tu banco. Apunta si aparece el cuerpo o solo el asunto.</li>
+    <li>Mándame dos o tres avisos reales copiados (BCP, Yape, Interbank si tienes): son la base de las reglas de B1. Tapa los cuatro dígitos si quieres.</li>
+    <li>Al terminar, borra «Prueba Yala»: mantenlo pulsado › Eliminar.</li>
+  </ol>
+</section>
+
+<footer>Sesión de definición del 12 de noviembre de 2026. Capturas de Atajos tomadas en el simulador iPhone 17 Pro con iOS 27.2. Las cifras de los ejemplos son ficticias. Lo marcado «Medido» está comprobado; lo de «Falta tu iPhone» es la prueba B0.</footer>
+</main>
+
+<script>
+const DECS=[
+ {id:"A1",fn:"Atajo",t:"¿Qué cubre el atajo en 2.3?",p:"Depende de tu prueba (B0). La notificación es la vía nueva de iOS 27; el correo de Mail solo sirve a quien usa la app Mail.",o:[["noti","Notificación primero","Correo de Mail en B3 si la prueba lo permite",1],["ambos","Notificación y correo a la vez","Más alcance, el doble de pruebas"],["correo","Solo correo de Mail","Si la notificación no entrega el texto"]]},
+ {id:"A2",fn:"Atajo",t:"¿Cómo se instala?",p:"Ver las opciones I1 a I3.",o:[["I2","I2 · Atajo listo por enlace + guía corta","Mismo patrón que el atajo de Apple Pay instalable",1],["I1","I1 · Guía para armarlo a mano",""],["I3","I3 · Solo la acción, sin guía",""]]},
+ {id:"A3",fn:"Atajo",t:"¿Cómo lee el aviso?",p:"Ver las opciones L1 a L3.",o:[["L2","L2 · Reglas y modelo del iPhone de respaldo","",1],["L1","L1 · Solo reglas",""],["L3","L3 · Solo el modelo del iPhone",""]]},
+ {id:"A4",fn:"Atajo",t:"¿Con qué bancos sale?",p:"Cada banco con reglas necesita avisos reales para los tests.",o:[["5","BCP, Interbank, BBVA, Scotiabank y Yape","El resto como «Otro banco»",1],["2","Solo BCP y Yape","Lo mínimo; el resto con el modelo"],["7","Los 5 + Plin y Diners","Más avisos que conseguir"]]},
+ {id:"A5",fn:"Atajo",t:"¿Yala avisa cuando apunta algo?",p:"El banco ya avisó e iOS muestra el aviso de Atajos. Uno más sería ruido.",o:[["no","No; se ve en la Bandeja y en el estado","",1],["si","Sí: «Apuntamos S/ 45,90 en Tambo+»","Útil al principio, molesto después"],["primero","Solo el primero, para confirmar que funciona",""]]},
+ {id:"A6",fn:"Atajo",t:"¿Dónde se activa?",p:"La revisión de la Bandeja propuso una pantalla «Lo que Yala apunta solo» que aún espera tu decisión.",o:[["pantalla","En «Lo que Yala apunta solo»","Junta Apple Pay, correo y avisos",1],["ajustes","En Ajustes › Bandeja, como hoy",""],["bandeja","Desde la Bandeja vacía",""]]},
+ {id:"S1",fn:"Suscripciones",t:"¿Dónde se propone?",p:"Ver las opciones P1 a P4.",o:[["P1","P1 · Tarjeta en Planificación","",1],["P2","P2 · En la Bandeja",""],["P3","P3 · Al registrar el tercer cobro",""],["P4","P4 · En Estadísticas",""]]},
+ {id:"S2",fn:"Suscripciones",t:"¿Desde cuántos cobros?",p:"La card dice tres meses. Con dos salen más propuestas y más errores.",o:[["3","3 cobros mensuales o 4 semanales","Anuales fuera de 2.3",1],["2","2 cobros","Más propuestas, más falsas"],["3a","3 mensuales, y anuales con 2","Pocos historiales tienen dos años"]]},
+ {id:"S3",fn:"Suscripciones",t:"Lo descartado, ¿se recuerda en cada iPhone o en todos?",p:"Recordarlo en todos los dispositivos necesita un campo nuevo sincronizado (ventana de esquema).",o:[["local","En cada iPhone","Sin esquema; en el iPad puede volver a salir",1],["sync","En todos, con la nube","Va a la ventana de esquema"]]},
+ {id:"S4",fn:"Suscripciones",t:"¿Se enlazan los cobros pasados al pago creado?",p:"Hoy un registro no sabe de qué pago planificado vino.",o:[["no","No, los pasados no se tocan","",1],["si","Sí, para ver el historial del pago","Toca registros y probablemente el esquema"]]},
+ {id:"S5",fn:"Suscripciones",t:"Cambios de precio y bajas, ¿cuándo?",p:"Están diseñados arriba; la pregunta es en qué lote.",o:[["s2","En un lote aparte de 2.3 (S2)","",1],["s1","Dentro de S1",""],["24","En 2.4",""]]}
+];
+const root=document.getElementById("decs"), bar=document.getElementById("savebar");
+let picks={}, db=null, canWrite=false;
+function render(){
+  root.innerHTML="";
+  let last="";
+  for(const d of DECS){
+    if(d.fn!==last){const h=document.createElement("h3");h.className="s";h.textContent=d.fn==="Atajo"?"Atajo del banco":"Suscripciones detectadas";root.appendChild(h);last=d.fn}
+    const box=document.createElement("div");box.className="dec";
+    const head=document.createElement("div");head.className="dh";
+    const id=document.createElement("span");id.className="id";id.textContent=d.id;
+    const t=document.createElement("h4");t.textContent=d.t;head.append(id,t);
+    const p=document.createElement("p");p.textContent=d.p;
+    const ch=document.createElement("div");ch.className="choices";
+    const chosen=picks[d.id]&&picks[d.id].opcion;
+    for(const [k,l,s,rec] of d.o){
+      const b=document.createElement("button");b.type="button";b.className="choice"+(rec?" rec":"");b.id="dec-"+d.id+"-"+k;
+      b.textContent=l; if(s){const sm=document.createElement("small");sm.textContent=s;b.appendChild(sm)}
+      b.setAttribute("aria-pressed",String(chosen===k));
+      b.disabled=!canWrite;
+      b.addEventListener("click",()=>choose(d.id,k));
+      ch.appendChild(b);
+    }
+    const st=document.createElement("div");st.className="dstate";
+    const opt=chosen&&d.o.find(x=>x[0]===chosen);
+    st.textContent=opt?("Elegida: "+opt[1]):"Sin respuesta: se tomará la recomendada.";
+    box.append(head,p,ch,st);root.appendChild(box);
+  }
+}
+async function choose(id,k){
+  if(!db||!canWrite)return;
+  const prev=picks[id];picks[id]={opcion:k};render();
+  try{await db.doc("decisiones/"+id).set({opcion:k,fecha:new Date().toISOString()})}
+  catch(e){picks[id]=prev;render();bar.textContent="No se pudo guardar ("+((e&&e.code)||"error")+"). Vuelve a tocar la opción."}
+}
+render();
+(async()=>{
+  const timer=setTimeout(()=>{bar.textContent="El registro no respondió. Las opciones se ven, pero no se guardan desde aquí."},10000);
+  try{
+    const c=window.claude; if(!c||!c.use){clearTimeout(timer);bar.textContent="Abre esta página en claude.ai para guardar tus elecciones.";return}
+    const [d,u]=await Promise.all([c.use("db"),c.use("user")]);
+    db=d; canWrite=u?await u.isOwner():false;
+    if(!db){clearTimeout(timer);bar.textContent="Sin registro disponible en esta vista: las elecciones no se guardan.";return}
+    db.collection("decisiones").onSnapshot(s=>{clearTimeout(timer);picks={};for(const x of s.docs){picks[x.id]=x.data()||{}}
+      const n=Object.keys(picks).length;bar.textContent=(canWrite?"Toca una opción para elegirla. ":"Solo Jürgen puede elegir. ")+n+" de "+DECS.length+" respondidas.";render()},
+      e=>{clearTimeout(timer);bar.textContent="No se pudo leer el registro ("+((e&&e.code)||"error")+")."});
+    render();
+  }catch(e){clearTimeout(timer);bar.textContent="No se pudo abrir el registro de decisiones."}
+})();
+</script>
