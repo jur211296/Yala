@@ -96,3 +96,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de conducir el simulador o
 - [AX loaded timeout: reinicia el 17 Pro](feedback_ax_loaded_timeout_se_cura_reiniciando.md) — runner sin arrancar, 0 casos: repetir no cura; apagar el extra, reiniciar y calentar sí.
 - [axe: primer toque y mazo en un paso](reference_axe_primer_toque_y_mazo_en_un_paso.md) — el 1.er toque por coordenadas se pierde: --id; `-uitest-setup-deck-at <n>` para los pasos 6-7 y el final.
 - [Device MCP sin OCR y carrusel del Welcome](reference_device_mcp_sin_ocr_y_carrusel_del_welcome.md) — capturas + coordenadas; pausa el carrusel antes de tocar.
+- [Grabaciones del iPhone 14 llevan notificaciones](feedback_grabaciones_del_iphone_14_llevan_notificaciones.md) — WhatsApp de clientes en vídeo y capturas: recorta, y el vídeo no se entrega.
