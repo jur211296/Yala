@@ -104,4 +104,3 @@ Subíndice de `MEMORY.md` (2026-11-05). **Memorias de proyecto: congeladas a su 
 - [QA guiado 2.1 sigue abierto](project_qa_guiado_2_1_espera_tf19.md) — tras el TF19 espera t2q8, 840m, blqa, z81w y un TF20; tanda en Yala Dev.
 - [Prueba de cortesía de IA espera iPhone](project_prueba_cortesia_ia_espera_iphone.md) — 12-nov: Y23-09 en qa; vaciar Yala Dev chocaba con el encargo.
 - [Yala web espera decisiones](project_yala_web_espera_decisiones.md) — 12-nov: maqueta y 6 lotes en el artifact; leer su db antes del lote 0.
-- [Adopt sobre la nube espera decisión](project_adopt_sobre_nube_espera_decision.md) — 13-nov: A/B/C para Jürgen; fallos 1 y 2 en el PR borrador.
