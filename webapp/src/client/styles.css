@@ -1,0 +1,194 @@
+/* Tokens del tema claro y oscuro de la app (los mismos de la maqueta aprobada, docs/web-app/index.html). */
+:root {
+  --bg: #fafbff;
+  --card: #ffffff;
+  --ink: #111114;
+  --ink2: #6c6c78;
+  --line: #ececf2;
+  --acc: #6063f1;
+  --pink: #ff0080;
+  --bad: #b0263f;
+  --badb: #fbe6ea;
+  --ok: #13804f;
+  --okb: #e2f4ea;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000;
+    --card: #1c1c1e;
+    --ink: #f2f2f7;
+    --ink2: #9a9aa6;
+    --line: #2a2a2e;
+    --acc: #818cf8;
+    --bad: #ff7d93;
+    --badb: #3c1620;
+    --ok: #4fd393;
+    --okb: #143325;
+    color-scheme: dark;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+}
+.shell {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: max(24px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+}
+.card {
+  width: min(400px, 100%);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 14px 40px rgba(20, 20, 50, 0.08);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font: 800 22px/1 -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+  padding-bottom: 4px;
+}
+.brand i {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(140deg, #6063f1, #ff0080);
+  display: inline-block;
+}
+h1 {
+  font: 800 24px/1.15 -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+  letter-spacing: -0.01em;
+  margin: 4px 0 0;
+  text-align: center;
+  text-wrap: balance;
+}
+.muted {
+  color: var(--ink2);
+  margin: 0;
+  text-align: center;
+}
+.fade {
+  color: var(--ink2);
+  font-size: 12.5px;
+  text-align: center;
+  margin: 0;
+}
+.fade a {
+  color: inherit;
+}
+.note {
+  font-size: 13.5px;
+  color: var(--ink2);
+  background: color-mix(in srgb, var(--acc) 8%, transparent);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin: 0;
+}
+.aviso {
+  margin: 0;
+  font-size: 14px;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--badb);
+  color: var(--bad);
+}
+.aviso.ok {
+  background: var(--okb);
+  color: var(--ok);
+}
+.login {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.btn {
+  display: block;
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  border-radius: 12px;
+  padding: 11px 14px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+.btn.dark {
+  background: #000;
+  color: #fff;
+  border-color: #000;
+}
+@media (prefers-color-scheme: dark) {
+  .btn.dark {
+    background: #fff;
+    color: #000;
+    border-color: #fff;
+  }
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.btn:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 2px;
+}
+.check {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 13.5px;
+  color: var(--ink2);
+  cursor: pointer;
+}
+.check input {
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  accent-color: var(--acc);
+  flex: 0 0 auto;
+}
+.turnstile:empty {
+  display: none;
+}
+.turnstile {
+  display: flex;
+  justify-content: center;
+}
+.kv {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+}
+.kv span:last-child {
+  color: var(--ink2);
+  overflow-wrap: anywhere;
+  text-align: right;
+}

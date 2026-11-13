@@ -1,0 +1,31 @@
+{
+  "name": "yala-web",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Yala web: la app en el navegador como un aparato más de la cuenta en la nube. Lote 0: entrar, sesión segura y salir (solo staging).",
+  "scripts": {
+    "dev": "vite build && wrangler dev",
+    "build": "vite build",
+    "deploy:staging": "vite build && wrangler deploy --env=\"\"",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.client.json",
+    "test": "vitest run",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts"
+  },
+  "dependencies": {
+    "jose": "6.2.12",
+    "react": "19.1.10",
+    "react-dom": "19.1.10"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20260926.1",
+    "@types/node": "22.20.4",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "5.2.0",
+    "typescript": "5.9.3",
+    "vite": "7.3.7",
+    "vitest": "3.2.7",
+    "wrangler": "4.141.0"
+  }
+}

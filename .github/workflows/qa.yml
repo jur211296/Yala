@@ -249,6 +249,28 @@ jobs:
       - run: npm run typecheck
       - run: npm test
 
+  # Suite de Yala web (`webapp/`, Worker aparte: sesión, login y su página): typecheck, build de la página y vitest,
+  # sin red. Corre en cada push, como `mcp`. El núcleo compartido (`shared-core/`) lo prueba el job `mcp`; la web lo
+  # importa, así que su typecheck también se rompe si el núcleo cambia de forma. Los e2e contra staging
+  # (`npm run test:e2e`) necesitan las contraseñas de los usuarios de prueba y NO corren aquí.
+  webapp:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: webapp
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: webapp/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm test
+
   # Decide si el job `tests` (macos-26, ~1,5 h de reloj) tiene algo que probar. Un
   # cambio de solo docs/tickets no puede romper el build ni la suite y hasta ahora
   # encolaba el runner de simulador igual: el PR #41 (3 ficheros .md) esperó 1 h 45 min.
@@ -338,6 +360,10 @@ jobs:
               # job `mcp`). Medido el 2026-09-26: 0 apariciones en el project.pbxproj ni en las
               # fuentes de los targets.
               mcp/*) ;;
+              # `webapp/` (Yala web) y `shared-core/` (núcleo TypeScript de mcp, gateway y web): Workers de
+              # Cloudflare, con su suite en los jobs `webapp` y `mcp`. Medido el 2026-11-13: 0 apariciones en el
+              # project.pbxproj.
+              webapp/*|shared-core/*) ;;
               # Los encargos que deja `lanzar-sesion` (2026-11-04). Toda sesión lanzada commitea
               # el suyo, así que sin esta línea TODO PR de sesión lanzada encolaba la suite.
               # Medido: 651 ficheros, todos `.md`, y 0 apariciones de `encargos` en el
