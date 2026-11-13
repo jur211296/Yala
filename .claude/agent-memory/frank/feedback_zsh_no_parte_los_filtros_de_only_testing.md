@@ -13,3 +13,9 @@ línea: con varias suites no casa nada, Swift Testing corre 0 casos y la corrida
 
 **How to apply:** siempre `${=F}` en zsh, y sin la línea `Test run with N tests in M suites` la corrida no cuenta. Ver
 [[feedback-runner-ax-timeout-tras-suite-larga]] antes de culpar al simulador.
+
+**Segunda vez, mismo día (pago por confirmar):** el fallo puede ser al revés. Con `$ALL` (lista de ficheros) sin partir,
+el ayudante no leyó nada, `ARGS` quedó vacío y `xcodebuild -scheme Yala test` sin `-only-testing` corrió `YalaTests`
+entero (5 min, 13 935 casos) y siguió con `YalaUITests` entero, que habría reventado el tope de 30 min de UI: hubo que
+pararlo. Antes de lanzar, imprime el número de filtros (`${#ONLY}`) y no lances con 0. Lo que funcionó: `typeset -a`
+y un bucle `for l in $(…); do ONLY+=($l); done`, luego `"${ONLY[@]}"`.
