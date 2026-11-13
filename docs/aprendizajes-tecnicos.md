@@ -708,3 +708,16 @@ puente con `shouldSave: false` para guardar todo junto siembra antes de escribir
 resto de llamadores sigue expuesto: ticket `group-system-category-seed-saves-the-context-mid-bridge`. Y el `rollback()` de
 ese camino (registro editado, gasto, repartos y préstamo insertados, «Grupos» desarchivada) NO aborta: medido en las dos
 formas, a diferencia del de la sección anterior.
+
+### Desinstalar Yala Dev no vacía su App Group: un «teléfono nuevo» de QA hay que vaciarlo a mano (2026-11-13)
+
+Medido en el iPhone 14 durante la sesión del minitutorial del correo: tras `devicectl device uninstall` de Yala Dev, el
+store de `group.com.jurgenschmidt.yala.dev` volvió intacto al reinstalar. Lo que vive en el App Group (el store personal,
+`UserDefaults` compartidos, el espejo del outbox) sobrevive, así que **una reinstalación no es un teléfono nuevo**: un QA
+que necesite «entrar desde un teléfono nuevo» tiene que vaciar los stores a mano (receta: `devicectl` sobre el App Group,
+`reference_contar_el_store_del_iphone_con_devicectl` en la memoria de Frank) y comprobar que quedaron vacíos antes de
+empezar. **No fue la causa** del bloqueo de 15 minutos al entrar en una cuenta con grupos (ticket
+`adopt-lineage-block-shows-connecting-for-fifteen-minutes`): la segunda y la tercera prueba vaciaron los stores y se
+reprodujo igual, porque las filas las creaba el puente de Grupos en el mismo intento. Lo que sí hace es convertir una
+prueba de «teléfono nuevo» en una de «teléfono con datos de antes» sin avisar, y entonces un bloqueo de linaje puede ser
+legítimo. Sin medir si una persona real que desinstala y reinstala de la App Store conserva el App Group igual.

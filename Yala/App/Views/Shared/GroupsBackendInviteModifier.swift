@@ -209,6 +209,10 @@ struct GroupsBackendInviteModifier: ViewModifier {
                         channelStartsAtSignIn: GroupsSignInChannelStartLogic.startsChannelAtSignIn(destino)) {
                         LateNoticeKeptGroupsMark.recordAtGroupsEntryIfNoGroupsYet(context: modelContext)
                     }
+                    // Un candado de una entrada del Welcome que no llegó a soltarse (la app se cerró a medias) no puede frenar a
+                    // quien entra por Grupos (`AccountEntryGroupsHold`). Si este sign-in acaba en un adopt, el Welcome lo vuelve
+                    // a armar al firmar.
+                    AccountEntryGroupsHold.clear()
                     if GroupsSignInChannelStartLogic.startsChannelAtSignIn(destino) {
                         GroupsSyncClient.shared.startIfEligible(context: modelContext, trigger: "post-sign-in")
                     } else if destino == .adoptAsCompleteAndOpenGroups {

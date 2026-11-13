@@ -278,7 +278,11 @@ struct WelcomeCloudSignInView: View {
                 if goesBack { onBack() }
             })
         }
-        .onDisappear { flowTask?.cancel() }
+        .onDisappear {
+            flowTask?.cancel()
+            // Sin un adopt que proteger, el candado de Grupos de esta entrada sobra (`AccountEntryGroupsHold`).
+            AccountEntryGroupsHold.releaseIfNoAdoptPending()
+        }
         // El diálogo de «Cancelar la activación» cuelga del `body` y no del botón: el botón sale del árbol en la misma
         // pasada en la que la fase deja de ofrecerlo, y un `.onChange` colgado de él no llegaba a correr (lo cazó la
         // review). Aquí sí baja el diálogo si la máquina deja de ofrecer la salida con él abierto.
@@ -1454,6 +1458,10 @@ struct WelcomeCloudSignInView: View {
     /// —incluida la asimetría Apple/Google, que no es cosmética— en vez de tener dos copias que se
     /// separen a la primera.
     private func ensureSignedIn() async -> Bool {
+        // El canal de Grupos espera a que el adopt decida (ticket `adopt-lineage-block-shows-connecting-for-fifteen-minutes`):
+        // se arma ANTES de abrir la sesión, porque cualquier disparador del canal (primer plano, la pestaña montada) correría
+        // en cuanto la sesión exista. Sin sesión, con el comodín.
+        AccountEntryGroupsHold.arm(sub: CloudAuthService.shared.currentUserID)
         // Retry con sesión ya viva (falló solo el paso siguiente): no re-pedir Face ID.
         guard !CloudAuthService.shared.hasSession else { return true }
         // vb1f: la credencial de Google que ya dio esta pantalla sirve a ESTE inicio de sesión y a ninguno más.
@@ -1643,6 +1651,11 @@ struct WelcomeCloudSignInView: View {
                 // (paso 8), y viaja como argumento.
                 // m387 · la puerta acepta la sesión: es la de quien sigue a Grupos.
                 GroupsConsentRegistrar.shared.sealAfterSessionAccepted()
+                // Sin adopt: la persona viene a usar sus grupos, y el canal tiene que poder arrancar ya. Se arranca aquí porque
+                // el primer plano que lo habría arrancado al volver de la hoja del proveedor lo frenó el candado, y la cadena de
+                // Grupos lee lo que el canal bajó (el nombre de quien vuelve, `ReturningGroupsMemberLogic`).
+                AccountEntryGroupsHold.clear()
+                GroupsSyncClient.shared.startIfEligible(context: modelContext, trigger: "account-entry-groups-only")
                 onEnterGroupsOnly(destino == .enterGroupsOnlyOfferingFullActivation, sessionOpenedHere)
                 return
             // `.adoptAsComplete` es el destino NORMAL de esta puerta: sigue al guard cross-cuenta y al
@@ -1828,6 +1841,9 @@ struct WelcomeCloudSignInView: View {
             return
         }
         controller.refresh()
+        // Un adopt que se retoma o se vuelve a pedir sin pasar por `ensureSignedIn`: el canal de Grupos vuelve a esperar a que
+        // decida (`AccountEntryGroupsHold`). Sin sesión, `runFlowAfterConsent` firma y lo arma igual.
+        AccountEntryGroupsHold.arm(sub: CloudAuthService.shared.currentUserID)
         // Con una cancelación pedida NUNCA se vuelve a reclamar: se reanuda, que ejecuta el «sí» apuntado, y el poll sale.
         if case .idle = controller.uiState, !cancelRequested {
             // La salida de un adopt cierra la sesión que abrió: sin ella se vuelve a firmar, en vez de reclamar sin sesión.
