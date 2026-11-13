@@ -444,6 +444,11 @@ struct TransactionsExportService {
         dateFormatter.calendar = Calendar(identifier: .gregorian)
         dateFormatter.locale = Locale(identifier: "en_US_POSIX")
         dateFormatter.dateFormat = "yyyy-MM-dd"
+        // La hora, en la misma zona que la fecha (la del teléfono): el import la vuelve a leer en la suya (H18).
+        let timeFormatter = DateFormatter()
+        timeFormatter.calendar = Calendar(identifier: .gregorian)
+        timeFormatter.locale = Locale(identifier: "en_US_POSIX")
+        timeFormatter.dateFormat = "HH:mm:ss"
 
         // Formatter para montos con punto decimal y 2 decimales.
         let amountFormatter = NumberFormatter()
@@ -504,6 +509,17 @@ struct TransactionsExportService {
 
                 case .splitPortion:
                     value = Self.splitPortionDescription(for: transaction)
+
+                case .time:
+                    value = timeFormatter.string(from: transaction.date)
+
+                case .exchangeRate:
+                    let cells = Self.exchangeRateCells(for: transaction)
+                    rowValues.append(csvEscaped(cells.rate))
+                    value = cells.currency
+
+                case .need:
+                    value = ImportRecordFieldsLogic.exportNeedCode(override: transaction.needOverride)
                 }
 
                 rowValues.append(csvEscaped(value))
@@ -611,6 +627,11 @@ struct TransactionsExportService {
         dateFormatter.calendar = Calendar(identifier: .gregorian)
         dateFormatter.locale = Locale(identifier: "en_US_POSIX")
         dateFormatter.dateFormat = "yyyy-MM-dd"
+        // La hora, en la misma zona que la fecha (la del teléfono): el import la vuelve a leer en la suya (H18).
+        let timeFormatter = DateFormatter()
+        timeFormatter.calendar = Calendar(identifier: .gregorian)
+        timeFormatter.locale = Locale(identifier: "en_US_POSIX")
+        timeFormatter.dateFormat = "HH:mm:ss"
 
         let amountFormatter = NumberFormatter()
         amountFormatter.locale = Locale(identifier: "en_US_POSIX")
@@ -661,6 +682,17 @@ struct TransactionsExportService {
 
                 case .splitPortion:
                     value = splitPortionDescription(for: transaction)
+
+                case .time:
+                    value = timeFormatter.string(from: transaction.date)
+
+                case .exchangeRate:
+                    let cells = exchangeRateCells(for: transaction)
+                    rowValues.append(cells.rate)
+                    value = cells.currency
+
+                case .need:
+                    value = ImportRecordFieldsLogic.exportNeedCode(override: transaction.needOverride)
                 }
 
                 rowValues.append(value)
@@ -689,6 +721,27 @@ struct TransactionsExportService {
         )
 
         return fileURL
+    }
+
+    // MARK: - Tasa de cambio (H18)
+
+    /// La tasa del registro y la moneda a la que es, o dos celdas vacías. Solo si el registro está en otra moneda que la
+    /// preferida con la que se convirtió y la tasa NO es provisional: una tasa aproximada que se reimporta como fija se
+    /// quedaría aproximada para siempre. Sin separador de miles y con hasta 15 cifras significativas, sin notación
+    /// científica («0.000063»), para que la ida y vuelta devuelva el mismo importe convertido.
+    static func exchangeRateCells(for transaction: TransactionItem) -> (rate: String, currency: String) {
+        let currency = normalizeCurrencyCode(transaction.currencyCode)
+        let target = normalizeCurrencyCode(transaction.preferredCurrencyCode)
+        let rate = abs(transaction.exchangeRate)
+        guard currency != target, !transaction.isExchangeRateProvisional, rate.isFinite, rate > 0 else { return ("", "") }
+        let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.numberStyle = .decimal
+        formatter.usesGroupingSeparator = false
+        formatter.usesSignificantDigits = true
+        formatter.maximumSignificantDigits = 15
+        guard let text = formatter.string(from: NSNumber(value: rate)) else { return ("", "") }
+        return (text, target)
     }
 
     // MARK: - Split Portion Description

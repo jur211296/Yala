@@ -96,6 +96,11 @@ enum ExportColumn: String, CaseIterable, Hashable, Identifiable {
     case note
     case splitTotal
     case splitPortion
+    /// La ida y vuelta exacta (H18, 2026-11-12): al final, para que las de siempre no cambien de posición.
+    case time
+    /// Escribe DOS columnas, `exchange_rate` y `rate_currency`: una tasa sin su moneda de destino no se puede aplicar.
+    case exchangeRate
+    case need
 
     var id: String { rawValue }
 
@@ -114,6 +119,9 @@ enum ExportColumn: String, CaseIterable, Hashable, Identifiable {
         case .note: return "note"
         case .splitTotal: return "split_total"
         case .splitPortion: return "split_portion"
+        case .time: return "time"
+        case .exchangeRate: return "exchange_rate"
+        case .need: return "need"
         }
     }
 
@@ -131,6 +139,9 @@ enum ExportColumn: String, CaseIterable, Hashable, Identifiable {
         case .note: return L10n.Export.columnNote
         case .splitTotal: return L10n.Export.columnSplitTotal
         case .splitPortion: return L10n.Export.columnSplitPortion
+        case .time: return L10n.Export.columnTime
+        case .exchangeRate: return L10n.Export.columnExchangeRate
+        case .need: return L10n.Export.columnNeed
         }
     }
 
@@ -148,7 +159,15 @@ enum ExportColumn: String, CaseIterable, Hashable, Identifiable {
         case .note: return L10n.Export.columnNoteDesc
         case .splitTotal: return L10n.Export.columnSplitTotalDesc
         case .splitPortion: return L10n.Export.columnSplitPortionDesc
+        case .time: return L10n.Export.columnTimeDesc
+        case .exchangeRate: return L10n.Export.columnExchangeRateDesc
+        case .need: return L10n.Export.columnNeedDesc
         }
+    }
+
+    /// Las columnas que escribe en el archivo: una, salvo la tasa, que va con la moneda a la que es.
+    var fileHeaderTitles: [String] {
+        self == .exchangeRate ? [csvHeaderTitle, "rate_currency"] : [csvHeaderTitle]
     }
 }
 
@@ -188,7 +207,7 @@ struct ExportColumns: Equatable {
     /// Lista de títulos de encabezado para las columnas activas,
     /// en el orden adecuado para el CSV.
     var csvHeaderTitles: [String] {
-        orderedActiveColumns.map { $0.csvHeaderTitle }
+        orderedActiveColumns.flatMap(\.fileHeaderTitles)
     }
 
     /// Indica si al menos una columna sigue activa.

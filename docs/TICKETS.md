@@ -326,7 +326,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cross-currency-sale-coverage-depends-on-the-rates-each-device-has | backlog | tickets/backlog/cross-currency-sale-coverage-depends-on-the-rates-each-device-has.md |
 | csv-import-leaves-no-origin-mark-and-reuses-opposite-categories | done | tickets/done/csv-import-leaves-no-origin-mark-and-reuses-opposite-categories.md |
 | csv-import-rows-fall-in-the-chat-sign-sweep | done | tickets/done/csv-import-rows-fall-in-the-chat-sign-sweep.md |
-| csv-import-silently-swallows-rows-and-only-reads-utf8 | backlog | tickets/backlog/csv-import-silently-swallows-rows-and-only-reads-utf8.md |
+| csv-import-silently-swallows-rows-and-only-reads-utf8 | done | tickets/done/csv-import-silently-swallows-rows-and-only-reads-utf8.md |
 | currency-change-asks-rates-for-the-old-currency | backlog | tickets/backlog/currency-change-asks-rates-for-the-old-currency.md |
 | currency-change-failure-is-silent-and-half-applied | done | tickets/done/currency-change-failure-is-silent-and-half-applied.md |
 | currency-change-service-tests-mirror-the-logic | done | tickets/done/currency-change-service-tests-mirror-the-logic.md |
@@ -414,7 +414,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | export-filters-say-1-seleccionadas | backlog | tickets/backlog/export-filters-say-1-seleccionadas.md |
 | export-hide-mode-with-the-defaults-exports-nothing | done | tickets/done/export-hide-mode-with-the-defaults-exports-nothing.md |
 | export-import-carry-record-kind-and-transfer-pair | backlog | tickets/backlog/export-import-carry-record-kind-and-transfer-pair.md |
-| export-import-lose-time-manual-rate-and-nature | backlog | tickets/backlog/export-import-lose-time-manual-rate-and-nature.md |
+| export-import-lose-time-manual-rate-and-nature | done | tickets/done/export-import-lose-time-manual-rate-and-nature.md |
 | export-wizard-amount-filter-in-hidden-currency | done | tickets/done/export-wizard-amount-filter-in-hidden-currency.md |
 | exportable-insights | backlog | tickets/backlog/exportable-insights.md |
 | exported-csv-cannot-be-imported-back | backlog | tickets/backlog/exported-csv-cannot-be-imported-back.md |
@@ -670,7 +670,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | import-of-thousands-of-rows-in-cloud-mode-is-unmeasured | backlog | tickets/backlog/import-of-thousands-of-rows-in-cloud-mode-is-unmeasured.md |
 | import-offers-the-groups-system-account | done | tickets/done/import-offers-the-groups-system-account.md |
 | import-preview-hides-what-it-will-create | backlog | tickets/backlog/import-preview-hides-what-it-will-create.md |
-| import-reads-thousands-as-decimals-and-drops-the-unicode-minus | backlog | tickets/backlog/import-reads-thousands-as-decimals-and-drops-the-unicode-minus.md |
+| import-reads-thousands-as-decimals-and-drops-the-unicode-minus | done | tickets/done/import-reads-thousands-as-decimals-and-drops-the-unicode-minus.md |
 | import-runs-twice-on-the-main-thread | backlog | tickets/backlog/import-runs-twice-on-the-main-thread.md |
 | import-transfer-pairing-ignores-accounts-and-currency-changes | backlog | tickets/backlog/import-transfer-pairing-ignores-accounts-and-currency-changes.md |
 | in-app-ai-privacy-claims-need-a-policy-check | done | tickets/done/in-app-ai-privacy-claims-need-a-policy-check.md |

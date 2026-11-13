@@ -8732,3 +8732,15 @@
 "pasos23.final.success.startUsing" = "Começar a usar";
 "pasos23.final.reminder.title" = "O teu teste do Yala Pro termina em breve";
 "pasos23.final.reminder.body" = "A %@ o teu plano começa. Se não quiseres continuar, cancela antes em Definições.";
+
+/* Importar y exportar sin perder datos (H13 y H18 de la auditoría del import, 2026-11-12) */
+"export.column.time" = "Hora";
+"export.column.time.description" = "A hora do registo.";
+"export.column.exchangeRate" = "Taxa de câmbio";
+"export.column.exchangeRate.description" = "Noutra moeda, a taxa usada na conversão e para que moeda.";
+"export.column.need" = "Necessidade";
+"export.column.need.description" = "Só se a mudaste nesse registo.";
+"import.error.unreadableRow" = "Linha %1$d: não a conseguimos ler porque não tem colunas.";
+"import.error.time" = "Linha %1$d: não percebemos a hora “%2$@”. Escreve-a assim: 14:30.";
+"import.error.exchangeRate" = "Linha %1$d: não percebemos a taxa de câmbio “%2$@”. Escreve-a com ponto decimal e sem separador de milhares, assim: 3.75.";
+"import.error.need" = "Linha %1$d: não percebemos a necessidade “%2$@”. Usa essential, priority, optional ou unclassified.";

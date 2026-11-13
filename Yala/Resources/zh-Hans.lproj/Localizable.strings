@@ -9495,3 +9495,15 @@
 "pasos23.final.success.startUsing" = "开始使用";
 "pasos23.final.reminder.title" = "你的 Yala Pro 试用即将结束";
 "pasos23.final.reminder.body" = "%@ 你的套餐开始计费。如果不想继续，请先到“设置”中取消。";
+
+/* Importar y exportar sin perder datos (H13 y H18 de la auditoría del import, 2026-11-12) */
+"export.column.time" = "时间";
+"export.column.time.description" = "记录的时间。";
+"export.column.exchangeRate" = "汇率";
+"export.column.exchangeRate.description" = "其他货币时，换算所用的汇率及换算成的货币。";
+"export.column.need" = "需求";
+"export.column.need.description" = "仅在你修改过该记录时填写。";
+"import.error.unreadableRow" = "第 %1$d 行：没有列，无法读取。";
+"import.error.time" = "第 %1$d 行：无法识别时间“%2$@”。请写成 14:30。";
+"import.error.exchangeRate" = "第 %1$d 行：无法识别汇率“%2$@”。请使用小数点、不加千位分隔符，写成 3.75。";
+"import.error.need" = "第 %1$d 行：无法识别需求“%2$@”。请使用 essential、priority、optional 或 unclassified。";

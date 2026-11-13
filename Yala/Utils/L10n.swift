@@ -4647,6 +4647,10 @@ enum L10n {
         static var columnNote: String { ls("export.column.note", comment: "") }
         static var columnSplitTotal: String { ls("export.column.splitTotal", comment: "") }
         static var columnSplitPortion: String { ls("export.column.splitPortion", comment: "") }
+        /// Las columnas de la ida y vuelta exacta (H18 de la auditoría del import).
+        static var columnTime: String { ls("export.column.time", comment: "Export column with the time of the record") }
+        static var columnExchangeRate: String { ls("export.column.exchangeRate", comment: "Export column with the exchange rate") }
+        static var columnNeed: String { ls("export.column.need", comment: "Export column with the nature changed by hand") }
 
         // Column descriptions
         static var columnDateDesc: String { ls("export.column.date.description", comment: "") }
@@ -4662,6 +4666,9 @@ enum L10n {
         static var columnNoteDesc: String { ls("export.column.note.description", comment: "") }
         static var columnSplitTotalDesc: String { ls("export.column.splitTotal.description", comment: "") }
         static var columnSplitPortionDesc: String { ls("export.column.splitPortion.description", comment: "") }
+        static var columnTimeDesc: String { ls("export.column.time.description", comment: "") }
+        static var columnExchangeRateDesc: String { ls("export.column.exchangeRate.description", comment: "") }
+        static var columnNeedDesc: String { ls("export.column.need.description", comment: "") }
 
         // G5-D2: export ampliado con grupos (archivo CSV aparte)
         static var includeGroups: String { ls("export.includeGroups", comment: "") }

@@ -8727,3 +8727,15 @@
 "pasos23.final.success.startUsing" = "Start using it";
 "pasos23.final.reminder.title" = "Your Yala Pro trial ends soon";
 "pasos23.final.reminder.body" = "Your plan starts on %@. If you don't want to continue, cancel in Settings first.";
+
+/* Importar y exportar sin perder datos (H13 y H18 de la auditoría del import, 2026-11-12) */
+"export.column.time" = "Time";
+"export.column.time.description" = "The time of the record.";
+"export.column.exchangeRate" = "Exchange rate";
+"export.column.exchangeRate.description" = "In another currency, the rate it was converted at and to which currency.";
+"export.column.need" = "Need";
+"export.column.need.description" = "Only if you changed it on that record.";
+"import.error.unreadableRow" = "Row %1$d: we couldn't read it because it has no columns.";
+"import.error.time" = "Row %1$d: we can't read the time “%2$@”. Write it like 14:30.";
+"import.error.exchangeRate" = "Row %1$d: we can't read the exchange rate “%2$@”. Write it with a decimal point and no thousands separator, like 3.75.";
+"import.error.need" = "Row %1$d: we can't read the need “%2$@”. Use essential, priority, optional or unclassified.";

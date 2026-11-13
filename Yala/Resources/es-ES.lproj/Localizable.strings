@@ -8743,3 +8743,15 @@
 "pasos23.final.success.startUsing" = "Empezar a usarlo";
 "pasos23.final.reminder.title" = "Tu prueba de Yala Pro termina pronto";
 "pasos23.final.reminder.body" = "El %@ empieza tu plan. Si no quieres seguir, cancela antes en Ajustes.";
+
+/* Importar y exportar sin perder datos (H13 y H18 de la auditoría del import, 2026-11-12) */
+"export.column.time" = "Hora";
+"export.column.time.description" = "La hora del registro.";
+"export.column.exchangeRate" = "Tipo de cambio";
+"export.column.exchangeRate.description" = "En otra moneda, el tipo con el que se convirtió y a qué moneda.";
+"export.column.need" = "Necesidad";
+"export.column.need.description" = "Solo si la has cambiado en ese registro.";
+"import.error.unreadableRow" = "Fila %1$d: no la hemos podido leer porque no tiene columnas.";
+"import.error.time" = "Fila %1$d: no entendemos la hora «%2$@». Escríbela así: 14:30.";
+"import.error.exchangeRate" = "Fila %1$d: no entendemos el tipo de cambio «%2$@». Escríbelo con punto decimal y sin separador de miles, así: 3.75.";
+"import.error.need" = "Fila %1$d: no entendemos la necesidad «%2$@». Usa essential, priority, optional o unclassified.";

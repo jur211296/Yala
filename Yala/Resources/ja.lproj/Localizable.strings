@@ -9495,3 +9495,15 @@
 "pasos23.final.success.startUsing" = "使いはじめる";
 "pasos23.final.reminder.title" = "Yala Proのトライアルがまもなく終了します";
 "pasos23.final.reminder.body" = "%@からプランが始まります。続けない場合は、その前に設定でキャンセルしてください。";
+
+/* Importar y exportar sin perder datos (H13 y H18 de la auditoría del import, 2026-11-12) */
+"export.column.time" = "時刻";
+"export.column.time.description" = "記録の時刻。";
+"export.column.exchangeRate" = "為替レート";
+"export.column.exchangeRate.description" = "別の通貨の場合、換算に使ったレートと換算先の通貨。";
+"export.column.need" = "性質";
+"export.column.need.description" = "その記録で変更した場合のみ。";
+"import.error.unreadableRow" = "%1$d行目：列がないため読み取れませんでした。";
+"import.error.time" = "%1$d行目：時刻「%2$@」を読み取れません。14:30 のように書いてください。";
+"import.error.exchangeRate" = "%1$d行目：為替レート「%2$@」を読み取れません。桁区切りを付けず、小数点で 3.75 のように書いてください。";
+"import.error.need" = "%1$d行目：性質「%2$@」を読み取れません。essential、priority、optional、unclassified のいずれかを使ってください。";
