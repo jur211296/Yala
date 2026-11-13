@@ -269,10 +269,18 @@ struct UXAudit22Lote12y13WiringTests {
         #expect(!tab.contains("maybeShowGroupsNotificationPrompt"), "vuelve la alerta suelta de avisos en la lista")
     }
 
-    /// L13-1: «Saldar» solo en las deudas tuyas.
+    /// L13-1 dejaba «Saldar» solo en las deudas tuyas; la decisión 37 de 2.3 (C1) lo reabre: también en las de otros,
+    /// si quien recibe puede confirmarlo. La regla vive en `SettlementSaldar23Logic.offersSettle` (lo fija
+    /// `GruposSaldar23Tests`); aquí, que la tarjeta la consulta y que «Saldar» no se pinta en otro sitio.
     @Test func settleButton_onlyOnDebtsInvolvingYou() throws {
         let view = try Self.source("Yala/App/Views/Groups/GroupBalancesView.swift")
-        #expect(view.contains("if card.involvesMe, onSettleDebt != nil {\n                    settleButton(card)"))
+        let gate = [
+            "if onSettleDebt != nil, SettlementSaldar23Logic.offersSettle(",
+            "    involvesMe: card.involvesMe, currentUserMemberID: currentUserMemberID,",
+            "    receiverCanConfirm: activeMemberIDs.contains(card.toMemberID)) {",
+            "    settleButton(card)",
+        ].map { "                " + $0 }.joined(separator: "\n")
+        #expect(view.contains(gate))
         #expect(view.components(separatedBy: "settleButton(card)").count == 2, "«Saldar» se pinta en otro sitio")
     }
 

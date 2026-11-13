@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1280)
+## Index (1288)
 
 | id | status | path |
 |---|---|---|
@@ -615,6 +615,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-reconnect-prune-or-rewire | done | tickets/done/groups-reconnect-prune-or-rewire.md |
 | groups-reject-can-expel-a-member-approved-elsewhere | discarded | tickets/discarded/groups-reject-can-expel-a-member-approved-elsewhere.md |
 | groups-set-member-role-deploy | done | tickets/done/groups-set-member-role-deploy.md |
+| groups-settle-like-splitwise-and-keep-the-group-currency | done | tickets/done/groups-settle-like-splitwise-and-keep-the-group-currency.md |
 | groups-settlement-reminder | done | tickets/done/groups-settlement-reminder.md |
 | groups-settlement-reminder-discoverability | done | tickets/done/groups-settlement-reminder-discoverability.md |
 | groups-settlement-reminder-stale-clock | backlog | tickets/backlog/groups-settlement-reminder-stale-clock.md |
@@ -892,6 +893,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | pdf-statement-pages-without-currency-pick-no-account | backlog | tickets/backlog/pdf-statement-pages-without-currency-pick-no-account.md |
 | pdf-statement-reads-only-the-first-page | done | tickets/done/pdf-statement-reads-only-the-first-page.md |
 | pending-reverse-complete-runs-with-whatever-session-is-live | backlog | tickets/backlog/pending-reverse-complete-runs-with-whatever-session-is-live.md |
+| pending-settlement-leaves-the-debt-card-with-settle | backlog | tickets/backlog/pending-settlement-leaves-the-debt-card-with-settle.md |
+| pending-settlements-spend-the-bridge-retry-budget | backlog | tickets/backlog/pending-settlements-spend-the-bridge-retry-budget.md |
 | period-totals-count-a-row-dated-at-tomorrows-midnight | done | tickets/done/period-totals-count-a-row-dated-at-tomorrows-midnight.md |
 | personal-clock-ahead-wins-every-conflict-until-real-time-catches-up | done | tickets/done/personal-clock-ahead-wins-every-conflict-until-real-time-catches-up.md |
 | personal-clock-rollback-wedges-the-drain-forever | done | tickets/done/personal-clock-rollback-wedges-the-drain-forever.md |
@@ -1120,6 +1123,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | settlement-amount-edited-after-approval-leaves-the-bank-stale | done | tickets/done/settlement-amount-edited-after-approval-leaves-the-bank-stale.md |
 | settlement-approval-leaves-no-trace-so-a-rebridge-asks-again | done | tickets/done/settlement-approval-leaves-no-trace-so-a-rebridge-asks-again.md |
 | settlement-direction-edited-after-approval-leaves-the-bank-stale | backlog | tickets/backlog/settlement-direction-edited-after-approval-leaves-the-bank-stale.md |
+| settlement-notification-states-a-third-party-payment-as-fact | backlog | tickets/backlog/settlement-notification-states-a-third-party-payment-as-fact.md |
 | settlement-retry-after-a-failed-confirmation-duplicates-the-payment | backlog | tickets/backlog/settlement-retry-after-a-failed-confirmation-duplicates-the-payment.md |
 | share-extension-image-skips-pro-gate | done | tickets/done/share-extension-image-skips-pro-gate.md |
 | share-image-reading-does-not-always-start | done | tickets/done/share-image-reading-does-not-always-start.md |

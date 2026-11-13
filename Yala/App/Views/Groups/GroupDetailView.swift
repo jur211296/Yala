@@ -75,6 +75,7 @@ struct GroupDetailView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(SceneNavigation.self) private var navigation
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(AppPreferences.self) private var appPreferences
 
     // MARK: - Input
 
@@ -499,11 +500,56 @@ struct GroupDetailView: View {
                 debt: debt,
                 memberNameLookup: viewModel.memberNameLookup,
                 currentUserMemberID: viewModel.currentMemberID,
-                onSave: {}
+                onSave: { announceSavedSettlement($0, undoable: $1) }
             )
             .yalaSheetDetents([.large])
             .presentationDragIndicator(.visible)
         }
+    }
+
+    // MARK: - Decisión 37 de 2.3 · C3: el aviso al saldar
+
+    /// Al guardar un pago: qué pasó y cómo queda la pareja, con «Deshacer» mientras dura el aviso. El aviso vive en su
+    /// propia ventana (`DraftDiscardUndoNotice`): la hoja de «Saldar» se está cerrando cuando llega.
+    /// `undoable == false` tras «Sí, registrar» en tus cuentas: lo que aprobaste en esa hoja ya es un movimiento de tu
+    /// cuenta sin enlace al pago, y «Deshacer» solo borraría el pago (review adversarial del 2026-11-12).
+    private func announceSavedSettlement(_ settlement: SplitSettlement, undoable: Bool) {
+        viewModel.loadData()
+        let me = viewModel.currentMemberID
+        let converted = viewModel.debtsWereConverted
+        // Espacio duro dentro de cada importe: el aviso es estrecho y partía «S/» de «30.00» en dos líneas.
+        let keepTogether = { (text: String) in text.replacingOccurrences(of: " ", with: "\u{00A0}") }
+        let message = SettlementSaldar23Logic.savedNotice(
+            fromMemberID: settlement.fromMemberID,
+            toMemberID: settlement.toMemberID,
+            currentUserMemberID: me,
+            isConfirmed: settlement.isConfirmed,
+            amount: keepTogether(appPreferences.currency(settlement.amount, currencyCode: settlement.currencyCode)),
+            remainder: SettlementSaldar23Logic.pairRemainder(
+                debts: viewModel.debts, fromMemberID: settlement.fromMemberID, toMemberID: settlement.toMemberID),
+            name: { id in id == me ? L10n.UXL13.you : viewModel.memberName(for: id) },
+            format: { debts in
+                debts.map {
+                    keepTogether(appPreferences.currency($0.amount, currencyCode: $0.currencyCode, isEstimate: converted))
+                }
+                .joined(separator: " + ")
+            }
+        )
+        let model = viewModel
+        let undo: (@MainActor () -> Void)?
+        if undoable {
+            undo = { model.undoSettlement(settlement) }
+        } else {
+            undo = nil
+        }
+        DraftDiscardUndoNotice.show(
+            message: message,
+            systemImage: "checkmark.circle",
+            undoTitle: L10n.UXL19.undo,
+            noticeIdentifier: "settlement_saved_notice",
+            undoIdentifier: "settlement_saved_undo",
+            onUndo: undo
+        )
     }
 
     // MARK: - Members Button
@@ -659,6 +705,7 @@ struct GroupDetailView: View {
                 settlements: viewModel.settlements,
                 memberNameLookup: viewModel.memberNameLookup,
                 currentUserMemberID: viewModel.currentUserMember?.id.uuidString,
+                activeMemberIDs: Set(viewModel.activeMembers.map { $0.id.uuidString }),
                 groupColorHex: group.colorHex,
                 balancesWereConverted: viewModel.balancesWereConverted,
                 debtsWereConverted: viewModel.debtsWereConverted,

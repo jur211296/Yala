@@ -6,8 +6,10 @@
 //  - L13-2 (variante 2): un pago que te toca confirmar sube a una tarjeta arriba de todo, «Ana dice que te pagó S/ 50 ·
 //    ¿Lo recibiste?», con «Sí, lo recibí» y «No me llegó», que pregunta antes de quitarlo.
 //  - L13-1 (variante 3 combinada): arriba lo tuyo (cuánto te deben o debes) y debajo «Para quedar a mano» con cada deuda
-//    en una tarjeta con avatares; las tuyas, resaltadas y con «Saldar»; las de los demás, sin botón. Sin la lista de
-//    saldo por miembro: el cuadro de arriba y las deudas ya dicen quién debe a quién con palabras, no solo con color.
+//    en una tarjeta con avatares; las tuyas, resaltadas y con «Saldar». Sin la lista de saldo por miembro: el cuadro de
+//    arriba y las deudas ya dicen quién debe a quién con palabras, no solo con color.
+//  - Decisión 37 de la revisión 2.3 (C1, reabre L13-1): las deudas de los demás también llevan «Saldar». Lo que apunta
+//    alguien que no paga ni recibe queda «Falta que <quien recibe> lo confirme», y la lista dice quién lo apuntó.
 //
 
 import SwiftUI
@@ -20,6 +22,8 @@ struct GroupBalancesView: View {
     let memberNameLookup: [String: String]
     /// Quién eres en este grupo. `nil` (sin resolver): no hay «lo tuyo» y ninguna deuda lleva botón.
     var currentUserMemberID: String?
+    /// Miembros activos: en una deuda entre otros, «Saldar» solo si quien recibe puede confirmarlo (decisión 37, C1).
+    var activeMemberIDs: Set<String> = []
     var groupColorHex: String = "#8B5CF6"
 
     /// True si los balances/debts vienen de consolidar multiples monedas a una sola.
@@ -162,7 +166,7 @@ struct GroupBalancesView: View {
             HStack(alignment: .top, spacing: DS.Spacing.md) {
                 avatar(fromName, size: largeAvatarSize)
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(L10n.UXL13.pendingTitle(name: fromName, amount: amount))
+                    Text(pendingTitle(settlement, fromName: fromName, amount: amount))
                         .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -182,6 +186,17 @@ struct GroupBalancesView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.hotPink.opacity(0.16), in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+    }
+
+    /// «Ana dice que te pagó S/ 50» o, si lo apuntó un tercero (C1), «Lucía apuntó que Ana te pagó S/ 50».
+    private func pendingTitle(_ settlement: SplitSettlement, fromName: String, amount: String) -> String {
+        if SettlementSaldar23Logic.recordedByThirdParty(
+            fromMemberID: settlement.fromMemberID, toMemberID: settlement.toMemberID,
+            recordedByMemberID: settlement.recordedByMemberID),
+           let recorder = settlement.recordedByMemberID {
+            return L10n.GruposSaldar23.pendingTitleOther(recorder: name(recorder), from: fromName, amount: amount)
+        }
+        return L10n.UXL13.pendingTitle(name: fromName, amount: amount)
     }
 
     @ViewBuilder
@@ -264,7 +279,9 @@ struct GroupBalancesView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityHidden(true)
                 Spacer(minLength: DS.Spacing.sm)
-                if card.involvesMe, onSettleDebt != nil {
+                if onSettleDebt != nil, SettlementSaldar23Logic.offersSettle(
+                    involvesMe: card.involvesMe, currentUserMemberID: currentUserMemberID,
+                    receiverCanConfirm: activeMemberIDs.contains(card.toMemberID)) {
                     settleButton(card)
                 }
             }
@@ -319,14 +336,15 @@ struct GroupBalancesView: View {
     }
 
     /// Una moneda: un botón. Varias: un menú con un «Saldar» por moneda — cada pago se apunta en su moneda y nunca se
-    /// mezclan.
+    /// mezclan. Las deudas entre otros llevan su propio id (`group_debt_settle_others`, C1).
     @ViewBuilder
     private func settleButton(_ card: GroupBalancesPresentationLogic.DebtCard) -> some View {
+        let id = card.involvesMe ? "group_debt_settle" : "group_debt_settle_others"
         if card.debts.count == 1, let debt = card.debts.first {
             Button { onSettleDebt?(debt) } label: { settleLabel }
                 .buttonStyle(.plain)
                 .accessibilityHint(L10n.Groups.Settlement.settleHint)
-                .accessibilityIdentifier("group_debt_settle")
+                .accessibilityIdentifier(id)
         } else {
             Menu {
                 ForEach(card.debts) { debt in
@@ -338,7 +356,7 @@ struct GroupBalancesView: View {
             } label: { settleLabel }
                 .buttonStyle(.plain)
                 .accessibilityHint(L10n.Groups.Settlement.settleHint)
-                .accessibilityIdentifier("group_debt_settle")
+                .accessibilityIdentifier(id)
         }
     }
 
@@ -502,10 +520,20 @@ struct GroupBalancesView: View {
     }
 
     /// L13-2: un pendiente que queda en la lista espera a otra persona, y lo dice: «Falta que Beto lo confirme».
+    /// C1 (decisión 37 de 2.3): si lo apuntó alguien que no paga ni recibe, delante va quién: «Lo apuntó Lucía · Falta
+    /// que Ana lo confirme».
     private func statusText(_ settlement: SplitSettlement) -> String {
         if settlement.isConfirmed { return L10n.Groups.Balance.confirmed }
         if settlement.toMemberID == currentUserMemberID { return L10n.Groups.Balance.pending }
-        return L10n.UXL13.pendingWaitingFor(name(settlement.toMemberID))
+        let waiting = L10n.UXL13.pendingWaitingFor(name(settlement.toMemberID))
+        guard SettlementSaldar23Logic.recordedByThirdParty(
+            fromMemberID: settlement.fromMemberID, toMemberID: settlement.toMemberID,
+            recordedByMemberID: settlement.recordedByMemberID),
+              let recorder = settlement.recordedByMemberID else { return waiting }
+        let who = recorder == currentUserMemberID
+            ? L10n.GruposSaldar23.recordedByYou
+            : L10n.GruposSaldar23.recordedBy(name(recorder))
+        return who + " · " + waiting
     }
 
     // MARK: - Helpers
