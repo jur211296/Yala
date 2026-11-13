@@ -24,6 +24,42 @@ Panel» (PR 954). Instalada por cable tras desinstalar Yala y Yala Dev, para par
 | 9 | Bandeja | pendiente | |
 | 10 | Modo nube | pendiente | |
 
+## Escenarios recorridos (13-nov, 14:26–15:45)
+
+Paso a paso con capturas y el veredicto de Jürgen: artifact «Recorrido de la bienvenida»
+(https://claude.ai/artifact/F4TCuVEC91NeiHvyoUJvAm). Capturas ligeras en `docs/qa/recorrido-bienvenida-2026-11-13/eNN/`;
+los PNG originales, en `~/Claude/entregas/2026-11-13-recorrido-interactivo-bienvenida-iphone-max/evidencia/`.
+
+| # | Escenario | Resultado |
+|---|---|---|
+| E01 | iCloud con datos · Entrar con mi iCloud · Quitar datos | Funciona; 7 hallazgos de flujo y texto |
+| E02 | iCloud con datos · Empezar de cero · Vaciar datos | Funciona; texto Pro |
+| E03 | iCloud «vacío» (62 categorías) · iCloud | Mal: lo trata como «con datos», 34 s + 54 s |
+| E03b | iCloud de verdad vacío · iCloud | Bien |
+| E04 | iCloud sin datos · Google existente · Cerrar sesión | Arreglo de «Empezar» OK; Panel vacío; 50 s; pide reabrir |
+| E05 | iCloud sin datos · Google existente (test) · Eliminar cuenta | Panel vacío otra vez; textos de eliminar |
+| E06 | iCloud sin datos · Google nueva | Funciona; textos de cuenta nueva |
+| E07 | Volver a tu iCloud con ~2300 registros | Atasco >6 min, «Cancelar» desactivado; causa medida en su card |
+| E08 | iCloud con datos · Google existente | Panel y Registros vacíos hasta reabrir (store medido: datos presentes) |
+| E10 | iCloud con datos · Apple existente (= cuenta test por correo) | Vacío incluso tras reabrir |
+| E11 | iCloud con datos · Apple nueva | Funciona; mensaje contradictorio Apple/Google |
+| E12 | Usar otra cuenta (Google y Apple) | Arreglo de «otra cuenta» OK, sin bucle |
+| E13 | Dividir con amigos | Entra, pero aterriza en el Panel; layout en iPhone 14 |
+| E14 | Tutoriales, Bandeja, 7 primeros pasos y correo | Funciona; problemas de layout en iPhone 14 |
+
+No recorridos: iCloud sin datos con Apple (las pantallas de Google con y sin datos de iCloud fueron idénticas) e iCloud con
+datos + Google nueva (la cuenta test se gastó en E07). Se dice en el cierre.
+
+## Cards creadas (tablero Yala, versión 2.3)
+
+Muy alta: Panel vacío tras «¡Tu cuenta está lista!» · iCloud vaciado tratado como «con datos».
+Alta: «Volver a tu iCloud» atascado · Conectar tarda 22–50 s · Cerrar sesión con vista propia y sin reabrir.
+Media: un solo «Continuar» al recuperar · sin tres preguntas a quien recupera · guías que se repiten · «Cerrar sesión» en
+modo iCloud · Dividir con amigos empuja iCloud · aterrizar en Grupos · Apple/Google mismo correo · textos de entrada y
+salida · pregunta de los datos de iCloud al entrar con cuenta.
+Baja: 63/65 categorías · destacar Más · intro de Grupos con grupos · guía bajo la barra · hoja de la puerta de Grupos ·
+primeros pasos en el iPhone 14.
+
 ## Matriz de escenarios (pedida por Jürgen, 13-nov 14:05)
 
 Cuentas: Google «antigua» = la de staging con grupos; Google «nueva» = una 2.ª cuenta suya, nunca usada en Yala Dev.
