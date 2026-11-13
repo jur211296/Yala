@@ -808,7 +808,10 @@ enum EntityApplyMap {
     /// El dangler de una (fila, columna), si existe. LANZA si no se puede leer: el que llama decide sobre ese
     /// registro (borrarlo, reapuntarlo o crear uno), y un `nil` por avería sería un duplicado o una nota perdida.
     private static func findDangler(rowSyncID: UUID, column: String, context: ModelContext) throws -> SyncDanglingRef? {
-        try fetchFirstOrThrow(FetchDescriptor<SyncDanglingRef>(
+        if let lookups = pageLookups, lookups.context === context, let hit = lookups.dangler(row: rowSyncID, column: column) {
+            return hit
+        }
+        return try fetchFirstOrThrow(FetchDescriptor<SyncDanglingRef>(
             predicate: #Predicate { $0.rowSyncID == rowSyncID && $0.column == column }
         ), context)
     }
@@ -818,6 +821,7 @@ enum EntityApplyMap {
     private static func clearDangler(rowSyncID: UUID, column: String, context: ModelContext) throws {
         if let existing = try findDangler(rowSyncID: rowSyncID, column: column, context: context) {
             context.delete(existing)
+            pageLookups(for: context)?.noteDanglerDeleted(existing, row: rowSyncID, column: column)
         }
     }
 
@@ -830,8 +834,10 @@ enum EntityApplyMap {
         if let existing = try findDangler(rowSyncID: rowSyncID, column: column, context: context) {
             existing.targetUUID = targetUUID
         } else {
-            context.insert(SyncDanglingRef(entityTable: entityTable, rowSyncID: rowSyncID,
-                                           column: column, targetUUID: targetUUID))
+            let dangler = SyncDanglingRef(entityTable: entityTable, rowSyncID: rowSyncID,
+                                          column: column, targetUUID: targetUUID)
+            context.insert(dangler)
+            pageLookups(for: context)?.noteDanglerInserted(dangler)
         }
     }
 
@@ -1161,79 +1167,92 @@ enum EntityApplyMap {
         lenient("TransactionItem") { try findTransactionItem(bySyncID: id, context: context) }
     }
     static func findTransactionItem(bySyncID id: UUID, context: ModelContext) throws -> TransactionItem? {
-        try fetchFirstOrThrow(FetchDescriptor<TransactionItem>(predicate: #Predicate { $0.syncID == id }), context)
+        if let hit = pageLookup(TransactionItem.self, id, context) { return hit }
+        return try fetchFirstOrThrow(FetchDescriptor<TransactionItem>(predicate: #Predicate { $0.syncID == id }), context)
     }
     static func fetchInboxDraft(bySyncID id: UUID, context: ModelContext) -> InboxDraft? {
         lenient("InboxDraft") { try findInboxDraft(bySyncID: id, context: context) }
     }
     static func findInboxDraft(bySyncID id: UUID, context: ModelContext) throws -> InboxDraft? {
-        try fetchFirstOrThrow(FetchDescriptor<InboxDraft>(predicate: #Predicate { $0.syncID == id }), context)
+        if let hit = pageLookup(InboxDraft.self, id, context) { return hit }
+        return try fetchFirstOrThrow(FetchDescriptor<InboxDraft>(predicate: #Predicate { $0.syncID == id }), context)
     }
     static func fetchCategory(bySyncID id: UUID, context: ModelContext) -> Category? {
         lenient("Category") { try findCategory(bySyncID: id, context: context) }
     }
     static func findCategory(bySyncID id: UUID, context: ModelContext) throws -> Category? {
-        try fetchFirstOrThrow(FetchDescriptor<Category>(predicate: #Predicate { $0.syncID == id }), context)
+        if let hit = pageLookup(Category.self, id, context) { return hit }
+        return try fetchFirstOrThrow(FetchDescriptor<Category>(predicate: #Predicate { $0.syncID == id }), context)
     }
     static func fetchFavoritePayment(bySyncID id: UUID, context: ModelContext) -> FavoritePayment? {
         lenient("FavoritePayment") { try findFavoritePayment(bySyncID: id, context: context) }
     }
     static func findFavoritePayment(bySyncID id: UUID, context: ModelContext) throws -> FavoritePayment? {
-        try fetchFirstOrThrow(FetchDescriptor<FavoritePayment>(predicate: #Predicate { $0.syncID == id }), context)
+        if let hit = pageLookup(FavoritePayment.self, id, context) { return hit }
+        return try fetchFirstOrThrow(FetchDescriptor<FavoritePayment>(predicate: #Predicate { $0.syncID == id }), context)
     }
     static func fetchMerchantMemory(bySyncID id: UUID, context: ModelContext) -> MerchantMemory? {
         lenient("MerchantMemory") { try findMerchantMemory(bySyncID: id, context: context) }
     }
     static func findMerchantMemory(bySyncID id: UUID, context: ModelContext) throws -> MerchantMemory? {
-        try fetchFirstOrThrow(FetchDescriptor<MerchantMemory>(predicate: #Predicate { $0.syncID == id }), context)
+        if let hit = pageLookup(MerchantMemory.self, id, context) { return hit }
+        return try fetchFirstOrThrow(FetchDescriptor<MerchantMemory>(predicate: #Predicate { $0.syncID == id }), context)
     }
     static func fetchExchangeRate(bySyncID id: UUID, context: ModelContext) -> ExchangeRate? {
         lenient("ExchangeRate") { try findExchangeRate(bySyncID: id, context: context) }
     }
     static func findExchangeRate(bySyncID id: UUID, context: ModelContext) throws -> ExchangeRate? {
-        try fetchFirstOrThrow(FetchDescriptor<ExchangeRate>(predicate: #Predicate { $0.syncID == id }), context)
+        if let hit = pageLookup(ExchangeRate.self, id, context) { return hit }
+        return try fetchFirstOrThrow(FetchDescriptor<ExchangeRate>(predicate: #Predicate { $0.syncID == id }), context)
     }
     static func fetchAccount(byShortcutID id: UUID, context: ModelContext) -> Account? {
         lenient("Account") { try findAccount(byShortcutID: id, context: context) }
     }
     static func findAccount(byShortcutID id: UUID, context: ModelContext) throws -> Account? {
-        try fetchFirstOrThrow(FetchDescriptor<Account>(predicate: #Predicate { $0.shortcutID == id }), context)
+        if let hit = pageLookup(Account.self, id, context) { return hit }
+        return try fetchFirstOrThrow(FetchDescriptor<Account>(predicate: #Predicate { $0.shortcutID == id }), context)
     }
     static func fetchSubcategory(byShortcutID id: UUID, context: ModelContext) -> Subcategory? {
         lenient("Subcategory") { try findSubcategory(byShortcutID: id, context: context) }
     }
     static func findSubcategory(byShortcutID id: UUID, context: ModelContext) throws -> Subcategory? {
-        try fetchFirstOrThrow(FetchDescriptor<Subcategory>(predicate: #Predicate { $0.shortcutID == id }), context)
+        if let hit = pageLookup(Subcategory.self, id, context) { return hit }
+        return try fetchFirstOrThrow(FetchDescriptor<Subcategory>(predicate: #Predicate { $0.shortcutID == id }), context)
     }
     static func fetchBudget(byID id: UUID, context: ModelContext) -> Budget? {
         lenient("Budget") { try findBudget(byID: id, context: context) }
     }
     static func findBudget(byID id: UUID, context: ModelContext) throws -> Budget? {
-        try fetchFirstOrThrow(FetchDescriptor<Budget>(predicate: #Predicate { $0.id == id }), context)
+        if let hit = pageLookup(Budget.self, id, context) { return hit }
+        return try fetchFirstOrThrow(FetchDescriptor<Budget>(predicate: #Predicate { $0.id == id }), context)
     }
     static func fetchScheduledPayment(byID id: UUID, context: ModelContext) -> ScheduledPayment? {
         lenient("ScheduledPayment") { try findScheduledPayment(byID: id, context: context) }
     }
     static func findScheduledPayment(byID id: UUID, context: ModelContext) throws -> ScheduledPayment? {
-        try fetchFirstOrThrow(FetchDescriptor<ScheduledPayment>(predicate: #Predicate { $0.id == id }), context)
+        if let hit = pageLookup(ScheduledPayment.self, id, context) { return hit }
+        return try fetchFirstOrThrow(FetchDescriptor<ScheduledPayment>(predicate: #Predicate { $0.id == id }), context)
     }
     static func fetchTag(byID id: UUID, context: ModelContext) -> Tag? {
         lenient("Tag") { try findTag(byID: id, context: context) }
     }
     static func findTag(byID id: UUID, context: ModelContext) throws -> Tag? {
-        try fetchFirstOrThrow(FetchDescriptor<Tag>(predicate: #Predicate { $0.id == id }), context)
+        if let hit = pageLookup(Tag.self, id, context) { return hit }
+        return try fetchFirstOrThrow(FetchDescriptor<Tag>(predicate: #Predicate { $0.id == id }), context)
     }
     static func fetchNotificationItem(byID id: UUID, context: ModelContext) -> NotificationItem? {
         lenient("NotificationItem") { try findNotificationItem(byID: id, context: context) }
     }
     static func findNotificationItem(byID id: UUID, context: ModelContext) throws -> NotificationItem? {
-        try fetchFirstOrThrow(FetchDescriptor<NotificationItem>(predicate: #Predicate { $0.id == id }), context)
+        if let hit = pageLookup(NotificationItem.self, id, context) { return hit }
+        return try fetchFirstOrThrow(FetchDescriptor<NotificationItem>(predicate: #Predicate { $0.id == id }), context)
     }
     static func fetchCashFlowPlan(byID id: UUID, context: ModelContext) -> CashFlowPlan? {
         lenient("CashFlowPlan") { try findCashFlowPlan(byID: id, context: context) }
     }
     static func findCashFlowPlan(byID id: UUID, context: ModelContext) throws -> CashFlowPlan? {
-        try fetchFirstOrThrow(FetchDescriptor<CashFlowPlan>(predicate: #Predicate { $0.id == id }), context)
+        if let hit = pageLookup(CashFlowPlan.self, id, context) { return hit }
+        return try fetchFirstOrThrow(FetchDescriptor<CashFlowPlan>(predicate: #Predicate { $0.id == id }), context)
     }
     static func fetchCashFlowLine(byID id: UUID, context: ModelContext) -> CashFlowLine? {
         lenient("CashFlowLine") { try findCashFlowLine(byID: id, context: context) }
@@ -1251,7 +1270,8 @@ enum EntityApplyMap {
         lenient("GroupBridgePreference") { try findGroupBridgePreference(byID: id, context: context) }
     }
     static func findGroupBridgePreference(byID id: UUID, context: ModelContext) throws -> GroupBridgePreference? {
-        try fetchFirstOrThrow(FetchDescriptor<GroupBridgePreference>(predicate: #Predicate { $0.id == id }), context)
+        if let hit = pageLookup(GroupBridgePreference.self, id, context) { return hit }
+        return try fetchFirstOrThrow(FetchDescriptor<GroupBridgePreference>(predicate: #Predicate { $0.id == id }), context)
     }
 
     /// `[Subcategory]` por sus `shortcutID` (CSV mirror de Budget). Fetch de TODAS + lookup en memoria
@@ -1260,7 +1280,8 @@ enum EntityApplyMap {
     static func findSubcategories(byShortcutIDs ids: [UUID], context: ModelContext) throws -> [Subcategory] {
         guard !ids.isEmpty else { return [] }
         var lookup: [UUID: Subcategory] = [:]
-        for s in try fetchAllOrThrow(FetchDescriptor<Subcategory>(), context) where lookup[s.shortcutID] == nil {
+        let all = try pageTable(Subcategory.self, context) ?? fetchAllOrThrow(FetchDescriptor<Subcategory>(), context)
+        for s in all where lookup[s.shortcutID] == nil {
             lookup[s.shortcutID] = s
         }
         return ids.compactMap { lookup[$0] }
@@ -1270,7 +1291,8 @@ enum EntityApplyMap {
     static func findAccounts(byShortcutIDs ids: [UUID], context: ModelContext) throws -> [Account] {
         guard !ids.isEmpty else { return [] }
         var lookup: [UUID: Account] = [:]
-        for a in try fetchAllOrThrow(FetchDescriptor<Account>(), context) where lookup[a.shortcutID] == nil {
+        let all = try pageTable(Account.self, context) ?? fetchAllOrThrow(FetchDescriptor<Account>(), context)
+        for a in all where lookup[a.shortcutID] == nil {
             lookup[a.shortcutID] = a
         }
         return ids.compactMap { lookup[$0] }
@@ -1281,7 +1303,8 @@ enum EntityApplyMap {
         lenient("SyncIdentity") { try findSyncIdentity(bySyncID: id, context: context) }
     }
     static func findSyncIdentity(bySyncID id: UUID, context: ModelContext) throws -> SyncIdentity? {
-        try fetchFirstOrThrow(FetchDescriptor<SyncIdentity>(predicate: #Predicate { $0.syncID == id }), context)
+        if let hit = pageLookup(SyncIdentity.self, id, context) { return hit }
+        return try fetchFirstOrThrow(FetchDescriptor<SyncIdentity>(predicate: #Predicate { $0.syncID == id }), context)
     }
 
     /// `[Tag]` por sus `id` (CSV mirror). Fetch de TODOS + lookup en memoria (los Tags son pocos; evita
@@ -1289,7 +1312,7 @@ enum EntityApplyMap {
     /// puede leer.
     static func findTags(byIDs ids: [UUID], context: ModelContext) throws -> [Tag] {
         guard !ids.isEmpty else { return [] }
-        let lookup = Tag.byIDLookup(try fetchAllOrThrow(FetchDescriptor<Tag>(), context))
+        let lookup = Tag.byIDLookup(try pageTable(Tag.self, context) ?? fetchAllOrThrow(FetchDescriptor<Tag>(), context))
         return ids.compactMap { lookup[$0] }
     }
 
@@ -1299,6 +1322,7 @@ enum EntityApplyMap {
         _ descriptor: FetchDescriptor<T>, _ context: ModelContext
     ) throws -> T? {
         if _testThrowOnFetchOf.contains(String(describing: T.self)) { throw EntityApplyFetchError.unreadable(String(describing: T.self)) }
+        _testSingleRowFetches += 1
         var d = descriptor
         d.fetchLimit = 1
         return try context.fetch(d).first
@@ -1326,12 +1350,281 @@ enum EntityApplyMap {
         }
     }
 
+    // MARK: - Búsquedas de una página por LOTE (YALA-IOS-J, 2026-11-13)
+
+    /// Las búsquedas de la página que `applyPage` está aplicando, o `nil` fuera de ella. Las pone y las quita
+    /// `CloudSyncEngine.applyPage` alrededor de su bucle; solo las consultan las búsquedas de ESE contexto.
+    static var pageLookups: ApplyPageLookups?
+
+    /// Las búsquedas de la página en curso si son de `context`; si no, `nil`.
+    static func pageLookups(for context: ModelContext) -> ApplyPageLookups? {
+        guard let lookups = pageLookups, lookups.context === context else { return nil }
+        return lookups
+    }
+
+    /// Lo que la página ya tiene leído para `id`, o `nil` si no lo cubre (y entonces se busca como siempre).
+    private static func pageLookup<M: PersistentModel>(_ type: M.Type, _ id: UUID, _ context: ModelContext) -> M?? {
+        guard let lookups = pageLookups, lookups.context === context else { return nil }
+        return lookups.lookup(type, id)
+    }
+
+    /// La tabla ENTERA de `M` si la página la leyó de una vez (destinos de refs y M2M), o `nil`.
+    private static func pageTable<M: PersistentModel>(_ type: M.Type, _ context: ModelContext) -> [M]? {
+        guard let lookups = pageLookups, lookups.context === context else { return nil }
+        return lookups.wholeTable(type)
+    }
+
+    /// Lee por LOTE lo que una página va a buscar fila a fila: sus filas por tabla (un `IN` por tabla), sus identidades,
+    /// relojes por unidad y danglers, y las tablas pequeñas que sus refs apuntan (cuentas, categorías, subcategorías,
+    /// etiquetas) enteras.
+    ///
+    /// Sin esto, cada delta hacía de cinco a diez lecturas sueltas, y ninguna columna de búsqueda tiene índice: cada una
+    /// recorría la tabla entera. Una página de 500 cambios sobre 4.000 movimientos tardaba 2,8 s en el hilo principal
+    /// del simulador (4,8 s con 500 nuevos), y en el iPhone 14 de producción ~4 s por página durante toda la primera
+    /// bajada de la nube (YALA-IOS-J, y con ella YALA-IOS-A).
+    ///
+    /// **Una lectura por lote que falla NO lanza: deja esa tabla sin cubrir**, y la búsqueda de esa fila va al `fetch` de
+    /// siempre, que lanza como antes («no pude leer» nunca es «no hay nada»). Así la página falla exactamente donde
+    /// fallaba, y una tabla que la página no llega a necesitar no la tumba.
+    static func prepareLookups(for page: PulledPage, context: ModelContext) -> ApplyPageLookups {
+        let lookups = ApplyPageLookups(context: context)
+        var idsByTable: [String: [UUID]] = [:]
+        for delta in page.deltas where isWired(table: delta.entityType) {
+            idsByTable[delta.entityType, default: []].append(delta.syncID)
+        }
+        guard !idsByTable.isEmpty else { return lookups }
+        let pageIDs = Array(Set(idsByTable.values.joined()))
+
+        // Destinos de refs y M2M: tablas pequeñas, enteras.
+        lookups.loadWholeTable(Account.self, key: { $0.shortcutID }) { try fetchAllOrThrow(FetchDescriptor<Account>(), context) }
+        lookups.loadWholeTable(Category.self, key: { $0.syncID }) { try fetchAllOrThrow(FetchDescriptor<Category>(), context) }
+        lookups.loadWholeTable(Subcategory.self, key: { $0.shortcutID }) {
+            try fetchAllOrThrow(FetchDescriptor<Subcategory>(), context)
+        }
+        lookups.loadWholeTable(Tag.self, key: { $0.id }) { try fetchAllOrThrow(FetchDescriptor<Tag>(), context) }
+
+        // Las filas de la página, por tabla. `CashFlowLine` y `CashFlowOverride` no: los borra en cascada su plan, y esa
+        // cascada solo la ve un `fetch` (ver `ApplyPageLookups`).
+        for (table, ids) in idsByTable {
+            switch table {
+            case transactionItem.table:
+                lookups.load(TransactionItem.self, ids: ids, key: { $0.syncID }) { chunk in
+                    let keys = chunk.map { Optional($0) }
+                    return try fetchAllOrThrow(FetchDescriptor<TransactionItem>(predicate: #Predicate { keys.contains($0.syncID) }), context)
+                }
+            case inboxDraft.table:
+                lookups.load(InboxDraft.self, ids: ids, key: { $0.syncID }) { chunk in
+                    let keys = chunk.map { Optional($0) }
+                    return try fetchAllOrThrow(FetchDescriptor<InboxDraft>(predicate: #Predicate { keys.contains($0.syncID) }), context)
+                }
+            case favoritePayment.table:
+                lookups.load(FavoritePayment.self, ids: ids, key: { $0.syncID }) { chunk in
+                    let keys = chunk.map { Optional($0) }
+                    return try fetchAllOrThrow(FetchDescriptor<FavoritePayment>(predicate: #Predicate { keys.contains($0.syncID) }), context)
+                }
+            case merchantMemory.table:
+                lookups.load(MerchantMemory.self, ids: ids, key: { $0.syncID }) { chunk in
+                    let keys = chunk.map { Optional($0) }
+                    return try fetchAllOrThrow(FetchDescriptor<MerchantMemory>(predicate: #Predicate { keys.contains($0.syncID) }), context)
+                }
+            case exchangeRate.table:
+                lookups.load(ExchangeRate.self, ids: ids, key: { $0.syncID }) { chunk in
+                    let keys = chunk.map { Optional($0) }
+                    return try fetchAllOrThrow(FetchDescriptor<ExchangeRate>(predicate: #Predicate { keys.contains($0.syncID) }), context)
+                }
+            case budget.table:
+                lookups.load(Budget.self, ids: ids, key: { $0.id }) { chunk in
+                    try fetchAllOrThrow(FetchDescriptor<Budget>(predicate: #Predicate { chunk.contains($0.id) }), context)
+                }
+            case scheduledPayment.table:
+                lookups.load(ScheduledPayment.self, ids: ids, key: { $0.id }) { chunk in
+                    try fetchAllOrThrow(FetchDescriptor<ScheduledPayment>(predicate: #Predicate { chunk.contains($0.id) }), context)
+                }
+            case notificationItem.table:
+                lookups.load(NotificationItem.self, ids: ids, key: { $0.id }) { chunk in
+                    try fetchAllOrThrow(FetchDescriptor<NotificationItem>(predicate: #Predicate { chunk.contains($0.id) }), context)
+                }
+            case cashFlowPlan.table:
+                lookups.load(CashFlowPlan.self, ids: ids, key: { $0.id }) { chunk in
+                    try fetchAllOrThrow(FetchDescriptor<CashFlowPlan>(predicate: #Predicate { chunk.contains($0.id) }), context)
+                }
+            case groupBridgePreference.table:
+                lookups.load(GroupBridgePreference.self, ids: ids, key: { $0.id }) { chunk in
+                    try fetchAllOrThrow(FetchDescriptor<GroupBridgePreference>(predicate: #Predicate { chunk.contains($0.id) }), context)
+                }
+            default:
+                break  // cuentas, categorías, subcategorías y etiquetas ya van enteras; el resto se busca como siempre.
+            }
+        }
+
+        // Testigos de identidad, relojes por unidad y danglers de las filas de la página.
+        lookups.load(SyncIdentity.self, ids: pageIDs, key: { $0.syncID }) { chunk in
+            try fetchAllOrThrow(FetchDescriptor<SyncIdentity>(predicate: #Predicate { chunk.contains($0.syncID) }), context)
+        }
+        lookups.load(SyncUnitClock.self, ids: pageIDs, key: { $0.syncID }) { chunk in
+            try fetchAllOrThrow(FetchDescriptor<SyncUnitClock>(predicate: #Predicate { chunk.contains($0.syncID) }), context)
+        }
+        lookups.loadDanglers(rows: pageIDs) { chunk in
+            try fetchAllOrThrow(FetchDescriptor<SyncDanglingRef>(predicate: #Predicate { chunk.contains($0.rowSyncID) }), context)
+        }
+        return lookups
+    }
+
     /// Tipos (nombre de clase) cuyas lecturas estrictas (`find*`, `fetchAllOrThrow` de los M2M, el registro
     /// `SyncDanglingRef`) y cuyo barrido `deleteLiveRows` LANZAN como si la base no se dejara leer. Vacío = nunca.
     /// SOLO tests (tickets `apply-overwrites-a-pending-local-write-without-its-guards` y
     /// `dangling-ref-repair-is-lost-when-its-row-cannot-be-read`).
     static var _testThrowOnFetchOf: Set<String> = []
+
+    /// Búsquedas de UNA fila que llegaron al almacén (`fetchFirstOrThrow`). Testigo de `SentryHangs2026Nov`: con las
+    /// búsquedas por lote, una página no hace una por delta. Solo lo leen y lo ponen a cero los tests.
+    static var _testSingleRowFetches = 0
 }
 
 /// Una lectura de la que depende el apply (búsqueda de fila, barrido) lanzó. El payload es el tipo, sin PII.
 enum EntityApplyFetchError: Error { case unreadable(String) }
+
+/// Lo que UNA página del apply tiene leído por lote (`EntityApplyMap.prepareLookups`). Contesta por las filas que CUBRE:
+/// las que pidió (aunque no existieran: «no está» también es respuesta) o, en una tabla leída entera, cualquiera. Lo que
+/// no cubre lo busca el llamador como siempre.
+///
+/// Se mantiene al día con lo que la propia página escribe: `noteInserted` (born-remote, testigo de identidad, dangler) y
+/// `noteDeleted` (tombstone). Lo que se escribe por otro camino se suelta con `forget`, y la siguiente búsqueda de esa
+/// fila vuelve al `fetch`. Una fila borrada no se devuelve (`isDeleted`). Los tipos que se borran en CASCADA
+/// (`CashFlowLine`, `CashFlowOverride`) no se cubren: esa propagación solo la ve un `fetch` del contexto.
+@MainActor
+final class ApplyPageLookups {
+    let context: ModelContext
+    /// Por tipo: filas por su clave. Varias por clave si el almacén las tiene repetidas (sin `.unique` por CloudKit).
+    private var rows: [ObjectIdentifier: [UUID: [any PersistentModel]]] = [:]
+    /// Por tipo: las claves que se pidieron y se leyeron. Una tabla entera las cubre todas (`wholeTables`).
+    private var covered: [ObjectIdentifier: Set<UUID>] = [:]
+    private var wholeTables: [ObjectIdentifier: [any PersistentModel]] = [:]
+    private var danglers: [DanglerKey: [SyncDanglingRef]] = [:]
+    private var danglerRows: Set<UUID> = []
+
+    private struct DanglerKey: Hashable { let row: UUID; let column: String }
+
+    /// Tamaño de cada `IN`: muy por debajo del límite de variables de SQLite.
+    nonisolated static let chunkSize = 400
+
+    /// Lecturas por lote hechas al preparar la página. Testigo de `SentryHangs2026Nov`: no depende de la página.
+    private(set) var batchReads = 0
+
+    init(context: ModelContext) { self.context = context }
+
+    // MARK: Carga
+
+    func loadWholeTable<M: PersistentModel>(_ type: M.Type, key: (M) -> UUID?, fetch: () throws -> [M]) {
+        let id = ObjectIdentifier(type)
+        do {
+            batchReads += 1
+            let models = try fetch()
+            var byKey: [UUID: [any PersistentModel]] = [:]
+            for model in models { if let k = key(model) { byKey[k, default: []].append(model) } }
+            rows[id] = byKey
+            wholeTables[id] = models
+        } catch {
+            forgetType(id)  // sin cubrir: la búsqueda de cada fila lanza como antes
+        }
+    }
+
+    func load<M: PersistentModel>(_ type: M.Type, ids: [UUID], key: (M) -> UUID?, fetch: ([UUID]) throws -> [M]) {
+        let id = ObjectIdentifier(type)
+        guard wholeTables[id] == nil, !ids.isEmpty else { return }
+        let unique = Array(Set(ids))
+        var byKey = rows[id] ?? [:]
+        do {
+            var start = 0
+            while start < unique.count {
+                let chunk = Array(unique[start..<min(start + Self.chunkSize, unique.count)])
+                batchReads += 1
+                for model in try fetch(chunk) { if let k = key(model) { byKey[k, default: []].append(model) } }
+                start += Self.chunkSize
+            }
+            rows[id] = byKey
+            covered[id, default: []].formUnion(unique)
+        } catch {
+            forgetType(id)
+        }
+    }
+
+    func loadDanglers(rows pageRows: [UUID], fetch: ([UUID]) throws -> [SyncDanglingRef]) {
+        let unique = Array(Set(pageRows))
+        var byKey: [DanglerKey: [SyncDanglingRef]] = [:]
+        do {
+            var start = 0
+            while start < unique.count {
+                let chunk = Array(unique[start..<min(start + Self.chunkSize, unique.count)])
+                batchReads += 1
+                for d in try fetch(chunk) { byKey[DanglerKey(row: d.rowSyncID, column: d.column), default: []].append(d) }
+                start += Self.chunkSize
+            }
+            danglers = byKey
+            danglerRows = Set(unique)
+        } catch {
+            danglers = [:]
+            danglerRows = []
+        }
+    }
+
+    // MARK: Consulta
+
+    /// `nil` = no cubierta (búscala como siempre); `.some(nil)` = leída y no está; `.some(m)` = la primera viva.
+    func lookup<M: PersistentModel>(_ type: M.Type, _ key: UUID) -> M?? {
+        let id = ObjectIdentifier(type)
+        guard wholeTables[id] != nil || covered[id]?.contains(key) == true else { return nil }
+        for model in rows[id]?[key] ?? [] {
+            if let typed = model as? M, !typed.isDeleted { return .some(typed) }
+        }
+        return .some(nil)
+    }
+
+    func wholeTable<M: PersistentModel>(_ type: M.Type) -> [M]? {
+        wholeTables[ObjectIdentifier(type)]?.compactMap { ($0 as? M).flatMap { $0.isDeleted ? nil : $0 } }
+    }
+
+    func dangler(row: UUID, column: String) -> SyncDanglingRef?? {
+        guard danglerRows.contains(row) else { return nil }
+        return .some(danglers[DanglerKey(row: row, column: column)]?.first { !$0.isDeleted })
+    }
+
+    // MARK: Lo que la página escribe
+
+    func noteInserted<M: PersistentModel>(_ model: M, key: UUID) {
+        let id = ObjectIdentifier(type(of: model))
+        guard wholeTables[id] != nil || covered[id]?.contains(key) == true else { return }
+        rows[id, default: [:]][key, default: []].append(model)
+        wholeTables[id]?.append(model)
+    }
+
+    /// Por IDENTIDAD, no por `isDeleted`: un objeto insertado y borrado en la misma página puede no decirlo.
+    func noteDeleted<M: PersistentModel>(_ model: M, key: UUID) {
+        let id = ObjectIdentifier(type(of: model))
+        rows[id]?[key]?.removeAll { ($0 as AnyObject) === model }
+        wholeTables[id]?.removeAll { ($0 as AnyObject) === model }
+    }
+
+    /// Una escritura de `key` por un camino que la página no sigue: la próxima búsqueda vuelve al `fetch`.
+    func forget<M: PersistentModel>(_ type: M.Type, key: UUID) {
+        let id = ObjectIdentifier(type)
+        if wholeTables[id] != nil { forgetType(id); return }
+        covered[id]?.remove(key)
+        rows[id]?[key] = nil
+    }
+
+    func noteDanglerInserted(_ dangler: SyncDanglingRef) {
+        guard danglerRows.contains(dangler.rowSyncID) else { return }
+        danglers[DanglerKey(row: dangler.rowSyncID, column: dangler.column), default: []].append(dangler)
+    }
+
+    func noteDanglerDeleted(_ dangler: SyncDanglingRef, row: UUID, column: String) {
+        danglers[DanglerKey(row: row, column: column)]?.removeAll { $0 === dangler }
+    }
+
+    private func forgetType(_ id: ObjectIdentifier) {
+        rows[id] = nil
+        covered[id] = nil
+        wholeTables[id] = nil
+    }
+}
