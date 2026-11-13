@@ -93,3 +93,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [zsh no parte los filtros de -only-testing](feedback_zsh_no_parte_los_filtros_de_only_testing.md) — `$F` con varias suites corre 0 casos y sale verde: `${=F}`.
 - [Un atasco se diagnostica y se cardea en el acto](feedback_un_atasco_se_diagnostica_y_se_cardea_en_el_acto.md) — telemetría por instalación + journal; very-high «CRÍTICO» lista.
 - [pgrep -f casa con prompts de otras sesiones](feedback_pgrep_f_casa_con_los_prompts_de_otras_sesiones.md) — usa `pgrep -x xcodebuild`.
+- [Breadcrumbs de Sentry fechan el pull](reference_sentry_breadcrumbs_fechan_el_pull.md) — GET /sync/pull cada 3-4 s = páginas en el hilo principal; mismo app_start_time = misma apertura.

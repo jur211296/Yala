@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1293)
+## Index (1294)
 
 | id | status | path |
 |---|---|---|
@@ -954,6 +954,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | private-signout-groups-session-expiry-does-not-say-where-to-sign-in | backlog | tickets/backlog/private-signout-groups-session-expiry-does-not-say-where-to-sign-in.md |
 | pro-saved-entitlement-survives-an-apple-id-switch | backlog | tickets/backlog/pro-saved-entitlement-survives-an-apple-id-switch.md |
 | pro-theme-resets-silently-when-pro-ends | done | tickets/done/pro-theme-resets-silently-when-pro-ends.md |
+| production-hangs-cloud-apply-panel-recalc-freeze | done | tickets/done/production-hangs-cloud-apply-panel-recalc-freeze.md |
 | profile-pro-gate-sheets-are-never-opened | backlog | tickets/backlog/profile-pro-gate-sheets-are-never-opened.md |
 | projected-flow-with-plan-counts-a-future-dated-row-twice-in-a-future-month | backlog | tickets/backlog/projected-flow-with-plan-counts-a-future-dated-row-twice-in-a-future-month.md |
 | prompts-de-traduccion-corren-xcodebuild-sin-cola | done | tickets/done/prompts-de-traduccion-corren-xcodebuild-sin-cola.md |
