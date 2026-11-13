@@ -31,3 +31,4 @@ Subíndice de `MEMORY.md` (2026-11-05).
 - [reference-ui-onboarding-login](reference_ui_onboarding_login.md) — Referencia de UI que Jürgen señaló el 2026-09-15 para el onboarding de Yala — pantalla de entrada con Google, correo y «…
 - [El centinela no vigila un `timeout`](feedback_el_centinela_no_vigila_un_timeout.md) — pgrep casa con el envoltorio y sale 2; lanza sin `timeout` y pasa `$!`.
 - [Device MCP Free: un espejo](reference_device_mcp_free_un_espejo.md) — otro dispositivo espejado ⇒ simulador con axe + simctl.
+- [iPhone 14 «recién instalado» exige quitar Yala prod](reference_iphone_14_recien_instalado_exige_quitar_yala_prod.md) — comparten App Group: el store de Yala Dev sobrevive a desinstalarla.
