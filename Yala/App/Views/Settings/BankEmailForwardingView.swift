@@ -2,7 +2,7 @@
 //  BankEmailForwardingView.swift
 //  Yala
 //
-//  «Correo del banco» (2.3): la dirección `auto+<código>@yala-app.pe` de la persona, su cupo de prueba y una guía por
+//  «Correo del banco» (2.3): la dirección `auto+<código>@yalainbox.com` de la persona, su cupo de prueba y una guía por
 //  pasos para reenviar los avisos del banco desde Gmail, Outlook o iCloud Mail. Solo sale con los datos en la nube y
 //  sesión (la fila de Ajustes la gatea `BankEmailEntryLogic.showsRow`).
 //
@@ -71,7 +71,7 @@ final class BankEmailModel {
     /// La dirección fija de `-uitest-bank-email`: sin red ni cuenta.
     static func uiTestInfo(withGmailCode: Bool) -> BankEmailAddressInfo {
         BankEmailAddressInfo(
-            address: "auto+k7m2xq9wpb@yala-app.pe", pro: false, trialLimit: 5, trialUsed: 2, skippedQuota: 0,
+            address: "auto+k7m2xq9wpb@yalainbox.com", pro: false, trialLimit: 5, trialUsed: 2, skippedQuota: 0,
             lastReceivedAtMs: nil,
             gmailConfirmation: withGmailCode ? .init(code: "482913765", receivedAtMs: Date.now.timeIntervalSince1970 * 1000) : nil)
     }

@@ -3,7 +3,7 @@
 //  Yala
 //
 //  Cliente HTTP del correo del banco por reenvío (2.3) contra el gateway (`gateway/src/mail/routes.ts`):
-//    - `POST /mail/address`     → la dirección `auto+<código>@yala-app.pe`, el cupo de prueba y el código de Gmail.
+//    - `POST /mail/address`     → la dirección `auto+<código>@yalainbox.com`, el cupo de prueba y el código de Gmail.
 //    - `GET  /mail/drafts`      → los movimientos que el gateway leyó de los avisos reenviados.
 //    - `POST /mail/drafts/ack`  → la app ya los creó en la Bandeja: el gateway los borra.
 //
