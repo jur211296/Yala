@@ -88,3 +88,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [Resolver conflictos no se encadena](feedback_resolver_conflictos_no_se_encadena.md) — `;` tras el resolvedor cerró un rebase con marcas; los .strings llevan «=======».
 - [Un `return` suelto no es mutante](feedback_un_return_suelto_no_es_mutante.md) — delante de un switch, Swift lo ejecuta; muta con `if … { return }`.
 - [Plantar estado del host de unit tests](reference_plantar_estado_del_host_de_unit_tests.md) — plist con el sim apagado; Swift Testing no baraja el orden.
+- [Lote que depende de otro en cola](feedback_lote_que_depende_de_otro_en_cola.md) — apilar sobre su rama; `reset --keep origin/2.3` cuando entre.

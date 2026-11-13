@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1269)
+## Index (1280)
 
 | id | status | path |
 |---|---|---|
@@ -837,6 +837,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | onboarding-2-3-groups-entry | qa | tickets/qa/onboarding-2-3-groups-entry.md |
 | onboarding-2-3-permissions-inside-the-tutorial | done | tickets/done/onboarding-2-3-permissions-inside-the-tutorial.md |
 | onboarding-2-3-first-account-questions | done | tickets/done/onboarding-2-3-first-account-questions.md |
+| onboarding-2-3-first-budget-questions | done | tickets/done/onboarding-2-3-first-budget-questions.md |
+| onboarding-2-3-first-scheduled-payment-questions | done | tickets/done/onboarding-2-3-first-scheduled-payment-questions.md |
+| onboarding-2-3-groups-tutorial-step | qa | tickets/qa/onboarding-2-3-groups-tutorial-step.md |
 | onboarding-2-3-learn-to-record-cleanup | done | tickets/done/onboarding-2-3-learn-to-record-cleanup.md |
 | onboarding-2-3-learn-to-record-courtesy-trial | qa | tickets/qa/onboarding-2-3-learn-to-record-courtesy-trial.md |
 | onboarding-2-3-learn-to-record-guide | done | tickets/done/onboarding-2-3-learn-to-record-guide.md |
