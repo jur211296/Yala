@@ -67,6 +67,13 @@ paths:
   cambie lo que pinta el Panel sin GUARDAR y sin avisar no se ve al volver** (antes sí): guarda, o avisa. Y lo que
   el cálculo lea fuera del almacén (una preferencia, el reloj) necesita su observador o entrar en la firma.
   La espera de 150 ms del Panel es ahora FIJA desde la primera petición: lo que llega dentro se suma, no la reinicia.
+  **La recarga lee los movimientos por tramos y cede el hilo entre uno y otro (2026-11-13, YALA-IOS-K)**: leídos de una
+  vez, con un historial grande la app dejaba de responder más de 2 s (`PanelViewModel.fetchTransactionsInSlices`, tramos
+  de 1.500 por clave fecha + instante de creación, con `<=` en el borde y descarte por identidad). Durante la lectura
+  `recalculateTask` sigue puesto: un recálculo se suma al de esa vuelta y una recarga abre la siguiente
+  (`finishRecalculation`). **Tras cada `await` de la recarga, una tarea cancelada no toca `recalculateTask`** (quien la
+  canceló ya lo soltó) y un almacén soltado corta. Una lectura nueva de tabla entera en `loadData` pasa por tramos o se mide.
+  Pin: `YalaTests/SentryHangs2026Nov/PanelSlicedLoadTests`.
 
 - **Entrar en Estadísticas no calcula en el `onAppear`, y solo calcula si cambió su firma (2026-11-11, G1 de la
   decisión 28).** Medido en el iPhone 14 con diez años (Release optimizado): el `onAppear` bloqueaba 7,5 s y el cambio
