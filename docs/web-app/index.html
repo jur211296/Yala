@@ -1,0 +1,781 @@
+<title>Yala web</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Propuesta de decisión: índice fijo arriba, maqueta navegable de la app web (escritorio y móvil, lote 1 o completa), entrada y seguridad, propuesta técnica comparada, lotes y decisiones con selector */
+:root{
+  --bg:#f3f3f7; --card:#ffffff; --ink:#16161d; --ink2:#55556a; --ink3:#7d7d93; --line:#e2e2ea;
+  --acc:#6063f1; --accb:#ebebfd; --ok:#13804f; --okb:#e2f4ea; --warn:#9a5b00; --warnb:#fdf0dc; --bad:#b0263f; --badb:#fbe6ea;
+  --display:"Bricolage Grotesque","SF Pro Display",-apple-system,system-ui,sans-serif;
+  --body:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --ui:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,"Segoe UI",sans-serif;
+  --round:ui-rounded,"SF Pro Rounded",-apple-system,Inter,sans-serif;
+  /* la app de Yala dentro de la maqueta: tokens del tema claro y oscuro de la app */
+  --y-bg:#fafbff; --y-card:#ffffff; --y-ink:#111114; --y-ink2:#6c6c78; --y-line:#ececf2; --y-acc:#6063f1; --y-acct:#6063f1;
+  --y-in:#0f7a80; --y-owe:#c8006a; --y-owed:#13804f; --y-side:#f4f5fb; --y-chrome:#e9e9ef; --y-frame:#cfd0da;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111117; --card:#1b1b24; --ink:#ececf3; --ink2:#a9a9bd; --ink3:#8a8aa0; --line:#2c2c3a;
+  --acc:#8d90ff; --accb:#25264a; --ok:#4fd393; --okb:#143325; --warn:#f2b45c; --warnb:#3a2a12; --bad:#ff7d93; --badb:#3c1620;
+  --y-bg:#000000; --y-card:#1c1c1e; --y-ink:#f2f2f7; --y-ink2:#9a9aa6; --y-line:#2a2a2e; --y-acc:#6063f1; --y-acct:#818cf8;
+  --y-in:#00c2cb; --y-owe:#ff4da6; --y-owed:#4fd393; --y-side:#0e0e10; --y-chrome:#26262c; --y-frame:#3a3a44; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111117; --card:#1b1b24; --ink:#ececf3; --ink2:#a9a9bd; --ink3:#8a8aa0; --line:#2c2c3a;
+  --acc:#8d90ff; --accb:#25264a; --ok:#4fd393; --okb:#143325; --warn:#f2b45c; --warnb:#3a2a12; --bad:#ff7d93; --badb:#3c1620;
+  --y-bg:#000000; --y-card:#1c1c1e; --y-ink:#f2f2f7; --y-ink2:#9a9aa6; --y-line:#2a2a2e; --y-acc:#6063f1; --y-acct:#818cf8;
+  --y-in:#00c2cb; --y-owe:#ff4da6; --y-owed:#4fd393; --y-side:#0e0e10; --y-chrome:#26262c; --y-frame:#3a3a44; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--body);margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+a{color:var(--acc)}
+code{font:600 .9em ui-monospace,Menlo,monospace}
+h1,h2,h3,h4{font-family:var(--display);text-wrap:balance;letter-spacing:-.015em}
+button{font:inherit}
+button:focus-visible,a:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+nav.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+nav.top .wrap{display:flex;gap:6px;overflow-x:auto;padding-block:8px;scrollbar-width:none}
+nav.top a{flex:0 0 auto;text-decoration:none;font-size:13px;font-weight:600;color:var(--ink2);padding:6px 11px;border-radius:99px;border:1px solid var(--line);background:var(--card)}
+header.hero{padding-block:36px 8px}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3)}
+h1{font-size:clamp(32px,5.6vw,56px);line-height:1.03;margin:8px 0 12px;font-weight:800}
+.lead{font-size:18px;color:var(--ink2);max-width:64ch;margin:0}
+.trio{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:22px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px 18px;min-width:0}
+.box h3{margin:0 0 6px;font-size:18px}
+.box ul{margin:0;padding-left:18px;color:var(--ink2);font-size:14px}
+.box li{margin:3px 0}
+.box.acc{border:2px solid var(--acc)}
+section.band{padding-block:40px 8px}
+h2{font-size:clamp(25px,3.6vw,36px);margin:0 0 6px;font-weight:800}
+h2 .k{font-family:var(--body);font-size:13px;font-weight:700;color:var(--acc);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:4px}
+h3.s{font-size:21px;margin:30px 0 6px}
+.sub{color:var(--ink2);max-width:72ch;margin:0 0 14px}
+.tag{display:inline-flex;align-items:center;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:99px;vertical-align:middle;background:var(--bg);color:var(--ink2);white-space:nowrap}
+.tag.ok{background:var(--okb);color:var(--ok)}.tag.warn{background:var(--warnb);color:var(--warn)}.tag.bad{background:var(--badb);color:var(--bad)}.tag.acc{background:var(--accb);color:var(--acc)}
+
+/* ---------- controles de la maqueta ---------- */
+.ctrl{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin:6px 0 12px}
+.seg{display:inline-flex;background:var(--card);border:1px solid var(--line);border-radius:99px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;color:var(--ink2);font-weight:600;font-size:13.5px;padding:6px 13px;border-radius:99px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--acc);color:#fff}
+.ctrl .lbl{font-size:12px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;margin-right:6px}
+.legend{display:flex;flex-wrap:wrap;gap:6px;font-size:12.5px;color:var(--ink2);align-items:center}
+.stage{overflow-x:auto;padding:4px 2px 16px}
+.stage.mob{display:flex;justify-content:center}
+
+/* ---------- la app (maqueta) ---------- */
+.y{font-family:var(--ui);color:var(--y-ink);font-size:13px;line-height:1.4;background:var(--y-bg)}
+.y *{box-sizing:border-box}
+.browser{width:1060px;margin:0 auto;border-radius:14px;overflow:hidden;border:1px solid var(--y-frame);box-shadow:0 14px 40px rgba(20,20,50,.14)}
+.chrome{display:flex;align-items:center;gap:10px;background:var(--y-chrome);padding:9px 12px}
+.dots{display:flex;gap:6px}.dots i{width:11px;height:11px;border-radius:50%;background:#ff5f57}.dots i:nth-child(2){background:#febc2e}.dots i:nth-child(3){background:#28c840}
+.url{flex:1;max-width:520px;margin:0 auto;background:var(--y-bg);border-radius:8px;padding:5px 12px;font-size:12px;color:var(--y-ink2);display:flex;gap:6px;align-items:center}
+.url b{color:var(--y-ink);font-weight:600}
+.lockico{width:10px;height:10px;border:1.6px solid var(--y-ink2);border-radius:2px;display:inline-block;position:relative;top:1px}
+.desk{display:grid;grid-template-columns:212px 1fr;height:660px}
+.side{background:var(--y-side);border-right:1px solid var(--y-line);padding:14px 10px;display:flex;flex-direction:column;gap:2px;overflow:auto}
+.brand{display:flex;align-items:center;gap:8px;font:800 19px/1 var(--display);padding:4px 8px 14px;color:var(--y-ink)}
+.brand i{width:26px;height:26px;border-radius:8px;background:linear-gradient(140deg,#6063f1,#ff0080);display:inline-block}
+.nv{display:flex;align-items:center;gap:9px;border:0;background:transparent;color:var(--y-ink);text-align:left;padding:7px 9px;border-radius:9px;cursor:pointer;font:500 13px/1.2 var(--ui);width:100%}
+.nv:hover{background:color-mix(in srgb,var(--y-acc) 8%,transparent)}
+.nv[aria-current="page"]{background:color-mix(in srgb,var(--y-acc) 14%,transparent);color:var(--y-acct);font-weight:650}
+.nv svg{width:17px;height:17px;flex:0 0 auto;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nv .sp{flex:1}
+.nv.sub{padding-left:35px;font-size:12.5px}
+.navh{color:var(--y-ink2);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:12px 9px 3px}
+.badge{background:#ff0080;color:#fff;font-size:10.5px;font-weight:700;border-radius:99px;padding:1px 6px}
+.lk{font-size:9.5px;font-weight:700;border-radius:99px;padding:1px 6px;background:color-mix(in srgb,var(--y-ink2) 16%,transparent);color:var(--y-ink2)}
+.nv.later{color:var(--y-ink2)}
+.sidefoot{margin-top:auto;padding:10px 8px 2px;font-size:11px;color:var(--y-ink2);border-top:1px solid var(--y-line)}
+.main{overflow:auto;position:relative}
+.topbar{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:10px;padding:14px 22px 10px;background:color-mix(in srgb,var(--y-bg) 88%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.topbar h5{font:700 22px/1.1 var(--ui);margin:0;letter-spacing:-.01em;flex:0 0 auto}
+.pp{border:1px solid var(--y-line);background:var(--y-card);border-radius:99px;padding:5px 11px;font-size:12px;font-weight:600;color:var(--y-ink)}
+.search{flex:1;max-width:300px;margin-left:auto;border:1px solid var(--y-line);background:var(--y-card);border-radius:10px;padding:6px 10px;color:var(--y-ink2);font-size:12px;display:flex;justify-content:space-between}
+.search kbd{font:600 10.5px var(--ui);background:var(--y-bg);border:1px solid var(--y-line);border-radius:5px;padding:0 5px}
+.ib{border:1px solid var(--y-line);background:var(--y-card);border-radius:10px;width:32px;height:32px;display:grid;place-items:center;cursor:pointer;color:var(--y-ink);flex:0 0 auto}
+.ib svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round}
+.ib[aria-pressed="true"]{background:var(--y-acc);color:#fff;border-color:var(--y-acc)}
+.add{border:0;background:var(--y-acc);color:#fff;font:650 12.5px var(--ui);border-radius:10px;padding:8px 12px;cursor:pointer;white-space:nowrap}
+.content{padding:4px 22px 26px;display:flex;flex-direction:column;gap:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.cd{background:var(--y-card);border-radius:16px;padding:14px 15px;border:1px solid var(--y-line);min-width:0}
+.cd h6{margin:0 0 8px;font:650 13px/1.2 var(--ui);color:var(--y-ink);display:flex;justify-content:space-between;gap:8px}
+.cd h6 small{font-weight:500;color:var(--y-ink2)}
+.hero-y{display:flex;flex-direction:column;gap:2px}
+.hero-y .cap{color:var(--y-ink2);font-size:12px;font-weight:600}
+.big{font:700 34px/1.1 var(--round);letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.inout{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:12px;color:var(--y-ink2);margin-top:4px}
+.inout b{color:var(--y-ink);font-family:var(--round)}
+.accs{display:flex;gap:10px;overflow-x:auto;padding-bottom:2px}
+.ac{flex:0 0 170px;border-radius:14px;padding:11px 12px;color:#fff;min-height:84px;display:flex;flex-direction:column;justify-content:space-between}
+.ac span{font-size:11px;opacity:.92}
+.ac b{font:700 17px/1.1 var(--round)}
+.row{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--y-line)}
+.cd h6 + .row,.day + .row,.row:first-child{border-top:0}
+.ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:12px;flex:0 0 auto}
+.row .t{flex:1;min-width:0}
+.row .t b{display:block;font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .t span{color:var(--y-ink2);font-size:11.5px;display:block}
+.amt{font:700 13.5px/1.2 var(--round);font-variant-numeric:tabular-nums;white-space:nowrap}
+.amt.in{color:var(--y-in)}
+.amt.owe{color:var(--y-owe)}.amt.owed{color:var(--y-owed)}
+.y.hideamt .amt,.y.hideamt .big,.y.hideamt .ac b,.y.hideamt .inout b{filter:blur(7px)}
+.day{font-size:11px;font-weight:700;color:var(--y-ink2);text-transform:uppercase;letter-spacing:.04em;padding:10px 0 2px}
+.bar{height:8px;border-radius:99px;background:color-mix(in srgb,var(--y-ink2) 18%,transparent);overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;border-radius:99px;background:var(--y-acc)}
+.bar i.over{background:#ff0080}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--y-line);background:var(--y-card);border-radius:99px;padding:4px 10px;font-size:11.5px;font-weight:600;color:var(--y-ink)}
+.chip.on{background:var(--y-acc);border-color:var(--y-acc);color:#fff}
+.src{font-size:10px;font-weight:700;border-radius:99px;padding:2px 7px;background:color-mix(in srgb,var(--y-acc) 14%,transparent);color:var(--y-acct);white-space:nowrap}
+.btns{display:flex;gap:6px}
+.bt{border:0;border-radius:9px;padding:6px 10px;font:650 11.5px var(--ui);cursor:pointer;background:var(--y-acc);color:#fff}
+.bt.sec{background:color-mix(in srgb,var(--y-ink2) 14%,transparent);color:var(--y-ink)}
+.note-y{font-size:11.5px;color:var(--y-ink2);background:color-mix(in srgb,var(--y-acc) 7%,transparent);border-radius:10px;padding:8px 10px}
+.note-y b{color:var(--y-ink)}
+.bars{display:flex;align-items:flex-end;gap:10px;height:120px;padding-top:6px}
+.bars div{flex:1;display:flex;gap:3px;align-items:flex-end;height:100%}
+.bars i{flex:1;border-radius:5px 5px 2px 2px;background:var(--y-acc)}
+.bars i.o{background:#ff0080;opacity:.85}
+.lbls{display:flex;gap:10px;font-size:10.5px;color:var(--y-ink2)}
+.lbls span{flex:1;text-align:center}
+.donut{width:150px;height:150px;border-radius:50%;background:conic-gradient(#6063f1 0 28%,#ff0080 28% 50%,#00c2cb 50% 65%,#f59e0b 65% 77%,#fb7185 77% 86%,#a3a3b5 86% 100%);display:grid;place-items:center;flex:0 0 auto}
+.donut::after{content:"";width:92px;height:92px;border-radius:50%;background:var(--y-card)}
+.leg{display:flex;flex-direction:column;gap:6px;font-size:12px;flex:1;min-width:0}
+.leg div{display:flex;align-items:center;gap:7px}
+.leg i{width:10px;height:10px;border-radius:3px;flex:0 0 auto}
+.leg b{margin-left:auto;font-family:var(--round)}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--y-line);font-size:12.5px;align-items:center}
+.cd h6 + .kv{border-top:0}
+.kv span:last-child{color:var(--y-ink2);text-align:right}
+.sw{width:34px;height:20px;border-radius:99px;background:#34c759;position:relative;flex:0 0 auto}
+.sw::after{content:"";position:absolute;right:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff}
+.sw.off{background:color-mix(in srgb,var(--y-ink2) 40%,transparent)}.sw.off::after{right:auto;left:2px}
+.dev{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--y-line)}
+.cd h6 + .dev,.dev:first-child{border-top:0}
+.dev .t{flex:1;min-width:0}.dev .t b{display:block;font-size:12.5px}.dev .t span{font-size:11px;color:var(--y-ink2)}
+.danger{border:0;background:transparent;color:#e0245e;font:650 12px var(--ui);cursor:pointer;padding:4px}
+.soon{position:absolute;inset:58px 0 0;z-index:2;display:grid;place-items:start center;padding:70px 16px 0;background:color-mix(in srgb,var(--y-bg) 55%,transparent);backdrop-filter:blur(2.5px);-webkit-backdrop-filter:blur(2.5px)}
+.soon div{max-width:360px;background:var(--y-card);border:1px solid var(--y-line);border-radius:16px;padding:16px 18px;box-shadow:0 10px 30px rgba(0,0,0,.12);text-align:center}
+.soon b{display:block;font-size:15px;margin-bottom:4px}
+.soon span{color:var(--y-ink2);font-size:12.5px}
+.chat{display:flex;flex-direction:column;gap:8px;max-width:560px}
+.msg{border-radius:14px;padding:9px 12px;max-width:85%;font-size:12.5px}
+.msg.me{align-self:flex-end;background:var(--y-acc);color:#fff}
+.msg.ai{background:var(--y-bg);border:1px solid var(--y-line)}
+.modal{position:absolute;inset:0;z-index:5;background:rgba(10,10,20,.32);display:grid;place-items:center;padding:16px}
+.sheet-y{width:min(380px,100%);background:var(--y-card);border-radius:18px;padding:16px;box-shadow:0 20px 50px rgba(0,0,0,.25);display:flex;flex-direction:column;gap:10px}
+.sheet-y h6{margin:0;font:700 16px var(--ui);display:flex;justify-content:space-between;align-items:center}
+.amt-in{font:700 30px var(--round);text-align:center;color:var(--y-ink);padding:6px 0}
+.fld{display:flex;justify-content:space-between;border-top:1px solid var(--y-line);padding:9px 2px;font-size:12.5px}
+.fld span:last-child{color:var(--y-ink2)}
+.toast-y{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);z-index:6;background:#1c1c22;color:#fff;border-radius:12px;padding:9px 14px;font-size:12px;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:90%;text-align:center}
+.phone{width:390px;max-width:100%;border-radius:30px;overflow:hidden;border:1px solid var(--y-frame);box-shadow:0 14px 40px rgba(20,20,50,.16);position:relative}
+.mbar{background:var(--y-chrome);padding:8px 14px 9px;text-align:center;font-size:11.5px;color:var(--y-ink2)}
+.mbar b{color:var(--y-ink)}
+.mscreen{height:690px;overflow:auto;position:relative;padding-bottom:74px}
+.mtop{display:flex;align-items:center;gap:8px;padding:14px 16px 6px}
+.mtop h5{font:700 26px var(--ui);margin:0;flex:1;letter-spacing:-.01em}
+.mtabs{position:absolute;left:0;right:0;bottom:0;z-index:4;display:grid;grid-template-columns:repeat(5,1fr);background:color-mix(in srgb,var(--y-card) 92%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--y-line);padding:6px 4px 10px}
+.mt{border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:2px;font:600 10px var(--ui);color:var(--y-ink2);cursor:pointer;position:relative}
+.mt svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.mt[aria-current="page"]{color:var(--y-acct)}
+.mt.plus span.c{width:40px;height:40px;border-radius:50%;background:var(--y-acc);display:grid;place-items:center;margin-top:-4px}
+.mt.plus svg{stroke:#fff}
+.mt .badge{position:absolute;top:-3px;left:56%}
+.phone .content{padding:4px 14px 20px}
+.phone .grid2{grid-template-columns:1fr}
+.phone .soon{inset:0}
+.morelist .nv{padding:11px 10px;font-size:14px}
+
+/* ---------- pantallas de entrada ---------- */
+.flow{display:flex;gap:14px;overflow-x:auto;padding:10px 2px 18px;scroll-snap-type:x proximity}
+.step{flex:0 0 auto;width:300px;scroll-snap-align:start;display:flex;flex-direction:column;gap:8px}
+.step .cap{font-size:13.5px;color:var(--ink2)}
+.step .cap b{color:var(--ink)}
+.scr{height:440px;border-radius:18px;border:1px solid var(--y-frame);overflow:hidden;display:flex;flex-direction:column}
+.scr .mbar{border-bottom:1px solid var(--y-line)}
+.scr .in{flex:1;padding:20px 18px;display:flex;flex-direction:column;gap:10px}
+.scr h6{font:800 21px/1.15 var(--display);margin:4px 0 2px;text-align:center;color:var(--y-ink)}
+.scr p{margin:0;color:var(--y-ink2);font-size:12.5px;text-align:center}
+.sso{border:1px solid var(--y-line);background:var(--y-card);color:var(--y-ink);border-radius:12px;padding:10px;font:650 13px var(--ui);text-align:center}
+.sso.dark{background:#000;color:#fff;border-color:#000}
+.sso.red{color:#e0245e}
+.check{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--y-ink2)}
+.check i{width:15px;height:15px;border:1.5px solid var(--y-ink2);border-radius:4px;flex:0 0 auto}
+.qr{width:132px;height:132px;margin:4px auto;display:grid;grid-template-columns:repeat(11,1fr);gap:1px;padding:8px;background:#fff;border-radius:10px;border:1px solid var(--y-line)}
+.qr i{background:#111;border-radius:1px}.qr i.o{background:transparent}
+.code{font:700 22px/1 ui-monospace,Menlo,monospace;letter-spacing:.2em;text-align:center;color:var(--y-ink)}
+.fade{color:var(--y-ink2);font-size:11px;text-align:center}
+
+/* ---------- técnica, lotes y decisiones ---------- */
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.fact{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;min-width:0}
+.fact h4{margin:0 0 6px;font-size:15px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.fact p{margin:0;color:var(--ink2);font-size:14px}
+.archwrap{overflow-x:auto;padding:4px 2px 12px}
+.arch{display:grid;grid-template-columns:1fr 24px 1.3fr 24px 1.4fr;gap:10px;align-items:center;min-width:820px}
+.node{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:13.5px;min-width:0}
+.node b{display:block;font-family:var(--display);font-size:15px;margin-bottom:2px}
+.node span{color:var(--ink2)}
+.node.hl{border:2px solid var(--acc)}
+.node.new{border-style:dashed}
+.stack{display:flex;flex-direction:column;gap:8px}
+.arrow{color:var(--ink3);font-size:20px;text-align:center}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px;margin-top:8px}
+.opt{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.opt.best{border:2px solid var(--acc)}
+.opt h4{margin:0;font-size:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.opt .code2{font:700 12px/1 ui-monospace,Menlo,monospace;background:var(--ink);color:var(--bg);padding:4px 6px;border-radius:6px}
+.opt p{margin:0;color:var(--ink2);font-size:14px}
+.pc{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;margin-top:auto}
+.pc ul{margin:0;padding-left:16px}
+.pc .p{background:var(--okb);border-radius:10px;padding:7px 9px}.pc .c{background:var(--badb);border-radius:10px;padding:7px 9px}
+.pc h5{margin:0 0 2px;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+.pc .p h5{color:var(--ok)}.pc .c h5{color:var(--bad)}
+.why{background:var(--accb);border-radius:14px;padding:12px 14px;margin-top:14px;max-width:84ch}
+.why b{color:var(--acc)}
+.lotes{display:flex;flex-direction:column;gap:12px}
+.lote{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px 18px;display:grid;grid-template-columns:120px 1fr;gap:6px 18px;min-width:0}
+.lote.first{border:2px solid var(--acc)}
+.lote .n{font:800 16px/1.2 var(--display);color:var(--acc)}
+.lote .n small{display:block;font:600 12px var(--body);color:var(--ink3);margin-top:4px}
+.lote h4{margin:0 0 4px;font-size:19px}
+.lote .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:6px}
+.lote .cols div{font-size:13.5px;color:var(--ink2);min-width:0}
+.lote .cols h5{margin:0 0 3px;font:700 11px var(--body);text-transform:uppercase;letter-spacing:.06em;color:var(--ink3)}
+.lote ul{margin:0;padding-left:16px}
+.risk{display:inline-flex;gap:3px;vertical-align:middle;margin-left:6px}
+.risk i{width:9px;height:9px;border-radius:2px;background:var(--line)}
+.risk.r1 i:nth-child(1),.risk.r2 i:nth-child(-n+2){background:var(--warn)}
+.risk.r3 i{background:var(--bad)}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:720px}
+th,td{text-align:left;padding:9px 12px;border-top:1px solid var(--line);vertical-align:top}
+thead th{border-top:0;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3)}
+.dec{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0;display:flex;flex-direction:column;gap:8px}
+.dec .dh{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.dec .id{font:700 13px/1 ui-monospace,Menlo,monospace;color:var(--acc)}
+.dec h4{margin:0;font-size:17px;flex:1;min-width:200px}
+.dec p{margin:0;color:var(--ink2);font-size:14px}
+.choices{display:flex;flex-wrap:wrap;gap:8px}
+.choice{font:600 13.5px/1.3 var(--body);text-align:left;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;padding:8px 11px;cursor:pointer;max-width:100%}
+.choice small{display:block;font-weight:500;color:var(--ink2);font-size:12px}
+.choice.rec{border-color:var(--acc)}
+.choice.rec::after{content:"Recomendada";display:block;margin-top:4px;font-size:10.5px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.05em}
+.choice[aria-pressed="true"]{background:var(--acc);border-color:var(--acc);color:#fff}
+.choice[aria-pressed="true"] small,.choice[aria-pressed="true"].rec::after{color:#fff}
+.choice:disabled{cursor:default}
+.dstate{font-size:12.5px;color:var(--ink3)}
+.savebar{position:sticky;bottom:max(10px,env(safe-area-inset-bottom,0px));z-index:10;margin:18px 0 6px;background:var(--ink);color:var(--bg);border-radius:14px;padding:10px 14px;font-size:13.5px;font-weight:600}
+footer{padding-block:30px 50px;color:var(--ink3);font-size:13px}
+@media (max-width:720px){.lote{grid-template-columns:1fr}.pc{grid-template-columns:1fr}}
+</style>
+
+<nav class="top" aria-label="Índice"><div class="wrap">
+  <a href="#resumen">Resumen</a><a href="#maqueta">Maqueta</a><a href="#entrada">Entrada y seguridad</a><a href="#tecnica">Propuesta técnica</a><a href="#lotes">Lotes</a><a href="#decisiones">Decisiones</a>
+</div></nav>
+
+<div class="wrap">
+<header class="hero" id="resumen">
+  <div class="eyebrow">Yala 2.3 → 3.0 · definición y maqueta · 12 de noviembre de 2026</div>
+  <h1>Yala web, un aparato más de tu cuenta en la nube</h1>
+  <p class="lead">Entras con Apple o con Google y ves lo mismo que en tu iPhone. Se construye en seis lotes: la beta de 2.3 mira tus cuentas y deja gastos en la Bandeja; en 3.0 la web registra, edita y cobra Pro como cualquier otro aparato.</p>
+  <div class="trio">
+    <div class="box"><h3>Lo que ya estaba decidido</h3><ul>
+      <li>21-oct: la beta va en 2.3 y solo mira y deja borradores en la Bandeja.</li>
+      <li>La web completa llega en 3.0, después de cerrar los bugs de la nube.</li>
+      <li>Vive fuera de <code>Web/</code>, que es la web de marketing de Lola.</li>
+    </ul></div>
+    <div class="box"><h3>Lo que propone esta página</h3><ul>
+      <li>La maqueta de la app entera, en escritorio y en móvil, marcada por lote.</li>
+      <li>Cómo se entra, cómo se protege y cómo se cierra una sesión desde el iPhone.</li>
+      <li>Dónde vive, con qué se hace y cómo habla con la nube sin romperla.</li>
+    </ul></div>
+    <div class="box acc"><h3>Lo que decides tú</h3><ul>
+      <li>13 decisiones al final, cada una con su opción recomendada.</li>
+      <li>Lo que no contestes se toma con la recomendada.</li>
+      <li>No se toca código hasta que apruebes el lote 0.</li>
+    </ul></div>
+  </div>
+</header>
+
+<section class="band" id="maqueta">
+  <h2><span class="k">1 · Maqueta navegable</span>Las mismas secciones que la app, en el navegador</h2>
+  <p class="sub">Toca las secciones de la barra lateral (en móvil, la barra de abajo y «Más»). Con «Lote 1» ves lo que trae la beta: lo que llega después sale con su número de lote. Prueba «Apuntar» y el ojo que oculta los montos. Los datos son de ejemplo.</p>
+  <div class="ctrl">
+    <div><span class="lbl">Aparato</span><span class="seg" role="group" aria-label="Aparato"><button type="button" id="dv-desk" aria-pressed="true">Escritorio</button><button type="button" id="dv-mob" aria-pressed="false">Móvil web</button></span></div>
+    <div><span class="lbl">Alcance</span><span class="seg" role="group" aria-label="Alcance"><button type="button" id="sc-l1" aria-pressed="true">Lote 1 · beta 2.3</button><button type="button" id="sc-full" aria-pressed="false">Completa · 3.0</button></span></div>
+  </div>
+  <div class="stage" id="stage"></div>
+</section>
+
+<section class="band" id="entrada">
+  <h2><span class="k">2 · Entrada, vínculo y seguridad</span>Cómo se entra y cómo se sale a distancia</h2>
+  <p class="sub">La web usa la misma cuenta de Yala que el iPhone. No hay cuenta nueva ni contraseña: entras con el Apple o el Google con que activaste la nube.</p>
+  <div class="flow">
+    <div class="step">
+      <div class="scr y"><div class="mbar"><span class="lockico"></span> <b>app.yala-app.pe</b></div><div class="in">
+        <div class="brand" style="justify-content:center;padding-bottom:2px"><i></i>Yala</div>
+        <h6>Entra a tu Yala</h6><p>Usa la misma cuenta que en tu iPhone.</p>
+        <div class="sso dark">Continuar con Apple</div><div class="sso">Continuar con Google</div>
+        <div class="check"><i></i>Es un equipo compartido: no recordar esta sesión</div>
+        <p class="fade">Protegido contra bots. Al entrar aceptas la política de privacidad.</p>
+      </div></div>
+      <div class="cap"><b>1 · Entrar · lote 1.</b> Apple y Google, como en la app. «Equipo compartido» acorta la sesión y la borra al cerrar el navegador.</div>
+    </div>
+    <div class="step">
+      <div class="scr y"><div class="mbar"><span class="lockico"></span> <b>app.yala-app.pe</b></div><div class="in">
+        <h6>Tu Yala vive en iCloud</h6><p>Yala web solo abre cuentas en la nube de Yala. Tus datos siguen en tu iCloud y no se mueven sin que lo pidas.</p>
+        <div class="note-y"><b>Para usarla:</b> en tu iPhone, Ajustes › Almacenamiento › Activar la nube. Tus registros se copian y vuelves aquí.</div>
+        <div class="sso">Ya la activé, volver a intentar</div>
+        <div class="note-y">¿Solo usas Grupos? Desde el lote 3 los ves aquí.</div>
+      </div></div>
+      <div class="cap"><b>2 · Quien no usa la nube.</b> Se le explica por qué no entra y cómo activarla. No se crea una cuenta vacía por error.</div>
+    </div>
+    <div class="step">
+      <div class="scr y"><div class="mbar"><span class="lockico"></span> <b>app.yala-app.pe/vincular</b></div><div class="in">
+        <h6>Abre Yala con tu iPhone</h6><p>En tu iPhone: Ajustes › Tu cuenta de Yala › Vincular un navegador, y apunta la cámara aquí.</p>
+        <div class="qr" id="qr" aria-hidden="true"></div>
+        <div class="code">K7Q-4MD</div>
+        <p class="fade">El código cambia cada 60 segundos.</p>
+      </div></div>
+      <div class="cap"><b>3 · Vincular con el iPhone · lote 2.</b> Para quien no recuerda con qué cuenta entró o no quiere escribir nada en un ordenador ajeno. El iPhone confirma con Face ID.</div>
+    </div>
+    <div class="step">
+      <div class="scr y"><div class="mbar">iPhone · Yala › Ajustes</div><div class="in">
+        <h6>Navegadores conectados</h6>
+        <div class="cd" style="padding:4px 12px">
+          <div class="dev"><div class="t"><b>Chrome en Mac</b><span>Lima · ahora</span></div><button class="danger" type="button" tabindex="-1">Cerrar</button></div>
+          <div class="dev"><div class="t"><b>Edge en Windows</b><span>Arequipa · hace 3 días · equipo compartido</span></div><button class="danger" type="button" tabindex="-1">Cerrar</button></div>
+        </div>
+        <div class="sso red">Cerrar todas las sesiones web</div>
+        <p class="fade">Al cerrar, esa pestaña se vacía en menos de un minuto.</p>
+      </div></div>
+      <div class="cap"><b>4 · Cerrar a distancia · lote 1.</b> La misma lista sale en la web, en Configurar. Es la parte del lote 1 que pide un cambio en la app de iOS (decisión D5).</div>
+    </div>
+  </div>
+
+  <h3 class="s">Seguridad y privacidad</h3>
+  <div class="facts">
+    <div class="fact"><h4>Cifrado <span class="tag">medido</span></h4><p>Hoy Yala no cifra de extremo a extremo, y la política lo dice. Todo viaja por HTTPS, y Grupos guarda nombres e importes cifrados con una llave que solo tiene el servidor. La web no cambia nada de eso ni necesita llaves nuevas.</p></div>
+    <div class="fact"><h4>La sesión no toca la página</h4><p>El navegador guarda una cookie que la página no puede leer. La sesión de la nube queda cifrada en el servidor de la web, como hace hoy el conector de Claude, y nunca llega al navegador.</p></div>
+    <div class="fact"><h4>Sin App Attest, otra defensa</h4><p>Un navegador no puede demostrar que es Yala como lo hace el iPhone. Lo sustituyen la verificación anti-bots al entrar, límites por cuenta (lecturas por minuto, borradores por día) y una lista cerrada de lo que la web puede pedir.</p></div>
+    <div class="fact"><h4>Cuánto dura una sesión</h4><p>30 días desde el último uso en un equipo propio. En uno compartido, hasta cerrar el navegador o 30 minutos sin uso. Borrar la cuenta o cerrar sesión en el iPhone cierra también las sesiones web.</p></div>
+    <div class="fact"><h4>Privacidad en pantalla</h4><p>El ojo oculta los montos, como en el Panel de la app. Ningún monto va en la dirección ni en el título de la pestaña, y las páginas no se guardan en la caché del navegador.</p></div>
+    <div class="fact"><h4>La política de privacidad</h4><p>Hay que añadir la web: qué guarda (la sesión, el navegador y la ciudad aproximada para la lista de sesiones) y cuánto tiempo. Puede ir junto a la card de la política del correo del banco.</p></div>
+  </div>
+</section>
+
+<section class="band" id="tecnica">
+  <h2><span class="k">3 · Propuesta técnica</span>Dónde vive, con qué se hace y cómo habla con la nube</h2>
+  <p class="sub">Primero, lo que medí hoy en la rama 2.3. Cada opción de abajo parte de esto.</p>
+  <div class="facts">
+    <div class="fact"><h4>La sincronización pasa por el gateway <span class="tag">medido</span></h4><p>El iPhone sube y baja cambios por el Worker del gateway: gana el último cambio por grupo de campos, y App Attest va delante. Son 16 tablas; el movimiento se llama <code>tx_items</code>.</p></div>
+    <div class="fact"><h4>El conector de Claude ya lee <span class="tag">medido</span></h4><p>Con un rol de Supabase que solo puede leer las filas del usuario, y ocho cálculos portados de Swift a TypeScript: saldos, divisas, presupuestos, resumen, Grupos y comercios.</p></div>
+    <div class="fact"><h4>Los borradores tienen una cola <span class="tag">medido</span></h4><p>Los del correo del banco esperan en una cola del gateway; el iPhone los recoge, los pasa a su Bandeja y confirma. El conector de Claude todavía no escribe borradores.</p></div>
+    <div class="fact"><h4>Pro ya es de la cuenta <span class="tag">medido</span></h4><p>El gateway guarda el derecho Pro por cuenta, no por aparato, con los avisos de Apple. La web puede saber si alguien es Pro sin StoreKit.</p></div>
+    <div class="fact"><h4>Grupos ya es del servidor <span class="tag">medido</span></h4><p>Grupos sincroniza por sus propias rutas del gateway, y el servidor cifra y descifra. Un tercer aparato no necesita nada más para leer o escribir.</p></div>
+    <div class="fact"><h4>Lo que no existe <span class="tag">medido</span></h4><p>No hay lista de sesiones ni forma de cerrar otra sesión a distancia: la app solo cierra la suya. Eso se construye en el lote 1.</p></div>
+  </div>
+
+  <h3 class="s">Cómo encaja (opción recomendada)</h3>
+  <div class="archwrap"><div class="arch">
+    <div class="node"><b>Navegador</b><span>La página de Yala web. Solo pinta: no guarda la sesión ni calcula saldos.</span></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="node hl new"><b>app.yala-app.pe</b><span>Un Worker nuevo, «yala-web»: sirve la página y hace de servidor de la web. Guarda la sesión cifrada y solo pide lo que su lista cerrada permite.</span></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="stack">
+      <div class="node"><b>Supabase · lectura</b><span>Con un rol de solo lectura, como el conector. Lotes 1 y 2.</span></div>
+      <div class="node"><b>Gateway · cola de borradores</b><span>La misma que el correo y los conectores de IA. El iPhone la recoge.</span></div>
+      <div class="node new"><b>Gateway · Grupos y sincronización</b><span>Grupos en el lote 3; la sincronización completa en el lote 4.</span></div>
+    </div>
+  </div></div>
+
+  <h3 class="s">Dónde vive</h3>
+  <div class="opts">
+    <div class="opt best"><h4><span class="code2">V1</span> app.yala-app.pe en Cloudflare <span class="tag acc">recomendada</span></h4><p>Un Worker propio, junto al gateway, el conector y el panel. Se despliega desde 2.3 sin tocar la web pública.</p>
+      <div class="pc"><div class="p"><h5>A favor</h5><ul><li>Mismo proveedor que todo el backend</li><li>Página y servidor en el mismo dominio: cookies propias y sin CORS</li></ul></div><div class="c"><h5>En contra</h5><ul><li>Un despliegue más que vigilar</li></ul></div></div></div>
+    <div class="opt"><h4><span class="code2">V2</span> app.yala-app.pe en Vercel</h4><p>Otro proyecto de Vercel, como la web pública.</p>
+      <div class="pc"><div class="p"><h5>A favor</h5><ul><li>Vistas previas por PR</li></ul></div><div class="c"><h5>En contra</h5><ul><li>El servidor de la web en otro proveedor que el gateway</li><li>Más saltos entre Vercel y Cloudflare</li></ul></div></div></div>
+    <div class="opt"><h4><span class="code2">V3</span> yala-app.pe/app, dentro de <code>Web/</code></h4><p>Una ruta más del sitio de marketing.</p>
+      <div class="pc"><div class="p"><h5>A favor</h5><ul><li>Un solo dominio para todo</li></ul></div><div class="c"><h5>En contra</h5><ul><li>Es la carpeta de Lola</li><li>Se publica desde la rama 1.0: la app iría al ritmo de los hotfix</li></ul></div></div></div>
+  </div>
+
+  <h3 class="s">Con qué se hace</h3>
+  <div class="opts">
+    <div class="opt best"><h4><span class="code2">S1</span> React y TypeScript, servidos por el Worker <span class="tag acc">recomendada</span></h4><p>Una app de una sola página hecha con Vite, y un servidor pequeño en el mismo Worker.</p>
+      <div class="pc"><div class="p"><h5>A favor</h5><ul><li>TypeScript, como el gateway y el conector: usa sus cálculos tal cual</li><li>Instalable como app (lote 5) sin rehacerla</li></ul></div><div class="c"><h5>En contra</h5><ul><li>El sistema de diseño de iOS se pasa a la web a mano</li></ul></div></div></div>
+    <div class="opt"><h4><span class="code2">S2</span> Astro, como la web pública</h4><p>Páginas del servidor con islas interactivas.</p>
+      <div class="pc"><div class="p"><h5>A favor</h5><ul><li>Lola ya lo conoce</li></ul></div><div class="c"><h5>En contra</h5><ul><li>Pensado para sitios, no para una app con estado y formularios</li></ul></div></div></div>
+    <div class="opt"><h4><span class="code2">S3</span> Next.js con servidor</h4><p>Lo más común en apps web grandes.</p>
+      <div class="pc"><div class="p"><h5>A favor</h5><ul><li>Mucha documentación</li></ul></div><div class="c"><h5>En contra</h5><ul><li>Encaja mejor en Vercel (V2)</li><li>Más piezas de las que la web necesita</li></ul></div></div></div>
+  </div>
+
+  <h3 class="s">Cómo lee y escribe sin romper la sincronización</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Qué hace la web</th><th>Lote</th><th>Por dónde</th><th>Por qué no rompe nada</th></tr></thead>
+    <tbody>
+      <tr><td>Ver saldos, registros, presupuestos, pagos y estadísticas</td><td><span class="tag acc">L1–L2</span></td><td>Servidor de la web → Supabase, con un rol que solo lee</td><td>No escribe: el rol no tiene permiso, como el del conector de Claude.</td></tr>
+      <tr><td>Apuntar un gasto</td><td><span class="tag acc">L1</span></td><td>Cola de borradores del gateway → el iPhone lo pasa a su Bandeja</td><td>Quien escribe en la sincronización sigue siendo el iPhone, como con el correo del banco.</td></tr>
+      <tr><td>Gastos y saldos de Grupos</td><td><span class="tag">L3</span></td><td>Las rutas de Grupos del gateway</td><td>Grupos ya admite varios aparatos por persona y lo arbitra el servidor.</td></tr>
+      <tr><td>Registrar, editar, borrar y aprobar la Bandeja</td><td><span class="tag">L4</span></td><td>La sincronización del gateway, como un aparato más</td><td>Mismo reloj por campo, mismas tablas y mismas reglas, después de cerrar la nube (salida de 2.5).</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 class="s">Cómo comparte las reglas de negocio con la app</h3>
+  <div class="opts">
+    <div class="opt best"><h4><span class="code2">R1</span> Un núcleo de TypeScript compartido, con pruebas de paridad <span class="tag acc">recomendada</span></h4><p>Los cálculos que hoy viven en el conector pasan a un paquete que usan el conector, el gateway y la web. Los tests de Swift exportan casos con su resultado, y los de TypeScript los comprueban.</p>
+      <div class="pc"><div class="p"><h5>A favor</h5><ul><li>Ocho cálculos ya están portados</li><li>Si Swift cambia un cálculo y TypeScript no, se pone rojo un test</li></ul></div><div class="c"><h5>En contra</h5><ul><li>Cada cálculo nuevo se escribe dos veces</li></ul></div></div></div>
+    <div class="opt"><h4><span class="code2">R2</span> Portar dentro de la web, sin compartir</h4><p>La web lleva sus propias copias.</p>
+      <div class="pc"><div class="p"><h5>A favor</h5><ul><li>Rápido al principio</li></ul></div><div class="c"><h5>En contra</h5><ul><li>Tres copias del saldo (iPhone, conector, web) que acaban dando cifras distintas</li></ul></div></div></div>
+    <div class="opt"><h4><span class="code2">R3</span> Compilar Swift a WebAssembly</h4><p>El código de la app, corriendo en el navegador.</p>
+      <div class="pc"><div class="p"><h5>A favor</h5><ul><li>Una sola fuente de verdad</li></ul></div><div class="c"><h5>En contra</h5><ul><li>Los cálculos dependen de SwiftData y Foundation</li><li>Herramienta poco madura y descarga pesada</li></ul></div></div></div>
+  </div>
+  <p class="why"><b>Por qué esta combinación.</b> V1 + S1 + R1 reutiliza lo que ya funciona para el conector de Claude: el mismo proveedor, el mismo lenguaje, la misma forma de guardar la sesión y los mismos cálculos. Y la web solo escribe en la sincronización cuando la nube esté cerrada, como pide el roadmap.</p>
+</section>
+
+<section class="band" id="lotes">
+  <h2><span class="k">4 · Plan de lotes</span>De mirar y apuntar a la app completa</h2>
+  <p class="sub">Cada lote se puede usar solo. La versión de cada uno es la propuesta (decisión D10). El riesgo va de uno a tres cuadros.</p>
+  <div class="lotes">
+    <div class="lote"><div class="n">Lote 0<small>2.3 · sin pantalla</small></div><div>
+      <h4>Cimientos <span class="risk r1" role="img" aria-label="Riesgo bajo"><i></i><i></i><i></i></span></h4>
+      <div class="cols">
+        <div><h5>Alcance</h5><ul><li>Dominio y Worker «yala-web» en staging</li><li>Entrar con Apple y Google (necesita tus dos altas en consola)</li><li>Sesión cifrada en el servidor y defensa anti-bots</li><li>El núcleo compartido sale del conector, con sus pruebas de paridad</li></ul></div>
+        <div><h5>Riesgo</h5><ul><li>Supabase tiene una sola «Site URL» y en staging apunta al conector: añadir la web sin romper su inicio de sesión</li></ul></div>
+        <div><h5>Pruebas</h5><ul><li>Las del núcleo, en el CI</li><li>Entrar y salir en staging con los usuarios de prueba A y B</li><li>Una sonda que intenta escribir con el rol de la web y debe fallar</li></ul></div>
+      </div></div></div>
+    <div class="lote first"><div class="n">Lote 1<small>2.3 · la beta</small></div><div>
+      <h4>Mirar y apuntar <span class="risk r2" role="img" aria-label="Riesgo medio"><i></i><i></i><i></i></span></h4>
+      <div class="cols">
+        <div><h5>Alcance</h5><ul><li>Panel: saldo, cuentas, entradas y salidas, últimos registros</li><li>Registros: lista por días, buscar, filtrar, detalle</li><li>Bandeja: ver lo pendiente</li><li>Apuntar un gasto que llega a la Bandeja del iPhone</li><li>Configurar: cuenta, sesiones, ocultar montos, tema</li><li>En el iPhone: «Navegadores conectados»</li><li>Español e inglés</li></ul></div>
+        <div><h5>Riesgo</h5><ul><li>Que un saldo no cuadre con el iPhone</li><li>La lista de sesiones pide un build de iOS</li><li>La cola de borradores pasa a ser común a web, correo y conectores</li></ul></div>
+        <div><h5>Pruebas</h5><ul><li>Mismo saldo que el iPhone en las cuentas A y B, también en dólares</li><li>Playwright contra staging: entrar, mirar, apuntar, salir</li><li>En el iPhone 14: el gasto llega a la Bandeja y la sesión se cierra a distancia</li></ul></div>
+      </div></div></div>
+    <div class="lote"><div class="n">Lote 2<small>2.4</small></div><div>
+      <h4>Ver todo <span class="risk r1" role="img" aria-label="Riesgo bajo"><i></i><i></i><i></i></span></h4>
+      <div class="cols">
+        <div><h5>Alcance</h5><ul><li>Presupuestos y pagos planificados</li><li>Estadísticas: resumen, distribución y tendencias</li><li>Grupos en lectura</li><li>Buscar en todo (⌘K) y exportar a CSV</li><li>Vincular con el iPhone por código QR</li><li>Los 16 idiomas de la app</li></ul></div>
+        <div><h5>Riesgo</h5><ul><li>Portar más cálculos con paridad (distribución, tendencias)</li></ul></div>
+        <div><h5>Pruebas</h5><ul><li>Paridad de cada cálculo nuevo contra los casos de Swift</li><li>Capturas de las mismas cifras en la web y en el iPhone</li></ul></div>
+      </div></div></div>
+    <div class="lote"><div class="n">Lote 3<small>2.5</small></div><div>
+      <h4>Grupos desde la web <span class="risk r2" role="img" aria-label="Riesgo medio"><i></i><i></i><i></i></span></h4>
+      <div class="cols">
+        <div><h5>Alcance</h5><ul><li>Añadir gastos de grupo, saldar e invitar</li><li>Las cuentas «solo Grupos» pueden entrar</li><li>Editar o descartar un borrador que el iPhone aún no recogió</li></ul></div>
+        <div><h5>Riesgo</h5><ul><li>Primer lote que escribe datos compartidos</li><li>Las rutas de Grupos piden App Attest: hace falta una puerta para la web</li></ul></div>
+        <div><h5>Pruebas</h5><ul><li>Los escenarios de Grupos con la web como tercer aparato</li><li>Un gasto hecho en la web llega a los iPhones del grupo</li></ul></div>
+      </div></div></div>
+    <div class="lote"><div class="n">Lote 4<small>3.0</small></div><div>
+      <h4>Un aparato más <span class="risk r3" role="img" aria-label="Riesgo alto"><i></i><i></i><i></i></span></h4>
+      <div class="cols">
+        <div><h5>Alcance</h5><ul><li>Registrar, editar y borrar de verdad</li><li>Aprobar la Bandeja desde la web</li><li>Cuentas, categorías, presupuestos y pagos</li><li>Sin conexión: los cambios esperan y suben al volver</li></ul></div>
+        <div><h5>Riesgo</h5><ul><li>Un cliente de sincronización nuevo puede duplicar o perder datos</li><li>Solo después de cerrar la nube (salida de 2.5)</li></ul></div>
+        <div><h5>Pruebas</h5><ul><li>La auditoría de escenarios de la nube con la web como tercer aparato</li><li>Ediciones a la vez en la web y el iPhone, y la web sin conexión</li><li>QA con dos aparatos de Jürgen</li></ul></div>
+      </div></div></div>
+    <div class="lote"><div class="n">Lote 5<small>3.0</small></div><div>
+      <h4>Completa <span class="risk r2" role="img" aria-label="Riesgo medio"><i></i><i></i><i></i></span></h4>
+      <div class="cols">
+        <div><h5>Alcance</h5><ul><li>Pagar Pro en la web, en soles, válido también en el iPhone</li><li>Yala IA en la web</li><li>Importar y Configurar completo</li><li>Instalable como app, también en Android</li><li>Incrustable en Claude (tu decisión del 10-nov)</li></ul></div>
+        <div><h5>Riesgo</h5><ul><li>El procesador de pagos y las reglas de Apple sobre cobrar fuera de la App Store</li></ul></div>
+        <div><h5>Pruebas</h5><ul><li>Pagar en la web y ver Pro en el iPhone</li><li>Instalar en un Android y usarla sin conexión</li></ul></div>
+      </div></div></div>
+  </div>
+
+  <h3 class="s">Qué trae cada lote, sección por sección</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Sección</th><th>Lote 1</th><th>Lote 2</th><th>Lote 3</th><th>Lotes 4 y 5</th></tr></thead>
+    <tbody id="matrix"></tbody>
+  </table></div>
+</section>
+
+<section class="band" id="decisiones">
+  <h2><span class="k">5 · Decisiones</span>Lo que decides tú</h2>
+  <p class="sub">Toca una opción para elegirla; se guarda sola. Lo que quede sin respuesta se toma con la recomendada. Con tus respuestas se escribe el encargo del lote 0.</p>
+  <div id="decs"></div>
+  <div class="savebar" id="savebar" role="status">Cargando el registro de decisiones…</div>
+</section>
+
+<footer>Definición y maqueta para la card «Yala web: definir y maquetar la app web como un dispositivo más en modo nube». Lo marcado como «medido» se comprobó en la rama 2.3 el 12-nov-2026. No se tocó código de la app, de la web pública ni de los servidores.</footer>
+</div>
+
+<script>
+const IC={
+ panel:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>',
+ bandeja:'<svg viewBox="0 0 24 24"><path d="M3 13h5l2 3h4l2-3h5"/><path d="M5 5h14l2 8v6H3v-6z"/></svg>',
+ registros:'<svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>',
+ presupuestos:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6 5"/></svg>',
+ pagos:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+ estadisticas:'<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+ grupos:'<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14.5c2.3 0 4 1.4 4.5 4"/></svg>',
+ ia:'<svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7 4.7 1.8-4.7 1.8L12 16l-1.8-4.7-4.7-1.8 4.7-1.8z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>',
+ configurar:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>',
+ mas:'<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>',
+ plus:'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+ eye:'<svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>'
+};
+const SECTIONS=[
+ {id:"panel",name:"Panel",lote:1,ic:"panel"},
+ {id:"bandeja",name:"Bandeja",lote:1,ic:"bandeja"},
+ {id:"registros",name:"Registros",lote:1,ic:"registros"},
+ {id:"presupuestos",name:"Presupuestos",lote:2,ic:"presupuestos",group:"Planificación"},
+ {id:"pagos",name:"Pagos planificados",lote:2,ic:"pagos",group:"Planificación"},
+ {id:"estadisticas",name:"Estadísticas",lote:2,ic:"estadisticas"},
+ {id:"grupos",name:"Grupos",lote:2,ic:"grupos"},
+ {id:"ia",name:"Yala IA",lote:5,ic:"ia"},
+ {id:"configurar",name:"Configurar",lote:1,ic:"configurar"}
+];
+const SOON={
+ presupuestos:"Llega en el lote 2. Mientras tanto, el Panel enseña lo gastado del mes.",
+ pagos:"Llega en el lote 2, con los próximos cobros y las suscripciones detectadas.",
+ estadisticas:"Llega en el lote 2: resumen, distribución y tendencias, con las mismas cifras que el iPhone.",
+ grupos:"Llega en el lote 2 para mirar y en el lote 3 para añadir gastos y saldar.",
+ ia:"Llega en el lote 5. Es Pro, como en el iPhone."
+};
+const ACCS=[["BCP Ahorros","S/ 5.230,10","#1f4fbf"],["Interbank Visa","−S/ 1.240,00","#0a7a55"],["BBVA dólares","$ 1.020,00","#0b3d91"],["Yape","S/ 312,40","#6e2bd9"],["Efectivo","S/ 118,00","#5f5f6c"]];
+const CAT={Comida:["C","#d97706"],Transporte:["T","#0891b2"],Supermercado:["S","#6063f1"],Suscripciones:["N","#db2777"],Servicios:["L","#64748b"],Ingreso:["$","#0f7a80"],Ocio:["O","#e11d48"],Salud:["F","#15803d"]};
+let RECS=[
+ {d:"Hoy",n:"Tambo+",c:"Comida",a:"Yape",v:"S/ 12,90"},
+ {d:"Hoy",n:"Uber",c:"Transporte",a:"Interbank Visa",v:"S/ 18,40"},
+ {d:"Ayer",n:"Wong",c:"Supermercado",a:"Interbank Visa",v:"S/ 186,30"},
+ {d:"Ayer",n:"Netflix",c:"Suscripciones",a:"Interbank Visa",v:"S/ 44,90"},
+ {d:"Lunes 10",n:"Sueldo",c:"Ingreso",a:"BCP Ahorros",v:"+S/ 6.800,00",inc:true},
+ {d:"Lunes 10",n:"Luz del Sur",c:"Servicios",a:"BCP Ahorros",v:"S/ 132,00"},
+ {d:"Domingo 9",n:"Cineplanet",c:"Ocio",a:"Interbank Visa",v:"S/ 38,00"},
+ {d:"Domingo 9",n:"Rappi",c:"Comida",a:"Yape",v:"S/ 52,00"},
+ {d:"Sábado 8",n:"Inkafarma",c:"Salud",a:"Efectivo",v:"S/ 27,50"}
+];
+let DRAFTS=[
+ {n:"Tambo+",c:"Comida",v:"S/ 8,50",s:"Apple Pay",w:"hace 20 min"},
+ {n:"Plaza Vea",c:"Supermercado",v:"S/ 64,00",s:"Correo del banco",w:"hace 2 h"},
+ {n:"Taxi al aeropuerto",c:"Transporte",v:"S/ 45,00",s:"Claude",w:"ayer"}
+];
+const BUD=[["Comida",640,800],["Supermercado",420,600],["Transporte",210,300],["Ocio",180,150]];
+const PAYS=[["Netflix","18 nov","S/ 44,90","N","#db2777"],["Spotify","20 nov","S/ 20,90","S","#15803d"],["Alquiler","1 dic","S/ 1.500,00","A","#6063f1"],["Claro hogar","5 dic","S/ 69,90","C","#b91c1c"]];
+const GRPS=[["Viaje a Cusco","4 personas · 23 gastos","Te deben S/ 120,00","owed"],["Depa Miraflores","3 personas · 41 gastos","Debes S/ 45,50","owe"],["Cumple de Ana","6 personas · 5 gastos","Todo saldado",""]];
+
+let st={device:"desk",scope:"l1",sec:"panel",hide:false,modal:false,toast:"",more:false};
+const stage=document.getElementById("stage");
+const L1=()=>st.scope==="l1";
+function catIc(c){const k=CAT[c]||["·","#777"];return `<span class="ic" style="background:${k[1]}">${k[0]}</span>`}
+function recRow(r){return `<div class="row">${catIc(r.c)}<div class="t"><b>${r.n}</b><span>${r.c} · ${r.a}</span></div><span class="amt${r.inc?" in":""}">${r.v}</span></div>`}
+function grouped(list){let out="",last="";for(const r of list){if(r.d!==last){out+=`<div class="day">${r.d}</div>`;last=r.d}out+=recRow(r)}return out}
+
+function scrPanel(mob){
+ const accs=ACCS.map(a=>`<div class="ac" style="background:${a[2]}"><span>${a[0]}</span><b>${a[1]}</b></div>`).join("");
+ return `<div class="cd hero-y"><span class="cap">Saldo total</span><span class="big">S/ 8.245,50</span>
+  <div class="inout"><span>Entradas <b class="amt in">S/ 6.800,00</b></span><span>Salidas <b>S/ 4.312,60</b></span></div></div>
+ <div class="accs">${accs}</div>
+ <div class="grid2">
+  <div class="cd"><h6>Entradas y salidas <small>últimos 6 meses</small></h6>
+   <div class="bars">${[[60,48],[62,55],[64,70],[61,52],[66,58],[68,43]].map(p=>`<div><i style="height:${p[0]}%"></i><i class="o" style="height:${p[1]}%"></i></div>`).join("")}</div>
+   <div class="lbls"><span>jun</span><span>jul</span><span>ago</span><span>set</span><span>oct</span><span>nov</span></div></div>
+  <div class="cd"><h6>Últimos registros <small>Ver todos</small></h6>${RECS.slice(0,4).map(recRow).join("")}</div>
+  <div class="cd"><h6>Presupuestos del mes</h6>${BUD.slice(0,3).map(b=>`<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:12px"><span>${b[0]}</span><span class="amt" style="font-size:12px">S/ ${b[1]} de ${b[2]}</span></div><div class="bar"><i style="width:${Math.min(100,b[1]/b[2]*100)}%"></i></div></div>`).join("")}</div>
+  <div class="cd"><h6>Próximos pagos</h6>${PAYS.slice(0,3).map(p=>`<div class="row"><span class="ic" style="background:${p[4]}">${p[3]}</span><div class="t"><b>${p[0]}</b><span>${p[1]}</span></div><span class="amt">${p[2]}</span></div>`).join("")}</div>
+ </div>`;
+}
+function scrBandeja(){
+ const rows=DRAFTS.map((d,i)=>`<div class="row" style="flex-wrap:wrap">${catIc(d.c)}<div class="t"><b>${d.n}</b><span>${d.c} · ${d.w}</span></div><span class="src">${d.s}</span><span class="amt">${d.v}</span>
+  ${L1()?"":`<div class="btns"><button class="bt" type="button" data-act="ok" data-i="${i}">Aprobar</button><button class="bt sec" type="button" data-act="no" data-i="${i}">Descartar</button></div>`}</div>`).join("");
+ return `${L1()?`<div class="note-y">En la beta la Bandeja se ve aquí y se aprueba en tu iPhone. Lo que apuntas en la web llega con la etiqueta «Yala web».</div>`:`<div class="note-y">Desde el lote 4 apruebas o descartas aquí, y el iPhone lo ve al momento.</div>`}
+ <div class="cd"><h6>${DRAFTS.length?DRAFTS.length+" por revisar":"Todo revisado"}</h6>${rows||'<div class="note-y">No queda nada por revisar.</div>'}</div>`;
+}
+function scrRegistros(){
+ return `<div class="chips"><span class="chip on">Este mes</span><span class="chip">Todas las cuentas</span><span class="chip">Categoría</span><span class="chip">Etiquetas</span></div>
+ <div class="cd"><div class="inout" style="margin:0 0 4px"><span>Salidas del mes <b>S/ 4.312,60</b></span><span>${RECS.length} registros</span></div>${grouped(RECS)}</div>
+ ${L1()?`<div class="note-y">En la beta los registros se miran. Para cambiar uno, ábrelo en tu iPhone: editar desde aquí llega en el lote 4.</div>`:""}`;
+}
+function scrPresupuestos(){
+ return `<div class="cd">${BUD.map((b,i)=>{const over=b[1]>b[2];return `<div style="padding:10px 0;${i?"border-top:1px solid var(--y-line)":""}"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span style="display:flex;align-items:center;gap:8px">${catIc(b[0])}<b>${b[0]}</b></span><span class="amt">S/ ${b[1]} <span style="color:var(--y-ink2);font-weight:500">de S/ ${b[2]}</span></span></div><div class="bar"><i class="${over?"over":""}" style="width:${Math.min(100,b[1]/b[2]*100)}%"></i></div><div style="font-size:11px;color:var(--y-ink2);margin-top:4px">${over?"Te pasaste S/ "+(b[1]-b[2]):"Quedan S/ "+(b[2]-b[1])+" · 18 días"}</div></div>`}).join("")}</div>`;
+}
+function scrPagos(){
+ return `<div class="cd hero-y"><span class="cap">Por pagar hasta fin de mes</span><span class="big">S/ 65,80</span></div>
+ <div class="cd"><h6>Próximos</h6>${PAYS.map(p=>`<div class="row"><span class="ic" style="background:${p[4]}">${p[3]}</span><div class="t"><b>${p[0]}</b><span>${p[1]} · mensual</span></div><span class="amt">${p[2]}</span></div>`).join("")}</div>`;
+}
+function scrEstadisticas(mob){
+ const leg=[["Comida","28 %","#6063f1"],["Supermercado","22 %","#ff0080"],["Servicios","15 %","#00c2cb"],["Transporte","12 %","#f59e0b"],["Ocio","9 %","#fb7185"],["Otros","14 %","#a3a3b5"]];
+ return `<div class="chips"><span class="chip">Resumen</span><span class="chip on">Distribución</span><span class="chip">Tendencias</span><span class="chip">Registros</span></div>
+ <div class="cd hero-y"><span class="cap">Gastado en noviembre</span><span class="big">S/ 4.312,60</span></div>
+ <div class="cd" style="display:flex;gap:18px;align-items:center;${mob?"flex-direction:column;align-items:stretch":""}"><div class="donut" style="${mob?"margin:0 auto":""}"></div><div class="leg">${leg.map(l=>`<div><i style="background:${l[2]}"></i>${l[0]}<b>${l[1]}</b></div>`).join("")}</div></div>`;
+}
+function scrGrupos(){
+ return `<div class="cd hero-y"><span class="cap">En tus grupos</span><span class="big amt owed" style="font-size:28px">Te deben S/ 74,50</span></div>
+ ${GRPS.map(g=>`<div class="cd"><div class="row" style="border:0;padding:0"><span class="ic" style="background:#6063f1">${g[0][0]}</span><div class="t"><b>${g[0]}</b><span>${g[1]}</span></div><span class="amt ${g[3]}">${g[2]}</span></div>${L1()?"":`<div class="btns" style="margin-top:10px"><button class="bt" type="button" tabindex="-1">Añadir gasto</button><button class="bt sec" type="button" tabindex="-1">Saldar</button></div>`}</div>`).join("")}`;
+}
+function scrIA(){
+ return `<div class="cd chat"><div class="msg me">¿Cuánto llevo en comida este mes y voy bien?</div>
+ <div class="msg ai">Llevas <b class="amt">S/ 640,00</b> en comida, el 80 % de tu presupuesto, con 18 días por delante. A este ritmo cerrarías en S/ 1.070. Rappi suma S/ 210 en cuatro pedidos.</div>
+ <div class="msg me">Apunta 25 de almuerzo con Yape</div>
+ <div class="msg ai">Listo: «Almuerzo · S/ 25,00 · Yape», en tu Bandeja para confirmar.</div></div>`;
+}
+function scrConfigurar(){
+ return `<div class="cd"><h6>Tu cuenta de Yala</h6><div class="kv"><span>Entraste con</span><span>Apple · c•••@icloud.com</span></div><div class="kv"><span>Plan</span><span>${L1()?"Pro · se gestiona en el iPhone":"Pro · renueva el 3 de diciembre"}</span></div><div class="kv"><span>Datos</span><span>En la nube de Yala</span></div></div>
+ <div class="cd"><h6>Sesiones</h6>
+  <div class="dev"><div class="t"><b>Este navegador · Chrome en Mac</b><span>Lima · ahora</span></div></div>
+  <div class="dev"><div class="t"><b>Edge en Windows</b><span>Arequipa · hace 3 días · equipo compartido</span></div><button class="danger" type="button" tabindex="-1">Cerrar</button></div>
+  <div class="dev"><div class="t"><b>iPhone 14 · app de Yala</b><span>Ahora · se cierra desde el iPhone</span></div></div>
+  <div class="kv"><span></span><button class="danger" type="button" tabindex="-1">Cerrar las demás sesiones web</button></div></div>
+ <div class="cd"><h6>En esta web</h6><div class="kv"><span>Ocultar montos al abrir</span><span class="sw off"></span></div><div class="kv"><span>Tema</span><span>Como el sistema</span></div><div class="kv"><span>Idioma</span><span>Español</span></div>
+ ${L1()?`<div class="kv"><span style="color:var(--y-ink2)">Categorías, cuentas, divisas, avisos y Pro se cambian en el iPhone hasta el lote 5.</span><span></span></div>`:`<div class="kv"><span>Categorías, cuentas y divisas</span><span>›</span></div><div class="kv"><span>Yala Pro</span><span>Pagar en soles ›</span></div>`}</div>`;
+}
+const SCR={panel:scrPanel,bandeja:scrBandeja,registros:scrRegistros,presupuestos:scrPresupuestos,pagos:scrPagos,estadisticas:scrEstadisticas,grupos:scrGrupos,ia:scrIA,configurar:scrConfigurar};
+const secById=id=>SECTIONS.find(s=>s.id===id);
+const locked=s=>L1()&&s.lote>1;
+
+function modalHTML(){
+ return `<div class="modal"><div class="sheet-y" role="dialog" aria-label="${L1()?"Apuntar un gasto":"Nuevo registro"}">
+  <h6>${L1()?"Apuntar un gasto":"Nuevo registro"} <button class="bt sec" type="button" id="m-close">Cancelar</button></h6>
+  <div class="amt-in">S/ 25,00</div>
+  <div class="fld"><span>Descripción</span><span>Almuerzo</span></div>
+  <div class="fld"><span>Categoría</span><span>Comida</span></div>
+  <div class="fld"><span>Cuenta</span><span>Yape</span></div>
+  <div class="fld"><span>Fecha</span><span>Hoy</span></div>
+  ${L1()?`<div class="note-y">Va a la Bandeja de tu iPhone. Ahí lo confirmas con un toque y entra en tus saldos.</div>`:""}
+  <button class="bt" type="button" id="m-send" style="padding:10px">${L1()?"Enviar a la Bandeja":"Guardar"}</button></div></div>`;
+}
+
+function render(){
+ const mob=st.device==="mob";
+ const s=secById(st.sec)||SECTIONS[0];
+ const body=SCR[s.id](mob);
+ const soon=locked(s)?`<div class="soon"><div><b>${s.name} · lote ${s.lote}</b><span>${SOON[s.id]||""}</span></div></div>`:"";
+ const toast=st.toast?`<div class="toast-y" role="status">${st.toast}</div>`:"";
+ const modal=st.modal?modalHTML():"";
+ const addLabel=L1()?"Apuntar":"Nuevo registro";
+ const badge=DRAFTS.length?`<span class="badge">${DRAFTS.length}</span>`:"";
+ if(!mob){
+  let nav="",lastGroup="";
+  for(const x of SECTIONS){
+   if(x.group&&x.group!==lastGroup){nav+=`<div class="navh">${x.group}</div>`;lastGroup=x.group}
+   nav+=`<button type="button" class="nv${x.group?" sub":""}${locked(x)?" later":""}" data-sec="${x.id}" ${x.id===s.id?'aria-current="page"':""}>${x.group?"":IC[x.ic]}<span class="sp">${x.name}</span>${x.id==="bandeja"?badge:""}${locked(x)?`<span class="lk">L${x.lote}</span>`:""}</button>`;
+  }
+  stage.className="stage";
+  stage.innerHTML=`<div class="browser y${st.hide?" hideamt":""}"><div class="chrome"><span class="dots"><i></i><i></i><i></i></span><span class="url"><span class="lockico"></span><b>app.yala-app.pe</b>/${s.id}</span></div>
+   <div class="desk"><aside class="side"><div class="brand"><i></i>Yala</div>${nav}<div class="sidefoot">${L1()?"Beta · lote 1":"Completa · 3.0"} · datos de ejemplo</div></aside>
+   <div class="main"><div class="topbar"><h5>${s.name}</h5>${["panel","registros","estadisticas"].includes(s.id)?'<span class="pp">Este mes ▾</span>':""}<span class="search">Buscar<kbd>⌘K</kbd></span>
+   <button class="ib" type="button" id="m-eye" aria-pressed="${st.hide}" aria-label="Ocultar montos">${IC.eye}</button><button class="add" type="button" id="m-add">+ ${addLabel}</button></div>
+   <div class="content">${body}</div>${soon}${modal}${toast}</div></div></div>`;
+ }else{
+  const tabs=[["panel","Panel",IC.panel],["registros","Registros",IC.registros],["add","",IC.plus],["bandeja","Bandeja",IC.bandeja],["mas","Más",IC.mas]];
+  const cur=st.more?"mas":(["panel","registros","bandeja"].includes(s.id)?s.id:"mas");
+  const tabHTML=tabs.map(t=>t[0]==="add"?`<button type="button" class="mt plus" id="m-add" aria-label="${addLabel}"><span class="c">${t[2]}</span></button>`:`<button type="button" class="mt" data-tab="${t[0]}" ${cur===t[0]?'aria-current="page"':""}>${t[2]}${t[1]}${t[0]==="bandeja"?badge:""}</button>`).join("");
+  const inner=st.more
+   ?`<div class="mtop"><h5>Más</h5></div><div class="content"><div class="cd morelist">${SECTIONS.filter(x=>!["panel","registros","bandeja"].includes(x.id)).map(x=>`<button type="button" class="nv${locked(x)?" later":""}" data-sec="${x.id}">${IC[x.ic]}<span class="sp">${x.name}</span>${locked(x)?`<span class="lk">L${x.lote}</span>`:""}</button>`).join("")}</div></div>`
+   :`<div class="mtop"><h5>${s.name}</h5><button class="ib" type="button" id="m-eye" aria-pressed="${st.hide}" aria-label="Ocultar montos">${IC.eye}</button></div><div class="content">${body}</div>${soon}`;
+  stage.className="stage mob";
+  stage.innerHTML=`<div class="phone y${st.hide?" hideamt":""}"><div class="mbar"><span class="lockico"></span> <b>app.yala-app.pe</b></div><div class="mscreen">${inner}${modal}${toast}</div><nav class="mtabs" aria-label="Secciones">${tabHTML}</nav></div>`;
+ }
+ wire();
+}
+let toastTimer=null;
+function showToast(t){st.toast=t;render();clearTimeout(toastTimer);toastTimer=setTimeout(()=>{st.toast="";render()},2600)}
+function wire(){
+ stage.querySelectorAll("[data-sec]").forEach(b=>b.addEventListener("click",()=>{st.sec=b.dataset.sec;st.more=false;render()}));
+ stage.querySelectorAll("[data-tab]").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.tab==="mas"){st.more=true}else{st.sec=b.dataset.tab;st.more=false}render()}));
+ const eye=stage.querySelector("#m-eye");if(eye)eye.addEventListener("click",()=>{st.hide=!st.hide;render()});
+ const add=stage.querySelector("#m-add");if(add)add.addEventListener("click",()=>{st.modal=true;render()});
+ const cl=stage.querySelector("#m-close");if(cl)cl.addEventListener("click",()=>{st.modal=false;render()});
+ const send=stage.querySelector("#m-send");if(send)send.addEventListener("click",()=>{
+  st.modal=false;
+  if(L1()){DRAFTS.unshift({n:"Almuerzo",c:"Comida",v:"S/ 25,00",s:"Yala web",w:"ahora"});showToast("Enviado a la Bandeja de tu iPhone")}
+  else{RECS.unshift({d:"Hoy",n:"Almuerzo",c:"Comida",a:"Yape",v:"S/ 25,00"});showToast("Guardado. Ya aparece en tu iPhone")}
+ });
+ stage.querySelectorAll("[data-act]").forEach(b=>b.addEventListener("click",()=>{
+  const d=DRAFTS.splice(Number(b.dataset.i),1)[0]; if(!d)return;
+  if(b.dataset.act==="ok"){RECS.unshift({d:"Hoy",n:d.n,c:d.c,a:"Yape",v:d.v});showToast("Aprobado: «"+d.n+"» ya está en tus registros")}else{showToast("Descartado")}
+ }));
+}
+function setSeg(a,b,on){document.getElementById(a).setAttribute("aria-pressed",String(on));document.getElementById(b).setAttribute("aria-pressed",String(!on))}
+document.getElementById("dv-desk").addEventListener("click",()=>{st.device="desk";st.more=false;setSeg("dv-desk","dv-mob",true);render()});
+document.getElementById("dv-mob").addEventListener("click",()=>{st.device="mob";setSeg("dv-desk","dv-mob",false);render()});
+document.getElementById("sc-l1").addEventListener("click",()=>{st.scope="l1";setSeg("sc-l1","sc-full",true);render()});
+document.getElementById("sc-full").addEventListener("click",()=>{st.scope="full";setSeg("sc-l1","sc-full",false);render()});
+if(window.matchMedia&&window.matchMedia("(max-width:700px)").matches){st.device="mob";setSeg("dv-desk","dv-mob",false)}
+render();
+
+/* QR decorativo: patrón fijo con las tres esquinas */
+(function(){const q=document.getElementById("qr");if(!q)return;const n=11;let h="";
+ const corner=(r,c)=>{for(const [R,C] of [[0,0],[0,n-3],[n-3,0]]){if(r>=R&&r<R+3&&c>=C&&c<C+3)return true}return false};
+ for(let r=0;r<n;r++)for(let c=0;c<n;c++){const on=corner(r,c)||((r*7+c*13+r*c)%5<2);h+=`<i class="${on?"":"o"}"></i>`}
+ q.innerHTML=h})();
+
+const MATRIX=[
+ ["Panel","Saldo, cuentas, entradas y salidas, últimos","Presupuestos y pagos en sus tarjetas","—","Configurar el Panel"],
+ ["Bandeja","Ver lo pendiente","—","Editar o descartar lo que el iPhone aún no recogió","Aprobar y descartar"],
+ ["Registros","Ver, buscar, filtrar","Exportar a CSV","—","Registrar, editar, borrar"],
+ ["Apuntar","Un gasto, como borrador","—","—","Registro directo, ingresos y transferencias"],
+ ["Presupuestos","—","Ver","—","Crear y editar"],
+ ["Pagos planificados","—","Ver","—","Crear, editar, marcar pagado"],
+ ["Estadísticas","—","Resumen, distribución, tendencias","—","Flujo de caja"],
+ ["Grupos","—","Ver","Añadir gastos, saldar, invitar","—"],
+ ["Yala IA","—","—","—","Chat Pro, como en el iPhone"],
+ ["Configurar","Cuenta, sesiones, ocultar montos, tema","Vincular por QR, 16 idiomas","—","Categorías, cuentas, divisas, pagar Pro"]
+];
+document.getElementById("matrix").innerHTML=MATRIX.map(r=>`<tr><td><b>${r[0]}</b></td>${r.slice(1).map(c=>`<td>${c==="—"?'<span style="color:var(--ink3)">—</span>':c}</td>`).join("")}</tr>`).join("");
+
+const DECS=[
+ {id:"D1",fn:"Producto",t:"¿Qué trae la beta de 2.3 (lote 1)?",p:"La card dice: ver el Panel, los registros y los saldos, y apuntar borradores. La pregunta es cuánto más se añade.",o:[["card","Lo de la card, más la Bandeja en lectura y las sesiones","Lo que enseña la maqueta en «Lote 1»",1],["min","Solo lo de la card","Sin Bandeja ni lista de sesiones: sale antes"],["mas","Lo de la card, más presupuestos y pagos","Adelanta parte del lote 2"]]},
+ {id:"D2",fn:"Producto",t:"¿Cómo se entra en la beta?",p:"Apple y Google necesitan tus dos altas en consola (la card que ya tienes). El QR necesita un cambio en el iPhone.",o:[["sso","Apple y Google; el QR en el lote 2","",1],["todo","Apple, Google y QR desde el lote 1","Más trabajo de iOS para 2.3"],["qr","Solo QR desde el iPhone","Sin altas en consola, pero sin el iPhone a mano no se entra"]]},
+ {id:"D3",fn:"Producto",t:"¿Qué ve quien no usa la nube?",p:"Hoy la nube solo se activa desde el iPhone.",o:[["guia","Por qué no entra y cómo activar la nube; «solo Grupos» entra en el lote 3","",1],["nada","Un aviso de que no tiene acceso","Más corto, menos útil"],["demo","Una demo con datos de ejemplo","Enseña la web, pero se confunde con sus datos"]]},
+ {id:"D12",fn:"Producto",t:"¿En qué idiomas sale la beta?",p:"La app tiene 16. Reutilizar su catálogo en la web es trabajo del lote 2.",o:[["esen","Español e inglés; los 16 en el lote 2","",1],["16","Los 16 desde el lote 1","Retrasa la beta"],["es","Solo español","La ficha en inglés queda sin web"]]},
+ {id:"D13",fn:"Producto",t:"¿Se puede crear una cuenta desde la web?",p:"Hoy la nube se activa en el iPhone. Abrirlo en la web es lo que traería a quien no tiene iPhone (Android, lote 5).",o:[["30","No hasta 3.0; antes, solo cuentas que ya existen","",1],["l3","Sí desde el lote 3, para Grupos",""],["ya","Sí desde la beta, con una cuenta vacía","Sin datos que mirar ni dónde apuntar"]]},
+ {id:"D4",fn:"Seguridad",t:"¿Cuánto dura una sesión web?",p:"Comodidad en tu ordenador y nada abierto en uno ajeno.",o:[["30","30 días sin uso; en equipo compartido, hasta cerrar o 30 min","",1],["7","7 días fijos para todos","Pide entrar cada semana"],["12","12 horas siempre","Lo más seguro y lo más pesado"]]},
+ {id:"D5",fn:"Seguridad",t:"¿Cerrar sesiones web desde el iPhone entra en 2.3?",p:"Es la única parte de la beta que pide un build de iOS («Navegadores conectados» en Ajustes).",o:[["si","Sí, en el lote 1","Cerrar a distancia desde el primer día",1],["web","No: en 2.3 solo desde la propia web","Sin build de iOS; si pierdes el ordenador, entras desde otro"],["l2","En el lote 2, junto al QR","Un solo cambio de iOS para los dos"]]},
+ {id:"D6",fn:"Técnica",t:"¿Dónde vive la app web?",p:"Ver V1 a V3 en la propuesta técnica.",o:[["V1","V1 · app.yala-app.pe en Cloudflare","",1],["V2","V2 · app.yala-app.pe en Vercel",""],["V3","V3 · yala-app.pe/app dentro de Web/","Es la carpeta de Lola y sale con la rama 1.0"]]},
+ {id:"D7",fn:"Técnica",t:"¿Con qué se hace?",p:"Ver S1 a S3.",o:[["S1","S1 · React y TypeScript servidos por el Worker","",1],["S2","S2 · Astro, como Web/",""],["S3","S3 · Next.js con servidor",""]]},
+ {id:"D8",fn:"Técnica",t:"¿Cómo lee los datos?",p:"El servidor de la web reutiliza la lectura del conector de Claude, o el navegador habla directo con Supabase.",o:[["bff","Servidor de la web con el rol de solo lectura del conector","La sesión nunca llega al navegador",1],["directo","El navegador habla con Supabase","Menos piezas; el token vive en el navegador"],["sync","Bajar la sincronización y calcular en el navegador","Adelanta trabajo del lote 4, con más riesgo hoy"]]},
+ {id:"D9",fn:"Técnica",t:"¿Por dónde llega un gasto apuntado a la Bandeja?",p:"Hoy el correo del banco usa una cola del gateway que el iPhone recoge. Los conectores de IA también tienen que dejar borradores.",o:[["cola","Una cola de borradores común: web, correo e IA","Se construye una vez",1],["fila","La web escribe la fila del borrador en la sincronización","Toca la sincronización antes de cerrar la nube"],["push","Aviso silencioso al iPhone, sin guardar en el servidor","Con el iPhone apagado, se pierde"]]},
+ {id:"D10",fn:"Plan",t:"¿En qué versión va cada lote?",p:"El roadmap pone la beta en 2.3 y la web completa en 3.0.",o:[["prop","Lotes 0 y 1 en 2.3, 2 en 2.4, 3 en 2.5, 4 y 5 en 3.0","",1],["rapido","Lotes 0 a 2 en 2.3","2.3 ya es la versión más cargada"],["lento","Solo la beta antes de 3.0; el resto en 3.0","3.0 crece mucho"]]},
+ {id:"D11",fn:"Plan",t:"¿Cuándo escribe la web en la sincronización?",p:"Escribir es lo que hace de la web un aparato más, y lo que puede duplicar o perder datos.",o:[["30","En 3.0, después de cerrar la nube","Lo que dice el roadmap",1],["25","En 2.5, solo registros nuevos",""],["nunca","Nunca: la web siempre deja borradores","No sería un aparato más"]]}
+];
+const root=document.getElementById("decs"), bar=document.getElementById("savebar");
+let picks={}, db=null, canWrite=false;
+function renderDecs(){
+ root.innerHTML="";let last="";
+ for(const d of DECS){
+  if(d.fn!==last){const h=document.createElement("h3");h.className="s";h.textContent=d.fn;root.appendChild(h);last=d.fn}
+  const box=document.createElement("div");box.className="dec";
+  const head=document.createElement("div");head.className="dh";
+  const id=document.createElement("span");id.className="id";id.textContent=d.id;
+  const t=document.createElement("h4");t.textContent=d.t;head.append(id,t);
+  const p=document.createElement("p");p.textContent=d.p;
+  const ch=document.createElement("div");ch.className="choices";
+  const chosen=picks[d.id]&&picks[d.id].opcion;
+  for(const [k,l,s,rec] of d.o){
+   const b=document.createElement("button");b.type="button";b.className="choice"+(rec?" rec":"");b.id="dec-"+d.id+"-"+k;
+   b.textContent=l; if(s){const sm=document.createElement("small");sm.textContent=s;b.appendChild(sm)}
+   b.setAttribute("aria-pressed",String(chosen===k));b.disabled=!canWrite;
+   b.addEventListener("click",()=>choose(d.id,k));ch.appendChild(b);
+  }
+  const stt=document.createElement("div");stt.className="dstate";
+  const opt=chosen&&d.o.find(x=>x[0]===chosen);
+  stt.textContent=opt?("Elegida: "+opt[1]):"Sin respuesta: se tomará la recomendada.";
+  box.append(head,p,ch,stt);root.appendChild(box);
+ }
+}
+async function choose(id,k){
+ if(!db||!canWrite)return;
+ const prev=picks[id];picks[id]={opcion:k};renderDecs();
+ try{await db.doc("decisiones/"+id).set({opcion:k,fecha:new Date().toISOString()})}
+ catch(e){picks[id]=prev;renderDecs();bar.textContent="No se pudo guardar ("+((e&&e.code)||"error")+"). Vuelve a tocar la opción."}
+}
+renderDecs();
+(async()=>{
+ const timer=setTimeout(()=>{bar.textContent="El registro no respondió. Las opciones se ven, pero no se guardan desde aquí."},10000);
+ try{
+  const c=window.claude; if(!c||!c.use){clearTimeout(timer);bar.textContent="Abre esta página en claude.ai para guardar tus elecciones.";return}
+  const [d,u]=await Promise.all([c.use("db"),c.use("user")]);
+  db=d; canWrite=u?await u.isOwner():false;
+  if(!db){clearTimeout(timer);bar.textContent="Sin registro disponible en esta vista: las elecciones no se guardan.";return}
+  db.collection("decisiones").onSnapshot(s=>{clearTimeout(timer);picks={};for(const x of s.docs){picks[x.id]=x.data()||{}}
+   const n=Object.keys(picks).length;bar.textContent=(canWrite?"Toca una opción para elegirla. ":"Solo Jürgen puede elegir. ")+n+" de "+DECS.length+" respondidas.";renderDecs()},
+   e=>{clearTimeout(timer);bar.textContent="No se pudo leer el registro ("+((e&&e.code)||"error")+")."});
+  renderDecs();
+ }catch(e){clearTimeout(timer);bar.textContent="No se pudo abrir el registro de decisiones."}
+})();
+</script>
