@@ -1,6 +1,6 @@
 ---
 id: yala-web-lote-0-cimientos
-status: backlog
+status: done
 priority: high
 area: web
 created: 2026-11-13
@@ -62,3 +62,28 @@ su id al hook (`webapp/supabase/web0_01_hook_web_client.sql`, con guarda md5 y m
 - Barrido de sesiones huérfanas del cliente web en Supabase (el análogo de `mcp0_04`): lote 1, con la lista de sesiones.
 - El widget real de Turnstile y `app.yala-app.pe`.
 - Producción: ni Worker, ni cliente OAuth, ni hook.
+
+## Resultado (13-nov)
+
+- `shared-core/`: el núcleo de lectura del conector, movido tal cual. La foto de paridad (sacada antes de mover) sale
+  igual byte a byte; suite de `mcp/` y del gateway en verde sin tocar el gateway.
+- `webapp/`: Worker `yala-web-staging` desplegado en <https://yala-web-staging.misty-surf-6866.workers.dev>, con la
+  página (React + Vite), login con Apple y Google vía Supabase, sesión cifrada, Turnstile y límites.
+- Supabase staging: cliente OAuth de la web, hook `web0_01` y la vuelta en `uri_allow_list` (detalle y marcha atrás en
+  `webapp/README.md`). Producción sin tocar.
+- Pruebas: 40 unitarias de la web; e2e contra staging 9/9 (página, puerta de Apple y de Google, A y B entran y salen,
+  contraseña mala, «solo Grupos» no entra, y la sonda: con el rol de la web PostgREST rechaza insertar, cambiar y
+  borrar).
+
+## Guion de prueba para Jürgen (Apple y Google de verdad)
+
+Lo único que no se automatiza es pasar por la pantalla de Apple o de Google. En un ordenador o en el iPhone:
+
+1. Abre <https://yala-web-staging.misty-surf-6866.workers.dev>.
+2. Toca «Continuar con Apple» y entra con la cuenta con la que usas **Yala Dev** con la nube activada.
+3. Tiene que salir «Hola, <tu nombre>» y tu correo. Si sale «Tu Yala vive en iCloud», esa cuenta no tiene la nube en
+   staging: es correcto, pero prueba con la de Yala Dev.
+4. Toca «Salir». Tiene que volver a la pantalla de entrar con «Saliste de Yala web».
+5. Repite con «Continuar con Google».
+6. Marca «Es un equipo compartido», entra, cierra el navegador entero y vuelve a abrir la dirección: tiene que pedirte
+   entrar otra vez.
