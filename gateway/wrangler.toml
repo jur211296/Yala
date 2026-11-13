@@ -61,6 +61,11 @@ APPLE_WEB_SIGN_IN_ROLLOUT_PERCENT = "100"
 # STAGING también en 0 a propósito: un valor > 0 BLOQUEARÍA la app de dogfooding/QA (≠ percents, que
 # encienden superficie). Se sube conscientemente al probar el flujo end-to-end.
 MIN_SUPPORTED_BUILD = "0"
+# Correo del banco por reenvío (src/mail/): la dirección es `<local>+<code>@<domain>`. Dominio aparte, solo para
+# recibir (decisión de Jürgen del 2026-11-10): nunca yala-app.pe. Staging usa su propio local para que Email Routing
+# mande `auto-staging@` a este Worker y `auto@` al de producción. Lo fija test/mail.wrangler.test.ts.
+MAIL_ADDRESS_LOCAL = "auto-staging"
+MAIL_ADDRESS_DOMAIN = "yalainbox.com"
 
 [[d1_databases]]
 binding = "DB"
@@ -189,6 +194,9 @@ APPLE_WEB_SIGN_IN_ROLLOUT_PERCENT = "0"
 # Forzado de actualización (min-version): 0 = desactivado. Se sube al build mínimo soportado cuando
 # haya que forzar una versión crítica (requiere que /config esté vivo en prod — D9/Modo Nube).
 MIN_SUPPORTED_BUILD = "0"
+# Correo del banco por reenvío: `auto+<code>@yalainbox.com` (ver la nota de staging).
+MAIL_ADDRESS_LOCAL = "auto"
+MAIL_ADDRESS_DOMAIN = "yalainbox.com"
 
 [[env.production.d1_databases]]
 binding = "DB"

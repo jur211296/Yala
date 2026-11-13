@@ -2,7 +2,7 @@
 //  BankEmailGuideUITests.swift
 //  YalaUITests
 //
-//  «Correo del banco» (2.3): Ajustes enseña la dirección `auto+…@yala-app.pe` y el cupo de prueba, y cada correo tiene su
+//  «Correo del banco» (2.3): Ajustes enseña la dirección `auto+…@yalainbox.com` y el cupo de prueba, y cada correo tiene su
 //  guía por pasos. El paso de Gmail que pide el código lo enseña en cuanto llega.
 //
 //  Sin servidor ni nube: `-uitest-bank-email` saca la fila y contesta con una dirección fija. Qué decide si la fila sale
@@ -24,7 +24,7 @@ final class BankEmailGuideUITests: XCTestCase {
 
         let address = app.descendants(matching: .any)["bank_email_address"]
         XCTAssertTrue(address.waitForExistence(timeout: 5), "No salió la dirección de Yala.")
-        XCTAssertEqual(address.label, "auto+k7m2xq9wpb@yala-app.pe")
+        XCTAssertEqual(address.label, "auto+k7m2xq9wpb@yalainbox.com")
         let quota = app.descendants(matching: .any)["bank_email_quota"]
         XCTAssertTrue(quota.exists, "Falta la línea del cupo de prueba.")
         XCTAssertTrue(quota.label.contains("2 de 5"), "El cupo no dice cuántos correos de prueba se usaron: «\(quota.label)».")

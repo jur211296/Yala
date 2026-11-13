@@ -1,6 +1,6 @@
 -- 0003_mail_forwarding — el correo del banco por reenvío (2.3, 2026-11-04).
 --
--- Cada cuenta de Yala en la nube tiene UNA dirección `auto+<code>@yala-app.pe`. El Worker recibe por Email Routing lo
+-- Cada cuenta de Yala en la nube tiene UNA dirección `auto+<code>@yalainbox.com`. El Worker recibe por Email Routing lo
 -- que la persona reenvía desde Gmail, Outlook o iCloud Mail, lo lee con IA y deja el movimiento aquí, en una cola por
 -- cuenta, hasta que la app lo recoge (GET /mail/drafts) y lo confirma (POST /mail/drafts/ack). La app crea el borrador
 -- local, que sincroniza como cualquier otro: el servidor nunca escribe en los datos de la nube de la persona.

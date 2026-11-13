@@ -37,7 +37,7 @@ export interface Env {
   // muestra la pantalla bloqueante. Ausente/inválido → 0 (desactivado). Flip = editar var + deploy.
   MIN_SUPPORTED_BUILD?: string;
 
-  // --- Correo del banco por reenvío (src/mail/): la dirección es `<local>+<code>@<domain>`. Ausentes → auto / yala-app.pe.
+  // --- Correo del banco por reenvío (src/mail/): la dirección es `<local>+<code>@<domain>`. Ausentes → auto / yalainbox.com.
   MAIL_ADDRESS_LOCAL?: string;
   MAIL_ADDRESS_DOMAIN?: string;
 

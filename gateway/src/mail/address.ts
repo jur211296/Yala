@@ -1,5 +1,6 @@
 /**
- * La dirección de reenvío de cada persona: `auto+<code>@yala-app.pe` (decisión de Jürgen del 2026-11-04).
+ * La dirección de reenvío de cada persona: `auto+<code>@yalainbox.com` (decisión de Jürgen del 2026-11-04; el
+ * dominio aparte, solo para recibir, del 2026-11-10).
  *
  * El código es lo único que separa el correo de una persona del de otra, así que se trata como un secreto corto:
  * 10 caracteres de un alfabeto de 31 (sin 0/o, 1/l/i, que se confunden al copiarlo a mano) ≈ 49 bits, sacados de
@@ -36,7 +37,7 @@ export interface MailAddressConfig {
 }
 
 export function mailConfig(env: { MAIL_ADDRESS_LOCAL?: string; MAIL_ADDRESS_DOMAIN?: string }): MailAddressConfig {
-  return { local: env.MAIL_ADDRESS_LOCAL || "auto", domain: env.MAIL_ADDRESS_DOMAIN || "yala-app.pe" };
+  return { local: env.MAIL_ADDRESS_LOCAL || "auto", domain: env.MAIL_ADDRESS_DOMAIN || "yalainbox.com" };
 }
 
 export function formatAddress(code: string, cfg: MailAddressConfig): string {

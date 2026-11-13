@@ -3896,9 +3896,9 @@
         "F-MAIL-03"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/BankEmailGuideUITests (seam -uitest-bank-email, sin red) + unit:YalaTests/BankEmailTests + gateway:test/mail.test.ts | 2026-11-04 (encargo S2 de 2.3, correo del banco por reenvío): Ajustes › «Correo del banco» con la dirección auto+<código>@yala-app.pe, el cupo de prueba y guías de Gmail, Outlook e iCloud Mail; el código de Gmail en su paso. unit:YalaTests/BankEmailTests (del aviso al borrador: signo, fecha, divisa, cuenta por banco o divisa, divisa del aviso sin cuenta; fila de Ajustes; cuándo pregunta; transporte con attest). gateway:test/mail.test.ts (cupo de 5, devolución, código de Gmail, rechazo de dirección ajena, techo diario, duplicados, ack por cuenta, tope de tokens). De punta a punta con un aviso real: espera al buzón (card de Jürgen).",
+      "coverage": "xcuitest:YalaUITests/BankEmailGuideUITests (seam -uitest-bank-email, sin red) + unit:YalaTests/BankEmailTests + gateway:test/mail.test.ts | 2026-11-04 (encargo S2 de 2.3, correo del banco por reenvío): Ajustes › «Correo del banco» con la dirección auto+<código>@yalainbox.com, el cupo de prueba y guías de Gmail, Outlook e iCloud Mail; el código de Gmail en su paso. unit:YalaTests/BankEmailTests (del aviso al borrador: signo, fecha, divisa, cuenta por banco o divisa, divisa del aviso sin cuenta; fila de Ajustes; cuándo pregunta; transporte con attest). gateway:test/mail.test.ts (cupo de 5, devolución, código de Gmail, rechazo de dirección ajena, techo diario, duplicados, ack por cuenta, tope de tokens). De punta a punta con un aviso real: espera al buzón (card de Jürgen).",
       "owner": "frank",
-      "lastVerified": "2026-11-04"
+      "lastVerified": "2026-11-12"
     },
     {
       "area": "insights-ant-expenses",
