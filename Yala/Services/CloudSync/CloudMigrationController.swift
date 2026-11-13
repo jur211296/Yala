@@ -82,7 +82,8 @@ nonisolated enum CloudMigrationUIStateDeriver {
         phase: MigrationPhase,
         mirrorOffArmed: Bool,
         mountedDecision: SwiftDataConfiguration.PersonalStoreDecision,
-        adoptEffectJournaled: Bool = false
+        adoptEffectJournaled: Bool = false,
+        adoptProgress: AdoptEffectProgress? = nil
     ) -> CloudMigrationUIState {
         let mirrorStillAttached = mountedDecision.attachesCloudKitMirror
         // 1) Relanzamiento de IDA/adopt: el mirror-off está ARMADO pero este proceso montó CON mirror (sigue
@@ -122,14 +123,15 @@ nonisolated enum CloudMigrationUIStateDeriver {
             // pendiente, el adopt que se reintenta → progreso con la fase journaleada (la tarjeta no la nombra). Si no, idle.
             if storageMode == .cloud { return .cloudActive }
             if AdoptEffectScope.isPending(phase, adoptEffectJournaled: adoptEffectJournaled, persistedCloudMode: false) {
-                return .migrating(MigrationUIStep(fraction: adoptEffectFraction, phase: phase))
+                return .migrating(MigrationUIStep(fraction: adoptProgress?.fraction ?? adoptEffectFraction, phase: phase))
             }
             return .idle
         }
     }
 
-    /// Dónde va la barra mientras el efecto del adopt se reintenta: después del claim (22 %) y antes del relanzamiento.
-    static let adoptEffectFraction = 0.6
+    /// Dónde va la barra mientras el efecto del adopt se reintenta y todavía no hay paso medido: justo después del claim
+    /// (22 %). Hasta la card jxbp era un 60 % fijo para todo el efecto; ahora cada paso real lo mueve (`AdoptEffectProgress`).
+    static let adoptEffectFraction = AdoptEffectProgress.startFraction
 
     /// La misma derivación con la LECTURA del journal. Un journal ilegible es `.journalUnreadable`, salvo el relanzamiento
     /// de IDA (regla 1 de arriba), que no mira la fase: el mirror-off armado con el espejo aún montado pide relanzar sea
@@ -140,12 +142,14 @@ nonisolated enum CloudMigrationUIStateDeriver {
         read: JournaledPhaseRead,
         mirrorOffArmed: Bool,
         mountedDecision: SwiftDataConfiguration.PersonalStoreDecision,
-        adoptEffectJournaled: Bool = false
+        adoptEffectJournaled: Bool = false,
+        adoptProgress: AdoptEffectProgress? = nil
     ) -> CloudMigrationUIState {
         switch read {
         case .phase(let phase):
             return derive(storageMode: storageMode, phase: phase, mirrorOffArmed: mirrorOffArmed,
-                          mountedDecision: mountedDecision, adoptEffectJournaled: adoptEffectJournaled)
+                          mountedDecision: mountedDecision, adoptEffectJournaled: adoptEffectJournaled,
+                          adoptProgress: adoptProgress)
         case .unreadable:
             if needsForwardRelaunch(mirrorOffArmed: mirrorOffArmed, mountedDecision: mountedDecision) {
                 return .needsRelaunch(.toCloud)
@@ -509,6 +513,11 @@ final class CloudMigrationController {
 
     /// La entrada del runner en curso espera a que iCloud termine de importar (`MigrationRunner.isAwaitingImportQuiescence`).
     private(set) var runnerAwaitingImport = false
+
+    /// El motor ya bajó la cuenta una vez en este proceso (`SyncQuiescenceCoordinator.hasCompletedFirstPull`). Copiado aquí
+    /// para que Almacenamiento repinte cuando cambia (card rfzc): la tarjeta decía «Todo sincronizado» con el Panel aún
+    /// vacío y la cuenta sin bajar.
+    private(set) var engineFirstPullCompleted = true
 
     /// «Volver a iCloud» se confirmó y el journal todavía no lo recoge: la entrada del runner espera a iCloud antes de su
     /// primer guardado. Hasta este ticket la pantalla seguía en «nube activa» con el botón apagado y nada más (card 27z3).
@@ -2002,7 +2011,9 @@ final class CloudMigrationController {
             mirrorOffArmed: mirrorOffArmed,
             mountedDecision: mountedDecision,
             // La última lectura buena: con el journal ilegible la fase no se usa (`.journalUnreadable`).
-            adoptEffectJournaled: adoptEffectJournaled)
+            adoptEffectJournaled: adoptEffectJournaled,
+            // Card jxbp: el paso real del efecto, del runner vivo (`_runner`: no se construye aquí).
+            adoptProgress: _runner?.adoptEffectProgress)
 
         // `_runner` y NO `runner`: la property lazy CONSTRUIRÍA el runner y su executor (red, sesión,
         // clients) — `refresh()` corre desde el `init` y desde el poll de la pantalla de adopt, y no
@@ -2013,6 +2024,7 @@ final class CloudMigrationController {
         reverseSessionExpiry = _runner?.lastReverseSessionExpiry
         uploadProgress = _runner?.snapshotUploadProgress
         runnerAwaitingImport = _runner?.isAwaitingImportQuiescence ?? false
+        engineFirstPullCompleted = SyncQuiescenceCoordinator.shared.hasCompletedFirstPull
         #if DEBUG
         if let fake = UITestHooks.fakeCloudProgress { applyFakeCloudProgress(fake) }
         #endif

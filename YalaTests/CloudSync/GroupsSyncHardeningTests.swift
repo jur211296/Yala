@@ -1381,7 +1381,8 @@ struct GroupsSyncHardeningTests {
         #expect(tail.contains("CompleteAccountAdoptPending.arm(sub: CloudAuthService.shared.currentUserID)"))
         let content = try String(contentsOf: root.appendingPathComponent("Yala/App/ContentView.swift"), encoding: .utf8)
         let adopt = try #require(content.range(of: "onAdoptStarted: {"))
-        let onAdopt = String(content[adopt.lowerBound...].prefix(2000))
+        // 3500: desde la card gd78, `onAdoptStarted` arma además la marca de la entrada a medias antes de lo que se mira aquí.
+        let onAdopt = String(content[adopt.lowerBound...].prefix(3500))
         let clear = try #require(onAdopt.range(of: "CompleteAccountAdoptPending.clear()"))
         let restart = try #require(onAdopt.range(of: "GroupsSyncClient.shared.startIfEligible(context: modelContext, trigger: \"adopt-started\")"),
                                    "al soltar el candado, el canal se arranca: nadie más lo haría")

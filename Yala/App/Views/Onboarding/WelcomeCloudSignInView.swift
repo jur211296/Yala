@@ -78,6 +78,10 @@ struct WelcomeCloudSignInView: View {
     }
 
     let entry: Entry
+    /// **Card gd78 · la pantalla se abre para RETOMAR un traspaso que un cierre dejó a medias** (`ContentView`,
+    /// `WelcomeAdoptInFlight`). No firma ni pregunta: vuelve a «Conectando con tu cuenta», retoma el traspaso donde quedó
+    /// —o lo vuelve a pedir con la sesión que quedó, si se cerró antes del claim— y ofrece «Cancelar la activación».
+    var resumesAdopt: Bool = false
     /// **Bloque [I]** · esta pantalla se abrió con la sesión YA firmada en otra puerta, así que arranca en
     /// el consentimiento en vez de en el intro.
     ///
@@ -226,6 +230,16 @@ struct WelcomeCloudSignInView: View {
         screen
         .welcomeBackButton(tint: .white, action: backAction)
         .onAppear {
+            // Card gd78 · retomar el traspaso que dejó un cierre. One-shot con el mismo latch: `onAppear` corre más de una vez.
+            if resumesAdopt, !didAutoOpenConsent {
+                didAutoOpenConsent = true
+                loadConfirmed = true
+                // `sessionOpenedHere` se queda en `false` (review adversarial): no consta quién abrió la sesión que quedó —la
+                // de la puerta de Grupos no es de esta entrada— y una salida del traspaso no debe cerrar una que no abrió.
+                phase = .adopting(fraction: 0)
+                launchFlow { await retryAdoptResume() }
+                return
+            }
             // Y23-02 · el acceso único arranca solo: el botón de la vitrina ya era el gesto. One-shot con el mismo latch
             // que el consentimiento automático, porque `onAppear` corre más de una vez.
             if case .unified(let requested) = entry, !didAutoOpenConsent {
@@ -1065,7 +1079,7 @@ struct WelcomeCloudSignInView: View {
     private func cancelAdoptEnabled(_ controller: CloudMigrationController) -> Bool {
         MigrationImportWaitLogic.cancelEnabled(
             isWorking: controller.isWorking, waitingForImport: controller.resumeWaitingForImport,
-            cancelling: controller.isCancellingMigration)
+            cancelling: controller.isCancellingMigration, adoptEffectPending: controller.isAdoptEffectPending)
     }
 
     /// Cancela y vuelve a mirar. **El poll se para ANTES** (`launchFlow` cancela el task viejo) y vuelve DESPUÉS: quien
@@ -1816,9 +1830,10 @@ struct WelcomeCloudSignInView: View {
                 autoResumeState = WelcomeAdoptAutoResume.State()
                 lastObservedPhase = nil
                 cancelRequested = false
-                await CloudMigrationController.shared?.startAdoptWithExistingSession(
-                    sessionOpenedByThisAttempt: sessionOpenedHere)
-                await pollAdoptProgress()
+                await driveWhilePolling {
+                    await CloudMigrationController.shared?.startAdoptWithExistingSession(
+                        sessionOpenedByThisAttempt: sessionOpenedHere)
+                }
             }
         }
     }
@@ -1861,7 +1876,23 @@ struct WelcomeCloudSignInView: View {
                 }
                 continue
             }
-            phase = next
+            // Review adversarial: con el drive en vuelo, un final de fallo es del intento de ANTES (el `failedRollback` que el
+            // «Reintentar» todavía no repuso, un bloqueo del claim anterior). Antes el sondeo empezaba al volver el drive y no
+            // podía verlo; ahora corre a la vez, así que se espera a que el drive diga lo suyo.
+            if controller.isWorking, CloudWelcomeSignInFlow.isFailureTerminal(next) {
+                do {
+                    try await Task.sleep(for: .seconds(1))
+                } catch {
+                    return
+                }
+                continue
+            }
+            // Card jxbp: la barra no retrocede cuando un reintento del efecto vuelve a empezar por su primer paso.
+            if case .adopting(let now) = next, case .adopting(let before) = phase {
+                phase = .adopting(fraction: AdoptEffectProgress.displayed(previous: before, next: now))
+            } else {
+                phase = next
+            }
             switch next {
             case .relaunch, .error, .adoptExit, .lineageExit:
                 return
@@ -1942,11 +1973,40 @@ struct WelcomeCloudSignInView: View {
                 await runFlowAfterConsent()
                 return
             }
-            await controller.startAdoptWithExistingSession(sessionOpenedByThisAttempt: sessionOpenedHere)
+            await driveWhilePolling {
+                await controller.startAdoptWithExistingSession(sessionOpenedByThisAttempt: sessionOpenedHere)
+            }
         } else {
-            await controller.resumeIfNeeded()
+            await driveWhilePolling { await controller.resumeIfNeeded() }
+        }
+    }
+
+    /// **Card jxbp · la barra se mueve MIENTRAS el traspaso trabaja.** Hasta ese día el poll arrancaba cuando el drive
+    /// volvía, así que la pantalla se quedaba en el 0 % durante todo el trabajo (leer la cuenta, comprobarla, preparar el
+    /// teléfono) y saltaba al final. Los dos corren a la vez en el hilo principal: el poll lee el progreso que el drive va
+    /// dejando en el controller, y el auto-resume no dispara mientras `isWorking`.
+    ///
+    /// Dos cosas de la review adversarial: (1) **el drive va en su propia tarea**, no en la de la pantalla: «Cancelar»
+    /// relanza el flujo (`launchFlow`) y cancelaba con él el efecto a mitad, que el runner no espera (sus esperas leen la
+    /// cancelación como «se agotó el plazo»); (2) **el primer vistazo espera a que el drive arranque** (`isWorking`) o
+    /// termine: sin eso leía el estado de ANTES —el `failedRollback` de un «Reintentar»— y se iba a un final viejo. Los
+    /// finales de fallo con el drive en vuelo los ignora el propio sondeo (`pollAdoptProgress`).
+    private func driveWhilePolling(_ drive: @escaping @MainActor () async -> Void) async {
+        let flag = AdoptDriveFlag()
+        let driving = Task { @MainActor in
+            await drive()
+            flag.finished = true
+        }
+        for _ in 0..<AdoptDriveFlag.startWaitTicks {
+            if flag.finished || CloudMigrationController.shared?.isWorking == true { break }
+            do {
+                try await Task.sleep(for: .milliseconds(50))
+            } catch {
+                break
+            }
         }
         await pollAdoptProgress()
+        await driving.value
     }
 
     private func retryLeaderPoll() async {
@@ -1986,4 +2046,26 @@ private struct AppleSignInButton: UIViewRepresentable {
         init(action: @escaping () -> Void) { self.action = action }
         @objc func tapped() { action() }
     }
+}
+
+// MARK: - Card gd78 · el método con el que se entra
+
+extension WelcomeCloudSignInView.Entry {
+    /// El proveedor de esta entrada, para retomarla tras un cierre (`WelcomeAdoptInFlight`). `nil` en el alta y en el faro
+    /// que no lo dice: la pantalla que retoma usa entonces el de la sesión guardada.
+    var signInProvider: CloudSignInProvider? {
+        switch self {
+        case .reentry(let provider), .unified(let provider): return provider
+        case .beaconRouted(let provider): return provider
+        case .bornCloud: return nil
+        }
+    }
+}
+
+/// La tarea que conduce el traspaso, vista desde la pantalla: ¿terminó? (`driveWhilePolling`).
+@MainActor
+private final class AdoptDriveFlag {
+    var finished = false
+    /// Cuánto espera el primer vistazo a que el drive arranque: 3 s en tramos de 50 ms.
+    static let startWaitTicks = 60
 }

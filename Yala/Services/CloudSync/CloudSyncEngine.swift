@@ -912,6 +912,12 @@ enum CloudSyncBreadcrumb {
 
     /// H-2026-07-17-5: los autos se agotaron sin avance → el botón Retomar manual queda visible
     /// (canario: si aparece seguido, el auto-resume no basta — investigar la causa del park).
+    /// Card gd78: el arranque encontró una entrada a una cuenta a medias (`WelcomeAdoptInFlight`) y eligió retomarla en
+    /// «Conectando con tu cuenta» (`resume`) o volver a la bienvenida (`backOut`). Sin PII.
+    static func welcomeAdoptRelaunchRoute(route: String, phase: String) {
+        logger.notice("CloudSyncMigration welcomeAdoptRelaunchRoute route=\(route, privacy: .public) phase=\(phase, privacy: .public)")
+    }
+
     static func welcomeAdoptAutoResumeExhausted(phase: String) {
         logger.notice("CloudSyncMigration welcomeAdoptAutoResumeExhausted phase=\(phase, privacy: .public) — autos agotados, Retomar manual visible")
     }

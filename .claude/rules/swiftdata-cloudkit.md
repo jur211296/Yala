@@ -42,7 +42,7 @@ paths:
 
 ## Índice de reglas (116)
 
-> Este fichero son **334 KB en 116 reglas largas**. No lo leas entero: localiza la regla
+> Este fichero son **336 KB en 116 reglas largas**. No lo leas entero: localiza la regla
 > aquí y lee **solo su tramo** con `sed -n '<linea>,<linea+N>p'`.
 > Los números de línea se desplazan al editar — regenera con
 > `python3 scripts/indexar_doc.py <fichero> --apply`.
@@ -164,7 +164,7 @@ paths:
 | `L1929` | El sello del claim se olvida cuando el teléfono cambia de persona (2026-09-29). | 2.4 KB |
 | `L1952` | La pantalla de la ida y la vuelta pinta pasos con su cifra, y la cifra solo INFORMA (2026-10-23). | 1.8 KB |
 | `L1970` | El drain no carga tablas ENTERAS en cada vuelta: corre en el hilo principal (2026-10-31, YALA-IOS-2). | 2.0 KB |
-| `L1990` | La subida de la ida funde las tasas duplicadas ANTES del baseline del historial (2026-11-05, card i9wh). | 3.9 KB |
+| `L1990` | La subida de la ida funde las tasas duplicadas ANTES del baseline del historial (2026-11-05, card i9wh). | 5.9 KB |
 
 <!-- INDICE:fin -->
 
@@ -2023,3 +2023,22 @@ LWW la que había cambiado otro teléfono ya en v5. Lo fija `CreditCardCycleSync
   cuenta o resucita una fila borrada, y un re-puente sobre un almacén personal sin sus filas); el canario
   `groupBridgeLeftoversRemoved` lo mide en la flota. Un emisor nuevo de «llegaron filas personales» engancha la
   limpieza. Lo fijan `GroupBridgeRemotePassBlindTests` y `GroupBridgeLeftoversUITests` (seed `grupos-repetidos`).
+
+- **Una entrada a una cuenta desde la bienvenida que se cierra a medias sigue NEUTRA y vuelve a «Conectando» (2026-11-13,
+  cards gd78/285z/jxbp, medido en el iPhone 14).** `onAdoptStarted` marca el onboarding y retira el neutro ANTES de
+  conducir; con el par aún sin escribir, el arranque siguiente montaba el espejo de iCloud, importaba el iCloud privado,
+  exportaba lo bajado y retomaba el traspaso encima de la mezcla. Lo sostiene `WelcomeAdoptInFlight`: marca durable con la
+  foto de `onAdoptStarted`, término del adaptador `shouldMountNeutralDurable`, asentada por `settle` cuando el par existe,
+  y ruta del arranque (`ContentView.resumeWelcomeAdoptAfterRelaunch`: retomar en la pantalla de conexión, o deshacer si
+  salió sin rastro). Tres cosas que no se tocan sin reabrirlo: (1) **con la marca puesta el arranque no siembra nada
+  sincronizable** aunque el onboarding conste hecho — los 7 avisos de `seedDefaultNotifications` paraban el traspaso
+  retomado por linaje («sin marcador ni filas suyas»); un sembrado nuevo del arranque mira `holdsNeutralMount()`; (2)
+  **la marca se retira cuando el traspaso aterriza o se deshace** (par escrito, `onFinishedToApp`, salida sin rastro, salir
+  a Grupos o al alta, la cancelación de la puerta) y en el borrado; un «Volver» con algo aún en el journal la conserva a
+  propósito, para que el arranque siguiente lo retome sin espejo. Una marca superviviente sin traspaso decidiría el
+  montaje tras «Volver a iCloud»; (3) **«Cancelar la activación» se
+  toca con el efecto del adopt en vuelo** (`MigrationImportWaitLogic.cancelEnabled(adoptEffectPending:)`): cada reintento
+  relee la cuenta entera y apagado no había salida. La barra del efecto avanza por pasos reales (`AdoptEffectProgress`,
+  leída del Merkle y de las páginas) y la pantalla conduce y refresca a la vez (`driveWhilePolling`). La puerta de la
+  bienvenida ofrece cancelar un paso a medias de otro intento (`WelcomeStaleMigrationCancel`, opción A de Jürgen). Lo fijan
+  `AdoptHalfwayExitTests` y su suite de cableado.

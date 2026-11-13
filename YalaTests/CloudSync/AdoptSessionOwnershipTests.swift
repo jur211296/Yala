@@ -390,11 +390,13 @@ struct AdoptSessionOwnershipWiringTests {
     @Test func welcomeRetry_signsInAgainWithoutASession() throws {
         let retry = Self.lines(try Self.body(of: "private func retryAdoptResume() async {", in: Self.welcomePath))
         let idle = try #require(retry.firstIndex(of: "if case .idle = controller.uiState, !cancelRequested {"))
-        #expect(Array(retry[(idle + 1)...(idle + 5)]) == [
+        // Card jxbp: la llamada va dentro de `driveWhilePolling`, que conduce y refresca a la vez.
+        #expect(Array(retry[(idle + 1)...(idle + 6)]) == [
             "guard CloudAuthService.shared.hasSession else {",
             "await runFlowAfterConsent()",
             "return",
             "}",
+            "await driveWhilePolling {",
             "await controller.startAdoptWithExistingSession(sessionOpenedByThisAttempt: sessionOpenedHere)",
         ])
     }

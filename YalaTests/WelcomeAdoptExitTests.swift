@@ -334,7 +334,7 @@ struct WelcomeAdoptExitTests {
             {
                 MigrationImportWaitLogic.cancelEnabled(
                     isWorking: controller.isWorking, waitingForImport: controller.resumeWaitingForImport,
-                    cancelling: controller.isCancellingMigration)
+                    cancelling: controller.isCancellingMigration, adoptEffectPending: controller.isAdoptEffectPending)
             }
             """))
         // El diálogo cuelga del `body`, que no sale del árbol: su `.onChange` corre de verdad.
@@ -367,7 +367,8 @@ struct WelcomeAdoptExitTests {
         #expect(retry.contains("if case .idle = controller.uiState, !cancelRequested {"))
         let src = try Self.flat(Self.source(Self.view))
         #expect(src.contains(
-            "lastObservedPhase = nil cancelRequested = false await CloudMigrationController.shared?.startAdoptWithExistingSession( sessionOpenedByThisAttempt: sessionOpenedHere)"))
+            // Card jxbp: dentro de `driveWhilePolling`, que conduce y refresca a la vez.
+            "lastObservedPhase = nil cancelRequested = false await driveWhilePolling { await CloudMigrationController.shared?.startAdoptWithExistingSession( sessionOpenedByThisAttempt: sessionOpenedHere) }"))
     }
 
     /// El cuerpo ENTERO: una sentencia antepuesta (un `onBack()` antes de cancelar, un `return`) pasaría un `contains`.

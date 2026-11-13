@@ -180,6 +180,15 @@ nonisolated enum CloudWelcomeSignInFlow {
     /// **`origin` solo toca la terminal de «listo»** (`.cloudActive`): el alta que entró en una cuenta ya creada sale por
     /// `.signUpEnteredExistingAccount` y la re-entrada por `.reentryReady`. El progreso, los fallos y el relanzamiento
     /// son los mismos venga de donde venga el adopt.
+    /// Los finales de FALLO del sondeo del adopt (review adversarial de la card jxbp): con el drive en vuelo son de un
+    /// intento anterior, y el sondeo no se va a ellos (`WelcomeCloudSignInView.pollAdoptProgress`).
+    static func isFailureTerminal(_ phase: CloudWelcomeSignInPhase) -> Bool {
+        switch phase {
+        case .error, .adoptExit, .lineageExit, .accountBlocked: return true
+        default: return false
+        }
+    }
+
     static func phase(
         for uiState: CloudMigrationUIState,
         claimBlocker: ClaimBlocker? = nil,

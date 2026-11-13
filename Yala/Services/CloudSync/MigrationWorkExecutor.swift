@@ -909,6 +909,11 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// La cifra de la subida (`MigrationSnapshotUploader.progress`).
     var snapshotUploadProgress: CloudProgressStepsLogic.UploadProgress? { uploader.progress }
 
+    /// En qué paso REAL va el efecto del adopt y cuántas filas de la cuenta lleva leídas (card jxbp). Solo informa: lo
+    /// lee la barra de «Conectando con tu cuenta» a través del runner y del controller. Cada pasada lo repone desde el
+    /// primer paso; la pantalla no retrocede (`AdoptEffectProgress.displayed`).
+    private(set) var adoptEffectProgress: AdoptEffectProgress?
+
     func uploadSnapshot(cursor: String?) async -> SnapshotStepOutcome {
         do {
             try restoreRelayIdentities()
@@ -2164,10 +2169,21 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         if let waiting = await awaitICloudCorpusIfNotLocal(localInventory) { return waiting }
         // Paso 1: enumerar el set de identidades del backend (upserts + tombstones) — read-only, idiom
         // `sweepZombies` (SIN applyPage, SIN avance de `SyncCursor`, SIN tocar testigos). Red → `.transient`.
-        guard let enumeration = await enumerateBackendSyncIDs() else { return .transient }
+        // Card jxbp: cuántas filas tiene la cuenta, para que la barra avance con la lectura. Solo informa: la comprobación
+        // de que la lectura salió entera sigue siendo el Merkle de DESPUÉS, y sin respuesta aquí la lectura va sin cifra.
+        var expectedRows: Int?
+        if case .snapshot(let merkle) = await merkleClient.fetchMerkle() {
+            expectedRows = AdoptEffectProgress.expectedRows(merkleCounts: merkle.entities.values.map(\.count))
+        }
+        adoptEffectProgress = AdoptEffectProgress(stage: .readingAccount, rowsRead: 0, rowsExpected: expectedRows)
+        guard let enumeration = await enumerateBackendSyncIDs(onPage: { [weak self] rows in
+            self?.adoptEffectProgress?.rowsRead += rows
+        }) else { return .transient }
+        adoptEffectProgress?.stage = .verifyingAccount
         // Verificación POSITIVA de completitud contra los counts del Merkle (SERIO 1 — ver doc del método).
         // El merkle se consulta DESPUÉS de la enumeración: sesgo a abortar, jamás a proceder.
         guard await verifyEnumerationComplete(enumeration) else { return .transient }
+        adoptEffectProgress?.stage = .matchingDevice
         let backendSyncIDs = enumeration.known
 
         // Las identidades que el espejo cambió desde una pasada ANTERIOR de este adopt, que sembró el registro fila →
@@ -2293,6 +2309,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // El relevo del marcador, en UN sitio y solo si el adopt terminó (ticket
         // `markerless-adopt-stays-blocked-while-another-device-writes-to-the-account`): después de guardar identidades y
         // casados, para que el espejo lo exporte detrás de ellos.
+        adoptEffectProgress?.stage = .uploading
         let outcome = await uploadAdoptOrphans(plan, identityAssigned: identityAssigned)
         if case .completed = outcome { relayAdoptMarkerIfCovered(enumeration: enumeration) }
         return outcome
@@ -2399,6 +2416,10 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// pendiente y el próximo `resume()` lo reintenta (tras su propia espera de quiescencia). Idempotente:
     /// una 2ª pasada re-diffea (lo aplicado sale del diff) y re-persiste (LWW/no-op).
     func runAdoptFlow() async throws {
+        adoptEffectProgress = AdoptEffectProgress(stage: .checkingDevice)
+        // Al acabar la pasada, bien o mal, el progreso deja de valer: el intento siguiente no puede leer el de éste
+        // (review adversarial).
+        defer { adoptEffectProgress = nil }
         // 1) Quiescencia del import (el adopt persiste `.cloud` sobre un store en importación — DEBE
         //    asentarse antes). El runner ya gatea sus entradas por quiescencia; esta es la red específica
         //    del contrato por si el drive alcanzó el efecto lejos de la entrada.
@@ -2442,6 +2463,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             throw MigrationExecutorError.adoptRetry(reason: "relayMarkerExport")
         }
 
+        adoptEffectProgress?.stage = .finishing
         // 3) Fast-forward del History baseline: sin él el primer drain del runtime post-relaunch re-emitiría
         //    el corpus ENTERO importado de CloudKit como deltas (contrato (ii)).
         engine.fastForwardHistoryBaseline(context: context)
@@ -3372,7 +3394,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// Enumera TODAS las identidades que el backend conoce (upserts Y tombstones) por páginas read-only (idiom
     /// `sweepZombies`). `nil` = red (transient). El loop copia el shape de `sweepZombies`: cursor, high-water,
     /// break si página vacía o sin progreso.
-    private func enumerateBackendSyncIDs() async -> BackendEnumeration? {
+    private func enumerateBackendSyncIDs(onPage: ((Int) -> Void)? = nil) async -> BackendEnumeration? {
         var known: Set<UUID> = []
         var liveByTable: [String: Set<UUID>] = [:]
         var liveKeys: [UUID: String] = [:]
@@ -3384,6 +3406,8 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         while true {
             switch await tombstoneSource.pullPage(since: cursor, limit: 500) {
             case let .page(page):
+                // Las vivas: el total con el que se compara (Merkle) cuenta solo filas vivas.
+                onPage?(page.deltas.lazy.filter { $0.op != .tombstone }.count)
                 for delta in page.deltas {
                     known.insert(delta.syncID)
                     do {

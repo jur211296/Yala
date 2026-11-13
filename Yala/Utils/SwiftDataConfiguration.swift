@@ -1012,6 +1012,12 @@ extension SwiftDataConfiguration {
                 corpusWipeCrossedTheZone: StorageModePersistence.hasICloudCorpusWipeCrossedTheZone(defaults),
                 persistedMode: persistedMode,
                 mirrorOffArmed: mirrorOffArmed)
+            // Card gd78: una entrada a una cuenta desde la bienvenida que se cerró antes de escribir el par sigue en el
+            // montaje con el que empezó. Sin este término el arranque montaba el espejo de iCloud a mitad del traspaso.
+            || WelcomeAdoptInFlight.holdsNeutralMount(
+                armed: WelcomeAdoptInFlight.isArmed(defaults),
+                persistedMode: persistedMode,
+                mirrorOffArmed: mirrorOffArmed)
     }
 
     // MARK: - Container CloudKit State
@@ -1117,6 +1123,9 @@ extension SwiftDataConfiguration {
         StorageModePersistence.settleFreshInstallNeutralMount(
             freshInstall: freshInstall,
             hasCompletedOnboarding: UserDefaults.standard.bool(forKey: "hasCompletedOnboarding"))
+        // Card gd78: el traspaso que escribió su par ya no sostiene el neutro.
+        WelcomeAdoptInFlight.settle(persistedMode: StorageModePersistence.read(),
+                                    mirrorOffArmed: StorageModePersistence.isMirrorOffArmed())
         let decision = personalStoreDecision(
             storageMode: CloudSyncFlags.storageMode,
             mirrorOffArmed: StorageModePersistence.isMirrorOffArmed(),

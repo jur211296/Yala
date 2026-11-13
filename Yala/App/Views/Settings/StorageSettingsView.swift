@@ -765,6 +765,18 @@ struct StorageSettingsView: View {
                 .accessibilityElement(children: .combine)
                 .accessibilityIdentifier(pending == nil
                                          ? "storage_sync_waiting_uncounted" : "storage_sync_waiting_count")
+            case .upToDate where CloudSyncFlags.storageMode == .cloud && !controller.engineFirstPullCompleted:
+                // Card rfzc: con el motor sano y nada por subir, pero la cuenta todavía bajando por primera vez, «Todo
+                // sincronizado» mentía: el Panel seguía vacío. Dice lo mismo que el aviso del Panel.
+                Label {
+                    Text(L10n.Welcome.Cloud.hydrationBanner)
+                } icon: {
+                    Image(systemName: "icloud.and.arrow.down")
+                }
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("storage_sync_first_download")
             case .upToDate:
                 HStack(spacing: DS.Spacing.sm) {
                     Image(systemName: "checkmark.circle.fill")
@@ -962,7 +974,8 @@ struct StorageSettingsView: View {
         YalaSecondaryButton(L10n.Storage.Progress.cancelMigration, icon: "xmark.circle",
                             isDisabled: !MigrationImportWaitLogic.cancelEnabled(
                                 isWorking: controller.isWorking, waitingForImport: controller.resumeWaitingForImport,
-                                cancelling: controller.isCancellingMigration)) {
+                                cancelling: controller.isCancellingMigration,
+                                adoptEffectPending: controller.isAdoptEffectPending)) {
             confirmCancelMigration = true
         }
         .accessibilityIdentifier("storage_cancel_migration_button")
