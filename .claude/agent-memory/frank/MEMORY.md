@@ -88,6 +88,7 @@
 - [El prototipo manda sobre el contrato](feedback_el_prototipo_manda_sobre_el_contrato.md) — servidor corto: se construye lo dibujado + mitigación + card de servidor.
 - [Si no avanza, cierra y prioriza el bug](feedback_si_no_avanza_cierra_y_prioriza_el_bug.md) — prueba parada por un bug grave ajeno: PR abierto, device-QA y card primero.
 - [QA en vivo: mira y sigue](feedback_qa_en_vivo_con_jurgen_mira_y_sigue.md) — si él prueba, sin popups ni toques; lo que destapa va a su card.
+- [Cada atasco es un bug](feedback_cada_atasco_es_un_bug.md) — en QA de iPhone, cada pantalla sin salida va a su card; luego se sigue.
 ## Cómo mido y cómo entrego
 - [Runner AX timeout tras la suite larga](feedback_runner_ax_timeout_tras_suite_larga.md) — cero casos y «AX loaded»: reinicia el simulador, no repitas igual.
 - [UI tras YalaTests entero: reinicia el simulador](reference_ui_tras_yalatests_entero_reinicia_el_simulador.md) — «AX loaded» = infraestructura; UI antes que unit.

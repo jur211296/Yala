@@ -13,6 +13,8 @@
 //  productores y los tests los leen por separado—; lo único que se decide aquí es qué pinta el cover con ellos.
 //
 
+import Foundation
+
 enum WelcomeCoverContentLogic {
 
     enum Content: Equatable {
@@ -63,5 +65,23 @@ enum WelcomeCoverContentLogic {
     /// del Welcome nunca tuvo `onDismiss`, y el respaldo lo devolvería al elector encima de la pantalla siguiente.
     static func runsCloudSignInDismissFallback(last: Content) -> Bool {
         last == .cloudSignIn
+    }
+
+    /// ¿Vuelve el respaldo al elector? Solo si nadie terminó ni pidió otra pantalla: con el onboarding completo, la
+    /// invitación de grupo, el onboarding o los pasos del Welcome ya pedidos, cada uno tiene a dónde ir.
+    static func dismissFallbackReopensChooser(
+        onboardingCompleted: Bool, showsGroupInvite: Bool, showsOnboarding: Bool, showsFlow: Bool
+    ) -> Bool {
+        !onboardingCompleted && !showsGroupInvite && !showsOnboarding && !showsFlow
+    }
+
+    /// El onboarding completo, leído de su almacén en este momento.
+    ///
+    /// **El `onDismiss` del cover no puede leer el `@AppStorage` de la vista** (card zrya, medido en el iPhone 14 el
+    /// 2026-11-13): UIKit guarda el cierre de cuando se PRESENTÓ el cover, y ahí el valor era el de antes del adopt.
+    /// Tras «¡Tu cuenta está lista!» → «Empezar», `onFinishedToApp` leía `true` y, una línea después en el log, el
+    /// respaldo leía `false` y devolvía a la persona a la bienvenida con su cuenta ya dentro.
+    static func onboardingCompletedNow(_ defaults: UserDefaults = .standard) -> Bool {
+        defaults.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
     }
 }
