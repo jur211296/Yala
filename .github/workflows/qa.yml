@@ -5,11 +5,14 @@ on:
   # disparaba DOS runs del mismo commit —uno por `push` y otro por `pull_request`— y cada
   # uno encola el runner de simulador. Medido el 2026-09-01 sobre un mismo commit: 97,4 min
   # (push) + 102,4 min (pull_request). El commit que se mergea lo vuelve a cubrir el push
-  # sobre `2.1`, así que no se pierde cobertura: se deja de pagarla dos veces.
+  # sobre la rama de trabajo, así que no se pierde cobertura: se deja de pagarla dos veces.
+  # La rama de trabajo va a mano: GitHub no admite expresiones en este filtro. Al publicar una
+  # version y cambiar la rama por defecto, cambia este valor y el de `on.push` de
+  # `nocturna-vigilante.yml` (los demas workflows leen la rama por defecto solos).
   push:
     branches: ["2.3", "1.0"]
   pull_request:
-  # La suite de UI entera NO corre en el PR: corre aqui, una vez al dia sobre `2.1`
+  # La suite de UI entera NO corre en el PR: corre aqui, una vez al dia sobre la rama por defecto
   # (decision del owner, 2026-09-06). El PR tiene que dar senal dentro de una sesion de
   # trabajo y no la daba — medido sobre 39 runs con la suite ejecutada (2026-09-06/07):
   # el job entero tardaba 89 min de mediana y el paso de UI se llevaba 67 de ellos, asi
@@ -20,7 +23,8 @@ on:
   # cubre la suite COMPLETA a diario.
   #
   # `schedule` corre sobre la rama por defecto del repositorio y no se puede elegir otra;
-  # aqui la rama por defecto ES `2.2` desde el 2026-10-22 (antes `2.1`, comprobado el 2026-09-07 con
+  # aqui la rama por defecto ES `2.3` desde el 2026-11-12 (antes `2.2` desde el 2026-10-22 y `2.1`;
+  # comprobado el 2026-11-12 con
   # `gh api repos/jur211296/Yala --jq .default_branch`), que es justo lo que se queria. Si
   # algun dia se cambia la rama por defecto, esta corrida se muda con ella sin avisar.
   #
@@ -50,9 +54,9 @@ on:
 # Medido en 30 días: 145 de 239 ramas de PR tuvieron más de un run, y cada uno ocupaba un
 # `macos-26` ~27 min para probar un commit que ya nadie iba a mergear.
 #
-# SOLO `pull_request`. Todo lo demás —push a `2.1`, la nocturna, un `workflow_dispatch`— cae en
+# SOLO `pull_request`. Todo lo demás —push a la rama de trabajo, la nocturna, un `workflow_dispatch`— cae en
 # un grupo por `run_id`, que es único: nunca comparte grupo con nadie y nunca se cancela. Es a
-# propósito. El push a `2.1` es la red del CI después del merge, y la nocturna es la única corrida
+# propósito. El push a la rama de trabajo es la red del CI después del merge, y la nocturna es la única corrida
 # de la suite de UI; cancelar cualquiera de las dos perdería cobertura sin que nadie lo viera.
 # (`nocturna-vigilante.yml` cuenta runs de `schedule` y `workflow_dispatch` sin mirar su
 # conclusión: como esos no se cancelan nunca, su cuenta no cambia.)
@@ -89,7 +93,7 @@ jobs:
       # revert ni rebase, y los merges de GitHub (el auto-merge incluido) se crean en el servidor.
       # Este paso le pasa el MISMO hook a los commits ya hechos: en un PR, a cada commit de
       # base..head y al título del PR (que GitHub copia al merge y al squash); en un push a
-      # `2.2`/`1.0`, a before..after. Lee el evento de GITHUB_EVENT_PATH y trae solo los commits
+      # la rama de trabajo o a `1.0`, a before..after. Lee el evento de GITHUB_EVENT_PATH y trae solo los commits
       # que faltan (sin árboles: ~2 s). En el `/gate` revisa los commits sin subir. Elegido por
       # Jürgen el 2026-10-08 (ticket `rebase-and-cherry-pick-skip-the-attribution-hook`).
       - name: Candado anti-atribución sobre los commits del PR o del push
@@ -353,10 +357,10 @@ jobs:
           echo "::notice title=Suite de simulador::SE SALTA — el diff es solo docs/tickets/encargos/marketing (ficheros: $total)"
 
   # Suite de tests. Runner `xcode-27` (preview de GitHub, macOS 27): Xcode 27.1 + sim
-  # iPhone 17 Pro en iOS 27.0 (rama 2.2; ver el paso «Seleccionar Xcode 27.1»). Build UNA vez + test-without-building.
+  # iPhone 17 Pro en iOS 27.0 (desde la rama 2.2; ver el paso «Seleccionar Xcode 27.1»). Build UNA vez + test-without-building.
   #
   # LOS UNIT BLOQUEAN (2026-10-10, ticket `ci-warns-but-does-not-block`). Un unit en rojo pone
-  # este job en rojo, y `tests` es check requerido del ruleset de `2.1`: el auto-merge (ADR-054 de
+  # este job en rojo, y `tests` es check requerido del ruleset de la rama de trabajo: el auto-merge (ADR-054 de
   # casa) ya no mergea con un unit en rojo. La UI sigue advisory y solo nocturna (job `ui`).
   #
   # Hasta ese dia los dos pasos de unit llevaban `continue-on-error: true` por el EXC_BREAKPOINT de
@@ -534,7 +538,7 @@ jobs:
         id: contexto
         run: echo "ui_tocaba=$UI_TOCABA" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      # XCODE 27.1 FIJO EN LA RAMA 2.2 (2026-10-18). 2.2 usa APIs que solo existen en el SDK de
+      # XCODE 27.1 FIJO DESDE LA RAMA 2.2 (2026-10-18; sigue en 2.3). 2.2 usa APIs que solo existen en el SDK de
       # iOS 27 (el «Abrir cuenta» de Siri, PR #552) y con el 26.6 de `macos-26` no compilaba:
       # `SiriQueryIntents.swift:195: … has no member 'open'`, cero tests corridos. La release de 2.2
       # se compila con 27.1 en la Mini, asi que el CI usa ese mismo build (27A9275) y no un guard
@@ -547,7 +551,7 @@ jobs:
       # pero solo admite el iPhone Duo; el script lo descarta (2026-10-23, ver su cabecera). Desde
       # la 20261104.0337.1 hay un iOS 27.2 completo, MAS NUEVO que el SDK 27.1: el script ya no lo
       # elige mientras haya otro (2026-11-07), porque ahi el paquete de UI no carga.
-      # La rama 2.1 sigue en `macos-26` con 26.6.
+      # La rama 2.1 seguia en `macos-26` con 26.6.
       - name: Seleccionar Xcode 27.1
         run: bash qa/scripts/ci-xcode.sh
       # Secrets.xcconfig está gitignored (API keys); sin él el build falla. El template
@@ -933,7 +937,7 @@ jobs:
   #
   # Desde el 2026-10-10 los unit BLOQUEAN (ver «LOS UNIT BLOQUEAN» sobre el job `tests`): su
   # rojo ya pone `tests` en rojo y frena el auto-merge, y el aviso lo dice asi. Sigue haciendo
-  # falta por dos cosas: la UI, que sigue advisory, y un push a `2.1` en rojo, que ya entro y
+  # falta por dos cosas: la UI, que sigue advisory, y un push a la rama de trabajo en rojo, que ya entro y
   # no tiene PR que lo frene — alguien tiene que enterarse.
   #
   # POR QUE SALIO DEL JOB `tests`. Cuando el aviso vivia ahi dentro, su `exit 1` tumbaba

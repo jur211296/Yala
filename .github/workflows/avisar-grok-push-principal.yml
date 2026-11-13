@@ -1,8 +1,9 @@
-name: Avisar a Grok (resumen diario de 2.3)
+name: Avisar a Grok (resumen diario de la rama de trabajo)
 
-# Un solo aviso al dia, a las 19:00 de Lima, con lo que entro en `2.3` en las 24 h anteriores
-# (hasta el 2026-10-22 era `2.1` y hasta el 2026-11-12 `2.2`; cada version se publica y se cierra en `1.0`, y
-# ahora todo se integra en 2.3):
+# Un solo aviso al dia, a las 19:00 de Lima, con lo que entro en la rama de trabajo en las 24 h anteriores.
+# La rama de trabajo es la rama POR DEFECTO del repositorio (`2.3` desde el 2026-11-12; antes `2.2` y `2.1`):
+# el paso «Componer el resumen» la lee de la API, asi que al publicar una version y cambiar la rama por
+# defecto este workflow la sigue solo. Lo que se resume:
 # los PRs mergeados y los commits directos que no vinieron de un PR. Si no entro nada, no se
 # envia nada — ni un «hoy no hubo nada», que es ruido con acuse de recibo.
 #
@@ -65,12 +66,12 @@ permissions:
 
 jobs:
   avisar:
-    name: Resumen diario de 2.3
+    name: Resumen diario de la rama de trabajo
     runs-on: ubuntu-latest
     steps:
-      # Historia entera: el resumen la recorre con `git log` sobre `origin/2.3`. El checkout
-      # es de la rama que dispara (la action local `.github/actions/avisar` sale de ahi), pero
-      # lo que se resume es SIEMPRE `2.3`, tambien en una prueba manual desde otra rama.
+      # Historia entera: el resumen la recorre con `git log` sobre `origin/<rama de trabajo>`. El
+      # checkout es de la rama que dispara (la action local `.github/actions/avisar` sale de ahi),
+      # pero lo que se resume es SIEMPRE la rama por defecto, tambien en una prueba manual desde otra.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
@@ -91,7 +92,11 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
-          RAMA="2.3"
+          # La rama de trabajo es la rama por defecto del repositorio: un solo sitio que cambiar al
+          # publicar una version (Settings > Branches), en vez de un literal por workflow.
+          RAMA=$(gh api "repos/$REPO" --jq .default_branch)
+          [ -n "$RAMA" ] || { echo "No pude leer la rama por defecto de $REPO." >&2; exit 1; }
+          echo "rama=$RAMA" >> "$GITHUB_OUTPUT"
           iso() { date -u -d "@$1" +%Y-%m-%dT%H:%M:%SZ; }
           lima() { date -u -d "@$(( $1 - 5 * 3600 ))" +'%d-%m %H:%M'; }
 
@@ -122,7 +127,7 @@ jobs:
           n_prs=$(printf '%s' "$prs_json" | jq 'length')
 
           # ---------- Commits directos en la ventana ----------
-          # Primer padre de `2.3` sin merges: cada PR entra como un commit de merge en la linea
+          # Primer padre de la rama de trabajo sin merges: cada PR entra como un commit de merge en la linea
           # principal, y lo que queda en ella sin serlo es lo que entro por push directo. Se
           # descartan ademas los que sean el `mergeCommit` de un PR, por si alguno se mergeo
           # con squash o rebase (ahi el commit del PR no es un merge). `--until` es inclusivo,
@@ -199,5 +204,5 @@ jobs:
           webhook-url: ${{ secrets.GROK_WEBHOOK_URL }}
           sender-key: ${{ secrets.GROK_WEBHOOK_SENDER_KEY }}
           github-token: ${{ github.token }}
-          asunto: resumen diario de lo que entro en 2.3
+          asunto: resumen diario de lo que entro en ${{ steps.componer.outputs.rama }}
           texto: ${{ steps.componer.outputs.texto }}
