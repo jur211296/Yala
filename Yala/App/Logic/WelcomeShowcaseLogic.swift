@@ -32,7 +32,7 @@ enum WelcomeShowcaseLogic {
         /// Foto y voz son de Yala Pro hoy: llevan el rótulo PRO.
         var isPro: Bool { self == .receipt || self == .voice }
 
-        /// Las de grupos llevan, en la puerta de «Mis finanzas», el atajo «Dividir gastos con amigos».
+        /// Las de grupos (las tres que enseña la puerta de Grupos).
         var isGroups: Bool { self == .splitAny || self == .whoOwes || self == .settle }
     }
 
@@ -64,9 +64,11 @@ enum WelcomeShowcaseLogic {
         }
     }
 
-    /// ¿Ofrece esta función el atajo a la puerta de Grupos? Solo las de grupos y solo desde «Mis finanzas».
-    static func offersGroupsDoor(_ demo: Demo, on door: Door) -> Bool {
-        door == .finances && demo.isGroups
+    /// ¿Se ofrece «Dividir gastos con amigos»? Desde el 13-nov va debajo de los accesos, siempre a la vista en «Mis
+    /// finanzas» (antes salía dentro de la vitrina y solo con una función de grupos). Sin entrada a la cuenta de Yala
+    /// sería un callejón: Grupos la exige.
+    static func offersGroupsDoor(on door: Door, providersAvailable: Bool) -> Bool {
+        door == .finances && providersAvailable
     }
 
     /// Accesibilidad de la ficha «Cómo usar esta especificación»: con Reducir movimiento la página que avanza sola se
