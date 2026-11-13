@@ -139,7 +139,11 @@ paths:
   el `TabGroup` salió con etiqueta vacía en `axe describe-ui`; con `.accessibilityLabel(…)` encima, «Tipo de pago». El
   `.menu` del día del mes, con título y `.labelsHidden()`, sí lleva el nombre (XCUITest
   `PlanningNecesariasLote04UITests#test_paymentEditor_selectorsHaveNames`). ⇒ un selector nuevo lleva título
-  siempre, nunca `Picker("")`; si es segmentado, además `.accessibilityLabel`.
+  siempre, nunca `Picker("")`; si es segmentado, además `.accessibilityLabel`. **Desde el 2026-11-12 lo fija un
+  barrido de `Yala/App`** (`VoiceOverSelectoresConNombreTests`): ningún `Picker`, `DatePicker`, `ColorPicker` ni
+  `Toggle` con título vacío. Lee el código con los espacios colapsados porque el título puede ir en otra línea: así
+  cazó la hora de las notificaciones, que el grep de una línea no veía. Un rótulo que es un `Text` aparte en la fila
+  no le llega al control: va también como título (con `.labelsHidden()`) y como `.accessibilityLabel`.
 
 - **Un freno «solo con la app activa» que DESCARTA la petición deja la pantalla sin cargar en el arranque del iPad
   (medido el 2026-11-05, iPad Pro 13, iOS 27.2, barrido final 2.2).** El Panel pedía su carga en el `onAppear` y en el

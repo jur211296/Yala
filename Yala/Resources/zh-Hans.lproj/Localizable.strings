@@ -9422,3 +9422,9 @@
 "pasos23.groups.what.link" = "我有邀请链接";
 "pasos23.groups.what.linkHint" = "已经有人建好了群组";
 "pasos23.groups.alreadySeen" = "群组你已经了解过了：进来时看过。接着做第 6 步。";
+
+/* VoiceOver: name of the Show only / Hide segmented control in Records filters */
+"a11y.selectores.filterMode" = "筛选模式";
+
+/* VoiceOver: name of the custom color picker in the icon/color sheet */
+"a11y.selectores.customColor" = "自定义颜色";

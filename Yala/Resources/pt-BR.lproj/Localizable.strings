@@ -9410,3 +9410,9 @@
 "pasos23.groups.what.link" = "Tenho um link de convite";
 "pasos23.groups.what.linkHint" = "Alguém já criou o grupo";
 "pasos23.groups.alreadySeen" = "Você já conhece Grupos: viu ao entrar. Seguimos com o passo 6.";
+
+/* VoiceOver: name of the Show only / Hide segmented control in Records filters */
+"a11y.selectores.filterMode" = "Modo do filtro";
+
+/* VoiceOver: name of the custom color picker in the icon/color sheet */
+"a11y.selectores.customColor" = "Cor personalizada";

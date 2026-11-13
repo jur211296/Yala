@@ -253,12 +253,13 @@ struct SettlementFormView: View {
     @ViewBuilder
     private var currencySegmentedControl: some View {
         if let suggested = suggestedAmount {
-            Picker("", selection: $useSuggestedAmount) {
+            Picker(L10n.GroupsNecesarias06.settlementCurrencyA11y, selection: $useSuggestedAmount) {
                 Text("\(appPreferences.currencyDisplayFormat.label(for: debt.currencyCode)) \(AmountInputHelper.formatWithGrouping(debt.amount))")
                     .tag(false)
                 Text("≈ \(appPreferences.currencyDisplayFormat.label(for: group.currencyCode)) \(AmountInputHelper.formatWithGrouping(suggested))")
                     .tag(true)
             }
+            .labelsHidden()
             .pickerStyle(.segmented)
             // Un segmentado no pasa su título a VoiceOver (regla de `swiftui-ds.md`); lote 06 de mejoras 2.3.
             .accessibilityLabel(L10n.GroupsNecesarias06.settlementCurrencyA11y)

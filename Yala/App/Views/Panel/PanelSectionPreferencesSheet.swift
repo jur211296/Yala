@@ -226,9 +226,10 @@ struct PanelSectionPreferencesSheet: View {
                     }
                 }
                 Spacer(minLength: 0)
-                Toggle("", isOn: visibilityBinding)
+                Toggle(type.displayName, isOn: visibilityBinding)
                     .labelsHidden()
                     .toggleStyle(.switch)
+                    .accessibilityLabel(type.displayName)
             }
 
             if type.supportsSize {

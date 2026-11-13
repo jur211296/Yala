@@ -359,12 +359,15 @@ struct GroupFormView: View {
 
                     Spacer()
 
-                    Picker("", selection: $defaultSplitType) {
+                    Picker(L10n.UXL19.splitType, selection: $defaultSplitType) {
                         ForEach(SplitType.allCases) { type in
                             Text(type.displayName).tag(type)
                         }
                     }
+                    .labelsHidden()
                     .pickerStyle(.menu)
+                    // El rótulo de la izquierda es un `Text` aparte: VoiceOver no lo une al menú.
+                    .accessibilityLabel(L10n.UXL19.splitType)
                 }
                 .padding(.horizontal, DS.FormRow.paddingH)
                 .padding(.vertical, DS.FormRow.paddingV)

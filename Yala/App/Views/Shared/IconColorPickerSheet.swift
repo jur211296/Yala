@@ -333,10 +333,11 @@ struct IconColorPickerSheet: View {
     }
 
     private var customColorButton: some View {
-        ColorPicker("", selection: $customColor, supportsOpacity: false)
+        ColorPicker(L10n.VoiceOverSelectores.customColor, selection: $customColor, supportsOpacity: false)
             .labelsHidden()
             .frame(width: 40, height: 40)
-            .accessibilityLabel(L10n.Accessibility.selectColor)
+            // «Seleccionar color» lo dicen también los colores fijos: este es el libre.
+            .accessibilityLabel(L10n.VoiceOverSelectores.customColor)
             .onChange(of: customColor) { _, newColor in
                 tempColorHex = newColor.toHex()
             }
