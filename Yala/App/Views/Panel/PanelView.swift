@@ -190,7 +190,8 @@ struct PanelView: View {
         }
     }
 
-    /// Paso 6 (Y23-14): la guía «Tus gráficas viven en Más». Sin «Más» en la barra (iPad a pantalla completa), las
+    /// Paso 6 (Y23-14): la guía «Tus gráficas viven en Más». Terminada, el paso queda hecho; con «Omitir», omitido (el
+    /// mazo pasa al 7 en los dos casos). Irse a otra pestaña la cierra sin tocar el mazo. Sin «Más» en la barra (iPad a pantalla completa), las
     /// gráficas están en su propia pestaña: se abren y el paso queda hecho.
     private func startChartsStepGuide() {
         let markDone = { SetupChecklistManager.shared.markCompleted(.whereMoneyGoes) }
@@ -199,11 +200,12 @@ struct PanelView: View {
             markDone()
             return
         }
-        PlaceGuideCenter.shared.start(.chartsStep, onFinish: markDone)
+        PlaceGuideCenter.shared.start(.chartsStep, onFinish: markDone,
+                                      onSkip: { SetupChecklistManager.shared.markSkipped(.whereMoneyGoes) })
     }
 
-    /// Lo que abre cada paso del mazo (Y23-05). Los pasos 1 a 5 abren su flujo guiado (Y23-07 a Y23-13); los demás,
-    /// hasta que llegue el suyo (Y23-14 a Y23-16), lo que ya existe.
+    /// Lo que abre cada paso del mazo (Y23-05): los pasos 1 a 5 y el 7, su flujo guiado (Y23-07 a Y23-13 y Y23-16); el 6,
+    /// la guía de Más (Y23-14).
     private func handleSetupStep(_ step: SetupStepID) {
         switch step {
         case .firstAccount:
@@ -219,10 +221,7 @@ struct PanelView: View {
         case .whereMoneyGoes:
             startChartsStepGuide()
         case .homeScreen:
-            // Los mini tutoriales de Y23-16 aún no existen: Ajustes › Tutoriales (widget, Apple Pay y Siri).
-            sheets.settingsInitialDestination = .tips
-            sheets.isPresentingSettings = true
-            SetupChecklistManager.shared.markCompleted(.homeScreen)
+            sheets.showHomeScreenTutorial = true
         case .tryVoiceInput:
             FeatureGateService.shared.enableSetupTrial(for: .voiceInput)
             sheets.isVoiceSetupTrial = true

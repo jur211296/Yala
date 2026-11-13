@@ -894,7 +894,13 @@ final class AppBootstrapper {
             // La guía de «días después» sale una vez: su marca no viaja de una corrida a otra. Y el mazo de Primeros
             // pasos solo se ve en una instalación marcada como nueva: su test la marca (Y23-05, Y23-15).
             UserDefaults.standard.removeObject(forKey: LaterChartsGuideLogic.shownKey)
+            // Y23-18: qué oferta se pidió y el aviso prometido tampoco viajan de una corrida a otra.
+            UserDefaults.standard.removeObject(forKey: SetupCompleteTrialOfferLogic.pendingOfferKey)
+            UserDefaults.standard.removeObject(forKey: SetupCompleteTrialOfferLogic.reminderOwedKey)
             if UITestHooks.showsSetupDeck { SetupChecklistManager.shared.markAsNewInstall() }
+            if UITestHooks.showsSetupDeck, let position = UITestHooks.setupDeckPosition {
+                for step in SetupStepID.deck.prefix(max(0, position - 1)) { SetupChecklistManager.shared.markSkipped(step) }
+            }
             // El avance guardado de las guías por pasos (L15-10): un test que deja una a medias la abriría a medias en
             // el siguiente.
             StepGuideProgressStore.guideIDs.forEach { StepGuideProgressStore.clear($0) }

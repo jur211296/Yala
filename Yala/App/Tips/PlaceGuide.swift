@@ -183,6 +183,9 @@ final class PlaceGuideCenter {
 
     /// Lo que pasa al terminarla entera (no al omitirla). Lo pasa quien la arranca: el paso 6 la da por hecha.
     @ObservationIgnored private var onFinish: (() -> Void)?
+    /// Lo que pasa al tocar «Omitir» (no al tocar fuera ni al irse a otra pestaña). El paso 6 la da por omitida y el mazo
+    /// pasa al 7, como en el prototipo (Y23-14).
+    @ObservationIgnored private var onSkip: (() -> Void)?
 
     init() {}
 
@@ -196,10 +199,17 @@ final class PlaceGuideCenter {
     /// Arranca una guía. Si ya hay otra en pantalla no hace nada: dos guías a la vez se taparían.
     @discardableResult
     func start(_ guide: PlaceGuide, onFinish: (() -> Void)? = nil) -> Bool {
+        start(guide, onFinish: onFinish, onSkip: nil)
+    }
+
+    /// Con lo que pasa al omitirla (el paso 6). Sobrecarga aparte para que `start(.x) { … }` siga siendo «al terminarla».
+    @discardableResult
+    func start(_ guide: PlaceGuide, onFinish: (() -> Void)?, onSkip: (() -> Void)?) -> Bool {
         guard self.guide == nil else { return false }
         self.guide = guide
         stageIndex = 0
         self.onFinish = onFinish
+        self.onSkip = onSkip
         return true
     }
 
@@ -223,8 +233,16 @@ final class PlaceGuideCenter {
         }
     }
 
-    /// «Omitir», o tocar fuera.
+    /// «Omitir».
     func skip() {
+        let onSkip = self.onSkip
+        close()
+        onSkip?()
+    }
+
+    /// Tocar fuera de la tarjeta: la cierra sin omitirla. Un toque perdido no da el paso 6 por omitido (review del
+    /// lote 05); el mazo sigue en ese paso.
+    func dismiss() {
         close()
     }
 
@@ -238,6 +256,7 @@ final class PlaceGuideCenter {
         guide = nil
         stageIndex = 0
         onFinish = nil
+        onSkip = nil
     }
 }
 

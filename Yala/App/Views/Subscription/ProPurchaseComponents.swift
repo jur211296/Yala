@@ -102,9 +102,14 @@ struct ProPlanCard: View {
     let isSelected: Bool
     /// «Sale a $2.50 al mes» bajo el anual (el paywall sí; «Función Pro», no: la captura elegida no lo lleva).
     var showsMonthlyEquivalent: Bool = true
+    /// La insignia en lugar de «Ahorra N %» (la oferta del final de Primeros pasos: «El más elegido», Y23-18).
+    var badgeOverride: String?
+    /// La línea en lugar de «Sale a $2.50 al mes» (la misma oferta: «Sale más barato por mes»).
+    var secondaryLineOverride: String?
     let onSelect: () -> Void
 
     private var savingsBadge: String? {
+        if let badgeOverride { return badgeOverride }
         guard offer.isYearly, let percent = StoreKitManager.shared.yearlySavingsPercent ?? fakeSavings else { return nil }
         return percent > 0 ? L10n.Subscription.saveBadge(percent) : nil
     }
@@ -154,7 +159,11 @@ struct ProPlanCard: View {
                     Text(priceLine)
                         .font(DS.Typography.subheadline)
                         .fixedSize(horizontal: false, vertical: true)
-                    if showsMonthlyEquivalent, let equivalent = offer.monthlyEquivalent {
+                    if let secondaryLineOverride {
+                        Text(secondaryLineOverride)
+                            .font(DS.Typography.caption)
+                            .opacity(isSelected ? 0.9 : 0.75)
+                    } else if showsMonthlyEquivalent, let equivalent = offer.monthlyEquivalent {
                         Text(L10n.UXPro.monthlyEquivalent(equivalent))
                             .font(DS.Typography.caption)
                             .opacity(isSelected ? 0.9 : 0.75)

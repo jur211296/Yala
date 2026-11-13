@@ -148,7 +148,10 @@ struct TrialOfferMomentLogicTests {
         #expect(practice.components(separatedBy: "TrialOfferMoments.notePracticeAnswered(").count - 1 == 2,
                 "las dos respuestas de «¿Era de prueba?» tienen que soltar la oferta que esperaba")
         let checklist = try SourceScan.code("Yala/App/Models/SetupChecklistManager.swift")
-        #expect(checklist.contains("var onAllStepsCompleted: () -> Void = { TrialOfferMoments.note(.setupChecklistCompleted) }"))
+        // Las dos ramas (lista de 2.2 y mazo de 2.3, que retrasa solo el envío: Y23-18) apuntan el momento.
+        let completion = try #require(checklist.range(of: "var onAllStepsCompleted: () -> Void = {"))
+        let completionBody = String(checklist[completion.upperBound...].prefix(700))
+        #expect(completionBody.components(separatedBy: ".setupChecklistCompleted").count - 1 == 2)
         #expect(checklist.contains("onAllStepsCompleted()"))
         // Desde Y23-05 ningún paso del mazo abre el paywall general («Conoce Yala Pro» salió del mazo): al completar
         // la lista solo sale la oferta de prueba.

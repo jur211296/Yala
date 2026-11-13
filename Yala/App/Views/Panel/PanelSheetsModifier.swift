@@ -48,6 +48,8 @@ struct PanelSheetsModifier: ViewModifier {
             .modifier(PrimerosPasosPanelPresentations(sheets: $sheets, viewModel: viewModel))
             // Primeros pasos 2.3: los pasos 3, 4 y 5 (Y23-11 a Y23-13).
             .modifier(PrimerosPasosPlanningPresentations(sheets: $sheets, viewModel: viewModel))
+            // Primeros pasos 2.3: el paso 7 (Y23-16).
+            .modifier(PrimerosPasosHomeScreenPresentation(sheets: $sheets))
             .sheet(item: $sheets.accountFormSheet) { sheet in
                 let names: [String] = {
                     guard let editing = sheet.account else {

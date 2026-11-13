@@ -116,6 +116,18 @@ final class UITestHooks {
     /// se calla para no tapar lo que cada test busca. Solo para los tests del propio mazo.
     nonisolated static var showsSetupDeck: Bool { hasArg("-uitest-show-setup-deck") }
 
+    /// `-uitest-setup-deck-at <n>`: con `-uitest-show-setup-deck`, el mazo arranca en el paso `n` (1…7, y 8 = completo):
+    /// los anteriores quedan omitidos. Para probar los pasos 6 y 7 y el final (Y23-14, Y23-16, Y23-18) sin recorrer
+    /// los cinco primeros.
+    nonisolated static var setupDeckPosition: Int? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-setup-deck-at", from: ProcessInfo.processInfo.arguments).flatMap { Int($0) }
+        #else
+        return nil
+        #endif
+    }
+
     /// `-uitest-later-charts-guide`: la guía de «días después» (Y23-15) puede salir bajo `-uitest`. Solo su XCUITest.
     nonisolated static var showsLaterChartsGuide: Bool { hasArg("-uitest-later-charts-guide") }
 
