@@ -3,7 +3,7 @@
 //  YalaUITests
 //
 //  Cobertura XCUITest del área `scheduled-payments` (escenarios 7.x): navegación
-//  Perfil → Pagos planificados (desde UX 2.2 · L10-15 abre Planificación: una sola lista) y
+//  a la lista de Planificación (la fila de Ajustes salió con la decisión 47 de 2.3) y
 //  creación de un pago desde el + de la lista (nombre + monto + cuenta vía Menu + subcategoría
 //  vía sheet compartido + frecuencia por defecto). Seed `minimal`.
 //  Convenciones: ver CLAUDE.md (sin sleeps, scheme Yala Dev).
@@ -17,20 +17,20 @@ final class ScheduledPaymentsCrudUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    /// Perfil → Pagos planificados abre la pantalla de Planificación, no otra lista (UX 2.2 · L10-15).
-    func test_opensScheduledListFromProfile() {
+    /// Una sola lista de pagos planificados, la de Planificación (UX 2.2 · L10-15). Desde la decisión 47 de 2.3 (B1)
+    /// Ajustes ya no tiene la fila que llevaba ahí: se llega por Planificación.
+    func test_opensScheduledListFromPlanning() {
         let app = XCUIApplication()
-        app.launchForUITest()
+        app.launchForUITest(deeplink: "scheduledPayments")
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
-
-        app.openProfile()
-        app.openSettingsSection("profile_planned")
 
         XCTAssertTrue(
             app.descendants(matching: .any)["scheduled_hero_pending"].waitForExistence(timeout: 10),
-            "Perfil › Pagos planificados no llevó a la lista de Planificación."
+            "No se abrió la lista de Pagos planificados de Planificación."
         )
-        XCTAssertFalse(app.buttons["scheduled_add_button"].exists, "Volvió a montarse la lista duplicada de Ajustes.")
+        app.openProfile()
+        XCTAssertTrue(app.buttons["profile_accounts"].waitForExistence(timeout: 10), "No se abrió Ajustes.")
+        XCTAssertFalse(app.buttons["profile_planned"].exists, "«Pagos planificados» volvió a Ajustes.")
     }
 
     /// CRUD — crear un pago planificado y verificar que aparece en la lista.

@@ -524,7 +524,7 @@
 "budgets.includeSharedExpenses" = "グループ支出の自分の分を含める";
 "budgets.includeSharedExpensesHint" = "オフにすると、個人の支出のみが対象になります。";
 "budgets.widget.noFavorites.title" = "お気に入り予算がありません";
-"budgets.widget.noFavorites.message" = "ここに表示するには、設定 > 予算でお気に入りに登録してください。";
+"budgets.widget.noFavorites.message" = "ここに表示するには、パネル設定 > パネルに表示する予算でお気に入りに登録してください。";
 "budgets.widget.selectFavorites" = "お気に入りを選択";
 "budgets.alerts.title" = "通知";
 "budgets.alerts.enable" = "上限に達したら通知";
@@ -9532,3 +9532,14 @@
 "groups.saldar23.notice.nowYouOwe" = "%2$@さんへの残りは%1$@です。";
 "groups.saldar23.notice.nowOwesYou" = "%1$@さんからの残りは%2$@です。";
 "groups.saldar23.notice.nowOthersOwe" = "%1$@さんから%3$@さんへの残りは%2$@です。";
+
+/* Lote chico 2.3 · Grupos y Ajustes: menos pagos al pie, Registros favoritos, Presupuestos en el Panel, Solo gastos en «Cómo usas Yala» */
+"groups.lote23chico.simplifiedNote" = "支払いの回数が減るように、Yalaが借りをまとめました。";
+"groups.lote23chico.showPairs" = "ペアごとの借りを見る";
+"groups.lote23chico.pairsNote" = "まとめる前の、ペアごとの借りです。精算するときは「支払いを減らす」表示に戻ってください。";
+"groups.lote23chico.showSimplified" = "支払いを減らして見る";
+"settings.lote23chico.favoriteRecords" = "お気に入りの記録";
+"settings.lote23chico.organizationFooter" = "予算と予定支払いは「計画」にあります。パネルに表示する予算は「パネル設定」で選びます。";
+"panel.lote23chico.budgetsOnPanel" = "パネルに表示する予算";
+"panel.lote23chico.budgetsOnPanelHint" = "予算カードに表示するものを選びます。";
+"usageMode.lote23chico.fullExpensesOnly" = "Yalaの全機能・支出のみ";

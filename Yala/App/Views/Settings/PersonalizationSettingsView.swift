@@ -28,10 +28,6 @@ struct PersonalizationSettingsView: View {
     @State private var showingAverageLinePicker = false
     @State private var showingWeekdayPicker = false
     @State private var showingLanguagePicker = false
-    /// UX 2.2 · L16-6: dos avisos, uno por sentido, con el texto de sus botones LITERAL: el `actions` de un `.alert` no
-    /// admite un botón cuyo texto dependa del estado (`swiftui-ds.md`), y un solo aviso para los dos lo necesitaba.
-    @State private var showingExpensesOnlyActivate = false
-    @State private var showingExpensesOnlyDeactivate = false
     @State private var showingSmartInsightsSettings = false
     @State private var showingAIPersonalization = false
 
@@ -125,22 +121,8 @@ struct PersonalizationSettingsView: View {
                 .listRowSeparator(.hidden)
             }
 
-            // MARK: - Modo de uso
-            YalaSettingsSection(L10n.Settings.sectionUsageMode) {
-                YalaSettingsToggleRow(L10n.Settings.expensesOnlyMode, isOn: Binding(
-                    get: { sessionState.isExpensesOnlyMode },
-                    set: { _ in
-                        if sessionState.isExpensesOnlyMode {
-                            showingExpensesOnlyDeactivate = true
-                        } else {
-                            showingExpensesOnlyActivate = true
-                        }
-                    }
-                ))
-                .accessibilityIdentifier("personalization_row_expenses_only")
-            } footer: {
-                Text(L10n.Settings.expensesOnlyModeDescription)
-            }
+            // «Modo de uso» (Solo gastos) salió de aquí con la decisión 48 de la revisión 2.3 (F1): vive en Ajustes ›
+            // «Cómo usas Yala», bajo «Yala completo» (`UsageModeSettingsView`).
 
             // MARK: - Interfaz
             // UX 2.2 · L16-5 (opción B de Jürgen, 2026-10-23): la fila sale SIEMPRE. Antes solo existía si en la bienvenida
@@ -411,39 +393,6 @@ struct PersonalizationSettingsView: View {
         .sheet(isPresented: $showingAIPersonalization) {
             AIPersonalizationSheet()
         }
-        // UX 2.2 · L16-6: un aviso del sistema y no un diálogo anclado al interruptor, que no pintaba «Cancelar»
-        // (`swiftui-ds.md`); y «Activar» sin rojo: activar no borra nada, solo oculta.
-        .alert(L10n.Settings.expensesOnlyActivateTitle, isPresented: $showingExpensesOnlyActivate) {
-            Button(L10n.Settings.expensesOnlyActivateConfirm) { setExpensesOnlyMode(true) }
-                .accessibilityIdentifier("expenses_only_activate_confirm")
-            Button(L10n.Settings.cancel, role: .cancel) {}
-                .accessibilityIdentifier("expenses_only_cancel")
-        } message: {
-            Text(L10n.Settings.expensesOnlyActivateMessage)
-        }
-        .alert(L10n.Settings.expensesOnlyDeactivateTitle, isPresented: $showingExpensesOnlyDeactivate) {
-            Button(L10n.Settings.expensesOnlyDeactivateConfirm) { setExpensesOnlyMode(false) }
-                .accessibilityIdentifier("expenses_only_deactivate_confirm")
-            Button(L10n.Settings.cancel, role: .cancel) {}
-        } message: {
-            Text(L10n.Settings.expensesOnlyDeactivateMessage)
-        }
-    }
-
-    private func setExpensesOnlyMode(_ newValue: Bool) {
-        // Este toggle es el punto de INTENCIÓN del usuario y la key es `synced: true`, así
-        // que publica ÉL — mismo orden que `OnboardingView`, que ya lo hacía a mano.
-        // El espejo (`SessionState.isExpensesOnlyMode.didSet`) escribe local + App Group +
-        // recarga widgets, pero NO encola y no debe: a ese mismo `didSet` llegan también el
-        // merge remoto (`PreferenceSyncService.applyMergeOutcome`) y el reset de
-        // `-uitest-reset`, y publicar ahí devolvería el eco (en `.cloud`, con HLC fresco
-        // sobre un valor recién bajado) y haría que un XCUITest encolara preferencias.
-        // Hasta ahora llegaba a iCloud de rebote, porque `AppPreferences.loadFromDefaults`
-        // re-persistía lo que releía; ese puente accidental se cerró.
-        guard newValue != sessionState.isExpensesOnlyMode else { return }
-        PreferenceSyncService.shared.set(
-            bool: newValue, forKey: AppPreferences.Keys.expensesOnlyMode)
-        sessionState.isExpensesOnlyMode = newValue
     }
 
 }

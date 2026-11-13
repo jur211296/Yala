@@ -10,6 +10,8 @@
 //    arriba y las deudas ya dicen quién debe a quién con palabras, no solo con color.
 //  - Decisión 37 de la revisión 2.3 (C1, reabre L13-1): las deudas de los demás también llevan «Saldar». Lo que apunta
 //    alguien que no paga ni recibe queda «Falta que <quien recibe> lo confirme», y la lista dice quién lo apuntó.
+//  - Decisión 36 de la revisión 2.3 (A1): con «Menos pagos» juntando deudas en un grupo de 3 o más, una línea al pie lo
+//    dice y deja ver las de cada par (solo mirar: sin «Saldar», y la opción del grupo no se toca).
 //
 
 import SwiftUI
@@ -18,6 +20,11 @@ struct GroupBalancesView: View {
 
     let balances: [MemberBalance]
     let debts: [Debt]
+    /// Las de cada par, sin juntar (`GroupDetailViewModel.pairDebts`). Vacías sin «Menos pagos».
+    var pairDebts: [Debt] = []
+    var pairDebtsWereConverted = false
+    /// «Menos pagos entre ustedes» del grupo.
+    var simplifyDebts = false
     let settlements: [SplitSettlement]
     let memberNameLookup: [String: String]
     /// Quién eres en este grupo. `nil` (sin resolver): no hay «lo tuyo» y ninguna deuda lleva botón.
@@ -58,6 +65,19 @@ struct GroupBalancesView: View {
     /// L13-2: «No me llegó» pregunta antes de quitar el pago (antes la ✗ lo borraba al primer toque).
     @State private var settlementToReject: SplitSettlement?
     @State private var showRejectConfirm = false
+    /// A1: qué deudas se ven en «Para quedar a mano». Local a esta pantalla: mirar las de cada par no cambia el grupo.
+    @State private var shownDebts: GroupMenosPagosNoteLogic.Shown = .simplified
+
+    private var showsMenosPagosNote: Bool {
+        GroupMenosPagosNoteLogic.showsNote(
+            simplifyDebts: simplifyDebts, activeMemberCount: activeMemberIDs.count, simplified: debts, pairs: pairDebts)
+    }
+
+    /// Las de cada par solo con la línea a la vista: si deja de salir (alguien saldó), vuelven las juntadas.
+    private var showsPairs: Bool { showsMenosPagosNote && shownDebts == .pairs }
+
+    /// «≈» de lo que se ve en «Para quedar a mano»: el de las juntadas o el de las de cada par.
+    private var listedDebtsWereConverted: Bool { showsPairs ? pairDebtsWereConverted : debtsWereConverted }
 
     private var pendingForMe: [SplitSettlement] {
         guard onConfirmSettlement != nil else { return [] }
@@ -248,7 +268,8 @@ struct GroupBalancesView: View {
     // MARK: - L13-1 · Para quedar a mano
 
     private var debtsSection: some View {
-        let cards = GroupBalancesPresentationLogic.debtCards(debts: debts, currentUserMemberID: currentUserMemberID)
+        let cards = GroupBalancesPresentationLogic.debtCards(
+            debts: showsPairs ? pairDebts : debts, currentUserMemberID: currentUserMemberID)
         return VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             YalaSectionHeader(L10n.UXL13.settleUpTitle)
                 .accessibilityAddTraits(.isHeader)
@@ -256,14 +277,48 @@ struct GroupBalancesView: View {
             VStack(spacing: DS.Spacing.md) {
                 ForEach(cards) { debtCard($0) }
             }
+
+            if showsMenosPagosNote {
+                menosPagosNote
+            }
         }
+        // Si la línea se va (alguien saldó, o se apagó «Menos pagos»), la próxima vez que vuelva enseña las juntadas,
+        // que son las que se saldan: no se queda pegada en las de cada par.
+        .onChange(of: showsMenosPagosNote) { _, shows in
+            if !shows { shownDebts = .simplified }
+        }
+    }
+
+    /// A1 · «Yala juntó las deudas…» con «Ver las deudas de cada par», o al revés cuando ya se ven las de cada par.
+    private var menosPagosNote: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+            Text(showsPairs ? L10n.Lote23Chico.pairsNote : L10n.Lote23Chico.simplifiedNote)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("group_balances_menos_pagos_note")
+            Button {
+                DS.Haptic.selection()
+                shownDebts = showsPairs ? .simplified : .pairs
+            } label: {
+                Text(showsPairs ? L10n.Lote23Chico.showSimplified : L10n.Lote23Chico.showPairs)
+                    .font(DS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(.thAccentText)
+                    .frame(minHeight: DS.Button.actionSize, alignment: .leading)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("group_balances_menos_pagos_toggle")
+        }
+        .padding(.horizontal, DS.Spacing.xs)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func debtCard(_ card: GroupBalancesPresentationLogic.DebtCard) -> some View {
         let fromName = name(card.fromMemberID)
         let toName = name(card.toMemberID)
         let amounts = card.debts.map { GroupBalancesPresentationLogic.CurrencyAmount(currencyCode: $0.currencyCode, amount: $0.amount) }
-        let amountsText = joined(amounts, isEstimate: debtsWereConverted)
+        let amountsText = joined(amounts, isEstimate: listedDebtsWereConverted)
         return VStack(alignment: .leading, spacing: DS.Spacing.md) {
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: DS.Spacing.sm) { pairLabel(card, from: fromName, to: toName) }
@@ -279,7 +334,8 @@ struct GroupBalancesView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityHidden(true)
                 Spacer(minLength: DS.Spacing.sm)
-                if onSettleDebt != nil, SettlementSaldar23Logic.offersSettle(
+                // Las de cada par son para mirar: se salda sobre las del grupo (A1).
+                if !showsPairs, onSettleDebt != nil, SettlementSaldar23Logic.offersSettle(
                     involvesMe: card.involvesMe, currentUserMemberID: currentUserMemberID,
                     receiverCanConfirm: activeMemberIDs.contains(card.toMemberID)) {
                     settleButton(card)

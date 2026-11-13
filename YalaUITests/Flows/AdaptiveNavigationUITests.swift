@@ -368,10 +368,11 @@ final class AdaptiveNavigationUITests: XCTestCase {
         XCTAssertTrue(listRow.waitForExistence(timeout: 10), "No apareció la lista de Ajustes.")
         app.openSettingsSection("profile_personalization")
 
-        let firstRow = app.switches["personalization_row_expenses_only"]
+        // «Idioma de la app» es la primera fila desde que «Solo gastos» pasó a «Cómo usas Yala» (decisión 48 de 2.3).
+        let firstRow = app.buttons["personalization_row_app_language"]
         XCTAssertTrue(firstRow.waitForExistence(timeout: 10), "No se abrió Personalización.")
         let rowText = firstRow.staticTexts.firstMatch
-        XCTAssertTrue(rowText.exists, "La fila «Solo gastos» no tiene texto.")
+        XCTAssertTrue(rowText.exists, "La fila «Idioma de la app» no tiene texto.")
         // Donde lista y ajuste no caben a la vez (iPad mini en vertical) la lista flota y se aparta al abrir el ajuste:
         // no hay columna al lado que medir. Que la lista siga a la vista donde sí caben lo fija el caso de arriba.
         guard listRow.isHittable else {

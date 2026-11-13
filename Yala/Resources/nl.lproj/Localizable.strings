@@ -524,7 +524,7 @@
 "budgets.includeSharedExpenses" = "Mijn deel van groepsuitgaven meetellen";
 "budgets.includeSharedExpensesHint" = "Als dit uit staat, tellen alleen je persoonlijke uitgaven mee.";
 "budgets.widget.noFavorites.title" = "Geen favoriete budgetten";
-"budgets.widget.noFavorites.message" = "Markeer budgetten als favoriet via Instellingen > Budgetten om ze hier te zien.";
+"budgets.widget.noFavorites.message" = "Markeer budgetten als favoriet via Panel instellen > Budgetten in het Panel om ze hier te zien.";
 "budgets.widget.selectFavorites" = "Selecteer favorieten";
 "budgets.alerts.title" = "Meldingen";
 "budgets.alerts.enable" = "Waarschuwen bij bereiken van limiet";
@@ -9532,3 +9532,14 @@
 "groups.saldar23.notice.nowYouOwe" = "Je bent %2$@ nu %1$@ schuldig.";
 "groups.saldar23.notice.nowOwesYou" = "%1$@ is je nu %2$@ schuldig.";
 "groups.saldar23.notice.nowOthersOwe" = "%1$@ is %3$@ nu %2$@ schuldig.";
+
+/* Lote chico 2.3 · Grupos y Ajustes: menos pagos al pie, Registros favoritos, Presupuestos en el Panel, Solo gastos en «Cómo usas Yala» */
+"groups.lote23chico.simplifiedNote" = "Yala heeft de schulden samengevoegd zodat er minder betalingen zijn.";
+"groups.lote23chico.showPairs" = "Schulden per paar bekijken";
+"groups.lote23chico.pairsNote" = "Dit zijn de schulden per paar, niet samengevoegd. Om te verrekenen ga je terug naar minder betalingen.";
+"groups.lote23chico.showSimplified" = "Bekijken met minder betalingen";
+"settings.lote23chico.favoriteRecords" = "Favoriete boekingen";
+"settings.lote23chico.organizationFooter" = "Budgetten en Geplande betalingen staan in Planning. Welke budgetten in het Panel staan, kies je in Panel instellen.";
+"panel.lote23chico.budgetsOnPanel" = "Budgetten in het Panel";
+"panel.lote23chico.budgetsOnPanelHint" = "Kies welke op de Budgetten-kaart staan.";
+"usageMode.lote23chico.fullExpensesOnly" = "Volledige Yala · alleen uitgaven";

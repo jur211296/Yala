@@ -225,6 +225,7 @@ enum DevSeedGroups {
         let group = SplitGroup(
             name: UITestHooks.seededCrossDebtsGroupName, iconName: "house", currencyCode: "PEN", isOwner: true)
         group.isBackendGroup = true  // C3: ver el porqué en el primer grupo de `create`.
+        group.simplifyDebts = UITestHooks.seedGroupCrossDebtsSimplified
         context.insert(group)
         let zone = group.cloudKitZoneID
         let me = SplitMember(
