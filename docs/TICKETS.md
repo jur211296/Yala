@@ -1263,6 +1263,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | waiting-card-disables-stop-waiting-without-saying-why | backlog | tickets/backlog/waiting-card-disables-stop-waiting-without-saying-why.md |
 | web-domain-has-no-spf-dkim-dmarc | done | tickets/done/web-domain-has-no-spf-dkim-dmarc.md |
 | weekday-bar-daily-average-unmarked | backlog | tickets/backlog/weekday-bar-daily-average-unmarked.md |
+| welcome-2-3-visual-adjustments | done | tickets/done/welcome-2-3-visual-adjustments.md |
 | welcome-adopt-cancel-dialog-says-from-here | done | tickets/done/welcome-adopt-cancel-dialog-says-from-here.md |
 | welcome-adopt-cancel-then-close-mounts-the-icloud-mirror | qa | tickets/qa/welcome-adopt-cancel-then-close-mounts-the-icloud-mirror.md |
 | welcome-adopt-effect-failure-has-no-reason-and-no-cancel | done | tickets/done/welcome-adopt-effect-failure-has-no-reason-and-no-cancel.md |

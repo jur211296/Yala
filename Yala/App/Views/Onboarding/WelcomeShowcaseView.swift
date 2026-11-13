@@ -7,8 +7,10 @@
 //  Un botón por proveedor —sin «Empezar» ni «Ya tengo una cuenta»—: qué pasa después lo decide el contenedor.
 //
 //  Fondo F2 (base oscura con el índigo como brillo detrás de la vitrina), solo en modo oscuro como toda la bienvenida.
-//  La mascota tiene su espacio reservado, vacío. Las reglas de qué se enseña y cuándo rota viven en
-//  `WelcomeShowcaseLogic`, con su test.
+//  Ajustes del 13-nov (Jürgen, primera vez en el iPhone): sin el hueco de la mascota, logo más grande, lema en la fuente
+//  del prototipo (Bricolage Grotesque) en dos líneas exactas, sin «EJEMPLO», minidescripciones de una línea, los tres
+//  accesos iguales (estilo de los botones de inicio de Vercel) y «Dividir gastos con amigos» debajo de ellos. Las
+//  reglas de qué se enseña y cuándo rota viven en `WelcomeShowcaseLogic`, con su test.
 //
 
 import SwiftUI
@@ -98,38 +100,42 @@ struct WelcomeShowcaseView: View {
 
     // MARK: - Cabecera y titular
 
+    /// Solo el logo, centrado: el hueco de la mascota se retiró (13-nov, la mascota no va en esta versión).
     private var header: some View {
-        HStack {
-            Color.clear.frame(width: 44, height: 44)
-            Spacer()
-            Image("YalaLogo")
-                .resizable()
-                .scaledToFit()
-                .frame(height: 30)
-                .colorMultiply(.white)
-                .accessibilityHidden(true)
-            Spacer()
-            // Espacio reservado para la mascota (fuera de alcance: se suma después).
-            Circle()
-                .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
-                .foregroundStyle(.white.opacity(0.25))
-                .frame(width: 44, height: 44)
-                .accessibilityHidden(true)
-        }
+        Image("YalaLogo")
+            .resizable()
+            .scaledToFit()
+            .frame(height: Self.logoHeight)
+            .colorMultiply(.white)
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .accessibilityHidden(true)
     }
+
+    static let logoHeight: CGFloat = 40
+
+    /// La fuente del lema en el prototipo (`--f-display`, peso 800, óptica de 28). Empaquetada en `Resources/Fonts`.
+    static let titleFontName = "BricolageGrotesque28pt-ExtraBold"
+    /// 28 pt, como el prototipo: «Tus finanzas personales,» mide ~318 pt y entra en el iPhone de 375 pt (343 útiles).
+    static let titleFontSize: CGFloat = 28
 
     private var title: some View {
         let (lead, accent, tint): (String, String, Color) = door == .finances
             ? (L10n.Showcase.financesTitle, L10n.Showcase.financesTitleAccent, .hotPink)
             : (L10n.Showcase.groupsTitle, L10n.Showcase.groupsTitleAccent, .neonCyan)
-        var leadPart = AttributedString(lead + " ")
+        // Dos líneas exactas: un solo `Text` con salto de línea, para que las dos encojan juntas si un idioma o el tamaño
+        // de texto no caben, y nunca se partan por otro sitio.
+        var leadPart = AttributedString(lead + "\n")
         leadPart.foregroundColor = .white
         var accentPart = AttributedString(accent)
         accentPart.foregroundColor = tint
         return Text(leadPart + accentPart)
-            .font(DS.Typography.welcomeHeadline)
+            .font(.custom(Self.titleFontName, size: Self.titleFontSize, relativeTo: .largeTitle))
+            .tracking(-Self.titleFontSize * 0.025)
+            .lineSpacing(-2)
+            .lineLimit(2)
+            .minimumScaleFactor(0.6)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityLabel("\(lead) \(accent)")
             .accessibilityAddTraits(.isHeader)
             .accessibilityIdentifier("welcome_showcase_title")
     }
@@ -195,32 +201,15 @@ struct WelcomeShowcaseView: View {
                 .transition(.opacity)
                 .accessibilityHidden(true)
 
-            (Text(caption(for: current)).foregroundStyle(.white.opacity(0.72)))
+            // Una línea como máximo (13-nov): una minidescripción de dos líneas subía el alto de la vitrina en cada
+            // vuelta. Si un idioma no cabe, encoge hasta ~13 pt y no más.
+            Text(caption(for: current))
+                .foregroundStyle(.white.opacity(0.72))
                 .font(DS.Typography.subheadline)
-                .fixedSize(horizontal: false, vertical: true)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            exampleTag
-
-            // Sin entrada a la cuenta de Yala, la puerta de Grupos sería un callejón: no se ofrece.
-            if providersAvailable, WelcomeShowcaseLogic.offersGroupsDoor(current, on: door) {
-                Button {
-                    DS.Haptic.selection()
-                    switchDoor(to: .groups)
-                } label: {
-                    HStack(spacing: DS.Spacing.xs) {
-                        Text(L10n.Showcase.groupsDoorLink)
-                        Image(systemName: "chevron.right").font(DS.Typography.caption)
-                    }
-                    .font(DS.Typography.subheadlineEmphasized)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, DS.Spacing.md)
-                    .frame(minHeight: 44)
-                    .background(.white.opacity(0.12), in: Capsule())
-                    .contentShape(Capsule())
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("welcome_showcase_groups_door")
-            }
+                .accessibilityIdentifier("welcome_showcase_caption")
         }
         .padding(DS.Spacing.md + DS.Spacing.xxs)
         .background {
@@ -252,20 +241,6 @@ struct WelcomeShowcaseView: View {
         let index: Int
     }
 
-    private var exampleTag: some View {
-        Text(L10n.Showcase.example.uppercased())
-            .font(DS.Typography.labelTiny)
-            .foregroundStyle(Color.neonCyan)
-            .padding(.horizontal, DS.Spacing.xs + DS.Spacing.xxs)
-            .padding(.vertical, DS.Spacing.xxs)
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
-                    .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [3, 2]))
-                    .foregroundStyle(Color.neonCyan)
-            )
-            .accessibilityHidden(true)
-    }
-
     private var segments: some View {
         HStack(spacing: DS.Spacing.xs) {
             ForEach(Array(demos.enumerated()), id: \.offset) { offset, demo in
@@ -291,18 +266,9 @@ struct WelcomeShowcaseView: View {
     private var accesses: some View {
         VStack(spacing: DS.Spacing.sm) {
             ForEach(WelcomeShowcaseLogic.accesses(for: door, providersAvailable: providersAvailable), id: \.self) { access in
-                switch access {
-                case .google:
-                    GoogleSignInButton(variant: .dark, purpose: .enter) { choose(.google) }
-                        .frame(height: WelcomeFormLayout.buttonHeight)
-                        .accessibilityIdentifier("welcome_access_google")
-                case .apple:
-                    WelcomeAppleEnterButton { choose(.apple) }
-                        .frame(height: WelcomeFormLayout.buttonHeight)
-                        .accessibilityIdentifier("welcome_access_apple")
-                case .iCloud:
-                    iCloudCard
-                }
+                WelcomeAccessButton(access: access) { choose(access) }
+                    .frame(height: access == .iCloud ? WelcomeAccessButton.iCloudHeight : WelcomeFormLayout.buttonHeight)
+                    .accessibilityIdentifier(Self.accessIdentifier(access))
             }
             if door == .groups {
                 Text(L10n.Showcase.groupsNeedAccount)
@@ -313,45 +279,37 @@ struct WelcomeShowcaseView: View {
                     .frame(maxWidth: .infinity)
                     .accessibilityIdentifier("welcome_access_groups_note")
             }
+            // Debajo de los tres accesos, como en el prototipo (13-nov): ya no vive dentro de la vitrina. Sin entrada a la
+            // cuenta de Yala, la puerta de Grupos sería un callejón: no se ofrece.
+            if WelcomeShowcaseLogic.offersGroupsDoor(on: door, providersAvailable: providersAvailable) {
+                Button {
+                    DS.Haptic.selection()
+                    switchDoor(to: .groups)
+                } label: {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Image(systemName: "person.2.fill").font(DS.Typography.caption)
+                        Text(L10n.Showcase.groupsDoorLink)
+                        Image(systemName: "chevron.right").font(DS.Typography.caption)
+                    }
+                    .font(DS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, DS.Spacing.md)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .padding(.top, DS.Spacing.xs)
+                .accessibilityIdentifier("welcome_showcase_groups_door")
+            }
         }
     }
 
-    private var iCloudCard: some View {
-        Button { choose(.iCloud) } label: {
-            HStack(spacing: DS.Spacing.md) {
-                Image(systemName: "icloud.fill")
-                    .font(DS.Typography.subheadlineEmphasized)
-                    .foregroundStyle(Color.neonCyan)
-                    .frame(width: 34, height: 34)
-                    .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(L10n.Showcase.enterWithICloud)
-                        .font(DS.Typography.bodyBold)
-                        .foregroundStyle(.white)
-                    Text(L10n.Showcase.iCloudLine)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.white.opacity(0.65))
-                }
-                .fixedSize(horizontal: false, vertical: true)
-                Spacer(minLength: DS.Spacing.sm)
-                Image(systemName: "chevron.right")
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.white.opacity(0.5))
-                    .accessibilityHidden(true)
-            }
-            .padding(.horizontal, DS.Spacing.md + DS.Spacing.xxs)
-            .padding(.vertical, DS.Spacing.md - 1)
-            .contentShape(Rectangle())
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .strokeBorder(.white.opacity(0.18), lineWidth: 1.5)
-            )
+    static func accessIdentifier(_ access: Access) -> String {
+        switch access {
+        case .google: "welcome_access_google"
+        case .apple: "welcome_access_apple"
+        case .iCloud: "welcome_access_icloud"
         }
-        .buttonStyle(.plain)
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(.isButton)
-        .accessibilityIdentifier("welcome_access_icloud")
     }
 
     // MARK: - Acciones
@@ -483,32 +441,84 @@ private struct ShowcaseSegment: View {
     }
 }
 
-// MARK: - Botón «Entrar con Apple»
+// MARK: - Botón de acceso
 
-/// El par del botón de Google, del mismo tamaño y con el estilo de Apple sobre fondo oscuro (blanco, logo y texto en
-/// negro). Un botón propio y no `ASAuthorizationAppleIDButton`: el del sistema no deja escribir «Entrar con Apple».
-struct WelcomeAppleEnterButton: View {
+/// Los tres accesos de la bienvenida con un solo diseño (13-nov, referencia de los botones de inicio de Vercel): el mismo
+/// ancho, borde fino, esquinas redondeadas y el ícono a la izquierda del texto, centrados en su botón. El relleno es un
+/// cristal medio sobre el fondo oscuro, no blanco (Jürgen: «los blancos gritan mucho»). iCloud privado es un poco más
+/// alto y lleva su línea debajo del título; se centra el bloque entero. El logo de Google va en color (guía de marca).
+struct WelcomeAccessButton: View {
+    let access: WelcomeShowcaseLogic.Access
     let action: () -> Void
+
+    // A11Y-DM: la bienvenida es solo oscura (SPEC 2.3); cristal medio sobre el fondo F2.
+    static let fill = Color.white.opacity(0.10)
+    static let stroke = Color.white.opacity(0.22)
+    static let ink = Color.white
+    // A11Y-DT: el mismo tamaño fijo que tenían los botones de Google y Apple (paridad con el botón del sistema).
+    static let font = Font.system(size: 17, weight: .semibold)
+    static let iconSlot: CGFloat = 22
+    /// Alto de iCloud privado: el de los otros dos más el de su línea de debajo.
+    static let iCloudHeight: CGFloat = WelcomeFormLayout.buttonHeight + DS.Spacing.md
+
+    private var subtitle: String? { access == .iCloud ? L10n.Showcase.iCloudLine : nil }
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: DS.Spacing.sm) {
-                Image(systemName: "apple.logo")
-                    // A11Y-DT: paridad con el botón de Google, que tampoco escala (contrato de marca).
-                    .font(.system(size: 19, weight: .medium))
+                icon
+                    .frame(width: Self.iconSlot, height: Self.iconSlot)
                     .accessibilityHidden(true)
-                Text(L10n.Showcase.enterWithApple)
-                    .font(.system(size: 19, weight: .medium))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(title)
+                        .font(Self.font)
+                        .foregroundStyle(Self.ink)
+                    if let subtitle {
+                        Text(subtitle)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(Self.ink.opacity(0.65))
+                    }
+                }
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
             }
-            // A11Y-DM: blanco y negro de Apple sobre la bienvenida oscura fija.
-            .foregroundStyle(Color.black)
+            .padding(.horizontal, DS.Spacing.lg)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.white, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+            .background(Self.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                    .strokeBorder(Self.stroke, lineWidth: 1)
+            )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder private var icon: some View {
+        switch access {
+        case .google:
+            Image("GoogleG")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 20, height: 20)  // guía de marca: el logo de Google nunca se recolorea
+        case .apple:
+            Image(systemName: "apple.logo")
+                .font(.system(size: 19, weight: .medium))  // A11Y-DT: va con el rótulo, que tampoco escala
+                .foregroundStyle(Self.ink)
+        case .iCloud:
+            Image(systemName: "icloud.fill")
+                .font(.system(size: 17, weight: .medium))  // A11Y-DT: va con el rótulo, que tampoco escala
+                .foregroundStyle(Color.neonCyan)
+        }
+    }
+
+    private var title: String {
+        switch access {
+        case .google: L10n.Showcase.enterWithGoogle
+        case .apple: L10n.Showcase.enterWithApple
+        case .iCloud: L10n.Showcase.enterWithICloud
+        }
     }
 }
 
