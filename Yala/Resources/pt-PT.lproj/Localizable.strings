@@ -8786,6 +8786,12 @@
 "groups.saldar23.notice.nowYouOwe" = "Agora deves %1$@ a %2$@.";
 "groups.saldar23.notice.nowOwesYou" = "Agora %1$@ deve-te %2$@.";
 "groups.saldar23.notice.nowOthersOwe" = "Agora %1$@ deve %2$@ a %3$@.";
+"groups.saldar23.pendingOnDebt.one" = "Há um pagamento de %@ por confirmar";
+"groups.saldar23.pendingOnDebt.many" = "Há pagamentos de %@ por confirmar";
+"groups.saldar23.confirmOver.title" = "Confirmar este pagamento?";
+"groups.saldar23.confirmOver.settled" = "%1$@ já não te devia nada: outro pagamento saldou esta dívida. Se confirmares estes %2$@, fica pago a mais. Se for o mesmo pagamento registado duas vezes, retira-o.";
+"groups.saldar23.confirmOver.exceeds" = "%1$@ só tinha %2$@ por te pagar. Se confirmares estes %3$@, fica pago a mais.";
+"groups.saldar23.confirmOver.confirmAnyway" = "Confirmar na mesma";
 
 /* Lote chico 2.3 · Grupos y Ajustes: menos pagos al pie, Registros favoritos, Presupuestos en el Panel, Solo gastos en «Cómo usas Yala» */
 "groups.lote23chico.simplifiedNote" = "O Yala juntou as dívidas para haver menos pagamentos.";

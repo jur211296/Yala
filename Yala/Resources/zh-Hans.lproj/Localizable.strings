@@ -9549,6 +9549,12 @@
 "groups.saldar23.notice.nowYouOwe" = "你现在欠 %2$@ %1$@。";
 "groups.saldar23.notice.nowOwesYou" = "%1$@ 现在欠你 %2$@。";
 "groups.saldar23.notice.nowOthersOwe" = "%1$@ 现在欠 %3$@ %2$@。";
+"groups.saldar23.pendingOnDebt.one" = "有一笔 %@ 的付款待确认";
+"groups.saldar23.pendingOnDebt.many" = "有多笔付款共 %@ 待确认";
+"groups.saldar23.confirmOver.title" = "确认这笔付款？";
+"groups.saldar23.confirmOver.settled" = "%1$@ 已经不欠你了：另一笔付款已结清这笔欠款。确认这 %2$@ 会多付。如果是同一笔付款记了两次，请删除它。";
+"groups.saldar23.confirmOver.exceeds" = "%1$@ 只剩 %2$@ 要付给你。确认这 %3$@ 会多付。";
+"groups.saldar23.confirmOver.confirmAnyway" = "仍然确认";
 
 /* Lote chico 2.3 · Grupos y Ajustes: menos pagos al pie, Registros favoritos, Presupuestos en el Panel, Solo gastos en «Cómo usas Yala» */
 "groups.lote23chico.simplifiedNote" = "Yala 合并了欠款，让付款次数更少。";

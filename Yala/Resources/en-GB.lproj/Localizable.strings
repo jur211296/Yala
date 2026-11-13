@@ -8781,6 +8781,12 @@
 "groups.saldar23.notice.nowYouOwe" = "You now owe %2$@ %1$@.";
 "groups.saldar23.notice.nowOwesYou" = "%1$@ now owes you %2$@.";
 "groups.saldar23.notice.nowOthersOwe" = "%1$@ now owes %3$@ %2$@.";
+"groups.saldar23.pendingOnDebt.one" = "There's a %@ payment waiting to be confirmed";
+"groups.saldar23.pendingOnDebt.many" = "Payments of %@ are waiting to be confirmed";
+"groups.saldar23.confirmOver.title" = "Confirm this payment?";
+"groups.saldar23.confirmOver.settled" = "%1$@ didn't owe you anything anymore: another payment settled this debt. If you confirm this %2$@, it'll be overpaid. If it's the same payment recorded twice, remove it.";
+"groups.saldar23.confirmOver.exceeds" = "%1$@ only had %2$@ left to pay you. If you confirm this %3$@, it'll be overpaid.";
+"groups.saldar23.confirmOver.confirmAnyway" = "Confirm anyway";
 
 /* Lote chico 2.3 · Grupos y Ajustes: menos pagos al pie, Registros favoritos, Presupuestos en el Panel, Solo gastos en «Cómo usas Yala» */
 "groups.lote23chico.simplifiedNote" = "Yala combined the debts so there are fewer payments.";

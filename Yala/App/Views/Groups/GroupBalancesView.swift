@@ -12,6 +12,9 @@
 //    alguien que no paga ni recibe queda «Falta que <quien recibe> lo confirme», y la lista dice quién lo apuntó.
 //  - Decisión 36 de la revisión 2.3 (A1): con «Menos pagos» juntando deudas en un grupo de 3 o más, una línea al pie lo
 //    dice y deja ver las de cada par (solo mirar: sin «Saldar», y la opción del grupo no se toca).
+//  - Pago por confirmar, opción B (Jürgen, 2026-11-13): una deuda con un pago esperando lo dice en su tarjeta, «Saldar»
+//    ofrece solo lo que queda fuera de ese pago, y «Sí, lo recibí» avisa si el pago ya no cabe en la deuda
+//    (`GroupPendingSettlementLogic`).
 //
 
 import SwiftUI
@@ -67,6 +70,9 @@ struct GroupBalancesView: View {
     @State private var showRejectConfirm = false
     /// A1: qué deudas se ven en «Para quedar a mano». Local a esta pantalla: mirar las de cada par no cambia el grupo.
     @State private var shownDebts: GroupMenosPagosNoteLogic.Shown = .simplified
+    /// Opción B: un «Sí, lo recibí» cuyo pago ya no cabe en la deuda espera aquí la respuesta del aviso.
+    @State private var settlementToConfirmOver: SplitSettlement?
+    @State private var showConfirmOver = false
 
     private var showsMenosPagosNote: Bool {
         GroupMenosPagosNoteLogic.showsNote(
@@ -85,6 +91,17 @@ struct GroupBalancesView: View {
             GroupBalancesPresentationLogic.needsMyConfirmation(
                 isConfirmed: $0.isConfirmed, toMemberID: $0.toMemberID, currentUserMemberID: currentUserMemberID)
         }
+    }
+
+    /// Los pagos tal como los lee `GroupPendingSettlementLogic`.
+    private var payments: [GroupPendingSettlementLogic.Payment] {
+        settlements.map { Self.payment($0) }
+    }
+
+    private static func payment(_ settlement: SplitSettlement) -> GroupPendingSettlementLogic.Payment {
+        GroupPendingSettlementLogic.Payment(
+            fromMemberID: settlement.fromMemberID, toMemberID: settlement.toMemberID, amount: settlement.amount,
+            currencyCode: settlement.currencyCode, isConfirmed: settlement.isConfirmed)
     }
 
     private var listedSettlements: [SplitSettlement] {
@@ -174,6 +191,26 @@ struct GroupBalancesView: View {
                      ? L10n.UXL13.pendingRejectMessage(name(settlement.fromMemberID))
                      : L10n.UXL13.pendingRejectMessageOther)
             }
+            // Opción B: «Sí, lo recibí» con un pago que ya no cabe en la deuda. Confirmarlo dejaría pagado de más; si es el
+            // mismo pago apuntado dos veces, se quita aquí mismo.
+            .alert(L10n.GruposSaldar23.confirmOverTitle, isPresented: $showConfirmOver,
+                   presenting: settlementToConfirmOver) { settlement in
+                Button(L10n.UXL13.pendingRejectConfirm, role: .destructive) {
+                    onRejectSettlement?(settlement)
+                    settlementToConfirmOver = nil
+                }
+                .accessibilityIdentifier("group_pending_over_remove")
+                Button(L10n.GruposSaldar23.confirmAnyway) {
+                    onConfirmSettlement?(settlement)
+                    settlementToConfirmOver = nil
+                }
+                .accessibilityIdentifier("group_pending_over_confirm")
+                // Con `.cancel`: con tres botones y ninguno de cancelar, el sistema añade otro «Cancelar» (salían dos).
+                Button(L10n.Common.cancel, role: .cancel) { settlementToConfirmOver = nil }
+                    .accessibilityIdentifier("group_pending_over_cancel")
+            } message: { settlement in
+                Text(confirmOverMessage(settlement))
+            }
         }
     }
 
@@ -224,7 +261,13 @@ struct GroupBalancesView: View {
         Button {
             // El éxito lo vibra `GroupDetailViewModel.confirmSettlement` cuando el servicio confirma: aquí vibraba dos
             // veces, y también si fallaba (card pjum).
-            onConfirmSettlement?(settlement)
+            // Opción B: si el pago ya no cabe en la deuda (otro pago la saldó), antes de confirmar se pregunta.
+            if confirmCheck(settlement) == .fits {
+                onConfirmSettlement?(settlement)
+            } else {
+                settlementToConfirmOver = settlement
+                showConfirmOver = true
+            }
         } label: {
             Text(L10n.UXL13.pendingYes)
                 .font(DS.Typography.label)
@@ -250,6 +293,26 @@ struct GroupBalancesView: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("group_pending_confirm_no")
+    }
+
+    /// Contra las deudas de cada par: «Menos pagos» junta deudas y la de esta pareja puede no salir como tarjeta.
+    private func confirmCheck(_ settlement: SplitSettlement) -> GroupPendingSettlementLogic.ConfirmCheck {
+        GroupPendingSettlementLogic.confirmCheck(
+            Self.payment(settlement),
+            pairDebts: simplifyDebts ? pairDebts : debts,
+            debtsWereConverted: simplifyDebts ? pairDebtsWereConverted : debtsWereConverted)
+    }
+
+    private func confirmOverMessage(_ settlement: SplitSettlement) -> String {
+        let from = name(settlement.fromMemberID)
+        let amount = appPreferences.currency(settlement.amount, currencyCode: settlement.currencyCode)
+        switch confirmCheck(settlement) {
+        case .exceeds(let owed):
+            return L10n.GruposSaldar23.confirmOverExceeds(
+                from: from, owed: appPreferences.currency(owed, currencyCode: settlement.currencyCode), amount: amount)
+        case .alreadySettled, .fits:
+            return L10n.GruposSaldar23.confirmOverSettled(from: from, amount: amount)
+        }
     }
 
     // MARK: - L13-1 · Lo tuyo, arriba
@@ -335,10 +398,18 @@ struct GroupBalancesView: View {
                     .accessibilityHidden(true)
                 Spacer(minLength: DS.Spacing.sm)
                 // Las de cada par son para mirar: se salda sobre las del grupo (A1).
-                if !showsPairs, onSettleDebt != nil, SettlementSaldar23Logic.offersSettle(
+                // Opción B: lo que ya cubre un pago por confirmar no se ofrece saldar otra vez.
+                let settleable = card.debts.compactMap { GroupPendingSettlementLogic.debtToSettle($0, payments: payments) }
+                if !showsPairs, onSettleDebt != nil, !settleable.isEmpty, SettlementSaldar23Logic.offersSettle(
                     involvesMe: card.involvesMe, currentUserMemberID: currentUserMemberID,
                     receiverCanConfirm: activeMemberIDs.contains(card.toMemberID)) {
-                    settleButton(card)
+                    settleButton(card, debts: settleable)
+                }
+            }
+
+            ForEach(card.debts) { debt in
+                if let pending = GroupPendingSettlementLogic.pending(on: debt, payments: payments) {
+                    pendingNote(pending, currencyCode: debt.currencyCode)
                 }
             }
         }
@@ -380,6 +451,24 @@ struct GroupBalancesView: View {
         }
     }
 
+    /// «Hay un pago de S/ 50 por confirmar»: la deuda sigue (los saldos solo cuentan lo confirmado), pero ya hay un pago
+    /// esperando.
+    private func pendingNote(_ pending: GroupPendingSettlementLogic.PendingOnDebt, currencyCode: String) -> some View {
+        let amount = appPreferences.currency(pending.pendingAmount, currencyCode: currencyCode)
+        return Label {
+            Text(pending.count == 1
+                 ? L10n.GruposSaldar23.pendingOnDebtOne(amount)
+                 : L10n.GruposSaldar23.pendingOnDebtMany(amount))
+                .fixedSize(horizontal: false, vertical: true)
+        } icon: {
+            Image(systemName: "clock")
+        }
+        .font(DS.Typography.caption)
+        .foregroundStyle(.secondary)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("group_debt_pending_note")
+    }
+
     private func debtA11yLabel(
         _ card: GroupBalancesPresentationLogic.DebtCard, from: String, to: String, amounts: String
     ) -> String {
@@ -394,16 +483,17 @@ struct GroupBalancesView: View {
     /// Una moneda: un botón. Varias: un menú con un «Saldar» por moneda — cada pago se apunta en su moneda y nunca se
     /// mezclan. Las deudas entre otros llevan su propio id (`group_debt_settle_others`, C1).
     @ViewBuilder
-    private func settleButton(_ card: GroupBalancesPresentationLogic.DebtCard) -> some View {
+    /// `debts`: las de la tarjeta menos lo que ya cubren los pagos por confirmar (opción B).
+    private func settleButton(_ card: GroupBalancesPresentationLogic.DebtCard, debts: [Debt]) -> some View {
         let id = card.involvesMe ? "group_debt_settle" : "group_debt_settle_others"
-        if card.debts.count == 1, let debt = card.debts.first {
+        if debts.count == 1, let debt = debts.first {
             Button { onSettleDebt?(debt) } label: { settleLabel }
                 .buttonStyle(.plain)
                 .accessibilityHint(L10n.Groups.Settlement.settleHint)
                 .accessibilityIdentifier(id)
         } else {
             Menu {
-                ForEach(card.debts) { debt in
+                ForEach(debts) { debt in
                     Button(appPreferences.currency(debt.amount, currencyCode: debt.currencyCode,
                                                    isEstimate: debtsWereConverted)) {
                         onSettleDebt?(debt)

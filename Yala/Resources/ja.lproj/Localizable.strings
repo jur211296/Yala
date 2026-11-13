@@ -9549,6 +9549,12 @@
 "groups.saldar23.notice.nowYouOwe" = "%2$@さんへの残りは%1$@です。";
 "groups.saldar23.notice.nowOwesYou" = "%1$@さんからの残りは%2$@です。";
 "groups.saldar23.notice.nowOthersOwe" = "%1$@さんから%3$@さんへの残りは%2$@です。";
+"groups.saldar23.pendingOnDebt.one" = "確認待ちの支払いが%@あります";
+"groups.saldar23.pendingOnDebt.many" = "確認待ちの支払いが合計%@あります";
+"groups.saldar23.confirmOver.title" = "この支払いを確認しますか？";
+"groups.saldar23.confirmOver.settled" = "%1$@さんはもう何も借りていません。別の支払いでこの借りは清算済みです。この%2$@を確認すると払いすぎになります。同じ支払いが二重に記録されているなら、削除してください。";
+"groups.saldar23.confirmOver.exceeds" = "%1$@さんの残りは%2$@だけでした。この%3$@を確認すると払いすぎになります。";
+"groups.saldar23.confirmOver.confirmAnyway" = "それでも確認";
 
 /* Lote chico 2.3 · Grupos y Ajustes: menos pagos al pie, Registros favoritos, Presupuestos en el Panel, Solo gastos en «Cómo usas Yala» */
 "groups.lote23chico.simplifiedNote" = "支払いの回数が減るように、Yalaが借りをまとめました。";

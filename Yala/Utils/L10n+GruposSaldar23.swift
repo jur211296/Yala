@@ -94,5 +94,25 @@ extension L10n {
         static func noticeNowOthersOwe(from: String, amounts: String, to: String) -> String {
             String(format: gs23("groups.saldar23.notice.nowOthersOwe"), from, amounts, to)
         }
+
+        // MARK: - Un pago por confirmar sobre la deuda (opción B, 2026-11-13)
+
+        /// En la tarjeta de la deuda: «Hay un pago de S/ 50 por confirmar».
+        static func pendingOnDebtOne(_ amount: String) -> String {
+            String(format: gs23("groups.saldar23.pendingOnDebt.one"), amount)
+        }
+        /// Con más de un pago esperando: «Hay pagos por confirmar por S/ 80».
+        static func pendingOnDebtMany(_ amount: String) -> String {
+            String(format: gs23("groups.saldar23.pendingOnDebt.many"), amount)
+        }
+        /// «Sí, lo recibí» cuando el pago ya no cabe en la deuda.
+        static var confirmOverTitle: String { gs23("groups.saldar23.confirmOver.title") }
+        static func confirmOverSettled(from: String, amount: String) -> String {
+            String(format: gs23("groups.saldar23.confirmOver.settled"), from, amount)
+        }
+        static func confirmOverExceeds(from: String, owed: String, amount: String) -> String {
+            String(format: gs23("groups.saldar23.confirmOver.exceeds"), from, owed, amount)
+        }
+        static var confirmAnyway: String { gs23("groups.saldar23.confirmOver.confirmAnyway") }
     }
 }

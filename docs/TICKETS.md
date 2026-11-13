@@ -896,7 +896,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | pdf-statement-pages-without-currency-pick-no-account | backlog | tickets/backlog/pdf-statement-pages-without-currency-pick-no-account.md |
 | pdf-statement-reads-only-the-first-page | done | tickets/done/pdf-statement-reads-only-the-first-page.md |
 | pending-reverse-complete-runs-with-whatever-session-is-live | backlog | tickets/backlog/pending-reverse-complete-runs-with-whatever-session-is-live.md |
-| pending-settlement-leaves-the-debt-card-with-settle | backlog | tickets/backlog/pending-settlement-leaves-the-debt-card-with-settle.md |
+| pending-settlement-leaves-the-debt-card-with-settle | done | tickets/done/pending-settlement-leaves-the-debt-card-with-settle.md |
 | pending-settlements-spend-the-bridge-retry-budget | backlog | tickets/backlog/pending-settlements-spend-the-bridge-retry-budget.md |
 | period-totals-count-a-row-dated-at-tomorrows-midnight | done | tickets/done/period-totals-count-a-row-dated-at-tomorrows-midnight.md |
 | personal-clock-ahead-wins-every-conflict-until-real-time-catches-up | done | tickets/done/personal-clock-ahead-wins-every-conflict-until-real-time-catches-up.md |

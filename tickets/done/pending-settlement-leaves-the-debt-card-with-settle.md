@@ -1,10 +1,10 @@
 ---
 id: pending-settlement-leaves-the-debt-card-with-settle
-status: backlog
+status: done
 priority: high
 area: "groups, settlements"
 created: 2026-11-12
-updated: 2026-11-12
+updated: 2026-11-13
 source: "QA del encargo «saldar como en Splitwise» (decisión 37 de 2.3)"
 ---
 
@@ -33,3 +33,17 @@ Decisión de producto pendiente (Jürgen). Opciones:
 - **C**: nada en la tarjeta; basta con la fila de «Pagos».
 
 Recomendación: B (cierra las dos puertas del duplicado; A sola deja la del que confirma).
+
+## Resolución (2026-11-13)
+
+Jürgen eligió **B** (comentario en la card, 13-nov 06:12). Hecho:
+
+- La tarjeta de la deuda dice «Hay un pago de S/ X por confirmar» (con varios, «Hay pagos por confirmar por S/ X»).
+  Cuenta solo los pagos pendientes de la misma pareja, en el mismo sentido y la misma moneda.
+- «Saldar» abre el formulario con lo que queda fuera de ese pago en «Todo». Si el pago cubre la deuda, no hay «Saldar»
+  en esa moneda.
+- «Sí, lo recibí» pregunta antes de confirmar si el pago ya no cabe en lo que se debe hoy esa pareja (deudas de cada
+  par): «Quitar el pago», «Confirmar igual» o «Cancelar». Con las deudas convertidas a una sola moneda no avisa.
+- Los saldos siguen contando solo lo confirmado (`GroupBalanceService` sin cambios).
+- Lógica: `Yala/Services/Groups/GroupPendingSettlementLogic.swift`. Tests: `YalaTests/GroupsPendingSettlement/`
+  (incluido el caso de la review con el servicio de saldos real) y `YalaUITests/Flows/GruposPagoPorConfirmarUITests`.

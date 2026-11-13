@@ -9549,6 +9549,12 @@
 "groups.saldar23.notice.nowYouOwe" = "Je bent %2$@ nu %1$@ schuldig.";
 "groups.saldar23.notice.nowOwesYou" = "%1$@ is je nu %2$@ schuldig.";
 "groups.saldar23.notice.nowOthersOwe" = "%1$@ is %3$@ nu %2$@ schuldig.";
+"groups.saldar23.pendingOnDebt.one" = "Er wacht een betaling van %@ op bevestiging";
+"groups.saldar23.pendingOnDebt.many" = "Er wachten betalingen van %@ op bevestiging";
+"groups.saldar23.confirmOver.title" = "Deze betaling bevestigen?";
+"groups.saldar23.confirmOver.settled" = "%1$@ was je niets meer schuldig: een andere betaling heeft deze schuld voldaan. Als je deze %2$@ bevestigt, is er te veel betaald. Is het dezelfde betaling die twee keer is ingevoerd, haal hem dan weg.";
+"groups.saldar23.confirmOver.exceeds" = "%1$@ hoefde je nog maar %2$@ te betalen. Als je deze %3$@ bevestigt, is er te veel betaald.";
+"groups.saldar23.confirmOver.confirmAnyway" = "Toch bevestigen";
 
 /* Lote chico 2.3 · Grupos y Ajustes: menos pagos al pie, Registros favoritos, Presupuestos en el Panel, Solo gastos en «Cómo usas Yala» */
 "groups.lote23chico.simplifiedNote" = "Yala heeft de schulden samengevoegd zodat er minder betalingen zijn.";
