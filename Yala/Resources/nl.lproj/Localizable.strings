@@ -9495,3 +9495,15 @@
 "pasos23.final.success.startUsing" = "Aan de slag";
 "pasos23.final.reminder.title" = "Je proefperiode van Yala Pro eindigt binnenkort";
 "pasos23.final.reminder.body" = "Op %@ begint je abonnement. Wil je niet doorgaan, zeg dan eerder op in Instellingen.";
+
+/* Importar y exportar sin perder datos (H13 y H18 de la auditoría del import, 2026-11-12) */
+"export.column.time" = "Tijd";
+"export.column.time.description" = "Het tijdstip van de boeking.";
+"export.column.exchangeRate" = "Wisselkoers";
+"export.column.exchangeRate.description" = "Bij een andere valuta de koers van de omrekening en naar welke valuta.";
+"export.column.need" = "Noodzaak";
+"export.column.need.description" = "Alleen als je die bij deze boeking hebt gewijzigd.";
+"import.error.unreadableRow" = "Rij %1$d: we konden hem niet lezen omdat hij geen kolommen heeft.";
+"import.error.time" = "Rij %1$d: we begrijpen de tijd ‘%2$@’ niet. Schrijf hem zo: 14:30.";
+"import.error.exchangeRate" = "Rij %1$d: we begrijpen de wisselkoers ‘%2$@’ niet. Schrijf hem met een decimale punt en zonder duizendtalscheiding, zo: 3.75.";
+"import.error.need" = "Rij %1$d: we begrijpen de noodzaak ‘%2$@’ niet. Gebruik essential, priority, optional of unclassified.";

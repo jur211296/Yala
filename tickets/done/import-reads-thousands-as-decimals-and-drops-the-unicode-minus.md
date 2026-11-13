@@ -1,10 +1,10 @@
 ---
 id: import-reads-thousands-as-decimals-and-drops-the-unicode-minus
-status: backlog
+status: done
 priority: high
 area: "import"
 created: 2026-10-29
-updated: 2026-10-29
+updated: 2026-11-12
 source: "auditoría del import 2.2 (sesión S27j), H1 de docs/import/AUDITORIA-IMPORT-2-2.md"
 ---
 
@@ -31,3 +31,14 @@ Decidir el separador decimal por archivo (si alguna fila trae decimales, ése ma
 - [ ] Tests con la tabla medida de la auditoría (H1): miles sin decimales, `1.234.567`, «−», y los que ya funcionan siguen igual.
 - [ ] Un archivo con `1,500` sin decimales en ninguna fila sale en la vista previa como dudoso, no importado en silencio.
 - [ ] Las cuatro rutas (CSV y Excel, simple y multidivisa) pasan por el mismo cambio.
+
+## Hecho (2026-11-12)
+
+Ya estaba en 2.3 desde el PR de «montos por archivo» del 30-oct (`ImportAmountParser`): esta ficha se quedó en backlog porque la auditoría entró después. Verificado hoy, sin rehacerlo:
+
+- [x] Tabla de la auditoría (miles sin decimales, `1.234.567`, «−», «–», «—» y los que ya funcionaban): `ImportAmountParserTests.auditTable_withoutFileEvidence`, en verde.
+- [x] `1,500` sin decimales en ninguna fila sale como dudoso en la vista previa: el mismo test y `ImportExportFidelityTests.amounts_sameInTheFourRoutes`.
+- [x] Las cuatro rutas (CSV y Excel, una cuenta y varias monedas) dan los mismos importes y el mismo dudoso: `ImportExportFidelityTests.amounts_sameInTheFourRoutes` (nuevo).
+- [x] En el simulador, «−12.50» entra como gasto (archivo `1-comilla-y-total.csv`, captura `despues-1.png` en `~/Claude/entregas/2026-11-12-importar-exportar-sin-perder-datos/evidencia`).
+
+Queda fuera: `parseDecimal` (`Yala/Utils/MoneyParsing.swift`), que usan los formularios, sigue sin reconocer «−»; el import ya no lo usa.

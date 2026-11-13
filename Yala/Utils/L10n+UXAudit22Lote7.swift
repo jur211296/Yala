@@ -242,6 +242,20 @@ extension L10n {
             static func newAccountNotChosen(_ row: Int, _ name: String) -> String {
                 String(format: l7("import.error.newAccountNotChosen"), row, name)
             }
+            /// Una línea sin separador (H13): antes se saltaba sin contarla.
+            static func unreadableRow(_ row: Int) -> String {
+                String(format: l7("import.error.unreadableRow"), row)
+            }
+            /// Las columnas opcionales de la ida y vuelta (H18).
+            static func invalidTime(_ row: Int, _ value: String) -> String {
+                String(format: l7("import.error.time"), row, value)
+            }
+            static func invalidExchangeRate(_ row: Int, _ value: String) -> String {
+                String(format: l7("import.error.exchangeRate"), row, value)
+            }
+            static func invalidNeed(_ row: Int, _ value: String) -> String {
+                String(format: l7("import.error.need"), row, value)
+            }
             static var xlsxCannotOpen: String { l7("import.error.xlsxOpen") }
             static var xlsxNoSheets: String { l7("import.error.xlsxNoSheets") }
             static var xlsxCannotRead: String { l7("import.error.xlsxRead") }

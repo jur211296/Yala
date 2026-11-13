@@ -9495,3 +9495,15 @@
 "pasos23.final.success.startUsing" = "Zacznij korzystać";
 "pasos23.final.reminder.title" = "Twój okres próbny Yala Pro wkrótce się kończy";
 "pasos23.final.reminder.body" = "W dniu %@ zaczyna się Twój plan. Jeśli nie chcesz kontynuować, anuluj wcześniej w Ustawieniach.";
+
+/* Importar y exportar sin perder datos (H13 y H18 de la auditoría del import, 2026-11-12) */
+"export.column.time" = "Godzina";
+"export.column.time.description" = "Godzina zapisu.";
+"export.column.exchangeRate" = "Kurs wymiany";
+"export.column.exchangeRate.description" = "W innej walucie: kurs przeliczenia i na jaką walutę.";
+"export.column.need" = "Potrzeba";
+"export.column.need.description" = "Tylko jeśli zmieniono ją w tym zapisie.";
+"import.error.unreadableRow" = "Wiersz %1$d: nie udało się go odczytać, bo nie ma kolumn.";
+"import.error.time" = "Wiersz %1$d: nie rozumiemy godziny „%2$@”. Zapisz ją tak: 14:30.";
+"import.error.exchangeRate" = "Wiersz %1$d: nie rozumiemy kursu wymiany „%2$@”. Zapisz go z kropką dziesiętną i bez separatora tysięcy, tak: 3.75.";
+"import.error.need" = "Wiersz %1$d: nie rozumiemy potrzeby „%2$@”. Użyj essential, priority, optional lub unclassified.";

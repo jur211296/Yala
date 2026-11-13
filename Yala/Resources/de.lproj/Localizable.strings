@@ -9483,3 +9483,15 @@
 "pasos23.final.success.startUsing" = "Loslegen";
 "pasos23.final.reminder.title" = "Deine Testphase von Yala Pro endet bald";
 "pasos23.final.reminder.body" = "Am %@ beginnt dein Abo. Wenn du nicht weitermachen möchtest, kündige vorher in den Einstellungen.";
+
+/* Importar y exportar sin perder datos (H13 y H18 de la auditoría del import, 2026-11-12) */
+"export.column.time" = "Uhrzeit";
+"export.column.time.description" = "Die Uhrzeit des Eintrags.";
+"export.column.exchangeRate" = "Wechselkurs";
+"export.column.exchangeRate.description" = "Bei einer anderen Währung der Kurs der Umrechnung und in welche Währung.";
+"export.column.need" = "Bedarf";
+"export.column.need.description" = "Nur wenn du ihn bei diesem Eintrag geändert hast.";
+"import.error.unreadableRow" = "Zeile %1$d: Wir konnten sie nicht lesen, weil sie keine Spalten hat.";
+"import.error.time" = "Zeile %1$d: Die Uhrzeit „%2$@“ verstehen wir nicht. Schreib sie so: 14:30.";
+"import.error.exchangeRate" = "Zeile %1$d: Den Wechselkurs „%2$@“ verstehen wir nicht. Schreib ihn mit Dezimalpunkt und ohne Tausendertrennzeichen, so: 3.75.";
+"import.error.need" = "Zeile %1$d: Den Bedarf „%2$@“ verstehen wir nicht. Nutze essential, priority, optional oder unclassified.";
