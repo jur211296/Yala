@@ -687,7 +687,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | inbox-list-capped-at-500-may-hide-old-pending-drafts | done | tickets/done/inbox-list-capped-at-500-may-hide-old-pending-drafts.md |
 | inbox-strings-show-a-python-dict-in-four-languages | done | tickets/done/inbox-strings-show-a-python-dict-in-four-languages.md |
 | inbox-success-says-transaction-created | done | tickets/done/inbox-success-says-transaction-created.md |
-| inbox-swipe-save-success-sheet-shows-blank | backlog | tickets/backlog/inbox-swipe-save-success-sheet-shows-blank.md |
+| inbox-swipe-save-success-sheet-shows-blank | done | tickets/done/inbox-swipe-save-success-sheet-shows-blank.md |
 | income-amount-color-is-dim-in-dark-mode | done | tickets/done/income-amount-color-is-dim-in-dark-mode.md |
 | indice-readme-barre-worktrees-anidados | discarded | tickets/discarded/indice-readme-barre-worktrees-anidados.md |
 | indice-readme-cuenta-los-ficheros-de-los-worktrees-anidados | discarded | tickets/discarded/indice-readme-cuenta-los-ficheros-de-los-worktrees-anidados.md |
@@ -993,7 +993,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reentry-killswitch-closes-both-doors | done | tickets/done/reentry-killswitch-closes-both-doors.md |
 | regional-variants-show-the-plural-form-for-one | done | tickets/done/regional-variants-show-the-plural-form-for-one.md |
 | registros-calendario-cuenta-gastos-por-signo | done | tickets/done/registros-calendario-cuenta-gastos-por-signo.md |
-| reimported-group-legs-become-transfers | backlog | tickets/backlog/reimported-group-legs-become-transfers.md |
+| reimported-group-legs-become-transfers | done | tickets/done/reimported-group-legs-become-transfers.md |
 | reinstall-mid-migration-has-no-exit-from-the-identity-gate | qa | tickets/qa/reinstall-mid-migration-has-no-exit-from-the-identity-gate.md |
 | reinstall-without-network-has-no-cloud-door | done | tickets/done/reinstall-without-network-has-no-cloud-door.md |
 | rejected-member-cold-tap-does-nothing | done | tickets/done/rejected-member-cold-tap-does-nothing.md |
@@ -1292,6 +1292,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | welcome-wipes-on-a-mirrored-store-never-start-with-drive-off | done | tickets/done/welcome-wipes-on-a-mirrored-store-never-start-with-drive-off.md |
 | whats-new-2-0-still-calls-groups-beta | discarded | tickets/discarded/whats-new-2-0-still-calls-groups-beta.md |
 | whats-new-2-2-review-before-release | done | tickets/done/whats-new-2-2-review-before-release.md |
+| whats-new-sheet-may-show-blank-like-the-inbox-swipe-sheet | backlog | tickets/backlog/whats-new-sheet-may-show-blank-like-the-inbox-swipe-sheet.md |
 | whats-new-yields-to-a-pending-trial-offer-after-updating | done | tickets/done/whats-new-yields-to-a-pending-trial-offer-after-updating.md |
 | white-text-on-the-brand-indigo-is-just-below-aa | done | tickets/done/white-text-on-the-brand-indigo-is-just-below-aa.md |
 | white-text-on-the-rosa-teal-and-minimal-accents-is-below-aa | done | tickets/done/white-text-on-the-rosa-teal-and-minimal-accents-is-below-aa.md |

@@ -4,7 +4,8 @@ status: backlog
 area: cloud-sync
 priority: high
 created: 2026-10-28
-updated: 2026-10-28
+updated: 2026-11-12
+card: tablero-fallos-altos-hoja-de-exito-en-blanco-al-hq7p
 source: S12h (card pet5) — telemetría del iPhone de Jürgen, 27-oct
 ---
 
@@ -45,3 +46,27 @@ pero el modo sigue en `.cloud`.
    `.cloud` + `mirrorOffArmed` + `bornCloud` sin sesión.
 3. Medirlo antes: no hay reproducción en simulador (Google + backend). Un canario cuando un adopt se journalea con
    `.cloud` persistido diría cuántas veces pasa en la flota.
+
+## Espera decisión de Jürgen (2026-11-12, lote de fallos altos)
+
+Medido en el código de `2.3` (84dea882c): el disparador que queda sigue vivo. «Empezar de cero» del Welcome
+(`ContentView`, las dos ramas que purgan Grupos) retira la sesión de la nube y olvida los sellos del claim
+(`CloudSessionRetirement.arm` → `forgetAllClaims`), pero **no devuelve el modo a `.icloud`**: solo lo hace el borrado de
+«Cerrar sesión» (`SwiftDataConfiguration`, que escribe `.icloud` y quita `mirrorOffArmed`). Volver a entrar con la misma
+cuenta da `existing_stable`, arranca el adopt y queda pendiente sin «Cancelar» ni techo, porque las dos exclusiones de
+`.cloud` (`AdoptEffectScope.isPending`, `observeAdoptEffectFailure`) no distinguen «el adopt escribió `.cloud`» de
+«`.cloud` ya estaba».
+
+**La pregunta:** ¿qué salida tiene quien entra con su cuenta en un teléfono que sigue en modo nube tras «Empezar de cero»?
+
+- **A (recomendada):** cerrar el origen y no adoptar sobre la nube. «Empezar de cero» en un teléfono en la nube lo deja
+  como recién instalado por el mismo camino que «Cerrar sesión» (modo iCloud, en el arranque o en el cambio de almacén);
+  y de cinturón el adopt no arranca con `.cloud` ya puesto: con la misma cuenta entra directo, con otra para y lo dice.
+  Con un canario para ver si alguien seguía cayendo. No pierde datos: el borrado ya lo pidió la persona y lo de la nube
+  sigue en su cuenta.
+- **B:** darle al adopt sobre la nube «Cancelar» y el techo de 72 h, marcando al empezar si `.cloud` ya estaba. Más
+  pequeño, pero al salir el teléfono queda en la nube sin sesión ni datos, y volver a entrar vuelve a adoptar.
+- **C:** solo el canario y decidir con cifras de la flota. No arregla nada hoy.
+
+Lo que no se tocó a propósito: ningún cambio de código en el adopt hasta la respuesta (el encargo pide no elegir la
+salida de producto).
