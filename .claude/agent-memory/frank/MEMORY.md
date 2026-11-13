@@ -88,6 +88,7 @@
 - [El prototipo manda sobre el contrato](feedback_el_prototipo_manda_sobre_el_contrato.md) — servidor corto: se construye lo dibujado + mitigación + card de servidor.
 - [Si no avanza, cierra y prioriza el bug](feedback_si_no_avanza_cierra_y_prioriza_el_bug.md) — prueba parada por un bug grave ajeno: PR abierto, device-QA y card primero.
 - [El iPhone 14 lo ve también la otra máquina](feedback_el_iphone_14_lo_ve_tambien_la_otra_maquina.md) — la sesión de la Mini lo conduce por red; mira su transcript antes de probar.
+- [Recorrido con artifact y veredicto](feedback_recorrido_con_artifact_y_veredicto.md) — tira de capturas por escenario + sí/no y nota en la db; publicar tras cada escenario.
 - [QA en vivo: mira y sigue](feedback_qa_en_vivo_con_jurgen_mira_y_sigue.md) — si él prueba, sin popups ni toques; lo que destapa va a su card.
 ## Cómo mido y cómo entrego
 - [Runner AX timeout tras la suite larga](feedback_runner_ax_timeout_tras_suite_larga.md) — cero casos y «AX loaded»: reinicia el simulador, no repitas igual.
