@@ -164,6 +164,11 @@ paths:
   valor de antes. Con un `@Observable` (Registros, `RecordsViewModel`) el mismo molde funciona. ⇒ **para presentar UN
   objeto, `.sheet(item:)`**; si hace falta encadenar otra presentación al cerrar, guarda el objeto en un estado aparte
   (`recordAwaitingEditor`) antes de vaciar el `item`. Pin: `UXAudit22Lote8CWiringTests`.
+  **Y es intermitente (medido el 2026-11-12, iOS 27.2, hoja de éxito de deslizar en la Bandeja):** con el molde viejo,
+  la primera vuelta de cada caso salió bien y la segunda vacía. Un XCUITest verde suelto no lo descarta: se mide con
+  `-test-iterations 3 -run-tests-until-failure`, y el pin barato es un scan del cableado (`InboxSwipeSuccessSheetWiringTests`).
+  Novedades (`ContentView`, `whatsNewData`) sigue con el molde: ticket
+  `whats-new-sheet-may-show-blank-like-the-inbox-swipe-sheet`.
 - **Una hoja que reescribe el registro que tiene abierto un editor deja al editor con datos viejos, y su «Guardar» los
   vuelve a escribir (review del 2026-11-02, card 6u5f).** «Tu parte» abierta desde el editor de la pata con receta pasa el
   puente, que le cambia el importe (al de la línea ancla) y, con una recarga de ancla, la convierte en transferencia; el
