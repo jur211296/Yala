@@ -108,6 +108,19 @@ describe("buildView — frases de plantilla con las cifras", () => {
     expect(JSON.stringify(usos)).not.toContain("alta");
   });
 
+  it("Usuario nuevo: los primeros días no son funciones y no salen en «Lo que más se usa»", () => {
+    const rows = fixture();
+    rows.push(
+      row(L, "use7", 6, "primeros.registro", 6),
+      row(L, "use7", 5, "primeros.pasos.ve", 5),
+      row(L, "use7", 2, "alta.reabrir.pide", 2),
+    );
+    const usos = buildView(rows, []).sections.find((s) => s.id === "uso")?.cards.find((c) => c.title === "Lo que más se usa");
+    expect(JSON.stringify(usos)).not.toContain("primeros");
+    expect(JSON.stringify(usos)).not.toContain("Primer registro");
+    expect(JSON.stringify(usos)).not.toContain("reabrir");
+  });
+
   it("Pro: solo cuentan los avisos de Production", () => {
     expect(lead(v, "pro")).toBe("Esta semana empezaron 4 pruebas de Pro y hubo menos de 3 compras.");
   });

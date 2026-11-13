@@ -914,6 +914,8 @@ final class ChatAssistantViewModel {
 
         do {
             try TransactionService.shared.create(transaction)
+            // Telemetría del usuario nuevo (card 4b7h): el primer gasto o ingreso propio, apuntado desde Yala IA.
+            NewUserMetrics.created(.firstExpense)
             if vibrates { DS.Haptic.success() }
             draft.status = .saved
             draft.savedTransactionID = transaction.persistentModelID

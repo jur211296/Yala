@@ -143,6 +143,8 @@ struct PanelView: View {
                 manager: SetupChecklistManager.shared,
                 onStepTapped: { step in handleSetupStep(step) }
             )
+            // Telemetría del usuario nuevo (card 4b7h): vio Primeros pasos.
+            .onAppear { MetricsService.used(.primerosPasosVe) }
         }
     }
 

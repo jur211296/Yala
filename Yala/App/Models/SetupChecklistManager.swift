@@ -232,6 +232,9 @@ final class SetupChecklistManager {
         stepSkipped[step] = false
         UserDefaults.standard.set(true, forKey: step.storageKey)
         UserDefaults.standard.removeObject(forKey: step.skippedStorageKey)
+        // Telemetría del usuario nuevo (card 4b7h): el paso hecho y, si no viene «¿Era de prueba?», el primer registro,
+        // presupuesto o pago que esperaba a saber si se quedaba.
+        NewUserMetrics.stepCompleted(step, practicePending: practiceItem != nil)
 
         #if DEBUG
         print("SetupChecklist: Step \(step.rawValue) completed (\(completedCount)/\(totalCount))")
@@ -440,6 +443,7 @@ final class SetupChecklistManager {
             print("SetupChecklist: All steps completed! 🎉")
             #endif
 
+            MetricsService.used(.primerosPasosCompleta)
             onAllStepsCompleted()
         }
     }

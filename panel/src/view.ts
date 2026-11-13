@@ -115,7 +115,7 @@ export function buildView(rowsIn: MetricRow[], activeHistory: { day: string; val
       share >= 0.8 ? `Casi todos ya están en la ${top[0]}${tail}.` : share >= 0.5 ? `La mayoría está en la ${top[0]}${tail}.` : `Las versiones están repartidas: la ${top[0]} va primera con ${people(top[1], "aparato", "aparatos")}.`;
   }
 
-  const uses = rows.on("use7", L).filter((r) => !(r.dim in PRO_FEATURES) && !r.dim.startsWith("alta."));
+  const uses = rows.on("use7", L).filter((r) => !(r.dim in PRO_FEATURES) && !r.dim.startsWith("alta.") && !r.dim.startsWith("primeros."));
   const usesBars = bars(uses.map((r) => [label(FEATURE_LABELS, r.dim), r.value]));
   const usesCard: Card = usesBars.length
     ? {

@@ -255,6 +255,25 @@ final class DraftService {
         currencyConverter: CurrencyConverter,
         splitLines: [GroupSplitLinesRecipe.Line]? = nil
     ) throws -> TransactionItem {
+        // Antes de aprobar: el borrador se borra al aprobarlo, y leer un `@Model` borrado aborta.
+        let createsAnOwnRecord = Self.approvalCreatesAnOwnRecord(draft)
+        let transaction = try approveDraftCore(draft, currencyConverter: currencyConverter, splitLines: splitLines)
+        // Telemetría del usuario nuevo (card 4b7h): el primer gasto o ingreso propio, si no era de prueba.
+        if createsAnOwnRecord { NewUserMetrics.created(.firstExpense) }
+        return transaction
+    }
+
+    /// Si aprobar este borrador APUNTA un gasto o ingreso de la persona (voz, foto, Apple Pay, Siri, correo, un pago
+    /// planificado). Lo que viene de un grupo no: lo apuntó quien añadió el gasto o la liquidación, y aquí solo se clasifica.
+    static func approvalCreatesAnOwnRecord(_ draft: InboxDraft) -> Bool {
+        !draft.sourceType.isFromGroup && !draft.isSettlementAmountChangeNotice
+    }
+
+    private func approveDraftCore(
+        _ draft: InboxDraft,
+        currencyConverter: CurrencyConverter,
+        splitLines: [GroupSplitLinesRecipe.Line]?
+    ) throws -> TransactionItem {
         let context = try requireContext()
 
         // Gasto planificado de grupo: se aprueba SOLO vía GroupExpenseFormView (crea el
@@ -694,6 +713,9 @@ final class DraftService {
             if ReviewPromptService.shouldPrompt(transactionCount: txCount) {
                 RouterEntryGate.shared.submit(.requestAppStoreReview)
             }
+            // Telemetría del usuario nuevo (card 4b7h): el primer gasto o ingreso propio. Los de grupo que este lote
+            // delega a `approveDraft` no cuentan, igual que allí.
+            NewUserMetrics.created(.firstExpense)
         }
 
         // Update widgets
