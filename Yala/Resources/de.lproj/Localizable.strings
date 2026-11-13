@@ -9537,6 +9537,12 @@
 "groups.saldar23.notice.nowYouOwe" = "Du schuldest %2$@ jetzt %1$@.";
 "groups.saldar23.notice.nowOwesYou" = "%1$@ schuldet dir jetzt %2$@.";
 "groups.saldar23.notice.nowOthersOwe" = "%1$@ schuldet %3$@ jetzt %2$@.";
+"groups.saldar23.pendingOnDebt.one" = "Eine Zahlung von %@ wartet auf Bestätigung";
+"groups.saldar23.pendingOnDebt.many" = "Zahlungen von %@ warten auf Bestätigung";
+"groups.saldar23.confirmOver.title" = "Diese Zahlung bestätigen?";
+"groups.saldar23.confirmOver.settled" = "%1$@ schuldete dir nichts mehr: Eine andere Zahlung hat diese Schuld beglichen. Wenn du diese %2$@ bestätigst, ist zu viel bezahlt. Ist es dieselbe Zahlung, doppelt eingetragen, entferne sie.";
+"groups.saldar23.confirmOver.exceeds" = "%1$@ musste dir nur noch %2$@ zahlen. Wenn du diese %3$@ bestätigst, ist zu viel bezahlt.";
+"groups.saldar23.confirmOver.confirmAnyway" = "Trotzdem bestätigen";
 
 /* Lote chico 2.3 · Grupos y Ajustes: menos pagos al pie, Registros favoritos, Presupuestos en el Panel, Solo gastos en «Cómo usas Yala» */
 "groups.lote23chico.simplifiedNote" = "Yala hat die Schulden zusammengefasst, damit es weniger Zahlungen gibt.";

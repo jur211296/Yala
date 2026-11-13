@@ -271,25 +271,31 @@ struct UXAudit22Lote12y13WiringTests {
 
     /// L13-1 dejaba «Saldar» solo en las deudas tuyas; la decisión 37 de 2.3 (C1) lo reabre: también en las de otros,
     /// si quien recibe puede confirmarlo. La regla vive en `SettlementSaldar23Logic.offersSettle` (lo fija
-    /// `GruposSaldar23Tests`); aquí, que la tarjeta la consulta y que «Saldar» no se pinta en otro sitio.
+    /// `GruposSaldar23Tests`); aquí, que la tarjeta la consulta y que «Saldar» no se pinta en otro sitio. Desde la opción B
+    /// del pago por confirmar (2026-11-13), «Saldar» ofrece la deuda menos lo pendiente (`GroupPendingSettlementLogic`,
+    /// lo fija `GroupPendingSettlementLogicTests`) y no sale si no queda nada.
     @Test func settleButton_onlyOnDebtsInvolvingYou() throws {
         let view = try Self.source("Yala/App/Views/Groups/GroupBalancesView.swift")
         let gate = [
+            "let settleable = card.debts.compactMap { GroupPendingSettlementLogic.debtToSettle($0, payments: payments) }",
             // `!showsPairs`: las deudas de cada par son solo para mirar (decisión 36 de 2.3, A1).
-            "if !showsPairs, onSettleDebt != nil, SettlementSaldar23Logic.offersSettle(",
+            "if !showsPairs, onSettleDebt != nil, !settleable.isEmpty, SettlementSaldar23Logic.offersSettle(",
             "    involvesMe: card.involvesMe, currentUserMemberID: currentUserMemberID,",
             "    receiverCanConfirm: activeMemberIDs.contains(card.toMemberID)) {",
-            "    settleButton(card)",
+            "    settleButton(card, debts: settleable)",
         ].map { "                " + $0 }.joined(separator: "\n")
         #expect(view.contains(gate))
-        #expect(view.components(separatedBy: "settleButton(card)").count == 2, "«Saldar» se pinta en otro sitio")
+        #expect(view.components(separatedBy: "settleButton(card").count == 2, "«Saldar» se pinta en otro sitio")
     }
 
-    /// L13-2: «No me llegó» pregunta antes; el rechazo solo sale del botón destructivo de la alerta.
+    /// L13-2: «No me llegó» pregunta antes; el rechazo solo sale del botón destructivo de una alerta: la de «No me llegó»
+    /// y, desde la opción B del pago por confirmar (2026-11-13), la que avisa en «Sí, lo recibí» si el pago ya no cabe.
     @Test func rejectingAPayment_asksFirst() throws {
         let view = try Self.source("Yala/App/Views/Groups/GroupBalancesView.swift")
         let calls = view.components(separatedBy: "onRejectSettlement?(").count - 1
-        #expect(calls == 1, "el rechazo se llama desde \(calls) sitios")
+        #expect(calls == 2, "el rechazo se llama desde \(calls) sitios")
+        let over = try #require(view.components(separatedBy: ".alert(L10n.GruposSaldar23.confirmOverTitle").dropFirst().first)
+        #expect((over.components(separatedBy: "} message: {").first ?? "").contains("onRejectSettlement?(settlement)"))
         let alert = try #require(view.components(separatedBy: ".alert(L10n.Groups.Settlement.rejectQuestion").dropFirst().first)
         let alertActions = alert.components(separatedBy: "} message: {").first ?? ""
         #expect(alertActions.contains("onRejectSettlement?(settlement)"))

@@ -116,6 +116,17 @@ enum DevSeedGroups {
             )
             pending.recordedByMemberID = ana.id.uuidString
             context.insert(pending)
+            // Grupos 2.3 · pago por confirmar (opción B): Ana ya saldó los soles con otro pago, confirmado. Saldar lo
+            // apuntado (S/ 80, las partes de Ana menos las mías) deja su deuda en soles a cero.
+            if UITestHooks.seedPendingSettlementAlreadySettled {
+                let settled = SplitSettlement(
+                    groupZoneID: zoneID, fromMemberID: ana.id.uuidString, toMemberID: me.id.uuidString,
+                    amount: 80, currencyCode: "PEN", date: Date.now
+                )
+                settled.recordedByMemberID = ana.id.uuidString
+                settled.isConfirmed = true
+                context.insert(settled)
+            }
         }
 
         // Grupos B · card 10: un grupo aparte, «Ventas con Ana», con solo una venta tuya de S/ 50 y el pago de Ana por

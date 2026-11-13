@@ -8790,6 +8790,12 @@
 "groups.saldar23.notice.nowYouOwe" = "Ahora le debés %1$@ a %2$@.";
 "groups.saldar23.notice.nowOwesYou" = "Ahora %1$@ te debe %2$@.";
 "groups.saldar23.notice.nowOthersOwe" = "Ahora %1$@ le debe %2$@ a %3$@.";
+"groups.saldar23.pendingOnDebt.one" = "Hay un pago de %@ por confirmar";
+"groups.saldar23.pendingOnDebt.many" = "Hay pagos por confirmar por %@";
+"groups.saldar23.confirmOver.title" = "¿Confirmar este pago?";
+"groups.saldar23.confirmOver.settled" = "%1$@ ya no te debía nada: otro pago saldó esta deuda. Si confirmás estos %2$@, va a quedar pagado de más. Si es el mismo pago anotado dos veces, quitalo.";
+"groups.saldar23.confirmOver.exceeds" = "A %1$@ solo le quedaban %2$@ por pagarte. Si confirmás estos %3$@, va a quedar pagado de más.";
+"groups.saldar23.confirmOver.confirmAnyway" = "Confirmar igual";
 
 /* Lote chico 2.3 · Grupos y Ajustes: menos pagos al pie, Registros favoritos, Presupuestos en el Panel, Solo gastos en «Cómo usas Yala» */
 "groups.lote23chico.simplifiedNote" = "Yala juntó las deudas para que haya menos pagos.";

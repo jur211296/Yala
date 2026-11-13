@@ -9549,6 +9549,12 @@
 "groups.saldar23.notice.nowYouOwe" = "Teraz jesteś winien(a) %1$@ dla %2$@.";
 "groups.saldar23.notice.nowOwesYou" = "Teraz %1$@ jest ci winien(a) %2$@.";
 "groups.saldar23.notice.nowOthersOwe" = "Teraz %1$@ jest winien(a) %2$@ dla %3$@.";
+"groups.saldar23.pendingOnDebt.one" = "Płatność %@ czeka na potwierdzenie";
+"groups.saldar23.pendingOnDebt.many" = "Płatności na %@ czekają na potwierdzenie";
+"groups.saldar23.confirmOver.title" = "Potwierdzić tę płatność?";
+"groups.saldar23.confirmOver.settled" = "%1$@ nie był(a) ci już nic winien(a): inna płatność spłaciła ten dług. Jeśli potwierdzisz te %2$@, będzie nadpłata. Jeśli to ta sama płatność zapisana dwa razy, usuń ją.";
+"groups.saldar23.confirmOver.exceeds" = "%1$@ miał(a) do zapłacenia ci już tylko %2$@. Jeśli potwierdzisz te %3$@, będzie nadpłata.";
+"groups.saldar23.confirmOver.confirmAnyway" = "Potwierdź mimo to";
 
 /* Lote chico 2.3 · Grupos y Ajustes: menos pagos al pie, Registros favoritos, Presupuestos en el Panel, Solo gastos en «Cómo usas Yala» */
 "groups.lote23chico.simplifiedNote" = "Yala połączyła długi, żeby było mniej płatności.";

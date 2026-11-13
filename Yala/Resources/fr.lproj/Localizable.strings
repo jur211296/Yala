@@ -9538,6 +9538,12 @@
 "groups.saldar23.notice.nowYouOwe" = "Tu dois maintenant %1$@ à %2$@.";
 "groups.saldar23.notice.nowOwesYou" = "%1$@ te doit maintenant %2$@.";
 "groups.saldar23.notice.nowOthersOwe" = "%1$@ doit maintenant %2$@ à %3$@.";
+"groups.saldar23.pendingOnDebt.one" = "Un paiement de %@ attend d’être confirmé";
+"groups.saldar23.pendingOnDebt.many" = "Des paiements de %@ attendent d’être confirmés";
+"groups.saldar23.confirmOver.title" = "Confirmer ce paiement ?";
+"groups.saldar23.confirmOver.settled" = "%1$@ ne te devait plus rien : un autre paiement a réglé cette dette. Si tu confirmes ces %2$@, ce sera payé en trop. Si c’est le même paiement noté deux fois, retire-le.";
+"groups.saldar23.confirmOver.exceeds" = "Il ne restait à %1$@ que %2$@ à te payer. Si tu confirmes ces %3$@, ce sera payé en trop.";
+"groups.saldar23.confirmOver.confirmAnyway" = "Confirmer quand même";
 
 /* Lote chico 2.3 · Grupos y Ajustes: menos pagos al pie, Registros favoritos, Presupuestos en el Panel, Solo gastos en «Cómo usas Yala» */
 "groups.lote23chico.simplifiedNote" = "Yala a regroupé les dettes pour qu'il y ait moins de paiements.";
