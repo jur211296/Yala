@@ -392,7 +392,11 @@ struct GroupFormView: View {
         let preferredCurrency = isFirstGroupSetup
             ? CurrencyDefaults.detectCurrencyFromRegion()
             : appPreferences.defaultCurrencyCode
-        let currencyCode = showDebtsInSingleCurrency ? selectedCurrency.rawValue : preferredCurrency.rawValue
+        // Decisión 3 de la revisión 2.3 (opción A): al editar un grupo con «una sola moneda» apagado, el grupo conserva
+        // la suya; la divisa preferida solo vale para uno nuevo.
+        let currencyCode = showDebtsInSingleCurrency
+            ? selectedCurrency.rawValue
+            : (group?.currencyCode ?? preferredCurrency.rawValue)
 
         do {
             if let group {

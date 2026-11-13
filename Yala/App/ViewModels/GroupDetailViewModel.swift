@@ -572,6 +572,24 @@ final class GroupDetailViewModel {
         }
     }
 
+    /// «Deshacer» del aviso que sale al saldar (decisión 37 de 2.3, C3). Borra el pago por el camino de siempre, que
+    /// limpia lo que el puente apuntó en tus cuentas y propaga el borrado a los demás. Si ya no existe (otro teléfono lo
+    /// quitó mientras duraba el aviso), no hay nada que deshacer.
+    func undoSettlement(_ settlement: SplitSettlement) {
+        guard !settlement.isDeleted, settlement.modelContext != nil,
+              !group.isDeleted, group.modelContext != nil else { return }
+        do {
+            try GroupExpenseService.shared.deleteSettlement(settlement, in: group)
+            DS.Haptic.success()
+            loadData()
+        } catch {
+            #if DEBUG
+            print("GroupDetailViewModel: Error undoing settlement: \(error)")
+            #endif
+            surfaceActionError(L10n.Groups.Settlement.deleteFailed)
+        }
+    }
+
     func sharesForExpense(_ expense: SplitExpense) -> [SplitShare] {
         shares.filter { $0.expenseID == expense.id }
     }

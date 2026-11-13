@@ -25,7 +25,7 @@ name: Vigilante de la nocturna
 #     cuando despierte ya pueda decidir algo. Llega con horas de retraso, como el de la
 #     nocturna; mientras nazca antes de las 08:17 UTC del día siguiente, mira el día correcto.
 #     Son dos por redundancia: cuestan segundos de Linux.
-#   · `push` a `2.1` — no depende del cron. Antes del plazo cada push lee una vez y no hace
+#   · `push` a la rama de trabajo (hoy `2.3`) — no depende del cron. Antes del plazo cada push lee una vez y no hace
 #     nada; después, el primero que llegue lanza si falta. Es la red si el cron muere.
 #
 # SI MUEVES EL CRON DE `qa.yml`: el vigilante lo lee solo y corre su «día» con él, pero sus
@@ -41,6 +41,8 @@ on:
     - cron: '47 20 * * *'
     - cron: '47 23 * * *'
   push:
+    # La rama de trabajo, a mano: GitHub no admite expresiones en este filtro. Al publicar una
+    # version y cambiar la rama por defecto, cambia este valor y el de `on.push` de `qa.yml`.
     branches: ["2.3"]
   workflow_dispatch:
     inputs:
