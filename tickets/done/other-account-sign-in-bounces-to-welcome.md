@@ -43,8 +43,15 @@ Tres fallos de la bienvenida 2.3, vistos por Jürgen el 13-nov:
   por la web (`CloudAuthService.signIn(…, appleOnTheWeb:)`); sin él (producción hoy), la nota de siempre y «Entrar con
   Google». Textos reutilizados, ya en los 16 idiomas.
 - **Fallo 2**: con corpus del iCloud privado (con copia en iCloud, sin sello de claim, sin restauración en curso y fuera
-  de la nube), la entrada única deja iCloud aparte ANTES de firmar (`WelcomeLeaveICloudBeforeSignIn`): una reapertura y
-  un solo inicio de sesión. La regla de seguridad del 26-sep (el vaciado purga la sesión) no se toca.
+  de la nube), toda entrada que firma deja iCloud aparte ANTES de abrir la hoja (`WelcomeLeaveICloudBeforeSignIn`, en
+  `runSignInFlow`): una reapertura y un solo inicio de sesión. La de «¡Hola de nuevo!» lo hace antes del consentimiento,
+  salvo si iCloud todavía está bajando datos (ahí el guard de siempre deja pasar, y el chequeo vuelve a correr al
+  aceptar). La regla de seguridad del 26-sep (el vaciado purga la sesión) no se toca.
+- **Device-QA en el iPhone 14 (13-nov, Yala Dev, staging)**: antes y después grabados. Fallo 1: «Usar otra cuenta» abre el
+  selector de Google en el acto. Fallo 3: «Otra cuenta de Apple» abre la página de Apple con «Usar otra cuenta de Apple»,
+  y cancelar vuelve a la vitrina. Fallo 2: con iCloud abierto, Yala deja iCloud aparte antes de Google y, al reabrir,
+  Google una sola vez. El adopt que sigue se atascó al 60 % por otra causa (el puente de Grupos), con su card crítica:
+  `tablero-critico-entrar-a-una-cuenta-con-grupos-s-qj81`.
 - Pruebas: `YalaTests/WelcomeOtherAccount/WelcomeOtherAccountTests` (tabla pura + escaneo del cableado; mutantes:
   devolver `onBack()` o quitar el chequeo de iCloud los pone en rojo), `Bienvenida23AltaUITests` (dos casos nuevos, 8/8),
   `YalaTests` entero.

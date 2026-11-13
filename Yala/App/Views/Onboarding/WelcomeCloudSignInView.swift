@@ -235,14 +235,8 @@ struct WelcomeCloudSignInView: View {
                 case "confirm": phase = .confirmLoad; return
                 default: break
                 }
-                // Fallo 2 del 13-nov: con el corpus del iCloud privado en el teléfono, se deja aparte ANTES de firmar
-                // (`WelcomeLeaveICloudBeforeSignIn`). Firmando primero, la vuelta al neutro purgaba la sesión y tras
-                // reabrir había que volver a firmar.
-                // Una vuelta del main actor después: cambiar el contenido del cover dentro de su propio `onAppear`.
-                if leavesICloudAsideBeforeSignIn() {
-                    launchFlow { onLeaveICloudAside(requested) }
-                    return
-                }
+                // Fallo 2 del 13-nov: con el corpus del iCloud privado, `runSignInFlow` deja iCloud aparte antes de abrir
+                // ninguna hoja (`leavesICloudAsideInsteadOfSigningIn`).
                 launchFlow {
                     // Una sesión que quedó viva de otro proveedor (app cerrada en «¿Cargamos…?») no se reusa para el
                     // botón que la persona acaba de tocar: se suelta y se firma con el pedido.
@@ -264,6 +258,14 @@ struct WelcomeCloudSignInView: View {
             // de llegar al intro. Con el latch, cancelar deja el intro del alta, que es la salida.
             guard startsAtConsent, !didAutoOpenConsent else { return }
             didAutoOpenConsent = true
+            // Fallo 2 del 13-nov: la entrada desde «¡Hola de nuevo!» también deja iCloud aparte antes de nada, y aquí antes
+            // del consentimiento, que si no se pediría dos veces (antes y después de reabrir). Una vuelta del main actor
+            // después: cambiar el contenido del cover dentro de su propio `onAppear`.
+            if leavesICloudAsideInsteadOfSigningIn() {
+                let aside = provider
+                launchFlow { onLeaveICloudAside(aside) }
+                return
+            }
             showConsent = true
         }
         // EL CONSENT VA SIEMPRE ANTES DEL SIGN-IN, en las dos entradas: el login envía identidad, así
@@ -317,9 +319,13 @@ struct WelcomeCloudSignInView: View {
         .interactiveDismissDisabled()
     }
 
-    /// Las condiciones vivas de `WelcomeLeaveICloudBeforeSignIn`, leídas como las lee el guard cross-cuenta tras firmar
+    /// ¿Se deja iCloud aparte en vez de firmar? Solo si todavía no hay sesión —con una viva (la que trae la puerta de Grupos,
+    /// o la de «¿Cargamos…?») ya no hay hoja que ahorrar, y decide el guard de siempre—, nunca en el alta (no adopta) y con
+    /// las condiciones vivas de `WelcomeLeaveICloudBeforeSignIn`, leídas como las lee el guard cross-cuenta tras firmar
     /// (`runSignInFlow`) y la puerta que va a vaciar (`WelcomeGroupsGateView.cloudAccountEntryPhase`).
-    private func leavesICloudAsideBeforeSignIn() -> Bool {
+    private func leavesICloudAsideInsteadOfSigningIn() -> Bool {
+        guard !CloudAuthService.shared.hasSession else { return false }
+        if case .bornCloud = activeEntry { return false }
         let hasLocalData = hasLocalDataNow()
         guard hasLocalData else { return false }
         return WelcomeLeaveICloudBeforeSignIn.leavesICloudAsideFirst(
@@ -1628,6 +1634,14 @@ struct WelcomeCloudSignInView: View {
     /// encontró la cuenta ya creada pasa `.signUpFoundExistingAccount`.
     private func runSignInFlow(origin: WelcomeAdoptOrigin) async {
         adoptOrigin = origin
+        // Fallo 2 del 13-nov: con el corpus del iCloud privado en el teléfono, se deja aparte ANTES de firmar
+        // (`WelcomeLeaveICloudBeforeSignIn`). Firmando primero, la vuelta al neutro purgaba la sesión y tras reabrir había
+        // que volver a firmar. Aquí lo cubre para todas las entradas que firman: la vitrina, «Usar otra cuenta», «Entrar
+        // con …» y los botones del intro.
+        if leavesICloudAsideInsteadOfSigningIn() {
+            onLeaveICloudAside(provider)
+            return
+        }
         phase = .checking
         guard await ensureSignedIn() else { return }
 

@@ -98,16 +98,30 @@ struct WelcomeOtherAccountWiringTests {
         #expect(!source.contains("textExit(L10n.UnifiedAccess.useAnotherAccount, id: \"welcome_cloud_"))
     }
 
-    @Test("La entrada única mira el corpus de iCloud antes de abrir la hoja de inicio de sesión")
-    func unifiedEntryLeavesICloudAsideBeforeSigningIn() throws {
+    @Test("Toda entrada que firma mira el corpus de iCloud antes de abrir la hoja de inicio de sesión")
+    func everySignInLeavesICloudAsideFirst() throws {
         let source = try viewSource()
-        let check = try #require(source.range(of: "if leavesICloudAsideBeforeSignIn() {"))
-        let signIn = try #require(source.range(of: "await runSignInFlow(origin: .reentry)\n                }\n                return"))
-        #expect(check.lowerBound < signIn.lowerBound)
-        let fn = try body(of: "private func leavesICloudAsideBeforeSignIn()", in: source)
+        let flow = try body(of: "private func runSignInFlow(origin: WelcomeAdoptOrigin) async {", in: source)
+        let check = try #require(flow.range(of: "if leavesICloudAsideInsteadOfSigningIn() {"))
+        let signIn = try #require(flow.range(of: "guard await ensureSignedIn() else { return }"))
+        #expect(check.lowerBound < signIn.lowerBound, "La hoja de inicio de sesión se abría antes de dejar iCloud aparte.")
+        #expect(flow[check.upperBound...].hasPrefix("\n            onLeaveICloudAside(provider)\n            return"))
+        let fn = try body(of: "private func leavesICloudAsideInsteadOfSigningIn()", in: source)
+        #expect(fn.contains("guard !CloudAuthService.shared.hasSession else { return false }"))
+        #expect(fn.contains("if case .bornCloud = activeEntry { return false }"))
         #expect(fn.contains("ICloudAsideEntryLogic.exit("))
         #expect(fn.contains("ICloudRestoreSessionSignal.isRestoringNow"))
         #expect(fn.contains("CloudClaimActionStore.shared.hasAnyClaim()"))
+    }
+
+    @Test("Desde «¡Hola de nuevo!» se deja iCloud aparte ANTES del consentimiento, que si no se pediría dos veces")
+    func reentryLeavesICloudAsideBeforeTheConsent() throws {
+        let source = try viewSource()
+        let latch = try #require(source.range(of: "guard startsAtConsent, !didAutoOpenConsent else { return }"))
+        let rest = source[latch.upperBound...]
+        let check = try #require(rest.range(of: "if leavesICloudAsideInsteadOfSigningIn() {"))
+        let consent = try #require(rest.range(of: "showConsent = true"))
+        #expect(check.lowerBound < consent.lowerBound)
     }
 
     @Test("«Otra cuenta de Apple» firma por la web con el despacho común (seam de XCUITest y Pro incluidos)")
