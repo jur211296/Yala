@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1292)
+## Index (1293)
 
 | id | status | path |
 |---|---|---|
@@ -88,6 +88,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | adopt-empty-backend-exit-leaves-the-window-unmeasured | backlog | tickets/backlog/adopt-empty-backend-exit-leaves-the-window-unmeasured.md |
 | adopt-exit-keeps-the-session-it-opened | done | tickets/done/adopt-exit-keeps-the-session-it-opened.md |
 | adopt-follower-waits-for-the-leader-with-no-ceiling | done | tickets/done/adopt-follower-waits-for-the-leader-with-no-ceiling.md |
+| adopt-halfway-always-has-an-exit | done | tickets/done/adopt-halfway-always-has-an-exit.md |
 | adopt-imports-between-the-reconcile-and-the-baseline-are-never-drained | backlog | tickets/backlog/adopt-imports-between-the-reconcile-and-the-baseline-are-never-drained.md |
 | adopt-lineage-block-for-foreign-data-takes-fifteen-minutes-to-say-so | backlog | tickets/backlog/adopt-lineage-block-for-foreign-data-takes-fifteen-minutes-to-say-so.md |
 | adopt-lineage-block-shows-connecting-for-fifteen-minutes | done | tickets/done/adopt-lineage-block-shows-connecting-for-fifteen-minutes.md |

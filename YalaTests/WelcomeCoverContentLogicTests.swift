@@ -172,7 +172,8 @@ struct WelcomeCoverContentLogicTests {
     func cleanupAndFallbackWiring() throws {
         let modifier = try Self.modifier
         let note = Self.flat(try Self.body(of: "private func noteWelcomeCoverContent(_ now: WelcomeCoverContentLogic.Content?) {", in: modifier))
-        #expect(note == "if WelcomeCoverContentLogic.cloudSignInLeftForFlow(last: lastWelcomeCoverContent, now: now) { resetCloudSignInEntry() } if let now { lastWelcomeCoverContent = now }")
+        // Card gd78: el modo «retomar» de la entrada se apaga en cuanto el cover deja de enseñarla.
+        #expect(note == "if WelcomeCoverContentLogic.cloudSignInLeftForFlow(last: lastWelcomeCoverContent, now: now) { resetCloudSignInEntry() } if let now { lastWelcomeCoverContent = now } if now != .cloudSignIn { welcomeCloudResumesAdopt = false }")
         let reset = Self.flat(try Self.body(of: "private func resetCloudSignInEntry() {", in: modifier))
         #expect(reset == "adoptStartsAtConsent = false cloudSignInFromExistingChooser = false")
         let dismiss = Self.flat(try Self.body(of: "private func welcomeCoverDidDismiss() {", in: modifier))

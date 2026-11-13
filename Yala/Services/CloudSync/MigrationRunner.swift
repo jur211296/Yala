@@ -884,6 +884,8 @@ protocol MigrationWorkExecuting: AnyObject {
     /// Cuántas filas de la subida de la ida confirmó el servidor, de cuántas hay (la cifra de «Subir tus datos»). Solo
     /// informa. Default `nil` en la extensión: los fakes no la modelan.
     var snapshotUploadProgress: CloudProgressStepsLogic.UploadProgress? { get }
+    /// En qué paso real va el efecto del adopt (card jxbp). Solo informa. Default `nil` en la extensión.
+    var adoptEffectProgress: AdoptEffectProgress? { get }
 
     // MARK: Reversa (§h, I11-2). El server-side (claim/freeze) queda notWired hasta I11-3.
 
@@ -944,6 +946,7 @@ protocol MigrationWorkExecuting: AnyObject {
 
 extension MigrationWorkExecuting {
     var snapshotUploadProgress: CloudProgressStepsLogic.UploadProgress? { nil }
+    var adoptEffectProgress: AdoptEffectProgress? { nil }
 
     /// Defaults del linaje de la ida (ticket `migration-takeover-uploads-without-a-lineage-check`): un conformador que no lo
     /// modela —los fakes de las suites de antes— recorre la identidad como antes del ticket. El ejecutor real los override.
@@ -1036,6 +1039,9 @@ final class MigrationRunner {
 
     /// Cuántas filas de la subida de la ida confirmó el servidor, de cuántas hay. Del uploader, a través del executor.
     var snapshotUploadProgress: CloudProgressStepsLogic.UploadProgress? { executor.snapshotUploadProgress }
+
+    /// En qué paso real va el efecto del adopt (card jxbp). Del executor.
+    var adoptEffectProgress: AdoptEffectProgress? { executor.adoptEffectProgress }
 
     /// Cuándo cambió de paso la última vez, para el canario `cloudMigrationStep`. En memoria: tras relanzar, el primer
     /// cambio sale sin duración.

@@ -622,7 +622,9 @@ struct MigrationJournalUnreadableWiringTests {
             "read: read.phaseRead,",
             "mirrorOffArmed: mirrorOffArmed,",
             "mountedDecision: mountedDecision,",
-            "adoptEffectJournaled: adoptEffectJournaled)",
+            "adoptEffectJournaled: adoptEffectJournaled,",
+            // Card jxbp: el paso real del efecto del adopt, del runner vivo.
+            "adoptProgress: _runner?.adoptEffectProgress)",
             "claimBlocker = _runner?.lastClaimBlocker",
             "claimDefinitiveCause = _runner?.lastClaimDefinitiveCause",
             "reverseUploadSample = _runner?.lastReverseUploadSample",
@@ -631,6 +633,8 @@ struct MigrationJournalUnreadableWiringTests {
             // de XCUITest y la primera muestra de la vuelta.
             "uploadProgress = _runner?.snapshotUploadProgress",
             "runnerAwaitingImport = _runner?.isAwaitingImportQuiescence ?? false",
+            // Card rfzc: el primer pull del motor, para que Almacenamiento no diga «Todo sincronizado» antes de tiempo.
+            "engineFirstPullCompleted = SyncQuiescenceCoordinator.shared.hasCompletedFirstPull",
             "#if DEBUG",
             "if let fake = UITestHooks.fakeCloudProgress { applyFakeCloudProgress(fake) }",
             "#endif",
@@ -888,7 +892,10 @@ struct MigrationJournalUnreadableWiringTests {
             "continue",
             "}",
         ])
-        #expect(poll[start + 14] == "phase = next")
+        // Card jxbp: después del caso ilegible, los fallos del intento de antes con el drive en vuelo se ignoran, y la barra
+        // no retrocede; `phase = next` sigue siendo la asignación de todo lo demás.
+        #expect(poll[start + 14] == "if controller.isWorking, CloudWelcomeSignInFlow.isFailureTerminal(next) {")
+        #expect(poll.contains("phase = next"))
         let retry = Self.lines(try Self.body(of: "private func retryAdoptResume() async {", in: view))
         #expect(retry.contains("if case .idle = controller.uiState, !cancelRequested {"))
     }
