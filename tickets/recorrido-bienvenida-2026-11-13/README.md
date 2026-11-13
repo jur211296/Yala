@@ -50,6 +50,19 @@ los PNG originales, en `~/Claude/entregas/2026-11-13-recorrido-interactivo-bienv
 No recorridos: iCloud sin datos con Apple (las pantallas de Google con y sin datos de iCloud fueron idénticas) e iCloud con
 datos + Google nueva (la cuenta test se gastó en E07). Se dice en el cierre.
 
+## Decisiones de Jürgen en el recorrido (13-nov)
+
+- Cerrar sesión, Quitar datos y Eliminar cuenta tienen pantalla propia con progreso; no se pide reabrir Yala salvo que
+  haya iCloud de por medio (y aun así, mejor evitarlo).
+- En el camino de cuenta (Google o Apple) no se menciona iCloud.
+- Si la cuenta ya tiene grupos, ni la intro ni el consentimiento de Grupos vuelven a salir.
+- Quien recupera sus datos no responde las tres preguntas; si se pregunta, se pregunta todo.
+- El mismo correo abre la misma cuenta con Apple o con Google; los textos lo dicen así.
+- En «Ver los 7 pasos» se puede abrir cualquier paso y la hoja se ve entera.
+- En modo iCloud la salida se llama «Cerrar sesión».
+- «¡Primeros pasos completos!» aunque se omitan pasos: se queda así, para no abrumar.
+- Los tutoriales de Ajustes se actualizan con urgencia.
+
 ## Cards creadas (tablero Yala, versión 2.3)
 
 Muy alta: Panel vacío tras «¡Tu cuenta está lista!» · iCloud vaciado tratado como «con datos».
