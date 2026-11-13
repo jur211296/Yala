@@ -64,7 +64,8 @@ struct SignOutWelcomeDestinationTests {
     func everyArm_decidesTheDestination() throws {
         let lines = try Self.codeLines("Yala/Services/CloudSync/CloudSessionSignOut.swift")
         let arms = lines.indices.filter { lines[$0] == "StorageModePersistence.armSignOutWipe()" }
-        #expect(arms.count == 4)
+        // El quinto es «Empezar de cero» en un teléfono en la nube (opción A del 13-nov), que retira como el borrado de cuenta.
+        #expect(arms.count == 5)
         var persisted = 0
         var cleared = 0
         for arm in arms {
@@ -81,7 +82,7 @@ struct SignOutWelcomeDestinationTests {
             }
         }
         #expect(persisted == 2)
-        #expect(cleared == 2)
+        #expect(cleared == 3)
     }
 
     // MARK: - Restaurar marca la elección

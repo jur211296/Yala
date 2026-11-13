@@ -2583,6 +2583,63 @@ final class CloudSessionSignOut {
         return true
     }
 
+    // MARK: - «Empezar de cero» del Welcome con el teléfono en la nube (opción A, 13-nov-2026)
+
+    /// **Devuelve a recién instalado un teléfono que sigue en modo nube tras «Empezar de cero» del Welcome** (ticket
+    /// `adopt-over-a-device-already-in-cloud-mode-has-no-exit`, opción A de Jürgen). Lo llama el Welcome cuando el borrado de
+    /// «Empezar de cero» ya terminó —filas, grupos del relevo, sesión retirada— y el modo persistido sigue en `.cloud`
+    /// (`AdoptOverCloudGuardLogic.freshStartReturnsToFreshInstall`). Hasta ese día el Welcome abría el onboarding encima: el
+    /// teléfono quedaba en `.cloud` sin sesión ni sello, y la siguiente entrada a la cuenta arrancaba un adopt sin salida.
+    ///
+    /// **Es el cierre local de «Borrar mi cuenta» en la nube sin el borrado de la cuenta** (`closeLocalAfterAccountDeletionCloud`),
+    /// y por la misma razón no hay push-all: la persona eligió empezar de cero, y este borrado es local: no toca la cuenta de la nube. El borrado
+    /// es el del arranque (`performSignOutWipeIfArmed`): archivos fuera, par a `.icloud`, neutro armado y preferencias de
+    /// instalación nueva. Se consuma en caliente si el montaje lo admite (los dos montajes de este estado, neutro y nube sin
+    /// espejo, lo admiten) y, si no, la fase `.awaitingRelaunch` pinta «reabre Yala» y lo consuma el arranque. Al terminar, la
+    /// persona está en el Welcome de un teléfono recién instalado.
+    ///
+    /// **No marca el store de Grupos**: el relevo de «Empezar de cero» ya purgó sus filas, y con los grupos que el aviso
+    /// tardío conservó para esta misma persona (`LateNoticeKeptGroupsMark`) borrarlos sería el daño que esa decisión evitó.
+    ///
+    /// **Dos mitades, y la primera es síncrona a propósito** (review adversarial). El Welcome se cierra en el mismo toque; si
+    /// el borrado se armara después de las esperas de red (desregistro del push, `signOut()`), un cierre de la app en ese
+    /// hueco reabría con el modo en `.cloud`, sin arm y con el elector ya visto: el onboarding privado sobre la nube, que es
+    /// el bug por otra puerta. Armado antes de cualquier `await`, ese cierre lo termina el arranque. El borrado del arranque
+    /// retira la sesión por su cuenta (`retireForSignOutWipe`), así que armar primero es seguro.
+    ///
+    /// Devuelve `false` sin tocar nada con el coordinador ocupado: el llamador no cierra el Welcome.
+    func armReturnToFreshInstallAfterWelcomeFreshStart() -> Bool {
+        guard phase == .idle else { return false }
+        phase = .working
+        CloudSyncBreadcrumb.signOutStarted(path: "welcome-fresh-start-cloud")
+        // Un marker `includesGroups` huérfano de un cierre anterior no puede colarse en este borrado (ver arriba).
+        StorageModePersistence.clearSignOutWipeIncludesGroups()
+        // Recién instalado es sin destino: la persona vuelve a elegir en el Welcome. El destino se retira pegado al arm.
+        StorageModePersistence.armSignOutWipe()
+        CloudSyncBreadcrumb.signOutWipeArmed()
+        destinationOnArm = nil
+        WelcomePendingDestinationStore.clear()
+        clearLocalSurfacesForArmedWipe()
+        phase = .awaitingRelaunch
+        return true
+    }
+
+    /// La segunda mitad, con el borrado ya armado: parar lo que corre, soltar la sesión y consumar el borrado en caliente.
+    /// Devuelve `true` si cerró sin reabrir; con `false` la fase sigue en `.awaitingRelaunch` y el cover pide reabrir.
+    @discardableResult
+    func finishReturnToFreshInstallAfterWelcomeFreshStart() async -> Bool {
+        guard phase == .awaitingRelaunch, StorageModePersistence.isSignOutWipeArmed() else { return false }
+        CloudSyncRuntime.shared?.teardownGuestSession()
+        GroupsSyncClient.shared.teardownForSignOut()
+        await PushTokenSignOutSeam.clearForSignOut()
+        // El Welcome ya retiró la sesión (`CloudSessionRetirement.retireForHandover`), pero ese retiro es un `Task`: se repite
+        // aquí, y si sobrevive queda armada para el arranque, como en el cierre tras borrar la cuenta.
+        Self.retireIfSessionSurvived(await CloudAuthService.shared.signOut(), path: "welcome-fresh-start-cloud")
+        guard await PersonalContainerSwap.attemptSignOutSwap() == .swapped else { return false }
+        phase = .idle
+        return true
+    }
+
     /// **Encargo S27i · D, ANTES del servidor: la zona de iCloud.** Es el único paso del borrado de la cuenta con sesión
     /// privada que depende de iCloud y puede fallar por algo que la persona no controla (red, iCloud ocupado), así que va
     /// primero: con la cuenta todavía viva, un fallo no ha cambiado nada y «Reintentar» repite el gesto entero. Al revés,

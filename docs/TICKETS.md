@@ -91,7 +91,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | adopt-imports-between-the-reconcile-and-the-baseline-are-never-drained | backlog | tickets/backlog/adopt-imports-between-the-reconcile-and-the-baseline-are-never-drained.md |
 | adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch | done | tickets/done/adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch.md |
 | adopt-orphan-with-a-fresh-hlc-beats-the-absent-leaders-edit | backlog | tickets/backlog/adopt-orphan-with-a-fresh-hlc-beats-the-absent-leaders-edit.md |
-| adopt-over-a-device-already-in-cloud-mode-has-no-exit | backlog | tickets/backlog/adopt-over-a-device-already-in-cloud-mode-has-no-exit.md |
+| adopt-over-a-device-already-in-cloud-mode-has-no-exit | done | tickets/done/adopt-over-a-device-already-in-cloud-mode-has-no-exit.md |
+| adopt-over-cloud-block-uses-the-foreign-data-copy | backlog | tickets/backlog/adopt-over-cloud-block-uses-the-foreign-data-copy.md |
 | adopt-rekeyed-rows-without-a-unique-lineage-key-still-duplicate | discarded | tickets/discarded/adopt-rekeyed-rows-without-a-unique-lineage-key-still-duplicate.md |
 | adopt-session-close-drops-the-mark-before-the-sign-out-lands | backlog | tickets/backlog/adopt-session-close-drops-the-mark-before-the-sign-out-lands.md |
 | adopt-terminal-claims-ready-without-checking-engine | backlog | tickets/backlog/adopt-terminal-claims-ready-without-checking-engine.md |
@@ -1277,6 +1278,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | welcome-fresh-install-neutral-mount-lasts-one-launch | done | tickets/done/welcome-fresh-install-neutral-mount-lasts-one-launch.md |
 | welcome-fresh-start-alert-leaves-blank-screen | done | tickets/done/welcome-fresh-start-alert-leaves-blank-screen.md |
 | welcome-fresh-start-failed-copy-says-data-is-still-here-after-partial-wipe | backlog | tickets/backlog/welcome-fresh-start-failed-copy-says-data-is-still-here-after-partial-wipe.md |
+| welcome-fresh-start-on-a-cloud-phone-wipes-rows-with-the-engine-alive | backlog | tickets/backlog/welcome-fresh-start-on-a-cloud-phone-wipes-rows-with-the-engine-alive.md |
 | welcome-groups-back-forgets-first-time-after-invite-screen | done | tickets/done/welcome-groups-back-forgets-first-time-after-invite-screen.md |
 | welcome-groups-gate-button-identifiers-are-shadowed-by-their-screen | done | tickets/done/welcome-groups-gate-button-identifiers-are-shadowed-by-their-screen.md |
 | welcome-groups-gate-loops-on-legacy-cloudkit-groups | done | tickets/done/welcome-groups-gate-loops-on-legacy-cloudkit-groups.md |

@@ -328,7 +328,8 @@ struct GroupsSyncHardeningTests {
         //
         // **Eran 5 hasta el 2026-09-13**: los dos que faltan eran los caminos de salida de la sesión de
         // visita, retirados con ella.
-        #expect(teardowns == 3)
+        // Y uno más desde el 2026-11-13: «Empezar de cero» en un teléfono en la nube (opción A), que cierra como la nube.
+        #expect(teardowns == 4)
         // El canal de grupos se corta en: el tramo común de los cierres por archivos (privada, «equipo» y
         // solo grupos — paso 9, `finalizeSessionExit`), el `.cloud`, los 2 cierres de eliminar-cuenta
         // (closeLocalAfterAccountDeletion Cloud/GroupsOnly — belts) y el desasociar de la fila de Ajustes
@@ -338,7 +339,8 @@ struct GroupsSyncHardeningTests {
         // grupos **para todos los miembros**.
         //
         // **Eran 7 hasta el 2026-09-13**, por los mismos dos caminos de la visita.
-        #expect(groupsTeardowns == 5)
+        // Más el de «Empezar de cero» en un teléfono en la nube (2026-11-13, opción A).
+        #expect(groupsTeardowns == 6)
     }
 
     // MARK: - (8) Barrido de tombstones de `split_groups` YA ENCOLADOS (mitad hacia atrás del 2026-08-02)

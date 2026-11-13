@@ -76,6 +76,12 @@ enum MetricsCanary: String {
     /// medias) era invisible en producción. `detail` separa cuál de los dos alerts lo emitió, sin PII.
     /// Misma familia que `attestKeyDiscardedAfterAssertFailure`.
     case freshStartWipeFailed
+    /// **La entrada a una cuenta desde el Welcome encontró el teléfono YA en modo nube y sin el sello de esa cuenta, y no
+    /// adoptó** (ticket `adopt-over-a-device-already-in-cloud-mode-has-no-exit`, opción A de Jürgen del 13-nov). Antes ese
+    /// adopt quedaba pendiente para siempre, sin «Cancelar» ni techo. El origen («Empezar de cero» dejaba el modo en la nube)
+    /// se cerró en el mismo cambio, así que **sostenido en >0 es otro camino que deja la nube puesta sin sesión**, o
+    /// teléfonos que ya venían así de antes. Sin `detail`.
+    case adoptOverCloudRefused
     /// **El aviso de «tus datos fueron eliminados de iCloud» no llegó a presentarse y se desarmó.** La
     /// red de presentación (`ContentView.armRemoteWipeNoticePresentationNet`) agotó el cap de su ciclo
     /// —unos nueve segundos togglando sin que UIKit montara nada— y soltó el blocker para no dejar el
