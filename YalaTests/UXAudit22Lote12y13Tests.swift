@@ -275,7 +275,8 @@ struct UXAudit22Lote12y13WiringTests {
     @Test func settleButton_onlyOnDebtsInvolvingYou() throws {
         let view = try Self.source("Yala/App/Views/Groups/GroupBalancesView.swift")
         let gate = [
-            "if onSettleDebt != nil, SettlementSaldar23Logic.offersSettle(",
+            // `!showsPairs`: las deudas de cada par son solo para mirar (decisión 36 de 2.3, A1).
+            "if !showsPairs, onSettleDebt != nil, SettlementSaldar23Logic.offersSettle(",
             "    involvesMe: card.involvesMe, currentUserMemberID: currentUserMemberID,",
             "    receiverCanConfirm: activeMemberIDs.contains(card.toMemberID)) {",
             "    settleButton(card)",

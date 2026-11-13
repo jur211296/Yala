@@ -807,7 +807,7 @@
 "budgets.status.exceeded" = "Excedidos";
 "budgets.status.inactive" = "Inactivos";
 "budgets.title" = "Presupuestos";
-"budgets.widget.noFavorites.message" = "Marca presupuestos como favoritos en Ajustes > Presupuestos para verlos aquí.";
+"budgets.widget.noFavorites.message" = "Marca presupuestos como favoritos en Configurar Panel > Presupuestos en el Panel para verlos aquí.";
 "budgets.widget.noFavorites.title" = "Sin presupuestos favoritos";
 "budgets.widget.selectFavorites" = "Seleccionar favoritos";
 "bulkEdit.availableTags" = "Disponibles para añadir";
@@ -8780,3 +8780,14 @@
 "groups.saldar23.notice.nowYouOwe" = "Ahora le debes %1$@ a %2$@.";
 "groups.saldar23.notice.nowOwesYou" = "Ahora %1$@ te debe %2$@.";
 "groups.saldar23.notice.nowOthersOwe" = "Ahora %1$@ le debe %2$@ a %3$@.";
+
+/* Lote chico 2.3 · Grupos y Ajustes: menos pagos al pie, Registros favoritos, Presupuestos en el Panel, Solo gastos en «Cómo usas Yala» */
+"groups.lote23chico.simplifiedNote" = "Yala ha juntado las deudas para que haya menos pagos.";
+"groups.lote23chico.showPairs" = "Ver las deudas de cada par";
+"groups.lote23chico.pairsNote" = "Así quedan las deudas de cada par, sin juntar. Para saldar, vuelve a menos pagos.";
+"groups.lote23chico.showSimplified" = "Ver con menos pagos";
+"settings.lote23chico.favoriteRecords" = "Registros favoritos";
+"settings.lote23chico.organizationFooter" = "Presupuestos y Pagos planificados están en Planificación. Los presupuestos que ves en el Panel se eligen en Configurar Panel.";
+"panel.lote23chico.budgetsOnPanel" = "Presupuestos en el Panel";
+"panel.lote23chico.budgetsOnPanelHint" = "Elige cuáles salen en la tarjeta de Presupuestos.";
+"usageMode.lote23chico.fullExpensesOnly" = "Yala completo · solo gastos";

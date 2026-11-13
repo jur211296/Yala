@@ -524,7 +524,7 @@
 "budgets.includeSharedExpenses" = "Count my share of group expenses";
 "budgets.includeSharedExpensesHint" = "When off, only your personal expenses count.";
 "budgets.widget.noFavorites.title" = "No favorite budgets";
-"budgets.widget.noFavorites.message" = "Mark budgets as favorites in Settings > Budgets to see them here.";
+"budgets.widget.noFavorites.message" = "Mark budgets as favorites in Configure Panel > Budgets on the Panel to see them here.";
 "budgets.widget.selectFavorites" = "Select favorites";
 "budgets.alerts.title" = "Alerts";
 "budgets.alerts.enable" = "Notify when reaching limit";
@@ -9526,3 +9526,14 @@
 "groups.saldar23.notice.nowYouOwe" = "You now owe %2$@ %1$@.";
 "groups.saldar23.notice.nowOwesYou" = "%1$@ now owes you %2$@.";
 "groups.saldar23.notice.nowOthersOwe" = "%1$@ now owes %3$@ %2$@.";
+
+/* Lote chico 2.3 · Grupos y Ajustes: menos pagos al pie, Registros favoritos, Presupuestos en el Panel, Solo gastos en «Cómo usas Yala» */
+"groups.lote23chico.simplifiedNote" = "Yala combined the debts so there are fewer payments.";
+"groups.lote23chico.showPairs" = "See each pair's debts";
+"groups.lote23chico.pairsNote" = "These are the debts between each pair, not combined. To settle up, go back to fewer payments.";
+"groups.lote23chico.showSimplified" = "See with fewer payments";
+"settings.lote23chico.favoriteRecords" = "Favorite records";
+"settings.lote23chico.organizationFooter" = "Budgets and Scheduled Payments are in Planning. The budgets you see on the Panel are chosen in Configure Panel.";
+"panel.lote23chico.budgetsOnPanel" = "Budgets on the Panel";
+"panel.lote23chico.budgetsOnPanelHint" = "Choose which ones appear on the Budgets card.";
+"usageMode.lote23chico.fullExpensesOnly" = "Full Yala · expenses only";

@@ -218,7 +218,8 @@ struct UXAudit22Decidido15WiringTests {
 
     @Test("L16-6: «Activar» sin rojo, en un aviso con «Cancelar»")
     func expensesOnly_alert() throws {
-        let src = try Self.code("Yala/App/Views/Settings/PersonalizationSettingsView.swift")
+        // «Solo gastos» vive en «Cómo usas Yala» desde la decisión 48 de 2.3 (F1), con los mismos avisos.
+        let src = try Self.code("Yala/App/Views/Settings/UsageModeSettingsView.swift")
         #expect(!src.contains("confirmationDialog("), "volvió el diálogo anclado, que no pinta «Cancelar»")
         let activate = try Self.body(after: "isPresented: $showingExpensesOnlyActivate", in: src, upTo: "} message:")
         #expect(activate.contains("Button(L10n.Settings.expensesOnlyActivateConfirm)"))

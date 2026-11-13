@@ -52,7 +52,8 @@ struct BudgetsFavoritesSettingsView: View {
                 .padding(.vertical, DS.Spacing.xxl)
             }
         .yalaScreenBackground(.subtle)
-        .navigationTitle(L10n.Settings.budgets)
+        // Decisión 47 de 2.3 (B1): la pantalla dice lo que es (elige qué presupuestos salen en el Panel), no «Presupuestos».
+        .navigationTitle(L10n.Lote23Chico.budgetsOnPanel)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
         .toolbar {

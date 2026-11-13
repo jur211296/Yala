@@ -1338,6 +1338,10 @@ final class UITestHooks {
     /// es «Lucía», no «Tú», para ver dónde la app lo cambia. Y «Grupo sin gastos», recién creado y sin nada apuntado.
     nonisolated static var seedGroupCrossDebts: Bool { hasArg("-uitest-seed-group-cross-debts") }
     nonisolated static let seededCrossDebtsGroupName = "Piso compartido"
+    /// `-uitest-seed-group-cross-debts-simplified`: con la semilla de arriba, «Piso compartido» con «Menos pagos»
+    /// ENCENDIDO (lote chico de 2.3, decisión 36): juntadas quedan Beto → Ana S/ 70 y tú → Ana S/ 10, distintas de las de
+    /// cada par (tú → Ana 40, Beto → Ana 40, Beto → tú 30), así que Saldos enseña la línea al pie.
+    nonisolated static var seedGroupCrossDebtsSimplified: Bool { hasArg("-uitest-seed-group-cross-debts-simplified") }
     nonisolated static let seededEmptyGroupName = "Grupo sin gastos"
 
     /// `-uitest-scheduled-due-today`: añade al seed UN pago planificado «una sola vez» que vence

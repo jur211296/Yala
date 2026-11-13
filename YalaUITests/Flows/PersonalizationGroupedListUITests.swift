@@ -19,9 +19,9 @@ final class PersonalizationGroupedListUITests: XCTestCase {
     }
 
     /// Los ajustes de Personalización, de arriba abajo. El interruptor de Yala IA sale con Pro y sin Pro desde UX 2.2
-    /// · L14-12, y «Tono de Yala IA» desde L14-10. «Idioma de la app» no está: solo aparece con un idioma forzado.
+    /// · L14-12, y «Tono de Yala IA» desde L14-10. «Idioma de la app» (sale siempre desde L16-5) se mira aparte.
+    /// «Solo gastos» salió con la decisión 48 de 2.3 (vive en «Cómo usas Yala»).
     private let expectedRows = [
-        "personalization_row_expenses_only",
         "voice_language_menu",
         "personalization_row_ai_tone",
         "personalization_row_ai_summary",
@@ -49,14 +49,14 @@ final class PersonalizationGroupedListUITests: XCTestCase {
     func test_personalization_isASystemGroupedList() {
         let app = openPersonalization()
 
-        let firstRow = app.switches["personalization_row_expenses_only"]
-        XCTAssertTrue(firstRow.waitForExistence(timeout: 10), "No apareció la fila «Solo gastos».")
+        let firstRow = app.buttons["personalization_row_app_language"]
+        XCTAssertTrue(firstRow.waitForExistence(timeout: 10), "No apareció la fila «Idioma de la app».")
 
         // Una `List` de SwiftUI es un UICollectionView: la fila tiene que colgar de uno.
-        let inList = app.collectionViews.switches["personalization_row_expenses_only"]
+        let inList = app.collectionViews.buttons["personalization_row_app_language"]
         XCTAssertTrue(
             inList.exists,
-            "La fila «Solo gastos» no cuelga de una lista del sistema: Personalización volvió a un ScrollView."
+            "La fila «Idioma de la app» no cuelga de una lista del sistema: Personalización volvió a un ScrollView."
         )
     }
 

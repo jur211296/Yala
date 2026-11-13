@@ -524,7 +524,7 @@
 "budgets.includeSharedExpenses" = "统计我在群组支出中的份额";
 "budgets.includeSharedExpensesHint" = "关闭后,只统计你的个人支出。";
 "budgets.widget.noFavorites.title" = "没有收藏的预算";
-"budgets.widget.noFavorites.message" = "在「设置 > 预算」中将预算标记为收藏即可在此查看。";
+"budgets.widget.noFavorites.message" = "在「配置面板 > 面板上的预算」中将预算标记为收藏即可在此查看。";
 "budgets.widget.selectFavorites" = "选择收藏";
 "budgets.alerts.title" = "提醒";
 "budgets.alerts.enable" = "达到额度时通知";
@@ -9532,3 +9532,14 @@
 "groups.saldar23.notice.nowYouOwe" = "你现在欠 %2$@ %1$@。";
 "groups.saldar23.notice.nowOwesYou" = "%1$@ 现在欠你 %2$@。";
 "groups.saldar23.notice.nowOthersOwe" = "%1$@ 现在欠 %3$@ %2$@。";
+
+/* Lote chico 2.3 · Grupos y Ajustes: menos pagos al pie, Registros favoritos, Presupuestos en el Panel, Solo gastos en «Cómo usas Yala» */
+"groups.lote23chico.simplifiedNote" = "Yala 合并了欠款，让付款次数更少。";
+"groups.lote23chico.showPairs" = "查看每两人之间的欠款";
+"groups.lote23chico.pairsNote" = "这是每两人之间未合并的欠款。要结清，请回到「减少付款」视图。";
+"groups.lote23chico.showSimplified" = "按减少付款查看";
+"settings.lote23chico.favoriteRecords" = "收藏的记录";
+"settings.lote23chico.organizationFooter" = "预算和计划付款在「计划」中。面板上显示哪些预算，在「配置面板」中选择。";
+"panel.lote23chico.budgetsOnPanel" = "面板上的预算";
+"panel.lote23chico.budgetsOnPanelHint" = "选择在预算卡片上显示哪些。";
+"usageMode.lote23chico.fullExpensesOnly" = "完整 Yala · 仅支出";

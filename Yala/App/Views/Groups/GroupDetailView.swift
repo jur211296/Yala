@@ -702,6 +702,9 @@ struct GroupDetailView: View {
             GroupBalancesView(
                 balances: viewModel.balances,
                 debts: viewModel.debts,
+                pairDebts: viewModel.pairDebts,
+                pairDebtsWereConverted: viewModel.pairDebtsWereConverted,
+                simplifyDebts: group.simplifyDebts,
                 settlements: viewModel.settlements,
                 memberNameLookup: viewModel.memberNameLookup,
                 currentUserMemberID: viewModel.currentUserMember?.id.uuidString,

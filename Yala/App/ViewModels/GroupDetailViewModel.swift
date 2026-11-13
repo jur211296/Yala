@@ -32,6 +32,12 @@ final class GroupDetailViewModel {
     private(set) var settlements: [SplitSettlement] = []
     private(set) var balances: [MemberBalance] = []
     private(set) var debts: [Debt] = []
+    /// Decisión 36 de 2.3 (A1): las deudas de cada par, SIN juntar, para «Ver las deudas de cada par» de Saldos. Solo se
+    /// calculan con «Menos pagos» encendido (sin él, `debts` ya son las de cada par); misma «una sola moneda» que `debts`.
+    private(set) var pairDebts: [Debt] = []
+    /// Las de cada par llevan «≈» por su cuenta: juntar puede anular la deuda en otra divisa (un ciclo en USD) y dejar
+    /// `debtsWereConverted` en `false` mientras las de cada par sí se convirtieron.
+    private(set) var pairDebtsWereConverted = false
 
     /// Progreso del presupuesto del grupo (G14), o `nil` si el grupo no tiene uno. Se recalcula en
     /// `recalculate()` como todo lo derivado, y no en la vista: `GroupBudgetLogic` deduplica y convierte
@@ -383,6 +389,18 @@ final class GroupDetailViewModel {
 
         if newBalances != balances { balances = newBalances }
         if newDebts != debts { debts = newDebts }
+
+        let rawPairDebts = group.simplifyDebts
+            ? GroupBalanceService.calculateDebts(
+                expenses: expenses, shares: shares, settlements: settlements, simplifyDebts: false)
+            : []
+        let newPairsConverted = group.showDebtsInSingleCurrency
+            && rawPairDebts.contains { $0.currencyCode != group.currencyCode }
+        let newPairDebts = newPairsConverted
+            ? GroupBalanceService.consolidatedDebts(from: rawPairDebts, targetCurrency: group.currencyCode)
+            : rawPairDebts
+        if newPairDebts != pairDebts { pairDebts = newPairDebts }
+        if newPairsConverted != pairDebtsWereConverted { pairDebtsWereConverted = newPairsConverted }
 
         // Presupuesto del grupo (G14). Va aquí y no en la vista porque `progress` deduplica y convierte
         // divisas; recalcularlo en cada `body` lo repetiría en cada scroll. Guard de igualdad como el

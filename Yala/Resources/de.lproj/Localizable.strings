@@ -522,7 +522,7 @@
 "budgets.includeSharedExpenses" = "Meinen Anteil an Gruppenausgaben zählen";
 "budgets.includeSharedExpensesHint" = "Wenn aus, zählen nur deine persönlichen Ausgaben.";
 "budgets.widget.noFavorites.title" = "Keine Favoriten";
-"budgets.widget.noFavorites.message" = "Markiere Budgets in Einstellungen > Budgets als Favoriten, um sie hier anzuzeigen.";
+"budgets.widget.noFavorites.message" = "Markiere Budgets in Panel einrichten > Budgets im Panel als Favoriten, um sie hier anzuzeigen.";
 "budgets.widget.selectFavorites" = "Favoriten auswählen";
 "budgets.alerts.title" = "Benachrichtigungen";
 "budgets.alerts.enable" = "Bei Erreichen des Limits benachrichtigen";
@@ -9520,3 +9520,14 @@
 "groups.saldar23.notice.nowYouOwe" = "Du schuldest %2$@ jetzt %1$@.";
 "groups.saldar23.notice.nowOwesYou" = "%1$@ schuldet dir jetzt %2$@.";
 "groups.saldar23.notice.nowOthersOwe" = "%1$@ schuldet %3$@ jetzt %2$@.";
+
+/* Lote chico 2.3 · Grupos y Ajustes: menos pagos al pie, Registros favoritos, Presupuestos en el Panel, Solo gastos en «Cómo usas Yala» */
+"groups.lote23chico.simplifiedNote" = "Yala hat die Schulden zusammengefasst, damit es weniger Zahlungen gibt.";
+"groups.lote23chico.showPairs" = "Schulden je Paar ansehen";
+"groups.lote23chico.pairsNote" = "So sehen die Schulden zwischen je zwei Personen aus, nicht zusammengefasst. Zum Ausgleichen geh zurück zu weniger Zahlungen.";
+"groups.lote23chico.showSimplified" = "Mit weniger Zahlungen ansehen";
+"settings.lote23chico.favoriteRecords" = "Lieblingseinträge";
+"settings.lote23chico.organizationFooter" = "Budgets und Geplante Zahlungen findest du unter Planung. Welche Budgets im Panel erscheinen, legst du unter „Panel einrichten“ fest.";
+"panel.lote23chico.budgetsOnPanel" = "Budgets im Panel";
+"panel.lote23chico.budgetsOnPanelHint" = "Wähle, welche auf der Budgets-Karte erscheinen.";
+"usageMode.lote23chico.fullExpensesOnly" = "Volles Yala · nur Ausgaben";
