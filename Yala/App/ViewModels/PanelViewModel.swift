@@ -507,9 +507,15 @@ final class PanelViewModel {
     }
 
     func loadData() {
+        loadData(stamp: currentDataStamp(), preloadedTransactions: nil)
+    }
+
+    /// `preloadedTransactions`: los movimientos ya leídos por tramos (`fetchTransactionsInSlices`, YALA-IOS-K); `nil`
+    /// los lee aquí de una vez. `stamp` se toma ANTES de leer nada, también antes de los tramos: un guardado que llegue
+    /// durante la lectura cuenta como cambio en la vuelta.
+    private func loadData(stamp: PanelDataStamp, preloadedTransactions: [TransactionItem]?) {
         guard let context = modelContext else { return }
-        // La firma se toma ANTES de leer: un guardado que llegue durante la lectura cuenta como cambio en la vuelta.
-        lastLoadStamp = currentDataStamp()
+        lastLoadStamp = stamp
 
         // Equality checks prevent unnecessary @Observable notifications, which break the
         // loadData → onChange(of: transactions) → recalculateData → loadData feedback loop.
@@ -561,15 +567,10 @@ final class PanelViewModel {
         // Fetch ALL transactions — no fetchLimit. The previous 2000-row cap dropped the
         // oldest records, which corrupted the running balance in the Trend widget
         // (visible as a constant vertical offset vs. Statistics → Tendencias).
-        let transactionsDesc = FetchDescriptor<TransactionItem>(
-            sortBy: [
-                SortDescriptor(\.date, order: .reverse),
-                SortDescriptor(\.createdAt, order: .reverse)
-            ]
-        )
         do {
             // Lo que espera su borrado con «Deshacer» no cuenta en ninguna cifra (`RecordPendingDeletion`).
-            let fetched = RecordPendingDeletion.shared.visible(try context.fetch(transactionsDesc))
+            let all = try preloadedTransactions ?? context.fetch(Self.allTransactionsDescriptor)
+            let fetched = RecordPendingDeletion.shared.visible(all)
             if fetched != transactions { transactions = fetched }
         } catch {
             #if DEBUG
@@ -2917,19 +2918,137 @@ final class PanelViewModel {
         recalculateTask = Task { @MainActor in
             do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
             guard !Task.isCancelled, !boundStore.isDetached else { return }
-            // Entre aquí y el final no hay ningún `await`: nadie puede sumarse a este cálculo a medias.
-            recalculateTask = nil
             let shouldReload = pendingReload
             pendingReload = false
             if shouldReload {
-                loadData()
+                // YALA-IOS-K: los movimientos se leen por tramos y la app atiende toques entre tramo y tramo. Mientras
+                // tanto `recalculateTask` sigue puesto: lo que se pida se suma a este cálculo (un recálculo lo cubre el
+                // cálculo de abajo, que lee los filtros de ese momento; una recarga, la vuelta que se pide al final).
+                let stamp = currentDataStamp()
+                let loaded = await fetchTransactionsInSlices()
+                // Cancelado (fondo, salir del Panel): quien canceló ya soltó la tarea; no se toca nada.
+                guard !Task.isCancelled else { return }
+                guard !boundStore.isDetached else {
+                    recalculateTask = nil
+                    return
+                }
+                guard let loaded else {
+                    // La lectura por tramos no pudo ir (lectura fallida): la de siempre, de una vez, con su `catch`.
+                    loadData(stamp: stamp, preloadedTransactions: nil)
+                    finishRecalculation()
+                    return
+                }
+                loadData(stamp: stamp, preloadedTransactions: loaded)
             }
-            performCalculation()
-            if isReady {
-                LoadTimeMarks.ready(.coldLaunch)
-                LoadTimeMarks.ready(.panel)
+            finishRecalculation()
+        }
+    }
+
+    /// El final de una vuelta del recálculo, sin ningún `await`: nadie puede sumarse a este cálculo a medias. Una recarga
+    /// pedida mientras se leían los tramos abre la vuelta siguiente.
+    private func finishRecalculation() {
+        recalculateTask = nil
+        performCalculation()
+        if isReady {
+            LoadTimeMarks.ready(.coldLaunch)
+            LoadTimeMarks.ready(.panel)
+        }
+        if pendingReload { scheduleRecalculation(reload: true) }
+    }
+
+    // MARK: - Lectura de los movimientos por tramos (YALA-IOS-K, 2026-11-13)
+
+    /// Todos los movimientos, del más nuevo al más viejo: lo que necesitan la tendencia y los saldos.
+    private static var allTransactionsDescriptor: FetchDescriptor<TransactionItem> {
+        FetchDescriptor<TransactionItem>(sortBy: [
+            SortDescriptor(\.date, order: .reverse),
+            SortDescriptor(\.createdAt, order: .reverse)
+        ])
+    }
+
+    /// Movimientos por tramo. Un tramo cuesta del orden de 0,1 s en un iPhone 14; todos de una vez pasaban de los 2 s
+    /// con un historial grande, con la app sin responder (Sentry YALA-IOS-K, `loadData` → `performAndWait`).
+    nonisolated static let transactionSliceSize = 1_500
+
+    /// Tramos que leyó la última carga. Testigo de `SentryHangs2026Nov`; sin uso en la app.
+    @ObservationIgnored private(set) var lastLoadSlices = 0
+
+    /// Lee TODOS los movimientos en el orden de `allTransactionsDescriptor`, por tramos de `transactionSliceSize`, y cede
+    /// el hilo principal entre uno y otro. `nil` si una lectura falla (el llamador lee de una vez y su `catch` decide).
+    ///
+    /// Cada tramo sigue al anterior por su CLAVE de orden, no por posición: lo que se guarde entre dos tramos no desplaza
+    /// a los siguientes. La clave se repite (importaciones, recurrentes con el mismo instante), así que cada tramo vuelve
+    /// a pedir la del último y lo ya leído se descarta por su identidad: ni salta filas ni las cuenta dos veces. Si un
+    /// tramo entero es de la misma clave y no trae nada nuevo, no hay forma de avanzar por clave y se lee el resto de una
+    /// vez. Una fila cuya fecha se edita entre dos tramos puede quedarse fuera de esta carga: esa edición guarda y la firma
+    /// (`lastLoadStamp`, tomada antes de leer) pide la recarga siguiente, como con un guardado justo después de leer.
+    ///
+    /// La lectura termina cuando un tramo no trae nada nuevo, no cuando trae menos de `transactionSliceSize`: con cambios
+    /// sin guardar en el contexto un tramo puede traer una fila de más o de menos, y cortar por la cuenta dejaría fuera el
+    /// resto del historial. Lo que se borró mientras se leía (otra tarea del hilo principal entre dos tramos: un borrado
+    /// con «Deshacer» que vence, una página de la nube) se descarta al final: leer un `@Model` borrado aborta en el iPhone.
+    func fetchTransactionsInSlices() async -> [TransactionItem]? {
+        guard let context = modelContext else { return nil }
+        let size = Self.transactionSliceSize
+        var result: [TransactionItem] = []
+        var seen = Set<PersistentIdentifier>()
+        var boundary: (date: Date, createdAt: Date)?
+        var slices = 0
+        defer { lastLoadSlices = slices }
+        while true {
+            var descriptor = Self.allTransactionsDescriptor
+            if let boundary {
+                let date = boundary.date
+                let createdAt = boundary.createdAt
+                descriptor.predicate = #Predicate<TransactionItem> {
+                    $0.date < date || ($0.date == date && $0.createdAt <= createdAt)
+                }
+            }
+            descriptor.fetchLimit = size
+            let slice: [TransactionItem]
+            do {
+                slice = try context.fetch(descriptor)
+            } catch {
+                #if DEBUG
+                print("PanelViewModel: Error loading transactions (tramo \(slices + 1)): \(error)")
+                #endif
+                return nil
+            }
+            slices += 1
+            var added = 0
+            for tx in slice where seen.insert(tx.persistentModelID).inserted {
+                result.append(tx)
+                added += 1
+            }
+            guard let last = slice.last, added > 0 || slice.count >= size else { return Self.alive(result) }
+            guard added > 0 else {
+                // Un tramo entero con la misma clave: no se puede avanzar por clave. El resto, de una vez.
+                let date = last.date
+                let createdAt = last.createdAt
+                var rest = Self.allTransactionsDescriptor
+                rest.predicate = #Predicate<TransactionItem> {
+                    $0.date < date || ($0.date == date && $0.createdAt <= createdAt)
+                }
+                do {
+                    for tx in try context.fetch(rest) where seen.insert(tx.persistentModelID).inserted { result.append(tx) }
+                } catch {
+                    return nil
+                }
+                return Self.alive(result)
+            }
+            boundary = (last.date, last.createdAt)
+            // Un milisegundo y no `Task.yield()`: el `yield` solo deja pasar a otras tareas del hilo principal, y lo que
+            // hace falta es que el run loop atienda los toques entre tramo y tramo.
+            do { try await Task.sleep(for: .milliseconds(1)) } catch { return nil }
+            guard !Task.isCancelled, !boundStore.isDetached, let current = modelContext, current === context else {
+                return nil
             }
         }
+    }
+
+    /// Lo leído sin lo que se borró mientras se leía.
+    private static func alive(_ transactions: [TransactionItem]) -> [TransactionItem] {
+        transactions.filter { !$0.isDeleted && $0.modelContext != nil }
     }
 
     /// Runs all widget calculations from cached data (no SwiftData fetch).

@@ -229,8 +229,11 @@ struct PanelReturnFreshnessWiringTests {
     @Test("La carga toma la firma ANTES de leer, y el freno mira primer plano, no «activa»")
     func loadAndBrake() throws {
         let vm = try Self.source("Yala/App/ViewModels/PanelViewModel.swift")
-        let load = try #require(vm.range(of: "    func loadData() {\n        guard let context = modelContext else { return }"))
-        #expect(vm[load.upperBound...].prefix(260).contains("lastLoadStamp = currentDataStamp()"))
+        // Las dos formas de leer toman la firma antes de leer nada: de una vez (`loadData()`) y por tramos (YALA-IOS-K).
+        #expect(vm.contains("    func loadData() {\n        loadData(stamp: currentDataStamp(), preloadedTransactions: nil)"))
+        let load = try #require(vm.range(of: "preloadedTransactions: [TransactionItem]?) {\n        guard let context = modelContext else { return }"))
+        #expect(vm[load.upperBound...].prefix(80).contains("lastLoadStamp = stamp"))
+        #expect(vm.contains("let stamp = currentDataStamp()\n                let loaded = await fetchTransactionsInSlices()"))
         #expect(vm.contains("{ UIApplication.shared.applicationState != .background }"))
         #expect(vm.contains("guard isApplicationInForeground() else {"))
         #expect(vm.contains("guard recalculateTask == nil else { return }"))
