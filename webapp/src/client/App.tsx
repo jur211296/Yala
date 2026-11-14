@@ -11,6 +11,7 @@ interface Me {
   nombre: string;
   correo: string | null;
   equipoCompartido: boolean;
+  soloGrupos?: boolean;
 }
 
 type State =

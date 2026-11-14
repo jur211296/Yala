@@ -21,6 +21,7 @@ exportan los tests de Swift (decisión R1 de `docs/web-app/index.html`).
 
 **Lo que solo usa Yala web** (lote 2) vive en `webCore.ts` y no entra en `TOOL_CORES`: el conector no lo ofrece y su
 contrato byte a byte no cambia. Estadísticas (`logic/stats.ts`) y el calendario de pagos (`logic/schedule.ts`) se
-prueban contra la app en el bloque `estadisticas`/`pagos` del mismo golden.
+prueban contra la app en el bloque `estadisticas`/`pagos` del mismo golden. Los saldos de Grupos (`logic/groupBalances.ts`, lote 3) tienen su propio golden,
+`mcp/test/golden/groups-parity.json`, que escribe `YalaTests/MCP/WebGroupsParityGoldenTests.swift`.
 
 No tiene `package.json` ni suite propia: sus pruebas corren en el job `mcp` del CI.

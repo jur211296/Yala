@@ -1,10 +1,13 @@
 /**
  * Apuntar un gasto (o un ingreso) desde la web: va a la Bandeja del iPhone, que lo confirma con un toque. La cuenta y la
  * subcategoría son opcionales: lo que falte se elige en el iPhone. La divisa es la de la cuenta elegida, o la preferida.
+ *
+ * Con `editar` (lote 3) cambia un borrador que la web dejó y el iPhone aún no recogió: llega con sus datos y guarda en
+ * `/api/borradores/editar`. Si el iPhone ya lo recogió, lo dice.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { texts } from "../i18n";
-import { ApiError, postJson, type Categoria, type Cuenta } from "./api";
+import { ApiError, postJson, type Categoria, type Cuenta, type Enviado } from "./api";
 import { todayKey } from "./format";
 
 const t = texts();
@@ -25,20 +28,22 @@ export function Apuntar({
   categorias,
   onClose,
   onSent,
+  editar,
 }: {
   cuentas: Cuenta[];
   divisaPreferida: string;
   categorias: Categoria[] | null;
   onClose: () => void;
   onSent: () => void;
+  editar?: Enviado;
 }) {
   const visibles = cuentas.filter((c) => !c.archivada);
-  const [tipo, setTipo] = useState<"gasto" | "ingreso">("gasto");
-  const [importe, setImporte] = useState("");
-  const [descripcion, setDescripcion] = useState("");
-  const [subcategoria, setSubcategoria] = useState("");
-  const [cuenta, setCuenta] = useState(visibles[0]?.id ?? "");
-  const [fecha, setFecha] = useState(todayKey());
+  const [tipo, setTipo] = useState<"gasto" | "ingreso">(editar?.tipo ?? "gasto");
+  const [importe, setImporte] = useState(editar ? editar.importe.toFixed(2) : "");
+  const [descripcion, setDescripcion] = useState(editar?.descripcion ?? "");
+  const [subcategoria, setSubcategoria] = useState(editar?.subcategoria ?? "");
+  const [cuenta, setCuenta] = useState(editar ? (editar.cuenta ?? "") : (visibles[0]?.id ?? ""));
+  const [fecha, setFecha] = useState(editar?.fecha ?? todayKey());
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const amountRef = useRef<HTMLInputElement>(null);
@@ -50,7 +55,8 @@ export function Apuntar({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const divisa = visibles.find((c) => c.id === cuenta)?.divisa ?? divisaPreferida;
+  const divisa = visibles.find((c) => c.id === cuenta)?.divisa ?? (editar?.divisa || divisaPreferida);
+  const titulo = editar ? t.app.editarTitulo : t.app.apuntarTitulo;
   const grupos = useMemo(
     () => (categorias ?? []).filter((c) => !c.oculta && c.es_ingreso === (tipo === "ingreso") && c.subcategorias.some((s) => !s.oculta)),
     [categorias, tipo],
@@ -66,11 +72,13 @@ export function Apuntar({
     setSending(true);
     setError(null);
     try {
-      await postJson("/api/borradores", { tipo, importe: n, divisa, descripcion: descripcion.trim(), fecha, cuenta: cuenta || null, subcategoria: subcategoria || null });
+      const datos = { tipo, importe: n, divisa, descripcion: descripcion.trim(), fecha, cuenta: cuenta || null, subcategoria: subcategoria || null };
+      await postJson(editar ? "/api/borradores/editar" : "/api/borradores", editar ? { id: editar.id, ...datos } : datos);
       onSent();
     } catch (err) {
       const body = err instanceof ApiError ? err.body : {};
-      const key = typeof body.error === "string" && body.error === "tope_diario" ? "tope_diario" : typeof body.campo === "string" ? body.campo : "otro";
+      const key =
+        body.error === "tope_diario" || body.error === "recogido" ? String(body.error) : typeof body.campo === "string" ? body.campo : "otro";
       setError(t.app.errores[key] ?? t.app.errores.otro!);
     } finally {
       setSending(false);
@@ -83,14 +91,14 @@ export function Apuntar({
         className="sheet"
         role="dialog"
         aria-modal="true"
-        aria-label={t.app.apuntarTitulo}
+        aria-label={titulo}
         onSubmit={(e) => {
           e.preventDefault();
           void send();
         }}
       >
         <h2>
-          {t.app.apuntarTitulo}
+          {titulo}
           <button className="btn-s" type="button" onClick={onClose}>
             {t.app.cancelar}
           </button>
@@ -166,7 +174,7 @@ export function Apuntar({
           </p>
         ) : null}
         <button className="btn-p" type="submit" disabled={sending}>
-          {sending ? t.app.enviando : t.app.enviar}
+          {sending ? t.app.enviando : editar ? t.app.guardar : t.app.enviar}
         </button>
       </form>
     </div>

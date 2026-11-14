@@ -33,6 +33,12 @@ export interface Env {
   SESSION_INDEX: DurableObjectNamespace;
   /** Los códigos de «Entrar con tu iPhone» (QR): un Durable Object por código (`qrPairing.ts`, lote 2). */
   QR_PAIRING: DurableObjectNamespace;
+  /**
+   * Grupos (lote 3): service binding al gateway del mismo entorno, entrada `WebGroupsReader`. Lee los grupos con el
+   * token de solo lectura de la sesión; la llave del cifrado de Grupos no sale del gateway. Opcional: sin él, Grupos
+   * responde 503 y lo demás sigue.
+   */
+  GATEWAY_GROUPS?: import("./groups").GroupsReaderBinding;
   /** IANA. La zona con la que se decide qué día es hoy si la app nunca subió la suya (como el conector). */
   DEFAULT_TIMEZONE: string;
   /** Límite por IP en `/auth/*` (lo abre el navegador). Opcional en los tests; en producción, obligatorio. */

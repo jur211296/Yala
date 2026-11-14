@@ -21,7 +21,7 @@
 #   responde 503 yala_siwa_not_configured. NUNCA commitear la .p8.
 
 name = "yala-gateway-staging"
-main = "src/index.ts"
+main = "src/worker.ts"  # reexporta la app de src/index.ts y la entrada interna de Yala web (src/web/)
 compatibility_date = "2026-06-01"
 compatibility_flags = ["nodejs_compat"]
 account_id = "86c270a7776be98639700bd5959b303b"
@@ -57,6 +57,9 @@ AI_CLOUD_EXPLORE_ROLLOUT_PERCENT = "100"
 # «Otra cuenta de Apple» en la app (inicio de sesión web de Apple). Staging tiene el proveedor web de Apple en su
 # Supabase (Services ID `pe.yala.app.web`); producción NO (2026-11-06). Ver test/config.test.ts.
 APPLE_WEB_SIGN_IN_ROLLOUT_PERCENT = "100"
+# Yala web, lote 3: la entrada interna `WebGroupsReader` (src/web/groupsReader.ts) que lee Grupos para la web por un
+# service binding. SOLO staging; producción no lo declara y la entrada responde «disabled».
+WEB_GROUPS_READER = "on"
 # Forzado de actualización (min-version): build por debajo del cual el cliente bloquea. 0 = desactivado.
 # STAGING también en 0 a propósito: un valor > 0 BLOQUEARÍA la app de dogfooding/QA (≠ percents, que
 # encienden superficie). Se sube conscientemente al probar el flujo end-to-end.

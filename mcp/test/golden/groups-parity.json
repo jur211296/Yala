@@ -1,0 +1,857 @@
+{
+  "about" : "Yala web, lote 3: saldos y deudas de Grupos. Entradas escritas a mano; los expected los escribe YalaTests/MCP/WebGroupsParityGoldenTests.swift con GroupBalanceService. mcp/test/groups-parity.test.ts exige lo mismo a shared-core/src/logic/groupBalances.ts. Ningún escenario lleva medio céntimo: la app suma los gastos en el orden de un diccionario (cambia entre ejecuciones) y en un medio céntimo el redondeo cambiaría de una corrida a otra.",
+  "scenarios" : [
+    {
+      "expected" : {
+        "global" : {
+          "iOwe" : {
+            "PEN" : 164.36000000000001
+          },
+          "owedToMe" : {
+            "PEN" : 71.5
+          },
+          "pendingSettlements" : 1
+        },
+        "groups" : {
+          "g-depa" : {
+            "balances" : [
+              {
+                "currency" : "PEN",
+                "member" : "m-ana",
+                "net" : 63.990000000000002,
+                "totalOwes" : 36.009999999999998,
+                "totalPaid" : 100
+              },
+              {
+                "currency" : "PEN",
+                "member" : "m-beto",
+                "net" : 15,
+                "totalOwes" : 45,
+                "totalPaid" : 60
+              },
+              {
+                "currency" : "PEN",
+                "member" : "m-caro",
+                "net" : -55.990000000000002,
+                "totalOwes" : 63.990000000000002,
+                "totalPaid" : 8
+              },
+              {
+                "currency" : "PEN",
+                "member" : "m-dani",
+                "net" : -23,
+                "totalOwes" : 56,
+                "totalPaid" : 33
+              }
+            ],
+            "balancesShown" : [
+              {
+                "currency" : "PEN",
+                "member" : "m-ana",
+                "net" : 63.990000000000002,
+                "totalOwes" : 36.009999999999998,
+                "totalPaid" : 100
+              },
+              {
+                "currency" : "PEN",
+                "member" : "m-beto",
+                "net" : 15,
+                "totalOwes" : 45,
+                "totalPaid" : 60
+              },
+              {
+                "currency" : "PEN",
+                "member" : "m-caro",
+                "net" : -55.990000000000002,
+                "totalOwes" : 63.990000000000002,
+                "totalPaid" : 8
+              },
+              {
+                "currency" : "PEN",
+                "member" : "m-dani",
+                "net" : -23,
+                "totalOwes" : 56,
+                "totalPaid" : 33
+              }
+            ],
+            "debts" : [
+              {
+                "amount" : 56,
+                "currency" : "PEN",
+                "from" : "m-caro",
+                "to" : "m-ana"
+              },
+              {
+                "amount" : 8,
+                "currency" : "PEN",
+                "from" : "m-dani",
+                "to" : "m-ana"
+              },
+              {
+                "amount" : 15,
+                "currency" : "PEN",
+                "from" : "m-dani",
+                "to" : "m-beto"
+              }
+            ],
+            "header" : {
+              "iOwe" : {
+
+              },
+              "owedToMe" : {
+                "PEN" : 64
+              },
+              "state" : "theyOweMe"
+            }
+          },
+          "g-oficina" : {
+            "balances" : [
+              {
+                "currency" : "EUR",
+                "member" : "m-ana",
+                "net" : -30,
+                "totalOwes" : 30,
+                "totalPaid" : 0
+              },
+              {
+                "currency" : "PEN",
+                "member" : "m-ana",
+                "net" : -80,
+                "totalOwes" : 80,
+                "totalPaid" : 0
+              },
+              {
+                "currency" : "USD",
+                "member" : "m-ana",
+                "net" : 15,
+                "totalOwes" : 35,
+                "totalPaid" : 50
+              },
+              {
+                "currency" : "PEN",
+                "member" : "m-beto",
+                "net" : 80,
+                "totalOwes" : 40,
+                "totalPaid" : 120
+              },
+              {
+                "currency" : "USD",
+                "member" : "m-beto",
+                "net" : -15,
+                "totalOwes" : 25,
+                "totalPaid" : 10
+              },
+              {
+                "currency" : "EUR",
+                "member" : "m-caro",
+                "net" : 30,
+                "totalOwes" : 10,
+                "totalPaid" : 40
+              }
+            ],
+            "balancesShown" : [
+              {
+                "currency" : "PEN",
+                "member" : "m-ana",
+                "net" : -146.03,
+                "totalOwes" : 333.52999999999997,
+                "totalPaid" : 187.5
+              },
+              {
+                "currency" : "PEN",
+                "member" : "m-beto",
+                "net" : 23.75,
+                "totalOwes" : 133.75,
+                "totalPaid" : 157.5
+              },
+              {
+                "currency" : "PEN",
+                "member" : "m-caro",
+                "net" : 122.28,
+                "totalOwes" : 40.759999999999998,
+                "totalPaid" : 163.03999999999999
+              }
+            ],
+            "debts" : [
+              {
+                "amount" : 23.75,
+                "currency" : "PEN",
+                "from" : "m-ana",
+                "to" : "m-beto"
+              },
+              {
+                "amount" : 122.28,
+                "currency" : "PEN",
+                "from" : "m-ana",
+                "to" : "m-caro"
+              }
+            ],
+            "header" : {
+              "iOwe" : {
+                "PEN" : 146.03
+              },
+              "owedToMe" : {
+
+              },
+              "state" : "iOwe"
+            }
+          },
+          "g-viaje" : {
+            "balances" : [
+              {
+                "currency" : "PEN",
+                "member" : "m-ana",
+                "net" : -10.83,
+                "totalOwes" : 100.83,
+                "totalPaid" : 90
+              },
+              {
+                "currency" : "PEN",
+                "member" : "m-beto",
+                "net" : 66.670000000000002,
+                "totalOwes" : 78.329999999999998,
+                "totalPaid" : 145
+              },
+              {
+                "currency" : "PEN",
+                "member" : "m-caro",
+                "net" : -55.840000000000003,
+                "totalOwes" : 85.840000000000003,
+                "totalPaid" : 30
+              }
+            ],
+            "balancesShown" : [
+              {
+                "currency" : "PEN",
+                "member" : "m-ana",
+                "net" : -10.83,
+                "totalOwes" : 100.83,
+                "totalPaid" : 90
+              },
+              {
+                "currency" : "PEN",
+                "member" : "m-beto",
+                "net" : 66.670000000000002,
+                "totalOwes" : 78.329999999999998,
+                "totalPaid" : 145
+              },
+              {
+                "currency" : "PEN",
+                "member" : "m-caro",
+                "net" : -55.840000000000003,
+                "totalOwes" : 85.840000000000003,
+                "totalPaid" : 30
+              }
+            ],
+            "debts" : [
+              {
+                "amount" : 18.329999999999998,
+                "currency" : "PEN",
+                "from" : "m-ana",
+                "to" : "m-beto"
+              },
+              {
+                "amount" : 7.5,
+                "currency" : "PEN",
+                "from" : "m-caro",
+                "to" : "m-ana"
+              },
+              {
+                "amount" : 48.340000000000003,
+                "currency" : "PEN",
+                "from" : "m-caro",
+                "to" : "m-beto"
+              }
+            ],
+            "header" : {
+              "iOwe" : {
+                "PEN" : 10.83
+              },
+              "owedToMe" : {
+
+              },
+              "state" : "iOwe"
+            }
+          }
+        }
+      },
+      "groups" : [
+        {
+          "expenses" : [
+            {
+              "amount" : 90,
+              "currency" : "PEN",
+              "id" : "e1",
+              "isSettled" : false,
+              "paidBy" : "m-ana"
+            },
+            {
+              "amount" : 45,
+              "currency" : "PEN",
+              "id" : "e2",
+              "isSettled" : false,
+              "paidBy" : "m-beto"
+            },
+            {
+              "amount" : 20,
+              "currency" : "PEN",
+              "id" : "e3",
+              "isSettled" : false,
+              "paidBy" : "m-caro"
+            },
+            {
+              "amount" : 100,
+              "currency" : "PEN",
+              "id" : "e4",
+              "isSettled" : false,
+              "paidBy" : "m-beto"
+            }
+          ],
+          "id" : "g-viaje",
+          "me" : "m-ana",
+          "settlements" : [
+            {
+              "amount" : 10,
+              "currency" : "PEN",
+              "from" : "m-caro",
+              "isConfirmed" : true,
+              "to" : "m-ana"
+            },
+            {
+              "amount" : 5,
+              "currency" : "PEN",
+              "from" : "m-beto",
+              "isConfirmed" : false,
+              "to" : "m-ana"
+            }
+          ],
+          "shares" : [
+            {
+              "amount" : 30,
+              "expenseId" : "e1",
+              "member" : "m-ana"
+            },
+            {
+              "amount" : 30,
+              "expenseId" : "e1",
+              "member" : "m-beto"
+            },
+            {
+              "amount" : 30,
+              "expenseId" : "e1",
+              "member" : "m-caro"
+            },
+            {
+              "amount" : 15,
+              "expenseId" : "e2",
+              "member" : "m-ana"
+            },
+            {
+              "amount" : 15,
+              "expenseId" : "e2",
+              "member" : "m-beto"
+            },
+            {
+              "amount" : 15,
+              "expenseId" : "e2",
+              "member" : "m-caro"
+            },
+            {
+              "amount" : 12.5,
+              "expenseId" : "e3",
+              "member" : "m-ana"
+            },
+            {
+              "amount" : 7.5,
+              "expenseId" : "e3",
+              "member" : "m-caro"
+            },
+            {
+              "amount" : 33.329999999999998,
+              "expenseId" : "e4",
+              "member" : "m-ana"
+            },
+            {
+              "amount" : 33.329999999999998,
+              "expenseId" : "e4",
+              "member" : "m-beto"
+            },
+            {
+              "amount" : 33.340000000000003,
+              "expenseId" : "e4",
+              "member" : "m-caro"
+            }
+          ],
+          "simplifyDebts" : false,
+          "singleCurrency" : null
+        },
+        {
+          "expenses" : [
+            {
+              "amount" : 100,
+              "currency" : "PEN",
+              "id" : "d1",
+              "isSettled" : false,
+              "paidBy" : "m-ana"
+            },
+            {
+              "amount" : 60,
+              "currency" : "PEN",
+              "id" : "d2",
+              "isSettled" : false,
+              "paidBy" : "m-beto"
+            },
+            {
+              "amount" : 33,
+              "currency" : "PEN",
+              "id" : "d3",
+              "isSettled" : false,
+              "paidBy" : "m-dani"
+            },
+            {
+              "amount" : 500,
+              "currency" : "PEN",
+              "id" : "d4",
+              "isSettled" : true,
+              "paidBy" : "m-caro"
+            },
+            {
+              "amount" : 8,
+              "currency" : "PEN",
+              "id" : "d5",
+              "isSettled" : false,
+              "paidBy" : "m-caro"
+            }
+          ],
+          "id" : "g-depa",
+          "me" : "m-ana",
+          "settlements" : [
+
+          ],
+          "shares" : [
+            {
+              "amount" : 25,
+              "expenseId" : "d1",
+              "member" : "m-ana"
+            },
+            {
+              "amount" : 25,
+              "expenseId" : "d1",
+              "member" : "m-beto"
+            },
+            {
+              "amount" : 25,
+              "expenseId" : "d1",
+              "member" : "m-caro"
+            },
+            {
+              "amount" : 25,
+              "expenseId" : "d1",
+              "member" : "m-dani"
+            },
+            {
+              "amount" : 20,
+              "expenseId" : "d2",
+              "member" : "m-beto"
+            },
+            {
+              "amount" : 20,
+              "expenseId" : "d2",
+              "member" : "m-caro"
+            },
+            {
+              "amount" : 20,
+              "expenseId" : "d2",
+              "member" : "m-dani"
+            },
+            {
+              "amount" : 11,
+              "expenseId" : "d3",
+              "member" : "m-ana"
+            },
+            {
+              "amount" : 11,
+              "expenseId" : "d3",
+              "member" : "m-caro"
+            },
+            {
+              "amount" : 11,
+              "expenseId" : "d3",
+              "member" : "m-dani"
+            },
+            {
+              "amount" : 250,
+              "expenseId" : "d4",
+              "member" : "m-ana"
+            },
+            {
+              "amount" : 250,
+              "expenseId" : "d4",
+              "member" : "m-caro"
+            },
+            {
+              "amount" : 7.9900000000000002,
+              "expenseId" : "d5",
+              "member" : "m-caro"
+            },
+            {
+              "amount" : 0.01,
+              "expenseId" : "d5",
+              "member" : "m-ana"
+            }
+          ],
+          "simplifyDebts" : true,
+          "singleCurrency" : null
+        },
+        {
+          "expenses" : [
+            {
+              "amount" : 50,
+              "currency" : "USD",
+              "id" : "o1",
+              "isSettled" : false,
+              "paidBy" : "m-ana"
+            },
+            {
+              "amount" : 120,
+              "currency" : "PEN",
+              "id" : "o2",
+              "isSettled" : false,
+              "paidBy" : "m-beto"
+            },
+            {
+              "amount" : 40,
+              "currency" : "EUR",
+              "id" : "o3",
+              "isSettled" : false,
+              "paidBy" : "m-caro"
+            }
+          ],
+          "id" : "g-oficina",
+          "me" : "m-ana",
+          "settlements" : [
+            {
+              "amount" : 10,
+              "currency" : "USD",
+              "from" : "m-beto",
+              "isConfirmed" : true,
+              "to" : "m-ana"
+            }
+          ],
+          "shares" : [
+            {
+              "amount" : 25,
+              "expenseId" : "o1",
+              "member" : "m-ana"
+            },
+            {
+              "amount" : 25,
+              "expenseId" : "o1",
+              "member" : "m-beto"
+            },
+            {
+              "amount" : 80,
+              "expenseId" : "o2",
+              "member" : "m-ana"
+            },
+            {
+              "amount" : 40,
+              "expenseId" : "o2",
+              "member" : "m-beto"
+            },
+            {
+              "amount" : 30,
+              "expenseId" : "o3",
+              "member" : "m-ana"
+            },
+            {
+              "amount" : 10,
+              "expenseId" : "o3",
+              "member" : "m-caro"
+            }
+          ],
+          "simplifyDebts" : true,
+          "singleCurrency" : "PEN"
+        }
+      ],
+      "id" : "lista-tres-grupos",
+      "ratesPerUSD" : {
+        "EUR" : 0.92000000000000004,
+        "PEN" : 3.75,
+        "USD" : 1
+      }
+    },
+    {
+      "expected" : {
+        "global" : {
+          "iOwe" : {
+            "USD" : 15
+          },
+          "owedToMe" : {
+            "PEN" : 80
+          },
+          "pendingSettlements" : 0
+        },
+        "groups" : {
+          "g-mixto" : {
+            "balances" : [
+              {
+                "currency" : "PEN",
+                "member" : "m-ana",
+                "net" : -80,
+                "totalOwes" : 80,
+                "totalPaid" : 0
+              },
+              {
+                "currency" : "USD",
+                "member" : "m-ana",
+                "net" : 15,
+                "totalOwes" : 35,
+                "totalPaid" : 50
+              },
+              {
+                "currency" : "PEN",
+                "member" : "m-beto",
+                "net" : 80,
+                "totalOwes" : 40,
+                "totalPaid" : 120
+              },
+              {
+                "currency" : "USD",
+                "member" : "m-beto",
+                "net" : -15,
+                "totalOwes" : 25,
+                "totalPaid" : 10
+              }
+            ],
+            "balancesShown" : [
+              {
+                "currency" : "PEN",
+                "member" : "m-ana",
+                "net" : -80,
+                "totalOwes" : 80,
+                "totalPaid" : 0
+              },
+              {
+                "currency" : "USD",
+                "member" : "m-ana",
+                "net" : 15,
+                "totalOwes" : 35,
+                "totalPaid" : 50
+              },
+              {
+                "currency" : "PEN",
+                "member" : "m-beto",
+                "net" : 80,
+                "totalOwes" : 40,
+                "totalPaid" : 120
+              },
+              {
+                "currency" : "USD",
+                "member" : "m-beto",
+                "net" : -15,
+                "totalOwes" : 25,
+                "totalPaid" : 10
+              }
+            ],
+            "debts" : [
+              {
+                "amount" : 80,
+                "currency" : "PEN",
+                "from" : "m-ana",
+                "to" : "m-beto"
+              },
+              {
+                "amount" : 15,
+                "currency" : "USD",
+                "from" : "m-beto",
+                "to" : "m-ana"
+              }
+            ],
+            "header" : {
+              "iOwe" : {
+                "USD" : 15
+              },
+              "owedToMe" : {
+                "PEN" : 80
+              },
+              "state" : "mixed"
+            }
+          }
+        }
+      },
+      "groups" : [
+        {
+          "expenses" : [
+            {
+              "amount" : 50,
+              "currency" : "USD",
+              "id" : "x1",
+              "isSettled" : false,
+              "paidBy" : "m-ana"
+            },
+            {
+              "amount" : 120,
+              "currency" : "PEN",
+              "id" : "x2",
+              "isSettled" : false,
+              "paidBy" : "m-beto"
+            }
+          ],
+          "id" : "g-mixto",
+          "me" : "m-beto",
+          "settlements" : [
+            {
+              "amount" : 10,
+              "currency" : "USD",
+              "from" : "m-beto",
+              "isConfirmed" : true,
+              "to" : "m-ana"
+            }
+          ],
+          "shares" : [
+            {
+              "amount" : 25,
+              "expenseId" : "x1",
+              "member" : "m-ana"
+            },
+            {
+              "amount" : 25,
+              "expenseId" : "x1",
+              "member" : "m-beto"
+            },
+            {
+              "amount" : 80,
+              "expenseId" : "x2",
+              "member" : "m-ana"
+            },
+            {
+              "amount" : 40,
+              "expenseId" : "x2",
+              "member" : "m-beto"
+            }
+          ],
+          "simplifyDebts" : false,
+          "singleCurrency" : null
+        }
+      ],
+      "id" : "varias-divisas-sin-una-sola-moneda",
+      "ratesPerUSD" : {
+        "EUR" : 0.92000000000000004,
+        "PEN" : 3.75,
+        "USD" : 1
+      }
+    },
+    {
+      "expected" : {
+        "global" : {
+          "iOwe" : {
+
+          },
+          "owedToMe" : {
+
+          },
+          "pendingSettlements" : 1
+        },
+        "groups" : {
+          "g-saldado" : {
+            "balances" : [
+              {
+                "currency" : "PEN",
+                "member" : "m-caro",
+                "net" : 0,
+                "totalOwes" : 60,
+                "totalPaid" : 60
+              },
+              {
+                "currency" : "PEN",
+                "member" : "m-dani",
+                "net" : 0,
+                "totalOwes" : 30,
+                "totalPaid" : 30
+              }
+            ],
+            "balancesShown" : [
+              {
+                "currency" : "PEN",
+                "member" : "m-caro",
+                "net" : 0,
+                "totalOwes" : 60,
+                "totalPaid" : 60
+              },
+              {
+                "currency" : "PEN",
+                "member" : "m-dani",
+                "net" : 0,
+                "totalOwes" : 30,
+                "totalPaid" : 30
+              }
+            ],
+            "debts" : [
+
+            ],
+            "header" : {
+              "iOwe" : {
+
+              },
+              "owedToMe" : {
+
+              },
+              "state" : "settled"
+            }
+          }
+        }
+      },
+      "groups" : [
+        {
+          "expenses" : [
+            {
+              "amount" : 60,
+              "currency" : "PEN",
+              "id" : "s1",
+              "isSettled" : false,
+              "paidBy" : "m-caro"
+            }
+          ],
+          "id" : "g-saldado",
+          "me" : "m-caro",
+          "settlements" : [
+            {
+              "amount" : 30,
+              "currency" : "PEN",
+              "from" : "m-dani",
+              "isConfirmed" : true,
+              "to" : "m-caro"
+            },
+            {
+              "amount" : 12,
+              "currency" : "PEN",
+              "from" : "m-dani",
+              "isConfirmed" : false,
+              "to" : "m-caro"
+            }
+          ],
+          "shares" : [
+            {
+              "amount" : 30,
+              "expenseId" : "s1",
+              "member" : "m-caro"
+            },
+            {
+              "amount" : 30,
+              "expenseId" : "s1",
+              "member" : "m-dani"
+            }
+          ],
+          "simplifyDebts" : true,
+          "singleCurrency" : "PEN"
+        }
+      ],
+      "id" : "saldado-y-solo-pendientes",
+      "ratesPerUSD" : {
+        "PEN" : 3.75,
+        "USD" : 1
+      }
+    }
+  ]
+}

@@ -73,9 +73,8 @@ export function parseWebDraft(body: unknown, nowMs: number): Parsed {
   return { ok: true, value: { tipo, importe, divisa, descripcion, fecha, cuenta, subcategoria: sub } };
 }
 
-export async function insertWebDraft(env: Env, userId: string, d: WebDraftInput, nowMs: number): Promise<string> {
-  const id = crypto.randomUUID();
-  const payload = {
+function draftPayload(d: WebDraftInput) {
+  return {
     kind: d.tipo === "ingreso" ? "income" : "expense",
     amount: d.importe,
     currency: d.divisa,
@@ -87,10 +86,43 @@ export async function insertWebDraft(env: Env, userId: string, d: WebDraftInput,
     account_ref: d.cuenta,
     subcategory_ref: d.subcategoria,
   };
+}
+
+export async function insertWebDraft(env: Env, userId: string, d: WebDraftInput, nowMs: number): Promise<string> {
+  const id = crypto.randomUUID();
   await env.DRAFTS_DB.prepare("INSERT INTO mail_drafts (id, user_id, created_at, payload) VALUES (?, ?, ?, ?)")
-    .bind(id, userId, nowMs, JSON.stringify(payload))
+    .bind(id, userId, nowMs, JSON.stringify(draftPayload(d)))
     .run();
   return id;
+}
+
+/**
+ * Lote 3: editar o descartar un borrador que la web dejó y el iPhone AÚN NO RECOGIÓ. Solo los de esta cuenta, con
+ * `source = web` y dentro de la caducidad de la cola. El iPhone borra lo que confirma (`ack`), así que «no está» es
+ * «ya lo recogió» (o caducó): `false`, y la página lo dice.
+ *
+ * Se edita EN SITIO, con el mismo `id` y la misma fecha de alta: el iPhone deduplica por `id`, y uno nuevo podría
+ * acabar dos veces en su Bandeja. Ventana aceptada: si el iPhone ya bajó el borrador y aún no lo confirmó (segundos,
+ * dentro de un mismo ciclo), le llega la versión que bajó.
+ */
+export async function editWebDraft(env: Env, userId: string, id: string, d: WebDraftInput, nowMs: number): Promise<boolean | "entrada"> {
+  if (!UUID_RE.test(id)) return "entrada";
+  const res = await env.DRAFTS_DB.prepare(
+    "UPDATE mail_drafts SET payload = ? WHERE id = ? AND user_id = ? AND created_at > ? AND json_extract(payload, '$.source') = 'web'",
+  )
+    .bind(JSON.stringify(draftPayload(d)), id.toLowerCase(), userId, nowMs - QUEUE_TTL_MS)
+    .run();
+  return (res.meta?.changes ?? 0) > 0;
+}
+
+export async function discardWebDraft(env: Env, userId: string, id: string, nowMs: number): Promise<boolean | "entrada"> {
+  if (!UUID_RE.test(id)) return "entrada";
+  const res = await env.DRAFTS_DB.prepare(
+    "DELETE FROM mail_drafts WHERE id = ? AND user_id = ? AND created_at > ? AND json_extract(payload, '$.source') = 'web'",
+  )
+    .bind(id.toLowerCase(), userId, nowMs - QUEUE_TTL_MS)
+    .run();
+  return (res.meta?.changes ?? 0) > 0;
 }
 
 export interface QueuedWebDraft {
@@ -101,6 +133,9 @@ export interface QueuedWebDraft {
   divisa: string;
   descripcion: string | null;
   fecha: string | null;
+  /** Lo que se eligió al apuntarlo, para poder editarlo (lote 3). */
+  cuenta: string | null;
+  subcategoria: string | null;
 }
 
 /** Lo que la web mandó y el iPhone todavía no recogió (y aún puede recoger): «esperando a tu iPhone». */
@@ -113,7 +148,15 @@ export async function queuedWebDrafts(env: Env, userId: string, nowMs: number): 
   const out: QueuedWebDraft[] = [];
   for (const r of res.results ?? []) {
     try {
-      const p = JSON.parse(r.payload) as { kind?: string; amount?: number; currency?: string; merchant?: string | null; date?: string | null };
+      const p = JSON.parse(r.payload) as {
+        kind?: string;
+        amount?: number;
+        currency?: string;
+        merchant?: string | null;
+        date?: string | null;
+        account_ref?: string | null;
+        subcategory_ref?: string | null;
+      };
       out.push({
         id: r.id,
         enviado: r.created_at,
@@ -122,6 +165,8 @@ export async function queuedWebDrafts(env: Env, userId: string, nowMs: number): 
         divisa: typeof p.currency === "string" ? p.currency : "",
         descripcion: p.merchant ?? null,
         fecha: p.date ?? null,
+        cuenta: typeof p.account_ref === "string" ? p.account_ref : null,
+        subcategoria: typeof p.subcategory_ref === "string" ? p.subcategory_ref : null,
       });
     } catch {
       // Una fila ilegible no tumba la lista; se va con la caducidad de la cola.

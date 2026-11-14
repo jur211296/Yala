@@ -122,10 +122,12 @@ describe.skipIf(!haveUsers)("staging · entrar, ver la cuenta y salir (usuarios 
     expect(b.jar.has("__Host-yala-web")).toBe(false);
   });
 
-  it.skipIf(!SOLO_GRUPOS.email)("una cuenta solo de Grupos no entra (lote 3) y se le explica por qué", async () => {
+  it.skipIf(!SOLO_GRUPOS.email)("una cuenta solo de Grupos entra desde el lote 3 (D3) y `me` lo dice", async () => {
     const { b, res } = await enterWithPassword(SOLO_GRUPOS);
-    expect(res.headers.get("Location")).toBe("/?aviso=solo-grupos");
-    expect(b.jar.has("__Host-yala-web")).toBe(false);
+    expect(res.headers.get("Location")).toBe("/");
+    expect(b.jar.has("__Host-yala-web")).toBe(true);
+    expect(((await (await b.go("/api/me")).json()) as { soloGrupos: boolean }).soloGrupos).toBe(true);
+    await b.go("/auth/logout", { form: {} });
   });
 });
 

@@ -4,6 +4,9 @@
   --fill: #6063f1;
   --side: #f4f5fb;
   --in: #0f7a80;
+  /* Grupos (lote 3): los colores de «debes» y «te deben» de la app (tema claro y oscuro). */
+  --owe: #c8006a;
+  --owed: #13804f;
   --round: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
@@ -11,6 +14,8 @@
     --fill: #6063f1;
     --side: #0e0e10;
     --in: #00c2cb;
+    --owe: #ff4da6;
+    --owed: #4fd393;
   }
 }
 
@@ -915,5 +920,166 @@
   }
   .trend {
     height: 150px;
+  }
+}
+
+/* ─── Grupos (lote 3) ─────────────────────────────────────────────────────────────────────────────────────────── */
+.amt.owe {
+  color: var(--owe);
+}
+.amt.owed {
+  color: var(--owed);
+}
+.hero .mid {
+  font: 700 20px/1.2 var(--round);
+}
+.hero .big.amt {
+  font: 700 30px/1.1 var(--round);
+}
+/* Con varias divisas la cifra puede no caber en una línea: que salte, sin desbordar la pantalla. */
+.hero .amt {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 720px) {
+  .hero .big.amt {
+    font-size: 24px;
+  }
+  .hero .mid {
+    font-size: 18px;
+  }
+}
+.band-l {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  text-align: right;
+}
+.ggrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px;
+}
+.gcard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.gcard:hover {
+  border-color: color-mix(in srgb, var(--fill) 40%, var(--line));
+}
+.gcard:focus-visible {
+  outline: 2px solid var(--fill);
+  outline-offset: 2px;
+}
+.gpeople {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+.gp {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12.5px;
+  color: var(--ink2);
+}
+.gp.more {
+  color: var(--ink2);
+  font-style: normal;
+}
+.lk.arch {
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.back {
+  align-self: flex-start;
+}
+.seg.seg3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+.tbl {
+  display: flex;
+  flex-direction: column;
+}
+.tbl .tr {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+  align-items: center;
+}
+.tbl .tr span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tbl .tr span:not(:first-child) {
+  text-align: right;
+}
+.tbl .th {
+  border-top: 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.amt-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.amt-col small {
+  font-size: 11.5px;
+  color: var(--ink2);
+  white-space: nowrap;
+}
+.row-acts {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.row-acts .btn-s {
+  padding: 5px 10px;
+  font-size: 12.5px;
+}
+.row-acts .danger {
+  color: #e0245e;
+}
+.confirm-q {
+  font-size: 12px;
+  color: var(--ink2);
+}
+.mtabs.two {
+  grid-template-columns: repeat(2, 1fr);
+}
+@media (max-width: 720px) {
+  .ggrid {
+    grid-template-columns: 1fr;
+  }
+  .tbl .tr {
+    grid-template-columns: minmax(0, 1.2fr) repeat(3, minmax(0, 1fr));
+    font-size: 12.5px;
+  }
+}
+.row:has(.row-acts) {
+  flex-wrap: wrap;
+}
+@media (max-width: 720px) {
+  .row-acts {
+    flex-basis: 100%;
   }
 }
