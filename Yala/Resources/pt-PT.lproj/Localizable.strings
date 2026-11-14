@@ -8843,3 +8843,26 @@
 "connectedBrowsers.sharedComputer" = "computador partilhado";
 "connectedBrowsers.justNow" = "agora";
 "connectedBrowsers.browserOn" = "%1$@ no %2$@";
+
+/* Yala web, lote 2: «Vincular un navegador» (entrar en la web con el QR) */
+"connectedBrowsers.link.row" = "Associar um navegador";
+"connectedBrowsers.link.rowFooter" = "Abre o teu Yala num computador sem escrever palavra-passe: lê o código que o Yala web mostra.";
+"connectedBrowsers.link.title" = "Associar um navegador";
+"connectedBrowsers.link.intro" = "No computador, abre o Yala web e escolhe “Entrar com o teu iPhone”. Aponta a câmara para o código.";
+"connectedBrowsers.link.scanner" = "Câmara para ler o código";
+"connectedBrowsers.link.typeHeader" = "Ou escreve o código";
+"connectedBrowsers.link.continue" = "Continuar";
+"connectedBrowsers.link.confirmHeader" = "Abrir o Yala neste navegador?";
+"connectedBrowsers.link.whereCity" = "Pedido a partir de %1$@ · código %2$@";
+"connectedBrowsers.link.whereNoCity" = "Código %@";
+"connectedBrowsers.link.warning" = "Só confirmes se vires este código no teu próprio ecrã. Ninguém do Yala to vai pedir.";
+"connectedBrowsers.link.confirm" = "Confirmar com Face ID";
+"connectedBrowsers.link.faceIDReason" = "Confirma que queres abrir o teu Yala nesse navegador.";
+"connectedBrowsers.link.doneTitle" = "Navegador associado";
+"connectedBrowsers.link.doneBody" = "%@ já mostra o teu Yala, só de leitura. Podes terminar a sessão aqui quando quiseres.";
+"connectedBrowsers.link.doneButton" = "OK";
+"connectedBrowsers.link.problem.invalidCode" = "Esse código não é do Yala web. Verifica se tem 8 caracteres.";
+"connectedBrowsers.link.problem.expired" = "O código expirou ou já foi usado. Pede outro no Yala web.";
+"connectedBrowsers.link.problem.noCloud" = "A tua conta não usa a nuvem do Yala. Ativa-a em Armazenamento para usar o Yala web.";
+"connectedBrowsers.link.problem.sessionExpired" = "A tua sessão da nuvem expirou. Volta a entrar em A tua conta Yala.";
+"connectedBrowsers.link.problem.network" = "Não foi possível ligar ao Yala web. Tenta novamente.";

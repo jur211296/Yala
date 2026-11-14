@@ -871,6 +871,7 @@
 				GID_URL_SCHEME = "com.googleusercontent.apps.295312853864-uaglr0r69rr6dtsg0sbo3rqbqgi7hdj7";
 				INFOPLIST_FILE = Yala/Resources/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Yala Dev";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Yala uses Face ID to confirm it's you before opening your account in a browser.";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = NO;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -919,6 +920,7 @@
 				GID_URL_SCHEME = "com.googleusercontent.apps.295312853864-uaglr0r69rr6dtsg0sbo3rqbqgi7hdj7";
 				INFOPLIST_FILE = Yala/Resources/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Yala Dev";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Yala uses Face ID to confirm it's you before opening your account in a browser.";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = NO;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

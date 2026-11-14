@@ -9606,3 +9606,26 @@
 "connectedBrowsers.sharedComputer" = "共用のコンピュータ";
 "connectedBrowsers.justNow" = "たった今";
 "connectedBrowsers.browserOn" = "%2$@ の %1$@";
+
+/* Yala web, lote 2: «Vincular un navegador» (entrar en la web con el QR) */
+"connectedBrowsers.link.row" = "ブラウザを連携";
+"connectedBrowsers.link.rowFooter" = "パスワードを入力せずにパソコンで Yala を開けます。Yala web に表示されたコードを読み取ってください。";
+"connectedBrowsers.link.title" = "ブラウザを連携";
+"connectedBrowsers.link.intro" = "パソコンで Yala web を開き、「iPhone でログイン」を選んでください。カメラをコードに向けます。";
+"connectedBrowsers.link.scanner" = "コードを読み取るカメラ";
+"connectedBrowsers.link.typeHeader" = "またはコードを入力";
+"connectedBrowsers.link.continue" = "続ける";
+"connectedBrowsers.link.confirmHeader" = "このブラウザで Yala を開きますか？";
+"connectedBrowsers.link.whereCity" = "%1$@ からのリクエスト · コード %2$@";
+"connectedBrowsers.link.whereNoCity" = "コード %@";
+"connectedBrowsers.link.warning" = "このコードが自分の画面に表示されている場合だけ確認してください。Yala がこのコードを尋ねることはありません。";
+"connectedBrowsers.link.confirm" = "Face ID で確認";
+"connectedBrowsers.link.faceIDReason" = "そのブラウザで Yala を開くことを確認してください。";
+"connectedBrowsers.link.doneTitle" = "ブラウザを連携しました";
+"connectedBrowsers.link.doneBody" = "%@ にあなたの Yala が表示されています（閲覧のみ）。ここからいつでもログアウトできます。";
+"connectedBrowsers.link.doneButton" = "完了";
+"connectedBrowsers.link.problem.invalidCode" = "Yala web のコードではありません。8 文字か確認してください。";
+"connectedBrowsers.link.problem.expired" = "コードの有効期限が切れたか、すでに使われています。Yala web で新しいコードを表示してください。";
+"connectedBrowsers.link.problem.noCloud" = "このアカウントは Yala クラウドを使っていません。Yala web を使うには「ストレージ」でオンにしてください。";
+"connectedBrowsers.link.problem.sessionExpired" = "クラウドのセッションが切れました。「Yala アカウント」で再度ログインしてください。";
+"connectedBrowsers.link.problem.network" = "Yala web に接続できませんでした。もう一度お試しください。";

@@ -9600,3 +9600,26 @@
 "connectedBrowsers.sharedComputer" = "shared computer";
 "connectedBrowsers.justNow" = "now";
 "connectedBrowsers.browserOn" = "%1$@ on %2$@";
+
+/* Yala web, lote 2: «Vincular un navegador» (entrar en la web con el QR) */
+"connectedBrowsers.link.row" = "Link a browser";
+"connectedBrowsers.link.rowFooter" = "Open your Yala on a computer without typing a password: scan the code Yala web shows.";
+"connectedBrowsers.link.title" = "Link a browser";
+"connectedBrowsers.link.intro" = "On the computer, open Yala web and choose “Sign in with your iPhone”. Point the camera at the code.";
+"connectedBrowsers.link.scanner" = "Camera to read the code";
+"connectedBrowsers.link.typeHeader" = "Or type the code";
+"connectedBrowsers.link.continue" = "Continue";
+"connectedBrowsers.link.confirmHeader" = "Open Yala in this browser?";
+"connectedBrowsers.link.whereCity" = "Requested from %1$@ · code %2$@";
+"connectedBrowsers.link.whereNoCity" = "Code %@";
+"connectedBrowsers.link.warning" = "Only confirm if you see this code on your own screen. No one from Yala will ever ask you for it.";
+"connectedBrowsers.link.confirm" = "Confirm with Face ID";
+"connectedBrowsers.link.faceIDReason" = "Confirm you want to open your Yala in that browser.";
+"connectedBrowsers.link.doneTitle" = "Browser linked";
+"connectedBrowsers.link.doneBody" = "%@ now shows your Yala, read-only. You can sign it out from here any time.";
+"connectedBrowsers.link.doneButton" = "Done";
+"connectedBrowsers.link.problem.invalidCode" = "That isn't a Yala web code. Check it has 8 characters.";
+"connectedBrowsers.link.problem.expired" = "The code expired or was already used. Get a new one on Yala web.";
+"connectedBrowsers.link.problem.noCloud" = "Your account doesn't use the Yala cloud. Turn it on in Storage to use Yala web.";
+"connectedBrowsers.link.problem.sessionExpired" = "Your cloud session expired. Sign in again in Your Yala account.";
+"connectedBrowsers.link.problem.network" = "Couldn't reach Yala web. Please try again.";

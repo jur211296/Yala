@@ -9606,3 +9606,26 @@
 "connectedBrowsers.sharedComputer" = "共用电脑";
 "connectedBrowsers.justNow" = "刚刚";
 "connectedBrowsers.browserOn" = "%2$@ 上的 %1$@";
+
+/* Yala web, lote 2: «Vincular un navegador» (entrar en la web con el QR) */
+"connectedBrowsers.link.row" = "关联浏览器";
+"connectedBrowsers.link.rowFooter" = "无需输入密码即可在电脑上打开 Yala：扫描 Yala web 显示的二维码。";
+"connectedBrowsers.link.title" = "关联浏览器";
+"connectedBrowsers.link.intro" = "在电脑上打开 Yala web，选择“用 iPhone 登录”。将相机对准二维码。";
+"connectedBrowsers.link.scanner" = "用于读取二维码的相机";
+"connectedBrowsers.link.typeHeader" = "或输入代码";
+"connectedBrowsers.link.continue" = "继续";
+"connectedBrowsers.link.confirmHeader" = "在此浏览器中打开 Yala？";
+"connectedBrowsers.link.whereCity" = "来自 %1$@ 的请求 · 代码 %2$@";
+"connectedBrowsers.link.whereNoCity" = "代码 %@";
+"connectedBrowsers.link.warning" = "仅当你在自己的屏幕上看到此代码时才确认。Yala 的任何人都不会向你索要。";
+"connectedBrowsers.link.confirm" = "用面容 ID 确认";
+"connectedBrowsers.link.faceIDReason" = "确认要在该浏览器中打开你的 Yala。";
+"connectedBrowsers.link.doneTitle" = "已关联浏览器";
+"connectedBrowsers.link.doneBody" = "%@ 现在显示你的 Yala（只读）。你可以随时在这里退出。";
+"connectedBrowsers.link.doneButton" = "完成";
+"connectedBrowsers.link.problem.invalidCode" = "这不是 Yala web 的代码。请确认它有 8 个字符。";
+"connectedBrowsers.link.problem.expired" = "代码已过期或已被使用。请在 Yala web 上获取新的代码。";
+"connectedBrowsers.link.problem.noCloud" = "你的账户未使用 Yala 云。请在“存储”中开启后再使用 Yala web。";
+"connectedBrowsers.link.problem.sessionExpired" = "你的云端会话已过期。请在“你的 Yala 账户”中重新登录。";
+"connectedBrowsers.link.problem.network" = "无法连接 Yala web。请重试。";

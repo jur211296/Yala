@@ -2,3 +2,4 @@
 "NSPhotoLibraryUsageDescription" = "Yala usa le tue foto per estrarre i dettagli delle spese da screenshot e ricevute. Le immagini selezionate vengono inviate a un servizio di IA.";
 "NSPhotoLibraryAddUsageDescription" = "Yala salva nelle tue foto i riepiloghi del gruppo che scegli di conservare. Non viene salvato nulla senza che tu lo chieda.";
 "NSCameraUsageDescription" = "Yala usa la fotocamera per fotografare i tuoi scontrini e creare spese. La foto viene inviata a un servizio di IA per essere letta.";
+"NSFaceIDUsageDescription" = "Yala usa Face ID per confermare che sei tu prima di aprire il tuo account in un browser.";

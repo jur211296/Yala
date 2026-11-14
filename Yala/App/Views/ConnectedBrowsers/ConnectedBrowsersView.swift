@@ -5,6 +5,7 @@
 //  Ajustes › Tu cuenta de Yala › «Navegadores conectados» (Yala web, lote 1, decisión D5): las sesiones de Yala web
 //  abiertas con esta cuenta, con «Cerrar» en cada una y «Cerrar todas». Al cerrar, esa pestaña se vacía en menos de un
 //  minuto (la web pregunta por su sesión cada 30 s). Solo existe en Yala Dev: la web de 2.3 vive en staging.
+//  Lote 2: «Vincular un navegador» abre `LinkBrowserView` (entrar en la web leyendo su QR, con Face ID).
 //
 
 import SwiftUI
@@ -12,9 +13,20 @@ import SwiftUI
 struct ConnectedBrowsersView: View {
     @State private var model: ConnectedBrowsersModel
     @State private var confirmCloseAll = false
+    private let client: ConnectedBrowsersClient
 
     init(model: ConnectedBrowsersModel? = nil) {
-        _model = State(initialValue: model ?? ConnectedBrowsersModel(client: Self.defaultClient()))
+        let client = Self.defaultClient()
+        self.client = client
+        _model = State(initialValue: model ?? ConnectedBrowsersModel(client: client))
+    }
+
+    private func linkModel() -> LinkBrowserModel {
+        #if DEBUG
+        // En la demo del simulador no hay Face ID que pedir: se da por confirmado.
+        if ConnectedBrowsersDemo.isActive { return LinkBrowserModel(client: client, authenticate: { _ in .confirmed }) }
+        #endif
+        return LinkBrowserModel(client: client)
     }
 
     private static func defaultClient() -> ConnectedBrowsersClient {
@@ -32,6 +44,20 @@ struct ConnectedBrowsersView: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("connected_browsers_intro")
+            }
+
+            YalaSettingsSection {
+                NavigationLink {
+                    LinkBrowserView(model: linkModel()) {
+                        Task { await model.load() }
+                    }
+                } label: {
+                    Label(ConnectedBrowsersText.linkRow, systemImage: "qrcode.viewfinder")
+                        .contentShape(Rectangle())
+                }
+                .accessibilityIdentifier("connected_browsers_link")
+            } footer: {
+                Text(ConnectedBrowsersText.linkRowFooter)
             }
 
             content
