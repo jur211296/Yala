@@ -95,3 +95,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [pgrep -f casa con prompts de otras sesiones](feedback_pgrep_f_casa_con_los_prompts_de_otras_sesiones.md) — usa `pgrep -x xcodebuild`.
 - [Breadcrumbs de Sentry fechan el pull](reference_sentry_breadcrumbs_fechan_el_pull.md) — GET /sync/pull cada 3-4 s = páginas en el hilo principal; mismo app_start_time = misma apertura.
 - [La nota de la card manda sobre su «hecha cuando»](feedback_la_nota_de_la_card_manda_sobre_su_hecha_cuando.md) — el «hecha cuando» es de Tim y anterior; si chocan, la nota de Jürgen.
+- [iPhone ocupado: avanza y prueba después](feedback_iphone_ocupado_avanza_y_prueba_despues.md) — código y sim mientras; nada completo sin probarlo en el iPhone.
