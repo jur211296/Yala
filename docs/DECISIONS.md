@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (101 entradas)
+## Índice (102 entradas)
 
-> **No hace falta leer este fichero entero** — son 284 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 287 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-13` [Lote del 13-nov: Grupos con pago por confirmar, Welcome 2.3, `toca:` estrecho, orden de la cola, IA ](#2026-11-13-lote-del-13-nov-grupos-con-pago-por-confirmar-welcome-23-toca-estrecho-orden-de-la-cola-ia-en-grupos-transferencias-de-sistema-y-el-traspaso-a-medias)
 - `2026-11-12` [Lote del 11 y 12-nov: cierre de la 2.2, nota de salud, «Activar sin borrar», bienvenida 2.3 y priori](#2026-11-12-lote-del-11-y-12-nov-cierre-de-la-22-nota-de-salud-activar-sin-borrar-bienvenida-23-y-prioridades-de-la-cola)
 - `2026-11-10` [El correo del banco llega a un dominio aparte, yalainbox.com, solo para recibir](#2026-11-10-el-correo-del-banco-llega-a-un-dominio-aparte-yalainboxcom-solo-para-recibir)
 - `2026-11-10` [Orden del 10-nov: 2.2 en verde y en TestFlight antes que los lotes de 2.3, que corren de a dos sin d](#2026-11-10-orden-del-10-nov-22-en-verde-y-en-testflight-antes-que-los-lotes-de-23-que-corren-de-a-dos-sin-declarar-el-catlogo-de-textos)
@@ -19,13 +20,13 @@
 - `2026-11-05` [Decisiones de Jürgen del 5-nov — deploys, umbral del 80 %, «en el límite» y el candado de commits](#2026-11-05-decisiones-de-jrgen-del-5-nov--deploys-umbral-del-80--en-el-lmite-y-el-candado-de-commits)
 - `2026-10-21` [Formulario de registro 2.2 — la cuenta viene puesta, guardar no saca del flujo y lo elegido va relle](#2026-10-21-formulario-de-registro-22--la-cuenta-viene-puesta-guardar-no-saca-del-flujo-y-lo-elegido-va-relleno)
 - `2026-10-21` [Roadmap de Yala de 2.2 a 4.0 — por tema y sin fechas](#2026-10-21-roadmap-de-yala-de-22-a-40--por-tema-y-sin-fechas)
-- `2026-10-07` [IA en el plan free — voz y foto son un cupo de prueba de 5 notas y 5 fotos](#2026-10-07-ia-en-el-plan-free--voz-y-foto-son-un-cupo-de-prueba-de-5-notas-y-5-fotos)
 - `2026-10-07` [IA — el gateway elige el modelo de cada tarea, por calidad medida](#2026-10-07-ia--el-gateway-elige-el-modelo-de-cada-tarea-por-calidad-medida)
+- `2026-10-07` [IA en el plan free — voz y foto son un cupo de prueba de 5 notas y 5 fotos](#2026-10-07-ia-en-el-plan-free--voz-y-foto-son-un-cupo-de-prueba-de-5-notas-y-5-fotos)
 - `2026-09-30` [El estado de Yala se lee de donde se escribe solo: se retira `docs/ESTADO.md`](#2026-09-30-el-estado-de-yala-se-lee-de-donde-se-escribe-solo-se-retira-docsestadomd)
 - `2026-09-27` [Yala se adapta por espacio, no por dispositivo](#2026-09-27-yala-se-adapta-por-espacio-no-por-dispositivo)
 - `2026-09-26` [El conector de Claude emite sus propios tokens](#2026-09-26-el-conector-de-claude-emite-sus-propios-tokens)
-- `2026-09-09` [CI — el aviso de rojos advisory es un check propio, y no calla aunque su canal caiga](#2026-09-09-ci--el-aviso-de-rojos-advisory-es-un-check-propio-y-no-calla-aunque-su-canal-caiga)
 - `2026-09-09` [Sesiones — dos ejes (privada × nube), un verbo por sesión, y Grupos como mini-app](#2026-09-09-sesiones--dos-ejes-privada--nube-un-verbo-por-sesin-y-grupos-como-mini-app)
+- `2026-09-09` [CI — el aviso de rojos advisory es un check propio, y no calla aunque su canal caiga](#2026-09-09-ci--el-aviso-de-rojos-advisory-es-un-check-propio-y-no-calla-aunque-su-canal-caiga)
 - `2026-09-02` [Panel — la jerarquía manda, el color informa y las tarjetas se quedan](#2026-09-02-panel--la-jerarqua-manda-el-color-informa-y-las-tarjetas-se-quedan)
 - `2026-08-31` [El repo recibe /abrir, /higiene y reorg_docs; lo demás del estándar de casa no aplica](#2026-08-31-el-repo-recibe-abrir-higiene-y-reorgdocs-lo-dems-del-estndar-de-casa-no-aplica)
 - `2026-08-30` [Frank es el agente de Yala; el gate pasa a hook de git](#2026-08-30-frank-es-el-agente-de-yala-el-gate-pasa-a-hook-de-git)
@@ -36,14 +37,14 @@
 - `2026-07-24` [Tanda 2026-07-24: fase 2.0.5 — 36 entradas (2026-07-08 → 2026-07-22)](#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
 - `2026-07-24` [Tanda 2026-07-24 (cierre): últimas 5 entradas de la fase 2.0.5](#tanda-2026-07-24-cierre-ltimas-5-entradas-de-la-fase-205)
 - `2026-07-06` [Stats — Comparativa: KPI "período anterior" alineado a la curva MTD-vs-MTD (p20-15 completo)](#2026-07-06-stats--comparativa-kpi-perodo-anterior-alineado-a-la-curva-mtd-vs-mtd-p20-15-completo)
+- `2026-07-05` [Cold launch — deep link de grupo `yala://groups/<id>` se perdía (gemelo D1 del anterior)](#2026-07-05-cold-launch--deep-link-de-grupo-yalagroupsid-se-perda-gemelo-d1-del-anterior)
 - `2026-07-05` [Siri — migrado al mismo patrón de cola (cierra el ciclo de Apple Pay)](#2026-07-05-siri--migrado-al-mismo-patrn-de-cola-cierra-el-ciclo-de-apple-pay)
 - `2026-07-05` [Cold launch — share-image al share sheet no hacía nada (intent no-serializable pre-init)](#2026-07-05-cold-launch--share-image-al-share-sheet-no-haca-nada-intent-no-serializable-pre-init)
 - `2026-07-05` [Stats — clasificación income/expense por categoría (fase 2 de p20-14)](#2026-07-05-stats--clasificacin-incomeexpense-por-categora-fase-2-de-p20-14)
-- `2026-07-05` [Cold launch — deep link de grupo `yala://groups/<id>` se perdía (gemelo D1 del anterior)](#2026-07-05-cold-launch--deep-link-de-grupo-yalagroupsid-se-perda-gemelo-d1-del-anterior)
 - `2026-07-04` [Apple Pay — el intent deja de tocar SwiftData (patrón de cola App Group)](#2026-07-04-apple-pay--el-intent-deja-de-tocar-swiftdata-patrn-de-cola-app-group)
 - `2026-07-02` [INCIDENTE PROD — sync de grupos muerto 4 días por campo sin deploy de schema + hardening](#2026-07-02-incidente-prod--sync-de-grupos-muerto-4-das-por-campo-sin-deploy-de-schema--hardening)
-- `2026-07-01` [Groups — notificaciones filtradas por participación + copy con voz de marca](#2026-07-01-groups--notificaciones-filtradas-por-participacin--copy-con-voz-de-marca)
 - `2026-07-01` [Groups — pagos planificados de grupo (gasto compartido recurrente)](#2026-07-01-groups--pagos-planificados-de-grupo-gasto-compartido-recurrente)
+- `2026-07-01` [Groups — notificaciones filtradas por participación + copy con voz de marca](#2026-07-01-groups--notificaciones-filtradas-por-participacin--copy-con-voz-de-marca)
 - `2026-06-30` [Personalización — toggle "Iconos coloridos" gobierna también "Más"](#2026-06-30-personalizacin--toggle-iconos-coloridos-gobierna-tambin-ms)
 - `2026-06-28` [..06-30] Groups — sync de "Solo Grupos" no bajaba cambios de otros miembros](#2026-06-2806-30-groups--sync-de-solo-grupos-no-bajaba-cambios-de-otros-miembros)
 - `2026-06-28` [Groups — rediseño del split de gastos estilo Splitwise](#2026-06-28-groups--rediseo-del-split-de-gastos-estilo-splitwise)
@@ -51,8 +52,8 @@
 - `2026-06-19` [..06-22] Groups — saga del crash-loop de sync en restore de iCloud (5 intentos, CERRADA en build 32)](#2026-06-1906-22-groups--saga-del-crash-loop-de-sync-en-restore-de-icloud-5-intentos-cerrada-en-build-32)
 - `2026-06-19` [Fix identity UUIDs colapsados tras restore lento de iCloud (Tag.id/Account.shortcutID/Subcategory.sh](#2026-06-19-fix-identity-uuids-colapsados-tras-restore-lento-de-icloud-tagidaccountshortcutidsubcategoryshortcutid)
 - `2026-06-14` [Fix doble canal de sync CloudKit en Grupos](#2026-06-14-fix-doble-canal-de-sync-cloudkit-en-grupos)
-- `2026-06-10` [Sesión de cierre pre-release 2.0](#2026-06-10-sesin-de-cierre-pre-release-20)
 - `2026-06-10` [OpenAI API key en Info.plist + PrivacyInfo sin FinancialInfo — diferido consciente a post-2.0](#2026-06-10-openai-api-key-en-infoplist--privacyinfo-sin-financialinfo--diferido-consciente-a-post-20)
+- `2026-06-10` [Sesión de cierre pre-release 2.0](#2026-06-10-sesin-de-cierre-pre-release-20)
 - `2026-06-08` [Fix Apple Pay — "No se pudo ejecutar el atajo"](#2026-06-08-fix-apple-pay--no-se-pudo-ejecutar-el-atajo)
 - `2026-06-08` [Fix invite-drop — persistencia de invite pendiente](#2026-06-08-fix-invite-drop--persistencia-de-invite-pendiente)
 - `2026-06-04` [Fix subcategorías duplicadas por re-sync de CloudKit](#2026-06-04-fix-subcategoras-duplicadas-por-re-sync-de-cloudkit)
@@ -62,8 +63,8 @@
 - `2026-05-26` [Refactor robusto del subsistema de routing (F0-F11)](#2026-05-26-refactor-robusto-del-subsistema-de-routing-f0-f11)
 - `2026-05-25` [Transfer pair integrity — épico de 6 commits](#2026-05-25-transfer-pair-integrity--pico-de-6-commits)
 - `2026-05-25` [CSV mirror épico — Budget filters + TransactionItem/InboxDraft tags resilientes a CloudKit lazy hydr](#2026-05-25-csv-mirror-pico--budget-filters--transactioniteminboxdraft-tags-resilientes-a-cloudkit-lazy-hydration)
-- `2026-05-22` [Groups — cleanup de TX/drafts huérfanos post soft-delete (FU-02-cleanup)](#2026-05-22-groups--cleanup-de-txdrafts-hurfanos-post-soft-delete-fu-02-cleanup)
 - `2026-05-22` [Groups — Soft-delete de grupo (FU-02, owner-only, gateado por balance=0)](#2026-05-22-groups--soft-delete-de-grupo-fu-02-owner-only-gateado-por-balance0)
+- `2026-05-22` [Groups — cleanup de TX/drafts huérfanos post soft-delete (FU-02-cleanup)](#2026-05-22-groups--cleanup-de-txdrafts-hurfanos-post-soft-delete-fu-02-cleanup)
 - `2026-05-20` [Onboarding informativo del tab Grupos (3 steps)](#2026-05-20-onboarding-informativo-del-tab-grupos-3-steps)
 - `2026-05-17` [Panel polish — AmountText API simplificada (cierre de sprint)](#2026-05-17-panel-polish--amounttext-api-simplificada-cierre-de-sprint)
 - `2026-05-13` [Stats polish — 4 tabs de Statistics panel-aligned (épico completo, Registros→Insights→Tendencias→Dis](#2026-05-13-stats-polish--4-tabs-de-statistics-panel-aligned-pico-completo-registrosinsightstendenciasdistribucin)
@@ -74,9 +75,9 @@
 - `2026-05-08` [Yala AI Onboarding — tutorial de 4 pasos post-consent](#2026-05-08-yala-ai-onboarding--tutorial-de-4-pasos-post-consent)
 - `2026-05-08` [Groups Pulido — Sprint Pulido 2 (9 bugs UX) + Sprint Pulido 3 (cierre diferidos)](#2026-05-08-groups-pulido--sprint-pulido-2-9-bugs-ux--sprint-pulido-3-cierre-diferidos)
 - `2026-05-08` [Fix subcategorías vacías en Grupos + FullModeActivation rediseñado](#2026-05-08-fix-subcategoras-vacas-en-grupos--fullmodeactivation-rediseado)
+- `2026-05-07` [A4 v3.2 — Fix P0 #2 (nudge dormant sin grupos) + #6 (Welcome Hero residual tras reinstall)](#2026-05-07-a4-v32--fix-p0-2-nudge-dormant-sin-grupos--6-welcome-hero-residual-tras-reinstall)
 - `2026-05-07` [A4 v3.2 — Welcome Hero + Chooser fix unificado (Sprint 2/2.1 polish visual)](#2026-05-07-a4-v32--welcome-hero--chooser-fix-unificado-sprint-221-polish-visual)
 - `2026-05-07` [Cleanup sistémico de duplicados CloudKit (TODO #10)](#2026-05-07-cleanup-sistmico-de-duplicados-cloudkit-todo-10)
-- `2026-05-07` [A4 v3.2 — Fix P0 #2 (nudge dormant sin grupos) + #6 (Welcome Hero residual tras reinstall)](#2026-05-07-a4-v32--fix-p0-2-nudge-dormant-sin-grupos--6-welcome-hero-residual-tras-reinstall)
 - `2026-05-06` [A4 — Landing + AASA + Welcome Chooser (cierra Fase A del épico Grupos)](#2026-05-06-a4--landing--aasa--welcome-chooser-cierra-fase-a-del-pico-grupos)
 - `2026-05-05` [A0-Bridge V2.0 — completa items P0+P1 diferidos](#2026-05-05-a0-bridge-v20--completa-items-p0p1-diferidos)
 - `2026-05-05` [Groups Pulido Final — Subset 3 (A6/A7/A8)](#2026-05-05-groups-pulido-final--subset-3-a6a7a8)
@@ -127,6 +128,13 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-13] Lote del 13-nov: Grupos con pago por confirmar, Welcome 2.3, `toca:` estrecho, orden de la cola, IA en Grupos, transferencias de sistema y el traspaso a medias
+**Contexto:** Ocho decisiones que Jürgen tomó en el chat el 13-nov (capturadas por el bot dueño, ADR-082 de casa). Las incorpora la sesión de «Volver a tu iCloud sin atasco», que no ejecuta ninguna: se registran juntas para que la sesión que implemente cada una no vuelva a preguntarlas.
+**Decisión:** (1) **Grupos 2.3, deuda con un pago esperando confirmación, opción B** (06:39): la tarjeta dice «Hay un pago de S/ X por confirmar», «Todo» ofrece solo lo que falta y «Sí, lo recibí» avisa si la deuda ya quedó saldada por otro pago (comentario en la card, 06:12). (2) **Welcome 2.3** (06:51): sin círculo de mascota, logo más grande y nítido, lema en dos líneas con la fuente del artifact, sin etiqueta EJEMPLO, minidescripciones de una línea, «Dividir con amigos» debajo de los tres botones, tercer botón iCloud privado, los tres botones de entrada iguales al estilo Vercel, otra cuenta de Google y Apple sin bucle; después, recorrido interactivo manual con Jürgen en el iPhone 14. (3) **Todo encargo de Yala declara en `toca:` solo las carpetas y archivos que de verdad toca** (07:25): nunca `Yala/`, `YalaTests/` ni `tickets/` enteros, para que la Mini y la Max corran dos sesiones a la vez sin bloquearse; tests nuevos en subcarpeta propia y tickets por archivo. (4) **Toda card de Yala con prioridad very-high o crítica se encola de inmediato al aparecer, delante de lo no crítico, y todo bug que reporta Jürgen va a la cola, priorizado** (09:54). (5) **Orden de la cola del 13-nov** (09:52): primero los bugs, luego el recorrido interactivo en el iPhone 14, luego Grupos con pago por confirmar y al final los ajustes visuales del Welcome. (6) **Repartir un recibo con IA en Grupos** (10:05): los botones de foto y voz van en el inicio de Grupos, como botones, igual que en personal, no dentro de «Nuevo gasto»; antes de decidir cambios, se le explica a Jürgen la barrera de uso de IA en Grupos (Grupos es free). (7) **La subcategoría sembrada de transferencia es de sistema** (12:18): no se borra ni se renombra, en todos los idiomas; Yala reconoce transferencias y ajustes por su papel, no por el nombre, y una creada por el usuario con el mismo nombre queda normal. (8) **«Ahora mismo no podemos preparar este dispositivo»** (14:08): si hay un traspaso local que quedó a medias de otro intento, Yala lo deshace y entra limpio (opción A).
+**Razones:** Son decisiones de producto y de operación que Jürgen tomó en el chat; escritas aquí, no se vuelven a preguntar.
+**Consecuencias:** (1), (2), (6), (7) y (8) definen el alcance de sus lotes de 2.3; (6) espera la explicación de la barrera de IA antes de cambiar nada. (3), (4) y (5) se ejecutan en la escritura de encargos y en el reparto de la cola, fuera del código: no dejan regla en `CLAUDE.md` ni en `.claude/rules/`.
+**Estado:** Activa
 
 ### [2026-11-12] Lote del 11 y 12-nov: cierre de la 2.2, nota de salud, «Activar sin borrar», bienvenida 2.3 y prioridades de la cola
 **Contexto:** Decisiones que Jürgen tomó en el chat entre el 11 y el 12-nov (capturadas por el bot dueño, ADR-082 de casa). Se registran aquí juntas porque ninguna tiene todavía su propia sesión cerrada.
