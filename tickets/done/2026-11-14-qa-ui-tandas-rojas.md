@@ -35,6 +35,12 @@ otro fallo del mismo caso sigue en rojo. Los cuatro son no estrictos: el de la t
 fallar. La sesión «Bugs de interfaz 2.3, lote 1» arregla las tarjetas gphj y 4wqy en su propio PR y quita esas
 expectativas allí.
 
+Y uno que salió al disparar el QA en la rama del PR (tanda 1, 3 de 3):
+`UXAudit22Lote11y16UITests.test_statistics_picksTheComparisonWithTheTwoChips`. En la nocturna del 14-nov fallaba una
+vez y pasaba al reintento; en local pasa. Carrera del test en el runner lento: tocaba el chip con el scroll aún en
+movimiento y leía la frase sin esperar a que se recalculara. Ahora espera el chip quieto (`waitForSettledLayout`) y la
+frase nueva.
+
 ## Tarjetas creadas
 
 - `tablero-2-3-con-texto-al-maximo-el-panel-se-sale-gphj` (high): el Panel se sale de la pantalla con AX5.
@@ -50,7 +56,7 @@ expectativas allí.
 ## Fuera
 
 - Rojos que pasan al reintento en la nocturna del 14-nov (inestables, no ponen la tanda en rojo):
-  `UXAudit22Lote11y16UITests.test_statistics_picksTheComparisonWithTheTwoChips`, `BalanceCalculatorReopenUITests`,
+  `BalanceCalculatorReopenUITests`,
   `FlujoNecesariasLote08UITests.test_netSummary_capture`, `GroupsAssociationRowUITests.test_detachWithFailingWipe…`,
   `AdaptiveNavigationUITests.test_recordOpensBeside…`, `GroupOpeningBalanceMemberUITests`,
   `InboxNotificationTapUITests.test_background…`, `ProjectedFlowUITests.test_panel_projectionToggle…`,
