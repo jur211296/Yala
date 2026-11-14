@@ -625,6 +625,9 @@ enum CloudSyncBreadcrumb {
     /// guard de alcance haciendo su trabajo; el usuario ve la pantalla de relanzamiento de siempre.
     static func swapSkippedMountHasMirror() {
         logger.notice("CloudSignOut swap SKIPPED — el mount de este proceso lleva mirror adjunto; se conserva el relanzamiento")
+        #if DEBUG
+        print("CloudSignOut swap SKIPPED — mount con espejo")
+        #endif
     }
 
     /// **El canario del release verificado, y es la superficie de observación de todo este subsistema.**
@@ -636,6 +639,9 @@ enum CloudSyncBreadcrumb {
     /// repone el container y el wipe de boot sigue armado.
     static func swapReleaseAborted(reason: String) {
         logger.error("CloudSignOut swap ABORTED reason=\(reason, privacy: .public) — release NO verificado; degrada al relanzamiento de boot")
+        #if DEBUG
+        print("CloudSignOut swap ABORTED reason=\(reason)")
+        #endif
     }
 
     /// El wipe se consumó pero el container nuevo no se pudo construir. No hay riesgo de datos: el disco
@@ -644,6 +650,9 @@ enum CloudSyncBreadcrumb {
     /// mount, no al swap.
     static func swapRemountFailed() {
         logger.error("CloudSignOut swap remount FAILED — wipe consumado; el arranque siguiente monta neutro")
+        #if DEBUG
+        print("CloudSignOut swap remount FAILED")
+        #endif
     }
 
     /// Swap consumado: store vaciado, container nuevo montado y jerarquía reconstruida sin relanzar.
@@ -669,6 +678,9 @@ enum CloudSyncBreadcrumb {
 
     static func swapCompleted() {
         logger.notice("CloudSignOut swap COMPLETED — store vaciado y remontado en sesión; sin relanzamiento")
+        #if DEBUG
+        print("CloudSignOut swap COMPLETED")
+        #endif
     }
 
     /// Paso 6 del rediseño de sesiones: [I] PROBÓ que la cuenta del faro de iCloud-KV ya no existe y lo

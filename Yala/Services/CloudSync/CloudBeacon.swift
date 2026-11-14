@@ -119,6 +119,16 @@ final class CloudBeacon {
     /// Lo lee la puerta de «Migrar a la nube» para decir «otro de tus dispositivos está llevando tus datos a la nube»
     /// (`StorageMigrationIdentityGateLogic`, ticket `settings-migrate-blocks-a-second-device-before-its-marker`). Un faro sin
     /// hash —el fingido de `-uitest-fake-beacon`, o uno escrito sin `sub`— no nombra ninguna cuenta.
+    /// Cuándo se enlazó la cuenta, o `nil` si el faro no lo trae (uno escrito antes de guardar la fecha) o va fingido. Lo
+    /// lee la nota de «copia de antes» de Restaurar (`WelcomeRestoreView.showsPreCloudNote`).
+    var linkedAt: Date? {
+        #if DEBUG
+        if UITestHooks.fakeBeaconProvider != nil { return nil }
+        #endif
+        let seconds = store.double(forKey: Keys.linkedAt)
+        return seconds > 0 ? Date(timeIntervalSince1970: seconds) : nil
+    }
+
     func namesAccount(sub: String?) -> Bool {
         guard let sub, !sub.isEmpty, isCloudAccountLinked, let hash = accountHash else { return false }
         return hash == Self.hash(sub)

@@ -67,8 +67,34 @@ struct WelcomeRestoreView: View {
     /// **y** movimientos o cuentas en la copia (card `icloud-recien-vaciado-yala-dice-ya-tiene`, E03 del 13-nov): una copia con
     /// solo las categorías de serie que la app vuelve a sembrar tras «Vaciar datos» no es «la de antes» de nada, y la nota
     /// salía igual porque el faro sobrevive en el iCloud-KV.
-    static func showsPreCloudNote(beaconLinked: Bool, transactions: Int, accounts: Int) -> Bool {
-        beaconLinked && (transactions > 0 || accounts > 0)
+    ///
+    /// **Y ningún movimiento de la copia es posterior al enlace** (barrido del iPhone 14, 14-nov, lote B): el faro guarda
+    /// cuándo se enlazó la cuenta (`CloudBeacon.linkedAt`). Una copia con un movimiento creado DESPUÉS siguió viva en iCloud
+    /// tras el enlace —la persona volvió a iCloud y apuntó ahí—, así que no es «de antes» de nada: el barrido creó
+    /// «Prueba» solo en iCloud y la nota lo negaba. Sin fecha de enlace (faro anterior a ella) o sin movimientos con fecha
+    /// no se puede saber, y se conserva la regla de antes.
+    static func showsPreCloudNote(beaconLinked: Bool, transactions: Int, accounts: Int,
+                                  linkedAt: Date? = nil, newestTransactionCreatedAt: Date? = nil) -> Bool {
+        guard beaconLinked && (transactions > 0 || accounts > 0) else { return false }
+        if let linkedAt, let newestTransactionCreatedAt, newestTransactionCreatedAt > linkedAt { return false }
+        return true
+    }
+
+    /// El movimiento propio (sin los de Grupos) más reciente de la copia restaurada, por fecha de creación. `nil` si no hay
+    /// ninguno o si no se pudo leer: la nota decide entonces como antes.
+    static func newestOwnTransactionCreatedAt(in context: ModelContext) -> Date? {
+        var descriptor = FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { $0.splitExpenseID == nil && $0.splitSettlementID == nil },
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
+        descriptor.fetchLimit = 1
+        do {
+            return try context.fetch(descriptor).first?.createdAt
+        } catch {
+            #if DEBUG
+            print("WelcomeRestoreView: Error: no se pudo leer el movimiento más reciente: \(error)")
+            #endif
+            return nil
+        }
     }
 
     var onContinueWithSummary: (ICloudAccountSummary) -> Void
@@ -129,9 +155,12 @@ struct WelcomeRestoreView: View {
                             // Con datos se resuelve en el acto: el aviso de la nube jamás tapa un restore
                             // que sí puede ocurrir, y ese caso no necesita preguntarle nada al backend.
                             if summary.hasAnyData {
+                                let beacon = CloudBeacon()
                                 foundCopyPredatesCloud = Self.showsPreCloudNote(
-                                    beaconLinked: CloudBeacon().isCloudAccountLinked,
-                                    transactions: summary.transactionsCount, accounts: summary.accountsCount)
+                                    beaconLinked: beacon.isCloudAccountLinked,
+                                    transactions: summary.transactionsCount, accounts: summary.accountsCount,
+                                    linkedAt: beacon.linkedAt,
+                                    newestTransactionCreatedAt: Self.newestOwnTransactionCreatedAt(in: modelContext))
                                 RestoreBreadcrumb.found(summary, settlement: settlement,
                                                         beaconLinked: foundCopyPredatesCloud)
                                 state = .found(summary)

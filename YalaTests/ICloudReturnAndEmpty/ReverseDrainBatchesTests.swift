@@ -63,11 +63,12 @@ private final class DrainStub: SyncHTTPSession, @unchecked Sendable {
                                     "status": "applied"])
                 }
             }
-            lock.lock()
-            let index = pushSizes.count
-            pushSizes.append(ids.count)
-            pushedSyncIDs.append(contentsOf: ids)
-            lock.unlock()
+            let index = lock.withLock { () -> Int in
+                let index = pushSizes.count
+                pushSizes.append(ids.count)
+                pushedSyncIDs.append(contentsOf: ids)
+                return index
+            }
             if let hook = onPushOnMain { await MainActor.run { hook(index) } }
             let body = (try? JSONSerialization.data(withJSONObject: ["results": results])) ?? Data()
             return (body, ok)

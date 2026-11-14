@@ -1604,6 +1604,11 @@ final class AppBootstrapper {
         GroupNotificationService.shared.setContext(nil)
         // Una foto de widgets pedida y aún sin hacer leería el contexto que se suelta (`WidgetDataCache.updateCache`).
         WidgetDataCache.cancelPendingUpdate()
+        // Barrido del 14-nov (card p9q0): los dos avisos de Grupos reciben el contexto en el chequeo de avisos del arranque,
+        // que solo corre con las notificaciones permitidas. Sin soltarlos, el almacén seguía vivo, el cambio en caliente
+        // abortaba y cerrar sesión en la nube pedía «Vuelve a abrir Yala».
+        GroupSettlementReminderService.shared.setContext(nil)
+        GroupBudgetAlertService.shared.setContext(nil)
         // Los dos contextos que alimentan a los observers de proceso (los observers NO se retiran: son
         // por-proceso y leen estas propiedades, que el re-bootstrap repone).
         raceCleanerModelContext = nil
