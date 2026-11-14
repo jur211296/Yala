@@ -550,6 +550,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-detach-ledger-cannot-verify-conserved-drafts | backlog | tickets/backlog/groups-detach-ledger-cannot-verify-conserved-drafts.md |
 | groups-detach-ledger-has-no-exit | done | tickets/done/groups-detach-ledger-has-no-exit.md |
 | groups-detach-save-breadcrumb-never-closes-on-throw | backlog | tickets/backlog/groups-detach-save-breadcrumb-never-closes-on-throw.md |
+| groups-door-three-questions-first-steps | done | tickets/done/groups-door-three-questions-first-steps.md |
 | groups-double-load-on-entry-needs-redeciding | backlog | tickets/backlog/groups-double-load-on-entry-needs-redeciding.md |
 | groups-drain-failure-reads-as-nothing-pending | done | tickets/done/groups-drain-failure-reads-as-nothing-pending.md |
 | groups-drain-has-no-rollback-and-keeps-the-mirror-of-a-failed-save | backlog | tickets/backlog/groups-drain-has-no-rollback-and-keeps-the-mirror-of-a-failed-save.md |
