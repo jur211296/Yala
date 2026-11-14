@@ -1,6 +1,6 @@
 ---
 name: yala-web-espera-decisiones
-description: Yala web: lotes 0 y 1 (beta) en staging desde el 14-nov; las 13 decisiones van con la recomendada (la db del artifact sigue vacía); lotes 2 y 3 también en 2.3 por decisión del 14-nov; device-QA de la beta pendiente.
+description: Yala web: lotes 0, 1 y 2 en staging desde el 14-nov; las 13 decisiones van con la recomendada (la db del artifact sigue vacía); lote 3 también en 2.3; device-QA de la beta y del QR pendientes de la mano de Jürgen.
 metadata:
   type: project
 ---
@@ -12,6 +12,10 @@ El 14-nov Jürgen cambió D10: los lotes 2 y 3 se hacen ya en 2.3 (`docs/DECISIO
 Estado al 14-nov: lote 0 (entrar y sesión) y lote 1 (Panel, Registros, Bandeja, Apuntar, sesiones y «Navegadores
 conectados» en el iPhone) desplegados en staging; producción, nada. El device-QA de la beta en el iPhone 14 espera la
 mano de Jürgen: entrar con Apple en Yala Dev y en la web (Face ID). Guion en `tickets/done/yala-web-lote-1-beta.md`.
+
+Lote 2 (14-nov): Estadísticas, Pagos planificados y entrar con el iPhone por QR, en staging. Del lote 2 del plan
+quedaron fuera, por no pedirlos el encargo, Presupuestos, Grupos en lectura, ⌘K, CSV y los 16 idiomas: van en el
+siguiente encargo. Device-QA del QR (cámara y Face ID reales) en `tickets/done/yala-web-lote-2.md`.
 
 **Why:** la web reusa el núcleo de `shared-core` y la cola de borradores del gateway; cada lote lo aprueba él.
 
