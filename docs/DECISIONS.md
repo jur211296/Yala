@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (103 entradas)
+## Índice (104 entradas)
 
-> **No hace falta leer este fichero entero** — son 288 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 290 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-14` [Yala web: Grupos se escribe desde la web con permiso propio (opción A), y el resto del lote 2 a crit](#2026-11-14-yala-web-grupos-se-escribe-desde-la-web-con-permiso-propio-opcin-a-y-el-resto-del-lote-2-a-criterio-de-frank)
 - `2026-11-14` [Lote del 14-nov: Yala web antes de 3.0, bugs altos del barrido delante y quién despliega a CloudKit](#2026-11-14-lote-del-14-nov-yala-web-antes-de-30-bugs-altos-del-barrido-delante-y-quin-despliega-a-cloudkit)
 - `2026-11-13` [Lote del 13-nov: Grupos pago por confirmar, bienvenida 2.3, encargos que declaran lo que tocan y ord](#2026-11-13-lote-del-13-nov-grupos-pago-por-confirmar-bienvenida-23-encargos-que-declaran-lo-que-tocan-y-orden-de-la-cola)
 - `2026-11-12` [Lote del 11 y 12-nov: cierre de la 2.2, nota de salud, «Activar sin borrar», bienvenida 2.3 y priori](#2026-11-12-lote-del-11-y-12-nov-cierre-de-la-22-nota-de-salud-activar-sin-borrar-bienvenida-23-y-prioridades-de-la-cola)
@@ -76,8 +77,8 @@
 - `2026-05-08` [Yala AI Onboarding — tutorial de 4 pasos post-consent](#2026-05-08-yala-ai-onboarding--tutorial-de-4-pasos-post-consent)
 - `2026-05-08` [Groups Pulido — Sprint Pulido 2 (9 bugs UX) + Sprint Pulido 3 (cierre diferidos)](#2026-05-08-groups-pulido--sprint-pulido-2-9-bugs-ux--sprint-pulido-3-cierre-diferidos)
 - `2026-05-08` [Fix subcategorías vacías en Grupos + FullModeActivation rediseñado](#2026-05-08-fix-subcategoras-vacas-en-grupos--fullmodeactivation-rediseado)
-- `2026-05-07` [Cleanup sistémico de duplicados CloudKit (TODO #10)](#2026-05-07-cleanup-sistmico-de-duplicados-cloudkit-todo-10)
 - `2026-05-07` [A4 v3.2 — Fix P0 #2 (nudge dormant sin grupos) + #6 (Welcome Hero residual tras reinstall)](#2026-05-07-a4-v32--fix-p0-2-nudge-dormant-sin-grupos--6-welcome-hero-residual-tras-reinstall)
+- `2026-05-07` [Cleanup sistémico de duplicados CloudKit (TODO #10)](#2026-05-07-cleanup-sistmico-de-duplicados-cloudkit-todo-10)
 - `2026-05-07` [A4 v3.2 — Welcome Hero + Chooser fix unificado (Sprint 2/2.1 polish visual)](#2026-05-07-a4-v32--welcome-hero--chooser-fix-unificado-sprint-221-polish-visual)
 - `2026-05-06` [A4 — Landing + AASA + Welcome Chooser (cierra Fase A del épico Grupos)](#2026-05-06-a4--landing--aasa--welcome-chooser-cierra-fase-a-del-pico-grupos)
 - `2026-05-05` [A0-Bridge V2.0 — completa items P0+P1 diferidos](#2026-05-05-a0-bridge-v20--completa-items-p0p1-diferidos)
@@ -129,6 +130,13 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-14] Yala web: Grupos se escribe desde la web con permiso propio (opción A), y el resto del lote 2 a criterio de Frank
+**Contexto:** Dos decisiones de Jürgen del 14-nov a las 13:53 (Lima), capturadas en el chat por el bot dueño (ADR-082 de casa) y pendientes de pasar al repo. Las incorpora la sesión que preparó las decisiones del barrido del iPhone; no las ejecuta.
+**Decisión:** (1) **Lote 3 de Yala web: escribir en Grupos desde la web con la opción A**: la web tiene su propio permiso de escritura por el gateway, **solo en staging hasta que se revise**. (2) **El resto del lote 2** (Presupuestos, Grupos en lectura, buscar, exportar CSV y los 16 idiomas) **se hace como Frank recomiende**; Jürgen acepta que vaya en un lote aparte antes del lote 3 o junto con él.
+**Razones:** Un permiso propio para la web separa lo que puede escribir el navegador de lo que puede hacer la app, y staging primero deja revisar el riesgo antes de abrirlo a cuentas reales. Lo demás del lote 2 es lectura y no pide una decisión de producto.
+**Consecuencias:** la sesión del lote 3 no despliega el permiso de escritura de la web a producción sin una revisión de Jürgen. La sesión que retome el lote 2 elige si va aparte o con el lote 3 y lo deja escrito en su Paso 0.
+**Estado:** Activa
 
 ### [2026-11-14] Lote del 14-nov: Yala web antes de 3.0, bugs altos del barrido delante y quién despliega a CloudKit
 **Contexto:** Decisiones que Jürgen tomó en el chat el 14-nov (capturadas por el bot dueño, ADR-082 de casa). Se registran desde la sesión «Yala web beta», que las recibió pendientes.
