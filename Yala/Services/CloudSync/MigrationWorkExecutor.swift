@@ -21,6 +21,7 @@
 
 import CloudKit
 import Foundation
+import OSLog
 import SwiftData
 #if canImport(UIKit)
 import UIKit
@@ -1625,6 +1626,28 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// que renovar— pero ya no se confunde con la red, porque es lo que elige el techo CORTO de esta etapa. Hasta ese
     /// día se quedaba en `.transient` y la vuelta se paraba aquí sin salida.
     func reverseDrainOnce() async -> ReverseStepOutcome {
+        await reverseDrainOnce(continueWhile: { true }, onProgress: { _ in })
+    }
+
+    /// Cuántos cambios sube cada tanda del drenaje de la vuelta. Lo mismo que un trozo de `SyncPushClient` (50 ≈ 15 s de
+    /// Worker, que aplica cada delta en serie): así cada petición confirma y purga lo suyo antes de la siguiente.
+    static let reverseDrainBatchSize = 50
+
+    /// **Por tandas desde el 13-nov** (card `volver-a-tu-icloud-se-queda-en-traer-tus`, E07 del recorrido). Hasta ese día
+    /// subía el outbox ENTERO en una sola llamada a `push` y purgaba al final: con 3090 cambios recién creados por «Cargar
+    /// datos de prueba» eran ~15 minutos sin una cifra, «Cancelar» esperaba apagado a que terminara y, al cerrar Yala, nada
+    /// quedaba purgado y la pasada siguiente volvía a empezar desde el primero. Ahora:
+    ///  - **el orden es el mismo**: se ordena el outbox entero por HLC (`HLC.uploadOrder`) ANTES de partirlo, así que la
+    ///    subida llega al servidor en el orden de siempre (regla «Todo HLC guardado queda acotado»);
+    ///  - **cada tanda confirmada se purga en el acto** (`applyResults`), así que lo subido sobrevive a cerrar Yala y a cancelar;
+    ///  - **`continueWhile` se pregunta antes de cada tanda**: con `false` corta con `.transient` y lo confirmado queda
+    ///    guardado. Es el «sí» de «Cancelar y seguir en tu cuenta de Yala»;
+    ///  - **`onProgress` dice cuántos lleva de cuántos había**: la cifra de «Traer tus datos de tu cuenta de Yala».
+    /// Lo que se escriba DURANTE la pasada lo recoge la siguiente (la verificación lo exige igual que antes).
+    func reverseDrainOnce(
+        continueWhile: @escaping @MainActor () -> Bool,
+        onProgress: @escaping @MainActor (CloudProgressStepsLogic.UploadProgress) -> Void
+    ) async -> ReverseStepOutcome {
         // Sin drain completo no se da por drenado: lo siguiente es CONGELAR el backend (mismo porqué que el outbox
         // ilegible de abajo; ticket `drain-duplicates-the-unit-clock-when-its-row-cannot-be-read`).
         guard engine.drainOnce(context: context) else { return .blocked(.localFailure) }
@@ -1642,15 +1665,36 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         let (live, poison) = pushClient.partitionBuildable(allLive)
         engine.deadLetterPoison(poison, context: context, now: now())
         if !live.isEmpty {
-            switch await pushClient.push(live) {
-            case .completed(let results):
-                await pushClient.applyResults(results, rows: live, engine: engine, context: context)
-            case .sessionExpired:
-                return .sessionExpired
-            case .accountUnavailable:
-                return .blocked(.accountUnavailable)
-            case .transient:
-                return .transient
+            let ordered = HLC.uploadOrder(live, hlc: \.hlc, createdAt: \.createdAt)
+            let total = ordered.count
+            var confirmed = 0
+            onProgress(CloudProgressStepsLogic.UploadProgress(done: 0, total: total))
+            var start = 0
+            while start < total {
+                guard continueWhile() else {
+                    migrationRunnerLogger.notice("reverseDrain stopped before batch sent=\(confirmed, privacy: .public) total=\(total, privacy: .public)")
+                    return .transient
+                }
+                let end = min(start + Self.reverseDrainBatchSize, total)
+                let batch = Array(ordered[start..<end])
+                let batchStartedAt = Date()
+                switch await pushClient.push(batch) {
+                case .completed(let results):
+                    await pushClient.applyResults(results, rows: batch, engine: engine, context: context)
+                    confirmed += results.count
+                    onProgress(CloudProgressStepsLogic.UploadProgress(done: confirmed, total: total))
+                    migrationRunnerLogger.notice("reverseDrain batch confirmed=\(confirmed, privacy: .public) total=\(total, privacy: .public) ms=\(Int(Date().timeIntervalSince(batchStartedAt) * 1000), privacy: .public)")
+                    // Un trozo que confirma menos de lo que mandó cortó a medias dentro de `push`: lo confirmado ya se
+                    // purgó y el resto vuelve en la pasada siguiente.
+                    if results.count < batch.count { return .transient }
+                case .sessionExpired:
+                    return .sessionExpired
+                case .accountUnavailable:
+                    return .blocked(.accountUnavailable)
+                case .transient:
+                    return .transient
+                }
+                start = end
             }
         }
         switch await engine.pullAndApplyOnce(using: pullClient, context: context, now: now()) {

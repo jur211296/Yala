@@ -511,6 +511,13 @@ final class CloudMigrationController {
     /// Cuántas filas de la subida de la ida confirmó el servidor, de cuántas hay (`MigrationRunner.snapshotUploadProgress`).
     private(set) var uploadProgress: CloudProgressStepsLogic.UploadProgress?
 
+    /// Un «Cancelar y seguir en tu cuenta de Yala» está en camino: el botón se apaga solo entonces.
+    private(set) var isCancellingReverse = false
+
+    /// Cuántos cambios pendientes lleva confirmados «Traer tus datos de tu cuenta de Yala» de la vuelta, de cuántos había
+    /// (`MigrationRunner.reverseDrainProgress`; card `volver-a-tu-icloud-se-queda-en-traer-tus`). Solo informa.
+    private(set) var reverseDrainProgress: CloudProgressStepsLogic.UploadProgress?
+
     /// La entrada del runner en curso espera a que iCloud termine de importar (`MigrationRunner.isAwaitingImportQuiescence`).
     private(set) var runnerAwaitingImport = false
 
@@ -541,7 +548,8 @@ final class CloudMigrationController {
     var reverseProgressSteps: [CloudProgressStepsLogic.Step] {
         CloudProgressStepsLogic.reverseSteps(
             phase: journaledPhase, waitingForICloud: isWaitingForICloudImport, wipingDeleted: priorICloudWipeDeleted,
-            startingReverse: isStartingReverse, pending: reverseUploadSample?.pending, firstPending: reverseFirstPending)
+            startingReverse: isStartingReverse, pending: reverseUploadSample?.pending, firstPending: reverseFirstPending,
+            bring: journaledPhase == .reverseDrainAll ? reverseDrainProgress : nil)
     }
 
     /// ¿La pantalla enseña ya los pasos de la vuelta aunque el journal siga en «nube activa»? Mientras se borra lo de antes
@@ -1683,6 +1691,7 @@ final class CloudMigrationController {
         // persona que firma para CONTINUAR se encontraba la vuelta abandonada en silencio, sin nota (`cancelled` no
         // la deja a propósito).
         cancelReverseRequested = false
+        _runner?.withdrawReverseCancel()
         releasedForResume = true
         isWorking = false
         await resume()
@@ -1754,12 +1763,19 @@ final class CloudMigrationController {
     /// nada. Espera a que suelte y cancela después. Si mientras tanto la vuelta ya avanzó —drenó, o saltó su
     /// techo—, el runner no hace nada: no hay de dónde salir.
     func cancelReverse() async {
+        // El botón se apaga SOLO mientras este «sí» está en camino (card `volver-a-tu-icloud-se-queda-en-traer-tus`): hasta el
+        // 13-nov colgaba de `isWorking`, que sigue en `true` todo el drenaje, y «Cancelar» quedaba apagado mientras esperaba.
+        isCancellingReverse = true
+        defer { isCancellingReverse = false }
         // El «sí» se apunta ANTES del spin, no después. Un re-kick de 30 s en vuelo puede cruzar las cuatro fases
         // previas al montaje en una sola pasada —cada una es una llamada de red, no una espera—, y con el flag
         // puesto después, el `resume()` que viniera detrás no lo veía: el gesto se perdía en silencio tras haber
         // prometido lo contrario. Lo que queda fuera de alcance es el pase que YA cruzó hasta el montaje: ahí la
         // salida previa no existe y el toque es no-op, con su ticket.
         cancelReverseRequested = true
+        // Y en el runner: el drenaje de «Traer tus datos» lo mira antes de cada tanda y corta, así que el «sí» no espera a
+        // que suba el outbox entero (card `volver-a-tu-icloud-se-queda-en-traer-tus`).
+        _runner?.requestReverseCancel()
         while isWorking {
             do {
                 try await Task.sleep(for: .milliseconds(200))
@@ -2028,6 +2044,7 @@ final class CloudMigrationController {
         reverseUploadSample = _runner?.lastReverseUploadSample
         reverseSessionExpiry = _runner?.lastReverseSessionExpiry
         uploadProgress = _runner?.snapshotUploadProgress
+        reverseDrainProgress = _runner?.reverseDrainProgress
         runnerAwaitingImport = _runner?.isAwaitingImportQuiescence ?? false
         engineFirstPullCompleted = SyncQuiescenceCoordinator.shared.hasCompletedFirstPull
         #if DEBUG

@@ -123,7 +123,7 @@ nonisolated enum WelcomePrivateICloudGateLogic {
                        outcome: ICloudProbeOutcome,
                        deviceData: DeviceDataReading) -> Decision {
         guard !skipValidation else { return .proceed }
-        if case .measured(let corpus) = outcome, corpus.hasAnyData { return .foundData(corpus) }
+        if case .measured(let corpus) = outcome, iCloudHasUserData(corpus) { return .foundData(corpus) }
         if deviceData == .unreadable { return .deviceUnreadable }
         let deviceHasData = deviceData == .present
         switch outcome {
@@ -136,6 +136,19 @@ nonisolated enum WelcomePrivateICloudGateLogic {
         case .measured:
             return deviceHasData ? .foundDeviceData(iCloudUnverified: false) : .proceed
         }
+    }
+
+    /// **¿Tiene este iCloud datos de la persona, a efectos de la puerta?** Movimientos o cuentas propias (o el tope, que es
+    /// «no lo sé»). Decisión de Jürgen del 13-nov (card `icloud-recien-vaciado-yala-dice-ya-tiene`, E03 del recorrido): «no debe
+    /// considerar cosas que no son para iCloud vacío». Tras «Vaciar datos» el iCloud se queda con las categorías de serie que
+    /// la app vuelve a sembrar —62 en el recorrido— y la puerta decía «Ya tienes datos en tu iCloud» por ellas. Un iCloud
+    /// sin registros ni cuentas es vacío: sigue directo, como uno sin nada.
+    ///
+    /// **Solo la puerta del Welcome, y no `ICloudPersonalCorpus.hasAnyData`**: ese predicado lo leen también el aviso del
+    /// espejo tardío (que BORRA) y las cifras del aviso. Seguir sin preguntar no destruye nada: el espejo baja lo que haya y el
+    /// deduplicador funde las categorías de serie repetidas.
+    static func iCloudHasUserData(_ corpus: ICloudPersonalCorpus) -> Bool {
+        corpus.truncated || corpus.transactions > 0 || corpus.accounts > 0
     }
 
     /// ¿El «no pudimos revisar» fue el plazo sin avance de la revisión (`ICloudZoneScan`) y no un fallo de CloudKit? Decide

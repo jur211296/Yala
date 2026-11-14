@@ -134,9 +134,11 @@ nonisolated enum CloudProgressStepsLogic {
     /// - `pending`: cuántos datos faltan por llegar a iCloud (la última muestra).
     /// - `firstPending`: la primera muestra de esta subida. Mientras la cifra no baje de ahí, iCloud todavía no subió nada:
     ///   está revisando lo que ya tiene (el lienzo B3).
+    /// - `bring`: cuántos cambios pendientes lleva subidos «Traer tus datos de tu cuenta de Yala» (el drenaje de la vuelta,
+    ///   por tandas desde el 13-nov), de cuántos había. Reusa la cifra y la barra de la subida de la ida.
     static func reverseSteps(
         phase: MigrationPhase, waitingForICloud: Bool, wipingDeleted: Int?, startingReverse: Bool,
-        pending: Int?, firstPending: Int?
+        pending: Int?, firstPending: Int?, bring: UploadProgress? = nil
     ) -> [Step] {
         let order: [Kind] = [.bring, .review, .uploadToICloud]
         var steps: [Step]
@@ -150,6 +152,9 @@ nonisolated enum CloudProgressStepsLogic {
         steps = order.enumerated().map { index, kind in Step(kind: kind, state: state(index: index, active: active)) }
         if let pending, active < order.count {
             steps[2].count = .pendingToICloud(pending)
+        }
+        if active == 0, phase == .reverseDrainAll, let bringCount = uploadCount(phase: phase, upload: bring) {
+            steps[0].count = bringCount
         }
         guard waitingForICloud, active < order.count, active != 1 else { return steps }
         // En «iCloud revisa lo que ya tiene» la espera ES el paso (el espejo importa lo que guarda): no se duplica.

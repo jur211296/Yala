@@ -944,8 +944,10 @@ struct StorageSettingsView: View {
     /// y volver a abrirla, porque ahí el espejo ESTÁ montado y hay que re-armar su apagado. Antes del montaje no hay
     /// espejo que apagar, así que esa frase sería falsa: no hay relanzamiento que pedir.
     private func cancelReverseButton(_ controller: CloudMigrationController) -> some View {
+        // Apagado solo con un «sí» ya en camino, nunca por el trabajo en vuelo: el drenaje de la vuelta lo mira entre tandas
+        // y `cancelReverse()` espera a que la pasada suelte (card `volver-a-tu-icloud-se-queda-en-traer-tus`).
         YalaSecondaryButton(L10n.Storage.Progress.cancelReverse, icon: "arrow.uturn.backward",
-                            isDisabled: controller.isWorking) {
+                            isDisabled: controller.isCancellingReverse) {
             confirmCancelReverse = true
         }
         .accessibilityIdentifier("storage_cancel_reverse_button")
