@@ -8874,6 +8874,6 @@
 "connectedBrowsers.link.doneButton" = "Listo";
 "connectedBrowsers.link.problem.invalidCode" = "Ese código no es de Yala web. Comprueba que tenga 8 caracteres.";
 "connectedBrowsers.link.problem.expired" = "El código ha caducado o ya se ha usado. Pide otro en Yala web.";
-"connectedBrowsers.link.problem.noCloud" = "Tu cuenta no usa la nube de Yala. Actívala en Almacenamiento para usar Yala web.";
+"connectedBrowsers.link.problem.noCloud" = "Tus datos están en tu iCloud. Para usar Yala web, llévalos a tu cuenta de Yala en Almacenamiento.";
 "connectedBrowsers.link.problem.sessionExpired" = "Tu sesión de la nube ha caducado. Vuelve a entrar en Tu cuenta de Yala.";
 "connectedBrowsers.link.problem.network" = "No se ha podido conectar con Yala web. Vuelve a intentarlo.";
