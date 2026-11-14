@@ -149,11 +149,14 @@ enum ProTourSteps {
 
     /// Standalone (not Pro Tour): TrendChartView — "Today FX" hint.
     /// 1 step independiente, mostrado primera vez en multi-currency.
+    /// El ancla de la píldora «Hoy ⓘ» de la tendencia (`TrendChartView`). El Panel sube hasta ella al sacar la guía
+    /// (card 3f57: tras reabrir quedaba bajo la barra de pestañas y la guía se pintaba encima de la barra).
+    static let todayFXAnchor = "todayFXHint"
     /// La persistencia vive en `AppPreferences.hasSeenTodayFXCoachMark`,
     /// no en `ProTourManager`. El enum se reutiliza por convención visual.
     static let todayFXSteps: [CoachMarkStep] = [
         CoachMarkStep(
-            id: "todayFXHint",
+            id: todayFXAnchor,
             title: L10n.Panel.LiveAnchorEducation.coachTitle,
             message: L10n.Panel.LiveAnchorEducation.coachMessage
         ),

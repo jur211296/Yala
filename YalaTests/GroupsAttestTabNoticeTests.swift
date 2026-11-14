@@ -261,10 +261,12 @@ struct GroupsAttestTabNoticeWiringTests {
             // racha de arranques anteriores, y el de dentro del `Task`, que llega cuando el refresco remoto
             // contesta. Anclarlos por separado no se puede —el primero es la misma llamada sin nada alrededor— y
             // un literal que solo dijera `viewModel.setContext(modelContext)` no ancla ningún recálculo.
+            // Tras el recálculo, la intro de Grupos que esperaba al primer tirón (card zkyg, 2026-11-13).
             ("entrar al tab y al contestar su refresco", """
                 Task {
                     await viewModel.refreshFromCloud(force: false)
                     refreshAttestTerminalNotice()
+                    if groupsOnboardingAwaitsPull, isRootPageShown { evaluateGroupsOnboarding(afterFirstPull: true) }
                 }
                 refreshAttestTerminalNotice()
                 """),

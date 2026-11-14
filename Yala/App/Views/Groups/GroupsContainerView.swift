@@ -24,6 +24,8 @@ struct GroupsContainerView: View {
     /// abierto va en la columna de detalle o empujado.
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// La pestaña está a la vista (`MainTabView`): la intro que espera al primer tirón no sale con otra pestaña delante.
+    @Environment(\.isRootPageShown) private var isRootPageShown
 
     // MARK: - State
 
@@ -39,6 +41,9 @@ struct GroupsContainerView: View {
     /// Sube al cerrar la tarjeta de avisos: el contenedor la anima a ella y a lo que sube detrás (card C2).
     @State private var notificationsCardDismissals = 0
     @State private var showGroupsOnboarding = false
+    /// Card zkyg: la intro se aplazó al primer tirón de Grupos de esta entrada. Solo entonces se vuelve a decidir tras
+    /// el tirón: sin esta marca, una intro aplazada con la X volvía a salir en cuanto el tirón terminaba.
+    @State private var groupsOnboardingAwaitsPull = false
     // D2 (§3.3.3): banner one-shot de re-entrada tras "Cerrar sesión de grupos". Se arma con
     // `GroupsSignOutBannerMarker` (in-session, sobrevive el relaunch), se lee en la primera aparición del
     // tab (el `onAppear` no re-lee si ya está visible) y se quema en el `onAppear` del banner real.
@@ -398,10 +403,12 @@ struct GroupsContainerView: View {
                     GroupsSyncClient.shared.startIfEligible(context: modelContext, trigger: "groups-tab")
                 }
                 // Traer cambios remotos de grupos al entrar al tab (el engine no auto-fetchea sin
-                // push; debounced + gateado por quiescencia dentro de syncNow), luego recarga.
+                // push; debounced + gateado por quiescencia dentro de syncNow), luego recarga. Card zkyg: después, la intro
+                // que esperaba a los grupos de la cuenta se decide, con la pestaña a la vista.
                 Task {
                     await viewModel.refreshFromCloud(force: false)
                     refreshAttestTerminalNotice()
+                    if groupsOnboardingAwaitsPull, isRootPageShown { evaluateGroupsOnboarding(afterFirstPull: true) }
                 }
                 refreshAttestTerminalNotice()
             }
@@ -705,7 +712,7 @@ struct GroupsContainerView: View {
         }
     }
 
-    private func evaluateGroupsOnboarding() {
+    private func evaluateGroupsOnboarding(afterFirstPull: Bool = false) {
         #if DEBUG
         // F1c: en uitest no montar el onboarding informativo del tab (interceptaría taps).
         //
@@ -717,12 +724,19 @@ struct GroupsContainerView: View {
         // que ningún test existente cambia de comportamiento.
         if UITestHooks.isActive && !UITestHooks.groupsEducativo { return }
         #endif
+        // Card zkyg: quien ya tiene grupos no ve la intro; si aún pueden estar bajando, se decide tras el primer tirón.
+        let hasGroups = !viewModel.activeGroups.isEmpty || !viewModel.archivedGroups.isEmpty
+        groupsOnboardingAwaitsPull = !afterFirstPull && GroupsOnboardingLogic.decidesAfterFirstPull(
+            hasGroups: hasGroups,
+            channelCanBringGroups: CloudSyncFlags.groupsBackendEnabled && CloudAuthService.shared.hasSession)
+        if groupsOnboardingAwaitsPull { return }
         let shouldShow = GroupsOnboardingLogic.shouldShow(
             hasSeenEducational: hasSeenGroupsEducational,
             // Un formulario pedido (la rama de la bienvenida, L13-8 «Crear grupo», L12-11) cuenta como un destino
             // pendiente igual que un deeplink: el educativo es una hoja del mismo anchor y se lo comería.
             hasPendingGroupDeeplink: navigation.pendingGroupID != nil || navigation.pendingNewGroupForm
-                || navigation.pendingExpenseAfterNewGroup
+                || navigation.pendingExpenseAfterNewGroup,
+            hasGroups: hasGroups
         )
         if shouldShow {
             showGroupsOnboarding = true

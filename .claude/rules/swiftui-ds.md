@@ -88,6 +88,13 @@ paths:
   plano. Una pasada nueva que cargue datos mira lo mismo. Pin: `StatisticsEntryFreshnessTests`,
   `StatisticsRespondsWithSkeletonUITests` (seam `-uitest-stats-calculation-delay-seconds`, solo alarga la espera).
 
+- **Lo que baja la nube con la app delante recarga en el acto (2026-11-13, card c8i9).** El aviso del motor
+  (`.cloudSyncAppliedRemoteChanges`) pasa por `RemoteChangesFanOut`: con la app activa sube `dataVersion`; sin ella,
+  queda pendiente para volver a primer plano. Antes solo marcaba pendiente, y tras «¡Tu cuenta está lista!» el Panel y
+  Registros se quedaban vacíos con los datos ya en el teléfono. Y el Panel que carga VACÍO con el motor sin su primer
+  tirón enseña su esqueleto hasta que el tirón termina (`PanelAccountDataWait`, techo 60 s), no S/ 0. El aviso de
+  CloudKit (`NSPersistentStoreRemoteChange`) sigue solo marcando pendiente. Pin: `PanelWaitsForAccountDataTests`.
+
 - **Un `onChange(of:)` sobre un `@Observable` puede DORMIRSE tras volver a primer plano, y el que recalcula una pantalla
   no puede depender de él (medido el 2026-11-05, iOS 27.2, lote P3, ticket
   `panel-stayed-filtered-after-removing-the-account-chip`).** En `PanelShell`, tras ir a inicio y volver, SwiftUI dejó de

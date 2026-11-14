@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1294)
+## Index (1295)
 
 | id | status | path |
 |---|---|---|
@@ -871,6 +871,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | owner-preferences-return-via-ikv-after-private-sign-out | qa | tickets/qa/owner-preferences-return-via-ikv-after-private-sign-out.md |
 | palette-pink-and-indigo-still-used-as-text-color | backlog | tickets/backlog/palette-pink-and-indigo-still-used-as-text-color.md |
 | panel-accounts-redesign | done | tickets/done/panel-accounts-redesign.md |
+| panel-and-groups-show-data-on-entry | done | tickets/done/panel-and-groups-show-data-on-entry.md |
 | panel-balance-chart-contradicts-its-own-figure | done | tickets/done/panel-balance-chart-contradicts-its-own-figure.md |
 | panel-balance-curve-parity-test-depends-on-the-clock | done | tickets/done/panel-balance-curve-parity-test-depends-on-the-clock.md |
 | panel-balance-curve-parity-test-depends-on-the-day | done | tickets/done/panel-balance-curve-parity-test-depends-on-the-day.md |

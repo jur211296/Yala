@@ -318,8 +318,11 @@ struct WelcomeFlowContainer: View {
                     },
                     onBack: { goTo(groupsChooserOrigin) },
                     // Card 2osn: «¿Ya tienes una cuenta? Entra aquí» va por la MISMA puerta que «Ya tengo una cuenta» del
-                    // elector (bypass incluido), y su «Volver» devuelve aquí.
-                    onSignIn: { handleExistingBranch() }
+                    // elector (bypass incluido), y su «Volver» devuelve aquí. Card x5tm: «Empezar» aterriza en Grupos.
+                    onSignIn: {
+                        WelcomeGroupsDoorLanding.arm()
+                        handleExistingBranch()
+                    }
                 )
                 .transition(.opacity)
             case .groupsGate(let purpose):
@@ -575,6 +578,8 @@ struct WelcomeFlowContainer: View {
         let destination: WelcomeMirrorRelaunchLogic.Destination
         switch option {
         case .restoreICloud:
+            // Restaurar no termina en «Empezar»: la puerta de Grupos no tiene dónde aterrizar (card x5tm).
+            WelcomeGroupsDoorLanding.disarm()
             StorageModePersistence.clearICloudCorpusWipeLeftHalfway()
             onRestoreOrigin(WelcomeBackStepLogic.restoreOrigin(openedFrom: step))
             destination = .restoreICloud
@@ -706,6 +711,8 @@ struct WelcomeFlowContainer: View {
     ///   cuenta» con el consentimiento de la nube en la misma hoja.
     /// · Google o Apple desde Grupos → los caminos de Grupos.
     private func handleShowcaseAccess(_ access: WelcomeShowcaseLogic.Access, from door: WelcomeShowcaseLogic.Door) {
+        // Una entrada nueva desde la vitrina deja de ser la de «Entra aquí» de Grupos (card x5tm).
+        WelcomeGroupsDoorLanding.disarm()
         switch (access, door) {
         case (.iCloud, _):
             handleNewOption(.privateAccount)
