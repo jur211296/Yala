@@ -1,6 +1,6 @@
 ---
 name: yala-web-espera-decisiones
-description: Yala web: lotes 0 a 3 en staging desde el 14-nov (lote 3 = Grupos en lectura); escribir en Grupos espera la decisión A/B/C de Jürgen; las 13 decisiones van con la recomendada; device-QA de la beta y del QR pendientes.
+description: Yala web: lotes 0 a 3 en staging desde el 14-nov (lote 3 = Grupos en lectura y escritura con la opción A); producción de la escritura espera una revisión de Jürgen; device-QA de la beta y del QR pendientes.
 metadata:
   type: project
 ---
@@ -17,13 +17,15 @@ Lote 2 (14-nov): Estadísticas, Pagos planificados y entrar con el iPhone por QR
 quedaron fuera, por no pedirlos el encargo, Presupuestos, Grupos en lectura, ⌘K, CSV y los 16 idiomas: van en el
 siguiente encargo. Device-QA del QR (cámara y Face ID reales) en `tickets/done/yala-web-lote-2.md`.
 
-Lote 3 (14-nov): Grupos en LECTURA, cuentas «solo Grupos» y editar o descartar borradores de la web, en staging. Lee
-Grupos por la entrada interna `WebGroupsReader` del gateway (la llave de Grupos no sale de ahí) con `web3_01` en
-Supabase staging. **Escribir en Grupos (añadir gasto, saldar, invitar) está parado** a la espera de Jürgen, preguntado
-el 14-nov 10:14 por `preguntar-bot`: A (rol propio de escritura por el gateway, recomendada), B (borradores que sube el
-iPhone) o C (nada hasta 3.0). El plan lo deja abierto («hace falta una puerta para la web»): no lo adivines. Datos de
-prueba en staging: «Viaje a Cusco» (A, B y C) y «Depa Miraflores» (A y B). El lote 3 llevó al PR del lote 2 el arreglo
-del texto que tumbaba su CI (decisión 51: «la nube de Yala» retirado como nombre de sitio).
+Lote 3 (14-nov): Grupos en lectura y, tras la respuesta de Jürgen (14-nov 13:52: **opción A**), también escritura desde
+la web: nuevo gasto con reparto igual, saldar e invitar, con el rol propio `yala_web` (web3_02) y la entrada interna
+`WebGroupsWriter` del gateway. Todo solo en staging: **producción de la escritura la quiere tras una revisión**, no la
+subas sin que la pida. Datos de prueba en staging: «Viaje a Cusco» (A, B y C) y «Depa Miraflores» (A y B; la e2e de
+escritura escribe ahí y lo borra al acabar con el token de la app de A).
+
+Lo que se intentó y no funcionó (14-nov): dar al rol `yala_web` INSERT + RLS y EXECUTE de `apply_group_delta`. Sin USAGE
+en el esquema `auth` (que `postgres` no puede conceder) la función INVOKER falla; se cambió a funciones DEFINER
+por operación (`web_add_group_expense`/`_settlement`). Detalle en `docs/aprendizajes-tecnicos.md`.
 
 **Why:** la web reusa el núcleo de `shared-core` y la cola de borradores del gateway; cada lote lo aprueba él.
 
