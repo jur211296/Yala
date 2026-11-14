@@ -1,12 +1,13 @@
 /**
  * Pagos planificados (lote 2): los próximos cobros de 30 días con el calendario del iPhone y las suscripciones activas.
- * Las fechas y los totales los calcula el núcleo compartido (`shared-core/src/logic/schedule.ts`). En lectura: crear,
- * editar o marcar como pagado sigue en el iPhone.
+ * Las fechas y los totales los calcula el núcleo compartido (`shared-core/src/logic/schedule.ts`). Lote 2b: lo que ya
+ * está pagado lleva la marca «Pagado» (la palabra de la app) y no suma en «Por pagar» (`webapp/src/worker/paid.ts`).
+ * En lectura: crear, editar o marcar como pagado sigue en el iPhone.
  */
 import { useCallback, useEffect, useState } from "react";
 import { texts } from "../i18n";
 import { getJson, type Cobro, type Pagos as Data, type Suscripcion } from "./api";
-import { badge, money, shortDate } from "./format";
+import { badge, money, named, shortDate } from "./format";
 
 const t = texts();
 
@@ -29,15 +30,18 @@ function CobroRow({ c }: { c: Cobro }) {
   const b = badge(c.nombre);
   const income = c.movimiento === "ingreso";
   return (
-    <div className="row">
+    <div className={`row${c.pagado ? " paid" : ""}`}>
       <span className="ic" style={{ background: b.color }} aria-hidden="true">
         {b.letter}
       </span>
       <span className="t">
-        <b>{c.nombre}</b>
+        <b>{named(c.nombre)}</b>
         <span>{[freq(c.frecuencia, c.cada), c.categoria, income ? t.pag.ingreso : null].filter(Boolean).join(" · ")}</span>
       </span>
-      <span className={`amt${income ? " in" : ""}`}>{money(c.importe, c.divisa, { sign: income })}</span>
+      <span className="amt-col">
+        <span className={`amt${income ? " in" : ""}`}>{money(c.importe, c.divisa, { sign: income })}</span>
+        {c.pagado ? <span className="paid-tag">{t.pag.pagado}</span> : null}
+      </span>
     </div>
   );
 }
@@ -50,7 +54,7 @@ function SubRow({ s, divisa }: { s: Suscripcion; divisa: string }) {
         {b.letter}
       </span>
       <span className="t">
-        <b>{s.nombre}</b>
+        <b>{named(s.nombre)}</b>
         <span>
           {[freq(s.frecuencia, s.cada), s.proximo_cobro ? t.pag.proximo(shortDate(dayIso(s.proximo_cobro))) : null].filter(Boolean).join(" · ")}
         </span>
@@ -108,6 +112,7 @@ export function Pagos() {
           {data.aproximado ? "≈ " : ""}
           {money(data.total_gastos, data.divisa)}
         </span>
+        {data.pagados > 0 ? <span className="sub">{t.pag.pagados(data.pagados)}</span> : null}
       </section>
       <div className="grid2">
         <section className="cd">

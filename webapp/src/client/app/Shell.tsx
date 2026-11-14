@@ -1,5 +1,6 @@
 /**
- * La app con sesión (lotes 1 a 3): Panel, Bandeja, Registros, Pagos planificados, Estadísticas, Grupos y Configurar,
+ * La app con sesión (lotes 1 a 3 y 2b): Panel, Bandeja, Registros, Presupuestos, Pagos planificados, Estadísticas, Grupos
+ * y Configurar, con la búsqueda ⌘K (lote 2b),
  * con «Apuntar» y el ojo que oculta los montos. Una cuenta «solo Grupos» (lote 3, decisión D3) abre en Grupos, no ve
  * «Apuntar», y las secciones de la nube completa le explican por qué no tienen nada.
  * Escritorio: barra lateral. Móvil: barra de pestañas con «+» en medio y «Más». Las secciones de los lotes siguientes
@@ -20,6 +21,9 @@ import { Apuntar } from "./Apuntar";
 import { Estadisticas } from "./Estadisticas";
 import { Pagos } from "./Pagos";
 import { Grupos, SoloGrupos } from "./Grupos";
+import { Presupuestos } from "./Presupuestos";
+import { Busqueda, type Destino } from "./Busqueda";
+import type { FiltroInicial } from "./Registros";
 
 const t = texts();
 
@@ -30,10 +34,22 @@ export interface Me {
   soloGrupos?: boolean;
 }
 
-type Sec = "panel" | "bandeja" | "registros" | "pagos" | "estadisticas" | "grupos" | "configurar" | "mas";
-const SECTIONS: Sec[] = ["panel", "bandeja", "registros", "pagos", "estadisticas", "grupos", "configurar", "mas"];
+type Sec = "panel" | "bandeja" | "registros" | "presupuestos" | "pagos" | "estadisticas" | "grupos" | "configurar" | "mas";
+const SECTIONS: Sec[] = ["panel", "bandeja", "registros", "presupuestos", "pagos", "estadisticas", "grupos", "configurar", "mas"];
 /** Lo que vive en la nube completa: una cuenta «solo Grupos» no tiene nada que ver ahí. */
-const FULL_CLOUD: Sec[] = ["panel", "bandeja", "registros", "pagos", "estadisticas"];
+const FULL_CLOUD: Sec[] = ["panel", "bandeja", "registros", "presupuestos", "pagos", "estadisticas"];
+/** Las que salen en «Más» del móvil (y marcan su pestaña). */
+const MORE: Sec[] = ["presupuestos", "pagos", "estadisticas", "grupos", "configurar"];
+const ICON: Record<Exclude<Sec, "mas">, ReactNode> = {
+  panel: Icons.panel,
+  bandeja: Icons.bandeja,
+  registros: Icons.registros,
+  presupuestos: Icons.presupuestos,
+  pagos: Icons.pagos,
+  estadisticas: Icons.estadisticas,
+  grupos: Icons.grupos,
+  configurar: Icons.configurar,
+};
 const HIDE_KEY = "yala-web-ocultar";
 
 function secFromPath(home: Sec = "panel"): Sec {
@@ -58,10 +74,7 @@ export function writeHidePref(v: boolean): void {
   }
 }
 
-const SOON: { key: keyof typeof t.app; icon: ReactNode; group?: boolean }[] = [
-  { key: "presupuestos", icon: Icons.presupuestos },
-  { key: "ia", icon: Icons.ia },
-];
+const SOON: { key: keyof typeof t.app; icon: ReactNode; group?: boolean }[] = [{ key: "ia", icon: Icons.ia }];
 
 export function Shell({ me }: { me: Me }) {
   const solo = me.soloGrupos === true;
@@ -75,6 +88,9 @@ export function Shell({ me }: { me: Me }) {
   const [panelError, setPanelError] = useState(false);
   const [cats, setCats] = useState<Categoria[] | null>(null);
   const [bandeja, setBandeja] = useState<BandejaData | null>(null);
+  const [buscar, setBuscar] = useState(false);
+  /** El filtro con el que la búsqueda abrió Registros; `n` lo vuelve a montar aunque el filtro se repita. */
+  const [regFiltro, setRegFiltro] = useState<{ f: FiltroInicial; n: number } | null>(null);
 
   const go = useCallback((s: Sec) => {
     setSec(s);
@@ -115,6 +131,18 @@ export function Shell({ me }: { me: Me }) {
     };
   }, []);
 
+  // ⌘K / Ctrl+K abre la búsqueda desde cualquier sección (también con el foco en un campo).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setBuscar((b) => !b);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   useEffect(() => {
     if (!toast) return;
     const id = window.setTimeout(() => setToast(null), 2800);
@@ -132,6 +160,11 @@ export function Shell({ me }: { me: Me }) {
     setEditando(d);
     loadCats();
   };
+
+  // Las secciones a las que lleva la búsqueda: las de la barra que esta cuenta puede abrir.
+  const destinos: Destino[] = (Object.keys(ICON) as Exclude<Sec, "mas">[])
+    .filter((k) => !solo || !FULL_CLOUD.includes(k))
+    .map((k) => ({ key: k, label: t.app[k], icon: ICON[k] }));
 
   const pendingCount = bandeja ? bandeja.pendientes.length + bandeja.enviados.length : 0;
   const badge = pendingCount > 0 ? <span className="badge">{pendingCount}</span> : null;
@@ -172,6 +205,7 @@ export function Shell({ me }: { me: Me }) {
           {navButton("panel", Icons.panel)}
           {navButton("bandeja", Icons.bandeja)}
           {navButton("registros", Icons.registros)}
+          {navButton("presupuestos", Icons.presupuestos)}
           {navButton("pagos", Icons.pagos)}
           {navButton("estadisticas", Icons.estadisticas)}
           {navButton("grupos", Icons.grupos)}
@@ -184,6 +218,9 @@ export function Shell({ me }: { me: Me }) {
       <div className="main">
         <header className="topbar">
           <h1>{title}</h1>
+          <button className="ib" type="button" aria-label={t.bus.abrir} aria-keyshortcuts="Meta+K Control+K" title={`${t.bus.abrir} (⌘K)`} onClick={() => setBuscar(true)}>
+            {Icons.search}
+          </button>
           <button
             className="ib"
             type="button"
@@ -205,13 +242,17 @@ export function Shell({ me }: { me: Me }) {
           {solo && FULL_CLOUD.includes(sec) ? <SoloGrupos onGroups={() => go("grupos")} /> : null}
           {sec === "grupos" ? <Grupos /> : null}
           {!solo && sec === "panel" ? <Panel data={panel} error={panelError} retry={loadPanel} onSeeAll={() => go("registros")} /> : null}
-          {!solo && sec === "registros" ? <Registros cuentas={panel?.cuentas.cuentas ?? []} /> : null}
+          {!solo && sec === "registros" ? (
+            <Registros key={regFiltro?.n ?? 0} cuentas={panel?.cuentas.cuentas ?? []} inicial={regFiltro?.f} onToast={setToast} />
+          ) : null}
+          {!solo && sec === "presupuestos" ? <Presupuestos /> : null}
           {!solo && sec === "bandeja" ? <Bandeja data={bandeja} reload={loadBandeja} onEdit={openEdit} onToast={setToast} /> : null}
           {!solo && sec === "pagos" ? <Pagos /> : null}
           {!solo && sec === "estadisticas" ? <Estadisticas /> : null}
           {sec === "configurar" ? <Configurar me={me} onToast={setToast} /> : null}
           {sec === "mas" ? (
             <div className="cd" style={{ padding: "6px 10px" }}>
+              {navButton("presupuestos", Icons.presupuestos)}
               {navButton("pagos", Icons.pagos)}
               {navButton("estadisticas", Icons.estadisticas)}
               {navButton("grupos", Icons.grupos)}
@@ -247,7 +288,7 @@ export function Shell({ me }: { me: Me }) {
           {t.app.bandeja}
           {badge}
         </button>
-        <button type="button" className="mt" aria-current={sec === "mas" || sec === "configurar" || sec === "pagos" || sec === "estadisticas" || sec === "grupos" ? "page" : undefined} onClick={() => go("mas")}>
+        <button type="button" className="mt" aria-current={sec === "mas" || MORE.includes(sec) ? "page" : undefined} onClick={() => go("mas")}>
           {Icons.mas}
           {t.app.mas}
         </button>
@@ -278,6 +319,23 @@ export function Shell({ me }: { me: Me }) {
             setEditando(null);
             setToast(t.app.guardadoToast);
             loadBandeja();
+          }}
+        />
+      ) : null}
+      {buscar ? (
+        <Busqueda
+          solo={solo}
+          destinos={destinos}
+          cuentas={panel?.cuentas.cuentas ?? []}
+          onClose={() => setBuscar(false)}
+          onGo={(k) => {
+            setBuscar(false);
+            go(k as Sec);
+          }}
+          onRegistros={(f) => {
+            setBuscar(false);
+            setRegFiltro((r) => ({ f, n: (r?.n ?? 0) + 1 }));
+            go("registros");
           }}
         />
       ) : null}

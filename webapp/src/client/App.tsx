@@ -3,7 +3,7 @@
  * es `HttpOnly`) y todo lo que sabe se lo pregunta al Worker en `/api/*`.
  */
 import { useEffect, useRef, useState } from "react";
-import { lang, texts } from "./i18n";
+import { lang, texts, privacyUrl, turnstileLang } from "./i18n";
 import { Shell } from "./app/Shell";
 import { QrLogin } from "./QrLogin";
 
@@ -30,7 +30,7 @@ declare global {
 }
 
 const t = texts();
-const PRIVACY_URL = lang() === "en" ? "https://yala-app.pe/en/privacy" : "https://yala-app.pe/privacy";
+const PRIVACY_URL = privacyUrl();
 
 /** El aviso con el que el Worker devolvió aquí, si lo hay. Se lee una vez y se quita de la dirección. */
 function takeAviso(): string | null {
@@ -146,7 +146,7 @@ function SsoLogin({ siteKey, onQr }: { siteKey: string; onQr: (token: string, co
       if (!widget.current || !window.turnstile || id) return;
       id = window.turnstile.render(widget.current, {
         sitekey: siteKey,
-        language: lang(),
+        language: turnstileLang(),
         appearance: "interaction-only",
         callback: (tok: string) => setToken(tok),
         "expired-callback": () => setToken(null),

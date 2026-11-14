@@ -87,3 +87,8 @@ const ACCOUNT_COLORS = ["#1f4fbf", "#0a7a55", "#0b3d91", "#6e2bd9", "#5f5f6c", "
 export function accountColor(i: number): string {
   return ACCOUNT_COLORS[i % ACCOUNT_COLORS.length]!;
 }
+
+/** El núcleo llama «(sin nombre)» a lo que no tiene nombre (presupuestos, pagos): en la página va en su idioma. */
+export function named(name: string | null | undefined): string {
+  return !name || name === "(sin nombre)" ? t.grp.sinNombre : name;
+}

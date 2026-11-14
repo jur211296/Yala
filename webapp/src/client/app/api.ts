@@ -180,6 +180,8 @@ export interface Cobro {
   frecuencia: string;
   cada: number;
   categoria: string | null;
+  /** Lote 2b: ya pagado, con la regla de la lista del iPhone (`webapp/src/worker/paid.ts`). */
+  pagado: boolean;
 }
 
 export interface Suscripcion {
@@ -197,7 +199,9 @@ export interface Suscripcion {
 export interface Pagos {
   divisa: string;
   proximos: Cobro[];
+  /** Lo que queda por pagar: los gastos de la lista que no están pagados. */
   total_gastos: number;
+  pagados: number;
   suscripciones: Suscripcion[];
   suscripciones_mensual: number;
   aproximado: boolean;
@@ -267,4 +271,27 @@ export interface GrupoDetalle {
     saldado: boolean;
   }[];
   pagos: { id: string; de: string; a: string; deTi: boolean; aTi: boolean; importe: number; divisa: string; fecha: string | null; confirmado: boolean; nota: string | null }[];
+}
+
+// ─── Lote 2b: Presupuestos (`estado_presupuestos` del núcleo) ──────────────────────────────────────────────────
+
+export interface Presupuesto {
+  id: string;
+  nombre: string;
+  divisa: string;
+  limite: number;
+  gastado: number;
+  porcentaje: number | null;
+  restante: number;
+  periodo: { tipo: "semanal" | "mensual" | "anual" | "unico"; desde: string; hasta: string };
+  dias_restantes: number;
+  estado: "sin_limite" | "excedido" | "en_riesgo" | "en_camino" | "inactivo";
+  activo: boolean;
+  movimientos: number;
+  aproximado: boolean;
+}
+
+export interface Presupuestos {
+  presupuestos: Presupuesto[];
+  avisos: string[];
 }
