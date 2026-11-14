@@ -8684,7 +8684,6 @@
 "account.saveErrorPartial" = "Nicht alles konnte gespeichert werden. Ein Teil der Änderungen ist eventuell schon sichtbar; prüfe das Konto und speichere erneut.";
 
 /* Groups: «From a receipt» in a new group expense (2.3) */
-"receiptSplit.entry.button" = "Aus einem Beleg";
 "receiptSplit.entry.hint" = "Liest einen Beleg per Foto oder Stimme und teilt ihn nach Positionen auf";
 "receiptSplit.title" = "Aus einem Beleg";
 "receiptSplit.photo.title" = "Foto des Belegs";
@@ -8730,6 +8729,15 @@
 "receiptSplit.failure.read.message" = "Etwas ist schiefgelaufen. Versuch es gleich noch einmal.";
 "receiptSplit.failure.noLines.title" = "Keine Positionen mit Betrag gefunden";
 "receiptSplit.failure.noLines.message" = "Versuch ein näheres Foto bei gutem Licht oder diktiere den Beleg.";
+"receiptSplit.failure.dailyLimitFree.title" = "Du hast die Belege für heute aufgeteilt";
+"receiptSplit.failure.dailyLimitFree.message" = "Morgen kannst du wieder kostenlos Belege aufteilen. Mit Yala Pro sind es jeden Tag viel mehr.";
+"receiptSplit.failure.dailyLimit.title" = "Du hast das Belege-Limit für heute erreicht";
+"receiptSplit.failure.dailyLimit.message" = "Morgen kannst du weiter Belege aufteilen.";
+"receiptSplit.text.hint" = "Schreib die Ausgabe und die KI teilt sie auf";
+"receiptSplit.text.title" = "Ausgabe schreiben";
+"receiptSplit.text.placeholder" = "Pizza 40 Ana und ich, Steak 35 Ben, Getränke 18 alle";
+"receiptSplit.text.footer" = "Jede Position mit Betrag und wer sie hatte. Was keinen Namen hat, wird auf alle aufgeteilt.";
+"receiptSplit.failure.noLines.textMessage" = "Schreib jede Position mit Betrag, zum Beispiel „Pizza 40“.";
 "receiptSplit.failure.noConnection.message" = "Verbinde dich mit dem Internet, um den Beleg zu lesen.";
 "receiptSplit.failure.mic.message" = "Erlaube den Zugriff in den Einstellungen, um den Beleg zu diktieren.";
 

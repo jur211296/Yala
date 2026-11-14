@@ -306,6 +306,17 @@ export const ROUTES: Readonly<Record<TaskId, Route>> = {
       prompt: "Personal finance voice note. Write every amount with digits, for example 12.50, 56.20 or 1,250.",
     },
   },
+  // La nota de un recibo de grupo: la misma transcripción que `voice.transcribe` (mismo banco); solo cambia el cubo.
+  "receipt.transcribe": {
+    mode: "transcription",
+    provider: "openai",
+    model: "gpt-transcribe",
+    params: {
+      languageField: "languages",
+      maxKeywords: 100,
+      prompt: "Personal finance voice note. Write every amount with digits, for example 12.50, 56.20 or 1,250.",
+    },
+  },
   // Banco del 2026-10-07 (gateway/bench/results/2026-10-07/REPORT-insights-y-tendencias.md). Ningún juez llegó al acuerdo
   // mínimo con la muestra a mano, así que deciden el criterio determinista (cero cifras inventadas, idioma, pantalla) y la
   // lectura a mano de las respuestas.

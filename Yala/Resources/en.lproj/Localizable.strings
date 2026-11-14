@@ -8690,7 +8690,6 @@
 "account.saveErrorPartial" = "Not everything could be saved. Some of the changes may already show; check the account and save again.";
 
 /* Groups: «From a receipt» in a new group expense (2.3) */
-"receiptSplit.entry.button" = "From a receipt";
 "receiptSplit.entry.hint" = "Reads a receipt from a photo or your voice and splits it by line";
 "receiptSplit.title" = "From a receipt";
 "receiptSplit.photo.title" = "Receipt photo";
@@ -8736,6 +8735,15 @@
 "receiptSplit.failure.read.message" = "Something went wrong. Try again in a moment.";
 "receiptSplit.failure.noLines.title" = "I couldn’t find lines with amounts";
 "receiptSplit.failure.noLines.message" = "Try a closer photo of the receipt in good light, or dictate it.";
+"receiptSplit.failure.dailyLimitFree.title" = "You've split today's receipts";
+"receiptSplit.failure.dailyLimitFree.message" = "Tomorrow you can split more receipts for free. With Yala Pro you get many more each day.";
+"receiptSplit.failure.dailyLimit.title" = "You've reached today's receipt limit";
+"receiptSplit.failure.dailyLimit.message" = "You can keep splitting receipts tomorrow.";
+"receiptSplit.text.hint" = "Type the expense and the AI splits it";
+"receiptSplit.text.title" = "Type the expense";
+"receiptSplit.text.placeholder" = "pizza 40 Ana and me, steak 35 Ben, drinks 18 everyone";
+"receiptSplit.text.footer" = "Each item with its amount and who had it. Anything without a name is split among everyone.";
+"receiptSplit.failure.noLines.textMessage" = "Type each item with its amount, for example “pizza 40”.";
 "receiptSplit.failure.noConnection.message" = "Connect to the internet to read the receipt.";
 "receiptSplit.failure.mic.message" = "Allow access in Settings to dictate the receipt.";
 

@@ -8694,7 +8694,6 @@
 "account.saveErrorPartial" = "Non è stato possibile salvare tutto. Parte delle modifiche potrebbe essere già visibile; controlla il conto e salva di nuovo.";
 
 /* Groups: «From a receipt» in a new group expense (2.3) */
-"receiptSplit.entry.button" = "Da uno scontrino";
 "receiptSplit.entry.hint" = "Legge uno scontrino da foto o voce e lo divide per righe";
 "receiptSplit.title" = "Da uno scontrino";
 "receiptSplit.photo.title" = "Foto dello scontrino";
@@ -8740,6 +8739,15 @@
 "receiptSplit.failure.read.message" = "Qualcosa è andato storto. Riprova tra un attimo.";
 "receiptSplit.failure.noLines.title" = "Nessuna riga con un importo";
 "receiptSplit.failure.noLines.message" = "Prova una foto più vicina allo scontrino e con buona luce, o dettalo.";
+"receiptSplit.failure.dailyLimitFree.title" = "Hai già diviso gli scontrini di oggi";
+"receiptSplit.failure.dailyLimitFree.message" = "Domani puoi dividere altri scontrini gratis. Con Yala Pro ne hai molti di più ogni giorno.";
+"receiptSplit.failure.dailyLimit.title" = "Hai raggiunto il limite di scontrini di oggi";
+"receiptSplit.failure.dailyLimit.message" = "Domani puoi continuare a dividere scontrini.";
+"receiptSplit.text.hint" = "Scrivi la spesa e l'IA la divide";
+"receiptSplit.text.title" = "Scrivi la spesa";
+"receiptSplit.text.placeholder" = "pizza 40 Ana e io, bistecca 35 Ben, bibite 18 tutti";
+"receiptSplit.text.footer" = "Ogni voce con il suo importo e chi l'ha presa. Quello senza nome si divide tra tutti.";
+"receiptSplit.failure.noLines.textMessage" = "Scrivi ogni voce con il suo importo, per esempio «pizza 40».";
 "receiptSplit.failure.noConnection.message" = "Connettiti a Internet per leggere lo scontrino.";
 "receiptSplit.failure.mic.message" = "Dai il permesso in Impostazioni per dettare lo scontrino.";
 

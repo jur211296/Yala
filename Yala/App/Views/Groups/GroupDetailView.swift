@@ -98,6 +98,8 @@ struct GroupDetailView: View {
     private var selectedTab: GroupDetailTab { pages.shown }
     @State private var showNudgeBanner = false
     @State private var showShareSheet = false
+    /// Voz y Foto bajo el saldo (2026-11-14).
+    @State private var receiptRequest: GroupReceiptRequest?
     @State private var wasArchivedOnAppear = false
 
     // MARK: - Init
@@ -182,6 +184,13 @@ struct GroupDetailView: View {
         }) { sheet in
             presentedSheet(for: sheet)
         }
+        // Voz y Foto bajo el saldo: la hoja del recibo y, con «Usar este reparto», Nuevo gasto relleno (2026-11-14).
+        .groupReceiptSplitFlow(
+            request: $receiptRequest,
+            activeMembers: { _ in viewModel.activeMembers },
+            memberCount: { _ in viewModel.activeMembers.count },
+            onReady: { _, template in viewModel.activeSheet = .addExpenseFromReceipt(template) }
+        )
         .sheet(isPresented: $showShareSheet) {
             if let url = viewModel.shareURL {
                 // L12-14 · el enlace viaja con un texto que dice qué es y qué hacer si aún no tiene Yala.
@@ -430,6 +439,18 @@ struct GroupDetailView: View {
                 memberNameLookup: viewModel.memberNameLookup,
                 groupChip: .readOnly,
                 onSave: {}
+            )
+            .yalaSheetDetents([.large])
+            .presentationDragIndicator(.visible)
+
+        case .addExpenseFromReceipt(let template):
+            GroupExpenseFormView(
+                group: group,
+                members: viewModel.activeMembers,
+                memberNameLookup: viewModel.memberNameLookup,
+                groupChip: .readOnly,
+                onSave: {},
+                receiptSplit: template
             )
             .yalaSheetDetents([.large])
             .presentationDragIndicator(.visible)
@@ -689,6 +710,10 @@ struct GroupDetailView: View {
                         }
                     }
                 } : nil,
+                onNewExpense: canAddHere ? { viewModel.activeSheet = .addExpense } : nil,
+                onReceipt: canAddHere ? { source in
+                    receiptRequest = GroupReceiptRequest(groups: [group], preselected: group, source: source)
+                } : nil,
                 headerBalance: viewModel.headerBalance,
                 debtsWereConverted: viewModel.debtsWereConverted,
                 headerDebts: viewModel.debts,
@@ -783,6 +808,11 @@ struct GroupDetailView: View {
         Task { @MainActor in
             await GroupBackendInviteEntryHandler.handle(groupID: groupID, token: token, source: .userAction)
         }
+    }
+
+    /// Quien puede apuntar gastos aquí y el grupo no está congelado: la misma condición que el + flotante.
+    private var canAddHere: Bool {
+        viewModel.canCurrentUserParticipate && !group.isMigratedFrozen
     }
 
     // MARK: - FAB

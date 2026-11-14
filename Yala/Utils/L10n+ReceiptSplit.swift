@@ -2,7 +2,7 @@
 //  L10n+ReceiptSplit.swift
 //  Yala
 //
-//  Textos de «Desde un recibo» en Nuevo gasto de un grupo (card «Grupos: repartir un recibo con IA», 2.3).
+//  Textos de repartir un recibo con IA en un grupo (Voz y Foto de Grupos) (card «Grupos: repartir un recibo con IA», 2.3).
 //  En su propio fichero, como los de cada lote, para no pisar `L10n.swift` con otras sesiones.
 //
 
@@ -25,9 +25,14 @@ private func lrs(_ key: String) -> String {
 
 extension L10n {
     enum ReceiptSplit {
-        // Entrada, en Nuevo gasto
-        static var entryButton: String { lrs("receiptSplit.entry.button") }
+        // Entrada: pista de accesibilidad de Voz y Foto en Grupos
         static var entryHint: String { lrs("receiptSplit.entry.hint") }
+
+        // Yala IA en Grupos: escribir el gasto
+        static var textHint: String { lrs("receiptSplit.text.hint") }
+        static var textTitle: String { lrs("receiptSplit.text.title") }
+        static var textPlaceholder: String { lrs("receiptSplit.text.placeholder") }
+        static var textFooter: String { lrs("receiptSplit.text.footer") }
 
         // Captura
         static var title: String { lrs("receiptSplit.title") }
@@ -90,6 +95,11 @@ extension L10n {
         static var failureReadMessage: String { lrs("receiptSplit.failure.read.message") }
         static var failureNoLinesTitle: String { lrs("receiptSplit.failure.noLines.title") }
         static var failureNoLinesMessage: String { lrs("receiptSplit.failure.noLines.message") }
+        static var failureNoLinesTextMessage: String { lrs("receiptSplit.failure.noLines.textMessage") }
+        static var failureDailyLimitFreeTitle: String { lrs("receiptSplit.failure.dailyLimitFree.title") }
+        static var failureDailyLimitFreeMessage: String { lrs("receiptSplit.failure.dailyLimitFree.message") }
+        static var failureDailyLimitTitle: String { lrs("receiptSplit.failure.dailyLimit.title") }
+        static var failureDailyLimitMessage: String { lrs("receiptSplit.failure.dailyLimit.message") }
         static var failureNoConnectionMessage: String { lrs("receiptSplit.failure.noConnection.message") }
         static var failureMicMessage: String { lrs("receiptSplit.failure.mic.message") }
     }

@@ -95,7 +95,7 @@ describe("tope de salida en todas las rutas de IA", () => {
 
   it("solo la transcripción va sin tope (la API de audio no lo tiene); el resto es managed o passthrough", () => {
     for (const [name, r] of chatRows()) {
-      if (r.mode === "transcription") expect(name).toBe("ROUTES.voice.transcribe");
+      if (r.mode === "transcription") expect(["ROUTES.voice.transcribe", "ROUTES.receipt.transcribe"]).toContain(name);
     }
     expect(PASSTHROUGH_MAX_OUTPUT_TOKENS).toBeGreaterThan(0);
   });

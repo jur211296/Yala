@@ -8696,7 +8696,6 @@
 "account.saveErrorPartial" = "すべてを保存できませんでした。一部の変更はすでに反映されている可能性があります。口座を確認して、もう一度保存してください。";
 
 /* Groups: «From a receipt» in a new group expense (2.3) */
-"receiptSplit.entry.button" = "レシートから";
 "receiptSplit.entry.hint" = "写真か音声でレシートを読み取り、品目ごとに割り勘します";
 "receiptSplit.title" = "レシートから";
 "receiptSplit.photo.title" = "レシートの写真";
@@ -8742,6 +8741,15 @@
 "receiptSplit.failure.read.message" = "問題が発生しました。少ししてからもう一度お試しください。";
 "receiptSplit.failure.noLines.title" = "金額のある品目が見つかりません";
 "receiptSplit.failure.noLines.message" = "明るい場所でレシートに近づいて撮るか、音声で入力してください。";
+"receiptSplit.failure.dailyLimitFree.title" = "今日のレシートは分け終わりました";
+"receiptSplit.failure.dailyLimitFree.message" = "明日また無料でレシートを分けられます。Yala Proなら毎日もっとたくさん使えます。";
+"receiptSplit.failure.dailyLimit.title" = "今日のレシートの上限に達しました";
+"receiptSplit.failure.dailyLimit.message" = "明日またレシートを分けられます。";
+"receiptSplit.text.hint" = "支出を書くとAIが分けます";
+"receiptSplit.text.title" = "支出を書く";
+"receiptSplit.text.placeholder" = "ピザ 40 アナと私、ステーキ 35 ベン、飲み物 18 全員";
+"receiptSplit.text.footer" = "品目ごとに金額と誰が食べたかを書いてください。名前のないものは全員で分けます。";
+"receiptSplit.failure.noLines.textMessage" = "品目ごとに金額を書いてください。例：「ピザ 40」。";
 "receiptSplit.failure.noConnection.message" = "レシートを読み取るにはインターネットに接続してください。";
 "receiptSplit.failure.mic.message" = "レシートを音声で入力するには「設定」でアクセスを許可してください。";
 

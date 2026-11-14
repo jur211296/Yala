@@ -8696,7 +8696,6 @@
 "account.saveErrorPartial" = "未能全部保存。部分更改可能已经显示；请检查该账户并再次保存。";
 
 /* Groups: «From a receipt» in a new group expense (2.3) */
-"receiptSplit.entry.button" = "从小票";
 "receiptSplit.entry.hint" = "用照片或语音读取小票，按项目分摊";
 "receiptSplit.title" = "从小票";
 "receiptSplit.photo.title" = "小票照片";
@@ -8742,6 +8741,15 @@
 "receiptSplit.failure.read.message" = "出了点问题，请稍后再试。";
 "receiptSplit.failure.noLines.title" = "未找到带金额的项目";
 "receiptSplit.failure.noLines.message" = "请在光线充足处靠近拍摄小票，或用语音口述。";
+"receiptSplit.failure.dailyLimitFree.title" = "今天的收据已经分完了";
+"receiptSplit.failure.dailyLimitFree.message" = "明天可以继续免费分收据。使用 Yala Pro，每天可以分更多。";
+"receiptSplit.failure.dailyLimit.title" = "已达到今天的收据上限";
+"receiptSplit.failure.dailyLimit.message" = "明天可以继续分收据。";
+"receiptSplit.text.hint" = "写下支出，AI 帮你分";
+"receiptSplit.text.title" = "写下支出";
+"receiptSplit.text.placeholder" = "披萨 40 安娜和我，牛排 35 小贝，饮料 18 大家";
+"receiptSplit.text.footer" = "每一项写上金额和谁吃的。没写名字的由大家平分。";
+"receiptSplit.failure.noLines.textMessage" = "每一项写上金额，例如“披萨 40”。";
 "receiptSplit.failure.noConnection.message" = "请连接互联网以读取小票。";
 "receiptSplit.failure.mic.message" = "请在“设置”中允许访问，以便口述小票。";
 

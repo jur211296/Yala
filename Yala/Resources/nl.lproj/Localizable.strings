@@ -8696,7 +8696,6 @@
 "account.saveErrorPartial" = "Niet alles kon worden opgeslagen. Een deel van de wijzigingen is misschien al zichtbaar; controleer de rekening en sla opnieuw op.";
 
 /* Groups: «From a receipt» in a new group expense (2.3) */
-"receiptSplit.entry.button" = "Van een bon";
 "receiptSplit.entry.hint" = "Leest een bon via foto of stem en verdeelt hem per regel";
 "receiptSplit.title" = "Van een bon";
 "receiptSplit.photo.title" = "Foto van de bon";
@@ -8742,6 +8741,15 @@
 "receiptSplit.failure.read.message" = "Er ging iets mis. Probeer het zo opnieuw.";
 "receiptSplit.failure.noLines.title" = "Geen regels met een bedrag gevonden";
 "receiptSplit.failure.noLines.message" = "Probeer een foto dichter bij de bon en met goed licht, of spreek hem in.";
+"receiptSplit.failure.dailyLimitFree.title" = "Je hebt de bonnetjes van vandaag verdeeld";
+"receiptSplit.failure.dailyLimitFree.message" = "Morgen kun je weer gratis bonnetjes verdelen. Met Yala Pro heb je er elke dag veel meer.";
+"receiptSplit.failure.dailyLimit.title" = "Je hebt de bonnetjeslimiet van vandaag bereikt";
+"receiptSplit.failure.dailyLimit.message" = "Morgen kun je verder met bonnetjes verdelen.";
+"receiptSplit.text.hint" = "Typ de uitgave en de AI verdeelt hem";
+"receiptSplit.text.title" = "Typ de uitgave";
+"receiptSplit.text.placeholder" = "pizza 40 Ana en ik, biefstuk 35 Ben, drankjes 18 iedereen";
+"receiptSplit.text.footer" = "Elk item met het bedrag en wie het had. Wat geen naam heeft, wordt over iedereen verdeeld.";
+"receiptSplit.failure.noLines.textMessage" = "Typ elk item met het bedrag, bijvoorbeeld ‘pizza 40’.";
 "receiptSplit.failure.noConnection.message" = "Maak verbinding met internet om de bon te lezen.";
 "receiptSplit.failure.mic.message" = "Geef toegang in Instellingen om de bon in te spreken.";
 
