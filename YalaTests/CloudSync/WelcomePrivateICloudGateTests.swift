@@ -59,19 +59,18 @@ struct WelcomePrivateICloudGateDecisionTests {
         #expect(Gate.advancesWithoutAsking(decision))
     }
 
-    /// **Las CUATRO cifras cuentan, no solo los movimientos.** Alguien que creó sus cuentas y lo dejó
-    /// tiene un corpus real y cero transacciones; tratarlo como «vacío» le borraría los datos sin
-    /// preguntar. Los presupuestos entraron el 2026-09-21
-    /// (`restore-treats-budgets-and-groups-as-no-data`) por la misma razón, y **son el único término
-    /// que el hermano `ICloudAccountSummary.hasAnyData` tiene y aquí faltaba**: los grupos, su quinto
-    /// término, no pueden estar —no existe `CD_SplitGroup` en este contenedor— y eso va escrito en el
-    /// docblock del predicado para que no se lea como un olvido.
-    @Test("cualquiera de las cuatro cifras basta para avisar",
+    /// **Las cuatro cifras siguen contando para el CORPUS** (`hasAnyData`, que lee también el aviso del espejo tardío), pero
+    /// **la puerta del Welcome solo avisa con movimientos o cuentas** desde el 13-nov (decisión de Jürgen, card
+    /// `icloud-recien-vaciado-yala-dice-ya-tiene`, E03 del recorrido): tras «Vaciar datos» el iCloud se queda con las
+    /// categorías de serie y la puerta decía «Ya tienes datos» por ellas. Seguir sin preguntar no borra nada: el espejo baja
+    /// lo que haya. Los casos de solo categorías o presupuestos viven en `ICloudJustEmptiedGateTests`.
+    @Test("movimientos o cuentas bastan para avisar; categorías y presupuestos siguen contando en el corpus",
           arguments: [corpus(transactions: 1), corpus(accounts: 1), corpus(categories: 1),
                       corpus(budgets: 1)])
     func anyCountTriggersTheNotice(_ c: ICloudPersonalCorpus) {
         #expect(c.hasAnyData)
-        #expect(Gate.decide(skipValidation: false, outcome: .measured(c), deviceData: .none) == .foundData(c))
+        let expected: Gate.Decision = (c.transactions > 0 || c.accounts > 0) ? .foundData(c) : .proceed
+        #expect(Gate.decide(skipValidation: false, outcome: .measured(c), deviceData: .none) == expected)
     }
 
     @Test("sin cuenta de iCloud (estado K) ⇒ se informa y se sigue en local, jamás se bloquea")
