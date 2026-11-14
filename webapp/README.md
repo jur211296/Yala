@@ -9,6 +9,11 @@ aprobadas: `docs/web-app/index.html`. Tickets: `tickets/*/yala-web-lote-0-cimien
 Bandeja del iPhone; Configurar (cuenta, sesiones web, ocultar montos, idioma, salir); español e inglés; y, en el iPhone
 (Yala Dev), Ajustes › Tu cuenta de Yala › «Navegadores conectados» para ver y cerrar las sesiones web.
 
+**Lote 2 (2.3, solo staging):** Estadísticas (Resumen, Distribución y Tendencias) y Pagos planificados (próximos cobros
+y suscripciones), en lectura y con las cifras del iPhone; y entrar con el iPhone por código QR, con «Vincular un
+navegador» en «Navegadores conectados» (Yala Dev). Del lote 2 del plan quedan para después Presupuestos, Grupos en
+lectura, ⌘K, CSV y los 16 idiomas.
+
 Staging: <https://yala-web-staging.misty-surf-6866.workers.dev>
 
 ## Cómo funciona
@@ -55,6 +60,22 @@ Worker puede pedir fuera (`src/worker/egress.ts`). Si la configuración está ma
   página pregunta `/api/me` cada 30 s y al volver a la pestaña: una sesión cerrada vuelve a la pantalla de entrar.
 - **El iPhone** entra por `/api/dispositivo/*` con el token de su sesión de la nube (`role = authenticated`, sin
   `client_id`). Sin App Attest: solo ve y cierra las sesiones web propias (decisión P9 del ticket).
+
+## Lote 2: estadísticas, pagos y entrar con el iPhone
+
+- **Estadísticas** (`/api/estadisticas?periodo=mes_actual|mes_pasado|anio_actual`): una lectura de movimientos y las
+  tres pestañas calculadas por `shared-core/src/logic/stats.ts` con las reglas de las pantallas del iPhone
+  (`InsightsCalculator`, `TopSpendingCategoriesCalculator`, `CashFlowCalculator`). Como el iPhone, deja fuera los
+  movimientos sin cuenta (el chat y el conector sí los cuentan). Paridad: `mcp/test/golden.test.ts`, con los valores que
+  escribe la app (`YalaTests/MCP/MCPAppParityGoldenTests.swift`).
+- **Pagos planificados** (`/api/pagos`): los cobros de los próximos 30 días con el calendario del iPhone
+  (`ScheduledPaymentDateCalculator`, port en `shared-core/src/logic/schedule.ts`), sin las fechas saltadas, y las
+  suscripciones con su equivalente mensual. Lo «ya pagado» del mes no se descuenta todavía.
+- **Entrar con el iPhone (QR)**: ver la cabecera de `src/worker/pairing.ts`. La web pide un código con Turnstile y queda
+  ligada a él por una cookie propia; el iPhone lo lee, enseña el navegador y la ciudad, pide Face ID y lo aprueba con su
+  sesión; el Worker pide el permiso de solo lectura de siempre y guarda solo el código de autorización, que sin la cookie
+  de ese navegador (PKCE) no sirve. Un Durable Object por código (`QrPairing`), que una alarma vacía al caducar. Límite
+  propio para las preguntas del navegador (`RL_QR`).
 
 ## Núcleo compartido
 
