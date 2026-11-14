@@ -3,8 +3,8 @@
 //  YalaTests
 //
 //  H2 de la auditoría del import 2.2 (card ynsq), de punta a punta: archivos sintéticos con transferencias
-//  nombradas en cada idioma, ajustes de saldo en todos los idiomas y las subcategorías sembradas que siguen
-//  siendo normales, por la ruta CSV de una cuenta y la de varias divisas. Las cifras de ingresos y gastos dejan fuera lo que lleva `balanceAdjustmentType`
+//  nombradas en cada idioma, ajustes de saldo en todos los idiomas y las subcategorías sembradas de transferencia
+//  (de sistema desde el 2026-11-13), por la ruta CSV de una cuenta y la de varias divisas. Las cifras de ingresos y gastos dejan fuera lo que lleva `balanceAdjustmentType`
 //  (`balanceAdjustmentType == nil` en 48 sitios), así que el oráculo es ese campo.
 //
 
@@ -29,9 +29,9 @@ struct ImportTransfersByLanguageTests {
         }
     }()
 
-    /// Subcategorías sembradas con nombre propio: siguen siendo movimientos normales al importar (decisión
-    /// de Jürgen, 2026-10-29; «口座振替» es una domiciliación en japonés).
-    private static let seededNamesThatStayNormal = ["Account transfer", "Kontoüberweisung", "口座振替"]
+    /// Subcategorías sembradas de transferencia con nombre propio: hasta el 2026-11-13 eran movimientos normales; desde
+    /// la decisión de Jürgen de ese día la sembrada es de sistema en todos los idiomas, y su fila es transferencia.
+    private static let seededTransferNamesWithTheirOwnText = ["Account transfer", "Kontoüberweisung", "口座振替"]
 
     @Test("CSV de una cuenta: transferencias de cada idioma y ajustes de todos los idiomas")
     func singleAccountCSV_marksTransfersAndAdjustments() async throws {
@@ -87,32 +87,38 @@ struct ImportTransfersByLanguageTests {
             rows.append("2026-10-15,25.00,\(currency),Otros,\(name),,")
         }
         rows.append("2026-10-16,-12.50,\(currency),Alimentación,Delivery,,")
-        for name in seededNamesThatStayNormal {
+        for name in seededTransferNamesWithTheirOwnText {
             rows.append("2026-10-17,40.00,\(currency),Ingresos,\(name),,")
         }
         return rows
     }
 
+    /// Desde el 2026-11-13 cada fila con papel va a la subcategoría de sistema de ese papel (no a una con su nombre),
+    /// así que el oráculo es el tipo del movimiento y el papel de su subcategoría, contados.
     private func assertClassification(in context: ModelContext) throws {
         let transactions = try context.fetch(FetchDescriptor<TransactionItem>())
         let currencies = Set(transactions.map(\.currencyCode)).count
         #expect(Self.transferNamesUnderTest.count >= 10)
-        let expected = Self.transferNamesUnderTest.count * 2 + Subcategory.balanceAdjustmentNames.count + 1
-            + Self.seededNamesThatStayNormal.count
-        #expect(transactions.count == expected * currencies)
+        let transfersPerCurrency = Self.transferNamesUnderTest.count * 2 + Self.seededTransferNamesWithTheirOwnText.count
+        let adjustmentsPerCurrency = Subcategory.balanceAdjustmentNames.count
+        #expect(transactions.count == (transfersPerCurrency + adjustmentsPerCurrency + 1) * currencies)
         #expect(!context.hasChanges, "importAndSave deja el contexto guardado")
 
-        for tx in transactions {
-            let name = tx.subcategory?.name ?? "—"
-            if Self.transferNamesUnderTest.contains(name) {
-                #expect(tx.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer, "«\(name)» no es transferencia")
-            } else if Subcategory.balanceAdjustmentNames.contains(name) {
-                #expect(tx.balanceAdjustmentType == InitialBalanceService.typeAdjustment, "«\(name)» no es ajuste")
-            } else {
-                #expect(name == "Delivery" || Self.seededNamesThatStayNormal.contains(name))
-                #expect(tx.balanceAdjustmentType == nil, "«\(name)» es un movimiento normal")
-            }
+        let transfers = transactions.filter { $0.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer }
+        let adjustments = transactions.filter { $0.balanceAdjustmentType == InitialBalanceService.typeAdjustment }
+        let normal = transactions.filter { $0.balanceAdjustmentType == nil }
+        #expect(transfers.count == transfersPerCurrency * currencies)
+        #expect(adjustments.count == adjustmentsPerCurrency * currencies)
+        #expect(normal.map { $0.subcategory?.name } == Array(repeating: "Delivery", count: currencies))
+        for tx in transfers {
+            #expect(tx.subcategory?.systemRole == .transfer)
+            #expect(tx.subcategory?.category?.isIncome == (tx.amount >= 0), "cada pata en la de su naturaleza")
         }
+        for tx in adjustments { #expect(tx.subcategory?.systemRole == .balanceAdjustment) }
+        // Una sola de cada: las filas no crean una subcategoría por nombre.
+        let subcategories = try context.fetch(FetchDescriptor<Subcategory>())
+        #expect(subcategories.filter { $0.systemRole == .transfer }.count == 2)
+        #expect(subcategories.filter { $0.systemRole == .balanceAdjustment }.count == 1)
     }
 
     private func makeAccount(currency: String, in context: ModelContext) -> Account {

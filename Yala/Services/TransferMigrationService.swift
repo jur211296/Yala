@@ -9,7 +9,8 @@
 import Foundation
 import SwiftData
 
-/// Service to migrate existing positive transfers from Otros/Transferencia to Ingresos/Transferencia
+/// Service to migrate existing positive transfers from Otros/Transferencia to Ingresos/Transferencia.
+/// Reconoce la subcategoría de transferencia por su papel (`systemRole`), no por el nombre.
 @MainActor struct TransferMigrationService {
 
     /// Key to track if migration has been performed
@@ -27,15 +28,13 @@ import SwiftData
         print("[TransferMigration] Starting migration of positive transfers...")
         #endif
 
-        // Find the Income category and its transfer subcategory
+        // Find the Income category and its transfer subcategory (por su papel, no por el nombre)
         let incomeCategoryName = "Ingresos"
-        let transferSubcategoryNames = Subcategory.transferNames
 
         // Fetch Ingresos/Transferencia entre cuentas subcategory
         guard let incomeTransferSubcategory = findOrCreateIncomeTransferSubcategory(
             in: context,
-            categoryName: incomeCategoryName,
-            subcategoryNames: transferSubcategoryNames
+            categoryName: incomeCategoryName
         ) else {
             #if DEBUG
             print("[TransferMigration] Could not find or create income transfer subcategory")
@@ -55,7 +54,7 @@ import SwiftData
             for transaction in transferTransactions {
                 // Check if this is a positive transfer in Otros
                 guard transaction.category?.name == otrosCategoryName,
-                      transferSubcategoryNames.contains(transaction.subcategory?.name ?? "")
+                      transaction.subcategory?.systemRole == .transfer
                 else { continue }
 
                 // Migrate to Ingresos/Transferencia entre cuentas
@@ -88,8 +87,7 @@ import SwiftData
     /// Finds or creates the Ingresos/Transferencia entre cuentas subcategory
     private static func findOrCreateIncomeTransferSubcategory(
         in context: ModelContext,
-        categoryName: String,
-        subcategoryNames: Set<String>
+        categoryName: String
     ) -> Subcategory? {
         // Try to find existing subcategory
         let descriptor = FetchDescriptor<Subcategory>()
@@ -105,7 +103,7 @@ import SwiftData
 
         for subcategory in allSubcategories {
             if subcategory.safeCategory.name == categoryName,
-               subcategoryNames.contains(subcategory.name) {
+               subcategory.systemRole == .transfer {
                 return subcategory
             }
         }
@@ -133,6 +131,7 @@ import SwiftData
             colorHex: nil,
             natureRawValue: SubcategoryNeed.unclassified.rawValue,
             iconName: "arrow.left.arrow.right",
+            systemRole: .transfer,
             category: incomeCategory
         )
         context.insert(subcategory)

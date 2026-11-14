@@ -37,9 +37,19 @@ final class Subcategory {
 
     /// True para subcategorías sistema persistentes (creadas por seed para flujos como bridge de grupos).
     /// CloudKit: must have default value. Excluidas de pickers manuales, presupuestos y "Top categorías".
-    /// NOTA: coexiste con `isSystemSubcategory` (computed legacy basado en nombre para "Ajuste de saldo"/"Transferencia").
-    /// Usar `isAnySystem` cuando se quiera filtrar AMBOS tipos de subcategoría sistema.
+    /// NOTA: coexiste con `systemRole` (transferencias y ajustes de saldo). Usar `isAnySystem` cuando se quiera filtrar
+    /// AMBOS tipos de subcategoría sistema.
     var isSystem: Bool = false
+
+    /// Papel estable de una subcategoría que Yala usa para sus propios movimientos: transferencias o ajustes de saldo
+    /// (`SubcategorySystemRole`). `nil` en las del usuario y en las del puente de Grupos (esas llevan `isSystem`).
+    ///
+    /// Se lee con `systemRole`, nunca a pelo. CloudKit: opcional y sin default, así que la migración ligera lo deja en
+    /// `nil` en las subcategorías de antes y las rellena `SubcategorySystemRoleBackfill` en cada arranque. Es un campo
+    /// nuevo del contenedor personal: va en los cuatro `Cloudkit Schemas/yala*.ckdb` y se despliega a Production antes
+    /// de publicar el build que lo escribe. El canal personal del Modo Nube no lo lleva: cada teléfono lo deriva con la
+    /// misma regla sobre campos que sí viajan (`inferredSystemRole` y el relleno).
+    var systemRoleRaw: String?
 
     /// Relación inversa con la categoría padre (optional for CloudKit compatibility)
     @Relationship(deleteRule: .nullify)
@@ -82,6 +92,7 @@ final class Subcategory {
         natureRawValue: String? = nil,
         iconName: String? = nil,
         isSystem: Bool = false,
+        systemRole: SubcategorySystemRole? = nil,
         category: Category?
     ) {
         self.name = name
@@ -92,12 +103,23 @@ final class Subcategory {
         self.natureRawValue = natureRawValue
         self.iconName = iconName
         self.isSystem = isSystem
+        self.systemRoleRaw = systemRole?.rawValue
         self.category = category
     }
 
 }
 
 // MARK: - System Subcategories
+
+/// El papel de una subcategoría de sistema de Yala. Lo que decide si es de sistema es el papel, no el nombre (decisión de
+/// Jürgen, 2026-11-13): una subcategoría que el usuario cree con el nombre de una de éstas es normal, y la que Yala
+/// siembra para las transferencias es de sistema en todos los idiomas.
+enum SubcategorySystemRole: String, CaseIterable, Sendable {
+    /// La subcategoría de las dos patas de una transferencia entre cuentas.
+    case transfer
+    /// «Ajustes de saldo»: el saldo inicial de una cuenta y sus correcciones.
+    case balanceAdjustment
+}
 
 extension Subcategory {
     /// Balance adjustment subcategory names (all localizations)
@@ -114,16 +136,9 @@ extension Subcategory {
     /// Transfer subcategory names (all localizations).
     ///
     /// Los valores de `transfer.categoryName` de los 16 `.lproj`: el nombre de la subcategoría que Yala crea
-    /// para sus transferencias. Lo exige `TransferNamesParityTests`: un idioma nuevo sin su nombre aquí haría
-    /// que el import contara sus transferencias como gasto e ingreso. «Transferencia entre contas» (sin
-    /// tilde) es un nombre viejo.
-    ///
-    /// **Las subcategorías SEMBRADAS de transferencia (`subcategory.accountTransfer` / `…Other`) no entran
-    /// con su propio nombre** (decisión de Jürgen, 2026-10-29): en en, de, nl, ja y zh son subcategorías
-    /// normales que el usuario elige a mano, y esta lista también decide `isAnySystem` en toda la app
-    /// (selectores, borrado, el puente de Grupos). En ja «口座振替» es además una domiciliación, no una
-    /// transferencia. Donde su texto coincide con `transfer.categoryName` (es, fr, it, pl, pt) ya son de
-    /// sistema por esa coincidencia. Separarlas por papel y no por nombre es el arreglo de fondo.
+    /// para sus transferencias. Lo exige `TransferNamesParityTests`. Desde el 2026-11-13 ya no decide qué es de
+    /// sistema: sirve para reconocer las subcategorías de antes del papel (`inferredSystemRole`) y las filas de un
+    /// archivo importado, que solo traen texto. «Transferencia entre contas» (sin tilde) es un nombre viejo.
     static let transferNames: Set<String> = [
         "Transferencia entre cuentas",
         "Transfer between accounts",
@@ -137,15 +152,56 @@ extension Subcategory {
         "账户间转账",
     ]
 
-    /// System subcategory names that cannot be deleted (all localizations)
-    static let systemSubcategoryNames: Set<String> = balanceAdjustmentNames.union(transferNames)
+    /// Los nombres de la subcategoría de transferencia que SIEMBRA Yala al empezar (`subcategory.accountTransfer` y
+    /// `…Other` de los 16 `.lproj`). En es, fr, it, pl y pt coinciden con `transferNames`; en en, de, nl, ja y zh no,
+    /// y hasta el 2026-11-13 eran subcategorías normales (decisión del 29-oct, reemplazada). Lo fija
+    /// `TransferNamesParityTests`.
+    static let seededTransferNames: Set<String> = [
+        "Transferencia entre cuentas",
+        "Account transfer",
+        "Kontoüberweisung",
+        "Virement entre comptes",
+        "Trasferimento tra conti",
+        "Transferência entre contas",
+        "Rekeningoverdracht",
+        "Transfer między kontami",
+        "口座振替",
+        "账户转账",
+    ]
 
-    /// Whether this subcategory is a system subcategory that cannot be deleted
-    var isSystemSubcategory: Bool {
-        Self.systemSubcategoryNames.contains(name)
+    /// Los nombres de antes que, en una subcategoría sembrada, eran de sistema solo por coincidir. El resto de
+    /// `seededTransferNames` eran normales y se elegían a mano: son los que el relleno separa.
+    static let namesThatWereSystemBeforeTheRole: Set<String> = balanceAdjustmentNames.union(transferNames)
+
+    /// El papel que tendría por su nombre una subcategoría de antes del papel, o `nil`.
+    ///
+    /// Solo cuenta para las que creó Yala (`isDefaultSeed`): las altas del usuario (Categorías, el importador, «Sin
+    /// asignar») pasan `isDefaultSeed: false`, así que una creada a mano con el nombre de transferencia queda normal.
+    /// Es el puente entre el dato viejo y el papel: lo consultan `systemRole` mientras el relleno no ha escrito el campo
+    /// y el propio relleno al escribirlo.
+    static func inferredSystemRole(name: String, isDefaultSeed: Bool) -> SubcategorySystemRole? {
+        guard isDefaultSeed else { return nil }
+        if balanceAdjustmentNames.contains(name) { return .balanceAdjustment }
+        if transferNames.contains(name) || seededTransferNames.contains(name) { return .transfer }
+        return nil
     }
 
-    /// True si es subcategoría sistema legacy (computed por nombre) O nuevo flag persistente `isSystem`.
+    /// El papel de la subcategoría: el guardado, o el que se deduce de una subcategoría de antes mientras el relleno no
+    /// lo escribe. Asignar `nil` lo borra.
+    var systemRole: SubcategorySystemRole? {
+        get {
+            if let raw = systemRoleRaw, let role = SubcategorySystemRole(rawValue: raw) { return role }
+            return Self.inferredSystemRole(name: name, isDefaultSeed: isDefaultSeed)
+        }
+        set { systemRoleRaw = newValue?.rawValue }
+    }
+
+    /// Whether this subcategory is a system subcategory that cannot be deleted. Por papel, no por nombre.
+    var isSystemSubcategory: Bool {
+        systemRole != nil
+    }
+
+    /// True si tiene papel de sistema (transferencia o ajuste) O el flag persistente `isSystem` del puente de Grupos.
     /// Usar este helper en filtros UI/stats que deben ocultar TODA subcat sistema.
     var isAnySystem: Bool {
         isSystemSubcategory || isSystem
