@@ -6,8 +6,11 @@
  * `GET /oauth/authorize` responde 302 a la Site URL con `authorization_id`, y el hook da `yala_mcp_reader` SOLO a los
  * clientes OAuth de la lista. Las palancas (`hookOff`, `failRefresh`…) simulan lo que puede ir mal.
  */
+import { readFileSync } from "node:fs";
+import { DatabaseSync } from "node:sqlite";
 import { createLocalJWKSet, exportJWK, generateKeyPair, SignJWT, type JWK, type JWTVerifyGetKey } from "jose";
 import { createApp } from "../src/worker/app";
+import { makeAppVerifier } from "../src/worker/device";
 import type { Env, RateLimiter } from "../src/worker/env";
 import { makeReaderVerifier } from "../src/worker/verify";
 import { TURNSTILE_VERIFY_URL } from "../src/worker/egress";
@@ -21,15 +24,97 @@ export const CONNECTOR_CLIENT = "65fb5767-59a5-4f50-b77c-7970e67589c5";
 export const TURNSTILE_OK = "token-humano";
 
 export class MemoryKV {
-  readonly data = new Map<string, { value: string; ttl?: number }>();
+  readonly data = new Map<string, { value: string; ttl?: number; metadata?: unknown }>();
   async get(key: string) {
     return this.data.get(key)?.value ?? null;
   }
-  async put(key: string, value: string, opts?: { expirationTtl?: number }) {
-    this.data.set(key, { value, ttl: opts?.expirationTtl });
+  async getWithMetadata(key: string) {
+    const e = this.data.get(key);
+    return { value: e?.value ?? null, metadata: e?.metadata ?? null };
+  }
+  async put(key: string, value: string, opts?: { expirationTtl?: number; metadata?: unknown }) {
+    this.data.set(key, { value, ttl: opts?.expirationTtl, metadata: opts?.metadata === undefined ? undefined : JSON.parse(JSON.stringify(opts.metadata)) });
   }
   async delete(key: string) {
     this.data.delete(key);
+  }
+  /** Sesiones guardadas (`s:`), sin contar las entradas de la lista de sesiones (`u:`), que caducan con ellas. */
+  sessionCount(): number {
+    return [...this.data.keys()].filter((k) => k.startsWith("s:")).length;
+  }
+  async list(opts: { prefix?: string; limit?: number } = {}) {
+    const keys = [...this.data.entries()]
+      .filter(([k]) => k.startsWith(opts.prefix ?? ""))
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(0, opts.limit ?? 1000)
+      .map(([name, e]) => ({ name, metadata: e.metadata }));
+    return { keys, list_complete: true, cacheStatus: null };
+  }
+}
+
+/** El doble del Durable Object de la lista de sesiones: un mapa por cuenta, con la misma API RPC. */
+export class FakeSessionIndexNamespace {
+  readonly byUser = new Map<string, Map<string, { entry: Record<string, unknown>; expira: number }>>();
+  readonly slots = new Map<string, number>();
+  idFromName(name: string) {
+    return name;
+  }
+  get(id: string) {
+    const rows = this.byUser.get(id) ?? new Map();
+    this.byUser.set(id, rows);
+    const copy = <T>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
+    return {
+      put: async (entry: Record<string, unknown>, expira: number) => void rows.set(entry.pid as string, { entry: copy(entry), expira }),
+      remove: async (pid: string) => void rows.delete(pid),
+      list: async (now: number) => {
+        for (const [pid, r] of rows) if (r.expira <= now) rows.delete(pid);
+        return [...rows.values()].map((r) => copy(r.entry)).sort((a, b) => (b.uso as number) - (a.uso as number));
+      },
+      touch: async (pid: string, uso: number, sid: string, expira: number) => {
+        const r = rows.get(pid);
+        if (r) rows.set(pid, { entry: { ...r.entry, uso, sid }, expira });
+      },
+      has: async (pid: string, now: number) => {
+        const r = rows.get(pid);
+        return !!r && r.expira > now;
+      },
+      takeDraftSlot: async (dia: string, max: number) => {
+        const key = `${id}:${dia}`;
+        const n = this.slots.get(key) ?? 0;
+        if (n >= max) return false;
+        this.slots.set(key, n + 1);
+        return true;
+      },
+    };
+  }
+  count(): number {
+    return [...this.byUser.values()].reduce((n, m) => n + m.size, 0);
+  }
+}
+
+/**
+ * Un D1 de verdad (SQLite en memoria, `node:sqlite`) con el esquema de la cola del gateway: la web escribe en la tabla
+ * real `mail_drafts` con su SQL real, JSON incluido.
+ */
+export class MemoryD1 {
+  readonly db = new DatabaseSync(":memory:");
+  constructor() {
+    this.db.exec(readFileSync(new URL("../../gateway/migrations/0003_mail_forwarding.sql", import.meta.url), "utf8"));
+  }
+  prepare(sql: string) {
+    const stmt = this.db.prepare(sql);
+    const make = (args: unknown[]) => ({
+      bind: (...more: unknown[]) => make([...args, ...more]),
+      first: async <T>() => (stmt.get(...(args as never[])) as T | undefined) ?? null,
+      all: async <T>() => ({ results: stmt.all(...(args as never[])) as T[] }),
+      run: async () => ({ meta: { changes: Number(stmt.run(...(args as never[])).changes) } }),
+    });
+    return make([]);
+  }
+  rows(): { id: string; user_id: string; created_at: number; payload: Record<string, unknown> }[] {
+    return (this.db.prepare("SELECT * FROM mail_drafts ORDER BY created_at").all() as { id: string; user_id: string; created_at: number; payload: string }[]).map(
+      (r) => ({ ...r, payload: JSON.parse(r.payload) as Record<string, unknown> }),
+    );
   }
 }
 
@@ -96,6 +181,14 @@ export class FakeSupabase {
   userOpaque4xx: number | null = null;
   turnstileOk = true;
   accessTtl = 3600;
+  /** `yala_web_close_session` no responde (5xx). */
+  closeRpcDown = false;
+  /** Filas de las tablas de la nube, por usuario: lo que devuelve PostgREST a quien tenga SELECT. */
+  readonly tables = new Map<string, Record<string, unknown>[]>();
+  /** Tablas que el rol de solo lectura puede leer (`mcp0_01` + `web1_01`). */
+  readonly readerTables = new Set([
+    "accounts", "tx_items", "categories", "subcategories", "tags", "budgets", "scheduled_payments", "user_preferences", "exchange_rates", "inbox_drafts",
+  ]);
   now = () => Math.floor(Date.now() / 1000);
 
   private constructor(
@@ -155,6 +248,18 @@ export class FakeSupabase {
     }
   }
 
+  /** El token de la sesión de la APP de un usuario (lo que manda el iPhone): `authenticated` y sin `client_id`. */
+  async appToken(user: TestUser): Promise<string> {
+    return (await this.issue(user.id, null)).access_token;
+  }
+
+  /** Mete filas en una tabla de la nube, de este usuario. */
+  seed(table: string, user: TestUser, rows: Record<string, unknown>[]): void {
+    const list = this.tables.get(table) ?? [];
+    list.push(...rows.map((r) => ({ deleted: false, ...r, user_id: user.id })));
+    this.tables.set(table, list);
+  }
+
   /** Sesiones abiertas de un usuario, por tipo. */
   openSessions(userId: string): { normal: number; web: number } {
     const all = [...this.sessions.values()].filter((s) => s.userId === userId);
@@ -181,6 +286,32 @@ export class FakeSupabase {
       if (s.clientId) return Response.json({ code: "42501", message: "permission denied for table profiles" }, { status: 403 });
       const user = [...this.users.values()].find((u) => u.id === s.userId)!;
       return Response.json(user.kind ? [{ kind: user.kind }] : []);
+    }
+
+    if (method === "POST" && path === "/rest/v1/rpc/yala_web_close_session") {
+      if (this.closeRpcDown) return new Response("caído", { status: 503 });
+      // `web1_01`: borra la sesión SOLO si es del cliente web y de quien llama. Con otro id, no hace nada.
+      const caller = this.sessionOf(headers.get("Authorization"));
+      if (!caller) return Response.json({ code: "PGRST301" }, { status: 401 });
+      const { p_session_id } = JSON.parse(body) as { p_session_id: string };
+      const target = this.sessions.get(p_session_id);
+      const closed = !!target && target.userId === caller.userId && target.clientId === WEB_CLIENT;
+      if (closed) this.sessions.delete(p_session_id);
+      return Response.json(closed);
+    }
+
+    const table = /^\/rest\/v1\/([a-z_]+)$/.exec(path)?.[1];
+    if (method === "GET" && table) {
+      const s = this.sessionOf(headers.get("Authorization"));
+      if (!s) return Response.json({ code: "PGRST301" }, { status: 401 });
+      if (s.clientId && !this.readerTables.has(table)) return Response.json({ code: "42501" }, { status: 403 });
+      // RLS: solo las filas propias. Los filtros de PostgREST no se simulan (salvo `deleted` y el estado de la Bandeja):
+      // las pruebas siembran lo que la consulta debe devolver. Una sola página.
+      if (Number(url.searchParams.get("offset") ?? "0") > 0) return Response.json([]);
+      let rows = (this.tables.get(table) ?? []).filter((r) => r.user_id === s.userId && r.deleted !== true);
+      if (url.searchParams.get("status_raw") === "eq.pending") rows = rows.filter((r) => r.status_raw === "pending");
+      const limit = Number(url.searchParams.get("limit") ?? "1000");
+      return Response.json(rows.slice(0, limit));
     }
 
     if (method === "POST" && path === "/auth/v1/token" && url.searchParams.get("grant_type") === "pkce") {
@@ -292,6 +423,9 @@ export function makeEnv(overrides: Partial<Env> = {}): Env {
     TURNSTILE_SITE_KEY: "1x00000000000000000000AA",
     TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA",
     WEB_KV: new MemoryKV() as unknown as KVNamespace,
+    DRAFTS_DB: new MemoryD1() as unknown as D1Database,
+    SESSION_INDEX: new FakeSessionIndexNamespace() as unknown as DurableObjectNamespace,
+    DEFAULT_TIMEZONE: "America/Lima",
     ASSETS: { fetch: async () => new Response("<!doctype html><title>Yala</title>", { headers: { "Content-Type": "text/html" } }) } as unknown as Fetcher,
     ...overrides,
   };
@@ -350,11 +484,14 @@ export interface World {
   env: Env;
   supabase: FakeSupabase;
   kv: MemoryKV;
+  d1: MemoryD1;
+  /** Un segundo navegador (otra sesión web de la misma cuenta, u otra persona). */
+  newBrowser(): Browser;
   browser: Browser;
   clock: { now: number };
   call(req: Request): Promise<Response>;
   /** Entra con Apple como lo haría el navegador: /auth/start → (Apple) → /auth/callback. Devuelve la última respuesta. */
-  socialLogin(user: TestUser, opts?: { compartido?: boolean; turnstile?: string }): Promise<Response>;
+  socialLogin(user: TestUser, opts?: { compartido?: boolean; turnstile?: string; browser?: Browser }): Promise<Response>;
 }
 
 export async function world(overrides: Partial<Env> = {}): Promise<World> {
@@ -362,27 +499,35 @@ export async function world(overrides: Partial<Env> = {}): Promise<World> {
   const env = makeEnv(overrides);
   const clock = { now: 1_800_000_000 };
   supabase.now = () => clock.now;
-  const app = createApp({ fetcher: supabase.fetcher, verify: makeReaderVerifier(env, supabase.jwks), nowSec: () => clock.now });
+  const app = createApp({
+    fetcher: supabase.fetcher,
+    verify: makeReaderVerifier(env, supabase.jwks),
+    appVerify: makeAppVerifier(env, supabase.jwks),
+    nowSec: () => clock.now,
+  });
   const call = (req: Request) => app.fetch(req, env);
   const browser = new Browser(call);
   return {
     env,
     supabase,
     kv: env.WEB_KV as unknown as MemoryKV,
+    d1: env.DRAFTS_DB as unknown as MemoryD1,
+    newBrowser: () => new Browser(call),
     browser,
     clock,
     call,
     async socialLogin(user, opts = {}) {
+      const b = opts.browser ?? browser;
       const form: Record<string, string> = { provider: "apple", "cf-turnstile-response": opts.turnstile ?? TURNSTILE_OK };
       if (opts.compartido) form.compartido = "1";
-      const start = await browser.request("/auth/start", { form });
+      const start = await b.request("/auth/start", { form });
       const location = start.headers.get("Location") ?? "";
       if (!location.startsWith(SB_URL)) return start;
       const to = new URL(location);
       const code = supabase.socialCode(user, to.searchParams.get("code_challenge") ?? "");
       const back = new URL(to.searchParams.get("redirect_to") ?? "");
       back.searchParams.set("code", code);
-      return browser.request(back.toString());
+      return b.request(back.toString());
     },
   };
 }

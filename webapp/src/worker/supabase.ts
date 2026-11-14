@@ -117,6 +117,24 @@ export async function logout(env: Env, fetcher: Fetcher, token: string): Promise
   }
 }
 
+/**
+ * Cierra a distancia UNA sesión web en Supabase, por su `session_id`, con el token de quien la cierra (el iPhone o otra
+ * sesión web de la misma cuenta). La función (`webapp/supabase/web1_01_bandeja_y_sesiones.sql`) solo borra sesiones del
+ * cliente OAuth de la web y de `auth.uid()`: con un id ajeno no hace nada. `true` si la cerró o ya no existía.
+ */
+export async function closeWebSession(env: Env, fetcher: Fetcher, token: string, sessionId: string): Promise<boolean> {
+  try {
+    const res = await fetcher(`${env.SUPABASE_URL.replace(/\/+$/, "")}/rest/v1/rpc/yala_web_close_session`, {
+      method: "POST",
+      headers: { ...headers(env, token), "Content-Type": "application/json" },
+      body: JSON.stringify({ p_session_id: sessionId }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 // ─── 2 · El permiso de solo lectura ────────────────────────────────────────────────────────────────────────────
 
 export type GrantFailure = "authorize" | "details" | "wrong_client" | "wrong_user" | "consent" | "redirect" | "exchange";

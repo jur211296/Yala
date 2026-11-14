@@ -16,7 +16,7 @@ describe("cuánto dura una sesión (D4)", () => {
     w.clock.now += 31 * DAY;
     const res = await w.browser.request("/api/me");
     expect(res.status).toBe(401);
-    expect(w.kv.data.size).toBe(0);
+    expect(w.kv.sessionCount()).toBe(0);
   });
 
   it("equipo propio: aunque se use, a los 90 días hay que volver a entrar", async () => {
@@ -78,7 +78,7 @@ describe("la sesión de Supabase que lleva dentro", () => {
     for (const [id, s] of w.supabase.sessions) if (s.clientId === WEB_CLIENT) w.supabase.sessions.delete(id);
     const res = await w.browser.request("/api/me");
     expect(res.status).toBe(401);
-    expect(w.kv.data.size).toBe(0);
+    expect(w.kv.sessionCount()).toBe(0);
     expect(w.browser.jar.has(SESSION_COOKIE)).toBe(false);
   });
 
@@ -89,10 +89,10 @@ describe("la sesión de Supabase que lleva dentro", () => {
     w.clock.now += 3600;
     w.supabase.failRefresh = { status: 500, code: "unexpected_failure" };
     expect((await w.browser.request("/api/me")).status).toBe(503);
-    expect(w.kv.data.size).toBe(1);
+    expect(w.kv.sessionCount()).toBe(1);
     w.supabase.failRefresh = { status: 400, code: "refresh_token_already_used" };
     expect((await w.browser.request("/api/me")).status).toBe(401);
-    expect(w.kv.data.size).toBe(0);
+    expect(w.kv.sessionCount()).toBe(0);
   });
 
   it("si al refrescar el token deja de ser de solo lectura, se cierra en vez de usarlo", async () => {
@@ -102,7 +102,7 @@ describe("la sesión de Supabase que lleva dentro", () => {
     w.clock.now += 3600;
     w.supabase.hookOff = true;
     expect((await w.browser.request("/api/me")).status).toBe(401);
-    expect(w.kv.data.size).toBe(0);
+    expect(w.kv.sessionCount()).toBe(0);
     expect(w.supabase.openSessions(ana.id).web).toBe(0);
   });
 
@@ -112,7 +112,7 @@ describe("la sesión de Supabase que lleva dentro", () => {
     await w.socialLogin(ana);
     w.supabase.userOpaque4xx = 403;
     expect((await w.browser.request("/api/me")).status).toBe(503);
-    expect(w.kv.data.size).toBe(1);
+    expect(w.kv.sessionCount()).toBe(1);
     w.supabase.userOpaque4xx = null;
     expect((await w.browser.request("/api/me")).status).toBe(200);
   });
@@ -123,7 +123,7 @@ describe("la sesión de Supabase que lleva dentro", () => {
     await w.socialLogin(ana);
     w.supabase.userDown = true;
     expect((await w.browser.request("/api/me")).status).toBe(503);
-    expect(w.kv.data.size).toBe(1);
+    expect(w.kv.sessionCount()).toBe(1);
   });
 });
 

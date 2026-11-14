@@ -1,9 +1,10 @@
 /**
- * Yala web, lote 0: entrar, ver de quién es la sesión y salir. La página solo pinta: no ve ningún token (la cookie es
- * `HttpOnly`) y todo lo que sabe se lo pregunta al Worker en `/api/*`.
+ * Yala web: entrar y, con sesión, la app (`app/Shell.tsx`, lote 1). La página solo pinta: no ve ningún token (la cookie
+ * es `HttpOnly`) y todo lo que sabe se lo pregunta al Worker en `/api/*`.
  */
 import { useEffect, useRef, useState } from "react";
 import { lang, texts } from "./i18n";
+import { Shell } from "./app/Shell";
 
 interface Me {
   nombre: string;
@@ -63,6 +64,8 @@ export function App() {
     void load().then(setState);
   }, []);
 
+  if (state.kind === "dentro" && !aviso) return <Shell me={state.me} />;
+
   return (
     <main className="shell">
       <div className="card">
@@ -84,7 +87,7 @@ export function App() {
             {state.kind === "cargando" ? <p className="muted">{t.cargando}</p> : null}
             {state.kind === "no-disponible" ? <p className="aviso">{t.noDisponible}</p> : null}
             {state.kind === "fuera" ? <Login siteKey={state.siteKey} /> : null}
-            {state.kind === "dentro" ? <Dentro me={state.me} /> : null}
+            {state.kind === "dentro" ? <Shell me={state.me} /> : null}
           </>
         )}
       </div>
@@ -159,25 +162,6 @@ function Login({ siteKey }: { siteKey: string }) {
         </a>
         .
       </p>
-    </form>
-  );
-}
-
-function Dentro({ me }: { me: Me }) {
-  return (
-    <form method="post" action="/auth/logout" className="login">
-      <h1>{t.hola(me.nombre)}</h1>
-      <p className="muted">{t.dentro}</p>
-      {me.correo ? (
-        <div className="kv">
-          <span>{t.cuenta}</span>
-          <span>{me.correo}</span>
-        </div>
-      ) : null}
-      {me.equipoCompartido ? <p className="note">{t.equipoCompartido}</p> : null}
-      <button className="btn" type="submit">
-        {t.salir}
-      </button>
     </form>
   );
 }

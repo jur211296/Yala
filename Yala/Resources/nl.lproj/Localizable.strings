@@ -9588,3 +9588,21 @@
 "bienvenida23.access.consentAccessDetail" = "Er is geen Yala-wachtwoord en geen herstel via e-mail: verlies je die toegang, exporteer dan eerst je gegevens (Instellingen → Boekingen exporteren).";
 "bienvenida23.access.createdTitle" = "Je account is aangemaakt";
 "bienvenida23.access.createdBody" = "Nu nog drie korte vragen om Yala op jou af te stemmen.";
+
+/* Yala web, lote 1: Ajustes › Tu cuenta de Yala › Navegadores conectados */
+"connectedBrowsers.title" = "Verbonden browsers";
+"connectedBrowsers.rowSubtitle" = "Yala web-sessies die met je account open zijn";
+"connectedBrowsers.intro" = "Hier zie je waar Yala web met je account open is. Herken je er een niet, meld die dan af.";
+"connectedBrowsers.empty" = "Er is geen Yala web-sessie open met je account.";
+"connectedBrowsers.close" = "Afmelden";
+"connectedBrowsers.closeAll" = "Alle websessies afmelden";
+"connectedBrowsers.closeAllConfirmTitle" = "Alle websessies afmelden?";
+"connectedBrowsers.closeAllConfirmBody" = "Die tabbladen worden binnen een minuut leeg. Je gegevens veranderen niet.";
+"connectedBrowsers.closeAllConfirm" = "Alles afmelden";
+"connectedBrowsers.footer" = "Als je er een afmeldt, wordt dat tabblad binnen een minuut leeg.";
+"connectedBrowsers.loadFailed" = "De lijst kon niet worden geladen. Controleer je verbinding en probeer het opnieuw.";
+"connectedBrowsers.closeFailed" = "Afmelden is niet gelukt. Controleer je verbinding en probeer het opnieuw.";
+"connectedBrowsers.unknownBrowser" = "Browser";
+"connectedBrowsers.sharedComputer" = "gedeelde computer";
+"connectedBrowsers.justNow" = "zojuist";
+"connectedBrowsers.browserOn" = "%1$@ op %2$@";

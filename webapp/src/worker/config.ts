@@ -67,6 +67,9 @@ export function configProblems(env: Partial<Env>): string[] {
   if (!env.TURNSTILE_SECRET_KEY) problems.push("falta el secreto TURNSTILE_SECRET_KEY");
   if (!env.WEB_KV) problems.push("falta el KV WEB_KV");
   if (!env.ASSETS) problems.push("falta el binding ASSETS");
+  if (!env.DRAFTS_DB) problems.push("falta el D1 DRAFTS_DB (la cola de borradores)");
+  if (!env.DEFAULT_TIMEZONE) problems.push("falta DEFAULT_TIMEZONE");
+  if (!env.SESSION_INDEX) problems.push("falta el Durable Object SESSION_INDEX (la lista de sesiones)");
 
   // Staging tiene el login con contraseña y acepta las claves de prueba de Turnstile: solo vale contra el Supabase de
   // staging. Un Worker de producción copiado a mano con ENVIRONMENT=staging no atiende.

@@ -1,6 +1,8 @@
 import { createApp } from "./app";
 import type { Env } from "./env";
 
+export { SessionIndex } from "./sessionIndex";
+
 const app = createApp();
 
 export default {

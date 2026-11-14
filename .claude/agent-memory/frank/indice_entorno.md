@@ -32,3 +32,4 @@ Subíndice de `MEMORY.md` (2026-11-05).
 - [El centinela no vigila un `timeout`](feedback_el_centinela_no_vigila_un_timeout.md) — pgrep casa con el envoltorio y sale 2; lanza sin `timeout` y pasa `$!`.
 - [Device MCP Free: un espejo](reference_device_mcp_free_un_espejo.md) — otro dispositivo espejado ⇒ simulador con axe + simctl.
 - [Campo de CloudKit en Development: lo añade Dan](feedback_campo_cloudkit_development_lo_anade_dan.md) — sin token de cktool; pedir al bot Frank → Dan; `preguntar-bot --help` envía.
+- [Secretos de staging en la Mini](reference_secretos_de_staging_en_la_mini.md) — desde la Max: SQL, deploy y e2e por ssh mini, sin copiar secretos.

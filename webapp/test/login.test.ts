@@ -43,8 +43,10 @@ describe("entrar con Apple o Google", () => {
     await w.socialLogin(ana);
     const cookieValue = w.browser.jar.get(SESSION_COOKIE)!.value;
     const web = [...w.supabase.sessions.values()].find((s) => s.clientId === WEB_CLIENT)!;
-    expect(w.kv.data.size).toBe(1);
-    for (const [key, { value }] of w.kv.data) {
+    expect(w.kv.sessionCount()).toBe(1);
+    for (const [key, { value: raw, metadata }] of w.kv.data) {
+      // Lo guardado y sus metadatos (la entrada de la lista de sesiones): ni la cookie, ni el refresh, ni un JWT.
+      const value = raw + JSON.stringify(metadata ?? null);
       expect(key).not.toContain(cookieValue);
       expect(value).not.toContain(cookieValue);
       expect(value).not.toContain(web.refresh);
@@ -86,7 +88,7 @@ describe("quién no entra", () => {
     const w = await world();
     const res = await w.browser.request("/auth/start", { form: { provider: "apple", "cf-turnstile-response": "bot" } });
     expect(res.headers.get("Location")).toBe("/?aviso=verificacion");
-    expect(w.kv.data.size).toBe(0);
+    expect(w.kv.sessionCount()).toBe(0);
     const sinToken = await w.browser.request("/auth/start", { form: { provider: "apple" } });
     expect(sinToken.headers.get("Location")).toBe("/?aviso=verificacion");
   });
@@ -124,7 +126,7 @@ describe("quién no entra", () => {
     w.supabase.hookOff = true;
     const ana = w.supabase.addUser({ email: "ana@yala.test" });
     expect((await w.socialLogin(ana)).headers.get("Location")).toBe("/?aviso=error");
-    expect(w.kv.data.size).toBe(0);
+    expect(w.kv.sessionCount()).toBe(0);
     expect(w.supabase.openSessions(ana.id)).toEqual({ normal: 0, web: 0 });
   });
 
@@ -141,7 +143,7 @@ describe("quién no entra", () => {
     const ana = w.supabase.addUser({ email: "ana@yala.test" });
     // El secreto es el de la web y el id el del conector: Supabase no canjea. Ningún camino guarda una sesión.
     expect((await w.socialLogin(ana)).headers.get("Location")).toBe("/?aviso=error");
-    expect(w.kv.data.size).toBe(0);
+    expect(w.kv.sessionCount()).toBe(0);
   });
 
   it("la vuelta sin la cookie de ESTE navegador, o repetida, no entra", async () => {
@@ -181,7 +183,7 @@ describe("volver a entrar sin salir", () => {
     const old = w.browser.jar.get(SESSION_COOKIE)!.value;
     await w.socialLogin(ana);
     expect(w.browser.jar.get(SESSION_COOKIE)!.value).not.toBe(old);
-    expect(w.kv.data.size).toBe(1);
+    expect(w.kv.sessionCount()).toBe(1);
     expect(w.supabase.openSessions(ana.id)).toEqual({ normal: 0, web: 1 });
     expect((await w.call(new Request(`${BASE}/api/me`, { headers: { Cookie: `${SESSION_COOKIE}=${old}` } }))).status).toBe(401);
   });
@@ -196,7 +198,7 @@ describe("salir", () => {
     expect(res.status).toBe(303);
     expect(res.headers.get("Location")).toBe("/?aviso=salida");
     expect(res.headers.getSetCookie().some((c) => c.startsWith(`${SESSION_COOKIE}=;`) && c.includes("Max-Age=0"))).toBe(true);
-    expect(w.kv.data.size).toBe(0);
+    expect(w.kv.sessionCount()).toBe(0);
     expect(w.supabase.openSessions(ana.id)).toEqual({ normal: 0, web: 0 });
     expect((await w.browser.request("/api/me")).status).toBe(401);
   });
