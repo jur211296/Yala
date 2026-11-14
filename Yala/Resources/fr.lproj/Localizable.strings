@@ -557,7 +557,8 @@
 "budgets.days.remaining" = "%@ jours restants";
 "budgets.period.past" = "Clôturé";
 "budgets.amount.of" = "sur %@";
-"budgets.exceeded.encouragement" = "Budget dépassé — la prochaine période sera meilleure !";
+"budgets.exceeded.overByAdjust %@" = "Dépassé de %@. Ajuster la limite ?";
+"budgets.exceeded.adjustLimit" = "Ajuster la limite";
 
 // Budget Editor
 "budgets.editor.name.placeholder" = "Nom du budget";

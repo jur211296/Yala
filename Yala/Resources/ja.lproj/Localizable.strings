@@ -559,7 +559,8 @@
 "budgets.days.remaining" = "残り%@日";
 "budgets.period.past" = "終了";
 "budgets.amount.of" = "/ %@";
-"budgets.exceeded.encouragement" = "予算を超えました — 次回はうまくいきますよ！";
+"budgets.exceeded.overByAdjust %@" = "%@ 超過しました。上限を調整しますか？";
+"budgets.exceeded.adjustLimit" = "上限を調整";
 
 // Budget Editor
 "budgets.editor.name.placeholder" = "予算名";
