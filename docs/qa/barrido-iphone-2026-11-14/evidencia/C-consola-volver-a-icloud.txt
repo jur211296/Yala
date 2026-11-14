@@ -1,0 +1,46 @@
+iCloudSync: startObserving() registered — listening for NSPersistentCloudKitContainer events
+StoreKitManager: Loading products for IDs: ["com.yala.pro.yearly", "com.yala.pro.monthly"]
+PanelViewModel: volver al Panel → recarga
+AppBootstrapper: Checking for pending Control Center action in App Group: group.com.jurgenschmidt.yala.dev
+AppBootstrapper: No pending Control Center action found
+UserSegmentService: segment=dormant (tx=0, avgDays=0.0, advanced=false) (pre-import)
+PanelViewModel: performCalculation #1
+StoreKitManager: Loaded 0 products
+NotificationService: Cancelled 3 dynamic notification schedules
+ContentView readiness blocked by: bootstrapPending
+ContentView readiness blocked by: bootstrapPending
+BackgroundTaskManager: Registered background tasks (including backup)
+BackgroundTaskManager: Scheduled main report task for ~14/11/26, 6:00 a. m.
+BackgroundTaskManager: Scheduled backup report task for ~14/11/26, 7:00 a. m.
+BackgroundTaskManager: Scheduled widget refresh for ~4 hours
+UserSegmentService: segment=powerUser (tx=2355, avgDays=0.0, advanced=true) (pre-import)
+AppBootstrapper: Checking for pending Control Center action in App Group: group.com.jurgenschmidt.yala.dev
+AppBootstrapper: No pending Control Center action found
+PanelViewModel: performCalculation #2
+ContentView: Bootstrap wait done — products=0, initialized=true
+CoreData: debug: PostSaveMaintenance: incremental_vacuum with freelist_count - 243 and pages_to_free 48
+AppBootstrapper: Remote CloudKit change — leading edge
+AppBootstrapper: repairStaleLineNames renamed 0 line(s)
+AppBootstrapper: Remote CloudKit change — trailing edge
+AppBootstrapper: migrateShortcutIDsAndRebuildCSVMirrors deferred — CloudKit import didn't settle within timeout
+CoreData: debug: PostSaveMaintenance: incremental_vacuum with freelist_count - 148 and pages_to_free 29
+CoreData: debug: PostSaveMaintenance: incremental_vacuum with freelist_count - 137 and pages_to_free 27
+CategorySeed: Ejecutando semilla inicial de categorías por defecto...
+CategorySeed: Semilla de categorías creada correctamente.
+CategorySeed: Semilla system groups creada correctamente.
+AppBootstrapper: Remote CloudKit change — leading edge
+PanelViewModel: performCalculation #3
+PanelViewModel: performCalculation #4
+AppBootstrapper: Remote CloudKit change — trailing edge
+CoreData: debug: PostSaveMaintenance: fileSize 16595392 greater than prune threshold
+CoreData: annotation: PostSaveMaintenance: wal_checkpoint(TRUNCATE) 
+AppBootstrapper: Remote CloudKit change — leading edge
+AppBootstrapper: Remote CloudKit change — trailing edge
+MetricsService: [canary] cloudReverseICloudPriorDataChecked detail=found value=1.0
+ICloudPersonalCorpusProbe: foreign wipe → done
+MetricsService: [canary] cloudReverseICloudPriorDataChoice detail=discard value=1.0
+MetricsService: [canary] cloudMigrationStep detail=notStarted>rConfirm value=-1.0
+MetricsService: [canary] cloudMigrationStep detail=rConfirm>rClaim value=0.0
+AppBootstrapper: Remote CloudKit change — leading edge
+MetricsService: [canary] cloudMigrationStep detail=rClaim>rDrain value=1.0
+AppBootstrapper: Remote CloudKit change — trailing edge
