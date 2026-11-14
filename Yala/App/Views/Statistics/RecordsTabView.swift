@@ -53,7 +53,7 @@ struct RecordsTabView: View {
         ScrollView {
             VStack(spacing: DS.Spacing.md) {
                 // «Buscar en Registros» (decisión 14 de 2.3): asoma al tirar; solo en Registros, no en Estadísticas.
-                RecordsListSearchSlot(viewModel: viewModel, onQueryChange: onFilterChange)
+                RecordsListSearchSlot(viewModel: viewModel)
                 StatsGuideSlot()
                 // L8-11: en modo duplicados el resumen del período («Neto del período · Sigue así») no dice nada de
                 // lo que se busca; lo sustituye el encabezado del modo, con el período para poder ampliar la búsqueda.
@@ -124,6 +124,7 @@ struct RecordsTabView: View {
                 )
             }
             .padding(.top, DS.Spacing.sm)
+            .recordsListSearchContainer(viewModel, onQueryChange: onFilterChange)
         }
         .measuresShortContainer($isShortContainer)
         .scrollViewGlassEdges()
