@@ -466,7 +466,7 @@ final class AppBootstrapper {
                 cloudSyncFanOutObserver = NotificationCenter.default.addObserver(
                     forName: .cloudSyncAppliedRemoteChanges, object: nil, queue: .main
                 ) { _ in
-                    Task { @MainActor in SessionState.shared.markRemoteChangePending() }
+                    Task { @MainActor in RemoteChangesFanOut.receive(isApplicationActive: UIApplication.shared.applicationState == .active) }
                 }
             }
             Task { await CloudSyncRuntime.startShared(context: context) }

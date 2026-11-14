@@ -3515,6 +3515,8 @@ private struct WelcomeFlowModifier: ViewModifier {
     /// Lo que `onAdoptStarted` cambió, para deshacerlo si el adopt sale hacia atrás sin dejar nada (card 0f7h).
     @State private var adoptStartSnapshot: WelcomeAdoptBackOut.Snapshot?
     @Environment(\.modelContext) private var modelContext
+    /// Card x5tm: «Empezar» de quien entró por la puerta de Grupos elige la pestaña de Grupos de esta ventana.
+    @Environment(SceneNavigation.self) private var navigation
     @Binding var showWelcomeFlow: Bool
     @Binding var welcomeFlowInitialStep: WelcomeFlowStep
     @Binding var welcomeRestoreOrigin: WelcomeFlowStep?
@@ -4026,6 +4028,8 @@ private struct WelcomeFlowModifier: ViewModifier {
                 // seguir sosteniendo el neutro hasta que el traspaso aterrice (review adversarial).
                 WelcomeAdoptInFlight.settle(persistedMode: StorageModePersistence.read(),
                                             mirrorOffArmed: StorageModePersistence.isMirrorOffArmed())
+                // Card x5tm: quien entró por «Entra aquí» de Grupos aterriza en Grupos, no en el Panel.
+                if WelcomeGroupsDoorLanding.consume() { navigation.selectMainTab(.groups) }
                 showWelcomeCloudSignIn = false
             },
             onBornCloudCompleted: {

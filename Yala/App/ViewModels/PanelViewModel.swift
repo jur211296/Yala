@@ -642,7 +642,63 @@ final class PanelViewModel {
         // Pre-compute account balances (not period-dependent — only changes when transactions change)
         calculateAccountBalances()
 
-        if !isReady { isReady = true }
+        // Card c8i9: mientras la cuenta llega de la nube, el esqueleto y no un Panel en S/ 0.
+        updateAccountDataWait()
+        let ready = !accountDataWait.isWaiting
+        if isReady != ready { isReady = ready }
+    }
+
+    // MARK: - Espera de la cuenta (card c8i9)
+
+    /// En qué punto está la espera a los datos de la cuenta (`PanelAccountDataWait`). Mientras espera, `isReady` es
+    /// `false` y el Panel enseña su esqueleto.
+    @ObservationIgnored private(set) var accountDataWait: PanelAccountDataWait = .idle
+    @ObservationIgnored private var accountDataWaitTask: Task<Void, Never>?
+    /// Lo que la espera lee del motor. Sustituible en los tests.
+    @ObservationIgnored var accountDataWaitInputs: @MainActor () -> (cloudEngineActive: Bool, firstPullCompleted: Bool,
+                                                                     attestVerdictIsTerminal: Bool) = {
+        (CloudSyncFlags.storageMode == .cloud,
+         SyncQuiescenceCoordinator.shared.hasCompletedFirstPull,
+         GroupsAttestStreakStore.isTerminal())
+    }
+
+    private func nextAccountDataWait(now: Date = .now) -> PanelAccountDataWait {
+        let inputs = accountDataWaitInputs()
+        return accountDataWait.next(
+            hasAccounts: !loadedAccounts.isEmpty,
+            cloudEngineActive: inputs.cloudEngineActive,
+            firstPullCompleted: inputs.firstPullCompleted,
+            attestVerdictIsTerminal: inputs.attestVerdictIsTerminal,
+            now: now)
+    }
+
+    private func updateAccountDataWait() {
+        accountDataWait = nextAccountDataWait()
+        if accountDataWait.isWaiting {
+            watchAccountDataWait()
+        } else {
+            accountDataWaitTask?.cancel()
+            accountDataWaitTask = nil
+        }
+    }
+
+    /// El primer tirón del motor no avisa a nadie si no trae nada (una cuenta vacía), y el techo vence sin ningún aviso:
+    /// se mira cada segundo y, al acabar la espera, se recarga.
+    private func watchAccountDataWait() {
+        guard accountDataWaitTask == nil else { return }
+        accountDataWaitTask = Task { @MainActor [weak self] in
+            while true {
+                do { try await Task.sleep(for: .seconds(1)) } catch { return }
+                guard let self else { return }
+                let next = self.nextAccountDataWait()
+                self.accountDataWait = next
+                guard next.isWaiting else {
+                    self.accountDataWaitTask = nil
+                    self.reloadAndRecalculate()
+                    return
+                }
+            }
+        }
     }
 
     // MARK: - Widget Data (struct-backed — reduces observation surface)

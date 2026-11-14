@@ -65,13 +65,26 @@ enum GroupsOnboardingLogic {
         alreadyPostponed ? .markSeen : .postponeOnce
     }
 
+    ///   - hasGroups: hay algún grupo en el teléfono, activo o archivado. Quien ya tiene grupos no es nuevo en Grupos:
+    ///     sin intro y sin volver a pedir el consentimiento, que es su último paso (card zkyg, Jürgen 13-nov: «Si ya tiene
+    ///     grupos, no debe aparecer el onboarding»). La marca del educativo es POR DISPOSITIVO y la borra reinstalar, así
+    ///     que sola no lo sabía.
     static func shouldShow(
         hasSeenEducational: Bool,
-        hasPendingGroupDeeplink: Bool
+        hasPendingGroupDeeplink: Bool,
+        hasGroups: Bool = false
     ) -> Bool {
         if hasSeenEducational { return false }
         if hasPendingGroupDeeplink { return false }
+        if hasGroups { return false }
         return true
+    }
+
+    /// ¿Se decide la intro después del primer tirón de Grupos de esta entrada a la pestaña? Con la sesión de la nube y el
+    /// canal encendido, y sin grupos todavía en el teléfono, los grupos de la cuenta pueden estar bajando: decidir antes
+    /// enseñaba la intro a quien acaba de entrar en una cuenta con grupos (card zkyg). Sin canal o sin sesión no baja nada.
+    static func decidesAfterFirstPull(hasGroups: Bool, channelCanBringGroups: Bool) -> Bool {
+        !hasGroups && channelCanBringGroups
     }
 
     /// ¿El último step del educativo ofrece el CTA de iniciar sesión? (A1 de D-A7, decisión
