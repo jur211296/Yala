@@ -98,3 +98,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de conducir el simulador o
 - [Device MCP sin OCR y carrusel del Welcome](reference_device_mcp_sin_ocr_y_carrusel_del_welcome.md) — capturas + coordenadas; pausa el carrusel antes de tocar.
 - [Grabaciones del iPhone 14 llevan notificaciones](feedback_grabaciones_del_iphone_14_llevan_notificaciones.md) — WhatsApp de clientes en vídeo y capturas: recorta, y el vídeo no se entrega.
 - [Simulador iPhone 14 para medir tamaño](reference_simulador_iphone_14_para_medir_tamano.md) — 390×844 + axe/simctl io cuando el teléfono lo tiene otra sesión.
+- [Simulador con axe si Device MCP espeja el iPhone](reference_simulador_con_axe_si_device_mcp_espeja_el_iphone.md) — simctl io + axe tap por coordenadas; hojas invisibles al árbol.
