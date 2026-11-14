@@ -60,3 +60,23 @@ antes de ese paso está en `lista.md`.
 | Gastos hormiga (`ea78`) | ¿Las compras que nombra tienen sentido y el tope «compras de hasta S/ 52-68» es razonable? |
 | Sugerencias de descripción (`y6du`) | ¿Son las que esperabas y en buen orden? |
 | Logos de suscripción (`9nn7`) | ¿Se ve bien el logo en lista, línea de tiempo y calendario? ¿Echas de menos algún servicio? |
+
+# Parte 3 (14-nov-2026)
+
+## Un dispositivo, una cuenta o una mano tuya en el teléfono
+
+| Card | Paso que se para | Qué hace falta |
+|---|---|---|
+| La señal de vaciado llega antes que la marca del parque (`r380`) | Vaciar datos en el iPhone 14 con otro dispositivo abierto | Un segundo dispositivo con el mismo iCloud y Yala Dev. Guion en la card: el otro se queda en la app con el aviso y el iPhone 14 conserva categorías y recordatorios. |
+| Un iPad con versión anterior borra los recordatorios (`z07r`) | Vaciar datos frente a un dispositivo con la 2.1 | Un TestFlight de 2.3 y un dispositivo con la 2.1 del App Store. |
+| Las esperas del arranque leen el token de iCloud Drive (`dtex`) | Apagar iCloud Drive | Tu mano en Ajustes del iPhone › tu nombre › iCloud › iCloud Drive; luego cerrar y abrir Yala 3 veces. |
+| El conector sepa tu zona horaria (`lhca`) | Cambiar la zona del teléfono y preguntar a Claude | La nube en staging en el iPhone, la zona en Madrid y Claude conectado a `yala-staging`. |
+| Conectar Yala en Claude con Apple o Google (`r8hi`) | Entrar en el permiso del conector | Tu Apple y tu Google desde Claude, contra el conector de staging. |
+
+## Algo que decides o despliegas tú
+
+| Card | Qué falta |
+|---|---|
+| La fila de chips de «Nuevo registro» (`deur`) | Tu decisión A/B/C/D para el iPhone SE. En el iPhone 14 y el 17 Pro «Etiquetas» se ve entera. |
+| Endurecer el conector en producción (`pv2l`) | Elegir el dominio (workers.dev o mcp.yala-app.pe); después despliega Dan. |
+| Mezcla con voz de los reels IG semana 3 (`vfsf`) | Escuchar los tres reels antes de publicar. Es de marketing (Lola): no lo probé. |
