@@ -1171,7 +1171,6 @@ struct ContentView: View {
         WelcomeConversationView(
             providerName: CloudAuthService.shared.hasSession ? CloudAuthService.shared.capturedFullName() : nil,
             livesInYalaAccount: CloudAuthService.shared.hasSession,
-            prefilledData: prefilledOnboardingData,
             onCancel: {
                 // Resetea `hasShownWelcomeChooser` para que la bienvenida se vuelva
                 // a presentar (no salta al Chooser automáticamente).
@@ -3723,18 +3722,15 @@ private struct WelcomeFlowModifier: ViewModifier {
                 case .restoreICloud:
                     showWelcomeFlow = false
                     showWelcomeRestore = true
-                case .cloudSignIn:
-                    welcomeCloudEntry = .reentry(.apple)  // EXPLÍCITO (jamás heredar el previo)
+                case .cloudSignIn, .googleSignIn:
+                    // E13 del recorrido del 13-nov: el acceso único de la vitrina (Y23-02), no el consentimiento en una
+                    // hoja aparte ANTES de elegir la cuenta. Firma, verifica y enseña el consentimiento dentro de «¿Cargamos
+                    // tus datos y entramos?» o «Vamos a crear tu cuenta»: un solo diseño y un solo momento para el aviso.
+                    // El proveedor va EXPLÍCITO (jamás heredar el previo), y el origen se marca para que «Volver» regrese
+                    // a «¡Hola de nuevo!».
+                    welcomeCloudEntry = .unified(option == .googleSignIn ? .google : .apple)
                     cloudSignInFromExistingChooser = true
-                    // UX 2.2 · L6-3: «Entrar con Apple» abre directamente el consentimiento, y de ahí Apple.
-                    // La pantalla intermedia repetía el mismo botón («Iniciar sesión con Apple»).
-                    adoptStartsAtConsent = true
-                    showWelcomeFlow = false
-                    showWelcomeCloudSignIn = true
-                case .googleSignIn:
-                    welcomeCloudEntry = .reentry(.google)
-                    cloudSignInFromExistingChooser = true
-                    adoptStartsAtConsent = true
+                    adoptStartsAtConsent = false
                     showWelcomeFlow = false
                     showWelcomeCloudSignIn = true
                 }
@@ -3915,11 +3911,12 @@ private struct WelcomeFlowModifier: ViewModifier {
             },
             onGroupsGateCloudAccountProceed: { provider, fromExistingChooser in
                 // La puerta de la entrada con otra cuenta abrió: el teléfono ya no tiene datos que dejar aparte. Se vuelve a
-                // la entrada a la cuenta como desde «¡Hola de nuevo!» —en el consentimiento, y de ahí al método—, porque la
-                // sesión no sobrevivió al borrado y la persona tiene que volver a firmar.
-                welcomeCloudEntry = .reentry(provider)  // EXPLÍCITO (jamás heredar el previo)
+                // la entrada a la cuenta como desde «¡Hola de nuevo!», porque la sesión no sobrevivió al borrado y la
+                // persona tiene que volver a firmar. Desde el E13 del recorrido del 13-nov, por el acceso único: firma y
+                // el consentimiento va dentro de la hoja que sigue, no en una hoja aparte antes.
+                welcomeCloudEntry = .unified(provider)  // EXPLÍCITO (jamás heredar el previo)
                 cloudSignInFromExistingChooser = fromExistingChooser
-                adoptStartsAtConsent = true
+                adoptStartsAtConsent = false
                 showWelcomeFlow = false
                 showWelcomeCloudSignIn = true
             },

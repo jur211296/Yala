@@ -58,6 +58,31 @@ final class Bienvenida23BaseUITests: XCTestCase {
         XCTAssertTrue(resume.waitForNonExistence(timeout: 5), "«Seguir donde iba» cierra la lista.")
     }
 
+    /// E14 del recorrido del 13-nov (decisión de Jürgen): en «Ver los 7 pasos» se abre cualquier paso tocándolo, aunque no
+    /// sea el siguiente. Con el mazo en el paso 1, tocar el 3 abre «Crea tu primer presupuesto». El control es la propia
+    /// condición: sin el arreglo, la fila no era un botón y la lista seguía arriba.
+    func test_stepsList_opensAStepThatIsNotTheNextOne() {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: nil, extraArguments: ["-uitest-fresh-install", "-uitest-show-setup-deck"])
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        let deck = app.buttons["setup_deck_current"]
+        XCTAssertTrue(deck.waitForExistence(timeout: 10), "No salió el mazo de Primeros pasos.")
+        XCTAssertTrue(deck.label.contains("1 de 7"), "El mazo empieza en el paso 1: «\(deck.label)».")
+        app.buttons["setup_checklist_toggle_steps"].tap()
+
+        let budgetRow = app.buttons["setup_steps_row_firstBudget"]
+        XCTAssertTrue(budgetRow.waitForExistence(timeout: 5), "El paso 3 no se puede tocar en la lista.")
+        // Abre grande: los siete a la vista sin desplazar, también el último.
+        XCTAssertTrue(app.buttons["setup_steps_row_homeScreen"].isHittable, "El paso 7 no se ve entero al abrir la lista.")
+        attach(app, "lista-7-pasos-grande")
+        budgetRow.tap()
+
+        XCTAssertTrue(app.buttons["first_budget_start"].waitForExistence(timeout: 10),
+                      "Tocar el paso 3 no abrió «Crea tu primer presupuesto».")
+        XCTAssertFalse(app.buttons["setup_steps_resume"].exists, "La lista siguió abierta encima del paso.")
+    }
+
     /// Y23-15: con registros en varios días, la guía sale sola: «Arma tu Panel» → «Tus gráficas viven en Más» →
     /// tocar Más → «Todas tus gráficas» → «Entendido».
     func test_laterGuide_walksFromConfigurePanelToStatisticsInMore() {

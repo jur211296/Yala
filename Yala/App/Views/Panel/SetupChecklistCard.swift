@@ -28,6 +28,8 @@ struct SetupChecklistCard: View {
 
     @State private var showCelebration = false
     @State private var showsAllSteps = false
+    /// El paso tocado en «Ver los 7 pasos», que se abre cuando la hoja termina de cerrarse.
+    @State private var stepOpenedFromList: SetupStepID?
     @Environment(\.self) private var environment
 
     /// Si el texto sobre el acento es claro (blanco en los temas índigo) u oscuro (negro en Teal, Rosa y Minimalista).
@@ -66,10 +68,17 @@ struct SetupChecklistCard: View {
                     DS.Haptic.success()
                 }
             }
-            .sheet(isPresented: $showsAllSteps) {
-                SetupStepsListSheet(manager: manager)
+            .sheet(isPresented: $showsAllSteps, onDismiss: openStepTappedInList) {
+                SetupStepsListSheet(manager: manager, onOpenStep: { stepOpenedFromList = $0 })
             }
         }
+    }
+
+    /// Abre el paso tocado en la lista, ya con la hoja cerrada (el paso puede presentar su propia pantalla).
+    private func openStepTappedInList() {
+        guard let step = stepOpenedFromList else { return }
+        stepOpenedFromList = nil
+        onStepTapped(step)
     }
 
     // MARK: - Deck
