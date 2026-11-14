@@ -63,6 +63,14 @@ struct WelcomeRestoreView: View {
     /// ticket `restore-beacon-outlives-account-deletion` §3, decisión A de Jürgen del 2026-11-05: nota, mismos botones).
     @State private var foundCopyPredatesCloud = false
 
+    /// ¿Va la nota «Esta copia de iCloud es de antes de que pasaras tus datos a tu cuenta de Yala»? Con el faro puesto
+    /// **y** movimientos o cuentas en la copia (card `icloud-recien-vaciado-yala-dice-ya-tiene`, E03 del 13-nov): una copia con
+    /// solo las categorías de serie que la app vuelve a sembrar tras «Vaciar datos» no es «la de antes» de nada, y la nota
+    /// salía igual porque el faro sobrevive en el iCloud-KV.
+    static func showsPreCloudNote(beaconLinked: Bool, transactions: Int, accounts: Int) -> Bool {
+        beaconLinked && (transactions > 0 || accounts > 0)
+    }
+
     var onContinueWithSummary: (ICloudAccountSummary) -> Void
     var onStartFresh: () -> Void
     var onOpenSettings: () -> Void
@@ -121,7 +129,9 @@ struct WelcomeRestoreView: View {
                             // Con datos se resuelve en el acto: el aviso de la nube jamás tapa un restore
                             // que sí puede ocurrir, y ese caso no necesita preguntarle nada al backend.
                             if summary.hasAnyData {
-                                foundCopyPredatesCloud = CloudBeacon().isCloudAccountLinked
+                                foundCopyPredatesCloud = Self.showsPreCloudNote(
+                                    beaconLinked: CloudBeacon().isCloudAccountLinked,
+                                    transactions: summary.transactionsCount, accounts: summary.accountsCount)
                                 RestoreBreadcrumb.found(summary, settlement: settlement,
                                                         beaconLinked: foundCopyPredatesCloud)
                                 state = .found(summary)

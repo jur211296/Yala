@@ -134,11 +134,15 @@ struct RestoreLoteN3WiringTests {
     @Test func theFoundBranch_leavesABreadcrumb_andNotesAPreCloudCopy() throws {
         let view = try Self.source(Self.viewPath)
         let branch = try #require(view.range(of: "if summary.hasAnyData {"))
-        let lines = String(view[branch.upperBound...]).split(separator: "\n").prefix(4)
+        let lines = String(view[branch.upperBound...]).split(separator: "\n").prefix(6)
             .map { $0.trimmingCharacters(in: .whitespaces) }
         // Card lokl: el faro se lee ANTES de pintar, y la nota sale solo con él. Card grgz: la miga, antes del estado.
+        // Desde el 13-nov (card `icloud-recien-vaciado-yala-dice-ya-tiene`) además pide movimientos o cuentas en la copia:
+        // la regla vive en `WelcomeRestoreView.showsPreCloudNote` y la fija `RestorePreCloudNoteTests`.
         #expect(lines == [
-            "foundCopyPredatesCloud = CloudBeacon().isCloudAccountLinked",
+            "foundCopyPredatesCloud = Self.showsPreCloudNote(",
+            "beaconLinked: CloudBeacon().isCloudAccountLinked,",
+            "transactions: summary.transactionsCount, accounts: summary.accountsCount)",
             "RestoreBreadcrumb.found(summary, settlement: settlement,",
             "beaconLinked: foundCopyPredatesCloud)",
             "state = .found(summary)",

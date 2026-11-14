@@ -632,6 +632,8 @@ struct MigrationJournalUnreadableWiringTests {
             // Los pasos con su cifra (ticket `cloud-progress-shows-real-steps-and-counts`): lo que el runner publica, el seam
             // de XCUITest y la primera muestra de la vuelta.
             "uploadProgress = _runner?.snapshotUploadProgress",
+            // Card `volver-a-tu-icloud-se-queda-en-traer-tus` (13-nov): la cifra de «Traer tus datos» de la vuelta.
+            "reverseDrainProgress = _runner?.reverseDrainProgress",
             "runnerAwaitingImport = _runner?.isAwaitingImportQuiescence ?? false",
             // Card rfzc: el primer pull del motor, para que Almacenamiento no diga «Todo sincronizado» antes de tiempo.
             "engineFirstPullCompleted = SyncQuiescenceCoordinator.shared.hasCompletedFirstPull",
