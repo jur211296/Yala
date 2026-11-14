@@ -51,3 +51,11 @@ Medido el 2026-11-14 (barrido, parte 3):
   plano: usa `scroll` con `distance` y una captura.
 - **Para volver a la app tras «Inicio», toca su icono**, no `launch_app`: con la app suspendida `launch_app` la
   relanzó y perdió la pantalla (y el filtro) que estabas probando.
+
+Medido el 2026-11-14 (lote B del barrido):
+
+- **`devicectl … process launch --console` solo trae `print`**: los breadcrumbs con `Logger` (`CloudSyncBreadcrumb`) no
+  salen. Para leer un desenlace en el teléfono, que el breadcrumb imprima también en `#if DEBUG` (así se vio
+  `CloudSignOut swap COMPLETED`). Engánchala en segundo plano y **no uses `launch_app` después**: relanza y corta la consola.
+- Tras eliminar la cuenta en la nube, Google vuelve a pedir el consentimiento («Iniciar sesión en Yala» → «Continuar»
+  abajo, con scroll).
