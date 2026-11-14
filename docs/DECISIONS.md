@@ -131,6 +131,13 @@ Cada decisión sigue esta estructura:
 
 ## Decisiones Activas
 
+### [2026-11-14] Bienvenida: «Entrar con iCloud privado» es la única excepción a la decisión 51 de 2.3
+**Contexto:** El PR de ajustes visuales de la bienvenida (13-nov) llamó al tercer acceso «Entrar con iCloud privado». La decisión 51 de 2.3 retiró «iCloud privado» como nombre de sitio («En tu iCloud» / «En tu cuenta de Yala»), y `DosNombresDeSitioTests` lo puso en rojo en 12 idiomas, lo que paraba el merge.
+**Decisión:** Jürgen (14-nov, 14:30 Lima) mantiene «Entrar con iCloud privado» en ese botón (clave `bienvenida23.access.iCloud`), y solo ahí, para dejar claro en la bienvenida que es la vía privada. La clave entra en `outOfScope` de `DosNombresDeSitioTests`; el resto de la regla sigue igual.
+**Razones:** En la bienvenida, junto a «Entrar con Google» y «Entrar con Apple», el adjetivo explica la diferencia; dentro de la app el sitio sigue llamándose «En tu iCloud».
+**Consecuencias:** No se abre ninguna otra excepción: un texto nuevo con «iCloud privado» vuelve a poner rojo el test.
+**Estado:** Activa
+
 ### [2026-11-14] Yala web: Grupos se escribe desde la web con permiso propio (opción A), y el resto del lote 2 a criterio de Frank
 **Contexto:** Dos decisiones de Jürgen del 14-nov a las 13:53 (Lima), capturadas en el chat por el bot dueño (ADR-082 de casa) y pendientes de pasar al repo. Las incorpora la sesión que preparó las decisiones del barrido del iPhone; no las ejecuta.
 **Decisión:** (1) **Lote 3 de Yala web: escribir en Grupos desde la web con la opción A**: la web tiene su propio permiso de escritura por el gateway, **solo en staging hasta que se revise**. (2) **El resto del lote 2** (Presupuestos, Grupos en lectura, buscar, exportar CSV y los 16 idiomas) **se hace como Frank recomiende**; Jürgen acepta que vaya en un lote aparte antes del lote 3 o junto con él.
