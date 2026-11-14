@@ -113,6 +113,8 @@ export interface Enviado {
   divisa: string;
   descripcion: string | null;
   fecha: string | null;
+  cuenta: string | null;
+  subcategoria: string | null;
 }
 
 export interface Bandeja {
@@ -200,4 +202,65 @@ export interface Pagos {
   suscripciones_mensual: number;
   aproximado: boolean;
   incompleto: boolean;
+}
+
+// ─── Grupos (lote 3, lectura): `webapp/src/worker/groups.ts` ────────────────────────────────────────────────────
+
+export interface Dinero {
+  divisa: string;
+  importe: number;
+}
+
+export interface Banda {
+  estado: "theyOweMe" | "iOwe" | "mixed" | "settled";
+  teDeben: Dinero[];
+  debes: Dinero[];
+}
+
+export interface GrupoTarjeta {
+  id: string;
+  nombre: string;
+  icono: string | null;
+  color: string | null;
+  divisa: string | null;
+  archivado: boolean;
+  miembros: number;
+  gastos: number;
+  banda: Banda;
+  personas: { nombre: string; sentido: "debes" | "teDebe"; importe: number; divisa: string }[];
+}
+
+export interface GruposLista {
+  resumen: { teDeben: Dinero[]; debes: Dinero[]; pagosPorConfirmar: number };
+  grupos: GrupoTarjeta[];
+  incompleto: boolean;
+}
+
+export interface GrupoDetalle {
+  id: string;
+  nombre: string;
+  divisa: string | null;
+  archivado: boolean;
+  incompleto: boolean;
+  menosPagos: boolean;
+  unaSolaMoneda: string | null;
+  miembros: { nombre: string; rol: string; esTu: boolean }[];
+  banda: Banda;
+  deudas: { de: string; a: string; deTi: boolean; aTi: boolean; importe: number; divisa: string }[];
+  saldos: { nombre: string; esTu: boolean; divisa: string; pago: number; leToca: number; neto: number }[];
+  gastos: {
+    id: string;
+    descripcion: string;
+    nota: string | null;
+    importe: number;
+    divisa: string;
+    fecha: string | null;
+    pagadoPor: string;
+    pagasteTu: boolean;
+    tuParte: number | null;
+    categoria: string | null;
+    saldoInicial: boolean;
+    saldado: boolean;
+  }[];
+  pagos: { id: string; de: string; a: string; deTi: boolean; aTi: boolean; importe: number; divisa: string; fecha: string | null; confirmado: boolean; nota: string | null }[];
 }

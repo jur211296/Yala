@@ -46,6 +46,7 @@ Para cada construcción, la pregunta es **a qué ruta llama y qué guard usa ESE
 |---|---|---|
 | `requireUserAndAttest` | **401 sin header** | `/groups/rpc/:fn` · `/groups/push` · `/groups/pull` · `/groups/merkle` · `/push/register` · `/push/unregister` · `/account/delete` · `/account/siwa/revoke` · `/sync/*` · `/prefs/*` · `/attest/bind` · `/mail/address` · `/mail/drafts` · `/mail/drafts/ack` (2.3, `BankEmailClient`) |
 | `requireUser` | pasa sin header | `/account/claim` · `/account/exists` · `/account/migration` · `/account/siwa/exchange` · `/account/entitlement` |
+| Entrada interna `WebGroupsReader` (service binding, sin ruta pública; `gateway/src/web/groupsReader.ts`) | no aplica: solo acepta tokens `yala_mcp_reader`, y uno `authenticated` se rechaza | lectura de Grupos de Yala web (lote 3). Solo con `WEB_GROUPS_READER = "on"` (staging); en producción responde `disabled`. **No admitas ahí un token `authenticated`**: sería una puerta a Grupos sin App Attest |
 
 Las **CUATRO** definiciones de la guard estricta están DUPLICADAS a propósito y son espejos declarados:
 `groups/rpc.ts`, `groups/routes.ts` (que `push/register.ts` reusa), `sync/routes.ts` y —la que esta regla
