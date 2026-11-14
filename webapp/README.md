@@ -18,8 +18,9 @@ Staging: <https://yala-web-staging.misty-surf-6866.workers.dev>
 
 **Lote 3 (2.3, solo staging):** Grupos en lectura (lo que te deben y lo que debes, quién le debe a quién, saldos por
 persona, gastos y pagos) con las cifras del iPhone; las cuentas «solo Grupos» entran y ven Grupos y Configurar; y los
-borradores de la web que el iPhone aún no recogió se editan o se descartan desde la Bandeja. Añadir gastos, saldar e
-invitar desde la web espera una decisión de Jürgen (cómo pasa la web la puerta de App Attest de Grupos).
+borradores de la web que el iPhone aún no recogió se editan o se descartan desde la Bandeja. Y, con la opción A que eligió
+Jürgen el 14-nov, la web **escribe** en Grupos: nuevo gasto con reparto igual, saldar e invitar por enlace (solo staging
+hasta una revisión).
 
 ## Cómo funciona
 
@@ -87,8 +88,9 @@ Worker puede pedir fuera (`src/worker/egress.ts`). Si la configuración está ma
 - **De dónde salen las filas.** Ocho columnas de Grupos están cifradas y la llave (`GROUPS_ENC_KEY`) solo vive en el
   gateway. La web la pide por un *service binding* (`GATEWAY_GROUPS` → entrada `WebGroupsReader` del gateway de
   staging, `gateway/src/web/groupsReader.ts`): no sale a internet ni tiene ruta pública, y la llave no viaja. La entrada
-  solo acepta tokens de rol `yala_mcp_reader` (el del iPhone por ahí se saltaría App Attest), lee con los cinco RPC
-  lectores `groups_pull_rows_*` y solo está encendida con `WEB_GROUPS_READER = "on"` (staging).
+  solo acepta tokens de la web (`yala_web`, o `yala_mcp_reader` de antes de web3_02; el del iPhone por ahí se saltaría
+  App Attest), lee con los cinco RPC lectores `groups_pull_rows_*` y solo está encendida con `WEB_GROUPS_READER = "on"`
+  (staging).
 - **Quién puede leer qué** lo decide la RLS de `supabase/web3_01_grupos_lectura.sql`: SELECT de las cinco tablas de
   Grupos para `yala_mcp_reader` solo si el token es del cliente de la web (`yala_is_web_reader()`) y la persona es
   miembro. El conector de Claude, que comparte el rol, no gana nada. Ninguna escritura.
@@ -110,6 +112,38 @@ Worker puede pedir fuera (`src/worker/egress.ts`). Si la configuración está ma
 - **Borradores:** `POST /api/borradores/editar` y `/descartar`, solo los de la propia cuenta con `source = web` dentro
   de la caducidad de la cola. Se edita en sitio (mismo `id`: el iPhone deduplica por él). Si ya no está, 409
   `recogido`. Ventana aceptada: si el iPhone ya lo bajó y aún no lo confirmó, le llega la versión que bajó.
+
+## Lote 3: escribir en Grupos (opción A, 14-nov)
+
+La pregunta era cómo pasa la web la puerta de App Attest de Grupos, que un navegador no puede dar. Jürgen eligió la A:
+un permiso propio de la web, por el gateway, solo en staging hasta una revisión. Lo que sustituye a App Attest:
+
+- **Rol propio, `yala_web`** (`supabase/web3_02_grupos_escritura.sql`). El hook de token se lo da a los tokens de la
+  web; hereda todo lo que lee `yala_mcp_reader` y solo añade EXECUTE de tres funciones: `web_add_group_expense`,
+  `web_add_group_settlement` y `create_group_invite`. Ningún permiso de tabla. El conector de Claude sigue en `yala_mcp_reader`, sin escribir.
+- **Lista cerrada en la base:** una función SECURITY DEFINER por operación, y cada llamada es una transacción (todo o
+  nada). `web_add_group_expense` solo deja crear un gasto NUEVO con todas sus cuotas: cuotas de ese gasto, de miembros
+  activos, que suman su importe, sin saldo inicial. `web_add_group_settlement`, un pago NUEVO entre dos miembros activos.
+  Las dos exigen miembro activo de un grupo vivo y no archivado, y un id **nuevo en todos los grupos**: el iPhone busca
+  gastos y pagos solo por id, así que un id repetido en otro grupo movería esa fila de grupo en los teléfonos (lo cazó
+  la revisión adversarial). Ya existente en este grupo = reenvío (`exists`, no toca nada). Por dentro, `apply_group_delta`,
+  la misma función que el iPhone. Van como funciones del dueño porque `auth` es de `supabase_admin` y no deja dar USAGE
+  a un rol nuevo (medido: «permission denied for schema auth»).
+- **Lista cerrada en el gateway:** la entrada interna `WebGroupsWriter` (`gateway/src/web/groupsWriter.ts`, binding
+  `GATEWAY_GROUPS_WRITER`, `WEB_GROUPS_WRITER = "on"` solo en staging) tiene tres operaciones y arma ella los deltas:
+  nuevo gasto con reparto igual (`shared-core/src/logic/groupSplit.ts`, paridad con `GroupSplitCalculator`), apuntar un
+  pago (confirmado si lo apunta quien paga o quien recibe; si no, pendiente, como `SettlementSaldar23Logic`) y crear un
+  enlace con el formato de la app (7 días, 20 usos). Valida miembros activos, divisas que el grupo ya usa, céntimos y
+  fechas. Los demás miembros reciben el aviso push de siempre.
+- **Límite por cuenta:** cubo `webw:<sub>` (300 al día, 20 por minuto), que se aplica también en `observe`.
+- **Reintentos:** el id lo pone el formulario al abrirse. Un fallo no deja nada escrito (transacción); un reenvío de lo
+  que ya entró devuelve `ya_estaba` sin tocar nada.
+- **Tokens de antes de web3_02** llevan `yala_mcp_reader`: leen igual, y al escribir el gateway responde `role`, la ruta
+  renueva el token una vez (el hook ya da `yala_web`), repite y guarda la renovación.
+- **Rutas:** `POST /api/grupos/gasto`, `/api/grupos/pago` y `/api/grupos/invitar` (mismo origen). El detalle trae
+  `puedeEscribir`, `puedeInvitar` (admin, o «miembros pueden invitar») y `divisas`.
+- **Queda en el iPhone:** editar o borrar gastos, repartos que no sean iguales, confirmar o rechazar pagos, estrenar una
+  divisa en el grupo y todo lo de membresía (aprobar, quitar, salir).
 
 ## Núcleo compartido
 
@@ -136,6 +170,25 @@ npx wrangler d1 execute yala-gateway-staging --remote \
 
 La ruta `/auth/password` (contraseña) existe **solo en staging**, para el e2e: la niegan la configuración y la lista
 cerrada en cualquier otro entorno.
+
+## Supabase staging (escritura del lote 3, 2026-11-14)
+
+`supabase/web3_02_grupos_escritura.sql`, aplicado el 14-nov (marcha atrás: `supabase/web3_02_rollback.sql`). Hook de token:
+md5 `120f45468bc1db690a4c5655e7a7d48c` (el de web0_01) → `54a4444f713eea227049396021d27ebd`.
+
+| Qué | Antes | Después |
+|---|---|---|
+| rol `yala_web` | — | sin login, miembro de `yala_mcp_reader` (hereda), `authenticator` puede entrar con él |
+| `yala_mcp_access_token_hook` | web y conector → `yala_mcp_reader` | web → `yala_web`; conector → `yala_mcp_reader` |
+| `web_add_group_expense(...)`, `web_add_group_settlement(...)` | — | `security definer`, EXECUTE solo `yala_web` (ver «Lote 3: escribir en Grupos») |
+| `web_group_write_guard`, `web_group_active_member` | — | `security definer`, sin EXECUTE para nadie: las usan las dos de arriba |
+| `create_group_invite` | EXECUTE `authenticated` | también `yala_web` |
+
+Sonda tras aplicar: `yala_web` sin INSERT, UPDATE ni DELETE en ninguna tabla, sin EXECUTE en `apply_group_delta` ni en
+las demás RPC de Grupos; `yala_mcp_reader` igual que antes. Con un token real de la web, PostgREST da 42501 a insertar,
+cambiar y borrar en tablas y a `apply_group_delta` (`test/e2e/web.e2e.test.ts`).
+
+**Producción: nada.**
 
 ## Supabase staging (cambios del lote 3, 2026-11-14)
 

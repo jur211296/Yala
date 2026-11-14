@@ -60,6 +60,9 @@ APPLE_WEB_SIGN_IN_ROLLOUT_PERCENT = "100"
 # Yala web, lote 3: la entrada interna `WebGroupsReader` (src/web/groupsReader.ts) que lee Grupos para la web por un
 # service binding. SOLO staging; producción no lo declara y la entrada responde «disabled».
 WEB_GROUPS_READER = "on"
+# Yala web, lote 3 (opción A de Jürgen, 14-nov): la entrada interna `WebGroupsWriter` (src/web/groupsWriter.ts) que
+# añade gastos y pagos e invita desde la web, con el rol `yala_web` (web3_02). SOLO staging hasta una revisión.
+WEB_GROUPS_WRITER = "on"
 # Forzado de actualización (min-version): build por debajo del cual el cliente bloquea. 0 = desactivado.
 # STAGING también en 0 a propósito: un valor > 0 BLOQUEARÍA la app de dogfooding/QA (≠ percents, que
 # encienden superficie). Se sube conscientemente al probar el flujo end-to-end.

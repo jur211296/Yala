@@ -1083,3 +1083,79 @@
     flex-basis: 100%;
   }
 }
+
+/* Grupos · escribir (lote 3, opción A) */
+.gacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.gacts .btn-p {
+  padding: 9px 16px;
+}
+.gacts .btn-s {
+  padding: 9px 14px;
+}
+.btn-xs {
+  padding: 4px 9px;
+  font-size: 12px;
+  margin-left: 8px;
+  flex: none;
+}
+.ok-line {
+  font-size: 13px;
+  color: var(--owed);
+  margin: 0;
+}
+.who-list {
+  display: block;
+  margin: 0;
+  min-width: 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  padding: 10px 2px;
+}
+.who-list legend {
+  color: var(--ink2);
+  padding: 0;
+  margin-bottom: 4px;
+}
+.who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  cursor: pointer;
+}
+.fld.who-list .who input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--fill);
+}
+.who .t {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.who .amt {
+  color: var(--ink2);
+  font-variant-numeric: tabular-nums;
+}
+.amt-in .amt-cur {
+  border: 0;
+  background: transparent;
+  color: var(--ink2);
+  font: 600 18px var(--round);
+}
+.link-in {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink);
+  font: 13px ui-monospace, SFMono-Regular, Menlo, monospace;
+  padding: 10px 12px;
+}

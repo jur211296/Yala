@@ -120,7 +120,7 @@ describe("lote 2: Estadísticas y Pagos planificados", () => {
     expect(body.tendencias.at(-1)?.gastos).toBe(50);
     for (const c of w.supabase.calls.filter((x) => x.path.startsWith("/rest/v1/"))) {
       const claims = JSON.parse(atob(c.auth!.replace("Bearer ", "").split(".")[1]!.replace(/-/g, "+").replace(/_/g, "/"))) as { role: string; client_id: string };
-      expect(claims.role).toBe("yala_mcp_reader");
+      expect(claims.role).toBe("yala_web");
       expect(claims.client_id).toBe(WEB_CLIENT);
     }
   });
@@ -201,7 +201,7 @@ describe("lote 2: entrar con el iPhone por QR", () => {
     expect(reads.length).toBeGreaterThan(0);
     for (const c of reads) {
       const claims = JSON.parse(atob(c.auth!.replace("Bearer ", "").split(".")[1]!.replace(/-/g, "+").replace(/_/g, "/"))) as { role: string; client_id: string };
-      expect(claims.role).toBe("yala_mcp_reader");
+      expect(claims.role).toBe("yala_web");
       expect(claims.client_id).toBe(WEB_CLIENT);
     }
     expect((await device(w, "/api/dispositivo/sesiones", iphone)).status).toBe(200);

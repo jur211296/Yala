@@ -131,8 +131,8 @@ describe.skipIf(!haveUsers)("staging · entrar, ver la cuenta y salir (usuarios 
   });
 });
 
-describe.skipIf(!haveUsers || !existsSync(CLIENT_FILE))("staging · la sesión de la web no puede escribir", () => {
-  it("con el rol de la web, PostgREST rechaza insertar, cambiar y borrar", async () => {
+describe.skipIf(!haveUsers || !existsSync(CLIENT_FILE))("staging · la sesión de la web solo añade en Grupos, por su función", () => {
+  it("con el rol propio de la web, PostgREST rechaza insertar, cambiar y borrar en tablas, y la escritura de Grupos del iPhone", async () => {
     const secret = (JSON.parse(readFileSync(CLIENT_FILE, "utf8")) as { client_secret: string }).client_secret;
     const env = {
       ENVIRONMENT: "staging",
@@ -154,7 +154,7 @@ describe.skipIf(!haveUsers || !existsSync(CLIENT_FILE))("staging · la sesión d
     const access = grant.tokens.access;
     try {
       const claims = JSON.parse(Buffer.from(access.split(".")[1]!, "base64url").toString()) as Record<string, unknown>;
-      expect(claims.role).toBe("yala_mcp_reader");
+      expect(claims.role).toBe("yala_web");
       expect(claims.client_id).toBe(WEB_CLIENT);
 
       const h = { apikey: ANON, Authorization: `Bearer ${access}`, "Content-Type": "application/json" };
@@ -166,11 +166,29 @@ describe.skipIf(!haveUsers || !existsSync(CLIENT_FILE))("staging · la sesión d
         fetch(`${SB}/rest/v1/tx_items`, { method: "POST", headers: h, body: JSON.stringify({ sync_id: nadie }) }),
         fetch(`${SB}/rest/v1/accounts?sync_id=eq.${nadie}`, { method: "PATCH", headers: h, body: JSON.stringify({ name: "sonda" }) }),
         fetch(`${SB}/rest/v1/accounts?sync_id=eq.${nadie}`, { method: "DELETE", headers: h }),
+        // Grupos (web3_02): ni INSERT directo, ni la función de escritura del iPhone. Solo sus dos funciones.
+        fetch(`${SB}/rest/v1/split_expenses`, { method: "POST", headers: h, body: JSON.stringify({ group_id: "nadie", sync_id: nadie }) }),
+        fetch(`${SB}/rest/v1/split_settlements?sync_id=eq.${nadie}`, { method: "PATCH", headers: h, body: JSON.stringify({ is_confirmed: true }) }),
+        fetch(`${SB}/rest/v1/rpc/apply_group_delta`, {
+          method: "POST",
+          headers: h,
+          body: JSON.stringify({ p_entity: "split_expenses", p_group_id: "nadie", p_sync_id: nadie, p_op: "upsert", p_fields: {}, p_field_hlcs: {}, p_key: "x" }),
+        }),
+        fetch(`${SB}/rest/v1/rpc/groups_forget_user`, { method: "POST", headers: h, body: JSON.stringify({ p_key: "x" }) }),
       ];
       for (const res of await Promise.all(probes)) {
         const text = await res.text();
         expect([401, 403], text).toContain(res.status);
         expect(text).toContain("42501"); // permission denied
+      }
+      // Sus dos funciones sí responden, y dicen que no a un grupo del que no es miembro (sin escribir nada).
+      for (const [fn, args] of [
+        ["web_add_group_expense", { p_group_id: "grupo-que-no-existe", p_expense_id: nadie, p_fields: {}, p_field_hlcs: {}, p_shares: [], p_key: "x", p_row_hlc: "x" }],
+        ["web_add_group_settlement", { p_group_id: "grupo-que-no-existe", p_sync_id: nadie, p_fields: {}, p_field_hlcs: {}, p_key: "x", p_row_hlc: "x" }],
+      ] as const) {
+        const own = await fetch(`${SB}/rest/v1/rpc/${fn}`, { method: "POST", headers: h, body: JSON.stringify(args) });
+        expect(own.status, fn).toBe(400);
+        expect(await own.text()).toContain("yala_not_authorized");
       }
     } finally {
       await logout(env, f, access);

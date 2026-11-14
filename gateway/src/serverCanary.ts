@@ -41,6 +41,12 @@ export const SERVER_CANARIES = [
   "groupSyncCoherenceGroupPartial",
   /** Un delta personal llegó con una unidad de coherencia a medias. `d` = entidad. */
   "cloudSyncCoherenceGroupPartial",
+  /** Yala web: una escritura en Grupos topó con el límite por cuenta (`web_groups_write`). */
+  "webGroupsWriteLimited",
+  /** Yala web: PostgREST rechazó una escritura en Grupos. `d` = `entidad/status` o `invite/status`. */
+  "webGroupsWriteRejected",
+  /** Yala web: una escritura en Grupos salió. `d` = `expense`, `settlement:confirmed`, `settlement:pending` o `invite`. */
+  "webGroupsWritten",
 ] as const;
 export type ServerCanary = (typeof SERVER_CANARIES)[number];
 

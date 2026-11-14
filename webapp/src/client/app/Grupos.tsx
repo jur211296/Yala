@@ -1,14 +1,19 @@
 /**
- * Grupos (lote 3), en lectura: la lista con lo que te deben y lo que debes, y el detalle de cada grupo con quién le debe
- * a quién, los saldos por persona, los gastos y los pagos. Las cifras salen del núcleo compartido
+ * Grupos (lote 3): la lista con lo que te deben y lo que debes, y el detalle de cada grupo con quién le debe a quién,
+ * los saldos por persona, los gastos y los pagos. Las cifras salen del núcleo compartido
  * (`shared-core/src/logic/groupBalances.ts`, con paridad contra `GroupBalanceService` de la app).
  *
- * Añadir un gasto, saldar e invitar siguen en el iPhone hasta que Jürgen decida cómo escribe la web en Grupos.
+ * Escribir (opción A de Jürgen, 14-nov; solo staging): «Nuevo gasto» con reparto igual, «Saldar» y «Invitar». Lo hace el
+ * gateway con el rol propio de la web (`webapp/src/worker/groupsWrite.ts`); el reparto que se enseña es el mismo
+ * `equalSplit` que guarda, con paridad contra `GroupSplitCalculator`. Editar o borrar gastos, otros repartos y confirmar
+ * pagos siguen en el iPhone.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { texts } from "../i18n";
-import { ApiError, getJson, type Banda, type Dinero, type GrupoDetalle, type GrupoTarjeta, type GruposLista } from "./api";
-import { badge, money, shortDate } from "./format";
+import { ApiError, getJson, postJson, type Banda, type Dinero, type GrupoDetalle, type GrupoTarjeta, type GruposLista } from "./api";
+import { badge, money, shortDate, todayKey } from "./format";
+import { parseAmount } from "./Apuntar";
+import { equalSplit } from "../../../../shared-core/src/logic/groupSplit";
 
 const t = texts();
 
@@ -129,12 +134,319 @@ function List({ onOpen }: { onOpen: (id: string) => void }) {
   );
 }
 
+
+// ─── Escribir (opción A) ───────────────────────────────────────────────────────────────────────────────────────
+
+type Miembro = GrupoDetalle["miembros"][number];
+
+/** El instante que se guarda: hoy, ahora; otro día, a mediodía local (no cambia de día en ningún huso cercano). */
+function instantFor(day: string): string {
+  if (day === todayKey()) return new Date().toISOString();
+  return new Date(`${day}T12:00:00`).toISOString();
+}
+
+/** Un id por formulario abierto: si el envío se repite (red lenta, doble toque), el gateway no lo duplica. */
+function useOnceId(): string {
+  return useRef(crypto.randomUUID()).current;
+}
+
+function errorText(err: unknown): string {
+  const body = err instanceof ApiError ? err.body : {};
+  const key = body.error === "limite" ? "limite" : body.error === "no_permitido" ? String(body.motivo ?? "otro") : typeof body.campo === "string" ? body.campo : "otro";
+  return t.grp.errores[key] ?? t.grp.errores.otro!;
+}
+
+function Sheet({ title, onClose, onSubmit, children }: { title: string; onClose: () => void; onSubmit?: () => void; children: React.ReactNode }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  return (
+    <div className="modal" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <form
+        className="sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSubmit?.();
+        }}
+      >
+        <h2>
+          {title}
+          <button className="btn-s" type="button" onClick={onClose}>
+            {onSubmit ? t.app.cancelar : t.grp.cerrar}
+          </button>
+        </h2>
+        {children}
+      </form>
+    </div>
+  );
+}
+
+function AmountField({ divisa, divisas, setDivisa, value, onChange, inputRef }: {
+  divisa: string;
+  divisas: string[];
+  setDivisa: (d: string) => void;
+  value: string;
+  onChange: (v: string) => void;
+  inputRef: React.RefObject<HTMLInputElement | null>;
+}) {
+  return (
+    <label className="amt-in">
+      {divisas.length > 1 ? (
+        <select className="amt-cur" value={divisa} onChange={(e) => setDivisa(e.target.value)} aria-label={t.grp.divisaCampo}>
+          {divisas.map((d) => (
+            <option key={d} value={d}>
+              {d}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <span>{divisa}</span>
+      )}
+      <input ref={inputRef} inputMode="decimal" autoComplete="off" aria-label={t.app.importe} placeholder="0.00" value={value} onChange={(e) => onChange(e.target.value)} maxLength={16} />
+    </label>
+  );
+}
+
+function ExpenseSheet({ data, onClose, onDone }: { data: GrupoDetalle; onClose: () => void; onDone: (msg: string) => void }) {
+  const id = useOnceId();
+  const me = data.miembros.find((m) => m.esTu);
+  const [importe, setImporte] = useState("");
+  const [divisa, setDivisa] = useState(data.divisa ?? data.divisas[0] ?? "PEN");
+  const [descripcion, setDescripcion] = useState("");
+  const [pagadoPor, setPagadoPor] = useState(me?.clave ?? data.miembros[0]?.clave ?? "");
+  const [fecha, setFecha] = useState(todayKey());
+  const [entre, setEntre] = useState<string[]>(data.miembros.map((m) => m.clave));
+  const [error, setError] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+  const amountRef = useRef<HTMLInputElement>(null);
+  useEffect(() => amountRef.current?.focus(), []);
+  const n = parseAmount(importe);
+  const ordered = data.miembros.filter((m) => entre.includes(m.clave)).map((m) => m.clave);
+  const parts = useMemo(() => new Map((n && n > 0 ? equalSplit(n, ordered) ?? [] : []).map((p) => [p.member, p.amount])), [n, ordered.join("|")]);
+  const label = (m: Miembro) => (m.esTu ? t.grp.tu : who(m.nombre));
+
+  const send = async () => {
+    if (n === null || n <= 0 || Math.abs(Math.round(n * 100) - n * 100) > 1e-6) return setError(t.grp.errores.importe!);
+    if (!descripcion.trim()) return setError(t.grp.errores.descripcion!);
+    if (ordered.length === 0) return setError(t.grp.errores.participantes!);
+    setSending(true);
+    setError(null);
+    try {
+      await postJson("/api/grupos/gasto", {
+        grupo: data.id,
+        id,
+        descripcion: descripcion.trim(),
+        importe: n,
+        divisa,
+        pagadoPor,
+        fecha: instantFor(fecha),
+        participantes: ordered,
+      });
+      onDone(t.grp.gastoHecho);
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <Sheet title={t.grp.nuevoGasto} onClose={onClose} onSubmit={() => void send()}>
+      <AmountField divisa={divisa} divisas={data.divisas} setDivisa={setDivisa} value={importe} onChange={setImporte} inputRef={amountRef} />
+      <label className="fld">
+        <span>{t.app.descripcion}</span>
+        <input value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder={t.app.descripcionPh} maxLength={120} required />
+      </label>
+      <label className="fld">
+        <span>{t.grp.pagadoPorCampo}</span>
+        <select value={pagadoPor} onChange={(e) => setPagadoPor(e.target.value)}>
+          {data.miembros.map((m) => (
+            <option key={m.clave} value={m.clave}>
+              {label(m)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="fld">
+        <span>{t.app.fecha}</span>
+        <input type="date" value={fecha} max={todayKey()} onChange={(e) => setFecha(e.target.value)} required />
+      </label>
+      <fieldset className="fld who-list">
+        <legend>{t.grp.entre}</legend>
+        {data.miembros.map((m) => {
+          const on = entre.includes(m.clave);
+          const part = parts.get(m.clave);
+          return (
+            <label className="who" key={m.clave}>
+              <input type="checkbox" checked={on} onChange={() => setEntre((xs) => (on ? xs.filter((x) => x !== m.clave) : [...xs, m.clave]))} />
+              <span className="t">{label(m)}</span>
+              <span className="amt">{on && part !== undefined ? money(part, divisa) : ""}</span>
+            </label>
+          );
+        })}
+      </fieldset>
+      <p className="note-y">{t.grp.soloIgual}</p>
+      {error ? (
+        <p className="err" role="alert">
+          {error}
+        </p>
+      ) : null}
+      <button className="btn-p" type="submit" disabled={sending}>
+        {sending ? t.grp.guardando : t.grp.anadir}
+      </button>
+    </Sheet>
+  );
+}
+
+export interface PagoInicial {
+  de: string;
+  a: string;
+  importe: number;
+  divisa: string;
+}
+
+function SettleSheet({ data, inicial, onClose, onDone }: { data: GrupoDetalle; inicial: PagoInicial | null; onClose: () => void; onDone: (msg: string) => void }) {
+  const id = useOnceId();
+  const me = data.miembros.find((m) => m.esTu);
+  const other = data.miembros.find((m) => !m.esTu);
+  const [de, setDe] = useState(inicial?.de ?? me?.clave ?? "");
+  const [a, setA] = useState(inicial?.a ?? other?.clave ?? "");
+  const [importe, setImporte] = useState(inicial ? inicial.importe.toFixed(2) : "");
+  const [divisa, setDivisa] = useState(inicial?.divisa ?? data.divisa ?? data.divisas[0] ?? "PEN");
+  const [fecha, setFecha] = useState(todayKey());
+  const [nota, setNota] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+  const amountRef = useRef<HTMLInputElement>(null);
+  useEffect(() => amountRef.current?.focus(), []);
+  const label = (m: Miembro) => (m.esTu ? t.grp.tu : who(m.nombre));
+  const nameOf = (k: string) => {
+    const m = data.miembros.find((x) => x.clave === k);
+    return m ? label(m) : "";
+  };
+  // `SettlementSaldar23Logic.confirmsOnRecord`: si no lo apunta ni quien paga ni quien recibe, espera a quien recibe.
+  const pendiente = !!me && me.clave !== de && me.clave !== a;
+  // Si la divisa del pago no está entre las del grupo (una deuda convertida), se añade para que el selector la enseñe.
+  const divisas = data.divisas.includes(divisa) ? data.divisas : [...data.divisas, divisa];
+
+  const send = async () => {
+    const n = parseAmount(importe);
+    if (n === null || n <= 0 || Math.abs(Math.round(n * 100) - n * 100) > 1e-6) return setError(t.grp.errores.importe!);
+    if (!de || !a || de === a) return setError(t.grp.errores.personas!);
+    setSending(true);
+    setError(null);
+    try {
+      await postJson("/api/grupos/pago", { grupo: data.id, id, de, a, importe: n, divisa, fecha: instantFor(fecha), nota: nota.trim() });
+      onDone(pendiente ? t.grp.pagoPendienteHecho(nameOf(a)) : t.grp.pagoHecho);
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <Sheet title={t.grp.saldar} onClose={onClose} onSubmit={() => void send()}>
+      <label className="fld">
+        <span>{t.grp.quienPaga}</span>
+        <select value={de} onChange={(e) => setDe(e.target.value)}>
+          {data.miembros.map((m) => (
+            <option key={m.clave} value={m.clave}>
+              {label(m)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="fld">
+        <span>{t.grp.aQuien}</span>
+        <select value={a} onChange={(e) => setA(e.target.value)}>
+          {data.miembros.map((m) => (
+            <option key={m.clave} value={m.clave}>
+              {label(m)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <AmountField divisa={divisa} divisas={divisas} setDivisa={setDivisa} value={importe} onChange={setImporte} inputRef={amountRef} />
+      <label className="fld">
+        <span>{t.app.fecha}</span>
+        <input type="date" value={fecha} max={todayKey()} onChange={(e) => setFecha(e.target.value)} required />
+      </label>
+      <label className="fld">
+        <span>{t.grp.notaOpcional}</span>
+        <input value={nota} onChange={(e) => setNota(e.target.value)} maxLength={300} />
+      </label>
+      {pendiente && a ? <p className="note-y">{t.grp.pendienteDe(nameOf(a))}</p> : null}
+      {error ? (
+        <p className="err" role="alert">
+          {error}
+        </p>
+      ) : null}
+      <button className="btn-p" type="submit" disabled={sending}>
+        {sending ? t.grp.guardando : t.grp.apuntarPago}
+      </button>
+    </Sheet>
+  );
+}
+
+function InviteSheet({ data, onClose }: { data: GrupoDetalle; onClose: () => void }) {
+  const [link, setLink] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const asked = useRef(false);
+  useEffect(() => {
+    if (asked.current) return;
+    asked.current = true;
+    postJson<{ enlace: string }>("/api/grupos/invitar", { grupo: data.id }).then((r) => setLink(r.enlace), (err) => setError(errorText(err)));
+  }, [data.id]);
+  const copy = async () => {
+    if (!link) return;
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  };
+  return (
+    <Sheet title={t.grp.invitarTitulo} onClose={onClose}>
+      <p className="empty">{t.grp.invitarCuerpo}</p>
+      {error ? (
+        <p className="err" role="alert">
+          {error}
+        </p>
+      ) : link ? (
+        <>
+          <input className="link-in" readOnly value={link} aria-label={t.grp.invitarTitulo} onFocus={(e) => e.currentTarget.select()} />
+          <p className="note-y">{t.grp.invitarComo}</p>
+          <button className="btn-p" type="button" onClick={() => void copy()}>
+            {copied ? t.grp.copiado : t.grp.copiar}
+          </button>
+        </>
+      ) : (
+        <p className="empty" aria-busy="true">
+          {t.grp.generando}
+        </p>
+      )}
+    </Sheet>
+  );
+}
+
+type Abierto = { tipo: "gasto" } | { tipo: "pago"; inicial: PagoInicial | null } | { tipo: "invitar" } | null;
+
 type Tab = "saldos" | "gastos" | "pagos";
 
 function Detail({ id, onBack }: { id: string; onBack: () => void }) {
   const [data, setData] = useState<GrupoDetalle | null>(null);
   const [error, setError] = useState<"no_existe" | "otro" | null>(null);
   const [tab, setTab] = useState<Tab>("saldos");
+  const [abierto, setAbierto] = useState<Abierto>(null);
+  const [hecho, setHecho] = useState<string | null>(null);
   const load = useCallback(() => {
     setError(null);
     getJson<GrupoDetalle>(`/api/grupos/detalle?id=${encodeURIComponent(id)}`).then(setData, (err) =>
@@ -161,6 +473,11 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
     </>
   );
   const name = (n: string, esTu: boolean) => (esTu ? t.grp.tu : who(n));
+  const done = (msg: string) => {
+    setAbierto(null);
+    setHecho(msg);
+    load();
+  };
   const opts = [data.menosPagos ? t.grp.menosPagos : null, data.unaSolaMoneda ? t.grp.todoEn(data.unaSolaMoneda) : null].filter(Boolean).join(" · ");
   return (
     <>
@@ -177,6 +494,27 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
         ) : null}
         <span className="inout">{[t.grp.personas(data.miembros.length), opts].filter(Boolean).join(" · ")}</span>
       </section>
+
+      {data.puedeEscribir ? (
+        <div className="gacts">
+          <button className="btn-p" type="button" onClick={() => setAbierto({ tipo: "gasto" })}>
+            {t.grp.nuevoGasto}
+          </button>
+          <button className="btn-s" type="button" onClick={() => setAbierto({ tipo: "pago", inicial: null })}>
+            {t.grp.saldar}
+          </button>
+          {data.puedeInvitar ? (
+            <button className="btn-s" type="button" onClick={() => setAbierto({ tipo: "invitar" })}>
+              {t.grp.invitar}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+      {hecho ? (
+        <p className="ok-line" role="status">
+          {hecho}
+        </p>
+      ) : null}
 
       <div className="seg seg3" role="group" aria-label={data.nombre}>
         {(["saldos", "gastos", "pagos"] as const).map((x) => (
@@ -199,6 +537,16 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
                   </b>
                 </span>
                 <span className={`amt${d.deTi ? " owe" : d.aTi ? " owed" : ""}`}>{money(d.importe, d.divisa)}</span>
+                {data.puedeEscribir ? (
+                  <button
+                    className="btn-s btn-xs"
+                    type="button"
+                    aria-label={`${t.grp.saldar}: ${name(d.de, d.deTi)} → ${name(d.a, d.aTi)}`}
+                    onClick={() => setAbierto({ tipo: "pago", inicial: { de: d.deClave, a: d.aClave, importe: d.importe, divisa: d.divisa } })}
+                  >
+                    {t.grp.saldar}
+                  </button>
+                ) : null}
               </div>
             ))}
           </section>
@@ -278,7 +626,11 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
       ) : null}
 
       {data.incompleto ? <p className="note-y">{t.grp.grupoIncompleto}</p> : null}
-      <p className="note-y">{t.grp.nota}</p>
+      <p className="note-y">{data.puedeEscribir ? t.grp.notaEscribe : t.grp.nota}</p>
+
+      {abierto?.tipo === "gasto" ? <ExpenseSheet data={data} onClose={() => setAbierto(null)} onDone={done} /> : null}
+      {abierto?.tipo === "pago" ? <SettleSheet data={data} inicial={abierto.inicial} onClose={() => setAbierto(null)} onDone={done} /> : null}
+      {abierto?.tipo === "invitar" ? <InviteSheet data={data} onClose={() => setAbierto(null)} /> : null}
     </>
   );
 }

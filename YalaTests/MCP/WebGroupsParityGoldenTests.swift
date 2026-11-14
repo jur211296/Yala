@@ -145,6 +145,40 @@ struct WebGroupsParityGoldenTests {
         }
     }
 
+    /// Yala web añade gastos con reparto igual (opción A del lote 3): las partes las calcula
+    /// `GroupSplitCalculator` y la web (`shared-core/src/logic/groupSplit.ts`) tiene que dar las mismas.
+    @Test func theWebEqualSplitGoldenMatchesTheApp() throws {
+        let data = try Data(contentsOf: Self.goldenURL)
+        guard var root = try JSONSerialization.jsonObject(with: data, options: [.mutableContainers]) as? [String: Any],
+              var cases = root["equalSplits"] as? [[String: Any]]
+        else { throw GoldenError.bad("groups-parity.json sin equalSplits") }
+        #expect(!cases.isEmpty)
+        var computed: [Any] = []
+        for c in cases {
+            guard let total = (c["total"] as? NSNumber)?.doubleValue, let members = c["participants"] as? [String]
+            else { throw GoldenError.bad("equalSplits: caso sin total o participants") }
+            let parts = GroupSplitCalculator.calculate(
+                total: total, splitType: .equal,
+                participants: members.map { GroupSplitCalculator.Participant(memberID: $0, value: 0) })
+            computed.append(parts.map { $0.map { ["member": $0.memberID, "amount": $0.amount] as [String: Any] } } ?? NSNull())
+        }
+        if Self.writeMode {
+            for i in cases.indices { cases[i]["expected"] = computed[i] }
+            root["equalSplits"] = cases
+            let out = try JSONSerialization.data(
+                withJSONObject: root, options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes])
+            try (out + Data("\n".utf8)).write(to: Self.goldenURL)
+            return
+        }
+        for (i, c) in cases.enumerated() {
+            guard let expected = c["expected"] else {
+                Issue.record("[equalSplits \(i)] sin expected: genera el golden con TEST_RUNNER_YALA_WRITE_MCP_GOLDENS=1")
+                continue
+            }
+            compare(computed[i], expected, path: "equalSplits[\(i)]")
+        }
+    }
+
     // MARK: - Cálculo con el código de la app
 
     private func compute(_ scenario: Scenario) -> [String: Any] {

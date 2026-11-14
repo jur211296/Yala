@@ -244,9 +244,13 @@ export interface GrupoDetalle {
   incompleto: boolean;
   menosPagos: boolean;
   unaSolaMoneda: string | null;
-  miembros: { nombre: string; rol: string; esTu: boolean }[];
+  miembros: { clave: string; nombre: string; rol: string; esTu: boolean }[];
   banda: Banda;
-  deudas: { de: string; a: string; deTi: boolean; aTi: boolean; importe: number; divisa: string }[];
+  /** Lote 3, opción A: si la web deja añadir, saldar e invitar aquí, y con qué divisas. */
+  puedeEscribir: boolean;
+  puedeInvitar: boolean;
+  divisas: string[];
+  deudas: { de: string; a: string; deClave: string; aClave: string; deTi: boolean; aTi: boolean; importe: number; divisa: string }[];
   saldos: { nombre: string; esTu: boolean; divisa: string; pago: number; leToca: number; neto: number }[];
   gastos: {
     id: string;

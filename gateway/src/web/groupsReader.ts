@@ -6,10 +6,11 @@
  * el gateway. La web no recibe la llave: pide los grupos ya descifrados por un *service binding* (sin ruta pública).
  *
  * Invariantes, espejo de `/groups/pull`:
- * - El JWT se reenvía TAL CUAL a PostgREST: la RLS decide (`web3_01`: rol `yala_mcp_reader` + cliente OAuth de la web +
- *   membresía). JAMÁS service_role.
- * - Solo se acepta un token de rol `yala_mcp_reader`. Un token `authenticated` (el del iPhone) por esta puerta se
- *   saltaría App Attest, que es lo que exigen las rutas de Grupos para ese rol.
+ * - El JWT se reenvía TAL CUAL a PostgREST: la RLS decide (`web3_01`: rol `yala_mcp_reader` —o `yala_web`, que lo
+ *   hereda (web3_02)— + cliente OAuth de la web + membresía). JAMÁS service_role.
+ * - Solo se acepta un token de rol `yala_web` o `yala_mcp_reader` (el de la web antes de web3_02). Un token
+ *   `authenticated` (el del iPhone) por esta puerta se saltaría App Attest, que es lo que exigen las rutas de Grupos
+ *   para ese rol.
  * - Solo LEE: los cinco RPC lectores `groups_pull_rows_*`. Ninguna escritura.
  * - Apagado salvo `WEB_GROUPS_READER = "on"` (solo en [vars] de staging) y con el kill-switch de Grupos.
  */
@@ -17,7 +18,8 @@ import type { Env } from "../env";
 import { callRpc, getRows, verifyUserToken } from "../sync/userauth";
 import { parseRolloutPercent } from "../config";
 
-export const WEB_READER_ROLE = "yala_mcp_reader";
+/** Roles que pueden leer por aquí. La RLS (`yala_is_web_reader`) exige además el cliente OAuth de la web. */
+export const WEB_READER_ROLES: readonly string[] = ["yala_web", "yala_mcp_reader"];
 /** Tope de grupos por lectura: la web pinta una lista, no un volcado. */
 export const WEB_MAX_GROUPS = 50;
 const PAGE = 1000;
@@ -70,7 +72,7 @@ export async function readGroupsForWeb(env: Env, token: string, only?: string): 
   const user = await verifyUserToken(env, token);
   if (!user) return { ok: false, error: "token" };
   const claims = decodeClaims(token);
-  if (!claims || claims.role !== WEB_READER_ROLE) return { ok: false, error: "role" };
+  if (!claims || !WEB_READER_ROLES.includes(String(claims.role))) return { ok: false, error: "role" };
 
   const onlyQ = only ? `&group_id=eq.${encodeURIComponent(only)}` : "";
   const memQ = `select=group_id,member_key&user_id=eq.${encodeURIComponent(user.sub)}&deleted=eq.false&status=eq.active${onlyQ}&order=joined_at.desc.nullslast,group_id.asc`;

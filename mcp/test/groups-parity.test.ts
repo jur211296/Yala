@@ -18,6 +18,7 @@ import {
   simplify,
   type GroupSource,
 } from "../../shared-core/src/logic/groupBalances";
+import { equalSplit } from "../../shared-core/src/logic/groupSplit";
 
 interface GoldenGroup {
   id: string;
@@ -36,7 +37,10 @@ interface GoldenScenario {
   expected: unknown;
 }
 
-const golden = goldenJson as unknown as { scenarios: GoldenScenario[] };
+const golden = goldenJson as unknown as {
+  scenarios: GoldenScenario[];
+  equalSplits: { total: number; participants: string[]; expected: { member: string; amount: number }[] | null }[];
+};
 const TOL = 1e-6;
 
 function compute(s: GoldenScenario) {
@@ -113,6 +117,16 @@ describe("Grupos · el núcleo da los saldos de la app (golden)", () => {
       compare(compute(s), s.expected, s.id);
     });
   }
+});
+
+describe("Grupos · el reparto igual de la web es el de la app (golden)", () => {
+  it("hay casos", () => expect(golden.equalSplits.length).toBeGreaterThan(5));
+  golden.equalSplits.forEach((c, i) => {
+    it(`${c.total} entre ${c.participants.length}`, () => {
+      expect(c.expected, `equalSplits[${i}] sin expected: genera el golden desde la app`).toBeTruthy();
+      compare(equalSplit(c.total, c.participants), c.expected, `equalSplits[${i}]`);
+    });
+  });
 });
 
 describe("Grupos · reglas que el golden no cubre", () => {

@@ -72,6 +72,7 @@ import {
 import { InvalidInputError, bandeja, categorias, estadisticas, pagos, panel, registros, toolContext } from "./data";
 import { discardWebDraft, editWebDraft, insertWebDraft, parseWebDraft, queuedWebDrafts, WEB_DRAFTS_PER_DAY } from "./drafts";
 import { converterFor, groupDetail, groupsList, GroupsUnavailableError } from "./groups";
+import { parseExpense, parseSettlement, writeErrorResponse, type WebInviteResult, type WebWriteResult } from "./groupsWrite";
 import { loadRates } from "../../../shared-core/src/toolCore";
 import { isPid, sessionIndex, toPublic, type SessionEntry } from "./sessions";
 import {
@@ -229,6 +230,9 @@ async function route(request: Request, url: URL, ctx: Ctx): Promise<Response> {
     if (path === "/api/borradores") return withFull(request, ctx, (live) => newDraft(request, ctx, live));
     if (path === "/api/borradores/editar") return withFull(request, ctx, (live) => changeDraft(request, ctx, live));
     if (path === "/api/borradores/descartar") return withFull(request, ctx, (live) => dropDraft(request, ctx, live));
+    if (path === "/api/grupos/gasto") return withLive(request, ctx, (live) => groupWrite(request, ctx, live, "gasto"));
+    if (path === "/api/grupos/pago") return withLive(request, ctx, (live) => groupWrite(request, ctx, live, "pago"));
+    if (path === "/api/grupos/invitar") return withLive(request, ctx, (live) => groupWrite(request, ctx, live, "invitar"));
     if (path === "/api/sesiones/cerrar") return withLive(request, ctx, (live) => closeOne(request, ctx, live.session.sub, live.session.access, live.session.pid));
     if (path === "/api/sesiones/cerrar-otras") return withLive(request, ctx, (live) => closeAll(ctx, live.session.sub, live.session.access, live.session.pid));
     return json({ error: "no_existe" }, 404);
@@ -417,6 +421,8 @@ interface Live {
   token: string;
   session: Session;
   account: { nombre: string; correo: string | null };
+  /** El handler renovó los tokens (escribir en Grupos con un token de antes de web3_02): hay que guardarlos. */
+  refreshed?: boolean;
 }
 
 /** Borra una sesión que ya no sirve: la del KV y su entrada en la lista. */
@@ -472,8 +478,9 @@ async function withLive(request: Request, ctx: Ctx, handler: (live: Live) => Pro
     return unauthorized(true);
   }
 
-  const res = await handler({ token, session, account: user.account });
-  const wrote = await saveSession(env.WEB_KV, token, session, now, changed);
+  const live: Live = { token, session, account: user.account };
+  const res = await handler(live);
+  const wrote = await saveSession(env.WEB_KV, token, session, now, changed || live.refreshed === true);
   if (wrote && session.pid) await touchEntry(ctx, session).catch(() => undefined);
   if (wrote && !session.shared) res.headers.append("Set-Cookie", sessionCookie(token, false, remainingSeconds(session, now)));
   return res;
@@ -532,9 +539,61 @@ async function listGroups(ctx: Ctx, live: Live): Promise<Response> {
 async function oneGroup(ctx: Ctx, live: Live, id: string | null): Promise<Response> {
   if (!id || !GROUP_ID_RE.test(id)) return json({ error: "entrada" }, 400);
   return groupsGuard(async () => {
-    const detail = await groupDetail(ctx.env.GATEWAY_GROUPS, live.session.access, id, await groupsConverter(ctx, live));
+    const detail = await groupDetail(ctx.env.GATEWAY_GROUPS, live.session.access, id, await groupsConverter(ctx, live), !!ctx.env.GATEWAY_GROUPS_WRITER);
     return detail ? json(detail) : json({ error: "no_existe" }, 404);
   });
+}
+
+// ─── Grupos (lote 3, escritura: opción A) ──────────────────────────────────────────────────────────────────────
+
+/**
+ * Añadir un gasto, saldar o invitar, por la entrada `WebGroupsWriter` del gateway (`groupsWrite.ts`). Una cuenta
+ * «solo Grupos» también escribe: es justo para quien la usa.
+ *
+ * Un token emitido antes de web3_02 lleva el rol de solo lectura y el gateway responde `role`: se renueva una vez (el hook
+ * ya da `yala_web`) y se repite. La renovación se marca en `live` para que `withLive` la guarde.
+ */
+async function groupWrite(request: Request, ctx: Ctx, live: Live, op: "gasto" | "pago" | "invitar"): Promise<Response> {
+  const writer = ctx.env.GATEWAY_GROUPS_WRITER;
+  if (!writer) return json({ error: "escritura_apagada" }, 409);
+  const body = await readJson(request);
+  if (body === null) return json({ error: "entrada" }, 400);
+  let call: (token: string) => Promise<WebWriteResult | WebInviteResult>;
+  if (op === "gasto") {
+    const parsed = parseExpense(body);
+    if (!parsed.ok) return json({ error: "entrada", campo: parsed.campo }, 400);
+    call = (token) => writer.addExpense(token, parsed.value);
+  } else if (op === "pago") {
+    const parsed = parseSettlement(body);
+    if (!parsed.ok) return json({ error: "entrada", campo: parsed.campo }, 400);
+    call = (token) => writer.addSettlement(token, parsed.value);
+  } else {
+    const grupo = typeof (body as { grupo?: unknown }).grupo === "string" ? (body as { grupo: string }).grupo : "";
+    if (!GROUP_ID_RE.test(grupo)) return json({ error: "entrada", campo: "grupo" }, 400);
+    call = (token) => writer.createInvite(token, grupo);
+  }
+  let r: WebWriteResult | WebInviteResult;
+  try {
+    r = await call(live.session.access);
+    if (!r.ok && r.error === "role") {
+      const fresh = await ensureFresh(ctx, live.session, true);
+      if (fresh.ok && fresh.changed) {
+        live.refreshed = true;
+        r = await call(live.session.access);
+      }
+    }
+  } catch (err) {
+    log("web_grupos_escritura_error", { op, motivo: String(err).slice(0, 80) });
+    return json({ error: "grupos_no_disponible" }, 503, { "Retry-After": "30" });
+  }
+  if (!r.ok) {
+    log("web_grupos_escritura_rechazada", { op, motivo: r.error, detalle: r.detail ?? "" });
+    const { status, body: out } = writeErrorResponse(r);
+    return json(out, status, status === 503 ? { "Retry-After": "30" } : {});
+  }
+  log("web_grupos_escritura", { op });
+  if ("url" in r) return json({ enlace: r.url, caduca: r.expiresAt }, 201);
+  return json({ estado: r.status === "already" ? "ya_estaba" : "hecho" }, r.status === "already" ? 200 : 201);
 }
 
 // ─── Bandeja y apuntar ─────────────────────────────────────────────────────────────────────────────────────────

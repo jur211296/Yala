@@ -84,7 +84,7 @@ describe("lote 3: Grupos en lectura", () => {
       { nombre: "Beto", sentido: "teDebe", importe: 15, divisa: "PEN" },
     ]);
     expect(gw.tokens).toHaveLength(1);
-    expect(claims(gw.tokens[0]!).role).toBe("yala_mcp_reader");
+    expect(claims(gw.tokens[0]!).role).toBe("yala_web");
   });
 
   it("el detalle: deudas, saldos por persona, gastos con tu parte y pagos; un grupo ajeno es 404", async () => {

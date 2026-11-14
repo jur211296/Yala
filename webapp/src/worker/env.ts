@@ -39,6 +39,8 @@ export interface Env {
    * responde 503 y lo demás sigue.
    */
   GATEWAY_GROUPS?: import("./groups").GroupsReaderBinding;
+  /** Escritura de Grupos (lote 3, opción A): entrada `WebGroupsWriter` del gateway de staging. Sin él, la web no escribe. */
+  GATEWAY_GROUPS_WRITER?: import("./groupsWrite").GroupsWriterBinding;
   /** IANA. La zona con la que se decide qué día es hoy si la app nunca subió la suya (como el conector). */
   DEFAULT_TIMEZONE: string;
   /** Límite por IP en `/auth/*` (lo abre el navegador). Opcional en los tests; en producción, obligatorio. */

@@ -1,5 +1,314 @@
 {
   "about" : "Yala web, lote 3: saldos y deudas de Grupos. Entradas escritas a mano; los expected los escribe YalaTests/MCP/WebGroupsParityGoldenTests.swift con GroupBalanceService. mcp/test/groups-parity.test.ts exige lo mismo a shared-core/src/logic/groupBalances.ts. Ningún escenario lleva medio céntimo: la app suma los gastos en el orden de un diccionario (cambia entre ejecuciones) y en un medio céntimo el redondeo cambiaría de una corrida a otra.",
+  "equalSplits" : [
+    {
+      "expected" : [
+        {
+          "amount" : 33.340000000000003,
+          "member" : "a"
+        },
+        {
+          "amount" : 33.329999999999998,
+          "member" : "b"
+        },
+        {
+          "amount" : 33.329999999999998,
+          "member" : "c"
+        }
+      ],
+      "participants" : [
+        "a",
+        "b",
+        "c"
+      ],
+      "total" : 100
+    },
+    {
+      "expected" : [
+        {
+          "amount" : 3.3399999999999999,
+          "member" : "a"
+        },
+        {
+          "amount" : 3.3300000000000001,
+          "member" : "b"
+        },
+        {
+          "amount" : 3.3300000000000001,
+          "member" : "c"
+        }
+      ],
+      "participants" : [
+        "a",
+        "b",
+        "c"
+      ],
+      "total" : 10
+    },
+    {
+      "expected" : [
+        {
+          "amount" : 0.02,
+          "member" : "a"
+        },
+        {
+          "amount" : 0.02,
+          "member" : "b"
+        },
+        {
+          "amount" : 0.01,
+          "member" : "c"
+        }
+      ],
+      "participants" : [
+        "a",
+        "b",
+        "c"
+      ],
+      "total" : 0.050000000000000003
+    },
+    {
+      "expected" : [
+        {
+          "amount" : 0.01,
+          "member" : "a"
+        },
+        {
+          "amount" : 0,
+          "member" : "b"
+        }
+      ],
+      "participants" : [
+        "a",
+        "b"
+      ],
+      "total" : 0.01
+    },
+    {
+      "expected" : [
+        {
+          "amount" : 45.5,
+          "member" : "a"
+        }
+      ],
+      "participants" : [
+        "a"
+      ],
+      "total" : 45.5
+    },
+    {
+      "expected" : [
+        {
+          "amount" : 14.289999999999999,
+          "member" : "a"
+        },
+        {
+          "amount" : 14.289999999999999,
+          "member" : "b"
+        },
+        {
+          "amount" : 14.289999999999999,
+          "member" : "c"
+        },
+        {
+          "amount" : 14.279999999999999,
+          "member" : "d"
+        },
+        {
+          "amount" : 14.279999999999999,
+          "member" : "e"
+        },
+        {
+          "amount" : 14.279999999999999,
+          "member" : "f"
+        },
+        {
+          "amount" : 14.279999999999999,
+          "member" : "g"
+        }
+      ],
+      "participants" : [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f",
+        "g"
+      ],
+      "total" : 99.989999999999995
+    },
+    {
+      "expected" : [
+        {
+          "amount" : 3086.4200000000001,
+          "member" : "a"
+        },
+        {
+          "amount" : 3086.4200000000001,
+          "member" : "b"
+        },
+        {
+          "amount" : 3086.4200000000001,
+          "member" : "c"
+        },
+        {
+          "amount" : 3086.4099999999999,
+          "member" : "d"
+        }
+      ],
+      "participants" : [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "total" : 12345.67
+    },
+    {
+      "expected" : [
+        {
+          "amount" : 1.3,
+          "member" : "a"
+        },
+        {
+          "amount" : 1.3,
+          "member" : "b"
+        },
+        {
+          "amount" : 1.3,
+          "member" : "c"
+        },
+        {
+          "amount" : 1.29,
+          "member" : "d"
+        },
+        {
+          "amount" : 1.29,
+          "member" : "e"
+        },
+        {
+          "amount" : 1.29,
+          "member" : "f"
+        }
+      ],
+      "participants" : [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f"
+      ],
+      "total" : 7.7699999999999996
+    },
+    {
+      "expected" : [
+        {
+          "amount" : 0.040000000000000001,
+          "member" : "a"
+        },
+        {
+          "amount" : 0.029999999999999999,
+          "member" : "b"
+        },
+        {
+          "amount" : 0.029999999999999999,
+          "member" : "c"
+        }
+      ],
+      "participants" : [
+        "a",
+        "b",
+        "c"
+      ],
+      "total" : 0.10000000000000001
+    },
+    {
+      "expected" : [
+        {
+          "amount" : 90909.100000000006,
+          "member" : "a"
+        },
+        {
+          "amount" : 90909.089999999997,
+          "member" : "b"
+        },
+        {
+          "amount" : 90909.089999999997,
+          "member" : "c"
+        },
+        {
+          "amount" : 90909.089999999997,
+          "member" : "d"
+        },
+        {
+          "amount" : 90909.089999999997,
+          "member" : "e"
+        },
+        {
+          "amount" : 90909.089999999997,
+          "member" : "f"
+        },
+        {
+          "amount" : 90909.089999999997,
+          "member" : "g"
+        },
+        {
+          "amount" : 90909.089999999997,
+          "member" : "h"
+        },
+        {
+          "amount" : 90909.089999999997,
+          "member" : "i"
+        },
+        {
+          "amount" : 90909.089999999997,
+          "member" : "j"
+        },
+        {
+          "amount" : 90909.089999999997,
+          "member" : "k"
+        }
+      ],
+      "participants" : [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f",
+        "g",
+        "h",
+        "i",
+        "j",
+        "k"
+      ],
+      "total" : 1000000
+    },
+    {
+      "expected" : [
+        {
+          "amount" : 11.109999999999999,
+          "member" : "c"
+        },
+        {
+          "amount" : 11.109999999999999,
+          "member" : "a"
+        },
+        {
+          "amount" : 11.109999999999999,
+          "member" : "b"
+        }
+      ],
+      "participants" : [
+        "c",
+        "a",
+        "b"
+      ],
+      "total" : 33.329999999999998
+    }
+  ],
   "scenarios" : [
     {
       "expected" : {

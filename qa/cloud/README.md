@@ -1633,6 +1633,9 @@ exige que cada nombre salga aquí:
 | `pushTokenRegisterFailed` | `POST /push/register` falló contra PostgREST | estado HTTP |
 | `groupSyncCoherenceGroupPartial` | delta de Grupos con una unidad de coherencia a medias | entidad |
 | `cloudSyncCoherenceGroupPartial` | delta personal con una unidad de coherencia a medias | entidad |
+| `webGroupsWriteLimited` | Yala web (staging): una escritura en Grupos topó con el límite por cuenta | — |
+| `webGroupsWriteRejected` | Yala web (staging): PostgREST rechazó una escritura en Grupos | `entidad/status` o `invite/status` |
+| `webGroupsWritten` | Yala web (staging): salió una escritura en Grupos | `expense`, `settlement:confirmed`, `settlement:pending`, `invite` |
 
 ```sql
 -- ¿Están llegando los avisos de Grupos? Entregados frente a fallos, por día.

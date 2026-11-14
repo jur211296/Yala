@@ -43,12 +43,16 @@ Medido antes de decidir (14-nov, sobre la rama del lote 2, en cola de auto-merge
 
 | # | Decisión | Elegida | Por qué |
 |---|---|---|---|
-| P1 | ¿Cómo escribe la web en Grupos? | **Decisión vital de Jürgen**, preguntada el 14-nov 10:14 con tres opciones (rol propio de escritura por el gateway, borradores que sube el iPhone, o nada hasta 3.0). Se construye primero la lectura. | El plan lo deja abierto («hace falta una puerta para la web») y cambia el modelo de permisos. |
+| P1 | ¿Cómo escribe la web en Grupos? | **Decisión vital de Jürgen**, preguntada el 14-nov 10:14 con tres opciones (rol propio de escritura por el gateway, borradores que sube el iPhone, o nada hasta 3.0). Se construye primero la lectura. **Contestada el 14-nov 13:52: A**, solo en staging hasta una revisión. | El plan lo deja abierto («hace falta una puerta para la web») y cambia el modelo de permisos. |
 | P2 | ¿Por dónde lee la web los datos de Grupos? | Por el gateway, con una **entrada interna** (un *service binding* de Cloudflare entre los dos Workers, sin ruta pública) que usa el token de solo lectura de la web y la llave que ya tiene. | La llave no sale del gateway. El plan pone Grupos «por las rutas de Grupos del gateway». Darle una copia a la web repartiría la llave. |
 | P3 | ¿Qué permiso nuevo hace falta en Supabase? | `web3_01` (solo staging): SELECT y los RPC lectores de Grupos para `yala_mcp_reader`, **solo si el token es del cliente de la web** (`client_id`) y la persona es miembro. Ni una escritura. | El conector de Claude comparte ese rol: con la condición del `client_id` no gana nada. |
 | P4 | ¿Qué ve una cuenta «solo Grupos»? | Grupos y Configurar. Panel, Registros, Bandeja, Apuntar, Estadísticas y Pagos le explican que viven en la nube completa y cómo activarla. | D3. Sin nube completa no hay datos personales que enseñar. |
 | P5 | ¿Qué grupos salen? | Los de membresía activa, sin los archivados ni los ocultos para todos, como la lista del iPhone. | La lista del iPhone; lo pendiente de aprobación no tiene saldos. |
 | P6 | ¿Editar y descartar borradores escribe datos compartidos? | No: es la cola de borradores de la propia persona (D9, la del lote 1). Se edita y se borra por `id` y `user_id`, solo los de `source = web`. | Ya decidido en el lote 1: la web escribe en esa cola. |
+| P8 | ¿Cómo es el permiso propio (A)? | Rol `yala_web` para los tokens de la web, miembro de `yala_mcp_reader`. Ningún permiso de tabla: EXECUTE de `web_add_group_expense` (un gasto NUEVO con todas sus cuotas, en una transacción: cuotas de miembros activos que suman el importe) y `web_add_group_settlement` (un pago NUEVO entre dos miembros activos), las dos SECURITY DEFINER, con id nuevo en TODOS los grupos, y de `create_group_invite`. | `apply_group_delta` es SECURITY INVOKER y el esquema `auth` no deja dar USAGE a un rol nuevo (medido). Así la lista cerrada vive también en la base. El conector sigue sin escribir. |
+| P9 | Lista cerrada | Tres operaciones en la entrada interna `WebGroupsWriter` del gateway: nuevo gasto con reparto igual, apuntar un pago, crear un enlace de invitación. | Lo que pedía el encargo. Editar, borrar, otros repartos y confirmar pagos siguen en el iPhone. |
+| P10 | Reglas de la app | Reparto igual de `GroupSplitCalculator` (portado, en el golden); pago confirmado si lo apunta quien paga o quien recibe (`SettlementSaldar23Logic`); enlace con el formato de `InviteLinkService`; aviso push del iPhone a los demás. | Lo que escribe la web tiene que ser indistinguible de lo que escribe el iPhone. |
+| P11 | Límites por cuenta | Cubo `webw:<sub>`: 300 al día, 20 por minuto, aplicado también en `observe`. | Es parte de lo que sustituye a App Attest; en `observe` el límite de siempre solo cuenta. |
 | P7 | Datos de prueba | Se crean en staging, para los usuarios de prueba A y B, por las rutas del gateway que usa un iPhone (crear grupo, unirse, gasto, pago). | Sin grupos en staging no se puede ver ni medir la paridad en pantalla. Solo staging. |
 
 ## Pruebas
@@ -72,12 +76,20 @@ Medido antes de decidir (14-nov, sobre la rama del lote 2, en cola de auto-merge
 - **Datos de prueba** en staging: «Viaje a Cusco» (Ana, Beto y Caro) y «Depa Miraflores» (Ana y Beto), creados por
   las rutas del gateway que usa el iPhone.
 
-Pruebas: web 95/95, conector 255/255 (con la paridad de Grupos), gateway 699 en verde (86 de staging se saltan offline); e2e contra staging 21/21;
-gate de iOS en verde (las dos schemes, 2 suites de paridad, 20/20 checks del CI).
+- **Escribir en Grupos (opción A)**: «Nuevo gasto» con reparto igual (enseña la parte de cada uno antes de guardar),
+  «Saldar» (también desde cada deuda, con el importe puesto) e «Invitar» (enlace de 7 días y 20 usos, con «Copiar»).
+  Permiso `web3_02` en Supabase staging, entrada interna `WebGroupsWriter` en el gateway, límite por cuenta y aviso push.
+  Lo escrito baja por `/groups/pull` con la forma de un gasto del iPhone (comprobado en la e2e).
+
+Pruebas: web 104/104, conector 267/267 (con la paridad de Grupos y del reparto igual), gateway 713 en verde (86 de
+staging se saltan offline); e2e contra staging 22/22 (escribe en «Depa Miraflores» y lo borra al acabar); sonda con un
+token real de la web: PostgREST da 42501 a tablas y a `apply_group_delta`.
 
 ## Queda fuera
 
-- **Escribir en Grupos desde la web** (añadir gasto, saldar, invitar): decisión de Jürgen, preguntada con opciones.
+- **Producción de la escritura**: Jürgen la quiere tras una revisión. `web3_02` y `WEB_GROUPS_WRITER` solo en staging.
+- Desde la web no se edita ni borra un gasto, no hay repartos distintos del igual, no se confirman ni rechazan pagos, no
+  se estrena una divisa en el grupo ni se gestiona la membresía: siguen en el iPhone.
 - Entrar con el iPhone por QR sigue siendo solo para la nube completa.
 - «Solo Grupos» se decide al entrar: si la cuenta pasa a completa, hay que volver a entrar.
 - Con 50 grupos la lista tarda unos 6 s (cinco lecturas por grupo); con pocos grupos, ~1 s.

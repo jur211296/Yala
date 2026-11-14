@@ -1,5 +1,6 @@
 /**
- * Grupos en la web (lote 3), en LECTURA.
+ * Grupos en la web (lote 3): la LECTURA. La escritura (opción A) va por `groupsWrite.ts`; aquí solo se dice en el detalle
+ * qué deja hacer (`writeFlags`).
  *
  * De dónde salen las filas: el gateway, por la entrada interna `WebGroupsReader` (service binding `GATEWAY_GROUPS`,
  * `gateway/src/web/groupsReader.ts`). Ocho columnas de Grupos están cifradas y la llave solo vive allí; la web le pasa
@@ -173,7 +174,25 @@ export async function groupsList(binding: GroupsReaderBinding | undefined, token
 }
 
 /** El detalle de un grupo: banda, quién le debe a quién, saldos por persona, gastos y pagos. `null` si no es suyo. */
-export async function groupDetail(binding: GroupsReaderBinding | undefined, token: string, id: string, convert: LatestConverter) {
+/**
+ * Qué deja hacer la web en este grupo (lote 3, opción A). `divisas`: las que el grupo ya usa; la web no estrena divisas.
+ * Invitar: admin, o «miembros pueden invitar» (lo decide de verdad `create_group_invite`). Un grupo archivado no se toca.
+ */
+function writeFlags(g: WebGroupRows, canWrite: boolean) {
+  const meta = g.group ?? {};
+  const puedeEscribir = canWrite && !bool(meta.is_archived);
+  const me = g.members.find((m) => str(m.member_key) === g.me);
+  const divisas = new Set<string>();
+  if (code(meta.currency_code)) divisas.add(code(meta.currency_code));
+  for (const r of [...g.expenses, ...g.settlements]) if (code(r.currency_code)) divisas.add(code(r.currency_code));
+  return {
+    puedeEscribir,
+    puedeInvitar: puedeEscribir && (str(me?.role) === "admin" || bool(meta.members_can_invite)),
+    divisas: [...divisas],
+  };
+}
+
+export async function groupDetail(binding: GroupsReaderBinding | undefined, token: string, id: string, convert: LatestConverter, canWrite = false) {
   const { groups, truncated } = await snapshot(binding, token, id);
   const g = groups.find((x) => x.group_id === id);
   if (!g) return null;
@@ -237,10 +256,20 @@ export async function groupDetail(binding: GroupsReaderBinding | undefined, toke
     unaSolaMoneda: source.singleCurrency,
     miembros: g.members
       .filter((m) => str(m.status) === "active")
-      .map((m) => ({ nombre: str(m.display_name).trim(), rol: str(m.role) || "member", esTu: str(m.member_key) === g.me }))
+      .map((m) => ({ clave: str(m.member_key), nombre: str(m.display_name).trim(), rol: str(m.role) || "member", esTu: str(m.member_key) === g.me }))
       .sort((a, b) => Number(b.esTu) - Number(a.esTu) || a.nombre.localeCompare(b.nombre, "es")),
     banda: band(headerBalance(debts, g.me)),
-    deudas: debts.map((d) => ({ de: name(d.from), a: name(d.to), deTi: d.from === g.me, aTi: d.to === g.me, importe: d.amount, divisa: d.currency })),
+    ...writeFlags(g, canWrite),
+    deudas: debts.map((d) => ({
+      de: name(d.from),
+      a: name(d.to),
+      deClave: d.from,
+      aClave: d.to,
+      deTi: d.from === g.me,
+      aTi: d.to === g.me,
+      importe: d.amount,
+      divisa: d.currency,
+    })),
     saldos,
     gastos,
     pagos,

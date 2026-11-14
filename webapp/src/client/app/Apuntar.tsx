@@ -12,7 +12,7 @@ import { todayKey } from "./format";
 
 const t = texts();
 
-function parseAmount(raw: string): number | null {
+export function parseAmount(raw: string): number | null {
   const clean = raw.replace(/\s/g, "").replace(/[^\d.,]/g, "");
   if (!clean) return null;
   // «1.234,50» y «1,234.50»: el último separador es el decimal.

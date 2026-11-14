@@ -17,12 +17,13 @@ function jwt(role: string): string {
 }
 const WEB = jwt("yala_mcp_reader");
 const PHONE = jwt("authenticated");
+const WEB_OWN = jwt("yala_web");
 
 vi.mock("../src/sync/userauth", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../src/sync/userauth")>();
   return {
     ...actual,
-    verifyUserToken: vi.fn(async (_env: Env, token: string) => (token === WEB || token === PHONE ? { sub: SUB, token } : null)),
+    verifyUserToken: vi.fn(async (_env: Env, token: string) => ([WEB, PHONE, WEB_OWN].includes(token) ? { sub: SUB, token } : null)),
   };
 });
 
@@ -111,6 +112,11 @@ describe("readGroupsForWeb", () => {
     const r = await readGroupsForWeb(env, WEB, "g1");
     expect(r.ok).toBe(true);
     expect(calls.find((c) => c.url.includes("/group_members?"))?.url).toContain("group_id=eq.g1");
+  });
+
+  it("acepta también el rol propio de la web (web3_02), que hereda la lectura", async () => {
+    stub();
+    expect((await readGroupsForWeb(env, WEB_OWN)).ok).toBe(true);
   });
 
   it("rechaza el token del iPhone: por aquí se saltaría App Attest", async () => {
