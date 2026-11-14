@@ -122,7 +122,7 @@ describe("mirar: Panel, Registros y Bandeja", () => {
     expect(reads.length).toBeGreaterThan(0);
     for (const c of reads) {
       const claims = JSON.parse(atob(c.auth!.replace("Bearer ", "").split(".")[1]!.replace(/-/g, "+").replace(/_/g, "/"))) as { role: string; client_id: string };
-      expect(claims.role).toBe("yala_mcp_reader");
+      expect(claims.role).toBe("yala_web");
       expect(claims.client_id).toBe(WEB_CLIENT);
     }
   });

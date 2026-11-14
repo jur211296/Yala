@@ -2,7 +2,7 @@
  * El Worker «yala-web»: sirve la página y hace de servidor de la web. Rutas:
  *
  *   GET  /api/config            clave pública de Turnstile y entorno (sin sesión)
- *   GET  /api/me                con sesión: el nombre de la cuenta. Sin ella, 401
+ *   GET  /api/me                con sesión: el nombre de la cuenta y si es «solo Grupos». Sin ella, 401
  *   GET  /api/panel             saldos, entradas y salidas del mes y últimos registros (núcleo compartido)
  *   GET  /api/registros         movimientos de 50 en 50, con filtros (`buscar_movimientos`)
  *   GET  /api/categorias        categorías y subcategorías, para filtrar y para apuntar
@@ -10,6 +10,10 @@
  *   GET  /api/estadisticas      Resumen, Distribución y Tendencias de un período (`?periodo=`, lote 2)
  *   GET  /api/pagos             próximos cobros de 30 días y suscripciones (lote 2)
  *   POST /api/borradores        apuntar un gasto: a la cola común de borradores (decisión D9)
+ *   POST /api/borradores/editar     cambia un borrador de la web que el iPhone aún no recogió ({id, …}, lote 3)
+ *   POST /api/borradores/descartar  lo retira de la cola ({id}, lote 3)
+ *   GET  /api/grupos            Grupos (lote 3, lectura): resumen y una tarjeta por grupo, por el gateway
+ *   GET  /api/grupos/detalle    un grupo (`?id=`): banda, deudas, saldos, gastos y pagos
  *   GET  /api/sesiones          las sesiones web de la cuenta
  *   POST /api/sesiones/cerrar   cierra otra sesión web de la cuenta ({id}); `cerrar-otras` cierra todas menos esta
  *   GET  /api/dispositivo/sesiones          el iPhone («Navegadores conectados»), con el token de su sesión
@@ -66,7 +70,10 @@ import {
   type PairingRecord,
 } from "./pairing";
 import { InvalidInputError, bandeja, categorias, estadisticas, pagos, panel, registros, toolContext } from "./data";
-import { insertWebDraft, parseWebDraft, queuedWebDrafts, WEB_DRAFTS_PER_DAY } from "./drafts";
+import { discardWebDraft, editWebDraft, insertWebDraft, parseWebDraft, queuedWebDrafts, WEB_DRAFTS_PER_DAY } from "./drafts";
+import { converterFor, groupDetail, groupsList, GroupsUnavailableError } from "./groups";
+import { parseExpense, parseSettlement, writeErrorResponse, type WebInviteResult, type WebWriteResult } from "./groupsWrite";
+import { loadRates } from "../../../shared-core/src/toolCore";
 import { isPid, sessionIndex, toPublic, type SessionEntry } from "./sessions";
 import {
   LOGIN_COOKIE,
@@ -177,6 +184,7 @@ export function createApp(deps: AppDeps = {}) {
       } catch (err) {
         console.error(JSON.stringify({ evento: "web_error", ruta: url.pathname, error: err instanceof Error ? err.name : "desconocido" }));
         if (err instanceof InvalidInputError && url.pathname.startsWith("/api/")) res = json({ error: "entrada" }, 400);
+        else if (err instanceof GroupsUnavailableError) res = json({ error: "grupos_no_disponible", motivo: err.reason }, 503, { "Retry-After": "30" });
         else res = url.pathname.startsWith("/api/") ? json({ error: "no_disponible" }, 503) : aviso("error");
       }
       return withHeaders(env, url.pathname, res);
@@ -202,19 +210,29 @@ async function route(request: Request, url: URL, ctx: Ctx): Promise<Response> {
   if (path.startsWith("/api/")) {
     if (method === "GET") {
       if (path === "/api/config") return json({ turnstileSiteKey: env.TURNSTILE_SITE_KEY, entorno: env.ENVIRONMENT });
-      if (path === "/api/me") return withLive(request, ctx, async (live) => json({ nombre: live.account.nombre, correo: live.account.correo, equipoCompartido: live.session.shared }));
-      if (path === "/api/panel") return withLive(request, ctx, async (live) => json(await panel(readCtx(ctx, live))));
-      if (path === "/api/registros") return withLive(request, ctx, async (live) => json(await registros(readCtx(ctx, live), url.searchParams)));
-      if (path === "/api/categorias") return withLive(request, ctx, async (live) => json(await categorias(readCtx(ctx, live))));
-      if (path === "/api/bandeja") return withLive(request, ctx, (live) => inbox(ctx, live));
-      if (path === "/api/estadisticas") return withLive(request, ctx, async (live) => json(await estadisticas(readCtx(ctx, live), url.searchParams)));
-      if (path === "/api/pagos") return withLive(request, ctx, async (live) => json(await pagos(readCtx(ctx, live))));
+      if (path === "/api/me")
+        return withLive(request, ctx, async (live) =>
+          json({ nombre: live.account.nombre, correo: live.account.correo, equipoCompartido: live.session.shared, soloGrupos: live.session.soloGrupos }),
+        );
+      if (path === "/api/panel") return withFull(request, ctx, async (live) => json(await panel(readCtx(ctx, live))));
+      if (path === "/api/registros") return withFull(request, ctx, async (live) => json(await registros(readCtx(ctx, live), url.searchParams)));
+      if (path === "/api/categorias") return withFull(request, ctx, async (live) => json(await categorias(readCtx(ctx, live))));
+      if (path === "/api/bandeja") return withFull(request, ctx, (live) => inbox(ctx, live));
+      if (path === "/api/estadisticas") return withFull(request, ctx, async (live) => json(await estadisticas(readCtx(ctx, live), url.searchParams)));
+      if (path === "/api/pagos") return withFull(request, ctx, async (live) => json(await pagos(readCtx(ctx, live))));
+      if (path === "/api/grupos") return withLive(request, ctx, (live) => listGroups(ctx, live));
+      if (path === "/api/grupos/detalle") return withLive(request, ctx, (live) => oneGroup(ctx, live, url.searchParams.get("id")));
       if (path === "/api/sesiones") return withLive(request, ctx, async (live) => json({ sesiones: await liveEntries(ctx, live.session.sub, live.session.pid) }));
       return json({ error: "no_existe" }, 404);
     }
     if (method !== "POST") return json({ error: "metodo" }, 405);
     if (!sameOrigin(request, env)) return json({ error: "origen" }, 403);
-    if (path === "/api/borradores") return withLive(request, ctx, (live) => newDraft(request, ctx, live));
+    if (path === "/api/borradores") return withFull(request, ctx, (live) => newDraft(request, ctx, live));
+    if (path === "/api/borradores/editar") return withFull(request, ctx, (live) => changeDraft(request, ctx, live));
+    if (path === "/api/borradores/descartar") return withFull(request, ctx, (live) => dropDraft(request, ctx, live));
+    if (path === "/api/grupos/gasto") return withLive(request, ctx, (live) => groupWrite(request, ctx, live, "gasto"));
+    if (path === "/api/grupos/pago") return withLive(request, ctx, (live) => groupWrite(request, ctx, live, "pago"));
+    if (path === "/api/grupos/invitar") return withLive(request, ctx, (live) => groupWrite(request, ctx, live, "invitar"));
     if (path === "/api/sesiones/cerrar") return withLive(request, ctx, (live) => closeOne(request, ctx, live.session.sub, live.session.access, live.session.pid));
     if (path === "/api/sesiones/cerrar-otras") return withLive(request, ctx, (live) => closeAll(ctx, live.session.sub, live.session.access, live.session.pid));
     return json({ error: "no_existe" }, 404);
@@ -300,9 +318,10 @@ async function finishLogin(ctx: Ctx, request: Request, normal: NormalSession, sh
   const { env, fetcher } = ctx;
   try {
     const kind = await cloudKind(env, fetcher, normal.access);
-    if (kind !== "complete") {
+    // Lote 3 (decisión D3): «solo Grupos» entra, y la web le enseña Grupos y Configurar. Sin nube, sigue sin entrar.
+    if (kind === "none") {
       log("web_entrada_sin_nube", { tipo: kind });
-      return aviso(kind === "groups_only" ? "solo-grupos" : "sin-nube", cookies);
+      return aviso("sin-nube", cookies);
     }
     const verifier = randomToken();
     const grant = await grantReadOnly(env, fetcher, normal, { verifier, challenge: await s256(verifier), state: randomToken(16) });
@@ -310,9 +329,9 @@ async function finishLogin(ctx: Ctx, request: Request, normal: NormalSession, sh
       log("web_permiso_fallido", { paso: grant.step, estado: grant.status ?? null });
       return aviso("error", cookies);
     }
-    const opened = await openReaderSession(ctx, request, grant.tokens, normal.userId, shared);
+    const opened = await openReaderSession(ctx, request, grant.tokens, normal.userId, shared, kind === "groups_only");
     if (!opened) return aviso("error", cookies);
-    log("web_entrada", { compartido: shared });
+    log("web_entrada", { compartido: shared, soloGrupos: kind === "groups_only" });
     return goTo("/", [...cookies, opened.cookie]);
   } finally {
     await logout(env, fetcher, normal.access);
@@ -330,6 +349,7 @@ async function openReaderSession(
   tokens: { access: string; refresh: string },
   expectedSub: string,
   shared: boolean,
+  soloGrupos = false,
 ): Promise<{ cookie: string } | null> {
   const { env, fetcher, verify, now } = ctx;
   const check = await verify(tokens.access, expectedSub);
@@ -348,6 +368,7 @@ async function openReaderSession(
       shared,
       now,
       pid,
+      soloGrupos,
     );
     const browser = describeBrowser(request.headers.get("User-Agent"));
     await sessionIndex(env, check.claims.sub).put(
@@ -400,6 +421,8 @@ interface Live {
   token: string;
   session: Session;
   account: { nombre: string; correo: string | null };
+  /** El handler renovó los tokens (escribir en Grupos con un token de antes de web3_02): hay que guardarlos. */
+  refreshed?: boolean;
 }
 
 /** Borra una sesión que ya no sirve: la del KV y su entrada en la lista. */
@@ -455,8 +478,9 @@ async function withLive(request: Request, ctx: Ctx, handler: (live: Live) => Pro
     return unauthorized(true);
   }
 
-  const res = await handler({ token, session, account: user.account });
-  const wrote = await saveSession(env.WEB_KV, token, session, now, changed);
+  const live: Live = { token, session, account: user.account };
+  const res = await handler(live);
+  const wrote = await saveSession(env.WEB_KV, token, session, now, changed || live.refreshed === true);
   if (wrote && session.pid) await touchEntry(ctx, session).catch(() => undefined);
   if (wrote && !session.shared) res.headers.append("Set-Cookie", sessionCookie(token, false, remainingSeconds(session, now)));
   return res;
@@ -470,6 +494,106 @@ async function touchEntry(ctx: Ctx, session: Session): Promise<void> {
 
 function readCtx(ctx: Ctx, live: Live) {
   return toolContext(ctx.env, ctx.fetcher, live.session.access, new Date(ctx.now * 1000));
+}
+
+/**
+ * Como `withLive`, para lo que vive en la nube COMPLETA (Panel, Registros, Bandeja, Apuntar, Estadísticas, Pagos). Una
+ * cuenta «solo Grupos» recibe 409 `solo_grupos` y la página le explica por qué (lote 3, decisión D3).
+ */
+async function withFull(request: Request, ctx: Ctx, handler: (live: Live) => Promise<Response>): Promise<Response> {
+  return withLive(request, ctx, (live) => (live.session.soloGrupos ? Promise.resolve(json({ error: "solo_grupos" }, 409)) : handler(live)));
+}
+
+// ─── Grupos (lote 3, lectura) ──────────────────────────────────────────────────────────────────────────────────
+
+/** «Una sola moneda» convierte con la tasa de hoy de las filas de la persona; sin filas, con la tabla estática. */
+async function groupsConverter(ctx: Ctx, live: Live) {
+  const today = new Date(ctx.now * 1000).toISOString().slice(0, 10);
+  const book = await loadRates(readCtx(ctx, live), today);
+  return converterFor(book, today);
+}
+
+const GROUP_ID_RE = /^[A-Za-z0-9._:-]{1,120}$/;
+
+/**
+ * Un gateway que no lee es un 503 que se DEVUELVE, no que se lanza: `withLive` guarda los tokens renovados después del
+ * handler, y un throw se saltaba ese guardado (el refresh ya rotado quedaba sin escribir y Supabase podía revocar la
+ * sesión por reuso del viejo).
+ */
+async function groupsGuard(run: () => Promise<Response>): Promise<Response> {
+  try {
+    return await run();
+  } catch (err) {
+    if (err instanceof GroupsUnavailableError) {
+      log("web_grupos_no_disponible", { motivo: err.reason });
+      return json({ error: "grupos_no_disponible", motivo: err.reason }, 503, { "Retry-After": "30" });
+    }
+    throw err;
+  }
+}
+
+async function listGroups(ctx: Ctx, live: Live): Promise<Response> {
+  return groupsGuard(async () => json(await groupsList(ctx.env.GATEWAY_GROUPS, live.session.access, await groupsConverter(ctx, live))));
+}
+
+async function oneGroup(ctx: Ctx, live: Live, id: string | null): Promise<Response> {
+  if (!id || !GROUP_ID_RE.test(id)) return json({ error: "entrada" }, 400);
+  return groupsGuard(async () => {
+    const detail = await groupDetail(ctx.env.GATEWAY_GROUPS, live.session.access, id, await groupsConverter(ctx, live), !!ctx.env.GATEWAY_GROUPS_WRITER);
+    return detail ? json(detail) : json({ error: "no_existe" }, 404);
+  });
+}
+
+// ─── Grupos (lote 3, escritura: opción A) ──────────────────────────────────────────────────────────────────────
+
+/**
+ * Añadir un gasto, saldar o invitar, por la entrada `WebGroupsWriter` del gateway (`groupsWrite.ts`). Una cuenta
+ * «solo Grupos» también escribe: es justo para quien la usa.
+ *
+ * Un token emitido antes de web3_02 lleva el rol de solo lectura y el gateway responde `role`: se renueva una vez (el hook
+ * ya da `yala_web`) y se repite. La renovación se marca en `live` para que `withLive` la guarde.
+ */
+async function groupWrite(request: Request, ctx: Ctx, live: Live, op: "gasto" | "pago" | "invitar"): Promise<Response> {
+  const writer = ctx.env.GATEWAY_GROUPS_WRITER;
+  if (!writer) return json({ error: "escritura_apagada" }, 409);
+  const body = await readJson(request);
+  if (body === null) return json({ error: "entrada" }, 400);
+  let call: (token: string) => Promise<WebWriteResult | WebInviteResult>;
+  if (op === "gasto") {
+    const parsed = parseExpense(body);
+    if (!parsed.ok) return json({ error: "entrada", campo: parsed.campo }, 400);
+    call = (token) => writer.addExpense(token, parsed.value);
+  } else if (op === "pago") {
+    const parsed = parseSettlement(body);
+    if (!parsed.ok) return json({ error: "entrada", campo: parsed.campo }, 400);
+    call = (token) => writer.addSettlement(token, parsed.value);
+  } else {
+    const grupo = typeof (body as { grupo?: unknown }).grupo === "string" ? (body as { grupo: string }).grupo : "";
+    if (!GROUP_ID_RE.test(grupo)) return json({ error: "entrada", campo: "grupo" }, 400);
+    call = (token) => writer.createInvite(token, grupo);
+  }
+  let r: WebWriteResult | WebInviteResult;
+  try {
+    r = await call(live.session.access);
+    if (!r.ok && r.error === "role") {
+      const fresh = await ensureFresh(ctx, live.session, true);
+      if (fresh.ok && fresh.changed) {
+        live.refreshed = true;
+        r = await call(live.session.access);
+      }
+    }
+  } catch (err) {
+    log("web_grupos_escritura_error", { op, motivo: String(err).slice(0, 80) });
+    return json({ error: "grupos_no_disponible" }, 503, { "Retry-After": "30" });
+  }
+  if (!r.ok) {
+    log("web_grupos_escritura_rechazada", { op, motivo: r.error, detalle: r.detail ?? "" });
+    const { status, body: out } = writeErrorResponse(r);
+    return json(out, status, status === 503 ? { "Retry-After": "30" } : {});
+  }
+  log("web_grupos_escritura", { op });
+  if ("url" in r) return json({ enlace: r.url, caduca: r.expiresAt }, 201);
+  return json({ estado: r.status === "already" ? "ya_estaba" : "hecho" }, r.status === "already" ? 200 : 201);
 }
 
 // ─── Bandeja y apuntar ─────────────────────────────────────────────────────────────────────────────────────────
@@ -493,6 +617,32 @@ async function newDraft(request: Request, ctx: Ctx, live: Live): Promise<Respons
   const id = await insertWebDraft(ctx.env, live.session.sub, parsed.value, nowMs);
   log("web_borrador");
   return json({ id }, 201);
+}
+
+/** Cambia un borrador que la web dejó y el iPhone aún no recogió. Mismas reglas que al apuntarlo. */
+async function changeDraft(request: Request, ctx: Ctx, live: Live): Promise<Response> {
+  const body = (await readJson(request)) as Record<string, unknown> | null;
+  if (body === null) return json({ error: "entrada" }, 400);
+  const nowMs = ctx.now * 1000;
+  const id = typeof body.id === "string" ? body.id : "";
+  const parsed = parseWebDraft(body, nowMs);
+  if (!parsed.ok) return json({ error: "entrada", campo: parsed.campo }, 400);
+  const changed = await editWebDraft(ctx.env, live.session.sub, id, parsed.value, nowMs);
+  if (changed === "entrada") return json({ error: "entrada", campo: "id" }, 400);
+  if (!changed) return json({ error: "recogido" }, 409);
+  log("web_borrador_editado");
+  return json({ id });
+}
+
+/** Retira de la cola un borrador que la web dejó y el iPhone aún no recogió. */
+async function dropDraft(request: Request, ctx: Ctx, live: Live): Promise<Response> {
+  const body = (await readJson(request)) as { id?: unknown } | null;
+  const id = typeof body?.id === "string" ? body.id : "";
+  const done = await discardWebDraft(ctx.env, live.session.sub, id, ctx.now * 1000);
+  if (done === "entrada") return json({ error: "entrada", campo: "id" }, 400);
+  if (!done) return json({ error: "recogido" }, 409);
+  log("web_borrador_descartado");
+  return json({ id });
 }
 
 // ─── Sesiones ──────────────────────────────────────────────────────────────────────────────────────────────────

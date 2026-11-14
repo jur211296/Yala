@@ -3,15 +3,18 @@
  * y, además:
  *
  * - `client_id` = el cliente OAuth de la web. Un token de la app o del conector no sirve aquí.
- * - `role = yala_mcp_reader`: lo pone el hook de Supabase (`webapp/supabase/web0_01_hook_web_client.sql`). Con ese rol
- *   PostgREST no deja escribir. Si alguien apagara el hook, el token volvería con `authenticated` —que escribe— y la
- *   web dejaría de dejar entrar en vez de guardar un token que escribe: falla CERRADO.
+ * - `role = yala_web` (o `yala_mcp_reader`, el de antes de web3_02): lo pone el hook de Supabase
+ *   (`webapp/supabase/web3_02_grupos_escritura.sql`). `yala_web` lee como el conector y solo AÑADE en Grupos (gasto,
+ *   pago, invitación), y eso solo con la llave de Grupos, que vive en el gateway. Si alguien apagara el hook, el token
+ *   volvería con `authenticated` —que escribe en todo— y la web dejaría de dejar entrar en vez de guardar un token que
+ *   escribe: falla CERRADO.
  * - `session_id`, y `sub` = el usuario que acaba de entrar (o el de la sesión, al refrescar).
  */
 import { createRemoteJWKSet, jwtVerify, type JWTPayload, type JWTVerifyGetKey } from "jose";
 import { authIssuer, type Env } from "./env";
 
-export const READER_ROLE = "yala_mcp_reader";
+/** Los roles que la web acepta en su token. `yala_mcp_reader` queda por los tokens emitidos antes de web3_02. */
+export const WEB_ROLES: readonly string[] = ["yala_web", "yala_mcp_reader"];
 
 export interface ReaderClaims {
   sub: string;
@@ -29,7 +32,7 @@ export function checkReaderClaims(payload: JWTPayload, env: Env, expectedSub: st
   const sub = typeof payload.sub === "string" ? payload.sub : "";
   if (!sub || typeof payload.exp !== "number") return { ok: false, reason: "invalid" };
   if (!env.SUPABASE_OAUTH_CLIENT_ID || payload["client_id"] !== env.SUPABASE_OAUTH_CLIENT_ID) return { ok: false, reason: "not_web_client" };
-  if (payload["role"] !== READER_ROLE) return { ok: false, reason: "not_read_only" };
+  if (!WEB_ROLES.includes(String(payload["role"]))) return { ok: false, reason: "not_read_only" };
   const sessionId = typeof payload["session_id"] === "string" ? (payload["session_id"] as string) : "";
   if (!sessionId) return { ok: false, reason: "no_session" };
   if (sub !== expectedSub) return { ok: false, reason: "wrong_user" };

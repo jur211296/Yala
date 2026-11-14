@@ -753,3 +753,18 @@ cierra también la sesión de Supabase, y cada petición de datos comprueba ante
 (lo fija `webapp/test/lote1.test.ts`, «aunque el KV aún devuelva la sesión cerrada»).
 
 Lo que cuesta poco y lo evita: un e2e contra el entorno real para todo lo que dependa de leer lo recién escrito en KV.
+
+### Supabase: un rol nuevo no puede llamar a `auth.uid()` en una función SECURITY INVOKER (2026-11-14)
+
+**Qué pasó.** Para que Yala web escribiera en Grupos (lote 3, opción A) se creó el rol `yala_web` con INSERT y RLS en las
+tablas de Grupos y EXECUTE de `apply_group_delta`. Cada escritura daba 503: `apply_group_delta` es SECURITY INVOKER y su
+primera línea lee `auth.uid()`, y el rol no tenía USAGE en el esquema `auth` («permission denied for schema auth»).
+
+**Por qué no se arregla con un GRANT.** El esquema `auth` es de `supabase_admin`, y `postgres` (el usuario de la Management
+API) solo tiene USAGE, sin opción de concederlo: `grant usage on schema auth to yala_web` no da error, da un aviso y no hace
+nada (`has_schema_privilege` sigue en `false`). `authenticated` lo tiene porque lo concedió `supabase_admin`.
+
+**Qué hacer.** Para un rol propio, las escrituras van por una función SECURITY DEFINER del dueño, que sí lee `auth.uid()`.
+Dentro la RLS no actúa, así que la función comprueba antes todo lo que la RLS decidía (miembro, grupo vivo, solo filas
+nuevas, id nuevo en todos los grupos): `webapp/supabase/web3_02_grupos_escritura.sql`, `web_add_group_expense`. Se verifica con `set local role <rol>` y
+`set_config('request.jwt.claims', …)` dentro de un bloque `do` que acaba en `raise exception` (no deja nada escrito).

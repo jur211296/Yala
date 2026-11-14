@@ -188,10 +188,12 @@ export class FakeSupabase {
   readonly authorizations = new Map<string, Authz>();
   readonly socialFlows = new Map<string, { userId: string; challenge: string; used?: boolean }>();
   readonly calls: { method: string; path: string; search: string; auth: string | null }[] = [];
-  /** Clientes OAuth a los que el hook da `yala_mcp_reader`. Sin la web aquí, el hook la rechaza (403). */
+  /** Clientes OAuth a los que el hook da token (la web `yala_web`, el conector `yala_mcp_reader`). Sin la web aquí, el hook la rechaza (403). */
   readonly hookAllow = new Set([CONNECTOR_CLIENT, WEB_CLIENT]);
   /** El hook apagado: los tokens OAuth salen con `authenticated` (el riesgo que la web tiene que rechazar). */
   hookOff = false;
+  /** El hook de antes de web3_02: la web sale con `yala_mcp_reader`, como el conector. */
+  oldWebRole = false;
   /** El usuario ya dio el permiso antes: Supabase devuelve `redirect_url` sin pedir consentimiento. */
   alreadyConsented = false;
   failRefresh: { status: number; code: string } | null = null;
@@ -236,7 +238,7 @@ export class FakeSupabase {
 
   private async sign(s: Sess): Promise<string> {
     let role = "authenticated";
-    if (s.clientId && !this.hookOff) role = "yala_mcp_reader";
+    if (s.clientId && !this.hookOff) role = s.clientId === WEB_CLIENT && !this.oldWebRole ? "yala_web" : "yala_mcp_reader";
     const claims: Record<string, unknown> = { role, session_id: s.id };
     if (s.clientId) claims.client_id = s.clientId;
     return new SignJWT(claims)

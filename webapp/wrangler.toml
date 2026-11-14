@@ -89,3 +89,17 @@ simple = { limit = 120, period = 60 }
 name = "RL_QR"
 namespace_id = "7403"
 simple = { limit = 60, period = 60 }
+
+# Grupos (lote 3): la entrada interna del gateway de staging que lee Grupos con el token de la web. Es un service
+# binding: no sale a internet ni tiene ruta pública. La llave del cifrado de Grupos se queda en el gateway.
+[[services]]
+binding = "GATEWAY_GROUPS"
+service = "yala-gateway-staging"
+entrypoint = "WebGroupsReader"
+
+# Grupos (lote 3, opción A de Jürgen del 14-nov): la entrada interna que AÑADE gastos y pagos e invita, con el rol propio
+# de la web (`yala_web`, web3_02). Solo staging hasta una revisión.
+[[services]]
+binding = "GATEWAY_GROUPS_WRITER"
+service = "yala-gateway-staging"
+entrypoint = "WebGroupsWriter"
