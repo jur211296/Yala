@@ -10,6 +10,7 @@
 import { NOT_DELETED, YalaReader } from "../../../shared-core/src/data";
 import { InvalidInputError } from "../../../shared-core/src/logic/dates";
 import { TOOL_CORES, type ToolContext, type ToolCore } from "../../../shared-core/src/toolCore";
+import { estadisticas as statsCore, pagos as paymentsCore } from "../../../shared-core/src/webCore";
 import type { Env } from "./env";
 import type { Fetcher } from "./egress";
 
@@ -56,6 +57,16 @@ export async function registros(ctx: ToolContext, q: URLSearchParams) {
     if (v && v.length <= 200) args[k] = v;
   }
   return core("buscar_movimientos").run(ctx, args);
+}
+
+/** Estadísticas (lote 2): Resumen, Distribución y Tendencias de un período (`mes_actual`, `mes_pasado`, `anio_actual`). */
+export async function estadisticas(ctx: ToolContext, q: URLSearchParams) {
+  return statsCore(ctx, { periodo: q.get("periodo") ?? undefined });
+}
+
+/** Pagos planificados (lote 2): próximos cobros de 30 días y suscripciones. */
+export async function pagos(ctx: ToolContext) {
+  return paymentsCore(ctx);
 }
 
 export async function categorias(ctx: ToolContext) {

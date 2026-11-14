@@ -4,6 +4,9 @@
   --fill: #6063f1;
   --side: #f4f5fb;
   --in: #0f7a80;
+  /* Grupos (lote 3): los colores de «debes» y «te deben» de la app (tema claro y oscuro). */
+  --owe: #c8006a;
+  --owed: #13804f;
   --round: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
@@ -11,6 +14,8 @@
     --fill: #6063f1;
     --side: #0e0e10;
     --in: #00c2cb;
+    --owe: #ff4da6;
+    --owed: #4fd393;
   }
 }
 
@@ -334,6 +339,7 @@
 }
 .hideamt .amt,
 .hideamt .big,
+.hideamt .kpi,
 .hideamt .ac b,
 .hideamt .inout b,
 .hideamt .amt-in {
@@ -766,5 +772,314 @@
   .modal {
     padding: 0;
     place-items: end stretch;
+  }
+}
+
+/* ─── Lote 2: Estadísticas y Pagos planificados ─────────────────────────────────────────────────────────────── */
+.small {
+  font-size: 12px;
+  text-align: left;
+  margin: 6px 0 0;
+}
+.seg3 {
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 420px;
+}
+.kpi {
+  font: 700 22px/1.2 var(--round);
+  margin: 4px 0 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.var {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink2);
+  white-space: nowrap;
+}
+.var.good {
+  color: var(--in);
+}
+.var.bad {
+  color: #d1336b;
+}
+.slice {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 8px 0;
+}
+.slice + .slice {
+  border-top: 1px solid var(--line);
+}
+.slice .t {
+  flex: 1;
+  min-width: 0;
+}
+.slice-h {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+}
+.slice-h b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.slice .sub,
+.amt .sub {
+  font-size: 11.5px;
+  color: var(--ink2);
+  font-weight: 500;
+}
+.dist {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+.donut {
+  flex: none;
+  width: 168px;
+  height: 168px;
+  border-radius: 50%;
+  -webkit-mask: radial-gradient(circle, transparent 52%, #000 53%);
+  mask: radial-gradient(circle, transparent 52%, #000 53%);
+}
+.dist-list {
+  flex: 1;
+  min-width: 0;
+}
+.trend {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  height: 180px;
+  align-items: end;
+  margin-top: 8px;
+}
+.tcol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+}
+.tcol span {
+  font-size: 11.5px;
+  color: var(--ink2);
+  text-transform: capitalize;
+}
+.tbars {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  gap: 4px;
+  align-items: flex-end;
+  justify-content: center;
+}
+.tbars i {
+  width: 38%;
+  max-width: 22px;
+  border-radius: 6px 6px 2px 2px;
+}
+.tbars i.in,
+.legend i.in {
+  background: var(--in);
+}
+.tbars i.out,
+.legend i.out {
+  background: var(--fill);
+}
+.legend {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--ink2);
+  margin-top: 10px;
+}
+.legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  margin-right: 4px;
+  vertical-align: -1px;
+}
+@media (max-width: 760px) {
+  .dist {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .donut {
+    width: 150px;
+    height: 150px;
+    margin: 0 auto 6px;
+  }
+  .trend {
+    height: 150px;
+  }
+}
+
+/* ─── Grupos (lote 3) ─────────────────────────────────────────────────────────────────────────────────────────── */
+.amt.owe {
+  color: var(--owe);
+}
+.amt.owed {
+  color: var(--owed);
+}
+.hero .mid {
+  font: 700 20px/1.2 var(--round);
+}
+.hero .big.amt {
+  font: 700 30px/1.1 var(--round);
+}
+/* Con varias divisas la cifra puede no caber en una línea: que salte, sin desbordar la pantalla. */
+.hero .amt {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 720px) {
+  .hero .big.amt {
+    font-size: 24px;
+  }
+  .hero .mid {
+    font-size: 18px;
+  }
+}
+.band-l {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  text-align: right;
+}
+.ggrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px;
+}
+.gcard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.gcard:hover {
+  border-color: color-mix(in srgb, var(--fill) 40%, var(--line));
+}
+.gcard:focus-visible {
+  outline: 2px solid var(--fill);
+  outline-offset: 2px;
+}
+.gpeople {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+.gp {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12.5px;
+  color: var(--ink2);
+}
+.gp.more {
+  color: var(--ink2);
+  font-style: normal;
+}
+.lk.arch {
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.back {
+  align-self: flex-start;
+}
+.seg.seg3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+.tbl {
+  display: flex;
+  flex-direction: column;
+}
+.tbl .tr {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+  align-items: center;
+}
+.tbl .tr span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tbl .tr span:not(:first-child) {
+  text-align: right;
+}
+.tbl .th {
+  border-top: 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.amt-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.amt-col small {
+  font-size: 11.5px;
+  color: var(--ink2);
+  white-space: nowrap;
+}
+.row-acts {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.row-acts .btn-s {
+  padding: 5px 10px;
+  font-size: 12.5px;
+}
+.row-acts .danger {
+  color: #e0245e;
+}
+.confirm-q {
+  font-size: 12px;
+  color: var(--ink2);
+}
+.mtabs.two {
+  grid-template-columns: repeat(2, 1fr);
+}
+@media (max-width: 720px) {
+  .ggrid {
+    grid-template-columns: 1fr;
+  }
+  .tbl .tr {
+    grid-template-columns: minmax(0, 1.2fr) repeat(3, minmax(0, 1fr));
+    font-size: 12.5px;
+  }
+}
+.row:has(.row-acts) {
+  flex-wrap: wrap;
+}
+@media (max-width: 720px) {
+  .row-acts {
+    flex-basis: 100%;
   }
 }

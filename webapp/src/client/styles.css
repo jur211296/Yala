@@ -192,3 +192,34 @@ input:focus-visible {
   overflow-wrap: anywhere;
   text-align: right;
 }
+
+/* Entrar con el iPhone (QR, lote 2) */
+.or {
+  text-align: center;
+  color: var(--ink2);
+  font-size: 12.5px;
+  margin: 2px 0;
+}
+.qr-login .qr {
+  display: block;
+  width: 190px;
+  height: 190px;
+  margin: 6px auto 2px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+.qr-login .qr-wait {
+  background: color-mix(in srgb, var(--ink2) 12%, transparent);
+}
+.qr-code {
+  font: 700 26px/1.2 ui-monospace, "SF Mono", Menlo, monospace;
+  letter-spacing: 0.12em;
+  text-align: center;
+  margin: 0;
+}
+.small-c {
+  font-size: 12.5px;
+  text-align: center;
+  margin: 4px 0 0;
+}

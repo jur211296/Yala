@@ -33,7 +33,7 @@ describe("entrar con Apple o Google", () => {
 
     const me = await w.browser.request("/api/me");
     expect(me.status).toBe(200);
-    expect(await me.json()).toEqual({ nombre: "Ana Pérez", correo: "ana@yala.test", equipoCompartido: false });
+    expect(await me.json()).toEqual({ nombre: "Ana Pérez", correo: "ana@yala.test", equipoCompartido: false, soloGrupos: false });
     expect(w.supabase.openSessions(ana.id)).toEqual({ normal: 0, web: 1 });
   });
 
@@ -114,11 +114,12 @@ describe("quién no entra", () => {
     expect(w.supabase.openSessions(nuevo.id)).toEqual({ normal: 0, web: 0 });
   });
 
-  it("una cuenta solo de Grupos no entra hasta el lote 3", async () => {
+  it("una cuenta solo de Grupos entra desde el lote 3 (D3), con la sesión de solo lectura y la normal cerrada", async () => {
     const w = await world();
     const grupos = w.supabase.addUser({ email: "grupos@yala.test", kind: "groups_only" });
-    expect((await w.socialLogin(grupos)).headers.get("Location")).toBe("/?aviso=solo-grupos");
-    expect(w.supabase.openSessions(grupos.id)).toEqual({ normal: 0, web: 0 });
+    expect((await w.socialLogin(grupos)).headers.get("Location")).toBe("/");
+    expect(w.browser.jar.has(SESSION_COOKIE)).toBe(true);
+    expect(w.supabase.openSessions(grupos.id)).toEqual({ normal: 0, web: 1 });
   });
 
   it("si el hook no marca el token como de solo lectura, no se guarda nada y la sesión se cierra", async () => {

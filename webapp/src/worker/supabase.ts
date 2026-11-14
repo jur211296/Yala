@@ -159,12 +159,19 @@ export function codeFromRedirect(env: Env, redirectUrl: string, state: string): 
  * Pide el permiso del cliente OAuth de la web, lo aprueba con la sesión normal del usuario y canjea el código.
  * `verifier` y `challenge` son el PKCE de ESTA petición; `state`, un valor al azar que la vuelta tiene que repetir.
  */
-export async function grantReadOnly(
+/**
+ * Primera mitad del permiso: pide y aprueba el permiso de la web con la sesión NORMAL de quien entra y devuelve el código
+ * de autorización, SIN canjearlo. El código solo se canjea con el `verifier` del PKCE (`exchangeReadOnly`).
+ *
+ * El QR (lote 2) lo usa partido: el iPhone aprueba con su sesión y el navegador canjea con el `verifier` que solo él
+ * puede derivar de su cookie. Entrar con Apple o Google lo usa entero (`grantReadOnly`).
+ */
+export async function authorizeReadOnly(
   env: Env,
   fetcher: Fetcher,
-  normal: NormalSession,
-  pkce: { verifier: string; challenge: string; state: string },
-): Promise<GrantResult> {
+  normal: Pick<NormalSession, "access" | "userId">,
+  pkce: { challenge: string; state: string },
+): Promise<{ ok: true; code: string } | { ok: false; step: GrantFailure; status?: number }> {
   const authorize = new URL(`${authIssuer(env)}/oauth/authorize`);
   authorize.search = new URLSearchParams({
     response_type: "code",
@@ -205,15 +212,30 @@ export async function grantReadOnly(
   }
   const code = redirectUrl ? codeFromRedirect(env, redirectUrl, pkce.state) : null;
   if (!code) return { ok: false, step: "redirect" };
+  return { ok: true, code };
+}
 
+/** Segunda mitad: canjea el código con el secreto del cliente y el `verifier` del PKCE. */
+export async function exchangeReadOnly(env: Env, fetcher: Fetcher, code: string, verifier: string): Promise<GrantResult> {
   const exchanged = await tokenRequest(env, fetcher, {
     grant_type: "authorization_code",
     code,
     redirect_uri: oauthRedirectUri(env),
-    code_verifier: pkce.verifier,
+    code_verifier: verifier,
   });
   if (!exchanged.ok) return { ok: false, step: "exchange", status: exchanged.status };
   return { ok: true, tokens: exchanged.value };
+}
+
+export async function grantReadOnly(
+  env: Env,
+  fetcher: Fetcher,
+  normal: NormalSession,
+  pkce: { verifier: string; challenge: string; state: string },
+): Promise<GrantResult> {
+  const auth = await authorizeReadOnly(env, fetcher, normal, pkce);
+  if (!auth.ok) return auth;
+  return exchangeReadOnly(env, fetcher, auth.code, pkce.verifier);
 }
 
 async function tokenRequest(env: Env, fetcher: Fetcher, body: Record<string, string>): Promise<Result<Tokens>> {

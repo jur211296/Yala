@@ -1,5 +1,7 @@
 /**
- * La app con sesión (lote 1): Panel, Bandeja, Registros y Configurar, con «Apuntar» y el ojo que oculta los montos.
+ * La app con sesión (lotes 1 a 3): Panel, Bandeja, Registros, Pagos planificados, Estadísticas, Grupos y Configurar,
+ * con «Apuntar» y el ojo que oculta los montos. Una cuenta «solo Grupos» (lote 3, decisión D3) abre en Grupos, no ve
+ * «Apuntar», y las secciones de la nube completa le explican por qué no tienen nada.
  * Escritorio: barra lateral. Móvil: barra de pestañas con «+» en medio y «Más». Las secciones de los lotes siguientes
  * salen en la barra como «Pronto», sin abrir nada.
  *
@@ -8,13 +10,16 @@
  */
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { texts } from "../i18n";
-import { getJson, type Bandeja as BandejaData, type Categoria, type Panel as PanelData } from "./api";
+import { getJson, type Bandeja as BandejaData, type Categoria, type Enviado, type Panel as PanelData } from "./api";
 import { Icons } from "./icons";
 import { Panel } from "./Panel";
 import { Registros } from "./Registros";
 import { Bandeja } from "./Bandeja";
 import { Configurar } from "./Configurar";
 import { Apuntar } from "./Apuntar";
+import { Estadisticas } from "./Estadisticas";
+import { Pagos } from "./Pagos";
+import { Grupos, SoloGrupos } from "./Grupos";
 
 const t = texts();
 
@@ -22,15 +27,18 @@ export interface Me {
   nombre: string;
   correo: string | null;
   equipoCompartido: boolean;
+  soloGrupos?: boolean;
 }
 
-type Sec = "panel" | "bandeja" | "registros" | "configurar" | "mas";
-const SECTIONS: Sec[] = ["panel", "bandeja", "registros", "configurar", "mas"];
+type Sec = "panel" | "bandeja" | "registros" | "pagos" | "estadisticas" | "grupos" | "configurar" | "mas";
+const SECTIONS: Sec[] = ["panel", "bandeja", "registros", "pagos", "estadisticas", "grupos", "configurar", "mas"];
+/** Lo que vive en la nube completa: una cuenta «solo Grupos» no tiene nada que ver ahí. */
+const FULL_CLOUD: Sec[] = ["panel", "bandeja", "registros", "pagos", "estadisticas"];
 const HIDE_KEY = "yala-web-ocultar";
 
-function secFromPath(): Sec {
+function secFromPath(home: Sec = "panel"): Sec {
   const p = window.location.pathname.replace(/^\/+|\/+$/g, "");
-  return (SECTIONS as string[]).includes(p) ? (p as Sec) : "panel";
+  return (SECTIONS as string[]).includes(p) ? (p as Sec) : home;
 }
 
 export function readHidePref(): boolean {
@@ -52,14 +60,14 @@ export function writeHidePref(v: boolean): void {
 
 const SOON: { key: keyof typeof t.app; icon: ReactNode; group?: boolean }[] = [
   { key: "presupuestos", icon: Icons.presupuestos },
-  { key: "pagos", icon: Icons.pagos },
-  { key: "estadisticas", icon: Icons.estadisticas },
-  { key: "grupos", icon: Icons.grupos },
   { key: "ia", icon: Icons.ia },
 ];
 
 export function Shell({ me }: { me: Me }) {
-  const [sec, setSec] = useState<Sec>(secFromPath);
+  const solo = me.soloGrupos === true;
+  const home: Sec = solo ? "grupos" : "panel";
+  const [sec, setSec] = useState<Sec>(() => secFromPath(home));
+  const [editando, setEditando] = useState<Enviado | null>(null);
   const [hide, setHide] = useState(readHidePref);
   const [apuntar, setApuntar] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -70,10 +78,10 @@ export function Shell({ me }: { me: Me }) {
 
   const go = useCallback((s: Sec) => {
     setSec(s);
-    const path = s === "panel" ? "/" : `/${s}`;
+    const path = s === home ? "/" : `/${s}`;
     if (window.location.pathname !== path) window.history.pushState(null, "", path);
     window.scrollTo(0, 0);
-  }, []);
+  }, [home]);
 
   const loadPanel = useCallback(() => {
     setPanelError(false);
@@ -84,12 +92,14 @@ export function Shell({ me }: { me: Me }) {
   }, []);
 
   useEffect(() => {
-    loadPanel();
-    loadBandeja();
-    const onPop = () => setSec(secFromPath());
+    if (!solo) {
+      loadPanel();
+      loadBandeja();
+    }
+    const onPop = () => setSec(secFromPath(home));
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
-  }, [loadPanel, loadBandeja]);
+  }, [loadPanel, loadBandeja, solo, home]);
 
   // ¿Sigue viva la sesión? Cada 30 s y al volver a la pestaña. `getJson` lleva a la pantalla de entrar con un 401.
   useEffect(() => {
@@ -111,9 +121,16 @@ export function Shell({ me }: { me: Me }) {
     return () => window.clearTimeout(id);
   }, [toast]);
 
+  const loadCats = () => {
+    if (!cats) getJson<{ categorias: Categoria[] }>("/api/categorias").then((r) => setCats(r.categorias), () => setCats([]));
+  };
   const openApuntar = () => {
     setApuntar(true);
-    if (!cats) getJson<{ categorias: Categoria[] }>("/api/categorias").then((r) => setCats(r.categorias), () => setCats([]));
+    loadCats();
+  };
+  const openEdit = (d: Enviado) => {
+    setEditando(d);
+    loadCats();
   };
 
   const pendingCount = bandeja ? bandeja.pendientes.length + bandeja.enviados.length : 0;
@@ -123,7 +140,7 @@ export function Shell({ me }: { me: Me }) {
   const navButton = (s: Exclude<Sec, "mas">, icon: ReactNode) => (
     <a
       className="nv"
-      href={s === "panel" ? "/" : `/${s}`}
+      href={s === home ? "/" : `/${s}`}
       aria-current={sec === s ? "page" : undefined}
       onClick={(e) => {
         e.preventDefault();
@@ -155,6 +172,9 @@ export function Shell({ me }: { me: Me }) {
           {navButton("panel", Icons.panel)}
           {navButton("bandeja", Icons.bandeja)}
           {navButton("registros", Icons.registros)}
+          {navButton("pagos", Icons.pagos)}
+          {navButton("estadisticas", Icons.estadisticas)}
+          {navButton("grupos", Icons.grupos)}
           {SOON.map(soonItem)}
           {navButton("configurar", Icons.configurar)}
         </nav>
@@ -174,18 +194,27 @@ export function Shell({ me }: { me: Me }) {
           >
             {Icons.eye}
           </button>
-          <button className="add" type="button" onClick={openApuntar}>
-            + {t.app.apuntar}
-          </button>
+          {solo ? null : (
+            <button className="add" type="button" onClick={openApuntar}>
+              + {t.app.apuntar}
+            </button>
+          )}
         </header>
 
         <main className="content">
-          {sec === "panel" ? <Panel data={panel} error={panelError} retry={loadPanel} onSeeAll={() => go("registros")} /> : null}
-          {sec === "registros" ? <Registros cuentas={panel?.cuentas.cuentas ?? []} /> : null}
-          {sec === "bandeja" ? <Bandeja data={bandeja} reload={loadBandeja} /> : null}
+          {solo && FULL_CLOUD.includes(sec) ? <SoloGrupos onGroups={() => go("grupos")} /> : null}
+          {sec === "grupos" ? <Grupos /> : null}
+          {!solo && sec === "panel" ? <Panel data={panel} error={panelError} retry={loadPanel} onSeeAll={() => go("registros")} /> : null}
+          {!solo && sec === "registros" ? <Registros cuentas={panel?.cuentas.cuentas ?? []} /> : null}
+          {!solo && sec === "bandeja" ? <Bandeja data={bandeja} reload={loadBandeja} onEdit={openEdit} onToast={setToast} /> : null}
+          {!solo && sec === "pagos" ? <Pagos /> : null}
+          {!solo && sec === "estadisticas" ? <Estadisticas /> : null}
           {sec === "configurar" ? <Configurar me={me} onToast={setToast} /> : null}
           {sec === "mas" ? (
             <div className="cd" style={{ padding: "6px 10px" }}>
+              {navButton("pagos", Icons.pagos)}
+              {navButton("estadisticas", Icons.estadisticas)}
+              {navButton("grupos", Icons.grupos)}
               {navButton("configurar", Icons.configurar)}
               {SOON.map(soonItem)}
             </div>
@@ -193,6 +222,16 @@ export function Shell({ me }: { me: Me }) {
         </main>
       </div>
 
+      {solo ? (
+        <nav className="mtabs two" aria-label={t.app.grupos}>
+          {(["grupos", "configurar"] as const).map((s) => (
+            <button key={s} type="button" className="mt" aria-current={sec === s ? "page" : undefined} onClick={() => go(s)}>
+              {s === "grupos" ? Icons.grupos : Icons.configurar}
+              {t.app[s]}
+            </button>
+          ))}
+        </nav>
+      ) : (
       <nav className="mtabs" aria-label={t.app.panel}>
         {(["panel", "registros"] as const).map((s) => (
           <button key={s} type="button" className="mt" aria-current={sec === s ? "page" : undefined} onClick={() => go(s)}>
@@ -208,11 +247,12 @@ export function Shell({ me }: { me: Me }) {
           {t.app.bandeja}
           {badge}
         </button>
-        <button type="button" className="mt" aria-current={sec === "mas" || sec === "configurar" ? "page" : undefined} onClick={() => go("mas")}>
+        <button type="button" className="mt" aria-current={sec === "mas" || sec === "configurar" || sec === "pagos" || sec === "estadisticas" || sec === "grupos" ? "page" : undefined} onClick={() => go("mas")}>
           {Icons.mas}
           {t.app.mas}
         </button>
       </nav>
+      )}
 
       {apuntar ? (
         <Apuntar
@@ -223,6 +263,20 @@ export function Shell({ me }: { me: Me }) {
           onSent={() => {
             setApuntar(false);
             setToast(t.app.enviadoToast);
+            loadBandeja();
+          }}
+        />
+      ) : null}
+      {editando ? (
+        <Apuntar
+          cuentas={panel?.cuentas.cuentas ?? []}
+          divisaPreferida={panel?.cuentas.total.divisa ?? "PEN"}
+          categorias={cats}
+          editar={editando}
+          onClose={() => setEditando(null)}
+          onSent={() => {
+            setEditando(null);
+            setToast(t.app.guardadoToast);
             loadBandeja();
           }}
         />

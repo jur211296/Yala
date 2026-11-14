@@ -19,7 +19,12 @@
 //  - el `tipo` de cada movimiento (`buscar_movimientos`): `TransactionClassificationLogic`, con transferencias y ajustes
 //    de saldo aparte;
 //  - conversiones sueltas: `CurrencyConverter.convertChecked(on:)`, con su escalón de filas anteriores y tabla
-//    estática.
+//    estática;
+//  - Yala web, lote 2 (`shared-core/src/logic/stats.ts` y `schedule.ts`): Estadísticas › Resumen
+//    (`InsightsCalculator.calculate`, con el período anterior alineado), Distribución
+//    (`TopSpendingCategoriesCalculator` sobre lo que filtra `FilterService.filterForTrends`), Tendencias › Entradas y
+//    salidas (`CashFlowCalculator` mes a mes) y las fechas de cobro de cada pago planificado
+//    (`ScheduledPaymentDateCalculator.paymentDatesInMonth`, con `isDateSkipped` para los próximos cobros).
 //
 //  Dos modos:
 //  - Por defecto VERIFICA: recalcula y compara con los `expected` del fichero. Si la app cambia una regla, este test
@@ -270,7 +275,15 @@ struct MCPAppParityGoldenTests {
             ])
         }
 
+        let categories = try context.fetch(FetchDescriptor<Yala.Category>())
+        let estadisticas = try webStatistics(
+            allTx: allTx, accounts: accounts.map(\.model), categories: categories,
+            currency: scenario.preferredCurrency, now: now, adjustment: adjustment, converter: converter)
+        let pagos = try webPayments(payments, now: now)
+
         return [
+            "estadisticas": estadisticas,
+            "pagos": pagos,
             "balances": [
                 "accounts": perAccount,
                 "total": round6(NSDecimalNumber(decimal: live.convertedTotal).doubleValue),
@@ -290,6 +303,129 @@ struct MCPAppParityGoldenTests {
             "kinds": kinds,
             "conversions": conversions,
         ]
+    }
+
+    // MARK: - Yala web, lote 2: Estadísticas y Pagos planificados
+
+    /// Las tres pestañas de Estadísticas que porta la web, con los calculadores de las pantallas. Los días se escriben con
+    /// `Calendar.current` (la zona del test); los escenarios fechan a las 12:00 UTC, el mismo día civil en cualquier zona
+    /// de UTC−11 a UTC+11.
+    private func webStatistics(
+        allTx: [TransactionItem],
+        accounts: [Account],
+        categories: [Yala.Category],
+        currency: String,
+        now: Date,
+        adjustment: GroupBridgeStatsAdjustment,
+        converter: CurrencyConverter
+    ) throws -> [String: Any] {
+        func opt(_ v: Double?) -> Any { v.map { round6($0) as Any } ?? NSNull() }
+        func slices(_ list: [CategorySpendingSummary]) -> [[String: Any]] {
+            list.map { slice in
+                [
+                    "categoria": slice.category.map { $0.name as Any } ?? NSNull(),
+                    "importe": round6(slice.amount),
+                    "porcentaje": round6(slice.percentage),
+                ]
+            }
+        }
+        // Lo que filtra la pantalla antes de calcular (cuentas excluidas de estadísticas, Grupos según su interruptor).
+        let filtered = FilterService.filterForTrends(
+            transactions: allTx, accounts: accounts, criteria: FilterCriteria(), includeBridgedGroupTx: true)
+
+        var periods: [String: Any] = [:]
+        let kinds: [(String, DetailPeriod)] = [("mes_actual", .thisMonth), ("mes_pasado", .lastMonth), ("anio_actual", .thisYear)]
+        for (key, period) in kinds {
+            let data = InsightsCalculator.calculate(
+                transactions: allTx, accounts: accounts, categories: categories, budgets: [], scheduledPayments: [],
+                period: period, criteria: FilterCriteria(), currencyCode: currency, customRange: nil,
+                converter: converter, includeBridgedGroupTx: true, adjustment: adjustment, now: now)
+            let summary = data.periodSummary
+            let distribution = TopSpendingCategoriesCalculator.calculateTopSpending(
+                transactions: filtered, interval: period.dateInterval(now: now), currencyCode: currency,
+                adjustment: adjustment, converter: converter)
+            periods[key] = [
+                "ingresos": round6(summary.totalIncome),
+                "gastos": round6(summary.totalExpense),
+                "neto": round6(summary.netBalance),
+                "variacion": [
+                    "ingresos": opt(summary.incomeVariation),
+                    "gastos": opt(summary.expenseVariation),
+                    "neto": opt(summary.balanceVariation),
+                    "gasto_medio_diario": opt(summary.dailyAverageVariation),
+                ],
+                "gasto_medio_diario": round6(summary.dailyAverageExpense),
+                "dias": Double(summary.dayCount),
+                "gasto_mas_alto": data.quickStats.highestExpense.map { round6($0.amount) as Any } ?? NSNull(),
+                "top_categorias": slices(Array(data.quickStats.topCategories.prefix(5))),
+                "distribucion": slices(distribution),
+            ]
+        }
+
+        // Tendencias › Entradas y salidas: seis meses, el actual hasta el último segundo de hoy.
+        let calendar = Calendar.current
+        guard let thisMonth = calendar.dateInterval(of: .month, for: now)?.start else {
+            throw GoldenError.bad("sin mes para \(now)")
+        }
+        let endOfToday = DetailPeriod.thisMonth.dateInterval(now: now).end
+        var trend: [[String: Any]] = []
+        for back in stride(from: 5, through: 0, by: -1) {
+            guard let start = calendar.date(byAdding: .month, value: -back, to: thisMonth),
+                  let next = calendar.date(byAdding: .month, value: 1, to: start)
+            else { throw GoldenError.bad("mes \(back) atrás") }
+            let end = back == 0 ? endOfToday : next.addingTimeInterval(-1)
+            let interval = DateInterval(start: start, end: end)
+            // `CashFlowCalculator` agrupa lo que recibe: el recorte por el intervalo lo hace quien llama
+            // (`TrendDataProcessor`), como aquí.
+            let flow = CashFlowCalculator.calculateCashFlow(
+                transactions: filtered.filter { interval.contains($0.date) }, interval: interval, grouping: .month,
+                currencyCode: currency, adjustment: adjustment, converter: converter)
+            trend.append([
+                "mes": dayKey(start, calendar).prefix(7).description,
+                "ingresos": round6(flow.totalIncome),
+                "gastos": round6(flow.totalExpense),
+                "neto": round6(flow.netFlow),
+            ])
+        }
+        return ["periodos": periods, "tendencias": trend]
+    }
+
+    /// Las fechas de cobro de cada pago en los seis meses desde el de `now`, y los próximos cobros (de hoy a 29 días
+    /// después, pagos activos, sin las fechas saltadas) como `"<id> <día>"` ordenados.
+    private func webPayments(_ payments: [(id: String, model: ScheduledPayment)], now: Date) throws -> [String: Any] {
+        // La semana empieza el lunes, como la preferencia por defecto que lee la web (`firstWeekday`): con `.current` el
+        // semanal «cada 2» dependería del idioma del simulador. La zona es la del test, como en el resto del golden.
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        calendar.firstWeekday = 2
+        guard let thisMonth = calendar.dateInterval(of: .month, for: now)?.start,
+              let lastUpcoming = calendar.date(byAdding: .day, value: 29, to: calendar.startOfDay(for: now))
+        else { throw GoldenError.bad("sin mes para \(now)") }
+        let today = calendar.startOfDay(for: now)
+        var dates: [String: Any] = [:]
+        var upcoming: [String] = []
+        for (id, payment) in payments {
+            var all: [String] = []
+            for offset in 0..<6 {
+                guard let month = calendar.date(byAdding: .month, value: offset, to: thisMonth) else { continue }
+                let days = ScheduledPaymentDateCalculator.paymentDatesInMonth(
+                    params: payment.dateCalculatorParams, month: month, calendar: calendar
+                ).sorted()
+                all.append(contentsOf: days.map { dayKey($0, calendar) })
+                if offset <= 1 && payment.isActive {
+                    for day in days where day >= today && day <= lastUpcoming && !payment.isDateSkipped(day) {
+                        upcoming.append("\(id) \(dayKey(day, calendar))")
+                    }
+                }
+            }
+            dates[id] = all
+        }
+        return ["fechas": dates, "proximos": upcoming.sorted()]
+    }
+
+    private func dayKey(_ date: Date, _ calendar: Calendar) -> String {
+        let c = calendar.dateComponents([.year, .month, .day], from: date)
+        return String(format: "%04d-%02d-%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0)
     }
 
     // MARK: - Filas → modelos por el camino del pull

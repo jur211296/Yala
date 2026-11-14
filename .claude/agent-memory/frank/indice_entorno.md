@@ -33,3 +33,4 @@ Subíndice de `MEMORY.md` (2026-11-05).
 - [Device MCP Free: un espejo](reference_device_mcp_free_un_espejo.md) — otro dispositivo espejado ⇒ simulador con axe + simctl.
 - [Campo de CloudKit en Development: lo añade Dan](feedback_campo_cloudkit_development_lo_anade_dan.md) — sin token de cktool; pedir al bot Frank → Dan; `preguntar-bot --help` envía.
 - [Secretos de staging en la Mini](reference_secretos_de_staging_en_la_mini.md) — desde la Max: SQL, deploy y e2e por ssh mini, sin copiar secretos.
+- [Playwright en la Mini](reference_playwright_en_la_mini.md) — capturas de staging con A/B: la descarga de Chromium se atasca; copiar el de la Max (1243 + playwright 1.63.0).

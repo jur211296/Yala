@@ -9,7 +9,17 @@ aprobadas: `docs/web-app/index.html`. Tickets: `tickets/*/yala-web-lote-0-cimien
 Bandeja del iPhone; Configurar (cuenta, sesiones web, ocultar montos, idioma, salir); español e inglés; y, en el iPhone
 (Yala Dev), Ajustes › Tu cuenta de Yala › «Navegadores conectados» para ver y cerrar las sesiones web.
 
+**Lote 2 (2.3, solo staging):** Estadísticas (Resumen, Distribución y Tendencias) y Pagos planificados (próximos cobros
+y suscripciones), en lectura y con las cifras del iPhone; y entrar con el iPhone por código QR, con «Vincular un
+navegador» en «Navegadores conectados» (Yala Dev). Del lote 2 del plan quedan para después Presupuestos, Grupos en
+lectura, ⌘K, CSV y los 16 idiomas.
+
 Staging: <https://yala-web-staging.misty-surf-6866.workers.dev>
+
+**Lote 3 (2.3, solo staging):** Grupos en lectura (lo que te deben y lo que debes, quién le debe a quién, saldos por
+persona, gastos y pagos) con las cifras del iPhone; las cuentas «solo Grupos» entran y ven Grupos y Configurar; y los
+borradores de la web que el iPhone aún no recogió se editan o se descartan desde la Bandeja. Añadir gastos, saldar e
+invitar desde la web espera una decisión de Jürgen (cómo pasa la web la puerta de App Attest de Grupos).
 
 ## Cómo funciona
 
@@ -56,6 +66,51 @@ Worker puede pedir fuera (`src/worker/egress.ts`). Si la configuración está ma
 - **El iPhone** entra por `/api/dispositivo/*` con el token de su sesión de la nube (`role = authenticated`, sin
   `client_id`). Sin App Attest: solo ve y cierra las sesiones web propias (decisión P9 del ticket).
 
+## Lote 2: estadísticas, pagos y entrar con el iPhone
+
+- **Estadísticas** (`/api/estadisticas?periodo=mes_actual|mes_pasado|anio_actual`): una lectura de movimientos y las
+  tres pestañas calculadas por `shared-core/src/logic/stats.ts` con las reglas de las pantallas del iPhone
+  (`InsightsCalculator`, `TopSpendingCategoriesCalculator`, `CashFlowCalculator`). Como el iPhone, deja fuera los
+  movimientos sin cuenta (el chat y el conector sí los cuentan). Paridad: `mcp/test/golden.test.ts`, con los valores que
+  escribe la app (`YalaTests/MCP/MCPAppParityGoldenTests.swift`).
+- **Pagos planificados** (`/api/pagos`): los cobros de los próximos 30 días con el calendario del iPhone
+  (`ScheduledPaymentDateCalculator`, port en `shared-core/src/logic/schedule.ts`), sin las fechas saltadas, y las
+  suscripciones con su equivalente mensual. Lo «ya pagado» del mes no se descuenta todavía.
+- **Entrar con el iPhone (QR)**: ver la cabecera de `src/worker/pairing.ts`. La web pide un código con Turnstile y queda
+  ligada a él por una cookie propia; el iPhone lo lee, enseña el navegador y la ciudad, pide Face ID y lo aprueba con su
+  sesión; el Worker pide el permiso de solo lectura de siempre y guarda solo el código de autorización, que sin la cookie
+  de ese navegador (PKCE) no sirve. Un Durable Object por código (`QrPairing`), que una alarma vacía al caducar. Límite
+  propio para las preguntas del navegador (`RL_QR`).
+
+## Lote 3: Grupos
+
+- **De dónde salen las filas.** Ocho columnas de Grupos están cifradas y la llave (`GROUPS_ENC_KEY`) solo vive en el
+  gateway. La web la pide por un *service binding* (`GATEWAY_GROUPS` → entrada `WebGroupsReader` del gateway de
+  staging, `gateway/src/web/groupsReader.ts`): no sale a internet ni tiene ruta pública, y la llave no viaja. La entrada
+  solo acepta tokens de rol `yala_mcp_reader` (el del iPhone por ahí se saltaría App Attest), lee con los cinco RPC
+  lectores `groups_pull_rows_*` y solo está encendida con `WEB_GROUPS_READER = "on"` (staging).
+- **Quién puede leer qué** lo decide la RLS de `supabase/web3_01_grupos_lectura.sql`: SELECT de las cinco tablas de
+  Grupos para `yala_mcp_reader` solo si el token es del cliente de la web (`yala_is_web_reader()`) y la persona es
+  miembro. El conector de Claude, que comparte el rol, no gana nada. Ninguna escritura.
+- **Saldos:** `shared-core/src/logic/groupBalances.ts`, port de `GroupBalanceService` con paridad contra la app
+  (`mcp/test/groups-parity.test.ts` ← `YalaTests/MCP/WebGroupsParityGoldenTests.swift`). Con «una sola moneda», la tasa
+  de hoy de las filas de la persona (o la tabla estática si no tiene): la app usa la última de su almacén, así que una
+  tasa de otro día puede dar otro céntimo.
+- **Como la lista del iPhone:** los grupos archivados salen al final con su marca y no suman al resumen ni a los pagos
+  por confirmar; con «una sola moneda», los saldos por persona también se consolidan (`shownBalances`); y el nombre de
+  quien borró su cuenta (`__deleted_user__`) lo traduce la página («Usuario eliminado»).
+- **Lo que no cabe se dice:** más de 50 grupos, o un grupo con más de 5.000 filas en alguna tabla, marcan `incompleto` y
+  la página lo avisa en vez de enseñar saldos cortados en silencio. Un gateway que no lee es un 503 que se devuelve (no
+  se lanza), para que la sesión renovada se guarde igual.
+- **Rutas:** `/api/grupos` (resumen y tarjetas, como mucho 50 grupos, los más recientes primero) y
+  `/api/grupos/detalle?id=` (solo ese grupo). Con los 50 grupos de prueba de A, la lista tarda unos 6 s: cada grupo son
+  cinco lecturas y un Worker abre seis conexiones a la vez. El detalle, ~1 s.
+- **«Solo Grupos»:** la sesión lo apunta al entrar (`soloGrupos`, `session.ts`), `/api/me` lo dice y lo de la nube
+  completa responde 409 `solo_grupos`. Entrar con el iPhone por QR sigue siendo solo para la nube completa.
+- **Borradores:** `POST /api/borradores/editar` y `/descartar`, solo los de la propia cuenta con `source = web` dentro
+  de la caducidad de la cola. Se edita en sitio (mismo `id`: el iPhone deduplica por él). Si ya no está, 409
+  `recogido`. Ventana aceptada: si el iPhone ya lo bajó y aún no lo confirmó, le llega la versión que bajó.
+
 ## Núcleo compartido
 
 Los cálculos y el lector de PostgREST viven en `shared-core/` (los usan el conector, el gateway y la web). La web lo
@@ -81,6 +136,21 @@ npx wrangler d1 execute yala-gateway-staging --remote \
 
 La ruta `/auth/password` (contraseña) existe **solo en staging**, para el e2e: la niegan la configuración y la lista
 cerrada en cualquier otro entorno.
+
+## Supabase staging (cambios del lote 3, 2026-11-14)
+
+`supabase/web3_01_grupos_lectura.sql`, aplicado el 14-nov (marcha atrás: `supabase/web3_01_rollback.sql`):
+
+| Qué | Antes | Después |
+|---|---|---|
+| `yala_is_web_reader()` | — | `security definer`, sin parámetros: ¿el token es del cliente OAuth de la web? (claim o sesión) |
+| `split_groups`, `group_members`, `split_expenses`, `split_shares`, `split_settlements` | sin acceso para `yala_mcp_reader` | SELECT + política `web_reader_select` (cliente de la web y miembro o escritor del grupo) |
+| `groups_pull_rows_*` (5), `is_group_member`, `is_group_writer`, `yala_try_decrypt` | EXECUTE solo `authenticated` | también `yala_mcp_reader` |
+
+Sonda tras aplicar: `yala_mcp_reader` sigue sin EXECUTE en `apply_group_delta`, `create_group`, `join_group`,
+`groups_forget_user` ni `record_groups_consent`, y sin INSERT ni UPDATE en ninguna tabla de Grupos.
+
+**Producción: nada.**
 
 ## Supabase staging (cambios del lote 1, 2026-11-14)
 

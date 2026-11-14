@@ -77,7 +77,7 @@ export interface ToolCore {
 
 const ORDER_ID: [string, string] = ["order", "sync_id.asc"];
 
-async function loadPrefs(ctx: ToolContext): Promise<Map<string, string>> {
+export async function loadPrefs(ctx: ToolContext): Promise<Map<string, string>> {
   const { rows } = await ctx.reader.all<PreferenceRow>("user_preferences", [
     ["select", COLUMNS.prefs],
     ["key", "in.(defaultCurrencyCode,firstWeekday,timeZoneIdentifier)"],
@@ -91,7 +91,7 @@ async function loadPrefs(ctx: ToolContext): Promise<Map<string, string>> {
  * suficientes para la ventana de 30 días anteriores de la app (ver fx.ts). Hay días con dos o tres filas —una por
  * dispositivo—, así que se leen hasta tres por día de ventana.
  */
-async function loadRates(ctx: ToolContext, fromKey: string, toKey: string = fromKey): Promise<RateBook> {
+export async function loadRates(ctx: ToolContext, fromKey: string, toKey: string = fromKey): Promise<RateBook> {
   const [inRange, before] = await Promise.all([
     ctx.reader.all<ExchangeRateRow>("exchange_rates", [
       ["select", COLUMNS.rates],
@@ -110,7 +110,7 @@ async function loadRates(ctx: ToolContext, fromKey: string, toKey: string = from
 }
 
 /** Día UTC de ahora: la clave con la que la app busca «la tasa de hoy». */
-function todayUtcKey(ctx: ToolContext): string {
+export function todayUtcKey(ctx: ToolContext): string {
   return utcDateKey(ctx.now) as string;
 }
 
@@ -118,7 +118,7 @@ function todayUtcKey(ctx: ToolContext): string {
  * Ajuste de gastos de grupo construido con el conjunto MÁS AMPLIO: los movimientos leídos más las patas hermanas que
  * se quedaron fuera del rango (misma `split_expense_id`), como pide `GroupBridgeStatsAdjustment.build`.
  */
-async function loadGroupAdjustment(
+export async function loadGroupAdjustment(
   ctx: ToolContext,
   txs: TxRow[],
   lookup: Lookup,
@@ -139,7 +139,7 @@ async function loadGroupAdjustment(
   return buildGroupAdjustment([...txs, ...siblings], lookup.accounts, lookup.subcategories, rates);
 }
 
-async function loadLookup(ctx: ToolContext): Promise<Lookup> {
+export async function loadLookup(ctx: ToolContext): Promise<Lookup> {
   const [accounts, categories, subcategories, tags] = await Promise.all([
     ctx.reader.all<AccountRow>("accounts", [["select", COLUMNS.accounts], NOT_DELETED, ORDER_ID]),
     ctx.reader.all<CategoryRow>("categories", [["select", COLUMNS.categories], NOT_DELETED, ORDER_ID]),
@@ -168,7 +168,7 @@ export function resolvePreferredCurrency(prefs: Map<string, string>, candidates:
  * usuario la cambia (`PrefSyncKey.firstWeekday`, «ints por presencia»), y sin ella usa lunes
  * (`userConfiguredCalendar`).
  */
-function firstWeekday(prefs: Map<string, string>, args: Record<string, unknown>): 1 | 2 {
+export function firstWeekday(prefs: Map<string, string>, args: Record<string, unknown>): 1 | 2 {
   if (args.primer_dia_semana === "domingo") return 1;
   if (args.primer_dia_semana === "lunes") return 2;
   return prefs.get("firstWeekday") === "1" ? 1 : 2;
@@ -180,7 +180,7 @@ function firstWeekday(prefs: Map<string, string>, args: Record<string, unknown>)
  * escribe gana); y si tampoco, `DEFAULT_TIMEZONE`, que es la única que se supone. Una zona guardada que no es IANA
  * válida se ignora, no rompe la herramienta. La de Claude, en cambio, sí se valida con error: la pidió él.
  */
-async function zoneOf(ctx: ToolContext, args: Record<string, unknown>, prefs: Promise<Map<string, string>>): Promise<{ tz: string; assumed: boolean }> {
+export async function zoneOf(ctx: ToolContext, args: Record<string, unknown>, prefs: Promise<Map<string, string>>): Promise<{ tz: string; assumed: boolean }> {
   const given = typeof args.zona_horaria === "string" && args.zona_horaria ? args.zona_horaria : null;
   if (given) return { tz: assertTimeZone(given), assumed: false };
   const stored = (await prefs).get("timeZoneIdentifier")?.trim();
@@ -434,7 +434,7 @@ const buscarMovimientos: ToolCore = {
  * Movimientos con fecha de un rango de días, con un día de margen a cada lado: el día exacto lo decide `txDay`.
  * Del más reciente al más antiguo, para que si se alcanza el tope de filas se pierda lo más viejo y no lo de hoy.
  */
-async function loadTxInRange(ctx: ToolContext, from: Day, to: Day, tz: string) {
+export async function loadTxInRange(ctx: ToolContext, from: Day, to: Day, tz: string) {
   return ctx.reader.all<TxRow>("tx_items", [
     ["select", COLUMNS.tx],
     NOT_DELETED,

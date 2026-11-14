@@ -31,12 +31,22 @@ export interface Env {
   DRAFTS_DB: D1Database;
   /** La lista de sesiones web de cada cuenta: un Durable Object por cuenta (`sessionIndex.ts`). */
   SESSION_INDEX: DurableObjectNamespace;
+  /** Los códigos de «Entrar con tu iPhone» (QR): un Durable Object por código (`qrPairing.ts`, lote 2). */
+  QR_PAIRING: DurableObjectNamespace;
+  /**
+   * Grupos (lote 3): service binding al gateway del mismo entorno, entrada `WebGroupsReader`. Lee los grupos con el
+   * token de solo lectura de la sesión; la llave del cifrado de Grupos no sale del gateway. Opcional: sin él, Grupos
+   * responde 503 y lo demás sigue.
+   */
+  GATEWAY_GROUPS?: import("./groups").GroupsReaderBinding;
   /** IANA. La zona con la que se decide qué día es hoy si la app nunca subió la suya (como el conector). */
   DEFAULT_TIMEZONE: string;
   /** Límite por IP en `/auth/*` (lo abre el navegador). Opcional en los tests; en producción, obligatorio. */
   RL_AUTH?: RateLimiter;
   /** Límite por sesión en `/api/*`. */
   RL_API?: RateLimiter;
+  /** Límite por IP en `/auth/qr/estado` y `/auth/qr/renovar`, que el navegador pregunta cada pocos segundos. */
+  RL_QR?: RateLimiter;
 }
 
 function trimSlash(url: string): string {

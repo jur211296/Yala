@@ -51,6 +51,15 @@ class_name = "SessionIndex"
 tag = "v1-sesiones"
 new_sqlite_classes = ["SessionIndex"]
 
+# «Entrar con tu iPhone» (lote 2): un objeto por código QR, que una alarma vacía al caducar (src/worker/pairing.ts).
+[[durable_objects.bindings]]
+name = "QR_PAIRING"
+class_name = "QrPairing"
+
+[[migrations]]
+tag = "v2-qr"
+new_sqlite_classes = ["QrPairing"]
+
 [vars]
 ENVIRONMENT = "staging"
 DEFAULT_TIMEZONE = "America/Lima"
@@ -74,3 +83,16 @@ simple = { limit = 30, period = 60 }
 name = "RL_API"
 namespace_id = "7402"
 simple = { limit = 120, period = 60 }
+
+# El navegador pregunta por su código QR cada ~2,5 s y lo renueva cada minuto.
+[[ratelimits]]
+name = "RL_QR"
+namespace_id = "7403"
+simple = { limit = 60, period = 60 }
+
+# Grupos (lote 3): la entrada interna del gateway de staging que lee Grupos con el token de la web. Es un service
+# binding: no sale a internet ni tiene ruta pública. La llave del cifrado de Grupos se queda en el gateway.
+[[services]]
+binding = "GATEWAY_GROUPS"
+service = "yala-gateway-staging"
+entrypoint = "WebGroupsReader"

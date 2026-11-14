@@ -37,6 +37,9 @@ interface StoredSession {
   shared: boolean;
   /** Id público de la sesión en la lista de sesiones (`sessions.ts`). Las del lote 0 no lo tienen. */
   pid?: string;
+  /** Cuenta «solo Grupos» (lote 3, decisión D3): la web le enseña Grupos y Configurar. No es un secreto ni un permiso:
+   *  su token es el mismo de solo lectura, y una cuenta así no tiene datos personales que leer. */
+  soloGrupos?: true;
   iv: string;
   ct: string;
 }
@@ -46,6 +49,7 @@ export interface Session extends SessionSecrets {
   lastSeen: number;
   shared: boolean;
   pid: string | null;
+  soloGrupos: boolean;
 }
 
 // ─── bytes ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -139,9 +143,16 @@ async function write(kv: KVNamespace, token: string, meta: Omit<StoredSession, "
 }
 
 /** Crea una sesión y devuelve el valor de la cookie. `pid`: su id en la lista de sesiones. */
-export async function createSession(kv: KVNamespace, secrets: SessionSecrets, shared: boolean, nowSec: number, pid?: string): Promise<string> {
+export async function createSession(
+  kv: KVNamespace,
+  secrets: SessionSecrets,
+  shared: boolean,
+  nowSec: number,
+  pid?: string,
+  soloGrupos = false,
+): Promise<string> {
   const token = randomToken();
-  await write(kv, token, { createdAt: nowSec, lastSeen: nowSec, shared, ...(pid ? { pid } : {}) }, secrets, nowSec);
+  await write(kv, token, { createdAt: nowSec, lastSeen: nowSec, shared, ...(pid ? { pid } : {}), ...(soloGrupos ? { soloGrupos: true as const } : {}) }, secrets, nowSec);
   return token;
 }
 
@@ -175,7 +186,7 @@ export async function loadSession(kv: KVNamespace, token: string | null, nowSec:
     await kv.delete(key);
     return null;
   }
-  return { ...secrets, createdAt: stored.createdAt, lastSeen: stored.lastSeen, shared: stored.shared, pid: typeof stored.pid === "string" ? stored.pid : null };
+  return { ...secrets, createdAt: stored.createdAt, lastSeen: stored.lastSeen, shared: stored.shared, pid: typeof stored.pid === "string" ? stored.pid : null, soloGrupos: stored.soloGrupos === true };
 }
 
 /**
@@ -184,9 +195,15 @@ export async function loadSession(kv: KVNamespace, token: string | null, nowSec:
  */
 export async function saveSession(kv: KVNamespace, token: string, session: Session, nowSec: number, tokensChanged: boolean): Promise<boolean> {
   if (!tokensChanged && nowSec - session.lastSeen < TOUCH_EVERY_SECONDS) return false;
-  const { createdAt, shared, pid, sub, sid, access, accessExp, refresh } = session;
+  const { createdAt, shared, pid, soloGrupos, sub, sid, access, accessExp, refresh } = session;
   try {
-    await write(kv, token, { createdAt, lastSeen: nowSec, shared, ...(pid ? { pid } : {}) }, { sub, sid, access, accessExp, refresh }, nowSec);
+    await write(
+      kv,
+      token,
+      { createdAt, lastSeen: nowSec, shared, ...(pid ? { pid } : {}), ...(soloGrupos ? { soloGrupos: true as const } : {}) },
+      { sub, sid, access, accessExp, refresh },
+      nowSec,
+    );
   } catch (err) {
     // Con tokens rotados no guardar es perder la sesión: que se note. Solo mover «último uso» (p. ej. dos pestañas en
     // el mismo segundo, el KV admite una escritura por segundo por clave) puede fallar sin consecuencias.
